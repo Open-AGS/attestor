@@ -58,6 +58,7 @@
     "test:evaluation-release-notes": "tsx tests/evaluation-release-notes.test.ts",
     "test:security-baseline-docs": "tsx tests/security-baseline-docs.test.ts",
     "test:package-script-runner": "tsx tests/package-script-runner.test.ts",
+    "test:production-rehearsal-buildout-docs": "tsx tests/production-rehearsal-buildout-docs.test.ts",
     "test:production-shared-authority-plane-docs": "tsx tests/production-shared-authority-plane-docs.test.ts",
     "test:release-authority-store": "tsx tests/release-authority-store.test.ts",
     "test:release-decision-log-store": "tsx tests/release-decision-log-store.test.ts",

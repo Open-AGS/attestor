@@ -197,6 +197,7 @@ npm run verify
 - [Hosted product flow buildout](docs/02-architecture/hosted-product-flow-buildout.md)
 - [Production runtime hardening buildout](docs/02-architecture/production-runtime-hardening-buildout.md)
 - [Production shared authority plane buildout](docs/02-architecture/production-shared-authority-plane-buildout.md)
+- [Production rehearsal buildout](docs/02-architecture/production-rehearsal-buildout.md)
 - [Production readiness](docs/08-deployment/production-readiness.md)
 - [Artifact attestation plan](docs/08-deployment/artifact-attestation-plan.md)
 - [Attestor Evaluation Packet v0.1](docs/00-evaluation/v0.1-evaluation-packet.md)
@@ -208,6 +209,7 @@ npm run verify
 - Want a compact outside-review packet? Start with [Attestor Evaluation Packet v0.1](docs/00-evaluation/v0.1-evaluation-packet.md).
 - Want the exact release boundary and known limitations? Start with [v0.1.2-evaluation release notes](docs/00-evaluation/v0.1.2-evaluation-release-notes.md).
 - Want the current disclosure path and CI trust boundary? Start with [Security Policy](SECURITY.md) and [Artifact attestation plan](docs/08-deployment/artifact-attestation-plan.md).
+- Want the path from repo-proof to real environment proof? Start with [Production rehearsal buildout](docs/02-architecture/production-rehearsal-buildout.md).
 - Want to wire the decision into your own app? Start with [Customer admission gate](docs/01-overview/customer-admission-gate.md) or run `npm run example:customer-gate`.
 - Want to know exactly where to put Attestor in your app? Start with [Customer integration recipes](docs/01-overview/customer-integration-recipes.md).
 - Want the deepest proof wedge? Start with [Financial reporting acceptance](docs/01-overview/financial-reporting-acceptance.md).

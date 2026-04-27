@@ -15,7 +15,7 @@ This guide uses the **recommended path today**:
 
 AWS remains supported. This guide chooses GKE because it is currently the cleanest repo-guided path end to end.
 
-The repo-side shared release/policy authority-plane buildout is tracked in [Production shared authority plane buildout](../02-architecture/production-shared-authority-plane-buildout.md). That track now proves the shared authority plane with embedded PostgreSQL; this guide remains the boundary for promoting it into a real customer-operated or hosted environment.
+The repo-side shared release/policy authority-plane buildout is tracked in [Production shared authority plane buildout](../02-architecture/production-shared-authority-plane-buildout.md). That track now proves the shared authority plane with embedded PostgreSQL; the next evidence track is [Production rehearsal buildout](../02-architecture/production-rehearsal-buildout.md), which turns this guide into a real target-environment proof path.
 
 ## What "Ready" Means Here
 

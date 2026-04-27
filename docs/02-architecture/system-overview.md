@@ -126,6 +126,7 @@ So the honest architectural statement is:
 
 Active priority:
 
+- move through the [Production rehearsal buildout](production-rehearsal-buildout.md) so `production-shared` becomes real-environment evidence, not just repo-embedded PostgreSQL proof
 - keep the completed [Production shared authority plane buildout](production-shared-authority-plane-buildout.md) aligned with production promotion gates so `production-shared` remains a tested shared authority plane, not a loose marketing claim
 - keep the product story centered on one Attestor platform
 - keep the README and architecture docs aligned with the trackers
@@ -142,4 +143,4 @@ Hosted product flow status:
 
 Future hosted product-flow changes should preserve the docs, contract, readiness, and probe gates before the public story expands again.
 
-Future runtime/store work should start from a new tracker only after the production readiness packet, HA probes, and real environment rehearsal show a concrete gap. Do not reopen completed runtime-hardening or shared-authority tracks just to widen the product story.
+Future runtime/store work should stay inside the production rehearsal track until the production readiness packet, HA probes, and real environment rehearsal show a concrete gap. Do not reopen completed runtime-hardening or shared-authority tracks just to widen the product story.

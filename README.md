@@ -1,19 +1,12 @@
 # Attestor
 
-**Attestor is a fail-closed approval layer for AI-assisted actions before they affect real systems.**
+AI can propose actions.
 
-Use it when an AI agent, automation, or workflow wants to write records, send controlled output, approve a financial result, or trigger programmable-money execution, and you need a policy decision plus durable proof before that action becomes real.
+Attestor makes sure those actions do not become real without policy, authority, and evidence.
 
-Attestor returns a bounded release decision:
+It sits between AI-assisted systems and real-world consequences, then blocks, narrows, reviews, or admits critical actions before downstream systems write, send, file, or execute.
 
-- `admit` — allow the action
-- `narrow` — allow only a safer bounded version
-- `review` — require human or external review
-- `block` — reject fail-closed
-
-It is not an agent framework, model runtime, wallet, custody platform, or orchestration system. It sits in front of those systems as a control point.
-
-Built for teams that cannot let sensitive outputs or execution paths enter production on informal trust.
+Attestor does not replace your system. It sits in front of it, controlling what is allowed to become real.
 
 ![Attestor platform flow: proof before consequence](docs/assets/attestor-platform-flow.png)
 
@@ -23,6 +16,53 @@ Built for teams that cannot let sensitive outputs or execution paths enter produ
 > [!IMPORTANT]
 > Start reviewer evaluation with the [Attestor Evaluation Packet v0.1](docs/00-evaluation/v0.1-evaluation-packet.md), the [v0.1.2-evaluation release notes](docs/00-evaluation/v0.1.2-evaluation-release-notes.md), the [Security Policy](SECURITY.md), and the current [Evaluation Smoke workflow](.github/workflows/evaluation-smoke.yml).
 
+## Why it matters
+
+An AI agent, automation, or workflow may try to:
+
+- write a controlled financial record
+- send customer-facing output
+- approve a high-risk business action
+- trigger programmable-money execution
+
+Without a control point, the action may rely on informal trust. When routed through Attestor, every proposed consequence is checked, policy is enforced, proof material is produced for allowed paths, and unsafe actions fail closed.
+
+## Example
+
+An AI-assisted workflow tries to approve a high-risk financial action.
+
+Attestor intercepts before the downstream system acts:
+
+- policy requires stronger approval
+- required authority or evidence is missing
+
+Result:
+
+- `block`
+- downstream does not proceed
+- the path fails closed instead of becoming a real action
+
+When policy, authority, and evidence pass, Attestor can return `admit` with proof references for later review.
+
+## Decisions
+
+Attestor always returns one of four bounded outcomes:
+
+- `admit` - allow the action
+- `narrow` - allow only a safer bounded version
+- `review` - require human or external review
+- `block` - reject fail-closed
+
+## What you can do with Attestor
+
+- Prevent AI-assisted systems from sending unauthorized payments.
+- Control AI-generated financial records before release.
+- Gate programmable-money actions before execution.
+- Add policy enforcement to automation systems.
+- Require human approval for high-risk actions.
+
+For the longer use-case map, see [What you can do with Attestor](docs/01-overview/what-you-can-do.md).
+
 ## Try it in 60 seconds
 
 ```bash
@@ -30,13 +70,16 @@ npm install
 npm run example:admission
 ```
 
-This runs the shortest local Attestor flow: two AI-assisted finance consequences go through the same admission facade. It shows: one path is admitted with proof references, one path is blocked fail-closed, and the downstream gate only proceeds when the decision allows it.
+What you'll see:
+
+- one path is admitted with proof references
+- one path is blocked fail-closed
+- the downstream gate only proceeds when the decision allows it
 
 For the guided first run, see [Try Attestor first](docs/01-overview/try-attestor-first.md).
 For an outside-review packet that explains what to run and what is proven, see [Attestor Evaluation Packet v0.1](docs/00-evaluation/v0.1-evaluation-packet.md).
 For the current evaluation release boundary and known limitations, see [v0.1.2-evaluation release notes](docs/00-evaluation/v0.1.2-evaluation-release-notes.md).
 For the first customer-side enforcement step, see [Customer admission gate](docs/01-overview/customer-admission-gate.md).
-For concrete use cases, see [What you can do with Attestor](docs/01-overview/what-you-can-do.md).
 For copyable placement recipes, see [Customer integration recipes](docs/01-overview/customer-integration-recipes.md).
 
 ## How Attestor works in practice

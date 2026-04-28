@@ -82,12 +82,12 @@ function testTrackerFreezesTheProductionRehearsalScope(): void {
   );
   includes(
     tracker,
-    '| Completed | 1 |',
-    'Production rehearsal docs: tracker marks only Step 01 complete',
+    '| Completed | 2 |',
+    'Production rehearsal docs: tracker marks Steps 01 and 02 complete',
   );
   includes(
     tracker,
-    '| Not started | 9 |',
+    '| Not started | 8 |',
     'Production rehearsal docs: tracker keeps the remaining steps pending',
   );
 }
@@ -101,7 +101,7 @@ function testFrozenStepsStayOrderedAndHonest(): void {
 
   const steps = [
     '| 01 | complete | Define the production rehearsal scope, success rubric, and non-claims |',
-    '| 02 | pending | Define the rehearsal manifest and evidence schema |',
+    '| 02 | complete | Define the rehearsal manifest and evidence schema |',
     '| 03 | pending | Add the one-command rehearsal planner |',
     '| 04 | pending | Bind rehearsal to a concrete target environment profile |',
     '| 05 | pending | Prove external substrate readiness |',
@@ -122,8 +122,8 @@ function testFrozenStepsStayOrderedAndHonest(): void {
 
   includes(
     tracker,
-    'Do not run ahead to GKE or production rollout until the manifest says exactly what evidence a rehearsal must collect.',
-    'Production rehearsal docs: immediate next step keeps Step 02 ahead of rollout work',
+    'It should read the Step 02 manifest, reject unsafe placeholders or missing target identity, verify referenced npm scripts exist, and print the operator run order',
+    'Production rehearsal docs: immediate next step keeps Step 03 focused on planner behavior',
   );
   excludes(
     tracker,

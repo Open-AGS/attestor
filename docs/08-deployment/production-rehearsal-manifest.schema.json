@@ -1,0 +1,360 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/0xlamarr-labs/attestor/docs/08-deployment/production-rehearsal-manifest.schema.json",
+  "title": "Attestor Production Rehearsal Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "rehearsalId",
+    "targetEnvironment",
+    "source",
+    "runtime",
+    "secretPosture",
+    "commandPlan",
+    "evidenceItems",
+    "stopConditions",
+    "nonClaims",
+    "goNoGo"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "attestor.production-rehearsal.manifest.v1"
+    },
+    "rehearsalId": {
+      "type": "string",
+      "minLength": 8,
+      "pattern": "^[a-z0-9][a-z0-9._-]*$"
+    },
+    "targetEnvironment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "type",
+        "provider",
+        "region",
+        "owner"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 3
+        },
+        "type": {
+          "enum": [
+            "local-rehearsal",
+            "staging",
+            "production-like",
+            "customer-operated-rehearsal"
+          ]
+        },
+        "provider": {
+          "type": "string",
+          "minLength": 2
+        },
+        "region": {
+          "type": "string",
+          "minLength": 2
+        },
+        "cluster": {
+          "type": "string"
+        },
+        "namespace": {
+          "type": "string"
+        },
+        "publicHostname": {
+          "type": "string"
+        },
+        "owner": {
+          "type": "string",
+          "minLength": 2
+        }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repository",
+        "commit",
+        "workflowRuns"
+      ],
+      "properties": {
+        "repository": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+        },
+        "commit": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{7,40}$"
+        },
+        "tag": {
+          "type": "string"
+        },
+        "release": {
+          "type": "string"
+        },
+        "workflowRuns": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "evaluationSmoke": {
+              "type": "string"
+            },
+            "fullVerify": {
+              "type": "string"
+            },
+            "releaseProvenance": {
+              "type": "string"
+            },
+            "productionRehearsal": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "profile",
+        "requireSharedAuthority",
+        "noLocalFallback"
+      ],
+      "properties": {
+        "profile": {
+          "enum": [
+            "single-node-durable",
+            "production-shared"
+          ]
+        },
+        "requireSharedAuthority": {
+          "type": "boolean"
+        },
+        "noLocalFallback": {
+          "const": true
+        },
+        "releaseAuthorityPgUrlRef": {
+          "type": "string"
+        },
+        "redisUrlRef": {
+          "type": "string"
+        }
+      }
+    },
+    "secretPosture": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "plaintextSecretsAllowed",
+        "redactedFields"
+      ],
+      "properties": {
+        "mode": {
+          "enum": [
+            "redacted",
+            "external-secret",
+            "secret-manager"
+          ]
+        },
+        "plaintextSecretsAllowed": {
+          "const": false
+        },
+        "redactedFields": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "commandPlan": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/commandStep"
+      }
+    },
+    "evidenceItems": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/evidenceItem"
+      }
+    },
+    "stopConditions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 8
+      }
+    },
+    "nonClaims": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 8
+      }
+    },
+    "goNoGo": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "verdict",
+        "notes"
+      ],
+      "properties": {
+        "verdict": {
+          "enum": [
+            "pending",
+            "go",
+            "no-go"
+          ]
+        },
+        "decidedBy": {
+          "type": "string"
+        },
+        "decidedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "commandStep": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "phase",
+        "command",
+        "required",
+        "stopOnFailure",
+        "evidenceIds"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9._-]*$"
+        },
+        "phase": {
+          "enum": [
+            "repo-baseline",
+            "render",
+            "probe",
+            "rehearsal",
+            "recovery",
+            "observability",
+            "provenance",
+            "decision"
+          ]
+        },
+        "command": {
+          "type": "string",
+          "minLength": 3
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "stopOnFailure": {
+          "type": "boolean"
+        },
+        "expectedArtifacts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "evidenceIds": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "evidenceItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "phase",
+        "kind",
+        "required",
+        "producer",
+        "status"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9._-]*$"
+        },
+        "phase": {
+          "enum": [
+            "repo-baseline",
+            "render",
+            "probe",
+            "rehearsal",
+            "recovery",
+            "observability",
+            "provenance",
+            "decision"
+          ]
+        },
+        "kind": {
+          "enum": [
+            "terminal-output",
+            "json",
+            "markdown",
+            "tarball",
+            "attestation",
+            "workflow-run",
+            "screenshot",
+            "operator-note"
+          ]
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "producer": {
+          "type": "string",
+          "minLength": 3
+        },
+        "artifactPath": {
+          "type": "string"
+        },
+        "digestSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "workflowRunId": {
+          "type": "string"
+        },
+        "verification": {
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "pending",
+            "pass",
+            "fail",
+            "blocked",
+            "skipped"
+          ]
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,247 @@
+{
+  "schemaVersion": "attestor.production-rehearsal.manifest.v1",
+  "rehearsalId": "v0.2-production-rehearsal-template",
+  "targetEnvironment": {
+    "name": "replace-with-target-name",
+    "type": "production-like",
+    "provider": "gke",
+    "region": "replace-with-region",
+    "cluster": "replace-with-cluster",
+    "namespace": "attestor",
+    "publicHostname": "replace-with-hostname",
+    "owner": "replace-with-operator"
+  },
+  "source": {
+    "repository": "0xlamarr-labs/attestor",
+    "commit": "0000000",
+    "tag": "v0.1.2-evaluation",
+    "release": "v0.1.2-evaluation",
+    "workflowRuns": {
+      "evaluationSmoke": "replace-with-run-id",
+      "fullVerify": "replace-with-run-id",
+      "releaseProvenance": "replace-with-run-id",
+      "productionRehearsal": "pending"
+    }
+  },
+  "runtime": {
+    "profile": "production-shared",
+    "requireSharedAuthority": true,
+    "noLocalFallback": true,
+    "releaseAuthorityPgUrlRef": "external-secret:ATTESTOR_RELEASE_AUTHORITY_PG_URL",
+    "redisUrlRef": "external-secret:REDIS_URL"
+  },
+  "secretPosture": {
+    "mode": "external-secret",
+    "plaintextSecretsAllowed": false,
+    "redactedFields": [
+      "ATTESTOR_RELEASE_AUTHORITY_PG_URL",
+      "ATTESTOR_CONTROL_PLANE_PG_URL",
+      "ATTESTOR_BILLING_LEDGER_PG_URL",
+      "REDIS_URL",
+      "STRIPE_API_KEY",
+      "STRIPE_WEBHOOK_SECRET",
+      "ATTESTOR_ADMIN_API_KEY",
+      "ATTESTOR_METRICS_API_KEY"
+    ]
+  },
+  "commandPlan": [
+    {
+      "id": "repo-verify",
+      "phase": "repo-baseline",
+      "command": "npm run verify",
+      "required": true,
+      "stopOnFailure": true,
+      "expectedArtifacts": [],
+      "evidenceIds": [
+        "repo-verify-output"
+      ]
+    },
+    {
+      "id": "render-production-readiness-packet",
+      "phase": "render",
+      "command": "npm run render:production-readiness-packet",
+      "required": true,
+      "stopOnFailure": true,
+      "expectedArtifacts": [
+        ".attestor/production-readiness/latest/README.md",
+        ".attestor/production-readiness/latest/summary.json"
+      ],
+      "evidenceIds": [
+        "production-readiness-packet"
+      ]
+    },
+    {
+      "id": "probe-ha-runtime-connectivity",
+      "phase": "probe",
+      "command": "npm run probe:ha-runtime-connectivity",
+      "required": true,
+      "stopOnFailure": true,
+      "expectedArtifacts": [],
+      "evidenceIds": [
+        "ha-runtime-connectivity-output"
+      ]
+    },
+    {
+      "id": "probe-ha-release-inputs",
+      "phase": "probe",
+      "command": "npm run probe:ha-release-inputs",
+      "required": true,
+      "stopOnFailure": true,
+      "expectedArtifacts": [],
+      "evidenceIds": [
+        "ha-release-inputs-output"
+      ]
+    },
+    {
+      "id": "probe-observability-receivers",
+      "phase": "observability",
+      "command": "npm run probe:observability-receivers",
+      "required": true,
+      "stopOnFailure": true,
+      "expectedArtifacts": [],
+      "evidenceIds": [
+        "observability-receiver-output"
+      ]
+    },
+    {
+      "id": "backup-control-plane",
+      "phase": "recovery",
+      "command": "npm run backup:control-plane",
+      "required": true,
+      "stopOnFailure": true,
+      "expectedArtifacts": [
+        ".attestor/backups/control-plane/latest"
+      ],
+      "evidenceIds": [
+        "control-plane-backup"
+      ]
+    },
+    {
+      "id": "restore-control-plane",
+      "phase": "recovery",
+      "command": "npm run restore:control-plane",
+      "required": true,
+      "stopOnFailure": true,
+      "expectedArtifacts": [],
+      "evidenceIds": [
+        "control-plane-restore-output"
+      ]
+    },
+    {
+      "id": "verify-release-provenance",
+      "phase": "provenance",
+      "command": "gh attestation verify evaluation-artifacts.tar.gz -R 0xlamarr-labs/attestor --signer-workflow 0xlamarr-labs/attestor/.github/workflows/release-provenance.yml",
+      "required": true,
+      "stopOnFailure": true,
+      "expectedArtifacts": [
+        "evaluation-artifacts.tar.gz"
+      ],
+      "evidenceIds": [
+        "release-provenance-verification"
+      ]
+    }
+  ],
+  "evidenceItems": [
+    {
+      "id": "repo-verify-output",
+      "phase": "repo-baseline",
+      "kind": "terminal-output",
+      "required": true,
+      "producer": "npm run verify",
+      "artifactPath": ".attestor/rehearsal/latest/repo-verify.txt",
+      "verification": "All suite commands exit 0 for the selected source commit.",
+      "status": "pending"
+    },
+    {
+      "id": "production-readiness-packet",
+      "phase": "render",
+      "kind": "json",
+      "required": true,
+      "producer": "npm run render:production-readiness-packet",
+      "artifactPath": ".attestor/production-readiness/latest/summary.json",
+      "verification": "Packet state is ready-for-environment-promotion and records runtime authority truth.",
+      "status": "pending"
+    },
+    {
+      "id": "ha-runtime-connectivity-output",
+      "phase": "probe",
+      "kind": "terminal-output",
+      "required": true,
+      "producer": "npm run probe:ha-runtime-connectivity",
+      "artifactPath": ".attestor/rehearsal/latest/ha-runtime-connectivity.txt",
+      "verification": "Probe reaches the configured external runtime inputs without local fallback.",
+      "status": "pending"
+    },
+    {
+      "id": "ha-release-inputs-output",
+      "phase": "probe",
+      "kind": "terminal-output",
+      "required": true,
+      "producer": "npm run probe:ha-release-inputs",
+      "artifactPath": ".attestor/rehearsal/latest/ha-release-inputs.txt",
+      "verification": "Release authority inputs are present for the selected target environment.",
+      "status": "pending"
+    },
+    {
+      "id": "observability-receiver-output",
+      "phase": "observability",
+      "kind": "terminal-output",
+      "required": true,
+      "producer": "npm run probe:observability-receivers",
+      "artifactPath": ".attestor/rehearsal/latest/observability-receivers.txt",
+      "verification": "Telemetry receivers accept logs, traces, and metrics for this target.",
+      "status": "pending"
+    },
+    {
+      "id": "control-plane-backup",
+      "phase": "recovery",
+      "kind": "tarball",
+      "required": true,
+      "producer": "npm run backup:control-plane",
+      "artifactPath": ".attestor/backups/control-plane/latest",
+      "verification": "Backup artifact exists and has a recorded digest before restore rehearsal.",
+      "status": "pending"
+    },
+    {
+      "id": "control-plane-restore-output",
+      "phase": "recovery",
+      "kind": "terminal-output",
+      "required": true,
+      "producer": "npm run restore:control-plane",
+      "artifactPath": ".attestor/rehearsal/latest/control-plane-restore.txt",
+      "verification": "Restore completes and the restored control-plane state passes readiness checks.",
+      "status": "pending"
+    },
+    {
+      "id": "release-provenance-verification",
+      "phase": "provenance",
+      "kind": "attestation",
+      "required": true,
+      "producer": "gh attestation verify",
+      "artifactPath": "evaluation-artifacts.tar.gz",
+      "verification": "GitHub attestation verifies repository and signer workflow for the release artifact.",
+      "status": "pending"
+    }
+  ],
+  "stopConditions": [
+    "Target environment identity is missing or ambiguous.",
+    "ATTESTOR_RUNTIME_PROFILE is not explicit.",
+    "production-shared is selected but shared authority PostgreSQL is missing or unreachable.",
+    "Any required command returns a non-zero exit code.",
+    "Any required evidence item remains pending, failed, blocked, or missing.",
+    "Any required artifact lacks a digest before packaging the final evidence bundle.",
+    "Any probe silently falls back to local/process memory for a production-shared target.",
+    "Any manifest contains plaintext secrets instead of redacted secret references."
+  ],
+  "nonClaims": [
+    "This manifest is not a hosted public SaaS launch.",
+    "This manifest is not market validation or customer adoption proof.",
+    "This manifest is not a blanket production guarantee for every environment.",
+    "This manifest is not a replacement for independent security review.",
+    "This manifest does not claim external PostgreSQL, Redis, Kubernetes, TLS, DNS, or observability readiness until those evidence items pass for the named target."
+  ],
+  "goNoGo": {
+    "verdict": "pending",
+    "notes": "No production-promotion decision exists until every required command, artifact, digest, provenance check, and stop condition has been evaluated for the named target."
+  }
+}

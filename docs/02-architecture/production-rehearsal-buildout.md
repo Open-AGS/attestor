@@ -67,17 +67,17 @@ A production rehearsal is a bounded run against a named target environment. It m
 | Metric | Value |
 |---|---|
 | Total frozen steps | 10 |
-| Completed | 1 |
+| Completed | 2 |
 | In progress | 0 |
-| Not started | 9 |
-| Current posture | Step 01 is complete: the production rehearsal scope, non-claims, external-environment boundary, and frozen 10-step path are now documented. The next work is Step 02: define a machine-readable rehearsal manifest and evidence schema that composes the existing benchmark, render, probe, readiness, backup/restore, and provenance outputs without inventing new product scope. |
+| Not started | 8 |
+| Current posture | Step 02 is complete: the production rehearsal manifest contract, JSON schema, example template, and truth guard now define what evidence a named environment must collect. The next work is Step 03: add a one-command rehearsal planner that reads the manifest, rejects unsafe placeholders, and prints the operator run order without treating pending evidence as production proof. |
 
 ## Frozen Step List
 
 | Step | Status | Deliverable | Evidence | Notes |
 |---|---|---|---|---|
 | 01 | complete | Define the production rehearsal scope, success rubric, and non-claims | `docs/02-architecture/production-rehearsal-buildout.md`, `README.md`, `docs/02-architecture/system-overview.md`, `docs/08-deployment/production-readiness.md`, `tests/production-rehearsal-buildout-docs.test.ts`, `package.json` | This step opens the real-environment proof track without reopening completed runtime/shared-authority trackers. It freezes the step list, preserves one-product framing, blocks hosted-crypto/API-story widening, and states that repo-proven embedded PostgreSQL behavior is not the same as external customer-operated production readiness. |
-| 02 | pending | Define the rehearsal manifest and evidence schema |  | Create a versioned manifest that records environment identity, runtime profile, command plan, expected artifacts, redacted secret posture, source commit/tag, workflow run ids, and pass/fail evidence pointers. It should compose existing outputs before adding new machinery. |
+| 02 | complete | Define the rehearsal manifest and evidence schema | `docs/08-deployment/production-rehearsal-manifest.md`, `docs/08-deployment/production-rehearsal-manifest.schema.json`, `docs/08-deployment/production-rehearsal-manifest.example.json`, `tests/production-rehearsal-manifest.test.ts`, `package.json` | The manifest contract records target environment identity, runtime profile, command plan, expected artifacts, redacted secret posture, source commit/tag, workflow run ids, evidence pointers, stop conditions, non-claims, and pending go/no-go state. It composes existing render/probe/backup/provenance commands and keeps all evidence pending until a named target run proves it. |
 | 03 | pending | Add the one-command rehearsal planner |  | Build a planner that reads the manifest and tells an operator which existing commands to run first: benchmarks, renderers, probes, readiness packet, backup/restore drill, and provenance checks. It should fail closed on missing target identity or unsafe defaults. |
 | 04 | pending | Bind rehearsal to a concrete target environment profile |  | Add the first explicit target profile, likely `gke-production-rehearsal`, using existing GKE, External Secrets, Gateway, cert-manager, Grafana Alloy, shared PostgreSQL, and shared Redis render paths. Keep local/evaluation paths separate. |
 | 05 | pending | Prove external substrate readiness |  | Run live probes for release-authority PostgreSQL, control-plane PostgreSQL, billing PostgreSQL, Redis, secrets, TLS/DNS, API readiness, worker readiness, and observability receivers. No silent fallback to local/process memory is allowed. |
@@ -103,4 +103,4 @@ This track is complete only when a named target environment can produce a rehear
 
 ## Immediate Next Step
 
-Implement Step 02: define the versioned rehearsal manifest and evidence schema. Do not run ahead to GKE or production rollout until the manifest says exactly what evidence a rehearsal must collect.
+Implement Step 03: add the one-command rehearsal planner. It should read the Step 02 manifest, reject unsafe placeholders or missing target identity, verify referenced npm scripts exist, and print the operator run order without running ahead to GKE rollout or treating pending evidence as proof.

@@ -57,6 +57,7 @@
     "test:evaluation-packet-docs": "tsx tests/evaluation-packet-docs.test.ts",
     "test:evaluation-release-notes": "tsx tests/evaluation-release-notes.test.ts",
     "test:security-baseline-docs": "tsx tests/security-baseline-docs.test.ts",
+    "test:container-security-baseline": "tsx tests/container-security-baseline.test.ts",
     "test:package-script-runner": "tsx tests/package-script-runner.test.ts",
     "test:production-rehearsal-buildout-docs": "tsx tests/production-rehearsal-buildout-docs.test.ts",
     "test:production-rehearsal-manifest": "tsx tests/production-rehearsal-manifest.test.ts",

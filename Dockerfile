@@ -10,7 +10,7 @@ FROM node:22-alpine AS build
 WORKDIR /app
 ENV REDISMS_DISABLE_POSTINSTALL=true
 COPY package*.json tsconfig.json ./
-RUN npm ci
+RUN npm ci --ignore-scripts --no-audit --no-fund && npm cache clean --force
 COPY src/ src/
 RUN npm run build && npm prune --production
 

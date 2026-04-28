@@ -118,6 +118,20 @@
       ]
     },
     {
+      "id": "rehearse-production-consequence",
+      "phase": "rehearsal",
+      "command": "npm run rehearse:production-consequence",
+      "required": true,
+      "stopOnFailure": true,
+      "expectedArtifacts": [
+        ".attestor/rehearsal/gke-production-rehearsal/consequence-behavior/summary.json",
+        ".attestor/rehearsal/gke-production-rehearsal/consequence-behavior/README.md"
+      ],
+      "evidenceIds": [
+        "production-rehearsal-consequence-behavior"
+      ]
+    },
+    {
       "id": "backup-control-plane",
       "phase": "recovery",
       "command": "npm run backup:control-plane",
@@ -214,6 +228,16 @@
       "producer": "npm run probe:production-rehearsal-substrates",
       "artifactPath": ".attestor/rehearsal/gke-production-rehearsal/substrate-readiness/summary.json",
       "verification": "Substrate readiness state is ready-for-rehearsal and records shared PostgreSQL, Redis, External Secrets, Gateway, HTTPRoute, Certificate, API, worker, DNS, and observability probe truth.",
+      "status": "pending"
+    },
+    {
+      "id": "production-rehearsal-consequence-behavior",
+      "phase": "rehearsal",
+      "kind": "json",
+      "required": true,
+      "producer": "npm run rehearse:production-consequence",
+      "artifactPath": ".attestor/rehearsal/gke-production-rehearsal/consequence-behavior/summary.json",
+      "verification": "Consequence rehearsal state is passed-core-consequence-rehearsal and records admitted/proceed, blocked/hold, review/hold, token active/revoked/consumed, evidence-pack, reviewer-queue-claim, and downstream gate behavior.",
       "status": "pending"
     },
     {

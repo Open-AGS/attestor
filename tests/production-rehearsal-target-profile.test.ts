@@ -215,8 +215,8 @@ function testManifestPatchAndDocsKeepTruthBoundary(): void {
 function testTrackerMarksStep04CompleteWithoutRenumbering(): void {
   const tracker = readProjectFile('docs', '02-architecture', 'production-rehearsal-buildout.md');
 
-  includes(tracker, '| Completed | 5 |', 'Production rehearsal target: tracker marks five steps complete');
-  includes(tracker, '| Not started | 5 |', 'Production rehearsal target: tracker leaves five steps not started');
+  includes(tracker, '| Completed | 6 |', 'Production rehearsal target: tracker marks six steps complete');
+  includes(tracker, '| Not started | 4 |', 'Production rehearsal target: tracker leaves four steps not started');
   includes(
     tracker,
     '| 04 | complete | Bind rehearsal to a concrete target environment profile |',
@@ -229,8 +229,8 @@ function testTrackerMarksStep04CompleteWithoutRenumbering(): void {
   );
   includes(
     tracker,
-    'Implement Step 06: rehearse core fail-closed consequence behavior.',
-    'Production rehearsal target: immediate next step advances to core consequence behavior',
+    'Implement Step 07: rehearse queue, worker, and async recovery.',
+    'Production rehearsal target: immediate next step advances to queue and async recovery',
   );
 }
 

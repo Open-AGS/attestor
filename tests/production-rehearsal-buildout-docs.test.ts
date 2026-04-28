@@ -82,12 +82,12 @@ function testTrackerFreezesTheProductionRehearsalScope(): void {
   );
   includes(
     tracker,
-    '| Completed | 5 |',
-    'Production rehearsal docs: tracker marks Steps 01 through 05 complete',
+    '| Completed | 6 |',
+    'Production rehearsal docs: tracker marks Steps 01 through 06 complete',
   );
   includes(
     tracker,
-    '| Not started | 5 |',
+    '| Not started | 4 |',
     'Production rehearsal docs: tracker keeps the remaining steps pending',
   );
 }
@@ -105,7 +105,7 @@ function testFrozenStepsStayOrderedAndHonest(): void {
     '| 03 | complete | Add the one-command rehearsal planner |',
     '| 04 | complete | Bind rehearsal to a concrete target environment profile |',
     '| 05 | complete | Prove external substrate readiness |',
-    '| 06 | pending | Rehearse core fail-closed consequence behavior |',
+    '| 06 | complete | Rehearse core fail-closed consequence behavior |',
     '| 07 | pending | Rehearse queue, worker, and async recovery |',
     '| 08 | pending | Rehearse backup, restore, and DR |',
     '| 09 | pending | Rehearse observability, alerting, and operator runbooks |',
@@ -122,8 +122,8 @@ function testFrozenStepsStayOrderedAndHonest(): void {
 
   includes(
     tracker,
-    'Implement Step 06: rehearse core fail-closed consequence behavior.',
-    'Production rehearsal docs: immediate next step moves to core consequence behavior',
+    'Implement Step 07: rehearse queue, worker, and async recovery.',
+    'Production rehearsal docs: immediate next step moves to queue and async recovery',
   );
   excludes(
     tracker,

@@ -52,6 +52,7 @@ The template composes existing commands before adding new machinery:
 - `npm run probe:ha-release-inputs`
 - `npm run probe:observability-receivers`
 - `npm run probe:production-rehearsal-substrates`
+- `npm run rehearse:production-consequence`
 - `npm run backup:control-plane`
 - `npm run restore:control-plane`
 - `gh attestation verify evaluation-artifacts.tar.gz -R 0xlamarr-labs/attestor --signer-workflow 0xlamarr-labs/attestor/.github/workflows/release-provenance.yml`
@@ -107,3 +108,29 @@ The command exits non-zero unless every required substrate check passes. It writ
 - `.attestor/rehearsal/gke-production-rehearsal/substrate-readiness/README.md`
 
 This probe still does not claim customer-operated production readiness by itself. It creates the Step 05 evidence item that later rehearsal steps can consume.
+
+## Core Consequence Behavior Rehearsal
+
+Step 06 adds the fail-closed consequence behavior rehearsal:
+
+```bash
+npm run rehearse:production-consequence
+```
+
+The command consumes the Step 05 substrate readiness summary, requires the `gke-production-rehearsal` target to stay on the `production-shared` / `async-shared-authority-stores` contract, and fails before core behavior if the shared release authority PostgreSQL input is missing.
+
+When prerequisites pass, the rehearsal exercises the existing Attestor primitives:
+
+- admitted consequence -> downstream gate proceeds with proof references
+- blocked consequence -> downstream gate holds fail-closed without inventing proof references
+- review/hold consequence -> downstream gate holds before execution
+- release token issuance, active introspection, revocation, and single-use replay exhaustion
+- release evidence pack export and verification
+- reviewer queue listing, claim, release, and dual-approval closure
+
+It writes:
+
+- `.attestor/rehearsal/gke-production-rehearsal/consequence-behavior/summary.json`
+- `.attestor/rehearsal/gke-production-rehearsal/consequence-behavior/README.md`
+
+This is target-bound technical evidence, not customer adoption proof or a blanket production guarantee.

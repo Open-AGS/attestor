@@ -46,6 +46,16 @@ function testDemoExplainsTheFirstUsefulAdmissionFlow(): void {
   includes(demo.output, 'Attestor first useful admission demo', 'Demo: output has title');
   includes(demo.output, 'public facade: attestor/consequence-admission', 'Demo: output names public facade');
   includes(demo.output, 'automatic pack detection: false', 'Demo: output rejects automatic routing');
+  includes(
+    demo.output,
+    'admitted paths carry proof references',
+    'Demo: output does not imply every blocked path carries proof',
+  );
+  includes(
+    demo.output,
+    'customer gate passes',
+    'Demo: output teaches downstream systems to use the customer gate',
+  );
   includes(demo.output, 'Input:', 'Demo: output groups the input clearly');
   includes(demo.output, 'Attestor decision:', 'Demo: output groups the decision clearly');
   includes(demo.output, 'Proof refs:', 'Demo: output groups proof references clearly');

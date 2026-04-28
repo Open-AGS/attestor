@@ -121,8 +121,8 @@ function renderResult(result: Omit<FirstUsefulAdmissionDemoResult, 'output'>): s
     'What this proves:',
     '1. A customer system proposes a consequence.',
     '2. It calls Attestor before the downstream action writes, sends, files, or executes.',
-    '3. Attestor returns admit, narrow, review, or block with proof references.',
-    '4. The downstream system proceeds only when the decision allows it.',
+    '3. Attestor returns admit, narrow, review, or block; admitted paths carry proof references.',
+    '4. The downstream system proceeds only when the decision allows it and the customer gate passes.',
     '',
   ];
 

@@ -49,7 +49,19 @@ export async function runPostgresProve(sql: string): Promise<PostgresProveResult
     return {
       attempted: false,
       config: null,
-      predictiveGuardrail: { performed: false, riskLevel: 'low', signals: [], recommendation: 'proceed', plannerEvidence: null },
+      predictiveGuardrail: {
+        performed: false,
+        riskLevel: 'critical',
+        signals: [{
+          signal: 'postgres_not_ready',
+          severity: 'critical',
+          detail: readiness.message,
+          threshold: 'configured PostgreSQL proof runtime',
+          observed: 'not-runnable',
+        }],
+        recommendation: 'deny',
+        plannerEvidence: null,
+      },
       execution: null,
       postgresEvidence: { executionContextHash: null, executionTimestamp: null, provider: 'postgres' },
       schemaAttestation: null,

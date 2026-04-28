@@ -4,8 +4,9 @@
  * Uses the official snowflake-sdk for governed read-only query execution.
  * Includes: connection, execution, EXPLAIN-based preflight, evidence collection.
  *
- * Safety: SQL governance (write rejection) is enforced at the Attestor engine level.
- * The connector executes only what passes governance gates.
+ * Safety: SQL governance (write/stacked-query rejection) is enforced inside
+ * this connector before SDK loading or connection, because explicit connector
+ * calls must not rely on a later pipeline layer to fail closed.
  */
 
 import { createHash } from 'node:crypto';
@@ -13,6 +14,7 @@ import type {
   DatabaseConnector, ConnectorConfig, ConnectorExecutionResult,
   ConnectorPreflightResult, ConnectorProbeResult,
 } from './connector-interface.js';
+import { validateReadOnlySql } from './postgres.js';
 import { captureSnowflakeSchemaAttestation } from './snowflake-attestation.js';
 
 // ─── Configuration ──────────────────────────────────────────────────────────
@@ -70,6 +72,11 @@ function execSql(conn: any, sql: string): Promise<any[]> {
   });
 }
 
+function injectLimit(sql: string, maxRows: number): string {
+  if (/\bLIMIT\b/i.test(sql)) return sql;
+  return `${sql.replace(/;\s*$/, '')} LIMIT ${maxRows}`;
+}
+
 function connectSnowflake(sdk: any, config: SnowflakeConfig): Promise<any> {
   return new Promise((resolve, reject) => {
     const conn = sdk.createConnection({
@@ -109,6 +116,24 @@ export const snowflakeConnector: DatabaseConnector = {
     const sfConfig = config as SnowflakeConfig;
     const start = Date.now();
     const timestamp = new Date().toISOString();
+
+    try {
+      validateReadOnlySql(sql);
+    } catch (err) {
+      return {
+        success: false,
+        provider: 'snowflake',
+        durationMs: Date.now() - start,
+        rowCount: 0,
+        columns: [],
+        columnTypes: [],
+        rows: [],
+        error: err instanceof Error ? err.message : String(err),
+        executionContextHash: null,
+        executionTimestamp: timestamp,
+      };
+    }
+
     const sdk = await getSnowflakeSDK();
     if (!sdk) {
       return { success: false, provider: 'snowflake', durationMs: 0, rowCount: 0, columns: [], columnTypes: [], rows: [], error: 'snowflake-sdk not installed', executionContextHash: null, executionTimestamp: timestamp };
@@ -148,7 +173,7 @@ export const snowflakeConnector: DatabaseConnector = {
       } catch { /* schema attestation is best-effort */ }
 
       // Execute governed query
-      const rows = await execSql(conn, sql);
+      const rows = await execSql(conn, injectLimit(sql, sfConfig.maxRows));
       const durationMs = Date.now() - start;
 
       // Extract columns from first row
@@ -181,9 +206,35 @@ export const snowflakeConnector: DatabaseConnector = {
 
   async preflight(sql: string, config: ConnectorConfig): Promise<ConnectorPreflightResult> {
     const sfConfig = config as SnowflakeConfig;
+    try {
+      validateReadOnlySql(sql);
+    } catch (err) {
+      return {
+        performed: false,
+        provider: 'snowflake',
+        riskLevel: 'critical',
+        recommendation: 'deny',
+        signals: [{
+          signal: 'sql_not_read_only',
+          severity: 'critical',
+          detail: err instanceof Error ? err.message : String(err),
+        }],
+      };
+    }
+
     const sdk = await getSnowflakeSDK();
     if (!sdk) {
-      return { performed: false, provider: 'snowflake', riskLevel: 'low', recommendation: 'proceed', signals: [] };
+      return {
+        performed: false,
+        provider: 'snowflake',
+        riskLevel: 'critical',
+        recommendation: 'deny',
+        signals: [{
+          signal: 'driver_missing',
+          severity: 'critical',
+          detail: 'snowflake-sdk not installed',
+        }],
+      };
     }
 
     let conn: any;
@@ -207,8 +258,8 @@ export const snowflakeConnector: DatabaseConnector = {
       };
     } catch (err: any) {
       return {
-        performed: false, provider: 'snowflake', riskLevel: 'low', recommendation: 'proceed',
-        signals: [{ signal: 'explain_failed', severity: 'info', detail: err.message }],
+        performed: false, provider: 'snowflake', riskLevel: 'critical', recommendation: 'deny',
+        signals: [{ signal: 'explain_failed', severity: 'critical', detail: err.message }],
       };
     } finally {
       if (conn) conn.destroy(() => {});

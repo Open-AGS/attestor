@@ -3,12 +3,12 @@
   "version": "0.1.2-evaluation",
   "description": "Governance and proof engine for AI-assisted high-stakes workflows",
   "type": "module",
-  "main": "dist/financial/cli.js",
-  "types": "dist/financial/cli.d.ts",
+  "main": "dist/consequence-admission/index.js",
+  "types": "dist/consequence-admission/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/financial/cli.d.ts",
-      "default": "./dist/financial/cli.js"
+      "types": "./dist/consequence-admission/index.d.ts",
+      "default": "./dist/consequence-admission/index.js"
     },
     "./release-layer": {
       "types": "./dist/release-layer/index.d.ts",

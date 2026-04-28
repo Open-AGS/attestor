@@ -1,7 +1,16 @@
 import assert from 'node:assert/strict';
 
+const root = await import('attestor');
 const admission = await import('attestor/consequence-admission');
 
+assert.equal(
+  root.CONSEQUENCE_ADMISSION_FACADE_SPEC_VERSION,
+  'attestor.consequence-admission-facade.v1',
+);
+assert.equal(
+  root.consequenceAdmissionFacadeDescriptor().publicSubpath,
+  'attestor/consequence-admission',
+);
 assert.equal(
   admission.CONSEQUENCE_ADMISSION_FACADE_SPEC_VERSION,
   'attestor.consequence-admission-facade.v1',

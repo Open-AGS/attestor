@@ -45,10 +45,16 @@ function excludes(content: string, unexpected: string, message: string): void {
 
 function packageJson(): {
   readonly private: boolean;
+  readonly main: string;
+  readonly types: string;
+  readonly exports: Readonly<Record<string, { readonly types: string; readonly default: string }>>;
   readonly scripts: Readonly<Record<string, string>>;
 } {
   return JSON.parse(readProjectFile('package.json')) as {
     readonly private: boolean;
+    readonly main: string;
+    readonly types: string;
+    readonly exports: Readonly<Record<string, { readonly types: string; readonly default: string }>>;
     readonly scripts: Readonly<Record<string, string>>;
   };
 }
@@ -141,6 +147,10 @@ function testPrivatePackageBoundaryIsDocumented(): void {
   const systemOverview = readProjectFile('docs', '02-architecture', 'system-overview.md');
 
   equal(pkg.private, true, 'Package boundary: repository package remains private');
+  equal(pkg.main, 'dist/consequence-admission/index.js', 'Package boundary: root main points at the customer-facing admission facade');
+  equal(pkg.types, 'dist/consequence-admission/index.d.ts', 'Package boundary: root types point at the customer-facing admission facade');
+  equal(pkg.exports['.'].default, './dist/consequence-admission/index.js', 'Package boundary: root export avoids the side-effectful financial CLI');
+  equal(pkg.exports['.'].types, './dist/consequence-admission/index.d.ts', 'Package boundary: root export types match the admission facade');
   includes(purpose, 'not a public npm publication claim', 'Package boundary: purpose clarifies private package posture');
   includes(systemOverview, 'not a public npm availability claim', 'Package boundary: system overview clarifies private package posture');
 }

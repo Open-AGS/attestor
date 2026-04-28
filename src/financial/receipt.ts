@@ -13,6 +13,7 @@
 
 import { createHash, createHmac } from 'node:crypto';
 import type { FinancialRunReport, FinancialDecision } from './types.js';
+import { timingSafeEqualHex } from './timing-safe.js';
 
 function h(text: string): string {
   return createHash('sha256').update(text).digest('hex').slice(0, 16);
@@ -146,7 +147,7 @@ export function verifyReceipt(
       const { signature: _sig, signatureMode: _mode, ...rest } = receipt;
       const canonical = JSON.stringify(rest, Object.keys(rest).sort());
       const expected = createHmac('sha256', signingKey).update(canonical).digest('hex');
-      signatureValid = expected === receipt.signature;
+      signatureValid = timingSafeEqualHex(expected, receipt.signature);
     }
   }
 

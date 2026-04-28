@@ -57,10 +57,10 @@ function testCoreAndPackStatusStayConsistent(): void {
     includes(systemOverview, packageSurface, `Product docs: system overview names ${packageSurface}`);
   }
 
-  includes(readme, '| Release layer | consequence decisions, deterministic checks, tokens, reviewer queue, evidence packs | complete, packaged |', 'Product docs: README release layer status is compact');
-  includes(readme, '| Policy control plane | signed policy bundles, activation, rollback, scoping, simulation, audit trail | complete, packaged |', 'Product docs: README policy control-plane status is compact');
-  includes(readme, '| Enforcement plane | offline/online verification, gateways, DPoP, mTLS/SPIFFE, HTTP message signatures | complete, packaged |', 'Product docs: README enforcement plane status is compact');
-  includes(readme, '| Crypto authorization core | programmable-money authorization vocabulary, bindings, simulation, adapter preflight | complete, packaged |', 'Product docs: README crypto core status is compact');
+  includes(readme, '| Release layer | consequence decisions, deterministic checks, tokens, reviewer queue, evidence packs | evaluation-packaged |', 'Product docs: README release layer status is compact');
+  includes(readme, '| Policy control plane | signed policy bundles, activation, rollback, scoping, simulation, audit trail | evaluation-packaged |', 'Product docs: README policy control-plane status is compact');
+  includes(readme, '| Enforcement plane | offline/online verification, gateways, DPoP, mTLS/SPIFFE, HTTP message signatures | evaluation-packaged |', 'Product docs: README enforcement plane status is compact');
+  includes(readme, '| Crypto authorization core | programmable-money authorization vocabulary, bindings, simulation, adapter preflight | evaluation-packaged |', 'Product docs: README crypto core status is compact');
   includes(purpose, 'The finance pack remains the deepest proven wedge today.', 'Product docs: purpose keeps finance as strongest wedge');
   includes(purpose, 'not a public hosted crypto HTTP route', 'Product docs: purpose keeps crypto hosted-route guardrail');
   includes(firstIntegrations, 'Do not describe crypto as generally available through a public hosted route', 'Product docs: first integrations keep crypto hosted-route guardrail');

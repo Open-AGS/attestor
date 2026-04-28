@@ -26,10 +26,10 @@ The platform core is made of reusable layers:
 
 | Layer | Role | Status |
 |---|---|---|
-| Release layer | decides whether a proposed consequence may proceed | complete, packaged |
-| Policy control plane | stores, signs, scopes, activates, rolls out, simulates, and audits policy | complete, packaged |
-| Enforcement plane | verifies authorization at downstream boundaries and fails closed without it | complete, packaged |
-| Crypto authorization core | extends the same decision model into programmable-money authorization objects and simulations | complete, packaged |
+| Release layer | decides whether a proposed consequence may proceed | evaluation-packaged |
+| Policy control plane | stores, signs, scopes, activates, rolls out, simulates, and audits policy | evaluation-packaged |
+| Enforcement plane | verifies authorization at downstream boundaries and fails closed without it | evaluation-packaged |
+| Crypto authorization core | extends the same decision model into programmable-money authorization objects and simulations | evaluation-packaged |
 
 The public package surfaces already reflect that shared core:
 
@@ -87,8 +87,8 @@ Current status:
 
 | Surface | Status |
 |---|---|
-| `attestor/crypto-authorization-core` | complete, packaged |
-| `attestor/crypto-execution-admission` | complete, packaged |
+| `attestor/crypto-authorization-core` | packaged for evaluation |
+| `attestor/crypto-execution-admission` | packaged for evaluation |
 
 What the crypto pack already covers:
 

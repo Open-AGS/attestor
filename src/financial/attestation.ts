@@ -19,6 +19,7 @@ import type { FinancialRunReport, VerificationSubResults } from './types.js';
 import { verifyLiveProof } from './types.js';
 import { canonicalOutputPackHash, canonicalDossierHash } from './canonical.js';
 import { verifyEvidenceChain } from './evidence-chain.js';
+import { timingSafeEqualHex } from './timing-safe.js';
 
 export interface AttestationPack {
   version: '1.1';
@@ -149,7 +150,7 @@ export function verifyAttestation(pack: AttestationPack, signingKey?: string): V
       const body = { ...rest, verification: { ...rest.verification, signatureVerified: null } };
       const canonical = JSON.stringify(body, Object.keys(body).sort());
       const expected = createHmac('sha256', signingKey).update(canonical).digest('hex');
-      signatureVerified = expected === pack.signature;
+      signatureVerified = timingSafeEqualHex(expected, pack.signature);
     }
   }
 

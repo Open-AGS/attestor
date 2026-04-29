@@ -235,7 +235,7 @@
     "test:consequence-admission-package-surface": "node scripts/probe-consequence-admission-package-surface.mjs"
   },
   "dependencies": {
-    "@hono/node-server": "^1.19.14",
+    "@hono/node-server": "^2.0.0",
     "@napi-rs/keyring": "^1.2.0",
     "@opentelemetry/api": "^1.9.1",
     "@opentelemetry/api-logs": "^0.215.0",

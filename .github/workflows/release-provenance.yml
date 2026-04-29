@@ -46,7 +46,7 @@ jobs:
             docs/08-deployment/artifact-attestation-plan.md
 
       - name: Upload release evaluation artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: evaluation-artifacts
           path: .attestor/release-provenance/evaluation-artifacts.tar.gz

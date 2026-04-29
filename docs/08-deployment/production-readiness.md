@@ -32,6 +32,8 @@ That is the practical line between "good code" and "rollout-ready system".
 
 Set `ATTESTOR_RUNTIME_PROFILE` deliberately before starting the API runtime. Do not let the profile default decide the production story.
 
+If `NODE_ENV=production`, `ATTESTOR_HA_MODE=true`, `ATTESTOR_PUBLIC_HOSTNAME`, or `ATTESTOR_PUBLIC_BASE_URL` is present, startup fails closed unless `ATTESTOR_RUNTIME_PROFILE` is set explicitly. The implicit `local-dev` fallback is only for non-production-like local/test runs.
+
 | Profile | Use today | Required proof | Do not claim |
 |---|---|---|---|
 | `local-dev` | Local development, demos, and repeatable tests. | `npm test` and local API checks may run quickly with memory-backed release state. | Production readiness |

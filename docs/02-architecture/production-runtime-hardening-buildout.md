@@ -31,6 +31,8 @@ single-node-durable -> restart-surviving file/shared state is required
 production-shared -> shared durable state is required
 ```
 
+Production-like runtimes (`NODE_ENV=production`, `ATTESTOR_HA_MODE=true`, `ATTESTOR_PUBLIC_HOSTNAME`, or `ATTESTOR_PUBLIC_BASE_URL`) now fail closed if `ATTESTOR_RUNTIME_PROFILE` is missing or blank. The implicit `local-dev` fallback remains available only for non-production-like local/test runs.
+
 ## Fresh Research Anchors
 
 Reviewed on 2026-04-23 before opening this track:

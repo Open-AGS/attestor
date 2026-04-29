@@ -86,6 +86,47 @@ function testProfileResolution(): void {
     'local-dev',
     'Runtime profile: defaults to local-dev',
   );
+  assert.throws(
+    () => resolveRuntimeProfile({ env: { NODE_ENV: 'production' } }),
+    RuntimeProfileConfigurationError,
+    'Runtime profile: NODE_ENV=production requires an explicit runtime profile',
+  );
+  passed += 1;
+  assert.throws(
+    () => resolveRuntimeProfile({
+      env: {
+        NODE_ENV: 'production',
+        [ATTESTOR_RUNTIME_PROFILE_ENV]: '   ',
+      },
+    }),
+    RuntimeProfileConfigurationError,
+    'Runtime profile: blank profile fails closed in production-like runtime',
+  );
+  passed += 1;
+  assert.throws(
+    () => resolveRuntimeProfile({ env: { ATTESTOR_HA_MODE: 'true' } }),
+    RuntimeProfileConfigurationError,
+    'Runtime profile: HA mode requires an explicit runtime profile',
+  );
+  passed += 1;
+  assert.throws(
+    () => resolveRuntimeProfile({
+      env: { ATTESTOR_PUBLIC_HOSTNAME: 'api.attestor.example.invalid' },
+    }),
+    RuntimeProfileConfigurationError,
+    'Runtime profile: public hosted mode requires an explicit runtime profile',
+  );
+  passed += 1;
+  equal(
+    resolveRuntimeProfile({
+      env: {
+        NODE_ENV: 'production',
+        [ATTESTOR_RUNTIME_PROFILE_ENV]: ' single-node-durable ',
+      },
+    }).id,
+    'single-node-durable',
+    'Runtime profile: explicit runtime profile is honored in production-like runtime',
+  );
   equal(
     resolveRuntimeProfile({
       env: { [ATTESTOR_RUNTIME_PROFILE_ENV]: ' single-node-durable ' },
@@ -384,6 +425,7 @@ function testDocsAndApiRuntimeAreWired(): void {
   includes(tracker, '`local-dev`', 'Runtime docs: local-dev profile is documented');
   includes(tracker, '`single-node-durable`', 'Runtime docs: single-node profile is documented');
   includes(tracker, '`production-shared`', 'Runtime docs: production profile is documented');
+  includes(tracker, 'Production-like runtimes (`NODE_ENV=production`, `ATTESTOR_HA_MODE=true`, `ATTESTOR_PUBLIC_HOSTNAME`, or `ATTESTOR_PUBLIC_BASE_URL`) now fail closed if `ATTESTOR_RUNTIME_PROFILE` is missing or blank.', 'Runtime docs: runtime hardening tracker documents production-like explicit profile guard');
   includes(tracker, '| 01 | complete | Add the runtime profile contract |', 'Runtime docs: Step 01 is complete');
   includes(tracker, '| 06 | complete | Wire runtime profile selection through API bootstrap |', 'Runtime docs: Step 06 is complete');
   includes(tracker, '| 07 | complete | Add restart and recovery tests |', 'Runtime docs: Step 07 is complete');
@@ -391,6 +433,7 @@ function testDocsAndApiRuntimeAreWired(): void {
   includes(readme, 'production-runtime-hardening-buildout.md', 'Runtime docs: README links hardening tracker');
   includes(productionReadiness, '## Runtime Profile Gate', 'Runtime docs: production readiness guide has a runtime profile gate');
   includes(productionReadiness, 'ATTESTOR_RUNTIME_PROFILE', 'Runtime docs: production readiness guide documents the runtime profile knob');
+  includes(productionReadiness, 'If `NODE_ENV=production`, `ATTESTOR_HA_MODE=true`, `ATTESTOR_PUBLIC_HOSTNAME`, or `ATTESTOR_PUBLIC_BASE_URL` is present, startup fails closed unless `ATTESTOR_RUNTIME_PROFILE` is set explicitly.', 'Runtime docs: production-like environments require explicit profile selection');
   includes(productionReadiness, 'ATTESTOR_RELEASE_AUTHORITY_PG_URL', 'Runtime docs: production readiness guide documents the release-authority PostgreSQL knob');
   includes(productionReadiness, 'npm run test:production-runtime-restart-recovery', 'Runtime docs: production readiness guide documents restart recovery gate');
   includes(productionReadiness, 'npm run test:production-shared-request-path-cutover', 'Runtime docs: production readiness guide documents shared request-path cutover gate');

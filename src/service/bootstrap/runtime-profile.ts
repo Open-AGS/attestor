@@ -153,6 +153,21 @@ export class RuntimeProfileConfigurationError extends Error {
   }
 }
 
+function envTruthy(raw: string | undefined): boolean {
+  const value = raw?.trim().toLowerCase();
+  return value === '1' || value === 'true' || value === 'yes' || value === 'on';
+}
+
+function isProductionLikeRuntimeEnv(
+  env: Readonly<Record<string, string | undefined>>,
+): boolean {
+  const nodeEnv = env.NODE_ENV?.trim().toLowerCase();
+  return nodeEnv === 'production'
+    || envTruthy(env.ATTESTOR_HA_MODE)
+    || Boolean(env.ATTESTOR_PUBLIC_HOSTNAME?.trim())
+    || Boolean(env.ATTESTOR_PUBLIC_BASE_URL?.trim());
+}
+
 export class RuntimeProfileDurabilityError extends Error {
   readonly evaluation: RuntimeProfileDurabilityEvaluation;
 
@@ -183,6 +198,11 @@ export function resolveRuntimeProfile(input: {
 } = {}): AttestorRuntimeProfile {
   const env = input.env ?? process.env;
   const requested = env[ATTESTOR_RUNTIME_PROFILE_ENV]?.trim();
+  if ((!requested || requested.length === 0) && isProductionLikeRuntimeEnv(env)) {
+    throw new RuntimeProfileConfigurationError(
+      `${ATTESTOR_RUNTIME_PROFILE_ENV} must be set explicitly when NODE_ENV=production, ATTESTOR_HA_MODE is enabled, or a public hosted hostname/base URL is configured. Supported profiles: ${runtimeProfileIds().join(', ')}`,
+    );
+  }
   const id = requested && requested.length > 0
     ? requested
     : input.defaultProfile ?? 'local-dev';

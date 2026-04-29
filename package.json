@@ -256,7 +256,7 @@
     "bullmq": "^5.76.4",
     "cda-schematron-validator": "^1.1.12",
     "dotenv": "^17.4.2",
-    "embedded-postgres": "^18.3.0-beta.16",
+    "embedded-postgres": "^18.3.0-beta.17",
     "hono": "^4.12.15",
     "ioredis": "^5.10.1",
     "jose": "^6.2.3",

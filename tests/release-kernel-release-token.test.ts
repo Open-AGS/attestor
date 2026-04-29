@@ -3,6 +3,7 @@ import { generateKeyPair } from '../src/signing/keys.js';
 import { createReleaseDecisionSkeleton } from '../src/release-kernel/object-model.js';
 import {
   createReleaseTokenIssuer,
+  releaseTokenVerificationKeyToJwks,
   verifyIssuedReleaseToken,
   RELEASE_TOKEN_ISSUANCE_SPEC_VERSION,
   RELEASE_TOKEN_VERIFICATION_KEY_SPEC_VERSION,
@@ -121,6 +122,28 @@ async function main(): Promise<void> {
     verificationKey.jwk.kid,
     issued.keyId,
     'Release token: JWKS export preserves the same key id used in the protected header',
+  );
+  const jwks = releaseTokenVerificationKeyToJwks(verificationKey);
+  equal(jwks.keys.length, 1, 'Release token: JWKS export exposes exactly one active verification key');
+  equal(
+    jwks.keys[0]?.kid,
+    issued.keyId,
+    'Release token: JWKS export binds the public verification key to the token kid',
+  );
+  equal(
+    jwks.keys[0]?.use,
+    'sig',
+    'Release token: JWKS export marks the key for signature verification',
+  );
+  equal(
+    Array.isArray(jwks.keys[0]?.key_ops) ? jwks.keys[0]?.key_ops?.join(',') : null,
+    'verify',
+    'Release token: JWKS export limits key operations to verification',
+  );
+  equal(
+    'd' in (jwks.keys[0] as Record<string, unknown>),
+    false,
+    'Release token: JWKS export does not expose private key material',
   );
 
   const verified = await verifyIssuedReleaseToken({

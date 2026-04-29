@@ -51,6 +51,7 @@ export type ReleaseDecisionLogVerificationResult =
 export type ReleaseDecisionLogWriter = decisionLog.ReleaseDecisionLogWriter;
 export type DeterministicCheckObservation = deterministicChecks.DeterministicCheckObservation;
 export type IssuedReleaseToken = token.IssuedReleaseToken;
+export type ReleaseTokenJwks = token.ReleaseTokenJwks;
 export type ReleaseTokenIssuer = token.ReleaseTokenIssuer;
 export type ReleaseTokenVerificationKey = token.ReleaseTokenVerificationKey;
 export type RegisteredReleaseToken = introspection.RegisteredReleaseToken;
@@ -175,6 +176,8 @@ export type ReleaseDeterministicEvaluationResult =
   decision.ReleaseDeterministicEvaluationResult;
 export type ReleaseDecisionEngine = decision.ReleaseDecisionEngine;
 export type ShadowModeReleaseEvaluator = shadow.ShadowModeReleaseEvaluator;
+
+export const releaseTokenVerificationKeyToJwks = token.releaseTokenVerificationKeyToJwks;
 
 export function releaseLayerPublicSurface(): ReleaseLayerPublicSurfaceDescriptor {
   return Object.freeze({

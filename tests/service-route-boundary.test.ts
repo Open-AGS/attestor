@@ -346,6 +346,22 @@ function testAccountRouteDelegatesApiKeyUseCases(): void {
   assert.match(accountApiKeyService, /rotate\(accountId: string, keyId: string\)/u);
 }
 
+function testCoreRouteExposesReleaseTokenJwksFromRuntimeKey(): void {
+  const coreRoute = readFileSync(join(ROUTE_ROOT, 'core-routes.ts'), 'utf8');
+  const apiRouteRuntime = readProjectFile(
+    'src',
+    'service',
+    'bootstrap',
+    'api-route-runtime.ts',
+  );
+
+  assert.match(coreRoute, /apiReleaseVerificationKeyPromise: Promise<ReleaseTokenVerificationKey>/u);
+  assert.match(coreRoute, /app\.get\('\/api\/v1\/release-token\/jwks'/u);
+  assert.match(coreRoute, /releaseTokenVerificationKeyToJwks\(verificationKey\)/u);
+  assert.match(coreRoute, /cache-control', 'no-store'/u);
+  assert.match(apiRouteRuntime, /apiReleaseVerificationKeyPromise,/u);
+}
+
 function testAccountRouteDelegatesUserManagementUseCases(): void {
   const accountRoute = readFileSync(join(ROUTE_ROOT, 'account-routes.ts'), 'utf8');
   const accountUserManagementService = readProjectFile(
@@ -484,9 +500,10 @@ testAdminRouteRequiresSharedDegradedModeGrantStore();
 testAccountRouteIsStronglyTyped();
 testAccountRouteDelegatesAuthUseCases();
 testAccountRouteDelegatesApiKeyUseCases();
+testCoreRouteExposesReleaseTokenJwksFromRuntimeKey();
 testAccountRouteDelegatesUserManagementUseCases();
 testAccountRouteUsesStateServicePort();
 testPipelineRoutesAreSplitByUseCaseBoundary();
 testPipelineRoutesDelegateUsageAndDeadLetterUseCases();
 
-console.log('Service route boundary tests: 21 passed, 0 failed');
+console.log('Service route boundary tests: 22 passed, 0 failed');

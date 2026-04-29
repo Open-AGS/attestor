@@ -122,6 +122,7 @@
     "test:service-stripe-webhook-service": "tsx tests/service-stripe-webhook-service.test.ts",
     "test:service-stripe-webhook-billing-processor": "tsx tests/service-stripe-webhook-billing-processor.test.ts",
     "test:service-bootstrap-boundary": "tsx tests/service-bootstrap-boundary.test.ts",
+    "test:service-core-routes": "tsx tests/service-core-routes.test.ts",
     "test:service-route-boundary": "tsx tests/service-route-boundary.test.ts",
     "test:service-version-alignment": "tsx tests/service-version-alignment.test.ts",
     "test:crypto-execution-admission": "tsx tests/crypto-execution-admission.test.ts",

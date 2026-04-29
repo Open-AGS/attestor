@@ -232,6 +232,7 @@ docker run \
 |---|---|---|
 | `GET /api/v1/health` | Detailed system state | Always 200, includes PKI/RLS/async status |
 | `GET /api/v1/ready` | Orchestrator readiness probe | 200 when ready, 503 when not |
+| `GET /api/v1/release-token/jwks` | Public release-token verification key set | JWKS with the active public verification key, `kid`, `alg`, `use=sig`, and `key_ops=["verify"]`; private issuer material is never returned |
 
 The readiness probe checks:
 - Async backend initialized (BullMQ or in-process)

@@ -78,6 +78,10 @@ export interface ReleaseTokenVerificationKey {
   readonly jwk: JWK;
 }
 
+export interface ReleaseTokenJwks {
+  readonly keys: readonly JWK[];
+}
+
 export interface VerifyReleaseTokenInput {
   readonly token: string;
   readonly verificationKey: ReleaseTokenVerificationKey;
@@ -256,6 +260,33 @@ export function createReleaseTokenIssuer(
         },
       };
     },
+  };
+}
+
+export function releaseTokenVerificationKeyToJwks(
+  verificationKey: ReleaseTokenVerificationKey,
+): ReleaseTokenJwks {
+  const {
+    d: _d,
+    p: _p,
+    q: _q,
+    dp: _dp,
+    dq: _dq,
+    qi: _qi,
+    k: _k,
+    ...publicJwk
+  } = verificationKey.jwk as JWK & Record<string, unknown>;
+
+  return {
+    keys: [
+      Object.freeze({
+        ...publicJwk,
+        kid: verificationKey.keyId,
+        use: 'sig',
+        alg: verificationKey.algorithm,
+        key_ops: ['verify'],
+      }),
+    ],
   };
 }
 

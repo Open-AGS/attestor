@@ -1,4 +1,8 @@
 import type { Hono } from 'hono';
+import {
+  releaseTokenVerificationKeyToJwks,
+  type ReleaseTokenVerificationKey,
+} from '../../../release-layer/index.js';
 
 type DomainRegistryLike = {
   listIds(): string[];
@@ -101,6 +105,7 @@ export interface CoreRouteDeps {
     signer: { certificate: { subject: string } };
     reviewer: { certificate: { subject: string } };
   };
+  apiReleaseVerificationKeyPromise: Promise<ReleaseTokenVerificationKey>;
   runtimeProfileDiagnostics: RuntimeProfileDiagnostics;
   releaseRuntimeRequestPathDiagnostics: ReleaseRuntimeRequestPathDiagnostics;
   evaluateSharedAuthorityRuntimeReadiness(input: {
@@ -129,6 +134,7 @@ export function registerCoreRoutes(app: Hono, deps: CoreRouteDeps): void {
     filingRegistry,
     pkiReady,
     pki,
+    apiReleaseVerificationKeyPromise,
     runtimeProfileDiagnostics,
     releaseRuntimeRequestPathDiagnostics,
     evaluateSharedAuthorityRuntimeReadiness,
@@ -208,6 +214,12 @@ export function registerCoreRoutes(app: Hono, deps: CoreRouteDeps): void {
       })),
     );
     return c.json({ connectors });
+  });
+
+  app.get('/api/v1/release-token/jwks', async (c) => {
+    const verificationKey = await apiReleaseVerificationKeyPromise;
+    c.header('cache-control', 'no-store');
+    return c.json(releaseTokenVerificationKeyToJwks(verificationKey));
   });
 
   app.get('/api/v1/ready', async (c) => {

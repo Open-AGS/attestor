@@ -272,7 +272,7 @@
     "smtp-server": "^3.18.4",
     "snowflake-sdk": "^2.4.0",
     "stripe": "^22.1.0",
-    "typescript": "^5.7.3",
+    "typescript": "^6.0.3",
     "xmlbuilder2": "^4.0.3",
     "xslt3": "^2.7.0"
   },

@@ -39,6 +39,12 @@ import type { HostedPasskeyAuthenticationChallengeState, HostedPasskeyAuthentica
 import type { TenantKeyRecord } from '../../tenant-key-store.js';
 import type { AccountAccessContext, TenantContext } from '../../tenant-isolation.js';
 import type { UsageContext } from '../../usage-meter.js';
+import {
+  checkAuthAttemptAllowed,
+  recordAuthAttemptFailure,
+  recordAuthAttemptSuccess,
+  resolveAuthAttemptSource,
+} from '../../auth-abuse-guard.js';
 
 interface CurrentHostedAccountResult {
   tenant: TenantContext;
@@ -326,8 +332,25 @@ app.post('/api/v1/auth/login', async (c) => {
   const body = await c.req.json().catch(() => ({}));
   const email = typeof body.email === 'string' ? body.email.trim() : '';
   const password = typeof body.password === 'string' ? body.password : '';
+  const authAttempt = {
+    email,
+    source: resolveAuthAttemptSource(c.req.raw.headers),
+  };
+  const attemptDecision = checkAuthAttemptAllowed(authAttempt);
+  if (!attemptDecision.allowed) {
+    c.header('Retry-After', String(attemptDecision.retryAfterSeconds));
+    c.header('x-attestor-auth-rate-limit-reset-at', attemptDecision.resetAt);
+    return c.json({
+      error: 'Too many authentication attempts. Try again later.',
+      retryAfterSeconds: attemptDecision.retryAfterSeconds,
+      resetAt: attemptDecision.resetAt,
+    }, 429);
+  }
+
   try {
     const login = await authService.login({ email, password });
+    recordAuthAttemptSuccess(authAttempt);
+
     if (login.mfaRequired) {
       return c.json({
         mfaRequired: true,
@@ -351,7 +374,12 @@ app.post('/api/v1/auth/login', async (c) => {
     });
   } catch (err) {
     const mapped = accountAuthServiceErrorResponse(c, err);
-    if (mapped) return mapped;
+    if (mapped) {
+      if (err instanceof AccountAuthServiceError && err.statusCode === 401) {
+        recordAuthAttemptFailure(authAttempt);
+      }
+      return mapped;
+    }
     throw err;
   }
 });

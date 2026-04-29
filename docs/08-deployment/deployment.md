@@ -71,6 +71,10 @@ docker run \
 | `SNOWFLAKE_ALLOWED_SCHEMAS` | No | None | Optional comma-separated Snowflake schema allowlist. When set, Snowflake connector queries must use schema-qualified or database.schema-qualified table references in the allowlist |
 | `SNOWFLAKE_TIMEOUT_MS` | No | `30000` | Snowflake connector client-side query timeout in milliseconds |
 | `ATTESTOR_TENANT_KEYS` | No | `""` | API key to tenant-id mapping (`key:id:name[:plan][:quota],...`). Empty keys allow anonymous `default` tenant only in local development; production-like runtimes (`NODE_ENV=production`, `ATTESTOR_HA_MODE`, public hostname/base URL) reject anonymous tenant fallback on non-public routes |
+| `ATTESTOR_AUTH_RATE_LIMIT_WINDOW_SECONDS` | No | `300` | Hosted password-login abuse guard window in seconds |
+| `ATTESTOR_AUTH_RATE_LIMIT_MAX_FAILURES_PER_EMAIL` | No | `5` | Failed password-login attempts per normalized email before temporary lockout |
+| `ATTESTOR_AUTH_RATE_LIMIT_MAX_FAILURES_PER_SOURCE` | No | `20` | Failed password-login attempts per client source before temporary lockout |
+| `ATTESTOR_AUTH_RATE_LIMIT_LOCKOUT_SECONDS` | No | `300` | Temporary login lockout duration after auth abuse guard threshold is reached |
 | `ATTESTOR_ACCOUNT_STORE_PATH` | No | `.attestor/accounts.json` | File-backed hosted account registry used when `ATTESTOR_CONTROL_PLANE_PG_URL` is not configured |
 | `ATTESTOR_ACCOUNT_USER_STORE_PATH` | No | `.attestor/account-users.json` | File-backed hosted account user registry used when `ATTESTOR_CONTROL_PLANE_PG_URL` is not configured |
 | `ATTESTOR_ACCOUNT_SESSION_STORE_PATH` | No | `.attestor/account-sessions.json` | File-backed hosted customer session store used when `ATTESTOR_CONTROL_PLANE_PG_URL` is not configured |

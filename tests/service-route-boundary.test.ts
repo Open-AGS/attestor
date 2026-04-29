@@ -308,6 +308,11 @@ function testAccountRouteDelegatesAuthUseCases(): void {
   assert.match(accountRoute, /authService\.bootstrapFirstUser/u);
   assert.match(accountRoute, /authService\.signup/u);
   assert.match(accountRoute, /authService\.login/u);
+  assert.match(accountRoute, /from '..\/..\/auth-abuse-guard\.js'/u);
+  assert.match(accountRoute, /checkAuthAttemptAllowed/u);
+  assert.match(accountRoute, /recordAuthAttemptFailure/u);
+  assert.match(accountRoute, /recordAuthAttemptSuccess/u);
+  assert.match(accountRoute, /resolveAuthAttemptSource/u);
   assert.doesNotMatch(accountRoute, /countAccountUsersForAccountState/u);
   assert.doesNotMatch(accountRoute, /provisionHostedAccountState/u);
   assert.doesNotMatch(accountRoute, /deriveSignupTenantId/u);

@@ -286,7 +286,7 @@
     "follow-redirects": "^1.16.0"
   },
   "engines": {
-    "node": ">=22"
+    "node": ">=22 <23"
   },
   "license": "SEE LICENSE IN LICENSE",
   "private": true

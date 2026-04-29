@@ -61,6 +61,7 @@ The evaluation baseline now includes a dedicated `Security Scan` workflow:
 - `actions/dependency-review-action@v4` blocks pull requests that introduce high or critical dependency vulnerabilities
 - [codeql.yml](.github/workflows/codeql.yml) runs CodeQL JavaScript/TypeScript analysis on `master`, schedule, and manual dispatch with `security-events: write` scoped to code scanning upload
 - [dependabot.yml](.github/dependabot.yml) asks Dependabot to keep npm and GitHub Actions dependencies reviewed weekly
+- The runtime and type baseline is Node 22. Dependabot may update Node 22-compatible `@types/node` releases, but `@types/node` semver-major updates are ignored until the CI/runtime baseline is deliberately moved.
 
 Current known limitation: npm still reports moderate `uuid` advisories in the Snowflake/Azure transitive chain where the automatic fix path is breaking. Those are tracked as non-blocking evaluation risk until the upstream dependency chain can be upgraded without downgrading Snowflake.
 

@@ -71,11 +71,16 @@ function testSupplyChainSecurityGatesStayPresent(): void {
   const securityScan = readProjectFile('.github', 'workflows', 'security-scan.yml');
   const codeql = readProjectFile('.github', 'workflows', 'codeql.yml');
   const dependabot = readProjectFile('.github', 'dependabot.yml');
+  const packageJson = JSON.parse(readProjectFile('package.json')) as {
+    readonly engines: Readonly<Record<string, string>>;
+  };
 
   includes(security, 'Supply Chain Scanning', 'Security baseline: supply-chain scanning is documented');
   includes(security, 'npm run security:audit-high', 'Security baseline: npm high/critical audit is documented');
   includes(security, 'actions/dependency-review-action@v4', 'Security baseline: dependency review action is documented');
   includes(security, 'CodeQL JavaScript/TypeScript analysis', 'Security baseline: CodeQL coverage is documented');
+  includes(security, 'The runtime and type baseline is Node 22', 'Security baseline: Node runtime/type baseline is documented');
+  includes(security, '`@types/node` semver-major updates are ignored', 'Security baseline: Node type major guard is documented');
   includes(security, 'moderate `uuid` advisories', 'Security baseline: remaining moderate advisory is documented honestly');
 
   includes(securityScan, 'name: Security Scan', 'Security baseline: security scan workflow title is stable');
@@ -94,6 +99,16 @@ function testSupplyChainSecurityGatesStayPresent(): void {
   includes(dependabot, 'package-ecosystem: "npm"', 'Security baseline: Dependabot tracks npm dependencies');
   includes(dependabot, 'package-ecosystem: "github-actions"', 'Security baseline: Dependabot tracks GitHub Actions dependencies');
   includes(dependabot, 'timezone: "Europe/Budapest"', 'Security baseline: Dependabot schedule has explicit timezone');
+  includes(dependabot, 'dependency-name: "@types/node"', 'Security baseline: Dependabot has an explicit Node types major guard');
+  includes(dependabot, 'update-types:', 'Security baseline: Dependabot constrains update types where required');
+  includes(dependabot, '"version-update:semver-major"', 'Security baseline: Dependabot ignores Node type semver-major updates');
+
+  assert.equal(
+    packageJson.engines.node,
+    '>=22 <23',
+    'Security baseline: package.json does not overclaim runtime major compatibility beyond Node 22',
+  );
+  passed += 1;
 }
 
 function testReleaseProvenanceWorkflowKeepsElevatedPermissionsScoped(): void {

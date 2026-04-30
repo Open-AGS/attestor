@@ -226,9 +226,23 @@ export async function probeObservabilityReceivers(options?: {
         activeAlerts: Array.isArray(alertmanagerProbe?.body) ? alertmanagerProbe!.body.length : null,
       },
     };
+    const persistedSummary = {
+      telemetry: {
+        ...summary.telemetry,
+        flushError: summary.telemetry.flushError ? 'redacted' : null,
+      },
+      prometheus: {
+        configured: summary.prometheus.configured,
+        url: summary.prometheus.url,
+      },
+      alertmanager: {
+        configured: summary.alertmanager.configured,
+        url: summary.alertmanager.url,
+      },
+    };
 
     mkdirSync(outputDir, { recursive: true });
-    writeFileSync(resolve(outputDir, 'summary.json'), `${JSON.stringify(summary, null, 2)}\n`, 'utf8');
+    writeFileSync(resolve(outputDir, 'summary.json'), `${JSON.stringify(persistedSummary, null, 2)}\n`, 'utf8');
     writeFileSync(
       resolve(outputDir, 'README.md'),
       `# Observability receiver probe

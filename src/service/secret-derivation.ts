@@ -1,4 +1,4 @@
-import { createHmac, hkdfSync } from 'node:crypto';
+import { hkdfSync, scryptSync } from 'node:crypto';
 
 function contextLabel(context: string): string {
   if (!/^[a-z0-9_.:-]+$/u.test(context)) {
@@ -23,11 +23,19 @@ export function deriveServiceKey(rawSecret: string, context: string, length = 32
 }
 
 export function digestSecretForComparison(secret: string, context: string): Buffer {
-  return createHmac('sha256', contextLabel(context))
-    .update(secret, 'utf8')
-    .digest();
+  return scryptSync(
+    secret,
+    `${contextLabel(context)}:secret-digest`,
+    32,
+    {
+      N: 2 ** 17,
+      r: 8,
+      p: 1,
+      maxmem: 256 * 1024 * 1024,
+    },
+  );
 }
 
 export function hashSecretForLookup(secret: string, context: string): string {
-  return `hmac-sha256:${digestSecretForComparison(secret, `${context}.lookup`).toString('hex')}`;
+  return `scrypt-sha256:${digestSecretForComparison(secret, `${context}.lookup`).toString('hex')}`;
 }

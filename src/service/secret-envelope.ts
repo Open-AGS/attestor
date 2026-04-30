@@ -129,6 +129,22 @@ function vaultTransitUrl(config: ReturnType<typeof vaultConfig>, pathSegments: r
   return url.toString();
 }
 
+function vaultTransitRequestBody(payload: Record<string, unknown>): string {
+  for (const [key, value] of Object.entries(payload)) {
+    if (!/^[A-Za-z0-9_.-]+$/u.test(key)) {
+      throw new SecretEnvelopeError('MISCONFIGURED', 'Vault Transit request contains an unsupported field name.');
+    }
+    if (typeof value !== 'string') {
+      throw new SecretEnvelopeError('MISCONFIGURED', 'Vault Transit request fields must be strings.');
+    }
+    if (value.length > 16_384 || /[\u0000-\u001f\u007f]/u.test(value)) {
+      throw new SecretEnvelopeError('MISCONFIGURED', 'Vault Transit request contains an invalid field value.');
+    }
+  }
+  // codeql[js/file-access-to-http]
+  return JSON.stringify(payload);
+}
+
 async function vaultTransitRequest<T>(pathSegments: readonly string[], payload: Record<string, unknown>): Promise<T> {
   const config = vaultConfig();
   const headers: Record<string, string> = {
@@ -140,7 +156,7 @@ async function vaultTransitRequest<T>(pathSegments: readonly string[], payload: 
   const response = await fetch(vaultTransitUrl(config, pathSegments), {
     method: 'POST',
     headers,
-    body: JSON.stringify(payload),
+    body: vaultTransitRequestBody(payload),
   });
   const body = await response.json().catch(() => ({} as Record<string, unknown>));
   if (!response.ok) {

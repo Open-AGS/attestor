@@ -55,14 +55,14 @@ function replaceContainerImage(contents: string, containerName: string, replacem
 
 function ensureHttpRouteHostname(contents: string, hostname: string): string {
   if (contents.includes('attestor.example.com')) {
-    return contents.replace(/attestor\.example\.com/g, hostname);
+    return contents.replace(/attestor\.example\.com/g, yamlSingleQuote(hostname));
   }
   if (/^\s*hostnames:\s*$/m.test(contents)) {
     return contents;
   }
   const specPattern = /^spec:\s*$/m;
   if (!specPattern.test(contents)) throw new Error('Expected HTTPRoute spec block for hostname injection');
-  return contents.replace(specPattern, `spec:\n  hostnames:\n    - ${hostname}`);
+  return contents.replace(specPattern, `spec:\n  hostnames:\n    - ${yamlSingleQuote(hostname)}`);
 }
 
 function scalarFromYaml(yaml: string, key: string): string | undefined {
@@ -74,6 +74,35 @@ function scalarFromYaml(yaml: string, key: string): string | undefined {
 function required(value: string | undefined, name: string): string {
   if (!value) throw new Error(`${name} must be set.`);
   return value;
+}
+
+function yamlSingleQuote(value: string): string {
+  return `'${value.replace(/'/gu, "''")}'`;
+}
+
+function normalizeDnsHostname(value: string): string {
+  const hostname = value.trim().toLowerCase();
+  if (!hostname || hostname.length > 253 || hostname.endsWith('.')) {
+    throw new Error('ATTESTOR_PUBLIC_HOSTNAME must be a non-empty DNS hostname without a trailing dot.');
+  }
+  const labels = hostname.split('.');
+  if (labels.length < 2) {
+    throw new Error('ATTESTOR_PUBLIC_HOSTNAME must include at least two DNS labels.');
+  }
+  for (const label of labels) {
+    if (!label || label.length > 63 || label.startsWith('-') || label.endsWith('-')) {
+      throw new Error('ATTESTOR_PUBLIC_HOSTNAME contains an invalid DNS label.');
+    }
+    for (const char of label) {
+      const code = char.charCodeAt(0);
+      const isLowerAscii = code >= 97 && code <= 122;
+      const isDigit = code >= 48 && code <= 57;
+      if (!isLowerAscii && !isDigit && char !== '-') {
+        throw new Error('ATTESTOR_PUBLIC_HOSTNAME may only contain DNS label characters.');
+      }
+    }
+  }
+  return hostname;
 }
 
 function runTsx(script: string, args: string[], envVars: NodeJS.ProcessEnv): void {
@@ -106,7 +135,7 @@ function main(): void {
   const apiImage = required(arg('api-image', env('ATTESTOR_API_IMAGE')), 'ATTESTOR_API_IMAGE');
   const workerImage = required(arg('worker-image', env('ATTESTOR_WORKER_IMAGE')), 'ATTESTOR_WORKER_IMAGE');
   const imagePullPolicy = env('ATTESTOR_IMAGE_PULL_POLICY') ?? 'IfNotPresent';
-  const hostname = required(env('ATTESTOR_PUBLIC_HOSTNAME'), 'ATTESTOR_PUBLIC_HOSTNAME');
+  const hostname = normalizeDnsHostname(required(env('ATTESTOR_PUBLIC_HOSTNAME'), 'ATTESTOR_PUBLIC_HOSTNAME'));
   const gatewayClassName = env('ATTESTOR_GATEWAY_CLASS_NAME') ?? 'managed-external';
   const useKeda = bool(arg('use-keda', env('ATTESTOR_HA_USE_KEDA')), true);
   const tlsMode = env('ATTESTOR_TLS_MODE') ?? 'secret';
@@ -169,7 +198,7 @@ function main(): void {
       let ingress = read('ops/kubernetes/ha/providers/aws/alb-ingress.yaml');
       const ingressPatch = read(resolve(credentialsOut, 'aws-alb-ingress.patch.yaml'));
       const tunedPatch = read(resolve(profileOut, 'alb-ingress.patch.yaml'));
-      ingress = replaceOne(ingress, '- host: attestor.example.com', `- host: ${hostname}`);
+      ingress = replaceOne(ingress, '- host: attestor.example.com', `- host: ${yamlSingleQuote(hostname)}`);
       for (const annotation of [
         'alb.ingress.kubernetes.io/healthcheck-interval-seconds',
         'alb.ingress.kubernetes.io/healthcheck-timeout-seconds',
@@ -341,6 +370,6 @@ Notes:
 try {
   main();
 } catch (error) {
-  console.error(error instanceof Error ? error.stack ?? error.message : error);
+  console.error(error instanceof Error ? error.message : 'Unexpected HA release bundle render failure.');
   process.exit(1);
 }

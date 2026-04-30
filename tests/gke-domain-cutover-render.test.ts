@@ -58,6 +58,23 @@ function main(): void {
     ok(summary.dnsRecord.target === '203.0.113.10' && summary.bootstrapHostname === '203.0.113.10.sslip.io', 'GKE domain cutover render: summary preserves DNS target and bootstrap sslip.io hostname');
     ok(readme.includes('kubectl apply -k') && readme.includes('attestor.example.invalid') && readme.includes('/api/v1/health') && readme.includes('/api/v1/ready'), 'GKE domain cutover render: handoff README documents apply flow, hostname, and verification URLs');
 
+    const invalid = spawnSync(
+      process.execPath,
+      [
+        resolve('node_modules/tsx/dist/cli.mjs'),
+        'scripts/render-gke-domain-cutover.ts',
+        '--hostname=attestor.example.invalid:443',
+        `--output-dir=${resolve(tempDir, 'invalid-bundle')}`,
+      ],
+      {
+        cwd: resolve('.'),
+        encoding: 'utf8',
+        env: process.env,
+      },
+    );
+    ok(invalid.status !== 0, 'GKE domain cutover render: invalid hostname is rejected');
+    ok(`${invalid.stderr}\n${invalid.stdout}`.includes('hostname'), 'GKE domain cutover render: invalid hostname error names the rejected field');
+
     console.log(`\nGKE domain cutover render tests: ${passed} passed, 0 failed`);
   } finally {
     rmSync(tempDir, { recursive: true, force: true });
@@ -68,6 +85,6 @@ try {
   main();
 } catch (error) {
   console.error('\nGKE domain cutover render tests failed.');
-  console.error(error instanceof Error ? error.stack ?? error.message : error);
+  console.error(error instanceof Error ? error.message : 'Unexpected GKE domain cutover render test failure.');
   process.exit(1);
 }

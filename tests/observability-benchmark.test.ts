@@ -49,7 +49,7 @@ async function main(): Promise<void> {
     } else if (query.startsWith('topk(5')) {
       result = [
         { metric: { route: '/api/v1/pipeline/run' }, value: [1712911200, '21.1'] },
-        { metric: { route: '/api/v1/account' }, value: [1712911200, '7.3'] },
+        { metric: { route: '/api/v1/account\r\nx-forged-log: token' }, value: [1712911200, '7.3'] },
       ];
     }
     res.writeHead(200, { 'content-type': 'application/json', connection: 'close' });
@@ -92,10 +92,26 @@ async function main(): Promise<void> {
     ok(benchmark.successRate === 0.9985, 'Observability benchmark: benchmark captures success rate');
     ok(benchmark.p95LatencyMs === 480, 'Observability benchmark: benchmark captures p95 latency');
     ok(routes.length === 2 && routes[0].route === '/api/v1/pipeline/run', 'Observability benchmark: hot route summary is emitted');
+    ok(!routes[1].route.includes('\n') && !routes[1].route.includes('\r'), 'Observability benchmark: route labels are sanitized before file output');
     ok(alerts.critical === 1 && alerts.warning === 1 && alerts.total === 2, 'Observability benchmark: alert summary is emitted');
     ok(readme.includes('render:observability-profile') && readme.includes('15m'), 'Observability benchmark: README carries next-step guidance');
     ok(benchmark.source.prometheusUrl.includes(`:${prometheusPort}`), 'Observability benchmark: source summary captures Prometheus URL');
+    ok(!readme.includes('@127.0.0.1'), 'Observability benchmark: README omits URL credentials');
     ok(directBenchmark.activeAlerts.total === 2, 'Observability benchmark: direct return value reports active alert count');
+
+    await captureObservabilityBenchmark({
+      prometheusUrl: `http://user:pass@127.0.0.1:${prometheusPort}`,
+      alertmanagerUrl: null,
+      window: '15m',
+      outputDir,
+    }).then(
+      () => {
+        throw new Error('Expected credentialed Prometheus URL to be rejected.');
+      },
+      (error) => {
+        ok(error instanceof Error && error.message.includes('must not include credentials'), 'Observability benchmark: credentialed URLs are rejected');
+      },
+    );
 
     console.log(`\nObservability benchmark tests: ${passed} passed, 0 failed`);
   } finally {
@@ -108,6 +124,6 @@ async function main(): Promise<void> {
 
 main().catch((error) => {
   console.error('\nObservability benchmark tests failed.');
-  console.error(error instanceof Error ? error.stack ?? error.message : error);
+  console.error(error instanceof Error ? error.message : 'Unexpected observability benchmark test failure.');
   process.exit(1);
 });

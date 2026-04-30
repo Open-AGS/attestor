@@ -4,13 +4,15 @@
  * Usage:
  *   npm run tenant:keys -- plans
  *   npm run tenant:keys -- list
- *   npm run tenant:keys -- issue --tenant-id tenant-pro --name Acme [--plan pro] [--quota 1000]
- *   npm run tenant:keys -- rotate --id tkey_... [--plan pro] [--quota 1000]
+ *   npm run tenant:keys -- issue --tenant-id tenant-pro --name Acme [--plan pro] [--quota 1000] [--out ./tenant.key]
+ *   npm run tenant:keys -- rotate --id tkey_... [--plan pro] [--quota 1000] [--out ./tenant.key]
  *   npm run tenant:keys -- deactivate --id tkey_...
  *   npm run tenant:keys -- reactivate --id tkey_...
  *   npm run tenant:keys -- revoke --id tkey_...
  */
 
+import { writeFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import {
   tenantKeyStorePolicy,
   TenantKeyStoreError,
@@ -37,12 +39,29 @@ function printUsage(): void {
   console.log('Commands:');
   console.log('  plans');
   console.log('  list');
-  console.log('  issue --tenant-id <id> --name <tenant name> [--plan <plan>] [--quota <n>]');
-  console.log('  rotate --id <tenant-key-record-id> [--plan <plan>] [--quota <n>]');
+  console.log('  issue --tenant-id <id> --name <tenant name> [--plan <plan>] [--quota <n>] [--out <secret-file>]');
+  console.log('  rotate --id <tenant-key-record-id> [--plan <plan>] [--quota <n>] [--out <secret-file>]');
   console.log('  deactivate --id <tenant-key-record-id>');
   console.log('  reactivate --id <tenant-key-record-id>');
-  console.log('  recover --id <tenant-key-record-id>');
+  console.log('  recover --id <tenant-key-record-id> [--out <secret-file>]');
   console.log('  revoke --id <tenant-key-record-id>');
+  console.log('');
+  console.log('Secret material is never printed to the console. Use --out to write it once to a local file.');
+}
+
+function writeSecretFile(secret: string, outputPath: string): string {
+  const absolutePath = resolve(outputPath);
+  writeFileSync(absolutePath, `${secret}\n`, { encoding: 'utf8', mode: 0o600, flag: 'wx' });
+  return absolutePath;
+}
+
+function reportSecretDelivery(secret: string, outputPath: string | undefined, label: string): void {
+  if (!outputPath) {
+    console.log(`${label} generated but not printed. Use --out <secret-file> when the caller must receive it.`);
+    return;
+  }
+  const absolutePath = writeSecretFile(secret, outputPath);
+  console.log(`${label} written to ${absolutePath}. Treat the file as secret material and delete it after use.`);
 }
 
 async function main() {
@@ -67,7 +86,7 @@ async function main() {
         `name="${record.tenantName}"`,
         `plan=${record.planId ?? 'community'}`,
         `quota=${record.monthlyRunQuota ?? 'unlimited'}`,
-        `preview=${record.apiKeyPreview}`,
+        'secret=redacted',
         `sealed=${record.recoveryEnvelope?.provider ?? '-'}`,
         `status=${record.status}`,
         `lastUsed=${record.lastUsedAt ?? 'never'}`,
@@ -102,6 +121,7 @@ async function main() {
     const tenantName = readFlag('--name');
     const planId = readFlag('--plan') ?? DEFAULT_HOSTED_PLAN_ID;
     const quotaRaw = readFlag('--quota');
+    const outputPath = readFlag('--out');
     const monthlyRunQuota = quotaRaw ? Number.parseInt(quotaRaw, 10) : null;
 
     if (!tenantId || !tenantName) {
@@ -126,8 +146,8 @@ async function main() {
     console.log(`Plan: ${record.planId ?? 'community'}`);
     console.log(`Quota: ${record.monthlyRunQuota ?? 'unlimited'}`);
     console.log('');
-    console.log('API key — show once and copy now:');
-    console.log(apiKey);
+    console.log('Secret material generated.');
+    reportSecretDelivery(apiKey, outputPath, 'API key');
     return;
   }
 
@@ -135,6 +155,7 @@ async function main() {
     const id = readFlag('--id');
     const planId = readFlag('--plan');
     const quotaRaw = readFlag('--quota');
+    const outputPath = readFlag('--out');
     const monthlyRunQuota = quotaRaw ? Number.parseInt(quotaRaw, 10) : null;
     if (!id) {
       console.error('rotate requires --id');
@@ -153,8 +174,8 @@ async function main() {
     console.log(`Plan: ${record.planId ?? 'community'}`);
     console.log(`Quota: ${record.monthlyRunQuota ?? 'unlimited'}`);
     console.log('');
-    console.log('New API key — show once and copy now:');
-    console.log(apiKey);
+    console.log('Replacement secret material generated.');
+    reportSecretDelivery(apiKey, outputPath, 'New API key');
     return;
   }
 
@@ -167,22 +188,23 @@ async function main() {
     const nextStatus = command === 'deactivate' ? 'inactive' : 'active';
     const { record, path } = await setTenantApiKeyStatusState(id, nextStatus);
     console.log(`Store: ${path}`);
-    console.log(`${command}d ${record.id} (${record.apiKeyPreview}) -> status=${record.status}`);
+    console.log(`${command}d ${record.id} -> status=${record.status}`);
     return;
   }
 
   if (command === 'recover') {
     const id = readFlag('--id');
+    const outputPath = readFlag('--out');
     if (!id) {
       console.error('recover requires --id');
       process.exit(1);
     }
     const { record, apiKey, path } = await recoverTenantApiKeyState(id);
     console.log(`Store: ${path}`);
-    console.log(`Recovered ${record.id} (${record.apiKeyPreview}) for tenant ${record.tenantId}`);
+    console.log(`Recovered ${record.id} for tenant ${record.tenantId}`);
     console.log('');
-    console.log('API key - break-glass recovery, handle with care:');
-    console.log(apiKey);
+    console.log('Break-glass secret material recovered.');
+    reportSecretDelivery(apiKey, outputPath, 'Recovered API key');
     return;
   }
 
@@ -198,7 +220,7 @@ async function main() {
       process.exit(1);
     }
     console.log(`Store: ${result.path}`);
-    console.log(`Revoked ${result.record.id} (${result.record.apiKeyPreview}) for tenant ${result.record.tenantId}`);
+    console.log(`Revoked ${result.record.id} for tenant ${result.record.tenantId}`);
     return;
   }
 

@@ -38,8 +38,33 @@ function required(value: string | undefined, name: string): string {
   return value;
 }
 
-function slug(value: string): string {
-  return value.replace(/[^a-z0-9.-]+/gi, '-').replace(/^-+|-+$/g, '').toLowerCase();
+function yamlSingleQuote(value: string): string {
+  return `'${value.replace(/'/gu, "''")}'`;
+}
+
+function normalizeDnsHostname(value: string): string {
+  const hostname = value.trim().toLowerCase();
+  if (!hostname || hostname.length > 253 || hostname.endsWith('.')) {
+    throw new Error('hostname must be a non-empty DNS hostname without a trailing dot.');
+  }
+  const labels = hostname.split('.');
+  if (labels.length < 2) {
+    throw new Error('hostname must include at least two DNS labels.');
+  }
+  for (const label of labels) {
+    if (!label || label.length > 63 || label.startsWith('-') || label.endsWith('-')) {
+      throw new Error('hostname contains an invalid DNS label.');
+    }
+    for (const char of label) {
+      const code = char.charCodeAt(0);
+      const isLowerAscii = code >= 97 && code <= 122;
+      const isDigit = code >= 48 && code <= 57;
+      if (!isLowerAscii && !isDigit && char !== '-') {
+        throw new Error('hostname may only contain DNS label characters.');
+      }
+    }
+  }
+  return hostname;
 }
 
 function read(path: string): string {
@@ -56,13 +81,13 @@ function replaceAll(contents: string, search: string, replacement: string): stri
 }
 
 function main(): void {
-  const hostname = required(arg('hostname', env('ATTESTOR_PUBLIC_HOSTNAME')), 'hostname or ATTESTOR_PUBLIC_HOSTNAME');
+  const hostname = normalizeDnsHostname(required(arg('hostname', env('ATTESTOR_PUBLIC_HOSTNAME')), 'hostname or ATTESTOR_PUBLIC_HOSTNAME'));
   const staticAddressName = arg('static-address-name', env('ATTESTOR_GKE_STATIC_ADDRESS_NAME') ?? 'attestor-gateway-ip')!;
   const dnsTargetIp = arg('dns-target-ip', env('ATTESTOR_GKE_GATEWAY_IP'));
   const clusterIssuer = arg('cluster-issuer', env('ATTESTOR_TLS_CLUSTER_ISSUER') ?? 'letsencrypt-prod')!;
   const tlsSecretName = arg('tls-secret-name', env('ATTESTOR_TLS_SECRET_NAME') ?? 'attestor-tls')!;
   const acmeEmail = arg('acme-email', env('ATTESTOR_ACME_EMAIL') ?? 'ops@example.com')!;
-  const outputDir = resolve(arg('output-dir', `.attestor/ha/gke-domain-cutover/${slug(hostname)}`)!);
+  const outputDir = resolve(arg('output-dir', `.attestor/ha/gke-domain-cutover/${hostname.split('.').join('-')}`)!);
   mkdirSync(outputDir, { recursive: true });
 
   const gatewayTemplate = read('ops/kubernetes/ha/providers/gke/https-gateway.example.yaml');
@@ -70,13 +95,13 @@ function main(): void {
   const certificateTemplate = read('ops/kubernetes/ha/providers/cert-manager/certificate.yaml');
   const clusterIssuerTemplate = read('ops/kubernetes/ha/providers/cert-manager/clusterissuer.example.yaml');
 
-  let gateway = replaceAll(gatewayTemplate, 'attestor.example.com', hostname);
+  let gateway = replaceAll(gatewayTemplate, 'attestor.example.com', yamlSingleQuote(hostname));
   gateway = replaceAll(gateway, 'attestor-gateway-ip', staticAddressName);
   gateway = replaceAll(gateway, 'attestor-tls', tlsSecretName);
 
-  const route = replaceAll(routeTemplate, 'attestor.example.com', hostname);
+  const route = replaceAll(routeTemplate, 'attestor.example.com', yamlSingleQuote(hostname));
 
-  let certificate = replaceAll(certificateTemplate, 'attestor.example.com', hostname);
+  let certificate = replaceAll(certificateTemplate, 'attestor.example.com', yamlSingleQuote(hostname));
   certificate = replaceAll(certificate, 'attestor-tls', tlsSecretName);
   certificate = replaceAll(certificate, 'letsencrypt-prod', clusterIssuer);
 
@@ -157,6 +182,6 @@ kubectl apply -k ${outputDir}
 try {
   main();
 } catch (error) {
-  console.error(error instanceof Error ? error.stack ?? error.message : error);
+  console.error(error instanceof Error ? error.message : 'Unexpected GKE domain cutover render failure.');
   process.exit(1);
 }

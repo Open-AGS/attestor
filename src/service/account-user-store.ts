@@ -167,11 +167,28 @@ export class AccountUserStoreError extends Error {
 }
 
 const PASSWORD_PARAMS = {
-  N: 16_384,
+  N: 131_072,
   r: 8,
   p: 1,
   keylen: 64,
 } as const;
+
+const SCRYPT_MIN_MAXMEM_BYTES = 32 * 1024 * 1024;
+const SCRYPT_MAXMEM_SLACK_BYTES = 16 * 1024 * 1024;
+
+function scryptOptions(params: AccountUserPasswordState['params']): {
+  N: number;
+  r: number;
+  p: number;
+  maxmem: number;
+} {
+  return {
+    N: params.N,
+    r: params.r,
+    p: params.p,
+    maxmem: Math.max(SCRYPT_MIN_MAXMEM_BYTES, 128 * params.N * params.r + SCRYPT_MAXMEM_SLACK_BYTES),
+  };
+}
 
 function storePath(): string {
   return resolve(process.env.ATTESTOR_ACCOUNT_USER_STORE_PATH ?? '.attestor/account-users.json');
@@ -380,11 +397,7 @@ function saveStore(store: AccountUserStoreFile): void {
 
 function hashPassword(password: string): AccountUserPasswordState {
   const salt = randomBytes(16);
-  const derived = scryptSync(password, salt, PASSWORD_PARAMS.keylen, {
-    N: PASSWORD_PARAMS.N,
-    r: PASSWORD_PARAMS.r,
-    p: PASSWORD_PARAMS.p,
-  });
+  const derived = scryptSync(password, salt, PASSWORD_PARAMS.keylen, scryptOptions(PASSWORD_PARAMS));
   return {
     algorithm: 'scrypt',
     params: { ...PASSWORD_PARAMS },
@@ -402,11 +415,12 @@ export function verifyAccountUserPasswordRecord(
   candidatePassword: string,
 ): boolean {
   const expected = Buffer.from(passwordState.hash, 'hex');
-  const actual = scryptSync(candidatePassword, Buffer.from(passwordState.salt, 'hex'), passwordState.params.keylen, {
-    N: passwordState.params.N,
-    r: passwordState.params.r,
-    p: passwordState.params.p,
-  });
+  const actual = scryptSync(
+    candidatePassword,
+    Buffer.from(passwordState.salt, 'hex'),
+    passwordState.params.keylen,
+    scryptOptions(passwordState.params),
+  );
   return expected.length === actual.length && timingSafeEqual(expected, actual);
 }
 

@@ -2,7 +2,7 @@ import { strict as assert } from 'node:assert';
 import { createHash, randomBytes } from 'node:crypto';
 import { createServer as createHttpServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { createServer as createNetServer } from 'node:net';
-import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
 import { tmpdir } from 'node:os';
@@ -177,7 +177,7 @@ async function main(): Promise<void> {
         const nonce = requestUrl.searchParams.get('nonce');
         const responseType = requestUrl.searchParams.get('response_type');
         const clientId = requestUrl.searchParams.get('client_id');
-        if (!redirectUri || !state || !codeChallenge || !nonce || responseType !== 'code' || clientId !== 'attestor-web') {
+        if (!redirectUri || redirectUri !== redirectUrl || !state || !codeChallenge || !nonce || responseType !== 'code' || clientId !== 'attestor-web') {
           res.statusCode = 400;
           res.end('bad authorize request');
           return;
@@ -288,10 +288,10 @@ async function main(): Promise<void> {
     });
     ok(
       adminCreate.response.status === 201,
-      `OIDC: hosted account provision status 201 (${adminCreate.response.status} ${JSON.stringify(adminCreate.body)} | logs=${Buffer.concat(apiOutput).toString('utf8')})`,
+      `OIDC: hosted account provision status 201 (${adminCreate.response.status})`,
     );
     const initialKey = adminCreate.body.initialKey.apiKey as string;
-    ok(typeof initialKey === 'string' && initialKey.startsWith('atk_'), `OIDC: initial tenant key is returned (${JSON.stringify(adminCreate.body)})`);
+    ok(typeof initialKey === 'string' && initialKey.startsWith('atk_'), 'OIDC: initial tenant key is returned');
 
     const tenantKeyStorePath = join(workDir, 'tenant-keys.json');
     ok(existsSync(tenantKeyStorePath), 'OIDC: tenant key store file created after account provisioning');
@@ -302,7 +302,7 @@ async function main(): Promise<void> {
     });
     ok(
       accountProbe.response.status === 200,
-      `OIDC: initial tenant API key resolves hosted account (${accountProbe.response.status} ${JSON.stringify(accountProbe.body)} | tenantKeyStore=${readFileSync(tenantKeyStorePath, 'utf8')} | logs=${Buffer.concat(apiOutput).toString('utf8')})`,
+      `OIDC: initial tenant API key resolves hosted account (${accountProbe.response.status})`,
     );
 
     const bootstrap = await fetchJson(`http://127.0.0.1:${apiPort}/api/v1/account/users/bootstrap`, {
@@ -319,7 +319,7 @@ async function main(): Promise<void> {
     });
     ok(
       bootstrap.response.status === 201,
-      `OIDC: bootstrap account admin status 201 (${bootstrap.response.status} ${JSON.stringify(bootstrap.body)} | logs=${Buffer.concat(apiOutput).toString('utf8')})`,
+      `OIDC: bootstrap account admin status 201 (${bootstrap.response.status})`,
     );
     ok(bootstrap.body.user.federation.oidcLinked === false, 'OIDC: bootstrap user starts without linked OIDC identity');
 
@@ -330,7 +330,7 @@ async function main(): Promise<void> {
     });
     ok(
       oidcBegin.response.status === 200,
-      `OIDC: login begin status 200 (${oidcBegin.response.status} ${JSON.stringify(oidcBegin.body)} | logs=${Buffer.concat(apiOutput).toString('utf8')})`,
+      `OIDC: login begin status 200 (${oidcBegin.response.status})`,
     );
     ok(oidcBegin.body.authorization.mode === 'authorization_code_pkce', 'OIDC: login begin reports PKCE mode');
     ok(Array.isArray(oidcBegin.body.authorization.scopes) && oidcBegin.body.authorization.scopes.includes('openid'), 'OIDC: login begin reports scopes');
@@ -390,6 +390,6 @@ async function main(): Promise<void> {
 
 main().catch((error) => {
   console.error('\nLive account OIDC SSO tests failed.');
-  console.error(error instanceof Error ? error.stack ?? error.message : error);
+  console.error(error instanceof Error ? error.message : 'Unexpected OIDC test failure');
   process.exit(1);
 });

@@ -30,6 +30,34 @@ interface BenchmarkOptions {
   window: string;
 }
 
+function endpointUrl(rawUrl: string, name: string): URL {
+  let parsed: URL;
+  try {
+    parsed = new URL(rawUrl);
+  } catch {
+    throw new Error(`${name} must be a valid URL.`);
+  }
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    throw new Error(`${name} must use http or https.`);
+  }
+  if (parsed.username || parsed.password) {
+    throw new Error(`${name} must not include credentials. Use *_AUTH_HEADER or *_BEARER_TOKEN instead.`);
+  }
+  parsed.hash = '';
+  return parsed;
+}
+
+function safeEndpointSummary(url: URL): string {
+  return url.origin;
+}
+
+function sanitizeMetricLabel(value: string | undefined, fallback: string): string {
+  const candidate = value ?? fallback;
+  const withoutControls = candidate.replace(/[\u0000-\u001f\u007f]/gu, '');
+  const bounded = withoutControls.slice(0, 180);
+  return bounded || fallback;
+}
+
 function arg(name: string, fallback?: string): string | undefined {
   const prefixed = `--${name}=`;
   const found = process.argv.find((entry) => entry.startsWith(prefixed));
@@ -89,6 +117,8 @@ export async function captureObservabilityBenchmark(options: BenchmarkOptions): 
   hotRoutes: Array<{ route: string; requestsPerSecond: number }>;
 }> {
   const { prometheusUrl, alertmanagerUrl, outputDir, window } = options;
+  const prometheusEndpoint = endpointUrl(prometheusUrl, 'prometheusUrl');
+  const alertmanagerEndpoint = alertmanagerUrl ? endpointUrl(alertmanagerUrl, 'alertmanagerUrl') : null;
   const routeMatcher = '{route!~"/api/v1/(metrics|admin/metrics|health|ready)"}';
   const requestMetric = `attestor_http_requests_total${routeMatcher}`;
   const durationMetric = `attestor_http_request_duration_seconds_bucket${routeMatcher}`;
@@ -96,28 +126,32 @@ export async function captureObservabilityBenchmark(options: BenchmarkOptions): 
   const prometheusAuth = headerValue('PROMETHEUS');
   const alertmanagerAuth = headerValue('ALERTMANAGER');
 
-  const rps = await queryPrometheus(prometheusUrl, prometheusAuth, `sum(rate(${requestMetric}[${window}]))`);
+  const rps = await queryPrometheus(prometheusEndpoint.toString(), prometheusAuth, `sum(rate(${requestMetric}[${window}]))`);
   const successRate = await queryPrometheus(
-    prometheusUrl,
+    prometheusEndpoint.toString(),
     prometheusAuth,
     `1 - (sum(rate(attestor_http_requests_total{route!~"/api/v1/(metrics|admin/metrics|health|ready)",status_code=~"5.."}[${window}])) / clamp_min(sum(rate(${requestMetric}[${window}])), 0.001))`,
   );
   const latency = await queryPrometheus(
-    prometheusUrl,
+    prometheusEndpoint.toString(),
     prometheusAuth,
     `histogram_quantile(0.95, sum(rate(${durationMetric}[${window}])) by (le)) * 1000`,
   );
   const routes = await queryPrometheus(
-    prometheusUrl,
+    prometheusEndpoint.toString(),
     prometheusAuth,
     `topk(5, sum(rate(${requestMetric}[${window}])) by (route))`,
   );
-  const alerts = alertmanagerUrl
-    ? await fetchJson<AlertmanagerAlert[]>(new URL('/api/v2/alerts', alertmanagerUrl).toString(), alertmanagerAuth)
+  const alerts = alertmanagerEndpoint
+    ? await fetchJson<AlertmanagerAlert[]>(new URL('/api/v2/alerts', alertmanagerEndpoint).toString(), alertmanagerAuth)
     : [];
 
   const benchmark = {
-    source: { prometheusUrl, alertmanagerUrl, window },
+    source: {
+      prometheusUrl: safeEndpointSummary(prometheusEndpoint),
+      alertmanagerUrl: alertmanagerEndpoint ? safeEndpointSummary(alertmanagerEndpoint) : null,
+      window,
+    },
     requestsPerSecond: round(firstNumber(rps), 2),
     successRate: round(Math.min(1, Math.max(0, firstNumber(successRate, 1))), 4),
     p95LatencyMs: round(Math.max(0, firstNumber(latency)), 2),
@@ -127,7 +161,7 @@ export async function captureObservabilityBenchmark(options: BenchmarkOptions): 
       total: alerts.length,
     },
     hotRoutes: routes.map((entry) => ({
-      route: entry.metric.route ?? 'unknown',
+      route: sanitizeMetricLabel(entry.metric.route, 'unknown'),
       requestsPerSecond: round(Number(entry.value[1]), 3),
     })),
   };
@@ -140,10 +174,10 @@ export async function captureObservabilityBenchmark(options: BenchmarkOptions): 
     resolve(outputDir, 'README.md'),
     `# Observability calibration snapshot
 
-Generated from:
+Generated from sanitized endpoint summaries:
 
-- Prometheus: ${prometheusUrl}
-- Alertmanager: ${alertmanagerUrl ?? 'not configured'}
+- Prometheus: ${safeEndpointSummary(prometheusEndpoint)}
+- Alertmanager: ${alertmanagerEndpoint ? safeEndpointSummary(alertmanagerEndpoint) : 'not configured'}
 - window: ${window}
 
 Next steps:
@@ -177,7 +211,7 @@ async function main(): Promise<void> {
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   main().catch((error) => {
-    console.error(error instanceof Error ? error.stack ?? error.message : error);
+    console.error(error instanceof Error ? error.message : 'Unexpected observability benchmark failure.');
     process.exit(1);
   });
 }

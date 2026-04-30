@@ -480,7 +480,7 @@ process.env.ATTESTOR_RATE_LIMIT_WINDOW_SECONDS = '5';
       ok(listAfterApprovalRes.status === 200, 'Reviewer inbox(after approval): status 200');
       const listAfterApprovalBody = await listAfterApprovalRes.json() as any;
       ok(!listAfterApprovalBody.items.some((item: any) => item.id === reviewQueueId), 'Reviewer inbox(after approval): approved item no longer appears in pending inbox');
-      console.log(`    approvals=2/2, token=${secondApprovalBody.releaseToken.tokenId}`);
+      console.log(`    approvals=2/2, releaseTokenIssued=${Boolean(secondApprovalBody.releaseToken.tokenId)}`);
     }
 
     // ═══ REVIEWER QUEUE — break-glass override ═══
@@ -514,7 +514,7 @@ process.env.ATTESTOR_RATE_LIMIT_WINDOW_SECONDS = '5';
       ok(typeof overrideBody.evidencePack?.exportPath === 'string', 'Reviewer override: durable evidence pack export path returned');
       breakGlassReleaseToken = overrideBody.releaseToken.token;
       breakGlassEvidencePackId = overrideBody.evidencePack.evidencePackId;
-      console.log(`    override=regulatory_deadline, token=${overrideBody.releaseToken.tokenId}`);
+      console.log(`    override=regulatory_deadline, releaseTokenIssued=${Boolean(overrideBody.releaseToken.tokenId)}`);
     }
 
     // ═══ RELEASE EVIDENCE PACK — exported durable bundle ═══
@@ -618,7 +618,7 @@ process.env.ATTESTOR_RATE_LIMIT_WINDOW_SECONDS = '5';
       ok(body.release?.authorized === true, 'Filing(approved dual-review token): release authorization is attached');
       ok(body.release?.introspectionVerified === true, 'Filing(approved dual-review token): high-risk introspection is confirmed');
       ok(body.package?.content?.facts?.length > 0, 'Filing(approved dual-review token): filing package is still produced after human authority closes');
-      console.log(`    approved review release decision=${body.release.decisionId}, token=${body.release.tokenId}`);
+      console.log(`    approved review release authorized=${Boolean(body.release.tokenId)}`);
     }
 
     // ═══ FILING EXPORT — break-glass override token ═══
@@ -637,7 +637,7 @@ process.env.ATTESTOR_RATE_LIMIT_WINDOW_SECONDS = '5';
       ok(body.release?.authorized === true, 'Filing(break-glass token): release authorization is attached');
       ok(body.release?.introspectionVerified === true, 'Filing(break-glass token): high-risk introspection is confirmed');
       ok(body.package?.content?.facts?.length > 0, 'Filing(break-glass token): filing package is produced after override');
-      console.log(`    overridden release decision=${body.release.decisionId}, token=${body.release.tokenId}`);
+      console.log(`    overridden release authorized=${Boolean(body.release.tokenId)}`);
     }
 
     // ═══ FILING EXPORT — authorized XBRL ═══
@@ -1199,7 +1199,7 @@ process.env.ATTESTOR_RATE_LIMIT_WINDOW_SECONDS = '5';
         headers: { Authorization: `Bearer ${issued.apiKey}` },
       });
       ok(revokedRes.status === 401, 'File store: revoked key rejected');
-      console.log(`    issued=${issued.record.id}, preview=${issued.record.apiKeyPreview}, revokedStatus=${revokedRes.status}`);
+      console.log(`    issued=${issued.record.id}, secret=redacted, revokedStatus=${revokedRes.status}`);
     }
 
     console.log('\n  [Admin tenant key management API]');

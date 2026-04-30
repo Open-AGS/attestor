@@ -33,7 +33,7 @@ async function run() {
   // ── ENV GATE ──
   if (!ACCOUNT || !USERNAME || !PASSWORD) {
     console.log('  SKIPPED: Snowflake env vars not set.');
-    console.log('  To run: set SNOWFLAKE_ACCOUNT, SNOWFLAKE_USERNAME, SNOWFLAKE_PASSWORD');
+    console.log('  To run: set the documented Snowflake account, user, and password env vars.');
     console.log('  This is not a failure — live cloud tests are opt-in.\n');
     console.log(`  Live Snowflake Tests: 0 run (skipped — env not configured)\n`);
     return;
@@ -69,9 +69,9 @@ async function run() {
   try {
     conn = await connectSnowflake();
     ok(true, 'Snowflake: connection established');
-    console.log(`    Connected to ${ACCOUNT}`);
+    console.log('    Connected to configured Snowflake account');
   } catch (err: any) {
-    console.error(`  ✗ Connection failed: ${err.message}`);
+    console.error(`  ✗ Connection failed: ${err instanceof Error ? err.name : 'SnowflakeConnectionError'}`);
     process.exit(1);
   }
 
@@ -90,7 +90,7 @@ async function run() {
     const info = sRows[0] as any;
     ok(info.USERNAME === USERNAME, 'Session: username matches');
     ok(!!info.WAREHOUSE, 'Session: warehouse set');
-    console.log(`    user=${info.USERNAME}, role=${info.ROLE}, wh=${info.WAREHOUSE}`);
+    console.log(`    session metadata present: user=${Boolean(info.USERNAME)}, role=${Boolean(info.ROLE)}, warehouse=${Boolean(info.WAREHOUSE)}`);
 
     // ═══ BOOTSTRAP ═══
     console.log('\n  [Bootstrap Demo Schema]');
@@ -150,4 +150,7 @@ async function run() {
   }
 }
 
-run().catch(err => { console.error('  CRASHED:', err.message); process.exit(1); });
+run().catch((err) => {
+  console.error('  CRASHED:', err instanceof Error ? err.name : 'UnexpectedSnowflakeTestError');
+  process.exit(1);
+});

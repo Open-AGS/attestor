@@ -128,6 +128,43 @@ function main(): void {
     ok(gkePolicy.includes('sslPolicy: attestor-modern-tls'), 'HA release bundle: GKE gateway policy carries SSL policy wiring');
     ok(gkeCertificate.includes('letsencrypt-prod') && gkeCertificate.includes('gke.attestor.example.invalid'), 'HA release bundle: GKE certificate carries issuer and hostname');
 
+    const invalidHostnameOut = resolve(tempDir, 'invalid-hostname-bundle');
+    const invalidHostname = spawnSync(
+      process.execPath,
+      [
+        resolve('node_modules/tsx/dist/cli.mjs'),
+        'scripts/render-ha-release-bundle.ts',
+        '--provider=gke',
+        `--benchmark=${benchmarkPath}`,
+        `--output-dir=${invalidHostnameOut}`,
+      ],
+      {
+        cwd: resolve('.'),
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          ATTESTOR_API_IMAGE: 'ghcr.io/example/attestor-api:4.5.6',
+          ATTESTOR_WORKER_IMAGE: 'ghcr.io/example/attestor-worker:4.5.6',
+          ATTESTOR_PUBLIC_HOSTNAME: 'bad.example.invalid\nmalicious.example.invalid',
+          ATTESTOR_HA_PRODUCTION_MODE: 'true',
+          ATTESTOR_TLS_MODE: 'cert-manager',
+          ATTESTOR_TLS_CLUSTER_ISSUER: 'letsencrypt-prod',
+          REDIS_URL: 'redis://cache.example.invalid:6379/0',
+          ATTESTOR_CONTROL_PLANE_PG_URL: 'postgres://user:pass@db/control',
+          ATTESTOR_BILLING_LEDGER_PG_URL: 'postgres://user:pass@db/billing',
+          ATTESTOR_RELEASE_AUTHORITY_PG_URL: 'postgres://user:pass@db/release_authority',
+          ATTESTOR_ADMIN_API_KEY: 'admin-key',
+          ATTESTOR_TLS_CERT_PEM_FILE: certPath,
+          ATTESTOR_TLS_KEY_PEM_FILE: keyPath,
+        },
+      },
+    );
+    ok(invalidHostname.status !== 0, 'HA release bundle: invalid hostname is rejected before YAML rendering');
+    ok(
+      `${invalidHostname.stderr}\n${invalidHostname.stdout}`.includes('ATTESTOR_PUBLIC_HOSTNAME'),
+      'HA release bundle: invalid hostname error names the rejected field',
+    );
+
     console.log(`\nHA release bundle render tests: ${passed} passed, 0 failed`);
   } finally {
     rmSync(tempDir, { recursive: true, force: true });
@@ -138,6 +175,6 @@ try {
   main();
 } catch (error) {
   console.error('\nHA release bundle render tests failed.');
-  console.error(error instanceof Error ? error.stack ?? error.message : error);
+  console.error(error instanceof Error ? error.message : 'Unexpected HA release bundle render test failure.');
   process.exit(1);
 }

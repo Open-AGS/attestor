@@ -142,7 +142,7 @@ function extractOpaqueToken(rawEmail: string): string {
   const normalized = normalizeEmailPayload(rawEmail);
   const match = normalized.match(/atok_[0-9a-f]{64}/);
   if (!match) {
-    throw new Error(`Expected opaque action token in SMTP payload.\n${rawEmail}`);
+    throw new Error('Expected opaque action token in SMTP payload.');
   }
   return match[0];
 }
@@ -314,7 +314,7 @@ async function main(): Promise<void> {
     const inviteActionUrl = extractActionUrl(inviteEmail);
     ok(inviteEmail.includes('invitee@email.example'), 'Email Delivery: invite email addressed to target user');
     ok(inviteBody.delivery.actionUrl === `https://attestor.dev/invite?token=${inviteToken}`, 'Email Delivery: invite API action URL matches token');
-    ok(inviteActionUrl === `https://attestor.dev/invite?token=${inviteToken}`, `Email Delivery: invite email action URL matches token (got ${inviteActionUrl})`);
+    ok(inviteActionUrl === `https://attestor.dev/invite?token=${inviteToken}`, 'Email Delivery: invite email action URL matches token');
     ok(normalizedInviteEmail.includes(inviteToken), 'Email Delivery: invite email body contains the opaque token');
 
     const acceptInviteRes = await fetch(`${base}/api/v1/account/users/invites/accept`, {
@@ -406,6 +406,6 @@ main()
   })
   .catch((error) => {
     console.error('\nLive account email delivery tests failed.');
-    console.error(error instanceof Error ? error.stack ?? error.message : error);
+    console.error(error instanceof Error ? error.message : 'Unexpected live account email delivery test failure.');
     process.exit(1);
   });

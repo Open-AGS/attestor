@@ -44,6 +44,8 @@ import {
   recordAuthAttemptFailure,
   recordAuthAttemptSuccess,
   resolveAuthAttemptSource,
+  type AuthAttemptDecision,
+  type AuthAttemptSubject,
 } from '../../auth-abuse-guard.js';
 
 interface CurrentHostedAccountResult {
@@ -110,6 +112,28 @@ function hostedEmailDeliveryProviderFilter(value: string | undefined): HostedEma
     default:
       return null;
   }
+}
+
+function authAttemptFor(context: Context, email: string): AuthAttemptSubject {
+  return {
+    email,
+    source: resolveAuthAttemptSource(context.req.raw.headers),
+  };
+}
+
+function authRateLimitResponse(context: Context, decision: AuthAttemptDecision): Response {
+  context.header('Retry-After', String(decision.retryAfterSeconds));
+  context.header('x-attestor-auth-rate-limit-reset-at', decision.resetAt);
+  return context.json({
+    error: 'Too many authentication attempts. Try again later.',
+    retryAfterSeconds: decision.retryAfterSeconds,
+    resetAt: decision.resetAt,
+  }, 429);
+}
+
+function maybeRateLimitAuthAttempt(context: Context, subject: AuthAttemptSubject): Response | null {
+  const decision = checkAuthAttemptAllowed(subject);
+  return decision.allowed ? null : authRateLimitResponse(context, decision);
 }
 
 export interface AccountRouteDeps {
@@ -263,6 +287,18 @@ export function registerAccountRoutes(app: Hono, deps: AccountRouteDeps): void {
     currentTenant,
   } = deps;
 
+  async function recordPasskeyAuthenticationFailure(record: AccountUserActionTokenRecord): Promise<void> {
+    const now = new Date().toISOString();
+    const nextRecord = structuredClone(record);
+    nextRecord.attemptCount += 1;
+    nextRecord.lastAttemptAt = now;
+    nextRecord.updatedAt = now;
+    if (nextRecord.maxAttempts !== null && nextRecord.attemptCount >= nextRecord.maxAttempts) {
+      nextRecord.revokedAt = now;
+    }
+    await stateService.saveAccountUserActionTokenRecord(nextRecord);
+  }
+
 app.post('/api/v1/account/users/bootstrap', async (c) => {
   const current = await currentHostedAccount(c);
   if (current instanceof Response) return current;
@@ -296,6 +332,10 @@ app.post('/api/v1/auth/signup', async (c) => {
   const email = typeof body.email === 'string' ? body.email.trim() : '';
   const displayName = typeof body.displayName === 'string' ? body.displayName.trim() : '';
   const password = typeof body.password === 'string' ? body.password : '';
+  const authAttempt = authAttemptFor(c, email);
+  const signupRateLimit = maybeRateLimitAuthAttempt(c, authAttempt);
+  if (signupRateLimit) return signupRateLimit;
+
   try {
     const signup = await authService.signup({
       accountName,
@@ -303,6 +343,7 @@ app.post('/api/v1/auth/signup', async (c) => {
       displayName,
       password,
     });
+    recordAuthAttemptSuccess(authAttempt);
 
     setSessionCookieForRecord(c, signup.sessionToken, signup.session.expiresAt);
 
@@ -323,7 +364,12 @@ app.post('/api/v1/auth/signup', async (c) => {
     }, 201);
   } catch (err) {
     const mapped = accountAuthServiceErrorResponse(c, err);
-    if (mapped) return mapped;
+    if (mapped) {
+      if (err instanceof AccountAuthServiceError) {
+        recordAuthAttemptFailure(authAttempt);
+      }
+      return mapped;
+    }
     throw err;
   }
 });
@@ -332,20 +378,9 @@ app.post('/api/v1/auth/login', async (c) => {
   const body = await c.req.json().catch(() => ({}));
   const email = typeof body.email === 'string' ? body.email.trim() : '';
   const password = typeof body.password === 'string' ? body.password : '';
-  const authAttempt = {
-    email,
-    source: resolveAuthAttemptSource(c.req.raw.headers),
-  };
-  const attemptDecision = checkAuthAttemptAllowed(authAttempt);
-  if (!attemptDecision.allowed) {
-    c.header('Retry-After', String(attemptDecision.retryAfterSeconds));
-    c.header('x-attestor-auth-rate-limit-reset-at', attemptDecision.resetAt);
-    return c.json({
-      error: 'Too many authentication attempts. Try again later.',
-      retryAfterSeconds: attemptDecision.retryAfterSeconds,
-      resetAt: attemptDecision.resetAt,
-    }, 429);
-  }
+  const authAttempt = authAttemptFor(c, email);
+  const loginRateLimit = maybeRateLimitAuthAttempt(c, authAttempt);
+  if (loginRateLimit) return loginRateLimit;
 
   try {
     const login = await authService.login({ email, password });
@@ -387,23 +422,32 @@ app.post('/api/v1/auth/login', async (c) => {
 app.post('/api/v1/auth/passkeys/options', async (c) => {
   const body = await c.req.json().catch(() => ({}));
   const email = typeof body.email === 'string' ? body.email.trim() : '';
+  const authAttempt = authAttemptFor(c, email);
+  const passkeyOptionsRateLimit = maybeRateLimitAuthAttempt(c, authAttempt);
+  if (passkeyOptionsRateLimit) return passkeyOptionsRateLimit;
+
   if (!email) {
+    recordAuthAttemptFailure(authAttempt);
     return c.json({ error: 'email is required for hosted passkey login in the current first slice.' }, 400);
   }
 
   const user = await stateService.findAccountUserByEmail(email);
   if (!user || user.status !== 'active') {
+    recordAuthAttemptFailure(authAttempt);
     return c.json({ error: 'Hosted passkey login requires an active account user with enrolled passkeys.' }, 404);
   }
   if (user.passkeys.credentials.length === 0) {
+    recordAuthAttemptFailure(authAttempt);
     return c.json({ error: `Account user '${user.email}' does not have passkeys enrolled.` }, 409);
   }
 
   const account = await stateService.findHostedAccountById(user.accountId);
   if (!account) {
+    recordAuthAttemptFailure(authAttempt);
     return c.json({ error: `Hosted account '${user.accountId}' was not found.` }, 404);
   }
   if (account.status === 'archived') {
+    recordAuthAttemptFailure(authAttempt);
     return c.json({ error: `Hosted account '${account.id}' is archived and cannot accept new sessions.` }, 403);
   }
 
@@ -430,6 +474,7 @@ app.post('/api/v1/auth/passkeys/options', async (c) => {
       hintedUser: accountUserView(user),
     });
   } catch (err) {
+    recordAuthAttemptFailure(authAttempt);
     return c.json({ error: accountRouteErrorMessage(err) }, 400);
   }
 });
@@ -451,16 +496,19 @@ app.post('/api/v1/auth/passkeys/verify', async (c) => {
   const user = await stateService.findAccountUserById(challengeRecord.accountUserId);
   const account = user ? await stateService.findHostedAccountById(user.accountId) : null;
   if (!user || !account || account.id !== challengeRecord.accountId || user.status !== 'active' || account.status === 'archived') {
+    await recordPasskeyAuthenticationFailure(challengeRecord);
     return c.json({ error: 'Passkey authentication challenge is invalid or expired.' }, 400);
   }
 
   const credentialUser = await stateService.findAccountUserByPasskeyCredentialId(response.id);
   if (!credentialUser || credentialUser.id !== user.id) {
+    await recordPasskeyAuthenticationFailure(challengeRecord);
     return c.json({ error: 'Passkey credential could not be matched to the challenged account user.' }, 400);
   }
 
   const credentialIndex = user.passkeys.credentials.findIndex((entry) => entry.credentialId === response.id);
   if (credentialIndex < 0) {
+    await recordPasskeyAuthenticationFailure(challengeRecord);
     return c.json({ error: 'Passkey credential could not be matched to the challenged account user.' }, 400);
   }
   const storedCredential = user.passkeys.credentials[credentialIndex]!;
@@ -473,9 +521,11 @@ app.post('/api/v1/auth/passkeys/verify', async (c) => {
       credential: passkeyCredentialToWebAuthnCredential(storedCredential),
     });
   } catch (err) {
+    await recordPasskeyAuthenticationFailure(challengeRecord);
     return c.json({ error: accountRouteErrorMessage(err) }, 400);
   }
   if (!verification.verified) {
+    await recordPasskeyAuthenticationFailure(challengeRecord);
     return c.json({ error: 'Passkey authentication could not be verified.' }, 400);
   }
 

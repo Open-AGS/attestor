@@ -1,4 +1,6 @@
 import { strict as assert } from 'node:assert';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import {
   authAbuseGuardPolicy,
   checkAuthAttemptAllowed,
@@ -149,6 +151,30 @@ function run() {
       });
       ok(resolveAuthAttemptSource(headers) === '192.0.2.10', 'source resolver uses first forwarded-for hop');
       ok(resolveAuthAttemptSource(new Headers()) === 'unknown-source', 'source resolver has deterministic fallback');
+    }
+
+    {
+      const routeSource = readFileSync(join(process.cwd(), 'src', 'service', 'http', 'routes', 'account-routes.ts'), 'utf8');
+      ok(
+        routeSource.includes("app.post('/api/v1/auth/signup'") &&
+          routeSource.includes('const signupRateLimit = maybeRateLimitAuthAttempt(c, authAttempt);'),
+        'hosted signup route is wired through the auth abuse guard',
+      );
+      ok(
+        routeSource.includes("app.post('/api/v1/auth/login'") &&
+          routeSource.includes('const loginRateLimit = maybeRateLimitAuthAttempt(c, authAttempt);'),
+        'hosted login route remains wired through the auth abuse guard',
+      );
+      ok(
+        routeSource.includes("app.post('/api/v1/auth/passkeys/options'") &&
+          routeSource.includes('const passkeyOptionsRateLimit = maybeRateLimitAuthAttempt(c, authAttempt);'),
+        'hosted passkey-options route is wired through the auth abuse guard',
+      );
+      ok(
+        routeSource.includes('async function recordPasskeyAuthenticationFailure') &&
+          (routeSource.match(/await recordPasskeyAuthenticationFailure\(challengeRecord\)/g) ?? []).length >= 5,
+        'hosted passkey verification failure paths consume the one-attempt challenge',
+      );
     }
 
     console.log(`Account Auth Abuse Guard Tests: ${passed} passed, 0 failed`);

@@ -80,6 +80,22 @@ activated/rejected -> superseded
 
 An `activated` candidate is still not automatic enforcement. It means the candidate has passed a customer-controlled approval path and can be used by a later policy/enforcement promotion workflow.
 
+## Approval API Surface
+
+The hosted shadow route exposes a small approval surface over this lifecycle:
+
+```text
+POST  /api/v1/shadow/policy-candidates/materialize
+GET   /api/v1/shadow/policy-candidate-records
+PATCH /api/v1/shadow/policy-candidates/:candidateId/status
+```
+
+Materialization turns the current shadow simulation output into persisted candidate records. Listing returns the persisted records for the current tenant. Status transition requires an explicit `status`, `actorRef`, and `reason`.
+
+The API does not expose the local file path of the backing store, and status transitions keep `approvalRequired: true`, `autoEnforce: false`, and `rawPayloadStored: false`.
+
+Invalid lifecycle jumps fail closed. For example, a `draft` candidate cannot move directly to `activated`; it must move through `proposed` and `approved` first.
+
 ## Why This Shape
 
 This follows the same pattern used by mature control systems:

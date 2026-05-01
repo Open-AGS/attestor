@@ -16,7 +16,10 @@ import {
   type ShadowRouteDeps,
 } from '../http/routes/shadow-routes.js';
 import { registerWebhookRoutes } from '../http/routes/webhook-routes.js';
-import { createFileBackedShadowAdmissionEventStore } from '../shadow-persistence-store.js';
+import {
+  createFileBackedShadowAdmissionEventStore,
+  createFileBackedShadowPolicyCandidateStore,
+} from '../shadow-persistence-store.js';
 import { installProductionSharedRequestGuard } from './production-shared-request-guard.js';
 import type { AppRuntime } from './runtime.js';
 
@@ -61,11 +64,30 @@ export function createShadowRouteDeps<Packet>(
   runtime: AppRuntime<Packet>,
 ): ShadowRouteDeps {
   const shadowEventStore = createFileBackedShadowAdmissionEventStore();
+  const shadowCandidateStore = createFileBackedShadowPolicyCandidateStore();
   return {
     currentTenant: runtime.services.httpRoutes.pipeline.currentTenant,
     listShadowEvents: ({ tenant }) =>
       shadowEventStore.list({ tenantId: tenant.tenantId }).events,
     listShadowSimulations: () => [],
+    materializeShadowPolicyCandidates: ({ tenant, bundle }) =>
+      shadowCandidateStore.upsertBundle({
+        tenantId: tenant.tenantId,
+        bundle,
+      }),
+    listShadowPolicyCandidateRecords: ({ tenant, status }) =>
+      shadowCandidateStore.list({
+        tenantId: tenant.tenantId,
+        status,
+      }).records,
+    transitionShadowPolicyCandidateStatus: ({ tenant, candidateId, status, actorRef, reason }) =>
+      shadowCandidateStore.transitionStatus({
+        tenantId: tenant.tenantId,
+        candidateId,
+        status,
+        actorRef,
+        reason,
+      }).record,
   };
 }
 

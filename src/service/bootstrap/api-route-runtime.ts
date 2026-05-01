@@ -327,6 +327,7 @@ export async function createApiHttpRouteRuntime(
     runtimeProfileDiagnostics,
     pki,
     pkiReady,
+    releaseSigningProvider,
     financeReleaseDecisionLog,
     apiReleaseReviewerQueueStore,
     apiReleaseIntrospectionStore,
@@ -388,6 +389,7 @@ export async function createApiHttpRouteRuntime(
     connectorRegistry,
     filingRegistry,
     pkiReady,
+    releaseSigningProvider,
     pki,
     apiReleaseVerificationKeysPromise,
     runtimeProfileDiagnostics,
@@ -763,6 +765,7 @@ export async function createApiHttpRouteRuntime(
         runtimeProfileDiagnostics,
         rlsActivationResult,
         pkiReady,
+        releaseSigningProvider,
       },
     }),
     httpRoutes: {

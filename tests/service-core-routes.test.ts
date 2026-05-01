@@ -83,6 +83,22 @@ async function testReleaseTokenJwksRouteExposesPublicVerificationKeyOnly(): Prom
       sharedComponents: [],
       blockers: [],
     },
+    releaseSigningProvider: {
+      version: 'test',
+      kind: 'file-pem',
+      configuredProvider: null,
+      derivedProvider: 'file-pem',
+      productionProviderRequired: false,
+      productionReady: false,
+      privateKeyExportable: true,
+      signingBoundary: 'runtime-file-pem',
+      rotationManagedBy: 'runtime-file-store',
+      publicVerificationKeysServedBy: 'runtime-jwks',
+      pkiPath: '/tmp/attestor-release-runtime-pki.json',
+      blockers: [
+        'release signer private key is exportable file-backed PEM; use an external KMS/HSM provider before production promotion',
+      ],
+    },
     evaluateSharedAuthorityRuntimeReadiness: async () => ({
       version: 'test',
       evaluatedAt: '2026-04-29T00:00:00.000Z',
@@ -105,6 +121,33 @@ async function testReleaseTokenJwksRouteExposesPublicVerificationKeyOnly(): Prom
   };
 
   registerCoreRoutes(app, deps);
+
+  const healthResponse = await app.request('/api/v1/health');
+  equal(healthResponse.status, 200, 'Core routes: health route stays available');
+  const healthBody = await healthResponse.json() as {
+    releaseRuntime?: {
+      signingProvider?: {
+        kind?: string;
+        productionReady?: boolean;
+        privateKeyExportable?: boolean;
+      };
+    };
+  };
+  equal(
+    healthBody.releaseRuntime?.signingProvider?.kind,
+    'file-pem',
+    'Core routes: health route reports the active release signing provider kind',
+  );
+  equal(
+    healthBody.releaseRuntime?.signingProvider?.productionReady,
+    false,
+    'Core routes: health route does not overclaim file-backed PEM as production-ready signing',
+  );
+  equal(
+    healthBody.releaseRuntime?.signingProvider?.privateKeyExportable,
+    true,
+    'Core routes: health route reports exportable local release signer material',
+  );
 
   const response = await app.request('/api/v1/release-token/jwks');
   equal(response.status, 200, 'Core routes: release-token JWKS route is public and available');

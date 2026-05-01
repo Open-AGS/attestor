@@ -2,22 +2,24 @@
 
 ![Attestor: proof before consequence](docs/assets/attestor-readme-hero.png)
 
-**AI Consequence Gateway.**
+**AI Action Authorization Layer.**
 
-Models propose. Systems change. Attestor sits between those two facts.
+Attestor is the authorization layer for AI actions before they become consequences.
 
-AI systems now reach tools that write to ledgers, CRMs, filing paths, wallets, ticketing systems, databases, and deployment pipelines. A bad answer can be corrected. A bad consequence has to be unwound. The trust boundary is not the model. The trust boundary is the consequence.
+Models propose actions. Systems change state. Attestor authorizes the gap between them.
+
+AI systems now reach tools that write to ledgers, CRMs, filing paths, wallets, ticketing systems, databases, and deployment pipelines. A bad answer can be corrected. A bad consequence has to be unwound. The trust boundary is not the model response. The trust boundary is the action that reaches a real system.
 
 Attestor sits at that boundary. A model, agent, workflow, wallet, or application proposes an action; Attestor admits it, narrows it, sends it to review, or blocks it before the downstream system writes, sends, files, settles, grants access, releases data, or executes.
 
-Attestor does not replace the model, agent runtime, wallet, custody platform, orchestration layer, or downstream system. It is the admission layer before a proposed AI action becomes a real-world consequence.
+Attestor does not replace the model, agent runtime, wallet, custody platform, orchestration layer, or downstream system. It is the authorization layer before a proposed AI action becomes a real-world consequence.
 
 > [!NOTE]
 > This repository is source-available under Business Source License 1.1. Non-production use is allowed. Production use requires a commercial license until the Change Date in [LICENSE](LICENSE).
 
 ## Current Status
 
-Attestor is currently an **evaluation release**: reviewer-runnable, CI-backed, and useful for technical evaluation. It demonstrates the consequence-gateway model, proof artifacts, finance wedge, crypto extension surfaces, and current fail-closed boundaries.
+Attestor is currently an **evaluation release**: reviewer-runnable, CI-backed, and useful for technical evaluation. It demonstrates the AI action authorization model, consequence-gateway proof artifacts, finance wedge, crypto extension surfaces, and current fail-closed boundaries.
 
 It is not a finished public SaaS, a production-use guarantee, a completed customer-operated deployment, or a substitute for an external security audit.
 
@@ -31,13 +33,13 @@ Start review with:
 
 ## What Attestor Does
 
-Attestor is admission control for AI-driven consequences that matter:
+Attestor authorizes high-risk AI actions before they become consequences that matter:
 
 ```text
 AI proposes -> Attestor admits / narrows / reviews / blocks -> allowed consequences proceed -> proof remains
 ```
 
-Use it where an AI-assisted system should not be able to create a consequence just because it can form a request:
+Use it where an AI-assisted system should not be able to act just because it can form a request:
 
 - a finance assistant prepares a report from live warehouse data
 - an agent proposes paying a supplier after reading a changed bank-account instruction
@@ -59,7 +61,7 @@ bad instruction -> plausible model output -> tool call -> real system changed
 
 Attestor treats the proposed consequence as the object of control. It does not need the model to become perfectly reliable. It requires the action to pass a bounded admission decision before the system of record, payment layer, wallet, filing path, admin plane, or operational workflow is allowed to act.
 
-This is AI consequence infrastructure: not a chatbot feature, not a prompt wrapper, not a generic agent workspace. A gateway before important AI actions become real.
+This is AI action authorization infrastructure: not a chatbot feature, not a prompt wrapper, not a generic agent workspace, and not a governance checklist. A gateway before important AI actions become real.
 
 ## Try It In 60 Seconds
 
@@ -168,7 +170,7 @@ See [AI-assisted financial reporting acceptance](docs/01-overview/financial-repo
 
 ## Architecture: Core And Packs
 
-Attestor is one product with a shared consequence-gateway core and modular packs for specific consequence domains.
+Attestor is one product with a shared AI action authorization core and modular packs for specific consequence domains.
 
 One product. One platform core.
 
@@ -250,6 +252,7 @@ Start here:
 
 - [Attestor Evaluation Packet v0.1](docs/00-evaluation/v0.1-evaluation-packet.md) - compact outside-review packet
 - [v0.1.2-evaluation release notes](docs/00-evaluation/v0.1.2-evaluation-release-notes.md) - current release boundary and known limitations
+- [AI action authorization positioning](docs/01-overview/action-authorization-positioning.md) - category framing and consequence-gateway language
 - [Try Attestor first](docs/01-overview/try-attestor-first.md) - shortest guided run
 - [Consequence admission quickstart](docs/01-overview/consequence-admission-quickstart.md) - package facade and first admission call
 - [Attestor operating model](docs/01-overview/operating-model.md) - decision vocabulary and placement model

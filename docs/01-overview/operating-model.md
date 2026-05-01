@@ -1,6 +1,6 @@
 # Attestor Operating Model
 
-Use this page as the customer-facing truth source for how Attestor is used as an AI consequence gateway.
+Use this page as the customer-facing truth source for how Attestor is used as an AI action authorization layer and AI consequence gateway.
 
 For pricing and buying paths, use [Commercial packaging, pricing, and evaluation](product-packaging.md).
 For hosted route order, use [Hosted journey contract](hosted-journey-contract.md).
@@ -11,6 +11,8 @@ For the public admission facade, use [Consequence admission quickstart](conseque
 ## The Short Version
 
 Attestor is called by a customer-controlled system before a sensitive output, record, action, message, filing-like artifact, data export, authority change, infrastructure change, or programmable-money execution becomes real.
+
+Externally, Attestor is the authorization layer for high-risk AI actions. Operationally, it is the consequence gateway that decides whether the proposed action may proceed, must be narrowed, needs review, or must be blocked.
 
 The customer system does not hand ownership of the workflow to Attestor. It asks Attestor for an admission decision before the downstream system writes, sends, files, executes, signs, broadcasts, settles, or routes the consequence.
 

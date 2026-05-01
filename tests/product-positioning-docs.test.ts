@@ -24,12 +24,17 @@ function excludes(content: string, unexpected: RegExp, message: string): void {
 function testTopLevelPositioningStaysAligned(): void {
   const readme = readProjectFile('README.md');
   const purpose = readProjectFile('docs', '01-overview', 'purpose.md');
+  const actionPositioning = readProjectFile('docs', '01-overview', 'action-authorization-positioning.md');
   const systemOverview = readProjectFile('docs', '02-architecture', 'system-overview.md');
   const packaging = readProjectFile('docs', '01-overview', 'product-packaging.md');
   const useCases = readProjectFile('docs', '01-overview', 'what-you-can-do.md');
 
-  includes(readme, 'Attestor is one product with a shared consequence-gateway core and modular packs for specific consequence domains.', 'Product docs: README keeps one-product framing');
-  includes(readme, 'AI consequence infrastructure', 'Product docs: README names the infrastructure category');
+  includes(readme, 'Attestor is the authorization layer for AI actions before they become consequences.', 'Product docs: README keeps action authorization framing');
+  includes(readme, 'Attestor is one product with a shared AI action authorization core and modular packs for specific consequence domains.', 'Product docs: README keeps one-product framing');
+  includes(readme, 'AI action authorization infrastructure', 'Product docs: README names the infrastructure category');
+  includes(actionPositioning, 'AI action authorization is the market category.', 'Product docs: action authorization positioning names the category');
+  includes(actionPositioning, 'AI Consequence Gateway is the Attestor operating model.', 'Product docs: action authorization positioning preserves consequence-gateway language');
+  includes(actionPositioning, 'observe -> recommend -> simulate -> approve -> enforce', 'Product docs: action authorization positioning keeps shadow mode adoption path');
   includes(purpose, 'Attestor is one product:', 'Product docs: purpose keeps one-product framing');
   includes(systemOverview, 'Attestor should be understood as one product:', 'Product docs: system overview keeps one-product framing');
   includes(packaging, 'Attestor is one product:', 'Product docs: packaging keeps one-product framing');

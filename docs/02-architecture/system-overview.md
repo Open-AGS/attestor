@@ -8,7 +8,7 @@ This document is the short architectural truth source. The README gives the prod
 
 Attestor should be understood as one product:
 
-**an AI consequence gateway for high-consequence systems**
+**an AI action authorization layer implemented as an AI consequence gateway for high-consequence systems**
 
 The core pattern is:
 
@@ -16,7 +16,7 @@ The core pattern is:
 AI proposes -> policy, authority, evidence, and enforcement checks -> admitted, narrowed, reviewed, or blocked consequence
 ```
 
-That same pattern spans AI-output release, programmable-money authorization, data export, authority change, communication, filing, and operational execution. The architecture therefore has one shared core and multiple packs, not multiple unrelated products hiding in one repository.
+That same pattern spans AI-output release, programmable-money authorization, data export, authority change, communication, filing, and operational execution. The architecture therefore has one shared action-authorization core and multiple packs, not multiple unrelated products hiding in one repository.
 
 The customer-facing operating model and decision vocabulary live in [Operating model](../01-overview/operating-model.md). Use that page when deciding how domain-native finance or crypto outcomes map to the shared `admit`, `narrow`, `review`, and `block` language.
 
@@ -150,7 +150,7 @@ The following distinctions matter:
 
 So the honest architectural statement is:
 
-**Attestor is one AI consequence gateway with a real shared core and modular packs, but not every pack or supporting slice is equally mature.**
+**Attestor is one AI action authorization layer with a real consequence-gateway core and modular packs, but not every pack or supporting slice is equally mature.**
 
 ## Current Work Posture
 

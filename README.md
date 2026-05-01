@@ -21,7 +21,7 @@ Attestor does not replace the model, agent runtime, wallet, custody platform, or
 
 ## Current Status
 
-Attestor is currently an **evaluation release**: reviewer-runnable, CI-backed, and useful for technical evaluation. It demonstrates the AI action authorization model, consequence-gateway proof artifacts, finance wedge, crypto extension surfaces, and current fail-closed boundaries.
+Attestor is currently an **evaluation release**: reviewer-runnable, CI-backed, and useful for technical evaluation. It demonstrates the AI action authorization model, consequence-gateway proof artifacts, consequence-pack surfaces, finance proof wedge, programmable-money extension surfaces, and current fail-closed boundaries.
 
 It is not a finished public SaaS, a production-use guarantee, a completed customer-operated deployment, or a substitute for an external security audit.
 
@@ -53,17 +53,23 @@ Use it where an AI-assisted system should not be able to act just because it can
 
 The posture is fail-closed. If policy, authority, evidence, freshness, scope, or verification cannot close, the consequence does not proceed silently.
 
-## Start In Shadow Mode
+## Start Without Blocking
 
 Teams do not need to begin by blocking production workflows.
 
-Attestor can start as a shadow control point: it receives proposed AI actions, computes what it would have admitted, narrowed, reviewed, or blocked, and exposes the gaps before enforcement is turned on.
+Attestor can start in `observe` or `warn` mode. It receives proposed AI actions, computes what would have been admitted, narrowed, reviewed, or blocked, and lets the customer measure risk and review load before switching to `review` or `enforce`.
+
+```text
+observe -> warn -> review -> enforce
+```
+
+The adoption path stays explicit:
 
 ```text
 observe -> recommend -> simulate -> approve -> enforce -> prove
 ```
 
-Shadow mode is for discovering the real action surface:
+Shadow mode is for discovering the real action surface before asking production workflows to stop:
 
 - which high-risk AI actions exist
 - which actions have no policy
@@ -71,7 +77,7 @@ Shadow mode is for discovering the real action surface:
 - which actions would create review load
 - which consequences would have been blocked before execution
 
-The current generic admission route implements the first control ladder for this path: `observe`, `warn`, `review`, and `enforce`. Recommendation, simulation, and reporting surfaces build on top of that ladder; they should make enforcement easier to approve before a workflow is asked to stop.
+The current generic admission route implements the first control ladder for this path. Recommendation, simulation, and reporting surfaces build on top of that ladder; they should make enforcement easier to approve before a workflow is asked to stop.
 
 ## Why It Exists
 
@@ -140,6 +146,27 @@ POST /api/v1/admissions
 
 It accepts an explicit consequence domain and adoption mode: `observe`, `warn`, `review`, or `enforce`. This is the route-level entry point for the shadow-to-enforcement ladder described above.
 
+Minimal request shape:
+
+```json
+{
+  "mode": "observe",
+  "actor": "support-ai-agent",
+  "action": "issue_refund",
+  "domain": "money-movement",
+  "downstreamSystem": "refund-service",
+  "amount": {
+    "value": 38000,
+    "currency": "HUF"
+  },
+  "evidenceRefs": [
+    "order:987",
+    "payment:456"
+  ],
+  "policyRef": "policy:refunds:v1"
+}
+```
+
 ## Decision Model
 
 Attestor never returns an open-ended "looks good." It returns one of four bounded outcomes:
@@ -202,7 +229,7 @@ See [AI-assisted financial reporting acceptance](docs/01-overview/financial-repo
 
 Attestor packs are organized by the type of consequence an AI action can create, not by the industry the customer happens to be in.
 
-A pack does not answer "is this finance or crypto?" It answers a colder question:
+A pack does not answer "is this finance or crypto?" It answers the control question:
 
 ```text
 What real system consequence is this AI action trying to create?

@@ -179,7 +179,13 @@ proposed consequence
   -> downstream verification
 ```
 
+The [consequence taxonomy](docs/02-architecture/consequence-taxonomy.md) names the domains this path is meant to control: financial records, money movement, programmable money, data disclosure, authority change, external communication, regulated filing, system operation, decision support, and custom customer-defined surfaces.
+
 The consequence-admission core gives every pack the same public language: `admit`, `narrow`, `review`, or `block`. Finance, crypto, data export, authority change, and future packs should not invent their own trust story. They attach to the same admission model.
+
+The [downstream enforcement contract](docs/02-architecture/downstream-enforcement-contract.md) defines what customer systems must bind before acting on an admission: admission id, digest, decision, consequence domain, consequence kind, risk class, downstream system, policy scope, proof, idempotency, and `narrow` constraints. This is where the gateway stops being advice.
+
+The [verifier helper](docs/02-architecture/verifier-helper.md) is the small customer-side wrapper for that contract. A downstream adapter can call `verify` for a structured hold decision or `assert` to stop execution fail-closed.
 
 The release layer turns a decision into something the rest of the system can inspect: deterministic checks, release tokens, reviewer queues, evidence packs, and proof references. This is where "the AI said so" becomes a bounded release decision.
 
@@ -244,6 +250,9 @@ Start here:
 - [Hosted account visibility](docs/01-overview/hosted-account-visibility.md) - account, usage, and billing visibility
 - [What you can do with Attestor](docs/01-overview/what-you-can-do.md) - longer use-case map
 - [System overview](docs/02-architecture/system-overview.md) - architecture map
+- [Consequence taxonomy](docs/02-architecture/consequence-taxonomy.md) - consequence domains, risk floors, and minimum controls
+- [Downstream enforcement contract](docs/02-architecture/downstream-enforcement-contract.md) - customer-side allow/hold contract before downstream action
+- [Verifier helper](docs/02-architecture/verifier-helper.md) - customer-side verify/assert helper for downstream adapters
 - [Proof console buildout](docs/02-architecture/proof-console-buildout.md) - local proof-surface tracker
 - [Production runtime hardening buildout](docs/02-architecture/production-runtime-hardening-buildout.md) - runtime profile and fail-closed hardening tracker
 - [Production shared authority plane buildout](docs/02-architecture/production-shared-authority-plane-buildout.md) - shared production authority-plane tracker

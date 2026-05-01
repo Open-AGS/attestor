@@ -4,18 +4,19 @@ import {
   type CanonicalReleaseJsonValue,
 } from '../release-kernel/release-canonicalization.js';
 import {
-  CONSEQUENCE_TYPES,
   RISK_CLASSES,
-  ConsequenceType,
   RiskClass,
 } from '../release-kernel/types.js';
 import type {
   CryptoExecutionAdmissionOutcome,
 } from '../crypto-execution-admission/index.js';
 import {
-  CRYPTO_AUTHORIZATION_CONSEQUENCE_KINDS,
-  CryptoAuthorizationConsequenceKind,
-} from '../crypto-authorization-core/types.js';
+  CONSEQUENCE_ADMISSION_CONTROL_REQUIREMENTS,
+  CONSEQUENCE_ADMISSION_DOMAINS,
+  CONSEQUENCE_ADMISSION_KNOWN_CONSEQUENCE_KINDS,
+  CONSEQUENCE_ADMISSION_TAXONOMY,
+  type ConsequenceAdmissionKnownConsequenceKind,
+} from './taxonomy.js';
 
 export const CONSEQUENCE_ADMISSION_CONTRACT_VERSION =
   'attestor.consequence-admission.v1';
@@ -93,29 +94,10 @@ export type ConsequenceAdmissionProofKind =
   typeof CONSEQUENCE_ADMISSION_PROOF_KINDS[number];
 
 export type ConsequenceAdmissionConsequenceKind =
-  | ConsequenceType
-  | CryptoAuthorizationConsequenceKind
-  | 'agent-payment'
-  | 'account-delegation'
-  | 'user-operation'
-  | 'wallet-call'
-  | 'token-approval'
-  | 'custody-withdrawal'
-  | 'intent-settlement'
-  | 'custom';
+  ConsequenceAdmissionKnownConsequenceKind;
 
-const CONSEQUENCE_ADMISSION_EXTRA_CONSEQUENCE_KINDS = [
-  'wallet-call',
-  'token-approval',
-  'intent-settlement',
-  'custom',
-] as const;
-
-const CONSEQUENCE_ADMISSION_CONSEQUENCE_KINDS = Object.freeze([
-  ...CONSEQUENCE_TYPES,
-  ...CRYPTO_AUTHORIZATION_CONSEQUENCE_KINDS,
-  ...CONSEQUENCE_ADMISSION_EXTRA_CONSEQUENCE_KINDS,
-] as const);
+export const CONSEQUENCE_ADMISSION_CONSEQUENCE_KINDS =
+  CONSEQUENCE_ADMISSION_KNOWN_CONSEQUENCE_KINDS;
 
 const CONSEQUENCE_ADMISSION_RISK_CLASSES = Object.freeze([
   ...RISK_CLASSES,
@@ -239,11 +221,16 @@ export interface ConsequenceAdmissionDescriptor {
   readonly version: typeof CONSEQUENCE_ADMISSION_CONTRACT_VERSION;
   readonly decisions: typeof CONSEQUENCE_ADMISSION_DECISIONS;
   readonly packFamilies: typeof CONSEQUENCE_ADMISSION_PACK_FAMILIES;
+  readonly consequenceKinds: typeof CONSEQUENCE_ADMISSION_CONSEQUENCE_KINDS;
+  readonly riskClasses: typeof CONSEQUENCE_ADMISSION_RISK_CLASSES;
   readonly entryPointKinds: typeof CONSEQUENCE_ADMISSION_ENTRY_POINT_KINDS;
   readonly checkKinds: typeof CONSEQUENCE_ADMISSION_CHECK_KINDS;
   readonly checkOutcomes: typeof CONSEQUENCE_ADMISSION_CHECK_OUTCOMES;
   readonly proofKinds: typeof CONSEQUENCE_ADMISSION_PROOF_KINDS;
   readonly nativeSurfaces: typeof CONSEQUENCE_ADMISSION_NATIVE_SURFACES;
+  readonly consequenceDomains: typeof CONSEQUENCE_ADMISSION_DOMAINS;
+  readonly controlRequirements: typeof CONSEQUENCE_ADMISSION_CONTROL_REQUIREMENTS;
+  readonly taxonomy: typeof CONSEQUENCE_ADMISSION_TAXONOMY;
 }
 
 export interface CreateConsequenceAdmissionRequestInput {
@@ -664,14 +651,22 @@ ConsequenceAdmissionDescriptor {
     version: CONSEQUENCE_ADMISSION_CONTRACT_VERSION,
     decisions: CONSEQUENCE_ADMISSION_DECISIONS,
     packFamilies: CONSEQUENCE_ADMISSION_PACK_FAMILIES,
+    consequenceKinds: CONSEQUENCE_ADMISSION_CONSEQUENCE_KINDS,
+    riskClasses: CONSEQUENCE_ADMISSION_RISK_CLASSES,
     entryPointKinds: CONSEQUENCE_ADMISSION_ENTRY_POINT_KINDS,
     checkKinds: CONSEQUENCE_ADMISSION_CHECK_KINDS,
     checkOutcomes: CONSEQUENCE_ADMISSION_CHECK_OUTCOMES,
     proofKinds: CONSEQUENCE_ADMISSION_PROOF_KINDS,
     nativeSurfaces: CONSEQUENCE_ADMISSION_NATIVE_SURFACES,
+    consequenceDomains: CONSEQUENCE_ADMISSION_DOMAINS,
+    controlRequirements: CONSEQUENCE_ADMISSION_CONTROL_REQUIREMENTS,
+    taxonomy: CONSEQUENCE_ADMISSION_TAXONOMY,
   });
 }
 
+export * from './taxonomy.js';
+export * from './downstream-enforcement-contract.js';
+export * from './verifier-helper.js';
 export * from './finance.js';
 export * from './crypto.js';
 export * from './facade.js';

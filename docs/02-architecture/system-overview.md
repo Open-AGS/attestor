@@ -20,6 +20,12 @@ That same pattern spans AI-output release, programmable-money authorization, dat
 
 The customer-facing operating model and decision vocabulary live in [Operating model](../01-overview/operating-model.md). Use that page when deciding how domain-native finance or crypto outcomes map to the shared `admit`, `narrow`, `review`, and `block` language.
 
+The consequence domain vocabulary lives in [Consequence taxonomy](consequence-taxonomy.md). Use it when deciding whether a proposed AI action is a financial record, money movement, programmable-money path, data disclosure, authority change, external communication, regulated filing, system operation, decision-support artifact, or custom customer surface.
+
+The customer-side allow/hold contract lives in [Downstream enforcement contract](downstream-enforcement-contract.md). Use it when deciding what a downstream payment adapter, wallet adapter, record writer, message sender, action dispatcher, or HTTP handler must bind before it acts on an Attestor admission.
+
+The practical customer-side helper lives in [Verifier helper](verifier-helper.md). Use it when wiring an adapter that should call `verify` or `assert` before a downstream system acts.
+
 ## Shared Platform Core
 
 The platform core is made of reusable layers:
@@ -60,6 +66,12 @@ Today the two most important packs are:
 - **crypto pack**: the active programmable-money extension
 
 Future packs should start from the same consequence boundary. A pack is not a new product identity; it is a domain-specific way to answer whether a proposed AI-driven consequence may proceed.
+
+The taxonomy comes before the pack. A pack may add native adapters and evidence formats, but the first classification is still the proposed consequence and the controls required before it reaches a downstream system.
+
+The downstream contract comes before execution. A downstream integration should not act on an Attestor response until the admission id, digest, decision, consequence domain, downstream system, policy scope, proof, replay/idempotency binding, and any `narrow` constraints match the customer enforcement point.
+
+The verifier helper packages that rule into a small customer-side API. It does not replace signed release-token verification; it gives the downstream adapter a consistent fail-closed check before it enters the stronger release-enforcement plane or the customer-owned execution layer.
 
 ## Finance Pack
 

@@ -34,6 +34,10 @@ Attestor owns the control point before consequence:
 - fail-closed gate semantics
 - later verification path
 
+For the shared consequence-domain vocabulary behind these examples, see [Consequence taxonomy](../02-architecture/consequence-taxonomy.md).
+For the customer-side allow/hold binding before downstream execution, see [Downstream enforcement contract](../02-architecture/downstream-enforcement-contract.md).
+For the small adapter-side verify/assert wrapper, see [Verifier helper](../02-architecture/verifier-helper.md).
+
 ## Start With The Smallest Useful Path
 
 For local evaluation:

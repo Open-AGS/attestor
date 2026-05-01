@@ -5,6 +5,9 @@ Use this page as the shortest internal orientation note.
 For the public product framing, use the [README](../../README.md).
 For the customer-facing operating model, use [Operating model](operating-model.md).
 For the architecture map, use [System overview](../02-architecture/system-overview.md).
+For the consequence domain vocabulary, use [Consequence taxonomy](../02-architecture/consequence-taxonomy.md).
+For the customer-side allow/hold binding, use [Downstream enforcement contract](../02-architecture/downstream-enforcement-contract.md).
+For the customer-side verify/assert helper, use [Verifier helper](../02-architecture/verifier-helper.md).
 For commercial packaging, use [Commercial packaging, pricing, and evaluation](product-packaging.md).
 
 ## Current Repository Truth
@@ -41,6 +44,12 @@ Attestor is an AI consequence gateway.
 It is used when a customer-controlled system has a proposed output, record, communication, action, filing-like artifact, data export, authority change, infrastructure change, or programmable-money execution path that should not proceed on informal trust.
 
 The customer system calls Attestor before the downstream system writes, sends, files, executes, signs, broadcasts, settles, or routes the consequence. Attestor evaluates policy, authority, evidence, freshness, and enforcement posture, then returns a bounded decision and proof material.
+
+The consequence taxonomy names the domains behind that boundary: financial records, money movement, programmable money, data disclosure, authority change, external communication, regulated filing, system operation, decision support, and custom customer surfaces.
+
+The downstream enforcement contract names what a customer enforcement point must bind before it acts: admission id, digest, decision, consequence domain, downstream system, policy scope, proof, idempotency, and any `narrow` constraints.
+
+The verifier helper packages that contract into a small customer-side API for adapters that should stop fail-closed before calling a payment rail, wallet adapter, record writer, message sender, admin plane, or operations system.
 
 The canonical customer-facing decision vocabulary is `admit`, `narrow`, `review`, or `block`. Domain-native surfaces may still expose older values, such as the finance hosted route's `pass` allow branch or the crypto package's `needs-evidence` review branch; [Operating model](operating-model.md) owns that mapping.
 

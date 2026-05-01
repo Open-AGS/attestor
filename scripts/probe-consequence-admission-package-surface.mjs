@@ -36,6 +36,34 @@ assert.equal(
   'attestor/crypto-execution-admission',
 );
 assert.equal(
+  admission.consequenceAdmissionDescriptor().consequenceDomains.includes('programmable-money'),
+  true,
+);
+assert.equal(
+  admission.consequenceAdmissionDomainProfile('money-movement').controlRequirements.includes(
+    'non-bypassable-integration',
+  ),
+  true,
+);
+assert.equal(
+  admission.consequenceAdmissionDownstreamContractDescriptor().bindingFields.includes(
+    'idempotency-key',
+  ),
+  true,
+);
+assert.equal(
+  typeof admission.evaluateConsequenceAdmissionDownstreamContract,
+  'function',
+);
+assert.equal(
+  admission.consequenceAdmissionVerifierHelperDescriptor().cryptographicTokenVerification,
+  false,
+);
+assert.equal(
+  typeof admission.createConsequenceAdmissionVerifier,
+  'function',
+);
+assert.equal(
   admission.financePipelineAdmissionDescriptor().route,
   '/api/v1/pipeline/run',
 );

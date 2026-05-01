@@ -1,5 +1,7 @@
 # Attestor
 
+![Attestor: proof before consequence](docs/assets/attestor-readme-hero.png)
+
 AI is already taking actions.
 
 Attestor makes sure those actions don't become real without control.
@@ -16,8 +18,6 @@ Without Attestor, AI actions can become real by default.
 With Attestor, nothing becomes real unless it is allowed.
 
 Attestor does not replace your system. It sits in front of it, controlling what is allowed to become real.
-
-![Attestor platform flow: proof before consequence](docs/assets/attestor-platform-flow.png)
 
 > [!NOTE]
 > This repository is source-available under Business Source License 1.1. Non-production use is allowed. Production use requires a commercial license until the Change Date in [LICENSE](LICENSE).

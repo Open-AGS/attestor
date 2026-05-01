@@ -43,7 +43,8 @@ function testSecurityPolicyKeepsReportingPathHonest(): void {
 function testReadmePinsReviewerAndSecurityEntry(): void {
   const readme = readProjectFile('README.md');
 
-  includes(readme, 'Start reviewer evaluation with the [Attestor Evaluation Packet v0.1]', 'Security baseline: README pins reviewer entry near the top');
+  includes(readme, 'Start review with:', 'Security baseline: README pins reviewer entry near the top');
+  includes(readme, '[Attestor Evaluation Packet v0.1](docs/00-evaluation/v0.1-evaluation-packet.md)', 'Security baseline: README links the evaluation packet near the top');
   includes(readme, '[Security Policy](SECURITY.md)', 'Security baseline: README links the security policy');
   includes(readme, '[Evaluation Smoke workflow](.github/workflows/evaluation-smoke.yml)', 'Security baseline: README links the current CI reviewer path');
   includes(readme, '[Artifact attestation plan](docs/08-deployment/artifact-attestation-plan.md)', 'Security baseline: README links the provenance plan');

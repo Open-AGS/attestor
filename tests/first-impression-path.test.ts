@@ -40,6 +40,7 @@ function testReadmeHasAFirstImpressionPath(): void {
   includes(readme, 'AI Action Authorization Layer.', 'README: opens with the AI action authorization category');
   includes(readme, 'The trust boundary is not the model response. The trust boundary is the action that reaches a real system.', 'README: frames the risk before architecture');
   includes(readme, 'Attestor sits at that boundary.', 'README: explains placement before architecture');
+  includes(readme, 'Start in shadow mode. See what your AI agents would have done before you let them act.', 'README: makes shadow mode visible immediately');
   includes(readme, 'It is the authorization layer before a proposed AI action becomes a real-world consequence.', 'README: keeps the gate framing cold and direct');
   includes(readme, 'If policy, authority, evidence, freshness, scope, or verification cannot close, the consequence does not proceed silently.', 'README: explains the fail-closed gateway result');
   includes(readme, 'Attestor does not replace the model, agent runtime, wallet, custody platform, orchestration layer, or downstream system.', 'README: keeps replacement non-claim near the top');
@@ -47,6 +48,8 @@ function testReadmeHasAFirstImpressionPath(): void {
   includes(readme, 'not a finished public SaaS', 'README: avoids public SaaS overclaim');
   includes(readme, '## What Attestor Does', 'README: names the operating model before architecture');
   includes(readme, 'AI proposes -> Attestor admits / narrows / reviews / blocks -> allowed consequences proceed -> proof remains', 'README: explains the control flow in one line');
+  includes(readme, '## Start In Shadow Mode', 'README: exposes shadow mode as the adoption path');
+  includes(readme, 'observe -> recommend -> simulate -> approve -> enforce -> prove', 'README: explains shadow-to-enforcement sequence');
   includes(readme, '## Why It Exists', 'README: explains the category before architecture');
   includes(readme, 'AI action authorization infrastructure', 'README: positions Attestor as infrastructure, not a generic tool');
   includes(readme, '## Try It In 60 Seconds', 'README: exposes a fast first run near the top');
@@ -66,6 +69,7 @@ function testReadmeHasAFirstImpressionPath(): void {
   includes(readme, 'Attestor is designed as a control point, not a data lake.', 'README: explains data handling posture early');
   includes(readme, '[Try Attestor first](docs/01-overview/try-attestor-first.md)', 'README: links to the guided first run');
   appearsBefore(readme, '## Current Status', '## Architecture: Core And Packs', 'README: keeps evaluation boundary before architecture');
+  appearsBefore(readme, '## Start In Shadow Mode', '## Why It Exists', 'README: positions shadow mode before deeper category explanation');
   appearsBefore(readme, '## Try It In 60 Seconds', '## Architecture: Core And Packs', 'README: keeps the runnable path before product packaging');
   appearsBefore(readme, '## Consequence Packs', '## Architecture: Core And Packs', 'README: names consequence packs before architecture detail');
   appearsBefore(readme, 'npm run proof:surface', '## Architecture: Core And Packs', 'README: keeps proof inspection before platform packaging');

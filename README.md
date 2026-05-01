@@ -8,6 +8,8 @@ Attestor is the authorization layer for AI actions before they become consequenc
 
 Models propose actions. Systems change state. Attestor authorizes the gap between them.
 
+Start in shadow mode. See what your AI agents would have done before you let them act.
+
 AI systems now reach tools that write to ledgers, CRMs, filing paths, wallets, ticketing systems, databases, and deployment pipelines. A bad answer can be corrected. A bad consequence has to be unwound. The trust boundary is not the model response. The trust boundary is the action that reaches a real system.
 
 Attestor sits at that boundary. A model, agent, workflow, wallet, or application proposes an action; Attestor admits it, narrows it, sends it to review, or blocks it before the downstream system writes, sends, files, settles, grants access, releases data, or executes.
@@ -50,6 +52,26 @@ Use it where an AI-assisted system should not be able to act just because it can
 - an operations agent proposes a deploy, secret rotation, incident action, or infrastructure change
 
 The posture is fail-closed. If policy, authority, evidence, freshness, scope, or verification cannot close, the consequence does not proceed silently.
+
+## Start In Shadow Mode
+
+Teams do not need to begin by blocking production workflows.
+
+Attestor can start as a shadow control point: it receives proposed AI actions, computes what it would have admitted, narrowed, reviewed, or blocked, and exposes the gaps before enforcement is turned on.
+
+```text
+observe -> recommend -> simulate -> approve -> enforce -> prove
+```
+
+Shadow mode is for discovering the real action surface:
+
+- which high-risk AI actions exist
+- which actions have no policy
+- which downstream tools have too much authority
+- which actions would create review load
+- which consequences would have been blocked before execution
+
+The current generic admission route implements the first control ladder for this path: `observe`, `warn`, `review`, and `enforce`. Recommendation, simulation, and reporting surfaces build on top of that ladder; they should make enforcement easier to approve before a workflow is asked to stop.
 
 ## Why It Exists
 
@@ -116,7 +138,7 @@ The first generic hosted action-authorization route is:
 POST /api/v1/admissions
 ```
 
-It accepts an explicit consequence domain and adoption mode: `observe`, `warn`, `review`, or `enforce`. `observe` and `warn` show what Attestor would have done before a team turns on enforcement; `review` and `enforce` hold or block incomplete consequences before downstream execution.
+It accepts an explicit consequence domain and adoption mode: `observe`, `warn`, `review`, or `enforce`. This is the route-level entry point for the shadow-to-enforcement ladder described above.
 
 ## Decision Model
 

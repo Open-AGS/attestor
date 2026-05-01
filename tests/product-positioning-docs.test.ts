@@ -30,6 +30,10 @@ function testTopLevelPositioningStaysAligned(): void {
   const useCases = readProjectFile('docs', '01-overview', 'what-you-can-do.md');
 
   includes(readme, 'Attestor is the authorization layer for AI actions before they become consequences.', 'Product docs: README keeps action authorization framing');
+  includes(readme, 'Start in shadow mode. See what your AI agents would have done before you let them act.', 'Product docs: README makes shadow mode the adoption wedge');
+  includes(readme, 'observe -> recommend -> simulate -> approve -> enforce -> prove', 'Product docs: README keeps the shadow-to-enforcement path');
+  includes(readme, 'The current generic admission route implements the first control ladder for this path: `observe`, `warn`, `review`, and `enforce`.', 'Product docs: README bounds implemented shadow ladder');
+  includes(readme, 'This is the route-level entry point for the shadow-to-enforcement ladder described above.', 'Product docs: README avoids repeating the route mode explanation');
   includes(readme, 'Attestor is one product with a shared AI action authorization core and modular packs for specific consequence domains.', 'Product docs: README keeps one-product framing');
   includes(readme, 'AI action authorization infrastructure', 'Product docs: README names the infrastructure category');
   includes(readme, '## Consequence Packs', 'Product docs: README names consequence packs before architecture');
@@ -38,7 +42,8 @@ function testTopLevelPositioningStaysAligned(): void {
   includes(actionPositioning, 'AI action authorization is the market category.', 'Product docs: action authorization positioning names the category');
   includes(actionPositioning, 'AI Consequence Gateway is the Attestor operating model.', 'Product docs: action authorization positioning preserves consequence-gateway language');
   includes(actionPositioning, 'This is the pack language.', 'Product docs: action authorization positioning names consequence-class pack language');
-  includes(actionPositioning, 'observe -> recommend -> simulate -> approve -> enforce', 'Product docs: action authorization positioning keeps shadow mode adoption path');
+  includes(actionPositioning, 'observe -> recommend -> simulate -> approve -> enforce -> prove', 'Product docs: action authorization positioning keeps shadow mode adoption path');
+  includes(actionPositioning, 'Current implementation note: `POST /api/v1/admissions` already has the first mode ladder', 'Product docs: action authorization positioning bounds shadow implementation');
   includes(purpose, 'Attestor is one product:', 'Product docs: purpose keeps one-product framing');
   includes(systemOverview, 'Attestor should be understood as one product:', 'Product docs: system overview keeps one-product framing');
   includes(packaging, 'Attestor is one product:', 'Product docs: packaging keeps one-product framing');

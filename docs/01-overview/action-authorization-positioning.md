@@ -70,7 +70,7 @@ Do not describe this as automatic learning or autonomous policy creation. In ent
 Use this path instead:
 
 ```text
-observe -> recommend -> simulate -> approve -> enforce
+observe -> recommend -> simulate -> approve -> enforce -> prove
 ```
 
 The intended product motion is:
@@ -110,6 +110,14 @@ The near-term MVP should be cut into small product PRs:
 5. dashboard and API summary
 
 That sequence keeps adoption low-risk: first visibility, then recommended policy, then simulated impact, then approved enforcement.
+
+The README should expose this adoption path near the top. The first impression should not make teams think they must start by blocking production workflows. The stronger message is:
+
+```text
+Start in shadow mode. See what your AI agents would have done before you let them act.
+```
+
+Current implementation note: `POST /api/v1/admissions` already has the first mode ladder: `observe`, `warn`, `review`, and `enforce`. Recommendation, simulation, summary, and dashboard surfaces should build on that ladder without claiming autonomous policy learning.
 
 ## Why This Shift Matters
 

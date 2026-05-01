@@ -1,6 +1,7 @@
 import type { Context, Hono } from 'hono';
 import {
   createConsequenceAdmissionProblem,
+  createActionRiskInventory,
   createShadowSummarySurface,
   type ShadowAdmissionEvent,
   type ShadowPolicySimulationReport,
@@ -44,6 +45,7 @@ function safeShadowSummary(c: Context, deps: ShadowRouteDeps) {
 
     return {
       tenant,
+      events,
       surface,
     };
   } catch (error) {
@@ -90,6 +92,19 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
       recommendations: result.surface.recommendations,
       latestSimulationDigest: result.surface.latestSimulation?.digest ?? null,
       source: 'shadow-summary',
+    });
+  });
+
+  app.get('/api/v1/shadow/action-risk-inventory', (c) => {
+    const result = safeShadowSummary(c, deps);
+    if (result instanceof Response) return result;
+
+    return c.json({
+      tenant: tenantSummary(result.tenant),
+      ...createActionRiskInventory({
+        events: result.events,
+        generatedAt: deps.now?.() ?? null,
+      }),
     });
   });
 }

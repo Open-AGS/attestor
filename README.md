@@ -81,6 +81,23 @@ Example decision payload:
 
 Allowed paths can also carry proof refs such as `certificate:...` and `verification-kit:...` for later verification.
 
+## Try it in 60 seconds
+
+```bash
+npm install
+npm run example:admission
+```
+
+What you'll see:
+
+- one path is admitted with proof references
+- one path is blocked fail-closed
+- the downstream gate only proceeds when the decision allows it
+
+For the guided first run, see [Try Attestor first](docs/01-overview/try-attestor-first.md).
+For an outside-review packet that explains what to run and what is proven, see [Attestor Evaluation Packet v0.1](docs/00-evaluation/v0.1-evaluation-packet.md).
+For the current evaluation release boundary and known limitations, see [v0.1.2-evaluation release notes](docs/00-evaluation/v0.1.2-evaluation-release-notes.md).
+
 ## Proof
 
 Every allowed or blocked action can produce verifiable decision output.
@@ -93,6 +110,23 @@ This includes:
 - verification references when available
 
 Proof can be stored, audited, and independently verified later.
+
+To inspect the shared finance/crypto proof surface locally:
+
+```bash
+npm run proof:surface
+```
+
+That command writes `.attestor/proof-surface/latest/` with a manifest, machine-readable bundle, markdown summary, and one unified proof output per runnable scenario. It is a local static proof surface; it does not start a hosted console or claim a public hosted crypto route.
+
+Shortest signed-proof path:
+
+```bash
+npm run showcase:proof
+npm run verify:cert -- .attestor/showcase/latest/evidence/kit.json
+```
+
+That path generates a local PostgreSQL-backed proof packet, then verifies the resulting kit outside the main runtime. Without a live upstream model, `verify:cert` reports `PROOF_DEGRADED` and exits non-zero by design; the full local release gate remains `npm run verify`.
 
 ## Data and security posture
 
@@ -123,22 +157,6 @@ This repository is an evaluation release. Production data handling depends on th
 
 For the longer use-case map, see [What you can do with Attestor](docs/01-overview/what-you-can-do.md).
 
-## Try it in 60 seconds
-
-```bash
-npm install
-npm run example:admission
-```
-
-What you'll see:
-
-- one path is admitted with proof references
-- one path is blocked fail-closed
-- the downstream gate only proceeds when the decision allows it
-
-For the guided first run, see [Try Attestor first](docs/01-overview/try-attestor-first.md).
-For an outside-review packet that explains what to run and what is proven, see [Attestor Evaluation Packet v0.1](docs/00-evaluation/v0.1-evaluation-packet.md).
-For the current evaluation release boundary and known limitations, see [v0.1.2-evaluation release notes](docs/00-evaluation/v0.1.2-evaluation-release-notes.md).
 For the first customer-side enforcement step, see [Customer admission gate](docs/01-overview/customer-admission-gate.md).
 For copyable placement recipes, see [Customer integration recipes](docs/01-overview/customer-integration-recipes.md).
 
@@ -230,27 +248,6 @@ Need to know where current plan, usage, billing, and entitlements live? See [Hos
 | Crypto | real programmable-money core on the same model, with packaged admission surfaces for external integrations | authorization and execution-admission surfaces packaged for evaluation |
 
 The crypto pack already covers the authorization core and execution-admission surfaces, including wallet RPC, Safe guard, ERC-4337 bundler, modular-account runtime, delegated-EOA runtime, x402 resource-server middleware, custody policy callback paths, intent-solver handoffs, uniform admission telemetry / signed receipts, JSON conformance fixtures, and a curated package surface for external integrators. It extends the same Attestor control model; it is not a separate product identity.
-
-## Proof and verification
-
-Attestor does not stop at policy text. It produces portable proof material and supports independent verification.
-
-To inspect the shared finance/crypto proof surface locally:
-
-```bash
-npm run proof:surface
-```
-
-That command writes `.attestor/proof-surface/latest/` with a manifest, machine-readable bundle, markdown summary, and one unified proof output per runnable scenario. It is a local static proof surface; it does not start a hosted console or claim a public hosted crypto route.
-
-Shortest proof path:
-
-```bash
-npm run showcase:proof
-npm run verify:cert -- .attestor/showcase/latest/evidence/kit.json
-```
-
-That path generates a local PostgreSQL-backed proof packet, then verifies the resulting kit outside the main runtime. Without a live upstream model, `verify:cert` reports `PROOF_DEGRADED` and exits non-zero by design; the full local release gate remains `npm run verify`.
 
 For tagged evaluation releases, the separate [Release Provenance workflow](.github/workflows/release-provenance.yml) packages the review artifacts and publishes a GitHub artifact attestation for the resulting `evaluation-artifacts.tar.gz` bundle. Scope and non-claims are in [Artifact attestation plan](docs/08-deployment/artifact-attestation-plan.md).
 

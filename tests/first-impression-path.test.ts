@@ -22,6 +22,18 @@ function excludes(content: string, unexpected: RegExp, message: string): void {
   passed += 1;
 }
 
+function appearsBefore(content: string, earlier: string, later: string, message: string): void {
+  const earlierIndex = content.indexOf(earlier);
+  const laterIndex = content.indexOf(later);
+  assert.ok(earlierIndex >= 0, `${message}\nMissing earlier marker: ${earlier}`);
+  assert.ok(laterIndex >= 0, `${message}\nMissing later marker: ${later}`);
+  assert.ok(
+    earlierIndex < laterIndex,
+    `${message}\nExpected "${earlier}" to appear before "${later}"`,
+  );
+  passed += 1;
+}
+
 function testReadmeHasAFirstImpressionPath(): void {
   const readme = readProjectFile('README.md');
 
@@ -40,7 +52,12 @@ function testReadmeHasAFirstImpressionPath(): void {
   includes(readme, 'one path is admitted with proof references', 'README: explains admitted proof refs');
   includes(readme, 'one path is blocked fail-closed', 'README: explains blocked fail-closed path');
   includes(readme, 'the downstream gate only proceeds when the decision allows it', 'README: explains downstream gate behavior');
+  includes(readme, 'npm run proof:surface', 'README: exposes the proof surface command near the first proof explanation');
+  includes(readme, 'Attestor is designed as a control point, not a data lake.', 'README: explains data handling posture early');
   includes(readme, '[Try Attestor first](docs/01-overview/try-attestor-first.md)', 'README: links to the guided first run');
+  appearsBefore(readme, '## Try it in 60 seconds', '## One product, modular packs', 'README: keeps the runnable path before product packaging');
+  appearsBefore(readme, 'npm run proof:surface', '## One product, modular packs', 'README: keeps proof inspection before platform packaging');
+  appearsBefore(readme, '## Data and security posture', '## One product, modular packs', 'README: explains trust boundaries before platform packaging');
 }
 
 function testTryFirstDocKeepsTheBoundaryHonest(): void {

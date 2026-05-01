@@ -1,4 +1,5 @@
 import type { Hono } from 'hono';
+import { createShadowAdmissionEvent } from '../../consequence-admission/index.js';
 import { registerAccountRoutes } from '../http/routes/account-routes.js';
 import { registerAdminRoutes } from '../http/routes/admin-routes.js';
 import { registerCoreRoutes } from '../http/routes/core-routes.js';
@@ -15,6 +16,7 @@ import {
   type ShadowRouteDeps,
 } from '../http/routes/shadow-routes.js';
 import { registerWebhookRoutes } from '../http/routes/webhook-routes.js';
+import { createFileBackedShadowAdmissionEventStore } from '../shadow-persistence-store.js';
 import { installProductionSharedRequestGuard } from './production-shared-request-guard.js';
 import type { AppRuntime } from './runtime.js';
 
@@ -41,17 +43,28 @@ export function createPipelineRouteDeps<Packet>(runtime: AppRuntime<Packet>) {
 export function createGenericAdmissionRouteDeps<Packet>(
   runtime: AppRuntime<Packet>,
 ): GenericAdmissionRouteDeps {
+  const shadowEventStore = createFileBackedShadowAdmissionEventStore();
   return {
     currentTenant: runtime.services.httpRoutes.pipeline.currentTenant,
+    recordShadowAdmission: ({ tenant, envelope }) => {
+      shadowEventStore.append({
+        tenantId: tenant.tenantId,
+        event: createShadowAdmissionEvent({
+          admission: envelope,
+        }),
+      });
+    },
   };
 }
 
 export function createShadowRouteDeps<Packet>(
   runtime: AppRuntime<Packet>,
 ): ShadowRouteDeps {
+  const shadowEventStore = createFileBackedShadowAdmissionEventStore();
   return {
     currentTenant: runtime.services.httpRoutes.pipeline.currentTenant,
-    listShadowEvents: () => [],
+    listShadowEvents: ({ tenant }) =>
+      shadowEventStore.list({ tenantId: tenant.tenantId }).events,
     listShadowSimulations: () => [],
   };
 }

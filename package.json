@@ -109,6 +109,7 @@
     "test:shadow-summary-routes": "tsx tests/shadow-summary-routes.test.ts",
     "test:action-risk-inventory": "tsx tests/action-risk-inventory.test.ts",
     "test:policy-discovery-candidates": "tsx tests/policy-discovery-candidates.test.ts",
+    "test:shadow-persistence-store": "tsx tests/shadow-persistence-store.test.ts",
     "test:consequence-taxonomy": "tsx tests/consequence-taxonomy.test.ts",
     "test:downstream-enforcement-contract": "tsx tests/downstream-enforcement-contract.test.ts",
     "test:consequence-verifier-helper": "tsx tests/consequence-verifier-helper.test.ts",

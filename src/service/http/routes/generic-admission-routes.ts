@@ -2,11 +2,16 @@ import type { Context, Hono } from 'hono';
 import {
   createConsequenceAdmissionProblem,
   createGenericAdmissionEnvelope,
+  type GenericAdmissionEnvelope,
 } from '../../../consequence-admission/index.js';
 import type { TenantContext } from '../../tenant-isolation.js';
 
 export interface GenericAdmissionRouteDeps {
   currentTenant(context: Context): TenantContext;
+  recordShadowAdmission?(input: {
+    readonly tenant: TenantContext;
+    readonly envelope: GenericAdmissionEnvelope;
+  }): void;
 }
 
 function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
@@ -47,9 +52,27 @@ export function registerGenericAdmissionRoutes(
 
     try {
       const tenant = deps.currentTenant(c);
-      return c.json(createGenericAdmissionEnvelope(
+      const envelope = createGenericAdmissionEnvelope(
         admissionPayloadWithTenant(payload, tenant),
-      ));
+      );
+      try {
+        deps.recordShadowAdmission?.({ tenant, envelope });
+      } catch (error) {
+        const detail =
+          error instanceof Error
+            ? error.message
+            : 'The shadow admission event could not be recorded.';
+        const problem = createConsequenceAdmissionProblem({
+          type: 'https://attestor.dev/problems/shadow-recording-unavailable',
+          title: 'Shadow recording unavailable',
+          status: 503,
+          detail,
+          instance: '/api/v1/admissions',
+          reasonCodes: ['shadow-recording-unavailable'],
+        });
+        return c.json(problem, 503);
+      }
+      return c.json(envelope);
     } catch (error) {
       const detail =
         error instanceof Error

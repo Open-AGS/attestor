@@ -49,6 +49,7 @@
 import { Hono } from 'hono';
 import { tenantMiddleware } from './tenant-isolation.js';
 import { createRequestObservabilityMiddleware } from './request-observability-middleware.js';
+import { installHttpProductionEdgeContract } from './http-production-edge-contract.js';
 import { findHostedAccountByTenantIdState } from './control-plane-store.js';
 import { resolveServiceInstanceId } from './high-availability.js';
 import { createApiHttpRouteRuntime } from './bootstrap/api-route-runtime.js';
@@ -65,6 +66,7 @@ const app = new Hono();
 const startTime = Date.now();
 const serviceInstanceId = resolveServiceInstanceId();
 
+installHttpProductionEdgeContract(app);
 
 app.use('/api/*', createRequestObservabilityMiddleware({
   serviceInstanceId,

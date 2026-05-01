@@ -131,6 +131,7 @@
     "test:service-bootstrap-boundary": "tsx tests/service-bootstrap-boundary.test.ts",
     "test:service-core-routes": "tsx tests/service-core-routes.test.ts",
     "test:service-route-boundary": "tsx tests/service-route-boundary.test.ts",
+    "test:http-production-edge-contract": "tsx tests/http-production-edge-contract.test.ts",
     "test:service-version-alignment": "tsx tests/service-version-alignment.test.ts",
     "test:crypto-execution-admission": "tsx tests/crypto-execution-admission.test.ts",
     "test:crypto-execution-admission-wallet-rpc": "tsx tests/crypto-execution-admission-wallet-rpc.test.ts",

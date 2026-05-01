@@ -14,6 +14,8 @@ function testApiServerUsesBootstrapComposition(): void {
   const apiServer = readFileSync(API_SERVER, 'utf8');
   const apiRouteRuntime = readFileSync(join(BOOTSTRAP_ROOT, 'api-route-runtime.ts'), 'utf8');
 
+  assert.match(apiServer, /from '\.\/http-production-edge-contract\.js'/u);
+  assert.match(apiServer, /installHttpProductionEdgeContract\(app\);/u);
   assert.match(apiServer, /from '\.\/bootstrap\/registries\.js'/u);
   assert.match(apiServer, /from '\.\/bootstrap\/api-route-runtime\.js'/u);
   assert.doesNotMatch(apiServer, /from '\.\/bootstrap\/runtime\.js'/u);

@@ -103,6 +103,7 @@
     "test:generic-admission-mode-ladder": "tsx tests/generic-admission-mode-ladder.test.ts",
     "test:generic-admission-routes": "tsx tests/generic-admission-routes.test.ts",
     "test:shadow-admission-events": "tsx tests/shadow-admission-events.test.ts",
+    "test:shadow-policy-simulation": "tsx tests/shadow-policy-simulation.test.ts",
     "test:consequence-taxonomy": "tsx tests/consequence-taxonomy.test.ts",
     "test:downstream-enforcement-contract": "tsx tests/downstream-enforcement-contract.test.ts",
     "test:consequence-verifier-helper": "tsx tests/consequence-verifier-helper.test.ts",

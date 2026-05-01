@@ -65,6 +65,20 @@ type ReleaseRuntimeRequestPathDiagnostics = {
   sharedComponents: readonly string[];
   blockers: readonly string[];
 };
+type ReleaseSigningProviderDiagnostics = {
+  version: string;
+  kind: string;
+  configuredProvider: string | null;
+  derivedProvider: string;
+  productionProviderRequired: boolean;
+  productionReady: boolean;
+  privateKeyExportable: boolean;
+  signingBoundary: string;
+  rotationManagedBy: string;
+  publicVerificationKeysServedBy: string;
+  pkiPath: string | null;
+  blockers: readonly string[];
+};
 type SharedAuthorityRuntimeReadiness = {
   version: string;
   evaluatedAt: string;
@@ -108,6 +122,7 @@ export interface CoreRouteDeps {
   apiReleaseVerificationKeysPromise: Promise<readonly ReleaseTokenVerificationKey[]>;
   runtimeProfileDiagnostics: RuntimeProfileDiagnostics;
   releaseRuntimeRequestPathDiagnostics: ReleaseRuntimeRequestPathDiagnostics;
+  releaseSigningProvider: ReleaseSigningProviderDiagnostics;
   evaluateSharedAuthorityRuntimeReadiness(input: {
     runtimeProfileId?: string | null;
     requestPathUsesSharedStores?: boolean;
@@ -137,6 +152,7 @@ export function registerCoreRoutes(app: Hono, deps: CoreRouteDeps): void {
     apiReleaseVerificationKeysPromise,
     runtimeProfileDiagnostics,
     releaseRuntimeRequestPathDiagnostics,
+    releaseSigningProvider,
     evaluateSharedAuthorityRuntimeReadiness,
     rlsActivationResult,
   } = deps;
@@ -181,6 +197,7 @@ export function registerCoreRoutes(app: Hono, deps: CoreRouteDeps): void {
         durability: runtimeProfileDiagnostics.durability,
         stores: runtimeProfileDiagnostics.releaseStores,
         requestPath: releaseRuntimeRequestPathDiagnostics,
+        signingProvider: releaseSigningProvider,
       },
       sharedAuthorityRuntime: await evaluateSharedAuthorityRuntimeReadiness({
         runtimeProfileId: runtimeProfileDiagnostics.profile.id,
@@ -241,6 +258,11 @@ export function registerCoreRoutes(app: Hono, deps: CoreRouteDeps): void {
     checks.releaseRuntime = runtimeProfileDiagnostics.durability.ready;
     if (!checks.releaseRuntime) ready = false;
 
+    checks.releaseSigningProvider = releaseSigningProvider.productionProviderRequired
+      ? releaseSigningProvider.productionReady
+      : true;
+    if (!checks.releaseSigningProvider) ready = false;
+
     const sharedAuthorityRuntime = await evaluateSharedAuthorityRuntimeReadiness({
       runtimeProfileId: runtimeProfileDiagnostics.profile.id,
       requestPathUsesSharedStores:
@@ -277,6 +299,7 @@ export function registerCoreRoutes(app: Hono, deps: CoreRouteDeps): void {
         durability: runtimeProfileDiagnostics.durability,
         stores: runtimeProfileDiagnostics.releaseStores,
         requestPath: releaseRuntimeRequestPathDiagnostics,
+        signingProvider: releaseSigningProvider,
       },
       sharedAuthorityRuntime,
       highAvailability,

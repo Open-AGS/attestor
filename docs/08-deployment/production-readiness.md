@@ -71,6 +71,16 @@ That PKI path carries the release-token issuer key material. Restart recovery is
 
 Changing `ATTESTOR_RELEASE_RUNTIME_PKI_ROTATION_ID` in a file-backed runtime explicitly rotates the active release-token signer. The runtime keeps the previous public verification key in `GET /api/v1/release-token/jwks` so already-issued tokens can still be verified by `kid`. This is controlled local/file-backed key lifecycle support; production KMS/HSM-backed rotation, compromise response, and key destruction remain a separate operator control.
 
+Release signing provider truth is now explicit:
+
+```bash
+ATTESTOR_RELEASE_SIGNING_PROVIDER=file-pem
+# or, for the production promotion gate:
+ATTESTOR_REQUIRE_PRODUCTION_RELEASE_SIGNING_PROVIDER=true
+```
+
+`file-pem` is restart-recoverable and useful for evaluation rehearsal, but `/api/v1/health` reports it as `productionReady: false` because the private release signer remains exportable runtime material. `ATTESTOR_RELEASE_SIGNING_PROVIDER=external-kms` currently fails closed because no KMS/HSM-backed signer is implemented yet; this prevents a deployment from claiming external key custody while the runtime still signs with local PEM material. `ATTESTOR_REQUIRE_PRODUCTION_RELEASE_SIGNING_PROVIDER=true` is the promotion guard: it refuses local signing material until a real external provider is wired.
+
 For `production-shared`, do not paper over the gate with file paths. Use it only when the dedicated release-authority PostgreSQL substrate is configured, reachable, and reflected in `/api/v1/ready`.
 
 ```bash

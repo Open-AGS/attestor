@@ -43,6 +43,11 @@ import {
   type RuntimeProfileStartupDiagnostics,
 } from './runtime-profile.js';
 import {
+  assertReleaseSigningProviderAllowed,
+  assertReleaseSigningProviderPreflight,
+  type ReleaseSigningProviderDiagnostics,
+} from './release-signing-provider.js';
+import {
   isReleaseAuthorityStoreConfigured,
   listReleaseAuthorityComponents,
   recordReleaseAuthorityComponentState,
@@ -973,6 +978,7 @@ export interface ReleaseRuntimeBootstrap {
   };
   pki: ReturnType<typeof generatePkiHierarchy>;
   pkiPersistence: ReleaseRuntimePkiPersistence;
+  releaseSigningProvider: ReleaseSigningProviderDiagnostics;
   pkiReady: boolean;
   financeReleaseDecisionLog: RequestPathReleaseDecisionLogWriter;
   apiReleaseReviewerQueueStore: RequestPathReleaseReviewerQueueStore;
@@ -1036,11 +1042,16 @@ export async function createReleaseRuntimeBootstrap(
     mode: releaseAuthorityStoreMode(),
     configured: isReleaseAuthorityStoreConfigured(),
   });
+  assertReleaseSigningProviderPreflight();
   const {
     pki,
     retiredVerificationKeys,
     persistence: pkiPersistence,
   } = resolveReleaseRuntimePki(runtimeProfile);
+  const releaseSigningProvider = assertReleaseSigningProviderAllowed({
+    runtimeProfile,
+    pkiPersistence,
+  });
   const pkiReady = true;
   const financeReleaseDecisionLog =
     sharedAuthorityRequestPath?.financeReleaseDecisionLog ??
@@ -1158,6 +1169,7 @@ export async function createReleaseRuntimeBootstrap(
     releaseAuthorityStore,
     pki,
     pkiPersistence,
+    releaseSigningProvider,
     pkiReady,
     financeReleaseDecisionLog,
     apiReleaseReviewerQueueStore,

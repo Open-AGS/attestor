@@ -2,6 +2,7 @@ import type { Context, Hono } from 'hono';
 import {
   createConsequenceAdmissionProblem,
   createActionRiskInventory,
+  createShadowPolicyDiscoveryCandidates,
   createShadowSummarySurface,
   type ShadowAdmissionEvent,
   type ShadowPolicySimulationReport,
@@ -103,6 +104,19 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
       tenant: tenantSummary(result.tenant),
       ...createActionRiskInventory({
         events: result.events,
+        generatedAt: deps.now?.() ?? null,
+      }),
+    });
+  });
+
+  app.get('/api/v1/shadow/policy-candidates', (c) => {
+    const result = safeShadowSummary(c, deps);
+    if (result instanceof Response) return result;
+
+    return c.json({
+      tenant: tenantSummary(result.tenant),
+      ...createShadowPolicyDiscoveryCandidates({
+        report: result.surface.latestSimulation,
         generatedAt: deps.now?.() ?? null,
       }),
     });

@@ -170,9 +170,52 @@ async function testActionRiskInventoryRouteReturnsDataMinimizedSurfaceList(): Pr
   ok(!text.includes('order:987'), 'Shadow action risk route: raw evidence id is not returned');
 }
 
+async function testPolicyCandidateRouteRequiresApprovalAndRedactsInputs(): Promise<void> {
+  const app = createApp([createEvent()]);
+  const response = await app.request('/api/v1/shadow/policy-candidates');
+  const text = await response.text();
+  const body = JSON.parse(text) as {
+    tenant: { tenantId: string };
+    candidateCount: number;
+    approvalRequired: boolean;
+    autoEnforce: boolean;
+    rawPayloadStored: boolean;
+    candidates: readonly {
+      actionSurface: string | null;
+      action: string;
+      proposedMode: string;
+      approvalRequired: boolean;
+      autoEnforce: boolean;
+      requiredControls: readonly string[];
+    }[];
+  };
+
+  equal(response.status, 200, 'Shadow policy candidates route: valid request returns 200');
+  equal(response.headers.get('cache-control'), 'no-store', 'Shadow policy candidates route: response is no-store');
+  equal(body.tenant.tenantId, 'tenant_shadow', 'Shadow policy candidates route: tenant context is included');
+  equal(body.approvalRequired, true, 'Shadow policy candidates route: approval is required');
+  equal(body.autoEnforce, false, 'Shadow policy candidates route: route never auto-enforces');
+  equal(body.rawPayloadStored, false, 'Shadow policy candidates route: raw payload boundary is explicit');
+  ok(body.candidateCount > 0, 'Shadow policy candidates route: candidates are returned');
+  ok(
+    body.candidates.some((candidate) =>
+      candidate.actionSurface === 'refund-service.issue_refund' &&
+      candidate.action === 'draft-policy' &&
+      candidate.proposedMode === 'observe' &&
+      candidate.approvalRequired &&
+      !candidate.autoEnforce &&
+      candidate.requiredControls.includes('customer-approval')
+    ),
+    'Shadow policy candidates route: policy gap returns approval-required draft candidate',
+  );
+  ok(!text.includes('customer_raw_value_must_not_escape'), 'Shadow policy candidates route: raw recipient is not returned');
+  ok(!text.includes('order:987'), 'Shadow policy candidates route: raw evidence id is not returned');
+}
+
 await testSummaryRouteIsNoStoreAndDataMinimized();
 await testRecommendationsRouteReturnsCompactView();
 await testEmptyShadowRouteIsExplicit();
 await testActionRiskInventoryRouteReturnsDataMinimizedSurfaceList();
+await testPolicyCandidateRouteRequiresApprovalAndRedactsInputs();
 
 console.log(`Shadow summary route tests: ${passed} passed, 0 failed`);

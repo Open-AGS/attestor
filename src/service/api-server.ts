@@ -7,6 +7,7 @@
  * - GET  /api/v1/shadow/summary     — data-minimized shadow adoption summary
  * - GET  /api/v1/shadow/recommendations — shadow policy recommendations
  * - GET  /api/v1/shadow/action-risk-inventory — shadow-discovered action surfaces
+ * - GET  /api/v1/shadow/policy-candidates — approval-required policy discovery candidates
  * - POST /api/v1/pipeline/run-async  — async job submission (returns jobId)
  * - GET  /api/v1/pipeline/status/:id — async job status/result
  * - POST /api/v1/verify              — certificate + PKI chain verification

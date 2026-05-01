@@ -94,6 +94,25 @@ This includes:
 
 Proof can be stored, audited, and independently verified later.
 
+## Data and security posture
+
+Attestor is designed as a control point, not a data lake.
+
+It receives the proposed consequence and the evidence needed to decide whether that consequence may proceed. Customer systems keep ownership of the model, agent, workflow, wallet, database, and downstream execution path. Attestor returns a bounded decision, reasons, and proof references; it does not need to become the system of record for the customer's raw business data.
+
+What the current evaluation baseline already does:
+
+- production-like runtimes disable anonymous tenant fallback for protected routes
+- connector proof paths sanitize connection URLs before exposing them in proof/probe material
+- the PostgreSQL proof connector enforces read-only transactions, statement timeouts, row limits, and schema allowlists when configured
+- CI runs evaluation smoke, CodeQL, dependency review, and high/critical npm audit gates
+
+The default safety posture is fail-closed: if policy, authority, evidence, freshness, or enforcement checks cannot close, the downstream system should hold, review, or block instead of proceeding silently.
+
+Proof and logs are not a place to dump secrets. Access tokens, private keys, database connection strings, payment details, and sensitive personal data should be masked, hashed, encrypted, or kept out unless a deployment deliberately configures otherwise.
+
+This repository is an evaluation release. Production data handling depends on the chosen hosted or customer-operated deployment, including secrets management, retention, logging, access control, and commercial support boundaries. Start with [Security Policy](SECURITY.md), [Production readiness](docs/08-deployment/production-readiness.md), and [v0.1.2-evaluation release notes](docs/00-evaluation/v0.1.2-evaluation-release-notes.md).
+
 ## What you can do with Attestor
 
 - Prevent AI-assisted systems from sending unauthorized payments.

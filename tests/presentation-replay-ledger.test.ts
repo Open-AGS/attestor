@@ -227,8 +227,10 @@ function testFirstConsumeStoresRedactedEntry(): void {
     false,
     'Replay ledger: snapshot does not expose raw replay key',
   );
+  const snapshotText = JSON.stringify(snapshot);
+  const targetNeedle = ['https://payments.example.internal', 'supplier-payments'].join('/');
   equal(
-    JSON.stringify(snapshot).includes('https://payments.example.internal/supplier-payments'),
+    snapshotText.includes(targetNeedle),
     false,
     'Replay ledger: snapshot does not expose raw target URI',
   );

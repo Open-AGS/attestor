@@ -139,8 +139,40 @@ async function testEmptyShadowRouteIsExplicit(): Promise<void> {
   equal(body.recommendations.length, 0, 'Shadow summary route: empty route does not invent recommendations');
 }
 
+async function testActionRiskInventoryRouteReturnsDataMinimizedSurfaceList(): Promise<void> {
+  const app = createApp([createEvent()]);
+  const response = await app.request('/api/v1/shadow/action-risk-inventory');
+  const text = await response.text();
+  const body = JSON.parse(text) as {
+    tenant: { tenantId: string };
+    eventCount: number;
+    surfaceCount: number;
+    rawPayloadStored: boolean;
+    surfaces: readonly {
+      actionSurface: string;
+      riskTier: string;
+      recommendedNextStep: string;
+      gapCounts: { policy: number };
+    }[];
+  };
+
+  equal(response.status, 200, 'Shadow action risk route: valid request returns 200');
+  equal(response.headers.get('cache-control'), 'no-store', 'Shadow action risk route: response is no-store');
+  equal(body.tenant.tenantId, 'tenant_shadow', 'Shadow action risk route: tenant context is included');
+  equal(body.eventCount, 1, 'Shadow action risk route: event count is returned');
+  equal(body.surfaceCount, 1, 'Shadow action risk route: surface count is returned');
+  equal(body.rawPayloadStored, false, 'Shadow action risk route: raw payload boundary is explicit');
+  equal(body.surfaces[0]?.actionSurface, 'refund-service.issue_refund', 'Shadow action risk route: action surface is returned');
+  equal(body.surfaces[0]?.riskTier, 'high', 'Shadow action risk route: policy gap is high risk');
+  equal(body.surfaces[0]?.recommendedNextStep, 'define-policy', 'Shadow action risk route: next step is explicit');
+  equal(body.surfaces[0]?.gapCounts.policy, 1, 'Shadow action risk route: policy gap count is returned');
+  ok(!text.includes('customer_raw_value_must_not_escape'), 'Shadow action risk route: raw recipient is not returned');
+  ok(!text.includes('order:987'), 'Shadow action risk route: raw evidence id is not returned');
+}
+
 await testSummaryRouteIsNoStoreAndDataMinimized();
 await testRecommendationsRouteReturnsCompactView();
 await testEmptyShadowRouteIsExplicit();
+await testActionRiskInventoryRouteReturnsDataMinimizedSurfaceList();
 
 console.log(`Shadow summary route tests: ${passed} passed, 0 failed`);

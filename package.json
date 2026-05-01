@@ -107,6 +107,7 @@
     "test:money-movement-shadow-pack": "tsx tests/money-movement-shadow-pack.test.ts",
     "test:shadow-summary-surface": "tsx tests/shadow-summary-surface.test.ts",
     "test:shadow-summary-routes": "tsx tests/shadow-summary-routes.test.ts",
+    "test:action-risk-inventory": "tsx tests/action-risk-inventory.test.ts",
     "test:consequence-taxonomy": "tsx tests/consequence-taxonomy.test.ts",
     "test:downstream-enforcement-contract": "tsx tests/downstream-enforcement-contract.test.ts",
     "test:consequence-verifier-helper": "tsx tests/consequence-verifier-helper.test.ts",

@@ -1,5 +1,5 @@
 /**
- * Attestor Predictive Guardrails — Pre-Execution Risk Preflight
+ * Attestor Predictive Guardrails - Pre-Execution Risk Preflight
  *
  * Uses PostgreSQL EXPLAIN (FORMAT JSON) to derive bounded risk signals
  * BEFORE actual execution. This is a proactive governance layer:
@@ -49,7 +49,7 @@ export interface PredictivePreflightOptions {
   readonly allowedSchemas?: readonly string[];
 }
 
-// ─── Risk Thresholds ─────────────────────────────────────────────────────────
+// Risk Thresholds
 
 const THRESHOLDS = {
   HIGH_ROW_ESTIMATE: 100000,
@@ -60,7 +60,7 @@ const THRESHOLDS = {
   MAX_NESTED_LOOPS: 3,
 };
 
-// ─── EXPLAIN Analysis ────────────────────────────────────────────────────────
+// EXPLAIN Analysis
 
 interface PlanNode {
   'Node Type': string;
@@ -134,12 +134,12 @@ export function analyzePlan(explainResult: unknown): PredictiveGuardrailResult {
 
     // Sequential scan risk
     if (metrics.sequentialScans > THRESHOLDS.MAX_SEQUENTIAL_SCANS) {
-      signals.push({ signal: 'excessive_sequential_scans', severity: 'warn', detail: `${metrics.sequentialScans} sequential scans detected`, threshold: `≤ ${THRESHOLDS.MAX_SEQUENTIAL_SCANS}`, observed: String(metrics.sequentialScans) });
+      signals.push({ signal: 'excessive_sequential_scans', severity: 'warn', detail: `${metrics.sequentialScans} sequential scans detected`, threshold: `<= ${THRESHOLDS.MAX_SEQUENTIAL_SCANS}`, observed: String(metrics.sequentialScans) });
     }
 
     // Nested loop risk
     if (metrics.nestedLoops > THRESHOLDS.MAX_NESTED_LOOPS) {
-      signals.push({ signal: 'excessive_nested_loops', severity: 'warn', detail: `${metrics.nestedLoops} nested loops detected`, threshold: `≤ ${THRESHOLDS.MAX_NESTED_LOOPS}`, observed: String(metrics.nestedLoops) });
+      signals.push({ signal: 'excessive_nested_loops', severity: 'warn', detail: `${metrics.nestedLoops} nested loops detected`, threshold: `<= ${THRESHOLDS.MAX_NESTED_LOOPS}`, observed: String(metrics.nestedLoops) });
     }
 
     // Determine risk level and recommendation

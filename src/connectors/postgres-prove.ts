@@ -80,7 +80,7 @@ export async function runPostgresProve(sql: string): Promise<PostgresProveResult
 
   // Step 2: Check if preflight denies execution
   if (preflight.recommendation === 'deny') {
-    // Execution was DENIED before it happened — no execution evidence exists
+    // Execution was DENIED before it happened; no execution evidence exists.
     return {
       attempted: true,
       config: { url: sanitizedUrl, timeoutMs: config.statementTimeoutMs ?? 10000, maxRows: config.maxRows ?? 10000, allowedSchemas: config.allowedSchemas ?? [] },
@@ -113,7 +113,7 @@ export async function runPostgresProve(sql: string): Promise<PostgresProveResult
     await attestClient.query('ROLLBACK');
     await attestClient.end();
   } catch {
-    // Schema attestation is best-effort — don't fail the query if it can't be captured
+    // Schema attestation is best-effort; don't fail the query if it can't be captured.
   }
 
   // Step 4: Execute query

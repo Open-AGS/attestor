@@ -105,6 +105,7 @@
     "test:consequence-verifier-helper": "tsx tests/consequence-verifier-helper.test.ts",
     "test:policy-limit-model": "tsx tests/policy-limit-model.test.ts",
     "test:downstream-presentation-binding": "tsx tests/downstream-presentation-binding.test.ts",
+    "test:presentation-replay-ledger": "tsx tests/presentation-replay-ledger.test.ts",
     "test:first-useful-admission-demo": "tsx tests/first-useful-admission-demo.test.ts",
     "test:non-bypassable-gateway-demo": "tsx tests/non-bypassable-gateway-demo.test.ts",
     "test:first-impression-path": "tsx tests/first-impression-path.test.ts",

@@ -10,6 +10,7 @@ For the customer-side allow/hold binding, use [Downstream enforcement contract](
 For the customer-side verify/assert helper, use [Verifier helper](../02-architecture/verifier-helper.md).
 For bounded policy limits, use [Policy limit model](../02-architecture/policy-limit-model.md).
 For final target/body/replay/freshness binding at the customer edge, use [Downstream presentation binding](../02-architecture/downstream-presentation-binding.md).
+For single-use replay consumption at that edge, use [Presentation replay ledger](../02-architecture/presentation-replay-ledger.md).
 For commercial packaging, use [Commercial packaging, pricing, and evaluation](product-packaging.md).
 
 ## Current Repository Truth
@@ -56,6 +57,8 @@ The verifier helper packages that contract into a small customer-side API for ad
 The policy limit model keeps an admission from becoming a broad permission. It carries bounded checks such as amount, velocity, recipient, asset, data scope, authority scope, time window, risk ceiling, and human-review threshold.
 
 The downstream presentation binding keeps an admitted consequence from becoming portable permission. It binds the admission to the exact enforcement point, target, body digest, replay key, nonce, freshness window, proof refs, and acknowledged constraints that are about to reach a real system.
+
+The presentation replay ledger consumes that replay key once and exports only redacted ledger evidence. A customer edge should not call the downstream system until presentation binding and replay consumption both close.
 
 The canonical customer-facing decision vocabulary is `admit`, `narrow`, `review`, or `block`. Domain-native surfaces may still expose older values, such as the finance hosted route's `pass` allow branch or the crypto package's `needs-evidence` review branch; [Operating model](operating-model.md) owns that mapping.
 

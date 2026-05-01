@@ -82,6 +82,16 @@ assert.equal(
   'function',
 );
 assert.equal(
+  admission.consequenceAdmissionPresentationReplayLedgerDescriptor().failureReasons.includes(
+    'replay-key-already-consumed',
+  ),
+  true,
+);
+assert.equal(
+  typeof admission.createConsequenceAdmissionPresentationReplayLedger,
+  'function',
+);
+assert.equal(
   admission.financePipelineAdmissionDescriptor().route,
   '/api/v1/pipeline/run',
 );

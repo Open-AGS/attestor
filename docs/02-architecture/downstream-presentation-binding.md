@@ -126,7 +126,7 @@ The evaluator returns explicit failure reasons:
 - `constraint-acknowledgement-missing`
 - `downstream-contract-held`
 
-The replay ledger itself is not inside this helper. Production systems should keep replay consumption in a shared store at the enforcement boundary. This helper checks the replay facts the enforcement point gives it.
+For single-use replay consumption, see [Presentation replay ledger](presentation-replay-ledger.md). The included ledger is an in-memory reference implementation with redacted entries; production systems should back the same contract with a shared atomic store at the enforcement boundary.
 
 ## Relationship To The Other Layers
 
@@ -134,4 +134,5 @@ The replay ledger itself is not inside this helper. Production systems should ke
 - [Downstream enforcement contract](downstream-enforcement-contract.md) defines which customer enforcement point may act.
 - [Policy limit model](policy-limit-model.md) defines the bounds of the allowed consequence.
 - Presentation binding checks whether the allowed consequence is being shown to the enforcement point in the exact bounded form.
+- [Presentation replay ledger](presentation-replay-ledger.md) consumes the presentation replay key once and keeps redacted evidence of that consumption.
 - The release-enforcement plane performs the deeper cryptographic verification path where signed release tokens and sender-constrained presentations are available.

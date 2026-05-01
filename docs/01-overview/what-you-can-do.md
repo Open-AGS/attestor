@@ -39,6 +39,7 @@ For amount, velocity, scope, allowlist, and review-threshold limits, see [Policy
 For the customer-side allow/hold binding before downstream execution, see [Downstream enforcement contract](../02-architecture/downstream-enforcement-contract.md).
 For the small adapter-side verify/assert wrapper, see [Verifier helper](../02-architecture/verifier-helper.md).
 For target, body, replay, nonce, freshness, proof, and constraint binding at the final customer edge, see [Downstream presentation binding](../02-architecture/downstream-presentation-binding.md).
+For single-use replay consumption with redacted receipts, see [Presentation replay ledger](../02-architecture/presentation-replay-ledger.md).
 
 ## Start With The Smallest Useful Path
 

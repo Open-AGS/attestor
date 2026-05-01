@@ -30,6 +30,8 @@ The shared limit vocabulary lives in [Policy limit model](policy-limit-model.md)
 
 The execution handoff vocabulary lives in [Downstream presentation binding](downstream-presentation-binding.md). Use it when the enforcement point must bind an allowed admission to the exact target, body digest, replay key, nonce, freshness window, proof references, and acknowledged constraints it is about to present to a real system.
 
+The single-use replay consumption shape lives in [Presentation replay ledger](presentation-replay-ledger.md). Use it when a customer enforcement point must consume the presentation replay key once and keep redacted evidence that the key was not reused.
+
 ## Shared Platform Core
 
 The platform core is made of reusable layers:
@@ -80,6 +82,8 @@ The verifier helper packages that rule into a small customer-side API. It does n
 The policy limit model sits before both. It prevents broad "yes" decisions by making the admitted consequence bounded: how much, how often, to whom, over what data, under which authority, in what window, and when human review becomes mandatory.
 
 The presentation binding sits at the last customer-side edge. It prevents an admitted decision from being copied into a different target, body, replay attempt, or enforcement point.
+
+The replay ledger is the consumption step after presentation binding. It turns replay posture from a caller-provided fact into an explicit single-use contract, while keeping raw replay keys, targets, and nonces out of exported entries.
 
 ## Finance Pack
 

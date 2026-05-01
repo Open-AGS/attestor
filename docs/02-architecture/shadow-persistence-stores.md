@@ -163,6 +163,40 @@ productionReady: false
 
 The draft is not a policy bundle, not a deployment, and not a mode switch. It is the review packet that a later customer-controlled policy promotion workflow can consume.
 
+## Policy Promotion Packet
+
+The next surface turns the promotion draft into a policy promotion packet:
+
+```text
+GET /api/v1/shadow/policy-promotion-packet
+GET /api/v1/shadow/policy-promotion-packet?status=activated
+```
+
+The packet carries a policy bundle draft with digest-bound rules:
+
+- source promotion draft digest
+- source simulation report digests
+- candidate digests
+- target mode and suggested validation actions
+- required controls, reason codes, and approval-trail digest
+
+The packet is still deliberately non-enforcing:
+
+```text
+reviewReady: true | false
+activationReady: false
+autoEnforce: false
+productionReady: false
+```
+
+Activation remains blocked until later gates close:
+
+- policy bundle simulation
+- production signing boundary
+- downstream verification binding
+
+This mirrors policy-bundle and admission-control systems that separate recommendation, dry-run, signed bundle distribution, and live enforcement. The packet is a review artifact, not a deployable policy.
+
 ## Why This Shape
 
 This follows the same pattern used by mature control systems:
@@ -181,6 +215,7 @@ shadow decision recorded
 candidate policy/control inferred
 customer approves or rejects
 promotion draft generated for review
+policy promotion packet generated
 only then can enforcement promotion happen
 ```
 

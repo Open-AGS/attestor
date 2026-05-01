@@ -37,10 +37,10 @@ function appearsBefore(content: string, earlier: string, later: string, message:
 function testReadmeHasAFirstImpressionPath(): void {
   const readme = readProjectFile('README.md');
 
-  includes(readme, 'AI Consequence Gateway.', 'README: opens with the AI consequence gateway category');
-  includes(readme, 'The trust boundary is not the model. The trust boundary is the consequence.', 'README: frames the risk before architecture');
+  includes(readme, 'AI Action Authorization Layer.', 'README: opens with the AI action authorization category');
+  includes(readme, 'The trust boundary is not the model response. The trust boundary is the action that reaches a real system.', 'README: frames the risk before architecture');
   includes(readme, 'Attestor sits at that boundary.', 'README: explains placement before architecture');
-  includes(readme, 'It is the admission layer before a proposed AI action becomes a real-world consequence.', 'README: keeps the gate framing cold and direct');
+  includes(readme, 'It is the authorization layer before a proposed AI action becomes a real-world consequence.', 'README: keeps the gate framing cold and direct');
   includes(readme, 'If policy, authority, evidence, freshness, scope, or verification cannot close, the consequence does not proceed silently.', 'README: explains the fail-closed gateway result');
   includes(readme, 'Attestor does not replace the model, agent runtime, wallet, custody platform, orchestration layer, or downstream system.', 'README: keeps replacement non-claim near the top');
   includes(readme, '## Current Status', 'README: exposes the evaluation boundary near the top');
@@ -48,7 +48,7 @@ function testReadmeHasAFirstImpressionPath(): void {
   includes(readme, '## What Attestor Does', 'README: names the operating model before architecture');
   includes(readme, 'AI proposes -> Attestor admits / narrows / reviews / blocks -> allowed consequences proceed -> proof remains', 'README: explains the control flow in one line');
   includes(readme, '## Why It Exists', 'README: explains the category before architecture');
-  includes(readme, 'AI consequence infrastructure', 'README: positions Attestor as infrastructure, not a generic tool');
+  includes(readme, 'AI action authorization infrastructure', 'README: positions Attestor as infrastructure, not a generic tool');
   includes(readme, '## Try It In 60 Seconds', 'README: exposes a fast first run near the top');
   includes(readme, 'npm run example:admission', 'README: shows the first runnable command');
   includes(readme, 'one proposed consequence admitted with proof references', 'README: explains admitted proof refs');
@@ -59,6 +59,8 @@ function testReadmeHasAFirstImpressionPath(): void {
   includes(readme, '## Proof Model', 'README: surfaces proof as a first-class concept near the top');
   includes(readme, 'local proof artifacts that can be reviewed later', 'README: explains why proof matters');
   includes(readme, 'npm run proof:surface', 'README: exposes the proof surface command near the first proof explanation');
+  includes(readme, 'POST /api/v1/admissions', 'README: exposes the generic admission route');
+  includes(readme, '`observe`, `warn`, `review`, or `enforce`', 'README: explains the generic mode ladder');
   includes(readme, 'Attestor is designed as a control point, not a data lake.', 'README: explains data handling posture early');
   includes(readme, '[Try Attestor first](docs/01-overview/try-attestor-first.md)', 'README: links to the guided first run');
   appearsBefore(readme, '## Current Status', '## Architecture: Core And Packs', 'README: keeps evaluation boundary before architecture');
@@ -75,7 +77,7 @@ function testTryFirstDocKeepsTheBoundaryHonest(): void {
   includes(doc, 'one is admitted', 'Try-first doc: explains admitted path');
   includes(doc, 'one is blocked fail-closed', 'Try-first doc: explains blocked path');
   includes(doc, 'proposed consequence -> Attestor admission decision -> proof refs -> downstream gate', 'Try-first doc: explains the operating shape');
-  includes(doc, 'not a universal hosted admission route', 'Try-first doc: does not invent a universal route');
+  includes(doc, 'not the generic hosted `POST /api/v1/admissions` route', 'Try-first doc: separates local demo from generic hosted route');
   includes(doc, 'not a public hosted crypto route', 'Try-first doc: does not invent a hosted crypto route');
   includes(doc, 'not a wallet, custody platform, agent runtime, or orchestration layer', 'Try-first doc: keeps Attestor role narrow');
   includes(doc, 'does not auto-detect packs from payload shape', 'Try-first doc: rejects automatic pack detection');

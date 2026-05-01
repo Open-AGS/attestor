@@ -15,6 +15,8 @@ import {
   CONSEQUENCE_ADMISSION_DOMAINS,
   CONSEQUENCE_ADMISSION_KNOWN_CONSEQUENCE_KINDS,
   CONSEQUENCE_ADMISSION_TAXONOMY,
+  consequenceAdmissionDomainProfile,
+  type ConsequenceAdmissionDomain,
   type ConsequenceAdmissionKnownConsequenceKind,
 } from './taxonomy.js';
 import {
@@ -42,6 +44,33 @@ export const CONSEQUENCE_ADMISSION_DECISIONS = [
 ] as const;
 export type ConsequenceAdmissionDecision =
   typeof CONSEQUENCE_ADMISSION_DECISIONS[number];
+
+export const GENERIC_ADMISSION_MODES = [
+  'observe',
+  'warn',
+  'review',
+  'enforce',
+] as const;
+export type GenericAdmissionMode =
+  typeof GENERIC_ADMISSION_MODES[number];
+
+export const GENERIC_ADMISSION_SHADOW_DECISIONS = [
+  'would_admit',
+  'would_narrow',
+  'would_review',
+  'would_block',
+] as const;
+export type GenericAdmissionShadowDecision =
+  typeof GENERIC_ADMISSION_SHADOW_DECISIONS[number];
+
+export const GENERIC_ADMISSION_DOWNSTREAM_POSTURES = [
+  'observe-only',
+  'warn-only',
+  'hold-for-review',
+  'enforce-decision',
+] as const;
+export type GenericAdmissionDownstreamPosture =
+  typeof GENERIC_ADMISSION_DOWNSTREAM_POSTURES[number];
 
 export const CONSEQUENCE_ADMISSION_PACK_FAMILIES = [
   'finance',
@@ -233,6 +262,9 @@ export interface ConsequenceAdmissionProblem {
 export interface ConsequenceAdmissionDescriptor {
   readonly version: typeof CONSEQUENCE_ADMISSION_CONTRACT_VERSION;
   readonly decisions: typeof CONSEQUENCE_ADMISSION_DECISIONS;
+  readonly genericAdmissionModes: typeof GENERIC_ADMISSION_MODES;
+  readonly genericAdmissionShadowDecisions: typeof GENERIC_ADMISSION_SHADOW_DECISIONS;
+  readonly genericAdmissionDownstreamPostures: typeof GENERIC_ADMISSION_DOWNSTREAM_POSTURES;
   readonly packFamilies: typeof CONSEQUENCE_ADMISSION_PACK_FAMILIES;
   readonly consequenceKinds: typeof CONSEQUENCE_ADMISSION_CONSEQUENCE_KINDS;
   readonly riskClasses: typeof CONSEQUENCE_ADMISSION_RISK_CLASSES;
@@ -275,6 +307,64 @@ export interface CreateConsequenceAdmissionResponseInput {
   readonly proof?: readonly ConsequenceAdmissionProofRef[];
   readonly operationalContext?: Readonly<Record<string, string | number | boolean | null>>;
   readonly failClosed?: boolean | null;
+}
+
+export type GenericAdmissionFeatureValue = string | number | boolean | null;
+
+export interface GenericAdmissionAmount {
+  readonly value: string | number;
+  readonly currency: string | null;
+  readonly asset: string | null;
+  readonly chain: string | null;
+}
+
+export interface GenericAdmissionDataScope {
+  readonly records: number | null;
+  readonly classification: string | null;
+  readonly fields: readonly string[];
+}
+
+export interface CreateGenericAdmissionInput {
+  readonly mode: GenericAdmissionMode;
+  readonly actor: string;
+  readonly action: string;
+  readonly domain: ConsequenceAdmissionDomain;
+  readonly downstreamSystem: string;
+  readonly requestedAt?: string | null;
+  readonly decidedAt?: string | null;
+  readonly requestId?: string | null;
+  readonly tenantId?: string | null;
+  readonly environment?: string | null;
+  readonly policyRef?: string | null;
+  readonly actorRef?: string | null;
+  readonly reviewerRef?: string | null;
+  readonly signerRef?: string | null;
+  readonly delegationRef?: string | null;
+  readonly authorityMode?: string | null;
+  readonly amount?: GenericAdmissionAmount | null;
+  readonly recipient?: string | null;
+  readonly dataScope?: GenericAdmissionDataScope | null;
+  readonly evidenceRefs?: readonly string[];
+  readonly nativeInputRefs?: readonly string[];
+  readonly observedFeatures?: Readonly<Record<string, GenericAdmissionFeatureValue>>;
+  readonly summary?: string | null;
+}
+
+export interface GenericAdmissionModeEvaluation {
+  readonly mode: GenericAdmissionMode;
+  readonly shadowDecision: GenericAdmissionShadowDecision;
+  readonly effectiveDecision: ConsequenceAdmissionDecision;
+  readonly downstreamPosture: GenericAdmissionDownstreamPosture;
+  readonly enforcementActive: boolean;
+  readonly reasonCodes: readonly string[];
+}
+
+export interface GenericAdmissionEnvelope {
+  readonly mode: GenericAdmissionMode;
+  readonly shadowDecision: GenericAdmissionShadowDecision;
+  readonly downstreamPosture: GenericAdmissionDownstreamPosture;
+  readonly enforcementActive: boolean;
+  readonly admission: ConsequenceAdmissionResponse;
 }
 
 function normalizeIdentifier(value: string | null | undefined, fieldName: string): string {
@@ -403,6 +493,424 @@ function admissionIdFor(input: {
 
 function readonlyCopy<T>(items: readonly T[] | null | undefined): readonly T[] {
   return Object.freeze([...(items ?? [])]);
+}
+
+function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function readRequiredString(
+  record: Readonly<Record<string, unknown>>,
+  fieldName: string,
+): string {
+  const value = record[fieldName];
+  if (typeof value !== 'string') {
+    throw new Error(`Consequence admission ${fieldName} requires a non-empty string value.`);
+  }
+  return normalizeIdentifier(value, fieldName);
+}
+
+function readOptionalString(
+  record: Readonly<Record<string, unknown>>,
+  fieldName: string,
+): string | null {
+  const value = record[fieldName];
+  if (value === undefined || value === null) return null;
+  if (typeof value !== 'string') {
+    throw new Error(`Consequence admission ${fieldName} must be a string when provided.`);
+  }
+  return normalizeOptionalIdentifier(value, fieldName);
+}
+
+function readOptionalTimestamp(
+  record: Readonly<Record<string, unknown>>,
+  fieldName: string,
+): string | null {
+  const value = readOptionalString(record, fieldName);
+  return value === null ? null : normalizeIsoTimestamp(value, fieldName);
+}
+
+function normalizeStringArray(value: unknown, fieldName: string): readonly string[] {
+  if (value === undefined || value === null) return Object.freeze([]);
+  if (!Array.isArray(value)) {
+    throw new Error(`Consequence admission ${fieldName} must be an array when provided.`);
+  }
+  return Object.freeze(
+    value.map((entry, index) => {
+      if (typeof entry !== 'string') {
+        throw new Error(
+          `Consequence admission ${fieldName}[${index}] must be a string.`,
+        );
+      }
+      return normalizeIdentifier(entry, `${fieldName}[${index}]`);
+    }),
+  );
+}
+
+function normalizeGenericAmount(value: unknown): GenericAdmissionAmount | null {
+  if (value === undefined || value === null) return null;
+  if (!isRecord(value)) {
+    throw new Error('Consequence admission amount must be an object when provided.');
+  }
+  const rawAmount = value.value;
+  if (typeof rawAmount !== 'string' && typeof rawAmount !== 'number') {
+    throw new Error('Consequence admission amount.value must be a string or number.');
+  }
+  if (typeof rawAmount === 'number' && !Number.isFinite(rawAmount)) {
+    throw new Error('Consequence admission amount.value must be finite.');
+  }
+  const amountValue =
+    typeof rawAmount === 'string'
+      ? normalizeIdentifier(rawAmount, 'amount.value')
+      : rawAmount;
+
+  return Object.freeze({
+    value: amountValue,
+    currency: readOptionalString(value, 'currency'),
+    asset: readOptionalString(value, 'asset'),
+    chain: readOptionalString(value, 'chain'),
+  });
+}
+
+function normalizeGenericDataScope(value: unknown): GenericAdmissionDataScope | null {
+  if (value === undefined || value === null) return null;
+  if (!isRecord(value)) {
+    throw new Error('Consequence admission dataScope must be an object when provided.');
+  }
+  const rawRecords = value.records;
+  if (
+    rawRecords !== undefined &&
+    rawRecords !== null &&
+    (typeof rawRecords !== 'number' || !Number.isFinite(rawRecords) || rawRecords < 0)
+  ) {
+    throw new Error('Consequence admission dataScope.records must be a non-negative number.');
+  }
+  return Object.freeze({
+    records: typeof rawRecords === 'number' ? rawRecords : null,
+    classification: readOptionalString(value, 'classification'),
+    fields: normalizeStringArray(value.fields, 'dataScope.fields'),
+  });
+}
+
+function normalizeGenericObservedFeatures(
+  value: unknown,
+): Readonly<Record<string, GenericAdmissionFeatureValue>> {
+  if (value === undefined || value === null) return Object.freeze({});
+  if (!isRecord(value)) {
+    throw new Error('Consequence admission observedFeatures must be an object when provided.');
+  }
+  const normalized: Record<string, GenericAdmissionFeatureValue> = {};
+  for (const [key, entry] of Object.entries(value)) {
+    const normalizedKey = normalizeIdentifier(key, 'observedFeatures key');
+    if (
+      entry !== null &&
+      typeof entry !== 'string' &&
+      typeof entry !== 'number' &&
+      typeof entry !== 'boolean'
+    ) {
+      throw new Error(
+        `Consequence admission observedFeatures.${normalizedKey} must be scalar or null.`,
+      );
+    }
+    if (typeof entry === 'number' && !Number.isFinite(entry)) {
+      throw new Error(
+        `Consequence admission observedFeatures.${normalizedKey} must be finite.`,
+      );
+    }
+    normalized[normalizedKey] = entry;
+  }
+  return Object.freeze(normalized);
+}
+
+function normalizeCreateGenericAdmissionInput(input: unknown): CreateGenericAdmissionInput {
+  if (!isRecord(input)) {
+    throw new Error('Consequence admission input must be a JSON object.');
+  }
+  const mode = normalizeEnumValue(
+    readRequiredString(input, 'mode'),
+    GENERIC_ADMISSION_MODES,
+    'mode',
+  );
+  const domain = normalizeEnumValue(
+    readRequiredString(input, 'domain'),
+    CONSEQUENCE_ADMISSION_DOMAINS,
+    'domain',
+  );
+
+  return Object.freeze({
+    mode,
+    actor: readRequiredString(input, 'actor'),
+    action: readRequiredString(input, 'action'),
+    domain,
+    downstreamSystem: readRequiredString(input, 'downstreamSystem'),
+    requestedAt: readOptionalTimestamp(input, 'requestedAt'),
+    decidedAt: readOptionalTimestamp(input, 'decidedAt'),
+    requestId: readOptionalString(input, 'requestId'),
+    tenantId: readOptionalString(input, 'tenantId'),
+    environment: readOptionalString(input, 'environment'),
+    policyRef: readOptionalString(input, 'policyRef'),
+    actorRef: readOptionalString(input, 'actorRef'),
+    reviewerRef: readOptionalString(input, 'reviewerRef'),
+    signerRef: readOptionalString(input, 'signerRef'),
+    delegationRef: readOptionalString(input, 'delegationRef'),
+    authorityMode: readOptionalString(input, 'authorityMode'),
+    amount: normalizeGenericAmount(input.amount),
+    recipient: readOptionalString(input, 'recipient'),
+    dataScope: normalizeGenericDataScope(input.dataScope),
+    evidenceRefs: normalizeStringArray(input.evidenceRefs, 'evidenceRefs'),
+    nativeInputRefs: normalizeStringArray(input.nativeInputRefs, 'nativeInputRefs'),
+    observedFeatures: normalizeGenericObservedFeatures(input.observedFeatures),
+    summary: readOptionalString(input, 'summary'),
+  });
+}
+
+function observedFeatureTrue(
+  input: CreateGenericAdmissionInput,
+  key: string,
+): boolean {
+  return input.observedFeatures?.[key] === true;
+}
+
+function genericAdmissionReviewReasons(
+  input: CreateGenericAdmissionInput,
+): readonly string[] {
+  const reasons: string[] = [];
+  const profile = consequenceAdmissionDomainProfile(input.domain);
+
+  if (!input.policyRef) reasons.push('policy-ref-missing');
+  if ((input.evidenceRefs ?? []).length === 0) reasons.push('evidence-ref-missing');
+
+  if (
+    input.domain === 'money-movement' ||
+    input.domain === 'programmable-money'
+  ) {
+    if (!input.amount) reasons.push('amount-scope-missing');
+    if (!input.recipient) reasons.push('recipient-scope-missing');
+  }
+
+  if (input.domain === 'data-disclosure' && !input.dataScope) {
+    reasons.push('data-scope-missing');
+  }
+
+  if (input.domain === 'authority-change' && !input.authorityMode) {
+    reasons.push('authority-mode-missing');
+  }
+
+  if (
+    profile.requiredChecks.includes('adapter-readiness') &&
+    !observedFeatureTrue(input, 'adapterReady')
+  ) {
+    reasons.push('adapter-readiness-missing');
+  }
+
+  if (input.domain === 'custom') {
+    reasons.push('custom-domain-review-required');
+  }
+
+  return Object.freeze(reasons);
+}
+
+function genericAdmissionShadowDecisionFor(
+  input: CreateGenericAdmissionInput,
+  reviewReasons: readonly string[],
+): GenericAdmissionShadowDecision {
+  if (
+    observedFeatureTrue(input, 'policyBlocked') ||
+    observedFeatureTrue(input, 'blocked') ||
+    observedFeatureTrue(input, 'unsafe')
+  ) {
+    return 'would_block';
+  }
+  if (reviewReasons.length > 0) return 'would_review';
+  if (observedFeatureTrue(input, 'narrowRequired')) return 'would_narrow';
+  return 'would_admit';
+}
+
+function effectiveDecisionForGenericMode(
+  mode: GenericAdmissionMode,
+  shadowDecision: GenericAdmissionShadowDecision,
+): ConsequenceAdmissionDecision {
+  if (mode === 'observe' || mode === 'warn') return 'admit';
+  if (mode === 'review') {
+    return shadowDecision === 'would_admit' ? 'admit' : 'review';
+  }
+  if (shadowDecision === 'would_block') return 'block';
+  if (shadowDecision === 'would_review') return 'review';
+  if (shadowDecision === 'would_narrow') return 'narrow';
+  return 'admit';
+}
+
+function downstreamPostureForGenericMode(
+  mode: GenericAdmissionMode,
+  effectiveDecision: ConsequenceAdmissionDecision,
+): GenericAdmissionDownstreamPosture {
+  if (mode === 'observe') return 'observe-only';
+  if (mode === 'warn') return 'warn-only';
+  if (effectiveDecision === 'review') return 'hold-for-review';
+  return 'enforce-decision';
+}
+
+function genericReasonCodes(
+  input: CreateGenericAdmissionInput,
+  shadowDecision: GenericAdmissionShadowDecision,
+  reviewReasons: readonly string[],
+): readonly string[] {
+  const reasons = [
+    `mode-${input.mode}`,
+    `shadow-${shadowDecision}`,
+    ...reviewReasons,
+  ];
+  if (input.mode === 'observe' || input.mode === 'warn') {
+    reasons.push('non-enforcing-mode');
+  }
+  if (observedFeatureTrue(input, 'policyBlocked')) reasons.push('policy-blocked');
+  if (observedFeatureTrue(input, 'blocked')) reasons.push('feature-blocked');
+  if (observedFeatureTrue(input, 'unsafe')) reasons.push('feature-unsafe');
+  if (observedFeatureTrue(input, 'narrowRequired')) reasons.push('narrow-required');
+  return Object.freeze([...new Set(reasons)]);
+}
+
+function createGenericAdmissionEvaluation(
+  input: CreateGenericAdmissionInput,
+): GenericAdmissionModeEvaluation {
+  const reviewReasons = genericAdmissionReviewReasons(input);
+  const shadowDecision = genericAdmissionShadowDecisionFor(input, reviewReasons);
+  const effectiveDecision = effectiveDecisionForGenericMode(input.mode, shadowDecision);
+  const downstreamPosture = downstreamPostureForGenericMode(input.mode, effectiveDecision);
+
+  return Object.freeze({
+    mode: input.mode,
+    shadowDecision,
+    effectiveDecision,
+    downstreamPosture,
+    enforcementActive: input.mode === 'review' || input.mode === 'enforce',
+    reasonCodes: genericReasonCodes(input, shadowDecision, reviewReasons),
+  });
+}
+
+function reasonCodesForCheck(
+  kind: ConsequenceAdmissionCheckKind,
+  reasonCodes: readonly string[],
+): readonly string[] {
+  const matches = reasonCodes.filter((reason) => {
+    if (kind === 'policy') return reason.startsWith('policy-');
+    if (kind === 'authority') return reason.startsWith('authority-');
+    if (kind === 'evidence') return reason.startsWith('evidence-');
+    if (kind === 'enforcement') return reason === 'non-enforcing-mode';
+    if (kind === 'adapter-readiness') return reason.startsWith('adapter-');
+    if (kind === 'freshness') return reason.startsWith('freshness-');
+    return false;
+  });
+  return Object.freeze(matches);
+}
+
+function checkOutcomeForGenericMode(
+  mode: GenericAdmissionMode,
+  checkReasons: readonly string[],
+): ConsequenceAdmissionCheckOutcome {
+  if (checkReasons.length === 0) return 'pass';
+  return mode === 'observe' || mode === 'warn' ? 'warn' : 'fail';
+}
+
+function createGenericAdmissionChecks(
+  input: CreateGenericAdmissionInput,
+  evaluation: GenericAdmissionModeEvaluation,
+): readonly ConsequenceAdmissionCheck[] {
+  const profile = consequenceAdmissionDomainProfile(input.domain);
+  return Object.freeze(
+    profile.requiredChecks.map((kind) => {
+      const checkReasons = reasonCodesForCheck(kind, evaluation.reasonCodes);
+      const outcome = checkOutcomeForGenericMode(input.mode, checkReasons);
+      return createConsequenceAdmissionCheck({
+        kind,
+        label: `${kind} check`,
+        outcome,
+        required: input.mode === 'review' || input.mode === 'enforce',
+        summary:
+          outcome === 'pass'
+            ? `${kind} closure is present for the proposed consequence.`
+            : `${kind} closure is incomplete for the proposed consequence.`,
+        reasonCodes: checkReasons,
+        evidenceRefs: [...(input.evidenceRefs ?? [])],
+      });
+    }),
+  );
+}
+
+function genericAdmissionReason(
+  evaluation: GenericAdmissionModeEvaluation,
+): string {
+  if (evaluation.mode === 'observe') {
+    return 'Observe mode recorded the shadow admission decision without blocking downstream execution.';
+  }
+  if (evaluation.mode === 'warn') {
+    return 'Warn mode allowed the request while returning the shadow admission decision and warning checks.';
+  }
+  if (evaluation.effectiveDecision === 'review') {
+    return 'The proposed consequence is held for review before downstream execution.';
+  }
+  if (evaluation.effectiveDecision === 'block') {
+    return 'The proposed consequence is blocked before downstream execution.';
+  }
+  if (evaluation.effectiveDecision === 'narrow') {
+    return 'The proposed consequence may proceed only through the returned constraints.';
+  }
+  return 'The proposed consequence passed the generic admission mode ladder.';
+}
+
+function genericAdmissionConstraints(
+  input: CreateGenericAdmissionInput,
+  evaluation: GenericAdmissionModeEvaluation,
+): readonly ConsequenceAdmissionConstraint[] {
+  if (evaluation.effectiveDecision !== 'narrow') return Object.freeze([]);
+  return Object.freeze([
+    {
+      id: `constraint:${input.domain}:generic-narrow`,
+      summary: 'Proceed only with the customer-approved narrowed scope.',
+      enforcedBy: input.downstreamSystem,
+    },
+  ]);
+}
+
+function genericAdmissionProof(
+  request: ConsequenceAdmissionRequest,
+  evaluation: GenericAdmissionModeEvaluation,
+): readonly ConsequenceAdmissionProofRef[] {
+  if (evaluation.effectiveDecision !== 'admit' && evaluation.effectiveDecision !== 'narrow') {
+    return Object.freeze([]);
+  }
+  return Object.freeze([
+    {
+      kind: 'admission-receipt',
+      id: `generic-admission:${request.requestId}`,
+      digest: request.requestId,
+      uri: null,
+      verifyHint:
+        evaluation.mode === 'observe' || evaluation.mode === 'warn'
+          ? 'Observe and warn modes are adoption modes; inspect shadowDecision before promoting to review or enforce.'
+          : 'Verify the admission digest and downstream enforcement contract before execution.',
+    },
+  ]);
+}
+
+function genericAdmissionSummary(input: CreateGenericAdmissionInput): string {
+  return input.summary ?? `${input.actor} proposes ${input.action} on ${input.downstreamSystem}.`;
+}
+
+function genericAdmissionDimensions(
+  input: CreateGenericAdmissionInput,
+  evaluation: GenericAdmissionModeEvaluation,
+): Readonly<Record<string, string | number | boolean | null>> {
+  return Object.freeze({
+    domain: input.domain,
+    mode: input.mode,
+    shadowDecision: evaluation.shadowDecision,
+    downstreamPosture: evaluation.downstreamPosture,
+    hasAmount: input.amount !== null && input.amount !== undefined,
+    hasRecipient: input.recipient !== null && input.recipient !== undefined,
+    hasDataScope: input.dataScope !== null && input.dataScope !== undefined,
+    adapterReady: observedFeatureTrue(input, 'adapterReady'),
+  });
 }
 
 export function isConsequenceAdmissionDecision(
@@ -663,11 +1171,92 @@ export function createConsequenceAdmissionProblem(input: {
   });
 }
 
+export function createGenericAdmissionEnvelope(input: unknown): GenericAdmissionEnvelope {
+  const normalized = normalizeCreateGenericAdmissionInput(input);
+  const evaluation = createGenericAdmissionEvaluation(normalized);
+  const profile = consequenceAdmissionDomainProfile(normalized.domain);
+  const requestedAt = normalized.requestedAt ?? new Date().toISOString();
+  const decidedAt = normalized.decidedAt ?? requestedAt;
+  const request = createConsequenceAdmissionRequest({
+    requestedAt,
+    requestId: normalized.requestId,
+    packFamily: 'general',
+    entryPoint: {
+      kind: 'hosted-route',
+      id: 'generic-admission-api',
+      route: '/api/v1/admissions',
+      packageSubpath: null,
+      sourceRef: 'src/service/http/routes/generic-admission-routes.ts',
+    },
+    proposedConsequence: {
+      actor: normalized.actor,
+      action: normalized.action,
+      downstreamSystem: normalized.downstreamSystem,
+      consequenceKind: profile.defaultConsequenceKinds[0] ?? 'custom',
+      riskClass: profile.minimumRiskClass,
+      summary: genericAdmissionSummary(normalized),
+    },
+    policyScope: {
+      policyRef: normalized.policyRef,
+      tenantId: normalized.tenantId,
+      environment: normalized.environment,
+      dimensions: genericAdmissionDimensions(normalized, evaluation),
+    },
+    authority: {
+      actorRef: normalized.actorRef ?? normalized.actor,
+      reviewerRef: normalized.reviewerRef,
+      signerRef: normalized.signerRef,
+      delegationRef: normalized.delegationRef,
+      authorityMode: normalized.authorityMode,
+    },
+    evidence: (normalized.evidenceRefs ?? []).map((ref) => ({
+      id: ref,
+      kind: 'reference',
+      digest: null,
+      uri: null,
+    })),
+    nativeInputRefs: normalized.nativeInputRefs,
+  });
+  const response = createConsequenceAdmissionResponse({
+    request,
+    decidedAt,
+    decision: evaluation.effectiveDecision,
+    reason: genericAdmissionReason(evaluation),
+    reasonCodes: evaluation.reasonCodes,
+    checks: createGenericAdmissionChecks(normalized, evaluation),
+    constraints: genericAdmissionConstraints(normalized, evaluation),
+    proof: genericAdmissionProof(request, evaluation),
+    operationalContext: {
+      mode: evaluation.mode,
+      shadowDecision: evaluation.shadowDecision,
+      downstreamPosture: evaluation.downstreamPosture,
+      enforcementActive: evaluation.enforcementActive,
+      modeBlocksDownstream:
+        evaluation.downstreamPosture === 'hold-for-review' ||
+        evaluation.effectiveDecision === 'block',
+      consequenceDomain: normalized.domain,
+      taxonomyRiskClass: profile.minimumRiskClass,
+      nonEnforcingMode: normalized.mode === 'observe' || normalized.mode === 'warn',
+    },
+  });
+
+  return Object.freeze({
+    mode: evaluation.mode,
+    shadowDecision: evaluation.shadowDecision,
+    downstreamPosture: evaluation.downstreamPosture,
+    enforcementActive: evaluation.enforcementActive,
+    admission: response,
+  });
+}
+
 export function consequenceAdmissionDescriptor():
 ConsequenceAdmissionDescriptor {
   return Object.freeze({
     version: CONSEQUENCE_ADMISSION_CONTRACT_VERSION,
     decisions: CONSEQUENCE_ADMISSION_DECISIONS,
+    genericAdmissionModes: GENERIC_ADMISSION_MODES,
+    genericAdmissionShadowDecisions: GENERIC_ADMISSION_SHADOW_DECISIONS,
+    genericAdmissionDownstreamPostures: GENERIC_ADMISSION_DOWNSTREAM_POSTURES,
     packFamilies: CONSEQUENCE_ADMISSION_PACK_FAMILIES,
     consequenceKinds: CONSEQUENCE_ADMISSION_CONSEQUENCE_KINDS,
     riskClasses: CONSEQUENCE_ADMISSION_RISK_CLASSES,

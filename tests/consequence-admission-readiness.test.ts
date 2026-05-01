@@ -76,12 +76,16 @@ function testDocsPointToOneAdmissionStory(): void {
   includes(quickstart, "from 'attestor/consequence-admission'", 'Admission readiness: quickstart imports public facade');
   includes(quickstart, '`finance-pipeline-run`', 'Admission readiness: quickstart names finance surface');
   includes(quickstart, '`crypto-execution-plan`', 'Admission readiness: quickstart names crypto surface');
+  includes(quickstart, '`POST /api/v1/admissions`', 'Admission readiness: quickstart names generic hosted admission route');
+  includes(quickstart, '`observe`, `warn`, `review`, or `enforce`', 'Admission readiness: quickstart names generic adoption modes');
   includes(quickstart, '`POST /api/v1/pipeline/run`', 'Admission readiness: quickstart preserves finance route');
   includes(quickstart, 'route: null', 'Admission readiness: quickstart preserves crypto package boundary');
   includes(quickstart, 'npm run test:consequence-admission-readiness', 'Admission readiness: quickstart names readiness gate');
+  includes(quickstart, 'npm run test:generic-admission-mode-ladder', 'Admission readiness: quickstart names generic mode ladder gate');
+  includes(quickstart, 'npm run test:generic-admission-routes', 'Admission readiness: quickstart names generic route gate');
   includes(quickstart, 'npm run test:consequence-admission-package-surface', 'Admission readiness: quickstart names package surface gate');
   includes(quickstart, 'npm run verify', 'Admission readiness: quickstart names full verification gate');
-  excludes(quickstart, /POST\s+\/api\/v1\/admit/u, 'Admission readiness: quickstart does not invent a universal hosted admit route');
+  includes(quickstart, 'Do not use the old placeholder `POST /api/v1/admit` route name.', 'Admission readiness: quickstart rejects the legacy admit placeholder');
   excludes(quickstart, /public hosted crypto route is available/iu, 'Admission readiness: quickstart does not claim hosted crypto availability');
 
   includes(firstCall, 'Consequence admission quickstart](consequence-admission-quickstart.md)', 'Admission readiness: first hosted call links quickstart');
@@ -96,7 +100,7 @@ function testDocsPointToOneAdmissionStory(): void {
   includes(tracker, '| Completed | 6 |', 'Admission readiness: tracker records all steps complete');
   includes(tracker, '| Not started | 0 |', 'Admission readiness: tracker has no remaining frozen step');
   includes(tracker, '| 06 | complete | Add admission readiness and quickstart gates |', 'Admission readiness: Step 06 row is complete');
-  includes(tracker, 'No frozen consequence-admission step remains.', 'Admission readiness: tracker closes the frozen track');
+  includes(tracker, 'The first post-track extension is the generic hosted admission route', 'Admission readiness: tracker documents the post-track generic route');
 }
 
 function testPackageAndDescriptorStayAligned(): void {

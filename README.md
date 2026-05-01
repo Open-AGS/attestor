@@ -110,6 +110,14 @@ It is a local static proof surface; it does not start a hosted console or claim 
 
 `npm run showcase:proof` generates a local PostgreSQL-backed proof packet. Without a live upstream model, `verify:cert` reports `PROOF_DEGRADED` and exits non-zero by design. The green local release gate remains `npm run verify`.
 
+The first generic hosted action-authorization route is:
+
+```http
+POST /api/v1/admissions
+```
+
+It accepts an explicit consequence domain and adoption mode: `observe`, `warn`, `review`, or `enforce`. `observe` and `warn` show what Attestor would have done before a team turns on enforcement; `review` and `enforce` hold or block incomplete consequences before downstream execution.
+
 ## Decision Model
 
 Attestor never returns an open-ended "looks good." It returns one of four bounded outcomes:

@@ -2,6 +2,10 @@ import type { Hono } from 'hono';
 import { registerAccountRoutes } from '../http/routes/account-routes.js';
 import { registerAdminRoutes } from '../http/routes/admin-routes.js';
 import { registerCoreRoutes } from '../http/routes/core-routes.js';
+import {
+  registerGenericAdmissionRoutes,
+  type GenericAdmissionRouteDeps,
+} from '../http/routes/generic-admission-routes.js';
 import { registerPipelineRoutes } from '../http/routes/pipeline-routes.js';
 import { registerPublicSiteRoutes } from '../http/routes/public-site-routes.js';
 import { registerReleasePolicyControlRoutes } from '../http/routes/release-policy-control-routes.js';
@@ -30,6 +34,14 @@ export function createPipelineRouteDeps<Packet>(runtime: AppRuntime<Packet>) {
   return runtime.services.httpRoutes.pipeline;
 }
 
+export function createGenericAdmissionRouteDeps<Packet>(
+  runtime: AppRuntime<Packet>,
+): GenericAdmissionRouteDeps {
+  return {
+    currentTenant: runtime.services.httpRoutes.pipeline.currentTenant,
+  };
+}
+
 export function createWebhookRouteDeps<Packet>(runtime: AppRuntime<Packet>) {
   return runtime.services.httpRoutes.webhook;
 }
@@ -48,6 +60,7 @@ export function registerAllRoutes<Packet>(app: Hono, runtime: AppRuntime<Packet>
   registerCoreRoutes(app, createCoreRouteDeps(runtime));
   registerAccountRoutes(app, createAccountRouteDeps(runtime));
   registerAdminRoutes(app, createAdminRouteDeps(runtime));
+  registerGenericAdmissionRoutes(app, createGenericAdmissionRouteDeps(runtime));
   registerReleaseReviewRoutes(app, createReleaseReviewRouteDeps(runtime));
   registerReleasePolicyControlRoutes(app, createReleasePolicyControlRouteDeps(runtime));
   registerWebhookRoutes(app, createWebhookRouteDeps(runtime));

@@ -25,7 +25,7 @@ proposed consequence
   -> downstream system proceeds only if allowed
 ```
 
-Attestor does not auto-detect finance, crypto, or future packs from magic input. The customer chooses the relevant path for the consequence it needs to control.
+Attestor does not auto-detect finance, crypto, or future packs from magic input. The customer chooses the relevant path for the consequence it needs to control. The generic hosted path is `POST /api/v1/admissions`; shipped pack-specific surfaces remain explicit package or route boundaries.
 
 Concrete examples:
 
@@ -54,14 +54,17 @@ This vocabulary is the customer-facing language. Some shipped surfaces still exp
 
 | Surface | Current shipped entry point | Current native decision | Canonical reading |
 |---|---|---|---|
+| Generic AI action authorization | `POST /api/v1/admissions` | `mode`: `observe`, `warn`, `review`, or `enforce`; `shadowDecision`: `would_admit`, `would_narrow`, `would_review`, or `would_block` | Generic action admission for explicit consequence domains. `observe` and `warn` do not enforce; they show what Attestor would have done. `review` holds incomplete actions. `enforce` applies the admission decision. |
 | Finance hosted proof wedge | `POST /api/v1/pipeline/run` | `decision`, including the finance allow value `pass`; signed runs can also include filing release status and proof material | `pass` is the finance allow branch and maps to `admit`; accepted filing releases map to `admit`; held/review-required paths map to `review`; denied, expired, revoked, or unknown paths map to `block`. |
 | Crypto package integration | `attestor/crypto-authorization-core` and `attestor/crypto-execution-admission` | `CryptoExecutionAdmissionPlan.outcome`: `admit`, `needs-evidence`, or `deny` | package-native `admit` maps to canonical `admit`; `needs-evidence` maps to fail-closed `review`; `deny` maps to fail-closed `block`. |
 | Local proof surface | `npm run proof:surface` | unified proof output decisions | Already uses `admit`, `narrow`, `review`, or `block`. |
 | Signed proof verification | `POST /api/v1/verify` | verification status | Verifies proof material; it does not create a new consequence decision by itself. |
 
-The typed contract lives in `src/consequence-admission/index.ts`. It defines the canonical request, response, check, proof, native-decision mapping, and fail-closed problem shapes without claiming a universal hosted admission route yet.
+The typed contract lives in `src/consequence-admission/index.ts`. It defines the canonical request, response, check, proof, native-decision mapping, mode ladder, and fail-closed problem shapes for both the generic hosted route and package-boundary adapters.
 
-The first customer-facing facade is exported through `attestor/consequence-admission`. Callers must choose `finance-pipeline-run` or `crypto-execution-plan` explicitly. The facade does not auto-detect packs, does not claim a universal hosted admission route, and does not claim a hosted crypto route.
+The generic hosted route lives at `POST /api/v1/admissions`. Callers must choose the consequence domain and mode explicitly. It is not the old placeholder `POST /api/v1/admit`, not automatic pack detection, and not a hosted crypto route.
+
+The first customer-facing facade is exported through `attestor/consequence-admission`. Callers must choose `finance-pipeline-run` or `crypto-execution-plan` explicitly. The facade does not auto-detect packs and does not claim a hosted crypto route.
 
 The finance projection lives in `src/consequence-admission/finance.ts`. It wraps the existing finance hosted route response into the canonical admission response shape without changing `POST /api/v1/pipeline/run` behavior.
 
@@ -81,7 +84,7 @@ That is the operating model whether the first integration is finance, crypto, or
 ## What Is Not Claimed Yet
 
 - No public hosted crypto HTTP route is claimed until a route contract, implementation, tests, and tracker step exist.
-- No universal hosted `admit` route is claimed until a route contract, implementation, tests, and tracker step exist.
+- No legacy `POST /api/v1/admit` route is claimed.
 - No automatic pack router is claimed.
 - No wallet, custody, model-runtime, agent-runtime, or orchestration ownership is claimed.
 - No downstream execution happens merely because Attestor returned a proof object; the customer-operated downstream system must enforce the returned decision.

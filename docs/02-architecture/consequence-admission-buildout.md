@@ -15,7 +15,7 @@ The goal is not to add a second product, a crypto-only track, or another broad s
 - Keep Attestor as one product with one platform core and modular packs.
 - Treat finance and crypto as pack families on the same consequence-admission model.
 - Do not claim a public hosted crypto HTTP route until a route contract, implementation, tests, and tracker step exist.
-- Do not claim a universal hosted admission route until the typed contract and route are implemented and tested.
+- The generic hosted admission route is `POST /api/v1/admissions`; do not claim the old placeholder `POST /api/v1/admit`.
 - Do not make Attestor sound like a magical router that guesses packs automatically.
 - Keep the public decision vocabulary bounded: `admit`, `narrow`, `review`, `block`.
 
@@ -78,7 +78,7 @@ Reviewed on 2026-04-23 before opening this track:
 | Completed | 6 |
 | In progress | 0 |
 | Not started | 0 |
-| Current posture | Step 06 is complete: the consequence-admission quickstart and readiness gate now prove README, operating model, first-call docs, first-integration docs, package exports, facade descriptors, and route/helper behavior stay aligned. No frozen consequence-admission step remains. |
+| Current posture | The frozen six-step package-facade track is complete. The next action-authorization extension adds `POST /api/v1/admissions` with an explicit mode ladder for generic consequence-domain admissions. |
 
 ## Frozen Step List
 
@@ -89,8 +89,33 @@ Reviewed on 2026-04-23 before opening this track:
 | 03 | complete | Add finance decision mapping into the admission contract | `src/consequence-admission/finance.ts`, `src/consequence-admission/index.ts`, `tests/consequence-admission-finance.test.ts`, `docs/01-overview/operating-model.md`, `docs/01-overview/hosted-first-api-call.md`, `docs/01-overview/finance-and-crypto-first-integrations.md`, `package.json` | The finance adapter wraps the current hosted finance pipeline response into a canonical admission request/response without changing route behavior. It maps native pipeline `pass` to `admit`, accepted filing release status to `admit`, held/review-required status to fail-closed `review`, denied/expired/revoked/unknown paths to fail-closed `block`, and emits policy/authority/evidence/freshness/enforcement/adapter-readiness checks plus certificate, verification-kit, release-token, release-evidence-pack, and review-queue proof references when present. |
 | 04 | complete | Add crypto package outcome mapping into the admission contract | `src/consequence-admission/crypto.ts`, `src/consequence-admission/index.ts`, `tests/consequence-admission-crypto.test.ts`, `docs/01-overview/operating-model.md`, `docs/01-overview/finance-and-crypto-first-integrations.md`, `package.json` | The crypto adapter wraps `CryptoExecutionAdmissionPlan` into canonical admission request/response objects through a package-boundary entry point. Package-native `admit` maps to canonical `admit`, `needs-evidence` maps to fail-closed `review`, and `deny` maps to fail-closed `block`. The adapter emits policy/authority/evidence/freshness/enforcement/adapter-readiness checks plus admission-plan, simulation, and source-module proof references while explicitly keeping `route: null` for crypto. |
 | 05 | complete | Add the first customer-facing admission facade | `src/consequence-admission/facade.ts`, `src/consequence-admission/index.ts`, `tests/consequence-admission-facade.test.ts`, `scripts/probe-consequence-admission-package-surface.mjs`, `package.json`, `docs/01-overview/operating-model.md`, `docs/01-overview/finance-and-crypto-first-integrations.md`, `tests/consequence-admission-operating-model.test.ts` | The first public facade is exported through `attestor/consequence-admission`. It requires an explicit `finance-pipeline-run` or `crypto-execution-plan` surface, delegates to the tested finance and crypto projections, preserves `/api/v1/pipeline/run` as the finance hosted route, preserves `attestor/crypto-execution-admission` as the crypto package boundary, rejects automatic pack detection, and keeps `publicHostedCryptoRouteClaimed: false`. |
-| 06 | complete | Add admission readiness and quickstart gates | `docs/01-overview/consequence-admission-quickstart.md`, `tests/consequence-admission-readiness.test.ts`, `tests/consequence-admission-operating-model.test.ts`, `package.json`, `README.md`, `docs/01-overview/operating-model.md`, `docs/01-overview/hosted-first-api-call.md`, `docs/01-overview/finance-and-crypto-first-integrations.md`, `docs/02-architecture/system-overview.md`, `docs/02-architecture/consequence-admission-buildout.md` | The quickstart documents how to use `attestor/consequence-admission` without inventing a universal hosted route, preserves finance as `POST /api/v1/pipeline/run`, preserves crypto as `attestor/crypto-execution-admission` with `route: null`, and names the readiness/package/full verify gates. The readiness test proves README, operating model, first-call docs, first-integration docs, tracker posture, package export, facade descriptor, finance route descriptor, crypto package descriptor, native mapping helpers, and fail-fast explicit-surface behavior stay aligned. |
+| 06 | complete | Add admission readiness and quickstart gates | `docs/01-overview/consequence-admission-quickstart.md`, `tests/consequence-admission-readiness.test.ts`, `tests/consequence-admission-operating-model.test.ts`, `package.json`, `README.md`, `docs/01-overview/operating-model.md`, `docs/01-overview/hosted-first-api-call.md`, `docs/01-overview/finance-and-crypto-first-integrations.md`, `docs/02-architecture/system-overview.md`, `docs/02-architecture/consequence-admission-buildout.md` | The quickstart documents how to use `attestor/consequence-admission`, preserves finance as `POST /api/v1/pipeline/run`, preserves crypto as `attestor/crypto-execution-admission` with `route: null`, and names the readiness/package/full verify gates. The readiness test proves README, operating model, first-call docs, first-integration docs, tracker posture, package export, facade descriptor, finance route descriptor, crypto package descriptor, native mapping helpers, and fail-fast explicit-surface behavior stay aligned. |
+
+## Extension After The Frozen Track
+
+The first post-track extension is the generic hosted admission route:
+
+```text
+POST /api/v1/admissions
+```
+
+This route accepts an explicit consequence domain and an explicit adoption mode:
+
+```text
+observe -> warn -> review -> enforce
+```
+
+The design follows the same safety posture as established admission systems: non-enforcing modes can show what policy would have done before a team turns on enforcement; enforcing modes hold or block incomplete consequences before downstream execution. The route is not automatic pack detection and does not replace the finance or crypto package boundaries.
+
+Evidence:
+
+- `src/consequence-admission/index.ts`
+- `src/service/http/routes/generic-admission-routes.ts`
+- `tests/generic-admission-mode-ladder.test.ts`
+- `tests/generic-admission-routes.test.ts`
+- `docs/01-overview/consequence-admission-quickstart.md`
+- `docs/01-overview/operating-model.md`
 
 ## Immediate Next Step
 
-No frozen consequence-admission step remains. Future admission expansion should start from a new explicit tracker or an intentional extension to this completed track.
+Continue the action-authorization roadmap with shadow event recording and policy discovery. The generic route should remain explicit and small until the recorder, summaries, and simulation reports exist.

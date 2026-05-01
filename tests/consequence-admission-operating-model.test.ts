@@ -41,8 +41,10 @@ function testOperatingModelDefinesCanonicalDecisionVocabulary(): void {
   includes(operatingModel, 'The first customer-facing facade is exported through `attestor/consequence-admission`.', 'Admission operating model: facade package is documented');
   includes(operatingModel, 'Callers must choose `finance-pipeline-run` or `crypto-execution-plan` explicitly.', 'Admission operating model: facade requires explicit surface');
   includes(operatingModel, 'Consequence admission quickstart](consequence-admission-quickstart.md)', 'Admission operating model: quickstart is linked');
+  includes(operatingModel, '`POST /api/v1/admissions`', 'Admission operating model: generic admission route is documented');
+  includes(operatingModel, '`observe`, `warn`, `review`, or `enforce`', 'Admission operating model: generic mode ladder is documented');
   includes(operatingModel, 'No public hosted crypto HTTP route is claimed', 'Admission operating model: hosted crypto route overclaim is blocked');
-  includes(operatingModel, 'No universal hosted `admit` route is claimed', 'Admission operating model: universal route overclaim is blocked');
+  includes(operatingModel, 'No legacy `POST /api/v1/admit` route is claimed', 'Admission operating model: legacy admit route overclaim is blocked');
 }
 
 function testTopLevelDocsLinkTheOperatingModel(): void {
@@ -82,7 +84,8 @@ function testTrackerDefinesTheStepwisePathWithoutSplittingTheProduct(): void {
   includes(tracker, 'The goal is not to add a second product, a crypto-only track, or another broad surface.', 'Admission tracker: no product split');
   includes(tracker, 'Keep Attestor as one product with one platform core and modular packs.', 'Admission tracker: one-product guardrail');
   includes(tracker, 'Do not claim a public hosted crypto HTTP route', 'Admission tracker: public crypto route overclaim blocked');
-  includes(tracker, 'Do not claim a universal hosted admission route', 'Admission tracker: universal route overclaim blocked');
+  includes(tracker, 'The generic hosted admission route is `POST /api/v1/admissions`', 'Admission tracker: generic admission route is explicit');
+  includes(tracker, 'do not claim the old placeholder `POST /api/v1/admit`', 'Admission tracker: legacy admit route overclaim blocked');
   includes(tracker, '| Total frozen steps | 6 |', 'Admission tracker: frozen step count is explicit');
   includes(tracker, '| Completed | 6 |', 'Admission tracker: Step 06 is complete');
   includes(tracker, '| Not started | 0 |', 'Admission tracker: no frozen step remains');
@@ -93,7 +96,7 @@ function testTrackerDefinesTheStepwisePathWithoutSplittingTheProduct(): void {
   includes(tracker, '| 05 | complete | Add the first customer-facing admission facade |', 'Admission tracker: Step 05 row is complete');
   includes(tracker, '| 06 | complete | Add admission readiness and quickstart gates |', 'Admission tracker: Step 06 row is complete');
   includes(tracker, 'The first public facade is exported through `attestor/consequence-admission`.', 'Admission tracker: facade posture is documented');
-  includes(tracker, 'No frozen consequence-admission step remains.', 'Admission tracker: completed track has no remaining frozen step');
+  includes(tracker, 'The first post-track extension is the generic hosted admission route', 'Admission tracker: post-track generic admission extension is documented');
   excludes(tracker, /\bfirst[- ]slice\b/iu, 'Admission tracker: no stale first-slice language');
 }
 
@@ -107,6 +110,8 @@ function testPackageScriptsExposeTheGuard(): void {
   includes(JSON.stringify(packageJson.scripts), 'test:consequence-admission-crypto', 'Admission operating model: crypto script is exported');
   includes(JSON.stringify(packageJson.scripts), 'test:consequence-admission-facade', 'Admission operating model: facade script is exported');
   includes(JSON.stringify(packageJson.scripts), 'test:consequence-admission-readiness', 'Admission operating model: readiness script is exported');
+  includes(JSON.stringify(packageJson.scripts), 'test:generic-admission-mode-ladder', 'Admission operating model: generic mode ladder script is exported');
+  includes(JSON.stringify(packageJson.scripts), 'test:generic-admission-routes', 'Admission operating model: generic route script is exported');
   includes(JSON.stringify(packageJson.scripts), 'test:consequence-admission-package-surface', 'Admission operating model: package surface script is exported');
   includes(packageJson.scripts.test, 'scripts/run-suite.mjs test', 'Admission operating model: npm test delegates to the suite runner');
   includes(packageJson.scripts.verify, 'scripts/run-suite.mjs verify', 'Admission operating model: npm run verify delegates to the suite runner');

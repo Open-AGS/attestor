@@ -188,7 +188,8 @@ function testExampleAndDocs(): void {
   includes(readme, 'docs/01-overview/customer-admission-gate.md', 'README: links customer gate docs');
   includes(doc, 'npm run example:customer-gate', 'Customer gate doc: includes runnable command');
   includes(doc, 'assertConsequenceAdmissionGateAllows', 'Customer gate doc: includes copy-paste helper');
-  includes(doc, 'This does not add a universal hosted admission route.', 'Customer gate doc: keeps route boundary honest');
+  includes(doc, 'This helper is not the hosted admission API.', 'Customer gate doc: keeps route boundary honest');
+  includes(doc, '`POST /api/v1/admissions`', 'Customer gate doc: points to the generic route');
   includes(doc, 'This does not add a public hosted crypto route.', 'Customer gate doc: keeps crypto boundary honest');
   includes(doc, 'This does not auto-detect packs from payload shape.', 'Customer gate doc: rejects auto detection');
   includes(tryFirst, '[Customer admission gate](customer-admission-gate.md)', 'Try-first doc: links the next integration step');

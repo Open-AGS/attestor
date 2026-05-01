@@ -1,12 +1,15 @@
 # Consequence Admission Quickstart
 
-Use this when you already have a shipped Attestor result and want the shared customer-facing admission shape:
+Use this when a customer-controlled system needs one shared admission shape before an AI action becomes a consequence:
 
 ```text
 proposed consequence -> explicit surface -> admit | narrow | review | block -> proof -> downstream gate
 ```
 
-This quickstart does not add a new hosted route. It uses the public package facade exported as `attestor/consequence-admission`.
+There are now two first integration paths:
+
+- `POST /api/v1/admissions` for generic AI action authorization across consequence domains.
+- `attestor/consequence-admission` for wrapping existing shipped Attestor surfaces such as the finance pipeline run and crypto execution-admission package plan.
 
 For the shortest first run, start with [Try Attestor first](try-attestor-first.md).
 For the first customer-side enforcement step, see [Customer admission gate](customer-admission-gate.md).
@@ -32,12 +35,68 @@ That demo shows a payment adapter that cannot dispatch without verifier allow.
 
 ## Rules
 
-- Choose the surface explicitly: `finance-pipeline-run` or `crypto-execution-plan`.
+- Use `POST /api/v1/admissions` when the customer system already has a proposed AI action and needs a generic consequence authorization decision.
+- Choose the consequence domain explicitly: `money-movement`, `programmable-money`, `data-disclosure`, `authority-change`, `external-communication`, `regulated-filing`, `system-operation`, `decision-support`, or `custom`.
+- Choose the adoption mode explicitly: `observe`, `warn`, `review`, or `enforce`.
+- Use the package facade when you already have a shipped Attestor surface result: `finance-pipeline-run` or `crypto-execution-plan`.
 - Use finance when the source result came from `POST /api/v1/pipeline/run`.
 - Use crypto when the source result is a `CryptoExecutionAdmissionPlan` from `attestor/crypto-execution-admission`.
 - Do not auto-detect packs from payload shape.
-- Do not treat this as a universal hosted admission route.
+- Do not use the old placeholder `POST /api/v1/admit` route name.
+- Do not treat the generic route as a magic pack router.
 - Do not treat crypto as generally available through a public hosted route.
+
+## Generic Hosted Admission
+
+The generic route is the first hosted action-authorization API:
+
+```http
+POST /api/v1/admissions
+```
+
+Example request:
+
+```json
+{
+  "mode": "observe",
+  "actor": "support-ai-agent",
+  "action": "issue_refund",
+  "domain": "money-movement",
+  "downstreamSystem": "refund-service",
+  "amount": {
+    "value": 38000,
+    "currency": "HUF"
+  },
+  "recipient": "customer_123",
+  "evidenceRefs": [
+    "order:987",
+    "payment:456"
+  ],
+  "policyRef": "policy:refunds:v1"
+}
+```
+
+The response carries both the effective admission decision and the shadow decision:
+
+```json
+{
+  "mode": "observe",
+  "shadowDecision": "would_admit",
+  "downstreamPosture": "observe-only",
+  "enforcementActive": false,
+  "admission": {
+    "decision": "admit",
+    "allowed": true,
+    "request": {
+      "entryPoint": {
+        "route": "/api/v1/admissions"
+      }
+    }
+  }
+}
+```
+
+`observe` and `warn` are adoption modes. They let a team see what Attestor would have done before enforcing a block. `review` and `enforce` are control modes. In those modes, incomplete policy, authority, evidence, scope, or adapter readiness holds the consequence before downstream execution.
 
 ## Import The Facade
 
@@ -115,6 +174,8 @@ Run these before changing the public admission story:
 
 ```bash
 npm run test:consequence-admission-readiness
+npm run test:generic-admission-mode-ladder
+npm run test:generic-admission-routes
 npm run test:consequence-admission-package-surface
 npm run verify
 ```
@@ -122,6 +183,8 @@ npm run verify
 These gates prove that:
 
 - README and overview docs point to the same admission story.
+- `POST /api/v1/admissions` exists as the generic hosted admission route.
+- Generic admissions require explicit consequence domain and mode.
 - The first hosted finance call still maps to canonical `admit`.
 - The first crypto integration still maps `needs-evidence` to fail-closed `review` and `deny` to fail-closed `block`.
 - `attestor/consequence-admission` is the public package facade.
@@ -130,4 +193,4 @@ These gates prove that:
 
 ## Keep The Boundary Honest
 
-If a future step adds a universal hosted admission route or a hosted crypto route, it needs its own route contract, implementation, tests, package/readiness evidence, and tracker update first.
+The generic hosted route is not a hosted crypto route and not automatic pack detection. If a future step adds a hosted crypto route or automatic routing, it needs its own route contract, implementation, tests, package/readiness evidence, and tracker update first.

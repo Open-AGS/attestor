@@ -39,7 +39,7 @@ That demo shows a payment adapter whose dispatch function is only reachable afte
 
 ## What This Does Not Claim
 
-- It is not a universal hosted admission route.
+- It is not the generic hosted `POST /api/v1/admissions` route.
 - It is not a public hosted crypto route.
 - It is not a wallet, custody platform, agent runtime, or orchestration layer.
 - It does not auto-detect packs from payload shape.

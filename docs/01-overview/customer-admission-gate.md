@@ -51,7 +51,7 @@ assertConsequenceAdmissionGateAllows({
 
 ## Boundary
 
-- This does not add a universal hosted admission route.
+- This helper is not the hosted admission API. Use `POST /api/v1/admissions` when a customer system needs the generic route.
 - This does not add a public hosted crypto route.
 - This does not auto-detect packs from payload shape.
 - This does not make Attestor the downstream system.

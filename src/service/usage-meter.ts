@@ -6,13 +6,13 @@
  * BOUNDARY:
  * - Monthly counters keyed by tenantId + month
  * - Local single-node JSON ledger, persisted on disk
- * - No shared multi-node billing datastore or concurrency locking yet
+ * - Local file lock around write mutations; no shared multi-node billing datastore
  * - Intended for hosted-product shell and quota enforcement
  */
 
 import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
-import { writeTextFileAtomic } from './file-store.js';
+import { withFileLock, writeTextFileAtomic } from './file-store.js';
 
 export interface UsageContext {
   tenantId: string;
@@ -72,6 +72,31 @@ function saveLedger(ledger: UsageLedgerFile): void {
   writeTextFileAtomic(path, `${JSON.stringify(ledger, null, 2)}\n`);
 }
 
+function withUsageLedgerLock<T>(action: (ledger: UsageLedgerFile, path: string) => T): T {
+  const path = ledgerPath();
+  return withFileLock(path, () => action(loadLedger(), path));
+}
+
+function buildUsageContext(
+  tenantId: string,
+  planId: string | null | undefined,
+  quota: number | null | undefined,
+  period: string,
+  used: number,
+): UsageContext {
+  const resolvedQuota = typeof quota === 'number' && quota >= 0 ? quota : null;
+  return {
+    tenantId,
+    planId: planId ?? 'community',
+    meter: 'monthly_pipeline_runs',
+    period,
+    used,
+    quota: resolvedQuota,
+    remaining: resolvedQuota === null ? null : Math.max(0, resolvedQuota - used),
+    enforced: resolvedQuota !== null,
+  };
+}
+
 function loadUsedCount(tenantId: string, period: string): number {
   const ledger = loadLedger();
   return ledger.monthlyPipelineRuns.find((entry) => entry.tenantId === tenantId && entry.period === period)?.used ?? 0;
@@ -84,17 +109,7 @@ export function getUsageContext(
 ): UsageContext {
   const period = currentPeriod();
   const used = loadUsedCount(tenantId, period);
-  const resolvedQuota = typeof quota === 'number' && quota >= 0 ? quota : null;
-  return {
-    tenantId,
-    planId: planId ?? 'community',
-    meter: 'monthly_pipeline_runs',
-    period,
-    used,
-    quota: resolvedQuota,
-    remaining: resolvedQuota === null ? null : Math.max(0, resolvedQuota - used),
-    enforced: resolvedQuota !== null,
-  };
+  return buildUsageContext(tenantId, planId, quota, period, used);
 }
 
 export function canConsumePipelineRun(
@@ -112,23 +127,27 @@ export function consumePipelineRun(
   planId: string | null | undefined,
   quota: number | null | undefined,
 ): UsageContext {
-  const period = currentPeriod();
-  const ledger = loadLedger();
-  const key = usageKey(tenantId, period);
-  const existing = ledger.monthlyPipelineRuns.find((entry) => usageKey(entry.tenantId, entry.period) === key);
-  if (existing) {
-    existing.used += 1;
-    existing.updatedAt = new Date().toISOString();
-  } else {
-    ledger.monthlyPipelineRuns.push({
-      tenantId,
-      period,
-      used: 1,
-      updatedAt: new Date().toISOString(),
-    });
-  }
-  saveLedger(ledger);
-  return getUsageContext(tenantId, planId, quota);
+  return withUsageLedgerLock((ledger) => {
+    const period = currentPeriod();
+    const key = usageKey(tenantId, period);
+    const existing = ledger.monthlyPipelineRuns.find((entry) => usageKey(entry.tenantId, entry.period) === key);
+    let used: number;
+    if (existing) {
+      existing.used += 1;
+      existing.updatedAt = new Date().toISOString();
+      used = existing.used;
+    } else {
+      used = 1;
+      ledger.monthlyPipelineRuns.push({
+        tenantId,
+        period,
+        used,
+        updatedAt: new Date().toISOString(),
+      });
+    }
+    saveLedger(ledger);
+    return buildUsageContext(tenantId, planId, quota, period, used);
+  });
 }
 
 export function readUsageLedgerSnapshot(): {

@@ -1,8 +1,9 @@
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { createHash } from 'node:crypto';
 import type { HistoricalSchemaComparison, SchemaAttestation } from './schema-attestation.js';
 import { compareSchemaAttestations } from './schema-attestation.js';
+import { withFileLock, writeTextFileAtomic } from '../platform/file-store.js';
 
 interface SchemaAttestationHistoryRecord {
   key: string;
@@ -38,7 +39,14 @@ function loadStore(): SchemaAttestationHistoryFile {
 function saveStore(store: SchemaAttestationHistoryFile): void {
   const path = storePath();
   mkdirSync(dirname(path), { recursive: true });
-  writeFileSync(path, `${JSON.stringify(store, null, 2)}\n`, 'utf8');
+  writeTextFileAtomic(path, `${JSON.stringify(store, null, 2)}\n`);
+}
+
+function withSchemaAttestationHistoryLock<T>(
+  action: (store: SchemaAttestationHistoryFile, path: string) => T,
+): T {
+  const path = storePath();
+  return withFileLock(path, () => action(loadStore(), path));
 }
 
 function hash(input: string): string {
@@ -64,50 +72,58 @@ function sanitizeAttestationForStore(attestation: SchemaAttestation): SchemaAtte
 
 export function findLatestSchemaAttestationHistory(key: string): SchemaAttestationHistoryRecord | null {
   const store = loadStore();
+  return findLatestSchemaAttestationHistoryInStore(store, key);
+}
+
+function findLatestSchemaAttestationHistoryInStore(
+  store: SchemaAttestationHistoryFile,
+  key: string,
+): SchemaAttestationHistoryRecord | null {
   return store.records
     .filter((record) => record.key === key)
     .sort((left, right) => left.capturedAt < right.capturedAt ? 1 : -1)[0] ?? null;
 }
 
 export function recordSchemaAttestationHistory(attestation: SchemaAttestation): HistoricalSchemaComparison | null {
-  const store = loadStore();
-  const historyKey = buildSchemaAttestationHistoryKey(attestation);
-  const previous = findLatestSchemaAttestationHistory(historyKey);
-  const comparison = previous ? compareSchemaAttestations(previous.attestation, attestation) : null;
+  return withSchemaAttestationHistoryLock((store) => {
+    const historyKey = buildSchemaAttestationHistoryKey(attestation);
+    const previous = findLatestSchemaAttestationHistoryInStore(store, historyKey);
+    const comparison = previous ? compareSchemaAttestations(previous.attestation, attestation) : null;
 
-  store.records.push({
-    key: historyKey,
-    capturedAt: attestation.capturedAt,
-    attestation: sanitizeAttestationForStore({
-      ...attestation,
+    store.records.push({
+      key: historyKey,
+      capturedAt: attestation.capturedAt,
+      attestation: sanitizeAttestationForStore({
+        ...attestation,
+        historyKey,
+        historicalComparison: null,
+      }),
+    });
+
+    const maxRecordsPerKey = Number.parseInt(process.env.ATTESTOR_SCHEMA_ATTESTATION_HISTORY_MAX_PER_KEY ?? '20', 10);
+    const safeMax = Number.isFinite(maxRecordsPerKey) && maxRecordsPerKey > 0 ? maxRecordsPerKey : 20;
+    const grouped = store.records.filter((record) => record.key === historyKey)
+      .sort((left, right) => left.capturedAt < right.capturedAt ? 1 : -1);
+    const keep = new Set(grouped.slice(0, safeMax).map((record) => `${record.key}:${record.capturedAt}`));
+    store.records = store.records.filter((record) => {
+      if (record.key !== historyKey) return true;
+      return keep.has(`${record.key}:${record.capturedAt}`);
+    });
+
+    saveStore(store);
+
+    if (!previous || !comparison) return null;
+    return {
       historyKey,
-      historicalComparison: null,
-    }),
+      previousCapturedAt: previous.attestation.capturedAt,
+      previousAttestationHash: previous.attestation.attestationHash,
+      currentAttestationHash: attestation.attestationHash,
+      schemaChanged: comparison.schemaChanged,
+      dataChanged: comparison.dataChanged,
+      contentChanged: comparison.contentChanged,
+      summary: comparison.summary,
+    };
   });
-
-  const maxRecordsPerKey = Number.parseInt(process.env.ATTESTOR_SCHEMA_ATTESTATION_HISTORY_MAX_PER_KEY ?? '20', 10);
-  const safeMax = Number.isFinite(maxRecordsPerKey) && maxRecordsPerKey > 0 ? maxRecordsPerKey : 20;
-  const grouped = store.records.filter((record) => record.key === historyKey)
-    .sort((left, right) => left.capturedAt < right.capturedAt ? 1 : -1);
-  const keep = new Set(grouped.slice(0, safeMax).map((record) => `${record.key}:${record.capturedAt}`));
-  store.records = store.records.filter((record) => {
-    if (record.key !== historyKey) return true;
-    return keep.has(`${record.key}:${record.capturedAt}`);
-  });
-
-  saveStore(store);
-
-  if (!previous || !comparison) return null;
-  return {
-    historyKey,
-    previousCapturedAt: previous.attestation.capturedAt,
-    previousAttestationHash: previous.attestation.attestationHash,
-    currentAttestationHash: attestation.attestationHash,
-    schemaChanged: comparison.schemaChanged,
-    dataChanged: comparison.dataChanged,
-    contentChanged: comparison.contentChanged,
-    summary: comparison.summary,
-  };
 }
 
 export function resetSchemaAttestationHistoryForTests(): void {

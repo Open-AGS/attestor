@@ -10,7 +10,7 @@
 import { randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
-import { writeTextFileAtomic } from './file-store.js';
+import { withFileLock, writeTextFileAtomic } from './file-store.js';
 import { hashJsonValue } from './json-stable.js';
 
 export type AdminAuditAction =
@@ -93,6 +93,11 @@ function saveLog(log: AdminAuditLogFile): void {
   writeTextFileAtomic(path, `${JSON.stringify(log, null, 2)}\n`);
 }
 
+function withAdminAuditLogLock<T>(action: (log: AdminAuditLogFile, path: string) => T): T {
+  const path = logPath();
+  return withFileLock(path, () => action(loadLog(), path));
+}
+
 function computeEventHash(record: Omit<AdminAuditRecord, 'eventHash'>): string {
   return hashJsonValue(record);
 }
@@ -101,21 +106,22 @@ export function appendAdminAuditRecord(input: Omit<AdminAuditRecord, 'id' | 'occ
   record: AdminAuditRecord;
   path: string;
 } {
-  const log = loadLog();
-  const previousHash = log.records.length > 0 ? log.records[log.records.length - 1]?.eventHash ?? null : null;
-  const baseRecord = {
-    id: `audit_${randomUUID().replace(/-/g, '').slice(0, 16)}`,
-    occurredAt: new Date().toISOString(),
-    previousHash,
-    ...input,
-  };
-  const record: AdminAuditRecord = {
-    ...baseRecord,
-    eventHash: computeEventHash(baseRecord),
-  };
-  log.records.push(record);
-  saveLog(log);
-  return { record, path: logPath() };
+  return withAdminAuditLogLock((log, path) => {
+    const previousHash = log.records.length > 0 ? log.records[log.records.length - 1]?.eventHash ?? null : null;
+    const baseRecord = {
+      id: `audit_${randomUUID().replace(/-/g, '').slice(0, 16)}`,
+      occurredAt: new Date().toISOString(),
+      previousHash,
+      ...input,
+    };
+    const record: AdminAuditRecord = {
+      ...baseRecord,
+      eventHash: computeEventHash(baseRecord),
+    };
+    log.records.push(record);
+    saveLog(log);
+    return { record, path };
+  });
 }
 
 export function listAdminAuditRecords(filters?: {

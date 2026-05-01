@@ -82,7 +82,9 @@ npm run verify:cert -- .attestor/showcase/latest/evidence/kit.json
 npm run verify
 ```
 
-`npm run proof:surface` writes `.attestor/proof-surface/latest/` with a manifest, machine-readable bundle, markdown summary, and one unified proof output per runnable scenario. It is a local static proof surface. It does not start a hosted console or claim a public hosted crypto route.
+`npm run proof:surface` writes `.attestor/proof-surface/latest/` with `.attestor/proof-surface/latest/manifest.json`, a machine-readable bundle, markdown summary, and one unified proof output per runnable scenario.
+
+It is a local static proof surface; it does not start a hosted console or claim a public hosted crypto route.
 
 `npm run showcase:proof` generates a local PostgreSQL-backed proof packet. Without a live upstream model, `verify:cert` reports `PROOF_DEGRADED` and exits non-zero by design. The full local release gate remains `npm run verify`.
 
@@ -148,6 +150,8 @@ See [AI-assisted financial reporting acceptance](docs/01-overview/financial-repo
 
 Attestor is one gateway with a shared admission core and modular packs for specific consequence domains.
 
+One product. One platform core.
+
 | Layer | Role | Current status |
 |---|---|---|
 | Consequence admission | common admit / narrow / review / block vocabulary and customer-side gate model | evaluation-packaged |
@@ -206,11 +210,21 @@ Start here:
 - [Attestor Evaluation Packet v0.1](docs/00-evaluation/v0.1-evaluation-packet.md) - compact outside-review packet
 - [v0.1.2-evaluation release notes](docs/00-evaluation/v0.1.2-evaluation-release-notes.md) - current release boundary and known limitations
 - [Try Attestor first](docs/01-overview/try-attestor-first.md) - shortest guided run
+- [Consequence admission quickstart](docs/01-overview/consequence-admission-quickstart.md) - package facade and first admission call
 - [Attestor operating model](docs/01-overview/operating-model.md) - decision vocabulary and placement model
 - [Customer admission gate](docs/01-overview/customer-admission-gate.md) - first customer-side enforcement step
 - [Customer integration recipes](docs/01-overview/customer-integration-recipes.md) - where to put Attestor in an existing app
+- [Commercial packaging, pricing, and evaluation](docs/01-overview/product-packaging.md) - commercial truth source and evaluation boundary
+- [Hosted customer journey](docs/01-overview/hosted-customer-journey.md) - hosted account and checkout path
+- [First hosted API call](docs/01-overview/hosted-first-api-call.md) - first hosted API-call quickstart
+- [Finance and crypto first integrations](docs/01-overview/finance-and-crypto-first-integrations.md) - first integration examples
+- [Hosted account visibility](docs/01-overview/hosted-account-visibility.md) - account, usage, and billing visibility
 - [What you can do with Attestor](docs/01-overview/what-you-can-do.md) - longer use-case map
 - [System overview](docs/02-architecture/system-overview.md) - architecture map
+- [Proof console buildout](docs/02-architecture/proof-console-buildout.md) - local proof-surface tracker
+- [Production runtime hardening buildout](docs/02-architecture/production-runtime-hardening-buildout.md) - runtime profile and fail-closed hardening tracker
+- [Production shared authority plane buildout](docs/02-architecture/production-shared-authority-plane-buildout.md) - shared production authority-plane tracker
+- [Production rehearsal buildout](docs/02-architecture/production-rehearsal-buildout.md) - active production rehearsal tracker
 - [Proof model](docs/05-proof/proof-model.md) - proof vocabulary and artifacts
 - [Signing and verification](docs/06-signing/signing-verification.md) - signed proof verification path
 - [Production readiness](docs/08-deployment/production-readiness.md) - deployment and maturity boundary

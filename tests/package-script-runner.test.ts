@@ -74,6 +74,7 @@ function testPackageJsonDelegatesLargeSuitesToRunner(): void {
 
   equal(pkg.scripts.test, 'node scripts/run-suite.mjs test', 'Package runner: npm test delegates to suite runner');
   equal(pkg.scripts.verify, 'node scripts/run-suite.mjs verify', 'Package runner: npm run verify delegates to suite runner');
+  equal(pkg.scripts['verify:full'], 'npm run verify && node scripts/run-live-ops-gate.mjs full', 'Package runner: full verification delegates live/ops work to the live/ops runner');
   equal(pkg.scripts['typecheck:hygiene'], 'tsc --noEmit --noUnusedLocals --noUnusedParameters', 'Package runner: strict unused-code hygiene is available as an explicit check');
   equal(pkg.scripts['test:package-script-runner'], 'tsx tests/package-script-runner.test.ts', 'Package runner: runner contract test is exposed');
 }
@@ -91,6 +92,7 @@ function testFastSuiteKeepsCriticalCoverage(): void {
     'test:evaluation-release-notes',
     'test:security-baseline-docs',
     'test:package-script-runner',
+    'test:verify-live-ops-gate',
     'tsx tests/account-session-cookie-security.test.ts',
     'tsx tests/release-kernel-release-decision-engine.test.ts',
     'tsx tests/release-layer-platform-surface.test.ts',
@@ -131,6 +133,8 @@ function testDefaultSuitesExcludeLiveAndOpsGates(): void {
     'test:live-api',
     'test:live-postgres',
     'test:live-snowflake',
+    'test:live-cypress',
+    'test:live-vsac',
     'test:observability-bundle',
     'test:kubernetes-ha-bundle',
     'test:production-readiness-packet',

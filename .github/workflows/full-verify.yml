@@ -2,6 +2,23 @@ name: Full Verify
 
 on:
   workflow_dispatch:
+    inputs:
+      mode:
+        description: "Verification scope to run."
+        required: true
+        default: "repo"
+        type: choice
+        options:
+          - repo
+          - local-live
+          - ops
+          - full
+          - external-live
+      github_environment:
+        description: "Protected GitHub Environment that holds external live verification secrets."
+        required: true
+        default: "live-ops-verification"
+        type: string
   schedule:
     - cron: "0 4 * * 1"
 
@@ -10,6 +27,7 @@ permissions:
 
 jobs:
   verify:
+    if: ${{ github.event_name == 'schedule' || inputs.mode == 'repo' || inputs.mode == 'full' }}
     runs-on: ubuntu-latest
     timeout-minutes: 90
 
@@ -28,3 +46,71 @@ jobs:
 
       - name: Verify
         run: npm run verify
+
+  live-ops:
+    if: ${{ github.event_name == 'workflow_dispatch' && (inputs.mode == 'local-live' || inputs.mode == 'ops' || inputs.mode == 'full') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Run selected local live or ops gate
+        run: |
+          if [ "${{ inputs.mode }}" = "local-live" ]; then
+            npm run verify:live-local
+          elif [ "${{ inputs.mode }}" = "ops" ]; then
+            npm run verify:ops
+          else
+            npm run verify:live-local
+            npm run verify:ops
+          fi
+
+  external-live:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.mode == 'external-live' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    environment:
+      name: ${{ inputs.github_environment }}
+      deployment: false
+    env:
+      ATTESTOR_RUN_EXTERNAL_LIVE_TESTS: "true"
+      SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+      SNOWFLAKE_USERNAME: ${{ secrets.SNOWFLAKE_USERNAME }}
+      SNOWFLAKE_PASSWORD: ${{ secrets.SNOWFLAKE_PASSWORD }}
+      SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE }}
+      VSAC_UMLS_API_KEY: ${{ secrets.VSAC_UMLS_API_KEY }}
+      UMLS_API_KEY: ${{ secrets.UMLS_API_KEY }}
+      CYPRESS_EMAIL: ${{ secrets.CYPRESS_EMAIL }}
+      CYPRESS_PASSWORD: ${{ secrets.CYPRESS_PASSWORD }}
+      CYPRESS_UMLS_USER: ${{ secrets.CYPRESS_UMLS_USER }}
+      CYPRESS_UMLS_PASS: ${{ secrets.CYPRESS_UMLS_PASS }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Verify repo gate
+        run: npm run verify
+
+      - name: Run external live gate
+        run: npm run verify:external-live

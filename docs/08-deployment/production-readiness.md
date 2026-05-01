@@ -28,6 +28,25 @@ Attestor is ready for production promotion when all four are true:
 
 That is the practical line between "good code" and "rollout-ready system".
 
+## Verification Gates
+
+Use `npm run verify` as the required repository gate. It is intentionally
+deterministic, secretless, and suitable for pull requests, reviewers, and the
+weekly `Full Verify` schedule.
+
+Use `npm run verify:full` when you want the longer local evidence chain. It
+runs `npm run verify`, then the local live/integration checks and the ops
+render/probe checks. This proves the repo-side live and deployment-shaped
+paths that can be exercised without customer secrets.
+
+External live checks are opt-in. Snowflake, VSAC, and ONC Cypress validation
+must run through `npm run verify:external-live` with
+`ATTESTOR_RUN_EXTERNAL_LIVE_TESTS=true` in an explicit live environment. In
+GitHub Actions, use the `Full Verify` workflow's `external-live` mode and a
+protected GitHub Environment that holds those credentials. Do not treat a
+green `verify` or default `verify:full` run as proof that external cloud,
+healthcare, or customer-operated substrates were reached.
+
 ## Runtime Profile Gate
 
 Set `ATTESTOR_RUNTIME_PROFILE` deliberately before starting the API runtime. Do not let the profile default decide the production story.

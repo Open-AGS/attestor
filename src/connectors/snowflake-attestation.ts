@@ -16,6 +16,20 @@
 import { createHash } from 'node:crypto';
 import type { SchemaAttestation, SchemaColumn, TableSentinel } from './schema-attestation.js';
 
+const SIMPLE_SNOWFLAKE_IDENTIFIER = /^[A-Za-z_][A-Za-z0-9_$]*$/;
+
+function assertSnowflakeIdentifier(value: string, field: string): string {
+  const trimmed = value.trim();
+  if (!SIMPLE_SNOWFLAKE_IDENTIFIER.test(trimmed)) {
+    throw new Error(`Invalid Snowflake ${field} identifier for schema attestation.`);
+  }
+  return trimmed;
+}
+
+function quoteSnowflakeString(value: string): string {
+  return `'${value.replace(/'/g, "''")}'`;
+}
+
 /**
  * Capture schema attestation from a Snowflake connection.
  * Requires an active snowflake-sdk connection.
@@ -27,13 +41,20 @@ export async function captureSnowflakeSchemaAttestation(
   tables: string[],
 ): Promise<SchemaAttestation> {
   const capturedAt = new Date().toISOString();
+  const safeDatabase = assertSnowflakeIdentifier(database, 'database');
+  const safeSchema = assertSnowflakeIdentifier(schema, 'schema');
+  const safeTables = tables.map((table) => assertSnowflakeIdentifier(table, 'table'));
+  if (safeTables.length === 0) {
+    throw new Error('Snowflake schema attestation requires at least one table.');
+  }
+  const tableList = safeTables.map((table) => quoteSnowflakeString(table.toUpperCase())).join(',');
 
   // 1. Schema fingerprint via INFORMATION_SCHEMA
   const colRows = await execSql(`
     SELECT TABLE_NAME, COLUMN_NAME, DATA_TYPE, IS_NULLABLE, COLUMN_DEFAULT, ORDINAL_POSITION
-    FROM ${database}.INFORMATION_SCHEMA.COLUMNS
-    WHERE TABLE_SCHEMA = '${schema}'
-      AND TABLE_NAME IN (${tables.map(t => `'${t.toUpperCase()}'`).join(',')})
+    FROM ${safeDatabase}.INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = ${quoteSnowflakeString(safeSchema.toUpperCase())}
+      AND TABLE_NAME IN (${tableList})
     ORDER BY TABLE_NAME, ORDINAL_POSITION
   `);
 
@@ -53,9 +74,9 @@ export async function captureSnowflakeSchemaAttestation(
 
   // 2. Data sentinels (COUNT per table)
   const sentinels: TableSentinel[] = [];
-  for (const table of tables) {
+  for (const table of safeTables) {
     try {
-      const rows = await execSql(`SELECT COUNT(*) AS ROW_COUNT FROM ${database}.${schema}.${table}`);
+      const rows = await execSql(`SELECT COUNT(*) AS ROW_COUNT FROM ${safeDatabase}.${safeSchema}.${table}`);
       sentinels.push({
         tableName: table,
         rowCount: Number(rows[0]?.ROW_COUNT ?? 0),
@@ -77,7 +98,7 @@ export async function captureSnowflakeSchemaAttestation(
     const ctxRows = await execSql(`SELECT CURRENT_VERSION() AS VER, CURRENT_ACCOUNT() AS ACCT`);
     const ctx = ctxRows[0] as any;
     executionContextHash = createHash('sha256')
-      .update(`${ctx.VER}|${ctx.ACCT}|${database}|${schema}|snowflake`)
+      .update(`${ctx.VER}|${ctx.ACCT}|${safeDatabase}|${safeSchema}|snowflake`)
       .digest('hex')
       .slice(0, 16);
   } catch { /* non-fatal */ }
@@ -93,8 +114,8 @@ export async function captureSnowflakeSchemaAttestation(
     capturedAt,
     executionContextHash,
     txidSnapshot: null,
-    schemaName: schema,
-    tables,
+    schemaName: safeSchema,
+    tables: safeTables,
     schemaFingerprint,
     columns,
     constraints: [],
@@ -113,7 +134,7 @@ export async function captureSnowflakeSchemaAttestation(
     constraintFingerprint: createHash('sha256').update('[]').digest('hex').slice(0, 32),
     indexFingerprint: createHash('sha256').update('[]').digest('hex').slice(0, 32),
     sentinelFingerprint,
-    contentFingerprint: createHash('sha256').update(JSON.stringify(tables)).digest('hex').slice(0, 32),
+    contentFingerprint: createHash('sha256').update(JSON.stringify(safeTables)).digest('hex').slice(0, 32),
     attestationHash,
     historyKey: null,
     historicalComparison: null,

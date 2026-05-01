@@ -26,8 +26,11 @@ export interface SnowflakeConfig extends ConnectorConfig {
   username: string;
   password: string;
   warehouse: string;
+  role?: string;
   database?: string;
   schema?: string;
+  queryTag?: string;
+  allowedTables?: string[];
 }
 
 const SNOWFLAKE_TABLE_REF_PATTERN =
@@ -42,6 +45,12 @@ export function loadSnowflakeConfig(): SnowflakeConfig | null {
     .split(',')
     .map((entry) => entry.trim())
     .filter(Boolean);
+  const allowedTables = (process.env.SNOWFLAKE_ALLOWED_TABLES ?? '')
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+  const timeoutMs = parsePositiveInteger(process.env.SNOWFLAKE_TIMEOUT_MS, 30000);
+  const maxRows = parsePositiveInteger(process.env.SNOWFLAKE_MAX_ROWS, 10000);
   return {
     provider: 'snowflake',
     connectionUrl: `https://${account}.snowflakecomputing.com`,
@@ -49,11 +58,14 @@ export function loadSnowflakeConfig(): SnowflakeConfig | null {
     username,
     password,
     warehouse: process.env.SNOWFLAKE_WAREHOUSE ?? 'COMPUTE_WH',
+    role: process.env.SNOWFLAKE_ROLE,
     database: process.env.SNOWFLAKE_DATABASE,
     schema: process.env.SNOWFLAKE_SCHEMA,
-    timeoutMs: parseInt(process.env.SNOWFLAKE_TIMEOUT_MS ?? '30000', 10),
-    maxRows: parseInt(process.env.SNOWFLAKE_MAX_ROWS ?? '10000', 10),
+    timeoutMs,
+    maxRows,
+    queryTag: process.env.SNOWFLAKE_QUERY_TAG ?? 'Attestor_Connector',
     allowedSchemas: allowedSchemas.length > 0 ? allowedSchemas : undefined,
+    allowedTables: allowedTables.length > 0 ? allowedTables : undefined,
   };
 }
 
@@ -68,8 +80,21 @@ async function getSnowflakeSDK() {
   }
 }
 
+function parsePositiveInteger(value: string | undefined, fallback: number): number {
+  const parsed = Number.parseInt(value ?? '', 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
 function boundedSnowflakeTimeoutMs(timeoutMs: number | undefined): number {
   return Number.isFinite(timeoutMs) && timeoutMs !== undefined && timeoutMs > 0 ? timeoutMs : 30000;
+}
+
+function boundedSnowflakeStatementTimeoutSeconds(timeoutMs: number | undefined): number {
+  return Math.max(1, Math.ceil(boundedSnowflakeTimeoutMs(timeoutMs) / 1000));
+}
+
+function quoteSnowflakeString(value: string): string {
+  return `'${value.replace(/'/g, "''")}'`;
 }
 
 function execSql(conn: any, sql: string, timeoutMs?: number): Promise<any[]> {
@@ -123,11 +148,13 @@ export function enforceSnowflakeAllowedSchemas(
   sql: string,
   allowedSchemas: readonly string[] = [],
   allowedDatabase?: string,
+  allowedTables: readonly string[] = [],
 ): void {
-  if (allowedSchemas.length === 0) return;
+  if (allowedSchemas.length === 0 && allowedTables.length === 0) return;
 
   const allowed = new Set(allowedSchemas.map((schema) => normalizeSnowflakeIdentifier(schema)));
   const allowedDb = allowedDatabase ? normalizeSnowflakeIdentifier(allowedDatabase) : null;
+  const allowedTableRefs = allowedTables.map((table) => splitSnowflakeObjectRef(table));
   const refs: Array<{ database: string | null; schema: string | null; table: string }> = [];
   let match: RegExpExecArray | null;
   const pattern = new RegExp(SNOWFLAKE_TABLE_REF_PATTERN.source, SNOWFLAKE_TABLE_REF_PATTERN.flags);
@@ -148,7 +175,7 @@ export function enforceSnowflakeAllowedSchemas(
   for (const ref of refs) {
     if (ref.schema === null) {
       throw new Error(
-        `Unqualified Snowflake table reference "${ref.table}" is not allowed when schema allowlist is active. Use fully qualified "schema.table" or "database.schema.table" syntax. Allowed schemas: [${allowedSchemas.join(', ')}].`,
+        `Unqualified Snowflake table reference "${ref.table}" is not allowed when a Snowflake allowlist is active. Use fully qualified "schema.table" or "database.schema.table" syntax. Allowed schemas: [${allowedSchemas.join(', ')}].`,
       );
     }
     if (allowedDb && ref.database !== null && ref.database !== allowedDb) {
@@ -156,10 +183,30 @@ export function enforceSnowflakeAllowedSchemas(
         `Snowflake database "${ref.database}" is not the configured database "${allowedDb}" for an allowlisted connector query.`,
       );
     }
-    if (!allowed.has(ref.schema)) {
+    if (allowedSchemas.length > 0 && !allowed.has(ref.schema)) {
       throw new Error(`Snowflake schema "${ref.schema}" is not in allowedSchemas [${allowedSchemas.join(', ')}].`);
     }
+    if (allowedTableRefs.length > 0 && !snowflakeTableRefAllowed(ref, allowedTableRefs)) {
+      throw new Error(
+        `Snowflake table "${[ref.database, ref.schema, ref.table].filter(Boolean).join('.')}" is not in allowedTables [${allowedTables.join(', ')}].`,
+      );
+    }
   }
+}
+
+function snowflakeTableRefAllowed(
+  ref: { database: string | null; schema: string | null; table: string },
+  allowedTableRefs: readonly string[][],
+): boolean {
+  return allowedTableRefs.some((allowed) => {
+    if (allowed.length === 3) {
+      return ref.database === allowed[0] && ref.schema === allowed[1] && ref.table === allowed[2];
+    }
+    if (allowed.length === 2) {
+      return ref.schema === allowed[0] && ref.table === allowed[1];
+    }
+    return false;
+  });
 }
 
 function injectLimit(sql: string, maxRows: number): string {
@@ -174,8 +221,11 @@ function connectSnowflake(sdk: any, config: SnowflakeConfig): Promise<any> {
       username: config.username,
       password: config.password,
       warehouse: config.warehouse,
+      role: config.role,
       database: config.database,
       schema: config.schema,
+      timeout: boundedSnowflakeTimeoutMs(config.timeoutMs),
+      queryTag: config.queryTag ?? 'Attestor_Connector',
       application: 'Attestor_Connector',
     });
     conn.connect((err: any, c: any) => {
@@ -183,6 +233,15 @@ function connectSnowflake(sdk: any, config: SnowflakeConfig): Promise<any> {
       else resolve(c);
     });
   });
+}
+
+async function configureSnowflakeSession(conn: any, config: SnowflakeConfig): Promise<void> {
+  const timeoutSeconds = boundedSnowflakeStatementTimeoutSeconds(config.timeoutMs);
+  await execSql(conn, `ALTER SESSION SET STATEMENT_TIMEOUT_IN_SECONDS = ${timeoutSeconds}`, config.timeoutMs);
+  await execSql(conn, 'ALTER SESSION SET ABORT_DETACHED_QUERY = TRUE', config.timeoutMs);
+  if (config.queryTag) {
+    await execSql(conn, `ALTER SESSION SET QUERY_TAG = ${quoteSnowflakeString(config.queryTag)}`, config.timeoutMs);
+  }
 }
 
 // ─── Connector Implementation ───────────────────────────────────────────────
@@ -209,7 +268,7 @@ export const snowflakeConnector: DatabaseConnector = {
 
     try {
       validateReadOnlySql(sql);
-      enforceSnowflakeAllowedSchemas(sql, sfConfig.allowedSchemas ?? [], sfConfig.database);
+      enforceSnowflakeAllowedSchemas(sql, sfConfig.allowedSchemas ?? [], sfConfig.database, sfConfig.allowedTables ?? []);
     } catch (err) {
       return {
         success: false,
@@ -233,15 +292,17 @@ export const snowflakeConnector: DatabaseConnector = {
     let conn: any;
     try {
       conn = await connectSnowflake(sdk, sfConfig);
+      await configureSnowflakeSession(conn, sfConfig);
 
       // Collect context evidence BEFORE query
       const ctxRows = await execSql(conn, `
         SELECT CURRENT_VERSION() AS ver, CURRENT_ACCOUNT() AS acct,
-               CURRENT_DATABASE() AS db, CURRENT_SCHEMA() AS sch
+               CURRENT_DATABASE() AS db, CURRENT_SCHEMA() AS sch,
+               CURRENT_ROLE() AS role, CURRENT_WAREHOUSE() AS wh
       `, sfConfig.timeoutMs);
       const ctx = ctxRows[0] as any;
       const executionContextHash = createHash('sha256')
-        .update(`${ctx.VER}|${ctx.ACCT}|${ctx.DB}|${ctx.SCH}|snowflake`)
+        .update(`${ctx.VER}|${ctx.ACCT}|${ctx.DB}|${ctx.SCH}|${ctx.ROLE}|${ctx.WH}|snowflake`)
         .digest('hex')
         .slice(0, 16);
 
@@ -299,7 +360,7 @@ export const snowflakeConnector: DatabaseConnector = {
     const sfConfig = config as SnowflakeConfig;
     try {
       validateReadOnlySql(sql);
-      enforceSnowflakeAllowedSchemas(sql, sfConfig.allowedSchemas ?? [], sfConfig.database);
+      enforceSnowflakeAllowedSchemas(sql, sfConfig.allowedSchemas ?? [], sfConfig.database, sfConfig.allowedTables ?? []);
     } catch (err) {
       return {
         performed: false,
@@ -332,6 +393,7 @@ export const snowflakeConnector: DatabaseConnector = {
     let conn: any;
     try {
       conn = await connectSnowflake(sdk, sfConfig);
+      await configureSnowflakeSession(conn, sfConfig);
       const rows = await execSql(conn, `EXPLAIN USING JSON ${sql}`, sfConfig.timeoutMs);
       const planStr = JSON.stringify(rows);
 
@@ -373,6 +435,7 @@ export const snowflakeConnector: DatabaseConnector = {
     let conn: any;
     try {
       conn = await connectSnowflake(sdk, sfConfig);
+      await configureSnowflakeSession(conn, sfConfig);
       steps.push({ step: 'connect', passed: true, detail: `Connected to ${sfConfig.account}` });
 
       const vRows = await execSql(conn, 'SELECT CURRENT_VERSION() AS version', sfConfig.timeoutMs);

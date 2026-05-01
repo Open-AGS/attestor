@@ -4,7 +4,9 @@
 
 **AI Consequence Gateway.**
 
-AI systems are moving from suggestions into actions: sending messages, preparing filings, calling tools, changing records, requesting payments, touching wallets, querying databases, and triggering operational workflows. The trust boundary is not the model. The trust boundary is the consequence.
+Models propose. Systems change. Attestor sits between those two facts.
+
+AI systems now reach tools that write to ledgers, CRMs, filing paths, wallets, ticketing systems, databases, and deployment pipelines. A bad answer can be corrected. A bad consequence has to be unwound. The trust boundary is not the model. The trust boundary is the consequence.
 
 Attestor sits at that boundary. A model, agent, workflow, wallet, or application proposes an action; Attestor admits it, narrows it, sends it to review, or blocks it before the downstream system writes, sends, files, settles, grants access, releases data, or executes.
 
@@ -29,7 +31,7 @@ Start review with:
 
 ## What Attestor Does
 
-Attestor is admission control for important AI-driven consequences:
+Attestor is admission control for AI-driven consequences that matter:
 
 ```text
 AI proposes -> Attestor admits / narrows / reviews / blocks -> allowed consequences proceed -> proof remains
@@ -37,19 +39,19 @@ AI proposes -> Attestor admits / narrows / reviews / blocks -> allowed consequen
 
 Use it where an AI-assisted system should not be able to create a consequence just because it can form a request:
 
-- release a financial record
-- send, authorize, or hand off money movement
-- approve a programmable-money action before a wallet, Safe, custody callback, or solver flow sees it
-- export sensitive data or run a live database-backed report
-- send customer, legal, compliance, or filing communications
-- mutate account status, permissions, entitlements, or admin state
-- trigger deployment, infrastructure, incident, or operational changes
+- a finance assistant prepares a report from live warehouse data
+- an agent proposes paying a supplier after reading a changed bank-account instruction
+- a crypto workflow prepares a Safe transaction, wallet RPC call, custody callback, or solver handoff
+- a support copilot drafts a refund, credit, suspension, or account-status change
+- an internal AI requests a customer-data export or live database-backed report
+- a compliance workflow prepares a filing, notice, or customer communication
+- an operations agent proposes a deploy, secret rotation, incident action, or infrastructure change
 
 The posture is fail-closed. If policy, authority, evidence, freshness, scope, or verification cannot close, the consequence does not proceed silently.
 
 ## Why It Exists
 
-Most AI safety layers focus on prompts, outputs, model behavior, or tool routing. Those matter, but they are not enough for enterprise systems where the costly event is downstream:
+Most AI safety layers focus on prompts, outputs, model behavior, or tool routing. Those matter, but they do not close the business risk by themselves. The costly event is downstream:
 
 ```text
 bad instruction -> plausible model output -> tool call -> real system changed
@@ -57,7 +59,7 @@ bad instruction -> plausible model output -> tool call -> real system changed
 
 Attestor treats the proposed consequence as the object of control. It does not need the model to become perfectly reliable. It requires the action to pass a bounded admission decision before the system of record, payment layer, wallet, filing path, admin plane, or operational workflow is allowed to act.
 
-This is the category: **AI consequence infrastructure**. Not a chatbot feature. Not a prompt wrapper. Not a generic agent workspace. A gateway before important AI actions become real.
+This is AI consequence infrastructure: not a chatbot feature, not a prompt wrapper, not a generic agent workspace. A gateway before important AI actions become real.
 
 ## Try It In 60 Seconds
 

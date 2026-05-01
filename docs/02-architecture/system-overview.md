@@ -1,6 +1,6 @@
 # System Overview
 
-Architecture of Attestor as of April 23, 2026.
+Architecture of Attestor as of May 1, 2026.
 
 This document is the short architectural truth source. The README gives the product view; the trackers and platform-surface docs give the detailed implementation view.
 
@@ -8,15 +8,15 @@ This document is the short architectural truth source. The README gives the prod
 
 Attestor should be understood as one product:
 
-**a policy-bound release and authorization platform for high-consequence systems**
+**an AI consequence gateway for high-consequence systems**
 
 The core pattern is:
 
 ```text
-proposed output or operation -> policy, authority, and evidence -> admitted, reviewed, narrowed, or blocked consequence
+AI proposes -> policy, authority, evidence, and enforcement checks -> admitted, narrowed, reviewed, or blocked consequence
 ```
 
-That same pattern spans both AI-output release and programmable-money authorization. The architecture therefore has one shared core and multiple packs, not multiple unrelated products hiding in one repository.
+That same pattern spans AI-output release, programmable-money authorization, data export, authority change, communication, filing, and operational execution. The architecture therefore has one shared core and multiple packs, not multiple unrelated products hiding in one repository.
 
 The customer-facing operating model and decision vocabulary live in [Operating model](../01-overview/operating-model.md). Use that page when deciding how domain-native finance or crypto outcomes map to the shared `admit`, `narrow`, `review`, and `block` language.
 
@@ -58,6 +58,8 @@ Today the two most important packs are:
 
 - **finance pack**: the strongest proven wedge
 - **crypto pack**: the active programmable-money extension
+
+Future packs should start from the same consequence boundary. A pack is not a new product identity; it is a domain-specific way to answer whether a proposed AI-driven consequence may proceed.
 
 ## Finance Pack
 
@@ -120,7 +122,7 @@ The following distinctions matter:
 
 So the honest architectural statement is:
 
-**Attestor is one product with a real shared core and modular packs, but not every pack or supporting slice is equally mature.**
+**Attestor is one AI consequence gateway with a real shared core and modular packs, but not every pack or supporting slice is equally mature.**
 
 ## Current Work Posture
 

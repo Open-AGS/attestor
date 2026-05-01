@@ -6,11 +6,17 @@
  * Redis-backed limiter in front of public auth routes. The important invariant
  * here is that hosted password login is no longer unlimited by default.
  */
+import { resolveTrustedClientAddress } from './trusted-proxy.js';
 
 export interface AuthAttemptSubject {
   email: string;
   source: string | null;
   nowMs?: number;
+}
+
+export interface AuthAttemptSourceInput {
+  directRemoteAddress?: string | null;
+  env?: Readonly<Record<string, string | undefined>>;
 }
 
 export interface AuthAttemptDecision {
@@ -107,13 +113,15 @@ function lockedDecision(
   };
 }
 
-export function resolveAuthAttemptSource(headers: Headers): string {
-  const forwardedFor = headers.get('x-forwarded-for')?.split(',')[0]?.trim();
-  return forwardedFor
-    || headers.get('cf-connecting-ip')?.trim()
-    || headers.get('x-real-ip')?.trim()
-    || headers.get('forwarded')?.trim()
-    || 'unknown-source';
+export function resolveAuthAttemptSource(
+  headers: Headers,
+  input: AuthAttemptSourceInput = {},
+): string {
+  return resolveTrustedClientAddress({
+    headers,
+    directRemoteAddress: input.directRemoteAddress ?? null,
+    env: input.env,
+  }).address ?? 'unknown-source';
 }
 
 export function checkAuthAttemptAllowed(input: AuthAttemptSubject): AuthAttemptDecision {

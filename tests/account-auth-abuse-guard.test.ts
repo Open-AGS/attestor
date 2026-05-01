@@ -23,6 +23,9 @@ const envKeys = [
   'ATTESTOR_AUTH_RATE_LIMIT_MAX_FAILURES_PER_EMAIL',
   'ATTESTOR_AUTH_RATE_LIMIT_MAX_FAILURES_PER_SOURCE',
   'ATTESTOR_AUTH_RATE_LIMIT_LOCKOUT_SECONDS',
+  'ATTESTOR_TRUST_PROXY_HEADERS',
+  'ATTESTOR_TRUSTED_PROXY_HEADERS',
+  'ATTESTOR_TRUSTED_PROXY_PEER_IPS',
 ] as const;
 
 const savedEnv = Object.fromEntries(envKeys.map((key) => [key, process.env[key]])) as Record<
@@ -168,8 +171,28 @@ function run() {
         'x-forwarded-for': '192.0.2.10, 192.0.2.11',
         'x-real-ip': '192.0.2.12',
       });
-      ok(resolveAuthAttemptSource(headers) === '192.0.2.10', 'source resolver uses first forwarded-for hop');
+      ok(
+        resolveAuthAttemptSource(headers, { directRemoteAddress: '198.51.100.10' }) === '198.51.100.10',
+        'source resolver ignores forwarded headers unless proxy trust is explicit',
+      );
       ok(resolveAuthAttemptSource(new Headers()) === 'unknown-source', 'source resolver has deterministic fallback');
+    }
+
+    resetCase();
+    {
+      process.env.ATTESTOR_TRUST_PROXY_HEADERS = 'true';
+      process.env.ATTESTOR_TRUSTED_PROXY_PEER_IPS = '10.0.0.1';
+      const headers = new Headers({
+        'x-forwarded-for': '192.0.2.10, 192.0.2.11',
+      });
+      ok(
+        resolveAuthAttemptSource(headers, { directRemoteAddress: '10.0.0.1' }) === '192.0.2.10',
+        'source resolver accepts forwarded headers from a configured trusted proxy peer',
+      );
+      ok(
+        resolveAuthAttemptSource(headers, { directRemoteAddress: '10.0.0.2' }) === '10.0.0.2',
+        'source resolver falls back to the direct peer when the proxy peer is not trusted',
+      );
     }
 
     {

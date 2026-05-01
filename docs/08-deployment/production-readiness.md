@@ -199,6 +199,26 @@ is a **single OTLP gateway**, not a split metrics/logs/traces credential set:
 - `ATTESTOR_API_IMAGE`
 - `ATTESTOR_WORKER_IMAGE`
 
+### Trusted proxy headers
+
+By default, Attestor treats `X-Forwarded-For`, `Forwarded`, `X-Real-IP`, and
+`CF-Connecting-IP` as untrusted request input. Auth throttling and request
+observability use the direct peer address unless the deployment explicitly
+enables trusted proxy header processing.
+
+Enable this only when Attestor is not directly reachable from the public
+internet and the immediately connected proxy/CDN/Gateway overwrites or strips
+inbound forwarded headers before sending traffic to Attestor:
+
+```bash
+ATTESTOR_TRUST_PROXY_HEADERS=true
+ATTESTOR_TRUSTED_PROXY_PEER_IPS=10.0.0.12,10.0.0.13
+```
+
+Use `ATTESTOR_TRUSTED_PROXY_PEER_IPS=*` only when the network path guarantees
+that every direct peer is a trusted proxy. Do not use wildcard trust on a
+runtime that can receive direct client traffic.
+
 ## Step 4: Measure the Real Environment
 
 Run fresh benchmarks against the actual target environment.

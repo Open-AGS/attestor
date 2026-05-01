@@ -1,4 +1,4 @@
-import type { MiddlewareHandler } from 'hono';
+import type { Context, MiddlewareHandler } from 'hono';
 import type { HostedAccountRecord } from './account-store.js';
 import type * as ControlPlaneStore from './control-plane-store.js';
 import {
@@ -9,16 +9,18 @@ import {
   observeRequestStart,
 } from './observability.js';
 import { currentTenant } from './request-context.js';
+import { directRemoteAddressFromContext, resolveTrustedClientAddress } from './trusted-proxy.js';
 
 export interface RequestObservabilityMiddlewareDeps {
   serviceInstanceId: string;
   findHostedAccountByTenantId: typeof ControlPlaneStore.findHostedAccountByTenantIdState;
 }
 
-function remoteAddressFromHeaders(headers: Headers): string | null {
-  return headers.get('x-forwarded-for')?.split(',')[0]?.trim()
-    || headers.get('x-real-ip')
-    || null;
+function remoteAddressFromContext(context: Context): string | null {
+  return resolveTrustedClientAddress({
+    headers: context.req.raw.headers,
+    directRemoteAddress: directRemoteAddressFromContext(context),
+  }).address;
 }
 
 export function createRequestObservabilityMiddleware(
@@ -26,7 +28,7 @@ export function createRequestObservabilityMiddleware(
 ): MiddlewareHandler {
   return async (context, next) => {
     const requestUrl = new URL(context.req.url);
-    const remoteAddress = remoteAddressFromHeaders(context.req.raw.headers);
+    const remoteAddress = remoteAddressFromContext(context);
     const trace = beginRequestTrace(context.req.header('traceparent'), {
       method: context.req.method,
       path: context.req.path,

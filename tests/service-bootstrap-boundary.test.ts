@@ -483,7 +483,9 @@ function testApiServerUsesExtractedRouteSupport(): void {
 
   for (const requestObservabilityHelper of [
     'export function createRequestObservabilityMiddleware(',
-    'function remoteAddressFromHeaders(',
+    'function remoteAddressFromContext(',
+    'resolveTrustedClientAddress(',
+    'directRemoteAddressFromContext(',
     'beginRequestTrace(',
     'observeRequestStart(',
     'observeRequestComplete(',

@@ -49,6 +49,7 @@ import {
   type AuthAttemptDecision,
   type AuthAttemptSubject,
 } from '../../auth-abuse-guard.js';
+import { directRemoteAddressFromContext } from '../../trusted-proxy.js';
 
 interface CurrentHostedAccountResult {
   tenant: TenantContext;
@@ -119,7 +120,9 @@ function hostedEmailDeliveryProviderFilter(value: string | undefined): HostedEma
 function authAttemptFor(context: Context, email: string): AuthAttemptSubject {
   return {
     email,
-    source: resolveAuthAttemptSource(context.req.raw.headers),
+    source: resolveAuthAttemptSource(context.req.raw.headers, {
+      directRemoteAddress: directRemoteAddressFromContext(context),
+    }),
   };
 }
 

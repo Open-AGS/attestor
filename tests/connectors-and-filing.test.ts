@@ -52,6 +52,7 @@ async function run() {
       loadSnowflakeConfig,
       snowflakeConnector,
     } = await import('../src/connectors/snowflake-connector.js');
+    const { captureSnowflakeSchemaAttestation } = await import('../src/connectors/snowflake-attestation.js');
 
     ok(snowflakeConnector.id === 'snowflake', 'Snowflake: id correct');
     ok(snowflakeConnector.displayName === 'Snowflake Data Cloud', 'Snowflake: displayName');
@@ -77,7 +78,12 @@ async function run() {
       username: process.env.SNOWFLAKE_USERNAME,
       password: process.env.SNOWFLAKE_PASSWORD,
       allowedSchemas: process.env.SNOWFLAKE_ALLOWED_SCHEMAS,
+      allowedTables: process.env.SNOWFLAKE_ALLOWED_TABLES,
       database: process.env.SNOWFLAKE_DATABASE,
+      role: process.env.SNOWFLAKE_ROLE,
+      queryTag: process.env.SNOWFLAKE_QUERY_TAG,
+      timeoutMs: process.env.SNOWFLAKE_TIMEOUT_MS,
+      maxRows: process.env.SNOWFLAKE_MAX_ROWS,
     };
     try {
       process.env.SNOWFLAKE_ACCOUNT = 'example-account';
@@ -85,19 +91,30 @@ async function run() {
       process.env.SNOWFLAKE_PASSWORD = 'example-password';
       process.env.SNOWFLAKE_DATABASE = 'finance_db';
       process.env.SNOWFLAKE_ALLOWED_SCHEMAS = 'finance, controls';
+      process.env.SNOWFLAKE_ALLOWED_TABLES = 'finance.exposures, finance.counterparties';
+      process.env.SNOWFLAKE_ROLE = 'ATTESTOR_READONLY';
+      process.env.SNOWFLAKE_QUERY_TAG = 'attestor-test';
+      process.env.SNOWFLAKE_TIMEOUT_MS = '12000';
+      process.env.SNOWFLAKE_MAX_ROWS = '250';
       const loaded = loadSnowflakeConfig();
       ok(loaded !== null, 'Snowflake: test config loads with required env vars');
       ok(loaded!.allowedSchemas?.join(',') === 'finance,controls', 'Snowflake: allowed schemas parsed from env');
+      ok(loaded!.allowedTables?.join(',') === 'finance.exposures,finance.counterparties', 'Snowflake: allowed tables parsed from env');
+      ok(loaded!.role === 'ATTESTOR_READONLY', 'Snowflake: role parsed from env');
+      ok(loaded!.queryTag === 'attestor-test', 'Snowflake: query tag parsed from env');
+      ok(loaded!.timeoutMs === 12000, 'Snowflake: timeout parsed from env');
+      ok(loaded!.maxRows === 250, 'Snowflake: max rows parsed from env');
 
       enforceSnowflakeAllowedSchemas(
         'SELECT * FROM finance.exposures JOIN finance.counterparties ON exposures.id = counterparties.id',
         ['finance'],
         'finance_db',
+        ['finance.exposures', 'finance.counterparties'],
       );
       ok(true, 'Snowflake: allowlisted schema-qualified references pass');
 
       try {
-        enforceSnowflakeAllowedSchemas('SELECT * FROM exposures', ['finance'], 'finance_db');
+        enforceSnowflakeAllowedSchemas('SELECT * FROM exposures', ['finance'], 'finance_db', ['finance.exposures']);
         assert.fail('Expected unqualified Snowflake table reference to fail closed');
       } catch (err) {
         ok(
@@ -107,7 +124,7 @@ async function run() {
       }
 
       try {
-        enforceSnowflakeAllowedSchemas('SELECT * FROM public.exposures', ['finance'], 'finance_db');
+        enforceSnowflakeAllowedSchemas('SELECT * FROM public.exposures', ['finance'], 'finance_db', ['finance.exposures']);
         assert.fail('Expected non-allowlisted Snowflake schema to fail closed');
       } catch (err) {
         ok(
@@ -117,7 +134,7 @@ async function run() {
       }
 
       try {
-        enforceSnowflakeAllowedSchemas('SELECT * FROM other_db.finance.exposures', ['finance'], 'finance_db');
+        enforceSnowflakeAllowedSchemas('SELECT * FROM other_db.finance.exposures', ['finance'], 'finance_db', ['finance.exposures']);
         assert.fail('Expected non-configured Snowflake database to fail closed');
       } catch (err) {
         ok(
@@ -125,6 +142,45 @@ async function run() {
           'Snowflake: non-configured database fails closed',
         );
       }
+
+      try {
+        enforceSnowflakeAllowedSchemas('SELECT * FROM finance.payments', ['finance'], 'finance_db', ['finance.exposures']);
+        assert.fail('Expected non-allowlisted Snowflake table to fail closed');
+      } catch (err) {
+        ok(
+          err instanceof Error && err.message.includes('not in allowedTables'),
+          'Snowflake: non-allowlisted table fails closed',
+        );
+      }
+
+      try {
+        await captureSnowflakeSchemaAttestation(async () => [], 'finance_db', "finance'; drop schema finance; --", ['exposures']);
+        assert.fail('Expected unsafe Snowflake schema identifier to fail closed');
+      } catch (err) {
+        ok(
+          err instanceof Error && err.message.includes('Invalid Snowflake schema identifier'),
+          'Snowflake: schema attestation rejects unsafe schema identifiers',
+        );
+      }
+
+      try {
+        await captureSnowflakeSchemaAttestation(async () => [], 'finance_db', 'finance', ['exposures;drop']);
+        assert.fail('Expected unsafe Snowflake table identifier to fail closed');
+      } catch (err) {
+        ok(
+          err instanceof Error && err.message.includes('Invalid Snowflake table identifier'),
+          'Snowflake: schema attestation rejects unsafe table identifiers',
+        );
+      }
+
+      const connectorSource = await import('node:fs').then((fs) =>
+        fs.readFileSync(new URL('../src/connectors/snowflake-connector.ts', import.meta.url), 'utf8')
+      );
+      ok(connectorSource.includes('STATEMENT_TIMEOUT_IN_SECONDS'), 'Snowflake: connector sets session statement timeout');
+      ok(connectorSource.includes('ABORT_DETACHED_QUERY'), 'Snowflake: connector aborts detached queries');
+      ok(connectorSource.includes('queryTag: config.queryTag'), 'Snowflake: connector passes query tag to driver');
+      ok(connectorSource.includes('role: config.role'), 'Snowflake: connector passes role to driver');
+      ok(connectorSource.includes('timeout: boundedSnowflakeTimeoutMs(config.timeoutMs)'), 'Snowflake: connector passes driver timeout');
     } finally {
       if (savedSnowflakeEnv.account === undefined) delete process.env.SNOWFLAKE_ACCOUNT;
       else process.env.SNOWFLAKE_ACCOUNT = savedSnowflakeEnv.account;
@@ -134,8 +190,18 @@ async function run() {
       else process.env.SNOWFLAKE_PASSWORD = savedSnowflakeEnv.password;
       if (savedSnowflakeEnv.allowedSchemas === undefined) delete process.env.SNOWFLAKE_ALLOWED_SCHEMAS;
       else process.env.SNOWFLAKE_ALLOWED_SCHEMAS = savedSnowflakeEnv.allowedSchemas;
+      if (savedSnowflakeEnv.allowedTables === undefined) delete process.env.SNOWFLAKE_ALLOWED_TABLES;
+      else process.env.SNOWFLAKE_ALLOWED_TABLES = savedSnowflakeEnv.allowedTables;
       if (savedSnowflakeEnv.database === undefined) delete process.env.SNOWFLAKE_DATABASE;
       else process.env.SNOWFLAKE_DATABASE = savedSnowflakeEnv.database;
+      if (savedSnowflakeEnv.role === undefined) delete process.env.SNOWFLAKE_ROLE;
+      else process.env.SNOWFLAKE_ROLE = savedSnowflakeEnv.role;
+      if (savedSnowflakeEnv.queryTag === undefined) delete process.env.SNOWFLAKE_QUERY_TAG;
+      else process.env.SNOWFLAKE_QUERY_TAG = savedSnowflakeEnv.queryTag;
+      if (savedSnowflakeEnv.timeoutMs === undefined) delete process.env.SNOWFLAKE_TIMEOUT_MS;
+      else process.env.SNOWFLAKE_TIMEOUT_MS = savedSnowflakeEnv.timeoutMs;
+      if (savedSnowflakeEnv.maxRows === undefined) delete process.env.SNOWFLAKE_MAX_ROWS;
+      else process.env.SNOWFLAKE_MAX_ROWS = savedSnowflakeEnv.maxRows;
     }
   }
 

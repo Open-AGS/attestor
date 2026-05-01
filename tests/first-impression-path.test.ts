@@ -37,27 +37,28 @@ function appearsBefore(content: string, earlier: string, later: string, message:
 function testReadmeHasAFirstImpressionPath(): void {
   const readme = readProjectFile('README.md');
 
-  includes(readme, 'AI is already taking actions.', 'README: opens with a sharper outside-reader hook');
-  includes(readme, '## TL;DR', 'README: exposes a short top-level summary');
-  includes(readme, 'AI proposes -> Attestor decides -> only safe actions execute.', 'README: explains the control flow in one line');
-  includes(readme, 'Attestor does not replace your system.', 'README: explains placement before architecture');
-  includes(readme, '## Why it matters', 'README: explains urgency before architecture');
-  includes(readme, '## Example', 'README: gives a concrete blocked-action example');
-  includes(readme, '## Decisions', 'README: makes the decision vocabulary prominent');
-  includes(readme, '## Proof', 'README: surfaces proof as a first-class concept near the top');
-  includes(readme, 'Proof can be stored, audited, and independently verified later.', 'README: explains why proof matters');
-  includes(readme, '## What you can do with Attestor', 'README: surfaces concrete use cases before architecture');
-  includes(readme, '## Try it in 60 seconds', 'README: exposes a fast first run near the top');
+  includes(readme, 'Consequence admission for AI-assisted systems.', 'README: opens with a sharper outside-reader hook');
+  includes(readme, 'Attestor sits before real-world consequences.', 'README: explains placement before architecture');
+  includes(readme, 'Attestor does not replace the model, agent runtime, wallet, custody platform, orchestration layer, or downstream system.', 'README: keeps replacement non-claim near the top');
+  includes(readme, '## Current Status', 'README: exposes the evaluation boundary near the top');
+  includes(readme, 'not a finished public SaaS', 'README: avoids public SaaS overclaim');
+  includes(readme, '## What Attestor Does', 'README: names the operating model before architecture');
+  includes(readme, 'AI proposes -> Attestor admits / narrows / reviews / blocks -> allowed consequences proceed -> proof remains', 'README: explains the control flow in one line');
+  includes(readme, '## Try It In 60 Seconds', 'README: exposes a fast first run near the top');
   includes(readme, 'npm run example:admission', 'README: shows the first runnable command');
-  includes(readme, 'one path is admitted with proof references', 'README: explains admitted proof refs');
-  includes(readme, 'one path is blocked fail-closed', 'README: explains blocked fail-closed path');
-  includes(readme, 'the downstream gate only proceeds when the decision allows it', 'README: explains downstream gate behavior');
+  includes(readme, 'one proposed consequence admitted with proof references', 'README: explains admitted proof refs');
+  includes(readme, 'one proposed consequence blocked fail-closed', 'README: explains blocked fail-closed path');
+  includes(readme, 'a customer-side gate that only proceeds when Attestor allows it', 'README: explains downstream gate behavior');
+  includes(readme, '## Decision Model', 'README: makes the decision vocabulary prominent');
+  includes(readme, '## Proof Model', 'README: surfaces proof as a first-class concept near the top');
+  includes(readme, 'local proof artifacts that can be reviewed later', 'README: explains why proof matters');
   includes(readme, 'npm run proof:surface', 'README: exposes the proof surface command near the first proof explanation');
   includes(readme, 'Attestor is designed as a control point, not a data lake.', 'README: explains data handling posture early');
   includes(readme, '[Try Attestor first](docs/01-overview/try-attestor-first.md)', 'README: links to the guided first run');
-  appearsBefore(readme, '## Try it in 60 seconds', '## One product, modular packs', 'README: keeps the runnable path before product packaging');
-  appearsBefore(readme, 'npm run proof:surface', '## One product, modular packs', 'README: keeps proof inspection before platform packaging');
-  appearsBefore(readme, '## Data and security posture', '## One product, modular packs', 'README: explains trust boundaries before platform packaging');
+  appearsBefore(readme, '## Current Status', '## Architecture: Core And Packs', 'README: keeps evaluation boundary before architecture');
+  appearsBefore(readme, '## Try It In 60 Seconds', '## Architecture: Core And Packs', 'README: keeps the runnable path before product packaging');
+  appearsBefore(readme, 'npm run proof:surface', '## Architecture: Core And Packs', 'README: keeps proof inspection before platform packaging');
+  appearsBefore(readme, '## Data And Security Posture', '## What Attestor Is Not', 'README: explains trust boundaries before non-claims');
 }
 
 function testTryFirstDocKeepsTheBoundaryHonest(): void {

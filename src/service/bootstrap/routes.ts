@@ -19,6 +19,7 @@ import { registerWebhookRoutes } from '../http/routes/webhook-routes.js';
 import {
   createFileBackedShadowAdmissionEventStore,
   createFileBackedShadowPolicyCandidateStore,
+  createFileBackedShadowPolicySimulationReportStore,
 } from '../shadow-persistence-store.js';
 import { installProductionSharedRequestGuard } from './production-shared-request-guard.js';
 import type { AppRuntime } from './runtime.js';
@@ -64,12 +65,29 @@ export function createShadowRouteDeps<Packet>(
   runtime: AppRuntime<Packet>,
 ): ShadowRouteDeps {
   const shadowEventStore = createFileBackedShadowAdmissionEventStore();
+  const shadowSimulationStore = createFileBackedShadowPolicySimulationReportStore();
   const shadowCandidateStore = createFileBackedShadowPolicyCandidateStore();
   return {
     currentTenant: runtime.services.httpRoutes.pipeline.currentTenant,
     listShadowEvents: ({ tenant }) =>
       shadowEventStore.list({ tenantId: tenant.tenantId }).events,
-    listShadowSimulations: () => [],
+    listShadowSimulations: ({ tenant }) =>
+      shadowSimulationStore.list({ tenantId: tenant.tenantId }).reports,
+    recordShadowPolicySimulationReport: ({ tenant, report }) =>
+      shadowSimulationStore.append({
+        tenantId: tenant.tenantId,
+        report,
+      }),
+    listShadowPolicySimulationReports: ({ tenant, proposedMode }) =>
+      shadowSimulationStore.list({
+        tenantId: tenant.tenantId,
+        proposedMode,
+      }).records,
+    findShadowPolicySimulationReport: ({ tenant, reportId }) =>
+      shadowSimulationStore.find({
+        tenantId: tenant.tenantId,
+        reportId,
+      }).record,
     materializeShadowPolicyCandidates: ({ tenant, bundle }) =>
       shadowCandidateStore.upsertBundle({
         tenantId: tenant.tenantId,

@@ -11,9 +11,11 @@
 import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import type {
+  GenericAdmissionMode,
   ShadowAdmissionEvent,
   ShadowPolicyDiscoveryCandidate,
   ShadowPolicyDiscoveryCandidates,
+  ShadowPolicySimulationReport,
 } from '../consequence-admission/index.js';
 import { hashJsonValue } from './json-stable.js';
 import { withFileLock, writeTextFileAtomic } from './file-store.js';
@@ -22,6 +24,8 @@ export const SHADOW_ADMISSION_EVENT_STORE_VERSION =
   'attestor.shadow-admission-event-store.v1';
 export const SHADOW_POLICY_CANDIDATE_STORE_VERSION =
   'attestor.shadow-policy-candidate-store.v1';
+export const SHADOW_POLICY_SIMULATION_REPORT_STORE_VERSION =
+  'attestor.shadow-policy-simulation-report-store.v1';
 
 export const SHADOW_POLICY_CANDIDATE_STATUSES = [
   'draft',
@@ -36,6 +40,7 @@ export type ShadowPolicyCandidateStatus =
 
 export type ShadowAdmissionStoreAppendResultKind = 'recorded' | 'duplicate';
 export type ShadowPolicyCandidateUpsertKind = 'created' | 'updated' | 'unchanged';
+export type ShadowPolicySimulationReportAppendKind = 'recorded' | 'duplicate';
 
 export interface ShadowAdmissionEventStoreRecord {
   readonly version: typeof SHADOW_ADMISSION_EVENT_STORE_VERSION;
@@ -97,6 +102,71 @@ export interface FileBackedShadowAdmissionEventStore {
     readonly exportedAt: string;
     readonly recordCount: number;
     readonly records: readonly ShadowAdmissionEventStoreRecord[];
+  };
+}
+
+export interface ShadowPolicySimulationReportStoreRecord {
+  readonly version: typeof SHADOW_POLICY_SIMULATION_REPORT_STORE_VERSION;
+  readonly tenantId: string;
+  readonly reportId: string;
+  readonly reportDigest: string;
+  readonly proposedMode: GenericAdmissionMode;
+  readonly eventCount: number;
+  readonly windowStart: string | null;
+  readonly windowEnd: string | null;
+  readonly recordedAt: string;
+  readonly report: ShadowPolicySimulationReport;
+  readonly rawPayloadStored: false;
+}
+
+interface ShadowPolicySimulationReportStoreFile {
+  version: 1;
+  records: ShadowPolicySimulationReportStoreRecord[];
+}
+
+export interface AppendShadowPolicySimulationReportInput {
+  readonly tenantId: string;
+  readonly report: ShadowPolicySimulationReport;
+  readonly recordedAt?: string | null;
+}
+
+export interface AppendShadowPolicySimulationReportResult {
+  readonly kind: ShadowPolicySimulationReportAppendKind;
+  readonly record: ShadowPolicySimulationReportStoreRecord;
+  readonly path: string;
+}
+
+export interface ShadowPolicySimulationReportListFilters {
+  readonly tenantId: string;
+  readonly proposedMode?: GenericAdmissionMode | null;
+  readonly limit?: number | null;
+}
+
+export interface FileBackedShadowPolicySimulationReportStore {
+  append(input: AppendShadowPolicySimulationReportInput): AppendShadowPolicySimulationReportResult;
+  list(filters: ShadowPolicySimulationReportListFilters): {
+    readonly records: readonly ShadowPolicySimulationReportStoreRecord[];
+    readonly reports: readonly ShadowPolicySimulationReport[];
+    readonly path: string;
+  };
+  find(input: {
+    readonly tenantId: string;
+    readonly reportId: string;
+  }): {
+    readonly record: ShadowPolicySimulationReportStoreRecord | null;
+    readonly path: string;
+  };
+  summarize(input: { readonly tenantId: string }): {
+    readonly summary: {
+      readonly tenantId: string;
+      readonly storageMode: 'file-backed-evaluation';
+      readonly reportCount: number;
+      readonly latestReportDigest: string | null;
+      readonly latestRecordedAt: string | null;
+      readonly rawPayloadStored: false;
+      readonly productionReady: false;
+    };
+    readonly path: string;
   };
 }
 
@@ -205,7 +275,15 @@ function defaultShadowPolicyCandidateStorePath(): string {
   return resolve(process.env.ATTESTOR_SHADOW_POLICY_CANDIDATE_STORE_PATH ?? '.attestor/shadow-policy-candidates.json');
 }
 
+function defaultShadowPolicySimulationReportStorePath(): string {
+  return resolve(process.env.ATTESTOR_SHADOW_POLICY_SIMULATION_REPORT_STORE_PATH ?? '.attestor/shadow-policy-simulation-reports.json');
+}
+
 function defaultAdmissionStore(): ShadowAdmissionEventStoreFile {
+  return { version: 1, records: [] };
+}
+
+function defaultSimulationStore(): ShadowPolicySimulationReportStoreFile {
   return { version: 1, records: [] };
 }
 
@@ -250,6 +328,14 @@ function normalizeLimit(limit: number | null | undefined, fallback: number): num
 
 function isCandidateStatus(value: string): value is ShadowPolicyCandidateStatus {
   return SHADOW_POLICY_CANDIDATE_STATUSES.includes(value as ShadowPolicyCandidateStatus);
+}
+
+function normalizeMode(value: GenericAdmissionMode | null | undefined, fieldName: string): GenericAdmissionMode | null {
+  if (value === undefined || value === null) return null;
+  if (value === 'observe' || value === 'warn' || value === 'review' || value === 'enforce') {
+    return value;
+  }
+  throw new Error(`Shadow persistence ${fieldName} must be observe, warn, review, or enforce.`);
 }
 
 function normalizeCandidateStatus(
@@ -406,6 +492,146 @@ export function createFileBackedShadowAdmissionEventStore(options?: {
         exportedAt: new Date().toISOString(),
         recordCount: records.length,
         records,
+      };
+    },
+  });
+}
+
+function normalizeSimulationRecord(
+  record: ShadowPolicySimulationReportStoreRecord,
+): ShadowPolicySimulationReportStoreRecord {
+  return {
+    version: SHADOW_POLICY_SIMULATION_REPORT_STORE_VERSION,
+    tenantId: normalizeIdentifier(record.tenantId, 'tenantId'),
+    reportId: normalizeIdentifier(record.reportId || record.report?.reportId, 'reportId'),
+    reportDigest: normalizeIdentifier(record.reportDigest || record.report?.digest, 'reportDigest'),
+    proposedMode: normalizeMode(record.proposedMode ?? record.report?.proposedMode, 'proposedMode') ?? 'review',
+    eventCount: Number.isFinite(record.eventCount)
+      ? Math.max(0, Math.trunc(record.eventCount))
+      : record.report?.eventCount ?? 0,
+    windowStart: normalizeOptionalString(record.windowStart ?? record.report?.windowStart),
+    windowEnd: normalizeOptionalString(record.windowEnd ?? record.report?.windowEnd),
+    recordedAt: normalizeIsoTimestamp(record.recordedAt, new Date().toISOString(), 'recordedAt'),
+    report: record.report,
+    rawPayloadStored: false,
+  };
+}
+
+function readSimulationStore(path: string): ShadowPolicySimulationReportStoreFile {
+  if (!existsSync(path)) return defaultSimulationStore();
+  const parsed = JSON.parse(readFileSync(path, 'utf8')) as ShadowPolicySimulationReportStoreFile;
+  if (parsed.version !== 1 || !Array.isArray(parsed.records)) {
+    throw new Error('Shadow policy simulation report store file is invalid.');
+  }
+  return {
+    version: 1,
+    records: parsed.records.map(normalizeSimulationRecord),
+  };
+}
+
+function saveSimulationStore(path: string, store: ShadowPolicySimulationReportStoreFile): void {
+  mkdirSync(dirname(path), { recursive: true });
+  writeTextFileAtomic(path, `${JSON.stringify(store, null, 2)}\n`);
+}
+
+function sortSimulationRecords(
+  records: readonly ShadowPolicySimulationReportStoreRecord[],
+): ShadowPolicySimulationReportStoreRecord[] {
+  return [...records].sort((left, right) => {
+    const byRecorded = compareDesc(left.recordedAt, right.recordedAt);
+    if (byRecorded !== 0) return byRecorded;
+    return left.reportId.localeCompare(right.reportId);
+  });
+}
+
+function assertSimulationReportDataMinimized(report: ShadowPolicySimulationReport): void {
+  if (report.rawPayloadEventCount !== 0) {
+    throw new Error('Shadow policy simulation store only accepts data-minimized reports.');
+  }
+}
+
+export function createFileBackedShadowPolicySimulationReportStore(options?: {
+  readonly path?: string | null;
+}): FileBackedShadowPolicySimulationReportStore {
+  const path = resolve(options?.path ?? defaultShadowPolicySimulationReportStorePath());
+
+  function withStoreLock<T>(action: (store: ShadowPolicySimulationReportStoreFile) => T): T {
+    return withFileLock(path, () => action(readSimulationStore(path)));
+  }
+
+  return Object.freeze({
+    append(input: AppendShadowPolicySimulationReportInput): AppendShadowPolicySimulationReportResult {
+      return withStoreLock((store) => {
+        const tenantId = normalizeIdentifier(input.tenantId, 'tenantId');
+        assertSimulationReportDataMinimized(input.report);
+        const existing = store.records.find((record) =>
+          record.tenantId === tenantId &&
+          (record.reportId === input.report.reportId || record.reportDigest === input.report.digest)
+        );
+        if (existing) {
+          return { kind: 'duplicate', record: normalizeSimulationRecord(existing), path };
+        }
+
+        const recordedAt = normalizeIsoTimestamp(
+          input.recordedAt,
+          new Date().toISOString(),
+          'recordedAt',
+        );
+        const record: ShadowPolicySimulationReportStoreRecord = {
+          version: SHADOW_POLICY_SIMULATION_REPORT_STORE_VERSION,
+          tenantId,
+          reportId: input.report.reportId,
+          reportDigest: input.report.digest,
+          proposedMode: input.report.proposedMode,
+          eventCount: input.report.eventCount,
+          windowStart: input.report.windowStart,
+          windowEnd: input.report.windowEnd,
+          recordedAt,
+          report: input.report,
+          rawPayloadStored: false,
+        };
+        store.records.push(record);
+        saveSimulationStore(path, store);
+        return { kind: 'recorded', record, path };
+      });
+    },
+    list(filters: ShadowPolicySimulationReportListFilters) {
+      const tenantId = normalizeIdentifier(filters.tenantId, 'tenantId');
+      const proposedMode = normalizeMode(filters.proposedMode, 'proposedMode');
+      const limit = normalizeLimit(filters.limit, 100);
+      const records = sortSimulationRecords(readSimulationStore(path).records)
+        .filter((record) => record.tenantId === tenantId)
+        .filter((record) => !proposedMode || record.proposedMode === proposedMode)
+        .slice(0, limit);
+      return {
+        records,
+        reports: records.map((record) => record.report),
+        path,
+      };
+    },
+    find(input: { readonly tenantId: string; readonly reportId: string }) {
+      const tenantId = normalizeIdentifier(input.tenantId, 'tenantId');
+      const reportId = normalizeIdentifier(input.reportId, 'reportId');
+      const record = readSimulationStore(path).records.find((entry) =>
+        entry.tenantId === tenantId && entry.reportId === reportId
+      ) ?? null;
+      return { record: record ? normalizeSimulationRecord(record) : null, path };
+    },
+    summarize(input: { readonly tenantId: string }) {
+      const tenantId = normalizeIdentifier(input.tenantId, 'tenantId');
+      const records = sortSimulationRecords(readSimulationStore(path).records)
+        .filter((record) => record.tenantId === tenantId);
+      return {
+        summary: {
+          tenantId,
+          storageMode: 'file-backed-evaluation',
+          reportCount: records.length,
+          latestReportDigest: records[0]?.reportDigest ?? null,
+          latestRecordedAt: records[0]?.recordedAt ?? null,
+          rawPayloadStored: false,
+          productionReady: false,
+        } as const,
+        path,
       };
     },
   });
@@ -710,10 +936,12 @@ export function createFileBackedShadowPolicyCandidateStore(options?: {
 export function resetShadowPersistenceStoresForTests(options?: {
   readonly admissionEventPath?: string | null;
   readonly policyCandidatePath?: string | null;
+  readonly policySimulationReportPath?: string | null;
 }): void {
   const admissionPath = resolve(options?.admissionEventPath ?? defaultShadowAdmissionEventStorePath());
   const candidatePath = resolve(options?.policyCandidatePath ?? defaultShadowPolicyCandidateStorePath());
-  for (const path of [admissionPath, candidatePath]) {
+  const simulationPath = resolve(options?.policySimulationReportPath ?? defaultShadowPolicySimulationReportStorePath());
+  for (const path of [admissionPath, candidatePath, simulationPath]) {
     if (existsSync(path)) rmSync(path, { force: true });
     if (existsSync(`${path}.lock`)) rmSync(`${path}.lock`, { recursive: true, force: true });
   }

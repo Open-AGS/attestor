@@ -2,9 +2,10 @@
 
 Attestor shadow mode needs a durable evaluation trail before it can become useful policy discovery.
 
-This first slice adds two local file-backed stores:
+This first slice adds three local file-backed stores:
 
 - shadow admission events, scoped by tenant
+- shadow simulation reports, scoped by tenant
 - shadow policy candidates, scoped by tenant and held behind an approval lifecycle
 
 The goal is not automatic learning. The goal is:
@@ -14,6 +15,8 @@ observe -> recommend -> approve -> enforce
 ```
 
 Shadow events show what AI actions would have done. Policy candidates summarize possible controls, but they remain non-enforcing until a customer-controlled approval path promotes them.
+
+Simulation reports replay the observed event set against a proposed mode, such as `review` or `enforce`, without changing downstream behavior. This gives teams an impact report before they tighten controls.
 
 ## Storage Boundary
 
@@ -56,6 +59,34 @@ The event stores:
 - evidence/native input counts
 
 The event does not store raw recipient values, raw evidence ids, raw prompts, raw payloads, or raw observed feature values.
+
+## Shadow Simulation Reports
+
+Simulation reports are dry-run impact reports over already-recorded shadow admission events.
+
+They store:
+
+- report id and digest
+- proposed mode
+- event count
+- event digests
+- decision counts
+- gap counts
+- review/block impact
+- surface-level simulations
+- recommendations
+
+They do not store raw event payloads, raw recipients, raw evidence ids, raw prompts, or raw observed feature values.
+
+The hosted route exposes the simulation history surface:
+
+```text
+POST /api/v1/shadow/simulations
+GET  /api/v1/shadow/simulations
+GET  /api/v1/shadow/simulations/:reportId
+```
+
+The `POST` route creates a new impact report from current tenant-scoped shadow events and persists it. Listing and lookup return persisted reports without exposing the local backing file path.
 
 ## Policy Candidate Lifecycle
 

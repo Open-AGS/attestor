@@ -15,6 +15,7 @@ import { registerShadowRoutes } from '../src/service/http/routes/shadow-routes.j
 import {
   createFileBackedShadowAdmissionEventStore,
   createFileBackedShadowPolicyCandidateStore,
+  createFileBackedShadowPolicySimulationReportStore,
   resetShadowPersistenceStoresForTests,
 } from '../src/service/shadow-persistence-store.js';
 import type { TenantContext } from '../src/service/tenant-isolation.js';
@@ -39,6 +40,7 @@ function throws(fn: () => unknown, pattern: RegExp, message: string): void {
 const tempDir = mkdtempSync(join(tmpdir(), 'attestor-shadow-store-'));
 const admissionPath = join(tempDir, 'shadow-events.json');
 const candidatePath = join(tempDir, 'shadow-candidates.json');
+const simulationPath = join(tempDir, 'shadow-simulations.json');
 
 const tenantA: TenantContext = {
   tenantId: 'tenant_shadow_a',
@@ -200,6 +202,82 @@ async function testAdmissionRouteRecordsAndSummaryReadsPersistedEvents(): Promis
   ok(!summaryText.includes('route-order:987'), 'Shadow persistence route: raw evidence id is not returned');
 }
 
+function testSimulationReportStorePersistsTenantScopedReports(): void {
+  const store = createFileBackedShadowPolicySimulationReportStore({ path: simulationPath });
+  const reportA = createShadowPolicySimulationReport({
+    events: [
+      createEvent({
+        tenantId: tenantA.tenantId,
+        policyRef: null,
+        occurredAt: '2026-05-02T08:06:00.000Z',
+      }),
+    ],
+    proposedMode: 'review',
+    generatedAt: '2026-05-02T08:07:00.000Z',
+  });
+  const reportB = createShadowPolicySimulationReport({
+    events: [
+      createEvent({
+        tenantId: tenantB.tenantId,
+        action: 'export_customer_data',
+        domain: 'data-disclosure',
+        downstreamSystem: 'warehouse',
+        occurredAt: '2026-05-02T08:08:00.000Z',
+      }),
+    ],
+    proposedMode: 'enforce',
+    generatedAt: '2026-05-02T08:09:00.000Z',
+  });
+  const first = store.append({
+    tenantId: tenantA.tenantId,
+    report: reportA,
+    recordedAt: '2026-05-02T08:07:30.000Z',
+  });
+  const duplicate = store.append({
+    tenantId: tenantA.tenantId,
+    report: reportA,
+    recordedAt: '2026-05-02T08:08:30.000Z',
+  });
+  store.append({
+    tenantId: tenantB.tenantId,
+    report: reportB,
+    recordedAt: '2026-05-02T08:09:30.000Z',
+  });
+
+  const tenantAReports = store.list({ tenantId: tenantA.tenantId });
+  const tenantBReports = store.list({ tenantId: tenantB.tenantId, proposedMode: 'enforce' });
+  const found = store.find({ tenantId: tenantA.tenantId, reportId: reportA.reportId }).record;
+  const missing = store.find({ tenantId: tenantB.tenantId, reportId: reportA.reportId }).record;
+  const summary = store.summarize({ tenantId: tenantA.tenantId }).summary;
+  const fileText = readFileSync(simulationPath, 'utf8');
+
+  equal(first.kind, 'recorded', 'Shadow simulation persistence: first report is recorded');
+  equal(duplicate.kind, 'duplicate', 'Shadow simulation persistence: duplicate report is idempotent');
+  equal(tenantAReports.reports.length, 1, 'Shadow simulation persistence: tenant A sees only its report');
+  equal(tenantBReports.reports.length, 1, 'Shadow simulation persistence: proposedMode filter works');
+  equal(found?.reportId, reportA.reportId, 'Shadow simulation persistence: report lookup works');
+  equal(missing, null, 'Shadow simulation persistence: cross-tenant lookup is isolated');
+  equal(summary.reportCount, 1, 'Shadow simulation persistence: summary is tenant-scoped');
+  equal(summary.rawPayloadStored, false, 'Shadow simulation persistence: raw payload boundary is explicit');
+  equal(summary.productionReady, false, 'Shadow simulation persistence: evaluation store is not production-ready');
+  ok(summary.latestReportDigest?.startsWith('sha256:'), 'Shadow simulation persistence: latest digest is retained');
+  ok(!fileText.includes('raw_customer_value_must_not_escape'), 'Shadow simulation persistence: raw recipient is not persisted');
+  ok(!fileText.includes('raw_feature_value_must_not_escape'), 'Shadow simulation persistence: raw feature value is not persisted');
+  ok(!fileText.includes('order:987'), 'Shadow simulation persistence: raw evidence id is not persisted');
+  throws(
+    () =>
+      store.append({
+        tenantId: tenantA.tenantId,
+        report: {
+          ...reportA,
+          rawPayloadEventCount: 1,
+        },
+      }),
+    /data-minimized/u,
+    'Shadow simulation persistence: reports with raw payload events fail closed',
+  );
+}
+
 function testPolicyCandidateStorePreservesApprovalLifecycle(): void {
   const eventWithoutPolicy = createEvent({
     tenantId: tenantA.tenantId,
@@ -299,9 +377,11 @@ try {
   resetShadowPersistenceStoresForTests({
     admissionEventPath: admissionPath,
     policyCandidatePath: candidatePath,
+    policySimulationReportPath: simulationPath,
   });
   testShadowAdmissionStorePersistsTenantScopedEvents();
   await testAdmissionRouteRecordsAndSummaryReadsPersistedEvents();
+  testSimulationReportStorePersistsTenantScopedReports();
   testPolicyCandidateStorePreservesApprovalLifecycle();
 
   console.log(`Shadow persistence store tests: ${passed} passed, 0 failed`);
@@ -309,6 +389,7 @@ try {
   resetShadowPersistenceStoresForTests({
     admissionEventPath: admissionPath,
     policyCandidatePath: candidatePath,
+    policySimulationReportPath: simulationPath,
   });
   if (existsSync(tempDir)) rmSync(tempDir, { recursive: true, force: true });
 }

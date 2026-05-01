@@ -111,6 +111,7 @@
     "test:policy-discovery-candidates": "tsx tests/policy-discovery-candidates.test.ts",
     "test:shadow-persistence-store": "tsx tests/shadow-persistence-store.test.ts",
     "test:shadow-policy-candidate-approval-routes": "tsx tests/shadow-policy-candidate-approval-routes.test.ts",
+    "test:shadow-simulation-history-routes": "tsx tests/shadow-simulation-history-routes.test.ts",
     "test:consequence-taxonomy": "tsx tests/consequence-taxonomy.test.ts",
     "test:downstream-enforcement-contract": "tsx tests/downstream-enforcement-contract.test.ts",
     "test:consequence-verifier-helper": "tsx tests/consequence-verifier-helper.test.ts",

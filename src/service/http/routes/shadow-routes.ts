@@ -3,14 +3,19 @@ import {
   createConsequenceAdmissionProblem,
   createActionRiskInventory,
   createShadowPolicyDiscoveryCandidates,
+  createShadowPolicySimulationReport,
   createShadowSummarySurface,
+  GENERIC_ADMISSION_MODES,
+  type GenericAdmissionMode,
   type ShadowAdmissionEvent,
   type ShadowPolicySimulationReport,
 } from '../../../consequence-admission/index.js';
 import {
   SHADOW_POLICY_CANDIDATE_STATUSES,
+  type AppendShadowPolicySimulationReportResult,
   type ShadowPolicyCandidateStatus,
   type ShadowPolicyCandidateStoreRecord,
+  type ShadowPolicySimulationReportStoreRecord,
   type UpsertShadowPolicyCandidateBundleResult,
 } from '../../shadow-persistence-store.js';
 import type { TenantContext } from '../../tenant-isolation.js';
@@ -23,6 +28,18 @@ export interface ShadowRouteDeps {
   listShadowSimulations?(
     input: { readonly tenant: TenantContext },
   ): readonly ShadowPolicySimulationReport[];
+  recordShadowPolicySimulationReport?(input: {
+    readonly tenant: TenantContext;
+    readonly report: ShadowPolicySimulationReport;
+  }): AppendShadowPolicySimulationReportResult;
+  listShadowPolicySimulationReports?(input: {
+    readonly tenant: TenantContext;
+    readonly proposedMode: GenericAdmissionMode | null;
+  }): readonly ShadowPolicySimulationReportStoreRecord[];
+  findShadowPolicySimulationReport?(input: {
+    readonly tenant: TenantContext;
+    readonly reportId: string;
+  }): ShadowPolicySimulationReportStoreRecord | null;
   materializeShadowPolicyCandidates?(input: {
     readonly tenant: TenantContext;
     readonly bundle: ReturnType<typeof createShadowPolicyDiscoveryCandidates>;
@@ -101,6 +118,14 @@ function parseCandidateStatus(value: string | null | undefined): ShadowPolicyCan
     : null;
 }
 
+function parseGenericMode(value: string | null | undefined): GenericAdmissionMode | null {
+  if (value === undefined || value === null || value.trim() === '') return null;
+  const normalized = value.trim();
+  return GENERIC_ADMISSION_MODES.includes(normalized as GenericAdmissionMode)
+    ? normalized as GenericAdmissionMode
+    : null;
+}
+
 function problem(c: Context, input: {
   readonly type: string;
   readonly title: string;
@@ -156,6 +181,72 @@ async function readStatusTransitionBody(c: Context): Promise<{
   return { status, actorRef, reason };
 }
 
+async function readSimulationRequestBody(c: Context): Promise<{
+  readonly proposedMode: GenericAdmissionMode | null;
+  readonly minimumPromotionEvents: number | null;
+} | Response> {
+  const contentType = c.req.header('content-type') ?? '';
+  if (!contentType.includes('application/json')) {
+    return { proposedMode: null, minimumPromotionEvents: null };
+  }
+
+  let body: unknown;
+  try {
+    body = await c.req.json<unknown>();
+  } catch {
+    return problem(c, {
+      type: 'https://attestor.dev/problems/shadow-simulation-json-invalid',
+      title: 'Invalid shadow simulation JSON',
+      status: 400,
+      detail: 'The shadow simulation route requires a valid JSON object when a body is provided.',
+      reasonCodes: ['invalid-json'],
+    });
+  }
+  if (!isRecord(body)) {
+    return problem(c, {
+      type: 'https://attestor.dev/problems/shadow-simulation-input-invalid',
+      title: 'Invalid shadow simulation input',
+      status: 400,
+      detail: 'The shadow simulation route requires an object body when a body is provided.',
+      reasonCodes: ['invalid-shadow-simulation-input'],
+    });
+  }
+
+  const proposedMode = typeof body.proposedMode === 'string'
+    ? parseGenericMode(body.proposedMode)
+    : null;
+  if (body.proposedMode !== undefined && !proposedMode) {
+    return problem(c, {
+      type: 'https://attestor.dev/problems/shadow-simulation-mode-invalid',
+      title: 'Invalid shadow simulation mode',
+      status: 400,
+      detail: `proposedMode must be one of: ${GENERIC_ADMISSION_MODES.join(', ')}.`,
+      reasonCodes: ['invalid-shadow-simulation-mode'],
+    });
+  }
+
+  const minimumPromotionEvents = body.minimumPromotionEvents === undefined || body.minimumPromotionEvents === null
+    ? null
+    : Number(body.minimumPromotionEvents);
+  if (
+    minimumPromotionEvents !== null &&
+    (!Number.isInteger(minimumPromotionEvents) || minimumPromotionEvents <= 0 || minimumPromotionEvents > 10_000)
+  ) {
+    return problem(c, {
+      type: 'https://attestor.dev/problems/shadow-simulation-input-invalid',
+      title: 'Invalid shadow simulation input',
+      status: 400,
+      detail: 'minimumPromotionEvents must be a positive integer no larger than 10000.',
+      reasonCodes: ['invalid-shadow-simulation-input'],
+    });
+  }
+
+  return {
+    proposedMode,
+    minimumPromotionEvents,
+  };
+}
+
 export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
   app.get('/api/v1/shadow/summary', (c) => {
     const result = safeShadowSummary(c, deps);
@@ -197,6 +288,154 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
         generatedAt: deps.now?.() ?? null,
       }),
     });
+  });
+
+  app.post('/api/v1/shadow/simulations', async (c) => {
+    const body = await readSimulationRequestBody(c);
+    if (body instanceof Response) return body;
+    const result = safeShadowSummary(c, deps);
+    if (result instanceof Response) return result;
+    if (!deps.recordShadowPolicySimulationReport) {
+      return problem(c, {
+        type: 'https://attestor.dev/problems/shadow-simulation-store-unavailable',
+        title: 'Shadow simulation store unavailable',
+        status: 503,
+        detail: 'Shadow simulation persistence is not configured for this runtime.',
+        reasonCodes: ['shadow-simulation-store-unavailable'],
+      });
+    }
+
+    const report = createShadowPolicySimulationReport({
+      events: result.events,
+      proposedMode: body.proposedMode ?? 'review',
+      minimumPromotionEvents: body.minimumPromotionEvents,
+      generatedAt: deps.now?.() ?? null,
+    });
+    try {
+      const persisted = deps.recordShadowPolicySimulationReport({
+        tenant: result.tenant,
+        report,
+      });
+      return c.json({
+        tenant: tenantSummary(result.tenant),
+        storageMode: 'file-backed-evaluation',
+        productionReady: false,
+        rawPayloadStored: false,
+        report,
+        persisted: {
+          kind: persisted.kind,
+          record: persisted.record,
+        },
+      });
+    } catch (error) {
+      const detail =
+        error instanceof Error
+          ? error.message
+          : 'The shadow simulation report could not be recorded.';
+      return problem(c, {
+        type: 'https://attestor.dev/problems/shadow-simulation-record-failed',
+        title: 'Shadow simulation record failed',
+        status: 503,
+        detail,
+        reasonCodes: ['shadow-simulation-record-failed'],
+      });
+    }
+  });
+
+  app.get('/api/v1/shadow/simulations', (c) => {
+    c.header('cache-control', 'no-store');
+    if (!deps.listShadowPolicySimulationReports) {
+      return problem(c, {
+        type: 'https://attestor.dev/problems/shadow-simulation-store-unavailable',
+        title: 'Shadow simulation store unavailable',
+        status: 503,
+        detail: 'Shadow simulation listing is not configured for this runtime.',
+        reasonCodes: ['shadow-simulation-store-unavailable'],
+      });
+    }
+    const modeQuery = c.req.query('proposedMode');
+    const proposedMode = parseGenericMode(modeQuery);
+    if (modeQuery && !proposedMode) {
+      return problem(c, {
+        type: 'https://attestor.dev/problems/shadow-simulation-mode-invalid',
+        title: 'Invalid shadow simulation mode',
+        status: 400,
+        detail: `proposedMode must be one of: ${GENERIC_ADMISSION_MODES.join(', ')}.`,
+        reasonCodes: ['invalid-shadow-simulation-mode'],
+      });
+    }
+    try {
+      const tenant = deps.currentTenant(c);
+      const records = deps.listShadowPolicySimulationReports({ tenant, proposedMode });
+      return c.json({
+        tenant: tenantSummary(tenant),
+        storageMode: 'file-backed-evaluation',
+        recordCount: records.length,
+        rawPayloadStored: false,
+        productionReady: false,
+        records,
+      });
+    } catch (error) {
+      const detail =
+        error instanceof Error
+          ? error.message
+          : 'The shadow simulation reports could not be listed.';
+      return problem(c, {
+        type: 'https://attestor.dev/problems/shadow-simulation-list-failed',
+        title: 'Shadow simulation list failed',
+        status: 503,
+        detail,
+        reasonCodes: ['shadow-simulation-list-failed'],
+      });
+    }
+  });
+
+  app.get('/api/v1/shadow/simulations/:reportId', (c) => {
+    c.header('cache-control', 'no-store');
+    if (!deps.findShadowPolicySimulationReport) {
+      return problem(c, {
+        type: 'https://attestor.dev/problems/shadow-simulation-store-unavailable',
+        title: 'Shadow simulation store unavailable',
+        status: 503,
+        detail: 'Shadow simulation lookup is not configured for this runtime.',
+        reasonCodes: ['shadow-simulation-store-unavailable'],
+      });
+    }
+    try {
+      const tenant = deps.currentTenant(c);
+      const record = deps.findShadowPolicySimulationReport({
+        tenant,
+        reportId: c.req.param('reportId'),
+      });
+      if (!record) {
+        return problem(c, {
+          type: 'https://attestor.dev/problems/shadow-simulation-not-found',
+          title: 'Shadow simulation not found',
+          status: 404,
+          detail: 'No shadow simulation report was found for this tenant and report id.',
+          reasonCodes: ['shadow-simulation-not-found'],
+        });
+      }
+      return c.json({
+        tenant: tenantSummary(tenant),
+        storageMode: 'file-backed-evaluation',
+        rawPayloadStored: false,
+        productionReady: false,
+        record,
+      });
+    } catch (error) {
+      const detail =
+        error instanceof Error
+          ? error.message
+          : 'The shadow simulation report could not be loaded.';
+      return problem(c, {
+        type: 'https://attestor.dev/problems/shadow-simulation-load-failed',
+        title: 'Shadow simulation load failed',
+        status: 503,
+        detail,
+        reasonCodes: ['shadow-simulation-load-failed'],
+      });
+    }
   });
 
   app.get('/api/v1/shadow/policy-candidates', (c) => {

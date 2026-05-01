@@ -44,6 +44,8 @@ The contract is not a wallet, payment rail, database permission system, or deplo
 
 For the small customer-side `verify` / `assert` wrapper around this contract, see [Verifier helper](verifier-helper.md).
 
+For the short-lived handoff record that binds an allowed admission to the exact target, body digest, replay key, nonce, freshness window, proof refs, and acknowledged constraints presented at the customer edge, see [Downstream presentation binding](downstream-presentation-binding.md).
+
 ## Boundary Kinds
 
 The current contract vocabulary covers:
@@ -131,6 +133,7 @@ The downstream enforcement contract sits one level above that:
 
 - consequence admission answers whether a proposed AI consequence is admitted, narrowed, reviewed, or blocked
 - the downstream enforcement contract checks whether this customer enforcement point may act on that admission
+- the downstream presentation binding checks whether this exact presentation is bound to the target, body, replay, proof, and freshness facts the enforcement point is about to use
 - the release-enforcement plane verifies stronger release-token and presentation material where available
 
 For production money, crypto, data export, admin, and operations flows, the contract should be treated as mandatory customer-side integration logic, not optional display metadata.

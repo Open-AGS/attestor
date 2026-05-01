@@ -30,6 +30,8 @@ The helper verifies downstream contract binding:
 
 It does not replace cryptographic release-token verification. Stronger token, signature, introspection, sender-constrained presentation, middleware, and gateway verification remains in the release-enforcement plane.
 
+It also does not replace the final [Downstream presentation binding](downstream-presentation-binding.md). Use that when the adapter needs to bind the admitted consequence to an exact target, body digest, replay key, nonce, freshness window, proof refs, and acknowledged constraints at the customer edge.
+
 ## API
 
 The helper is exported through `attestor/consequence-admission`:

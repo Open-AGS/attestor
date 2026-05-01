@@ -90,6 +90,7 @@ function testFastSuiteKeepsCriticalCoverage(): void {
     'test:downstream-enforcement-contract',
     'test:consequence-verifier-helper',
     'test:policy-limit-model',
+    'test:downstream-presentation-binding',
     'test:non-bypassable-gateway-demo',
     'test:first-impression-path',
     'test:proof-surface-readiness',

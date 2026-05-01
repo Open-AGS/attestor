@@ -72,6 +72,16 @@ assert.equal(
   'function',
 );
 assert.equal(
+  admission.consequenceAdmissionPresentationBindingDescriptor().bindingFields.includes(
+    'body-digest',
+  ),
+  true,
+);
+assert.equal(
+  typeof admission.evaluateConsequenceAdmissionPresentationBinding,
+  'function',
+);
+assert.equal(
   admission.financePipelineAdmissionDescriptor().route,
   '/api/v1/pipeline/run',
 );

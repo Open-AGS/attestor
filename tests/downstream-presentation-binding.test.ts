@@ -1,0 +1,410 @@
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import {
+  CONSEQUENCE_ADMISSION_PRESENTATION_BINDING_VERSION,
+  consequenceAdmissionPresentationBindingDescriptor,
+  createConsequenceAdmissionCheck,
+  createConsequenceAdmissionDownstreamContract,
+  createConsequenceAdmissionPresentationBinding,
+  createConsequenceAdmissionRequest,
+  createConsequenceAdmissionResponse,
+  evaluateConsequenceAdmissionPresentationBinding,
+  type ConsequenceAdmissionCheck,
+  type ConsequenceAdmissionDownstreamContract,
+  type ConsequenceAdmissionRequest,
+  type ConsequenceAdmissionResponse,
+} from '../src/consequence-admission/index.js';
+
+let passed = 0;
+
+function readProjectFile(...segments: string[]): string {
+  return readFileSync(join(process.cwd(), ...segments), 'utf8');
+}
+
+function ok(condition: unknown, message: string): void {
+  assert.ok(condition, message);
+  passed += 1;
+}
+
+function equal<T>(actual: T, expected: T, message: string): void {
+  assert.equal(actual, expected, message);
+  passed += 1;
+}
+
+function deepEqual<T>(actual: T, expected: T, message: string): void {
+  assert.deepEqual(actual, expected, message);
+  passed += 1;
+}
+
+function includes(content: string, expected: string, message: string): void {
+  assert.ok(
+    content.includes(expected),
+    `${message}\nExpected to find: ${expected}`,
+  );
+  passed += 1;
+}
+
+function paymentRequest(): ConsequenceAdmissionRequest {
+  return createConsequenceAdmissionRequest({
+    requestedAt: '2026-05-01T12:00:00.000Z',
+    packFamily: 'general',
+    entryPoint: {
+      kind: 'internal-service',
+      id: 'presentation-binding-payment',
+      route: null,
+      packageSubpath: null,
+      sourceRef: 'customer/payment-adapter',
+    },
+    proposedConsequence: {
+      actor: 'AI-assisted payment workflow',
+      action: 'prepare supplier payment dispatch',
+      downstreamSystem: 'supplier-payment-service',
+      consequenceKind: 'action',
+      riskClass: 'R3',
+      summary: 'AI-assisted workflow asks to dispatch a supplier payment.',
+    },
+    policyScope: {
+      policyRef: 'policy:payments:v1',
+      tenantId: 'tenant_payments',
+      environment: 'production',
+      dimensions: {
+        domain: 'money-movement',
+      },
+    },
+    authority: {
+      actorRef: 'actor:payment-agent',
+      reviewerRef: 'reviewer:finance-ops',
+      authorityMode: 'named-reviewer',
+    },
+    evidence: [
+      {
+        id: 'evidence:invoice',
+        kind: 'invoice',
+        digest: 'sha256:invoice',
+        uri: null,
+      },
+    ],
+    nativeInputRefs: ['amount', 'recipient', 'idempotencyKey'],
+  });
+}
+
+function passCheck(kind: ConsequenceAdmissionCheck['kind']): ConsequenceAdmissionCheck {
+  return createConsequenceAdmissionCheck({
+    kind,
+    label: `${kind} check`,
+    outcome: 'pass',
+    required: true,
+    summary: `${kind} passed for presentation binding coverage.`,
+    reasonCodes: [`${kind}-passed`],
+    evidenceRefs: [`evidence:${kind}`],
+  });
+}
+
+function admittedPayment(): ConsequenceAdmissionResponse {
+  return createConsequenceAdmissionResponse({
+    request: paymentRequest(),
+    decidedAt: '2026-05-01T12:00:01.000Z',
+    decision: 'admit',
+    reason: 'Payment consequence passed admission checks.',
+    reasonCodes: ['payment-admitted'],
+    checks: [
+      passCheck('policy'),
+      passCheck('authority'),
+      passCheck('evidence'),
+      passCheck('freshness'),
+      passCheck('enforcement'),
+    ],
+    proof: [
+      {
+        kind: 'release-token',
+        id: 'rt_payment_presentation',
+        digest: 'sha256:token',
+        uri: null,
+        verifyHint: 'Verify the release token before dispatch.',
+      },
+    ],
+  });
+}
+
+function narrowedPayment(): ConsequenceAdmissionResponse {
+  return createConsequenceAdmissionResponse({
+    request: paymentRequest(),
+    decidedAt: '2026-05-01T12:00:02.000Z',
+    decision: 'narrow',
+    reason: 'Payment can proceed only below the bounded amount.',
+    reasonCodes: ['payment-narrowed'],
+    checks: [passCheck('policy'), passCheck('authority'), passCheck('evidence')],
+    constraints: [
+      {
+        id: 'constraint:max-amount',
+        summary: 'Payment amount must not exceed 250 EUR.',
+        enforcedBy: 'supplier-payment-service',
+      },
+    ],
+    proof: [
+      {
+        kind: 'release-token',
+        id: 'rt_payment_presentation_narrow',
+        digest: 'sha256:narrow-token',
+        uri: null,
+        verifyHint: 'Verify the narrow release token before dispatch.',
+      },
+    ],
+  });
+}
+
+function paymentContract(): ConsequenceAdmissionDownstreamContract {
+  return createConsequenceAdmissionDownstreamContract({
+    enforcementPointId: 'payment-adapter:supplier-payment-service',
+    boundaryKind: 'payment-adapter',
+    consequenceDomain: 'money-movement',
+    downstreamSystems: ['supplier-payment-service'],
+    acceptedConsequenceKinds: ['action', 'agent-payment'],
+    acceptedRiskClasses: ['R3', 'R4'],
+    policyRefs: ['policy:payments:v1'],
+    environment: 'production',
+  });
+}
+
+function paymentBinding(admission = admittedPayment()) {
+  return createConsequenceAdmissionPresentationBinding({
+    admission,
+    contract: paymentContract(),
+    target: {
+      uri: 'https://payments.example.internal/supplier-payments',
+      method: 'POST',
+      bodyDigest: 'sha256:payment-body',
+    },
+    replayKey: 'payment:tenant_a:invoice_1938:attempt_1',
+    nonce: 'nonce:payment-adapter:001',
+    presentedAt: '2026-05-01T12:00:05.000Z',
+    expiresAt: '2026-05-01T12:01:05.000Z',
+  });
+}
+
+const EXPECTED = {
+  targetUri: 'https://payments.example.internal/supplier-payments',
+  method: 'POST',
+  bodyDigest: 'sha256:payment-body',
+  nonce: 'nonce:payment-adapter:001',
+  requireBodyDigest: true,
+  requireReplayKey: true,
+  requireNonce: true,
+  maxFreshnessSeconds: 60,
+};
+
+function testDescriptor(): void {
+  const descriptor = consequenceAdmissionPresentationBindingDescriptor();
+
+  equal(
+    descriptor.version,
+    CONSEQUENCE_ADMISSION_PRESENTATION_BINDING_VERSION,
+    'Presentation binding: descriptor exposes stable version',
+  );
+  ok(
+    descriptor.bindingFields.includes('body-digest'),
+    'Presentation binding: body digest is a first-class binding field',
+  );
+  ok(
+    descriptor.bindingFields.includes('replay-key'),
+    'Presentation binding: replay key is a first-class binding field',
+  );
+  equal(
+    descriptor.cryptographicPresentationVerification,
+    false,
+    'Presentation binding: descriptor does not overclaim cryptographic verification',
+  );
+  equal(descriptor.failClosed, true, 'Presentation binding: descriptor is fail-closed');
+}
+
+function testMatchingPresentationAllows(): void {
+  const admission = admittedPayment();
+  const decision = evaluateConsequenceAdmissionPresentationBinding({
+    admission,
+    contract: paymentContract(),
+    presentation: paymentBinding(admission),
+    expected: EXPECTED,
+    now: '2026-05-01T12:00:30.000Z',
+  });
+
+  equal(decision.outcome, 'allow', 'Presentation binding: matching presentation allows');
+  equal(decision.allowed, true, 'Presentation binding: allowed flag is true on allow');
+  equal(decision.failClosed, false, 'Presentation binding: successful decision is not fail-closed');
+  equal(decision.downstreamDecision.outcome, 'allow', 'Presentation binding: downstream contract also allows');
+  ok(
+    decision.receiptDigest.startsWith('sha256:'),
+    'Presentation binding: allow decision has digest-shaped receipt',
+  );
+}
+
+function testReplayAndExpiryHold(): void {
+  const admission = admittedPayment();
+  const binding = paymentBinding(admission);
+  const replayed = evaluateConsequenceAdmissionPresentationBinding({
+    admission,
+    contract: paymentContract(),
+    presentation: binding,
+    expected: {
+      ...EXPECTED,
+      usedReplayKeys: ['payment:tenant_a:invoice_1938:attempt_1'],
+    },
+    now: '2026-05-01T12:00:30.000Z',
+  });
+  const expired = evaluateConsequenceAdmissionPresentationBinding({
+    admission,
+    contract: paymentContract(),
+    presentation: binding,
+    expected: EXPECTED,
+    now: '2026-05-01T12:02:00.000Z',
+  });
+
+  deepEqual(
+    replayed.failureReasons,
+    ['replay-key-reused'],
+    'Presentation binding: consumed replay key holds precisely',
+  );
+  deepEqual(
+    expired.failureReasons,
+    ['presentation-expired'],
+    'Presentation binding: expired presentation holds precisely',
+  );
+}
+
+function testTargetBodyAndNonceMustMatch(): void {
+  const admission = admittedPayment();
+  const binding = paymentBinding(admission);
+  const wrongBody = evaluateConsequenceAdmissionPresentationBinding({
+    admission,
+    contract: paymentContract(),
+    presentation: binding,
+    expected: {
+      ...EXPECTED,
+      bodyDigest: 'sha256:different-body',
+    },
+    now: '2026-05-01T12:00:30.000Z',
+  });
+  const wrongTarget = evaluateConsequenceAdmissionPresentationBinding({
+    admission,
+    contract: paymentContract(),
+    presentation: binding,
+    expected: {
+      ...EXPECTED,
+      targetUri: 'https://payments.example.internal/manual-payments',
+    },
+    now: '2026-05-01T12:00:30.000Z',
+  });
+  const wrongNonce = evaluateConsequenceAdmissionPresentationBinding({
+    admission,
+    contract: paymentContract(),
+    presentation: binding,
+    expected: {
+      ...EXPECTED,
+      nonce: 'nonce:payment-adapter:002',
+    },
+    now: '2026-05-01T12:00:30.000Z',
+  });
+
+  deepEqual(
+    wrongBody.failureReasons,
+    ['body-digest-mismatch'],
+    'Presentation binding: body digest mismatch holds precisely',
+  );
+  deepEqual(
+    wrongTarget.failureReasons,
+    ['target-uri-mismatch'],
+    'Presentation binding: target mismatch holds precisely',
+  );
+  deepEqual(
+    wrongNonce.failureReasons,
+    ['nonce-mismatch'],
+    'Presentation binding: nonce mismatch holds precisely',
+  );
+}
+
+function testNarrowPresentationRequiresConstraintAcknowledgement(): void {
+  const admission = narrowedPayment();
+  const held = evaluateConsequenceAdmissionPresentationBinding({
+    admission,
+    contract: paymentContract(),
+    presentation: paymentBinding(admission),
+    expected: EXPECTED,
+    now: '2026-05-01T12:00:30.000Z',
+  });
+  const acknowledged = createConsequenceAdmissionPresentationBinding({
+    admission,
+    contract: paymentContract(),
+    target: {
+      uri: 'https://payments.example.internal/supplier-payments',
+      method: 'POST',
+      bodyDigest: 'sha256:payment-body',
+    },
+    replayKey: 'payment:tenant_a:invoice_1938:attempt_2',
+    nonce: 'nonce:payment-adapter:001',
+    presentedAt: '2026-05-01T12:00:05.000Z',
+    expiresAt: '2026-05-01T12:01:05.000Z',
+    acceptedConstraintIds: ['constraint:max-amount'],
+  });
+  const allowed = evaluateConsequenceAdmissionPresentationBinding({
+    admission,
+    contract: paymentContract(),
+    presentation: acknowledged,
+    expected: {
+      ...EXPECTED,
+      usedReplayKeys: [],
+    },
+    now: '2026-05-01T12:00:30.000Z',
+  });
+
+  deepEqual(
+    held.failureReasons,
+    ['constraint-acknowledgement-missing', 'downstream-contract-held'],
+    'Presentation binding: unacknowledged narrow constraint holds at both presentation and downstream contract layers',
+  );
+  equal(allowed.outcome, 'allow', 'Presentation binding: acknowledged narrow constraint allows');
+}
+
+function testDocsAndScriptsExposePresentationBinding(): void {
+  const readme = readProjectFile('README.md');
+  const bindingDoc = readProjectFile('docs', '02-architecture', 'downstream-presentation-binding.md');
+  const contractDoc = readProjectFile('docs', '02-architecture', 'downstream-enforcement-contract.md');
+  const systemOverview = readProjectFile('docs', '02-architecture', 'system-overview.md');
+  const packageJson = JSON.parse(readProjectFile('package.json')) as {
+    readonly scripts: Readonly<Record<string, string>>;
+  };
+
+  includes(
+    readme,
+    'docs/02-architecture/downstream-presentation-binding.md',
+    'Presentation binding: README links presentation binding doc',
+  );
+  includes(
+    bindingDoc,
+    'this exact consequence is allowed here, now',
+    'Presentation binding: doc states exact final-edge purpose',
+  );
+  includes(
+    contractDoc,
+    '[Downstream presentation binding](downstream-presentation-binding.md)',
+    'Presentation binding: downstream contract doc links presentation binding',
+  );
+  includes(
+    systemOverview,
+    '[Downstream presentation binding](downstream-presentation-binding.md)',
+    'Presentation binding: system overview links presentation binding',
+  );
+  equal(
+    packageJson.scripts['test:downstream-presentation-binding'],
+    'tsx tests/downstream-presentation-binding.test.ts',
+    'Presentation binding: focused test script is exposed',
+  );
+}
+
+testDescriptor();
+testMatchingPresentationAllows();
+testReplayAndExpiryHold();
+testTargetBodyAndNonceMustMatch();
+testNarrowPresentationRequiresConstraintAcknowledgement();
+testDocsAndScriptsExposePresentationBinding();
+
+console.log(`Downstream presentation binding tests: ${passed} passed, 0 failed`);

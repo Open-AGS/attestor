@@ -21,6 +21,9 @@ import {
   CONSEQUENCE_ADMISSION_POLICY_LIMIT_BREACH_ACTIONS,
   CONSEQUENCE_ADMISSION_POLICY_LIMIT_KINDS,
 } from './policy-limits.js';
+import {
+  CONSEQUENCE_ADMISSION_PRESENTATION_BINDING_FIELDS,
+} from './presentation-binding.js';
 
 export const CONSEQUENCE_ADMISSION_CONTRACT_VERSION =
   'attestor.consequence-admission.v1';
@@ -237,6 +240,7 @@ export interface ConsequenceAdmissionDescriptor {
   readonly taxonomy: typeof CONSEQUENCE_ADMISSION_TAXONOMY;
   readonly policyLimitKinds: typeof CONSEQUENCE_ADMISSION_POLICY_LIMIT_KINDS;
   readonly policyLimitBreachActions: typeof CONSEQUENCE_ADMISSION_POLICY_LIMIT_BREACH_ACTIONS;
+  readonly presentationBindingFields: typeof CONSEQUENCE_ADMISSION_PRESENTATION_BINDING_FIELDS;
 }
 
 export interface CreateConsequenceAdmissionRequestInput {
@@ -669,11 +673,13 @@ ConsequenceAdmissionDescriptor {
     taxonomy: CONSEQUENCE_ADMISSION_TAXONOMY,
     policyLimitKinds: CONSEQUENCE_ADMISSION_POLICY_LIMIT_KINDS,
     policyLimitBreachActions: CONSEQUENCE_ADMISSION_POLICY_LIMIT_BREACH_ACTIONS,
+    presentationBindingFields: CONSEQUENCE_ADMISSION_PRESENTATION_BINDING_FIELDS,
   });
 }
 
 export * from './taxonomy.js';
 export * from './policy-limits.js';
+export * from './presentation-binding.js';
 export * from './downstream-enforcement-contract.js';
 export * from './verifier-helper.js';
 export * from './finance.js';

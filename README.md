@@ -193,6 +193,8 @@ The [verifier helper](docs/02-architecture/verifier-helper.md) is the small cust
 
 The [policy limit model](docs/02-architecture/policy-limit-model.md) gives those admissions bounded policy material: amount caps, velocity windows, recipient and asset allowlists, data scope, authority scope, time windows, risk ceilings, and review thresholds.
 
+The [downstream presentation binding](docs/02-architecture/downstream-presentation-binding.md) binds an allowed admission to the exact enforcement point, target, method, body digest, replay key, nonce, freshness window, proof refs, and acknowledged constraints that are about to cross into the real system.
+
 The release layer turns a decision into something the rest of the system can inspect: deterministic checks, release tokens, reviewer queues, evidence packs, and proof references. This is where "the AI said so" becomes a bounded release decision.
 
 The policy control plane is where authority changes are controlled: signed policy bundles, activation, rollback, scoping, simulation, and audit trail. A gateway without policy provenance is only an interruption point.
@@ -261,6 +263,7 @@ Start here:
 - [Downstream enforcement contract](docs/02-architecture/downstream-enforcement-contract.md) - customer-side allow/hold contract before downstream action
 - [Verifier helper](docs/02-architecture/verifier-helper.md) - customer-side verify/assert helper for downstream adapters
 - [Policy limit model](docs/02-architecture/policy-limit-model.md) - amount, velocity, scope, allowlist, and review-threshold limits
+- [Downstream presentation binding](docs/02-architecture/downstream-presentation-binding.md) - target, body, replay, nonce, freshness, proof, and constraint binding
 - [Proof console buildout](docs/02-architecture/proof-console-buildout.md) - local proof-surface tracker
 - [Production runtime hardening buildout](docs/02-architecture/production-runtime-hardening-buildout.md) - runtime profile and fail-closed hardening tracker
 - [Production shared authority plane buildout](docs/02-architecture/production-shared-authority-plane-buildout.md) - shared production authority-plane tracker

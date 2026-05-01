@@ -197,6 +197,40 @@ Activation remains blocked until later gates close:
 
 This mirrors policy-bundle and admission-control systems that separate recommendation, dry-run, signed bundle distribution, and live enforcement. The packet is a review artifact, not a deployable policy.
 
+## Policy Promotion Simulation
+
+The next surface replays the policy promotion packet against tenant-scoped shadow events:
+
+```text
+GET /api/v1/shadow/policy-promotion-simulation
+GET /api/v1/shadow/policy-promotion-simulation?status=activated
+```
+
+This simulation answers:
+
+```text
+If this policy bundle draft had evaluated the recorded shadow events, what would it have done?
+```
+
+It reports:
+
+- source packet and bundle draft digests
+- matched and unmatched event counts
+- per-rule matched event digests
+- aggregate impact counts: admit, audit, warn, hold-for-review, block
+- remaining activation blockers
+
+Running this simulation closes only the `policy-simulation-required` blocker for the returned artifact. It does not close production signing or downstream verification. The response still keeps:
+
+```text
+activationReady: false
+autoEnforce: false
+rawPayloadStored: false
+productionReady: false
+```
+
+The simulation uses shadow event metadata and digests. It does not store or return raw prompts, recipients, evidence ids, SQL, customer records, wallet material, payment secrets, or downstream response bodies.
+
 ## Why This Shape
 
 This follows the same pattern used by mature control systems:
@@ -216,6 +250,7 @@ candidate policy/control inferred
 customer approves or rejects
 promotion draft generated for review
 policy promotion packet generated
+policy promotion packet simulated
 only then can enforcement promotion happen
 ```
 

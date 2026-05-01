@@ -5,6 +5,7 @@ import {
   createShadowPolicyDiscoveryCandidates,
   createShadowPolicyPromotionDraft,
   createShadowPolicyPromotionPacket,
+  createShadowPolicyPromotionSimulation,
   createShadowPolicySimulationReport,
   createShadowSummarySurface,
   GENERIC_ADMISSION_MODES,
@@ -704,6 +705,76 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
         status: 503,
         detail,
         reasonCodes: ['policy-promotion-packet-failed'],
+      });
+    }
+  });
+
+  app.get('/api/v1/shadow/policy-promotion-simulation', (c) => {
+    c.header('cache-control', 'no-store');
+    if (!deps.listShadowPolicyCandidateRecords) {
+      return problem(c, {
+        type: 'https://attestor.dev/problems/policy-candidate-store-unavailable',
+        title: 'Policy candidate store unavailable',
+        status: 503,
+        detail: 'Policy promotion simulation is not configured for this runtime.',
+        reasonCodes: ['policy-candidate-store-unavailable'],
+      });
+    }
+    const statusQuery = c.req.query('status');
+    const sourceStatus = parsePromotionSourceStatus(statusQuery);
+    if (!sourceStatus) {
+      return problem(c, {
+        type: 'https://attestor.dev/problems/policy-promotion-source-status-invalid',
+        title: 'Invalid policy promotion source status',
+        status: 400,
+        detail:
+          `Policy promotion simulations can only be generated from: ${SHADOW_POLICY_PROMOTION_SOURCE_STATUSES.join(', ')}.`,
+        reasonCodes: ['invalid-policy-promotion-source-status'],
+      });
+    }
+
+    try {
+      const tenant = deps.currentTenant(c);
+      const records = deps.listShadowPolicyCandidateRecords({
+        tenant,
+        status: sourceStatus,
+      });
+      const draft = createShadowPolicyPromotionDraft({
+        tenantId: tenant.tenantId,
+        records,
+        sourceStatus,
+        generatedAt: deps.now?.() ?? null,
+      });
+      const packet = createShadowPolicyPromotionPacket({
+        draft,
+        generatedAt: deps.now?.() ?? null,
+      });
+      const simulation = createShadowPolicyPromotionSimulation({
+        packet,
+        events: deps.listShadowEvents({ tenant }),
+        generatedAt: deps.now?.() ?? null,
+      });
+      return c.json({
+        tenant: tenantSummary(tenant),
+        storageMode: 'file-backed-evaluation',
+        productionReady: false,
+        approvalRequired: true,
+        autoEnforce: false,
+        rawPayloadStored: false,
+        simulation,
+      });
+    } catch (error) {
+      const detail =
+        error instanceof Error
+          ? error.message
+          : 'Policy promotion simulation could not be generated.';
+      const status: ShadowProblemStatus = detail.includes('exceeds maximum') ? 400 : 503;
+      return problem(c, {
+        type: 'https://attestor.dev/problems/policy-promotion-simulation-failed',
+        title: 'Policy promotion simulation failed',
+        status,
+        detail,
+        reasonCodes: ['policy-promotion-simulation-failed'],
       });
     }
   });

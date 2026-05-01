@@ -37,8 +37,11 @@ function appearsBefore(content: string, earlier: string, later: string, message:
 function testReadmeHasAFirstImpressionPath(): void {
   const readme = readProjectFile('README.md');
 
-  includes(readme, 'Consequence admission for AI-assisted systems.', 'README: opens with a sharper outside-reader hook');
-  includes(readme, 'Attestor sits before real-world consequences.', 'README: explains placement before architecture');
+  includes(readme, 'A fail-closed gateway for AI actions before they affect real systems.', 'README: opens with a sharper outside-reader hook');
+  includes(readme, 'The dangerous moment is not the suggestion. It is the handoff from suggestion to consequence.', 'README: frames the risk before architecture');
+  includes(readme, 'Attestor sits at that handoff.', 'README: explains placement before architecture');
+  includes(readme, 'The point is not to make the AI more confident.', 'README: keeps the gate framing cold and direct');
+  includes(readme, 'If they do not close, the gate holds or blocks by default.', 'README: explains the fail-closed gateway result');
   includes(readme, 'Attestor does not replace the model, agent runtime, wallet, custody platform, orchestration layer, or downstream system.', 'README: keeps replacement non-claim near the top');
   includes(readme, '## Current Status', 'README: exposes the evaluation boundary near the top');
   includes(readme, 'not a finished public SaaS', 'README: avoids public SaaS overclaim');
@@ -48,7 +51,7 @@ function testReadmeHasAFirstImpressionPath(): void {
   includes(readme, 'npm run example:admission', 'README: shows the first runnable command');
   includes(readme, 'one proposed consequence admitted with proof references', 'README: explains admitted proof refs');
   includes(readme, 'one proposed consequence blocked fail-closed', 'README: explains blocked fail-closed path');
-  includes(readme, 'a customer-side gate that only proceeds when Attestor allows it', 'README: explains downstream gate behavior');
+  includes(readme, 'a customer-side gate that refuses to run the downstream action unless Attestor allows it', 'README: explains downstream gate behavior');
   includes(readme, '## Decision Model', 'README: makes the decision vocabulary prominent');
   includes(readme, '## Proof Model', 'README: surfaces proof as a first-class concept near the top');
   includes(readme, 'local proof artifacts that can be reviewed later', 'README: explains why proof matters');

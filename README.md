@@ -2,9 +2,13 @@
 
 ![Attestor: proof before consequence](docs/assets/attestor-readme-hero.png)
 
-**Consequence admission for AI-assisted systems.**
+**A fail-closed gateway for AI actions before they affect real systems.**
 
-Attestor sits before real-world consequences. A model, agent, workflow, wallet, or application proposes an action; Attestor admits, narrows, sends to review, or blocks it; only allowed consequences proceed; and the decision leaves proof that can be inspected later.
+AI systems can draft, call tools, prepare records, request payments, and trigger workflows. The dangerous moment is not the suggestion. It is the handoff from suggestion to consequence.
+
+Attestor sits at that handoff. A model, agent, workflow, wallet, or application can propose an action; Attestor admits it, narrows it, sends it to review, or blocks it before the downstream system writes, sends, files, settles, or executes.
+
+The point is not to make the AI more confident. The point is to make real systems harder to change by accident. Policy, authority, evidence, and enforcement checks must close before a proposed action proceeds. If they do not close, the gate holds or blocks by default.
 
 Attestor does not replace the model, agent runtime, wallet, custody platform, orchestration layer, or downstream system. It sits before the consequence.
 
@@ -13,7 +17,9 @@ Attestor does not replace the model, agent runtime, wallet, custody platform, or
 
 ## Current Status
 
-Attestor is currently an **evaluation release**: reviewer-runnable, CI-backed, and useful for technical evaluation. It is not a finished public SaaS, a production-use guarantee, a completed customer-operated deployment, or a substitute for an external security audit.
+Attestor is currently an **evaluation release**: reviewer-runnable, CI-backed, and useful for technical evaluation. It shows the admission model, proof artifacts, finance wedge, crypto extension surfaces, and current fail-closed boundaries.
+
+It is not a finished public SaaS, a production-use guarantee, a completed customer-operated deployment, or a substitute for an external security audit.
 
 Start review with:
 
@@ -24,20 +30,20 @@ Start review with:
 
 ## What Attestor Does
 
-Attestor is a consequence-admission engine for high-stakes AI-assisted systems:
+Attestor is the approval layer between an AI-assisted system and a real effect:
 
 ```text
 AI proposes -> Attestor admits / narrows / reviews / blocks -> allowed consequences proceed -> proof remains
 ```
 
-Use it when an AI-assisted system is about to do something that should not become real by default:
+Use it where "the AI decided" is not enough:
 
-- release a financial record
-- send or authorize money movement
-- invoke a downstream write, filing, settlement, or execution path
-- proceed without required authority, policy, evidence, or freshness checks
+- a financial record is about to be released
+- money movement is about to be sent, authorized, or settled
+- a downstream write, filing, settlement, or execution path is about to run
+- authority, policy, evidence, freshness, or enforcement is missing
 
-The default posture is fail-closed: if the required checks cannot close, the downstream system should hold, review, or block instead of proceeding silently.
+Attestor returns a bounded decision and proof references. The customer system enforces the decision. If the checks cannot close, the safe outcome is not "try anyway"; it is hold, review, or block.
 
 ## Try It In 60 Seconds
 
@@ -46,11 +52,11 @@ npm install
 npm run example:admission
 ```
 
-You will see:
+You will see the gateway behavior directly:
 
 - one proposed consequence admitted with proof references
 - one proposed consequence blocked fail-closed
-- a customer-side gate that only proceeds when Attestor allows it
+- a customer-side gate that refuses to run the downstream action unless Attestor allows it
 
 For a guided first run, see [Try Attestor first](docs/01-overview/try-attestor-first.md).
 
@@ -76,20 +82,20 @@ npm run verify:cert -- .attestor/showcase/latest/evidence/kit.json
 npm run verify
 ```
 
-`npm run proof:surface` writes `.attestor/proof-surface/latest/` with a manifest, machine-readable bundle, markdown summary, and one unified proof output per runnable scenario. It is a local static proof surface; it does not start a hosted console or claim a public hosted crypto route.
+`npm run proof:surface` writes `.attestor/proof-surface/latest/` with a manifest, machine-readable bundle, markdown summary, and one unified proof output per runnable scenario. It is a local static proof surface. It does not start a hosted console or claim a public hosted crypto route.
 
-`npm run showcase:proof` generates a local PostgreSQL-backed proof packet. Without a live upstream model, `verify:cert` reports `PROOF_DEGRADED` and exits non-zero by design; the full local release gate remains `npm run verify`.
+`npm run showcase:proof` generates a local PostgreSQL-backed proof packet. Without a live upstream model, `verify:cert` reports `PROOF_DEGRADED` and exits non-zero by design. The full local release gate remains `npm run verify`.
 
 ## Decision Model
 
-Attestor returns one of four bounded outcomes:
+The gateway never returns an open-ended "looks good." It returns one of four bounded outcomes:
 
 | Decision | Meaning |
 |---|---|
-| `admit` | Allow the proposed consequence. |
-| `narrow` | Allow only a safer bounded version. |
-| `review` | Require human or external review. |
-| `block` | Reject fail-closed. |
+| `admit` | The proposed consequence may proceed. |
+| `narrow` | Only a safer bounded version may proceed. |
+| `review` | The consequence must wait for human or external review. |
+| `block` | The consequence is rejected fail-closed. |
 
 Example decision payload:
 
@@ -107,11 +113,13 @@ Example decision payload:
 }
 ```
 
-Allowed paths can carry proof references such as `certificate:...` and `verification-kit:...` for later inspection.
+Allowed paths can carry proof references such as `certificate:...` and `verification-kit:...`. Blocked paths keep the reason codes that explain why the gate did not open.
 
 ## Proof Model
 
-Attestor is built around proof before consequence. A decision can include:
+Attestor is built around proof before consequence. A consequence should not merely happen; it should leave a bounded record of why it was allowed, narrowed, reviewed, or blocked.
+
+A decision can include:
 
 - decision outcome
 - policy context
@@ -124,7 +132,7 @@ The current evaluation baseline includes local proof packets, verification kits,
 
 ## Current Proof Wedge
 
-The deepest proven wedge today is **finance**.
+The deepest proven wedge today is **finance**, because finance makes the gateway requirement obvious: records, approvals, authority, and audit trails cannot be hand-waved.
 
 The first hard boundary is:
 
@@ -132,13 +140,13 @@ The first hard boundary is:
 AI output -> structured financial record release
 ```
 
-This is where weak acceptance models break quickly: reviewer authority matters, deterministic checks matter, portable proof matters, and auditability is not optional. Finance is the current proving ground, not the ceiling of the platform.
+This is where weak acceptance models break quickly. Reviewer authority matters. Deterministic checks matter. Portable proof matters. Auditability is not optional. Finance is the current proving ground, not the ceiling of the platform.
 
 See [AI-assisted financial reporting acceptance](docs/01-overview/financial-reporting-acceptance.md).
 
 ## Architecture: Core And Packs
 
-Attestor is one product with a shared consequence-admission core and modular packs for specific consequence domains.
+Attestor is one gateway with a shared admission core and modular packs for specific consequence domains.
 
 | Layer | Role | Current status |
 |---|---|---|
@@ -148,7 +156,7 @@ Attestor is one product with a shared consequence-admission core and modular pac
 | Enforcement plane | offline/online verification, gateways, DPoP, mTLS/SPIFFE, HTTP message signatures | evaluation-packaged |
 | Crypto authorization core | programmable-money authorization vocabulary, bindings, simulation, adapter preflight | evaluation-packaged |
 
-Customer systems call the relevant Attestor path for the consequence they want to control. Attestor does not guess what to run automatically.
+Customer systems call the relevant Attestor path for the consequence they want to control. Attestor does not guess what to run automatically, and it does not bypass the customer's own enforcement point.
 
 ## Pack Status
 
@@ -157,13 +165,13 @@ Customer systems call the relevant Attestor path for the consequence they want t
 | Finance | deepest proven path today; financial reporting is the current proof wedge | evaluation proving pack |
 | Crypto | packaged extension of the same policy / authority / proof / fail-closed model for programmable-money admission surfaces | authorization and execution-admission surfaces packaged for evaluation |
 
-The crypto pack includes packaged admission surfaces for wallet RPC, Safe guard, ERC-4337 bundler, modular-account runtime, delegated-EOA runtime, x402 resource-server middleware, custody policy callbacks, intent-solver handoffs, telemetry receipts, and conformance fixtures. It extends the shared Attestor model; it is not a separate product identity.
+The crypto pack applies the same gate to programmable-money surfaces: wallet RPC, Safe guard, ERC-4337 bundler, modular-account runtime, delegated-EOA runtime, x402 resource-server middleware, custody policy callbacks, intent-solver handoffs, telemetry receipts, and conformance fixtures. It extends the shared Attestor model; it is not a separate product identity.
 
 ## Data And Security Posture
 
 Attestor is designed as a control point, not a data lake.
 
-It receives the proposed consequence and the evidence needed to decide whether that consequence may proceed. Customer systems keep ownership of the model, agent, workflow, wallet, database, and downstream execution path. Attestor returns a bounded decision, reasons, and proof references; it does not need to become the system of record for raw business data.
+It receives the proposed consequence and the evidence needed to decide whether that consequence may proceed. Customer systems keep ownership of the model, agent, workflow, wallet, database, and downstream execution path. Attestor returns a bounded decision, reasons, and proof references. It does not need to become the system of record for raw business data.
 
 The current evaluation baseline already includes:
 
@@ -186,6 +194,7 @@ Attestor is not:
 - a wallet or custody platform
 - an orchestration framework or generic AI workspace
 - the downstream system that writes, sends, files, executes, settles, or stores the final result
+- a permission slip for AI actions without customer-side enforcement
 - a magical system that guesses the right consequence path automatically
 - proof that AI or programmable execution is inherently trustworthy
 - a claim that every runtime profile is production-ready in this evaluation release

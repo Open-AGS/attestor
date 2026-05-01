@@ -32,12 +32,14 @@ function testTopLevelPositioningStaysAligned(): void {
   includes(readme, 'Attestor is the authorization layer for AI actions before they become consequences.', 'Product docs: README keeps action authorization framing');
   includes(readme, 'Start in shadow mode. See what your AI agents would have done before you let them act.', 'Product docs: README makes shadow mode the adoption wedge');
   includes(readme, 'observe -> recommend -> simulate -> approve -> enforce -> prove', 'Product docs: README keeps the shadow-to-enforcement path');
-  includes(readme, 'The current generic admission route implements the first control ladder for this path: `observe`, `warn`, `review`, and `enforce`.', 'Product docs: README bounds implemented shadow ladder');
+  includes(readme, 'Attestor can start in `observe` or `warn` mode.', 'Product docs: README makes non-blocking adoption concrete');
+  includes(readme, 'observe -> warn -> review -> enforce', 'Product docs: README keeps the adoption mode ladder');
+  includes(readme, 'The current generic admission route implements the first control ladder for this path.', 'Product docs: README bounds implemented shadow ladder');
   includes(readme, 'This is the route-level entry point for the shadow-to-enforcement ladder described above.', 'Product docs: README avoids repeating the route mode explanation');
   includes(readme, 'Attestor is one product with a shared AI action authorization core and modular packs for specific consequence domains.', 'Product docs: README keeps one-product framing');
   includes(readme, 'AI action authorization infrastructure', 'Product docs: README names the infrastructure category');
   includes(readme, '## Consequence Packs', 'Product docs: README names consequence packs before architecture');
-  includes(readme, 'A pack does not answer "is this finance or crypto?"', 'Product docs: README blocks industry-pack framing');
+  includes(readme, 'A pack does not answer "is this finance or crypto?" It answers the control question:', 'Product docs: README blocks industry-pack framing');
   includes(readme, 'The pack is the consequence class. Adapters sit underneath it.', 'Product docs: README keeps adapters below consequence packs');
   includes(actionPositioning, 'AI action authorization is the market category.', 'Product docs: action authorization positioning names the category');
   includes(actionPositioning, 'AI Consequence Gateway is the Attestor operating model.', 'Product docs: action authorization positioning preserves consequence-gateway language');

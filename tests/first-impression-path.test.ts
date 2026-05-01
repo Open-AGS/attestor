@@ -48,7 +48,8 @@ function testReadmeHasAFirstImpressionPath(): void {
   includes(readme, 'not a finished public SaaS', 'README: avoids public SaaS overclaim');
   includes(readme, '## What Attestor Does', 'README: names the operating model before architecture');
   includes(readme, 'AI proposes -> Attestor admits / narrows / reviews / blocks -> allowed consequences proceed -> proof remains', 'README: explains the control flow in one line');
-  includes(readme, '## Start In Shadow Mode', 'README: exposes shadow mode as the adoption path');
+  includes(readme, '## Start Without Blocking', 'README: exposes shadow mode as the adoption path');
+  includes(readme, 'observe -> warn -> review -> enforce', 'README: explains the adoption mode ladder');
   includes(readme, 'observe -> recommend -> simulate -> approve -> enforce -> prove', 'README: explains shadow-to-enforcement sequence');
   includes(readme, '## Why It Exists', 'README: explains the category before architecture');
   includes(readme, 'AI action authorization infrastructure', 'README: positions Attestor as infrastructure, not a generic tool');
@@ -64,12 +65,13 @@ function testReadmeHasAFirstImpressionPath(): void {
   includes(readme, 'npm run proof:surface', 'README: exposes the proof surface command near the first proof explanation');
   includes(readme, 'POST /api/v1/admissions', 'README: exposes the generic admission route');
   includes(readme, '`observe`, `warn`, `review`, or `enforce`', 'README: explains the generic mode ladder');
+  includes(readme, '"domain": "money-movement"', 'README: shows the route is consequence-domain based');
   includes(readme, '## Consequence Packs', 'README: introduces consequence packs before architecture');
   includes(readme, 'The pack is the consequence class. Adapters sit underneath it.', 'README: keeps consequence packs above adapters');
   includes(readme, 'Attestor is designed as a control point, not a data lake.', 'README: explains data handling posture early');
   includes(readme, '[Try Attestor first](docs/01-overview/try-attestor-first.md)', 'README: links to the guided first run');
   appearsBefore(readme, '## Current Status', '## Architecture: Core And Packs', 'README: keeps evaluation boundary before architecture');
-  appearsBefore(readme, '## Start In Shadow Mode', '## Why It Exists', 'README: positions shadow mode before deeper category explanation');
+  appearsBefore(readme, '## Start Without Blocking', '## Why It Exists', 'README: positions shadow mode before deeper category explanation');
   appearsBefore(readme, '## Try It In 60 Seconds', '## Architecture: Core And Packs', 'README: keeps the runnable path before product packaging');
   appearsBefore(readme, '## Consequence Packs', '## Architecture: Core And Packs', 'README: names consequence packs before architecture detail');
   appearsBefore(readme, 'npm run proof:surface', '## Architecture: Core And Packs', 'README: keeps proof inspection before platform packaging');

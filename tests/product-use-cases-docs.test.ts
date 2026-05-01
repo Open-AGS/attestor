@@ -24,14 +24,17 @@ function excludes(content: string, unexpected: RegExp, message: string): void {
 function testUseCaseBridgeStaysConcrete(): void {
   const doc = readProjectFile('docs', '01-overview', 'what-you-can-do.md');
 
-  includes(doc, 'proposed consequence -> Attestor decision and proof -> customer gate -> downstream action', 'Use cases: core operating shape is explicit');
+  includes(doc, 'AI proposal -> Attestor decision and proof -> customer gate -> downstream action', 'Use cases: core operating shape is explicit');
   includes(doc, '| AI-assisted finance report |', 'Use cases: finance report use case is present');
   includes(doc, '| Customer-facing message |', 'Use cases: communication use case is present');
   includes(doc, '| Financial action |', 'Use cases: action dispatch use case is present');
   includes(doc, '| Programmable-money path |', 'Use cases: crypto execution use case is present');
+  includes(doc, '| Data access or export |', 'Use cases: data consequence use case is present');
+  includes(doc, '| Authority change |', 'Use cases: authority consequence use case is present');
+  includes(doc, '| Operational action |', 'Use cases: operations consequence use case is present');
   includes(doc, '| Hosted API workflow |', 'Use cases: hosted API use case is present');
   includes(doc, '| Audit and verification |', 'Use cases: verification use case is present');
-  includes(doc, 'The customer still owns the model, workflow, wallet, database, message system, filing tool, or payment rail.', 'Use cases: customer ownership boundary is explicit');
+  includes(doc, 'The customer still owns the model, workflow, wallet, database, message system, filing tool, deployment system, or payment rail.', 'Use cases: customer ownership boundary is explicit');
   includes(doc, 'Attestor owns the control point before consequence:', 'Use cases: Attestor role is explicit');
   includes(doc, 'npm run example:admission', 'Use cases: local first-run command is present');
   includes(doc, 'npm run example:customer-gate', 'Use cases: customer gate command is present');
@@ -46,6 +49,7 @@ function testUseCaseBridgeDoesNotOverclaim(): void {
 
   includes(doc, 'Not a claim that every pack has the same hosted route.', 'Use cases: hosted route overclaim is blocked');
   includes(doc, 'Not automatic pack detection.', 'Use cases: automatic pack detection overclaim is blocked');
+  includes(doc, 'Not a prompt wrapper.', 'Use cases: prompt-wrapper overclaim is blocked');
   includes(doc, 'Not a wallet, custody platform, database, message system, model runtime, or orchestration tool.', 'Use cases: role overclaim is blocked');
   excludes(doc, /POST\s+\/api\/v1\/admit/u, 'Use cases: universal admit route is not invented');
   excludes(doc, /public hosted crypto route is available/iu, 'Use cases: hosted crypto route is not invented');

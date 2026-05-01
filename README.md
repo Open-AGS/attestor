@@ -4,7 +4,9 @@
 
 **AI Consequence Gateway.**
 
-AI systems are moving from suggestions into actions: sending messages, preparing filings, calling tools, changing records, requesting payments, touching wallets, querying databases, and triggering operational workflows. The trust boundary is not the model. The trust boundary is the consequence.
+Models propose. Systems change. Attestor sits between those two facts.
+
+AI systems now reach tools that write to ledgers, CRMs, filing paths, wallets, ticketing systems, databases, and deployment pipelines. A bad answer can be corrected. A bad consequence has to be unwound. The trust boundary is not the model. The trust boundary is the consequence.
 
 Attestor sits at that boundary. A model, agent, workflow, wallet, or application proposes an action; Attestor admits it, narrows it, sends it to review, or blocks it before the downstream system writes, sends, files, settles, grants access, releases data, or executes.
 
@@ -29,7 +31,7 @@ Start review with:
 
 ## What Attestor Does
 
-Attestor is admission control for important AI-driven consequences:
+Attestor is admission control for AI-driven consequences that matter:
 
 ```text
 AI proposes -> Attestor admits / narrows / reviews / blocks -> allowed consequences proceed -> proof remains
@@ -37,19 +39,19 @@ AI proposes -> Attestor admits / narrows / reviews / blocks -> allowed consequen
 
 Use it where an AI-assisted system should not be able to create a consequence just because it can form a request:
 
-- release a financial record
-- send, authorize, or hand off money movement
-- approve a programmable-money action before a wallet, Safe, custody callback, or solver flow sees it
-- export sensitive data or run a live database-backed report
-- send customer, legal, compliance, or filing communications
-- mutate account status, permissions, entitlements, or admin state
-- trigger deployment, infrastructure, incident, or operational changes
+- a finance assistant prepares a report from live warehouse data
+- an agent proposes paying a supplier after reading a changed bank-account instruction
+- a crypto workflow prepares a Safe transaction, wallet RPC call, custody callback, or solver handoff
+- a support copilot drafts a refund, credit, suspension, or account-status change
+- an internal AI requests a customer-data export or live database-backed report
+- a compliance workflow prepares a filing, notice, or customer communication
+- an operations agent proposes a deploy, secret rotation, incident action, or infrastructure change
 
 The posture is fail-closed. If policy, authority, evidence, freshness, scope, or verification cannot close, the consequence does not proceed silently.
 
 ## Why It Exists
 
-Most AI safety layers focus on prompts, outputs, model behavior, or tool routing. Those matter, but they are not enough for enterprise systems where the costly event is downstream:
+Most AI safety layers focus on prompts, outputs, model behavior, or tool routing. Those matter, but they do not close the business risk by themselves. The costly event is downstream:
 
 ```text
 bad instruction -> plausible model output -> tool call -> real system changed
@@ -57,7 +59,7 @@ bad instruction -> plausible model output -> tool call -> real system changed
 
 Attestor treats the proposed consequence as the object of control. It does not need the model to become perfectly reliable. It requires the action to pass a bounded admission decision before the system of record, payment layer, wallet, filing path, admin plane, or operational workflow is allowed to act.
 
-This is the category: **AI consequence infrastructure**. Not a chatbot feature. Not a prompt wrapper. Not a generic agent workspace. A gateway before important AI actions become real.
+This is AI consequence infrastructure: not a chatbot feature, not a prompt wrapper, not a generic agent workspace. A gateway before important AI actions become real.
 
 ## Try It In 60 Seconds
 
@@ -166,24 +168,30 @@ Attestor is one product with a shared consequence-gateway core and modular packs
 
 One product. One platform core.
 
-| Layer | Role | Current status |
-|---|---|---|
-| Consequence admission | common admit / narrow / review / block vocabulary and customer-side gate model | evaluation-packaged |
-| Release layer | decisions, deterministic checks, tokens, reviewer queue, evidence packs | evaluation-packaged |
-| Policy control plane | signed policy bundles, activation, rollback, scoping, simulation, audit trail | evaluation-packaged |
-| Enforcement plane | offline/online verification, gateways, DPoP, mTLS/SPIFFE, HTTP message signatures | evaluation-packaged |
-| Crypto authorization core | programmable-money authorization vocabulary, bindings, simulation, adapter preflight | evaluation-packaged |
+Read the architecture as a path, not a stack diagram:
+
+```text
+proposed consequence
+  -> consequence admission
+  -> policy, authority, evidence, freshness, and enforcement checks
+  -> bounded decision
+  -> proof material
+  -> downstream verification
+```
+
+The consequence-admission core gives every pack the same public language: `admit`, `narrow`, `review`, or `block`. Finance, crypto, data export, authority change, and future packs should not invent their own trust story. They attach to the same admission model.
+
+The release layer turns a decision into something the rest of the system can inspect: deterministic checks, release tokens, reviewer queues, evidence packs, and proof references. This is where "the AI said so" becomes a bounded release decision.
+
+The policy control plane is where authority changes are controlled: signed policy bundles, activation, rollback, scoping, simulation, and audit trail. A gateway without policy provenance is only an interruption point.
+
+The enforcement plane is the downstream edge. It verifies releases offline or online and fails closed when the required proof is absent, stale, out of scope, or invalid. This is the difference between advice and a gate.
+
+The crypto authorization core extends the same model into programmable-money surfaces: wallet RPC, Safe guards, ERC-4337 bundlers, modular accounts, delegated EOAs, x402 middleware, custody policy callbacks, intent-solver handoffs, telemetry receipts, and conformance fixtures. It is not a separate product identity; it is a pack on the shared consequence gateway.
+
+Finance remains the deepest proof wedge today. Crypto is the active programmable-money extension. Both exist to prove the same architectural claim: important AI actions should meet policy, authority, evidence, and verification before they reach the system that can make them real.
 
 Customer systems call the relevant Attestor path for the consequence they want to control. Attestor does not guess what to run automatically, and it does not bypass the customer's own enforcement point.
-
-## Pack Status
-
-| Pack | What it means today | Status |
-|---|---|---|
-| Finance | deepest proven path today; financial reporting is the current proof wedge | evaluation proving pack |
-| Crypto | packaged extension of the same policy / authority / proof / fail-closed model for programmable-money admission surfaces | authorization and execution-admission surfaces packaged for evaluation |
-
-The crypto pack applies the same gate to programmable-money surfaces: wallet RPC, Safe guard, ERC-4337 bundler, modular-account runtime, delegated-EOA runtime, x402 resource-server middleware, custody policy callbacks, intent-solver handoffs, telemetry receipts, and conformance fixtures. It extends the shared Attestor model; it is not a separate product identity.
 
 ## Data And Security Posture
 

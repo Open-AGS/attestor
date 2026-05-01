@@ -11,7 +11,7 @@ For commercial packaging, use [Commercial packaging, pricing, and evaluation](pr
 
 Attestor is one product:
 
-**a policy-bound release and authorization platform that sits before real consequence.**
+**an AI consequence gateway: a policy-bound admission layer before important AI actions become real system changes.**
 
 The repository currently contains a shared platform core with curated package surfaces:
 
@@ -36,9 +36,9 @@ Supporting slices such as healthcare, Snowflake, VSAC, observability, HA/DR, OID
 
 ## What It Is
 
-Attestor is a release and authorization layer before consequence.
+Attestor is an AI consequence gateway.
 
-It is used when a customer-controlled system has a proposed output, record, communication, action, filing-like artifact, or programmable-money execution path that should not proceed on informal trust.
+It is used when a customer-controlled system has a proposed output, record, communication, action, filing-like artifact, data export, authority change, infrastructure change, or programmable-money execution path that should not proceed on informal trust.
 
 The customer system calls Attestor before the downstream system writes, sends, files, executes, signs, broadcasts, settles, or routes the consequence. Attestor evaluates policy, authority, evidence, freshness, and enforcement posture, then returns a bounded decision and proof material.
 
@@ -53,11 +53,12 @@ The canonical customer-facing decision vocabulary is `admit`, `narrow`, `review`
 - not a wallet or custody platform
 - not a bundler, paymaster, bridge, facilitator, solver, or relayer
 - not an LLM orchestration framework
+- not a prompt wrapper
 - not a BI front-end
 - not a generic AI compliance checklist
 - not a magical router that guesses the correct pack automatically
 
-Attestor makes release into consequence governable. It does not make AI or programmable execution inherently trustworthy.
+Attestor makes the handoff from AI proposal to real consequence governable. It does not make AI or programmable execution inherently trustworthy.
 
 ## Who This Is For
 
@@ -65,4 +66,4 @@ Attestor makes release into consequence governable. It does not make AI or progr
 - reviewers and control functions who need evidence-bearing release decisions
 - builders who need portable proof, not just a model answer
 - organizations that want AI assistance without surrendering authority, auditability, or verification
-- finance, crypto, healthcare, insurance, and internal AI platform teams that need a release or authorization boundary rather than another AI app
+- finance, crypto, healthcare, insurance, security, operations, and internal AI platform teams that need an admission boundary before real systems change

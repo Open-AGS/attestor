@@ -35,6 +35,7 @@ function testTopLevelPositioningStaysAligned(): void {
   includes(packaging, 'Attestor is one product:', 'Product docs: packaging keeps one-product framing');
   includes(useCases, 'Attestor owns the control point before consequence:', 'Product docs: use-case bridge keeps control-point framing');
   includes(readme, 'docs/01-overview/what-you-can-do.md', 'Product docs: README links the use-case bridge');
+  includes(readme, 'Read the architecture as a path, not a stack diagram:', 'Product docs: README avoids table-first architecture framing');
   includes(readme, 'Attestor does not guess what to run automatically, and it does not bypass the customer\'s own enforcement point.', 'Product docs: README blocks automatic-pack overclaim');
   includes(purpose, 'not a magical router that guesses the correct pack automatically', 'Product docs: purpose blocks automatic-pack overclaim');
   includes(useCases, 'Not automatic pack detection.', 'Product docs: use-case bridge blocks automatic-pack overclaim');
@@ -58,10 +59,12 @@ function testCoreAndPackStatusStayConsistent(): void {
     includes(systemOverview, packageSurface, `Product docs: system overview names ${packageSurface}`);
   }
 
-  includes(readme, '| Release layer | decisions, deterministic checks, tokens, reviewer queue, evidence packs | evaluation-packaged |', 'Product docs: README release layer status is compact');
-  includes(readme, '| Policy control plane | signed policy bundles, activation, rollback, scoping, simulation, audit trail | evaluation-packaged |', 'Product docs: README policy control-plane status is compact');
-  includes(readme, '| Enforcement plane | offline/online verification, gateways, DPoP, mTLS/SPIFFE, HTTP message signatures | evaluation-packaged |', 'Product docs: README enforcement plane status is compact');
-  includes(readme, '| Crypto authorization core | programmable-money authorization vocabulary, bindings, simulation, adapter preflight | evaluation-packaged |', 'Product docs: README crypto core status is compact');
+  includes(readme, 'The release layer turns a decision into something the rest of the system can inspect', 'Product docs: README release layer role is concrete');
+  includes(readme, 'The policy control plane is where authority changes are controlled', 'Product docs: README policy control-plane role is concrete');
+  includes(readme, 'The enforcement plane is the downstream edge.', 'Product docs: README enforcement-plane role is concrete');
+  includes(readme, 'The crypto authorization core extends the same model into programmable-money surfaces', 'Product docs: README crypto core role is concrete');
+  excludes(readme, /\| Layer \| Role \| Current status \|/u, 'Product docs: README should not use the old layer table');
+  excludes(readme, /\| Pack \| What it means today \| Status \|/u, 'Product docs: README should not use the old pack table');
   includes(purpose, 'The finance pack remains the deepest proven wedge today.', 'Product docs: purpose keeps finance as strongest wedge');
   includes(purpose, 'not a public hosted crypto HTTP route', 'Product docs: purpose keeps crypto hosted-route guardrail');
   includes(firstIntegrations, 'Do not describe crypto as generally available through a public hosted route', 'Product docs: first integrations keep crypto hosted-route guardrail');

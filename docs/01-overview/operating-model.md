@@ -1,6 +1,6 @@
 # Attestor Operating Model
 
-Use this page as the customer-facing truth source for how Attestor is used before consequence.
+Use this page as the customer-facing truth source for how Attestor is used as an AI consequence gateway.
 
 For pricing and buying paths, use [Commercial packaging, pricing, and evaluation](product-packaging.md).
 For hosted route order, use [Hosted journey contract](hosted-journey-contract.md).
@@ -10,7 +10,7 @@ For the public admission facade, use [Consequence admission quickstart](conseque
 
 ## The Short Version
 
-Attestor is called by a customer-controlled system before a sensitive output, record, action, message, filing-like artifact, or programmable-money execution becomes real.
+Attestor is called by a customer-controlled system before a sensitive output, record, action, message, filing-like artifact, data export, authority change, infrastructure change, or programmable-money execution becomes real.
 
 The customer system does not hand ownership of the workflow to Attestor. It asks Attestor for an admission decision before the downstream system writes, sends, files, executes, signs, broadcasts, settles, or routes the consequence.
 
@@ -24,6 +24,16 @@ proposed consequence
 ```
 
 Attestor does not auto-detect finance, crypto, or future packs from magic input. The customer chooses the relevant path for the consequence it needs to control.
+
+Concrete examples:
+
+- a finance assistant prepares a report from live warehouse data
+- an agent proposes a supplier payment or refund
+- a crypto workflow prepares a wallet RPC call, Safe transaction, custody callback, or solver handoff
+- a support system proposes an account suspension, credit, or entitlement change
+- an operations agent proposes a deploy, secret rotation, or incident action
+
+The pattern does not change across those examples. The consequence changes; the admission boundary stays the same.
 
 ## Canonical Admission Vocabulary
 

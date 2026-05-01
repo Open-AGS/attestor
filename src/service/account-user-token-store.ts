@@ -111,6 +111,11 @@ function passwordResetTtlMinutes(): number {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : 30;
 }
 
+function passwordResetMaxAttempts(): number {
+  const parsed = Number.parseInt(process.env.ATTESTOR_PASSWORD_RESET_MAX_ATTEMPTS ?? '5', 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 5;
+}
+
 function mfaLoginTtlMinutes(): number {
   const parsed = Number.parseInt(process.env.ATTESTOR_MFA_LOGIN_TTL_MINUTES ?? '10', 10);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : 10;
@@ -265,6 +270,7 @@ export function buildPasswordResetTokenRecord(input: IssuePasswordResetTokenInpu
     role: null,
     issuedByAccountUserId: input.issuedByAccountUserId,
     expiresAt,
+    maxAttempts: passwordResetMaxAttempts(),
   });
 }
 

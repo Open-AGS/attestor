@@ -101,6 +101,7 @@
     "test:pipeline-connector-fail-closed": "tsx tests/pipeline-connector-fail-closed.test.ts",
     "test:tenant-isolation-production-guard": "tsx tests/tenant-isolation-production-guard.test.ts",
     "test:account-auth-abuse-guard": "tsx tests/account-auth-abuse-guard.test.ts",
+    "test:account-user-action-token-store": "tsx tests/account-user-action-token-store.test.ts",
     "test:connectors-and-filing": "tsx tests/connectors-and-filing.test.ts",
     "test:predictive-guardrails-fail-closed": "tsx tests/predictive-guardrails-fail-closed.test.ts",
     "test:proof-surface-docs": "tsx tests/proof-surface-docs.test.ts",

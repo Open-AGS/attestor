@@ -438,6 +438,7 @@ export async function createApiHttpRouteRuntime(
     revokeAccountUserActionTokensForUserState,
     issuePasswordResetTokenState,
     setAccountUserPasswordState,
+    saveAccountUserActionTokenRecordState,
     deliverHostedInviteEmail,
     deliverHostedPasswordResetEmail,
     findAccountUserByEmail: findAccountUserByEmailState,

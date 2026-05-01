@@ -1647,6 +1647,9 @@ async function findAccountUserActionTokenByTokenPg(token: string): Promise<Accou
   if (record.revokedAt || record.consumedAt || Date.parse(record.expiresAt) <= Date.now()) {
     return null;
   }
+  if (record.maxAttempts !== null && record.attemptCount >= record.maxAttempts) {
+    return null;
+  }
   return record;
 }
 

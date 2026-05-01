@@ -171,6 +171,12 @@ function run() {
         'hosted passkey-options route is wired through the auth abuse guard',
       );
       ok(
+        routeSource.includes("app.post('/api/v1/auth/password/reset'") &&
+          routeSource.includes('const authAttempt = authAttemptForPasswordReset(c, resetToken);') &&
+          routeSource.includes('const resetRateLimit = maybeRateLimitAuthAttempt(c, authAttempt);'),
+        'hosted password-reset apply route is wired through the auth abuse guard',
+      );
+      ok(
         routeSource.includes('async function recordPasskeyAuthenticationFailure') &&
           (routeSource.match(/await recordPasskeyAuthenticationFailure\(challengeRecord\)/g) ?? []).length >= 5,
         'hosted passkey verification failure paths consume the one-attempt challenge',

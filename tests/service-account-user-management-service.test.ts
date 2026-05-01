@@ -232,6 +232,7 @@ function createDeps(overrides: Partial<AccountUserManagementServiceDeps> = {}): 
       record: user({ id, passwordUpdatedAt: now }),
       path: null,
     }),
+    saveAccountUserActionTokenRecordState: async (record) => ({ record, path: null }),
     deliverHostedInviteEmail: async () => delivery(),
     deliverHostedPasswordResetEmail: async () => delivery({ recipient: 'ops@example.com' }),
   };
@@ -363,9 +364,41 @@ async function testConsumePasswordResetRevokesAndConsumes(): Promise<void> {
   assert.deepEqual(calls, [
     'password:user_123',
     'sessions:user_123',
-    'tokens:user_123:password_reset',
     'consume:reset_123',
+    'tokens:user_123:password_reset',
   ]);
+}
+
+async function testConsumePasswordResetRecordsFailedTokenAttempt(): Promise<void> {
+  let savedRecord: AccountUserActionTokenRecord | null = null;
+  const service = createAccountUserManagementService(createDeps({
+    findAccountUserActionTokenByTokenState: async () => token({
+      id: 'reset_123',
+      purpose: 'password_reset',
+      accountUserId: 'user_123',
+      attemptCount: 4,
+      maxAttempts: 5,
+      displayName: null,
+      role: null,
+    }),
+    saveAccountUserActionTokenRecordState: async (record) => {
+      savedRecord = record;
+      return { record, path: null };
+    },
+  }));
+
+  await assert.rejects(
+    () => service.consumePasswordReset({
+      resetToken: 'reset_secret',
+      newPassword: 'short',
+    }),
+    AccountUserManagementServiceError,
+  );
+
+  assert.equal(savedRecord?.attemptCount, 5);
+  assert.equal(typeof savedRecord?.lastAttemptAt, 'string');
+  assert.equal(savedRecord?.updatedAt, savedRecord?.lastAttemptAt);
+  assert.equal(savedRecord?.revokedAt, savedRecord?.lastAttemptAt);
 }
 
 await testCreateUserValidatesPasswordAndRole();
@@ -373,5 +406,6 @@ await testInviteDeliveryFailureRevokesIssuedToken();
 await testAcceptInviteConsumesTokenAndIssuesSession();
 await testDeactivationRevokesSessionsAndTokens();
 await testConsumePasswordResetRevokesAndConsumes();
+await testConsumePasswordResetRecordsFailedTokenAttempt();
 
-console.log('Service account user management service tests: 5 passed, 0 failed');
+console.log('Service account user management service tests: 6 passed, 0 failed');

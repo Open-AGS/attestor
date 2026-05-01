@@ -1,4 +1,5 @@
 import type { Context, Hono } from 'hono';
+import { createHash } from 'node:crypto';
 import type {
   AuthenticationResponseJSON,
   RegistrationResponseJSON,
@@ -119,6 +120,14 @@ function authAttemptFor(context: Context, email: string): AuthAttemptSubject {
     email,
     source: resolveAuthAttemptSource(context.req.raw.headers),
   };
+}
+
+function authAttemptForPasswordReset(context: Context, resetToken: string): AuthAttemptSubject {
+  const normalized = resetToken.trim();
+  const tokenBucket = normalized
+    ? createHash('sha256').update(normalized).digest('hex').slice(0, 24)
+    : 'missing-token';
+  return authAttemptFor(context, `password-reset:${tokenBucket}`);
 }
 
 function authRateLimitResponse(context: Context, decision: AuthAttemptDecision): Response {
@@ -1858,8 +1867,12 @@ app.post('/api/v1/auth/password/reset', async (c) => {
   const body = await c.req.json().catch(() => ({}));
   const resetToken = typeof body.resetToken === 'string' ? body.resetToken.trim() : '';
   const newPassword = typeof body.newPassword === 'string' ? body.newPassword : '';
+  const authAttempt = authAttemptForPasswordReset(c, resetToken);
+  const resetRateLimit = maybeRateLimitAuthAttempt(c, authAttempt);
+  if (resetRateLimit) return resetRateLimit;
   try {
     await userManagementService.consumePasswordReset({ resetToken, newPassword });
+    recordAuthAttemptSuccess(authAttempt);
     deleteCookie(c, sessionCookieName(), {
       path: '/api/v1',
     });
@@ -1868,7 +1881,12 @@ app.post('/api/v1/auth/password/reset', async (c) => {
     });
   } catch (err) {
     const mapped = accountUserManagementServiceErrorResponse(c, err);
-    if (mapped) return mapped;
+    if (mapped) {
+      if (err instanceof AccountUserManagementServiceError && err.statusCode === 400) {
+        recordAuthAttemptFailure(authAttempt);
+      }
+      return mapped;
+    }
     throw err;
   }
 });

@@ -101,6 +101,7 @@ export interface AccountUserManagementServiceDeps {
   revokeAccountUserActionTokensForUserState: typeof ControlPlaneStore.revokeAccountUserActionTokensForUserState;
   issuePasswordResetTokenState: typeof ControlPlaneStore.issuePasswordResetTokenState;
   setAccountUserPasswordState: typeof ControlPlaneStore.setAccountUserPasswordState;
+  saveAccountUserActionTokenRecordState: typeof ControlPlaneStore.saveAccountUserActionTokenRecordState;
   deliverHostedInviteEmail: typeof import('../email-delivery.js').deliverHostedInviteEmail;
   deliverHostedPasswordResetEmail: typeof import('../email-delivery.js').deliverHostedPasswordResetEmail;
 }
@@ -140,6 +141,21 @@ function throwMappedError(error: unknown): never {
   const mapped = mapUserServiceError(error);
   if (mapped) throw mapped;
   throw error;
+}
+
+async function recordPasswordResetAttemptFailure(
+  deps: AccountUserManagementServiceDeps,
+  record: AccountUserActionTokenRecord,
+): Promise<void> {
+  const now = new Date().toISOString();
+  const nextRecord = structuredClone(record);
+  nextRecord.attemptCount += 1;
+  nextRecord.lastAttemptAt = now;
+  nextRecord.updatedAt = now;
+  if (nextRecord.maxAttempts !== null && nextRecord.attemptCount >= nextRecord.maxAttempts) {
+    nextRecord.revokedAt = now;
+  }
+  await deps.saveAccountUserActionTokenRecordState(nextRecord);
 }
 
 async function requireAccount(
@@ -340,21 +356,28 @@ export function createAccountUserManagementService(
     },
 
     async consumePasswordReset(input) {
-      requireNonEmpty(input.resetToken && input.newPassword, 'resetToken and newPassword are required.');
-      requirePasswordLength(input.newPassword, 'newPassword');
+      requireNonEmpty(input.resetToken, 'resetToken is required.');
+      requireNonEmpty(input.newPassword, 'newPassword is required.');
       const tokenRecord = await deps.findAccountUserActionTokenByTokenState(input.resetToken);
       if (!tokenRecord || tokenRecord.purpose !== 'password_reset' || !tokenRecord.accountUserId) {
         throw new AccountUserManagementServiceError(400, 'Password reset token is invalid or expired.');
       }
+      try {
+        requirePasswordLength(input.newPassword, 'newPassword');
+      } catch (error) {
+        await recordPasswordResetAttemptFailure(deps, tokenRecord);
+        throw error;
+      }
       const user = await deps.findAccountUserByIdState(tokenRecord.accountUserId);
       const account = user ? await deps.findHostedAccountByIdState(user.accountId) : null;
       if (!user || !account || account.id !== tokenRecord.accountId || account.status === 'archived') {
+        await recordPasswordResetAttemptFailure(deps, tokenRecord);
         throw new AccountUserManagementServiceError(400, 'Password reset token is invalid or expired.');
       }
       await deps.setAccountUserPasswordState(user.id, input.newPassword);
       await deps.revokeAccountSessionsForUserState(user.id);
-      await deps.revokeAccountUserActionTokensForUserState(user.id, 'password_reset');
       await deps.consumeAccountUserActionTokenState(tokenRecord.id);
+      await deps.revokeAccountUserActionTokensForUserState(user.id, 'password_reset');
     },
   };
 }

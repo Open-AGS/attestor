@@ -10,6 +10,10 @@ import { registerPipelineRoutes } from '../http/routes/pipeline-routes.js';
 import { registerPublicSiteRoutes } from '../http/routes/public-site-routes.js';
 import { registerReleasePolicyControlRoutes } from '../http/routes/release-policy-control-routes.js';
 import { registerReleaseReviewRoutes } from '../http/routes/release-review-routes.js';
+import {
+  registerShadowRoutes,
+  type ShadowRouteDeps,
+} from '../http/routes/shadow-routes.js';
 import { registerWebhookRoutes } from '../http/routes/webhook-routes.js';
 import { installProductionSharedRequestGuard } from './production-shared-request-guard.js';
 import type { AppRuntime } from './runtime.js';
@@ -42,6 +46,16 @@ export function createGenericAdmissionRouteDeps<Packet>(
   };
 }
 
+export function createShadowRouteDeps<Packet>(
+  runtime: AppRuntime<Packet>,
+): ShadowRouteDeps {
+  return {
+    currentTenant: runtime.services.httpRoutes.pipeline.currentTenant,
+    listShadowEvents: () => [],
+    listShadowSimulations: () => [],
+  };
+}
+
 export function createWebhookRouteDeps<Packet>(runtime: AppRuntime<Packet>) {
   return runtime.services.httpRoutes.webhook;
 }
@@ -61,6 +75,7 @@ export function registerAllRoutes<Packet>(app: Hono, runtime: AppRuntime<Packet>
   registerAccountRoutes(app, createAccountRouteDeps(runtime));
   registerAdminRoutes(app, createAdminRouteDeps(runtime));
   registerGenericAdmissionRoutes(app, createGenericAdmissionRouteDeps(runtime));
+  registerShadowRoutes(app, createShadowRouteDeps(runtime));
   registerReleaseReviewRoutes(app, createReleaseReviewRouteDeps(runtime));
   registerReleasePolicyControlRoutes(app, createReleasePolicyControlRouteDeps(runtime));
   registerWebhookRoutes(app, createWebhookRouteDeps(runtime));

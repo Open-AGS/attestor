@@ -3,6 +3,9 @@
  *
  * Endpoints:
  * - POST /api/v1/pipeline/run       — synchronous governed pipeline execution
+ * - POST /api/v1/admissions         — generic AI action admission boundary
+ * - GET  /api/v1/shadow/summary     — data-minimized shadow adoption summary
+ * - GET  /api/v1/shadow/recommendations — shadow policy recommendations
  * - POST /api/v1/pipeline/run-async  — async job submission (returns jobId)
  * - GET  /api/v1/pipeline/status/:id — async job status/result
  * - POST /api/v1/verify              — certificate + PKI chain verification

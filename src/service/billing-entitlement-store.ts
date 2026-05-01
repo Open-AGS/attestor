@@ -10,7 +10,7 @@
 import { randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
-import { writeTextFileAtomic } from './file-store.js';
+import { withFileLock, writeTextFileAtomic } from './file-store.js';
 import type {
   HostedAccountRecord,
   HostedAccountStatus,
@@ -136,6 +136,11 @@ function saveStore(store: BillingEntitlementStoreFile): void {
   const path = storePath();
   mkdirSync(dirname(path), { recursive: true });
   writeTextFileAtomic(path, `${JSON.stringify(store, null, 2)}\n`);
+}
+
+function withBillingEntitlementStoreLock<T>(action: (store: BillingEntitlementStoreFile, path: string) => T): T {
+  const path = storePath();
+  return withFileLock(path, () => action(loadStore(), path));
 }
 
 function hasStripeBinding(account: HostedAccountRecord): boolean {
@@ -356,14 +361,15 @@ export function projectHostedBillingEntitlement(
 export function upsertHostedBillingEntitlement(
   input: ProjectHostedBillingEntitlementInput,
 ): { record: HostedBillingEntitlementRecord; path: string } {
-  const store = loadStore();
-  const index = store.records.findIndex((entry) => entry.accountId === input.account.id);
-  const previous = index >= 0 ? store.records[index] : null;
-  const record = projectHostedBillingEntitlement(previous, input);
-  if (index >= 0) store.records[index] = record;
-  else store.records.push(record);
-  saveStore(store);
-  return { record, path: storePath() };
+  return withBillingEntitlementStoreLock((store, path) => {
+    const index = store.records.findIndex((entry) => entry.accountId === input.account.id);
+    const previous = index >= 0 ? store.records[index] : null;
+    const record = projectHostedBillingEntitlement(previous, input);
+    if (index >= 0) store.records[index] = record;
+    else store.records.push(record);
+    saveStore(store);
+    return { record, path };
+  });
 }
 
 export function findHostedBillingEntitlementByAccountId(accountId: string): {
@@ -414,15 +420,17 @@ export function restoreHostedBillingEntitlementStoreSnapshot(snapshot: HostedBil
   recordCount: number;
   path: string;
 } {
-  const store: BillingEntitlementStoreFile = {
-    version: 1,
-    records: snapshot.records.map(normalizeHostedBillingEntitlementRecord),
-  };
-  saveStore(store);
-  return {
-    recordCount: store.records.length,
-    path: storePath(),
-  };
+  return withBillingEntitlementStoreLock((_store, path) => {
+    const store: BillingEntitlementStoreFile = {
+      version: 1,
+      records: snapshot.records.map(normalizeHostedBillingEntitlementRecord),
+    };
+    saveStore(store);
+    return {
+      recordCount: store.records.length,
+      path,
+    };
+  });
 }
 
 export function resetHostedBillingEntitlementStoreForTests(): void {

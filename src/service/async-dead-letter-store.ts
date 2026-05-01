@@ -9,7 +9,7 @@
 
 import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
-import { writeTextFileAtomic } from './file-store.js';
+import { withFileLock, writeTextFileAtomic } from './file-store.js';
 
 export type AsyncDeadLetterBackendMode = 'bullmq' | 'in_process';
 
@@ -66,6 +66,11 @@ function saveStore(store: AsyncDeadLetterStoreFile): void {
   writeTextFileAtomic(path, `${JSON.stringify(store, null, 2)}\n`);
 }
 
+function withAsyncDeadLetterStoreLock<T>(action: (store: AsyncDeadLetterStoreFile, path: string) => T): T {
+  const path = storePath();
+  return withFileLock(path, () => action(loadStore(), path));
+}
+
 function sortRecords(records: AsyncDeadLetterRecord[]): AsyncDeadLetterRecord[] {
   return [...records].sort((left, right) => {
     const leftKey = left.failedAt ?? left.recordedAt;
@@ -107,17 +112,18 @@ export function readAsyncDeadLetterStoreSnapshot(): {
 export function upsertAsyncDeadLetterRecord(
   input: AsyncDeadLetterRecord,
 ): { record: AsyncDeadLetterRecord; path: string } {
-  const store = loadStore();
-  const record = normalizeAsyncDeadLetterRecord(input);
-  const existingIdx = store.records.findIndex((entry) => entry.jobId === record.jobId);
-  if (existingIdx >= 0) {
-    store.records[existingIdx] = record;
-  } else {
-    store.records.push(record);
-  }
-  store.records = sortRecords(store.records);
-  saveStore(store);
-  return { record, path: storePath() };
+  return withAsyncDeadLetterStoreLock((store, path) => {
+    const record = normalizeAsyncDeadLetterRecord(input);
+    const existingIdx = store.records.findIndex((entry) => entry.jobId === record.jobId);
+    if (existingIdx >= 0) {
+      store.records[existingIdx] = record;
+    } else {
+      store.records.push(record);
+    }
+    store.records = sortRecords(store.records);
+    saveStore(store);
+    return { record, path };
+  });
 }
 
 export function listAsyncDeadLetterRecords(filters?: {
@@ -140,14 +146,15 @@ export function removeAsyncDeadLetterRecord(jobId: string): {
   record: AsyncDeadLetterRecord | null;
   path: string;
 } {
-  const store = loadStore();
-  const existingIdx = store.records.findIndex((entry) => entry.jobId === jobId);
-  if (existingIdx < 0) {
-    return { removed: false, record: null, path: storePath() };
-  }
-  const [record] = store.records.splice(existingIdx, 1);
-  saveStore(store);
-  return { removed: true, record, path: storePath() };
+  return withAsyncDeadLetterStoreLock((store, path) => {
+    const existingIdx = store.records.findIndex((entry) => entry.jobId === jobId);
+    if (existingIdx < 0) {
+      return { removed: false, record: null, path };
+    }
+    const [record] = store.records.splice(existingIdx, 1);
+    saveStore(store);
+    return { removed: true, record, path };
+  });
 }
 
 export function resetAsyncDeadLetterStoreForTests(): void {

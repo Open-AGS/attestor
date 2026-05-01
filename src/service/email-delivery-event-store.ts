@@ -12,7 +12,7 @@ import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { hashJsonValue } from './json-stable.js';
 import type { HostedEmailDeliveryPurpose } from './email-delivery.js';
-import { writeTextFileAtomic } from './file-store.js';
+import { withFileLock, writeTextFileAtomic } from './file-store.js';
 
 export type HostedEmailDeliveryProvider = 'manual' | 'smtp' | 'sendgrid_smtp' | 'mailgun_smtp';
 export type HostedEmailDeliveryChannel = 'api_response' | 'smtp';
@@ -232,6 +232,13 @@ function saveStore(store: HostedEmailDeliveryEventStoreFile): void {
   const path = storePath();
   mkdirSync(dirname(path), { recursive: true });
   writeTextFileAtomic(path, `${JSON.stringify(store, null, 2)}\n`);
+}
+
+function withEmailDeliveryEventStoreLock<T>(
+  action: (store: HostedEmailDeliveryEventStoreFile, path: string) => T,
+): T {
+  const path = storePath();
+  return withFileLock(path, () => action(loadStore(), path));
 }
 
 function normalizeRecipient(value: string): string {
@@ -491,11 +498,12 @@ export function buildHostedEmailDispatchEventRecord(
 export function recordHostedEmailDispatchEvent(
   input: RecordHostedEmailDispatchEventInput,
 ): { record: HostedEmailDeliveryEventRecord; path: string } {
-  const store = loadStore();
-  const record = buildHostedEmailDispatchEventRecord(input);
-  store.records.push(record);
-  saveStore(store);
-  return { record, path: storePath() };
+  return withEmailDeliveryEventStoreLock((store, path) => {
+    const record = buildHostedEmailDispatchEventRecord(input);
+    store.records.push(record);
+    saveStore(store);
+    return { record, path };
+  });
 }
 
 export function buildHostedEmailProviderEventRecord(
@@ -539,23 +547,24 @@ export function buildHostedEmailProviderEventRecord(
 export function recordHostedEmailProviderEvent(
   input: RecordHostedEmailProviderEventInput,
 ): HostedEmailProviderEventRecordResult {
-  const store = loadStore();
-  const record = buildHostedEmailProviderEventRecord(input);
-  if (input.providerEventId) {
-    const existing = store.records.find((entry) =>
-      entry.provider === input.provider
-      && entry.providerEventId === input.providerEventId,
-    );
-    if (existing) {
-      if (existing.payloadHash !== record.payloadHash) {
-        return { kind: 'conflict', record: existing, path: storePath() };
+  return withEmailDeliveryEventStoreLock((store, path) => {
+    const record = buildHostedEmailProviderEventRecord(input);
+    if (input.providerEventId) {
+      const existing = store.records.find((entry) =>
+        entry.provider === input.provider
+        && entry.providerEventId === input.providerEventId,
+      );
+      if (existing) {
+        if (existing.payloadHash !== record.payloadHash) {
+          return { kind: 'conflict', record: existing, path };
+        }
+        return { kind: 'duplicate', record: existing, path };
       }
-      return { kind: 'duplicate', record: existing, path: storePath() };
     }
-  }
-  store.records.push(record);
-  saveStore(store);
-  return { kind: 'recorded', record, path: storePath() };
+    store.records.push(record);
+    saveStore(store);
+    return { kind: 'recorded', record, path };
+  });
 }
 
 export function listHostedEmailDeliveryEvents(filters?: {
@@ -598,15 +607,17 @@ export function exportHostedEmailDeliveryEventStoreSnapshot(): HostedEmailDelive
 export function restoreHostedEmailDeliveryEventStoreSnapshot(
   snapshot: HostedEmailDeliveryEventStoreSnapshot,
 ): { recordCount: number; path: string } {
-  const store: HostedEmailDeliveryEventStoreFile = {
-    version: 1,
-    records: snapshot.records.map(normalizeRecord),
-  };
-  saveStore(store);
-  return {
-    recordCount: store.records.length,
-    path: storePath(),
-  };
+  return withEmailDeliveryEventStoreLock((_store, path) => {
+    const store: HostedEmailDeliveryEventStoreFile = {
+      version: 1,
+      records: snapshot.records.map(normalizeRecord),
+    };
+    saveStore(store);
+    return {
+      recordCount: store.records.length,
+      path,
+    };
+  });
 }
 
 export function resetHostedEmailDeliveryEventStoreForTests(): void {

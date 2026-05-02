@@ -4,6 +4,8 @@ import {
   createActionRiskInventory,
   createShadowPolicyDiscoveryCandidates,
   createShadowDownstreamVerificationBinding,
+  createShadowPolicyBundlePublication,
+  createShadowPolicyBundleSigningPayload,
   createShadowPolicyPromotionDraft,
   createShadowPolicyPromotionPacket,
   createShadowPolicyPromotionSimulation,
@@ -12,6 +14,8 @@ import {
   GENERIC_ADMISSION_MODES,
   SHADOW_POLICY_PROMOTION_SOURCE_STATUSES,
   type GenericAdmissionMode,
+  type ShadowPolicyBundlePublicationSignature,
+  type ShadowPolicyBundleSigningPayload,
   type ShadowPolicyPromotionSourceStatus,
   type ShadowAdmissionEvent,
   type ShadowPolicySimulationReport,
@@ -61,6 +65,10 @@ export interface ShadowRouteDeps {
     readonly actorRef: string;
     readonly reason: string;
   }): ShadowPolicyCandidateStoreRecord;
+  signShadowPolicyBundlePublication?(input: {
+    readonly tenant: TenantContext;
+    readonly payload: ShadowPolicyBundleSigningPayload;
+  }): ShadowPolicyBundlePublicationSignature;
   now?(): string;
 }
 
@@ -776,6 +784,86 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
         status,
         detail,
         reasonCodes: ['policy-promotion-simulation-failed'],
+      });
+    }
+  });
+
+  app.get('/api/v1/shadow/policy-bundle-publication', (c) => {
+    c.header('cache-control', 'no-store');
+    if (!deps.listShadowPolicyCandidateRecords) {
+      return problem(c, {
+        type: 'https://attestor.dev/problems/policy-candidate-store-unavailable',
+        title: 'Policy candidate store unavailable',
+        status: 503,
+        detail: 'Policy bundle publication is not configured for this runtime.',
+        reasonCodes: ['policy-candidate-store-unavailable'],
+      });
+    }
+    const statusQuery = c.req.query('status');
+    const sourceStatus = parsePromotionSourceStatus(statusQuery);
+    if (!sourceStatus) {
+      return problem(c, {
+        type: 'https://attestor.dev/problems/policy-promotion-source-status-invalid',
+        title: 'Invalid policy promotion source status',
+        status: 400,
+        detail:
+          `Policy bundle publications can only be generated from: ${SHADOW_POLICY_PROMOTION_SOURCE_STATUSES.join(', ')}.`,
+        reasonCodes: ['invalid-policy-promotion-source-status'],
+      });
+    }
+
+    try {
+      const tenant = deps.currentTenant(c);
+      const records = deps.listShadowPolicyCandidateRecords({
+        tenant,
+        status: sourceStatus,
+      });
+      const draft = createShadowPolicyPromotionDraft({
+        tenantId: tenant.tenantId,
+        records,
+        sourceStatus,
+        generatedAt: deps.now?.() ?? null,
+      });
+      const packet = createShadowPolicyPromotionPacket({
+        draft,
+        generatedAt: deps.now?.() ?? null,
+      });
+      const simulation = createShadowPolicyPromotionSimulation({
+        packet,
+        events: deps.listShadowEvents({ tenant }),
+        generatedAt: deps.now?.() ?? null,
+      });
+      const signingPayload = createShadowPolicyBundleSigningPayload(simulation);
+      const signature = deps.signShadowPolicyBundlePublication?.({
+        tenant,
+        payload: signingPayload,
+      }) ?? null;
+      const publication = createShadowPolicyBundlePublication({
+        simulation,
+        signature,
+        generatedAt: deps.now?.() ?? null,
+      });
+      return c.json({
+        tenant: tenantSummary(tenant),
+        storageMode: 'file-backed-evaluation',
+        productionReady: false,
+        approvalRequired: true,
+        autoEnforce: false,
+        rawPayloadStored: false,
+        publication,
+      });
+    } catch (error) {
+      const detail =
+        error instanceof Error
+          ? error.message
+          : 'Policy bundle publication could not be generated.';
+      const status: ShadowProblemStatus = detail.includes('exceeds maximum') ? 400 : 503;
+      return problem(c, {
+        type: 'https://attestor.dev/problems/policy-bundle-publication-failed',
+        title: 'Policy bundle publication failed',
+        status,
+        detail,
+        reasonCodes: ['policy-bundle-publication-failed'],
       });
     }
   });

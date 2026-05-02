@@ -264,6 +264,36 @@ productionReady: false
 
 This mirrors signed-policy systems where a digest alone is not enough. Downstream verifiers must validate the signature, signer identity, signed payload digest, source artifact chain, freshness, and scope before trusting a policy bundle.
 
+## Downstream Verification Binding
+
+The next surface turns the simulated promotion packet into a downstream verification binding draft:
+
+```text
+GET /api/v1/shadow/downstream-verification-binding
+GET /api/v1/shadow/downstream-verification-binding?status=activated
+```
+
+The binding is the contract a customer enforcement point must verify before it treats an Attestor promotion artifact as executable. It carries:
+
+- source simulation, packet, and bundle draft digests
+- tenant scope
+- rule ids, candidate digests, target modes, and matched event-set digests
+- required downstream claims such as `tenantId`, `sourceSimulationDigest`, `admissionDigest`, `downstreamSystem`, `expiresAt`, and `replayNonce`
+- required fail-closed checks for artifact signature, source digests, tenant scope, rule binding, admission digest, downstream scope, replay protection, and freshness
+
+Generating this binding can close the `downstream-verification-required` draft blocker for the returned artifact, but it deliberately replaces it with `downstream-integration-proof-required`. A binding draft is not proof that a payment processor, queue consumer, gateway, wallet adapter, or record writer has actually enforced the contract.
+
+The response still keeps:
+
+```text
+activationReady: false
+autoEnforce: false
+rawPayloadStored: false
+productionReady: false
+```
+
+This follows the same discipline used by external authorization and signed-policy systems: the downstream side must verify the signed artifact chain, the intended audience/scope, freshness, replay resistance, and the exact rule/admission digest before a consequence can execute.
+
 ## Why This Shape
 
 This follows the same pattern used by mature control systems:
@@ -285,6 +315,7 @@ promotion draft generated for review
 policy promotion packet generated
 policy promotion packet simulated
 policy bundle publication signed or held unsigned
+downstream verification binding drafted
 only then can enforcement promotion happen
 ```
 

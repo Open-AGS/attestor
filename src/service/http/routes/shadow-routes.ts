@@ -3,6 +3,7 @@ import {
   createConsequenceAdmissionProblem,
   createActionRiskInventory,
   createShadowPolicyDiscoveryCandidates,
+  createShadowDownstreamVerificationBinding,
   createShadowPolicyPromotionDraft,
   createShadowPolicyPromotionPacket,
   createShadowPolicyPromotionSimulation,
@@ -775,6 +776,80 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
         status,
         detail,
         reasonCodes: ['policy-promotion-simulation-failed'],
+      });
+    }
+  });
+
+  app.get('/api/v1/shadow/downstream-verification-binding', (c) => {
+    c.header('cache-control', 'no-store');
+    if (!deps.listShadowPolicyCandidateRecords) {
+      return problem(c, {
+        type: 'https://attestor.dev/problems/policy-candidate-store-unavailable',
+        title: 'Policy candidate store unavailable',
+        status: 503,
+        detail: 'Downstream verification binding generation is not configured for this runtime.',
+        reasonCodes: ['policy-candidate-store-unavailable'],
+      });
+    }
+    const statusQuery = c.req.query('status');
+    const sourceStatus = parsePromotionSourceStatus(statusQuery);
+    if (!sourceStatus) {
+      return problem(c, {
+        type: 'https://attestor.dev/problems/policy-promotion-source-status-invalid',
+        title: 'Invalid policy promotion source status',
+        status: 400,
+        detail:
+          `Downstream verification bindings can only be generated from: ${SHADOW_POLICY_PROMOTION_SOURCE_STATUSES.join(', ')}.`,
+        reasonCodes: ['invalid-policy-promotion-source-status'],
+      });
+    }
+
+    try {
+      const tenant = deps.currentTenant(c);
+      const records = deps.listShadowPolicyCandidateRecords({
+        tenant,
+        status: sourceStatus,
+      });
+      const draft = createShadowPolicyPromotionDraft({
+        tenantId: tenant.tenantId,
+        records,
+        sourceStatus,
+        generatedAt: deps.now?.() ?? null,
+      });
+      const packet = createShadowPolicyPromotionPacket({
+        draft,
+        generatedAt: deps.now?.() ?? null,
+      });
+      const simulation = createShadowPolicyPromotionSimulation({
+        packet,
+        events: deps.listShadowEvents({ tenant }),
+        generatedAt: deps.now?.() ?? null,
+      });
+      const binding = createShadowDownstreamVerificationBinding({
+        simulation,
+        generatedAt: deps.now?.() ?? null,
+      });
+      return c.json({
+        tenant: tenantSummary(tenant),
+        storageMode: 'file-backed-evaluation',
+        productionReady: false,
+        approvalRequired: true,
+        autoEnforce: false,
+        rawPayloadStored: false,
+        binding,
+      });
+    } catch (error) {
+      const detail =
+        error instanceof Error
+          ? error.message
+          : 'Downstream verification binding could not be generated.';
+      const status: ShadowProblemStatus = detail.includes('exceeds maximum') ? 400 : 503;
+      return problem(c, {
+        type: 'https://attestor.dev/problems/downstream-verification-binding-failed',
+        title: 'Downstream verification binding failed',
+        status,
+        detail,
+        reasonCodes: ['downstream-verification-binding-failed'],
       });
     }
   });

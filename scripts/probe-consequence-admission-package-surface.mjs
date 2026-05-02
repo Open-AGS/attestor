@@ -78,6 +78,22 @@ assert.equal(
   'function',
 );
 assert.equal(
+  admission.consequenceAuditEvidenceExportDescriptor().artifactKinds.includes(
+    'shadow-event-set',
+  ),
+  true,
+);
+assert.equal(
+  admission.consequenceAdmissionDescriptor().auditEvidenceFindingKinds.includes(
+    'raw-payload-present',
+  ),
+  true,
+);
+assert.equal(
+  typeof admission.createConsequenceAuditEvidenceExport,
+  'function',
+);
+assert.equal(
   admission.consequenceAdmissionPolicyLimitDescriptor().limitKinds.includes('velocity'),
   true,
 );

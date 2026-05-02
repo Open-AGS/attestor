@@ -182,7 +182,17 @@ The corrected request must include a `retryAttempt` binding. The binding points 
 }
 ```
 
-A bound retry creates a new request ID while preserving a canonical pointer to the earlier admission. Later retry-budget and attempt-ledger layers can use that binding to detect loops, stale attempts, and duplicate submissions.
+A bound retry creates a new request ID while preserving a canonical pointer to the earlier admission.
+
+The retry budget contract then evaluates the binding:
+
+- the previous admission must have allowed a safe correction retry
+- the previous admission ID, digest, and request ID must match
+- the attempt number must stay within the current max-attempt budget
+- the attempt must arrive inside the retry window
+- correction reason codes must come from the previous model-safe feedback
+
+The current default is two model correction attempts within a 300-second window. The attempt ledger layer will add persistent duplicate detection and cross-request accounting on top of this contract.
 
 Policy-blocked, unsafe, adapter-readiness, custom-domain review, replay, and human-rejection signals are not automatic model-retry paths. They must route to customer review or operator control.
 

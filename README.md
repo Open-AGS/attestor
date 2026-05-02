@@ -317,6 +317,8 @@ The [downstream enforcement contract](docs/02-architecture/downstream-enforcemen
 
 The [verifier helper](docs/02-architecture/verifier-helper.md) is the small customer-side wrapper for that contract. A downstream adapter can call `verify` for a structured hold decision or `assert` to stop execution fail-closed.
 
+The [adapter framework](docs/02-architecture/adapter-framework.md) turns that verifier rule into a protected execution shape for HTTP handlers, queue consumers, tool wrappers, MCP tool wrappers, payment adapters, wallet adapters, and custom customer edges: verify before execute.
+
 The [policy limit model](docs/02-architecture/policy-limit-model.md) gives those admissions bounded policy material: amount caps, velocity windows, recipient and asset allowlists, data scope, authority scope, time windows, risk ceilings, and review thresholds.
 
 The [retry attempt ledger](docs/02-architecture/retry-attempt-ledger.md) records safe-retry attempts after the retry budget closes. It makes automatic correction attempts idempotent and auditable without storing raw retry payloads.
@@ -394,6 +396,7 @@ Start here:
 - [Consequence taxonomy](docs/02-architecture/consequence-taxonomy.md) - consequence domains, risk floors, and minimum controls
 - [Downstream enforcement contract](docs/02-architecture/downstream-enforcement-contract.md) - customer-side allow/hold contract before downstream action
 - [Verifier helper](docs/02-architecture/verifier-helper.md) - customer-side verify/assert helper for downstream adapters
+- [Adapter framework](docs/02-architecture/adapter-framework.md) - protected verify-before-execute wrapper for tool and customer adapters
 - [Policy limit model](docs/02-architecture/policy-limit-model.md) - amount, velocity, scope, allowlist, and review-threshold limits
 - [Retry attempt ledger](docs/02-architecture/retry-attempt-ledger.md) - idempotent safe-retry attempt records without raw retry payloads
 - [Downstream presentation binding](docs/02-architecture/downstream-presentation-binding.md) - target, body, replay, nonce, freshness, proof, and constraint binding

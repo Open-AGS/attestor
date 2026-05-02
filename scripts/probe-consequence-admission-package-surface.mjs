@@ -64,6 +64,20 @@ assert.equal(
   'function',
 );
 assert.equal(
+  admission.consequenceAdmissionAdapterFrameworkDescriptor().adapterKinds.includes(
+    'mcp-tool-wrapper',
+  ),
+  true,
+);
+assert.equal(
+  admission.consequenceAdmissionDescriptor().adapterKinds.includes('tool-wrapper'),
+  true,
+);
+assert.equal(
+  typeof admission.createConsequenceAdmissionProtectedAdapter,
+  'function',
+);
+assert.equal(
   admission.consequenceAdmissionPolicyLimitDescriptor().limitKinds.includes('velocity'),
   true,
 );

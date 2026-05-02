@@ -26,6 +26,8 @@ The customer-side allow/hold contract lives in [Downstream enforcement contract]
 
 The practical customer-side helper lives in [Verifier helper](verifier-helper.md). Use it when wiring an adapter that should call `verify` or `assert` before a downstream system acts.
 
+The protected adapter shape lives in [Adapter framework](adapter-framework.md). Use it when an HTTP handler, queue consumer, tool wrapper, MCP tool wrapper, payment adapter, wallet adapter, record writer, or custom customer edge needs a standard verify-before-execute wrapper.
+
 The shared limit vocabulary lives in [Policy limit model](policy-limit-model.md). Use it when a proposed consequence must carry amount caps, velocity windows, recipient or asset allowlists, data scope, authority scope, time bounds, risk ceilings, or review thresholds before admission.
 
 The safe-retry accounting shape lives in [Retry attempt ledger](retry-attempt-ledger.md). Use it when a model-safe correction attempt must be recorded as an idempotent continuation of a held admission rather than a fresh probe.
@@ -82,6 +84,8 @@ The taxonomy comes before the pack. A pack may add native adapters and evidence 
 The downstream contract comes before execution. A downstream integration should not act on an Attestor response until the admission id, digest, decision, consequence domain, downstream system, policy scope, proof, replay/idempotency binding, and any `narrow` constraints match the customer enforcement point.
 
 The verifier helper packages that rule into a small customer-side API. It does not replace signed release-token verification; it gives the downstream adapter a consistent fail-closed check before it enters the stronger release-enforcement plane or the customer-owned execution layer.
+
+The adapter framework packages the helper into a protected execution shape. It keeps the executor private to the adapter, verifies the Attestor admission before execution, and exports only digests for raw input, result, or error material.
 
 The policy limit model sits before both. It prevents broad "yes" decisions by making the admitted consequence bounded: how much, how often, to whom, over what data, under which authority, in what window, and when human review becomes mandatory.
 

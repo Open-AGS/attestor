@@ -37,6 +37,10 @@ import {
   CONSEQUENCE_ADMISSION_RETRY_ATTEMPT_LEDGER_OUTCOMES,
   CONSEQUENCE_ADMISSION_RETRY_ATTEMPT_LEDGER_VERSION,
 } from './retry-attempt-ledger.js';
+import {
+  CONSEQUENCE_ADMISSION_ADAPTER_KINDS,
+  CONSEQUENCE_ADMISSION_ADAPTER_OUTCOMES,
+} from './adapter-framework.js';
 
 export const CONSEQUENCE_ADMISSION_CONTRACT_VERSION =
   'attestor.consequence-admission.v1';
@@ -417,6 +421,8 @@ export interface ConsequenceAdmissionDescriptor {
   readonly retryBudgetOutcomes: typeof CONSEQUENCE_ADMISSION_RETRY_BUDGET_OUTCOMES;
   readonly retryAttemptLedgerOutcomes: typeof CONSEQUENCE_ADMISSION_RETRY_ATTEMPT_LEDGER_OUTCOMES;
   readonly retryAttemptLedgerFailureReasons: typeof CONSEQUENCE_ADMISSION_RETRY_ATTEMPT_LEDGER_FAILURE_REASONS;
+  readonly adapterKinds: typeof CONSEQUENCE_ADMISSION_ADAPTER_KINDS;
+  readonly adapterOutcomes: typeof CONSEQUENCE_ADMISSION_ADAPTER_OUTCOMES;
   readonly proofKinds: typeof CONSEQUENCE_ADMISSION_PROOF_KINDS;
   readonly nativeSurfaces: typeof CONSEQUENCE_ADMISSION_NATIVE_SURFACES;
   readonly consequenceDomains: typeof CONSEQUENCE_ADMISSION_DOMAINS;
@@ -1956,6 +1962,8 @@ ConsequenceAdmissionDescriptor {
     retryBudgetOutcomes: CONSEQUENCE_ADMISSION_RETRY_BUDGET_OUTCOMES,
     retryAttemptLedgerOutcomes: CONSEQUENCE_ADMISSION_RETRY_ATTEMPT_LEDGER_OUTCOMES,
     retryAttemptLedgerFailureReasons: CONSEQUENCE_ADMISSION_RETRY_ATTEMPT_LEDGER_FAILURE_REASONS,
+    adapterKinds: CONSEQUENCE_ADMISSION_ADAPTER_KINDS,
+    adapterOutcomes: CONSEQUENCE_ADMISSION_ADAPTER_OUTCOMES,
     proofKinds: CONSEQUENCE_ADMISSION_PROOF_KINDS,
     nativeSurfaces: CONSEQUENCE_ADMISSION_NATIVE_SURFACES,
     consequenceDomains: CONSEQUENCE_ADMISSION_DOMAINS,
@@ -1975,6 +1983,7 @@ export * from './presentation-binding.js';
 export * from './presentation-replay-ledger.js';
 export * from './downstream-execution-receipt.js';
 export * from './retry-attempt-ledger.js';
+export * from './adapter-framework.js';
 export * from './downstream-enforcement-contract.js';
 export * from './verifier-helper.js';
 export * from './shadow-events.js';

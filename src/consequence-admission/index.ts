@@ -1297,6 +1297,7 @@ export * from './shadow-downstream-verification-binding.js';
 export * from './shadow-downstream-integration-proof.js';
 export * from './shadow-activation-readiness-gate.js';
 export * from './shadow-customer-activation-handoff.js';
+export * from './shadow-customer-activation-receipt.js';
 export * from './finance.js';
 export * from './crypto.js';
 export * from './facade.js';

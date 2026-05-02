@@ -4,6 +4,7 @@ import {
   createActionRiskInventory,
   createShadowActivationReadinessGate,
   createShadowCustomerActivationHandoff,
+  createShadowCustomerActivationReceipt,
   createShadowPolicyDiscoveryCandidates,
   createShadowDownstreamIntegrationProof,
   createShadowDownstreamVerificationBinding,
@@ -19,11 +20,20 @@ import {
   SHADOW_DOWNSTREAM_INTEGRATION_EVIDENCE_KINDS,
   SHADOW_DOWNSTREAM_VERIFICATION_CHECKS,
   SHADOW_CUSTOMER_ACTIVATION_REF_KINDS,
+  SHADOW_CUSTOMER_ACTIVATION_RECEIPT_KILL_SWITCH_STATUSES,
+  SHADOW_CUSTOMER_ACTIVATION_RECEIPT_MONITORING_STATUSES,
+  SHADOW_CUSTOMER_ACTIVATION_RECEIPT_ROLLBACK_STATUSES,
+  SHADOW_CUSTOMER_ACTIVATION_RECEIPT_STATUSES,
   SHADOW_CUSTOMER_ACTIVATION_ROLLOUT_STRATEGIES,
   SHADOW_POLICY_PROMOTION_SOURCE_STATUSES,
   type ConsequenceAdmissionDownstreamBoundaryKind,
   type GenericAdmissionMode,
   type ShadowCustomerActivationControlRef,
+  type ShadowCustomerActivationHandoff,
+  type ShadowCustomerActivationReceiptKillSwitchStatus,
+  type ShadowCustomerActivationReceiptMonitoringStatus,
+  type ShadowCustomerActivationReceiptRollbackStatus,
+  type ShadowCustomerActivationReceiptStatus,
   type ShadowCustomerActivationRefKind,
   type ShadowCustomerActivationRolloutStrategy,
   type ShadowDownstreamIntegrationEvidenceKind,
@@ -726,6 +736,198 @@ async function readCustomerActivationHandoffBody(c: Context): Promise<{
     killSwitchRef,
     monitoringRef,
     expiresAt,
+  };
+}
+
+function parseCustomerActivationReceiptStatus(
+  value: string | null | undefined,
+): ShadowCustomerActivationReceiptStatus | null {
+  if (value === undefined || value === null || value.trim() === '') return null;
+  const normalized = value.trim();
+  return SHADOW_CUSTOMER_ACTIVATION_RECEIPT_STATUSES.includes(
+    normalized as ShadowCustomerActivationReceiptStatus,
+  )
+    ? normalized as ShadowCustomerActivationReceiptStatus
+    : null;
+}
+
+function parseCustomerActivationReceiptRollbackStatus(
+  value: string | null | undefined,
+): ShadowCustomerActivationReceiptRollbackStatus | null {
+  if (value === undefined || value === null || value.trim() === '') return null;
+  const normalized = value.trim();
+  return SHADOW_CUSTOMER_ACTIVATION_RECEIPT_ROLLBACK_STATUSES.includes(
+    normalized as ShadowCustomerActivationReceiptRollbackStatus,
+  )
+    ? normalized as ShadowCustomerActivationReceiptRollbackStatus
+    : null;
+}
+
+function parseCustomerActivationReceiptKillSwitchStatus(
+  value: string | null | undefined,
+): ShadowCustomerActivationReceiptKillSwitchStatus | null {
+  if (value === undefined || value === null || value.trim() === '') return null;
+  const normalized = value.trim();
+  return SHADOW_CUSTOMER_ACTIVATION_RECEIPT_KILL_SWITCH_STATUSES.includes(
+    normalized as ShadowCustomerActivationReceiptKillSwitchStatus,
+  )
+    ? normalized as ShadowCustomerActivationReceiptKillSwitchStatus
+    : null;
+}
+
+function parseCustomerActivationReceiptMonitoringStatus(
+  value: string | null | undefined,
+): ShadowCustomerActivationReceiptMonitoringStatus | null {
+  if (value === undefined || value === null || value.trim() === '') return null;
+  const normalized = value.trim();
+  return SHADOW_CUSTOMER_ACTIVATION_RECEIPT_MONITORING_STATUSES.includes(
+    normalized as ShadowCustomerActivationReceiptMonitoringStatus,
+  )
+    ? normalized as ShadowCustomerActivationReceiptMonitoringStatus
+    : null;
+}
+
+async function readCustomerActivationReceiptBody(c: Context): Promise<{
+  readonly handoff: ShadowCustomerActivationHandoff;
+  readonly activationStatus: ShadowCustomerActivationReceiptStatus;
+  readonly attemptedAt: string;
+  readonly observedAt: string;
+  readonly completedAt: string | null;
+  readonly activationDigest: string | null;
+  readonly externalReceiptDigest: string | null;
+  readonly rollbackStatus: ShadowCustomerActivationReceiptRollbackStatus | null;
+  readonly rollbackDigest: string | null;
+  readonly killSwitchStatus: ShadowCustomerActivationReceiptKillSwitchStatus | null;
+  readonly monitoringStatus: ShadowCustomerActivationReceiptMonitoringStatus | null;
+  readonly errorDigest: string | null;
+  readonly skipReasonCode: string | null;
+} | Response> {
+  const contentType = c.req.header('content-type') ?? '';
+  if (!contentType.includes('application/json')) {
+    return problem(c, {
+      type: 'https://attestor.dev/problems/customer-activation-receipt-json-required',
+      title: 'Customer activation receipt JSON required',
+      status: 400,
+      detail: 'The customer activation receipt route requires a JSON object body.',
+      reasonCodes: ['customer-activation-receipt-json-required'],
+    });
+  }
+
+  let body: unknown;
+  try {
+    body = await c.req.json<unknown>();
+  } catch {
+    return problem(c, {
+      type: 'https://attestor.dev/problems/customer-activation-receipt-json-invalid',
+      title: 'Invalid customer activation receipt JSON',
+      status: 400,
+      detail: 'The customer activation receipt route requires a valid JSON object body.',
+      reasonCodes: ['invalid-json'],
+    });
+  }
+  if (!isRecord(body)) {
+    return problem(c, {
+      type: 'https://attestor.dev/problems/customer-activation-receipt-input-invalid',
+      title: 'Invalid customer activation receipt input',
+      status: 400,
+      detail: 'The customer activation receipt route requires an object body.',
+      reasonCodes: ['invalid-customer-activation-receipt-input'],
+    });
+  }
+  const bodyRecord = body;
+  const handoff = bodyRecord.handoff;
+  const activationStatus = typeof bodyRecord.activationStatus === 'string'
+    ? parseCustomerActivationReceiptStatus(bodyRecord.activationStatus)
+    : null;
+  const attemptedAt = typeof bodyRecord.attemptedAt === 'string' ? bodyRecord.attemptedAt.trim() : '';
+  const observedAt = typeof bodyRecord.observedAt === 'string' ? bodyRecord.observedAt.trim() : '';
+  const completedAt = bodyRecord.completedAt === undefined || bodyRecord.completedAt === null
+    ? null
+    : typeof bodyRecord.completedAt === 'string'
+      ? bodyRecord.completedAt.trim()
+      : '';
+  if (!isRecord(handoff) || !activationStatus || !attemptedAt || !observedAt || completedAt === '') {
+    return problem(c, {
+      type: 'https://attestor.dev/problems/customer-activation-receipt-input-invalid',
+      title: 'Invalid customer activation receipt input',
+      status: 400,
+      detail:
+        `The customer activation receipt route requires handoff, activationStatus, attemptedAt, and observedAt. Activation status must be one of: ${SHADOW_CUSTOMER_ACTIVATION_RECEIPT_STATUSES.join(', ')}.`,
+      reasonCodes: ['invalid-customer-activation-receipt-input'],
+    });
+  }
+
+  const rollbackStatus = bodyRecord.rollbackStatus === undefined || bodyRecord.rollbackStatus === null
+    ? null
+    : typeof bodyRecord.rollbackStatus === 'string'
+      ? parseCustomerActivationReceiptRollbackStatus(bodyRecord.rollbackStatus)
+      : null;
+  const killSwitchStatus = bodyRecord.killSwitchStatus === undefined || bodyRecord.killSwitchStatus === null
+    ? null
+    : typeof bodyRecord.killSwitchStatus === 'string'
+      ? parseCustomerActivationReceiptKillSwitchStatus(bodyRecord.killSwitchStatus)
+      : null;
+  const monitoringStatus = bodyRecord.monitoringStatus === undefined || bodyRecord.monitoringStatus === null
+    ? null
+    : typeof bodyRecord.monitoringStatus === 'string'
+      ? parseCustomerActivationReceiptMonitoringStatus(bodyRecord.monitoringStatus)
+      : null;
+  if (
+    (bodyRecord.rollbackStatus !== undefined && bodyRecord.rollbackStatus !== null && !rollbackStatus) ||
+    (bodyRecord.killSwitchStatus !== undefined && bodyRecord.killSwitchStatus !== null && !killSwitchStatus) ||
+    (bodyRecord.monitoringStatus !== undefined && bodyRecord.monitoringStatus !== null && !monitoringStatus)
+  ) {
+    return problem(c, {
+      type: 'https://attestor.dev/problems/customer-activation-receipt-status-invalid',
+      title: 'Invalid customer activation receipt status',
+      status: 400,
+      detail:
+        'rollbackStatus, killSwitchStatus, or monitoringStatus is outside the supported receipt vocabulary.',
+      reasonCodes: ['invalid-customer-activation-receipt-status'],
+    });
+  }
+
+  function optionalString(fieldName: string): string | null {
+    const value = bodyRecord[fieldName];
+    if (value === undefined || value === null) return null;
+    return typeof value === 'string' ? value.trim() : '';
+  }
+
+  const activationDigest = optionalString('activationDigest');
+  const externalReceiptDigest = optionalString('externalReceiptDigest');
+  const rollbackDigest = optionalString('rollbackDigest');
+  const errorDigest = optionalString('errorDigest');
+  const skipReasonCode = optionalString('skipReasonCode');
+  if (
+    activationDigest === '' ||
+    externalReceiptDigest === '' ||
+    rollbackDigest === '' ||
+    errorDigest === '' ||
+    skipReasonCode === ''
+  ) {
+    return problem(c, {
+      type: 'https://attestor.dev/problems/customer-activation-receipt-input-invalid',
+      title: 'Invalid customer activation receipt input',
+      status: 400,
+      detail: 'Optional customer activation receipt digest and reason fields must be strings when provided.',
+      reasonCodes: ['invalid-customer-activation-receipt-input'],
+    });
+  }
+
+  return {
+    handoff: handoff as unknown as ShadowCustomerActivationHandoff,
+    activationStatus,
+    attemptedAt,
+    observedAt,
+    completedAt,
+    activationDigest,
+    externalReceiptDigest,
+    rollbackStatus,
+    rollbackDigest,
+    killSwitchStatus,
+    monitoringStatus,
+    errorDigest,
+    skipReasonCode,
   };
 }
 
@@ -1708,6 +1910,66 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
         status,
         detail,
         reasonCodes: ['customer-activation-handoff-failed'],
+      });
+    }
+  });
+
+  app.post('/api/v1/shadow/customer-activation-receipt', async (c) => {
+    c.header('cache-control', 'no-store');
+    const body = await readCustomerActivationReceiptBody(c);
+    if (body instanceof Response) return body;
+
+    try {
+      const tenant = deps.currentTenant(c);
+      const receipt = createShadowCustomerActivationReceipt({
+        handoff: body.handoff,
+        activationStatus: body.activationStatus,
+        attemptedAt: body.attemptedAt,
+        observedAt: body.observedAt,
+        completedAt: body.completedAt,
+        activationDigest: body.activationDigest,
+        externalReceiptDigest: body.externalReceiptDigest,
+        rollbackStatus: body.rollbackStatus,
+        rollbackDigest: body.rollbackDigest,
+        killSwitchStatus: body.killSwitchStatus,
+        monitoringStatus: body.monitoringStatus,
+        errorDigest: body.errorDigest,
+        skipReasonCode: body.skipReasonCode,
+        generatedAt: deps.now?.() ?? null,
+      });
+      if (receipt.tenantId !== tenant.tenantId) {
+        return problem(c, {
+          type: 'https://attestor.dev/problems/customer-activation-receipt-tenant-mismatch',
+          title: 'Customer activation receipt tenant mismatch',
+          status: 400,
+          detail: 'The handoff tenant does not match the authenticated tenant.',
+          reasonCodes: ['customer-activation-receipt-tenant-mismatch'],
+        });
+      }
+      return c.json({
+        tenant: tenantSummary(tenant),
+        storageMode: 'stateless-receipt',
+        productionReady: false,
+        approvalRequired: true,
+        autoEnforce: false,
+        rawPayloadStored: false,
+        receipt,
+      });
+    } catch (error) {
+      const detail =
+        error instanceof Error
+          ? error.message
+          : 'Customer activation receipt could not be generated.';
+      const status: ShadowProblemStatus =
+        detail.includes('Shadow customer activation receipt')
+          ? 400
+          : 503;
+      return problem(c, {
+        type: 'https://attestor.dev/problems/customer-activation-receipt-failed',
+        title: 'Customer activation receipt failed',
+        status,
+        detail,
+        reasonCodes: ['customer-activation-receipt-failed'],
       });
     }
   });

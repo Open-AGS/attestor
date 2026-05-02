@@ -63,10 +63,10 @@ Attestor applies the same discipline to AI action authorization: observe actions
 
 ## Current Boundary
 
-This is an evaluation candidate model with a hosted read route, file-backed candidate materialization, lifecycle transitions, a non-enforcing promotion draft, a non-enforcing policy promotion packet, a packet impact simulation over shadow events, a signed policy bundle publication artifact, a downstream verification binding draft, a downstream integration proof artifact, an activation readiness gate, and a customer-controlled activation handoff. It is not yet:
+This is an evaluation candidate model with a hosted read route, file-backed candidate materialization, lifecycle transitions, a non-enforcing promotion draft, a non-enforcing policy promotion packet, a packet impact simulation over shadow events, a signed policy bundle publication artifact, a downstream verification binding draft, a downstream integration proof artifact, an activation readiness gate, a customer-controlled activation handoff, and a customer activation receipt. It is not yet:
 
 - an automatic policy writer
 - a policy compiler
 - a customer-operated enforcement promotion system
 
-The production path should bind candidates to shared tenant-scoped storage, reviewer identity, policy bundle versions, simulations, production signing custody, signed bundle publication, downstream verification bindings, continuously enforced downstream integration proofs, and customer-controlled activation/rollback controls that remain outside Attestor's auto-execution path.
+The production path should bind candidates to shared tenant-scoped storage, reviewer identity, policy bundle versions, simulations, production signing custody, signed bundle publication, downstream verification bindings, continuously enforced downstream integration proofs, customer-controlled activation/rollback controls, and post-activation receipts that remain outside Attestor's auto-execution path.

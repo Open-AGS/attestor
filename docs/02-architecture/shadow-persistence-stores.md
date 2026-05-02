@@ -441,6 +441,57 @@ productionReady: false
 
 It is a signed/canonical review artifact for the customer's activation process, not an instruction for Attestor to flip enforcement on by itself.
 
+## Customer Activation Receipt
+
+The handoff is pre-activation. The receipt is post-activation:
+
+```text
+POST /api/v1/shadow/customer-activation-receipt
+```
+
+The route accepts a previously generated customer activation handoff plus a data-minimized activation observation:
+
+```json
+{
+  "handoff": {
+    "version": "attestor.shadow-customer-activation-handoff.v1",
+    "digest": "sha256:..."
+  },
+  "activationStatus": "activated",
+  "attemptedAt": "2026-05-02T18:05:10.000Z",
+  "observedAt": "2026-05-02T18:06:10.000Z",
+  "activationDigest": "sha256:...",
+  "externalReceiptDigest": "sha256:...",
+  "rollbackStatus": "not-triggered",
+  "killSwitchStatus": "verified",
+  "monitoringStatus": "healthy"
+}
+```
+
+The receipt can record:
+
+- `activated`
+- `rolled-back`
+- `failed`
+- `aborted`
+
+It verifies that the handoff digest still matches the canonical handoff payload, that the handoff was actually ready, that timestamps are ordered, and that the status-specific evidence is present.
+
+For an `activated` receipt, the customer must supply activation result evidence, verify the kill switch, and report healthy monitoring. A monitoring alarm or unverified kill switch keeps the receipt held. For a `rolled-back` receipt, rollback completion and rollback evidence are required. For `failed` or `aborted`, the receipt requires error evidence or an explicit abort reason.
+
+The receipt does not store raw deployment output, alert payloads, operator identifiers, feature-flag values, payment responses, wallet data, or customer records. Operator refs are digested.
+
+The response still returns:
+
+```text
+approvalRequired: true
+autoEnforce: false
+rawPayloadStored: false
+productionReady: false
+```
+
+This closes the activation observation trail without making Attestor the deployer, rollback engine, feature-flag provider, or monitoring system.
+
 ## Why This Shape
 
 This follows the same pattern used by mature control systems:
@@ -466,6 +517,7 @@ downstream verification binding drafted
 downstream integration proof supplied
 activation readiness gate evaluated
 customer activation handoff generated
+customer activation receipt recorded or held
 only then can enforcement promotion happen
 ```
 

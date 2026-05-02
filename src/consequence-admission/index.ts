@@ -857,6 +857,16 @@ function normalizeRetryAttemptBinding(
   });
 }
 
+export function createConsequenceAdmissionRetryAttemptBinding(
+  input: CreateConsequenceAdmissionRetryAttemptBindingInput | ConsequenceAdmissionRetryAttemptBinding,
+): ConsequenceAdmissionRetryAttemptBinding {
+  const binding = normalizeRetryAttemptBinding(input);
+  if (binding === null) {
+    throw new Error('Consequence admission retry attempt binding requires an input object.');
+  }
+  return binding;
+}
+
 function normalizeCreateGenericAdmissionInput(input: unknown): CreateGenericAdmissionInput {
   if (!isRecord(input)) {
     throw new Error('Consequence admission input must be a JSON object.');

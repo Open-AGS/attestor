@@ -112,6 +112,10 @@ assert.equal(
   'function',
 );
 assert.equal(
+  typeof admission.createConsequenceAdmissionRetryAttemptBinding,
+  'function',
+);
+assert.equal(
   admission.financePipelineAdmissionDescriptor().route,
   '/api/v1/pipeline/run',
 );

@@ -103,6 +103,7 @@ You will see:
 - one proposed consequence blocked fail-closed
 - a customer-side gate that only proceeds when Attestor allows it
 - a non-bypassable gateway demo where a payment adapter cannot dispatch without verifier allow
+- an agent retry wrapper demo where model-safe feedback becomes one bounded correction attempt
 
 For a guided first run, see [Try Attestor first](docs/01-overview/try-attestor-first.md).
 
@@ -117,6 +118,9 @@ npm run example:customer-gate
 
 # Non-bypassable gateway demo
 npm run example:non-bypassable-gateway
+
+# Agent retry wrapper demo
+npm run example:agent-retry-wrapper
 
 # Local cross-pack proof surface
 npm run proof:surface
@@ -378,6 +382,7 @@ Start here:
 - [Attestor operating model](docs/01-overview/operating-model.md) - decision vocabulary and placement model
 - [Customer admission gate](docs/01-overview/customer-admission-gate.md) - first customer-side enforcement step
 - [Non-bypassable gateway demo](docs/01-overview/non-bypassable-gateway-demo.md) - protected adapter demo with no verifier bypass
+- [Agent retry wrapper demo](docs/01-overview/agent-retry-wrapper-demo.md) - bounded correction loop for model-safe retries
 - [Customer integration recipes](docs/01-overview/customer-integration-recipes.md) - where to put Attestor in an existing app
 - [Commercial packaging, pricing, and evaluation](docs/01-overview/product-packaging.md) - commercial truth source and evaluation boundary
 - [Hosted customer journey](docs/01-overview/hosted-customer-journey.md) - hosted account and checkout path

@@ -33,6 +33,14 @@ npm run example:non-bypassable-gateway
 
 That demo shows a payment adapter that cannot dispatch without verifier allow.
 
+Use the agent retry wrapper demo when you want to see the bounded correction loop:
+
+```bash
+npm run example:agent-retry-wrapper
+```
+
+That demo shows an agent receiving model-safe feedback, creating a bound retry attempt, passing the retry budget, recording the attempt in the ledger, and stopping unsafe feedback before a retry is created.
+
 ## Rules
 
 - Use `POST /api/v1/admissions` when the customer system already has a proposed AI action and needs a generic consequence authorization decision.

@@ -37,6 +37,14 @@ npm run example:non-bypassable-gateway
 
 That demo shows a payment adapter whose dispatch function is only reachable after the verifier helper allows the Attestor admission.
 
+To see how an agent can retry a held action without probing the gateway, run:
+
+```bash
+npm run example:agent-retry-wrapper
+```
+
+That demo shows model-safe feedback, retry attempt binding, retry budget evaluation, and attempt-ledger duplicate handling.
+
 ## What This Does Not Claim
 
 - It is not the generic hosted `POST /api/v1/admissions` route.
@@ -51,6 +59,7 @@ Customer systems still choose the relevant Attestor surface explicitly.
 - Need the shared admission vocabulary? Read [Consequence Admission Quickstart](consequence-admission-quickstart.md).
 - Need to wire the decision into your own app? Read [Customer admission gate](customer-admission-gate.md).
 - Need to see the no-bypass adapter shape? Read [Non-bypassable gateway demo](non-bypassable-gateway-demo.md).
+- Need bounded agent retries? Read [Agent retry wrapper demo](agent-retry-wrapper-demo.md).
 - Need the first hosted call after signup? Read [First hosted API call](hosted-first-api-call.md).
 - Need the finance and crypto entry paths? Read [Finance and crypto first integrations](finance-and-crypto-first-integrations.md).
 - Need pricing, evaluation, or hosted trial details? Read [Commercial packaging, pricing, and evaluation](product-packaging.md).

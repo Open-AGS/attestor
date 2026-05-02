@@ -78,6 +78,8 @@ function testDocsPointToOneAdmissionStory(): void {
   includes(quickstart, '`crypto-execution-plan`', 'Admission readiness: quickstart names crypto surface');
   includes(quickstart, '`POST /api/v1/admissions`', 'Admission readiness: quickstart names generic hosted admission route');
   includes(quickstart, '`observe`, `warn`, `review`, or `enforce`', 'Admission readiness: quickstart names generic adoption modes');
+  includes(quickstart, '"retryCategory": "safe-correction"', 'Admission readiness: quickstart documents safe correction retry');
+  includes(quickstart, 'Policy-blocked, unsafe, adapter-readiness, custom-domain review, replay, and human-rejection signals are not automatic model-retry paths.', 'Admission readiness: quickstart bounds non-retryable signals');
   includes(quickstart, '`POST /api/v1/pipeline/run`', 'Admission readiness: quickstart preserves finance route');
   includes(quickstart, 'route: null', 'Admission readiness: quickstart preserves crypto package boundary');
   includes(quickstart, 'npm run test:consequence-admission-readiness', 'Admission readiness: quickstart names readiness gate');

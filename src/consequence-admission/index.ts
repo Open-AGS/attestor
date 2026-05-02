@@ -72,6 +72,14 @@ export const GENERIC_ADMISSION_DOWNSTREAM_POSTURES = [
 export type GenericAdmissionDownstreamPosture =
   typeof GENERIC_ADMISSION_DOWNSTREAM_POSTURES[number];
 
+export const CONSEQUENCE_ADMISSION_FEEDBACK_DISCLOSURE_LEVELS = [
+  'minimal',
+  'actionable',
+  'diagnostic',
+] as const;
+export type ConsequenceAdmissionFeedbackDisclosureLevel =
+  typeof CONSEQUENCE_ADMISSION_FEEDBACK_DISCLOSURE_LEVELS[number];
+
 export const CONSEQUENCE_ADMISSION_PACK_FAMILIES = [
   'finance',
   'crypto',
@@ -229,6 +237,31 @@ export interface ConsequenceAdmissionProofRef {
   readonly verifyHint: string;
 }
 
+export interface ConsequenceAdmissionFeedback {
+  readonly disclosureLevel: ConsequenceAdmissionFeedbackDisclosureLevel;
+  readonly safeForModel: true;
+  readonly reasonCodes: readonly string[];
+  readonly missingFields: readonly string[];
+  readonly requiredEvidenceKinds: readonly string[];
+  readonly operatorOnlyReasonCodes: readonly string[];
+  readonly safeInstruction: string;
+}
+
+export interface ConsequenceAdmissionRetryGuidance {
+  readonly retryAllowed: boolean;
+  readonly retryCategory:
+    | 'not-needed'
+    | 'safe-correction'
+    | 'human-review-required'
+    | 'not-retryable';
+  readonly maxAttempts: number;
+  readonly retryWindowSeconds: number | null;
+  readonly nextAllowedMode: GenericAdmissionMode | null;
+  readonly requiresChangedRequest: boolean;
+  readonly sameRequestReplayAllowed: false;
+  readonly nonRetryableReasonCodes: readonly string[];
+}
+
 export interface ConsequenceAdmissionResponse {
   readonly version: typeof CONSEQUENCE_ADMISSION_CONTRACT_VERSION;
   readonly admissionId: string;
@@ -243,6 +276,8 @@ export interface ConsequenceAdmissionResponse {
   readonly constraints: readonly ConsequenceAdmissionConstraint[];
   readonly nativeDecision: ConsequenceAdmissionNativeDecision | null;
   readonly proof: readonly ConsequenceAdmissionProofRef[];
+  readonly feedback: ConsequenceAdmissionFeedback;
+  readonly retry: ConsequenceAdmissionRetryGuidance;
   readonly operationalContext: Readonly<Record<string, string | number | boolean | null>>;
   readonly canonical: string;
   readonly digest: string;
@@ -271,6 +306,7 @@ export interface ConsequenceAdmissionDescriptor {
   readonly entryPointKinds: typeof CONSEQUENCE_ADMISSION_ENTRY_POINT_KINDS;
   readonly checkKinds: typeof CONSEQUENCE_ADMISSION_CHECK_KINDS;
   readonly checkOutcomes: typeof CONSEQUENCE_ADMISSION_CHECK_OUTCOMES;
+  readonly feedbackDisclosureLevels: typeof CONSEQUENCE_ADMISSION_FEEDBACK_DISCLOSURE_LEVELS;
   readonly proofKinds: typeof CONSEQUENCE_ADMISSION_PROOF_KINDS;
   readonly nativeSurfaces: typeof CONSEQUENCE_ADMISSION_NATIVE_SURFACES;
   readonly consequenceDomains: typeof CONSEQUENCE_ADMISSION_DOMAINS;
@@ -1006,6 +1042,217 @@ export function createConsequenceAdmissionCheck(
   });
 }
 
+interface AdmissionCorrectionHint {
+  readonly missingFields: readonly string[];
+  readonly requiredEvidenceKinds: readonly string[];
+  readonly retryableByModel: boolean;
+  readonly operatorOnly: boolean;
+}
+
+const ADMISSION_CORRECTION_HINTS: Readonly<Record<string, AdmissionCorrectionHint>> =
+  Object.freeze({
+    'policy-ref-missing': {
+      missingFields: ['policyRef'],
+      requiredEvidenceKinds: ['policy_ref'],
+      retryableByModel: true,
+      operatorOnly: false,
+    },
+    'evidence-ref-missing': {
+      missingFields: ['evidenceRefs'],
+      requiredEvidenceKinds: ['evidence_ref'],
+      retryableByModel: true,
+      operatorOnly: false,
+    },
+    'amount-scope-missing': {
+      missingFields: ['amount'],
+      requiredEvidenceKinds: [],
+      retryableByModel: true,
+      operatorOnly: false,
+    },
+    'recipient-scope-missing': {
+      missingFields: ['recipient'],
+      requiredEvidenceKinds: [],
+      retryableByModel: true,
+      operatorOnly: false,
+    },
+    'data-scope-missing': {
+      missingFields: ['dataScope'],
+      requiredEvidenceKinds: ['data_scope_ref'],
+      retryableByModel: true,
+      operatorOnly: false,
+    },
+    'authority-mode-missing': {
+      missingFields: ['authorityMode'],
+      requiredEvidenceKinds: ['authority_ref'],
+      retryableByModel: true,
+      operatorOnly: false,
+    },
+    'narrow-required': {
+      missingFields: [],
+      requiredEvidenceKinds: ['narrowing_ref'],
+      retryableByModel: true,
+      operatorOnly: false,
+    },
+    'adapter-readiness-missing': {
+      missingFields: ['observedFeatures.adapterReady'],
+      requiredEvidenceKinds: ['adapter_readiness_ref'],
+      retryableByModel: false,
+      operatorOnly: true,
+    },
+    'custom-domain-review-required': {
+      missingFields: [],
+      requiredEvidenceKinds: ['customer_policy_ref'],
+      retryableByModel: false,
+      operatorOnly: true,
+    },
+    'policy-blocked': {
+      missingFields: [],
+      requiredEvidenceKinds: [],
+      retryableByModel: false,
+      operatorOnly: true,
+    },
+    'feature-blocked': {
+      missingFields: [],
+      requiredEvidenceKinds: [],
+      retryableByModel: false,
+      operatorOnly: true,
+    },
+    'feature-unsafe': {
+      missingFields: [],
+      requiredEvidenceKinds: [],
+      retryableByModel: false,
+      operatorOnly: true,
+    },
+  });
+
+function uniqueSortedStrings(items: readonly string[]): readonly string[] {
+  return Object.freeze([...new Set(items)].sort());
+}
+
+function admissionCorrectionHints(
+  reasonCodes: readonly string[],
+): readonly AdmissionCorrectionHint[] {
+  return Object.freeze(
+    reasonCodes
+      .map((code) => ADMISSION_CORRECTION_HINTS[code])
+      .filter((hint): hint is AdmissionCorrectionHint => hint !== undefined),
+  );
+}
+
+function admissionFeedbackInstruction(input: {
+  readonly allowed: boolean;
+  readonly retryAllowed: boolean;
+  readonly operatorOnlyReasonCodes: readonly string[];
+  readonly reasonCodes: readonly string[];
+}): string {
+  if (input.allowed && input.reasonCodes.length === 0) {
+    return 'No correction is required. Do not retry solely to seek a different decision.';
+  }
+  if (input.retryAllowed) {
+    return [
+      'Retry only with bounded references for the missing fields.',
+      'Do not include raw customer, bank, wallet, credential, secret, or private policy data.',
+    ].join(' ');
+  }
+  if (input.operatorOnlyReasonCodes.length > 0) {
+    return 'Do not retry automatically. Route the action to the customer review or operator boundary.';
+  }
+  if (input.allowed) {
+    return 'Use the reason codes as shadow feedback. Do not include raw sensitive data in a retry.';
+  }
+  return 'Do not retry automatically without customer-controlled review.';
+}
+
+function createAdmissionFeedback(input: {
+  readonly allowed: boolean;
+  readonly reasonCodes: readonly string[];
+  readonly retryAllowed: boolean;
+}): ConsequenceAdmissionFeedback {
+  const hints = admissionCorrectionHints(input.reasonCodes);
+  const missingFields = uniqueSortedStrings(hints.flatMap((hint) => [...hint.missingFields]));
+  const requiredEvidenceKinds = uniqueSortedStrings(
+    hints.flatMap((hint) => [...hint.requiredEvidenceKinds]),
+  );
+  const operatorOnlyReasonCodes = uniqueSortedStrings(
+    input.reasonCodes.filter((code) => ADMISSION_CORRECTION_HINTS[code]?.operatorOnly === true),
+  );
+  const disclosureLevel: ConsequenceAdmissionFeedbackDisclosureLevel =
+    missingFields.length > 0 || requiredEvidenceKinds.length > 0
+      ? 'actionable'
+      : 'minimal';
+
+  return Object.freeze({
+    disclosureLevel,
+    safeForModel: true,
+    reasonCodes: readonlyCopy(input.reasonCodes),
+    missingFields,
+    requiredEvidenceKinds,
+    operatorOnlyReasonCodes,
+    safeInstruction: admissionFeedbackInstruction({
+      allowed: input.allowed,
+      retryAllowed: input.retryAllowed,
+      operatorOnlyReasonCodes,
+      reasonCodes: input.reasonCodes,
+    }),
+  });
+}
+
+function genericModeFromOperationalContext(
+  operationalContext: Readonly<Record<string, string | number | boolean | null>>,
+): GenericAdmissionMode | null {
+  const mode = operationalContext.mode;
+  return typeof mode === 'string' && GENERIC_ADMISSION_MODES.includes(mode as GenericAdmissionMode)
+    ? mode as GenericAdmissionMode
+    : null;
+}
+
+function retryAllowedByReasonCodes(reasonCodes: readonly string[]): boolean {
+  const hints = admissionCorrectionHints(reasonCodes);
+  return hints.some((hint) => hint.retryableByModel) &&
+    !hints.some((hint) => hint.operatorOnly);
+}
+
+function nonRetryableReasonCodes(reasonCodes: readonly string[]): readonly string[] {
+  return uniqueSortedStrings(
+    reasonCodes.filter((code) => ADMISSION_CORRECTION_HINTS[code]?.operatorOnly === true),
+  );
+}
+
+function createAdmissionRetryGuidance(input: {
+  readonly decision: ConsequenceAdmissionDecision;
+  readonly allowed: boolean;
+  readonly reasonCodes: readonly string[];
+  readonly operationalContext: Readonly<Record<string, string | number | boolean | null>>;
+}): ConsequenceAdmissionRetryGuidance {
+  const nonRetryable = nonRetryableReasonCodes(input.reasonCodes);
+  const retryAllowed =
+    input.decision === 'review' &&
+    !input.allowed &&
+    nonRetryable.length === 0 &&
+    retryAllowedByReasonCodes(input.reasonCodes);
+  const retryCategory: ConsequenceAdmissionRetryGuidance['retryCategory'] =
+    input.allowed
+      ? 'not-needed'
+      : retryAllowed
+        ? 'safe-correction'
+        : input.decision === 'review'
+          ? 'human-review-required'
+          : 'not-retryable';
+
+  return Object.freeze({
+    retryAllowed,
+    retryCategory,
+    maxAttempts: retryAllowed ? 2 : 0,
+    retryWindowSeconds: retryAllowed ? 300 : null,
+    nextAllowedMode: retryAllowed
+      ? genericModeFromOperationalContext(input.operationalContext)
+      : null,
+    requiresChangedRequest: retryAllowed,
+    sameRequestReplayAllowed: false,
+    nonRetryableReasonCodes: nonRetryable,
+  });
+}
+
 export function createConsequenceAdmissionRequest(
   input: CreateConsequenceAdmissionRequestInput,
 ): ConsequenceAdmissionRequest {
@@ -1119,6 +1366,18 @@ export function createConsequenceAdmissionResponse(
     !requestedFailClosed &&
     !decisionFailClosed;
   const failClosed = decisionFailClosed || requestedFailClosed || (decisionAllows && !allowed);
+  const operationalContext = Object.freeze(input.operationalContext ?? {});
+  const retry = createAdmissionRetryGuidance({
+    decision,
+    allowed,
+    reasonCodes,
+    operationalContext,
+  });
+  const feedback = createAdmissionFeedback({
+    allowed,
+    reasonCodes,
+    retryAllowed: retry.retryAllowed,
+  });
   const admissionId = admissionIdFor({
     decidedAt,
     requestId: input.request.requestId,
@@ -1140,7 +1399,9 @@ export function createConsequenceAdmissionResponse(
     constraints,
     nativeDecision,
     proof,
-    operationalContext: Object.freeze(input.operationalContext ?? {}),
+    feedback,
+    retry,
+    operationalContext,
   } as const;
   const canonical = canonicalObject(canonicalPayload as unknown as CanonicalReleaseJsonValue);
 
@@ -1263,6 +1524,7 @@ ConsequenceAdmissionDescriptor {
     entryPointKinds: CONSEQUENCE_ADMISSION_ENTRY_POINT_KINDS,
     checkKinds: CONSEQUENCE_ADMISSION_CHECK_KINDS,
     checkOutcomes: CONSEQUENCE_ADMISSION_CHECK_OUTCOMES,
+    feedbackDisclosureLevels: CONSEQUENCE_ADMISSION_FEEDBACK_DISCLOSURE_LEVELS,
     proofKinds: CONSEQUENCE_ADMISSION_PROOF_KINDS,
     nativeSurfaces: CONSEQUENCE_ADMISSION_NATIVE_SURFACES,
     consequenceDomains: CONSEQUENCE_ADMISSION_DOMAINS,

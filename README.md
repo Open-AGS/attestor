@@ -195,6 +195,33 @@ Example decision payload:
 
 Allowed paths can carry proof references such as `certificate:...` and `verification-kit:...`. Blocked paths keep the reason codes that explain why the gate did not open.
 
+Admission responses also carry model-safe feedback. This is not raw policy disclosure and not autonomous policy learning; it is a bounded correction contract for agents and customer runtimes that want to retry safely:
+
+```json
+{
+  "feedback": {
+    "disclosureLevel": "actionable",
+    "safeForModel": true,
+    "missingFields": [
+      "evidenceRefs"
+    ],
+    "requiredEvidenceKinds": [
+      "evidence_ref"
+    ],
+    "safeInstruction": "Retry only with bounded references for the missing fields. Do not include raw customer, bank, wallet, credential, secret, or private policy data."
+  },
+  "retry": {
+    "retryAllowed": true,
+    "retryCategory": "safe-correction",
+    "maxAttempts": 2,
+    "requiresChangedRequest": true,
+    "sameRequestReplayAllowed": false
+  }
+}
+```
+
+Some failures are deliberately not model-retryable. `policy-blocked`, unsafe signals, custom-domain review, and adapter readiness gaps route to customer review or operator control instead of teaching the model how to probe the boundary.
+
 ## Proof Model
 
 Attestor is built around proof before consequence. A consequence should not merely happen; it should leave a bounded record of why it was allowed, narrowed, reviewed, or blocked.

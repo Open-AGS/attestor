@@ -60,6 +60,14 @@ async function testPostAdmissionRouteReturnsEnvelope(): Promise<void> {
     admission: {
       decision: string;
       allowed: boolean;
+      feedback: {
+        safeForModel: boolean;
+        disclosureLevel: string;
+      };
+      retry: {
+        retryAllowed: boolean;
+        retryCategory: string;
+      };
       request: {
         policyScope: {
           tenantId: string;
@@ -79,6 +87,10 @@ async function testPostAdmissionRouteReturnsEnvelope(): Promise<void> {
   equal(body.downstreamPosture, 'enforce-decision', 'Generic admission route: enforce posture is returned');
   equal(body.admission.decision, 'admit', 'Generic admission route: complete request admits');
   equal(body.admission.allowed, true, 'Generic admission route: admitted request is allowed');
+  equal(body.admission.feedback.safeForModel, true, 'Generic admission route: model-safe feedback is exposed');
+  equal(body.admission.feedback.disclosureLevel, 'minimal', 'Generic admission route: admitted feedback is minimal');
+  equal(body.admission.retry.retryAllowed, false, 'Generic admission route: admitted request is not retryable');
+  equal(body.admission.retry.retryCategory, 'not-needed', 'Generic admission route: retry category is not-needed');
   equal(body.admission.request.entryPoint.route, '/api/v1/admissions', 'Generic admission route: entry point is canonical');
   equal(body.admission.request.policyScope.tenantId, 'tenant_route', 'Generic admission route: tenant context scopes the request');
   equal(body.admission.request.policyScope.environment, 'api_key', 'Generic admission route: tenant source fills environment by default');

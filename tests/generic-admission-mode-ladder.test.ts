@@ -87,6 +87,8 @@ function testObserveModeRecordsShadowWithoutBlocking(): void {
   equal(envelope.admission.operationalContext.nonEnforcingMode, true, 'Generic admission: observe marks non-enforcing mode');
   ok(envelope.admission.reasonCodes.includes('policy-ref-missing'), 'Generic admission: observe still records policy gap');
   ok(envelope.admission.reasonCodes.includes('evidence-ref-missing'), 'Generic admission: observe still records evidence gap');
+  equal(envelope.admission.feedback.disclosureLevel, 'actionable', 'Generic admission: observe emits actionable feedback for gaps');
+  equal(envelope.admission.retry.retryAllowed, false, 'Generic admission: observe feedback is not an execution retry loop');
 }
 
 function testReviewModeHoldsIncompleteActions(): void {
@@ -112,6 +114,16 @@ function testReviewModeHoldsIncompleteActions(): void {
   equal(envelope.admission.decision, 'review', 'Generic admission: incomplete review-mode action returns review');
   equal(envelope.admission.allowed, false, 'Generic admission: review decision is not allowed');
   equal(envelope.admission.failClosed, true, 'Generic admission: review decision fails closed');
+  equal(envelope.admission.feedback.safeForModel, true, 'Generic admission: feedback is marked safe for model repair');
+  ok(envelope.admission.feedback.missingFields.includes('policyRef'), 'Generic admission: feedback names missing policy ref field');
+  ok(envelope.admission.feedback.missingFields.includes('evidenceRefs'), 'Generic admission: feedback names missing evidence refs field');
+  ok(envelope.admission.feedback.requiredEvidenceKinds.includes('policy_ref'), 'Generic admission: feedback names policy ref evidence kind');
+  ok(envelope.admission.feedback.requiredEvidenceKinds.includes('evidence_ref'), 'Generic admission: feedback names evidence ref evidence kind');
+  equal(envelope.admission.retry.retryAllowed, true, 'Generic admission: review gaps can be safely retried');
+  equal(envelope.admission.retry.retryCategory, 'safe-correction', 'Generic admission: retry category is safe correction');
+  equal(envelope.admission.retry.nextAllowedMode, 'review', 'Generic admission: retry stays on the current review rung');
+  equal(envelope.admission.retry.requiresChangedRequest, true, 'Generic admission: retry requires a changed request');
+  equal(envelope.admission.retry.sameRequestReplayAllowed, false, 'Generic admission: same request replay is not model repair');
 }
 
 function testEnforceModeAdmitsCompleteMoneyMovement(): void {
@@ -126,6 +138,8 @@ function testEnforceModeAdmitsCompleteMoneyMovement(): void {
   equal(envelope.admission.decision, 'admit', 'Generic admission: complete enforce request admits');
   equal(envelope.admission.allowed, true, 'Generic admission: complete enforce request is allowed');
   equal(envelope.admission.proof[0]?.kind, 'admission-receipt', 'Generic admission: admitted request has receipt proof');
+  equal(envelope.admission.retry.retryAllowed, false, 'Generic admission: admitted request does not need retry');
+  equal(envelope.admission.retry.retryCategory, 'not-needed', 'Generic admission: admitted request retry category is not-needed');
 }
 
 function testProgrammableMoneyRequiresAdapterReadiness(): void {
@@ -146,6 +160,11 @@ function testProgrammableMoneyRequiresAdapterReadiness(): void {
   equal(incomplete.shadowDecision, 'would_review', 'Generic admission: programmable money needs adapter readiness');
   equal(incomplete.admission.decision, 'review', 'Generic admission: missing adapter readiness holds execution');
   ok(incomplete.admission.reasonCodes.includes('adapter-readiness-missing'), 'Generic admission: adapter gap is explicit');
+  equal(incomplete.admission.retry.retryAllowed, false, 'Generic admission: adapter readiness is not model-retryable');
+  ok(
+    incomplete.admission.feedback.operatorOnlyReasonCodes.includes('adapter-readiness-missing'),
+    'Generic admission: adapter readiness is operator-only feedback',
+  );
   equal(complete.shadowDecision, 'would_admit', 'Generic admission: adapter-ready programmable money can admit');
   equal(complete.admission.allowed, true, 'Generic admission: adapter-ready programmable money is allowed');
 }
@@ -162,6 +181,9 @@ function testEnforceModeBlocksKnownUnsafeSignals(): void {
   equal(envelope.admission.decision, 'block', 'Generic admission: enforce mode applies block');
   equal(envelope.admission.allowed, false, 'Generic admission: block is not allowed');
   equal(envelope.admission.failClosed, true, 'Generic admission: block fails closed');
+  equal(envelope.admission.retry.retryAllowed, false, 'Generic admission: policy-blocked actions are not model-retryable');
+  ok(envelope.admission.retry.nonRetryableReasonCodes.includes('policy-blocked'), 'Generic admission: block marks policy-blocked as non-retryable');
+  ok(envelope.admission.feedback.operatorOnlyReasonCodes.includes('policy-blocked'), 'Generic admission: policy-blocked feedback is operator-only');
 }
 
 function testInvalidInputFailsClosed(): void {

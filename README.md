@@ -319,6 +319,8 @@ The [verifier helper](docs/02-architecture/verifier-helper.md) is the small cust
 
 The [adapter framework](docs/02-architecture/adapter-framework.md) turns that verifier rule into a protected execution shape for HTTP handlers, queue consumers, tool wrappers, MCP tool wrappers, payment adapters, wallet adapters, and custom customer edges: verify before execute.
 
+The [audit evidence export](docs/02-architecture/audit-evidence-export.md) packages shadow events, simulations, policy discovery, promotion packets, and downstream proof references into a canonical reviewer packet without claiming compliance or exporting raw customer payloads.
+
 The [policy limit model](docs/02-architecture/policy-limit-model.md) gives those admissions bounded policy material: amount caps, velocity windows, recipient and asset allowlists, data scope, authority scope, time windows, risk ceilings, and review thresholds.
 
 The [retry attempt ledger](docs/02-architecture/retry-attempt-ledger.md) records safe-retry attempts after the retry budget closes. It makes automatic correction attempts idempotent and auditable without storing raw retry payloads.
@@ -397,6 +399,7 @@ Start here:
 - [Downstream enforcement contract](docs/02-architecture/downstream-enforcement-contract.md) - customer-side allow/hold contract before downstream action
 - [Verifier helper](docs/02-architecture/verifier-helper.md) - customer-side verify/assert helper for downstream adapters
 - [Adapter framework](docs/02-architecture/adapter-framework.md) - protected verify-before-execute wrapper for tool and customer adapters
+- [Audit evidence export](docs/02-architecture/audit-evidence-export.md) - canonical reviewer packet for shadow-to-enforcement evidence
 - [Policy limit model](docs/02-architecture/policy-limit-model.md) - amount, velocity, scope, allowlist, and review-threshold limits
 - [Retry attempt ledger](docs/02-architecture/retry-attempt-ledger.md) - idempotent safe-retry attempt records without raw retry payloads
 - [Downstream presentation binding](docs/02-architecture/downstream-presentation-binding.md) - target, body, replay, nonce, freshness, proof, and constraint binding

@@ -28,6 +28,8 @@ The practical customer-side helper lives in [Verifier helper](verifier-helper.md
 
 The protected adapter shape lives in [Adapter framework](adapter-framework.md). Use it when an HTTP handler, queue consumer, tool wrapper, MCP tool wrapper, payment adapter, wallet adapter, record writer, or custom customer edge needs a standard verify-before-execute wrapper.
 
+The reviewer-facing evidence package lives in [Audit evidence export](audit-evidence-export.md). Use it when shadow events, simulations, policy candidates, promotion packets, and downstream proof references need to be handed to a reviewer without raw customer payloads or fake compliance claims.
+
 The shared limit vocabulary lives in [Policy limit model](policy-limit-model.md). Use it when a proposed consequence must carry amount caps, velocity windows, recipient or asset allowlists, data scope, authority scope, time bounds, risk ceilings, or review thresholds before admission.
 
 The safe-retry accounting shape lives in [Retry attempt ledger](retry-attempt-ledger.md). Use it when a model-safe correction attempt must be recorded as an idempotent continuation of a held admission rather than a fresh probe.
@@ -86,6 +88,8 @@ The downstream contract comes before execution. A downstream integration should 
 The verifier helper packages that rule into a small customer-side API. It does not replace signed release-token verification; it gives the downstream adapter a consistent fail-closed check before it enters the stronger release-enforcement plane or the customer-owned execution layer.
 
 The adapter framework packages the helper into a protected execution shape. It keeps the executor private to the adapter, verifies the Attestor admission before execution, and exports only digests for raw input, result, or error material.
+
+The audit evidence export packages the shadow-to-enforcement trail for human review. It does not approve candidates, activate policies, or claim compliance; it gives reviewers a tenant-scoped, digest-first packet that shows what is proven, what is missing, and what still needs approval.
 
 The policy limit model sits before both. It prevents broad "yes" decisions by making the admitted consequence bounded: how much, how often, to whom, over what data, under which authority, in what window, and when human review becomes mandatory.
 

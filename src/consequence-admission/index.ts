@@ -41,6 +41,10 @@ import {
   CONSEQUENCE_ADMISSION_ADAPTER_KINDS,
   CONSEQUENCE_ADMISSION_ADAPTER_OUTCOMES,
 } from './adapter-framework.js';
+import {
+  CONSEQUENCE_AUDIT_EVIDENCE_ARTIFACT_KINDS,
+  CONSEQUENCE_AUDIT_EVIDENCE_FINDING_KINDS,
+} from './audit-evidence-export.js';
 
 export const CONSEQUENCE_ADMISSION_CONTRACT_VERSION =
   'attestor.consequence-admission.v1';
@@ -423,6 +427,8 @@ export interface ConsequenceAdmissionDescriptor {
   readonly retryAttemptLedgerFailureReasons: typeof CONSEQUENCE_ADMISSION_RETRY_ATTEMPT_LEDGER_FAILURE_REASONS;
   readonly adapterKinds: typeof CONSEQUENCE_ADMISSION_ADAPTER_KINDS;
   readonly adapterOutcomes: typeof CONSEQUENCE_ADMISSION_ADAPTER_OUTCOMES;
+  readonly auditEvidenceArtifactKinds: typeof CONSEQUENCE_AUDIT_EVIDENCE_ARTIFACT_KINDS;
+  readonly auditEvidenceFindingKinds: typeof CONSEQUENCE_AUDIT_EVIDENCE_FINDING_KINDS;
   readonly proofKinds: typeof CONSEQUENCE_ADMISSION_PROOF_KINDS;
   readonly nativeSurfaces: typeof CONSEQUENCE_ADMISSION_NATIVE_SURFACES;
   readonly consequenceDomains: typeof CONSEQUENCE_ADMISSION_DOMAINS;
@@ -1964,6 +1970,8 @@ ConsequenceAdmissionDescriptor {
     retryAttemptLedgerFailureReasons: CONSEQUENCE_ADMISSION_RETRY_ATTEMPT_LEDGER_FAILURE_REASONS,
     adapterKinds: CONSEQUENCE_ADMISSION_ADAPTER_KINDS,
     adapterOutcomes: CONSEQUENCE_ADMISSION_ADAPTER_OUTCOMES,
+    auditEvidenceArtifactKinds: CONSEQUENCE_AUDIT_EVIDENCE_ARTIFACT_KINDS,
+    auditEvidenceFindingKinds: CONSEQUENCE_AUDIT_EVIDENCE_FINDING_KINDS,
     proofKinds: CONSEQUENCE_ADMISSION_PROOF_KINDS,
     nativeSurfaces: CONSEQUENCE_ADMISSION_NATIVE_SURFACES,
     consequenceDomains: CONSEQUENCE_ADMISSION_DOMAINS,
@@ -1984,6 +1992,7 @@ export * from './presentation-replay-ledger.js';
 export * from './downstream-execution-receipt.js';
 export * from './retry-attempt-ledger.js';
 export * from './adapter-framework.js';
+export * from './audit-evidence-export.js';
 export * from './downstream-enforcement-contract.js';
 export * from './verifier-helper.js';
 export * from './shadow-events.js';

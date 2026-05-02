@@ -39,6 +39,12 @@ export const CONSEQUENCE_ADMISSION_CONTRACT_VERSION =
 export const CONSEQUENCE_ADMISSION_RETRY_ATTEMPT_VERSION =
   'attestor.consequence-admission-retry-attempt.v1';
 
+export const CONSEQUENCE_ADMISSION_RETRY_RULE_VERSION =
+  'attestor.consequence-admission-retry-rules.v1';
+
+export const CONSEQUENCE_ADMISSION_RETRY_DEFAULT_MAX_ATTEMPTS = 2;
+export const CONSEQUENCE_ADMISSION_RETRY_DEFAULT_WINDOW_SECONDS = 300;
+
 export const CONSEQUENCE_ADMISSION_DECISIONS = [
   'admit',
   'narrow',
@@ -92,6 +98,13 @@ export const CONSEQUENCE_ADMISSION_RETRY_BINDING_FIELDS = [
 ] as const;
 export type ConsequenceAdmissionRetryBindingField =
   typeof CONSEQUENCE_ADMISSION_RETRY_BINDING_FIELDS[number];
+
+export const CONSEQUENCE_ADMISSION_RETRY_BUDGET_OUTCOMES = [
+  'allow-retry',
+  'hold-for-review',
+] as const;
+export type ConsequenceAdmissionRetryBudgetOutcome =
+  typeof CONSEQUENCE_ADMISSION_RETRY_BUDGET_OUTCOMES[number];
 
 export const CONSEQUENCE_ADMISSION_PACK_FAMILIES = [
   'finance',
@@ -291,6 +304,27 @@ export interface ConsequenceAdmissionRetryGuidance {
   readonly nonRetryableReasonCodes: readonly string[];
 }
 
+export interface ConsequenceAdmissionRetryBudgetEvaluation {
+  readonly version: typeof CONSEQUENCE_ADMISSION_RETRY_RULE_VERSION;
+  readonly outcome: ConsequenceAdmissionRetryBudgetOutcome;
+  readonly retryAllowed: boolean;
+  readonly failClosed: boolean;
+  readonly previousAdmissionId: string;
+  readonly previousAdmissionDigest: string;
+  readonly retryAttemptId: string;
+  readonly attemptNumber: number;
+  readonly maxAttempts: number;
+  readonly attemptsRemaining: number;
+  readonly retryWindowSeconds: number;
+  readonly windowStartedAt: string;
+  readonly windowExpiresAt: string;
+  readonly evaluatedAt: string;
+  readonly reasonCodes: readonly string[];
+  readonly safeInstruction: string;
+  readonly canonical: string;
+  readonly digest: string;
+}
+
 export interface ConsequenceAdmissionResponse {
   readonly version: typeof CONSEQUENCE_ADMISSION_CONTRACT_VERSION;
   readonly admissionId: string;
@@ -326,6 +360,9 @@ export interface ConsequenceAdmissionProblem {
 export interface ConsequenceAdmissionDescriptor {
   readonly version: typeof CONSEQUENCE_ADMISSION_CONTRACT_VERSION;
   readonly retryAttemptVersion: typeof CONSEQUENCE_ADMISSION_RETRY_ATTEMPT_VERSION;
+  readonly retryRuleVersion: typeof CONSEQUENCE_ADMISSION_RETRY_RULE_VERSION;
+  readonly retryDefaultMaxAttempts: typeof CONSEQUENCE_ADMISSION_RETRY_DEFAULT_MAX_ATTEMPTS;
+  readonly retryDefaultWindowSeconds: typeof CONSEQUENCE_ADMISSION_RETRY_DEFAULT_WINDOW_SECONDS;
   readonly decisions: typeof CONSEQUENCE_ADMISSION_DECISIONS;
   readonly genericAdmissionModes: typeof GENERIC_ADMISSION_MODES;
   readonly genericAdmissionShadowDecisions: typeof GENERIC_ADMISSION_SHADOW_DECISIONS;
@@ -338,6 +375,7 @@ export interface ConsequenceAdmissionDescriptor {
   readonly checkOutcomes: typeof CONSEQUENCE_ADMISSION_CHECK_OUTCOMES;
   readonly feedbackDisclosureLevels: typeof CONSEQUENCE_ADMISSION_FEEDBACK_DISCLOSURE_LEVELS;
   readonly retryBindingFields: typeof CONSEQUENCE_ADMISSION_RETRY_BINDING_FIELDS;
+  readonly retryBudgetOutcomes: typeof CONSEQUENCE_ADMISSION_RETRY_BUDGET_OUTCOMES;
   readonly proofKinds: typeof CONSEQUENCE_ADMISSION_PROOF_KINDS;
   readonly nativeSurfaces: typeof CONSEQUENCE_ADMISSION_NATIVE_SURFACES;
   readonly consequenceDomains: typeof CONSEQUENCE_ADMISSION_DOMAINS;
@@ -348,6 +386,14 @@ export interface ConsequenceAdmissionDescriptor {
   readonly presentationBindingFields: typeof CONSEQUENCE_ADMISSION_PRESENTATION_BINDING_FIELDS;
   readonly presentationReplayLedgerFailureReasons: typeof CONSEQUENCE_ADMISSION_PRESENTATION_REPLAY_LEDGER_FAILURE_REASONS;
   readonly downstreamExecutionStatuses: typeof CONSEQUENCE_ADMISSION_DOWNSTREAM_EXECUTION_STATUSES;
+}
+
+export interface EvaluateConsequenceAdmissionRetryBudgetInput {
+  readonly previousAdmission: ConsequenceAdmissionResponse;
+  readonly retryAttempt: ConsequenceAdmissionRetryAttemptBinding;
+  readonly evaluatedAt?: string | null;
+  readonly maxAttempts?: number | null;
+  readonly retryWindowSeconds?: number | null;
 }
 
 export interface CreateConsequenceAdmissionRetryAttemptBindingInput {
@@ -1358,8 +1404,10 @@ function createAdmissionRetryGuidance(input: {
   return Object.freeze({
     retryAllowed,
     retryCategory,
-    maxAttempts: retryAllowed ? 2 : 0,
-    retryWindowSeconds: retryAllowed ? 300 : null,
+    maxAttempts: retryAllowed ? CONSEQUENCE_ADMISSION_RETRY_DEFAULT_MAX_ATTEMPTS : 0,
+    retryWindowSeconds: retryAllowed
+      ? CONSEQUENCE_ADMISSION_RETRY_DEFAULT_WINDOW_SECONDS
+      : null,
     nextAllowedMode: retryAllowed
       ? genericModeFromOperationalContext(input.operationalContext)
       : null,
@@ -1370,6 +1418,121 @@ function createAdmissionRetryGuidance(input: {
       ? CONSEQUENCE_ADMISSION_RETRY_BINDING_FIELDS
       : Object.freeze([]),
     nonRetryableReasonCodes: nonRetryable,
+  });
+}
+
+function retryBudgetNumber(
+  value: number | null | undefined,
+  fallback: number,
+  fieldName: string,
+): number {
+  if (value === undefined || value === null) return fallback;
+  return normalizePositiveInteger(value, fieldName);
+}
+
+function addSeconds(timestamp: string, seconds: number): string {
+  return new Date(new Date(timestamp).getTime() + seconds * 1000).toISOString();
+}
+
+function retryBudgetInstruction(retryAllowed: boolean): string {
+  if (retryAllowed) {
+    return [
+      'Bound retry may proceed as a correction attempt.',
+      'The downstream system must still honor the new admission decision before execution.',
+    ].join(' ');
+  }
+  return 'Do not retry automatically. Route the action to customer review or operator control.';
+}
+
+export function evaluateConsequenceAdmissionRetryBudget(
+  input: EvaluateConsequenceAdmissionRetryBudgetInput,
+): ConsequenceAdmissionRetryBudgetEvaluation {
+  const previous = input.previousAdmission;
+  const attempt = input.retryAttempt;
+  const maxAttempts = retryBudgetNumber(
+    input.maxAttempts,
+    previous.retry.maxAttempts,
+    'retryBudget.maxAttempts',
+  );
+  const retryWindowSeconds = retryBudgetNumber(
+    input.retryWindowSeconds,
+    previous.retry.retryWindowSeconds ?? CONSEQUENCE_ADMISSION_RETRY_DEFAULT_WINDOW_SECONDS,
+    'retryBudget.retryWindowSeconds',
+  );
+  const evaluatedAt = normalizeIsoTimestamp(
+    input.evaluatedAt ?? attempt.attemptedAt,
+    'retryBudget.evaluatedAt',
+  );
+  const windowStartedAt = previous.decidedAt;
+  const windowExpiresAt = addSeconds(windowStartedAt, retryWindowSeconds);
+  const reasonCodes: string[] = [];
+
+  if (!previous.retry.retryAllowed) {
+    reasonCodes.push('previous-retry-not-allowed');
+  }
+  if (attempt.previousAdmissionId !== previous.admissionId) {
+    reasonCodes.push('retry-previous-admission-id-mismatch');
+  }
+  if (attempt.previousAdmissionDigest !== previous.digest) {
+    reasonCodes.push('retry-previous-admission-digest-mismatch');
+  }
+  if (attempt.previousRequestId !== previous.request.requestId) {
+    reasonCodes.push('retry-previous-request-id-mismatch');
+  }
+  if (attempt.attemptNumber > maxAttempts) {
+    reasonCodes.push('retry-budget-exhausted');
+  }
+  if (new Date(attempt.attemptedAt).getTime() < new Date(windowStartedAt).getTime()) {
+    reasonCodes.push('retry-before-previous-decision');
+  }
+  if (new Date(attempt.attemptedAt).getTime() > new Date(windowExpiresAt).getTime()) {
+    reasonCodes.push('retry-window-expired');
+  }
+  if (attempt.correctionReasonCodes.length === 0) {
+    reasonCodes.push('retry-correction-reason-missing');
+  }
+
+  const previousFeedbackReasons = new Set(previous.feedback.reasonCodes);
+  const unboundCorrectionReasons = attempt.correctionReasonCodes.filter(
+    (reason) => !previousFeedbackReasons.has(reason),
+  );
+  if (unboundCorrectionReasons.length > 0) {
+    reasonCodes.push('retry-correction-reason-unbound');
+  }
+
+  const previousOperatorOnlyReasons = new Set(previous.feedback.operatorOnlyReasonCodes);
+  const operatorOnlyCorrectionReasons = attempt.correctionReasonCodes.filter((reason) =>
+    previousOperatorOnlyReasons.has(reason),
+  );
+  if (operatorOnlyCorrectionReasons.length > 0) {
+    reasonCodes.push('retry-operator-only-reason');
+  }
+
+  const retryAllowed = reasonCodes.length === 0;
+  const payload = {
+    version: CONSEQUENCE_ADMISSION_RETRY_RULE_VERSION,
+    outcome: retryAllowed ? 'allow-retry' : 'hold-for-review',
+    retryAllowed,
+    failClosed: !retryAllowed,
+    previousAdmissionId: previous.admissionId,
+    previousAdmissionDigest: previous.digest,
+    retryAttemptId: attempt.attemptId,
+    attemptNumber: attempt.attemptNumber,
+    maxAttempts,
+    attemptsRemaining: Math.max(maxAttempts - attempt.attemptNumber, 0),
+    retryWindowSeconds,
+    windowStartedAt,
+    windowExpiresAt,
+    evaluatedAt,
+    reasonCodes: uniqueSortedStrings(reasonCodes),
+    safeInstruction: retryBudgetInstruction(retryAllowed),
+  } satisfies Omit<ConsequenceAdmissionRetryBudgetEvaluation, 'canonical' | 'digest'>;
+  const canonical = canonicalObject(payload as unknown as CanonicalReleaseJsonValue);
+
+  return Object.freeze({
+    ...payload,
+    canonical: canonical.canonical,
+    digest: canonical.digest,
   });
 }
 
@@ -1644,6 +1807,9 @@ ConsequenceAdmissionDescriptor {
   return Object.freeze({
     version: CONSEQUENCE_ADMISSION_CONTRACT_VERSION,
     retryAttemptVersion: CONSEQUENCE_ADMISSION_RETRY_ATTEMPT_VERSION,
+    retryRuleVersion: CONSEQUENCE_ADMISSION_RETRY_RULE_VERSION,
+    retryDefaultMaxAttempts: CONSEQUENCE_ADMISSION_RETRY_DEFAULT_MAX_ATTEMPTS,
+    retryDefaultWindowSeconds: CONSEQUENCE_ADMISSION_RETRY_DEFAULT_WINDOW_SECONDS,
     decisions: CONSEQUENCE_ADMISSION_DECISIONS,
     genericAdmissionModes: GENERIC_ADMISSION_MODES,
     genericAdmissionShadowDecisions: GENERIC_ADMISSION_SHADOW_DECISIONS,
@@ -1656,6 +1822,7 @@ ConsequenceAdmissionDescriptor {
     checkOutcomes: CONSEQUENCE_ADMISSION_CHECK_OUTCOMES,
     feedbackDisclosureLevels: CONSEQUENCE_ADMISSION_FEEDBACK_DISCLOSURE_LEVELS,
     retryBindingFields: CONSEQUENCE_ADMISSION_RETRY_BINDING_FIELDS,
+    retryBudgetOutcomes: CONSEQUENCE_ADMISSION_RETRY_BUDGET_OUTCOMES,
     proofKinds: CONSEQUENCE_ADMISSION_PROOF_KINDS,
     nativeSurfaces: CONSEQUENCE_ADMISSION_NATIVE_SURFACES,
     consequenceDomains: CONSEQUENCE_ADMISSION_DOMAINS,

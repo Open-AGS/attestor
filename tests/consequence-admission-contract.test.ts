@@ -1,13 +1,17 @@
 import assert from 'node:assert/strict';
 import {
   CONSEQUENCE_ADMISSION_CONTRACT_VERSION,
+  CONSEQUENCE_ADMISSION_RETRY_DEFAULT_MAX_ATTEMPTS,
+  CONSEQUENCE_ADMISSION_RETRY_DEFAULT_WINDOW_SECONDS,
   CONSEQUENCE_ADMISSION_RETRY_ATTEMPT_VERSION,
+  CONSEQUENCE_ADMISSION_RETRY_RULE_VERSION,
   consequenceAdmissionAllowsConsequence,
   consequenceAdmissionDescriptor,
   createConsequenceAdmissionCheck,
   createConsequenceAdmissionProblem,
   createConsequenceAdmissionRequest,
   createConsequenceAdmissionResponse,
+  evaluateConsequenceAdmissionRetryBudget,
   isConsequenceAdmissionDecision,
   mapCryptoAdmissionOutcomeToAdmission,
   mapFinancePipelineDecisionToAdmission,
@@ -113,6 +117,21 @@ function testDescriptorAndDecisionHelpers(): void {
     CONSEQUENCE_ADMISSION_RETRY_ATTEMPT_VERSION,
     'Admission contract: retry attempt binding version is stable',
   );
+  equal(
+    descriptor.retryRuleVersion,
+    CONSEQUENCE_ADMISSION_RETRY_RULE_VERSION,
+    'Admission contract: retry rule version is stable',
+  );
+  equal(
+    descriptor.retryDefaultMaxAttempts,
+    CONSEQUENCE_ADMISSION_RETRY_DEFAULT_MAX_ATTEMPTS,
+    'Admission contract: default retry max attempts is exposed',
+  );
+  equal(
+    descriptor.retryDefaultWindowSeconds,
+    CONSEQUENCE_ADMISSION_RETRY_DEFAULT_WINDOW_SECONDS,
+    'Admission contract: default retry window is exposed',
+  );
   deepEqual(
     [...descriptor.decisions],
     ['admit', 'narrow', 'review', 'block'],
@@ -127,6 +146,10 @@ function testDescriptorAndDecisionHelpers(): void {
   ok(
     descriptor.retryBindingFields.includes('previousAdmissionDigest'),
     'Admission contract: retry binding fields require previous admission digest',
+  );
+  ok(
+    descriptor.retryBudgetOutcomes.includes('hold-for-review'),
+    'Admission contract: retry budget can hold retries fail-closed',
   );
   ok(isConsequenceAdmissionDecision('admit'), 'Admission contract: admit is recognized');
   ok(!isConsequenceAdmissionDecision('pass'), 'Admission contract: finance pass stays native, not canonical');
@@ -264,6 +287,116 @@ function testRetryAttemptBindingIsCanonical(): void {
     JSON.parse(JSON.stringify(retryRequest)).retryAttempt.previousAdmissionId,
     firstResponse.admissionId,
     'Admission contract: retry attempt survives JSON serialization',
+  );
+}
+
+function testRetryBudgetAllowsBoundCorrectionWithinWindow(): void {
+  const firstRequest = requestFixture();
+  const firstResponse = createConsequenceAdmissionResponse({
+    request: firstRequest,
+    decidedAt: '2026-04-23T10:00:01.000Z',
+    decision: 'review',
+    reason: 'Evidence is missing before execution.',
+    reasonCodes: ['evidence-ref-missing'],
+  });
+  const retryRequest = createConsequenceAdmissionRequest({
+    requestedAt: '2026-04-23T10:01:00.000Z',
+    packFamily: 'finance',
+    entryPoint: firstRequest.entryPoint,
+    proposedConsequence: firstRequest.proposedConsequence,
+    policyScope: firstRequest.policyScope,
+    authority: firstRequest.authority,
+    evidence: [
+      {
+        id: 'evidence:retry:invoice',
+        kind: 'reference',
+        digest: null,
+        uri: null,
+      },
+    ],
+    retryAttempt: {
+      previousAdmissionId: firstResponse.admissionId,
+      previousAdmissionDigest: firstResponse.digest,
+      previousRequestId: firstResponse.request.requestId,
+      attemptNumber: 1,
+      attemptedAt: '2026-04-23T10:01:00.000Z',
+      correctionReasonCodes: ['evidence-ref-missing'],
+      correctionFields: ['evidenceRefs'],
+      idempotencyKey: 'retry:evidence:1',
+    },
+  });
+  const budget = evaluateConsequenceAdmissionRetryBudget({
+    previousAdmission: firstResponse,
+    retryAttempt: retryRequest.retryAttempt!,
+  });
+
+  equal(budget.version, CONSEQUENCE_ADMISSION_RETRY_RULE_VERSION, 'Admission contract: retry budget version is stable');
+  equal(budget.outcome, 'allow-retry', 'Admission contract: bound correction within window is allowed');
+  equal(budget.retryAllowed, true, 'Admission contract: retry budget allows safe correction');
+  equal(budget.failClosed, false, 'Admission contract: allowed retry budget is not fail-closed');
+  equal(budget.maxAttempts, 2, 'Admission contract: retry budget uses default max attempts');
+  equal(budget.attemptsRemaining, 1, 'Admission contract: retry budget reports remaining attempts');
+  equal(budget.retryWindowSeconds, 300, 'Admission contract: retry budget uses default window');
+  ok(budget.digest.startsWith('sha256:'), 'Admission contract: retry budget is canonical digest-shaped');
+}
+
+function testRetryBudgetHoldsUnboundAndExpiredAttempts(): void {
+  const firstRequest = requestFixture();
+  const firstResponse = createConsequenceAdmissionResponse({
+    request: firstRequest,
+    decidedAt: '2026-04-23T10:00:01.000Z',
+    decision: 'review',
+    reason: 'Evidence is missing before execution.',
+    reasonCodes: ['evidence-ref-missing'],
+  });
+  const exhaustedAttempt = createConsequenceAdmissionRequest({
+    requestedAt: '2026-04-23T10:06:00.000Z',
+    packFamily: 'finance',
+    entryPoint: firstRequest.entryPoint,
+    proposedConsequence: firstRequest.proposedConsequence,
+    policyScope: firstRequest.policyScope,
+    authority: firstRequest.authority,
+    evidence: [
+      {
+        id: 'evidence:retry:invoice',
+        kind: 'reference',
+        digest: null,
+        uri: null,
+      },
+    ],
+    retryAttempt: {
+      previousAdmissionId: firstResponse.admissionId,
+      previousAdmissionDigest: 'sha256:not-the-previous-digest',
+      previousRequestId: firstResponse.request.requestId,
+      attemptNumber: 3,
+      attemptedAt: '2026-04-23T10:06:00.000Z',
+      correctionReasonCodes: ['policy-ref-missing'],
+      correctionFields: ['policyRef'],
+    },
+  });
+  const budget = evaluateConsequenceAdmissionRetryBudget({
+    previousAdmission: firstResponse,
+    retryAttempt: exhaustedAttempt.retryAttempt!,
+  });
+
+  equal(budget.outcome, 'hold-for-review', 'Admission contract: invalid retry budget holds for review');
+  equal(budget.retryAllowed, false, 'Admission contract: invalid retry budget is not allowed');
+  equal(budget.failClosed, true, 'Admission contract: invalid retry budget fails closed');
+  ok(
+    budget.reasonCodes.includes('retry-previous-admission-digest-mismatch'),
+    'Admission contract: retry budget detects previous digest mismatch',
+  );
+  ok(
+    budget.reasonCodes.includes('retry-budget-exhausted'),
+    'Admission contract: retry budget detects exhausted attempts',
+  );
+  ok(
+    budget.reasonCodes.includes('retry-window-expired'),
+    'Admission contract: retry budget detects expired attempt windows',
+  );
+  ok(
+    budget.reasonCodes.includes('retry-correction-reason-unbound'),
+    'Admission contract: retry budget detects unbound correction reasons',
   );
 }
 
@@ -502,6 +635,8 @@ testDescriptorAndDecisionHelpers();
 testNativeDecisionMappingsFailClosed();
 testRequestAndResponseAreCanonicalAndProofBearing();
 testRetryAttemptBindingIsCanonical();
+testRetryBudgetAllowsBoundCorrectionWithinWindow();
+testRetryBudgetHoldsUnboundAndExpiredAttempts();
 testAllowedDecisionsFailClosedWithoutProofOrRequiredChecks();
 testReviewAndBlockPosturesFailClosed();
 testNarrowRequiresExplicitConstraints();

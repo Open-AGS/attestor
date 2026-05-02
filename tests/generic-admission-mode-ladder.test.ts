@@ -124,6 +124,69 @@ function testReviewModeHoldsIncompleteActions(): void {
   equal(envelope.admission.retry.nextAllowedMode, 'review', 'Generic admission: retry stays on the current review rung');
   equal(envelope.admission.retry.requiresChangedRequest, true, 'Generic admission: retry requires a changed request');
   equal(envelope.admission.retry.sameRequestReplayAllowed, false, 'Generic admission: same request replay is not model repair');
+  equal(envelope.admission.retry.retryBindingRequired, true, 'Generic admission: retry requires attempt binding');
+  ok(
+    envelope.admission.retry.retryBindingFields.includes('previousAdmissionDigest'),
+    'Generic admission: retry binding asks for the previous admission digest',
+  );
+}
+
+function testRetryAttemptBindingIsCarriedByGenericRequest(): void {
+  const held = createGenericAdmissionEnvelope({
+    mode: 'review',
+    actor: 'support-ai-agent',
+    action: 'issue_refund',
+    domain: 'money-movement',
+    downstreamSystem: 'refund-service',
+    requestedAt: '2026-05-01T17:02:00.000Z',
+    decidedAt: '2026-05-01T17:02:01.000Z',
+    amount: {
+      value: 38000,
+      currency: 'HUF',
+    },
+    recipient: 'customer_123',
+  });
+  const retry = createGenericAdmissionEnvelope({
+    mode: 'review',
+    actor: 'support-ai-agent',
+    action: 'issue_refund',
+    domain: 'money-movement',
+    downstreamSystem: 'refund-service',
+    requestedAt: '2026-05-01T17:03:00.000Z',
+    decidedAt: '2026-05-01T17:03:01.000Z',
+    amount: {
+      value: 38000,
+      currency: 'HUF',
+    },
+    recipient: 'customer_123',
+    policyRef: 'policy:refunds:v1',
+    evidenceRefs: ['order:987', 'payment:456'],
+    retryAttempt: {
+      previousAdmissionId: held.admission.admissionId,
+      previousAdmissionDigest: held.admission.digest,
+      previousRequestId: held.admission.request.requestId,
+      attemptNumber: 1,
+      attemptedAt: '2026-05-01T17:03:00.000Z',
+      correctionReasonCodes: ['policy-ref-missing', 'evidence-ref-missing'],
+      correctionFields: ['policyRef', 'evidenceRefs'],
+      idempotencyKey: 'retry:refund:1',
+    },
+  });
+
+  equal(retry.admission.decision, 'admit', 'Generic admission: corrected bound retry can admit');
+  equal(
+    retry.admission.request.retryAttempt?.previousAdmissionDigest,
+    held.admission.digest,
+    'Generic admission: corrected retry binds to previous admission digest',
+  );
+  ok(
+    retry.admission.reasonCodes.includes('retry-attempt-bound'),
+    'Generic admission: bound retry is marked in reason codes',
+  );
+  ok(
+    retry.admission.request.requestId !== held.admission.request.requestId,
+    'Generic admission: bound retry has a new request id',
+  );
 }
 
 function testEnforceModeAdmitsCompleteMoneyMovement(): void {
@@ -209,6 +272,7 @@ function testInvalidInputFailsClosed(): void {
 testDescriptorExposesModeLadder();
 testObserveModeRecordsShadowWithoutBlocking();
 testReviewModeHoldsIncompleteActions();
+testRetryAttemptBindingIsCarriedByGenericRequest();
 testEnforceModeAdmitsCompleteMoneyMovement();
 testProgrammableMoneyRequiresAdapterReadiness();
 testEnforceModeBlocksKnownUnsafeSignals();

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import {
   CONSEQUENCE_ADMISSION_CONTRACT_VERSION,
+  CONSEQUENCE_ADMISSION_RETRY_ATTEMPT_VERSION,
   consequenceAdmissionAllowsConsequence,
   consequenceAdmissionDescriptor,
   createConsequenceAdmissionCheck,
@@ -107,6 +108,11 @@ function testDescriptorAndDecisionHelpers(): void {
   const descriptor = consequenceAdmissionDescriptor();
 
   equal(descriptor.version, CONSEQUENCE_ADMISSION_CONTRACT_VERSION, 'Admission contract: version is stable');
+  equal(
+    descriptor.retryAttemptVersion,
+    CONSEQUENCE_ADMISSION_RETRY_ATTEMPT_VERSION,
+    'Admission contract: retry attempt binding version is stable',
+  );
   deepEqual(
     [...descriptor.decisions],
     ['admit', 'narrow', 'review', 'block'],
@@ -118,6 +124,10 @@ function testDescriptorAndDecisionHelpers(): void {
   ok(descriptor.checkKinds.includes('enforcement'), 'Admission contract: enforcement is a first-class check');
   ok(descriptor.feedbackDisclosureLevels.includes('minimal'), 'Admission contract: minimal feedback level is exposed');
   ok(descriptor.feedbackDisclosureLevels.includes('actionable'), 'Admission contract: actionable feedback level is exposed');
+  ok(
+    descriptor.retryBindingFields.includes('previousAdmissionDigest'),
+    'Admission contract: retry binding fields require previous admission digest',
+  );
   ok(isConsequenceAdmissionDecision('admit'), 'Admission contract: admit is recognized');
   ok(!isConsequenceAdmissionDecision('pass'), 'Admission contract: finance pass stays native, not canonical');
   equal(consequenceAdmissionAllowsConsequence('admit'), true, 'Admission contract: admit allows consequence');
@@ -184,6 +194,77 @@ function testRequestAndResponseAreCanonicalAndProofBearing(): void {
   ok(response.admissionId.startsWith('sha256:'), 'Admission contract: admission id is digest-shaped');
   ok(response.digest.startsWith('sha256:'), 'Admission contract: response digest is canonical');
   equal(JSON.parse(response.canonical).decision, 'admit', 'Admission contract: canonical JSON is parseable');
+}
+
+function testRetryAttemptBindingIsCanonical(): void {
+  const firstRequest = requestFixture();
+  const firstResponse = createConsequenceAdmissionResponse({
+    request: firstRequest,
+    decidedAt: '2026-04-23T10:00:01.000Z',
+    decision: 'review',
+    reason: 'Evidence is missing before execution.',
+    reasonCodes: ['evidence-ref-missing'],
+  });
+  const retryRequest = createConsequenceAdmissionRequest({
+    requestedAt: '2026-04-23T10:01:00.000Z',
+    packFamily: 'finance',
+    entryPoint: firstRequest.entryPoint,
+    proposedConsequence: firstRequest.proposedConsequence,
+    policyScope: firstRequest.policyScope,
+    authority: firstRequest.authority,
+    evidence: [
+      {
+        id: 'evidence:retry:invoice',
+        kind: 'reference',
+        digest: null,
+        uri: null,
+      },
+    ],
+    retryAttempt: {
+      previousAdmissionId: firstResponse.admissionId,
+      previousAdmissionDigest: firstResponse.digest,
+      previousRequestId: firstResponse.request.requestId,
+      attemptNumber: 1,
+      attemptedAt: '2026-04-23T10:01:00.000Z',
+      correctionReasonCodes: ['evidence-ref-missing'],
+      correctionFields: ['evidenceRefs'],
+      idempotencyKey: 'retry:evidence:1',
+    },
+  });
+
+  equal(
+    retryRequest.retryAttempt?.version,
+    CONSEQUENCE_ADMISSION_RETRY_ATTEMPT_VERSION,
+    'Admission contract: retry attempt carries its binding version',
+  );
+  equal(
+    retryRequest.retryAttempt?.previousAdmissionDigest,
+    firstResponse.digest,
+    'Admission contract: retry attempt binds to the previous admission digest',
+  );
+  equal(
+    retryRequest.retryAttempt?.previousRequestId,
+    firstResponse.request.requestId,
+    'Admission contract: retry attempt binds to the previous request id',
+  );
+  equal(
+    retryRequest.retryAttempt?.attemptNumber,
+    1,
+    'Admission contract: retry attempt records the attempt number',
+  );
+  ok(
+    retryRequest.retryAttempt?.attemptId.startsWith('retry-attempt:sha256:'),
+    'Admission contract: retry attempt id is canonical digest-shaped',
+  );
+  ok(
+    retryRequest.requestId !== firstResponse.request.requestId,
+    'Admission contract: retry attempt creates a new request id',
+  );
+  equal(
+    JSON.parse(JSON.stringify(retryRequest)).retryAttempt.previousAdmissionId,
+    firstResponse.admissionId,
+    'Admission contract: retry attempt survives JSON serialization',
+  );
 }
 
 function testAllowedDecisionsFailClosedWithoutProofOrRequiredChecks(): void {
@@ -420,6 +501,7 @@ function testProblemShapeIsFailClosed(): void {
 testDescriptorAndDecisionHelpers();
 testNativeDecisionMappingsFailClosed();
 testRequestAndResponseAreCanonicalAndProofBearing();
+testRetryAttemptBindingIsCanonical();
 testAllowedDecisionsFailClosedWithoutProofOrRequiredChecks();
 testReviewAndBlockPosturesFailClosed();
 testNarrowRequiresExplicitConstraints();

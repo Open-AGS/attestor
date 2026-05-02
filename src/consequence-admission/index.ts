@@ -36,6 +36,9 @@ import {
 export const CONSEQUENCE_ADMISSION_CONTRACT_VERSION =
   'attestor.consequence-admission.v1';
 
+export const CONSEQUENCE_ADMISSION_RETRY_ATTEMPT_VERSION =
+  'attestor.consequence-admission-retry-attempt.v1';
+
 export const CONSEQUENCE_ADMISSION_DECISIONS = [
   'admit',
   'narrow',
@@ -79,6 +82,16 @@ export const CONSEQUENCE_ADMISSION_FEEDBACK_DISCLOSURE_LEVELS = [
 ] as const;
 export type ConsequenceAdmissionFeedbackDisclosureLevel =
   typeof CONSEQUENCE_ADMISSION_FEEDBACK_DISCLOSURE_LEVELS[number];
+
+export const CONSEQUENCE_ADMISSION_RETRY_BINDING_FIELDS = [
+  'previousAdmissionId',
+  'previousAdmissionDigest',
+  'previousRequestId',
+  'attemptNumber',
+  'correctionReasonCodes',
+] as const;
+export type ConsequenceAdmissionRetryBindingField =
+  typeof CONSEQUENCE_ADMISSION_RETRY_BINDING_FIELDS[number];
 
 export const CONSEQUENCE_ADMISSION_PACK_FAMILIES = [
   'finance',
@@ -193,6 +206,19 @@ export interface ConsequenceAdmissionEvidenceRef {
   readonly uri: string | null;
 }
 
+export interface ConsequenceAdmissionRetryAttemptBinding {
+  readonly version: typeof CONSEQUENCE_ADMISSION_RETRY_ATTEMPT_VERSION;
+  readonly attemptId: string;
+  readonly previousAdmissionId: string;
+  readonly previousAdmissionDigest: string;
+  readonly previousRequestId: string;
+  readonly attemptNumber: number;
+  readonly attemptedAt: string;
+  readonly correctionReasonCodes: readonly string[];
+  readonly correctionFields: readonly string[];
+  readonly idempotencyKey: string | null;
+}
+
 export interface ConsequenceAdmissionRequest {
   readonly version: typeof CONSEQUENCE_ADMISSION_CONTRACT_VERSION;
   readonly requestId: string;
@@ -204,6 +230,7 @@ export interface ConsequenceAdmissionRequest {
   readonly authority: ConsequenceAdmissionAuthority;
   readonly evidence: readonly ConsequenceAdmissionEvidenceRef[];
   readonly nativeInputRefs: readonly string[];
+  readonly retryAttempt: ConsequenceAdmissionRetryAttemptBinding | null;
 }
 
 export interface ConsequenceAdmissionCheck {
@@ -259,6 +286,8 @@ export interface ConsequenceAdmissionRetryGuidance {
   readonly nextAllowedMode: GenericAdmissionMode | null;
   readonly requiresChangedRequest: boolean;
   readonly sameRequestReplayAllowed: false;
+  readonly retryBindingRequired: boolean;
+  readonly retryBindingFields: readonly ConsequenceAdmissionRetryBindingField[];
   readonly nonRetryableReasonCodes: readonly string[];
 }
 
@@ -296,6 +325,7 @@ export interface ConsequenceAdmissionProblem {
 
 export interface ConsequenceAdmissionDescriptor {
   readonly version: typeof CONSEQUENCE_ADMISSION_CONTRACT_VERSION;
+  readonly retryAttemptVersion: typeof CONSEQUENCE_ADMISSION_RETRY_ATTEMPT_VERSION;
   readonly decisions: typeof CONSEQUENCE_ADMISSION_DECISIONS;
   readonly genericAdmissionModes: typeof GENERIC_ADMISSION_MODES;
   readonly genericAdmissionShadowDecisions: typeof GENERIC_ADMISSION_SHADOW_DECISIONS;
@@ -307,6 +337,7 @@ export interface ConsequenceAdmissionDescriptor {
   readonly checkKinds: typeof CONSEQUENCE_ADMISSION_CHECK_KINDS;
   readonly checkOutcomes: typeof CONSEQUENCE_ADMISSION_CHECK_OUTCOMES;
   readonly feedbackDisclosureLevels: typeof CONSEQUENCE_ADMISSION_FEEDBACK_DISCLOSURE_LEVELS;
+  readonly retryBindingFields: typeof CONSEQUENCE_ADMISSION_RETRY_BINDING_FIELDS;
   readonly proofKinds: typeof CONSEQUENCE_ADMISSION_PROOF_KINDS;
   readonly nativeSurfaces: typeof CONSEQUENCE_ADMISSION_NATIVE_SURFACES;
   readonly consequenceDomains: typeof CONSEQUENCE_ADMISSION_DOMAINS;
@@ -319,6 +350,18 @@ export interface ConsequenceAdmissionDescriptor {
   readonly downstreamExecutionStatuses: typeof CONSEQUENCE_ADMISSION_DOWNSTREAM_EXECUTION_STATUSES;
 }
 
+export interface CreateConsequenceAdmissionRetryAttemptBindingInput {
+  readonly attemptId?: string | null;
+  readonly previousAdmissionId: string;
+  readonly previousAdmissionDigest: string;
+  readonly previousRequestId: string;
+  readonly attemptNumber: number;
+  readonly attemptedAt: string;
+  readonly correctionReasonCodes?: readonly string[];
+  readonly correctionFields?: readonly string[];
+  readonly idempotencyKey?: string | null;
+}
+
 export interface CreateConsequenceAdmissionRequestInput {
   readonly requestedAt: string;
   readonly requestId?: string | null;
@@ -329,6 +372,7 @@ export interface CreateConsequenceAdmissionRequestInput {
   readonly authority?: Partial<ConsequenceAdmissionAuthority> | null;
   readonly evidence?: readonly ConsequenceAdmissionEvidenceRef[];
   readonly nativeInputRefs?: readonly string[];
+  readonly retryAttempt?: CreateConsequenceAdmissionRetryAttemptBindingInput | ConsequenceAdmissionRetryAttemptBinding | null;
 }
 
 export interface CreateConsequenceAdmissionResponseInput {
@@ -383,6 +427,7 @@ export interface CreateGenericAdmissionInput {
   readonly evidenceRefs?: readonly string[];
   readonly nativeInputRefs?: readonly string[];
   readonly observedFeatures?: Readonly<Record<string, GenericAdmissionFeatureValue>>;
+  readonly retryAttempt?: ConsequenceAdmissionRetryAttemptBinding | null;
   readonly summary?: string | null;
 }
 
@@ -566,6 +611,13 @@ function readOptionalTimestamp(
   return value === null ? null : normalizeIsoTimestamp(value, fieldName);
 }
 
+function normalizePositiveInteger(value: unknown, fieldName: string): number {
+  if (typeof value !== 'number' || !Number.isInteger(value) || value < 1) {
+    throw new Error(`Consequence admission ${fieldName} must be a positive integer.`);
+  }
+  return value;
+}
+
 function normalizeStringArray(value: unknown, fieldName: string): readonly string[] {
   if (value === undefined || value === null) return Object.freeze([]);
   if (!Array.isArray(value)) {
@@ -658,6 +710,66 @@ function normalizeGenericObservedFeatures(
   return Object.freeze(normalized);
 }
 
+function retryAttemptIdFor(
+  input: Omit<ConsequenceAdmissionRetryAttemptBinding, 'attemptId'>,
+): string {
+  return `retry-attempt:${canonicalObject(input as unknown as CanonicalReleaseJsonValue).digest}`;
+}
+
+function normalizeRetryAttemptBinding(
+  value: unknown,
+): ConsequenceAdmissionRetryAttemptBinding | null {
+  if (value === undefined || value === null) return null;
+  if (!isRecord(value)) {
+    throw new Error('Consequence admission retryAttempt must be an object when provided.');
+  }
+
+  const base = Object.freeze({
+    version: CONSEQUENCE_ADMISSION_RETRY_ATTEMPT_VERSION,
+    previousAdmissionId: normalizeIdentifier(
+      value.previousAdmissionId as string | null | undefined,
+      'retryAttempt.previousAdmissionId',
+    ),
+    previousAdmissionDigest: normalizeIdentifier(
+      value.previousAdmissionDigest as string | null | undefined,
+      'retryAttempt.previousAdmissionDigest',
+    ),
+    previousRequestId: normalizeIdentifier(
+      value.previousRequestId as string | null | undefined,
+      'retryAttempt.previousRequestId',
+    ),
+    attemptNumber: normalizePositiveInteger(value.attemptNumber, 'retryAttempt.attemptNumber'),
+    attemptedAt: normalizeIsoTimestamp(
+      normalizeIdentifier(value.attemptedAt as string | null | undefined, 'retryAttempt.attemptedAt'),
+      'retryAttempt.attemptedAt',
+    ),
+    correctionReasonCodes: uniqueSortedStrings(
+      normalizeStringArray(value.correctionReasonCodes, 'retryAttempt.correctionReasonCodes'),
+    ),
+    correctionFields: uniqueSortedStrings(
+      normalizeStringArray(value.correctionFields, 'retryAttempt.correctionFields'),
+    ),
+    idempotencyKey: normalizeOptionalIdentifier(
+      value.idempotencyKey as string | null | undefined,
+      'retryAttempt.idempotencyKey',
+    ),
+  } satisfies Omit<ConsequenceAdmissionRetryAttemptBinding, 'attemptId'>);
+  const expectedAttemptId = retryAttemptIdFor(base);
+  const suppliedAttemptId = normalizeOptionalIdentifier(
+    value.attemptId as string | null | undefined,
+    'retryAttempt.attemptId',
+  );
+
+  if (suppliedAttemptId !== null && suppliedAttemptId !== expectedAttemptId) {
+    throw new Error('Consequence admission retryAttempt.attemptId does not match the binding.');
+  }
+
+  return Object.freeze({
+    ...base,
+    attemptId: expectedAttemptId,
+  });
+}
+
 function normalizeCreateGenericAdmissionInput(input: unknown): CreateGenericAdmissionInput {
   if (!isRecord(input)) {
     throw new Error('Consequence admission input must be a JSON object.');
@@ -696,6 +808,7 @@ function normalizeCreateGenericAdmissionInput(input: unknown): CreateGenericAdmi
     evidenceRefs: normalizeStringArray(input.evidenceRefs, 'evidenceRefs'),
     nativeInputRefs: normalizeStringArray(input.nativeInputRefs, 'nativeInputRefs'),
     observedFeatures: normalizeGenericObservedFeatures(input.observedFeatures),
+    retryAttempt: normalizeRetryAttemptBinding(input.retryAttempt),
     summary: readOptionalString(input, 'summary'),
   });
 }
@@ -803,6 +916,9 @@ function genericReasonCodes(
   if (observedFeatureTrue(input, 'blocked')) reasons.push('feature-blocked');
   if (observedFeatureTrue(input, 'unsafe')) reasons.push('feature-unsafe');
   if (observedFeatureTrue(input, 'narrowRequired')) reasons.push('narrow-required');
+  if (input.retryAttempt !== null && input.retryAttempt !== undefined) {
+    reasons.push('retry-attempt-bound');
+  }
   return Object.freeze([...new Set(reasons)]);
 }
 
@@ -1249,6 +1365,10 @@ function createAdmissionRetryGuidance(input: {
       : null,
     requiresChangedRequest: retryAllowed,
     sameRequestReplayAllowed: false,
+    retryBindingRequired: retryAllowed,
+    retryBindingFields: retryAllowed
+      ? CONSEQUENCE_ADMISSION_RETRY_BINDING_FIELDS
+      : Object.freeze([]),
     nonRetryableReasonCodes: nonRetryable,
   });
 }
@@ -1320,11 +1440,19 @@ export function createConsequenceAdmissionRequest(
         normalizeIdentifier(entry, 'nativeInputRefs[]'),
       ),
     ),
+    retryAttempt: normalizeRetryAttemptBinding(input.retryAttempt),
   } satisfies Omit<ConsequenceAdmissionRequest, 'requestId'>);
+  const requestId = normalizeOptionalIdentifier(input.requestId, 'requestId');
+
+  if (base.retryAttempt !== null && requestId === base.retryAttempt.previousRequestId) {
+    throw new Error(
+      'Consequence admission retry attempts must not reuse the previous requestId.',
+    );
+  }
 
   return Object.freeze({
     ...base,
-    requestId: normalizeOptionalIdentifier(input.requestId, 'requestId') ?? requestIdFor(base),
+    requestId: requestId ?? requestIdFor(base),
   });
 }
 
@@ -1477,6 +1605,7 @@ export function createGenericAdmissionEnvelope(input: unknown): GenericAdmission
       uri: null,
     })),
     nativeInputRefs: normalized.nativeInputRefs,
+    retryAttempt: normalized.retryAttempt,
   });
   const response = createConsequenceAdmissionResponse({
     request,
@@ -1514,6 +1643,7 @@ export function consequenceAdmissionDescriptor():
 ConsequenceAdmissionDescriptor {
   return Object.freeze({
     version: CONSEQUENCE_ADMISSION_CONTRACT_VERSION,
+    retryAttemptVersion: CONSEQUENCE_ADMISSION_RETRY_ATTEMPT_VERSION,
     decisions: CONSEQUENCE_ADMISSION_DECISIONS,
     genericAdmissionModes: GENERIC_ADMISSION_MODES,
     genericAdmissionShadowDecisions: GENERIC_ADMISSION_SHADOW_DECISIONS,
@@ -1525,6 +1655,7 @@ ConsequenceAdmissionDescriptor {
     checkKinds: CONSEQUENCE_ADMISSION_CHECK_KINDS,
     checkOutcomes: CONSEQUENCE_ADMISSION_CHECK_OUTCOMES,
     feedbackDisclosureLevels: CONSEQUENCE_ADMISSION_FEEDBACK_DISCLOSURE_LEVELS,
+    retryBindingFields: CONSEQUENCE_ADMISSION_RETRY_BINDING_FIELDS,
     proofKinds: CONSEQUENCE_ADMISSION_PROOF_KINDS,
     nativeSurfaces: CONSEQUENCE_ADMISSION_NATIVE_SURFACES,
     consequenceDomains: CONSEQUENCE_ADMISSION_DOMAINS,

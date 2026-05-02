@@ -141,6 +141,10 @@ The first implemented layer is the admission feedback contract. It adds model-sa
 - `retry.maxAttempts`
 - `retry.requiresChangedRequest`
 - `retry.sameRequestReplayAllowed`
+- `retry.retryBindingRequired`
+- `retry.retryBindingFields`
+
+The second layer is retry attempt binding. A corrected request carries a `retryAttempt` object that points back to the held admission through the previous admission ID, previous admission digest, previous request ID, attempt number, correction reason codes, and optional idempotency key. This keeps retries useful without turning the gateway into a blind probing oracle.
 
 This does not mean the model can keep probing until it gets an admit. Some reasons are not model-retryable. Unsafe signals, policy blocks, adapter readiness gaps, custom-domain review, replay failures, and human rejection must route to customer review or operator control.
 

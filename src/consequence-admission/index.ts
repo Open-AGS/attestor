@@ -1292,6 +1292,7 @@ export * from './policy-discovery-candidates.js';
 export * from './shadow-policy-promotion-draft.js';
 export * from './shadow-policy-promotion-packet.js';
 export * from './shadow-policy-promotion-simulation.js';
+export * from './shadow-policy-bundle-publication.js';
 export * from './finance.js';
 export * from './crypto.js';
 export * from './facade.js';

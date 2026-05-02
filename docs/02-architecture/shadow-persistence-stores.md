@@ -231,6 +231,39 @@ productionReady: false
 
 The simulation uses shadow event metadata and digests. It does not store or return raw prompts, recipients, evidence ids, SQL, customer records, wallet material, payment secrets, or downstream response bodies.
 
+## Policy Bundle Publication
+
+The next surface prepares the simulated policy bundle for signed publication:
+
+```text
+GET /api/v1/shadow/policy-bundle-publication
+GET /api/v1/shadow/policy-bundle-publication?status=activated
+```
+
+The publication artifact creates a canonical signing payload over:
+
+- tenant id
+- source packet digest
+- source bundle draft digest
+- source simulation digest
+- target modes
+- rule ids, candidate digests, source report digests, and rule digests
+
+If no signing provider is configured, the artifact remains explicitly `unsigned` and the `bundle-signature-required` blocker stays open. If an evaluation signer is configured, the artifact can carry a detached Ed25519 signature over the canonical signing payload and close the local signature gate for that returned artifact.
+
+Evaluation signatures do not claim production readiness. A runtime-memory or file-PEM signer still leaves `production-signing-provider-required` open. Production promotion needs a managed signing boundary, such as external KMS/HSM-style custody, before the bundle can be treated as a production trust anchor.
+
+The response still keeps:
+
+```text
+activationReady: false
+autoEnforce: false
+rawPayloadStored: false
+productionReady: false
+```
+
+This mirrors signed-policy systems where a digest alone is not enough. Downstream verifiers must validate the signature, signer identity, signed payload digest, source artifact chain, freshness, and scope before trusting a policy bundle.
+
 ## Why This Shape
 
 This follows the same pattern used by mature control systems:
@@ -251,6 +284,7 @@ customer approves or rejects
 promotion draft generated for review
 policy promotion packet generated
 policy promotion packet simulated
+policy bundle publication signed or held unsigned
 only then can enforcement promotion happen
 ```
 

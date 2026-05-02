@@ -130,11 +130,59 @@ Example held response excerpt:
       "retryCategory": "safe-correction",
       "maxAttempts": 2,
       "requiresChangedRequest": true,
-      "sameRequestReplayAllowed": false
+      "sameRequestReplayAllowed": false,
+      "retryBindingRequired": true,
+      "retryBindingFields": [
+        "previousAdmissionId",
+        "previousAdmissionDigest",
+        "previousRequestId",
+        "attemptNumber",
+        "correctionReasonCodes"
+      ]
     }
   }
 }
 ```
+
+The corrected request must include a `retryAttempt` binding. The binding points at the held admission and records the attempt number and correction reasons:
+
+```json
+{
+  "mode": "review",
+  "actor": "support-ai-agent",
+  "action": "issue_refund",
+  "domain": "money-movement",
+  "downstreamSystem": "refund-service",
+  "policyRef": "policy:refunds:v1",
+  "evidenceRefs": [
+    "order:987",
+    "payment:456"
+  ],
+  "amount": {
+    "value": 38000,
+    "currency": "HUF"
+  },
+  "recipient": "customer_123",
+  "retryAttempt": {
+    "previousAdmissionId": "sha256:...",
+    "previousAdmissionDigest": "sha256:...",
+    "previousRequestId": "sha256:...",
+    "attemptNumber": 1,
+    "attemptedAt": "2026-05-01T18:11:00.000Z",
+    "correctionReasonCodes": [
+      "policy-ref-missing",
+      "evidence-ref-missing"
+    ],
+    "correctionFields": [
+      "policyRef",
+      "evidenceRefs"
+    ],
+    "idempotencyKey": "retry:refund:1"
+  }
+}
+```
+
+A bound retry creates a new request ID while preserving a canonical pointer to the earlier admission. Later retry-budget and attempt-ledger layers can use that binding to detect loops, stale attempts, and duplicate submissions.
 
 Policy-blocked, unsafe, adapter-readiness, custom-domain review, replay, and human-rejection signals are not automatic model-retry paths. They must route to customer review or operator control.
 

@@ -147,8 +147,113 @@ async function testInvalidInputReturnsFailClosedProblem(): Promise<void> {
   ok(body.reasonCodes.includes('invalid-admission-input'), 'Generic admission route: invalid input reason is explicit');
 }
 
+async function testPostAdmissionRouteCarriesRetryAttemptBinding(): Promise<void> {
+  const app = createApp();
+  const heldResponse = await app.request('/api/v1/admissions', {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({
+      mode: 'review',
+      actor: 'support-ai-agent',
+      action: 'issue_refund',
+      domain: 'money-movement',
+      downstreamSystem: 'refund-service',
+      requestedAt: '2026-05-01T18:10:00.000Z',
+      decidedAt: '2026-05-01T18:10:01.000Z',
+      amount: {
+        value: 38000,
+        currency: 'HUF',
+      },
+      recipient: 'customer_123',
+    }),
+  });
+  const held = await heldResponse.json() as {
+    admission: {
+      admissionId: string;
+      digest: string;
+      request: {
+        requestId: string;
+      };
+    };
+  };
+  const retryResponse = await app.request('/api/v1/admissions', {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({
+      mode: 'review',
+      actor: 'support-ai-agent',
+      action: 'issue_refund',
+      domain: 'money-movement',
+      downstreamSystem: 'refund-service',
+      requestedAt: '2026-05-01T18:11:00.000Z',
+      decidedAt: '2026-05-01T18:11:01.000Z',
+      policyRef: 'policy:refunds:v1',
+      evidenceRefs: ['order:987', 'payment:456'],
+      amount: {
+        value: 38000,
+        currency: 'HUF',
+      },
+      recipient: 'customer_123',
+      retryAttempt: {
+        previousAdmissionId: held.admission.admissionId,
+        previousAdmissionDigest: held.admission.digest,
+        previousRequestId: held.admission.request.requestId,
+        attemptNumber: 1,
+        attemptedAt: '2026-05-01T18:11:00.000Z',
+        correctionReasonCodes: ['policy-ref-missing', 'evidence-ref-missing'],
+        correctionFields: ['policyRef', 'evidenceRefs'],
+        idempotencyKey: 'retry:route:1',
+      },
+    }),
+  });
+  const retry = await retryResponse.json() as {
+    admission: {
+      decision: string;
+      reasonCodes: readonly string[];
+      request: {
+        requestId: string;
+        retryAttempt: {
+          attemptId: string;
+          previousAdmissionDigest: string;
+          attemptNumber: number;
+        };
+      };
+    };
+  };
+
+  equal(retryResponse.status, 200, 'Generic admission route: bound retry returns 200');
+  equal(retry.admission.decision, 'admit', 'Generic admission route: corrected bound retry admits');
+  equal(
+    retry.admission.request.retryAttempt.previousAdmissionDigest,
+    held.admission.digest,
+    'Generic admission route: retry attempt binds to previous admission digest',
+  );
+  equal(
+    retry.admission.request.retryAttempt.attemptNumber,
+    1,
+    'Generic admission route: retry attempt number is preserved',
+  );
+  ok(
+    retry.admission.request.retryAttempt.attemptId.startsWith('retry-attempt:sha256:'),
+    'Generic admission route: retry attempt id is canonical digest-shaped',
+  );
+  ok(
+    retry.admission.reasonCodes.includes('retry-attempt-bound'),
+    'Generic admission route: retry attempt is visible as a reason code',
+  );
+  ok(
+    retry.admission.request.requestId !== held.admission.request.requestId,
+    'Generic admission route: retry attempt has a new request id',
+  );
+}
+
 await testPostAdmissionRouteReturnsEnvelope();
 await testInvalidJsonReturnsFailClosedProblem();
 await testInvalidInputReturnsFailClosedProblem();
+await testPostAdmissionRouteCarriesRetryAttemptBinding();
 
 console.log(`Generic admission route tests: ${passed} passed, 0 failed`);

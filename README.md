@@ -215,10 +215,20 @@ Admission responses also carry model-safe feedback. This is not raw policy discl
     "retryCategory": "safe-correction",
     "maxAttempts": 2,
     "requiresChangedRequest": true,
-    "sameRequestReplayAllowed": false
+    "sameRequestReplayAllowed": false,
+    "retryBindingRequired": true,
+    "retryBindingFields": [
+      "previousAdmissionId",
+      "previousAdmissionDigest",
+      "previousRequestId",
+      "attemptNumber",
+      "correctionReasonCodes"
+    ]
   }
 }
 ```
+
+The corrected request must carry a `retryAttempt` binding back to the held admission. That binding includes the previous admission ID, previous admission digest, previous request ID, attempt number, and correction reason codes. This makes a retry an auditable continuation, not a fresh probe against the gateway.
 
 Some failures are deliberately not model-retryable. `policy-blocked`, unsafe signals, custom-domain review, and adapter readiness gaps route to customer review or operator control instead of teaching the model how to probe the boundary.
 

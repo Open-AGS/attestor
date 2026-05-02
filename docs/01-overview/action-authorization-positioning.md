@@ -148,6 +148,8 @@ The second layer is retry attempt binding and retry budget evaluation. A correct
 
 The third layer is a correction catalog. Correction reason codes must be stable enough for clients, agent wrappers, review UIs, and audit exports to understand, while still being safe enough to return to a model. The catalog separates model-retryable gaps from customer-review and operator-control reasons.
 
+The fourth layer is retry attempt ledger. A retry that passes through the budget check is recorded as a bounded continuation of the held admission, not a new probe. The ledger stores the previous admission link, retry attempt digest, budget digest, and idempotency key digest. Duplicate retry attempts return the existing record. Conflicting idempotency keys, mismatched budget material, and exhausted ledger capacity hold fail-closed.
+
 This does not mean the model can keep probing until it gets an admit. Some reasons are not model-retryable. Unsafe signals, policy blocks, adapter readiness gaps, custom-domain review, replay failures, and human rejection must route to customer review or operator control.
 
 Use this language:

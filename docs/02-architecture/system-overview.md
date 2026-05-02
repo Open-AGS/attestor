@@ -28,6 +28,8 @@ The practical customer-side helper lives in [Verifier helper](verifier-helper.md
 
 The shared limit vocabulary lives in [Policy limit model](policy-limit-model.md). Use it when a proposed consequence must carry amount caps, velocity windows, recipient or asset allowlists, data scope, authority scope, time bounds, risk ceilings, or review thresholds before admission.
 
+The safe-retry accounting shape lives in [Retry attempt ledger](retry-attempt-ledger.md). Use it when a model-safe correction attempt must be recorded as an idempotent continuation of a held admission rather than a fresh probe.
+
 The execution handoff vocabulary lives in [Downstream presentation binding](downstream-presentation-binding.md). Use it when the enforcement point must bind an allowed admission to the exact target, body digest, replay key, nonce, freshness window, proof references, and acknowledged constraints it is about to present to a real system.
 
 The single-use replay consumption shape lives in [Presentation replay ledger](presentation-replay-ledger.md). Use it when a customer enforcement point must consume the presentation replay key once and keep redacted evidence that the key was not reused.
@@ -82,6 +84,8 @@ The downstream contract comes before execution. A downstream integration should 
 The verifier helper packages that rule into a small customer-side API. It does not replace signed release-token verification; it gives the downstream adapter a consistent fail-closed check before it enters the stronger release-enforcement plane or the customer-owned execution layer.
 
 The policy limit model sits before both. It prevents broad "yes" decisions by making the admitted consequence bounded: how much, how often, to whom, over what data, under which authority, in what window, and when human review becomes mandatory.
+
+The retry attempt ledger sits beside policy limits in the safe-retry path. It does not authorize a consequence by itself; it records that a retry attempt was bound to the previous admission, evaluated against the retry budget, and protected from duplicate or conflicting idempotency reuse.
 
 The presentation binding sits at the last customer-side edge. It prevents an admitted decision from being copied into a different target, body, replay attempt, or enforcement point.
 

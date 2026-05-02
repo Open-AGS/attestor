@@ -232,6 +232,8 @@ The corrected request must carry a `retryAttempt` binding back to the held admis
 
 Retry attempts are also budgeted. The current contract allows at most two model correction attempts within a 300-second window from the held admission. A retry outside that budget, outside the window, or with correction reasons that do not match the previous model-safe feedback must hold for customer review or operator control.
 
+The [retry attempt ledger](docs/02-architecture/retry-attempt-ledger.md) records each bound retry attempt after budget evaluation. It keeps the previous admission link, retry attempt digest, budget digest, and idempotency key digest without storing raw retry payloads or raw idempotency keys. Duplicate attempts return the existing record; conflicting idempotency keys hold fail-closed.
+
 Correction reason codes come from a stable correction catalog. The catalog separates model-retryable gaps such as missing `evidenceRefs` from customer-review or operator-control reasons such as `policy-blocked`, `feature-unsafe`, and `adapter-readiness-missing`.
 
 Some failures are deliberately not model-retryable. `policy-blocked`, unsafe signals, custom-domain review, and adapter readiness gaps route to customer review or operator control instead of teaching the model how to probe the boundary.
@@ -313,6 +315,8 @@ The [verifier helper](docs/02-architecture/verifier-helper.md) is the small cust
 
 The [policy limit model](docs/02-architecture/policy-limit-model.md) gives those admissions bounded policy material: amount caps, velocity windows, recipient and asset allowlists, data scope, authority scope, time windows, risk ceilings, and review thresholds.
 
+The [retry attempt ledger](docs/02-architecture/retry-attempt-ledger.md) records safe-retry attempts after the retry budget closes. It makes automatic correction attempts idempotent and auditable without storing raw retry payloads.
+
 The [downstream presentation binding](docs/02-architecture/downstream-presentation-binding.md) binds an allowed admission to the exact enforcement point, target, method, body digest, replay key, nonce, freshness window, proof refs, and acknowledged constraints that are about to cross into the real system.
 
 The [presentation replay ledger](docs/02-architecture/presentation-replay-ledger.md) consumes that replay key once. The evaluation helper keeps exported ledger entries redacted; production deployments should back the same contract with a shared atomic store at the enforcement edge.
@@ -386,6 +390,7 @@ Start here:
 - [Downstream enforcement contract](docs/02-architecture/downstream-enforcement-contract.md) - customer-side allow/hold contract before downstream action
 - [Verifier helper](docs/02-architecture/verifier-helper.md) - customer-side verify/assert helper for downstream adapters
 - [Policy limit model](docs/02-architecture/policy-limit-model.md) - amount, velocity, scope, allowlist, and review-threshold limits
+- [Retry attempt ledger](docs/02-architecture/retry-attempt-ledger.md) - idempotent safe-retry attempt records without raw retry payloads
 - [Downstream presentation binding](docs/02-architecture/downstream-presentation-binding.md) - target, body, replay, nonce, freshness, proof, and constraint binding
 - [Presentation replay ledger](docs/02-architecture/presentation-replay-ledger.md) - single-use replay consumption with redacted receipts
 - [Downstream execution receipt](docs/02-architecture/downstream-execution-receipt.md) - redacted result receipt after replay consumption

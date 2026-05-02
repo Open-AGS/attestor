@@ -128,6 +128,7 @@
     "test:downstream-presentation-binding": "tsx tests/downstream-presentation-binding.test.ts",
     "test:presentation-replay-ledger": "tsx tests/presentation-replay-ledger.test.ts",
     "test:downstream-execution-receipt": "tsx tests/downstream-execution-receipt.test.ts",
+    "test:retry-attempt-ledger": "tsx tests/retry-attempt-ledger.test.ts",
     "test:first-useful-admission-demo": "tsx tests/first-useful-admission-demo.test.ts",
     "test:non-bypassable-gateway-demo": "tsx tests/non-bypassable-gateway-demo.test.ts",
     "test:first-impression-path": "tsx tests/first-impression-path.test.ts",

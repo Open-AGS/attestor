@@ -4,6 +4,7 @@ import {
   CONSEQUENCE_ADMISSION_CONTRACT_VERSION,
   CONSEQUENCE_ADMISSION_RETRY_DEFAULT_MAX_ATTEMPTS,
   CONSEQUENCE_ADMISSION_RETRY_DEFAULT_WINDOW_SECONDS,
+  CONSEQUENCE_ADMISSION_RETRY_ATTEMPT_LEDGER_VERSION,
   CONSEQUENCE_ADMISSION_RETRY_ATTEMPT_VERSION,
   CONSEQUENCE_ADMISSION_RETRY_RULE_VERSION,
   consequenceAdmissionAllowsConsequence,
@@ -126,6 +127,11 @@ function testDescriptorAndDecisionHelpers(): void {
     'Admission contract: retry rule version is stable',
   );
   equal(
+    descriptor.retryAttemptLedgerVersion,
+    CONSEQUENCE_ADMISSION_RETRY_ATTEMPT_LEDGER_VERSION,
+    'Admission contract: retry attempt ledger version is stable',
+  );
+  equal(
     descriptor.correctionCatalogVersion,
     CONSEQUENCE_ADMISSION_CORRECTION_CATALOG_VERSION,
     'Admission contract: correction catalog version is stable',
@@ -158,6 +164,14 @@ function testDescriptorAndDecisionHelpers(): void {
   ok(
     descriptor.retryBudgetOutcomes.includes('hold-for-review'),
     'Admission contract: retry budget can hold retries fail-closed',
+  );
+  ok(
+    descriptor.retryAttemptLedgerOutcomes.includes('duplicate'),
+    'Admission contract: retry attempt ledger exposes duplicate outcome',
+  );
+  ok(
+    descriptor.retryAttemptLedgerFailureReasons.includes('idempotency-key-conflict'),
+    'Admission contract: retry attempt ledger exposes idempotency conflict',
   );
   ok(
     descriptor.correctionAudiences.includes('model'),

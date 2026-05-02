@@ -194,7 +194,7 @@ The retry budget contract then evaluates the binding:
 - the attempt must arrive inside the retry window
 - correction reason codes must come from the previous model-safe feedback
 
-The current default is two model correction attempts within a 300-second window. The attempt ledger layer will add persistent duplicate detection and cross-request accounting on top of this contract.
+The current default is two model correction attempts within a 300-second window. The retry attempt ledger records each bound retry attempt after budget evaluation, deduplicates repeated attempts by retry attempt ID, binds idempotency key reuse by digest, and keeps held retry attempts as review evidence without storing raw retry payloads.
 
 Policy-blocked, unsafe, adapter-readiness, custom-domain review, replay, and human-rejection signals are not automatic model-retry paths. They must route to customer review or operator control.
 

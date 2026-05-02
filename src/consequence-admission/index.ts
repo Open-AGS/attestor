@@ -32,6 +32,11 @@ import {
 import {
   CONSEQUENCE_ADMISSION_DOWNSTREAM_EXECUTION_STATUSES,
 } from './downstream-execution-receipt.js';
+import {
+  CONSEQUENCE_ADMISSION_RETRY_ATTEMPT_LEDGER_FAILURE_REASONS,
+  CONSEQUENCE_ADMISSION_RETRY_ATTEMPT_LEDGER_OUTCOMES,
+  CONSEQUENCE_ADMISSION_RETRY_ATTEMPT_LEDGER_VERSION,
+} from './retry-attempt-ledger.js';
 
 export const CONSEQUENCE_ADMISSION_CONTRACT_VERSION =
   'attestor.consequence-admission.v1';
@@ -391,6 +396,7 @@ export interface ConsequenceAdmissionDescriptor {
   readonly version: typeof CONSEQUENCE_ADMISSION_CONTRACT_VERSION;
   readonly retryAttemptVersion: typeof CONSEQUENCE_ADMISSION_RETRY_ATTEMPT_VERSION;
   readonly retryRuleVersion: typeof CONSEQUENCE_ADMISSION_RETRY_RULE_VERSION;
+  readonly retryAttemptLedgerVersion: typeof CONSEQUENCE_ADMISSION_RETRY_ATTEMPT_LEDGER_VERSION;
   readonly correctionCatalogVersion: typeof CONSEQUENCE_ADMISSION_CORRECTION_CATALOG_VERSION;
   readonly retryDefaultMaxAttempts: typeof CONSEQUENCE_ADMISSION_RETRY_DEFAULT_MAX_ATTEMPTS;
   readonly retryDefaultWindowSeconds: typeof CONSEQUENCE_ADMISSION_RETRY_DEFAULT_WINDOW_SECONDS;
@@ -409,6 +415,8 @@ export interface ConsequenceAdmissionDescriptor {
   readonly correctionReasonCodes: readonly string[];
   readonly retryBindingFields: typeof CONSEQUENCE_ADMISSION_RETRY_BINDING_FIELDS;
   readonly retryBudgetOutcomes: typeof CONSEQUENCE_ADMISSION_RETRY_BUDGET_OUTCOMES;
+  readonly retryAttemptLedgerOutcomes: typeof CONSEQUENCE_ADMISSION_RETRY_ATTEMPT_LEDGER_OUTCOMES;
+  readonly retryAttemptLedgerFailureReasons: typeof CONSEQUENCE_ADMISSION_RETRY_ATTEMPT_LEDGER_FAILURE_REASONS;
   readonly proofKinds: typeof CONSEQUENCE_ADMISSION_PROOF_KINDS;
   readonly nativeSurfaces: typeof CONSEQUENCE_ADMISSION_NATIVE_SURFACES;
   readonly consequenceDomains: typeof CONSEQUENCE_ADMISSION_DOMAINS;
@@ -1917,6 +1925,7 @@ ConsequenceAdmissionDescriptor {
     version: CONSEQUENCE_ADMISSION_CONTRACT_VERSION,
     retryAttemptVersion: CONSEQUENCE_ADMISSION_RETRY_ATTEMPT_VERSION,
     retryRuleVersion: CONSEQUENCE_ADMISSION_RETRY_RULE_VERSION,
+    retryAttemptLedgerVersion: CONSEQUENCE_ADMISSION_RETRY_ATTEMPT_LEDGER_VERSION,
     correctionCatalogVersion: CONSEQUENCE_ADMISSION_CORRECTION_CATALOG_VERSION,
     retryDefaultMaxAttempts: CONSEQUENCE_ADMISSION_RETRY_DEFAULT_MAX_ATTEMPTS,
     retryDefaultWindowSeconds: CONSEQUENCE_ADMISSION_RETRY_DEFAULT_WINDOW_SECONDS,
@@ -1935,6 +1944,8 @@ ConsequenceAdmissionDescriptor {
     correctionReasonCodes: consequenceAdmissionCorrectionCatalog().reasonCodes,
     retryBindingFields: CONSEQUENCE_ADMISSION_RETRY_BINDING_FIELDS,
     retryBudgetOutcomes: CONSEQUENCE_ADMISSION_RETRY_BUDGET_OUTCOMES,
+    retryAttemptLedgerOutcomes: CONSEQUENCE_ADMISSION_RETRY_ATTEMPT_LEDGER_OUTCOMES,
+    retryAttemptLedgerFailureReasons: CONSEQUENCE_ADMISSION_RETRY_ATTEMPT_LEDGER_FAILURE_REASONS,
     proofKinds: CONSEQUENCE_ADMISSION_PROOF_KINDS,
     nativeSurfaces: CONSEQUENCE_ADMISSION_NATIVE_SURFACES,
     consequenceDomains: CONSEQUENCE_ADMISSION_DOMAINS,
@@ -1953,6 +1964,7 @@ export * from './policy-limits.js';
 export * from './presentation-binding.js';
 export * from './presentation-replay-ledger.js';
 export * from './downstream-execution-receipt.js';
+export * from './retry-attempt-ledger.js';
 export * from './downstream-enforcement-contract.js';
 export * from './verifier-helper.js';
 export * from './shadow-events.js';

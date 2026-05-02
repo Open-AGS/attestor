@@ -102,6 +102,16 @@ assert.equal(
   'function',
 );
 assert.equal(
+  admission.consequenceAdmissionRetryAttemptLedgerDescriptor().failureReasons.includes(
+    'idempotency-key-conflict',
+  ),
+  true,
+);
+assert.equal(
+  typeof admission.createConsequenceAdmissionRetryAttemptLedger,
+  'function',
+);
+assert.equal(
   admission.financePipelineAdmissionDescriptor().route,
   '/api/v1/pipeline/run',
 );

@@ -35,6 +35,8 @@ function testTopLevelPositioningStaysAligned(): void {
   includes(readme, 'Attestor can start in `observe` or `warn` mode.', 'Product docs: README makes non-blocking adoption concrete');
   includes(readme, 'observe -> warn -> review -> enforce', 'Product docs: README keeps the adoption mode ladder');
   includes(readme, 'The current generic admission route implements the first control ladder for this path.', 'Product docs: README bounds implemented shadow ladder');
+  includes(readme, 'Admission responses also carry model-safe feedback.', 'Product docs: README introduces safe feedback contract');
+  includes(readme, 'Some failures are deliberately not model-retryable.', 'Product docs: README blocks retry-loop overclaim');
   includes(readme, 'This is the route-level entry point for the shadow-to-enforcement ladder described above.', 'Product docs: README avoids repeating the route mode explanation');
   includes(readme, 'a treasury or wallet workflow prepares a programmable-money transaction', 'Product docs: README uses consequence-pack examples');
   includes(readme, 'Attestor is one product with a shared AI action authorization core and modular packs for specific consequence domains.', 'Product docs: README keeps one-product framing');
@@ -47,6 +49,7 @@ function testTopLevelPositioningStaysAligned(): void {
   includes(actionPositioning, 'This is the pack language.', 'Product docs: action authorization positioning names consequence-class pack language');
   includes(actionPositioning, 'observe -> recommend -> simulate -> approve -> enforce -> prove', 'Product docs: action authorization positioning keeps shadow mode adoption path');
   includes(actionPositioning, 'Current implementation note: `POST /api/v1/admissions` already has the first mode ladder', 'Product docs: action authorization positioning bounds shadow implementation');
+  includes(actionPositioning, 'Attestor returns bounded correction feedback so agents can retry safely without learning sensitive data or bypassing policy.', 'Product docs: action authorization positioning frames safe retry correctly');
   includes(purpose, 'Attestor is one product:', 'Product docs: purpose keeps one-product framing');
   includes(systemOverview, 'Attestor should be understood as one product:', 'Product docs: system overview keeps one-product framing');
   includes(packaging, 'Attestor is one product:', 'Product docs: packaging keeps one-product framing');

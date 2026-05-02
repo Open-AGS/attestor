@@ -87,6 +87,14 @@ The response carries both the effective admission decision and the shadow decisi
   "admission": {
     "decision": "admit",
     "allowed": true,
+    "feedback": {
+      "safeForModel": true,
+      "disclosureLevel": "minimal"
+    },
+    "retry": {
+      "retryAllowed": false,
+      "retryCategory": "not-needed"
+    },
     "request": {
       "entryPoint": {
         "route": "/api/v1/admissions"
@@ -97,6 +105,38 @@ The response carries both the effective admission decision and the shadow decisi
 ```
 
 `observe` and `warn` are adoption modes. They let a team see what Attestor would have done before enforcing a block. `review` and `enforce` are control modes. In those modes, incomplete policy, authority, evidence, scope, or adapter readiness holds the consequence before downstream execution.
+
+When an action is held for missing policy, evidence, amount, recipient, data scope, or authority shape, the admission response includes model-safe feedback. The feedback names fields and evidence kinds, not raw customer data or private policy internals. A safe retry must send a changed request; replaying the same request is not treated as model repair.
+
+Example held response excerpt:
+
+```json
+{
+  "admission": {
+    "decision": "review",
+    "allowed": false,
+    "feedback": {
+      "disclosureLevel": "actionable",
+      "safeForModel": true,
+      "missingFields": [
+        "evidenceRefs"
+      ],
+      "requiredEvidenceKinds": [
+        "evidence_ref"
+      ]
+    },
+    "retry": {
+      "retryAllowed": true,
+      "retryCategory": "safe-correction",
+      "maxAttempts": 2,
+      "requiresChangedRequest": true,
+      "sameRequestReplayAllowed": false
+    }
+  }
+}
+```
+
+Policy-blocked, unsafe, adapter-readiness, custom-domain review, replay, and human-rejection signals are not automatic model-retry paths. They must route to customer review or operator control.
 
 ## Import The Facade
 

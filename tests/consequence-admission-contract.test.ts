@@ -116,6 +116,8 @@ function testDescriptorAndDecisionHelpers(): void {
   ok(descriptor.packFamilies.includes('crypto'), 'Admission contract: crypto pack family is present');
   ok(descriptor.checkKinds.includes('freshness'), 'Admission contract: freshness is a first-class check');
   ok(descriptor.checkKinds.includes('enforcement'), 'Admission contract: enforcement is a first-class check');
+  ok(descriptor.feedbackDisclosureLevels.includes('minimal'), 'Admission contract: minimal feedback level is exposed');
+  ok(descriptor.feedbackDisclosureLevels.includes('actionable'), 'Admission contract: actionable feedback level is exposed');
   ok(isConsequenceAdmissionDecision('admit'), 'Admission contract: admit is recognized');
   ok(!isConsequenceAdmissionDecision('pass'), 'Admission contract: finance pass stays native, not canonical');
   equal(consequenceAdmissionAllowsConsequence('admit'), true, 'Admission contract: admit allows consequence');
@@ -175,6 +177,10 @@ function testRequestAndResponseAreCanonicalAndProofBearing(): void {
   equal(response.failClosed, false, 'Admission contract: admitted response is not fail-closed');
   equal(response.nativeDecision?.value, 'pass', 'Admission contract: native finance value is preserved');
   equal(response.proof[0]?.kind, 'verification-kit', 'Admission contract: proof refs are preserved');
+  equal(response.feedback.safeForModel, true, 'Admission contract: feedback is explicitly model-safe');
+  equal(response.feedback.disclosureLevel, 'minimal', 'Admission contract: admitted response feedback stays minimal');
+  equal(response.retry.retryAllowed, false, 'Admission contract: admitted response does not allow retry');
+  equal(response.retry.retryCategory, 'not-needed', 'Admission contract: admitted retry category is not-needed');
   ok(response.admissionId.startsWith('sha256:'), 'Admission contract: admission id is digest-shaped');
   ok(response.digest.startsWith('sha256:'), 'Admission contract: response digest is canonical');
   equal(JSON.parse(response.canonical).decision, 'admit', 'Admission contract: canonical JSON is parseable');
@@ -210,6 +216,8 @@ function testAllowedDecisionsFailClosedWithoutProofOrRequiredChecks(): void {
 
   equal(missingProof.allowed, false, 'Admission contract: admit without proof is not allowed');
   equal(missingProof.failClosed, true, 'Admission contract: admit without proof fails closed');
+  equal(missingProof.feedback.safeForModel, true, 'Admission contract: proofless admit still emits model-safe feedback');
+  equal(missingProof.retry.retryAllowed, false, 'Admission contract: proofless admit is not automatically retryable');
   equal(JSON.parse(missingProof.canonical).allowed, false, 'Admission contract: canonical JSON records proofless admit as not allowed');
   equal(failedRequiredCheck.allowed, false, 'Admission contract: failed required checks prevent allowed=true');
   equal(failedRequiredCheck.failClosed, true, 'Admission contract: failed required checks fail closed');
@@ -245,6 +253,8 @@ function testReviewAndBlockPosturesFailClosed(): void {
 
   equal(review.allowed, false, 'Admission contract: review does not allow automatic consequence');
   equal(review.failClosed, true, 'Admission contract: review fails closed even if callers try to override it');
+  equal(review.retry.retryAllowed, false, 'Admission contract: package review without safe correction hints is not model-retryable');
+  equal(review.retry.retryCategory, 'human-review-required', 'Admission contract: package review requires human review');
   equal(block.allowed, false, 'Admission contract: block does not allow consequence');
   equal(block.failClosed, true, 'Admission contract: block fails closed');
 }

@@ -63,6 +63,8 @@ function testReadmeHasAFirstImpressionPath(): void {
   includes(readme, 'a customer-side gate that only proceeds when Attestor allows it', 'README: explains downstream gate behavior');
   includes(readme, 'a non-bypassable gateway demo where a payment adapter cannot dispatch without verifier allow', 'README: explains non-bypassable adapter behavior');
   includes(readme, '## Decision Model', 'README: makes the decision vocabulary prominent');
+  includes(readme, 'Admission responses also carry model-safe feedback.', 'README: exposes safe retry feedback near the decision model');
+  includes(readme, 'sameRequestReplayAllowed', 'README: makes replay unsafe for model repair');
   includes(readme, '## Proof Model', 'README: surfaces proof as a first-class concept near the top');
   includes(readme, 'local proof artifacts that can be reviewed later', 'README: explains why proof matters');
   includes(readme, 'npm run proof:surface', 'README: exposes the proof surface command near the first proof explanation');

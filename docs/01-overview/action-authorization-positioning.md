@@ -119,6 +119,43 @@ Start in shadow mode. See what your AI agents would have done before you let the
 
 Current implementation note: `POST /api/v1/admissions` already has the first mode ladder: `observe`, `warn`, `review`, and `enforce`. Recommendation, simulation, summary, and dashboard surfaces should build on that ladder without claiming autonomous policy learning.
 
+## Safe Retry Loop
+
+The gateway should be strict without becoming a dead end. When an AI action is incomplete, Attestor should return enough structured feedback for a safe retry, without leaking customer data, raw policy material, wallet details, bank details, credentials, or internal thresholds.
+
+The product shape is:
+
+```text
+AI proposes -> Attestor evaluates -> Attestor returns safe feedback -> AI may retry within bounds -> proof remains
+```
+
+The first implemented layer is the admission feedback contract. It adds model-safe `feedback` and `retry` fields to admission responses:
+
+- `feedback.reasonCodes`
+- `feedback.missingFields`
+- `feedback.requiredEvidenceKinds`
+- `feedback.operatorOnlyReasonCodes`
+- `feedback.safeInstruction`
+- `retry.retryAllowed`
+- `retry.retryCategory`
+- `retry.maxAttempts`
+- `retry.requiresChangedRequest`
+- `retry.sameRequestReplayAllowed`
+
+This does not mean the model can keep probing until it gets an admit. Some reasons are not model-retryable. Unsafe signals, policy blocks, adapter readiness gaps, custom-domain review, replay failures, and human rejection must route to customer review or operator control.
+
+Use this language:
+
+```text
+Attestor returns bounded correction feedback so agents can retry safely without learning sensitive data or bypassing policy.
+```
+
+Avoid:
+
+```text
+Attestor teaches the model how to get approved.
+```
+
 ## Why This Shift Matters
 
 Agent and tool ecosystems are moving toward action, not just generation. OpenAI's Agents SDK describes tools as letting agents take actions such as fetching data, calling APIs, executing code, or using a computer. MCP tools are model-controlled and can be discovered and invoked by language models. OWASP's Excessive Agency risk calls out damaging actions caused by too much functionality, permission, or autonomy, and recommends downstream authorization rather than relying on an LLM to decide whether an action is allowed.

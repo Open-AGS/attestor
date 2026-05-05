@@ -392,6 +392,7 @@ Start here:
 - [Customer integration recipes](docs/01-overview/customer-integration-recipes.md) - where to put Attestor in an existing app
 - [Commercial packaging, pricing, and evaluation](docs/01-overview/product-packaging.md) - commercial truth source and evaluation boundary
 - [Hosted customer journey](docs/01-overview/hosted-customer-journey.md) - hosted account and checkout path
+- [Hosted action authorization API](docs/01-overview/hosted-action-authorization-api.md) - OpenAPI contract for admissions and shadow read surfaces
 - [First hosted API call](docs/01-overview/hosted-first-api-call.md) - first hosted API-call quickstart
 - [Finance and crypto first integrations](docs/01-overview/finance-and-crypto-first-integrations.md) - first integration examples
 - [Hosted account visibility](docs/01-overview/hosted-account-visibility.md) - account, usage, and billing visibility

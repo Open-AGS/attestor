@@ -1,0 +1,750 @@
+{
+  "openapi": "3.2.0",
+  "info": {
+    "title": "Attestor Action Authorization API",
+    "version": "0.1.2-evaluation",
+    "summary": "Bounded hosted API contract for AI action authorization before consequence.",
+    "description": "This evaluation contract describes the generic admission route and the shadow-mode read surfaces that exist today. It is not a production readiness claim, a compliance certification, or a wallet/custody API."
+  },
+  "servers": [
+    {
+      "url": "{baseUrl}",
+      "description": "Customer-operated or hosted Attestor base URL.",
+      "variables": {
+        "baseUrl": {
+          "default": "http://localhost:3000"
+        }
+      }
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "Admissions",
+      "description": "Authorize proposed AI actions before downstream consequence."
+    },
+    {
+      "name": "Shadow",
+      "description": "Read-only shadow-mode visibility, policy discovery, audit evidence, and dashboard surfaces."
+    }
+  ],
+  "paths": {
+    "/api/v1/admissions": {
+      "post": {
+        "tags": [
+          "Admissions"
+        ],
+        "operationId": "createAdmission",
+        "summary": "Evaluate one proposed AI action.",
+        "description": "Returns an admission envelope with `admit`, `narrow`, `review`, or `block` semantics. Non-enforcing modes observe or warn; enforcing modes can hold or block before downstream execution.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenericAdmissionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Admission evaluated.",
+            "headers": {
+              "Cache-Control": {
+                "$ref": "#/components/headers/NoStore"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenericAdmissionEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/FailClosedProblem"
+          },
+          "503": {
+            "$ref": "#/components/responses/FailClosedProblem"
+          }
+        }
+      }
+    },
+    "/api/v1/shadow/summary": {
+      "get": {
+        "tags": [
+          "Shadow"
+        ],
+        "operationId": "getShadowSummary",
+        "summary": "Summarize shadow admission events.",
+        "responses": {
+          "200": {
+            "description": "Data-minimized shadow summary for the current tenant.",
+            "headers": {
+              "Cache-Control": {
+                "$ref": "#/components/headers/NoStore"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShadowSummaryResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "$ref": "#/components/responses/FailClosedProblem"
+          }
+        }
+      }
+    },
+    "/api/v1/shadow/recommendations": {
+      "get": {
+        "tags": [
+          "Shadow"
+        ],
+        "operationId": "getShadowRecommendations",
+        "summary": "Read compact shadow recommendations.",
+        "responses": {
+          "200": {
+            "description": "Recommendation list derived from the latest shadow simulation.",
+            "headers": {
+              "Cache-Control": {
+                "$ref": "#/components/headers/NoStore"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShadowRecommendationsResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "$ref": "#/components/responses/FailClosedProblem"
+          }
+        }
+      }
+    },
+    "/api/v1/shadow/action-risk-inventory": {
+      "get": {
+        "tags": [
+          "Shadow"
+        ],
+        "operationId": "getActionRiskInventory",
+        "summary": "List discovered action-risk surfaces.",
+        "responses": {
+          "200": {
+            "description": "Data-minimized inventory of action surfaces and control gaps.",
+            "headers": {
+              "Cache-Control": {
+                "$ref": "#/components/headers/NoStore"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActionRiskInventoryResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "$ref": "#/components/responses/FailClosedProblem"
+          }
+        }
+      }
+    },
+    "/api/v1/shadow/policy-candidates": {
+      "get": {
+        "tags": [
+          "Shadow"
+        ],
+        "operationId": "getPolicyCandidates",
+        "summary": "Read draft policy candidates.",
+        "description": "Candidates are recommendations requiring customer approval. This route never activates policy and never auto-enforces.",
+        "responses": {
+          "200": {
+            "description": "Approval-required policy candidate bundle.",
+            "headers": {
+              "Cache-Control": {
+                "$ref": "#/components/headers/NoStore"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PolicyCandidatesResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "$ref": "#/components/responses/FailClosedProblem"
+          }
+        }
+      }
+    },
+    "/api/v1/shadow/audit-evidence": {
+      "get": {
+        "tags": [
+          "Shadow"
+        ],
+        "operationId": "getAuditEvidence",
+        "summary": "Read the canonical audit evidence packet.",
+        "description": "Returns reviewer evidence for shadow-to-enforcement review. It is not a compliance certificate.",
+        "responses": {
+          "200": {
+            "description": "Canonical audit evidence export for the current tenant.",
+            "headers": {
+              "Cache-Control": {
+                "$ref": "#/components/headers/NoStore"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditEvidenceResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "$ref": "#/components/responses/FailClosedProblem"
+          }
+        }
+      }
+    },
+    "/api/v1/shadow/business-risk-dashboard": {
+      "get": {
+        "tags": [
+          "Shadow"
+        ],
+        "operationId": "getBusinessRiskDashboard",
+        "summary": "Read the operator-facing business risk dashboard.",
+        "description": "Returns decision-support metrics over audit evidence. It does not infer financial impact and does not authorize consequences.",
+        "responses": {
+          "200": {
+            "description": "Business risk dashboard model for the current tenant.",
+            "headers": {
+              "Cache-Control": {
+                "$ref": "#/components/headers/NoStore"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessRiskDashboardResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "$ref": "#/components/responses/FailClosedProblem"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Tenant API key or authenticated bearer credential. Credentials must be sent in the Authorization header, not in URLs."
+      }
+    },
+    "headers": {
+      "NoStore": {
+        "description": "Shadow and admission responses are not cacheable.",
+        "schema": {
+          "type": "string",
+          "const": "no-store"
+        }
+      }
+    },
+    "responses": {
+      "FailClosedProblem": {
+        "description": "RFC 9457-style problem detail with Attestor fail-closed fields.",
+        "headers": {
+          "Cache-Control": {
+            "$ref": "#/components/headers/NoStore"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/FailClosedProblem"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "GenericAdmissionRequest": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": [
+          "mode",
+          "actor",
+          "action",
+          "domain",
+          "downstreamSystem"
+        ],
+        "properties": {
+          "mode": {
+            "$ref": "#/components/schemas/AdmissionMode"
+          },
+          "actor": {
+            "type": "string",
+            "minLength": 1
+          },
+          "action": {
+            "type": "string",
+            "minLength": 1
+          },
+          "domain": {
+            "$ref": "#/components/schemas/ConsequenceDomain"
+          },
+          "downstreamSystem": {
+            "type": "string",
+            "minLength": 1
+          },
+          "policyRef": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "evidenceRefs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "amount": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "value": {
+                "type": "number"
+              },
+              "currency": {
+                "type": "string"
+              }
+            }
+          },
+          "recipient": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Accepted as input, but raw recipient values must not be returned by shadow read routes."
+          }
+        }
+      },
+      "AdmissionMode": {
+        "type": "string",
+        "enum": [
+          "observe",
+          "warn",
+          "review",
+          "enforce"
+        ]
+      },
+      "ConsequenceDomain": {
+        "type": "string",
+        "enum": [
+          "money-movement",
+          "data-disclosure",
+          "authority-change",
+          "external-communication",
+          "regulated-filing",
+          "system-operation",
+          "programmable-money",
+          "decision-support",
+          "custom"
+        ]
+      },
+      "AdmissionDecision": {
+        "type": "string",
+        "enum": [
+          "admit",
+          "narrow",
+          "review",
+          "block"
+        ]
+      },
+      "GenericAdmissionEnvelope": {
+        "type": "object",
+        "required": [
+          "mode",
+          "shadowDecision",
+          "downstreamPosture",
+          "enforcementActive",
+          "admission"
+        ],
+        "properties": {
+          "mode": {
+            "$ref": "#/components/schemas/AdmissionMode"
+          },
+          "shadowDecision": {
+            "type": "string"
+          },
+          "downstreamPosture": {
+            "type": "string"
+          },
+          "enforcementActive": {
+            "type": "boolean"
+          },
+          "admission": {
+            "$ref": "#/components/schemas/AdmissionResponse"
+          }
+        }
+      },
+      "AdmissionResponse": {
+        "type": "object",
+        "required": [
+          "decision",
+          "allowed",
+          "failClosed",
+          "reasonCodes",
+          "digest"
+        ],
+        "properties": {
+          "decision": {
+            "$ref": "#/components/schemas/AdmissionDecision"
+          },
+          "allowed": {
+            "type": "boolean"
+          },
+          "failClosed": {
+            "type": "boolean"
+          },
+          "reasonCodes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "digest": {
+            "type": "string",
+            "pattern": "^sha256:"
+          }
+        }
+      },
+      "FailClosedProblem": {
+        "type": "object",
+        "required": [
+          "type",
+          "title",
+          "status",
+          "detail",
+          "decision",
+          "failClosed",
+          "reasonCodes"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "format": "uri"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "type": "integer"
+          },
+          "detail": {
+            "type": "string"
+          },
+          "instance": {
+            "type": "string"
+          },
+          "decision": {
+            "const": "block"
+          },
+          "failClosed": {
+            "const": true
+          },
+          "reasonCodes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "TenantSummary": {
+        "type": "object",
+        "required": [
+          "tenantId",
+          "source",
+          "planId"
+        ],
+        "properties": {
+          "tenantId": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "planId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "ShadowBoundary": {
+        "type": "object",
+        "required": [
+          "productionReady",
+          "rawPayloadStored"
+        ],
+        "properties": {
+          "productionReady": {
+            "const": false
+          },
+          "rawPayloadStored": {
+            "const": false
+          },
+          "autoEnforce": {
+            "const": false
+          },
+          "approvalRequired": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ShadowSummaryResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ShadowBoundary"
+          },
+          {
+            "type": "object",
+            "required": [
+              "tenant",
+              "eventCount",
+              "summary",
+              "recommendations"
+            ],
+            "properties": {
+              "tenant": {
+                "$ref": "#/components/schemas/TenantSummary"
+              },
+              "eventCount": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "summary": {
+                "type": "object"
+              },
+              "recommendations": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "ShadowRecommendationsResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ShadowBoundary"
+          },
+          {
+            "type": "object",
+            "required": [
+              "tenant",
+              "recommendationCount",
+              "recommendations",
+              "source"
+            ],
+            "properties": {
+              "tenant": {
+                "$ref": "#/components/schemas/TenantSummary"
+              },
+              "recommendationCount": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "recommendations": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                }
+              },
+              "source": {
+                "const": "shadow-summary"
+              }
+            }
+          }
+        ]
+      },
+      "ActionRiskInventoryResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ShadowBoundary"
+          },
+          {
+            "type": "object",
+            "required": [
+              "tenant",
+              "surfaceCount",
+              "surfaces"
+            ],
+            "properties": {
+              "tenant": {
+                "$ref": "#/components/schemas/TenantSummary"
+              },
+              "surfaceCount": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "surfaces": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "PolicyCandidatesResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ShadowBoundary"
+          },
+          {
+            "type": "object",
+            "required": [
+              "tenant",
+              "candidateCount",
+              "approvalRequired",
+              "autoEnforce",
+              "candidates"
+            ],
+            "properties": {
+              "tenant": {
+                "$ref": "#/components/schemas/TenantSummary"
+              },
+              "candidateCount": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "approvalRequired": {
+                "const": true
+              },
+              "autoEnforce": {
+                "const": false
+              },
+              "candidates": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "AuditEvidenceResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ShadowBoundary"
+          },
+          {
+            "type": "object",
+            "required": [
+              "tenant",
+              "approvalRequired",
+              "autoEnforce",
+              "complianceClaimed",
+              "auditEvidence"
+            ],
+            "properties": {
+              "tenant": {
+                "$ref": "#/components/schemas/TenantSummary"
+              },
+              "approvalRequired": {
+                "const": true
+              },
+              "autoEnforce": {
+                "const": false
+              },
+              "complianceClaimed": {
+                "const": false
+              },
+              "auditEvidence": {
+                "type": "object"
+              }
+            }
+          }
+        ]
+      },
+      "BusinessRiskDashboardResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ShadowBoundary"
+          },
+          {
+            "type": "object",
+            "required": [
+              "tenant",
+              "decisionSupportOnly",
+              "autoEnforce",
+              "impactMode",
+              "rawImpactValueStored",
+              "dashboard"
+            ],
+            "properties": {
+              "tenant": {
+                "$ref": "#/components/schemas/TenantSummary"
+              },
+              "decisionSupportOnly": {
+                "const": true
+              },
+              "autoEnforce": {
+                "const": false
+              },
+              "impactMode": {
+                "enum": [
+                  "not-supplied",
+                  "operator-supplied"
+                ]
+              },
+              "rawImpactValueStored": {
+                "const": false
+              },
+              "dashboard": {
+                "type": "object"
+              }
+            }
+          }
+        ]
+      }
+    }
+  },
+  "x-attestor-boundary": {
+    "evaluationRelease": true,
+    "productionReady": false,
+    "complianceClaimed": false,
+    "autoEnforceFromShadowReads": false,
+    "rawPayloadStoredByShadowReads": false,
+    "publicHostedCryptoRouteClaimed": false
+  }
+}

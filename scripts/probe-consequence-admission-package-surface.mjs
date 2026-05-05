@@ -126,6 +126,28 @@ assert.equal(
   'function',
 );
 assert.equal(
+  admission.consequenceDashboardApiSummaryDescriptor().tileKinds.includes(
+    'policy-gaps',
+  ),
+  true,
+);
+assert.equal(
+  admission.consequenceDashboardApiSummaryDescriptor().attentionKinds.includes(
+    'define-policy',
+  ),
+  true,
+);
+assert.equal(
+  admission.consequenceAdmissionDescriptor().dashboardApiSummaryLinkKinds.includes(
+    'business-risk-dashboard',
+  ),
+  true,
+);
+assert.equal(
+  typeof admission.createConsequenceDashboardApiSummary,
+  'function',
+);
+assert.equal(
   admission.consequenceExternalReviewPacketDescriptor().focusAreas.includes(
     'proof-integrity',
   ),
@@ -150,6 +172,12 @@ assert.equal(
 assert.equal(
   admission.consequenceDataMinimizationRedactionPolicyDescriptor().surfaceKinds.includes(
     'audit-evidence-export',
+  ),
+  true,
+);
+assert.equal(
+  admission.consequenceDataMinimizationRedactionPolicyDescriptor().surfaceKinds.includes(
+    'dashboard-api-summary',
   ),
   true,
 );

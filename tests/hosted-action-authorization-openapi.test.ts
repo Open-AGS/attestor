@@ -85,6 +85,7 @@ function testOpenApiContractListsOnlyCommittedActionAuthorizationRoutes(): void 
     '/api/v1/shadow/action-risk-inventory',
     '/api/v1/shadow/audit-evidence',
     '/api/v1/shadow/business-risk-dashboard',
+    '/api/v1/shadow/dashboard-summary',
     '/api/v1/shadow/policy-candidates',
     '/api/v1/shadow/recommendations',
     '/api/v1/shadow/summary',
@@ -137,6 +138,7 @@ function testOpenApiContractPreservesShadowBoundaries(): void {
   includes(text, '"decisionSupportOnly"', 'Hosted OpenAPI: dashboard is decision support only');
   includes(text, '"impactMode"', 'Hosted OpenAPI: dashboard impact mode is explicit');
   includes(text, '"rawImpactValueStored"', 'Hosted OpenAPI: raw impact boundary is explicit');
+  includes(text, '/api/v1/shadow/dashboard-summary', 'Hosted OpenAPI: dashboard summary route is documented');
 }
 
 function testDocsPointToTheOpenApiTruthSource(): void {
@@ -147,6 +149,7 @@ function testDocsPointToTheOpenApiTruthSource(): void {
   includes(readme, 'docs/01-overview/hosted-action-authorization-api.md', 'Hosted OpenAPI docs: README link points at guide');
   includes(doc, 'docs/api/attestor-action-authorization.openapi.json', 'Hosted OpenAPI docs: guide points at OpenAPI file');
   includes(doc, '`POST /api/v1/admissions`', 'Hosted OpenAPI docs: guide names the canonical admission route');
+  includes(doc, '`GET /api/v1/shadow/dashboard-summary`', 'Hosted OpenAPI docs: guide names dashboard summary route');
   includes(doc, 'RFC 9457-style problem details', 'Hosted OpenAPI docs: guide names problem details boundary');
   includes(doc, 'no public hosted crypto HTTP route is claimed', 'Hosted OpenAPI docs: guide avoids hosted crypto overclaim');
   excludes(doc, 'POST /api/v1/admit', 'Hosted OpenAPI docs: guide does not revive old route placeholder');

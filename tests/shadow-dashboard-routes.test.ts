@@ -258,6 +258,114 @@ async function testBusinessRiskDashboardRouteIsDecisionSupportOnly(): Promise<vo
   ok(!text.includes('raw_note_must_not_escape'), 'Shadow business risk route: raw observed features are not returned');
 }
 
+async function testDashboardSummaryRouteReturnsCompactBusinessView(): Promise<void> {
+  const app = createApp([
+    createEvent(),
+    createEvent({
+      action: 'export_customer_report',
+      domain: 'data-disclosure',
+      downstreamSystem: 'report-service',
+      policyRef: 'policy:reports:v1',
+      evidenceRefs: ['ticket:dashboard_summary_raw_evidence_must_not_escape'],
+      occurredAt: '2026-05-03T10:02:02.000Z',
+    }),
+    createEvent({
+      mode: 'enforce',
+      policyRef: 'policy:refunds:v1',
+      evidenceRefs: ['order:dashboard_summary_blocked_raw_evidence_must_not_escape'],
+      occurredAt: '2026-05-03T10:03:02.000Z',
+      blocked: true,
+    }),
+  ]);
+  const response = await app.request('/api/v1/shadow/dashboard-summary');
+  const text = await response.text();
+  const body = JSON.parse(text) as {
+    tenant: { tenantId: string };
+    productionReady: boolean;
+    complianceClaimed: boolean;
+    decisionSupportOnly: boolean;
+    autoEnforce: boolean;
+    rawPayloadStored: boolean;
+    rawImpactValueStored: boolean;
+    source: string;
+    auditEvidenceDigest: string;
+    dashboardDigest: string;
+    summary: {
+      version: string;
+      sourceAuditExportDigest: string;
+      sourceDashboardDigest: string;
+      tenantId: string | null;
+      overview: {
+        observedActionCount: number;
+        policyGapCount: number;
+        wouldBlockCount: number;
+      };
+      tiles: readonly { kind: string; value: number; route: string }[];
+      attentionItems: readonly { kind: string; route: string }[];
+      apiLinks: readonly { kind: string; route: string }[];
+      rawPayloadStored: boolean;
+      decisionSupportOnly: boolean;
+      autoEnforce: boolean;
+      digest: string;
+    };
+  };
+
+  equal(response.status, 200, 'Shadow dashboard summary route: valid request returns 200');
+  equal(response.headers.get('cache-control'), 'no-store', 'Shadow dashboard summary route: response is no-store');
+  equal(body.tenant.tenantId, 'tenant_shadow_dashboard', 'Shadow dashboard summary route: tenant context is included');
+  equal(body.productionReady, false, 'Shadow dashboard summary route: production readiness is not claimed');
+  equal(body.complianceClaimed, false, 'Shadow dashboard summary route: compliance is not claimed');
+  equal(body.decisionSupportOnly, true, 'Shadow dashboard summary route: route is decision support only');
+  equal(body.autoEnforce, false, 'Shadow dashboard summary route: route never auto-enforces');
+  equal(body.rawPayloadStored, false, 'Shadow dashboard summary route: raw payload boundary is explicit');
+  equal(body.rawImpactValueStored, false, 'Shadow dashboard summary route: raw impact boundary is explicit');
+  equal(body.source, 'business-risk-dashboard', 'Shadow dashboard summary route: source is explicit');
+  equal(
+    body.summary.version,
+    'attestor.consequence-dashboard-api-summary.v1',
+    'Shadow dashboard summary route: summary model is returned',
+  );
+  equal(
+    body.summary.sourceAuditExportDigest,
+    body.auditEvidenceDigest,
+    'Shadow dashboard summary route: summary is bound to audit evidence digest',
+  );
+  equal(
+    body.summary.sourceDashboardDigest,
+    body.dashboardDigest,
+    'Shadow dashboard summary route: summary is bound to dashboard digest',
+  );
+  equal(body.summary.tenantId, 'tenant_shadow_dashboard', 'Shadow dashboard summary route: summary tenant is scoped');
+  equal(body.summary.overview.observedActionCount, 3, 'Shadow dashboard summary route: action count is retained');
+  ok(body.summary.overview.policyGapCount > 0, 'Shadow dashboard summary route: policy gaps are retained');
+  equal(body.summary.overview.wouldBlockCount, 1, 'Shadow dashboard summary route: blocked count is retained');
+  ok(
+    body.summary.tiles.some((tile) =>
+      tile.kind === 'policy-gaps' &&
+      tile.route === '/api/v1/shadow/policy-candidates'
+    ),
+    'Shadow dashboard summary route: policy gap tile points to policy candidates',
+  );
+  ok(
+    body.summary.attentionItems.some((item) => item.kind === 'define-policy'),
+    'Shadow dashboard summary route: define-policy attention item is returned',
+  );
+  ok(
+    body.summary.apiLinks.some((link) =>
+      link.kind === 'business-risk-dashboard' &&
+      link.route === '/api/v1/shadow/business-risk-dashboard'
+    ),
+    'Shadow dashboard summary route: full dashboard link is returned',
+  );
+  equal(body.summary.rawPayloadStored, false, 'Shadow dashboard summary route: summary is data-minimized');
+  equal(body.summary.decisionSupportOnly, true, 'Shadow dashboard summary route: summary is decision support only');
+  equal(body.summary.autoEnforce, false, 'Shadow dashboard summary route: summary never auto-enforces');
+  ok(body.summary.digest.startsWith('sha256:'), 'Shadow dashboard summary route: summary digest is returned');
+  ok(!text.includes('raw_customer_marker_must_not_escape'), 'Shadow dashboard summary route: raw recipient is not returned');
+  ok(!text.includes('dashboard_summary_raw_evidence_must_not_escape'), 'Shadow dashboard summary route: raw evidence ids are not returned');
+  ok(!text.includes('raw_note_must_not_escape'), 'Shadow dashboard summary route: raw observed features are not returned');
+}
+
 async function testEmptyDashboardRoutesAreExplicit(): Promise<void> {
   const app = createApp([]);
   const auditResponse = await app.request('/api/v1/shadow/audit-evidence');
@@ -272,6 +380,14 @@ async function testEmptyDashboardRoutesAreExplicit(): Promise<void> {
     dashboard: {
       metrics: readonly { metric: string; value: number }[];
       impactMode: string;
+      autoEnforce: boolean;
+    };
+  };
+  const summaryResponse = await app.request('/api/v1/shadow/dashboard-summary');
+  const summaryBody = await summaryResponse.json() as {
+    summary: {
+      overview: { observedActionCount: number };
+      attentionItems: readonly { kind: string }[];
       autoEnforce: boolean;
     };
   };
@@ -290,10 +406,18 @@ async function testEmptyDashboardRoutesAreExplicit(): Promise<void> {
   );
   equal(dashboardBody.dashboard.impactMode, 'not-supplied', 'Shadow business risk route: empty route does not invent impact');
   equal(dashboardBody.dashboard.autoEnforce, false, 'Shadow business risk route: empty route never auto-enforces');
+  equal(summaryResponse.status, 200, 'Shadow dashboard summary route: empty request returns 200');
+  equal(summaryBody.summary.overview.observedActionCount, 0, 'Shadow dashboard summary route: empty action count is zero');
+  ok(
+    summaryBody.summary.attentionItems.some((item) => item.kind === 'start-shadow-mode'),
+    'Shadow dashboard summary route: empty summary points to shadow mode evidence',
+  );
+  equal(summaryBody.summary.autoEnforce, false, 'Shadow dashboard summary route: empty summary never auto-enforces');
 }
 
 await testAuditEvidenceRouteIsNoStoreAndRedacted();
 await testBusinessRiskDashboardRouteIsDecisionSupportOnly();
+await testDashboardSummaryRouteReturnsCompactBusinessView();
 await testEmptyDashboardRoutesAreExplicit();
 
 console.log(`Shadow dashboard route tests: ${passed} passed, 0 failed`);

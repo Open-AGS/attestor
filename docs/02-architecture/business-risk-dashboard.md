@@ -27,6 +27,8 @@ The dashboard summarizes:
 
 The dashboard is meant to make shadow mode legible to buyers and operators without turning proof artifacts into a data warehouse.
 
+The compact first-screen API view lives in [Dashboard API summary](dashboard-api-summary.md). Use it when a UI, CLI, or customer-facing API needs tiles, attention items, top domains, and links without returning the full dashboard model.
+
 ## Impact Boundary
 
 The dashboard does not infer money saved, customer loss prevented, records protected, or business damage avoided.

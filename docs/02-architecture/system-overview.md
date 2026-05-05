@@ -34,6 +34,8 @@ The append-only proof trail lives in [Tamper-evident history](tamper-evident-his
 
 The operator-facing risk summary lives in [Business risk dashboard](business-risk-dashboard.md). Use it when a customer needs to see action volume, review load, blocked actions, policy gaps, consequence-domain risk, downstream proof coverage, and operator-supplied impact without turning raw logs into the product.
 
+The first-screen dashboard API lives in [Dashboard API summary](dashboard-api-summary.md). Use it when a UI, CLI, or customer-facing API needs compact tiles, attention items, top domains, and links to deeper proof surfaces without exposing raw event data.
+
 The outside-reviewer handoff lives in [External review packet](external-review-packet.md). Use it when an independent reviewer needs a digest-first map of audit evidence, dashboard context, runtime/storage evidence, repository security references, checklist items, and non-claims without raw customer payloads or fake audit badges.
 
 The shared redaction boundary lives in [Data minimization and redaction policy](data-minimization-redaction-policy.md). Use it when deciding what model feedback, audit evidence, dashboard metrics, retry records, presentation bindings, replay receipts, or downstream execution receipts may expose without leaking raw customer payloads.
@@ -106,6 +108,8 @@ The audit evidence export packages the shadow-to-enforcement trail for human rev
 The tamper-evident history sits behind that packet. It records digest-only source artifacts in a linear hash chain and exports a root digest plus verification summary, without claiming external immutability, signatures, or production durability.
 
 The business risk dashboard sits on top of that export. It is decision support for operators and buyers, not a new authority surface: it summarizes risk signals, but it does not infer money saved, approve enforcement, or replace the customer authority path.
+
+The dashboard API summary sits on top of the business dashboard. It is the compact first-screen shape for product surfaces: observed action count, review/block counts, policy gaps, downstream proof coverage, top consequence domains, attention items, and links to the deeper read APIs.
 
 The external review packet sits above both. It packages source digests, runtime/storage evidence refs, repository evidence refs, reviewer checklist items, findings, and non-claims so a third-party reviewer can inspect the system without receiving raw prompts, raw tool payloads, customer records, bank data, wallet material, credentials, or downstream error bodies.
 

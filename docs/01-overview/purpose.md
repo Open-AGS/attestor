@@ -10,6 +10,7 @@ For the consequence domain vocabulary, use [Consequence taxonomy](../02-architec
 For the customer-side allow/hold binding, use [Downstream enforcement contract](../02-architecture/downstream-enforcement-contract.md).
 For the customer-side verify/assert helper, use [Verifier helper](../02-architecture/verifier-helper.md).
 For bounded policy limits, use [Policy limit model](../02-architecture/policy-limit-model.md).
+For the first-screen dashboard API summary, use [Dashboard API summary](../02-architecture/dashboard-api-summary.md).
 For the external review packet and reviewer handoff boundary, use [External review packet](../02-architecture/external-review-packet.md).
 For final target/body/replay/freshness binding at the customer edge, use [Downstream presentation binding](../02-architecture/downstream-presentation-binding.md).
 For single-use replay consumption at that edge, use [Presentation replay ledger](../02-architecture/presentation-replay-ledger.md).

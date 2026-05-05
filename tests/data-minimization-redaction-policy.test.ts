@@ -6,6 +6,7 @@ import {
   consequenceAdmissionDescriptor,
   consequenceAuditEvidenceExportDescriptor,
   consequenceBusinessRiskDashboardDescriptor,
+  consequenceDashboardApiSummaryDescriptor,
   consequenceDataMinimizationRedactionPolicyDescriptor,
   consequenceExternalReviewPacketDescriptor,
   evaluateConsequenceDataMinimizationArtifact,
@@ -42,6 +43,9 @@ function testDescriptorCoversCriticalSurfaces(): void {
   );
   const dashboard = descriptor.surfaces.find((surface) =>
     surface.surfaceKind === 'business-risk-dashboard'
+  );
+  const dashboardApiSummary = descriptor.surfaces.find((surface) =>
+    surface.surfaceKind === 'dashboard-api-summary'
   );
   const externalReview = descriptor.surfaces.find((surface) =>
     surface.surfaceKind === 'external-review-packet'
@@ -80,6 +84,11 @@ function testDescriptorCoversCriticalSurfaces(): void {
   ok(
     dashboard?.allowedUnits.includes('operator-supplied-aggregate-impact'),
     'Data minimization policy: dashboard allows only aggregate impact',
+  );
+  ok(dashboardApiSummary, 'Data minimization policy: dashboard API summary surface is present');
+  ok(
+    dashboardApiSummary?.allowedUnits.includes('artifact-reference'),
+    'Data minimization policy: dashboard API summary allows artifact references',
   );
   ok(externalReview, 'Data minimization policy: external review packet surface is present');
   ok(
@@ -146,6 +155,7 @@ function testExistingDescriptorsBindToPolicyVersion(): void {
   const admission = consequenceAdmissionDescriptor();
   const auditExport = consequenceAuditEvidenceExportDescriptor();
   const dashboard = consequenceBusinessRiskDashboardDescriptor();
+  const dashboardApiSummary = consequenceDashboardApiSummaryDescriptor();
   const externalReview = consequenceExternalReviewPacketDescriptor();
 
   equal(
@@ -172,12 +182,18 @@ function testExistingDescriptorsBindToPolicyVersion(): void {
     'Data minimization policy: dashboard descriptor binds policy version',
   );
   equal(
+    dashboardApiSummary.dataMinimizationPolicyVersion,
+    CONSEQUENCE_DATA_MINIMIZATION_REDACTION_POLICY_VERSION,
+    'Data minimization policy: dashboard API summary descriptor binds policy version',
+  );
+  equal(
     externalReview.dataMinimizationPolicyVersion,
     CONSEQUENCE_DATA_MINIMIZATION_REDACTION_POLICY_VERSION,
     'Data minimization policy: external review packet descriptor binds policy version',
   );
   equal(auditExport.rawPayloadStored, false, 'Data minimization policy: audit export remains raw-payload-free');
   equal(dashboard.rawPayloadStored, false, 'Data minimization policy: dashboard remains raw-payload-free');
+  equal(dashboardApiSummary.rawPayloadStored, false, 'Data minimization policy: dashboard API summary remains raw-payload-free');
   equal(externalReview.rawPayloadStored, false, 'Data minimization policy: external review packet remains raw-payload-free');
 }
 
@@ -198,6 +214,11 @@ function testDocsAndScriptsExposePolicy(): void {
     readme,
     'raw prompts, raw tool payloads, raw customer identifiers',
     'Data minimization policy: README names forbidden raw classes',
+  );
+  includes(
+    doc,
+    'dashboard-api-summary',
+    'Data minimization policy: doc lists dashboard API summary surface',
   );
   includes(
     doc,

@@ -60,6 +60,11 @@ import {
   CONSEQUENCE_BUSINESS_RISK_SIGNALS,
 } from './business-risk-dashboard.js';
 import {
+  CONSEQUENCE_DASHBOARD_API_SUMMARY_ATTENTION_KINDS,
+  CONSEQUENCE_DASHBOARD_API_SUMMARY_LINK_KINDS,
+  CONSEQUENCE_DASHBOARD_API_SUMMARY_TILE_KINDS,
+} from './dashboard-api-summary.js';
+import {
   CONSEQUENCE_EXTERNAL_REVIEW_EVIDENCE_KINDS,
   CONSEQUENCE_EXTERNAL_REVIEW_EVIDENCE_STATUSES,
   CONSEQUENCE_EXTERNAL_REVIEW_FINDING_KINDS,
@@ -467,6 +472,9 @@ export interface ConsequenceAdmissionDescriptor {
     typeof CONSEQUENCE_TAMPER_EVIDENT_HISTORY_VERIFICATION_FAILURE_REASONS;
   readonly businessRiskDashboardWidgets: typeof CONSEQUENCE_BUSINESS_RISK_DASHBOARD_WIDGETS;
   readonly businessRiskSignals: typeof CONSEQUENCE_BUSINESS_RISK_SIGNALS;
+  readonly dashboardApiSummaryTileKinds: typeof CONSEQUENCE_DASHBOARD_API_SUMMARY_TILE_KINDS;
+  readonly dashboardApiSummaryAttentionKinds: typeof CONSEQUENCE_DASHBOARD_API_SUMMARY_ATTENTION_KINDS;
+  readonly dashboardApiSummaryLinkKinds: typeof CONSEQUENCE_DASHBOARD_API_SUMMARY_LINK_KINDS;
   readonly externalReviewFocusAreas: typeof CONSEQUENCE_EXTERNAL_REVIEW_FOCUS_AREAS;
   readonly externalReviewEvidenceKinds: typeof CONSEQUENCE_EXTERNAL_REVIEW_EVIDENCE_KINDS;
   readonly externalReviewEvidenceStatuses: typeof CONSEQUENCE_EXTERNAL_REVIEW_EVIDENCE_STATUSES;
@@ -2026,6 +2034,9 @@ ConsequenceAdmissionDescriptor {
       CONSEQUENCE_TAMPER_EVIDENT_HISTORY_VERIFICATION_FAILURE_REASONS,
     businessRiskDashboardWidgets: CONSEQUENCE_BUSINESS_RISK_DASHBOARD_WIDGETS,
     businessRiskSignals: CONSEQUENCE_BUSINESS_RISK_SIGNALS,
+    dashboardApiSummaryTileKinds: CONSEQUENCE_DASHBOARD_API_SUMMARY_TILE_KINDS,
+    dashboardApiSummaryAttentionKinds: CONSEQUENCE_DASHBOARD_API_SUMMARY_ATTENTION_KINDS,
+    dashboardApiSummaryLinkKinds: CONSEQUENCE_DASHBOARD_API_SUMMARY_LINK_KINDS,
     externalReviewFocusAreas: CONSEQUENCE_EXTERNAL_REVIEW_FOCUS_AREAS,
     externalReviewEvidenceKinds: CONSEQUENCE_EXTERNAL_REVIEW_EVIDENCE_KINDS,
     externalReviewEvidenceStatuses: CONSEQUENCE_EXTERNAL_REVIEW_EVIDENCE_STATUSES,
@@ -2054,6 +2065,7 @@ export * from './adapter-framework.js';
 export * from './audit-evidence-export.js';
 export * from './tamper-evident-history.js';
 export * from './business-risk-dashboard.js';
+export * from './dashboard-api-summary.js';
 export * from './external-review-packet.js';
 export * from './data-minimization-redaction-policy.js';
 export * from './downstream-enforcement-contract.js';

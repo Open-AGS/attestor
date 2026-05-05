@@ -4,6 +4,7 @@ import {
   createActionRiskInventory,
   createConsequenceAuditEvidenceExport,
   createConsequenceBusinessRiskDashboard,
+  createConsequenceDashboardApiSummary,
   createShadowActivationReadinessGate,
   createShadowCustomerActivationHandoff,
   createShadowCustomerActivationReceipt,
@@ -1111,6 +1112,50 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
       source: 'audit-evidence',
       auditEvidenceDigest: auditEvidence.digest,
       dashboard,
+    });
+  });
+
+  app.get('/api/v1/shadow/dashboard-summary', (c) => {
+    const result = safeShadowSummary(c, deps);
+    if (result instanceof Response) return result;
+    const policyDiscovery = createShadowPolicyDiscoveryCandidates({
+      report: result.surface.latestSimulation,
+      generatedAt: result.surface.generatedAt,
+    });
+    const auditEvidence = createConsequenceAuditEvidenceExport({
+      events: result.events,
+      summarySurface: result.surface,
+      simulations: simulationsForAuditEvidence({
+        simulations: result.simulations,
+        latestSimulation: result.surface.latestSimulation,
+      }),
+      policyDiscovery,
+      generatedAt: result.surface.generatedAt,
+      tenantId: result.tenant.tenantId,
+    });
+    const dashboard = createConsequenceBusinessRiskDashboard({
+      auditExport: auditEvidence,
+      generatedAt: result.surface.generatedAt,
+    });
+    const summary = createConsequenceDashboardApiSummary({
+      auditEvidence,
+      dashboard,
+      generatedAt: result.surface.generatedAt,
+    });
+
+    return c.json({
+      tenant: tenantSummary(result.tenant),
+      storageMode: result.surface.storageMode,
+      productionReady: false,
+      complianceClaimed: false,
+      decisionSupportOnly: true,
+      autoEnforce: false,
+      rawPayloadStored: false,
+      rawImpactValueStored: false,
+      source: 'business-risk-dashboard',
+      auditEvidenceDigest: auditEvidence.digest,
+      dashboardDigest: dashboard.digest,
+      summary,
     });
   });
 

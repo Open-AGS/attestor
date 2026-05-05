@@ -15,6 +15,7 @@ The contract covers the current evaluation API shape for the first integration p
 - `GET /api/v1/shadow/policy-candidates`
 - `GET /api/v1/shadow/audit-evidence`
 - `GET /api/v1/shadow/business-risk-dashboard`
+- `GET /api/v1/shadow/dashboard-summary`
 
 It is intentionally not a full hosted account, billing, finance-pipeline, or crypto-hosted-route catalog.
 

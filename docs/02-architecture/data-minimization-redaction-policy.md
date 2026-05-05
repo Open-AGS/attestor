@@ -1,6 +1,6 @@
 # Data Minimization And Redaction Policy
 
-The data minimization and redaction policy is the shared privacy boundary for model feedback, proof, audit, tamper-history, dashboard, external review, retry, and downstream receipt surfaces.
+The data minimization and redaction policy is the shared privacy boundary for model feedback, proof, audit, tamper-history, dashboard, dashboard summaries, external review, retry, and downstream receipt surfaces.
 
 It answers a narrow question:
 
@@ -27,6 +27,7 @@ reviewers receive digest-first packets
 external reviewers receive evidence maps and non-claims
 tamper histories receive source digests and root digests
 dashboards receive counts and aggregate signals
+dashboard summaries receive tiles, attention items, and API links
 downstream receipts receive result digests
 ```
 
@@ -45,6 +46,7 @@ The versioned package descriptor covers these surfaces:
 - `audit-evidence-export`
 - `tamper-evident-history`
 - `business-risk-dashboard`
+- `dashboard-api-summary`
 - `external-review-packet`
 - `downstream-presentation-binding`
 - `presentation-replay-ledger`
@@ -138,6 +140,8 @@ The audit evidence export and business risk dashboard sit on top of this policy.
 The audit export is digest-first review evidence. It can show what was observed, where policy gaps exist, what simulations or promotion packets were produced, and whether downstream proof exists.
 
 The dashboard is decision support. It can show action volume, review load, blocked actions, policy gaps, consequence-domain risk, downstream proof coverage, and operator-supplied aggregate impact.
+
+The dashboard API summary is the compact first-screen shape over that dashboard. It can show tiles, attention items, top domains, and links to deeper API surfaces.
 
 The external review packet is a reviewer handoff. It can show source evidence digests, repository evidence references, runtime/storage evidence references, checklist items, findings, and non-claims.
 

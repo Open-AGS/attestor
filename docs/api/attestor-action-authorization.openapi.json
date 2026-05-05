@@ -252,6 +252,36 @@
           }
         }
       }
+    },
+    "/api/v1/shadow/dashboard-summary": {
+      "get": {
+        "tags": [
+          "Shadow"
+        ],
+        "operationId": "getDashboardSummary",
+        "summary": "Read the compact first-screen dashboard API summary.",
+        "description": "Returns a data-minimized decision-support summary over audit evidence and the business-risk dashboard. It does not expose raw payloads and does not authorize consequences.",
+        "responses": {
+          "200": {
+            "description": "Dashboard API summary model for the current tenant.",
+            "headers": {
+              "Cache-Control": {
+                "$ref": "#/components/headers/NoStore"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardApiSummaryResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "$ref": "#/components/responses/FailClosedProblem"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -731,6 +761,54 @@
                 "const": false
               },
               "dashboard": {
+                "type": "object"
+              }
+            }
+          }
+        ]
+      },
+      "DashboardApiSummaryResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ShadowBoundary"
+          },
+          {
+            "type": "object",
+            "required": [
+              "tenant",
+              "decisionSupportOnly",
+              "autoEnforce",
+              "rawImpactValueStored",
+              "complianceClaimed",
+              "auditEvidenceDigest",
+              "dashboardDigest",
+              "summary"
+            ],
+            "properties": {
+              "tenant": {
+                "$ref": "#/components/schemas/TenantSummary"
+              },
+              "decisionSupportOnly": {
+                "const": true
+              },
+              "autoEnforce": {
+                "const": false
+              },
+              "rawImpactValueStored": {
+                "const": false
+              },
+              "complianceClaimed": {
+                "const": false
+              },
+              "auditEvidenceDigest": {
+                "type": "string",
+                "pattern": "^sha256:"
+              },
+              "dashboardDigest": {
+                "type": "string",
+                "pattern": "^sha256:"
+              },
+              "summary": {
                 "type": "object"
               }
             }

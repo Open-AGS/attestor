@@ -356,6 +356,7 @@ The default redaction rule is explicit in the [data minimization and redaction p
 The current evaluation baseline already includes:
 
 - protected-route guards that disable anonymous tenant fallback in production-like runtimes
+- tenant-boundary route guards for shadow, policy, simulation, and activation receipt records
 - connector proof paths that sanitize connection URLs before exposing proof or probe material
 - PostgreSQL proof connector limits including read-only transactions, statement timeouts, row limits, and schema allowlists when configured
 - CI coverage for evaluation smoke, CodeQL, dependency review, high/critical npm audit gates, and supply-chain baseline checks
@@ -423,3 +424,4 @@ Start here:
 - [Production readiness](docs/08-deployment/production-readiness.md) - deployment and maturity boundary
 - [Artifact attestation plan](docs/08-deployment/artifact-attestation-plan.md) - release artifact attestation scope
 - [Security Policy](SECURITY.md) - disclosure path, CI trust boundary, and evaluation security status
+- [Tenant isolation boundary](docs/02-architecture/tenant-isolation-boundary.md) - route-side tenant-bound record checks

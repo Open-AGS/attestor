@@ -139,12 +139,46 @@ function tenantSummary(tenant: TenantContext): {
   });
 }
 
+type TenantBoundRecord = {
+  readonly tenantId: string | null;
+};
+
+function assertTenantBoundRecord<T extends TenantBoundRecord>(
+  tenant: TenantContext,
+  record: T,
+  resource: string,
+  options?: { readonly allowNullTenantId?: boolean },
+): T {
+  if (record.tenantId === null && options?.allowNullTenantId === true) return record;
+  if (record.tenantId !== tenant.tenantId) {
+    throw new Error(
+      `Shadow tenant boundary violation: ${resource} record does not belong to the authenticated tenant.`,
+    );
+  }
+  return record;
+}
+
+function assertTenantBoundRecords<T extends TenantBoundRecord>(
+  tenant: TenantContext,
+  records: readonly T[],
+  resource: string,
+  options?: { readonly allowNullTenantId?: boolean },
+): readonly T[] {
+  for (const record of records) assertTenantBoundRecord(tenant, record, resource, options);
+  return records;
+}
+
 function safeShadowSummary(c: Context, deps: ShadowRouteDeps) {
   c.header('cache-control', 'no-store');
 
   try {
     const tenant = deps.currentTenant(c);
-    const events = deps.listShadowEvents({ tenant });
+    const events = assertTenantBoundRecords(
+      tenant,
+      deps.listShadowEvents({ tenant }),
+      'shadow admission event',
+      { allowNullTenantId: true },
+    );
     const simulations = deps.listShadowSimulations?.({ tenant }) ?? [];
     const surface = createShadowSummarySurface({
       events,
@@ -1096,7 +1130,12 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
 
     try {
       const tenant = deps.currentTenant(c);
-      const events = deps.listShadowEvents({ tenant });
+      const events = assertTenantBoundRecords(
+        tenant,
+        deps.listShadowEvents({ tenant }),
+        'shadow admission event',
+        { allowNullTenantId: true },
+      );
       const report = createShadowPolicySimulationReport({
         events,
         proposedMode: body.proposedMode,
@@ -1107,6 +1146,11 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
         tenant,
         report,
       });
+      const persistedRecord = assertTenantBoundRecord(
+        tenant,
+        persisted.record,
+        'shadow simulation',
+      );
       return c.json({
         tenant: tenantSummary(tenant),
         storageMode: 'file-backed-evaluation',
@@ -1115,7 +1159,7 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
         report,
         persisted: {
           kind: persisted.kind,
-          record: persisted.record,
+          record: persistedRecord,
         },
       });
     } catch (error) {
@@ -1158,7 +1202,11 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
     }
     try {
       const tenant = deps.currentTenant(c);
-      const records = deps.listShadowPolicySimulationReports({ tenant, proposedMode });
+      const records = assertTenantBoundRecords(
+        tenant,
+        deps.listShadowPolicySimulationReports({ tenant, proposedMode }),
+        'shadow simulation',
+      );
       return c.json({
         tenant: tenantSummary(tenant),
         storageMode: 'file-backed-evaluation',
@@ -1208,12 +1256,13 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
           reasonCodes: ['shadow-simulation-not-found'],
         });
       }
+      const tenantRecord = assertTenantBoundRecord(tenant, record, 'shadow simulation');
       return c.json({
         tenant: tenantSummary(tenant),
         storageMode: 'file-backed-evaluation',
         rawPayloadStored: false,
         productionReady: false,
-        record,
+        record: tenantRecord,
       });
     } catch (error) {
       const detail =
@@ -1265,6 +1314,11 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
         tenant: result.tenant,
         bundle,
       });
+      const records = assertTenantBoundRecords(
+        result.tenant,
+        persisted.records,
+        'shadow policy candidate',
+      );
       return c.json({
         tenant: tenantSummary(result.tenant),
         version: bundle.version,
@@ -1274,7 +1328,7 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
         autoEnforce: false,
         rawPayloadStored: false,
         persisted: {
-          records: persisted.records,
+          records,
           createdCount: persisted.createdCount,
           updatedCount: persisted.updatedCount,
           unchangedCount: persisted.unchangedCount,
@@ -1319,7 +1373,11 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
     }
     try {
       const tenant = deps.currentTenant(c);
-      const records = deps.listShadowPolicyCandidateRecords({ tenant, status });
+      const records = assertTenantBoundRecords(
+        tenant,
+        deps.listShadowPolicyCandidateRecords({ tenant, status }),
+        'shadow policy candidate',
+      );
       return c.json({
         tenant: tenantSummary(tenant),
         storageMode: 'file-backed-evaluation',
@@ -1371,10 +1429,14 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
 
     try {
       const tenant = deps.currentTenant(c);
-      const records = deps.listShadowPolicyCandidateRecords({
+      const records = assertTenantBoundRecords(
         tenant,
-        status: sourceStatus,
-      });
+        deps.listShadowPolicyCandidateRecords({
+          tenant,
+          status: sourceStatus,
+        }),
+        'shadow policy candidate',
+      );
       const draft = createShadowPolicyPromotionDraft({
         tenantId: tenant.tenantId,
         records,
@@ -1431,10 +1493,14 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
 
     try {
       const tenant = deps.currentTenant(c);
-      const records = deps.listShadowPolicyCandidateRecords({
+      const records = assertTenantBoundRecords(
         tenant,
-        status: sourceStatus,
-      });
+        deps.listShadowPolicyCandidateRecords({
+          tenant,
+          status: sourceStatus,
+        }),
+        'shadow policy candidate',
+      );
       const draft = createShadowPolicyPromotionDraft({
         tenantId: tenant.tenantId,
         records,
@@ -1495,10 +1561,14 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
 
     try {
       const tenant = deps.currentTenant(c);
-      const records = deps.listShadowPolicyCandidateRecords({
+      const records = assertTenantBoundRecords(
         tenant,
-        status: sourceStatus,
-      });
+        deps.listShadowPolicyCandidateRecords({
+          tenant,
+          status: sourceStatus,
+        }),
+        'shadow policy candidate',
+      );
       const draft = createShadowPolicyPromotionDraft({
         tenantId: tenant.tenantId,
         records,
@@ -1511,7 +1581,12 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
       });
       const simulation = createShadowPolicyPromotionSimulation({
         packet,
-        events: deps.listShadowEvents({ tenant }),
+        events: assertTenantBoundRecords(
+          tenant,
+          deps.listShadowEvents({ tenant }),
+          'shadow admission event',
+          { allowNullTenantId: true },
+        ),
         generatedAt: deps.now?.() ?? null,
       });
       return c.json({
@@ -1565,10 +1640,14 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
 
     try {
       const tenant = deps.currentTenant(c);
-      const records = deps.listShadowPolicyCandidateRecords({
+      const records = assertTenantBoundRecords(
         tenant,
-        status: sourceStatus,
-      });
+        deps.listShadowPolicyCandidateRecords({
+          tenant,
+          status: sourceStatus,
+        }),
+        'shadow policy candidate',
+      );
       const draft = createShadowPolicyPromotionDraft({
         tenantId: tenant.tenantId,
         records,
@@ -1581,7 +1660,12 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
       });
       const simulation = createShadowPolicyPromotionSimulation({
         packet,
-        events: deps.listShadowEvents({ tenant }),
+        events: assertTenantBoundRecords(
+          tenant,
+          deps.listShadowEvents({ tenant }),
+          'shadow admission event',
+          { allowNullTenantId: true },
+        ),
         generatedAt: deps.now?.() ?? null,
       });
       const signingPayload = createShadowPolicyBundleSigningPayload(simulation);
@@ -1645,10 +1729,14 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
 
     try {
       const tenant = deps.currentTenant(c);
-      const records = deps.listShadowPolicyCandidateRecords({
+      const records = assertTenantBoundRecords(
         tenant,
-        status: sourceStatus,
-      });
+        deps.listShadowPolicyCandidateRecords({
+          tenant,
+          status: sourceStatus,
+        }),
+        'shadow policy candidate',
+      );
       const draft = createShadowPolicyPromotionDraft({
         tenantId: tenant.tenantId,
         records,
@@ -1661,7 +1749,12 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
       });
       const simulation = createShadowPolicyPromotionSimulation({
         packet,
-        events: deps.listShadowEvents({ tenant }),
+        events: assertTenantBoundRecords(
+          tenant,
+          deps.listShadowEvents({ tenant }),
+          'shadow admission event',
+          { allowNullTenantId: true },
+        ),
         generatedAt: deps.now?.() ?? null,
       });
       const binding = createShadowDownstreamVerificationBinding({
@@ -1721,10 +1814,14 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
 
     try {
       const tenant = deps.currentTenant(c);
-      const records = deps.listShadowPolicyCandidateRecords({
+      const records = assertTenantBoundRecords(
         tenant,
-        status: sourceStatus,
-      });
+        deps.listShadowPolicyCandidateRecords({
+          tenant,
+          status: sourceStatus,
+        }),
+        'shadow policy candidate',
+      );
       const draft = createShadowPolicyPromotionDraft({
         tenantId: tenant.tenantId,
         records,
@@ -1737,7 +1834,12 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
       });
       const simulation = createShadowPolicyPromotionSimulation({
         packet,
-        events: deps.listShadowEvents({ tenant }),
+        events: assertTenantBoundRecords(
+          tenant,
+          deps.listShadowEvents({ tenant }),
+          'shadow admission event',
+          { allowNullTenantId: true },
+        ),
         generatedAt: deps.now?.() ?? null,
       });
       const signingPayload = createShadowPolicyBundleSigningPayload(simulation);
@@ -1820,10 +1922,14 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
 
     try {
       const tenant = deps.currentTenant(c);
-      const records = deps.listShadowPolicyCandidateRecords({
+      const records = assertTenantBoundRecords(
         tenant,
-        status: sourceStatus,
-      });
+        deps.listShadowPolicyCandidateRecords({
+          tenant,
+          status: sourceStatus,
+        }),
+        'shadow policy candidate',
+      );
       const draft = createShadowPolicyPromotionDraft({
         tenantId: tenant.tenantId,
         records,
@@ -1836,7 +1942,12 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
       });
       const simulation = createShadowPolicyPromotionSimulation({
         packet,
-        events: deps.listShadowEvents({ tenant }),
+        events: assertTenantBoundRecords(
+          tenant,
+          deps.listShadowEvents({ tenant }),
+          'shadow admission event',
+          { allowNullTenantId: true },
+        ),
         generatedAt: deps.now?.() ?? null,
       });
       const signingPayload = createShadowPolicyBundleSigningPayload(simulation);
@@ -1928,10 +2039,14 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
 
     try {
       const tenant = deps.currentTenant(c);
-      const records = deps.listShadowPolicyCandidateRecords({
+      const records = assertTenantBoundRecords(
         tenant,
-        status: sourceStatus,
-      });
+        deps.listShadowPolicyCandidateRecords({
+          tenant,
+          status: sourceStatus,
+        }),
+        'shadow policy candidate',
+      );
       const draft = createShadowPolicyPromotionDraft({
         tenantId: tenant.tenantId,
         records,
@@ -1944,7 +2059,12 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
       });
       const simulation = createShadowPolicyPromotionSimulation({
         packet,
-        events: deps.listShadowEvents({ tenant }),
+        events: assertTenantBoundRecords(
+          tenant,
+          deps.listShadowEvents({ tenant }),
+          'shadow admission event',
+          { allowNullTenantId: true },
+        ),
         generatedAt: deps.now?.() ?? null,
       });
       const signingPayload = createShadowPolicyBundleSigningPayload(simulation);
@@ -2056,6 +2176,9 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
         tenant,
         receipt,
       }) ?? null;
+      const persistedRecord = persisted
+        ? assertTenantBoundRecord(tenant, persisted.record, 'shadow customer activation receipt')
+        : null;
       return c.json({
         tenant: tenantSummary(tenant),
         storageMode: persisted ? 'file-backed-evaluation' : 'stateless-receipt',
@@ -2067,7 +2190,7 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
         persisted: persisted
           ? {
             kind: persisted.kind,
-            record: persisted.record,
+            record: persistedRecord,
           }
           : null,
       });
@@ -2130,12 +2253,16 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
 
     try {
       const tenant = deps.currentTenant(c);
-      const records = deps.listShadowCustomerActivationReceiptRecords({
+      const records = assertTenantBoundRecords(
         tenant,
-        activationStatus,
-        receiptReady,
-        sourceHandoffDigest,
-      });
+        deps.listShadowCustomerActivationReceiptRecords({
+          tenant,
+          activationStatus,
+          receiptReady,
+          sourceHandoffDigest,
+        }),
+        'shadow customer activation receipt',
+      );
       return c.json({
         tenant: tenantSummary(tenant),
         storageMode: 'file-backed-evaluation',
@@ -2150,7 +2277,9 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
           ? error.message
           : 'Customer activation receipt history could not be listed.';
       const status: ShadowProblemStatus =
-        detail.includes('corruption detected') ? 503 : 400;
+        detail.includes('corruption detected') || detail.includes('tenant boundary violation')
+          ? 503
+          : 400;
       return problem(c, {
         type: 'https://attestor.dev/problems/customer-activation-receipt-list-failed',
         title: 'Customer activation receipt list failed',
@@ -2188,12 +2317,17 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
           reasonCodes: ['customer-activation-receipt-not-found'],
         });
       }
+      const tenantRecord = assertTenantBoundRecord(
+        tenant,
+        record,
+        'shadow customer activation receipt',
+      );
       return c.json({
         tenant: tenantSummary(tenant),
         storageMode: 'file-backed-evaluation',
         productionReady: false,
         rawPayloadStored: false,
-        record,
+        record: tenantRecord,
       });
     } catch (error) {
       const detail =
@@ -2226,13 +2360,17 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
 
     try {
       const tenant = deps.currentTenant(c);
-      const record = deps.transitionShadowPolicyCandidateStatus({
+      const record = assertTenantBoundRecord(
         tenant,
-        candidateId: c.req.param('candidateId'),
-        status: body.status,
-        actorRef: body.actorRef,
-        reason: body.reason,
-      });
+        deps.transitionShadowPolicyCandidateStatus({
+          tenant,
+          candidateId: c.req.param('candidateId'),
+          status: body.status,
+          actorRef: body.actorRef,
+          reason: body.reason,
+        }),
+        'shadow policy candidate',
+      );
       return c.json({
         tenant: tenantSummary(tenant),
         approvalRequired: true,

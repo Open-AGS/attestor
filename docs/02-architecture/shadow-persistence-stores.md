@@ -41,6 +41,8 @@ They are not:
 
 Production deployments should move this state into the shared authority/control plane with stronger durability, backup, retention, and operator controls.
 
+The runtime-level inventory for that move is [Production storage path](production-storage-path.md). In `production-shared`, the storage path gate treats these file-backed evaluation stores as blockers until shadow events, simulations, policy candidates, and activation receipts have shared authority/control-plane storage behind them.
+
 ## Shadow Admission Events
 
 The admission event store persists records produced from the generic admission route.

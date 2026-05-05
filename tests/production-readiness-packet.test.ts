@@ -7,6 +7,10 @@ import { join, resolve } from 'node:path';
 import EmbeddedPostgres from 'embedded-postgres';
 import { RedisMemoryServer } from 'redis-memory-server';
 import { renderProductionReadinessPacket } from '../scripts/render-production-readiness-packet.ts';
+import type {
+  ProductionStorageMode,
+  ProductionStoragePathComponentId,
+} from '../src/service/bootstrap/production-storage-path.js';
 
 let passed = 0;
 
@@ -44,6 +48,22 @@ function reservePort(): Promise<number> {
       server.close((error) => error ? reject(error) : resolvePort(address.port));
     });
   });
+}
+
+function allSharedProductionStorageComponentModes(): Partial<
+Readonly<Record<ProductionStoragePathComponentId, ProductionStorageMode>>
+> {
+  return {
+    'shadow-admission-events': 'shared-durable',
+    'shadow-policy-simulations': 'shared-durable',
+    'shadow-policy-candidates': 'shared-durable',
+    'shadow-activation-receipts': 'shared-durable',
+    'retry-attempt-ledger': 'shared-durable',
+    'presentation-replay-ledger': 'shared-durable',
+    'agent-loop-abuse-guard': 'shared-durable',
+    'audit-evidence-export': 'shared-durable',
+    'business-risk-dashboard': 'shared-durable',
+  };
 }
 
 async function main(): Promise<void> {
@@ -237,6 +257,22 @@ async function main(): Promise<void> {
 
     const now = new Date();
     utimesSync(observabilityBenchmarkPath, now, now);
+    const storageBlocked = await renderProductionReadinessPacket({
+      observabilityProvider: 'grafana-alloy',
+      observabilitySecretMode: 'external-secret',
+      observabilityBenchmarkPath,
+      prometheusUrl: `http://127.0.0.1:${prometheusPort}`,
+      alertmanagerUrl: `http://127.0.0.1:${alertmanagerPort}`,
+      haProvider: 'generic',
+      haBenchmarkPath,
+      observabilityBenchmarkMaxAgeHours: 24,
+      haBenchmarkMaxAgeHours: 72,
+      outputDir: resolve(tempDir, 'storage-blocked'),
+    });
+    ok(storageBlocked.readiness.state === 'blocked-on-environment-inputs', 'Production readiness packet: production-shared blocks on evaluation consequence storage');
+    ok(storageBlocked.runtimeAuthority.productionStoragePath.state === 'production-shared-blocked', 'Production readiness packet: storage path state is included');
+    ok(storageBlocked.readiness.missingInputs.some((item) => item.includes('shared consequence-admission storage path')), 'Production readiness packet: missing shared consequence storage is surfaced');
+
     const ready = await renderProductionReadinessPacket({
       observabilityProvider: 'grafana-alloy',
       observabilitySecretMode: 'external-secret',
@@ -248,6 +284,7 @@ async function main(): Promise<void> {
       observabilityBenchmarkMaxAgeHours: 24,
       haBenchmarkMaxAgeHours: 72,
       outputDir: resolve(tempDir, 'ready'),
+      productionStorageComponentModes: allSharedProductionStorageComponentModes(),
     });
     ok(ready.readiness.state === 'ready-for-environment-promotion', 'Production readiness packet: ready state is reached with complete fresh inputs');
     ok(ready.readiness.promotionGatePassed === true, 'Production readiness packet: both promotion gates pass');
@@ -256,6 +293,7 @@ async function main(): Promise<void> {
     ok(ready.observability.provider === 'grafana-alloy', 'Production readiness packet: Grafana Alloy can drive the observability side of the final handoff');
     ok(ready.runtimeAuthority.profile === 'production-shared', 'Production readiness packet: runtime profile truth is captured');
     ok(ready.runtimeAuthority.releaseAuthorityPgConfigured === true, 'Production readiness packet: release-authority PG is captured');
+    ok(ready.runtimeAuthority.productionStoragePath.state === 'production-shared-ready', 'Production readiness packet: shared consequence storage clears the storage gate');
     ok(readFileSync(resolve(tempDir, 'ready', 'README.md'), 'utf8').includes('Runtime authority'), 'Production readiness packet: runtime authority section is written');
 
     console.log(`\nProduction readiness packet tests: ${passed} passed, 0 failed`);

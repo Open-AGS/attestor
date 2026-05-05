@@ -95,6 +95,7 @@
     "test:production-shared-multi-instance-recovery": "tsx tests/production-shared-multi-instance-recovery.test.ts",
     "test:production-runtime-profile": "tsx tests/production-runtime-profile.test.ts",
     "test:production-runtime-restart-recovery": "tsx tests/production-runtime-restart-recovery.test.ts",
+    "test:production-storage-path": "tsx tests/production-storage-path.test.ts",
     "test:consequence-admission-operating-model": "tsx tests/consequence-admission-operating-model.test.ts",
     "test:consequence-admission-contract": "tsx tests/consequence-admission-contract.test.ts",
     "test:consequence-admission-finance": "tsx tests/consequence-admission-finance.test.ts",

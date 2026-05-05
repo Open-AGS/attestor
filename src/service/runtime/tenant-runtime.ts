@@ -144,8 +144,10 @@ export async function shutdownTenantRuntimeBackends(): Promise<void> {
     shutdownTenantRateLimiter(),
     worker?.close(),
     queue?.close(),
-    redisShutdown?.(),
   ]);
+  if (redisShutdown) {
+    await Promise.allSettled([redisShutdown()]);
+  }
 }
 
 try {

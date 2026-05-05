@@ -68,6 +68,32 @@ The runtime diagnostics are visible at:
 
 Both responses include `runtimeProfile` and `releaseRuntime`. Treat `releaseRuntime.durability.ready=false` or `/api/v1/ready` returning `503` as a stop condition.
 
+## Production Storage Path Gate
+
+`production-shared` also requires the consequence-admission storage path to be truthful. The shared release authority and control plane are not enough if the AI action authorization history still depends on local evaluation stores.
+
+`GET /api/v1/health` and `GET /api/v1/ready` include:
+
+```text
+productionStoragePath
+checks.productionStoragePath
+```
+
+For `local-dev` and `single-node-durable`, file-backed evaluation stores can be accepted for evaluation. For `production-shared`, `/api/v1/ready` must report `checks.productionStoragePath=true`. If it is false, inspect `productionStoragePath.blockers` before promoting the environment.
+
+Current `production-shared` blockers can include:
+
+- shadow admission event history still file-backed
+- shadow simulation reports still file-backed
+- policy candidate lifecycle still file-backed
+- activation receipt history still file-backed
+- retry attempt ledger still an in-memory reference implementation
+- presentation replay ledger still an in-memory reference implementation
+- agent-loop abuse guard counters still in-memory
+- audit/dashboard source history still derived from evaluation stores
+
+This gate prevents a green HA or observability packet from being read as proof that the consequence-admission storage path is production shared. See [Production storage path](../02-architecture/production-storage-path.md).
+
 ### Runtime Authority State Knobs
 
 For `single-node-durable`, point the release-authority stores at durable disk paths that survive process restart:

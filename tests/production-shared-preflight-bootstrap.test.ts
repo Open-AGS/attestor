@@ -63,6 +63,7 @@ async function run(): Promise<void> {
     const healthBody = await health.json() as {
       releaseRuntime: { durability: { ready: boolean } };
       sharedAuthorityRuntime: { ready: boolean };
+      productionStoragePath: { state: string; readyForSelectedProfile: boolean };
     };
     equal(
       healthBody.releaseRuntime.durability.ready,
@@ -74,6 +75,11 @@ async function run(): Promise<void> {
       false,
       'Production-shared preflight: health exposes shared authority not-ready state',
     );
+    equal(
+      healthBody.productionStoragePath.readyForSelectedProfile,
+      false,
+      'Production-shared preflight: health exposes production storage path not-ready state',
+    );
 
     const ready = await app.request('/api/v1/ready');
     equal(ready.status, 503, 'Production-shared preflight: readiness fails closed');
@@ -81,6 +87,7 @@ async function run(): Promise<void> {
       ready: boolean;
       checks: Record<string, boolean>;
       sharedAuthorityRuntime: { checks: Record<string, boolean> };
+      productionStoragePath: { blockers: readonly { code: string }[] };
     };
     equal(readyBody.ready, false, 'Production-shared preflight: ready=false is explicit');
     equal(
@@ -94,9 +101,20 @@ async function run(): Promise<void> {
       'Production-shared preflight: shared authority readiness check is false',
     );
     equal(
+      readyBody.checks.productionStoragePath,
+      false,
+      'Production-shared preflight: production storage path readiness check is false',
+    );
+    equal(
       readyBody.sharedAuthorityRuntime.checks.requestPathUsesSharedStores,
       false,
       'Production-shared preflight: shared authority readiness carries request-path truth',
+    );
+    ok(
+      readyBody.productionStoragePath.blockers.some(
+        (blocker) => blocker.code === 'evaluation-store-not-shared',
+      ),
+      'Production-shared preflight: production storage path names evaluation store blockers',
     );
 
     const blocked = await app.request('/api/v1/domains');

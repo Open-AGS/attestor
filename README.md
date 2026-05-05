@@ -420,6 +420,7 @@ Start here:
 - [Downstream presentation binding](docs/02-architecture/downstream-presentation-binding.md) - target, body, replay, nonce, freshness, proof, and constraint binding
 - [Presentation replay ledger](docs/02-architecture/presentation-replay-ledger.md) - single-use replay consumption with redacted receipts
 - [Downstream execution receipt](docs/02-architecture/downstream-execution-receipt.md) - redacted result receipt after replay consumption
+- [Production storage path](docs/02-architecture/production-storage-path.md) - storage truth gate for file-backed evaluation stores before production-shared
 - [Proof console buildout](docs/02-architecture/proof-console-buildout.md) - local proof-surface tracker
 - [Production runtime hardening buildout](docs/02-architecture/production-runtime-hardening-buildout.md) - runtime profile and fail-closed hardening tracker
 - [Production shared authority plane buildout](docs/02-architecture/production-shared-authority-plane-buildout.md) - shared production authority-plane tracker

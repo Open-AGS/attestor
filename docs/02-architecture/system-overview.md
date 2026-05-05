@@ -40,6 +40,8 @@ The safe-retry accounting shape lives in [Retry attempt ledger](retry-attempt-le
 
 The automatic retry abuse boundary lives in [Agent loop abuse guard](agent-loop-abuse-guard.md). Use it when a model-safe retry loop needs rate, window, and correction-signature limits so it cannot become DoS or policy probing.
 
+The production storage truth gate lives in [Production storage path](production-storage-path.md). Use it when deciding whether shadow events, simulations, candidates, activation receipts, retry/replay ledgers, loop-guard counters, audit exports, and dashboards are still evaluation-backed or ready to support a `production-shared` claim.
+
 The execution handoff vocabulary lives in [Downstream presentation binding](downstream-presentation-binding.md). Use it when the enforcement point must bind an allowed admission to the exact target, body digest, replay key, nonce, freshness window, proof references, and acknowledged constraints it is about to present to a real system.
 
 The single-use replay consumption shape lives in [Presentation replay ledger](presentation-replay-ledger.md). Use it when a customer enforcement point must consume the presentation replay key once and keep redacted evidence that the key was not reused.
@@ -106,6 +108,8 @@ The policy limit model sits before both. It prevents broad "yes" decisions by ma
 The retry attempt ledger sits beside policy limits in the safe-retry path. It does not authorize a consequence by itself; it records that a retry attempt was bound to the previous admission, evaluated against the retry budget, and protected from duplicate or conflicting idempotency reuse.
 
 The agent loop abuse guard sits above that ledger. It limits automatic retries per previous admission, actor/action/downstream windows, non-retryable correction reasons, and distinct correction signatures so correction does not degrade into overload or policy probing.
+
+The production storage path sits below those surfaces. It does not make file-backed evaluation stores production-ready; it inventories the storage mode behind the consequence-admission path and makes `production-shared` fail closed until the needed history, ledgers, guards, exports, and dashboard sources move to shared durable storage.
 
 The presentation binding sits at the last customer-side edge. It prevents an admitted decision from being copied into a different target, body, replay attempt, or enforcement point.
 

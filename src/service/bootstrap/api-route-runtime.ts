@@ -288,6 +288,9 @@ import {
   evaluateSharedAuthorityRuntimeReadiness as evaluateSharedAuthorityRuntimeReadinessState,
 } from './shared-authority-readiness.js';
 import {
+  evaluateProductionStoragePath as evaluateProductionStoragePathState,
+} from './production-storage-path.js';
+import {
   releaseRuntimeDurabilitySummary,
   resolveRuntimeProfile,
 } from './runtime-profile.js';
@@ -399,6 +402,10 @@ export async function createApiHttpRouteRuntime(
         runtimeProfileId: runtimeProfileId === runtimeProfile.id ? runtimeProfile.id : null,
         requestPathUsesSharedStores:
           releaseRuntimeRequestPathDiagnostics.usesSharedAuthorityStores,
+      }),
+    evaluateProductionStoragePath: ({ runtimeProfileId }) =>
+      evaluateProductionStoragePathState({
+        runtimeProfileId: runtimeProfileId === runtimeProfile.id ? runtimeProfile.id : null,
       }),
     rlsActivationResult,
   } satisfies ApiRouteDeps['core'];

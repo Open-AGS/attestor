@@ -96,6 +96,36 @@ type SharedAuthorityRuntimeReadiness = {
     components: readonly string[];
   }[];
 };
+type ProductionStoragePathEvaluation = {
+  version: string;
+  evaluatedAt: string;
+  runtimeProfileId: string | null;
+  state: string;
+  readyForSelectedProfile: boolean;
+  productionReady: boolean;
+  rawPayloadStored: false;
+  exposesConnectionStrings: false;
+  components: readonly {
+    component: string;
+    plane: string;
+    label: string;
+    currentMode: string;
+    requiredModeForProduction: string;
+    satisfiesProductionShared: boolean;
+    tenantScoped: boolean;
+    rawPayloadStored: false;
+    exposesStorageSecret: false;
+    productionReady: boolean;
+    migrationTarget: string;
+    note: string;
+  }[];
+  blockers: readonly {
+    code: string;
+    component: string;
+    message: string;
+  }[];
+  requiredProofs: readonly string[];
+};
 
 export interface CoreRouteDeps {
   evaluateApiHighAvailabilityState(input: {
@@ -127,6 +157,9 @@ export interface CoreRouteDeps {
     runtimeProfileId?: string | null;
     requestPathUsesSharedStores?: boolean;
   }): Promise<SharedAuthorityRuntimeReadiness>;
+  evaluateProductionStoragePath(input: {
+    runtimeProfileId?: string | null;
+  }): ProductionStoragePathEvaluation;
   rlsActivationResult: {
     activated: boolean;
     policiesFound: number;
@@ -154,6 +187,7 @@ export function registerCoreRoutes(app: Hono, deps: CoreRouteDeps): void {
     releaseRuntimeRequestPathDiagnostics,
     releaseSigningProvider,
     evaluateSharedAuthorityRuntimeReadiness,
+    evaluateProductionStoragePath,
     rlsActivationResult,
   } = deps;
 
@@ -203,6 +237,9 @@ export function registerCoreRoutes(app: Hono, deps: CoreRouteDeps): void {
         runtimeProfileId: runtimeProfileDiagnostics.profile.id,
         requestPathUsesSharedStores:
           releaseRuntimeRequestPathDiagnostics.usesSharedAuthorityStores,
+      }),
+      productionStoragePath: evaluateProductionStoragePath({
+        runtimeProfileId: runtimeProfileDiagnostics.profile.id,
       }),
       highAvailability,
       engine: 'attestor',
@@ -274,6 +311,12 @@ export function registerCoreRoutes(app: Hono, deps: CoreRouteDeps): void {
         : true;
     if (!checks.sharedAuthorityRuntime) ready = false;
 
+    const productionStoragePath = evaluateProductionStoragePath({
+      runtimeProfileId: runtimeProfileDiagnostics.profile.id,
+    });
+    checks.productionStoragePath = productionStoragePath.readyForSelectedProfile;
+    if (!checks.productionStoragePath) ready = false;
+
     checks.domains = domainRegistry.listIds().length > 0;
     if (!checks.domains) ready = false;
 
@@ -302,6 +345,7 @@ export function registerCoreRoutes(app: Hono, deps: CoreRouteDeps): void {
         signingProvider: releaseSigningProvider,
       },
       sharedAuthorityRuntime,
+      productionStoragePath,
       highAvailability,
     }, status);
   });

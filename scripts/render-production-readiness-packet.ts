@@ -9,6 +9,12 @@ import {
   renderHaPromotionPacket,
   type HaPromotionPacket,
 } from './render-ha-promotion-packet.ts';
+import {
+  evaluateProductionStoragePath,
+  type ProductionStorageMode,
+  type ProductionStoragePathComponentId,
+  type ProductionStoragePathEvaluation,
+} from '../src/service/bootstrap/production-storage-path.ts';
 
 type ObservabilityProvider = 'generic' | 'grafana-cloud' | 'grafana-alloy';
 type HaProvider = 'generic' | 'aws' | 'gke';
@@ -48,6 +54,25 @@ function benchmarkAgeHours(path: string): number {
 function evaluateRuntimeAuthority(profile: string | null): {
   profile: string | null;
   releaseAuthorityPgConfigured: boolean;
+  productionStoragePath: ProductionStoragePathEvaluation;
+  environmentInputsComplete: boolean;
+  promotionGatePassed: boolean;
+  missingInputs: string[];
+  issues: string[];
+  requiredProofs: string[];
+} {
+  return evaluateRuntimeAuthorityWithStorage(profile, {});
+}
+
+function evaluateRuntimeAuthorityWithStorage(
+  profile: string | null,
+  productionStorageComponentModes: Partial<
+    Readonly<Record<ProductionStoragePathComponentId, ProductionStorageMode>>
+  >,
+): {
+  profile: string | null;
+  releaseAuthorityPgConfigured: boolean;
+  productionStoragePath: ProductionStoragePathEvaluation;
   environmentInputsComplete: boolean;
   promotionGatePassed: boolean;
   missingInputs: string[];
@@ -55,10 +80,20 @@ function evaluateRuntimeAuthority(profile: string | null): {
   requiredProofs: string[];
 } {
   const releaseAuthorityPgConfigured = Boolean(env('ATTESTOR_RELEASE_AUTHORITY_PG_URL'));
+  const runtimeProfileId = profile === 'local-dev' ||
+    profile === 'single-node-durable' ||
+    profile === 'production-shared'
+    ? profile
+    : null;
+  const productionStoragePath = evaluateProductionStoragePath({
+    runtimeProfileId,
+    componentModes: productionStorageComponentModes,
+  });
   const missingInputs: string[] = [];
   const issues: string[] = [];
   const requiredProofs = [
     'npm run test:production-runtime-profile',
+    'npm run test:production-storage-path',
     ...(profile === 'single-node-durable' ? ['npm run test:production-runtime-restart-recovery'] : []),
     ...(profile === 'production-shared' ? [
       'npm run test:production-shared-request-path-cutover',
@@ -79,9 +114,17 @@ function evaluateRuntimeAuthority(profile: string | null): {
     issues.push('production-shared requires ATTESTOR_RELEASE_AUTHORITY_PG_URL.');
   }
 
+  if (profile === 'production-shared' && !productionStoragePath.readyForSelectedProfile) {
+    missingInputs.push('shared consequence-admission storage path');
+    issues.push(
+      `production-shared requires shared consequence-admission storage; blockers: ${productionStoragePath.blockers.map((blocker) => blocker.component).join(', ')}.`,
+    );
+  }
+
   return {
     profile,
     releaseAuthorityPgConfigured,
+    productionStoragePath,
     environmentInputsComplete: missingInputs.length === 0 && issues.length === 0,
     promotionGatePassed: missingInputs.length === 0 && issues.length === 0,
     missingInputs,
@@ -140,6 +183,9 @@ export async function renderProductionReadinessPacket(options?: {
   observabilityBenchmarkMaxAgeHours?: number;
   haBenchmarkMaxAgeHours?: number;
   runtimeProfile?: RuntimeProfile;
+  productionStorageComponentModes?: Partial<
+    Readonly<Record<ProductionStoragePathComponentId, ProductionStorageMode>>
+  >;
 }): Promise<ProductionReadinessPacket> {
   const observabilityProvider = (options?.observabilityProvider
     ?? arg('observability-provider', env('ATTESTOR_OBSERVABILITY_PROVIDER') ?? 'grafana-alloy')) as ObservabilityProvider;
@@ -169,7 +215,10 @@ export async function renderProductionReadinessPacket(options?: {
   const alertmanagerUrl = options?.alertmanagerUrl ?? arg('alertmanager-url', env('ATTESTOR_OBSERVABILITY_ALERTMANAGER_URL') ?? env('ALERTMANAGER_BASE_URL')) ?? null;
   const observabilityBenchmarkMaxAgeHours = options?.observabilityBenchmarkMaxAgeHours ?? numberArg('observability-max-age-hours', 24);
   const haBenchmarkMaxAgeHours = options?.haBenchmarkMaxAgeHours ?? numberArg('ha-max-age-hours', 72);
-  const runtimeAuthority = evaluateRuntimeAuthority(options?.runtimeProfile ?? arg('runtime-profile', env('ATTESTOR_RUNTIME_PROFILE') ?? undefined) ?? null);
+  const runtimeAuthority = evaluateRuntimeAuthorityWithStorage(
+    options?.runtimeProfile ?? arg('runtime-profile', env('ATTESTOR_RUNTIME_PROFILE') ?? undefined) ?? null,
+    options?.productionStorageComponentModes ?? {},
+  );
 
   mkdirSync(outputDir, { recursive: true });
 
@@ -287,6 +336,7 @@ Runtime authority:
 
 - profile: ${runtimeAuthority.profile ?? 'not configured'}
 - release authority PostgreSQL configured: ${runtimeAuthority.releaseAuthorityPgConfigured}
+- production storage path: ${runtimeAuthority.productionStoragePath.state}
 - required proofs:
 ${formatChecklist(runtimeAuthority.requiredProofs)}
 

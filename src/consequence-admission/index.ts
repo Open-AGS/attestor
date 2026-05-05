@@ -55,6 +55,12 @@ import {
   CONSEQUENCE_BUSINESS_RISK_SIGNALS,
 } from './business-risk-dashboard.js';
 import {
+  CONSEQUENCE_EXTERNAL_REVIEW_EVIDENCE_KINDS,
+  CONSEQUENCE_EXTERNAL_REVIEW_EVIDENCE_STATUSES,
+  CONSEQUENCE_EXTERNAL_REVIEW_FINDING_KINDS,
+  CONSEQUENCE_EXTERNAL_REVIEW_FOCUS_AREAS,
+} from './external-review-packet.js';
+import {
   CONSEQUENCE_DATA_MINIMIZATION_FORBIDDEN_RAW_CLASSES,
   CONSEQUENCE_DATA_MINIMIZATION_REDACTION_POLICY_VERSION,
   CONSEQUENCE_DATA_MINIMIZATION_SURFACE_KINDS,
@@ -451,6 +457,10 @@ export interface ConsequenceAdmissionDescriptor {
   readonly auditEvidenceFindingKinds: typeof CONSEQUENCE_AUDIT_EVIDENCE_FINDING_KINDS;
   readonly businessRiskDashboardWidgets: typeof CONSEQUENCE_BUSINESS_RISK_DASHBOARD_WIDGETS;
   readonly businessRiskSignals: typeof CONSEQUENCE_BUSINESS_RISK_SIGNALS;
+  readonly externalReviewFocusAreas: typeof CONSEQUENCE_EXTERNAL_REVIEW_FOCUS_AREAS;
+  readonly externalReviewEvidenceKinds: typeof CONSEQUENCE_EXTERNAL_REVIEW_EVIDENCE_KINDS;
+  readonly externalReviewEvidenceStatuses: typeof CONSEQUENCE_EXTERNAL_REVIEW_EVIDENCE_STATUSES;
+  readonly externalReviewFindingKinds: typeof CONSEQUENCE_EXTERNAL_REVIEW_FINDING_KINDS;
   readonly proofKinds: typeof CONSEQUENCE_ADMISSION_PROOF_KINDS;
   readonly nativeSurfaces: typeof CONSEQUENCE_ADMISSION_NATIVE_SURFACES;
   readonly consequenceDomains: typeof CONSEQUENCE_ADMISSION_DOMAINS;
@@ -2002,6 +2012,10 @@ ConsequenceAdmissionDescriptor {
     auditEvidenceFindingKinds: CONSEQUENCE_AUDIT_EVIDENCE_FINDING_KINDS,
     businessRiskDashboardWidgets: CONSEQUENCE_BUSINESS_RISK_DASHBOARD_WIDGETS,
     businessRiskSignals: CONSEQUENCE_BUSINESS_RISK_SIGNALS,
+    externalReviewFocusAreas: CONSEQUENCE_EXTERNAL_REVIEW_FOCUS_AREAS,
+    externalReviewEvidenceKinds: CONSEQUENCE_EXTERNAL_REVIEW_EVIDENCE_KINDS,
+    externalReviewEvidenceStatuses: CONSEQUENCE_EXTERNAL_REVIEW_EVIDENCE_STATUSES,
+    externalReviewFindingKinds: CONSEQUENCE_EXTERNAL_REVIEW_FINDING_KINDS,
     proofKinds: CONSEQUENCE_ADMISSION_PROOF_KINDS,
     nativeSurfaces: CONSEQUENCE_ADMISSION_NATIVE_SURFACES,
     consequenceDomains: CONSEQUENCE_ADMISSION_DOMAINS,
@@ -2025,6 +2039,7 @@ export * from './agent-loop-abuse-guard.js';
 export * from './adapter-framework.js';
 export * from './audit-evidence-export.js';
 export * from './business-risk-dashboard.js';
+export * from './external-review-packet.js';
 export * from './data-minimization-redaction-policy.js';
 export * from './downstream-enforcement-contract.js';
 export * from './verifier-helper.js';

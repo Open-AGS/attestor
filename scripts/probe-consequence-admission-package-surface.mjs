@@ -110,8 +110,36 @@ assert.equal(
   'function',
 );
 assert.equal(
+  admission.consequenceExternalReviewPacketDescriptor().focusAreas.includes(
+    'proof-integrity',
+  ),
+  true,
+);
+assert.equal(
+  admission.consequenceExternalReviewPacketDescriptor().evidenceKinds.includes(
+    'supply-chain-baseline',
+  ),
+  true,
+);
+assert.equal(
+  admission.consequenceAdmissionDescriptor().externalReviewFindingKinds.includes(
+    'external-review-required',
+  ),
+  true,
+);
+assert.equal(
+  typeof admission.createConsequenceExternalReviewPacket,
+  'function',
+);
+assert.equal(
   admission.consequenceDataMinimizationRedactionPolicyDescriptor().surfaceKinds.includes(
     'audit-evidence-export',
+  ),
+  true,
+);
+assert.equal(
+  admission.consequenceDataMinimizationRedactionPolicyDescriptor().surfaceKinds.includes(
+    'external-review-packet',
   ),
   true,
 );

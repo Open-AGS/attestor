@@ -32,6 +32,8 @@ The reviewer-facing evidence package lives in [Audit evidence export](audit-evid
 
 The operator-facing risk summary lives in [Business risk dashboard](business-risk-dashboard.md). Use it when a customer needs to see action volume, review load, blocked actions, policy gaps, consequence-domain risk, downstream proof coverage, and operator-supplied impact without turning raw logs into the product.
 
+The outside-reviewer handoff lives in [External review packet](external-review-packet.md). Use it when an independent reviewer needs a digest-first map of audit evidence, dashboard context, runtime/storage evidence, repository security references, checklist items, and non-claims without raw customer payloads or fake audit badges.
+
 The shared redaction boundary lives in [Data minimization and redaction policy](data-minimization-redaction-policy.md). Use it when deciding what model feedback, audit evidence, dashboard metrics, retry records, presentation bindings, replay receipts, or downstream execution receipts may expose without leaking raw customer payloads.
 
 The shared limit vocabulary lives in [Policy limit model](policy-limit-model.md). Use it when a proposed consequence must carry amount caps, velocity windows, recipient or asset allowlists, data scope, authority scope, time bounds, risk ceilings, or review thresholds before admission.
@@ -100,6 +102,8 @@ The adapter framework packages the helper into a protected execution shape. It k
 The audit evidence export packages the shadow-to-enforcement trail for human review. It does not approve candidates, activate policies, or claim compliance; it gives reviewers a tenant-scoped, digest-first packet that shows what is proven, what is missing, and what still needs approval.
 
 The business risk dashboard sits on top of that export. It is decision support for operators and buyers, not a new authority surface: it summarizes risk signals, but it does not infer money saved, approve enforcement, or replace the customer authority path.
+
+The external review packet sits above both. It packages source digests, runtime/storage evidence refs, repository evidence refs, reviewer checklist items, findings, and non-claims so a third-party reviewer can inspect the system without receiving raw prompts, raw tool payloads, customer records, bank data, wallet material, credentials, or downstream error bodies.
 
 The data minimization and redaction policy sits across those read surfaces. It keeps model feedback, proof exports, dashboards, retry ledgers, presentation bindings, replay ledgers, and execution receipts on structural control evidence: reason codes, safe instructions, counts, digests, scoped references, statuses, and aggregate signals instead of raw prompts, raw payloads, credentials, bank data, wallet material, private policy thresholds, or downstream error bodies.
 

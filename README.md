@@ -325,7 +325,9 @@ The [audit evidence export](docs/02-architecture/audit-evidence-export.md) packa
 
 The [business risk dashboard](docs/02-architecture/business-risk-dashboard.md) turns that reviewer packet into operator-facing metrics: observed AI actions, review load, blocked actions, policy gaps, domain risk, downstream proof coverage, and optional operator-supplied impact.
 
-The [data minimization and redaction policy](docs/02-architecture/data-minimization-redaction-policy.md) defines what model feedback, audit packets, dashboards, retry ledgers, presentation bindings, replay receipts, and execution receipts may expose by default: reason codes, safe instructions, counts, digests, scoped references, and aggregate signals instead of raw customer payloads.
+The [external review packet](docs/02-architecture/external-review-packet.md) wraps audit evidence, dashboard context, runtime/storage evidence, repository security refs, checklist items, and non-claims into a digest-first reviewer handoff. It is not a security audit, compliance certificate, or production-readiness guarantee.
+
+The [data minimization and redaction policy](docs/02-architecture/data-minimization-redaction-policy.md) defines what model feedback, audit packets, dashboards, external review packets, retry ledgers, presentation bindings, replay receipts, and execution receipts may expose by default: reason codes, safe instructions, counts, digests, scoped references, and aggregate signals instead of raw customer payloads.
 
 The [policy limit model](docs/02-architecture/policy-limit-model.md) gives those admissions bounded policy material: amount caps, velocity windows, recipient and asset allowlists, data scope, authority scope, time windows, risk ceilings, and review thresholds.
 
@@ -413,7 +415,8 @@ Start here:
 - [Adapter framework](docs/02-architecture/adapter-framework.md) - protected verify-before-execute wrapper for tool and customer adapters
 - [Audit evidence export](docs/02-architecture/audit-evidence-export.md) - canonical reviewer packet for shadow-to-enforcement evidence
 - [Business risk dashboard](docs/02-architecture/business-risk-dashboard.md) - operator-facing dashboard model over audit evidence
-- [Data minimization and redaction policy](docs/02-architecture/data-minimization-redaction-policy.md) - shared feedback, proof, audit, dashboard, retry, and receipt redaction boundary
+- [External review packet](docs/02-architecture/external-review-packet.md) - digest-first handoff for outside review without claiming audit completion
+- [Data minimization and redaction policy](docs/02-architecture/data-minimization-redaction-policy.md) - shared feedback, proof, audit, dashboard, external review, retry, and receipt redaction boundary
 - [Policy limit model](docs/02-architecture/policy-limit-model.md) - amount, velocity, scope, allowlist, and review-threshold limits
 - [Retry attempt ledger](docs/02-architecture/retry-attempt-ledger.md) - idempotent safe-retry attempt records without raw retry payloads
 - [Agent loop abuse guard](docs/02-architecture/agent-loop-abuse-guard.md) - retry loop DoS and policy-probing guard

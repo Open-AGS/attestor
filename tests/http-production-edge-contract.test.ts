@@ -25,11 +25,13 @@ function ok(value: unknown, message: string): void {
 
 function createEdgeContractApp(input: {
   apiBodyLimitBytes?: number;
+  env?: Readonly<Record<string, string | undefined>>;
   logMessages?: string[];
 } = {}): Hono {
   const app = new Hono();
   installHttpProductionEdgeContract(app, {
     apiBodyLimitBytes: input.apiBodyLimitBytes,
+    env: input.env,
     logger: {
       error: (message?: unknown) => {
         input.logMessages?.push(String(message ?? ''));
@@ -53,6 +55,13 @@ async function testSecurityHeadersApplyToApiAndPublicResponses(): Promise<void> 
   equal(apiResponse.headers.get('x-content-type-options'), 'nosniff', 'HTTP edge contract: API response disables MIME sniffing');
   equal(apiResponse.headers.get('x-frame-options'), 'DENY', 'HTTP edge contract: API response denies framing');
   equal(apiResponse.headers.get('referrer-policy'), 'no-referrer', 'HTTP edge contract: API response sets a conservative referrer policy');
+  equal(apiResponse.headers.get('cross-origin-opener-policy'), 'same-origin', 'HTTP edge contract: API response pins COOP');
+  equal(apiResponse.headers.get('cross-origin-resource-policy'), 'same-origin', 'HTTP edge contract: API response pins CORP');
+  equal(
+    apiResponse.headers.get('strict-transport-security'),
+    'max-age=63072000; includeSubDomains; preload',
+    'HTTP edge contract: API response pins HSTS',
+  );
   equal(apiResponse.headers.get('cache-control'), 'no-store', 'HTTP edge contract: API response is not cached by default');
   match(
     apiResponse.headers.get('content-security-policy'),
@@ -68,6 +77,36 @@ async function testSecurityHeadersApplyToApiAndPublicResponses(): Promise<void> 
   const publicResponse = await app.request('/');
   equal(publicResponse.status, 200, 'HTTP edge contract: public route remains reachable');
   equal(publicResponse.headers.get('x-frame-options'), 'DENY', 'HTTP edge contract: public route gets security headers');
+}
+
+async function testProductionHostValidationUsesConfiguredAllowlist(): Promise<void> {
+  const app = createEdgeContractApp({
+    env: {
+      NODE_ENV: 'production',
+      ATTESTOR_PUBLIC_HOSTNAME: 'api.attestor.example',
+    },
+  });
+
+  const allowedResponse = await app.request('/api/v1/ok', {
+    headers: { host: 'api.attestor.example' },
+  });
+  equal(allowedResponse.status, 200, 'HTTP edge contract: configured production host is accepted');
+
+  const rejectedResponse = await app.request('/api/v1/ok', {
+    headers: { host: 'attacker.example' },
+  });
+  equal(rejectedResponse.status, 421, 'HTTP edge contract: unlisted production host is rejected');
+  equal(rejectedResponse.headers.get('cache-control'), 'no-store', 'HTTP edge contract: rejected host response is no-store');
+  const rejectedBody = await rejectedResponse.json() as { error: string };
+  equal(rejectedBody.error, 'host_not_allowed', 'HTTP edge contract: rejected host returns stable error code');
+}
+
+async function testLocalHostValidationStaysOpenWithoutConfiguredHost(): Promise<void> {
+  const app = createEdgeContractApp();
+  const response = await app.request('/api/v1/ok', {
+    headers: { host: 'local.test' },
+  });
+  equal(response.status, 200, 'HTTP edge contract: local runs do not require a host allowlist');
 }
 
 async function testApiBodyLimitFailsClosedWithoutConsumingValidRawBody(): Promise<void> {
@@ -137,6 +176,8 @@ function testBodyLimitEnvironmentParsing(): void {
 
 async function main(): Promise<void> {
   await testSecurityHeadersApplyToApiAndPublicResponses();
+  await testProductionHostValidationUsesConfiguredAllowlist();
+  await testLocalHostValidationStaysOpenWithoutConfiguredHost();
   await testApiBodyLimitFailsClosedWithoutConsumingValidRawBody();
   await testNotFoundAndInternalErrorsAreGeneric();
   testBodyLimitEnvironmentParsing();

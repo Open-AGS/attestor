@@ -186,8 +186,8 @@ function run() {
         'x-forwarded-for': '192.0.2.10, 192.0.2.11',
       });
       ok(
-        resolveAuthAttemptSource(headers, { directRemoteAddress: '10.0.0.1' }) === '192.0.2.10',
-        'source resolver accepts forwarded headers from a configured trusted proxy peer',
+        resolveAuthAttemptSource(headers, { directRemoteAddress: '10.0.0.1' }) === '192.0.2.11',
+        'source resolver accepts the selected forwarded header from a configured trusted proxy peer',
       );
       ok(
         resolveAuthAttemptSource(headers, { directRemoteAddress: '10.0.0.2' }) === '10.0.0.2',

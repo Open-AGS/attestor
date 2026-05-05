@@ -71,6 +71,11 @@ docker run \
 | `SNOWFLAKE_ALLOWED_SCHEMAS` | No | None | Optional comma-separated Snowflake schema allowlist. When set, Snowflake connector queries must use schema-qualified or database.schema-qualified table references in the allowlist |
 | `SNOWFLAKE_TIMEOUT_MS` | No | `30000` | Snowflake connector client-side query timeout in milliseconds |
 | `ATTESTOR_TENANT_KEYS` | No | `""` | API key to tenant-id mapping (`key:id:name[:plan][:quota],...`). Empty keys allow anonymous `default` tenant only in local development; production-like runtimes (`NODE_ENV=production`, `ATTESTOR_HA_MODE`, public hostname/base URL) reject anonymous tenant fallback on non-public routes |
+| `ATTESTOR_ALLOWED_HOSTS` | No | None | Optional comma-separated HTTP Host allowlist. In production-like runtimes, this is combined with `ATTESTOR_PUBLIC_HOSTNAME` and `ATTESTOR_PUBLIC_BASE_URL` hostnames and rejects non-matching Host headers |
+| `ATTESTOR_TRUST_PROXY_HEADERS` | No | `false` | Enables trusted proxy header processing for source IP resolution. Only enable when the direct peer is a trusted proxy that overwrites or strips inbound forwarded headers |
+| `ATTESTOR_TRUSTED_PROXY_PEER_IPS` | No | None | Comma-separated direct proxy peer IP allowlist for trusted forwarded headers. Wildcard `*` is blocked in production-like runtimes unless explicitly overridden |
+| `ATTESTOR_TRUSTED_PROXY_HOPS` | No | `1` | Trusted reverse-proxy hop count used to select `X-Forwarded-For` / RFC 7239 `Forwarded` addresses from the right side of the chain |
+| `ATTESTOR_TRUSTED_PROXY_PEER_WILDCARD_OVERRIDE` | No | None | Production-like escape hatch for `ATTESTOR_TRUSTED_PROXY_PEER_IPS=*`; must be exactly `accept-the-risk` |
 | `ATTESTOR_AUTH_RATE_LIMIT_WINDOW_SECONDS` | No | `300` | Hosted password-login abuse guard window in seconds |
 | `ATTESTOR_AUTH_RATE_LIMIT_MAX_FAILURES_PER_EMAIL` | No | `5` | Failed password-login attempts per normalized email before temporary lockout |
 | `ATTESTOR_AUTH_RATE_LIMIT_MAX_FAILURES_PER_SOURCE` | No | `20` | Failed password-login attempts per client source before temporary lockout |

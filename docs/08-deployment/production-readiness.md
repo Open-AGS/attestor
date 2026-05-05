@@ -270,9 +270,34 @@ ATTESTOR_TRUST_PROXY_HEADERS=true
 ATTESTOR_TRUSTED_PROXY_PEER_IPS=10.0.0.12,10.0.0.13
 ```
 
-Use `ATTESTOR_TRUSTED_PROXY_PEER_IPS=*` only when the network path guarantees
-that every direct peer is a trusted proxy. Do not use wildcard trust on a
-runtime that can receive direct client traffic.
+The default trusted-proxy hop count is `1`, which selects the rightmost
+`X-Forwarded-For` / RFC 7239 `Forwarded` address added by the immediately
+connected trusted proxy. If the target has a fixed chain such as CDN -> WAF ->
+nginx -> Attestor, set the explicit hop count instead of trusting the leftmost
+client-supplied value:
+
+```bash
+ATTESTOR_TRUSTED_PROXY_HOPS=2
+```
+
+The reference nginx HA config overwrites `X-Forwarded-For` with `$remote_addr`.
+Do not replace that with `$proxy_add_x_forwarded_for` unless an upstream trusted
+edge already strips or overwrites inbound forwarded headers.
+
+Use `ATTESTOR_TRUSTED_PROXY_PEER_IPS=*` only in non-production-like local/test
+or fully isolated network paths. Production-like runtimes fail closed on
+wildcard trusted proxy peers unless the operator also sets:
+
+```bash
+ATTESTOR_TRUSTED_PROXY_PEER_WILDCARD_OVERRIDE=accept-the-risk
+```
+
+That override is intentionally loud. It means every direct peer can choose the
+client source address used by auth throttling and request observability.
+
+When `ATTESTOR_PUBLIC_HOSTNAME`, `ATTESTOR_PUBLIC_BASE_URL`, or
+`ATTESTOR_ALLOWED_HOSTS` is configured on a production-like runtime, the HTTP
+edge contract rejects requests whose `Host` header is outside that allowlist.
 
 ## Step 4: Measure the Real Environment
 

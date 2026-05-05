@@ -1,5 +1,8 @@
 import type { Hono } from 'hono';
-import { createShadowAdmissionEvent } from '../../consequence-admission/index.js';
+import {
+  createConsequenceAdmissionAgentLoopAbuseGuard,
+  createShadowAdmissionEvent,
+} from '../../consequence-admission/index.js';
 import { registerAccountRoutes } from '../http/routes/account-routes.js';
 import { registerAdminRoutes } from '../http/routes/admin-routes.js';
 import { registerCoreRoutes } from '../http/routes/core-routes.js';
@@ -49,8 +52,15 @@ export function createGenericAdmissionRouteDeps<Packet>(
   runtime: AppRuntime<Packet>,
 ): GenericAdmissionRouteDeps {
   const shadowEventStore = createFileBackedShadowAdmissionEventStore();
+  const agentLoopAbuseGuard = createConsequenceAdmissionAgentLoopAbuseGuard();
   return {
     currentTenant: runtime.services.httpRoutes.pipeline.currentTenant,
+    evaluateAgentLoopAbuse: ({ tenant, envelope, receivedAt }) =>
+      agentLoopAbuseGuard.evaluate({
+        tenantId: tenant.tenantId,
+        envelope,
+        receivedAt,
+      }),
     recordShadowAdmission: ({ tenant, envelope }) => {
       shadowEventStore.append({
         tenantId: tenant.tenantId,

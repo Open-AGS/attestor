@@ -2,6 +2,7 @@ import type { Context, Hono } from 'hono';
 import {
   createConsequenceAdmissionProblem,
   createGenericAdmissionEnvelope,
+  type ConsequenceAdmissionAgentLoopAbuseGuardDecision,
   type GenericAdmissionEnvelope,
 } from '../../../consequence-admission/index.js';
 import type { TenantContext } from '../../tenant-isolation.js';
@@ -12,6 +13,11 @@ export interface GenericAdmissionRouteDeps {
     readonly tenant: TenantContext;
     readonly envelope: GenericAdmissionEnvelope;
   }): void;
+  evaluateAgentLoopAbuse?(input: {
+    readonly tenant: TenantContext;
+    readonly envelope: GenericAdmissionEnvelope;
+    readonly receivedAt: string;
+  }): ConsequenceAdmissionAgentLoopAbuseGuardDecision;
 }
 
 function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
@@ -55,6 +61,29 @@ export function registerGenericAdmissionRoutes(
       const envelope = createGenericAdmissionEnvelope(
         admissionPayloadWithTenant(payload, tenant),
       );
+      const loopGuard = deps.evaluateAgentLoopAbuse?.({
+        tenant,
+        envelope,
+        receivedAt: new Date().toISOString(),
+      });
+      if (loopGuard && !loopGuard.allowed) {
+        if (loopGuard.retryAfterSeconds > 0) {
+          c.header('retry-after', String(loopGuard.retryAfterSeconds));
+        }
+        const status = loopGuard.outcome === 'throttle' ? 429 : 409;
+        const problem = createConsequenceAdmissionProblem({
+          type: 'https://attestor.dev/problems/agent-loop-abuse-guard',
+          title: 'Agent loop held',
+          status,
+          detail: loopGuard.reason,
+          instance: '/api/v1/admissions',
+          reasonCodes: [
+            'agent-loop-abuse-guard',
+            ...loopGuard.reasonCodes,
+          ],
+        });
+        return c.json(problem, status);
+      }
       try {
         deps.recordShadowAdmission?.({ tenant, envelope });
       } catch (error) {

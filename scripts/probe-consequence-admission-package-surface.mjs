@@ -178,6 +178,20 @@ assert.equal(
   'function',
 );
 assert.equal(
+  admission.consequenceAdmissionAgentLoopAbuseGuardDescriptor().reasonCodes.includes(
+    'agent-loop-policy-probing-risk',
+  ),
+  true,
+);
+assert.equal(
+  admission.consequenceAdmissionDescriptor().agentLoopAbuseGuardOutcomes.includes('throttle'),
+  true,
+);
+assert.equal(
+  typeof admission.createConsequenceAdmissionAgentLoopAbuseGuard,
+  'function',
+);
+assert.equal(
   admission.financePipelineAdmissionDescriptor().route,
   '/api/v1/pipeline/run',
 );

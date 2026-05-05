@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { Hono } from 'hono';
+import { createConsequenceAdmissionAgentLoopAbuseGuard } from '../src/consequence-admission/index.js';
 import { registerGenericAdmissionRoutes } from '../src/service/http/routes/generic-admission-routes.js';
 
 let passed = 0;
@@ -27,6 +28,42 @@ function createApp(): Hono {
     }),
   });
   return app;
+}
+
+function createLoopGuardedApp(): { readonly app: Hono; readonly shadowRecords: number } {
+  const app = new Hono();
+  const guard = createConsequenceAdmissionAgentLoopAbuseGuard({
+    policy: {
+      maxRetryAttemptsPerPreviousAdmission: 2,
+    },
+    now: () => '2026-05-01T18:12:00.000Z',
+  });
+  let shadowRecords = 0;
+  registerGenericAdmissionRoutes(app, {
+    currentTenant: () => ({
+      tenantId: 'tenant_route',
+      tenantName: 'Route Tenant',
+      authenticatedAt: '2026-05-01T18:00:00.000Z',
+      source: 'api_key',
+      planId: 'community',
+      monthlyRunQuota: 100,
+    }),
+    evaluateAgentLoopAbuse: ({ tenant, envelope, receivedAt }) =>
+      guard.evaluate({
+        tenantId: tenant.tenantId,
+        envelope,
+        receivedAt,
+      }),
+    recordShadowAdmission: () => {
+      shadowRecords += 1;
+    },
+  });
+  return {
+    app,
+    get shadowRecords() {
+      return shadowRecords;
+    },
+  };
 }
 
 async function testPostAdmissionRouteReturnsEnvelope(): Promise<void> {
@@ -251,9 +288,66 @@ async function testPostAdmissionRouteCarriesRetryAttemptBinding(): Promise<void>
   );
 }
 
+async function testLoopGuardThrottlesRetryAttemptBeyondBudget(): Promise<void> {
+  const guarded = createLoopGuardedApp();
+  const response = await guarded.app.request('/api/v1/admissions', {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({
+      mode: 'review',
+      actor: 'support-ai-agent',
+      action: 'issue_refund',
+      domain: 'money-movement',
+      downstreamSystem: 'refund-service',
+      requestedAt: '2026-05-01T18:12:00.000Z',
+      decidedAt: '2026-05-01T18:12:01.000Z',
+      policyRef: 'policy:refunds:v1',
+      evidenceRefs: ['order:987', 'payment:456'],
+      amount: {
+        value: 38000,
+        currency: 'HUF',
+      },
+      recipient: 'customer_123',
+      retryAttempt: {
+        previousAdmissionId: 'admission:previous',
+        previousAdmissionDigest: 'sha256:previous-admission',
+        previousRequestId: 'request:previous',
+        attemptNumber: 3,
+        attemptedAt: '2026-05-01T18:12:00.000Z',
+        correctionReasonCodes: ['policy-ref-missing'],
+        correctionFields: ['policyRef'],
+        idempotencyKey: 'retry:route:over-budget',
+      },
+    }),
+  });
+  const body = await response.json() as {
+    decision: string;
+    failClosed: boolean;
+    reasonCodes: readonly string[];
+  };
+
+  equal(response.status, 429, 'Generic admission route: over-budget retry returns 429');
+  equal(response.headers.get('cache-control'), 'no-store', 'Generic admission route: retry throttle is no-store');
+  ok(response.headers.get('retry-after') !== null, 'Generic admission route: retry throttle includes Retry-After');
+  equal(body.decision, 'block', 'Generic admission route: retry throttle problem blocks');
+  equal(body.failClosed, true, 'Generic admission route: retry throttle fails closed');
+  ok(
+    body.reasonCodes.includes('agent-loop-attempt-budget-exhausted'),
+    'Generic admission route: retry throttle reason is explicit',
+  );
+  equal(
+    guarded.shadowRecords,
+    0,
+    'Generic admission route: throttled retry is not recorded as an accepted shadow admission',
+  );
+}
+
 await testPostAdmissionRouteReturnsEnvelope();
 await testInvalidJsonReturnsFailClosedProblem();
 await testInvalidInputReturnsFailClosedProblem();
 await testPostAdmissionRouteCarriesRetryAttemptBinding();
+await testLoopGuardThrottlesRetryAttemptBeyondBudget();
 
 console.log(`Generic admission route tests: ${passed} passed, 0 failed`);

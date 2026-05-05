@@ -38,6 +38,11 @@ import {
   CONSEQUENCE_ADMISSION_RETRY_ATTEMPT_LEDGER_VERSION,
 } from './retry-attempt-ledger.js';
 import {
+  CONSEQUENCE_ADMISSION_AGENT_LOOP_ABUSE_GUARD_OUTCOMES,
+  CONSEQUENCE_ADMISSION_AGENT_LOOP_ABUSE_GUARD_REASON_CODES,
+  CONSEQUENCE_ADMISSION_AGENT_LOOP_ABUSE_GUARD_VERSION,
+} from './agent-loop-abuse-guard.js';
+import {
   CONSEQUENCE_ADMISSION_ADAPTER_KINDS,
   CONSEQUENCE_ADMISSION_ADAPTER_OUTCOMES,
 } from './adapter-framework.js';
@@ -414,6 +419,7 @@ export interface ConsequenceAdmissionDescriptor {
   readonly retryAttemptVersion: typeof CONSEQUENCE_ADMISSION_RETRY_ATTEMPT_VERSION;
   readonly retryRuleVersion: typeof CONSEQUENCE_ADMISSION_RETRY_RULE_VERSION;
   readonly retryAttemptLedgerVersion: typeof CONSEQUENCE_ADMISSION_RETRY_ATTEMPT_LEDGER_VERSION;
+  readonly agentLoopAbuseGuardVersion: typeof CONSEQUENCE_ADMISSION_AGENT_LOOP_ABUSE_GUARD_VERSION;
   readonly correctionCatalogVersion: typeof CONSEQUENCE_ADMISSION_CORRECTION_CATALOG_VERSION;
   readonly dataMinimizationPolicyVersion: typeof CONSEQUENCE_DATA_MINIMIZATION_REDACTION_POLICY_VERSION;
   readonly retryDefaultMaxAttempts: typeof CONSEQUENCE_ADMISSION_RETRY_DEFAULT_MAX_ATTEMPTS;
@@ -437,6 +443,8 @@ export interface ConsequenceAdmissionDescriptor {
   readonly retryBudgetOutcomes: typeof CONSEQUENCE_ADMISSION_RETRY_BUDGET_OUTCOMES;
   readonly retryAttemptLedgerOutcomes: typeof CONSEQUENCE_ADMISSION_RETRY_ATTEMPT_LEDGER_OUTCOMES;
   readonly retryAttemptLedgerFailureReasons: typeof CONSEQUENCE_ADMISSION_RETRY_ATTEMPT_LEDGER_FAILURE_REASONS;
+  readonly agentLoopAbuseGuardOutcomes: typeof CONSEQUENCE_ADMISSION_AGENT_LOOP_ABUSE_GUARD_OUTCOMES;
+  readonly agentLoopAbuseGuardReasonCodes: typeof CONSEQUENCE_ADMISSION_AGENT_LOOP_ABUSE_GUARD_REASON_CODES;
   readonly adapterKinds: typeof CONSEQUENCE_ADMISSION_ADAPTER_KINDS;
   readonly adapterOutcomes: typeof CONSEQUENCE_ADMISSION_ADAPTER_OUTCOMES;
   readonly auditEvidenceArtifactKinds: typeof CONSEQUENCE_AUDIT_EVIDENCE_ARTIFACT_KINDS;
@@ -1962,6 +1970,7 @@ ConsequenceAdmissionDescriptor {
     retryAttemptVersion: CONSEQUENCE_ADMISSION_RETRY_ATTEMPT_VERSION,
     retryRuleVersion: CONSEQUENCE_ADMISSION_RETRY_RULE_VERSION,
     retryAttemptLedgerVersion: CONSEQUENCE_ADMISSION_RETRY_ATTEMPT_LEDGER_VERSION,
+    agentLoopAbuseGuardVersion: CONSEQUENCE_ADMISSION_AGENT_LOOP_ABUSE_GUARD_VERSION,
     correctionCatalogVersion: CONSEQUENCE_ADMISSION_CORRECTION_CATALOG_VERSION,
     dataMinimizationPolicyVersion: CONSEQUENCE_DATA_MINIMIZATION_REDACTION_POLICY_VERSION,
     retryDefaultMaxAttempts: CONSEQUENCE_ADMISSION_RETRY_DEFAULT_MAX_ATTEMPTS,
@@ -1985,6 +1994,8 @@ ConsequenceAdmissionDescriptor {
     retryBudgetOutcomes: CONSEQUENCE_ADMISSION_RETRY_BUDGET_OUTCOMES,
     retryAttemptLedgerOutcomes: CONSEQUENCE_ADMISSION_RETRY_ATTEMPT_LEDGER_OUTCOMES,
     retryAttemptLedgerFailureReasons: CONSEQUENCE_ADMISSION_RETRY_ATTEMPT_LEDGER_FAILURE_REASONS,
+    agentLoopAbuseGuardOutcomes: CONSEQUENCE_ADMISSION_AGENT_LOOP_ABUSE_GUARD_OUTCOMES,
+    agentLoopAbuseGuardReasonCodes: CONSEQUENCE_ADMISSION_AGENT_LOOP_ABUSE_GUARD_REASON_CODES,
     adapterKinds: CONSEQUENCE_ADMISSION_ADAPTER_KINDS,
     adapterOutcomes: CONSEQUENCE_ADMISSION_ADAPTER_OUTCOMES,
     auditEvidenceArtifactKinds: CONSEQUENCE_AUDIT_EVIDENCE_ARTIFACT_KINDS,
@@ -2010,6 +2021,7 @@ export * from './presentation-binding.js';
 export * from './presentation-replay-ledger.js';
 export * from './downstream-execution-receipt.js';
 export * from './retry-attempt-ledger.js';
+export * from './agent-loop-abuse-guard.js';
 export * from './adapter-framework.js';
 export * from './audit-evidence-export.js';
 export * from './business-risk-dashboard.js';

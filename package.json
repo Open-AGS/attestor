@@ -136,6 +136,7 @@
     "test:presentation-replay-ledger": "tsx tests/presentation-replay-ledger.test.ts",
     "test:downstream-execution-receipt": "tsx tests/downstream-execution-receipt.test.ts",
     "test:retry-attempt-ledger": "tsx tests/retry-attempt-ledger.test.ts",
+    "test:agent-loop-abuse-guard": "tsx tests/consequence-admission-agent-loop-abuse-guard.test.ts",
     "test:first-useful-admission-demo": "tsx tests/first-useful-admission-demo.test.ts",
     "test:non-bypassable-gateway-demo": "tsx tests/non-bypassable-gateway-demo.test.ts",
     "test:agent-retry-wrapper-demo": "tsx tests/agent-retry-wrapper-demo.test.ts",

@@ -238,6 +238,8 @@ Retry attempts are also budgeted. The current contract allows at most two model 
 
 The [retry attempt ledger](docs/02-architecture/retry-attempt-ledger.md) records each bound retry attempt after budget evaluation. It keeps the previous admission link, retry attempt digest, budget digest, and idempotency key digest without storing raw retry payloads or raw idempotency keys. Duplicate attempts return the existing record; conflicting idempotency keys hold fail-closed.
 
+The [agent loop abuse guard](docs/02-architecture/agent-loop-abuse-guard.md) sits above the retry ledger. It keeps automatic correction from turning into DoS or policy probing by bounding retry attempts per held admission, actor/action/downstream windows, non-retryable correction reasons, and distinct correction signatures.
+
 Correction reason codes come from a stable correction catalog. The catalog separates model-retryable gaps such as missing `evidenceRefs` from customer-review or operator-control reasons such as `policy-blocked`, `feature-unsafe`, and `adapter-readiness-missing`.
 
 Some failures are deliberately not model-retryable. `policy-blocked`, unsafe signals, custom-domain review, and adapter readiness gaps route to customer review or operator control instead of teaching the model how to probe the boundary.
@@ -329,6 +331,8 @@ The [policy limit model](docs/02-architecture/policy-limit-model.md) gives those
 
 The [retry attempt ledger](docs/02-architecture/retry-attempt-ledger.md) records safe-retry attempts after the retry budget closes. It makes automatic correction attempts idempotent and auditable without storing raw retry payloads.
 
+The [agent loop abuse guard](docs/02-architecture/agent-loop-abuse-guard.md) limits the surrounding retry behavior so a bounded correction loop cannot become overload or policy probing.
+
 The [downstream presentation binding](docs/02-architecture/downstream-presentation-binding.md) binds an allowed admission to the exact enforcement point, target, method, body digest, replay key, nonce, freshness window, proof refs, and acknowledged constraints that are about to cross into the real system.
 
 The [presentation replay ledger](docs/02-architecture/presentation-replay-ledger.md) consumes that replay key once. The evaluation helper keeps exported ledger entries redacted; production deployments should back the same contract with a shared atomic store at the enforcement edge.
@@ -412,6 +416,7 @@ Start here:
 - [Data minimization and redaction policy](docs/02-architecture/data-minimization-redaction-policy.md) - shared feedback, proof, audit, dashboard, retry, and receipt redaction boundary
 - [Policy limit model](docs/02-architecture/policy-limit-model.md) - amount, velocity, scope, allowlist, and review-threshold limits
 - [Retry attempt ledger](docs/02-architecture/retry-attempt-ledger.md) - idempotent safe-retry attempt records without raw retry payloads
+- [Agent loop abuse guard](docs/02-architecture/agent-loop-abuse-guard.md) - retry loop DoS and policy-probing guard
 - [Downstream presentation binding](docs/02-architecture/downstream-presentation-binding.md) - target, body, replay, nonce, freshness, proof, and constraint binding
 - [Presentation replay ledger](docs/02-architecture/presentation-replay-ledger.md) - single-use replay consumption with redacted receipts
 - [Downstream execution receipt](docs/02-architecture/downstream-execution-receipt.md) - redacted result receipt after replay consumption

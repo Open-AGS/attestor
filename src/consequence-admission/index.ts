@@ -51,6 +51,11 @@ import {
   CONSEQUENCE_AUDIT_EVIDENCE_FINDING_KINDS,
 } from './audit-evidence-export.js';
 import {
+  CONSEQUENCE_TAMPER_EVIDENT_HISTORY_ENTRY_KINDS,
+  CONSEQUENCE_TAMPER_EVIDENT_HISTORY_VERIFICATION_FAILURE_REASONS,
+  CONSEQUENCE_TAMPER_EVIDENT_HISTORY_VERSION,
+} from './tamper-evident-history.js';
+import {
   CONSEQUENCE_BUSINESS_RISK_DASHBOARD_WIDGETS,
   CONSEQUENCE_BUSINESS_RISK_SIGNALS,
 } from './business-risk-dashboard.js';
@@ -449,6 +454,11 @@ export interface ConsequenceAdmissionDescriptor {
   readonly adapterOutcomes: typeof CONSEQUENCE_ADMISSION_ADAPTER_OUTCOMES;
   readonly auditEvidenceArtifactKinds: typeof CONSEQUENCE_AUDIT_EVIDENCE_ARTIFACT_KINDS;
   readonly auditEvidenceFindingKinds: typeof CONSEQUENCE_AUDIT_EVIDENCE_FINDING_KINDS;
+  readonly tamperEvidentHistoryVersion: typeof CONSEQUENCE_TAMPER_EVIDENT_HISTORY_VERSION;
+  readonly tamperEvidentHistoryEntryKinds:
+    typeof CONSEQUENCE_TAMPER_EVIDENT_HISTORY_ENTRY_KINDS;
+  readonly tamperEvidentHistoryVerificationFailureReasons:
+    typeof CONSEQUENCE_TAMPER_EVIDENT_HISTORY_VERIFICATION_FAILURE_REASONS;
   readonly businessRiskDashboardWidgets: typeof CONSEQUENCE_BUSINESS_RISK_DASHBOARD_WIDGETS;
   readonly businessRiskSignals: typeof CONSEQUENCE_BUSINESS_RISK_SIGNALS;
   readonly proofKinds: typeof CONSEQUENCE_ADMISSION_PROOF_KINDS;
@@ -2000,6 +2010,10 @@ ConsequenceAdmissionDescriptor {
     adapterOutcomes: CONSEQUENCE_ADMISSION_ADAPTER_OUTCOMES,
     auditEvidenceArtifactKinds: CONSEQUENCE_AUDIT_EVIDENCE_ARTIFACT_KINDS,
     auditEvidenceFindingKinds: CONSEQUENCE_AUDIT_EVIDENCE_FINDING_KINDS,
+    tamperEvidentHistoryVersion: CONSEQUENCE_TAMPER_EVIDENT_HISTORY_VERSION,
+    tamperEvidentHistoryEntryKinds: CONSEQUENCE_TAMPER_EVIDENT_HISTORY_ENTRY_KINDS,
+    tamperEvidentHistoryVerificationFailureReasons:
+      CONSEQUENCE_TAMPER_EVIDENT_HISTORY_VERIFICATION_FAILURE_REASONS,
     businessRiskDashboardWidgets: CONSEQUENCE_BUSINESS_RISK_DASHBOARD_WIDGETS,
     businessRiskSignals: CONSEQUENCE_BUSINESS_RISK_SIGNALS,
     proofKinds: CONSEQUENCE_ADMISSION_PROOF_KINDS,
@@ -2024,6 +2038,7 @@ export * from './retry-attempt-ledger.js';
 export * from './agent-loop-abuse-guard.js';
 export * from './adapter-framework.js';
 export * from './audit-evidence-export.js';
+export * from './tamper-evident-history.js';
 export * from './business-risk-dashboard.js';
 export * from './data-minimization-redaction-policy.js';
 export * from './downstream-enforcement-contract.js';

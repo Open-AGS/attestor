@@ -29,6 +29,8 @@ shadow events
 
 The packet keeps the product posture honest: it shows what exists, what is missing, and what still requires approval.
 
+The export can also reference a [tamper-evident history](tamper-evident-history.md) artifact. That history gives reviewers a digest-chain root for the source evidence sequence without turning the audit packet into a compliance certificate or immutable storage claim.
+
 ## Data Posture
 
 The export is redacted by default.
@@ -42,6 +44,7 @@ It includes:
 - surface digests
 - policy gap, review load, blocked, and non-enforcing counts
 - artifact references by id and digest
+- tamper-evident history digest and entry count when supplied
 - audit findings
 - alignment references for review planning
 
@@ -92,6 +95,7 @@ The export can reference these artifact kinds:
 - `policy-discovery-candidates`
 - `policy-promotion-packet`
 - `downstream-integration-proof`
+- `tamper-evident-history`
 
 ## Findings
 
@@ -135,5 +139,6 @@ It is a control-evidence package. The enforcement chain still depends on:
 - [Verifier helper](verifier-helper.md)
 - [Adapter framework](adapter-framework.md)
 - [Downstream integration proof](shadow-persistence-stores.md)
+- [Tamper-evident history](tamper-evident-history.md)
 
 The export should make audits easier. It should not make claims that belong to auditors, lawyers, regulators, or production operators.

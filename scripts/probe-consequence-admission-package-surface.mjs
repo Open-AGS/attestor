@@ -94,6 +94,22 @@ assert.equal(
   'function',
 );
 assert.equal(
+  admission.consequenceTamperEvidentHistoryDescriptor().entryKinds.includes(
+    'audit-evidence-export',
+  ),
+  true,
+);
+assert.equal(
+  admission.consequenceAdmissionDescriptor().tamperEvidentHistoryEntryKinds.includes(
+    'downstream-execution-receipt',
+  ),
+  true,
+);
+assert.equal(
+  typeof admission.createConsequenceTamperEvidentHistoryLedger,
+  'function',
+);
+assert.equal(
   admission.consequenceBusinessRiskDashboardDescriptor().widgets.includes(
     'consequence-domain-risk',
   ),

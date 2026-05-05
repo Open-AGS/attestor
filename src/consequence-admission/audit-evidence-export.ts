@@ -28,6 +28,9 @@ import type {
 import {
   CONSEQUENCE_DATA_MINIMIZATION_REDACTION_POLICY_VERSION,
 } from './data-minimization-redaction-policy.js';
+import type {
+  ConsequenceTamperEvidentHistoryExport,
+} from './tamper-evident-history.js';
 
 export const CONSEQUENCE_AUDIT_EVIDENCE_EXPORT_VERSION =
   'attestor.consequence-audit-evidence-export.v1';
@@ -39,6 +42,7 @@ export const CONSEQUENCE_AUDIT_EVIDENCE_ARTIFACT_KINDS = [
   'policy-discovery-candidates',
   'policy-promotion-packet',
   'downstream-integration-proof',
+  'tamper-evident-history',
 ] as const;
 export type ConsequenceAuditEvidenceArtifactKind =
   typeof CONSEQUENCE_AUDIT_EVIDENCE_ARTIFACT_KINDS[number];
@@ -84,6 +88,7 @@ export interface CreateConsequenceAuditEvidenceExportInput {
   readonly policyDiscovery?: ShadowPolicyDiscoveryCandidates | null;
   readonly promotionPackets?: readonly ShadowPolicyPromotionPacket[] | null;
   readonly downstreamProofs?: readonly ShadowDownstreamIntegrationProof[] | null;
+  readonly tamperEvidentHistory?: ConsequenceTamperEvidentHistoryExport | null;
   readonly generatedAt?: string | null;
   readonly periodStart?: string | null;
   readonly periodEnd?: string | null;
@@ -132,6 +137,7 @@ export interface ConsequenceAuditEvidenceControlSummary {
   readonly promotionPacketCount: number;
   readonly downstreamIntegrationProofCount: number;
   readonly readyDownstreamIntegrationProofCount: number;
+  readonly tamperEvidentHistoryEntryCount: number;
   readonly policyGapCount: number;
   readonly reviewLoadCount: number;
   readonly blockedCount: number;
@@ -388,6 +394,7 @@ function artifactRefsFor(input: {
   readonly policyDiscovery: ShadowPolicyDiscoveryCandidates | null;
   readonly promotionPackets: readonly ShadowPolicyPromotionPacket[];
   readonly downstreamProofs: readonly ShadowDownstreamIntegrationProof[];
+  readonly tamperEvidentHistory: ConsequenceTamperEvidentHistoryExport | null;
 }): readonly ConsequenceAuditEvidenceArtifactRef[] {
   return Object.freeze([
     artifactRef('shadow-event-set', `shadow-events:${input.eventSetDigest}`, input.eventSetDigest, input.events.length),
@@ -416,6 +423,18 @@ function artifactRefsFor(input: {
     ),
     ...input.downstreamProofs.map((proof) =>
       artifactRef('downstream-integration-proof', proof.proofId, proof.digest, proof.observedCheckCount),
+    ),
+    ...(
+      input.tamperEvidentHistory === null
+        ? []
+        : [
+            artifactRef(
+              'tamper-evident-history',
+              input.tamperEvidentHistory.historyId,
+              input.tamperEvidentHistory.digest,
+              input.tamperEvidentHistory.entryCount,
+            ),
+          ]
     ),
   ].sort((left, right) =>
     `${left.kind}:${left.id}`.localeCompare(`${right.kind}:${right.id}`),
@@ -609,6 +628,7 @@ export function createConsequenceAuditEvidenceExport(
   const simulations = Object.freeze([...(input.simulations ?? [])]);
   const promotionPackets = Object.freeze([...(input.promotionPackets ?? [])]);
   const downstreamProofs = Object.freeze([...(input.downstreamProofs ?? [])]);
+  const tamperEvidentHistory = input.tamperEvidentHistory ?? null;
   const artifactRefs = artifactRefsFor({
     events: input.events,
     eventSetDigest,
@@ -617,6 +637,7 @@ export function createConsequenceAuditEvidenceExport(
     policyDiscovery: input.policyDiscovery ?? null,
     promotionPackets,
     downstreamProofs,
+    tamperEvidentHistory,
   });
   const findings = findingsFor({
     summary,
@@ -661,6 +682,7 @@ export function createConsequenceAuditEvidenceExport(
       downstreamIntegrationProofCount: downstreamProofs.length,
       readyDownstreamIntegrationProofCount:
         downstreamProofs.filter((proof) => proof.integrationProofReady).length,
+      tamperEvidentHistoryEntryCount: tamperEvidentHistory?.entryCount ?? 0,
       policyGapCount: summary.policyGapCount,
       reviewLoadCount: summary.reviewLoadCount,
       blockedCount: summary.blockedCount,

@@ -13,6 +13,7 @@ For bounded policy limits, use [Policy limit model](../02-architecture/policy-li
 For final target/body/replay/freshness binding at the customer edge, use [Downstream presentation binding](../02-architecture/downstream-presentation-binding.md).
 For single-use replay consumption at that edge, use [Presentation replay ledger](../02-architecture/presentation-replay-ledger.md).
 For redacted post-consequence result receipts, use [Downstream execution receipt](../02-architecture/downstream-execution-receipt.md).
+For digest-chain reviewer history, use [Tamper-evident history](../02-architecture/tamper-evident-history.md).
 For commercial packaging, use [Commercial packaging, pricing, and evaluation](product-packaging.md).
 
 ## Current Repository Truth
@@ -63,6 +64,8 @@ The downstream presentation binding keeps an admitted consequence from becoming 
 The presentation replay ledger consumes that replay key once and exports only redacted ledger evidence. A customer edge should not call the downstream system until presentation binding and replay consumption both close.
 
 The downstream execution receipt records what happened after the customer-owned enforcement point acted or deliberately skipped the action. It binds the result back to the admission and replay receipt without storing raw downstream data.
+
+The tamper-evident history links digest-first evidence over time. It gives reviewer exports a root digest and verification summary that detects modified, deleted, or reordered records without storing raw business payloads.
 
 The canonical customer-facing decision vocabulary is `admit`, `narrow`, `review`, or `block`. Domain-native surfaces may still expose older values, such as the finance hosted route's `pass` allow branch or the crypto package's `needs-evidence` review branch; [Operating model](operating-model.md) owns that mapping.
 

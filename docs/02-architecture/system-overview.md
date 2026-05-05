@@ -30,6 +30,8 @@ The protected adapter shape lives in [Adapter framework](adapter-framework.md). 
 
 The reviewer-facing evidence package lives in [Audit evidence export](audit-evidence-export.md). Use it when shadow events, simulations, policy candidates, promotion packets, and downstream proof references need to be handed to a reviewer without raw customer payloads or fake compliance claims.
 
+The append-only proof trail lives in [Tamper-evident history](tamper-evident-history.md). Use it when digest-first evidence needs a linear history root that can detect modified, deleted, or reordered entries before a reviewer trusts an export.
+
 The operator-facing risk summary lives in [Business risk dashboard](business-risk-dashboard.md). Use it when a customer needs to see action volume, review load, blocked actions, policy gaps, consequence-domain risk, downstream proof coverage, and operator-supplied impact without turning raw logs into the product.
 
 The shared redaction boundary lives in [Data minimization and redaction policy](data-minimization-redaction-policy.md). Use it when deciding what model feedback, audit evidence, dashboard metrics, retry records, presentation bindings, replay receipts, or downstream execution receipts may expose without leaking raw customer payloads.
@@ -96,6 +98,8 @@ The verifier helper packages that rule into a small customer-side API. It does n
 The adapter framework packages the helper into a protected execution shape. It keeps the executor private to the adapter, verifies the Attestor admission before execution, and exports only digests for raw input, result, or error material.
 
 The audit evidence export packages the shadow-to-enforcement trail for human review. It does not approve candidates, activate policies, or claim compliance; it gives reviewers a tenant-scoped, digest-first packet that shows what is proven, what is missing, and what still needs approval.
+
+The tamper-evident history sits behind that packet. It records digest-only source artifacts in a linear hash chain and exports a root digest plus verification summary, without claiming external immutability, signatures, or production durability.
 
 The business risk dashboard sits on top of that export. It is decision support for operators and buyers, not a new authority surface: it summarizes risk signals, but it does not infer money saved, approve enforcement, or replace the customer authority path.
 

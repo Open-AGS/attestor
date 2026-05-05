@@ -323,6 +323,8 @@ The [audit evidence export](docs/02-architecture/audit-evidence-export.md) packa
 
 The [business risk dashboard](docs/02-architecture/business-risk-dashboard.md) turns that reviewer packet into operator-facing metrics: observed AI actions, review load, blocked actions, policy gaps, domain risk, downstream proof coverage, and optional operator-supplied impact.
 
+The [data minimization and redaction policy](docs/02-architecture/data-minimization-redaction-policy.md) defines what model feedback, audit packets, dashboards, retry ledgers, presentation bindings, replay receipts, and execution receipts may expose by default: reason codes, safe instructions, counts, digests, scoped references, and aggregate signals instead of raw customer payloads.
+
 The [policy limit model](docs/02-architecture/policy-limit-model.md) gives those admissions bounded policy material: amount caps, velocity windows, recipient and asset allowlists, data scope, authority scope, time windows, risk ceilings, and review thresholds.
 
 The [retry attempt ledger](docs/02-architecture/retry-attempt-ledger.md) records safe-retry attempts after the retry budget closes. It makes automatic correction attempts idempotent and auditable without storing raw retry payloads.
@@ -348,6 +350,8 @@ Customer systems call the relevant Attestor path for the consequence they want t
 Attestor is designed as a control point, not a data lake.
 
 It receives the proposed consequence and the evidence needed to decide whether that consequence may proceed. Customer systems keep ownership of the model, agent, workflow, wallet, database, and downstream execution path. Attestor returns a bounded decision, reasons, and proof references. It does not need to become the system of record for raw business data.
+
+The default redaction rule is explicit in the [data minimization and redaction policy](docs/02-architecture/data-minimization-redaction-policy.md): model feedback, retry records, audit evidence, dashboard summaries, and downstream receipts should expose structural control evidence, not raw prompts, raw tool payloads, raw customer identifiers, bank/payment data, wallet material, credentials, private policy thresholds, or downstream error bodies.
 
 The current evaluation baseline already includes:
 
@@ -404,6 +408,7 @@ Start here:
 - [Adapter framework](docs/02-architecture/adapter-framework.md) - protected verify-before-execute wrapper for tool and customer adapters
 - [Audit evidence export](docs/02-architecture/audit-evidence-export.md) - canonical reviewer packet for shadow-to-enforcement evidence
 - [Business risk dashboard](docs/02-architecture/business-risk-dashboard.md) - operator-facing dashboard model over audit evidence
+- [Data minimization and redaction policy](docs/02-architecture/data-minimization-redaction-policy.md) - shared feedback, proof, audit, dashboard, retry, and receipt redaction boundary
 - [Policy limit model](docs/02-architecture/policy-limit-model.md) - amount, velocity, scope, allowlist, and review-threshold limits
 - [Retry attempt ledger](docs/02-architecture/retry-attempt-ledger.md) - idempotent safe-retry attempt records without raw retry payloads
 - [Downstream presentation binding](docs/02-architecture/downstream-presentation-binding.md) - target, body, replay, nonce, freshness, proof, and constraint binding

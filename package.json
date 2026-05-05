@@ -129,6 +129,7 @@
     "test:consequence-admission-adapter-framework": "tsx tests/consequence-admission-adapter-framework.test.ts",
     "test:consequence-audit-evidence-export": "tsx tests/consequence-audit-evidence-export.test.ts",
     "test:consequence-business-risk-dashboard": "tsx tests/consequence-business-risk-dashboard.test.ts",
+    "test:data-minimization-redaction-policy": "tsx tests/data-minimization-redaction-policy.test.ts",
     "test:policy-limit-model": "tsx tests/policy-limit-model.test.ts",
     "test:downstream-presentation-binding": "tsx tests/downstream-presentation-binding.test.ts",
     "test:presentation-replay-ledger": "tsx tests/presentation-replay-ledger.test.ts",

@@ -25,6 +25,9 @@ import type {
 import type {
   ShadowDownstreamIntegrationProof,
 } from './shadow-downstream-integration-proof.js';
+import {
+  CONSEQUENCE_DATA_MINIMIZATION_REDACTION_POLICY_VERSION,
+} from './data-minimization-redaction-policy.js';
 
 export const CONSEQUENCE_AUDIT_EVIDENCE_EXPORT_VERSION =
   'attestor.consequence-audit-evidence-export.v1';
@@ -179,6 +182,7 @@ export interface ConsequenceAuditEvidenceExport {
 
 export interface ConsequenceAuditEvidenceExportDescriptor {
   readonly version: typeof CONSEQUENCE_AUDIT_EVIDENCE_EXPORT_VERSION;
+  readonly dataMinimizationPolicyVersion: typeof CONSEQUENCE_DATA_MINIMIZATION_REDACTION_POLICY_VERSION;
   readonly artifactKinds: typeof CONSEQUENCE_AUDIT_EVIDENCE_ARTIFACT_KINDS;
   readonly findingKinds: typeof CONSEQUENCE_AUDIT_EVIDENCE_FINDING_KINDS;
   readonly findingSeverities: typeof CONSEQUENCE_AUDIT_EVIDENCE_FINDING_SEVERITIES;
@@ -682,6 +686,7 @@ export function consequenceAuditEvidenceExportDescriptor():
 ConsequenceAuditEvidenceExportDescriptor {
   return Object.freeze({
     version: CONSEQUENCE_AUDIT_EVIDENCE_EXPORT_VERSION,
+    dataMinimizationPolicyVersion: CONSEQUENCE_DATA_MINIMIZATION_REDACTION_POLICY_VERSION,
     artifactKinds: CONSEQUENCE_AUDIT_EVIDENCE_ARTIFACT_KINDS,
     findingKinds: CONSEQUENCE_AUDIT_EVIDENCE_FINDING_KINDS,
     findingSeverities: CONSEQUENCE_AUDIT_EVIDENCE_FINDING_SEVERITIES,

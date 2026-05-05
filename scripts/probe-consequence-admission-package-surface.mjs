@@ -110,6 +110,22 @@ assert.equal(
   'function',
 );
 assert.equal(
+  admission.consequenceDataMinimizationRedactionPolicyDescriptor().surfaceKinds.includes(
+    'audit-evidence-export',
+  ),
+  true,
+);
+assert.equal(
+  admission.consequenceAdmissionDescriptor().dataMinimizationForbiddenRawClasses.includes(
+    'credential-or-secret',
+  ),
+  true,
+);
+assert.equal(
+  typeof admission.evaluateConsequenceDataMinimizationArtifact,
+  'function',
+);
+assert.equal(
   admission.consequenceAdmissionPolicyLimitDescriptor().limitKinds.includes('velocity'),
   true,
 );

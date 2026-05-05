@@ -7,6 +7,9 @@ import type {
   ConsequenceAuditEvidenceExport,
   ConsequenceAuditEvidenceFindingSeverity,
 } from './audit-evidence-export.js';
+import {
+  CONSEQUENCE_DATA_MINIMIZATION_REDACTION_POLICY_VERSION,
+} from './data-minimization-redaction-policy.js';
 
 export const CONSEQUENCE_BUSINESS_RISK_DASHBOARD_VERSION =
   'attestor.consequence-business-risk-dashboard.v1';
@@ -156,6 +159,7 @@ export interface ConsequenceBusinessRiskDashboard {
 
 export interface ConsequenceBusinessRiskDashboardDescriptor {
   readonly version: typeof CONSEQUENCE_BUSINESS_RISK_DASHBOARD_VERSION;
+  readonly dataMinimizationPolicyVersion: typeof CONSEQUENCE_DATA_MINIMIZATION_REDACTION_POLICY_VERSION;
   readonly widgets: typeof CONSEQUENCE_BUSINESS_RISK_DASHBOARD_WIDGETS;
   readonly signals: typeof CONSEQUENCE_BUSINESS_RISK_SIGNALS;
   readonly impactKinds: typeof CONSEQUENCE_BUSINESS_IMPACT_KINDS;
@@ -563,6 +567,7 @@ export function consequenceBusinessRiskDashboardDescriptor():
 ConsequenceBusinessRiskDashboardDescriptor {
   return Object.freeze({
     version: CONSEQUENCE_BUSINESS_RISK_DASHBOARD_VERSION,
+    dataMinimizationPolicyVersion: CONSEQUENCE_DATA_MINIMIZATION_REDACTION_POLICY_VERSION,
     widgets: CONSEQUENCE_BUSINESS_RISK_DASHBOARD_WIDGETS,
     signals: CONSEQUENCE_BUSINESS_RISK_SIGNALS,
     impactKinds: CONSEQUENCE_BUSINESS_IMPACT_KINDS,

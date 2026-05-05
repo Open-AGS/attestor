@@ -32,6 +32,8 @@ The reviewer-facing evidence package lives in [Audit evidence export](audit-evid
 
 The operator-facing risk summary lives in [Business risk dashboard](business-risk-dashboard.md). Use it when a customer needs to see action volume, review load, blocked actions, policy gaps, consequence-domain risk, downstream proof coverage, and operator-supplied impact without turning raw logs into the product.
 
+The shared redaction boundary lives in [Data minimization and redaction policy](data-minimization-redaction-policy.md). Use it when deciding what model feedback, audit evidence, dashboard metrics, retry records, presentation bindings, replay receipts, or downstream execution receipts may expose without leaking raw customer payloads.
+
 The shared limit vocabulary lives in [Policy limit model](policy-limit-model.md). Use it when a proposed consequence must carry amount caps, velocity windows, recipient or asset allowlists, data scope, authority scope, time bounds, risk ceilings, or review thresholds before admission.
 
 The safe-retry accounting shape lives in [Retry attempt ledger](retry-attempt-ledger.md). Use it when a model-safe correction attempt must be recorded as an idempotent continuation of a held admission rather than a fresh probe.
@@ -94,6 +96,8 @@ The adapter framework packages the helper into a protected execution shape. It k
 The audit evidence export packages the shadow-to-enforcement trail for human review. It does not approve candidates, activate policies, or claim compliance; it gives reviewers a tenant-scoped, digest-first packet that shows what is proven, what is missing, and what still needs approval.
 
 The business risk dashboard sits on top of that export. It is decision support for operators and buyers, not a new authority surface: it summarizes risk signals, but it does not infer money saved, approve enforcement, or replace the customer authority path.
+
+The data minimization and redaction policy sits across those read surfaces. It keeps model feedback, proof exports, dashboards, retry ledgers, presentation bindings, replay ledgers, and execution receipts on structural control evidence: reason codes, safe instructions, counts, digests, scoped references, statuses, and aggregate signals instead of raw prompts, raw payloads, credentials, bank data, wallet material, private policy thresholds, or downstream error bodies.
 
 The policy limit model sits before both. It prevents broad "yes" decisions by making the admitted consequence bounded: how much, how often, to whom, over what data, under which authority, in what window, and when human review becomes mandatory.
 

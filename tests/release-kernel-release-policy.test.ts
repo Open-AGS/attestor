@@ -102,6 +102,20 @@ async function main(): Promise<void> {
       firstPolicy,
       matchingOutputContract,
       {
+        allowedTools: [],
+        allowedTargets: [],
+        allowedDataDomains: [],
+      },
+      'record-store',
+    ),
+    'Release policy: empty capability boundaries do not match by vacuous truth',
+  );
+
+  ok(
+    !matchesReleasePolicyScope(
+      firstPolicy,
+      matchingOutputContract,
+      {
         ...matchingCapabilityBoundary,
         allowedTools: ['xbrl-export', 'wire-transfer'],
       },
@@ -203,6 +217,40 @@ async function main(): Promise<void> {
     customPolicy.rollout.mode,
     'dry-run',
     'Release policy: rollout state is first-class and can keep a policy in dry-run while the policy grammar itself stays stable',
+  );
+
+  assert.throws(
+    () =>
+      createReleasePolicyDefinition({
+        ...customPolicy,
+        id: 'custom.communication.observe.enforce',
+        rollout: {
+          mode: 'enforce',
+        },
+        acceptance: {
+          ...customPolicy.acceptance,
+          failureDisposition: 'observe',
+        },
+      }),
+    /failureDisposition=observe/i,
+    'Release policy: non-R0 observe dispositions cannot be activated in hard enforce rollout',
+  );
+
+  const dryRunObservePolicy = createReleasePolicyDefinition({
+    ...customPolicy,
+    id: 'custom.communication.observe.dry-run',
+    rollout: {
+      mode: 'dry-run',
+    },
+    acceptance: {
+      ...customPolicy.acceptance,
+      failureDisposition: 'observe',
+    },
+  });
+  equal(
+    dryRunObservePolicy.acceptance.failureDisposition,
+    'observe',
+    'Release policy: observe dispositions remain allowed for shadow-only dry-run policy discovery',
   );
 
   console.log(`\nRelease kernel release-policy tests: ${passed} passed, 0 failed`);

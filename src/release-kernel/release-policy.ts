@@ -117,12 +117,15 @@ export interface CreateReleasePolicyDefinitionInput {
 export function createReleasePolicyDefinition(
   input: CreateReleasePolicyDefinitionInput,
 ): ReleasePolicyDefinition {
+  const rollout = createReleasePolicyRollout(input.rollout ?? { mode: 'enforce' });
+  assertObserveDispositionIsShadowOnly(input, rollout);
+
   return {
     version: RELEASE_POLICY_SPEC_VERSION,
     id: input.id,
     name: input.name,
     status: input.status ?? 'active',
-    rollout: createReleasePolicyRollout(input.rollout ?? { mode: 'enforce' }),
+    rollout,
     scope: input.scope,
     outputContract: input.outputContract,
     capabilityBoundary: input.capabilityBoundary,
@@ -132,6 +135,23 @@ export function createReleasePolicyDefinition(
   };
 }
 
+function assertObserveDispositionIsShadowOnly(
+  input: CreateReleasePolicyDefinitionInput,
+  rollout: ReleasePolicyRolloutDefinition,
+): void {
+  if (input.acceptance.failureDisposition !== 'observe' || input.scope.riskClass === 'R0') {
+    return;
+  }
+  const canEnforce =
+    rollout.mode === 'enforce' ||
+    (rollout.mode === 'canary' && rollout.canaryPercentage > 0);
+  if (canEnforce) {
+    throw new Error(
+      'Release policy failureDisposition=observe is only allowed for R0 policy or shadow-only rollout modes.',
+    );
+  }
+}
+
 export function matchesReleasePolicyScope(
   policy: ReleasePolicyDefinition,
   outputContract: OutputContractDescriptor,
@@ -139,6 +159,9 @@ export function matchesReleasePolicyScope(
   targetKind: ReleaseTargetKind,
 ): boolean {
   return (
+    capabilityBoundary.allowedTools.length > 0 &&
+    capabilityBoundary.allowedTargets.length > 0 &&
+    capabilityBoundary.allowedDataDomains.length > 0 &&
     policy.scope.consequenceType === outputContract.consequenceType &&
     policy.scope.riskClass === outputContract.riskClass &&
     policy.scope.targetKinds.includes(targetKind) &&

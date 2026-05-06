@@ -36,6 +36,7 @@ export interface CreateReleaseTokenIssuerInput {
   readonly publicKeyPem: string;
   readonly keyId?: string;
   readonly algorithm?: ReleaseTokenSigningAlgorithm;
+  readonly overrideAuthorityRoles?: readonly string[];
 }
 
 export interface CreateReleaseTokenVerificationKeyInput {
@@ -122,6 +123,15 @@ export interface ReleaseTokenIssuer {
   exportVerificationKey(): Promise<ReleaseTokenVerificationKey>;
 }
 
+export const DEFAULT_RELEASE_TOKEN_OVERRIDE_AUTHORITY_ROLES = Object.freeze([
+  'policy-admin',
+  'risk-owner',
+  'compliance-officer',
+  'security-admin',
+  'incident-commander',
+  'financial_reporting_manager',
+] as const);
+
 export async function createReleaseTokenVerificationKey(
   input: CreateReleaseTokenVerificationKeyInput,
 ): Promise<ReleaseTokenVerificationKey> {
@@ -157,10 +167,41 @@ function isExpiredJoseError(error: unknown): boolean {
   );
 }
 
-function assertDecisionEligibleForReleaseToken(decision: ReleaseDecision): void {
+function normalizeRole(role: string | undefined): string {
+  return role?.trim().toLowerCase() ?? '';
+}
+
+function assertDecisionEligibleForReleaseToken(
+  decision: ReleaseDecision,
+  overrideAuthorityRoles: readonly string[],
+): void {
   if (decision.status !== 'accepted' && decision.status !== 'overridden') {
     throw new Error(
       `Release token issuance requires an accepted or overridden decision, received ${decision.status}.`,
+    );
+  }
+  if (decision.status !== 'overridden') {
+    return;
+  }
+  if (!decision.override) {
+    throw new Error('Overridden release token issuance requires an explicit override grant.');
+  }
+  if (!decision.override.reasonCode.trim()) {
+    throw new Error('Overridden release token issuance requires an override reasonCode.');
+  }
+  const overrideRole = normalizeRole(decision.override.requestedBy.role);
+  if (!overrideRole) {
+    throw new Error('Overridden release token issuance requires an override requester role.');
+  }
+  const allowedRoles = new Set(
+    (decision.reviewAuthority.requiredRoles.length > 0
+      ? decision.reviewAuthority.requiredRoles
+      : overrideAuthorityRoles
+    ).map(normalizeRole),
+  );
+  if (!allowedRoles.has(overrideRole)) {
+    throw new Error(
+      `Overridden release token issuance requires an authorized override requester role, received ${decision.override.requestedBy.role}.`,
     );
   }
 }
@@ -217,10 +258,12 @@ export function createReleaseTokenIssuer(
   const algorithm = input.algorithm ?? 'EdDSA';
   const keyIdentity = derivePublicKeyIdentity(input.publicKeyPem);
   const keyId = input.keyId ?? keyIdentity.fingerprint;
+  const overrideAuthorityRoles =
+    input.overrideAuthorityRoles ?? DEFAULT_RELEASE_TOKEN_OVERRIDE_AUTHORITY_ROLES;
 
   return {
     async issue(issueInput: ReleaseTokenIssueInput): Promise<IssuedReleaseToken> {
-      assertDecisionEligibleForReleaseToken(issueInput.decision);
+      assertDecisionEligibleForReleaseToken(issueInput.decision, overrideAuthorityRoles);
       const issuedAt = parseIssuedAt(issueInput.issuedAt);
       const issuedAtEpochSeconds = Math.floor(issuedAt.getTime() / 1000);
       const ttlSeconds = resolveTokenTtlSeconds(

@@ -167,7 +167,7 @@ export interface CreateReleaseEvidencePackIssuerInput {
 
 export interface VerifyReleaseEvidencePackInput {
   readonly issuedEvidencePack: IssuedReleaseEvidencePack;
-  readonly verificationKey?: ReleaseEvidenceVerificationKey;
+  readonly verificationKey: ReleaseEvidenceVerificationKey;
 }
 
 export interface ReleaseEvidencePackVerificationResult {
@@ -556,7 +556,12 @@ export function verifyIssuedReleaseEvidencePack(
   input: VerifyReleaseEvidencePackInput,
 ): ReleaseEvidencePackVerificationResult {
   const pack = input.issuedEvidencePack;
-  const verificationKey = input.verificationKey ?? pack.verificationKey;
+  if (!input.verificationKey) {
+    throw new Error(
+      'Release evidence pack verification requires an explicit trusted verification key.',
+    );
+  }
+  const verificationKey = input.verificationKey;
   const payload = Buffer.from(pack.envelope.payload, 'base64');
   const pae = dssePreAuthEncoding(pack.envelope.payloadType, payload);
   const signature = pack.envelope.signatures[0];
@@ -717,7 +722,10 @@ function verifyReleaseEvidencePackStoreFileIntegrity(
 ): void {
   for (const pack of file.packs) {
     try {
-      verifyIssuedReleaseEvidencePack({ issuedEvidencePack: pack });
+      verifyIssuedReleaseEvidencePack({
+        issuedEvidencePack: pack,
+        verificationKey: pack.verificationKey,
+      });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       throw new ReleaseEvidencePackStoreError(
@@ -791,7 +799,10 @@ function upsertIssuedReleaseEvidencePack(
   file: ReleaseEvidencePackStoreFile,
   pack: IssuedReleaseEvidencePack,
 ): IssuedReleaseEvidencePack {
-  verifyIssuedReleaseEvidencePack({ issuedEvidencePack: pack });
+  verifyIssuedReleaseEvidencePack({
+    issuedEvidencePack: pack,
+    verificationKey: pack.verificationKey,
+  });
   const stored = freezeIssuedReleaseEvidencePack(pack);
   const existingIndex = file.packs.findIndex(
     (entry) => entry.evidencePack.id === stored.evidencePack.id,

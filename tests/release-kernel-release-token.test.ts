@@ -31,7 +31,10 @@ async function throwsAsync(
   passed += 1;
 }
 
-function makeDecision(status: 'accepted' | 'overridden' | 'denied' | 'hold') {
+function makeDecision(
+  status: 'accepted' | 'overridden' | 'denied' | 'hold',
+  overrides: Partial<Parameters<typeof createReleaseDecisionSkeleton>[0]> = {},
+) {
   return createReleaseDecisionSkeleton({
     id: `decision-${status}`,
     createdAt: '2026-04-17T20:00:00.000Z',
@@ -67,9 +70,11 @@ function makeDecision(status: 'accepted' | 'overridden' | 'denied' | 'hold') {
             requestedBy: {
               id: 'user.breakglass',
               type: 'user',
+              role: 'risk-owner',
             },
           }
         : null,
+    ...overrides,
   });
 }
 
@@ -182,6 +187,74 @@ async function main(): Promise<void> {
   ok(
     overriddenToken.claims.override,
     'Release token: overridden release decisions preserve override state in the claims',
+  );
+
+  await throwsAsync(
+    () =>
+      issuer.issue({
+        decision: makeDecision('overridden', { override: null }),
+      }),
+    /explicit override grant/,
+    'Release token: overridden decisions require an explicit override grant before token issuance',
+  );
+
+  await throwsAsync(
+    () =>
+      issuer.issue({
+        decision: makeDecision('overridden', {
+          override: {
+            reasonCode: 'emergency-filing-window',
+            requestedBy: {
+              id: 'user.breakglass',
+              type: 'user',
+            },
+          },
+        }),
+      }),
+    /override requester role/,
+    'Release token: break-glass token issuance requires a role-bound requester',
+  );
+
+  await throwsAsync(
+    () =>
+      issuer.issue({
+        decision: makeDecision('overridden', {
+          override: {
+            reasonCode: 'emergency-filing-window',
+            requestedBy: {
+              id: 'user.breakglass',
+              type: 'user',
+              role: 'support-agent',
+            },
+          },
+        }),
+      }),
+    /authorized override requester role/,
+    'Release token: break-glass token issuance rejects unauthorized requester roles',
+  );
+
+  const customOverrideIssuer = createReleaseTokenIssuer({
+    issuer: 'attestor.release.local',
+    privateKeyPem: keyPair.privateKeyPem,
+    publicKeyPem: keyPair.publicKeyPem,
+    overrideAuthorityRoles: ['support-lead'],
+  });
+  const customOverrideToken = await customOverrideIssuer.issue({
+    decision: makeDecision('overridden', {
+      override: {
+        reasonCode: 'customer-support-incident',
+        requestedBy: {
+          id: 'user.support-lead',
+          type: 'user',
+          role: 'support-lead',
+        },
+      },
+    }),
+    issuedAt: '2026-04-17T20:00:00.000Z',
+  });
+  ok(
+    customOverrideToken.claims.override,
+    'Release token: deployments can explicitly configure domain-specific override authority roles',
   );
 
   const shortLived = await issuer.issue({

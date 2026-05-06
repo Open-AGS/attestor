@@ -705,7 +705,10 @@ async function runCoreBehavior(
       },
     ],
   });
-  const evidenceVerification = verifyIssuedReleaseEvidencePack({ issuedEvidencePack });
+  const evidenceVerification = verifyIssuedReleaseEvidencePack({
+    issuedEvidencePack,
+    verificationKey: issuedEvidencePack.verificationKey,
+  });
   await stores.evidencePack.upsert(issuedEvidencePack);
   const storedEvidencePack = await stores.evidencePack.get(issuedEvidencePack.evidencePack.id);
   checks.push(

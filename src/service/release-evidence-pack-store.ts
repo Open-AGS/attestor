@@ -94,7 +94,10 @@ function rowJsonObject(row: PgQueryResultRow): Record<string, unknown> {
 
 function verifyAndFreezePack(pack: IssuedReleaseEvidencePack): IssuedReleaseEvidencePack {
   try {
-    evidence.verifyIssuedReleaseEvidencePack({ issuedEvidencePack: pack });
+    evidence.verifyIssuedReleaseEvidencePack({
+      issuedEvidencePack: pack,
+      verificationKey: pack.verificationKey,
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     throw new SharedReleaseEvidencePackStoreError(

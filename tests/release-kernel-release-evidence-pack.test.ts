@@ -249,6 +249,7 @@ async function main(): Promise<void> {
 
   const verification = verifyIssuedReleaseEvidencePack({
     issuedEvidencePack,
+    verificationKey: evidenceIssuer.exportVerificationKey(),
   });
   equal(verification.valid, true, 'Release evidence pack: DSSE signature verifies');
   equal(
@@ -282,6 +283,7 @@ async function main(): Promise<void> {
   equal(
     verifyIssuedReleaseEvidencePack({
       issuedEvidencePack: reloadedEvidencePack!,
+      verificationKey: reloadedEvidencePack!.verificationKey,
     }).valid,
     true,
     'Release evidence pack: file-backed store reload remains verifiable',
@@ -292,6 +294,18 @@ async function main(): Promise<void> {
   };
   tamperedStoreFile.packs[0]!.bundleDigest = 'sha256:deadbeef';
   writeFileSync(fileBackedStorePath, `${JSON.stringify(tamperedStoreFile, null, 2)}\n`);
+  assert.throws(
+    () =>
+      verifyIssuedReleaseEvidencePack(
+        { issuedEvidencePack } as unknown as Parameters<
+          typeof verifyIssuedReleaseEvidencePack
+        >[0],
+      ),
+    /explicit trusted verification key/i,
+    'Release evidence pack: verification requires a caller-supplied trusted key',
+  );
+  passed += 1;
+
   assert.throws(
     () => createFileBackedReleaseEvidencePackStore(fileBackedStorePath),
     ReleaseEvidencePackStoreError,
@@ -322,6 +336,7 @@ async function main(): Promise<void> {
           ],
         },
       },
+      verificationKey: evidenceIssuer.exportVerificationKey(),
     });
   } catch (error) {
     tamperedSignatureError = error as Error;
@@ -338,6 +353,7 @@ async function main(): Promise<void> {
         ...issuedEvidencePack,
         bundleDigest: 'sha256:deadbeef',
       },
+      verificationKey: evidenceIssuer.exportVerificationKey(),
     });
   } catch (error) {
     tamperedDigestError = error as Error;

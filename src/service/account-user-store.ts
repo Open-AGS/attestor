@@ -57,6 +57,7 @@ export interface AccountUserTotpState {
   recoveryCodes: AccountUserRecoveryCodeRecord[];
   recoveryCodesIssuedAt: string | null;
   lastVerifiedAt: string | null;
+  lastAcceptedStep: string | null;
 }
 
 export interface AccountUserOidcIdentityRecord {
@@ -218,8 +219,15 @@ export function defaultAccountUserMfaState(): AccountUserMfaState {
       recoveryCodes: [],
       recoveryCodesIssuedAt: null,
       lastVerifiedAt: null,
+      lastAcceptedStep: null,
     },
   };
+}
+
+function normalizeTotpStep(value: unknown): string | null {
+  if (typeof value === 'string' && /^\d+$/.test(value)) return value;
+  if (typeof value === 'number' && Number.isSafeInteger(value) && value >= 0) return String(value);
+  return null;
 }
 
 function normalizePasskeyTransport(value: unknown): AccountUserPasskeyTransport | null {
@@ -290,6 +298,7 @@ function normalizeRecord(record: AccountUserRecord): AccountUserRecord {
             consumedAt: entry.consumedAt ?? null,
           }))
           : [],
+        lastAcceptedStep: normalizeTotpStep(rawTotp?.lastAcceptedStep),
         },
     },
     passkeys: {
@@ -593,6 +602,34 @@ export function recordAccountUserLogin(id: string): {
     record.updatedAt = record.lastLoginAt;
     saveStore(store);
     return { record, path };
+  });
+}
+
+export function recordAccountUserTotpVerificationStep(
+  id: string,
+  acceptedStep: string,
+  verifiedAt = new Date().toISOString(),
+): {
+  record: AccountUserRecord;
+  path: string;
+  accepted: boolean;
+} {
+  if (!/^\d+$/.test(acceptedStep)) {
+    throw new AccountUserStoreError('INVALID_STATE', 'Accepted TOTP step must be a non-negative integer string.');
+  }
+  const nextStep = BigInt(acceptedStep);
+  return withAccountUserStoreLock((store, path) => {
+    const record = requireRecord(store, id);
+    const lastStep = normalizeTotpStep(record.mfa.totp.lastAcceptedStep);
+    if (lastStep !== null && nextStep <= BigInt(lastStep)) {
+      return { record: normalizeRecord(record), path, accepted: false };
+    }
+    record.mfa.totp.lastAcceptedStep = acceptedStep;
+    record.mfa.totp.lastVerifiedAt = verifiedAt;
+    record.mfa.totp.updatedAt = verifiedAt;
+    record.updatedAt = verifiedAt;
+    saveStore(store);
+    return { record: normalizeRecord(record), path, accepted: true };
   });
 }
 

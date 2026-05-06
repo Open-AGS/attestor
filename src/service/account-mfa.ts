@@ -38,6 +38,11 @@ export interface EncryptedTotpSecret {
   authTag: string;
 }
 
+export interface TotpVerificationResult {
+  ok: boolean;
+  acceptedStep: string | null;
+}
+
 function encryptionKey(): Buffer {
   const raw = process.env.ATTESTOR_ACCOUNT_MFA_ENCRYPTION_KEY?.trim()
     || process.env.ATTESTOR_ADMIN_API_KEY?.trim();
@@ -117,6 +122,11 @@ function currentTotpStep(nowMs = Date.now()): bigint {
   return BigInt(Math.floor(nowMs / (TOTP_PERIOD_SECONDS * 1000)));
 }
 
+function parseTotpStep(value: string | null | undefined): bigint | null {
+  if (!value || !/^\d+$/.test(value)) return null;
+  return BigInt(value);
+}
+
 function countRemainingRecoveryCodes(codes: AccountUserRecoveryCodeRecord[]): number {
   return codes.filter((entry) => !entry.consumedAt).length;
 }
@@ -167,19 +177,34 @@ export function verifyTotpCode(options: {
   code: string;
   nowMs?: number;
 }): boolean {
+  return verifyTotpCodeWithStep(options).ok;
+}
+
+export function verifyTotpCodeWithStep(options: {
+  secretBase32: string;
+  code: string;
+  nowMs?: number;
+  lastAcceptedStep?: string | null;
+}): TotpVerificationResult {
   const normalizedCode = sanitizeTotpCode(options.code);
-  if (!/^\d{6}$/.test(normalizedCode)) return false;
+  if (!/^\d{6}$/.test(normalizedCode)) return { ok: false, acceptedStep: null };
   const expected = Buffer.from(normalizedCode, 'utf8');
   const secret = base32Decode(options.secretBase32);
   const step = currentTotpStep(options.nowMs);
+  const lastAcceptedStep = parseTotpStep(options.lastAcceptedStep);
   for (let offset = -TOTP_WINDOW; offset <= TOTP_WINDOW; offset += 1) {
-    const candidate = hotp(secret, step + BigInt(offset));
+    const acceptedStep = step + BigInt(offset);
+    if (acceptedStep < 0n) continue;
+    const candidate = hotp(secret, acceptedStep);
     const candidateBuffer = Buffer.from(candidate, 'utf8');
     if (candidateBuffer.length === expected.length && timingSafeEqual(candidateBuffer, expected)) {
-      return true;
+      if (lastAcceptedStep !== null && acceptedStep <= lastAcceptedStep) {
+        return { ok: false, acceptedStep: acceptedStep.toString() };
+      }
+      return { ok: true, acceptedStep: acceptedStep.toString() };
     }
   }
-  return false;
+  return { ok: false, acceptedStep: null };
 }
 
 export function generateCurrentTotpCode(secretBase32: string, nowMs = Date.now()): string {
@@ -191,7 +216,7 @@ function normalizeRecoveryCode(code: string): string {
 }
 
 function formatRecoveryCode(normalized: string): string {
-  return `${normalized.slice(0, 4)}-${normalized.slice(4)}`;
+  return normalized.match(/.{1,4}/g)?.join('-') ?? normalized;
 }
 
 export function generateRecoveryCodes(count = 8): {
@@ -202,7 +227,7 @@ export function generateRecoveryCodes(count = 8): {
   const codes: string[] = [];
   const hashedCodes: AccountUserRecoveryCodeRecord[] = [];
   for (let index = 0; index < count; index += 1) {
-    const normalized = normalizeRecoveryCode(base32Encode(randomBytes(5)).slice(0, 8));
+    const normalized = normalizeRecoveryCode(base32Encode(randomBytes(10)).slice(0, 16));
     codes.push(formatRecoveryCode(normalized));
     hashedCodes.push({
       id: `mfarec_${createHash('sha256').update(`${normalized}:${issuedAt}:${index}`).digest('hex').slice(0, 12)}`,

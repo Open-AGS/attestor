@@ -11,6 +11,7 @@ export interface AccountStateService {
   findAccountUserById: typeof ControlPlaneStore.findAccountUserByIdState;
   findAccountUserByPasskeyCredentialId: typeof ControlPlaneStore.findAccountUserByPasskeyCredentialIdState;
   saveAccountUserRecord: typeof ControlPlaneStore.saveAccountUserRecordState;
+  recordAccountUserTotpVerificationStep: typeof ControlPlaneStore.recordAccountUserTotpVerificationStepState;
   consumeAccountUserActionToken: typeof ControlPlaneStore.consumeAccountUserActionTokenState;
   revokeAccountUserActionTokensForUser: typeof ControlPlaneStore.revokeAccountUserActionTokensForUserState;
   recordHostedSamlReplay: typeof ControlPlaneStore.recordHostedSamlReplayState;

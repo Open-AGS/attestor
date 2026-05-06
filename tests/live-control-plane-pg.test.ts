@@ -47,6 +47,17 @@ function ok(condition: boolean, message: string): void {
   passed += 1;
 }
 
+function currentTotpStepIndex(nowMs = Date.now()): number {
+  return Math.floor(nowMs / 30_000);
+}
+
+async function waitForTotpStepAfter(step: number): Promise<void> {
+  while (currentTotpStepIndex() <= step) {
+    await new Promise((resolve) => setTimeout(resolve, 250));
+  }
+  await new Promise((resolve) => setTimeout(resolve, 150));
+}
+
 async function reservePort(): Promise<number> {
   return new Promise((resolve, reject) => {
     const server = createServer();
@@ -288,6 +299,7 @@ async function run(): Promise<void> {
     ok(typeof mfaEnrollBody.enrollment.secretBase32 === 'string', 'Shared PG MFA enroll: secret returned');
     ok(!existsSync(accountUserStorePath), 'Shared PG MFA enroll: no local account user store created');
 
+    let lastOwnerTotpStep = currentTotpStepIndex();
     const mfaConfirmRes = await fetch(`${base}/api/v1/account/mfa/totp/confirm`, {
       method: 'POST',
       headers: {
@@ -431,6 +443,8 @@ async function run(): Promise<void> {
     ok(mfaLoginBody.mfaRequired === true, 'Shared PG MFA login: mfaRequired');
     ok(!existsSync(accountUserTokenStorePath), 'Shared PG MFA login: no local action token store created');
 
+    await waitForTotpStepAfter(lastOwnerTotpStep);
+    lastOwnerTotpStep = currentTotpStepIndex();
     const mfaVerifyRes = await fetch(`${base}/api/v1/auth/mfa/verify`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -594,6 +608,8 @@ async function run(): Promise<void> {
     const reLoginBody = await reLoginRes.json() as any;
     ok(reLoginBody.mfaRequired === true, 'Shared PG re-login still enforces MFA');
 
+    await waitForTotpStepAfter(lastOwnerTotpStep);
+    lastOwnerTotpStep = currentTotpStepIndex();
     const reLoginVerifyRes = await fetch(`${base}/api/v1/auth/mfa/verify`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -978,6 +994,8 @@ async function run(): Promise<void> {
     const postInvoiceLoginBody = await postInvoiceLoginRes.json() as any;
     ok(postInvoiceLoginBody.mfaRequired === true, 'Shared PG post-invoice login still enforces MFA');
 
+    await waitForTotpStepAfter(lastOwnerTotpStep);
+    lastOwnerTotpStep = currentTotpStepIndex();
     const postInvoiceVerifyRes = await fetch(`${base}/api/v1/auth/mfa/verify`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

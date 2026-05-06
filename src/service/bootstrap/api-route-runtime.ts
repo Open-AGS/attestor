@@ -31,7 +31,7 @@ import {
   generateTotpSecretBase32,
   totpSummary,
   verifyAndConsumeRecoveryCode,
-  verifyTotpCode,
+  verifyTotpCodeWithStep,
 } from '../account-mfa.js';
 import {
   buildHostedOidcAuthorizationRequest,
@@ -126,6 +126,7 @@ import {
   provisionHostedAccountState,
   queryUsageLedgerState,
   recordAccountUserLoginState,
+  recordAccountUserTotpVerificationStepState,
   recordAdminIdempotencyState,
   recordHostedEmailProviderEventState,
   recordHostedSamlReplayState,
@@ -460,6 +461,7 @@ export async function createApiHttpRouteRuntime(
     findAccountUserById: findAccountUserByIdState,
     findAccountUserByPasskeyCredentialId: findAccountUserByPasskeyCredentialIdState,
     saveAccountUserRecord: saveAccountUserRecordState,
+    recordAccountUserTotpVerificationStep: recordAccountUserTotpVerificationStepState,
     consumeAccountUserActionToken: consumeAccountUserActionTokenState,
     revokeAccountUserActionTokensForUser: revokeAccountUserActionTokensForUserState,
     recordHostedSamlReplay: recordHostedSamlReplayState,
@@ -490,7 +492,7 @@ export async function createApiHttpRouteRuntime(
     completeHostedOidcAuthorization,
     hostedOidcAllowsAutomaticLinking,
     linkAccountUserOidcIdentity,
-    verifyTotpCode,
+    verifyTotpCodeWithStep,
     verifyAndConsumeRecoveryCode,
     requireAccountSession,
     currentAccountAccess,

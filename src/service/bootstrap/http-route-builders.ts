@@ -97,7 +97,7 @@ export function buildAccountRouteDeps(input: BuildAccountRouteDepsInput): Accoun
     completeHostedOidcAuthorization: input.completeHostedOidcAuthorization,
     hostedOidcAllowsAutomaticLinking: input.hostedOidcAllowsAutomaticLinking,
     linkAccountUserOidcIdentity: input.linkAccountUserOidcIdentity,
-    verifyTotpCode: input.verifyTotpCode,
+    verifyTotpCodeWithStep: input.verifyTotpCodeWithStep,
     verifyAndConsumeRecoveryCode: input.verifyAndConsumeRecoveryCode,
     requireAccountSession: input.requireAccountSession,
     currentAccountAccess: input.currentAccountAccess,

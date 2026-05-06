@@ -4,10 +4,10 @@
  * BOUNDARY:
  * - WebAuthn/passkeys only (no SAML)
  * - Server-side verification uses @simplewebauthn/server
- * - Passkey verification follows the current SimpleWebAuthn passkeys baseline:
- *   `userVerification: 'preferred'` + `requireUserVerification: false` by default
- * - Deployments with stricter MFA/regulatory requirements can opt into
- *   `ATTESTOR_WEBAUTHN_REQUIRE_USER_VERIFICATION=true`
+ * - Passkey user verification is production-aware: local/dev defaults to
+ *   `preferred`, while production-like runtimes default to `required`
+ * - Deployments can pin `ATTESTOR_WEBAUTHN_REQUIRE_USER_VERIFICATION`
+ *   explicitly for their rollout profile
  * - One-time challenge state is persisted by the hosted account action-token store
  * - RP ID / origin may be env-pinned for production deployments
  * - Authentication first slice is email-first, not full usernameless discovery
@@ -31,6 +31,7 @@ import type {
   AccountUserPasskeyCredentialRecord,
   AccountUserRecord,
 } from './account-user-store.js';
+import { isProductionLikeRuntimeEnv } from './deployment-safety.js';
 
 export interface HostedPasskeyConfig {
   rpId: string;
@@ -80,7 +81,8 @@ function normalizeRpId(value: string): string {
 
 function requireUserVerification(): boolean {
   const value = process.env.ATTESTOR_WEBAUTHN_REQUIRE_USER_VERIFICATION?.trim().toLowerCase();
-  return value === 'true' || value === '1' || value === 'yes';
+  if (value) return value === 'true' || value === '1' || value === 'yes';
+  return isProductionLikeRuntimeEnv();
 }
 
 function resolveOrigin(requestOrigin?: string | URL | null): string {

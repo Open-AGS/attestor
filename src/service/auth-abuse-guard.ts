@@ -179,7 +179,6 @@ export function recordAuthAttemptUse(input: AuthAttemptSubject): AuthAttemptDeci
 
 export function recordAuthAttemptSuccess(input: AuthAttemptSubject): void {
   emailBuckets.delete(normalizeEmail(input.email));
-  sourceBuckets.delete(normalizeSource(input.source));
 }
 
 export function resetAuthAbuseGuardForTests(): void {

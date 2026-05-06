@@ -43,6 +43,7 @@ import {
   listAllAccountUsers as listAllAccountUsersFile,
   normalizeAccountUserEmail,
   recordAccountUserLogin as recordAccountUserLoginFile,
+  recordAccountUserTotpVerificationStep as recordAccountUserTotpVerificationStepFile,
   saveAccountUserRecord as saveAccountUserRecordFile,
   setAccountUserPassword as setAccountUserPasswordFile,
   setAccountUserStatus as setAccountUserStatusFile,
@@ -2599,6 +2600,47 @@ export async function recordAccountUserLoginState(id: string): Promise<{
   record.updatedAt = record.lastLoginAt;
   await upsertAccountUserPg(record);
   return { record, path: controlPlaneStoreSource() };
+}
+
+export async function recordAccountUserTotpVerificationStepState(
+  id: string,
+  acceptedStep: string,
+  verifiedAt = new Date().toISOString(),
+): Promise<{
+  record: AccountUserRecord;
+  path: string | null;
+  accepted: boolean;
+}> {
+  if (!/^\d+$/.test(acceptedStep)) {
+    throw new AccountUserStoreError('INVALID_STATE', 'Accepted TOTP step must be a non-negative integer string.');
+  }
+  if (!isSharedControlPlaneConfigured()) {
+    return recordAccountUserTotpVerificationStepFile(id, acceptedStep, verifiedAt);
+  }
+  const nextStep = BigInt(acceptedStep);
+  return withPgTransaction(async (client) => {
+    const result = await client.query(
+      `SELECT record_json
+         FROM attestor_control_plane.account_users
+        WHERE account_user_id = $1
+        FOR UPDATE`,
+      [id],
+    );
+    const record = result.rows[0] ? rowToAccountUser(result.rows[0]) : null;
+    if (!record) {
+      throw new AccountUserStoreError('NOT_FOUND', `Account user '${id}' was not found.`);
+    }
+    const lastStep = record.mfa.totp.lastAcceptedStep;
+    if (lastStep && /^\d+$/.test(lastStep) && nextStep <= BigInt(lastStep)) {
+      return { record, path: controlPlaneStoreSource(), accepted: false };
+    }
+    record.mfa.totp.lastAcceptedStep = acceptedStep;
+    record.mfa.totp.lastVerifiedAt = verifiedAt;
+    record.mfa.totp.updatedAt = verifiedAt;
+    record.updatedAt = verifiedAt;
+    await upsertAccountUserPg(record, client);
+    return { record, path: controlPlaneStoreSource(), accepted: true };
+  });
 }
 
 export async function setAccountUserStatusState(

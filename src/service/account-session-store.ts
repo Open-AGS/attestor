@@ -17,6 +17,7 @@ import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import type { AccountUserRole } from './account-user-store.js';
+import { isProductionLikeRuntimeEnv } from './deployment-safety.js';
 import { withFileLock, writeTextFileAtomic } from './file-store.js';
 
 export interface AccountSessionRecord {
@@ -62,6 +63,8 @@ export function sessionIdleTimeoutMinutes(): number {
 }
 
 export function sessionCookieSecure(): boolean {
+  if (isProductionLikeRuntimeEnv()) return true;
+
   const explicit = process.env.ATTESTOR_SESSION_COOKIE_SECURE?.trim();
   if (explicit) {
     return /^(1|true|yes)$/i.test(explicit);

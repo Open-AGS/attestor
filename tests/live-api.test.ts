@@ -83,6 +83,17 @@ function ok(condition: boolean, msg: string): void {
   passed++;
 }
 
+function currentTotpStepIndex(nowMs = Date.now()): number {
+  return Math.floor(nowMs / 30_000);
+}
+
+async function waitForTotpStepAfter(step: number): Promise<void> {
+  while (currentTotpStepIndex() <= step) {
+    await new Promise((resolve) => setTimeout(resolve, 250));
+  }
+  await new Promise((resolve) => setTimeout(resolve, 150));
+}
+
 function metricSamples(metrics: string, metricName: string, labels: Record<string, string>): number[] {
   const labelMatcher = Object.entries(labels).map(([key, value]) => `${key}="${value}"`);
   return metrics
@@ -1601,6 +1612,7 @@ process.env.ATTESTOR_RATE_LIMIT_WINDOW_SECONDS = '5';
       const readOnlyPendingMfaBody = await readOnlyPendingMfaRes.json() as any;
       ok(readOnlyPendingMfaBody.mfa.pendingEnrollment === true, 'MFA: summary shows pending enrollment');
 
+      const readOnlyMfaConfirmStep = currentTotpStepIndex();
       const readOnlyMfaConfirmRes = await fetch(`${BASE}/api/v1/account/mfa/totp/confirm`, {
         method: 'POST',
         headers: {
@@ -1655,6 +1667,7 @@ process.env.ATTESTOR_RATE_LIMIT_WINDOW_SECONDS = '5';
       });
       ok(readOnlyMfaWrongVerifyRes.status === 400, 'MFA: wrong TOTP code rejected');
 
+      await waitForTotpStepAfter(readOnlyMfaConfirmStep);
       const readOnlyMfaVerifyRes = await fetch(`${BASE}/api/v1/auth/mfa/verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

@@ -200,7 +200,7 @@ export interface AccountRouteDeps {
   completeHostedOidcAuthorization: typeof AccountOidc.completeHostedOidcAuthorization;
   hostedOidcAllowsAutomaticLinking: typeof AccountOidc.hostedOidcAllowsAutomaticLinking;
   linkAccountUserOidcIdentity: typeof AccountOidc.linkAccountUserOidcIdentity;
-  verifyTotpCode: typeof AccountMfa.verifyTotpCode;
+  verifyTotpCodeWithStep: typeof AccountMfa.verifyTotpCodeWithStep;
   verifyAndConsumeRecoveryCode: typeof AccountMfa.verifyAndConsumeRecoveryCode;
   requireAccountSession(
     context: Context,
@@ -283,7 +283,7 @@ export function registerAccountRoutes(app: Hono, deps: AccountRouteDeps): void {
     completeHostedOidcAuthorization,
     hostedOidcAllowsAutomaticLinking,
     linkAccountUserOidcIdentity,
-    verifyTotpCode,
+    verifyTotpCodeWithStep,
     verifyAndConsumeRecoveryCode,
     requireAccountSession,
     currentAccountAccess,
@@ -935,25 +935,27 @@ app.post('/api/v1/auth/mfa/verify', async (c) => {
 
   if (code) {
     try {
-      verified = verifyTotpCode({
+      const totpVerification = verifyTotpCodeWithStep({
         secretBase32: decryptTotpSecret({
           ciphertext: user.mfa.totp.secretCiphertext,
           iv: user.mfa.totp.secretIv,
           authTag: user.mfa.totp.secretAuthTag,
         }),
         code,
+        lastAcceptedStep: user.mfa.totp.lastAcceptedStep,
       });
+      verified = totpVerification.ok;
+      if (verified && totpVerification.acceptedStep) {
+        const consumed = await stateService.recordAccountUserTotpVerificationStep(
+          user.id,
+          totpVerification.acceptedStep,
+        );
+        verified = consumed.accepted;
+      }
     } catch (err) {
       const mapped = accountMfaErrorResponse(c, err);
       if (mapped) return mapped;
       throw err;
-    }
-    if (verified) {
-      const now = new Date().toISOString();
-      nextUser.mfa.totp.lastVerifiedAt = now;
-      nextUser.mfa.totp.updatedAt = now;
-      nextUser.updatedAt = now;
-      await stateService.saveAccountUserRecord(nextUser);
     }
   } else {
     const recovery = verifyAndConsumeRecoveryCode(user.mfa.totp, recoveryCode);
@@ -1400,7 +1402,8 @@ app.post('/api/v1/account/mfa/totp/confirm', async (c) => {
     if (mapped) return mapped;
     throw err;
   }
-  if (!verifyTotpCode({ secretBase32, code })) {
+  const totpVerification = verifyTotpCodeWithStep({ secretBase32, code });
+  if (!totpVerification.ok || !totpVerification.acceptedStep) {
     return c.json({ error: 'TOTP code is invalid.' }, 400);
   }
 
@@ -1418,6 +1421,7 @@ app.post('/api/v1/account/mfa/totp/confirm', async (c) => {
   nextUser.mfa.totp.updatedAt = now;
   nextUser.mfa.totp.sessionBoundaryAt = now;
   nextUser.mfa.totp.lastVerifiedAt = now;
+  nextUser.mfa.totp.lastAcceptedStep = totpVerification.acceptedStep;
   nextUser.mfa.totp.recoveryCodes = recovery.hashedCodes;
   nextUser.mfa.totp.recoveryCodesIssuedAt = now;
   nextUser.updatedAt = now;
@@ -1476,14 +1480,24 @@ app.post('/api/v1/account/mfa/disable', async (c) => {
   const nextUser = structuredClone(user);
   if (code) {
     try {
-      verified = verifyTotpCode({
+      const totpVerification = verifyTotpCodeWithStep({
         secretBase32: decryptTotpSecret({
           ciphertext: user.mfa.totp.secretCiphertext,
           iv: user.mfa.totp.secretIv,
           authTag: user.mfa.totp.secretAuthTag,
         }),
         code,
+        lastAcceptedStep: user.mfa.totp.lastAcceptedStep,
       });
+      verified = totpVerification.ok;
+      if (verified && totpVerification.acceptedStep) {
+        const consumed = await stateService.recordAccountUserTotpVerificationStep(
+          user.id,
+          totpVerification.acceptedStep,
+        );
+        verified = consumed.accepted;
+        nextUser.mfa.totp.lastAcceptedStep = totpVerification.acceptedStep;
+      }
     } catch (err) {
       const mapped = accountMfaErrorResponse(c, err);
       if (mapped) return mapped;
@@ -1513,6 +1527,7 @@ app.post('/api/v1/account/mfa/disable', async (c) => {
   nextUser.mfa.totp.pendingSecretAuthTag = null;
   nextUser.mfa.totp.pendingIssuedAt = null;
   nextUser.mfa.totp.lastVerifiedAt = now;
+  nextUser.mfa.totp.lastAcceptedStep = null;
   nextUser.mfa.totp.recoveryCodes = [];
   nextUser.mfa.totp.recoveryCodesIssuedAt = null;
   nextUser.updatedAt = now;

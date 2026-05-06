@@ -129,7 +129,23 @@ function run() {
       recordAuthAttemptFailure({ ...subject, nowMs: 21_000 });
       ok(!checkAuthAttemptAllowed({ ...subject, nowMs: 22_000 }).allowed, 'subject locks before reset');
       recordAuthAttemptSuccess({ ...subject, nowMs: 23_000 });
-      ok(checkAuthAttemptAllowed({ ...subject, nowMs: 24_000 }).allowed, 'successful login clears failure buckets');
+      ok(checkAuthAttemptAllowed({ ...subject, nowMs: 24_000 }).allowed, 'successful login clears the matching email bucket');
+    }
+
+    resetCase();
+    setPolicy({
+      windowSeconds: 60,
+      maxFailuresPerEmail: 10,
+      maxFailuresPerSource: 2,
+      lockoutSeconds: 30,
+    });
+    {
+      const source = '198.51.100.27';
+      recordAuthAttemptFailure({ email: 'first@example.com', source, nowMs: 23_000 });
+      recordAuthAttemptSuccess({ email: 'valid@example.com', source, nowMs: 24_000 });
+      recordAuthAttemptFailure({ email: 'second@example.com', source, nowMs: 25_000 });
+      const locked = checkAuthAttemptAllowed({ email: 'third@example.com', source, nowMs: 26_000 });
+      ok(!locked.allowed && locked.reason === 'source_locked', 'successful login does not clear source abuse budget');
     }
 
     resetCase();

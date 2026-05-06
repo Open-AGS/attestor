@@ -149,6 +149,8 @@
     "test:pipeline-connector-fail-closed": "tsx tests/pipeline-connector-fail-closed.test.ts",
     "test:tenant-isolation-production-guard": "tsx tests/tenant-isolation-production-guard.test.ts",
     "test:account-auth-abuse-guard": "tsx tests/account-auth-abuse-guard.test.ts",
+    "test:account-mfa-replay": "tsx tests/account-mfa-replay.test.ts",
+    "test:account-passkey-user-verification-policy": "tsx tests/account-passkey-user-verification-policy.test.ts",
     "test:account-oidc-linking-policy": "tsx tests/account-oidc-linking-policy.test.ts",
     "test:account-user-action-token-store": "tsx tests/account-user-action-token-store.test.ts",
     "test:file-store-race-hardening": "tsx tests/file-store-race-hardening.test.ts",

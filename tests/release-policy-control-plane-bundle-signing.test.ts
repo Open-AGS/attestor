@@ -75,12 +75,59 @@ function testSignAndVerifyRoundTrip(): void {
     artifact: sampleArtifact(),
     signedAt: '2026-04-17T13:10:00.000Z',
   });
-  const verification = verifyIssuedPolicyBundle({ issuedBundle: issued });
+  const verification = verifyIssuedPolicyBundle({
+    issuedBundle: issued,
+    verificationKey: signer.exportVerificationKey(),
+  });
 
   assert.equal(verification.valid, true);
   assert.equal(verification.bundleId, issued.artifact.bundleId);
   assert.equal(issued.signatureRecord.algorithm, 'EdDSA');
   assert.equal(issued.signatureRecord.envelopeType, 'dsse');
+}
+
+function testVerificationRequiresExplicitTrustedKey(): void {
+  const signerKey = generateKeyPair();
+  const signer = createPolicyBundleSigner({
+    issuer: 'attestor.policy-control-plane',
+    privateKeyPem: signerKey.privateKeyPem,
+    publicKeyPem: signerKey.publicKeyPem,
+  });
+  const issued = signer.sign({
+    artifact: sampleArtifact(),
+  });
+
+  assert.throws(
+    () =>
+      verifyIssuedPolicyBundle(
+        { issuedBundle: issued } as unknown as Parameters<
+          typeof verifyIssuedPolicyBundle
+        >[0],
+      ),
+    /explicit trusted verification key/i,
+  );
+}
+
+function testEmbeddedSelfAttestingKeyIsNotTrustedByDefault(): void {
+  const attackerKey = generateKeyPair();
+  const signer = createPolicyBundleSigner({
+    issuer: 'attacker.policy-control-plane',
+    privateKeyPem: attackerKey.privateKeyPem,
+    publicKeyPem: attackerKey.publicKeyPem,
+  });
+  const issued = signer.sign({
+    artifact: sampleArtifact(),
+  });
+
+  assert.throws(
+    () =>
+      verifyIssuedPolicyBundle(
+        { issuedBundle: issued } as unknown as Parameters<
+          typeof verifyIssuedPolicyBundle
+        >[0],
+      ),
+    /explicit trusted verification key/i,
+  );
 }
 
 function testWrongKeyFails(): void {
@@ -131,7 +178,11 @@ function testPayloadTamperFails(): void {
   } as const;
 
   assert.throws(
-    () => verifyIssuedPolicyBundle({ issuedBundle: tampered }),
+    () =>
+      verifyIssuedPolicyBundle({
+        issuedBundle: tampered,
+        verificationKey: signer.exportVerificationKey(),
+      }),
     /invalid|does not match/i,
   );
 }
@@ -156,7 +207,11 @@ function testSignatureRecordPayloadDigestMismatchFails(): void {
   } as const;
 
   assert.throws(
-    () => verifyIssuedPolicyBundle({ issuedBundle: tampered }),
+    () =>
+      verifyIssuedPolicyBundle({
+        issuedBundle: tampered,
+        verificationKey: signer.exportVerificationKey(),
+      }),
     /payload digest/i,
   );
 }
@@ -184,15 +239,21 @@ function testSignatureRecordBundleMismatchFails(): void {
   } as const;
 
   assert.throws(
-    () => verifyIssuedPolicyBundle({ issuedBundle: tampered }),
+    () =>
+      verifyIssuedPolicyBundle({
+        issuedBundle: tampered,
+        verificationKey: signer.exportVerificationKey(),
+      }),
     /bundle reference/i,
   );
 }
 
 testSignAndVerifyRoundTrip();
+testVerificationRequiresExplicitTrustedKey();
+testEmbeddedSelfAttestingKeyIsNotTrustedByDefault();
 testWrongKeyFails();
 testPayloadTamperFails();
 testSignatureRecordPayloadDigestMismatchFails();
 testSignatureRecordBundleMismatchFails();
 
-console.log('Release policy control-plane bundle-signing tests: 22 passed, 0 failed');
+console.log('Release policy control-plane bundle-signing tests: 7 passed, 0 failed');

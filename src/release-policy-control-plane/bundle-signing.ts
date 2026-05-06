@@ -95,7 +95,7 @@ export interface PolicyBundleSigner {
 
 export interface VerifyIssuedPolicyBundleInput {
   readonly issuedBundle: IssuedPolicyBundleSignature;
-  readonly verificationKey?: PolicyBundleVerificationKey;
+  readonly verificationKey: PolicyBundleVerificationKey;
 }
 
 export interface PolicyBundleVerificationResult {
@@ -209,7 +209,12 @@ export function verifyIssuedPolicyBundle(
   input: VerifyIssuedPolicyBundleInput,
 ): PolicyBundleVerificationResult {
   const issuedBundle = input.issuedBundle;
-  const verificationKey = input.verificationKey ?? issuedBundle.verificationKey;
+  if (!input.verificationKey) {
+    throw new Error(
+      'Policy bundle verification requires an explicit trusted verification key.',
+    );
+  }
+  const verificationKey = input.verificationKey;
   const payload = Buffer.from(issuedBundle.envelope.payload, 'base64');
   const pae = dssePreAuthEncoding(issuedBundle.envelope.payloadType, payload);
   const dsseSignature = issuedBundle.envelope.signatures[0];

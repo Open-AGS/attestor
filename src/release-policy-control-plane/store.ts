@@ -126,6 +126,21 @@ function assertBundleRecordCoherence(
   }
 }
 
+export function assertBundleRecordContentIsImmutable(
+  existing: StoredPolicyBundleRecord,
+  next: StoredPolicyBundleRecord,
+): void {
+  if (
+    existing.manifest.bundle.digest !== next.manifest.bundle.digest ||
+    existing.artifact.payloadDigest !== next.artifact.payloadDigest ||
+    existing.bundleVersion !== next.bundleVersion
+  ) {
+    throw new Error(
+      'Policy store bundle content is immutable for an existing packId and bundleId; publish changed content under a new bundleId.',
+    );
+  }
+}
+
 function compareBundleRecords(
   left: StoredPolicyBundleRecord,
   right: StoredPolicyBundleRecord,
@@ -286,6 +301,7 @@ function createPolicyControlPlaneStoreFromAccessors(
             entry.bundleId === record.bundleId,
         );
         if (existingIndex >= 0) {
+          assertBundleRecordContentIsImmutable(store.bundles[existingIndex]!, record);
           store.bundles[existingIndex] = record;
         } else {
           store.bundles.push(record);

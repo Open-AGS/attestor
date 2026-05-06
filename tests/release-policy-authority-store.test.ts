@@ -223,6 +223,23 @@ async function run(): Promise<void> {
       bundle.signedBundle.keyId,
       'Shared policy store: signed bundle reloads durably',
     );
+    await assert.rejects(
+      () =>
+        policyStore.upsertBundle({
+          manifest: {
+            ...bundle.manifest,
+            bundle: {
+              ...bundle.manifest.bundle,
+              digest: 'sha256:substituted-policy-content',
+            },
+          },
+          artifact: bundle.artifact,
+          signedBundle: bundle.signedBundle,
+        }),
+      /immutable|new bundleId/i,
+      'Shared policy store: existing bundle id rejects content substitution',
+    );
+    passed += 1;
     equal((await policyStore.listBundleHistory('finance-core')).length, 1, 'Shared policy store: bundle history lists persisted bundle');
     equal((await policyStore.exportSnapshot()).activations.length, 1, 'Shared policy store: snapshot includes persisted activation');
 

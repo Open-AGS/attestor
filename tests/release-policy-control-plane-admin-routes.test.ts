@@ -373,6 +373,7 @@ async function testBundleDetailSupportsCacheHeadersAndConditionalRevalidation():
   assert.equal(first.status, 200);
   assert.ok(etag);
   assert.equal(first.headers.get('cache-control'), 'private, max-age=60, stale-if-error=300');
+  assert.equal(first.headers.get('vary'), 'Authorization');
   assert.equal(first.headers.get('x-attestor-policy-bundle-freshness'), 'fresh');
   assert.equal(first.body.cache.etag, etag);
   assert.equal(second.status, 304);

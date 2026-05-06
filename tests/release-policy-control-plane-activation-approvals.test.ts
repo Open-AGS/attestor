@@ -276,6 +276,24 @@ function testGateRejectsExpiredOrMismatchedApproval(): void {
   });
   assert.equal(mismatched.allowed, false);
   assert.equal(mismatched.status, 'approval-bundle-mismatch');
+
+  const digestSubstitution = evaluatePolicyActivationApprovalGate(store, {
+    target: bundle.target,
+    bundleRecord: {
+      ...bundle.bundleRecord,
+      manifest: {
+        ...bundle.bundleRecord.manifest,
+        bundle: {
+          ...bundle.bundleRecord.manifest.bundle,
+          digest: 'sha256:substituted-policy-content',
+        },
+      },
+    },
+    approvalRequestId: request.id,
+    now: '2026-04-18T09:14:00.000Z',
+  });
+  assert.equal(digestSubstitution.allowed, false);
+  assert.equal(digestSubstitution.status, 'approval-bundle-digest-mismatch');
 }
 
 function testFileBackedApprovalStorePersists(): void {

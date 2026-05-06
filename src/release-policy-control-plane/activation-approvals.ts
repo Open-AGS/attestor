@@ -36,6 +36,7 @@ export type PolicyActivationApprovalGateStatus =
   | 'approval-not-found'
   | 'approval-target-mismatch'
   | 'approval-bundle-mismatch'
+  | 'approval-bundle-digest-mismatch'
   | 'approval-requirement-mismatch'
   | 'approval-pending'
   | 'approval-rejected'
@@ -667,6 +668,15 @@ export function evaluatePolicyActivationApprovalGate(
       requirement,
       request,
       message: 'Policy activation approval bundle does not match the requested activation bundle.',
+    });
+  }
+  if (request.bundle.digest !== input.bundleRecord.manifest.bundle.digest) {
+    return Object.freeze({
+      allowed: false,
+      status: 'approval-bundle-digest-mismatch',
+      requirement,
+      request,
+      message: 'Policy activation approval bundle digest does not match the requested activation bundle.',
     });
   }
   if (request.requirement.requiredApprovals < requirement.requiredApprovals) {

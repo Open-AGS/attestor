@@ -244,6 +244,51 @@ function testBundleUpsertReplacesExistingRecord(): void {
   assert.equal(record?.storedAt, '2026-04-17T14:10:00.000Z');
 }
 
+function testBundleUpsertRejectsContentSubstitution(): void {
+  const store = createInMemoryPolicyControlPlaneStore();
+  const original = createSignedBundle();
+  const substituted = createSignedBundle();
+
+  store.upsertPack(original.pack);
+  store.upsertBundle({
+    manifest: original.manifest,
+    artifact: original.artifact,
+    signedBundle: original.signedBundle,
+    storedAt: '2026-04-17T14:00:00.000Z',
+  });
+
+  assert.throws(
+    () =>
+      store.upsertBundle({
+        manifest: {
+          ...substituted.manifest,
+          bundle: {
+            ...substituted.manifest.bundle,
+            digest: 'sha256:substituted-policy-content',
+          },
+        },
+        artifact: substituted.artifact,
+        signedBundle: substituted.signedBundle,
+        storedAt: '2026-04-17T14:10:00.000Z',
+      }),
+    /immutable|new bundleId/i,
+  );
+  assert.throws(
+    () =>
+      store.upsertBundle({
+        manifest: original.manifest,
+        artifact: {
+          ...substituted.artifact,
+          payloadDigest: 'sha256:substituted-payload-digest',
+        },
+        signedBundle: substituted.signedBundle,
+        storedAt: '2026-04-17T14:11:00.000Z',
+      }),
+    /immutable|new bundleId/i,
+  );
+  assert.equal(store.getBundle('finance-core', original.artifact.bundleId)?.manifest.bundle.digest, original.manifest.bundle.digest);
+}
+
 function testMetadataAndActivationOrdering(): void {
   const store = createInMemoryPolicyControlPlaneStore();
   const activationOld = createPolicyActivationRecord({
@@ -277,6 +322,7 @@ testBundleHistoryOrdering();
 testSnapshotsAreFrozenAndIndependent();
 testFileBackedRoundTrip();
 testBundleUpsertReplacesExistingRecord();
+testBundleUpsertRejectsContentSubstitution();
 testMetadataAndActivationOrdering();
 
 console.log('Release policy control-plane store tests: 27 passed, 0 failed');

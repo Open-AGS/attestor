@@ -239,6 +239,7 @@ export function policyBundleCacheHeaders(
   return Object.freeze({
     etag: descriptor.etag,
     'cache-control': descriptor.cacheControl,
+    vary: 'Authorization',
     'last-modified': httpDate(descriptor.storedAt),
     'x-attestor-policy-bundle-digest': descriptor.digest,
     'x-attestor-policy-bundle-version': descriptor.bundleVersion,

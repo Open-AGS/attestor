@@ -178,6 +178,7 @@ function testCacheHeadersExposeConsumerContract(): void {
 
   assert.equal(headers.etag, descriptor.etag);
   assert.equal(headers['cache-control'], 'private, max-age=60, stale-if-error=300');
+  assert.equal(headers.vary, 'Authorization');
   assert.equal(headers['x-attestor-policy-bundle-freshness'], 'stale-if-error');
   assert.equal(headers['x-attestor-policy-bundle-failure-mode'], 'fail-closed-after-stale-if-error');
   assert.equal(headers['x-attestor-policy-bundle-persisted'], 'true');

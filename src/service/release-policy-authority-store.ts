@@ -574,8 +574,21 @@ export function createSharedPolicyControlPlaneStore(): SharedPolicyControlPlaneS
     async upsertBundle(input: UpsertStoredPolicyBundleInput): Promise<StoredPolicyBundleRecord> {
       await ensurePolicyAuthorityTables();
       const normalized = normalizeBundle(input);
-      await withReleaseAuthorityAdvisoryLock(POLICY_STORE_MUTATION_LOCK, (client) =>
-        client.query(
+      await withReleaseAuthorityAdvisoryLock(POLICY_STORE_MUTATION_LOCK, async (client) => {
+        const existing = await client.query(
+          `SELECT *
+             FROM ${POLICY_BUNDLES_TABLE}
+            WHERE pack_id = $1 AND bundle_id = $2
+            LIMIT 1`,
+          [normalized.packId, normalized.bundleId],
+        );
+        if (existing.rows.length > 0) {
+          policyStore.assertBundleRecordContentIsImmutable(
+            rowToBundle(existing.rows[0]!),
+            normalized,
+          );
+        }
+        await client.query(
           `INSERT INTO ${POLICY_BUNDLES_TABLE} (
             pack_id, bundle_id, bundle_version, stored_at, bundle_json, updated_at
           ) VALUES (
@@ -593,8 +606,8 @@ export function createSharedPolicyControlPlaneStore(): SharedPolicyControlPlaneS
             normalized.storedAt,
             JSON.stringify(normalized),
           ],
-        ),
-      );
+        );
+      });
       return normalized;
     },
 

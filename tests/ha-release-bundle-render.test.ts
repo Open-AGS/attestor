@@ -77,12 +77,15 @@ function main(): void {
     const awsIngress = readFileSync(resolve(awsOut, 'ingress.yaml'), 'utf8');
     const awsConfigMap = readFileSync(resolve(awsOut, 'configmap.yaml'), 'utf8');
     const awsApiDeployment = readFileSync(resolve(awsOut, 'api-deployment.yaml'), 'utf8');
+    const awsPkiPvc = readFileSync(resolve(awsOut, 'release-runtime-pki-pvc.yaml'), 'utf8');
     const awsApiScaled = readFileSync(resolve(awsOut, 'api-scaledobject.yaml'), 'utf8');
     const awsSummary = JSON.parse(readFileSync(resolve(awsOut, 'summary.json'), 'utf8')) as any;
     ok(awsKustomization.includes('ingress.yaml') && !awsKustomization.includes('gateway.yaml'), 'HA release bundle: AWS bundle uses ingress instead of gateway resources');
     ok(awsIngress.includes('certificate-arn') && awsIngress.includes('ELBSecurityPolicy-TLS13-1-2-2021-06'), 'HA release bundle: AWS ingress carries ACM TLS wiring');
     ok(awsConfigMap.includes('ATTESTOR_RUNTIME_PROFILE') && awsConfigMap.includes('production-shared'), 'HA release bundle: AWS config keeps production-shared runtime profile');
+    ok(awsConfigMap.includes('ATTESTOR_RELEASE_RUNTIME_PKI_SHARED_PATH') && awsConfigMap.includes('/var/lib/attestor/release-runtime-pki/release-runtime-pki.json'), 'HA release bundle: AWS config carries shared release-runtime PKI boundary');
     ok(awsApiDeployment.includes('ATTESTOR_RELEASE_AUTHORITY_PG_URL'), 'HA release bundle: AWS API deployment wires release-authority PostgreSQL');
+    ok(awsApiDeployment.includes('claimName: attestor-release-runtime-pki') && awsPkiPvc.includes('ReadWriteMany'), 'HA release bundle: AWS API deployment mounts a shared release-runtime PKI PVC');
     ok(awsApiScaled.includes('threshold: "18"') && awsApiScaled.includes('activationThreshold: "3"'), 'HA release bundle: AWS KEDA scaler is benchmark-tuned');
     ok(awsSummary.provider === 'aws' && awsSummary.apiImage.includes(':1.2.3'), 'HA release bundle: AWS summary captures provider and image refs');
 
@@ -123,7 +126,9 @@ function main(): void {
     const gkeRoute = readFileSync(resolve(gkeOut, 'httproute.yaml'), 'utf8');
     const gkePolicy = readFileSync(resolve(gkeOut, 'gcpgatewaypolicy.yaml'), 'utf8');
     const gkeCertificate = readFileSync(resolve(gkeOut, 'certificate.yaml'), 'utf8');
+    const gkePkiPvc = readFileSync(resolve(gkeOut, 'release-runtime-pki-pvc.yaml'), 'utf8');
     ok(gkeKustomization.includes('gateway.yaml') && gkeKustomization.includes('certificate.yaml'), 'HA release bundle: GKE bundle includes gateway and cert-manager certificate');
+    ok(gkeKustomization.includes('release-runtime-pki-pvc.yaml') && gkePkiPvc.includes('ReadWriteMany'), 'HA release bundle: GKE bundle carries the shared release-runtime PKI PVC');
     ok(gkeGateway.includes('gke.attestor.example.invalid') && gkeRoute.includes('gke.attestor.example.invalid'), 'HA release bundle: GKE bundle rewires hostname across gateway and route');
     ok(gkePolicy.includes('sslPolicy: attestor-modern-tls'), 'HA release bundle: GKE gateway policy carries SSL policy wiring');
     ok(gkeCertificate.includes('letsencrypt-prod') && gkeCertificate.includes('gke.attestor.example.invalid'), 'HA release bundle: GKE certificate carries issuer and hostname');

@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, chmodSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { generatePkiHierarchy } from '../../signing/pki-chain.js';
+import { setKeylessCa } from '../../signing/keyless-signer.js';
 import {
   decisionLog,
   evidence,
@@ -87,6 +88,7 @@ import type {
   RequestPathReleaseTokenIntrospectionStore,
 } from '../release-authority-request-path.js';
 import { withFileLock, writeTextFileAtomic } from '../file-store.js';
+import { envTruthy } from '../deployment-safety.js';
 
 const {
   createFileBackedReleaseDecisionLogWriter,
@@ -122,6 +124,10 @@ const API_CA_SUBJECT = 'Attestor Keyless CA';
 const API_SIGNER_SUBJECT = 'API Runtime Signer';
 const API_REVIEWER_SUBJECT = 'API Reviewer';
 export const ATTESTOR_RELEASE_RUNTIME_PKI_PATH_ENV = 'ATTESTOR_RELEASE_RUNTIME_PKI_PATH';
+export const ATTESTOR_RELEASE_RUNTIME_PKI_SHARED_PATH_ENV =
+  'ATTESTOR_RELEASE_RUNTIME_PKI_SHARED_PATH';
+export const ATTESTOR_RELEASE_RUNTIME_PKI_REQUIRE_SHARED_PATH_ENV =
+  'ATTESTOR_RELEASE_RUNTIME_PKI_REQUIRE_SHARED_PATH';
 export const ATTESTOR_RELEASE_RUNTIME_PKI_ROTATION_ID_ENV =
   'ATTESTOR_RELEASE_RUNTIME_PKI_ROTATION_ID';
 export const RELEASE_RUNTIME_PKI_STORE_SPEC_VERSION = 'attestor.release-runtime-pki-store.v1';
@@ -149,6 +155,8 @@ interface StoredReleaseRuntimeVerificationKey {
 export interface ReleaseRuntimePkiPersistence {
   readonly mode: 'ephemeral' | 'file';
   readonly path: string | null;
+  readonly sharedPathRequired: boolean;
+  readonly sharedPathAttested: boolean;
   readonly generated: boolean;
   readonly rotated: boolean;
   readonly rotationId: string | null;
@@ -223,6 +231,40 @@ function releaseRuntimePkiPath(): string {
   return configured && configured.length > 0
     ? configured
     : join(process.cwd(), '.attestor', 'release-runtime-pki.json');
+}
+
+function releaseRuntimePkiPathConfigured(): boolean {
+  return Boolean(process.env[ATTESTOR_RELEASE_RUNTIME_PKI_PATH_ENV]?.trim());
+}
+
+function releaseRuntimePkiSharedPathRequired(): boolean {
+  return envTruthy(process.env.ATTESTOR_HA_MODE)
+    || envTruthy(process.env[ATTESTOR_RELEASE_RUNTIME_PKI_REQUIRE_SHARED_PATH_ENV]);
+}
+
+function releaseRuntimePkiSharedPathAttested(): boolean {
+  return envTruthy(process.env[ATTESTOR_RELEASE_RUNTIME_PKI_SHARED_PATH_ENV]);
+}
+
+function assertReleaseRuntimePkiSharedPathBoundary(): {
+  readonly sharedPathRequired: boolean;
+  readonly sharedPathAttested: boolean;
+} {
+  const sharedPathRequired = releaseRuntimePkiSharedPathRequired();
+  const sharedPathAttested = releaseRuntimePkiSharedPathAttested();
+  if (!sharedPathRequired) return { sharedPathRequired, sharedPathAttested };
+
+  if (!releaseRuntimePkiPathConfigured()) {
+    throw new Error(
+      `${ATTESTOR_RELEASE_RUNTIME_PKI_PATH_ENV} must be set explicitly when release runtime PKI shared-path enforcement is required.`,
+    );
+  }
+  if (!sharedPathAttested) {
+    throw new Error(
+      `${ATTESTOR_RELEASE_RUNTIME_PKI_SHARED_PATH_ENV}=true is required when release runtime PKI shared-path enforcement is required.`,
+    );
+  }
+  return { sharedPathRequired, sharedPathAttested };
 }
 
 function releaseRuntimePkiRotationId(): string | null {
@@ -327,6 +369,7 @@ function loadOrCreateFileBackedReleaseRuntimePki(path: string): {
   retiredVerificationKeys: readonly StoredReleaseRuntimeVerificationKey[];
   persistence: ReleaseRuntimePkiPersistence;
 } {
+  const sharedPathBoundary = assertReleaseRuntimePkiSharedPathBoundary();
   mkdirSync(dirname(path), { recursive: true });
   return withFileLock(path, () => {
     const rotationId = releaseRuntimePkiRotationId();
@@ -361,6 +404,7 @@ function loadOrCreateFileBackedReleaseRuntimePki(path: string): {
           persistence: {
             mode: 'file',
             path,
+            ...sharedPathBoundary,
             generated: true,
             rotated: true,
             rotationId,
@@ -375,6 +419,7 @@ function loadOrCreateFileBackedReleaseRuntimePki(path: string): {
         persistence: {
           mode: 'file',
           path,
+          ...sharedPathBoundary,
           generated: false,
           rotated: false,
           rotationId: stored.rotationId,
@@ -407,6 +452,7 @@ function loadOrCreateFileBackedReleaseRuntimePki(path: string): {
       persistence: {
         mode: 'file',
         path,
+        ...sharedPathBoundary,
         generated: true,
         rotated: false,
         rotationId,
@@ -421,6 +467,10 @@ function resolveReleaseRuntimePki(runtimeProfile: AttestorRuntimeProfile): {
   retiredVerificationKeys: readonly StoredReleaseRuntimeVerificationKey[];
   persistence: ReleaseRuntimePkiPersistence;
 } {
+  if (releaseRuntimePkiSharedPathRequired()) {
+    assertReleaseRuntimePkiSharedPathBoundary();
+  }
+
   if (
     runtimeProfile.id === 'local-dev' &&
     !(process.env[ATTESTOR_RELEASE_RUNTIME_PKI_PATH_ENV]?.trim())
@@ -431,6 +481,8 @@ function resolveReleaseRuntimePki(runtimeProfile: AttestorRuntimeProfile): {
       persistence: {
         mode: 'ephemeral',
         path: null,
+        sharedPathRequired: false,
+        sharedPathAttested: false,
         generated: true,
         rotated: false,
         rotationId: null,
@@ -1048,6 +1100,7 @@ export async function createReleaseRuntimeBootstrap(
     retiredVerificationKeys,
     persistence: pkiPersistence,
   } = resolveReleaseRuntimePki(runtimeProfile);
+  setKeylessCa(pki.ca);
   const releaseSigningProvider = assertReleaseSigningProviderAllowed({
     runtimeProfile,
     pkiPersistence,

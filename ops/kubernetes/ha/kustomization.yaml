@@ -5,6 +5,7 @@ resources:
   - namespace.yaml
   - api-serviceaccount.yaml
   - configmap.yaml
+  - release-runtime-pki-pvc.yaml
   - api-service.yaml
   - api-deployment.yaml
   - worker-deployment.yaml

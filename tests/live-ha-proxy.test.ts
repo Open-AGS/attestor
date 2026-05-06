@@ -1,6 +1,8 @@
 import { strict as assert } from 'node:assert';
+import { mkdtempSync, rmSync } from 'node:fs';
 import { createServer as createHttpServer, request as httpRequest } from 'node:http';
 import { createServer as createNetServer } from 'node:net';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
 
@@ -82,6 +84,7 @@ async function main(): Promise<void> {
   const api1Port = await reservePort();
   const api2Port = await reservePort();
   const proxyPort = await reservePort();
+  const tempRoots: string[] = [];
 
   const api1 = spawnApiServer('api-node-1', api1Port);
   const api2 = spawnApiServer('api-node-2', api2Port);
@@ -130,6 +133,9 @@ async function main(): Promise<void> {
       child.once('exit', () => resolve());
       setTimeout(() => resolve(), 4000).unref();
     })));
+    for (const root of tempRoots) {
+      rmSync(root, { recursive: true, force: true });
+    }
   };
 
   try {
@@ -153,6 +159,8 @@ async function main(): Promise<void> {
     ok(second.body.highAvailability?.enabled === false, 'HA proxy: second node reports single-node mode by default');
 
     const failingPort = await reservePort();
+    const failingPkiRoot = mkdtempSync(join(tmpdir(), 'attestor-live-ha-pki-'));
+    tempRoots.push(failingPkiRoot);
     const failing = spawn(
       process.execPath,
       [tsxCli, 'src/service/api-server.ts'],
@@ -163,6 +171,9 @@ async function main(): Promise<void> {
           PORT: String(failingPort),
           ATTESTOR_INSTANCE_ID: 'ha-guard-test',
           ATTESTOR_HA_MODE: 'true',
+          ATTESTOR_RUNTIME_PROFILE: 'production-shared',
+          ATTESTOR_RELEASE_RUNTIME_PKI_PATH: join(failingPkiRoot, 'release-runtime-pki.json'),
+          ATTESTOR_RELEASE_RUNTIME_PKI_SHARED_PATH: 'true',
           REDIS_URL: '',
           ATTESTOR_CONTROL_PLANE_PG_URL: '',
           ATTESTOR_BILLING_LEDGER_PG_URL: '',
@@ -189,6 +200,8 @@ async function main(): Promise<void> {
     ok(output.includes('REDIS_URL-backed external Redis'), 'HA guard: failure mentions external Redis requirement');
 
     const publicHostedPort = await reservePort();
+    const publicHostedPkiRoot = mkdtempSync(join(tmpdir(), 'attestor-live-public-hosted-pki-'));
+    tempRoots.push(publicHostedPkiRoot);
     const publicHosted = spawn(
       process.execPath,
       [tsxCli, 'src/service/api-server.ts'],
@@ -199,6 +212,8 @@ async function main(): Promise<void> {
           PORT: String(publicHostedPort),
           ATTESTOR_INSTANCE_ID: 'public-hosted-guard-test',
           ATTESTOR_HA_MODE: '',
+          ATTESTOR_RUNTIME_PROFILE: 'production-shared',
+          ATTESTOR_RELEASE_RUNTIME_PKI_PATH: join(publicHostedPkiRoot, 'release-runtime-pki.json'),
           ATTESTOR_PUBLIC_HOSTNAME: 'api.attestor.example.invalid',
           ATTESTOR_CONTROL_PLANE_PG_URL: '',
           ATTESTOR_BILLING_LEDGER_PG_URL: '',

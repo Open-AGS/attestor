@@ -19,6 +19,10 @@ function env(name: string): string | null {
   return value && value.trim() ? value.trim() : null;
 }
 
+function envTruthy(name: string): boolean {
+  return /^(1|true|yes|on)$/i.test(process.env[name] ?? '');
+}
+
 function readJson<T>(path: string): T {
   return JSON.parse(readFileSync(resolve(path), 'utf8')) as T;
 }
@@ -54,6 +58,10 @@ function detectMissingInputs(provider: Provider, tlsMode: string): string[] {
   requireOne('ATTESTOR_RUNTIME_PROFILE');
   if (runtimeProfile === 'production-shared') {
     requireOne('ATTESTOR_RELEASE_AUTHORITY_PG_URL');
+  }
+  requireOne('ATTESTOR_RELEASE_RUNTIME_PKI_PATH');
+  if (!envTruthy('ATTESTOR_RELEASE_RUNTIME_PKI_SHARED_PATH')) {
+    missing.push('ATTESTOR_RELEASE_RUNTIME_PKI_SHARED_PATH=true');
   }
   requireOne('ATTESTOR_ADMIN_API_KEY');
   requireOne('ATTESTOR_METRICS_API_KEY');

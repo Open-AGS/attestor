@@ -8,6 +8,7 @@ import { ATTESTOR_RELEASE_TOKEN_INTROSPECTION_STORE_PATH_ENV } from '../src/rele
 import { ATTESTOR_RELEASE_REVIEWER_QUEUE_STORE_PATH_ENV } from '../src/release-kernel/reviewer-queue.js';
 import {
   ATTESTOR_RELEASE_RUNTIME_PKI_PATH_ENV,
+  ATTESTOR_RELEASE_RUNTIME_PKI_SHARED_PATH_ENV,
   createReleaseRuntimeBootstrap,
 } from '../src/service/bootstrap/release-runtime.js';
 import {
@@ -34,6 +35,8 @@ const STORE_PATH_ENV = [
   'ATTESTOR_POLICY_ACTIVATION_APPROVAL_STORE_PATH',
   'ATTESTOR_POLICY_MUTATION_AUDIT_LOG_PATH',
   ATTESTOR_RELEASE_RUNTIME_PKI_PATH_ENV,
+  ATTESTOR_RELEASE_RUNTIME_PKI_SHARED_PATH_ENV,
+  'ATTESTOR_HA_MODE',
   ATTESTOR_RELEASE_SIGNING_PROVIDER_ENV,
   ATTESTOR_REQUIRE_PRODUCTION_RELEASE_SIGNING_PROVIDER_ENV,
 ] as const;
@@ -248,6 +251,67 @@ async function testFilePemProviderRemainsTruthful(): Promise<void> {
   }
 }
 
+async function testHaModeRequiresSharedPkiPathAttestation(): Promise<void> {
+  const root = mkdtempSync(join(tmpdir(), 'attestor-release-signing-ha-pki-'));
+  const previousEnv = new Map<string, string | undefined>(
+    STORE_PATH_ENV.map((key) => [key, process.env[key]]),
+  );
+
+  try {
+    configureDurableRuntimePaths(root);
+    process.env.ATTESTOR_HA_MODE = 'true';
+    delete process.env[ATTESTOR_RELEASE_RUNTIME_PKI_PATH_ENV];
+    try {
+      await createReleaseRuntimeBootstrap({ runtimeProfile: localProfile() });
+      assert.fail('expected HA release PKI bootstrap to fail closed without an explicit shared path');
+    } catch (error) {
+      includes(
+        error instanceof Error ? error.message : String(error),
+        `${ATTESTOR_RELEASE_RUNTIME_PKI_PATH_ENV} must be set explicitly`,
+        'Release signing provider: HA mode refuses local-dev ephemeral PKI without an explicit shared path',
+      );
+    }
+    equal(
+      existsSync(join(root, 'release-runtime-pki.json')),
+      false,
+      'Release signing provider: HA missing-path failure does not create local issuer key material',
+    );
+
+    process.env[ATTESTOR_RELEASE_RUNTIME_PKI_PATH_ENV] = join(root, 'release-runtime-pki.json');
+    try {
+      await createReleaseRuntimeBootstrap({ runtimeProfile: durableProfile() });
+      assert.fail('expected HA release PKI bootstrap to fail closed without shared-path attestation');
+    } catch (error) {
+      includes(
+        error instanceof Error ? error.message : String(error),
+        `${ATTESTOR_RELEASE_RUNTIME_PKI_SHARED_PATH_ENV}=true`,
+        'Release signing provider: HA mode requires explicit shared release PKI path attestation',
+      );
+    }
+    equal(
+      existsSync(join(root, 'release-runtime-pki.json')),
+      false,
+      'Release signing provider: HA shared-path failure does not create local issuer key material',
+    );
+
+    process.env[ATTESTOR_RELEASE_RUNTIME_PKI_SHARED_PATH_ENV] = 'true';
+    const runtime = await createReleaseRuntimeBootstrap({ runtimeProfile: durableProfile() });
+    equal(
+      runtime.pkiPersistence.sharedPathRequired,
+      true,
+      'Release signing provider: HA shared-path requirement is recorded in PKI persistence diagnostics',
+    );
+    equal(
+      runtime.pkiPersistence.sharedPathAttested,
+      true,
+      'Release signing provider: HA shared-path attestation is recorded in PKI persistence diagnostics',
+    );
+  } finally {
+    restoreEnvironment(previousEnv);
+    rmSync(root, { recursive: true, force: true });
+  }
+}
+
 async function testProviderMismatchFailsClosed(): Promise<void> {
   const root = mkdtempSync(join(tmpdir(), 'attestor-release-signing-mismatch-'));
   const previousEnv = new Map<string, string | undefined>(
@@ -282,6 +346,7 @@ async function main(): Promise<void> {
   await testExternalKmsDeclarationFailsClosed();
   await testStrictProductionProviderGateFailsClosed();
   await testFilePemProviderRemainsTruthful();
+  await testHaModeRequiresSharedPkiPathAttestation();
   await testProviderMismatchFailsClosed();
 
   console.log(`production-release-signing-provider.test.ts: ${passed} assertions passed`);

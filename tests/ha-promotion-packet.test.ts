@@ -73,6 +73,8 @@ async function main(): Promise<void> {
     ATTESTOR_BILLING_LEDGER_PG_URL: process.env.ATTESTOR_BILLING_LEDGER_PG_URL,
     ATTESTOR_RUNTIME_PROFILE: process.env.ATTESTOR_RUNTIME_PROFILE,
     ATTESTOR_RELEASE_AUTHORITY_PG_URL: process.env.ATTESTOR_RELEASE_AUTHORITY_PG_URL,
+    ATTESTOR_RELEASE_RUNTIME_PKI_PATH: process.env.ATTESTOR_RELEASE_RUNTIME_PKI_PATH,
+    ATTESTOR_RELEASE_RUNTIME_PKI_SHARED_PATH: process.env.ATTESTOR_RELEASE_RUNTIME_PKI_SHARED_PATH,
     ATTESTOR_ADMIN_API_KEY: process.env.ATTESTOR_ADMIN_API_KEY,
     ATTESTOR_METRICS_API_KEY: process.env.ATTESTOR_METRICS_API_KEY,
     ATTESTOR_ACCOUNT_MFA_ENCRYPTION_KEY: process.env.ATTESTOR_ACCOUNT_MFA_ENCRYPTION_KEY,
@@ -119,6 +121,8 @@ async function main(): Promise<void> {
     process.env.ATTESTOR_BILLING_LEDGER_PG_URL = `${basePg}/billing_ledger`;
     process.env.ATTESTOR_RUNTIME_PROFILE = 'production-shared';
     process.env.ATTESTOR_RELEASE_AUTHORITY_PG_URL = `${basePg}/release_authority`;
+    process.env.ATTESTOR_RELEASE_RUNTIME_PKI_PATH = '/mnt/shared-attestor-release-pki/release-runtime-pki.json';
+    process.env.ATTESTOR_RELEASE_RUNTIME_PKI_SHARED_PATH = 'true';
     process.env.ATTESTOR_ADMIN_API_KEY = 'admin-key';
     process.env.ATTESTOR_METRICS_API_KEY = 'metrics-key';
     process.env.ATTESTOR_ACCOUNT_MFA_ENCRYPTION_KEY = 'mfa-key';

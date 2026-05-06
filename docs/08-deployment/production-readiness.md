@@ -132,10 +132,15 @@ For `production-shared`, do not paper over the gate with file paths. Use it only
 ATTESTOR_RUNTIME_PROFILE=production-shared
 ATTESTOR_RELEASE_AUTHORITY_PG_URL=postgres://attestor:...@postgres.example.internal:5432/attestor_release_authority
 ATTESTOR_RELEASE_RUNTIME_PKI_PATH=/var/lib/attestor/release-runtime-pki.json
+ATTESTOR_RELEASE_RUNTIME_PKI_SHARED_PATH=true
 ATTESTOR_RELEASE_RUNTIME_PKI_ROTATION_ID=initial-issuer
 ```
 
 In this profile, file-backed release-authority paths are no longer the authority-plane proof. The request path must use the async shared authority-store contract, and readiness must fail closed if the shared PostgreSQL substrate is missing or unreachable. The PKI path is still part of the runtime trust boundary until a customer KMS/HSM-backed issuer is wired; deploy it through the same secret-management posture as other signing material.
+
+In HA mode, the release-runtime PKI path must be explicit and must be operator-attested with `ATTESTOR_RELEASE_RUNTIME_PKI_SHARED_PATH=true`. This is deliberately not inferred from the string path: the runtime cannot prove whether `/var/lib/...` is an EFS/NFS/shared volume or a per-pod local mount. Without that attestation, startup refuses to create local issuer material, because per-instance PKI would make tokens issued by one instance fail verification through another instance behind the load balancer.
+
+The release-token JWKS endpoint publishes active and retired signer verification keys for token verification. The CA trust root used for evidence-pack trust chains is exposed separately at `GET /api/v1/pki/ca`, so third-party verifiers can fetch the public CA material needed to validate attached chains without receiving any private key material.
 
 ## Recommended Stack
 
@@ -244,6 +249,7 @@ is a **single OTLP gateway**, not a split metrics/logs/traces credential set:
 - `ATTESTOR_CONTROL_PLANE_PG_URL`
 - `ATTESTOR_BILLING_LEDGER_PG_URL`
 - `ATTESTOR_RELEASE_AUTHORITY_PG_URL` when `ATTESTOR_RUNTIME_PROFILE=production-shared`
+- `ATTESTOR_RELEASE_RUNTIME_PKI_PATH` and `ATTESTOR_RELEASE_RUNTIME_PKI_SHARED_PATH=true` when `ATTESTOR_HA_MODE=true`
 - optional `ATTESTOR_PG_URL`
 - `ATTESTOR_ADMIN_API_KEY`
 - TLS material if you are not delegating certificate issuance elsewhere

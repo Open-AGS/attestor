@@ -117,6 +117,10 @@ export async function probeHaReleaseInputs(options?: {
   required('ATTESTOR_CONTROL_PLANE_PG_URL', env('ATTESTOR_CONTROL_PLANE_PG_URL'), issues);
   required('ATTESTOR_BILLING_LEDGER_PG_URL', env('ATTESTOR_BILLING_LEDGER_PG_URL'), issues);
   validateRuntimeProfile(issues);
+  required('ATTESTOR_RELEASE_RUNTIME_PKI_PATH', env('ATTESTOR_RELEASE_RUNTIME_PKI_PATH'), issues);
+  if (!envTruthy('ATTESTOR_RELEASE_RUNTIME_PKI_SHARED_PATH')) {
+    pushInvalid('ATTESTOR_RELEASE_RUNTIME_PKI_SHARED_PATH=true is required for HA release-token verification.', issues);
+  }
   required('ATTESTOR_ADMIN_API_KEY', env('ATTESTOR_ADMIN_API_KEY'), issues);
   required('ATTESTOR_METRICS_API_KEY', env('ATTESTOR_METRICS_API_KEY'), issues);
   required('ATTESTOR_ACCOUNT_MFA_ENCRYPTION_KEY', env('ATTESTOR_ACCOUNT_MFA_ENCRYPTION_KEY'), issues);

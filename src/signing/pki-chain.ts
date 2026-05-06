@@ -90,6 +90,13 @@ export interface ChainVerification {
   explanation: string;
 }
 
+const DEFAULT_TRUST_CHAIN_CLOCK_SKEW_MS = 5_000;
+
+export interface VerifyTrustChainOptions {
+  readonly now?: Date;
+  readonly clockSkewMs?: number;
+}
+
 // ─── CA Certificate ─────────────────────────────────────────────────────────
 
 /**
@@ -185,8 +192,11 @@ export function buildTrustChain(
 export function verifyTrustChain(
   chain: TrustChain,
   caPublicKeyPem: string,
+  options: VerifyTrustChainOptions = {},
 ): ChainVerification {
-  const now = new Date();
+  const now = options.now ?? new Date();
+  const clockSkewMs = Math.max(0, options.clockSkewMs ?? DEFAULT_TRUST_CHAIN_CLOCK_SKEW_MS);
+  const nowMs = now.getTime();
 
   // 1. Verify CA self-signature
   const { signature: caSig, ...caBody } = chain.ca;
@@ -198,7 +208,9 @@ export function verifyTrustChain(
   const caFpMatch = caIdentity.fingerprint === chain.ca.fingerprint;
 
   // 3. Check CA expiry
-  const caExpired = now > new Date(chain.ca.notAfter) || now < new Date(chain.ca.notBefore);
+  const caExpired =
+    nowMs > new Date(chain.ca.notAfter).getTime() + clockSkewMs ||
+    nowMs < new Date(chain.ca.notBefore).getTime() - clockSkewMs;
 
   // 4. Verify leaf certificate — signed by the CA
   const { issuerSignature: leafSig, ...leafBody } = chain.leaf;
@@ -209,7 +221,9 @@ export function verifyTrustChain(
   const issuerMatch = chain.leaf.issuerFingerprint === chain.ca.fingerprint;
 
   // 6. Check leaf expiry
-  const leafExpired = now > new Date(chain.leaf.notAfter) || now < new Date(chain.leaf.notBefore);
+  const leafExpired =
+    nowMs > new Date(chain.leaf.notAfter).getTime() + clockSkewMs ||
+    nowMs < new Date(chain.leaf.notBefore).getTime() - clockSkewMs;
 
   const chainIntact = caValid && caFpMatch && leafValid && issuerMatch;
   const overall = !chainIntact ? 'invalid' : (caExpired || leafExpired) ? 'expired' : 'valid';

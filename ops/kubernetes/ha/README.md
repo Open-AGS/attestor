@@ -6,6 +6,7 @@ It assumes:
 
 - external Redis
 - shared PostgreSQL control-plane and billing ledger
+- a shared `ReadWriteMany` release-runtime PKI volume for API pods
 - `ATTESTOR_HA_MODE=true`
 - a Gateway API implementation provided by the cluster
 
@@ -40,6 +41,7 @@ This bootstrap route has now been live-validated on GKE: the base Gateway served
 The bundle now includes:
 
 - zero-downtime rolling updates (`maxUnavailable: 0`, `maxSurge: 1`, `minReadySeconds`)
+- a shared release-runtime PKI PVC mounted at `/var/lib/attestor/release-runtime-pki`
 - tuned HPA behavior for scale up/down
 - topology spread + pod anti-affinity for API and worker
 - API startup/readiness/liveness probes
@@ -94,6 +96,7 @@ Workload-aware autoscaling overlay:
 
 Notes:
 
+- the release-runtime PKI PVC must be backed by storage that is actually shared across API pods, such as EFS, Filestore, or another RWX-capable storage class; the runtime treats `ATTESTOR_RELEASE_RUNTIME_PKI_SHARED_PATH=true` as operator attestation and fails closed in HA mode without it
 - the KEDA overlay replaces the base HPAs with:
   - Prometheus request-rate scaling for `attestor-api`
   - Redis waiting-list scaling for `attestor-worker`
@@ -135,7 +138,7 @@ Credential/certificate wiring notes:
   - GKE Gateway policy patches
 - `render:ha-release-bundle` turns the benchmark + credential render outputs into a self-contained apply-ready bundle with final resources, not just patch fragments
 - `probe:ha-runtime-connectivity` validates target-near Redis reachability, control-plane/billing-ledger PostgreSQL connectivity, hostname/image sanity, and TLS material shape before promotion
-- `probe:ha-release-inputs` validates the minimum shared-state, image, hostname, Redis, control-plane, billing-ledger, and TLS inputs for a real HA promotion, runs the runtime-connectivity probe, then dry-runs the final release-bundle render before rollout
+- `probe:ha-release-inputs` validates the minimum shared-state, shared release-runtime PKI, image, hostname, Redis, control-plane, billing-ledger, and TLS inputs for a real HA promotion, runs the runtime-connectivity probe, then dry-runs the final release-bundle render before rollout
 - `render:ha-promotion-packet` collapses the benchmark truth, release preflight, missing-input inventory, release-bundle location, and recommended apply flow into one rollout checkpoint
 - `render:production-readiness-packet` fuses the HA and observability promotion packets, then blocks promotion if either benchmark is stale
 - `render:secret-manager-bootstrap` emits provider-ready `ClusterSecretStore` manifests plus the exact remote secret catalog for the HA runtime/TLS and observability secret surfaces

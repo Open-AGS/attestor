@@ -213,3 +213,10 @@ spec:
             limits:
               cpu: "1"
               memory: 1Gi
+          volumeMounts:
+            - name: release-runtime-pki
+              mountPath: /var/lib/attestor/release-runtime-pki
+      volumes:
+        - name: release-runtime-pki
+          persistentVolumeClaim:
+            claimName: attestor-release-runtime-pki

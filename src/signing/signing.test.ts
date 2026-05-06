@@ -176,6 +176,19 @@ async function runSigningTests(): Promise<number> {
     assert(signerVerify.overall === 'valid', 'PKI: signer chain overall valid');
     passed += 7;
 
+    const justAfterLeafExpiry = new Date(new Date(pki.chains.signer.leaf.notAfter).getTime() + 3_000);
+    const skewTolerantVerify = verifyTrustChain(pki.chains.signer, pki.ca.keyPair.publicKeyPem, {
+      now: justAfterLeafExpiry,
+      clockSkewMs: 5_000,
+    });
+    const strictExpiryVerify = verifyTrustChain(pki.chains.signer, pki.ca.keyPair.publicKeyPem, {
+      now: justAfterLeafExpiry,
+      clockSkewMs: 0,
+    });
+    assert(skewTolerantVerify.overall === 'valid', 'PKI: trust-chain verification tolerates small clock skew');
+    assert(strictExpiryVerify.overall === 'expired', 'PKI: trust-chain verification can still fail strict expiry');
+    passed += 2;
+
     // Verify reviewer chain
     const reviewerVerify = verifyTrustChain(pki.chains.reviewer, pki.ca.keyPair.publicKeyPem);
     assert(reviewerVerify.overall === 'valid', 'PKI: reviewer chain valid');

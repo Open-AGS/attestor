@@ -16,6 +16,7 @@ function equal<T>(actual: T, expected: T, message: string): void {
 
 async function testReleaseTokenJwksRouteExposesPublicVerificationKeyOnly(): Promise<void> {
   const keyPair = generateKeyPair();
+  const caKeyPair = generateKeyPair();
   const issuer = createReleaseTokenIssuer({
     issuer: 'attestor.release.local',
     privateKeyPem: keyPair.privateKeyPem,
@@ -55,7 +56,18 @@ async function testReleaseTokenJwksRouteExposesPublicVerificationKeyOnly(): Prom
     },
     pkiReady: true,
     pki: {
-      ca: { certificate: { name: 'Test CA', fingerprint: 'ca-fingerprint' } },
+      ca: {
+        keyPair: { publicKeyPem: caKeyPair.publicKeyPem },
+        certificate: {
+          certificateId: 'ca_service_core_routes',
+          name: 'Test CA',
+          notBefore: '2026-04-29T00:00:00.000Z',
+          notAfter: '2027-04-29T00:00:00.000Z',
+          publicKey: caKeyPair.publicKeyHex,
+          fingerprint: caKeyPair.fingerprint,
+          signature: 'ca-signature-placeholder',
+        },
+      },
       signer: { certificate: { subject: 'API Runtime Signer' } },
       reviewer: { certificate: { subject: 'API Reviewer' } },
     },
@@ -206,6 +218,31 @@ async function testReleaseTokenJwksRouteExposesPublicVerificationKeyOnly(): Prom
     'd' in (body.keys[1] ?? {}),
     false,
     'Core routes: release-token JWKS route does not expose retired private key material',
+  );
+
+  const caResponse = await app.request('/api/v1/pki/ca');
+  equal(caResponse.status, 200, 'Core routes: CA trust-root route is public and available');
+  equal(
+    caResponse.headers.get('cache-control'),
+    'no-store',
+    'Core routes: CA trust-root route avoids stale trust-root discovery during evaluation',
+  );
+  const caBody = await caResponse.json() as { keys: Array<Record<string, unknown>> };
+  equal(caBody.keys.length, 1, 'Core routes: CA trust-root route exposes the active CA public key');
+  equal(
+    caBody.keys[0]?.keyId,
+    caKeyPair.fingerprint,
+    'Core routes: CA trust-root route uses the CA fingerprint as the public key id',
+  );
+  equal(
+    caBody.keys[0]?.publicKeyPem,
+    caKeyPair.publicKeyPem,
+    'Core routes: CA trust-root route exposes the CA public key PEM',
+  );
+  equal(
+    'privateKeyPem' in (caBody.keys[0] ?? {}),
+    false,
+    'Core routes: CA trust-root route does not expose CA private key material',
   );
 }
 

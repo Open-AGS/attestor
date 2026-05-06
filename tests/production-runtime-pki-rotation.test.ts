@@ -17,6 +17,8 @@ import {
   ATTESTOR_RUNTIME_PROFILE_ENV,
   resolveRuntimeProfile,
 } from '../src/service/bootstrap/runtime-profile.js';
+import { createRequestSigners } from '../src/service/request-context.js';
+import { resetKeylessCa } from '../src/signing/keyless-signer.js';
 
 let passed = 0;
 
@@ -113,6 +115,7 @@ async function main(): Promise<void> {
 
   try {
     configureDurableRuntimePaths(root, 'rotation-a');
+    resetKeylessCa();
     const firstProfile = resolveRuntimeProfile({ env: process.env });
     const first = await createReleaseRuntimeBootstrap({ runtimeProfile: firstProfile });
     const firstVerificationKey = await first.apiReleaseVerificationKeyPromise;
@@ -125,6 +128,11 @@ async function main(): Promise<void> {
     equal(first.pkiPersistence.rotationId, 'rotation-a', 'PKI rotation: first boot records the configured rotation id');
     equal(first.pkiPersistence.retiredVerificationKeyCount, 0, 'PKI rotation: first boot has no retired verification keys');
     equal(issued.keyId, firstVerificationKey.keyId, 'PKI rotation: issued token is signed by the first active key');
+    equal(
+      createRequestSigners('operator_asserted').signer.caPublicKeyPem,
+      first.pki.ca.keyPair.publicKeyPem,
+      'PKI rotation: request keyless signer uses the persisted runtime CA trust root',
+    );
 
     configureDurableRuntimePaths(root, 'rotation-b');
     const secondProfile = resolveRuntimeProfile({ env: process.env });
@@ -136,6 +144,11 @@ async function main(): Promise<void> {
     equal(second.pkiPersistence.rotated, true, 'PKI rotation: rotation id change performs an explicit rotation');
     equal(second.pkiPersistence.rotationId, 'rotation-b', 'PKI rotation: rotated runtime records the new rotation id');
     equal(second.pkiPersistence.retiredVerificationKeyCount, 1, 'PKI rotation: rotated runtime keeps one retired verification key');
+    equal(
+      createRequestSigners('operator_asserted').signer.caPublicKeyPem,
+      second.pki.ca.keyPair.publicKeyPem,
+      'PKI rotation: request keyless signer follows the rotated runtime CA trust root',
+    );
     notEqual(
       secondVerificationKey.keyId,
       firstVerificationKey.keyId,

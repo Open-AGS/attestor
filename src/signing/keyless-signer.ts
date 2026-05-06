@@ -79,6 +79,10 @@ export interface KeylessSignerConfig {
 
 let cachedCa: { keyPair: AttestorKeyPair; certificate: CaCertificate } | null = null;
 
+export function setKeylessCa(ca: { keyPair: AttestorKeyPair; certificate: CaCertificate }): void {
+  cachedCa = ca;
+}
+
 function getOrCreateCa(config?: KeylessSignerConfig): { keyPair: AttestorKeyPair; certificate: CaCertificate } {
   if (!cachedCa) {
     const caKeyPair = generateKeyPair();

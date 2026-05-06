@@ -145,7 +145,18 @@ export interface CoreRouteDeps {
   filingRegistry: FilingRegistryLike;
   pkiReady: boolean;
   pki: {
-    ca: { certificate: { name: string; fingerprint: string } };
+    ca: {
+      keyPair: { publicKeyPem: string };
+      certificate: {
+        certificateId?: string;
+        name: string;
+        notBefore?: string;
+        notAfter?: string;
+        publicKey?: string;
+        fingerprint: string;
+        signature?: string;
+      };
+    };
     signer: { certificate: { subject: string } };
     reviewer: { certificate: { subject: string } };
   };
@@ -274,6 +285,22 @@ export function registerCoreRoutes(app: Hono, deps: CoreRouteDeps): void {
     const verificationKeys = await apiReleaseVerificationKeysPromise;
     c.header('cache-control', 'no-store');
     return c.json(releaseTokenVerificationKeysToJwks(verificationKeys));
+  });
+
+  app.get('/api/v1/pki/ca', (c) => {
+    c.header('cache-control', 'no-store');
+    return c.json({
+      version: 'attestor.release-runtime-ca-public-keys.v1',
+      keys: [
+        {
+          keyId: pki.ca.certificate.fingerprint,
+          algorithm: 'EdDSA',
+          use: 'attestor-trust-root',
+          publicKeyPem: pki.ca.keyPair.publicKeyPem,
+          certificate: pki.ca.certificate,
+        },
+      ],
+    });
   });
 
   app.get('/api/v1/ready', async (c) => {

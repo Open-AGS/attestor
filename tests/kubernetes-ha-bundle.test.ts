@@ -22,6 +22,7 @@ function main(): void {
   const apiDeployment = read('ops/kubernetes/ha/api-deployment.yaml');
   const workerDeployment = read('ops/kubernetes/ha/worker-deployment.yaml');
   const runtimeConfigMap = read('ops/kubernetes/ha/configmap.yaml');
+  const releasePkiPvc = read('ops/kubernetes/ha/release-runtime-pki-pvc.yaml');
   const apiHpa = read('ops/kubernetes/ha/api-hpa.yaml');
   const workerHpa = read('ops/kubernetes/ha/worker-hpa.yaml');
   const gateway = read('ops/kubernetes/ha/gateway.yaml');
@@ -60,9 +61,11 @@ function main(): void {
   const gkeProfile = read('ops/kubernetes/ha/profiles/gke-production.json');
   const haReadme = read('ops/kubernetes/ha/README.md');
 
-  ok(kustomization.includes('api-deployment.yaml') && kustomization.includes('gateway.yaml'), 'Kubernetes HA bundle: kustomization includes deployment and gateway resources');
+  ok(kustomization.includes('api-deployment.yaml') && kustomization.includes('gateway.yaml') && kustomization.includes('release-runtime-pki-pvc.yaml'), 'Kubernetes HA bundle: kustomization includes deployment, gateway, and shared release-runtime PKI resources');
   ok(apiDeployment.includes('ATTESTOR_HA_MODE') && apiDeployment.includes('ATTESTOR_CONTROL_PLANE_PG_URL'), 'Kubernetes HA bundle: API deployment enables HA mode and shared control-plane');
   ok(apiDeployment.includes('ATTESTOR_RELEASE_AUTHORITY_PG_URL') && apiDeployment.includes('release-authority-pg-url'), 'Kubernetes HA bundle: API deployment wires shared release-authority PostgreSQL');
+  ok(apiDeployment.includes('claimName: attestor-release-runtime-pki') && apiDeployment.includes('/var/lib/attestor/release-runtime-pki'), 'Kubernetes HA bundle: API deployment mounts a shared release-runtime PKI path');
+  ok(releasePkiPvc.includes('ReadWriteMany'), 'Kubernetes HA bundle: release-runtime PKI PVC requires shared read/write access across API pods');
   ok(apiDeployment.includes('readinessProbe:') && apiDeployment.includes('livenessProbe:'), 'Kubernetes HA bundle: API deployment defines readiness and liveness probes');
   ok(apiDeployment.includes('rollingUpdate:') && apiDeployment.includes('maxUnavailable: 0'), 'Kubernetes HA bundle: API deployment uses zero-downtime rolling update settings');
   ok(apiDeployment.includes('startupProbe:') && apiDeployment.includes('preStop:'), 'Kubernetes HA bundle: API deployment defines startup probe and preStop drain');
@@ -73,6 +76,7 @@ function main(): void {
   ok(workerDeployment.includes('topologySpreadConstraints:') && workerDeployment.includes('podAntiAffinity:'), 'Kubernetes HA bundle: worker deployment spreads replicas across nodes/zones');
   ok(runtimeConfigMap.includes('OTEL_EXPORTER_OTLP_ENDPOINT') && runtimeConfigMap.includes('attestor-observability-receiver.attestor-observability.svc.cluster.local:4318'), 'Kubernetes HA bundle: runtime configmap points applications at the in-cluster Alloy OTLP HTTP receiver');
   ok(runtimeConfigMap.includes('ATTESTOR_RUNTIME_PROFILE') && runtimeConfigMap.includes('production-shared'), 'Kubernetes HA bundle: runtime configmap selects the production-shared profile');
+  ok(runtimeConfigMap.includes('ATTESTOR_RELEASE_RUNTIME_PKI_PATH') && runtimeConfigMap.includes('ATTESTOR_RELEASE_RUNTIME_PKI_SHARED_PATH'), 'Kubernetes HA bundle: runtime configmap declares the shared release-runtime PKI boundary');
   ok(apiHpa.includes('behavior:') && workerHpa.includes('behavior:'), 'Kubernetes HA bundle: HPAs include scale behaviors');
   ok(apiHpa.includes('memory') && workerHpa.includes('memory'), 'Kubernetes HA bundle: HPAs scale on memory as well as CPU');
   ok(apiPdb.includes('PodDisruptionBudget') && workerPdb.includes('PodDisruptionBudget'), 'Kubernetes HA bundle: PDBs exist for API and worker');
@@ -107,7 +111,7 @@ function main(): void {
   ok(profilesReadme.includes('render:ha-profile') && profilesReadme.includes('aws-production.json'), 'Kubernetes HA bundle: profiles README documents benchmark-to-profile tuning flow');
   ok(releaseBundleScript.includes('render-ha-profile.ts') && releaseBundleScript.includes('render-ha-credentials.ts'), 'Kubernetes HA bundle: release bundle renderer composes scaling and credential artifacts');
   ok(gkeDomainCutoverScript.includes('https-gateway.example.yaml') && gkeDomainCutoverScript.includes('clusterissuer.example.yaml') && gkeDomainCutoverScript.includes('summary.json'), 'Kubernetes HA bundle: final-domain cutover renderer composes GKE Gateway and cert-manager manifests into a DNS handoff bundle');
-  ok(releaseProbeScript.includes('render-ha-release-bundle.ts') && releaseProbeScript.includes('ATTESTOR_CONTROL_PLANE_PG_URL') && releaseProbeScript.includes('ATTESTOR_BILLING_LEDGER_PG_URL') && releaseProbeScript.includes('ATTESTOR_RELEASE_AUTHORITY_PG_URL'), 'Kubernetes HA bundle: release input probe validates shared-state envs and final bundle render');
+  ok(releaseProbeScript.includes('render-ha-release-bundle.ts') && releaseProbeScript.includes('ATTESTOR_CONTROL_PLANE_PG_URL') && releaseProbeScript.includes('ATTESTOR_BILLING_LEDGER_PG_URL') && releaseProbeScript.includes('ATTESTOR_RELEASE_AUTHORITY_PG_URL') && releaseProbeScript.includes('ATTESTOR_RELEASE_RUNTIME_PKI_SHARED_PATH'), 'Kubernetes HA bundle: release input probe validates shared-state envs, shared PKI, and final bundle render');
   ok(promotionPacketScript.includes('ready-for-environment-promotion') && promotionPacketScript.includes('probeHaReleaseInputs') && promotionPacketScript.includes('release-bundle'), 'Kubernetes HA bundle: promotion packet script collapses HA readiness and release handoff into one checkpoint');
   ok(awsProfile.includes('"provider": "aws"') && awsProfile.includes('"availabilityTarget": 0.995'), 'Kubernetes HA bundle: AWS calibration profile ships production SLO defaults');
   ok(gkeProfile.includes('"provider": "gke"') && gkeProfile.includes('"timeoutLatencyMultiplier": 6'), 'Kubernetes HA bundle: GKE calibration profile ships backend timeout tuning defaults');

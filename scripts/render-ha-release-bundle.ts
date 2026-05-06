@@ -175,6 +175,7 @@ function main(): void {
     let httpRoute = read('ops/kubernetes/ha/httproute.yaml');
     const apiService = read('ops/kubernetes/ha/api-service.yaml');
     const namespaceYaml = read('ops/kubernetes/ha/namespace.yaml');
+    const releaseRuntimePkiPvc = read('ops/kubernetes/ha/release-runtime-pki-pvc.yaml');
     const apiPdb = read('ops/kubernetes/ha/api-pdb.yaml');
     const workerPdb = read('ops/kubernetes/ha/worker-pdb.yaml');
 
@@ -195,9 +196,10 @@ function main(): void {
       );
     }
 
-    const resources: string[] = ['namespace.yaml', 'configmap.yaml', 'api-service.yaml', 'api-deployment.yaml', 'worker-deployment.yaml', 'api-pdb.yaml', 'worker-pdb.yaml'];
+    const resources: string[] = ['namespace.yaml', 'configmap.yaml', 'release-runtime-pki-pvc.yaml', 'api-service.yaml', 'api-deployment.yaml', 'worker-deployment.yaml', 'api-pdb.yaml', 'worker-pdb.yaml'];
     write(resolve(outputDir, 'namespace.yaml'), namespaceYaml);
     write(resolve(outputDir, 'configmap.yaml'), configmap);
+    write(resolve(outputDir, 'release-runtime-pki-pvc.yaml'), releaseRuntimePkiPvc);
     write(resolve(outputDir, 'api-service.yaml'), apiService);
     write(resolve(outputDir, 'api-deployment.yaml'), apiDeployment);
     write(resolve(outputDir, 'worker-deployment.yaml'), workerDeployment);

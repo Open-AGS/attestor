@@ -40,6 +40,11 @@ function ok(condition: unknown, message: string): void {
   passed += 1;
 }
 
+function deepEqual(actual: unknown, expected: unknown, message: string): void {
+  assert.deepEqual(actual, expected, message);
+  passed += 1;
+}
+
 async function reservePort(): Promise<number> {
   return new Promise((resolve, reject) => {
     const server = createServer();
@@ -289,7 +294,8 @@ async function main(): Promise<void> {
     ok(authOptionsRes.status === 200, 'Passkey auth options: 200');
     const authOptionsBody = await authOptionsRes.json() as any;
     ok(authOptionsBody.mode === 'email_lookup', 'Passkey auth options: email_lookup mode');
-    ok(authOptionsBody.hintedUser?.email === 'owner@passkeys.example', 'Passkey auth options: hinted user returned');
+    ok(authOptionsBody.hintedUser === null, 'Passkey auth options: no unauthenticated user profile returned');
+    ok(!JSON.stringify(authOptionsBody).includes('owner@passkeys.example'), 'Passkey auth options: response does not echo account email');
 
     const seededAuthenticationToken = await issueAccountPasskeyChallengeTokenState({
       purpose: 'passkey_authentication',
@@ -360,7 +366,19 @@ async function main(): Promise<void> {
         email: 'owner@passkeys.example',
       }),
     });
-    ok(authOptionsAfterDeleteRes.status === 409, 'Passkey auth options(after delete): 409');
+    ok(authOptionsAfterDeleteRes.status === 404, 'Passkey auth options(after delete): generic unavailable status');
+    const authOptionsAfterDeleteBody = await authOptionsAfterDeleteRes.json() as any;
+
+    const authOptionsUnknownRes = await fetch(`${base}/api/v1/auth/passkeys/options`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: 'unknown-passkey-user@example.test',
+      }),
+    });
+    ok(authOptionsUnknownRes.status === authOptionsAfterDeleteRes.status, 'Passkey auth options: missing user and no-passkey user share status');
+    const authOptionsUnknownBody = await authOptionsUnknownRes.json() as any;
+    deepEqual(authOptionsUnknownBody, authOptionsAfterDeleteBody, 'Passkey auth options: missing user and no-passkey user share error body');
 
     console.log(`  ${passed} passed, 0 failed`);
   } finally {

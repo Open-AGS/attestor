@@ -440,6 +440,8 @@ app.post('/api/v1/auth/login', async (c) => {
   }
 });
 
+const HOSTED_PASSKEY_LOGIN_UNAVAILABLE_ERROR = 'Hosted passkey login is not available for that account identifier.';
+
 app.post('/api/v1/auth/passkeys/options', async (c) => {
   const body = await c.req.json().catch(() => ({}));
   const email = typeof body.email === 'string' ? body.email.trim() : '';
@@ -455,21 +457,21 @@ app.post('/api/v1/auth/passkeys/options', async (c) => {
   const user = await stateService.findAccountUserByEmail(email);
   if (!user || user.status !== 'active') {
     recordAuthAttemptFailure(authAttempt);
-    return c.json({ error: 'Hosted passkey login requires an active account user with enrolled passkeys.' }, 404);
+    return c.json({ error: HOSTED_PASSKEY_LOGIN_UNAVAILABLE_ERROR }, 404);
   }
   if (user.passkeys.credentials.length === 0) {
     recordAuthAttemptFailure(authAttempt);
-    return c.json({ error: `Account user '${user.email}' does not have passkeys enrolled.` }, 409);
+    return c.json({ error: HOSTED_PASSKEY_LOGIN_UNAVAILABLE_ERROR }, 404);
   }
 
   const account = await stateService.findHostedAccountById(user.accountId);
   if (!account) {
     recordAuthAttemptFailure(authAttempt);
-    return c.json({ error: `Hosted account '${user.accountId}' was not found.` }, 404);
+    return c.json({ error: HOSTED_PASSKEY_LOGIN_UNAVAILABLE_ERROR }, 404);
   }
   if (account.status === 'archived') {
     recordAuthAttemptFailure(authAttempt);
-    return c.json({ error: `Hosted account '${account.id}' is archived and cannot accept new sessions.` }, 403);
+    return c.json({ error: HOSTED_PASSKEY_LOGIN_UNAVAILABLE_ERROR }, 404);
   }
 
   try {
@@ -492,7 +494,7 @@ app.post('/api/v1/auth/passkeys/options', async (c) => {
       challengeToken: issued.token,
       authentication: built.authentication,
       mode: 'email_lookup',
-      hintedUser: accountUserView(user),
+      hintedUser: null,
     });
   } catch (err) {
     recordAuthAttemptFailure(authAttempt);

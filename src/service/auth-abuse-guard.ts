@@ -4,9 +4,10 @@
  * Interactive auth throttling. Local/dev can use an in-process fallback;
  * HA runtimes fail closed unless a shared Redis limiter is configured.
  */
-import { createHash } from 'node:crypto';
+import { createHmac } from 'node:crypto';
 import IORedis from 'ioredis';
-import { envTruthy } from './deployment-safety.js';
+import { envTruthy, isProductionLikeRuntimeEnv } from './deployment-safety.js';
+import { deriveServiceKey } from './secret-derivation.js';
 import { resolveTrustedClientAddress } from './trusted-proxy.js';
 
 export interface AuthAttemptSubject {
@@ -120,8 +121,23 @@ function normalizeSource(source: string | null): string {
   return normalized.length > 0 ? normalized.slice(0, 160) : 'unknown-source';
 }
 
+function redisKeyHmacKey(): Buffer {
+  const dedicated = process.env.ATTESTOR_AUTH_RATE_LIMIT_HASH_KEY?.trim();
+  if (dedicated) return deriveServiceKey(dedicated, 'auth-abuse.redis-key');
+  if (isProductionLikeRuntimeEnv() || requiresSharedAuthAbuseGuard()) {
+    throw new Error('ATTESTOR_AUTH_RATE_LIMIT_HASH_KEY must be set before using shared production-like auth abuse buckets.');
+  }
+  const localFallback = process.env.ATTESTOR_ADMIN_API_KEY?.trim();
+  return deriveServiceKey(localFallback || 'attestor-local-auth-abuse-redis-key', 'auth-abuse.redis-key');
+}
+
 function redisKey(scope: 'email' | 'source', normalized: string): string {
-  return `${REDIS_KEY_PREFIX}:${scope}:${createHash('sha256').update(normalized).digest('hex')}`;
+  const digest = createHmac('sha256', redisKeyHmacKey())
+    .update(scope)
+    .update('\0')
+    .update(normalized)
+    .digest('hex');
+  return `${REDIS_KEY_PREFIX}:${scope}:${digest}`;
 }
 
 function nowMs(input?: number): number {

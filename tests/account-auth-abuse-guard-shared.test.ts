@@ -20,6 +20,7 @@ const envKeys = [
   'ATTESTOR_AUTH_RATE_LIMIT_MAX_FAILURES_PER_EMAIL',
   'ATTESTOR_AUTH_RATE_LIMIT_MAX_FAILURES_PER_SOURCE',
   'ATTESTOR_AUTH_RATE_LIMIT_LOCKOUT_SECONDS',
+  'ATTESTOR_AUTH_RATE_LIMIT_HASH_KEY',
   'ATTESTOR_AUTH_RATE_LIMIT_REDIS_URL',
   'ATTESTOR_AUTH_RATE_LIMIT_REQUIRE_SHARED',
   'ATTESTOR_HA_MODE',
@@ -72,6 +73,17 @@ async function main(): Promise<void> {
     await resetSharedAuthAbuseGuardForTests();
     clearEnv();
     redis = await startRedis();
+    process.env.ATTESTOR_HA_MODE = 'true';
+    configureAuthAbuseGuard({ redisUrl: redis.url, redisMode: 'test' });
+    await assert.rejects(
+      () => checkAuthAttemptAllowedShared({ email: 'missing-key@example.test', source: '203.0.113.9' }),
+      /ATTESTOR_AUTH_RATE_LIMIT_HASH_KEY/u,
+      'Shared auth abuse guard: HA Redis buckets require a dedicated hash key',
+    );
+
+    await resetSharedAuthAbuseGuardForTests();
+    clearEnv();
+    process.env.ATTESTOR_AUTH_RATE_LIMIT_HASH_KEY = 'shared-auth-abuse-test-key';
     process.env.ATTESTOR_AUTH_RATE_LIMIT_WINDOW_SECONDS = '60';
     process.env.ATTESTOR_AUTH_RATE_LIMIT_MAX_FAILURES_PER_EMAIL = '10';
     process.env.ATTESTOR_AUTH_RATE_LIMIT_MAX_FAILURES_PER_SOURCE = '2';

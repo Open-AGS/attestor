@@ -22,6 +22,7 @@ import type {
   AccountUserRecord,
   AccountUserSamlIdentityRecord,
 } from './account-user-store.js';
+import { isProductionLikeRuntimeEnv } from './deployment-safety.js';
 import { deriveServiceKey } from './secret-derivation.js';
 
 export interface HostedSamlConfig {
@@ -31,6 +32,7 @@ export interface HostedSamlConfig {
   acsUrl: string;
   relayStateTtlMinutes: number;
   authnRequestsSigned: boolean;
+  messageSignatureRequired: boolean;
   privateKey: string | null;
   signingCert: string | null;
   clockDriftMs: number;
@@ -150,15 +152,33 @@ function resolveAcsUrl(requestOrigin?: string | URL | null): string {
   return new URL('/api/v1/auth/saml/acs', origin).href;
 }
 
+export function hostedSamlRelayStateKeySource(): 'dedicated' | 'local-admin-fallback' {
+  const dedicated = process.env.ATTESTOR_HOSTED_SAML_RELAY_STATE_KEY?.trim();
+  if (dedicated) return 'dedicated';
+  const fallback = process.env.ATTESTOR_ADMIN_API_KEY?.trim();
+  if (fallback && !isProductionLikeRuntimeEnv()) return 'local-admin-fallback';
+  throw new Error(
+    'ATTESTOR_HOSTED_SAML_RELAY_STATE_KEY must be set before enabling hosted SAML SSO in this runtime.',
+  );
+}
+
 function relayStateKey(): Buffer {
-  const raw = process.env.ATTESTOR_HOSTED_SAML_RELAY_STATE_KEY?.trim()
-    || process.env.ATTESTOR_ADMIN_API_KEY?.trim();
+  const source = hostedSamlRelayStateKeySource();
+  const raw = source === 'dedicated'
+    ? process.env.ATTESTOR_HOSTED_SAML_RELAY_STATE_KEY?.trim()
+    : process.env.ATTESTOR_ADMIN_API_KEY?.trim();
   if (!raw) {
     throw new Error(
-      'ATTESTOR_HOSTED_SAML_RELAY_STATE_KEY or ATTESTOR_ADMIN_API_KEY must be set before enabling hosted SAML SSO.',
+      'ATTESTOR_HOSTED_SAML_RELAY_STATE_KEY must be set before enabling hosted SAML SSO in this runtime.',
     );
   }
   return deriveServiceKey(raw, 'hosted.saml.relay');
+}
+
+function samlMessageSignatureRequired(): boolean {
+  const raw = process.env.ATTESTOR_HOSTED_SAML_REQUIRE_MESSAGE_SIGNATURE?.trim().toLowerCase();
+  if (!raw) return true;
+  return raw === '1' || raw === 'true' || raw === 'yes' || raw === 'on';
 }
 
 function encodeBase64Url(value: Buffer): string {
@@ -283,6 +303,7 @@ function loadHostedSamlConfig(requestOrigin?: string | URL | null): HostedSamlCo
     acsUrl,
     relayStateTtlMinutes: samlRelayStateTtlMinutes(),
     authnRequestsSigned,
+    messageSignatureRequired: samlMessageSignatureRequired(),
     privateKey,
     signingCert,
     clockDriftMs: samlClockDriftMs(),
@@ -295,6 +316,7 @@ function entityCacheKey(config: HostedSamlConfig): string {
     config.metadataUrl,
     config.acsUrl,
     config.authnRequestsSigned ? 'signed' : 'unsigned',
+    config.messageSignatureRequired ? 'message-signed' : 'assertion-signed',
     createHash('sha256').update(config.idpMetadataXml).digest('hex'),
     createHash('sha256').update(config.privateKey ?? '').digest('hex'),
     createHash('sha256').update(config.signingCert ?? '').digest('hex'),
@@ -311,7 +333,7 @@ function buildEntities(config: HostedSamlConfig): { sp: any; idp: any; config: H
     entityID: config.entityId,
     authnRequestsSigned: config.authnRequestsSigned,
     wantAssertionsSigned: true,
-    wantMessageSigned: true,
+    wantMessageSigned: config.messageSignatureRequired,
     privateKey: config.privateKey ?? undefined,
     signingCert: config.signingCert ?? undefined,
     clockDrifts: [-config.clockDriftMs, config.clockDriftMs],
@@ -352,6 +374,7 @@ export function loadHostedSamlSummary(requestOrigin?: string | URL | null): {
   metadataUrl: string | null;
   acsUrl: string | null;
   authnRequestsSigned: boolean;
+  messageSignatureRequired: boolean;
 } {
   const config = loadHostedSamlConfig(requestOrigin);
   return {
@@ -360,6 +383,7 @@ export function loadHostedSamlSummary(requestOrigin?: string | URL | null): {
     metadataUrl: config?.metadataUrl ?? null,
     acsUrl: config?.acsUrl ?? null,
     authnRequestsSigned: config?.authnRequestsSigned ?? false,
+    messageSignatureRequired: config?.messageSignatureRequired ?? true,
   };
 }
 

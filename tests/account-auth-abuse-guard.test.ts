@@ -215,43 +215,43 @@ function run() {
       const routeSource = readFileSync(join(process.cwd(), 'src', 'service', 'http', 'routes', 'account-routes.ts'), 'utf8');
       ok(
         routeSource.includes("app.post('/api/v1/auth/signup'") &&
-          routeSource.includes('const signupRateLimit = maybeRateLimitAuthAttempt(c, authAttempt);'),
+          routeSource.includes('const signupRateLimit = await maybeRateLimitAuthAttempt(c, authAttempt);'),
         'hosted signup route is wired through the auth abuse guard',
       );
       ok(
         routeSource.includes("app.post('/api/v1/auth/login'") &&
-          routeSource.includes('const loginRateLimit = maybeRateLimitAuthAttempt(c, authAttempt);'),
+          routeSource.includes('const loginRateLimit = await maybeRateLimitAuthAttempt(c, authAttempt);'),
         'hosted login route remains wired through the auth abuse guard',
       );
       ok(
         routeSource.includes("app.post('/api/v1/auth/passkeys/options'") &&
-          routeSource.includes('const passkeyOptionsRateLimit = maybeRateLimitAuthAttempt(c, authAttempt);'),
+          routeSource.includes('const passkeyOptionsRateLimit = await maybeRateLimitAuthAttempt(c, authAttempt);'),
         'hosted passkey-options route is wired through the auth abuse guard',
       );
       ok(
         routeSource.includes("app.post('/api/v1/auth/password/reset'") &&
           routeSource.includes('const authAttempt = authAttemptForPasswordReset(c, resetToken);') &&
-          routeSource.includes('const resetRateLimit = maybeRateLimitAuthAttempt(c, authAttempt);'),
+          routeSource.includes('const resetRateLimit = await maybeRateLimitAuthAttempt(c, authAttempt);'),
         'hosted password-reset apply route is wired through the auth abuse guard',
       );
       ok(
         routeSource.includes("app.post('/api/v1/account/users/invites/accept'") &&
           routeSource.includes("const authAttempt = authAttemptForActionToken(c, 'invite', inviteToken);") &&
-          routeSource.includes('const inviteAcceptRateLimit = maybeRateLimitAuthAttempt(c, authAttempt);') &&
-          routeSource.includes('recordAuthAttemptFailure(authAttempt);'),
+          routeSource.includes('const inviteAcceptRateLimit = await maybeRateLimitAuthAttempt(c, authAttempt);') &&
+          routeSource.includes('await recordAuthAttemptFailure(authAttempt);'),
         'hosted invite accept route is wired through action-token abuse throttling',
       );
       ok(
         routeSource.includes("app.post('/api/v1/account/users/:id/password-reset'") &&
           routeSource.includes("`password-reset-issue:${access.accountId}:${c.req.param('id')}`") &&
-          routeSource.includes('const resetIssueRateLimit = maybeRateLimitAuthAttempt(c, authAttempt);') &&
-          routeSource.includes('recordAuthAttemptUse(authAttempt);'),
+          routeSource.includes('const resetIssueRateLimit = await maybeRateLimitAuthAttempt(c, authAttempt);') &&
+          routeSource.includes('await recordAuthAttemptUse(authAttempt);'),
         'hosted password reset issue route throttles successful request flooding',
       );
       ok(
         routeSource.includes('function authAttemptForCurrentPassword') &&
-          (routeSource.match(/maybeRateLimitCurrentPasswordAttempt\(c, access\)/g) ?? []).length >= 5 &&
-          (routeSource.match(/recordAuthAttemptFailure\(currentPasswordAttempt\.subject\)/g) ?? []).length >= 5,
+          (routeSource.match(/await maybeRateLimitCurrentPasswordAttempt\(c, access\)/g) ?? []).length >= 5 &&
+          (routeSource.match(/await recordAuthAttemptFailure\(currentPasswordAttempt\.subject\)/g) ?? []).length >= 5,
         'hosted current-password sensitive routes share an auth abuse budget',
       );
       ok(

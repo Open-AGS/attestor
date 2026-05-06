@@ -21,6 +21,7 @@ import type {
   AccountUserOidcIdentityRecord,
   AccountUserRecord,
 } from './account-user-store.js';
+import { isProductionLikeRuntimeEnv } from './deployment-safety.js';
 import { deriveServiceKey } from './secret-derivation.js';
 
 export interface HostedOidcConfig {
@@ -72,12 +73,24 @@ function envTruthy(raw: string | undefined): boolean {
   return value === '1' || value === 'true' || value === 'yes' || value === 'on';
 }
 
+export function hostedOidcStateKeySource(): 'dedicated' | 'local-admin-fallback' {
+  const dedicated = process.env.ATTESTOR_HOSTED_OIDC_STATE_KEY?.trim();
+  if (dedicated) return 'dedicated';
+  const fallback = process.env.ATTESTOR_ADMIN_API_KEY?.trim();
+  if (fallback && !isProductionLikeRuntimeEnv()) return 'local-admin-fallback';
+  throw new Error(
+    'ATTESTOR_HOSTED_OIDC_STATE_KEY must be set before enabling hosted OIDC SSO in this runtime.',
+  );
+}
+
 function stateKey(): Buffer {
-  const raw = process.env.ATTESTOR_HOSTED_OIDC_STATE_KEY?.trim()
-    || process.env.ATTESTOR_ADMIN_API_KEY?.trim();
+  const source = hostedOidcStateKeySource();
+  const raw = source === 'dedicated'
+    ? process.env.ATTESTOR_HOSTED_OIDC_STATE_KEY?.trim()
+    : process.env.ATTESTOR_ADMIN_API_KEY?.trim();
   if (!raw) {
     throw new Error(
-      'ATTESTOR_HOSTED_OIDC_STATE_KEY or ATTESTOR_ADMIN_API_KEY must be set before enabling hosted OIDC SSO.',
+      'ATTESTOR_HOSTED_OIDC_STATE_KEY must be set before enabling hosted OIDC SSO in this runtime.',
     );
   }
   return deriveServiceKey(raw, 'hosted.oidc.state');

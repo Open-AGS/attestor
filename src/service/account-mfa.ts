@@ -7,8 +7,8 @@
  * BOUNDARY:
  * - TOTP only (RFC 6238 SHA-1, 6 digits, 30-second period)
  * - No WebAuthn/passkeys yet
- * - Secret encryption requires ATTESTOR_ACCOUNT_MFA_ENCRYPTION_KEY or
- *   falls back to ATTESTOR_ADMIN_API_KEY for hosted deployments
+ * - Secret encryption requires ATTESTOR_ACCOUNT_MFA_ENCRYPTION_KEY in
+ *   production-like runtimes; local/dev can fall back to the admin key
  */
 
 import {
@@ -25,6 +25,7 @@ import {
   type AccountUserRecoveryCodeRecord,
   type AccountUserTotpState,
 } from './account-user-store.js';
+import { isProductionLikeRuntimeEnv } from './deployment-safety.js';
 import { deriveServiceKey } from './secret-derivation.js';
 
 const BASE32_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
@@ -43,12 +44,24 @@ export interface TotpVerificationResult {
   acceptedStep: string | null;
 }
 
+export function accountMfaEncryptionKeySource(): 'dedicated' | 'local-admin-fallback' {
+  const dedicated = process.env.ATTESTOR_ACCOUNT_MFA_ENCRYPTION_KEY?.trim();
+  if (dedicated) return 'dedicated';
+  const fallback = process.env.ATTESTOR_ADMIN_API_KEY?.trim();
+  if (fallback && !isProductionLikeRuntimeEnv()) return 'local-admin-fallback';
+  throw new Error(
+    'ATTESTOR_ACCOUNT_MFA_ENCRYPTION_KEY must be set before enabling account MFA in this runtime.',
+  );
+}
+
 function encryptionKey(): Buffer {
-  const raw = process.env.ATTESTOR_ACCOUNT_MFA_ENCRYPTION_KEY?.trim()
-    || process.env.ATTESTOR_ADMIN_API_KEY?.trim();
+  const source = accountMfaEncryptionKeySource();
+  const raw = source === 'dedicated'
+    ? process.env.ATTESTOR_ACCOUNT_MFA_ENCRYPTION_KEY?.trim()
+    : process.env.ATTESTOR_ADMIN_API_KEY?.trim();
   if (!raw) {
     throw new Error(
-      'ATTESTOR_ACCOUNT_MFA_ENCRYPTION_KEY or ATTESTOR_ADMIN_API_KEY must be set before enabling account MFA.',
+      'ATTESTOR_ACCOUNT_MFA_ENCRYPTION_KEY must be set before enabling account MFA in this runtime.',
     );
   }
   return deriveServiceKey(raw, 'account.mfa.encryption');

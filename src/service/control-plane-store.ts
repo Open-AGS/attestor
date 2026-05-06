@@ -54,8 +54,8 @@ import {
 } from './account-user-store.js';
 import {
   buildAccountSessionRecord,
+  accountSessionTokenHashCandidates,
   findAccountSessionByToken as findAccountSessionByTokenFile,
-  hashAccountSessionToken,
   isAccountSessionRecordExpired,
   issueAccountSession as issueAccountSessionFile,
   listAccountSessions as listAccountSessionsFile,
@@ -1612,13 +1612,13 @@ async function upsertAccountUserActionTokenPg(
 async function findAccountSessionByTokenPg(token: string, options?: { touch?: boolean }): Promise<AccountSessionRecord | null> {
   await ensureSchema();
   const pool = await getPool();
-  const tokenHash = hashAccountSessionToken(token);
+  const tokenHashes = accountSessionTokenHashCandidates(token);
   const result = await pool.query(
     `SELECT record_json
        FROM attestor_control_plane.account_sessions
-      WHERE token_hash = $1
+      WHERE token_hash = ANY($1::text[])
       LIMIT 1`,
-    [tokenHash],
+    [tokenHashes],
   );
   if (!result.rows[0]) return null;
   const record = rowToAccountSession(result.rows[0]);

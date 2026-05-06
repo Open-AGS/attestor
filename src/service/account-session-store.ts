@@ -13,12 +13,13 @@
  * - No refresh tokens, device binding, or central session revocation bus yet
  */
 
-import { createHash, randomBytes, randomUUID } from 'node:crypto';
+import { createHash, createHmac, randomBytes, randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import type { AccountUserRole } from './account-user-store.js';
 import { isProductionLikeRuntimeEnv } from './deployment-safety.js';
 import { withFileLock, writeTextFileAtomic } from './file-store.js';
+import { deriveServiceKey } from './secret-derivation.js';
 
 export interface AccountSessionRecord {
   id: string;
@@ -93,8 +94,30 @@ function defaultStore(): AccountSessionStoreFile {
   return { version: 1, records: [] };
 }
 
-function hashToken(token: string): string {
+function sessionTokenHashKey(): Buffer | null {
+  const dedicated = process.env.ATTESTOR_SESSION_TOKEN_HASH_KEY?.trim();
+  if (dedicated) return deriveServiceKey(dedicated, 'account.session.token-hash');
+  if (isProductionLikeRuntimeEnv()) {
+    throw new Error('ATTESTOR_SESSION_TOKEN_HASH_KEY must be set before issuing production-like account sessions.');
+  }
+  const localFallback = process.env.ATTESTOR_ADMIN_API_KEY?.trim();
+  return localFallback ? deriveServiceKey(localFallback, 'account.session.token-hash') : null;
+}
+
+function legacyHashToken(token: string): string {
   return createHash('sha256').update(token).digest('hex');
+}
+
+function hashToken(token: string): string {
+  const key = sessionTokenHashKey();
+  if (!key) return legacyHashToken(token);
+  return createHmac('sha256', key).update(token).digest('hex');
+}
+
+export function accountSessionTokenHashCandidates(token: string): string[] {
+  const current = hashToken(token);
+  const legacy = legacyHashToken(token);
+  return [...new Set([current, legacy])];
 }
 
 export function hashAccountSessionToken(token: string): string {
@@ -192,11 +215,11 @@ export function findAccountSessionByToken(
   token: string,
   options?: { touch?: boolean },
 ): AccountSessionRecord | null {
-  const hashed = hashToken(token);
+  const hashes = accountSessionTokenHashCandidates(token);
   return withFileLock(storePath(), () => {
     const store = loadStore();
     let changed = pruneExpiredSessions(store);
-    const record = store.records.find((entry) => entry.tokenHash === hashed) ?? null;
+    const record = store.records.find((entry) => hashes.includes(entry.tokenHash)) ?? null;
     if (!record || record.revokedAt) {
       if (changed) saveStore(store);
       return null;
@@ -231,11 +254,11 @@ export function revokeAccountSessionByToken(token: string): {
   record: AccountSessionRecord | null;
   path: string;
 } {
-  const hashed = hashToken(token);
+  const hashes = accountSessionTokenHashCandidates(token);
   const path = storePath();
   return withFileLock(path, () => {
     const store = loadStore();
-    const record = store.records.find((entry) => entry.tokenHash === hashed) ?? null;
+    const record = store.records.find((entry) => hashes.includes(entry.tokenHash)) ?? null;
     if (!record) return { record: null, path };
     if (!record.revokedAt) {
       record.revokedAt = new Date().toISOString();

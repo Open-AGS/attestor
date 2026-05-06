@@ -14,6 +14,10 @@ import {
   configureTenantRateLimiter,
   shutdownTenantRateLimiter,
 } from '../rate-limit.js';
+import {
+  configureAuthAbuseGuard,
+  shutdownAuthAbuseGuard,
+} from '../auth-abuse-guard.js';
 import { resolveRedis } from '../redis-auto.js';
 import {
   resolvePlanAsyncDispatch,
@@ -125,6 +129,12 @@ export function configureTenantRuntimeBackends(): void {
     redisUrl: rateLimitRedisUrl ?? sharedRedisUrl,
     redisMode: rateLimitRedisUrl ? 'explicit' : redisMode,
   });
+
+  const authRateLimitRedisUrl = explicitRedisUrl('ATTESTOR_AUTH_RATE_LIMIT_REDIS_URL');
+  configureAuthAbuseGuard({
+    redisUrl: authRateLimitRedisUrl ?? sharedRedisUrl,
+    redisMode: authRateLimitRedisUrl ? 'explicit' : redisMode,
+  });
 }
 
 export async function shutdownTenantRuntimeBackends(): Promise<void> {
@@ -142,6 +152,7 @@ export async function shutdownTenantRuntimeBackends(): Promise<void> {
     shutdownTenantAsyncExecutionCoordinator(),
     shutdownTenantAsyncWeightedDispatchCoordinator(),
     shutdownTenantRateLimiter(),
+    shutdownAuthAbuseGuard(),
     worker?.close(),
     queue?.close(),
   ]);

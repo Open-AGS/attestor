@@ -41,10 +41,10 @@ import type { TenantKeyRecord } from '../../tenant-key-store.js';
 import type { AccountAccessContext, TenantContext } from '../../tenant-isolation.js';
 import type { UsageContext } from '../../usage-meter.js';
 import {
-  checkAuthAttemptAllowed,
-  recordAuthAttemptFailure,
-  recordAuthAttemptSuccess,
-  recordAuthAttemptUse,
+  checkAuthAttemptAllowedShared as checkAuthAttemptAllowed,
+  recordAuthAttemptFailureShared as recordAuthAttemptFailure,
+  recordAuthAttemptSuccessShared as recordAuthAttemptSuccess,
+  recordAuthAttemptUseShared as recordAuthAttemptUse,
   resolveAuthAttemptSource,
   type AuthAttemptDecision,
   type AuthAttemptSubject,
@@ -156,19 +156,19 @@ function authRateLimitResponse(context: Context, decision: AuthAttemptDecision):
   }, 429);
 }
 
-function maybeRateLimitAuthAttempt(context: Context, subject: AuthAttemptSubject): Response | null {
-  const decision = checkAuthAttemptAllowed(subject);
+async function maybeRateLimitAuthAttempt(context: Context, subject: AuthAttemptSubject): Promise<Response | null> {
+  const decision = await checkAuthAttemptAllowed(subject);
   return decision.allowed ? null : authRateLimitResponse(context, decision);
 }
 
-function maybeRateLimitCurrentPasswordAttempt(
+async function maybeRateLimitCurrentPasswordAttempt(
   context: Context,
   access: AccountAccessContext,
-): { subject: AuthAttemptSubject; response: Response | null } {
+): Promise<{ subject: AuthAttemptSubject; response: Response | null }> {
   const subject = authAttemptForCurrentPassword(context, access);
   return {
     subject,
-    response: maybeRateLimitAuthAttempt(context, subject),
+    response: await maybeRateLimitAuthAttempt(context, subject),
   };
 }
 
@@ -369,7 +369,7 @@ app.post('/api/v1/auth/signup', async (c) => {
   const displayName = typeof body.displayName === 'string' ? body.displayName.trim() : '';
   const password = typeof body.password === 'string' ? body.password : '';
   const authAttempt = authAttemptFor(c, email);
-  const signupRateLimit = maybeRateLimitAuthAttempt(c, authAttempt);
+  const signupRateLimit = await maybeRateLimitAuthAttempt(c, authAttempt);
   if (signupRateLimit) return signupRateLimit;
 
   try {
@@ -379,7 +379,7 @@ app.post('/api/v1/auth/signup', async (c) => {
       displayName,
       password,
     });
-    recordAuthAttemptSuccess(authAttempt);
+    await recordAuthAttemptSuccess(authAttempt);
 
     setSessionCookieForRecord(c, signup.sessionToken, signup.session.expiresAt);
 
@@ -402,7 +402,7 @@ app.post('/api/v1/auth/signup', async (c) => {
     const mapped = accountAuthServiceErrorResponse(c, err);
     if (mapped) {
       if (err instanceof AccountAuthServiceError) {
-        recordAuthAttemptFailure(authAttempt);
+        await recordAuthAttemptFailure(authAttempt);
       }
       return mapped;
     }
@@ -415,12 +415,12 @@ app.post('/api/v1/auth/login', async (c) => {
   const email = typeof body.email === 'string' ? body.email.trim() : '';
   const password = typeof body.password === 'string' ? body.password : '';
   const authAttempt = authAttemptFor(c, email);
-  const loginRateLimit = maybeRateLimitAuthAttempt(c, authAttempt);
+  const loginRateLimit = await maybeRateLimitAuthAttempt(c, authAttempt);
   if (loginRateLimit) return loginRateLimit;
 
   try {
     const login = await authService.login({ email, password });
-    recordAuthAttemptSuccess(authAttempt);
+    await recordAuthAttemptSuccess(authAttempt);
 
     if (login.mfaRequired) {
       return c.json({
@@ -447,7 +447,7 @@ app.post('/api/v1/auth/login', async (c) => {
     const mapped = accountAuthServiceErrorResponse(c, err);
     if (mapped) {
       if (err instanceof AccountAuthServiceError && err.statusCode === 401) {
-        recordAuthAttemptFailure(authAttempt);
+        await recordAuthAttemptFailure(authAttempt);
       }
       return mapped;
     }
@@ -461,31 +461,31 @@ app.post('/api/v1/auth/passkeys/options', async (c) => {
   const body = await c.req.json().catch(() => ({}));
   const email = typeof body.email === 'string' ? body.email.trim() : '';
   const authAttempt = authAttemptFor(c, email);
-  const passkeyOptionsRateLimit = maybeRateLimitAuthAttempt(c, authAttempt);
+  const passkeyOptionsRateLimit = await maybeRateLimitAuthAttempt(c, authAttempt);
   if (passkeyOptionsRateLimit) return passkeyOptionsRateLimit;
 
   if (!email) {
-    recordAuthAttemptFailure(authAttempt);
+    await recordAuthAttemptFailure(authAttempt);
     return c.json({ error: 'email is required for hosted passkey login in the current first slice.' }, 400);
   }
 
   const user = await stateService.findAccountUserByEmail(email);
   if (!user || user.status !== 'active') {
-    recordAuthAttemptFailure(authAttempt);
+    await recordAuthAttemptFailure(authAttempt);
     return c.json({ error: HOSTED_PASSKEY_LOGIN_UNAVAILABLE_ERROR }, 404);
   }
   if (user.passkeys.credentials.length === 0) {
-    recordAuthAttemptFailure(authAttempt);
+    await recordAuthAttemptFailure(authAttempt);
     return c.json({ error: HOSTED_PASSKEY_LOGIN_UNAVAILABLE_ERROR }, 404);
   }
 
   const account = await stateService.findHostedAccountById(user.accountId);
   if (!account) {
-    recordAuthAttemptFailure(authAttempt);
+    await recordAuthAttemptFailure(authAttempt);
     return c.json({ error: HOSTED_PASSKEY_LOGIN_UNAVAILABLE_ERROR }, 404);
   }
   if (account.status === 'archived') {
-    recordAuthAttemptFailure(authAttempt);
+    await recordAuthAttemptFailure(authAttempt);
     return c.json({ error: HOSTED_PASSKEY_LOGIN_UNAVAILABLE_ERROR }, 404);
   }
 
@@ -512,7 +512,7 @@ app.post('/api/v1/auth/passkeys/options', async (c) => {
       hintedUser: null,
     });
   } catch (err) {
-    recordAuthAttemptFailure(authAttempt);
+    await recordAuthAttemptFailure(authAttempt);
     return c.json({ error: accountRouteErrorMessage(err) }, 400);
   }
 });
@@ -1034,10 +1034,10 @@ app.post('/api/v1/auth/password/change', async (c) => {
   if (!currentPassword || !newPassword) {
     return c.json({ error: 'currentPassword and newPassword are required.' }, 400);
   }
-  const currentPasswordAttempt = maybeRateLimitCurrentPasswordAttempt(c, access);
+  const currentPasswordAttempt = await maybeRateLimitCurrentPasswordAttempt(c, access);
   if (currentPasswordAttempt.response) return currentPasswordAttempt.response;
   if (!verifyAccountUserPasswordRecord(user.password, currentPassword)) {
-    recordAuthAttemptFailure(currentPasswordAttempt.subject);
+    await recordAuthAttemptFailure(currentPasswordAttempt.subject);
     return c.json({ error: 'Current password is invalid.' }, 403);
   }
   if (newPassword.length < 12) {
@@ -1152,10 +1152,10 @@ app.post('/api/v1/account/passkeys/register/options', async (c) => {
   if (!password) {
     return c.json({ error: 'password is required.' }, 400);
   }
-  const currentPasswordAttempt = maybeRateLimitCurrentPasswordAttempt(c, access);
+  const currentPasswordAttempt = await maybeRateLimitCurrentPasswordAttempt(c, access);
   if (currentPasswordAttempt.response) return currentPasswordAttempt.response;
   if (!verifyAccountUserPasswordRecord(user.password, password)) {
-    recordAuthAttemptFailure(currentPasswordAttempt.subject);
+    await recordAuthAttemptFailure(currentPasswordAttempt.subject);
     return c.json({ error: 'Current password is invalid.' }, 403);
   }
 
@@ -1282,10 +1282,10 @@ app.post('/api/v1/account/passkeys/:id/delete', async (c) => {
   if (!passkeyId || !password) {
     return c.json({ error: 'passkey id and password are required.' }, 400);
   }
-  const currentPasswordAttempt = maybeRateLimitCurrentPasswordAttempt(c, access);
+  const currentPasswordAttempt = await maybeRateLimitCurrentPasswordAttempt(c, access);
   if (currentPasswordAttempt.response) return currentPasswordAttempt.response;
   if (!verifyAccountUserPasswordRecord(user.password, password)) {
-    recordAuthAttemptFailure(currentPasswordAttempt.subject);
+    await recordAuthAttemptFailure(currentPasswordAttempt.subject);
     return c.json({ error: 'Current password is invalid.' }, 403);
   }
 
@@ -1322,10 +1322,10 @@ app.post('/api/v1/account/mfa/totp/enroll', async (c) => {
   if (!password) {
     return c.json({ error: 'password is required.' }, 400);
   }
-  const currentPasswordAttempt = maybeRateLimitCurrentPasswordAttempt(c, access);
+  const currentPasswordAttempt = await maybeRateLimitCurrentPasswordAttempt(c, access);
   if (currentPasswordAttempt.response) return currentPasswordAttempt.response;
   if (!verifyAccountUserPasswordRecord(user.password, password)) {
-    recordAuthAttemptFailure(currentPasswordAttempt.subject);
+    await recordAuthAttemptFailure(currentPasswordAttempt.subject);
     return c.json({ error: 'Current password is invalid.' }, 403);
   }
   if (totpSummary(user.mfa.totp).enabled) {
@@ -1465,10 +1465,10 @@ app.post('/api/v1/account/mfa/disable', async (c) => {
   if (!password || (!code && !recoveryCode)) {
     return c.json({ error: 'password and either code or recoveryCode are required.' }, 400);
   }
-  const currentPasswordAttempt = maybeRateLimitCurrentPasswordAttempt(c, access);
+  const currentPasswordAttempt = await maybeRateLimitCurrentPasswordAttempt(c, access);
   if (currentPasswordAttempt.response) return currentPasswordAttempt.response;
   if (!verifyAccountUserPasswordRecord(user.password, password)) {
-    recordAuthAttemptFailure(currentPasswordAttempt.subject);
+    await recordAuthAttemptFailure(currentPasswordAttempt.subject);
     return c.json({ error: 'Current password is invalid.' }, 403);
   }
   if (!totpSummary(user.mfa.totp).enabled || !user.mfa.totp.secretCiphertext || !user.mfa.totp.secretIv || !user.mfa.totp.secretAuthTag) {
@@ -1837,14 +1837,14 @@ app.post('/api/v1/account/users/invites/accept', async (c) => {
   const inviteToken = typeof body.inviteToken === 'string' ? body.inviteToken.trim() : '';
   const password = typeof body.password === 'string' ? body.password : '';
   const authAttempt = authAttemptForActionToken(c, 'invite', inviteToken);
-  const inviteAcceptRateLimit = maybeRateLimitAuthAttempt(c, authAttempt);
+  const inviteAcceptRateLimit = await maybeRateLimitAuthAttempt(c, authAttempt);
   if (inviteAcceptRateLimit) return inviteAcceptRateLimit;
   try {
     const accepted = await userManagementService.acceptInvite({
       inviteToken,
       password,
     });
-    recordAuthAttemptSuccess(authAttempt);
+    await recordAuthAttemptSuccess(authAttempt);
     setSessionCookieForRecord(c, accepted.sessionToken, accepted.session.expiresAt);
     return c.json({
       accepted: true,
@@ -1860,7 +1860,7 @@ app.post('/api/v1/account/users/invites/accept', async (c) => {
     const mapped = accountUserManagementServiceErrorResponse(c, err);
     if (mapped) {
       if (err instanceof AccountUserManagementServiceError && err.statusCode === 400) {
-        recordAuthAttemptFailure(authAttempt);
+        await recordAuthAttemptFailure(authAttempt);
       }
       return mapped;
     }
@@ -1913,9 +1913,9 @@ app.post('/api/v1/account/users/:id/password-reset', async (c) => {
   const body = await c.req.json().catch(() => ({}));
   const ttlMinutes = typeof body.ttlMinutes === 'number' ? body.ttlMinutes : null;
   const authAttempt = authAttemptFor(c, `password-reset-issue:${access.accountId}:${c.req.param('id')}`);
-  const resetIssueRateLimit = maybeRateLimitAuthAttempt(c, authAttempt);
+  const resetIssueRateLimit = await maybeRateLimitAuthAttempt(c, authAttempt);
   if (resetIssueRateLimit) return resetIssueRateLimit;
-  recordAuthAttemptUse(authAttempt);
+  await recordAuthAttemptUse(authAttempt);
   try {
     const issued = await userManagementService.issuePasswordReset({
       accountId: access.accountId,
@@ -1940,11 +1940,11 @@ app.post('/api/v1/auth/password/reset', async (c) => {
   const resetToken = typeof body.resetToken === 'string' ? body.resetToken.trim() : '';
   const newPassword = typeof body.newPassword === 'string' ? body.newPassword : '';
   const authAttempt = authAttemptForPasswordReset(c, resetToken);
-  const resetRateLimit = maybeRateLimitAuthAttempt(c, authAttempt);
+  const resetRateLimit = await maybeRateLimitAuthAttempt(c, authAttempt);
   if (resetRateLimit) return resetRateLimit;
   try {
     await userManagementService.consumePasswordReset({ resetToken, newPassword });
-    recordAuthAttemptSuccess(authAttempt);
+    await recordAuthAttemptSuccess(authAttempt);
     deleteCookie(c, sessionCookieName(), {
       path: '/api/v1',
     });
@@ -1955,7 +1955,7 @@ app.post('/api/v1/auth/password/reset', async (c) => {
     const mapped = accountUserManagementServiceErrorResponse(c, err);
     if (mapped) {
       if (err instanceof AccountUserManagementServiceError && err.statusCode === 400) {
-        recordAuthAttemptFailure(authAttempt);
+        await recordAuthAttemptFailure(authAttempt);
       }
       return mapped;
     }

@@ -90,6 +90,8 @@ async function main(): Promise<void> {
     ATTESTOR_SESSION_COOKIE_SECURE: process.env.ATTESTOR_SESSION_COOKIE_SECURE,
     ATTESTOR_STRIPE_USE_MOCK: process.env.ATTESTOR_STRIPE_USE_MOCK,
     ATTESTOR_HOSTED_OIDC_ALLOW_INSECURE_HTTP: process.env.ATTESTOR_HOSTED_OIDC_ALLOW_INSECURE_HTTP,
+    ATTESTOR_EMAIL_DELIVERY_MODE: process.env.ATTESTOR_EMAIL_DELIVERY_MODE,
+    ATTESTOR_SMTP_IGNORE_TLS: process.env.ATTESTOR_SMTP_IGNORE_TLS,
     ATTESTOR_HA_RUNTIME_SECRET_MODE: process.env.ATTESTOR_HA_RUNTIME_SECRET_MODE,
     ATTESTOR_HA_SECRET_STORE: process.env.ATTESTOR_HA_SECRET_STORE,
     ATTESTOR_HA_EXTERNAL_SECRET_STORE_KIND: process.env.ATTESTOR_HA_EXTERNAL_SECRET_STORE_KIND,
@@ -192,6 +194,14 @@ async function main(): Promise<void> {
     ok(insecureOidc.rolloutReadiness.envComplete === false, 'HA release probe: insecure hosted OIDC override blocks public deployment readiness');
     ok(insecureOidc.rolloutReadiness.issues.some((issue) => issue.includes('OIDC_ALLOW_INSECURE_HTTP')), 'HA release probe: insecure hosted OIDC issue is surfaced');
     delete process.env.ATTESTOR_HOSTED_OIDC_ALLOW_INSECURE_HTTP;
+
+    process.env.ATTESTOR_EMAIL_DELIVERY_MODE = 'smtp';
+    process.env.ATTESTOR_SMTP_IGNORE_TLS = 'true';
+    const insecureSmtp = await probeHaReleaseInputs({ provider: 'generic', benchmarkPath });
+    ok(insecureSmtp.rolloutReadiness.envComplete === false, 'HA release probe: SMTP ignore TLS blocks public deployment readiness');
+    ok(insecureSmtp.rolloutReadiness.issues.some((issue) => issue.includes('ATTESTOR_SMTP_IGNORE_TLS')), 'HA release probe: SMTP ignore TLS issue is surfaced');
+    delete process.env.ATTESTOR_EMAIL_DELIVERY_MODE;
+    delete process.env.ATTESTOR_SMTP_IGNORE_TLS;
 
     process.env.ATTESTOR_BILLING_SUCCESS_URL = 'http://ha.attestor.example.invalid/billing/success';
     const insecureBillingUrl = await probeHaReleaseInputs({ provider: 'generic', benchmarkPath });

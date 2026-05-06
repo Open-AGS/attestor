@@ -103,6 +103,13 @@ function cookieHeaderFromResponse(res: Response): string | null {
   return cookiePair?.trim() || null;
 }
 
+async function waitForRateLimitWindowHead(windowSeconds: number): Promise<void> {
+  const windowMs = windowSeconds * 1000;
+  const elapsedMs = Date.now() % windowMs;
+  if (elapsedMs <= 500) return;
+  await new Promise((resolve) => setTimeout(resolve, windowMs - elapsedMs + 150));
+}
+
 function unsignedBearerToken(payload: Record<string, unknown>): string {
   const header = Buffer.from(JSON.stringify({ alg: 'none', typ: 'JWT' })).toString('base64url');
   const body = Buffer.from(JSON.stringify(payload)).toString('base64url');
@@ -3159,6 +3166,9 @@ process.env.ATTESTOR_RATE_LIMIT_WINDOW_SECONDS = '5';
       });
       ok(rateTenantRes.status === 201, 'Admin API: starter tenant for rate-limit test issued');
       const rateTenantBody = await rateTenantRes.json() as any;
+      await waitForRateLimitWindowHead(
+        Number.parseInt(process.env.ATTESTOR_RATE_LIMIT_WINDOW_SECONDS ?? '5', 10) || 5,
+      );
 
       for (let attempt = 0; attempt < 3; attempt += 1) {
         const allowed = await fetch(`${BASE}/api/v1/pipeline/run`, {

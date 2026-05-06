@@ -131,6 +131,13 @@ export async function probeHaReleaseInputs(options?: {
   if (publicHostname && envTruthy('ATTESTOR_HOSTED_OIDC_ALLOW_INSECURE_HTTP')) {
     pushInvalid('ATTESTOR_HOSTED_OIDC_ALLOW_INSECURE_HTTP must not be enabled for a public deployment.', issues);
   }
+  if (
+    publicHostname
+    && env('ATTESTOR_EMAIL_DELIVERY_MODE')?.toLowerCase() === 'smtp'
+    && envTruthy('ATTESTOR_SMTP_IGNORE_TLS')
+  ) {
+    pushInvalid('ATTESTOR_SMTP_IGNORE_TLS must not be enabled for public hosted SMTP delivery.', issues);
+  }
   if (publicHostname) {
     required('STRIPE_API_KEY', env('STRIPE_API_KEY'), issues);
     required('STRIPE_WEBHOOK_SECRET', env('STRIPE_WEBHOOK_SECRET'), issues);

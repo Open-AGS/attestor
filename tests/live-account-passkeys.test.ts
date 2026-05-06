@@ -12,6 +12,7 @@ import { resetAccountUserActionTokenStoreForTests } from '../src/service/account
 import { resetAdminAuditLogForTests } from '../src/service/admin-audit-log.js';
 import { resetAdminIdempotencyStoreForTests } from '../src/service/admin-idempotency-store.js';
 import { resetAsyncDeadLetterStoreForTests } from '../src/service/async-dead-letter-store.js';
+import { resetAuthAbuseGuardForTests } from '../src/service/auth-abuse-guard.js';
 import { resetBillingEventLedgerForTests } from '../src/service/billing-event-ledger.js';
 import { resetHostedBillingEntitlementStoreForTests } from '../src/service/billing-entitlement-store.js';
 import {
@@ -132,6 +133,7 @@ async function main(): Promise<void> {
     resetAdminAuditLogForTests();
     resetAdminIdempotencyStoreForTests();
     resetAsyncDeadLetterStoreForTests();
+    resetAuthAbuseGuardForTests();
     resetStripeWebhookStoreForTests();
     resetHostedBillingEntitlementStoreForTests();
     await resetBillingEventLedgerForTests();
@@ -194,6 +196,37 @@ async function main(): Promise<void> {
     ok(listEmptyRes.status === 200, 'Passkey list(empty): 200');
     const listEmptyBody = await listEmptyRes.json() as any;
     ok(listEmptyBody.passkeys.credentialCount === 0, 'Passkey list(empty): count=0');
+
+    for (let attempt = 1; attempt <= 5; attempt += 1) {
+      const wrongCurrentPasswordRes = await fetch(`${base}/api/v1/account/passkeys/register/options`, {
+        method: 'POST',
+        headers: {
+          Cookie: sessionCookie!,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          password: `WrongPasskeyOwner${attempt}!`,
+        }),
+      });
+      ok(wrongCurrentPasswordRes.status === 403, `Current password budget: wrong attempt ${attempt} rejected`);
+    }
+
+    const lockedCurrentPasswordRes = await fetch(`${base}/api/v1/auth/password/change`, {
+      method: 'POST',
+      headers: {
+        Cookie: sessionCookie!,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        currentPassword: 'PasskeyOwner123!',
+        newPassword: 'PasskeyOwner456!',
+      }),
+    });
+    ok(
+      lockedCurrentPasswordRes.status === 429,
+      'Current password budget: shared budget blocks password change after passkey failures',
+    );
+    resetAuthAbuseGuardForTests();
 
     const registerOptionsRes = await fetch(`${base}/api/v1/account/passkeys/register/options`, {
       method: 'POST',

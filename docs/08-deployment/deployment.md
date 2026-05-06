@@ -114,7 +114,7 @@ docker run \
 | `ATTESTOR_SMTP_USER` | No | None | Optional SMTP username |
 | `ATTESTOR_SMTP_PASS` | No | None | Optional SMTP password |
 | `ATTESTOR_SMTP_SECURE` | No | `false` | Enable SMTPS for hosted invite/reset delivery |
-| `ATTESTOR_SMTP_IGNORE_TLS` | No | `false` | Skip STARTTLS for local/test SMTP delivery |
+| `ATTESTOR_SMTP_IGNORE_TLS` | No | `false` | Skip STARTTLS for local/test SMTP delivery only; public hosted readiness fails closed when SMTP delivery enables this |
 | `ATTESTOR_EMAIL_DELIVERY_EVENTS_PATH` | No | `.attestor/email-delivery-events.json` | File-backed hosted email-delivery event ledger used when `ATTESTOR_CONTROL_PLANE_PG_URL` is not configured |
 | `ATTESTOR_SENDGRID_EVENT_WEBHOOK_PUBLIC_KEY` | No | None | SendGrid Event Webhook public key enabling signed delivery analytics at `POST /api/v1/email/sendgrid/webhook` |
 | `ATTESTOR_SENDGRID_EVENT_WEBHOOK_MAX_AGE_SECONDS` | No | `300` | Max webhook timestamp age in seconds for SendGrid signature verification |

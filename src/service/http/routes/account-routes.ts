@@ -130,6 +130,10 @@ function authAttemptForPasswordReset(context: Context, resetToken: string): Auth
   return authAttemptForActionToken(context, 'password-reset', resetToken);
 }
 
+function authAttemptForCurrentPassword(context: Context, access: AccountAccessContext): AuthAttemptSubject {
+  return authAttemptFor(context, `current-password:${access.accountId}:${access.accountUserId}`);
+}
+
 function authAttemptForActionToken(
   context: Context,
   purpose: 'invite' | 'password-reset',
@@ -155,6 +159,17 @@ function authRateLimitResponse(context: Context, decision: AuthAttemptDecision):
 function maybeRateLimitAuthAttempt(context: Context, subject: AuthAttemptSubject): Response | null {
   const decision = checkAuthAttemptAllowed(subject);
   return decision.allowed ? null : authRateLimitResponse(context, decision);
+}
+
+function maybeRateLimitCurrentPasswordAttempt(
+  context: Context,
+  access: AccountAccessContext,
+): { subject: AuthAttemptSubject; response: Response | null } {
+  const subject = authAttemptForCurrentPassword(context, access);
+  return {
+    subject,
+    response: maybeRateLimitAuthAttempt(context, subject),
+  };
 }
 
 export interface AccountRouteDeps {
@@ -1017,7 +1032,10 @@ app.post('/api/v1/auth/password/change', async (c) => {
   if (!currentPassword || !newPassword) {
     return c.json({ error: 'currentPassword and newPassword are required.' }, 400);
   }
+  const currentPasswordAttempt = maybeRateLimitCurrentPasswordAttempt(c, access);
+  if (currentPasswordAttempt.response) return currentPasswordAttempt.response;
   if (!verifyAccountUserPasswordRecord(user.password, currentPassword)) {
+    recordAuthAttemptFailure(currentPasswordAttempt.subject);
     return c.json({ error: 'Current password is invalid.' }, 403);
   }
   if (newPassword.length < 12) {
@@ -1132,7 +1150,10 @@ app.post('/api/v1/account/passkeys/register/options', async (c) => {
   if (!password) {
     return c.json({ error: 'password is required.' }, 400);
   }
+  const currentPasswordAttempt = maybeRateLimitCurrentPasswordAttempt(c, access);
+  if (currentPasswordAttempt.response) return currentPasswordAttempt.response;
   if (!verifyAccountUserPasswordRecord(user.password, password)) {
+    recordAuthAttemptFailure(currentPasswordAttempt.subject);
     return c.json({ error: 'Current password is invalid.' }, 403);
   }
 
@@ -1259,7 +1280,10 @@ app.post('/api/v1/account/passkeys/:id/delete', async (c) => {
   if (!passkeyId || !password) {
     return c.json({ error: 'passkey id and password are required.' }, 400);
   }
+  const currentPasswordAttempt = maybeRateLimitCurrentPasswordAttempt(c, access);
+  if (currentPasswordAttempt.response) return currentPasswordAttempt.response;
   if (!verifyAccountUserPasswordRecord(user.password, password)) {
+    recordAuthAttemptFailure(currentPasswordAttempt.subject);
     return c.json({ error: 'Current password is invalid.' }, 403);
   }
 
@@ -1296,7 +1320,10 @@ app.post('/api/v1/account/mfa/totp/enroll', async (c) => {
   if (!password) {
     return c.json({ error: 'password is required.' }, 400);
   }
+  const currentPasswordAttempt = maybeRateLimitCurrentPasswordAttempt(c, access);
+  if (currentPasswordAttempt.response) return currentPasswordAttempt.response;
   if (!verifyAccountUserPasswordRecord(user.password, password)) {
+    recordAuthAttemptFailure(currentPasswordAttempt.subject);
     return c.json({ error: 'Current password is invalid.' }, 403);
   }
   if (totpSummary(user.mfa.totp).enabled) {
@@ -1434,7 +1461,10 @@ app.post('/api/v1/account/mfa/disable', async (c) => {
   if (!password || (!code && !recoveryCode)) {
     return c.json({ error: 'password and either code or recoveryCode are required.' }, 400);
   }
+  const currentPasswordAttempt = maybeRateLimitCurrentPasswordAttempt(c, access);
+  if (currentPasswordAttempt.response) return currentPasswordAttempt.response;
   if (!verifyAccountUserPasswordRecord(user.password, password)) {
+    recordAuthAttemptFailure(currentPasswordAttempt.subject);
     return c.json({ error: 'Current password is invalid.' }, 403);
   }
   if (!totpSummary(user.mfa.totp).enabled || !user.mfa.totp.secretCiphertext || !user.mfa.totp.secretIv || !user.mfa.totp.secretAuthTag) {

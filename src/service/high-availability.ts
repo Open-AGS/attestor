@@ -85,6 +85,12 @@ export function evaluateApiHighAvailabilityState(input: {
     if (envTruthy(process.env.ATTESTOR_HOSTED_OIDC_ALLOW_INSECURE_HTTP)) {
       issues.push('Public hosted deployments must not enable ATTESTOR_HOSTED_OIDC_ALLOW_INSECURE_HTTP.');
     }
+    if (
+      process.env.ATTESTOR_EMAIL_DELIVERY_MODE?.trim().toLowerCase() === 'smtp'
+      && envTruthy(process.env.ATTESTOR_SMTP_IGNORE_TLS)
+    ) {
+      issues.push('Public hosted deployments must not enable ATTESTOR_SMTP_IGNORE_TLS for SMTP invite/reset delivery.');
+    }
   }
 
   return {

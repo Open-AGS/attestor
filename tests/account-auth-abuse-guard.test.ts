@@ -233,6 +233,12 @@ function run() {
         'hosted password reset issue route throttles successful request flooding',
       );
       ok(
+        routeSource.includes('function authAttemptForCurrentPassword') &&
+          (routeSource.match(/maybeRateLimitCurrentPasswordAttempt\(c, access\)/g) ?? []).length >= 5 &&
+          (routeSource.match(/recordAuthAttemptFailure\(currentPasswordAttempt\.subject\)/g) ?? []).length >= 5,
+        'hosted current-password sensitive routes share an auth abuse budget',
+      );
+      ok(
         routeSource.includes('async function recordPasskeyAuthenticationFailure') &&
           (routeSource.match(/await recordPasskeyAuthenticationFailure\(challengeRecord\)/g) ?? []).length >= 5,
         'hosted passkey verification failure paths consume the one-attempt challenge',

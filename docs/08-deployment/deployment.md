@@ -116,9 +116,10 @@ docker run \
 | `ATTESTOR_SMTP_SECURE` | No | `false` | Enable SMTPS for hosted invite/reset delivery |
 | `ATTESTOR_SMTP_IGNORE_TLS` | No | `false` | Skip STARTTLS for local/test SMTP delivery only; public hosted readiness fails closed when SMTP delivery enables this |
 | `ATTESTOR_EMAIL_DELIVERY_EVENTS_PATH` | No | `.attestor/email-delivery-events.json` | File-backed hosted email-delivery event ledger used when `ATTESTOR_CONTROL_PLANE_PG_URL` is not configured |
+| `ATTESTOR_EMAIL_WEBHOOK_REQUIRE_SHARED_STORE` | No | `false` | When true, SendGrid/Mailgun provider webhooks refuse file-backed event storage and require `ATTESTOR_CONTROL_PLANE_PG_URL`; `ATTESTOR_HA_MODE=true` enforces the same gate |
 | `ATTESTOR_SENDGRID_EVENT_WEBHOOK_PUBLIC_KEY` | No | None | SendGrid Event Webhook public key enabling signed delivery analytics at `POST /api/v1/email/sendgrid/webhook` |
 | `ATTESTOR_SENDGRID_EVENT_WEBHOOK_MAX_AGE_SECONDS` | No | `300` | Max webhook timestamp age in seconds for SendGrid signature verification |
-| `ATTESTOR_MAILGUN_WEBHOOK_SIGNING_KEY` | No | None | Mailgun webhook signing key enabling signed delivery analytics at `POST /api/v1/email/mailgun/webhook` |
+| `ATTESTOR_MAILGUN_WEBHOOK_SIGNING_KEY` | No | None | Mailgun webhook signing key enabling signed delivery analytics at `POST /api/v1/email/mailgun/webhook`; Mailgun replay protection stores only a keyed digest of the signature token |
 | `ATTESTOR_MAILGUN_WEBHOOK_MAX_AGE_SECONDS` | No | `300` | Max webhook timestamp age in seconds for Mailgun signature verification |
 | `ATTESTOR_ACCOUNT_INVITE_BASE_URL` | No | None | Optional hosted invite URL base; Attestor appends `?token=...` for the email body, while delivery ledgers/API summaries redact the bearer token |
 | `ATTESTOR_PASSWORD_RESET_BASE_URL` | No | None | Optional hosted password-reset URL base; Attestor appends `?token=...` for the email body, while delivery ledgers/API summaries redact the bearer token |
@@ -222,7 +223,7 @@ docker run \
 | `OTEL_METRIC_EXPORT_INTERVAL` | No | `1000` | Optional OTLP metrics export interval in milliseconds |
 | `OTEL_SERVICE_NAME` | No | `attestor-api` | OpenTelemetry service name for exported request spans |
 | `OTEL_SERVICE_INSTANCE_ID` | No | Hostname | OpenTelemetry service instance id for exported request spans |
-| `STRIPE_API_KEY` | No | None | Stripe secret API key for hosted Checkout and Billing Portal session creation |
+| `STRIPE_API_KEY` | No | None | Stripe secret API key for hosted Checkout and Billing Portal session creation; required in production-like runtimes |
 | `STRIPE_WEBHOOK_SECRET` | No | None | Stripe signing secret for `POST /api/v1/billing/stripe/webhook` |
 | `ATTESTOR_STRIPE_PRICE_STARTER` | No | None | Stripe recurring price id for the hosted `starter` plan |
 | `ATTESTOR_STRIPE_PRICE_PRO` | No | None | Stripe recurring price id for the hosted `pro` plan |

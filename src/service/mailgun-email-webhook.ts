@@ -80,6 +80,17 @@ export function verifySignedMailgunWebhook(input: MailgunWebhookSignatureRecord)
   return safeHexEquals(expected, input.signature);
 }
 
+export function mailgunSignatureTokenDigest(input: MailgunWebhookSignatureRecord): string | null {
+  const signingKey = webhookSigningKey();
+  const token = input.token.trim();
+  if (!signingKey || !token) return null;
+  return createHmac('sha256', signingKey)
+    .update('mailgun.webhook.replay-token', 'utf8')
+    .update('\0', 'utf8')
+    .update(token, 'utf8')
+    .digest('hex');
+}
+
 function extractTopLevelString(value: unknown): string | null {
   return typeof value === 'string' && value.trim() ? value.trim() : null;
 }

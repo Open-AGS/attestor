@@ -111,7 +111,6 @@ export function createStripeWebhookService(deps: StripeWebhookServiceDeps): Stri
           statusCode: 400,
           responseBody: {
             error: 'Stripe webhook signature verification failed.',
-            detail: error instanceof Error ? error.message : String(error),
           },
         };
       }

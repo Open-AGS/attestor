@@ -150,6 +150,44 @@ function defaultStore(): HostedEmailDeliveryEventStoreFile {
   return { version: 1, records: [] };
 }
 
+function redactBearerActionUrl(actionUrl: string | null): string | null {
+  if (!actionUrl) return null;
+  try {
+    const url = new URL(actionUrl);
+    if (url.searchParams.has('token')) url.searchParams.set('token', 'redacted');
+    return url.toString();
+  } catch {
+    return null;
+  }
+}
+
+function normalizeProviderEventId(value: string | null): string | null {
+  const normalized = value?.trim() ?? '';
+  return normalized.length > 0 ? normalized : null;
+}
+
+export function hostedEmailProviderReplayDigest(record: HostedEmailDeliveryEventRecord): string | null {
+  const value = record.metadata.mailgunSignatureTokenDigest;
+  return typeof value === 'string' && value.trim() ? value.trim() : null;
+}
+
+function findExistingProviderEvent(
+  records: HostedEmailDeliveryEventRecord[],
+  record: HostedEmailDeliveryEventRecord,
+): HostedEmailDeliveryEventRecord | null {
+  const replayDigest = hostedEmailProviderReplayDigest(record);
+  return records.find((entry) =>
+    entry.provider === record.provider
+    && (
+      entry.providerEventId === record.providerEventId
+      || (
+        replayDigest !== null
+        && hostedEmailProviderReplayDigest(entry) === replayDigest
+      )
+    ),
+  ) ?? null;
+}
+
 export function normalizeStatus(value: string | null | undefined): HostedEmailDeliveryStatus {
   switch (value) {
     case 'manual_delivered':
@@ -197,10 +235,10 @@ function normalizeRecord(record: HostedEmailDeliveryEventRecord): HostedEmailDel
     recipient: typeof record.recipient === 'string' ? record.recipient.trim().toLowerCase() : '',
     messageId: record.messageId ?? null,
     providerMessageId: record.providerMessageId ?? null,
-    providerEventId: record.providerEventId ?? null,
+    providerEventId: normalizeProviderEventId(record.providerEventId),
     eventType: typeof record.eventType === 'string' && record.eventType.trim() ? record.eventType.trim() : 'unknown',
     statusHint: normalizeStatus(record.statusHint),
-    actionUrl: record.actionUrl ?? null,
+    actionUrl: redactBearerActionUrl(record.actionUrl),
     tokenReturned: Boolean(record.tokenReturned),
     occurredAt: record.occurredAt,
     recordedAt: record.recordedAt,
@@ -463,6 +501,7 @@ export function buildHostedEmailDispatchEventRecord(
   input: RecordHostedEmailDispatchEventInput,
 ): HostedEmailDeliveryEventRecord {
   const occurredAt = input.occurredAt ?? new Date().toISOString();
+  const actionUrl = redactBearerActionUrl(input.actionUrl);
   return normalizeRecord({
     id: nextRecordId('email_evt'),
     deliveryId: input.deliveryId,
@@ -477,7 +516,7 @@ export function buildHostedEmailDispatchEventRecord(
     providerEventId: null,
     eventType: 'dispatch.accepted',
     statusHint: input.provider === 'manual' ? 'manual_delivered' : 'smtp_sent',
-    actionUrl: input.actionUrl,
+    actionUrl,
     tokenReturned: input.tokenReturned,
     occurredAt,
     recordedAt: new Date().toISOString(),
@@ -487,7 +526,7 @@ export function buildHostedEmailDispatchEventRecord(
       channel: input.channel,
       recipient: normalizeRecipient(input.recipient),
       messageId: input.messageId ?? null,
-      actionUrl: input.actionUrl ?? null,
+      actionUrl,
       tokenReturned: Boolean(input.tokenReturned),
       metadata: input.metadata ?? {},
     }),
@@ -509,10 +548,12 @@ export function recordHostedEmailDispatchEvent(
 export function buildHostedEmailProviderEventRecord(
   input: RecordHostedEmailProviderEventInput,
 ): HostedEmailDeliveryEventRecord {
+  const providerEventId = normalizeProviderEventId(input.providerEventId);
+  const actionUrl = redactBearerActionUrl(input.actionUrl);
   const payloadHash = hashJsonValue({
     deliveryId: input.deliveryId,
     provider: input.provider,
-    providerEventId: input.providerEventId ?? null,
+    providerEventId,
     eventType: input.eventType,
     occurredAt: input.occurredAt,
     recipient: normalizeRecipient(input.recipient),
@@ -532,10 +573,10 @@ export function buildHostedEmailProviderEventRecord(
     recipient: normalizeRecipient(input.recipient),
     messageId: input.messageId,
     providerMessageId: input.providerMessageId,
-    providerEventId: input.providerEventId,
+    providerEventId,
     eventType: input.eventType,
     statusHint: input.statusHint,
-    actionUrl: input.actionUrl,
+    actionUrl,
     tokenReturned: input.tokenReturned,
     occurredAt: input.occurredAt,
     recordedAt: new Date().toISOString(),
@@ -549,17 +590,15 @@ export function recordHostedEmailProviderEvent(
 ): HostedEmailProviderEventRecordResult {
   return withEmailDeliveryEventStoreLock((store, path) => {
     const record = buildHostedEmailProviderEventRecord(input);
-    if (input.providerEventId) {
-      const existing = store.records.find((entry) =>
-        entry.provider === input.provider
-        && entry.providerEventId === input.providerEventId,
-      );
-      if (existing) {
-        if (existing.payloadHash !== record.payloadHash) {
-          return { kind: 'conflict', record: existing, path };
-        }
-        return { kind: 'duplicate', record: existing, path };
+    if (!record.providerEventId) {
+      throw new Error('Hosted email provider events require a providerEventId for replay-safe idempotency.');
+    }
+    const existing = findExistingProviderEvent(store.records, record);
+    if (existing) {
+      if (existing.payloadHash !== record.payloadHash) {
+        return { kind: 'conflict', record: existing, path };
       }
+      return { kind: 'duplicate', record: existing, path };
     }
     store.records.push(record);
     saveStore(store);

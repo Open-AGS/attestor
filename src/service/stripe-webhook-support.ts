@@ -1,7 +1,13 @@
 import Stripe from 'stripe';
+import { isProductionLikeRuntimeEnv } from './deployment-safety.js';
 
 export function stripeClient(): Stripe {
-  return new Stripe(process.env.STRIPE_API_KEY?.trim() || 'sk_test_attestor_local');
+  const apiKey = process.env.STRIPE_API_KEY?.trim();
+  if (apiKey) return new Stripe(apiKey);
+  if (isProductionLikeRuntimeEnv()) {
+    throw new Error('STRIPE_API_KEY is required before Stripe webhooks run in production-like runtime.');
+  }
+  return new Stripe('sk_test_attestor_local');
 }
 
 export function parseStripeInvoiceStatus(

@@ -163,6 +163,7 @@ import {
   buildHostedEmailProviderEventRecord,
   exportHostedEmailDeliveryEventStoreSnapshot as exportHostedEmailDeliveryEventStoreSnapshotFile,
   filterHostedEmailDeliverySummaries,
+  hostedEmailProviderReplayDigest,
   listHostedEmailDeliveries as listHostedEmailDeliveriesFile,
   normalizeStatus as normalizeHostedEmailDeliveryStatus,
   recordHostedEmailDispatchEvent as recordHostedEmailDispatchEventFile,
@@ -3677,26 +3678,31 @@ export async function recordHostedEmailProviderEventState(
     return { ...result, path: result.path };
   }
   const builtRecord = buildHostedEmailProviderEventRecord(input);
-  if (!input.providerEventId) {
-    const record = {
-      ...builtRecord,
-      id: `email_evt_${randomUUID().replace(/-/g, '').slice(0, 16)}`,
-    };
-    await insertHostedEmailDeliveryEventPg(record);
-    return { kind: 'recorded', record, path: controlPlaneStoreSource() };
+  if (!builtRecord.providerEventId) {
+    throw new Error('Hosted email provider events require a providerEventId for replay-safe idempotency.');
   }
+  const replayDigest = hostedEmailProviderReplayDigest(builtRecord);
 
   return withPgTransaction(async (client) => {
-    await client.query('SELECT pg_advisory_xact_lock($1::bigint)', [
-      advisoryLockKey(`attestor_control_plane:email_delivery:${input.provider}:${input.providerEventId}`),
-    ]);
+    const lockKeys = [
+      `attestor_control_plane:email_delivery:${builtRecord.provider}:${builtRecord.providerEventId}`,
+      replayDigest
+        ? `attestor_control_plane:email_delivery_replay:${builtRecord.provider}:${replayDigest}`
+        : null,
+    ].filter((value): value is string => value !== null).sort();
+    for (const lockKey of lockKeys) {
+      await client.query('SELECT pg_advisory_xact_lock($1::bigint)', [advisoryLockKey(lockKey)]);
+    }
     const existingResult = await client.query(
       `SELECT record_json
          FROM attestor_control_plane.email_delivery_events
         WHERE provider = $1
-          AND provider_event_id = $2
+          AND (
+            provider_event_id = $2
+            OR ($3::text IS NOT NULL AND record_json->'metadata'->>'mailgunSignatureTokenDigest' = $3)
+          )
         LIMIT 1`,
-      [input.provider, input.providerEventId],
+      [builtRecord.provider, builtRecord.providerEventId, replayDigest],
     );
     const existing = existingResult.rows[0] ? rowToHostedEmailDeliveryEventRecord(existingResult.rows[0]) : null;
     if (existing) {

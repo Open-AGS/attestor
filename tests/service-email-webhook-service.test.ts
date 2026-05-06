@@ -124,6 +124,8 @@ function createDeps(
       event: mailgunEvent(),
     }),
     verifySignedMailgunWebhook: () => true,
+    mailgunSignatureTokenDigest: () => 'mailgun_token_digest_123',
+    isSharedControlPlaneConfigured: () => true,
     findEmailDeliveryById: async () => delivery(),
     recordEmailProviderEvent: async (input) => {
       recorded.push(input);
@@ -189,6 +191,75 @@ async function testMailgunWebhookRecordsSeverityAwareEvents(): Promise<void> {
   assert.equal(recorded[0]?.eventType, 'mailgun.failed');
   assert.equal(recorded[0]?.statusHint, 'deferred');
   assert.equal(recorded[0]?.purpose, 'password_reset');
+  assert.equal(recorded[0]?.metadata?.mailgunEventId, 'mg_event_123');
+  assert.equal(recorded[0]?.metadata?.mailgunSignatureTokenDigest, 'mailgun_token_digest_123');
+}
+
+async function testMailgunWebhookRejectsMissingEventId(): Promise<void> {
+  const service = createEmailWebhookService(createDeps({
+    parseMailgunWebhookEvent: () => ({
+      signature: {
+        timestamp: '1776765600',
+        token: 'token_123',
+        signature: 'signature_123',
+      },
+      event: mailgunEvent({ eventId: null }),
+    }),
+  }));
+
+  const result = await service.handleMailgun({
+    rawPayload: '{}',
+  });
+
+  assert.equal(result.statusCode, 400);
+  assert.match(String(result.responseBody.error), /event-data\.id/u);
+}
+
+async function testMailgunWebhookRejectsReplayTokenWithoutDigest(): Promise<void> {
+  const service = createEmailWebhookService(createDeps({
+    mailgunSignatureTokenDigest: () => null,
+  }));
+
+  const result = await service.handleMailgun({
+    rawPayload: '{}',
+  });
+
+  assert.equal(result.statusCode, 400);
+  assert.match(String(result.responseBody.error), /replay protection/u);
+}
+
+async function testSendGridWebhookRejectsMissingEventId(): Promise<void> {
+  const service = createEmailWebhookService(createDeps({
+    parseSendGridWebhookEvents: () => [sendGridEvent({ sgEventId: null })],
+  }));
+
+  const result = await service.handleSendGrid({
+    rawPayload: '[]',
+    signature: 'sig',
+    timestamp: '1776765600',
+  });
+
+  assert.equal(result.statusCode, 400);
+  assert.match(String(result.responseBody.error), /sg_event_id/u);
+}
+
+async function testEmailWebhooksRequireSharedStoreInHaMode(): Promise<void> {
+  const saved = process.env.ATTESTOR_HA_MODE;
+  process.env.ATTESTOR_HA_MODE = 'true';
+  try {
+    const service = createEmailWebhookService(createDeps({
+      isSharedControlPlaneConfigured: () => false,
+    }));
+    const result = await service.handleMailgun({
+      rawPayload: '{}',
+    });
+
+    assert.equal(result.statusCode, 503);
+    assert.match(String(result.responseBody.error), /shared control-plane storage/u);
+  } finally {
+    if (saved === undefined) delete process.env.ATTESTOR_HA_MODE;
+    else process.env.ATTESTOR_HA_MODE = saved;
+  }
 }
 
 async function testMailgunWebhookFailsClosedWhenDisabled(): Promise<void> {
@@ -210,7 +281,11 @@ async function testMailgunWebhookFailsClosedWhenDisabled(): Promise<void> {
 
 await testSendGridWebhookRecordsProviderEvents();
 await testSendGridWebhookRejectsUnsignedRequests();
+await testSendGridWebhookRejectsMissingEventId();
 await testMailgunWebhookRecordsSeverityAwareEvents();
+await testMailgunWebhookRejectsMissingEventId();
+await testMailgunWebhookRejectsReplayTokenWithoutDigest();
+await testEmailWebhooksRequireSharedStoreInHaMode();
 await testMailgunWebhookFailsClosedWhenDisabled();
 
-console.log('Service email webhook service tests: 4 passed, 0 failed');
+console.log('Service email webhook service tests: 8 passed, 0 failed');

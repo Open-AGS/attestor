@@ -8,6 +8,7 @@ import type {
   MailgunWebhookSignatureRecord,
   MailgunWebhookStatus,
 } from '../mailgun-email-webhook.js';
+import { envTruthy } from '../deployment-safety.js';
 import type {
   SendGridWebhookEventRecord,
   SendGridWebhookStatus,
@@ -49,6 +50,8 @@ export interface EmailWebhookServiceDeps {
     event: MailgunWebhookEventRecord;
   };
   verifySignedMailgunWebhook(input: MailgunWebhookSignatureRecord): boolean;
+  mailgunSignatureTokenDigest(input: MailgunWebhookSignatureRecord): string | null;
+  isSharedControlPlaneConfigured(): boolean;
   findEmailDeliveryById(deliveryId: string): Promise<HostedEmailDeliverySummaryRecord | null>;
   recordEmailProviderEvent(
     input: RecordHostedEmailProviderEventInput,
@@ -91,6 +94,16 @@ function disabled(error: string): EmailWebhookServiceResult {
     statusCode: 503,
     responseBody: { error },
   };
+}
+
+function requiresSharedEmailWebhookStore(): boolean {
+  return envTruthy(process.env.ATTESTOR_HA_MODE)
+    || envTruthy(process.env.ATTESTOR_EMAIL_WEBHOOK_REQUIRE_SHARED_STORE);
+}
+
+function sharedStoreUnavailable(deps: EmailWebhookServiceDeps): EmailWebhookServiceResult | null {
+  if (!requiresSharedEmailWebhookStore() || deps.isSharedControlPlaneConfigured()) return null;
+  return disabled('Email provider webhooks require shared control-plane storage in HA/shared-store mode.');
 }
 
 function incrementCounter(
@@ -140,6 +153,7 @@ async function recordSendGridEvent(
 async function recordMailgunEvent(
   deps: EmailWebhookServiceDeps,
   event: MailgunWebhookEventRecord,
+  signatureTokenDigest: string,
   counters: EmailWebhookCounters,
 ): Promise<void> {
   if (!event.deliveryId || !event.email) {
@@ -168,6 +182,8 @@ async function recordMailgunEvent(
       : deps.now(),
     metadata: {
       ...event.raw,
+      mailgunEventId: event.eventId,
+      mailgunSignatureTokenDigest: signatureTokenDigest,
       severity: event.severity ?? null,
     },
     rawPayload: event.raw,
@@ -184,6 +200,8 @@ export function createEmailWebhookService(deps: EmailWebhookServiceDeps): EmailW
           'SendGrid event webhook disabled. Set ATTESTOR_SENDGRID_EVENT_WEBHOOK_PUBLIC_KEY to enable delivery analytics.',
         );
       }
+      const sharedStoreError = sharedStoreUnavailable(deps);
+      if (sharedStoreError) return sharedStoreError;
 
       const signature = input.signature?.trim() ?? '';
       const timestamp = input.timestamp?.trim() ?? '';
@@ -206,6 +224,9 @@ export function createEmailWebhookService(deps: EmailWebhookServiceDeps): EmailW
         events = deps.parseSendGridWebhookEvents(input.rawPayload);
       } catch (error) {
         return badRequest(error instanceof Error ? error.message : String(error));
+      }
+      if (events.some((event) => !event.sgEventId)) {
+        return badRequest('SendGrid webhook event requires sg_event_id for replay-safe idempotency.');
       }
 
       const counters: EmailWebhookCounters = {
@@ -233,6 +254,8 @@ export function createEmailWebhookService(deps: EmailWebhookServiceDeps): EmailW
           'Mailgun event webhook disabled. Set ATTESTOR_MAILGUN_WEBHOOK_SIGNING_KEY to enable delivery analytics.',
         );
       }
+      const sharedStoreError = sharedStoreUnavailable(deps);
+      if (sharedStoreError) return sharedStoreError;
 
       let parsed: {
         signature: MailgunWebhookSignatureRecord;
@@ -247,6 +270,13 @@ export function createEmailWebhookService(deps: EmailWebhookServiceDeps): EmailW
       if (!deps.verifySignedMailgunWebhook(parsed.signature)) {
         return badRequest('Mailgun webhook signature verification failed.');
       }
+      if (!parsed.event.eventId) {
+        return badRequest('Mailgun webhook event-data.id is required for replay-safe idempotency.');
+      }
+      const signatureTokenDigest = deps.mailgunSignatureTokenDigest(parsed.signature);
+      if (!signatureTokenDigest) {
+        return badRequest('Mailgun webhook signature token could not be bound for replay protection.');
+      }
 
       const counters: EmailWebhookCounters = {
         applied: 0,
@@ -254,7 +284,7 @@ export function createEmailWebhookService(deps: EmailWebhookServiceDeps): EmailW
         ignored: 0,
         conflict: 0,
       };
-      await recordMailgunEvent(deps, parsed.event, counters);
+      await recordMailgunEvent(deps, parsed.event, signatureTokenDigest, counters);
 
       return ok({
         received: true,

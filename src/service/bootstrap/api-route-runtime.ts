@@ -192,6 +192,7 @@ import {
 import { hashJsonValue } from '../json-stable.js';
 import {
   getMailgunWebhookStatus,
+  mailgunSignatureTokenDigest,
   mailgunEventTypeToStatusHint,
   parseMailgunWebhookEvent,
   verifySignedMailgunWebhook,
@@ -741,6 +742,7 @@ export async function createApiHttpRouteRuntime(
     getMailgunWebhookStatus,
     parseMailgunWebhookEvent,
     verifySignedMailgunWebhook,
+    mailgunSignatureTokenDigest,
     async findEmailDeliveryById(deliveryId) {
       const existing = await listHostedEmailDeliveriesState({
         deliveryId,

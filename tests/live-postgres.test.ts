@@ -116,7 +116,7 @@ async function run() {
       ok(result.columns.includes('counterparty_name'), 'Query: has counterparty_name column');
       ok(result.columns.includes('exposure_usd'), 'Query: has exposure_usd column');
       ok(result.executionContextHash !== null, 'Query: context hash present');
-      ok(result.executionContextHash!.length === 16, 'Query: context hash is 16 hex chars');
+      ok(result.executionContextHash!.length === 64, 'Query: context hash is 64 hex chars');
       ok(result.durationMs >= 0, 'Query: duration recorded');
 
       const bnova = result.rows.find((row: any) => row.counterparty_name === 'Bank of Nova Scotia');

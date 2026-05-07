@@ -19,7 +19,13 @@
  * 3. attestor_demo.position_reconciliation (reconciliation scenario — expected: fail)
  */
 
-import { loadPostgresConfig, isPostgresConfigured, isPostgresDriverAvailable } from './postgres.js';
+import {
+  isPostgresConfigured,
+  isPostgresDriverAvailable,
+  loadPostgresConfig,
+  noteConnectorCleanupFailure,
+  sanitizeConnectorError,
+} from './postgres.js';
 
 // ─── SQL Definitions ────────────────────────────────────────────────────────
 
@@ -197,8 +203,8 @@ export async function runDemoBootstrap(): Promise<DemoBootstrapResult> {
       executedSql: SETUP_SQL.trim(),
     };
   } catch (err) {
-    try { await client.end(); } catch { /* ignore */ }
-    const msg = err instanceof Error ? err.message : String(err);
+    try { await client.end(); } catch { noteConnectorCleanupFailure('postgres-demo', 'bootstrap-disconnect'); }
+    const msg = sanitizeConnectorError(err, 'PostgreSQL demo bootstrap failed.');
     return { success: false, schema: DEMO_SCHEMA, tables: [], rowCounts: {}, message: `Bootstrap failed: ${msg}`, executedSql: SETUP_SQL.trim() };
   }
 }
@@ -230,7 +236,7 @@ export async function runDemoTeardown(): Promise<{ success: boolean; message: st
     await client.end();
     return { success: true, message: `Demo schema '${DEMO_SCHEMA}' removed.` };
   } catch (err) {
-    try { await client.end(); } catch { /* ignore */ }
-    return { success: false, message: `Teardown failed: ${err instanceof Error ? err.message : String(err)}` };
+    try { await client.end(); } catch { noteConnectorCleanupFailure('postgres-demo', 'teardown-disconnect'); }
+    return { success: false, message: `Teardown failed: ${sanitizeConnectorError(err, 'PostgreSQL demo teardown failed.')}` };
   }
 }

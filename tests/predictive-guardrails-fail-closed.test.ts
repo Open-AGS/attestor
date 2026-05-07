@@ -1,5 +1,11 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { analyzePlan, runPredictivePreflight } from '../src/connectors/predictive-guardrails.js';
+import {
+  enforceAllowedSchemas,
+  sanitizeConnectorError,
+  validateReadOnlySql,
+} from '../src/connectors/postgres.js';
 import { runPostgresProve } from '../src/connectors/postgres-prove.js';
 import { snowflakeConnector } from '../src/connectors/snowflake-connector.js';
 
@@ -56,6 +62,64 @@ function testValidLowRiskPlanCanProceed(): void {
   equal(result.riskLevel, 'low', 'Predictive guardrail: low-risk plan stays low risk');
   equal(result.recommendation, 'proceed', 'Predictive guardrail: low-risk valid plan can proceed');
   ok(result.plannerEvidence?.nodeTypes.includes('Index Scan'), 'Predictive guardrail: valid plan evidence is retained');
+}
+
+function testConnectorGovernanceRejectsFinancialForbiddenPatterns(): void {
+  assert.throws(
+    () => validateReadOnlySql('MERGE INTO finance.payments USING finance.incoming ON payments.id = incoming.id'),
+    /Write operation detected/,
+  );
+  passed += 1;
+  assert.throws(
+    () => validateReadOnlySql('SELECT pg_sleep(10)'),
+    /Forbidden SQL clause detected/,
+  );
+  passed += 1;
+  assert.throws(
+    () => validateReadOnlySql('SELECT * FROM finance.payments UNION SELECT * FROM information_schema.tables'),
+    /SQL injection pattern detected/,
+  );
+  passed += 1;
+}
+
+function testConnectorGovernanceIgnoresStringLiterals(): void {
+  validateReadOnlySql("SELECT * FROM finance.notes WHERE note LIKE '%INSERT INTO ledger%'");
+  validateReadOnlySql("SELECT * FROM finance.notes WHERE note = 'pg_sleep(10)'");
+  validateReadOnlySql("SELECT * FROM finance.notes WHERE note = E'escaped \\' UPDATE text'");
+  validateReadOnlySql("SELECT * FROM finance.notes WHERE note = 'quoted '' DELETE text'");
+  enforceAllowedSchemas(
+    "SELECT * FROM finance.notes WHERE note = 'FROM public.secrets'",
+    ['finance'],
+  );
+  passed += 5;
+}
+
+function testConnectorSchemaAllowlistRejectsCteAliasesUntilParserAware(): void {
+  assert.throws(
+    () => enforceAllowedSchemas('WITH scoped AS (SELECT * FROM finance.notes) SELECT * FROM scoped', ['finance']),
+    /Unqualified table reference/,
+  );
+  passed += 1;
+}
+
+function testConnectorErrorsAreSanitized(): void {
+  const sanitized = sanitizeConnectorError(
+    new Error('SQL compilation error: Object FINANCE.SECRET_TABLE does not exist in account ACME123'),
+    'Snowflake connector execution failed.',
+  );
+
+  ok(sanitized.startsWith('Snowflake connector execution failed.'), 'Connector errors: public message is retained');
+  ok(sanitized.includes('errorRef=connector-error:'), 'Connector errors: opaque error reference is returned');
+  ok(!sanitized.includes('SECRET_TABLE'), 'Connector errors: raw object names are not returned');
+  ok(!sanitized.includes('ACME123'), 'Connector errors: raw account identifiers are not returned');
+}
+
+function testPredictivePreflightSourceUsesReadOnlyTimeoutTransaction(): void {
+  const source = readFileSync(new URL('../src/connectors/predictive-guardrails.ts', import.meta.url), 'utf8');
+
+  ok(source.includes('BEGIN TRANSACTION READ ONLY'), 'Postgres predictive preflight: EXPLAIN runs inside read-only transaction');
+  ok(source.includes('SET LOCAL statement_timeout'), 'Postgres predictive preflight: EXPLAIN has statement timeout');
+  ok(source.includes('ROLLBACK'), 'Postgres predictive preflight: transaction is rolled back');
 }
 
 async function testPostgresPredictivePreflightRejectsWriteSqlBeforeExplain(): Promise<void> {
@@ -142,6 +206,11 @@ async function testSnowflakeWriteSqlFailsClosedBeforeDriver(): Promise<void> {
 testMissingExplainPlanFailsClosed();
 testMalformedExplainPlanFailsClosed();
 testValidLowRiskPlanCanProceed();
+testConnectorGovernanceRejectsFinancialForbiddenPatterns();
+testConnectorGovernanceIgnoresStringLiterals();
+testConnectorSchemaAllowlistRejectsCteAliasesUntilParserAware();
+testConnectorErrorsAreSanitized();
+testPredictivePreflightSourceUsesReadOnlyTimeoutTransaction();
 await testPostgresPredictivePreflightRejectsWriteSqlBeforeExplain();
 await testPostgresPredictivePreflightRejectsStackedSqlBeforeExplain();
 await testPostgresPredictivePreflightRejectsSchemaBypassBeforeExplain();

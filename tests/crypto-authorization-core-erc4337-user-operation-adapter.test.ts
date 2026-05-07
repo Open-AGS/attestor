@@ -501,6 +501,22 @@ function testCreatesAllowPreflight(): void {
     'ERC-4337 UserOperation adapter: UserOperation hash is independently verified',
   );
   ok(
+    preflight.observations.some(
+      (entry) =>
+        entry.check === 'erc4337-bundler-simulation-passed' &&
+        entry.evidence.validationEvidenceSource === 'customer-bundler-validation',
+    ),
+    'ERC-4337 UserOperation adapter: bundler simulation evidence declares customer-bound source',
+  );
+  ok(
+    preflight.observations.some(
+      (entry) =>
+        entry.check === 'erc4337-erc7562-scope-passed' &&
+        entry.evidence.validationEvidenceSource === 'customer-bundler-validation',
+    ),
+    'ERC-4337 UserOperation adapter: ERC-7562 evidence declares customer-bound source',
+  );
+  ok(
     erc4337UserOperationPreflightLabel(preflight).includes('outcome:allow'),
     'ERC-4337 UserOperation adapter: label includes outcome',
   );

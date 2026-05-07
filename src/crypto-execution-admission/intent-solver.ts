@@ -159,8 +159,10 @@ export interface IntentSolverCounterpartyEvidence {
   readonly solverId: string;
   readonly solverAddress: string | null;
   readonly allowlisted: boolean;
+  readonly allowlistEvidenceRef?: string | null;
   readonly blocked: boolean;
   readonly screeningStatus: IntentSolverCounterpartyScreeningStatus;
+  readonly screeningEvidenceRef?: string | null;
   readonly reputationTier: string | null;
   readonly bondPosted: boolean | null;
   readonly requiredBondSatisfied: boolean | null;
@@ -597,8 +599,16 @@ function normalizedCounterparty(
       'counterparty.solverAddress',
     ),
     allowlisted: Boolean(counterparty.allowlisted),
+    allowlistEvidenceRef: normalizeOptionalIdentifier(
+      counterparty.allowlistEvidenceRef,
+      'counterparty.allowlistEvidenceRef',
+    ),
     blocked: Boolean(counterparty.blocked),
     screeningStatus: normalizeScreeningStatus(counterparty.screeningStatus),
+    screeningEvidenceRef: normalizeOptionalIdentifier(
+      counterparty.screeningEvidenceRef,
+      'counterparty.screeningEvidenceRef',
+    ),
     reputationTier: normalizeOptionalIdentifier(
       counterparty.reputationTier,
       'counterparty.reputationTier',
@@ -702,6 +712,25 @@ function expectationsFor(input: {
   const routeChainsCovered = fillInstructionsCoverRoute(route);
   const settlementCoversRoute = destinationSettlersCoverRoute(settlement, route);
   const routeCounterpartiesClean = routeCounterpartiesAllowed(route, counterparty);
+  const counterpartyTrustEvidenceReady =
+    counterparty.allowlisted &&
+    counterparty.screeningStatus === 'clear' &&
+    counterparty.allowlistEvidenceRef !== null &&
+    counterparty.screeningEvidenceRef !== null;
+  const counterpartyBindingReady =
+    counterpartyTrustEvidenceReady &&
+    !counterparty.blocked &&
+    routeCounterpartiesClean;
+  const counterpartyBindingPending =
+    !counterparty.blocked &&
+    (
+      counterparty.screeningStatus === 'pending' ||
+      (
+        counterparty.allowlisted &&
+        counterparty.screeningStatus === 'clear' &&
+        !counterpartyTrustEvidenceReady
+      )
+    );
   const orderFresh =
     deadlineInFuture(order.openDeadline, createdAt) &&
     deadlineInFuture(order.fillDeadline, createdAt) &&
@@ -832,28 +861,25 @@ function expectationsFor(input: {
     }),
     expectation({
       kind: 'counterparty-binding',
-      status:
-        counterparty.allowlisted &&
-        !counterparty.blocked &&
-        counterparty.screeningStatus === 'clear' &&
-        routeCounterpartiesClean
-          ? 'satisfied'
-          : counterparty.screeningStatus === 'pending'
-            ? 'pending'
-            : 'failed',
-      reasonCode:
-        counterparty.allowlisted &&
-        !counterparty.blocked &&
-        counterparty.screeningStatus === 'clear' &&
-        routeCounterpartiesClean
-          ? 'solver-counterparties-clear'
-          : counterparty.screeningStatus === 'pending'
+      status: counterpartyBindingReady
+        ? 'satisfied'
+        : counterpartyBindingPending
+          ? 'pending'
+          : 'failed',
+      reasonCode: counterpartyBindingReady
+        ? 'solver-counterparties-clear'
+        : counterpartyBindingPending
+          ? counterparty.screeningStatus === 'pending'
             ? 'solver-counterparty-screening-pending'
-            : 'solver-counterparty-blocked',
+            : 'solver-counterparty-evidence-missing'
+          : 'solver-counterparty-blocked',
       evidence: {
         allowlisted: counterparty.allowlisted,
+        allowlistEvidenceRef: counterparty.allowlistEvidenceRef ?? null,
         blocked: counterparty.blocked,
         screeningStatus: counterparty.screeningStatus,
+        screeningEvidenceRef: counterparty.screeningEvidenceRef ?? null,
+        counterpartyEvidenceSource: 'customer-solver-screening-evidence',
         counterpartyRefs: [...route.counterpartyRefs],
         blockedCounterpartyRefs: [...counterparty.blockedCounterpartyRefs],
       },

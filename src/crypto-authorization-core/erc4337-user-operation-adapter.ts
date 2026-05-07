@@ -1146,6 +1146,7 @@ function buildObservations(input: {
         : 'Bundler simulateValidation did not pass and the UserOperation must fail closed.',
       evidence: {
         bundlerId: validation.bundlerId,
+        validationEvidenceSource: 'customer-bundler-validation',
         simulateValidationStatus: validation.simulateValidationStatus,
         validatedAt: validation.validatedAt,
       },
@@ -1169,6 +1170,7 @@ function buildObservations(input: {
         ? 'ERC-7562 validation-scope evidence passed without forbidden validation behavior.'
         : 'ERC-7562 validation-scope evidence failed or detected forbidden validation behavior.',
       evidence: {
+        validationEvidenceSource: 'customer-bundler-validation',
         erc7562ValidationStatus: validation.erc7562ValidationStatus,
         bannedOpcodeDetected: validation.bannedOpcodeDetected ?? false,
         storageAccessViolation: validation.storageAccessViolation ?? false,

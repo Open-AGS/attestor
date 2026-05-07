@@ -195,8 +195,10 @@ function counterparty(
     solverId: 'solver-across-style-001',
     solverAddress: SOLVER,
     allowlisted: true,
+    allowlistEvidenceRef: 'solver-allowlist:across-style-relayer:sha256:001',
     blocked: false,
     screeningStatus: 'clear',
+    screeningEvidenceRef: 'solver-screening:across-style-relayer:sha256:001',
     reputationTier: 'institutional',
     bondPosted: true,
     requiredBondSatisfied: true,
@@ -316,6 +318,34 @@ equal(blockedCounterparty.outcome, 'blocked', 'blocked solver counterparty block
 ok(
   blockedCounterparty.blockingReasons.includes('solver-counterparty-blocked'),
   'counterparty block is recorded',
+);
+
+const missingCounterpartyEvidence = createIntentSolverAdmissionHandoff({
+  plan: planFixture(),
+  order: order(),
+  route: route(),
+  settlement: settlement(),
+  counterparty: counterparty({ allowlistEvidenceRef: null }),
+  replay: replay(),
+  createdAt: '2026-04-22T20:03:00.000Z',
+});
+equal(
+  missingCounterpartyEvidence.outcome,
+  'needs-solver-evidence',
+  'missing solver allowlist evidence requires route review',
+);
+ok(
+  missingCounterpartyEvidence.nextActions.includes('solver-counterparty-evidence-missing'),
+  'missing counterparty evidence is a next action',
+);
+ok(
+  missingCounterpartyEvidence.expectations.some(
+    (entry) =>
+      entry.kind === 'counterparty-binding' &&
+      entry.status === 'pending' &&
+      entry.reasonCode === 'solver-counterparty-evidence-missing',
+  ),
+  'counterparty binding stays pending until solver trust evidence is present',
 );
 
 const duplicateReplay = createIntentSolverAdmissionHandoff({

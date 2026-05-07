@@ -27,7 +27,7 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget -q --spider http://localhost:3700/api/v1/ready || exit 1"]
+      test: ["CMD-SHELL", "node -e \"require('node:http').get('http://localhost:3700/api/v1/ready', (res) => process.exit(res.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))\""]
       interval: 10s
       timeout: 5s
       retries: 3

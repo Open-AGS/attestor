@@ -48,7 +48,61 @@ function testMultiRoleImageDoesNotCarryApiOnlyHealthcheck(): void {
   );
 }
 
+function testDockerBaseImageIsDigestPinned(): void {
+  const dockerfile = readProjectFile('Dockerfile');
+  const nodeDigestRef = 'node:22-alpine@sha256:8ea2348b068a9544dae7317b4f3aafcdc032df1647bb7d768a05a5cad1a7683f';
+
+  includes(
+    dockerfile,
+    `FROM ${nodeDigestRef} AS build`,
+    'Container security: build image pins the Node Alpine base image by digest',
+  );
+  includes(
+    dockerfile,
+    `FROM ${nodeDigestRef}`,
+    'Container security: runtime image pins the Node Alpine base image by digest',
+  );
+}
+
+function testComposeHealthchecksUseNodeRuntime(): void {
+  const compose = `${readProjectFile('docker-compose.yml')}\n${readProjectFile('docker-compose.ha.yml')}`;
+
+  includes(
+    compose,
+    "require('node:http').get('http://localhost:3700/api/v1/ready'",
+    'Container security: compose healthchecks use Node instead of an external wget applet',
+  );
+  excludes(
+    compose,
+    'wget -q --spider',
+    'Container security: compose healthchecks do not depend on wget availability',
+  );
+}
+
+function testHaComposeRequiresExplicitDatabaseCredentials(): void {
+  const compose = readProjectFile('docker-compose.ha.yml');
+
+  includes(
+    compose,
+    '${ATTESTOR_DB_PASSWORD:?set ATTESTOR_DB_PASSWORD}',
+    'Container security: HA compose requires explicit database credentials',
+  );
+  excludes(
+    compose,
+    'attestor:attestor@postgres',
+    'Container security: HA compose does not embed the default attestor database password in connection URLs',
+  );
+  excludes(
+    compose,
+    'POSTGRES_PASSWORD: attestor',
+    'Container security: HA compose does not start PostgreSQL with the default attestor password',
+  );
+}
+
 testDockerBuildInstallStaysScriptless();
 testMultiRoleImageDoesNotCarryApiOnlyHealthcheck();
+testDockerBaseImageIsDigestPinned();
+testComposeHealthchecksUseNodeRuntime();
+testHaComposeRequiresExplicitDatabaseCredentials();
 
 console.log(`Container security baseline tests: ${passed} passed, 0 failed`);

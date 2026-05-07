@@ -43,6 +43,15 @@ Starts 4 services: `api`, `worker`, `postgres`, `redis`.
 - Worker auto-restarts on crash (`restart: unless-stopped`)
 - PostgreSQL RLS auto-activated on API startup when `ATTESTOR_PG_URL` is set
 
+The HA compose topology is a rehearsal pattern and requires explicit database credentials:
+
+```bash
+ATTESTOR_DB_USER=attestor \
+ATTESTOR_DB_PASSWORD="$(openssl rand -base64 32)" \
+ATTESTOR_DB_NAME=attestor \
+docker compose -f docker-compose.ha.yml up
+```
+
 ## Container
 
 ```bash

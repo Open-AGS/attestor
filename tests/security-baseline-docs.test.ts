@@ -21,6 +21,11 @@ function excludes(content: string, unexpected: RegExp, message: string): void {
   passed += 1;
 }
 
+function matches(content: string, expected: RegExp, message: string): void {
+  assert.match(content, expected, message);
+  passed += 1;
+}
+
 function testSecurityPolicyExplainsEvaluationBoundary(): void {
   const security = readProjectFile('SECURITY.md');
 
@@ -78,11 +83,12 @@ function testSupplyChainSecurityGatesStayPresent(): void {
 
   includes(security, 'Supply Chain Scanning', 'Security baseline: supply-chain scanning is documented');
   includes(security, 'npm run security:supply-chain-baseline', 'Security baseline: supply-chain baseline guard is documented');
-  includes(security, 'blocks lockfile drift, non-registry dependency resolutions, missing registry integrity metadata, unexpected dependency install scripts, and workflow permission regressions', 'Security baseline: supply-chain guard scope is documented');
+  includes(security, 'blocks lockfile drift, non-registry dependency resolutions, missing registry integrity metadata, unexpected dependency install scripts, non-SHA-pinned GitHub Actions, missing release SBOM packaging, and workflow permission regressions', 'Security baseline: supply-chain guard scope is documented');
   includes(security, 'The install-script allowlist is intentionally narrow.', 'Security baseline: install-script allowlist is documented');
   includes(security, 'npm run security:audit-high', 'Security baseline: npm high/critical audit is documented');
-  includes(security, 'actions/dependency-review-action@v4', 'Security baseline: dependency review action is documented');
+  includes(security, 'SHA-pinned `actions/dependency-review-action`', 'Security baseline: dependency review action is documented as SHA-pinned');
   includes(security, 'CodeQL JavaScript/TypeScript analysis', 'Security baseline: CodeQL coverage is documented');
+  includes(security, 'Release provenance artifacts include a CycloneDX SBOM', 'Security baseline: release provenance SBOM is documented');
   includes(security, 'The runtime and type baseline is Node 22', 'Security baseline: Node runtime/type baseline is documented');
   includes(security, '`@types/node` semver-major updates are ignored', 'Security baseline: Node type major guard is documented');
   includes(security, 'moderate `uuid` advisories', 'Security baseline: remaining moderate advisory is documented honestly');
@@ -91,19 +97,20 @@ function testSupplyChainSecurityGatesStayPresent(): void {
   includes(securityScan, 'supply-chain-baseline:', 'Security baseline: security scan runs the supply-chain baseline job');
   includes(securityScan, 'npm run security:supply-chain-baseline', 'Security baseline: security scan runs the supply-chain baseline guard');
   includes(securityScan, 'npm run security:audit-high', 'Security baseline: security scan runs npm audit gate');
-  includes(securityScan, 'uses: actions/dependency-review-action@v4', 'Security baseline: dependency review action is pinned by major version');
+  matches(securityScan, /uses: actions\/dependency-review-action@[0-9a-f]{40}/u, 'Security baseline: dependency review action is pinned by full SHA');
   includes(securityScan, 'fail-on-severity: high', 'Security baseline: dependency review blocks high and critical advisories');
   includes(securityScan, 'comment-summary-in-pr: never', 'Security baseline: dependency review avoids PR write permission');
 
   includes(codeql, 'name: CodeQL', 'Security baseline: CodeQL workflow title is stable');
   includes(codeql, 'security-events: write', 'Security baseline: CodeQL upload permission is explicit');
-  includes(codeql, 'uses: github/codeql-action/init@v4', 'Security baseline: CodeQL init action is present');
+  matches(codeql, /uses: github\/codeql-action\/init@[0-9a-f]{40}/u, 'Security baseline: CodeQL init action is pinned by full SHA');
   includes(codeql, 'languages: javascript-typescript', 'Security baseline: CodeQL scans JavaScript and TypeScript');
   includes(codeql, 'queries: security-extended', 'Security baseline: CodeQL uses security-extended queries');
 
   includes(dependabot, 'version: 2', 'Security baseline: Dependabot config uses current syntax');
   includes(dependabot, 'package-ecosystem: "npm"', 'Security baseline: Dependabot tracks npm dependencies');
   includes(dependabot, 'package-ecosystem: "github-actions"', 'Security baseline: Dependabot tracks GitHub Actions dependencies');
+  includes(dependabot, 'package-ecosystem: "docker"', 'Security baseline: Dependabot tracks Docker base image dependencies');
   includes(dependabot, 'timezone: "Europe/Budapest"', 'Security baseline: Dependabot schedule has explicit timezone');
   includes(dependabot, 'dependency-name: "@types/node"', 'Security baseline: Dependabot has an explicit Node types major guard');
   includes(dependabot, 'update-types:', 'Security baseline: Dependabot constrains update types where required');
@@ -127,9 +134,10 @@ function testReleaseProvenanceWorkflowKeepsElevatedPermissionsScoped(): void {
   includes(workflow, 'contents: read', 'Security baseline: release provenance keeps contents read-only');
   includes(workflow, 'attestations: write', 'Security baseline: release provenance has attestation permission');
   includes(workflow, 'id-token: write', 'Security baseline: release provenance has OIDC permission');
-  includes(workflow, 'uses: actions/attest@v4', 'Security baseline: release provenance uses the current attest action');
+  matches(workflow, /uses: actions\/attest@[0-9a-f]{40}/u, 'Security baseline: release provenance attest action is pinned by full SHA');
   includes(workflow, 'npm run proof:surface', 'Security baseline: release provenance renders proof surface');
   includes(workflow, 'npm run showcase:proof', 'Security baseline: release provenance renders the offline-capable proof showcase');
+  includes(workflow, 'npm run sbom:cyclonedx', 'Security baseline: release provenance generates a CycloneDX SBOM');
   excludes(workflow, /showcase:proof:hybrid/iu, 'Security baseline: release provenance must not depend on live-upstream hybrid proof');
 }
 

@@ -4,6 +4,7 @@ import {
   ERC4337_USER_OPERATION_CHECKS,
   ERC4337_USER_OPERATION_ENTRYPOINT_VERSIONS,
   ERC4337_USER_OPERATION_OUTCOMES,
+  computeErc4337UserOperationHash,
   createErc4337UserOperationPreflight,
   erc4337UserOperationAdapterDescriptor,
   erc4337UserOperationPreflightLabel,
@@ -72,7 +73,7 @@ const OTHER_ADDRESS = '0x5555555555555555555555555555555555555555';
 const ENTRYPOINT_ADDRESS = '0x4337084d9e255ff0702461cf8895ce9e3b5ff108';
 const VERIFYING_CONTRACT = '0x9999999999999999999999999999999999999999';
 const SIGNATURE = `0x${'11'.repeat(65)}`;
-const USER_OP_HASH = `0x${'ee'.repeat(32)}`;
+const STALE_USER_OP_HASH = `0x${'ee'.repeat(32)}`;
 const SPIFFE_ID = 'spiffe://attestor.test/ns/crypto/sa/erc4337-user-operation';
 const VALIDATED_AT_EPOCH_SECONDS = 1776762050;
 const SIMULATED_AT_EPOCH_SECONDS = 1776762120;
@@ -326,7 +327,7 @@ function fixtureSuite(
 function userOperation(
   overrides: Partial<Erc4337UserOperation> = {},
 ): Erc4337UserOperation {
-  return {
+  const operation: Erc4337UserOperation = {
     sender: ACCOUNT_ADDRESS,
     nonce: '42',
     entryPoint: ENTRYPOINT_ADDRESS,
@@ -350,8 +351,15 @@ function userOperation(
     paymasterPostOpGasLimit: '50000',
     paymasterData: '0xabcd',
     signature: SIGNATURE,
-    userOpHash: USER_OP_HASH,
+    userOpHash: STALE_USER_OP_HASH,
     ...overrides,
+  };
+  if (overrides.userOpHash !== undefined) {
+    return operation;
+  }
+  return {
+    ...operation,
+    userOpHash: computeErc4337UserOperationHash(operation),
   };
 }
 
@@ -433,14 +441,15 @@ function testDescriptor(): void {
 
 function testCreatesAllowPreflight(): void {
   const suite = fixtureSuite();
+  const operation = userOperation();
   const preflight = createErc4337UserOperationPreflight({
     ...suite,
-    userOperation: userOperation(),
+    userOperation: operation,
     bundlerValidation: bundlerValidation(),
   });
   const second = createErc4337UserOperationPreflight({
     ...suite,
-    userOperation: userOperation(),
+    userOperation: operation,
     bundlerValidation: bundlerValidation(),
   });
 
@@ -465,8 +474,8 @@ function testCreatesAllowPreflight(): void {
   );
   equal(
     preflight.userOpHash,
-    USER_OP_HASH,
-    'ERC-4337 UserOperation adapter: carries userOpHash',
+    operation.userOpHash,
+    'ERC-4337 UserOperation adapter: carries recomputed userOpHash',
   );
   equal(
     preflight.entryPoint,
@@ -488,8 +497,31 @@ function testCreatesAllowPreflight(): void {
     'ERC-4337 UserOperation adapter: all allow observations pass',
   );
   ok(
+    preflight.observations.some((entry) => entry.code === 'erc4337-userop-hash-verified'),
+    'ERC-4337 UserOperation adapter: UserOperation hash is independently verified',
+  );
+  ok(
     erc4337UserOperationPreflightLabel(preflight).includes('outcome:allow'),
     'ERC-4337 UserOperation adapter: label includes outcome',
+  );
+}
+
+function testUserOperationHashMismatchBlocks(): void {
+  const suite = fixtureSuite();
+  const preflight = createErc4337UserOperationPreflight({
+    ...suite,
+    userOperation: userOperation({ userOpHash: STALE_USER_OP_HASH }),
+    bundlerValidation: bundlerValidation(),
+  });
+
+  equal(
+    preflight.outcome,
+    'block',
+    'ERC-4337 UserOperation adapter: stale bundler-supplied UserOperation hash blocks',
+  );
+  ok(
+    preflight.observations.some((entry) => entry.code === 'erc4337-userop-hash-mismatch'),
+    'ERC-4337 UserOperation adapter: userOpHash mismatch reason is present',
   );
 }
 
@@ -751,6 +783,7 @@ function testRejectsWrongAdapterIntent(): void {
 function main(): void {
   testDescriptor();
   testCreatesAllowPreflight();
+  testUserOperationHashMismatchBlocks();
   testSimulationAllowsBoundUserOperation();
   testBundlerSimulationFailureBlocks();
   testErc7562ViolationBlocks();

@@ -1122,7 +1122,7 @@ function buildObservations(input: {
     }),
     observation({
       check: 'custody-approval-quorum',
-      status: quorumReady ? 'pass' : 'warn',
+      status: quorumReady ? 'pass' : 'fail',
       code: quorumReady
         ? 'custody-approval-quorum-satisfied'
         : 'custody-approval-quorum-pending',

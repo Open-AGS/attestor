@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { keccak_256 } from '@noble/hashes/sha3';
 import {
   canonicalizeReleaseJson,
   type CanonicalReleaseJsonValue,
@@ -226,6 +227,14 @@ export interface Erc4337UserOperationAdapterDescriptor {
 
 const ZERO_EVM_ADDRESS = '0x0000000000000000000000000000000000000000';
 const EIP_7702_FACTORY_MARKER = '0x7702';
+const ERC4337_PACKED_USEROP_TYPE =
+  'PackedUserOperation(address sender,uint256 nonce,bytes initCode,bytes callData,bytes32 accountGasLimits,uint256 preVerificationGas,bytes32 gasFees,bytes paymasterAndData)';
+const ERC4337_EIP712_DOMAIN_TYPE =
+  'EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)';
+const ERC4337_DOMAIN_NAME = 'ERC4337';
+const ERC4337_DOMAIN_VERSION = '1';
+const UINT_128_MAX = (1n << 128n) - 1n;
+const UINT_256_MAX = (1n << 256n) - 1n;
 
 function normalizeIdentifier(value: string | null | undefined, fieldName: string): string {
   const normalized = value?.trim() ?? '';
@@ -342,6 +351,246 @@ function normalizePositiveUintString(value: string | null | undefined, fieldName
     throw new Error(`ERC-4337 UserOperation adapter ${fieldName} must be a positive integer string.`);
   }
   return normalized;
+}
+
+function stripHexPrefix(value: string): string {
+  return value.startsWith('0x') ? value.slice(2) : value;
+}
+
+function utf8Hex(value: string): string {
+  return Buffer.from(value, 'utf8').toString('hex');
+}
+
+function keccakHex(value: string): string {
+  return `0x${Buffer.from(keccak_256(Buffer.from(stripHexPrefix(value), 'hex'))).toString('hex')}`;
+}
+
+function keccakUtf8(value: string): string {
+  return keccakHex(`0x${utf8Hex(value)}`);
+}
+
+function encodeUintWord(value: string | bigint, fieldName: string): string {
+  const parsed = typeof value === 'bigint' ? value : BigInt(value);
+  if (parsed < 0n || parsed > UINT_256_MAX) {
+    throw new Error(`ERC-4337 UserOperation adapter ${fieldName} exceeds uint256.`);
+  }
+  return parsed.toString(16).padStart(64, '0');
+}
+
+function encodeUint128Half(value: string | bigint, fieldName: string): string {
+  const parsed = typeof value === 'bigint' ? value : BigInt(value);
+  if (parsed < 0n || parsed > UINT_128_MAX) {
+    throw new Error(`ERC-4337 UserOperation adapter ${fieldName} exceeds uint128.`);
+  }
+  return parsed.toString(16).padStart(32, '0');
+}
+
+function encodeAddressWord(value: string): string {
+  return stripHexPrefix(value).padStart(64, '0');
+}
+
+function encodeBytes32Word(value: string): string {
+  const stripped = stripHexPrefix(value);
+  if (stripped.length !== 64) {
+    throw new Error('ERC-4337 UserOperation adapter expected a bytes32 word.');
+  }
+  return stripped;
+}
+
+function abiEncodeWords(words: readonly string[]): string {
+  return `0x${words.join('')}`;
+}
+
+function packUint128Pair(input: {
+  readonly high: string;
+  readonly low: string;
+  readonly highFieldName: string;
+  readonly lowFieldName: string;
+}): string {
+  return `0x${encodeUint128Half(input.high, input.highFieldName)}${encodeUint128Half(
+    input.low,
+    input.lowFieldName,
+  )}`;
+}
+
+function caip2ChainIdAsUint(input: string): string {
+  const match = /^eip155:(0|[1-9]\d*)$/.exec(input);
+  if (match === null) {
+    throw new Error('ERC-4337 UserOperation adapter userOperation.chainId must be an eip155 CAIP-2 chain id.');
+  }
+  return match[1] ?? '0';
+}
+
+function initCodeForUserOperation(userOperation: Erc4337UserOperation): string {
+  if (userOperation.factory === null || userOperation.factory === undefined) {
+    return '0x';
+  }
+  if (userOperation.factory === EIP_7702_FACTORY_MARKER) {
+    throw new Error('EIP-7702 UserOperation hash recomputation requires on-chain delegate-code evidence.');
+  }
+  return `0x${stripHexPrefix(userOperation.factory)}${stripHexPrefix(userOperation.factoryData ?? '0x')}`;
+}
+
+function paymasterAndDataForUserOperation(userOperation: Erc4337UserOperation): string {
+  if (userOperation.paymaster === null || userOperation.paymaster === undefined) {
+    return '0x';
+  }
+  if (userOperation.entryPointVersion === 'v0.6') {
+    return `0x${stripHexPrefix(userOperation.paymaster)}${stripHexPrefix(userOperation.paymasterData ?? '0x')}`;
+  }
+  if (
+    userOperation.paymasterVerificationGasLimit === null ||
+    userOperation.paymasterVerificationGasLimit === undefined ||
+    userOperation.paymasterPostOpGasLimit === null ||
+    userOperation.paymasterPostOpGasLimit === undefined
+  ) {
+    throw new Error('ERC-4337 UserOperation adapter paymaster gas limits are required for packed EntryPoint versions.');
+  }
+  return `0x${stripHexPrefix(userOperation.paymaster)}${encodeUint128Half(
+    userOperation.paymasterVerificationGasLimit,
+    'userOperation.paymasterVerificationGasLimit',
+  )}${encodeUint128Half(
+    userOperation.paymasterPostOpGasLimit,
+    'userOperation.paymasterPostOpGasLimit',
+  )}${stripHexPrefix(userOperation.paymasterData ?? '0x')}`;
+}
+
+function v06UserOperationStructHash(userOperation: Erc4337UserOperation): string {
+  const initCodeHash = keccakHex(initCodeForUserOperation(userOperation));
+  const callDataHash = keccakHex(userOperation.callData);
+  const paymasterAndDataHash = keccakHex(paymasterAndDataForUserOperation(userOperation));
+  return keccakHex(
+    abiEncodeWords([
+      encodeAddressWord(userOperation.sender),
+      encodeUintWord(userOperation.nonce, 'userOperation.nonce'),
+      encodeBytes32Word(initCodeHash),
+      encodeBytes32Word(callDataHash),
+      encodeUintWord(userOperation.callGasLimit, 'userOperation.callGasLimit'),
+      encodeUintWord(userOperation.verificationGasLimit, 'userOperation.verificationGasLimit'),
+      encodeUintWord(userOperation.preVerificationGas, 'userOperation.preVerificationGas'),
+      encodeUintWord(userOperation.maxFeePerGas, 'userOperation.maxFeePerGas'),
+      encodeUintWord(userOperation.maxPriorityFeePerGas, 'userOperation.maxPriorityFeePerGas'),
+      encodeBytes32Word(paymasterAndDataHash),
+    ]),
+  );
+}
+
+function packedUserOperationStructHash(userOperation: Erc4337UserOperation): string {
+  const accountGasLimits = packUint128Pair({
+    high: userOperation.verificationGasLimit,
+    low: userOperation.callGasLimit,
+    highFieldName: 'userOperation.verificationGasLimit',
+    lowFieldName: 'userOperation.callGasLimit',
+  });
+  const gasFees = packUint128Pair({
+    high: userOperation.maxPriorityFeePerGas,
+    low: userOperation.maxFeePerGas,
+    highFieldName: 'userOperation.maxPriorityFeePerGas',
+    lowFieldName: 'userOperation.maxFeePerGas',
+  });
+  const fields = [
+    encodeAddressWord(userOperation.sender),
+    encodeUintWord(userOperation.nonce, 'userOperation.nonce'),
+    encodeBytes32Word(keccakHex(initCodeForUserOperation(userOperation))),
+    encodeBytes32Word(keccakHex(userOperation.callData)),
+    encodeBytes32Word(accountGasLimits),
+    encodeUintWord(userOperation.preVerificationGas, 'userOperation.preVerificationGas'),
+    encodeBytes32Word(gasFees),
+    encodeBytes32Word(keccakHex(paymasterAndDataForUserOperation(userOperation))),
+  ];
+  if (userOperation.entryPointVersion === 'v0.8') {
+    return keccakHex(
+      abiEncodeWords([
+        encodeBytes32Word(keccakUtf8(ERC4337_PACKED_USEROP_TYPE)),
+        ...fields,
+      ]),
+    );
+  }
+  return keccakHex(abiEncodeWords(fields));
+}
+
+function eip712DomainSeparator(input: {
+  readonly chainId: string;
+  readonly verifyingContract: string;
+}): string {
+  return keccakHex(
+    abiEncodeWords([
+      encodeBytes32Word(keccakUtf8(ERC4337_EIP712_DOMAIN_TYPE)),
+      encodeBytes32Word(keccakUtf8(ERC4337_DOMAIN_NAME)),
+      encodeBytes32Word(keccakUtf8(ERC4337_DOMAIN_VERSION)),
+      encodeUintWord(input.chainId, 'userOperation.chainId'),
+      encodeAddressWord(input.verifyingContract),
+    ]),
+  );
+}
+
+function computeNormalizedErc4337UserOperationHash(
+  userOperation: Erc4337UserOperation,
+): string {
+  const chainId = caip2ChainIdAsUint(userOperation.chainId);
+  if (userOperation.entryPointVersion === 'v0.6') {
+    return keccakHex(
+      abiEncodeWords([
+        encodeBytes32Word(v06UserOperationStructHash(userOperation)),
+        encodeAddressWord(userOperation.entryPoint),
+        encodeUintWord(chainId, 'userOperation.chainId'),
+      ]),
+    );
+  }
+  const structHash = packedUserOperationStructHash(userOperation);
+  if (userOperation.entryPointVersion === 'v0.8') {
+    return keccakHex(
+      `0x1901${stripHexPrefix(eip712DomainSeparator({
+        chainId,
+        verifyingContract: userOperation.entryPoint,
+      }))}${stripHexPrefix(structHash)}`,
+    );
+  }
+  return keccakHex(
+    abiEncodeWords([
+      encodeBytes32Word(structHash),
+      encodeAddressWord(userOperation.entryPoint),
+      encodeUintWord(chainId, 'userOperation.chainId'),
+    ]),
+  );
+}
+
+function userOperationHashBinding(userOperation: Erc4337UserOperation): {
+  readonly status: Erc4337UserOperationObservationStatus;
+  readonly code: string;
+  readonly computedUserOpHash: string | null;
+  readonly error: string | null;
+} {
+  try {
+    const computedUserOpHash = computeNormalizedErc4337UserOperationHash(userOperation);
+    if (computedUserOpHash !== userOperation.userOpHash) {
+      return Object.freeze({
+        status: 'fail',
+        code: 'erc4337-userop-hash-mismatch',
+        computedUserOpHash,
+        error: null,
+      });
+    }
+    return Object.freeze({
+      status: 'pass',
+      code: 'erc4337-userop-hash-verified',
+      computedUserOpHash,
+      error: null,
+    });
+  } catch (error) {
+    return Object.freeze({
+      status: 'fail',
+      code: 'erc4337-userop-hash-unverified',
+      computedUserOpHash: null,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+}
+
+export function computeErc4337UserOperationHash(
+  input: Erc4337UserOperation,
+): string {
+  return computeNormalizedErc4337UserOperationHash(normalizedUserOperation(input));
 }
 
 function normalizeOptionalCallCount(value: number | null | undefined): number | null {
@@ -748,15 +997,22 @@ function buildObservations(input: {
     }),
   );
 
+  const hashBinding = userOperationHashBinding(userOperation);
   observations.push(
     observation({
       check: 'erc4337-userop-hash-bound',
-      status: 'pass',
-      code: 'erc4337-userop-hash-bound',
-      message: 'UserOperation hash is present and bound into adapter evidence.',
+      status: hashBinding.status,
+      code: hashBinding.code,
+      message: hashBinding.status === 'pass'
+        ? 'UserOperation hash was recomputed from normalized EntryPoint fields before binding.'
+        : 'UserOperation hash could not be recomputed to match the supplied bundler evidence.',
       evidence: {
-        userOpHash: userOperation.userOpHash,
+        suppliedUserOpHash: userOperation.userOpHash,
+        computedUserOpHash: hashBinding.computedUserOpHash,
+        recomputationError: hashBinding.error,
+        hashSource: 'attestor-recomputed',
         entryPoint: userOperation.entryPoint,
+        entryPointVersion: userOperation.entryPointVersion,
         chainId: userOperation.chainId,
       },
     }),

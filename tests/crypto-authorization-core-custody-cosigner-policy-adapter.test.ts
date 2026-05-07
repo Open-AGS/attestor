@@ -717,7 +717,7 @@ function testPendingPolicyRequiresReview(): void {
   );
 }
 
-function testQuorumPendingRequiresReview(): void {
+function testQuorumPendingBlocks(): void {
   const preflight = createCustodyCosignerPolicyPreflight({
     ...preflightInput(),
     approvals: approvals({
@@ -730,12 +730,17 @@ function testQuorumPendingRequiresReview(): void {
 
   equal(
     preflight.outcome,
-    'review-required',
-    'custody adapter: incomplete approval quorum requires review',
+    'block',
+    'custody adapter: incomplete approval quorum blocks',
   );
   ok(
     preflight.observations.some((entry) => entry.code === 'custody-approval-quorum-pending'),
     'custody adapter: quorum pending reason is present',
+  );
+  ok(
+    preflight.observations.some((entry) =>
+      entry.code === 'custody-approval-quorum-pending' && entry.status === 'fail'),
+    'custody adapter: quorum pending is a hard failure',
   );
 }
 
@@ -1036,7 +1041,7 @@ testDescriptor();
 testCreatesAllowPreflight();
 testSimulationAllowsCustodyWithdrawal();
 testPendingPolicyRequiresReview();
-testQuorumPendingRequiresReview();
+testQuorumPendingBlocks();
 testExplicitDenyBlocks();
 testImplicitDenyBlocks();
 testDestinationMismatchBlocks();

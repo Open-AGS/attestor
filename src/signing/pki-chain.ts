@@ -85,16 +85,21 @@ export interface ChainVerification {
   chainIntact: boolean;
   caExpired: boolean;
   leafExpired: boolean;
+  caRevoked: boolean;
+  leafRevoked: boolean;
   issuerMatch: boolean;
   overall: 'valid' | 'invalid' | 'expired';
   explanation: string;
 }
 
-const DEFAULT_TRUST_CHAIN_CLOCK_SKEW_MS = 5_000;
+const DAY_MS = 24 * 60 * 60 * 1000;
+const DEFAULT_TRUST_CHAIN_CLOCK_SKEW_MS = 60_000;
 
 export interface VerifyTrustChainOptions {
   readonly now?: Date;
   readonly clockSkewMs?: number;
+  readonly revokedCertificateIds?: readonly string[];
+  readonly revokedFingerprints?: readonly string[];
 }
 
 // ─── CA Certificate ─────────────────────────────────────────────────────────
@@ -145,8 +150,29 @@ export function issueLeafCertificate(
   caCert: CaCertificate,
   validityDays: number = 90,
 ): LeafCertificate {
+  return issueLeafCertificateForDuration(
+    subject,
+    role,
+    subjectKeyPair,
+    caKeyPair,
+    caCert,
+    validityDays * DAY_MS,
+  );
+}
+
+export function issueLeafCertificateForDuration(
+  subject: string,
+  role: string,
+  subjectKeyPair: AttestorKeyPair,
+  caKeyPair: AttestorKeyPair,
+  caCert: CaCertificate,
+  validityMs: number,
+): LeafCertificate {
   const now = new Date();
-  const notAfter = new Date(now.getTime() + validityDays * 24 * 60 * 60 * 1000);
+  if (!Number.isFinite(validityMs) || validityMs <= 0) {
+    throw new Error('Leaf certificate validity duration must be a positive finite number of milliseconds.');
+  }
+  const notAfter = new Date(now.getTime() + Math.floor(validityMs));
 
   const certificateId = `leaf_${createHash('sha256').update(`${subject}:${subjectKeyPair.fingerprint}:${now.toISOString()}`).digest('hex').slice(0, 16)}`;
 
@@ -197,6 +223,8 @@ export function verifyTrustChain(
   const now = options.now ?? new Date();
   const clockSkewMs = Math.max(0, options.clockSkewMs ?? DEFAULT_TRUST_CHAIN_CLOCK_SKEW_MS);
   const nowMs = now.getTime();
+  const revokedCertificateIds = new Set(options.revokedCertificateIds ?? []);
+  const revokedFingerprints = new Set(options.revokedFingerprints ?? []);
 
   // 1. Verify CA self-signature
   const { signature: caSig, ...caBody } = chain.ca;
@@ -225,14 +253,37 @@ export function verifyTrustChain(
     nowMs > new Date(chain.leaf.notAfter).getTime() + clockSkewMs ||
     nowMs < new Date(chain.leaf.notBefore).getTime() - clockSkewMs;
 
+  const caRevoked =
+    revokedCertificateIds.has(chain.ca.certificateId) ||
+    revokedFingerprints.has(chain.ca.fingerprint);
+  const leafRevoked =
+    revokedCertificateIds.has(chain.leaf.certificateId) ||
+    revokedFingerprints.has(chain.leaf.subjectFingerprint);
+
   const chainIntact = caValid && caFpMatch && leafValid && issuerMatch;
-  const overall = !chainIntact ? 'invalid' : (caExpired || leafExpired) ? 'expired' : 'valid';
+  const overall =
+    !chainIntact || caRevoked || leafRevoked
+      ? 'invalid'
+      : (caExpired || leafExpired)
+        ? 'expired'
+        : 'valid';
 
   const explanation = overall === 'valid'
     ? `Trust chain verified: CA=${chain.ca.name}, subject=${chain.leaf.subject}, role=${chain.leaf.role}`
-    : `Chain verification failed: ca_sig=${caValid}, ca_fp=${caFpMatch}, leaf_sig=${leafValid}, issuer=${issuerMatch}, ca_expired=${caExpired}, leaf_expired=${leafExpired}`;
+    : `Chain verification failed: ca_sig=${caValid}, ca_fp=${caFpMatch}, leaf_sig=${leafValid}, issuer=${issuerMatch}, ca_expired=${caExpired}, leaf_expired=${leafExpired}, ca_revoked=${caRevoked}, leaf_revoked=${leafRevoked}`;
 
-  return { caValid: caValid && caFpMatch, leafValid, chainIntact, caExpired, leafExpired, issuerMatch, overall, explanation };
+  return {
+    caValid: caValid && caFpMatch,
+    leafValid,
+    chainIntact,
+    caExpired,
+    leafExpired,
+    caRevoked,
+    leafRevoked,
+    issuerMatch,
+    overall,
+    explanation,
+  };
 }
 
 // ─── Convenience: Full PKI Setup ────────────────────────────────────────────

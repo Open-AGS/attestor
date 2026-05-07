@@ -99,6 +99,8 @@ async function runSigningTests(): Promise<number> {
   assert(cert.version === '1.0', 'Certificate version is 1.0');
   assert(cert.type === 'attestor.certificate.v1', 'Certificate type is correct');
   assert(cert.certificateId.startsWith('cert_'), 'Certificate ID has cert_ prefix');
+  assert(Date.parse(cert.notBefore) <= Date.parse(cert.issuedAt), 'Certificate notBefore is issuedAt-bounded');
+  assert(Date.parse(cert.notAfter) > Date.parse(cert.issuedAt), 'Certificate notAfter is present and future');
   assert(cert.decision === 'pass', 'Decision preserved');
   assert(cert.authority.warrantStatus === 'fulfilled', 'Warrant status preserved');
   assert(cert.evidence.evidenceChainRoot === 'abc123root', 'Evidence chain root preserved');
@@ -106,7 +108,7 @@ async function runSigningTests(): Promise<number> {
   assert(cert.signing.publicKey === kp.publicKeyHex, 'Signing public key matches');
   assert(cert.signing.fingerprint === kp.fingerprint, 'Signing fingerprint matches');
   assert(cert.signing.signature.length === 128, 'Certificate signature is 64 bytes');
-  passed += 10;
+  passed += 12;
   console.log(`    Certificate: ${cert.certificateId} issued`);
 
   console.log('\n  [Certificate Verification]');
@@ -114,10 +116,26 @@ async function runSigningTests(): Promise<number> {
   const verification = verifyCertificate(cert, kp.publicKeyPem);
   assert(verification.signatureValid === true, 'Certificate signature valid');
   assert(verification.fingerprintConsistent === true, 'Fingerprint consistent');
+  assert(verification.expiryBounded === true, 'Certificate expiry is bounded');
+  assert(verification.expired === false, 'Certificate is not expired');
   assert(verification.schemaValid === true, 'Schema valid');
   assert(verification.overall === 'valid', 'Overall: valid');
-  passed += 4;
+  passed += 6;
   console.log(`    Verification: ${verification.overall}`);
+
+  const expiredVerify = verifyCertificate(cert, kp.publicKeyPem, {
+    now: new Date(Date.parse(cert.notAfter) + 61_000),
+  });
+  assert(expiredVerify.overall === 'expired', 'Certificate: expired certificate is rejected');
+  const expectedFingerprintMismatch = verifyCertificate(cert, kp.publicKeyPem, {
+    expectedFingerprint: wrongKey.fingerprint,
+  });
+  assert(expectedFingerprintMismatch.overall === 'invalid', 'Certificate: trusted fingerprint mismatch is rejected');
+  const revokedVerify = verifyCertificate(cert, kp.publicKeyPem, {
+    revokedCertificateIds: [cert.certificateId],
+  });
+  assert(revokedVerify.overall === 'revoked', 'Certificate: revoked certificate is rejected');
+  passed += 3;
 
   // Tamper detection
   const tamperCert = { ...cert, decision: 'fail' as const };
@@ -145,6 +163,7 @@ async function runSigningTests(): Promise<number> {
   console.log('\n  [PKI Trust Chain]');
   {
     const { verifyTrustChain, generatePkiHierarchy } = await import('./pki-chain.js');
+    const { createKeylessSigner, resetKeylessCa } = await import('./keyless-signer.js');
 
     // Generate full PKI hierarchy
     const pki = generatePkiHierarchy('Test CA', 'Test Signer', 'Test Reviewer');
@@ -176,18 +195,40 @@ async function runSigningTests(): Promise<number> {
     assert(signerVerify.overall === 'valid', 'PKI: signer chain overall valid');
     passed += 7;
 
-    const justAfterLeafExpiry = new Date(new Date(pki.chains.signer.leaf.notAfter).getTime() + 3_000);
+    const revokedChain = verifyTrustChain(pki.chains.signer, pki.ca.keyPair.publicKeyPem, {
+      revokedCertificateIds: [pki.chains.signer.leaf.certificateId],
+    });
+    assert(revokedChain.leafRevoked, 'PKI: revoked leaf is marked revoked');
+    assert(revokedChain.overall === 'invalid', 'PKI: revoked leaf invalidates trust chain');
+    passed += 2;
+
+    const justAfterLeafExpiry = new Date(new Date(pki.chains.signer.leaf.notAfter).getTime() + 30_000);
     const skewTolerantVerify = verifyTrustChain(pki.chains.signer, pki.ca.keyPair.publicKeyPem, {
       now: justAfterLeafExpiry,
-      clockSkewMs: 5_000,
     });
     const strictExpiryVerify = verifyTrustChain(pki.chains.signer, pki.ca.keyPair.publicKeyPem, {
       now: justAfterLeafExpiry,
       clockSkewMs: 0,
     });
-    assert(skewTolerantVerify.overall === 'valid', 'PKI: trust-chain verification tolerates small clock skew');
+    assert(skewTolerantVerify.overall === 'valid', 'PKI: trust-chain verification tolerates default clock skew');
     assert(strictExpiryVerify.overall === 'expired', 'PKI: trust-chain verification can still fail strict expiry');
     passed += 2;
+
+    resetKeylessCa();
+    const keyless = createKeylessSigner(
+      {
+        subject: 'Short Lived Runtime',
+        role: 'runtime_signer',
+        source: 'ephemeral',
+        identifier: 'short-lived-runtime',
+      },
+      { leafValidityMinutes: 60 },
+    );
+    const leafTtlMs =
+      Date.parse(keyless.trustChain.leaf.notAfter) -
+      Date.parse(keyless.trustChain.leaf.notBefore);
+    assert(leafTtlMs <= 61 * 60 * 1000, 'PKI: keyless leaf certificate honors sub-day validity');
+    passed += 1;
 
     // Verify reviewer chain
     const reviewerVerify = verifyTrustChain(pki.chains.reviewer, pki.ca.keyPair.publicKeyPem);

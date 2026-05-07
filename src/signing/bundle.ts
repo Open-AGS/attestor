@@ -266,7 +266,10 @@ export function buildVerificationKit(
   if (!report.certificate) return null;
 
   const bundle = buildAuthorityBundle(report);
-  const cryptoResult = verifyCertificate(report.certificate, publicKeyPem);
+  const cryptoResult = verifyCertificate(report.certificate, publicKeyPem, {
+    expectedFingerprint: trustChain?.leaf.subjectFingerprint ?? null,
+    allowLegacyUnbounded: trustChain !== null && trustChain !== undefined,
+  });
 
   const endorsement = report.oversight.endorsement ?? null;
   const verification = buildVerificationSummary(report.certificate, bundle, cryptoResult, endorsement, reviewerPublicKeyPem ?? null);
@@ -297,7 +300,7 @@ export function buildVerificationSummary(
   reviewerPublicKeyPem?: string | null,
 ): VerificationSummary {
   const cryptographic = {
-    valid: cryptoResult.signatureValid && cryptoResult.fingerprintConsistent,
+    valid: cryptoResult.overall === 'valid',
     algorithm: certificate.signing.algorithm,
     fingerprint: certificate.signing.fingerprint,
   };

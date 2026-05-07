@@ -32,7 +32,7 @@ import {
 } from './keys.js';
 import {
   createCaCertificate,
-  issueLeafCertificate,
+  issueLeafCertificateForDuration,
   buildTrustChain,
   verifyTrustChain,
   type CaCertificate,
@@ -120,14 +120,13 @@ export function createKeylessSigner(
   const signingKeyPair = generateKeyPair();
 
   // Issue short-lived leaf certificate
-  const leafCert = issueLeafCertificate(
+  const leafCert = issueLeafCertificateForDuration(
     identity.subject,
     identity.role,
     signingKeyPair,
     ca.keyPair,
     ca.certificate,
-    // Convert minutes to days (minimum 1 day for the cert library, but we track actual validity separately)
-    Math.max(1, Math.ceil(leafValidityMinutes / (24 * 60))),
+    leafValidityMinutes * 60 * 1000,
   );
 
   const trustChain = buildTrustChain(ca.certificate, leafCert);

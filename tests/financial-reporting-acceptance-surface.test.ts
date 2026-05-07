@@ -40,10 +40,13 @@ async function main(): Promise<void> {
 
   const certificate = JSON.parse(readFileSync(resolve(evidenceRoot, 'evidence', 'certificate.json'), 'utf8')) as AttestationCertificate;
   const publicKeyPem = readFileSync(resolve(evidenceRoot, 'evidence', 'public-key.pem'), 'utf8');
-  const certificateVerification = verifyCertificate(certificate, publicKeyPem);
+  const trustChain = JSON.parse(readFileSync(resolve(evidenceRoot, 'evidence', 'trust-chain.json'), 'utf8')) as TrustChain;
+  const certificateVerification = verifyCertificate(certificate, publicKeyPem, {
+    expectedFingerprint: trustChain.leaf.subjectFingerprint,
+    allowLegacyUnbounded: true,
+  });
   ok(certificateVerification.overall === 'valid', 'Finance acceptance surface: committed certificate verifies against the committed signer public key');
 
-  const trustChain = JSON.parse(readFileSync(resolve(evidenceRoot, 'evidence', 'trust-chain.json'), 'utf8')) as TrustChain;
   const caPublicKeyPem = readFileSync(resolve(evidenceRoot, 'evidence', 'ca-public.pem'), 'utf8');
   const chainVerification = verifyTrustChain(trustChain, caPublicKeyPem);
   ok(chainVerification.overall === 'valid', 'Finance acceptance surface: committed trust chain verifies against the committed CA public key');

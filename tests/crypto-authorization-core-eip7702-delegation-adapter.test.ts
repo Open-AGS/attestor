@@ -126,6 +126,9 @@ interface FixtureSuite {
 
 function fixtureSuite(
   executionAdapterKind: CryptoExecutionAdapterKind = 'eip-7702-delegation',
+  options: {
+    readonly allowUniversalChainAuthorization?: boolean;
+  } = {},
 ): FixtureSuite {
   const chain = fixtureChain();
   const account = fixtureEoaAccount();
@@ -175,6 +178,7 @@ function fixtureSuite(
     digestMode: 'eip-712-typed-data',
     requiredArtifacts: CRYPTO_AUTHORIZATION_DEFAULT_REQUIRED_ARTIFACTS,
     budgetId: 'budget:eip7702:daily',
+    allowUniversalChainAuthorization: options.allowUniversalChainAuthorization,
   });
   const intent = createCryptoAuthorizationIntent({
     intentId: `intent-crypto-eip7702-delegation-${executionAdapterKind}`,
@@ -426,9 +430,9 @@ function recovery(overrides: Partial<Eip7702RecoveryEvidence> = {}): Eip7702Reco
   };
 }
 
-function preflightInput() {
+function preflightInput(suite: FixtureSuite = fixtureSuite()) {
   return {
-    ...fixtureSuite(),
+    ...suite,
     authorization: authorization(),
     accountState: accountState(),
     delegateCode: delegateCode(),
@@ -666,6 +670,36 @@ function testChainMismatchBlocks(): void {
   ok(
     preflight.observations.some((entry) => entry.code === 'eip7702-authorization-chain-mismatch'),
     'EIP-7702 delegation adapter: wrong chain reason is present',
+  );
+}
+
+function testUniversalChainAuthorizationRequiresOptIn(): void {
+  const blocked = createEip7702DelegationPreflight({
+    ...preflightInput(),
+    authorization: authorization({ chainId: '0' }),
+  });
+  const allowed = createEip7702DelegationPreflight({
+    ...preflightInput(fixtureSuite('eip-7702-delegation', {
+      allowUniversalChainAuthorization: true,
+    })),
+    authorization: authorization({ chainId: '0' }),
+  });
+
+  equal(
+    blocked.outcome,
+    'block',
+    'EIP-7702 delegation adapter: universal chain authorization blocks by default',
+  );
+  ok(
+    blocked.observations.some(
+      (entry) => entry.code === 'eip7702-universal-chain-authorization-not-allowed',
+    ),
+    'EIP-7702 delegation adapter: universal chain block reason is present',
+  );
+  equal(
+    allowed.outcome,
+    'allow',
+    'EIP-7702 delegation adapter: universal chain authorization requires explicit opt-in',
   );
 }
 
@@ -924,6 +958,7 @@ testErc4337PathAllows();
 testWalletCapabilityPathAllows();
 testNonceMismatchBlocks();
 testChainMismatchBlocks();
+testUniversalChainAuthorizationRequiresOptIn();
 testInvalidSignatureBlocks();
 testDelegateCodeNotApprovedBlocks();
 testAccountCodeStateBlocks();

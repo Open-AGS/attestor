@@ -274,7 +274,7 @@ export const CRYPTO_FRESHNESS_BASELINES: Record<
   R0: Object.freeze({
     clockSkewSeconds: 120,
     maxAuthorizationAgeSeconds: 86_400,
-    replayStoreSeconds: 0,
+    replayStoreSeconds: 3_600,
     maxRevocationStatusAgeSeconds: 3_600,
   }),
   R1: Object.freeze({

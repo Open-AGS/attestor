@@ -456,6 +456,7 @@ function serviceTrust(
     resourceOriginAllowlisted: true,
     payToAllowlisted: true,
     assetAllowlisted: true,
+    assetAllowlistEvidenceRef: 'asset-allowlist:base-usdc:sha256:001',
     networkAllowlisted: true,
     priceMatchesCatalog: true,
     ...overrides,
@@ -905,6 +906,25 @@ function testServiceTrustBlocks(): void {
   ok(
     preflight.observations.some((entry) => entry.code === 'x402-service-trust-not-ready'),
     'x402 adapter: service trust reason is present',
+  );
+
+  const missingAssetEvidence = createX402AgenticPaymentPreflight({
+    ...preflightInput(),
+    serviceTrust: serviceTrust({
+      assetAllowlistEvidenceRef: null,
+    }),
+  });
+
+  equal(
+    missingAssetEvidence.outcome,
+    'block',
+    'x402 adapter: asset allowlist without evidence blocks',
+  );
+  ok(
+    missingAssetEvidence.observations.some(
+      (entry) => entry.code === 'x402-asset-allowlist-evidence-missing',
+    ),
+    'x402 adapter: missing asset evidence reason is present',
   );
 }
 

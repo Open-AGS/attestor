@@ -81,6 +81,7 @@ const OPERATION_HASH = `0x${'aa'.repeat(32)}`;
 const MANIFEST_HASH = `0x${'bb'.repeat(32)}`;
 const HOOK_DATA_HASH = `0x${'cc'.repeat(32)}`;
 const INIT_DATA_HASH = `0x${'dd'.repeat(32)}`;
+const MODULE_ALLOWLIST_DIGEST = `0x${'ee'.repeat(32)}`;
 const SPIFFE_ID = 'spiffe://attestor.test/ns/crypto/sa/modular-account';
 const VALIDATED_AT_EPOCH_SECONDS = 1776762050;
 const SIMULATED_AT_EPOCH_SECONDS = 1776762120;
@@ -355,6 +356,9 @@ function moduleState(
     moduleId: adapterKind === 'erc-6900-plugin' ? 'plugin:limit-order' : 'module:executor',
     moduleVersion: '1.0.0',
     moduleInstalled: true,
+    moduleAllowlisted: true,
+    moduleAllowlistDigest: MODULE_ALLOWLIST_DIGEST,
+    moduleAuditEvidenceRef: 'evidence:module-audit:attestor-reviewed:v1',
     accountSupportsExecutionMode: true,
     accountSupportsModuleType: true,
     moduleTypeMatches: true,
@@ -499,6 +503,10 @@ function testDescriptor(): void {
     descriptor.references.includes('plugin-manifest'),
     'Modular account adapters: descriptor names plugin manifest evidence',
   );
+  ok(
+    descriptor.references.includes('module-allowlist'),
+    'Modular account adapters: descriptor names module allowlist evidence',
+  );
 }
 
 function testCreatesErc7579AllowPreflight(): void {
@@ -549,6 +557,10 @@ function testCreatesErc7579AllowPreflight(): void {
   ok(
     preflight.observations.every((entry) => entry.status === 'pass'),
     'Modular account adapters: ERC-7579 all allow observations pass',
+  );
+  ok(
+    preflight.observations.some((entry) => entry.code === 'modular-module-allowlist-evidence-bound'),
+    'Modular account adapters: ERC-7579 binds module allowlist evidence',
   );
   ok(
     modularAccountAdapterPreflightLabel(preflight).includes('outcome:allow'),
@@ -616,6 +628,29 @@ function testCreatesErc6900AllowPreflight(): void {
   ok(
     preflight.observations.some((entry) => entry.code === 'modular-plugin-manifest-bound'),
     'Modular account adapters: ERC-6900 binds approved plugin manifest',
+  );
+}
+
+function testMissingModuleAllowlistEvidenceBlocks(): void {
+  const preflight = createModularAccountAdapterPreflight({
+    ...preflightInput('erc-7579-module'),
+    moduleState: moduleState('erc-7579-module', {
+      moduleAllowlisted: false,
+      moduleAllowlistDigest: null,
+      moduleAuditEvidenceRef: null,
+    }),
+  });
+
+  equal(
+    preflight.outcome,
+    'block',
+    'Modular account adapters: missing module allowlist evidence blocks',
+  );
+  ok(
+    preflight.observations.some((entry) =>
+      entry.code === 'modular-module-allowlist-evidence-missing'
+    ),
+    'Modular account adapters: missing module allowlist reason is present',
   );
 }
 
@@ -808,6 +843,7 @@ testDescriptor();
 testCreatesErc7579AllowPreflight();
 testSimulationAllowsErc7579Module();
 testCreatesErc6900AllowPreflight();
+testMissingModuleAllowlistEvidenceBlocks();
 testDisabledModuleBlocks();
 testUnsupportedExecutionModeBlocks();
 testDelegatecallRequiresExplicitEvidence();

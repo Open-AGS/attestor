@@ -645,7 +645,13 @@ function authorizationChainReady(input: {
   readonly intent: CryptoAuthorizationIntent;
 }): boolean {
   const chainId = eip155ChainId(input.intent);
-  return input.authorization.chainId === '0' || input.authorization.chainId === chainId;
+  return (
+    input.authorization.chainId === chainId ||
+    (
+      input.authorization.chainId === '0' &&
+      input.intent.constraints.allowUniversalChainAuthorization === true
+    )
+  );
 }
 
 function delegateCodeReady(delegateCode: Eip7702DelegateCodeEvidence): boolean {
@@ -827,13 +833,16 @@ function buildObservations(input: {
   const authorizationNonceReady =
     input.authorization.nonce === input.accountState.currentNonce &&
     nonceMatches(input.intent.constraints.nonce, input.authorization.nonce);
+  const authorizationChainScoped = authorizationChainReady({
+    authorization: input.authorization,
+    intent: input.intent,
+  });
   const delegationAddressReady =
     input.authorization.delegationAddress !== ZERO_EVM_ADDRESS &&
     sameAddress(input.authorization.delegationAddress, input.delegateCode.delegationAddress);
   const releaseReady =
     input.releaseBinding.status === 'bound' &&
-    (input.releaseBinding.releaseDecision.status === 'accepted' ||
-      input.releaseBinding.releaseDecision.status === 'overridden');
+    input.releaseBinding.releaseDecision.status === 'accepted';
   const enforcementReady =
     input.enforcementBinding.adapterKind === 'eip-7702-delegation' &&
     input.enforcementBinding.enforcementRequest.enforcementPoint.boundaryKind === 'action-dispatch' &&
@@ -920,18 +929,22 @@ function buildObservations(input: {
   observations.push(
     observation({
       check: 'eip7702-authorization-chain-scope',
-      status: authorizationChainReady({ authorization: input.authorization, intent: input.intent })
-        ? 'pass'
-        : 'fail',
-      code: authorizationChainReady({ authorization: input.authorization, intent: input.intent })
+      status: authorizationChainScoped ? 'pass' : 'fail',
+      code: authorizationChainScoped
         ? 'eip7702-authorization-chain-scoped'
-        : 'eip7702-authorization-chain-mismatch',
-      message: authorizationChainReady({ authorization: input.authorization, intent: input.intent })
-        ? 'Authorization tuple chain id is either universal zero or the current EIP-155 chain.'
-        : 'Authorization tuple chain id is not valid for this EIP-155 chain.',
+        : input.authorization.chainId === '0'
+          ? 'eip7702-universal-chain-authorization-not-allowed'
+          : 'eip7702-authorization-chain-mismatch',
+      message: authorizationChainScoped
+        ? 'Authorization tuple chain id is scoped to the current EIP-155 chain or explicitly allowed as universal.'
+        : input.authorization.chainId === '0'
+          ? 'Universal EIP-7702 authorization is not allowed unless the intent explicitly opts in.'
+          : 'Authorization tuple chain id is not valid for this EIP-155 chain.',
       evidence: {
         tupleChainId: input.authorization.chainId,
         intentEip155ChainId: eip155ChainId(input.intent),
+        universalChainAuthorizationAllowed:
+          input.intent.constraints.allowUniversalChainAuthorization,
       },
     }),
   );
@@ -1308,7 +1321,7 @@ function buildObservations(input: {
         : 'eip7702-release-binding-not-executable',
       message: releaseReady
         ? 'Release binding is executable for EIP-7702 delegated execution.'
-        : 'Release binding is not executable and delegated execution must fail closed.',
+        : 'Release binding must be accepted, not overridden, before delegated execution.',
       evidence: {
         bindingStatus: input.releaseBinding.status,
         releaseStatus: input.releaseBinding.releaseDecision.status,

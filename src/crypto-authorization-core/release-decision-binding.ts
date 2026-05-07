@@ -340,8 +340,8 @@ function releaseStatusFor(input: CreateCryptoReleaseDecisionBindingInput): Relea
 function bindingStatusFor(releaseStatus: ReleaseDecisionStatus): CryptoReleaseBindingStatus {
   switch (releaseStatus) {
     case 'accepted':
-    case 'overridden':
       return 'bound';
+    case 'overridden':
     case 'review-required':
       return 'review-required';
     case 'hold':
@@ -796,7 +796,7 @@ function releaseTokenPostureFor(
   input: CreateCryptoReleaseDecisionBindingInput,
   releaseDecision: ReleaseDecision,
 ): CryptoReleaseTokenPosture {
-  const eligible = releaseDecision.status === 'accepted' || releaseDecision.status === 'overridden';
+  const eligible = releaseDecision.status === 'accepted';
   const required = eligible;
   const claims = input.releaseTokenClaims ?? null;
   if (claims) {

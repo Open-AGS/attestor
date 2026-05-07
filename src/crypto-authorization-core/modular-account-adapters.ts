@@ -116,6 +116,7 @@ export const MODULAR_ACCOUNT_CHECKS = [
   'modular-chain-matches-intent',
   'modular-account-implementation-bound',
   'modular-module-installed',
+  'modular-module-allowlist-evidence',
   'modular-module-type-supported',
   'modular-execution-mode-supported',
   'modular-target-matches-intent',
@@ -185,6 +186,9 @@ export interface ModularAccountModuleState {
   readonly moduleId?: string | null;
   readonly moduleVersion?: string | null;
   readonly moduleInstalled: boolean;
+  readonly moduleAllowlisted?: boolean | null;
+  readonly moduleAllowlistDigest?: string | null;
+  readonly moduleAuditEvidenceRef?: string | null;
   readonly accountSupportsExecutionMode: boolean;
   readonly accountSupportsModuleType: boolean;
   readonly moduleTypeMatches: boolean;
@@ -606,6 +610,15 @@ function normalizedModuleState(input: ModularAccountModuleState): ModularAccount
     moduleId: normalizeOptionalIdentifier(input.moduleId, 'moduleState.moduleId'),
     moduleVersion: normalizeOptionalIdentifier(input.moduleVersion, 'moduleState.moduleVersion'),
     moduleInstalled: input.moduleInstalled,
+    moduleAllowlisted: input.moduleAllowlisted ?? false,
+    moduleAllowlistDigest: normalizeOptionalHash(
+      input.moduleAllowlistDigest,
+      'moduleState.moduleAllowlistDigest',
+    ),
+    moduleAuditEvidenceRef: normalizeOptionalIdentifier(
+      input.moduleAuditEvidenceRef,
+      'moduleState.moduleAuditEvidenceRef',
+    ),
     accountSupportsExecutionMode: input.accountSupportsExecutionMode,
     accountSupportsModuleType: input.accountSupportsModuleType,
     moduleTypeMatches: input.moduleTypeMatches,
@@ -773,6 +786,16 @@ function moduleTypeMatchesProfile(input: {
     expectedTypeId !== null &&
     input.moduleState.moduleTypeId === expectedTypeId &&
     input.moduleState.moduleTypeMatches
+  );
+}
+
+function moduleAllowlistEvidenceReady(moduleState: ModularAccountModuleState): boolean {
+  return (
+    moduleState.moduleAllowlisted === true &&
+    moduleState.moduleAllowlistDigest !== null &&
+    moduleState.moduleAllowlistDigest !== undefined &&
+    moduleState.moduleAuditEvidenceRef !== null &&
+    moduleState.moduleAuditEvidenceRef !== undefined
   );
 }
 
@@ -953,6 +976,7 @@ function buildObservations(input: {
       adapterKind: input.adapterKind,
       moduleState: input.moduleState,
     });
+  const allowlistEvidenceReady = moduleAllowlistEvidenceReady(input.moduleState);
   const validationFunctionReady = validationReady({
     adapterKind: input.adapterKind,
     validation: input.validation,
@@ -1087,6 +1111,26 @@ function buildObservations(input: {
         moduleAddress: input.moduleState.moduleAddress,
         moduleKind: input.moduleState.moduleKind,
         moduleId: input.moduleState.moduleId ?? null,
+      },
+    }),
+  );
+
+  observations.push(
+    observation({
+      check: 'modular-module-allowlist-evidence',
+      status: allowlistEvidenceReady ? 'pass' : 'fail',
+      code: allowlistEvidenceReady
+        ? 'modular-module-allowlist-evidence-bound'
+        : 'modular-module-allowlist-evidence-missing',
+      message: allowlistEvidenceReady
+        ? 'Module/plugin is allowlisted with digest-bound audit evidence before execution.'
+        : 'Module/plugin lacks allowlist or audit evidence and must fail closed.',
+      evidence: {
+        moduleAddress: input.moduleState.moduleAddress,
+        moduleKind: input.moduleState.moduleKind,
+        moduleAllowlisted: input.moduleState.moduleAllowlisted ?? false,
+        moduleAllowlistDigest: input.moduleState.moduleAllowlistDigest ?? null,
+        moduleAuditEvidenceRef: input.moduleState.moduleAuditEvidenceRef ?? null,
       },
     }),
   );
@@ -1427,8 +1471,7 @@ function buildObservations(input: {
 
   const releaseReady =
     input.releaseBinding.status === 'bound' &&
-    (input.releaseBinding.releaseDecision.status === 'accepted' ||
-      input.releaseBinding.releaseDecision.status === 'overridden');
+    input.releaseBinding.releaseDecision.status === 'accepted';
   observations.push(
     observation({
       check: 'modular-release-binding-ready',
@@ -1594,6 +1637,8 @@ function preflightIdFor(input: {
     accountAddress: input.moduleState.accountAddress,
     moduleAddress: input.moduleState.moduleAddress,
     moduleKind: input.moduleState.moduleKind,
+    moduleAllowlistDigest: input.moduleState.moduleAllowlistDigest ?? null,
+    moduleAuditEvidenceRef: input.moduleState.moduleAuditEvidenceRef ?? null,
     operationHash: input.execution.operationHash,
     releaseBindingDigest: input.releaseBindingDigest,
     policyScopeDigest: input.policyScopeDigest,
@@ -1635,6 +1680,8 @@ function signalFor(input: {
       accountAddress: input.moduleState.accountAddress,
       moduleAddress: input.moduleState.moduleAddress,
       moduleKind: input.moduleState.moduleKind,
+      moduleAllowlistDigest: input.moduleState.moduleAllowlistDigest ?? null,
+      moduleAuditEvidenceRef: input.moduleState.moduleAuditEvidenceRef ?? null,
       operationHash: input.execution.operationHash,
       executionFunction: input.execution.executionFunction,
       validationFunction: input.validation.validationFunction,
@@ -1698,6 +1745,8 @@ export function createModularAccountAdapterPreflight(
     accountAddress: moduleState.accountAddress,
     moduleAddress: moduleState.moduleAddress,
     moduleKind: moduleState.moduleKind,
+    moduleAllowlistDigest: moduleState.moduleAllowlistDigest ?? null,
+    moduleAuditEvidenceRef: moduleState.moduleAuditEvidenceRef ?? null,
     operationHash: execution.operationHash,
     executionFunction: execution.executionFunction,
     validationFunction: validation.validationFunction,
@@ -1773,6 +1822,8 @@ export function modularAccountAdaptersDescriptor(): ModularAccountAdaptersDescri
       'ERC-1271',
       'ERC-165',
       'ERC-2771',
+      'module-allowlist',
+      'audit-evidence',
       'module-hook',
       'plugin-manifest',
       'runtime-validation',

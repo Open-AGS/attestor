@@ -80,7 +80,9 @@ function fixtureAsset() {
   });
 }
 
-function fixtureIntent() {
+function fixtureIntent(overrides: {
+  readonly tenantId?: string;
+} = {}) {
   const chain = fixtureChain();
   const account = fixtureAccount();
   const asset = fixtureAsset();
@@ -112,7 +114,7 @@ function fixtureIntent() {
       'runtime-context',
     ],
     environment: 'prod',
-    tenantId: 'tenant-1',
+    tenantId: overrides.tenantId ?? 'tenant-1',
     policyPackRef: 'policy-pack:crypto:v1',
   });
   const constraints = createCryptoAuthorizationConstraints({
@@ -149,8 +151,7 @@ function fixtureSigner() {
   });
 }
 
-function fixtureEnvelope() {
-  const intent = fixtureIntent();
+function fixtureEnvelope(intent = fixtureIntent()) {
   const counterparty = createCryptoCanonicalCounterpartyReference({
     counterpartyKind: 'bridge',
     counterpartyId: 'bridge:canonical-usdc',
@@ -237,6 +238,16 @@ function testTypedDataShape(): void {
   equal(typedData.domain.chainId, 1, 'Crypto EIP-712 envelope: EIP-155 chain id is projected into domain');
   equal(typedData.domain.verifyingContract, '0x9999999999999999999999999999999999999999', 'Crypto EIP-712 envelope: verifying contract is normalized');
   ok(/^0x[0-9a-f]{64}$/.test(typedData.domain.salt), 'Crypto EIP-712 envelope: domain salt is bytes32');
+}
+
+function testDefaultDomainSaltBindsTenantScope(): void {
+  const tenantA = fixtureEnvelope(fixtureIntent({ tenantId: 'tenant-1' }));
+  const tenantB = fixtureEnvelope(fixtureIntent({ tenantId: 'tenant-2' }));
+
+  ok(
+    tenantA.typedData.domain.salt !== tenantB.typedData.domain.salt,
+    'Crypto EIP-712 envelope: default domain salt separates tenants',
+  );
 }
 
 function testMessageBindingsAndCoverage(): void {
@@ -556,6 +567,7 @@ function testInvalidInputsReject(): void {
 async function main(): Promise<void> {
   testDescriptor();
   testTypedDataShape();
+  testDefaultDomainSaltBindsTenantScope();
   testMessageBindingsAndCoverage();
   testSignerChainAndDomainIntrospection();
   testCustomDomainAndLargeChain();

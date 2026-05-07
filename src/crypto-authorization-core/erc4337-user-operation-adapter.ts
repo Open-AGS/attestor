@@ -1066,8 +1066,7 @@ function buildObservations(input: {
 
   const releaseReady =
     input.releaseBinding.status === 'bound' &&
-    (input.releaseBinding.releaseDecision.status === 'accepted' ||
-      input.releaseBinding.releaseDecision.status === 'overridden');
+    input.releaseBinding.releaseDecision.status === 'accepted';
   observations.push(
     observation({
       check: 'erc4337-release-binding-ready',

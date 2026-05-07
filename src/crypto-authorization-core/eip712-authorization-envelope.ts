@@ -317,11 +317,21 @@ function decisionDigestFor(decision: CryptoAuthorizationDecision): string {
   });
 }
 
-function defaultDomainSalt(caip2ChainId: string, verifyingContract: string): string {
+function defaultDomainSaltForIntent(
+  intent: CryptoAuthorizationIntent,
+  caip2ChainId: string,
+  verifyingContract: string,
+): string {
   return sha256Bytes32({
     version: CRYPTO_EIP712_AUTHORIZATION_ENVELOPE_SPEC_VERSION,
     caip2ChainId,
     verifyingContract,
+    policyScope: {
+      environment: intent.policyScope.environment,
+      tenantId: intent.policyScope.tenantId,
+      accountId: intent.policyScope.accountId,
+      policyPackRef: intent.policyScope.policyPackRef,
+    },
   });
 }
 
@@ -387,7 +397,7 @@ export function createCryptoEip712AuthorizationEnvelope(
 
   const domainSalt = input.domainSalt
     ? digestToBytes32(input.domainSalt, 'domainSalt')
-    : defaultDomainSalt(chainBinding.caip2ChainId, verifyingContract);
+    : defaultDomainSaltForIntent(input.intent, chainBinding.caip2ChainId, verifyingContract);
   const domain: CryptoEip712Domain = Object.freeze({
     name: normalizeOptionalIdentifier(input.domainName, CRYPTO_EIP712_DOMAIN_NAME, 'domainName'),
     version: normalizeOptionalIdentifier(

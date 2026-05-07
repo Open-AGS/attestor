@@ -546,7 +546,7 @@ function riskReviewObservation(
 
   if (
     input.releaseBinding?.status === 'bound' &&
-    (releaseStatus === 'accepted' || releaseStatus === 'overridden')
+    releaseStatus === 'accepted'
   ) {
     return observation({
       check: 'risk-review-posture',

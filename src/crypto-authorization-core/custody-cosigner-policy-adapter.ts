@@ -631,8 +631,7 @@ function normalizePostExecution(postExecution: CustodyPostExecutionEvidence): Cu
 function releaseReady(releaseBinding: CryptoReleaseDecisionBinding): boolean {
   return (
     releaseBinding.status === 'bound' &&
-    (releaseBinding.releaseDecision.status === 'accepted' ||
-      releaseBinding.releaseDecision.status === 'overridden')
+    releaseBinding.releaseDecision.status === 'accepted'
   );
 }
 

@@ -709,6 +709,7 @@ function x402ServiceTrust(): X402ServiceTrustEvidence {
     resourceOriginAllowlisted: true,
     payToAllowlisted: true,
     assetAllowlisted: true,
+    assetAllowlistEvidenceRef: 'asset-allowlist:base-usdc:sha256:proof-surface',
     networkAllowlisted: true,
     priceMatchesCatalog: true,
   };

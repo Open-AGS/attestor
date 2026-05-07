@@ -172,6 +172,7 @@ export interface CryptoAuthorizationConstraints {
   readonly maxAmount: string | null;
   readonly budgetId: string | null;
   readonly cadence: string | null;
+  readonly allowUniversalChainAuthorization: boolean;
 }
 
 export interface CreateCryptoAuthorizationConstraintsInput {
@@ -184,6 +185,7 @@ export interface CreateCryptoAuthorizationConstraintsInput {
   readonly maxAmount?: string | null;
   readonly budgetId?: string | null;
   readonly cadence?: string | null;
+  readonly allowUniversalChainAuthorization?: boolean | null;
 }
 
 export interface CryptoAuthorizationIntent {
@@ -551,6 +553,7 @@ export function createCryptoAuthorizationConstraints(
     maxAmount: normalizeOptionalIdentifier(input.maxAmount, 'maxAmount'),
     budgetId: normalizeOptionalIdentifier(input.budgetId, 'budgetId'),
     cadence: normalizeOptionalIdentifier(input.cadence, 'cadence'),
+    allowUniversalChainAuthorization: input.allowUniversalChainAuthorization === true,
   });
 }
 

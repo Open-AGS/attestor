@@ -23,6 +23,10 @@ The goal is to make crypto authorization reusable **without** freezing every int
   - pre-execution simulation
   - Safe, approval/allowance, ERC-4337, ERC-7579, ERC-6900, EIP-7702, x402, and custody co-signer adapters
 
+The modular-account adapters treat installed modules and plugins as customer-authority boundaries. ERC-7579 and ERC-6900 evidence must therefore include module allowlist and audit evidence before an adapter can allow execution; module installation alone is not a sufficient trust signal.
+
+The package also keeps the signature boundary honest. Attestor can bind low-s posture into crypto evidence, but wallet, smart-account, bundler, and EVM-facing downstream integrations must still normalize or reject high-s ECDSA signatures before execution. Attestor does not become the wallet-side signature verifier.
+
 This follows current Node package-subpath export guidance and current TypeScript package-resolution guidance: the package exposes one stable entrypoint while hiding internal implementation paths behind the `exports` map.
 
 ## SemVer Boundary

@@ -469,6 +469,19 @@ function testProvidedReleaseDecisionValidation(): void {
         ...parts,
         releaseDecision: {
           ...initial.releaseDecision,
+          status: 'overridden',
+        },
+      }),
+    /release decision status does not match crypto result/i,
+  );
+  passed += 1;
+
+  assert.throws(
+    () =>
+      createCryptoReleaseDecisionBinding({
+        ...parts,
+        releaseDecision: {
+          ...initial.releaseDecision,
           outputHash: 'sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc',
         },
       }),

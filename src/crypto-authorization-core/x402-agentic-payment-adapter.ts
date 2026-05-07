@@ -209,6 +209,7 @@ export interface X402ServiceTrustEvidence {
   readonly resourceOriginAllowlisted: boolean;
   readonly payToAllowlisted: boolean;
   readonly assetAllowlisted: boolean;
+  readonly assetAllowlistEvidenceRef?: string | null;
   readonly networkAllowlisted: boolean;
   readonly priceMatchesCatalog: boolean;
 }
@@ -652,6 +653,10 @@ function normalizeServiceTrust(input: X402ServiceTrustEvidence): X402ServiceTrus
     resourceOriginAllowlisted: Boolean(input.resourceOriginAllowlisted),
     payToAllowlisted: Boolean(input.payToAllowlisted),
     assetAllowlisted: Boolean(input.assetAllowlisted),
+    assetAllowlistEvidenceRef: normalizeOptionalIdentifier(
+      input.assetAllowlistEvidenceRef,
+      'serviceTrust.assetAllowlistEvidenceRef',
+    ),
     networkAllowlisted: Boolean(input.networkAllowlisted),
     priceMatchesCatalog: Boolean(input.priceMatchesCatalog),
   });
@@ -800,8 +805,7 @@ function privacyReady(privacy: X402PrivacyMetadataEvidence): boolean {
 function releaseReady(releaseBinding: CryptoReleaseDecisionBinding): boolean {
   return (
     releaseBinding.status === 'bound' &&
-    (releaseBinding.releaseDecision.status === 'accepted' ||
-      releaseBinding.releaseDecision.status === 'overridden')
+    releaseBinding.releaseDecision.status === 'accepted'
   );
 }
 
@@ -896,6 +900,7 @@ function buildObservations(input: {
     input.serviceTrust.resourceOriginAllowlisted &&
     input.serviceTrust.payToAllowlisted &&
     input.serviceTrust.assetAllowlisted &&
+    input.serviceTrust.assetAllowlistEvidenceRef !== null &&
     input.serviceTrust.networkAllowlisted &&
     input.serviceTrust.priceMatchesCatalog;
 
@@ -1357,16 +1362,21 @@ function buildObservations(input: {
       status: serviceReady ? 'pass' : 'fail',
       code: serviceReady
         ? 'x402-service-trust-ready'
-        : 'x402-service-trust-not-ready',
+        : input.serviceTrust.assetAllowlisted && input.serviceTrust.assetAllowlistEvidenceRef === null
+          ? 'x402-asset-allowlist-evidence-missing'
+          : 'x402-service-trust-not-ready',
       message: serviceReady
         ? 'Resource origin, recipient, asset, network, and catalog price are trusted.'
-        : 'x402 payment requires trusted resource origin, recipient, asset, network, and catalog price.',
+        : input.serviceTrust.assetAllowlisted && input.serviceTrust.assetAllowlistEvidenceRef === null
+          ? 'x402 asset allowlist status must be backed by an evidence reference.'
+          : 'x402 payment requires trusted resource origin, recipient, asset, network, and catalog price.',
       evidence: {
         merchantId: input.serviceTrust.merchantId,
         serviceDiscoveryRef: input.serviceTrust.serviceDiscoveryRef ?? null,
         resourceOriginAllowlisted: input.serviceTrust.resourceOriginAllowlisted,
         payToAllowlisted: input.serviceTrust.payToAllowlisted,
         assetAllowlisted: input.serviceTrust.assetAllowlisted,
+        assetAllowlistEvidenceRef: input.serviceTrust.assetAllowlistEvidenceRef ?? null,
         networkAllowlisted: input.serviceTrust.networkAllowlisted,
         priceMatchesCatalog: input.serviceTrust.priceMatchesCatalog,
       },
@@ -1484,7 +1494,7 @@ function buildObservations(input: {
         : 'x402-release-binding-not-ready',
       message: releaseReady(input.releaseBinding)
         ? 'Release binding is accepted and ready for x402 payment execution.'
-        : 'x402 payment requires an accepted or overridden Attestor release binding.',
+        : 'x402 payment requires an accepted Attestor release binding.',
       evidence: {
         releaseBindingStatus: input.releaseBinding.status,
         releaseDecisionStatus: input.releaseBinding.releaseDecision.status,

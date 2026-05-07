@@ -640,6 +640,7 @@ function testInvalidInputsReject(): void {
 }
 
 function testBaselines(): void {
+  equal(CRYPTO_FRESHNESS_BASELINES.R0.replayStoreSeconds, 3600, 'Crypto replay freshness: R0 still keeps a replay ledger window');
   equal(CRYPTO_FRESHNESS_BASELINES.R4.clockSkewSeconds, 15, 'Crypto replay freshness: R4 clock skew is tight');
   equal(CRYPTO_FRESHNESS_BASELINES.R4.maxAuthorizationAgeSeconds, 120, 'Crypto replay freshness: R4 max age is tight');
   equal(CRYPTO_FRESHNESS_BASELINES.R3.maxRevocationStatusAgeSeconds, 60, 'Crypto replay freshness: R3 revocation liveness is bounded');

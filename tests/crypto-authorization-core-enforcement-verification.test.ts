@@ -335,7 +335,7 @@ function createBinding(
 function issueableReleaseDecision(
   decision: CryptoReleaseDecisionBinding['releaseDecision'],
 ): CryptoReleaseDecisionBinding['releaseDecision'] {
-  if (decision.status === 'accepted' || decision.status === 'overridden') {
+  if (decision.status === 'accepted') {
     return decision;
   }
 

@@ -284,12 +284,16 @@ function testPricingAndTrialTruthsStayAnchored(): void {
   const packaging = readProjectFile('docs', '01-overview', 'product-packaging.md');
   const stripeBootstrap = readProjectFile('docs', '01-overview', 'stripe-commercial-bootstrap.md');
 
-  includes(packaging, '| `community` | free |', 'Hosted product flow docs: community plan remains free');
-  includes(packaging, 'first `10` hosted runs', 'Hosted product flow docs: community hosted run quota is documented');
-  includes(packaging, '| `starter` | EUR `499` / month |', 'Hosted product flow docs: starter pricing is documented');
-  includes(packaging, 'with `14` days as the default bootstrap value', 'Hosted product flow docs: starter trial posture is documented');
-  includes(packaging, '| `pro` | EUR `1,999` / month |', 'Hosted product flow docs: pro pricing is documented');
-  includes(packaging, '| `enterprise` | from EUR `7,500` / month |', 'Hosted product flow docs: enterprise pricing posture is documented');
+  includes(packaging, '`monthly_admission_runs`', 'Hosted product flow docs: billable admission meter is documented');
+  includes(packaging, '| `developer` | free | `500` admissions / month |', 'Hosted product flow docs: developer plan remains free');
+  includes(packaging, '| `trial` | free for `60` days | `5,000` admissions total |', 'Hosted product flow docs: shadow trial posture is documented');
+  includes(packaging, '| `starter` | USD `$299` / month or `$2,990` / year | `25,000` admissions / month |', 'Hosted product flow docs: starter pricing is documented');
+  includes(packaging, '| `pro` | USD `$1,499` / month or `$14,990` / year | `250,000` admissions / month |', 'Hosted product flow docs: pro pricing is documented');
+  includes(packaging, '| `scale` | USD `$5,999` / month, contract-led | `1,000,000` admissions / month |', 'Hosted product flow docs: scale pricing posture is documented');
+  includes(packaging, '| `enterprise` | from USD `$50,000` / year | custom, normally `5,000,000`+ admissions / month |', 'Hosted product flow docs: enterprise pricing posture is documented');
+  includes(packaging, 'Current shipped hosted implementation still uses:', 'Hosted product flow docs: pricing model does not overclaim current runtime support');
+  includes(packaging, 'plan ids: `community`, `starter`, `pro`, `enterprise`', 'Hosted product flow docs: current shipped plan ids remain documented');
+  includes(packaging, 'Starter Stripe trial bootstrap: `14` days by default', 'Hosted product flow docs: current starter trial runtime posture is documented');
   includes(stripeBootstrap, 'ATTESTOR_STRIPE_STARTER_TRIAL_DAYS=14', 'Hosted product flow docs: operator trial env var is documented');
   includes(stripeBootstrap, 'POST /api/v1/billing/stripe/webhook', 'Hosted product flow docs: operator webhook route is documented');
 }

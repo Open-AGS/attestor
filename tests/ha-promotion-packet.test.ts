@@ -82,6 +82,7 @@ async function main(): Promise<void> {
     STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
     ATTESTOR_STRIPE_PRICE_STARTER: process.env.ATTESTOR_STRIPE_PRICE_STARTER,
     ATTESTOR_STRIPE_PRICE_PRO: process.env.ATTESTOR_STRIPE_PRICE_PRO,
+    ATTESTOR_STRIPE_PRICE_SCALE: process.env.ATTESTOR_STRIPE_PRICE_SCALE,
     ATTESTOR_STRIPE_PRICE_ENTERPRISE: process.env.ATTESTOR_STRIPE_PRICE_ENTERPRISE,
     ATTESTOR_BILLING_SUCCESS_URL: process.env.ATTESTOR_BILLING_SUCCESS_URL,
     ATTESTOR_BILLING_CANCEL_URL: process.env.ATTESTOR_BILLING_CANCEL_URL,
@@ -130,6 +131,7 @@ async function main(): Promise<void> {
     process.env.STRIPE_WEBHOOK_SECRET = 'whsec_promotion';
     process.env.ATTESTOR_STRIPE_PRICE_STARTER = 'price_starter_promotion';
     process.env.ATTESTOR_STRIPE_PRICE_PRO = 'price_pro_promotion';
+    process.env.ATTESTOR_STRIPE_PRICE_SCALE = 'price_scale_promotion';
     process.env.ATTESTOR_STRIPE_PRICE_ENTERPRISE = 'price_enterprise_promotion';
     process.env.ATTESTOR_BILLING_SUCCESS_URL = 'https://ha.attestor.example.invalid/billing/success';
     process.env.ATTESTOR_BILLING_CANCEL_URL = 'https://ha.attestor.example.invalid/billing/cancel';

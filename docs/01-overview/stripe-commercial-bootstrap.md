@@ -10,7 +10,7 @@ From the customer's side, the commercial shape stays simple:
 
 1. choose a plan
 2. sign up for a hosted account
-3. upgrade through Stripe Checkout when `starter`, `pro`, `scale`, or `enterprise` is needed
+3. upgrade through Stripe Checkout when `starter`, `pro`, or `scale` is needed
 4. return to the Attestor account plane
 5. manage API keys, usage, and billing
 
@@ -25,7 +25,8 @@ Create recurring Stripe prices for:
 - `starter`
 - `pro`
 - `scale`
-- `enterprise`
+
+Do not create an Enterprise self-service price unless you intentionally want Enterprise checkout. The default commercial model keeps Enterprise sales/custom.
 
 Those live Stripe prices should mirror [Commercial packaging, pricing, and evaluation](product-packaging.md).
 
@@ -34,7 +35,8 @@ Map those live Stripe price ids into:
 - `ATTESTOR_STRIPE_PRICE_STARTER`
 - `ATTESTOR_STRIPE_PRICE_PRO`
 - `ATTESTOR_STRIPE_PRICE_SCALE`
-- `ATTESTOR_STRIPE_PRICE_ENTERPRISE`
+
+Leave `ATTESTOR_STRIPE_PRICE_ENTERPRISE` unset unless Enterprise self-service checkout is intentionally enabled.
 
 For the shipped default hosted funnel:
 
@@ -91,7 +93,8 @@ export STRIPE_WEBHOOK_SECRET=whsec_...
 export ATTESTOR_STRIPE_PRICE_STARTER=price_...
 export ATTESTOR_STRIPE_PRICE_PRO=price_...
 export ATTESTOR_STRIPE_PRICE_SCALE=price_...
-export ATTESTOR_STRIPE_PRICE_ENTERPRISE=price_...
+# Optional only when Enterprise self-service checkout is intentionally enabled:
+# export ATTESTOR_STRIPE_PRICE_ENTERPRISE=price_...
 export ATTESTOR_BILLING_SUCCESS_URL=https://<host>/billing/success
 export ATTESTOR_BILLING_CANCEL_URL=https://<host>/billing/cancel
 export ATTESTOR_BILLING_PORTAL_RETURN_URL=https://<host>/settings/billing

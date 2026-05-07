@@ -28,6 +28,7 @@ const runtimeSecretMappings: SecretMapping[] = [
   { envName: 'STRIPE_WEBHOOK_SECRET', secretKey: 'stripe-webhook-secret', remoteSuffix: 'stripe-webhook-secret' },
   { envName: 'ATTESTOR_STRIPE_PRICE_STARTER', secretKey: 'stripe-price-starter', remoteSuffix: 'stripe-price-starter' },
   { envName: 'ATTESTOR_STRIPE_PRICE_PRO', secretKey: 'stripe-price-pro', remoteSuffix: 'stripe-price-pro' },
+  { envName: 'ATTESTOR_STRIPE_PRICE_SCALE', secretKey: 'stripe-price-scale', remoteSuffix: 'stripe-price-scale' },
   { envName: 'ATTESTOR_STRIPE_PRICE_ENTERPRISE', secretKey: 'stripe-price-enterprise', remoteSuffix: 'stripe-price-enterprise' },
   { envName: 'ATTESTOR_HOSTED_OIDC_CLIENT_SECRET', secretKey: 'hosted-oidc-client-secret', remoteSuffix: 'hosted-oidc-client-secret' },
   { envName: 'ATTESTOR_HOSTED_OIDC_STATE_KEY', secretKey: 'hosted-oidc-state-key', remoteSuffix: 'hosted-oidc-state-key' },

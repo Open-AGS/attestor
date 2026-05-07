@@ -71,7 +71,7 @@ function detectMissingInputs(provider: Provider, tlsMode: string): string[] {
     requireOne('STRIPE_WEBHOOK_SECRET');
     requireOne('ATTESTOR_STRIPE_PRICE_STARTER');
     requireOne('ATTESTOR_STRIPE_PRICE_PRO');
-    requireOne('ATTESTOR_STRIPE_PRICE_ENTERPRISE');
+    requireOne('ATTESTOR_STRIPE_PRICE_SCALE');
     requireOne('ATTESTOR_BILLING_SUCCESS_URL');
     requireOne('ATTESTOR_BILLING_CANCEL_URL');
     requireOne('ATTESTOR_BILLING_PORTAL_RETURN_URL');

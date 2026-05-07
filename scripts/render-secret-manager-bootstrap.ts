@@ -167,12 +167,21 @@ function buildCatalog(prefix: string, provider: ConcreteProvider): SecretCatalog
       env: 'ATTESTOR_STRIPE_PRICE_PRO',
     },
     {
-      logicalName: `${prefix}/stripe-price-enterprise`,
-      remoteName: remoteSecretKey(provider, `${prefix}/stripe-price-enterprise`),
+      logicalName: `${prefix}/stripe-price-scale`,
+      remoteName: remoteSecretKey(provider, `${prefix}/stripe-price-scale`),
       type: 'string',
       required: true,
       consumer: 'ha',
+      env: 'ATTESTOR_STRIPE_PRICE_SCALE',
+    },
+    {
+      logicalName: `${prefix}/stripe-price-enterprise`,
+      remoteName: remoteSecretKey(provider, `${prefix}/stripe-price-enterprise`),
+      type: 'string',
+      required: false,
+      consumer: 'ha',
       env: 'ATTESTOR_STRIPE_PRICE_ENTERPRISE',
+      notes: 'Optional only when Enterprise self-service checkout is intentionally enabled; otherwise Enterprise remains sales/custom.',
     },
     {
       logicalName: `${prefix}/hosted-oidc-client-secret`,

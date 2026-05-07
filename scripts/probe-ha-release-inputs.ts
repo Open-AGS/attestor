@@ -147,7 +147,7 @@ export async function probeHaReleaseInputs(options?: {
     required('STRIPE_WEBHOOK_SECRET', env('STRIPE_WEBHOOK_SECRET'), issues);
     required('ATTESTOR_STRIPE_PRICE_STARTER', env('ATTESTOR_STRIPE_PRICE_STARTER'), issues);
     required('ATTESTOR_STRIPE_PRICE_PRO', env('ATTESTOR_STRIPE_PRICE_PRO'), issues);
-    required('ATTESTOR_STRIPE_PRICE_ENTERPRISE', env('ATTESTOR_STRIPE_PRICE_ENTERPRISE'), issues);
+    required('ATTESTOR_STRIPE_PRICE_SCALE', env('ATTESTOR_STRIPE_PRICE_SCALE'), issues);
     requireAbsoluteHttpsUrl('ATTESTOR_BILLING_SUCCESS_URL', env('ATTESTOR_BILLING_SUCCESS_URL'), issues);
     requireAbsoluteHttpsUrl('ATTESTOR_BILLING_CANCEL_URL', env('ATTESTOR_BILLING_CANCEL_URL'), issues);
     requireAbsoluteHttpsUrl('ATTESTOR_BILLING_PORTAL_RETURN_URL', env('ATTESTOR_BILLING_PORTAL_RETURN_URL'), issues);

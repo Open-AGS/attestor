@@ -62,6 +62,7 @@ function main(): void {
     ok(inlineGatewayPatch.includes('hostname: attestor.example.invalid') && inlineGatewayPatch.includes('certificateRefs:'), 'HA credentials render: Gateway patch rewires hostname and TLS secret');
     ok(inlineExternalSecret.includes('prod-attestor-control-plane-pg-url') && inlineExternalSecret.includes('platform-secrets'), 'HA credentials render: GKE runtime ExternalSecret normalizes remote keys for Google Secret Manager');
     ok(inlineExternalSecret.includes('prod-attestor-release-authority-pg-url'), 'HA credentials render: runtime ExternalSecret includes release-authority PostgreSQL');
+    ok(inlineExternalSecret.includes('prod-attestor-stripe-price-scale'), 'HA credentials render: runtime ExternalSecret includes hosted Scale Stripe price');
     ok(inlineExternalSecret.includes('account-mfa-encryption-key') && inlineExternalSecret.includes('hosted-oidc-state-key'), 'HA credentials render: runtime ExternalSecret includes hosted auth secret refs');
     ok(inlineGkePatch.includes('sslPolicy: attestor-modern-tls'), 'HA credentials render: GKE patch carries configured SSL policy');
     ok(inlineSummary.runtimeSecrets.remoteSecretProvider === 'gke', 'HA credentials render: summary captures GKE remote secret provider');

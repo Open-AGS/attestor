@@ -7,19 +7,21 @@
  * shell should speak a consistent built-in vocabulary.
  */
 
-export type HostedPlanId = 'community' | 'starter' | 'pro' | 'enterprise';
+export type HostedPlanId = 'developer' | 'trial' | 'starter' | 'pro' | 'scale' | 'enterprise';
+export type LegacyHostedPlanId = 'community';
 
 export interface HostedPlanDefinition {
   id: HostedPlanId;
   displayName: string;
   description: string;
+  defaultEvaluationDays: number | null;
   defaultStripeTrialDays: number | null;
   defaultMonthlyRunQuota: number | null;
   defaultPipelineRequestsPerWindow: number | null;
   defaultAsyncPendingJobsPerTenant: number | null;
   defaultAsyncActiveJobsPerTenant: number | null;
   defaultAsyncDispatchWeight: number | null;
-  intendedFor: 'self_host' | 'hosted' | 'enterprise';
+  intendedFor: 'evaluation' | 'hosted' | 'enterprise';
   defaultForHostedProvisioning: boolean;
 }
 
@@ -82,46 +84,77 @@ export interface PlanStripeTrialSpec {
   source: 'plan_default' | 'env_override' | 'custom_unconfigured';
 }
 
-export const SELF_HOST_PLAN_ID: HostedPlanId = 'community';
+export const SELF_HOST_PLAN_ID: HostedPlanId = 'developer';
 export const DEFAULT_HOSTED_PLAN_ID: HostedPlanId = 'starter';
 
 const PLAN_CATALOG: HostedPlanDefinition[] = [
   {
-    id: 'community',
-    displayName: 'Community',
-    description: 'Zero-cost evaluation path for local validation and early hosted financial-reporting acceptance checks, including 10 hosted runs before a paid hosted plan is needed.',
+    id: 'developer',
+    displayName: 'Developer',
+    description: 'Perpetual free evaluation path for local proof work and low-volume shadow or warn testing before a paid hosted plan is needed.',
+    defaultEvaluationDays: null,
     defaultStripeTrialDays: null,
-    defaultMonthlyRunQuota: 10,
-    defaultPipelineRequestsPerWindow: null,
-    defaultAsyncPendingJobsPerTenant: null,
-    defaultAsyncActiveJobsPerTenant: null,
-    defaultAsyncDispatchWeight: null,
-    intendedFor: 'self_host',
+    defaultMonthlyRunQuota: 500,
+    defaultPipelineRequestsPerWindow: 10,
+    defaultAsyncPendingJobsPerTenant: 2,
+    defaultAsyncActiveJobsPerTenant: 1,
+    defaultAsyncDispatchWeight: 1,
+    intendedFor: 'evaluation',
+    defaultForHostedProvisioning: false,
+  },
+  {
+    id: 'trial',
+    displayName: 'Free Shadow Trial',
+    description: 'Sixty-day shadow-mode onboarding path with Pro-like discovery headroom before the customer chooses Developer or a paid hosted plan.',
+    defaultEvaluationDays: 60,
+    defaultStripeTrialDays: null,
+    defaultMonthlyRunQuota: 5_000,
+    defaultPipelineRequestsPerWindow: 60,
+    defaultAsyncPendingJobsPerTenant: 8,
+    defaultAsyncActiveJobsPerTenant: 2,
+    defaultAsyncDispatchWeight: 2,
+    intendedFor: 'evaluation',
     defaultForHostedProvisioning: false,
   },
   {
     id: 'starter',
     displayName: 'Starter',
-    description: 'Hosted API access for the first live AI-assisted financial reporting workflow, including a 14-day free trial and governed acceptance without building the control layer yourself.',
-    defaultStripeTrialDays: 14,
-    defaultMonthlyRunQuota: 100,
-    defaultPipelineRequestsPerWindow: 10,
-    defaultAsyncPendingJobsPerTenant: 2,
-    defaultAsyncActiveJobsPerTenant: 1,
-    defaultAsyncDispatchWeight: 1,
+    description: 'Hosted API access for the first live high-consequence workflow, including enforce mode and account-plane billing without building the control layer yourself.',
+    defaultEvaluationDays: null,
+    defaultStripeTrialDays: null,
+    defaultMonthlyRunQuota: 25_000,
+    defaultPipelineRequestsPerWindow: 120,
+    defaultAsyncPendingJobsPerTenant: 8,
+    defaultAsyncActiveJobsPerTenant: 2,
+    defaultAsyncDispatchWeight: 2,
     intendedFor: 'hosted',
     defaultForHostedProvisioning: true,
   },
   {
     id: 'pro',
     displayName: 'Pro',
-    description: 'Higher-throughput hosted API plan for repeated financial reporting or control use across multiple internal workflows or business units.',
+    description: 'Growth-stage hosted API plan for repeated release, finance, crypto, or operational control use across multiple workflows or one business unit.',
+    defaultEvaluationDays: null,
     defaultStripeTrialDays: null,
-    defaultMonthlyRunQuota: 1000,
-    defaultPipelineRequestsPerWindow: 60,
-    defaultAsyncPendingJobsPerTenant: 8,
-    defaultAsyncActiveJobsPerTenant: 2,
-    defaultAsyncDispatchWeight: 2,
+    defaultMonthlyRunQuota: 250_000,
+    defaultPipelineRequestsPerWindow: 600,
+    defaultAsyncPendingJobsPerTenant: 32,
+    defaultAsyncActiveJobsPerTenant: 4,
+    defaultAsyncDispatchWeight: 4,
+    intendedFor: 'hosted',
+    defaultForHostedProvisioning: false,
+  },
+  {
+    id: 'scale',
+    displayName: 'Scale',
+    description: 'High-volume hosted plan for larger admission volume, stronger retention and support needs, and heavier integration posture.',
+    defaultEvaluationDays: null,
+    defaultStripeTrialDays: null,
+    defaultMonthlyRunQuota: 1_000_000,
+    defaultPipelineRequestsPerWindow: 3_000,
+    defaultAsyncPendingJobsPerTenant: 128,
+    defaultAsyncActiveJobsPerTenant: 16,
+    defaultAsyncDispatchWeight: 8,
     intendedFor: 'hosted',
     defaultForHostedProvisioning: false,
   },
@@ -129,16 +162,23 @@ const PLAN_CATALOG: HostedPlanDefinition[] = [
     id: 'enterprise',
     displayName: 'Enterprise',
     description: 'Hosted enterprise or customer-operated deployment plan for regulated reporting environments, higher-scale control surfaces, or negotiated deployment boundaries.',
+    defaultEvaluationDays: null,
     defaultStripeTrialDays: null,
     defaultMonthlyRunQuota: null,
-    defaultPipelineRequestsPerWindow: 300,
-    defaultAsyncPendingJobsPerTenant: 32,
-    defaultAsyncActiveJobsPerTenant: 4,
-    defaultAsyncDispatchWeight: 4,
+    defaultPipelineRequestsPerWindow: 10_000,
+    defaultAsyncPendingJobsPerTenant: 256,
+    defaultAsyncActiveJobsPerTenant: 32,
+    defaultAsyncDispatchWeight: 16,
     intendedFor: 'enterprise',
     defaultForHostedProvisioning: false,
   },
 ];
+
+function canonicalHostedPlanId(planId: string | null | undefined): string | null {
+  const trimmed = planId?.trim();
+  if (!trimmed) return null;
+  return trimmed === 'community' ? 'developer' : trimmed;
+}
 
 function normalizeQuota(quota: number | null | undefined): number | null {
   if (typeof quota !== 'number' || !Number.isInteger(quota) || quota < 0) return null;
@@ -198,12 +238,13 @@ export function validHostedPlanIds(): HostedPlanId[] {
 }
 
 export function getHostedPlan(planId: string | null | undefined): HostedPlanDefinition | null {
-  if (!planId) return null;
-  return PLAN_CATALOG.find((plan) => plan.id === planId) ?? null;
+  const canonicalPlanId = canonicalHostedPlanId(planId);
+  if (!canonicalPlanId) return null;
+  return PLAN_CATALOG.find((plan) => plan.id === canonicalPlanId) ?? null;
 }
 
 export function resolvePlanRateLimit(planId: string | null | undefined): PlanRateLimitSpec {
-  const resolvedPlanId = planId?.trim() || SELF_HOST_PLAN_ID;
+  const resolvedPlanId = canonicalHostedPlanId(planId) || SELF_HOST_PLAN_ID;
   const plan = getHostedPlan(resolvedPlanId);
   const windowSeconds = defaultRateLimitWindowSeconds();
 
@@ -234,7 +275,7 @@ export function resolvePlanRateLimit(planId: string | null | undefined): PlanRat
 }
 
 export function resolvePlanAsyncQueue(planId: string | null | undefined): PlanAsyncQueueSpec {
-  const resolvedPlanId = planId?.trim() || SELF_HOST_PLAN_ID;
+  const resolvedPlanId = canonicalHostedPlanId(planId) || SELF_HOST_PLAN_ID;
   const plan = getHostedPlan(resolvedPlanId);
 
   if (!plan) {
@@ -261,7 +302,7 @@ export function resolvePlanAsyncQueue(planId: string | null | undefined): PlanAs
 }
 
 export function resolvePlanAsyncExecution(planId: string | null | undefined): PlanAsyncExecutionSpec {
-  const resolvedPlanId = planId?.trim() || SELF_HOST_PLAN_ID;
+  const resolvedPlanId = canonicalHostedPlanId(planId) || SELF_HOST_PLAN_ID;
   const plan = getHostedPlan(resolvedPlanId);
 
   if (!plan) {
@@ -288,7 +329,7 @@ export function resolvePlanAsyncExecution(planId: string | null | undefined): Pl
 }
 
 export function resolvePlanAsyncDispatch(planId: string | null | undefined): PlanAsyncDispatchSpec {
-  const resolvedPlanId = planId?.trim() || SELF_HOST_PLAN_ID;
+  const resolvedPlanId = canonicalHostedPlanId(planId) || SELF_HOST_PLAN_ID;
   const plan = getHostedPlan(resolvedPlanId);
   const baseIntervalMs = defaultAsyncDispatchBaseIntervalMs();
 
@@ -321,7 +362,7 @@ export function resolvePlanAsyncDispatch(planId: string | null | undefined): Pla
 }
 
 export function resolvePlanStripePrice(planId: string | null | undefined): PlanStripePriceSpec {
-  const resolvedPlanId = planId?.trim() || SELF_HOST_PLAN_ID;
+  const resolvedPlanId = canonicalHostedPlanId(planId) || SELF_HOST_PLAN_ID;
   const plan = getHostedPlan(resolvedPlanId);
 
   if (!plan) {
@@ -331,6 +372,16 @@ export function resolvePlanStripePrice(planId: string | null | undefined): PlanS
       configured: false,
       knownPlan: false,
       source: 'custom_unconfigured',
+    };
+  }
+
+  if (plan.intendedFor === 'evaluation') {
+    return {
+      planId: plan.id,
+      priceId: null,
+      configured: false,
+      knownPlan: true,
+      source: 'unconfigured',
     };
   }
 
@@ -345,7 +396,7 @@ export function resolvePlanStripePrice(planId: string | null | undefined): PlanS
 }
 
 export function resolvePlanStripeTrialDays(planId: string | null | undefined): PlanStripeTrialSpec {
-  const resolvedPlanId = planId?.trim() || SELF_HOST_PLAN_ID;
+  const resolvedPlanId = canonicalHostedPlanId(planId) || SELF_HOST_PLAN_ID;
   const plan = getHostedPlan(resolvedPlanId);
 
   if (!plan) {
@@ -388,13 +439,13 @@ export function resolvePlanSpec(options?: {
   defaultPlanId?: HostedPlanId;
   allowCustomPlan?: boolean;
 }): ResolvedPlanSpec {
-  const requestedPlanId = options?.planId?.trim() || options?.defaultPlanId || SELF_HOST_PLAN_ID;
+  const requestedPlanId = canonicalHostedPlanId(options?.planId) || options?.defaultPlanId || SELF_HOST_PLAN_ID;
   const overrideQuota = normalizeQuota(options?.monthlyRunQuota);
   const plan = getHostedPlan(requestedPlanId);
 
   if (!plan) {
     if (!options?.allowCustomPlan) {
-      throw new Error(`Unknown planId '${requestedPlanId}'. Valid plans: ${validHostedPlanIds().join(', ')}`);
+      throw new Error(`Unknown planId '${requestedPlanId}'. Valid plans: ${validHostedPlanIds().join(', ')}. Legacy alias 'community' resolves to 'developer'.`);
     }
     return {
       plan: null,

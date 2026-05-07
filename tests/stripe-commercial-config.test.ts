@@ -21,6 +21,7 @@ async function main(): Promise<void> {
     ATTESTOR_STRIPE_STARTER_TRIAL_DAYS: process.env.ATTESTOR_STRIPE_STARTER_TRIAL_DAYS,
     ATTESTOR_STRIPE_PRICE_STARTER: process.env.ATTESTOR_STRIPE_PRICE_STARTER,
     ATTESTOR_STRIPE_PRICE_PRO: process.env.ATTESTOR_STRIPE_PRICE_PRO,
+    ATTESTOR_STRIPE_PRICE_SCALE: process.env.ATTESTOR_STRIPE_PRICE_SCALE,
   };
 
   process.env.ATTESTOR_STRIPE_USE_MOCK = 'true';
@@ -28,22 +29,27 @@ async function main(): Promise<void> {
   process.env.ATTESTOR_BILLING_CANCEL_URL = 'https://attestor.example.invalid/billing/cancel';
   process.env.ATTESTOR_STRIPE_PRICE_STARTER = 'price_starter_live';
   process.env.ATTESTOR_STRIPE_PRICE_PRO = 'price_pro_live';
+  process.env.ATTESTOR_STRIPE_PRICE_SCALE = 'price_scale_live';
 
   try {
     const starter = getHostedPlan('starter');
     const pro = getHostedPlan('pro');
-    const community = getHostedPlan('community');
+    const scale = getHostedPlan('scale');
+    const developer = getHostedPlan('developer');
+    const legacyCommunity = getHostedPlan('community');
 
-    ok(starter?.defaultStripeTrialDays === 14, 'Stripe commercial config: starter defaults to a 14-day trial');
+    ok(starter?.defaultStripeTrialDays === null, 'Stripe commercial config: starter defaults to no paid Stripe trial');
     ok(pro?.defaultStripeTrialDays === null, 'Stripe commercial config: pro defaults to no trial');
-    ok(community?.intendedFor === 'self_host', 'Stripe commercial config: community remains the non-Stripe evaluation plan');
-    ok(community?.defaultMonthlyRunQuota === 10, 'Stripe commercial config: community exposes 10 included hosted runs');
+    ok(scale?.defaultMonthlyRunQuota === 1_000_000, 'Stripe commercial config: scale exposes one million included admissions');
+    ok(developer?.intendedFor === 'evaluation', 'Stripe commercial config: developer remains the non-Stripe evaluation plan');
+    ok(developer?.defaultMonthlyRunQuota === 500, 'Stripe commercial config: developer exposes 500 included admissions');
+    ok(legacyCommunity?.id === 'developer', 'Stripe commercial config: legacy community resolves to developer');
 
     process.env.ATTESTOR_STRIPE_STARTER_TRIAL_DAYS = '21';
     ok(resolvePlanStripeTrialDays('starter').trialDays === 21, 'Stripe commercial config: starter trial can be overridden by env');
 
     process.env.ATTESTOR_STRIPE_STARTER_TRIAL_DAYS = '0';
-    ok(resolvePlanStripeTrialDays('starter').trialDays === 14, 'Stripe commercial config: invalid starter trial override falls back to 14 days');
+    ok(resolvePlanStripeTrialDays('starter').trialDays === null, 'Stripe commercial config: invalid starter trial override falls back to no paid trial');
 
     delete process.env.ATTESTOR_STRIPE_STARTER_TRIAL_DAYS;
 
@@ -68,7 +74,7 @@ async function main(): Promise<void> {
       plan: starter!,
       idempotencyKey: 'starter-trial-test',
     });
-    ok(starterCheckout.trialDays === 14, 'Stripe commercial config: starter checkout returns a 14-day trial in mock mode');
+    ok(starterCheckout.trialDays === null, 'Stripe commercial config: starter checkout returns no paid Stripe trial in mock mode');
 
     const proCheckout = await createHostedCheckoutSession({
       account,

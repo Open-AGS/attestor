@@ -122,7 +122,7 @@ async function testUsageReportEnrichesTenantAndAccountContext(): Promise<void> {
     accountName: 'Acme',
     planId: 'pro',
     monthlyRunQuota: 10,
-    meter: 'monthly_pipeline_runs',
+    meter: 'monthly_admission_runs',
     period: '2026-04',
     used: 7,
     remaining: 3,

@@ -56,7 +56,7 @@ export function registerPublicSiteRoutes<Packet>(app: Hono, deps: PublicSiteRout
     title: 'Checkout completed',
     message: 'Your checkout finished successfully. Attestor keeps the same account and updates the plan on that account as soon as Stripe webhook reconciliation completes.',
     bullets: [
-      'Starter begins with a 14-day free trial before the first paid cycle.',
+      'Paid checkout moves the same account onto Starter, Pro, Scale, or Enterprise after Stripe reconciliation.',
       'If the plan view still looks unchanged, wait a few seconds and refresh.',
       'You can manage payment details, invoices, and plan changes from the billing portal.',
     ],
@@ -75,7 +75,7 @@ export function registerPublicSiteRoutes<Packet>(app: Hono, deps: PublicSiteRout
     message: 'No plan change was applied. Your existing account stays exactly as it was before checkout started.',
     bullets: [
       'You can start checkout again from the same hosted account.',
-      'Starter is the first hosted paid plan and includes a 14-day free trial.',
+      'Developer and Free Shadow Trial stay outside Stripe; paid checkout starts at Starter.',
       'If you are still evaluating, you can wait to upgrade until you are ready.',
     ],
     actions: [
@@ -92,8 +92,8 @@ export function registerPublicSiteRoutes<Packet>(app: Hono, deps: PublicSiteRout
     message: 'This is the simple return page for billing. Use it after checkout or the Stripe billing portal to confirm what happens next.',
     bullets: [
       'Hosted signup creates the account you will keep using.',
-      'Starter is the first hosted paid plan and includes a 14-day free trial.',
-      'Pro and Enterprise are paid upgrades on the same account.',
+      'Developer is the free evaluation plan, and Starter is the first paid hosted plan.',
+      'Pro, Scale, and Enterprise are paid upgrades on the same account.',
       'Use Stripe Checkout to start a paid plan and the billing portal to manage it later.',
     ],
     note: 'If you are integrating directly against the API, the account and billing export endpoints below remain the canonical machine-readable views.',

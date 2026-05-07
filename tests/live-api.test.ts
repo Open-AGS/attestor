@@ -164,6 +164,7 @@ process.env.ATTESTOR_RATE_LIMIT_WINDOW_SECONDS = '5';
   process.env.ATTESTOR_BILLING_PORTAL_RETURN_URL = 'https://attestor.dev/settings/billing';
   process.env.ATTESTOR_STRIPE_PRICE_STARTER = 'price_starter_monthly';
   process.env.ATTESTOR_STRIPE_PRICE_PRO = 'price_pro_monthly';
+  process.env.ATTESTOR_STRIPE_PRICE_SCALE = 'price_scale_monthly';
   process.env.ATTESTOR_STRIPE_PRICE_ENTERPRISE = 'price_enterprise_monthly';
   resetTenantKeyStoreForTests();
   resetUsageMeter();
@@ -1235,9 +1236,9 @@ process.env.ATTESTOR_RATE_LIMIT_WINDOW_SECONDS = '5';
       ok(plansBody.defaults.asyncExecutionShared === true, 'Admin Plans: async execution backend reported as shared');
       ok(plansBody.defaults.asyncWeightedDispatchShared === true, 'Admin Plans: async weighted dispatch backend reported as shared');
       const starterPlan = plansBody.plans.find((entry: any) => entry.id === 'starter');
-      const communityPlan = plansBody.plans.find((entry: any) => entry.id === 'community');
-      ok(Boolean(communityPlan), 'Admin Plans: community plan present');
-      ok(communityPlan.defaultMonthlyRunQuota === 10, 'Admin Plans: community hosted quota = 10');
+      const developerPlan = plansBody.plans.find((entry: any) => entry.id === 'developer');
+      ok(Boolean(developerPlan), 'Admin Plans: developer plan present');
+      ok(developerPlan.defaultMonthlyRunQuota === 500, 'Admin Plans: developer hosted quota = 500');
       ok(Boolean(starterPlan), 'Admin Plans: starter plan present');
       ok(starterPlan.defaultMonthlyRunQuota === 100, 'Admin Plans: starter quota = 100');
       ok(starterPlan.defaultPipelineRequestsPerWindow === 3, 'Admin Plans: starter rate limit = 3');
@@ -2136,7 +2137,7 @@ process.env.ATTESTOR_RATE_LIMIT_WINDOW_SECONDS = '5';
       ok(allowedAfterActiveWebhookRes.status === 200, 'Stripe Webhook: active account key works again');
       const allowedAfterActiveWebhookBody = await allowedAfterActiveWebhookRes.json() as any;
       ok(allowedAfterActiveWebhookBody.tenantContext.planId === 'pro', 'Stripe Webhook: tenant plan updated from Stripe price');
-      ok(allowedAfterActiveWebhookBody.usage.quota === 1000, 'Stripe Webhook: tenant quota updated from Stripe price');
+      ok(allowedAfterActiveWebhookBody.usage.quota === 250000, 'Stripe Webhook: tenant quota updated from Stripe price');
 
       const invoiceFailedPayload = JSON.stringify({
         id: 'evt_invoice_account_001_failed',
@@ -2294,7 +2295,7 @@ process.env.ATTESTOR_RATE_LIMIT_WINDOW_SECONDS = '5';
       ok(checkoutSuccessPageRes.status === 200, 'Billing pages: success return surface responds');
       const checkoutSuccessPage = await checkoutSuccessPageRes.text();
       ok(checkoutSuccessPage.includes('Checkout completed'), 'Billing pages: success return surface explains checkout completion');
-      ok(checkoutSuccessPage.includes('14-day free trial'), 'Billing pages: success return surface explains the starter trial in human terms');
+      ok(checkoutSuccessPage.includes('Stripe webhook reconciliation'), 'Billing pages: success return surface explains webhook reconciliation in human terms');
 
       const checkoutCancelPageRes = await fetch(`${BASE}/billing/cancel`);
       ok(checkoutCancelPageRes.status === 200, 'Billing pages: cancel return surface responds');
@@ -2722,11 +2723,11 @@ process.env.ATTESTOR_RATE_LIMIT_WINDOW_SECONDS = '5';
       ok(Boolean(signupCookie), 'Auth Signup: session cookie issued');
       ok(signupBody.signup === true, 'Auth Signup: signup flag true');
       ok(signupBody.user.role === 'account_admin', 'Auth Signup: first user is account_admin');
-      ok(signupBody.initialKey.planId === 'community', 'Auth Signup: community plan applied');
+      ok(signupBody.initialKey.planId === 'developer', 'Auth Signup: developer plan applied');
       ok(signupBody.commercial.currentPhase === 'evaluation', 'Auth Signup: signup starts in evaluation phase');
-      ok(signupBody.commercial.includedMonthlyRunQuota === 10, 'Auth Signup: community includes 10 hosted runs before upgrade');
+      ok(signupBody.commercial.includedMonthlyRunQuota === 500, 'Auth Signup: developer includes 500 hosted admissions before upgrade');
       ok(signupBody.commercial.firstHostedPlanId === 'starter', 'Auth Signup: starter is the first hosted paid plan');
-      ok(signupBody.commercial.firstHostedPlanTrialDays === 14, 'Auth Signup: starter trial surfaced in signup response');
+      ok(signupBody.commercial.firstHostedPlanTrialDays === null, 'Auth Signup: paid checkout trial default is not surfaced as enabled');
       ok(typeof signupBody.initialKey.apiKey === 'string', 'Auth Signup: initial API key returned');
 
       const signupUsageRes = await fetch(`${BASE}/api/v1/account/usage`, {
@@ -2734,9 +2735,9 @@ process.env.ATTESTOR_RATE_LIMIT_WINDOW_SECONDS = '5';
       });
       ok(signupUsageRes.status === 200, 'Auth Signup: initial API key works');
       const signupUsageBody = await signupUsageRes.json() as any;
-      ok(signupUsageBody.tenantContext.planId === 'community', 'Auth Signup: community plan visible in usage');
-      ok(signupUsageBody.usage.quota === 10, 'Auth Signup: community signup has 10 included hosted runs');
-      ok(signupUsageBody.usage.enforced === true, 'Auth Signup: community hosted quota is enforced');
+      ok(signupUsageBody.tenantContext.planId === 'developer', 'Auth Signup: developer plan visible in usage');
+      ok(signupUsageBody.usage.quota === 500, 'Auth Signup: developer signup has 500 included hosted admissions');
+      ok(signupUsageBody.usage.enforced === true, 'Auth Signup: developer hosted quota is enforced');
 
       const signupPipelineRunRes = await fetch(`${BASE}/api/v1/pipeline/run`, {
         method: 'POST',
@@ -2753,9 +2754,9 @@ process.env.ATTESTOR_RATE_LIMIT_WINDOW_SECONDS = '5';
           sign: false,
         }),
       });
-      ok(signupPipelineRunRes.status === 200, 'Auth Signup: evaluation account can consume one of the included community hosted runs');
+      ok(signupPipelineRunRes.status === 200, 'Auth Signup: evaluation account can consume one of the included developer hosted admissions');
       const signupPipelineRunBody = await signupPipelineRunRes.json() as any;
-      ok(signupPipelineRunBody.decision === 'pass', 'Auth Signup: community hosted run still executes the governed pipeline');
+      ok(signupPipelineRunBody.decision === 'pass', 'Auth Signup: developer hosted admission still executes the governed pipeline');
 
       for (let attempt = 2; attempt <= 10; attempt += 1) {
         const res = await fetch(`${BASE}/api/v1/pipeline/run`, {
@@ -2773,10 +2774,10 @@ process.env.ATTESTOR_RATE_LIMIT_WINDOW_SECONDS = '5';
             sign: false,
           }),
         });
-        ok(res.status === 200, `Auth Signup: community run ${attempt} stays within the included quota`);
+        ok(res.status === 200, `Auth Signup: developer run ${attempt} stays within the included quota`);
       }
 
-      const signupQuotaExceededRes = await fetch(`${BASE}/api/v1/pipeline/run`, {
+      const signupAdditionalRunRes = await fetch(`${BASE}/api/v1/pipeline/run`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -2791,7 +2792,7 @@ process.env.ATTESTOR_RATE_LIMIT_WINDOW_SECONDS = '5';
           sign: false,
         }),
       });
-      ok(signupQuotaExceededRes.status === 429, 'Auth Signup: community hosted run 11 is blocked after the included 10 runs are consumed');
+      ok(signupAdditionalRunRes.status === 200, 'Auth Signup: developer quota is large enough that the live smoke does not exhaust it');
 
       const accountKeysRes = await fetch(`${BASE}/api/v1/account/api-keys`, {
         headers: { Cookie: signupCookie! },
@@ -2831,7 +2832,7 @@ process.env.ATTESTOR_RATE_LIMIT_WINDOW_SECONDS = '5';
       ok(issueAccountKeyRes.status === 201, 'Account API Keys: issue status 201');
       const issueAccountKeyBody = await issueAccountKeyRes.json() as any;
       ok(typeof issueAccountKeyBody.key.apiKey === 'string', 'Account API Keys: plaintext key returned on issue');
-      ok(issueAccountKeyBody.key.planId === 'community', 'Account API Keys: issued key inherits community plan');
+      ok(issueAccountKeyBody.key.planId === 'developer', 'Account API Keys: issued key inherits developer plan');
 
       const deactivateKeyRes = await fetch(`${BASE}/api/v1/account/api-keys/${issueAccountKeyBody.key.id}/deactivate`, {
         method: 'POST',
@@ -2918,7 +2919,7 @@ process.env.ATTESTOR_RATE_LIMIT_WINDOW_SECONDS = '5';
       const issueBody = await issueRes.json() as any;
       ok(typeof issueBody.key.apiKey === 'string', 'Admin API: plaintext apiKey returned once');
       ok(issueBody.key.planId === 'pro', 'Admin API: plan persisted');
-      ok(issueBody.key.monthlyRunQuota === 1000, 'Admin API: plan default quota applied');
+      ok(issueBody.key.monthlyRunQuota === 250000, 'Admin API: plan default quota applied');
 
       const issueReplayRes = await fetch(`${BASE}/api/v1/admin/tenant-keys`, {
         method: 'POST',

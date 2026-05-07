@@ -29,7 +29,7 @@ async function main(): Promise<void> {
   const landing = renderFinancialReportingLandingPage(packet);
   ok(landing.includes('AI-assisted financial reporting acceptance'), 'Finance acceptance surface: landing page leads with the finance wedge');
   ok(landing.includes('/proof/financial-reporting-acceptance'), 'Finance acceptance surface: landing page points at the proof surface');
-  ok(landing.includes('Community') && landing.includes('Starter') && landing.includes('Pro') && landing.includes('Enterprise'), 'Finance acceptance surface: landing page includes the plan ladder');
+  ok(landing.includes('Developer') && landing.includes('Starter') && landing.includes('Pro') && landing.includes('Scale') && landing.includes('Enterprise'), 'Finance acceptance surface: landing page includes the plan ladder');
   ok(landing.includes('Reviewer endorsement') && !landing.includes('Attestor Live Reviewer'), 'Finance acceptance surface: landing page keeps reviewer proof without exposing reviewer identity');
 
   const proofPage = renderFinancialReportingProofPage(packet);

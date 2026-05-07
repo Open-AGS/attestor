@@ -291,10 +291,12 @@ function testPricingAndTrialTruthsStayAnchored(): void {
   includes(packaging, '| `pro` | USD `$1,499` / month or `$14,990` / year | `250,000` admissions / month |', 'Hosted product flow docs: pro pricing is documented');
   includes(packaging, '| `scale` | USD `$5,999` / month, contract-led | `1,000,000` admissions / month |', 'Hosted product flow docs: scale pricing posture is documented');
   includes(packaging, '| `enterprise` | from USD `$50,000` / year | custom, normally `5,000,000`+ admissions / month |', 'Hosted product flow docs: enterprise pricing posture is documented');
-  includes(packaging, 'Current shipped hosted implementation still uses:', 'Hosted product flow docs: pricing model does not overclaim current runtime support');
-  includes(packaging, 'plan ids: `community`, `starter`, `pro`, `enterprise`', 'Hosted product flow docs: current shipped plan ids remain documented');
-  includes(packaging, 'Starter Stripe trial bootstrap: `14` days by default', 'Hosted product flow docs: current starter trial runtime posture is documented');
-  includes(stripeBootstrap, 'ATTESTOR_STRIPE_STARTER_TRIAL_DAYS=14', 'Hosted product flow docs: operator trial env var is documented');
+  includes(packaging, 'plan ids: `developer`, `trial`, `starter`, `pro`, `scale`, `enterprise`', 'Hosted product flow docs: current shipped plan ids remain documented');
+  includes(packaging, 'legacy alias: `community` resolves to `developer`', 'Hosted product flow docs: legacy community alias is documented');
+  includes(packaging, 'usage meter name: `monthly_admission_runs`', 'Hosted product flow docs: current admission meter is documented');
+  includes(packaging, 'Developer is documented as shadow/warn only, but route-level mode restriction is not yet enforced by plan.', 'Hosted product flow docs: Developer mode enforcement gap is not overclaimed');
+  includes(packaging, 'The `trial` plan exists in the catalog, but signup still provisions Developer by default', 'Hosted product flow docs: trial lifecycle gap is not overclaimed');
+  includes(stripeBootstrap, 'ATTESTOR_STRIPE_PRICE_SCALE=price_', 'Hosted product flow docs: operator scale Stripe price env var is documented');
   includes(stripeBootstrap, 'POST /api/v1/billing/stripe/webhook', 'Hosted product flow docs: operator webhook route is documented');
 }
 

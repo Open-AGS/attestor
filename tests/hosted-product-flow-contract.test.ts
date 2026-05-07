@@ -52,7 +52,7 @@ function testDescriptorShape(): void {
 
   equal(contract.version, HOSTED_JOURNEY_CONTRACT_VERSION, 'Hosted journey contract: version is exported');
   equal(contract.productModel, HOSTED_JOURNEY_PRODUCT_MODEL, 'Hosted journey contract: product model is one Attestor core');
-  equal(contract.defaultEvaluationPlanId, 'community', 'Hosted journey contract: community is default evaluation path');
+  equal(contract.defaultEvaluationPlanId, 'developer', 'Hosted journey contract: Developer is default evaluation path');
   equal(contract.firstPaidHostedPlanId, 'starter', 'Hosted journey contract: starter is first paid hosted plan');
   ok(contract.consequenceBoundary.includes('before the downstream system'), 'Hosted journey contract: consequence boundary is explicit');
   ok(contract.packSelection.includes('does not auto-detect packs'), 'Hosted journey contract: no auto-detect promise');

@@ -25,7 +25,7 @@ export interface AdminUsageRecord {
   accountName: string | null;
   planId: string | null;
   monthlyRunQuota: number | null;
-  meter: 'monthly_pipeline_runs';
+  meter: 'monthly_admission_runs';
   period: string;
   used: number;
   remaining: number | null;
@@ -108,7 +108,7 @@ export function createAdminQueryService(deps: AdminQueryServiceDeps): AdminQuery
           accountName: accountRecord?.accountName ?? null,
           planId: tenantRecord?.planId ?? null,
           monthlyRunQuota: quota,
-          meter: 'monthly_pipeline_runs' as const,
+          meter: 'monthly_admission_runs' as const,
           period: entry.period,
           used: entry.used,
           remaining: quota === null ? null : Math.max(0, quota - entry.used),

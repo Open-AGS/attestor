@@ -64,6 +64,7 @@ export function adminPlanView() {
     id: plan.id,
     displayName: plan.displayName,
     description: plan.description,
+    defaultEvaluationDays: plan.defaultEvaluationDays,
     defaultStripeTrialDays: resolvePlanStripeTrialDays(plan.id).trialDays,
     defaultMonthlyRunQuota: plan.defaultMonthlyRunQuota,
     defaultPipelineRequestsPerWindow: resolvePlanRateLimit(plan.id).requestsPerWindow,

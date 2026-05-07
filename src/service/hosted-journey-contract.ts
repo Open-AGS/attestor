@@ -366,7 +366,7 @@ export const HOSTED_JOURNEY_STEP_CONTRACTS = [
     id: 'create-hosted-account',
     title: 'Create the hosted account',
     audience: 'customer',
-    intent: 'Start on the free community evaluation path and receive the first tenant API key.',
+    intent: 'Start on the free Developer evaluation path and receive the first tenant API key.',
     routeKeys: ['signup'],
     successSignals: [
       'first account user has account_admin authority',
@@ -385,7 +385,7 @@ export const HOSTED_JOURNEY_STEP_CONTRACTS = [
     intent: 'Confirm the account plane can show current plan, entitlement, usage, and rate limit before real use.',
     routeKeys: ['account_summary', 'usage', 'entitlement', 'features'],
     successSignals: [
-      'community plan is visible during evaluation',
+      'developer plan is visible during evaluation',
       'included hosted run quota is visible',
       'entitlement state is visible',
       'feature grants are visible',
@@ -483,7 +483,7 @@ export function hostedJourneyContract() {
   return {
     version: HOSTED_JOURNEY_CONTRACT_VERSION,
     productModel: HOSTED_JOURNEY_PRODUCT_MODEL,
-    defaultEvaluationPlanId: 'community',
+    defaultEvaluationPlanId: 'developer',
     firstPaidHostedPlanId: 'starter',
     consequenceBoundary:
       'customer systems call Attestor before the downstream system writes, sends, files, or executes',

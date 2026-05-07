@@ -2017,9 +2017,9 @@ app.post('/api/v1/account/billing/checkout', async (c) => {
   }
 
   const plan = getHostedPlan(requestedPlanId);
-  if (!plan || plan.intendedFor === 'self_host') {
+  if (!plan || plan.intendedFor === 'evaluation') {
     return c.json({
-      error: `Hosted billing checkout only supports hosted/enterprise plans. Valid hosted plans: starter, pro, enterprise.`,
+      error: `Hosted billing checkout only supports hosted/enterprise plans. Valid hosted plans: starter, pro, scale, enterprise.`,
     }, 400);
   }
 

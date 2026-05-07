@@ -1,7 +1,7 @@
 /**
  * Attestor Usage Meter — Hosted API First Slice
  *
- * Tracks billable pipeline run usage per tenant in a local file-backed ledger.
+ * Tracks billable admission run usage per tenant in a local file-backed ledger.
  *
  * BOUNDARY:
  * - Monthly counters keyed by tenantId + month
@@ -17,7 +17,7 @@ import { withFileLock, writeTextFileAtomic } from './file-store.js';
 export interface UsageContext {
   tenantId: string;
   planId: string;
-  meter: 'monthly_pipeline_runs';
+  meter: 'monthly_admission_runs';
   period: string;
   used: number;
   quota: number | null;
@@ -34,6 +34,8 @@ export interface UsageLedgerRecord {
 
 interface UsageLedgerFile {
   version: 1;
+  // Storage key retained for backward-compatible ledger files; the public meter
+  // exposed by API responses is monthly_admission_runs.
   monthlyPipelineRuns: UsageLedgerRecord[];
 }
 
@@ -87,8 +89,8 @@ function buildUsageContext(
   const resolvedQuota = typeof quota === 'number' && quota >= 0 ? quota : null;
   return {
     tenantId,
-    planId: planId ?? 'community',
-    meter: 'monthly_pipeline_runs',
+    planId: planId ?? 'developer',
+    meter: 'monthly_admission_runs',
     period,
     used,
     quota: resolvedQuota,

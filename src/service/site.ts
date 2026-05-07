@@ -616,13 +616,13 @@ export function renderFinancialReportingLandingPage(packet: ProofShowcasePacket 
 
         <div class="section-inner plans" id="plans">
           <p class="eyebrow">Buying shape</p>
-          <h2>Simple plan ladder, one reporting-acceptance budget.</h2>
-          <p>One run means one governed acceptance pass for one reporting input. Community is for first validation, Starter is for the first live reporting workflow, Pro is for recurring departmental use, and Enterprise is for the point where fixed public quotas stop matching the governance boundary.</p>
+          <h2>Simple plan ladder, one admission budget.</h2>
+          <p>One admission means one governed consequence decision before a downstream system acts. Developer is for first validation, Starter is for the first live workflow, Pro and Scale are for expanding operational use, and Enterprise is for strict deployment boundaries.</p>
           <div class="plans-grid">
             <div class="plan">
-              <h3>Community</h3>
+              <h3>Developer</h3>
               <div class="price">Free</div>
-              <div class="meta">Zero-cost evaluation path and the first <strong>10</strong> hosted runs.</div>
+              <div class="meta">Perpetual free path with <strong>500</strong> admissions/month for low-volume evaluation.</div>
               <ul>
                 <li>Try the counterparty reporting proof path</li>
                 <li>Issue the first tenant API key</li>
@@ -631,8 +631,8 @@ export function renderFinancialReportingLandingPage(packet: ProofShowcasePacket 
             </div>
             <div class="plan">
               <h3>Starter</h3>
-              <div class="price">EUR 499</div>
-              <div class="meta">The first paid hosted plan, with <strong>100</strong> runs/month and a 14-day trial.</div>
+              <div class="price">USD 299/mo</div>
+              <div class="meta">The first paid hosted plan, with <strong>25,000</strong> admissions/month.</div>
               <ul>
                 <li>One serious reporting workflow</li>
                 <li>Usage, billing, and API key management</li>
@@ -641,12 +641,22 @@ export function renderFinancialReportingLandingPage(packet: ProofShowcasePacket 
             </div>
             <div class="plan">
               <h3>Pro</h3>
-              <div class="price">EUR 1,999</div>
-              <div class="meta"><strong>1,000</strong> runs/month for several recurring reporting or control workflows.</div>
+              <div class="price">USD 1,499/mo</div>
+              <div class="meta"><strong>250,000</strong> admissions/month for several recurring workflows.</div>
               <ul>
                 <li>Department-level usage</li>
                 <li>Higher rate limits and stronger runtime headroom</li>
                 <li>Multiple review or reporting cycles</li>
+              </ul>
+            </div>
+            <div class="plan">
+              <h3>Scale</h3>
+              <div class="price">USD 5,999/mo</div>
+              <div class="meta"><strong>1,000,000</strong> admissions/month for high-volume hosted operations.</div>
+              <ul>
+                <li>Scale-level usage</li>
+                <li>Retention and support uplift</li>
+                <li>Custom integration posture</li>
               </ul>
             </div>
             <div class="plan">
@@ -660,7 +670,7 @@ export function renderFinancialReportingLandingPage(packet: ProofShowcasePacket 
               </ul>
             </div>
           </div>
-          <p class="footer-note">The shortest hosted flow is: sign up, receive the first key, run the reporting-acceptance path, upgrade the same account only when the free budget is gone.</p>
+          <p class="footer-note">The shortest hosted flow is: sign up, receive the first key, run an admission, upgrade the same account only when the free budget is no longer the right boundary.</p>
         </div>
       </section>
     </main>

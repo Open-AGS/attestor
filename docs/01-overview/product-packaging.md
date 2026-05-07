@@ -261,19 +261,21 @@ That applies whether Attestor is used through a hosted paid plan or through a cu
 
 ## Current Implementation Status
 
-This pricing model is the target commercial packaging. Runtime support is intentionally staged.
+This pricing model is now the runtime plan-catalog shape for hosted account provisioning, quota defaults, rate limits, admin plan views, Stripe price lookup, and usage response naming.
 
-Current shipped hosted implementation still uses:
+Current shipped hosted implementation uses:
 
-- plan ids: `community`, `starter`, `pro`, `enterprise`
-- usage meter name: `monthly_pipeline_runs`
-- first free hosted path: `community` with `10` runs
-- Starter Stripe trial bootstrap: `14` days by default
-- Stripe price env vars: `ATTESTOR_STRIPE_PRICE_STARTER`, `ATTESTOR_STRIPE_PRICE_PRO`, and `ATTESTOR_STRIPE_PRICE_ENTERPRISE`
+- plan ids: `developer`, `trial`, `starter`, `pro`, `scale`, `enterprise`
+- legacy alias: `community` resolves to `developer` for backward compatibility with older local records
+- usage meter name: `monthly_admission_runs`
+- first free hosted path: `developer` with `500` admissions per month
+- free shadow trial plan metadata: `trial` with `60` days and `5,000` admissions
+- paid Stripe price env vars: `ATTESTOR_STRIPE_PRICE_STARTER`, `ATTESTOR_STRIPE_PRICE_PRO`, `ATTESTOR_STRIPE_PRICE_SCALE`, and `ATTESTOR_STRIPE_PRICE_ENTERPRISE`
 
-The next implementation step is to migrate the runtime plan catalog and docs from `community` to `developer`, add the `trial` onboarding state, add `scale`, rename the usage meter contract to `monthly_admission_runs`, and map the new Stripe price ids.
+Two commercial behaviors are not fully automated yet and must not be overclaimed:
 
-Until that migration lands, customer-facing hosted route docs should describe the shipped route behavior, while this page describes the intended commercial packaging.
+- Developer is documented as shadow/warn only, but route-level mode restriction is not yet enforced by plan.
+- The `trial` plan exists in the catalog, but signup still provisions Developer by default; trial invitation/conversion lifecycle is a separate implementation step.
 
 ## Hosted Commercial Surface
 

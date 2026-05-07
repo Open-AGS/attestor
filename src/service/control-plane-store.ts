@@ -942,7 +942,7 @@ async function maybeSealTenantKeyRecord(record: TenantKeyRecord, apiKey: string)
     tenantKeyId: record.id,
     tenantId: record.tenantId,
     tenantName: record.tenantName,
-    planId: record.planId ?? 'community',
+    planId: record.planId ?? 'developer',
     createdAt: record.createdAt,
   });
   if (!recoveryEnvelope) return record;
@@ -979,8 +979,8 @@ function usageContextFromRecord(
   const resolvedQuota = typeof quota === 'number' && quota >= 0 ? quota : null;
   return {
     tenantId,
-    planId: planId ?? 'community',
-    meter: 'monthly_pipeline_runs',
+    planId: planId ?? 'developer',
+    meter: 'monthly_admission_runs',
     period,
     used,
     quota: resolvedQuota,

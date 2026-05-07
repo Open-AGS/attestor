@@ -75,7 +75,7 @@ function createDeps(
     resolvePlanSpec: (() => {
       throw new Error('unused resolvePlanSpec');
     }) as StripeWebhookBillingProcessorDeps['resolvePlanSpec'],
-    DEFAULT_HOSTED_PLAN_ID: 'community',
+    DEFAULT_HOSTED_PLAN_ID: 'starter',
     syncTenantPlanByTenantIdState: async () => ({
       record: null,
       path: null,

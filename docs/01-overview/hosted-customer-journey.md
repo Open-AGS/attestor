@@ -66,7 +66,7 @@ Use this sequence:
 5. inspect usage or entitlement with `GET /api/v1/account/usage`, `GET /api/v1/account/entitlement`, or `GET /api/v1/account`
 6. inspect feature or billing state with `GET /api/v1/account/features`, `GET /api/v1/account/billing/export`, or `GET /api/v1/account/billing/reconciliation`
 7. start checkout for a paid hosted plan
-   send `planId` (`starter`, `pro`, or `enterprise`) to `POST /api/v1/account/billing/checkout`
+   send `planId` (`starter`, `pro`, `scale`, or `enterprise`) to `POST /api/v1/account/billing/checkout`
 8. open the returned `checkoutUrl` and finish payment in Stripe
 9. keep using the same account after checkout completes
 10. manage billing later through `POST /api/v1/account/billing/portal`

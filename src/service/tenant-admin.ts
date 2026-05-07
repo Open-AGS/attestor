@@ -4,8 +4,8 @@
  * Usage:
  *   npm run tenant:keys -- plans
  *   npm run tenant:keys -- list
- *   npm run tenant:keys -- issue --tenant-id tenant-pro --name Acme [--plan pro] [--quota 1000] [--out ./tenant.key]
- *   npm run tenant:keys -- rotate --id tkey_... [--plan pro] [--quota 1000] [--out ./tenant.key]
+ *   npm run tenant:keys -- issue --tenant-id tenant-pro --name Acme [--plan pro] [--quota 250000] [--out ./tenant.key]
+ *   npm run tenant:keys -- rotate --id tkey_... [--plan pro] [--quota 250000] [--out ./tenant.key]
  *   npm run tenant:keys -- deactivate --id tkey_...
  *   npm run tenant:keys -- reactivate --id tkey_...
  *   npm run tenant:keys -- revoke --id tkey_...
@@ -84,7 +84,7 @@ async function main() {
         `id=${record.id}`,
         `tenant=${record.tenantId}`,
         `name="${record.tenantName}"`,
-        `plan=${record.planId ?? 'community'}`,
+        `plan=${record.planId ?? 'developer'}`,
         `quota=${record.monthlyRunQuota ?? 'unlimited'}`,
         'secret=redacted',
         `sealed=${record.recoveryEnvelope?.provider ?? '-'}`,
@@ -143,7 +143,7 @@ async function main() {
     console.log(`Store: ${path}`);
     console.log(`Issued tenant key record ${record.id}`);
     console.log(`Tenant: ${record.tenantId} (${record.tenantName})`);
-    console.log(`Plan: ${record.planId ?? 'community'}`);
+    console.log(`Plan: ${record.planId ?? 'developer'}`);
     console.log(`Quota: ${record.monthlyRunQuota ?? 'unlimited'}`);
     console.log('');
     console.log('Secret material generated.');
@@ -171,7 +171,7 @@ async function main() {
     });
     console.log(`Store: ${path}`);
     console.log(`Rotated ${previousRecord.id} -> ${record.id} for tenant ${record.tenantId}`);
-    console.log(`Plan: ${record.planId ?? 'community'}`);
+    console.log(`Plan: ${record.planId ?? 'developer'}`);
     console.log(`Quota: ${record.monthlyRunQuota ?? 'unlimited'}`);
     console.log('');
     console.log('Replacement secret material generated.');

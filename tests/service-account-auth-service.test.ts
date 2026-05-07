@@ -139,8 +139,8 @@ function tenantKey(overrides: Partial<TenantKeyRecord> = {}): TenantKeyRecord {
     id: 'key_123',
     tenantId: 'tenant_123',
     tenantName: 'Acme',
-    planId: 'community',
-    monthlyRunQuota: 10,
+    planId: 'developer',
+    monthlyRunQuota: 500,
     apiKeyHash: 'hash',
     apiKeyPreview: 'att_...',
     status: 'active',
@@ -180,25 +180,26 @@ function actionToken(overrides: Partial<AccountUserActionTokenRecord> = {}): Acc
   };
 }
 
-const communityPlan: HostedPlanDefinition = {
-  id: 'community',
-  displayName: 'Community',
-  description: 'Community',
+const developerPlan: HostedPlanDefinition = {
+  id: 'developer',
+  displayName: 'Developer',
+  description: 'Developer',
+  defaultEvaluationDays: null,
   defaultStripeTrialDays: null,
-  defaultMonthlyRunQuota: 10,
-  defaultPipelineRequestsPerWindow: null,
-  defaultAsyncPendingJobsPerTenant: null,
-  defaultAsyncActiveJobsPerTenant: null,
-  defaultAsyncDispatchWeight: null,
-  intendedFor: 'self_host',
+  defaultMonthlyRunQuota: 500,
+  defaultPipelineRequestsPerWindow: 10,
+  defaultAsyncPendingJobsPerTenant: 2,
+  defaultAsyncActiveJobsPerTenant: 1,
+  defaultAsyncDispatchWeight: 1,
+  intendedFor: 'evaluation',
   defaultForHostedProvisioning: false,
 };
 
 function resolvedPlan(): ResolvedPlanSpec {
   return {
-    plan: communityPlan,
-    planId: 'community',
-    monthlyRunQuota: 10,
+    plan: developerPlan,
+    planId: 'developer',
+    monthlyRunQuota: 500,
     knownPlan: true,
     quotaSource: 'plan_default',
   };
@@ -211,23 +212,23 @@ function currentAccount(source: AccountAuthCurrentAccount['tenant']['source'] = 
       tenantName: 'Acme',
       authenticatedAt: now,
       source,
-      planId: 'community',
-      monthlyRunQuota: 10,
+      planId: 'developer',
+      monthlyRunQuota: 500,
     },
     account: account(),
     usage: {
       tenantId: 'tenant_123',
-      planId: 'community',
-      meter: 'monthly_pipeline_runs',
+      planId: 'developer',
+      meter: 'monthly_admission_runs',
       period: '2026-04',
       used: 0,
-      quota: 10,
-      remaining: 10,
+      quota: 500,
+      remaining: 500,
       enforced: true,
     },
     rateLimit: {
       tenantId: 'tenant_123',
-      planId: 'community',
+      planId: 'developer',
       scope: 'pipeline_requests',
       backend: 'memory',
       windowSeconds: 60,
@@ -256,12 +257,12 @@ function createDeps(overrides: Partial<AccountAuthServiceDeps> = {}): AccountAut
     findAccountUserByEmailState: async () => null,
     deriveSignupTenantId: () => 'tenant_123',
     resolvePlanSpec: () => resolvedPlan(),
-    SELF_HOST_PLAN_ID: 'community',
+    SELF_HOST_PLAN_ID: 'developer',
     DEFAULT_HOSTED_PLAN_ID: 'starter',
     resolvePlanStripeTrialDays: (planId) => ({
       planId: planId ?? 'starter',
-      trialDays: 14,
-      configured: true,
+      trialDays: null,
+      configured: false,
       knownPlan: true,
       source: 'plan_default',
     }),
@@ -369,9 +370,9 @@ async function testSignupOrchestratesAccountAndSession(): Promise<void> {
   assert.equal(result.apiKey, 'att_live_initial');
   assert.deepEqual(result.commercial, {
     currentPhase: 'evaluation',
-    includedMonthlyRunQuota: 10,
+    includedMonthlyRunQuota: 500,
     firstHostedPlanId: 'starter',
-    firstHostedPlanTrialDays: 14,
+    firstHostedPlanTrialDays: null,
   });
   assert.deepEqual(syncEvents, ['tenant_123:auth.signup']);
 }

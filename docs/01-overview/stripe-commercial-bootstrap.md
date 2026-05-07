@@ -10,7 +10,7 @@ From the customer's side, the commercial shape stays simple:
 
 1. choose a plan
 2. sign up for a hosted account
-3. upgrade through Stripe Checkout when `starter`, `pro`, or `enterprise` is needed
+3. upgrade through Stripe Checkout when `starter`, `pro`, `scale`, or `enterprise` is needed
 4. return to the Attestor account plane
 5. manage API keys, usage, and billing
 
@@ -24,6 +24,7 @@ Create recurring Stripe prices for:
 
 - `starter`
 - `pro`
+- `scale`
 - `enterprise`
 
 Those live Stripe prices should mirror [Commercial packaging, pricing, and evaluation](product-packaging.md).
@@ -32,14 +33,16 @@ Map those live Stripe price ids into:
 
 - `ATTESTOR_STRIPE_PRICE_STARTER`
 - `ATTESTOR_STRIPE_PRICE_PRO`
+- `ATTESTOR_STRIPE_PRICE_SCALE`
 - `ATTESTOR_STRIPE_PRICE_ENTERPRISE`
 
 For the shipped default hosted funnel:
 
-- `community` stays outside Stripe as the free evaluation path
+- `developer` and `trial` stay outside Stripe as free evaluation paths
+- legacy local records with `community` resolve to `developer`
 - `starter` is the first paid hosted plan
-- `ATTESTOR_STRIPE_STARTER_TRIAL_DAYS` defaults to `14` for the starter trial unless you deliberately set a different approved value
-- any change to public price or trial posture should be reflected first in [Commercial packaging, pricing, and evaluation](product-packaging.md)
+- paid plan trials are not enabled by default; the `trial` plan is a free shadow onboarding state, not a Stripe Checkout trial
+- any change to public price, free trial posture, or paid checkout behavior should be reflected first in [Commercial packaging, pricing, and evaluation](product-packaging.md)
 
 ### 2. Activate Your Stripe Live Account
 
@@ -75,7 +78,7 @@ That means:
 
 - the bank account is part of **your Stripe live setup**
 - it is **not** something Attestor stores or handles
-- it is **not** required for free `community` signups
+- it is **not** required for free `developer` or `trial` evaluation paths
 - it **is** required before you can honestly call the product commercially live
 
 ## 3. Configure The Attestor Runtime
@@ -87,8 +90,8 @@ export STRIPE_API_KEY=sk_live_...
 export STRIPE_WEBHOOK_SECRET=whsec_...
 export ATTESTOR_STRIPE_PRICE_STARTER=price_...
 export ATTESTOR_STRIPE_PRICE_PRO=price_...
+export ATTESTOR_STRIPE_PRICE_SCALE=price_...
 export ATTESTOR_STRIPE_PRICE_ENTERPRISE=price_...
-export ATTESTOR_STRIPE_STARTER_TRIAL_DAYS=14
 export ATTESTOR_BILLING_SUCCESS_URL=https://<host>/billing/success
 export ATTESTOR_BILLING_CANCEL_URL=https://<host>/billing/cancel
 export ATTESTOR_BILLING_PORTAL_RETURN_URL=https://<host>/settings/billing

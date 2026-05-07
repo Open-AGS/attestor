@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -17,7 +17,7 @@ import {
   type FinancePipelineAdmissionRun,
 } from '../src/consequence-admission/index.js';
 import { resetAccountSessionStoreForTests } from '../src/service/account-session-store.js';
-import { resetAccountStoreForTests } from '../src/service/account-store.js';
+import { listHostedAccounts, resetAccountStoreForTests } from '../src/service/account-store.js';
 import { resetAccountUserStoreForTests } from '../src/service/account-user-store.js';
 import { resetAccountUserActionTokenStoreForTests } from '../src/service/account-user-token-store.js';
 import { resetAdminAuditLogForTests } from '../src/service/admin-audit-log.js';
@@ -31,7 +31,7 @@ import { resetTenantRateLimiterForTests } from '../src/service/rate-limit.js';
 import { resetStripeWebhookStoreForTests } from '../src/service/stripe-webhook-store.js';
 import { resetTenantKeyStoreForTests } from '../src/service/tenant-key-store.js';
 import { shutdownTenantRuntimeBackends } from '../src/service/runtime/tenant-runtime.js';
-import { consumePipelineRun, resetUsageMeter } from '../src/service/usage-meter.js';
+import { resetUsageMeter } from '../src/service/usage-meter.js';
 
 let passed = 0;
 
@@ -113,7 +113,7 @@ async function runPipeline(baseUrl: string, apiKey: string): Promise<Response> {
 function configureIsolatedStores(root: string): void {
   delete process.env.ATTESTOR_TENANT_KEYS;
   delete process.env.ATTESTOR_BILLING_LEDGER_PG_URL;
-  delete process.env.ATTESTOR_RATE_LIMIT_COMMUNITY_REQUESTS;
+  delete process.env.ATTESTOR_RATE_LIMIT_DEVELOPER_REQUESTS;
   delete process.env.ATTESTOR_RATE_LIMIT_STARTER_REQUESTS;
   delete process.env.ATTESTOR_RATE_LIMIT_PRO_REQUESTS;
   delete process.env.ATTESTOR_RATE_LIMIT_ENTERPRISE_REQUESTS;
@@ -146,7 +146,25 @@ function configureIsolatedStores(root: string): void {
   process.env.ATTESTOR_BILLING_PORTAL_RETURN_URL = 'https://attestor.dev/settings/billing';
   process.env.ATTESTOR_STRIPE_PRICE_STARTER = 'price_starter_monthly';
   process.env.ATTESTOR_STRIPE_PRICE_PRO = 'price_pro_monthly';
+  process.env.ATTESTOR_STRIPE_PRICE_SCALE = 'price_scale_monthly';
   process.env.ATTESTOR_STRIPE_PRICE_ENTERPRISE = 'price_enterprise_monthly';
+}
+
+function currentUsagePeriod(): string {
+  const now = new Date();
+  return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
+}
+
+function seedUsageLedger(root: string, tenantId: string, used: number): void {
+  writeFileSync(join(root, 'usage-ledger.json'), `${JSON.stringify({
+    version: 1,
+    monthlyPipelineRuns: [{
+      tenantId,
+      period: currentUsagePeriod(),
+      used,
+      updatedAt: new Date().toISOString(),
+    }],
+  }, null, 2)}\n`);
 }
 
 async function resetStores(): Promise<void> {
@@ -181,9 +199,11 @@ async function main(): Promise<void> {
     await new Promise((resolve) => setTimeout(resolve, 250));
 
     const suffix = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const accountName = `Hosted Evaluation ${suffix}`;
+    const email = `owner-${suffix}@example.test`;
     const signupRes = await postJson(`${baseUrl}/api/v1/auth/signup`, {
-      accountName: `Hosted Evaluation ${suffix}`,
-      email: `owner-${suffix}@example.test`,
+      accountName,
+      email,
       displayName: 'Hosted Evaluation Owner',
       password: 'HostedSignupPass123!',
     });
@@ -194,12 +214,12 @@ async function main(): Promise<void> {
     const signupBody = await readJson(signupRes);
     equal(signupBody.signup, true, 'Hosted signup: response identifies signup flow');
     equal(signupBody.user.role, 'account_admin', 'Hosted signup: first user is account_admin');
-    equal(signupBody.initialKey.planId, 'community', 'Hosted signup: first API key starts on community');
-    equal(signupBody.initialKey.monthlyRunQuota, 10, 'Hosted signup: first API key has community quota');
+    equal(signupBody.initialKey.planId, 'developer', 'Hosted signup: first API key starts on Developer');
+    equal(signupBody.initialKey.monthlyRunQuota, 500, 'Hosted signup: first API key has Developer quota');
     equal(signupBody.commercial.currentPhase, 'evaluation', 'Hosted signup: commercial phase starts as evaluation');
-    equal(signupBody.commercial.includedMonthlyRunQuota, 10, 'Hosted signup: evaluation quota is visible');
+    equal(signupBody.commercial.includedMonthlyRunQuota, 500, 'Hosted signup: evaluation quota is visible');
     equal(signupBody.commercial.firstHostedPlanId, 'starter', 'Hosted signup: first paid hosted plan is starter');
-    equal(signupBody.commercial.firstHostedPlanTrialDays, 14, 'Hosted signup: starter trial posture is visible');
+    equal(signupBody.commercial.firstHostedPlanTrialDays, null, 'Hosted signup: paid checkout has no default Stripe trial');
     ok(
       typeof signupBody.initialKey.apiKey === 'string' && signupBody.initialKey.apiKey.startsWith('atk_'),
       'Hosted signup: plaintext initial API key is returned once',
@@ -212,7 +232,12 @@ async function main(): Promise<void> {
 
     const initialApiKey = signupBody.initialKey.apiKey as string;
     const initialKeyId = signupBody.initialKey.id as string;
-    const tenantId = signupBody.account.primaryTenantId as string;
+    const storedAccounts = listHostedAccounts().records;
+    equal(storedAccounts.length, 1, 'Hosted signup: exactly one account is persisted');
+    const [storedAccount] = storedAccounts;
+    equal(storedAccount.id, signupBody.account.id, 'Hosted signup: persisted account matches response account');
+    const tenantId = storedAccount.primaryTenantId;
+    equal(signupBody.account.primaryTenantId, tenantId, 'Hosted signup: response tenant id matches persisted account');
 
     const anonymousUsageRes = await fetch(`${baseUrl}/api/v1/account/usage`);
     equal(anonymousUsageRes.status, 401, 'Hosted auth: active hosted key makes tenant auth mandatory');
@@ -224,11 +249,11 @@ async function main(): Promise<void> {
     const usageBody = await readJson(usageRes);
     equal(usageBody.tenantContext.tenantId, tenantId, 'Hosted usage: tenant context matches signup account');
     equal(usageBody.tenantContext.source, 'api_key', 'Hosted usage: tenant source is API key');
-    equal(usageBody.tenantContext.planId, 'community', 'Hosted usage: community plan is visible');
+    equal(usageBody.tenantContext.planId, 'developer', 'Hosted usage: Developer plan is visible');
     equal(usageBody.usage.used, 0, 'Hosted usage: usage starts at zero');
-    equal(usageBody.usage.quota, 10, 'Hosted usage: community quota is visible');
-    equal(usageBody.usage.remaining, 10, 'Hosted usage: remaining quota starts at ten');
-    equal(usageBody.usage.enforced, true, 'Hosted usage: community quota is enforced');
+    equal(usageBody.usage.quota, 500, 'Hosted usage: Developer quota is visible');
+    equal(usageBody.usage.remaining, 500, 'Hosted usage: remaining quota starts at five hundred');
+    equal(usageBody.usage.enforced, true, 'Hosted usage: Developer quota is enforced');
 
     const accountRes = await fetch(`${baseUrl}/api/v1/account`, {
       headers: { Authorization: `Bearer ${initialApiKey}` },
@@ -238,7 +263,7 @@ async function main(): Promise<void> {
     equal(accountBody.account.id, signupBody.account.id, 'Hosted account: account id matches signup');
     equal(accountBody.entitlement.status, 'provisioned', 'Hosted account: initial entitlement is provisioned');
     equal(accountBody.entitlement.accessEnabled, true, 'Hosted account: initial entitlement allows access');
-    equal(accountBody.entitlement.effectivePlanId, 'community', 'Hosted account: entitlement reflects community plan');
+    equal(accountBody.entitlement.effectivePlanId, 'developer', 'Hosted account: entitlement reflects Developer plan');
 
     const firstRunRes = await runPipeline(baseUrl, initialApiKey);
     equal(firstRunRes.status, 200, 'Hosted consequence call: first API key can call Attestor');
@@ -246,7 +271,7 @@ async function main(): Promise<void> {
     equal(firstRunBody.decision, 'pass', 'Hosted consequence call: decision is returned before consequence');
     equal(firstRunBody.tenantContext.tenantId, tenantId, 'Hosted consequence call: tenant context is preserved');
     equal(firstRunBody.usage.used, 1, 'Hosted consequence call: allowed run consumes usage');
-    equal(firstRunBody.usage.remaining, 9, 'Hosted consequence call: remaining quota decrements');
+    equal(firstRunBody.usage.remaining, 499, 'Hosted consequence call: remaining quota decrements');
 
     const admission = createConsequenceAdmissionFacadeResponse({
       surface: 'finance-pipeline-run',
@@ -272,24 +297,17 @@ async function main(): Promise<void> {
       'Hosted consequence call: customer gate records proceed reason',
     );
 
-    for (let usageSeed = 2; usageSeed <= 10; usageSeed += 1) {
-      const seededUsage = consumePipelineRun(tenantId, 'community', 10);
-      equal(
-        seededUsage.used,
-        usageSeed,
-        `Hosted quota: ledger seed reaches community usage ${usageSeed}`,
-      );
-    }
+    seedUsageLedger(tempRoot, tenantId, 500);
 
     const quotaExceededRes = await runPipeline(baseUrl, initialApiKey);
-    equal(quotaExceededRes.status, 429, 'Hosted quota: community run 11 is blocked');
+    equal(quotaExceededRes.status, 429, 'Hosted quota: Developer run 501 is blocked');
     const quotaExceededBody = await readJson(quotaExceededRes);
     equal(
       quotaExceededBody.error,
       'Monthly pipeline run quota exceeded for this tenant plan.',
       'Hosted quota: rejection reason is explicit',
     );
-    equal(quotaExceededBody.usage.used, 10, 'Hosted quota: rejected run does not increment usage');
+    equal(quotaExceededBody.usage.used, 500, 'Hosted quota: rejected run does not increment usage');
     equal(quotaExceededBody.usage.remaining, 0, 'Hosted quota: rejected run reports exhausted quota');
 
     const keysRes = await fetch(`${baseUrl}/api/v1/account/api-keys`, {
@@ -320,7 +338,7 @@ async function main(): Promise<void> {
       typeof issueKeyBody.key.apiKey === 'string' && issueKeyBody.key.apiKey.startsWith('atk_'),
       'Hosted API keys: newly issued plaintext key is returned once',
     );
-    equal(issueKeyBody.key.planId, 'community', 'Hosted API keys: issued key inherits community plan');
+    equal(issueKeyBody.key.planId, 'developer', 'Hosted API keys: issued key inherits Developer plan');
 
     const secondApiKey = issueKeyBody.key.apiKey as string;
     const secondKeyUsageRes = await fetch(`${baseUrl}/api/v1/account/usage`, {
@@ -328,7 +346,7 @@ async function main(): Promise<void> {
     });
     equal(secondKeyUsageRes.status, 200, 'Hosted API keys: newly issued key authenticates');
     const secondKeyUsageBody = await readJson(secondKeyUsageRes);
-    equal(secondKeyUsageBody.usage.used, 10, 'Hosted API keys: usage stays tenant-scoped across keys');
+    equal(secondKeyUsageBody.usage.used, 500, 'Hosted API keys: usage stays tenant-scoped across keys');
 
     const revokeInitialKeyRes = await fetch(`${baseUrl}/api/v1/account/api-keys/${initialKeyId}/revoke`, {
       method: 'POST',

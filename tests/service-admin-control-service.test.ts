@@ -76,6 +76,7 @@ const proPlan: HostedPlanDefinition = {
   id: 'pro',
   displayName: 'Pro',
   description: 'Pro',
+  defaultEvaluationDays: null,
   defaultStripeTrialDays: null,
   defaultMonthlyRunQuota: 1000,
   defaultPipelineRequestsPerWindow: 100,

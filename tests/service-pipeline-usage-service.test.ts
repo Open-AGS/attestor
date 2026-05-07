@@ -19,7 +19,7 @@ function usage(overrides: Partial<UsageContext> = {}): UsageContext {
   return {
     tenantId: 'tenant_123',
     planId: 'pro',
-    meter: 'monthly_pipeline_runs',
+    meter: 'monthly_admission_runs',
     period: '2026-04',
     used: 3,
     quota: 10,

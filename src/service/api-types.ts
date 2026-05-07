@@ -1241,16 +1241,17 @@ export interface AdminAccountLifecycleResponse {
 }
 
 export interface HostedPlanSummary {
-  id: 'community' | 'starter' | 'pro' | 'enterprise';
+  id: 'developer' | 'trial' | 'starter' | 'pro' | 'scale' | 'enterprise';
   displayName: string;
   description: string;
+  defaultEvaluationDays: number | null;
   defaultStripeTrialDays: number | null;
   defaultMonthlyRunQuota: number | null;
   defaultPipelineRequestsPerWindow: number | null;
   defaultAsyncPendingJobsPerTenant: number | null;
   defaultAsyncActiveJobsPerTenant: number | null;
   stripePriceConfigured: boolean;
-  intendedFor: 'self_host' | 'hosted' | 'enterprise';
+  intendedFor: 'evaluation' | 'hosted' | 'enterprise';
   defaultForHostedProvisioning: boolean;
 }
 
@@ -1360,7 +1361,7 @@ export interface AdminUsageRecord {
   accountName: string | null;
   planId: string | null;
   monthlyRunQuota: number | null;
-  meter: 'monthly_pipeline_runs';
+  meter: 'monthly_admission_runs';
   period: string;
   used: number;
   remaining: number | null;
@@ -1552,7 +1553,7 @@ export interface AdminAsyncRetryResponse {
 export interface UsageContext {
   tenantId: string;
   planId: string;
-  meter: 'monthly_pipeline_runs';
+  meter: 'monthly_admission_runs';
   period: string;
   used: number;
   quota: number | null;

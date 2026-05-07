@@ -277,7 +277,7 @@ export function createAccountAuthService(deps: AccountAuthServiceDeps): AccountA
         initialKey: provisioned.initialKey,
         apiKey: provisioned.apiKey,
         commercial: {
-          currentPhase: resolvedPlan.plan?.intendedFor === 'self_host' ? 'evaluation' : 'paid',
+          currentPhase: resolvedPlan.plan?.intendedFor === 'evaluation' ? 'evaluation' : 'paid',
           includedMonthlyRunQuota: resolvedPlan.monthlyRunQuota,
           firstHostedPlanId: deps.DEFAULT_HOSTED_PLAN_ID,
           firstHostedPlanTrialDays: deps.resolvePlanStripeTrialDays(deps.DEFAULT_HOSTED_PLAN_ID).trialDays,

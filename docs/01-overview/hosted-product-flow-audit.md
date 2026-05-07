@@ -61,9 +61,9 @@ The refactor already moved the most important hosted flow responsibilities behin
 
 The current repo already covers important parts of the hosted product path:
 
-- `tests/live-api.test.ts` proves signup, first API key, community quota, API-key lifecycle, checkout, portal, signed webhook processing, entitlement summary updates, invoice outcomes, delinquency/suspension behavior, and route observability.
+- `tests/live-api.test.ts` proves signup, first API key, Developer quota, API-key lifecycle, checkout, portal, signed webhook processing, entitlement summary updates, invoice outcomes, delinquency/suspension behavior, and route observability.
 - `tests/live-control-plane-pg.test.ts` covers the same billing/entitlement shape against shared control-plane persistence.
-- `tests/stripe-commercial-config.test.ts` covers Stripe checkout/portal configuration, hosted plan pricing env vars, starter trial defaults, mock mode, and unsafe return URL rejection.
+- `tests/stripe-commercial-config.test.ts` covers Stripe checkout/portal configuration, hosted plan pricing env vars, free evaluation plan defaults, mock mode, and unsafe return URL rejection.
 - `tests/stripe-webhook-events.test.ts` guards the supported Stripe event list and canonical webhook route.
 - `tests/service-stripe-webhook-service.test.ts` covers signature enforcement, dedupe, replay, conflict, and shared-ledger/control-plane claim behavior.
 - `tests/service-stripe-webhook-billing-processor.test.ts` covers billing event processing behavior behind the route.

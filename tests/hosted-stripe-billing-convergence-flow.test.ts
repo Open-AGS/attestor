@@ -105,7 +105,7 @@ async function postStripeWebhook(baseUrl: string, payload: string): Promise<Resp
 function configureIsolatedStores(root: string): void {
   delete process.env.ATTESTOR_TENANT_KEYS;
   delete process.env.ATTESTOR_BILLING_LEDGER_PG_URL;
-  delete process.env.ATTESTOR_RATE_LIMIT_COMMUNITY_REQUESTS;
+  delete process.env.ATTESTOR_RATE_LIMIT_DEVELOPER_REQUESTS;
   delete process.env.ATTESTOR_RATE_LIMIT_STARTER_REQUESTS;
   delete process.env.ATTESTOR_RATE_LIMIT_PRO_REQUESTS;
   delete process.env.ATTESTOR_RATE_LIMIT_ENTERPRISE_REQUESTS;
@@ -138,6 +138,7 @@ function configureIsolatedStores(root: string): void {
   process.env.ATTESTOR_BILLING_PORTAL_RETURN_URL = 'https://attestor.dev/settings/billing';
   process.env.ATTESTOR_STRIPE_PRICE_STARTER = 'price_starter_monthly';
   process.env.ATTESTOR_STRIPE_PRICE_PRO = 'price_pro_monthly';
+  process.env.ATTESTOR_STRIPE_PRICE_SCALE = 'price_scale_monthly';
   process.env.ATTESTOR_STRIPE_PRICE_ENTERPRISE = 'price_enterprise_monthly';
 }
 
@@ -377,13 +378,13 @@ async function main(): Promise<void> {
 
     const invalidPlanRes = await postJson(
       `${baseUrl}/api/v1/account/billing/checkout`,
-      { planId: 'community' },
+      { planId: 'developer' },
       {
         Cookie: accountAdminCookie!,
-        'Idempotency-Key': 'billing-invalid-community',
+        'Idempotency-Key': 'billing-invalid-developer',
       },
     );
-    equal(invalidPlanRes.status, 400, 'Hosted checkout: community cannot be bought through Stripe checkout');
+    equal(invalidPlanRes.status, 400, 'Hosted checkout: Developer cannot be bought through Stripe checkout');
 
     const checkoutRes = await postJson(
       `${baseUrl}/api/v1/account/billing/checkout`,
@@ -421,7 +422,7 @@ async function main(): Promise<void> {
     equal(entitlementAfterCheckoutRes.status, 200, 'Hosted entitlement: readable after checkout start');
     const entitlementAfterCheckoutBody = await readJson(entitlementAfterCheckoutRes);
     equal(entitlementAfterCheckoutBody.entitlement.status, 'provisioned', 'Hosted entitlement: checkout start alone does not activate paid access');
-    equal(entitlementAfterCheckoutBody.entitlement.effectivePlanId, 'community', 'Hosted entitlement: evaluation plan remains active until webhook convergence');
+    equal(entitlementAfterCheckoutBody.entitlement.effectivePlanId, 'developer', 'Hosted entitlement: evaluation plan remains active until webhook convergence');
 
     const portalBeforeCustomerRes = await fetch(`${baseUrl}/api/v1/account/billing/portal`, {
       method: 'POST',
@@ -558,7 +559,7 @@ async function main(): Promise<void> {
     equal(unblockedUsageRes.status, 200, 'Hosted enforcement: active paid account can use tenant APIs again');
     const unblockedUsageBody = await readJson(unblockedUsageRes);
     equal(unblockedUsageBody.tenantContext.planId, 'pro', 'Hosted enforcement: restored tenant API sees pro plan');
-    equal(unblockedUsageBody.usage.quota, 1000, 'Hosted enforcement: pro quota is visible after billing convergence');
+    equal(unblockedUsageBody.usage.quota, 250000, 'Hosted enforcement: pro quota is visible after billing convergence');
 
     const invoiceFailedRes = await postStripeWebhook(baseUrl, invoicePayload({
       eventId: 'evt_hosted_invoice_failed',

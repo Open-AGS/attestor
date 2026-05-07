@@ -48,7 +48,7 @@ Expected shape:
 {
   "tenantContext": {
     "source": "api_key",
-    "planId": "community"
+    "planId": "developer"
   },
   "usage": {
     "used": 0,
@@ -130,7 +130,7 @@ Expected shape:
   "proofMode": "offline_fixture",
   "tenantContext": {
     "source": "api_key",
-    "planId": "community"
+    "planId": "developer"
   },
   "usage": {
     "used": 1,

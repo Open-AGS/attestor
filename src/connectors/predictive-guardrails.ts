@@ -16,7 +16,12 @@
  * - A replacement for runtime guardrails (those still run independently)
  */
 
-import { enforceAllowedSchemas, validateReadOnlySql } from './postgres.js';
+import {
+  enforceAllowedSchemas,
+  noteConnectorCleanupFailure,
+  sanitizeConnectorError,
+  validateReadOnlySql,
+} from './postgres.js';
 
 export interface PredictiveGuardrailResult {
   /** Whether the preflight was performed. */
@@ -47,6 +52,13 @@ export interface PredictiveRiskSignal {
 
 export interface PredictivePreflightOptions {
   readonly allowedSchemas?: readonly string[];
+  readonly statementTimeoutMs?: number | null;
+}
+
+function boundedPostgresStatementTimeoutMs(timeoutMs: number | null | undefined): number {
+  return typeof timeoutMs === 'number' && Number.isFinite(timeoutMs) && timeoutMs > 0
+    ? Math.trunc(timeoutMs)
+    : 10000;
 }
 
 // Risk Thresholds
@@ -229,26 +241,36 @@ export async function runPredictivePreflight(
   }
 
   const client = new Client({ connectionString: connectionUrl });
+  const timeoutMs = boundedPostgresStatementTimeoutMs(options.statementTimeoutMs);
+  let transactionStarted = false;
   try {
     await client.connect();
+    await client.query('BEGIN TRANSACTION READ ONLY');
+    transactionStarted = true;
+    await client.query(`SET LOCAL statement_timeout = '${timeoutMs}'`);
     const result = await client.query(`EXPLAIN (FORMAT JSON) ${sql}`);
     const explainJson = result.rows[0]?.['QUERY PLAN'];
-    await client.end();
+    await client.query('ROLLBACK');
+    transactionStarted = false;
     return analyzePlan(explainJson);
   } catch (err) {
-    try { await client.end(); } catch { /* ignore */ }
+    if (transactionStarted) {
+      try { await client.query('ROLLBACK'); } catch { noteConnectorCleanupFailure('postgres-predictive-preflight', 'rollback'); }
+    }
     return {
       performed: false,
       riskLevel: 'critical',
       signals: [{
         signal: 'explain_failed',
         severity: 'critical',
-        detail: err instanceof Error ? err.message : String(err),
+        detail: sanitizeConnectorError(err, 'PostgreSQL EXPLAIN preflight failed.'),
         threshold: 'successful EXPLAIN preflight',
         observed: 'error',
       }],
       recommendation: 'deny',
       plannerEvidence: null,
     };
+  } finally {
+    try { await client.end(); } catch { noteConnectorCleanupFailure('postgres-predictive-preflight', 'disconnect'); }
   }
 }

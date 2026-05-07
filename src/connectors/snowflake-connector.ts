@@ -14,7 +14,7 @@ import type {
   DatabaseConnector, ConnectorConfig, ConnectorExecutionResult,
   ConnectorPreflightResult, ConnectorProbeResult,
 } from './connector-interface.js';
-import { validateReadOnlySql } from './postgres.js';
+import { noteConnectorCleanupFailure, sanitizeConnectorError, validateReadOnlySql } from './postgres.js';
 import { captureSnowflakeSchemaAttestation } from './snowflake-attestation.js';
 
 // ─── Configuration ──────────────────────────────────────────────────────────
@@ -95,6 +95,13 @@ function boundedSnowflakeStatementTimeoutSeconds(timeoutMs: number | undefined):
 
 function quoteSnowflakeString(value: string): string {
   return `'${value.replace(/'/g, "''")}'`;
+}
+
+function destroySnowflakeConnection(conn: any, phase: string): void {
+  if (!conn) return;
+  conn.destroy((err: unknown) => {
+    if (err) noteConnectorCleanupFailure('snowflake', phase);
+  });
 }
 
 function execSql(conn: any, sql: string, timeoutMs?: number): Promise<any[]> {
@@ -303,8 +310,7 @@ export const snowflakeConnector: DatabaseConnector = {
       const ctx = ctxRows[0] as any;
       const executionContextHash = createHash('sha256')
         .update(`${ctx.VER}|${ctx.ACCT}|${ctx.DB}|${ctx.SCH}|${ctx.ROLE}|${ctx.WH}|snowflake`)
-        .digest('hex')
-        .slice(0, 16);
+        .digest('hex');
 
       // Capture schema attestation (best-effort)
       let schemaAttestationResult: ConnectorExecutionResult['schemaAttestation'] = null;
@@ -349,10 +355,11 @@ export const snowflakeConnector: DatabaseConnector = {
       return {
         success: false, provider: 'snowflake', durationMs: Date.now() - start,
         rowCount: 0, columns: [], columnTypes: [], rows: [],
-        error: err.message ?? String(err), executionContextHash: null, executionTimestamp: timestamp,
+        error: sanitizeConnectorError(err, 'Snowflake connector execution failed.'),
+        executionContextHash: null, executionTimestamp: timestamp,
       };
     } finally {
-      if (conn) conn.destroy(() => {});
+      destroySnowflakeConnection(conn, 'execute-disconnect');
     }
   },
 
@@ -413,10 +420,14 @@ export const snowflakeConnector: DatabaseConnector = {
     } catch (err: any) {
       return {
         performed: false, provider: 'snowflake', riskLevel: 'critical', recommendation: 'deny',
-        signals: [{ signal: 'explain_failed', severity: 'critical', detail: err.message }],
+        signals: [{
+          signal: 'explain_failed',
+          severity: 'critical',
+          detail: sanitizeConnectorError(err, 'Snowflake EXPLAIN preflight failed.'),
+        }],
       };
     } finally {
-      if (conn) conn.destroy(() => {});
+      destroySnowflakeConnection(conn, 'preflight-disconnect');
     }
   },
 
@@ -448,10 +459,11 @@ export const snowflakeConnector: DatabaseConnector = {
 
       return { provider: 'snowflake', success: steps.every(s => s.passed), steps, serverVersion, message: 'Snowflake probe passed' };
     } catch (err: any) {
-      steps.push({ step: 'connect', passed: false, detail: err.message });
-      return { provider: 'snowflake', success: false, steps, serverVersion, message: `Probe failed: ${err.message}` };
+      const sanitized = sanitizeConnectorError(err, 'Snowflake probe failed.');
+      steps.push({ step: 'connect', passed: false, detail: sanitized });
+      return { provider: 'snowflake', success: false, steps, serverVersion, message: sanitized };
     } finally {
-      if (conn) conn.destroy(() => {});
+      destroySnowflakeConnection(conn, 'probe-disconnect');
     }
   },
 };

@@ -58,13 +58,61 @@ export interface PostgresExecutionResult {
 
 // ─── SQL Safety ──────────────────────────────────────────────────────────────
 
-const WRITE_PATTERNS = /\b(INSERT|UPDATE|DELETE|DROP|ALTER|TRUNCATE|CREATE|GRANT|REVOKE|EXEC|CALL)\b/i;
+const WRITE_PATTERNS = /\b(INSERT|UPDATE|DELETE|DROP|ALTER|TRUNCATE|CREATE|REPLACE|MERGE|UPSERT|GRANT|REVOKE|EXEC|EXECUTE|CALL)\b/i;
+const FORBIDDEN_CLAUSES = /\b(INTO\s+OUTFILE|INTO\s+DUMPFILE|LOAD\s+DATA|LOAD_FILE|PG_SLEEP|WAITFOR|XP_CMDSHELL|SP_EXECUTESQL)\b/i;
+const INJECTION_PATTERNS = [
+  /\bUNION\s+(?:ALL\s+)?SELECT\b[\s\S]*\b(?:INFORMATION_SCHEMA|PG_CATALOG)\b/i,
+  /\bOR\s+1\s*=\s*1\b/i,
+  /\bAND\s+1\s*=\s*1\b/i,
+  /\bBENCHMARK\s*\(/i,
+];
 const STACKED_QUERY_PATTERN = /;\s*\S/;
 const TABLE_REF_PATTERN = /\b(?:FROM|JOIN|INTO|UPDATE|TABLE)\s+(?:"?(\w+)"?\.)?"?(\w+)"?/gi;
 
+function stripDollarQuotedStrings(sql: string): string {
+  return sql.replace(/\$([A-Za-z_][A-Za-z0-9_]*)?\$[\s\S]*?\$\1\$/g, ' ');
+}
+
+export function sqlForGovernance(sql: string): string {
+  return stripDollarQuotedStrings(sql)
+    .replace(/--[^\n]*/g, ' ')
+    .replace(/\/\*[\s\S]*?\*\//g, ' ')
+    .replace(/(?:\b(?:E|U&))?'(?:''|\\.|[^'])*'/gi, ' ')
+    .trim();
+}
+
+export function sanitizeConnectorError(
+  error: unknown,
+  publicMessage = 'Connector execution failed.',
+): string {
+  const raw = error instanceof Error ? error.message : String(error);
+  const errorRef = createHash('sha256')
+    .update(raw)
+    .digest('hex')
+    .slice(0, 16);
+  return `${publicMessage} errorRef=connector-error:${errorRef}`;
+}
+
+export function noteConnectorCleanupFailure(provider: string, phase: string): void {
+  process.emitWarning(
+    `${provider} connector cleanup failed during ${phase}.`,
+    { code: 'ATTESTOR_CONNECTOR_CLEANUP_FAILED' },
+  );
+}
+
+function boundedPostgresStatementTimeoutMs(timeoutMs: number | undefined): number {
+  return typeof timeoutMs === 'number' && Number.isFinite(timeoutMs) && timeoutMs > 0
+    ? Math.trunc(timeoutMs)
+    : 10000;
+}
+
 export function validateReadOnlySql(sql: string): void {
-  const stripped = sql.replace(/--[^\n]*/g, ' ').replace(/\/\*[\s\S]*?\*\//g, ' ').trim();
+  const stripped = sqlForGovernance(sql);
   if (WRITE_PATTERNS.test(stripped)) throw new Error('Write operation detected. Only SELECT/WITH allowed.');
+  if (FORBIDDEN_CLAUSES.test(stripped)) throw new Error('Forbidden SQL clause detected. Only bounded read-only SELECT/WITH allowed.');
+  for (const pattern of INJECTION_PATTERNS) {
+    if (pattern.test(stripped)) throw new Error('SQL injection pattern detected. Query rejected before connector execution.');
+  }
   if (STACKED_QUERY_PATTERN.test(stripped)) throw new Error('Stacked queries detected. Single SELECT only.');
   if (!/^\s*(SELECT|WITH)\b/i.test(stripped)) throw new Error(`Query must start with SELECT or WITH.`);
 }
@@ -79,6 +127,8 @@ export function validateReadOnlySql(sql: string): void {
  *
  * This is a safety-first design: require explicit schema qualification
  * when an allowlist is active, even if it is less convenient.
+ * CTE aliases are not expanded by this regex-based gate; they remain
+ * rejected as unqualified references until a parser-aware allowlist is used.
  */
 export function enforceAllowedSchemas(sql: string, allowedSchemas: string[]): void {
   if (allowedSchemas.length === 0) return;
@@ -86,7 +136,8 @@ export function enforceAllowedSchemas(sql: string, allowedSchemas: string[]): vo
   const refs: Array<{ schema: string | null; table: string }> = [];
   let match: RegExpExecArray | null;
   const pattern = new RegExp(TABLE_REF_PATTERN.source, TABLE_REF_PATTERN.flags);
-  while ((match = pattern.exec(sql)) !== null) {
+  const stripped = sqlForGovernance(sql);
+  while ((match = pattern.exec(stripped)) !== null) {
     refs.push({ schema: match[1]?.toLowerCase() ?? null, table: match[2].toLowerCase() });
   }
   for (const ref of refs) {
@@ -122,7 +173,7 @@ export async function executePostgresQuery(
     return { success: false, durationMs: Date.now() - start, rowCount: 0, columns: [], columnTypes: [], rows: [], error: err instanceof Error ? err.message : String(err), executionContextHash: null, executionTimestamp };
   }
 
-  const timeoutMs = config.statementTimeoutMs ?? 10000;
+  const timeoutMs = boundedPostgresStatementTimeoutMs(config.statementTimeoutMs);
   const maxRows = config.maxRows ?? 10000;
   const boundedSql = injectLimit(sql, maxRows);
 
@@ -146,7 +197,7 @@ export async function executePostgresQuery(
     const versionResult = await client.query('SELECT version(), current_schemas(false)::text AS schemas');
     const serverVersion = versionResult.rows[0]?.version ?? 'unknown';
     const currentSchemas = versionResult.rows[0]?.schemas ?? 'unknown';
-    const executionContextHash = createHash('sha256').update(`${serverVersion}|${currentSchemas}|${config.connectionUrl.replace(/:[^@]*@/, ':***@')}`).digest('hex').slice(0, 16);
+    const executionContextHash = createHash('sha256').update(`${serverVersion}|${currentSchemas}|${config.connectionUrl.replace(/:[^@]*@/, ':***@')}`).digest('hex');
 
     const result = await client.query(boundedSql);
     await client.query('ROLLBACK');
@@ -177,10 +228,10 @@ export async function executePostgresQuery(
 
     return { success: true, durationMs: Date.now() - start, rowCount: result.rowCount ?? rows.length, columns, columnTypes, rows, error: null, executionContextHash, executionTimestamp };
   } catch (err) {
-    try { await client.query('ROLLBACK'); } catch { /* ignore */ }
-    return { success: false, durationMs: Date.now() - start, rowCount: 0, columns: [], columnTypes: [], rows: [], error: err instanceof Error ? err.message : String(err), executionContextHash: null, executionTimestamp };
+    try { await client.query('ROLLBACK'); } catch { noteConnectorCleanupFailure('postgres', 'rollback'); }
+    return { success: false, durationMs: Date.now() - start, rowCount: 0, columns: [], columnTypes: [], rows: [], error: sanitizeConnectorError(err, 'PostgreSQL connector execution failed.'), executionContextHash: null, executionTimestamp };
   } finally {
-    try { await client.end(); } catch { /* ignore */ }
+    try { await client.end(); } catch { noteConnectorCleanupFailure('postgres', 'disconnect'); }
   }
 }
 
@@ -296,9 +347,9 @@ export async function runPostgresProbe(): Promise<PostgresProbeResult> {
   try {
     await client.connect();
   } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
+    const msg = sanitizeConnectorError(err, 'PostgreSQL probe connection failed.');
     steps.push({ step: 'connect', passed: false, detail: msg, remediation: 'Check: host reachable, port open, credentials correct, database exists. Verify ATTESTOR_PG_URL.' });
-    return { attempted: true, success: false, steps, serverVersion, currentSchemas, sanitizedUrl, message: `Connection failed: ${msg}` };
+    return { attempted: true, success: false, steps, serverVersion, currentSchemas, sanitizedUrl, message: msg };
   }
   steps.push({ step: 'connect', passed: true, detail: 'Connection established', remediation: null });
 
@@ -309,10 +360,10 @@ export async function runPostgresProbe(): Promise<PostgresProbeResult> {
     if (!serverVersion) throw new Error('version() returned null');
     steps.push({ step: 'version', passed: true, detail: `Server: ${serverVersion.split(',')[0]}`, remediation: null });
   } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
+    const msg = sanitizeConnectorError(err, 'PostgreSQL probe version check failed.');
     steps.push({ step: 'version', passed: false, detail: msg, remediation: 'Check: user has permission to run SELECT version(). Database may require specific privileges.' });
-    try { await client.end(); } catch { /* ignore */ }
-    return { attempted: true, success: false, steps, serverVersion, currentSchemas, sanitizedUrl, message: `Version check failed: ${msg}` };
+    try { await client.end(); } catch { noteConnectorCleanupFailure('postgres-probe', 'disconnect'); }
+    return { attempted: true, success: false, steps, serverVersion, currentSchemas, sanitizedUrl, message: msg };
   }
 
   // Step 6: Schemas (separate try/catch)
@@ -322,10 +373,10 @@ export async function runPostgresProbe(): Promise<PostgresProbeResult> {
     if (!currentSchemas) throw new Error('current_schemas() returned null');
     steps.push({ step: 'schemas', passed: true, detail: `Schemas: ${currentSchemas}`, remediation: null });
   } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
+    const msg = sanitizeConnectorError(err, 'PostgreSQL probe schema check failed.');
     steps.push({ step: 'schemas', passed: false, detail: msg, remediation: 'Check: schema search path is configured. User may lack schema-level permissions.' });
-    try { await client.end(); } catch { /* ignore */ }
-    return { attempted: true, success: false, steps, serverVersion, currentSchemas, sanitizedUrl, message: `Schema check failed: ${msg}` };
+    try { await client.end(); } catch { noteConnectorCleanupFailure('postgres-probe', 'disconnect'); }
+    return { attempted: true, success: false, steps, serverVersion, currentSchemas, sanitizedUrl, message: msg };
   }
 
   // Step 7: Read-only transaction (separate try/catch)
@@ -334,13 +385,13 @@ export async function runPostgresProbe(): Promise<PostgresProbeResult> {
     await client.query('ROLLBACK');
     steps.push({ step: 'readonly_txn', passed: true, detail: 'Read-only transaction works', remediation: null });
   } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
+    const msg = sanitizeConnectorError(err, 'PostgreSQL probe read-only transaction check failed.');
     steps.push({ step: 'readonly_txn', passed: false, detail: msg, remediation: 'Check: user has permission to begin read-only transactions. Database may restrict transaction modes.' });
-    try { await client.end(); } catch { /* ignore */ }
-    return { attempted: true, success: false, steps, serverVersion, currentSchemas, sanitizedUrl, message: `Read-only transaction check failed: ${msg}` };
+    try { await client.end(); } catch { noteConnectorCleanupFailure('postgres-probe', 'disconnect'); }
+    return { attempted: true, success: false, steps, serverVersion, currentSchemas, sanitizedUrl, message: msg };
   }
 
-  try { await client.end(); } catch { /* ignore */ }
+  try { await client.end(); } catch { noteConnectorCleanupFailure('postgres-probe', 'disconnect'); }
 
   const allPassed = steps.every(s => s.passed);
   return {

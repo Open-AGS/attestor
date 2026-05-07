@@ -51,6 +51,7 @@ export const HOSTED_JOURNEY_TRUTH_SOURCES = {
   productPositioning: 'README.md',
   operatingModel: 'docs/01-overview/operating-model.md',
   pricingPackaging: 'docs/01-overview/product-packaging.md',
+  pricingRoiCalculator: 'docs/01-overview/pricing-roi-calculator.md',
   customerNarrative: 'docs/01-overview/hosted-customer-journey.md',
   firstApiCallQuickstart: 'docs/01-overview/hosted-first-api-call.md',
   customerAdmissionGate: 'docs/01-overview/customer-admission-gate.md',

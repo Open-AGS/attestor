@@ -61,6 +61,11 @@ assert(
   stableJson(rootLockPackage?.devDependencies) === stableJson(packageJson.devDependencies),
   'package-lock root devDependencies must match package.json devDependencies.',
 );
+assert(
+  typeof packageJson.scripts?.['sbom:cyclonedx'] === 'string' &&
+    packageJson.scripts['sbom:cyclonedx'].includes('npm sbom'),
+  'package.json must expose a CycloneDX SBOM generation script.',
+);
 
 const allowedInstallScriptPackages = new Set([
   'esbuild',
@@ -118,6 +123,25 @@ for (const workflowFile of workflowFiles) {
 
   if (/\bsecurity-events:\s*write\b/u.test(workflow)) {
     assert(workflowFile === 'codeql.yml', `${workflowFile} must not request security-events: write.`);
+  }
+
+  if (workflowFile === 'release-provenance.yml') {
+    assert(
+      workflow.includes('npm run sbom:cyclonedx') && workflow.includes('sbom.cyclonedx.json'),
+      'release-provenance.yml must generate and package a CycloneDX SBOM.',
+    );
+  }
+
+  const actionRefs = workflow.matchAll(/^\s*uses:\s*([^\s#]+)(?:\s+#.*)?$/gmu);
+  for (const match of actionRefs) {
+    const actionRef = match[1] ?? '';
+    if (actionRef.startsWith('./') || actionRef.startsWith('docker://')) {
+      continue;
+    }
+    assert(
+      /@[0-9a-f]{40}$/u.test(actionRef),
+      `${workflowFile} must pin GitHub Actions by full commit SHA: ${actionRef}`,
+    );
   }
 }
 

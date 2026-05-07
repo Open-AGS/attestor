@@ -21,3 +21,12 @@ updates:
       time: "06:30"
       timezone: "Europe/Budapest"
     open-pull-requests-limit: 5
+
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "07:00"
+      timezone: "Europe/Budapest"
+    open-pull-requests-limit: 5

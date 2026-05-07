@@ -20,9 +20,9 @@ services:
       PORT: 3700
       ATTESTOR_INSTANCE_ID: api1
       ATTESTOR_HA_MODE: "true"
-      ATTESTOR_PG_URL: postgresql://attestor:attestor@postgres:5432/attestor
-      ATTESTOR_CONTROL_PLANE_PG_URL: postgresql://attestor:attestor@postgres:5432/attestor
-      ATTESTOR_BILLING_LEDGER_PG_URL: postgresql://attestor:attestor@postgres:5432/attestor
+      ATTESTOR_PG_URL: postgresql://${ATTESTOR_DB_USER:?set ATTESTOR_DB_USER}:${ATTESTOR_DB_PASSWORD:?set ATTESTOR_DB_PASSWORD}@postgres:5432/${ATTESTOR_DB_NAME:-attestor}
+      ATTESTOR_CONTROL_PLANE_PG_URL: postgresql://${ATTESTOR_DB_USER:?set ATTESTOR_DB_USER}:${ATTESTOR_DB_PASSWORD:?set ATTESTOR_DB_PASSWORD}@postgres:5432/${ATTESTOR_DB_NAME:-attestor}
+      ATTESTOR_BILLING_LEDGER_PG_URL: postgresql://${ATTESTOR_DB_USER:?set ATTESTOR_DB_USER}:${ATTESTOR_DB_PASSWORD:?set ATTESTOR_DB_PASSWORD}@postgres:5432/${ATTESTOR_DB_NAME:-attestor}
       REDIS_URL: redis://redis:6379
       ATTESTOR_RATE_LIMIT_REDIS_URL: redis://redis:6379
       ATTESTOR_ASYNC_ACTIVE_REDIS_URL: redis://redis:6379
@@ -33,7 +33,7 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget -q --spider http://localhost:3700/api/v1/ready || exit 1"]
+      test: ["CMD-SHELL", "node -e \"require('node:http').get('http://localhost:3700/api/v1/ready', (res) => process.exit(res.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))\""]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -48,9 +48,9 @@ services:
       PORT: 3700
       ATTESTOR_INSTANCE_ID: api2
       ATTESTOR_HA_MODE: "true"
-      ATTESTOR_PG_URL: postgresql://attestor:attestor@postgres:5432/attestor
-      ATTESTOR_CONTROL_PLANE_PG_URL: postgresql://attestor:attestor@postgres:5432/attestor
-      ATTESTOR_BILLING_LEDGER_PG_URL: postgresql://attestor:attestor@postgres:5432/attestor
+      ATTESTOR_PG_URL: postgresql://${ATTESTOR_DB_USER:?set ATTESTOR_DB_USER}:${ATTESTOR_DB_PASSWORD:?set ATTESTOR_DB_PASSWORD}@postgres:5432/${ATTESTOR_DB_NAME:-attestor}
+      ATTESTOR_CONTROL_PLANE_PG_URL: postgresql://${ATTESTOR_DB_USER:?set ATTESTOR_DB_USER}:${ATTESTOR_DB_PASSWORD:?set ATTESTOR_DB_PASSWORD}@postgres:5432/${ATTESTOR_DB_NAME:-attestor}
+      ATTESTOR_BILLING_LEDGER_PG_URL: postgresql://${ATTESTOR_DB_USER:?set ATTESTOR_DB_USER}:${ATTESTOR_DB_PASSWORD:?set ATTESTOR_DB_PASSWORD}@postgres:5432/${ATTESTOR_DB_NAME:-attestor}
       REDIS_URL: redis://redis:6379
       ATTESTOR_RATE_LIMIT_REDIS_URL: redis://redis:6379
       ATTESTOR_ASYNC_ACTIVE_REDIS_URL: redis://redis:6379
@@ -61,7 +61,7 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget -q --spider http://localhost:3700/api/v1/ready || exit 1"]
+      test: ["CMD-SHELL", "node -e \"require('node:http').get('http://localhost:3700/api/v1/ready', (res) => process.exit(res.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))\""]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -74,7 +74,7 @@ services:
       ATTESTOR_INSTANCE_ID: worker1
       ATTESTOR_HA_MODE: "true"
       REDIS_URL: redis://redis:6379
-      ATTESTOR_PG_URL: postgresql://attestor:attestor@postgres:5432/attestor
+      ATTESTOR_PG_URL: postgresql://${ATTESTOR_DB_USER:?set ATTESTOR_DB_USER}:${ATTESTOR_DB_PASSWORD:?set ATTESTOR_DB_PASSWORD}@postgres:5432/${ATTESTOR_DB_NAME:-attestor}
     depends_on:
       redis:
         condition: service_healthy
@@ -87,7 +87,7 @@ services:
       ATTESTOR_INSTANCE_ID: worker2
       ATTESTOR_HA_MODE: "true"
       REDIS_URL: redis://redis:6379
-      ATTESTOR_PG_URL: postgresql://attestor:attestor@postgres:5432/attestor
+      ATTESTOR_PG_URL: postgresql://${ATTESTOR_DB_USER:?set ATTESTOR_DB_USER}:${ATTESTOR_DB_PASSWORD:?set ATTESTOR_DB_PASSWORD}@postgres:5432/${ATTESTOR_DB_NAME:-attestor}
     depends_on:
       redis:
         condition: service_healthy
@@ -96,9 +96,9 @@ services:
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_USER: attestor
-      POSTGRES_PASSWORD: attestor
-      POSTGRES_DB: attestor
+      POSTGRES_USER: ${ATTESTOR_DB_USER:?set ATTESTOR_DB_USER}
+      POSTGRES_PASSWORD: ${ATTESTOR_DB_PASSWORD:?set ATTESTOR_DB_PASSWORD}
+      POSTGRES_DB: ${ATTESTOR_DB_NAME:-attestor}
     volumes:
       - pg_data:/var/lib/postgresql/data
     healthcheck:

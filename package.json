@@ -45,6 +45,7 @@
     "typecheck:hygiene": "tsc --noEmit --noUnusedLocals --noUnusedParameters",
     "security:audit-high": "npm audit --audit-level=high",
     "security:supply-chain-baseline": "node scripts/check-supply-chain-baseline.mjs",
+    "sbom:cyclonedx": "npm sbom --package-lock-only --sbom-format cyclonedx --sbom-type application > .attestor/release-provenance/sbom.cyclonedx.json",
     "test": "node scripts/run-suite.mjs test",
     "test:financial": "tsx src/financial/financial.test.ts",
     "test:financial-hmac-verification": "tsx tests/financial-hmac-verification.test.ts",

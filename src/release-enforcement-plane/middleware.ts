@@ -38,6 +38,10 @@ import {
   type EnforcementFailureReason,
   type CreateEnforcementPointReferenceInput,
 } from './types.js';
+import type {
+  NonceLedgerEntry,
+  ReplayLedgerEntry,
+} from './freshness.js';
 
 /**
  * Reference Node and Hono policy-enforcement-point middleware.
@@ -121,6 +125,8 @@ export interface ReleaseEnforcementMiddlewareOptions {
   readonly releaseTokenId?: ReleaseEnforcementResolver<string | null | undefined>;
   readonly releaseDecisionId?: ReleaseEnforcementResolver<string | null | undefined>;
   readonly idempotencyKey?: ReleaseEnforcementResolver<string | null | undefined>;
+  readonly replayLedgerEntry?: ReleaseEnforcementResolver<ReplayLedgerEntry | null | undefined>;
+  readonly nonceLedgerEntry?: ReleaseEnforcementResolver<NonceLedgerEntry | null | undefined>;
   readonly buildInput?: (
     context: ReleaseEnforcementHttpContext,
   ) => OfflineReleaseVerificationInput | OnlineReleaseVerificationInput | Promise<OfflineReleaseVerificationInput | OnlineReleaseVerificationInput>;
@@ -504,6 +510,8 @@ async function defaultInputForHttpRequest(
     presentation,
     verificationKey,
     now: context.checkedAt,
+    replayLedgerEntry: await resolveOption(options.replayLedgerEntry, context),
+    nonceLedgerEntry: await resolveOption(options.nonceLedgerEntry, context),
   };
 
   if (options.verifierMode === 'online' || options.forceOnlineIntrospection === true) {

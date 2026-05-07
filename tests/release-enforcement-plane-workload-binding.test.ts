@@ -286,6 +286,7 @@ async function testMtlsPresentationAndOfflineVerifier(): Promise<void> {
     request,
     presentation,
     verificationKey,
+    replayLedgerEntry: null,
     now: '2026-04-18T12:01:00.000Z',
   });
 
@@ -318,6 +319,7 @@ async function testMtlsRejectsWrongCertificate(): Promise<void> {
       presentedAt: '2026-04-18T12:01:00.000Z',
     }),
     verificationKey,
+    replayLedgerEntry: null,
     now: '2026-04-18T12:01:00.000Z',
   });
 
@@ -345,6 +347,7 @@ async function testMtlsRejectsUnboundToken(): Promise<void> {
       presentedAt: '2026-04-18T12:01:00.000Z',
     }),
     verificationKey,
+    replayLedgerEntry: null,
     now: '2026-04-18T12:01:00.000Z',
   });
 
@@ -392,6 +395,7 @@ async function testSpiffePresentationAndOfflineVerifier(): Promise<void> {
     request,
     presentation,
     verificationKey,
+    replayLedgerEntry: null,
     now: '2026-04-18T12:01:00.000Z',
   });
 
@@ -427,6 +431,7 @@ async function testSpiffeRejectsWrongIdentity(): Promise<void> {
       presentedAt: '2026-04-18T12:01:00.000Z',
     }),
     verificationKey,
+    replayLedgerEntry: null,
     now: '2026-04-18T12:01:00.000Z',
   });
 
@@ -464,6 +469,7 @@ async function testSpiffeRejectsWrongSvidThumbprint(): Promise<void> {
       presentedAt: '2026-04-18T12:01:00.000Z',
     }),
     verificationKey,
+    replayLedgerEntry: null,
     now: '2026-04-18T12:01:00.000Z',
   });
 
@@ -527,6 +533,7 @@ async function testTokenExchangePreservesWorkloadBinding(): Promise<void> {
       presentedAt: '2026-04-18T12:01:30.000Z',
     }),
     verificationKey,
+    replayLedgerEntry: null,
     now: '2026-04-18T12:01:30.000Z',
   });
 

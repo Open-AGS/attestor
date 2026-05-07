@@ -181,7 +181,7 @@ function options(input: {
   readonly store?: ReleaseTokenIntrospectionStore;
   readonly verifierMode?: 'offline' | 'online';
   readonly nonce?: string;
-  readonly replayLedgerEntry?: ReplayLedgerEntry;
+  readonly replayLedgerEntry?: ReplayLedgerEntry | null;
 }) {
   return {
     verificationKey: input.verificationKey,
@@ -194,7 +194,7 @@ function options(input: {
     usageStore: input.store,
     verifierMode: input.verifierMode,
     requestId: 'erq-action-dispatch-test',
-    replayLedgerEntry: input.replayLedgerEntry,
+    replayLedgerEntry: input.replayLedgerEntry ?? null,
     nonceLedgerEntry: input.nonce ? nonceLedgerEntry(input.nonce) : undefined,
     now: () => '2026-04-18T19:01:00.000Z',
   };

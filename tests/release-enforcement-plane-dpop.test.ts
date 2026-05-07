@@ -239,6 +239,7 @@ async function testOfflineVerifierAcceptsDpopBoundToken(): Promise<void> {
     presentation,
     verificationKey,
     now: '2026-04-18T11:01:10.000Z',
+    replayLedgerEntry: null,
   });
 
   equal(verified.status, 'valid', 'DPoP: offline verifier accepts matching DPoP-bound release token');
@@ -616,6 +617,7 @@ async function testHighRiskDpopPresentationWorksWithOnlineVerifier(): Promise<vo
     verificationKey,
     now: '2026-04-18T11:01:10.000Z',
     introspector,
+    replayLedgerEntry: null,
     nonceLedgerEntry: {
       nonce: 'nonce-r4',
       issuedAt: '2026-04-18T11:00:50.000Z',

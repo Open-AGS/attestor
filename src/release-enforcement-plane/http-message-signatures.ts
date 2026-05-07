@@ -702,6 +702,9 @@ function coverageFailureReasons(input: {
   readonly coveredComponents: readonly string[];
   readonly requiredCoveredComponents: readonly string[];
 }): readonly EnforcementFailureReason[] {
+  if (input.requiredCoveredComponents.length === 0) {
+    return ['binding-mismatch'];
+  }
   const covered = new Set(input.coveredComponents.map(normalizeComponentName));
   const missing = input.requiredCoveredComponents
     .map(normalizeComponentName)
@@ -863,7 +866,9 @@ export async function verifyHttpMessageSignature(
   const created = numericParam(parsed.params, 'created');
   const expires = numericParam(parsed.params, 'expires');
   const requiredCoveredComponents =
-    input.requiredCoveredComponents ?? DEFAULT_HTTP_AUTHORIZATION_ENVELOPE_COMPONENTS;
+    input.requiredCoveredComponents === undefined
+      ? DEFAULT_HTTP_AUTHORIZATION_ENVELOPE_COMPONENTS
+      : Object.freeze(input.requiredCoveredComponents.map(normalizeComponentName));
   const headers = normalizeHttpMessageHeaders(input.message.headers);
   const failureReasons: EnforcementFailureReason[] = [];
   let publicKeyThumbprintValue: string | null = null;

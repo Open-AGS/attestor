@@ -281,6 +281,7 @@ async function testOfflineVerifierAcceptsHttpMessageSignature(): Promise<void> {
       issuedAt: '2026-04-18T13:00:50.000Z',
       expiresAt: '2026-04-18T13:01:30.000Z',
     },
+    replayLedgerEntry: null,
     httpMessageSignature: {
       message: httpMessageFromAuthorizationEnvelope(envelope, BODY),
       publicJwk: signatureKey.publicJwk,
@@ -367,6 +368,28 @@ async function testCoverageRequirementsFailClosed(): Promise<void> {
     ['@method', '@target-uri'],
     'HTTP signatures: default coverage begins with derived request binding',
   );
+}
+
+async function testEmptyCoverageRequirementFailsClosed(): Promise<void> {
+  const signatureKey = await generateHttpMessageSignatureKeyPair();
+  const { issued } = await issueHttpSignatureBoundToken({
+    signatureKey,
+    tokenId: 'rt_http_sig_empty_coverage',
+    decisionId: 'decision-http-sig-empty-coverage',
+  });
+  const envelope = await makeEnvelope({ signatureKey, issued });
+  const verified = await verifyHttpMessageSignature({
+    message: httpMessageFromAuthorizationEnvelope(envelope, BODY),
+    signatureInput: envelope.signatureInput,
+    signature: envelope.signature,
+    publicJwk: signatureKey.publicJwk,
+    expectedJwkThumbprint: signatureKey.publicKeyThumbprint,
+    requiredCoveredComponents: [],
+    now: '2026-04-18T13:01:10.000Z',
+  });
+
+  equal(verified.status, 'invalid', 'HTTP signatures: empty required coverage fails closed');
+  deepEqual(verified.failureReasons, ['binding-mismatch'], 'HTTP signatures: empty requirement cannot mean no binding required');
 }
 
 async function testUnboundReleaseTokenFails(): Promise<void> {
@@ -596,6 +619,7 @@ async function testHighRiskWebhookWorksWithOnlineVerifier(): Promise<void> {
       issuedAt: '2026-04-18T13:00:50.000Z',
       expiresAt: '2026-04-18T13:01:30.000Z',
     },
+    replayLedgerEntry: null,
     httpMessageSignature: {
       message: httpMessageFromAuthorizationEnvelope(envelope, BODY),
       publicJwk: signatureKey.publicJwk,
@@ -659,6 +683,7 @@ async function main(): Promise<void> {
   await testOfflineVerifierFailsClosedWithoutHttpContext();
   await testBodyTamperingFailsDigestCheck();
   await testCoverageRequirementsFailClosed();
+  await testEmptyCoverageRequirementFailsClosed();
   await testUnboundReleaseTokenFails();
   await testWrongSigningKeyFailsSenderBinding();
   await testReplayLedgerHitFails();

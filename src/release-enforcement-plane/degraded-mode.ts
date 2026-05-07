@@ -25,6 +25,10 @@ import {
   ENFORCEMENT_FAILURE_REASONS,
   ENFORCEMENT_POINT_KINDS,
 } from './types.js';
+import {
+  resolveVerificationProfile,
+  type VerificationProfile,
+} from './verification-profiles.js';
 
 export const RELEASE_DEGRADED_MODE_CONTROL_SPEC_VERSION =
   'attestor.release-enforcement-degraded-mode.v1';
@@ -150,6 +154,7 @@ export interface EvaluateDegradedModeInput {
   readonly scope?: DegradedModeScope | null;
   readonly verification?: VerificationResult | null;
   readonly failureReasons?: readonly EnforcementFailureReason[];
+  readonly profile?: VerificationProfile | null;
 }
 
 export interface DegradedModeDecision {
@@ -317,6 +322,10 @@ function normalizeScope(scope: DegradedModeScope | null | undefined): DegradedMo
   return Object.freeze(normalized);
 }
 
+function scopeHasNarrowingField(scope: DegradedModeScope): boolean {
+  return Object.values(scope).some((value) => value !== null && value !== undefined);
+}
+
 function normalizeFailureReasons(
   reasons: readonly EnforcementFailureReason[] | null | undefined,
   fieldName = 'allowedFailureReasons',
@@ -446,13 +455,19 @@ export function createDegradedModeGrant(input: CreateDegradedModeGrantInput): De
   if (remainingUses > maxUses) {
     throw new Error('Release enforcement-plane degraded mode remainingUses cannot exceed maxUses.');
   }
+  const scope = normalizeScope(input.scope);
+  if (!scopeHasNarrowingField(scope)) {
+    throw new Error(
+      'Release enforcement-plane degraded mode grant scope requires at least one non-wildcard field.',
+    );
+  }
 
   const withoutDigest: Omit<DegradedModeGrant, 'auditDigest'> = Object.freeze({
     version: RELEASE_DEGRADED_MODE_CONTROL_SPEC_VERSION,
     id: normalizeIdentifier(input.id ?? createDegradedModeGrantId(), 'id'),
     state: input.state,
     reason: input.reason,
-    scope: normalizeScope(input.scope),
+    scope,
     authorizedBy: normalizeActor(input.authorizedBy, 'authorizedBy'),
     approvedBy: Object.freeze((input.approvedBy ?? []).map((actor) => normalizeActor(actor, 'approvedBy'))),
     authorizedAt,
@@ -540,6 +555,92 @@ export function degradedModeScopeMatches(
     scopeFieldMatches(grantScope.consequenceType, requestScope.consequenceType) &&
     scopeFieldMatches(grantScope.riskClass, requestScope.riskClass)
   );
+}
+
+function actorIdentity(actor: ReleaseActorReference): string {
+  return `${actor.type}:${actor.id}`;
+}
+
+function distinctApproverIdentities(
+  grant: DegradedModeGrant,
+): ReadonlySet<string> {
+  const authorizer = actorIdentity(grant.authorizedBy);
+  return new Set(
+    grant.approvedBy
+      .map(actorIdentity)
+      .filter((identity) => identity !== authorizer),
+  );
+}
+
+function scopeCanResolveVerificationProfile(scope: DegradedModeScope): scope is DegradedModeScope & {
+  readonly boundaryKind: NonNullable<DegradedModeScope['boundaryKind']>;
+  readonly consequenceType: NonNullable<DegradedModeScope['consequenceType']>;
+  readonly riskClass: NonNullable<DegradedModeScope['riskClass']>;
+} {
+  return (
+    scope.boundaryKind !== null &&
+    scope.boundaryKind !== undefined &&
+    scope.consequenceType !== null &&
+    scope.consequenceType !== undefined &&
+    scope.riskClass !== null &&
+    scope.riskClass !== undefined
+  );
+}
+
+function profileMatchesScope(profile: VerificationProfile, scope: DegradedModeScope): boolean {
+  return (
+    (scope.boundaryKind === null ||
+      scope.boundaryKind === undefined ||
+      profile.boundaryKind === scope.boundaryKind) &&
+    (scope.consequenceType === null ||
+      scope.consequenceType === undefined ||
+      profile.consequenceType === scope.consequenceType) &&
+    (scope.riskClass === null ||
+      scope.riskClass === undefined ||
+      profile.riskClass === scope.riskClass)
+  );
+}
+
+function resolveDegradedModeProfile(input: {
+  readonly profile?: VerificationProfile | null;
+  readonly request?: EnforcementRequest | null;
+  readonly scope: DegradedModeScope;
+}): VerificationProfile | null {
+  const requestProfile = input.request
+    ? resolveVerificationProfile({
+        consequenceType: input.request.enforcementPoint.consequenceType,
+        riskClass: input.request.enforcementPoint.riskClass,
+        boundaryKind: input.request.enforcementPoint.boundaryKind,
+      })
+    : null;
+  const selectedProfile = input.profile ?? requestProfile;
+
+  if (selectedProfile) {
+    if (
+      requestProfile &&
+      (selectedProfile.consequenceType !== requestProfile.consequenceType ||
+        selectedProfile.riskClass !== requestProfile.riskClass ||
+        selectedProfile.boundaryKind !== requestProfile.boundaryKind)
+    ) {
+      throw new Error(
+        'Release enforcement-plane degraded mode profile must match the enforcement request boundary, consequence type, and risk class.',
+      );
+    }
+    if (!profileMatchesScope(selectedProfile, input.scope)) {
+      throw new Error(
+        'Release enforcement-plane degraded mode profile must match the evaluated scope.',
+      );
+    }
+    return selectedProfile;
+  }
+
+  return scopeCanResolveVerificationProfile(input.scope)
+    ? resolveVerificationProfile({
+        consequenceType: input.scope.consequenceType,
+        riskClass: input.scope.riskClass,
+        boundaryKind: input.scope.boundaryKind,
+      })
+    : null;
 }
 
 export function degradedModeGrantView(grant: DegradedModeGrant): Record<string, unknown> {
@@ -659,6 +760,11 @@ export function evaluateDegradedMode(input: EvaluateDegradedModeInput): Degraded
 
   const grantStatus = degradedModeGrantStatus(grant, checkedAt);
   const requestScope = normalizeScope(input.scope ?? (input.request ? degradedModeScopeFromRequest(input.request) : null));
+  const profile = resolveDegradedModeProfile({
+    profile: input.profile,
+    request: input.request,
+    scope: requestScope,
+  });
   if (
     grantStatus !== 'active' ||
     !degradedModeScopeMatches(grant.scope, requestScope) ||
@@ -674,6 +780,15 @@ export function evaluateDegradedMode(input: EvaluateDegradedModeInput): Degraded
   }
 
   if (grant.state === 'cache-only') {
+    if (profile?.cacheBudget.requireFreshOnlineCheck) {
+      return failClosedDecision({
+        checkedAt,
+        status: 'fail-closed',
+        failures: uniqueFailureReasons([...failures, 'fresh-introspection-required']),
+        grant,
+        grantStatus,
+      });
+    }
     if (!cacheStateAllowsDegradedMode(input.verification)) {
       return failClosedDecision({
         checkedAt,
@@ -694,6 +809,29 @@ export function evaluateDegradedMode(input: EvaluateDegradedModeInput): Degraded
       breakGlass: null,
       grantStatus,
       auditRecord: null,
+    });
+  }
+
+  if (profile?.overridePosture === 'not-allowed') {
+    return failClosedDecision({
+      checkedAt,
+      status: 'fail-closed',
+      failures: uniqueFailureReasons([...failures, 'binding-mismatch']),
+      grant,
+      grantStatus,
+    });
+  }
+
+  if (
+    profile?.overridePosture === 'dual-break-glass' &&
+    distinctApproverIdentities(grant).size < 2
+  ) {
+    return failClosedDecision({
+      checkedAt,
+      status: 'fail-closed',
+      failures: uniqueFailureReasons([...failures, 'binding-mismatch']),
+      grant,
+      grantStatus,
     });
   }
 

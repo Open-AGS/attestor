@@ -33,6 +33,7 @@ import {
   type OnlineReleaseVerification,
 } from './online-verifier.js';
 import { httpReleaseTokenDigest } from './http-message-signatures.js';
+import type { ReplayLedgerEntry } from './freshness.js';
 import {
   ENFORCEMENT_FAILURE_REASONS,
   type CreateEnforcementPointReferenceInput,
@@ -118,6 +119,7 @@ export interface RecordWriteGatewayOptions {
   readonly usageStore?: ReleaseTokenIntrospectionStore;
   readonly consumeOnSuccess?: boolean;
   readonly forceOnlineIntrospection?: boolean;
+  readonly replayLedgerEntry?: ReplayLedgerEntry | null;
   readonly now?: () => string;
   readonly requestId?: string;
   readonly traceId?: string | null;
@@ -552,6 +554,7 @@ export async function enforceRecordWrite(
       request,
       presentation: verifierPresentation,
       verificationKey: input.options.verificationKey,
+      replayLedgerEntry: input.options.replayLedgerEntry,
       now: checkedAt,
     });
     const forcedFailureReasons = gatewayFailureReasons([
@@ -591,6 +594,7 @@ export async function enforceRecordWrite(
       request,
       presentation,
       verificationKey: input.options.verificationKey,
+      replayLedgerEntry: input.options.replayLedgerEntry,
       now: checkedAt,
     });
     return resultFromVerification({
@@ -607,6 +611,7 @@ export async function enforceRecordWrite(
     request,
     presentation,
     verificationKey: input.options.verificationKey,
+    replayLedgerEntry: input.options.replayLedgerEntry,
     now: checkedAt,
     introspector: input.options.introspector,
     usageStore: input.options.usageStore,

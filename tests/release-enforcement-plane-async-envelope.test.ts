@@ -342,6 +342,7 @@ async function testOfflineVerifierAcceptsAsyncEnvelope(): Promise<void> {
     presentation: envelope.presentation,
     verificationKey,
     now: '2026-04-18T14:01:10.000Z',
+    replayLedgerEntry: null,
     asyncEnvelope: {
       envelope,
       publicJwk: envelopeKey.publicJwk,
@@ -451,6 +452,7 @@ async function testUnboundReleaseTokenFails(): Promise<void> {
     presentation: envelope.presentation,
     verificationKey,
     now: '2026-04-18T14:01:10.000Z',
+    replayLedgerEntry: null,
     asyncEnvelope: {
       envelope,
       publicJwk: envelopeKey.publicJwk,
@@ -571,6 +573,7 @@ async function testArtifactBoundaryBindsSubjectDigest(): Promise<void> {
     presentation: envelope.presentation,
     verificationKey,
     now: '2026-04-18T14:01:10.000Z',
+    replayLedgerEntry: null,
     asyncEnvelope: {
       envelope,
       publicJwk: envelopeKey.publicJwk,
@@ -608,6 +611,7 @@ async function testHighRiskAsyncEnvelopeWorksWithOnlineVerifier(): Promise<void>
     presentation: envelope.presentation,
     verificationKey,
     now: '2026-04-18T14:01:10.000Z',
+    replayLedgerEntry: null,
     introspector,
     resourceServerId: 'erq-async-high-risk-pep',
     asyncEnvelope: {

@@ -256,6 +256,7 @@ async function testAudienceScopedExchangeIssuesDownstreamToken(): Promise<void> 
     request,
     presentation: bearerPresentation({ issued: exchanged.issuedToken }),
     verificationKey,
+    replayLedgerEntry: null,
     now: '2026-04-18T10:01:30.000Z',
   });
 
@@ -533,6 +534,7 @@ async function testHighRiskExchangeRegistersForOnlineVerifier(): Promise<void> {
     request,
     presentation: mtlsPresentation({ issued: exchanged.issuedToken }),
     verificationKey,
+    replayLedgerEntry: null,
     now: '2026-04-18T10:01:00.000Z',
     introspector,
     resourceServerId: 'erq-exchanged-r4-pep',

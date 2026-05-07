@@ -672,6 +672,10 @@ function deriveStatus(
   return 'valid';
 }
 
+function replayLedgerLookupIsExplicit(input: OfflineReleaseVerificationInput): boolean {
+  return input.replayLedgerEntry !== undefined;
+}
+
 export async function verifyOfflineReleaseAuthorization(
   input: OfflineReleaseVerificationInput,
 ): Promise<OfflineReleaseVerification> {
@@ -720,6 +724,13 @@ export async function verifyOfflineReleaseAuthorization(
 
   if (claims !== null) {
     const rules = resolveFreshnessRules(profile);
+    if (
+      offlineFailures.length === 0 &&
+      rules.replayProtectionRequired &&
+      !replayLedgerLookupIsExplicit(input)
+    ) {
+      offlineFailures.push('missing-replay-proof');
+    }
     freshness = evaluateReleaseFreshness({
       rules,
       now: checkedAt,

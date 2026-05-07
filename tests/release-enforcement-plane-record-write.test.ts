@@ -23,6 +23,7 @@ import {
   createMtlsBoundPresentationFromIssuedToken,
   createMtlsReleaseTokenConfirmation,
 } from '../src/release-enforcement-plane/workload-binding.js';
+import type { ReplayLedgerEntry } from '../src/release-enforcement-plane/freshness.js';
 
 let passed = 0;
 
@@ -147,6 +148,7 @@ function options(input: {
   readonly introspector?: ReleaseTokenIntrospector;
   readonly store?: ReleaseTokenIntrospectionStore;
   readonly verifierMode?: 'offline' | 'online';
+  readonly replayLedgerEntry?: ReplayLedgerEntry | null;
 }) {
   return {
     verificationKey: input.verificationKey,
@@ -159,6 +161,7 @@ function options(input: {
     usageStore: input.store,
     verifierMode: input.verifierMode,
     requestId: 'erq-record-write-test',
+    replayLedgerEntry: input.replayLedgerEntry ?? null,
     now: () => '2026-04-18T17:01:00.000Z',
   };
 }

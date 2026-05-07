@@ -188,6 +188,7 @@ async function testLowRiskOfflineAllow(): Promise<void> {
     expected: {
       policyHash: 'sha256:policy',
     },
+    replayLedgerEntry: null,
   });
 
   equal(verified.version, OFFLINE_RELEASE_VERIFIER_SPEC_VERSION, 'Offline verifier: result stamps stable spec version');
@@ -258,6 +259,7 @@ async function testHighRiskNeedsOnline(): Promise<void> {
     verificationKey,
     profile,
     now: '2026-04-18T08:01:00.000Z',
+    replayLedgerEntry: null,
   });
 
   equal(verified.status, 'indeterminate', 'Offline verifier: high-risk token remains indeterminate until online liveness');
@@ -266,6 +268,46 @@ async function testHighRiskNeedsOnline(): Promise<void> {
   deepEqual(verified.failureReasons, ['fresh-introspection-required'], 'Offline verifier: only missing online liveness remains');
   equal(verified.verificationResult.status, 'indeterminate', 'Offline verifier: verification result records indeterminate status');
   equal(verified.freshness?.status, 'indeterminate', 'Offline verifier: freshness evaluator records missing online state');
+}
+
+async function testMissingReplayLedgerLookupFails(): Promise<void> {
+  const { issuer, verificationKey } = await setupIssuer();
+  const decision = makeDecision({
+    id: 'decision-missing-replay-ledger',
+    consequenceType: 'decision-support',
+    riskClass: 'R1',
+    targetId: 'analytics.memo.preview',
+  });
+  const issued = await issuer.issue({
+    decision,
+    issuedAt: '2026-04-18T08:00:00.000Z',
+    tokenId: 'rt_missing_replay_ledger',
+  });
+  const request = makeRequest({
+    id: 'erq-missing-replay-ledger',
+    targetId: 'analytics.memo.preview',
+    releaseTokenId: issued.tokenId,
+    releaseDecisionId: decision.id,
+  });
+
+  const verified = await verifyOfflineReleaseAuthorization({
+    request,
+    presentation: bearerPresentation({
+      token: issued.token,
+      tokenId: issued.tokenId,
+      decisionId: decision.id,
+      audience: 'analytics.memo.preview',
+      expiresAt: issued.expiresAt,
+    }),
+    verificationKey,
+    now: '2026-04-18T08:01:00.000Z',
+    expected: {
+      policyHash: 'sha256:policy',
+    },
+  });
+
+  equal(verified.status, 'invalid', 'Offline verifier: omitted replay ledger lookup fails closed');
+  deepEqual(verified.failureReasons, ['missing-replay-proof'], 'Offline verifier: missing replay lookup is explicit');
 }
 
 async function testAudienceMismatchFails(): Promise<void> {
@@ -616,6 +658,7 @@ async function testDisallowedPresentationModeFails(): Promise<void> {
 async function main(): Promise<void> {
   await testLowRiskOfflineAllow();
   await testHighRiskNeedsOnline();
+  await testMissingReplayLedgerLookupFails();
   await testAudienceMismatchFails();
   await testOutputAndConsequenceBindingMismatchFails();
   await testConsequenceAndRiskBindingMismatchFails();

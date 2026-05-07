@@ -178,6 +178,7 @@ function baseOptions(input: {
       riskClass: input.riskClass,
       consequenceType: input.consequenceType,
     }),
+    replayLedgerEntry: null,
     now: () => '2026-04-18T15:01:00.000Z',
   };
 }

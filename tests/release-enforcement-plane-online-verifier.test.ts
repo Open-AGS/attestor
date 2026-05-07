@@ -234,6 +234,7 @@ async function testLowRiskCanRemainOfflineValid(): Promise<void> {
     presentation: bearerPresentation({ issued, decisionId: decision.id }),
     verificationKey,
     now: '2026-04-18T09:01:00.000Z',
+    replayLedgerEntry: null,
   });
 
   equal(verified.version, ONLINE_RELEASE_VERIFIER_SPEC_VERSION, 'Online verifier: result stamps stable spec version');
@@ -280,6 +281,7 @@ async function testHighRiskActiveIntrospectionAllows(): Promise<void> {
     presentation: mtlsPresentation({ issued, decisionId: decision.id }),
     verificationKey,
     now: '2026-04-18T09:01:00.000Z',
+    replayLedgerEntry: null,
     introspector,
     resourceServerId: 'erq-online-r4-pep',
   });
@@ -331,6 +333,7 @@ async function testHighRiskCanConsumeOnSuccess(): Promise<void> {
     presentation: mtlsPresentation({ issued, decisionId: decision.id }),
     verificationKey,
     now: '2026-04-18T09:01:00.000Z',
+    replayLedgerEntry: null,
     introspector,
     usageStore: store,
     consumeOnSuccess: true,
@@ -385,6 +388,7 @@ async function testRevokedTokenFails(): Promise<void> {
     presentation: mtlsPresentation({ issued, decisionId: decision.id }),
     verificationKey,
     now: '2026-04-18T09:01:00.000Z',
+    replayLedgerEntry: null,
     introspector,
   });
 
@@ -436,6 +440,7 @@ async function testConsumedTokenFailsAsReplay(): Promise<void> {
     presentation: mtlsPresentation({ issued, decisionId: decision.id }),
     verificationKey,
     now: '2026-04-18T09:01:00.000Z',
+    replayLedgerEntry: null,
     introspector,
   });
 
@@ -478,6 +483,7 @@ async function testUnknownTokenFails(): Promise<void> {
     presentation: mtlsPresentation({ issued, decisionId: decision.id }),
     verificationKey,
     now: '2026-04-18T09:01:00.000Z',
+    replayLedgerEntry: null,
     introspector,
   });
 
@@ -521,6 +527,7 @@ async function testUnsupportedTokenTypeFails(): Promise<void> {
     presentation: mtlsPresentation({ issued, decisionId: decision.id }),
     verificationKey,
     now: '2026-04-18T09:01:00.000Z',
+    replayLedgerEntry: null,
     introspector,
     tokenTypeHint: 'not_supported',
   });
@@ -569,6 +576,7 @@ async function testActiveClaimMismatchFails(): Promise<void> {
     presentation: mtlsPresentation({ issued, decisionId: decision.id }),
     verificationKey,
     now: '2026-04-18T09:01:00.000Z',
+    replayLedgerEntry: null,
     introspector,
   });
 
@@ -615,6 +623,7 @@ async function testIntrospectionUnavailableFailsClosed(): Promise<void> {
     presentation: mtlsPresentation({ issued, decisionId: decision.id }),
     verificationKey,
     now: '2026-04-18T09:01:00.000Z',
+    replayLedgerEntry: null,
     introspector,
   });
 

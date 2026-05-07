@@ -181,7 +181,7 @@ function options(input: {
   readonly store?: ReleaseTokenIntrospectionStore;
   readonly verifierMode?: 'offline' | 'online';
   readonly nonce?: string;
-  readonly replayLedgerEntry?: ReplayLedgerEntry;
+  readonly replayLedgerEntry?: ReplayLedgerEntry | null;
   readonly httpMessageSignature?: Parameters<typeof enforceCommunicationSend>[0]['options']['httpMessageSignature'];
 }) {
   return {
@@ -195,7 +195,7 @@ function options(input: {
     usageStore: input.store,
     verifierMode: input.verifierMode,
     requestId: 'erq-communication-send-test',
-    replayLedgerEntry: input.replayLedgerEntry,
+    replayLedgerEntry: input.replayLedgerEntry ?? null,
     nonceLedgerEntry: input.nonce ? nonceLedgerEntry(input.nonce) : undefined,
     httpMessageSignature: input.httpMessageSignature,
     now: () => '2026-04-18T18:01:00.000Z',

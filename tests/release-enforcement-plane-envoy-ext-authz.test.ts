@@ -235,7 +235,7 @@ function options(input: {
   readonly store?: ReleaseTokenIntrospectionStore;
   readonly verifierMode?: 'offline' | 'online';
   readonly nonce?: string;
-  readonly replayLedgerEntry?: ReplayLedgerEntry;
+  readonly replayLedgerEntry?: ReplayLedgerEntry | null;
 }) {
   return {
     verificationKey: input.verificationKey,
@@ -247,7 +247,7 @@ function options(input: {
     usageStore: input.store,
     verifierMode: input.verifierMode,
     requestId: 'erq-envoy-ext-authz-test',
-    replayLedgerEntry: input.replayLedgerEntry,
+    replayLedgerEntry: input.replayLedgerEntry ?? null,
     nonceLedgerEntry: input.nonce ? nonceLedgerEntry(input.nonce) : undefined,
     now: () => CHECKED_AT,
   };

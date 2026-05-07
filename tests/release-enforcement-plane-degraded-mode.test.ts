@@ -99,6 +99,34 @@ function sampleRequest() {
   });
 }
 
+function lowRiskRequest() {
+  return createEnforcementRequest({
+    id: 'erq_degraded_mode_low_risk_1',
+    receivedAt: CHECKED_AT,
+    enforcementPoint: {
+      environment: 'prod-eu',
+      enforcementPointId: 'decision-support-gateway',
+      pointKind: 'application-middleware',
+      boundaryKind: 'http-request',
+      consequenceType: 'decision-support',
+      riskClass: 'R1',
+      tenantId: 'tenant-finance',
+      accountId: 'acct-enterprise',
+      workloadId: 'spiffe://attestor/prod/decision-support',
+      audience: 'analytics.memo.preview',
+    },
+    targetId: 'analytics.memo.preview',
+    outputHash: 'sha256:output',
+    consequenceHash: 'sha256:consequence',
+    releaseTokenId: 'rt_degraded_low_risk_1',
+    releaseDecisionId: 'rd_degraded_low_risk_1',
+  });
+}
+
+function lowRiskScope() {
+  return degradedModeScopeFromRequest(lowRiskRequest());
+}
+
 function sampleVerification(options?: {
   status?: 'valid' | 'invalid' | 'indeterminate';
   cacheState?: 'fresh' | 'stale-allowed' | 'stale-denied' | 'miss' | 'negative-hit';
@@ -135,7 +163,7 @@ function sampleGrant(overrides?: Partial<Parameters<typeof createDegradedModeGra
     reason: 'availability-restore',
     scope: sampleScope(),
     authorizedBy: adminActor(),
-    approvedBy: [adminActor('user_release_approver')],
+    approvedBy: [adminActor('user_release_approver'), adminActor('user_release_approver_2')],
     authorizedAt: CHECKED_AT,
     startsAt: CHECKED_AT,
     expiresAt: EXPIRES_AT,
@@ -186,6 +214,12 @@ function testGrantValidation(): void {
     /remainingUses cannot exceed maxUses/i,
   );
   passed += 1;
+
+  assert.throws(
+    () => sampleGrant({ scope: {} }),
+    /scope requires at least one non-wildcard field/i,
+  );
+  passed += 1;
 }
 
 function testScopeMatching(): void {
@@ -201,6 +235,27 @@ function testCacheOnlyDecision(): void {
   const grant = sampleGrant({
     id: 'dmg_cache_only',
     state: 'cache-only',
+    scope: lowRiskScope(),
+    maxUses: 1,
+    expiresAt: '2026-04-18T10:05:00.000Z',
+  });
+  const decision = evaluateDegradedMode({
+    checkedAt: CHECKED_AT,
+    grant,
+    request: lowRiskRequest(),
+    verification: sampleVerification(),
+  });
+
+  equal(decision.status, 'cache-only-allow', 'Degraded mode: cache-only grants can allow during introspection outage');
+  equal(decision.degradedState, 'cache-only', 'Degraded mode: decision records cache-only state');
+  equal(decision.outcome, 'allow', 'Degraded mode: cache-only outcome is an explicit allow');
+  equal(decision.breakGlass, null, 'Degraded mode: cache-only does not masquerade as break-glass');
+}
+
+function testCacheOnlyDeniedForFreshOnlineProfiles(): void {
+  const grant = sampleGrant({
+    id: 'dmg_cache_only_r4',
+    state: 'cache-only',
     maxUses: 1,
     expiresAt: '2026-04-18T10:05:00.000Z',
   });
@@ -211,10 +266,8 @@ function testCacheOnlyDecision(): void {
     verification: sampleVerification(),
   });
 
-  equal(decision.status, 'cache-only-allow', 'Degraded mode: cache-only grants can allow during introspection outage');
-  equal(decision.degradedState, 'cache-only', 'Degraded mode: decision records cache-only state');
-  equal(decision.outcome, 'allow', 'Degraded mode: cache-only outcome is an explicit allow');
-  equal(decision.breakGlass, null, 'Degraded mode: cache-only does not masquerade as break-glass');
+  equal(decision.status, 'fail-closed', 'Degraded mode: cache-only cannot override fresh-online R4 profiles');
+  ok(decision.failureReasons.includes('fresh-introspection-required'), 'Degraded mode: denial names fresh introspection requirement');
 }
 
 function testCacheOnlyHardFailureDenial(): void {
@@ -254,6 +307,23 @@ function testBreakGlassDecision(): void {
   equal(decision.outcome, 'break-glass-allow', 'Degraded mode: emergency path emits break-glass outcome');
   equal(decision.breakGlass?.ticketId, 'INC-2026-0418', 'Degraded mode: break-glass decision carries ticket evidence');
   equal(decision.grantStatus, 'active', 'Degraded mode: decision exposes active grant status');
+}
+
+function testDualBreakGlassRequiresTwoApprovers(): void {
+  const decision = evaluateDegradedMode({
+    checkedAt: CHECKED_AT,
+    grant: sampleGrant({
+      id: 'dmg_single_approver_r4',
+      approvedBy: [adminActor('user_release_approver')],
+    }),
+    request: sampleRequest(),
+    verification: sampleVerification({
+      failureReasons: ['fresh-introspection-required'],
+    }),
+  });
+
+  equal(decision.status, 'fail-closed', 'Degraded mode: R4 dual break-glass rejects single approver grants');
+  ok(decision.failureReasons.includes('binding-mismatch'), 'Degraded mode: insufficient approval binding is explicit');
 }
 
 function testFailClosedStates(): void {
@@ -439,8 +509,10 @@ async function main(): Promise<void> {
   testGrantValidation();
   testScopeMatching();
   testCacheOnlyDecision();
+  testCacheOnlyDeniedForFreshOnlineProfiles();
   testCacheOnlyHardFailureDenial();
   testBreakGlassDecision();
+  testDualBreakGlassRequiresTwoApprovers();
   testFailClosedStates();
   testGrantStoreAuditAndUseBudget();
   testFileBackedGrantStorePersists();

@@ -27,7 +27,16 @@
  * SCOPE: 'onc_cypress_api' — real ONC Cypress server execution
  */
 
+import {
+  assertSafeQrdaXmlPayload,
+  fetchWithTimeout,
+  publicExternalRequestError,
+  resolvePinnedHttpsBaseUrl,
+  resolveSafeCypressValidatorUrl,
+} from './filing-security.js';
+
 const CYPRESS_API_BASE = 'https://cypressdemo.healthit.gov';
+const CYPRESS_ALLOWED_HOSTS = ['cypressdemo.healthit.gov'];
 
 export interface CypressApiConfig {
   /** Cypress demo account email. Default: CYPRESS_EMAIL, then legacy CYPRESS_UMLS_USER */
@@ -91,6 +100,17 @@ function configuredCypressPassword(config?: CypressApiConfig): string | null {
     || null;
 }
 
+function configuredCypressBaseUrl(config?: CypressApiConfig): string {
+  return config?.baseUrl?.trim() || CYPRESS_API_BASE;
+}
+
+function resolvedCypressBaseUrl(config?: CypressApiConfig): string {
+  return resolvePinnedHttpsBaseUrl(configuredCypressBaseUrl(config), {
+    serviceName: 'ONC Cypress',
+    allowedHosts: CYPRESS_ALLOWED_HOSTS,
+  });
+}
+
 /**
  * Check if ONC Cypress API credentials are configured.
  */
@@ -107,7 +127,6 @@ export async function fetchCypressValidators(
 ): Promise<{ httpStatus: number; validators: CypressValidatorDescriptor[]; error: string | null }> {
   const email = configuredCypressEmail(config);
   const password = configuredCypressPassword(config);
-  const baseUrl = (config.baseUrl ?? CYPRESS_API_BASE).replace(/\/+$/u, '');
 
   if (!email || !password) {
     return {
@@ -116,9 +135,19 @@ export async function fetchCypressValidators(
       error: 'Cypress credentials not configured. Set CYPRESS_EMAIL and CYPRESS_PASSWORD (or legacy CYPRESS_UMLS_USER / CYPRESS_UMLS_PASS).',
     };
   }
+  let baseUrl: string;
+  try {
+    baseUrl = resolvedCypressBaseUrl(config);
+  } catch (err: any) {
+    return {
+      httpStatus: 0,
+      validators: [],
+      error: err.message,
+    };
+  }
 
   try {
-    const response = await fetch(`${baseUrl}/qrda_validation.json`, {
+    const response = await fetchWithTimeout(`${baseUrl}/qrda_validation.json`, {
       method: 'GET',
       headers: {
         Accept: 'application/json',
@@ -156,7 +185,7 @@ export async function fetchCypressValidators(
     return {
       httpStatus: 0,
       validators: [],
-      error: `Validator index request failed: ${err.message}`,
+      error: publicExternalRequestError('Validator index request failed.', err),
     };
   }
 }
@@ -205,8 +234,36 @@ export async function validateViaCypressApi(
       uploadPath: null,
     };
   }
+  try {
+    assertSafeQrdaXmlPayload(xml, 'QRDA3 Cypress API upload payload');
+  } catch (err: any) {
+    return {
+      valid: false,
+      errors: [{ message: err.message }],
+      errorCount: 1,
+      validator: null,
+      path: null,
+      scope: 'onc_cypress_api',
+      httpStatus: 0,
+      uploadPath: null,
+    };
+  }
 
-  const baseUrl = (config.baseUrl ?? CYPRESS_API_BASE).replace(/\/+$/u, '');
+  let baseUrl: string;
+  try {
+    baseUrl = resolvedCypressBaseUrl(config);
+  } catch (err: any) {
+    return {
+      valid: false,
+      errors: [{ message: err.message }],
+      errorCount: 1,
+      validator: null,
+      path: null,
+      scope: 'onc_cypress_api',
+      httpStatus: 0,
+      uploadPath: null,
+    };
+  }
   const year = config.year ?? '2026';
   const ig = config.ig ?? 'CMS';
   const qrdaType = config.qrdaType ?? 'III';
@@ -243,12 +300,27 @@ export async function validateViaCypressApi(
       uploadPath: null,
     };
   }
+  let uploadUrl: string;
+  try {
+    uploadUrl = resolveSafeCypressValidatorUrl(baseUrl, selectedValidator.path);
+  } catch (err: any) {
+    return {
+      valid: false,
+      errors: [{ message: err.message }],
+      errorCount: 1,
+      validator: selectedValidator.validator,
+      path: selectedValidator.path,
+      scope: 'onc_cypress_api',
+      httpStatus: 0,
+      uploadPath: null,
+    };
+  }
 
   const formData = new FormData();
   formData.append('file', new Blob([xml], { type: 'application/xml' }), 'attestor-qrda3.xml');
 
   try {
-    const response = await fetch(`${baseUrl}${selectedValidator.path}`, {
+    const response = await fetchWithTimeout(uploadUrl, {
       method: 'POST',
       headers: {
         Authorization: basicAuthHeader(email, password),
@@ -323,7 +395,7 @@ export async function validateViaCypressApi(
   } catch (err: any) {
     return {
       valid: false,
-      errors: [{ message: `Cypress API connection failed: ${err.message}` }],
+      errors: [{ message: publicExternalRequestError('Cypress API connection failed.', err) }],
       errorCount: 1,
       validator: null,
       path: null,

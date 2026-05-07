@@ -22,6 +22,10 @@
 import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {
+  assertSafeQrdaXmlPayload,
+  assertSchematronExternalReferencesAreLocal,
+} from './filing-security.js';
 
 export interface CmsSchematronResult {
   /** True when zero error-severity assertion failures */
@@ -49,6 +53,19 @@ export interface CmsSchematronAssertion {
  * and runs it through cda-schematron-validator.
  */
 export async function validateCmsSchematron(xml: string): Promise<CmsSchematronResult> {
+  try {
+    assertSafeQrdaXmlPayload(xml, 'QRDA3 CMS Schematron validation payload');
+  } catch (err: any) {
+    return {
+      valid: false,
+      errors: [{ description: err.message, test: 'xml_payload_guard' }],
+      warnings: [],
+      errorCount: 1, warningCount: 0,
+      scope: 'cms_schematron_2026',
+      schematronFile: '',
+    };
+  }
+
   // Locate vendored .sch file relative to project root
   const schPath = join(
     dirname(fileURLToPath(import.meta.url)),
@@ -71,6 +88,19 @@ export async function validateCmsSchematron(xml: string): Promise<CmsSchematronR
   }
 
   // Run validation (cda-schematron-validator is CJS — use createRequire for ESM compat)
+  try {
+    assertSchematronExternalReferencesAreLocal(schContent);
+  } catch (err: any) {
+    return {
+      valid: false,
+      errors: [{ description: err.message, test: 'schematron_external_reference_guard' }],
+      warnings: [],
+      errorCount: 1, warningCount: 0,
+      scope: 'cms_schematron_2026',
+      schematronFile: schPath,
+    };
+  }
+
   const { createRequire } = await import('node:module');
   const require = createRequire(import.meta.url);
   const validator = require('cda-schematron-validator');

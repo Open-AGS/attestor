@@ -23,6 +23,8 @@
 // ─── CMS IG Conformance Rules ──────────────────────────────────────────────
 // Each rule maps to a CMS 2026 QRDA III IG conformance statement.
 
+import { assertSafeQrdaXmlPayload } from './filing-security.js';
+
 export interface SchematronRule {
   /** CMS conformance reference (e.g., 'CMS_0001', 'CONF:3338-17208') */
   id: string;
@@ -290,6 +292,17 @@ export interface SchematronValidationResult {
  * The assertions are modeled after CMS 2026 QRDA III IG CONF: statements.
  */
 export async function validateQrda3Schematron(xml: string): Promise<SchematronValidationResult> {
+  try {
+    assertSafeQrdaXmlPayload(xml, 'QRDA3 SaxonJS validation payload');
+  } catch (err: any) {
+    return {
+      valid: false,
+      assertions: [{ ruleId: 'XML_PAYLOAD_GUARD', description: err.message, passed: false, severity: 'error', section: 'XMLSecurity' }],
+      errors: 1, warnings: 0, totalRules: 1, passedRules: 0,
+      scope: 'cms_qrda3_xpath',
+    };
+  }
+
   const SaxonJS = await import('saxon-js');
   const Saxon = SaxonJS.default ?? SaxonJS;
 

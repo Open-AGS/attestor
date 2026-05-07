@@ -23,6 +23,8 @@
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
+import { assertSafeQrdaXmlPayload } from './filing-security.js';
+
 export interface CypressValidationResult {
   valid: boolean;
   layers: CypressLayerResult[];
@@ -308,6 +310,27 @@ function validateMeasurePeriod(xml: string): CypressLayerResult {
  * Use the separate live VSAC client path when credentials are available.
  */
 export function validateCypressLayers(xml: string): CypressValidationResult {
+  try {
+    assertSafeQrdaXmlPayload(xml, 'QRDA3 Cypress-equivalent validation payload', {
+      forbidRegexConfusingMarkup: true,
+    });
+  } catch (err: any) {
+    const layer: CypressLayerResult = {
+      layer: 0,
+      name: 'XmlPayloadGuard',
+      valid: false,
+      errors: [err.message],
+      warnings: [],
+    };
+    return {
+      valid: false,
+      layers: [layer],
+      totalErrors: 1,
+      totalWarnings: 0,
+      scope: 'cypress_validators',
+    };
+  }
+
   const measures = extractMeasures(xml);
 
   const layers: CypressLayerResult[] = [

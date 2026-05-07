@@ -13,9 +13,15 @@
  */
 
 import type { QualityMeasure, VsacValueSetBinding } from '../domains/healthcare-measures.js';
+import {
+  fetchWithTimeout,
+  publicExternalRequestError,
+  resolvePinnedHttpsBaseUrl,
+} from './filing-security.js';
 
 const VSAC_FHIR_BASE = 'https://cts.nlm.nih.gov/fhir';
 const VSAC_DEFAULT_MANIFEST = 'http://cts.nlm.nih.gov/fhir/Library/latest-active';
+const VSAC_ALLOWED_HOSTS = ['cts.nlm.nih.gov'];
 
 export interface VsacApiConfig {
   apiKey?: string;
@@ -69,6 +75,13 @@ function configuredBaseUrl(config?: VsacApiConfig): string {
   return config?.baseUrl?.trim() || process.env.VSAC_FHIR_BASE_URL?.trim() || VSAC_FHIR_BASE;
 }
 
+function resolvedVsacBaseUrl(config?: VsacApiConfig): string {
+  return resolvePinnedHttpsBaseUrl(configuredBaseUrl(config), {
+    serviceName: 'VSAC FHIR',
+    allowedHosts: VSAC_ALLOWED_HOSTS,
+  });
+}
+
 function configuredManifestUrl(config?: VsacApiConfig): string | null {
   if (config && Object.prototype.hasOwnProperty.call(config, 'manifestUrl')) {
     return config.manifestUrl?.trim() || null;
@@ -80,12 +93,13 @@ function basicAuthHeader(apiKey: string): string {
   return `Basic ${Buffer.from(`apikey:${apiKey}`).toString('base64')}`;
 }
 
-function countExpansionContains(contains: any[] | undefined): number {
+function countExpansionContains(contains: any[] | undefined, depth = 0): number {
   if (!Array.isArray(contains) || contains.length === 0) return 0;
+  if (depth > 16) throw new Error('VSAC expansion nesting exceeds depth limit.');
   let total = 0;
   for (const item of contains) {
     total += 1;
-    total += countExpansionContains(item?.contains);
+    total += countExpansionContains(item?.contains, depth + 1);
   }
   return total;
 }
@@ -129,10 +143,22 @@ export function collectVsacLayer7Targets(
 }
 
 export async function fetchVsacCapabilityStatement(config: VsacApiConfig = {}): Promise<VsacCapabilityResult> {
-  const baseUrl = configuredBaseUrl(config).replace(/\/+$/, '');
+  let baseUrl: string;
+  try {
+    baseUrl = resolvedVsacBaseUrl(config);
+  } catch (err: any) {
+    return {
+      reachable: false,
+      httpStatus: 0,
+      resourceType: null,
+      fhirVersion: null,
+      url: '',
+      error: err.message,
+    };
+  }
   const url = `${baseUrl}/metadata`;
   try {
-    const response = await fetch(url, {
+    const response = await fetchWithTimeout(url, {
       method: 'GET',
       headers: { Accept: 'application/fhir+json' },
     });
@@ -152,7 +178,7 @@ export async function fetchVsacCapabilityStatement(config: VsacApiConfig = {}): 
       resourceType: null,
       fhirVersion: null,
       url,
-      error: `VSAC capability request failed: ${err.message}`,
+      error: publicExternalRequestError('VSAC capability request failed.', err),
     };
   }
 }
@@ -162,7 +188,20 @@ export async function expandVsacValueSet(
   config: VsacApiConfig = {},
 ): Promise<VsacExpansionResult> {
   const apiKey = configuredApiKey(config);
-  const baseUrl = configuredBaseUrl(config).replace(/\/+$/, '');
+  let baseUrl: string;
+  try {
+    baseUrl = resolvedVsacBaseUrl(config);
+  } catch (err: any) {
+    return {
+      ...target,
+      valid: false,
+      httpStatus: 0,
+      expansionUrl: '',
+      codeCount: 0,
+      title: null,
+      error: err.message,
+    };
+  }
   const manifestUrl = configuredManifestUrl(config);
   const url = new URL(`${baseUrl}/ValueSet/${encodeURIComponent(target.oid)}/$expand`);
   if (manifestUrl) url.searchParams.set('manifest', manifestUrl);
@@ -180,7 +219,7 @@ export async function expandVsacValueSet(
   }
 
   try {
-    const response = await fetch(url, {
+    const response = await fetchWithTimeout(url, {
       method: 'GET',
       headers: {
         Accept: 'application/fhir+json',
@@ -213,7 +252,7 @@ export async function expandVsacValueSet(
       expansionUrl: url.toString(),
       codeCount: 0,
       title: null,
-      error: `VSAC expansion failed: ${err.message}`,
+      error: publicExternalRequestError('VSAC expansion failed.', err),
     };
   }
 }

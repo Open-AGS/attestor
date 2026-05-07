@@ -186,6 +186,7 @@
     "test:service-core-routes": "tsx tests/service-core-routes.test.ts",
     "test:service-route-boundary": "tsx tests/service-route-boundary.test.ts",
     "test:pipeline-filing-default-secure": "tsx tests/pipeline-filing-default-secure.test.ts",
+    "test:filing-security-boundaries": "tsx tests/filing-security-boundaries.test.ts",
     "test:http-production-edge-contract": "tsx tests/http-production-edge-contract.test.ts",
     "test:trusted-proxy-headers": "tsx tests/trusted-proxy-headers.test.ts",
     "test:nginx-ha-edge-config": "tsx tests/nginx-ha-edge-config.test.ts",

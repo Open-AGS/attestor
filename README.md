@@ -406,6 +406,7 @@ Start here:
 - [Agent retry wrapper demo](docs/01-overview/agent-retry-wrapper-demo.md) - bounded correction loop for model-safe retries
 - [Customer integration recipes](docs/01-overview/customer-integration-recipes.md) - where to put Attestor in an existing app
 - [Commercial packaging, pricing, and evaluation](docs/01-overview/product-packaging.md) - commercial truth source and evaluation boundary
+- [Pricing ROI calculator](docs/01-overview/pricing-roi-calculator.md) - buyer-facing sizing and avoided-loss worksheet
 - [Hosted customer journey](docs/01-overview/hosted-customer-journey.md) - hosted account and checkout path
 - [Hosted action authorization API](docs/01-overview/hosted-action-authorization-api.md) - OpenAPI contract for admissions and shadow read surfaces
 - [First hosted API call](docs/01-overview/hosted-first-api-call.md) - first hosted API-call quickstart

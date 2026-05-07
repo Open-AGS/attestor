@@ -17,7 +17,7 @@ import {
   type FinancePipelineAdmissionRun,
 } from '../src/consequence-admission/index.js';
 import { resetAccountSessionStoreForTests } from '../src/service/account-session-store.js';
-import { resetAccountStoreForTests } from '../src/service/account-store.js';
+import { listHostedAccounts, resetAccountStoreForTests } from '../src/service/account-store.js';
 import { resetAccountUserStoreForTests } from '../src/service/account-user-store.js';
 import { resetAccountUserActionTokenStoreForTests } from '../src/service/account-user-token-store.js';
 import { resetAdminAuditLogForTests } from '../src/service/admin-audit-log.js';
@@ -199,9 +199,11 @@ async function main(): Promise<void> {
     await new Promise((resolve) => setTimeout(resolve, 250));
 
     const suffix = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const accountName = `Hosted Evaluation ${suffix}`;
+    const email = `owner-${suffix}@example.test`;
     const signupRes = await postJson(`${baseUrl}/api/v1/auth/signup`, {
-      accountName: `Hosted Evaluation ${suffix}`,
-      email: `owner-${suffix}@example.test`,
+      accountName,
+      email,
       displayName: 'Hosted Evaluation Owner',
       password: 'HostedSignupPass123!',
     });
@@ -230,7 +232,12 @@ async function main(): Promise<void> {
 
     const initialApiKey = signupBody.initialKey.apiKey as string;
     const initialKeyId = signupBody.initialKey.id as string;
-    const tenantId = signupBody.account.primaryTenantId as string;
+    const storedAccounts = listHostedAccounts().records;
+    equal(storedAccounts.length, 1, 'Hosted signup: exactly one account is persisted');
+    const [storedAccount] = storedAccounts;
+    equal(storedAccount.id, signupBody.account.id, 'Hosted signup: persisted account matches response account');
+    const tenantId = storedAccount.primaryTenantId;
+    equal(signupBody.account.primaryTenantId, tenantId, 'Hosted signup: response tenant id matches persisted account');
 
     const anonymousUsageRes = await fetch(`${baseUrl}/api/v1/account/usage`);
     equal(anonymousUsageRes.status, 401, 'Hosted auth: active hosted key makes tenant auth mandatory');

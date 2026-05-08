@@ -84,6 +84,15 @@ export interface PlanStripeTrialSpec {
   source: 'plan_default' | 'env_override' | 'custom_unconfigured';
 }
 
+export interface PlanGenericAdmissionModeSpec {
+  planId: string;
+  mode: string;
+  allowed: boolean;
+  knownPlan: boolean;
+  allowedModes: readonly string[];
+  reasonCodes: readonly string[];
+}
+
 export const SELF_HOST_PLAN_ID: HostedPlanId = 'developer';
 export const DEFAULT_HOSTED_PLAN_ID: HostedPlanId = 'starter';
 
@@ -241,6 +250,34 @@ export function getHostedPlan(planId: string | null | undefined): HostedPlanDefi
   const canonicalPlanId = canonicalHostedPlanId(planId);
   if (!canonicalPlanId) return null;
   return PLAN_CATALOG.find((plan) => plan.id === canonicalPlanId) ?? null;
+}
+
+export function resolvePlanGenericAdmissionMode(
+  planId: string | null | undefined,
+  mode: string,
+): PlanGenericAdmissionModeSpec {
+  const resolvedPlanId = canonicalHostedPlanId(planId) || SELF_HOST_PLAN_ID;
+  const plan = getHostedPlan(resolvedPlanId);
+  const allowedModes =
+    plan?.intendedFor === 'evaluation'
+      ? Object.freeze(['observe', 'warn'])
+      : Object.freeze(['observe', 'warn', 'review', 'enforce']);
+  const allowed = allowedModes.includes(mode);
+
+  return {
+    planId: plan?.id ?? resolvedPlanId,
+    mode,
+    allowed,
+    knownPlan: plan !== null,
+    allowedModes,
+    reasonCodes: allowed
+      ? []
+      : [
+        'plan-mode-restricted',
+        `plan-${plan?.id ?? resolvedPlanId}`,
+        `mode-${mode}`,
+      ],
+  };
 }
 
 export function resolvePlanRateLimit(planId: string | null | undefined): PlanRateLimitSpec {

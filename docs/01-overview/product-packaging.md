@@ -273,9 +273,9 @@ Current shipped hosted implementation uses:
 - required paid Stripe price env vars: `ATTESTOR_STRIPE_PRICE_STARTER`, `ATTESTOR_STRIPE_PRICE_PRO`, and `ATTESTOR_STRIPE_PRICE_SCALE`
 - optional Enterprise self-service price env var: `ATTESTOR_STRIPE_PRICE_ENTERPRISE`, only when Enterprise checkout is intentionally enabled
 
-Two commercial behaviors are not fully automated yet and must not be overclaimed:
+One commercial behavior is not fully automated yet and must not be overclaimed:
 
-- Developer is documented as shadow/warn only, but route-level mode restriction is not yet enforced by plan.
+- Developer and Free Shadow Trial route-level mode restrictions are enforced on the generic admission route: evaluation plans may use `observe` and `warn`, while `review` and `enforce` require a paid hosted or Enterprise plan.
 - The `trial` plan exists in the catalog, but signup still provisions Developer by default; trial invitation/conversion lifecycle is a separate implementation step.
 
 ## Hosted Commercial Surface

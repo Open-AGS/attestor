@@ -15,7 +15,7 @@ function ok(condition: unknown, message: string): void {
   passed += 1;
 }
 
-function createApp(): Hono {
+function createApp(planId = 'starter'): Hono {
   const app = new Hono();
   registerGenericAdmissionRoutes(app, {
     currentTenant: () => ({
@@ -23,14 +23,14 @@ function createApp(): Hono {
       tenantName: 'Route Tenant',
       authenticatedAt: '2026-05-01T18:00:00.000Z',
       source: 'api_key',
-      planId: 'community',
+      planId,
       monthlyRunQuota: 100,
     }),
   });
   return app;
 }
 
-function createLoopGuardedApp(): { readonly app: Hono; readonly shadowRecords: number } {
+function createLoopGuardedApp(planId = 'starter'): { readonly app: Hono; readonly shadowRecords: number } {
   const app = new Hono();
   const guard = createConsequenceAdmissionAgentLoopAbuseGuard({
     policy: {
@@ -45,7 +45,7 @@ function createLoopGuardedApp(): { readonly app: Hono; readonly shadowRecords: n
       tenantName: 'Route Tenant',
       authenticatedAt: '2026-05-01T18:00:00.000Z',
       source: 'api_key',
-      planId: 'community',
+      planId,
       monthlyRunQuota: 100,
     }),
     evaluateAgentLoopAbuse: ({ tenant, envelope, receivedAt }) =>
@@ -64,6 +64,58 @@ function createLoopGuardedApp(): { readonly app: Hono; readonly shadowRecords: n
       return shadowRecords;
     },
   };
+}
+
+async function testEvaluationPlansRejectEnforcingModes(): Promise<void> {
+  const scenarios = [
+    { planId: 'developer', mode: 'enforce', expectedPlanId: 'developer' },
+    { planId: 'trial', mode: 'review', expectedPlanId: 'trial' },
+    { planId: 'community', mode: 'enforce', expectedPlanId: 'developer' },
+  ] as const;
+
+  for (const scenario of scenarios) {
+    const app = createApp(scenario.planId);
+    const response = await app.request('/api/v1/admissions', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        mode: scenario.mode,
+        actor: 'support-ai-agent',
+        action: 'issue_refund',
+        domain: 'money-movement',
+        downstreamSystem: 'refund-service',
+        requestedAt: '2026-05-01T18:00:00.000Z',
+        decidedAt: '2026-05-01T18:00:01.000Z',
+        policyRef: 'policy:refunds:v1',
+        evidenceRefs: ['order:987', 'payment:456'],
+        amount: {
+          value: 38000,
+          currency: 'HUF',
+        },
+        recipient: 'customer_123',
+      }),
+    });
+    const body = await response.json() as {
+      decision: string;
+      failClosed: boolean;
+      detail: string;
+      reasonCodes: readonly string[];
+    };
+
+    equal(response.status, 403, `Generic admission route: ${scenario.planId} ${scenario.mode} returns 403`);
+    equal(body.decision, 'block', `Generic admission route: ${scenario.planId} ${scenario.mode} blocks`);
+    equal(body.failClosed, true, `Generic admission route: ${scenario.planId} ${scenario.mode} fails closed`);
+    ok(
+      body.detail.includes(`Plan ${scenario.expectedPlanId} only allows observe, warn admission modes`),
+      `Generic admission route: ${scenario.planId} ${scenario.mode} explains allowed modes`,
+    );
+    ok(
+      body.reasonCodes.includes('plan-mode-restricted'),
+      `Generic admission route: ${scenario.planId} ${scenario.mode} includes plan restriction reason`,
+    );
+  }
 }
 
 async function testPostAdmissionRouteReturnsEnvelope(): Promise<void> {
@@ -344,6 +396,7 @@ async function testLoopGuardThrottlesRetryAttemptBeyondBudget(): Promise<void> {
   );
 }
 
+await testEvaluationPlansRejectEnforcingModes();
 await testPostAdmissionRouteReturnsEnvelope();
 await testInvalidJsonReturnsFailClosedProblem();
 await testInvalidInputReturnsFailClosedProblem();

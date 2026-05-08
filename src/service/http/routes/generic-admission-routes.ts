@@ -5,6 +5,7 @@ import {
   type ConsequenceAdmissionAgentLoopAbuseGuardDecision,
   type GenericAdmissionEnvelope,
 } from '../../../consequence-admission/index.js';
+import { resolvePlanGenericAdmissionMode } from '../../plan-catalog.js';
 import type { TenantContext } from '../../tenant-isolation.js';
 
 export interface GenericAdmissionRouteDeps {
@@ -61,6 +62,18 @@ export function registerGenericAdmissionRoutes(
       const envelope = createGenericAdmissionEnvelope(
         admissionPayloadWithTenant(payload, tenant),
       );
+      const modePolicy = resolvePlanGenericAdmissionMode(tenant.planId, envelope.mode);
+      if (!modePolicy.allowed) {
+        const problem = createConsequenceAdmissionProblem({
+          type: 'https://attestor.dev/problems/admission-plan-mode-restricted',
+          title: 'Admission mode not available on plan',
+          status: 403,
+          detail: `Plan ${modePolicy.planId} only allows ${modePolicy.allowedModes.join(', ')} admission modes; requested ${modePolicy.mode}.`,
+          instance: '/api/v1/admissions',
+          reasonCodes: modePolicy.reasonCodes,
+        });
+        return c.json(problem, 403);
+      }
       const loopGuard = deps.evaluateAgentLoopAbuse?.({
         tenant,
         envelope,

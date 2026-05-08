@@ -10,6 +10,10 @@ function arg(name: string): string | null {
   return entry ? entry.slice(prefix.length).trim() : null;
 }
 
+function flag(name: string): boolean {
+  return process.argv.includes(`--${name}`);
+}
+
 function env(name: string): string | null {
   const value = process.env[name];
   return value && value.trim() ? value.trim() : null;
@@ -69,6 +73,16 @@ async function resolveWebhookEndpoint(stripe: Stripe): Promise<Stripe.WebhookEnd
 }
 
 async function main(): Promise<void> {
+  if (flag('print-required-events')) {
+    console.log(JSON.stringify({
+      route: STRIPE_WEBHOOK_ROUTE,
+      expectedUrl: expectedWebhookUrl(),
+      requiredEvents: [...STRIPE_SUPPORTED_WEBHOOK_EVENTS],
+      note: 'Create or update a Stripe webhook endpoint with these enabled events, then run this probe without --print-required-events using STRIPE_API_KEY.',
+    }, null, 2));
+    return;
+  }
+
   const stripe = new Stripe(requireStripeApiKey());
   const endpoint = await resolveWebhookEndpoint(stripe);
   const enabledEvents = [...endpoint.enabled_events].sort();

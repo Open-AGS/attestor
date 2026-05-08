@@ -106,6 +106,35 @@ Create a Stripe webhook endpoint that targets:
 
 - `POST /api/v1/billing/stripe/webhook`
 
+Print the exact operator manifest from the repo before creating or editing the endpoint:
+
+```bash
+ATTESTOR_PUBLIC_HOSTNAME=<host> npm run probe:stripe-webhook-config -- --print-required-events
+```
+
+The endpoint must enable these Attestor-supported Stripe event types:
+
+- `checkout.session.completed`
+- `customer.subscription.created`
+- `customer.subscription.updated`
+- `customer.subscription.deleted`
+- `customer.subscription.paused`
+- `customer.subscription.resumed`
+- `invoice.paid`
+- `invoice.payment_failed`
+- `charge.succeeded`
+- `charge.failed`
+- `charge.refunded`
+- `entitlements.active_entitlement_summary.updated`
+
+After creating the endpoint and copying its signing secret into `STRIPE_WEBHOOK_SECRET`, verify the live Stripe configuration:
+
+```bash
+STRIPE_API_KEY=sk_live_... \
+ATTESTOR_PUBLIC_HOSTNAME=<host> \
+npm run probe:stripe-webhook-config
+```
+
 Stripe webhooks are what make the billing state actually converge back into Attestor:
 
 - checkout completion

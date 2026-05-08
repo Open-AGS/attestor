@@ -325,6 +325,8 @@ function testPricingAndTrialTruthsStayAnchored(): void {
     'Hosted product flow docs: ROI calculator is a machine-readable truth source',
   );
   includes(stripeBootstrap, 'ATTESTOR_STRIPE_PRICE_SCALE=price_', 'Hosted product flow docs: operator scale Stripe price env var is documented');
+  includes(stripeBootstrap, 'npm run probe:stripe-webhook-config -- --print-required-events', 'Hosted product flow docs: operator webhook manifest command is documented');
+  includes(stripeBootstrap, '`entitlements.active_entitlement_summary.updated`', 'Hosted product flow docs: operator webhook event list includes entitlement summary updates');
   includes(stripeBootstrap, 'POST /api/v1/billing/stripe/webhook', 'Hosted product flow docs: operator webhook route is documented');
 }
 
@@ -377,6 +379,7 @@ function testRuntimeCoverageGatesAreNamed(): void {
   includes(packageJson, '"test:hosted-signup-first-api-key-flow"', 'Hosted product flow docs: package script exposes signup-to-first-key gate');
   includes(packageJson, '"test:hosted-stripe-billing-convergence-flow"', 'Hosted product flow docs: package script exposes Stripe billing convergence gate');
   includes(packageJson, '"test:hosted-product-flow-readiness"', 'Hosted product flow docs: package script exposes hosted readiness gate');
+  includes(packageJson, '"test:stripe-webhook-config-probe"', 'Hosted product flow docs: package script exposes Stripe webhook config probe guard');
   includes(packageJson, '"probe:production-hosted-flow"', 'Hosted product flow docs: production hosted flow probe is exposed');
   includes(liveApi, '/api/v1/auth/signup', 'Hosted product flow docs: live API suite covers hosted signup');
   includes(packageJson, '"test:consequence-admission-customer-gate"', 'Hosted product flow docs: package script exposes customer gate guard');

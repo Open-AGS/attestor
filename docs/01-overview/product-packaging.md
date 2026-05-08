@@ -270,7 +270,8 @@ Current shipped hosted implementation uses:
 - usage meter name: `monthly_admission_runs`
 - first free hosted path: `developer` with `500` admissions per month
 - free shadow trial plan metadata: `trial` with `60` days and `5,000` admissions
-- paid Stripe price env vars: `ATTESTOR_STRIPE_PRICE_STARTER`, `ATTESTOR_STRIPE_PRICE_PRO`, `ATTESTOR_STRIPE_PRICE_SCALE`, and `ATTESTOR_STRIPE_PRICE_ENTERPRISE`
+- required paid Stripe price env vars: `ATTESTOR_STRIPE_PRICE_STARTER`, `ATTESTOR_STRIPE_PRICE_PRO`, and `ATTESTOR_STRIPE_PRICE_SCALE`
+- optional Enterprise self-service price env var: `ATTESTOR_STRIPE_PRICE_ENTERPRISE`, only when Enterprise checkout is intentionally enabled
 
 Two commercial behaviors are not fully automated yet and must not be overclaimed:
 

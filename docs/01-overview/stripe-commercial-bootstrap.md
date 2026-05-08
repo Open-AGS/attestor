@@ -57,6 +57,31 @@ That usually means:
 - payout account configured
 - live API key available
 
+Verify that account state from the repo after the Dashboard setup:
+
+```bash
+STRIPE_API_KEY=sk_live_... \
+ATTESTOR_STRIPE_PRICE_STARTER=price_... \
+ATTESTOR_STRIPE_PRICE_PRO=price_... \
+ATTESTOR_STRIPE_PRICE_SCALE=price_... \
+npm run probe:stripe-live-readiness
+```
+
+This probe checks:
+
+- the API key is live-mode
+- Stripe account details, charge capability, and payout capability are enabled
+- the Starter, Pro, and Scale price ids are active live monthly USD prices matching the commercial model
+- the default Stripe Customer Portal configuration is active
+
+It cannot enter legal, tax, payout, or Customer Portal settings for you. Configure those in Stripe Dashboard, then rerun the probe until it returns `"ok": true`.
+
+To print the expected price manifest without a Stripe API key:
+
+```bash
+npm run probe:stripe-live-readiness -- --print-required-prices
+```
+
 ## When Your Bank Details Are Needed
 
 Your bank details are needed when you want Stripe to pay out your sales balance to you.

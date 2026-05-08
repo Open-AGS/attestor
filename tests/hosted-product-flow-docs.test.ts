@@ -168,6 +168,21 @@ function testCommercialTruthSourcesStayLinked(): void {
     'operator-facing and should not become a second public pricing page',
     'Hosted product flow docs: Stripe bootstrap stays operator-facing',
   );
+  includes(
+    stripeBootstrap,
+    'npm run probe:stripe-live-readiness',
+    'Hosted product flow docs: Stripe bootstrap names live readiness probe',
+  );
+  includes(
+    stripeBootstrap,
+    '--print-required-prices',
+    'Hosted product flow docs: Stripe bootstrap documents price manifest mode',
+  );
+  includes(
+    packaging,
+    'optional Enterprise self-service price env var',
+    'Hosted product flow docs: product packaging keeps Enterprise checkout optional',
+  );
 }
 
 function testAccountVisibilityGuideStaysGrounded(): void {

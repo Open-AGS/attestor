@@ -327,7 +327,7 @@ function testPricingAndTrialTruthsStayAnchored(): void {
   includes(packaging, 'plan ids: `developer`, `trial`, `starter`, `pro`, `scale`, `enterprise`', 'Hosted product flow docs: current shipped plan ids remain documented');
   includes(packaging, 'legacy alias: `community` resolves to `developer`', 'Hosted product flow docs: legacy community alias is documented');
   includes(packaging, 'usage meter name: `monthly_admission_runs`', 'Hosted product flow docs: current admission meter is documented');
-  includes(packaging, 'Developer is documented as shadow/warn only, but route-level mode restriction is not yet enforced by plan.', 'Hosted product flow docs: Developer mode enforcement gap is not overclaimed');
+  includes(packaging, 'Developer and Free Shadow Trial route-level mode restrictions are enforced on the generic admission route', 'Hosted product flow docs: evaluation plan mode enforcement is documented');
   includes(packaging, 'The `trial` plan exists in the catalog, but signup still provisions Developer by default', 'Hosted product flow docs: trial lifecycle gap is not overclaimed');
   includes(pricingRoi, '`daily_admissions`', 'Hosted product flow docs: ROI calculator sizes by daily admissions');
   includes(pricingRoi, 'monthly_admissions = daily_admissions * business_days_per_month', 'Hosted product flow docs: ROI calculator includes monthly sizing formula');

@@ -13,6 +13,7 @@
 import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { withFileLock, writeTextFileAtomic } from './file-store.js';
+import { resolvePlanQuotaPolicy } from './plan-catalog.js';
 
 export interface UsageContext {
   tenantId: string;
@@ -23,6 +24,9 @@ export interface UsageContext {
   quota: number | null;
   remaining: number | null;
   enforced: boolean;
+  hardLimit: boolean;
+  overage: boolean;
+  overageUnits: number;
 }
 
 export interface UsageLedgerRecord {
@@ -87,15 +91,21 @@ function buildUsageContext(
   used: number,
 ): UsageContext {
   const resolvedQuota = typeof quota === 'number' && quota >= 0 ? quota : null;
+  const quotaPolicy = resolvePlanQuotaPolicy(planId);
+  const overageUnits = resolvedQuota === null ? 0 : Math.max(0, used - resolvedQuota);
+  const hardLimit = resolvedQuota !== null && quotaPolicy.hardLimit;
   return {
     tenantId,
-    planId: planId ?? 'developer',
+    planId: quotaPolicy.planId,
     meter: 'monthly_admission_runs',
     period,
     used,
     quota: resolvedQuota,
     remaining: resolvedQuota === null ? null : Math.max(0, resolvedQuota - used),
-    enforced: resolvedQuota !== null,
+    enforced: hardLimit,
+    hardLimit,
+    overage: overageUnits > 0,
+    overageUnits,
   };
 }
 

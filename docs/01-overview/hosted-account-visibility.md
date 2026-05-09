@@ -41,6 +41,7 @@ Attestor owns the customer-visible control view before and around consequence:
 
 - hosted account identity and tenant context
 - usage and quota projection
+- hard-limit versus paid soft-overage posture
 - rate-limit projection
 - entitlement state and access posture
 - feature projection on top of the effective plan
@@ -77,6 +78,8 @@ Use this order:
 ## Important shape details
 
 - Attestor currently returns usage and rate-limit visibility in JSON response bodies through `usage` and `rateLimit`; this guide does not claim a separate public header contract.
+- `usage.enforced` and `usage.hardLimit` mean the included quota is a hard stop; `usage.overage` and `usage.overageUnits` mean a paid hosted account continued beyond included admissions.
+- Developer and Free Shadow Trial remain hard-limited. Starter, Pro, and Scale continue into paid soft overage instead of stopping production consequence gates.
 - `GET /api/v1/account/billing/export` can return `json` or `csv`, and the JSON payload includes a `summary.dataSource` value such as `stripe_live`, `ledger_derived`, `mock_summary`, or `empty`.
 - `GET /api/v1/account/features` is the clean place to answer "is this capability actually granted?" without forcing callers to interpret raw Stripe objects.
 - `GET /api/v1/account/billing/reconciliation` is session-only on purpose; it is for account-plane review work, not for generic tenant runtime calls.

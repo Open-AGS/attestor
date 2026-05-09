@@ -268,6 +268,7 @@ Current shipped hosted implementation uses:
 - plan ids: `developer`, `trial`, `starter`, `pro`, `scale`, `enterprise`
 - legacy alias: `community` resolves to `developer` for backward compatibility with older local records
 - usage meter name: `monthly_admission_runs`
+- paid hosted quota behavior: Starter, Pro, and Scale continue into soft overage; Developer and Free Shadow Trial remain hard-limited
 - first free hosted path: `developer` with `500` admissions per month
 - free shadow trial plan metadata: `trial` with `60` days and `5,000` admissions
 - required paid Stripe price env vars: `ATTESTOR_STRIPE_PRICE_STARTER`, `ATTESTOR_STRIPE_PRICE_PRO`, and `ATTESTOR_STRIPE_PRICE_SCALE`

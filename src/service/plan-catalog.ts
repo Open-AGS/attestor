@@ -93,6 +93,14 @@ export interface PlanGenericAdmissionModeSpec {
   reasonCodes: readonly string[];
 }
 
+export interface PlanQuotaPolicySpec {
+  planId: string;
+  knownPlan: boolean;
+  hardLimit: boolean;
+  softOverage: boolean;
+  source: 'evaluation_hard_limit' | 'paid_soft_overage' | 'custom_hard_limit';
+}
+
 export const SELF_HOST_PLAN_ID: HostedPlanId = 'developer';
 export const DEFAULT_HOSTED_PLAN_ID: HostedPlanId = 'starter';
 
@@ -277,6 +285,39 @@ export function resolvePlanGenericAdmissionMode(
         `plan-${plan?.id ?? resolvedPlanId}`,
         `mode-${mode}`,
       ],
+  };
+}
+
+export function resolvePlanQuotaPolicy(planId: string | null | undefined): PlanQuotaPolicySpec {
+  const resolvedPlanId = canonicalHostedPlanId(planId) || SELF_HOST_PLAN_ID;
+  const plan = getHostedPlan(resolvedPlanId);
+
+  if (!plan) {
+    return {
+      planId: resolvedPlanId,
+      knownPlan: false,
+      hardLimit: true,
+      softOverage: false,
+      source: 'custom_hard_limit',
+    };
+  }
+
+  if (plan.intendedFor === 'evaluation') {
+    return {
+      planId: plan.id,
+      knownPlan: true,
+      hardLimit: true,
+      softOverage: false,
+      source: 'evaluation_hard_limit',
+    };
+  }
+
+  return {
+    planId: plan.id,
+    knownPlan: true,
+    hardLimit: false,
+    softOverage: true,
+    source: 'paid_soft_overage',
   };
 }
 

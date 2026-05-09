@@ -54,12 +54,15 @@ Expected shape:
     "used": 0,
     "quota": 10,
     "remaining": 10,
-    "enforced": true
+    "enforced": true,
+    "hardLimit": true,
+    "overage": false,
+    "overageUnits": 0
   }
 }
 ```
 
-Exact IDs and limits depend on the account and plan. The important signal is that the tenant context, usage, quota, and enforcement posture are visible before the first consequence call.
+Exact IDs and limits depend on the account and plan. The important signal is that the tenant context, usage, quota, overage, and enforcement posture are visible before the first consequence call.
 
 ## 3. Call Attestor Before Consequence
 
@@ -134,7 +137,9 @@ Expected shape:
   },
   "usage": {
     "used": 1,
-    "remaining": 9
+    "remaining": 9,
+    "overage": false,
+    "overageUnits": 0
   }
 }
 ```
@@ -193,7 +198,8 @@ The verify payload is built from the signed pipeline response. A valid verificat
 
 - `401`: the tenant API key is missing, invalid, or revoked
 - `400`: the request shape is invalid, usually missing `candidateSql` or `intent`
-- `429`: quota or rate limit blocks the run; the rejected run does not become a downstream consequence
+- `429`: free/trial hard quota or rate limit blocks the run; the rejected run does not become a downstream consequence
+- paid hosted overage: Starter, Pro, and Scale continue returning `200`, keep `remaining` at `0`, and mark `usage.overage` plus `usage.overageUnits`
 - non-allowed decision: the downstream system must fail closed or route to review
 
 ## Where To Go Next

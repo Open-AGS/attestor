@@ -200,6 +200,8 @@ function testAccountVisibilityGuideStaysGrounded(): void {
   includes(guide, '`POST /api/v1/account/billing/portal`', 'Hosted account visibility: billing portal route is documented');
   includes(guide, '`POST /api/v1/account/billing/checkout`', 'Hosted account visibility: billing checkout route is documented');
   includes(guide, '`rateLimit`', 'Hosted account visibility: rateLimit body field is documented');
+  includes(guide, 'hard-limit versus paid soft-overage posture', 'Hosted account visibility: overage posture is documented');
+  includes(guide, '`usage.overage` and `usage.overageUnits`', 'Hosted account visibility: overage fields are documented');
   includes(guide, '`summary.dataSource`', 'Hosted account visibility: billing export data source field is documented');
   includes(guide, 'Stripe still owns the billing system itself:', 'Hosted account visibility: Stripe ownership boundary is documented');
   includes(guide, 'use [Stripe commercial bootstrap](stripe-commercial-bootstrap.md) only for operator setup, not as a customer pricing page', 'Hosted account visibility: operator truth source separation is documented');
@@ -277,8 +279,10 @@ function testFirstApiCallQuickstartStaysGrounded(): void {
   includes(firstApiCall, '"decision": "pass"', 'Hosted first API-call docs: expected decision shape is shown');
   includes(firstApiCall, '"tenantContext"', 'Hosted first API-call docs: tenant context response shape is shown');
   includes(firstApiCall, '"usage"', 'Hosted first API-call docs: usage response shape is shown');
+  includes(firstApiCall, '"overageUnits"', 'Hosted first API-call docs: overage unit field is shown');
   includes(firstApiCall, '`401`', 'Hosted first API-call docs: invalid key failure is documented');
   includes(firstApiCall, '`429`', 'Hosted first API-call docs: quota/rate-limit failure is documented');
+  includes(firstApiCall, 'paid hosted overage: Starter, Pro, and Scale continue returning `200`', 'Hosted first API-call docs: paid soft overage failure posture is documented');
   includes(
     firstApiCall,
     'The downstream system should gate on the returned decision.',
@@ -327,6 +331,7 @@ function testPricingAndTrialTruthsStayAnchored(): void {
   includes(packaging, 'plan ids: `developer`, `trial`, `starter`, `pro`, `scale`, `enterprise`', 'Hosted product flow docs: current shipped plan ids remain documented');
   includes(packaging, 'legacy alias: `community` resolves to `developer`', 'Hosted product flow docs: legacy community alias is documented');
   includes(packaging, 'usage meter name: `monthly_admission_runs`', 'Hosted product flow docs: current admission meter is documented');
+  includes(packaging, 'paid hosted quota behavior: Starter, Pro, and Scale continue into soft overage', 'Hosted product flow docs: paid soft overage behavior is documented');
   includes(packaging, 'Developer and Free Shadow Trial route-level mode restrictions are enforced on the generic admission route', 'Hosted product flow docs: evaluation plan mode enforcement is documented');
   includes(packaging, 'The `trial` plan exists in the catalog, but signup still provisions Developer by default', 'Hosted product flow docs: trial lifecycle gap is not overclaimed');
   includes(pricingRoi, '`daily_admissions`', 'Hosted product flow docs: ROI calculator sizes by daily admissions');

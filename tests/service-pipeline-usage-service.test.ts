@@ -25,6 +25,9 @@ function usage(overrides: Partial<UsageContext> = {}): UsageContext {
     quota: 10,
     remaining: 7,
     enforced: true,
+    hardLimit: true,
+    overage: false,
+    overageUnits: 0,
     ...overrides,
   };
 }

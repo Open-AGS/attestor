@@ -194,7 +194,7 @@ import {
   type AsyncDeadLetterRecord,
 } from './async-dead-letter-store.js';
 import { hashJsonValue } from './json-stable.js';
-import { DEFAULT_HOSTED_PLAN_ID, resolvePlanSpec } from './plan-catalog.js';
+import { DEFAULT_HOSTED_PLAN_ID, resolvePlanQuotaPolicy, resolvePlanSpec } from './plan-catalog.js';
 import { hashSecretForLookup } from './secret-derivation.js';
 import type { HostedSamlReplayRecord } from './account-saml.js';
 
@@ -977,15 +977,21 @@ function usageContextFromRecord(
   period: string,
 ): UsageContext {
   const resolvedQuota = typeof quota === 'number' && quota >= 0 ? quota : null;
+  const quotaPolicy = resolvePlanQuotaPolicy(planId);
+  const overageUnits = resolvedQuota === null ? 0 : Math.max(0, used - resolvedQuota);
+  const hardLimit = resolvedQuota !== null && quotaPolicy.hardLimit;
   return {
     tenantId,
-    planId: planId ?? 'developer',
+    planId: quotaPolicy.planId,
     meter: 'monthly_admission_runs',
     period,
     used,
     quota: resolvedQuota,
     remaining: resolvedQuota === null ? null : Math.max(0, resolvedQuota - used),
-    enforced: resolvedQuota !== null,
+    enforced: hardLimit,
+    hardLimit,
+    overage: overageUnits > 0,
+    overageUnits,
   };
 }
 

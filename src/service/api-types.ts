@@ -1559,6 +1559,9 @@ export interface UsageContext {
   quota: number | null;
   remaining: number | null;
   enforced: boolean;
+  hardLimit: boolean;
+  overage: boolean;
+  overageUnits: number;
 }
 
 export interface RateLimitContext {

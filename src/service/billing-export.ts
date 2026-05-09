@@ -18,6 +18,7 @@ import {
   listBillingInvoiceLineItems,
   type BillingInvoiceLineItemRecord,
 } from './billing-event-ledger.js';
+import type { UsageContext } from './usage-meter.js';
 
 export interface HostedBillingExportCheckoutSummary {
   sessionId: string | null;
@@ -79,6 +80,7 @@ export interface HostedBillingExportPayload {
   invoices: HostedBillingExportInvoiceRecord[];
   charges: HostedBillingExportChargeRecord[];
   lineItems: HostedBillingExportInvoiceLineItemRecord[];
+  usage: UsageContext | null;
   entitlementFeatures: {
     lookupKeys: string[];
     featureIds: string[];
@@ -92,6 +94,9 @@ export interface HostedBillingExportPayload {
     invoiceCount: number;
     chargeCount: number;
     lineItemCount: number;
+    usageOverage: boolean;
+    usageOverageUnits: number;
+    usageHardLimit: boolean;
   };
 }
 
@@ -314,6 +319,7 @@ function mapEntitlementReadModel(record: HostedBillingEntitlementRecord | null |
 export async function buildHostedBillingExport(options: {
   account: HostedAccountRecord;
   entitlement?: HostedBillingEntitlementRecord | null;
+  usage?: UsageContext | null;
   limit?: number | null;
 }): Promise<HostedBillingExportPayload> {
   const limit = Math.max(1, Math.min(100, options.limit ?? 20));
@@ -395,6 +401,7 @@ export async function buildHostedBillingExport(options: {
     invoices,
     charges,
     lineItems,
+    usage: options.usage ?? null,
     entitlementFeatures,
     summary: {
       dataSource,
@@ -404,6 +411,9 @@ export async function buildHostedBillingExport(options: {
       invoiceCount: invoices.length,
       chargeCount: charges.length,
       lineItemCount: lineItems.length,
+      usageOverage: options.usage?.overage ?? false,
+      usageOverageUnits: options.usage?.overageUnits ?? 0,
+      usageHardLimit: options.usage?.hardLimit ?? false,
     },
   };
 }
@@ -437,6 +447,12 @@ export function renderHostedBillingExportCsv(payload: HostedBillingExportPayload
       'billingReason',
       'description',
       'quantity',
+      'usageUsed',
+      'usageQuota',
+      'usageRemaining',
+      'usageOverage',
+      'usageOverageUnits',
+      'usageHardLimit',
       'periodStart',
       'periodEnd',
       'proration',
@@ -467,6 +483,15 @@ export function renderHostedBillingExportCsv(payload: HostedBillingExportPayload
       invoice.subscriptionId ?? '',
       invoice.priceId ?? '',
       invoice.billingReason ?? '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
       '',
       '',
       '',
@@ -505,6 +530,11 @@ export function renderHostedBillingExportCsv(payload: HostedBillingExportPayload
       '',
       '',
       '',
+      '',
+      '',
+      '',
+      '',
+      '',
       charge.createdAt ?? '',
       '',
       charge.refunded === null ? '' : String(charge.refunded),
@@ -533,10 +563,54 @@ export function renderHostedBillingExportCsv(payload: HostedBillingExportPayload
       '',
       lineItem.description ?? '',
       lineItem.quantity === null ? '' : String(lineItem.quantity),
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
       lineItem.periodStart ?? '',
       lineItem.periodEnd ?? '',
       lineItem.proration === null ? '' : String(lineItem.proration),
       lineItem.captureMode,
+      '',
+      '',
+      '',
+      '',
+    ].map(escapeCsv).join(','));
+  }
+
+  if (payload.usage) {
+    rows.push([
+      'usage',
+      payload.accountId,
+      payload.tenantId,
+      'usage_meter',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      payload.stripeSubscriptionId ?? '',
+      '',
+      '',
+      payload.usage.meter,
+      '',
+      String(payload.usage.used),
+      payload.usage.quota === null ? '' : String(payload.usage.quota),
+      payload.usage.remaining === null ? '' : String(payload.usage.remaining),
+      String(payload.usage.overage),
+      String(payload.usage.overageUnits),
+      String(payload.usage.hardLimit),
+      '',
+      '',
+      '',
+      '',
       '',
       '',
       '',

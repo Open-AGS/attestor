@@ -577,6 +577,7 @@ export async function createApiHttpRouteRuntime(
     buildHostedBillingReconciliation,
     renderHostedBillingExportCsv,
     billingEntitlementView,
+    getUsageContext: getUsageContextState,
     buildHostedFeatureServiceView,
     getTenantAsyncExecutionCoordinatorStatus,
     getTenantAsyncWeightedDispatchCoordinatorStatus,

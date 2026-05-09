@@ -25,6 +25,7 @@ import type { HostedEmailDeliveryProvider, HostedEmailDeliveryStatus } from '../
 import type * as Observability from '../../observability.js';
 import type * as PlanCatalog from '../../plan-catalog.js';
 import type { TenantKeyRecord } from '../../tenant-key-store.js';
+import type { UsageContext } from '../../usage-meter.js';
 import type { InProcessAsyncJob, TenantAsyncBackendMode } from '../../runtime/tenant-runtime.js';
 import type * as TenantRuntime from '../../runtime/tenant-runtime.js';
 import type { ReleaseActorReference } from '../../../release-layer/index.js';
@@ -67,6 +68,7 @@ export interface AdminRouteDeps {
   buildHostedBillingReconciliation: typeof BillingReconciliation.buildHostedBillingReconciliation;
   renderHostedBillingExportCsv: typeof BillingExport.renderHostedBillingExportCsv;
   billingEntitlementView(record: HostedBillingEntitlementRecord): AdminRouteResponseBody;
+  getUsageContext(tenantId: string, planId: string | null, quota: number | null): Promise<UsageContext>;
   buildHostedFeatureServiceView: typeof BillingFeatureService.buildHostedFeatureServiceView;
   getTenantAsyncExecutionCoordinatorStatus(): { shared: boolean; backend: 'memory' | 'redis' };
   getTenantAsyncWeightedDispatchCoordinatorStatus(): { shared: boolean; backend: 'memory' | 'redis' };
@@ -296,6 +298,7 @@ export function registerAdminRoutes(app: Hono, deps: AdminRouteDeps): void {
     buildHostedBillingReconciliation,
     renderHostedBillingExportCsv,
     billingEntitlementView,
+    getUsageContext,
     buildHostedFeatureServiceView,
     getTenantAsyncExecutionCoordinatorStatus,
     getTenantAsyncWeightedDispatchCoordinatorStatus,
@@ -395,9 +398,16 @@ app.get('/api/v1/admin/accounts/:id/billing/export', async (c) => {
   }
 
   const entitlement = await readHostedBillingEntitlement(account);
+  const tenantRecord = await adminQueryService.findTenantRecordByTenantId(account.primaryTenantId);
+  const usage = await getUsageContext(
+    account.primaryTenantId,
+    tenantRecord?.planId ?? account.billing.lastCheckoutPlanId,
+    tenantRecord?.monthlyRunQuota ?? null,
+  );
   const payload = await buildHostedBillingExport({
     account,
     entitlement,
+    usage,
     limit: parsedLimit ?? undefined,
   });
   const reconciliation = buildHostedBillingReconciliation(payload);
@@ -1679,6 +1689,7 @@ app.get('/api/v1/admin/usage', async (c) => {
       recordCount: records.length,
       tenantCount: new Set(records.map((entry) => entry.tenantId)).size,
       totalUsed: records.reduce((sum, entry) => sum + entry.used, 0),
+      totalOverageUnits: records.reduce((sum, entry) => sum + entry.overageUnits, 0),
     },
   });
 });

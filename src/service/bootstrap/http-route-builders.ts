@@ -200,6 +200,7 @@ export function buildAdminRouteDeps(input: BuildAdminRouteDepsInput): BuiltAdmin
       buildHostedBillingReconciliation: input.buildHostedBillingReconciliation,
       renderHostedBillingExportCsv: input.renderHostedBillingExportCsv,
       billingEntitlementView: input.billingEntitlementView,
+      getUsageContext: input.getUsageContext,
       buildHostedFeatureServiceView: input.buildHostedFeatureServiceView,
       getTenantAsyncExecutionCoordinatorStatus: input.getTenantAsyncExecutionCoordinatorStatus,
       getTenantAsyncWeightedDispatchCoordinatorStatus:

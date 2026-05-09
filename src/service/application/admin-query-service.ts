@@ -4,6 +4,7 @@ import type { HostedAccountRecord } from '../account-store.js';
 import type { HostedBillingEntitlementRecord } from '../billing-entitlement-store.js';
 import type * as ControlPlaneStore from '../control-plane-store.js';
 import type { HostedEmailDeliverySummaryRecord } from '../email-delivery-event-store.js';
+import { resolvePlanQuotaPolicy } from '../plan-catalog.js';
 import type { TenantKeyRecord } from '../tenant-key-store.js';
 
 export interface AdminQueryListResult<T> {
@@ -30,6 +31,9 @@ export interface AdminUsageRecord {
   used: number;
   remaining: number | null;
   enforced: boolean;
+  hardLimit: boolean;
+  overage: boolean;
+  overageUnits: number;
   updatedAt: string;
 }
 
@@ -37,6 +41,7 @@ export interface AdminQueryService {
   listTenantKeys(): Promise<AdminQueryListResult<TenantKeyRecord>>;
   listHostedAccounts(): Promise<AdminQueryListResult<HostedAccountRecord>>;
   findHostedAccountById(id: string): Promise<HostedAccountRecord | null>;
+  findTenantRecordByTenantId(tenantId: string): Promise<TenantKeyRecord | null>;
   listAdminAuditRecords(
     filters: Parameters<typeof ControlPlaneStore.listAdminAuditRecordsState>[0],
   ): Promise<AdminAuditQueryResult>;
@@ -79,6 +84,10 @@ export function createAdminQueryService(deps: AdminQueryServiceDeps): AdminQuery
       return deps.findHostedAccountByIdState(id);
     },
 
+    findTenantRecordByTenantId(tenantId) {
+      return deps.findTenantRecordByTenantIdState(tenantId);
+    },
+
     listAdminAuditRecords(filters) {
       return deps.listAdminAuditRecordsState(filters);
     },
@@ -101,6 +110,9 @@ export function createAdminQueryService(deps: AdminQueryServiceDeps): AdminQuery
         const tenantRecord = await deps.findTenantRecordByTenantIdState(entry.tenantId);
         const accountRecord = await deps.findHostedAccountByTenantIdState(entry.tenantId);
         const quota = tenantRecord?.monthlyRunQuota ?? null;
+        const quotaPolicy = resolvePlanQuotaPolicy(tenantRecord?.planId ?? null);
+        const overageUnits = quota === null ? 0 : Math.max(0, entry.used - quota);
+        const hardLimit = quota !== null && quotaPolicy.hardLimit;
         return {
           tenantId: entry.tenantId,
           tenantName: tenantRecord?.tenantName ?? null,
@@ -112,7 +124,10 @@ export function createAdminQueryService(deps: AdminQueryServiceDeps): AdminQuery
           period: entry.period,
           used: entry.used,
           remaining: quota === null ? null : Math.max(0, quota - entry.used),
-          enforced: quota !== null,
+          enforced: hardLimit,
+          hardLimit,
+          overage: overageUnits > 0,
+          overageUnits,
           updatedAt: entry.updatedAt,
         };
       }));

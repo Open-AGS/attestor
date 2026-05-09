@@ -356,6 +356,7 @@
   "overrides": {
     "@xmldom/xmldom": "^0.8.13",
     "axios": "^1.15.2",
+    "fast-xml-builder": "^1.2.0",
     "fast-xml-parser": "^5.7.2",
     "follow-redirects": "^1.16.0",
     "uuid": "^14.0.0"

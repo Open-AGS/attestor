@@ -65,12 +65,43 @@ async function testUsageServiceConsumesRunFromTenantContext(): Promise<void> {
 
   const result = await service.consume(tenant);
 
-  assert.equal(result.used, 4);
-  assert.equal(result.remaining, 6);
+  assert.equal(result.usage.used, 4);
+  assert.equal(result.usage.remaining, 6);
+  assert.equal(result.billingMetering, null);
   assert.deepEqual(calls, ['consume:tenant_123:pro:10']);
+}
+
+async function testUsageServiceRecordsOverageMetering(): Promise<void> {
+  const calls: string[] = [];
+  const service = createPipelineUsageService({
+    ...createDeps(calls),
+    async consumeRun(tenantId, planId, quota) {
+      calls.push(`consume:${tenantId}:${planId}:${quota}`);
+      return usage({ used: 11, remaining: 0, enforced: false, hardLimit: false, overage: true, overageUnits: 1 });
+    },
+    async recordOverageMetering({ tenant: meteredTenant, usage: meteredUsage }) {
+      calls.push(`meter:${meteredTenant.tenantId}:${meteredUsage.used}:${meteredUsage.overageUnits}`);
+      return {
+        provider: 'stripe',
+        status: 'mock_recorded',
+        reason: null,
+        eventName: 'attestor_admission_overage',
+        eventIdentifier: 'attestor_meter_event',
+        value: 1,
+        mock: true,
+      };
+    },
+  });
+
+  const result = await service.consume(tenant);
+
+  assert.equal(result.usage.overage, true);
+  assert.equal(result.billingMetering?.status, 'mock_recorded');
+  assert.deepEqual(calls, ['consume:tenant_123:pro:10', 'meter:tenant_123:11:1']);
 }
 
 await testUsageServiceChecksQuotaFromTenantContext();
 await testUsageServiceConsumesRunFromTenantContext();
+await testUsageServiceRecordsOverageMetering();
 
-console.log('Service pipeline usage service tests: 2 passed, 0 failed');
+console.log('Service pipeline usage service tests: 3 passed, 0 failed');

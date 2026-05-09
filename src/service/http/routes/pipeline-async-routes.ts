@@ -202,7 +202,8 @@ app.post('/api/v1/pipeline/run-async', async (c) => {
       }
       const rateLimit = rateReservation.rateLimit;
       applyRateLimitHeaders(c, rateLimit);
-      const usage = await pipelineUsageService.consume(tenant);
+      const usageConsumption = await pipelineUsageService.consume(tenant);
+      const { usage, billingMetering } = usageConsumption;
       const asyncQueue = await getAsyncQueueSummary(bullmqQueue, tenant.tenantId, tenant.planId);
       return c.json({
         jobId,
@@ -211,6 +212,7 @@ app.post('/api/v1/pipeline/run-async', async (c) => {
         submittedAt,
         tenantContext: { tenantId: tenant.tenantId, source: tenant.source, planId: tenant.planId },
         usage,
+        billingMetering,
         rateLimit,
         asyncQueue: {
           tenantPendingJobs: asyncQueue.tenant?.pendingJobs ?? 0,
@@ -281,7 +283,8 @@ app.post('/api/v1/pipeline/run-async', async (c) => {
     }
     const rateLimit = rateReservation.rateLimit;
     applyRateLimitHeaders(c, rateLimit);
-    const usage = await pipelineUsageService.consume(tenant);
+    const usageConsumption = await pipelineUsageService.consume(tenant);
+    const { usage, billingMetering } = usageConsumption;
     const jobId = `job-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
     const job: InProcessAsyncJob = {
       id: jobId,
@@ -355,6 +358,7 @@ app.post('/api/v1/pipeline/run-async', async (c) => {
       submittedAt,
       tenantContext: { tenantId: tenant.tenantId, source: tenant.source, planId: tenant.planId },
       usage,
+      billingMetering,
       rateLimit,
       asyncQueue: {
         tenantPendingJobs: inProcessSnapshot.pendingJobs + 1,

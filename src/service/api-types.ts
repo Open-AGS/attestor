@@ -44,6 +44,7 @@ export interface SyncPipelineRunResponse {
   schemaAttestation: SchemaAttestationSummary | null;
   tenantContext: { tenantId: string; source: string; planId: string | null };
   usage: UsageContext;
+  billingMetering: PipelineBillingMeteringResult | null;
   rateLimit: RateLimitContext;
   identitySource: 'operator_asserted' | 'oidc_verified' | 'pki_bound';
   reviewerName: string | null;
@@ -74,6 +75,7 @@ export interface AsyncPipelineSubmitResponse {
   submittedAt: string;
   tenantContext: { tenantId: string; source: string; planId: string | null };
   usage: UsageContext;
+  billingMetering: PipelineBillingMeteringResult | null;
   rateLimit: RateLimitContext;
   asyncQueue: {
     tenantPendingJobs: number;
@@ -1566,6 +1568,16 @@ export interface UsageContext {
   hardLimit: boolean;
   overage: boolean;
   overageUnits: number;
+}
+
+export interface PipelineBillingMeteringResult {
+  provider: 'stripe';
+  status: 'not_applicable' | 'skipped' | 'mock_recorded' | 'sent' | 'failed';
+  reason: string | null;
+  eventName: string | null;
+  eventIdentifier: string | null;
+  value: number;
+  mock: boolean;
 }
 
 export interface RateLimitContext {

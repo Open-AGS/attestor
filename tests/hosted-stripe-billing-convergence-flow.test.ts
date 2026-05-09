@@ -139,6 +139,9 @@ function configureIsolatedStores(root: string): void {
   process.env.ATTESTOR_STRIPE_PRICE_STARTER = 'price_starter_monthly';
   process.env.ATTESTOR_STRIPE_PRICE_PRO = 'price_pro_monthly';
   process.env.ATTESTOR_STRIPE_PRICE_SCALE = 'price_scale_monthly';
+  process.env.ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER = 'price_starter_overage_monthly';
+  process.env.ATTESTOR_STRIPE_OVERAGE_PRICE_PRO = 'price_pro_overage_monthly';
+  process.env.ATTESTOR_STRIPE_OVERAGE_PRICE_SCALE = 'price_scale_overage_monthly';
   process.env.ATTESTOR_STRIPE_PRICE_ENTERPRISE = 'price_enterprise_monthly';
 }
 

@@ -272,6 +272,7 @@ import {
   extractInvoiceLineItemSnapshotsFromInvoice,
   listHostedStripeActiveEntitlements,
   listHostedStripeInvoiceLineItems,
+  recordStripeOverageMeterEvent,
 } from '../stripe-billing.js';
 import { isSupportedStripeWebhookEvent } from '../stripe-webhook-events.js';
 import {
@@ -636,6 +637,10 @@ export async function createApiHttpRouteRuntime(
   const pipelineRouteDeps = buildPipelineRouteDeps({
     checkQuota: canConsumePipelineRunState,
     consumeRun: consumePipelineRunState,
+    async recordOverageMetering({ tenant, usage }) {
+      const account = await findHostedAccountByTenantIdState(tenant.tenantId);
+      return recordStripeOverageMeterEvent({ account, tenant, usage });
+    },
     upsertDeadLetterRecord: upsertAsyncDeadLetterRecordState,
     currentTenant,
     reserveTenantPipelineRequest,

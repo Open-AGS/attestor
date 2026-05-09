@@ -195,6 +195,15 @@ export function createStripeWebhookBillingProcessor(
       || eventType === 'charge.refunded';
   }
 
+  function stripeSubscriptionHostedPriceId(subscription: Stripe.Subscription): string | null {
+    const priceIds = (subscription.items?.data ?? [])
+      .map((item) => typeof item.price?.id === 'string' ? item.price.id : null)
+      .filter((priceId): priceId is string => priceId !== null);
+    return priceIds.find((priceId) => findHostedPlanByStripePriceId(priceId) !== null)
+      ?? priceIds[0]
+      ?? null;
+  }
+
   async function processUnsupportedEvent(
     stripeWebhook: StripeWebhookProcessingHandle,
     c: StripeWebhookProcessorContext,
@@ -246,9 +255,7 @@ export function createStripeWebhookBillingProcessor(
         : event.type === 'customer.subscription.deleted'
           ? 'canceled'
           : null;
-    const stripePriceId = typeof subscription.items?.data?.[0]?.price?.id === 'string'
-      ? subscription.items.data[0].price.id
-      : null;
+    const stripePriceId = stripeSubscriptionHostedPriceId(subscription);
     const accountIdFromMetadata = metadataStringValue('attestorAccountId', subscription.metadata);
 
     let applied;

@@ -3,8 +3,9 @@ import {
   StripeBillingError,
   createHostedBillingPortalSession,
   createHostedCheckoutSession,
+  recordStripeOverageMeterEvent,
 } from '../src/service/stripe-billing.js';
-import { getHostedPlan, resolvePlanStripeTrialDays } from '../src/service/plan-catalog.js';
+import { getHostedPlan, resolvePlanStripeOveragePrice, resolvePlanStripeTrialDays } from '../src/service/plan-catalog.js';
 
 let passed = 0;
 
@@ -22,6 +23,10 @@ async function main(): Promise<void> {
     ATTESTOR_STRIPE_PRICE_STARTER: process.env.ATTESTOR_STRIPE_PRICE_STARTER,
     ATTESTOR_STRIPE_PRICE_PRO: process.env.ATTESTOR_STRIPE_PRICE_PRO,
     ATTESTOR_STRIPE_PRICE_SCALE: process.env.ATTESTOR_STRIPE_PRICE_SCALE,
+    ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER: process.env.ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER,
+    ATTESTOR_STRIPE_OVERAGE_PRICE_PRO: process.env.ATTESTOR_STRIPE_OVERAGE_PRICE_PRO,
+    ATTESTOR_STRIPE_OVERAGE_PRICE_SCALE: process.env.ATTESTOR_STRIPE_OVERAGE_PRICE_SCALE,
+    ATTESTOR_STRIPE_OVERAGE_METER_EVENT_NAME: process.env.ATTESTOR_STRIPE_OVERAGE_METER_EVENT_NAME,
   };
 
   process.env.ATTESTOR_STRIPE_USE_MOCK = 'true';
@@ -30,6 +35,9 @@ async function main(): Promise<void> {
   process.env.ATTESTOR_STRIPE_PRICE_STARTER = 'price_starter_live';
   process.env.ATTESTOR_STRIPE_PRICE_PRO = 'price_pro_live';
   process.env.ATTESTOR_STRIPE_PRICE_SCALE = 'price_scale_live';
+  process.env.ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER = 'price_starter_overage_live';
+  process.env.ATTESTOR_STRIPE_OVERAGE_PRICE_PRO = 'price_pro_overage_live';
+  process.env.ATTESTOR_STRIPE_OVERAGE_PRICE_SCALE = 'price_scale_overage_live';
 
   try {
     const starter = getHostedPlan('starter');
@@ -44,6 +52,8 @@ async function main(): Promise<void> {
     ok(developer?.intendedFor === 'evaluation', 'Stripe commercial config: developer remains the non-Stripe evaluation plan');
     ok(developer?.defaultMonthlyRunQuota === 500, 'Stripe commercial config: developer exposes 500 included admissions');
     ok(legacyCommunity?.id === 'developer', 'Stripe commercial config: legacy community resolves to developer');
+    ok(resolvePlanStripeOveragePrice('starter').priceId === 'price_starter_overage_live', 'Stripe commercial config: starter overage price resolves from env');
+    ok(resolvePlanStripeOveragePrice('developer').billable === false, 'Stripe commercial config: developer is not metered for paid overage');
 
     process.env.ATTESTOR_STRIPE_STARTER_TRIAL_DAYS = '21';
     ok(resolvePlanStripeTrialDays('starter').trialDays === 21, 'Stripe commercial config: starter trial can be overridden by env');
@@ -75,6 +85,7 @@ async function main(): Promise<void> {
       idempotencyKey: 'starter-trial-test',
     });
     ok(starterCheckout.trialDays === null, 'Stripe commercial config: starter checkout returns no paid Stripe trial in mock mode');
+    ok(starterCheckout.stripeOveragePriceId === 'price_starter_overage_live', 'Stripe commercial config: starter checkout includes the metered overage price');
 
     const proCheckout = await createHostedCheckoutSession({
       account,
@@ -83,6 +94,50 @@ async function main(): Promise<void> {
       idempotencyKey: 'pro-no-trial-test',
     });
     ok(proCheckout.trialDays === null, 'Stripe commercial config: pro checkout returns no trial in mock mode');
+    ok(proCheckout.stripeOveragePriceId === 'price_pro_overage_live', 'Stripe commercial config: pro checkout includes the metered overage price');
+
+    delete process.env.ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER;
+    let missingOveragePriceError: unknown = null;
+    try {
+      await createHostedCheckoutSession({
+        account,
+        tenant,
+        plan: starter!,
+        idempotencyKey: 'missing-overage-price-test',
+      });
+    } catch (error) {
+      missingOveragePriceError = error;
+    }
+    ok(missingOveragePriceError instanceof StripeBillingError, 'Stripe commercial config: missing paid overage price raises StripeBillingError');
+    ok((missingOveragePriceError as StripeBillingError).code === 'PLAN_UNAVAILABLE', 'Stripe commercial config: missing paid overage price is treated as unavailable plan config');
+    process.env.ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER = 'price_starter_overage_live';
+
+    const metering = await recordStripeOverageMeterEvent({
+      account: {
+        ...account,
+        billing: {
+          provider: 'stripe',
+          stripeCustomerId: 'cus_mock_123',
+        },
+      },
+      tenant,
+      usage: {
+        tenantId: 'tenant_123',
+        planId: 'starter',
+        meter: 'monthly_admission_runs',
+        period: '2026-05',
+        used: 25_001,
+        quota: 25_000,
+        remaining: 0,
+        enforced: false,
+        hardLimit: false,
+        overage: true,
+        overageUnits: 1,
+      },
+    });
+    ok(metering.status === 'mock_recorded', 'Stripe commercial config: mock Stripe overage metering records over-quota usage');
+    ok(metering.value === 1, 'Stripe commercial config: overage meter emits one admission unit per over-quota run');
+    ok(typeof metering.eventIdentifier === 'string' && metering.eventIdentifier.startsWith('attestor_'), 'Stripe commercial config: overage meter event gets a stable Attestor identifier');
 
     process.env.ATTESTOR_BILLING_SUCCESS_URL = '/billing/success';
     let invalidCheckoutUrlError: unknown = null;

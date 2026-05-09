@@ -151,10 +151,12 @@ async function run() {
   process.env.ATTESTOR_SESSION_COOKIE_SECURE = 'false';
   process.env.ATTESTOR_ADMIN_API_KEY = 'admin-secret';
   process.env.ATTESTOR_METRICS_API_KEY = 'metrics-secret';
-process.env.ATTESTOR_RATE_LIMIT_WINDOW_SECONDS = '5';
+  process.env.ATTESTOR_RATE_LIMIT_WINDOW_SECONDS = '5';
   process.env.ATTESTOR_RATE_LIMIT_STARTER_REQUESTS = '3';
   process.env.ATTESTOR_RATE_LIMIT_PRO_REQUESTS = '20';
   process.env.ATTESTOR_ASYNC_PENDING_STARTER_JOBS = '1';
+  process.env.ATTESTOR_ASYNC_ACTIVE_STARTER_JOBS = '1';
+  process.env.ATTESTOR_ASYNC_DISPATCH_STARTER_WEIGHT = '1';
   process.env.ATTESTOR_ASYNC_DISPATCH_BASE_INTERVAL_MS = '400';
   process.env.ATTESTOR_STRIPE_USE_MOCK = 'true';
   process.env.STRIPE_API_KEY = 'sk_test_live_api_mock';
@@ -165,6 +167,9 @@ process.env.ATTESTOR_RATE_LIMIT_WINDOW_SECONDS = '5';
   process.env.ATTESTOR_STRIPE_PRICE_STARTER = 'price_starter_monthly';
   process.env.ATTESTOR_STRIPE_PRICE_PRO = 'price_pro_monthly';
   process.env.ATTESTOR_STRIPE_PRICE_SCALE = 'price_scale_monthly';
+  process.env.ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER = 'price_starter_overage_monthly';
+  process.env.ATTESTOR_STRIPE_OVERAGE_PRICE_PRO = 'price_pro_overage_monthly';
+  process.env.ATTESTOR_STRIPE_OVERAGE_PRICE_SCALE = 'price_scale_overage_monthly';
   process.env.ATTESTOR_STRIPE_PRICE_ENTERPRISE = 'price_enterprise_monthly';
   resetTenantKeyStoreForTests();
   resetUsageMeter();
@@ -516,7 +521,7 @@ process.env.ATTESTOR_RATE_LIMIT_WINDOW_SECONDS = '5';
           ticketId: 'INC-2048',
           requestedById: 'ops.breakglass',
           requestedByName: 'Operations Override',
-          requestedByRole: 'incident_commander',
+          requestedByRole: 'financial_reporting_manager',
           note: 'Emergency filing preparation needed before market open.',
         }),
       });
@@ -1243,7 +1248,7 @@ process.env.ATTESTOR_RATE_LIMIT_WINDOW_SECONDS = '5';
       ok(Boolean(developerPlan), 'Admin Plans: developer plan present');
       ok(developerPlan.defaultMonthlyRunQuota === 500, 'Admin Plans: developer hosted quota = 500');
       ok(Boolean(starterPlan), 'Admin Plans: starter plan present');
-      ok(starterPlan.defaultMonthlyRunQuota === 100, 'Admin Plans: starter quota = 100');
+      ok(starterPlan.defaultMonthlyRunQuota === 25_000, 'Admin Plans: starter quota = 25,000');
       ok(starterPlan.defaultPipelineRequestsPerWindow === 3, 'Admin Plans: starter rate limit = 3');
       ok(starterPlan.defaultAsyncActiveJobsPerTenant === 1, 'Admin Plans: starter active execution cap = 1');
       ok(starterPlan.defaultAsyncDispatchWeight === 1, 'Admin Plans: starter dispatch weight = 1');
@@ -1273,7 +1278,7 @@ process.env.ATTESTOR_RATE_LIMIT_WINDOW_SECONDS = '5';
       ok(createAccountBody.account.accountName === 'Account Co', 'Admin Accounts: account name persisted');
       ok(typeof createAccountBody.initialKey.apiKey === 'string', 'Admin Accounts: initial key returned');
       ok(createAccountBody.initialKey.planId === 'starter', 'Admin Accounts: hosted default plan applied');
-      ok(createAccountBody.initialKey.monthlyRunQuota === 100, 'Admin Accounts: hosted default quota applied');
+      ok(createAccountBody.initialKey.monthlyRunQuota === 25_000, 'Admin Accounts: hosted default quota applied');
 
       const createAccountReplayRes = await fetch(`${BASE}/api/v1/admin/accounts`, {
         method: 'POST',
@@ -2310,7 +2315,7 @@ process.env.ATTESTOR_RATE_LIMIT_WINDOW_SECONDS = '5';
       ok(billingSettingsPageRes.status === 200, 'Billing pages: billing settings return surface responds');
       const billingSettingsPage = await billingSettingsPageRes.text();
       ok(billingSettingsPage.includes('Billing settings'), 'Billing pages: billing settings return surface explains next steps');
-      ok(billingSettingsPage.includes('Starter is the first hosted paid plan'), 'Billing pages: billing settings summarises the plan ladder in plain language');
+      ok(billingSettingsPage.includes('Developer is the free evaluation plan'), 'Billing pages: billing settings summarises the plan ladder in plain language');
 
       const landingPageRes = await fetch(`${BASE}/`);
       ok(landingPageRes.status === 200, 'Site surface: landing page responds');

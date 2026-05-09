@@ -7,11 +7,13 @@
  * - Supports a deterministic mock mode for local integration tests
  */
 
+import { createHash } from 'node:crypto';
 import Stripe from 'stripe';
 import type { HostedAccountRecord } from './account-store.js';
 import type { HostedPlanDefinition } from './plan-catalog.js';
 import type { TenantContext } from './tenant-isolation.js';
-import { resolvePlanStripePrice, resolvePlanStripeTrialDays } from './plan-catalog.js';
+import type { UsageContext } from './usage-meter.js';
+import { resolvePlanStripeOveragePrice, resolvePlanStripePrice, resolvePlanStripeTrialDays } from './plan-catalog.js';
 
 export class StripeBillingError extends Error {
   constructor(
@@ -81,11 +83,25 @@ function planPriceOrThrow(planId: string): { planId: string; priceId: string } {
   };
 }
 
+function planOveragePriceOrThrow(plan: HostedPlanDefinition): { priceId: string | null } {
+  const resolved = resolvePlanStripeOveragePrice(plan.id);
+  if (resolved.billable && !resolved.priceId) {
+    throw new StripeBillingError(
+      'PLAN_UNAVAILABLE',
+      `Stripe metered overage price not configured for plan '${plan.id}'. Set ATTESTOR_STRIPE_OVERAGE_PRICE_${plan.id.toUpperCase()} first.`,
+    );
+  }
+  return {
+    priceId: resolved.priceId,
+  };
+}
+
 export interface HostedCheckoutSessionResult {
   sessionId: string;
   url: string;
   planId: string;
   stripePriceId: string;
+  stripeOveragePriceId: string | null;
   trialDays: number | null;
   mode: 'subscription';
   mock: boolean;
@@ -156,6 +172,16 @@ export interface HostedStripeBillingSnapshot {
   charges: HostedStripeChargeSnapshot[];
   lineItems: HostedStripeInvoiceLineItemSnapshot[];
   entitlements: HostedStripeActiveEntitlementSnapshot[];
+}
+
+export interface StripeOverageMeteringResult {
+  provider: 'stripe';
+  status: 'not_applicable' | 'skipped' | 'mock_recorded' | 'sent' | 'failed';
+  reason: string | null;
+  eventName: string | null;
+  eventIdentifier: string | null;
+  value: number;
+  mock: boolean;
 }
 
 function stripeReferenceId(value: unknown): string | null {
@@ -325,6 +351,7 @@ export async function createHostedCheckoutSession(options: {
   idempotencyKey: string;
 }): Promise<HostedCheckoutSessionResult> {
   const { planId, priceId } = planPriceOrThrow(options.plan.id);
+  const { priceId: overagePriceId } = planOveragePriceOrThrow(options.plan);
   const trialDays = resolvePlanStripeTrialDays(options.plan.id).trialDays;
   const successUrl = requiredUrl('ATTESTOR_BILLING_SUCCESS_URL');
   const cancelUrl = requiredUrl('ATTESTOR_BILLING_CANCEL_URL');
@@ -346,6 +373,7 @@ export async function createHostedCheckoutSession(options: {
       url: `https://billing.stripe.test/checkout/${token}`,
       planId,
       stripePriceId: priceId,
+      stripeOveragePriceId: overagePriceId,
       trialDays,
       mode: 'subscription',
       mock: true,
@@ -362,7 +390,10 @@ export async function createHostedCheckoutSession(options: {
     mode: 'subscription',
     success_url: successUrl,
     cancel_url: cancelUrl,
-    line_items: [{ price: priceId, quantity: 1 }],
+    line_items: [
+      { price: priceId, quantity: 1 },
+      ...(overagePriceId ? [{ price: overagePriceId }] : []),
+    ],
     customer: options.account.billing.stripeCustomerId ?? undefined,
     customer_email: options.account.billing.stripeCustomerId ? undefined : options.account.contactEmail,
     metadata,
@@ -383,10 +414,142 @@ export async function createHostedCheckoutSession(options: {
     url: session.url,
     planId,
     stripePriceId: priceId,
+    stripeOveragePriceId: overagePriceId,
     trialDays,
     mode: 'subscription',
     mock: false,
   };
+}
+
+function stripeMeterEventIdentifier(options: {
+  tenantId: string;
+  planId: string | null;
+  meter: string;
+  period: string;
+  used: number;
+}): string {
+  const digest = createHash('sha256')
+    .update(JSON.stringify({
+      tenantId: options.tenantId,
+      planId: options.planId,
+      meter: options.meter,
+      period: options.period,
+      used: options.used,
+    }))
+    .digest('hex')
+    .slice(0, 40);
+  return `attestor_${digest}`;
+}
+
+export async function recordStripeOverageMeterEvent(options: {
+  account: HostedAccountRecord | null;
+  tenant: Pick<TenantContext, 'tenantId' | 'planId'>;
+  usage: UsageContext;
+}): Promise<StripeOverageMeteringResult> {
+  if (!options.usage.overage || options.usage.overageUnits <= 0) {
+    return {
+      provider: 'stripe',
+      status: 'not_applicable',
+      reason: 'usage_within_included_quota',
+      eventName: null,
+      eventIdentifier: null,
+      value: 0,
+      mock: useMockStripeBilling(),
+    };
+  }
+
+  const overagePrice = resolvePlanStripeOveragePrice(options.usage.planId);
+  if (!overagePrice.billable) {
+    return {
+      provider: 'stripe',
+      status: 'not_applicable',
+      reason: 'plan_not_metered_for_overage',
+      eventName: overagePrice.meterEventName,
+      eventIdentifier: null,
+      value: 0,
+      mock: useMockStripeBilling(),
+    };
+  }
+  if (!overagePrice.priceId) {
+    return {
+      provider: 'stripe',
+      status: 'failed',
+      reason: `Stripe overage price is not configured for plan '${overagePrice.planId}'.`,
+      eventName: overagePrice.meterEventName,
+      eventIdentifier: null,
+      value: 1,
+      mock: useMockStripeBilling(),
+    };
+  }
+
+  const account = options.account;
+  const stripeCustomerId = account?.billing.provider === 'stripe'
+    ? account.billing.stripeCustomerId
+    : null;
+  if (!stripeCustomerId) {
+    return {
+      provider: 'stripe',
+      status: 'skipped',
+      reason: 'hosted account has no Stripe customer id',
+      eventName: overagePrice.meterEventName,
+      eventIdentifier: null,
+      value: 1,
+      mock: useMockStripeBilling(),
+    };
+  }
+
+  const identifier = stripeMeterEventIdentifier({
+    tenantId: options.tenant.tenantId,
+    planId: options.usage.planId,
+    meter: options.usage.meter,
+    period: options.usage.period,
+    used: options.usage.used,
+  });
+
+  if (useMockStripeBilling()) {
+    return {
+      provider: 'stripe',
+      status: 'mock_recorded',
+      reason: null,
+      eventName: overagePrice.meterEventName,
+      eventIdentifier: identifier,
+      value: 1,
+      mock: true,
+    };
+  }
+
+  try {
+    await stripeClient().billing.meterEvents.create({
+      event_name: overagePrice.meterEventName,
+      identifier,
+      payload: {
+        stripe_customer_id: stripeCustomerId,
+        value: '1',
+      },
+      timestamp: Math.floor(Date.now() / 1000),
+    }, {
+      idempotencyKey: identifier,
+    });
+    return {
+      provider: 'stripe',
+      status: 'sent',
+      reason: null,
+      eventName: overagePrice.meterEventName,
+      eventIdentifier: identifier,
+      value: 1,
+      mock: false,
+    };
+  } catch (error) {
+    return {
+      provider: 'stripe',
+      status: 'failed',
+      reason: error instanceof Error ? error.message : String(error),
+      eventName: overagePrice.meterEventName,
+      eventIdentifier: identifier,
+      value: 1,
+      mock: false,
+    };
+  }
 }
 
 export async function createHostedBillingPortalSession(options: {

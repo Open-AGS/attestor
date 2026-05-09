@@ -2043,6 +2043,7 @@ app.post('/api/v1/account/billing/checkout', async (c) => {
     tenantId: current.tenant.tenantId,
     planId: checkout.planId,
     stripePriceId: checkout.stripePriceId,
+    stripeOveragePriceId: checkout.stripeOveragePriceId,
     trialDays: checkout.trialDays,
     checkoutSessionId: checkout.sessionId,
     checkoutUrl: checkout.url,

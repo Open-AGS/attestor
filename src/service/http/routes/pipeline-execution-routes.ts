@@ -662,7 +662,8 @@ app.post('/api/v1/pipeline/run', async (c) => {
       };
     }
 
-    const usage = await pipelineUsageService.consume(tenant);
+    const usageConsumption = await pipelineUsageService.consume(tenant);
+    const { usage, billingMetering } = usageConsumption;
 
     return c.json({
       runId: report.runId,
@@ -695,6 +696,7 @@ app.post('/api/v1/pipeline/run', async (c) => {
         return { tenantId: tenant.tenantId, source: tenant.source, planId: tenant.planId };
       })(),
       usage,
+      billingMetering,
       rateLimit,
       identitySource,
       reviewerName: reviewerIdentity?.name ?? null,

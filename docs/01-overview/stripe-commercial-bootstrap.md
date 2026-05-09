@@ -18,13 +18,26 @@ Customers do not need to understand your payout setup. They only need a clear pl
 
 ## What You Must Set Up As The Operator
 
-### 1. Create The Live Stripe Prices
+### 1. Create The Live Stripe Prices And Meter
 
 Create recurring Stripe prices for:
 
 - `starter`
 - `pro`
 - `scale`
+
+Create one Stripe Billing Meter for admission overage:
+
+- event name: `attestor_admission_overage`
+- customer mapping payload key: `stripe_customer_id`
+- value payload key: `value`
+- aggregation: `sum`
+
+Then create one recurring metered monthly overage price per paid hosted plan, attached to that meter:
+
+- Starter overage: USD `$0.05` per admission
+- Pro overage: USD `$0.025` per admission
+- Scale overage: USD `$0.015` per admission
 
 Do not create an Enterprise self-service price unless you intentionally want Enterprise checkout. The default commercial model keeps Enterprise sales/custom.
 
@@ -35,6 +48,9 @@ Map those live Stripe price ids into:
 - `ATTESTOR_STRIPE_PRICE_STARTER`
 - `ATTESTOR_STRIPE_PRICE_PRO`
 - `ATTESTOR_STRIPE_PRICE_SCALE`
+- `ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER`
+- `ATTESTOR_STRIPE_OVERAGE_PRICE_PRO`
+- `ATTESTOR_STRIPE_OVERAGE_PRICE_SCALE`
 
 Leave `ATTESTOR_STRIPE_PRICE_ENTERPRISE` unset unless Enterprise self-service checkout is intentionally enabled.
 
@@ -64,6 +80,9 @@ STRIPE_API_KEY=sk_live_... \
 ATTESTOR_STRIPE_PRICE_STARTER=price_... \
 ATTESTOR_STRIPE_PRICE_PRO=price_... \
 ATTESTOR_STRIPE_PRICE_SCALE=price_... \
+ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER=price_... \
+ATTESTOR_STRIPE_OVERAGE_PRICE_PRO=price_... \
+ATTESTOR_STRIPE_OVERAGE_PRICE_SCALE=price_... \
 npm run probe:stripe-live-readiness
 ```
 
@@ -72,6 +91,7 @@ This probe checks:
 - the API key is live-mode
 - Stripe account details, charge capability, and payout capability are enabled
 - the Starter, Pro, and Scale price ids are active live monthly USD prices matching the commercial model
+- the Starter, Pro, and Scale overage prices are active live monthly metered USD prices attached to the `attestor_admission_overage` meter
 - the default Stripe Customer Portal configuration is active
 - the default Stripe Customer Portal lets customers switch between the configured Starter, Pro, and Scale prices
 - quantity changes are disabled in the Customer Portal, because hosted plans are quota tiers rather than seat quantities
@@ -123,6 +143,10 @@ export STRIPE_WEBHOOK_SECRET=whsec_...
 export ATTESTOR_STRIPE_PRICE_STARTER=price_...
 export ATTESTOR_STRIPE_PRICE_PRO=price_...
 export ATTESTOR_STRIPE_PRICE_SCALE=price_...
+export ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER=price_...
+export ATTESTOR_STRIPE_OVERAGE_PRICE_PRO=price_...
+export ATTESTOR_STRIPE_OVERAGE_PRICE_SCALE=price_...
+export ATTESTOR_STRIPE_OVERAGE_METER_EVENT_NAME=attestor_admission_overage
 # Optional only when Enterprise self-service checkout is intentionally enabled:
 # export ATTESTOR_STRIPE_PRICE_ENTERPRISE=price_...
 export ATTESTOR_BILLING_SUCCESS_URL=https://<host>/billing/success
@@ -198,5 +222,6 @@ Attestor is commercially live when all of these are true:
 - Attestor runtime has the live Stripe env vars
 - Stripe webhook is pointed at the live Attestor deployment
 - a paid checkout can complete and reflect back into the hosted account plane
+- an over-quota paid admission emits a Stripe Billing Meter Event for the subscribed customer
 
 Until then, the product may still be technically live and usable, but it is not yet fully sale-ready.

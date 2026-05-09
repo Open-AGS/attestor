@@ -11,9 +11,24 @@ export interface PipelineUsageDecision {
   usage: UsageContext;
 }
 
+export interface PipelineBillingMeteringResult {
+  provider: 'stripe';
+  status: 'not_applicable' | 'skipped' | 'mock_recorded' | 'sent' | 'failed';
+  reason: string | null;
+  eventName: string | null;
+  eventIdentifier: string | null;
+  value: number;
+  mock: boolean;
+}
+
+export interface PipelineUsageConsumption {
+  usage: UsageContext;
+  billingMetering: PipelineBillingMeteringResult | null;
+}
+
 export interface PipelineUsageService {
   check(tenant: PipelineUsageTenant): Promise<PipelineUsageDecision>;
-  consume(tenant: PipelineUsageTenant): Promise<UsageContext>;
+  consume(tenant: PipelineUsageTenant): Promise<PipelineUsageConsumption>;
 }
 
 export interface PipelineUsageServiceDeps {
@@ -27,6 +42,10 @@ export interface PipelineUsageServiceDeps {
     planId: string | null | undefined,
     quota: number | null | undefined,
   ): Promise<UsageContext>;
+  recordOverageMetering?(input: {
+    tenant: PipelineUsageTenant;
+    usage: UsageContext;
+  }): Promise<PipelineBillingMeteringResult | null>;
 }
 
 export function createPipelineUsageService(deps: PipelineUsageServiceDeps): PipelineUsageService {
@@ -35,8 +54,12 @@ export function createPipelineUsageService(deps: PipelineUsageServiceDeps): Pipe
       return deps.checkQuota(tenant.tenantId, tenant.planId, tenant.monthlyRunQuota);
     },
 
-    consume(tenant) {
-      return deps.consumeRun(tenant.tenantId, tenant.planId, tenant.monthlyRunQuota);
+    async consume(tenant) {
+      const usage = await deps.consumeRun(tenant.tenantId, tenant.planId, tenant.monthlyRunQuota);
+      const billingMetering = usage.overage && usage.overageUnits > 0
+        ? await deps.recordOverageMetering?.({ tenant, usage }) ?? null
+        : null;
+      return { usage, billingMetering };
     },
   };
 }

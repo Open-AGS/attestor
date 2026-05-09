@@ -5,12 +5,15 @@ type PaidPlanId = 'starter' | 'pro' | 'scale';
 
 export interface StripePriceExpectation {
   planId: PaidPlanId;
+  kind: 'base' | 'overage';
   displayName: string;
   envName: string;
   expectedCurrency: string;
-  expectedUnitAmount: number;
+  expectedUnitAmountDecimal: string;
   expectedInterval: 'month';
   expectedIntervalCount: number;
+  expectedUsageType: 'licensed' | 'metered';
+  expectedMeterEventName: string | null;
 }
 
 export interface StripePriceReadiness {
@@ -20,9 +23,12 @@ export interface StripePriceReadiness {
   active: boolean | null;
   livemode: boolean | null;
   currency: string | null;
-  unitAmount: number | null;
+  unitAmount: string | null;
   interval: string | null;
   intervalCount: number | null;
+  usageType: string | null;
+  meterId: string | null;
+  meterEventName: string | null;
   productId: string | null;
   productActive: boolean | null;
   matchesExpected: boolean;
@@ -81,6 +87,11 @@ export interface StripeReadinessClient {
   products: {
     retrieve(id: string): Promise<Stripe.Product | Stripe.DeletedProduct>;
   };
+  billing: {
+    meters: {
+      retrieve(id: string): Promise<Stripe.Billing.Meter>;
+    };
+  };
   billingPortal: {
     configurations: {
       list(params: Stripe.BillingPortal.ConfigurationListParams): Promise<{ data: Stripe.BillingPortal.Configuration[] }>;
@@ -97,30 +108,75 @@ export interface StripeLiveReadinessProbeOptions {
 export const STRIPE_PRICE_EXPECTATIONS: readonly StripePriceExpectation[] = Object.freeze([
   {
     planId: 'starter',
+    kind: 'base',
     displayName: 'Starter',
     envName: 'ATTESTOR_STRIPE_PRICE_STARTER',
     expectedCurrency: 'usd',
-    expectedUnitAmount: 29_900,
+    expectedUnitAmountDecimal: '29900',
     expectedInterval: 'month',
     expectedIntervalCount: 1,
+    expectedUsageType: 'licensed',
+    expectedMeterEventName: null,
   },
   {
     planId: 'pro',
+    kind: 'base',
     displayName: 'Pro',
     envName: 'ATTESTOR_STRIPE_PRICE_PRO',
     expectedCurrency: 'usd',
-    expectedUnitAmount: 149_900,
+    expectedUnitAmountDecimal: '149900',
     expectedInterval: 'month',
     expectedIntervalCount: 1,
+    expectedUsageType: 'licensed',
+    expectedMeterEventName: null,
   },
   {
     planId: 'scale',
+    kind: 'base',
     displayName: 'Scale',
     envName: 'ATTESTOR_STRIPE_PRICE_SCALE',
     expectedCurrency: 'usd',
-    expectedUnitAmount: 599_900,
+    expectedUnitAmountDecimal: '599900',
     expectedInterval: 'month',
     expectedIntervalCount: 1,
+    expectedUsageType: 'licensed',
+    expectedMeterEventName: null,
+  },
+  {
+    planId: 'starter',
+    kind: 'overage',
+    displayName: 'Starter overage',
+    envName: 'ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER',
+    expectedCurrency: 'usd',
+    expectedUnitAmountDecimal: '5',
+    expectedInterval: 'month',
+    expectedIntervalCount: 1,
+    expectedUsageType: 'metered',
+    expectedMeterEventName: 'attestor_admission_overage',
+  },
+  {
+    planId: 'pro',
+    kind: 'overage',
+    displayName: 'Pro overage',
+    envName: 'ATTESTOR_STRIPE_OVERAGE_PRICE_PRO',
+    expectedCurrency: 'usd',
+    expectedUnitAmountDecimal: '2.5',
+    expectedInterval: 'month',
+    expectedIntervalCount: 1,
+    expectedUsageType: 'metered',
+    expectedMeterEventName: 'attestor_admission_overage',
+  },
+  {
+    planId: 'scale',
+    kind: 'overage',
+    displayName: 'Scale overage',
+    envName: 'ATTESTOR_STRIPE_OVERAGE_PRICE_SCALE',
+    expectedCurrency: 'usd',
+    expectedUnitAmountDecimal: '1.5',
+    expectedInterval: 'month',
+    expectedIntervalCount: 1,
+    expectedUsageType: 'metered',
+    expectedMeterEventName: 'attestor_admission_overage',
   },
 ]);
 
@@ -174,12 +230,32 @@ function priceIntervalCount(price: Stripe.Price): number | null {
   return price.recurring?.interval_count ?? null;
 }
 
+function priceUsageType(price: Stripe.Price): string | null {
+  return price.recurring?.usage_type ?? null;
+}
+
+function priceMeterId(price: Stripe.Price): string | null {
+  return price.recurring?.meter ?? null;
+}
+
+function priceUnitAmount(price: Stripe.Price): string | null {
+  const decimal = price.unit_amount_decimal;
+  if (typeof decimal === 'string' && decimal.trim() !== '') return decimal.trim();
+  return typeof price.unit_amount === 'number' ? String(price.unit_amount) : null;
+}
+
+function decimalAmountsMatch(actual: string | null, expected: string): boolean {
+  if (actual === null) return false;
+  return Number(actual) === Number(expected);
+}
+
 function sortedUnique(values: Iterable<string>): string[] {
   return Array.from(new Set(Array.from(values).filter((value) => value.trim() !== ''))).sort();
 }
 
 function requiredPortalPriceIds(env: Record<string, string | undefined>): string[] {
   return sortedUnique(STRIPE_PRICE_EXPECTATIONS
+    .filter((expectation) => expectation.kind === 'base')
     .map((expectation) => envValue(env, expectation.envName))
     .filter((value): value is string => value !== null));
 }
@@ -245,6 +321,9 @@ async function evaluatePrice(
       unitAmount: null,
       interval: null,
       intervalCount: null,
+      usageType: null,
+      meterId: null,
+      meterEventName: null,
       productId: null,
       productActive: null,
       matchesExpected: false,
@@ -263,13 +342,27 @@ async function evaluatePrice(
 
     const interval = priceInterval(price);
     const intervalCount = priceIntervalCount(price);
+    const usageType = priceUsageType(price);
+    const meterId = priceMeterId(price);
+    const unitAmount = priceUnitAmount(price);
+    let meterEventName: string | null = null;
+    if (meterId) {
+      const meter = await stripe.billing.meters.retrieve(meterId);
+      meterEventName = meter.event_name;
+      if (meter.status !== 'active') {
+        issues.push(`${expectation.displayName} Stripe meter is ${meter.status}, expected active.`);
+      }
+      if (!allowTestMode && meter.livemode !== true) {
+        issues.push(`${expectation.displayName} Stripe meter is not a live-mode meter.`);
+      }
+    }
     if (price.active !== true) issues.push(`${expectation.displayName} Stripe price is not active.`);
     if (!allowTestMode && price.livemode !== true) issues.push(`${expectation.displayName} Stripe price is not a live-mode price.`);
     if (price.currency !== expectation.expectedCurrency) {
       issues.push(`${expectation.displayName} Stripe price currency is ${price.currency}, expected ${expectation.expectedCurrency}.`);
     }
-    if (price.unit_amount !== expectation.expectedUnitAmount) {
-      issues.push(`${expectation.displayName} Stripe price amount is ${price.unit_amount}, expected ${expectation.expectedUnitAmount}.`);
+    if (!decimalAmountsMatch(unitAmount, expectation.expectedUnitAmountDecimal)) {
+      issues.push(`${expectation.displayName} Stripe price amount is ${unitAmount ?? 'null'}, expected ${expectation.expectedUnitAmountDecimal}.`);
     }
     if (price.type !== 'recurring') issues.push(`${expectation.displayName} Stripe price is not recurring.`);
     if (interval !== expectation.expectedInterval) {
@@ -277,6 +370,18 @@ async function evaluatePrice(
     }
     if (intervalCount !== expectation.expectedIntervalCount) {
       issues.push(`${expectation.displayName} Stripe price interval_count is ${intervalCount ?? 'null'}, expected ${expectation.expectedIntervalCount}.`);
+    }
+    if (usageType !== expectation.expectedUsageType) {
+      issues.push(`${expectation.displayName} Stripe price usage_type is ${usageType ?? 'null'}, expected ${expectation.expectedUsageType}.`);
+    }
+    if (expectation.expectedMeterEventName && !meterId) {
+      issues.push(`${expectation.displayName} Stripe price must be attached to a billing meter.`);
+    }
+    if (expectation.expectedMeterEventName && meterEventName !== expectation.expectedMeterEventName) {
+      issues.push(`${expectation.displayName} Stripe meter event_name is ${meterEventName ?? 'null'}, expected ${expectation.expectedMeterEventName}.`);
+    }
+    if (!expectation.expectedMeterEventName && meterId) {
+      issues.push(`${expectation.displayName} Stripe base price must not be attached to a metered usage meter.`);
     }
     if (retrievedProductActive !== true) issues.push(`${expectation.displayName} Stripe product is not active.`);
 
@@ -287,9 +392,12 @@ async function evaluatePrice(
       active: price.active,
       livemode: price.livemode,
       currency: price.currency,
-      unitAmount: price.unit_amount,
+      unitAmount,
       interval,
       intervalCount,
+      usageType,
+      meterId,
+      meterEventName,
       productId,
       productActive: retrievedProductActive,
       matchesExpected: issues.length === 0,
@@ -307,6 +415,9 @@ async function evaluatePrice(
       unitAmount: null,
       interval: null,
       intervalCount: null,
+      usageType: null,
+      meterId: null,
+      meterEventName: null,
       productId: null,
       productActive: null,
       matchesExpected: false,
@@ -461,9 +572,17 @@ async function main(): Promise<void> {
         forbiddenAllowedUpdates: ['quantity'],
         prorationBehavior: 'none',
         scheduleAtPeriodEndConditions: ['decreasing_item_amount', 'shortening_interval'],
-        priceEnvVars: STRIPE_PRICE_EXPECTATIONS.map((expectation) => expectation.envName),
+        priceEnvVars: STRIPE_PRICE_EXPECTATIONS
+          .filter((expectation) => expectation.kind === 'base')
+          .map((expectation) => expectation.envName),
       },
-      note: 'Create or update these live recurring Stripe prices, map the ids to the listed env vars, then run this probe with STRIPE_API_KEY.',
+      requiredMeterEvent: {
+        eventName: 'attestor_admission_overage',
+        customerPayloadKey: 'stripe_customer_id',
+        valuePayloadKey: 'value',
+        defaultAggregation: 'sum',
+      },
+      note: 'Create or update these live recurring Stripe base and metered overage prices, map the ids to the listed env vars, then run this probe with STRIPE_API_KEY.',
     }, null, 2));
     return;
   }

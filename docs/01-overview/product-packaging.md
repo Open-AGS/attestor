@@ -230,11 +230,19 @@ When a paid customer exceeds included usage:
 
 - continue processing admissions
 - mark usage as overage
+- emit one Stripe Billing Meter Event per over-quota admission
 - notify at `80%`, `100%`, and `110%`
 - expose overage clearly in account usage and billing export
 - avoid surprise hard stops on production consequence gates
 
 Hard quota remains appropriate for free Developer and Trial plans. Paid production customers should not discover on a Friday night that all consequence gates stopped because billing crossed a line.
+
+The Stripe runtime contract for the default hosted model is:
+
+- base monthly prices: `ATTESTOR_STRIPE_PRICE_STARTER`, `ATTESTOR_STRIPE_PRICE_PRO`, `ATTESTOR_STRIPE_PRICE_SCALE`
+- metered overage prices: `ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER`, `ATTESTOR_STRIPE_OVERAGE_PRICE_PRO`, `ATTESTOR_STRIPE_OVERAGE_PRICE_SCALE`
+- overage meter event name: `attestor_admission_overage` unless `ATTESTOR_STRIPE_OVERAGE_METER_EVENT_NAME` is explicitly overridden
+- meter payload keys: `stripe_customer_id` and `value`
 
 ## Buying Motion
 
@@ -272,11 +280,12 @@ Current shipped hosted implementation uses:
 - first free hosted path: `developer` with `500` admissions per month
 - free shadow trial plan metadata: `trial` with `60` days and `5,000` admissions
 - required paid Stripe price env vars: `ATTESTOR_STRIPE_PRICE_STARTER`, `ATTESTOR_STRIPE_PRICE_PRO`, and `ATTESTOR_STRIPE_PRICE_SCALE`
+- required paid Stripe overage price env vars: `ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER`, `ATTESTOR_STRIPE_OVERAGE_PRICE_PRO`, and `ATTESTOR_STRIPE_OVERAGE_PRICE_SCALE`
+- Stripe overage meter events are emitted for over-quota paid admissions through the `attestor_admission_overage` meter event name
 - optional Enterprise self-service price env var: `ATTESTOR_STRIPE_PRICE_ENTERPRISE`, only when Enterprise checkout is intentionally enabled
 
-One commercial behavior is not fully automated yet and must not be overclaimed:
+One commercial behavior is still a separate lifecycle step and must not be overclaimed:
 
-- Developer and Free Shadow Trial route-level mode restrictions are enforced on the generic admission route: evaluation plans may use `observe` and `warn`, while `review` and `enforce` require a paid hosted or Enterprise plan.
 - The `trial` plan exists in the catalog, but signup still provisions Developer by default; trial invitation/conversion lifecycle is a separate implementation step.
 
 ## Hosted Commercial Surface

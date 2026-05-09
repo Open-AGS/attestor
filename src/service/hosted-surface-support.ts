@@ -8,6 +8,7 @@ import {
   resolvePlanAsyncExecution,
   resolvePlanAsyncQueue,
   resolvePlanRateLimit,
+  resolvePlanStripeOveragePrice,
   resolvePlanStripePrice,
   resolvePlanStripeTrialDays,
 } from './plan-catalog.js';
@@ -73,6 +74,8 @@ export function adminPlanView() {
     defaultAsyncDispatchWeight: resolvePlanAsyncDispatch(plan.id).dispatchWeight,
     defaultAsyncDispatchWindowMs: resolvePlanAsyncDispatch(plan.id).dispatchWindowMs,
     stripePriceConfigured: resolvePlanStripePrice(plan.id).configured,
+    stripeOveragePriceConfigured: resolvePlanStripeOveragePrice(plan.id).configured,
+    stripeOverageMeterEventName: resolvePlanStripeOveragePrice(plan.id).meterEventName,
     intendedFor: plan.intendedFor,
     defaultForHostedProvisioning: plan.defaultForHostedProvisioning,
   }));

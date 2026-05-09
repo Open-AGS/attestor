@@ -25,7 +25,14 @@ import {
   rotateTenantApiKeyState,
   setTenantApiKeyStatusState,
 } from './control-plane-store.js';
-import { DEFAULT_HOSTED_PLAN_ID, listHostedPlans, resolvePlanRateLimit, resolvePlanStripePrice, validHostedPlanIds } from './plan-catalog.js';
+import {
+  DEFAULT_HOSTED_PLAN_ID,
+  listHostedPlans,
+  resolvePlanRateLimit,
+  resolvePlanStripeOveragePrice,
+  resolvePlanStripePrice,
+  validHostedPlanIds,
+} from './plan-catalog.js';
 
 function readFlag(flag: string, fallback?: string): string | undefined {
   const index = process.argv.indexOf(flag);
@@ -103,12 +110,14 @@ async function main() {
     for (const plan of listHostedPlans()) {
       const rateLimit = resolvePlanRateLimit(plan.id);
       const stripePrice = resolvePlanStripePrice(plan.id);
+      const stripeOveragePrice = resolvePlanStripeOveragePrice(plan.id);
       console.log([
         `id=${plan.id}`,
         `name="${plan.displayName}"`,
         `quota=${plan.defaultMonthlyRunQuota ?? 'unlimited'}`,
         `rateLimit=${rateLimit.requestsPerWindow ?? 'unlimited'}/${rateLimit.windowSeconds}s`,
         `stripePrice=${stripePrice.priceId ?? 'unconfigured'}`,
+        `stripeOveragePrice=${stripeOveragePrice.priceId ?? (stripeOveragePrice.billable ? 'unconfigured' : 'not_billable')}`,
         `defaultForHostedProvisioning=${plan.defaultForHostedProvisioning}`,
         `scope=${plan.intendedFor}`,
       ].join(' | '));

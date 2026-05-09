@@ -332,7 +332,7 @@ function testPricingAndTrialTruthsStayAnchored(): void {
   includes(packaging, 'legacy alias: `community` resolves to `developer`', 'Hosted product flow docs: legacy community alias is documented');
   includes(packaging, 'usage meter name: `monthly_admission_runs`', 'Hosted product flow docs: current admission meter is documented');
   includes(packaging, 'paid hosted quota behavior: Starter, Pro, and Scale continue into soft overage', 'Hosted product flow docs: paid soft overage behavior is documented');
-  includes(packaging, 'Developer and Free Shadow Trial route-level mode restrictions are enforced on the generic admission route', 'Hosted product flow docs: evaluation plan mode enforcement is documented');
+  includes(packaging, 'Stripe overage meter events are emitted for over-quota paid admissions', 'Hosted product flow docs: paid overage metering is documented');
   includes(packaging, 'The `trial` plan exists in the catalog, but signup still provisions Developer by default', 'Hosted product flow docs: trial lifecycle gap is not overclaimed');
   includes(pricingRoi, '`daily_admissions`', 'Hosted product flow docs: ROI calculator sizes by daily admissions');
   includes(pricingRoi, 'monthly_admissions = daily_admissions * business_days_per_month', 'Hosted product flow docs: ROI calculator includes monthly sizing formula');
@@ -345,6 +345,8 @@ function testPricingAndTrialTruthsStayAnchored(): void {
     'Hosted product flow docs: ROI calculator is a machine-readable truth source',
   );
   includes(stripeBootstrap, 'ATTESTOR_STRIPE_PRICE_SCALE=price_', 'Hosted product flow docs: operator scale Stripe price env var is documented');
+  includes(stripeBootstrap, 'ATTESTOR_STRIPE_OVERAGE_PRICE_SCALE=price_', 'Hosted product flow docs: operator scale overage Stripe price env var is documented');
+  includes(stripeBootstrap, 'event name: `attestor_admission_overage`', 'Hosted product flow docs: operator overage meter event name is documented');
   includes(stripeBootstrap, 'lets customers switch between the configured Starter, Pro, and Scale prices', 'Hosted product flow docs: Stripe readiness checks portal plan switching');
   includes(stripeBootstrap, 'quantity changes are disabled in the Customer Portal', 'Hosted product flow docs: Stripe readiness checks portal quantity posture');
   includes(stripeBootstrap, 'npm run probe:stripe-webhook-config -- --print-required-events', 'Hosted product flow docs: operator webhook manifest command is documented');

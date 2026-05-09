@@ -76,6 +76,16 @@ export interface PlanStripePriceSpec {
   source: 'env' | 'unconfigured' | 'custom_unconfigured';
 }
 
+export interface PlanStripeOveragePriceSpec {
+  planId: string;
+  priceId: string | null;
+  configured: boolean;
+  knownPlan: boolean;
+  billable: boolean;
+  meterEventName: string;
+  source: 'env' | 'unconfigured' | 'not_billable' | 'custom_unconfigured';
+}
+
 export interface PlanStripeTrialSpec {
   planId: string;
   trialDays: number | null;
@@ -103,6 +113,7 @@ export interface PlanQuotaPolicySpec {
 
 export const SELF_HOST_PLAN_ID: HostedPlanId = 'developer';
 export const DEFAULT_HOSTED_PLAN_ID: HostedPlanId = 'starter';
+export const DEFAULT_STRIPE_OVERAGE_METER_EVENT_NAME = 'attestor_admission_overage';
 
 const PLAN_CATALOG: HostedPlanDefinition[] = [
   {
@@ -225,6 +236,10 @@ function asyncDispatchWeightEnvNameForPlan(planId: HostedPlanId): string {
 
 function stripePriceEnvNameForPlan(planId: HostedPlanId): string {
   return `ATTESTOR_STRIPE_PRICE_${planId.toUpperCase()}`;
+}
+
+function stripeOveragePriceEnvNameForPlan(planId: HostedPlanId): string {
+  return `ATTESTOR_STRIPE_OVERAGE_PRICE_${planId.toUpperCase()}`;
 }
 
 function stripeTrialEnvNameForPlan(planId: HostedPlanId): string {
@@ -469,6 +484,55 @@ export function resolvePlanStripePrice(planId: string | null | undefined): PlanS
     priceId,
     configured: Boolean(priceId),
     knownPlan: true,
+    source: priceId ? 'env' : 'unconfigured',
+  };
+}
+
+export function stripeOverageMeterEventName(env: Record<string, string | undefined> = process.env): string {
+  const configured = env.ATTESTOR_STRIPE_OVERAGE_METER_EVENT_NAME?.trim();
+  return configured || DEFAULT_STRIPE_OVERAGE_METER_EVENT_NAME;
+}
+
+export function resolvePlanStripeOveragePrice(
+  planId: string | null | undefined,
+  env: Record<string, string | undefined> = process.env,
+): PlanStripeOveragePriceSpec {
+  const resolvedPlanId = canonicalHostedPlanId(planId) || SELF_HOST_PLAN_ID;
+  const plan = getHostedPlan(resolvedPlanId);
+  const meterEventName = stripeOverageMeterEventName(env);
+
+  if (!plan) {
+    return {
+      planId: resolvedPlanId,
+      priceId: null,
+      configured: false,
+      knownPlan: false,
+      billable: false,
+      meterEventName,
+      source: 'custom_unconfigured',
+    };
+  }
+
+  if (plan.intendedFor !== 'hosted') {
+    return {
+      planId: plan.id,
+      priceId: null,
+      configured: false,
+      knownPlan: true,
+      billable: false,
+      meterEventName,
+      source: 'not_billable',
+    };
+  }
+
+  const priceId = env[stripeOveragePriceEnvNameForPlan(plan.id)]?.trim() || null;
+  return {
+    planId: plan.id,
+    priceId,
+    configured: Boolean(priceId),
+    knownPlan: true,
+    billable: true,
+    meterEventName,
     source: priceId ? 'env' : 'unconfigured',
   };
 }

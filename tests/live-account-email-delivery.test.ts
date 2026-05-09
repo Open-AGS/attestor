@@ -199,9 +199,11 @@ async function main(): Promise<void> {
     process.env.STRIPE_WEBHOOK_SECRET = 'whsec_email_delivery';
     process.env.ATTESTOR_BILLING_SUCCESS_URL = 'https://attestor.dev/billing/success';
     process.env.ATTESTOR_BILLING_CANCEL_URL = 'https://attestor.dev/billing/cancel';
-  process.env.ATTESTOR_BILLING_PORTAL_RETURN_URL = 'https://attestor.dev/settings/billing';
+    process.env.ATTESTOR_BILLING_PORTAL_RETURN_URL = 'https://attestor.dev/settings/billing';
     process.env.ATTESTOR_STRIPE_PRICE_STARTER = 'price_starter_monthly';
     process.env.ATTESTOR_STRIPE_PRICE_PRO = 'price_pro_monthly';
+    process.env.ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER = 'price_starter_overage_monthly';
+    process.env.ATTESTOR_STRIPE_OVERAGE_PRICE_PRO = 'price_pro_overage_monthly';
     process.env.ATTESTOR_EMAIL_DELIVERY_MODE = 'smtp';
     process.env.ATTESTOR_EMAIL_PROVIDER = 'smtp';
     process.env.ATTESTOR_EMAIL_FROM = 'Attestor <noreply@attestor.dev>';

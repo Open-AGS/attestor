@@ -52,6 +52,7 @@ function main(): void {
     ok(catalog.includes('"logicalName": "corp/attestor/control-plane-pg-url"'), 'Secret manager bootstrap: HA runtime logical path uses the configured prefix');
     ok(catalog.includes('"logicalName": "corp/attestor/release-authority-pg-url"'), 'Secret manager bootstrap: HA catalog includes release-authority PostgreSQL');
     ok(catalog.includes('"logicalName": "corp/attestor/stripe-price-scale"'), 'Secret manager bootstrap: HA catalog includes hosted Scale Stripe price');
+    ok(catalog.includes('"logicalName": "corp/attestor/stripe-overage-price-scale"'), 'Secret manager bootstrap: HA catalog includes hosted Scale overage Stripe price');
     ok(catalog.includes('"required": false') && catalog.includes('Enterprise self-service checkout'), 'Secret manager bootstrap: Enterprise Stripe price is optional and sales/custom by default');
     ok(catalog.includes('"remoteName": "corp-attestor-control-plane-pg-url"'), 'Secret manager bootstrap: GKE catalog normalizes remote secret ids for Google Secret Manager');
 
@@ -61,6 +62,7 @@ function main(): void {
     ok(seed.includes('REPLACE_ME_FOR_ATTESTOR_ACCOUNT_MFA_ENCRYPTION_KEY'), 'Secret manager bootstrap: runtime seed contains MFA encryption key placeholder');
     ok(seed.includes('REPLACE_ME_FOR_ATTESTOR_RELEASE_AUTHORITY_PG_URL'), 'Secret manager bootstrap: runtime seed contains release-authority PostgreSQL placeholder');
     ok(seed.includes('REPLACE_ME_FOR_ATTESTOR_STRIPE_PRICE_SCALE'), 'Secret manager bootstrap: runtime seed contains Scale Stripe price placeholder');
+    ok(seed.includes('REPLACE_ME_FOR_ATTESTOR_STRIPE_OVERAGE_PRICE_SCALE'), 'Secret manager bootstrap: runtime seed contains Scale overage Stripe price placeholder');
     ok(seed.includes('REPLACE_ME_FOR_ATTESTOR_HOSTED_OIDC_STATE_KEY'), 'Secret manager bootstrap: runtime seed contains hosted OIDC state key placeholder');
     ok(seed.includes('"corp-attestor-admin-api-key"'), 'Secret manager bootstrap: GKE seed uses normalized remote secret ids');
 

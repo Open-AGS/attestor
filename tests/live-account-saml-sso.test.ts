@@ -212,6 +212,8 @@ function buildCommonApiEnv(workDir: string, base: string): NodeJS.ProcessEnv {
     ATTESTOR_BILLING_PORTAL_RETURN_URL: 'https://attestor.dev/settings/billing',
     ATTESTOR_STRIPE_PRICE_STARTER: 'price_starter_monthly',
     ATTESTOR_STRIPE_PRICE_PRO: 'price_pro_monthly',
+    ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER: 'price_starter_overage_monthly',
+    ATTESTOR_STRIPE_OVERAGE_PRICE_PRO: 'price_pro_overage_monthly',
     ATTESTOR_STRIPE_PRICE_ENTERPRISE: 'price_enterprise_monthly',
     ATTESTOR_SESSION_COOKIE_SECURE: 'false',
     ATTESTOR_EMAIL_DELIVERY_MODE: 'manual',

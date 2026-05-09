@@ -240,6 +240,10 @@ docker run \
 | `ATTESTOR_STRIPE_PRICE_STARTER` | No | None | Stripe recurring price id for the hosted `starter` plan |
 | `ATTESTOR_STRIPE_PRICE_PRO` | No | None | Stripe recurring price id for the hosted `pro` plan |
 | `ATTESTOR_STRIPE_PRICE_SCALE` | No | None | Stripe recurring price id for the hosted `scale` plan |
+| `ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER` | No | None | Stripe recurring metered overage price id for the hosted `starter` plan |
+| `ATTESTOR_STRIPE_OVERAGE_PRICE_PRO` | No | None | Stripe recurring metered overage price id for the hosted `pro` plan |
+| `ATTESTOR_STRIPE_OVERAGE_PRICE_SCALE` | No | None | Stripe recurring metered overage price id for the hosted `scale` plan |
+| `ATTESTOR_STRIPE_OVERAGE_METER_EVENT_NAME` | No | `attestor_admission_overage` | Stripe Billing Meter event name used for paid overage admissions |
 | `ATTESTOR_STRIPE_PRICE_ENTERPRISE` | No | None | Optional Stripe recurring price id only when Enterprise self-service checkout is intentionally enabled; otherwise Enterprise is sales/custom |
 | `ATTESTOR_STRIPE_STARTER_TRIAL_DAYS` | No | `14` | Starter-plan Stripe trial length in days for hosted checkout |
 | `ATTESTOR_BILLING_SUCCESS_URL` | No | None | Return URL for successful Stripe Checkout sessions |

@@ -14,25 +14,37 @@ function ok(condition: unknown, message: string): void {
   passed += 1;
 }
 
+function priceIdForExpectation(expectation: typeof STRIPE_PRICE_EXPECTATIONS[number]): string {
+  return expectation.kind === 'base'
+    ? `price_${expectation.planId}_live`
+    : `price_${expectation.planId}_overage_live`;
+}
+
 function fakeStripe(overrides?: {
   account?: any;
   prices?: Record<string, any>;
   products?: Record<string, any>;
+  meters?: Record<string, any>;
   portalConfigurations?: any[];
 }): any {
   const defaultPrices = Object.fromEntries(
     STRIPE_PRICE_EXPECTATIONS.map((expectation) => [
-      `price_${expectation.planId}_live`,
+      priceIdForExpectation(expectation),
       {
-        id: `price_${expectation.planId}_live`,
+        id: priceIdForExpectation(expectation),
         active: true,
         livemode: true,
         currency: expectation.expectedCurrency,
-        unit_amount: expectation.expectedUnitAmount,
+        unit_amount: Number.isInteger(Number(expectation.expectedUnitAmountDecimal))
+          ? Number(expectation.expectedUnitAmountDecimal)
+          : null,
+        unit_amount_decimal: expectation.expectedUnitAmountDecimal,
         type: 'recurring',
         recurring: {
           interval: expectation.expectedInterval,
           interval_count: expectation.expectedIntervalCount,
+          usage_type: expectation.expectedUsageType,
+          meter: expectation.expectedMeterEventName ? 'mtr_admission_overage' : null,
         },
         product: `prod_${expectation.planId}`,
       },
@@ -47,6 +59,16 @@ function fakeStripe(overrides?: {
       },
     ]),
   );
+  const defaultMeters = {
+    mtr_admission_overage: {
+      id: 'mtr_admission_overage',
+      object: 'billing.meter',
+      display_name: 'Attestor admission overage',
+      event_name: 'attestor_admission_overage',
+      status: 'active',
+      livemode: true,
+    },
+  };
 
   return {
     accounts: {
@@ -78,6 +100,15 @@ function fakeStripe(overrides?: {
         return product;
       },
     },
+    billing: {
+      meters: {
+        retrieve: async (id: string) => {
+          const meter = (overrides?.meters ?? defaultMeters)[id];
+          if (!meter) throw new Error(`No such meter: ${id}`);
+          return meter;
+        },
+      },
+    },
     billingPortal: {
       configurations: {
         list: async () => ({
@@ -91,9 +122,11 @@ function fakeStripe(overrides?: {
               subscription_update: {
                 enabled: true,
                 default_allowed_updates: ['price'],
-                products: STRIPE_PRICE_EXPECTATIONS.map((expectation) => ({
+                products: STRIPE_PRICE_EXPECTATIONS
+                  .filter((expectation) => expectation.kind === 'base')
+                  .map((expectation) => ({
                   product: `prod_${expectation.planId}`,
-                  prices: [`price_${expectation.planId}_live`],
+                  prices: [priceIdForExpectation(expectation)],
                   adjustable_quantity: {
                     enabled: false,
                     minimum: 1,
@@ -126,6 +159,9 @@ async function testHappyPath(): Promise<void> {
       ATTESTOR_STRIPE_PRICE_STARTER: 'price_starter_live',
       ATTESTOR_STRIPE_PRICE_PRO: 'price_pro_live',
       ATTESTOR_STRIPE_PRICE_SCALE: 'price_scale_live',
+      ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER: 'price_starter_overage_live',
+      ATTESTOR_STRIPE_OVERAGE_PRICE_PRO: 'price_pro_overage_live',
+      ATTESTOR_STRIPE_OVERAGE_PRICE_SCALE: 'price_scale_overage_live',
     },
   });
 
@@ -136,6 +172,7 @@ async function testHappyPath(): Promise<void> {
   ok(summary.customerPortal.subscriptionUpdateMissingPriceIds.length === 0, 'Stripe live readiness probe: portal includes all configured plan prices');
   ok(summary.customerPortal.subscriptionUpdateProrationBehavior === 'none', 'Stripe live readiness probe: portal proration behavior is surfaced');
   ok(summary.prices.every((price) => price.matchesExpected), 'Stripe live readiness probe: all required prices match expected commercial model');
+  ok(summary.prices.filter((price) => price.meterEventName === 'attestor_admission_overage').length === 3, 'Stripe live readiness probe: all overage prices bind the shared admission meter');
 }
 
 async function testFailClosedIssues(): Promise<void> {
@@ -150,6 +187,17 @@ async function testFailClosedIssues(): Promise<void> {
       recurring: { interval: 'year', interval_count: 1 },
       product: 'prod_starter',
     },
+    price_starter_overage_live: {
+      id: 'price_starter_overage_live',
+      active: true,
+      livemode: true,
+      currency: 'usd',
+      unit_amount: 5,
+      unit_amount_decimal: '5',
+      type: 'recurring',
+      recurring: { interval: 'month', interval_count: 1, usage_type: 'metered', meter: 'mtr_wrong' },
+      product: 'prod_starter',
+    },
     price_pro_live: {
       id: 'price_pro_live',
       active: true,
@@ -157,7 +205,18 @@ async function testFailClosedIssues(): Promise<void> {
       currency: 'usd',
       unit_amount: 149_900,
       type: 'recurring',
-      recurring: { interval: 'month', interval_count: 1 },
+      recurring: { interval: 'month', interval_count: 1, usage_type: 'licensed', meter: null },
+      product: 'prod_pro',
+    },
+    price_pro_overage_live: {
+      id: 'price_pro_overage_live',
+      active: true,
+      livemode: true,
+      currency: 'usd',
+      unit_amount: null,
+      unit_amount_decimal: '2.5',
+      type: 'recurring',
+      recurring: { interval: 'month', interval_count: 1, usage_type: 'metered', meter: 'mtr_admission_overage' },
       product: 'prod_pro',
     },
     price_scale_live: {
@@ -167,7 +226,18 @@ async function testFailClosedIssues(): Promise<void> {
       currency: 'usd',
       unit_amount: 599_900,
       type: 'recurring',
-      recurring: { interval: 'month', interval_count: 1 },
+      recurring: { interval: 'month', interval_count: 1, usage_type: 'licensed', meter: null },
+      product: 'prod_scale',
+    },
+    price_scale_overage_live: {
+      id: 'price_scale_overage_live',
+      active: true,
+      livemode: true,
+      currency: 'usd',
+      unit_amount: null,
+      unit_amount_decimal: '1.5',
+      type: 'recurring',
+      recurring: { interval: 'month', interval_count: 1, usage_type: 'metered', meter: 'mtr_admission_overage' },
       product: 'prod_scale',
     },
   };
@@ -195,6 +265,9 @@ async function testFailClosedIssues(): Promise<void> {
       ATTESTOR_STRIPE_PRICE_STARTER: 'price_starter_live',
       ATTESTOR_STRIPE_PRICE_PRO: 'price_pro_live',
       ATTESTOR_STRIPE_PRICE_SCALE: 'price_scale_live',
+      ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER: 'price_starter_overage_live',
+      ATTESTOR_STRIPE_OVERAGE_PRICE_PRO: 'price_pro_overage_live',
+      ATTESTOR_STRIPE_OVERAGE_PRICE_SCALE: 'price_scale_overage_live',
     },
   });
 
@@ -203,6 +276,7 @@ async function testFailClosedIssues(): Promise<void> {
   ok(summary.issues.some((issue) => issue.includes('payouts are not enabled')), 'Stripe live readiness probe: missing payout readiness is blocked');
   ok(summary.issues.some((issue) => issue.includes('Customer Portal')), 'Stripe live readiness probe: missing Customer Portal is blocked');
   ok(summary.issues.some((issue) => issue.includes('Starter Stripe price amount')), 'Stripe live readiness probe: price mismatch is blocked');
+  ok(summary.issues.some((issue) => issue.includes('Starter overage') && issue.includes('meter')), 'Stripe live readiness probe: overage meter mismatch is blocked');
 }
 
 async function testPortalPlanSwitchDriftFailsClosed(): Promise<void> {
@@ -242,6 +316,9 @@ async function testPortalPlanSwitchDriftFailsClosed(): Promise<void> {
       ATTESTOR_STRIPE_PRICE_STARTER: 'price_starter_live',
       ATTESTOR_STRIPE_PRICE_PRO: 'price_pro_live',
       ATTESTOR_STRIPE_PRICE_SCALE: 'price_scale_live',
+      ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER: 'price_starter_overage_live',
+      ATTESTOR_STRIPE_OVERAGE_PRICE_PRO: 'price_pro_overage_live',
+      ATTESTOR_STRIPE_OVERAGE_PRICE_SCALE: 'price_scale_overage_live',
     },
   });
 
@@ -254,7 +331,7 @@ async function testPortalPlanSwitchDriftFailsClosed(): Promise<void> {
 
 function testManifestCanPrintWithoutKey(): void {
   const manifest = requiredStripePriceManifest();
-  ok(manifest.length === 3, 'Stripe live readiness probe: required price manifest covers Starter, Pro, and Scale');
+  ok(manifest.length === 6, 'Stripe live readiness probe: required price manifest covers base and overage prices for Starter, Pro, and Scale');
 
   const run = spawnSync(
     process.execPath,
@@ -274,12 +351,13 @@ function testManifestCanPrintWithoutKey(): void {
   );
   ok(run.status === 0, 'Stripe live readiness probe: required-price manifest prints without Stripe API key');
   const printed = JSON.parse(run.stdout) as {
-    requiredPrices: Array<{ envName: string; expectedCurrency: string }>;
+    requiredPrices: Array<{ envName: string; expectedCurrency: string; expectedUsageType: string }>;
     requiredCustomerPortal?: { subscriptionUpdateEnabled?: boolean };
+    requiredMeterEvent?: { eventName?: string };
   };
   ok(
-    printed.requiredPrices.map((entry) => entry.envName).join(',') === 'ATTESTOR_STRIPE_PRICE_STARTER,ATTESTOR_STRIPE_PRICE_PRO,ATTESTOR_STRIPE_PRICE_SCALE',
-    'Stripe live readiness probe: printed manifest names required hosted price env vars',
+    printed.requiredPrices.map((entry) => entry.envName).join(',') === 'ATTESTOR_STRIPE_PRICE_STARTER,ATTESTOR_STRIPE_PRICE_PRO,ATTESTOR_STRIPE_PRICE_SCALE,ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER,ATTESTOR_STRIPE_OVERAGE_PRICE_PRO,ATTESTOR_STRIPE_OVERAGE_PRICE_SCALE',
+    'Stripe live readiness probe: printed manifest names required hosted base and overage price env vars',
   );
   ok(
     printed.requiredPrices.every((entry) => entry.expectedCurrency === 'usd'),
@@ -288,6 +366,10 @@ function testManifestCanPrintWithoutKey(): void {
   ok(
     printed.requiredCustomerPortal?.subscriptionUpdateEnabled === true,
     'Stripe live readiness probe: printed manifest includes required Customer Portal posture',
+  );
+  ok(
+    printed.requiredMeterEvent?.eventName === 'attestor_admission_overage',
+    'Stripe live readiness probe: printed manifest includes required admission overage meter event',
   );
 }
 

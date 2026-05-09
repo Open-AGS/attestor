@@ -21,7 +21,7 @@ Attestor does not replace the model, agent runtime, wallet, custody platform, or
 
 ## Current Status
 
-Attestor is currently an **evaluation release**: reviewer-runnable, CI-backed, and useful for technical evaluation. It demonstrates the AI action authorization model, consequence-gateway proof artifacts, consequence-pack surfaces, finance proof wedge, programmable-money extension surfaces, and current fail-closed boundaries.
+Attestor is currently an **evaluation release**: reviewer-runnable, CI-backed, and useful for technical evaluation. It demonstrates the AI action authorization model, consequence-gateway proof artifacts, consequence-pack surfaces, programmable-money extension surfaces, hosted account and billing surfaces, and current fail-closed boundaries.
 
 It is not a finished public SaaS, a production-use guarantee, a completed customer-operated deployment, or a substitute for an external security audit.
 
@@ -190,7 +190,7 @@ Example decision payload:
   "failClosed": true,
   "reason": "Customer gate held the consequence because Attestor returned block.",
   "reasonCodes": [
-    "finance-policy-fail",
+    "policy-fail",
     "customer-gate-hold"
   ],
   "proofRefs": []
@@ -258,20 +258,6 @@ A decision can include:
 - local proof artifacts that can be reviewed later
 
 The current evaluation baseline includes local proof packets, verification kits, signed proof paths, CI-backed smoke checks, and release artifact attestation for tagged evaluation releases. The exact boundary and non-claims are documented in the [Evaluation Packet](docs/00-evaluation/v0.1-evaluation-packet.md), [v0.1.2 release notes](docs/00-evaluation/v0.1.2-evaluation-release-notes.md), and [Artifact attestation plan](docs/08-deployment/artifact-attestation-plan.md).
-
-## Current Proof Wedge
-
-The deepest proven wedge today is **finance**, because finance makes the gateway requirement obvious: records, approvals, authority, and audit trails cannot be hand-waved.
-
-The first hard boundary is:
-
-```text
-AI output -> structured financial record release
-```
-
-This is a proving wedge, not the ceiling. The same admission model applies to money-adjacent actions, programmable-money handoffs, data exports, authority changes, regulated filings, customer communications, and operational execution.
-
-See [AI-assisted financial reporting acceptance](docs/01-overview/financial-reporting-acceptance.md).
 
 ## Consequence Packs
 

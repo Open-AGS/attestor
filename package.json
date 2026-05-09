@@ -181,6 +181,7 @@
     "test:service-email-webhook-service": "tsx tests/service-email-webhook-service.test.ts",
     "test:service-pipeline-usage-service": "tsx tests/service-pipeline-usage-service.test.ts",
     "test:usage-meter-overage-policy": "tsx tests/usage-meter-overage-policy.test.ts",
+    "test:billing-export-usage-summary": "tsx tests/billing-export-usage-summary.test.ts",
     "test:service-pipeline-dead-letter-service": "tsx tests/service-pipeline-dead-letter-service.test.ts",
     "test:stripe-webhook-support-hardening": "tsx tests/stripe-webhook-support-hardening.test.ts",
     "test:service-stripe-webhook-service": "tsx tests/service-stripe-webhook-service.test.ts",

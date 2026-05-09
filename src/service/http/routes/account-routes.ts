@@ -2104,6 +2104,7 @@ app.get('/api/v1/account/billing/export', async (c) => {
   const payload = await buildHostedBillingExport({
     account: current.account,
     entitlement,
+    usage: current.usage,
     limit: parsedLimit ?? undefined,
   });
   const reconciliation = buildHostedBillingReconciliation(payload);
@@ -2147,6 +2148,7 @@ app.get('/api/v1/account/billing/reconciliation', async (c) => {
   const payload = await buildHostedBillingExport({
     account: current.account,
     entitlement,
+    usage: current.usage,
     limit: parsedLimit ?? undefined,
   });
   const reconciliation = buildHostedBillingReconciliation(payload);

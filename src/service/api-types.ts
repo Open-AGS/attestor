@@ -1025,6 +1025,7 @@ export interface AccountBillingExportResponse {
   invoices: BillingExportInvoiceRecord[];
   charges: BillingExportChargeRecord[];
   lineItems: BillingExportInvoiceLineItemRecord[];
+  usage: UsageContext | null;
   entitlementFeatures: BillingExportEntitlementFeatures;
   reconciliation: AccountBillingReconciliationSummary;
   summary: {
@@ -1035,6 +1036,9 @@ export interface AccountBillingExportResponse {
     invoiceCount: number;
     chargeCount: number;
     lineItemCount: number;
+    usageOverage: boolean;
+    usageOverageUnits: number;
+    usageHardLimit: boolean;
   };
 }
 

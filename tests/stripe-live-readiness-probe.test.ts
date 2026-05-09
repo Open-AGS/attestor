@@ -38,7 +38,9 @@ function fakeStripe(overrides?: {
         unit_amount: Number.isInteger(Number(expectation.expectedUnitAmountDecimal))
           ? Number(expectation.expectedUnitAmountDecimal)
           : null,
-        unit_amount_decimal: expectation.expectedUnitAmountDecimal,
+        unit_amount_decimal: Number.isInteger(Number(expectation.expectedUnitAmountDecimal))
+          ? expectation.expectedUnitAmountDecimal
+          : { toString: () => expectation.expectedUnitAmountDecimal },
         type: 'recurring',
         recurring: {
           interval: expectation.expectedInterval,
@@ -111,7 +113,7 @@ function fakeStripe(overrides?: {
     },
     billingPortal: {
       configurations: {
-        list: async () => ({
+        list: async (_params?: any) => ({
           data: overrides?.portalConfigurations ?? [{
             id: 'bpc_ready',
             active: true,

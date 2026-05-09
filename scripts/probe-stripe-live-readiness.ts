@@ -239,8 +239,12 @@ function priceMeterId(price: Stripe.Price): string | null {
 }
 
 function priceUnitAmount(price: Stripe.Price): string | null {
-  const decimal = price.unit_amount_decimal;
+  const decimal = price.unit_amount_decimal as unknown;
   if (typeof decimal === 'string' && decimal.trim() !== '') return decimal.trim();
+  if (decimal && typeof decimal === 'object' && typeof (decimal as { toString?: unknown }).toString === 'function') {
+    const serialized = (decimal as { toString: () => string }).toString().trim();
+    if (serialized !== '' && serialized !== '[object Object]') return serialized;
+  }
   return typeof price.unit_amount === 'number' ? String(price.unit_amount) : null;
 }
 
@@ -432,7 +436,12 @@ async function evaluateCustomerPortal(
 ): Promise<StripeCustomerPortalReadiness> {
   const issues: string[] = [];
   const warnings: string[] = [];
-  const configurations = await stripe.billingPortal.configurations.list({ active: true, is_default: true, limit: 10 });
+  const configurations = await stripe.billingPortal.configurations.list({
+    active: true,
+    is_default: true,
+    limit: 10,
+    expand: ['data.features.subscription_update.products'],
+  });
   const defaultConfiguration = configurations.data[0] ?? null;
 
   if (!defaultConfiguration) {

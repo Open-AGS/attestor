@@ -11,7 +11,11 @@ import type {
   IssuedPolicyBundleSignature,
   PolicyBundleVerificationKey,
 } from './bundle-signing.js';
-import type { SignablePolicyBundleArtifact } from './bundle-format.js';
+import {
+  createSignablePolicyBundleArtifact,
+  type SignablePolicyBundleArtifact,
+} from './bundle-format.js';
+import { canonicalizeReleaseJson } from '../release-kernel/release-canonicalization.js';
 
 /**
  * Policy control-plane store abstraction.
@@ -110,12 +114,43 @@ function assertBundleRecordCoherence(
     throw new Error('Policy store bundle artifact must match the manifest bundle reference.');
   }
 
+  const expectedArtifact = createSignablePolicyBundleArtifact(
+    input.artifact.statement.predicate.pack,
+    input.manifest,
+  );
+  if (
+    input.artifact.version !== expectedArtifact.version ||
+    input.artifact.bundleId !== expectedArtifact.bundleId ||
+    input.artifact.packId !== expectedArtifact.packId ||
+    input.artifact.payloadType !== expectedArtifact.payloadType ||
+    input.artifact.canonicalPayload !== expectedArtifact.canonicalPayload ||
+    input.artifact.payloadDigest !== expectedArtifact.payloadDigest ||
+    input.artifact.packDigest !== expectedArtifact.packDigest ||
+    input.artifact.manifestDigest !== expectedArtifact.manifestDigest ||
+    input.artifact.entriesDigest !== expectedArtifact.entriesDigest ||
+    input.artifact.schemasDigest !== expectedArtifact.schemasDigest ||
+    canonicalizeReleaseJson(input.artifact.statement as never) !==
+      expectedArtifact.canonicalPayload
+  ) {
+    throw new Error(
+      'Policy store bundle artifact must be regenerated from the supplied manifest and pack predicate.',
+    );
+  }
+
   if (input.signedBundle) {
     if (
       input.signedBundle.artifact.bundleId !== input.artifact.bundleId ||
       input.signedBundle.artifact.packId !== input.artifact.packId
     ) {
       throw new Error('Policy store signed bundle must wrap the same bundle artifact.');
+    }
+    if (
+      input.signedBundle.artifact.payloadDigest !== input.artifact.payloadDigest ||
+      input.signedBundle.artifact.canonicalPayload !== input.artifact.canonicalPayload ||
+      canonicalizeReleaseJson(input.signedBundle.artifact as never) !==
+        canonicalizeReleaseJson(input.artifact as never)
+    ) {
+      throw new Error('Policy store signed bundle must wrap the exact bundle artifact content.');
     }
   }
 

@@ -83,8 +83,11 @@ export interface ConsequenceAdmissionPresentationBinding {
   readonly admissionDigest: string;
   readonly contractId: string;
   readonly enforcementPointId: string;
+  readonly enforcementPointIdDigest: string;
   readonly downstreamSystem: string;
+  readonly downstreamSystemDigest: string;
   readonly policyRef: string | null;
+  readonly policyRefDigest: string | null;
   readonly consequenceKind: ConsequenceAdmissionConsequenceKind;
   readonly target: ConsequenceAdmissionPresentationTarget;
   readonly targetDigest: string;
@@ -174,6 +177,9 @@ export interface ConsequenceAdmissionPresentationBindingDescriptor {
   readonly preferredReplayKeyObservation: 'usedReplayKeyDigests';
   readonly decisionExposesRawReplayKeys: false;
   readonly canonicalUsesTargetDigest: true;
+  readonly canonicalUsesEnforcementPointIdDigest: true;
+  readonly canonicalUsesDownstreamSystemDigest: true;
+  readonly canonicalUsesPolicyRefDigest: true;
   readonly canonicalUsesReplayKeyDigest: true;
   readonly canonicalUsesNonceDigest: true;
   readonly canonicalUsesConstraintIdDigests: true;
@@ -317,9 +323,9 @@ function bindingCanonicalPayload(
     admissionId: binding.admissionId,
     admissionDigest: binding.admissionDigest,
     contractId: binding.contractId,
-    enforcementPointId: binding.enforcementPointId,
-    downstreamSystem: binding.downstreamSystem,
-    policyRef: binding.policyRef,
+    enforcementPointIdDigest: binding.enforcementPointIdDigest,
+    downstreamSystemDigest: binding.downstreamSystemDigest,
+    policyRefDigest: binding.policyRefDigest,
     consequenceKind: binding.consequenceKind,
     targetDigest: binding.targetDigest,
     replayKeyDigest: binding.replayKeyDigest,
@@ -446,6 +452,10 @@ export function createConsequenceAdmissionPresentationBinding(
     input.acceptedConstraintIds ?? [],
     'acceptedConstraintIds[]',
   );
+  const downstreamSystem = normalizeOptionalIdentifier(input.downstreamSystem, 'downstreamSystem') ??
+    input.admission.request.proposedConsequence.downstreamSystem;
+  const policyRef = normalizeOptionalIdentifier(input.policyRef, 'policyRef') ??
+    input.admission.request.policyScope.policyRef;
   const target = Object.freeze({
     uri: normalizeOptionalIdentifier(input.target.uri, 'target.uri'),
     targetRef: normalizeOptionalIdentifier(input.target.targetRef, 'target.targetRef'),
@@ -459,10 +469,11 @@ export function createConsequenceAdmissionPresentationBinding(
     admissionDigest: input.admission.digest,
     contractId: contract.contractId,
     enforcementPointId: contract.enforcementPointId,
-    downstreamSystem: normalizeOptionalIdentifier(input.downstreamSystem, 'downstreamSystem') ??
-      input.admission.request.proposedConsequence.downstreamSystem,
-    policyRef: normalizeOptionalIdentifier(input.policyRef, 'policyRef') ??
-      input.admission.request.policyScope.policyRef,
+    enforcementPointIdDigest: digestText(contract.enforcementPointId),
+    downstreamSystem,
+    downstreamSystemDigest: digestText(downstreamSystem),
+    policyRef,
+    policyRefDigest: policyRef === null ? null : digestText(policyRef),
     consequenceKind: input.consequenceKind ??
       input.admission.request.proposedConsequence.consequenceKind,
     target,
@@ -488,8 +499,8 @@ export function createConsequenceAdmissionPresentationBinding(
     admissionId: base.admissionId,
     admissionDigest: base.admissionDigest,
     contractId: base.contractId,
-    enforcementPointId: base.enforcementPointId,
-    downstreamSystem: base.downstreamSystem,
+    enforcementPointIdDigest: base.enforcementPointIdDigest,
+    downstreamSystemDigest: base.downstreamSystemDigest,
     targetDigest: base.targetDigest,
     replayKeyDigest: base.replayKeyDigest,
     nonceDigest: base.nonceDigest,
@@ -687,6 +698,9 @@ ConsequenceAdmissionPresentationBindingDescriptor {
     preferredReplayKeyObservation: 'usedReplayKeyDigests',
     decisionExposesRawReplayKeys: false,
     canonicalUsesTargetDigest: true,
+    canonicalUsesEnforcementPointIdDigest: true,
+    canonicalUsesDownstreamSystemDigest: true,
+    canonicalUsesPolicyRefDigest: true,
     canonicalUsesReplayKeyDigest: true,
     canonicalUsesNonceDigest: true,
     canonicalUsesConstraintIdDigests: true,

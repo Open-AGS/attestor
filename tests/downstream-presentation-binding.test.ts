@@ -255,6 +255,21 @@ function testDescriptor(): void {
     'Presentation binding: canonical payload binds targets by digest',
   );
   equal(
+    descriptor.canonicalUsesEnforcementPointIdDigest,
+    true,
+    'Presentation binding: canonical payload binds enforcement points by digest',
+  );
+  equal(
+    descriptor.canonicalUsesDownstreamSystemDigest,
+    true,
+    'Presentation binding: canonical payload binds downstream systems by digest',
+  );
+  equal(
+    descriptor.canonicalUsesPolicyRefDigest,
+    true,
+    'Presentation binding: canonical payload binds policy refs by digest',
+  );
+  equal(
     descriptor.canonicalUsesReplayKeyDigest,
     true,
     'Presentation binding: canonical payload binds replay keys by digest',
@@ -277,6 +292,12 @@ function testMatchingPresentationAllows(): void {
   const binding = paymentBinding(admission);
   const canonicalPayload = JSON.parse(binding.canonical) as {
     readonly target?: unknown;
+    readonly enforcementPointId?: unknown;
+    readonly enforcementPointIdDigest?: unknown;
+    readonly downstreamSystem?: unknown;
+    readonly downstreamSystemDigest?: unknown;
+    readonly policyRef?: unknown;
+    readonly policyRefDigest?: unknown;
     readonly targetDigest?: unknown;
     readonly replayKeyDigest?: unknown;
     readonly nonceDigest?: unknown;
@@ -302,6 +323,21 @@ function testMatchingPresentationAllows(): void {
     'Presentation binding: binding exposes target digest',
   );
   equal(
+    binding.enforcementPointIdDigest,
+    digestText('payment-adapter:supplier-payment-service'),
+    'Presentation binding: binding exposes enforcement point digest',
+  );
+  equal(
+    binding.downstreamSystemDigest,
+    digestText('supplier-payment-service'),
+    'Presentation binding: binding exposes downstream system digest',
+  );
+  equal(
+    binding.policyRefDigest,
+    digestText('policy:payments:v1'),
+    'Presentation binding: binding exposes policy ref digest',
+  );
+  equal(
     binding.replayKeyDigest,
     digestText('payment:tenant_a:invoice_1938:attempt_1'),
     'Presentation binding: binding exposes replay key digest',
@@ -322,9 +358,54 @@ function testMatchingPresentationAllows(): void {
     'Presentation binding: canonical payload does not contain raw nonce',
   );
   equal(
+    binding.canonical.includes('supplier-payment-service'),
+    false,
+    'Presentation binding: canonical payload does not contain raw downstream system',
+  );
+  equal(
+    binding.canonical.includes('policy:payments:v1'),
+    false,
+    'Presentation binding: canonical payload does not contain raw policy ref',
+  );
+  equal(
+    binding.canonical.includes('payment-adapter:supplier-payment-service'),
+    false,
+    'Presentation binding: canonical payload does not contain raw enforcement point id',
+  );
+  equal(
     'target' in canonicalPayload,
     false,
     'Presentation binding: canonical payload omits raw target material',
+  );
+  equal(
+    'enforcementPointId' in canonicalPayload,
+    false,
+    'Presentation binding: canonical payload omits raw enforcement point id',
+  );
+  equal(
+    'downstreamSystem' in canonicalPayload,
+    false,
+    'Presentation binding: canonical payload omits raw downstream system',
+  );
+  equal(
+    'policyRef' in canonicalPayload,
+    false,
+    'Presentation binding: canonical payload omits raw policy ref',
+  );
+  equal(
+    canonicalPayload.enforcementPointIdDigest,
+    binding.enforcementPointIdDigest,
+    'Presentation binding: canonical payload includes enforcement point digest field',
+  );
+  equal(
+    canonicalPayload.downstreamSystemDigest,
+    binding.downstreamSystemDigest,
+    'Presentation binding: canonical payload includes downstream system digest field',
+  );
+  equal(
+    canonicalPayload.policyRefDigest,
+    binding.policyRefDigest,
+    'Presentation binding: canonical payload includes policy ref digest field',
   );
   equal(
     canonicalPayload.targetDigest,
@@ -595,8 +676,23 @@ function testDocsAndScriptsExposePresentationBinding(): void {
   );
   includes(
     bindingDoc,
-    'canonical payload binds targets, replay keys, and nonces by digest',
+    'canonical payload binds targets, enforcement points, downstream systems, policy refs, replay keys, and nonces by digest',
     'Presentation binding: doc states target digest canonical binding',
+  );
+  includes(
+    bindingDoc,
+    'enforcement points',
+    'Presentation binding: doc states enforcement points are digest-bound in canonical proof material',
+  );
+  includes(
+    bindingDoc,
+    'policy refs, replay keys, and nonces by digest',
+    'Presentation binding: doc states policy refs are digest-bound in canonical proof material',
+  );
+  includes(
+    bindingDoc,
+    'downstream systems, policy refs',
+    'Presentation binding: doc states downstream systems are digest-bound in canonical proof material',
   );
   includes(
     bindingDoc,

@@ -232,6 +232,18 @@ assert.equal(
   true,
 );
 assert.equal(
+  admission.consequenceAdmissionPresentationBindingDescriptor().canonicalUsesEnforcementPointIdDigest,
+  true,
+);
+assert.equal(
+  admission.consequenceAdmissionPresentationBindingDescriptor().canonicalUsesDownstreamSystemDigest,
+  true,
+);
+assert.equal(
+  admission.consequenceAdmissionPresentationBindingDescriptor().canonicalUsesPolicyRefDigest,
+  true,
+);
+assert.equal(
   admission.consequenceAdmissionPresentationBindingDescriptor().canonicalUsesConstraintIdDigests,
   true,
 );

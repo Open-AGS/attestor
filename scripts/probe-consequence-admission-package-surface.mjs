@@ -212,6 +212,10 @@ assert.equal(
   true,
 );
 assert.equal(
+  admission.consequenceAdmissionPresentationBindingDescriptor().supportsReplayKeyDigestObservations,
+  true,
+);
+assert.equal(
   typeof admission.evaluateConsequenceAdmissionPresentationBinding,
   'function',
 );

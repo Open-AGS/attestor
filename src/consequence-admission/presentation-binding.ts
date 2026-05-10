@@ -166,6 +166,9 @@ export interface ConsequenceAdmissionPresentationBindingDescriptor {
   readonly cryptographicPresentationVerification: false;
   readonly storesRawBodies: false;
   readonly requiresBodyDigestReferences: true;
+  readonly supportsReplayKeyDigestObservations: true;
+  readonly preferredReplayKeyObservation: 'usedReplayKeyDigests';
+  readonly decisionExposesRawReplayKeys: false;
   readonly replayLedgerIncluded: false;
   readonly failClosed: true;
 }
@@ -664,6 +667,9 @@ ConsequenceAdmissionPresentationBindingDescriptor {
     cryptographicPresentationVerification: false,
     storesRawBodies: false,
     requiresBodyDigestReferences: true,
+    supportsReplayKeyDigestObservations: true,
+    preferredReplayKeyObservation: 'usedReplayKeyDigests',
+    decisionExposesRawReplayKeys: false,
     replayLedgerIncluded: false,
     failClosed: true,
   });

@@ -230,6 +230,21 @@ function testDescriptor(): void {
     true,
     'Presentation binding: descriptor requires digest references for bodies',
   );
+  equal(
+    descriptor.supportsReplayKeyDigestObservations,
+    true,
+    'Presentation binding: descriptor exposes digest replay-key observations',
+  );
+  equal(
+    descriptor.preferredReplayKeyObservation,
+    'usedReplayKeyDigests',
+    'Presentation binding: descriptor prefers digest replay-key observation lists',
+  );
+  equal(
+    descriptor.decisionExposesRawReplayKeys,
+    false,
+    'Presentation binding: decisions do not expose raw replay keys',
+  );
   equal(descriptor.failClosed, true, 'Presentation binding: descriptor is fail-closed');
 }
 
@@ -293,6 +308,11 @@ function testReplayAndExpiryHold(): void {
     replayedByDigest.failureReasons,
     ['replay-key-reused'],
     'Presentation binding: consumed replay key digest holds without raw replay-key lists',
+  );
+  equal(
+    JSON.stringify(replayedByDigest).includes('payment:tenant_a:invoice_1938:attempt_1'),
+    false,
+    'Presentation binding: digest replay decision does not serialize raw replay key material',
   );
   deepEqual(
     expired.failureReasons,
@@ -466,6 +486,16 @@ function testDocsAndScriptsExposePresentationBinding(): void {
     bindingDoc,
     'this exact consequence is allowed here, now',
     'Presentation binding: doc states exact final-edge purpose',
+  );
+  includes(
+    bindingDoc,
+    '`usedReplayKeyDigests`',
+    'Presentation binding: doc names digest replay-key observation field',
+  );
+  includes(
+    bindingDoc,
+    'Digest observations are the preferred replay interface',
+    'Presentation binding: doc prefers digest replay observations',
   );
   includes(
     contractDoc,

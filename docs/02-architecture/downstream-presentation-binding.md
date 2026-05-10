@@ -45,6 +45,12 @@ The point is not to create another proof format for its own sake. The point is t
 
 Executable body material must be supplied as a digest reference such as `sha256:...`. If raw request body material is placed in `bodyDigest`, binding creation rejects it, and presentation evaluation holds fail-closed rather than treating raw material as proof.
 
+## Replay Observation Boundary
+
+The binding object carries the short-lived replay key that the customer-owned enforcement point is about to consume. Decision and proof surfaces should not echo raw replay keys back out.
+
+Replay reuse checks support `usedReplayKeyDigests`, where each observed replay key is supplied as `sha256:...`. Digest observations are the preferred replay interface for adapters, receipts, tests, and operator surfaces. The older `usedReplayKeys` expectation remains compatible for local callers that still hold raw runtime material, but it should not be used for exported proof, telemetry, dashboard, or review surfaces.
+
 ## Package Surface
 
 The package surface is exported through `attestor/consequence-admission`.

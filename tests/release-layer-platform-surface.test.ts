@@ -6,6 +6,7 @@ import {
   RELEASE_LAYER_PUBLIC_SUBPATH,
   releaseLayer,
   releaseLayerPublicSurface,
+  type ReleaseEvidencePackVerificationResult,
   type ReleaseVerificationInput,
 } from '../src/release-layer/index.js';
 import {
@@ -93,6 +94,34 @@ function testReleaseLayerNamespaceBindings(): void {
     releaseLayer.evidence.RELEASE_EVIDENCE_PACK_ISSUANCE_SPEC_VERSION,
     'attestor.release-evidence-pack-issuance.v1',
   );
+  const evidenceVerification = {
+    version: 'attestor.release-evidence-pack-verification.v1',
+    valid: true,
+    evidencePackId: 'ep_release_layer_surface',
+    decisionId: 'rd_release_layer_surface',
+    decisionStatus: 'accepted',
+    consequenceType: 'record',
+    riskClass: 'R4',
+    outputHash: 'sha256:output',
+    consequenceHash: 'sha256:consequence',
+    policyVersion: 'policy.release-layer-surface.v1',
+    policyHash: 'sha256:policy',
+    policyIrHash: 'sha256:policy-ir',
+    policyProvenanceSource: 'compiled-admission-policy-index',
+    compiledPolicyIndexVersion: 'attestor.compiled-admission-policy-index.v1',
+    compiledPolicyIrVersion: 'attestor.compiled-admission-policy-ir.v1',
+    releaseTokenId: 'rt_release_layer_surface',
+    reviewId: 'rq_release_layer_surface',
+    keyId: 'key_release_layer_surface',
+    predicateType: 'https://attestor.ai/attestation/release-evidence/v1',
+    subjectCount: 2,
+    bundleDigest: 'sha256:bundle',
+  } satisfies ReleaseEvidencePackVerificationResult;
+  assert.equal(
+    evidenceVerification.policyProvenanceSource,
+    'compiled-admission-policy-index',
+    'release-layer surface exposes policy-provenance-bound evidence verification result',
+  );
   assert.equal(
     releaseLayer.review.RELEASE_REVIEWER_QUEUE_SPEC_VERSION,
     'attestor.release-reviewer-queue.v2',
@@ -131,4 +160,4 @@ testReleaseLayerPublicSurfaceDescriptor();
 testReleaseLayerNamespaceBindings();
 testFinanceReleaseLayerSurface();
 
-console.log('Release layer platform surface tests: 20 passed, 0 failed');
+console.log('Release layer platform surface tests: 21 passed, 0 failed');

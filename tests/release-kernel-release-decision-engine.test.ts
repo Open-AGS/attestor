@@ -131,6 +131,34 @@ async function main(): Promise<void> {
     'finance.structured-record-release.v1',
     'Release decision engine: the default engine includes the frozen first hard-gateway policy',
   );
+  ok(
+    engineResult.decision.policyHash.startsWith('sha256:'),
+    'Release decision engine: created engines bind decisions to the compiled policy hash',
+  );
+
+  const weakenedR4Engine = createReleaseDecisionEngine({
+    policies: [
+      createReleasePolicyDefinition({
+        ...createFirstHardGatewayReleasePolicy(),
+        id: 'finance.weakened-runtime-policy',
+        acceptance: {
+          ...createFirstHardGatewayReleasePolicy().acceptance,
+          requiredChecks: ['contract-shape'],
+          requiredEvidenceKinds: ['trace'],
+        },
+      }),
+    ],
+  });
+  const weakenedR4Result = weakenedR4Engine.evaluate(request);
+  ok(
+    !weakenedR4Result.policyMatched,
+    'Release decision engine: verifier-failed policies are not admitted through the compiled hot-path index',
+  );
+  equal(
+    weakenedR4Result.decision.status,
+    'denied',
+    'Release decision engine: verifier-failed policy lookup fails closed',
+  );
 
   const nonMatchingRequest = {
     ...request,
@@ -382,6 +410,64 @@ async function main(): Promise<void> {
     rollbackResult.decision.policyVersion,
     'finance.structured-record-release.rollback',
     'Release decision engine: decision skeleton binds to the effective fallback policy during rollback',
+  );
+
+  const compiledRollbackFallbackPolicy = createReleasePolicyDefinition({
+    ...createFirstHardGatewayReleasePolicy(),
+    id: 'finance.structured-record-release.compiled-rollback',
+  });
+  const compiledRolledBackPrimaryPolicy = createReleasePolicyDefinition({
+    ...createFirstHardGatewayReleasePolicy(),
+    rollout: {
+      mode: 'rolled-back',
+      fallbackPolicyId: compiledRollbackFallbackPolicy.id,
+      activatedAt: '2026-04-17T20:25:00.000Z',
+    },
+  });
+  const compiledRollbackEngine = createReleaseDecisionEngine({
+    policies: [compiledRolledBackPrimaryPolicy, compiledRollbackFallbackPolicy],
+  });
+  const compiledRollbackResult = compiledRollbackEngine.evaluate(request);
+  equal(
+    compiledRollbackResult.plan.effectivePolicyId,
+    compiledRollbackFallbackPolicy.id,
+    'Release decision engine: created engines resolve rollback fallback through the compiled hot-path index',
+  );
+  ok(
+    compiledRollbackResult.decision.policyHash.startsWith('sha256:'),
+    'Release decision engine: compiled rollback fallback decisions bind to a compiled policy hash',
+  );
+
+  const weakenedRollbackFallbackPolicy = createReleasePolicyDefinition({
+    ...compiledRollbackFallbackPolicy,
+    id: 'finance.structured-record-release.weakened-rollback',
+    acceptance: {
+      ...compiledRollbackFallbackPolicy.acceptance,
+      requiredChecks: ['contract-shape'],
+      requiredEvidenceKinds: ['trace'],
+    },
+  });
+  const rolledBackToWeakenedPolicy = createReleasePolicyDefinition({
+    ...createFirstHardGatewayReleasePolicy(),
+    rollout: {
+      mode: 'rolled-back',
+      fallbackPolicyId: weakenedRollbackFallbackPolicy.id,
+      activatedAt: '2026-04-17T20:30:00.000Z',
+    },
+  });
+  const weakenedRollbackEngine = createReleaseDecisionEngine({
+    policies: [rolledBackToWeakenedPolicy, weakenedRollbackFallbackPolicy],
+  });
+  const weakenedRollbackResult = weakenedRollbackEngine.evaluate(request);
+  equal(
+    weakenedRollbackResult.plan.effectivePolicyId,
+    rolledBackToWeakenedPolicy.id,
+    'Release decision engine: verifier-failed rollback fallback policies are not admitted as effective policies',
+  );
+  equal(
+    weakenedRollbackResult.plan.rolloutFallbackPolicyId,
+    weakenedRollbackFallbackPolicy.id,
+    'Release decision engine: rejected rollback fallback id remains visible for diagnostics',
   );
 
   console.log(`\nRelease kernel release-decision-engine tests: ${passed} passed, 0 failed`);

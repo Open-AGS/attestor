@@ -248,7 +248,13 @@ async function main(): Promise<void> {
     },
     acceptance: {
       strategy: 'all-required',
-      requiredChecks: ['contract-shape'],
+      requiredChecks: [
+        'contract-shape',
+        'target-binding',
+        'capability-boundary',
+        'consequence-hash-integrity',
+        'policy-rule-validation',
+      ],
       requiredEvidenceKinds: ['trace'],
       maxWarnings: 0,
       failureDisposition: 'deny',
@@ -256,7 +262,7 @@ async function main(): Promise<void> {
     release: {
       reviewMode: 'auto',
       minimumReviewerCount: 0,
-      tokenEnforcement: 'optional',
+      tokenEnforcement: 'required',
       requireSignedEnvelope: false,
       requireDurableEvidencePack: false,
       requireDownstreamReceipt: false,
@@ -351,7 +357,13 @@ async function main(): Promise<void> {
     },
     acceptance: {
       strategy: 'all-required',
-      requiredChecks: ['contract-shape', 'target-binding'],
+      requiredChecks: [
+        'contract-shape',
+        'target-binding',
+        'capability-boundary',
+        'consequence-hash-integrity',
+        'policy-rule-validation',
+      ],
       requiredEvidenceKinds: ['trace'],
       maxWarnings: 0,
       failureDisposition: 'hold',

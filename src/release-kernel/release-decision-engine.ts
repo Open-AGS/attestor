@@ -5,6 +5,15 @@ import type {
   ReleaseTargetReference,
 } from './object-model.js';
 import { createReleaseDecisionSkeleton } from './object-model.js';
+import type {
+  CompiledAdmissionPolicyIndex,
+  CompiledAdmissionPolicyIndexEntry,
+} from './compiled-policy-index.js';
+import {
+  createCompiledAdmissionPolicyIndex,
+  resolveCompiledAdmissionPolicyIndexEntries,
+  resolveCompiledAdmissionPolicyIndexEntry,
+} from './compiled-policy-index.js';
 import type { DeterministicCheckObservation } from './release-deterministic-checks.js';
 import {
   applyDeterministicCheckReport,
@@ -142,6 +151,7 @@ function buildRolloutContext(
 interface EffectiveReleasePolicyResolution {
   readonly matchedPolicy: ReleasePolicyDefinition;
   readonly effectivePolicy: ReleasePolicyDefinition;
+  readonly effectiveCompiledPolicy: CompiledAdmissionPolicyIndexEntry | null;
   readonly rollout: ReleasePolicyRolloutResolution;
   readonly fallbackPolicyId: string | null;
 }
@@ -171,11 +181,34 @@ function findRollbackFallbackPolicy(
     : null;
 }
 
+function findRollbackFallbackCompiledPolicy(
+  index: CompiledAdmissionPolicyIndex,
+  matchedPolicy: ReleasePolicyDefinition,
+  input: ReleaseEvaluationRequest,
+): CompiledAdmissionPolicyIndexEntry | null {
+  const fallbackPolicyId = matchedPolicy.rollout.fallbackPolicyId;
+  if (!fallbackPolicyId) {
+    return null;
+  }
+
+  return (
+    resolveCompiledAdmissionPolicyIndexEntries(index, input).find(
+      (entry) => entry.definition.id === fallbackPolicyId,
+    ) ?? null
+  );
+}
+
 function resolveEffectiveReleasePolicy(
   policies: readonly ReleasePolicyDefinition[],
   input: ReleaseEvaluationRequest,
+  compiledPolicyIndex?: CompiledAdmissionPolicyIndex,
 ): EffectiveReleasePolicyResolution | null {
-  const matchedPolicy = resolveMatchingReleasePolicy(policies, input);
+  const matchedCompiledPolicy = compiledPolicyIndex
+    ? resolveCompiledAdmissionPolicyIndexEntry(compiledPolicyIndex, input)
+    : null;
+  const matchedPolicy = compiledPolicyIndex
+    ? matchedCompiledPolicy?.definition ?? null
+    : resolveMatchingReleasePolicy(policies, input);
   if (!matchedPolicy) {
     return null;
   }
@@ -185,16 +218,23 @@ function resolveEffectiveReleasePolicy(
     return {
       matchedPolicy,
       effectivePolicy: matchedPolicy,
+      effectiveCompiledPolicy: matchedCompiledPolicy,
       rollout: resolveReleasePolicyRollout(matchedPolicy.rollout, rolloutContext),
       fallbackPolicyId: null,
     };
   }
 
-  const fallback = findRollbackFallbackPolicy(policies, matchedPolicy, input);
+  const fallbackCompiledPolicy = compiledPolicyIndex
+    ? findRollbackFallbackCompiledPolicy(compiledPolicyIndex, matchedPolicy, input)
+    : null;
+  const fallback = compiledPolicyIndex
+    ? fallbackCompiledPolicy?.definition ?? null
+    : findRollbackFallbackPolicy(policies, matchedPolicy, input);
   if (!fallback) {
     return {
       matchedPolicy,
       effectivePolicy: matchedPolicy,
+      effectiveCompiledPolicy: matchedCompiledPolicy,
       rollout: resolveReleasePolicyRollout(matchedPolicy.rollout, rolloutContext),
       fallbackPolicyId: matchedPolicy.rollout.fallbackPolicyId,
     };
@@ -204,6 +244,7 @@ function resolveEffectiveReleasePolicy(
   return {
     matchedPolicy,
     effectivePolicy: fallback,
+    effectiveCompiledPolicy: fallbackCompiledPolicy,
     rollout: {
       rolloutMode: 'rolled-back',
       evaluationMode: fallbackRollout.evaluationMode,
@@ -264,8 +305,9 @@ export function resolveMatchingReleasePolicy(
 export function evaluateReleaseDecisionSkeleton(
   input: ReleaseEvaluationRequest,
   policies: readonly ReleasePolicyDefinition[],
+  compiledPolicyIndex?: CompiledAdmissionPolicyIndex,
 ): ReleaseEvaluationResult {
-  const resolvedPolicy = resolveEffectiveReleasePolicy(policies, input);
+  const resolvedPolicy = resolveEffectiveReleasePolicy(policies, input, compiledPolicyIndex);
 
   if (!resolvedPolicy) {
     const decision = createReleaseDecisionSkeleton({
@@ -315,7 +357,7 @@ export function evaluateReleaseDecisionSkeleton(
     createdAt: input.createdAt,
     status: 'hold',
     policyVersion: effectivePolicy.id,
-    policyHash: effectivePolicy.id,
+    policyHash: resolvedPolicy.effectiveCompiledPolicy?.compiled.policyHash ?? effectivePolicy.id,
     outputHash: input.outputHash,
     consequenceHash: input.consequenceHash,
     outputContract: input.outputContract,
@@ -350,11 +392,12 @@ export function createReleaseDecisionEngine(
   input: CreateReleaseDecisionEngineInput = {},
 ): ReleaseDecisionEngine {
   const policies = input.policies ?? [createFirstHardGatewayReleasePolicy()];
+  const compiledPolicyIndex = createCompiledAdmissionPolicyIndex(policies);
   const decisionLog = input.decisionLog;
 
   return {
     evaluate(request: ReleaseEvaluationRequest): ReleaseEvaluationResult {
-      const result = evaluateReleaseDecisionSkeleton(request, policies);
+      const result = evaluateReleaseDecisionSkeleton(request, policies, compiledPolicyIndex);
       logEvaluation(decisionLog, request, result, 'policy-resolution', false);
       return result;
     },
@@ -362,7 +405,7 @@ export function createReleaseDecisionEngine(
       request: ReleaseEvaluationRequest,
       observation: DeterministicCheckObservation,
     ): ReleaseDeterministicEvaluationResult {
-      const initial = evaluateReleaseDecisionSkeleton(request, policies);
+      const initial = evaluateReleaseDecisionSkeleton(request, policies, compiledPolicyIndex);
       logEvaluation(decisionLog, request, initial, 'policy-resolution', false);
 
       if (!initial.policyMatched || initial.matchedPolicyId === null) {
@@ -372,7 +415,7 @@ export function createReleaseDecisionEngine(
         };
       }
 
-      const resolvedPolicy = resolveEffectiveReleasePolicy(policies, request);
+      const resolvedPolicy = resolveEffectiveReleasePolicy(policies, request, compiledPolicyIndex);
       if (!resolvedPolicy) {
         return {
           ...initial,

@@ -32,6 +32,7 @@ function testReleaseLayerPublicSurfaceDescriptor(): void {
     'decisionLog',
     'deterministicChecks',
     'compiledPolicyIr',
+    'compiledPolicyIndex',
     'shadow',
     'canonicalization',
     'token',
@@ -54,6 +55,10 @@ function testReleaseLayerNamespaceBindings(): void {
   assert.equal(
     releaseLayer.compiledPolicyIr.COMPILED_ADMISSION_POLICY_IR_VERSION,
     'attestor.compiled-admission-policy-ir.v1',
+  );
+  assert.equal(
+    releaseLayer.compiledPolicyIndex.COMPILED_ADMISSION_POLICY_INDEX_VERSION,
+    'attestor.compiled-admission-policy-index.v1',
   );
   assert.equal(
     releaseLayer.token.RELEASE_TOKEN_ISSUANCE_SPEC_VERSION,
@@ -105,4 +110,4 @@ testReleaseLayerPublicSurfaceDescriptor();
 testReleaseLayerNamespaceBindings();
 testFinanceReleaseLayerSurface();
 
-console.log('Release layer platform surface tests: 19 passed, 0 failed');
+console.log('Release layer platform surface tests: 20 passed, 0 failed');

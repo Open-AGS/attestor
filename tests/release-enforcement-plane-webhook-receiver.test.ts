@@ -7,7 +7,7 @@ import {
   type IssuedReleaseToken,
   type ReleaseTokenVerificationKey,
 } from '../src/release-kernel/release-token.js';
-import type { ReleaseDecision } from '../src/release-kernel/object-model.js';
+import type { ReleaseDecision, ReleasePolicyProvenance } from '../src/release-kernel/object-model.js';
 import {
   createInMemoryReleaseTokenIntrospectionStore,
   createReleaseTokenIntrospector,
@@ -62,7 +62,26 @@ const TARGET_ID = 'webhook.receiver.workflow';
 const OUTPUT_HASH = 'sha256:output';
 const CONSEQUENCE_HASH = 'sha256:consequence';
 const POLICY_HASH = 'sha256:policy';
+const POLICY_IR_HASH = 'sha256:policy-ir';
+const COMPILED_POLICY_INDEX_VERSION = 'attestor.policy-index.test.v1';
+const COMPILED_POLICY_IR_VERSION = 'attestor.policy-ir.test.v1';
 const WEBHOOK_URL = 'https://webhooks.attestor.test/hooks/release?attempt=1';
+
+function policyProvenance(): ReleasePolicyProvenance {
+  return {
+    source: 'compiled-admission-policy-index',
+    policyId: 'policy.release-webhook-receiver-test',
+    policySpecVersion: 'attestor.release-policy.v1',
+    policyHash: POLICY_HASH,
+    compiledPolicyHash: POLICY_HASH,
+    compiledPolicyIrHash: POLICY_IR_HASH,
+    compiledPolicyIndexVersion: COMPILED_POLICY_INDEX_VERSION,
+    compiledPolicyIrVersion: COMPILED_POLICY_IR_VERSION,
+    verificationValid: true,
+    verificationErrorCodes: [],
+    verificationWarningCodes: [],
+  };
+}
 
 function makeDecision(input: {
   readonly id: string;
@@ -77,6 +96,7 @@ function makeDecision(input: {
     status: 'accepted',
     policyVersion: 'policy.release-webhook-receiver-test.v1',
     policyHash: POLICY_HASH,
+    policyProvenance: policyProvenance(),
     outputHash: OUTPUT_HASH,
     consequenceHash: CONSEQUENCE_HASH,
     outputContract: {

@@ -549,6 +549,8 @@ function expectedBindingFor(
     outputHash: releaseBinding.releaseDecision.outputHash,
     consequenceHash: releaseBinding.releaseDecision.consequenceHash,
     policyHash: releaseBinding.releaseDecision.policyHash,
+    policyIrHash:
+      releaseBinding.releaseDecision.policyProvenance?.compiledPolicyIrHash ?? '',
   });
 }
 

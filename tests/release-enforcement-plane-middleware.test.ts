@@ -3,6 +3,7 @@ import { createServer, type Server } from 'node:http';
 import { Hono } from 'hono';
 import { generateKeyPair } from '../src/signing/keys.js';
 import { createReleaseDecisionSkeleton } from '../src/release-kernel/object-model.js';
+import type { ReleasePolicyProvenance } from '../src/release-kernel/object-model.js';
 import {
   createReleaseTokenIssuer,
   type IssuedReleaseToken,
@@ -17,6 +18,8 @@ import type { CreateEnforcementPointReferenceInput } from '../src/release-enforc
 import {
   ATTESTOR_CONSEQUENCE_HASH_HEADER,
   ATTESTOR_OUTPUT_HASH_HEADER,
+  ATTESTOR_POLICY_HASH_HEADER,
+  ATTESTOR_POLICY_IR_HASH_HEADER,
   ATTESTOR_RELEASE_DECISION_ID_HEADER,
   ATTESTOR_RELEASE_TOKEN_ID_HEADER,
   ATTESTOR_TARGET_ID_HEADER,
@@ -55,6 +58,25 @@ const TARGET_ID = 'middleware.release.target';
 const OUTPUT_HASH = 'sha256:output';
 const CONSEQUENCE_HASH = 'sha256:consequence';
 const POLICY_HASH = 'sha256:policy';
+const POLICY_IR_HASH = 'sha256:policy-ir';
+const COMPILED_POLICY_INDEX_VERSION = 'attestor.policy-index.test.v1';
+const COMPILED_POLICY_IR_VERSION = 'attestor.policy-ir.test.v1';
+
+function policyProvenance(): ReleasePolicyProvenance {
+  return {
+    source: 'compiled-admission-policy-index',
+    policyId: 'policy.release-middleware-test',
+    policySpecVersion: 'attestor.release-policy.v1',
+    policyHash: POLICY_HASH,
+    compiledPolicyHash: POLICY_HASH,
+    compiledPolicyIrHash: POLICY_IR_HASH,
+    compiledPolicyIndexVersion: COMPILED_POLICY_INDEX_VERSION,
+    compiledPolicyIrVersion: COMPILED_POLICY_IR_VERSION,
+    verificationValid: true,
+    verificationErrorCodes: [],
+    verificationWarningCodes: [],
+  };
+}
 
 function makeDecision(input: {
   readonly id: string;
@@ -69,6 +91,7 @@ function makeDecision(input: {
     status: 'accepted',
     policyVersion: 'policy.release-middleware-test.v1',
     policyHash: POLICY_HASH,
+    policyProvenance: policyProvenance(),
     outputHash: OUTPUT_HASH,
     consequenceHash: CONSEQUENCE_HASH,
     outputContract: {
@@ -162,6 +185,8 @@ function releaseHeaders(
     [ATTESTOR_TARGET_ID_HEADER]: decision.target.id,
     [ATTESTOR_OUTPUT_HASH_HEADER]: decision.outputHash,
     [ATTESTOR_CONSEQUENCE_HASH_HEADER]: decision.consequenceHash,
+    [ATTESTOR_POLICY_HASH_HEADER]: decision.policyHash,
+    [ATTESTOR_POLICY_IR_HASH_HEADER]: decision.policyProvenance?.compiledPolicyIrHash ?? POLICY_IR_HASH,
     [ATTESTOR_IDEMPOTENCY_KEY_HEADER]: 'idem-middleware-1',
     ...overrides,
   });
@@ -285,6 +310,37 @@ async function testHonoMiddlewareDeniesBindingMismatch(): Promise<void> {
   deepEqual(body.failureReasons, ['binding-mismatch'], 'Middleware: binding mismatch reason is explicit');
   equal(body.verificationStatus, 'invalid', 'Middleware: invalid verification status is exposed');
   ok(typeof body.requestId === 'string' && body.requestId.length > 0, 'Middleware: denied body carries enforcement request id');
+}
+
+async function testHonoMiddlewareDeniesPolicyIrMismatch(): Promise<void> {
+  const { issued, verificationKey, decision } = await issueToken({
+    tokenId: 'rt_middleware_hono_policy_ir',
+    decisionId: 'decision-middleware-hono-policy-ir',
+  });
+  const app = new Hono<HonoReleaseEnforcementEnv>();
+  let handlerReached = 0;
+
+  app.use('/mutate/*', createHonoReleaseEnforcementMiddleware(baseOptions({ verificationKey })));
+  app.post('/mutate/report', (context) => {
+    handlerReached += 1;
+    return context.text('should not run');
+  });
+
+  const response = await app.request('/mutate/report', {
+    method: 'POST',
+    headers: releaseHeaders(issued, decision, {
+      [ATTESTOR_POLICY_IR_HASH_HEADER]: 'sha256:wrong-policy-ir',
+    }),
+  });
+  const body = await response.json() as {
+    readonly failureReasons: readonly string[];
+    readonly verificationStatus: string;
+  };
+
+  equal(response.status, 403, 'Middleware: Hono denies policy IR binding mismatch');
+  equal(handlerReached, 0, 'Middleware: policy IR mismatch does not reach handler');
+  deepEqual(body.failureReasons, ['stale-policy'], 'Middleware: policy IR mismatch reason is explicit');
+  equal(body.verificationStatus, 'invalid', 'Middleware: policy IR mismatch exposes invalid verification status');
 }
 
 async function testHonoMiddlewareSkipsSafeMethods(): Promise<void> {
@@ -505,6 +561,7 @@ async function main(): Promise<void> {
   await testHonoMiddlewareAllowsValidReleaseAuthorization();
   await testHonoMiddlewareDeniesMissingAuthorization();
   await testHonoMiddlewareDeniesBindingMismatch();
+  await testHonoMiddlewareDeniesPolicyIrMismatch();
   await testHonoMiddlewareSkipsSafeMethods();
   await testHonoMiddlewareOnlineVerifierAllowsHighRisk();
   await testHonoMiddlewareOfflineHighRiskFailsClosed();

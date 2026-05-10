@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { generateKeyPair } from '../src/signing/keys.js';
 import { createReleaseDecisionSkeleton } from '../src/release-kernel/object-model.js';
+import type { ReleasePolicyProvenance } from '../src/release-kernel/object-model.js';
 import { createReleaseTokenIssuer } from '../src/release-kernel/release-token.js';
 import {
   createEnforcementRequest,
@@ -37,6 +38,30 @@ function tokenDigest(token: string): string {
   return `sha256:${createHash('sha256').update(token).digest('hex')}`;
 }
 
+const POLICY_HASH = 'sha256:policy';
+const POLICY_IR_HASH = 'sha256:policy-ir';
+const COMPILED_POLICY_INDEX_VERSION = 'attestor.policy-index.test.v1';
+const COMPILED_POLICY_IR_VERSION = 'attestor.policy-ir.test.v1';
+
+function policyProvenance(input: {
+  readonly policyHash?: string;
+  readonly policyIrHash?: string | null;
+} = {}): ReleasePolicyProvenance {
+  return {
+    source: 'compiled-admission-policy-index',
+    policyId: 'policy.release-offline-test',
+    policySpecVersion: 'attestor.release-policy.v1',
+    policyHash: input.policyHash ?? POLICY_HASH,
+    compiledPolicyHash: input.policyHash ?? POLICY_HASH,
+    compiledPolicyIrHash: input.policyIrHash ?? POLICY_IR_HASH,
+    compiledPolicyIndexVersion: COMPILED_POLICY_INDEX_VERSION,
+    compiledPolicyIrVersion: COMPILED_POLICY_IR_VERSION,
+    verificationValid: true,
+    verificationErrorCodes: [],
+    verificationWarningCodes: [],
+  };
+}
+
 function makeDecision(input: {
   readonly id: string;
   readonly consequenceType: 'communication' | 'record' | 'action' | 'decision-support';
@@ -45,13 +70,23 @@ function makeDecision(input: {
   readonly outputHash?: string;
   readonly consequenceHash?: string;
   readonly policyHash?: string;
+  readonly policyIrHash?: string | null;
+  readonly includePolicyProvenance?: boolean;
 }) {
+  const policyHash = input.policyHash ?? POLICY_HASH;
   return createReleaseDecisionSkeleton({
     id: input.id,
     createdAt: '2026-04-18T08:00:00.000Z',
     status: 'accepted',
     policyVersion: 'policy.release-offline-test.v1',
-    policyHash: input.policyHash ?? 'sha256:policy',
+    policyHash,
+    policyProvenance:
+      input.includePolicyProvenance === false
+        ? null
+        : policyProvenance({
+            policyHash,
+            policyIrHash: input.policyIrHash,
+          }),
     outputHash: input.outputHash ?? 'sha256:output',
     consequenceHash: input.consequenceHash ?? 'sha256:consequence',
     outputContract: {
@@ -186,7 +221,8 @@ async function testLowRiskOfflineAllow(): Promise<void> {
     verificationKey,
     now: '2026-04-18T08:01:00.000Z',
     expected: {
-      policyHash: 'sha256:policy',
+      policyHash: POLICY_HASH,
+      policyIrHash: POLICY_IR_HASH,
     },
     replayLedgerEntry: null,
   });
@@ -201,6 +237,7 @@ async function testLowRiskOfflineAllow(): Promise<void> {
   equal(verified.verificationResult.status, 'valid', 'Offline verifier: object-model verification result is valid');
   equal(verified.verificationResult.releaseTokenId, 'rt_low_risk', 'Offline verifier: verification result binds token id');
   equal(verified.verificationResult.outputHash, 'sha256:output', 'Offline verifier: verification result carries output hash');
+  equal(verified.verificationResult.policyIrHash, POLICY_IR_HASH, 'Offline verifier: verification result carries compiled policy IR hash');
 }
 
 async function testHighRiskNeedsOnline(): Promise<void> {
@@ -302,7 +339,7 @@ async function testMissingReplayLedgerLookupFails(): Promise<void> {
     verificationKey,
     now: '2026-04-18T08:01:00.000Z',
     expected: {
-      policyHash: 'sha256:policy',
+      policyHash: POLICY_HASH,
     },
   });
 
@@ -461,6 +498,104 @@ async function testPolicyAndDigestBindingMismatchFails(): Promise<void> {
 
   equal(verified.status, 'invalid', 'Offline verifier: policy and presentation digest mismatch is invalid');
   deepEqual(verified.failureReasons, ['binding-mismatch'], 'Offline verifier: policy/digest mismatch is a binding mismatch');
+}
+
+async function testPolicyIrBindingMismatchFailsAsStalePolicy(): Promise<void> {
+  const { issuer, verificationKey } = await setupIssuer();
+  const decision = makeDecision({
+    id: 'decision-policy-ir',
+    consequenceType: 'decision-support',
+    riskClass: 'R1',
+    targetId: 'analytics.memo.preview',
+  });
+  const issued = await issuer.issue({
+    decision,
+    issuedAt: '2026-04-18T08:00:00.000Z',
+    tokenId: 'rt_policy_ir',
+  });
+  const request = makeRequest({
+    id: 'erq-policy-ir',
+    targetId: 'analytics.memo.preview',
+    releaseTokenId: issued.tokenId,
+    releaseDecisionId: decision.id,
+  });
+
+  const verified = await verifyOfflineReleaseAuthorization({
+    request,
+    presentation: bearerPresentation({
+      token: issued.token,
+      tokenId: issued.tokenId,
+      decisionId: decision.id,
+    }),
+    verificationKey,
+    now: '2026-04-18T08:01:00.000Z',
+    expected: {
+      policyIrHash: 'sha256:other-policy-ir',
+    },
+    replayLedgerEntry: null,
+  });
+
+  equal(verified.status, 'invalid', 'Offline verifier: policy IR hash mismatch is invalid');
+  deepEqual(verified.failureReasons, ['stale-policy'], 'Offline verifier: policy IR mismatch maps to stale policy');
+}
+
+async function testRequiredPolicyProvenanceMissingFailsClosed(): Promise<void> {
+  const { issuer, verificationKey } = await setupIssuer();
+  const decision = makeDecision({
+    id: 'decision-r4-missing-policy-provenance',
+    consequenceType: 'record',
+    riskClass: 'R4',
+    targetId: 'finance.reporting.record-store',
+    includePolicyProvenance: false,
+  });
+  const issued = await issuer.issue({
+    decision,
+    issuedAt: '2026-04-18T08:00:00.000Z',
+    tokenId: 'rt_r4_missing_policy_provenance',
+    confirmation: createMtlsReleaseTokenConfirmation({
+      certificateThumbprint: 'cert-thumbprint',
+      spiffeId: 'spiffe://attestor/tests/finance-writer',
+    }),
+  });
+  const request = makeRequest({
+    id: 'erq-r4-missing-policy-provenance',
+    targetId: 'finance.reporting.record-store',
+    boundaryKind: 'record-write',
+    pointKind: 'record-write-gateway',
+    consequenceType: 'record',
+    riskClass: 'R4',
+    releaseTokenId: issued.tokenId,
+    releaseDecisionId: decision.id,
+  });
+  const presentation = createReleasePresentation({
+    mode: 'mtls-bound-token',
+    presentedAt: '2026-04-18T08:01:00.000Z',
+    releaseToken: issued.token,
+    releaseTokenId: issued.tokenId,
+    releaseTokenDigest: tokenDigest(issued.token),
+    issuer: 'attestor.release.local',
+    subject: `releaseDecision:${decision.id}`,
+    audience: 'finance.reporting.record-store',
+    expiresAt: issued.expiresAt,
+    proof: {
+      kind: 'mtls',
+      certificateThumbprint: 'cert-thumbprint',
+      subjectDn: 'CN=finance-writer',
+      spiffeId: 'spiffe://attestor/tests/finance-writer',
+    },
+  });
+
+  const verified = await verifyOfflineReleaseAuthorization({
+    request,
+    presentation,
+    verificationKey,
+    now: '2026-04-18T08:01:00.000Z',
+    replayLedgerEntry: null,
+  });
+
+  equal(verified.status, 'invalid', 'Offline verifier: required compiled policy provenance fails closed when missing');
+  ok(verified.failureReasons.includes('stale-policy'), 'Offline verifier: missing required policy provenance is stale policy');
+  equal(verified.verificationResult.policyIrHash, null, 'Offline verifier: missing policy provenance leaves no policy IR hash');
 }
 
 async function testReplayLedgerHitFails(): Promise<void> {
@@ -663,6 +798,8 @@ async function main(): Promise<void> {
   await testOutputAndConsequenceBindingMismatchFails();
   await testConsequenceAndRiskBindingMismatchFails();
   await testPolicyAndDigestBindingMismatchFails();
+  await testPolicyIrBindingMismatchFailsAsStalePolicy();
+  await testRequiredPolicyProvenanceMissingFailsClosed();
   await testReplayLedgerHitFails();
   await testExpiredTokenFails();
   await testWrongVerificationKeyFails();

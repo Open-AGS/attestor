@@ -6,7 +6,7 @@ import {
   type IssuedReleaseToken,
   type ReleaseTokenVerificationKey,
 } from '../src/release-kernel/release-token.js';
-import type { ReleaseDecision } from '../src/release-kernel/object-model.js';
+import type { ReleaseDecision, ReleasePolicyProvenance } from '../src/release-kernel/object-model.js';
 import {
   createInMemoryReleaseTokenIntrospectionStore,
   createReleaseTokenIntrospector,
@@ -44,6 +44,10 @@ function deepEqual<T>(actual: T, expected: T, message: string): void {
 
 const WORKLOAD_CERT_THUMBPRINT = 'cert-thumbprint-record-write';
 const WORKLOAD_SPIFFE_ID = 'spiffe://attestor/tests/record-write-gateway';
+const POLICY_HASH = 'sha256:policy';
+const POLICY_IR_HASH = 'sha256:policy-ir';
+const COMPILED_POLICY_INDEX_VERSION = 'attestor.policy-index.test.v1';
+const COMPILED_POLICY_IR_VERSION = 'attestor.policy-ir.test.v1';
 const MUTATION: RecordWriteMutation = Object.freeze({
   storeId: 'finance.reporting',
   collection: 'counterparty_exposures',
@@ -61,6 +65,22 @@ const MUTATION: RecordWriteMutation = Object.freeze({
   reason: 'release-authorized filing preparation update',
 });
 
+function policyProvenance(): ReleasePolicyProvenance {
+  return {
+    source: 'compiled-admission-policy-index',
+    policyId: 'policy.release-record-write-test',
+    policySpecVersion: 'attestor.release-policy.v1',
+    policyHash: POLICY_HASH,
+    compiledPolicyHash: POLICY_HASH,
+    compiledPolicyIrHash: POLICY_IR_HASH,
+    compiledPolicyIndexVersion: COMPILED_POLICY_INDEX_VERSION,
+    compiledPolicyIrVersion: COMPILED_POLICY_IR_VERSION,
+    verificationValid: true,
+    verificationErrorCodes: [],
+    verificationWarningCodes: [],
+  };
+}
+
 function makeDecision(input: {
   readonly id: string;
   readonly binding: ReturnType<typeof buildRecordWriteCanonicalBinding>;
@@ -71,7 +91,8 @@ function makeDecision(input: {
     createdAt: '2026-04-18T17:00:00.000Z',
     status: 'accepted',
     policyVersion: 'policy.release-record-write-test.v1',
-    policyHash: 'sha256:policy',
+    policyHash: POLICY_HASH,
+    policyProvenance: policyProvenance(),
     outputHash: input.binding.hashBundle.outputHash,
     consequenceHash: input.binding.hashBundle.consequenceHash,
     outputContract: input.binding.outputContract,

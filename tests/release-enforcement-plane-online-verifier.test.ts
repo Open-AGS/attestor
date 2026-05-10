@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { generateKeyPair } from '../src/signing/keys.js';
 import { createReleaseDecisionSkeleton } from '../src/release-kernel/object-model.js';
+import type { ReleasePolicyProvenance } from '../src/release-kernel/object-model.js';
 import {
   createReleaseTokenIssuer,
   type IssuedReleaseToken,
@@ -27,6 +28,10 @@ import { createMtlsReleaseTokenConfirmation } from '../src/release-enforcement-p
 let passed = 0;
 const WORKLOAD_CERT_THUMBPRINT = 'cert-thumbprint';
 const WORKLOAD_SPIFFE_ID = 'spiffe://attestor/tests/finance-writer';
+const POLICY_HASH = 'sha256:policy';
+const POLICY_IR_HASH = 'sha256:policy-ir';
+const COMPILED_POLICY_INDEX_VERSION = 'attestor.policy-index.test.v1';
+const COMPILED_POLICY_IR_VERSION = 'attestor.policy-ir.test.v1';
 
 function ok(condition: unknown, message: string): void {
   assert.ok(condition, message);
@@ -47,6 +52,22 @@ function tokenDigest(token: string): string {
   return `sha256:${createHash('sha256').update(token).digest('hex')}`;
 }
 
+function policyProvenance(): ReleasePolicyProvenance {
+  return {
+    source: 'compiled-admission-policy-index',
+    policyId: 'policy.release-online-test',
+    policySpecVersion: 'attestor.release-policy.v1',
+    policyHash: POLICY_HASH,
+    compiledPolicyHash: POLICY_HASH,
+    compiledPolicyIrHash: POLICY_IR_HASH,
+    compiledPolicyIndexVersion: COMPILED_POLICY_INDEX_VERSION,
+    compiledPolicyIrVersion: COMPILED_POLICY_IR_VERSION,
+    verificationValid: true,
+    verificationErrorCodes: [],
+    verificationWarningCodes: [],
+  };
+}
+
 function makeDecision(input: {
   readonly id: string;
   readonly consequenceType: 'record' | 'decision-support';
@@ -58,7 +79,8 @@ function makeDecision(input: {
     createdAt: '2026-04-18T09:00:00.000Z',
     status: 'accepted',
     policyVersion: 'policy.release-online-test.v1',
-    policyHash: 'sha256:policy',
+    policyHash: POLICY_HASH,
+    policyProvenance: policyProvenance(),
     outputHash: 'sha256:output',
     consequenceHash: 'sha256:consequence',
     outputContract: {
@@ -202,6 +224,17 @@ function activeIntrospectionFromIssued(
     output_hash: issued.claims.output_hash,
     consequence_hash: issued.claims.consequence_hash,
     policy_hash: issued.claims.policy_hash,
+    ...(issued.claims.policy_version ? { policy_version: issued.claims.policy_version } : {}),
+    ...(issued.claims.policy_ir_hash ? { policy_ir_hash: issued.claims.policy_ir_hash } : {}),
+    ...(issued.claims.policy_provenance_source
+      ? { policy_provenance_source: issued.claims.policy_provenance_source }
+      : {}),
+    ...(issued.claims.compiled_policy_index_version
+      ? { compiled_policy_index_version: issued.claims.compiled_policy_index_version }
+      : {}),
+    ...(issued.claims.compiled_policy_ir_version
+      ? { compiled_policy_ir_version: issued.claims.compiled_policy_ir_version }
+      : {}),
     override: issued.claims.override,
     authority_mode: issued.claims.authority_mode,
     introspection_required: issued.claims.introspection_required,
@@ -294,6 +327,8 @@ async function testHighRiskActiveIntrospectionAllows(): Promise<void> {
   equal(verified.verificationResult.status, 'valid', 'Online verifier: final verification result is valid after liveness');
   equal(verified.verificationResult.mode, 'hybrid-required', 'Online verifier: high-risk result records hybrid verification');
   equal(verified.verificationResult.introspection?.active, true, 'Online verifier: verification result embeds active introspection snapshot');
+  equal(verified.verificationResult.policyIrHash, POLICY_IR_HASH, 'Online verifier: final verification result carries policy IR hash');
+  equal(verified.verificationResult.introspection?.policyIrHash, POLICY_IR_HASH, 'Online verifier: introspection snapshot carries policy IR hash');
   equal(verified.freshness?.introspectionCache.status, 'fresh', 'Online verifier: active live introspection creates fresh cache state');
 }
 
@@ -585,6 +620,55 @@ async function testActiveClaimMismatchFails(): Promise<void> {
   ok(verified.failureReasons.includes('binding-mismatch'), 'Online verifier: claim mismatch also marks binding mismatch');
 }
 
+async function testActivePolicyClaimMismatchFailsAsStalePolicy(): Promise<void> {
+  const { issuer, verificationKey } = await setupIssuer();
+  const decision = makeDecision({
+    id: 'decision-policy-mismatch-online',
+    consequenceType: 'record',
+    riskClass: 'R4',
+    targetId: 'finance.reporting.record-store',
+  });
+  const issued = await issuer.issue({
+    decision,
+    issuedAt: '2026-04-18T09:00:00.000Z',
+    tokenId: 'rt_online_policy_mismatch',
+    confirmation: createMtlsReleaseTokenConfirmation({
+      certificateThumbprint: WORKLOAD_CERT_THUMBPRINT,
+      spiffeId: WORKLOAD_SPIFFE_ID,
+    }),
+  });
+  const introspector: ReleaseTokenIntrospector = {
+    async introspect() {
+      return activeIntrospectionFromIssued(issued, {
+        policy_ir_hash: 'sha256:wrong-policy-ir',
+      });
+    },
+  };
+  const request = makeRequest({
+    id: 'erq-policy-mismatch',
+    targetId: 'finance.reporting.record-store',
+    consequenceType: 'record',
+    riskClass: 'R4',
+    boundaryKind: 'record-write',
+    pointKind: 'record-write-gateway',
+    releaseTokenId: issued.tokenId,
+    releaseDecisionId: decision.id,
+  });
+
+  const verified = await verifyOnlineReleaseAuthorization({
+    request,
+    presentation: mtlsPresentation({ issued, decisionId: decision.id }),
+    verificationKey,
+    now: '2026-04-18T09:01:00.000Z',
+    replayLedgerEntry: null,
+    introspector,
+  });
+
+  equal(verified.status, 'invalid', 'Online verifier: active policy claim mismatch fails closed');
+  ok(verified.failureReasons.includes('introspection-claim-mismatch'), 'Online verifier: policy mismatch is still a claim mismatch');
+  ok(verified.failureReasons.includes('stale-policy'), 'Online verifier: policy mismatch is marked as stale policy');
+}
+
 async function testIntrospectionUnavailableFailsClosed(): Promise<void> {
   const { issuer, verificationKey } = await setupIssuer();
   const decision = makeDecision({
@@ -642,6 +726,7 @@ async function main(): Promise<void> {
   await testUnknownTokenFails();
   await testUnsupportedTokenTypeFails();
   await testActiveClaimMismatchFails();
+  await testActivePolicyClaimMismatchFailsAsStalePolicy();
   await testIntrospectionUnavailableFailsClosed();
 
   console.log(`Release enforcement-plane online-verifier tests: ${passed} passed, 0 failed`);

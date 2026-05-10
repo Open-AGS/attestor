@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import type {
   ReleaseActorReference,
   ReleaseDecision,
+  ReleasePolicyProvenance,
   ReleaseTargetKind,
   ReleaseTokenActorClaim,
   ReleaseTokenClaims,
@@ -331,6 +332,32 @@ function flattenActorChain(
   return Object.freeze(chain);
 }
 
+function policyProvenanceFromClaims(
+  claims: ReleaseTokenClaims,
+): ReleasePolicyProvenance | null {
+  if (claims.policy_provenance_source === undefined) {
+    return null;
+  }
+
+  return Object.freeze({
+    source: claims.policy_provenance_source,
+    policyId:
+      claims.policy_id ??
+      claims.policy_version ??
+      'attestor.release-token-exchange.derived-policy',
+    policySpecVersion:
+      claims.policy_version ?? 'attestor.release-token-exchange.derived-policy.v1',
+    policyHash: claims.policy_hash,
+    compiledPolicyHash: claims.policy_hash,
+    compiledPolicyIrHash: claims.policy_ir_hash ?? null,
+    compiledPolicyIndexVersion: claims.compiled_policy_index_version ?? null,
+    compiledPolicyIrVersion: claims.compiled_policy_ir_version ?? null,
+    verificationValid: null,
+    verificationErrorCodes: Object.freeze([]),
+    verificationWarningCodes: Object.freeze([]),
+  });
+}
+
 function derivedDecisionForExchange(input: {
   readonly claims: ReleaseTokenClaims;
   readonly request: ReleaseTokenExchangeRequest;
@@ -345,6 +372,7 @@ function derivedDecisionForExchange(input: {
     status: input.claims.decision,
     policyVersion: 'attestor.release-token-exchange.derived-policy.v1',
     policyHash: input.claims.policy_hash,
+    policyProvenance: policyProvenanceFromClaims(input.claims),
     outputHash: input.claims.output_hash,
     consequenceHash: input.claims.consequence_hash,
     outputContract: {

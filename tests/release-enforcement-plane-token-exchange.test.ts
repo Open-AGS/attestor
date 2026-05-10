@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { generateKeyPair } from '../src/signing/keys.js';
 import { createReleaseDecisionSkeleton } from '../src/release-kernel/object-model.js';
+import type { ReleasePolicyProvenance } from '../src/release-kernel/object-model.js';
 import {
   createReleaseTokenIssuer,
   type IssuedReleaseToken,
@@ -29,6 +30,10 @@ import { createMtlsReleaseTokenConfirmation } from '../src/release-enforcement-p
 let passed = 0;
 const WORKLOAD_CERT_THUMBPRINT = 'cert-thumbprint';
 const WORKLOAD_SPIFFE_ID = 'spiffe://attestor/tests/finance-writer';
+const POLICY_HASH = 'sha256:policy';
+const POLICY_IR_HASH = 'sha256:policy-ir';
+const COMPILED_POLICY_INDEX_VERSION = 'attestor.policy-index.test.v1';
+const COMPILED_POLICY_IR_VERSION = 'attestor.policy-ir.test.v1';
 
 function ok(condition: unknown, message: string): void {
   assert.ok(condition, message);
@@ -49,6 +54,22 @@ function tokenDigest(token: string): string {
   return `sha256:${createHash('sha256').update(token).digest('hex')}`;
 }
 
+function policyProvenance(): ReleasePolicyProvenance {
+  return {
+    source: 'compiled-admission-policy-index',
+    policyId: 'policy.release-token-exchange-test',
+    policySpecVersion: 'attestor.release-policy.v1',
+    policyHash: POLICY_HASH,
+    compiledPolicyHash: POLICY_HASH,
+    compiledPolicyIrHash: POLICY_IR_HASH,
+    compiledPolicyIndexVersion: COMPILED_POLICY_INDEX_VERSION,
+    compiledPolicyIrVersion: COMPILED_POLICY_IR_VERSION,
+    verificationValid: true,
+    verificationErrorCodes: [],
+    verificationWarningCodes: [],
+  };
+}
+
 function makeDecision(input: {
   readonly id: string;
   readonly consequenceType: 'record' | 'decision-support';
@@ -60,7 +81,8 @@ function makeDecision(input: {
     createdAt: '2026-04-18T10:00:00.000Z',
     status: 'accepted',
     policyVersion: 'policy.release-token-exchange-test.v1',
-    policyHash: 'sha256:policy',
+    policyHash: POLICY_HASH,
+    policyProvenance: policyProvenance(),
     outputHash: 'sha256:output',
     consequenceHash: 'sha256:consequence',
     outputContract: {

@@ -28,6 +28,8 @@ import {
 import {
   ATTESTOR_CONSEQUENCE_HASH_HEADER,
   ATTESTOR_OUTPUT_HASH_HEADER,
+  ATTESTOR_POLICY_HASH_HEADER,
+  ATTESTOR_POLICY_IR_HASH_HEADER,
   ATTESTOR_RELEASE_DECISION_ID_HEADER,
   ATTESTOR_RELEASE_TOKEN_ID_HEADER,
   ATTESTOR_TARGET_ID_HEADER,
@@ -122,6 +124,8 @@ export interface ReleaseEnforcementMiddlewareOptions {
   readonly targetId?: ReleaseEnforcementResolver<string | null | undefined>;
   readonly outputHash?: ReleaseEnforcementResolver<string | null | undefined>;
   readonly consequenceHash?: ReleaseEnforcementResolver<string | null | undefined>;
+  readonly policyHash?: ReleaseEnforcementResolver<string | null | undefined>;
+  readonly policyIrHash?: ReleaseEnforcementResolver<string | null | undefined>;
   readonly releaseTokenId?: ReleaseEnforcementResolver<string | null | undefined>;
   readonly releaseDecisionId?: ReleaseEnforcementResolver<string | null | undefined>;
   readonly idempotencyKey?: ReleaseEnforcementResolver<string | null | undefined>;
@@ -423,6 +427,12 @@ async function defaultInputForHttpRequest(
     context,
     ATTESTOR_CONSEQUENCE_HASH_HEADER,
   );
+  const policyHash =
+    normalizeIdentifier(await resolveOption(options.policyHash, context)) ??
+    headerValue(context.request.headers, ATTESTOR_POLICY_HASH_HEADER);
+  const policyIrHash =
+    normalizeIdentifier(await resolveOption(options.policyIrHash, context)) ??
+    headerValue(context.request.headers, ATTESTOR_POLICY_IR_HASH_HEADER);
 
   if (targetId === null || outputHash === null || consequenceHash === null) {
     return deniedResult({
@@ -510,6 +520,13 @@ async function defaultInputForHttpRequest(
     presentation,
     verificationKey,
     now: context.checkedAt,
+    expected:
+      policyHash !== null || policyIrHash !== null
+        ? {
+            policyHash: policyHash ?? undefined,
+            policyIrHash: policyIrHash ?? undefined,
+          }
+        : undefined,
     replayLedgerEntry: await resolveOption(options.replayLedgerEntry, context),
     nonceLedgerEntry: await resolveOption(options.nonceLedgerEntry, context),
   };

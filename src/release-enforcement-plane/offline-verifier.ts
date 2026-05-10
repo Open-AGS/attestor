@@ -75,6 +75,7 @@ export interface OfflineVerifierExpectedBinding {
   readonly outputHash?: string;
   readonly consequenceHash?: string;
   readonly policyHash?: string;
+  readonly policyIrHash?: string;
 }
 
 export interface OfflineHttpMessageSignatureVerificationContext {
@@ -160,6 +161,7 @@ function expectedBindingForRequest(
     outputHash: input.expected?.outputHash ?? request.outputHash,
     consequenceHash: input.expected?.consequenceHash ?? request.consequenceHash,
     policyHash: input.expected?.policyHash ?? '',
+    policyIrHash: input.expected?.policyIrHash ?? '',
   };
 }
 
@@ -246,9 +248,40 @@ function claimShapeFailureReasons(claims: ReleaseTokenClaims): readonly Enforcem
   return reasons;
 }
 
+function hasCompiledPolicyProvenance(claims: ReleaseTokenClaims): boolean {
+  return (
+    claims.policy_provenance_source === 'compiled-admission-policy-index' &&
+    typeof claims.policy_ir_hash === 'string' &&
+    claims.policy_ir_hash.trim().length > 0 &&
+    typeof claims.compiled_policy_index_version === 'string' &&
+    claims.compiled_policy_index_version.trim().length > 0 &&
+    typeof claims.compiled_policy_ir_version === 'string' &&
+    claims.compiled_policy_ir_version.trim().length > 0
+  );
+}
+
+function policyProvenanceFailureReasons(
+  profile: VerificationProfile,
+  expected: Required<OfflineVerifierExpectedBinding>,
+  claims: ReleaseTokenClaims,
+): readonly EnforcementFailureReason[] {
+  const reasons: EnforcementFailureReason[] = [];
+
+  if (expected.policyIrHash && claims.policy_ir_hash !== expected.policyIrHash) {
+    reasons.push('stale-policy');
+  }
+
+  if (profile.policyProvenanceRequired && !hasCompiledPolicyProvenance(claims)) {
+    reasons.push('stale-policy');
+  }
+
+  return reasons;
+}
+
 function bindingFailureReasons(
   input: OfflineReleaseVerificationInput,
   claims: ReleaseTokenClaims,
+  profile: VerificationProfile,
 ): readonly EnforcementFailureReason[] {
   const expected = expectedBindingForRequest(input);
   const presentation = input.presentation;
@@ -317,6 +350,8 @@ function bindingFailureReasons(
   if (expected.policyHash && claims.policy_hash !== expected.policyHash) {
     reasons.push('binding-mismatch');
   }
+
+  reasons.push(...policyProvenanceFailureReasons(profile, expected, claims));
 
   return reasons;
 }
@@ -703,7 +738,7 @@ export async function verifyOfflineReleaseAuthorization(
       offlineFailures.push(
         ...protectedHeaderFailureReasons(tokenVerification, input.verificationKey),
         ...claimShapeFailureReasons(tokenVerification.claims),
-        ...bindingFailureReasons(input, tokenVerification.claims),
+        ...bindingFailureReasons(input, tokenVerification.claims, profile),
         ...(await dpopBindingFailureReasons(input, tokenVerification.claims, checkedAt)),
         ...workloadBindingFailureReasons(input, tokenVerification.claims, checkedAt),
         ...(await httpMessageSignatureBindingFailureReasons(
@@ -777,6 +812,12 @@ export async function verifyOfflineReleaseAuthorization(
     releaseDecisionId: claims?.decision_id ?? input.request.releaseDecisionId,
     outputHash: claims?.output_hash ?? null,
     consequenceHash: claims?.consequence_hash ?? null,
+    policyHash: claims?.policy_hash ?? null,
+    policyVersion: claims?.policy_version ?? null,
+    policyIrHash: claims?.policy_ir_hash ?? null,
+    policyProvenanceSource: claims?.policy_provenance_source ?? null,
+    compiledPolicyIndexVersion: claims?.compiled_policy_index_version ?? null,
+    compiledPolicyIrVersion: claims?.compiled_policy_ir_version ?? null,
     failureReasons,
   });
 

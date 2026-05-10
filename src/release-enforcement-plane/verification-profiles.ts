@@ -42,6 +42,7 @@ export interface RiskVerificationBaseline {
   readonly riskClass: ReleaseEnforcementRiskClass;
   readonly verificationModes: readonly EnforcementVerificationMode[];
   readonly onlineIntrospectionRequired: boolean;
+  readonly policyProvenanceRequired: boolean;
   readonly senderConstraint: SenderConstraintRequirement;
   readonly replayProtectionRequired: boolean;
   readonly cacheBudget: VerificationCacheBudget;
@@ -54,6 +55,7 @@ export interface BoundaryVerificationBaseline {
   readonly supportedConsequenceTypes: readonly ReleaseEnforcementConsequenceType[];
   readonly verificationModes: readonly EnforcementVerificationMode[];
   readonly allowedPresentationModes: readonly ReleasePresentationMode[];
+  readonly policyProvenanceRequired: boolean;
   readonly senderConstraint: SenderConstraintRequirement;
   readonly replayProtectionRequired: boolean;
   readonly cacheBudget: VerificationCacheBudget;
@@ -76,6 +78,7 @@ export interface VerificationProfile {
   readonly onlineIntrospectionRequired: boolean;
   readonly allowedPresentationModes: readonly ReleasePresentationMode[];
   readonly senderConstrainedPresentationModes: readonly ReleasePresentationMode[];
+  readonly policyProvenanceRequired: boolean;
   readonly senderConstraint: SenderConstraintRequirement;
   readonly replayProtectionRequired: boolean;
   readonly cacheBudget: VerificationCacheBudget;
@@ -106,6 +109,7 @@ export const RISK_VERIFICATION_BASELINES: Record<
     riskClass: 'R0',
     verificationModes: ['shadow-observe'] as const,
     onlineIntrospectionRequired: false,
+    policyProvenanceRequired: false,
     senderConstraint: 'none',
     replayProtectionRequired: false,
     cacheBudget: Object.freeze({
@@ -121,6 +125,7 @@ export const RISK_VERIFICATION_BASELINES: Record<
     riskClass: 'R1',
     verificationModes: ['offline-signature'] as const,
     onlineIntrospectionRequired: false,
+    policyProvenanceRequired: false,
     senderConstraint: 'none',
     replayProtectionRequired: true,
     cacheBudget: Object.freeze({
@@ -136,6 +141,7 @@ export const RISK_VERIFICATION_BASELINES: Record<
     riskClass: 'R2',
     verificationModes: ['offline-signature', 'online-introspection'] as const,
     onlineIntrospectionRequired: true,
+    policyProvenanceRequired: false,
     senderConstraint: 'recommended',
     replayProtectionRequired: true,
     cacheBudget: Object.freeze({
@@ -151,6 +157,7 @@ export const RISK_VERIFICATION_BASELINES: Record<
     riskClass: 'R3',
     verificationModes: ['hybrid-required'] as const,
     onlineIntrospectionRequired: true,
+    policyProvenanceRequired: true,
     senderConstraint: 'required',
     replayProtectionRequired: true,
     cacheBudget: Object.freeze({
@@ -166,6 +173,7 @@ export const RISK_VERIFICATION_BASELINES: Record<
     riskClass: 'R4',
     verificationModes: ['hybrid-required'] as const,
     onlineIntrospectionRequired: true,
+    policyProvenanceRequired: true,
     senderConstraint: 'required',
     replayProtectionRequired: true,
     cacheBudget: Object.freeze({
@@ -188,6 +196,7 @@ export const BOUNDARY_VERIFICATION_BASELINES: Record<
     supportedConsequenceTypes: ['communication', 'record', 'action', 'decision-support'] as const,
     verificationModes: ['offline-signature'] as const,
     allowedPresentationModes: ['bearer-release-token', 'dpop-bound-token', 'http-message-signature'] as const,
+    policyProvenanceRequired: false,
     senderConstraint: 'recommended',
     replayProtectionRequired: true,
     cacheBudget: Object.freeze({
@@ -207,6 +216,7 @@ export const BOUNDARY_VERIFICATION_BASELINES: Record<
       'dpop-bound-token',
       'http-message-signature',
     ] as const,
+    policyProvenanceRequired: true,
     senderConstraint: 'required',
     replayProtectionRequired: true,
     cacheBudget: Object.freeze({
@@ -226,6 +236,7 @@ export const BOUNDARY_VERIFICATION_BASELINES: Record<
       'spiffe-bound-token',
       'mtls-bound-token',
     ] as const,
+    policyProvenanceRequired: true,
     senderConstraint: 'recommended',
     replayProtectionRequired: true,
     cacheBudget: Object.freeze({
@@ -246,6 +257,7 @@ export const BOUNDARY_VERIFICATION_BASELINES: Record<
       'mtls-bound-token',
       'spiffe-bound-token',
     ] as const,
+    policyProvenanceRequired: true,
     senderConstraint: 'required',
     replayProtectionRequired: true,
     cacheBudget: Object.freeze({
@@ -265,6 +277,7 @@ export const BOUNDARY_VERIFICATION_BASELINES: Record<
       'dpop-bound-token',
       'http-message-signature',
     ] as const,
+    policyProvenanceRequired: true,
     senderConstraint: 'required',
     replayProtectionRequired: true,
     cacheBudget: Object.freeze({
@@ -280,6 +293,7 @@ export const BOUNDARY_VERIFICATION_BASELINES: Record<
     supportedConsequenceTypes: ['action'] as const,
     verificationModes: ['hybrid-required'] as const,
     allowedPresentationModes: ['dpop-bound-token', 'mtls-bound-token', 'spiffe-bound-token'] as const,
+    policyProvenanceRequired: true,
     senderConstraint: 'required',
     replayProtectionRequired: true,
     cacheBudget: Object.freeze({
@@ -300,6 +314,7 @@ export const BOUNDARY_VERIFICATION_BASELINES: Record<
       'mtls-bound-token',
       'spiffe-bound-token',
     ] as const,
+    policyProvenanceRequired: true,
     senderConstraint: 'recommended',
     replayProtectionRequired: true,
     cacheBudget: Object.freeze({
@@ -315,6 +330,7 @@ export const BOUNDARY_VERIFICATION_BASELINES: Record<
     supportedConsequenceTypes: ['record', 'decision-support'] as const,
     verificationModes: ['offline-signature'] as const,
     allowedPresentationModes: ['signed-json-envelope', 'http-message-signature'] as const,
+    policyProvenanceRequired: false,
     senderConstraint: 'not-applicable',
     replayProtectionRequired: false,
     cacheBudget: Object.freeze({
@@ -456,6 +472,8 @@ export function resolveVerificationProfile(
     onlineIntrospectionRequired,
     allowedPresentationModes,
     senderConstrainedPresentationModes: constrainedModes,
+    policyProvenanceRequired:
+      risk.policyProvenanceRequired || boundary.policyProvenanceRequired,
     senderConstraint,
     replayProtectionRequired:
       risk.replayProtectionRequired || boundary.replayProtectionRequired,

@@ -5,6 +5,7 @@ import {
   type IssuedReleaseToken,
   type ReleaseTokenVerificationKey,
 } from '../src/release-kernel/release-token.js';
+import type { ReleasePolicyProvenance } from '../src/release-kernel/object-model.js';
 import {
   createInMemoryReleaseTokenIntrospectionStore,
   createReleaseTokenIntrospector,
@@ -92,6 +93,9 @@ const SIGNATURE = `0x${'11'.repeat(65)}`;
 const CERT_THUMBPRINT = 'cert-thumbprint-crypto-enforcement';
 const SPIFFE_ID = 'spiffe://attestor.test/ns/crypto/sa/safe-guard';
 const CHECKED_AT = '2026-04-21T09:02:00.000Z';
+const POLICY_IR_HASH = 'sha256:crypto-policy-ir';
+const COMPILED_POLICY_INDEX_VERSION = 'attestor.crypto-policy-index.test.v1';
+const COMPILED_POLICY_IR_VERSION = 'attestor.crypto-policy-ir.test.v1';
 
 function ok(condition: unknown, message: string): void {
   assert.ok(condition, message);
@@ -106,6 +110,22 @@ function equal<T>(actual: T, expected: T, message: string): void {
 function deepEqual<T>(actual: T, expected: T, message: string): void {
   assert.deepEqual(actual, expected, message);
   passed += 1;
+}
+
+function cryptoPolicyProvenance(policyHash: string): ReleasePolicyProvenance {
+  return {
+    source: 'compiled-admission-policy-index',
+    policyId: 'policy.crypto-enforcement-test',
+    policySpecVersion: 'attestor.crypto-policy.v1',
+    policyHash,
+    compiledPolicyHash: policyHash,
+    compiledPolicyIrHash: POLICY_IR_HASH,
+    compiledPolicyIndexVersion: COMPILED_POLICY_INDEX_VERSION,
+    compiledPolicyIrVersion: COMPILED_POLICY_IR_VERSION,
+    verificationValid: true,
+    verificationErrorCodes: [],
+    verificationWarningCodes: [],
+  };
 }
 
 function fixtureChain() {
@@ -335,13 +355,11 @@ function createBinding(
 function issueableReleaseDecision(
   decision: CryptoReleaseDecisionBinding['releaseDecision'],
 ): CryptoReleaseDecisionBinding['releaseDecision'] {
-  if (decision.status === 'accepted') {
-    return decision;
-  }
-
   return Object.freeze({
     ...decision,
     status: 'accepted',
+    policyProvenance:
+      decision.policyProvenance ?? cryptoPolicyProvenance(decision.policyHash),
   });
 }
 

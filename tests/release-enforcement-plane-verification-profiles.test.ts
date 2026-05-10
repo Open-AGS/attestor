@@ -39,16 +39,21 @@ function testRiskBaselines(): void {
   equal(RISK_VERIFICATION_BASELINES.R0.verificationModes[0], 'shadow-observe', 'Verification profiles: R0 remains shadow-first');
   equal(RISK_VERIFICATION_BASELINES.R1.onlineIntrospectionRequired, false, 'Verification profiles: R1 does not require online introspection by default');
   equal(RISK_VERIFICATION_BASELINES.R2.onlineIntrospectionRequired, true, 'Verification profiles: R2 requires online liveness by default');
+  equal(RISK_VERIFICATION_BASELINES.R2.policyProvenanceRequired, false, 'Verification profiles: R2 does not require compiled policy provenance by risk alone');
   equal(RISK_VERIFICATION_BASELINES.R3.senderConstraint, 'required', 'Verification profiles: R3 requires sender constraint');
+  equal(RISK_VERIFICATION_BASELINES.R3.policyProvenanceRequired, true, 'Verification profiles: R3 requires compiled policy provenance');
   equal(RISK_VERIFICATION_BASELINES.R4.overridePosture, 'dual-break-glass', 'Verification profiles: R4 requires dual break-glass posture');
+  equal(RISK_VERIFICATION_BASELINES.R4.policyProvenanceRequired, true, 'Verification profiles: R4 requires compiled policy provenance');
   equal(RISK_VERIFICATION_BASELINES.R4.cacheBudget.positiveTtlSeconds, 0, 'Verification profiles: R4 does not allow positive introspection caching');
 }
 
 function testBoundaryBaselines(): void {
   deepEqual(BOUNDARY_VERIFICATION_BASELINES['record-write'].supportedConsequenceTypes, ['record'], 'Verification profiles: record-write only supports record consequence');
   ok(BOUNDARY_VERIFICATION_BASELINES.webhook.verificationModes.includes('hybrid-required'), 'Verification profiles: webhook boundaries require hybrid verification');
+  equal(BOUNDARY_VERIFICATION_BASELINES.webhook.policyProvenanceRequired, true, 'Verification profiles: webhook boundaries require compiled policy provenance');
   ok(BOUNDARY_VERIFICATION_BASELINES['action-dispatch'].allowedPresentationModes.includes('spiffe-bound-token'), 'Verification profiles: action dispatch supports workload-bound presentation');
   equal(BOUNDARY_VERIFICATION_BASELINES['artifact-export'].senderConstraint, 'not-applicable', 'Verification profiles: artifact export is not a live sender-bound boundary');
+  equal(BOUNDARY_VERIFICATION_BASELINES['artifact-export'].policyProvenanceRequired, false, 'Verification profiles: artifact export does not require compiled policy provenance by boundary');
   equal(BOUNDARY_VERIFICATION_BASELINES['proxy-admission'].cacheBudget.requireFreshOnlineCheck, true, 'Verification profiles: proxy admission requires fresh online checks');
 }
 
@@ -63,6 +68,7 @@ function testRecordWriteR4Profile(): void {
   equal(profile.id, 'verification-profile:record:R4:record-write', 'Verification profiles: profile id is deterministic');
   deepEqual(profile.verificationModes, ['hybrid-required'], 'Verification profiles: R4 record-write uses hybrid verification');
   equal(profile.onlineIntrospectionRequired, true, 'Verification profiles: R4 record-write requires online introspection');
+  equal(profile.policyProvenanceRequired, true, 'Verification profiles: R4 record-write requires compiled policy provenance');
   equal(profile.senderConstraint, 'required', 'Verification profiles: R4 record-write requires sender constraint');
   deepEqual(profile.allowedPresentationModes, ['bearer-release-token', 'dpop-bound-token', 'mtls-bound-token', 'spiffe-bound-token'], 'Verification profiles: R4 record-write keeps compatible presentation modes');
   deepEqual(profile.senderConstrainedPresentationModes, ['dpop-bound-token', 'mtls-bound-token', 'spiffe-bound-token'], 'Verification profiles: R4 record-write exposes only sender-constrained modes separately');
@@ -95,6 +101,7 @@ function testProxyAndLowRiskProfiles(): void {
 
   deepEqual(proxy.verificationModes, ['hybrid-required'], 'Verification profiles: proxy admission upgrades R2 to hybrid verification');
   equal(proxy.onlineIntrospectionRequired, true, 'Verification profiles: proxy admission requires online introspection');
+  equal(proxy.policyProvenanceRequired, true, 'Verification profiles: proxy admission requires compiled policy provenance at the boundary');
   equal(proxy.cacheBudget.positiveTtlSeconds, 10, 'Verification profiles: proxy admission tightens positive cache budget');
   equal(proxy.senderConstraint, 'recommended', 'Verification profiles: R2 proxy admission recommends sender constraint');
 
@@ -106,6 +113,7 @@ function testProxyAndLowRiskProfiles(): void {
 
   deepEqual(lowRiskHttp.verificationModes, ['offline-signature'], 'Verification profiles: R1 HTTP request can verify offline');
   equal(lowRiskHttp.onlineIntrospectionRequired, false, 'Verification profiles: R1 HTTP request does not require introspection');
+  equal(lowRiskHttp.policyProvenanceRequired, false, 'Verification profiles: R1 HTTP request does not require compiled policy provenance');
   equal(lowRiskHttp.cacheBudget.positiveTtlSeconds, 60, 'Verification profiles: HTTP boundary tightens R1 cache budget');
 }
 

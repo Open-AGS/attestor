@@ -6,7 +6,7 @@ import {
   type IssuedReleaseToken,
   type ReleaseTokenVerificationKey,
 } from '../src/release-kernel/release-token.js';
-import type { ReleaseDecision } from '../src/release-kernel/object-model.js';
+import type { ReleaseDecision, ReleasePolicyProvenance } from '../src/release-kernel/object-model.js';
 import {
   createInMemoryReleaseTokenIntrospectionStore,
   createReleaseTokenIntrospector,
@@ -56,11 +56,31 @@ const TARGET_ID = 'release.async.queue';
 const QUEUE_OR_TOPIC = 'attestor.release.consequences';
 const MESSAGE_ID = 'msg-async-envelope-1';
 const IDEMPOTENCY_KEY = 'idem-async-envelope-1';
+const POLICY_HASH = 'sha256:policy';
+const POLICY_IR_HASH = 'sha256:policy-ir';
+const COMPILED_POLICY_INDEX_VERSION = 'attestor.policy-index.test.v1';
+const COMPILED_POLICY_IR_VERSION = 'attestor.policy-ir.test.v1';
 const PAYLOAD = {
   consequence: 'record.write',
   rowCount: 2,
   target: TARGET_ID,
 };
+
+function policyProvenance(): ReleasePolicyProvenance {
+  return {
+    source: 'compiled-admission-policy-index',
+    policyId: 'policy.release-async-envelope-test',
+    policySpecVersion: 'attestor.release-policy.v1',
+    policyHash: POLICY_HASH,
+    compiledPolicyHash: POLICY_HASH,
+    compiledPolicyIrHash: POLICY_IR_HASH,
+    compiledPolicyIndexVersion: COMPILED_POLICY_INDEX_VERSION,
+    compiledPolicyIrVersion: COMPILED_POLICY_IR_VERSION,
+    verificationValid: true,
+    verificationErrorCodes: [],
+    verificationWarningCodes: [],
+  };
+}
 
 function makeDecision(input: {
   readonly id: string;
@@ -74,7 +94,8 @@ function makeDecision(input: {
     createdAt: '2026-04-18T14:00:00.000Z',
     status: 'accepted',
     policyVersion: 'policy.release-async-envelope-test.v1',
-    policyHash: 'sha256:policy',
+    policyHash: POLICY_HASH,
+    policyProvenance: policyProvenance(),
     outputHash: 'sha256:output',
     consequenceHash: 'sha256:consequence',
     outputContract: {

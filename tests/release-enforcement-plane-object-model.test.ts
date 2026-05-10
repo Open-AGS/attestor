@@ -155,6 +155,12 @@ function testIntrospectionSnapshot(): ReturnType<typeof createIntrospectionSnaps
     clientId: ' filing-export-pep ',
     consequenceType: 'record',
     riskClass: 'R4',
+    policyHash: ' sha256:policy ',
+    policyVersion: ' policy.object-model-test.v1 ',
+    policyIrHash: ' sha256:policy-ir ',
+    policyProvenanceSource: 'compiled-admission-policy-index',
+    compiledPolicyIndexVersion: ' attestor.policy-index.test.v1 ',
+    compiledPolicyIrVersion: ' attestor.policy-ir.test.v1 ',
   });
 
   equal(snapshot.version, INTROSPECTION_SNAPSHOT_SPEC_VERSION, 'Enforcement object model: introspection stamps schema version');
@@ -163,6 +169,8 @@ function testIntrospectionSnapshot(): ReturnType<typeof createIntrospectionSnaps
   deepEqual(snapshot.scope, ['filing:export', 'record:write'], 'Enforcement object model: introspection scopes are unique and sorted');
   equal(snapshot.consequenceType, 'record', 'Enforcement object model: introspection can carry consequence binding');
   equal(snapshot.riskClass, 'R4', 'Enforcement object model: introspection can carry risk binding');
+  equal(snapshot.policyIrHash, 'sha256:policy-ir', 'Enforcement object model: introspection can carry policy IR binding');
+  equal(snapshot.policyProvenanceSource, 'compiled-admission-policy-index', 'Enforcement object model: introspection can carry policy provenance source');
 
   return snapshot;
 }
@@ -182,6 +190,12 @@ function testVerificationDecisionAndReceipt(): void {
     releaseDecisionId: ' rd_001 ',
     outputHash: ' sha256:output ',
     consequenceHash: ' sha256:consequence ',
+    policyHash: ' sha256:policy ',
+    policyVersion: ' policy.object-model-test.v1 ',
+    policyIrHash: ' sha256:policy-ir ',
+    policyProvenanceSource: 'compiled-admission-policy-index',
+    compiledPolicyIndexVersion: ' attestor.policy-index.test.v1 ',
+    compiledPolicyIrVersion: ' attestor.policy-ir.test.v1 ',
     introspection,
   });
 
@@ -190,6 +204,8 @@ function testVerificationDecisionAndReceipt(): void {
   equal(verification.presentationMode, 'dpop-bound-token', 'Enforcement object model: verification records presentation mode');
   equal(verification.releaseTokenId, 'rt_001', 'Enforcement object model: verification binds token id');
   equal(verification.outputHash, 'sha256:output', 'Enforcement object model: verification binds output hash');
+  equal(verification.policyIrHash, 'sha256:policy-ir', 'Enforcement object model: verification binds policy IR hash');
+  equal(verification.compiledPolicyIndexVersion, 'attestor.policy-index.test.v1', 'Enforcement object model: verification binds compiled policy index version');
   deepEqual(verification.failureReasons, [], 'Enforcement object model: valid verification has no failure reasons');
 
   const decision = createEnforcementDecision({

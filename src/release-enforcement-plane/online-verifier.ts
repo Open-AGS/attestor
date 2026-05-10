@@ -139,9 +139,39 @@ function activeIntrospectionClaimMismatch(
     introspection.output_hash !== claims.output_hash ||
     introspection.consequence_hash !== claims.consequence_hash ||
     introspection.policy_hash !== claims.policy_hash ||
+    (introspection.policy_version ?? null) !== (claims.policy_version ?? null) ||
+    (introspection.policy_ir_hash ?? null) !== (claims.policy_ir_hash ?? null) ||
+    (introspection.policy_provenance_source ?? null) !==
+      (claims.policy_provenance_source ?? null) ||
+    (introspection.compiled_policy_index_version ?? null) !==
+      (claims.compiled_policy_index_version ?? null) ||
+    (introspection.compiled_policy_ir_version ?? null) !==
+      (claims.compiled_policy_ir_version ?? null) ||
     introspection.override !== claims.override ||
     introspection.authority_mode !== claims.authority_mode ||
     introspection.introspection_required !== claims.introspection_required
+  );
+}
+
+function activeIntrospectionPolicyMismatch(
+  offline: OfflineReleaseVerification,
+  introspection: ActiveReleaseTokenIntrospectionResult,
+): boolean {
+  const claims = offline.claims;
+  if (claims === null) {
+    return false;
+  }
+
+  return (
+    introspection.policy_hash !== claims.policy_hash ||
+    (introspection.policy_version ?? null) !== (claims.policy_version ?? null) ||
+    (introspection.policy_ir_hash ?? null) !== (claims.policy_ir_hash ?? null) ||
+    (introspection.policy_provenance_source ?? null) !==
+      (claims.policy_provenance_source ?? null) ||
+    (introspection.compiled_policy_index_version ?? null) !==
+      (claims.compiled_policy_index_version ?? null) ||
+    (introspection.compiled_policy_ir_version ?? null) !==
+      (claims.compiled_policy_ir_version ?? null)
   );
 }
 
@@ -172,6 +202,12 @@ function snapshotFromIntrospection(
     clientId: introspection.resource_server_id,
     consequenceType: introspection.consequence_type,
     riskClass: introspection.risk_class,
+    policyHash: introspection.policy_hash,
+    policyVersion: introspection.policy_version ?? null,
+    policyIrHash: introspection.policy_ir_hash ?? null,
+    policyProvenanceSource: introspection.policy_provenance_source ?? null,
+    compiledPolicyIndexVersion: introspection.compiled_policy_index_version ?? null,
+    compiledPolicyIrVersion: introspection.compiled_policy_ir_version ?? null,
   });
 }
 
@@ -291,6 +327,24 @@ function createFinalVerificationResult(input: {
     consequenceHash:
       input.offline.claims?.consequence_hash ??
       input.offline.verificationResult.consequenceHash,
+    policyHash:
+      input.offline.claims?.policy_hash ??
+      input.offline.verificationResult.policyHash,
+    policyVersion:
+      input.offline.claims?.policy_version ??
+      input.offline.verificationResult.policyVersion,
+    policyIrHash:
+      input.offline.claims?.policy_ir_hash ??
+      input.offline.verificationResult.policyIrHash,
+    policyProvenanceSource:
+      input.offline.claims?.policy_provenance_source ??
+      input.offline.verificationResult.policyProvenanceSource,
+    compiledPolicyIndexVersion:
+      input.offline.claims?.compiled_policy_index_version ??
+      input.offline.verificationResult.compiledPolicyIndexVersion,
+    compiledPolicyIrVersion:
+      input.offline.claims?.compiled_policy_ir_version ??
+      input.offline.verificationResult.compiledPolicyIrVersion,
     failureReasons: input.failureReasons,
     introspection: input.introspectionSnapshot,
   });
@@ -464,6 +518,7 @@ export async function verifyOnlineReleaseAuthorization(
 
   const freshness = freshnessFromActiveIntrospection(input, offline, introspection, checkedAt);
   const activeMismatch = activeIntrospectionClaimMismatch(offline, introspection);
+  const activePolicyMismatch = activeIntrospectionPolicyMismatch(offline, introspection);
   let consumed = false;
   let useCount: number | null = null;
   let maxUses: number | null = null;
@@ -493,6 +548,7 @@ export async function verifyOnlineReleaseAuthorization(
   const failureReasons = uniqueFailureReasons([
     ...(freshness.status === 'invalid' ? freshness.failureReasons : []),
     ...(activeMismatch ? ['introspection-claim-mismatch' as const, 'binding-mismatch' as const] : []),
+    ...(activePolicyMismatch ? ['stale-policy' as const] : []),
     ...usageFailures,
   ]);
   const valid = failureReasons.length === 0;

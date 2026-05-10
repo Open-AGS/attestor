@@ -46,6 +46,8 @@ export const ATTESTOR_RELEASE_DECISION_ID_HEADER = 'attestor-release-decision-id
 export const ATTESTOR_TARGET_ID_HEADER = 'attestor-target-id';
 export const ATTESTOR_OUTPUT_HASH_HEADER = 'attestor-output-hash';
 export const ATTESTOR_CONSEQUENCE_HASH_HEADER = 'attestor-consequence-hash';
+export const ATTESTOR_POLICY_HASH_HEADER = 'attestor-policy-hash';
+export const ATTESTOR_POLICY_IR_HASH_HEADER = 'attestor-policy-ir-hash';
 
 export const DEFAULT_HTTP_AUTHORIZATION_ENVELOPE_COMPONENTS = Object.freeze([
   '@method',
@@ -56,6 +58,7 @@ export const DEFAULT_HTTP_AUTHORIZATION_ENVELOPE_COMPONENTS = Object.freeze([
   ATTESTOR_TARGET_ID_HEADER,
   ATTESTOR_OUTPUT_HASH_HEADER,
   ATTESTOR_CONSEQUENCE_HASH_HEADER,
+  ATTESTOR_POLICY_HASH_HEADER,
 ] as const);
 
 export type HttpMessageSignatureAlgorithm = typeof HTTP_MESSAGE_SIGNATURE_ALGORITHM;
@@ -998,6 +1001,10 @@ function signedEnvelopeHeaders(input: {
     [ATTESTOR_TARGET_ID_HEADER]: input.issuedToken.claims.aud,
     [ATTESTOR_OUTPUT_HASH_HEADER]: input.issuedToken.claims.output_hash,
     [ATTESTOR_CONSEQUENCE_HASH_HEADER]: input.issuedToken.claims.consequence_hash,
+    [ATTESTOR_POLICY_HASH_HEADER]: input.issuedToken.claims.policy_hash,
+    ...(input.issuedToken.claims.policy_ir_hash
+      ? { [ATTESTOR_POLICY_IR_HASH_HEADER]: input.issuedToken.claims.policy_ir_hash }
+      : {}),
   };
 
   return Object.freeze(headers);
@@ -1029,6 +1036,14 @@ export async function createHttpAuthorizationEnvelope(
     headers,
     body: input.request.body,
   };
+  const coveredComponents =
+    input.coveredComponents ??
+    (input.issuedToken.claims.policy_ir_hash
+      ? Object.freeze([
+          ...DEFAULT_HTTP_AUTHORIZATION_ENVELOPE_COMPONENTS,
+          ATTESTOR_POLICY_IR_HASH_HEADER,
+        ] as const)
+      : DEFAULT_HTTP_AUTHORIZATION_ENVELOPE_COMPONENTS);
   const signature = await createHttpMessageSignature({
     message,
     privateJwk: input.privateJwk,
@@ -1037,7 +1052,7 @@ export async function createHttpAuthorizationEnvelope(
     label: input.label,
     tag: input.tag,
     algorithm: input.algorithm,
-    coveredComponents: input.coveredComponents,
+    coveredComponents,
     createdAt: input.createdAt,
     expiresAt: input.expiresAt,
     nonce: input.nonce,

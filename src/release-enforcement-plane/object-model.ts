@@ -1,4 +1,5 @@
 import type { ReleaseActorReference } from '../release-layer/index.js';
+import type { ReleasePolicyProvenanceSource } from '../release-kernel/object-model.js';
 import type {
   EnforcementBreakGlassReason,
   EnforcementCacheState,
@@ -153,6 +154,12 @@ export interface IntrospectionSnapshot {
   readonly clientId: string | null;
   readonly consequenceType: ReleaseEnforcementConsequenceType | null;
   readonly riskClass: ReleaseEnforcementRiskClass | null;
+  readonly policyHash: string | null;
+  readonly policyVersion: string | null;
+  readonly policyIrHash: string | null;
+  readonly policyProvenanceSource: ReleasePolicyProvenanceSource | null;
+  readonly compiledPolicyIndexVersion: string | null;
+  readonly compiledPolicyIrVersion: string | null;
 }
 
 export interface VerificationResult {
@@ -171,6 +178,12 @@ export interface VerificationResult {
   readonly audience: string | null;
   readonly outputHash: string | null;
   readonly consequenceHash: string | null;
+  readonly policyHash: string | null;
+  readonly policyVersion: string | null;
+  readonly policyIrHash: string | null;
+  readonly policyProvenanceSource: ReleasePolicyProvenanceSource | null;
+  readonly compiledPolicyIndexVersion: string | null;
+  readonly compiledPolicyIrVersion: string | null;
   readonly failureReasons: readonly EnforcementFailureReason[];
   readonly introspection: IntrospectionSnapshot | null;
 }
@@ -262,6 +275,12 @@ export interface CreateIntrospectionSnapshotInput {
   readonly clientId?: string | null;
   readonly consequenceType?: ReleaseEnforcementConsequenceType | null;
   readonly riskClass?: ReleaseEnforcementRiskClass | null;
+  readonly policyHash?: string | null;
+  readonly policyVersion?: string | null;
+  readonly policyIrHash?: string | null;
+  readonly policyProvenanceSource?: ReleasePolicyProvenanceSource | null;
+  readonly compiledPolicyIndexVersion?: string | null;
+  readonly compiledPolicyIrVersion?: string | null;
 }
 
 export interface CreateVerificationResultInput {
@@ -275,6 +294,12 @@ export interface CreateVerificationResultInput {
   readonly releaseDecisionId?: string | null;
   readonly outputHash?: string | null;
   readonly consequenceHash?: string | null;
+  readonly policyHash?: string | null;
+  readonly policyVersion?: string | null;
+  readonly policyIrHash?: string | null;
+  readonly policyProvenanceSource?: ReleasePolicyProvenanceSource | null;
+  readonly compiledPolicyIndexVersion?: string | null;
+  readonly compiledPolicyIrVersion?: string | null;
   readonly failureReasons?: readonly EnforcementFailureReason[];
   readonly introspection?: IntrospectionSnapshot | null;
 }
@@ -653,6 +678,18 @@ export function createIntrospectionSnapshot(
     clientId: normalizeOptionalIdentifier(input.clientId, 'introspectionSnapshot.clientId'),
     consequenceType: input.consequenceType ?? null,
     riskClass: input.riskClass ?? null,
+    policyHash: normalizeOptionalIdentifier(input.policyHash, 'introspectionSnapshot.policyHash'),
+    policyVersion: normalizeOptionalIdentifier(input.policyVersion, 'introspectionSnapshot.policyVersion'),
+    policyIrHash: normalizeOptionalIdentifier(input.policyIrHash, 'introspectionSnapshot.policyIrHash'),
+    policyProvenanceSource: input.policyProvenanceSource ?? null,
+    compiledPolicyIndexVersion: normalizeOptionalIdentifier(
+      input.compiledPolicyIndexVersion,
+      'introspectionSnapshot.compiledPolicyIndexVersion',
+    ),
+    compiledPolicyIrVersion: normalizeOptionalIdentifier(
+      input.compiledPolicyIrVersion,
+      'introspectionSnapshot.compiledPolicyIrVersion',
+    ),
   });
 }
 
@@ -689,6 +726,34 @@ export function createVerificationResult(
       input.consequenceHash,
       'verificationResult.consequenceHash',
     ),
+    policyHash:
+      normalizeOptionalIdentifier(input.policyHash, 'verificationResult.policyHash') ??
+      input.introspection?.policyHash ??
+      null,
+    policyVersion:
+      normalizeOptionalIdentifier(input.policyVersion, 'verificationResult.policyVersion') ??
+      input.introspection?.policyVersion ??
+      null,
+    policyIrHash:
+      normalizeOptionalIdentifier(input.policyIrHash, 'verificationResult.policyIrHash') ??
+      input.introspection?.policyIrHash ??
+      null,
+    policyProvenanceSource:
+      input.policyProvenanceSource ?? input.introspection?.policyProvenanceSource ?? null,
+    compiledPolicyIndexVersion:
+      normalizeOptionalIdentifier(
+        input.compiledPolicyIndexVersion,
+        'verificationResult.compiledPolicyIndexVersion',
+      ) ??
+      input.introspection?.compiledPolicyIndexVersion ??
+      null,
+    compiledPolicyIrVersion:
+      normalizeOptionalIdentifier(
+        input.compiledPolicyIrVersion,
+        'verificationResult.compiledPolicyIrVersion',
+      ) ??
+      input.introspection?.compiledPolicyIrVersion ??
+      null,
     failureReasons,
     introspection: input.introspection ?? null,
   });

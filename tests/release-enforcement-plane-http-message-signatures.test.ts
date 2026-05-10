@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { generateKeyPair } from '../src/signing/keys.js';
 import { createReleaseDecisionSkeleton } from '../src/release-kernel/object-model.js';
+import type { ReleasePolicyProvenance } from '../src/release-kernel/object-model.js';
 import {
   createReleaseTokenIssuer,
   type IssuedReleaseToken,
@@ -21,6 +22,8 @@ import { verifyOnlineReleaseAuthorization } from '../src/release-enforcement-pla
 import {
   ATTESTOR_CONSEQUENCE_HASH_HEADER,
   ATTESTOR_OUTPUT_HASH_HEADER,
+  ATTESTOR_POLICY_HASH_HEADER,
+  ATTESTOR_POLICY_IR_HASH_HEADER,
   ATTESTOR_RELEASE_TOKEN_DIGEST_HEADER,
   ATTESTOR_TARGET_ID_HEADER,
   DEFAULT_HTTP_AUTHORIZATION_ENVELOPE_COMPONENTS,
@@ -60,6 +63,26 @@ const BODY = JSON.stringify({
   consequence: 'callback.dispatch',
 });
 const TARGET_ID = 'callbacks.attestor.receiver';
+const POLICY_HASH = 'sha256:policy';
+const POLICY_IR_HASH = 'sha256:policy-ir';
+const COMPILED_POLICY_INDEX_VERSION = 'attestor.policy-index.test.v1';
+const COMPILED_POLICY_IR_VERSION = 'attestor.policy-ir.test.v1';
+
+function policyProvenance(): ReleasePolicyProvenance {
+  return {
+    source: 'compiled-admission-policy-index',
+    policyId: 'policy.release-http-signature-test',
+    policySpecVersion: 'attestor.release-policy.v1',
+    policyHash: POLICY_HASH,
+    compiledPolicyHash: POLICY_HASH,
+    compiledPolicyIrHash: POLICY_IR_HASH,
+    compiledPolicyIndexVersion: COMPILED_POLICY_INDEX_VERSION,
+    compiledPolicyIrVersion: COMPILED_POLICY_IR_VERSION,
+    verificationValid: true,
+    verificationErrorCodes: [],
+    verificationWarningCodes: [],
+  };
+}
 
 function makeDecision(input: {
   readonly id: string;
@@ -74,7 +97,8 @@ function makeDecision(input: {
     createdAt: '2026-04-18T13:00:00.000Z',
     status: 'accepted',
     policyVersion: 'policy.release-http-signature-test.v1',
-    policyHash: 'sha256:policy',
+    policyHash: POLICY_HASH,
+    policyProvenance: policyProvenance(),
     outputHash: 'sha256:output',
     consequenceHash: 'sha256:consequence',
     outputContract: {
@@ -236,8 +260,12 @@ async function testEnvelopeCreationAndVerification(): Promise<void> {
   equal(envelope.headers[ATTESTOR_TARGET_ID_HEADER], TARGET_ID, 'HTTP signatures: target-id header is present');
   equal(envelope.headers[ATTESTOR_OUTPUT_HASH_HEADER], 'sha256:output', 'HTTP signatures: output hash header is present');
   equal(envelope.headers[ATTESTOR_CONSEQUENCE_HASH_HEADER], 'sha256:consequence', 'HTTP signatures: consequence hash header is present');
+  equal(envelope.headers[ATTESTOR_POLICY_HASH_HEADER], POLICY_HASH, 'HTTP signatures: policy hash header is present');
+  equal(envelope.headers[ATTESTOR_POLICY_IR_HASH_HEADER], POLICY_IR_HASH, 'HTTP signatures: policy IR hash header is present');
   ok(envelope.coveredComponents.includes('authorization'), 'HTTP signatures: Authorization is signed');
   ok(envelope.coveredComponents.includes('content-digest'), 'HTTP signatures: Content-Digest is signed');
+  ok(envelope.coveredComponents.includes(ATTESTOR_POLICY_HASH_HEADER), 'HTTP signatures: policy hash is signed');
+  ok(envelope.coveredComponents.includes(ATTESTOR_POLICY_IR_HASH_HEADER), 'HTTP signatures: policy IR hash is signed when present');
   equal(envelope.presentation.mode, 'http-message-signature', 'HTTP signatures: envelope creates release presentation');
 
   const verified = await verifyHttpMessageSignature({
@@ -653,6 +681,7 @@ async function testStandaloneSignatureHelper(): Promise<void> {
       [ATTESTOR_TARGET_ID_HEADER]: TARGET_ID,
       [ATTESTOR_OUTPUT_HASH_HEADER]: 'sha256:output',
       [ATTESTOR_CONSEQUENCE_HASH_HEADER]: 'sha256:consequence',
+      [ATTESTOR_POLICY_HASH_HEADER]: POLICY_HASH,
     },
     body,
   };

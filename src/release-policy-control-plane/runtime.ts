@@ -85,6 +85,14 @@ function buildResolutionFinding(status: ActivePolicyResolutionStatus): ReleaseFi
           'No active policy entry in the resolved bundle matched this release scope, so the request is denied.',
         source: 'policy',
       };
+    case 'policy-entry-verification-failed':
+      return {
+        code: 'policy_entry_verification_failed',
+        result: 'fail',
+        message:
+          'The matched policy entry failed compiled admission verification, so Attestor is failing closed before runtime release evaluation.',
+        source: 'policy',
+      };
     case 'ambiguous-policy-entry':
       return {
         code: 'policy_entry_ambiguous',

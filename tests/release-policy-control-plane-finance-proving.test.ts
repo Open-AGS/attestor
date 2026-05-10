@@ -135,6 +135,7 @@ function scopedFinanceOverrideBundle(
   scope: FinancePolicyScopeOverrides,
   bundleId: string,
   policyId: string,
+  options: { readonly weakened?: boolean } = {},
 ) {
   const baseDefinition = policy.createFirstHardGatewayReleasePolicy();
   const overrideDefinition = policy.createReleasePolicyDefinition({
@@ -151,7 +152,13 @@ function scopedFinanceOverrideBundle(
     scope: baseDefinition.scope,
     outputContract: baseDefinition.outputContract,
     capabilityBoundary: baseDefinition.capabilityBoundary,
-    acceptance: baseDefinition.acceptance,
+    acceptance: options.weakened
+      ? {
+          ...baseDefinition.acceptance,
+          requiredChecks: ['contract-shape'],
+          requiredEvidenceKinds: ['trace'],
+        }
+      : baseDefinition.acceptance,
     release: baseDefinition.release,
     notes: [...baseDefinition.notes, `Scoped ${flow} override.`],
   });
@@ -218,8 +225,9 @@ function activateScopedFinanceOverride(
   scope: FinancePolicyScopeOverrides,
   bundleId: string,
   policyId: string,
+  options: { readonly weakened?: boolean } = {},
 ): void {
-  const bundle = scopedFinanceOverrideBundle(flow, scope, bundleId, policyId);
+  const bundle = scopedFinanceOverrideBundle(flow, scope, bundleId, policyId, options);
   store.upsertPack(bundle.pack);
   store.upsertBundle({
     manifest: bundle.manifest,
@@ -395,6 +403,41 @@ function testFrozenRecordScopeFailsClosedAtRuntime(): void {
   );
 }
 
+function testVerifierFailedRecordPolicyFailsClosedAtRuntime(): void {
+  const store = createInMemoryPolicyControlPlaneStore();
+  activateScopedFinanceOverride(
+    store,
+    'record',
+    {},
+    'bundle_finance_weakened_record',
+    'finance.structured-record-release.weakened-runtime.v1',
+    { weakened: true },
+  );
+
+  const engine = createFinanceControlPlaneReleaseDecisionEngine({
+    store,
+    flow: 'record',
+    environment: 'api-runtime',
+  });
+  const input = recordEvaluationInput();
+  const evaluation = engine.evaluateWithDeterministicChecks(
+    input.request,
+    input.observation,
+  );
+
+  equal(
+    evaluation.decision.status,
+    'denied',
+    'Finance proving runtime: verifier-failed control-plane policies fail closed before release evaluation',
+  );
+  ok(
+    evaluation.decision.findings.some(
+      (finding) => finding.code === 'policy_entry_verification_failed',
+    ),
+    'Finance proving runtime: verifier-failed control-plane policies carry an explicit finding',
+  );
+}
+
 function testActionShadowStillRequiresNamedReview(): void {
   const store = createInMemoryPolicyControlPlaneStore();
   ensureFinanceProvingPolicies(store, {
@@ -547,6 +590,7 @@ function run(): void {
   testRecordFlowResolvesPolicyThroughControlPlane();
   testCommunicationShadowStillResolvesDryRunPolicy();
   testFrozenRecordScopeFailsClosedAtRuntime();
+  testVerifierFailedRecordPolicyFailsClosedAtRuntime();
   testActionShadowStillRequiresNamedReview();
   testRecordFlowUsesTenantScopedBundleOverride();
   testRecordFlowUsesCohortScopedBundleOverride();

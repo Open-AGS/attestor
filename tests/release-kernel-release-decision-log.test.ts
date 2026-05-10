@@ -4,6 +4,12 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createReleaseDecisionSkeleton } from '../src/release-kernel/object-model.js';
 import {
+  COMPILED_ADMISSION_POLICY_INDEX_VERSION,
+} from '../src/release-kernel/compiled-policy-index.js';
+import {
+  COMPILED_ADMISSION_POLICY_IR_VERSION,
+} from '../src/release-kernel/compiled-policy-ir.js';
+import {
   createFileBackedReleaseDecisionLogWriter,
   createInMemoryReleaseDecisionLogWriter,
   createReleaseDecisionLogEntry,
@@ -67,6 +73,11 @@ function makeMetadata(input: Partial<ReleaseDecisionLogMetadata> = {}): ReleaseD
     requiresReview: true,
     deterministicChecksCompleted: false,
     effectivePolicyId: 'finance.structured-record-release.v1',
+    policyHash: 'sha256:policy',
+    policyIrHash: 'sha256:policy-ir',
+    policyProvenanceSource: 'compiled-admission-policy-index',
+    compiledPolicyIndexVersion: COMPILED_ADMISSION_POLICY_INDEX_VERSION,
+    compiledPolicyIrVersion: COMPILED_ADMISSION_POLICY_IR_VERSION,
     rolloutMode: 'enforce',
     rolloutEvaluationMode: 'enforce',
     rolloutReason: 'enforce',
@@ -114,6 +125,16 @@ async function main(): Promise<void> {
     firstEntry.previousEntryDigest,
     null,
     'Release decision log: the first entry starts the chain with no previous digest',
+  );
+  equal(
+    firstEntry.metadata.compiledPolicyIndexVersion,
+    COMPILED_ADMISSION_POLICY_INDEX_VERSION,
+    'Release decision log: metadata snapshots the compiled policy index version',
+  );
+  equal(
+    firstEntry.metadata.compiledPolicyIrVersion,
+    COMPILED_ADMISSION_POLICY_IR_VERSION,
+    'Release decision log: metadata snapshots the compiled policy IR version',
   );
 
   const writer = createInMemoryReleaseDecisionLogWriter();
@@ -280,6 +301,21 @@ async function main(): Promise<void> {
     engineEntries.at(-1)?.phase,
     'deterministic-checks',
     'Release decision log: deterministic evaluation appends a deterministic-check log entry',
+  );
+  equal(
+    engineEntries[0]?.metadata.policyProvenanceSource,
+    'compiled-admission-policy-index',
+    'Release decision log: engine metadata carries compiled policy provenance source',
+  );
+  equal(
+    engineEntries[0]?.metadata.compiledPolicyIndexVersion,
+    COMPILED_ADMISSION_POLICY_INDEX_VERSION,
+    'Release decision log: engine metadata carries compiled policy index version',
+  );
+  equal(
+    engineEntries[0]?.metadata.compiledPolicyIrVersion,
+    COMPILED_ADMISSION_POLICY_IR_VERSION,
+    'Release decision log: engine metadata carries compiled policy IR version',
   );
 
   console.log(`\nRelease kernel release-decision-log tests: ${passed} passed, 0 failed`);

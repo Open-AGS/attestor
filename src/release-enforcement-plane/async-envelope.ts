@@ -18,6 +18,7 @@ import type {
 import {
   createReleasePresentation,
   type ReleasePresentation,
+  type ReleaseEnforcementPolicyContext,
   type ReleasePresentationProof,
 } from './object-model.js';
 import type { ReplayLedgerEntry } from './freshness.js';
@@ -129,6 +130,7 @@ export interface AsyncConsequenceBinding {
   readonly policyProvenanceSource: ReleasePolicyProvenanceSource | null;
   readonly compiledPolicyIndexVersion: string | null;
   readonly compiledPolicyIrVersion: string | null;
+  readonly policyContext: ReleaseEnforcementPolicyContext;
 }
 
 export interface AsyncConsequenceTransportBinding {
@@ -242,6 +244,7 @@ export interface VerifySignedAsyncConsequenceEnvelopeInput {
   readonly expectedPolicyProvenanceSource?: ReleasePolicyProvenanceSource | null;
   readonly expectedCompiledPolicyIndexVersion?: string | null;
   readonly expectedCompiledPolicyIrVersion?: string | null;
+  readonly expectedPolicyContext?: ReleaseEnforcementPolicyContext | null;
   readonly expectedConsequenceType?: ReleaseEnforcementConsequenceType | null;
   readonly expectedRiskClass?: ReleaseEnforcementRiskClass | null;
   readonly expectedIdempotencyKey?: string | null;
@@ -276,6 +279,7 @@ export interface SignedAsyncConsequenceEnvelopeVerification {
   readonly policyProvenanceSource: ReleasePolicyProvenanceSource | null;
   readonly compiledPolicyIndexVersion: string | null;
   readonly compiledPolicyIrVersion: string | null;
+  readonly policyContext: ReleaseEnforcementPolicyContext | null;
   readonly targetId: string | null;
   readonly messageId: string | null;
   readonly queueOrTopic: string | null;
@@ -331,6 +335,57 @@ function normalizeScope(values: readonly string[] | undefined): readonly string[
       ),
     ).sort(),
   );
+}
+
+function policyContextFromClaims(
+  claims: IssuedReleaseToken['claims'],
+): ReleaseEnforcementPolicyContext {
+  return Object.freeze({
+    policyHash: claims.policy_hash,
+    policyVersion: claims.policy_version ?? null,
+    policyIrHash: claims.policy_ir_hash ?? null,
+    policyProvenanceSource: claims.policy_provenance_source ?? null,
+    compiledPolicyIndexVersion: claims.compiled_policy_index_version ?? null,
+    compiledPolicyIrVersion: claims.compiled_policy_ir_version ?? null,
+  });
+}
+
+function normalizePolicyContext(
+  context: ReleaseEnforcementPolicyContext | null | undefined,
+): ReleaseEnforcementPolicyContext | null {
+  if (!context) {
+    return null;
+  }
+  return Object.freeze({
+    policyHash: context.policyHash ?? null,
+    policyVersion: context.policyVersion ?? null,
+    policyIrHash: context.policyIrHash ?? null,
+    policyProvenanceSource: context.policyProvenanceSource ?? null,
+    compiledPolicyIndexVersion: context.compiledPolicyIndexVersion ?? null,
+    compiledPolicyIrVersion: context.compiledPolicyIrVersion ?? null,
+  });
+}
+
+function policyContextFromConsequence(
+  consequence: AsyncConsequenceBinding,
+): ReleaseEnforcementPolicyContext {
+  return Object.freeze({
+    policyHash: consequence.policyHash ?? null,
+    policyVersion: consequence.policyVersion ?? null,
+    policyIrHash: consequence.policyIrHash ?? null,
+    policyProvenanceSource: consequence.policyProvenanceSource ?? null,
+    compiledPolicyIndexVersion: consequence.compiledPolicyIndexVersion ?? null,
+    compiledPolicyIrVersion: consequence.compiledPolicyIrVersion ?? null,
+  });
+}
+
+function policyContextMatchesConsequence(consequence: AsyncConsequenceBinding): boolean {
+  const policyContext = normalizePolicyContext(consequence.policyContext);
+  return policyContext !== null &&
+    timingSafeStringEqual(
+      canonicalJson(policyContext),
+      canonicalJson(policyContextFromConsequence(consequence)),
+    );
 }
 
 function epochSeconds(value: string): number {
@@ -639,6 +694,7 @@ function buildStatement(input: {
         policyProvenanceSource: input.issuedToken.claims.policy_provenance_source ?? null,
         compiledPolicyIndexVersion: input.issuedToken.claims.compiled_policy_index_version ?? null,
         compiledPolicyIrVersion: input.issuedToken.claims.compiled_policy_ir_version ?? null,
+        policyContext: policyContextFromClaims(input.issuedToken.claims),
       }),
       payload: input.payload,
       transport: Object.freeze({
@@ -828,6 +884,7 @@ function invalidVerification(checkedAt: string): SignedAsyncConsequenceEnvelopeV
     policyProvenanceSource: null,
     compiledPolicyIndexVersion: null,
     compiledPolicyIrVersion: null,
+    policyContext: null,
     targetId: null,
     messageId: null,
     queueOrTopic: null,
@@ -971,6 +1028,24 @@ function compareExpected(
   return [];
 }
 
+function compareExpectedPolicyContext(
+  actual: ReleaseEnforcementPolicyContext | null,
+  expected: ReleaseEnforcementPolicyContext | null | undefined,
+): readonly EnforcementFailureReason[] {
+  if (expected === undefined || expected === null) {
+    return [];
+  }
+  const normalizedExpected = normalizePolicyContext(expected);
+  if (
+    actual === null ||
+    normalizedExpected === null ||
+    !timingSafeStringEqual(canonicalJson(actual), canonicalJson(normalizedExpected))
+  ) {
+    return ['binding-mismatch'];
+  }
+  return [];
+}
+
 function bindingFailureReasons(input: {
   readonly verificationInput: VerifySignedAsyncConsequenceEnvelopeInput;
   readonly statement: AsyncConsequenceEnvelopeStatement;
@@ -983,6 +1058,7 @@ function bindingFailureReasons(input: {
   const predicate = input.statement.predicate;
   const expected = input.verificationInput;
   const reasons: EnforcementFailureReason[] = [];
+  const policyContext = normalizePolicyContext(predicate.consequence.policyContext);
 
   reasons.push(
     ...compareExpected(input.envelopeDigest, expected.expectedEnvelopeDigest, 'binding-mismatch'),
@@ -1050,6 +1126,7 @@ function bindingFailureReasons(input: {
       expected.expectedCompiledPolicyIrVersion,
       'binding-mismatch',
     ),
+    ...compareExpectedPolicyContext(policyContext, expected.expectedPolicyContext),
     ...compareExpected(
       predicate.idempotencyKey,
       expected.expectedIdempotencyKey,
@@ -1066,6 +1143,10 @@ function bindingFailureReasons(input: {
       'binding-mismatch',
     ),
   );
+
+  if (!policyContextMatchesConsequence(predicate.consequence)) {
+    reasons.push('binding-mismatch');
+  }
 
   if (
     expected.expectedConsequenceType !== undefined &&
@@ -1213,6 +1294,7 @@ export async function verifySignedAsyncConsequenceEnvelope(
     policyProvenanceSource: predicate?.consequence.policyProvenanceSource ?? null,
     compiledPolicyIndexVersion: predicate?.consequence.compiledPolicyIndexVersion ?? null,
     compiledPolicyIrVersion: predicate?.consequence.compiledPolicyIrVersion ?? null,
+    policyContext: normalizePolicyContext(predicate?.consequence.policyContext),
     targetId: predicate?.target.id ?? null,
     messageId: predicate?.transport.messageId ?? null,
     queueOrTopic: predicate?.transport.queueOrTopic ?? null,

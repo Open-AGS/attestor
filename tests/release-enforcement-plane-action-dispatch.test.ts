@@ -23,6 +23,7 @@ import {
   RELEASE_ACTION_DISPATCH_GATEWAY_SPEC_VERSION,
   type ActionDispatchRequest,
 } from '../src/release-enforcement-plane/action-dispatch.js';
+import { createEnforcementReceiptDigest } from '../src/release-enforcement-plane/object-model.js';
 import {
   createDpopBoundPresentationFromIssuedToken,
   createDpopProof,
@@ -363,6 +364,46 @@ async function testValidDpopActionDispatchAllowsAndConsumesToken(): Promise<void
   equal(result.decision?.outcome, 'allow', 'Action-dispatch gateway: valid action emits allow decision');
   ok(result.receipt?.receiptDigest?.startsWith('sha256:'), 'Action-dispatch gateway: allowed action emits receipt digest');
   equal(result.receipt?.policyIrHash, POLICY_IR_HASH, 'Action-dispatch gateway: receipt preserves compiled policy IR provenance');
+  equal(result.receipt?.compiledPolicyIrVersion, COMPILED_POLICY_IR_VERSION, 'Action-dispatch gateway: receipt preserves compiled policy IR version');
+  deepEqual(
+    result.verificationResult?.policyContext,
+    {
+      policyHash: POLICY_HASH,
+      policyVersion: 'policy.release-action-dispatch-test.v1',
+      policyIrHash: POLICY_IR_HASH,
+      policyProvenanceSource: 'compiled-admission-policy-index',
+      compiledPolicyIndexVersion: COMPILED_POLICY_INDEX_VERSION,
+      compiledPolicyIrVersion: COMPILED_POLICY_IR_VERSION,
+    },
+    'Action-dispatch gateway: verification exposes structured policy context',
+  );
+  deepEqual(
+    result.receipt?.policyContext,
+    result.verificationResult?.policyContext,
+    'Action-dispatch gateway: receipt carries the verified structured policy context',
+  );
+  equal(
+    result.receipt?.receiptDigest,
+    result.decision ? createEnforcementReceiptDigest({ decision: result.decision }) : null,
+    'Action-dispatch gateway: receipt digest binds structured policy context',
+  );
+  if (!result.decision) {
+    throw new Error('Expected action-dispatch allow result to carry an enforcement decision.');
+  }
+  const tamperedPolicyDecision = {
+    ...result.decision,
+    verification: {
+      ...result.decision.verification,
+      policyContext: {
+        ...result.decision.verification.policyContext,
+        compiledPolicyIrVersion: 'attestor.policy-ir.tampered.v1',
+      },
+    },
+  };
+  ok(
+    createEnforcementReceiptDigest({ decision: tamperedPolicyDecision }) !== result.receipt?.receiptDigest,
+    'Action-dispatch gateway: changing structured policy context changes receipt digest',
+  );
   equal(result.request?.enforcementPoint.boundaryKind, 'action-dispatch', 'Action-dispatch gateway: request uses action-dispatch boundary');
   equal(result.request?.targetId, result.binding.target.id, 'Action-dispatch gateway: request target matches action binding');
   equal(result.request?.outputHash, result.binding.hashBundle.outputHash, 'Action-dispatch gateway: request output hash matches binding');

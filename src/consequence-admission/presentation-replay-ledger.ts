@@ -453,7 +453,7 @@ export function createConsequenceAdmissionPresentationReplayLedger(
       admissionDigest: consumeInput.presentation.admissionDigest,
       contractId: consumeInput.presentation.contractId,
       enforcementPointId: consumeInput.presentation.enforcementPointId,
-      targetDigest: digestValue(consumeInput.presentation.target as unknown as CanonicalReleaseJsonValue),
+      targetDigest: consumeInput.presentation.targetDigest,
       nonceDigest: consumeInput.presentation.nonce === null
         ? null
         : digestText(consumeInput.presentation.nonce),

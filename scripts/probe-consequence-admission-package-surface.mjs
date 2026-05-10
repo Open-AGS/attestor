@@ -220,6 +220,10 @@ assert.equal(
   true,
 );
 assert.equal(
+  admission.consequenceAdmissionPresentationBindingDescriptor().canonicalUsesTargetDigest,
+  true,
+);
+assert.equal(
   typeof admission.evaluateConsequenceAdmissionPresentationBinding,
   'function',
 );

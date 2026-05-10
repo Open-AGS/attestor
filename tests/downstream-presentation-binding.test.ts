@@ -246,6 +246,11 @@ function testDescriptor(): void {
     'Presentation binding: decisions do not expose raw replay keys',
   );
   equal(
+    descriptor.canonicalUsesTargetDigest,
+    true,
+    'Presentation binding: canonical payload binds targets by digest',
+  );
+  equal(
     descriptor.canonicalUsesReplayKeyDigest,
     true,
     'Presentation binding: canonical payload binds replay keys by digest',
@@ -261,6 +266,12 @@ function testDescriptor(): void {
 function testMatchingPresentationAllows(): void {
   const admission = admittedPayment();
   const binding = paymentBinding(admission);
+  const canonicalPayload = JSON.parse(binding.canonical) as {
+    readonly target?: unknown;
+    readonly targetDigest?: unknown;
+    readonly replayKeyDigest?: unknown;
+    readonly nonceDigest?: unknown;
+  };
   const decision = evaluateConsequenceAdmissionPresentationBinding({
     admission,
     contract: paymentContract(),
@@ -276,6 +287,10 @@ function testMatchingPresentationAllows(): void {
   ok(
     decision.receiptDigest.startsWith('sha256:'),
     'Presentation binding: allow decision has digest-shaped receipt',
+  );
+  ok(
+    binding.targetDigest.startsWith('sha256:'),
+    'Presentation binding: binding exposes target digest',
   );
   equal(
     binding.replayKeyDigest,
@@ -297,12 +312,24 @@ function testMatchingPresentationAllows(): void {
     false,
     'Presentation binding: canonical payload does not contain raw nonce',
   );
-  ok(
-    binding.canonical.includes('"replayKeyDigest"'),
+  equal(
+    'target' in canonicalPayload,
+    false,
+    'Presentation binding: canonical payload omits raw target material',
+  );
+  equal(
+    canonicalPayload.targetDigest,
+    binding.targetDigest,
+    'Presentation binding: canonical payload includes target digest field',
+  );
+  equal(
+    canonicalPayload.replayKeyDigest,
+    binding.replayKeyDigest,
     'Presentation binding: canonical payload includes replay key digest field',
   );
-  ok(
-    binding.canonical.includes('"nonceDigest"'),
+  equal(
+    canonicalPayload.nonceDigest,
+    binding.nonceDigest,
     'Presentation binding: canonical payload includes nonce digest field',
   );
 }
@@ -538,8 +565,8 @@ function testDocsAndScriptsExposePresentationBinding(): void {
   );
   includes(
     bindingDoc,
-    'canonical payload binds replay keys and nonces by digest',
-    'Presentation binding: doc states digest canonical binding',
+    'canonical payload binds targets, replay keys, and nonces by digest',
+    'Presentation binding: doc states target digest canonical binding',
   );
   includes(
     contractDoc,

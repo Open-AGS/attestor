@@ -87,6 +87,7 @@ export interface ConsequenceAdmissionPresentationBinding {
   readonly policyRef: string | null;
   readonly consequenceKind: ConsequenceAdmissionConsequenceKind;
   readonly target: ConsequenceAdmissionPresentationTarget;
+  readonly targetDigest: string;
   readonly replayKey: string | null;
   readonly replayKeyDigest: string | null;
   readonly nonce: string | null;
@@ -171,6 +172,7 @@ export interface ConsequenceAdmissionPresentationBindingDescriptor {
   readonly supportsReplayKeyDigestObservations: true;
   readonly preferredReplayKeyObservation: 'usedReplayKeyDigests';
   readonly decisionExposesRawReplayKeys: false;
+  readonly canonicalUsesTargetDigest: true;
   readonly canonicalUsesReplayKeyDigest: true;
   readonly canonicalUsesNonceDigest: true;
   readonly replayLedgerIncluded: false;
@@ -317,7 +319,7 @@ function bindingCanonicalPayload(
     downstreamSystem: binding.downstreamSystem,
     policyRef: binding.policyRef,
     consequenceKind: binding.consequenceKind,
-    target: binding.target,
+    targetDigest: binding.targetDigest,
     replayKeyDigest: binding.replayKeyDigest,
     nonceDigest: binding.nonceDigest,
     presentedAt: binding.presentedAt,
@@ -438,6 +440,12 @@ export function createConsequenceAdmissionPresentationBinding(
   }
   const replayKey = normalizeOptionalIdentifier(input.replayKey, 'replayKey');
   const nonce = normalizeOptionalIdentifier(input.nonce, 'nonce');
+  const target = Object.freeze({
+    uri: normalizeOptionalIdentifier(input.target.uri, 'target.uri'),
+    targetRef: normalizeOptionalIdentifier(input.target.targetRef, 'target.targetRef'),
+    method: normalizeOptionalMethod(input.target.method),
+    bodyDigest: bodyDigest.digest,
+  });
 
   const base = Object.freeze({
     version: CONSEQUENCE_ADMISSION_PRESENTATION_BINDING_VERSION,
@@ -451,12 +459,8 @@ export function createConsequenceAdmissionPresentationBinding(
       input.admission.request.policyScope.policyRef,
     consequenceKind: input.consequenceKind ??
       input.admission.request.proposedConsequence.consequenceKind,
-    target: Object.freeze({
-      uri: normalizeOptionalIdentifier(input.target.uri, 'target.uri'),
-      targetRef: normalizeOptionalIdentifier(input.target.targetRef, 'target.targetRef'),
-      method: normalizeOptionalMethod(input.target.method),
-      bodyDigest: bodyDigest.digest,
-    }),
+    target,
+    targetDigest: canonicalObject(target as unknown as CanonicalReleaseJsonValue).digest,
     replayKey,
     replayKeyDigest: replayKey === null ? null : digestText(replayKey),
     nonce,
@@ -482,9 +486,9 @@ export function createConsequenceAdmissionPresentationBinding(
     contractId: base.contractId,
     enforcementPointId: base.enforcementPointId,
     downstreamSystem: base.downstreamSystem,
+    targetDigest: base.targetDigest,
     replayKeyDigest: base.replayKeyDigest,
     nonceDigest: base.nonceDigest,
-    target: base.target,
     presentedAt: base.presentedAt,
     expiresAt: base.expiresAt,
   } as CanonicalReleaseJsonValue).digest;
@@ -678,6 +682,7 @@ ConsequenceAdmissionPresentationBindingDescriptor {
     supportsReplayKeyDigestObservations: true,
     preferredReplayKeyObservation: 'usedReplayKeyDigests',
     decisionExposesRawReplayKeys: false,
+    canonicalUsesTargetDigest: true,
     canonicalUsesReplayKeyDigest: true,
     canonicalUsesNonceDigest: true,
     replayLedgerIncluded: false,

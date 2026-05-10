@@ -250,6 +250,11 @@ function testFirstConsumeStoresRedactedEntry(): void {
     'Replay ledger: snapshot does not expose raw target URI',
   );
   equal(
+    consumed.entry?.targetDigest,
+    paymentBinding({ admission }).targetDigest,
+    'Replay ledger: entry reuses the presentation target digest',
+  );
+  equal(
     ledger.has('payment:tenant_a:invoice_1938:attempt_1', '2026-05-01T13:00:31.000Z'),
     true,
     'Replay ledger: has detects consumed key inside retention window',

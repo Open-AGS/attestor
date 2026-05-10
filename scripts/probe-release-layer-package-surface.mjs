@@ -12,6 +12,15 @@ assert.equal(
   'attestor.release-token-issuance.v1',
 );
 assert.equal(
+  core.releaseLayer.verification.RELEASE_VERIFICATION_SPEC_VERSION,
+  'attestor.release-verification.v1',
+);
+assert.equal(
+  typeof core.releaseLayer.verification.createReleaseVerificationMiddleware,
+  'function',
+  'release-layer package surface should expose the downstream verification middleware namespace',
+);
+assert.equal(
   finance.RELEASE_LAYER_FINANCE_SURFACE_SPEC_VERSION,
   'attestor.release-layer-finance.v1',
 );

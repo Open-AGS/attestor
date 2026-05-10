@@ -6,6 +6,7 @@ import {
   RELEASE_LAYER_PUBLIC_SUBPATH,
   releaseLayer,
   releaseLayerPublicSurface,
+  type ReleaseVerificationInput,
 } from '../src/release-layer/index.js';
 import {
   RELEASE_LAYER_FINANCE_SURFACE_SPEC_VERSION,
@@ -67,6 +68,26 @@ function testReleaseLayerNamespaceBindings(): void {
   assert.equal(
     releaseLayer.verification.RELEASE_VERIFICATION_SPEC_VERSION,
     'attestor.release-verification.v1',
+  );
+  const provenanceBoundVerification = {
+    token: 'release-token',
+    verificationKey: {} as ReleaseVerificationInput['verificationKey'],
+    expectedPolicyHash: 'sha256:policy',
+    expectedPolicyVersion: 'policy.release-layer-surface.v1',
+    expectedPolicyIrHash: 'sha256:policy-ir',
+    expectedPolicyProvenanceSource: 'compiled-admission-policy-index',
+    expectedCompiledPolicyIndexVersion: 'attestor.compiled-admission-policy-index.v1',
+    expectedCompiledPolicyIrVersion: 'attestor.compiled-admission-policy-ir.v1',
+  } satisfies ReleaseVerificationInput;
+  assert.equal(
+    provenanceBoundVerification.expectedPolicyProvenanceSource,
+    'compiled-admission-policy-index',
+    'release-layer surface exposes full policy-provenance-bound verification input',
+  );
+  assert.equal(
+    typeof releaseLayer.verification.createReleaseVerificationMiddleware,
+    'function',
+    'release-layer surface exposes downstream verification middleware through the verification namespace',
   );
   assert.equal(
     releaseLayer.evidence.RELEASE_EVIDENCE_PACK_ISSUANCE_SPEC_VERSION,

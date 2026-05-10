@@ -74,6 +74,20 @@ const tokenIssuer = releaseLayer.token.createReleaseTokenIssuer({
   publicKeyPem: publicKeyPem,
 });
 
+const verificationInput = {
+  token: releaseToken,
+  verificationKey,
+  expectedTargetId: financeReleaseLayer.record.FINANCE_FILING_PREPARE_TARGET_ID,
+  expectedOutputHash: outputHash,
+  expectedConsequenceHash: consequenceHash,
+  expectedPolicyHash: policyHash,
+  expectedPolicyVersion: policyVersion,
+  expectedPolicyIrHash: policyIrHash,
+  expectedPolicyProvenanceSource: 'compiled-admission-policy-index',
+  expectedCompiledPolicyIndexVersion: compiledPolicyIndexVersion,
+  expectedCompiledPolicyIrVersion: compiledPolicyIrVersion,
+};
+
 const financeRecordTarget = financeReleaseLayer.record.FINANCE_FILING_PREPARE_TARGET_ID;
 ```
 

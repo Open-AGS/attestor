@@ -8,6 +8,7 @@ import {
   createEnforcementRequest,
   createReleasePresentation,
   type EnforcementRequest,
+  type ReleaseEnforcementPolicyContext,
   type ReleasePresentation,
 } from '../src/release-enforcement-plane/object-model.js';
 import {
@@ -43,6 +44,17 @@ const POLICY_VERSION = 'policy.release-offline-test.v1';
 const POLICY_IR_HASH = 'sha256:policy-ir';
 const COMPILED_POLICY_INDEX_VERSION = 'attestor.policy-index.test.v1';
 const COMPILED_POLICY_IR_VERSION = 'attestor.policy-ir.test.v1';
+
+function expectedPolicyContext(): ReleaseEnforcementPolicyContext {
+  return {
+    policyHash: POLICY_HASH,
+    policyVersion: POLICY_VERSION,
+    policyIrHash: POLICY_IR_HASH,
+    policyProvenanceSource: 'compiled-admission-policy-index',
+    compiledPolicyIndexVersion: COMPILED_POLICY_INDEX_VERSION,
+    compiledPolicyIrVersion: COMPILED_POLICY_IR_VERSION,
+  };
+}
 
 function policyProvenance(input: {
   readonly policyHash?: string;
@@ -228,6 +240,7 @@ async function testLowRiskOfflineAllow(): Promise<void> {
       policyProvenanceSource: 'compiled-admission-policy-index',
       compiledPolicyIndexVersion: COMPILED_POLICY_INDEX_VERSION,
       compiledPolicyIrVersion: COMPILED_POLICY_IR_VERSION,
+      policyContext: expectedPolicyContext(),
     },
     replayLedgerEntry: null,
   });
@@ -579,6 +592,27 @@ async function testPolicyIrBindingMismatchFailsAsStalePolicy(): Promise<void> {
 
   equal(staleCompiledIndex.status, 'invalid', 'Offline verifier: compiled policy index mismatch is invalid');
   deepEqual(staleCompiledIndex.failureReasons, ['stale-policy'], 'Offline verifier: compiled policy index mismatch maps to stale policy');
+
+  const stalePolicyContext = await verifyOfflineReleaseAuthorization({
+    request,
+    presentation: bearerPresentation({
+      token: issued.token,
+      tokenId: issued.tokenId,
+      decisionId: decision.id,
+    }),
+    verificationKey,
+    now: '2026-04-18T08:01:00.000Z',
+    expected: {
+      policyContext: {
+        ...expectedPolicyContext(),
+        policyIrHash: 'sha256:other-policy-context-ir',
+      },
+    },
+    replayLedgerEntry: null,
+  });
+
+  equal(stalePolicyContext.status, 'invalid', 'Offline verifier: structured policy context mismatch is invalid');
+  deepEqual(stalePolicyContext.failureReasons, ['stale-policy'], 'Offline verifier: structured policy context mismatch maps to stale policy');
 }
 
 async function testRequiredPolicyProvenanceMissingFailsClosed(): Promise<void> {

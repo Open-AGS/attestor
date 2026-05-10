@@ -572,6 +572,18 @@ function testCreatesBinding(): void {
     COMPILED_POLICY_IR_VERSION,
     'Crypto enforcement verification: expected binding carries compiled policy IR version',
   );
+  deepEqual(
+    binding.expectedBinding.policyContext,
+    {
+      policyHash: releaseBinding.releaseDecision.policyHash,
+      policyVersion: releaseBinding.releaseDecision.policyVersion,
+      policyIrHash: POLICY_IR_HASH,
+      policyProvenanceSource: 'compiled-admission-policy-index',
+      compiledPolicyIndexVersion: COMPILED_POLICY_INDEX_VERSION,
+      compiledPolicyIrVersion: COMPILED_POLICY_IR_VERSION,
+    },
+    'Crypto enforcement verification: expected binding carries structured policy context',
+  );
   equal(
     binding.digest,
     second.digest,
@@ -626,7 +638,6 @@ async function testOfflineVerificationWrapper(): Promise<void> {
     now: CHECKED_AT,
     verificationResultId: 'vr_crypto_offline_001',
   });
-
   equal(
     verified.status,
     'indeterminate',

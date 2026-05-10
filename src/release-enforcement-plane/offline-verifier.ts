@@ -82,6 +82,7 @@ export interface OfflineVerifierExpectedBinding {
   readonly policyProvenanceSource?: ReleasePolicyProvenanceSource | null;
   readonly compiledPolicyIndexVersion?: string;
   readonly compiledPolicyIrVersion?: string;
+  readonly policyContext?: ReleaseEnforcementPolicyContext | null;
 }
 
 export interface OfflineHttpMessageSignatureVerificationContext {
@@ -149,6 +150,7 @@ interface ResolvedOfflineVerifierExpectedBinding {
   readonly policyProvenanceSource: ReleasePolicyProvenanceSource | null;
   readonly compiledPolicyIndexVersion: string;
   readonly compiledPolicyIrVersion: string;
+  readonly policyContext: ReleaseEnforcementPolicyContext | null;
 }
 
 function normalizeIsoTimestamp(value: string, fieldName: string): string {
@@ -188,6 +190,7 @@ function expectedBindingForRequest(
     policyProvenanceSource: input.expected?.policyProvenanceSource ?? null,
     compiledPolicyIndexVersion: input.expected?.compiledPolicyIndexVersion ?? '',
     compiledPolicyIrVersion: input.expected?.compiledPolicyIrVersion ?? '',
+    policyContext: input.expected?.policyContext ?? null,
   };
 }
 
@@ -318,6 +321,13 @@ function policyProvenanceFailureReasons(
   if (
     expected.compiledPolicyIrVersion &&
     claims.compiled_policy_ir_version !== expected.compiledPolicyIrVersion
+  ) {
+    reasons.push('stale-policy');
+  }
+
+  if (
+    expected.policyContext !== null &&
+    !policyContextMatchesClaims(expected.policyContext, claims)
   ) {
     reasons.push('stale-policy');
   }
@@ -625,6 +635,19 @@ function policyContextFromClaims(
     compiledPolicyIndexVersion: claims.compiled_policy_index_version ?? null,
     compiledPolicyIrVersion: claims.compiled_policy_ir_version ?? null,
   });
+}
+
+function policyContextMatchesClaims(
+  expected: ReleaseEnforcementPolicyContext,
+  claims: ReleaseTokenClaims,
+): boolean {
+  const actual = policyContextFromClaims(claims);
+  return actual.policyHash === expected.policyHash &&
+    actual.policyVersion === expected.policyVersion &&
+    actual.policyIrHash === expected.policyIrHash &&
+    actual.policyProvenanceSource === expected.policyProvenanceSource &&
+    actual.compiledPolicyIndexVersion === expected.compiledPolicyIndexVersion &&
+    actual.compiledPolicyIrVersion === expected.compiledPolicyIrVersion;
 }
 
 async function signedJsonEnvelopeBindingFailureReasons(

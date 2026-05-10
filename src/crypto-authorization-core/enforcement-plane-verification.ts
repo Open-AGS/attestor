@@ -11,6 +11,7 @@ import {
   createReleasePresentation,
   type EnforcementRequest,
   type EnforcementRequestTransport,
+  type ReleaseEnforcementPolicyContext,
   type ReleasePresentation,
   type ReleasePresentationProof,
 } from '../release-enforcement-plane/object-model.js';
@@ -558,6 +559,26 @@ function expectedBindingFor(
       releaseBinding.releaseDecision.policyProvenance?.compiledPolicyIndexVersion ?? '',
     compiledPolicyIrVersion:
       releaseBinding.releaseDecision.policyProvenance?.compiledPolicyIrVersion ?? '',
+    policyContext: releaseBinding.releaseDecision.policyProvenance
+      ? policyContextFor(releaseBinding)
+      : null,
+  });
+}
+
+function policyContextFor(
+  releaseBinding: CryptoReleaseDecisionBinding,
+): ReleaseEnforcementPolicyContext {
+  return Object.freeze({
+    policyHash: releaseBinding.releaseDecision.policyHash,
+    policyVersion: releaseBinding.releaseDecision.policyVersion,
+    policyIrHash:
+      releaseBinding.releaseDecision.policyProvenance?.compiledPolicyIrHash ?? null,
+    policyProvenanceSource:
+      releaseBinding.releaseDecision.policyProvenance?.source ?? null,
+    compiledPolicyIndexVersion:
+      releaseBinding.releaseDecision.policyProvenance?.compiledPolicyIndexVersion ?? null,
+    compiledPolicyIrVersion:
+      releaseBinding.releaseDecision.policyProvenance?.compiledPolicyIrVersion ?? null,
   });
 }
 

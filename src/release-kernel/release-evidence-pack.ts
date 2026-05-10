@@ -186,6 +186,20 @@ export interface ReleaseEvidencePackVerificationResult {
   readonly version: typeof RELEASE_EVIDENCE_PACK_VERIFICATION_SPEC_VERSION;
   readonly valid: true;
   readonly evidencePackId: string;
+  readonly decisionId: string;
+  readonly decisionStatus: ReleaseDecision['status'];
+  readonly consequenceType: ReleaseDecision['consequenceType'];
+  readonly riskClass: ReleaseDecision['riskClass'];
+  readonly outputHash: string;
+  readonly consequenceHash: string;
+  readonly policyVersion: string;
+  readonly policyHash: string;
+  readonly policyIrHash: string | null;
+  readonly policyProvenanceSource: ReleasePolicyProvenanceSource | null;
+  readonly compiledPolicyIndexVersion: string | null;
+  readonly compiledPolicyIrVersion: string | null;
+  readonly releaseTokenId: string | null;
+  readonly reviewId: string | null;
   readonly keyId: string;
   readonly predicateType: string;
   readonly subjectCount: number;
@@ -232,6 +246,22 @@ function canonicalDigest(value: unknown): string {
 
 function canonicalEqual(left: unknown, right: unknown): boolean {
   return canonicalizeReleaseJson(left as never) === canonicalizeReleaseJson(right as never);
+}
+
+function assertSameNullableString(
+  left: string | null | undefined,
+  right: string | null | undefined,
+  message: string,
+): void {
+  if ((left ?? null) !== (right ?? null)) {
+    throw new Error(message);
+  }
+}
+
+function assertNullableStringField(value: unknown, fieldName: string): void {
+  if (value !== null && typeof value !== 'string') {
+    throw new Error(`Release evidence pack verification requires ${fieldName} to be a string or null.`);
+  }
 }
 
 function resolveIssuedAt(issuedAt?: string): string {
@@ -491,6 +521,127 @@ function buildBundleDigest(input: {
   });
 }
 
+function assertSubjectDigestMatches(
+  subject: ReleaseEvidenceStatementSubject | undefined,
+  expectedName: string,
+  expectedDigest: string,
+): void {
+  if (!subject || subject.name !== expectedName || subject.digest.sha256 !== stripSha256Prefix(expectedDigest)) {
+    throw new Error('Release evidence pack statement subject does not match its signed release material.');
+  }
+}
+
+function assertPredicateInternalConsistency(statement: ReleaseEvidenceStatement): void {
+  const { evidencePack, decision, releaseToken } = statement.predicate;
+  assertNullableStringField(evidencePack.policyIrHash, 'evidencePack.policyIrHash');
+  assertNullableStringField(
+    evidencePack.policyProvenanceSource,
+    'evidencePack.policyProvenanceSource',
+  );
+  assertNullableStringField(
+    evidencePack.compiledPolicyIndexVersion,
+    'evidencePack.compiledPolicyIndexVersion',
+  );
+  assertNullableStringField(
+    evidencePack.compiledPolicyIrVersion,
+    'evidencePack.compiledPolicyIrVersion',
+  );
+  assertNullableStringField(decision.policyIrHash, 'decision.policyIrHash');
+  assertNullableStringField(
+    decision.policyProvenanceSource,
+    'decision.policyProvenanceSource',
+  );
+  assertNullableStringField(
+    decision.compiledPolicyIndexVersion,
+    'decision.compiledPolicyIndexVersion',
+  );
+  assertNullableStringField(decision.compiledPolicyIrVersion, 'decision.compiledPolicyIrVersion');
+  if (releaseToken) {
+    assertNullableStringField(releaseToken.policyVersion, 'releaseToken.policyVersion');
+    assertNullableStringField(releaseToken.policyIrHash, 'releaseToken.policyIrHash');
+    assertNullableStringField(
+      releaseToken.policyProvenanceSource,
+      'releaseToken.policyProvenanceSource',
+    );
+    assertNullableStringField(
+      releaseToken.compiledPolicyIndexVersion,
+      'releaseToken.compiledPolicyIndexVersion',
+    );
+    assertNullableStringField(
+      releaseToken.compiledPolicyIrVersion,
+      'releaseToken.compiledPolicyIrVersion',
+    );
+  }
+
+  if (decision.evidencePackId !== evidencePack.id) {
+    throw new Error('Release evidence pack decision summary does not match the evidence pack id.');
+  }
+  if (decision.policyVersion !== evidencePack.policyVersion) {
+    throw new Error('Release evidence pack decision summary policy version does not match the evidence pack.');
+  }
+  if (decision.policyHash !== evidencePack.policyHash) {
+    throw new Error('Release evidence pack decision summary policy hash does not match the evidence pack.');
+  }
+  assertSameNullableString(
+    decision.policyIrHash,
+    evidencePack.policyIrHash,
+    'Release evidence pack decision summary policy IR hash does not match the evidence pack.',
+  );
+  if (decision.policyProvenanceSource !== evidencePack.policyProvenanceSource) {
+    throw new Error('Release evidence pack decision summary policy provenance source does not match the evidence pack.');
+  }
+  assertSameNullableString(
+    decision.compiledPolicyIndexVersion,
+    evidencePack.compiledPolicyIndexVersion,
+    'Release evidence pack decision summary compiled policy index version does not match the evidence pack.',
+  );
+  assertSameNullableString(
+    decision.compiledPolicyIrVersion,
+    evidencePack.compiledPolicyIrVersion,
+    'Release evidence pack decision summary compiled policy IR version does not match the evidence pack.',
+  );
+
+  if (releaseToken) {
+    assertSameNullableString(
+      releaseToken.policyVersion,
+      evidencePack.policyVersion,
+      'Release evidence pack token summary policy version does not match the evidence pack.',
+    );
+    if (releaseToken.policyHash !== evidencePack.policyHash) {
+      throw new Error('Release evidence pack token summary policy hash does not match the evidence pack.');
+    }
+    assertSameNullableString(
+      releaseToken.policyIrHash,
+      evidencePack.policyIrHash,
+      'Release evidence pack token summary policy IR hash does not match the evidence pack.',
+    );
+    if (releaseToken.policyProvenanceSource !== evidencePack.policyProvenanceSource) {
+      throw new Error('Release evidence pack token summary policy provenance source does not match the evidence pack.');
+    }
+    assertSameNullableString(
+      releaseToken.compiledPolicyIndexVersion,
+      evidencePack.compiledPolicyIndexVersion,
+      'Release evidence pack token summary compiled policy index version does not match the evidence pack.',
+    );
+    assertSameNullableString(
+      releaseToken.compiledPolicyIrVersion,
+      evidencePack.compiledPolicyIrVersion,
+      'Release evidence pack token summary compiled policy IR version does not match the evidence pack.',
+    );
+  }
+
+  assertSubjectDigestMatches(
+    statement.subject[0],
+    `release-output/${decision.id}`,
+    evidencePack.outputHash,
+  );
+  assertSubjectDigestMatches(
+    statement.subject[1],
+    `release-consequence/${decision.targetId}`,
+    evidencePack.consequenceHash,
+  );
+}
+
 export function createReleaseEvidencePackIssuer(
   input: CreateReleaseEvidencePackIssuerInput,
 ): ReleaseEvidencePackIssuer {
@@ -633,6 +784,7 @@ export function verifyIssuedReleaseEvidencePack(
   if (statement.subject.length < 2) {
     throw new Error('Release evidence pack statement subjects are incomplete.');
   }
+  assertPredicateInternalConsistency(statement);
 
   const expectedBundleDigest = buildBundleDigest({
     evidencePack: pack.evidencePack,
@@ -651,6 +803,20 @@ export function verifyIssuedReleaseEvidencePack(
     version: RELEASE_EVIDENCE_PACK_VERIFICATION_SPEC_VERSION,
     valid: true,
     evidencePackId: pack.evidencePack.id,
+    decisionId: statement.predicate.decision.id,
+    decisionStatus: statement.predicate.decision.status,
+    consequenceType: statement.predicate.decision.consequenceType,
+    riskClass: statement.predicate.decision.riskClass,
+    outputHash: pack.evidencePack.outputHash,
+    consequenceHash: pack.evidencePack.consequenceHash,
+    policyVersion: pack.evidencePack.policyVersion,
+    policyHash: pack.evidencePack.policyHash,
+    policyIrHash: pack.evidencePack.policyIrHash,
+    policyProvenanceSource: pack.evidencePack.policyProvenanceSource,
+    compiledPolicyIndexVersion: pack.evidencePack.compiledPolicyIndexVersion,
+    compiledPolicyIrVersion: pack.evidencePack.compiledPolicyIrVersion,
+    releaseTokenId: statement.predicate.releaseToken?.tokenId ?? null,
+    reviewId: statement.predicate.review?.reviewId ?? null,
     keyId: signature.keyid,
     predicateType: statement.predicateType,
     subjectCount: statement.subject.length,

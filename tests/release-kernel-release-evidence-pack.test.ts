@@ -1,4 +1,5 @@
 import { strict as assert } from 'node:assert';
+import { createPrivateKey, sign } from 'node:crypto';
 import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -17,12 +18,16 @@ import {
 } from '../src/release-kernel/reviewer-queue.js';
 import {
   ReleaseEvidencePackStoreError,
+  RELEASE_EVIDENCE_PACK_DSSE_PAYLOAD_TYPE,
   createFileBackedReleaseEvidencePackStore,
   createInMemoryReleaseEvidencePackStore,
   createReleaseEvidencePackIssuer,
+  type IssuedReleaseEvidencePack,
+  type ReleaseEvidenceStatement,
   resetFileBackedReleaseEvidencePackStoreForTests,
   verifyIssuedReleaseEvidencePack,
 } from '../src/release-kernel/release-evidence-pack.js';
+import { canonicalizeReleaseJson } from '../src/release-kernel/release-canonicalization.js';
 import { createReleaseTokenIssuer } from '../src/release-kernel/release-token.js';
 import { generateKeyPair } from '../src/signing/keys.js';
 
@@ -36,6 +41,48 @@ function ok(condition: unknown, message: string): void {
 function equal<T>(actual: T, expected: T, message: string): void {
   assert.equal(actual, expected, message);
   passed += 1;
+}
+
+function dssePreAuthEncoding(payloadType: string, payload: Buffer): Buffer {
+  const payloadTypeBuffer = Buffer.from(payloadType, 'utf-8');
+  return Buffer.concat([
+    Buffer.from('DSSEv1 ', 'utf-8'),
+    Buffer.from(String(payloadTypeBuffer.length), 'utf-8'),
+    Buffer.from(' ', 'utf-8'),
+    payloadTypeBuffer,
+    Buffer.from(' ', 'utf-8'),
+    Buffer.from(String(payload.length), 'utf-8'),
+    Buffer.from(' ', 'utf-8'),
+    payload,
+  ]);
+}
+
+function resignEvidencePackStatement(input: {
+  readonly issuedEvidencePack: IssuedReleaseEvidencePack;
+  readonly statement: ReleaseEvidenceStatement;
+  readonly privateKeyPem: string;
+}): IssuedReleaseEvidencePack {
+  const payload = Buffer.from(canonicalizeReleaseJson(input.statement as never), 'utf-8');
+  const signature = sign(
+    null,
+    dssePreAuthEncoding(RELEASE_EVIDENCE_PACK_DSSE_PAYLOAD_TYPE, payload),
+    createPrivateKey(input.privateKeyPem),
+  );
+
+  return {
+    ...input.issuedEvidencePack,
+    statement: input.statement,
+    envelope: {
+      ...input.issuedEvidencePack.envelope,
+      payload: payload.toString('base64'),
+      signatures: [
+        {
+          ...input.issuedEvidencePack.envelope.signatures[0]!,
+          sig: signature.toString('base64'),
+        },
+      ],
+    },
+  };
 }
 
 function makeFinanceReport(overrides: Record<string, unknown> = {}) {
@@ -317,6 +364,61 @@ async function main(): Promise<void> {
     issuedEvidencePack.bundleDigest,
     'Release evidence pack: verification preserves the exported bundle digest',
   );
+  equal(
+    verification.decisionId,
+    recordWithToken.releaseDecision.id,
+    'Release evidence pack: verification result exposes the signed release decision id',
+  );
+  equal(
+    verification.outputHash,
+    recordWithToken.releaseDecision.outputHash,
+    'Release evidence pack: verification result exposes the signed output hash',
+  );
+  equal(
+    verification.consequenceHash,
+    recordWithToken.releaseDecision.consequenceHash,
+    'Release evidence pack: verification result exposes the signed consequence hash',
+  );
+  equal(
+    verification.policyVersion,
+    recordWithToken.releaseDecision.policyVersion,
+    'Release evidence pack: verification result exposes the signed policy version',
+  );
+  equal(
+    verification.policyHash,
+    recordWithToken.releaseDecision.policyHash,
+    'Release evidence pack: verification result exposes the signed policy hash',
+  );
+  equal(
+    verification.policyIrHash,
+    recordWithToken.releaseDecision.policyProvenance?.compiledPolicyIrHash ?? null,
+    'Release evidence pack: verification result exposes the signed policy IR hash',
+  );
+  equal(
+    verification.policyProvenanceSource,
+    recordWithToken.releaseDecision.policyProvenance?.source ?? null,
+    'Release evidence pack: verification result exposes the signed policy provenance source',
+  );
+  equal(
+    verification.compiledPolicyIndexVersion,
+    recordWithToken.releaseDecision.policyProvenance?.compiledPolicyIndexVersion ?? null,
+    'Release evidence pack: verification result exposes the signed compiled policy index version',
+  );
+  equal(
+    verification.compiledPolicyIrVersion,
+    recordWithToken.releaseDecision.policyProvenance?.compiledPolicyIrVersion ?? null,
+    'Release evidence pack: verification result exposes the signed compiled policy IR version',
+  );
+  equal(
+    verification.releaseTokenId,
+    issuedToken.tokenId,
+    'Release evidence pack: verification result exposes the signed release token id',
+  );
+  equal(
+    verification.reviewId,
+    recordWithToken.detail.id,
+    'Release evidence pack: verification result exposes the signed reviewer queue id',
+  );
 
   const store = createInMemoryReleaseEvidencePackStore();
   store.upsert(issuedEvidencePack);
@@ -450,6 +552,92 @@ async function main(): Promise<void> {
   ok(
     mismatchedEvidencePackError?.message.includes('exported evidence pack'),
     'Release evidence pack: exported evidence pack must match the signed DSSE payload',
+  );
+
+  let inconsistentDecisionPolicyError: Error | null = null;
+  try {
+    const inconsistentStatement: ReleaseEvidenceStatement = {
+      ...issuedEvidencePack.statement,
+      predicate: {
+        ...issuedEvidencePack.statement.predicate,
+        decision: {
+          ...issuedEvidencePack.statement.predicate.decision,
+          policyHash: 'sha256:inconsistent-decision-policy',
+        },
+      },
+    };
+    verifyIssuedReleaseEvidencePack({
+      issuedEvidencePack: resignEvidencePackStatement({
+        issuedEvidencePack,
+        statement: inconsistentStatement,
+        privateKeyPem: signingKeys.privateKeyPem,
+      }),
+      verificationKey: evidenceIssuer.exportVerificationKey(),
+    });
+  } catch (error) {
+    inconsistentDecisionPolicyError = error as Error;
+  }
+  ok(
+    inconsistentDecisionPolicyError?.message.includes('decision summary policy hash'),
+    'Release evidence pack: signed decision policy summary must match the signed evidence pack',
+  );
+
+  let inconsistentTokenPolicyError: Error | null = null;
+  try {
+    const inconsistentStatement: ReleaseEvidenceStatement = {
+      ...issuedEvidencePack.statement,
+      predicate: {
+        ...issuedEvidencePack.statement.predicate,
+        releaseToken: issuedEvidencePack.statement.predicate.releaseToken
+          ? {
+              ...issuedEvidencePack.statement.predicate.releaseToken,
+              policyHash: 'sha256:inconsistent-token-policy',
+            }
+          : null,
+      },
+    };
+    verifyIssuedReleaseEvidencePack({
+      issuedEvidencePack: resignEvidencePackStatement({
+        issuedEvidencePack,
+        statement: inconsistentStatement,
+        privateKeyPem: signingKeys.privateKeyPem,
+      }),
+      verificationKey: evidenceIssuer.exportVerificationKey(),
+    });
+  } catch (error) {
+    inconsistentTokenPolicyError = error as Error;
+  }
+  ok(
+    inconsistentTokenPolicyError?.message.includes('token summary policy hash'),
+    'Release evidence pack: signed token policy summary must match the signed evidence pack',
+  );
+
+  let inconsistentSubjectError: Error | null = null;
+  try {
+    const inconsistentStatement: ReleaseEvidenceStatement = {
+      ...issuedEvidencePack.statement,
+      subject: [
+        {
+          ...issuedEvidencePack.statement.subject[0]!,
+          digest: { sha256: 'inconsistent-output-subject' },
+        },
+        ...issuedEvidencePack.statement.subject.slice(1),
+      ],
+    };
+    verifyIssuedReleaseEvidencePack({
+      issuedEvidencePack: resignEvidencePackStatement({
+        issuedEvidencePack,
+        statement: inconsistentStatement,
+        privateKeyPem: signingKeys.privateKeyPem,
+      }),
+      verificationKey: evidenceIssuer.exportVerificationKey(),
+    });
+  } catch (error) {
+    inconsistentSubjectError = error as Error;
+  }
+  ok(
+    inconsistentSubjectError?.message.includes('statement subject'),
+    'Release evidence pack: signed statement subjects must match the signed release hashes',
   );
 
   let tamperedDigestError: Error | null = null;

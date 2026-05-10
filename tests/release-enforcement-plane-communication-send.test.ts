@@ -317,6 +317,7 @@ async function testValidDpopCommunicationSendAllowsAndConsumesToken(): Promise<v
   equal(result.responseStatus, 200, 'Communication-send gateway: allowed result is send-ready');
   equal(result.decision?.outcome, 'allow', 'Communication-send gateway: valid send emits allow decision');
   ok(result.receipt?.receiptDigest?.startsWith('sha256:'), 'Communication-send gateway: allowed send emits receipt digest');
+  equal(result.receipt?.policyIrHash, POLICY_IR_HASH, 'Communication-send gateway: receipt preserves compiled policy IR provenance');
   equal(result.request?.enforcementPoint.boundaryKind, 'communication-send', 'Communication-send gateway: request uses communication-send boundary');
   equal(result.request?.targetId, result.binding.target.id, 'Communication-send gateway: request target matches message binding');
   equal(result.request?.outputHash, result.binding.hashBundle.outputHash, 'Communication-send gateway: request output hash matches binding');

@@ -1,8 +1,9 @@
-import type {
-  EnforcementDecision,
-  EnforcementReceipt,
-  EnforcementRequest,
-  VerificationResult,
+import {
+  createEnforcementReceiptDigest,
+  type EnforcementDecision,
+  type EnforcementReceipt,
+  type EnforcementRequest,
+  type VerificationResult,
 } from './object-model.js';
 import type {
   EnforcementFailureReason,
@@ -24,6 +25,8 @@ export type EnforcementConformanceStatus = 'pass' | 'fail';
 export type EnforcementConformanceRuleId =
   | 'result.shape'
   | 'decision.receipt-consistency'
+  | 'receipt.digest-verifies'
+  | 'policy-provenance.continuity'
   | 'deny.failure-reasons'
   | 'allow.verification'
   | 'telemetry.required-fields'
@@ -124,6 +127,36 @@ function resultRiskClass(
     null;
 }
 
+function policyProvenanceView(
+  input:
+    | VerificationResult
+    | EnforcementReceipt
+    | EnforcementTelemetryEvent['verification']
+    | EnforcementTransparencyReceipt['subject']
+    | null
+    | undefined,
+): Readonly<Record<string, unknown>> {
+  return Object.freeze({
+    policyHash: input?.policyHash ?? null,
+    policyVersion: input?.policyVersion ?? null,
+    policyIrHash: input?.policyIrHash ?? null,
+    policyProvenanceSource: input?.policyProvenanceSource ?? null,
+    compiledPolicyIndexVersion: input?.compiledPolicyIndexVersion ?? null,
+    compiledPolicyIrVersion: input?.compiledPolicyIrVersion ?? null,
+  });
+}
+
+function hasPolicyProvenance(view: Readonly<Record<string, unknown>>): boolean {
+  return Object.values(view).some((value) => value !== null && value !== undefined);
+}
+
+function samePolicyProvenance(
+  expected: Readonly<Record<string, unknown>>,
+  actual: Readonly<Record<string, unknown>>,
+): boolean {
+  return JSON.stringify(expected) === JSON.stringify(actual);
+}
+
 function isDeniedResult(result: EnforcementConformanceResultLike): boolean {
   return result.status === 'denied' ||
     result.status === 'rejected' ||
@@ -175,6 +208,11 @@ function receiptConsistencyFinding(result: EnforcementConformanceResultLike): En
     result.receipt.decisionId === result.decision.id &&
     result.receipt.requestId === result.decision.requestId &&
     result.receipt.outcome === result.decision.outcome &&
+    result.receipt.releaseTokenId === result.decision.releaseTokenId &&
+    result.receipt.releaseDecisionId === result.decision.releaseDecisionId &&
+    result.receipt.outputHash === result.decision.verification.outputHash &&
+    result.receipt.consequenceHash === result.decision.verification.consequenceHash &&
+    result.receipt.verificationStatus === result.decision.verification.status &&
     JSON.stringify(result.receipt.failureReasons) === JSON.stringify(result.decision.failureReasons);
 
   return finding(
@@ -182,12 +220,87 @@ function receiptConsistencyFinding(result: EnforcementConformanceResultLike): En
     consistent ? 'pass' : 'fail',
     consistent
       ? 'Enforcement receipt matches the decision it represents.'
-      : 'Enforcement receipt must match decision id, request id, outcome, and failure reasons.',
+      : 'Enforcement receipt must match decision id, request id, outcome, verification bindings, and failure reasons.',
     {
       decisionId: result.decision.id,
       receiptDecisionId: result.receipt.decisionId,
       decisionOutcome: result.decision.outcome,
       receiptOutcome: result.receipt.outcome,
+      receiptVerificationStatus: result.receipt.verificationStatus,
+      verificationStatus: result.decision.verification.status,
+    },
+  );
+}
+
+function receiptDigestFinding(result: EnforcementConformanceResultLike): EnforcementConformanceFinding {
+  if (!result.decision || !result.receipt) {
+    return finding(
+      'receipt.digest-verifies',
+      'pass',
+      'Receipt digest verification is not required when decision or receipt is absent.',
+      {
+        hasDecision: Boolean(result.decision),
+        hasReceipt: Boolean(result.receipt),
+      },
+    );
+  }
+
+  const expectedDigest = createEnforcementReceiptDigest({
+    decision: result.decision,
+    outputHash: result.receipt.outputHash,
+    consequenceHash: result.receipt.consequenceHash,
+  });
+  const matches = result.receipt.receiptDigest === expectedDigest;
+
+  return finding(
+    'receipt.digest-verifies',
+    matches ? 'pass' : 'fail',
+    matches
+      ? 'Enforcement receipt digest verifies against the decision and policy provenance material.'
+      : 'Enforcement receipt digest must verify against the decision and policy provenance material.',
+    {
+      expectedDigest,
+      actualDigest: result.receipt.receiptDigest,
+    },
+  );
+}
+
+function policyProvenanceContinuityFinding(
+  result: EnforcementConformanceResultLike,
+  telemetryEvent: EnforcementTelemetryEvent | null | undefined,
+  transparencyReceipt: EnforcementTransparencyReceipt | null | undefined,
+): EnforcementConformanceFinding {
+  const verification = resultVerification(result);
+  const verificationView = policyProvenanceView(verification);
+  const receiptView = policyProvenanceView(result.receipt);
+  const telemetryView = policyProvenanceView(telemetryEvent?.verification);
+  const transparencyView = policyProvenanceView(transparencyReceipt?.subject);
+  const expected = hasPolicyProvenance(verificationView) ? verificationView : receiptView;
+
+  if (!hasPolicyProvenance(expected)) {
+    return finding(
+      'policy-provenance.continuity',
+      'pass',
+      'Policy provenance continuity is not required when the result carries no policy provenance evidence.',
+      {},
+    );
+  }
+
+  const receiptAligned = !result.receipt || samePolicyProvenance(expected, receiptView);
+  const telemetryAligned = !telemetryEvent || samePolicyProvenance(expected, telemetryView);
+  const transparencyAligned = !transparencyReceipt || samePolicyProvenance(expected, transparencyView);
+
+  return finding(
+    'policy-provenance.continuity',
+    receiptAligned && telemetryAligned && transparencyAligned ? 'pass' : 'fail',
+    receiptAligned && telemetryAligned && transparencyAligned
+      ? 'Policy provenance is continuous across verification, receipt, telemetry, and transparency surfaces.'
+      : 'Policy provenance must remain aligned across receipt, telemetry, and transparency surfaces.',
+    {
+      expected,
+      receiptAligned,
+      telemetryAligned,
+      transparencyAligned,
     },
   );
 }
@@ -412,6 +525,8 @@ export function runEnforcementPointConformance(
   const findings = Object.freeze([
     resultShapeFinding(input.result),
     receiptConsistencyFinding(input.result),
+    receiptDigestFinding(input.result),
+    policyProvenanceContinuityFinding(input.result, input.telemetryEvent, input.transparencyReceipt),
     denyFailureFinding(input.result),
     allowVerificationFinding(input.result),
     telemetryRequiredFinding(input.result, input.telemetryEvent, options),

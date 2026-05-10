@@ -362,6 +362,7 @@ async function testValidDpopActionDispatchAllowsAndConsumesToken(): Promise<void
   equal(result.responseStatus, 200, 'Action-dispatch gateway: allowed result is dispatch-ready');
   equal(result.decision?.outcome, 'allow', 'Action-dispatch gateway: valid action emits allow decision');
   ok(result.receipt?.receiptDigest?.startsWith('sha256:'), 'Action-dispatch gateway: allowed action emits receipt digest');
+  equal(result.receipt?.policyIrHash, POLICY_IR_HASH, 'Action-dispatch gateway: receipt preserves compiled policy IR provenance');
   equal(result.request?.enforcementPoint.boundaryKind, 'action-dispatch', 'Action-dispatch gateway: request uses action-dispatch boundary');
   equal(result.request?.targetId, result.binding.target.id, 'Action-dispatch gateway: request target matches action binding');
   equal(result.request?.outputHash, result.binding.hashBundle.outputHash, 'Action-dispatch gateway: request output hash matches binding');

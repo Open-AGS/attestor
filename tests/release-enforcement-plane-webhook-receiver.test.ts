@@ -323,6 +323,7 @@ async function testDirectReceiverAcceptsSignedWebhook(): Promise<void> {
   equal(result.responseStatus, 202, 'Webhook receiver: accepted result is admission-ready');
   equal(result.decision?.outcome, 'allow', 'Webhook receiver: valid webhook creates allow decision');
   ok(result.receipt?.receiptDigest?.startsWith('sha256:'), 'Webhook receiver: accepted webhook emits receipt digest');
+  equal(result.receipt?.policyIrHash, POLICY_IR_HASH, 'Webhook receiver: receipt preserves compiled policy IR provenance');
   equal(result.online?.onlineChecked, true, 'Webhook receiver: webhook path performs online introspection');
   equal(result.online?.consumed, true, 'Webhook receiver: accepted webhook consumes token use');
   equal(result.offline?.freshness?.nonce.status, 'valid', 'Webhook receiver: nonce freshness is valid');

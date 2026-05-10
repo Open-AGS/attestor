@@ -9,6 +9,7 @@ import {
   VERIFICATION_RESULT_SPEC_VERSION,
   createEnforcementDecision,
   createEnforcementReceipt,
+  createEnforcementReceiptDigest,
   createEnforcementRequest,
   createIntrospectionSnapshot,
   createReleasePresentation,
@@ -225,7 +226,7 @@ function testVerificationDecisionAndReceipt(): void {
     id: ' erc_001 ',
     issuedAt: '2026-04-18T07:15:17.000Z',
     decision,
-    receiptDigest: ' sha256:receipt ',
+    receiptDigest: createEnforcementReceiptDigest({ decision }),
   });
 
   equal(receipt.version, ENFORCEMENT_RECEIPT_SPEC_VERSION, 'Enforcement object model: receipt stamps schema version');
@@ -233,6 +234,11 @@ function testVerificationDecisionAndReceipt(): void {
   equal(receipt.outcome, 'allow', 'Enforcement object model: receipt carries outcome');
   equal(receipt.outputHash, 'sha256:output', 'Enforcement object model: receipt inherits output hash from verification');
   equal(receipt.consequenceHash, 'sha256:consequence', 'Enforcement object model: receipt inherits consequence hash from verification');
+  equal(receipt.policyHash, 'sha256:policy', 'Enforcement object model: receipt inherits policy hash from verification');
+  equal(receipt.policyIrHash, 'sha256:policy-ir', 'Enforcement object model: receipt inherits policy IR hash from verification');
+  equal(receipt.policyProvenanceSource, 'compiled-admission-policy-index', 'Enforcement object model: receipt preserves policy provenance source');
+  equal(receipt.compiledPolicyIndexVersion, 'attestor.policy-index.test.v1', 'Enforcement object model: receipt preserves compiled policy index version');
+  equal(receipt.receiptDigest, createEnforcementReceiptDigest({ decision }), 'Enforcement object model: receipt digest binds policy provenance material');
 }
 
 function testInvalidAndBreakGlassBranches(): void {

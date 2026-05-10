@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {
   createEnforcementDecision,
   createEnforcementReceipt,
+  createEnforcementReceiptDigest,
   createEnforcementRequest,
   createReleasePresentation,
   createVerificationResult,
@@ -46,6 +47,11 @@ function deepEqual<T>(actual: T, expected: T, message: string): void {
 }
 
 const CHECKED_AT = '2026-04-18T11:00:00.000Z';
+const POLICY_HASH = 'sha256:policy-conformance';
+const POLICY_IR_HASH = 'sha256:policy-ir-conformance';
+const POLICY_VERSION = 'policy.conformance-test.v1';
+const COMPILED_POLICY_INDEX_VERSION = 'attestor.policy-index.conformance-test.v1';
+const COMPILED_POLICY_IR_VERSION = 'attestor.policy-ir.conformance-test.v1';
 
 function sampleRequest() {
   return createEnforcementRequest({
@@ -99,6 +105,12 @@ function allowedDecisionAndReceipt(): {
     releaseDecisionId: 'rd_conformance_1',
     outputHash: 'sha256:output',
     consequenceHash: 'sha256:consequence',
+    policyHash: POLICY_HASH,
+    policyVersion: POLICY_VERSION,
+    policyIrHash: POLICY_IR_HASH,
+    policyProvenanceSource: 'compiled-admission-policy-index',
+    compiledPolicyIndexVersion: COMPILED_POLICY_INDEX_VERSION,
+    compiledPolicyIrVersion: COMPILED_POLICY_IR_VERSION,
   });
   const decision = createEnforcementDecision({
     id: 'ed_conformance_allowed',
@@ -110,7 +122,7 @@ function allowedDecisionAndReceipt(): {
     id: 'er_conformance_allowed',
     issuedAt: CHECKED_AT,
     decision,
-    receiptDigest: 'sha256:receipt-allowed',
+    receiptDigest: createEnforcementReceiptDigest({ decision }),
   });
   return { decision, receipt };
 }
@@ -140,7 +152,7 @@ function deniedDecisionAndReceipt(failureReason: 'replayed-authorization' | 'fre
     id: `er_conformance_${failureReason}`,
     issuedAt: CHECKED_AT,
     decision,
-    receiptDigest: `sha256:receipt-${failureReason}`,
+    receiptDigest: createEnforcementReceiptDigest({ decision }),
   });
   return { decision, receipt };
 }
@@ -182,7 +194,7 @@ function breakGlassDecisionAndReceipt() {
     id: 'er_conformance_break_glass',
     issuedAt: CHECKED_AT,
     decision,
-    receiptDigest: 'sha256:receipt-break-glass',
+    receiptDigest: createEnforcementReceiptDigest({ decision }),
   });
   return { decision, receipt };
 }
@@ -229,6 +241,13 @@ function testTelemetryEventForAllow(): EnforcementTelemetryEvent {
   equal(event.refs.decisionId, decision.id, 'Telemetry: event binds decision reference');
   equal(event.refs.receiptId, receipt.id, 'Telemetry: event binds receipt reference');
   equal(event.enforcementPoint.riskClass, 'R4', 'Telemetry: event carries low-cardinality risk class');
+  equal(receipt.policyIrHash, POLICY_IR_HASH, 'Telemetry: fixture receipt preserves policy IR provenance');
+  equal(event.verification.policyIrHash, POLICY_IR_HASH, 'Telemetry: event carries policy IR provenance');
+  equal(
+    event.attributes['attestor.release_enforcement.policy.ir_hash'],
+    POLICY_IR_HASH,
+    'Telemetry: attributes expose policy IR provenance for audit queries',
+  );
   ok(event.eventDigest.startsWith('sha256:'), 'Telemetry: event carries deterministic digest');
 
   return event;
@@ -297,6 +316,8 @@ function testTransparencyReceipt(): ReturnType<typeof transparencyReceiptFor> {
   equal(transparencyReceipt.version, RELEASE_ENFORCEMENT_TRANSPARENCY_RECEIPT_SPEC_VERSION, 'Transparency: receipt stamps schema version');
   equal(transparencyReceipt.subject.type, 'enforcement-receipt', 'Transparency: receipt binds enforcement receipt subject');
   equal(transparencyReceipt.subject.id, receipt.id, 'Transparency: subject carries receipt id');
+  equal(transparencyReceipt.subject.policyIrHash, POLICY_IR_HASH, 'Transparency: subject carries policy IR provenance');
+  equal(transparencyReceipt.subject.policyProvenanceSource, 'compiled-admission-policy-index', 'Transparency: subject carries policy provenance source');
   ok(transparencyReceipt.subject.digest.startsWith('sha256:'), 'Transparency: subject carries digest');
   equal(verification.status, 'valid', 'Transparency: receipt verifies');
   deepEqual([...verification.failureReasons], [], 'Transparency: valid receipt has no verification failures');
@@ -361,6 +382,8 @@ function testConformancePass(transparencyReceipt: ReturnType<typeof transparency
   equal(report.status, 'pass', 'Conformance: high-risk allowed result passes with telemetry and transparency receipt');
   equal(report.summary.failed, 0, 'Conformance: passing report has zero failed rules');
   ok(report.findings.some((finding) => finding.ruleId === 'telemetry.required-fields'), 'Conformance: telemetry rule ran');
+  ok(report.findings.some((finding) => finding.ruleId === 'receipt.digest-verifies'), 'Conformance: receipt digest verification rule ran');
+  ok(report.findings.some((finding) => finding.ruleId === 'policy-provenance.continuity'), 'Conformance: policy provenance continuity rule ran');
   ok(report.findings.some((finding) => finding.ruleId === 'high-consequence.transparency-required'), 'Conformance: transparency rule ran');
 }
 
@@ -378,6 +401,64 @@ function testConformanceFailures(): void {
     body: 'Bearer raw.jwt.material should not appear in telemetry',
   };
   ok(telemetryEventSafetyFindings(unsafeEvent).length > 0, 'Conformance: unsafe telemetry marker is detectable');
+
+  const badDigestReport = runEnforcementPointConformance({
+    id: 'receipt-digest-mismatch',
+    result: {
+      status: 'allowed',
+      checkedAt: CHECKED_AT,
+      request: sampleRequest(),
+      decision,
+      receipt: {
+        ...receipt,
+        receiptDigest: 'sha256:wrong-receipt-digest',
+      },
+      failureReasons: [],
+      responseStatus: 200,
+    },
+  });
+  ok(
+    badDigestReport.findings.some(
+      (finding) => finding.ruleId === 'receipt.digest-verifies' && finding.status === 'fail',
+    ),
+    'Conformance: receipt digest mismatch fails verification rule',
+  );
+
+  const basePolicyEvent = createEnforcementTelemetryEvent({
+    source: 'record-write-gateway',
+    observedAt: CHECKED_AT,
+    status: 'allowed',
+    decision,
+    receipt,
+    responseStatus: 200,
+  });
+  const policyMismatchEvent = {
+    ...basePolicyEvent,
+    verification: {
+      ...basePolicyEvent.verification,
+      policyIrHash: 'sha256:wrong-policy-ir',
+    },
+  };
+  const policyMismatchReport = runEnforcementPointConformance({
+    id: 'policy-provenance-mismatch',
+    result: {
+      status: 'allowed',
+      checkedAt: CHECKED_AT,
+      request: sampleRequest(),
+      decision,
+      receipt,
+      failureReasons: [],
+      responseStatus: 200,
+    },
+    telemetryEvent: policyMismatchEvent,
+    options: { requireTelemetry: true },
+  });
+  ok(
+    policyMismatchReport.findings.some(
+      (finding) => finding.ruleId === 'policy-provenance.continuity' && finding.status === 'fail',
+    ),
+    'Conformance: policy provenance mismatch fails continuity rule',
+  );
 
   const missingTransparency = runEnforcementPointConformance({
     id: 'missing-transparency',

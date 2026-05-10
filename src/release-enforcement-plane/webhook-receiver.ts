@@ -10,6 +10,7 @@ import type { ReleaseTokenVerificationKey } from '../release-kernel/release-toke
 import {
   createEnforcementDecision,
   createEnforcementReceipt,
+  createEnforcementReceiptDigest,
   createEnforcementRequest,
   createReleasePresentation,
   type CreateEnforcementRequestInput,
@@ -409,19 +410,6 @@ function resultFromEarlyRejection(input: {
   });
 }
 
-function receiptDigestForDecision(decision: EnforcementDecision): string {
-  const material = JSON.stringify({
-    decisionId: decision.id,
-    requestId: decision.requestId,
-    outcome: decision.outcome,
-    releaseTokenId: decision.releaseTokenId,
-    releaseDecisionId: decision.releaseDecisionId,
-    verificationStatus: decision.verification.status,
-    failureReasons: decision.failureReasons,
-  });
-  return `sha256:${createHash('sha256').update(material).digest('hex')}`;
-}
-
 function activeBreakGlassGrant(
   grant: EnforcementBreakGlassGrant | null | undefined,
   checkedAt: string,
@@ -484,7 +472,7 @@ function createDecisionAndReceipt(input: {
     id: `er_webhook_${input.request.id}`,
     issuedAt: input.checkedAt,
     decision,
-    receiptDigest: receiptDigestForDecision(decision),
+    receiptDigest: createEnforcementReceiptDigest({ decision }),
   });
 
   return { decision, receipt };

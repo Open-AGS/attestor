@@ -13,6 +13,7 @@ import {
 import {
   createEnforcementDecision,
   createEnforcementReceipt,
+  createEnforcementReceiptDigest,
 } from '../src/release-enforcement-plane/object-model.js';
 import { runEnforcementPointConformance } from '../src/release-enforcement-plane/conformance.js';
 import {
@@ -739,7 +740,7 @@ async function testConformanceAndDegradedModeReuse(): Promise<void> {
     id: 'er_crypto_enforcement_001',
     issuedAt: CHECKED_AT,
     decision,
-    receiptDigest: 'sha256:crypto-enforcement-receipt-001',
+    receiptDigest: createEnforcementReceiptDigest({ decision }),
   });
   const report = runEnforcementPointConformance({
     id: 'crypto-safe-guard-allow',

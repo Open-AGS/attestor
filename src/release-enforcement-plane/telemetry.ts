@@ -74,6 +74,12 @@ export interface EnforcementTelemetryVerification {
   readonly cacheState: VerificationResult['cacheState'] | null;
   readonly degradedState: VerificationResult['degradedState'] | null;
   readonly introspectionActive: boolean | null;
+  readonly policyHash: string | null;
+  readonly policyVersion: string | null;
+  readonly policyIrHash: string | null;
+  readonly policyProvenanceSource: VerificationResult['policyProvenanceSource'];
+  readonly compiledPolicyIndexVersion: string | null;
+  readonly compiledPolicyIrVersion: string | null;
 }
 
 export interface EnforcementTelemetryEvent {
@@ -136,6 +142,12 @@ export interface EnforcementTransparencySubject {
   readonly requestId: string | null;
   readonly decisionId: string | null;
   readonly outcome: EnforcementTelemetryOutcome;
+  readonly policyHash: string | null;
+  readonly policyVersion: string | null;
+  readonly policyIrHash: string | null;
+  readonly policyProvenanceSource: VerificationResult['policyProvenanceSource'];
+  readonly compiledPolicyIndexVersion: string | null;
+  readonly compiledPolicyIrVersion: string | null;
   readonly digest: string;
 }
 
@@ -295,13 +307,23 @@ function pointFromInput(input: CreateEnforcementTelemetryEventInput): Enforcemen
 
 function verificationView(input: CreateEnforcementTelemetryEventInput): EnforcementTelemetryVerification {
   const verification = verificationFromInput(input);
+  const receipt = input.receipt ?? null;
   return Object.freeze({
-    status: verification?.status ?? null,
+    status: verification?.status ?? receipt?.verificationStatus ?? null,
     mode: verification?.mode ?? null,
     presentationMode: verification?.presentationMode ?? null,
     cacheState: verification?.cacheState ?? null,
     degradedState: verification?.degradedState ?? null,
     introspectionActive: verification?.introspection?.active ?? null,
+    policyHash: verification?.policyHash ?? receipt?.policyHash ?? null,
+    policyVersion: verification?.policyVersion ?? receipt?.policyVersion ?? null,
+    policyIrHash: verification?.policyIrHash ?? receipt?.policyIrHash ?? null,
+    policyProvenanceSource:
+      verification?.policyProvenanceSource ?? receipt?.policyProvenanceSource ?? null,
+    compiledPolicyIndexVersion:
+      verification?.compiledPolicyIndexVersion ?? receipt?.compiledPolicyIndexVersion ?? null,
+    compiledPolicyIrVersion:
+      verification?.compiledPolicyIrVersion ?? receipt?.compiledPolicyIrVersion ?? null,
   });
 }
 
@@ -397,6 +419,15 @@ function defaultAttributes(input: {
     'attestor.release_enforcement.presentation.mode': input.verification.presentationMode,
     'attestor.release_enforcement.cache.state': input.verification.cacheState,
     'attestor.release_enforcement.degraded.state': input.verification.degradedState,
+    'attestor.release_enforcement.policy.hash': input.verification.policyHash,
+    'attestor.release_enforcement.policy.version': input.verification.policyVersion,
+    'attestor.release_enforcement.policy.ir_hash': input.verification.policyIrHash,
+    'attestor.release_enforcement.policy.provenance.source':
+      input.verification.policyProvenanceSource,
+    'attestor.release_enforcement.policy.compiled_index.version':
+      input.verification.compiledPolicyIndexVersion,
+    'attestor.release_enforcement.policy.compiled_ir.version':
+      input.verification.compiledPolicyIrVersion,
     'http.response.status_code': input.responseStatus,
   });
 }
@@ -512,6 +543,12 @@ function subjectFromReceipt(receipt: EnforcementReceipt): EnforcementTransparenc
     requestId: receipt.requestId,
     decisionId: receipt.decisionId,
     outcome: receipt.outcome,
+    policyHash: receipt.policyHash,
+    policyVersion: receipt.policyVersion,
+    policyIrHash: receipt.policyIrHash,
+    policyProvenanceSource: receipt.policyProvenanceSource,
+    compiledPolicyIndexVersion: receipt.compiledPolicyIndexVersion,
+    compiledPolicyIrVersion: receipt.compiledPolicyIrVersion,
     digest: enforcementTelemetryDigest(receipt),
   });
 }
@@ -523,6 +560,12 @@ function subjectFromDecision(decision: EnforcementDecision): EnforcementTranspar
     requestId: decision.requestId,
     decisionId: decision.id,
     outcome: decision.outcome,
+    policyHash: decision.verification.policyHash,
+    policyVersion: decision.verification.policyVersion,
+    policyIrHash: decision.verification.policyIrHash,
+    policyProvenanceSource: decision.verification.policyProvenanceSource,
+    compiledPolicyIndexVersion: decision.verification.compiledPolicyIndexVersion,
+    compiledPolicyIrVersion: decision.verification.compiledPolicyIrVersion,
     digest: enforcementTelemetryDigest(decision),
   });
 }
@@ -534,6 +577,12 @@ function subjectFromEvent(event: EnforcementTelemetryEvent): EnforcementTranspar
     requestId: event.refs.requestId,
     decisionId: event.refs.decisionId,
     outcome: event.outcome,
+    policyHash: event.verification.policyHash,
+    policyVersion: event.verification.policyVersion,
+    policyIrHash: event.verification.policyIrHash,
+    policyProvenanceSource: event.verification.policyProvenanceSource,
+    compiledPolicyIndexVersion: event.verification.compiledPolicyIndexVersion,
+    compiledPolicyIrVersion: event.verification.compiledPolicyIrVersion,
     digest: event.eventDigest,
   });
 }

@@ -16,6 +16,7 @@ import type { OutputContractDescriptor } from '../release-kernel/types.js';
 import {
   createEnforcementDecision,
   createEnforcementReceipt,
+  createEnforcementReceiptDigest,
   createEnforcementRequest,
   createReleasePresentation,
   type EnforcementDecision,
@@ -546,20 +547,11 @@ function decisionAndReceipt(input: {
     verification: input.verification,
     failureReasons: input.failureReasons,
   });
-  const receiptDigest = sha256(JSON.stringify({
-    decisionId: decision.id,
-    requestId: decision.requestId,
-    outcome: decision.outcome,
-    releaseTokenId: decision.releaseTokenId,
-    releaseDecisionId: decision.releaseDecisionId,
-    verificationStatus: decision.verification.status,
-    failureReasons: decision.failureReasons,
-  }));
   const receipt = createEnforcementReceipt({
     id: `er_communication_send_${input.request.id}`,
     issuedAt: input.checkedAt,
     decision,
-    receiptDigest,
+    receiptDigest: createEnforcementReceiptDigest({ decision }),
   });
 
   return { decision, receipt };

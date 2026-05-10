@@ -250,6 +250,7 @@ async function testValidRecordWriteAllowsAndConsumesToken(): Promise<void> {
   equal(result.responseStatus, 200, 'Record-write gateway: allowed result is admission-ready');
   equal(result.decision?.outcome, 'allow', 'Record-write gateway: valid record write emits allow decision');
   ok(result.receipt?.receiptDigest?.startsWith('sha256:'), 'Record-write gateway: allowed record write emits receipt digest');
+  equal(result.receipt?.policyIrHash, POLICY_IR_HASH, 'Record-write gateway: receipt preserves compiled policy IR provenance');
   equal(result.request?.targetId, result.binding.target.id, 'Record-write gateway: request target matches record binding');
   equal(result.request?.outputHash, result.binding.hashBundle.outputHash, 'Record-write gateway: request output hash matches binding');
   equal(result.request?.consequenceHash, result.binding.hashBundle.consequenceHash, 'Record-write gateway: request consequence hash matches binding');

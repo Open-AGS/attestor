@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import type { ReleaseActorReference } from '../release-layer/index.js';
 import type { ReleasePolicyProvenanceSource } from '../release-kernel/object-model.js';
 import type {
@@ -225,9 +226,33 @@ export interface EnforcementReceipt {
   readonly releaseDecisionId: string | null;
   readonly outputHash: string | null;
   readonly consequenceHash: string | null;
+  readonly policyHash: string | null;
+  readonly policyVersion: string | null;
+  readonly policyIrHash: string | null;
+  readonly policyProvenanceSource: ReleasePolicyProvenanceSource | null;
+  readonly compiledPolicyIndexVersion: string | null;
+  readonly compiledPolicyIrVersion: string | null;
   readonly verificationStatus: VerificationStatus;
   readonly failureReasons: readonly EnforcementFailureReason[];
   readonly receiptDigest: string | null;
+}
+
+export interface EnforcementReceiptDigestMaterial {
+  readonly decisionId: string;
+  readonly requestId: string;
+  readonly outcome: EnforcementOutcome;
+  readonly releaseTokenId: string | null;
+  readonly releaseDecisionId: string | null;
+  readonly outputHash: string | null;
+  readonly consequenceHash: string | null;
+  readonly policyHash: string | null;
+  readonly policyVersion: string | null;
+  readonly policyIrHash: string | null;
+  readonly policyProvenanceSource: ReleasePolicyProvenanceSource | null;
+  readonly compiledPolicyIndexVersion: string | null;
+  readonly compiledPolicyIrVersion: string | null;
+  readonly verificationStatus: VerificationStatus;
+  readonly failureReasons: readonly EnforcementFailureReason[];
 }
 
 export interface CreateEnforcementRequestInput {
@@ -323,6 +348,12 @@ export interface CreateEnforcementReceiptInput {
   readonly receiptDigest?: string | null;
 }
 
+export interface CreateEnforcementReceiptDigestInput {
+  readonly decision: EnforcementDecision;
+  readonly outputHash?: string | null;
+  readonly consequenceHash?: string | null;
+}
+
 function normalizeIdentifier(value: string, fieldName: string): string {
   const normalized = value.trim();
   if (normalized.length === 0) {
@@ -354,6 +385,10 @@ function normalizeOptionalText(value: string | null | undefined): string | null 
 
   const normalized = value.trim();
   return normalized.length > 0 ? normalized : null;
+}
+
+function sha256(value: string): string {
+  return `sha256:${createHash('sha256').update(value).digest('hex')}`;
 }
 
 function normalizeIsoTimestamp(value: string, fieldName: string): string {
@@ -788,9 +823,45 @@ export function createEnforcementDecision(
   });
 }
 
+export function enforcementReceiptDigestMaterial(
+  input: CreateEnforcementReceiptDigestInput,
+): EnforcementReceiptDigestMaterial {
+  const outputHash =
+    normalizeOptionalIdentifier(input.outputHash, 'enforcementReceipt.outputHash') ??
+    input.decision.verification.outputHash;
+  const consequenceHash =
+    normalizeOptionalIdentifier(input.consequenceHash, 'enforcementReceipt.consequenceHash') ??
+    input.decision.verification.consequenceHash;
+
+  return Object.freeze({
+    decisionId: input.decision.id,
+    requestId: input.decision.requestId,
+    outcome: input.decision.outcome,
+    releaseTokenId: input.decision.releaseTokenId,
+    releaseDecisionId: input.decision.releaseDecisionId,
+    outputHash,
+    consequenceHash,
+    policyHash: input.decision.verification.policyHash,
+    policyVersion: input.decision.verification.policyVersion,
+    policyIrHash: input.decision.verification.policyIrHash,
+    policyProvenanceSource: input.decision.verification.policyProvenanceSource,
+    compiledPolicyIndexVersion: input.decision.verification.compiledPolicyIndexVersion,
+    compiledPolicyIrVersion: input.decision.verification.compiledPolicyIrVersion,
+    verificationStatus: input.decision.verification.status,
+    failureReasons: input.decision.failureReasons,
+  });
+}
+
+export function createEnforcementReceiptDigest(
+  input: CreateEnforcementReceiptDigestInput,
+): string {
+  return sha256(JSON.stringify(enforcementReceiptDigestMaterial(input)));
+}
+
 export function createEnforcementReceipt(
   input: CreateEnforcementReceiptInput,
 ): EnforcementReceipt {
+  const digestMaterial = enforcementReceiptDigestMaterial(input);
   return Object.freeze({
     version: ENFORCEMENT_RECEIPT_SPEC_VERSION,
     id: normalizeIdentifier(input.id, 'enforcementReceipt.id'),
@@ -801,12 +872,14 @@ export function createEnforcementReceipt(
     enforcementPointLabel: enforcementPointReferenceLabel(input.decision.enforcementPoint),
     releaseTokenId: input.decision.releaseTokenId,
     releaseDecisionId: input.decision.releaseDecisionId,
-    outputHash:
-      normalizeOptionalIdentifier(input.outputHash, 'enforcementReceipt.outputHash') ??
-      input.decision.verification.outputHash,
-    consequenceHash:
-      normalizeOptionalIdentifier(input.consequenceHash, 'enforcementReceipt.consequenceHash') ??
-      input.decision.verification.consequenceHash,
+    outputHash: digestMaterial.outputHash,
+    consequenceHash: digestMaterial.consequenceHash,
+    policyHash: digestMaterial.policyHash,
+    policyVersion: digestMaterial.policyVersion,
+    policyIrHash: digestMaterial.policyIrHash,
+    policyProvenanceSource: digestMaterial.policyProvenanceSource,
+    compiledPolicyIndexVersion: digestMaterial.compiledPolicyIndexVersion,
+    compiledPolicyIrVersion: digestMaterial.compiledPolicyIrVersion,
     verificationStatus: input.decision.verification.status,
     failureReasons: input.decision.failureReasons,
     receiptDigest: normalizeOptionalIdentifier(

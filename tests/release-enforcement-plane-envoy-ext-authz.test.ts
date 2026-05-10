@@ -465,6 +465,7 @@ async function testValidDpopProxyCheck(): Promise<void> {
   ok(result.checkResponse.ok_response?.headers_to_remove?.includes('authorization'), 'Envoy bridge: credentials are stripped before upstream by default');
   ok(result.checkResponse.ok_response?.headers?.some((entry) => entry.header.key === ATTESTOR_PROXY_ENFORCEMENT_STATUS_HEADER), 'Envoy bridge: allow status header is added');
   ok(result.receipt?.receiptDigest?.startsWith('sha256:'), 'Envoy bridge: allowed check has an enforcement receipt digest');
+  equal(result.receipt?.policyIrHash, POLICY_IR_HASH, 'Envoy bridge: receipt preserves compiled policy IR provenance');
   ok(Boolean(result.checkResponse.dynamic_metadata?.[ENVOY_EXT_AUTHZ_DYNAMIC_METADATA_NAMESPACE]), 'Envoy bridge: dynamic metadata is populated');
 }
 

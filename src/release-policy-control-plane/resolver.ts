@@ -7,6 +7,11 @@ import {
   type ReleasePolicyRolloutResolution,
   type ReleaseTargetKind,
 } from '../release-layer/index.js';
+import {
+  createCompiledAdmissionPolicyIndex,
+  type CompiledAdmissionPolicyIndexRejectionReason,
+} from '../release-kernel/compiled-policy-index.js';
+import type { CompiledAdmissionPolicyVerificationResult } from '../release-kernel/compiled-policy-ir.js';
 import type { PolicyBundleEntry } from './object-model.js';
 import {
   defaultPolicyCompatibilityDescriptor,
@@ -46,6 +51,7 @@ export type ActivePolicyResolutionStatus =
   | 'bundle-resolution-failed'
   | 'incompatible-bundle'
   | 'no-policy-entry'
+  | 'policy-entry-verification-failed'
   | 'ambiguous-policy-entry';
 
 export interface ActivePolicyResolverInput {
@@ -61,6 +67,11 @@ export interface ResolvedPolicyEntryCandidate {
   readonly match: PolicyScopeMatchResult;
 }
 
+export interface RejectedResolvedPolicyEntryCandidate extends ResolvedPolicyEntryCandidate {
+  readonly reason: CompiledAdmissionPolicyIndexRejectionReason;
+  readonly verification: CompiledAdmissionPolicyVerificationResult;
+}
+
 export interface ActivePolicyResolutionResult {
   readonly version: typeof ACTIVE_POLICY_RESOLVER_SPEC_VERSION;
   readonly status: ActivePolicyResolutionStatus;
@@ -74,6 +85,7 @@ export interface ActivePolicyResolutionResult {
   };
   readonly matchedEntryCandidates: readonly ResolvedPolicyEntryCandidate[];
   readonly ambiguousEntryCandidates: readonly ResolvedPolicyEntryCandidate[];
+  readonly rejectedEntryCandidates: readonly RejectedResolvedPolicyEntryCandidate[];
   readonly selectedEntry: PolicyBundleEntry | null;
   readonly effectivePolicy: ReleasePolicyDefinition | null;
   readonly rollout: ReleasePolicyRolloutResolution | null;
@@ -106,6 +118,7 @@ function selectMatchingEntries(
 ): {
   readonly matchedEntryCandidates: readonly ResolvedPolicyEntryCandidate[];
   readonly ambiguousEntryCandidates: readonly ResolvedPolicyEntryCandidate[];
+  readonly rejectedEntryCandidates: readonly RejectedResolvedPolicyEntryCandidate[];
   readonly selectedEntry: PolicyBundleEntry | null;
 } {
   const matchedEntryCandidates = Object.freeze(
@@ -132,20 +145,54 @@ function selectMatchingEntries(
     return Object.freeze({
       matchedEntryCandidates,
       ambiguousEntryCandidates: Object.freeze([]),
+      rejectedEntryCandidates: Object.freeze([]),
       selectedEntry: null,
     });
   }
 
-  const ambiguousEntryCandidates = Object.freeze(
+  const topPrecedenceCandidates = Object.freeze(
     matchedEntryCandidates.filter((candidate) =>
       samePrecedenceMatch(candidate.match, topCandidate.match),
     ),
   );
+  const rejectedEntryCandidates = Object.freeze(
+    topPrecedenceCandidates
+      .map((candidate): RejectedResolvedPolicyEntryCandidate | null => {
+        const index = createCompiledAdmissionPolicyIndex([candidate.entry.definition]);
+        const rejection = index.rejectedEntries[0] ?? null;
+        if (!rejection) {
+          return null;
+        }
+
+        return Object.freeze({
+          entry: candidate.entry,
+          match: candidate.match,
+          reason: rejection.reason,
+          verification: rejection.verification,
+        });
+      })
+      .filter(
+        (candidate): candidate is RejectedResolvedPolicyEntryCandidate =>
+          candidate !== null,
+      ),
+  );
+
+  if (rejectedEntryCandidates.length > 0) {
+    return Object.freeze({
+      matchedEntryCandidates,
+      ambiguousEntryCandidates: Object.freeze([]),
+      rejectedEntryCandidates,
+      selectedEntry: null,
+    });
+  }
+
+  const ambiguousEntryCandidates = topPrecedenceCandidates;
 
   return Object.freeze({
     matchedEntryCandidates,
     ambiguousEntryCandidates:
       ambiguousEntryCandidates.length > 1 ? ambiguousEntryCandidates : Object.freeze([]),
+    rejectedEntryCandidates,
     selectedEntry:
       ambiguousEntryCandidates.length > 1 ? null : topCandidate.entry,
   });
@@ -174,6 +221,7 @@ function failResult(
   compatibility = compatibilityEnvelope(bundleRecord),
   matchedEntryCandidates: readonly ResolvedPolicyEntryCandidate[] = Object.freeze([]),
   ambiguousEntryCandidates: readonly ResolvedPolicyEntryCandidate[] = Object.freeze([]),
+  rejectedEntryCandidates: readonly RejectedResolvedPolicyEntryCandidate[] = Object.freeze([]),
 ): ActivePolicyResolutionResult {
   return Object.freeze({
     version: ACTIVE_POLICY_RESOLVER_SPEC_VERSION,
@@ -184,6 +232,7 @@ function failResult(
     compatibility,
     matchedEntryCandidates,
     ambiguousEntryCandidates,
+    rejectedEntryCandidates,
     selectedEntry: null,
     effectivePolicy: null,
     rollout: null,
@@ -240,6 +289,19 @@ export function resolveActivePolicy(
     );
   }
 
+  if (entrySelection.rejectedEntryCandidates.length > 0) {
+    return failResult(
+      input,
+      bundleResolution,
+      bundleRecord,
+      'policy-entry-verification-failed',
+      compatibility,
+      entrySelection.matchedEntryCandidates,
+      Object.freeze([]),
+      entrySelection.rejectedEntryCandidates,
+    );
+  }
+
   if (entrySelection.ambiguousEntryCandidates.length > 0) {
     return failResult(
       input,
@@ -267,6 +329,7 @@ export function resolveActivePolicy(
     compatibility,
     matchedEntryCandidates: entrySelection.matchedEntryCandidates,
     ambiguousEntryCandidates: Object.freeze([]),
+    rejectedEntryCandidates: Object.freeze([]),
     selectedEntry,
     effectivePolicy: selectedEntry.definition,
     rollout,

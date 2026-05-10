@@ -251,6 +251,66 @@ function testNoPolicyEntryFailsClosedWhenBundleExists(): void {
   assert.equal(result.selectedEntry, null);
 }
 
+function testVerifierFailedPolicyEntryFailsClosed(): void {
+  const store = createInMemoryPolicyControlPlaneStore();
+  const firstHardGatewayPolicy = policy.createFirstHardGatewayReleasePolicy();
+  const weakenedPolicy = policy.createReleasePolicyDefinition({
+    ...firstHardGatewayPolicy,
+    id: 'finance.weakened-control-plane-entry',
+    acceptance: {
+      ...firstHardGatewayPolicy.acceptance,
+      requiredChecks: ['contract-shape'],
+      requiredEvidenceKinds: ['trace'],
+    },
+  });
+  const bundle = createSignedBundle('bundle_finance_weakened_entry', [
+    createEntry(
+      'entry-weakened',
+      {
+        environment: 'prod-eu',
+        tenantId: 'tenant-finance',
+        accountId: 'account-major',
+        domainId: 'finance',
+        wedgeId: 'finance.record.release',
+        consequenceType: 'record',
+        riskClass: 'R4',
+      },
+      weakenedPolicy,
+    ),
+  ]);
+
+  store.upsertPack(bundle.pack);
+  store.upsertBundle({
+    manifest: bundle.manifest,
+    artifact: bundle.artifact,
+    signedBundle: bundle.signedBundle,
+  });
+  store.upsertActivation(
+    createActivation('activation-weakened-entry', bundle.artifact.bundleId, {
+      environment: 'prod-eu',
+      tenantId: 'tenant-finance',
+      domainId: 'finance',
+      consequenceType: 'record',
+    }),
+  );
+
+  const result = createActivePolicyResolver(store).resolve(sampleResolverInput());
+
+  assert.equal(result.status, 'policy-entry-verification-failed');
+  assert.equal(result.bundleResolution.status, 'resolved');
+  assert.equal(result.matchedEntryCandidates.length, 1);
+  assert.equal(result.rejectedEntryCandidates.length, 1);
+  assert.equal(result.rejectedEntryCandidates[0]?.entry.id, 'entry-weakened');
+  assert.equal(result.rejectedEntryCandidates[0]?.reason, 'verification-failed');
+  assert.ok(
+    result.rejectedEntryCandidates[0]?.verification.errors.some(
+      (finding) => finding.code === 'missing-required-check',
+    ),
+  );
+  assert.equal(result.selectedEntry, null);
+  assert.equal(result.effectivePolicy, null);
+}
+
 function testAmbiguousEntryResolutionFailsClosed(): void {
   const store = createInMemoryPolicyControlPlaneStore();
   const basePolicy = policy.createFirstHardGatewayReleasePolicy();
@@ -418,11 +478,12 @@ function testFrozenBundleResolutionFailsClosedBeforePolicySelection(): void {
 function run(): void {
   testResolvedPolicyUsesMostSpecificEntry();
   testNoPolicyEntryFailsClosedWhenBundleExists();
+  testVerifierFailedPolicyEntryFailsClosed();
   testAmbiguousEntryResolutionFailsClosed();
   testIncompatibleBundleFailsClosed();
   testBundleResolutionFailurePassesThrough();
   testFrozenBundleResolutionFailsClosedBeforePolicySelection();
-  console.log('Release policy control-plane resolver tests: 6 passed, 0 failed');
+  console.log('Release policy control-plane resolver tests: 7 passed, 0 failed');
 }
 
 run();

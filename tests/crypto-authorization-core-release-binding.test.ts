@@ -465,6 +465,23 @@ function testEvidencePackBinding(): void {
         releaseDecision: initial.releaseDecision,
         evidencePack: {
           ...evidencePack,
+          policyContext: {
+            ...evidencePack.policyContext,
+            policyHash: 'sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd',
+          },
+        },
+      }),
+    /evidence pack policy context hash does not match/i,
+  );
+  passed += 1;
+
+  assert.throws(
+    () =>
+      createCryptoReleaseDecisionBinding({
+        ...parts,
+        releaseDecision: initial.releaseDecision,
+        evidencePack: {
+          ...evidencePack,
           policyProvenanceSource: 'compiled-admission-policy-index',
         },
       }),

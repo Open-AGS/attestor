@@ -753,6 +753,36 @@ function validateEvidencePack(
   ) {
     throw new Error('Crypto release decision binding evidence pack compiled policy IR version does not match release decision.');
   }
+  if (evidencePack.policyContext.policyVersion !== releaseDecision.policyVersion) {
+    throw new Error('Crypto release decision binding evidence pack policy context version does not match release decision.');
+  }
+  if (evidencePack.policyContext.policyHash !== releaseDecision.policyHash) {
+    throw new Error('Crypto release decision binding evidence pack policy context hash does not match release decision.');
+  }
+  if (
+    (evidencePack.policyContext.policyIrHash ?? null) !==
+    (releaseDecision.policyProvenance?.compiledPolicyIrHash ?? null)
+  ) {
+    throw new Error('Crypto release decision binding evidence pack policy context IR hash does not match release decision.');
+  }
+  if (
+    (evidencePack.policyContext.policyProvenanceSource ?? null) !==
+    (releaseDecision.policyProvenance?.source ?? null)
+  ) {
+    throw new Error('Crypto release decision binding evidence pack policy context provenance source does not match release decision.');
+  }
+  if (
+    (evidencePack.policyContext.compiledPolicyIndexVersion ?? null) !==
+    (releaseDecision.policyProvenance?.compiledPolicyIndexVersion ?? null)
+  ) {
+    throw new Error('Crypto release decision binding evidence pack policy context compiled policy index version does not match release decision.');
+  }
+  if (
+    (evidencePack.policyContext.compiledPolicyIrVersion ?? null) !==
+    (releaseDecision.policyProvenance?.compiledPolicyIrVersion ?? null)
+  ) {
+    throw new Error('Crypto release decision binding evidence pack policy context compiled policy IR version does not match release decision.');
+  }
 
   const evidenceDigests = new Set(evidencePack.artifacts.map((artifact) => artifact.digest));
   for (const artifact of requiredArtifacts) {

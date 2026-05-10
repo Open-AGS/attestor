@@ -295,6 +295,16 @@ function evidencePackFor(binding: CryptoReleaseDecisionBinding): EvidencePack {
     policyProvenanceSource: binding.releaseDecision.policyProvenance?.source ?? null,
     compiledPolicyIndexVersion: binding.releaseDecision.policyProvenance?.compiledPolicyIndexVersion ?? null,
     compiledPolicyIrVersion: binding.releaseDecision.policyProvenance?.compiledPolicyIrVersion ?? null,
+    policyContext: {
+      policyVersion: binding.releaseDecision.policyVersion,
+      policyHash: binding.releaseDecision.policyHash,
+      policyIrHash: binding.releaseDecision.policyProvenance?.compiledPolicyIrHash ?? null,
+      policyProvenanceSource: binding.releaseDecision.policyProvenance?.source ?? null,
+      compiledPolicyIndexVersion:
+        binding.releaseDecision.policyProvenance?.compiledPolicyIndexVersion ?? null,
+      compiledPolicyIrVersion:
+        binding.releaseDecision.policyProvenance?.compiledPolicyIrVersion ?? null,
+    },
     retentionClass: 'regulated',
     findings: binding.releaseDecision.findings,
     artifacts: binding.evidence.requiredArtifacts,

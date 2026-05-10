@@ -122,6 +122,14 @@ async function main(): Promise<void> {
     policyProvenanceSource: null,
     compiledPolicyIndexVersion: null,
     compiledPolicyIrVersion: null,
+    policyContext: {
+      policyVersion: decision.policyVersion,
+      policyHash: decision.policyHash,
+      policyIrHash: null,
+      policyProvenanceSource: null,
+      compiledPolicyIndexVersion: null,
+      compiledPolicyIrVersion: null,
+    },
     retentionClass: 'regulated',
     findings: decision.findings,
     artifacts: [

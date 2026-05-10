@@ -6,6 +6,7 @@ import type {
   EvidenceArtifactReference,
   EvidencePack,
   ReleaseDecision,
+  ReleaseEvidencePolicyContext,
   ReleasePolicyProvenanceSource,
 } from './object-model.js';
 import { EVIDENCE_PACK_SPEC_VERSION, retentionClassForRiskClass } from './object-model.js';
@@ -70,6 +71,7 @@ export interface ReleaseEvidenceDecisionSummary {
   readonly policyProvenanceSource: ReleasePolicyProvenanceSource | null;
   readonly compiledPolicyIndexVersion: string | null;
   readonly compiledPolicyIrVersion: string | null;
+  readonly policyContext: ReleaseEvidencePolicyContext;
   readonly targetId: string;
   readonly targetDisplayName: string | null;
   readonly requesterId: string;
@@ -103,6 +105,15 @@ export interface ReleaseEvidenceReviewSummary {
   readonly overrideReasonCode: string | null;
 }
 
+export interface ReleaseEvidenceTokenPolicyContext {
+  readonly policyVersion: string | null;
+  readonly policyHash: string;
+  readonly policyIrHash: string | null;
+  readonly policyProvenanceSource: ReleasePolicyProvenanceSource | null;
+  readonly compiledPolicyIndexVersion: string | null;
+  readonly compiledPolicyIrVersion: string | null;
+}
+
 export interface ReleaseEvidenceTokenSummary {
   readonly tokenId: string;
   readonly audience: string;
@@ -116,6 +127,7 @@ export interface ReleaseEvidenceTokenSummary {
   readonly policyProvenanceSource: ReleasePolicyProvenanceSource | null;
   readonly compiledPolicyIndexVersion: string | null;
   readonly compiledPolicyIrVersion: string | null;
+  readonly policyContext: ReleaseEvidenceTokenPolicyContext;
 }
 
 export interface ReleaseEvidencePredicate {
@@ -198,6 +210,7 @@ export interface ReleaseEvidencePackVerificationResult {
   readonly policyProvenanceSource: ReleasePolicyProvenanceSource | null;
   readonly compiledPolicyIndexVersion: string | null;
   readonly compiledPolicyIrVersion: string | null;
+  readonly policyContext: ReleaseEvidencePolicyContext;
   readonly releaseTokenId: string | null;
   readonly reviewId: string | null;
   readonly keyId: string;
@@ -264,6 +277,129 @@ function assertNullableStringField(value: unknown, fieldName: string): void {
   }
 }
 
+function assertRequiredStringField(value: unknown, fieldName: string): void {
+  if (typeof value !== 'string') {
+    throw new Error(`Release evidence pack verification requires ${fieldName} to be a string.`);
+  }
+}
+
+function buildDecisionPolicyContext(decision: ReleaseDecision): ReleaseEvidencePolicyContext {
+  return Object.freeze({
+    policyVersion: decision.policyVersion,
+    policyHash: decision.policyHash,
+    policyIrHash: decision.policyProvenance?.compiledPolicyIrHash ?? null,
+    policyProvenanceSource: decision.policyProvenance?.source ?? null,
+    compiledPolicyIndexVersion: decision.policyProvenance?.compiledPolicyIndexVersion ?? null,
+    compiledPolicyIrVersion: decision.policyProvenance?.compiledPolicyIrVersion ?? null,
+  });
+}
+
+function buildEvidencePackPolicyContext(pack: {
+  readonly policyVersion: string;
+  readonly policyHash: string;
+  readonly policyIrHash: string | null;
+  readonly policyProvenanceSource: ReleasePolicyProvenanceSource | null;
+  readonly compiledPolicyIndexVersion: string | null;
+  readonly compiledPolicyIrVersion: string | null;
+}): ReleaseEvidencePolicyContext {
+  return Object.freeze({
+    policyVersion: pack.policyVersion,
+    policyHash: pack.policyHash,
+    policyIrHash: pack.policyIrHash,
+    policyProvenanceSource: pack.policyProvenanceSource,
+    compiledPolicyIndexVersion: pack.compiledPolicyIndexVersion,
+    compiledPolicyIrVersion: pack.compiledPolicyIrVersion,
+  });
+}
+
+function buildTokenPolicyContext(
+  issuedToken: IssuedReleaseToken,
+): ReleaseEvidenceTokenPolicyContext {
+  return Object.freeze({
+    policyVersion: issuedToken.claims.policy_version ?? null,
+    policyHash: issuedToken.claims.policy_hash,
+    policyIrHash: issuedToken.claims.policy_ir_hash ?? null,
+    policyProvenanceSource: issuedToken.claims.policy_provenance_source ?? null,
+    compiledPolicyIndexVersion: issuedToken.claims.compiled_policy_index_version ?? null,
+    compiledPolicyIrVersion: issuedToken.claims.compiled_policy_ir_version ?? null,
+  });
+}
+
+function freezeReleaseEvidencePolicyContext(
+  context: ReleaseEvidencePolicyContext,
+): ReleaseEvidencePolicyContext {
+  return Object.freeze({ ...context });
+}
+
+function freezeReleaseEvidenceTokenPolicyContext(
+  context: ReleaseEvidenceTokenPolicyContext,
+): ReleaseEvidenceTokenPolicyContext {
+  return Object.freeze({ ...context });
+}
+
+function assertReleaseEvidencePolicyContextShape(
+  value: unknown,
+  fieldName: string,
+  policyVersionMode: 'required' | 'nullable',
+): void {
+  if (!value || typeof value !== 'object') {
+    throw new Error(`Release evidence pack verification requires ${fieldName} to be an object.`);
+  }
+  const context = value as Record<string, unknown>;
+  if (policyVersionMode === 'required') {
+    assertRequiredStringField(context.policyVersion, `${fieldName}.policyVersion`);
+  } else {
+    assertNullableStringField(context.policyVersion, `${fieldName}.policyVersion`);
+  }
+  assertRequiredStringField(context.policyHash, `${fieldName}.policyHash`);
+  assertNullableStringField(context.policyIrHash, `${fieldName}.policyIrHash`);
+  assertNullableStringField(
+    context.policyProvenanceSource,
+    `${fieldName}.policyProvenanceSource`,
+  );
+  assertNullableStringField(
+    context.compiledPolicyIndexVersion,
+    `${fieldName}.compiledPolicyIndexVersion`,
+  );
+  assertNullableStringField(
+    context.compiledPolicyIrVersion,
+    `${fieldName}.compiledPolicyIrVersion`,
+  );
+}
+
+function assertPolicyContextMatchesFields(
+  context: ReleaseEvidenceTokenPolicyContext,
+  fields: ReleaseEvidenceTokenPolicyContext,
+  label: string,
+): void {
+  assertSameNullableString(
+    context.policyVersion,
+    fields.policyVersion,
+    `${label} policy version does not match flat policy version.`,
+  );
+  if (context.policyHash !== fields.policyHash) {
+    throw new Error(`${label} policy hash does not match flat policy hash.`);
+  }
+  assertSameNullableString(
+    context.policyIrHash,
+    fields.policyIrHash,
+    `${label} policy IR hash does not match flat policy IR hash.`,
+  );
+  if (context.policyProvenanceSource !== fields.policyProvenanceSource) {
+    throw new Error(`${label} policy provenance source does not match flat policy provenance source.`);
+  }
+  assertSameNullableString(
+    context.compiledPolicyIndexVersion,
+    fields.compiledPolicyIndexVersion,
+    `${label} compiled policy index version does not match flat compiled policy index version.`,
+  );
+  assertSameNullableString(
+    context.compiledPolicyIrVersion,
+    fields.compiledPolicyIrVersion,
+    `${label} compiled policy IR version does not match flat compiled policy IR version.`,
+  );
+}
+
 function resolveIssuedAt(issuedAt?: string): string {
   const resolved = issuedAt ? new Date(issuedAt) : new Date();
   if (Number.isNaN(resolved.getTime())) {
@@ -317,6 +453,7 @@ function summarizeReleaseToken(
   if (!issuedToken) {
     return null;
   }
+  const policyContext = buildTokenPolicyContext(issuedToken);
 
   return {
     tokenId: issuedToken.tokenId,
@@ -325,12 +462,13 @@ function summarizeReleaseToken(
     expiresAt: issuedToken.expiresAt,
     override: issuedToken.claims.override,
     introspectionRequired: issuedToken.claims.introspection_required,
-    policyVersion: issuedToken.claims.policy_version ?? null,
-    policyHash: issuedToken.claims.policy_hash,
-    policyIrHash: issuedToken.claims.policy_ir_hash ?? null,
-    policyProvenanceSource: issuedToken.claims.policy_provenance_source ?? null,
-    compiledPolicyIndexVersion: issuedToken.claims.compiled_policy_index_version ?? null,
-    compiledPolicyIrVersion: issuedToken.claims.compiled_policy_ir_version ?? null,
+    policyVersion: policyContext.policyVersion,
+    policyHash: policyContext.policyHash,
+    policyIrHash: policyContext.policyIrHash,
+    policyProvenanceSource: policyContext.policyProvenanceSource,
+    compiledPolicyIndexVersion: policyContext.compiledPolicyIndexVersion,
+    compiledPolicyIrVersion: policyContext.compiledPolicyIrVersion,
+    policyContext,
   };
 }
 
@@ -338,18 +476,21 @@ function summarizeDecision(
   decision: ReleaseDecision,
   evidencePackId: string,
 ): ReleaseEvidenceDecisionSummary {
+  const policyContext = buildDecisionPolicyContext(decision);
+
   return {
     id: decision.id,
     createdAt: decision.createdAt,
     status: decision.status,
     consequenceType: decision.consequenceType,
     riskClass: decision.riskClass,
-    policyVersion: decision.policyVersion,
-    policyHash: decision.policyHash,
-    policyIrHash: decision.policyProvenance?.compiledPolicyIrHash ?? null,
-    policyProvenanceSource: decision.policyProvenance?.source ?? null,
-    compiledPolicyIndexVersion: decision.policyProvenance?.compiledPolicyIndexVersion ?? null,
-    compiledPolicyIrVersion: decision.policyProvenance?.compiledPolicyIrVersion ?? null,
+    policyVersion: policyContext.policyVersion,
+    policyHash: policyContext.policyHash,
+    policyIrHash: policyContext.policyIrHash,
+    policyProvenanceSource: policyContext.policyProvenanceSource,
+    compiledPolicyIndexVersion: policyContext.compiledPolicyIndexVersion,
+    compiledPolicyIrVersion: policyContext.compiledPolicyIrVersion,
+    policyContext,
     targetId: decision.target.id,
     targetDisplayName: decision.target.displayName ?? null,
     requesterId: decision.requester.id,
@@ -430,17 +571,20 @@ function buildEvidencePack(
   evidencePackId: string,
   artifacts: readonly EvidenceArtifactReference[],
 ): EvidencePack {
+  const policyContext = buildDecisionPolicyContext(decision);
+
   return Object.freeze({
     version: EVIDENCE_PACK_SPEC_VERSION,
     id: evidencePackId,
     outputHash: decision.outputHash,
     consequenceHash: decision.consequenceHash,
-    policyVersion: decision.policyVersion,
-    policyHash: decision.policyHash,
-    policyIrHash: decision.policyProvenance?.compiledPolicyIrHash ?? null,
-    policyProvenanceSource: decision.policyProvenance?.source ?? null,
-    compiledPolicyIndexVersion: decision.policyProvenance?.compiledPolicyIndexVersion ?? null,
-    compiledPolicyIrVersion: decision.policyProvenance?.compiledPolicyIrVersion ?? null,
+    policyVersion: policyContext.policyVersion,
+    policyHash: policyContext.policyHash,
+    policyIrHash: policyContext.policyIrHash,
+    policyProvenanceSource: policyContext.policyProvenanceSource,
+    compiledPolicyIndexVersion: policyContext.compiledPolicyIndexVersion,
+    compiledPolicyIrVersion: policyContext.compiledPolicyIrVersion,
+    policyContext,
     retentionClass: releaseDecisionRetentionClass(decision),
     findings: Object.freeze(decision.findings.map((finding) => Object.freeze({ ...finding }))),
     artifacts,
@@ -556,6 +700,49 @@ function assertPredicateInternalConsistency(statement: ReleaseEvidenceStatement)
     'decision.compiledPolicyIndexVersion',
   );
   assertNullableStringField(decision.compiledPolicyIrVersion, 'decision.compiledPolicyIrVersion');
+  if (evidencePack.policyContext !== undefined) {
+    assertReleaseEvidencePolicyContextShape(
+      evidencePack.policyContext,
+      'evidencePack.policyContext',
+      'required',
+    );
+  }
+  if (decision.policyContext !== undefined) {
+    assertReleaseEvidencePolicyContextShape(
+      decision.policyContext,
+      'decision.policyContext',
+      'required',
+    );
+  }
+  const evidencePackPolicyContext =
+    evidencePack.policyContext ?? buildEvidencePackPolicyContext(evidencePack);
+  const decisionPolicyContext =
+    decision.policyContext ??
+    buildEvidencePackPolicyContext({
+      policyVersion: decision.policyVersion,
+      policyHash: decision.policyHash,
+      policyIrHash: decision.policyIrHash,
+      policyProvenanceSource: decision.policyProvenanceSource,
+      compiledPolicyIndexVersion: decision.compiledPolicyIndexVersion,
+      compiledPolicyIrVersion: decision.compiledPolicyIrVersion,
+    });
+  assertPolicyContextMatchesFields(
+    evidencePackPolicyContext,
+    buildEvidencePackPolicyContext(evidencePack),
+    'Release evidence pack policy context',
+  );
+  assertPolicyContextMatchesFields(
+    decisionPolicyContext,
+    {
+      policyVersion: decision.policyVersion,
+      policyHash: decision.policyHash,
+      policyIrHash: decision.policyIrHash,
+      policyProvenanceSource: decision.policyProvenanceSource,
+      compiledPolicyIndexVersion: decision.compiledPolicyIndexVersion,
+      compiledPolicyIrVersion: decision.compiledPolicyIrVersion,
+    },
+    'Release evidence pack decision policy context',
+  );
   if (releaseToken) {
     assertNullableStringField(releaseToken.policyVersion, 'releaseToken.policyVersion');
     assertNullableStringField(releaseToken.policyIrHash, 'releaseToken.policyIrHash');
@@ -570,6 +757,32 @@ function assertPredicateInternalConsistency(statement: ReleaseEvidenceStatement)
     assertNullableStringField(
       releaseToken.compiledPolicyIrVersion,
       'releaseToken.compiledPolicyIrVersion',
+    );
+    if (releaseToken.policyContext !== undefined) {
+      assertReleaseEvidencePolicyContextShape(
+        releaseToken.policyContext,
+        'releaseToken.policyContext',
+        'nullable',
+      );
+    }
+    assertPolicyContextMatchesFields(
+      releaseToken.policyContext ?? {
+        policyVersion: releaseToken.policyVersion,
+        policyHash: releaseToken.policyHash,
+        policyIrHash: releaseToken.policyIrHash,
+        policyProvenanceSource: releaseToken.policyProvenanceSource,
+        compiledPolicyIndexVersion: releaseToken.compiledPolicyIndexVersion,
+        compiledPolicyIrVersion: releaseToken.compiledPolicyIrVersion,
+      },
+      {
+        policyVersion: releaseToken.policyVersion,
+        policyHash: releaseToken.policyHash,
+        policyIrHash: releaseToken.policyIrHash,
+        policyProvenanceSource: releaseToken.policyProvenanceSource,
+        compiledPolicyIndexVersion: releaseToken.compiledPolicyIndexVersion,
+        compiledPolicyIrVersion: releaseToken.compiledPolicyIrVersion,
+      },
+      'Release evidence pack token policy context',
     );
   }
 
@@ -815,6 +1028,8 @@ export function verifyIssuedReleaseEvidencePack(
     policyProvenanceSource: pack.evidencePack.policyProvenanceSource,
     compiledPolicyIndexVersion: pack.evidencePack.compiledPolicyIndexVersion,
     compiledPolicyIrVersion: pack.evidencePack.compiledPolicyIrVersion,
+    policyContext:
+      pack.evidencePack.policyContext ?? buildEvidencePackPolicyContext(pack.evidencePack),
     releaseTokenId: statement.predicate.releaseToken?.tokenId ?? null,
     reviewId: statement.predicate.review?.reviewId ?? null,
     keyId: signature.keyid,
@@ -827,6 +1042,9 @@ export function verifyIssuedReleaseEvidencePack(
 function freezeEvidencePack(pack: EvidencePack): EvidencePack {
   return Object.freeze({
     ...pack,
+    policyContext: freezeReleaseEvidencePolicyContext(
+      pack.policyContext ?? buildEvidencePackPolicyContext(pack),
+    ),
     findings: Object.freeze(pack.findings.map((finding) => Object.freeze({ ...finding }))),
     artifacts: Object.freeze(pack.artifacts.map((artifact) => Object.freeze({ ...artifact }))),
   });
@@ -837,6 +1055,17 @@ function freezeReleaseEvidenceDecisionSummary(
 ): ReleaseEvidenceDecisionSummary {
   return Object.freeze({
     ...summary,
+    policyContext: freezeReleaseEvidencePolicyContext(
+      summary.policyContext ??
+        buildEvidencePackPolicyContext({
+          policyVersion: summary.policyVersion,
+          policyHash: summary.policyHash,
+          policyIrHash: summary.policyIrHash,
+          policyProvenanceSource: summary.policyProvenanceSource,
+          compiledPolicyIndexVersion: summary.compiledPolicyIndexVersion,
+          compiledPolicyIrVersion: summary.compiledPolicyIrVersion,
+        }),
+    ),
     override: summary.override
       ? Object.freeze({ ...summary.override })
       : null,
@@ -861,7 +1090,21 @@ function freezeReleaseEvidenceReviewSummary(
 function freezeReleaseEvidenceTokenSummary(
   summary: ReleaseEvidenceTokenSummary | null,
 ): ReleaseEvidenceTokenSummary | null {
-  return summary ? Object.freeze({ ...summary }) : null;
+  return summary
+    ? Object.freeze({
+        ...summary,
+        policyContext: freezeReleaseEvidenceTokenPolicyContext(
+          summary.policyContext ?? {
+            policyVersion: summary.policyVersion,
+            policyHash: summary.policyHash,
+            policyIrHash: summary.policyIrHash,
+            policyProvenanceSource: summary.policyProvenanceSource,
+            compiledPolicyIndexVersion: summary.compiledPolicyIndexVersion,
+            compiledPolicyIrVersion: summary.compiledPolicyIrVersion,
+          },
+        ),
+      })
+    : null;
 }
 
 function freezeReleaseEvidenceStatement(

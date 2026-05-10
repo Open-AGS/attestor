@@ -43,6 +43,11 @@ function equal<T>(actual: T, expected: T, message: string): void {
   passed += 1;
 }
 
+function deepEqual<T>(actual: T, expected: T, message: string): void {
+  assert.deepEqual(actual, expected, message);
+  passed += 1;
+}
+
 function dssePreAuthEncoding(payloadType: string, payload: Buffer): Buffer {
   const payloadTypeBuffer = Buffer.from(payloadType, 'utf-8');
   return Buffer.concat([
@@ -263,6 +268,24 @@ async function main(): Promise<void> {
       },
     ],
   });
+  const expectedEvidencePolicyContext = {
+    policyVersion: recordWithToken.releaseDecision.policyVersion,
+    policyHash: recordWithToken.releaseDecision.policyHash,
+    policyIrHash: recordWithToken.releaseDecision.policyProvenance?.compiledPolicyIrHash ?? null,
+    policyProvenanceSource: recordWithToken.releaseDecision.policyProvenance?.source ?? null,
+    compiledPolicyIndexVersion:
+      recordWithToken.releaseDecision.policyProvenance?.compiledPolicyIndexVersion ?? null,
+    compiledPolicyIrVersion:
+      recordWithToken.releaseDecision.policyProvenance?.compiledPolicyIrVersion ?? null,
+  };
+  const expectedTokenPolicyContext = {
+    policyVersion: issuedToken.claims.policy_version ?? null,
+    policyHash: issuedToken.claims.policy_hash,
+    policyIrHash: issuedToken.claims.policy_ir_hash ?? null,
+    policyProvenanceSource: issuedToken.claims.policy_provenance_source ?? null,
+    compiledPolicyIndexVersion: issuedToken.claims.compiled_policy_index_version ?? null,
+    compiledPolicyIrVersion: issuedToken.claims.compiled_policy_ir_version ?? null,
+  };
 
   equal(issuedEvidencePack.evidencePack.id, 'ep_release_evidence_test', 'Release evidence pack: caller-provided pack id is preserved');
   equal(issuedEvidencePack.evidencePack.retentionClass, 'regulated', 'Release evidence pack: regulated finance release gets regulated retention');
@@ -285,6 +308,11 @@ async function main(): Promise<void> {
     issuedEvidencePack.evidencePack.compiledPolicyIrVersion,
     recordWithToken.releaseDecision.policyProvenance?.compiledPolicyIrVersion ?? null,
     'Release evidence pack: durable evidence preserves the compiled policy IR version from the release decision',
+  );
+  deepEqual(
+    issuedEvidencePack.evidencePack.policyContext,
+    expectedEvidencePolicyContext,
+    'Release evidence pack: durable evidence exposes a structured policy context',
   );
   ok(issuedEvidencePack.evidencePack.artifacts.some((artifact) => artifact.kind === 'review-record'), 'Release evidence pack: review-record artifact is captured');
   ok(issuedEvidencePack.evidencePack.artifacts.some((artifact) => artifact.kind === 'signature'), 'Release evidence pack: release-token artifact is captured');
@@ -323,6 +351,11 @@ async function main(): Promise<void> {
     issuedToken.claims.compiled_policy_ir_version ?? null,
     'Release evidence pack: predicate token summary preserves the token compiled policy IR version',
   );
+  deepEqual(
+    issuedEvidencePack.statement.predicate.releaseToken?.policyContext,
+    expectedTokenPolicyContext,
+    'Release evidence pack: predicate token summary exposes a structured policy context',
+  );
   equal(
     issuedEvidencePack.statement.predicate.decision.policyIrHash,
     recordWithToken.releaseDecision.policyProvenance?.compiledPolicyIrHash ?? null,
@@ -342,6 +375,11 @@ async function main(): Promise<void> {
     issuedEvidencePack.statement.predicate.decision.compiledPolicyIrVersion,
     recordWithToken.releaseDecision.policyProvenance?.compiledPolicyIrVersion ?? null,
     'Release evidence pack: predicate decision summary preserves the runtime compiled policy IR version',
+  );
+  deepEqual(
+    issuedEvidencePack.statement.predicate.decision.policyContext,
+    expectedEvidencePolicyContext,
+    'Release evidence pack: predicate decision summary exposes a structured policy context',
   );
   equal(
     issuedEvidencePack.statement.predicate.review?.reviewId,
@@ -408,6 +446,11 @@ async function main(): Promise<void> {
     verification.compiledPolicyIrVersion,
     recordWithToken.releaseDecision.policyProvenance?.compiledPolicyIrVersion ?? null,
     'Release evidence pack: verification result exposes the signed compiled policy IR version',
+  );
+  deepEqual(
+    verification.policyContext,
+    expectedEvidencePolicyContext,
+    'Release evidence pack: verification result exposes the signed structured policy context',
   );
   equal(
     verification.releaseTokenId,
@@ -563,6 +606,10 @@ async function main(): Promise<void> {
         decision: {
           ...issuedEvidencePack.statement.predicate.decision,
           policyHash: 'sha256:inconsistent-decision-policy',
+          policyContext: {
+            ...issuedEvidencePack.statement.predicate.decision.policyContext,
+            policyHash: 'sha256:inconsistent-decision-policy',
+          },
         },
       },
     };
@@ -582,6 +629,37 @@ async function main(): Promise<void> {
     'Release evidence pack: signed decision policy summary must match the signed evidence pack',
   );
 
+  let inconsistentDecisionPolicyContextError: Error | null = null;
+  try {
+    const inconsistentStatement: ReleaseEvidenceStatement = {
+      ...issuedEvidencePack.statement,
+      predicate: {
+        ...issuedEvidencePack.statement.predicate,
+        decision: {
+          ...issuedEvidencePack.statement.predicate.decision,
+          policyContext: {
+            ...issuedEvidencePack.statement.predicate.decision.policyContext,
+            policyHash: 'sha256:inconsistent-decision-policy-context',
+          },
+        },
+      },
+    };
+    verifyIssuedReleaseEvidencePack({
+      issuedEvidencePack: resignEvidencePackStatement({
+        issuedEvidencePack,
+        statement: inconsistentStatement,
+        privateKeyPem: signingKeys.privateKeyPem,
+      }),
+      verificationKey: evidenceIssuer.exportVerificationKey(),
+    });
+  } catch (error) {
+    inconsistentDecisionPolicyContextError = error as Error;
+  }
+  ok(
+    inconsistentDecisionPolicyContextError?.message.includes('decision policy context policy hash'),
+    'Release evidence pack: signed decision policy context must match the signed decision policy fields',
+  );
+
   let inconsistentTokenPolicyError: Error | null = null;
   try {
     const inconsistentStatement: ReleaseEvidenceStatement = {
@@ -592,6 +670,10 @@ async function main(): Promise<void> {
           ? {
               ...issuedEvidencePack.statement.predicate.releaseToken,
               policyHash: 'sha256:inconsistent-token-policy',
+              policyContext: {
+                ...issuedEvidencePack.statement.predicate.releaseToken.policyContext,
+                policyHash: 'sha256:inconsistent-token-policy',
+              },
             }
           : null,
       },
@@ -610,6 +692,39 @@ async function main(): Promise<void> {
   ok(
     inconsistentTokenPolicyError?.message.includes('token summary policy hash'),
     'Release evidence pack: signed token policy summary must match the signed evidence pack',
+  );
+
+  let inconsistentTokenPolicyContextError: Error | null = null;
+  try {
+    const inconsistentStatement: ReleaseEvidenceStatement = {
+      ...issuedEvidencePack.statement,
+      predicate: {
+        ...issuedEvidencePack.statement.predicate,
+        releaseToken: issuedEvidencePack.statement.predicate.releaseToken
+          ? {
+              ...issuedEvidencePack.statement.predicate.releaseToken,
+              policyContext: {
+                ...issuedEvidencePack.statement.predicate.releaseToken.policyContext,
+                policyHash: 'sha256:inconsistent-token-policy-context',
+              },
+            }
+          : null,
+      },
+    };
+    verifyIssuedReleaseEvidencePack({
+      issuedEvidencePack: resignEvidencePackStatement({
+        issuedEvidencePack,
+        statement: inconsistentStatement,
+        privateKeyPem: signingKeys.privateKeyPem,
+      }),
+      verificationKey: evidenceIssuer.exportVerificationKey(),
+    });
+  } catch (error) {
+    inconsistentTokenPolicyContextError = error as Error;
+  }
+  ok(
+    inconsistentTokenPolicyContextError?.message.includes('token policy context policy hash'),
+    'Release evidence pack: signed token policy context must match the signed token policy fields',
   );
 
   let inconsistentSubjectError: Error | null = null;

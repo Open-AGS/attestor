@@ -6,7 +6,9 @@ import {
   RELEASE_LAYER_PUBLIC_SUBPATH,
   releaseLayer,
   releaseLayerPublicSurface,
+  type ReleaseEvidencePolicyContext,
   type ReleaseEvidencePackVerificationResult,
+  type ReleaseEvidenceTokenPolicyContext,
   type ReleaseTokenIntrospectionPolicyContext,
   type ReleaseVerificationPolicyContext,
   type ReleaseVerificationInput,
@@ -113,6 +115,23 @@ function testReleaseLayerNamespaceBindings(): void {
     'compiled-admission-policy-index',
     'release-layer surface exposes structured introspection token policy context',
   );
+  const evidencePolicyContext = {
+    policyVersion: 'policy.release-layer-surface.v1',
+    policyHash: 'sha256:policy',
+    policyIrHash: 'sha256:policy-ir',
+    policyProvenanceSource: 'compiled-admission-policy-index',
+    compiledPolicyIndexVersion: 'attestor.compiled-admission-policy-index.v1',
+    compiledPolicyIrVersion: 'attestor.compiled-admission-policy-ir.v1',
+  } satisfies ReleaseEvidencePolicyContext;
+  const evidenceTokenPolicyContext = {
+    ...evidencePolicyContext,
+    policyVersion: 'policy.release-layer-surface.v1',
+  } satisfies ReleaseEvidenceTokenPolicyContext;
+  assert.equal(
+    evidenceTokenPolicyContext.policyHash,
+    'sha256:policy',
+    'release-layer surface exposes structured evidence token policy context',
+  );
   assert.equal(
     typeof releaseLayer.verification.createReleaseVerificationMiddleware,
     'function',
@@ -138,6 +157,7 @@ function testReleaseLayerNamespaceBindings(): void {
     policyProvenanceSource: 'compiled-admission-policy-index',
     compiledPolicyIndexVersion: 'attestor.compiled-admission-policy-index.v1',
     compiledPolicyIrVersion: 'attestor.compiled-admission-policy-ir.v1',
+    policyContext: evidencePolicyContext,
     releaseTokenId: 'rt_release_layer_surface',
     reviewId: 'rq_release_layer_surface',
     keyId: 'key_release_layer_surface',
@@ -149,6 +169,11 @@ function testReleaseLayerNamespaceBindings(): void {
     evidenceVerification.policyProvenanceSource,
     'compiled-admission-policy-index',
     'release-layer surface exposes policy-provenance-bound evidence verification result',
+  );
+  assert.equal(
+    evidenceVerification.policyContext.compiledPolicyIrVersion,
+    'attestor.compiled-admission-policy-ir.v1',
+    'release-layer surface exposes structured evidence verification policy context',
   );
   assert.equal(
     releaseLayer.review.RELEASE_REVIEWER_QUEUE_SPEC_VERSION,

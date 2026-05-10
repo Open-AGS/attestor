@@ -128,6 +128,23 @@ equal(
   0,
   'telemetry event does not contain sensitive markers',
 );
+const rawPayloadEvent = {
+  ...admittedEvent,
+  attributes: {
+    ...admittedEvent.attributes,
+    rawMarker: 'raw_customer_value_must_not_escape',
+    rawPayloadStored: true,
+  },
+};
+const rawPayloadFindings = cryptoAdmissionTelemetryEventSafetyFindings(rawPayloadEvent);
+ok(
+  rawPayloadFindings.some((finding) => finding.includes('raw payload marker')),
+  'telemetry safety detects raw payload marker',
+);
+ok(
+  rawPayloadFindings.some((finding) => finding.includes('raw payload storage')),
+  'telemetry safety detects raw payload storage declaration',
+);
 
 const blockedPlan = planFixture({
   surface: 'account-abstraction-bundler',

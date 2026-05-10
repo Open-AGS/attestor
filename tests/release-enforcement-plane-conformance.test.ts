@@ -425,6 +425,30 @@ function testConformanceFailures(): void {
   };
   ok(telemetryEventSafetyFindings(unsafeEvent).length > 0, 'Conformance: unsafe telemetry marker is detectable');
 
+  const rawPayloadEvent = {
+    ...createEnforcementTelemetryEvent({
+      source: 'record-write-gateway',
+      observedAt: CHECKED_AT,
+      status: 'allowed',
+      decision,
+      receipt,
+      responseStatus: 200,
+    }),
+    attributes: {
+      'attestor.test.raw_marker': 'raw_customer_value_must_not_escape',
+      'attestor.test.raw_payload_stored': true,
+    },
+  };
+  const rawPayloadFindings = telemetryEventSafetyFindings(rawPayloadEvent);
+  ok(
+    rawPayloadFindings.some((finding) => finding.includes('raw payload marker')),
+    'Conformance: raw payload marker is detectable',
+  );
+  ok(
+    rawPayloadFindings.some((finding) => finding.includes('raw payload storage')),
+    'Conformance: raw payload storage declaration is detectable',
+  );
+
   const badDigestReport = runEnforcementPointConformance({
     id: 'receipt-digest-mismatch',
     result: {

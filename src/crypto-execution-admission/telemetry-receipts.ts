@@ -27,6 +27,40 @@ export const CRYPTO_ADMISSION_TELEMETRY_EVENT_TYPE =
 export const CRYPTO_ADMISSION_RECEIPT_EVENT_TYPE =
   'attestor.crypto_execution_admission.receipt';
 
+const CRYPTO_ADMISSION_TELEMETRY_SENSITIVE_MARKERS = Object.freeze([
+  'bearer ',
+  'jwt.',
+  'private_key',
+  'secret=',
+  'attestor-release-token',
+  'raw-model-prompt',
+  'raw-model-output',
+  'raw-tool-payload',
+  'raw-customer-identifier',
+  'raw-personal-data',
+  'raw-bank-or-payment-data',
+  'raw-wallet-key-or-secret',
+  'raw-recipient-details',
+  'raw-evidence-document',
+  'raw-database-row-or-query-result',
+  'raw-downstream-response',
+  'credential-or-secret',
+  'private-policy-threshold',
+  'raw-idempotency-key',
+  'raw-replay-key',
+] as const);
+
+function containsRawPayloadMarker(material: string): boolean {
+  return material.includes('raw_') && material.includes('must_not_escape');
+}
+
+function declaresRawPayloadStorage(material: string): boolean {
+  return (
+    material.includes('rawpayloadstored":true') ||
+    material.includes('raw_payload_stored":true')
+  );
+}
+
 export const CRYPTO_ADMISSION_TELEMETRY_SIGNALS = [
   'admitted',
   'blocked',
@@ -742,16 +776,16 @@ export function cryptoAdmissionTelemetryEventSafetyFindings(
     data: event.data,
   }).toLowerCase();
   const findings: string[] = [];
-  for (const marker of [
-    'bearer ',
-    'jwt.',
-    'private_key',
-    'secret=',
-    'attestor-release-token',
-  ]) {
+  for (const marker of CRYPTO_ADMISSION_TELEMETRY_SENSITIVE_MARKERS) {
     if (material.includes(marker)) {
       findings.push(`telemetry contains sensitive marker: ${marker.trim()}`);
     }
+  }
+  if (containsRawPayloadMarker(material)) {
+    findings.push('telemetry contains raw payload marker');
+  }
+  if (declaresRawPayloadStorage(material)) {
+    findings.push('telemetry declares raw payload storage');
   }
   return Object.freeze(findings);
 }

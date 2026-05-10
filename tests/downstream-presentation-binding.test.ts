@@ -266,6 +266,12 @@ function testDescriptor(): void {
 function testMatchingPresentationAllows(): void {
   const admission = admittedPayment();
   const binding = paymentBinding(admission);
+  const canonicalPayload = JSON.parse(binding.canonical) as {
+    readonly target?: unknown;
+    readonly targetDigest?: unknown;
+    readonly replayKeyDigest?: unknown;
+    readonly nonceDigest?: unknown;
+  };
   const decision = evaluateConsequenceAdmissionPresentationBinding({
     admission,
     contract: paymentContract(),
@@ -307,20 +313,23 @@ function testMatchingPresentationAllows(): void {
     'Presentation binding: canonical payload does not contain raw nonce',
   );
   equal(
-    binding.canonical.includes('https://payments.example.internal/supplier-payments'),
+    'target' in canonicalPayload,
     false,
-    'Presentation binding: canonical payload does not contain raw target URI',
+    'Presentation binding: canonical payload omits raw target material',
   );
-  ok(
-    binding.canonical.includes('"targetDigest"'),
+  equal(
+    canonicalPayload.targetDigest,
+    binding.targetDigest,
     'Presentation binding: canonical payload includes target digest field',
   );
-  ok(
-    binding.canonical.includes('"replayKeyDigest"'),
+  equal(
+    canonicalPayload.replayKeyDigest,
+    binding.replayKeyDigest,
     'Presentation binding: canonical payload includes replay key digest field',
   );
-  ok(
-    binding.canonical.includes('"nonceDigest"'),
+  equal(
+    canonicalPayload.nonceDigest,
+    binding.nonceDigest,
     'Presentation binding: canonical payload includes nonce digest field',
   );
 }

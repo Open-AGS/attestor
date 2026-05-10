@@ -11,7 +11,7 @@ import {
 } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { withFileLock } from '../platform/file-store.js';
-import type { ReleaseDecision } from './object-model.js';
+import type { ReleaseDecision, ReleasePolicyProvenanceSource } from './object-model.js';
 import { RELEASE_DECISION_STATUSES, type ReleaseDecisionStatus } from './types.js';
 
 /**
@@ -52,6 +52,9 @@ export interface ReleaseDecisionLogMetadata {
   readonly requiresReview: boolean;
   readonly deterministicChecksCompleted: boolean;
   readonly effectivePolicyId: string | null;
+  readonly policyHash?: string | null;
+  readonly policyIrHash?: string | null;
+  readonly policyProvenanceSource?: ReleasePolicyProvenanceSource | null;
   readonly rolloutMode: string | null;
   readonly rolloutEvaluationMode: string | null;
   readonly rolloutReason: string | null;
@@ -121,6 +124,7 @@ function digestDecision(decision: ReleaseDecision): string {
       status: decision.status,
       policyVersion: decision.policyVersion,
       policyHash: decision.policyHash,
+      policyProvenance: decision.policyProvenance ?? null,
       outputHash: decision.outputHash,
       consequenceHash: decision.consequenceHash,
       consequenceType: decision.consequenceType,
@@ -163,6 +167,9 @@ function snapshotMetadata(metadata: ReleaseDecisionLogMetadata): ReleaseDecision
     requiresReview: metadata.requiresReview,
     deterministicChecksCompleted: metadata.deterministicChecksCompleted,
     effectivePolicyId: metadata.effectivePolicyId,
+    policyHash: metadata.policyHash ?? null,
+    policyIrHash: metadata.policyIrHash ?? null,
+    policyProvenanceSource: metadata.policyProvenanceSource ?? null,
     rolloutMode: metadata.rolloutMode,
     rolloutEvaluationMode: metadata.rolloutEvaluationMode,
     rolloutReason: metadata.rolloutReason,
@@ -187,6 +194,22 @@ function requireString(value: unknown, fieldName: string, lineNumber: number): s
 function requireNullableString(value: unknown, fieldName: string, lineNumber: number): string | null {
   if (value === null) return null;
   return requireString(value, fieldName, lineNumber);
+}
+
+function requireNullablePolicyProvenanceSource(
+  value: unknown,
+  fieldName: string,
+  lineNumber: number,
+): ReleasePolicyProvenanceSource | null {
+  if (value === null || value === undefined) {
+    return null;
+  }
+  if (value === 'compiled-admission-policy-index' || value === 'policy-definition') {
+    return value;
+  }
+  throw new ReleaseDecisionLogStoreError(
+    `Release decision log line ${lineNumber} has invalid ${fieldName}.`,
+  );
 }
 
 function requireNumber(value: unknown, fieldName: string, lineNumber: number): number {
@@ -276,6 +299,17 @@ function normalizeLoadedMetadata(
     effectivePolicyId: requireNullableString(
       value.effectivePolicyId,
       'metadata.effectivePolicyId',
+      lineNumber,
+    ),
+    policyHash: requireNullableString(value.policyHash ?? null, 'metadata.policyHash', lineNumber),
+    policyIrHash: requireNullableString(
+      value.policyIrHash ?? null,
+      'metadata.policyIrHash',
+      lineNumber,
+    ),
+    policyProvenanceSource: requireNullablePolicyProvenanceSource(
+      value.policyProvenanceSource,
+      'metadata.policyProvenanceSource',
       lineNumber,
     ),
     rolloutMode: requireNullableString(value.rolloutMode, 'metadata.rolloutMode', lineNumber),

@@ -68,6 +68,11 @@ export interface RegisteredReleaseToken {
   readonly outputHash: string;
   readonly consequenceHash: string;
   readonly policyHash: string;
+  readonly policyVersion?: string;
+  readonly policyIrHash?: string | null;
+  readonly policyProvenanceSource?: ReleaseTokenClaims['policy_provenance_source'] | null;
+  readonly compiledPolicyIndexVersion?: string | null;
+  readonly compiledPolicyIrVersion?: string | null;
   readonly override: boolean;
   readonly introspectionRequired: boolean;
   readonly authorityMode: ReleaseDecision['reviewAuthority']['mode'];
@@ -158,6 +163,11 @@ export interface ActiveReleaseTokenIntrospectionResult
   readonly output_hash: string;
   readonly consequence_hash: string;
   readonly policy_hash: string;
+  readonly policy_version?: string;
+  readonly policy_ir_hash?: string;
+  readonly policy_provenance_source?: ReleaseTokenClaims['policy_provenance_source'];
+  readonly compiled_policy_index_version?: string;
+  readonly compiled_policy_ir_version?: string;
   readonly override: boolean;
   readonly authority_mode: ReleaseTokenClaims['authority_mode'];
   readonly introspection_required: boolean;
@@ -256,6 +266,12 @@ function registeredReleaseTokenMatchesClaims(
     record.outputHash === claims.output_hash &&
     record.consequenceHash === claims.consequence_hash &&
     record.policyHash === claims.policy_hash &&
+    (record.policyVersion ?? null) === (claims.policy_version ?? null) &&
+    (record.policyIrHash ?? null) === (claims.policy_ir_hash ?? null) &&
+    (record.policyProvenanceSource ?? null) === (claims.policy_provenance_source ?? null) &&
+    (record.compiledPolicyIndexVersion ?? null) ===
+      (claims.compiled_policy_index_version ?? null) &&
+    (record.compiledPolicyIrVersion ?? null) === (claims.compiled_policy_ir_version ?? null) &&
     record.override === claims.override &&
     record.introspectionRequired === claims.introspection_required &&
     record.authorityMode === claims.authority_mode
@@ -306,6 +322,23 @@ function buildRegisteredReleaseToken(
     outputHash: decision.outputHash,
     consequenceHash: decision.consequenceHash,
     policyHash: decision.policyHash,
+    policyVersion: issuedToken.claims.policy_version ?? decision.policyVersion,
+    policyIrHash:
+      issuedToken.claims.policy_ir_hash ??
+      decision.policyProvenance?.compiledPolicyIrHash ??
+      null,
+    policyProvenanceSource:
+      issuedToken.claims.policy_provenance_source ??
+      decision.policyProvenance?.source ??
+      null,
+    compiledPolicyIndexVersion:
+      issuedToken.claims.compiled_policy_index_version ??
+      decision.policyProvenance?.compiledPolicyIndexVersion ??
+      null,
+    compiledPolicyIrVersion:
+      issuedToken.claims.compiled_policy_ir_version ??
+      decision.policyProvenance?.compiledPolicyIrVersion ??
+      null,
     override: decision.override !== null || decision.status === 'overridden',
     introspectionRequired: issuedToken.claims.introspection_required,
     authorityMode: decision.reviewAuthority.mode,
@@ -703,6 +736,17 @@ export async function introspectReleaseToken(
     output_hash: verified.claims.output_hash,
     consequence_hash: verified.claims.consequence_hash,
     policy_hash: verified.claims.policy_hash,
+    ...(verified.claims.policy_version ? { policy_version: verified.claims.policy_version } : {}),
+    ...(verified.claims.policy_ir_hash ? { policy_ir_hash: verified.claims.policy_ir_hash } : {}),
+    ...(verified.claims.policy_provenance_source
+      ? { policy_provenance_source: verified.claims.policy_provenance_source }
+      : {}),
+    ...(verified.claims.compiled_policy_index_version
+      ? { compiled_policy_index_version: verified.claims.compiled_policy_index_version }
+      : {}),
+    ...(verified.claims.compiled_policy_ir_version
+      ? { compiled_policy_ir_version: verified.claims.compiled_policy_ir_version }
+      : {}),
     override: verified.claims.override,
     authority_mode: verified.claims.authority_mode,
     introspection_required: verified.claims.introspection_required,

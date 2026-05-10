@@ -16,6 +16,8 @@ import {
 } from '../src/release-kernel/release-verification.js';
 
 let passed = 0;
+const POLICY_HASH = 'sha256:policy-runtime-verification';
+const POLICY_IR_HASH = 'sha256:policy-ir-runtime-verification';
 
 function ok(condition: unknown, message: string): void {
   assert.ok(condition, message);
@@ -43,7 +45,20 @@ async function main(): Promise<void> {
     createdAt: '2026-04-17T21:00:00.000Z',
     status: 'accepted',
     policyVersion: 'finance.structured-record-release.v1',
-    policyHash: 'finance.structured-record-release.v1',
+    policyHash: POLICY_HASH,
+    policyProvenance: {
+      source: 'compiled-admission-policy-index',
+      policyId: 'finance.structured-record-release.v1',
+      policySpecVersion: 'attestor.release-policy.v1',
+      policyHash: POLICY_HASH,
+      compiledPolicyHash: POLICY_HASH,
+      compiledPolicyIrHash: POLICY_IR_HASH,
+      compiledPolicyIndexVersion: 'attestor.compiled-admission-policy-index.v1',
+      compiledPolicyIrVersion: 'attestor.compiled-admission-policy-ir.v1',
+      verificationValid: true,
+      verificationErrorCodes: [],
+      verificationWarningCodes: [],
+    },
     outputHash: 'sha256:output',
     consequenceHash: 'sha256:consequence',
     outputContract: {
@@ -83,6 +98,8 @@ async function main(): Promise<void> {
     expectedTargetId: 'finance.reporting.record-store',
     expectedOutputHash: 'sha256:output',
     expectedConsequenceHash: 'sha256:consequence',
+    expectedPolicyHash: POLICY_HASH,
+    expectedPolicyIrHash: POLICY_IR_HASH,
     currentDate: '2026-04-17T21:01:00.000Z',
     introspector,
     tokenTypeHint: 'attestor_release_token',
@@ -98,6 +115,11 @@ async function main(): Promise<void> {
     verified.expectedOutputHash,
     'sha256:output',
     'Release verification: downstream expected output hash is bound into the verification context',
+  );
+  equal(
+    verified.expectedPolicyIrHash,
+    POLICY_IR_HASH,
+    'Release verification: downstream expected policy IR hash is bound into the verification context',
   );
   ok(
     verified.introspection?.active === true,
@@ -183,6 +205,24 @@ async function main(): Promise<void> {
       }),
     /output hash does not match/,
     'Release verification: output hash mismatch is rejected instead of silently trusting the token',
+  );
+  passed += 1;
+
+  await assert.rejects(
+    () =>
+      verifyReleaseAuthorization({
+        token: issued.token,
+        verificationKey,
+        audience: 'finance.reporting.record-store',
+        expectedTargetId: 'finance.reporting.record-store',
+        expectedOutputHash: 'sha256:output',
+        expectedConsequenceHash: 'sha256:consequence',
+        expectedPolicyIrHash: 'sha256:wrong-policy-ir',
+        currentDate: '2026-04-17T21:01:00.000Z',
+        introspector,
+      }),
+    /policy IR hash does not match/,
+    'Release verification: policy IR hash mismatch is rejected instead of admitting a token from a different compiled policy',
   );
   passed += 1;
 
@@ -292,6 +332,8 @@ async function main(): Promise<void> {
       expectedTargetId: 'finance.reporting.record-store',
       expectedOutputHash: 'sha256:output',
       expectedConsequenceHash: 'sha256:consequence',
+      expectedPolicyHash: POLICY_HASH,
+      expectedPolicyIrHash: POLICY_IR_HASH,
       currentDate: '2026-04-17T21:01:00.000Z',
       introspector,
       tokenTypeHint: 'attestor_release_token',

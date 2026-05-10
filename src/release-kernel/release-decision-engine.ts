@@ -2,6 +2,7 @@ import type {
   ReleaseActorReference,
   ReleaseDecision,
   ReleaseFinding,
+  ReleasePolicyProvenance,
   ReleaseTargetReference,
 } from './object-model.js';
 import { createReleaseDecisionSkeleton } from './object-model.js';
@@ -10,6 +11,7 @@ import type {
   CompiledAdmissionPolicyIndexEntry,
 } from './compiled-policy-index.js';
 import {
+  COMPILED_ADMISSION_POLICY_INDEX_VERSION,
   createCompiledAdmissionPolicyIndex,
   resolveCompiledAdmissionPolicyIndexEntries,
   resolveCompiledAdmissionPolicyIndexEntry,
@@ -131,6 +133,45 @@ function buildPendingChecksFinding(policyId: string): ReleaseFinding {
     message: `Release policy ${policyId} matched. Deterministic release checks must run before final release.`,
     source: 'policy',
   };
+}
+
+function buildPolicyProvenance(
+  resolution: EffectiveReleasePolicyResolution,
+): ReleasePolicyProvenance {
+  const compiledPolicy = resolution.effectiveCompiledPolicy;
+  if (compiledPolicy) {
+    return Object.freeze({
+      source: 'compiled-admission-policy-index',
+      policyId: compiledPolicy.compiled.sourcePolicyId,
+      policySpecVersion: compiledPolicy.compiled.sourcePolicyVersion,
+      policyHash: compiledPolicy.compiled.policyHash,
+      compiledPolicyHash: compiledPolicy.compiled.policyHash,
+      compiledPolicyIrHash: compiledPolicy.compiled.irHash,
+      compiledPolicyIndexVersion: COMPILED_ADMISSION_POLICY_INDEX_VERSION,
+      compiledPolicyIrVersion: compiledPolicy.compiled.version,
+      verificationValid: compiledPolicy.verification.valid,
+      verificationErrorCodes: Object.freeze(
+        compiledPolicy.verification.errors.map((finding) => finding.code),
+      ),
+      verificationWarningCodes: Object.freeze(
+        compiledPolicy.verification.warnings.map((finding) => finding.code),
+      ),
+    });
+  }
+
+  return Object.freeze({
+    source: 'policy-definition',
+    policyId: resolution.effectivePolicy.id,
+    policySpecVersion: resolution.effectivePolicy.version,
+    policyHash: resolution.effectivePolicy.id,
+    compiledPolicyHash: null,
+    compiledPolicyIrHash: null,
+    compiledPolicyIndexVersion: null,
+    compiledPolicyIrVersion: null,
+    verificationValid: null,
+    verificationErrorCodes: Object.freeze([]),
+    verificationWarningCodes: Object.freeze([]),
+  });
 }
 
 function buildRolloutContext(
@@ -275,6 +316,9 @@ function logEvaluation(
         requiresReview: result.plan.requiresReview,
         deterministicChecksCompleted,
         effectivePolicyId: result.plan.effectivePolicyId,
+        policyHash: result.decision.policyHash,
+        policyIrHash: result.decision.policyProvenance?.compiledPolicyIrHash ?? null,
+        policyProvenanceSource: result.decision.policyProvenance?.source ?? null,
         rolloutMode: result.plan.rolloutMode,
         rolloutEvaluationMode: result.plan.rolloutEvaluationMode,
         rolloutReason: result.plan.rolloutReason,
@@ -358,6 +402,7 @@ export function evaluateReleaseDecisionSkeleton(
     status: 'hold',
     policyVersion: effectivePolicy.id,
     policyHash: resolvedPolicy.effectiveCompiledPolicy?.compiled.policyHash ?? effectivePolicy.id,
+    policyProvenance: buildPolicyProvenance(resolvedPolicy),
     outputHash: input.outputHash,
     consequenceHash: input.consequenceHash,
     outputContract: input.outputContract,

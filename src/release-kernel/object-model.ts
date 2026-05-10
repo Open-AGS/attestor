@@ -117,6 +117,7 @@ export interface EvidencePack {
   readonly consequenceHash: string;
   readonly policyVersion: string;
   readonly policyHash: string;
+  readonly policyIrHash?: string | null;
   readonly retentionClass: EvidenceRetentionClass;
   readonly findings: readonly ReleaseFinding[];
   readonly artifacts: readonly EvidenceArtifactReference[];
@@ -128,6 +129,24 @@ export interface OverrideGrant {
   readonly requestedBy: ReleaseActorReference;
 }
 
+export type ReleasePolicyProvenanceSource =
+  | 'compiled-admission-policy-index'
+  | 'policy-definition';
+
+export interface ReleasePolicyProvenance {
+  readonly source: ReleasePolicyProvenanceSource;
+  readonly policyId: string;
+  readonly policySpecVersion: string;
+  readonly policyHash: string;
+  readonly compiledPolicyHash: string | null;
+  readonly compiledPolicyIrHash: string | null;
+  readonly compiledPolicyIndexVersion: string | null;
+  readonly compiledPolicyIrVersion: string | null;
+  readonly verificationValid: boolean | null;
+  readonly verificationErrorCodes: readonly string[];
+  readonly verificationWarningCodes: readonly string[];
+}
+
 export interface ReleaseDecision {
   readonly version: typeof RELEASE_DECISION_SPEC_VERSION;
   readonly id: string;
@@ -137,6 +156,7 @@ export interface ReleaseDecision {
   readonly riskClass: RiskClass;
   readonly policyVersion: string;
   readonly policyHash: string;
+  readonly policyProvenance?: ReleasePolicyProvenance | null;
   readonly outputContract: OutputContractDescriptor;
   readonly capabilityBoundary: CapabilityBoundaryDescriptor;
   readonly outputHash: string;
@@ -182,6 +202,12 @@ export interface ReleaseTokenClaims {
   readonly output_hash: string;
   readonly consequence_hash: string;
   readonly policy_hash: string;
+  readonly policy_id?: string;
+  readonly policy_version?: string;
+  readonly policy_ir_hash?: string;
+  readonly policy_provenance_source?: ReleasePolicyProvenanceSource;
+  readonly compiled_policy_index_version?: string;
+  readonly compiled_policy_ir_version?: string;
   readonly override: boolean;
   readonly introspection_required: boolean;
   readonly authority_mode: ReviewAuthorityMode;
@@ -202,6 +228,7 @@ export interface CreateReleaseDecisionSkeletonInput {
   readonly status: ReleaseDecisionStatus;
   readonly policyVersion: string;
   readonly policyHash: string;
+  readonly policyProvenance?: ReleasePolicyProvenance | null;
   readonly outputHash: string;
   readonly consequenceHash: string;
   readonly outputContract: OutputContractDescriptor;
@@ -327,6 +354,7 @@ export function createReleaseDecisionSkeleton(
     riskClass,
     policyVersion: input.policyVersion,
     policyHash: input.policyHash,
+    policyProvenance: input.policyProvenance ?? null,
     outputContract: input.outputContract,
     capabilityBoundary: input.capabilityBoundary,
     outputHash: input.outputHash,
@@ -365,6 +393,8 @@ export function releaseDecisionMaxUses(decision: ReleaseDecision): number | null
 }
 
 export function buildReleaseTokenClaims(input: BuildReleaseTokenClaimsInput): ReleaseTokenClaims {
+  const policyProvenance = input.decision.policyProvenance ?? null;
+
   return {
     version: RELEASE_TOKEN_SPEC_VERSION,
     iss: input.issuer,
@@ -381,6 +411,22 @@ export function buildReleaseTokenClaims(input: BuildReleaseTokenClaimsInput): Re
     output_hash: input.decision.outputHash,
     consequence_hash: input.decision.consequenceHash,
     policy_hash: input.decision.policyHash,
+    policy_version: input.decision.policyVersion,
+    ...(policyProvenance
+      ? {
+          policy_id: policyProvenance.policyId,
+          policy_provenance_source: policyProvenance.source,
+        }
+      : {}),
+    ...(policyProvenance?.compiledPolicyIrHash
+      ? { policy_ir_hash: policyProvenance.compiledPolicyIrHash }
+      : {}),
+    ...(policyProvenance?.compiledPolicyIndexVersion
+      ? { compiled_policy_index_version: policyProvenance.compiledPolicyIndexVersion }
+      : {}),
+    ...(policyProvenance?.compiledPolicyIrVersion
+      ? { compiled_policy_ir_version: policyProvenance.compiledPolicyIrVersion }
+      : {}),
     override: input.decision.override !== null || input.decision.status === 'overridden',
     introspection_required: releaseDecisionRequiresIntrospection(input.decision),
     authority_mode: input.decision.reviewAuthority.mode,

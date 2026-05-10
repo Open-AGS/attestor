@@ -15,6 +15,7 @@ import {
 import {
   createVerificationResult,
   type EnforcementRequest,
+  type ReleaseEnforcementPolicyContext,
   type ReleasePresentation,
   type VerificationResult,
 } from './object-model.js';
@@ -613,6 +614,19 @@ function asyncEnvelopeExpectedQueueOrTopic(
     : null;
 }
 
+function policyContextFromClaims(
+  claims: ReleaseTokenClaims,
+): ReleaseEnforcementPolicyContext {
+  return Object.freeze({
+    policyHash: claims.policy_hash,
+    policyVersion: claims.policy_version ?? null,
+    policyIrHash: claims.policy_ir_hash ?? null,
+    policyProvenanceSource: claims.policy_provenance_source ?? null,
+    compiledPolicyIndexVersion: claims.compiled_policy_index_version ?? null,
+    compiledPolicyIrVersion: claims.compiled_policy_ir_version ?? null,
+  });
+}
+
 async function signedJsonEnvelopeBindingFailureReasons(
   input: OfflineReleaseVerificationInput,
   claims: ReleaseTokenClaims,
@@ -657,6 +671,7 @@ async function signedJsonEnvelopeBindingFailureReasons(
     expectedPolicyProvenanceSource: claims.policy_provenance_source ?? null,
     expectedCompiledPolicyIndexVersion: claims.compiled_policy_index_version ?? null,
     expectedCompiledPolicyIrVersion: claims.compiled_policy_ir_version ?? null,
+    expectedPolicyContext: policyContextFromClaims(claims),
     expectedConsequenceType: claims.consequence_type,
     expectedRiskClass: claims.risk_class,
     expectedIdempotencyKey:

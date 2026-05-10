@@ -433,6 +433,11 @@ async function testOfflineVerifierAcceptsAsyncEnvelope(): Promise<void> {
   equal(verified.status, 'indeterminate', 'Async envelopes: offline verifier verifies async envelope before live liveness');
   equal(verified.offlineVerified, true, 'Async envelopes: offline verifier records local envelope success');
   deepEqual(verified.failureReasons, ['fresh-introspection-required'], 'Async envelopes: async-message still requires live liveness by profile');
+  deepEqual(
+    verified.verificationResult.policyContext,
+    expectedPolicyContext(),
+    'Async envelopes: offline verifier preserves structured policy context',
+  );
   equal(verified.freshness?.replay.replayKey, envelope.replayKey, 'Async envelopes: freshness tracks envelope replay key');
   equal(verified.freshness?.replay.subjectKind, 'signed-json-envelope', 'Async envelopes: freshness tracks signed envelope subject kind');
 }

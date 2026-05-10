@@ -7,6 +7,7 @@ import {
   releaseLayer,
   releaseLayerPublicSurface,
   type ReleaseEvidencePackVerificationResult,
+  type ReleaseTokenIntrospectionPolicyContext,
   type ReleaseVerificationPolicyContext,
   type ReleaseVerificationInput,
 } from '../src/release-layer/index.js';
@@ -98,6 +99,19 @@ function testReleaseLayerNamespaceBindings(): void {
     verifiedPolicyContext.compiledPolicyIndexVersion,
     'attestor.compiled-admission-policy-index.v1',
     'release-layer surface exposes direct verified token policy provenance context',
+  );
+  const introspectionPolicyContext = {
+    policy_hash: 'sha256:policy',
+    policy_version: 'policy.release-layer-surface.v1',
+    policy_ir_hash: 'sha256:policy-ir',
+    policy_provenance_source: 'compiled-admission-policy-index',
+    compiled_policy_index_version: 'attestor.compiled-admission-policy-index.v1',
+    compiled_policy_ir_version: 'attestor.compiled-admission-policy-ir.v1',
+  } satisfies ReleaseTokenIntrospectionPolicyContext;
+  assert.equal(
+    introspectionPolicyContext.policy_provenance_source,
+    'compiled-admission-policy-index',
+    'release-layer surface exposes structured introspection token policy context',
   );
   assert.equal(
     typeof releaseLayer.verification.createReleaseVerificationMiddleware,

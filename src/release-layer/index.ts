@@ -72,6 +72,8 @@ export type RegisterIssuedReleaseTokenInput = introspection.RegisterIssuedReleas
 export type RevokeReleaseTokenInput = introspection.RevokeReleaseTokenInput;
 export type RecordReleaseTokenUseInput = introspection.RecordReleaseTokenUseInput;
 export type RecordedReleaseTokenUseResult = introspection.RecordedReleaseTokenUseResult;
+export type ReleaseTokenIntrospectionPolicyContext =
+  introspection.ReleaseTokenIntrospectionPolicyContext;
 export type ReleaseTokenInactiveReason = introspection.ReleaseTokenInactiveReason;
 export type ReleaseTokenIntrospectionStore = introspection.ReleaseTokenIntrospectionStore;
 export type ReleaseTokenIntrospector = introspection.ReleaseTokenIntrospector;

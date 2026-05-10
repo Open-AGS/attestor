@@ -129,6 +129,36 @@ async function main(): Promise<void> {
       'Release introspection: active response preserves the policy IR hash',
     );
     equal(
+      active.token_policy.policy_hash,
+      POLICY_HASH,
+      'Release introspection: active response exposes structured token policy hash',
+    );
+    equal(
+      active.token_policy.policy_version,
+      'finance.structured-record-release.v1',
+      'Release introspection: active response exposes structured token policy version',
+    );
+    equal(
+      active.token_policy.policy_ir_hash,
+      POLICY_IR_HASH,
+      'Release introspection: active response exposes structured token policy IR hash',
+    );
+    equal(
+      active.token_policy.policy_provenance_source,
+      'compiled-admission-policy-index',
+      'Release introspection: active response exposes structured token policy provenance source',
+    );
+    equal(
+      active.token_policy.compiled_policy_index_version,
+      'attestor.compiled-admission-policy-index.v1',
+      'Release introspection: active response exposes structured compiled policy index version',
+    );
+    equal(
+      active.token_policy.compiled_policy_ir_version,
+      'attestor.compiled-admission-policy-ir.v1',
+      'Release introspection: active response exposes structured compiled policy IR version',
+    );
+    equal(
       active.resource_server_id,
       'attestor.tests.release-introspection',
       'Release introspection: resource server id is echoed for audit correlation',

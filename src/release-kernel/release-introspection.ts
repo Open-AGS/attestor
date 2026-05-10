@@ -145,6 +145,15 @@ export interface InactiveReleaseTokenIntrospectionResult
   readonly inactive_reason: ReleaseTokenInactiveReason;
 }
 
+export interface ReleaseTokenIntrospectionPolicyContext {
+  readonly policy_hash: string;
+  readonly policy_version?: string;
+  readonly policy_ir_hash?: string;
+  readonly policy_provenance_source?: ReleaseTokenClaims['policy_provenance_source'];
+  readonly compiled_policy_index_version?: string;
+  readonly compiled_policy_ir_version?: string;
+}
+
 export interface ActiveReleaseTokenIntrospectionResult
   extends ReleaseTokenIntrospectionBase {
   readonly active: true;
@@ -168,6 +177,7 @@ export interface ActiveReleaseTokenIntrospectionResult
   readonly policy_provenance_source?: ReleaseTokenClaims['policy_provenance_source'];
   readonly compiled_policy_index_version?: string;
   readonly compiled_policy_ir_version?: string;
+  readonly token_policy: ReleaseTokenIntrospectionPolicyContext;
   readonly override: boolean;
   readonly authority_mode: ReleaseTokenClaims['authority_mode'];
   readonly introspection_required: boolean;
@@ -231,6 +241,25 @@ function inactiveReleaseTokenIntrospection(
     checked_at: introspectionTimestamp(currentDate),
     resource_server_id: resourceServerId ?? null,
   };
+}
+
+function releaseTokenIntrospectionPolicyContext(
+  claims: ReleaseTokenClaims,
+): ReleaseTokenIntrospectionPolicyContext {
+  return Object.freeze({
+    policy_hash: claims.policy_hash,
+    ...(claims.policy_version ? { policy_version: claims.policy_version } : {}),
+    ...(claims.policy_ir_hash ? { policy_ir_hash: claims.policy_ir_hash } : {}),
+    ...(claims.policy_provenance_source
+      ? { policy_provenance_source: claims.policy_provenance_source }
+      : {}),
+    ...(claims.compiled_policy_index_version
+      ? { compiled_policy_index_version: claims.compiled_policy_index_version }
+      : {}),
+    ...(claims.compiled_policy_ir_version
+      ? { compiled_policy_ir_version: claims.compiled_policy_ir_version }
+      : {}),
+  });
 }
 
 function normalizeSupportedTokenTypeHint(
@@ -747,6 +776,7 @@ export async function introspectReleaseToken(
     ...(verified.claims.compiled_policy_ir_version
       ? { compiled_policy_ir_version: verified.claims.compiled_policy_ir_version }
       : {}),
+    token_policy: releaseTokenIntrospectionPolicyContext(verified.claims),
     override: verified.claims.override,
     authority_mode: verified.claims.authority_mode,
     introspection_required: verified.claims.introspection_required,

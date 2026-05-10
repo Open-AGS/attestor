@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { policy } from '../src/release-layer/index.js';
+import { compileReleasePolicyDefinition } from '../src/release-kernel/compiled-policy-ir.js';
 import {
   POLICY_ACTIVATION_RECORD_SPEC_VERSION,
   POLICY_BUNDLE_MANIFEST_SPEC_VERSION,
@@ -57,6 +58,8 @@ function testPolicyBundleManifestAndEntry(): void {
     createdAt: '2026-04-17T10:00:00.000Z',
     latestBundleRef: sampleBundleReference(),
   });
+  const definition = samplePolicyDefinition();
+  const compiled = compileReleasePolicyDefinition(definition);
   const entry = createPolicyBundleEntry({
     id: 'entry-record-r4',
     scopeTarget: createPolicyActivationTarget({
@@ -67,7 +70,7 @@ function testPolicyBundleManifestAndEntry(): void {
       consequenceType: 'record',
       riskClass: 'R4',
     }),
-    definition: samplePolicyDefinition(),
+    definition,
     policyHash: 'sha256:0f0f0f',
   });
   const manifest = createPolicyBundleManifest({
@@ -89,6 +92,8 @@ function testPolicyBundleManifestAndEntry(): void {
     'consequence-type',
     'risk-class',
   ]);
+  assert.equal(manifest.entries[0]?.compiledPolicyHash, compiled.policyHash);
+  assert.equal(manifest.entries[0]?.compiledPolicyIrHash, compiled.irHash);
   assert.equal(manifest.compatibility.releasePolicySpecVersion, policy.RELEASE_POLICY_SPEC_VERSION);
 }
 
@@ -222,4 +227,4 @@ testFrozenActivationRequiresReason();
 testHistoricalActivationRequiresSupersessionLink();
 testControlPlaneMetadataAndCompatibility();
 
-console.log('Release policy control-plane object-model tests: 31 passed, 0 failed');
+console.log('Release policy control-plane object-model tests: 33 passed, 0 failed');

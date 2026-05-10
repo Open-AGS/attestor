@@ -21,6 +21,7 @@ import {
   type ReleasePolicyRolloutDefinition,
   type ReleasePolicyRolloutMode,
 } from '../release-layer/index.js';
+import { compileReleasePolicyDefinition } from '../release-kernel/compiled-policy-ir.js';
 
 export const POLICY_PACK_SPEC_VERSION = 'attestor.policy-pack.v1';
 export const POLICY_BUNDLE_MANIFEST_SPEC_VERSION =
@@ -73,6 +74,8 @@ export interface PolicyBundleEntry {
   readonly definition: ReleasePolicyDefinition;
   readonly rollout: ReleasePolicyRolloutDefinition;
   readonly policyHash: string;
+  readonly compiledPolicyHash: string;
+  readonly compiledPolicyIrHash: string;
 }
 
 export interface PolicyBundleManifest {
@@ -146,6 +149,8 @@ export interface CreatePolicyBundleEntryInput {
   readonly scopeTarget: PolicyActivationTarget;
   readonly definition: ReleasePolicyDefinition;
   readonly policyHash: string;
+  readonly compiledPolicyHash?: string;
+  readonly compiledPolicyIrHash?: string;
 }
 
 export interface CreatePolicyBundleManifestInput {
@@ -266,6 +271,8 @@ export function createPolicyPackMetadata(
 export function createPolicyBundleEntry(
   input: CreatePolicyBundleEntryInput,
 ): PolicyBundleEntry {
+  const compiled = compileReleasePolicyDefinition(input.definition);
+
   return Object.freeze({
     id: normalizeIdentifier(input.id, 'policy bundle entry id'),
     policyId: input.definition.id,
@@ -273,6 +280,14 @@ export function createPolicyBundleEntry(
     definition: input.definition,
     rollout: input.definition.rollout,
     policyHash: normalizeIdentifier(input.policyHash, 'policy bundle entry hash'),
+    compiledPolicyHash: normalizeIdentifier(
+      input.compiledPolicyHash ?? compiled.policyHash,
+      'compiled policy hash',
+    ),
+    compiledPolicyIrHash: normalizeIdentifier(
+      input.compiledPolicyIrHash ?? compiled.irHash,
+      'compiled policy IR hash',
+    ),
   });
 }
 

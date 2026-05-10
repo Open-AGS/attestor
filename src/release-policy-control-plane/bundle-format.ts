@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { compileReleasePolicyDefinition } from '../release-kernel/compiled-policy-ir.js';
 import { canonicalizeReleaseJson } from '../release-kernel/release-canonicalization.js';
 import {
   type PolicyBundleEntry,
@@ -156,6 +157,8 @@ export function computePolicyBundleEntryDigest(entry: PolicyBundleEntry): string
       },
       definition: entry.definition as never,
       rollout: entry.rollout as never,
+      compiledPolicyHash: entry.compiledPolicyHash,
+      compiledPolicyIrHash: entry.compiledPolicyIrHash,
     } as never),
   );
 }
@@ -186,6 +189,18 @@ function assertBundleIntegrity(
         `Policy bundle entry '${entry.id}' has policyHash '${entry.policyHash}' but expected '${expectedDigest}'.`,
       );
     }
+
+    const compiled = compileReleasePolicyDefinition(entry.definition);
+    if (entry.compiledPolicyHash !== compiled.policyHash) {
+      throw new Error(
+        `Policy bundle entry '${entry.id}' has compiledPolicyHash '${entry.compiledPolicyHash}' but expected '${compiled.policyHash}'.`,
+      );
+    }
+    if (entry.compiledPolicyIrHash !== compiled.irHash) {
+      throw new Error(
+        `Policy bundle entry '${entry.id}' has compiledPolicyIrHash '${entry.compiledPolicyIrHash}' but expected '${compiled.irHash}'.`,
+      );
+    }
   }
 }
 
@@ -214,6 +229,8 @@ export function createSignablePolicyBundleArtifact(
     normalizedEntries.map((entry) => ({
       id: entry.id,
       policyHash: entry.policyHash,
+      compiledPolicyHash: entry.compiledPolicyHash,
+      compiledPolicyIrHash: entry.compiledPolicyIrHash,
     })),
   );
   const schemasDigest = computeDigest(

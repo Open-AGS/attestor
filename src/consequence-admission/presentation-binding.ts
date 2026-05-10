@@ -88,7 +88,9 @@ export interface ConsequenceAdmissionPresentationBinding {
   readonly consequenceKind: ConsequenceAdmissionConsequenceKind;
   readonly target: ConsequenceAdmissionPresentationTarget;
   readonly replayKey: string | null;
+  readonly replayKeyDigest: string | null;
   readonly nonce: string | null;
+  readonly nonceDigest: string | null;
   readonly presentedAt: string;
   readonly expiresAt: string;
   readonly proofRefIds: readonly string[];
@@ -169,6 +171,8 @@ export interface ConsequenceAdmissionPresentationBindingDescriptor {
   readonly supportsReplayKeyDigestObservations: true;
   readonly preferredReplayKeyObservation: 'usedReplayKeyDigests';
   readonly decisionExposesRawReplayKeys: false;
+  readonly canonicalUsesReplayKeyDigest: true;
+  readonly canonicalUsesNonceDigest: true;
   readonly replayLedgerIncluded: false;
   readonly failClosed: true;
 }
@@ -314,8 +318,8 @@ function bindingCanonicalPayload(
     policyRef: binding.policyRef,
     consequenceKind: binding.consequenceKind,
     target: binding.target,
-    replayKey: binding.replayKey,
-    nonce: binding.nonce,
+    replayKeyDigest: binding.replayKeyDigest,
+    nonceDigest: binding.nonceDigest,
     presentedAt: binding.presentedAt,
     expiresAt: binding.expiresAt,
     proofRefIds: binding.proofRefIds,
@@ -432,6 +436,8 @@ export function createConsequenceAdmissionPresentationBinding(
       'Consequence admission presentation binding target.bodyDigest must be a digest reference.',
     );
   }
+  const replayKey = normalizeOptionalIdentifier(input.replayKey, 'replayKey');
+  const nonce = normalizeOptionalIdentifier(input.nonce, 'nonce');
 
   const base = Object.freeze({
     version: CONSEQUENCE_ADMISSION_PRESENTATION_BINDING_VERSION,
@@ -451,8 +457,10 @@ export function createConsequenceAdmissionPresentationBinding(
       method: normalizeOptionalMethod(input.target.method),
       bodyDigest: bodyDigest.digest,
     }),
-    replayKey: normalizeOptionalIdentifier(input.replayKey, 'replayKey'),
-    nonce: normalizeOptionalIdentifier(input.nonce, 'nonce'),
+    replayKey,
+    replayKeyDigest: replayKey === null ? null : digestText(replayKey),
+    nonce,
+    nonceDigest: nonce === null ? null : digestText(nonce),
     presentedAt,
     expiresAt,
     proofRefIds: uniqueIdentifiers(
@@ -474,8 +482,8 @@ export function createConsequenceAdmissionPresentationBinding(
     contractId: base.contractId,
     enforcementPointId: base.enforcementPointId,
     downstreamSystem: base.downstreamSystem,
-    replayKey: base.replayKey,
-    nonce: base.nonce,
+    replayKeyDigest: base.replayKeyDigest,
+    nonceDigest: base.nonceDigest,
     target: base.target,
     presentedAt: base.presentedAt,
     expiresAt: base.expiresAt,
@@ -670,6 +678,8 @@ ConsequenceAdmissionPresentationBindingDescriptor {
     supportsReplayKeyDigestObservations: true,
     preferredReplayKeyObservation: 'usedReplayKeyDigests',
     decisionExposesRawReplayKeys: false,
+    canonicalUsesReplayKeyDigest: true,
+    canonicalUsesNonceDigest: true,
     replayLedgerIncluded: false,
     failClosed: true,
   });

@@ -51,6 +51,8 @@ The binding object carries the short-lived replay key that the customer-owned en
 
 Replay reuse checks support `usedReplayKeyDigests`, where each observed replay key is supplied as `sha256:...`. Digest observations are the preferred replay interface for adapters, receipts, tests, and operator surfaces. The older `usedReplayKeys` expectation remains compatible for local callers that still hold raw runtime material, but it should not be used for exported proof, telemetry, dashboard, or review surfaces.
 
+The runtime binding still carries the replay key and nonce so the customer enforcement point can consume and compare them. The canonical payload binds replay keys and nonces by digest, so the stable `bindingId`, `digest`, and `canonical` fields do not retain those raw runtime values.
+
 ## Package Surface
 
 The package surface is exported through `attestor/consequence-admission`.

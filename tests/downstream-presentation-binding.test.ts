@@ -245,15 +245,26 @@ function testDescriptor(): void {
     false,
     'Presentation binding: decisions do not expose raw replay keys',
   );
+  equal(
+    descriptor.canonicalUsesReplayKeyDigest,
+    true,
+    'Presentation binding: canonical payload binds replay keys by digest',
+  );
+  equal(
+    descriptor.canonicalUsesNonceDigest,
+    true,
+    'Presentation binding: canonical payload binds nonces by digest',
+  );
   equal(descriptor.failClosed, true, 'Presentation binding: descriptor is fail-closed');
 }
 
 function testMatchingPresentationAllows(): void {
   const admission = admittedPayment();
+  const binding = paymentBinding(admission);
   const decision = evaluateConsequenceAdmissionPresentationBinding({
     admission,
     contract: paymentContract(),
-    presentation: paymentBinding(admission),
+    presentation: binding,
     expected: EXPECTED,
     now: '2026-05-01T12:00:30.000Z',
   });
@@ -265,6 +276,34 @@ function testMatchingPresentationAllows(): void {
   ok(
     decision.receiptDigest.startsWith('sha256:'),
     'Presentation binding: allow decision has digest-shaped receipt',
+  );
+  equal(
+    binding.replayKeyDigest,
+    digestText('payment:tenant_a:invoice_1938:attempt_1'),
+    'Presentation binding: binding exposes replay key digest',
+  );
+  equal(
+    binding.nonceDigest,
+    digestText('nonce:payment-adapter:001'),
+    'Presentation binding: binding exposes nonce digest',
+  );
+  equal(
+    binding.canonical.includes('payment:tenant_a:invoice_1938:attempt_1'),
+    false,
+    'Presentation binding: canonical payload does not contain raw replay key',
+  );
+  equal(
+    binding.canonical.includes('nonce:payment-adapter:001'),
+    false,
+    'Presentation binding: canonical payload does not contain raw nonce',
+  );
+  ok(
+    binding.canonical.includes('"replayKeyDigest"'),
+    'Presentation binding: canonical payload includes replay key digest field',
+  );
+  ok(
+    binding.canonical.includes('"nonceDigest"'),
+    'Presentation binding: canonical payload includes nonce digest field',
   );
 }
 
@@ -496,6 +535,11 @@ function testDocsAndScriptsExposePresentationBinding(): void {
     bindingDoc,
     'Digest observations are the preferred replay interface',
     'Presentation binding: doc prefers digest replay observations',
+  );
+  includes(
+    bindingDoc,
+    'canonical payload binds replay keys and nonces by digest',
+    'Presentation binding: doc states digest canonical binding',
   );
   includes(
     contractDoc,

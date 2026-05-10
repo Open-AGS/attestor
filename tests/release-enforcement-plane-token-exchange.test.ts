@@ -32,6 +32,8 @@ const WORKLOAD_CERT_THUMBPRINT = 'cert-thumbprint';
 const WORKLOAD_SPIFFE_ID = 'spiffe://attestor/tests/finance-writer';
 const POLICY_HASH = 'sha256:policy';
 const POLICY_IR_HASH = 'sha256:policy-ir';
+const SOURCE_POLICY_VERSION = 'policy.release-token-exchange-test.v1';
+const EXCHANGED_POLICY_VERSION = 'attestor.release-token-exchange.derived-policy.v1';
 const COMPILED_POLICY_INDEX_VERSION = 'attestor.policy-index.test.v1';
 const COMPILED_POLICY_IR_VERSION = 'attestor.policy-ir.test.v1';
 
@@ -52,6 +54,28 @@ function deepEqual<T>(actual: T, expected: T, message: string): void {
 
 function tokenDigest(token: string): string {
   return `sha256:${createHash('sha256').update(token).digest('hex')}`;
+}
+
+function expectedExchangedPolicyContext() {
+  return {
+    policyHash: POLICY_HASH,
+    policyVersion: EXCHANGED_POLICY_VERSION,
+    policyIrHash: POLICY_IR_HASH,
+    policyProvenanceSource: 'compiled-admission-policy-index',
+    compiledPolicyIndexVersion: COMPILED_POLICY_INDEX_VERSION,
+    compiledPolicyIrVersion: COMPILED_POLICY_IR_VERSION,
+  } as const;
+}
+
+function expectedExchangedTokenPolicy() {
+  return {
+    policy_hash: POLICY_HASH,
+    policy_version: EXCHANGED_POLICY_VERSION,
+    policy_ir_hash: POLICY_IR_HASH,
+    policy_provenance_source: 'compiled-admission-policy-index',
+    compiled_policy_index_version: COMPILED_POLICY_INDEX_VERSION,
+    compiled_policy_ir_version: COMPILED_POLICY_IR_VERSION,
+  } as const;
 }
 
 function policyProvenance(): ReleasePolicyProvenance {
@@ -80,7 +104,7 @@ function makeDecision(input: {
     id: input.id,
     createdAt: '2026-04-18T10:00:00.000Z',
     status: 'accepted',
-    policyVersion: 'policy.release-token-exchange-test.v1',
+    policyVersion: SOURCE_POLICY_VERSION,
     policyHash: POLICY_HASH,
     policyProvenance: policyProvenance(),
     outputHash: 'sha256:output',
@@ -267,6 +291,24 @@ async function testAudienceScopedExchangeIssuesDownstreamToken(): Promise<void> 
   equal(exchanged.issuedToken.claims.source_aud, 'attestor.release.authority', 'Token exchange: JWT records source audience');
   equal(exchanged.issuedToken.claims.token_use, 'exchanged-release', 'Token exchange: JWT marks exchanged release use');
   equal(exchanged.issuedToken.claims.act?.sub, 'svc.memo-gateway', 'Token exchange: JWT carries actor claim');
+  equal(exchanged.issuedToken.claims.policy_hash, POLICY_HASH, 'Token exchange: JWT preserves source policy hash');
+  equal(exchanged.issuedToken.claims.policy_version, EXCHANGED_POLICY_VERSION, 'Token exchange: JWT marks derived exchange policy version');
+  equal(exchanged.issuedToken.claims.policy_ir_hash, POLICY_IR_HASH, 'Token exchange: JWT preserves compiled policy IR hash');
+  equal(
+    exchanged.issuedToken.claims.policy_provenance_source,
+    'compiled-admission-policy-index',
+    'Token exchange: JWT preserves policy provenance source',
+  );
+  equal(
+    exchanged.issuedToken.claims.compiled_policy_index_version,
+    COMPILED_POLICY_INDEX_VERSION,
+    'Token exchange: JWT preserves compiled policy index version',
+  );
+  equal(
+    exchanged.issuedToken.claims.compiled_policy_ir_version,
+    COMPILED_POLICY_IR_VERSION,
+    'Token exchange: JWT preserves compiled policy IR version',
+  );
 
   const request = makeRequest({
     id: 'erq-exchanged-r1',
@@ -284,6 +326,11 @@ async function testAudienceScopedExchangeIssuesDownstreamToken(): Promise<void> 
 
   equal(verified.status, 'valid', 'Token exchange: downstream verifier accepts narrowed token for the target audience');
   equal(verified.claims?.aud, 'analytics.memo.writer', 'Token exchange: verifier sees downstream audience');
+  deepEqual(
+    verified.verificationResult.policyContext,
+    expectedExchangedPolicyContext(),
+    'Token exchange: offline verifier carries exchanged structured policy context',
+  );
 }
 
 async function testExchangeDoesNotBroadenAudience(): Promise<void> {
@@ -565,6 +612,21 @@ async function testHighRiskExchangeRegistersForOnlineVerifier(): Promise<void> {
   equal(verified.status, 'valid', 'Token exchange: registered high-risk child token passes online enforcement');
   equal(verified.active, true, 'Token exchange: online verifier sees child token active');
   equal(verified.introspection?.scope, 'record:write', 'Token exchange: introspection exposes narrowed scope');
+  deepEqual(
+    verified.introspection?.active === true ? verified.introspection.token_policy : null,
+    expectedExchangedTokenPolicy(),
+    'Token exchange: online introspection exposes exchanged structured token policy',
+  );
+  deepEqual(
+    verified.verificationResult.policyContext,
+    expectedExchangedPolicyContext(),
+    'Token exchange: online verifier carries exchanged structured policy context',
+  );
+  deepEqual(
+    verified.verificationResult.introspection?.policyContext,
+    expectedExchangedPolicyContext(),
+    'Token exchange: online verifier snapshots exchanged structured policy context',
+  );
   equal(verified.freshness?.introspectionCache.status, 'fresh', 'Token exchange: online freshness is fresh');
 }
 

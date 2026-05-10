@@ -8,6 +8,7 @@ import * as policy from '../release-kernel/release-policy.js';
 import * as decision from '../release-kernel/release-decision-engine.js';
 import * as decisionLog from '../release-kernel/release-decision-log.js';
 import * as deterministicChecks from '../release-kernel/release-deterministic-checks.js';
+import * as compiledPolicyIr from '../release-kernel/compiled-policy-ir.js';
 import * as shadow from '../release-kernel/release-shadow-mode.js';
 import * as canonicalization from '../release-kernel/release-canonicalization.js';
 import * as token from '../release-kernel/release-token.js';
@@ -27,6 +28,7 @@ export {
   decision,
   decisionLog,
   deterministicChecks,
+  compiledPolicyIr,
   shadow,
   canonicalization,
   token,
@@ -50,6 +52,10 @@ export type ReleaseDecisionLogVerificationResult =
   decisionLog.ReleaseDecisionLogVerificationResult;
 export type ReleaseDecisionLogWriter = decisionLog.ReleaseDecisionLogWriter;
 export type DeterministicCheckObservation = deterministicChecks.DeterministicCheckObservation;
+export type AdmissionObligationKind = compiledPolicyIr.AdmissionObligationKind;
+export type CompiledAdmissionPolicy = compiledPolicyIr.CompiledAdmissionPolicy;
+export type CompiledAdmissionPolicyVerificationResult =
+  compiledPolicyIr.CompiledAdmissionPolicyVerificationResult;
 export type IssuedReleaseToken = token.IssuedReleaseToken;
 export type ReleaseTokenJwks = token.ReleaseTokenJwks;
 export type ReleaseTokenIssuer = token.ReleaseTokenIssuer;
@@ -148,6 +154,7 @@ export const releaseLayer = Object.freeze({
   decision,
   decisionLog,
   deterministicChecks,
+  compiledPolicyIr,
   shadow,
   canonicalization,
   token,

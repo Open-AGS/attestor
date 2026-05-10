@@ -647,10 +647,9 @@ export async function runFinancialTests(): Promise<number> {
     console.log('\n  [Kit-Level Reviewer Verification]');
 
     const { buildVerificationKit } = await import('../signing/bundle.js');
-    const { generateKeyPair: genCertKey } = await import('../signing/keys.js');
     const { generatePkiHierarchy } = await import('../signing/pki-chain.js');
-    const certKeyPair = genCertKey();
     const testPki = generatePkiHierarchy('Test CA', 'Test Signer', 'Test Reviewer');
+    const certKeyPair = testPki.signer.keyPair;
 
     // Run a signed pipeline with both certificate signing key and reviewer key
     const kitReport = runFinancialPipeline({

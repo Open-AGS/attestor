@@ -18,6 +18,9 @@ import {
 let passed = 0;
 const POLICY_HASH = 'sha256:policy-runtime-verification';
 const POLICY_IR_HASH = 'sha256:policy-ir-runtime-verification';
+const POLICY_VERSION = 'finance.structured-record-release.v1';
+const COMPILED_POLICY_INDEX_VERSION = 'attestor.compiled-admission-policy-index.v1';
+const COMPILED_POLICY_IR_VERSION = 'attestor.compiled-admission-policy-ir.v1';
 
 function ok(condition: unknown, message: string): void {
   assert.ok(condition, message);
@@ -44,17 +47,17 @@ async function main(): Promise<void> {
     id: 'decision-release-verifier',
     createdAt: '2026-04-17T21:00:00.000Z',
     status: 'accepted',
-    policyVersion: 'finance.structured-record-release.v1',
+    policyVersion: POLICY_VERSION,
     policyHash: POLICY_HASH,
     policyProvenance: {
       source: 'compiled-admission-policy-index',
-      policyId: 'finance.structured-record-release.v1',
+      policyId: POLICY_VERSION,
       policySpecVersion: 'attestor.release-policy.v1',
       policyHash: POLICY_HASH,
       compiledPolicyHash: POLICY_HASH,
       compiledPolicyIrHash: POLICY_IR_HASH,
-      compiledPolicyIndexVersion: 'attestor.compiled-admission-policy-index.v1',
-      compiledPolicyIrVersion: 'attestor.compiled-admission-policy-ir.v1',
+      compiledPolicyIndexVersion: COMPILED_POLICY_INDEX_VERSION,
+      compiledPolicyIrVersion: COMPILED_POLICY_IR_VERSION,
       verificationValid: true,
       verificationErrorCodes: [],
       verificationWarningCodes: [],
@@ -99,7 +102,11 @@ async function main(): Promise<void> {
     expectedOutputHash: 'sha256:output',
     expectedConsequenceHash: 'sha256:consequence',
     expectedPolicyHash: POLICY_HASH,
+    expectedPolicyVersion: POLICY_VERSION,
     expectedPolicyIrHash: POLICY_IR_HASH,
+    expectedPolicyProvenanceSource: 'compiled-admission-policy-index',
+    expectedCompiledPolicyIndexVersion: COMPILED_POLICY_INDEX_VERSION,
+    expectedCompiledPolicyIrVersion: COMPILED_POLICY_IR_VERSION,
     currentDate: '2026-04-17T21:01:00.000Z',
     introspector,
     tokenTypeHint: 'attestor_release_token',
@@ -120,6 +127,26 @@ async function main(): Promise<void> {
     verified.expectedPolicyIrHash,
     POLICY_IR_HASH,
     'Release verification: downstream expected policy IR hash is bound into the verification context',
+  );
+  equal(
+    verified.expectedPolicyVersion,
+    POLICY_VERSION,
+    'Release verification: downstream expected policy version is bound into the verification context',
+  );
+  equal(
+    verified.expectedPolicyProvenanceSource,
+    'compiled-admission-policy-index',
+    'Release verification: downstream expected policy provenance source is bound into the verification context',
+  );
+  equal(
+    verified.expectedCompiledPolicyIndexVersion,
+    COMPILED_POLICY_INDEX_VERSION,
+    'Release verification: downstream expected compiled policy index version is bound into the verification context',
+  );
+  equal(
+    verified.expectedCompiledPolicyIrVersion,
+    COMPILED_POLICY_IR_VERSION,
+    'Release verification: downstream expected compiled policy IR version is bound into the verification context',
   );
   ok(
     verified.introspection?.active === true,
@@ -223,6 +250,29 @@ async function main(): Promise<void> {
       }),
     /policy IR hash does not match/,
     'Release verification: policy IR hash mismatch is rejected instead of admitting a token from a different compiled policy',
+  );
+  passed += 1;
+
+  await assert.rejects(
+    () =>
+      verifyReleaseAuthorization({
+        token: issued.token,
+        verificationKey,
+        audience: 'finance.reporting.record-store',
+        expectedTargetId: 'finance.reporting.record-store',
+        expectedOutputHash: 'sha256:output',
+        expectedConsequenceHash: 'sha256:consequence',
+        expectedPolicyHash: POLICY_HASH,
+        expectedPolicyVersion: POLICY_VERSION,
+        expectedPolicyIrHash: POLICY_IR_HASH,
+        expectedPolicyProvenanceSource: 'compiled-admission-policy-index',
+        expectedCompiledPolicyIndexVersion: 'attestor.compiled-admission-policy-index.wrong',
+        expectedCompiledPolicyIrVersion: COMPILED_POLICY_IR_VERSION,
+        currentDate: '2026-04-17T21:01:00.000Z',
+        introspector,
+      }),
+    /compiled policy index version does not match/,
+    'Release verification: compiled policy index version mismatch is rejected instead of admitting stale compiled policy provenance',
   );
   passed += 1;
 
@@ -333,7 +383,11 @@ async function main(): Promise<void> {
       expectedOutputHash: 'sha256:output',
       expectedConsequenceHash: 'sha256:consequence',
       expectedPolicyHash: POLICY_HASH,
+      expectedPolicyVersion: POLICY_VERSION,
       expectedPolicyIrHash: POLICY_IR_HASH,
+      expectedPolicyProvenanceSource: 'compiled-admission-policy-index',
+      expectedCompiledPolicyIndexVersion: COMPILED_POLICY_INDEX_VERSION,
+      expectedCompiledPolicyIrVersion: COMPILED_POLICY_IR_VERSION,
       currentDate: '2026-04-17T21:01:00.000Z',
       introspector,
       tokenTypeHint: 'attestor_release_token',

@@ -14,6 +14,7 @@ import type {
   ReleaseTokenIntrospectionResult,
   ReleaseTokenIntrospector,
 } from './release-introspection.js';
+import type { ReleasePolicyProvenanceSource } from './object-model.js';
 
 /**
  * Downstream release-token verification SDK and middleware.
@@ -44,7 +45,11 @@ export interface ReleaseVerificationInput extends VerifyReleaseTokenInput {
   readonly expectedOutputHash?: string;
   readonly expectedConsequenceHash?: string;
   readonly expectedPolicyHash?: string;
+  readonly expectedPolicyVersion?: string;
   readonly expectedPolicyIrHash?: string;
+  readonly expectedPolicyProvenanceSource?: ReleasePolicyProvenanceSource;
+  readonly expectedCompiledPolicyIndexVersion?: string;
+  readonly expectedCompiledPolicyIrVersion?: string;
   readonly introspector?: ReleaseTokenIntrospector;
   readonly usageStore?: AwaitableReleaseTokenIntrospectionStore;
   readonly consumeOnSuccess?: boolean;
@@ -61,7 +66,11 @@ export interface ReleaseVerificationContext {
   readonly expectedOutputHash: string | undefined;
   readonly expectedConsequenceHash: string | undefined;
   readonly expectedPolicyHash: string | undefined;
+  readonly expectedPolicyVersion: string | undefined;
   readonly expectedPolicyIrHash: string | undefined;
+  readonly expectedPolicyProvenanceSource: ReleasePolicyProvenanceSource | undefined;
+  readonly expectedCompiledPolicyIndexVersion: string | undefined;
+  readonly expectedCompiledPolicyIrVersion: string | undefined;
   readonly introspection: ReleaseTokenIntrospectionResult | null;
   readonly usage: {
     readonly consumed: boolean;
@@ -107,7 +116,11 @@ export interface CreateReleaseVerificationMiddlewareInput {
   readonly expectedOutputHash?: ResolveMaybe<string | undefined>;
   readonly expectedConsequenceHash?: ResolveMaybe<string | undefined>;
   readonly expectedPolicyHash?: ResolveMaybe<string | undefined>;
+  readonly expectedPolicyVersion?: ResolveMaybe<string | undefined>;
   readonly expectedPolicyIrHash?: ResolveMaybe<string | undefined>;
+  readonly expectedPolicyProvenanceSource?: ResolveMaybe<ReleasePolicyProvenanceSource | undefined>;
+  readonly expectedCompiledPolicyIndexVersion?: ResolveMaybe<string | undefined>;
+  readonly expectedCompiledPolicyIrVersion?: ResolveMaybe<string | undefined>;
   readonly currentDate?: ResolveMaybe<string | undefined>;
   readonly introspector?:
     | ReleaseTokenIntrospector
@@ -260,6 +273,21 @@ function assertVerifiedBinding(
   }
 
   if (
+    input.expectedPolicyVersion !== undefined &&
+    verification.claims.policy_version !== input.expectedPolicyVersion
+  ) {
+    throw new ReleaseVerificationError(
+      403,
+      'insufficient_scope',
+      'Release token policy version does not match the downstream policy provenance requirement.',
+      buildBearerChallenge(
+        'insufficient_scope',
+        'Release token policy version does not match the downstream policy provenance requirement.',
+      ),
+    );
+  }
+
+  if (
     input.expectedPolicyIrHash !== undefined &&
     verification.claims.policy_ir_hash !== input.expectedPolicyIrHash
   ) {
@@ -270,6 +298,51 @@ function assertVerifiedBinding(
       buildBearerChallenge(
         'insufficient_scope',
         'Release token policy IR hash does not match the downstream policy provenance requirement.',
+      ),
+    );
+  }
+
+  if (
+    input.expectedPolicyProvenanceSource !== undefined &&
+    verification.claims.policy_provenance_source !== input.expectedPolicyProvenanceSource
+  ) {
+    throw new ReleaseVerificationError(
+      403,
+      'insufficient_scope',
+      'Release token policy provenance source does not match the downstream policy provenance requirement.',
+      buildBearerChallenge(
+        'insufficient_scope',
+        'Release token policy provenance source does not match the downstream policy provenance requirement.',
+      ),
+    );
+  }
+
+  if (
+    input.expectedCompiledPolicyIndexVersion !== undefined &&
+    verification.claims.compiled_policy_index_version !== input.expectedCompiledPolicyIndexVersion
+  ) {
+    throw new ReleaseVerificationError(
+      403,
+      'insufficient_scope',
+      'Release token compiled policy index version does not match the downstream policy provenance requirement.',
+      buildBearerChallenge(
+        'insufficient_scope',
+        'Release token compiled policy index version does not match the downstream policy provenance requirement.',
+      ),
+    );
+  }
+
+  if (
+    input.expectedCompiledPolicyIrVersion !== undefined &&
+    verification.claims.compiled_policy_ir_version !== input.expectedCompiledPolicyIrVersion
+  ) {
+    throw new ReleaseVerificationError(
+      403,
+      'insufficient_scope',
+      'Release token compiled policy IR version does not match the downstream policy provenance requirement.',
+      buildBearerChallenge(
+        'insufficient_scope',
+        'Release token compiled policy IR version does not match the downstream policy provenance requirement.',
       ),
     );
   }
@@ -441,7 +514,11 @@ export async function verifyReleaseAuthorization(
     expectedOutputHash: input.expectedOutputHash,
     expectedConsequenceHash: input.expectedConsequenceHash,
     expectedPolicyHash: input.expectedPolicyHash,
+    expectedPolicyVersion: input.expectedPolicyVersion,
     expectedPolicyIrHash: input.expectedPolicyIrHash,
+    expectedPolicyProvenanceSource: input.expectedPolicyProvenanceSource,
+    expectedCompiledPolicyIndexVersion: input.expectedCompiledPolicyIndexVersion,
+    expectedCompiledPolicyIrVersion: input.expectedCompiledPolicyIrVersion,
     introspection,
     usage,
   });
@@ -468,7 +545,20 @@ export function createReleaseVerificationMiddleware(
         context,
       );
       const expectedPolicyHash = await resolveValue(input.expectedPolicyHash, context);
+      const expectedPolicyVersion = await resolveValue(input.expectedPolicyVersion, context);
       const expectedPolicyIrHash = await resolveValue(input.expectedPolicyIrHash, context);
+      const expectedPolicyProvenanceSource = await resolveValue(
+        input.expectedPolicyProvenanceSource,
+        context,
+      );
+      const expectedCompiledPolicyIndexVersion = await resolveValue(
+        input.expectedCompiledPolicyIndexVersion,
+        context,
+      );
+      const expectedCompiledPolicyIrVersion = await resolveValue(
+        input.expectedCompiledPolicyIrVersion,
+        context,
+      );
       const currentDate = await resolveValue(input.currentDate, context);
       const introspector = await resolveValue(input.introspector, context);
       const usageStore = await resolveValue(input.usageStore, context);
@@ -484,7 +574,11 @@ export function createReleaseVerificationMiddleware(
         expectedOutputHash,
         expectedConsequenceHash,
         expectedPolicyHash,
+        expectedPolicyVersion,
         expectedPolicyIrHash,
+        expectedPolicyProvenanceSource,
+        expectedCompiledPolicyIndexVersion,
+        expectedCompiledPolicyIrVersion,
         currentDate,
         introspector,
         usageStore,

@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { policy } from '../src/release-layer/index.js';
+import { compileReleasePolicyDefinition } from '../src/release-kernel/compiled-policy-ir.js';
 import {
   createPolicyBundleEntry,
   createPolicyBundleManifest,
@@ -101,6 +102,8 @@ function testCreateSignableBundleArtifact(): void {
   });
 
   const artifact = createSignablePolicyBundleArtifact(pack, manifest);
+  const compiled = compileReleasePolicyDefinition(entry.definition);
+  const artifactEntry = artifact.statement.predicate.entries[0];
 
   assert.equal(artifact.version, POLICY_BUNDLE_FORMAT_SPEC_VERSION);
   assert.equal(artifact.payloadType, POLICY_BUNDLE_PAYLOAD_TYPE);
@@ -108,7 +111,9 @@ function testCreateSignableBundleArtifact(): void {
   assert.equal(artifact.statement.predicateType, POLICY_BUNDLE_PREDICATE_TYPE);
   assert.equal(artifact.statement.subject.length, 4);
   assert.equal(artifact.statement.predicate.pack.id, 'finance-core');
-  assert.equal(artifact.statement.predicate.entries[0]?.id, 'entry-record-r4');
+  assert.equal(artifactEntry?.id, 'entry-record-r4');
+  assert.equal(artifactEntry?.compiledPolicyHash, compiled.policyHash);
+  assert.equal(artifactEntry?.compiledPolicyIrHash, compiled.irHash);
   assert.equal(artifact.payloadDigest.startsWith('sha256:'), true);
 }
 
@@ -197,6 +202,82 @@ function testBundleRejectsInvalidPolicyHash(): void {
   );
 }
 
+function testBundleRejectsInvalidCompiledPolicyHash(): void {
+  const pack = samplePackMetadata();
+  const target = createPolicyActivationTarget({
+    environment: 'prod-eu',
+    tenantId: 'tenant-finance',
+    domainId: 'finance',
+    consequenceType: 'record',
+    riskClass: 'R4',
+  });
+  const definition = policy.createFirstHardGatewayReleasePolicy();
+  const invalidCompiledPolicyHash = 'sha256:not-the-compiled-policy-hash';
+  const provisional = createPolicyBundleEntry({
+    id: 'entry-invalid-compiled-policy-hash',
+    scopeTarget: target,
+    definition,
+    policyHash: 'sha256:placeholder',
+    compiledPolicyHash: invalidCompiledPolicyHash,
+  });
+  const invalidEntry = createPolicyBundleEntry({
+    id: provisional.id,
+    scopeTarget: target,
+    definition,
+    policyHash: computePolicyBundleEntryDigest(provisional),
+    compiledPolicyHash: invalidCompiledPolicyHash,
+  });
+  const manifest = createPolicyBundleManifest({
+    bundle: sampleBundleReference('bundle_invalid_compiled_policy_hash'),
+    pack,
+    generatedAt: '2026-04-17T12:16:00.000Z',
+    entries: [invalidEntry],
+  });
+
+  assert.throws(
+    () => createSignablePolicyBundleArtifact(pack, manifest),
+    /compiledPolicyHash/i,
+  );
+}
+
+function testBundleRejectsInvalidCompiledPolicyIrHash(): void {
+  const pack = samplePackMetadata();
+  const target = createPolicyActivationTarget({
+    environment: 'prod-eu',
+    tenantId: 'tenant-finance',
+    domainId: 'finance',
+    consequenceType: 'record',
+    riskClass: 'R4',
+  });
+  const definition = policy.createFirstHardGatewayReleasePolicy();
+  const invalidCompiledPolicyIrHash = 'sha256:not-the-compiled-policy-ir-hash';
+  const provisional = createPolicyBundleEntry({
+    id: 'entry-invalid-compiled-policy-ir-hash',
+    scopeTarget: target,
+    definition,
+    policyHash: 'sha256:placeholder',
+    compiledPolicyIrHash: invalidCompiledPolicyIrHash,
+  });
+  const invalidEntry = createPolicyBundleEntry({
+    id: provisional.id,
+    scopeTarget: target,
+    definition,
+    policyHash: computePolicyBundleEntryDigest(provisional),
+    compiledPolicyIrHash: invalidCompiledPolicyIrHash,
+  });
+  const manifest = createPolicyBundleManifest({
+    bundle: sampleBundleReference('bundle_invalid_compiled_policy_ir_hash'),
+    pack,
+    generatedAt: '2026-04-17T12:17:00.000Z',
+    entries: [invalidEntry],
+  });
+
+  assert.throws(
+    () => createSignablePolicyBundleArtifact(pack, manifest),
+    /compiledPolicyIrHash/i,
+  );
+}
+
 function testBundleRejectsWrongPackBinding(): void {
   const pack = samplePackMetadata();
   const otherPack = createPolicyPackMetadata({
@@ -231,6 +312,8 @@ testEntryDigestDeterminism();
 testCreateSignableBundleArtifact();
 testBundleArtifactIsOrderIndependent();
 testBundleRejectsInvalidPolicyHash();
+testBundleRejectsInvalidCompiledPolicyHash();
+testBundleRejectsInvalidCompiledPolicyIrHash();
 testBundleRejectsWrongPackBinding();
 
-console.log('Release policy control-plane bundle-format tests: 23 passed, 0 failed');
+console.log('Release policy control-plane bundle-format tests: 25 passed, 0 failed');

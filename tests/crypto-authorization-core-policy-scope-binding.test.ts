@@ -31,6 +31,7 @@ import {
   createCryptoChainReference,
 } from '../src/crypto-authorization-core/types.js';
 import type { CryptoReleaseDecisionBinding } from '../src/crypto-authorization-core/release-decision-binding.js';
+import { compileReleasePolicyDefinition } from '../src/release-kernel/compiled-policy-ir.js';
 import { computePolicyBundleEntryDigest } from '../src/release-policy-control-plane/bundle-format.js';
 import { createPolicySimulationApi } from '../src/release-policy-control-plane/simulation.js';
 import { createInMemoryPolicyControlPlaneStore } from '../src/release-policy-control-plane/store.js';
@@ -222,6 +223,7 @@ function testDescriptor(): void {
 function testCreatesPolicyControlPlaneBinding(): void {
   const binding = fixtureBinding();
   const second = fixtureBinding();
+  const compiledPolicy = compileReleasePolicyDefinition(binding.policyBundleEntry.definition);
 
   equal(binding.version, CRYPTO_POLICY_CONTROL_PLANE_SCOPE_BINDING_SPEC_VERSION, 'Crypto policy scope binding: binding carries version');
   equal(binding.intentId, 'intent-policy-scope-001', 'Crypto policy scope binding: intent id is bound');
@@ -260,6 +262,8 @@ function testCreatesPolicyControlPlaneBinding(): void {
   equal(binding.policyPack.latestBundleRef?.bundleId, binding.bundleId, 'Crypto policy scope binding: pack latest bundle points at bundle');
   ok(binding.policyPack.labels.includes('approval'), 'Crypto policy scope binding: policy pack labels consequence');
   equal(binding.policyBundleEntry.policyHash, computePolicyBundleEntryDigest(binding.policyBundleEntry), 'Crypto policy scope binding: policy hash verifies');
+  equal(binding.policyBundleEntry.compiledPolicyHash, compiledPolicy.policyHash, 'Crypto policy scope binding: compiled policy hash verifies');
+  equal(binding.policyBundleEntry.compiledPolicyIrHash, compiledPolicy.irHash, 'Crypto policy scope binding: compiled policy IR hash verifies');
   equal(binding.policyBundleEntry.definition.scope.wedgeId, 'crypto.approval', 'Crypto policy scope binding: release policy wedge is crypto approval');
   equal(binding.policyBundleEntry.definition.release.requireSignedEnvelope, true, 'Crypto policy scope binding: release policy requires signed envelope');
   equal(binding.policyBundleManifest.packId, 'crypto-approval-pack', 'Crypto policy scope binding: manifest binds pack id');

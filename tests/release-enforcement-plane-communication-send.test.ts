@@ -23,6 +23,7 @@ import {
   RELEASE_COMMUNICATION_SEND_GATEWAY_SPEC_VERSION,
   type CommunicationSendMessage,
 } from '../src/release-enforcement-plane/communication-send.js';
+import { createEnforcementReceiptDigest } from '../src/release-enforcement-plane/object-model.js';
 import {
   createDpopBoundPresentationFromIssuedToken,
   createDpopProof,
@@ -318,6 +319,46 @@ async function testValidDpopCommunicationSendAllowsAndConsumesToken(): Promise<v
   equal(result.decision?.outcome, 'allow', 'Communication-send gateway: valid send emits allow decision');
   ok(result.receipt?.receiptDigest?.startsWith('sha256:'), 'Communication-send gateway: allowed send emits receipt digest');
   equal(result.receipt?.policyIrHash, POLICY_IR_HASH, 'Communication-send gateway: receipt preserves compiled policy IR provenance');
+  equal(result.receipt?.compiledPolicyIrVersion, COMPILED_POLICY_IR_VERSION, 'Communication-send gateway: receipt preserves compiled policy IR version');
+  deepEqual(
+    result.verificationResult?.policyContext,
+    {
+      policyHash: POLICY_HASH,
+      policyVersion: 'policy.release-communication-send-test.v1',
+      policyIrHash: POLICY_IR_HASH,
+      policyProvenanceSource: 'compiled-admission-policy-index',
+      compiledPolicyIndexVersion: COMPILED_POLICY_INDEX_VERSION,
+      compiledPolicyIrVersion: COMPILED_POLICY_IR_VERSION,
+    },
+    'Communication-send gateway: verification exposes structured policy context',
+  );
+  deepEqual(
+    result.receipt?.policyContext,
+    result.verificationResult?.policyContext,
+    'Communication-send gateway: receipt carries the verified structured policy context',
+  );
+  equal(
+    result.receipt?.receiptDigest,
+    result.decision ? createEnforcementReceiptDigest({ decision: result.decision }) : null,
+    'Communication-send gateway: receipt digest binds structured policy context',
+  );
+  if (!result.decision) {
+    throw new Error('Expected communication-send allow result to carry an enforcement decision.');
+  }
+  const tamperedPolicyDecision = {
+    ...result.decision,
+    verification: {
+      ...result.decision.verification,
+      policyContext: {
+        ...result.decision.verification.policyContext,
+        compiledPolicyIrVersion: 'attestor.policy-ir.tampered.v1',
+      },
+    },
+  };
+  ok(
+    createEnforcementReceiptDigest({ decision: tamperedPolicyDecision }) !== result.receipt?.receiptDigest,
+    'Communication-send gateway: changing structured policy context changes receipt digest',
+  );
   equal(result.request?.enforcementPoint.boundaryKind, 'communication-send', 'Communication-send gateway: request uses communication-send boundary');
   equal(result.request?.targetId, result.binding.target.id, 'Communication-send gateway: request target matches message binding');
   equal(result.request?.outputHash, result.binding.hashBundle.outputHash, 'Communication-send gateway: request output hash matches binding');

@@ -602,6 +602,11 @@ async function signedJsonEnvelopeBindingFailureReasons(
     expectedOutputHash: claims.output_hash,
     expectedConsequenceHash: claims.consequence_hash,
     expectedPolicyHash: claims.policy_hash,
+    expectedPolicyVersion: claims.policy_version ?? null,
+    expectedPolicyIrHash: claims.policy_ir_hash ?? null,
+    expectedPolicyProvenanceSource: claims.policy_provenance_source ?? null,
+    expectedCompiledPolicyIndexVersion: claims.compiled_policy_index_version ?? null,
+    expectedCompiledPolicyIrVersion: claims.compiled_policy_ir_version ?? null,
     expectedConsequenceType: claims.consequence_type,
     expectedRiskClass: claims.risk_class,
     expectedIdempotencyKey:

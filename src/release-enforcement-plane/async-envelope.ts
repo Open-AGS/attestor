@@ -11,7 +11,10 @@ import {
 import { calculateJwkThumbprint } from 'jose';
 import type { JWK } from 'jose';
 import type { IssuedReleaseToken } from '../release-kernel/release-token.js';
-import type { ReleaseTokenConfirmationClaim } from '../release-kernel/object-model.js';
+import type {
+  ReleasePolicyProvenanceSource,
+  ReleaseTokenConfirmationClaim,
+} from '../release-kernel/object-model.js';
 import {
   createReleasePresentation,
   type ReleasePresentation,
@@ -121,6 +124,11 @@ export interface AsyncConsequenceBinding {
   readonly outputHash: string;
   readonly consequenceHash: string;
   readonly policyHash: string;
+  readonly policyVersion: string | null;
+  readonly policyIrHash: string | null;
+  readonly policyProvenanceSource: ReleasePolicyProvenanceSource | null;
+  readonly compiledPolicyIndexVersion: string | null;
+  readonly compiledPolicyIrVersion: string | null;
 }
 
 export interface AsyncConsequenceTransportBinding {
@@ -229,6 +237,11 @@ export interface VerifySignedAsyncConsequenceEnvelopeInput {
   readonly expectedOutputHash?: string | null;
   readonly expectedConsequenceHash?: string | null;
   readonly expectedPolicyHash?: string | null;
+  readonly expectedPolicyVersion?: string | null;
+  readonly expectedPolicyIrHash?: string | null;
+  readonly expectedPolicyProvenanceSource?: ReleasePolicyProvenanceSource | null;
+  readonly expectedCompiledPolicyIndexVersion?: string | null;
+  readonly expectedCompiledPolicyIrVersion?: string | null;
   readonly expectedConsequenceType?: ReleaseEnforcementConsequenceType | null;
   readonly expectedRiskClass?: ReleaseEnforcementRiskClass | null;
   readonly expectedIdempotencyKey?: string | null;
@@ -257,6 +270,12 @@ export interface SignedAsyncConsequenceEnvelopeVerification {
   readonly releaseTokenDigest: string | null;
   readonly releaseTokenId: string | null;
   readonly releaseDecisionId: string | null;
+  readonly policyHash: string | null;
+  readonly policyVersion: string | null;
+  readonly policyIrHash: string | null;
+  readonly policyProvenanceSource: ReleasePolicyProvenanceSource | null;
+  readonly compiledPolicyIndexVersion: string | null;
+  readonly compiledPolicyIrVersion: string | null;
   readonly targetId: string | null;
   readonly messageId: string | null;
   readonly queueOrTopic: string | null;
@@ -615,6 +634,11 @@ function buildStatement(input: {
         outputHash: input.issuedToken.claims.output_hash,
         consequenceHash: input.issuedToken.claims.consequence_hash,
         policyHash: input.issuedToken.claims.policy_hash,
+        policyVersion: input.issuedToken.claims.policy_version ?? null,
+        policyIrHash: input.issuedToken.claims.policy_ir_hash ?? null,
+        policyProvenanceSource: input.issuedToken.claims.policy_provenance_source ?? null,
+        compiledPolicyIndexVersion: input.issuedToken.claims.compiled_policy_index_version ?? null,
+        compiledPolicyIrVersion: input.issuedToken.claims.compiled_policy_ir_version ?? null,
       }),
       payload: input.payload,
       transport: Object.freeze({
@@ -798,6 +822,12 @@ function invalidVerification(checkedAt: string): SignedAsyncConsequenceEnvelopeV
     releaseTokenDigest: null,
     releaseTokenId: null,
     releaseDecisionId: null,
+    policyHash: null,
+    policyVersion: null,
+    policyIrHash: null,
+    policyProvenanceSource: null,
+    compiledPolicyIndexVersion: null,
+    compiledPolicyIrVersion: null,
     targetId: null,
     messageId: null,
     queueOrTopic: null,
@@ -996,6 +1026,31 @@ function bindingFailureReasons(input: {
       'binding-mismatch',
     ),
     ...compareExpected(
+      predicate.consequence.policyVersion ?? null,
+      expected.expectedPolicyVersion,
+      'binding-mismatch',
+    ),
+    ...compareExpected(
+      predicate.consequence.policyIrHash ?? null,
+      expected.expectedPolicyIrHash,
+      'binding-mismatch',
+    ),
+    ...compareExpected(
+      predicate.consequence.policyProvenanceSource ?? null,
+      expected.expectedPolicyProvenanceSource,
+      'binding-mismatch',
+    ),
+    ...compareExpected(
+      predicate.consequence.compiledPolicyIndexVersion ?? null,
+      expected.expectedCompiledPolicyIndexVersion,
+      'binding-mismatch',
+    ),
+    ...compareExpected(
+      predicate.consequence.compiledPolicyIrVersion ?? null,
+      expected.expectedCompiledPolicyIrVersion,
+      'binding-mismatch',
+    ),
+    ...compareExpected(
       predicate.idempotencyKey,
       expected.expectedIdempotencyKey,
       'binding-mismatch',
@@ -1152,6 +1207,12 @@ export async function verifySignedAsyncConsequenceEnvelope(
     releaseTokenDigest: predicate?.release.tokenDigest ?? null,
     releaseTokenId: predicate?.release.tokenId ?? null,
     releaseDecisionId: predicate?.release.decisionId ?? null,
+    policyHash: predicate?.consequence.policyHash ?? null,
+    policyVersion: predicate?.consequence.policyVersion ?? null,
+    policyIrHash: predicate?.consequence.policyIrHash ?? null,
+    policyProvenanceSource: predicate?.consequence.policyProvenanceSource ?? null,
+    compiledPolicyIndexVersion: predicate?.consequence.compiledPolicyIndexVersion ?? null,
+    compiledPolicyIrVersion: predicate?.consequence.compiledPolicyIrVersion ?? null,
     targetId: predicate?.target.id ?? null,
     messageId: predicate?.transport.messageId ?? null,
     queueOrTopic: predicate?.transport.queueOrTopic ?? null,

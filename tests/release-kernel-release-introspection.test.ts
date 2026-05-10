@@ -14,6 +14,8 @@ import {
 } from '../src/release-kernel/release-introspection.js';
 
 let passed = 0;
+const POLICY_HASH = 'sha256:policy-runtime-introspection';
+const POLICY_IR_HASH = 'sha256:policy-ir-runtime-introspection';
 
 function ok(condition: unknown, message: string): void {
   assert.ok(condition, message);
@@ -31,7 +33,20 @@ function makeDecision() {
     createdAt: '2026-04-17T23:00:00.000Z',
     status: 'accepted',
     policyVersion: 'finance.structured-record-release.v1',
-    policyHash: 'finance.structured-record-release.v1',
+    policyHash: POLICY_HASH,
+    policyProvenance: {
+      source: 'compiled-admission-policy-index',
+      policyId: 'finance.structured-record-release.v1',
+      policySpecVersion: 'attestor.release-policy.v1',
+      policyHash: POLICY_HASH,
+      compiledPolicyHash: POLICY_HASH,
+      compiledPolicyIrHash: POLICY_IR_HASH,
+      compiledPolicyIndexVersion: 'attestor.compiled-admission-policy-index.v1',
+      compiledPolicyIrVersion: 'attestor.compiled-admission-policy-ir.v1',
+      verificationValid: true,
+      verificationErrorCodes: [],
+      verificationWarningCodes: [],
+    },
     outputHash: 'sha256:output',
     consequenceHash: 'sha256:consequence',
     outputContract: {
@@ -102,6 +117,16 @@ async function main(): Promise<void> {
       active.output_hash,
       decision.outputHash,
       'Release introspection: active response preserves the bound output hash',
+    );
+    equal(
+      active.policy_hash,
+      POLICY_HASH,
+      'Release introspection: active response preserves the policy hash',
+    );
+    equal(
+      active.policy_ir_hash,
+      POLICY_IR_HASH,
+      'Release introspection: active response preserves the policy IR hash',
     );
     equal(
       active.resource_server_id,

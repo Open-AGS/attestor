@@ -11,6 +11,8 @@ import {
 } from '../src/release-kernel/release-token.js';
 
 let passed = 0;
+const POLICY_HASH = 'sha256:policy-runtime-token';
+const POLICY_IR_HASH = 'sha256:policy-ir-runtime-token';
 
 function ok(condition: unknown, message: string): void {
   assert.ok(condition, message);
@@ -86,7 +88,22 @@ async function main(): Promise<void> {
     publicKeyPem: keyPair.publicKeyPem,
   });
 
-  const acceptedDecision = makeDecision('accepted');
+  const acceptedDecision = makeDecision('accepted', {
+    policyHash: POLICY_HASH,
+    policyProvenance: {
+      source: 'compiled-admission-policy-index',
+      policyId: 'finance.structured-record-release.v1',
+      policySpecVersion: 'attestor.release-policy.v1',
+      policyHash: POLICY_HASH,
+      compiledPolicyHash: POLICY_HASH,
+      compiledPolicyIrHash: POLICY_IR_HASH,
+      compiledPolicyIndexVersion: 'attestor.compiled-admission-policy-index.v1',
+      compiledPolicyIrVersion: 'attestor.compiled-admission-policy-ir.v1',
+      verificationValid: true,
+      verificationErrorCodes: [],
+      verificationWarningCodes: [],
+    },
+  });
   const issued = await issuer.issue({
     decision: acceptedDecision,
     issuedAt: '2026-04-17T20:00:00.000Z',
@@ -111,6 +128,21 @@ async function main(): Promise<void> {
     issued.claims.aud,
     'finance.reporting.record-store',
     'Release token: the audience is bound to the downstream release target id',
+  );
+  equal(
+    issued.claims.policy_hash,
+    POLICY_HASH,
+    'Release token: token claims preserve the compiled policy hash bound into the decision',
+  );
+  equal(
+    issued.claims.policy_ir_hash,
+    POLICY_IR_HASH,
+    'Release token: token claims preserve the compiled policy IR hash for downstream provenance gates',
+  );
+  equal(
+    issued.claims.policy_provenance_source,
+    'compiled-admission-policy-index',
+    'Release token: token claims expose the policy provenance source',
   );
   ok(
     issued.token.length > 40,

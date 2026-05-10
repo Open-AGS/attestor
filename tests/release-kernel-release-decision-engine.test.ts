@@ -5,6 +5,7 @@ import {
   RELEASE_DECISION_ENGINE_SPEC_VERSION,
   resolveMatchingReleasePolicy,
 } from '../src/release-kernel/release-decision-engine.js';
+import { compileReleasePolicyDefinition } from '../src/release-kernel/compiled-policy-ir.js';
 import {
   createFirstHardGatewayReleasePolicy,
   createReleasePolicyDefinition,
@@ -119,6 +120,16 @@ async function main(): Promise<void> {
     'Release decision engine: the initial decision skeleton binds to the matched policy version',
   );
   equal(
+    result.decision.policyProvenance?.source,
+    'policy-definition',
+    'Release decision engine: direct skeleton evaluation records policy-definition provenance when no compiled index is supplied',
+  );
+  equal(
+    result.decision.policyProvenance?.compiledPolicyIrHash ?? null,
+    null,
+    'Release decision engine: direct skeleton evaluation does not invent a compiled IR hash without the compiled index',
+  );
+  equal(
     result.decision.findings[0]?.code,
     'deterministic_checks_pending',
     'Release decision engine: matched decisions explain that checks still need to run',
@@ -134,6 +145,22 @@ async function main(): Promise<void> {
   ok(
     engineResult.decision.policyHash.startsWith('sha256:'),
     'Release decision engine: created engines bind decisions to the compiled policy hash',
+  );
+  const compiledFirstPolicy = compileReleasePolicyDefinition(createFirstHardGatewayReleasePolicy());
+  equal(
+    engineResult.decision.policyProvenance?.source,
+    'compiled-admission-policy-index',
+    'Release decision engine: created engines record compiled-index provenance on runtime decisions',
+  );
+  equal(
+    engineResult.decision.policyProvenance?.compiledPolicyIrHash,
+    compiledFirstPolicy.irHash,
+    'Release decision engine: created engines bind runtime decisions to the compiled policy IR hash',
+  );
+  equal(
+    engineResult.decision.policyProvenance?.verificationValid,
+    true,
+    'Release decision engine: created engines expose the verifier result that admitted the compiled policy',
   );
 
   const weakenedR4Engine = createReleaseDecisionEngine({
@@ -436,6 +463,11 @@ async function main(): Promise<void> {
   ok(
     compiledRollbackResult.decision.policyHash.startsWith('sha256:'),
     'Release decision engine: compiled rollback fallback decisions bind to a compiled policy hash',
+  );
+  equal(
+    compiledRollbackResult.decision.policyProvenance?.policyId,
+    compiledRollbackFallbackPolicy.id,
+    'Release decision engine: compiled rollback fallback decisions preserve the effective compiled policy id in provenance',
   );
 
   const weakenedRollbackFallbackPolicy = createReleasePolicyDefinition({

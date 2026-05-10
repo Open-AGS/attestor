@@ -219,6 +219,11 @@ async function main(): Promise<void> {
 
   equal(issuedEvidencePack.evidencePack.id, 'ep_release_evidence_test', 'Release evidence pack: caller-provided pack id is preserved');
   equal(issuedEvidencePack.evidencePack.retentionClass, 'regulated', 'Release evidence pack: regulated finance release gets regulated retention');
+  equal(
+    issuedEvidencePack.evidencePack.policyIrHash,
+    recordWithToken.releaseDecision.policyProvenance?.compiledPolicyIrHash ?? null,
+    'Release evidence pack: durable evidence preserves the compiled policy IR hash from the release decision',
+  );
   ok(issuedEvidencePack.evidencePack.artifacts.some((artifact) => artifact.kind === 'review-record'), 'Release evidence pack: review-record artifact is captured');
   ok(issuedEvidencePack.evidencePack.artifacts.some((artifact) => artifact.kind === 'signature'), 'Release evidence pack: release-token artifact is captured');
   equal(
@@ -235,6 +240,16 @@ async function main(): Promise<void> {
     issuedEvidencePack.statement.predicate.releaseToken?.tokenId,
     issuedToken.tokenId,
     'Release evidence pack: predicate carries the issued release token summary',
+  );
+  equal(
+    issuedEvidencePack.statement.predicate.releaseToken?.policyIrHash ?? null,
+    issuedToken.claims.policy_ir_hash ?? null,
+    'Release evidence pack: predicate token summary preserves the token policy IR hash',
+  );
+  equal(
+    issuedEvidencePack.statement.predicate.decision.policyIrHash,
+    recordWithToken.releaseDecision.policyProvenance?.compiledPolicyIrHash ?? null,
+    'Release evidence pack: predicate decision summary preserves the runtime policy IR hash',
   );
   equal(
     issuedEvidencePack.statement.predicate.review?.reviewId,

@@ -43,6 +43,8 @@ export interface ReleaseVerificationInput extends VerifyReleaseTokenInput {
   readonly expectedTargetId?: string;
   readonly expectedOutputHash?: string;
   readonly expectedConsequenceHash?: string;
+  readonly expectedPolicyHash?: string;
+  readonly expectedPolicyIrHash?: string;
   readonly introspector?: ReleaseTokenIntrospector;
   readonly usageStore?: AwaitableReleaseTokenIntrospectionStore;
   readonly consumeOnSuccess?: boolean;
@@ -58,6 +60,8 @@ export interface ReleaseVerificationContext {
   readonly expectedTargetId: string | undefined;
   readonly expectedOutputHash: string | undefined;
   readonly expectedConsequenceHash: string | undefined;
+  readonly expectedPolicyHash: string | undefined;
+  readonly expectedPolicyIrHash: string | undefined;
   readonly introspection: ReleaseTokenIntrospectionResult | null;
   readonly usage: {
     readonly consumed: boolean;
@@ -102,6 +106,8 @@ export interface CreateReleaseVerificationMiddlewareInput {
   readonly expectedTargetId?: ResolveMaybe<string | undefined>;
   readonly expectedOutputHash?: ResolveMaybe<string | undefined>;
   readonly expectedConsequenceHash?: ResolveMaybe<string | undefined>;
+  readonly expectedPolicyHash?: ResolveMaybe<string | undefined>;
+  readonly expectedPolicyIrHash?: ResolveMaybe<string | undefined>;
   readonly currentDate?: ResolveMaybe<string | undefined>;
   readonly introspector?:
     | ReleaseTokenIntrospector
@@ -237,6 +243,36 @@ function assertVerifiedBinding(
       ),
     );
   }
+
+  if (
+    input.expectedPolicyHash !== undefined &&
+    verification.claims.policy_hash !== input.expectedPolicyHash
+  ) {
+    throw new ReleaseVerificationError(
+      403,
+      'insufficient_scope',
+      'Release token policy hash does not match the downstream policy provenance requirement.',
+      buildBearerChallenge(
+        'insufficient_scope',
+        'Release token policy hash does not match the downstream policy provenance requirement.',
+      ),
+    );
+  }
+
+  if (
+    input.expectedPolicyIrHash !== undefined &&
+    verification.claims.policy_ir_hash !== input.expectedPolicyIrHash
+  ) {
+    throw new ReleaseVerificationError(
+      403,
+      'insufficient_scope',
+      'Release token policy IR hash does not match the downstream policy provenance requirement.',
+      buildBearerChallenge(
+        'insufficient_scope',
+        'Release token policy IR hash does not match the downstream policy provenance requirement.',
+      ),
+    );
+  }
 }
 
 function assertActiveIntrospectionConsistency(
@@ -250,6 +286,14 @@ function assertActiveIntrospectionConsistency(
     introspection.output_hash !== verification.claims.output_hash ||
     introspection.consequence_hash !== verification.claims.consequence_hash ||
     introspection.policy_hash !== verification.claims.policy_hash ||
+    (introspection.policy_version ?? null) !== (verification.claims.policy_version ?? null) ||
+    (introspection.policy_ir_hash ?? null) !== (verification.claims.policy_ir_hash ?? null) ||
+    (introspection.policy_provenance_source ?? null) !==
+      (verification.claims.policy_provenance_source ?? null) ||
+    (introspection.compiled_policy_index_version ?? null) !==
+      (verification.claims.compiled_policy_index_version ?? null) ||
+    (introspection.compiled_policy_ir_version ?? null) !==
+      (verification.claims.compiled_policy_ir_version ?? null) ||
     introspection.decision !== verification.claims.decision ||
     introspection.risk_class !== verification.claims.risk_class
   ) {
@@ -396,6 +440,8 @@ export async function verifyReleaseAuthorization(
     expectedTargetId: input.expectedTargetId,
     expectedOutputHash: input.expectedOutputHash,
     expectedConsequenceHash: input.expectedConsequenceHash,
+    expectedPolicyHash: input.expectedPolicyHash,
+    expectedPolicyIrHash: input.expectedPolicyIrHash,
     introspection,
     usage,
   });
@@ -421,6 +467,8 @@ export function createReleaseVerificationMiddleware(
         input.expectedConsequenceHash,
         context,
       );
+      const expectedPolicyHash = await resolveValue(input.expectedPolicyHash, context);
+      const expectedPolicyIrHash = await resolveValue(input.expectedPolicyIrHash, context);
       const currentDate = await resolveValue(input.currentDate, context);
       const introspector = await resolveValue(input.introspector, context);
       const usageStore = await resolveValue(input.usageStore, context);
@@ -435,6 +483,8 @@ export function createReleaseVerificationMiddleware(
         expectedTargetId,
         expectedOutputHash,
         expectedConsequenceHash,
+        expectedPolicyHash,
+        expectedPolicyIrHash,
         currentDate,
         introspector,
         usageStore,

@@ -103,6 +103,11 @@ async function main(): Promise<void> {
   equal(token.aud, 'sec.edgar.filing.prepare', 'Release object model: token audience binds to the downstream target');
   equal(token.decision_id, decision.id, 'Release object model: token claims bind back to the release decision');
   equal(token.risk_class, 'R4', 'Release object model: token claims preserve risk class');
+  equal(
+    token.policy_version,
+    decision.policyVersion,
+    'Release object model: token claims preserve the release policy version/id binding',
+  );
   ok(token.introspection_required, 'Release object model: token claims expose introspection requirements');
   equal(token.exp - token.iat, 180, 'Release object model: token TTL is preserved exactly');
 

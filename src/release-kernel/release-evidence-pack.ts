@@ -64,6 +64,8 @@ export interface ReleaseEvidenceDecisionSummary {
   readonly consequenceType: ReleaseDecision['consequenceType'];
   readonly riskClass: ReleaseDecision['riskClass'];
   readonly policyVersion: string;
+  readonly policyHash: string;
+  readonly policyIrHash: string | null;
   readonly targetId: string;
   readonly targetDisplayName: string | null;
   readonly requesterId: string;
@@ -104,6 +106,8 @@ export interface ReleaseEvidenceTokenSummary {
   readonly expiresAt: string;
   readonly override: boolean;
   readonly introspectionRequired: boolean;
+  readonly policyHash: string;
+  readonly policyIrHash: string | null;
 }
 
 export interface ReleaseEvidencePredicate {
@@ -279,6 +283,8 @@ function summarizeReleaseToken(
     expiresAt: issuedToken.expiresAt,
     override: issuedToken.claims.override,
     introspectionRequired: issuedToken.claims.introspection_required,
+    policyHash: issuedToken.claims.policy_hash,
+    policyIrHash: issuedToken.claims.policy_ir_hash ?? null,
   };
 }
 
@@ -293,6 +299,8 @@ function summarizeDecision(
     consequenceType: decision.consequenceType,
     riskClass: decision.riskClass,
     policyVersion: decision.policyVersion,
+    policyHash: decision.policyHash,
+    policyIrHash: decision.policyProvenance?.compiledPolicyIrHash ?? null,
     targetId: decision.target.id,
     targetDisplayName: decision.target.displayName ?? null,
     requesterId: decision.requester.id,
@@ -380,6 +388,7 @@ function buildEvidencePack(
     consequenceHash: decision.consequenceHash,
     policyVersion: decision.policyVersion,
     policyHash: decision.policyHash,
+    policyIrHash: decision.policyProvenance?.compiledPolicyIrHash ?? null,
     retentionClass: releaseDecisionRetentionClass(decision),
     findings: Object.freeze(decision.findings.map((finding) => Object.freeze({ ...finding }))),
     artifacts,

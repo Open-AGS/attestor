@@ -6,6 +6,7 @@ import {
   type VerificationResult,
 } from './object-model.js';
 import type {
+  EnforcementPointReference,
   EnforcementFailureReason,
   ReleaseEnforcementRiskClass,
 } from './types.js';
@@ -16,6 +17,7 @@ import {
   telemetryEventSafetyFindings,
   verifyEnforcementTransparencyReceipt,
 } from './telemetry.js';
+import { resolveVerificationProfile } from './verification-profiles.js';
 
 export const RELEASE_ENFORCEMENT_CONFORMANCE_SPEC_VERSION =
   'attestor.release-enforcement-conformance.v1';
@@ -26,6 +28,7 @@ export type EnforcementConformanceRuleId =
   | 'result.shape'
   | 'decision.receipt-consistency'
   | 'receipt.digest-verifies'
+  | 'policy-provenance.required'
   | 'policy-provenance.continuity'
   | 'deny.failure-reasons'
   | 'allow.verification'
@@ -119,12 +122,18 @@ function resultVerification(
   return result.verificationResult ?? result.decision?.verification ?? null;
 }
 
+function resultEnforcementPoint(
+  result: EnforcementConformanceResultLike,
+): EnforcementPointReference | null {
+  return result.decision?.enforcementPoint ??
+    result.request?.enforcementPoint ??
+    null;
+}
+
 function resultRiskClass(
   result: EnforcementConformanceResultLike,
 ): ReleaseEnforcementRiskClass | null {
-  return result.decision?.enforcementPoint.riskClass ??
-    result.request?.enforcementPoint.riskClass ??
-    null;
+  return resultEnforcementPoint(result)?.riskClass ?? null;
 }
 
 function policyProvenanceView(
@@ -148,6 +157,23 @@ function policyProvenanceView(
 
 function hasPolicyProvenance(view: Readonly<Record<string, unknown>>): boolean {
   return Object.values(view).some((value) => value !== null && value !== undefined);
+}
+
+function isNonEmptyString(value: unknown): value is string {
+  return typeof value === 'string' && value.trim().length > 0;
+}
+
+function hasRequiredCompiledPolicyProvenance(
+  view: Readonly<Record<string, unknown>>,
+): boolean {
+  return (
+    isNonEmptyString(view.policyHash) &&
+    isNonEmptyString(view.policyVersion) &&
+    isNonEmptyString(view.policyIrHash) &&
+    view.policyProvenanceSource === 'compiled-admission-policy-index' &&
+    isNonEmptyString(view.compiledPolicyIndexVersion) &&
+    isNonEmptyString(view.compiledPolicyIrVersion)
+  );
 }
 
 function samePolicyProvenance(
@@ -261,6 +287,70 @@ function receiptDigestFinding(result: EnforcementConformanceResultLike): Enforce
     {
       expectedDigest,
       actualDigest: result.receipt.receiptDigest,
+    },
+  );
+}
+
+function policyProvenanceRequiredFinding(result: EnforcementConformanceResultLike): EnforcementConformanceFinding {
+  const enforcementPoint = resultEnforcementPoint(result);
+  if (!enforcementPoint) {
+    return finding(
+      'policy-provenance.required',
+      'pass',
+      'Policy provenance requirement cannot be resolved without an enforcement point.',
+      {},
+    );
+  }
+
+  const profile = resolveVerificationProfile({
+    consequenceType: enforcementPoint.consequenceType,
+    riskClass: enforcementPoint.riskClass,
+    boundaryKind: enforcementPoint.boundaryKind,
+  });
+
+  if (!profile.policyProvenanceRequired) {
+    return finding(
+      'policy-provenance.required',
+      'pass',
+      'Policy provenance is not required by this verification profile.',
+      {
+        profileId: profile.id,
+        riskClass: enforcementPoint.riskClass,
+        boundaryKind: enforcementPoint.boundaryKind,
+      },
+    );
+  }
+
+  if (!isAllowedResult(result)) {
+    return finding(
+      'policy-provenance.required',
+      'pass',
+      'Policy provenance presence is enforced for allowed enforcement results.',
+      {
+        profileId: profile.id,
+        status: result.status,
+      },
+    );
+  }
+
+  const verificationView = policyProvenanceView(resultVerification(result));
+  const receiptView = policyProvenanceView(result.receipt);
+  const verificationComplete = hasRequiredCompiledPolicyProvenance(verificationView);
+  const receiptComplete = !result.receipt || hasRequiredCompiledPolicyProvenance(receiptView);
+  const complete = verificationComplete && receiptComplete;
+
+  return finding(
+    'policy-provenance.required',
+    complete ? 'pass' : 'fail',
+    complete
+      ? 'Allowed result carries required compiled policy provenance.'
+      : 'Allowed result must carry required compiled policy provenance for this verification profile.',
+    {
+      profileId: profile.id,
+      verificationComplete,
+      receiptComplete,
+      verification: verificationView,
+      receipt: receiptView,
     },
   );
 }
@@ -526,6 +616,7 @@ export function runEnforcementPointConformance(
     resultShapeFinding(input.result),
     receiptConsistencyFinding(input.result),
     receiptDigestFinding(input.result),
+    policyProvenanceRequiredFinding(input.result),
     policyProvenanceContinuityFinding(input.result, input.telemetryEvent, input.transparencyReceipt),
     denyFailureFinding(input.result),
     allowVerificationFinding(input.result),

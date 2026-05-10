@@ -89,11 +89,14 @@ function samplePresentation() {
   });
 }
 
-function allowedDecisionAndReceipt(): {
+function allowedDecisionAndReceipt(input: {
+  readonly includePolicyProvenance?: boolean;
+} = {}): {
   readonly decision: EnforcementDecision;
   readonly receipt: EnforcementReceipt;
 } {
   const request = sampleRequest();
+  const includePolicyProvenance = input.includePolicyProvenance ?? true;
   const verification = createVerificationResult({
     id: 'vr_conformance_allowed',
     checkedAt: CHECKED_AT,
@@ -105,12 +108,16 @@ function allowedDecisionAndReceipt(): {
     releaseDecisionId: 'rd_conformance_1',
     outputHash: 'sha256:output',
     consequenceHash: 'sha256:consequence',
-    policyHash: POLICY_HASH,
-    policyVersion: POLICY_VERSION,
-    policyIrHash: POLICY_IR_HASH,
-    policyProvenanceSource: 'compiled-admission-policy-index',
-    compiledPolicyIndexVersion: COMPILED_POLICY_INDEX_VERSION,
-    compiledPolicyIrVersion: COMPILED_POLICY_IR_VERSION,
+    ...(includePolicyProvenance
+      ? {
+          policyHash: POLICY_HASH,
+          policyVersion: POLICY_VERSION,
+          policyIrHash: POLICY_IR_HASH,
+          policyProvenanceSource: 'compiled-admission-policy-index' as const,
+          compiledPolicyIndexVersion: COMPILED_POLICY_INDEX_VERSION,
+          compiledPolicyIrVersion: COMPILED_POLICY_IR_VERSION,
+        }
+      : {}),
   });
   const decision = createEnforcementDecision({
     id: 'ed_conformance_allowed',
@@ -383,6 +390,7 @@ function testConformancePass(transparencyReceipt: ReturnType<typeof transparency
   equal(report.summary.failed, 0, 'Conformance: passing report has zero failed rules');
   ok(report.findings.some((finding) => finding.ruleId === 'telemetry.required-fields'), 'Conformance: telemetry rule ran');
   ok(report.findings.some((finding) => finding.ruleId === 'receipt.digest-verifies'), 'Conformance: receipt digest verification rule ran');
+  ok(report.findings.some((finding) => finding.ruleId === 'policy-provenance.required'), 'Conformance: required policy provenance rule ran');
   ok(report.findings.some((finding) => finding.ruleId === 'policy-provenance.continuity'), 'Conformance: policy provenance continuity rule ran');
   ok(report.findings.some((finding) => finding.ruleId === 'high-consequence.transparency-required'), 'Conformance: transparency rule ran');
 }
@@ -458,6 +466,26 @@ function testConformanceFailures(): void {
       (finding) => finding.ruleId === 'policy-provenance.continuity' && finding.status === 'fail',
     ),
     'Conformance: policy provenance mismatch fails continuity rule',
+  );
+
+  const missingPolicy = allowedDecisionAndReceipt({ includePolicyProvenance: false });
+  const missingPolicyReport = runEnforcementPointConformance({
+    id: 'missing-required-policy-provenance',
+    result: {
+      status: 'allowed',
+      checkedAt: CHECKED_AT,
+      request: sampleRequest(),
+      decision: missingPolicy.decision,
+      receipt: missingPolicy.receipt,
+      failureReasons: [],
+      responseStatus: 200,
+    },
+  });
+  ok(
+    missingPolicyReport.findings.some(
+      (finding) => finding.ruleId === 'policy-provenance.required' && finding.status === 'fail',
+    ),
+    'Conformance: allowed R4 result without required policy provenance fails',
   );
 
   const missingTransparency = runEnforcementPointConformance({

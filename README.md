@@ -286,6 +286,8 @@ Attestor is one product with a shared AI action authorization core and modular p
 
 One product. One platform core.
 
+The current engine shape is a consequence gateway, not a prompt filter. The core admits, narrows, reviews, or blocks proposed consequences; the release layer turns decisions into proof material; the policy control plane binds authority and provenance; the enforcement plane verifies at the downstream edge; and the evidence path stays data-minimized by default.
+
 Read the architecture as a path, not a stack diagram:
 
 ```text

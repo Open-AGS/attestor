@@ -7,6 +7,7 @@ import {
   consequenceAuditEvidenceExportDescriptor,
   consequenceBusinessRiskDashboardDescriptor,
   consequenceDashboardApiSummaryDescriptor,
+  consequenceDataMinimizationMaterialSafetyFindings,
   consequenceDataMinimizationRedactionPolicyDescriptor,
   consequenceExternalReviewPacketDescriptor,
   evaluateConsequenceDataMinimizationArtifact,
@@ -151,6 +152,37 @@ function testEvaluationAllowsOnlySurfaceSpecificUnits(): void {
   );
 }
 
+function testMaterialSafetyFindingsUsePolicyForbiddenClasses(): void {
+  const findings = consequenceDataMinimizationMaterialSafetyFindings({
+    findingSubject: 'telemetry',
+    material: JSON.stringify({
+      body: 'release-token=raw token must not leave the runtime',
+      attributes: {
+        customerMarker: 'raw_customer_value_must_not_escape',
+        rawPayloadStored: true,
+        forbiddenClass: 'raw-bank-or-payment-data',
+      },
+    }),
+  });
+
+  ok(
+    findings.some((finding) => finding.includes('release-token=')),
+    'Data minimization policy: runtime token markers are detected centrally',
+  );
+  ok(
+    findings.some((finding) => finding.includes('raw-bank-or-payment-data')),
+    'Data minimization policy: forbidden raw classes are detected centrally',
+  );
+  ok(
+    findings.some((finding) => finding.includes('raw payload marker')),
+    'Data minimization policy: raw must-not-escape markers are detected centrally',
+  );
+  ok(
+    findings.some((finding) => finding.includes('raw payload storage')),
+    'Data minimization policy: raw payload storage declarations are detected centrally',
+  );
+}
+
 function testExistingDescriptorsBindToPolicyVersion(): void {
   const admission = consequenceAdmissionDescriptor();
   const auditExport = consequenceAuditEvidenceExportDescriptor();
@@ -254,6 +286,7 @@ function testDocsAndScriptsExposePolicy(): void {
 
 testDescriptorCoversCriticalSurfaces();
 testEvaluationAllowsOnlySurfaceSpecificUnits();
+testMaterialSafetyFindingsUsePolicyForbiddenClasses();
 testExistingDescriptorsBindToPolicyVersion();
 testDocsAndScriptsExposePolicy();
 

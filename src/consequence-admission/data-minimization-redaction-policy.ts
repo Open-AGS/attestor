@@ -77,6 +77,17 @@ export const CONSEQUENCE_DATA_MINIMIZATION_FORBIDDEN_RAW_CLASSES = [
 export type ConsequenceDataMinimizationForbiddenRawClass =
   typeof CONSEQUENCE_DATA_MINIMIZATION_FORBIDDEN_RAW_CLASSES[number];
 
+export const CONSEQUENCE_DATA_MINIMIZATION_RUNTIME_SECRET_MARKERS = [
+  'bearer ',
+  'jwt.',
+  'private_key',
+  'secret=',
+  'release-token=',
+  'attestor-release-token',
+] as const;
+export type ConsequenceDataMinimizationRuntimeSecretMarker =
+  typeof CONSEQUENCE_DATA_MINIMIZATION_RUNTIME_SECRET_MARKERS[number];
+
 export const CONSEQUENCE_DATA_MINIMIZATION_GOVERNANCE_REFS = [
   'nist-ai-rmf-risk-documentation',
   'nist-sp-800-122-pii-confidentiality',
@@ -120,6 +131,12 @@ export interface EvaluateConsequenceDataMinimizationArtifactInput {
   readonly rawPayloadStored?: boolean | null;
   readonly exposedUnits?: readonly ConsequenceDataMinimizationAllowedUnit[] | null;
   readonly exposedRawClasses?: readonly ConsequenceDataMinimizationForbiddenRawClass[] | null;
+}
+
+export interface ConsequenceDataMinimizationMaterialSafetyFindingInput {
+  readonly material: string;
+  readonly findingSubject?: string | null;
+  readonly extraSensitiveMarkers?: readonly string[] | null;
 }
 
 export interface ConsequenceDataMinimizationArtifactEvaluation {
@@ -323,6 +340,44 @@ function policyForSurface(
     throw new Error(`Consequence data minimization unknown surface: ${surfaceKind}`);
   }
   return policy;
+}
+
+function materialContainsRawPayloadMarker(material: string): boolean {
+  return material.includes('raw_') && material.includes('must_not_escape');
+}
+
+function materialDeclaresRawPayloadStorage(material: string): boolean {
+  return (
+    material.includes('rawpayloadstored":true') ||
+    material.includes('raw_payload_stored":true')
+  );
+}
+
+export function consequenceDataMinimizationMaterialSafetyFindings(
+  input: ConsequenceDataMinimizationMaterialSafetyFindingInput,
+): readonly string[] {
+  const material = input.material.toLowerCase();
+  const findingSubject = input.findingSubject?.trim() || 'material';
+  const markers = new Set([
+    ...CONSEQUENCE_DATA_MINIMIZATION_RUNTIME_SECRET_MARKERS,
+    ...CONSEQUENCE_DATA_MINIMIZATION_FORBIDDEN_RAW_CLASSES,
+    ...(input.extraSensitiveMarkers ?? []),
+  ].map((marker) => marker.toLowerCase()));
+  const findings: string[] = [];
+
+  for (const marker of markers) {
+    if (material.includes(marker)) {
+      findings.push(`${findingSubject} contains sensitive marker: ${marker.trim()}`);
+    }
+  }
+  if (materialContainsRawPayloadMarker(material)) {
+    findings.push(`${findingSubject} contains raw payload marker`);
+  }
+  if (materialDeclaresRawPayloadStorage(material)) {
+    findings.push(`${findingSubject} declares raw payload storage`);
+  }
+
+  return Object.freeze(findings);
 }
 
 export function consequenceDataMinimizationRedactionPolicyDescriptor():

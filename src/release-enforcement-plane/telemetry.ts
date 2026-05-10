@@ -12,6 +12,7 @@ import type {
   ReleaseEnforcementRiskClass,
 } from './types.js';
 import { ENFORCEMENT_FAILURE_REASONS } from './types.js';
+import { consequenceDataMinimizationMaterialSafetyFindings } from '../consequence-admission/data-minimization-redaction-policy.js';
 
 export const RELEASE_ENFORCEMENT_TELEMETRY_SPEC_VERSION =
   'attestor.release-enforcement-telemetry.v1';
@@ -22,41 +23,6 @@ export const ENFORCEMENT_TELEMETRY_EVENT_NAME =
   'attestor.release_enforcement.decision';
 export const ENFORCEMENT_TRANSPARENCY_EVENT_NAME =
   'attestor.release_enforcement.transparency_receipt';
-
-const ENFORCEMENT_TELEMETRY_SENSITIVE_MARKERS = Object.freeze([
-  'bearer ',
-  'jwt.',
-  'private_key',
-  'secret=',
-  'release-token=',
-  'attestor-release-token',
-  'raw-model-prompt',
-  'raw-model-output',
-  'raw-tool-payload',
-  'raw-customer-identifier',
-  'raw-personal-data',
-  'raw-bank-or-payment-data',
-  'raw-wallet-key-or-secret',
-  'raw-recipient-details',
-  'raw-evidence-document',
-  'raw-database-row-or-query-result',
-  'raw-downstream-response',
-  'credential-or-secret',
-  'private-policy-threshold',
-  'raw-idempotency-key',
-  'raw-replay-key',
-] as const);
-
-function containsRawPayloadMarker(material: string): boolean {
-  return material.includes('raw_') && material.includes('must_not_escape');
-}
-
-function declaresRawPayloadStorage(material: string): boolean {
-  return (
-    material.includes('rawpayloadstored":true') ||
-    material.includes('raw_payload_stored":true')
-  );
-}
 
 export const ENFORCEMENT_TELEMETRY_HIGH_CONSEQUENCE_RISK_CLASSES = Object.freeze([
   'R4',
@@ -778,18 +744,9 @@ export function telemetryEventSafetyFindings(
     body: event.body,
     attributes: event.attributes,
     refs: event.refs,
-  }).toLowerCase();
-  const findings: string[] = [];
-  for (const marker of ENFORCEMENT_TELEMETRY_SENSITIVE_MARKERS) {
-    if (material.includes(marker)) {
-      findings.push(`telemetry contains sensitive marker: ${marker.trim()}`);
-    }
-  }
-  if (containsRawPayloadMarker(material)) {
-    findings.push('telemetry contains raw payload marker');
-  }
-  if (declaresRawPayloadStorage(material)) {
-    findings.push('telemetry declares raw payload storage');
-  }
-  return Object.freeze(findings);
+  });
+  return consequenceDataMinimizationMaterialSafetyFindings({
+    material,
+    findingSubject: 'telemetry',
+  });
 }

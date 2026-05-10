@@ -250,6 +250,11 @@ function testTelemetryEventForAllow(): EnforcementTelemetryEvent {
   equal(event.enforcementPoint.riskClass, 'R4', 'Telemetry: event carries low-cardinality risk class');
   equal(receipt.policyIrHash, POLICY_IR_HASH, 'Telemetry: fixture receipt preserves policy IR provenance');
   equal(event.verification.policyIrHash, POLICY_IR_HASH, 'Telemetry: event carries policy IR provenance');
+  deepEqual(
+    event.verification.policyContext,
+    receipt.policyContext,
+    'Telemetry: event carries structured policy context',
+  );
   equal(
     event.attributes['attestor.release_enforcement.policy.ir_hash'],
     POLICY_IR_HASH,
@@ -325,6 +330,11 @@ function testTransparencyReceipt(): ReturnType<typeof transparencyReceiptFor> {
   equal(transparencyReceipt.subject.id, receipt.id, 'Transparency: subject carries receipt id');
   equal(transparencyReceipt.subject.policyIrHash, POLICY_IR_HASH, 'Transparency: subject carries policy IR provenance');
   equal(transparencyReceipt.subject.policyProvenanceSource, 'compiled-admission-policy-index', 'Transparency: subject carries policy provenance source');
+  deepEqual(
+    transparencyReceipt.subject.policyContext,
+    receipt.policyContext,
+    'Transparency: subject carries structured policy context',
+  );
   ok(transparencyReceipt.subject.digest.startsWith('sha256:'), 'Transparency: subject carries digest');
   equal(verification.status, 'valid', 'Transparency: receipt verifies');
   deepEqual([...verification.failureReasons], [], 'Transparency: valid receipt has no verification failures');
@@ -342,6 +352,11 @@ function testTransparencyReceipt(): ReturnType<typeof transparencyReceiptFor> {
   });
   equal(event.name, ENFORCEMENT_TRANSPARENCY_EVENT_NAME, 'Transparency: telemetry export gets transparency event name');
   equal(event.signal, 'transparency-receipt', 'Transparency: telemetry export uses transparency signal');
+  deepEqual(
+    event.verification.policyContext,
+    receipt.policyContext,
+    'Transparency: telemetry export carries structured policy context',
+  );
 
   const tampered = {
     ...transparencyReceipt,

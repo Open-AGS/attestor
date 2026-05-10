@@ -3,6 +3,7 @@ import type {
   EnforcementDecision,
   EnforcementReceipt,
   EnforcementRequest,
+  ReleaseEnforcementPolicyContext,
   VerificationResult,
 } from './object-model.js';
 import type {
@@ -80,6 +81,7 @@ export interface EnforcementTelemetryVerification {
   readonly policyProvenanceSource: VerificationResult['policyProvenanceSource'];
   readonly compiledPolicyIndexVersion: string | null;
   readonly compiledPolicyIrVersion: string | null;
+  readonly policyContext: ReleaseEnforcementPolicyContext;
 }
 
 export interface EnforcementTelemetryEvent {
@@ -148,6 +150,7 @@ export interface EnforcementTransparencySubject {
   readonly policyProvenanceSource: VerificationResult['policyProvenanceSource'];
   readonly compiledPolicyIndexVersion: string | null;
   readonly compiledPolicyIrVersion: string | null;
+  readonly policyContext: ReleaseEnforcementPolicyContext;
   readonly digest: string;
 }
 
@@ -308,6 +311,27 @@ function pointFromInput(input: CreateEnforcementTelemetryEventInput): Enforcemen
 function verificationView(input: CreateEnforcementTelemetryEventInput): EnforcementTelemetryVerification {
   const verification = verificationFromInput(input);
   const receipt = input.receipt ?? null;
+  const policyHash = verification?.policyHash ?? receipt?.policyHash ?? null;
+  const policyVersion = verification?.policyVersion ?? receipt?.policyVersion ?? null;
+  const policyIrHash = verification?.policyIrHash ?? receipt?.policyIrHash ?? null;
+  const policyProvenanceSource =
+    verification?.policyProvenanceSource ?? receipt?.policyProvenanceSource ?? null;
+  const compiledPolicyIndexVersion =
+    verification?.compiledPolicyIndexVersion ?? receipt?.compiledPolicyIndexVersion ?? null;
+  const compiledPolicyIrVersion =
+    verification?.compiledPolicyIrVersion ?? receipt?.compiledPolicyIrVersion ?? null;
+  const policyContext =
+    verification?.policyContext ??
+    receipt?.policyContext ??
+    Object.freeze({
+      policyHash,
+      policyVersion,
+      policyIrHash,
+      policyProvenanceSource,
+      compiledPolicyIndexVersion,
+      compiledPolicyIrVersion,
+    });
+
   return Object.freeze({
     status: verification?.status ?? receipt?.verificationStatus ?? null,
     mode: verification?.mode ?? null,
@@ -315,15 +339,13 @@ function verificationView(input: CreateEnforcementTelemetryEventInput): Enforcem
     cacheState: verification?.cacheState ?? null,
     degradedState: verification?.degradedState ?? null,
     introspectionActive: verification?.introspection?.active ?? null,
-    policyHash: verification?.policyHash ?? receipt?.policyHash ?? null,
-    policyVersion: verification?.policyVersion ?? receipt?.policyVersion ?? null,
-    policyIrHash: verification?.policyIrHash ?? receipt?.policyIrHash ?? null,
-    policyProvenanceSource:
-      verification?.policyProvenanceSource ?? receipt?.policyProvenanceSource ?? null,
-    compiledPolicyIndexVersion:
-      verification?.compiledPolicyIndexVersion ?? receipt?.compiledPolicyIndexVersion ?? null,
-    compiledPolicyIrVersion:
-      verification?.compiledPolicyIrVersion ?? receipt?.compiledPolicyIrVersion ?? null,
+    policyHash,
+    policyVersion,
+    policyIrHash,
+    policyProvenanceSource,
+    compiledPolicyIndexVersion,
+    compiledPolicyIrVersion,
+    policyContext,
   });
 }
 
@@ -549,6 +571,7 @@ function subjectFromReceipt(receipt: EnforcementReceipt): EnforcementTransparenc
     policyProvenanceSource: receipt.policyProvenanceSource,
     compiledPolicyIndexVersion: receipt.compiledPolicyIndexVersion,
     compiledPolicyIrVersion: receipt.compiledPolicyIrVersion,
+    policyContext: receipt.policyContext,
     digest: enforcementTelemetryDigest(receipt),
   });
 }
@@ -566,6 +589,7 @@ function subjectFromDecision(decision: EnforcementDecision): EnforcementTranspar
     policyProvenanceSource: decision.verification.policyProvenanceSource,
     compiledPolicyIndexVersion: decision.verification.compiledPolicyIndexVersion,
     compiledPolicyIrVersion: decision.verification.compiledPolicyIrVersion,
+    policyContext: decision.verification.policyContext,
     digest: enforcementTelemetryDigest(decision),
   });
 }
@@ -583,6 +607,7 @@ function subjectFromEvent(event: EnforcementTelemetryEvent): EnforcementTranspar
     policyProvenanceSource: event.verification.policyProvenanceSource,
     compiledPolicyIndexVersion: event.verification.compiledPolicyIndexVersion,
     compiledPolicyIrVersion: event.verification.compiledPolicyIrVersion,
+    policyContext: event.verification.policyContext,
     digest: event.eventDigest,
   });
 }

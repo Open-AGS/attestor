@@ -42,9 +42,9 @@ Core functions:
 
 The included ledger is an in-memory reference implementation for evaluation, tests, local demos, and adapter shape. It is not a production shared store. Production deployments should back the same contract with a shared, atomic store at the enforcement boundary.
 
-## Redacted Ledger Entries
+## Digest-Indexed Ledger Entries
 
-The ledger uses the raw replay key internally so it can reject duplicates, but exported entries are redacted:
+The ledger normalizes the replay key only long enough to derive a digest, then indexes replay consumption by `replayKeyDigest`. The in-memory reference implementation does not retain raw replay keys as map keys or exported entries:
 
 - replay key is stored as `replayKeyDigest`
 - target is stored as `targetDigest`

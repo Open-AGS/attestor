@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
@@ -43,6 +44,10 @@ function includes(content: string, expected: string, message: string): void {
     `${message}\nExpected to find: ${expected}`,
   );
   passed += 1;
+}
+
+function digestText(value: string): string {
+  return `sha256:${createHash('sha256').update(value).digest('hex')}`;
 }
 
 function paymentRequest(): ConsequenceAdmissionRequest {
@@ -261,6 +266,16 @@ function testReplayAndExpiryHold(): void {
     },
     now: '2026-05-01T12:00:30.000Z',
   });
+  const replayedByDigest = evaluateConsequenceAdmissionPresentationBinding({
+    admission,
+    contract: paymentContract(),
+    presentation: binding,
+    expected: {
+      ...EXPECTED,
+      usedReplayKeyDigests: [digestText('payment:tenant_a:invoice_1938:attempt_1')],
+    },
+    now: '2026-05-01T12:00:30.000Z',
+  });
   const expired = evaluateConsequenceAdmissionPresentationBinding({
     admission,
     contract: paymentContract(),
@@ -273,6 +288,11 @@ function testReplayAndExpiryHold(): void {
     replayed.failureReasons,
     ['replay-key-reused'],
     'Presentation binding: consumed replay key holds precisely',
+  );
+  deepEqual(
+    replayedByDigest.failureReasons,
+    ['replay-key-reused'],
+    'Presentation binding: consumed replay key digest holds without raw replay-key lists',
   );
   deepEqual(
     expired.failureReasons,

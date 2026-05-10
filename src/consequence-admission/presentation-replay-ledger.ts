@@ -117,6 +117,8 @@ export interface ConsequenceAdmissionPresentationReplayLedgerDescriptor {
   readonly outcomes: typeof CONSEQUENCE_ADMISSION_PRESENTATION_REPLAY_LEDGER_OUTCOMES;
   readonly failureReasons: typeof CONSEQUENCE_ADMISSION_PRESENTATION_REPLAY_LEDGER_FAILURE_REASONS;
   readonly storesRawReplayKeysExternally: false;
+  readonly storesRawReplayKeysInMemory: false;
+  readonly replayKeyIndex: 'sha256-digest';
   readonly storesRawTargetsExternally: false;
   readonly storesRawNoncesExternally: false;
   readonly inMemoryReferenceImplementation: true;
@@ -347,29 +349,30 @@ export function createConsequenceAdmissionPresentationReplayLedger(
     3600,
   );
   const now = input.now ?? defaultNow;
-  const entries = new Map<string, ConsequenceAdmissionPresentationReplayLedgerEntry>();
+  const entriesByReplayKeyDigest =
+    new Map<string, ConsequenceAdmissionPresentationReplayLedgerEntry>();
 
   function prune(nowValue: string | null = null): number {
     const prunedAt = new Date(normalizeIsoTimestamp(nowValue ?? now(), 'now')).getTime();
     let removed = 0;
-    for (const [replayKey, entry] of entries.entries()) {
+    for (const [replayKeyDigest, entry] of entriesByReplayKeyDigest.entries()) {
       if (new Date(entry.retainedUntil).getTime() < prunedAt) {
-        entries.delete(replayKey);
+        entriesByReplayKeyDigest.delete(replayKeyDigest);
         removed += 1;
       }
     }
     return removed;
   }
 
-  function activeReplayKeys(nowValue: string): readonly string[] {
+  function activeReplayKeyDigests(nowValue: string): readonly string[] {
     prune(nowValue);
-    return Object.freeze([...entries.keys()].sort());
+    return Object.freeze([...entriesByReplayKeyDigest.keys()].sort());
   }
 
   function has(replayKey: string, nowValue: string | null = null): boolean {
-    const key = normalizeIdentifier(replayKey, 'replayKey');
+    const replayKeyDigest = digestText(normalizeIdentifier(replayKey, 'replayKey'));
     prune(nowValue ?? now());
-    return entries.has(key);
+    return entriesByReplayKeyDigest.has(replayKeyDigest);
   }
 
   function snapshot(
@@ -377,7 +380,8 @@ export function createConsequenceAdmissionPresentationReplayLedger(
   ): ConsequenceAdmissionPresentationReplayLedgerSnapshot {
     prune(nowValue ?? now());
     const redactedEntries = Object.freeze(
-      [...entries.values()].sort((a, b) => a.replayKeyDigest.localeCompare(b.replayKeyDigest)),
+      [...entriesByReplayKeyDigest.values()]
+        .sort((a, b) => a.replayKeyDigest.localeCompare(b.replayKeyDigest)),
     );
     return Object.freeze({
       version: CONSEQUENCE_ADMISSION_PRESENTATION_REPLAY_LEDGER_VERSION,
@@ -396,11 +400,11 @@ export function createConsequenceAdmissionPresentationReplayLedger(
       'presentation.replayKey',
     );
     const replayKeyDigest = replayKey === null ? null : digestText(replayKey);
-    const expectedUsedReplayKeys = Object.freeze(
+    const expectedUsedReplayKeyDigests = Object.freeze(
       Array.from(
         new Set([
-          ...(consumeInput.expected?.usedReplayKeys ?? []),
-          ...activeReplayKeys(consumedAt),
+          ...(consumeInput.expected?.usedReplayKeyDigests ?? []),
+          ...activeReplayKeyDigests(consumedAt),
         ]),
       ).sort(),
     );
@@ -411,19 +415,21 @@ export function createConsequenceAdmissionPresentationReplayLedger(
       expected: {
         ...(consumeInput.expected ?? {}),
         requireReplayKey: consumeInput.expected?.requireReplayKey ?? true,
-        usedReplayKeys: expectedUsedReplayKeys,
+        usedReplayKeyDigests: expectedUsedReplayKeyDigests,
       },
       now: consumedAt,
     });
-    const replayAlreadyConsumed =
-      replayKey !== null && expectedUsedReplayKeys.includes(replayKey);
+    const replayAlreadyConsumed = replayKeyDigest !== null &&
+      (entriesByReplayKeyDigest.has(replayKeyDigest) ||
+        (replayKey !== null && (consumeInput.expected?.usedReplayKeys ?? []).includes(replayKey)) ||
+        expectedUsedReplayKeyDigests.includes(replayKeyDigest));
     const failureReasons = orderedFailureReasons([
       ...(!presentationDecision.allowed ? ['presentation-held' as const] : []),
       ...(replayKey === null ? ['replay-key-missing' as const] : []),
       ...(replayAlreadyConsumed ? ['replay-key-already-consumed' as const] : []),
     ]);
 
-    if (failureReasons.length > 0 || replayKey === null) {
+    if (failureReasons.length > 0 || replayKeyDigest === null) {
       return decision({
         outcome: 'held',
         ledgerId,
@@ -436,7 +442,7 @@ export function createConsequenceAdmissionPresentationReplayLedger(
       });
     }
 
-    const consumedReplayKeyDigest = digestText(replayKey);
+    const consumedReplayKeyDigest = replayKeyDigest;
     const entryBase = Object.freeze({
       version: CONSEQUENCE_ADMISSION_PRESENTATION_REPLAY_LEDGER_VERSION,
       ledgerId,
@@ -464,7 +470,7 @@ export function createConsequenceAdmissionPresentationReplayLedger(
       ...entryBase,
       entryDigest: entryDigest(entryBase),
     });
-    entries.set(replayKey, entry);
+    entriesByReplayKeyDigest.set(consumedReplayKeyDigest, entry);
 
     return decision({
       outcome: 'consumed',
@@ -495,6 +501,8 @@ ConsequenceAdmissionPresentationReplayLedgerDescriptor {
     outcomes: CONSEQUENCE_ADMISSION_PRESENTATION_REPLAY_LEDGER_OUTCOMES,
     failureReasons: CONSEQUENCE_ADMISSION_PRESENTATION_REPLAY_LEDGER_FAILURE_REASONS,
     storesRawReplayKeysExternally: false,
+    storesRawReplayKeysInMemory: false,
+    replayKeyIndex: 'sha256-digest',
     storesRawTargetsExternally: false,
     storesRawNoncesExternally: false,
     inMemoryReferenceImplementation: true,

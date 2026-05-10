@@ -125,6 +125,7 @@ export interface ConsequenceAdmissionPresentationExpectation {
   readonly requireNonce?: boolean | null;
   readonly maxFreshnessSeconds?: number | null;
   readonly usedReplayKeys?: readonly string[];
+  readonly usedReplayKeyDigests?: readonly string[];
 }
 
 export interface EvaluateConsequenceAdmissionPresentationBindingInput {
@@ -250,6 +251,27 @@ function uniqueIdentifiers(
   );
 }
 
+function uniqueDigestReferences(
+  values: readonly string[],
+  fieldName: string,
+): readonly string[] {
+  return Object.freeze(
+    Array.from(
+      new Set(
+        values.map((value) => {
+          const normalized = normalizeIdentifier(value, fieldName);
+          if (!isDigestReference(normalized)) {
+            throw new Error(
+              `Consequence admission presentation binding ${fieldName} must contain digest references.`,
+            );
+          }
+          return normalized;
+        }),
+      ),
+    ).sort(),
+  );
+}
+
 function resolveContract(
   value:
     | ConsequenceAdmissionDownstreamContract
@@ -270,6 +292,10 @@ function canonicalObject<T extends CanonicalReleaseJsonValue>(value: T): {
     canonical,
     digest: `sha256:${createHash('sha256').update(canonical).digest('hex')}`,
   });
+}
+
+function digestText(value: string): string {
+  return `sha256:${createHash('sha256').update(value).digest('hex')}`;
 }
 
 function bindingCanonicalPayload(
@@ -504,10 +530,21 @@ export function evaluateConsequenceAdmissionPresentationBinding(
     'expected.bodyDigest',
   );
   const expectedNonce = normalizeOptionalIdentifier(expected?.nonce, 'expected.nonce');
+  const expectedUsedReplayKeyDigests = uniqueDigestReferences(
+    expected?.usedReplayKeyDigests ?? [],
+    'expected.usedReplayKeyDigests[]',
+  );
   const presentedAtMs = new Date(presentation.presentedAt).getTime();
   const expiresAtMs = new Date(presentation.expiresAt).getTime();
   const nowMs = new Date(now).getTime();
   const freshnessSeconds = Math.ceil((expiresAtMs - presentedAtMs) / 1000);
+  const presentationReplayKeyDigest = presentation.replayKey === null
+    ? null
+    : digestText(presentation.replayKey);
+  const replayKeyReused = presentation.replayKey !== null &&
+    ((expected?.usedReplayKeys ?? []).includes(presentation.replayKey) ||
+      (presentationReplayKeyDigest !== null &&
+        expectedUsedReplayKeyDigests.includes(presentationReplayKeyDigest)));
 
   const failures = orderedFailureReasons([
     ...(presentation.admissionId !== input.admission.admissionId
@@ -554,10 +591,7 @@ export function evaluateConsequenceAdmissionPresentationBinding(
     ...(requireReplayKey && presentation.replayKey === null
       ? ['replay-key-missing' as const]
       : []),
-    ...(presentation.replayKey !== null &&
-      (expected?.usedReplayKeys ?? []).includes(presentation.replayKey)
-      ? ['replay-key-reused' as const]
-      : []),
+    ...(replayKeyReused ? ['replay-key-reused' as const] : []),
     ...(requireNonce && presentation.nonce === null ? ['nonce-missing' as const] : []),
     ...(expectedNonce !== null && presentation.nonce !== expectedNonce
       ? ['nonce-mismatch' as const]

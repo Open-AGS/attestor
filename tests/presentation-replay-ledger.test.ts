@@ -193,6 +193,16 @@ function testDescriptor(): void {
     'Replay ledger: exported entries do not expose raw replay keys',
   );
   equal(
+    descriptor.storesRawReplayKeysInMemory,
+    false,
+    'Replay ledger: in-memory reference does not retain raw replay keys',
+  );
+  equal(
+    descriptor.replayKeyIndex,
+    'sha256-digest',
+    'Replay ledger: duplicate detection is indexed by replay key digest',
+  );
+  equal(
     descriptor.productionSharedStoreIncluded,
     false,
     'Replay ledger: descriptor does not overclaim production shared store',
@@ -226,6 +236,11 @@ function testFirstConsumeStoresRedactedEntry(): void {
     JSON.stringify(snapshot).includes('payment:tenant_a:invoice_1938:attempt_1'),
     false,
     'Replay ledger: snapshot does not expose raw replay key',
+  );
+  equal(
+    JSON.stringify(consumed).includes('payment:tenant_a:invoice_1938:attempt_1'),
+    false,
+    'Replay ledger: consume decision does not expose raw replay key',
   );
   const snapshotText = JSON.stringify(snapshot);
   const targetNeedle = ['https://payments.example.internal', 'supplier-payments'].join('/');
@@ -384,6 +399,7 @@ function testDocsAndScriptsExposeReplayLedger(): void {
   const ledgerDoc = readProjectFile('docs', '02-architecture', 'presentation-replay-ledger.md');
   const bindingDoc = readProjectFile('docs', '02-architecture', 'downstream-presentation-binding.md');
   const systemOverview = readProjectFile('docs', '02-architecture', 'system-overview.md');
+  const ledgerSource = readProjectFile('src', 'consequence-admission', 'presentation-replay-ledger.ts');
   const packageJson = JSON.parse(readProjectFile('package.json')) as {
     readonly scripts: Readonly<Record<string, string>>;
   };
@@ -395,8 +411,18 @@ function testDocsAndScriptsExposeReplayLedger(): void {
   );
   includes(
     ledgerDoc,
-    'single-use replay consumption',
-    'Replay ledger: doc states single-use purpose',
+    'indexes replay consumption by `replayKeyDigest`',
+    'Replay ledger: doc states digest-indexed replay consumption',
+  );
+  includes(
+    ledgerSource,
+    'entriesByReplayKeyDigest',
+    'Replay ledger: source names digest-indexed storage',
+  );
+  equal(
+    ledgerSource.includes('entries.set(replayKey'),
+    false,
+    'Replay ledger: source does not index entries by raw replay key',
   );
   includes(
     bindingDoc,

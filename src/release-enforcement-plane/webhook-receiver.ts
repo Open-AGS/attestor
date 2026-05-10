@@ -6,6 +6,7 @@ import type {
   ReleaseTokenIntrospectionStore,
   ReleaseTokenIntrospector,
 } from '../release-kernel/release-introspection.js';
+import type { ReleasePolicyProvenanceSource } from '../release-kernel/object-model.js';
 import type { ReleaseTokenVerificationKey } from '../release-kernel/release-token.js';
 import {
   createEnforcementDecision,
@@ -33,7 +34,13 @@ import {
 } from './online-verifier.js';
 import {
   ATTESTOR_CONSEQUENCE_HASH_HEADER,
+  ATTESTOR_COMPILED_POLICY_INDEX_VERSION_HEADER,
+  ATTESTOR_COMPILED_POLICY_IR_VERSION_HEADER,
   ATTESTOR_OUTPUT_HASH_HEADER,
+  ATTESTOR_POLICY_HASH_HEADER,
+  ATTESTOR_POLICY_IR_HASH_HEADER,
+  ATTESTOR_POLICY_PROVENANCE_SOURCE_HEADER,
+  ATTESTOR_POLICY_VERSION_HEADER,
   ATTESTOR_RELEASE_DECISION_ID_HEADER,
   ATTESTOR_RELEASE_TOKEN_DIGEST_HEADER,
   ATTESTOR_RELEASE_TOKEN_ID_HEADER,
@@ -79,6 +86,14 @@ export const HONO_RELEASE_WEBHOOK_BODY_CONTEXT_KEY = 'releaseWebhookBody';
 export const ATTESTOR_WEBHOOK_EVENT_ID_HEADER = 'attestor-webhook-event-id';
 export const ATTESTOR_WEBHOOK_RECEIVER_STATUS_HEADER = 'x-attestor-webhook-receiver-status';
 export const DEFAULT_WEBHOOK_RECEIVER_METHODS = Object.freeze(['POST'] as const);
+export const DEFAULT_WEBHOOK_RECEIVER_HTTP_AUTHORIZATION_COMPONENTS = Object.freeze([
+  ...DEFAULT_HTTP_AUTHORIZATION_ENVELOPE_COMPONENTS,
+  ATTESTOR_POLICY_VERSION_HEADER,
+  ATTESTOR_POLICY_IR_HASH_HEADER,
+  ATTESTOR_POLICY_PROVENANCE_SOURCE_HEADER,
+  ATTESTOR_COMPILED_POLICY_INDEX_VERSION_HEADER,
+  ATTESTOR_COMPILED_POLICY_IR_VERSION_HEADER,
+] as const);
 export const DEFAULT_WEBHOOK_BREAK_GLASS_FAILURE_REASONS = Object.freeze([
   'introspection-unavailable',
   'fresh-introspection-required',
@@ -154,6 +169,14 @@ export interface ReleaseWebhookReceiverOptions {
   readonly targetId?: ReleaseWebhookReceiverResolver<string | null | undefined>;
   readonly outputHash?: ReleaseWebhookReceiverResolver<string | null | undefined>;
   readonly consequenceHash?: ReleaseWebhookReceiverResolver<string | null | undefined>;
+  readonly policyHash?: ReleaseWebhookReceiverResolver<string | null | undefined>;
+  readonly policyVersion?: ReleaseWebhookReceiverResolver<string | null | undefined>;
+  readonly policyIrHash?: ReleaseWebhookReceiverResolver<string | null | undefined>;
+  readonly policyProvenanceSource?: ReleaseWebhookReceiverResolver<
+    ReleasePolicyProvenanceSource | string | null | undefined
+  >;
+  readonly compiledPolicyIndexVersion?: ReleaseWebhookReceiverResolver<string | null | undefined>;
+  readonly compiledPolicyIrVersion?: ReleaseWebhookReceiverResolver<string | null | undefined>;
   readonly releaseTokenId?: ReleaseWebhookReceiverResolver<string | null | undefined>;
   readonly releaseDecisionId?: ReleaseWebhookReceiverResolver<string | null | undefined>;
   readonly idempotencyKey?: ReleaseWebhookReceiverResolver<string | null | undefined>;
@@ -658,6 +681,24 @@ async function buildVerifierInput(
     context,
     ATTESTOR_CONSEQUENCE_HASH_HEADER,
   );
+  const policyHash =
+    normalizeIdentifier(await resolveOption(options.policyHash, context)) ??
+    headerValue(context.request.headers, ATTESTOR_POLICY_HASH_HEADER);
+  const policyVersion =
+    normalizeIdentifier(await resolveOption(options.policyVersion, context)) ??
+    headerValue(context.request.headers, ATTESTOR_POLICY_VERSION_HEADER);
+  const policyIrHash =
+    normalizeIdentifier(await resolveOption(options.policyIrHash, context)) ??
+    headerValue(context.request.headers, ATTESTOR_POLICY_IR_HASH_HEADER);
+  const policyProvenanceSource =
+    normalizeIdentifier(await resolveOption(options.policyProvenanceSource, context)) ??
+    headerValue(context.request.headers, ATTESTOR_POLICY_PROVENANCE_SOURCE_HEADER);
+  const compiledPolicyIndexVersion =
+    normalizeIdentifier(await resolveOption(options.compiledPolicyIndexVersion, context)) ??
+    headerValue(context.request.headers, ATTESTOR_COMPILED_POLICY_INDEX_VERSION_HEADER);
+  const compiledPolicyIrVersion =
+    normalizeIdentifier(await resolveOption(options.compiledPolicyIrVersion, context)) ??
+    headerValue(context.request.headers, ATTESTOR_COMPILED_POLICY_IR_VERSION_HEADER);
   if (targetId === null || outputHash === null || consequenceHash === null) {
     return resultFromEarlyRejection({
       checkedAt: context.checkedAt,
@@ -712,7 +753,7 @@ async function buildVerifierInput(
     expectedNonce,
     expectedTag: HTTP_MESSAGE_SIGNATURE_TAG,
     requiredCoveredComponents:
-      options.requiredCoveredComponents ?? DEFAULT_HTTP_AUTHORIZATION_ENVELOPE_COMPONENTS,
+      options.requiredCoveredComponents ?? DEFAULT_WEBHOOK_RECEIVER_HTTP_AUTHORIZATION_COMPONENTS,
     now: context.checkedAt,
     maxSignatureAgeSeconds: options.maxSignatureAgeSeconds,
     clockSkewSeconds: options.clockSkewSeconds,
@@ -772,6 +813,23 @@ async function buildVerifierInput(
     presentation,
     verificationKey,
     now: context.checkedAt,
+    expected:
+      policyHash !== null ||
+      policyVersion !== null ||
+      policyIrHash !== null ||
+      policyProvenanceSource !== null ||
+      compiledPolicyIndexVersion !== null ||
+      compiledPolicyIrVersion !== null
+        ? {
+            policyHash: policyHash ?? undefined,
+            policyVersion: policyVersion ?? undefined,
+            policyIrHash: policyIrHash ?? undefined,
+            policyProvenanceSource:
+              policyProvenanceSource as ReleasePolicyProvenanceSource | undefined,
+            compiledPolicyIndexVersion: compiledPolicyIndexVersion ?? undefined,
+            compiledPolicyIrVersion: compiledPolicyIrVersion ?? undefined,
+          }
+        : undefined,
     replayLedgerEntry,
     nonceLedgerEntry,
     httpMessageSignature: {
@@ -780,7 +838,7 @@ async function buildVerifierInput(
       expectedNonce,
       expectedTag: HTTP_MESSAGE_SIGNATURE_TAG,
       requiredCoveredComponents:
-        options.requiredCoveredComponents ?? DEFAULT_HTTP_AUTHORIZATION_ENVELOPE_COMPONENTS,
+        options.requiredCoveredComponents ?? DEFAULT_WEBHOOK_RECEIVER_HTTP_AUTHORIZATION_COMPONENTS,
       maxSignatureAgeSeconds: options.maxSignatureAgeSeconds,
       clockSkewSeconds: options.clockSkewSeconds,
     },
@@ -905,7 +963,7 @@ export function releaseWebhookReceiverResponseHeaders(
     );
   }
   if (result.failureReasons.includes('missing-nonce') || result.failureReasons.includes('invalid-nonce')) {
-    headers.set('accept-signature', `${HTTP_MESSAGE_SIGNATURE_LABEL}=("${DEFAULT_HTTP_AUTHORIZATION_ENVELOPE_COMPONENTS.join('" "')}")`);
+    headers.set('accept-signature', `${HTTP_MESSAGE_SIGNATURE_LABEL}=("${DEFAULT_WEBHOOK_RECEIVER_HTTP_AUTHORIZATION_COMPONENTS.join('" "')}")`);
   }
   return headers;
 }

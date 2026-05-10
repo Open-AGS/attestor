@@ -17,8 +17,15 @@ import {
 import type { CreateEnforcementPointReferenceInput } from '../src/release-enforcement-plane/types.js';
 import type { NonceLedgerEntry, ReplayLedgerEntry } from '../src/release-enforcement-plane/freshness.js';
 import {
+  ATTESTOR_COMPILED_POLICY_INDEX_VERSION_HEADER,
+  ATTESTOR_COMPILED_POLICY_IR_VERSION_HEADER,
+  ATTESTOR_POLICY_IR_HASH_HEADER,
+  ATTESTOR_POLICY_PROVENANCE_SOURCE_HEADER,
+  ATTESTOR_POLICY_VERSION_HEADER,
   createHttpAuthorizationEnvelope,
+  createHttpMessageSignature,
   createHttpMessageSignatureReleaseTokenConfirmation,
+  DEFAULT_HTTP_AUTHORIZATION_ENVELOPE_COMPONENTS,
   generateHttpMessageSignatureKeyPair,
   type HttpAuthorizationEnvelope,
   type HttpMessageSignatureKeyPair,
@@ -190,6 +197,7 @@ async function makeEnvelope(input: {
   readonly body?: string;
   readonly nonce?: string;
   readonly url?: string;
+  readonly coveredComponents?: readonly string[];
 }): Promise<HttpAuthorizationEnvelope> {
   return createHttpAuthorizationEnvelope({
     request: {
@@ -207,6 +215,7 @@ async function makeEnvelope(input: {
     expiresAt: '2026-04-18T16:02:00.000Z',
     nonce: input.nonce ?? 'nonce-webhook-1',
     presentedAt: '2026-04-18T16:01:00.000Z',
+    coveredComponents: input.coveredComponents,
   });
 }
 
@@ -323,11 +332,137 @@ async function testDirectReceiverAcceptsSignedWebhook(): Promise<void> {
   equal(result.responseStatus, 202, 'Webhook receiver: accepted result is admission-ready');
   equal(result.decision?.outcome, 'allow', 'Webhook receiver: valid webhook creates allow decision');
   ok(result.receipt?.receiptDigest?.startsWith('sha256:'), 'Webhook receiver: accepted webhook emits receipt digest');
+  equal(result.receipt?.policyHash, POLICY_HASH, 'Webhook receiver: receipt preserves policy hash provenance');
+  equal(result.receipt?.policyVersion, 'policy.release-webhook-receiver-test.v1', 'Webhook receiver: receipt preserves policy version provenance');
   equal(result.receipt?.policyIrHash, POLICY_IR_HASH, 'Webhook receiver: receipt preserves compiled policy IR provenance');
+  equal(result.receipt?.policyProvenanceSource, 'compiled-admission-policy-index', 'Webhook receiver: receipt preserves policy provenance source');
+  equal(result.receipt?.compiledPolicyIndexVersion, COMPILED_POLICY_INDEX_VERSION, 'Webhook receiver: receipt preserves compiled policy index version');
+  equal(result.receipt?.compiledPolicyIrVersion, COMPILED_POLICY_IR_VERSION, 'Webhook receiver: receipt preserves compiled policy IR version');
+  deepEqual(
+    result.verificationResult?.policyContext,
+    {
+      policyHash: POLICY_HASH,
+      policyVersion: 'policy.release-webhook-receiver-test.v1',
+      policyIrHash: POLICY_IR_HASH,
+      policyProvenanceSource: 'compiled-admission-policy-index',
+      compiledPolicyIndexVersion: COMPILED_POLICY_INDEX_VERSION,
+      compiledPolicyIrVersion: COMPILED_POLICY_IR_VERSION,
+    },
+    'Webhook receiver: verification result carries full policy context',
+  );
+  ok(
+    result.signature?.coveredComponents.includes(ATTESTOR_POLICY_VERSION_HEADER),
+    'Webhook receiver: HTTP signature covers policy version by default',
+  );
+  ok(
+    result.signature?.coveredComponents.includes(ATTESTOR_POLICY_IR_HASH_HEADER),
+    'Webhook receiver: HTTP signature covers policy IR hash by default',
+  );
+  ok(
+    result.signature?.coveredComponents.includes(ATTESTOR_POLICY_PROVENANCE_SOURCE_HEADER),
+    'Webhook receiver: HTTP signature covers policy provenance source by default',
+  );
+  ok(
+    result.signature?.coveredComponents.includes(ATTESTOR_COMPILED_POLICY_INDEX_VERSION_HEADER),
+    'Webhook receiver: HTTP signature covers compiled policy index version by default',
+  );
+  ok(
+    result.signature?.coveredComponents.includes(ATTESTOR_COMPILED_POLICY_IR_VERSION_HEADER),
+    'Webhook receiver: HTTP signature covers compiled policy IR version by default',
+  );
   equal(result.online?.onlineChecked, true, 'Webhook receiver: webhook path performs online introspection');
   equal(result.online?.consumed, true, 'Webhook receiver: accepted webhook consumes token use');
   equal(result.offline?.freshness?.nonce.status, 'valid', 'Webhook receiver: nonce freshness is valid');
   deepEqual(result.failureReasons, [], 'Webhook receiver: valid webhook has no failures');
+}
+
+async function testPolicyProvenanceHeaderMismatchFailsClosed(): Promise<void> {
+  const { signatureKey, issued, verificationKey, decision, envelope } = await setupValidWebhook({
+    tokenId: 'rt_webhook_receiver_policy_mismatch',
+    decisionId: 'decision-webhook-receiver-policy-mismatch',
+    nonce: 'nonce-webhook-policy-mismatch',
+  });
+  const { store, introspector } = register(issued, decision);
+  const headers = {
+    ...envelope.headers,
+    [ATTESTOR_COMPILED_POLICY_IR_VERSION_HEADER]: 'attestor.policy-ir.test.wrong',
+  };
+  const signature = await createHttpMessageSignature({
+    message: {
+      method: 'POST',
+      uri: envelope.uri,
+      headers,
+      body: BODY,
+    },
+    privateJwk: signatureKey.privateJwk,
+    publicJwk: signatureKey.publicJwk,
+    coveredComponents: envelope.coveredComponents,
+    createdAt: envelope.createdAt,
+    expiresAt: envelope.expiresAt,
+    nonce: envelope.nonce,
+  });
+
+  const result = await evaluateReleaseWebhookRequest(
+    {
+      method: 'POST',
+      url: envelope.uri,
+      headers: new Headers({
+        ...headers,
+        'signature-input': signature.signatureInput,
+        signature: signature.signature,
+      }),
+      body: BODY,
+    },
+    receiverOptions({
+      signatureKey,
+      verificationKey,
+      introspector,
+      store,
+      nonce: 'nonce-webhook-policy-mismatch',
+    }),
+  );
+
+  equal(result.status, 'rejected', 'Webhook receiver: signed policy provenance mismatch is rejected');
+  equal(result.responseStatus, 403, 'Webhook receiver: policy provenance mismatch is fail-closed');
+  deepEqual(result.failureReasons, ['stale-policy'], 'Webhook receiver: policy provenance mismatch maps to stale policy');
+  equal(result.decision?.outcome, 'deny', 'Webhook receiver: stale policy creates deny decision');
+}
+
+async function testMissingPolicyProvenanceCoverageFailsClosed(): Promise<void> {
+  const { signatureKey, issued, verificationKey, decision } = await setupValidWebhook({
+    tokenId: 'rt_webhook_receiver_policy_coverage',
+    decisionId: 'decision-webhook-receiver-policy-coverage',
+    nonce: 'nonce-webhook-policy-coverage',
+  });
+  const { store, introspector } = register(issued, decision);
+  const envelope = await makeEnvelope({
+    signatureKey,
+    issued,
+    nonce: 'nonce-webhook-policy-coverage',
+    coveredComponents: DEFAULT_HTTP_AUTHORIZATION_ENVELOPE_COMPONENTS,
+  });
+  const result = await evaluateReleaseWebhookRequest(
+    {
+      method: 'POST',
+      url: envelope.uri,
+      headers: new Headers(envelope.headers),
+      body: BODY,
+    },
+    receiverOptions({
+      signatureKey,
+      verificationKey,
+      introspector,
+      store,
+      nonce: 'nonce-webhook-policy-coverage',
+    }),
+  );
+
+  equal(result.status, 'rejected', 'Webhook receiver: missing policy provenance signature coverage is rejected');
+  deepEqual(result.failureReasons, ['binding-mismatch'], 'Webhook receiver: missing coverage maps to binding mismatch');
+  ok(
+    result.signature?.coveredComponents.includes(ATTESTOR_POLICY_VERSION_HEADER) === false,
+    'Webhook receiver: rejected envelope omitted policy version coverage',
+  );
 }
 
 async function testMissingSignatureFailsClosed(): Promise<void> {
@@ -660,6 +795,8 @@ async function testHonoReceiverBlocksRejectedWebhook(): Promise<void> {
 
 async function main(): Promise<void> {
   await testDirectReceiverAcceptsSignedWebhook();
+  await testPolicyProvenanceHeaderMismatchFailsClosed();
+  await testMissingPolicyProvenanceCoverageFailsClosed();
   await testMissingSignatureFailsClosed();
   await testTamperedBodyIsDenied();
   await testReplayLedgerHitIsConflict();

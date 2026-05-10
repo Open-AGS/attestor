@@ -55,6 +55,8 @@ export interface ReleaseDecisionLogMetadata {
   readonly policyHash?: string | null;
   readonly policyIrHash?: string | null;
   readonly policyProvenanceSource?: ReleasePolicyProvenanceSource | null;
+  readonly compiledPolicyIndexVersion?: string | null;
+  readonly compiledPolicyIrVersion?: string | null;
   readonly rolloutMode: string | null;
   readonly rolloutEvaluationMode: string | null;
   readonly rolloutReason: string | null;
@@ -170,6 +172,8 @@ function snapshotMetadata(metadata: ReleaseDecisionLogMetadata): ReleaseDecision
     policyHash: metadata.policyHash ?? null,
     policyIrHash: metadata.policyIrHash ?? null,
     policyProvenanceSource: metadata.policyProvenanceSource ?? null,
+    compiledPolicyIndexVersion: metadata.compiledPolicyIndexVersion ?? null,
+    compiledPolicyIrVersion: metadata.compiledPolicyIrVersion ?? null,
     rolloutMode: metadata.rolloutMode,
     rolloutEvaluationMode: metadata.rolloutEvaluationMode,
     rolloutReason: metadata.rolloutReason,
@@ -310,6 +314,16 @@ function normalizeLoadedMetadata(
     policyProvenanceSource: requireNullablePolicyProvenanceSource(
       value.policyProvenanceSource,
       'metadata.policyProvenanceSource',
+      lineNumber,
+    ),
+    compiledPolicyIndexVersion: requireNullableString(
+      value.compiledPolicyIndexVersion ?? null,
+      'metadata.compiledPolicyIndexVersion',
+      lineNumber,
+    ),
+    compiledPolicyIrVersion: requireNullableString(
+      value.compiledPolicyIrVersion ?? null,
+      'metadata.compiledPolicyIrVersion',
       lineNumber,
     ),
     rolloutMode: requireNullableString(value.rolloutMode, 'metadata.rolloutMode', lineNumber),

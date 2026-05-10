@@ -319,6 +319,10 @@ function logEvaluation(
         policyHash: result.decision.policyHash,
         policyIrHash: result.decision.policyProvenance?.compiledPolicyIrHash ?? null,
         policyProvenanceSource: result.decision.policyProvenance?.source ?? null,
+        compiledPolicyIndexVersion:
+          result.decision.policyProvenance?.compiledPolicyIndexVersion ?? null,
+        compiledPolicyIrVersion:
+          result.decision.policyProvenance?.compiledPolicyIrVersion ?? null,
         rolloutMode: result.plan.rolloutMode,
         rolloutEvaluationMode: result.plan.rolloutEvaluationMode,
         rolloutReason: result.plan.rolloutReason,

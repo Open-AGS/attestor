@@ -236,7 +236,7 @@ async function run(): Promise<void> {
           artifact: bundle.artifact,
           signedBundle: bundle.signedBundle,
         }),
-      /immutable|new bundleId/i,
+      /immutable|new bundleId|regenerated from the supplied manifest/i,
       'Shared policy store: existing bundle id rejects content substitution',
     );
     passed += 1;

@@ -271,7 +271,7 @@ function testBundleUpsertRejectsContentSubstitution(): void {
         signedBundle: substituted.signedBundle,
         storedAt: '2026-04-17T14:10:00.000Z',
       }),
-    /immutable|new bundleId/i,
+    /immutable|new bundleId|regenerated from the supplied manifest/i,
   );
   assert.throws(
     () =>
@@ -284,9 +284,57 @@ function testBundleUpsertRejectsContentSubstitution(): void {
         signedBundle: substituted.signedBundle,
         storedAt: '2026-04-17T14:11:00.000Z',
       }),
-    /immutable|new bundleId/i,
+    /immutable|new bundleId|regenerated from the supplied manifest/i,
   );
   assert.equal(store.getBundle('finance-core', original.artifact.bundleId)?.manifest.bundle.digest, original.manifest.bundle.digest);
+}
+
+function testBundleUpsertRejectsArtifactManifestMismatch(): void {
+  const store = createInMemoryPolicyControlPlaneStore();
+  const bundle = createSignedBundle();
+  const tamperedArtifact = {
+    ...bundle.artifact,
+    statement: {
+      ...bundle.artifact.statement,
+      predicate: {
+        ...bundle.artifact.statement.predicate,
+        entries: [],
+      },
+    },
+  } as typeof bundle.artifact;
+
+  assert.throws(
+    () =>
+      store.upsertBundle({
+        manifest: bundle.manifest,
+        artifact: tamperedArtifact,
+        signedBundle: bundle.signedBundle,
+      }),
+    /regenerated from the supplied manifest/i,
+  );
+  assert.equal(store.listBundles().length, 0);
+}
+
+function testBundleUpsertRejectsSignedBundleArtifactMismatch(): void {
+  const store = createInMemoryPolicyControlPlaneStore();
+  const bundle = createSignedBundle();
+  const mismatchedSignedBundle = {
+    ...bundle.signedBundle,
+    artifact: {
+      ...bundle.signedBundle.artifact,
+      payloadDigest: 'sha256:signed-bundle-wrapped-different-content',
+    },
+  } as typeof bundle.signedBundle;
+
+  assert.throws(
+    () =>
+      store.upsertBundle({
+        manifest: bundle.manifest,
+        artifact: bundle.artifact,
+        signedBundle: mismatchedSignedBundle,
+      }),
+    /exact bundle artifact content/i,
+  );
 }
 
 function testMetadataAndActivationOrdering(): void {
@@ -323,6 +371,8 @@ testSnapshotsAreFrozenAndIndependent();
 testFileBackedRoundTrip();
 testBundleUpsertReplacesExistingRecord();
 testBundleUpsertRejectsContentSubstitution();
+testBundleUpsertRejectsArtifactManifestMismatch();
+testBundleUpsertRejectsSignedBundleArtifactMismatch();
 testMetadataAndActivationOrdering();
 
-console.log('Release policy control-plane store tests: 27 passed, 0 failed');
+console.log('Release policy control-plane store tests: 30 passed, 0 failed');

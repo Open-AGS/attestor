@@ -19,6 +19,7 @@ import {
   RELEASE_RECORD_WRITE_GATEWAY_SPEC_VERSION,
   type RecordWriteMutation,
 } from '../src/release-enforcement-plane/record-write.js';
+import { createEnforcementReceiptDigest } from '../src/release-enforcement-plane/object-model.js';
 import {
   createMtlsBoundPresentationFromIssuedToken,
   createMtlsReleaseTokenConfirmation,
@@ -251,6 +252,46 @@ async function testValidRecordWriteAllowsAndConsumesToken(): Promise<void> {
   equal(result.decision?.outcome, 'allow', 'Record-write gateway: valid record write emits allow decision');
   ok(result.receipt?.receiptDigest?.startsWith('sha256:'), 'Record-write gateway: allowed record write emits receipt digest');
   equal(result.receipt?.policyIrHash, POLICY_IR_HASH, 'Record-write gateway: receipt preserves compiled policy IR provenance');
+  equal(result.receipt?.compiledPolicyIrVersion, COMPILED_POLICY_IR_VERSION, 'Record-write gateway: receipt preserves compiled policy IR version');
+  deepEqual(
+    result.verificationResult?.policyContext,
+    {
+      policyHash: POLICY_HASH,
+      policyVersion: 'policy.release-record-write-test.v1',
+      policyIrHash: POLICY_IR_HASH,
+      policyProvenanceSource: 'compiled-admission-policy-index',
+      compiledPolicyIndexVersion: COMPILED_POLICY_INDEX_VERSION,
+      compiledPolicyIrVersion: COMPILED_POLICY_IR_VERSION,
+    },
+    'Record-write gateway: verification exposes structured policy context',
+  );
+  deepEqual(
+    result.receipt?.policyContext,
+    result.verificationResult?.policyContext,
+    'Record-write gateway: receipt carries the verified structured policy context',
+  );
+  equal(
+    result.receipt?.receiptDigest,
+    result.decision ? createEnforcementReceiptDigest({ decision: result.decision }) : null,
+    'Record-write gateway: receipt digest binds structured policy context',
+  );
+  if (!result.decision) {
+    throw new Error('Expected record-write allow result to carry an enforcement decision.');
+  }
+  const tamperedPolicyDecision = {
+    ...result.decision,
+    verification: {
+      ...result.decision.verification,
+      policyContext: {
+        ...result.decision.verification.policyContext,
+        compiledPolicyIrVersion: 'attestor.policy-ir.tampered.v1',
+      },
+    },
+  };
+  ok(
+    createEnforcementReceiptDigest({ decision: tamperedPolicyDecision }) !== result.receipt?.receiptDigest,
+    'Record-write gateway: changing structured policy context changes receipt digest',
+  );
   equal(result.request?.targetId, result.binding.target.id, 'Record-write gateway: request target matches record binding');
   equal(result.request?.outputHash, result.binding.hashBundle.outputHash, 'Record-write gateway: request output hash matches binding');
   equal(result.request?.consequenceHash, result.binding.hashBundle.consequenceHash, 'Record-write gateway: request consequence hash matches binding');

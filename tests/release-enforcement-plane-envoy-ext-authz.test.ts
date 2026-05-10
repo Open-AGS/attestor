@@ -43,6 +43,7 @@ import {
   ATTESTOR_ENFORCEMENT_REQUEST_ID_HEADER,
   ATTESTOR_RELEASE_TOKEN_HEADER,
 } from '../src/release-enforcement-plane/middleware.js';
+import { createEnforcementReceiptDigest } from '../src/release-enforcement-plane/object-model.js';
 import {
   createDpopProof,
   dpopReplayKey,
@@ -466,6 +467,46 @@ async function testValidDpopProxyCheck(): Promise<void> {
   ok(result.checkResponse.ok_response?.headers?.some((entry) => entry.header.key === ATTESTOR_PROXY_ENFORCEMENT_STATUS_HEADER), 'Envoy bridge: allow status header is added');
   ok(result.receipt?.receiptDigest?.startsWith('sha256:'), 'Envoy bridge: allowed check has an enforcement receipt digest');
   equal(result.receipt?.policyIrHash, POLICY_IR_HASH, 'Envoy bridge: receipt preserves compiled policy IR provenance');
+  equal(result.receipt?.compiledPolicyIrVersion, COMPILED_POLICY_IR_VERSION, 'Envoy bridge: receipt preserves compiled policy IR version');
+  deepEqual(
+    result.verificationResult?.policyContext,
+    {
+      policyHash: POLICY_HASH,
+      policyVersion: 'policy.release-envoy-ext-authz-test.v1',
+      policyIrHash: POLICY_IR_HASH,
+      policyProvenanceSource: 'compiled-admission-policy-index',
+      compiledPolicyIndexVersion: COMPILED_POLICY_INDEX_VERSION,
+      compiledPolicyIrVersion: COMPILED_POLICY_IR_VERSION,
+    },
+    'Envoy bridge: verification exposes structured policy context',
+  );
+  deepEqual(
+    result.receipt?.policyContext,
+    result.verificationResult?.policyContext,
+    'Envoy bridge: receipt carries the verified structured policy context',
+  );
+  equal(
+    result.receipt?.receiptDigest,
+    result.decision ? createEnforcementReceiptDigest({ decision: result.decision }) : null,
+    'Envoy bridge: receipt digest binds structured policy context',
+  );
+  if (!result.decision) {
+    throw new Error('Expected Envoy allow result to carry an enforcement decision.');
+  }
+  const tamperedPolicyDecision = {
+    ...result.decision,
+    verification: {
+      ...result.decision.verification,
+      policyContext: {
+        ...result.decision.verification.policyContext,
+        compiledPolicyIrVersion: 'attestor.policy-ir.tampered.v1',
+      },
+    },
+  };
+  ok(
+    createEnforcementReceiptDigest({ decision: tamperedPolicyDecision }) !== result.receipt?.receiptDigest,
+    'Envoy bridge: changing structured policy context changes receipt digest',
+  );
   ok(Boolean(result.checkResponse.dynamic_metadata?.[ENVOY_EXT_AUTHZ_DYNAMIC_METADATA_NAMESPACE]), 'Envoy bridge: dynamic metadata is populated');
 }
 

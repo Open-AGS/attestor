@@ -157,7 +157,7 @@ async function testHappyPath(): Promise<void> {
   const summary = await probeStripeLiveReadiness({
     stripe: fakeStripe(),
     env: {
-      STRIPE_API_KEY: 'sk_live_ready',
+      STRIPE_API_KEY: 'rk_live_ready',
       ATTESTOR_STRIPE_PRICE_STARTER: 'price_starter_live',
       ATTESTOR_STRIPE_PRICE_PRO: 'price_pro_live',
       ATTESTOR_STRIPE_PRICE_SCALE: 'price_scale_live',
@@ -168,6 +168,7 @@ async function testHappyPath(): Promise<void> {
   });
 
   ok(summary.ok === true, 'Stripe live readiness probe: ready account, prices, and portal pass');
+  ok(summary.apiKeyMode === 'live', 'Stripe live readiness probe: restricted live API keys are accepted for readiness');
   ok(summary.account.payoutsEnabled === true, 'Stripe live readiness probe: payout readiness is surfaced');
   ok(summary.customerPortal.defaultConfigurationId === 'bpc_ready', 'Stripe live readiness probe: default portal config is surfaced');
   ok(summary.customerPortal.subscriptionUpdateAllowedUpdates.join(',') === 'price', 'Stripe live readiness probe: portal only allows price updates');

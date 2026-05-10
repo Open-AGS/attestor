@@ -135,6 +135,26 @@ spec:
                 secretKeyRef:
                   name: attestor-runtime-secrets
                   key: stripe-price-pro
+            - name: ATTESTOR_STRIPE_PRICE_SCALE
+              valueFrom:
+                secretKeyRef:
+                  name: attestor-runtime-secrets
+                  key: stripe-price-scale
+            - name: ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER
+              valueFrom:
+                secretKeyRef:
+                  name: attestor-runtime-secrets
+                  key: stripe-overage-price-starter
+            - name: ATTESTOR_STRIPE_OVERAGE_PRICE_PRO
+              valueFrom:
+                secretKeyRef:
+                  name: attestor-runtime-secrets
+                  key: stripe-overage-price-pro
+            - name: ATTESTOR_STRIPE_OVERAGE_PRICE_SCALE
+              valueFrom:
+                secretKeyRef:
+                  name: attestor-runtime-secrets
+                  key: stripe-overage-price-scale
             - name: ATTESTOR_STRIPE_PRICE_ENTERPRISE
               valueFrom:
                 secretKeyRef:

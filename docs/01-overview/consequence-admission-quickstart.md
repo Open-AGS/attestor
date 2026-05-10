@@ -72,8 +72,8 @@ Example request:
   "domain": "money-movement",
   "downstreamSystem": "refund-service",
   "amount": {
-    "value": 38000,
-    "currency": "HUF"
+    "value": 380,
+    "currency": "USD"
   },
   "recipient": "customer_123",
   "evidenceRefs": [
@@ -169,8 +169,8 @@ The corrected request must include a `retryAttempt` binding. The binding points 
     "payment:456"
   ],
   "amount": {
-    "value": 38000,
-    "currency": "HUF"
+    "value": 380,
+    "currency": "USD"
   },
   "recipient": "customer_123",
   "retryAttempt": {

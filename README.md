@@ -159,8 +159,8 @@ Minimal request shape:
   "domain": "money-movement",
   "downstreamSystem": "refund-service",
   "amount": {
-    "value": 38000,
-    "currency": "HUF"
+    "value": 380,
+    "currency": "USD"
   },
   "evidenceRefs": [
     "order:987",
@@ -379,51 +379,12 @@ Attestor is not:
 
 ## Deeper Docs
 
-Start here:
+Use this as a map, not a full index:
 
-- [Attestor Evaluation Packet v0.1](docs/00-evaluation/v0.1-evaluation-packet.md) - compact outside-review packet
-- [v0.1.2-evaluation release notes](docs/00-evaluation/v0.1.2-evaluation-release-notes.md) - current release boundary and known limitations
-- [AI action authorization positioning](docs/01-overview/action-authorization-positioning.md) - category framing and consequence-gateway language
-- [Try Attestor first](docs/01-overview/try-attestor-first.md) - shortest guided run
-- [Consequence admission quickstart](docs/01-overview/consequence-admission-quickstart.md) - package facade and first admission call
-- [Attestor operating model](docs/01-overview/operating-model.md) - decision vocabulary and placement model
-- [Customer admission gate](docs/01-overview/customer-admission-gate.md) - first customer-side enforcement step
-- [Non-bypassable gateway demo](docs/01-overview/non-bypassable-gateway-demo.md) - protected adapter demo with no verifier bypass
-- [Agent retry wrapper demo](docs/01-overview/agent-retry-wrapper-demo.md) - bounded correction loop for model-safe retries
-- [Customer integration recipes](docs/01-overview/customer-integration-recipes.md) - where to put Attestor in an existing app
-- [Commercial packaging, pricing, and evaluation](docs/01-overview/product-packaging.md) - commercial truth source and evaluation boundary
-- [Pricing ROI calculator](docs/01-overview/pricing-roi-calculator.md) - buyer-facing sizing and avoided-loss worksheet
-- [Hosted customer journey](docs/01-overview/hosted-customer-journey.md) - hosted account and checkout path
-- [Hosted action authorization API](docs/01-overview/hosted-action-authorization-api.md) - OpenAPI contract for admissions and shadow read surfaces
-- [First hosted API call](docs/01-overview/hosted-first-api-call.md) - first hosted API-call quickstart
-- [Finance and crypto first integrations](docs/01-overview/finance-and-crypto-first-integrations.md) - first integration examples
-- [Hosted account visibility](docs/01-overview/hosted-account-visibility.md) - account, usage, and billing visibility
-- [What you can do with Attestor](docs/01-overview/what-you-can-do.md) - longer use-case map
-- [System overview](docs/02-architecture/system-overview.md) - architecture map
-- [Consequence taxonomy](docs/02-architecture/consequence-taxonomy.md) - consequence domains, risk floors, and minimum controls
-- [Downstream enforcement contract](docs/02-architecture/downstream-enforcement-contract.md) - customer-side allow/hold contract before downstream action
-- [Verifier helper](docs/02-architecture/verifier-helper.md) - customer-side verify/assert helper for downstream adapters
-- [Adapter framework](docs/02-architecture/adapter-framework.md) - protected verify-before-execute wrapper for tool and customer adapters
-- [Audit evidence export](docs/02-architecture/audit-evidence-export.md) - canonical reviewer packet for shadow-to-enforcement evidence
-- [Tamper-evident history](docs/02-architecture/tamper-evident-history.md) - digest-chain history for reviewer evidence
-- [Business risk dashboard](docs/02-architecture/business-risk-dashboard.md) - operator-facing dashboard model over audit evidence
-- [Dashboard API summary](docs/02-architecture/dashboard-api-summary.md) - compact first-screen API shape for tiles, attention items, and top domains
-- [External review packet](docs/02-architecture/external-review-packet.md) - digest-first handoff for outside review without claiming audit completion
-- [Data minimization and redaction policy](docs/02-architecture/data-minimization-redaction-policy.md) - shared feedback, proof, audit, dashboard, external review, summary, retry, and receipt redaction boundary
-- [Policy limit model](docs/02-architecture/policy-limit-model.md) - amount, velocity, scope, allowlist, and review-threshold limits
-- [Retry attempt ledger](docs/02-architecture/retry-attempt-ledger.md) - idempotent safe-retry attempt records without raw retry payloads
-- [Agent loop abuse guard](docs/02-architecture/agent-loop-abuse-guard.md) - retry loop DoS and policy-probing guard
-- [Downstream presentation binding](docs/02-architecture/downstream-presentation-binding.md) - target, body, replay, nonce, freshness, proof, and constraint binding
-- [Presentation replay ledger](docs/02-architecture/presentation-replay-ledger.md) - single-use replay consumption with redacted receipts
-- [Downstream execution receipt](docs/02-architecture/downstream-execution-receipt.md) - redacted result receipt after replay consumption
-- [Production storage path](docs/02-architecture/production-storage-path.md) - storage truth gate for file-backed evaluation stores before production-shared
-- [Proof console buildout](docs/02-architecture/proof-console-buildout.md) - local proof-surface tracker
-- [Production runtime hardening buildout](docs/02-architecture/production-runtime-hardening-buildout.md) - runtime profile and fail-closed hardening tracker
-- [Production shared authority plane buildout](docs/02-architecture/production-shared-authority-plane-buildout.md) - shared production authority-plane tracker
-- [Production rehearsal buildout](docs/02-architecture/production-rehearsal-buildout.md) - active production rehearsal tracker
-- [Proof model](docs/05-proof/proof-model.md) - proof vocabulary and artifacts
-- [Signing and verification](docs/06-signing/signing-verification.md) - signed proof verification path
-- [Production readiness](docs/08-deployment/production-readiness.md) - deployment and maturity boundary
-- [Artifact attestation plan](docs/08-deployment/artifact-attestation-plan.md) - release artifact attestation scope
-- [Security Policy](SECURITY.md) - disclosure path, CI trust boundary, and evaluation security status
-- [Tenant isolation boundary](docs/02-architecture/tenant-isolation-boundary.md) - route-side tenant-bound record checks
+- Review boundary: [Attestor Evaluation Packet v0.1](docs/00-evaluation/v0.1-evaluation-packet.md), [v0.1.2-evaluation release notes](docs/00-evaluation/v0.1.2-evaluation-release-notes.md), [Security Policy](SECURITY.md), [Artifact attestation plan](docs/08-deployment/artifact-attestation-plan.md).
+- First run and product framing: [Try Attestor first](docs/01-overview/try-attestor-first.md), [What you can do with Attestor](docs/01-overview/what-you-can-do.md), [AI action authorization positioning](docs/01-overview/action-authorization-positioning.md), [Attestor operating model](docs/01-overview/operating-model.md), [Customer integration recipes](docs/01-overview/customer-integration-recipes.md).
+- Admission and hosted entry points: [Consequence admission quickstart](docs/01-overview/consequence-admission-quickstart.md), [Customer admission gate](docs/01-overview/customer-admission-gate.md), [Non-bypassable gateway demo](docs/01-overview/non-bypassable-gateway-demo.md), [Agent retry wrapper demo](docs/01-overview/agent-retry-wrapper-demo.md), [Hosted action authorization API](docs/01-overview/hosted-action-authorization-api.md), [First hosted API call](docs/01-overview/hosted-first-api-call.md), [Finance and crypto first integrations](docs/01-overview/finance-and-crypto-first-integrations.md).
+- Hosted product and billing: [Commercial packaging, pricing, and evaluation](docs/01-overview/product-packaging.md), [Pricing ROI calculator](docs/01-overview/pricing-roi-calculator.md), [Hosted customer journey](docs/01-overview/hosted-customer-journey.md), [Hosted account visibility](docs/01-overview/hosted-account-visibility.md).
+- Core architecture: [System overview](docs/02-architecture/system-overview.md), [Consequence taxonomy](docs/02-architecture/consequence-taxonomy.md), [Downstream enforcement contract](docs/02-architecture/downstream-enforcement-contract.md), [Verifier helper](docs/02-architecture/verifier-helper.md), [Adapter framework](docs/02-architecture/adapter-framework.md).
+- Evidence and safety ledgers: [Audit evidence export](docs/02-architecture/audit-evidence-export.md), [Tamper-evident history](docs/02-architecture/tamper-evident-history.md), [Business risk dashboard](docs/02-architecture/business-risk-dashboard.md), [Dashboard API summary](docs/02-architecture/dashboard-api-summary.md), [External review packet](docs/02-architecture/external-review-packet.md), [Data minimization and redaction policy](docs/02-architecture/data-minimization-redaction-policy.md), [Policy limit model](docs/02-architecture/policy-limit-model.md), [Retry attempt ledger](docs/02-architecture/retry-attempt-ledger.md), [Agent loop abuse guard](docs/02-architecture/agent-loop-abuse-guard.md), [Downstream presentation binding](docs/02-architecture/downstream-presentation-binding.md), [Presentation replay ledger](docs/02-architecture/presentation-replay-ledger.md), [Downstream execution receipt](docs/02-architecture/downstream-execution-receipt.md).
+- Runtime and promotion: [Production storage path](docs/02-architecture/production-storage-path.md), [Proof console buildout](docs/02-architecture/proof-console-buildout.md), [Production runtime hardening buildout](docs/02-architecture/production-runtime-hardening-buildout.md), [Production shared authority plane buildout](docs/02-architecture/production-shared-authority-plane-buildout.md), [Production rehearsal buildout](docs/02-architecture/production-rehearsal-buildout.md), [Proof model](docs/05-proof/proof-model.md), [Signing and verification](docs/06-signing/signing-verification.md), [Production readiness](docs/08-deployment/production-readiness.md), [Tenant isolation boundary](docs/02-architecture/tenant-isolation-boundary.md).

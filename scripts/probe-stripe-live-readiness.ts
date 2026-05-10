@@ -197,8 +197,8 @@ function envValue(env: Record<string, string | undefined>, name: string): string
 
 function apiKeyMode(apiKey: string | null): 'live' | 'test' | 'unknown' {
   if (!apiKey) return 'unknown';
-  if (apiKey.startsWith('sk_live_')) return 'live';
-  if (apiKey.startsWith('sk_test_')) return 'test';
+  if (apiKey.startsWith('sk_live_') || apiKey.startsWith('rk_live_')) return 'live';
+  if (apiKey.startsWith('sk_test_') || apiKey.startsWith('rk_test_')) return 'test';
   return 'unknown';
 }
 

@@ -110,6 +110,15 @@ export interface EvidenceArtifactReference {
   readonly digest?: string;
 }
 
+export interface ReleaseEvidencePolicyContext {
+  readonly policyVersion: string;
+  readonly policyHash: string;
+  readonly policyIrHash: string | null;
+  readonly policyProvenanceSource: ReleasePolicyProvenanceSource | null;
+  readonly compiledPolicyIndexVersion: string | null;
+  readonly compiledPolicyIrVersion: string | null;
+}
+
 export interface EvidencePack {
   readonly version: typeof EVIDENCE_PACK_SPEC_VERSION;
   readonly id: string;
@@ -121,6 +130,7 @@ export interface EvidencePack {
   readonly policyProvenanceSource: ReleasePolicyProvenanceSource | null;
   readonly compiledPolicyIndexVersion: string | null;
   readonly compiledPolicyIrVersion: string | null;
+  readonly policyContext: ReleaseEvidencePolicyContext;
   readonly retentionClass: EvidenceRetentionClass;
   readonly findings: readonly ReleaseFinding[];
   readonly artifacts: readonly EvidenceArtifactReference[];

@@ -77,6 +77,7 @@ export type ReleaseTokenIntrospectionStore = introspection.ReleaseTokenIntrospec
 export type ReleaseTokenIntrospector = introspection.ReleaseTokenIntrospector;
 export type ReleaseVerificationContext = verification.ReleaseVerificationContext;
 export type ReleaseVerificationErrorConstructor = typeof verification.ReleaseVerificationError;
+export type ReleaseVerificationPolicyContext = verification.ReleaseVerificationPolicyContext;
 export type ReleaseVerificationInput = verification.ReleaseVerificationInput;
 export type IssuedReleaseEvidencePack = evidence.IssuedReleaseEvidencePack;
 export type ReleaseEvidencePackIssuer = evidence.ReleaseEvidencePackIssuer;

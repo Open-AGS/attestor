@@ -7,6 +7,7 @@ import {
   releaseLayer,
   releaseLayerPublicSurface,
   type ReleaseEvidencePackVerificationResult,
+  type ReleaseVerificationPolicyContext,
   type ReleaseVerificationInput,
 } from '../src/release-layer/index.js';
 import {
@@ -84,6 +85,19 @@ function testReleaseLayerNamespaceBindings(): void {
     provenanceBoundVerification.expectedPolicyProvenanceSource,
     'compiled-admission-policy-index',
     'release-layer surface exposes full policy-provenance-bound verification input',
+  );
+  const verifiedPolicyContext = {
+    policyVersion: 'policy.release-layer-surface.v1',
+    policyHash: 'sha256:policy',
+    policyIrHash: 'sha256:policy-ir',
+    policyProvenanceSource: 'compiled-admission-policy-index',
+    compiledPolicyIndexVersion: 'attestor.compiled-admission-policy-index.v1',
+    compiledPolicyIrVersion: 'attestor.compiled-admission-policy-ir.v1',
+  } satisfies ReleaseVerificationPolicyContext;
+  assert.equal(
+    verifiedPolicyContext.compiledPolicyIndexVersion,
+    'attestor.compiled-admission-policy-index.v1',
+    'release-layer surface exposes direct verified token policy provenance context',
   );
   assert.equal(
     typeof releaseLayer.verification.createReleaseVerificationMiddleware,

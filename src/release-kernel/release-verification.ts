@@ -57,10 +57,20 @@ export interface ReleaseVerificationInput extends VerifyReleaseTokenInput {
   readonly resourceServerId?: string;
 }
 
+export interface ReleaseVerificationPolicyContext {
+  readonly policyVersion: string | null;
+  readonly policyHash: string;
+  readonly policyIrHash: string | null;
+  readonly policyProvenanceSource: ReleasePolicyProvenanceSource | null;
+  readonly compiledPolicyIndexVersion: string | null;
+  readonly compiledPolicyIrVersion: string | null;
+}
+
 export interface ReleaseVerificationContext {
   readonly version: typeof RELEASE_VERIFICATION_SPEC_VERSION;
   readonly token: string;
   readonly verification: ReleaseTokenVerificationResult;
+  readonly tokenPolicy: ReleaseVerificationPolicyContext;
   readonly audience: string | undefined;
   readonly expectedTargetId: string | undefined;
   readonly expectedOutputHash: string | undefined;
@@ -509,6 +519,15 @@ export async function verifyReleaseAuthorization(
     version: RELEASE_VERIFICATION_SPEC_VERSION,
     token: input.token,
     verification,
+    tokenPolicy: Object.freeze({
+      policyVersion: verification.claims.policy_version ?? null,
+      policyHash: verification.claims.policy_hash,
+      policyIrHash: verification.claims.policy_ir_hash ?? null,
+      policyProvenanceSource: verification.claims.policy_provenance_source ?? null,
+      compiledPolicyIndexVersion:
+        verification.claims.compiled_policy_index_version ?? null,
+      compiledPolicyIrVersion: verification.claims.compiled_policy_ir_version ?? null,
+    }),
     audience: input.audience,
     expectedTargetId: input.expectedTargetId,
     expectedOutputHash: input.expectedOutputHash,

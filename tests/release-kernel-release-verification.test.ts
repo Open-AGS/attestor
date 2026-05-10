@@ -148,6 +148,36 @@ async function main(): Promise<void> {
     COMPILED_POLICY_IR_VERSION,
     'Release verification: downstream expected compiled policy IR version is bound into the verification context',
   );
+  equal(
+    verified.tokenPolicy.policyHash,
+    POLICY_HASH,
+    'Release verification: verified token policy hash is exposed directly in the verification context',
+  );
+  equal(
+    verified.tokenPolicy.policyVersion,
+    POLICY_VERSION,
+    'Release verification: verified token policy version is exposed directly in the verification context',
+  );
+  equal(
+    verified.tokenPolicy.policyIrHash,
+    POLICY_IR_HASH,
+    'Release verification: verified token policy IR hash is exposed directly in the verification context',
+  );
+  equal(
+    verified.tokenPolicy.policyProvenanceSource,
+    'compiled-admission-policy-index',
+    'Release verification: verified token policy provenance source is exposed directly in the verification context',
+  );
+  equal(
+    verified.tokenPolicy.compiledPolicyIndexVersion,
+    COMPILED_POLICY_INDEX_VERSION,
+    'Release verification: verified token compiled policy index version is exposed directly in the verification context',
+  );
+  equal(
+    verified.tokenPolicy.compiledPolicyIrVersion,
+    COMPILED_POLICY_IR_VERSION,
+    'Release verification: verified token compiled policy IR version is exposed directly in the verification context',
+  );
   ok(
     verified.introspection?.active === true,
     'Release verification: high-risk release tokens require and preserve an active introspection result',
@@ -399,6 +429,8 @@ async function main(): Promise<void> {
     return context.json({
       ok: true,
       decisionId: verificationContext.verification.claims.decision_id,
+      policyHash: verificationContext.tokenPolicy.policyHash,
+      compiledPolicyIndexVersion: verificationContext.tokenPolicy.compiledPolicyIndexVersion,
       introspectionActive: verificationContext.introspection?.active ?? false,
       consumed: verificationContext.usage?.consumed ?? false,
     });
@@ -420,6 +452,16 @@ async function main(): Promise<void> {
     successBody.decisionId,
     decision.id,
     'Release verification middleware: downstream handlers receive the verified release context',
+  );
+  equal(
+    successBody.policyHash,
+    POLICY_HASH,
+    'Release verification middleware: downstream handlers receive direct verified policy provenance context',
+  );
+  equal(
+    successBody.compiledPolicyIndexVersion,
+    COMPILED_POLICY_INDEX_VERSION,
+    'Release verification middleware: downstream handlers receive direct compiled policy index provenance context',
   );
   ok(
     successBody.introspectionActive === true,

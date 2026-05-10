@@ -483,6 +483,37 @@ function testConformanceFailures(): void {
     'Conformance: policy provenance mismatch fails continuity rule',
   );
 
+  const policyContextMismatchEvent = {
+    ...basePolicyEvent,
+    verification: {
+      ...basePolicyEvent.verification,
+      policyContext: {
+        ...basePolicyEvent.verification.policyContext,
+        policyIrHash: 'sha256:wrong-policy-context-ir',
+      },
+    },
+  };
+  const policyContextMismatchReport = runEnforcementPointConformance({
+    id: 'policy-context-mismatch',
+    result: {
+      status: 'allowed',
+      checkedAt: CHECKED_AT,
+      request: sampleRequest(),
+      decision,
+      receipt,
+      failureReasons: [],
+      responseStatus: 200,
+    },
+    telemetryEvent: policyContextMismatchEvent,
+    options: { requireTelemetry: true },
+  });
+  ok(
+    policyContextMismatchReport.findings.some(
+      (finding) => finding.ruleId === 'policy-provenance.continuity' && finding.status === 'fail',
+    ),
+    'Conformance: structured policy context mismatch fails continuity rule',
+  );
+
   const missingPolicy = allowedDecisionAndReceipt({ includePolicyProvenance: false });
   const missingPolicyReport = runEnforcementPointConformance({
     id: 'missing-required-policy-provenance',

@@ -3,6 +3,7 @@ import {
   type EnforcementDecision,
   type EnforcementReceipt,
   type EnforcementRequest,
+  type ReleaseEnforcementPolicyContext,
   type VerificationResult,
 } from './object-model.js';
 import type {
@@ -93,6 +94,21 @@ export interface EnforcementConformanceSuiteReport {
   readonly reports: readonly EnforcementConformanceReport[];
 }
 
+type PolicyContextField = keyof ReleaseEnforcementPolicyContext;
+
+type PolicyProvenanceView = Readonly<ReleaseEnforcementPolicyContext & {
+  readonly policyContext: ReleaseEnforcementPolicyContext | null;
+}>;
+
+const POLICY_CONTEXT_FIELDS = Object.freeze([
+  'policyHash',
+  'policyVersion',
+  'policyIrHash',
+  'policyProvenanceSource',
+  'compiledPolicyIndexVersion',
+  'compiledPolicyIrVersion',
+] as const satisfies readonly PolicyContextField[]);
+
 function normalizeIsoTimestamp(value: string, fieldName: string): string {
   const timestamp = new Date(value).getTime();
   if (!Number.isFinite(timestamp)) {
@@ -144,7 +160,8 @@ function policyProvenanceView(
     | EnforcementTransparencyReceipt['subject']
     | null
     | undefined,
-): Readonly<Record<string, unknown>> {
+): PolicyProvenanceView {
+  const policyContext = normalizePolicyContext(input?.policyContext);
   return Object.freeze({
     policyHash: input?.policyHash ?? null,
     policyVersion: input?.policyVersion ?? null,
@@ -152,11 +169,31 @@ function policyProvenanceView(
     policyProvenanceSource: input?.policyProvenanceSource ?? null,
     compiledPolicyIndexVersion: input?.compiledPolicyIndexVersion ?? null,
     compiledPolicyIrVersion: input?.compiledPolicyIrVersion ?? null,
+    policyContext,
   });
 }
 
-function hasPolicyProvenance(view: Readonly<Record<string, unknown>>): boolean {
-  return Object.values(view).some((value) => value !== null && value !== undefined);
+function normalizePolicyContext(
+  context: ReleaseEnforcementPolicyContext | null | undefined,
+): ReleaseEnforcementPolicyContext | null {
+  if (!context) {
+    return null;
+  }
+  return Object.freeze({
+    policyHash: context.policyHash ?? null,
+    policyVersion: context.policyVersion ?? null,
+    policyIrHash: context.policyIrHash ?? null,
+    policyProvenanceSource: context.policyProvenanceSource ?? null,
+    compiledPolicyIndexVersion: context.compiledPolicyIndexVersion ?? null,
+    compiledPolicyIrVersion: context.compiledPolicyIrVersion ?? null,
+  });
+}
+
+function hasPolicyProvenance(view: PolicyProvenanceView): boolean {
+  return POLICY_CONTEXT_FIELDS.some((field) =>
+    view[field] !== null && view[field] !== undefined ||
+    view.policyContext?.[field] !== null && view.policyContext?.[field] !== undefined,
+  );
 }
 
 function isNonEmptyString(value: unknown): value is string {
@@ -164,7 +201,7 @@ function isNonEmptyString(value: unknown): value is string {
 }
 
 function hasRequiredCompiledPolicyProvenance(
-  view: Readonly<Record<string, unknown>>,
+  view: PolicyProvenanceView,
 ): boolean {
   return (
     isNonEmptyString(view.policyHash) &&
@@ -172,15 +209,30 @@ function hasRequiredCompiledPolicyProvenance(
     isNonEmptyString(view.policyIrHash) &&
     view.policyProvenanceSource === 'compiled-admission-policy-index' &&
     isNonEmptyString(view.compiledPolicyIndexVersion) &&
-    isNonEmptyString(view.compiledPolicyIrVersion)
+    isNonEmptyString(view.compiledPolicyIrVersion) &&
+    view.policyContext !== null &&
+    isNonEmptyString(view.policyContext.policyHash) &&
+    isNonEmptyString(view.policyContext.policyVersion) &&
+    isNonEmptyString(view.policyContext.policyIrHash) &&
+    view.policyContext.policyProvenanceSource === 'compiled-admission-policy-index' &&
+    isNonEmptyString(view.policyContext.compiledPolicyIndexVersion) &&
+    isNonEmptyString(view.policyContext.compiledPolicyIrVersion) &&
+    policyContextMatchesFlatFields(view)
   );
 }
 
 function samePolicyProvenance(
-  expected: Readonly<Record<string, unknown>>,
-  actual: Readonly<Record<string, unknown>>,
+  expected: PolicyProvenanceView,
+  actual: PolicyProvenanceView,
 ): boolean {
   return JSON.stringify(expected) === JSON.stringify(actual);
+}
+
+function policyContextMatchesFlatFields(view: PolicyProvenanceView): boolean {
+  if (!view.policyContext) {
+    return true;
+  }
+  return POLICY_CONTEXT_FIELDS.every((field) => view[field] === view.policyContext?.[field]);
 }
 
 function isDeniedResult(result: EnforcementConformanceResultLike): boolean {
@@ -376,18 +428,34 @@ function policyProvenanceContinuityFinding(
     );
   }
 
+  const verificationContextAligned = policyContextMatchesFlatFields(verificationView);
+  const receiptContextAligned = !result.receipt || policyContextMatchesFlatFields(receiptView);
+  const telemetryContextAligned = !telemetryEvent || policyContextMatchesFlatFields(telemetryView);
+  const transparencyContextAligned = !transparencyReceipt || policyContextMatchesFlatFields(transparencyView);
   const receiptAligned = !result.receipt || samePolicyProvenance(expected, receiptView);
   const telemetryAligned = !telemetryEvent || samePolicyProvenance(expected, telemetryView);
   const transparencyAligned = !transparencyReceipt || samePolicyProvenance(expected, transparencyView);
+  const aligned =
+    verificationContextAligned &&
+    receiptContextAligned &&
+    telemetryContextAligned &&
+    transparencyContextAligned &&
+    receiptAligned &&
+    telemetryAligned &&
+    transparencyAligned;
 
   return finding(
     'policy-provenance.continuity',
-    receiptAligned && telemetryAligned && transparencyAligned ? 'pass' : 'fail',
-    receiptAligned && telemetryAligned && transparencyAligned
+    aligned ? 'pass' : 'fail',
+    aligned
       ? 'Policy provenance is continuous across verification, receipt, telemetry, and transparency surfaces.'
       : 'Policy provenance must remain aligned across receipt, telemetry, and transparency surfaces.',
     {
       expected,
+      verificationContextAligned,
+      receiptContextAligned,
+      telemetryContextAligned,
+      transparencyContextAligned,
       receiptAligned,
       telemetryAligned,
       transparencyAligned,

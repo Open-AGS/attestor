@@ -15,6 +15,7 @@ import {
   createEnforcementRequest,
   createReleasePresentation,
   type EnforcementRequest,
+  type ReleaseEnforcementPolicyContext,
 } from '../src/release-enforcement-plane/object-model.js';
 import { verifyOfflineReleaseAuthorization } from '../src/release-enforcement-plane/offline-verifier.js';
 import { verifyOnlineReleaseAuthorization } from '../src/release-enforcement-plane/online-verifier.js';
@@ -66,6 +67,17 @@ const PAYLOAD = {
   rowCount: 2,
   target: TARGET_ID,
 };
+
+function expectedPolicyContext(): ReleaseEnforcementPolicyContext {
+  return {
+    policyHash: POLICY_HASH,
+    policyVersion: POLICY_VERSION,
+    policyIrHash: POLICY_IR_HASH,
+    policyProvenanceSource: 'compiled-admission-policy-index',
+    compiledPolicyIndexVersion: COMPILED_POLICY_INDEX_VERSION,
+    compiledPolicyIrVersion: COMPILED_POLICY_IR_VERSION,
+  };
+}
 
 function policyProvenance(): ReleasePolicyProvenance {
   return {
@@ -327,6 +339,11 @@ async function testEnvelopeCreationAndDirectVerification(): Promise<void> {
   equal(envelope.statement.predicate.consequence.policyProvenanceSource, 'compiled-admission-policy-index', 'Async envelopes: predicate signs policy provenance source');
   equal(envelope.statement.predicate.consequence.compiledPolicyIndexVersion, COMPILED_POLICY_INDEX_VERSION, 'Async envelopes: predicate signs compiled policy index version');
   equal(envelope.statement.predicate.consequence.compiledPolicyIrVersion, COMPILED_POLICY_IR_VERSION, 'Async envelopes: predicate signs compiled policy IR version');
+  deepEqual(
+    envelope.statement.predicate.consequence.policyContext,
+    expectedPolicyContext(),
+    'Async envelopes: predicate signs structured policy context',
+  );
   equal(envelope.presentation.mode, 'signed-json-envelope', 'Async envelopes: wrapper creates signed-json presentation');
   equal(envelope.presentation.proof?.kind, 'signed-json-envelope', 'Async envelopes: presentation carries signed envelope proof');
   ok(envelope.subjectDigest.startsWith('sha256:'), 'Async envelopes: subject digest is SHA-256 tagged');
@@ -349,6 +366,7 @@ async function testEnvelopeCreationAndDirectVerification(): Promise<void> {
     expectedPolicyProvenanceSource: 'compiled-admission-policy-index',
     expectedCompiledPolicyIndexVersion: COMPILED_POLICY_INDEX_VERSION,
     expectedCompiledPolicyIrVersion: COMPILED_POLICY_IR_VERSION,
+    expectedPolicyContext: expectedPolicyContext(),
   });
 
   equal(verified.status, 'valid', 'Async envelopes: valid DSSE envelope verifies directly');
@@ -356,6 +374,11 @@ async function testEnvelopeCreationAndDirectVerification(): Promise<void> {
   equal(verified.policyHash, POLICY_HASH, 'Async envelopes: verifier exposes signed policy hash');
   equal(verified.policyIrHash, POLICY_IR_HASH, 'Async envelopes: verifier exposes signed policy IR hash');
   equal(verified.compiledPolicyIndexVersion, COMPILED_POLICY_INDEX_VERSION, 'Async envelopes: verifier exposes compiled policy index version');
+  deepEqual(
+    verified.policyContext,
+    expectedPolicyContext(),
+    'Async envelopes: verifier exposes signed structured policy context',
+  );
   equal(verified.signatureRef, envelope.signatureRef, 'Async envelopes: verifier exposes signature ref');
   equal(verified.replayKey, envelope.replayKey, 'Async envelopes: verifier derives replay key from envelope digest');
 
@@ -367,6 +390,18 @@ async function testEnvelopeCreationAndDirectVerification(): Promise<void> {
   });
   equal(wrongPolicy.status, 'invalid', 'Async envelopes: policy IR mismatch invalidates envelope binding');
   deepEqual(wrongPolicy.failureReasons, ['binding-mismatch'], 'Async envelopes: policy IR mismatch maps to binding mismatch');
+
+  const wrongPolicyContext = await verifySignedAsyncConsequenceEnvelope({
+    envelope,
+    publicJwk: envelopeKey.publicJwk,
+    now: '2026-04-18T14:01:10.000Z',
+    expectedPolicyContext: {
+      ...expectedPolicyContext(),
+      policyIrHash: 'sha256:wrong-policy-context-ir',
+    },
+  });
+  equal(wrongPolicyContext.status, 'invalid', 'Async envelopes: policy context mismatch invalidates envelope binding');
+  deepEqual(wrongPolicyContext.failureReasons, ['binding-mismatch'], 'Async envelopes: policy context mismatch maps to binding mismatch');
 }
 
 async function testOfflineVerifierAcceptsAsyncEnvelope(): Promise<void> {

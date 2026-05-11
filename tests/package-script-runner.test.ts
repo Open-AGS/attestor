@@ -104,6 +104,7 @@ function testFastSuiteKeepsCriticalCoverage(): void {
     'test:crypto-intelligence-surface-consistency',
     'test:crypto-authorization-core-noble-hashes-dependency-risk',
     'test:node-26-runtime-validation',
+    'test:production-rollout-public-boundary',
     'tsx tests/account-session-cookie-security.test.ts',
     'tsx tests/release-kernel-release-decision-engine.test.ts',
     'tsx tests/release-layer-platform-surface.test.ts',

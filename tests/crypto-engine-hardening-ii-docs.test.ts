@@ -101,6 +101,16 @@ includes(
 );
 includes(
   text,
+  'Node.js package `exports`',
+  'crypto engine hardening II docs: package exports research anchor is present',
+);
+includes(
+  text,
+  '| 06 | complete | Package surface consistency |',
+  'crypto engine hardening II docs: step 06 is complete',
+);
+includes(
+  text,
   '| 10 | blocked | Production rollout readiness |',
   'crypto engine hardening II docs: production rollout remains honestly blocked',
 );

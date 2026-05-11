@@ -2,8 +2,11 @@ import assert from 'node:assert/strict';
 import {
   CRYPTO_NARROWING_CANDIDATE_KINDS,
   CRYPTO_NARROWING_SCOPE_KINDS,
+  CRYPTO_POLICY_COVERAGE_SOURCE_KINDS,
+  CRYPTO_POLICY_DIMENSION_COVERAGE_STATUSES,
   CRYPTO_POLICY_GAP_CLASSES,
   CRYPTO_POLICY_GAP_NARROWING_SPEC_VERSION,
+  createCryptoPolicyCoverageProfile,
   createCryptoPolicyGapNarrowingAssessment,
   cryptoPolicyGapNarrowingDescriptor,
   cryptoPolicyGapNarrowingLabel,
@@ -108,8 +111,20 @@ function testDescriptorVocabulary(): void {
     CRYPTO_NARROWING_SCOPE_KINDS,
     'crypto policy gap narrowing: descriptor exposes scope kinds',
   );
+  deepEqual(
+    descriptor.policyCoverageStatuses,
+    CRYPTO_POLICY_DIMENSION_COVERAGE_STATUSES,
+    'crypto policy gap narrowing: descriptor exposes policy coverage statuses',
+  );
+  deepEqual(
+    descriptor.policyCoverageSourceKinds,
+    CRYPTO_POLICY_COVERAGE_SOURCE_KINDS,
+    'crypto policy gap narrowing: descriptor exposes policy coverage source kinds',
+  );
   equal(descriptor.approvalRequired, true, 'crypto policy gap narrowing: descriptor requires approval');
   equal(descriptor.autoApply, false, 'crypto policy gap narrowing: descriptor blocks auto-apply');
+  equal(descriptor.explicitDenyWins, true, 'crypto policy gap narrowing: explicit deny wins');
+  equal(descriptor.implicitDenyFailsClosed, true, 'crypto policy gap narrowing: implicit deny fails closed');
 }
 
 function testAllowanceGapProducesSafeNarrowingWithoutThresholdLeak(): void {
@@ -322,6 +337,118 @@ function testVelocityGapAndDeterminism(): void {
   );
 }
 
+function testPolicyCoverageProfileAddsExplicitDenyImplicitDenyAndStaleGaps(): void {
+  const profile = createCryptoPolicyCoverageProfile({
+    generatedAt: '2026-05-11T11:51:00.000Z',
+    scopeRef: 'policy-coverage:treasury',
+    entries: [
+      {
+        dimension: 'amount',
+        status: 'covered',
+        sourceKind: 'policy-rule',
+        sourceRef: 'policy-rule:amount-band',
+        evidenceRefs: [{ kind: 'digest', value: 'sha256:amount-policy' }],
+        observedAt: '2026-05-11T11:50:00.000Z',
+        maxAgeSeconds: 600,
+      },
+      {
+        dimension: 'counterparty',
+        status: 'explicit-deny',
+        sourceKind: 'policy-rule',
+        sourceRef: 'policy-rule:counterparty-deny',
+        reasonCodes: ['counterparty-denied'],
+        evidenceRefs: [{ kind: 'digest', value: 'sha256:counterparty-policy' }],
+      },
+      {
+        dimension: 'protocol',
+        status: 'implicit-deny',
+        sourceKind: 'scope-binding',
+        sourceRef: 'scope-binding:protocol',
+      },
+      {
+        dimension: 'budget',
+        status: 'covered',
+        sourceKind: 'operator-risk-input',
+        sourceRef: 'operator-input:budget',
+        observedAt: '2026-05-11T10:00:00.000Z',
+        maxAgeSeconds: 60,
+      },
+      {
+        dimension: 'approval-quorum',
+        status: 'review-required',
+        sourceKind: 'external-review',
+        sourceRef: 'review:quorum',
+      },
+    ],
+  });
+  const risk = createCryptoConsequenceRiskAssessment({
+    consequenceKind: 'transfer',
+    account: fixtureAccount(),
+    asset: fixtureAsset(),
+    amount: {
+      assetAmount: '25',
+      normalizedUsd: '25',
+    },
+    counterparty: fixtureCounterparty(),
+  });
+  const signals = createCryptoIntelligenceRiskSignalAssessment({
+    riskAssessment: risk,
+  });
+  const assessment = createCryptoPolicyGapNarrowingAssessment({
+    signalAssessment: signals,
+    generatedAt: '2026-05-11T11:52:00.000Z',
+    policyCoverageProfile: profile,
+  });
+
+  equal(profile.recommendedDisposition, 'block', 'policy coverage profile: deny and stale coverage block');
+  equal(profile.coveredCount, 1, 'policy coverage profile: only fresh covered dimensions count as covered');
+  equal(profile.blockCount, 3, 'policy coverage profile: explicit deny, implicit deny, and stale entries block');
+  equal(profile.reviewCount, 1, 'policy coverage profile: review-required entries are counted');
+  equal(profile.explicitDenyWins, true, 'policy coverage profile: explicit deny precedence is documented');
+  equal(profile.implicitDenyFailsClosed, true, 'policy coverage profile: implicit deny fails closed');
+  equal(profile.rawPolicyThresholdExposed, false, 'policy coverage profile: private thresholds are not exposed');
+  ok(
+    profile.reasonCodes.includes('policy-coverage-explicit-deny') &&
+      profile.reasonCodes.includes('policy-coverage-implicit-deny') &&
+      profile.reasonCodes.includes('policy-coverage-stale'),
+    'policy coverage profile: reason codes preserve deny and stale posture',
+  );
+  ok(
+    gapClasses(assessment).includes('policy-explicit-deny'),
+    'crypto policy gap narrowing: explicit deny gap is produced',
+  );
+  ok(
+    gapClasses(assessment).includes('policy-implicit-deny'),
+    'crypto policy gap narrowing: implicit deny gap is produced',
+  );
+  ok(
+    gapClasses(assessment).includes('policy-evidence-stale'),
+    'crypto policy gap narrowing: stale policy evidence gap is produced',
+  );
+  ok(
+    gapClasses(assessment).includes('authority-review-required'),
+    'crypto policy gap narrowing: review-required policy coverage creates review gap',
+  );
+  ok(
+    candidateKinds(assessment).includes('block-until-policy'),
+    'crypto policy gap narrowing: deny/conflict coverage blocks until policy changes',
+  );
+  ok(
+    candidateKinds(assessment).includes('collect-evidence'),
+    'crypto policy gap narrowing: stale coverage asks for fresh evidence',
+  );
+  equal(
+    assessment.policyCoverageProfileDigest,
+    profile.digest,
+    'crypto policy gap narrowing: assessment binds policy coverage profile digest',
+  );
+  ok(
+    !assessment.canonical.includes('private-limit') &&
+      !assessment.canonical.includes('internal-threshold-value'),
+    'crypto policy gap narrowing: policy coverage canonical output avoids private policy internals',
+  );
+}
+
 function testInvalidInputsFailClosed(): void {
   const risk = createCryptoConsequenceRiskAssessment({
     consequenceKind: 'agent-payment',
@@ -367,6 +494,40 @@ function testInvalidInputsFailClosed(): void {
     /does not support candidate kind/i,
   );
   passed += 1;
+
+  assert.throws(
+    () =>
+      createCryptoPolicyCoverageProfile({
+        generatedAt: '2026-05-11T11:50:00.000Z',
+        entries: [
+          {
+            dimension: 'unknown-dimension' as never,
+            status: 'covered',
+            sourceKind: 'policy-rule',
+          },
+        ],
+      }),
+    /does not support policy dimension/i,
+  );
+  passed += 1;
+
+  assert.throws(
+    () =>
+      createCryptoPolicyCoverageProfile({
+        generatedAt: '2026-05-11T11:50:00.000Z',
+        entries: [
+          {
+            dimension: 'amount',
+            status: 'covered',
+            sourceKind: 'policy-rule',
+            observedAt: '2026-05-11T11:51:00.000Z',
+            maxAgeSeconds: 60,
+          },
+        ],
+      }),
+    /observedAt cannot be after generatedAt/i,
+  );
+  passed += 1;
 }
 
 testDescriptorVocabulary();
@@ -375,6 +536,7 @@ testDelegationGapBlocksUntilEvidenceCanBeBound();
 testX402SolverAndRouteGapsProduceDigestOnlyCandidates();
 testPolicyDimensionAndAllowedCandidateFiltering();
 testVelocityGapAndDeterminism();
+testPolicyCoverageProfileAddsExplicitDenyImplicitDenyAndStaleGaps();
 testInvalidInputsFailClosed();
 
 console.log(`Crypto authorization core policy-gap narrowing tests: ${passed} passed, 0 failed`);

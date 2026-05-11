@@ -3,8 +3,9 @@ import {
   canonicalizeReleaseJson,
   type CanonicalReleaseJsonValue,
 } from '../release-kernel/release-canonicalization.js';
-import type {
-  CryptoAuthorizationPolicyDimension,
+import {
+  CRYPTO_AUTHORIZATION_POLICY_DIMENSIONS,
+  type CryptoAuthorizationPolicyDimension,
 } from './types.js';
 import type {
   CryptoIntelligenceEvidenceRef,
@@ -27,6 +28,10 @@ export const CRYPTO_POLICY_GAP_NARROWING_SPEC_VERSION =
 
 export const CRYPTO_POLICY_GAP_CLASSES = [
   'policy-dimension-missing',
+  'policy-explicit-deny',
+  'policy-implicit-deny',
+  'policy-conflict',
+  'policy-evidence-stale',
   'evidence-missing',
   'adapter-readiness-missing',
   'freshness-window-missing',
@@ -79,6 +84,29 @@ export const CRYPTO_NARROWING_SCOPE_KINDS = [
 export type CryptoNarrowingScopeKind =
   typeof CRYPTO_NARROWING_SCOPE_KINDS[number];
 
+export const CRYPTO_POLICY_DIMENSION_COVERAGE_STATUSES = [
+  'covered',
+  'missing',
+  'stale',
+  'conflicting',
+  'explicit-deny',
+  'implicit-deny',
+  'review-required',
+] as const;
+export type CryptoPolicyDimensionCoverageStatus =
+  typeof CRYPTO_POLICY_DIMENSION_COVERAGE_STATUSES[number];
+
+export const CRYPTO_POLICY_COVERAGE_SOURCE_KINDS = [
+  'policy-rule',
+  'scope-binding',
+  'operator-risk-input',
+  'adapter-readiness',
+  'simulation',
+  'external-review',
+] as const;
+export type CryptoPolicyCoverageSourceKind =
+  typeof CRYPTO_POLICY_COVERAGE_SOURCE_KINDS[number];
+
 export interface CryptoPolicyGap {
   readonly gapId: string;
   readonly gapClass: CryptoPolicyGapClass;
@@ -114,12 +142,65 @@ export interface CryptoNarrowingCandidate {
   readonly rawPayloadRequired: false;
 }
 
+export interface CryptoPolicyDimensionCoverageInput {
+  readonly dimension: CryptoAuthorizationPolicyDimension;
+  readonly status: CryptoPolicyDimensionCoverageStatus;
+  readonly sourceKind: CryptoPolicyCoverageSourceKind;
+  readonly sourceRef?: string | null;
+  readonly evidenceRefs?: readonly CryptoIntelligenceEvidenceRef[] | null;
+  readonly reasonCodes?: readonly string[] | null;
+  readonly observedAt?: string | null;
+  readonly maxAgeSeconds?: number | null;
+}
+
+export interface CryptoPolicyDimensionCoverage {
+  readonly dimension: CryptoAuthorizationPolicyDimension;
+  readonly status: CryptoPolicyDimensionCoverageStatus;
+  readonly sourceKind: CryptoPolicyCoverageSourceKind;
+  readonly sourceRef: string | null;
+  readonly disposition: CryptoIntelligenceSignalDisposition;
+  readonly evidenceRefs: readonly CryptoIntelligenceEvidenceRef[];
+  readonly reasonCodes: readonly string[];
+  readonly observedAt: string | null;
+  readonly maxAgeSeconds: number | null;
+  readonly stale: boolean;
+  readonly rawPolicyThresholdExposed: false;
+}
+
+export interface CreateCryptoPolicyCoverageProfileInput {
+  readonly generatedAt: string;
+  readonly scopeRef?: string | null;
+  readonly entries: readonly CryptoPolicyDimensionCoverageInput[];
+}
+
+export interface CryptoPolicyCoverageProfile {
+  readonly version: typeof CRYPTO_POLICY_GAP_NARROWING_SPEC_VERSION;
+  readonly generatedAt: string;
+  readonly scopeRef: string | null;
+  readonly entryCount: number;
+  readonly coveredCount: number;
+  readonly reviewCount: number;
+  readonly blockCount: number;
+  readonly recommendedDisposition: CryptoIntelligenceSignalDisposition;
+  readonly missingPolicyDimensions: readonly CryptoAuthorizationPolicyDimension[];
+  readonly blockedPolicyDimensions: readonly CryptoAuthorizationPolicyDimension[];
+  readonly reasonCodes: readonly string[];
+  readonly entries: readonly CryptoPolicyDimensionCoverage[];
+  readonly explicitDenyWins: true;
+  readonly implicitDenyFailsClosed: true;
+  readonly rawPolicyThresholdExposed: false;
+  readonly rawPayloadStored: false;
+  readonly canonical: string;
+  readonly digest: string;
+}
+
 export interface CreateCryptoPolicyGapNarrowingAssessmentInput {
   readonly signalAssessment: CryptoIntelligenceRiskSignalAssessment;
   readonly generatedAt: string;
   readonly policyRef?: string | null;
   readonly operatorContextRef?: string | null;
   readonly allowedCandidateKinds?: readonly CryptoNarrowingCandidateKind[] | null;
+  readonly policyCoverageProfile?: CryptoPolicyCoverageProfile | null;
 }
 
 export interface CryptoPolicyGapNarrowingAssessment {
@@ -130,6 +211,7 @@ export interface CryptoPolicyGapNarrowingAssessment {
   readonly policyRef: string | null;
   readonly operatorContextRef: string | null;
   readonly recommendedDisposition: CryptoIntelligenceSignalDisposition;
+  readonly policyCoverageProfileDigest: string | null;
   readonly gapCount: number;
   readonly candidateCount: number;
   readonly blockedGapCount: number;
@@ -148,9 +230,13 @@ export interface CryptoPolicyGapNarrowingDescriptor {
   readonly gapClasses: typeof CRYPTO_POLICY_GAP_CLASSES;
   readonly candidateKinds: typeof CRYPTO_NARROWING_CANDIDATE_KINDS;
   readonly scopeKinds: typeof CRYPTO_NARROWING_SCOPE_KINDS;
+  readonly policyCoverageStatuses: typeof CRYPTO_POLICY_DIMENSION_COVERAGE_STATUSES;
+  readonly policyCoverageSourceKinds: typeof CRYPTO_POLICY_COVERAGE_SOURCE_KINDS;
   readonly approvalRequired: true;
   readonly autoApply: false;
   readonly rawPolicyThresholdExposed: false;
+  readonly explicitDenyWins: true;
+  readonly implicitDenyFailsClosed: true;
 }
 
 const SEVERITY_RANK: Record<CryptoIntelligenceSignalSeverity, number> = {
@@ -250,6 +336,202 @@ function safeEvidenceRefs(
   return Object.freeze(output);
 }
 
+function safeReasonCodes(codes: readonly string[] | null | undefined): readonly string[] {
+  const output: string[] = [];
+  const seen = new Set<string>();
+  for (const code of codes ?? []) {
+    const normalized = normalizeIdentifier(code, 'reasonCode');
+    if (/\s/.test(normalized)) {
+      throw new Error('Crypto policy gap narrowing reason codes must be compact.');
+    }
+    if (!seen.has(normalized)) {
+      seen.add(normalized);
+      output.push(normalized);
+    }
+  }
+  return Object.freeze(output.sort());
+}
+
+function normalizePositiveInteger(
+  value: number | null | undefined,
+  fieldName: string,
+): number | null {
+  if (value === undefined || value === null) return null;
+  if (!Number.isInteger(value) || value <= 0) {
+    throw new Error(`Crypto policy gap narrowing ${fieldName} must be a positive integer.`);
+  }
+  return value;
+}
+
+function dispositionForCoverageStatus(
+  status: CryptoPolicyDimensionCoverageStatus,
+): CryptoIntelligenceSignalDisposition {
+  switch (status) {
+    case 'covered':
+      return 'admit';
+    case 'review-required':
+      return 'review';
+    case 'missing':
+    case 'stale':
+    case 'conflicting':
+    case 'explicit-deny':
+    case 'implicit-deny':
+      return 'block';
+  }
+}
+
+function shouldTreatCoverageAsStale(input: {
+  readonly generatedAt: string;
+  readonly observedAt: string | null;
+  readonly maxAgeSeconds: number | null;
+  readonly status: CryptoPolicyDimensionCoverageStatus;
+}): boolean {
+  if (
+    input.observedAt === null ||
+    input.maxAgeSeconds === null ||
+    input.status === 'explicit-deny' ||
+    input.status === 'implicit-deny'
+  ) {
+    return false;
+  }
+  const generatedAtMs = Date.parse(input.generatedAt);
+  const observedAtMs = Date.parse(input.observedAt);
+  if (observedAtMs > generatedAtMs) {
+    throw new Error('Crypto policy gap narrowing policy coverage observedAt cannot be after generatedAt.');
+  }
+  return generatedAtMs - observedAtMs > input.maxAgeSeconds * 1000;
+}
+
+function coverageEntry(
+  input: CryptoPolicyDimensionCoverageInput,
+  generatedAt: string,
+): CryptoPolicyDimensionCoverage {
+  if (!CRYPTO_AUTHORIZATION_POLICY_DIMENSIONS.includes(input.dimension)) {
+    throw new Error(`Crypto policy gap narrowing does not support policy dimension ${input.dimension}.`);
+  }
+  if (!includesValue(CRYPTO_POLICY_DIMENSION_COVERAGE_STATUSES, input.status)) {
+    throw new Error(`Crypto policy gap narrowing does not support coverage status ${input.status}.`);
+  }
+  if (!includesValue(CRYPTO_POLICY_COVERAGE_SOURCE_KINDS, input.sourceKind)) {
+    throw new Error(`Crypto policy gap narrowing does not support coverage source kind ${input.sourceKind}.`);
+  }
+
+  const observedAt = input.observedAt
+    ? normalizeIsoTimestamp(input.observedAt, 'policyCoverage.observedAt')
+    : null;
+  const maxAgeSeconds = normalizePositiveInteger(
+    input.maxAgeSeconds,
+    'policyCoverage.maxAgeSeconds',
+  );
+  const stale = shouldTreatCoverageAsStale({
+    generatedAt,
+    observedAt,
+    maxAgeSeconds,
+    status: input.status,
+  });
+  const status = stale ? 'stale' : input.status;
+  const baseReasonCodes = [
+    `policy-coverage-${status}`,
+    `policy-dimension-${input.dimension}`,
+    ...safeReasonCodes(input.reasonCodes),
+  ];
+
+  return Object.freeze({
+    dimension: input.dimension,
+    status,
+    sourceKind: input.sourceKind,
+    sourceRef: normalizeOptionalRef(input.sourceRef, 'policyCoverage.sourceRef'),
+    disposition: dispositionForCoverageStatus(status),
+    evidenceRefs: safeEvidenceRefs(input.evidenceRefs ?? []),
+    reasonCodes: safeReasonCodes(baseReasonCodes),
+    observedAt,
+    maxAgeSeconds,
+    stale,
+    rawPolicyThresholdExposed: false,
+  });
+}
+
+function coverageProfilePayload(input: {
+  readonly generatedAt: string;
+  readonly scopeRef: string | null;
+  readonly entries: readonly CryptoPolicyDimensionCoverage[];
+  readonly recommendedDisposition: CryptoIntelligenceSignalDisposition;
+  readonly missingPolicyDimensions: readonly CryptoAuthorizationPolicyDimension[];
+  readonly blockedPolicyDimensions: readonly CryptoAuthorizationPolicyDimension[];
+  readonly reasonCodes: readonly string[];
+}): CanonicalReleaseJsonValue {
+  return {
+    version: CRYPTO_POLICY_GAP_NARROWING_SPEC_VERSION,
+    generatedAt: input.generatedAt,
+    scopeRef: input.scopeRef,
+    entries: input.entries as unknown as CanonicalReleaseJsonValue,
+    recommendedDisposition: input.recommendedDisposition,
+    missingPolicyDimensions: input.missingPolicyDimensions,
+    blockedPolicyDimensions: input.blockedPolicyDimensions,
+    reasonCodes: input.reasonCodes,
+    explicitDenyWins: true,
+    implicitDenyFailsClosed: true,
+    rawPolicyThresholdExposed: false,
+    rawPayloadStored: false,
+  };
+}
+
+export function createCryptoPolicyCoverageProfile(
+  input: CreateCryptoPolicyCoverageProfileInput,
+): CryptoPolicyCoverageProfile {
+  const generatedAt = normalizeIsoTimestamp(input.generatedAt, 'generatedAt');
+  const scopeRef = normalizeOptionalRef(input.scopeRef, 'scopeRef');
+  const entries = Object.freeze(
+    input.entries.map((entry) => coverageEntry(entry, generatedAt)),
+  );
+  const recommendedDisposition = entries.reduce<CryptoIntelligenceSignalDisposition>(
+    (current, entry) => strongerDisposition(current, entry.disposition),
+    'admit',
+  );
+  const missingPolicyDimensions = unique(
+    entries
+      .filter((entry) => entry.status === 'missing')
+      .map((entry) => entry.dimension),
+  );
+  const blockedPolicyDimensions = unique(
+    entries
+      .filter((entry) => entry.disposition === 'block')
+      .map((entry) => entry.dimension),
+  );
+  const reasonCodes = safeReasonCodes(entries.flatMap((entry) => entry.reasonCodes));
+  const payload = coverageProfilePayload({
+    generatedAt,
+    scopeRef,
+    entries,
+    recommendedDisposition,
+    missingPolicyDimensions,
+    blockedPolicyDimensions,
+    reasonCodes,
+  });
+  const canonical = canonicalObject(payload);
+
+  return Object.freeze({
+    version: CRYPTO_POLICY_GAP_NARROWING_SPEC_VERSION,
+    generatedAt,
+    scopeRef,
+    entryCount: entries.length,
+    coveredCount: entries.filter((entry) => entry.status === 'covered').length,
+    reviewCount: entries.filter((entry) => entry.disposition === 'review').length,
+    blockCount: entries.filter((entry) => entry.disposition === 'block').length,
+    recommendedDisposition,
+    missingPolicyDimensions,
+    blockedPolicyDimensions,
+    reasonCodes,
+    entries,
+    explicitDenyWins: true,
+    implicitDenyFailsClosed: true,
+    rawPolicyThresholdExposed: false,
+    rawPayloadStored: false,
+    canonical: canonical.canonical,
+    digest: canonical.digest,
+  });
+}
+
 function gapClassForSignal(signal: CryptoIntelligenceRiskSignal): CryptoPolicyGapClass {
   if (signal.missingEvidenceClasses.includes('adapter-preflight')) {
     return 'adapter-readiness-missing';
@@ -316,6 +598,14 @@ function summaryForGapClass(gapClass: CryptoPolicyGapClass): string {
   switch (gapClass) {
     case 'policy-dimension-missing':
       return 'Policy dimensions are missing; bind the required dimensions before enforcement.';
+    case 'policy-explicit-deny':
+      return 'Policy explicitly denies this consequence; block until customer-approved policy coverage changes.';
+    case 'policy-implicit-deny':
+      return 'Policy falls through implicit deny; block until an explicit allow policy matches the scoped consequence.';
+    case 'policy-conflict':
+      return 'Policy evidence is conflicting; resolve the customer-controlled policy conflict before enforcement.';
+    case 'policy-evidence-stale':
+      return 'Policy coverage evidence is stale; collect fresh digest-bound policy evidence before enforcement.';
     case 'evidence-missing':
       return 'Required evidence is missing; collect digest-bound evidence before execution.';
     case 'adapter-readiness-missing':
@@ -468,10 +758,114 @@ function gapsFromSignals(
   );
 }
 
+function gapClassForCoverageStatus(
+  status: CryptoPolicyDimensionCoverageStatus,
+): CryptoPolicyGapClass | null {
+  switch (status) {
+    case 'covered':
+      return null;
+    case 'missing':
+      return 'policy-dimension-missing';
+    case 'stale':
+      return 'policy-evidence-stale';
+    case 'conflicting':
+      return 'policy-conflict';
+    case 'explicit-deny':
+      return 'policy-explicit-deny';
+    case 'implicit-deny':
+      return 'policy-implicit-deny';
+    case 'review-required':
+      return 'authority-review-required';
+  }
+}
+
+function missingEvidenceForCoverageStatus(
+  status: CryptoPolicyDimensionCoverageStatus,
+): readonly CryptoIntelligenceMissingEvidenceClass[] {
+  switch (status) {
+    case 'missing':
+      return Object.freeze(['policy-dimension'] as const);
+    case 'stale':
+      return Object.freeze(['freshness-window'] as const);
+    case 'covered':
+    case 'conflicting':
+    case 'explicit-deny':
+    case 'implicit-deny':
+    case 'review-required':
+      return Object.freeze([]);
+  }
+}
+
+function gapFromCoverageEntry(
+  profileDigest: string,
+  entry: CryptoPolicyDimensionCoverage,
+): CryptoPolicyGap | null {
+  const gapClass = gapClassForCoverageStatus(entry.status);
+  if (gapClass === null) return null;
+  const sourceSignalCodes = safeReasonCodes(entry.reasonCodes);
+  const missingEvidenceClasses = missingEvidenceForCoverageStatus(entry.status);
+  const evidenceRefs = safeEvidenceRefs([
+    ...entry.evidenceRefs,
+    {
+      kind: 'digest',
+      value: profileDigest,
+    },
+  ]);
+
+  return Object.freeze({
+    gapId: gapIdFor({
+      sourceSignalAssessmentDigest: profileDigest,
+      gapClass,
+      sourceSignalCodes,
+      requiredPolicyDimensions: [entry.dimension],
+      missingEvidenceClasses,
+    }),
+    gapClass,
+    severity: entry.disposition === 'block' ? 'critical' : 'warning',
+    disposition: entry.disposition,
+    sourceSignalCodes,
+    requiredPolicyDimensions: Object.freeze([entry.dimension]),
+    missingEvidenceClasses,
+    evidenceRefs,
+    modelSafeSummary: summaryForGapClass(gapClass),
+    blocksAdmission: entry.disposition === 'block',
+  });
+}
+
+function gapsFromPolicyCoverageProfile(
+  profile: CryptoPolicyCoverageProfile | null,
+): readonly CryptoPolicyGap[] {
+  if (profile === null) return Object.freeze([]);
+  return Object.freeze(
+    profile.entries
+      .map((entry) => gapFromCoverageEntry(profile.digest, entry))
+      .filter((entry): entry is CryptoPolicyGap => entry !== null),
+  );
+}
+
+function sortGaps(gaps: readonly CryptoPolicyGap[]): readonly CryptoPolicyGap[] {
+  return Object.freeze(
+    [...gaps].sort((left, right) => {
+      const dispositionDelta =
+        DISPOSITION_RANK[right.disposition] - DISPOSITION_RANK[left.disposition];
+      if (dispositionDelta !== 0) return dispositionDelta;
+      const severityDelta = SEVERITY_RANK[right.severity] - SEVERITY_RANK[left.severity];
+      if (severityDelta !== 0) return severityDelta;
+      return left.gapClass.localeCompare(right.gapClass);
+    }),
+  );
+}
+
 function candidateKindForGap(gap: CryptoPolicyGap): CryptoNarrowingCandidateKind {
   switch (gap.gapClass) {
     case 'policy-dimension-missing':
       return 'bind-policy-dimension';
+    case 'policy-explicit-deny':
+    case 'policy-implicit-deny':
+    case 'policy-conflict':
+      return 'block-until-policy';
+    case 'policy-evidence-stale':
+      return 'collect-evidence';
     case 'evidence-missing':
       return 'collect-evidence';
     case 'adapter-readiness-missing':
@@ -710,6 +1104,7 @@ function assessmentPayload(input: {
   readonly policyRef: string | null;
   readonly operatorContextRef: string | null;
   readonly recommendedDisposition: CryptoIntelligenceSignalDisposition;
+  readonly policyCoverageProfileDigest: string | null;
   readonly gaps: readonly CryptoPolicyGap[];
   readonly candidates: readonly CryptoNarrowingCandidate[];
 }): CanonicalReleaseJsonValue {
@@ -721,6 +1116,7 @@ function assessmentPayload(input: {
     policyRef: input.policyRef,
     operatorContextRef: input.operatorContextRef,
     recommendedDisposition: input.recommendedDisposition,
+    policyCoverageProfileDigest: input.policyCoverageProfileDigest,
     gaps: input.gaps as unknown as CanonicalReleaseJsonValue,
     candidates: input.candidates as unknown as CanonicalReleaseJsonValue,
     approvalRequired: true,
@@ -739,10 +1135,14 @@ export function createCryptoPolicyGapNarrowingAssessment(
     input.operatorContextRef,
     'operatorContextRef',
   );
-  const gaps = gapsFromSignals(
-    input.signalAssessment.digest,
-    input.signalAssessment.signals,
-  );
+  const policyCoverageProfile = input.policyCoverageProfile ?? null;
+  const gaps = sortGaps([
+    ...gapsFromSignals(
+      input.signalAssessment.digest,
+      input.signalAssessment.signals,
+    ),
+    ...gapsFromPolicyCoverageProfile(policyCoverageProfile),
+  ]);
   const candidates = candidatesFromGaps(
     gaps,
     allowedCandidateSet(input.allowedCandidateKinds),
@@ -756,6 +1156,7 @@ export function createCryptoPolicyGapNarrowingAssessment(
     policyRef,
     operatorContextRef,
     recommendedDisposition,
+    policyCoverageProfileDigest: policyCoverageProfile?.digest ?? null,
     gaps,
     candidates,
   });
@@ -769,6 +1170,7 @@ export function createCryptoPolicyGapNarrowingAssessment(
     policyRef,
     operatorContextRef,
     recommendedDisposition,
+    policyCoverageProfileDigest: policyCoverageProfile?.digest ?? null,
     gapCount: gaps.length,
     candidateCount: candidates.length,
     blockedGapCount: gaps.filter((gap) => gap.blocksAdmission).length,
@@ -790,9 +1192,13 @@ CryptoPolicyGapNarrowingDescriptor {
     gapClasses: CRYPTO_POLICY_GAP_CLASSES,
     candidateKinds: CRYPTO_NARROWING_CANDIDATE_KINDS,
     scopeKinds: CRYPTO_NARROWING_SCOPE_KINDS,
+    policyCoverageStatuses: CRYPTO_POLICY_DIMENSION_COVERAGE_STATUSES,
+    policyCoverageSourceKinds: CRYPTO_POLICY_COVERAGE_SOURCE_KINDS,
     approvalRequired: true,
     autoApply: false,
     rawPolicyThresholdExposed: false,
+    explicitDenyWins: true,
+    implicitDenyFailsClosed: true,
   });
 }
 

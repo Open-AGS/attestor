@@ -135,6 +135,12 @@ function testCryptoIntelligenceNamespaceBindings(): void {
       .candidateKinds.includes('bind-route-commitment'),
     'crypto intelligence platform surface: policy gap narrowing exposes route narrowing',
   );
+  ok(
+    cryptoIntelligence.policyGapNarrowing
+      .cryptoPolicyGapNarrowingDescriptor()
+      .policyCoverageStatuses.includes('explicit-deny'),
+    'crypto intelligence platform surface: policy gap narrowing exposes explicit deny coverage',
+  );
   equal(
     cryptoIntelligence.adapterReadiness.cryptoAdapterReadinessManifestDescriptor().version,
     'attestor.crypto-adapter-readiness-manifest.v1',

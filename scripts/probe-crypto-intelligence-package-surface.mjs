@@ -35,6 +35,28 @@ assert.equal(
   true,
 );
 assert.equal(
+  cryptoIntelligence.cryptoIntelligence.policyGapNarrowing
+    .cryptoPolicyGapNarrowingDescriptor()
+    .policyCoverageStatuses.includes('explicit-deny'),
+  true,
+);
+assert.equal(
+  cryptoIntelligence.cryptoIntelligence.policyGapNarrowing
+    .createCryptoPolicyCoverageProfile({
+      generatedAt: '2026-05-11T12:00:00.000Z',
+      entries: [
+        {
+          dimension: 'counterparty',
+          status: 'explicit-deny',
+          sourceKind: 'policy-rule',
+          sourceRef: 'policy-rule:package-probe',
+        },
+      ],
+    })
+    .recommendedDisposition,
+  'block',
+);
+assert.equal(
   cryptoIntelligence.cryptoIntelligence.adapterReadiness
     .cryptoAdapterReadinessManifestDescriptor()
     .matrixEntryCount,

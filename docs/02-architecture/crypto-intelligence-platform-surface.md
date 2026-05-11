@@ -32,6 +32,7 @@ The public subpath exposes:
 - `cryptoIntelligencePublicSurface()`
 - risk signal descriptors, constants, labels, and `createCryptoIntelligenceRiskSignalAssessment()`
 - policy gap descriptors, constants, labels, and `createCryptoPolicyGapNarrowingAssessment()`
+- policy coverage profile descriptors and `createCryptoPolicyCoverageProfile()`
 - adapter readiness descriptors, constants, labels, and `createCryptoAdapterReadinessManifest()`
 - conformance fixture descriptors and negative fixture validation
 - privacy minimization descriptors and evaluation helpers
@@ -44,7 +45,7 @@ The curated namespace object groups the platform surface as:
 | Namespace | Role |
 |---|---|
 | `riskSignals` | Deterministic risk/readiness/freshness/velocity signals over programmable-money consequences |
-| `policyGapNarrowing` | Missing evidence, policy gap, and safe narrowing candidates without exposing private thresholds |
+| `policyGapNarrowing` | Missing evidence, policy coverage, explicit/implicit deny, stale policy evidence, policy gap, and safe narrowing candidates without exposing private thresholds |
 | `adapterReadiness` | Wallet, Safe, ERC-4337, modular-account, delegated-EOA, x402, custody, and solver readiness matrix |
 | `conformanceFixtures` | Positive and negative execution-admission fixture coverage, including malformed, stale, contradictory, and privacy-unsafe paths |
 | `privacyMinimization` | Digest-first guard for intelligence outputs, telemetry, dashboards, proof packets, and benchmark outputs |
@@ -61,12 +62,21 @@ The crypto execution-admission surface answers which wallet, guard, bundler, pay
 The crypto intelligence surface answers:
 
 - what is risky or missing?
+- which policy dimensions are covered, stale, conflicting, explicitly denied, or implicitly denied?
 - what adapter evidence is ready, missing, or blocked?
 - what model-safe narrowing or operator action is available?
 - what proof links and dashboard summaries can be shown without raw payloads?
 - whether the intelligence path remains inside performance and privacy budgets?
 
 It does not authorize execution by itself. It informs the same `admit`, `narrow`, `review`, and `block` consequence path, and downstream systems still verify before acting.
+
+Policy coverage profile rules are fail-closed:
+
+- explicit deny wins over narrowing suggestions
+- implicit deny blocks until an explicit customer-approved allow rule matches
+- stale policy evidence blocks until fresh digest-bound policy evidence is collected
+- conflicting policy evidence routes to operator resolution before enforcement
+- review-required coverage produces review work, not autonomous policy edits
 
 ## Privacy And Non-Claims
 

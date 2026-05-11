@@ -202,6 +202,26 @@ assert.equal(
   true,
 );
 assert.equal(
+  admission.consequenceAdmissionDescriptor().packDecisionProfileVersion,
+  'attestor.consequence-admission-pack-decision-profile.v1',
+);
+assert.equal(
+  admission.consequenceAdmissionPackDecisionProfileDescriptor().signalKinds.includes(
+    'crypto-adapter-readiness-posture',
+  ),
+  true,
+);
+assert.equal(
+  admission.consequenceDataMinimizationRedactionPolicyDescriptor().surfaceKinds.includes(
+    'pack-decision-profile',
+  ),
+  true,
+);
+assert.equal(
+  typeof admission.createConsequenceAdmissionPackDecisionProfile,
+  'function',
+);
+assert.equal(
   typeof admission.evaluateConsequenceDataMinimizationArtifact,
   'function',
 );

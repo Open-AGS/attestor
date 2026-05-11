@@ -56,6 +56,16 @@ includes(
 );
 includes(
   text,
+  '| 02 | complete | Pack-specific decision logic |',
+  'crypto engine hardening II docs: step 02 is complete',
+);
+includes(
+  text,
+  'Open Policy Agent decision logs',
+  'crypto engine hardening II docs: decision-log research anchor is present',
+);
+includes(
+  text,
   '| 10 | blocked | Production rollout readiness |',
   'crypto engine hardening II docs: production rollout remains honestly blocked',
 );

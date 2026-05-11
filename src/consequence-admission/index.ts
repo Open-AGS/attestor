@@ -75,6 +75,12 @@ import {
   CONSEQUENCE_DATA_MINIMIZATION_REDACTION_POLICY_VERSION,
   CONSEQUENCE_DATA_MINIMIZATION_SURFACE_KINDS,
 } from './data-minimization-redaction-policy.js';
+import {
+  CONSEQUENCE_ADMISSION_PACK_DECISION_POSTURES,
+  CONSEQUENCE_ADMISSION_PACK_DECISION_PROFILE_VERSION,
+  CONSEQUENCE_ADMISSION_PACK_DECISION_RECOMMENDED_ACTIONS,
+  CONSEQUENCE_ADMISSION_PACK_DECISION_SIGNAL_KINDS,
+} from './pack-decision-profile.js';
 
 export const CONSEQUENCE_ADMISSION_CONTRACT_VERSION =
   'attestor.consequence-admission.v1';
@@ -438,6 +444,7 @@ export interface ConsequenceAdmissionDescriptor {
   readonly agentLoopAbuseGuardVersion: typeof CONSEQUENCE_ADMISSION_AGENT_LOOP_ABUSE_GUARD_VERSION;
   readonly correctionCatalogVersion: typeof CONSEQUENCE_ADMISSION_CORRECTION_CATALOG_VERSION;
   readonly dataMinimizationPolicyVersion: typeof CONSEQUENCE_DATA_MINIMIZATION_REDACTION_POLICY_VERSION;
+  readonly packDecisionProfileVersion: typeof CONSEQUENCE_ADMISSION_PACK_DECISION_PROFILE_VERSION;
   readonly retryDefaultMaxAttempts: typeof CONSEQUENCE_ADMISSION_RETRY_DEFAULT_MAX_ATTEMPTS;
   readonly retryDefaultWindowSeconds: typeof CONSEQUENCE_ADMISSION_RETRY_DEFAULT_WINDOW_SECONDS;
   readonly decisions: typeof CONSEQUENCE_ADMISSION_DECISIONS;
@@ -455,6 +462,9 @@ export interface ConsequenceAdmissionDescriptor {
   readonly correctionReasonCodes: readonly string[];
   readonly dataMinimizationSurfaceKinds: typeof CONSEQUENCE_DATA_MINIMIZATION_SURFACE_KINDS;
   readonly dataMinimizationForbiddenRawClasses: typeof CONSEQUENCE_DATA_MINIMIZATION_FORBIDDEN_RAW_CLASSES;
+  readonly packDecisionPostures: typeof CONSEQUENCE_ADMISSION_PACK_DECISION_POSTURES;
+  readonly packDecisionRecommendedActions: typeof CONSEQUENCE_ADMISSION_PACK_DECISION_RECOMMENDED_ACTIONS;
+  readonly packDecisionSignalKinds: typeof CONSEQUENCE_ADMISSION_PACK_DECISION_SIGNAL_KINDS;
   readonly retryBindingFields: typeof CONSEQUENCE_ADMISSION_RETRY_BINDING_FIELDS;
   readonly retryBudgetOutcomes: typeof CONSEQUENCE_ADMISSION_RETRY_BUDGET_OUTCOMES;
   readonly retryAttemptLedgerOutcomes: typeof CONSEQUENCE_ADMISSION_RETRY_ATTEMPT_LEDGER_OUTCOMES;
@@ -2001,6 +2011,7 @@ ConsequenceAdmissionDescriptor {
     agentLoopAbuseGuardVersion: CONSEQUENCE_ADMISSION_AGENT_LOOP_ABUSE_GUARD_VERSION,
     correctionCatalogVersion: CONSEQUENCE_ADMISSION_CORRECTION_CATALOG_VERSION,
     dataMinimizationPolicyVersion: CONSEQUENCE_DATA_MINIMIZATION_REDACTION_POLICY_VERSION,
+    packDecisionProfileVersion: CONSEQUENCE_ADMISSION_PACK_DECISION_PROFILE_VERSION,
     retryDefaultMaxAttempts: CONSEQUENCE_ADMISSION_RETRY_DEFAULT_MAX_ATTEMPTS,
     retryDefaultWindowSeconds: CONSEQUENCE_ADMISSION_RETRY_DEFAULT_WINDOW_SECONDS,
     decisions: CONSEQUENCE_ADMISSION_DECISIONS,
@@ -2018,6 +2029,9 @@ ConsequenceAdmissionDescriptor {
     correctionReasonCodes: consequenceAdmissionCorrectionCatalog().reasonCodes,
     dataMinimizationSurfaceKinds: CONSEQUENCE_DATA_MINIMIZATION_SURFACE_KINDS,
     dataMinimizationForbiddenRawClasses: CONSEQUENCE_DATA_MINIMIZATION_FORBIDDEN_RAW_CLASSES,
+    packDecisionPostures: CONSEQUENCE_ADMISSION_PACK_DECISION_POSTURES,
+    packDecisionRecommendedActions: CONSEQUENCE_ADMISSION_PACK_DECISION_RECOMMENDED_ACTIONS,
+    packDecisionSignalKinds: CONSEQUENCE_ADMISSION_PACK_DECISION_SIGNAL_KINDS,
     retryBindingFields: CONSEQUENCE_ADMISSION_RETRY_BINDING_FIELDS,
     retryBudgetOutcomes: CONSEQUENCE_ADMISSION_RETRY_BUDGET_OUTCOMES,
     retryAttemptLedgerOutcomes: CONSEQUENCE_ADMISSION_RETRY_ATTEMPT_LEDGER_OUTCOMES,
@@ -2068,6 +2082,7 @@ export * from './business-risk-dashboard.js';
 export * from './dashboard-api-summary.js';
 export * from './external-review-packet.js';
 export * from './data-minimization-redaction-policy.js';
+export * from './pack-decision-profile.js';
 export * from './downstream-enforcement-contract.js';
 export * from './verifier-helper.js';
 export * from './shadow-events.js';

@@ -9,6 +9,7 @@ export const CONSEQUENCE_DATA_MINIMIZATION_REDACTION_POLICY_VERSION =
 
 export const CONSEQUENCE_DATA_MINIMIZATION_SURFACE_KINDS = [
   'admission-model-feedback',
+  'pack-decision-profile',
   'admission-problem',
   'retry-attempt-ledger',
   'shadow-summary',
@@ -187,6 +188,18 @@ Object.freeze([
     'safe-instruction',
     'missing-field-names',
     'required-evidence-kinds',
+    'status',
+  ]),
+  surface('pack-decision-profile', 'operator', true, [
+    'reason-codes',
+    'safe-instruction',
+    'counts',
+    'digests',
+    'timestamps',
+    'consequence-domain',
+    'surface-digest',
+    'artifact-reference',
+    'approval-state',
     'status',
   ]),
   surface('admission-problem', 'model', true, [

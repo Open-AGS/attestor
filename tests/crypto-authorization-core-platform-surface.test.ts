@@ -50,6 +50,7 @@ function testCryptoAuthorizationCorePublicSurfaceDescriptor(): void {
       'objectModel',
       'canonicalReferences',
       'consequenceRiskMapping',
+      'intelligenceRiskSignals',
       'eip712',
       'erc1271',
       'replayFreshness',
@@ -111,6 +112,11 @@ function testCryptoAuthorizationCoreBaseNamespaces(): void {
     cryptoAuthorizationCore.consequenceRiskMapping.CRYPTO_CONSEQUENCE_RISK_MAPPING_SPEC_VERSION,
     'attestor.crypto-consequence-risk-mapping.v1',
     'crypto platform surface: risk-mapping namespace is bound',
+  );
+  equal(
+    cryptoAuthorizationCore.intelligenceRiskSignals.CRYPTO_INTELLIGENCE_RISK_SIGNALS_SPEC_VERSION,
+    'attestor.crypto-intelligence-risk-signals.v1',
+    'crypto platform surface: intelligence risk-signals namespace is bound',
   );
   equal(
     cryptoAuthorizationCore.eip712.CRYPTO_EIP712_AUTHORIZATION_ENVELOPE_SPEC_VERSION,

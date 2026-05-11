@@ -2,6 +2,7 @@ import * as types from './types.js';
 import * as objectModel from './object-model.js';
 import * as canonicalReferences from './canonical-references.js';
 import * as consequenceRiskMapping from './consequence-risk-mapping.js';
+import * as intelligenceRiskSignals from './intelligence-risk-signals.js';
 import * as eip712 from './eip712-authorization-envelope.js';
 import * as erc1271 from './erc1271-validation-projection.js';
 import * as replayFreshness from './replay-freshness-rules.js';
@@ -23,6 +24,7 @@ export {
   objectModel,
   canonicalReferences,
   consequenceRiskMapping,
+  intelligenceRiskSignals,
   eip712,
   erc1271,
   replayFreshness,
@@ -119,6 +121,7 @@ export const cryptoAuthorizationCore = Object.freeze({
   objectModel,
   canonicalReferences,
   consequenceRiskMapping,
+  intelligenceRiskSignals,
   eip712,
   erc1271,
   replayFreshness,
@@ -145,6 +148,8 @@ export type CryptoCanonicalReferenceBundle =
   canonicalReferences.CryptoCanonicalReferenceBundle;
 export type CryptoConsequenceRiskAssessment =
   consequenceRiskMapping.CryptoConsequenceRiskAssessment;
+export type CryptoIntelligenceRiskSignalAssessment =
+  intelligenceRiskSignals.CryptoIntelligenceRiskSignalAssessment;
 export type CryptoReleaseDecisionBinding =
   releaseDecisionBinding.CryptoReleaseDecisionBinding;
 export type CryptoPolicyControlPlaneScopeBinding =

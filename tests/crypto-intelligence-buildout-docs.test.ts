@@ -107,12 +107,12 @@ function testTrackerFreezesTheStepList(): void {
   const tracker = readProjectFile('docs', '02-architecture', 'crypto-intelligence-buildout.md');
 
   includes(tracker, '| Total frozen steps | 10 |', 'Crypto intelligence docs: step count is frozen');
-  includes(tracker, '| Completed | 1 |', 'Crypto intelligence docs: only Step 01 is complete');
-  includes(tracker, '| Not started | 9 |', 'Crypto intelligence docs: remaining steps are pending');
+  includes(tracker, '| Completed | 2 |', 'Crypto intelligence docs: Steps 01 and 02 are complete');
+  includes(tracker, '| Not started | 8 |', 'Crypto intelligence docs: remaining steps are pending');
 
   const steps = [
     '| 01 | complete | Define crypto intelligence scope, research anchors, vocabulary, and guardrails |',
-    '| 02 | pending | Add crypto risk signal model and severity mapping |',
+    '| 02 | complete | Add crypto risk signal model and severity mapping |',
     '| 03 | pending | Add policy gap and safe narrowing candidate generation |',
     '| 04 | pending | Add adapter readiness matrix and manifest |',
     '| 05 | pending | Expand negative conformance fixtures for crypto intelligence |',
@@ -152,8 +152,8 @@ function testTrackerStaysGroundedInExistingCryptoSurfaces(): void {
   );
   includes(
     tracker,
-    'Implement Step 02: add the crypto risk signal model and severity mapping',
-    'Crypto intelligence docs: immediate next step is Step 02',
+    'Implement Step 03: add policy gap and safe narrowing candidate generation',
+    'Crypto intelligence docs: immediate next step is Step 03',
   );
 }
 

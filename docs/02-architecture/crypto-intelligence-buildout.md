@@ -81,17 +81,17 @@ Start crypto intelligence as a new repository track above the packaged crypto su
 | Metric | Value |
 |---|---|
 | Total frozen steps | 10 |
-| Completed | 1 |
+| Completed | 2 |
 | In progress | 0 |
-| Not started | 9 |
-| Current posture | Step 01 opens the crypto intelligence track and freezes the scope. The completed crypto authorization and execution-admission tracks remain the base. No new hosted crypto route, wallet role, custody role, oracle role, or execution path is introduced by this step. |
+| Not started | 8 |
+| Current posture | Step 02 adds a deterministic crypto risk signal model and severity mapping on top of the completed crypto authorization and execution-admission tracks. No new hosted crypto route, wallet role, custody role, oracle role, or execution path is introduced by this step. |
 
 ## Frozen Step List
 
 | Step | Status | Deliverable | Evidence | Notes |
 |---|---|---|---|---|
 | 01 | complete | Define crypto intelligence scope, research anchors, vocabulary, and guardrails | `docs/02-architecture/crypto-intelligence-buildout.md`, `tests/crypto-intelligence-buildout-docs.test.ts`, `README.md`, `docs/02-architecture/system-overview.md`, `package.json` | Opens the next crypto track without reopening the completed crypto authorization or execution-admission trackers. Preserves one-product framing, digest-first privacy, fail-closed posture, and the no-hosted-crypto-route guardrail. |
-| 02 | pending | Add crypto risk signal model and severity mapping | _pending_ | Should interpret account kind, chain, asset, amount, counterparty, bridge/route, allowance, delegation, custody, x402, solver, freshness, and velocity posture into deterministic risk signals without replacing the existing core risk mapper. |
+| 02 | complete | Add crypto risk signal model and severity mapping | `src/crypto-authorization-core/intelligence-risk-signals.ts`, `tests/crypto-authorization-core-intelligence-risk-signals.test.ts`, `tests/crypto-authorization-core-platform-surface.test.ts`, `scripts/probe-crypto-authorization-core-package-surface.mjs`, `package.json` | Interprets account kind, chain, asset, amount, counterparty, bridge/route, allowance, delegation, custody, x402, solver, freshness, readiness, and velocity posture into deterministic model-safe signals without replacing the existing core risk mapper. |
 | 03 | pending | Add policy gap and safe narrowing candidate generation | _pending_ | Should convert missing policy dimensions and failed limits into model-safe gap classes and bounded narrowing candidates while keeping private policy thresholds out of feedback. |
 | 04 | pending | Add adapter readiness matrix and manifest | _pending_ | Should summarize readiness across wallet RPC, Safe guard, ERC-4337 bundler, modular account runtime, delegated EOA runtime, x402 resource server, custody policy engine, and intent solver surfaces. |
 | 05 | pending | Expand negative conformance fixtures for crypto intelligence | _pending_ | Should add malformed, stale, malicious, contradictory, and privacy-unsafe fixtures for each supported crypto surface, including delegated EOA, x402, custody, ERC-4337, and intent-solver paths. |
@@ -116,4 +116,4 @@ This track is complete only when:
 
 ## Immediate Next Step
 
-Implement Step 02: add the crypto risk signal model and severity mapping on top of the completed crypto authorization and execution-admission surfaces.
+Implement Step 03: add policy gap and safe narrowing candidate generation on top of the Step 02 signal model.

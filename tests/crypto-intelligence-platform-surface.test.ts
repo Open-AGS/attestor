@@ -201,6 +201,18 @@ function testCryptoIntelligenceSafetyNamespaces(): void {
   ok(
     cryptoIntelligence.privacyMinimization
       .cryptoIntelligencePrivacyMinimizationDescriptor()
+      .forbiddenRawClasses.includes('raw-model-prompt'),
+    'crypto intelligence platform surface: privacy minimization blocks raw prompts',
+  );
+  ok(
+    cryptoIntelligence.privacyMinimization
+      .cryptoIntelligencePrivacyMinimizationDescriptor()
+      .forbiddenRawClasses.includes('raw-provider-body'),
+    'crypto intelligence platform surface: privacy minimization blocks provider bodies',
+  );
+  ok(
+    cryptoIntelligence.privacyMinimization
+      .cryptoIntelligencePrivacyMinimizationDescriptor()
       .surfaceKinds.includes('intelligence-performance-benchmark'),
     'crypto intelligence platform surface: privacy gate covers performance benchmarks',
   );

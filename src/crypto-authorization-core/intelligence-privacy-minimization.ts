@@ -55,13 +55,20 @@ export type CryptoIntelligencePrivacyAllowedUnit =
   typeof CRYPTO_INTELLIGENCE_PRIVACY_ALLOWED_UNITS[number];
 
 export const CRYPTO_INTELLIGENCE_PRIVACY_FORBIDDEN_RAW_CLASSES = [
+  'raw-model-prompt',
+  'raw-model-output',
+  'raw-tool-payload',
   'raw-wallet-metadata',
+  'raw-wallet-address',
   'raw-transaction-payload',
   'raw-custody-callback-body',
+  'raw-provider-body',
   'raw-provider-error-body',
   'raw-provider-response-body',
+  'raw-route-details',
   'raw-solver-route-secret',
   'raw-customer-identifier',
+  'raw-customer-contact',
   'raw-private-policy-threshold',
   'private-policy-threshold',
   'raw-payment-header',
@@ -153,38 +160,113 @@ interface ForbiddenFieldRule {
   readonly triggersOnTruthyOnly: boolean;
 }
 
+interface SensitiveMaterialPatternRule {
+  readonly pattern: RegExp;
+  readonly code: string;
+  readonly message: string;
+}
+
 const FORBIDDEN_FIELD_RULES: readonly ForbiddenFieldRule[] = Object.freeze([
+  fieldRule('prompt', 'raw-model-prompt-field'),
+  fieldRule('modelPrompt', 'raw-model-prompt-field'),
+  fieldRule('rawPrompt', 'raw-model-prompt-field'),
+  fieldRule('rawModelPrompt', 'raw-model-prompt-field'),
+  fieldRule('modelOutput', 'raw-model-output-field'),
+  fieldRule('rawModelOutput', 'raw-model-output-field'),
+  fieldRule('toolPayload', 'raw-tool-payload-field'),
+  fieldRule('rawToolPayload', 'raw-tool-payload-field'),
+  fieldRule('toolRequestBody', 'raw-tool-payload-field'),
+  fieldRule('toolResponseBody', 'raw-tool-payload-field'),
   fieldRule('rawPayload', 'raw-payload-field'),
   fieldRule('rawWalletMetadata', 'raw-wallet-metadata-field'),
   fieldRule('walletMetadataRaw', 'raw-wallet-metadata-field'),
+  fieldRule('walletAddress', 'raw-wallet-address-field'),
+  fieldRule('rawWalletAddress', 'raw-wallet-address-field'),
   fieldRule('rawTransactionPayload', 'raw-transaction-payload-field'),
   fieldRule('transactionPayload', 'raw-transaction-payload-field'),
   fieldRule('custodyCallbackBody', 'raw-custody-callback-body-field'),
   fieldRule('rawCustodyCallbackBody', 'raw-custody-callback-body-field'),
+  fieldRule('providerBody', 'raw-provider-body-field'),
+  fieldRule('rawProviderBody', 'raw-provider-body-field'),
+  fieldRule('providerPayload', 'raw-provider-body-field'),
+  fieldRule('rawProviderPayload', 'raw-provider-body-field'),
+  fieldRule('providerRequestBody', 'raw-provider-body-field'),
+  fieldRule('providerResponse', 'raw-provider-body-field'),
+  fieldRule('rawProviderResponse', 'raw-provider-body-field'),
   fieldRule('providerErrorBody', 'raw-provider-error-body-field'),
   fieldRule('rawProviderErrorBody', 'raw-provider-error-body-field'),
   fieldRule('providerResponseBody', 'raw-provider-response-body-field'),
   fieldRule('rawProviderResponseBody', 'raw-provider-response-body-field'),
+  fieldRule('routePayload', 'raw-route-details-field'),
+  fieldRule('rawRoutePayload', 'raw-route-details-field'),
+  fieldRule('routeDetails', 'raw-route-details-field'),
+  fieldRule('rawRouteDetails', 'raw-route-details-field'),
   fieldRule('solverRouteSecret', 'raw-solver-route-secret-field'),
   fieldRule('rawSolverRouteSecret', 'raw-solver-route-secret-field'),
   fieldRule('routeSecret', 'raw-solver-route-secret-field'),
+  fieldRule('policyThreshold', 'private-policy-threshold-field'),
+  fieldRule('rawPolicyThreshold', 'private-policy-threshold-field'),
   fieldRule('privatePolicyThreshold', 'private-policy-threshold-field'),
   fieldRule('rawPrivatePolicyThreshold', 'private-policy-threshold-field'),
   fieldRule('customerIdentifier', 'raw-customer-identifier-field'),
   fieldRule('customerId', 'raw-customer-identifier-field'),
   fieldRule('rawCustomerIdentifier', 'raw-customer-identifier-field'),
+  fieldRule('customerEmail', 'raw-customer-contact-field'),
+  fieldRule('customerName', 'raw-customer-contact-field'),
+  fieldRule('customerPhone', 'raw-customer-contact-field'),
+  fieldRule('customerAddress', 'raw-customer-contact-field'),
   fieldRule('paymentHeader', 'raw-payment-header-field'),
   fieldRule('rawPaymentHeader', 'raw-payment-header-field'),
+  fieldRule('paymentHeaders', 'raw-payment-header-field'),
+  fieldRule('rawPaymentHeaders', 'raw-payment-header-field'),
   fieldRule('idempotencyKey', 'raw-idempotency-key-field'),
   fieldRule('rawIdempotencyKey', 'raw-idempotency-key-field'),
+  fieldRule('idempotencyKeyRaw', 'raw-idempotency-key-field'),
+  fieldRule('idemKey', 'raw-idempotency-key-field'),
   fieldRule('recipientDetails', 'raw-recipient-details-field'),
   fieldRule('rawRecipientDetails', 'raw-recipient-details-field'),
+  fieldRule('recipientAddress', 'raw-recipient-details-field'),
+  fieldRule('rawRecipientAddress', 'raw-recipient-details-field'),
   fieldRule('rawPayloadStored', 'raw-payload-stored', true),
   fieldRule('rawProviderResponseStored', 'raw-provider-response-stored', true),
   fieldRule('customerIdentifiersStored', 'customer-identifiers-stored', true),
   fieldRule('privatePolicyThresholdsStored', 'private-policy-thresholds-stored', true),
   fieldRule('solverRouteSecretsStored', 'solver-route-secrets-stored', true),
 ]);
+
+const SENSITIVE_MATERIAL_PATTERN_RULES: readonly SensitiveMaterialPatternRule[] =
+  Object.freeze([
+    Object.freeze({
+      pattern: /\b0x[a-f0-9]{40}\b/iu,
+      code: 'raw-wallet-address-marker',
+      message: 'Artifact material contains a raw wallet or account address.',
+    }),
+    Object.freeze({
+      pattern: /\b[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}\b/iu,
+      code: 'raw-customer-contact-marker',
+      message: 'Artifact material contains raw customer contact material.',
+    }),
+    Object.freeze({
+      pattern: /\bcus_(?:live_|test_)?[a-z0-9_]+\b/iu,
+      code: 'raw-customer-identifier-marker',
+      message: 'Artifact material contains a raw customer identifier.',
+    }),
+    Object.freeze({
+      pattern: /\b(?:sk|rk)_(?:live|test)_[a-z0-9_]+\b/iu,
+      code: 'credential-or-secret-marker',
+      message: 'Artifact material contains a raw Stripe-style API key marker.',
+    }),
+    Object.freeze({
+      pattern: /\bwhsec_[a-z0-9_]+\b/iu,
+      code: 'credential-or-secret-marker',
+      message: 'Artifact material contains a raw webhook secret marker.',
+    }),
+    Object.freeze({
+      pattern: /\bprivate-policy-threshold\b\s*[:=]/iu,
+      code: 'private-policy-threshold-marker',
+      message: 'Artifact material contains a raw private policy threshold value.',
+    }),
+  ]);
 
 const SURFACE_POLICIES: readonly CryptoIntelligencePrivacySurfacePolicy[] =
   Object.freeze(
@@ -281,22 +363,30 @@ function materialSafetyFindings(input: {
   readonly surfaceKind: CryptoIntelligencePrivacySurfaceKind;
   readonly extraSensitiveMarkers?: readonly string[] | null;
 }): readonly CryptoIntelligencePrivacyFinding[] {
+  const material = materialForArtifact(input.artifact);
   const findings = consequenceDataMinimizationMaterialSafetyFindings({
-    material: materialForArtifact(input.artifact),
+    material,
     findingSubject: input.surfaceKind,
     extraSensitiveMarkers: input.extraSensitiveMarkers ?? [],
   });
 
-  const actionableFindings = findings.filter(
-    (finding) => !finding.includes('private-policy-threshold'),
-  );
-
-  return Object.freeze(
-    actionableFindings.map((_finding, index) => ({
+  const sharedFindings = findings
+    .filter((finding) => !finding.includes('private-policy-threshold'))
+    .map((_finding, index) => ({
       code: 'sensitive-marker-detected',
       path: `$material[${index}]`,
       message: 'Artifact material contains a forbidden sensitive marker.',
-    })),
+    }));
+  const patternFindings = SENSITIVE_MATERIAL_PATTERN_RULES
+    .filter((rule) => rule.pattern.test(material))
+    .map((rule) => ({
+      code: rule.code,
+      path: '$material',
+      message: rule.message,
+    }));
+
+  return Object.freeze(
+    [...sharedFindings, ...patternFindings],
   );
 }
 

@@ -92,12 +92,17 @@ Policy coverage profile rules are fail-closed:
 
 The surface is digest-first by default. It must not expose:
 
+- raw model prompts or raw model outputs
+- raw tool payloads
 - raw wallet metadata
+- raw wallet addresses
 - raw transaction payloads
 - customer identifiers
+- customer contact material
 - custody callback bodies
-- provider error bodies
+- provider request, response, or error bodies
 - private policy thresholds
+- raw route details
 - solver route secrets
 - raw idempotency keys
 - payment headers or recipient details

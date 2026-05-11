@@ -137,6 +137,23 @@ assert.equal(
   false,
 );
 assert.equal(
+  cryptoIntelligence.cryptoIntelligence.privacyMinimization
+    .cryptoIntelligencePrivacyMinimizationDescriptor()
+    .forbiddenRawClasses.includes('raw-route-details'),
+  true,
+);
+assert.equal(
+  cryptoIntelligence.cryptoIntelligence.privacyMinimization
+    .evaluateCryptoIntelligencePrivacyMinimizationArtifact({
+      surfaceKind: 'intelligence-proof-packet',
+      artifact: {
+        prompt: 'raw model prompt must not cross the crypto intelligence boundary',
+      },
+    })
+    .reasonCodes.includes('raw-model-prompt-field'),
+  true,
+);
+assert.equal(
   cryptoIntelligence.cryptoIntelligence.operatorRiskInputs
     .cryptoOperatorRiskInputContractDescriptor()
     .attestorNativeOracleClaim,

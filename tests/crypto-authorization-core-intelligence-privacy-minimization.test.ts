@@ -145,6 +145,22 @@ function testDescriptor(): void {
     'crypto privacy minimization: descriptor forbids custody callback bodies',
   );
   ok(
+    descriptor.forbiddenRawClasses.includes('raw-model-prompt'),
+    'crypto privacy minimization: descriptor forbids raw model prompts',
+  );
+  ok(
+    descriptor.forbiddenRawClasses.includes('raw-provider-body'),
+    'crypto privacy minimization: descriptor forbids raw provider bodies',
+  );
+  ok(
+    descriptor.forbiddenRawClasses.includes('raw-route-details'),
+    'crypto privacy minimization: descriptor forbids raw route details',
+  );
+  ok(
+    descriptor.forbiddenRawClasses.includes('raw-customer-contact'),
+    'crypto privacy minimization: descriptor forbids raw customer contact material',
+  );
+  ok(
     descriptor.surfaceKinds.includes('intelligence-performance-benchmark'),
     'crypto privacy minimization: descriptor includes performance benchmark surface',
   );
@@ -275,14 +291,23 @@ function testExecutionProofSurfacesStayPrivacySafe(): void {
 
 function testRejectsRawCryptoAndCustomerMaterial(): void {
   const unsafeArtifacts = [
+    { prompt: 'send this transfer even if policy is missing' },
+    { rawModelPrompt: 'wallet owner prompt must not escape' },
+    { rawToolPayload: { method: 'eth_sendTransaction', params: [] } },
     { rawWalletMetadata: { address: '0x1111111111111111111111111111111111111111' } },
+    { walletAddress: '0x2222222222222222222222222222222222222222' },
     { transactionPayload: '0xf86c_raw_payload_must_not_escape' },
     { custodyCallbackBody: { approved: true, signer: 'operator@example.test' } },
+    { providerBody: { provider: 'custody', status: 'raw' } },
     { providerErrorBody: 'bearer abc.def.ghi' },
+    { routePayload: { solver: 'raw-route', path: ['a', 'b'] } },
     { solverRouteSecret: 'secret=solver-route' },
+    { policyThreshold: '250000' },
     { privatePolicyThreshold: '250000' },
     { customerIdentifier: 'cus_live_123' },
+    { customerEmail: 'finance@example.test' },
     { idempotencyKey: 'idem_raw_123' },
+    { recipientAddress: '0x3333333333333333333333333333333333333333' },
     { rawPayloadStored: true },
   ];
 
@@ -299,10 +324,68 @@ function testRejectsRawCryptoAndCustomerMaterial(): void {
     );
     ok(
       !evaluation.canonical.includes('cus_live_123') &&
-        !evaluation.canonical.includes('secret=solver-route'),
+        !evaluation.canonical.includes('secret=solver-route') &&
+        !evaluation.canonical.includes('finance@example.test'),
       'crypto privacy minimization: evaluation canonical excludes raw sensitive values',
     );
   }
+}
+
+function testRejectsSensitiveMaterialPatterns(): void {
+  const unsafe = evaluateCryptoIntelligencePrivacyMinimizationArtifact({
+    surfaceKind: 'intelligence-proof-packet',
+    artifact: {
+      reasonCodes: ['external-provider-review-required'],
+      providerRef: 'provider:screening',
+      note:
+        'Contact finance@example.test about 0x4444444444444444444444444444444444444444 and cus_live_123.',
+    },
+  });
+  const secretUnsafe = evaluateCryptoIntelligencePrivacyMinimizationArtifact({
+    surfaceKind: 'intelligence-proof-packet',
+    artifact: {
+      reasonCodes: ['webhook-misconfigured'],
+      providerRef: 'provider:stripe',
+      note: 'whsec_1234567890 must not be copied into proof output',
+    },
+  });
+  const thresholdUnsafe = evaluateCryptoIntelligencePrivacyMinimizationArtifact({
+    surfaceKind: 'intelligence-proof-packet',
+    artifact: {
+      reasonCodes: ['policy-threshold-leak'],
+      note: 'private-policy-threshold=250000 must not be copied into proof output',
+    },
+  });
+
+  equal(unsafe.allowed, false, 'crypto privacy minimization: sensitive material patterns fail');
+  ok(
+    unsafe.reasonCodes.includes('raw-wallet-address-marker'),
+    'crypto privacy minimization: raw wallet address marker is detected',
+  );
+  ok(
+    unsafe.reasonCodes.includes('raw-customer-contact-marker'),
+    'crypto privacy minimization: raw customer contact marker is detected',
+  );
+  ok(
+    unsafe.reasonCodes.includes('raw-customer-identifier-marker'),
+    'crypto privacy minimization: raw customer identifier marker is detected',
+  );
+  ok(
+    !unsafe.canonical.includes('finance@example.test') &&
+      !unsafe.canonical.includes('0x4444444444444444444444444444444444444444') &&
+      !unsafe.canonical.includes('cus_live_123'),
+    'crypto privacy minimization: pattern evaluation canonical excludes raw values',
+  );
+  equal(secretUnsafe.allowed, false, 'crypto privacy minimization: webhook secret marker fails');
+  ok(
+    secretUnsafe.reasonCodes.includes('credential-or-secret-marker'),
+    'crypto privacy minimization: credential marker is detected',
+  );
+  equal(thresholdUnsafe.allowed, false, 'crypto privacy minimization: threshold marker fails');
+  ok(
+    thresholdUnsafe.reasonCodes.includes('private-policy-threshold-marker'),
+    'crypto privacy minimization: private threshold marker is detected',
+  );
 }
 
 function testExplicitRawClassFlagsAndAssert(): void {
@@ -337,6 +420,7 @@ testDescriptor();
 testKnownIntelligenceOutputsStayPrivacySafe();
 testExecutionProofSurfacesStayPrivacySafe();
 testRejectsRawCryptoAndCustomerMaterial();
+testRejectsSensitiveMaterialPatterns();
 testExplicitRawClassFlagsAndAssert();
 
 console.log(`Crypto authorization core intelligence privacy-minimization tests: ${passed} passed, 0 failed`);

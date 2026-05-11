@@ -149,6 +149,11 @@ includes(
   '| 10 | blocked | Production rollout readiness |',
   'crypto engine hardening II docs: production rollout remains honestly blocked',
 );
+includes(
+  text,
+  'deployment target and operator-managed runtime access',
+  'crypto engine hardening II docs: production rollout blocker uses neutral public language',
+);
 equal(stepRows.length, 10, 'crypto engine hardening II docs: tracker has 10 steps');
 
 console.log(`crypto-engine-hardening-ii-docs: ${passed} assertions passed`);

@@ -15,6 +15,10 @@ assert.equal(
   'attestor.crypto-authorization-simulation.v1',
 );
 assert.equal(
+  cryptoCore.cryptoAuthorizationCore.intelligenceRiskSignals.CRYPTO_INTELLIGENCE_RISK_SIGNALS_SPEC_VERSION,
+  'attestor.crypto-intelligence-risk-signals.v1',
+);
+assert.equal(
   cryptoCore.cryptoAuthorizationCore.x402AgenticPayment.X402_AGENTIC_PAYMENT_ADAPTER_SPEC_VERSION,
   'attestor.crypto-x402-agentic-payment-adapter.v1',
 );

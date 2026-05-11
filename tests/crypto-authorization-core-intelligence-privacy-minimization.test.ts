@@ -11,7 +11,9 @@ import {
   createCryptoIntelligenceRiskSignalAssessment,
 } from '../src/crypto-authorization-core/intelligence-risk-signals.js';
 import {
+  createCryptoPolicyCoverageProfile,
   createCryptoPolicyGapNarrowingAssessment,
+  createCryptoPolicyIntelligenceRoutingProfile,
 } from '../src/crypto-authorization-core/policy-gap-narrowing.js';
 import {
   createCryptoConsequenceRiskAssessment,
@@ -146,6 +148,10 @@ function testDescriptor(): void {
     descriptor.surfaceKinds.includes('intelligence-performance-benchmark'),
     'crypto privacy minimization: descriptor includes performance benchmark surface',
   );
+  ok(
+    descriptor.surfaceKinds.includes('policy-intelligence-routing-profile'),
+    'crypto privacy minimization: descriptor includes policy intelligence routing surface',
+  );
   deepEqual(
     descriptor.forbiddenRawClasses,
     CRYPTO_INTELLIGENCE_PRIVACY_FORBIDDEN_RAW_CLASSES,
@@ -165,10 +171,28 @@ function testDescriptor(): void {
 
 function testKnownIntelligenceOutputsStayPrivacySafe(): void {
   const signals = safeRiskSignalAssessment();
+  const coverage = createCryptoPolicyCoverageProfile({
+    generatedAt: '2026-05-11T12:00:00.000Z',
+    scopeRef: 'policy-coverage:privacy-safe-routing',
+    entries: [
+      {
+        dimension: 'counterparty',
+        status: 'explicit-deny',
+        sourceKind: 'policy-rule',
+        sourceRef: 'policy-rule:counterparty-deny',
+        evidenceRefs: [{ kind: 'digest', value: 'sha256:counterparty-policy' }],
+      },
+    ],
+  });
   const gaps = createCryptoPolicyGapNarrowingAssessment({
     signalAssessment: signals,
     generatedAt: '2026-05-11T12:00:00.000Z',
     operatorContextRef: 'operator-context:crypto-review',
+    policyCoverageProfile: coverage,
+  });
+  const routing = createCryptoPolicyIntelligenceRoutingProfile({
+    coverageProfile: coverage,
+    policyGapAssessment: gaps,
   });
 
   const signalEvaluation = evaluateCryptoIntelligencePrivacyMinimizationArtifact({
@@ -179,14 +203,27 @@ function testKnownIntelligenceOutputsStayPrivacySafe(): void {
     surfaceKind: 'policy-gap-narrowing',
     artifact: gaps,
   });
+  const routingEvaluation = evaluateCryptoIntelligencePrivacyMinimizationArtifact({
+    surfaceKind: 'policy-intelligence-routing-profile',
+    artifact: routing,
+  });
 
   equal(signalEvaluation.allowed, true, 'crypto privacy minimization: risk signals are safe');
   equal(gapEvaluation.allowed, true, 'crypto privacy minimization: gap narrowing is safe');
+  equal(
+    routingEvaluation.allowed,
+    true,
+    'crypto privacy minimization: policy intelligence routing is safe',
+  );
   equal(signalEvaluation.rawPayloadStored, false, 'crypto privacy minimization: no raw payload flag');
   ok(signalEvaluation.digest.startsWith('sha256:'), 'crypto privacy minimization: risk signal evaluation is digest-bound');
   ok(
     !signalEvaluation.canonical.includes('0x1111111111111111111111111111111111111111'),
     'crypto privacy minimization: evaluation canonical does not store raw account addresses',
+  );
+  ok(
+    !routingEvaluation.canonical.includes('0x1111111111111111111111111111111111111111'),
+    'crypto privacy minimization: routing evaluation canonical does not store raw account addresses',
   );
 }
 

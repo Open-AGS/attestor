@@ -13,7 +13,7 @@ This tracker continues after the frozen crypto authorization, execution-admissio
 
 ## Research Anchors
 
-Reviewed on 2026-05-11 before Steps 01-02:
+Reviewed on 2026-05-11 before Steps 01-03:
 
 - ERC-4337 keeps `UserOperation`, EntryPoint validation, bundler behavior, and simulation as pre-execution account-abstraction concerns. Adapter readiness must keep validation evidence explicit before handoff: [ERC-4337](https://eips.ethereum.org/EIPS/eip-4337)
 - ERC-7562 constrains account-abstraction validation behavior and DoS-sensitive validation scope. A green adapter check should distinguish "simulation exists" from "validation posture is acceptable": [ERC-7562](https://eips.ethereum.org/EIPS/eip-7562)
@@ -22,6 +22,7 @@ Reviewed on 2026-05-11 before Steps 01-02:
 - x402 separates HTTP transport from payment requirement, verification, settlement, and response material. Agent-payment readiness must keep those evidence classes explicit and digest-bound: [x402 specification](https://github.com/x402-foundation/x402)
 - Safe guards can reject transactions before or after execution. Guard readiness must include precheck, installation, recoverability, and terminal evidence posture rather than a boolean "Safe supported" label: [Safe Guards](https://docs.safe.global/advanced/smart-account-guards)
 - Open Policy Agent decision logs preserve decision id, path, input/result shape, and masking controls. Pack-specific decision profiles should likewise expose traceable but model-safe decision facts rather than raw inputs: [OPA decision logs](https://www.openpolicyagent.org/docs/management-decision-logs)
+- AWS IAM policy evaluation gives explicit deny precedence over allow and leaves missing allow as an implicit deny. Attestor policy intelligence follows the same safety shape: explicit deny is terminal, missing coverage fails closed, and conflicts require operator resolution: [AWS IAM policy evaluation logic](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_evaluation-logic.html)
 - NIST AI RMF separates risk governance, mapping, measuring, and managing. Attestor pack decisions should therefore produce inspectable profile artifacts that state posture, action, checks, and evidence gaps instead of opaque "smart" verdicts: [NIST AI RMF](https://www.nist.gov/itl/ai-risk-management-framework)
 
 ## Step List
@@ -30,7 +31,7 @@ Reviewed on 2026-05-11 before Steps 01-02:
 |---|---|---|---|---|
 | 01 | complete | Adapter readiness intelligence profile | `src/crypto-execution-admission/adapter-readiness-manifest.ts`, `tests/crypto-execution-admission-adapter-readiness-manifest.test.ts`, `tests/crypto-execution-admission-platform-surface.test.ts`, `tests/crypto-intelligence-platform-surface.test.ts`, `tests/crypto-authorization-core-intelligence-privacy-minimization.test.ts`, `scripts/probe-crypto-intelligence-package-surface.mjs` | Adds deterministic posture, readiness score, risk-factor, next-action, standards-coverage, attention-item, and digest-first privacy flags above the existing adapter readiness manifest. |
 | 02 | complete | Pack-specific decision logic | `src/consequence-admission/pack-decision-profile.ts`, `tests/consequence-admission-pack-decision-profile.test.ts`, `src/consequence-admission/index.ts`, `src/consequence-admission/data-minimization-redaction-policy.ts`, `scripts/probe-consequence-admission-package-surface.mjs` | Adds deterministic finance and crypto pack decision profiles over canonical admissions. The profile emits pack posture, recommended action, model-safe signals, check/proof summaries, and privacy-safe facts without changing the shared `admit` / `narrow` / `review` / `block` contract. |
-| 03 | pending | Policy intelligence deepening II | pending | Add stronger conflict resolution, stale-policy routing, and review routing on top of policy coverage profiles. |
+| 03 | complete | Policy intelligence deepening II | `src/crypto-authorization-core/policy-gap-narrowing.ts`, `tests/crypto-authorization-core-policy-gap-narrowing.test.ts`, `tests/crypto-authorization-core-intelligence-privacy-minimization.test.ts`, `tests/crypto-authorization-core-platform-surface.test.ts`, `tests/crypto-intelligence-platform-surface.test.ts`, `scripts/probe-crypto-intelligence-package-surface.mjs` | Adds deterministic policy intelligence routing over coverage profiles: explicit deny dominates, conflicts require operator resolution, implicit deny and missing policy fail closed, stale evidence routes to refresh, and review-only coverage routes to review without leaking raw policy, wallet, customer, or threshold material. |
 | 04 | pending | Proof console and dashboard hardening | pending | Improve priority ordering, top blockers, missing evidence, and readiness heatmap surfaces without raw payload drilldown. |
 | 05 | pending | Runtime performance and efficiency | pending | Tighten hot-path budgets, canonicalization/hash costs, memoization boundaries, and benchmark regressions. |
 | 06 | pending | Package surface consistency | pending | Strengthen public subpaths, descriptor drift checks, and deep-import probes across pack surfaces. |
@@ -41,4 +42,4 @@ Reviewed on 2026-05-11 before Steps 01-02:
 
 ## Current Posture
 
-Steps 01-02 are implemented in code as reusable package surfaces, not just documentation. The remaining steps are intentionally scoped follow-up PRs.
+Steps 01-03 are implemented in code as reusable package surfaces, not just documentation. The remaining steps are intentionally scoped follow-up PRs.

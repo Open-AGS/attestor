@@ -6,9 +6,14 @@ import {
   CRYPTO_POLICY_DIMENSION_COVERAGE_STATUSES,
   CRYPTO_POLICY_GAP_CLASSES,
   CRYPTO_POLICY_GAP_NARROWING_SPEC_VERSION,
+  CRYPTO_POLICY_INTELLIGENCE_OPERATOR_ACTIONS,
+  CRYPTO_POLICY_INTELLIGENCE_ROUTE_KINDS,
+  CRYPTO_POLICY_INTELLIGENCE_ROUTING_SPEC_VERSION,
   createCryptoPolicyCoverageProfile,
   createCryptoPolicyGapNarrowingAssessment,
+  createCryptoPolicyIntelligenceRoutingProfile,
   cryptoPolicyGapNarrowingDescriptor,
+  cryptoPolicyIntelligenceRoutingDescriptor,
   cryptoPolicyGapNarrowingLabel,
 } from '../src/crypto-authorization-core/policy-gap-narrowing.js';
 import {
@@ -121,10 +126,56 @@ function testDescriptorVocabulary(): void {
     CRYPTO_POLICY_COVERAGE_SOURCE_KINDS,
     'crypto policy gap narrowing: descriptor exposes policy coverage source kinds',
   );
+  equal(
+    descriptor.policyIntelligenceRoutingVersion,
+    CRYPTO_POLICY_INTELLIGENCE_ROUTING_SPEC_VERSION,
+    'crypto policy gap narrowing: descriptor exposes policy intelligence routing version',
+  );
+  deepEqual(
+    descriptor.policyIntelligenceRouteKinds,
+    CRYPTO_POLICY_INTELLIGENCE_ROUTE_KINDS,
+    'crypto policy gap narrowing: descriptor exposes policy intelligence route kinds',
+  );
+  deepEqual(
+    descriptor.policyIntelligenceOperatorActions,
+    CRYPTO_POLICY_INTELLIGENCE_OPERATOR_ACTIONS,
+    'crypto policy gap narrowing: descriptor exposes policy intelligence operator actions',
+  );
   equal(descriptor.approvalRequired, true, 'crypto policy gap narrowing: descriptor requires approval');
   equal(descriptor.autoApply, false, 'crypto policy gap narrowing: descriptor blocks auto-apply');
   equal(descriptor.explicitDenyWins, true, 'crypto policy gap narrowing: explicit deny wins');
   equal(descriptor.implicitDenyFailsClosed, true, 'crypto policy gap narrowing: implicit deny fails closed');
+  equal(
+    descriptor.conflictResolutionRequired,
+    true,
+    'crypto policy gap narrowing: policy conflicts require operator resolution',
+  );
+  equal(
+    descriptor.stalePolicyMustRefresh,
+    true,
+    'crypto policy gap narrowing: stale policy evidence must refresh',
+  );
+
+  const routingDescriptor = cryptoPolicyIntelligenceRoutingDescriptor();
+  equal(
+    routingDescriptor.version,
+    CRYPTO_POLICY_INTELLIGENCE_ROUTING_SPEC_VERSION,
+    'crypto policy routing: descriptor exposes version',
+  );
+  ok(
+    routingDescriptor.routeKinds.includes('block-explicit-deny') &&
+      routingDescriptor.routeKinds.includes('block-policy-conflict'),
+    'crypto policy routing: descriptor exposes terminal and conflict routes',
+  );
+  ok(
+    routingDescriptor.operatorActions.includes('refresh-policy-evidence'),
+    'crypto policy routing: descriptor exposes stale evidence operator action',
+  );
+  equal(
+    routingDescriptor.rawPayloadStored,
+    false,
+    'crypto policy routing: descriptor rejects raw payload storage',
+  );
 }
 
 function testAllowanceGapProducesSafeNarrowingWithoutThresholdLeak(): void {
@@ -449,6 +500,185 @@ function testPolicyCoverageProfileAddsExplicitDenyImplicitDenyAndStaleGaps(): vo
   );
 }
 
+function testPolicyIntelligenceRoutingProfilePrecedenceAndPrivacy(): void {
+  const profile = createCryptoPolicyCoverageProfile({
+    generatedAt: '2026-05-11T11:55:00.000Z',
+    scopeRef: 'policy-coverage:treasury-routing',
+    entries: [
+      {
+        dimension: 'counterparty',
+        status: 'conflicting',
+        sourceKind: 'policy-rule',
+        sourceRef: 'policy-rule:counterparty-conflict',
+        reasonCodes: ['counterparty-policy-conflict'],
+      },
+      {
+        dimension: 'protocol',
+        status: 'explicit-deny',
+        sourceKind: 'policy-rule',
+        sourceRef: 'policy-rule:protocol-deny',
+        evidenceRefs: [{ kind: 'digest', value: 'sha256:protocol-policy' }],
+      },
+      {
+        dimension: 'budget',
+        status: 'covered',
+        sourceKind: 'operator-risk-input',
+        observedAt: '2026-05-11T11:00:00.000Z',
+        maxAgeSeconds: 60,
+      },
+      {
+        dimension: 'approval-quorum',
+        status: 'review-required',
+        sourceKind: 'external-review',
+        sourceRef: 'review:approval-quorum',
+      },
+      {
+        dimension: 'runtime-context',
+        status: 'implicit-deny',
+        sourceKind: 'scope-binding',
+        sourceRef: 'scope-binding:route',
+      },
+    ],
+  });
+  const risk = createCryptoConsequenceRiskAssessment({
+    consequenceKind: 'transfer',
+    account: fixtureAccount(),
+    asset: fixtureAsset(),
+    amount: {
+      assetAmount: '25',
+      normalizedUsd: '25',
+    },
+    counterparty: fixtureCounterparty(),
+  });
+  const signals = createCryptoIntelligenceRiskSignalAssessment({
+    riskAssessment: risk,
+  });
+  const assessment = createCryptoPolicyGapNarrowingAssessment({
+    signalAssessment: signals,
+    generatedAt: '2026-05-11T11:56:00.000Z',
+    policyCoverageProfile: profile,
+  });
+  const routing = createCryptoPolicyIntelligenceRoutingProfile({
+    coverageProfile: profile,
+    policyGapAssessment: assessment,
+  });
+
+  equal(
+    routing.version,
+    CRYPTO_POLICY_INTELLIGENCE_ROUTING_SPEC_VERSION,
+    'crypto policy routing: version is stable',
+  );
+  equal(
+    routing.coverageProfileDigest,
+    profile.digest,
+    'crypto policy routing: binds coverage profile digest',
+  );
+  equal(
+    routing.policyGapAssessmentDigest,
+    assessment.digest,
+    'crypto policy routing: binds gap assessment digest',
+  );
+  equal(
+    routing.recommendedDisposition,
+    'block',
+    'crypto policy routing: deny, conflict, implicit deny, and stale evidence block',
+  );
+  equal(
+    routing.dominantRouteKind,
+    'block-explicit-deny',
+    'crypto policy routing: explicit deny dominates other block routes',
+  );
+  equal(
+    routing.routeCounts['block-policy-conflict'],
+    1,
+    'crypto policy routing: conflict route is counted',
+  );
+  equal(
+    routing.routeCounts['block-stale-policy'],
+    1,
+    'crypto policy routing: stale policy route is counted',
+  );
+  equal(
+    routing.routeCounts['block-implicit-deny'],
+    1,
+    'crypto policy routing: implicit deny route is counted',
+  );
+  equal(
+    routing.routeCounts['review-required'],
+    1,
+    'crypto policy routing: review route is counted',
+  );
+  equal(
+    routing.topBlockers[0]?.routeKind,
+    'block-explicit-deny',
+    'crypto policy routing: top blocker preserves deny precedence',
+  );
+  ok(
+    routing.reviewDimensions.includes('approval-quorum'),
+    'crypto policy routing: review dimensions are preserved',
+  );
+  equal(routing.explicitDenyWins, true, 'crypto policy routing: explicit deny wins');
+  equal(routing.implicitDenyFailsClosed, true, 'crypto policy routing: implicit deny fails closed');
+  equal(
+    routing.conflictResolutionRequired,
+    true,
+    'crypto policy routing: conflicts require operator resolution',
+  );
+  equal(
+    routing.stalePolicyMustRefresh,
+    true,
+    'crypto policy routing: stale policy must refresh',
+  );
+  equal(
+    routing.rawPolicyThresholdExposed,
+    false,
+    'crypto policy routing: private thresholds are not exposed',
+  );
+  ok(
+    !routing.canonical.includes('internal-threshold-value') &&
+      !routing.canonical.includes('0x1111111111111111111111111111111111111111'),
+    'crypto policy routing: canonical output avoids raw policy and wallet material',
+  );
+}
+
+function testPolicyIntelligenceRoutingReviewOnlyPath(): void {
+  const profile = createCryptoPolicyCoverageProfile({
+    generatedAt: '2026-05-11T11:57:00.000Z',
+    scopeRef: 'policy-coverage:review-only',
+    entries: [
+      {
+        dimension: 'approval-quorum',
+        status: 'review-required',
+        sourceKind: 'external-review',
+        sourceRef: 'review:manual-approval',
+      },
+    ],
+  });
+  const routing = createCryptoPolicyIntelligenceRoutingProfile({
+    coverageProfile: profile,
+  });
+
+  equal(
+    routing.recommendedDisposition,
+    'review',
+    'crypto policy routing: review-only policy coverage routes to review',
+  );
+  equal(
+    routing.dominantRouteKind,
+    'review-required',
+    'crypto policy routing: review-only route is dominant without blockers',
+  );
+  equal(
+    routing.blockRouteCount,
+    0,
+    'crypto policy routing: review-only route does not count as block',
+  );
+  ok(
+    routing.modelSafeSummary.includes('routes to review'),
+    'crypto policy routing: review-only summary is model-safe',
+  );
+}
+
 function testInvalidInputsFailClosed(): void {
   const risk = createCryptoConsequenceRiskAssessment({
     consequenceKind: 'agent-payment',
@@ -528,6 +758,42 @@ function testInvalidInputsFailClosed(): void {
     /observedAt cannot be after generatedAt/i,
   );
   passed += 1;
+
+  const coverageProfile = createCryptoPolicyCoverageProfile({
+    generatedAt: '2026-05-11T11:50:00.000Z',
+    entries: [
+      {
+        dimension: 'counterparty',
+        status: 'explicit-deny',
+        sourceKind: 'policy-rule',
+      },
+    ],
+  });
+  const differentCoverageProfile = createCryptoPolicyCoverageProfile({
+    generatedAt: '2026-05-11T11:50:00.000Z',
+    entries: [
+      {
+        dimension: 'asset',
+        status: 'explicit-deny',
+        sourceKind: 'policy-rule',
+      },
+    ],
+  });
+  const assessment = createCryptoPolicyGapNarrowingAssessment({
+    signalAssessment: signals,
+    generatedAt: '2026-05-11T11:50:00.000Z',
+    policyCoverageProfile: coverageProfile,
+  });
+
+  assert.throws(
+    () =>
+      createCryptoPolicyIntelligenceRoutingProfile({
+        coverageProfile: differentCoverageProfile,
+        policyGapAssessment: assessment,
+      }),
+    /same coverage profile digest/i,
+  );
+  passed += 1;
 }
 
 testDescriptorVocabulary();
@@ -537,6 +803,8 @@ testX402SolverAndRouteGapsProduceDigestOnlyCandidates();
 testPolicyDimensionAndAllowedCandidateFiltering();
 testVelocityGapAndDeterminism();
 testPolicyCoverageProfileAddsExplicitDenyImplicitDenyAndStaleGaps();
+testPolicyIntelligenceRoutingProfilePrecedenceAndPrivacy();
+testPolicyIntelligenceRoutingReviewOnlyPath();
 testInvalidInputsFailClosed();
 
 console.log(`Crypto authorization core policy-gap narrowing tests: ${passed} passed, 0 failed`);

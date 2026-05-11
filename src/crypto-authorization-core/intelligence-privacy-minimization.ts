@@ -22,6 +22,7 @@ export const CRYPTO_INTELLIGENCE_PRIVACY_MINIMIZATION_SPEC_VERSION =
 export const CRYPTO_INTELLIGENCE_PRIVACY_SURFACE_KINDS = [
   'risk-signal-assessment',
   'policy-gap-narrowing',
+  'policy-intelligence-routing-profile',
   'adapter-readiness-manifest',
   'adapter-readiness-intelligence-profile',
   'negative-conformance-fixtures',

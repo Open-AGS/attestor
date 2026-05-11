@@ -167,6 +167,8 @@ export type CryptoIntelligenceRiskSignalAssessment =
   intelligenceRiskSignals.CryptoIntelligenceRiskSignalAssessment;
 export type CryptoPolicyGapNarrowingAssessment =
   policyGapNarrowing.CryptoPolicyGapNarrowingAssessment;
+export type CryptoPolicyIntelligenceRoutingProfile =
+  policyGapNarrowing.CryptoPolicyIntelligenceRoutingProfile;
 export type CryptoIntelligencePrivacyMinimizationEvaluation =
   intelligencePrivacyMinimization.CryptoIntelligencePrivacyMinimizationEvaluation;
 export type CryptoOperatorRiskInputBundle =

@@ -95,6 +95,11 @@ function testCryptoIntelligencePublicSurfaceDescriptor(): void {
     'crypto intelligence platform surface: adapter readiness intelligence profile is packaged',
   );
   equal(
+    descriptor.policyIntelligenceRoutingVersion,
+    'attestor.crypto-policy-intelligence-routing.v1',
+    'crypto intelligence platform surface: policy intelligence routing profile is packaged',
+  );
+  equal(
     descriptor.negativeFixtureCount,
     40,
     'crypto intelligence platform surface: negative conformance fixtures are packaged',
@@ -146,6 +151,19 @@ function testCryptoIntelligenceNamespaceBindings(): void {
       .policyCoverageStatuses.includes('explicit-deny'),
     'crypto intelligence platform surface: policy gap narrowing exposes explicit deny coverage',
   );
+  ok(
+    cryptoIntelligence.policyGapNarrowing
+      .cryptoPolicyGapNarrowingDescriptor()
+      .policyIntelligenceRouteKinds.includes('block-policy-conflict'),
+    'crypto intelligence platform surface: policy gap narrowing exposes policy intelligence routes',
+  );
+  equal(
+    cryptoIntelligence.policyGapNarrowing
+      .cryptoPolicyIntelligenceRoutingDescriptor()
+      .version,
+    'attestor.crypto-policy-intelligence-routing.v1',
+    'crypto intelligence platform surface: policy intelligence routing descriptor is bound',
+  );
   equal(
     cryptoIntelligence.adapterReadiness.cryptoAdapterReadinessManifestDescriptor().version,
     'attestor.crypto-adapter-readiness-manifest.v1',
@@ -179,6 +197,12 @@ function testCryptoIntelligenceSafetyNamespaces(): void {
       .cryptoIntelligencePrivacyMinimizationDescriptor()
       .surfaceKinds.includes('intelligence-performance-benchmark'),
     'crypto intelligence platform surface: privacy gate covers performance benchmarks',
+  );
+  ok(
+    cryptoIntelligence.privacyMinimization
+      .cryptoIntelligencePrivacyMinimizationDescriptor()
+      .surfaceKinds.includes('policy-intelligence-routing-profile'),
+    'crypto intelligence platform surface: privacy gate covers policy intelligence routing',
   );
   equal(
     cryptoIntelligence.operatorRiskInputs

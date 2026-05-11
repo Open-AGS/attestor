@@ -129,6 +129,11 @@ function testCryptoAuthorizationCoreBaseNamespaces(): void {
     'crypto platform surface: policy-gap narrowing namespace is bound',
   );
   equal(
+    cryptoAuthorizationCore.policyGapNarrowing.CRYPTO_POLICY_INTELLIGENCE_ROUTING_SPEC_VERSION,
+    'attestor.crypto-policy-intelligence-routing.v1',
+    'crypto platform surface: policy intelligence routing namespace is bound',
+  );
+  equal(
     cryptoAuthorizationCore.intelligencePrivacyMinimization
       .CRYPTO_INTELLIGENCE_PRIVACY_MINIMIZATION_SPEC_VERSION,
     'attestor.crypto-intelligence-privacy-minimization.v1',
@@ -280,6 +285,13 @@ function testCryptoAuthorizationCoreDescriptorFunctions(): void {
       .failClosedOnBudgetExceeded,
     true,
     'crypto platform surface: intelligence performance budget descriptor is callable',
+  );
+  equal(
+    cryptoAuthorizationCore.policyGapNarrowing
+      .cryptoPolicyIntelligenceRoutingDescriptor()
+      .conflictResolutionRequired,
+    true,
+    'crypto platform surface: policy intelligence routing descriptor is callable',
   );
   equal(
     cryptoAuthorizationCore.custodyCosignerPolicy

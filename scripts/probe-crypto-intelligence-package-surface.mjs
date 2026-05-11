@@ -42,6 +42,12 @@ assert.equal(
 );
 assert.equal(
   cryptoIntelligence.cryptoIntelligence.policyGapNarrowing
+    .cryptoPolicyIntelligenceRoutingDescriptor()
+    .version,
+  'attestor.crypto-policy-intelligence-routing.v1',
+);
+assert.equal(
+  cryptoIntelligence.cryptoIntelligence.policyGapNarrowing
     .createCryptoPolicyCoverageProfile({
       generatedAt: '2026-05-11T12:00:00.000Z',
       entries: [
@@ -55,6 +61,27 @@ assert.equal(
     })
     .recommendedDisposition,
   'block',
+);
+const coverageProfile =
+  cryptoIntelligence.cryptoIntelligence.policyGapNarrowing
+    .createCryptoPolicyCoverageProfile({
+      generatedAt: '2026-05-11T12:00:00.000Z',
+      entries: [
+        {
+          dimension: 'protocol',
+          status: 'explicit-deny',
+          sourceKind: 'policy-rule',
+          sourceRef: 'policy-rule:package-routing',
+        },
+      ],
+    });
+assert.equal(
+  cryptoIntelligence.cryptoIntelligence.policyGapNarrowing
+    .createCryptoPolicyIntelligenceRoutingProfile({
+      coverageProfile,
+    })
+    .dominantRouteKind,
+  'block-explicit-deny',
 );
 assert.equal(
   cryptoIntelligence.cryptoIntelligence.adapterReadiness

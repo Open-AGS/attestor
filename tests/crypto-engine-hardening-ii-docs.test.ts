@@ -66,6 +66,16 @@ includes(
 );
 includes(
   text,
+  'AWS IAM policy evaluation',
+  'crypto engine hardening II docs: explicit deny research anchor is present',
+);
+includes(
+  text,
+  '| 03 | complete | Policy intelligence deepening II |',
+  'crypto engine hardening II docs: step 03 is complete',
+);
+includes(
+  text,
   '| 10 | blocked | Production rollout readiness |',
   'crypto engine hardening II docs: production rollout remains honestly blocked',
 );

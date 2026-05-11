@@ -33,6 +33,7 @@ The public subpath exposes:
 - risk signal descriptors, constants, labels, and `createCryptoIntelligenceRiskSignalAssessment()`
 - policy gap descriptors, constants, labels, and `createCryptoPolicyGapNarrowingAssessment()`
 - policy coverage profile descriptors and `createCryptoPolicyCoverageProfile()`
+- policy intelligence routing descriptors and `createCryptoPolicyIntelligenceRoutingProfile()`
 - adapter readiness descriptors, constants, labels, and `createCryptoAdapterReadinessManifest()`
 - adapter readiness intelligence descriptors, posture/risk-factor constants, labels, and `createCryptoAdapterReadinessIntelligenceProfile()`
 - conformance fixture descriptors and negative fixture validation
@@ -46,7 +47,7 @@ The curated namespace object groups the platform surface as:
 | Namespace | Role |
 |---|---|
 | `riskSignals` | Deterministic risk/readiness/freshness/velocity signals over programmable-money consequences |
-| `policyGapNarrowing` | Missing evidence, policy coverage, explicit/implicit deny, stale policy evidence, policy gap, and safe narrowing candidates without exposing private thresholds |
+| `policyGapNarrowing` | Missing evidence, policy coverage, explicit/implicit deny, stale policy evidence, policy-intelligence routing, policy gaps, and safe narrowing candidates without exposing private thresholds |
 | `adapterReadiness` | Wallet, Safe, ERC-4337, modular-account, delegated-EOA, x402, custody, and solver readiness matrix plus deterministic readiness intelligence profiles |
 | `conformanceFixtures` | Positive and negative execution-admission fixture coverage, including malformed, stale, contradictory, and privacy-unsafe paths |
 | `privacyMinimization` | Digest-first guard for intelligence outputs, telemetry, dashboards, proof packets, and benchmark outputs |
@@ -64,6 +65,7 @@ The crypto intelligence surface answers:
 
 - what is risky or missing?
 - which policy dimensions are covered, stale, conflicting, explicitly denied, or implicitly denied?
+- which policy route dominates, and what operator action is required before retry?
 - what adapter evidence is ready, missing, blocked, or review-required?
 - which adapter standards and surfaces need the next operator action?
 - what model-safe narrowing or operator action is available?

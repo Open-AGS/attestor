@@ -28,6 +28,12 @@ assert.equal(
   'attestor.crypto-policy-gap-narrowing.v1',
 );
 assert.equal(
+  cryptoCore.cryptoAuthorizationCore.policyGapNarrowing
+    .cryptoPolicyIntelligenceRoutingDescriptor()
+    .version,
+  'attestor.crypto-policy-intelligence-routing.v1',
+);
+assert.equal(
   cryptoCore.cryptoAuthorizationCore.intelligencePrivacyMinimization
     .CRYPTO_INTELLIGENCE_PRIVACY_MINIMIZATION_SPEC_VERSION,
   'attestor.crypto-intelligence-privacy-minimization.v1',
@@ -94,6 +100,28 @@ const unsafePrivacyEvaluation =
     });
 assert.equal(unsafePrivacyEvaluation.allowed, false);
 assert.ok(unsafePrivacyEvaluation.reasonCodes.includes('raw-transaction-payload-field'));
+
+const policyCoverage =
+  cryptoCore.cryptoAuthorizationCore.policyGapNarrowing
+    .createCryptoPolicyCoverageProfile({
+      generatedAt: '2026-05-11T12:00:00.000Z',
+      scopeRef: 'package-surface:policy-routing',
+      entries: [
+        {
+          dimension: 'counterparty',
+          status: 'conflicting',
+          sourceKind: 'policy-rule',
+          sourceRef: 'policy-rule:counterparty-conflict',
+        },
+      ],
+    });
+const policyRouting =
+  cryptoCore.cryptoAuthorizationCore.policyGapNarrowing
+    .createCryptoPolicyIntelligenceRoutingProfile({
+      coverageProfile: policyCoverage,
+    });
+assert.equal(policyRouting.dominantRouteKind, 'block-policy-conflict');
+assert.equal(policyRouting.rawPayloadStored, false);
 
 const operatorRiskBundle =
   cryptoCore.cryptoAuthorizationCore.operatorRiskInputContract

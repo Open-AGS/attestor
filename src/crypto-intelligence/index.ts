@@ -106,6 +106,8 @@ export interface CryptoIntelligencePublicSurfaceDescriptor {
   readonly decisionSupportNamespaces: typeof CRYPTO_INTELLIGENCE_DECISION_SUPPORT_NAMESPACES;
   readonly proofAndSafetyNamespaces: typeof CRYPTO_INTELLIGENCE_PROOF_AND_SAFETY_NAMESPACES;
   readonly privacyGuardrails: typeof CRYPTO_INTELLIGENCE_PRIVACY_GUARDRAILS;
+  readonly policyIntelligenceRoutingVersion:
+    typeof policyGapNarrowing.CRYPTO_POLICY_INTELLIGENCE_ROUTING_SPEC_VERSION;
   readonly adapterReadinessMatrixEntryCount: number;
   readonly adapterReadinessIntelligenceVersion:
     typeof adapterReadiness.CRYPTO_ADAPTER_READINESS_INTELLIGENCE_SPEC_VERSION;
@@ -120,7 +122,7 @@ export const CRYPTO_INTELLIGENCE_EXTRACTION_CRITERIA = Object.freeze([
     id: 'stable-risk-readiness-gap-contract',
     status: 'ready',
     description:
-      'Risk signals, policy gaps, safe narrowing candidates, and adapter readiness manifests are stable enough to consume from one package surface.',
+      'Risk signals, policy gaps, policy-intelligence routing, safe narrowing candidates, and adapter readiness manifests are stable enough to consume from one package surface.',
   }),
   Object.freeze({
     id: 'privacy-and-model-feedback-boundary-proven',
@@ -164,6 +166,8 @@ export type CryptoIntelligenceRiskSignalAssessment =
   riskSignals.CryptoIntelligenceRiskSignalAssessment;
 export type CryptoPolicyGapNarrowingAssessment =
   policyGapNarrowing.CryptoPolicyGapNarrowingAssessment;
+export type CryptoPolicyIntelligenceRoutingProfile =
+  policyGapNarrowing.CryptoPolicyIntelligenceRoutingProfile;
 export type CryptoAdapterReadinessManifest =
   adapterReadiness.CryptoAdapterReadinessManifest;
 export type CryptoAdapterReadinessIntelligenceProfile =
@@ -190,6 +194,8 @@ CryptoIntelligencePublicSurfaceDescriptor {
     decisionSupportNamespaces: CRYPTO_INTELLIGENCE_DECISION_SUPPORT_NAMESPACES,
     proofAndSafetyNamespaces: CRYPTO_INTELLIGENCE_PROOF_AND_SAFETY_NAMESPACES,
     privacyGuardrails: CRYPTO_INTELLIGENCE_PRIVACY_GUARDRAILS,
+    policyIntelligenceRoutingVersion:
+      policyGapNarrowing.CRYPTO_POLICY_INTELLIGENCE_ROUTING_SPEC_VERSION,
     adapterReadinessMatrixEntryCount:
       Object.keys(adapterReadiness.CRYPTO_ADAPTER_READINESS_MATRIX).length,
     adapterReadinessIntelligenceVersion:

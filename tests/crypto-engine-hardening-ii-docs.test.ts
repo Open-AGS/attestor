@@ -131,6 +131,21 @@ includes(
 );
 includes(
   text,
+  'Node.js 26 is `Current`',
+  'crypto engine hardening II docs: Node 26 release-status research anchor is present',
+);
+includes(
+  text,
+  '`node:alpine` uses musl libc',
+  'crypto engine hardening II docs: Node Docker Alpine research anchor is present',
+);
+includes(
+  text,
+  '| 09 | complete | Node 26 runtime validation |',
+  'crypto engine hardening II docs: step 09 is complete',
+);
+includes(
+  text,
   '| 10 | blocked | Production rollout readiness |',
   'crypto engine hardening II docs: production rollout remains honestly blocked',
 );

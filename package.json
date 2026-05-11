@@ -202,6 +202,7 @@
     "test:nginx-ha-edge-config": "tsx tests/nginx-ha-edge-config.test.ts",
     "test:service-version-alignment": "tsx tests/service-version-alignment.test.ts",
     "test:crypto-engine-hardening-ii-docs": "tsx tests/crypto-engine-hardening-ii-docs.test.ts",
+    "test:node-26-runtime-validation": "tsx tests/node-26-runtime-validation.test.ts",
     "test:crypto-authorization-core-noble-hashes-dependency-risk": "tsx tests/crypto-authorization-core-noble-hashes-dependency-risk.test.ts",
     "test:crypto-intelligence-buildout-docs": "tsx tests/crypto-intelligence-buildout-docs.test.ts",
     "test:crypto-authorization-core-intelligence-risk-signals": "tsx tests/crypto-authorization-core-intelligence-risk-signals.test.ts",

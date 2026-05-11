@@ -391,11 +391,16 @@ app.post('/api/v1/pipeline/run-async', async (c) => {
 
 app.get('/api/v1/pipeline/status/:jobId', async (c) => {
   const jobId = c.req.param('jobId');
+  const tenant = currentTenant(c);
+  const notFound = () => c.json({ error: 'Job not found' }, 404);
 
   // Try BullMQ first
   if (asyncBackendMode === 'bullmq' && bullmqQueue) {
     const bmStatus = await getJobStatus(bullmqQueue, jobId);
     if (bmStatus.status !== 'not_found') {
+      if (!bmStatus.tenant || bmStatus.tenant.tenantId !== tenant.tenantId) {
+        return notFound();
+      }
       return c.json({
         jobId,
         backendMode: 'bullmq',
@@ -420,7 +425,7 @@ app.get('/api/v1/pipeline/status/:jobId', async (c) => {
 
   // In-process fallback
   const job = inProcessJobs.get(jobId);
-  if (!job) return c.json({ error: 'Job not found' }, 404);
+  if (!job || job.tenantId !== tenant.tenantId) return notFound();
   return c.json({
     jobId: job.id,
     backendMode: 'in_process',

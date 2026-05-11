@@ -13,6 +13,7 @@ It defines the supported customer sequence, route ownership, auth boundary, succ
 - The current account-plane visibility map lives in [Hosted account visibility](hosted-account-visibility.md).
 - Operator Stripe setup lives in [Stripe commercial bootstrap](stripe-commercial-bootstrap.md).
 - The machine-readable contract descriptor lives in `src/service/hosted-journey-contract.ts`.
+- The machine-readable route authorization matrix lives in `src/service/hosted-api-authorization-matrix.ts`.
 
 ## Contract Rules
 
@@ -22,6 +23,7 @@ It defines the supported customer sequence, route ownership, auth boundary, succ
 - Attestor does not auto-detect what pack to run. The customer system calls the relevant hosted path for the consequence it needs to control.
 - Checkout starts the paid hosted path, but signed Stripe webhooks are what converge billing and entitlement state back into Attestor.
 - Customer systems still own their data, models, agents, wallets, and downstream execution systems.
+- Route authorization is a first-class contract: every hosted API surface must declare its auth, tenant/account, object, mutation, idempotency/replay, and privacy boundary.
 
 ## Auth Boundaries
 

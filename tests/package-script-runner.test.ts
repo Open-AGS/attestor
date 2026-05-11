@@ -101,6 +101,7 @@ function testFastSuiteKeepsCriticalCoverage(): void {
     'test:security-baseline-docs',
     'test:package-script-runner',
     'test:verify-live-ops-gate',
+    'test:hosted-api-authorization-matrix',
     'test:crypto-intelligence-surface-consistency',
     'test:crypto-authorization-core-noble-hashes-dependency-risk',
     'test:node-26-runtime-validation',

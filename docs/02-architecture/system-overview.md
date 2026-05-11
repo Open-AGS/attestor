@@ -116,7 +116,7 @@ The external review packet sits above both. It packages source digests, runtime/
 
 The data minimization and redaction policy sits across those read surfaces. It keeps model feedback, proof exports, dashboards, retry ledgers, presentation bindings, replay ledgers, and execution receipts on structural control evidence: reason codes, safe instructions, counts, digests, scoped references, statuses, and aggregate signals instead of raw prompts, raw payloads, credentials, bank data, wallet material, private policy thresholds, or downstream error bodies.
 
-The crypto intelligence buildout applies that same boundary to programmable-money paths. Its current summary surface aggregates crypto risk signals, policy gaps, operator-supplied risk inputs, adapter readiness, missing evidence, digest-first proof links, and aggregate performance budgets without raw wallet/payment payload drilldown, native screening claims, or inferred financial impact.
+The crypto intelligence buildout applies that same boundary to programmable-money paths. Its current summary surface aggregates crypto risk signals, policy gaps, operator-supplied risk inputs, adapter readiness, missing evidence, digest-first proof links, aggregate performance budgets, and package-surface consistency checks without raw wallet/payment payload drilldown, native screening claims, or inferred financial impact.
 
 The policy limit model sits before both. It prevents broad "yes" decisions by making the admitted consequence bounded: how much, how often, to whom, over what data, under which authority, in what window, and when human review becomes mandatory.
 
@@ -175,13 +175,13 @@ What the crypto pack already covers:
 - EIP-7702 delegation-aware adapter
 - x402 and custody/co-signer adapters
 - execution-admission planning, wallet RPC handoffs, Safe guard receipts, ERC-4337 bundler handoffs, modular-account handoffs, delegated-EOA handoffs, x402 resource-server middleware, custody policy callback contracts, intent-solver admission handoffs, uniform admission telemetry / signed receipts, JSON conformance fixtures, and a curated package surface for external integrators
-- crypto intelligence now packages risk signals, policy gaps, adapter readiness, operator risk inputs, dashboard summaries, conformance fixtures, privacy gates, and performance budgets through `attestor/crypto-intelligence` without raw wallet/payment payload drilldown or native screening claims
+- crypto intelligence now packages risk signals, policy gaps, adapter readiness, operator risk inputs, dashboard summaries, conformance fixtures, privacy gates, performance budgets, and package-surface consistency checks through `attestor/crypto-intelligence` without raw wallet/payment payload drilldown or native screening claims
 
 Current crypto execution-admission posture:
 
 - the frozen execution-admission buildout is complete
 - the frozen crypto intelligence buildout is complete
-- future crypto hardening should build on [Crypto engine hardening II](crypto-engine-hardening-ii.md), [Crypto intelligence buildout](crypto-intelligence-buildout.md), and the packaged `attestor/crypto-intelligence` surface rather than reopening the frozen authorization, execution-admission, or intelligence lists; current hardening adds adapter-readiness intelligence plus consequence-admission pack decision profiles for finance and crypto
+- future crypto hardening should build on [Crypto engine hardening II](crypto-engine-hardening-ii.md), [Crypto intelligence buildout](crypto-intelligence-buildout.md), and the packaged `attestor/crypto-intelligence` surface rather than reopening the frozen authorization, execution-admission, or intelligence lists; current hardening adds adapter-readiness intelligence, consequence-admission pack decision profiles, policy-intelligence routing, proof-console prioritization, runtime efficiency guards, and package-surface consistency checks for finance and crypto
 
 ## Product Truth Versus First Slices
 

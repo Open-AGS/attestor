@@ -157,7 +157,7 @@ function testTrackerStaysGroundedInExistingCryptoSurfaces(): void {
 
   includes(
     systemOverview,
-    'crypto intelligence now packages risk signals, policy gaps, adapter readiness, operator risk inputs, dashboard summaries, conformance fixtures, privacy gates, and performance budgets through `attestor/crypto-intelligence`',
+    'crypto intelligence now packages risk signals, policy gaps, adapter readiness, operator risk inputs, dashboard summaries, conformance fixtures, privacy gates, performance budgets, and package-surface consistency checks through `attestor/crypto-intelligence`',
     'Crypto intelligence docs: system overview points future crypto work to this tracker',
   );
   includes(

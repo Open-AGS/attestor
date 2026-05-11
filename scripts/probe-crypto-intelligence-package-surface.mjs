@@ -1,6 +1,21 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 
 const cryptoIntelligence = await import('attestor/crypto-intelligence');
+const packageJson = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+
+async function importIsBlocked(specifier) {
+  try {
+    await import(specifier);
+    return false;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return (
+      message.includes('Package subpath') ||
+      message.includes('ERR_PACKAGE_PATH_NOT_EXPORTED')
+    );
+  }
+}
 
 assert.equal(
   cryptoIntelligence.CRYPTO_INTELLIGENCE_PLATFORM_SURFACE_SPEC_VERSION,
@@ -164,20 +179,40 @@ assert.equal(
   false,
 );
 
-let blockedInternalPath = false;
-try {
-  await import('attestor/crypto-intelligence/index.js');
-} catch (error) {
-  const message = error instanceof Error ? error.message : String(error);
-  blockedInternalPath =
-    message.includes('Package subpath') ||
-    message.includes('ERR_PACKAGE_PATH_NOT_EXPORTED');
+assert.equal(
+  cryptoIntelligence.cryptoIntelligence.packageSurfaceConsistency
+    .cryptoPackageSurfaceConsistencyDescriptor()
+    .failClosedOnDrift,
+  true,
+);
+
+const blockedDeepImportProbes = [];
+for (const probe of cryptoIntelligence
+  .CRYPTO_PACKAGE_SURFACE_CONSISTENCY_DEEP_IMPORT_PROBES) {
+  if (await importIsBlocked(probe.specifier)) {
+    blockedDeepImportProbes.push(probe.specifier);
+  }
 }
 
+const consistencyProfile =
+  cryptoIntelligence.createCryptoPackageSurfaceConsistencyProfile({
+    generatedAt: '2026-05-11T12:00:00.000Z',
+    packagePrivate: packageJson.private,
+    exportMap: packageJson.exports,
+    blockedDeepImportProbes,
+  });
 assert.equal(
-  blockedInternalPath,
-  true,
-  'internal crypto intelligence module paths should stay outside the public package surface',
+  consistencyProfile.status,
+  'pass',
+  'crypto package surfaces should match package exports, descriptors, and deep-import probes',
+);
+assert.equal(consistencyProfile.summary.surfaceCount, 4);
+assert.equal(consistencyProfile.summary.matchedExportCount, 4);
+assert.equal(consistencyProfile.summary.matchedDescriptorCount, 4);
+assert.equal(consistencyProfile.summary.blockedDeepImportCount, 4);
+assert.deepEqual(
+  consistencyProfile.reasonCodes,
+  ['package-surface-consistency-pass'],
 );
 
 console.log('crypto-intelligence package surface probe passed');

@@ -101,6 +101,7 @@ function testFastSuiteKeepsCriticalCoverage(): void {
     'test:security-baseline-docs',
     'test:package-script-runner',
     'test:verify-live-ops-gate',
+    'test:crypto-intelligence-surface-consistency',
     'tsx tests/account-session-cookie-security.test.ts',
     'tsx tests/release-kernel-release-decision-engine.test.ts',
     'tsx tests/release-layer-platform-surface.test.ts',

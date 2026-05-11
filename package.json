@@ -211,6 +211,7 @@
     "test:crypto-authorization-core-intelligence-performance-budget": "tsx tests/crypto-authorization-core-intelligence-performance-budget.test.ts",
     "test:crypto-authorization-core-platform-surface": "tsx tests/crypto-authorization-core-platform-surface.test.ts",
     "test:crypto-intelligence-platform-surface": "tsx tests/crypto-intelligence-platform-surface.test.ts",
+    "test:crypto-intelligence-surface-consistency": "tsx tests/crypto-intelligence-package-surface-consistency.test.ts",
     "test:crypto-execution-admission": "tsx tests/crypto-execution-admission.test.ts",
     "test:crypto-execution-admission-wallet-rpc": "tsx tests/crypto-execution-admission-wallet-rpc.test.ts",
     "test:crypto-execution-admission-safe-guard": "tsx tests/crypto-execution-admission-safe-guard.test.ts",

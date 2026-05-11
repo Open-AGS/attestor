@@ -71,6 +71,7 @@ function testCryptoIntelligencePublicSurfaceDescriptor(): void {
       'conformanceFixtures',
       'privacyMinimization',
       'performanceBudget',
+      'packageSurfaceConsistency',
     ],
     'crypto intelligence platform surface: descriptor groups proof and safety namespaces',
   );
@@ -103,6 +104,11 @@ function testCryptoIntelligencePublicSurfaceDescriptor(): void {
     descriptor.negativeFixtureCount,
     40,
     'crypto intelligence platform surface: negative conformance fixtures are packaged',
+  );
+  equal(
+    descriptor.packageSurfaceConsistencyVersion,
+    'attestor.crypto-package-surface-consistency.v1',
+    'crypto intelligence platform surface: package surface consistency profile is packaged',
   );
   equal(
     CRYPTO_INTELLIGENCE_EXTRACTION_CRITERIA.length,
@@ -244,6 +250,13 @@ function testCryptoIntelligenceSafetyNamespaces(): void {
       .failClosedOnRegression,
     true,
     'crypto intelligence platform surface: performance regressions fail closed',
+  );
+  equal(
+    cryptoIntelligence.packageSurfaceConsistency
+      .cryptoPackageSurfaceConsistencyDescriptor()
+      .failClosedOnDrift,
+    true,
+    'crypto intelligence platform surface: package surface drift fails closed',
   );
 }
 

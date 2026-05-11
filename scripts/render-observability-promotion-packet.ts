@@ -4,6 +4,10 @@ import { pathToFileURL } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { probeObservabilityReleaseInputs } from './probe-observability-release-inputs.ts';
 import { resolveRepoPipelineReadiness } from './repo-pipeline-readiness.ts';
+import {
+  safeErrorMessage,
+  stringifySecretSafe,
+} from './secret-safe-output.ts';
 
 type Provider = 'generic' | 'grafana-cloud' | 'grafana-alloy';
 type SecretMode = 'secret' | 'external-secret';
@@ -31,7 +35,7 @@ function runTsx(script: string, args: string[], envVars: NodeJS.ProcessEnv): voi
     env: envVars,
   });
   if (run.status !== 0) {
-    throw new Error(`${script} failed.\nstdout:\n${run.stdout}\nstderr:\n${run.stderr}`);
+    throw new Error(`${script} failed.\nstdout:\n${stringifySecretSafe(run.stdout)}\nstderr:\n${stringifySecretSafe(run.stderr)}`);
   }
 }
 
@@ -251,12 +255,12 @@ Recommended apply flow:
 
 async function main(): Promise<void> {
   const packet = await renderObservabilityPromotionPacket();
-  console.log(JSON.stringify(packet, null, 2));
+  console.log(stringifySecretSafe(packet));
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   main().catch((error) => {
-    console.error(error instanceof Error ? error.stack ?? error.message : error);
+    console.error(safeErrorMessage(error));
     process.exit(1);
   });
 }

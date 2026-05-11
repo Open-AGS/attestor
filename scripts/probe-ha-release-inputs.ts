@@ -4,6 +4,11 @@ import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { probeHaRuntimeConnectivity } from './probe-ha-runtime-connectivity.ts';
+import {
+  redactSensitiveOutput,
+  safeErrorMessage,
+  stringifySecretSafe,
+} from './secret-safe-output.ts';
 
 type Provider = 'generic' | 'aws' | 'gke';
 
@@ -227,7 +232,7 @@ export async function probeHaReleaseInputs(options?: {
       );
       bundleRenderSucceeded = run.status === 0;
       if (!bundleRenderSucceeded) {
-        issues.push(`render-ha-release-bundle failed: ${(run.stderr || run.stdout).trim()}`);
+        issues.push(`render-ha-release-bundle failed: ${redactSensitiveOutput((run.stderr || run.stdout).trim())}`);
       }
     } finally {
       rmSync(outDir, { recursive: true, force: true });
@@ -255,12 +260,12 @@ export async function probeHaReleaseInputs(options?: {
 
 async function main(): Promise<void> {
   const summary = await probeHaReleaseInputs();
-  console.log(JSON.stringify(summary, null, 2));
+  console.log(stringifySecretSafe(summary));
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   main().catch((error) => {
-    console.error(error instanceof Error ? error.stack ?? error.message : error);
+    console.error(safeErrorMessage(error));
     process.exit(1);
   });
 }

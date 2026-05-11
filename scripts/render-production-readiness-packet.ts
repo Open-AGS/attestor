@@ -15,6 +15,10 @@ import {
   type ProductionStoragePathComponentId,
   type ProductionStoragePathEvaluation,
 } from '../src/service/bootstrap/production-storage-path.ts';
+import {
+  safeErrorMessage,
+  stringifySecretSafe,
+} from './secret-safe-output.ts';
 
 type ObservabilityProvider = 'generic' | 'grafana-cloud' | 'grafana-alloy';
 type HaProvider = 'generic' | 'aws' | 'gke';
@@ -369,12 +373,12 @@ Recommended promotion flow:
 
 async function main(): Promise<void> {
   const packet = await renderProductionReadinessPacket();
-  console.log(JSON.stringify(packet, null, 2));
+  console.log(stringifySecretSafe(packet));
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   main().catch((error) => {
-    console.error(error instanceof Error ? error.stack ?? error.message : error);
+    console.error(safeErrorMessage(error));
     process.exit(1);
   });
 }

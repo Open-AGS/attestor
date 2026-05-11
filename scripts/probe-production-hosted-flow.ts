@@ -1,5 +1,10 @@
 import assert from 'node:assert/strict';
 import Stripe from 'stripe';
+import {
+  digestReference,
+  safeErrorMessage,
+  stringifySecretSafe,
+} from './secret-safe-output.ts';
 
 import {
   COUNTERPARTY_FIXTURE,
@@ -346,21 +351,21 @@ async function main(): Promise<void> {
     assert.equal(usageAfter.res.status, 200, `Account usage after run failed: ${usageAfter.res.status} ${usageAfter.text}`);
     assert.ok((usageAfter.body.usage?.used ?? 0) >= (usageBefore.body.usage?.used ?? 0) + 1, 'Usage did not increment after pipeline run.');
 
-    console.log(JSON.stringify({
-      baseUrl,
-      accountId: account.id,
-      tenantId: account.primaryTenantId,
+    console.log(stringifySecretSafe({
+      targetRef: digestReference('base-url', baseUrl),
+      accountRef: digestReference('account', account.id),
+      tenantRef: digestReference('tenant', account.primaryTenantId),
       product: {
         decision: pipelineRun.body.decision,
         proofMode: pipelineRun.body.proofMode,
-        certificateId: pipelineRun.body.certificate.certificateId,
+        certificateRef: digestReference('certificate', pipelineRun.body.certificate.certificateId),
         verifyOverall: verify.body.overall,
         filingAdapter: filing.body.adapterId,
       },
       billing: {
-        checkoutSessionId: checkout.body.checkoutSessionId,
+        checkoutSessionRef: digestReference('checkout-session', checkout.body.checkoutSessionId),
         checkoutTrialDays: checkout.body.trialDays,
-        portalSessionId: portal.body.portalSessionId,
+        portalSessionRef: digestReference('portal-session', portal.body.portalSessionId),
         entitlementStatus: entitlement.body.entitlement.status,
         effectivePlanId: entitlement.body.entitlement.effectivePlanId,
         subscriptionStatus: accountSummary.body.account.billing.stripeSubscriptionStatus,
@@ -375,7 +380,7 @@ async function main(): Promise<void> {
         before: usageBefore.body.usage?.used ?? null,
         after: usageAfter.body.usage?.used ?? null,
       },
-    }, null, 2));
+    }));
   } finally {
     if (accountId) {
       await archiveAccount(
@@ -393,6 +398,6 @@ async function main(): Promise<void> {
 }
 
 main().catch((error) => {
-  console.error(error instanceof Error ? error.stack ?? error.message : String(error));
+  console.error(safeErrorMessage(error));
   process.exitCode = 1;
 });

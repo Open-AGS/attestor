@@ -5,6 +5,11 @@ import { pathToFileURL } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { probeObservabilityReceivers } from './probe-observability-receivers.ts';
 import { probeAlertRouting } from './probe-alert-routing.ts';
+import {
+  redactSensitiveOutput,
+  safeErrorMessage,
+  stringifySecretSafe,
+} from './secret-safe-output.ts';
 
 type Provider = 'generic' | 'grafana-cloud' | 'grafana-alloy';
 type SecretMode = 'secret' | 'external-secret';
@@ -130,7 +135,7 @@ export async function probeObservabilityReleaseInputs(options?: {
       );
       bundleRenderSucceeded = releaseRender.status === 0;
       if (!bundleRenderSucceeded) {
-        issues.push(`render-observability-release-bundle failed: ${(releaseRender.stderr || releaseRender.stdout).trim()}`);
+        issues.push(`render-observability-release-bundle failed: ${redactSensitiveOutput((releaseRender.stderr || releaseRender.stdout).trim())}`);
       } else {
         const probeSummary = await probeObservabilityReceivers({
           prometheusUrl,
@@ -191,12 +196,12 @@ export async function probeObservabilityReleaseInputs(options?: {
 
 async function main(): Promise<void> {
   const summary = await probeObservabilityReleaseInputs();
-  console.log(JSON.stringify(summary, null, 2));
+  console.log(stringifySecretSafe(summary));
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   main().catch((error) => {
-    console.error(error instanceof Error ? error.stack ?? error.message : error);
+    console.error(safeErrorMessage(error));
     process.exit(1);
   });
 }

@@ -34,6 +34,7 @@ The public subpath exposes:
 - policy gap descriptors, constants, labels, and `createCryptoPolicyGapNarrowingAssessment()`
 - policy coverage profile descriptors and `createCryptoPolicyCoverageProfile()`
 - adapter readiness descriptors, constants, labels, and `createCryptoAdapterReadinessManifest()`
+- adapter readiness intelligence descriptors, posture/risk-factor constants, labels, and `createCryptoAdapterReadinessIntelligenceProfile()`
 - conformance fixture descriptors and negative fixture validation
 - privacy minimization descriptors and evaluation helpers
 - operator-supplied risk input descriptors, labels, and `createCryptoOperatorRiskInputBundle()`
@@ -46,7 +47,7 @@ The curated namespace object groups the platform surface as:
 |---|---|
 | `riskSignals` | Deterministic risk/readiness/freshness/velocity signals over programmable-money consequences |
 | `policyGapNarrowing` | Missing evidence, policy coverage, explicit/implicit deny, stale policy evidence, policy gap, and safe narrowing candidates without exposing private thresholds |
-| `adapterReadiness` | Wallet, Safe, ERC-4337, modular-account, delegated-EOA, x402, custody, and solver readiness matrix |
+| `adapterReadiness` | Wallet, Safe, ERC-4337, modular-account, delegated-EOA, x402, custody, and solver readiness matrix plus deterministic readiness intelligence profiles |
 | `conformanceFixtures` | Positive and negative execution-admission fixture coverage, including malformed, stale, contradictory, and privacy-unsafe paths |
 | `privacyMinimization` | Digest-first guard for intelligence outputs, telemetry, dashboards, proof packets, and benchmark outputs |
 | `operatorRiskInputs` | Customer-operated or third-party risk input contract with provenance, freshness, scope, and digest binding |
@@ -63,7 +64,8 @@ The crypto intelligence surface answers:
 
 - what is risky or missing?
 - which policy dimensions are covered, stale, conflicting, explicitly denied, or implicitly denied?
-- what adapter evidence is ready, missing, or blocked?
+- what adapter evidence is ready, missing, blocked, or review-required?
+- which adapter standards and surfaces need the next operator action?
 - what model-safe narrowing or operator action is available?
 - what proof links and dashboard summaries can be shown without raw payloads?
 - whether the intelligence path remains inside performance and privacy budgets?
@@ -113,6 +115,7 @@ import {
   cryptoIntelligence,
   cryptoIntelligencePublicSurface,
   createCryptoAdapterReadinessManifest,
+  createCryptoAdapterReadinessIntelligenceProfile,
 } from 'attestor/crypto-intelligence';
 
 const surface = cryptoIntelligencePublicSurface();
@@ -133,8 +136,16 @@ const readiness = createCryptoAdapterReadinessManifest({
   scopeRef: 'integration:treasury-wallet',
 });
 
+const readinessProfile = createCryptoAdapterReadinessIntelligenceProfile({
+  manifest: readiness,
+});
+
 if (readiness.rawPayloadStored) {
   throw new Error('Crypto intelligence readiness must stay digest-first.');
+}
+
+if (readinessProfile.summary.blockedCount > 0) {
+  throw new Error('Blocked adapter handoffs require operator resolution.');
 }
 ```
 

@@ -4,6 +4,9 @@ import {
   CRYPTO_ADAPTER_READINESS_MATRIX,
   CRYPTO_EXECUTION_ADMISSION_ADAPTER_PROFILES,
   createCryptoAdapterReadinessManifest,
+  createCryptoAdapterReadinessIntelligenceProfile,
+  cryptoAdapterReadinessIntelligenceDescriptor,
+  cryptoAdapterReadinessIntelligenceProfileLabel,
   cryptoAdapterReadinessManifestDescriptor,
   cryptoAdapterReadinessManifestLabel,
 } from '../src/crypto-execution-admission/index.js';
@@ -277,9 +280,169 @@ function testDescriptorAndDeterminism(): void {
   );
 }
 
+function testIntelligenceProfilePrioritizesReadinessWork(): void {
+  const walletPlan = planFixture({
+    adapterKind: 'wallet-call-api',
+    surface: 'wallet-rpc',
+    outcome: 'admit',
+    steps: [
+      step({
+        stepId: 'preflight:wallet-capabilities',
+        kind: 'prepare-wallet-call',
+        source: 'wallet-capabilities',
+        status: 'satisfied',
+      }),
+      step({
+        stepId: 'preflight:wallet-call-preparation',
+        kind: 'prepare-wallet-call',
+        source: 'wallet-call-preparation',
+        status: 'satisfied',
+      }),
+    ],
+  });
+  const x402Plan = planFixture({
+    adapterKind: 'x402-payment',
+    surface: 'agent-payment-http',
+    outcome: 'needs-evidence',
+    steps: [
+      step({
+        stepId: 'preflight:x402-payment',
+        kind: 'verify-http-payment',
+        surface: 'agent-payment-http',
+        source: 'x402-payment',
+        status: 'required',
+        reasonCode: 'x402-payment-verification-missing',
+      }),
+    ],
+  });
+  const bundlerPlan = planFixture({
+    adapterKind: 'erc-4337-user-operation',
+    surface: 'account-abstraction-bundler',
+    outcome: 'deny',
+    blockedReasons: ['erc-7562-validation-failed'],
+    steps: [
+      step({
+        stepId: 'preflight:erc-7562-validation-scope',
+        kind: 'simulate-user-operation',
+        surface: 'account-abstraction-bundler',
+        source: 'erc-7562-validation-scope',
+        status: 'blocked',
+        reasonCode: 'erc-7562-validation-failed',
+      }),
+    ],
+  });
+  const manifest = createCryptoAdapterReadinessManifest({
+    generatedAt: '2026-05-11T07:34:00.000Z',
+    scopeRef: 'crypto-engine-hardening-ii-step-01',
+    plans: [walletPlan, x402Plan, bundlerPlan],
+  });
+  const profile = createCryptoAdapterReadinessIntelligenceProfile({ manifest });
+  const descriptor = cryptoAdapterReadinessIntelligenceDescriptor();
+  const walletEntry = profile.entries.find(
+    (entry) => entry.matrixEntryId === 'wallet-call-api',
+  );
+  const x402Entry = profile.entries.find((entry) => entry.matrixEntryId === 'x402-payment');
+  const bundlerEntry = profile.entries.find(
+    (entry) => entry.matrixEntryId === 'erc-4337-user-operation',
+  );
+
+  equal(
+    descriptor.version,
+    'attestor.crypto-adapter-readiness-intelligence.v1',
+    'adapter readiness intelligence: descriptor exposes version',
+  );
+  ok(
+    descriptor.riskFactorKinds.includes('account-abstraction-validation-review'),
+    'adapter readiness intelligence: descriptor exposes account abstraction review factor',
+  );
+  equal(
+    walletEntry?.posture,
+    'execution-ready',
+    'adapter readiness intelligence: admitted wallet plan is execution-ready',
+  );
+  equal(
+    walletEntry?.readinessScore,
+    100,
+    'adapter readiness intelligence: ready wallet plan receives full score',
+  );
+  equal(
+    x402Entry?.posture,
+    'review-required',
+    'adapter readiness intelligence: partial x402 plan routes to review',
+  );
+  equal(
+    x402Entry?.nextAction,
+    'run-required-preflight',
+    'adapter readiness intelligence: x402 missing preflight points to preflight action',
+  );
+  ok(
+    x402Entry?.riskFactors.some(
+      (factor) => factor.kind === 'http-payment-verification-review',
+    ),
+    'adapter readiness intelligence: x402 payment verification is a first-class factor',
+  );
+  equal(
+    bundlerEntry?.posture,
+    'blocked',
+    'adapter readiness intelligence: denied bundler plan is blocked',
+  );
+  ok(
+    bundlerEntry?.riskFactors.some(
+      (factor) => factor.kind === 'account-abstraction-validation-review',
+    ),
+    'adapter readiness intelligence: ERC-4337 validation review is surfaced',
+  );
+  equal(
+    profile.summary.executionReadyCount,
+    1,
+    'adapter readiness intelligence: summary counts ready entries',
+  );
+  equal(
+    profile.summary.reviewRequiredCount,
+    1,
+    'adapter readiness intelligence: summary counts partial plan review entries',
+  );
+  equal(
+    profile.summary.blockedCount,
+    1,
+    'adapter readiness intelligence: summary counts blocked entries',
+  );
+  equal(
+    profile.summary.evidenceRequiredCount,
+    8,
+    'adapter readiness intelligence: summary counts missing-plan entries',
+  );
+  ok(
+    profile.summary.topRiskFactorKinds.some(
+      (entry) => entry.value === 'admission-plan-missing',
+    ),
+    'adapter readiness intelligence: top factors prioritize missing admission plans',
+  );
+  ok(
+    profile.summary.standardsCoverage.some(
+      (entry) => entry.standard === 'ERC-4337' && entry.blockedCount > 0,
+    ),
+    'adapter readiness intelligence: standards coverage captures blocked ERC-4337 posture',
+  );
+  equal(
+    profile.rawPayloadStored,
+    false,
+    'adapter readiness intelligence: profile stores no raw payload',
+  );
+  ok(
+    !profile.canonical.includes('0x1111111111111111111111111111111111111111'),
+    'adapter readiness intelligence: canonical output excludes raw wallet address',
+  );
+  ok(
+    cryptoAdapterReadinessIntelligenceProfileLabel(profile).includes('blocked:1'),
+    'adapter readiness intelligence: label summarizes blocked posture',
+  );
+}
+
 testMatrixMatchesExecutionAdmissionProfiles();
 testManifestWithoutPlansNeedsEvidenceForEverySurface();
 testManifestClassifiesReadyBlockedAndMissingAdapters();
 testDescriptorAndDeterminism();
+testIntelligenceProfilePrioritizesReadinessWork();
 
 console.log(`crypto-execution-admission-adapter-readiness-manifest: ${passed} assertions passed`);

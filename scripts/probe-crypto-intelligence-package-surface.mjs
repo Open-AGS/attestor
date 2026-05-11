@@ -63,6 +63,26 @@ assert.equal(
   11,
 );
 assert.equal(
+  cryptoIntelligence.cryptoIntelligence.adapterReadiness
+    .cryptoAdapterReadinessIntelligenceDescriptor()
+    .version,
+  'attestor.crypto-adapter-readiness-intelligence.v1',
+);
+const readinessManifest =
+  cryptoIntelligence.cryptoIntelligence.adapterReadiness
+    .createCryptoAdapterReadinessManifest({
+      generatedAt: '2026-05-11T12:00:00.000Z',
+      scopeRef: 'package-surface:adapter-readiness-intelligence',
+    });
+assert.equal(
+  cryptoIntelligence.cryptoIntelligence.adapterReadiness
+    .createCryptoAdapterReadinessIntelligenceProfile({
+      manifest: readinessManifest,
+    })
+    .summary.evidenceRequiredCount,
+  11,
+);
+assert.equal(
   cryptoIntelligence.cryptoIntelligence.conformanceFixtures
     .validateCryptoAdmissionNegativeConformanceFixtures()
     .status,

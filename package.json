@@ -200,6 +200,7 @@
     "test:trusted-proxy-headers": "tsx tests/trusted-proxy-headers.test.ts",
     "test:nginx-ha-edge-config": "tsx tests/nginx-ha-edge-config.test.ts",
     "test:service-version-alignment": "tsx tests/service-version-alignment.test.ts",
+    "test:crypto-engine-hardening-ii-docs": "tsx tests/crypto-engine-hardening-ii-docs.test.ts",
     "test:crypto-intelligence-buildout-docs": "tsx tests/crypto-intelligence-buildout-docs.test.ts",
     "test:crypto-authorization-core-intelligence-risk-signals": "tsx tests/crypto-authorization-core-intelligence-risk-signals.test.ts",
     "test:crypto-authorization-core-policy-gap-narrowing": "tsx tests/crypto-authorization-core-policy-gap-narrowing.test.ts",

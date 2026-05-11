@@ -107,6 +107,8 @@ export interface CryptoIntelligencePublicSurfaceDescriptor {
   readonly proofAndSafetyNamespaces: typeof CRYPTO_INTELLIGENCE_PROOF_AND_SAFETY_NAMESPACES;
   readonly privacyGuardrails: typeof CRYPTO_INTELLIGENCE_PRIVACY_GUARDRAILS;
   readonly adapterReadinessMatrixEntryCount: number;
+  readonly adapterReadinessIntelligenceVersion:
+    typeof adapterReadiness.CRYPTO_ADAPTER_READINESS_INTELLIGENCE_SPEC_VERSION;
   readonly negativeFixtureCount: number;
   readonly hostedRouteClaimed: false;
   readonly attestorNativeOracleClaimed: false;
@@ -164,6 +166,8 @@ export type CryptoPolicyGapNarrowingAssessment =
   policyGapNarrowing.CryptoPolicyGapNarrowingAssessment;
 export type CryptoAdapterReadinessManifest =
   adapterReadiness.CryptoAdapterReadinessManifest;
+export type CryptoAdapterReadinessIntelligenceProfile =
+  adapterReadiness.CryptoAdapterReadinessIntelligenceProfile;
 export type CryptoAdmissionConformanceFixtureSuite =
   conformanceFixtures.CryptoAdmissionConformanceFixtureSuite;
 export type CryptoIntelligencePrivacyMinimizationEvaluation =
@@ -188,6 +192,8 @@ CryptoIntelligencePublicSurfaceDescriptor {
     privacyGuardrails: CRYPTO_INTELLIGENCE_PRIVACY_GUARDRAILS,
     adapterReadinessMatrixEntryCount:
       Object.keys(adapterReadiness.CRYPTO_ADAPTER_READINESS_MATRIX).length,
+    adapterReadinessIntelligenceVersion:
+      adapterReadiness.CRYPTO_ADAPTER_READINESS_INTELLIGENCE_SPEC_VERSION,
     negativeFixtureCount:
       conformanceFixtures.CRYPTO_ADMISSION_NEGATIVE_CONFORMANCE_FIXTURES.length,
     hostedRouteClaimed: false,

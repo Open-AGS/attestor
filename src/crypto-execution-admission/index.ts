@@ -20,6 +20,7 @@ import * as custodyPolicyCallback from './custody-policy-callback.js';
 import * as intentSolver from './intent-solver.js';
 import * as telemetryReceipts from './telemetry-receipts.js';
 import * as conformanceFixtures from './conformance-fixtures.js';
+import * as adapterReadinessManifest from './adapter-readiness-manifest.js';
 
 /**
  * Crypto execution admission turns a crypto authorization simulation into the
@@ -183,6 +184,7 @@ export const CRYPTO_EXECUTION_ADMISSION_NAMESPACE_EXPORTS = [
   'intentSolver',
   'telemetryReceipts',
   'conformanceFixtures',
+  'adapterReadinessManifest',
 ] as const;
 
 export const CRYPTO_EXECUTION_ADMISSION_INTEGRATION_NAMESPACES = [
@@ -199,6 +201,7 @@ export const CRYPTO_EXECUTION_ADMISSION_INTEGRATION_NAMESPACES = [
 export const CRYPTO_EXECUTION_ADMISSION_PROOF_NAMESPACES = [
   'telemetryReceipts',
   'conformanceFixtures',
+  'adapterReadinessManifest',
 ] as const;
 
 export const CRYPTO_EXECUTION_ADMISSION_ADAPTER_PROFILES = Object.freeze({
@@ -810,6 +813,7 @@ export const cryptoExecutionAdmission = Object.freeze({
   intentSolver,
   telemetryReceipts,
   conformanceFixtures,
+  adapterReadinessManifest,
 });
 
 export type CryptoExecutionAdmission = typeof cryptoExecutionAdmission;
@@ -833,6 +837,8 @@ export type CryptoAdmissionReceipt =
   telemetryReceipts.CryptoAdmissionReceipt;
 export type CryptoAdmissionConformanceFixtureSuite =
   conformanceFixtures.CryptoAdmissionConformanceFixtureSuite;
+export type CryptoAdapterReadinessManifest =
+  adapterReadinessManifest.CryptoAdapterReadinessManifest;
 
 export function cryptoExecutionAdmissionPublicSurface():
 CryptoExecutionAdmissionPublicSurfaceDescriptor {
@@ -861,3 +867,4 @@ export * from './custody-policy-callback.js';
 export * from './intent-solver.js';
 export * from './telemetry-receipts.js';
 export * from './conformance-fixtures.js';
+export * from './adapter-readiness-manifest.js';

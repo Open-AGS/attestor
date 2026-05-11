@@ -95,11 +95,21 @@ assert.equal(
   true,
 );
 assert.equal(
+  admission.cryptoAdapterReadinessManifestDescriptor().surfaces.includes('wallet-rpc'),
+  true,
+);
+assert.equal(
+  admission.createCryptoAdapterReadinessManifest({
+    generatedAt: '2026-05-11T07:34:00.000Z',
+  }).coverage.totalEntries,
+  11,
+);
+assert.equal(
   admission.cryptoExecutionAdmissionPublicSurface().version,
   'attestor.crypto-execution-admission-platform.v1',
 );
 assert.equal(
-  admission.cryptoExecutionAdmissionPublicSurface().namespaceExports.includes('conformanceFixtures'),
+  admission.cryptoExecutionAdmissionPublicSurface().namespaceExports.includes('adapterReadinessManifest'),
   true,
 );
 assert.equal(
@@ -109,6 +119,12 @@ assert.equal(
 assert.equal(
   admission.cryptoExecutionAdmission.walletRpc.walletRpcAdmissionDescriptor().methods.includes('wallet_sendCalls'),
   true,
+);
+assert.equal(
+  admission.cryptoExecutionAdmission.adapterReadinessManifest
+    .cryptoAdapterReadinessManifestDescriptor()
+    .matrixEntryCount,
+  11,
 );
 
 let blockedInternalPath = false;

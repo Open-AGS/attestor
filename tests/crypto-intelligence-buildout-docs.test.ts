@@ -107,14 +107,14 @@ function testTrackerFreezesTheStepList(): void {
   const tracker = readProjectFile('docs', '02-architecture', 'crypto-intelligence-buildout.md');
 
   includes(tracker, '| Total frozen steps | 10 |', 'Crypto intelligence docs: step count is frozen');
-  includes(tracker, '| Completed | 3 |', 'Crypto intelligence docs: Steps 01 through 03 are complete');
-  includes(tracker, '| Not started | 7 |', 'Crypto intelligence docs: remaining steps are pending');
+  includes(tracker, '| Completed | 4 |', 'Crypto intelligence docs: Steps 01 through 04 are complete');
+  includes(tracker, '| Not started | 6 |', 'Crypto intelligence docs: remaining steps are pending');
 
   const steps = [
     '| 01 | complete | Define crypto intelligence scope, research anchors, vocabulary, and guardrails |',
     '| 02 | complete | Add crypto risk signal model and severity mapping |',
     '| 03 | complete | Add policy gap and safe narrowing candidate generation |',
-    '| 04 | pending | Add adapter readiness matrix and manifest |',
+    '| 04 | complete | Add adapter readiness matrix and manifest |',
     '| 05 | pending | Expand negative conformance fixtures for crypto intelligence |',
     '| 06 | pending | Harden crypto privacy and telemetry minimization |',
     '| 07 | pending | Add operator-supplied risk input contract |',
@@ -152,8 +152,13 @@ function testTrackerStaysGroundedInExistingCryptoSurfaces(): void {
   );
   includes(
     tracker,
-    'Implement Step 04: add the adapter readiness matrix and manifest',
-    'Crypto intelligence docs: immediate next step is Step 04',
+    'Implement Step 05: expand negative conformance fixtures for crypto intelligence',
+    'Crypto intelligence docs: immediate next step is Step 05',
+  );
+  includes(
+    tracker,
+    'src/crypto-execution-admission/adapter-readiness-manifest.ts',
+    'Crypto intelligence docs: Step 04 evidence points to adapter readiness manifest',
   );
 }
 

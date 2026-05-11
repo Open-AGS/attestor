@@ -23,6 +23,11 @@ assert.equal(
   'attestor.crypto-policy-gap-narrowing.v1',
 );
 assert.equal(
+  cryptoCore.cryptoAuthorizationCore.intelligencePrivacyMinimization
+    .CRYPTO_INTELLIGENCE_PRIVACY_MINIMIZATION_SPEC_VERSION,
+  'attestor.crypto-intelligence-privacy-minimization.v1',
+);
+assert.equal(
   cryptoCore.cryptoAuthorizationCore.x402AgenticPayment.X402_AGENTIC_PAYMENT_ADAPTER_SPEC_VERSION,
   'attestor.crypto-x402-agentic-payment-adapter.v1',
 );
@@ -46,5 +51,28 @@ assert.equal(
   true,
   'internal crypto authorization core module paths should stay outside the public package surface',
 );
+
+const privacyEvaluation =
+  cryptoCore.cryptoAuthorizationCore.intelligencePrivacyMinimization
+    .evaluateCryptoIntelligencePrivacyMinimizationArtifact({
+      surfaceKind: 'risk-signal-assessment',
+      artifact: {
+        reasonCodes: ['route-boundary-unsafe'],
+        routeCommitmentDigest: 'sha256:route',
+      },
+    });
+assert.equal(privacyEvaluation.allowed, true);
+assert.equal(privacyEvaluation.rawPayloadStored, false);
+
+const unsafePrivacyEvaluation =
+  cryptoCore.cryptoAuthorizationCore.intelligencePrivacyMinimization
+    .evaluateCryptoIntelligencePrivacyMinimizationArtifact({
+      surfaceKind: 'admission-telemetry-event',
+      artifact: {
+        rawTransactionPayload: '0xraw',
+      },
+    });
+assert.equal(unsafePrivacyEvaluation.allowed, false);
+assert.ok(unsafePrivacyEvaluation.reasonCodes.includes('raw-transaction-payload-field'));
 
 console.log('crypto-authorization-core package surface probe passed');

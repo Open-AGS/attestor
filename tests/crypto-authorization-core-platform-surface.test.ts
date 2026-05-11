@@ -52,6 +52,7 @@ function testCryptoAuthorizationCorePublicSurfaceDescriptor(): void {
       'consequenceRiskMapping',
       'intelligenceRiskSignals',
       'policyGapNarrowing',
+      'intelligencePrivacyMinimization',
       'eip712',
       'erc1271',
       'replayFreshness',
@@ -123,6 +124,12 @@ function testCryptoAuthorizationCoreBaseNamespaces(): void {
     cryptoAuthorizationCore.policyGapNarrowing.CRYPTO_POLICY_GAP_NARROWING_SPEC_VERSION,
     'attestor.crypto-policy-gap-narrowing.v1',
     'crypto platform surface: policy-gap narrowing namespace is bound',
+  );
+  equal(
+    cryptoAuthorizationCore.intelligencePrivacyMinimization
+      .CRYPTO_INTELLIGENCE_PRIVACY_MINIMIZATION_SPEC_VERSION,
+    'attestor.crypto-intelligence-privacy-minimization.v1',
+    'crypto platform surface: intelligence privacy minimization namespace is bound',
   );
   equal(
     cryptoAuthorizationCore.eip712.CRYPTO_EIP712_AUTHORIZATION_ENVELOPE_SPEC_VERSION,
@@ -224,6 +231,13 @@ function testCryptoAuthorizationCoreDescriptorFunctions(): void {
       .version,
     'attestor.crypto-enforcement-verification.v1',
     'crypto platform surface: enforcement descriptor is callable',
+  );
+  equal(
+    cryptoAuthorizationCore.intelligencePrivacyMinimization
+      .cryptoIntelligencePrivacyMinimizationDescriptor()
+      .rawPayloadStored,
+    false,
+    'crypto platform surface: intelligence privacy minimization descriptor is callable',
   );
   equal(
     cryptoAuthorizationCore.custodyCosignerPolicy

@@ -81,10 +81,10 @@ Start crypto intelligence as a new repository track above the packaged crypto su
 | Metric | Value |
 |---|---|
 | Total frozen steps | 10 |
-| Completed | 5 |
+| Completed | 6 |
 | In progress | 0 |
-| Not started | 5 |
-| Current posture | Step 05 adds negative crypto conformance fixtures for malformed, stale, malicious, contradictory, and privacy-unsafe evidence across every existing crypto execution-admission surface. The fixtures are fail-closed and expose only model-safe reason codes, evidence classes, and safe instructions. |
+| Not started | 4 |
+| Current posture | Step 06 adds a crypto intelligence privacy-minimization gate that rejects raw wallet metadata, transaction payloads, custody callback bodies, provider error bodies, route secrets, customer identifiers, raw idempotency keys, and private policy thresholds before telemetry, proof, dashboard, or model-safe feedback can treat an artifact as safe. |
 
 ## Frozen Step List
 
@@ -95,7 +95,7 @@ Start crypto intelligence as a new repository track above the packaged crypto su
 | 03 | complete | Add policy gap and safe narrowing candidate generation | `src/crypto-authorization-core/policy-gap-narrowing.ts`, `tests/crypto-authorization-core-policy-gap-narrowing.test.ts`, `tests/crypto-authorization-core-platform-surface.test.ts`, `scripts/probe-crypto-authorization-core-package-surface.mjs`, `package.json` | Converts missing policy dimensions and failed limits into model-safe gap classes and approval-required narrowing candidates while keeping private policy thresholds out of feedback. |
 | 04 | complete | Add adapter readiness matrix and manifest | `src/crypto-execution-admission/adapter-readiness-manifest.ts`, `tests/crypto-execution-admission-adapter-readiness-manifest.test.ts`, `tests/crypto-execution-admission-platform-surface.test.ts`, `scripts/probe-crypto-execution-admission-package-surface.mjs`, `package.json` | Summarizes readiness across wallet RPC, Safe guard, ERC-4337 bundler, modular account runtime, delegated EOA runtime, x402 resource server, custody policy engine, and intent solver surfaces using model-safe reason codes, evidence classes, plan digests, and explicit no-raw-payload privacy boundaries. |
 | 05 | complete | Expand negative conformance fixtures for crypto intelligence | `src/crypto-execution-admission/conformance-fixtures.ts`, `tests/crypto-execution-admission-negative-conformance-fixtures.test.ts`, `tests/crypto-execution-admission-conformance-fixtures.test.ts`, `scripts/probe-crypto-execution-admission-package-surface.mjs`, `package.json` | Adds 40 fail-closed negative fixtures: malformed, stale, malicious, contradictory, and privacy-unsafe cases for wallet RPC, Safe guard, ERC-4337 bundler, modular account runtime, delegated EOA runtime, x402 resource server, custody policy engine, and intent solver. |
-| 06 | pending | Harden crypto privacy and telemetry minimization | _pending_ | Should add regression gates that block raw wallet metadata, raw transaction payloads, custody callback bodies, provider error bodies, route secrets, private policy thresholds, and customer identifiers from intelligence outputs. |
+| 06 | complete | Harden crypto privacy and telemetry minimization | `src/crypto-authorization-core/intelligence-privacy-minimization.ts`, `tests/crypto-authorization-core-intelligence-privacy-minimization.test.ts`, `tests/crypto-authorization-core-platform-surface.test.ts`, `scripts/probe-crypto-authorization-core-package-surface.mjs`, `package.json` | Adds a digest-first privacy minimization gate for risk signals, policy gaps, adapter readiness manifests, negative fixtures, telemetry events, dashboard summaries, and proof packets. The gate fails closed on raw wallet metadata, transaction payloads, custody callback bodies, provider error bodies, route secrets, customer identifiers, raw idempotency keys, payment headers, recipient details, and private policy threshold exposure. |
 | 07 | pending | Add operator-supplied risk input contract | _pending_ | Should define how customer-owned or third-party risk, sanctions, screening, route, liquidity, and counterparty inputs are referenced by digest, scope, freshness, and provenance without becoming Attestor-native oracle claims. |
 | 08 | pending | Add crypto intelligence dashboard summary | _pending_ | Should expose operator-facing counts, top surfaces, top failure reasons, missing evidence classes, readiness coverage, and proof links without raw payload drilldown or financial-impact overclaims. |
 | 09 | pending | Add crypto intelligence performance budget and benchmarks | _pending_ | Should baseline canonicalization, hashing, fixture validation, telemetry safety scans, and signal aggregation paths, then add regression budgets that preserve fail-closed behavior. |
@@ -116,4 +116,4 @@ This track is complete only when:
 
 ## Immediate Next Step
 
-Implement Step 06: harden crypto privacy and telemetry minimization across intelligence outputs.
+Implement Step 07: add operator-supplied risk input contract.

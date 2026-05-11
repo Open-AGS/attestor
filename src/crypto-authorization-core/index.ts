@@ -4,6 +4,7 @@ import * as canonicalReferences from './canonical-references.js';
 import * as consequenceRiskMapping from './consequence-risk-mapping.js';
 import * as intelligenceRiskSignals from './intelligence-risk-signals.js';
 import * as policyGapNarrowing from './policy-gap-narrowing.js';
+import * as intelligencePrivacyMinimization from './intelligence-privacy-minimization.js';
 import * as eip712 from './eip712-authorization-envelope.js';
 import * as erc1271 from './erc1271-validation-projection.js';
 import * as replayFreshness from './replay-freshness-rules.js';
@@ -27,6 +28,7 @@ export {
   consequenceRiskMapping,
   intelligenceRiskSignals,
   policyGapNarrowing,
+  intelligencePrivacyMinimization,
   eip712,
   erc1271,
   replayFreshness,
@@ -125,6 +127,7 @@ export const cryptoAuthorizationCore = Object.freeze({
   consequenceRiskMapping,
   intelligenceRiskSignals,
   policyGapNarrowing,
+  intelligencePrivacyMinimization,
   eip712,
   erc1271,
   replayFreshness,
@@ -155,6 +158,8 @@ export type CryptoIntelligenceRiskSignalAssessment =
   intelligenceRiskSignals.CryptoIntelligenceRiskSignalAssessment;
 export type CryptoPolicyGapNarrowingAssessment =
   policyGapNarrowing.CryptoPolicyGapNarrowingAssessment;
+export type CryptoIntelligencePrivacyMinimizationEvaluation =
+  intelligencePrivacyMinimization.CryptoIntelligencePrivacyMinimizationEvaluation;
 export type CryptoReleaseDecisionBinding =
   releaseDecisionBinding.CryptoReleaseDecisionBinding;
 export type CryptoPolicyControlPlaneScopeBinding =

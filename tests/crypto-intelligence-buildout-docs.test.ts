@@ -107,8 +107,8 @@ function testTrackerFreezesTheStepList(): void {
   const tracker = readProjectFile('docs', '02-architecture', 'crypto-intelligence-buildout.md');
 
   includes(tracker, '| Total frozen steps | 10 |', 'Crypto intelligence docs: step count is frozen');
-  includes(tracker, '| Completed | 5 |', 'Crypto intelligence docs: Steps 01 through 05 are complete');
-  includes(tracker, '| Not started | 5 |', 'Crypto intelligence docs: remaining steps are pending');
+  includes(tracker, '| Completed | 6 |', 'Crypto intelligence docs: Steps 01 through 06 are complete');
+  includes(tracker, '| Not started | 4 |', 'Crypto intelligence docs: remaining steps are pending');
 
   const steps = [
     '| 01 | complete | Define crypto intelligence scope, research anchors, vocabulary, and guardrails |',
@@ -116,7 +116,7 @@ function testTrackerFreezesTheStepList(): void {
     '| 03 | complete | Add policy gap and safe narrowing candidate generation |',
     '| 04 | complete | Add adapter readiness matrix and manifest |',
     '| 05 | complete | Expand negative conformance fixtures for crypto intelligence |',
-    '| 06 | pending | Harden crypto privacy and telemetry minimization |',
+    '| 06 | complete | Harden crypto privacy and telemetry minimization |',
     '| 07 | pending | Add operator-supplied risk input contract |',
     '| 08 | pending | Add crypto intelligence dashboard summary |',
     '| 09 | pending | Add crypto intelligence performance budget and benchmarks |',
@@ -152,8 +152,18 @@ function testTrackerStaysGroundedInExistingCryptoSurfaces(): void {
   );
   includes(
     tracker,
-    'Implement Step 06: harden crypto privacy and telemetry minimization',
-    'Crypto intelligence docs: immediate next step is Step 06',
+    'Implement Step 07: add operator-supplied risk input contract',
+    'Crypto intelligence docs: immediate next step is Step 07',
+  );
+  includes(
+    tracker,
+    'src/crypto-authorization-core/intelligence-privacy-minimization.ts',
+    'Crypto intelligence docs: Step 06 evidence points to privacy minimization module',
+  );
+  includes(
+    tracker,
+    'tests/crypto-authorization-core-intelligence-privacy-minimization.test.ts',
+    'Crypto intelligence docs: Step 06 evidence points to privacy minimization tests',
   );
   includes(
     tracker,

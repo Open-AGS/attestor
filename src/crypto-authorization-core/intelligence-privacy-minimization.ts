@@ -26,6 +26,7 @@ export const CRYPTO_INTELLIGENCE_PRIVACY_SURFACE_KINDS = [
   'negative-conformance-fixtures',
   'admission-telemetry-event',
   'intelligence-dashboard-summary',
+  'intelligence-performance-benchmark',
   'intelligence-proof-packet',
 ] as const;
 export type CryptoIntelligencePrivacySurfaceKind =

@@ -55,6 +55,7 @@ Reviewed on 2026-05-11 before opening this track:
 - OpenTelemetry and CloudEvents keep event data structured and portable. Crypto intelligence telemetry should remain low-cardinality, digest-first, and safe for customer-operated observability stacks: [OpenTelemetry events](https://opentelemetry.io/docs/specs/semconv/general/events/), [CloudEvents specification](https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md)
 - W3C PROV models provenance around entities, activities, and agents. Operator-supplied risk inputs should therefore bind source, method, dataset version, retrieval time, and evidence digest instead of relying on a raw provider response: [W3C PROV-O](https://www.w3.org/TR/prov-o/)
 - OFAC publishes sanctions list services and data formats, but Attestor must not claim native sanctions coverage. Customer-operated or third-party screening can only enter as scoped, digest-bound evidence with dataset version references: [OFAC sanctions list service](https://ofac.treasury.gov/sanctions-list-service)
+- Node's performance hooks and crypto hashing APIs provide stable local measurement and digest primitives, so Step 09 records aggregate p50/p95/max timing budgets for intelligence hot paths without persisting raw benchmark inputs: [Node.js perf_hooks](https://nodejs.org/api/perf_hooks.html), [Node.js crypto](https://nodejs.org/api/crypto.html)
 
 ## Architecture Decision
 
@@ -83,10 +84,10 @@ Start crypto intelligence as a new repository track above the packaged crypto su
 | Metric | Value |
 |---|---|
 | Total frozen steps | 10 |
-| Completed | 8 |
+| Completed | 9 |
 | In progress | 0 |
-| Not started | 2 |
-| Current posture | Step 08 adds a privacy-minimized crypto intelligence dashboard summary that aggregates risk signals, policy gaps, operator risk inputs, adapter readiness, missing evidence, and proof links without raw payload drilldown or financial-impact overclaims. |
+| Not started | 1 |
+| Current posture | Step 09 adds aggregate performance budgets and benchmark output for crypto intelligence hot paths: risk signals, policy gaps, operator risk inputs, dashboard aggregation, privacy scans, canonicalization/hashing, fixture validation, and telemetry safety scans. |
 
 ## Frozen Step List
 
@@ -100,7 +101,7 @@ Start crypto intelligence as a new repository track above the packaged crypto su
 | 06 | complete | Harden crypto privacy and telemetry minimization | `src/crypto-authorization-core/intelligence-privacy-minimization.ts`, `tests/crypto-authorization-core-intelligence-privacy-minimization.test.ts`, `tests/crypto-authorization-core-platform-surface.test.ts`, `scripts/probe-crypto-authorization-core-package-surface.mjs`, `package.json` | Adds a digest-first privacy minimization gate for risk signals, policy gaps, adapter readiness manifests, negative fixtures, telemetry events, dashboard summaries, and proof packets. The gate fails closed on raw wallet metadata, transaction payloads, custody callback bodies, provider error bodies, route secrets, customer identifiers, raw idempotency keys, payment headers, recipient details, and private policy threshold exposure. |
 | 07 | complete | Add operator-supplied risk input contract | `src/crypto-authorization-core/operator-risk-input-contract.ts`, `tests/crypto-authorization-core-operator-risk-input-contract.test.ts`, `tests/crypto-authorization-core-platform-surface.test.ts`, `scripts/probe-crypto-authorization-core-package-surface.mjs`, `package.json` | Defines how customer-owned or third-party sanctions, screening, counterparty, route, liquidity, bridge, custody, market, and fraud signals enter crypto intelligence as digest-bound, scoped, fresh, provenance-bound evidence. The contract fails closed on stale evidence, missing digest references, missing scope, privacy-minimization failures, and any Attestor-native oracle claim. |
 | 08 | complete | Add crypto intelligence dashboard summary | `src/crypto-authorization-core/intelligence-dashboard-summary.ts`, `tests/crypto-authorization-core-intelligence-dashboard-summary.test.ts`, `tests/crypto-authorization-core-platform-surface.test.ts`, `scripts/probe-crypto-authorization-core-package-surface.mjs`, `package.json` | Exposes operator-facing counts, top surfaces, top failure reasons, missing evidence classes, readiness coverage, attention items, and digest-first proof links without raw payload drilldown, customer/provider material, compliance claims, or financial-impact overclaims. |
-| 09 | pending | Add crypto intelligence performance budget and benchmarks | _pending_ | Should baseline canonicalization, hashing, fixture validation, telemetry safety scans, and signal aggregation paths, then add regression budgets that preserve fail-closed behavior. |
+| 09 | complete | Add crypto intelligence performance budget and benchmarks | `src/crypto-authorization-core/intelligence-performance-budget.ts`, `tests/crypto-authorization-core-intelligence-performance-budget.test.ts`, `scripts/benchmark-crypto-intelligence-performance.ts`, `tests/crypto-authorization-core-intelligence-privacy-minimization.test.ts`, `tests/crypto-authorization-core-platform-surface.test.ts`, `scripts/probe-crypto-authorization-core-package-surface.mjs`, `package.json` | Baselines risk-signal, policy-gap, operator-risk-input, dashboard-summary, privacy-scan, canonicalization/hash, negative-fixture, and telemetry-safety paths with p50/p95/max budgets. Benchmark output is digest-first, aggregate-only, fail-closed on budget breaches or insufficient samples, and does not store raw benchmark inputs. |
 | 10 | pending | Package and document the crypto intelligence surface | _pending_ | Should decide whether the intelligence layer stays under existing package surfaces or becomes a curated `attestor/crypto-intelligence` subpath, with package-boundary probes only after the contract is stable. |
 
 ## Completion Definition
@@ -118,4 +119,4 @@ This track is complete only when:
 
 ## Immediate Next Step
 
-Implement Step 09: add crypto intelligence performance budget and benchmarks.
+Implement Step 10: package and document the crypto intelligence surface.

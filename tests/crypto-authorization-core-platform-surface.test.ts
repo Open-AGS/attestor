@@ -55,6 +55,7 @@ function testCryptoAuthorizationCorePublicSurfaceDescriptor(): void {
       'intelligencePrivacyMinimization',
       'operatorRiskInputContract',
       'intelligenceDashboardSummary',
+      'intelligencePerformanceBudget',
       'eip712',
       'erc1271',
       'replayFreshness',
@@ -144,6 +145,12 @@ function testCryptoAuthorizationCoreBaseNamespaces(): void {
       .CRYPTO_INTELLIGENCE_DASHBOARD_SUMMARY_SPEC_VERSION,
     'attestor.crypto-intelligence-dashboard-summary.v1',
     'crypto platform surface: intelligence dashboard summary namespace is bound',
+  );
+  equal(
+    cryptoAuthorizationCore.intelligencePerformanceBudget
+      .CRYPTO_INTELLIGENCE_PERFORMANCE_BUDGET_SPEC_VERSION,
+    'attestor.crypto-intelligence-performance-budget.v1',
+    'crypto platform surface: intelligence performance budget namespace is bound',
   );
   equal(
     cryptoAuthorizationCore.eip712.CRYPTO_EIP712_AUTHORIZATION_ENVELOPE_SPEC_VERSION,
@@ -266,6 +273,13 @@ function testCryptoAuthorizationCoreDescriptorFunctions(): void {
       .rawPayloadDrilldownEnabled,
     false,
     'crypto platform surface: intelligence dashboard descriptor is callable',
+  );
+  equal(
+    cryptoAuthorizationCore.intelligencePerformanceBudget
+      .cryptoIntelligencePerformanceBudgetDescriptor()
+      .failClosedOnBudgetExceeded,
+    true,
+    'crypto platform surface: intelligence performance budget descriptor is callable',
   );
   equal(
     cryptoAuthorizationCore.custodyCosignerPolicy

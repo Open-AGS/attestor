@@ -38,6 +38,11 @@ assert.equal(
   'attestor.crypto-operator-risk-input-contract.v1',
 );
 assert.equal(
+  cryptoCore.cryptoAuthorizationCore.intelligenceDashboardSummary
+    .CRYPTO_INTELLIGENCE_DASHBOARD_SUMMARY_SPEC_VERSION,
+  'attestor.crypto-intelligence-dashboard-summary.v1',
+);
+assert.equal(
   cryptoCore.cryptoAuthorizationCore.x402AgenticPayment.X402_AGENTIC_PAYMENT_ADAPTER_SPEC_VERSION,
   'attestor.crypto-x402-agentic-payment-adapter.v1',
 );
@@ -126,5 +131,17 @@ const operatorRiskBundle =
 assert.equal(operatorRiskBundle.status, 'accepted');
 assert.equal(operatorRiskBundle.attestorNativeOracleClaim, false);
 assert.equal(operatorRiskBundle.recommendedDisposition, 'review');
+
+const dashboardSummary =
+  cryptoCore.cryptoAuthorizationCore.intelligenceDashboardSummary
+    .createCryptoIntelligenceDashboardSummary({
+      generatedAt: '2026-05-11T12:10:00.000Z',
+      scopeRef: 'package-surface:dashboard-summary',
+      operatorRiskInputBundles: [operatorRiskBundle],
+    });
+assert.equal(dashboardSummary.rawPayloadDrilldownEnabled, false);
+assert.equal(dashboardSummary.financialImpactClaimed, false);
+assert.equal(dashboardSummary.decisionSupportOnly, true);
+assert.equal(dashboardSummary.posture, 'attention-needed');
 
 console.log('crypto-authorization-core package surface probe passed');

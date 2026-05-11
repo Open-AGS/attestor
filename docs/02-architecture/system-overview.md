@@ -115,6 +115,8 @@ The external review packet sits above both. It packages source digests, runtime/
 
 The data minimization and redaction policy sits across those read surfaces. It keeps model feedback, proof exports, dashboards, retry ledgers, presentation bindings, replay ledgers, and execution receipts on structural control evidence: reason codes, safe instructions, counts, digests, scoped references, statuses, and aggregate signals instead of raw prompts, raw payloads, credentials, bank data, wallet material, private policy thresholds, or downstream error bodies.
 
+The crypto intelligence buildout applies that same boundary to programmable-money paths. Its current summary surface aggregates crypto risk signals, policy gaps, operator-supplied risk inputs, adapter readiness, missing evidence, and digest-first proof links without raw wallet/payment payload drilldown, native screening claims, or inferred financial impact.
+
 The policy limit model sits before both. It prevents broad "yes" decisions by making the admitted consequence bounded: how much, how often, to whom, over what data, under which authority, in what window, and when human review becomes mandatory.
 
 The retry attempt ledger sits beside policy limits in the safe-retry path. It does not authorize a consequence by itself; it records that a retry attempt was bound to the previous admission, evaluated against the retry budget, and protected from duplicate or conflicting idempotency reuse.
@@ -175,7 +177,7 @@ What the crypto pack already covers:
 Current crypto execution-admission posture:
 
 - the frozen execution-admission buildout is complete
-- future crypto work now starts with [Crypto intelligence buildout](crypto-intelligence-buildout.md) rather than extending the frozen authorization or execution-admission lists
+- current crypto intelligence work now adds risk signals, policy gaps, adapter readiness, operator risk inputs, and dashboard summaries through [Crypto intelligence buildout](crypto-intelligence-buildout.md) rather than extending the frozen authorization or execution-admission lists
 
 ## Product Truth Versus First Slices
 

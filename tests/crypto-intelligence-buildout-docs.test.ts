@@ -107,8 +107,8 @@ function testTrackerFreezesTheStepList(): void {
   const tracker = readProjectFile('docs', '02-architecture', 'crypto-intelligence-buildout.md');
 
   includes(tracker, '| Total frozen steps | 10 |', 'Crypto intelligence docs: step count is frozen');
-  includes(tracker, '| Completed | 7 |', 'Crypto intelligence docs: Steps 01 through 07 are complete');
-  includes(tracker, '| Not started | 3 |', 'Crypto intelligence docs: remaining steps are pending');
+  includes(tracker, '| Completed | 8 |', 'Crypto intelligence docs: Steps 01 through 08 are complete');
+  includes(tracker, '| Not started | 2 |', 'Crypto intelligence docs: remaining steps are pending');
 
   const steps = [
     '| 01 | complete | Define crypto intelligence scope, research anchors, vocabulary, and guardrails |',
@@ -118,7 +118,7 @@ function testTrackerFreezesTheStepList(): void {
     '| 05 | complete | Expand negative conformance fixtures for crypto intelligence |',
     '| 06 | complete | Harden crypto privacy and telemetry minimization |',
     '| 07 | complete | Add operator-supplied risk input contract |',
-    '| 08 | pending | Add crypto intelligence dashboard summary |',
+    '| 08 | complete | Add crypto intelligence dashboard summary |',
     '| 09 | pending | Add crypto intelligence performance budget and benchmarks |',
     '| 10 | pending | Package and document the crypto intelligence surface |',
   ];
@@ -147,13 +147,23 @@ function testTrackerStaysGroundedInExistingCryptoSurfaces(): void {
 
   includes(
     systemOverview,
-    'future crypto work now starts with [Crypto intelligence buildout](crypto-intelligence-buildout.md)',
+    'current crypto intelligence work now adds risk signals, policy gaps, adapter readiness, operator risk inputs, and dashboard summaries through [Crypto intelligence buildout](crypto-intelligence-buildout.md)',
     'Crypto intelligence docs: system overview points future crypto work to this tracker',
   );
   includes(
     tracker,
-    'Implement Step 08: add crypto intelligence dashboard summary',
-    'Crypto intelligence docs: immediate next step is Step 08',
+    'Implement Step 09: add crypto intelligence performance budget and benchmarks',
+    'Crypto intelligence docs: immediate next step is Step 09',
+  );
+  includes(
+    tracker,
+    'src/crypto-authorization-core/intelligence-dashboard-summary.ts',
+    'Crypto intelligence docs: Step 08 evidence points to dashboard summary contract',
+  );
+  includes(
+    tracker,
+    'tests/crypto-authorization-core-intelligence-dashboard-summary.test.ts',
+    'Crypto intelligence docs: Step 08 evidence points to dashboard summary tests',
   );
   includes(
     tracker,

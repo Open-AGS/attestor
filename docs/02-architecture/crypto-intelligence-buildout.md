@@ -83,10 +83,10 @@ Start crypto intelligence as a new repository track above the packaged crypto su
 | Metric | Value |
 |---|---|
 | Total frozen steps | 10 |
-| Completed | 7 |
+| Completed | 8 |
 | In progress | 0 |
-| Not started | 3 |
-| Current posture | Step 07 adds an operator-supplied risk input contract for customer-owned or third-party sanctions, screening, counterparty, route, liquidity, bridge, custody, market, and fraud signals. Inputs are accepted only when provenance, scope, freshness, and digest evidence are bound, privacy-minimized, and explicitly non-oracular. |
+| Not started | 2 |
+| Current posture | Step 08 adds a privacy-minimized crypto intelligence dashboard summary that aggregates risk signals, policy gaps, operator risk inputs, adapter readiness, missing evidence, and proof links without raw payload drilldown or financial-impact overclaims. |
 
 ## Frozen Step List
 
@@ -99,7 +99,7 @@ Start crypto intelligence as a new repository track above the packaged crypto su
 | 05 | complete | Expand negative conformance fixtures for crypto intelligence | `src/crypto-execution-admission/conformance-fixtures.ts`, `tests/crypto-execution-admission-negative-conformance-fixtures.test.ts`, `tests/crypto-execution-admission-conformance-fixtures.test.ts`, `scripts/probe-crypto-execution-admission-package-surface.mjs`, `package.json` | Adds 40 fail-closed negative fixtures: malformed, stale, malicious, contradictory, and privacy-unsafe cases for wallet RPC, Safe guard, ERC-4337 bundler, modular account runtime, delegated EOA runtime, x402 resource server, custody policy engine, and intent solver. |
 | 06 | complete | Harden crypto privacy and telemetry minimization | `src/crypto-authorization-core/intelligence-privacy-minimization.ts`, `tests/crypto-authorization-core-intelligence-privacy-minimization.test.ts`, `tests/crypto-authorization-core-platform-surface.test.ts`, `scripts/probe-crypto-authorization-core-package-surface.mjs`, `package.json` | Adds a digest-first privacy minimization gate for risk signals, policy gaps, adapter readiness manifests, negative fixtures, telemetry events, dashboard summaries, and proof packets. The gate fails closed on raw wallet metadata, transaction payloads, custody callback bodies, provider error bodies, route secrets, customer identifiers, raw idempotency keys, payment headers, recipient details, and private policy threshold exposure. |
 | 07 | complete | Add operator-supplied risk input contract | `src/crypto-authorization-core/operator-risk-input-contract.ts`, `tests/crypto-authorization-core-operator-risk-input-contract.test.ts`, `tests/crypto-authorization-core-platform-surface.test.ts`, `scripts/probe-crypto-authorization-core-package-surface.mjs`, `package.json` | Defines how customer-owned or third-party sanctions, screening, counterparty, route, liquidity, bridge, custody, market, and fraud signals enter crypto intelligence as digest-bound, scoped, fresh, provenance-bound evidence. The contract fails closed on stale evidence, missing digest references, missing scope, privacy-minimization failures, and any Attestor-native oracle claim. |
-| 08 | pending | Add crypto intelligence dashboard summary | _pending_ | Should expose operator-facing counts, top surfaces, top failure reasons, missing evidence classes, readiness coverage, and proof links without raw payload drilldown or financial-impact overclaims. |
+| 08 | complete | Add crypto intelligence dashboard summary | `src/crypto-authorization-core/intelligence-dashboard-summary.ts`, `tests/crypto-authorization-core-intelligence-dashboard-summary.test.ts`, `tests/crypto-authorization-core-platform-surface.test.ts`, `scripts/probe-crypto-authorization-core-package-surface.mjs`, `package.json` | Exposes operator-facing counts, top surfaces, top failure reasons, missing evidence classes, readiness coverage, attention items, and digest-first proof links without raw payload drilldown, customer/provider material, compliance claims, or financial-impact overclaims. |
 | 09 | pending | Add crypto intelligence performance budget and benchmarks | _pending_ | Should baseline canonicalization, hashing, fixture validation, telemetry safety scans, and signal aggregation paths, then add regression budgets that preserve fail-closed behavior. |
 | 10 | pending | Package and document the crypto intelligence surface | _pending_ | Should decide whether the intelligence layer stays under existing package surfaces or becomes a curated `attestor/crypto-intelligence` subpath, with package-boundary probes only after the contract is stable. |
 
@@ -118,4 +118,4 @@ This track is complete only when:
 
 ## Immediate Next Step
 
-Implement Step 08: add crypto intelligence dashboard summary.
+Implement Step 09: add crypto intelligence performance budget and benchmarks.

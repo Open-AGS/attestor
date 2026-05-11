@@ -54,6 +54,7 @@ function testCryptoAuthorizationCorePublicSurfaceDescriptor(): void {
       'policyGapNarrowing',
       'intelligencePrivacyMinimization',
       'operatorRiskInputContract',
+      'intelligenceDashboardSummary',
       'eip712',
       'erc1271',
       'replayFreshness',
@@ -137,6 +138,12 @@ function testCryptoAuthorizationCoreBaseNamespaces(): void {
       .CRYPTO_OPERATOR_RISK_INPUT_CONTRACT_SPEC_VERSION,
     'attestor.crypto-operator-risk-input-contract.v1',
     'crypto platform surface: operator risk input namespace is bound',
+  );
+  equal(
+    cryptoAuthorizationCore.intelligenceDashboardSummary
+      .CRYPTO_INTELLIGENCE_DASHBOARD_SUMMARY_SPEC_VERSION,
+    'attestor.crypto-intelligence-dashboard-summary.v1',
+    'crypto platform surface: intelligence dashboard summary namespace is bound',
   );
   equal(
     cryptoAuthorizationCore.eip712.CRYPTO_EIP712_AUTHORIZATION_ENVELOPE_SPEC_VERSION,
@@ -252,6 +259,13 @@ function testCryptoAuthorizationCoreDescriptorFunctions(): void {
       .attestorNativeOracleClaim,
     false,
     'crypto platform surface: operator risk input descriptor is callable',
+  );
+  equal(
+    cryptoAuthorizationCore.intelligenceDashboardSummary
+      .cryptoIntelligenceDashboardSummaryDescriptor()
+      .rawPayloadDrilldownEnabled,
+    false,
+    'crypto platform surface: intelligence dashboard descriptor is callable',
   );
   equal(
     cryptoAuthorizationCore.custodyCosignerPolicy

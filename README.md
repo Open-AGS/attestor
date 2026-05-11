@@ -317,6 +317,8 @@ The [business risk dashboard](docs/02-architecture/business-risk-dashboard.md) t
 
 The [dashboard API summary](docs/02-architecture/dashboard-api-summary.md) gives the first-screen product shape over that dashboard: compact tiles, attention items, top consequence domains, and links to deeper proof surfaces.
 
+The [crypto intelligence buildout](docs/02-architecture/crypto-intelligence-buildout.md) adds the same summary discipline to programmable-money paths: risk signals, policy gaps, adapter readiness, operator-supplied risk inputs, missing evidence, and digest-first proof links without raw wallet/payment payload drilldown or native screening claims.
+
 The [external review packet](docs/02-architecture/external-review-packet.md) wraps audit evidence, dashboard context, runtime/storage evidence, repository security refs, checklist items, and non-claims into a digest-first reviewer handoff. It is not a security audit, compliance certificate, or production-readiness guarantee.
 
 The [data minimization and redaction policy](docs/02-architecture/data-minimization-redaction-policy.md) defines what model feedback, audit packets, dashboards, dashboard summaries, external review packets, retry ledgers, presentation bindings, replay receipts, and execution receipts may expose by default: reason codes, safe instructions, counts, digests, scoped references, and aggregate signals instead of raw customer payloads.

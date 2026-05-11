@@ -111,6 +111,16 @@ includes(
 );
 includes(
   text,
+  'NIST Privacy Framework data-processing practices',
+  'crypto engine hardening II docs: privacy enforcement research anchor is present',
+);
+includes(
+  text,
+  '| 07 | complete | Privacy and data-minimization enforcement II |',
+  'crypto engine hardening II docs: step 07 is complete',
+);
+includes(
+  text,
   '| 10 | blocked | Production rollout readiness |',
   'crypto engine hardening II docs: production rollout remains honestly blocked',
 );

@@ -89,6 +89,23 @@ const privacyEvaluation =
     });
 assert.equal(privacyEvaluation.allowed, true);
 assert.equal(privacyEvaluation.rawPayloadStored, false);
+assert.equal(
+  cryptoCore.cryptoAuthorizationCore.intelligencePrivacyMinimization
+    .cryptoIntelligencePrivacyMinimizationDescriptor()
+    .forbiddenRawClasses.includes('raw-model-prompt'),
+  true,
+);
+assert.equal(
+  cryptoCore.cryptoAuthorizationCore.intelligencePrivacyMinimization
+    .evaluateCryptoIntelligencePrivacyMinimizationArtifact({
+      surfaceKind: 'intelligence-proof-packet',
+      artifact: {
+        providerBody: { status: 'raw-provider-body' },
+      },
+    })
+    .reasonCodes.includes('raw-provider-body-field'),
+  true,
+);
 
 const unsafePrivacyEvaluation =
   cryptoCore.cryptoAuthorizationCore.intelligencePrivacyMinimization

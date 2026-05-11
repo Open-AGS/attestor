@@ -121,6 +121,16 @@ includes(
 );
 includes(
   text,
+  '@noble/hashes',
+  'crypto engine hardening II docs: noble hashes dependency research anchor is present',
+);
+includes(
+  text,
+  '| 08 | complete | Dependency risk cleanup |',
+  'crypto engine hardening II docs: step 08 is complete',
+);
+includes(
+  text,
   '| 10 | blocked | Production rollout readiness |',
   'crypto engine hardening II docs: production rollout remains honestly blocked',
 );

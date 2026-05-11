@@ -90,6 +90,11 @@ function testCryptoIntelligencePublicSurfaceDescriptor(): void {
     'crypto intelligence platform surface: adapter readiness matrix is packaged',
   );
   equal(
+    descriptor.adapterReadinessIntelligenceVersion,
+    'attestor.crypto-adapter-readiness-intelligence.v1',
+    'crypto intelligence platform surface: adapter readiness intelligence profile is packaged',
+  );
+  equal(
     descriptor.negativeFixtureCount,
     40,
     'crypto intelligence platform surface: negative conformance fixtures are packaged',
@@ -145,6 +150,12 @@ function testCryptoIntelligenceNamespaceBindings(): void {
     cryptoIntelligence.adapterReadiness.cryptoAdapterReadinessManifestDescriptor().version,
     'attestor.crypto-adapter-readiness-manifest.v1',
     'crypto intelligence platform surface: adapter readiness namespace is bound',
+  );
+  ok(
+    cryptoIntelligence.adapterReadiness
+      .cryptoAdapterReadinessIntelligenceDescriptor()
+      .postures.includes('review-required'),
+    'crypto intelligence platform surface: adapter readiness intelligence descriptor is bound',
   );
   equal(
     cryptoIntelligence.conformanceFixtures

@@ -164,6 +164,12 @@ function testCryptoExecutionAdmissionProofNamespaces(): void {
     'attestor.crypto-adapter-readiness-manifest.v1',
     'crypto execution admission platform surface: adapter readiness namespace is bound',
   );
+  equal(
+    cryptoExecutionAdmission.adapterReadinessManifest
+      .CRYPTO_ADAPTER_READINESS_INTELLIGENCE_SPEC_VERSION,
+    'attestor.crypto-adapter-readiness-intelligence.v1',
+    'crypto execution admission platform surface: adapter readiness intelligence namespace is bound',
+  );
 }
 
 function testCryptoExecutionAdmissionDescriptorFunctions(): void {
@@ -195,6 +201,12 @@ function testCryptoExecutionAdmissionDescriptorFunctions(): void {
       .cryptoAdapterReadinessManifestDescriptor()
       .surfaces.includes('wallet-rpc'),
     'crypto execution admission platform surface: adapter readiness descriptor is callable',
+  );
+  ok(
+    cryptoExecutionAdmission.adapterReadinessManifest
+      .cryptoAdapterReadinessIntelligenceDescriptor()
+      .riskFactorKinds.includes('delegated-authority-review'),
+    'crypto execution admission platform surface: adapter readiness intelligence descriptor is callable',
   );
 }
 

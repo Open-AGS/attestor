@@ -27,6 +27,7 @@ import {
 import {
   CRYPTO_ADMISSION_NEGATIVE_CONFORMANCE_FIXTURES,
   createCryptoAdapterReadinessManifest,
+  createCryptoAdapterReadinessIntelligenceProfile,
 } from '../src/crypto-execution-admission/index.js';
 
 let passed = 0;
@@ -194,10 +195,18 @@ function testExecutionProofSurfacesStayPrivacySafe(): void {
     generatedAt: '2026-05-11T12:01:00.000Z',
     scopeRef: 'crypto-intelligence-step-06',
   });
+  const readinessProfile = createCryptoAdapterReadinessIntelligenceProfile({
+    manifest,
+  });
   const manifestEvaluation = evaluateCryptoIntelligencePrivacyMinimizationArtifact({
     surfaceKind: 'adapter-readiness-manifest',
     artifact: manifest,
   });
+  const readinessProfileEvaluation =
+    evaluateCryptoIntelligencePrivacyMinimizationArtifact({
+      surfaceKind: 'adapter-readiness-intelligence-profile',
+      artifact: readinessProfile,
+    });
   const negativeFixtureEvaluation = evaluateCryptoIntelligencePrivacyMinimizationArtifact({
     surfaceKind: 'negative-conformance-fixtures',
     artifact: CRYPTO_ADMISSION_NEGATIVE_CONFORMANCE_FIXTURES,
@@ -213,6 +222,11 @@ function testExecutionProofSurfacesStayPrivacySafe(): void {
   });
 
   equal(manifestEvaluation.allowed, true, 'crypto privacy minimization: adapter manifest is safe');
+  equal(
+    readinessProfileEvaluation.allowed,
+    true,
+    'crypto privacy minimization: adapter readiness intelligence profile is safe',
+  );
   equal(negativeFixtureEvaluation.allowed, true, 'crypto privacy minimization: negative fixtures are safe');
   equal(performanceBenchmarkEvaluation.allowed, true, 'crypto privacy minimization: performance benchmark is safe');
   equal(

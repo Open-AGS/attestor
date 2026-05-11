@@ -181,7 +181,7 @@ Current crypto execution-admission posture:
 
 - the frozen execution-admission buildout is complete
 - the frozen crypto intelligence buildout is complete
-- future crypto hardening should build on [Crypto intelligence buildout](crypto-intelligence-buildout.md) and the packaged `attestor/crypto-intelligence` surface rather than reopening the frozen authorization, execution-admission, or intelligence lists
+- future crypto hardening should build on [Crypto engine hardening II](crypto-engine-hardening-ii.md), [Crypto intelligence buildout](crypto-intelligence-buildout.md), and the packaged `attestor/crypto-intelligence` surface rather than reopening the frozen authorization, execution-admission, or intelligence lists
 
 ## Product Truth Versus First Slices
 

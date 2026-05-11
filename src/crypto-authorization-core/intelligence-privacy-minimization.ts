@@ -23,6 +23,7 @@ export const CRYPTO_INTELLIGENCE_PRIVACY_SURFACE_KINDS = [
   'risk-signal-assessment',
   'policy-gap-narrowing',
   'adapter-readiness-manifest',
+  'adapter-readiness-intelligence-profile',
   'negative-conformance-fixtures',
   'admission-telemetry-event',
   'intelligence-dashboard-summary',

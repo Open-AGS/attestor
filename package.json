@@ -200,6 +200,7 @@
     "test:crypto-authorization-core-intelligence-risk-signals": "tsx tests/crypto-authorization-core-intelligence-risk-signals.test.ts",
     "test:crypto-authorization-core-policy-gap-narrowing": "tsx tests/crypto-authorization-core-policy-gap-narrowing.test.ts",
     "test:crypto-authorization-core-intelligence-privacy-minimization": "tsx tests/crypto-authorization-core-intelligence-privacy-minimization.test.ts",
+    "test:crypto-authorization-core-operator-risk-input-contract": "tsx tests/crypto-authorization-core-operator-risk-input-contract.test.ts",
     "test:crypto-execution-admission": "tsx tests/crypto-execution-admission.test.ts",
     "test:crypto-execution-admission-wallet-rpc": "tsx tests/crypto-execution-admission-wallet-rpc.test.ts",
     "test:crypto-execution-admission-safe-guard": "tsx tests/crypto-execution-admission-safe-guard.test.ts",

@@ -107,8 +107,8 @@ function testTrackerFreezesTheStepList(): void {
   const tracker = readProjectFile('docs', '02-architecture', 'crypto-intelligence-buildout.md');
 
   includes(tracker, '| Total frozen steps | 10 |', 'Crypto intelligence docs: step count is frozen');
-  includes(tracker, '| Completed | 6 |', 'Crypto intelligence docs: Steps 01 through 06 are complete');
-  includes(tracker, '| Not started | 4 |', 'Crypto intelligence docs: remaining steps are pending');
+  includes(tracker, '| Completed | 7 |', 'Crypto intelligence docs: Steps 01 through 07 are complete');
+  includes(tracker, '| Not started | 3 |', 'Crypto intelligence docs: remaining steps are pending');
 
   const steps = [
     '| 01 | complete | Define crypto intelligence scope, research anchors, vocabulary, and guardrails |',
@@ -117,7 +117,7 @@ function testTrackerFreezesTheStepList(): void {
     '| 04 | complete | Add adapter readiness matrix and manifest |',
     '| 05 | complete | Expand negative conformance fixtures for crypto intelligence |',
     '| 06 | complete | Harden crypto privacy and telemetry minimization |',
-    '| 07 | pending | Add operator-supplied risk input contract |',
+    '| 07 | complete | Add operator-supplied risk input contract |',
     '| 08 | pending | Add crypto intelligence dashboard summary |',
     '| 09 | pending | Add crypto intelligence performance budget and benchmarks |',
     '| 10 | pending | Package and document the crypto intelligence surface |',
@@ -152,8 +152,28 @@ function testTrackerStaysGroundedInExistingCryptoSurfaces(): void {
   );
   includes(
     tracker,
-    'Implement Step 07: add operator-supplied risk input contract',
-    'Crypto intelligence docs: immediate next step is Step 07',
+    'Implement Step 08: add crypto intelligence dashboard summary',
+    'Crypto intelligence docs: immediate next step is Step 08',
+  );
+  includes(
+    tracker,
+    'src/crypto-authorization-core/operator-risk-input-contract.ts',
+    'Crypto intelligence docs: Step 07 evidence points to operator risk input contract',
+  );
+  includes(
+    tracker,
+    'tests/crypto-authorization-core-operator-risk-input-contract.test.ts',
+    'Crypto intelligence docs: Step 07 evidence points to operator risk input tests',
+  );
+  includes(
+    tracker,
+    'W3C PROV models provenance around entities, activities, and agents',
+    'Crypto intelligence docs: Step 07 research anchor covers provenance',
+  );
+  includes(
+    tracker,
+    'OFAC publishes sanctions list services and data formats',
+    'Crypto intelligence docs: Step 07 research anchor avoids sanctions overclaim',
   );
   includes(
     tracker,

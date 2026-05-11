@@ -1,6 +1,11 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 
 const cryptoCore = await import('attestor/crypto-authorization-core');
+
+function digestFor(label) {
+  return `sha256:${createHash('sha256').update(label).digest('hex')}`;
+}
 
 assert.equal(
   cryptoCore.CRYPTO_AUTHORIZATION_CORE_PLATFORM_SURFACE_SPEC_VERSION,
@@ -26,6 +31,11 @@ assert.equal(
   cryptoCore.cryptoAuthorizationCore.intelligencePrivacyMinimization
     .CRYPTO_INTELLIGENCE_PRIVACY_MINIMIZATION_SPEC_VERSION,
   'attestor.crypto-intelligence-privacy-minimization.v1',
+);
+assert.equal(
+  cryptoCore.cryptoAuthorizationCore.operatorRiskInputContract
+    .CRYPTO_OPERATOR_RISK_INPUT_CONTRACT_SPEC_VERSION,
+  'attestor.crypto-operator-risk-input-contract.v1',
 );
 assert.equal(
   cryptoCore.cryptoAuthorizationCore.x402AgenticPayment.X402_AGENTIC_PAYMENT_ADAPTER_SPEC_VERSION,
@@ -74,5 +84,47 @@ const unsafePrivacyEvaluation =
     });
 assert.equal(unsafePrivacyEvaluation.allowed, false);
 assert.ok(unsafePrivacyEvaluation.reasonCodes.includes('raw-transaction-payload-field'));
+
+const operatorRiskBundle =
+  cryptoCore.cryptoAuthorizationCore.operatorRiskInputContract
+    .createCryptoOperatorRiskInputBundle({
+      generatedAt: '2026-05-11T12:00:00.000Z',
+      scopeRef: 'package-surface:operator-risk',
+      inputs: [
+        {
+          inputId: 'risk-input:package-surface',
+          inputClass: 'counterparty-risk',
+          riskTier: 'high',
+          source: {
+            sourceKind: 'third-party-provider',
+            providerRef: 'provider:package-surface',
+            datasetRef: 'dataset:counterparty-risk',
+            datasetVersionRef: 'dataset-version:2026-05-11',
+            methodRef: 'method:counterparty-risk:v1',
+            retrievedAt: '2026-05-11T11:58:00.000Z',
+            evidenceDigest: digestFor('operator-risk-source'),
+          },
+          freshness: {
+            observedAt: '2026-05-11T11:57:00.000Z',
+            maxAgeSeconds: 3600,
+          },
+          scope: {
+            scopeKind: 'counterparty',
+            consequenceKind: 'transfer',
+            chainRef: 'eip155:1',
+            counterpartyDigest: digestFor('counterparty-scope'),
+          },
+          evidenceRefs: [
+            {
+              kind: 'digest',
+              value: digestFor('operator-risk-evidence'),
+            },
+          ],
+        },
+      ],
+    });
+assert.equal(operatorRiskBundle.status, 'accepted');
+assert.equal(operatorRiskBundle.attestorNativeOracleClaim, false);
+assert.equal(operatorRiskBundle.recommendedDisposition, 'review');
 
 console.log('crypto-authorization-core package surface probe passed');

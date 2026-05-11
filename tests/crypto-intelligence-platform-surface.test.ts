@@ -219,6 +219,19 @@ function testCryptoIntelligenceSafetyNamespaces(): void {
     'crypto intelligence platform surface: dashboard summary blocks raw payload drilldown',
   );
   equal(
+    cryptoIntelligence.dashboardSummary
+      .cryptoIntelligenceDashboardSummaryDescriptor()
+      .topBlockersAvailable,
+    true,
+    'crypto intelligence platform surface: dashboard summary exposes top blockers',
+  );
+  ok(
+    cryptoIntelligence.dashboardSummary
+      .cryptoIntelligenceDashboardSummaryDescriptor()
+      .proofLinkKinds.includes('policy-intelligence-routing'),
+    'crypto intelligence platform surface: dashboard summary links policy routing proofs',
+  );
+  equal(
     cryptoIntelligence.performanceBudget
       .cryptoIntelligencePerformanceBudgetDescriptor()
       .failClosedOnBudgetExceeded,

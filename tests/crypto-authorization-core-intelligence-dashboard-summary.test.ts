@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import {
   CRYPTO_INTELLIGENCE_DASHBOARD_ATTENTION_KINDS,
+  CRYPTO_INTELLIGENCE_DASHBOARD_PRIORITY_TIERS,
   CRYPTO_INTELLIGENCE_DASHBOARD_PROOF_LINK_KINDS,
   CRYPTO_INTELLIGENCE_DASHBOARD_SUMMARY_SPEC_VERSION,
   CRYPTO_INTELLIGENCE_DASHBOARD_TILE_KINDS,
@@ -14,7 +15,9 @@ import {
   createCryptoIntelligenceRiskSignalAssessment,
 } from '../src/crypto-authorization-core/intelligence-risk-signals.js';
 import {
+  createCryptoPolicyCoverageProfile,
   createCryptoPolicyGapNarrowingAssessment,
+  createCryptoPolicyIntelligenceRoutingProfile,
 } from '../src/crypto-authorization-core/policy-gap-narrowing.js';
 import {
   createCryptoOperatorRiskInputBundle,
@@ -200,6 +203,31 @@ function testDescriptor(): void {
     CRYPTO_INTELLIGENCE_DASHBOARD_PROOF_LINK_KINDS,
     'crypto dashboard summary: descriptor exposes proof link kinds',
   );
+  deepEqual(
+    descriptor.priorityTiers,
+    CRYPTO_INTELLIGENCE_DASHBOARD_PRIORITY_TIERS,
+    'crypto dashboard summary: descriptor exposes priority tiers',
+  );
+  ok(
+    descriptor.widgets.includes('priority-queue') &&
+      descriptor.widgets.includes('readiness-heatmap') &&
+      descriptor.widgets.includes('top-blockers'),
+    'crypto dashboard summary: descriptor exposes proof-console hardening widgets',
+  );
+  ok(
+    descriptor.proofLinkKinds.includes('policy-intelligence-routing'),
+    'crypto dashboard summary: descriptor exposes policy routing proof links',
+  );
+  equal(
+    descriptor.topBlockersAvailable,
+    true,
+    'crypto dashboard summary: descriptor exposes top blocker queue',
+  );
+  equal(
+    descriptor.readinessHeatmapAvailable,
+    true,
+    'crypto dashboard summary: descriptor exposes readiness heatmap',
+  );
   equal(
     descriptor.rawPayloadDrilldownEnabled,
     false,
@@ -219,6 +247,29 @@ function testDashboardAggregatesCryptoIntelligenceWithoutRawDrilldown(): void {
     generatedAt: '2026-05-11T12:00:00.000Z',
     operatorContextRef: 'operator-context:crypto-review',
   });
+  const policyCoverage = createCryptoPolicyCoverageProfile({
+    generatedAt: '2026-05-11T12:00:00.000Z',
+    scopeRef: 'policy-coverage:dashboard',
+    entries: [
+      {
+        dimension: 'counterparty',
+        status: 'explicit-deny',
+        sourceKind: 'policy-rule',
+        sourceRef: 'policy-rule:dashboard-deny',
+        reasonCodes: ['counterparty-denied'],
+        evidenceRefs: [{ kind: 'digest', value: digestFor('policy-routing:evidence') }],
+      },
+      {
+        dimension: 'approval-quorum',
+        status: 'review-required',
+        sourceKind: 'external-review',
+        sourceRef: 'review:approval-quorum',
+      },
+    ],
+  });
+  const policyRouting = createCryptoPolicyIntelligenceRoutingProfile({
+    coverageProfile: policyCoverage,
+  });
   const operatorRisk = createCryptoOperatorRiskInputBundle({
     generatedAt: '2026-05-11T12:00:00.000Z',
     scopeRef: 'crypto-intelligence:dashboard',
@@ -230,6 +281,7 @@ function testDashboardAggregatesCryptoIntelligenceWithoutRawDrilldown(): void {
     scopeRef: 'crypto-intelligence:step-08',
     signalAssessments: [signals],
     policyGapAssessments: [gaps],
+    policyIntelligenceRoutingProfiles: [policyRouting],
     operatorRiskInputBundles: [operatorRisk],
     readiness: [
       {
@@ -270,11 +322,28 @@ function testDashboardAggregatesCryptoIntelligenceWithoutRawDrilldown(): void {
   equal(summary.posture, 'blocked-for-review', 'crypto dashboard summary: blockers route to review');
   equal(summary.overview.signalAssessmentCount, 1, 'crypto dashboard summary: signal assessments are counted');
   equal(summary.overview.policyGapAssessmentCount, 1, 'crypto dashboard summary: policy gap assessments are counted');
+  equal(summary.overview.policyRoutingProfileCount, 1, 'crypto dashboard summary: policy routing profiles are counted');
+  equal(summary.overview.blockedPolicyRoutingCount, 1, 'crypto dashboard summary: blocked policy routing profiles are counted');
   equal(summary.overview.operatorRiskInputCount, 1, 'crypto dashboard summary: operator risk inputs are counted');
   equal(summary.readinessCoverage.totalEntries, 3, 'crypto dashboard summary: readiness entries are counted');
   equal(summary.readinessCoverage.readyCount, 1, 'crypto dashboard summary: ready readiness count is tracked');
   equal(summary.readinessCoverage.blockedCount, 1, 'crypto dashboard summary: blocked readiness count is tracked');
   equal(summary.readinessCoverage.readyCoveragePercent, 33, 'crypto dashboard summary: readiness coverage is rounded');
+  equal(
+    summary.readinessCoverage.heatmapRows[0]?.status,
+    'blocked',
+    'crypto dashboard summary: readiness heatmap prioritizes blocked rows',
+  );
+  equal(
+    summary.readinessCoverage.heatmapRows[0]?.priorityTier,
+    'blocker',
+    'crypto dashboard summary: readiness heatmap marks blocked rows as blockers',
+  );
+  equal(
+    summary.readinessCoverage.heatmapRows[0]?.readinessScore,
+    0,
+    'crypto dashboard summary: readiness heatmap gives blocked rows zero score',
+  );
   ok(
     summary.topSurfaces.some((row) => row.surface === 'x402' || row.surface === 'x402-resource-server'),
     'crypto dashboard summary: top surfaces include payment or readiness surfaces',
@@ -293,6 +362,30 @@ function testDashboardAggregatesCryptoIntelligenceWithoutRawDrilldown(): void {
     ),
     'crypto dashboard summary: readiness attention includes readiness reason codes',
   );
+  equal(
+    summary.topBlockers[0]?.rank,
+    1,
+    'crypto dashboard summary: top blockers are ranked',
+  );
+  equal(
+    summary.topBlockers[0]?.priorityTier,
+    'blocker',
+    'crypto dashboard summary: top blockers expose priority tier',
+  );
+  ok(
+    summary.topBlockers.some((item) =>
+      item.kind === 'policy-routing-blocker' &&
+      item.reasonCodes.includes('block-explicit-deny'),
+    ),
+    'crypto dashboard summary: top blockers include policy routing blockers',
+  );
+  ok(
+    summary.topFailureReasons.some((row) =>
+      row.sourceKind === 'policy-routing' &&
+      row.reasonCode === 'block-explicit-deny',
+    ),
+    'crypto dashboard summary: top failure reasons include policy routing route codes',
+  );
   ok(
     summary.missingEvidenceClasses.some((row) => row.evidenceClass === 'x402-payment-signature'),
     'crypto dashboard summary: missing evidence includes x402 signature',
@@ -309,6 +402,13 @@ function testDashboardAggregatesCryptoIntelligenceWithoutRawDrilldown(): void {
     summary.proofLinks.some((link) => link.kind === 'policy-gap-narrowing' && link.digest === gaps.digest),
     'crypto dashboard summary: proof links include policy gap digest',
   );
+  ok(
+    summary.proofLinks.some((link) =>
+      link.kind === 'policy-intelligence-routing' &&
+      link.digest === policyRouting.digest,
+    ),
+    'crypto dashboard summary: proof links include policy routing digest',
+  );
   equal(summary.decisionSupportOnly, true, 'crypto dashboard summary: summary is decision support only');
   equal(summary.autoEnforce, false, 'crypto dashboard summary: summary cannot auto-enforce');
   equal(summary.complianceClaimed, false, 'crypto dashboard summary: summary makes no compliance claim');
@@ -319,7 +419,8 @@ function testDashboardAggregatesCryptoIntelligenceWithoutRawDrilldown(): void {
   ok(
     !summary.canonical.includes('0x1111111111111111111111111111111111111111') &&
       !summary.canonical.includes('PAYMENT-SIGNATURE') &&
-      !summary.canonical.includes('provider-secret'),
+      !summary.canonical.includes('provider-secret') &&
+      !summary.canonical.includes('private-policy-threshold'),
     'crypto dashboard summary: canonical output avoids raw wallet, payment, and provider material',
   );
   equal(

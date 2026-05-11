@@ -76,6 +76,21 @@ includes(
 );
 includes(
   text,
+  'Grafana dashboard guidance',
+  'crypto engine hardening II docs: dashboard research anchor is present',
+);
+includes(
+  text,
+  'OpenTelemetry attribute limits',
+  'crypto engine hardening II docs: telemetry cardinality research anchor is present',
+);
+includes(
+  text,
+  '| 04 | complete | Proof console and dashboard hardening |',
+  'crypto engine hardening II docs: step 04 is complete',
+);
+includes(
+  text,
   '| 10 | blocked | Production rollout readiness |',
   'crypto engine hardening II docs: production rollout remains honestly blocked',
 );

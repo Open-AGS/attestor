@@ -280,6 +280,20 @@ function testCryptoAuthorizationCoreDescriptorFunctions(): void {
     'crypto platform surface: intelligence dashboard descriptor is callable',
   );
   equal(
+    cryptoAuthorizationCore.intelligenceDashboardSummary
+      .cryptoIntelligenceDashboardSummaryDescriptor()
+      .topBlockersAvailable,
+    true,
+    'crypto platform surface: intelligence dashboard top blockers are exposed',
+  );
+  equal(
+    cryptoAuthorizationCore.intelligenceDashboardSummary
+      .cryptoIntelligenceDashboardSummaryDescriptor()
+      .readinessHeatmapAvailable,
+    true,
+    'crypto platform surface: intelligence dashboard readiness heatmap is exposed',
+  );
+  equal(
     cryptoAuthorizationCore.intelligencePerformanceBudget
       .cryptoIntelligencePerformanceBudgetDescriptor()
       .failClosedOnBudgetExceeded,

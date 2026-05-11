@@ -52,7 +52,7 @@ The curated namespace object groups the platform surface as:
 | `conformanceFixtures` | Positive and negative execution-admission fixture coverage, including malformed, stale, contradictory, and privacy-unsafe paths |
 | `privacyMinimization` | Digest-first guard for intelligence outputs, telemetry, dashboards, proof packets, and benchmark outputs |
 | `operatorRiskInputs` | Customer-operated or third-party risk input contract with provenance, freshness, scope, and digest binding |
-| `dashboardSummary` | Operator-facing counts, posture, attention items, missing evidence, readiness coverage, and digest-first proof links |
+| `dashboardSummary` | Operator-facing counts, posture, priority queue, top blockers, missing evidence, readiness heatmap, readiness coverage, and digest-first proof links |
 | `performanceBudget` | Aggregate p50/p95/max budget checks for intelligence hot paths |
 
 ## What This Surface Answers
@@ -67,6 +67,7 @@ The crypto intelligence surface answers:
 - which policy dimensions are covered, stale, conflicting, explicitly denied, or implicitly denied?
 - which policy route dominates, and what operator action is required before retry?
 - what adapter evidence is ready, missing, blocked, or review-required?
+- which proof-console blockers should be reviewed first?
 - which adapter standards and surfaces need the next operator action?
 - what model-safe narrowing or operator action is available?
 - what proof links and dashboard summaries can be shown without raw payloads?

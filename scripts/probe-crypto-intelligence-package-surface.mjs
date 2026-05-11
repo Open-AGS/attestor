@@ -134,6 +134,18 @@ assert.equal(
   true,
 );
 assert.equal(
+  cryptoIntelligence.cryptoIntelligence.dashboardSummary
+    .cryptoIntelligenceDashboardSummaryDescriptor()
+    .topBlockersAvailable,
+  true,
+);
+assert.equal(
+  cryptoIntelligence.cryptoIntelligence.dashboardSummary
+    .cryptoIntelligenceDashboardSummaryDescriptor()
+    .proofLinkKinds.includes('policy-intelligence-routing'),
+  true,
+);
+assert.equal(
   cryptoIntelligence.cryptoIntelligence.performanceBudget
     .cryptoIntelligencePerformanceBudgetDescriptor()
     .failClosedOnBudgetExceeded,

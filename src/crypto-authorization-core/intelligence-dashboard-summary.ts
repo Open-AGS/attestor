@@ -15,6 +15,7 @@ import type {
   CryptoNarrowingCandidateKind,
   CryptoPolicyGapClass,
   CryptoPolicyGapNarrowingAssessment,
+  CryptoPolicyIntelligenceRoutingProfile,
 } from './policy-gap-narrowing.js';
 import type {
   CryptoOperatorRiskInputBundle,
@@ -46,6 +47,9 @@ export type CryptoIntelligenceDashboardPosture =
 export const CRYPTO_INTELLIGENCE_DASHBOARD_WIDGETS = [
   'risk-posture',
   'adapter-readiness',
+  'priority-queue',
+  'readiness-heatmap',
+  'top-blockers',
   'missing-evidence',
   'policy-gaps',
   'operator-risk-inputs',
@@ -71,6 +75,7 @@ export type CryptoIntelligenceDashboardTileKind =
 export const CRYPTO_INTELLIGENCE_DASHBOARD_ATTENTION_KINDS = [
   'risk-signal-blocker',
   'policy-gap-blocker',
+  'policy-routing-blocker',
   'adapter-readiness-gap',
   'operator-risk-input-gap',
   'missing-evidence',
@@ -82,6 +87,7 @@ export type CryptoIntelligenceDashboardAttentionKind =
 export const CRYPTO_INTELLIGENCE_DASHBOARD_PROOF_LINK_KINDS = [
   'risk-signal-assessment',
   'policy-gap-narrowing',
+  'policy-intelligence-routing',
   'operator-risk-input',
   'adapter-readiness-manifest',
   'negative-conformance-fixtures',
@@ -99,9 +105,19 @@ export const CRYPTO_INTELLIGENCE_DASHBOARD_READINESS_STATUSES = [
 export type CryptoIntelligenceDashboardReadinessStatus =
   typeof CRYPTO_INTELLIGENCE_DASHBOARD_READINESS_STATUSES[number];
 
+export const CRYPTO_INTELLIGENCE_DASHBOARD_PRIORITY_TIERS = [
+  'blocker',
+  'needs-evidence',
+  'review',
+  'ready',
+] as const;
+export type CryptoIntelligenceDashboardPriorityTier =
+  typeof CRYPTO_INTELLIGENCE_DASHBOARD_PRIORITY_TIERS[number];
+
 export type CryptoIntelligenceDashboardSourceKind =
   | 'risk-signal'
   | 'policy-gap'
+  | 'policy-routing'
   | 'operator-risk-input'
   | 'adapter-readiness'
   | 'dashboard';
@@ -128,6 +144,8 @@ export interface CreateCryptoIntelligenceDashboardSummaryInput {
   readonly scopeRef: string;
   readonly signalAssessments?: readonly CryptoIntelligenceRiskSignalAssessment[] | null;
   readonly policyGapAssessments?: readonly CryptoPolicyGapNarrowingAssessment[] | null;
+  readonly policyIntelligenceRoutingProfiles?:
+    readonly CryptoPolicyIntelligenceRoutingProfile[] | null;
   readonly operatorRiskInputBundles?: readonly CryptoOperatorRiskInputBundle[] | null;
   readonly readiness?: readonly CryptoIntelligenceDashboardReadinessInput[] | null;
   readonly proofLinks?: readonly CreateCryptoIntelligenceDashboardProofLinkInput[] | null;
@@ -177,6 +195,18 @@ export interface CryptoIntelligenceDashboardReadinessEntry {
   readonly missingEvidenceClasses: readonly string[];
 }
 
+export interface CryptoIntelligenceDashboardReadinessHeatmapRow {
+  readonly surface: string;
+  readonly adapterKind: CryptoExecutionAdapterKind | null;
+  readonly status: CryptoIntelligenceDashboardReadinessStatus;
+  readonly priorityTier: CryptoIntelligenceDashboardPriorityTier;
+  readonly readinessScore: number;
+  readonly reasonCodes: readonly string[];
+  readonly missingEvidenceClasses: readonly string[];
+  readonly sourceDigest: string | null;
+  readonly rawPayloadDrilldownEnabled: false;
+}
+
 export interface CryptoIntelligenceDashboardReadinessCoverage {
   readonly totalEntries: number;
   readonly readyCount: number;
@@ -185,6 +215,7 @@ export interface CryptoIntelligenceDashboardReadinessCoverage {
   readonly notObservedCount: number;
   readonly readyCoveragePercent: number;
   readonly entries: readonly CryptoIntelligenceDashboardReadinessEntry[];
+  readonly heatmapRows: readonly CryptoIntelligenceDashboardReadinessHeatmapRow[];
 }
 
 export interface CryptoIntelligenceDashboardAttentionItem {
@@ -197,6 +228,21 @@ export interface CryptoIntelligenceDashboardAttentionItem {
   readonly reasonCodes: readonly string[];
   readonly missingEvidenceClasses: readonly string[];
   readonly sourceDigests: readonly string[];
+}
+
+export interface CryptoIntelligenceDashboardTopBlocker {
+  readonly rank: number;
+  readonly kind: CryptoIntelligenceDashboardAttentionKind;
+  readonly priorityTier: CryptoIntelligenceDashboardPriorityTier;
+  readonly severity: CryptoIntelligenceSignalSeverity;
+  readonly disposition: CryptoIntelligenceSignalDisposition;
+  readonly count: number;
+  readonly title: string;
+  readonly nextStep: string;
+  readonly reasonCodes: readonly string[];
+  readonly missingEvidenceClasses: readonly string[];
+  readonly sourceDigests: readonly string[];
+  readonly rawPayloadDrilldownEnabled: false;
 }
 
 export interface CryptoIntelligenceDashboardProofLink {
@@ -216,6 +262,9 @@ export interface CryptoIntelligenceDashboardOverview {
   readonly policyGapCount: number;
   readonly blockedPolicyGapCount: number;
   readonly narrowingCandidateCount: number;
+  readonly policyRoutingProfileCount: number;
+  readonly blockedPolicyRoutingCount: number;
+  readonly reviewPolicyRoutingCount: number;
   readonly operatorRiskInputBundleCount: number;
   readonly operatorRiskInputCount: number;
   readonly acceptedOperatorRiskInputCount: number;
@@ -238,6 +287,7 @@ export interface CryptoIntelligenceDashboardSummary {
   readonly tiles: readonly CryptoIntelligenceDashboardTile[];
   readonly topSurfaces: readonly CryptoIntelligenceDashboardSurfaceRow[];
   readonly topFailureReasons: readonly CryptoIntelligenceDashboardFailureReasonRow[];
+  readonly topBlockers: readonly CryptoIntelligenceDashboardTopBlocker[];
   readonly missingEvidenceClasses: readonly CryptoIntelligenceDashboardMissingEvidenceRow[];
   readonly readinessCoverage: CryptoIntelligenceDashboardReadinessCoverage;
   readonly attentionItems: readonly CryptoIntelligenceDashboardAttentionItem[];
@@ -266,6 +316,9 @@ export interface CryptoIntelligenceDashboardSummaryDescriptor {
   readonly attentionKinds: typeof CRYPTO_INTELLIGENCE_DASHBOARD_ATTENTION_KINDS;
   readonly proofLinkKinds: typeof CRYPTO_INTELLIGENCE_DASHBOARD_PROOF_LINK_KINDS;
   readonly readinessStatuses: typeof CRYPTO_INTELLIGENCE_DASHBOARD_READINESS_STATUSES;
+  readonly priorityTiers: typeof CRYPTO_INTELLIGENCE_DASHBOARD_PRIORITY_TIERS;
+  readonly topBlockersAvailable: true;
+  readonly readinessHeatmapAvailable: true;
   readonly proofLinksAreDigestFirst: true;
   readonly decisionSupportOnly: true;
   readonly autoEnforce: false;
@@ -318,6 +371,13 @@ const DISPOSITION_RANK: Record<CryptoIntelligenceSignalDisposition, number> = {
   admit: 0,
   review: 1,
   block: 2,
+};
+
+const READINESS_STATUS_RANK: Record<CryptoIntelligenceDashboardReadinessStatus, number> = {
+  ready: 0,
+  'not-observed': 1,
+  'needs-evidence': 2,
+  blocked: 3,
 };
 
 function canonicalObject(value: CanonicalReleaseJsonValue): {
@@ -425,6 +485,45 @@ function strongerDisposition(
   right: CryptoIntelligenceSignalDisposition,
 ): CryptoIntelligenceSignalDisposition {
   return DISPOSITION_RANK[right] > DISPOSITION_RANK[left] ? right : left;
+}
+
+function priorityTierForDisposition(
+  disposition: CryptoIntelligenceSignalDisposition,
+): CryptoIntelligenceDashboardPriorityTier {
+  if (disposition === 'block') return 'blocker';
+  if (disposition === 'review') return 'review';
+  return 'ready';
+}
+
+function priorityTierForReadinessStatus(
+  status: CryptoIntelligenceDashboardReadinessStatus,
+): CryptoIntelligenceDashboardPriorityTier {
+  if (status === 'blocked') return 'blocker';
+  if (status === 'needs-evidence' || status === 'not-observed') return 'needs-evidence';
+  return 'ready';
+}
+
+function readinessScoreForStatus(
+  status: CryptoIntelligenceDashboardReadinessStatus,
+): number {
+  switch (status) {
+    case 'ready':
+      return 100;
+    case 'not-observed':
+      return 50;
+    case 'needs-evidence':
+      return 25;
+    case 'blocked':
+      return 0;
+  }
+}
+
+function sourceKindSeverity(
+  disposition: CryptoIntelligenceSignalDisposition,
+): CryptoIntelligenceSignalSeverity {
+  if (disposition === 'block') return 'critical';
+  if (disposition === 'review') return 'warning';
+  return 'info';
 }
 
 function addSurface(
@@ -553,6 +652,8 @@ function derivedProofLinks(input: {
   readonly routeBase: string | null;
   readonly signalAssessments: readonly CryptoIntelligenceRiskSignalAssessment[];
   readonly policyGapAssessments: readonly CryptoPolicyGapNarrowingAssessment[];
+  readonly policyIntelligenceRoutingProfiles:
+    readonly CryptoPolicyIntelligenceRoutingProfile[];
   readonly operatorRiskInputBundles: readonly CryptoOperatorRiskInputBundle[];
   readonly readinessEntries: readonly CryptoIntelligenceDashboardReadinessEntry[];
 }): readonly CryptoIntelligenceDashboardProofLink[] {
@@ -574,6 +675,16 @@ function derivedProofLinks(input: {
         label: 'policy gap narrowing',
         digest: assessment.digest,
         route: routeFor(input.routeBase, 'policy-gaps'),
+      }),
+    );
+  }
+  for (const profile of input.policyIntelligenceRoutingProfiles) {
+    links.push(
+      normalizeProofLink({
+        kind: 'policy-intelligence-routing',
+        label: `policy routing ${profile.dominantRouteKind}`,
+        digest: profile.digest,
+        route: routeFor(input.routeBase, 'policy-routing'),
       }),
     );
   }
@@ -698,6 +809,35 @@ function missingEvidenceRows(
   );
 }
 
+function readinessHeatmapRows(
+  entries: readonly CryptoIntelligenceDashboardReadinessEntry[],
+): readonly CryptoIntelligenceDashboardReadinessHeatmapRow[] {
+  return Object.freeze(
+    [...entries]
+      .sort((left, right) => {
+        const statusDelta =
+          READINESS_STATUS_RANK[right.status] - READINESS_STATUS_RANK[left.status];
+        if (statusDelta !== 0) return statusDelta;
+        return `${left.surface}:${left.adapterKind ?? ''}`.localeCompare(
+          `${right.surface}:${right.adapterKind ?? ''}`,
+        );
+      })
+      .map((entry) =>
+        Object.freeze({
+          surface: entry.surface,
+          adapterKind: entry.adapterKind,
+          status: entry.status,
+          priorityTier: priorityTierForReadinessStatus(entry.status),
+          readinessScore: readinessScoreForStatus(entry.status),
+          reasonCodes: entry.reasonCodes,
+          missingEvidenceClasses: entry.missingEvidenceClasses,
+          sourceDigest: entry.sourceDigest,
+          rawPayloadDrilldownEnabled: false,
+        }),
+      ),
+  );
+}
+
 function readinessCoverage(
   entries: readonly CryptoIntelligenceDashboardReadinessEntry[],
 ): CryptoIntelligenceDashboardReadinessCoverage {
@@ -720,12 +860,15 @@ function readinessCoverage(
         `${left.status}:${left.surface}`.localeCompare(`${right.status}:${right.surface}`),
       ),
     ),
+    heatmapRows: readinessHeatmapRows(entries),
   });
 }
 
 function dashboardOverview(input: {
   readonly signalAssessments: readonly CryptoIntelligenceRiskSignalAssessment[];
   readonly policyGapAssessments: readonly CryptoPolicyGapNarrowingAssessment[];
+  readonly policyIntelligenceRoutingProfiles:
+    readonly CryptoPolicyIntelligenceRoutingProfile[];
   readonly operatorRiskInputBundles: readonly CryptoOperatorRiskInputBundle[];
   readonly readiness: CryptoIntelligenceDashboardReadinessCoverage;
   readonly proofLinks: readonly CryptoIntelligenceDashboardProofLink[];
@@ -740,6 +883,13 @@ function dashboardOverview(input: {
     policyGapCount: input.policyGapAssessments.reduce((sum, entry) => sum + entry.gapCount, 0),
     blockedPolicyGapCount: input.policyGapAssessments.reduce((sum, entry) => sum + entry.blockedGapCount, 0),
     narrowingCandidateCount: input.policyGapAssessments.reduce((sum, entry) => sum + entry.candidateCount, 0),
+    policyRoutingProfileCount: input.policyIntelligenceRoutingProfiles.length,
+    blockedPolicyRoutingCount: input.policyIntelligenceRoutingProfiles.filter(
+      (profile) => profile.recommendedDisposition === 'block',
+    ).length,
+    reviewPolicyRoutingCount: input.policyIntelligenceRoutingProfiles.filter(
+      (profile) => profile.recommendedDisposition === 'review',
+    ).length,
     operatorRiskInputBundleCount: input.operatorRiskInputBundles.length,
     operatorRiskInputCount: input.operatorRiskInputBundles.reduce((sum, entry) => sum + entry.inputCount, 0),
     acceptedOperatorRiskInputCount: input.operatorRiskInputBundles.reduce((sum, entry) => sum + entry.acceptedCount, 0),
@@ -761,6 +911,7 @@ function dashboardPosture(input: {
   if (
     input.overview.blockSignalCount > 0 ||
     input.overview.blockedPolicyGapCount > 0 ||
+    input.overview.blockedPolicyRoutingCount > 0 ||
     input.readiness.blockedCount > 0 ||
     input.operatorRiskInputBundles.some((bundle) => bundle.recommendedDisposition === 'block')
   ) {
@@ -770,6 +921,7 @@ function dashboardPosture(input: {
     input.signalAssessments.length === 0 ||
     input.overview.reviewSignalCount > 0 ||
     input.overview.policyGapCount > 0 ||
+    input.overview.reviewPolicyRoutingCount > 0 ||
     input.readiness.needsEvidenceCount > 0 ||
     input.readiness.notObservedCount > 0 ||
     input.operatorRiskInputBundles.some((bundle) => bundle.recommendedDisposition !== 'admit')
@@ -826,8 +978,14 @@ function dashboardTiles(input: {
     Object.freeze({
       kind: 'policy-gaps',
       label: 'policy gaps',
-      value: input.overview.policyGapCount,
-      status: tileStatus(input.overview.policyGapCount, 'attention-needed'),
+      value: input.overview.policyGapCount + input.overview.policyRoutingProfileCount,
+      status:
+        input.overview.blockedPolicyGapCount + input.overview.blockedPolicyRoutingCount > 0
+          ? 'blocked-for-review'
+          : tileStatus(
+              input.overview.policyGapCount + input.overview.policyRoutingProfileCount,
+              'attention-needed',
+            ),
     }),
     Object.freeze({
       kind: 'readiness-coverage',
@@ -922,6 +1080,29 @@ function attentionItems(input: {
       ),
     });
   }
+  if (input.overview.blockedPolicyRoutingCount > 0) {
+    items.push({
+      kind: 'policy-routing-blocker',
+      severity: 'critical',
+      disposition: 'block',
+      count: input.overview.blockedPolicyRoutingCount,
+      title: 'Policy routing blocks admission.',
+      nextStep: 'Resolve explicit deny, implicit deny, stale-policy, or conflict routes before retry.',
+      reasonCodes: input.topFailureReasons
+        .filter((reason) => reason.sourceKind === 'policy-routing')
+        .map((reason) => reason.reasonCode),
+      missingEvidenceClasses: uniqueSorted(
+        input.topFailureReasons
+          .filter((reason) => reason.sourceKind === 'policy-routing')
+          .flatMap((reason) => reason.missingEvidenceClasses),
+      ),
+      sourceDigests: uniqueSorted(
+        input.topFailureReasons
+          .filter((reason) => reason.sourceKind === 'policy-routing')
+          .flatMap((reason) => reason.sourceDigests),
+      ),
+    });
+  }
   if (input.readiness.blockedCount + input.readiness.needsEvidenceCount + input.readiness.notObservedCount > 0) {
     items.push({
       kind: 'adapter-readiness-gap',
@@ -954,6 +1135,41 @@ function attentionItems(input: {
   }
 
   return Object.freeze(items.slice(0, MAX_TOP_ROWS).map((item) => Object.freeze(item)));
+}
+
+function topBlockers(
+  attention: readonly CryptoIntelligenceDashboardAttentionItem[],
+): readonly CryptoIntelligenceDashboardTopBlocker[] {
+  return Object.freeze(
+    attention
+      .filter((item) => item.disposition === 'block' || item.disposition === 'review')
+      .sort((left, right) => {
+        const dispositionDelta =
+          DISPOSITION_RANK[right.disposition] - DISPOSITION_RANK[left.disposition];
+        if (dispositionDelta !== 0) return dispositionDelta;
+        const severityDelta = SEVERITY_RANK[right.severity] - SEVERITY_RANK[left.severity];
+        if (severityDelta !== 0) return severityDelta;
+        if (right.count !== left.count) return right.count - left.count;
+        return left.kind.localeCompare(right.kind);
+      })
+      .slice(0, MAX_TOP_ROWS)
+      .map((item, index) =>
+        Object.freeze({
+          rank: index + 1,
+          kind: item.kind,
+          priorityTier: priorityTierForDisposition(item.disposition),
+          severity: item.severity,
+          disposition: item.disposition,
+          count: item.count,
+          title: item.title,
+          nextStep: item.nextStep,
+          reasonCodes: item.reasonCodes,
+          missingEvidenceClasses: item.missingEvidenceClasses,
+          sourceDigests: item.sourceDigests,
+          rawPayloadDrilldownEnabled: false,
+        }),
+      ),
+  );
 }
 
 function collectFromRiskSignals(
@@ -1050,6 +1266,55 @@ function collectFromPolicyGaps(
         missingEvidenceClasses: candidate.missingEvidenceClasses,
         sourceDigest: assessment.digest,
       });
+    }
+  }
+}
+
+function collectFromPolicyRouting(
+  profiles: readonly CryptoPolicyIntelligenceRoutingProfile[],
+  surfaces: Map<string, CountedSource>,
+  reasons: Map<string, CountedReason>,
+): void {
+  for (const profile of profiles) {
+    const severity = sourceKindSeverity(profile.recommendedDisposition);
+    addSurface(surfaces, {
+      surface: profile.dominantRouteKind,
+      sourceKind: 'policy-routing',
+      severity,
+      disposition: profile.recommendedDisposition,
+      sourceDigest: profile.digest,
+    });
+    addReason(reasons, {
+      reasonCode: profile.dominantRouteKind,
+      sourceKind: 'policy-routing',
+      severity,
+      disposition: profile.recommendedDisposition,
+      sourceDigest: profile.digest,
+    });
+    for (const blocker of profile.topBlockers) {
+      addSurface(surfaces, {
+        surface: blocker.routeKind,
+        sourceKind: 'policy-routing',
+        severity: 'critical',
+        disposition: 'block',
+        sourceDigest: profile.digest,
+      });
+      addReason(reasons, {
+        reasonCode: blocker.routeKind,
+        sourceKind: 'policy-routing',
+        severity: 'critical',
+        disposition: 'block',
+        sourceDigest: profile.digest,
+      });
+      for (const reasonCode of blocker.reasonCodes) {
+        addReason(reasons, {
+          reasonCode,
+          sourceKind: 'policy-routing',
+          severity: 'critical',
+          disposition: 'block',
+          sourceDigest: profile.digest,
+        });
+      }
     }
   }
 }
@@ -1168,6 +1433,9 @@ CryptoIntelligenceDashboardSummaryDescriptor {
     attentionKinds: CRYPTO_INTELLIGENCE_DASHBOARD_ATTENTION_KINDS,
     proofLinkKinds: CRYPTO_INTELLIGENCE_DASHBOARD_PROOF_LINK_KINDS,
     readinessStatuses: CRYPTO_INTELLIGENCE_DASHBOARD_READINESS_STATUSES,
+    priorityTiers: CRYPTO_INTELLIGENCE_DASHBOARD_PRIORITY_TIERS,
+    topBlockersAvailable: true,
+    readinessHeatmapAvailable: true,
     proofLinksAreDigestFirst: true,
     decisionSupportOnly: true,
     autoEnforce: false,
@@ -1194,6 +1462,9 @@ export function createCryptoIntelligenceDashboardSummary(
   );
   const signalAssessments = Object.freeze([...(input.signalAssessments ?? [])]);
   const policyGapAssessments = Object.freeze([...(input.policyGapAssessments ?? [])]);
+  const policyIntelligenceRoutingProfiles = Object.freeze([
+    ...(input.policyIntelligenceRoutingProfiles ?? []),
+  ]);
   const operatorRiskInputBundles = Object.freeze([...(input.operatorRiskInputBundles ?? [])]);
   const readinessEntries = Object.freeze(
     (input.readiness ?? []).map((entry) => normalizeReadinessEntry(entry)),
@@ -1204,6 +1475,7 @@ export function createCryptoIntelligenceDashboardSummary(
       routeBase,
       signalAssessments,
       policyGapAssessments,
+      policyIntelligenceRoutingProfiles,
       operatorRiskInputBundles,
       readinessEntries,
     }),
@@ -1216,6 +1488,7 @@ export function createCryptoIntelligenceDashboardSummary(
 
   collectFromRiskSignals(signalAssessments, surfaces, reasons, evidence);
   collectFromPolicyGaps(policyGapAssessments, surfaces, reasons, evidence);
+  collectFromPolicyRouting(policyIntelligenceRoutingProfiles, surfaces, reasons);
   collectFromOperatorRiskInputs(operatorRiskInputBundles, surfaces, reasons, evidence);
   collectFromReadiness(readinessEntries, surfaces, reasons, evidence);
 
@@ -1235,6 +1508,7 @@ export function createCryptoIntelligenceDashboardSummary(
   const overview = dashboardOverview({
     signalAssessments,
     policyGapAssessments,
+    policyIntelligenceRoutingProfiles,
     operatorRiskInputBundles,
     readiness,
     proofLinks,
@@ -1244,6 +1518,12 @@ export function createCryptoIntelligenceDashboardSummary(
     readiness,
     operatorRiskInputBundles,
     signalAssessments,
+  });
+  const attention = attentionItems({
+    overview,
+    readiness,
+    topFailureReasons,
+    missingEvidence: missingEvidenceClasses,
   });
   const payload = Object.freeze({
     version: CRYPTO_INTELLIGENCE_DASHBOARD_SUMMARY_SPEC_VERSION,
@@ -1256,14 +1536,10 @@ export function createCryptoIntelligenceDashboardSummary(
     tiles: dashboardTiles({ overview, readiness }),
     topSurfaces,
     topFailureReasons,
+    topBlockers: topBlockers(attention),
     missingEvidenceClasses,
     readinessCoverage: readiness,
-    attentionItems: attentionItems({
-      overview,
-      readiness,
-      topFailureReasons,
-      missingEvidence: missingEvidenceClasses,
-    }),
+    attentionItems: attention,
     proofLinks,
     widgets: CRYPTO_INTELLIGENCE_DASHBOARD_WIDGETS,
     decisionSupportOnly: true,

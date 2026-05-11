@@ -173,6 +173,13 @@ const dashboardSummary =
       operatorRiskInputBundles: [operatorRiskBundle],
     });
 assert.equal(dashboardSummary.rawPayloadDrilldownEnabled, false);
+assert.equal(dashboardSummary.topBlockers.length > 0, true);
+assert.equal(
+  cryptoCore.cryptoAuthorizationCore.intelligenceDashboardSummary
+    .cryptoIntelligenceDashboardSummaryDescriptor()
+    .readinessHeatmapAvailable,
+  true,
+);
 assert.equal(dashboardSummary.financialImpactClaimed, false);
 assert.equal(dashboardSummary.decisionSupportOnly, true);
 assert.equal(dashboardSummary.posture, 'attention-needed');

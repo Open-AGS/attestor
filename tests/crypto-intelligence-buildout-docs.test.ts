@@ -1,0 +1,166 @@
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
+let passed = 0;
+
+function readProjectFile(...segments: string[]): string {
+  return readFileSync(join(process.cwd(), ...segments), 'utf8');
+}
+
+function includes(content: string, expected: string, message: string): void {
+  assert.ok(
+    content.includes(expected),
+    `${message}\nExpected to find: ${expected}`,
+  );
+  passed += 1;
+}
+
+function excludes(content: string, unexpected: RegExp, message: string): void {
+  assert.doesNotMatch(content, unexpected, message);
+  passed += 1;
+}
+
+function testTrackerIsLinkedFromCurrentTruthSources(): void {
+  const readme = readProjectFile('README.md');
+  const systemOverview = readProjectFile('docs', '02-architecture', 'system-overview.md');
+  const packageJson = readProjectFile('package.json');
+
+  includes(
+    readme,
+    'docs/02-architecture/crypto-intelligence-buildout.md',
+    'Crypto intelligence docs: README links the tracker',
+  );
+  includes(
+    systemOverview,
+    '[Crypto intelligence buildout](crypto-intelligence-buildout.md)',
+    'Crypto intelligence docs: system overview links the tracker',
+  );
+  includes(
+    packageJson,
+    '"test:crypto-intelligence-buildout-docs"',
+    'Crypto intelligence docs: package script exposes the docs guard',
+  );
+}
+
+function testTrackerPreservesScopeAndNonGoals(): void {
+  const tracker = readProjectFile('docs', '02-architecture', 'crypto-intelligence-buildout.md');
+
+  includes(
+    tracker,
+    'after the completed crypto authorization core and crypto execution-admission tracks',
+    'Crypto intelligence docs: tracker starts after completed crypto tracks',
+  );
+  includes(
+    tracker,
+    'Keep Attestor as one product with one platform core and modular packs.',
+    'Crypto intelligence docs: one-product framing is preserved',
+  );
+  includes(
+    tracker,
+    'Do not add a public hosted crypto route as part of this tracker.',
+    'Crypto intelligence docs: public hosted crypto route remains blocked',
+  );
+  includes(
+    tracker,
+    'Do not make Attestor a wallet, custody platform, bundler, paymaster, bridge, facilitator, solver, relayer, oracle, or market-data vendor.',
+    'Crypto intelligence docs: tracker blocks role expansion',
+  );
+  includes(
+    tracker,
+    'Do not claim sanctions, fraud, compliance, or counterparty screening coverage unless',
+    'Crypto intelligence docs: tracker blocks unsupported compliance or screening claims',
+  );
+  excludes(
+    tracker,
+    /hosted crypto route is ready|Attestor becomes a wallet|Attestor becomes a custody platform|native sanctions oracle/i,
+    'Crypto intelligence docs: tracker avoids hosted-route and oracle overclaims',
+  );
+}
+
+function testTrackerProtectsCryptoPrivacyBoundary(): void {
+  const tracker = readProjectFile('docs', '02-architecture', 'crypto-intelligence-buildout.md');
+
+  includes(
+    tracker,
+    'Do not expose raw wallet metadata, raw transaction payloads, customer identifiers, custody callback bodies, provider error bodies, private policy thresholds, or solver route secrets',
+    'Crypto intelligence docs: tracker blocks raw crypto and customer data exposure',
+  );
+  includes(
+    tracker,
+    'reason codes, missing evidence classes, safe instructions, scoped refs, and digests are allowed',
+    'Crypto intelligence docs: tracker defines model-safe feedback shape',
+  );
+  includes(
+    tracker,
+    'Preserve fail-closed behavior when intelligence inputs are absent, stale, ambiguous, contradictory, or outside the admitted scope.',
+    'Crypto intelligence docs: tracker preserves fail-closed intelligence posture',
+  );
+  includes(
+    tracker,
+    'operator-supplied risk inputs are provenance-bound, scoped, fresh, and non-oracular',
+    'Crypto intelligence docs: completion definition keeps risk inputs non-oracular',
+  );
+}
+
+function testTrackerFreezesTheStepList(): void {
+  const tracker = readProjectFile('docs', '02-architecture', 'crypto-intelligence-buildout.md');
+
+  includes(tracker, '| Total frozen steps | 10 |', 'Crypto intelligence docs: step count is frozen');
+  includes(tracker, '| Completed | 1 |', 'Crypto intelligence docs: only Step 01 is complete');
+  includes(tracker, '| Not started | 9 |', 'Crypto intelligence docs: remaining steps are pending');
+
+  const steps = [
+    '| 01 | complete | Define crypto intelligence scope, research anchors, vocabulary, and guardrails |',
+    '| 02 | pending | Add crypto risk signal model and severity mapping |',
+    '| 03 | pending | Add policy gap and safe narrowing candidate generation |',
+    '| 04 | pending | Add adapter readiness matrix and manifest |',
+    '| 05 | pending | Expand negative conformance fixtures for crypto intelligence |',
+    '| 06 | pending | Harden crypto privacy and telemetry minimization |',
+    '| 07 | pending | Add operator-supplied risk input contract |',
+    '| 08 | pending | Add crypto intelligence dashboard summary |',
+    '| 09 | pending | Add crypto intelligence performance budget and benchmarks |',
+    '| 10 | pending | Package and document the crypto intelligence surface |',
+  ];
+
+  for (const step of steps) {
+    includes(tracker, step, `Crypto intelligence docs: frozen step is present: ${step}`);
+  }
+}
+
+function testTrackerStaysGroundedInExistingCryptoSurfaces(): void {
+  const tracker = readProjectFile('docs', '02-architecture', 'crypto-intelligence-buildout.md');
+  const systemOverview = readProjectFile('docs', '02-architecture', 'system-overview.md');
+
+  for (const surface of [
+    'wallet RPC',
+    'Safe guard',
+    'ERC-4337 bundler',
+    'modular-account',
+    'delegated-EOA',
+    'x402 resource-server',
+    'custody policy engine',
+    'intent solver',
+  ]) {
+    includes(tracker, surface, `Crypto intelligence docs: tracker names existing surface ${surface}`);
+  }
+
+  includes(
+    systemOverview,
+    'future crypto work now starts with [Crypto intelligence buildout](crypto-intelligence-buildout.md)',
+    'Crypto intelligence docs: system overview points future crypto work to this tracker',
+  );
+  includes(
+    tracker,
+    'Implement Step 02: add the crypto risk signal model and severity mapping',
+    'Crypto intelligence docs: immediate next step is Step 02',
+  );
+}
+
+testTrackerIsLinkedFromCurrentTruthSources();
+testTrackerPreservesScopeAndNonGoals();
+testTrackerProtectsCryptoPrivacyBoundary();
+testTrackerFreezesTheStepList();
+testTrackerStaysGroundedInExistingCryptoSurfaces();
+
+console.log(`Crypto intelligence buildout docs tests: ${passed} passed, 0 failed`);

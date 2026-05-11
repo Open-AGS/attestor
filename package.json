@@ -196,6 +196,7 @@
     "test:trusted-proxy-headers": "tsx tests/trusted-proxy-headers.test.ts",
     "test:nginx-ha-edge-config": "tsx tests/nginx-ha-edge-config.test.ts",
     "test:service-version-alignment": "tsx tests/service-version-alignment.test.ts",
+    "test:crypto-intelligence-buildout-docs": "tsx tests/crypto-intelligence-buildout-docs.test.ts",
     "test:crypto-execution-admission": "tsx tests/crypto-execution-admission.test.ts",
     "test:crypto-execution-admission-wallet-rpc": "tsx tests/crypto-execution-admission-wallet-rpc.test.ts",
     "test:crypto-execution-admission-safe-guard": "tsx tests/crypto-execution-admission-safe-guard.test.ts",

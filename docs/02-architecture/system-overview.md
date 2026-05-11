@@ -175,7 +175,7 @@ What the crypto pack already covers:
 Current crypto execution-admission posture:
 
 - the frozen execution-admission buildout is complete
-- future crypto work should start from a new tracker rather than extending the frozen list
+- future crypto work now starts with [Crypto intelligence buildout](crypto-intelligence-buildout.md) rather than extending the frozen authorization or execution-admission lists
 
 ## Product Truth Versus First Slices
 
@@ -202,7 +202,7 @@ Active priority:
 - keep the README and architecture docs aligned with the trackers
 - preserve the completed consequence-admission contract, quickstart, and readiness gates before widening public API claims
 - keep the first consequence-admission facade explicit: callers choose `finance-pipeline-run` or `crypto-execution-plan`; Attestor does not guess the pack automatically
-- treat the frozen crypto execution-admission track as complete
+- treat the frozen crypto execution-admission track as complete and route new crypto intelligence work through [Crypto intelligence buildout](crypto-intelligence-buildout.md)
 - keep the hosted product flow truth sources, focused gates, and production probe aligned now that the hosted product flow hardening track is complete
 - avoid widening supporting hosted surfaces faster than their customer journey, billing, and readiness gates can stay honest
 

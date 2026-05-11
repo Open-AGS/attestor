@@ -141,6 +141,10 @@ function testDescriptor(): void {
     descriptor.forbiddenRawClasses.includes('raw-custody-callback-body'),
     'crypto privacy minimization: descriptor forbids custody callback bodies',
   );
+  ok(
+    descriptor.surfaceKinds.includes('intelligence-performance-benchmark'),
+    'crypto privacy minimization: descriptor includes performance benchmark surface',
+  );
   deepEqual(
     descriptor.forbiddenRawClasses,
     CRYPTO_INTELLIGENCE_PRIVACY_FORBIDDEN_RAW_CLASSES,
@@ -198,9 +202,19 @@ function testExecutionProofSurfacesStayPrivacySafe(): void {
     surfaceKind: 'negative-conformance-fixtures',
     artifact: CRYPTO_ADMISSION_NEGATIVE_CONFORMANCE_FIXTURES,
   });
+  const performanceBenchmarkEvaluation = evaluateCryptoIntelligencePrivacyMinimizationArtifact({
+    surfaceKind: 'intelligence-performance-benchmark',
+    artifact: {
+      operationKind: 'dashboard-summary-aggregation',
+      sampleCount: 5,
+      p95Ms: 12,
+      digest: 'sha256:performance',
+    },
+  });
 
   equal(manifestEvaluation.allowed, true, 'crypto privacy minimization: adapter manifest is safe');
   equal(negativeFixtureEvaluation.allowed, true, 'crypto privacy minimization: negative fixtures are safe');
+  equal(performanceBenchmarkEvaluation.allowed, true, 'crypto privacy minimization: performance benchmark is safe');
   equal(
     negativeFixtureEvaluation.reasonCodes.length,
     0,

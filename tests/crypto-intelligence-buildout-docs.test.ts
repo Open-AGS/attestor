@@ -107,8 +107,8 @@ function testTrackerFreezesTheStepList(): void {
   const tracker = readProjectFile('docs', '02-architecture', 'crypto-intelligence-buildout.md');
 
   includes(tracker, '| Total frozen steps | 10 |', 'Crypto intelligence docs: step count is frozen');
-  includes(tracker, '| Completed | 8 |', 'Crypto intelligence docs: Steps 01 through 08 are complete');
-  includes(tracker, '| Not started | 2 |', 'Crypto intelligence docs: remaining steps are pending');
+  includes(tracker, '| Completed | 9 |', 'Crypto intelligence docs: Steps 01 through 09 are complete');
+  includes(tracker, '| Not started | 1 |', 'Crypto intelligence docs: remaining steps are pending');
 
   const steps = [
     '| 01 | complete | Define crypto intelligence scope, research anchors, vocabulary, and guardrails |',
@@ -119,7 +119,7 @@ function testTrackerFreezesTheStepList(): void {
     '| 06 | complete | Harden crypto privacy and telemetry minimization |',
     '| 07 | complete | Add operator-supplied risk input contract |',
     '| 08 | complete | Add crypto intelligence dashboard summary |',
-    '| 09 | pending | Add crypto intelligence performance budget and benchmarks |',
+    '| 09 | complete | Add crypto intelligence performance budget and benchmarks |',
     '| 10 | pending | Package and document the crypto intelligence surface |',
   ];
 
@@ -152,8 +152,18 @@ function testTrackerStaysGroundedInExistingCryptoSurfaces(): void {
   );
   includes(
     tracker,
-    'Implement Step 09: add crypto intelligence performance budget and benchmarks',
-    'Crypto intelligence docs: immediate next step is Step 09',
+    'Implement Step 10: package and document the crypto intelligence surface',
+    'Crypto intelligence docs: immediate next step is Step 10',
+  );
+  includes(
+    tracker,
+    'src/crypto-authorization-core/intelligence-performance-budget.ts',
+    'Crypto intelligence docs: Step 09 evidence points to performance budget contract',
+  );
+  includes(
+    tracker,
+    'scripts/benchmark-crypto-intelligence-performance.ts',
+    'Crypto intelligence docs: Step 09 evidence points to performance benchmark script',
   );
   includes(
     tracker,
@@ -184,6 +194,11 @@ function testTrackerStaysGroundedInExistingCryptoSurfaces(): void {
     tracker,
     'OFAC publishes sanctions list services and data formats',
     'Crypto intelligence docs: Step 07 research anchor avoids sanctions overclaim',
+  );
+  includes(
+    tracker,
+    "Node's performance hooks and crypto hashing APIs provide stable local measurement and digest primitives",
+    'Crypto intelligence docs: Step 09 research anchor covers performance measurement',
   );
   includes(
     tracker,

@@ -7,6 +7,7 @@ import * as policyGapNarrowing from './policy-gap-narrowing.js';
 import * as intelligencePrivacyMinimization from './intelligence-privacy-minimization.js';
 import * as operatorRiskInputContract from './operator-risk-input-contract.js';
 import * as intelligenceDashboardSummary from './intelligence-dashboard-summary.js';
+import * as intelligencePerformanceBudget from './intelligence-performance-budget.js';
 import * as eip712 from './eip712-authorization-envelope.js';
 import * as erc1271 from './erc1271-validation-projection.js';
 import * as replayFreshness from './replay-freshness-rules.js';
@@ -33,6 +34,7 @@ export {
   intelligencePrivacyMinimization,
   operatorRiskInputContract,
   intelligenceDashboardSummary,
+  intelligencePerformanceBudget,
   eip712,
   erc1271,
   replayFreshness,
@@ -134,6 +136,7 @@ export const cryptoAuthorizationCore = Object.freeze({
   intelligencePrivacyMinimization,
   operatorRiskInputContract,
   intelligenceDashboardSummary,
+  intelligencePerformanceBudget,
   eip712,
   erc1271,
   replayFreshness,
@@ -170,6 +173,8 @@ export type CryptoOperatorRiskInputBundle =
   operatorRiskInputContract.CryptoOperatorRiskInputBundle;
 export type CryptoIntelligenceDashboardSummary =
   intelligenceDashboardSummary.CryptoIntelligenceDashboardSummary;
+export type CryptoIntelligencePerformanceBenchmark =
+  intelligencePerformanceBudget.CryptoIntelligencePerformanceBenchmark;
 export type CryptoReleaseDecisionBinding =
   releaseDecisionBinding.CryptoReleaseDecisionBinding;
 export type CryptoPolicyControlPlaneScopeBinding =

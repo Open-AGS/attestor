@@ -43,6 +43,11 @@ assert.equal(
   'attestor.crypto-intelligence-dashboard-summary.v1',
 );
 assert.equal(
+  cryptoCore.cryptoAuthorizationCore.intelligencePerformanceBudget
+    .CRYPTO_INTELLIGENCE_PERFORMANCE_BUDGET_SPEC_VERSION,
+  'attestor.crypto-intelligence-performance-budget.v1',
+);
+assert.equal(
   cryptoCore.cryptoAuthorizationCore.x402AgenticPayment.X402_AGENTIC_PAYMENT_ADAPTER_SPEC_VERSION,
   'attestor.crypto-x402-agentic-payment-adapter.v1',
 );
@@ -143,5 +148,25 @@ assert.equal(dashboardSummary.rawPayloadDrilldownEnabled, false);
 assert.equal(dashboardSummary.financialImpactClaimed, false);
 assert.equal(dashboardSummary.decisionSupportOnly, true);
 assert.equal(dashboardSummary.posture, 'attention-needed');
+
+const performanceSamples =
+  cryptoCore.cryptoAuthorizationCore.intelligencePerformanceBudget
+    .CRYPTO_INTELLIGENCE_PERFORMANCE_OPERATION_KINDS.flatMap((operationKind) =>
+      [1, 2, 3, 4, 5].map((durationMs, iteration) => ({
+        operationKind,
+        durationMs,
+        iteration,
+      })),
+    );
+const performanceBenchmark =
+  cryptoCore.cryptoAuthorizationCore.intelligencePerformanceBudget
+    .createCryptoIntelligencePerformanceBenchmark({
+      generatedAt: '2026-05-11T12:20:00.000Z',
+      environmentRef: 'package-surface:performance',
+      samples: performanceSamples,
+    });
+assert.equal(performanceBenchmark.status, 'pass');
+assert.equal(performanceBenchmark.rawBenchmarkInputsStored, false);
+assert.equal(performanceBenchmark.failClosedOnBudgetExceeded, true);
 
 console.log('crypto-authorization-core package surface probe passed');

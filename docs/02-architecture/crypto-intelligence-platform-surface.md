@@ -41,6 +41,7 @@ The public subpath exposes:
 - operator-supplied risk input descriptors, labels, and `createCryptoOperatorRiskInputBundle()`
 - dashboard summary descriptors, labels, and `createCryptoIntelligenceDashboardSummary()`
 - performance budget descriptors, labels, and `createCryptoIntelligencePerformanceBenchmark()`
+- performance efficiency profiles and regression guards with digest-key-only memoization boundaries
 
 The curated namespace object groups the platform surface as:
 
@@ -53,7 +54,7 @@ The curated namespace object groups the platform surface as:
 | `privacyMinimization` | Digest-first guard for intelligence outputs, telemetry, dashboards, proof packets, and benchmark outputs |
 | `operatorRiskInputs` | Customer-operated or third-party risk input contract with provenance, freshness, scope, and digest binding |
 | `dashboardSummary` | Operator-facing counts, posture, priority queue, top blockers, missing evidence, readiness heatmap, readiness coverage, and digest-first proof links |
-| `performanceBudget` | Aggregate p50/p95/max budget checks for intelligence hot paths |
+| `performanceBudget` | Aggregate p50/p95/max budget checks, per-unit cost, regression guards, and digest-key-only memoization boundaries for intelligence hot paths |
 
 ## What This Surface Answers
 
@@ -72,6 +73,7 @@ The crypto intelligence surface answers:
 - what model-safe narrowing or operator action is available?
 - what proof links and dashboard summaries can be shown without raw payloads?
 - whether the intelligence path remains inside performance and privacy budgets?
+- whether hot paths regressed against a benchmark baseline without storing raw benchmark inputs?
 
 It does not authorize execution by itself. It informs the same `admit`, `narrow`, `review`, and `block` consequence path, and downstream systems still verify before acting.
 

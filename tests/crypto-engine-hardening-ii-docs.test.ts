@@ -91,6 +91,16 @@ includes(
 );
 includes(
   text,
+  'Node.js `perf_hooks`',
+  'crypto engine hardening II docs: Node performance research anchor is present',
+);
+includes(
+  text,
+  '| 05 | complete | Runtime performance and efficiency |',
+  'crypto engine hardening II docs: step 05 is complete',
+);
+includes(
+  text,
   '| 10 | blocked | Production rollout readiness |',
   'crypto engine hardening II docs: production rollout remains honestly blocked',
 );

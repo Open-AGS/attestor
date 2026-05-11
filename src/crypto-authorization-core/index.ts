@@ -177,6 +177,8 @@ export type CryptoIntelligenceDashboardSummary =
   intelligenceDashboardSummary.CryptoIntelligenceDashboardSummary;
 export type CryptoIntelligencePerformanceBenchmark =
   intelligencePerformanceBudget.CryptoIntelligencePerformanceBenchmark;
+export type CryptoIntelligencePerformanceEfficiencyProfile =
+  intelligencePerformanceBudget.CryptoIntelligencePerformanceEfficiencyProfile;
 export type CryptoReleaseDecisionBinding =
   releaseDecisionBinding.CryptoReleaseDecisionBinding;
 export type CryptoPolicyControlPlaneScopeBinding =

@@ -45,9 +45,25 @@ export const CRYPTO_INTELLIGENCE_PERFORMANCE_REASON_CODES = [
   'performance-budget-max-exceeded',
   'performance-budget-average-exceeded',
   'performance-budget-insufficient-samples',
+  'performance-regression-average-per-unit-exceeded',
+  'performance-regression-p95-exceeded',
+  'performance-regression-max-exceeded',
+  'performance-memoization-boundary-unsafe',
 ] as const;
 export type CryptoIntelligencePerformanceReasonCode =
   typeof CRYPTO_INTELLIGENCE_PERFORMANCE_REASON_CODES[number];
+
+export const CRYPTO_INTELLIGENCE_MEMOIZATION_BOUNDARY_KINDS = [
+  'digest-key-only',
+  'canonical-json-only',
+  'aggregate-dashboard-only',
+  'no-raw-payload-cache',
+  'no-provider-response-cache',
+  'no-customer-identifier-cache',
+  'no-private-policy-threshold-cache',
+] as const;
+export type CryptoIntelligenceMemoizationBoundaryKind =
+  typeof CRYPTO_INTELLIGENCE_MEMOIZATION_BOUNDARY_KINDS[number];
 
 export interface CryptoIntelligencePerformanceBudget {
   readonly operationKind: CryptoIntelligencePerformanceOperationKind;
@@ -76,12 +92,46 @@ export interface CryptoIntelligencePerformanceOperationResult {
   readonly operationKind: CryptoIntelligencePerformanceOperationKind;
   readonly sampleCount: number;
   readonly unitCount: number;
+  readonly totalDurationMs: number;
   readonly averageMs: number;
+  readonly averageMsPerUnit: number;
   readonly p50Ms: number;
   readonly p95Ms: number;
   readonly maxMs: number;
   readonly budget: CryptoIntelligencePerformanceBudget;
   readonly status: CryptoIntelligencePerformanceStatus;
+  readonly reasonCodes: readonly CryptoIntelligencePerformanceReasonCode[];
+}
+
+export interface CryptoIntelligencePerformanceRegressionBudget {
+  readonly operationKind: CryptoIntelligencePerformanceOperationKind;
+  readonly maxAverageMsPerUnitIncreasePercent: number;
+  readonly maxP95MsIncreasePercent: number;
+  readonly maxMaxMsIncreasePercent: number;
+}
+
+export interface CreateCryptoIntelligencePerformanceEfficiencyProfileInput {
+  readonly benchmark: CryptoIntelligencePerformanceBenchmark;
+  readonly baselineBenchmark?: CryptoIntelligencePerformanceBenchmark | null;
+  readonly regressionBudgets?: readonly CryptoIntelligencePerformanceRegressionBudget[] | null;
+  readonly memoizationBoundaries?: readonly CryptoIntelligenceMemoizationBoundaryKind[] | null;
+}
+
+export interface CryptoIntelligencePerformanceOperationEfficiency {
+  readonly operationKind: CryptoIntelligencePerformanceOperationKind;
+  readonly sampleCount: number;
+  readonly unitCount: number;
+  readonly averageMsPerUnit: number;
+  readonly p95Ms: number;
+  readonly maxMs: number;
+  readonly budgetStatus: CryptoIntelligencePerformanceStatus;
+  readonly regressionStatus: CryptoIntelligencePerformanceStatus;
+  readonly baselineAverageMsPerUnit: number | null;
+  readonly averageMsPerUnitIncreasePercent: number | null;
+  readonly baselineP95Ms: number | null;
+  readonly p95MsIncreasePercent: number | null;
+  readonly baselineMaxMs: number | null;
+  readonly maxMsIncreasePercent: number | null;
   readonly reasonCodes: readonly CryptoIntelligencePerformanceReasonCode[];
 }
 
@@ -109,16 +159,43 @@ export interface CryptoIntelligencePerformanceBenchmark {
   readonly digest: string;
 }
 
+export interface CryptoIntelligencePerformanceEfficiencyProfile {
+  readonly version: typeof CRYPTO_INTELLIGENCE_PERFORMANCE_BUDGET_SPEC_VERSION;
+  readonly benchmarkDigest: string;
+  readonly baselineBenchmarkDigest: string | null;
+  readonly status: CryptoIntelligencePerformanceStatus;
+  readonly operationCount: number;
+  readonly failedRegressionOperationCount: number;
+  readonly insufficientRegressionBaselineCount: number;
+  readonly memoizationBoundaries: readonly CryptoIntelligenceMemoizationBoundaryKind[];
+  readonly reasonCodes: readonly CryptoIntelligencePerformanceReasonCode[];
+  readonly operations: readonly CryptoIntelligencePerformanceOperationEfficiency[];
+  readonly failClosedOnRegression: true;
+  readonly digestKeysOnly: true;
+  readonly rawPayloadStored: false;
+  readonly rawBenchmarkInputsStored: false;
+  readonly rawPayloadCacheAllowed: false;
+  readonly rawProviderResponseCacheAllowed: false;
+  readonly customerIdentifierCacheAllowed: false;
+  readonly privatePolicyThresholdCacheAllowed: false;
+  readonly canonical: string;
+  readonly digest: string;
+}
+
 export interface CryptoIntelligencePerformanceBudgetDescriptor {
   readonly version: typeof CRYPTO_INTELLIGENCE_PERFORMANCE_BUDGET_SPEC_VERSION;
   readonly operationKinds: typeof CRYPTO_INTELLIGENCE_PERFORMANCE_OPERATION_KINDS;
   readonly statuses: typeof CRYPTO_INTELLIGENCE_PERFORMANCE_STATUSES;
   readonly reasonCodes: typeof CRYPTO_INTELLIGENCE_PERFORMANCE_REASON_CODES;
+  readonly memoizationBoundaryKinds: typeof CRYPTO_INTELLIGENCE_MEMOIZATION_BOUNDARY_KINDS;
   readonly defaultBudgets: readonly CryptoIntelligencePerformanceBudget[];
+  readonly defaultRegressionBudgets: readonly CryptoIntelligencePerformanceRegressionBudget[];
   readonly failClosedOnBudgetExceeded: true;
+  readonly failClosedOnRegression: true;
   readonly decisionSupportOnly: true;
   readonly rawPayloadStored: false;
   readonly rawBenchmarkInputsStored: false;
+  readonly rawPayloadCacheAllowed: false;
 }
 
 export const CRYPTO_INTELLIGENCE_DEFAULT_PERFORMANCE_BUDGETS = Object.freeze([
@@ -131,6 +208,12 @@ export const CRYPTO_INTELLIGENCE_DEFAULT_PERFORMANCE_BUDGETS = Object.freeze([
   budget('negative-fixture-validation', 5, 35, 80, 160),
   budget('telemetry-safety-scan', 5, 15, 30, 60),
 ] satisfies readonly CryptoIntelligencePerformanceBudget[]);
+
+export const CRYPTO_INTELLIGENCE_DEFAULT_REGRESSION_BUDGETS = Object.freeze(
+  CRYPTO_INTELLIGENCE_PERFORMANCE_OPERATION_KINDS.map((operationKind) =>
+    regressionBudget(operationKind, 20, 25, 35),
+  ),
+);
 
 function budget(
   operationKind: CryptoIntelligencePerformanceOperationKind,
@@ -145,6 +228,20 @@ function budget(
     maxAverageMs,
     maxP95Ms,
     maxMaxMs,
+  });
+}
+
+function regressionBudget(
+  operationKind: CryptoIntelligencePerformanceOperationKind,
+  maxAverageMsPerUnitIncreasePercent: number,
+  maxP95MsIncreasePercent: number,
+  maxMaxMsIncreasePercent: number,
+): CryptoIntelligencePerformanceRegressionBudget {
+  return Object.freeze({
+    operationKind,
+    maxAverageMsPerUnitIncreasePercent,
+    maxP95MsIncreasePercent,
+    maxMaxMsIncreasePercent,
   });
 }
 
@@ -232,6 +329,29 @@ function normalizeBudget(
   return budget(input.operationKind, minSamples, maxAverageMs, maxP95Ms, maxMaxMs);
 }
 
+function normalizeRegressionBudget(
+  input: CryptoIntelligencePerformanceRegressionBudget,
+): CryptoIntelligencePerformanceRegressionBudget {
+  if (!includesValue(CRYPTO_INTELLIGENCE_PERFORMANCE_OPERATION_KINDS, input.operationKind)) {
+    throw new Error(`Crypto intelligence performance regression operation is unsupported: ${input.operationKind}.`);
+  }
+  return regressionBudget(
+    input.operationKind,
+    normalizePositiveNumber(
+      input.maxAverageMsPerUnitIncreasePercent,
+      'regressionBudget.maxAverageMsPerUnitIncreasePercent',
+    ),
+    normalizePositiveNumber(
+      input.maxP95MsIncreasePercent,
+      'regressionBudget.maxP95MsIncreasePercent',
+    ),
+    normalizePositiveNumber(
+      input.maxMaxMsIncreasePercent,
+      'regressionBudget.maxMaxMsIncreasePercent',
+    ),
+  );
+}
+
 function normalizeSample(
   sample: CryptoIntelligencePerformanceSample,
 ): CryptoIntelligencePerformanceSample {
@@ -263,6 +383,39 @@ function budgetMap(
     }
   }
   return map;
+}
+
+function regressionBudgetMap(
+  budgets: readonly CryptoIntelligencePerformanceRegressionBudget[] | null | undefined,
+): Map<CryptoIntelligencePerformanceOperationKind, CryptoIntelligencePerformanceRegressionBudget> {
+  const map = new Map<
+  CryptoIntelligencePerformanceOperationKind,
+  CryptoIntelligencePerformanceRegressionBudget
+  >();
+  for (const entry of budgets ?? CRYPTO_INTELLIGENCE_DEFAULT_REGRESSION_BUDGETS) {
+    const normalized = normalizeRegressionBudget(entry);
+    map.set(normalized.operationKind, normalized);
+  }
+  for (const kind of CRYPTO_INTELLIGENCE_PERFORMANCE_OPERATION_KINDS) {
+    if (!map.has(kind)) {
+      throw new Error(`Crypto intelligence performance regression budget is missing operation ${kind}.`);
+    }
+  }
+  return map;
+}
+
+function normalizeMemoizationBoundaries(
+  boundaries: readonly CryptoIntelligenceMemoizationBoundaryKind[] | null | undefined,
+): readonly CryptoIntelligenceMemoizationBoundaryKind[] {
+  const input = boundaries ?? CRYPTO_INTELLIGENCE_MEMOIZATION_BOUNDARY_KINDS;
+  const output = new Set<CryptoIntelligenceMemoizationBoundaryKind>();
+  for (const boundary of input) {
+    if (!includesValue(CRYPTO_INTELLIGENCE_MEMOIZATION_BOUNDARY_KINDS, boundary)) {
+      throw new Error(`Crypto intelligence performance memoization boundary is unsupported: ${boundary}.`);
+    }
+    output.add(boundary);
+  }
+  return Object.freeze([...output].sort());
 }
 
 function round(value: number): number {
@@ -324,10 +477,13 @@ function operationResult(input: {
     .map((sample) => sample.durationMs)
     .sort((left, right) => left - right);
   const sampleCount = durations.length;
+  const totalDurationMs = durations.reduce((sum, duration) => sum + duration, 0);
   const averageMs =
     sampleCount === 0
       ? 0
-      : durations.reduce((sum, duration) => sum + duration, 0) / sampleCount;
+      : totalDurationMs / sampleCount;
+  const unitCount = input.samples.reduce((sum, sample) => sum + (sample.unitCount ?? 1), 0);
+  const averageMsPerUnit = unitCount === 0 ? 0 : totalDurationMs / unitCount;
   const p50Ms = percentile(durations, 0.5);
   const p95Ms = percentile(durations, 0.95);
   const maxMs = durations[durations.length - 1] ?? 0;
@@ -342,8 +498,10 @@ function operationResult(input: {
   return Object.freeze({
     operationKind: input.operationKind,
     sampleCount,
-    unitCount: input.samples.reduce((sum, sample) => sum + (sample.unitCount ?? 1), 0),
+    unitCount,
+    totalDurationMs: round(totalDurationMs),
     averageMs: round(averageMs),
+    averageMsPerUnit: round(averageMsPerUnit),
     p50Ms: round(p50Ms),
     p95Ms: round(p95Ms),
     maxMs: round(maxMs),
@@ -371,6 +529,115 @@ function uniqueReasonCodes(
   );
 }
 
+function percentIncrease(current: number, baseline: number): number {
+  if (baseline <= 0) return current > 0 ? 100 : 0;
+  return round(((current - baseline) / baseline) * 100);
+}
+
+function efficiencyReasonCodes(input: {
+  readonly current: CryptoIntelligencePerformanceOperationResult;
+  readonly baseline: CryptoIntelligencePerformanceOperationResult | null;
+  readonly regressionBudget: CryptoIntelligencePerformanceRegressionBudget;
+}): {
+  readonly status: CryptoIntelligencePerformanceStatus;
+  readonly reasonCodes: readonly CryptoIntelligencePerformanceReasonCode[];
+  readonly averageMsPerUnitIncreasePercent: number | null;
+  readonly p95MsIncreasePercent: number | null;
+  readonly maxMsIncreasePercent: number | null;
+} {
+  if (input.baseline === null) {
+    return Object.freeze({
+      status: 'insufficient-samples',
+      reasonCodes: Object.freeze(['performance-budget-insufficient-samples'] as const),
+      averageMsPerUnitIncreasePercent: null,
+      p95MsIncreasePercent: null,
+      maxMsIncreasePercent: null,
+    });
+  }
+
+  const averageMsPerUnitIncreasePercent = percentIncrease(
+    input.current.averageMsPerUnit,
+    input.baseline.averageMsPerUnit,
+  );
+  const p95MsIncreasePercent = percentIncrease(input.current.p95Ms, input.baseline.p95Ms);
+  const maxMsIncreasePercent = percentIncrease(input.current.maxMs, input.baseline.maxMs);
+  const reasonCodes: CryptoIntelligencePerformanceReasonCode[] = [];
+
+  if (
+    averageMsPerUnitIncreasePercent >
+    input.regressionBudget.maxAverageMsPerUnitIncreasePercent
+  ) {
+    reasonCodes.push('performance-regression-average-per-unit-exceeded');
+  }
+  if (p95MsIncreasePercent > input.regressionBudget.maxP95MsIncreasePercent) {
+    reasonCodes.push('performance-regression-p95-exceeded');
+  }
+  if (maxMsIncreasePercent > input.regressionBudget.maxMaxMsIncreasePercent) {
+    reasonCodes.push('performance-regression-max-exceeded');
+  }
+
+  return Object.freeze({
+    status: reasonCodes.length === 0 ? 'pass' : 'fail',
+    reasonCodes: Object.freeze(
+      reasonCodes.length === 0
+        ? (['performance-budget-pass'] as const)
+        : [...new Set(reasonCodes)].sort(),
+    ),
+    averageMsPerUnitIncreasePercent,
+    p95MsIncreasePercent,
+    maxMsIncreasePercent,
+  });
+}
+
+function operationEfficiency(input: {
+  readonly current: CryptoIntelligencePerformanceOperationResult;
+  readonly baseline: CryptoIntelligencePerformanceOperationResult | null;
+  readonly regressionBudget: CryptoIntelligencePerformanceRegressionBudget;
+}): CryptoIntelligencePerformanceOperationEfficiency {
+  const regression = efficiencyReasonCodes(input);
+  return Object.freeze({
+    operationKind: input.current.operationKind,
+    sampleCount: input.current.sampleCount,
+    unitCount: input.current.unitCount,
+    averageMsPerUnit: input.current.averageMsPerUnit,
+    p95Ms: input.current.p95Ms,
+    maxMs: input.current.maxMs,
+    budgetStatus: input.current.status,
+    regressionStatus: regression.status,
+    baselineAverageMsPerUnit: input.baseline?.averageMsPerUnit ?? null,
+    averageMsPerUnitIncreasePercent: regression.averageMsPerUnitIncreasePercent,
+    baselineP95Ms: input.baseline?.p95Ms ?? null,
+    p95MsIncreasePercent: regression.p95MsIncreasePercent,
+    baselineMaxMs: input.baseline?.maxMs ?? null,
+    maxMsIncreasePercent: regression.maxMsIncreasePercent,
+    reasonCodes: regression.reasonCodes,
+  });
+}
+
+function efficiencyStatus(
+  operations: readonly CryptoIntelligencePerformanceOperationEfficiency[],
+  memoizationSafe: boolean,
+): CryptoIntelligencePerformanceStatus {
+  if (!memoizationSafe || operations.some((operation) => operation.regressionStatus === 'fail')) {
+    return 'fail';
+  }
+  if (operations.some((operation) => operation.regressionStatus === 'insufficient-samples')) {
+    return 'insufficient-samples';
+  }
+  return 'pass';
+}
+
+function efficiencyReasonCodeSet(
+  operations: readonly CryptoIntelligencePerformanceOperationEfficiency[],
+  memoizationSafe: boolean,
+): readonly CryptoIntelligencePerformanceReasonCode[] {
+  const codes = new Set<CryptoIntelligencePerformanceReasonCode>(
+    operations.flatMap((operation) => operation.reasonCodes),
+  );
+  if (!memoizationSafe) codes.add('performance-memoization-boundary-unsafe');
+  return Object.freeze([...codes].sort());
+}
+
 export function cryptoIntelligencePerformanceBudgetDescriptor():
 CryptoIntelligencePerformanceBudgetDescriptor {
   return Object.freeze({
@@ -378,11 +645,15 @@ CryptoIntelligencePerformanceBudgetDescriptor {
     operationKinds: CRYPTO_INTELLIGENCE_PERFORMANCE_OPERATION_KINDS,
     statuses: CRYPTO_INTELLIGENCE_PERFORMANCE_STATUSES,
     reasonCodes: CRYPTO_INTELLIGENCE_PERFORMANCE_REASON_CODES,
+    memoizationBoundaryKinds: CRYPTO_INTELLIGENCE_MEMOIZATION_BOUNDARY_KINDS,
     defaultBudgets: CRYPTO_INTELLIGENCE_DEFAULT_PERFORMANCE_BUDGETS,
+    defaultRegressionBudgets: CRYPTO_INTELLIGENCE_DEFAULT_REGRESSION_BUDGETS,
     failClosedOnBudgetExceeded: true,
+    failClosedOnRegression: true,
     decisionSupportOnly: true,
     rawPayloadStored: false,
     rawBenchmarkInputsStored: false,
+    rawPayloadCacheAllowed: false,
   });
 }
 
@@ -438,6 +709,67 @@ export function createCryptoIntelligencePerformanceBenchmark(
     privatePolicyThresholdsStored: false,
     solverRouteSecretsStored: false,
   } satisfies Omit<CryptoIntelligencePerformanceBenchmark, 'canonical' | 'digest'>);
+
+  assertCryptoIntelligencePrivacyMinimized({
+    surfaceKind: 'intelligence-performance-benchmark',
+    artifact: payload,
+  });
+  const canonical = canonicalObject(payload as unknown as CanonicalReleaseJsonValue);
+
+  return Object.freeze({
+    ...payload,
+    canonical: canonical.canonical,
+    digest: canonical.digest,
+  });
+}
+
+export function createCryptoIntelligencePerformanceEfficiencyProfile(
+  input: CreateCryptoIntelligencePerformanceEfficiencyProfileInput,
+): CryptoIntelligencePerformanceEfficiencyProfile {
+  const baselineBenchmark = input.baselineBenchmark ?? null;
+  const regressionBudgets = regressionBudgetMap(input.regressionBudgets);
+  const memoizationBoundaries = normalizeMemoizationBoundaries(input.memoizationBoundaries);
+  const memoizationSafe = CRYPTO_INTELLIGENCE_MEMOIZATION_BOUNDARY_KINDS.every(
+    (boundary) => memoizationBoundaries.includes(boundary),
+  );
+  const baselineByOperation = new Map(
+    baselineBenchmark?.results.map((result) => [result.operationKind, result]) ?? [],
+  );
+  const operations = Object.freeze(
+    input.benchmark.results.map((current) =>
+      operationEfficiency({
+        current,
+        baseline: baselineByOperation.get(current.operationKind) ?? null,
+        regressionBudget: regressionBudgets.get(current.operationKind)!,
+      }),
+    ),
+  );
+  const status = efficiencyStatus(operations, memoizationSafe);
+  const reasonCodes = efficiencyReasonCodeSet(operations, memoizationSafe);
+  const payload = Object.freeze({
+    version: CRYPTO_INTELLIGENCE_PERFORMANCE_BUDGET_SPEC_VERSION,
+    benchmarkDigest: input.benchmark.digest,
+    baselineBenchmarkDigest: baselineBenchmark?.digest ?? null,
+    status,
+    operationCount: operations.length,
+    failedRegressionOperationCount: operations.filter(
+      (operation) => operation.regressionStatus === 'fail',
+    ).length,
+    insufficientRegressionBaselineCount: operations.filter(
+      (operation) => operation.regressionStatus === 'insufficient-samples',
+    ).length,
+    memoizationBoundaries,
+    reasonCodes,
+    operations,
+    failClosedOnRegression: true,
+    digestKeysOnly: true,
+    rawPayloadStored: false,
+    rawBenchmarkInputsStored: false,
+    rawPayloadCacheAllowed: false,
+    rawProviderResponseCacheAllowed: false,
+    customerIdentifierCacheAllowed: false,
+    privatePolicyThresholdCacheAllowed: false,
+  } satisfies Omit<CryptoIntelligencePerformanceEfficiencyProfile, 'canonical' | 'digest'>);
 
   assertCryptoIntelligencePrivacyMinimized({
     surfaceKind: 'intelligence-performance-benchmark',

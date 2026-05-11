@@ -301,6 +301,13 @@ function testCryptoAuthorizationCoreDescriptorFunctions(): void {
     'crypto platform surface: intelligence performance budget descriptor is callable',
   );
   equal(
+    cryptoAuthorizationCore.intelligencePerformanceBudget
+      .cryptoIntelligencePerformanceBudgetDescriptor()
+      .failClosedOnRegression,
+    true,
+    'crypto platform surface: intelligence performance regressions fail closed',
+  );
+  equal(
     cryptoAuthorizationCore.policyGapNarrowing
       .cryptoPolicyIntelligenceRoutingDescriptor()
       .conflictResolutionRequired,

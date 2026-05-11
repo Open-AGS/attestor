@@ -238,6 +238,13 @@ function testCryptoIntelligenceSafetyNamespaces(): void {
     true,
     'crypto intelligence platform surface: performance budget fails closed',
   );
+  equal(
+    cryptoIntelligence.performanceBudget
+      .cryptoIntelligencePerformanceBudgetDescriptor()
+      .failClosedOnRegression,
+    true,
+    'crypto intelligence platform surface: performance regressions fail closed',
+  );
 }
 
 testCryptoIntelligencePublicSurfaceDescriptor();

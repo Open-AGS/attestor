@@ -203,5 +203,18 @@ const performanceBenchmark =
 assert.equal(performanceBenchmark.status, 'pass');
 assert.equal(performanceBenchmark.rawBenchmarkInputsStored, false);
 assert.equal(performanceBenchmark.failClosedOnBudgetExceeded, true);
+assert.equal(
+  performanceBenchmark.results.every((result) => result.averageMsPerUnit > 0),
+  true,
+);
+const efficiencyProfile =
+  cryptoCore.cryptoAuthorizationCore.intelligencePerformanceBudget
+    .createCryptoIntelligencePerformanceEfficiencyProfile({
+      benchmark: performanceBenchmark,
+      baselineBenchmark: performanceBenchmark,
+    });
+assert.equal(efficiencyProfile.status, 'pass');
+assert.equal(efficiencyProfile.rawPayloadCacheAllowed, false);
+assert.equal(efficiencyProfile.digestKeysOnly, true);
 
 console.log('crypto-authorization-core package surface probe passed');

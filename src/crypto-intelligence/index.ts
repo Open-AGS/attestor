@@ -182,6 +182,8 @@ export type CryptoIntelligenceDashboardSummary =
   dashboardSummary.CryptoIntelligenceDashboardSummary;
 export type CryptoIntelligencePerformanceBenchmark =
   performanceBudget.CryptoIntelligencePerformanceBenchmark;
+export type CryptoIntelligencePerformanceEfficiencyProfile =
+  performanceBudget.CryptoIntelligencePerformanceEfficiencyProfile;
 
 export function cryptoIntelligencePublicSurface():
 CryptoIntelligencePublicSurfaceDescriptor {

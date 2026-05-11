@@ -151,6 +151,18 @@ assert.equal(
     .failClosedOnBudgetExceeded,
   true,
 );
+assert.equal(
+  cryptoIntelligence.cryptoIntelligence.performanceBudget
+    .cryptoIntelligencePerformanceBudgetDescriptor()
+    .failClosedOnRegression,
+  true,
+);
+assert.equal(
+  cryptoIntelligence.cryptoIntelligence.performanceBudget
+    .cryptoIntelligencePerformanceBudgetDescriptor()
+    .rawPayloadCacheAllowed,
+  false,
+);
 
 let blockedInternalPath = false;
 try {

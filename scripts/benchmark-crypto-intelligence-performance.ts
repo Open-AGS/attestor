@@ -27,6 +27,7 @@ import {
 } from '../src/crypto-authorization-core/intelligence-dashboard-summary.js';
 import {
   createCryptoIntelligencePerformanceBenchmark,
+  createCryptoIntelligencePerformanceEfficiencyProfile,
   type CryptoIntelligencePerformanceOperationKind,
   type CryptoIntelligencePerformanceSample,
 } from '../src/crypto-authorization-core/intelligence-performance-budget.js';
@@ -360,6 +361,10 @@ export function captureCryptoIntelligencePerformanceBenchmark(
     environmentRef: options.environmentRef,
     samples,
   });
+  const efficiencyProfile = createCryptoIntelligencePerformanceEfficiencyProfile({
+    benchmark,
+    baselineBenchmark: benchmark,
+  });
 
   mkdirSync(options.outputDir, { recursive: true });
   writeFileSync(
@@ -376,6 +381,14 @@ export function captureCryptoIntelligencePerformanceBenchmark(
       failedOperationCount: benchmark.failedOperationCount,
       insufficientSampleOperationCount: benchmark.insufficientSampleOperationCount,
       results: benchmark.results,
+      efficiencyProfile: {
+        status: efficiencyProfile.status,
+        reasonCodes: efficiencyProfile.reasonCodes,
+        failedRegressionOperationCount: efficiencyProfile.failedRegressionOperationCount,
+        insufficientRegressionBaselineCount:
+          efficiencyProfile.insufficientRegressionBaselineCount,
+        digest: efficiencyProfile.digest,
+      },
       digest: benchmark.digest,
     }, null, 2)}\n`,
     'utf8',
@@ -390,6 +403,7 @@ Generated: ${benchmark.generatedAt}
 - status: ${benchmark.status}
 - samples: ${benchmark.sampleCount}
 - digest: ${benchmark.digest}
+- efficiency profile digest: ${efficiencyProfile.digest}
 
 This benchmark stores aggregated operation timings only. It does not persist raw crypto payloads, wallet metadata, customer identifiers, provider responses, private policy thresholds, or solver route secrets.
 `,

@@ -1,11 +1,14 @@
 import assert from 'node:assert/strict';
 import {
   CRYPTO_INTELLIGENCE_DEFAULT_PERFORMANCE_BUDGETS,
+  CRYPTO_INTELLIGENCE_DEFAULT_REGRESSION_BUDGETS,
+  CRYPTO_INTELLIGENCE_MEMOIZATION_BOUNDARY_KINDS,
   CRYPTO_INTELLIGENCE_PERFORMANCE_BUDGET_SPEC_VERSION,
   CRYPTO_INTELLIGENCE_PERFORMANCE_OPERATION_KINDS,
   CRYPTO_INTELLIGENCE_PERFORMANCE_REASON_CODES,
   CRYPTO_INTELLIGENCE_PERFORMANCE_STATUSES,
   createCryptoIntelligencePerformanceBenchmark,
+  createCryptoIntelligencePerformanceEfficiencyProfile,
   cryptoIntelligencePerformanceBenchmarkLabel,
   cryptoIntelligencePerformanceBudgetDescriptor,
   type CryptoIntelligencePerformanceOperationKind,
@@ -70,10 +73,20 @@ function testDescriptor(): void {
     CRYPTO_INTELLIGENCE_PERFORMANCE_REASON_CODES,
     'crypto performance budget: descriptor exposes reason codes',
   );
+  deepEqual(
+    descriptor.memoizationBoundaryKinds,
+    CRYPTO_INTELLIGENCE_MEMOIZATION_BOUNDARY_KINDS,
+    'crypto performance budget: descriptor exposes memoization boundary kinds',
+  );
   equal(
     descriptor.defaultBudgets.length,
     CRYPTO_INTELLIGENCE_PERFORMANCE_OPERATION_KINDS.length,
     'crypto performance budget: every operation has a default budget',
+  );
+  equal(
+    descriptor.defaultRegressionBudgets.length,
+    CRYPTO_INTELLIGENCE_PERFORMANCE_OPERATION_KINDS.length,
+    'crypto performance budget: every operation has a regression budget',
   );
   equal(
     descriptor.failClosedOnBudgetExceeded,
@@ -81,9 +94,19 @@ function testDescriptor(): void {
     'crypto performance budget: budget breaches fail closed',
   );
   equal(
+    descriptor.failClosedOnRegression,
+    true,
+    'crypto performance budget: performance regressions fail closed',
+  );
+  equal(
     descriptor.rawBenchmarkInputsStored,
     false,
     'crypto performance budget: raw benchmark inputs are not stored',
+  );
+  equal(
+    descriptor.rawPayloadCacheAllowed,
+    false,
+    'crypto performance budget: raw payload caches are not allowed',
   );
 }
 
@@ -101,6 +124,14 @@ function testPassingBenchmarkAggregatesBudgetResults(): void {
   equal(benchmark.sampleCount, CRYPTO_INTELLIGENCE_PERFORMANCE_OPERATION_KINDS.length * 5, 'crypto performance budget: samples are counted');
   equal(benchmark.failedOperationCount, 0, 'crypto performance budget: no failed operations');
   equal(benchmark.insufficientSampleOperationCount, 0, 'crypto performance budget: no insufficient operations');
+  ok(
+    benchmark.results.every((result) => result.totalDurationMs > 0),
+    'crypto performance budget: total operation duration is tracked',
+  );
+  ok(
+    benchmark.results.every((result) => result.averageMsPerUnit > 0),
+    'crypto performance budget: per-unit operation cost is tracked',
+  );
   ok(
     benchmark.results.every((result) => result.reasonCodes.includes('performance-budget-pass')),
     'crypto performance budget: every operation carries pass reason',
@@ -159,6 +190,101 @@ function testBudgetFailuresAndInsufficientSamplesFailClosed(): void {
   ok(
     insufficient.reasonCodes.includes('performance-budget-insufficient-samples'),
     'crypto performance budget: insufficient sample reason is present',
+  );
+}
+
+function testEfficiencyProfileDetectsRegressionAndUnsafeMemoization(): void {
+  const baseline = createCryptoIntelligencePerformanceBenchmark({
+    generatedAt: '2026-05-11T14:36:00.000Z',
+    benchmarkId: 'crypto-intelligence-performance:test-baseline',
+    environmentRef: 'ci:unit',
+    samples: passingSamples(),
+  });
+  const current = createCryptoIntelligencePerformanceBenchmark({
+    generatedAt: '2026-05-11T14:37:00.000Z',
+    benchmarkId: 'crypto-intelligence-performance:test-current',
+    environmentRef: 'ci:unit',
+    samples: [
+      ...passingSamples().filter(
+        (sample) => sample.operationKind !== 'canonicalization-and-hashing',
+      ),
+      ...samplesFor('canonicalization-and-hashing', [1, 2, 3, 4, 10]),
+    ],
+  });
+  const profile = createCryptoIntelligencePerformanceEfficiencyProfile({
+    benchmark: current,
+    baselineBenchmark: baseline,
+    regressionBudgets: CRYPTO_INTELLIGENCE_DEFAULT_REGRESSION_BUDGETS.map(
+      (budget) =>
+        budget.operationKind === 'canonicalization-and-hashing'
+          ? {
+              ...budget,
+              maxAverageMsPerUnitIncreasePercent: 10,
+              maxP95MsIncreasePercent: 10,
+              maxMaxMsIncreasePercent: 10,
+            }
+          : budget,
+    ),
+  });
+
+  equal(profile.status, 'fail', 'crypto performance efficiency: regression fails closed');
+  equal(
+    profile.failedRegressionOperationCount,
+    1,
+    'crypto performance efficiency: failing regression operation is counted',
+  );
+  ok(
+    profile.reasonCodes.includes('performance-regression-max-exceeded') ||
+      profile.reasonCodes.includes('performance-regression-average-per-unit-exceeded'),
+    'crypto performance efficiency: regression reason is recorded',
+  );
+  ok(
+    profile.operations.some((operation) =>
+      operation.operationKind === 'canonicalization-and-hashing' &&
+      operation.regressionStatus === 'fail' &&
+      operation.averageMsPerUnitIncreasePercent !== null,
+    ),
+    'crypto performance efficiency: per-unit regression is attached to the operation',
+  );
+  equal(profile.digestKeysOnly, true, 'crypto performance efficiency: profile is digest-key only');
+  equal(profile.rawPayloadCacheAllowed, false, 'crypto performance efficiency: raw payload cache is blocked');
+
+  const unsafeMemoization = createCryptoIntelligencePerformanceEfficiencyProfile({
+    benchmark: baseline,
+    baselineBenchmark: baseline,
+    memoizationBoundaries: ['digest-key-only'],
+  });
+  equal(
+    unsafeMemoization.status,
+    'fail',
+    'crypto performance efficiency: incomplete memoization boundary fails closed',
+  );
+  ok(
+    unsafeMemoization.reasonCodes.includes('performance-memoization-boundary-unsafe'),
+    'crypto performance efficiency: unsafe memoization boundary reason is recorded',
+  );
+}
+
+function testEfficiencyProfileFailsClosedWithoutBaseline(): void {
+  const benchmark = createCryptoIntelligencePerformanceBenchmark({
+    generatedAt: '2026-05-11T14:38:00.000Z',
+    benchmarkId: 'crypto-intelligence-performance:test-no-baseline',
+    environmentRef: 'ci:unit',
+    samples: passingSamples(),
+  });
+  const profile = createCryptoIntelligencePerformanceEfficiencyProfile({
+    benchmark,
+  });
+
+  equal(
+    profile.status,
+    'insufficient-samples',
+    'crypto performance efficiency: missing baseline is insufficient',
+  );
+  equal(
+    profile.insufficientRegressionBaselineCount,
+    CRYPTO_INTELLIGENCE_PERFORMANCE_OPERATION_KINDS.length,
+    'crypto performance efficiency: missing baseline is counted per operation',
   );
 }
 
@@ -231,6 +357,8 @@ function testValidationAndPrivacyGuards(): void {
 testDescriptor();
 testPassingBenchmarkAggregatesBudgetResults();
 testBudgetFailuresAndInsufficientSamplesFailClosed();
+testEfficiencyProfileDetectsRegressionAndUnsafeMemoization();
+testEfficiencyProfileFailsClosedWithoutBaseline();
 testValidationAndPrivacyGuards();
 
 console.log(`Crypto authorization core intelligence performance budget tests: ${passed} passed, 0 failed`);

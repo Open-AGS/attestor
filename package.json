@@ -328,7 +328,7 @@
     "@opentelemetry/semantic-conventions": "^1.40.0",
     "@simplewebauthn/server": "^13.3.0",
     "@solarahealth/fhir-r4": "^1.2.0",
-    "@types/node": "^22.0.0",
+    "@types/node": "^22.19.18",
     "@types/nodemailer": "^8.0.0",
     "@types/smtp-server": "^3.5.13",
     "bullmq": "^5.76.4",

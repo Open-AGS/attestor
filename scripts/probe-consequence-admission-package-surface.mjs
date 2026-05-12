@@ -403,6 +403,22 @@ assert.equal(
   typeof admission.createPolicyFoundryCandidateRegistry,
   'function',
 );
+assert.equal(
+  admission.POLICY_FOUNDRY_COUNTEREXAMPLE_LEDGER_VERSION,
+  'attestor.policy-foundry-counterexample-ledger.v1',
+);
+assert.equal(
+  admission.policyFoundryCounterexampleLedgerDescriptor().dataMinimizationSurfaceKind,
+  'policy-foundry-counterexample-ledger',
+);
+assert.equal(
+  admission.policyFoundryCounterexampleLedgerDescriptor().evidenceDigestOnly,
+  true,
+);
+assert.equal(
+  typeof admission.createPolicyFoundryCounterexampleLedger,
+  'function',
+);
 
 let blockedInternalPath = false;
 try {

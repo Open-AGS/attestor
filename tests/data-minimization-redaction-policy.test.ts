@@ -63,6 +63,9 @@ function testDescriptorCoversCriticalSurfaces(): void {
   const candidateRegistry = descriptor.surfaces.find((surface) =>
     surface.surfaceKind === 'policy-foundry-candidate-registry'
   );
+  const counterexampleLedger = descriptor.surfaces.find((surface) =>
+    surface.surfaceKind === 'policy-foundry-counterexample-ledger'
+  );
   const externalReview = descriptor.surfaces.find((surface) =>
     surface.surfaceKind === 'external-review-packet'
   );
@@ -130,6 +133,11 @@ function testDescriptorCoversCriticalSurfaces(): void {
   ok(
     candidateRegistry?.allowedUnits.includes('policy-reference'),
     'Data minimization policy: Policy Foundry candidate registry allows policy references',
+  );
+  ok(counterexampleLedger, 'Data minimization policy: Policy Foundry counterexample ledger surface is present');
+  ok(
+    counterexampleLedger?.allowedUnits.includes('digests'),
+    'Data minimization policy: Policy Foundry counterexample ledger allows evidence digests',
   );
   ok(externalReview, 'Data minimization policy: external review packet surface is present');
   ok(
@@ -316,6 +324,11 @@ function testDocsAndScriptsExposePolicy(): void {
     doc,
     'policy-foundry-candidate-registry',
     'Data minimization policy: doc lists Policy Foundry candidate registry surface',
+  );
+  includes(
+    doc,
+    'policy-foundry-counterexample-ledger',
+    'Data minimization policy: doc lists Policy Foundry counterexample ledger surface',
   );
   includes(
     doc,

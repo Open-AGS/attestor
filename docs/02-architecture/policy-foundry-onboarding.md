@@ -371,6 +371,17 @@ regulated filing, system operation, decision support, and custom domains.
 Custom domains remain `needs-template` until a customer template exists. LLM
 text, summaries, and private thresholds cannot become threshold authority.
 
+The Counterexample Ledger is the first candidate-level promotion blocker ledger
+for this path. It lives in
+`src/consequence-admission/policy-foundry-counterexample-ledger.ts`, is covered
+by `tests/policy-foundry-counterexample-ledger.test.ts`, and is exposed through
+`test:policy-foundry-counterexample-ledger`. It records digest-only supporting
+evidence, simulation counterexamples, missing proof, high-risk auto-admits,
+single-actor concentration, replay pressure, schema/template gaps, and red-team
+replay failures per candidate. It is review material only: it does not resolve
+the evidence gap, activate enforcement, store raw shadow payloads, or prove
+production readiness.
+
 ```text
 coverageScore
 coverageDimensions
@@ -385,6 +396,12 @@ candidateRegistry
 schemaStatus
 templateId
 requiredAttributes
+counterexampleLedger
+promotionBlocked
+supportingEvidenceCount
+counterexampleCount
+missingProofCount
+replayDuplicateRate
 readinessScore
 sampleSize
 actorDistributionHealth
@@ -461,7 +478,7 @@ readiness/no-go contract with a read-only shadow route, candidate-specific
 evidence replay, active questions, action-surface review handoff, synthetic
 onboarding red-team fixture generation, and the first onboarding session
 contract plus the first coverage score, minimum viable gate planner, and
-schema-bound candidate registry contracts. It does not yet have a live
+schema-bound candidate registry and counterexample ledger contracts. It does not yet have a live
 adversarial replay executor, UI workflow, or full commercial entitlement
 contract for Foundry capabilities. The deeper self-onboarding track is tracked in
 [Policy Foundry Self-Onboarding Deepening](policy-foundry-self-onboarding-deepening.md).

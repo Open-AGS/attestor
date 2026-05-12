@@ -41,7 +41,7 @@ These sources are engineering anchors only. They do not certify Attestor.
 | Step 02 | complete | Add Coverage Score v1 | Per-surface coverage for shadow traffic, manifest, evidence, authority, verifier/gateway, credential isolation, and replay/idempotency |
 | Step 03 | complete | Add Minimum Viable Gate Planner | Select the smallest reviewed integration path: SDK verifier, gateway proxy, MCP tool gateway, sidecar/ext_authz, or provider connector |
 | Step 04 | complete | Add Schema-Bound Candidate Registry | Keep candidate policy generation tied to domain schemas/templates, not LLM threshold authority |
-| Step 05 | not started | Add Counterexample Ledger | Track supporting evidence, counterexamples, missing proof, high-risk auto-admits, actor concentration, and replay pressure per candidate |
+| Step 05 | complete | Add Counterexample Ledger | Track supporting evidence, counterexamples, missing proof, high-risk auto-admits, actor concentration, and replay pressure per candidate |
 | Step 06 | not started | Add Policy Twin v2 Summary | Produce a clearer backtest packet for admit/review/block impact, review-load delta, no-go reasons, and rollout recommendation |
 | Step 07 | not started | Add Authority Relationship Context | Capture approver, owner, tenant, delegation, and scope context without storing raw customer identity data |
 | Step 08 | not started | Add Review-Only Integration Patch Pack | Render SDK/gateway/MCP/sidecar/provider draft patches as review material only |
@@ -142,6 +142,27 @@ The registry is not a policy-authoring authority. It does not allow LLM text,
 private thresholds, or candidate summaries to become threshold authority. Every
 registered candidate remains approval-required and non-enforcing.
 
+## Step 05 Scope
+
+Step 05 adds `attestor.policy-foundry-counterexample-ledger.v1`.
+
+The counterexample ledger binds each candidate to digest-only supporting
+evidence and promotion blockers:
+
+```text
+supporting-evidence
+simulation-counterexample
+missing-proof
+high-risk-auto-admit
+actor-concentration
+replay-duplicate-pressure
+schema-template-gap
+red-team-replay-failure
+```
+
+The ledger is review material only. It does not resolve the counterexamples,
+activate enforcement, store raw shadow payloads, or prove production readiness.
+
 ## Protected Principles
 
 - customer authority
@@ -166,5 +187,5 @@ contracts, or shared product positioning are touched.
 
 ## Current Status
 
-Step 01 through Step 04 are complete. Step 05 is the next implementation step. The
+Step 01 through Step 05 are complete. Step 06 is the next implementation step. The
 rest of the list remains open.

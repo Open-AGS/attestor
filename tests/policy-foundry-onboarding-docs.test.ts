@@ -99,6 +99,11 @@ function testPolicyFoundryArchitectureIsGrounded(): void {
   );
   includes(
     doc,
+    'src/consequence-admission/policy-foundry-counterexample-ledger.ts',
+    'Policy Foundry docs: counterexample ledger contract evidence is named',
+  );
+  includes(
+    doc,
     'GET /api/v1/shadow/policy-foundry/active-questions',
     'Policy Foundry docs: active question route is named',
   );
@@ -259,6 +264,16 @@ function testPackageScriptIsExposed(): void {
     pkg.scripts['test:policy-foundry-candidate-registry'] ?? '',
     'tsx tests/policy-foundry-candidate-registry.test.ts',
     'Package: Policy Foundry candidate registry test command is stable',
+  );
+  includes(
+    JSON.stringify(pkg.scripts),
+    'test:policy-foundry-counterexample-ledger',
+    'Package: Policy Foundry counterexample ledger test is exposed',
+  );
+  includes(
+    pkg.scripts['test:policy-foundry-counterexample-ledger'] ?? '',
+    'tsx tests/policy-foundry-counterexample-ledger.test.ts',
+    'Package: Policy Foundry counterexample ledger test command is stable',
   );
 }
 

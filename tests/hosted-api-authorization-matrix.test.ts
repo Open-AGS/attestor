@@ -39,6 +39,7 @@ const routeFiles = [
   ['src', 'service', 'http', 'routes', 'core-routes.ts'],
   ['src', 'service', 'http', 'routes', 'account-routes.ts'],
   ['src', 'service', 'http', 'routes', 'admin-routes.ts'],
+  ['src', 'service', 'http', 'routes', 'action-surface-onboarding-routes.ts'],
   ['src', 'service', 'http', 'routes', 'release-review-routes.ts'],
   ['src', 'service', 'http', 'routes', 'release-policy-control-routes.ts'],
   ['src', 'service', 'http', 'routes', 'generic-admission-routes.ts'],

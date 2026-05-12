@@ -154,6 +154,18 @@ POST /api/v1/admissions
 
 It accepts an explicit consequence domain and adoption mode: `observe`, `warn`, `review`, or `enforce`. This is the route-level entry point for the shadow-to-enforcement ladder described above.
 
+The hosted action-surface onboarding renderer is:
+
+```http
+POST /api/v1/shadow/action-surface/onboarding-packet
+```
+
+It renders the same review-required packet as the local CLI from bounded
+manifests, declarations, and the authenticated tenant's stored shadow events.
+It is stateless review material: no raw manifest payload is stored, no
+credentials are issued, no gateway is deployed, and enforcement is not
+activated.
+
 Minimal request shape:
 
 ```json

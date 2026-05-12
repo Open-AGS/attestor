@@ -7,6 +7,10 @@ import { registerAccountRoutes } from '../http/routes/account-routes.js';
 import { registerAdminRoutes } from '../http/routes/admin-routes.js';
 import { registerCoreRoutes } from '../http/routes/core-routes.js';
 import {
+  registerActionSurfaceOnboardingRoutes,
+  type ActionSurfaceOnboardingRouteDeps,
+} from '../http/routes/action-surface-onboarding-routes.js';
+import {
   registerGenericAdmissionRoutes,
   type GenericAdmissionRouteDeps,
 } from '../http/routes/generic-admission-routes.js';
@@ -138,6 +142,18 @@ export function createShadowRouteDeps<Packet>(
   };
 }
 
+export function createActionSurfaceOnboardingRouteDeps<Packet>(
+  runtime: AppRuntime<Packet>,
+): ActionSurfaceOnboardingRouteDeps {
+  const shadowEventStore = createFileBackedShadowAdmissionEventStore();
+  return {
+    currentTenant: runtime.services.httpRoutes.pipeline.currentTenant,
+    listShadowEvents: ({ tenant }) =>
+      shadowEventStore.list({ tenantId: tenant.tenantId }).events,
+    now: () => new Date().toISOString(),
+  };
+}
+
 export function createWebhookRouteDeps<Packet>(runtime: AppRuntime<Packet>) {
   return runtime.services.httpRoutes.webhook;
 }
@@ -158,6 +174,7 @@ export function registerAllRoutes<Packet>(app: Hono, runtime: AppRuntime<Packet>
   registerAdminRoutes(app, createAdminRouteDeps(runtime));
   registerGenericAdmissionRoutes(app, createGenericAdmissionRouteDeps(runtime));
   registerShadowRoutes(app, createShadowRouteDeps(runtime));
+  registerActionSurfaceOnboardingRoutes(app, createActionSurfaceOnboardingRouteDeps(runtime));
   registerReleaseReviewRoutes(app, createReleaseReviewRouteDeps(runtime));
   registerReleasePolicyControlRoutes(app, createReleasePolicyControlRouteDeps(runtime));
   registerWebhookRoutes(app, createWebhookRouteDeps(runtime));

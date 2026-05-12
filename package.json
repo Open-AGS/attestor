@@ -133,6 +133,7 @@
     "test:action-surface-manifest-intake": "tsx tests/action-surface-manifest-intake.test.ts",
     "test:action-surface-integration-artifacts": "tsx tests/action-surface-integration-artifacts.test.ts",
     "test:action-surface-onboarding-packet": "tsx tests/action-surface-onboarding-packet.test.ts",
+    "test:action-surface-onboarding-packet-route": "tsx tests/action-surface-onboarding-packet-route.test.ts",
     "test:action-surface-onboarding-packet-render": "tsx tests/action-surface-onboarding-packet-render.test.ts",
     "test:policy-discovery-candidates": "tsx tests/policy-discovery-candidates.test.ts",
     "test:policy-foundry-onboarding-docs": "tsx tests/policy-foundry-onboarding-docs.test.ts",

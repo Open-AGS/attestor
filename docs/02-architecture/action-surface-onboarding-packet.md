@@ -86,6 +86,55 @@ The renderer follows the same plan/apply boundary as the packet itself. It
 creates review material only. It does not deploy a gateway, issue credentials,
 rotate provider access, record approval, or activate enforcement.
 
+## Hosted API Renderer
+
+Hosted deployments can render the same review packet through:
+
+```http
+POST /api/v1/shadow/action-surface/onboarding-packet
+```
+
+The route is tenant-scoped by the hosted tenant middleware and returns a
+stateless review packet. It does not write `summary.json`, does not persist the
+submitted manifest text, and does not activate enforcement. By default, it
+combines bounded request manifests or declarations with the authenticated
+tenant's stored shadow admission events. A caller can set
+`includeShadowEvents: false` when it wants a declaration-only packet.
+
+Minimal hosted request:
+
+```json
+{
+  "manifests": [
+    {
+      "manifestKind": "openapi",
+      "text": "{\"openapi\":\"3.1.0\",\"info\":{\"title\":\"Refund API\",\"version\":\"1.0.0\"},\"paths\":{\"/refunds\":{\"post\":{\"operationId\":\"issueRefund\",\"responses\":{\"200\":{\"description\":\"ok\"}}}}}}"
+    }
+  ],
+  "defaultDomain": "money-movement",
+  "downstreamSystem": "refund-service",
+  "credentialPosture": "agent-held-static-secret"
+}
+```
+
+The response carries:
+
+```text
+storageMode: stateless-review-packet
+approvalRequired: true
+autoEnforce: false
+rawPayloadStored: false
+productionReady: false
+executionPlanOnly: true
+deploysInfrastructure: false
+issuesCredentials: false
+activatesEnforcement: false
+```
+
+The hosted route replaces caller-provided manifest source paths with bounded
+hosted request references before rendering, so local filenames or private paths
+do not become packet evidence.
+
 Every packet carries:
 
 ```text

@@ -57,6 +57,9 @@ function testDescriptorCoversCriticalSurfaces(): void {
   const coverageScore = descriptor.surfaces.find((surface) =>
     surface.surfaceKind === 'policy-foundry-coverage-score'
   );
+  const gatePlanner = descriptor.surfaces.find((surface) =>
+    surface.surfaceKind === 'policy-foundry-gate-planner'
+  );
   const externalReview = descriptor.surfaces.find((surface) =>
     surface.surfaceKind === 'external-review-packet'
   );
@@ -114,6 +117,11 @@ function testDescriptorCoversCriticalSurfaces(): void {
   ok(
     coverageScore?.allowedUnits.includes('counts'),
     'Data minimization policy: Policy Foundry coverage score allows counts',
+  );
+  ok(gatePlanner, 'Data minimization policy: Policy Foundry gate planner surface is present');
+  ok(
+    gatePlanner?.allowedUnits.includes('artifact-reference'),
+    'Data minimization policy: Policy Foundry gate planner allows artifact references',
   );
   ok(externalReview, 'Data minimization policy: external review packet surface is present');
   ok(
@@ -290,6 +298,11 @@ function testDocsAndScriptsExposePolicy(): void {
     doc,
     'policy-foundry-coverage-score',
     'Data minimization policy: doc lists Policy Foundry coverage score surface',
+  );
+  includes(
+    doc,
+    'policy-foundry-gate-planner',
+    'Data minimization policy: doc lists Policy Foundry gate planner surface',
   );
   includes(
     doc,

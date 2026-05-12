@@ -39,7 +39,7 @@ These sources are engineering anchors only. They do not certify Attestor.
 |---|---|---|---|
 | Step 01 | complete | Add Onboarding Session Contract v1 | Digest-bound session state with requirements-aware blockers, current/eventual requirements, source digests, and explicit non-claims |
 | Step 02 | complete | Add Coverage Score v1 | Per-surface coverage for shadow traffic, manifest, evidence, authority, verifier/gateway, credential isolation, and replay/idempotency |
-| Step 03 | not started | Add Minimum Viable Gate Planner | Select the smallest reviewed integration path: SDK verifier, gateway proxy, MCP tool gateway, sidecar/ext_authz, or provider connector |
+| Step 03 | complete | Add Minimum Viable Gate Planner | Select the smallest reviewed integration path: SDK verifier, gateway proxy, MCP tool gateway, sidecar/ext_authz, or provider connector |
 | Step 04 | not started | Add Schema-Bound Candidate Registry | Keep candidate policy generation tied to domain schemas/templates, not LLM threshold authority |
 | Step 05 | not started | Add Counterexample Ledger | Track supporting evidence, counterexamples, missing proof, high-risk auto-admits, actor concentration, and replay pressure per candidate |
 | Step 06 | not started | Add Policy Twin v2 Summary | Produce a clearer backtest packet for admit/review/block impact, review-load delta, no-go reasons, and rollout recommendation |
@@ -109,6 +109,26 @@ The score is onboarding guidance only. A high score can make the next customer
 review step clearer, but it does not activate enforcement, prove production
 readiness, or allow a non-bypassable claim.
 
+## Step 03 Scope
+
+Step 03 adds `attestor.policy-foundry-gate-planner.v1`.
+
+The gate planner selects the smallest safe next integration path per surface:
+
+```text
+shadow-capture-sdk
+sdk-gate
+gateway-proxy
+mcp-tool-gateway
+sidecar-ext-authz
+provider-native-connector
+```
+
+The planner uses coverage status, action-surface onboarding plans, integration
+readiness, and review artifact digests. It can name a non-bypassable candidate
+path, but it cannot allow a non-bypassable claim. It does not deploy gateways,
+issue credentials, activate enforcement, or prove production readiness.
+
 ## Protected Principles
 
 - customer authority
@@ -133,5 +153,5 @@ contracts, or shared product positioning are touched.
 
 ## Current Status
 
-Step 01 and Step 02 are complete. Step 03 is the next implementation step. The
+Step 01, Step 02, and Step 03 are complete. Step 04 is the next implementation step. The
 rest of the list remains open.

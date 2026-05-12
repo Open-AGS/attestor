@@ -349,12 +349,27 @@ replay/idempotency, red-team replay, customer approval, and generated artifact
 review. It is onboarding guidance only: it does not activate enforcement, prove
 production readiness, or allow a non-bypassable claim.
 
+The Minimum Viable Gate Planner is the first per-surface gate-selection layer
+for this path. It lives in
+`src/consequence-admission/policy-foundry-gate-planner.ts`, is covered by
+`tests/policy-foundry-gate-planner.test.ts`, and is exposed through
+`test:policy-foundry-gate-planner`. It consumes the coverage score,
+action-surface onboarding packet, and integration-mode readiness to choose the
+smallest reviewed next path: shadow capture, SDK gate, gateway proxy, MCP tool
+gateway, sidecar/ext_authz, or provider-native connector. It may identify a
+non-bypassable candidate path, but it never allows a non-bypassable claim and
+does not deploy infrastructure, issue credentials, or activate enforcement.
+
 ```text
 coverageScore
 coverageDimensions
 missingDimensions
 partialDimensions
 nextCoverageStep
+gatePlanner
+selectedGateMode
+requiredGateArtifacts
+requiredCustomerWork
 readinessScore
 sampleSize
 actorDistributionHealth
@@ -430,8 +445,8 @@ simulation reports, promotion drafts, activation readiness gates, and the first
 readiness/no-go contract with a read-only shadow route, candidate-specific
 evidence replay, active questions, action-surface review handoff, synthetic
 onboarding red-team fixture generation, and the first onboarding session
-contract plus the first coverage score contract. It does not yet have a minimum
-viable gate planner, schema-bound candidate registry, live adversarial replay
-executor, UI workflow, or full commercial entitlement contract for Foundry
-capabilities. The deeper self-onboarding track is tracked in
+contract plus the first coverage score and minimum viable gate planner
+contracts. It does not yet have a schema-bound candidate registry, live
+adversarial replay executor, UI workflow, or full commercial entitlement
+contract for Foundry capabilities. The deeper self-onboarding track is tracked in
 [Policy Foundry Self-Onboarding Deepening](policy-foundry-self-onboarding-deepening.md).

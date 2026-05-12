@@ -23,6 +23,10 @@ Reviewed on 2026-05-11 before opening this track:
 - Stripe's go-live checklist keeps live keys, webhook secrets, payment method readiness, and webhook testing as concrete launch gates. Billing live readiness is not complete until deployment env, restart, and smoke tests pass: [Stripe go-live checklist](https://docs.stripe.com/get-started/checklist/go-live)
 - OWASP API6:2023 treats automated access to sensitive business flows as a distinct API risk even when requests are otherwise valid. Hosted checkout, portal, API-key lifecycle, auth challenges, admin mutations, tenant execution, provider webhooks, and release-bound exports must therefore declare abuse, replay, cost, duplicate, role, and privacy controls explicitly: [OWASP API6:2023](https://owasp.org/API-Security/editions/2023/en/0xa6-unrestricted-access-to-sensitive-business-flows/)
 - Stripe idempotency guidance makes retry semantics a provider-facing contract for mutating API calls. Hosted Checkout keeps a required customer-supplied `Idempotency-Key` at the route and Stripe SDK layer; Portal remains a short-lived hosted handoff whose subscription effects converge through signed webhooks: [Stripe idempotent requests](https://docs.stripe.com/api/idempotent_requests)
+- Stripe webhook guidance requires raw-body signature verification, duplicate-event handling, and deterministic 2xx/4xx outcomes. Hosted billing webhooks therefore keep signed ingress, payload hash conflict rejection, provider event dedupe, claim release, and shared-store production posture explicit: [Stripe webhooks](https://docs.stripe.com/webhooks)
+- Stripe webhook signature guidance warns that signature verification depends on the exact raw payload and signed header. Hosted Stripe webhook routes must therefore pass the unmodified request body into the verifier before parsing or projecting billing state: [Stripe webhook signatures](https://docs.stripe.com/webhooks/signature)
+- BullMQ retry and stalled-job guidance treats attempts, backoff, and stalled recovery as explicit worker policy. Hosted async jobs therefore keep retry, backoff, stalled limit, tenant execution lease, and dead-letter recovery as first-class controls: [BullMQ retrying failing jobs](https://docs.bullmq.io/guide/retrying-failing-jobs), [BullMQ stalled jobs](https://docs.bullmq.io/guide/jobs/stalled)
+- OWASP API4:2023 treats unbounded repeated work as a resource-consumption risk. Provider callbacks, async queue admission, retry loops, and dead-letter recovery must therefore be bounded by dedupe, quota, rate, retry, and privacy-safe evidence: [OWASP API4:2023](https://owasp.org/API-Security/editions/2023/en/0xa4-unrestricted-resource-consumption/)
 
 ## Step List
 
@@ -30,7 +34,7 @@ Reviewed on 2026-05-11 before opening this track:
 |---|---|---|---|---|
 | 01 | complete | Hosted API Authorization Matrix | `src/service/hosted-api-authorization-matrix.ts`, `tests/hosted-api-authorization-matrix.test.ts`, `src/service/http/routes/pipeline-async-routes.ts`, `docs/01-overview/hosted-journey-contract.md`, `package.json` | Adds a machine-readable route authorization matrix for public metadata, credential challenge, account plane, tenant runtime, signed webhooks, shadow control, and operator admin routes. Also fixes the confirmed async job status BOLA edge by requiring the job tenant to match the current tenant before returning status. |
 | 02 | complete | Sensitive Business Flow Abuse Guard | `src/service/hosted-sensitive-business-flow-abuse-guard.ts`, `tests/hosted-sensitive-business-flow-abuse-guard.test.ts`, `src/service/http/routes/account-routes.ts`, `package.json` | Adds a machine-readable abuse-control profile for checkout, portal, API-key issue/rotate/status/revoke, tenant admin, signup/bootstrap, auth challenges, tenant execution, provider webhooks, and release-bound export. Also wires SAML and OIDC login initiation through the shared auth abuse budget. |
-| 03 | not started | Webhook And Async Reconciliation Hardening | TBD | Strengthen duplicate, delayed, out-of-order, and replay paths for Stripe, email webhooks, async jobs, entitlement convergence, and dead-letter recovery. |
+| 03 | complete | Webhook And Async Reconciliation Hardening | `src/service/hosted-webhook-async-reconciliation-hardening.ts`, `tests/hosted-webhook-async-reconciliation-hardening.test.ts`, `src/service/account-store.ts`, `src/service/control-plane-store.ts`, `src/service/application/stripe-webhook-billing-processor.ts`, `package.json` | Adds a machine-readable reconciliation profile for Stripe ingress, billing convergence, email provider webhooks, tenant async execution, and dead-letter recovery. Also adds provider-event ordering guards so older Stripe subscription and invoice events are finalized as ignored instead of overwriting fresher state. |
 | 04 | not started | LLM/Agent Tool-Use Boundary Guard | TBD | Ensure hosted action-authorization, shadow, recommendation, and model-safe feedback paths cannot leak private prompts, raw tool payloads, provider bodies, or unsafe retry authority. |
 | 05 | not started | Production Runtime Health Contract | TBD | Define route, worker, queue, storage, webhook, and degraded-mode readiness contracts aligned with readiness/liveness/startup semantics. |
 | 06 | not started | Release Provenance And SLSA Alignment | TBD | Tie build, SBOM, package surface, proof packet, and release evidence into verifiable provenance and tamper-evident artifacts. |
@@ -41,7 +45,7 @@ Reviewed on 2026-05-11 before opening this track:
 
 ## Current Posture
 
-Steps 01-02 are complete in code and test coverage. Steps 03-09 remain implementation work. Step 10 remains blocked until a working deployment target is available.
+Steps 01-03 are complete in code and test coverage. Steps 04-09 remain implementation work. Step 10 remains blocked until a working deployment target is available.
 
 ## Step 02 Evidence
 
@@ -51,3 +55,13 @@ The sensitive business flow guard is repo-side hardening, not a production rollo
 - `tests/hosted-sensitive-business-flow-abuse-guard.test.ts` verifies route ownership against the hosted authorization matrix, required controls, source evidence, validation evidence, secret-safe output, docs, and package-runner exposure.
 - `src/service/http/routes/account-routes.ts` now rate-limits SAML and OIDC login initiation with the same hosted auth abuse guard used by password login, signup, passkeys, password reset, and invite acceptance.
 - Billing production readiness is still separate: live deployment env, service restart, Stripe readiness probe, and webhook smoke test remain Step 10 work on a working deployment target.
+
+## Step 03 Evidence
+
+The webhook and async reconciliation guard is repo-side hardening, not a production rollout claim.
+
+- `src/service/hosted-webhook-async-reconciliation-hardening.ts` declares the reconciliation profile across Stripe signed ingress, Stripe billing convergence, email provider callbacks, tenant async execution, and dead-letter recovery.
+- `tests/hosted-webhook-async-reconciliation-hardening.test.ts` verifies source evidence, validation evidence, controls, external research anchors, package-runner exposure, docs exposure, and secret-safe output.
+- `src/service/account-store.ts` and `src/service/control-plane-store.ts` now persist provider-created timestamps for subscription and invoice event lanes and reject stale provider events before they can regress account or billing state.
+- `src/service/application/stripe-webhook-billing-processor.ts` now finalizes stale Stripe subscription and invoice events as ignored with deterministic reasons instead of syncing tenant plan, entitlement, or applied audit records from older event material.
+- Async production readiness is still separate from deployment: Redis-backed queue/worker readiness, deployment env, service restart, and runtime smoke tests remain Step 10 work on a working deployment target.

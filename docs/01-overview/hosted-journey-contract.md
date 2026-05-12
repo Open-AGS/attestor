@@ -15,6 +15,7 @@ It defines the supported customer sequence, route ownership, auth boundary, succ
 - The machine-readable contract descriptor lives in `src/service/hosted-journey-contract.ts`.
 - The machine-readable route authorization matrix lives in `src/service/hosted-api-authorization-matrix.ts`.
 - The machine-readable sensitive business flow abuse guard lives in `src/service/hosted-sensitive-business-flow-abuse-guard.ts`.
+- The machine-readable webhook and async reconciliation hardening profile lives in `src/service/hosted-webhook-async-reconciliation-hardening.ts`.
 
 ## Contract Rules
 
@@ -26,6 +27,7 @@ It defines the supported customer sequence, route ownership, auth boundary, succ
 - Customer systems still own their data, models, agents, wallets, and downstream execution systems.
 - Route authorization is a first-class contract: every hosted API surface must declare its auth, tenant/account, object, mutation, idempotency/replay, and privacy boundary.
 - Sensitive business flows are also an abuse-control contract: valid-looking retries and automation must still be bounded by role, replay, duplicate, cost, and privacy controls.
+- Webhook and async reconciliation is an explicit contract: signed ingress, provider event ordering, duplicate handling, idempotent finalization, claim release, retry policy, dead-letter recovery, and privacy-minimized evidence must be verifiable in code.
 
 ## Auth Boundaries
 

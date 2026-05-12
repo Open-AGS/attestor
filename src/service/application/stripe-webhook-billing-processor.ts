@@ -257,6 +257,7 @@ export function createStripeWebhookBillingProcessor(
           : null;
     const stripePriceId = stripeSubscriptionHostedPriceId(subscription);
     const accountIdFromMetadata = metadataStringValue('attestorAccountId', subscription.metadata);
+    const eventCreatedAt = unixSecondsToIso(event.created) ?? new Date().toISOString();
 
     let applied;
     try {
@@ -268,6 +269,7 @@ export function createStripeWebhookBillingProcessor(
         stripePriceId,
         eventId: event.id,
         eventType: event.type,
+        eventCreatedAt,
       });
     } catch (err) {
       try {
@@ -317,6 +319,56 @@ export function createStripeWebhookBillingProcessor(
       });
     }
 
+    if (applied.stale) {
+      observeBillingWebhookEvent(event.type, 'ignored');
+      c.set('obs.accountId', applied.record.id);
+      c.set('obs.accountStatus', applied.record.status);
+      c.set('obs.tenantId', applied.record.primaryTenantId);
+      c.set('obs.planId', null);
+
+      if (sharedBillingLedger) {
+        await stripeWebhook.finalizeSharedEvent({
+          providerEventId: event.id,
+          outcome: 'ignored',
+          reason: 'stale_subscription_event',
+          accountId: applied.record.id,
+          tenantId: applied.record.primaryTenantId,
+          stripeCustomerId,
+          stripeSubscriptionId,
+          stripePriceId,
+          accountStatusBefore: applied.previousStatus,
+          accountStatusAfter: applied.nextStatus,
+          billingStatusBefore: applied.previousBillingStatus,
+          billingStatusAfter: applied.nextBillingStatus,
+          metadata: {
+            eventType: event.type,
+            matchReason: applied.matchReason,
+            eventCreatedAt,
+            latestSubscriptionEventCreatedAt: applied.record.billing.lastSubscriptionEventCreatedAt,
+          },
+        });
+      } else {
+        await stripeWebhook.finalizeDedupe({
+          eventType: event.type,
+          accountId: applied.record.id,
+          stripeCustomerId,
+          stripeSubscriptionId,
+          outcome: 'ignored',
+          reason: 'stale_subscription_event',
+        });
+      }
+
+      return c.json({
+        received: true,
+        duplicate: false,
+        ignored: true,
+        eventId: event.id,
+        eventType: event.type,
+        reason: 'stale_subscription_event',
+        accountId: applied.record.id,
+      });
+    }
+
     const mappedPlan = findHostedPlanByStripePriceId(stripePriceId);
     if (mappedPlan) {
       const resolvedPlan = resolvePlanSpec({
@@ -331,7 +383,7 @@ export function createStripeWebhookBillingProcessor(
     const entitlement = await syncHostedBillingEntitlement(applied.record, {
       lastEventId: event.id,
       lastEventType: event.type,
-      lastEventAt: unixSecondsToIso(event.created) ?? new Date().toISOString(),
+      lastEventAt: eventCreatedAt,
     });
     const revokedSessions = await revokeAccountSessionsForLifecycleChange({
       account: applied.record,
@@ -948,7 +1000,7 @@ export function createStripeWebhookBillingProcessor(
       invoice.metadata,
       invoice.subscription_details?.metadata ?? null,
     );
-    const extractedInvoiceLineItems = extractInvoiceLineItemSnapshotsFromInvoice(invoice);
+    const eventCreatedAt = unixSecondsToIso(event.created) ?? new Date().toISOString();
 
     let applied;
     try {
@@ -964,10 +1016,11 @@ export function createStripeWebhookBillingProcessor(
         amountDue: typeof invoice.amount_due === 'number' ? invoice.amount_due : null,
         paidAt: unixSecondsToIso((invoice.status_transitions as { paid_at?: unknown } | null | undefined)?.paid_at),
         paymentFailedAt: event.type === 'invoice.payment_failed'
-          ? (unixSecondsToIso(event.created) ?? new Date().toISOString())
+          ? eventCreatedAt
           : null,
         eventId: event.id,
         eventType: event.type,
+        eventCreatedAt,
       });
     } catch (err) {
       try {
@@ -1023,6 +1076,64 @@ export function createStripeWebhookBillingProcessor(
       });
     }
 
+    if (applied.stale) {
+      observeBillingWebhookEvent(event.type, 'ignored');
+      c.set('obs.accountId', applied.record.id);
+      c.set('obs.accountStatus', applied.record.status);
+      c.set('obs.tenantId', applied.record.primaryTenantId);
+      c.set('obs.planId', null);
+
+      if (sharedBillingLedger) {
+        await stripeWebhook.finalizeSharedEvent({
+          providerEventId: event.id,
+          outcome: 'ignored',
+          reason: 'stale_invoice_event',
+          accountId: applied.record.id,
+          tenantId: applied.record.primaryTenantId,
+          stripeCustomerId,
+          stripeSubscriptionId,
+          stripePriceId,
+          stripeInvoiceId,
+          stripeInvoiceStatus,
+          stripeInvoiceCurrency,
+          stripeInvoiceAmountPaid: typeof invoice.amount_paid === 'number' ? invoice.amount_paid : null,
+          stripeInvoiceAmountDue: typeof invoice.amount_due === 'number' ? invoice.amount_due : null,
+          accountStatusBefore: applied.previousStatus,
+          accountStatusAfter: applied.nextStatus,
+          billingStatusBefore: applied.previousBillingStatus,
+          billingStatusAfter: applied.nextBillingStatus,
+          metadata: {
+            eventType: event.type,
+            matchReason: applied.matchReason,
+            billingReason: invoice.billing_reason ?? null,
+            eventCreatedAt,
+            latestInvoiceEventCreatedAt: applied.record.billing.lastInvoiceEventCreatedAt,
+          },
+        });
+      } else {
+        await stripeWebhook.finalizeDedupe({
+          eventType: event.type,
+          accountId: applied.record.id,
+          stripeCustomerId,
+          stripeSubscriptionId,
+          outcome: 'ignored',
+          reason: 'stale_invoice_event',
+        });
+      }
+
+      return c.json({
+        received: true,
+        duplicate: false,
+        ignored: true,
+        eventId: event.id,
+        eventType: event.type,
+        reason: 'stale_invoice_event',
+        accountId: applied.record.id,
+        invoiceId: stripeInvoiceId,
+      });
+    }
+
+    const extractedInvoiceLineItems = extractInvoiceLineItemSnapshotsFromInvoice(invoice);
     const mappedPlan = findHostedPlanByStripePriceId(stripePriceId);
     if (mappedPlan) {
       const resolvedPlan = resolvePlanSpec({
@@ -1095,7 +1206,7 @@ export function createStripeWebhookBillingProcessor(
     const entitlement = await syncHostedBillingEntitlement(applied.record, {
       lastEventId: event.id,
       lastEventType: event.type,
-      lastEventAt: unixSecondsToIso(event.created) ?? new Date().toISOString(),
+      lastEventAt: eventCreatedAt,
     });
     const revokedSessions = await revokeAccountSessionsForLifecycleChange({
       account: applied.record,

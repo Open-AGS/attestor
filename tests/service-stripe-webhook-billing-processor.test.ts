@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import Stripe from 'stripe';
-import { AccountStoreError } from '../src/service/account-store.js';
+import { AccountStoreError, type HostedAccountRecord } from '../src/service/account-store.js';
 import {
   createStripeWebhookBillingProcessor,
   type StripeWebhookBillingProcessorDeps,
@@ -116,6 +116,56 @@ function createDeps(
   };
 }
 
+function hostedAccount(overrides: Partial<HostedAccountRecord> = {}): HostedAccountRecord {
+  const record: HostedAccountRecord = {
+    id: 'acct_123',
+    accountName: 'Acme',
+    contactEmail: 'owner@example.test',
+    primaryTenantId: 'tenant_123',
+    status: 'active',
+    createdAt: '2026-04-21T09:00:00.000Z',
+    updatedAt: '2026-04-21T10:00:00.000Z',
+    suspendedAt: null,
+    archivedAt: null,
+    billing: {
+      provider: 'stripe',
+      stripeCustomerId: 'cus_123',
+      stripeSubscriptionId: 'sub_123',
+      stripeSubscriptionStatus: 'active',
+      stripePriceId: 'price_123',
+      lastCheckoutSessionId: null,
+      lastCheckoutCompletedAt: null,
+      lastCheckoutPlanId: null,
+      lastSubscriptionEventId: 'evt_new_subscription',
+      lastSubscriptionEventType: 'customer.subscription.updated',
+      lastSubscriptionEventCreatedAt: '2026-04-21T11:00:00.000Z',
+      lastInvoiceId: 'in_123',
+      lastInvoiceStatus: 'paid',
+      lastInvoiceCurrency: 'usd',
+      lastInvoiceAmountPaid: 149900,
+      lastInvoiceAmountDue: 149900,
+      lastInvoiceEventId: 'evt_new_invoice',
+      lastInvoiceEventType: 'invoice.paid',
+      lastInvoiceEventCreatedAt: '2026-04-21T11:00:00.000Z',
+      lastInvoiceProcessedAt: '2026-04-21T11:00:01.000Z',
+      lastInvoicePaidAt: '2026-04-21T11:00:00.000Z',
+      delinquentSince: null,
+      lastWebhookEventId: 'evt_new_invoice',
+      lastWebhookEventType: 'invoice.paid',
+      lastWebhookEventCreatedAt: '2026-04-21T11:00:00.000Z',
+      lastWebhookProcessedAt: '2026-04-21T11:00:01.000Z',
+    },
+  };
+  return {
+    ...record,
+    ...overrides,
+    billing: {
+      ...record.billing,
+      ...(overrides.billing ?? {}),
+    },
+  };
+}
+
 async function testUnsupportedEventFinalizesFileDedupe(): Promise<void> {
   const observed: Array<[string, string]> = [];
   let dedupeFinalization: StripeWebhookDedupeFinalizationInput | null = null;
@@ -211,8 +261,146 @@ async function testAccountStoreErrorReleasesClaimAndMapsConflict(): Promise<void
   });
 }
 
+async function testStaleSubscriptionEventFinalizesIgnoredWithoutStateConvergence(): Promise<void> {
+  const account = hostedAccount();
+  let dedupeFinalization: StripeWebhookDedupeFinalizationInput | null = null;
+  let receivedEventCreatedAt: string | null | undefined;
+  const processor = createStripeWebhookBillingProcessor(createDeps({
+    isSupportedStripeWebhookEvent: () => true,
+    applyStripeSubscriptionStateState: async (input) => {
+      receivedEventCreatedAt = input.eventCreatedAt;
+      return {
+        record: account,
+        previousStatus: account.status,
+        nextStatus: account.status,
+        previousBillingStatus: account.billing.stripeSubscriptionStatus,
+        nextBillingStatus: account.billing.stripeSubscriptionStatus,
+        path: null,
+        matchReason: 'subscription_id',
+        stale: true,
+      };
+    },
+    syncTenantPlanByTenantIdState: async () => {
+      throw new Error('stale subscription event must not sync tenant plan');
+    },
+    syncHostedBillingEntitlement: async () => {
+      throw new Error('stale subscription event must not sync entitlement');
+    },
+    appendAdminAuditRecordState: async () => {
+      throw new Error('stale subscription event must not append applied audit record');
+    },
+    unixSecondsToIso: () => '2026-04-21T10:00:00.000Z',
+  }));
+  const webhook = createWebhook(stripeEvent({
+    id: 'evt_old_subscription',
+    type: 'customer.subscription.updated',
+    data: {
+      object: {
+        id: 'sub_123',
+        customer: 'cus_123',
+        status: 'past_due',
+        items: {
+          data: [{
+            price: {
+              id: 'price_123',
+            },
+          }],
+        },
+        metadata: {},
+      },
+    },
+  }), {
+    finalizeDedupe: async (input) => {
+      dedupeFinalization = input;
+    },
+  });
+
+  const result = await processor.process(webhook);
+
+  assert.equal(receivedEventCreatedAt, '2026-04-21T10:00:00.000Z');
+  assert.equal(result.statusCode, 200);
+  assert.equal(result.responseBody.ignored, true);
+  assert.equal(result.responseBody.reason, 'stale_subscription_event');
+  assert.deepEqual(dedupeFinalization, {
+    eventType: 'customer.subscription.updated',
+    accountId: 'acct_123',
+    stripeCustomerId: 'cus_123',
+    stripeSubscriptionId: 'sub_123',
+    outcome: 'ignored',
+    reason: 'stale_subscription_event',
+  });
+}
+
+async function testStaleInvoiceEventFinalizesSharedLedgerAsIgnored(): Promise<void> {
+  const account = hostedAccount();
+  let sharedFinalization: StripeWebhookSharedFinalizationInput | null = null;
+  const processor = createStripeWebhookBillingProcessor(createDeps({
+    isSupportedStripeWebhookEvent: () => true,
+    parseStripeInvoiceStatus: () => 'open',
+    stripeInvoicePriceId: () => 'price_123',
+    applyStripeInvoiceStateState: async () => ({
+      record: account,
+      previousStatus: account.status,
+      nextStatus: account.status,
+      previousBillingStatus: account.billing.stripeSubscriptionStatus,
+      nextBillingStatus: account.billing.stripeSubscriptionStatus,
+      path: null,
+      matchReason: 'subscription_id',
+      stale: true,
+    }),
+    extractInvoiceLineItemSnapshotsFromInvoice: () => {
+      throw new Error('stale invoice event must not extract line items');
+    },
+    syncTenantPlanByTenantIdState: async () => {
+      throw new Error('stale invoice event must not sync tenant plan');
+    },
+    syncHostedBillingEntitlement: async () => {
+      throw new Error('stale invoice event must not sync entitlement');
+    },
+    appendAdminAuditRecordState: async () => {
+      throw new Error('stale invoice event must not append applied audit record');
+    },
+    unixSecondsToIso: () => '2026-04-21T10:00:00.000Z',
+  }));
+  const webhook = createWebhook(stripeEvent({
+    id: 'evt_old_invoice',
+    type: 'invoice.payment_failed',
+    data: {
+      object: {
+        id: 'in_old',
+        customer: 'cus_123',
+        subscription: 'sub_123',
+        status: 'open',
+        currency: 'usd',
+        amount_paid: 0,
+        amount_due: 149900,
+        billing_reason: 'subscription_cycle',
+        metadata: {},
+      },
+    },
+  }), {
+    sharedBillingLedger: true,
+    finalizeSharedEvent: async (input) => {
+      sharedFinalization = input;
+    },
+  });
+
+  const result = await processor.process(webhook);
+
+  assert.equal(result.statusCode, 200);
+  assert.equal(result.responseBody.ignored, true);
+  assert.equal(result.responseBody.reason, 'stale_invoice_event');
+  assert.equal(sharedFinalization?.providerEventId, 'evt_old_invoice');
+  assert.equal(sharedFinalization?.outcome, 'ignored');
+  assert.equal(sharedFinalization?.reason, 'stale_invoice_event');
+  assert.equal(sharedFinalization?.accountId, 'acct_123');
+  assert.equal(sharedFinalization?.tenantId, 'tenant_123');
+}
+
 await testUnsupportedEventFinalizesFileDedupe();
 await testUnsupportedEventFinalizesSharedLedger();
 await testAccountStoreErrorReleasesClaimAndMapsConflict();
+await testStaleSubscriptionEventFinalizesIgnoredWithoutStateConvergence();
+await testStaleInvoiceEventFinalizesSharedLedgerAsIgnored();
 
-console.log('Service stripe webhook billing processor tests: 3 passed, 0 failed');
+console.log('Service stripe webhook billing processor tests: 5 passed, 0 failed');

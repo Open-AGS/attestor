@@ -62,6 +62,7 @@
     "test:hosted-product-flow-readiness": "tsx tests/hosted-product-flow-readiness.test.ts",
     "test:hosted-api-authorization-matrix": "tsx tests/hosted-api-authorization-matrix.test.ts",
     "test:hosted-sensitive-business-flow-abuse-guard": "tsx tests/hosted-sensitive-business-flow-abuse-guard.test.ts",
+    "test:hosted-webhook-async-reconciliation-hardening": "tsx tests/hosted-webhook-async-reconciliation-hardening.test.ts",
     "test:hosted-action-authorization-openapi": "tsx tests/hosted-action-authorization-openapi.test.ts",
     "test:product-positioning-docs": "tsx tests/product-positioning-docs.test.ts",
     "test:product-use-cases-docs": "tsx tests/product-use-cases-docs.test.ts",

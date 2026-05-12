@@ -45,6 +45,9 @@ export interface HostedAccountBillingState {
   lastCheckoutSessionId: string | null;
   lastCheckoutCompletedAt: string | null;
   lastCheckoutPlanId: string | null;
+  lastSubscriptionEventId: string | null;
+  lastSubscriptionEventType: string | null;
+  lastSubscriptionEventCreatedAt: string | null;
   lastInvoiceId: string | null;
   lastInvoiceStatus: StripeInvoiceStatus;
   lastInvoiceCurrency: string | null;
@@ -52,11 +55,13 @@ export interface HostedAccountBillingState {
   lastInvoiceAmountDue: number | null;
   lastInvoiceEventId: string | null;
   lastInvoiceEventType: string | null;
+  lastInvoiceEventCreatedAt: string | null;
   lastInvoiceProcessedAt: string | null;
   lastInvoicePaidAt: string | null;
   delinquentSince: string | null;
   lastWebhookEventId: string | null;
   lastWebhookEventType: string | null;
+  lastWebhookEventCreatedAt: string | null;
   lastWebhookProcessedAt: string | null;
 }
 
@@ -135,6 +140,9 @@ function defaultBillingState(): HostedAccountBillingState {
     lastCheckoutSessionId: null,
     lastCheckoutCompletedAt: null,
     lastCheckoutPlanId: null,
+    lastSubscriptionEventId: null,
+    lastSubscriptionEventType: null,
+    lastSubscriptionEventCreatedAt: null,
     lastInvoiceId: null,
     lastInvoiceStatus: null,
     lastInvoiceCurrency: null,
@@ -142,11 +150,13 @@ function defaultBillingState(): HostedAccountBillingState {
     lastInvoiceAmountDue: null,
     lastInvoiceEventId: null,
     lastInvoiceEventType: null,
+    lastInvoiceEventCreatedAt: null,
     lastInvoiceProcessedAt: null,
     lastInvoicePaidAt: null,
     delinquentSince: null,
     lastWebhookEventId: null,
     lastWebhookEventType: null,
+    lastWebhookEventCreatedAt: null,
     lastWebhookProcessedAt: null,
   };
 }
@@ -360,6 +370,17 @@ function deriveStripeSubscriptionStatusFromInvoiceEvent(
   return currentStatus;
 }
 
+function isIncomingProviderEventOlder(
+  incomingEventCreatedAt: string | null | undefined,
+  latestEventCreatedAt: string | null | undefined,
+): boolean {
+  if (!incomingEventCreatedAt || !latestEventCreatedAt) return false;
+  const incomingTime = Date.parse(incomingEventCreatedAt);
+  const latestTime = Date.parse(latestEventCreatedAt);
+  if (!Number.isFinite(incomingTime) || !Number.isFinite(latestTime)) return false;
+  return incomingTime < latestTime;
+}
+
 export function createHostedAccount(input: CreateHostedAccountInput): {
   record: HostedAccountRecord;
   path: string;
@@ -482,6 +503,7 @@ export function applyStripeSubscriptionState(options: {
   stripePriceId?: string | null;
   eventId: string;
   eventType: string;
+  eventCreatedAt?: string | null;
 }): {
   record: HostedAccountRecord | null;
   previousStatus: HostedAccountStatus | null;
@@ -490,6 +512,7 @@ export function applyStripeSubscriptionState(options: {
   nextBillingStatus: StripeSubscriptionStatus;
   path: string | null;
   matchReason: 'account_id' | 'subscription_id' | 'customer_id' | 'none';
+  stale: boolean;
 } {
   return withAccountStoreLock((store, path) => {
     const normalizedStatus = normalizeStripeSubscriptionStatus(options.stripeSubscriptionStatus ?? null);
@@ -506,6 +529,20 @@ export function applyStripeSubscriptionState(options: {
         nextBillingStatus: normalizedStatus,
         path: null,
         matchReason: 'none',
+        stale: false,
+      };
+    }
+
+    if (isIncomingProviderEventOlder(options.eventCreatedAt, record.billing.lastSubscriptionEventCreatedAt)) {
+      return {
+        record,
+        previousStatus: record.status,
+        nextStatus: record.status,
+        previousBillingStatus: record.billing.stripeSubscriptionStatus,
+        nextBillingStatus: record.billing.stripeSubscriptionStatus,
+        path,
+        matchReason,
+        stale: true,
       };
     }
 
@@ -524,8 +561,12 @@ export function applyStripeSubscriptionState(options: {
       stripeSubscriptionId: options.stripeSubscriptionId ?? record.billing.stripeSubscriptionId,
       stripeSubscriptionStatus: normalizedStatus,
       stripePriceId: options.stripePriceId ?? record.billing.stripePriceId,
+      lastSubscriptionEventId: options.eventId,
+      lastSubscriptionEventType: options.eventType,
+      lastSubscriptionEventCreatedAt: options.eventCreatedAt ?? record.billing.lastSubscriptionEventCreatedAt,
       lastWebhookEventId: options.eventId,
       lastWebhookEventType: options.eventType,
+      lastWebhookEventCreatedAt: options.eventCreatedAt ?? record.billing.lastWebhookEventCreatedAt,
       lastWebhookProcessedAt: new Date().toISOString(),
     };
 
@@ -549,6 +590,7 @@ export function applyStripeSubscriptionState(options: {
       nextBillingStatus: record.billing.stripeSubscriptionStatus,
       path,
       matchReason,
+      stale: false,
     };
   });
 }
@@ -638,6 +680,7 @@ export function applyStripeInvoiceState(options: {
   paymentFailedAt?: string | null;
   eventId: string;
   eventType: string;
+  eventCreatedAt?: string | null;
 }): {
   record: HostedAccountRecord | null;
   previousStatus: HostedAccountStatus | null;
@@ -646,6 +689,7 @@ export function applyStripeInvoiceState(options: {
   nextBillingStatus: StripeSubscriptionStatus;
   path: string | null;
   matchReason: 'account_id' | 'subscription_id' | 'customer_id' | 'none';
+  stale: boolean;
 } {
   return withAccountStoreLock((store, path) => {
     const normalizedInvoiceStatus = normalizeStripeInvoiceStatus(options.invoiceStatus ?? null);
@@ -661,6 +705,20 @@ export function applyStripeInvoiceState(options: {
         nextBillingStatus: null,
         path: null,
         matchReason: 'none',
+        stale: false,
+      };
+    }
+
+    if (isIncomingProviderEventOlder(options.eventCreatedAt, record.billing.lastInvoiceEventCreatedAt)) {
+      return {
+        record,
+        previousStatus: record.status,
+        nextStatus: record.status,
+        previousBillingStatus: record.billing.stripeSubscriptionStatus,
+        nextBillingStatus: record.billing.stripeSubscriptionStatus,
+        path,
+        matchReason,
+        stale: true,
       };
     }
 
@@ -699,11 +757,13 @@ export function applyStripeInvoiceState(options: {
       lastInvoiceAmountDue: options.amountDue ?? record.billing.lastInvoiceAmountDue,
       lastInvoiceEventId: options.eventId,
       lastInvoiceEventType: options.eventType,
+      lastInvoiceEventCreatedAt: options.eventCreatedAt ?? record.billing.lastInvoiceEventCreatedAt,
       lastInvoiceProcessedAt: new Date().toISOString(),
       lastInvoicePaidAt: paidAt,
       delinquentSince,
       lastWebhookEventId: options.eventId,
       lastWebhookEventType: options.eventType,
+      lastWebhookEventCreatedAt: options.eventCreatedAt ?? record.billing.lastWebhookEventCreatedAt,
       lastWebhookProcessedAt: new Date().toISOString(),
     };
 
@@ -727,6 +787,7 @@ export function applyStripeInvoiceState(options: {
       nextBillingStatus: record.billing.stripeSubscriptionStatus,
       path,
       matchReason,
+      stale: false,
     };
   });
 }

@@ -103,6 +103,7 @@ function testFastSuiteKeepsCriticalCoverage(): void {
     'test:verify-live-ops-gate',
     'test:hosted-api-authorization-matrix',
     'test:hosted-sensitive-business-flow-abuse-guard',
+    'test:hosted-webhook-async-reconciliation-hardening',
     'test:crypto-intelligence-surface-consistency',
     'test:crypto-authorization-core-noble-hashes-dependency-risk',
     'test:node-26-runtime-validation',

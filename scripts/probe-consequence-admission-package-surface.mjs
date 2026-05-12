@@ -371,6 +371,22 @@ assert.equal(
   typeof admission.createPolicyFoundryCoverageScore,
   'function',
 );
+assert.equal(
+  admission.POLICY_FOUNDRY_GATE_PLANNER_VERSION,
+  'attestor.policy-foundry-gate-planner.v1',
+);
+assert.equal(
+  admission.policyFoundryGatePlannerDescriptor().dataMinimizationSurfaceKind,
+  'policy-foundry-gate-planner',
+);
+assert.equal(
+  admission.policyFoundryGatePlannerDescriptor().deploysInfrastructure,
+  false,
+);
+assert.equal(
+  typeof admission.createPolicyFoundryGatePlanner,
+  'function',
+);
 
 let blockedInternalPath = false;
 try {

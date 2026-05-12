@@ -89,6 +89,11 @@ function testPolicyFoundryArchitectureIsGrounded(): void {
   );
   includes(
     doc,
+    'src/consequence-admission/policy-foundry-gate-planner.ts',
+    'Policy Foundry docs: gate planner contract evidence is named',
+  );
+  includes(
+    doc,
     'GET /api/v1/shadow/policy-foundry/active-questions',
     'Policy Foundry docs: active question route is named',
   );
@@ -229,6 +234,16 @@ function testPackageScriptIsExposed(): void {
     pkg.scripts['test:policy-foundry-coverage-score'] ?? '',
     'tsx tests/policy-foundry-coverage-score.test.ts',
     'Package: Policy Foundry coverage score test command is stable',
+  );
+  includes(
+    JSON.stringify(pkg.scripts),
+    'test:policy-foundry-gate-planner',
+    'Package: Policy Foundry gate planner test is exposed',
+  );
+  includes(
+    pkg.scripts['test:policy-foundry-gate-planner'] ?? '',
+    'tsx tests/policy-foundry-gate-planner.test.ts',
+    'Package: Policy Foundry gate planner test command is stable',
   );
 }
 

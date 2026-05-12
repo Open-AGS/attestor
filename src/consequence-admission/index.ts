@@ -2096,6 +2096,7 @@ export * from './action-surface-manifest-intake.js';
 export * from './action-surface-integration-artifacts.js';
 export * from './action-surface-onboarding-packet.js';
 export * from './action-surface-onboarding-review-handoff.js';
+export * from './action-surface-onboarding-red-team-fixtures.js';
 export * from './policy-discovery-candidates.js';
 export * from './policy-foundry-readiness.js';
 export * from './policy-foundry-red-team-replay.js';

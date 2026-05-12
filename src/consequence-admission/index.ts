@@ -2091,6 +2091,7 @@ export * from './money-movement-shadow.js';
 export * from './shadow-summary.js';
 export * from './action-risk-inventory.js';
 export * from './action-surface-profiler.js';
+export * from './action-surface-declaration-ingestors.js';
 export * from './policy-discovery-candidates.js';
 export * from './policy-foundry-readiness.js';
 export * from './policy-foundry-red-team-replay.js';

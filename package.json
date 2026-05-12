@@ -129,6 +129,7 @@
     "test:shadow-dashboard-routes": "tsx tests/shadow-dashboard-routes.test.ts",
     "test:action-risk-inventory": "tsx tests/action-risk-inventory.test.ts",
     "test:action-surface-profiler": "tsx tests/action-surface-profiler.test.ts",
+    "test:action-surface-ingestors": "tsx tests/action-surface-declaration-ingestors.test.ts",
     "test:policy-discovery-candidates": "tsx tests/policy-discovery-candidates.test.ts",
     "test:policy-foundry-onboarding-docs": "tsx tests/policy-foundry-onboarding-docs.test.ts",
     "test:policy-foundry-readiness": "tsx tests/policy-foundry-readiness.test.ts",

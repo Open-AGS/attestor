@@ -30,11 +30,12 @@ send shadow traffic
 The customer gets useful feedback from real action traffic without letting
 shadow mode change production behavior.
 
-The [Action Surface Profiler](action-surface-profiler.md) is the discovery layer
-before Policy Foundry. It maps observed shadow events and declared OpenAPI,
-AsyncAPI, MCP, workflow, provider, or manual surfaces into a data-minimized
-action inventory so Policy Foundry starts from known action surfaces instead of
-a blank policy editor.
+The [Action Surface Declaration Ingestors](action-surface-declaration-ingestors.md)
+and [Action Surface Profiler](action-surface-profiler.md) are the discovery
+layer before Policy Foundry. The ingestors convert parsed OpenAPI, AsyncAPI,
+MCP, and workflow metadata into declarations; the profiler combines those
+declarations with observed shadow traffic so Policy Foundry starts from known
+action surfaces instead of a blank policy editor.
 
 ## Research Anchors
 

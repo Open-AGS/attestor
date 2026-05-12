@@ -2101,6 +2101,7 @@ export * from './policy-discovery-candidates.js';
 export * from './policy-foundry-readiness.js';
 export * from './policy-foundry-red-team-replay.js';
 export * from './policy-foundry-active-questions.js';
+export * from './policy-foundry-onboarding-session.js';
 export * from './integration-mode-readiness.js';
 export * from './shadow-policy-promotion-draft.js';
 export * from './shadow-policy-promotion-packet.js';

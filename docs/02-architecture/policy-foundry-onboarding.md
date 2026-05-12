@@ -325,6 +325,17 @@ feeds that computed status into the readiness contract. Clients cannot
 self-attest `redTeamReplayStatus` through the readiness query because that
 would turn a no-go control into caller-supplied evidence.
 
+The Onboarding Session Contract is the first central self-onboarding state
+object for this path. It lives in
+`src/consequence-admission/policy-foundry-onboarding-session.ts`, is covered by
+`tests/policy-foundry-onboarding-session.test.ts`, and is exposed through
+`test:policy-foundry-onboarding-session`. It combines the action-surface
+onboarding packet, Policy Foundry readiness, active question packet, red-team
+replay result, and integration-mode readiness into one digest-bound session
+with requirements-aware blockers, current requirements, eventual requirements,
+source digests, and the next safe step. It does not deploy infrastructure, issue
+credentials, activate enforcement, or allow a non-bypassable claim.
+
 ```text
 readinessScore
 sampleSize
@@ -399,7 +410,10 @@ Policy Foundry as described here is not fully implemented. The current system
 has shadow events, action risk inventory, policy discovery candidates,
 simulation reports, promotion drafts, activation readiness gates, and the first
 readiness/no-go contract with a read-only shadow route, candidate-specific
-evidence replay, action-surface review handoff, and synthetic onboarding
-red-team fixture generation. It does not yet have a live adversarial replay
-executor, UI workflow, or full commercial entitlement contract for Foundry
-capabilities.
+evidence replay, active questions, action-surface review handoff, synthetic
+onboarding red-team fixture generation, and the first onboarding session
+contract. It does not yet have coverage scoring, a minimum viable gate planner,
+schema-bound candidate registry, live adversarial replay executor, UI workflow,
+or full commercial entitlement contract for Foundry capabilities. The deeper
+self-onboarding track is tracked in
+[Policy Foundry Self-Onboarding Deepening](policy-foundry-self-onboarding-deepening.md).

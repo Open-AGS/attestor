@@ -51,6 +51,9 @@ function testDescriptorCoversCriticalSurfaces(): void {
   const activeQuestions = descriptor.surfaces.find((surface) =>
     surface.surfaceKind === 'policy-foundry-active-questions'
   );
+  const onboardingSession = descriptor.surfaces.find((surface) =>
+    surface.surfaceKind === 'policy-foundry-onboarding-session'
+  );
   const externalReview = descriptor.surfaces.find((surface) =>
     surface.surfaceKind === 'external-review-packet'
   );
@@ -98,6 +101,11 @@ function testDescriptorCoversCriticalSurfaces(): void {
   ok(
     activeQuestions?.allowedUnits.includes('safe-instruction'),
     'Data minimization policy: Policy Foundry active questions allow safe instructions',
+  );
+  ok(onboardingSession, 'Data minimization policy: Policy Foundry onboarding session surface is present');
+  ok(
+    onboardingSession?.allowedUnits.includes('digests'),
+    'Data minimization policy: Policy Foundry onboarding sessions allow source digests',
   );
   ok(externalReview, 'Data minimization policy: external review packet surface is present');
   ok(
@@ -264,6 +272,11 @@ function testDocsAndScriptsExposePolicy(): void {
     doc,
     'policy-foundry-active-questions',
     'Data minimization policy: doc lists Policy Foundry active questions surface',
+  );
+  includes(
+    doc,
+    'policy-foundry-onboarding-session',
+    'Data minimization policy: doc lists Policy Foundry onboarding session surface',
   );
   includes(
     doc,

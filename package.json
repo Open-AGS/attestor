@@ -143,6 +143,7 @@
     "test:policy-foundry-readiness": "tsx tests/policy-foundry-readiness.test.ts",
     "test:policy-foundry-red-team-replay": "tsx tests/policy-foundry-red-team-replay.test.ts",
     "test:policy-foundry-active-questions": "tsx tests/policy-foundry-active-questions.test.ts",
+    "test:policy-foundry-onboarding-session": "tsx tests/policy-foundry-onboarding-session.test.ts",
     "test:integration-mode-readiness": "tsx tests/integration-mode-readiness.test.ts",
     "test:shadow-policy-foundry-readiness-routes": "tsx tests/shadow-policy-foundry-readiness-routes.test.ts",
     "test:shadow-persistence-store": "tsx tests/shadow-persistence-store.test.ts",

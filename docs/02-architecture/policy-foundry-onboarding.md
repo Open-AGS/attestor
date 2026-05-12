@@ -239,6 +239,13 @@ full enforce
 rollback
 ```
 
+Before any candidate can claim a practical enforcement path, pair the Policy
+Foundry readiness result with [Integration Mode Readiness](integration-mode-readiness.md).
+That contract checks whether the workflow is only advisory, ready for shadow
+capture, or eligible for a reviewed scoped-enforcement path with verifier,
+adapter/proxy, credential isolation, replay, idempotency, and generated artifact
+review evidence.
+
 Paid production customers should get soft overage behavior, but security gates
 must not silently downgrade. If enforcement evidence is incomplete, hold the
 consequence rather than converting the failure into advisory text.
@@ -326,6 +333,13 @@ llmAuthorityAllowed: false
 
 That contract can consume the existing shadow simulation, policy discovery
 candidate, action risk inventory, and activation readiness surfaces.
+
+Integration Mode Readiness is the companion contract for onboarding automation.
+It lives in `src/consequence-admission/integration-mode-readiness.ts` and is
+covered by `tests/integration-mode-readiness.test.ts`. It does not activate
+enforcement; it classifies bypass risk, credential isolation, generated
+artifact review, and the missing verifier/proxy/adapter controls that block a
+workflow from moving beyond advisory or shadow mode.
 
 ## Current Status
 

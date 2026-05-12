@@ -351,6 +351,8 @@ The [Action surface onboarding packet](docs/02-architecture/action-surface-onboa
 
 The same packet can produce an action-surface review handoff: a digest-bound checklist of shadow capture, generated artifacts, credential boundary, verifier, Policy Twin, red-team replay, tenant boundary, and customer approval work. The handoff reduces adoption friction, but it remains review material and does not deploy or activate enforcement.
 
+The onboarding packet can also produce a red-team fixture bundle for each discovered action surface: unknown actor, missing evidence, duplicate request, actor burst, foreign tenant, unsafe proof URI, malicious summary, high-risk auto-admit, review-required auto-promote, direct credential bypass, and missing verifier cases. These are synthetic review plans, not live exploit runs or enforcement activation.
+
 The [Policy Foundry onboarding](docs/02-architecture/policy-foundry-onboarding.md) layer turns that same shadow traffic into candidate policy, readiness, active-question, red-team replay, and no-go evidence. It should make adoption easier without letting LLM text become policy authority or letting customers self-attest readiness controls.
 
 The [Integration mode readiness](docs/02-architecture/integration-mode-readiness.md) contract classifies whether a customer workflow is only advisory, ready for shadow capture, or eligible for a reviewed path toward scoped enforcement. It surfaces bypass risk, credential isolation, generated artifact review, and missing verifier/proxy/adapter controls before any non-bypassable claim is allowed.

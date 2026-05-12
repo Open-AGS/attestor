@@ -187,6 +187,35 @@ false`, `issuesCredentials: false`, `activatesEnforcement: false`, and
 It must not be used as proof that a gateway, verifier, credential boundary, or
 production route exists. Those remain downstream evidence requirements.
 
+## Action Surface Onboarding Red-Team Fixtures
+
+`createActionSurfaceOnboardingRedTeamFixtureBundle()` converts the same packet
+into surface-specific synthetic red-team fixture plans. These fixtures are
+generated from action-surface metadata and readiness digests; they do not replay
+raw customer payloads, raw prompts, proof URIs, provider bodies, payment
+records, wallet material, or private thresholds.
+
+The fixture bundle covers:
+
+- unknown actor
+- missing evidence
+- missing authority
+- duplicate request
+- actor burst
+- foreign tenant record
+- unsafe proof URI
+- malicious summary
+- high-risk auto-admit
+- review-required auto-promote
+- direct credential bypass
+- missing verifier
+
+The fixtures are synthetic review plans only. They do not execute against
+customer infrastructure, do not deploy an enforcement point, do not issue or
+rotate credentials, and do not prove production readiness. A passing result
+requires a separate reviewed replay or downstream test result that is bound back
+to the generated case digests.
+
 ## Surface Plan
 
 Each surface plan includes:

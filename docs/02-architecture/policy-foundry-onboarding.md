@@ -278,6 +278,9 @@ reads must not become paid-only safety features.
 The first runtime slice is the Policy Foundry readiness contract, not a UI
 rewrite. It lives in `src/consequence-admission/policy-foundry-readiness.ts`
 and is covered by `tests/policy-foundry-readiness.test.ts`.
+The hosted read-only route is
+`GET /api/v1/shadow/policy-foundry/readiness` and is covered by
+`tests/shadow-policy-foundry-readiness-routes.test.ts`.
 
 ```text
 readinessScore
@@ -313,6 +316,6 @@ Repository foundations already exist in:
 Policy Foundry as described here is not fully implemented. The current system
 has shadow events, action risk inventory, policy discovery candidates,
 simulation reports, promotion drafts, activation readiness gates, and the first
-readiness/no-go contract. It does not yet have a hosted active-question route,
+readiness/no-go contract with a read-only shadow route. It does not yet have a
 candidate-specific red-team replay suite, UI workflow, or full commercial
 entitlement contract for Foundry capabilities.

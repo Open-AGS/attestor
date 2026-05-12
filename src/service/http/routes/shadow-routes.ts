@@ -18,8 +18,10 @@ import {
   createShadowPolicyPromotionSimulation,
   createShadowPolicySimulationReport,
   createShadowSummarySurface,
+  evaluatePolicyFoundryReadiness,
   CONSEQUENCE_ADMISSION_DOWNSTREAM_BOUNDARY_KINDS,
   GENERIC_ADMISSION_MODES,
+  POLICY_FOUNDRY_RED_TEAM_REPLAY_STATUSES,
   SHADOW_DOWNSTREAM_INTEGRATION_EVIDENCE_KINDS,
   SHADOW_DOWNSTREAM_VERIFICATION_CHECKS,
   SHADOW_CUSTOMER_ACTIVATION_REF_KINDS,
@@ -31,6 +33,7 @@ import {
   SHADOW_POLICY_PROMOTION_SOURCE_STATUSES,
   type ConsequenceAdmissionDownstreamBoundaryKind,
   type GenericAdmissionMode,
+  type PolicyFoundryRedTeamReplayStatus,
   type ShadowCustomerActivationControlRef,
   type ShadowCustomerActivationHandoff,
   type ShadowCustomerActivationReceiptKillSwitchStatus,
@@ -41,6 +44,7 @@ import {
   type ShadowCustomerActivationRolloutStrategy,
   type ShadowDownstreamIntegrationEvidenceKind,
   type ShadowDownstreamVerificationCheckKind,
+  type ShadowPolicyDiscoveryCandidate,
   type ShadowPolicyBundlePublicationSignature,
   type ShadowPolicyBundleSigningPayload,
   type ShadowPolicyPromotionSourceStatus,
@@ -239,6 +243,32 @@ function parsePromotionSourceStatus(
   return SHADOW_POLICY_PROMOTION_SOURCE_STATUSES.includes(normalized as ShadowPolicyPromotionSourceStatus)
     ? normalized as ShadowPolicyPromotionSourceStatus
     : null;
+}
+
+function parsePolicyFoundryRedTeamReplayStatus(
+  value: string | null | undefined,
+): PolicyFoundryRedTeamReplayStatus | null {
+  if (value === undefined || value === null || value.trim() === '') return 'not-run';
+  const normalized = value.trim();
+  return POLICY_FOUNDRY_RED_TEAM_REPLAY_STATUSES.includes(
+    normalized as PolicyFoundryRedTeamReplayStatus,
+  )
+    ? normalized as PolicyFoundryRedTeamReplayStatus
+    : null;
+}
+
+function selectPolicyFoundryCandidate(input: {
+  readonly candidates: readonly ShadowPolicyDiscoveryCandidate[];
+  readonly candidateId: string | null;
+  readonly actionSurface: string | null;
+  readonly domain: string | null;
+}): ShadowPolicyDiscoveryCandidate | null {
+  return input.candidates.find((candidate) => {
+    if (input.candidateId && candidate.candidateId !== input.candidateId) return false;
+    if (input.actionSurface && candidate.actionSurface !== input.actionSurface) return false;
+    if (input.domain && candidate.domain !== input.domain) return false;
+    return true;
+  }) ?? null;
 }
 
 function problem(c: Context, input: {
@@ -1334,6 +1364,105 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
         report: result.surface.latestSimulation,
         generatedAt: deps.now?.() ?? null,
       }),
+    });
+  });
+
+  app.get('/api/v1/shadow/policy-foundry/readiness', (c) => {
+    const result = safeShadowSummary(c, deps);
+    if (result instanceof Response) return result;
+
+    const redTeamReplayStatusQuery = c.req.query('redTeamReplayStatus');
+    const redTeamReplayStatus = parsePolicyFoundryRedTeamReplayStatus(
+      redTeamReplayStatusQuery,
+    );
+    if (redTeamReplayStatusQuery && !redTeamReplayStatus) {
+      return problem(c, {
+        type: 'https://attestor.dev/problems/policy-foundry-red-team-status-invalid',
+        title: 'Invalid Policy Foundry red-team replay status',
+        status: 400,
+        detail:
+          `redTeamReplayStatus must be one of: ${POLICY_FOUNDRY_RED_TEAM_REPLAY_STATUSES.join(', ')}.`,
+        reasonCodes: ['invalid-policy-foundry-red-team-status'],
+      });
+    }
+
+    const customerApprovedQuery = c.req.query('customerApproved');
+    const customerApproved = parseBooleanQuery(customerApprovedQuery);
+    if (customerApprovedQuery && customerApproved === null) {
+      return problem(c, {
+        type: 'https://attestor.dev/problems/policy-foundry-readiness-query-invalid',
+        title: 'Invalid Policy Foundry readiness query',
+        status: 400,
+        detail: 'customerApproved must be true or false when provided.',
+        reasonCodes: ['invalid-policy-foundry-readiness-query'],
+      });
+    }
+
+    const tenantBoundaryProvenQuery = c.req.query('tenantBoundaryProven');
+    const tenantBoundaryProven = parseBooleanQuery(tenantBoundaryProvenQuery);
+    if (tenantBoundaryProvenQuery && tenantBoundaryProven === null) {
+      return problem(c, {
+        type: 'https://attestor.dev/problems/policy-foundry-readiness-query-invalid',
+        title: 'Invalid Policy Foundry readiness query',
+        status: 400,
+        detail: 'tenantBoundaryProven must be true or false when provided.',
+        reasonCodes: ['invalid-policy-foundry-readiness-query'],
+      });
+    }
+
+    const llmAuthoritySourceQuery = c.req.query('llmAuthoritySource');
+    const llmAuthoritySource = parseBooleanQuery(llmAuthoritySourceQuery);
+    if (llmAuthoritySourceQuery && llmAuthoritySource === null) {
+      return problem(c, {
+        type: 'https://attestor.dev/problems/policy-foundry-readiness-query-invalid',
+        title: 'Invalid Policy Foundry readiness query',
+        status: 400,
+        detail: 'llmAuthoritySource must be true or false when provided.',
+        reasonCodes: ['invalid-policy-foundry-readiness-query'],
+      });
+    }
+
+    const candidateId = c.req.query('candidateId')?.trim() || null;
+    const actionSurface = c.req.query('actionSurface')?.trim() || null;
+    const domain = c.req.query('domain')?.trim() || null;
+    const bundle = createShadowPolicyDiscoveryCandidates({
+      report: result.surface.latestSimulation,
+      generatedAt: deps.now?.() ?? null,
+    });
+    const candidate = selectPolicyFoundryCandidate({
+      candidates: bundle.candidates,
+      candidateId,
+      actionSurface,
+      domain,
+    });
+    const readiness = evaluatePolicyFoundryReadiness({
+      candidate,
+      report: result.surface.latestSimulation,
+      events: result.events,
+      generatedAt: deps.now?.() ?? null,
+      customerApproved,
+      tenantBoundaryProven,
+      llmAuthoritySource,
+      redTeamReplayStatus,
+    });
+
+    return c.json({
+      tenant: tenantSummary(result.tenant),
+      storageMode: result.surface.storageMode,
+      productionReady: false,
+      approvalRequired: true,
+      autoEnforce: false,
+      rawPayloadStored: false,
+      decisionSupportOnly: true,
+      source: 'shadow-policy-foundry-readiness',
+      candidateSelection: {
+        candidateId,
+        actionSurface,
+        domain,
+        matched: candidate !== null,
+        candidateCount: bundle.candidateCount,
+      },
+      readiness,
     });
   });
 

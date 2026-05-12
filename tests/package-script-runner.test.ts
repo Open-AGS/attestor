@@ -106,6 +106,7 @@ function testFastSuiteKeepsCriticalCoverage(): void {
     'test:hosted-webhook-async-reconciliation-hardening',
     'test:hosted-llm-agent-tool-boundary-guard',
     'test:hosted-production-runtime-health-contract',
+    'test:hosted-release-provenance-slsa-alignment',
     'test:crypto-intelligence-surface-consistency',
     'test:crypto-authorization-core-noble-hashes-dependency-risk',
     'test:node-26-runtime-validation',

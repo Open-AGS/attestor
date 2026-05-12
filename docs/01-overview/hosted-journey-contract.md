@@ -18,6 +18,7 @@ It defines the supported customer sequence, route ownership, auth boundary, succ
 - The machine-readable webhook and async reconciliation hardening profile lives in `src/service/hosted-webhook-async-reconciliation-hardening.ts`.
 - The machine-readable LLM/agent tool-use boundary guard lives in `src/service/hosted-llm-agent-tool-boundary-guard.ts`.
 - The machine-readable production runtime health contract lives in `src/service/hosted-production-runtime-health-contract.ts`.
+- The machine-readable release provenance and SLSA alignment profile lives in `src/service/hosted-release-provenance-slsa-alignment.ts`.
 
 ## Contract Rules
 
@@ -32,6 +33,7 @@ It defines the supported customer sequence, route ownership, auth boundary, succ
 - Webhook and async reconciliation is an explicit contract: signed ingress, provider event ordering, duplicate handling, idempotent finalization, claim release, retry policy, dead-letter recovery, and privacy-minimized evidence must be verifiable in code.
 - LLM/agent tool-use boundaries are explicit: model-safe feedback cannot expose raw prompts, raw tool payloads, provider bodies, customer records, private thresholds, or downstream execution authority, and unsafe retry authority stays behind retry binding, agent-loop budgets, customer review, or operator control.
 - Production runtime health is also a contract: process liveness, dependency readiness, startup diagnostics, worker readiness, queue health, storage authority readiness, webhook ingress readiness, and degraded-mode visibility must stay separate and must not expose secrets or raw customer data.
+- Release provenance is also a contract: evaluation release artifacts, SBOMs, package-surface gates, proof packets, DSSE evidence packs, and reviewer verification commands must stay digest-bound, attestation-verifiable, and honest about non-claims.
 
 ## Auth Boundaries
 

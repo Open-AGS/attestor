@@ -1,6 +1,6 @@
 # Artifact Attestation Plan
 
-Attestor `v0.1.2-evaluation` has a reviewer-runnable packet, a GitHub-visible smoke gate, a full verification workflow, and a release-only provenance workflow. The first provenance step is implemented through [release-provenance.yml](../../.github/workflows/release-provenance.yml): a separate release-only attestation path that proves where selected review artifacts came from without widening the push or PR reviewer workflows.
+Attestor `v0.1.2-evaluation` has a reviewer-runnable packet, a GitHub-visible smoke gate, a full verification workflow, and a release-only provenance workflow. The first SLSA v1.2-aligned release provenance step is implemented through [release-provenance.yml](../../.github/workflows/release-provenance.yml): a separate release-only attestation path that proves where selected review artifacts came from without widening the push or PR reviewer workflows.
 
 ## Current Baseline
 
@@ -39,7 +39,8 @@ The dedicated [release-provenance.yml](../../.github/workflows/release-provenanc
 3. runs `npm run showcase:proof`
 4. packages the review artifacts into `.attestor/release-provenance/evaluation-artifacts.tar.gz`
 5. uploads that archive as the `evaluation-artifacts` workflow artifact
-6. publishes a GitHub artifact attestation for that archive with `actions/attest@v4`
+6. publishes a GitHub build provenance attestation for that archive with `actions/attest@v4`
+7. publishes a separate GitHub SBOM attestation for the same archive subject with `sbom-path`
 
 The current `Evaluation Smoke` and `Full Verify` workflows are not repurposed for that job.
 
@@ -76,6 +77,8 @@ After downloading `evaluation-artifacts.tar.gz` from a `Release Provenance` run,
 
 ```bash
 gh attestation verify evaluation-artifacts.tar.gz -R 0xlamarr-labs/attestor
+gh attestation verify evaluation-artifacts.tar.gz -R 0xlamarr-labs/attestor --signer-workflow 0xlamarr-labs/attestor/.github/workflows/release-provenance.yml
+gh attestation verify evaluation-artifacts.tar.gz -R 0xlamarr-labs/attestor --signer-workflow 0xlamarr-labs/attestor/.github/workflows/release-provenance.yml --format json
 ```
 
 ## Non-Claims

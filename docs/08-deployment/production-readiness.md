@@ -76,6 +76,14 @@ src/service/hosted-production-runtime-health-contract.ts
 
 It is the machine-readable boundary for process liveness, dependency readiness, startup diagnostics, worker readiness, queue health, storage authority readiness, webhook ingress readiness, degraded-mode visibility, and secret-safe probe output. It does not replace endpoint probes against a real deployment target.
 
+The repo-side Release provenance and SLSA alignment profile lives in:
+
+```text
+src/service/hosted-release-provenance-slsa-alignment.ts
+```
+
+It is the machine-readable boundary for the evaluation release archive, SBOM, package-surface probes, proof packets, DSSE evidence packs, tamper-evident history, GitHub attestation verification, and non-claims. It does not replace deployment provenance, live environment readiness, service restart, worker probes, Stripe/webhook smoke tests, or production rehearsal.
+
 ## Production Storage Path Gate
 
 `production-shared` also requires the consequence-admission storage path to be truthful. The shared release authority and control plane are not enough if the AI action authorization history still depends on local evaluation stores.

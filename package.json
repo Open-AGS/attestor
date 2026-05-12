@@ -74,6 +74,7 @@
     "test:evaluation-packet-docs": "tsx tests/evaluation-packet-docs.test.ts",
     "test:evaluation-release-notes": "tsx tests/evaluation-release-notes.test.ts",
     "test:security-baseline-docs": "tsx tests/security-baseline-docs.test.ts",
+    "test:research-provenance-ledger": "tsx tests/research-provenance-ledger.test.ts",
     "test:supply-chain-baseline": "npm run security:supply-chain-baseline",
     "test:tenant-admin-secret-output": "tsx tests/tenant-admin-secret-output.test.ts",
     "test:container-security-baseline": "tsx tests/container-security-baseline.test.ts",

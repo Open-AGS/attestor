@@ -33,6 +33,47 @@ This ledger uses only repository history, merged PR evidence, current source/doc
 - Contract/documentation evidence: README, OpenAPI, tracker, readiness, or architecture docs.
 - Limitation evidence: explicit non-claim, no-go, or blocked condition.
 
+## Recorded Research Source Index
+
+This index records research and buildout sources found in the repository. A source being listed here does not mean every later PR or commit consumed that source. Exact commit attribution is only asserted in the detailed entries where PR, commit, docs, and tests support that mapping.
+
+### Repository Research Notes
+
+| Source | Recorded scope | Trust surfaces / protected principles | Mapping status |
+|---|---|---|---|
+| `docs/research/db-tenancy-and-distributed.md` | PostgreSQL shared-schema RLS, schema-per-tenant, project-per-tenant, Drizzle RLS, Hono/BullMQ/Inngest/Temporal deployment patterns, Railway/Fly deployment choices. | tenant isolation; runtime readiness; operational boundedness. | Source-indexed. Used as repository research evidence for tenant and distributed-runtime work where referenced by tracker or PR evidence. |
+| `docs/research/domains-and-pki-default.md` | Multi-domain governance engines, OPA bundles, dbt/GX, OSCAL, healthcare/insurance governance, Sigstore/Fulcio, SLSA provenance, PKI-by-default transition. | proof integrity; release provenance; auditability; no overclaim. | Source-indexed. Used as repository research evidence for domain governance and PKI/default-verifier work where referenced by tracker or PR evidence. |
+| `docs/research/final-6-features.md` | OIDC/keychain, PKI mandatory verify, Redis default, PostgreSQL RLS activation, distributed deployment, QRDA III healthcare feasibility. | customer authority; proof integrity; tenant isolation; runtime readiness; no overclaim. | Source-indexed roadmap research; not every item has a commit-level implementation mapping in this ledger. |
+| `docs/research/implementation-wave2.md` | OIDC session, PKI default verifier, Redis-backed BullMQ default, PostgreSQL RLS, schema attestation, distributed deployment, healthcare eCQM measures. | customer authority; proof integrity; tenant isolation; runtime readiness; auditability. | Source-indexed implementation research; exact per-commit mapping is not recorded for every item. |
+| `docs/research/oidc-and-redis-async.md` | `openid-client` v6, CLI SSO patterns, token/keychain handling, BullMQ v5 retry/DLQ/health/rate-limit rules, embedded Redis constraints. | customer authority; runtime readiness; replay/idempotency safety; operational boundedness. | Source-indexed; async/webhook hardening entries use BullMQ guidance where tracker evidence records it. |
+| `docs/research/schema-attestation-and-filing.md` | PostgreSQL/Snowflake schema fingerprints, pgaudit, dbt contracts, SEC EDGAR/iXBRL, EBA DPM/xBRL-CSV, filing-grade evidence. | proof integrity; auditability; no overclaim; release provenance. | Source-indexed finance and filing research; exact per-commit mapping is not recorded for every item. |
+| `docs/research/cms-validation-path.md` | QRDA III validation, CMS Schematron, Cypress CVU+ constraints, honest claim boundary for "CMS-validatable" output. | no overclaim; proof integrity; auditability. | Source-indexed healthcare validation research; no production-readiness claim. |
+
+### Recorded Audit And Truth-Source Notes
+
+| Source | Recorded scope | Trust surfaces / protected principles | Mapping status |
+|---|---|---|---|
+| `docs/01-overview/hosted-product-flow-audit.md` | Hosted account, API key, usage, billing, Stripe, entitlement, adoption flow, truth sources, runtime routes, service boundaries, tests/probes, and hardening gaps. | runtime readiness; customer authority; no overclaim; replay/idempotency safety; auditability. | Audit-indexed. Used as context for hosted product hardening, but exact per-PR mapping is not expanded in this ledger. |
+
+### Buildout Trackers With Recorded Research Anchors
+
+| Source | Recorded anchors / scope | Current recorded status | Mapping status |
+|---|---|---|---|
+| `docs/02-architecture/release-layer-buildout.md` | Modular monolith vs strangler extraction, release kernel, risk controls, OPA/Cedar-style policy design, decision logs, canonicalization, JOSE, RFC 6750/7662/7009, SLSA/in-toto, rollout controls. | Complete: 24/24 frozen steps. | Tracker-level research and implementation evidence; exact PR mapping is not expanded for every step in this ledger. |
+| `docs/02-architecture/release-policy-control-plane-buildout.md` | OPA bundles/discovery, Amazon Verified Permissions policy stores, Kubernetes admission good practices, signed bundle lifecycle, simulation, activation, audit, approvals, rollback. | Complete: 20/20 frozen steps. | Tracker-level research and implementation evidence. |
+| `docs/02-architecture/release-enforcement-plane-buildout.md` | NIST SP 800-207 PEP/PDP/PAP separation, Istio/Envoy external authorization, Kubernetes admission, RFC 7662/7009/8693/9449/8705/9421, SPIFFE/SPIRE, Sigstore, GitHub attestations, SCITT. | Complete: 20/20 frozen steps. | Tracker-level research and implementation evidence. |
+| `docs/02-architecture/proof-console-buildout.md` | Proof/adoption credibility research, SEC/iXBRL/EDGAR, EIP-7702, x402, ERC-4337, Safe guards, W3C VC, CloudEvents, OpenTelemetry, NIST AI RMF, SLSA/in-toto, JSON Schema, README/style/Diataxis guidance. | Complete: 8/8 frozen steps. | Tracker-level research and implementation evidence. |
+| `docs/02-architecture/consequence-admission-buildout.md` | NIST AI RMF, MCP authorization, x402, runtime guardrails, SEC EDGAR, OPA decision logs, RFC 8785, ERC-4337, EIP-7702, ERC-6900, RFC 9457, OpenAPI 3.1.1. | Complete: 6/6 frozen steps. | Tracker-level research and implementation evidence. |
+| `docs/02-architecture/hosted-product-flow-buildout.md` | Stripe Checkout, Customer Portal, subscription webhooks, Entitlements, idempotency, webhook signatures, OpenAPI, OAuth bearer auth, OWASP API risks, SEC/iXBRL, EIP-712/ERC-1271/ERC-4337/EIP-7702 positioning. | Complete: 8/8 frozen steps. | Tracker-level research and implementation evidence; live deployment remains separate. |
+| `docs/02-architecture/production-runtime-hardening-buildout.md` | Runtime profile matrix, durable stores, restart/recovery, readiness endpoint checks, production-shared boundary, anti-overclaim language. | Complete: 8/8 frozen steps. | Tracker-level research and implementation evidence; customer-operated production remains unproven without target probes. |
+| `docs/02-architecture/production-shared-authority-plane-buildout.md` | PostgreSQL transaction isolation, `ON CONFLICT`, advisory locks, `SKIP LOCKED`, LISTEN/NOTIFY, WAL reliability, Redis persistence, node-postgres pooling/transactions, Kubernetes probes, libpq URLs. | Complete: 9/9 frozen steps. | Tracker-level research and implementation evidence; external production inputs still required. |
+| `docs/02-architecture/production-rehearsal-buildout.md` | NIST SSDF, SLSA artifact provenance, GitHub artifact attestations, Kubernetes production guidance, PostgreSQL HA, BullMQ production guidance, OWASP API Security Top 10. | Complete: 10/10 frozen steps. | Tracker-level rehearsal evidence; not market validation or independent compliance approval. |
+| `docs/02-architecture/hosted-production-trust-hardening.md` | OWASP API/LLM/Agentic risks, NIST SSDF, SLSA, GitHub attestations, Kubernetes probes, Stripe go-live/idempotency/webhooks, BullMQ retries, OpenAI agent safety, Google SRE, OpenTelemetry, OWASP logging, NIST incident response. | Steps 01-07 complete; Steps 08-09 not started; Step 10 blocked. | Detailed entries map Steps 01, 03, 05, 06, and 07 to PR/commit evidence. |
+| `docs/02-architecture/crypto-authorization-core-buildout.md` | EIP-712, EIP-191, ERC-5267, ERC-7739, ERC-1271, EIP-6492, ERC-4337, ERC-7562, EIP-5792, ERC-7715, ERC-7579, ERC-6900, EIP-2, EIP-7702, ERC-7902, Safe, x402, EIP-3009, custody policy, package exports, CAIP identifiers, Chainalysis risk data. | Complete: 20/20 frozen steps. | Tracker-level research and implementation evidence. |
+| `docs/02-architecture/crypto-execution-admission-buildout.md` | EIP-5792, ERC-7715, ERC-7902, ERC-1271, ERC-4337, ERC-7769, ERC-7579, ERC-6900, EIP-7702, Safe guards, x402, Fireblocks, Turnkey, ERC-7683 and intent routing. | Complete: 12/12 frozen steps. | Tracker-level research and implementation evidence. |
+| `docs/02-architecture/crypto-intelligence-buildout.md` | ERC-4337, ERC-7562, EIP-7702, ERC-7683, x402, Safe guards, Turnkey, Fireblocks, Chainalysis risk reporting, NIST AI RMF, OpenTelemetry, CloudEvents, W3C PROV, OFAC data boundaries, Node perf/crypto, package exports. | Complete: 10/10 frozen steps. | Tracker-level research and implementation evidence. |
+| `docs/02-architecture/crypto-engine-hardening-ii.md` | ERC-4337, ERC-7562, ERC-7579, EIP-7702, x402, Safe guards, OPA decision logs, AWS IAM deny precedence, Grafana dashboard guidance, OpenTelemetry limits, Node perf/crypto, package exports, NIST Privacy Framework, OWASP logging, GDPR, NIST AI RMF, `@noble/hashes`, Node 26 runtime baseline. | Steps 01-09 implemented; Step 10 blocked on production rollout infrastructure. | Tracker-level research and implementation evidence; Node 26 and production rollout remain no-go until conditions pass. |
+
 ## Entries
 
 ### 1. Hosted API Authorization Matrix And Async Job Ownership
@@ -223,6 +264,88 @@ This ledger uses only repository history, merged PR evidence, current source/doc
 - Remaining limitation or no-go condition: Node 26 runtime remains rejected for now. Production rollout remains blocked until a working deployment target, environment inputs, service restart, readiness probes, Stripe/webhook smoke tests, and hosted product smoke tests pass.
 - Status: complete no-go and public-boundary hardening; production rollout still blocked.
 
+## Additional Recorded Research-Backed Tracks
+
+The entries above are the most concrete PR/commit-linked hardening records. The tracks below are also recorded research-backed engineering work, but this ledger does not yet expand every frozen step into a separate commit-linked entry. Where exact PR or commit attribution is not recorded here, the tracker file remains the source of truth.
+
+### 12. Release Layer Buildout
+
+- Step / PR / commit: `docs/02-architecture/release-layer-buildout.md`; exact per-step PR/commit mapping not expanded in this ledger.
+- Date if available: not recorded in the ledger.
+- Trust surface: release decisions, release tokens, reviewer authority, evidence packs, deterministic checks, token lifecycle, replay protection, first hard finance gateway.
+- Protected principle: proof integrity; fail-closed boundary; release provenance; auditability; replay/idempotency safety.
+- Research anchor / source used, if recorded: Microsoft monolith architecture, AWS strangler fig pattern, NIST AI RMF, OPA/Cedar-style policy patterns, OPA decision logs, NIST log-management patterns, RFC 8785, JOSE/JWT, RFC 6750/7662/7009, SLSA/in-toto, Kubernetes warn/audit/deny rollout patterns, and structured reporting anchors recorded in tracker step notes.
+- Repository evidence: `src/release-kernel/*`, `src/release-layer/*`, `tests/release-kernel-*.test.ts`, `tests/release-layer-platform-surface.test.ts`, `scripts/probe-release-layer-package-surface.mjs`, `docs/02-architecture/release-layer-platform-surface.md`.
+- Implemented control: Turns release authorization into a packaged consequence boundary with deterministic checks, signed tokens, introspection, revocation, replay consumption, reviewer queue, dual approval, break-glass, evidence packs, rollout posture, and package-surface controls.
+- Tests / verification: Tracker records per-step focused tests and package-surface probes; exact full command set for every historical step is not expanded here.
+- Remaining limitation or no-go condition: The track proves packaged release-layer behavior inside the repo; customer-operated production adoption still requires deployment-specific enforcement and runtime proof.
+- Status: complete tracker, source-indexed in this ledger.
+
+### 13. Release Policy Control Plane
+
+- Step / PR / commit: `docs/02-architecture/release-policy-control-plane-buildout.md`; exact per-step PR/commit mapping not expanded in this ledger.
+- Date if available: not recorded in the ledger.
+- Trust surface: policy-pack lifecycle, signed policy bundles, scoped activation, dry-run simulation, mutation audit, reviewer approval, rollback, package surface.
+- Protected principle: customer authority; proof integrity; fail-closed boundary; auditability; release provenance.
+- Research anchor / source used, if recorded: OPA bundles/discovery, Amazon Verified Permissions policy stores/schemas/authorization, Kubernetes admission webhook good practices.
+- Repository evidence: `src/release-policy-control-plane/*`, `src/service/http/routes/release-policy-control-routes.ts`, `tests/release-policy-control-plane-*.test.ts`, `docs/02-architecture/release-policy-control-plane-platform-surface.md`.
+- Implemented control: Adds deterministic policy pack objects, signed bundle verification, scope precedence, active resolution, simulation, impact summaries, executable test packs, hash-linked audit logs, admin routes, approval gates, rollback, and packaging.
+- Tests / verification: Tracker records focused unit and route tests for each frozen step.
+- Remaining limitation or no-go condition: Repository control-plane tests do not prove customer policy governance, external approval identity, or production operator process.
+- Status: complete tracker, source-indexed in this ledger.
+
+### 14. Release Enforcement Plane
+
+- Step / PR / commit: `docs/02-architecture/release-enforcement-plane-buildout.md`; exact per-step PR/commit mapping not expanded in this ledger.
+- Date if available: not recorded in the ledger.
+- Trust surface: distributed enforcement points, offline/online verification, sender-constrained presentation, HTTP/webhook/async/record/communication/action gateways, proxy bridge, degraded mode, transparency receipts.
+- Protected principle: fail-closed boundary; replay/idempotency safety; proof integrity; operational boundedness; auditability.
+- Research anchor / source used, if recorded: NIST SP 800-207, Istio/Envoy external authorization, Kubernetes admission policies, RFC 7662/7009/8693/9449/8705/9421, SPIFFE/SPIRE, Sigstore policy-controller, GitHub artifact-attestation enforcement, SCITT.
+- Repository evidence: `src/release-enforcement-plane/*`, `tests/release-enforcement-plane-*.test.ts`, `docs/08-deployment/release-enforcement-plane-envoy.md`, `docs/02-architecture/release-enforcement-plane-platform-surface.md`.
+- Implemented control: Packages reusable policy enforcement points that fail closed without valid Attestor release authorization and bind authorization to the caller, workload, request, queue envelope, proxy context, or downstream consequence.
+- Tests / verification: Tracker records focused verifier, presentation, middleware, gateway, Envoy, degraded-mode, telemetry, conformance, and package-surface tests.
+- Remaining limitation or no-go condition: Reference PEPs and adapters do not prove every customer mesh, proxy, queue, or service runtime until deployed and rehearsed in that target.
+- Status: complete tracker, source-indexed in this ledger.
+
+### 15. Proof Surface And Consequence Admission Tracks
+
+- Step / PR / commit: `docs/02-architecture/proof-console-buildout.md` and `docs/02-architecture/consequence-admission-buildout.md`; exact per-step PR/commit mapping not expanded in this ledger.
+- Date if available: reviewed on 2026-04-22 and 2026-04-23 according to tracker evidence.
+- Trust surface: proof surface, admission vocabulary, canonical admission object, facade route behavior, finance and crypto proof scenarios, evaluator-facing documentation.
+- Protected principle: proof integrity; auditability; no overclaim; fail-closed boundary; data minimization and redaction.
+- Research anchor / source used, if recorded: Stanford Web Credibility, FTC dark patterns, SEC/iXBRL/EDGAR, XBRL, EIP-7702, x402, ERC-4337, Safe guards, W3C VC, CloudEvents, OpenTelemetry, NIST AI RMF, SLSA/in-toto, JSON Schema, GitHub README guidance, Google style, Diataxis, MCP authorization, OPA decision logs, RFC 8785, RFC 9457, OpenAPI 3.1.1.
+- Repository evidence: proof surface scripts, proof-surface registry and manifest files, `src/consequence-admission/*`, package-surface probes, README proof commands, architecture trackers.
+- Implemented control: Makes proof outputs runnable, digest-bound, inspectable, and package-bound while keeping admission mode explicit and avoiding hidden auto-routing or universal-route claims.
+- Tests / verification: Tracker records proof-surface readiness gates, package-surface probes, and consequence-admission package tests.
+- Remaining limitation or no-go condition: Proof outputs are evaluation and integration evidence, not independent certification or full production assurance.
+- Status: complete trackers, source-indexed in this ledger.
+
+### 16. Hosted Product, Runtime, Shared Authority, And Rehearsal Tracks
+
+- Step / PR / commit: `docs/02-architecture/hosted-product-flow-buildout.md`, `docs/02-architecture/production-runtime-hardening-buildout.md`, `docs/02-architecture/production-shared-authority-plane-buildout.md`, and `docs/02-architecture/production-rehearsal-buildout.md`; exact per-step PR/commit mapping not expanded in this ledger.
+- Date if available: hosted product reviewed on 2026-04-22; runtime reviewed on 2026-04-23; shared authority reviewed on 2026-04-24; rehearsal reviewed on 2026-04-27.
+- Trust surface: commercial hosted flow, checkout/portal/webhooks, tenant API keys, runtime profiles, durable stores, shared PostgreSQL authority plane, promotion rehearsal evidence.
+- Protected principle: runtime readiness; customer authority; tenant isolation; replay/idempotency safety; no overclaim; operational boundedness.
+- Research anchor / source used, if recorded: Stripe Checkout/Portal/subscriptions/Entitlements/idempotency/webhooks, OpenAPI, OAuth/RFC bearer auth, OWASP API Security, SEC/iXBRL, EIP-712/ERC-1271/ERC-4337/EIP-7702, PostgreSQL transaction/locking/WAL/libpq guidance, Redis persistence, node-postgres pooling, Kubernetes probes/production guidance, NIST SSDF, SLSA, GitHub artifact attestations, BullMQ production guidance.
+- Repository evidence: hosted account/billing routes, runtime bootstrap and readiness files, release authority store, production readiness docs, deployment docs, rehearsal artifacts/scripts, focused hosted/runtime/shared-authority tests.
+- Implemented control: Adds current-scope hosted product flow evidence, runtime profile boundaries, durable restart-safe mode, shared authority-store cut line, readiness contracts, and signed rehearsal candidate evidence.
+- Tests / verification: Tracker records hosted flow readiness tests, runtime profile/restart/recovery tests, shared-authority multi-instance recovery tests, and production rehearsal gates.
+- Remaining limitation or no-go condition: External customer-operated production remains unproven until environment inputs, deployment restart, readiness probes, webhook smoke tests, hosted product smoke tests, and target rehearsal pass.
+- Status: hosted/runtime/shared/rehearsal trackers complete for repo-side scope; live production rollout remains blocked separately.
+
+### 17. Crypto Authorization, Execution, Intelligence, And Engine Hardening
+
+- Step / PR / commit: `docs/02-architecture/crypto-authorization-core-buildout.md`, `docs/02-architecture/crypto-execution-admission-buildout.md`, `docs/02-architecture/crypto-intelligence-buildout.md`, and `docs/02-architecture/crypto-engine-hardening-ii.md`; exact per-step PR/commit mapping not expanded in this ledger.
+- Date if available: execution reviewed on 2026-04-22; intelligence and hardening II reviewed on 2026-05-11; authorization date not recorded in this ledger.
+- Trust surface: programmable-money authorization, wallet and smart-account adapters, execution-admission preflight, custody callbacks, intent routing, operator risk input, dashboard intelligence, privacy enforcement, package surfaces, runtime/dependency hardening.
+- Protected principle: proof integrity; fail-closed boundary; customer authority; replay/idempotency safety; data minimization and redaction; operational boundedness.
+- Research anchor / source used, if recorded: EIP-712, EIP-191, ERC-5267, ERC-7739, ERC-1271, EIP-6492, ERC-4337, ERC-7562, EIP-5792, ERC-7715, ERC-7769, ERC-7579, ERC-6900, EIP-2, EIP-7702, ERC-7902, Safe guards/modules, x402, EIP-3009, ERC-7683, Turnkey, Fireblocks, Chainalysis risk data, W3C PROV, OFAC data boundaries, OPA decision logs, AWS IAM evaluation, Grafana dashboard guidance, OpenTelemetry, NIST Privacy Framework, OWASP logging, GDPR, NIST AI RMF, Node perf/crypto/package exports, TypeScript module resolution, `@noble/hashes`, Node release/Docker runtime guidance.
+- Repository evidence: `src/crypto-authorization-core/*`, `src/crypto-execution-admission/*`, `src/crypto-intelligence/index.ts`, package-surface probes, crypto focused tests, crypto intelligence benchmark script, crypto hardening docs/tests.
+- Implemented control: Builds crypto authorization and execution admission as packaged deterministic surfaces, adds intelligence over risk/readiness/gaps, enforces digest-first privacy, records performance budgets, validates package boundaries, and blocks Node 26 / unresolved production rollout as no-go conditions.
+- Tests / verification: Tracker records crypto package tests, adapter/conformance tests, privacy minimization tests, dashboard/performance/package-surface tests, dependency-risk tests, and Node 26 runtime validation.
+- Remaining limitation or no-go condition: Attestor does not become a wallet, custody platform, bundler, paymaster, bridge, facilitator, solver, relayer, oracle, sanctions provider, fraud provider, or market-data vendor. Customer-operated integrations and third-party signals must be digest-bound and scoped before execution claims.
+- Status: crypto authorization, execution, and intelligence trackers complete for current package scope; engine hardening Step 10 remains blocked on production rollout infrastructure.
+
 ## Strong Recorded Research Support
 
 The strongest recorded research support appears in:
@@ -236,6 +359,8 @@ The strongest recorded research support appears in:
 - PR #84 / Tenant Isolation Boundary: OWASP API1:2023 and NIST SP 800-53 Rev. 5.
 - PR #31 / Presentation Replay Ledger: NIST SP 800-207 and OWASP Agentic Applications 2026.
 - PR #207 / Node 26 Runtime No-Go: Node LTS status and Node Docker Alpine/musl validation concerns.
+- Release-layer, policy-control-plane, enforcement-plane, proof-console, consequence-admission, hosted-product, production-runtime, shared-authority, production-rehearsal, and crypto buildout trackers: strong tracker-level research support recorded in `docs/02-architecture/*-buildout.md`.
+- Repository research notes in `docs/research/*.md`: strong source-index support for tenant isolation, distributed runtime, PKI/default verification, schema attestation, filing paths, OIDC/session posture, Redis/BullMQ async behavior, and healthcare validation boundaries.
 
 ## Repository-Internal Only Entries
 
@@ -251,6 +376,8 @@ These entries are primarily repository-internal hardening evidence rather than e
 - PR #20 has no PR-specific external research source recorded; the entry is marked repository-internal only.
 - PR #170 has no PR-specific external research source recorded; it is treated as follow-up enforcement of the already recorded data minimization policy.
 - PR #208 and PR #209 have no PR-specific external source recorded; both are repository-internal no-overclaim/secret-safety hardening.
+- Many frozen buildout steps have tracker-level research anchors and per-step repository evidence but are not expanded here into one entry per historical PR or commit. Their exact PR/commit mapping is therefore marked not expanded rather than invented.
+- Some repository research notes are source-indexed only. If a later commit, PR body, tracker row, or test does not explicitly reference them, this ledger does not claim direct source-to-commit causality.
 - Complete production readiness is not proven. The repository records this as blocked on target-specific deployment env, service restart, readiness probes, webhook smoke tests, hosted product smoke tests, and production rehearsal evidence.
 - External KMS/HSM-backed release signing is not proven or implemented.
 - Customer-operated replay/idempotency storage at every downstream enforcement edge is not proven by evaluation helper tests alone.

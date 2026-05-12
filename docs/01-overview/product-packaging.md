@@ -130,11 +130,47 @@ The trial is an onboarding state for serious evaluation, not a permanent plan.
 - `60` day window
 - `5,000` admissions total
 - Pro-like feature discovery in shadow mode
+- Policy Foundry discovery preview
+- Policy Twin simulation preview
+- readiness and no-go scoring preview
 - policy candidate discovery
 - no card required
 - converts to Developer, Starter, Pro, Scale, or Enterprise
 
 High-consequence teams need enough time to observe real action surfaces before asking workflows to stop. Fourteen days is usually too short for finance, crypto, healthcare, custody, or regulated operational buyers.
+
+## Policy Foundry Packaging Boundary
+
+Policy Foundry is the platform-core onboarding layer for observed-action policy
+mining. It identifies evidence-backed, approval-required policy candidates and
+missing controls from customer shadow action traffic. It is not a pack-specific
+feature and should not be positioned as a finance-only or crypto-only product.
+
+External-facing language should avoid saying that Attestor "trains on" or
+"learns the company." The safer claim is that Attestor identifies policy
+candidates and missing controls from observed shadow actions.
+
+The commercial boundary is:
+
+| Plan | Policy Foundry posture |
+|---|---|
+| `developer` | Basic shadow summary, action risk inventory, limited policy candidate preview, no production enforcement. |
+| `trial` | Time-boxed Pro-like shadow discovery, Policy Twin preview, readiness and no-go scoring preview, no production enforcement. |
+| `starter` | One production workflow with basic Policy Foundry, Policy Twin, active questions, review/enforce ladder, and short-retention audit export. |
+| `pro` | Advanced confidence scoring, candidate red-team replay, multiple workflows, RBAC/SSO, dual approval, and longer retention. |
+| `scale` | Higher-volume discovery, custom templates, drift detection, stronger support, and longer retention. |
+| `enterprise` | Customer-operated, dedicated, air-gapped, regulated, or custom pack deployment boundaries. |
+
+Security minimums must not become paid-only features. Redaction, proof
+verification, tenant isolation, fail-closed semantics, and the rule that shadow
+reads never auto-enforce must apply across all plans.
+
+The implementation boundary is still important: Policy Foundry as a full
+readiness engine, active-question contract, candidate-specific red-team replay
+suite, and entitlement-aware rollout layer is not fully implemented yet. Current
+repo-side foundations include shadow events, action risk inventory, policy
+discovery candidates, simulation reports, promotion drafts, and activation
+readiness gates.
 
 ### Starter
 

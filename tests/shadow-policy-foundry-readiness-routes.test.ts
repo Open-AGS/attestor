@@ -208,9 +208,48 @@ async function testInvalidReadinessQueryFailsClosed(): Promise<void> {
   );
 }
 
+async function testRedTeamReplayRouteIsDataMinimized(): Promise<void> {
+  const app = createApp(cleanEvents());
+  const response = await app.request('/api/v1/shadow/policy-foundry/red-team-replay');
+  const text = await response.text();
+  const body = JSON.parse(text) as {
+    tenant: { tenantId: string };
+    approvalRequired: boolean;
+    autoEnforce: boolean;
+    rawPayloadStored: boolean;
+    decisionSupportOnly: boolean;
+    candidateSelection: { matched: boolean };
+    replay: {
+      status: string;
+      caseCount: number;
+      failedCaseCount: number;
+      rawPayloadStored: boolean;
+      evidenceReplayOnly: boolean;
+    };
+  };
+
+  equal(response.status, 200, 'Policy Foundry red-team route: valid request returns 200');
+  equal(response.headers.get('cache-control'), 'no-store', 'Policy Foundry red-team route: response is no-store');
+  equal(body.tenant.tenantId, 'tenant_policy_foundry', 'Policy Foundry red-team route: tenant context is included');
+  equal(body.approvalRequired, true, 'Policy Foundry red-team route: approval is required');
+  equal(body.autoEnforce, false, 'Policy Foundry red-team route: route never auto-enforces');
+  equal(body.rawPayloadStored, false, 'Policy Foundry red-team route: raw payload boundary is explicit');
+  equal(body.decisionSupportOnly, true, 'Policy Foundry red-team route: output is decision support only');
+  equal(body.candidateSelection.matched, true, 'Policy Foundry red-team route: default candidate is selected');
+  equal(body.replay.status, 'passed', 'Policy Foundry red-team route: clean replay passes');
+  equal(body.replay.failedCaseCount, 0, 'Policy Foundry red-team route: clean replay has no failed cases');
+  equal(body.replay.rawPayloadStored, false, 'Policy Foundry red-team route: replay output stays data-minimized');
+  equal(body.replay.evidenceReplayOnly, true, 'Policy Foundry red-team route: evidence replay limitation is explicit');
+  ok(body.replay.caseCount >= 10, 'Policy Foundry red-team route: case set is returned');
+  ok(!text.includes('ops-agent-'), 'Policy Foundry red-team route: raw actor IDs are not returned');
+  ok(!text.includes('raw_recipient_must_not_escape'), 'Policy Foundry red-team route: raw recipient is not returned');
+  ok(!text.includes('raw_feature_must_not_escape'), 'Policy Foundry red-team route: raw feature values are not returned');
+}
+
 await testReadinessRouteIsDataMinimizedAndApprovalRequired();
 await testApprovedAndReplayedRouteCanBecomeScopedEnforceEligible();
 await testSingleActorRouteBlocksEnforcement();
 await testInvalidReadinessQueryFailsClosed();
+await testRedTeamReplayRouteIsDataMinimized();
 
 console.log(`Shadow Policy Foundry readiness route tests: ${passed} passed, 0 failed`);

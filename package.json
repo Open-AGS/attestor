@@ -131,6 +131,7 @@
     "test:policy-discovery-candidates": "tsx tests/policy-discovery-candidates.test.ts",
     "test:policy-foundry-onboarding-docs": "tsx tests/policy-foundry-onboarding-docs.test.ts",
     "test:policy-foundry-readiness": "tsx tests/policy-foundry-readiness.test.ts",
+    "test:policy-foundry-red-team-replay": "tsx tests/policy-foundry-red-team-replay.test.ts",
     "test:shadow-policy-foundry-readiness-routes": "tsx tests/shadow-policy-foundry-readiness-routes.test.ts",
     "test:shadow-persistence-store": "tsx tests/shadow-persistence-store.test.ts",
     "test:shadow-route-tenant-boundary": "tsx tests/shadow-route-tenant-boundary.test.ts",

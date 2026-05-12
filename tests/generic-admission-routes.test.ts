@@ -66,6 +66,26 @@ function createLoopGuardedApp(planId = 'starter'): { readonly app: Hono; readonl
   };
 }
 
+function validAdmissionPayload(overrides: Record<string, unknown> = {}): Record<string, unknown> {
+  return {
+    mode: 'enforce',
+    actor: 'support-ai-agent',
+    action: 'issue_refund',
+    domain: 'money-movement',
+    downstreamSystem: 'refund-service',
+    requestedAt: '2026-05-01T18:00:00.000Z',
+    decidedAt: '2026-05-01T18:00:01.000Z',
+    policyRef: 'policy:refunds:v1',
+    evidenceRefs: ['order:987', 'payment:456'],
+    amount: {
+      value: 38000,
+      currency: 'HUF',
+    },
+    recipient: 'customer_123',
+    ...overrides,
+  };
+}
+
 async function testEvaluationPlansRejectEnforcingModes(): Promise<void> {
   const scenarios = [
     { planId: 'developer', mode: 'enforce', expectedPlanId: 'developer' },
@@ -183,6 +203,89 @@ async function testPostAdmissionRouteReturnsEnvelope(): Promise<void> {
   equal(body.admission.request.entryPoint.route, '/api/v1/admissions', 'Generic admission route: entry point is canonical');
   equal(body.admission.request.policyScope.tenantId, 'tenant_route', 'Generic admission route: tenant context scopes the request');
   equal(body.admission.request.policyScope.environment, 'api_key', 'Generic admission route: tenant source fills environment by default');
+}
+
+async function testTenantMismatchFailsClosedBeforeShadowRecording(): Promise<void> {
+  const app = new Hono();
+  let shadowRecords = 0;
+  registerGenericAdmissionRoutes(app, {
+    currentTenant: () => ({
+      tenantId: 'tenant_auth',
+      tenantName: 'Authenticated Tenant',
+      authenticatedAt: '2026-05-01T18:00:00.000Z',
+      source: 'api_key',
+      planId: 'starter',
+      monthlyRunQuota: 100,
+    }),
+    recordShadowAdmission: () => {
+      shadowRecords += 1;
+    },
+  });
+  const response = await app.request('/api/v1/admissions', {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify(validAdmissionPayload({
+      tenantId: 'tenant_other',
+    })),
+  });
+  const body = await response.json() as {
+    decision: string;
+    failClosed: boolean;
+    reasonCodes: readonly string[];
+  };
+
+  equal(response.status, 403, 'Generic admission route: mismatched tenant returns 403');
+  equal(body.decision, 'block', 'Generic admission route: mismatched tenant blocks');
+  equal(body.failClosed, true, 'Generic admission route: mismatched tenant fails closed');
+  ok(
+    body.reasonCodes.includes('tenant-scope-mismatch'),
+    'Generic admission route: mismatched tenant reason is explicit',
+  );
+  equal(shadowRecords, 0, 'Generic admission route: mismatched tenant is not shadow recorded');
+}
+
+async function testLoopGuardUnavailableFailsClosedBeforeShadowRecording(): Promise<void> {
+  const app = new Hono();
+  let shadowRecords = 0;
+  registerGenericAdmissionRoutes(app, {
+    currentTenant: () => ({
+      tenantId: 'tenant_route',
+      tenantName: 'Route Tenant',
+      authenticatedAt: '2026-05-01T18:00:00.000Z',
+      source: 'api_key',
+      planId: 'starter',
+      monthlyRunQuota: 100,
+    }),
+    evaluateAgentLoopAbuse: async () => {
+      throw new Error('shared guard unavailable');
+    },
+    recordShadowAdmission: () => {
+      shadowRecords += 1;
+    },
+  });
+  const response = await app.request('/api/v1/admissions', {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify(validAdmissionPayload()),
+  });
+  const body = await response.json() as {
+    decision: string;
+    failClosed: boolean;
+    reasonCodes: readonly string[];
+  };
+
+  equal(response.status, 503, 'Generic admission route: unavailable loop guard returns 503');
+  equal(body.decision, 'block', 'Generic admission route: unavailable loop guard blocks');
+  equal(body.failClosed, true, 'Generic admission route: unavailable loop guard fails closed');
+  ok(
+    body.reasonCodes.includes('agent-loop-abuse-guard-unavailable'),
+    'Generic admission route: unavailable loop guard reason is explicit',
+  );
+  equal(shadowRecords, 0, 'Generic admission route: unavailable loop guard is not shadow recorded');
 }
 
 async function testInvalidJsonReturnsFailClosedProblem(): Promise<void> {
@@ -398,6 +501,8 @@ async function testLoopGuardThrottlesRetryAttemptBeyondBudget(): Promise<void> {
 
 await testEvaluationPlansRejectEnforcingModes();
 await testPostAdmissionRouteReturnsEnvelope();
+await testTenantMismatchFailsClosedBeforeShadowRecording();
+await testLoopGuardUnavailableFailsClosedBeforeShadowRecording();
 await testInvalidJsonReturnsFailClosedProblem();
 await testInvalidInputReturnsFailClosedProblem();
 await testPostAdmissionRouteCarriesRetryAttemptBinding();

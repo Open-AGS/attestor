@@ -1,4 +1,5 @@
 import { controlPlaneStoreMode } from '../control-plane-store.js';
+import { agentLoopAbuseGuardStorageMode } from '../agent-loop-abuse-guard.js';
 import { releaseAuthorityStoreMode } from '../release-authority-store.js';
 import type { AttestorRuntimeProfileId } from './runtime-profile.js';
 
@@ -228,7 +229,7 @@ readonly ProductionStoragePathComponent[] {
       component: 'agent-loop-abuse-guard',
       plane: 'consequence-admission-plane',
       label: 'Agent retry-loop abuse guard',
-      currentMode: current('agent-loop-abuse-guard', 'in-memory-reference'),
+      currentMode: current('agent-loop-abuse-guard', agentLoopAbuseGuardStorageMode()),
       requiredModeForProduction: 'shared-durable',
       tenantScoped: true,
       migrationTarget: 'shared-authority-control-plane',

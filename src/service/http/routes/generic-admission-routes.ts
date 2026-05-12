@@ -18,7 +18,7 @@ export interface GenericAdmissionRouteDeps {
     readonly tenant: TenantContext;
     readonly envelope: GenericAdmissionEnvelope;
     readonly receivedAt: string;
-  }): ConsequenceAdmissionAgentLoopAbuseGuardDecision;
+  }): ConsequenceAdmissionAgentLoopAbuseGuardDecision | Promise<ConsequenceAdmissionAgentLoopAbuseGuardDecision>;
 }
 
 function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
@@ -27,12 +27,25 @@ function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
 
 function admissionPayloadWithTenant(payload: unknown, tenant: TenantContext): unknown {
   if (!isRecord(payload)) return payload;
+  if (typeof payload.tenantId === 'string') {
+    const requestedTenantId = payload.tenantId.trim();
+    if (requestedTenantId && requestedTenantId !== tenant.tenantId) {
+      throw new GenericAdmissionTenantScopeMismatchError();
+    }
+  }
   return {
     ...payload,
-    tenantId: typeof payload.tenantId === 'string' ? payload.tenantId : tenant.tenantId,
+    tenantId: tenant.tenantId,
     environment:
       typeof payload.environment === 'string' ? payload.environment : tenant.source,
   };
+}
+
+class GenericAdmissionTenantScopeMismatchError extends Error {
+  constructor() {
+    super('Admission tenantId must match the authenticated tenant context.');
+    this.name = 'GenericAdmissionTenantScopeMismatchError';
+  }
 }
 
 export function registerGenericAdmissionRoutes(
@@ -59,9 +72,25 @@ export function registerGenericAdmissionRoutes(
 
     try {
       const tenant = deps.currentTenant(c);
-      const envelope = createGenericAdmissionEnvelope(
-        admissionPayloadWithTenant(payload, tenant),
-      );
+      let envelope: GenericAdmissionEnvelope;
+      try {
+        envelope = createGenericAdmissionEnvelope(
+          admissionPayloadWithTenant(payload, tenant),
+        );
+      } catch (error) {
+        if (error instanceof GenericAdmissionTenantScopeMismatchError) {
+          const problem = createConsequenceAdmissionProblem({
+            type: 'https://attestor.dev/problems/admission-tenant-scope-mismatch',
+            title: 'Admission tenant scope mismatch',
+            status: 403,
+            detail: error.message,
+            instance: '/api/v1/admissions',
+            reasonCodes: ['tenant-scope-mismatch'],
+          });
+          return c.json(problem, 403);
+        }
+        throw error;
+      }
       const modePolicy = resolvePlanGenericAdmissionMode(tenant.planId, envelope.mode);
       if (!modePolicy.allowed) {
         const problem = createConsequenceAdmissionProblem({
@@ -74,11 +103,28 @@ export function registerGenericAdmissionRoutes(
         });
         return c.json(problem, 403);
       }
-      const loopGuard = deps.evaluateAgentLoopAbuse?.({
-        tenant,
-        envelope,
-        receivedAt: new Date().toISOString(),
-      });
+      let loopGuard: ConsequenceAdmissionAgentLoopAbuseGuardDecision | undefined;
+      try {
+        loopGuard = await deps.evaluateAgentLoopAbuse?.({
+          tenant,
+          envelope,
+          receivedAt: new Date().toISOString(),
+        });
+      } catch (error) {
+        const detail =
+          error instanceof Error
+            ? error.message
+            : 'The agent loop abuse guard could not evaluate the admission.';
+        const problem = createConsequenceAdmissionProblem({
+          type: 'https://attestor.dev/problems/agent-loop-abuse-guard-unavailable',
+          title: 'Agent loop abuse guard unavailable',
+          status: 503,
+          detail,
+          instance: '/api/v1/admissions',
+          reasonCodes: ['agent-loop-abuse-guard-unavailable'],
+        });
+        return c.json(problem, 503);
+      }
       if (loopGuard && !loopGuard.allowed) {
         if (loopGuard.retryAfterSeconds > 0) {
           c.header('retry-after', String(loopGuard.retryAfterSeconds));

@@ -18,6 +18,10 @@ import {
   configureAuthAbuseGuard,
   shutdownAuthAbuseGuard,
 } from '../auth-abuse-guard.js';
+import {
+  configureAgentLoopAbuseGuard,
+  shutdownAgentLoopAbuseGuard,
+} from '../agent-loop-abuse-guard.js';
 import { resolveRedis } from '../redis-auto.js';
 import {
   resolvePlanAsyncDispatch,
@@ -135,6 +139,12 @@ export function configureTenantRuntimeBackends(): void {
     redisUrl: authRateLimitRedisUrl ?? sharedRedisUrl,
     redisMode: authRateLimitRedisUrl ? 'explicit' : redisMode,
   });
+
+  const agentLoopGuardRedisUrl = explicitRedisUrl('ATTESTOR_AGENT_LOOP_GUARD_REDIS_URL');
+  configureAgentLoopAbuseGuard({
+    redisUrl: agentLoopGuardRedisUrl ?? sharedRedisUrl,
+    redisMode: agentLoopGuardRedisUrl ? 'explicit' : redisMode,
+  });
 }
 
 export async function shutdownTenantRuntimeBackends(): Promise<void> {
@@ -153,6 +163,7 @@ export async function shutdownTenantRuntimeBackends(): Promise<void> {
     shutdownTenantAsyncWeightedDispatchCoordinator(),
     shutdownTenantRateLimiter(),
     shutdownAuthAbuseGuard(),
+    shutdownAgentLoopAbuseGuard(),
     worker?.close(),
     queue?.close(),
   ]);

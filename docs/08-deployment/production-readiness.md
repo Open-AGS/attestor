@@ -68,6 +68,14 @@ The runtime diagnostics are visible at:
 
 Both responses include `runtimeProfile` and `releaseRuntime`. Treat `releaseRuntime.durability.ready=false` or `/api/v1/ready` returning `503` as a stop condition.
 
+The repo-side Production runtime health contract lives in:
+
+```text
+src/service/hosted-production-runtime-health-contract.ts
+```
+
+It is the machine-readable boundary for process liveness, dependency readiness, startup diagnostics, worker readiness, queue health, storage authority readiness, webhook ingress readiness, degraded-mode visibility, and secret-safe probe output. It does not replace endpoint probes against a real deployment target.
+
 ## Production Storage Path Gate
 
 `production-shared` also requires the consequence-admission storage path to be truthful. The shared release authority and control plane are not enough if the AI action authorization history still depends on local evaluation stores.

@@ -203,6 +203,7 @@ export function registerCoreRoutes(app: Hono, deps: CoreRouteDeps): void {
   } = deps;
 
   app.get('/api/v1/health', async (c) => {
+    c.header('cache-control', 'no-store');
     const highAvailability = evaluateApiHighAvailabilityState({
       redisMode: redisMode as 'external' | 'localhost' | 'embedded' | 'none' | 'unavailable',
       asyncBackendMode: asyncBackendMode as 'bullmq' | 'in_process' | 'none',
@@ -304,6 +305,7 @@ export function registerCoreRoutes(app: Hono, deps: CoreRouteDeps): void {
   });
 
   app.get('/api/v1/ready', async (c) => {
+    c.header('cache-control', 'no-store');
     const checks: Record<string, boolean> = {};
     let ready = true;
     const highAvailability = evaluateApiHighAvailabilityState({

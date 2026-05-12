@@ -64,6 +64,7 @@
     "test:hosted-sensitive-business-flow-abuse-guard": "tsx tests/hosted-sensitive-business-flow-abuse-guard.test.ts",
     "test:hosted-webhook-async-reconciliation-hardening": "tsx tests/hosted-webhook-async-reconciliation-hardening.test.ts",
     "test:hosted-llm-agent-tool-boundary-guard": "tsx tests/hosted-llm-agent-tool-boundary-guard.test.ts",
+    "test:hosted-production-runtime-health-contract": "tsx tests/hosted-production-runtime-health-contract.test.ts",
     "test:hosted-action-authorization-openapi": "tsx tests/hosted-action-authorization-openapi.test.ts",
     "test:product-positioning-docs": "tsx tests/product-positioning-docs.test.ts",
     "test:product-use-cases-docs": "tsx tests/product-use-cases-docs.test.ts",

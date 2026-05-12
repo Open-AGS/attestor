@@ -30,6 +30,8 @@ Reviewed on 2026-05-11 before opening this track:
 - OWASP Top 10 for Agentic Applications 2026 treats tool misuse and excessive agent authority as first-order risks for agent systems. Hosted model feedback, tool wrappers, retries, and recommendation reads must therefore separate model-readable guidance from executable authority: [OWASP Agentic Applications 2026](https://genai.owasp.org/resource/owasp-top-10-for-agentic-applications-for-2026/)
 - NIST AI RMF frames trustworthy AI risk work as govern, map, measure, and manage functions. Attestor's LLM/agent boundary therefore needs machine-readable controls plus tests, not only prose warnings: [NIST AI RMF](https://www.nist.gov/itl/ai-risk-management-framework)
 - OpenAI agent safety guidance recommends structured outputs, tool approvals, guardrails, evals, and isolating untrusted data from tool-driving agent behavior. Attestor's boundary follows the same pattern by exposing structured safe feedback and keeping tool authority outside model-visible text: [OpenAI Safety in building agents](https://platform.openai.com/docs/guides/agent-builder-safety)
+- Google SRE monitoring guidance separates symptoms, causes, and actionable signals. Attestor runtime health should therefore expose process health, dependency readiness, blocker codes, and operational state without turning noisy diagnostics into routability claims: [Google SRE monitoring distributed systems](https://sre.google/sre-book/monitoring-distributed-systems/)
+- OpenTelemetry service semantic conventions provide stable service identity attributes. Attestor health and readiness surfaces should keep `serviceVersion`, `instanceId`, runtime profile, and backend modes explicit and low-cardinality: [OpenTelemetry service attributes](https://opentelemetry.io/docs/specs/semconv/resource/)
 
 ## Step List
 
@@ -39,7 +41,7 @@ Reviewed on 2026-05-11 before opening this track:
 | 02 | complete | Sensitive Business Flow Abuse Guard | `src/service/hosted-sensitive-business-flow-abuse-guard.ts`, `tests/hosted-sensitive-business-flow-abuse-guard.test.ts`, `src/service/http/routes/account-routes.ts`, `package.json` | Adds a machine-readable abuse-control profile for checkout, portal, API-key issue/rotate/status/revoke, tenant admin, signup/bootstrap, auth challenges, tenant execution, provider webhooks, and release-bound export. Also wires SAML and OIDC login initiation through the shared auth abuse budget. |
 | 03 | complete | Webhook And Async Reconciliation Hardening | `src/service/hosted-webhook-async-reconciliation-hardening.ts`, `tests/hosted-webhook-async-reconciliation-hardening.test.ts`, `src/service/account-store.ts`, `src/service/control-plane-store.ts`, `src/service/application/stripe-webhook-billing-processor.ts`, `package.json` | Adds a machine-readable reconciliation profile for Stripe ingress, billing convergence, email provider webhooks, tenant async execution, and dead-letter recovery. Also adds provider-event ordering guards so older Stripe subscription and invoice events are finalized as ignored instead of overwriting fresher state. |
 | 04 | complete | LLM/Agent Tool-Use Boundary Guard | `src/service/hosted-llm-agent-tool-boundary-guard.ts`, `tests/hosted-llm-agent-tool-boundary-guard.test.ts`, `docs/api/attestor-action-authorization.openapi.json`, `tests/hosted-action-authorization-openapi.test.ts`, `package.json` | Adds a machine-readable boundary profile across model-safe admission feedback, agent retry authority, shadow recommendation reads, protected adapter execution, and proof/dashboard/problem-detail surfaces. Also extends the OpenAPI contract with model-safe feedback and explicit no-tool-authority/no-unsafe-retry boundary flags. |
-| 05 | not started | Production Runtime Health Contract | TBD | Define route, worker, queue, storage, webhook, and degraded-mode readiness contracts aligned with readiness/liveness/startup semantics. |
+| 05 | complete | Production Runtime Health Contract | `src/service/hosted-production-runtime-health-contract.ts`, `tests/hosted-production-runtime-health-contract.test.ts`, `src/service/http/routes/core-routes.ts`, `src/service/worker.ts`, `package.json` | Adds a machine-readable health contract across API process health, API dependency readiness, worker health/readiness, async queue runtime, storage/release authority readiness, webhook ingress readiness, and degraded-mode visibility. Also makes API and worker probe responses explicitly no-store at the route/server level. |
 | 06 | not started | Release Provenance And SLSA Alignment | TBD | Tie build, SBOM, package surface, proof packet, and release evidence into verifiable provenance and tamper-evident artifacts. |
 | 07 | not started | Observability Privacy And Incident Evidence | TBD | Add privacy-safe operational evidence, alert context, incident packet shape, low-cardinality telemetry guard, and no-raw-customer-data checks. |
 | 08 | not started | Backup/Restore/DR Proof Tightening | TBD | Add restore dry-run evidence, freshness, checksum, recovery objective, and operator runbook guards. |
@@ -48,7 +50,7 @@ Reviewed on 2026-05-11 before opening this track:
 
 ## Current Posture
 
-Steps 01-04 are complete in code and test coverage. Steps 05-09 remain implementation work. Step 10 remains blocked until a working deployment target is available.
+Steps 01-05 are complete in code and test coverage. Steps 06-09 remain implementation work. Step 10 remains blocked until a working deployment target is available.
 
 ## Step 02 Evidence
 
@@ -78,3 +80,13 @@ The LLM/agent tool-use boundary guard is repo-side hardening, not a production r
 - `docs/api/attestor-action-authorization.openapi.json` now documents `ModelSafeFeedback` and explicit boundary flags: model-safe feedback only, no tool execution authority, no unsafe retry authority, no provider bodies exposed to model, and no raw tool payload storage from shadow reads.
 - `tests/hosted-action-authorization-openapi.test.ts` keeps the public action-authorization contract aligned with those model, tool, retry, and shadow-read boundaries.
 - Production readiness is still separate from this repo-side guard: deployment env, service restart, readiness probes, webhook smoke tests, and hosted product smoke tests remain Step 10 work on a working deployment target.
+
+## Step 05 Evidence
+
+The production runtime health contract is repo-side hardening, not a production rollout claim.
+
+- `src/service/hosted-production-runtime-health-contract.ts` declares the health contract across API liveness/startup diagnostics, API readiness, worker readiness, async queue runtime, storage/release authority readiness, webhook ingress readiness, and degraded-mode visibility.
+- `tests/hosted-production-runtime-health-contract.test.ts` verifies source evidence, validation evidence, required controls, external research anchors, package-runner exposure, docs exposure, no-secret contract output, and readiness/liveness separation.
+- `src/service/http/routes/core-routes.ts` now sets `cache-control: no-store` directly on `/api/v1/health` and `/api/v1/ready`, even when the routes are mounted without the full HTTP edge middleware.
+- `src/service/worker.ts` now sets `cache-control: no-store` directly on worker `/health` and `/ready` probe responses.
+- Production readiness is still separate from this repo-side guard: real deployment env, endpoint reachability, worker reachability, Stripe/webhook smoke tests, observability checks, and rehearsal remain Step 10 work on a working deployment target.

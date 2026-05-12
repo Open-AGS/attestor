@@ -83,6 +83,7 @@ async function startWorkerHealthServer(options: {
     res.statusCode = path === '/health'
       ? (options.shuttingDown() ? 503 : 200)
       : (ready ? 200 : 503);
+    res.setHeader('cache-control', 'no-store');
     res.setHeader('content-type', 'application/json; charset=utf-8');
     res.end(JSON.stringify(payload));
   });

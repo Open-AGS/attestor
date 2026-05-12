@@ -149,6 +149,11 @@ async function testReleaseTokenJwksRouteExposesPublicVerificationKeyOnly(): Prom
 
   const healthResponse = await app.request('/api/v1/health');
   equal(healthResponse.status, 200, 'Core routes: health route stays available');
+  equal(
+    healthResponse.headers.get('cache-control'),
+    'no-store',
+    'Core routes: health route is explicitly no-store',
+  );
   const healthBody = await healthResponse.json() as {
     releaseRuntime?: {
       signingProvider?: {
@@ -172,6 +177,13 @@ async function testReleaseTokenJwksRouteExposesPublicVerificationKeyOnly(): Prom
     healthBody.releaseRuntime?.signingProvider?.privateKeyExportable,
     true,
     'Core routes: health route reports exportable local release signer material',
+  );
+
+  const readyResponse = await app.request('/api/v1/ready');
+  equal(
+    readyResponse.headers.get('cache-control'),
+    'no-store',
+    'Core routes: readiness route is explicitly no-store',
   );
 
   const response = await app.request('/api/v1/release-token/jwks');

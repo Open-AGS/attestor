@@ -17,6 +17,7 @@ It defines the supported customer sequence, route ownership, auth boundary, succ
 - The machine-readable sensitive business flow abuse guard lives in `src/service/hosted-sensitive-business-flow-abuse-guard.ts`.
 - The machine-readable webhook and async reconciliation hardening profile lives in `src/service/hosted-webhook-async-reconciliation-hardening.ts`.
 - The machine-readable LLM/agent tool-use boundary guard lives in `src/service/hosted-llm-agent-tool-boundary-guard.ts`.
+- The machine-readable production runtime health contract lives in `src/service/hosted-production-runtime-health-contract.ts`.
 
 ## Contract Rules
 
@@ -30,6 +31,7 @@ It defines the supported customer sequence, route ownership, auth boundary, succ
 - Sensitive business flows are also an abuse-control contract: valid-looking retries and automation must still be bounded by role, replay, duplicate, cost, and privacy controls.
 - Webhook and async reconciliation is an explicit contract: signed ingress, provider event ordering, duplicate handling, idempotent finalization, claim release, retry policy, dead-letter recovery, and privacy-minimized evidence must be verifiable in code.
 - LLM/agent tool-use boundaries are explicit: model-safe feedback cannot expose raw prompts, raw tool payloads, provider bodies, customer records, private thresholds, or downstream execution authority, and unsafe retry authority stays behind retry binding, agent-loop budgets, customer review, or operator control.
+- Production runtime health is also a contract: process liveness, dependency readiness, startup diagnostics, worker readiness, queue health, storage authority readiness, webhook ingress readiness, and degraded-mode visibility must stay separate and must not expose secrets or raw customer data.
 
 ## Auth Boundaries
 

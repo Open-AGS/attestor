@@ -77,9 +77,12 @@ async function main(): Promise<void> {
     ok(readyBody.queueBackend === 'bullmq', 'Worker health: queue backend exposed');
     ok(readyBody.redis?.available === true, 'Worker health: Redis availability exposed');
     ok(readyBody.highAvailability?.enabled === false, 'Worker health: HA disabled by default');
+    const readyRes = await fetch(`http://127.0.0.1:${healthPort}/ready`);
+    ok(readyRes.headers.get('cache-control') === 'no-store', 'Worker health: /ready is explicitly no-store');
 
     const healthRes = await fetch(`http://127.0.0.1:${healthPort}/health`);
     ok(healthRes.status === 200, 'Worker health: /health returns 200');
+    ok(healthRes.headers.get('cache-control') === 'no-store', 'Worker health: /health is explicitly no-store');
     const healthBody = await healthRes.json() as any;
     ok(healthBody.status === 'healthy', 'Worker health: /health reports healthy');
     ok(healthBody.instanceId === 'worker-node-1', 'Worker health: instance id exposed on /health');

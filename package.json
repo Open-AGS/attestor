@@ -146,6 +146,7 @@
     "test:policy-foundry-onboarding-session": "tsx tests/policy-foundry-onboarding-session.test.ts",
     "test:policy-foundry-coverage-score": "tsx tests/policy-foundry-coverage-score.test.ts",
     "test:policy-foundry-gate-planner": "tsx tests/policy-foundry-gate-planner.test.ts",
+    "test:policy-foundry-candidate-registry": "tsx tests/policy-foundry-candidate-registry.test.ts",
     "test:integration-mode-readiness": "tsx tests/integration-mode-readiness.test.ts",
     "test:shadow-policy-foundry-readiness-routes": "tsx tests/shadow-policy-foundry-readiness-routes.test.ts",
     "test:shadow-persistence-store": "tsx tests/shadow-persistence-store.test.ts",

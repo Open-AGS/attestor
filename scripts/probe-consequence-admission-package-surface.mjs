@@ -387,6 +387,22 @@ assert.equal(
   typeof admission.createPolicyFoundryGatePlanner,
   'function',
 );
+assert.equal(
+  admission.POLICY_FOUNDRY_CANDIDATE_REGISTRY_VERSION,
+  'attestor.policy-foundry-candidate-registry.v1',
+);
+assert.equal(
+  admission.policyFoundryCandidateRegistryDescriptor().dataMinimizationSurfaceKind,
+  'policy-foundry-candidate-registry',
+);
+assert.equal(
+  admission.policyFoundryCandidateRegistryDescriptor().llmThresholdAuthorityAllowed,
+  false,
+);
+assert.equal(
+  typeof admission.createPolicyFoundryCandidateRegistry,
+  'function',
+);
 
 let blockedInternalPath = false;
 try {

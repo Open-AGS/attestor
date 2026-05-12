@@ -360,6 +360,17 @@ gateway, sidecar/ext_authz, or provider-native connector. It may identify a
 non-bypassable candidate path, but it never allows a non-bypassable claim and
 does not deploy infrastructure, issue credentials, or activate enforcement.
 
+The Schema-Bound Candidate Registry is the first template binding layer for
+candidate policies. It lives in
+`src/consequence-admission/policy-foundry-candidate-registry.ts`, is covered by
+`tests/policy-foundry-candidate-registry.test.ts`, and is exposed through
+`test:policy-foundry-candidate-registry`. It maps discovered candidates to
+domain templates and required schema attributes for money movement,
+programmable money, data disclosure, authority change, external communication,
+regulated filing, system operation, decision support, and custom domains.
+Custom domains remain `needs-template` until a customer template exists. LLM
+text, summaries, and private thresholds cannot become threshold authority.
+
 ```text
 coverageScore
 coverageDimensions
@@ -370,6 +381,10 @@ gatePlanner
 selectedGateMode
 requiredGateArtifacts
 requiredCustomerWork
+candidateRegistry
+schemaStatus
+templateId
+requiredAttributes
 readinessScore
 sampleSize
 actorDistributionHealth
@@ -445,8 +460,8 @@ simulation reports, promotion drafts, activation readiness gates, and the first
 readiness/no-go contract with a read-only shadow route, candidate-specific
 evidence replay, active questions, action-surface review handoff, synthetic
 onboarding red-team fixture generation, and the first onboarding session
-contract plus the first coverage score and minimum viable gate planner
-contracts. It does not yet have a schema-bound candidate registry, live
+contract plus the first coverage score, minimum viable gate planner, and
+schema-bound candidate registry contracts. It does not yet have a live
 adversarial replay executor, UI workflow, or full commercial entitlement
 contract for Foundry capabilities. The deeper self-onboarding track is tracked in
 [Policy Foundry Self-Onboarding Deepening](policy-foundry-self-onboarding-deepening.md).

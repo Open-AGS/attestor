@@ -60,6 +60,9 @@ function testDescriptorCoversCriticalSurfaces(): void {
   const gatePlanner = descriptor.surfaces.find((surface) =>
     surface.surfaceKind === 'policy-foundry-gate-planner'
   );
+  const candidateRegistry = descriptor.surfaces.find((surface) =>
+    surface.surfaceKind === 'policy-foundry-candidate-registry'
+  );
   const externalReview = descriptor.surfaces.find((surface) =>
     surface.surfaceKind === 'external-review-packet'
   );
@@ -122,6 +125,11 @@ function testDescriptorCoversCriticalSurfaces(): void {
   ok(
     gatePlanner?.allowedUnits.includes('artifact-reference'),
     'Data minimization policy: Policy Foundry gate planner allows artifact references',
+  );
+  ok(candidateRegistry, 'Data minimization policy: Policy Foundry candidate registry surface is present');
+  ok(
+    candidateRegistry?.allowedUnits.includes('policy-reference'),
+    'Data minimization policy: Policy Foundry candidate registry allows policy references',
   );
   ok(externalReview, 'Data minimization policy: external review packet surface is present');
   ok(
@@ -303,6 +311,11 @@ function testDocsAndScriptsExposePolicy(): void {
     doc,
     'policy-foundry-gate-planner',
     'Data minimization policy: doc lists Policy Foundry gate planner surface',
+  );
+  includes(
+    doc,
+    'policy-foundry-candidate-registry',
+    'Data minimization policy: doc lists Policy Foundry candidate registry surface',
   );
   includes(
     doc,

@@ -94,6 +94,11 @@ function testPolicyFoundryArchitectureIsGrounded(): void {
   );
   includes(
     doc,
+    'src/consequence-admission/policy-foundry-candidate-registry.ts',
+    'Policy Foundry docs: candidate registry contract evidence is named',
+  );
+  includes(
+    doc,
     'GET /api/v1/shadow/policy-foundry/active-questions',
     'Policy Foundry docs: active question route is named',
   );
@@ -244,6 +249,16 @@ function testPackageScriptIsExposed(): void {
     pkg.scripts['test:policy-foundry-gate-planner'] ?? '',
     'tsx tests/policy-foundry-gate-planner.test.ts',
     'Package: Policy Foundry gate planner test command is stable',
+  );
+  includes(
+    JSON.stringify(pkg.scripts),
+    'test:policy-foundry-candidate-registry',
+    'Package: Policy Foundry candidate registry test is exposed',
+  );
+  includes(
+    pkg.scripts['test:policy-foundry-candidate-registry'] ?? '',
+    'tsx tests/policy-foundry-candidate-registry.test.ts',
+    'Package: Policy Foundry candidate registry test command is stable',
   );
 }
 

@@ -67,6 +67,16 @@ function testPolicyFoundryArchitectureIsGrounded(): void {
     'src/consequence-admission/shadow-simulation.ts',
     'Policy Foundry docs: current Policy Twin foundation is named',
   );
+  includes(
+    doc,
+    'src/consequence-admission/policy-foundry-red-team-replay.ts',
+    'Policy Foundry docs: red-team replay contract evidence is named',
+  );
+  includes(
+    doc,
+    'GET /api/v1/shadow/policy-foundry/red-team-replay',
+    'Policy Foundry docs: red-team replay route is named',
+  );
 }
 
 function testSafetyInvariantsAreExplicit(): void {
@@ -144,6 +154,16 @@ function testPackageScriptIsExposed(): void {
     pkg.scripts['test:policy-foundry-onboarding-docs'] ?? '',
     'tsx tests/policy-foundry-onboarding-docs.test.ts',
     'Package: Policy Foundry onboarding docs test command is stable',
+  );
+  includes(
+    JSON.stringify(pkg.scripts),
+    'test:policy-foundry-red-team-replay',
+    'Package: Policy Foundry red-team replay test is exposed',
+  );
+  includes(
+    pkg.scripts['test:policy-foundry-red-team-replay'] ?? '',
+    'tsx tests/policy-foundry-red-team-replay.test.ts',
+    'Package: Policy Foundry red-team replay test command is stable',
   );
 }
 

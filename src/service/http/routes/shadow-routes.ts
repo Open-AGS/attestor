@@ -18,6 +18,7 @@ import {
   createShadowPolicyPromotionSimulation,
   createShadowPolicySimulationReport,
   createShadowSummarySurface,
+  evaluatePolicyFoundryRedTeamReplay,
   evaluatePolicyFoundryReadiness,
   CONSEQUENCE_ADMISSION_DOWNSTREAM_BOUNDARY_KINDS,
   GENERIC_ADMISSION_MODES,
@@ -1463,6 +1464,51 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
         candidateCount: bundle.candidateCount,
       },
       readiness,
+    });
+  });
+
+  app.get('/api/v1/shadow/policy-foundry/red-team-replay', (c) => {
+    const result = safeShadowSummary(c, deps);
+    if (result instanceof Response) return result;
+
+    const candidateId = c.req.query('candidateId')?.trim() || null;
+    const actionSurface = c.req.query('actionSurface')?.trim() || null;
+    const domain = c.req.query('domain')?.trim() || null;
+    const bundle = createShadowPolicyDiscoveryCandidates({
+      report: result.surface.latestSimulation,
+      generatedAt: deps.now?.() ?? null,
+    });
+    const candidate = selectPolicyFoundryCandidate({
+      candidates: bundle.candidates,
+      candidateId,
+      actionSurface,
+      domain,
+    });
+    const replay = evaluatePolicyFoundryRedTeamReplay({
+      candidate,
+      report: result.surface.latestSimulation,
+      events: result.events,
+      tenantId: result.tenant.tenantId,
+      generatedAt: deps.now?.() ?? null,
+    });
+
+    return c.json({
+      tenant: tenantSummary(result.tenant),
+      storageMode: result.surface.storageMode,
+      productionReady: false,
+      approvalRequired: true,
+      autoEnforce: false,
+      rawPayloadStored: false,
+      decisionSupportOnly: true,
+      source: 'shadow-policy-foundry-red-team-replay',
+      candidateSelection: {
+        candidateId,
+        actionSurface,
+        domain,
+        matched: candidate !== null,
+        candidateCount: bundle.candidateCount,
+      },
+      replay,
     });
   });
 

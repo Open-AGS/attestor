@@ -212,6 +212,12 @@ candidate-specific red-team replay set:
 
 Failures produce no-go reasons or review-only recommendations.
 
+The first runtime slice is an evidence-replay contract, not a live adversarial
+execution engine. It evaluates candidate-specific shadow evidence for policy,
+evidence, authority, adapter, tenant, replay, actor-burst, unsafe URI, and
+prompt-injection signals without storing or replaying raw prompts, payloads, or
+proof URIs.
+
 ### 9. Roll Out Gradually
 
 The rollout ladder is:
@@ -281,6 +287,10 @@ and is covered by `tests/policy-foundry-readiness.test.ts`.
 The hosted read-only route is
 `GET /api/v1/shadow/policy-foundry/readiness` and is covered by
 `tests/shadow-policy-foundry-readiness-routes.test.ts`.
+The candidate-specific red-team replay contract lives in
+`src/consequence-admission/policy-foundry-red-team-replay.ts`, is covered by
+`tests/policy-foundry-red-team-replay.test.ts`, and is exposed through
+`GET /api/v1/shadow/policy-foundry/red-team-replay`.
 
 ```text
 readinessScore
@@ -316,6 +326,6 @@ Repository foundations already exist in:
 Policy Foundry as described here is not fully implemented. The current system
 has shadow events, action risk inventory, policy discovery candidates,
 simulation reports, promotion drafts, activation readiness gates, and the first
-readiness/no-go contract with a read-only shadow route. It does not yet have a
-candidate-specific red-team replay suite, UI workflow, or full commercial
-entitlement contract for Foundry capabilities.
+readiness/no-go contract with a read-only shadow route and candidate-specific
+evidence replay. It does not yet have a live adversarial replay executor, UI
+workflow, or full commercial entitlement contract for Foundry capabilities.

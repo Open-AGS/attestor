@@ -24,9 +24,9 @@ Initial repo-side ingestors support parsed object forms of:
 - GitHub Actions-style workflow manifests, using jobs as operational execution
   surfaces.
 
-YAML parsing and live provider discovery are intentionally outside this first
-contract. Callers can parse YAML or fetch provider metadata before passing the
-bounded object to Attestor.
+The [Action Surface Manifest Intake](action-surface-manifest-intake.md) layer
+provides the JSON/YAML text parsing step before these ingestors. Live provider
+discovery remains outside this contract.
 
 ## Normalized Output
 
@@ -113,7 +113,9 @@ Still required:
 ## Relationship To The Onboarding Flow
 
 ```text
-OpenAPI / AsyncAPI / MCP / workflow metadata
+OpenAPI / AsyncAPI / MCP / workflow JSON/YAML text
+  -> Action Surface Manifest Intake
+  -> parsed metadata
   -> Action Surface Declaration Ingestors
   -> Action Surface Profiler
   -> Policy Foundry

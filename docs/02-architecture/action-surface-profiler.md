@@ -50,9 +50,10 @@ The contract accepts two bounded input classes:
 1. Shadow admission events already produced by Attestor.
 2. Operator-supplied or generated declarations from OpenAPI, AsyncAPI, MCP tool
    manifests, workflow manifests, provider logs, or manual inventory. The
+   [Action Surface Manifest Intake](action-surface-manifest-intake.md) and
    [Action Surface Declaration Ingestors](action-surface-declaration-ingestors.md)
-   provide the first repo-side conversion path for parsed OpenAPI, AsyncAPI,
-   MCP, and workflow metadata.
+   provide the first repo-side conversion path from bounded JSON/YAML manifest
+   text to parsed metadata to profiler-ready declarations.
 
 Declarations may include:
 
@@ -141,6 +142,7 @@ The profiler is earlier than:
 
 ```text
 declared API/tool/workflow surfaces + shadow events
+  -> Action Surface Manifest Intake
   -> Action Surface Declaration Ingestors
   -> Action Surface Profiler
   -> Policy Foundry

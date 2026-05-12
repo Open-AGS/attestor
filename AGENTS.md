@@ -51,6 +51,12 @@ For trust-sensitive changes, document:
 
 Green tests alone are not enough for trust-sensitive work. Prefer code, contracts, tests, docs, CI, and probe evidence that agree with each other.
 
+## Audit Finding Handling
+
+For audit findings, validate before fixing. Keep a finding `open` until repository evidence confirms it. Mark unsupported findings as `disputed`, `duplicate`, `out-of-scope`, `blocked`, or `accepted limitation` instead of turning them into code changes.
+
+Before remediation, record the audit scope, threat model or source, affected trust surface, protected principle, repository evidence, research anchor for the fix, smallest safe fix, verification plan, and remaining limitation using `docs/audit/ledger-template.md` or the closest active tracker.
+
 ## Do Not
 
 - Do not overclaim production readiness, compliance, audit completion, security posture, SLSA level, live billing readiness, or deployment maturity.

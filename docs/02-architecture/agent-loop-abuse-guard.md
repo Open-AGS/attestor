@@ -95,11 +95,21 @@ If the guard throttles, the route returns `429` with `Retry-After`.
 
 If the guard holds because the retry is not model-retryable or looks like policy probing, the route returns a fail-closed problem response and does not record the request as an accepted shadow admission.
 
-## Production Boundary
+## Shared Runtime Boundary
 
-The included guard is an in-memory reference implementation for evaluation, local demos, and route-shape tests.
+The consequence-admission package exposes an in-memory reference guard for evaluation, local demos, and route-shape tests. The hosted service route uses a service wrapper that can preserve the same fail-closed semantics with shared Redis counters and correction signatures.
 
-Production deployments should preserve the same semantics with a shared guard:
+Production-like runtimes must configure shared storage when `ATTESTOR_HA_MODE=true`, `ATTESTOR_RUNTIME_PROFILE=production-shared`, or `ATTESTOR_AGENT_LOOP_GUARD_REQUIRE_SHARED=true`. If shared storage is required but unavailable, the route fails closed before recording the admission as accepted shadow input.
+
+```bash
+ATTESTOR_AGENT_LOOP_GUARD_REDIS_URL=redis://redis.example.internal:6379
+ATTESTOR_AGENT_LOOP_GUARD_HASH_KEY=<dedicated high-entropy key>
+ATTESTOR_AGENT_LOOP_GUARD_REQUIRE_SHARED=true
+```
+
+If `ATTESTOR_AGENT_LOOP_GUARD_REDIS_URL` is not set, the service wrapper can use the shared `REDIS_URL` resolved by the runtime. The dedicated hash key prevents raw tenant, actor, action, downstream, and previous-admission identifiers from becoming Redis key material.
+
+Production deployments should preserve these semantics:
 
 - tenant-bound keys
 - actor/action/downstream windows

@@ -267,7 +267,7 @@ readonly HostedObservabilityPrivacyIncidentGuard[] = [
     implementationEvidence: [
       'src/service/hosted-observability-privacy-incident-evidence.ts',
       'scripts/rehearse-production-observability-alerting.ts',
-      'src/release-kernel/release-evidence-pack.ts',
+      'src/release-layer/index.ts',
       'src/consequence-admission/audit-evidence-export.ts',
     ],
     validation: [

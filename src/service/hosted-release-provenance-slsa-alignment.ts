@@ -268,8 +268,7 @@ export const HOSTED_RELEASE_PROVENANCE_SLSA_GUARDS: readonly HostedReleaseProven
     nonClaimBoundary:
       'Tamper-evident local history is an integrity guard; it does not claim external transparency-log immutability or compliance certification until that substrate exists.',
     implementationEvidence: [
-      'src/release-kernel/release-canonicalization.ts',
-      'src/release-kernel/release-evidence-pack.ts',
+      'src/release-layer/index.ts',
       'src/consequence-admission/tamper-evident-history.ts',
       'src/consequence-admission/audit-evidence-export.ts',
       'src/consequence-admission/external-review-packet.ts',

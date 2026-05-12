@@ -14,6 +14,8 @@ Do not modify files during a cold audit. Do not treat README claims as proof. Tr
 6. Recommend the smallest safe fix for confirmed issues.
 7. Name the regression test or probe that would prove the fix.
 
+Record the audit run using `docs/audit/ledger-template.md` when findings are expected to drive remediation. Include the target ref, mode, threat model or framework, research anchors, files/modules inspected, scope, out-of-scope surfaces, and known limitations.
+
 ## Finding Format
 
 Use this shape for each finding:
@@ -24,12 +26,17 @@ Severity:
 Status:
 Protected principle:
 Trust surface:
+Source audit:
 Exact file/path:
 Exact function/route/test/contract:
+Affected modules or chain:
 Observed behavior:
 Expected behavior:
 What can go wrong:
 Exploitability or hardening gap:
+Validation evidence:
+Dispute rationale:
+Research anchors for fix:
 Smallest safe fix:
 Regression test or probe:
 Does this weaken Attestor's core claim:

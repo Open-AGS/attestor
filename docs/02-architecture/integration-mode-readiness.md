@@ -87,6 +87,10 @@ provider connector, credential isolation, Policy Twin, and red-team replay
 drafts, but the readiness contract still treats them as untrusted until customer
 review and downstream control evidence are present.
 
+The [Action Surface Onboarding Packet](action-surface-onboarding-packet.md)
+collects those artifact drafts and readiness results into one digest-first
+customer plan. It remains a review packet and does not activate enforcement.
+
 ## Credential Isolation
 
 Credential isolation is the difference between advisory guidance and a practical
@@ -147,6 +151,7 @@ shadow capture
   -> Policy Foundry candidate and readiness
   -> Integration Mode Readiness
   -> Action Surface Integration Artifacts
+  -> Action Surface Onboarding Packet
   -> customer review
   -> scoped enforcement only after downstream verification closes
 ```

@@ -132,6 +132,7 @@
     "test:action-surface-ingestors": "tsx tests/action-surface-declaration-ingestors.test.ts",
     "test:action-surface-manifest-intake": "tsx tests/action-surface-manifest-intake.test.ts",
     "test:action-surface-integration-artifacts": "tsx tests/action-surface-integration-artifacts.test.ts",
+    "test:action-surface-onboarding-packet": "tsx tests/action-surface-onboarding-packet.test.ts",
     "test:policy-discovery-candidates": "tsx tests/policy-discovery-candidates.test.ts",
     "test:policy-foundry-onboarding-docs": "tsx tests/policy-foundry-onboarding-docs.test.ts",
     "test:policy-foundry-readiness": "tsx tests/policy-foundry-readiness.test.ts",
@@ -410,6 +411,7 @@
     "fast-xml-builder": "^1.2.0",
     "fast-xml-parser": "^5.7.2",
     "follow-redirects": "^1.16.0",
+    "protobufjs": "8.2.0",
     "uuid": "^14.0.0"
   },
   "engines": {

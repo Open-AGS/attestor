@@ -146,6 +146,7 @@ declared API/tool/workflow surfaces + shadow events
   -> Action Surface Declaration Ingestors
   -> Action Surface Profiler
   -> Action Surface Integration Artifacts
+  -> Action Surface Onboarding Packet
   -> Policy Foundry
   -> Integration Mode Readiness
   -> customer review of verifier/proxy/adapter drafts

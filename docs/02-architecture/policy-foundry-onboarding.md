@@ -32,15 +32,17 @@ shadow mode change production behavior.
 
 The [Action Surface Manifest Intake](action-surface-manifest-intake.md),
 [Action Surface Declaration Ingestors](action-surface-declaration-ingestors.md),
-[Action Surface Profiler](action-surface-profiler.md), and
-[Action Surface Integration Artifacts](action-surface-integration-artifacts.md)
+[Action Surface Profiler](action-surface-profiler.md),
+[Action Surface Integration Artifacts](action-surface-integration-artifacts.md),
+and [Action Surface Onboarding Packet](action-surface-onboarding-packet.md)
 are the discovery and draft-generation layer before Policy Foundry. Manifest
 intake parses bounded JSON/YAML text, the ingestors convert parsed OpenAPI,
 AsyncAPI, MCP, and workflow metadata into declarations, the profiler combines
 those declarations with observed shadow traffic, and integration artifacts
-prepare review-required SDK/gateway/MCP/sidecar/provider drafts. Policy Foundry
-therefore starts from known action surfaces and reviewed draft controls instead
-of a blank policy editor.
+prepare review-required SDK/gateway/MCP/sidecar/provider drafts. The onboarding
+packet binds those outputs and readiness blockers into one customer review plan.
+Policy Foundry therefore starts from known action surfaces and reviewed draft
+controls instead of a blank policy editor.
 
 ## Research Anchors
 
@@ -359,6 +361,14 @@ automation path. It lives in
 by `tests/action-surface-integration-artifacts.test.ts`, and generates only
 review-required drafts. It does not deploy gateways, issue credentials, activate
 provider connectors, or claim production readiness.
+
+Action Surface Onboarding Packet is the first combined customer plan for the
+automation path. It lives in
+`src/consequence-admission/action-surface-onboarding-packet.ts`, is covered by
+`tests/action-surface-onboarding-packet.test.ts`, and composes manifest intake,
+profiler, integration artifact, and readiness outputs into a digest-first
+review-required packet. It is not an apply step and does not activate
+enforcement.
 
 ## Current Status
 

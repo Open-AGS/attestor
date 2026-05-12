@@ -124,6 +124,7 @@ manifest intake
   -> declaration ingestors
   -> action surface profiler
   -> action surface integration artifacts
+  -> action surface onboarding packet
   -> customer review
   -> integration mode readiness
   -> scoped enforcement only if downstream controls close

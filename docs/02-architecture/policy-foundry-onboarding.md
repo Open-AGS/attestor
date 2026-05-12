@@ -273,10 +273,11 @@ Security minimums stay available across plans: redaction, proof verification,
 tenant isolation, fail-closed semantics, and no auto-enforcement from shadow
 reads must not become paid-only safety features.
 
-## First Implementation Slice
+## Readiness Contract
 
-The first runtime slice should be a Policy Foundry readiness contract, not a UI
-rewrite:
+The first runtime slice is the Policy Foundry readiness contract, not a UI
+rewrite. It lives in `src/consequence-admission/policy-foundry-readiness.ts`
+and is covered by `tests/policy-foundry-readiness.test.ts`.
 
 ```text
 readinessScore
@@ -311,7 +312,7 @@ Repository foundations already exist in:
 
 Policy Foundry as described here is not fully implemented. The current system
 has shadow events, action risk inventory, policy discovery candidates,
-simulation reports, promotion drafts, and activation readiness gates. It does
-not yet have a dedicated readiness engine, active-question contract,
-candidate-specific red-team replay suite, or full commercial entitlement
-contract for Foundry capabilities.
+simulation reports, promotion drafts, activation readiness gates, and the first
+readiness/no-go contract. It does not yet have a hosted active-question route,
+candidate-specific red-team replay suite, UI workflow, or full commercial
+entitlement contract for Foundry capabilities.

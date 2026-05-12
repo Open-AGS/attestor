@@ -2091,6 +2091,7 @@ export * from './money-movement-shadow.js';
 export * from './shadow-summary.js';
 export * from './action-risk-inventory.js';
 export * from './policy-discovery-candidates.js';
+export * from './policy-foundry-readiness.js';
 export * from './shadow-policy-promotion-draft.js';
 export * from './shadow-policy-promotion-packet.js';
 export * from './shadow-policy-promotion-simulation.js';

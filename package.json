@@ -130,6 +130,7 @@
     "test:action-risk-inventory": "tsx tests/action-risk-inventory.test.ts",
     "test:policy-discovery-candidates": "tsx tests/policy-discovery-candidates.test.ts",
     "test:policy-foundry-onboarding-docs": "tsx tests/policy-foundry-onboarding-docs.test.ts",
+    "test:policy-foundry-readiness": "tsx tests/policy-foundry-readiness.test.ts",
     "test:shadow-persistence-store": "tsx tests/shadow-persistence-store.test.ts",
     "test:shadow-route-tenant-boundary": "tsx tests/shadow-route-tenant-boundary.test.ts",
     "test:shadow-policy-candidate-approval-routes": "tsx tests/shadow-policy-candidate-approval-routes.test.ts",

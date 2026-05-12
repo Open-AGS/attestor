@@ -23,6 +23,12 @@ function remoteAddressFromContext(context: Context): string | null {
   }).address;
 }
 
+function routeLabelFromContext(context: Context, statusCode: number): string {
+  const routePath = context.req.routePath;
+  if (routePath && routePath.trim()) return routePath;
+  return statusCode === 404 ? '__unmatched__' : '__unrouted__';
+}
+
 export function createRequestObservabilityMiddleware(
   deps: RequestObservabilityMiddlewareDeps,
 ): MiddlewareHandler {
@@ -42,7 +48,7 @@ export function createRequestObservabilityMiddleware(
     observeRequestStart();
 
     let statusCode = 500;
-    let route = context.req.path;
+    let route = '__unrouted__';
     let rateLimited = false;
     let quotaRejected = false;
     let thrownError: unknown = null;
@@ -50,11 +56,11 @@ export function createRequestObservabilityMiddleware(
     try {
       await next();
       statusCode = context.res.status;
-      route = context.req.routePath || context.req.path;
+      route = routeLabelFromContext(context, statusCode);
       rateLimited = context.res.headers.get('retry-after') !== null;
       quotaRejected = statusCode === 429 && route === '/api/v1/pipeline/run';
     } catch (error) {
-      route = context.req.routePath || context.req.path;
+      route = routeLabelFromContext(context, statusCode);
       thrownError = error;
       throw error;
     } finally {

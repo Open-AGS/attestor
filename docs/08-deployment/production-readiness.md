@@ -84,6 +84,14 @@ src/service/hosted-release-provenance-slsa-alignment.ts
 
 It is the machine-readable boundary for the evaluation release archive, SBOM, package-surface probes, proof packets, DSSE evidence packs, tamper-evident history, GitHub attestation verification, and non-claims. It does not replace deployment provenance, live environment readiness, service restart, worker probes, Stripe/webhook smoke tests, or production rehearsal.
 
+The repo-side observability privacy and incident evidence profile lives in:
+
+```text
+src/service/hosted-observability-privacy-incident-evidence.ts
+```
+
+It is the machine-readable boundary for privacy-safe request telemetry, low-cardinality metric labels, OTLP receiver probes, alert routing context, incident packet shape, dashboard runtime truth, and production rehearsal evidence. It does not replace live collector credentials, alert destination delivery, customer incident communications, backend retention policy, deployment restart, Stripe/webhook smoke tests, or target-specific production rehearsal.
+
 ## Production Storage Path Gate
 
 `production-shared` also requires the consequence-admission storage path to be truthful. The shared release authority and control plane are not enough if the AI action authorization history still depends on local evaluation stores.

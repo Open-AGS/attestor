@@ -23,7 +23,6 @@ import { BatchLogRecordProcessor, LoggerProvider as SdkLoggerProvider } from '@o
 import { MeterProvider, PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
 import { BatchSpanProcessor, NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import {
-  ATTR_CLIENT_ADDRESS,
   ATTR_HTTP_REQUEST_METHOD,
   ATTR_HTTP_RESPONSE_STATUS_CODE,
   ATTR_HTTP_ROUTE,
@@ -32,9 +31,6 @@ import {
   ATTR_SERVICE_INSTANCE_ID,
   ATTR_SERVICE_NAME,
   ATTR_SERVICE_VERSION,
-  ATTR_URL_FULL,
-  ATTR_URL_PATH,
-  ATTR_USER_AGENT_ORIGINAL,
 } from '@opentelemetry/semantic-conventions';
 import { ATTESTOR_SERVICE_VERSION } from './version.js';
 
@@ -107,6 +103,27 @@ export interface StructuredRequestLogRecord {
   quotaRejected: boolean;
   remoteAddress: string | null;
   userAgent: string | null;
+}
+
+export interface PrivacySafeStructuredRequestLogRecord {
+  occurredAt: string;
+  route: string;
+  rawPathOmitted: true;
+  method: string;
+  statusCode: number;
+  durationMs: number;
+  traceId: string;
+  spanId: string;
+  parentSpanId: string | null;
+  traceFlags: string;
+  tenantPresent: boolean;
+  planId: string | null;
+  accountPresent: boolean;
+  accountStatus: string | null;
+  rateLimited: boolean;
+  quotaRejected: boolean;
+  clientAddressPresent: boolean;
+  userAgentPresent: boolean;
 }
 
 interface DurationHistogramState {
@@ -265,6 +282,48 @@ function labelEscape(value: string): string {
 function labels(input: Record<string, string>): string {
   const parts = Object.entries(input).map(([key, value]) => `${key}="${labelEscape(value)}"`);
   return `{${parts.join(',')}}`;
+}
+
+function privacySafeRouteLabel(route: string): string {
+  const trimmed = route.trim();
+  if (!trimmed) return '__unknown__';
+  const withoutQuery = trimmed.split('?')[0] ?? '';
+  const segments = withoutQuery.split('/').map((segment) => {
+    if (!segment || segment.startsWith(':') || segment === '*') return segment;
+    if (/^(?:acct|cus|sub|price|prod|pi|cs|evt|in|tok|key|tenant|user)_[A-Za-z0-9_-]{6,}$/u.test(segment)) {
+      return ':id';
+    }
+    if (/^[0-9a-f]{8,}(?:-[0-9a-f]{4,})*$/iu.test(segment)) return ':id';
+    if (segment.length >= 16 && /[0-9]/u.test(segment) && /[A-Za-z]/u.test(segment)) return ':id';
+    return segment;
+  });
+  const normalized = segments.join('/');
+  return normalized || '__unknown__';
+}
+
+export function toPrivacySafeStructuredRequestLogRecord(
+  record: StructuredRequestLogRecord,
+): PrivacySafeStructuredRequestLogRecord {
+  return {
+    occurredAt: record.occurredAt,
+    route: privacySafeRouteLabel(record.route),
+    rawPathOmitted: true,
+    method: record.method,
+    statusCode: record.statusCode,
+    durationMs: record.durationMs,
+    traceId: record.traceId,
+    spanId: record.spanId,
+    parentSpanId: record.parentSpanId,
+    traceFlags: record.traceFlags,
+    tenantPresent: Boolean(record.tenantId),
+    planId: record.planId,
+    accountPresent: Boolean(record.accountId),
+    accountStatus: record.accountStatus,
+    rateLimited: record.rateLimited,
+    quotaRejected: record.quotaRejected,
+    clientAddressPresent: Boolean(record.remoteAddress),
+    userAgentPresent: Boolean(record.userAgent),
+  };
 }
 
 function incrementMetric(map: Map<string, number>, key: string, by = 1): void {
@@ -654,15 +713,15 @@ export function beginRequestTrace(
       })
       : ROOT_CONTEXT;
     span = tracer.startSpan(
-      `${input.method} ${input.path}`,
+      `HTTP ${input.method}`,
       {
         kind: SpanKind.SERVER,
         attributes: {
           [ATTR_HTTP_REQUEST_METHOD]: input.method,
-          [ATTR_URL_PATH]: input.path,
-          [ATTR_URL_FULL]: input.url,
-          ...(input.remoteAddress ? { [ATTR_CLIENT_ADDRESS]: input.remoteAddress } : {}),
-          ...(input.userAgent ? { [ATTR_USER_AGENT_ORIGINAL]: input.userAgent } : {}),
+          'attestor.http.raw_url_omitted': true,
+          'attestor.http.raw_path_omitted': true,
+          'attestor.client.address_present': Boolean(input.remoteAddress),
+          'attestor.user_agent.present': Boolean(input.userAgent),
           ...(input.serverAddress ? { [ATTR_SERVER_ADDRESS]: input.serverAddress } : {}),
           ...(input.serverPort !== null ? { [ATTR_SERVER_PORT]: input.serverPort } : {}),
         },
@@ -692,14 +751,15 @@ export function completeRequestTrace(
 ): void {
   const span = traceContext.span;
   if (!span) return;
-  span.updateName(`${input.method} ${input.route}`);
-  span.setAttribute(ATTR_HTTP_ROUTE, input.route);
+  const route = privacySafeRouteLabel(input.route);
+  span.updateName(`${input.method} ${route}`);
+  span.setAttribute(ATTR_HTTP_ROUTE, route);
   span.setAttribute(ATTR_HTTP_RESPONSE_STATUS_CODE, input.statusCode);
-  if (input.remoteAddress) span.setAttribute(ATTR_CLIENT_ADDRESS, input.remoteAddress);
-  if (input.userAgent) span.setAttribute(ATTR_USER_AGENT_ORIGINAL, input.userAgent);
-  if (input.tenantId) span.setAttribute('attestor.tenant.id', input.tenantId);
+  span.setAttribute('attestor.client.address_present', Boolean(input.remoteAddress));
+  span.setAttribute('attestor.user_agent.present', Boolean(input.userAgent));
+  span.setAttribute('attestor.tenant.present', Boolean(input.tenantId));
   if (input.planId) span.setAttribute('attestor.plan.id', input.planId);
-  if (input.accountId) span.setAttribute('attestor.account.id', input.accountId);
+  span.setAttribute('attestor.account.present', Boolean(input.accountId));
   if (input.accountStatus) span.setAttribute('attestor.account.status', input.accountStatus);
   span.setAttribute('attestor.rate_limited', input.rateLimited);
   span.setAttribute('attestor.quota_rejected', input.quotaRejected);
@@ -721,25 +781,26 @@ export function observeRequestStart(): void {
 
 export function observeRequestComplete(input: HttpObservation): void {
   inFlightRequests = Math.max(0, inFlightRequests - 1);
+  const route = privacySafeRouteLabel(input.route);
   incrementMetric(
     httpRequestCounts,
-    `${input.method}|${input.route}|${input.statusCode}`,
+    `${input.method}|${route}|${input.statusCode}`,
   );
   incrementMetric(traceContextCounts as unknown as Map<string, number>, input.traceContextStatus);
   telemetryHttpRequestCounter?.add(1, {
     method: input.method,
-    route: input.route,
+    route,
     status_code: String(input.statusCode),
   });
   telemetryHttpRequestDurationHistogram?.record(input.durationSeconds, {
     method: input.method,
-    route: input.route,
+    route,
   });
   telemetryTraceContextCounter?.add(1, {
     status: input.traceContextStatus,
   });
 
-  const state = durationState(`${input.method}|${input.route}`);
+  const state = durationState(`${input.method}|${route}`);
   state.count += 1;
   state.sum += input.durationSeconds;
   HTTP_DURATION_BUCKETS.forEach((bucket, index) => {
@@ -758,6 +819,7 @@ export function observeBillingWebhookEvent(eventType: string, outcome: BillingWe
 }
 
 export function appendStructuredRequestLog(record: StructuredRequestLogRecord): void {
+  const safeRecord = toPrivacySafeStructuredRequestLogRecord(record);
   if (telemetryRequestLogger) {
     const severity = record.statusCode >= 500
       ? { number: SeverityNumber.ERROR, text: 'ERROR' }
@@ -769,25 +831,25 @@ export function appendStructuredRequestLog(record: StructuredRequestLogRecord): 
       eventName: 'attestor.http.request',
       severityNumber: severity.number,
       severityText: severity.text,
-      body: `${record.method} ${record.route} -> ${record.statusCode}`,
+      body: `${safeRecord.method} ${safeRecord.route} -> ${safeRecord.statusCode}`,
       attributes: {
-        'attestor.occurred_at': record.occurredAt,
-        'attestor.http.route': record.route,
-        'attestor.http.path': record.path,
-        'attestor.http.method': record.method,
-        'attestor.http.status_code': record.statusCode,
-        'attestor.http.duration_ms': record.durationMs,
-        'attestor.trace.id': record.traceId,
-        'attestor.trace.span_id': record.spanId,
-        ...(record.parentSpanId ? { 'attestor.trace.parent_span_id': record.parentSpanId } : {}),
-        ...(record.tenantId ? { 'attestor.tenant.id': record.tenantId } : {}),
-        ...(record.planId ? { 'attestor.plan.id': record.planId } : {}),
-        ...(record.accountId ? { 'attestor.account.id': record.accountId } : {}),
-        ...(record.accountStatus ? { 'attestor.account.status': record.accountStatus } : {}),
-        ...(record.remoteAddress ? { 'client.address': record.remoteAddress } : {}),
-        ...(record.userAgent ? { 'user_agent.original': record.userAgent } : {}),
-        'attestor.rate_limited': record.rateLimited,
-        'attestor.quota_rejected': record.quotaRejected,
+        'attestor.occurred_at': safeRecord.occurredAt,
+        'attestor.http.route': safeRecord.route,
+        'attestor.http.raw_path_omitted': safeRecord.rawPathOmitted,
+        'attestor.http.method': safeRecord.method,
+        'attestor.http.status_code': safeRecord.statusCode,
+        'attestor.http.duration_ms': safeRecord.durationMs,
+        'attestor.trace.id': safeRecord.traceId,
+        'attestor.trace.span_id': safeRecord.spanId,
+        ...(safeRecord.parentSpanId ? { 'attestor.trace.parent_span_id': safeRecord.parentSpanId } : {}),
+        'attestor.tenant.present': safeRecord.tenantPresent,
+        ...(safeRecord.planId ? { 'attestor.plan.id': safeRecord.planId } : {}),
+        'attestor.account.present': safeRecord.accountPresent,
+        ...(safeRecord.accountStatus ? { 'attestor.account.status': safeRecord.accountStatus } : {}),
+        'attestor.client.address_present': safeRecord.clientAddressPresent,
+        'attestor.user_agent.present': safeRecord.userAgentPresent,
+        'attestor.rate_limited': safeRecord.rateLimited,
+        'attestor.quota_rejected': safeRecord.quotaRejected,
       },
       context: trace.setSpanContext(ROOT_CONTEXT, {
         traceId: record.traceId,
@@ -801,7 +863,7 @@ export function appendStructuredRequestLog(record: StructuredRequestLogRecord): 
   const path = logPath();
   if (!path) return;
   mkdirSync(dirname(path), { recursive: true });
-  appendFileSync(path, `${JSON.stringify(record)}\n`, 'utf8');
+  appendFileSync(path, `${JSON.stringify(safeRecord)}\n`, 'utf8');
 }
 
 export function renderPrometheusMetrics(version: string, runtimeTruth?: RuntimeTruthMetrics): string {

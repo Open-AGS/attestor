@@ -19,6 +19,7 @@ It defines the supported customer sequence, route ownership, auth boundary, succ
 - The machine-readable LLM/agent tool-use boundary guard lives in `src/service/hosted-llm-agent-tool-boundary-guard.ts`.
 - The machine-readable production runtime health contract lives in `src/service/hosted-production-runtime-health-contract.ts`.
 - The machine-readable release provenance and SLSA alignment profile lives in `src/service/hosted-release-provenance-slsa-alignment.ts`.
+- The machine-readable observability privacy and incident evidence profile lives in `src/service/hosted-observability-privacy-incident-evidence.ts`.
 
 ## Contract Rules
 
@@ -34,6 +35,7 @@ It defines the supported customer sequence, route ownership, auth boundary, succ
 - LLM/agent tool-use boundaries are explicit: model-safe feedback cannot expose raw prompts, raw tool payloads, provider bodies, customer records, private thresholds, or downstream execution authority, and unsafe retry authority stays behind retry binding, agent-loop budgets, customer review, or operator control.
 - Production runtime health is also a contract: process liveness, dependency readiness, startup diagnostics, worker readiness, queue health, storage authority readiness, webhook ingress readiness, and degraded-mode visibility must stay separate and must not expose secrets or raw customer data.
 - Release provenance is also a contract: evaluation release artifacts, SBOMs, package-surface gates, proof packets, DSSE evidence packs, and reviewer verification commands must stay digest-bound, attestation-verifiable, and honest about non-claims.
+- Observability and incident evidence are also contracts: request traces, metrics, logs, alert context, dashboard truth, rehearsal output, and incident packets must be privacy-safe, low-cardinality where labels are involved, and free of raw customer identifiers, paths, payloads, IP addresses, user agents, provider bodies, and secrets.
 
 ## Auth Boundaries
 

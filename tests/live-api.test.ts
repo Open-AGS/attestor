@@ -2710,7 +2710,8 @@ async function run() {
 
       const observabilityLog = readFileSync(process.env.ATTESTOR_OBSERVABILITY_LOG_PATH!, 'utf8').trim().split(/\r?\n/).map((line) => JSON.parse(line));
       ok(observabilityLog.some((entry: any) => entry.route === '/api/v1/health' && entry.traceId), 'Observability Log: health request captured with trace id');
-      ok(observabilityLog.some((entry: any) => entry.route === '/api/v1/billing/stripe/webhook' && entry.accountId === createAccountBody.account.id), 'Observability Log: billing webhook captured with account context');
+      ok(observabilityLog.some((entry: any) => entry.route === '/api/v1/billing/stripe/webhook' && entry.accountPresent === true), 'Observability Log: billing webhook captured with account context');
+      ok(observabilityLog.every((entry: any) => !('accountId' in entry) && !('tenantId' in entry) && !('remoteAddress' in entry) && !('userAgent' in entry)), 'Observability Log: privacy-safe projection omits raw identifiers and client metadata');
 
       const telemetryNoAuth = await fetch(`${BASE}/api/v1/admin/telemetry`);
       ok(telemetryNoAuth.status === 401, 'Admin Telemetry: auth required');

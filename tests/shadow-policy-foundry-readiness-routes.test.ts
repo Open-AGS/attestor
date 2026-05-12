@@ -93,12 +93,18 @@ async function testReadinessRouteIsDataMinimizedAndApprovalRequired(): Promise<v
     rawPayloadStored: boolean;
     decisionSupportOnly: boolean;
     candidateSelection: { matched: boolean; candidateCount: number };
+    redTeamReplay: {
+      status: string;
+      caseCount: number;
+      failedCaseCount: number;
+    };
     readiness: {
       status: string;
       approvalRequired: boolean;
       autoEnforce: boolean;
       noGoReasons: readonly string[];
       recommendedRolloutStep: string;
+      confidence: { redTeamReplayStatus: string };
     };
   };
 
@@ -114,13 +120,21 @@ async function testReadinessRouteIsDataMinimizedAndApprovalRequired(): Promise<v
   ok(body.candidateSelection.candidateCount > 0, 'Policy Foundry readiness route: candidates are derived from shadow traffic');
   equal(body.readiness.approvalRequired, true, 'Policy Foundry readiness route: readiness keeps approval required');
   equal(body.readiness.autoEnforce, false, 'Policy Foundry readiness route: readiness never auto-enforces');
+  equal(body.redTeamReplay.status, 'passed', 'Policy Foundry readiness route: computes red-team replay status');
+  ok(body.redTeamReplay.caseCount >= 10, 'Policy Foundry readiness route: computed replay case count is returned');
+  equal(body.redTeamReplay.failedCaseCount, 0, 'Policy Foundry readiness route: clean computed replay has no failures');
+  equal(
+    body.readiness.confidence.redTeamReplayStatus,
+    body.redTeamReplay.status,
+    'Policy Foundry readiness route: readiness uses computed replay status',
+  );
   ok(
     body.readiness.noGoReasons.includes('customer-approval-required'),
     'Policy Foundry readiness route: missing customer approval is explicit',
   );
   ok(
-    body.readiness.noGoReasons.includes('red-team-replay-not-run'),
-    'Policy Foundry readiness route: missing red-team replay is explicit',
+    !body.readiness.noGoReasons.includes('red-team-replay-not-run'),
+    'Policy Foundry readiness route: computed red-team replay removes self-attested not-run state',
   );
   ok(!text.includes('ops-agent-'), 'Policy Foundry readiness route: raw actor IDs are not returned');
   ok(!text.includes('raw_recipient_must_not_escape'), 'Policy Foundry readiness route: raw recipient is not returned');
@@ -130,7 +144,7 @@ async function testReadinessRouteIsDataMinimizedAndApprovalRequired(): Promise<v
 async function testApprovedAndReplayedRouteCanBecomeScopedEnforceEligible(): Promise<void> {
   const app = createApp(cleanEvents());
   const response = await app.request(
-    '/api/v1/shadow/policy-foundry/readiness?customerApproved=true&redTeamReplayStatus=passed',
+    '/api/v1/shadow/policy-foundry/readiness?customerApproved=true',
   );
   const body = await response.json() as {
     readiness: {
@@ -139,6 +153,7 @@ async function testApprovedAndReplayedRouteCanBecomeScopedEnforceEligible(): Pro
       noGoReasons: readonly string[];
       confidence: { actorDistributionHealth: string; redTeamReplayStatus: string };
     };
+    redTeamReplay: { status: string };
   };
 
   equal(response.status, 200, 'Policy Foundry readiness route: approved replayed request returns 200');
@@ -156,8 +171,8 @@ async function testApprovedAndReplayedRouteCanBecomeScopedEnforceEligible(): Pro
   );
   equal(
     body.readiness.confidence.redTeamReplayStatus,
-    'passed',
-    'Policy Foundry readiness route: red-team replay status is retained',
+    body.redTeamReplay.status,
+    'Policy Foundry readiness route: red-team replay status is computed and retained',
   );
 }
 
@@ -170,14 +185,16 @@ async function testSingleActorRouteBlocksEnforcement(): Promise<void> {
   );
   const app = createApp(events);
   const response = await app.request(
-    '/api/v1/shadow/policy-foundry/readiness?customerApproved=true&redTeamReplayStatus=passed',
+    '/api/v1/shadow/policy-foundry/readiness?customerApproved=true',
   );
   const body = await response.json() as {
     readiness: {
       status: string;
       noGoReasons: readonly string[];
       activeQuestions: readonly { kind: string }[];
+      confidence: { redTeamReplayStatus: string };
     };
+    redTeamReplay: { status: string; failedCaseCount: number };
   };
 
   equal(response.status, 200, 'Policy Foundry readiness route: concentrated sample returns 200');
@@ -185,6 +202,17 @@ async function testSingleActorRouteBlocksEnforcement(): Promise<void> {
   ok(
     body.readiness.noGoReasons.includes('single-actor-concentration'),
     'Policy Foundry readiness route: concentration no-go is explicit',
+  );
+  equal(body.redTeamReplay.status, 'failed', 'Policy Foundry readiness route: concentrated sample fails computed replay');
+  ok(body.redTeamReplay.failedCaseCount > 0, 'Policy Foundry readiness route: concentrated replay failure count is returned');
+  ok(
+    body.readiness.noGoReasons.includes('red-team-replay-failed'),
+    'Policy Foundry readiness route: failed computed replay becomes no-go',
+  );
+  equal(
+    body.readiness.confidence.redTeamReplayStatus,
+    'failed',
+    'Policy Foundry readiness route: readiness records failed computed replay',
   );
   ok(
     body.readiness.activeQuestions.some((question) => question.kind === 'confirm-representative-sample'),
@@ -195,16 +223,16 @@ async function testSingleActorRouteBlocksEnforcement(): Promise<void> {
 async function testInvalidReadinessQueryFailsClosed(): Promise<void> {
   const app = createApp(cleanEvents());
   const response = await app.request(
-    '/api/v1/shadow/policy-foundry/readiness?redTeamReplayStatus=maybe',
+    '/api/v1/shadow/policy-foundry/readiness?redTeamReplayStatus=passed',
   );
   const body = await response.json() as {
     reasonCodes: readonly string[];
   };
 
-  equal(response.status, 400, 'Policy Foundry readiness route: invalid replay status returns 400');
+  equal(response.status, 400, 'Policy Foundry readiness route: caller-supplied replay status returns 400');
   ok(
-    body.reasonCodes.includes('invalid-policy-foundry-red-team-status'),
-    'Policy Foundry readiness route: invalid replay status reason is explicit',
+    body.reasonCodes.includes('policy-foundry-red-team-status-computed'),
+    'Policy Foundry readiness route: computed replay status reason is explicit',
   );
 }
 

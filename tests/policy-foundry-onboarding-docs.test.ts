@@ -77,6 +77,36 @@ function testPolicyFoundryArchitectureIsGrounded(): void {
     'GET /api/v1/shadow/policy-foundry/red-team-replay',
     'Policy Foundry docs: red-team replay route is named',
   );
+  includes(
+    doc,
+    'self-attest `redTeamReplayStatus` through the readiness query',
+    'Policy Foundry docs: readiness replay status cannot be caller supplied',
+  );
+}
+
+function testReadmeNamesPolicyFoundryWithoutOverclaiming(): void {
+  const readme = readProjectFile('README.md');
+
+  includes(
+    readme,
+    'Policy Foundry is the onboarding layer for this path.',
+    'README: Policy Foundry is named in the adoption path',
+  );
+  includes(
+    readme,
+    'observed-action policy mining, not model training, not automatic policy writing',
+    'README: Policy Foundry avoids ML-training and auto-policy claims',
+  );
+  includes(
+    readme,
+    'customers self-attest readiness controls',
+    'README: readiness evidence cannot be self-attested',
+  );
+  includes(
+    readme,
+    '[Policy Foundry onboarding](docs/02-architecture/policy-foundry-onboarding.md)',
+    'README: Policy Foundry architecture guide is linked',
+  );
 }
 
 function testSafetyInvariantsAreExplicit(): void {
@@ -168,6 +198,7 @@ function testPackageScriptIsExposed(): void {
 }
 
 testPolicyFoundryArchitectureIsGrounded();
+testReadmeNamesPolicyFoundryWithoutOverclaiming();
 testSafetyInvariantsAreExplicit();
 testOnboardingResearchAnchorsAreRecorded();
 testCommercialBoundaryMatchesPackaging();

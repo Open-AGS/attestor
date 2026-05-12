@@ -291,6 +291,10 @@ The candidate-specific red-team replay contract lives in
 `src/consequence-admission/policy-foundry-red-team-replay.ts`, is covered by
 `tests/policy-foundry-red-team-replay.test.ts`, and is exposed through
 `GET /api/v1/shadow/policy-foundry/red-team-replay`.
+The readiness route computes the candidate-specific replay result itself and
+feeds that computed status into the readiness contract. Clients cannot
+self-attest `redTeamReplayStatus` through the readiness query because that
+would turn a no-go control into caller-supplied evidence.
 
 ```text
 readinessScore

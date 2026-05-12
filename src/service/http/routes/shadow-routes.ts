@@ -22,7 +22,6 @@ import {
   evaluatePolicyFoundryReadiness,
   CONSEQUENCE_ADMISSION_DOWNSTREAM_BOUNDARY_KINDS,
   GENERIC_ADMISSION_MODES,
-  POLICY_FOUNDRY_RED_TEAM_REPLAY_STATUSES,
   SHADOW_DOWNSTREAM_INTEGRATION_EVIDENCE_KINDS,
   SHADOW_DOWNSTREAM_VERIFICATION_CHECKS,
   SHADOW_CUSTOMER_ACTIVATION_REF_KINDS,
@@ -34,7 +33,6 @@ import {
   SHADOW_POLICY_PROMOTION_SOURCE_STATUSES,
   type ConsequenceAdmissionDownstreamBoundaryKind,
   type GenericAdmissionMode,
-  type PolicyFoundryRedTeamReplayStatus,
   type ShadowCustomerActivationControlRef,
   type ShadowCustomerActivationHandoff,
   type ShadowCustomerActivationReceiptKillSwitchStatus,
@@ -243,18 +241,6 @@ function parsePromotionSourceStatus(
   const normalized = value.trim();
   return SHADOW_POLICY_PROMOTION_SOURCE_STATUSES.includes(normalized as ShadowPolicyPromotionSourceStatus)
     ? normalized as ShadowPolicyPromotionSourceStatus
-    : null;
-}
-
-function parsePolicyFoundryRedTeamReplayStatus(
-  value: string | null | undefined,
-): PolicyFoundryRedTeamReplayStatus | null {
-  if (value === undefined || value === null || value.trim() === '') return 'not-run';
-  const normalized = value.trim();
-  return POLICY_FOUNDRY_RED_TEAM_REPLAY_STATUSES.includes(
-    normalized as PolicyFoundryRedTeamReplayStatus,
-  )
-    ? normalized as PolicyFoundryRedTeamReplayStatus
     : null;
 }
 
@@ -1372,18 +1358,14 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
     const result = safeShadowSummary(c, deps);
     if (result instanceof Response) return result;
 
-    const redTeamReplayStatusQuery = c.req.query('redTeamReplayStatus');
-    const redTeamReplayStatus = parsePolicyFoundryRedTeamReplayStatus(
-      redTeamReplayStatusQuery,
-    );
-    if (redTeamReplayStatusQuery && !redTeamReplayStatus) {
+    if (c.req.query('redTeamReplayStatus') !== undefined) {
       return problem(c, {
-        type: 'https://attestor.dev/problems/policy-foundry-red-team-status-invalid',
-        title: 'Invalid Policy Foundry red-team replay status',
+        type: 'https://attestor.dev/problems/policy-foundry-red-team-status-computed',
+        title: 'Policy Foundry red-team replay status is computed',
         status: 400,
         detail:
-          `redTeamReplayStatus must be one of: ${POLICY_FOUNDRY_RED_TEAM_REPLAY_STATUSES.join(', ')}.`,
-        reasonCodes: ['invalid-policy-foundry-red-team-status'],
+          'redTeamReplayStatus is computed from the candidate-specific red-team replay contract and cannot be supplied by clients.',
+        reasonCodes: ['policy-foundry-red-team-status-computed'],
       });
     }
 
@@ -1436,6 +1418,13 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
       actionSurface,
       domain,
     });
+    const replay = evaluatePolicyFoundryRedTeamReplay({
+      candidate,
+      report: result.surface.latestSimulation,
+      events: result.events,
+      tenantId: result.tenant.tenantId,
+      generatedAt: deps.now?.() ?? null,
+    });
     const readiness = evaluatePolicyFoundryReadiness({
       candidate,
       report: result.surface.latestSimulation,
@@ -1444,7 +1433,7 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
       customerApproved,
       tenantBoundaryProven,
       llmAuthoritySource,
-      redTeamReplayStatus,
+      redTeamReplayStatus: replay.status,
     });
 
     return c.json({
@@ -1462,6 +1451,12 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
         domain,
         matched: candidate !== null,
         candidateCount: bundle.candidateCount,
+      },
+      redTeamReplay: {
+        status: replay.status,
+        digest: replay.digest,
+        caseCount: replay.caseCount,
+        failedCaseCount: replay.failedCaseCount,
       },
       readiness,
     });

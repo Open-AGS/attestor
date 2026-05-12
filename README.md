@@ -321,69 +321,28 @@ proposed consequence
   -> downstream verification
 ```
 
-The [consequence taxonomy](docs/02-architecture/consequence-taxonomy.md) names the domains this path is meant to control: financial records, money movement, programmable money, data disclosure, authority change, external communication, regulated filing, system operation, decision support, and custom customer-defined surfaces.
+Core contracts:
 
-The consequence-admission core gives every pack the same public language: `admit`, `narrow`, `review`, or `block`. Money movement, data movement, authority change, external communication, operational execution, programmable money, and future packs should not invent their own trust story. They attach to the same admission model.
+- [Consequence taxonomy](docs/02-architecture/consequence-taxonomy.md) and the consequence-admission core keep every pack on the same `admit` / `narrow` / `review` / `block` language.
+- [Downstream enforcement contract](docs/02-architecture/downstream-enforcement-contract.md), [verifier helper](docs/02-architecture/verifier-helper.md), and [adapter framework](docs/02-architecture/adapter-framework.md) define the customer-side fail-closed edge: verify before execute.
+- [Audit evidence export](docs/02-architecture/audit-evidence-export.md), [tamper-evident history](docs/02-architecture/tamper-evident-history.md), [business risk dashboard](docs/02-architecture/business-risk-dashboard.md), [dashboard API summary](docs/02-architecture/dashboard-api-summary.md), and [external review packet](docs/02-architecture/external-review-packet.md) turn decisions and shadow evidence into digest-first review material without claiming audit certification.
+- [Data minimization and redaction policy](docs/02-architecture/data-minimization-redaction-policy.md), [policy limit model](docs/02-architecture/policy-limit-model.md), [retry attempt ledger](docs/02-architecture/retry-attempt-ledger.md), and [agent loop abuse guard](docs/02-architecture/agent-loop-abuse-guard.md) keep retries, feedback, and proof surfaces bounded.
+- [Downstream presentation binding](docs/02-architecture/downstream-presentation-binding.md), [presentation replay ledger](docs/02-architecture/presentation-replay-ledger.md), and [downstream execution receipt](docs/02-architecture/downstream-execution-receipt.md) bind an allowed admission to the exact downstream execution attempt and outcome.
 
-The [downstream enforcement contract](docs/02-architecture/downstream-enforcement-contract.md) defines what customer systems must bind before acting on an admission: admission id, digest, decision, consequence domain, consequence kind, risk class, downstream system, policy scope, proof, idempotency, and `narrow` constraints. This is where the gateway stops being advice.
+Onboarding automation:
 
-The [verifier helper](docs/02-architecture/verifier-helper.md) is the small customer-side wrapper for that contract. A downstream adapter can call `verify` for a structured hold decision or `assert` to stop execution fail-closed.
+- [Action surface manifest intake](docs/02-architecture/action-surface-manifest-intake.md), [Action surface declaration ingestors](docs/02-architecture/action-surface-declaration-ingestors.md), and [Action surface profiler](docs/02-architecture/action-surface-profiler.md) turn customer-owned metadata and shadow events into a data-minimized action-surface map.
+- [Action surface integration artifacts](docs/02-architecture/action-surface-integration-artifacts.md), [Action surface onboarding packet](docs/02-architecture/action-surface-onboarding-packet.md), action-surface review handoff, and red-team fixture bundle reduce adoption friction with review-required plans. They do not deploy infrastructure, issue credentials, activate enforcement, or make a non-bypassable claim by themselves.
+- [Policy Foundry onboarding](docs/02-architecture/policy-foundry-onboarding.md) and [Integration mode readiness](docs/02-architecture/integration-mode-readiness.md) turn shadow traffic into policy candidates, readiness/no-go evidence, active questions, Policy Twin work, and reviewed paths toward scoped enforcement. The path where customers self-attest readiness controls is not allowed.
 
-The [adapter framework](docs/02-architecture/adapter-framework.md) turns that verifier rule into a protected execution shape for HTTP handlers, queue consumers, tool wrappers, MCP tool wrappers, payment adapters, wallet adapters, and custom customer edges: verify before execute.
+Runtime and packs:
 
-The [audit evidence export](docs/02-architecture/audit-evidence-export.md) packages shadow events, simulations, policy discovery, promotion packets, and downstream proof references into a canonical reviewer packet without claiming compliance or exporting raw customer payloads.
-
-The [tamper-evident history](docs/02-architecture/tamper-evident-history.md) links digest-first evidence over time. It exports a root digest and verification summary so modified, deleted, or reordered records fail closed before a reviewer trusts the packet.
-
-The [business risk dashboard](docs/02-architecture/business-risk-dashboard.md) turns that reviewer packet into operator-facing metrics: observed AI actions, review load, blocked actions, policy gaps, domain risk, downstream proof coverage, and optional operator-supplied impact.
-
-The [dashboard API summary](docs/02-architecture/dashboard-api-summary.md) gives the first-screen product shape over that dashboard: compact tiles, attention items, top consequence domains, and links to deeper proof surfaces.
-
-The [Action surface manifest intake](docs/02-architecture/action-surface-manifest-intake.md) parses bounded JSON/YAML OpenAPI, AsyncAPI, MCP tool, and workflow manifest text into safe manifest objects without storing the raw file content.
-
-The [Action surface declaration ingestors](docs/02-architecture/action-surface-declaration-ingestors.md) convert parsed OpenAPI, AsyncAPI, MCP tool, and workflow metadata into profiler-ready declarations without storing raw payloads, secret names, workflow commands, or provider bodies.
-
-The [Action surface profiler](docs/02-architecture/action-surface-profiler.md) turns shadow events and declared OpenAPI, AsyncAPI, MCP, workflow, provider, or manual inventory into a data-minimized map of AI action surfaces. It recommends the next integration mode to evaluate without storing raw payloads, issuing credentials, or claiming that a surface is non-bypassable.
-
-The [Action surface integration artifacts](docs/02-architecture/action-surface-integration-artifacts.md) turn profiler output into review-required SDK, gateway proxy, MCP tool gateway, sidecar/ext-authz, provider connector, credential isolation, Policy Twin, and red-team replay drafts. These artifacts reduce onboarding friction, but they do not deploy infrastructure, issue credentials, activate enforcement, or make a non-bypassable claim without reviewed downstream controls.
-
-The [Action surface onboarding packet](docs/02-architecture/action-surface-onboarding-packet.md) combines manifest intake, declaration ingestion, profiling, integration artifact drafts, and readiness into one digest-first customer plan. It is a review-required packet, not an apply step: it does not deploy gateways, issue credentials, activate enforcement, or claim production readiness.
-
-The same packet can produce an action-surface review handoff: a digest-bound checklist of shadow capture, generated artifacts, credential boundary, verifier, Policy Twin, red-team replay, tenant boundary, and customer approval work. The handoff reduces adoption friction, but it remains review material and does not deploy or activate enforcement.
-
-The onboarding packet can also produce a red-team fixture bundle for each discovered action surface: unknown actor, missing evidence, duplicate request, actor burst, foreign tenant, unsafe proof URI, malicious summary, high-risk auto-admit, review-required auto-promote, direct credential bypass, and missing verifier cases. These are synthetic review plans, not live exploit runs or enforcement activation.
-
-The [Policy Foundry onboarding](docs/02-architecture/policy-foundry-onboarding.md) layer turns that same shadow traffic into candidate policy, readiness, active-question, red-team replay, and no-go evidence. It should make adoption easier without letting LLM text become policy authority or letting customers self-attest readiness controls.
-
-The [Integration mode readiness](docs/02-architecture/integration-mode-readiness.md) contract classifies whether a customer workflow is only advisory, ready for shadow capture, or eligible for a reviewed path toward scoped enforcement. It surfaces bypass risk, credential isolation, generated artifact review, and missing verifier/proxy/adapter controls before any non-bypassable claim is allowed.
-
-The [crypto intelligence buildout](docs/02-architecture/crypto-intelligence-buildout.md) packages that same summary discipline at `attestor/crypto-intelligence`: risk signals, policy coverage, policy gaps, adapter readiness, operator-supplied risk inputs, missing evidence, conformance fixtures, privacy gates, aggregate performance budgets, package-surface consistency checks, and digest-first proof links without raw wallet/payment payload drilldown or native screening claims. The next [engine hardening track](docs/02-architecture/crypto-engine-hardening-ii.md) adds adapter-readiness intelligence, pack-specific decision profiles, policy-intelligence routing, proof-console prioritization, runtime efficiency guards, and package-surface drift checks for explicit-deny precedence, stale-policy refresh, conflict resolution, readiness heatmaps, top blockers, benchmark regression detection, export-map consistency, next operator actions, and finance/crypto pack signals without changing Attestor into a hosted crypto execution provider.
-
-The [external review packet](docs/02-architecture/external-review-packet.md) wraps audit evidence, dashboard context, runtime/storage evidence, repository security refs, checklist items, and non-claims into a digest-first reviewer handoff. It is not a security audit, compliance certificate, or production-readiness guarantee.
-
-The [data minimization and redaction policy](docs/02-architecture/data-minimization-redaction-policy.md) defines what model feedback, audit packets, dashboards, dashboard summaries, external review packets, retry ledgers, presentation bindings, replay receipts, and execution receipts may expose by default: reason codes, safe instructions, counts, digests, scoped references, and aggregate signals instead of raw customer payloads.
-
-The [policy limit model](docs/02-architecture/policy-limit-model.md) gives those admissions bounded policy material: amount caps, velocity windows, recipient and asset allowlists, data scope, authority scope, time windows, risk ceilings, and review thresholds.
-
-The [retry attempt ledger](docs/02-architecture/retry-attempt-ledger.md) records safe-retry attempts after the retry budget closes. It makes automatic correction attempts idempotent and auditable without storing raw retry payloads.
-
-The [agent loop abuse guard](docs/02-architecture/agent-loop-abuse-guard.md) limits the surrounding retry behavior so a bounded correction loop cannot become overload or policy probing.
-
-The [downstream presentation binding](docs/02-architecture/downstream-presentation-binding.md) binds an allowed admission to the exact enforcement point, target, method, body digest, replay key, nonce, freshness window, proof refs, and acknowledged constraints that are about to cross into the real system.
-
-The [presentation replay ledger](docs/02-architecture/presentation-replay-ledger.md) consumes that replay key once. The evaluation helper keeps exported ledger entries redacted; production deployments should back the same contract with a shared atomic store at the enforcement edge.
-
-The [downstream execution receipt](docs/02-architecture/downstream-execution-receipt.md) records what happened after the replay key was consumed: succeeded, failed, or skipped, with result/error/receipt material kept as digests instead of raw downstream data.
-
-The release layer turns a decision into something the rest of the system can inspect: deterministic checks, release tokens, reviewer queues, evidence packs, and proof references. This is where "the AI said so" becomes a bounded release decision.
-
-The policy control plane is where authority changes are controlled: signed policy bundles, activation, rollback, scoping, simulation, and audit trail. A gateway without policy provenance is only an interruption point.
-
-The enforcement plane is the downstream edge. It verifies releases offline or online and fails closed when the required proof is absent, stale, out of scope, or invalid. This is the difference between advice and a gate.
-
-Pack-specific adapters live below this layer. They provide native evidence, simulations, verifier bindings, release material, conformance fixtures, and downstream handoff details for a consequence class. They do not get a separate product identity or a separate trust story.
-
-Customer systems call the relevant Attestor path for the consequence they want to control. Attestor does not guess what to run automatically, and it does not bypass the customer's own enforcement point.
+- The release layer turns a decision into something the rest of the system can inspect: release tokens, reviewer queues, evidence packs, signed policy bundles, and proof material.
+- The policy control plane is where authority changes are controlled through signed policy bundles, activation rules, reviewer constraints, and provenance checks.
+- The enforcement plane is the downstream edge. It verifies the decision, proof, binding, and replay posture before execution.
+- Pack-specific adapters live below this layer. They provide native evidence, simulations, verifier bindings, conformance fixtures, and downstream handoff details for a consequence class without getting a separate product identity or trust story.
+- Attestor does not guess what to run automatically, and it does not bypass the customer's own enforcement point.
+- [Crypto intelligence buildout](docs/02-architecture/crypto-intelligence-buildout.md) and [crypto intelligence surface](docs/02-architecture/crypto-intelligence-platform-surface.md) apply the same summary discipline to programmable-money surfaces without turning Attestor into a hosted crypto execution provider.
 
 ## Data And Security Posture
 

@@ -370,6 +370,22 @@ profiler, integration artifact, and readiness outputs into a digest-first
 review-required packet. It is not an apply step and does not activate
 enforcement.
 
+The action-surface review handoff lives in
+`src/consequence-admission/action-surface-onboarding-review-handoff.ts`, is
+covered by `tests/action-surface-onboarding-review-handoff.test.ts`, and turns
+that packet into a digest-bound checklist for shadow capture, generated
+artifacts, credential boundary, verifier, Policy Twin, red-team replay, tenant
+boundary, and customer approval work. It is review material only.
+
+The action-surface red-team fixture bundle lives in
+`src/consequence-admission/action-surface-onboarding-red-team-fixtures.ts`, is
+covered by `tests/action-surface-onboarding-red-team-fixtures.test.ts`, and
+generates synthetic per-surface cases for unknown actor, missing evidence,
+duplicate request, actor burst, foreign tenant, unsafe proof URI, malicious
+summary, high-risk auto-admit, review-required auto-promote, direct credential
+bypass, and missing verifier paths. It does not execute against customer
+infrastructure or prove production readiness.
+
 ## Current Status
 
 Repository foundations already exist in:
@@ -382,6 +398,8 @@ Repository foundations already exist in:
 Policy Foundry as described here is not fully implemented. The current system
 has shadow events, action risk inventory, policy discovery candidates,
 simulation reports, promotion drafts, activation readiness gates, and the first
-readiness/no-go contract with a read-only shadow route and candidate-specific
-evidence replay. It does not yet have a live adversarial replay executor, UI
-workflow, or full commercial entitlement contract for Foundry capabilities.
+readiness/no-go contract with a read-only shadow route, candidate-specific
+evidence replay, action-surface review handoff, and synthetic onboarding
+red-team fixture generation. It does not yet have a live adversarial replay
+executor, UI workflow, or full commercial entitlement contract for Foundry
+capabilities.

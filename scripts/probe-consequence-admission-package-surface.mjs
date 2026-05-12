@@ -419,6 +419,22 @@ assert.equal(
   typeof admission.createPolicyFoundryCounterexampleLedger,
   'function',
 );
+assert.equal(
+  admission.POLICY_FOUNDRY_POLICY_TWIN_SUMMARY_VERSION,
+  'attestor.policy-foundry-policy-twin-summary.v1',
+);
+assert.equal(
+  admission.policyFoundryPolicyTwinSummaryDescriptor().dataMinimizationSurfaceKind,
+  'policy-foundry-policy-twin-summary',
+);
+assert.equal(
+  admission.policyFoundryPolicyTwinSummaryDescriptor().policyTwinEvidenceOnly,
+  true,
+);
+assert.equal(
+  typeof admission.createPolicyFoundryPolicyTwinSummary,
+  'function',
+);
 
 let blockedInternalPath = false;
 try {

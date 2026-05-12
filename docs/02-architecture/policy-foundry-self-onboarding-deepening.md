@@ -42,7 +42,7 @@ These sources are engineering anchors only. They do not certify Attestor.
 | Step 03 | complete | Add Minimum Viable Gate Planner | Select the smallest reviewed integration path: SDK verifier, gateway proxy, MCP tool gateway, sidecar/ext_authz, or provider connector |
 | Step 04 | complete | Add Schema-Bound Candidate Registry | Keep candidate policy generation tied to domain schemas/templates, not LLM threshold authority |
 | Step 05 | complete | Add Counterexample Ledger | Track supporting evidence, counterexamples, missing proof, high-risk auto-admits, actor concentration, and replay pressure per candidate |
-| Step 06 | not started | Add Policy Twin v2 Summary | Produce a clearer backtest packet for admit/review/block impact, review-load delta, no-go reasons, and rollout recommendation |
+| Step 06 | complete | Add Policy Twin v2 Summary | Produce a clearer backtest packet for admit/review/block impact, review-load delta, no-go reasons, and rollout recommendation |
 | Step 07 | not started | Add Authority Relationship Context | Capture approver, owner, tenant, delegation, and scope context without storing raw customer identity data |
 | Step 08 | not started | Add Review-Only Integration Patch Pack | Render SDK/gateway/MCP/sidecar/provider draft patches as review material only |
 | Step 09 | not started | Add One-Command Self-Onboarding CLI | Render session, coverage, blockers, patch pack, handoff, and red-team fixtures from customer-owned manifests and shadow data |
@@ -163,6 +163,28 @@ red-team-replay-failure
 The ledger is review material only. It does not resolve the counterexamples,
 activate enforcement, store raw shadow payloads, or prove production readiness.
 
+## Step 06 Scope
+
+Step 06 adds `attestor.policy-foundry-policy-twin-summary.v1`.
+
+The Policy Twin v2 summary packages the existing shadow simulation report,
+readiness evaluation, and counterexample ledger into a digest-bound backtest
+packet:
+
+```text
+admit/narrow/review/block counts
+admit/narrow/review/block rates
+manual-review baseline
+review-load delta
+no-go reasons
+promotion block status
+rollout recommendation
+```
+
+The summary is decision support only. It does not replace the underlying
+simulation report, resolve no-go reasons, activate enforcement, or prove
+production readiness.
+
 ## Protected Principles
 
 - customer authority
@@ -187,5 +209,5 @@ contracts, or shared product positioning are touched.
 
 ## Current Status
 
-Step 01 through Step 05 are complete. Step 06 is the next implementation step. The
+Step 01 through Step 06 are complete. Step 07 is the next implementation step. The
 rest of the list remains open.

@@ -66,6 +66,9 @@ function testDescriptorCoversCriticalSurfaces(): void {
   const counterexampleLedger = descriptor.surfaces.find((surface) =>
     surface.surfaceKind === 'policy-foundry-counterexample-ledger'
   );
+  const policyTwinSummary = descriptor.surfaces.find((surface) =>
+    surface.surfaceKind === 'policy-foundry-policy-twin-summary'
+  );
   const externalReview = descriptor.surfaces.find((surface) =>
     surface.surfaceKind === 'external-review-packet'
   );
@@ -138,6 +141,11 @@ function testDescriptorCoversCriticalSurfaces(): void {
   ok(
     counterexampleLedger?.allowedUnits.includes('digests'),
     'Data minimization policy: Policy Foundry counterexample ledger allows evidence digests',
+  );
+  ok(policyTwinSummary, 'Data minimization policy: Policy Twin summary surface is present');
+  ok(
+    policyTwinSummary?.allowedUnits.includes('counts'),
+    'Data minimization policy: Policy Twin summary allows counts',
   );
   ok(externalReview, 'Data minimization policy: external review packet surface is present');
   ok(
@@ -329,6 +337,11 @@ function testDocsAndScriptsExposePolicy(): void {
     doc,
     'policy-foundry-counterexample-ledger',
     'Data minimization policy: doc lists Policy Foundry counterexample ledger surface',
+  );
+  includes(
+    doc,
+    'policy-foundry-policy-twin-summary',
+    'Data minimization policy: doc lists Policy Twin summary surface',
   );
   includes(
     doc,

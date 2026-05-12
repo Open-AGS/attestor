@@ -382,6 +382,17 @@ replay failures per candidate. It is review material only: it does not resolve
 the evidence gap, activate enforcement, store raw shadow payloads, or prove
 production readiness.
 
+The Policy Twin v2 Summary is the first customer-facing backtest packet for
+this path. It lives in
+`src/consequence-admission/policy-foundry-policy-twin-summary.ts`, is covered
+by `tests/policy-foundry-policy-twin-summary.test.ts`, and is exposed through
+`test:policy-foundry-policy-twin-summary`. It packages the shadow simulation,
+readiness evaluation, and counterexample ledger into admit/narrow/review/block
+rates, manual-review baseline impact, review-load delta, no-go reasons,
+promotion block status, and rollout recommendation. It is decision support only:
+it does not replace the underlying simulation, resolve blockers, activate
+enforcement, or prove production readiness.
+
 ```text
 coverageScore
 coverageDimensions
@@ -402,6 +413,11 @@ supportingEvidenceCount
 counterexampleCount
 missingProofCount
 replayDuplicateRate
+policyTwinSummary
+decisionImpact
+reviewLoadImpact
+reviewLoadDeltaCount
+reviewLoadReductionRate
 readinessScore
 sampleSize
 actorDistributionHealth
@@ -478,7 +494,8 @@ readiness/no-go contract with a read-only shadow route, candidate-specific
 evidence replay, active questions, action-surface review handoff, synthetic
 onboarding red-team fixture generation, and the first onboarding session
 contract plus the first coverage score, minimum viable gate planner, and
-schema-bound candidate registry and counterexample ledger contracts. It does not yet have a live
+schema-bound candidate registry, counterexample ledger, and Policy Twin v2
+summary contracts. It does not yet have a live
 adversarial replay executor, UI workflow, or full commercial entitlement
 contract for Foundry capabilities. The deeper self-onboarding track is tracked in
 [Policy Foundry Self-Onboarding Deepening](policy-foundry-self-onboarding-deepening.md).

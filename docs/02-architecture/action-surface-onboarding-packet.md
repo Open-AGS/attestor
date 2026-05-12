@@ -159,6 +159,34 @@ activatesEnforcement: false
 nonBypassableClaimAllowed: false
 ```
 
+## Action Surface Onboarding Review Handoff
+
+`createActionSurfaceOnboardingReviewHandoff()` converts an onboarding packet
+into a digest-bound review checklist for the customer-side implementation
+conversation. It is still review material, not activation material.
+
+The handoff summarizes:
+
+- source packet digest and status
+- per-surface review status
+- shadow capture gaps
+- generated artifact review status
+- credential boundary work
+- downstream verifier work
+- Policy Twin and red-team replay work
+- tenant boundary and customer approval blockers
+- remaining no-go reasons and next review steps
+
+The handoff exists so a company does not have to translate a packet into an
+implementation checklist by hand. It keeps the same boundary as the packet:
+`approvalRequired: true`, `autoEnforce: false`, `rawPayloadStored: false`,
+`productionReady: false`, `executionPlanOnly: true`, `deploysInfrastructure:
+false`, `issuesCredentials: false`, `activatesEnforcement: false`, and
+`nonBypassableClaimAllowed: false`.
+
+It must not be used as proof that a gateway, verifier, credential boundary, or
+production route exists. Those remain downstream evidence requirements.
+
 ## Surface Plan
 
 Each surface plan includes:

@@ -195,6 +195,14 @@ Bad questions are broad setup friction:
 Define your complete refund policy.
 ```
 
+The first runtime slice is the active-question packet contract in
+`src/consequence-admission/policy-foundry-active-questions.ts`, covered by
+`tests/policy-foundry-active-questions.test.ts` and exposed through
+`GET /api/v1/shadow/policy-foundry/active-questions`. It consumes the computed
+readiness/no-go result, returns only the highest-priority blocking questions,
+binds the readiness digest, and stays data-minimized. It does not collect raw
+policy thresholds, raw customer identifiers, or private business context.
+
 ### 8. Replay Adversarial Cases
 
 Before a candidate can become review-ready or enforce-eligible, run a small
@@ -308,6 +316,7 @@ replayDuplicateRate
 simulationQuality
 redTeamReplayStatus
 activeQuestions
+activeQuestionPacket
 recommendedRolloutStep
 noGoReasons
 approvalRequired: true

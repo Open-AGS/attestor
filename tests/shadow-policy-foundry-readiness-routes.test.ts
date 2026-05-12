@@ -236,6 +236,80 @@ async function testInvalidReadinessQueryFailsClosed(): Promise<void> {
   );
 }
 
+async function testActiveQuestionRouteIsDataMinimizedAndPrioritized(): Promise<void> {
+  const events = Array.from({ length: 24 }, (_, index) =>
+    event({
+      actor: `support-agent-${index % 3}`,
+      occurredAt: `2026-05-07T22:${String(index).padStart(2, '0')}:02.000Z`,
+      policyRef: null,
+      evidenceRefs: [],
+    }),
+  );
+  const app = createApp(events);
+  const response = await app.request('/api/v1/shadow/policy-foundry/active-questions');
+  const text = await response.text();
+  const body = JSON.parse(text) as {
+    productionReady: boolean;
+    approvalRequired: boolean;
+    autoEnforce: boolean;
+    rawPayloadStored: boolean;
+    decisionSupportOnly: boolean;
+    candidateSelection: { matched: boolean; candidateCount: number };
+    redTeamReplay: { status: string; failedCaseCount: number };
+    readiness: { status: string; digest: string };
+    activeQuestionPacket: {
+      status: string;
+      questionCount: number;
+      omittedQuestionCount: number;
+      readinessDigest: string;
+      rawPayloadStored: boolean;
+      decisionSupportOnly: boolean;
+      questions: readonly {
+        kind: string;
+        expectedAnswerKind: string;
+        blocksReasonCodes: readonly string[];
+      }[];
+    };
+  };
+
+  equal(response.status, 200, 'Policy Foundry active questions route: valid request returns 200');
+  equal(response.headers.get('cache-control'), 'no-store', 'Policy Foundry active questions route: response is no-store');
+  equal(body.productionReady, false, 'Policy Foundry active questions route: production readiness is not overclaimed');
+  equal(body.approvalRequired, true, 'Policy Foundry active questions route: approval is required');
+  equal(body.autoEnforce, false, 'Policy Foundry active questions route: route never auto-enforces');
+  equal(body.rawPayloadStored, false, 'Policy Foundry active questions route: raw payload boundary is explicit');
+  equal(body.decisionSupportOnly, true, 'Policy Foundry active questions route: output is decision support only');
+  equal(body.candidateSelection.matched, true, 'Policy Foundry active questions route: candidate is selected');
+  ok(body.candidateSelection.candidateCount > 0, 'Policy Foundry active questions route: candidates are derived from shadow traffic');
+  equal(body.redTeamReplay.status, 'failed', 'Policy Foundry active questions route: replay status is computed');
+  ok(body.redTeamReplay.failedCaseCount > 0, 'Policy Foundry active questions route: replay failures are retained');
+  equal(body.activeQuestionPacket.status, 'questions-required', 'Policy Foundry active questions route: missing controls produce questions');
+  equal(body.activeQuestionPacket.rawPayloadStored, false, 'Policy Foundry active questions route: packet stores no raw payload');
+  equal(body.activeQuestionPacket.decisionSupportOnly, true, 'Policy Foundry active questions route: packet is decision support only');
+  equal(body.activeQuestionPacket.questionCount, 3, 'Policy Foundry active questions route: packet asks only top three questions');
+  ok(body.activeQuestionPacket.omittedQuestionCount > 0, 'Policy Foundry active questions route: omitted questions are counted');
+  equal(
+    body.activeQuestionPacket.readinessDigest,
+    body.readiness.digest,
+    'Policy Foundry active questions route: packet binds readiness digest',
+  );
+  ok(
+    body.activeQuestionPacket.questions.some((question) => question.kind === 'choose-policy-template'),
+    'Policy Foundry active questions route: policy template question is included',
+  );
+  ok(
+    body.activeQuestionPacket.questions.some((question) => question.expectedAnswerKind === 'evidence-source-ref'),
+    'Policy Foundry active questions route: evidence source question is included',
+  );
+  ok(
+    body.activeQuestionPacket.questions.every((question) => question.blocksReasonCodes.length > 0),
+    'Policy Foundry active questions route: each question maps to blocking reasons',
+  );
+  ok(!text.includes('support-agent-'), 'Policy Foundry active questions route: raw actor IDs are not returned');
+  ok(!text.includes('raw_recipient_must_not_escape'), 'Policy Foundry active questions route: raw recipient is not returned');
+  ok(!text.includes('raw_feature_must_not_escape'), 'Policy Foundry active questions route: raw feature values are not returned');
+}
+
 async function testRedTeamReplayRouteIsDataMinimized(): Promise<void> {
   const app = createApp(cleanEvents());
   const response = await app.request('/api/v1/shadow/policy-foundry/red-team-replay');
@@ -278,6 +352,7 @@ await testReadinessRouteIsDataMinimizedAndApprovalRequired();
 await testApprovedAndReplayedRouteCanBecomeScopedEnforceEligible();
 await testSingleActorRouteBlocksEnforcement();
 await testInvalidReadinessQueryFailsClosed();
+await testActiveQuestionRouteIsDataMinimizedAndPrioritized();
 await testRedTeamReplayRouteIsDataMinimized();
 
 console.log(`Shadow Policy Foundry readiness route tests: ${passed} passed, 0 failed`);

@@ -18,6 +18,7 @@ import {
   createShadowPolicyPromotionSimulation,
   createShadowPolicySimulationReport,
   createShadowSummarySurface,
+  createPolicyFoundryActiveQuestionPacket,
   evaluatePolicyFoundryRedTeamReplay,
   evaluatePolicyFoundryReadiness,
   CONSEQUENCE_ADMISSION_DOWNSTREAM_BOUNDARY_KINDS,
@@ -1459,6 +1460,123 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
         failedCaseCount: replay.failedCaseCount,
       },
       readiness,
+    });
+  });
+
+  app.get('/api/v1/shadow/policy-foundry/active-questions', (c) => {
+    const result = safeShadowSummary(c, deps);
+    if (result instanceof Response) return result;
+
+    if (c.req.query('redTeamReplayStatus') !== undefined) {
+      return problem(c, {
+        type: 'https://attestor.dev/problems/policy-foundry-red-team-status-computed',
+        title: 'Policy Foundry red-team replay status is computed',
+        status: 400,
+        detail:
+          'redTeamReplayStatus is computed from the candidate-specific red-team replay contract and cannot be supplied by clients.',
+        reasonCodes: ['policy-foundry-red-team-status-computed'],
+      });
+    }
+
+    const customerApprovedQuery = c.req.query('customerApproved');
+    const customerApproved = parseBooleanQuery(customerApprovedQuery);
+    if (customerApprovedQuery && customerApproved === null) {
+      return problem(c, {
+        type: 'https://attestor.dev/problems/policy-foundry-active-questions-query-invalid',
+        title: 'Invalid Policy Foundry active questions query',
+        status: 400,
+        detail: 'customerApproved must be true or false when provided.',
+        reasonCodes: ['invalid-policy-foundry-active-questions-query'],
+      });
+    }
+
+    const tenantBoundaryProvenQuery = c.req.query('tenantBoundaryProven');
+    const tenantBoundaryProven = parseBooleanQuery(tenantBoundaryProvenQuery);
+    if (tenantBoundaryProvenQuery && tenantBoundaryProven === null) {
+      return problem(c, {
+        type: 'https://attestor.dev/problems/policy-foundry-active-questions-query-invalid',
+        title: 'Invalid Policy Foundry active questions query',
+        status: 400,
+        detail: 'tenantBoundaryProven must be true or false when provided.',
+        reasonCodes: ['invalid-policy-foundry-active-questions-query'],
+      });
+    }
+
+    const llmAuthoritySourceQuery = c.req.query('llmAuthoritySource');
+    const llmAuthoritySource = parseBooleanQuery(llmAuthoritySourceQuery);
+    if (llmAuthoritySourceQuery && llmAuthoritySource === null) {
+      return problem(c, {
+        type: 'https://attestor.dev/problems/policy-foundry-active-questions-query-invalid',
+        title: 'Invalid Policy Foundry active questions query',
+        status: 400,
+        detail: 'llmAuthoritySource must be true or false when provided.',
+        reasonCodes: ['invalid-policy-foundry-active-questions-query'],
+      });
+    }
+
+    const candidateId = c.req.query('candidateId')?.trim() || null;
+    const actionSurface = c.req.query('actionSurface')?.trim() || null;
+    const domain = c.req.query('domain')?.trim() || null;
+    const bundle = createShadowPolicyDiscoveryCandidates({
+      report: result.surface.latestSimulation,
+      generatedAt: deps.now?.() ?? null,
+    });
+    const candidate = selectPolicyFoundryCandidate({
+      candidates: bundle.candidates,
+      candidateId,
+      actionSurface,
+      domain,
+    });
+    const replay = evaluatePolicyFoundryRedTeamReplay({
+      candidate,
+      report: result.surface.latestSimulation,
+      events: result.events,
+      tenantId: result.tenant.tenantId,
+      generatedAt: deps.now?.() ?? null,
+    });
+    const readiness = evaluatePolicyFoundryReadiness({
+      candidate,
+      report: result.surface.latestSimulation,
+      events: result.events,
+      generatedAt: deps.now?.() ?? null,
+      customerApproved,
+      tenantBoundaryProven,
+      llmAuthoritySource,
+      redTeamReplayStatus: replay.status,
+    });
+    const activeQuestionPacket = createPolicyFoundryActiveQuestionPacket({
+      readiness,
+      generatedAt: deps.now?.() ?? null,
+    });
+
+    return c.json({
+      tenant: tenantSummary(result.tenant),
+      storageMode: result.surface.storageMode,
+      productionReady: false,
+      approvalRequired: true,
+      autoEnforce: false,
+      rawPayloadStored: false,
+      decisionSupportOnly: true,
+      source: 'shadow-policy-foundry-active-questions',
+      candidateSelection: {
+        candidateId,
+        actionSurface,
+        domain,
+        matched: candidate !== null,
+        candidateCount: bundle.candidateCount,
+      },
+      redTeamReplay: {
+        status: replay.status,
+        digest: replay.digest,
+        caseCount: replay.caseCount,
+        failedCaseCount: replay.failedCaseCount,
+      },
+      readiness: {
+        status: readiness.status,
+        digest: readiness.digest,
+        recommendedRolloutStep: readiness.recommendedRolloutStep,
+      },
+      activeQuestionPacket,
     });
   });
 

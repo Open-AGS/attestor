@@ -48,6 +48,9 @@ function testDescriptorCoversCriticalSurfaces(): void {
   const dashboardApiSummary = descriptor.surfaces.find((surface) =>
     surface.surfaceKind === 'dashboard-api-summary'
   );
+  const activeQuestions = descriptor.surfaces.find((surface) =>
+    surface.surfaceKind === 'policy-foundry-active-questions'
+  );
   const externalReview = descriptor.surfaces.find((surface) =>
     surface.surfaceKind === 'external-review-packet'
   );
@@ -90,6 +93,11 @@ function testDescriptorCoversCriticalSurfaces(): void {
   ok(
     dashboardApiSummary?.allowedUnits.includes('artifact-reference'),
     'Data minimization policy: dashboard API summary allows artifact references',
+  );
+  ok(activeQuestions, 'Data minimization policy: Policy Foundry active questions surface is present');
+  ok(
+    activeQuestions?.allowedUnits.includes('safe-instruction'),
+    'Data minimization policy: Policy Foundry active questions allow safe instructions',
   );
   ok(externalReview, 'Data minimization policy: external review packet surface is present');
   ok(
@@ -251,6 +259,11 @@ function testDocsAndScriptsExposePolicy(): void {
     doc,
     'dashboard-api-summary',
     'Data minimization policy: doc lists dashboard API summary surface',
+  );
+  includes(
+    doc,
+    'policy-foundry-active-questions',
+    'Data minimization policy: doc lists Policy Foundry active questions surface',
   );
   includes(
     doc,

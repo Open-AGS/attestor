@@ -79,6 +79,16 @@ function testPolicyFoundryArchitectureIsGrounded(): void {
   );
   includes(
     doc,
+    'src/consequence-admission/policy-foundry-active-questions.ts',
+    'Policy Foundry docs: active question contract evidence is named',
+  );
+  includes(
+    doc,
+    'GET /api/v1/shadow/policy-foundry/active-questions',
+    'Policy Foundry docs: active question route is named',
+  );
+  includes(
+    doc,
     'self-attest `redTeamReplayStatus` through the readiness query',
     'Policy Foundry docs: readiness replay status cannot be caller supplied',
   );
@@ -194,6 +204,16 @@ function testPackageScriptIsExposed(): void {
     pkg.scripts['test:policy-foundry-red-team-replay'] ?? '',
     'tsx tests/policy-foundry-red-team-replay.test.ts',
     'Package: Policy Foundry red-team replay test command is stable',
+  );
+  includes(
+    JSON.stringify(pkg.scripts),
+    'test:policy-foundry-active-questions',
+    'Package: Policy Foundry active questions test is exposed',
+  );
+  includes(
+    pkg.scripts['test:policy-foundry-active-questions'] ?? '',
+    'tsx tests/policy-foundry-active-questions.test.ts',
+    'Package: Policy Foundry active questions test command is stable',
   );
 }
 

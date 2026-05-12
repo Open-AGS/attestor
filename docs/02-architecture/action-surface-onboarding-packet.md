@@ -64,6 +64,28 @@ manifest text
   -> review-required packet
 ```
 
+## Local Renderer
+
+The fastest local entry point is:
+
+```bash
+npm run render:action-surface-onboarding-packet -- --openapi=path/to/openapi.yaml
+```
+
+The renderer writes:
+
+- `.attestor/action-surface-onboarding/latest/summary.json`
+- `.attestor/action-surface-onboarding/latest/README.md`
+
+It can also accept `--manifest`, `--asyncapi`, `--mcp-tools`, `--workflow`,
+`--declarations`, `--shadow-events`, and `--readiness-overrides` inputs. These
+inputs let a customer start from files they already have instead of filling a
+blank policy editor.
+
+The renderer follows the same plan/apply boundary as the packet itself. It
+creates review material only. It does not deploy a gateway, issue credentials,
+rotate provider access, record approval, or activate enforcement.
+
 Every packet carries:
 
 ```text

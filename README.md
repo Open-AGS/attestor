@@ -124,6 +124,9 @@ npm run example:non-bypassable-gateway
 # Agent retry wrapper demo
 npm run example:agent-retry-wrapper
 
+# Render a review-required action-surface onboarding packet
+npm run render:action-surface-onboarding-packet -- --openapi=path/to/openapi.yaml
+
 # Local cross-pack proof surface
 npm run proof:surface
 

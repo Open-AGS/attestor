@@ -37,8 +37,8 @@ These sources are engineering anchors only. They do not certify Attestor.
 
 | Step | Status | Goal | Output |
 |---|---|---|---|
-| Step 01 | in progress | Add Onboarding Session Contract v1 | Digest-bound session state with requirements-aware blockers, current/eventual requirements, source digests, and explicit non-claims |
-| Step 02 | not started | Add Coverage Score v1 | Per-surface coverage for shadow traffic, manifest, evidence, authority, verifier/gateway, credential isolation, and replay/idempotency |
+| Step 01 | complete | Add Onboarding Session Contract v1 | Digest-bound session state with requirements-aware blockers, current/eventual requirements, source digests, and explicit non-claims |
+| Step 02 | complete | Add Coverage Score v1 | Per-surface coverage for shadow traffic, manifest, evidence, authority, verifier/gateway, credential isolation, and replay/idempotency |
 | Step 03 | not started | Add Minimum Viable Gate Planner | Select the smallest reviewed integration path: SDK verifier, gateway proxy, MCP tool gateway, sidecar/ext_authz, or provider connector |
 | Step 04 | not started | Add Schema-Bound Candidate Registry | Keep candidate policy generation tied to domain schemas/templates, not LLM threshold authority |
 | Step 05 | not started | Add Counterexample Ledger | Track supporting evidence, counterexamples, missing proof, high-risk auto-admits, actor concentration, and replay pressure per candidate |
@@ -81,6 +81,34 @@ The contract exposes:
 It does not deploy infrastructure, issue credentials, activate enforcement, or
 allow a non-bypassable claim.
 
+## Step 02 Scope
+
+Step 02 adds `attestor.policy-foundry-coverage-score.v1`.
+
+The coverage score is a digest-bound, per-surface status object. It translates
+the onboarding session, action-surface packet, Policy Foundry readiness,
+red-team replay, and integration-mode readiness into coverage dimensions:
+
+```text
+action-surface-inventory
+shadow-traffic
+policy-twin
+policy-schema
+evidence-binding
+authority-binding
+verifier-or-gateway
+credential-isolation
+tenant-boundary
+replay-idempotency
+red-team-replay
+customer-approval
+generated-artifact-review
+```
+
+The score is onboarding guidance only. A high score can make the next customer
+review step clearer, but it does not activate enforcement, prove production
+readiness, or allow a non-bypassable claim.
+
 ## Protected Principles
 
 - customer authority
@@ -105,4 +133,5 @@ contracts, or shared product positioning are touched.
 
 ## Current Status
 
-Step 01 is the active implementation step. The rest of the list remains open.
+Step 01 and Step 02 are complete. Step 03 is the next implementation step. The
+rest of the list remains open.

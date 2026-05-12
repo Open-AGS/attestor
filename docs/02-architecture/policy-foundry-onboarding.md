@@ -336,7 +336,25 @@ with requirements-aware blockers, current requirements, eventual requirements,
 source digests, and the next safe step. It does not deploy infrastructure, issue
 credentials, activate enforcement, or allow a non-bypassable claim.
 
+The Coverage Score Contract is the first per-surface coverage layer for this
+path. It lives in
+`src/consequence-admission/policy-foundry-coverage-score.ts`, is covered by
+`tests/policy-foundry-coverage-score.test.ts`, and is exposed through
+`test:policy-foundry-coverage-score`. It translates the onboarding session,
+action-surface packet, Policy Foundry readiness, red-team replay, and
+integration-mode readiness into digest-bound coverage dimensions for shadow
+traffic, manifest/declaration coverage, Policy Twin, policy schema, evidence,
+authority, verifier/gateway, credential isolation, tenant boundary,
+replay/idempotency, red-team replay, customer approval, and generated artifact
+review. It is onboarding guidance only: it does not activate enforcement, prove
+production readiness, or allow a non-bypassable claim.
+
 ```text
+coverageScore
+coverageDimensions
+missingDimensions
+partialDimensions
+nextCoverageStep
 readinessScore
 sampleSize
 actorDistributionHealth
@@ -412,8 +430,8 @@ simulation reports, promotion drafts, activation readiness gates, and the first
 readiness/no-go contract with a read-only shadow route, candidate-specific
 evidence replay, active questions, action-surface review handoff, synthetic
 onboarding red-team fixture generation, and the first onboarding session
-contract. It does not yet have coverage scoring, a minimum viable gate planner,
-schema-bound candidate registry, live adversarial replay executor, UI workflow,
-or full commercial entitlement contract for Foundry capabilities. The deeper
-self-onboarding track is tracked in
+contract plus the first coverage score contract. It does not yet have a minimum
+viable gate planner, schema-bound candidate registry, live adversarial replay
+executor, UI workflow, or full commercial entitlement contract for Foundry
+capabilities. The deeper self-onboarding track is tracked in
 [Policy Foundry Self-Onboarding Deepening](policy-foundry-self-onboarding-deepening.md).

@@ -54,6 +54,9 @@ function testDescriptorCoversCriticalSurfaces(): void {
   const onboardingSession = descriptor.surfaces.find((surface) =>
     surface.surfaceKind === 'policy-foundry-onboarding-session'
   );
+  const coverageScore = descriptor.surfaces.find((surface) =>
+    surface.surfaceKind === 'policy-foundry-coverage-score'
+  );
   const externalReview = descriptor.surfaces.find((surface) =>
     surface.surfaceKind === 'external-review-packet'
   );
@@ -106,6 +109,11 @@ function testDescriptorCoversCriticalSurfaces(): void {
   ok(
     onboardingSession?.allowedUnits.includes('digests'),
     'Data minimization policy: Policy Foundry onboarding sessions allow source digests',
+  );
+  ok(coverageScore, 'Data minimization policy: Policy Foundry coverage score surface is present');
+  ok(
+    coverageScore?.allowedUnits.includes('counts'),
+    'Data minimization policy: Policy Foundry coverage score allows counts',
   );
   ok(externalReview, 'Data minimization policy: external review packet surface is present');
   ok(
@@ -277,6 +285,11 @@ function testDocsAndScriptsExposePolicy(): void {
     doc,
     'policy-foundry-onboarding-session',
     'Data minimization policy: doc lists Policy Foundry onboarding session surface',
+  );
+  includes(
+    doc,
+    'policy-foundry-coverage-score',
+    'Data minimization policy: doc lists Policy Foundry coverage score surface',
   );
   includes(
     doc,

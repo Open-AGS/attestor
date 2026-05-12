@@ -84,6 +84,11 @@ function testPolicyFoundryArchitectureIsGrounded(): void {
   );
   includes(
     doc,
+    'src/consequence-admission/policy-foundry-coverage-score.ts',
+    'Policy Foundry docs: coverage score contract evidence is named',
+  );
+  includes(
+    doc,
     'GET /api/v1/shadow/policy-foundry/active-questions',
     'Policy Foundry docs: active question route is named',
   );
@@ -214,6 +219,16 @@ function testPackageScriptIsExposed(): void {
     pkg.scripts['test:policy-foundry-active-questions'] ?? '',
     'tsx tests/policy-foundry-active-questions.test.ts',
     'Package: Policy Foundry active questions test command is stable',
+  );
+  includes(
+    JSON.stringify(pkg.scripts),
+    'test:policy-foundry-coverage-score',
+    'Package: Policy Foundry coverage score test is exposed',
+  );
+  includes(
+    pkg.scripts['test:policy-foundry-coverage-score'] ?? '',
+    'tsx tests/policy-foundry-coverage-score.test.ts',
+    'Package: Policy Foundry coverage score test command is stable',
   );
 }
 

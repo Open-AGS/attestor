@@ -355,6 +355,22 @@ assert.equal(
   typeof admission.assertConsequenceAdmissionGateAllows,
   'function',
 );
+assert.equal(
+  admission.POLICY_FOUNDRY_COVERAGE_SCORE_VERSION,
+  'attestor.policy-foundry-coverage-score.v1',
+);
+assert.equal(
+  admission.policyFoundryCoverageScoreDescriptor().dataMinimizationSurfaceKind,
+  'policy-foundry-coverage-score',
+);
+assert.equal(
+  admission.policyFoundryCoverageScoreDescriptor().autoEnforce,
+  false,
+);
+assert.equal(
+  typeof admission.createPolicyFoundryCoverageScore,
+  'function',
+);
 
 let blockedInternalPath = false;
 try {

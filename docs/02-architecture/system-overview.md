@@ -72,6 +72,8 @@ The platform core is made of reusable layers:
 
 The machine-readable naming contract lives in `src/consequence-admission/control-plane-roles.ts`. It keeps PDP, PEP, PIP, PAP, audit-proof, replay, pack, and hosted-service vocabulary aligned across package exports, docs, and tests.
 
+The machine-readable domain-pack boundary lives in `src/consequence-admission/domain-pack-boundary.ts`. It keeps finance, crypto, filing, general admission, and future packs as bounded extensions over the shared admission core instead of separate products or separate decision engines.
+
 | Layer | Role | Status |
 |---|---|---|
 | Release layer | decides whether a proposed consequence may proceed | evaluation-packaged |
@@ -102,6 +104,8 @@ The pack model is:
 - domain or execution packs attach to that core
 - packs reuse the same policy, proof, and authorization logic
 - packs do not become separate products by default
+
+The detailed pack placement contract is [Domain pack boundary](domain-pack-boundary.md). A pack may add domain defaults, evidence shapes, policy templates, adapter projections, readiness signals, and replay examples. It must not fork the `admit` / `narrow` / `review` / `block` vocabulary, the failure-mode registry, the control-binding contract, or the replay layer.
 
 Today the two most important packs are:
 

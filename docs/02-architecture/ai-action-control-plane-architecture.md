@@ -116,8 +116,12 @@ These rules are the architecture target for future boundary tests.
    it must not silently approve an action.
 6. PAP/Policy Foundry may propose, simulate, score, and prepare review material;
    it must not auto-enforce a policy candidate.
-7. Packs may provide domain templates, evidence defaults, adapters, and replay
-   fixtures; packs must not fork the admission decision vocabulary.
+7. Packs may provide domain templates, evidence defaults, adapters, readiness
+   signals, and replay fixtures; packs must not fork the admission decision
+   vocabulary, become separate product identities, or claim production readiness.
+   The domain-pack boundary contract lives in
+   `src/consequence-admission/domain-pack-boundary.ts` as
+   `attestor.consequence-domain-pack-boundary.v1`.
 8. Failure-mode registry, control binding, and replay targets belong to the
    shared control layer, not to individual packs or hosted service routes. The
    placement contract lives in
@@ -227,3 +231,7 @@ Policy Foundry, failure-mode, replay, or authority graph refactors continue.
 5. Keep failure-mode registry, control binding, and replay work in the shared
    control layer unless a tracker proves that a pack-specific extension is the
    safer boundary.
+6. Keep domain packs as bounded extensions over the shared admission core. Use
+   [Domain pack boundary](domain-pack-boundary.md) and
+   `npm run test:domain-pack-boundary` before adding a pack surface or changing
+   pack responsibilities.

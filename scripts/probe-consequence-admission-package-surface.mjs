@@ -206,6 +206,10 @@ assert.equal(
   'attestor.consequence-admission-pack-decision-profile.v1',
 );
 assert.equal(
+  admission.consequenceAdmissionDescriptor().domainPackBoundaryVersion,
+  'attestor.consequence-domain-pack-boundary.v1',
+);
+assert.equal(
   admission.consequenceAdmissionDescriptor().controlPlaneRoleVersion,
   'attestor.control-plane-roles.v1',
 );
@@ -246,6 +250,26 @@ assert.equal(
 assert.equal(
   admission.consequenceAdmissionDescriptor().replayLayerPlacement.nonOwningRoles.includes(
     'hosted-service',
+  ),
+  true,
+);
+assert.equal(
+  admission.consequenceDomainPackBoundaryDescriptor().primaryRole,
+  'pack',
+);
+assert.equal(
+  admission.consequenceDomainPackBoundaryDescriptor().surfaces.some((surface) =>
+    surface.kind === 'crypto-admission-projection'
+  ),
+  true,
+);
+assert.equal(
+  admission.consequenceAdmissionDescriptor().domainPackBoundary.separateProductIdentityAllowed,
+  false,
+);
+assert.equal(
+  admission.consequenceAdmissionDescriptor().domainPackBoundary.sharedContractsRequired.includes(
+    'attestor.consequence-replay-layer-placement.v1',
   ),
   true,
 );

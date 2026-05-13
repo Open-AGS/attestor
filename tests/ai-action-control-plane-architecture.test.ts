@@ -64,13 +64,18 @@ function testControlPlaneRolesStayMapped(): void {
 
   includes(
     doc,
-    'Packs may provide domain templates, evidence defaults, adapters, and replay',
+    'Packs may provide domain templates, evidence defaults, adapters, readiness',
     'AI action control-plane docs: pack boundary inputs are explicit',
   );
   includes(
     doc,
-    'fixtures; packs must not fork the admission decision vocabulary.',
+    'signals, and replay fixtures; packs must not fork the admission decision',
     'AI action control-plane docs: packs cannot fork the decision vocabulary',
+  );
+  includes(
+    doc,
+    'attestor.consequence-domain-pack-boundary.v1',
+    'AI action control-plane docs: domain pack boundary contract is named',
   );
   includes(
     doc,

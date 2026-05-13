@@ -82,6 +82,11 @@ import {
   CONSEQUENCE_ADMISSION_PACK_DECISION_SIGNAL_KINDS,
 } from './pack-decision-profile.js';
 import {
+  CONSEQUENCE_DOMAIN_PACK_BOUNDARY_VERSION,
+  consequenceDomainPackBoundaryDescriptor,
+  type ConsequenceDomainPackBoundaryDescriptor,
+} from './domain-pack-boundary.js';
+import {
   ATTESTOR_CONTROL_PLANE_ROLES,
   ATTESTOR_CONTROL_PLANE_ROLE_VERSION,
   ATTESTOR_CONTROL_PLANE_ROLE_DESCRIPTORS,
@@ -460,6 +465,7 @@ export interface ConsequenceAdmissionDescriptor {
   readonly correctionCatalogVersion: typeof CONSEQUENCE_ADMISSION_CORRECTION_CATALOG_VERSION;
   readonly dataMinimizationPolicyVersion: typeof CONSEQUENCE_DATA_MINIMIZATION_REDACTION_POLICY_VERSION;
   readonly packDecisionProfileVersion: typeof CONSEQUENCE_ADMISSION_PACK_DECISION_PROFILE_VERSION;
+  readonly domainPackBoundaryVersion: typeof CONSEQUENCE_DOMAIN_PACK_BOUNDARY_VERSION;
   readonly controlPlaneRoleVersion: typeof ATTESTOR_CONTROL_PLANE_ROLE_VERSION;
   readonly failureModeRegistryPlacementVersion: typeof CONSEQUENCE_FAILURE_MODE_REGISTRY_PLACEMENT_VERSION;
   readonly replayLayerPlacementVersion: typeof CONSEQUENCE_REPLAY_LAYER_PLACEMENT_VERSION;
@@ -480,6 +486,7 @@ export interface ConsequenceAdmissionDescriptor {
   readonly correctionReasonCodes: readonly string[];
   readonly controlPlaneRoles: typeof ATTESTOR_CONTROL_PLANE_ROLES;
   readonly controlPlaneRoleDescriptors: typeof ATTESTOR_CONTROL_PLANE_ROLE_DESCRIPTORS;
+  readonly domainPackBoundary: ConsequenceDomainPackBoundaryDescriptor;
   readonly failureModeRegistryPlacement: ConsequenceFailureModeRegistryPlacementDescriptor;
   readonly replayLayerPlacement: ConsequenceReplayLayerPlacementDescriptor;
   readonly dataMinimizationSurfaceKinds: typeof CONSEQUENCE_DATA_MINIMIZATION_SURFACE_KINDS;
@@ -2034,6 +2041,7 @@ ConsequenceAdmissionDescriptor {
     correctionCatalogVersion: CONSEQUENCE_ADMISSION_CORRECTION_CATALOG_VERSION,
     dataMinimizationPolicyVersion: CONSEQUENCE_DATA_MINIMIZATION_REDACTION_POLICY_VERSION,
     packDecisionProfileVersion: CONSEQUENCE_ADMISSION_PACK_DECISION_PROFILE_VERSION,
+    domainPackBoundaryVersion: CONSEQUENCE_DOMAIN_PACK_BOUNDARY_VERSION,
     controlPlaneRoleVersion: ATTESTOR_CONTROL_PLANE_ROLE_VERSION,
     failureModeRegistryPlacementVersion: CONSEQUENCE_FAILURE_MODE_REGISTRY_PLACEMENT_VERSION,
     replayLayerPlacementVersion: CONSEQUENCE_REPLAY_LAYER_PLACEMENT_VERSION,
@@ -2054,6 +2062,7 @@ ConsequenceAdmissionDescriptor {
     correctionReasonCodes: consequenceAdmissionCorrectionCatalog().reasonCodes,
     controlPlaneRoles: ATTESTOR_CONTROL_PLANE_ROLES,
     controlPlaneRoleDescriptors: ATTESTOR_CONTROL_PLANE_ROLE_DESCRIPTORS,
+    domainPackBoundary: consequenceDomainPackBoundaryDescriptor(),
     failureModeRegistryPlacement: consequenceFailureModeRegistryPlacementDescriptor(),
     replayLayerPlacement: consequenceReplayLayerPlacementDescriptor(),
     dataMinimizationSurfaceKinds: CONSEQUENCE_DATA_MINIMIZATION_SURFACE_KINDS,
@@ -2112,6 +2121,7 @@ export * from './dashboard-api-summary.js';
 export * from './external-review-packet.js';
 export * from './data-minimization-redaction-policy.js';
 export * from './pack-decision-profile.js';
+export * from './domain-pack-boundary.js';
 export * from './control-plane-roles.js';
 export * from './downstream-enforcement-contract.js';
 export * from './verifier-helper.js';

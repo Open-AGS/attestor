@@ -154,6 +154,11 @@ function testPolicyFoundryArchitectureIsGrounded(): void {
   );
   includes(
     doc,
+    'src/service/policy-foundry-hosted-ui.ts',
+    'Policy Foundry docs: hosted UI flow renderer evidence is named',
+  );
+  includes(
+    doc,
     'scripts/render-policy-foundry-self-onboarding.ts',
     'Policy Foundry docs: self-onboarding renderer evidence is named',
   );
@@ -216,6 +221,11 @@ function testReadmeNamesPolicyFoundryWithoutOverclaiming(): void {
     readme,
     'hosted review surface',
     'README: hosted review surface is named without UI overclaim',
+  );
+  includes(
+    readme,
+    'hosted UI flow',
+    'README: hosted UI flow is named without production overclaim',
   );
   includes(
     readme,
@@ -473,6 +483,16 @@ function testPackageScriptIsExposed(): void {
     pkg.scripts['test:policy-foundry-hosted-review-surface'] ?? '',
     'tsx tests/policy-foundry-hosted-review-surface.test.ts',
     'Package: Policy Foundry hosted review surface test command is stable',
+  );
+  includes(
+    JSON.stringify(pkg.scripts),
+    'test:policy-foundry-hosted-ui-flow',
+    'Package: Policy Foundry hosted UI flow test is exposed',
+  );
+  includes(
+    pkg.scripts['test:policy-foundry-hosted-ui-flow'] ?? '',
+    'tsx tests/policy-foundry-hosted-ui-flow.test.ts',
+    'Package: Policy Foundry hosted UI flow test command is stable',
   );
 }
 

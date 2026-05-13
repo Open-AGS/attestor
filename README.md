@@ -190,7 +190,9 @@ infrastructure is deployed, no production traffic is executed, and enforcement
 is not activated. The response includes a compact hosted review surface with
 task cards, no-go cards, evidence digest cards, and the next safe step, so a UI
 or integrator does not need to parse the full nested packet for the first
-review screen.
+review screen. The hosted UI flow route renders that same review surface as
+HTML for a first customer-facing onboarding screen while keeping the same
+review-only boundary.
 
 Minimal request shape:
 

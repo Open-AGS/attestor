@@ -400,8 +400,8 @@ can render current work, prefill from digest-bound sources, and show next safe
 steps. It must not apply patches, issue credentials, deploy infrastructure,
 execute production traffic, activate enforcement, or make a non-bypassable
 claim. The hosted workflow route wrapper exists as stateless review material,
-but hosted UI implementation and billing-provider entitlement enforcement remain
-separate unresolved tasks.
+but persistent hosted wizard state and billing-provider entitlement enforcement
+remain separate unresolved tasks.
 
 ## Step 15 Scope
 
@@ -424,6 +424,27 @@ inputs. It does not apply patches, issue credentials, deploy infrastructure,
 execute production traffic, activate enforcement, implement the hosted UI, or
 prove production readiness. The full digest-bound packet remains required for
 implementation review.
+
+## Step 16 Scope
+
+Step 16 adds `attestor.policy-foundry-hosted-ui-flow.v1`.
+
+The hosted UI flow renders the compact hosted review surface into a first HTML
+onboarding screen:
+
+```text
+hosted review surface
+-> status region
+-> task list
+-> no-go panel
+-> evidence digest list
+-> automation boundary
+```
+
+It renders from the review surface only and does not parse raw customer-owned
+manifests, issue credentials, deploy infrastructure, apply patches, execute
+production traffic, activate enforcement, persist a hosted wizard state, or
+prove production readiness.
 
 ## Protected Principles
 
@@ -449,9 +470,10 @@ contracts, or shared product positioning are touched.
 
 ## Current Status
 
-Step 01 through Step 12 are complete. Step 13 through Step 15 are also complete
+Step 01 through Step 12 are complete. Step 13 through Step 16 are also complete
 repo-side: the repo-side self-onboarding deepening list now includes the local
 adversarial replay executor, hosted workflow contract, stateless hosted workflow
-route wrapper, and compact hosted review surface. Hosted UI flows, live
-adversarial replay execution, billing provider entitlement enforcement,
-deployment wiring, and production smoke tests remain outside this tracker.
+route wrapper, compact hosted review surface, and hosted UI flow renderer. A
+persistent hosted wizard, live adversarial replay execution, billing provider
+entitlement enforcement, deployment wiring, and production smoke tests remain
+outside this tracker.

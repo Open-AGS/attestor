@@ -28,10 +28,13 @@ import {
   type PolicyFoundryHostedOnboardingReviewedStepId,
   type ShadowAdmissionEvent,
 } from '../../../consequence-admission/index.js';
+import { renderPolicyFoundryHostedUiFlow } from '../../policy-foundry-hosted-ui.js';
 import type { TenantContext } from '../../tenant-isolation.js';
 
 export const HOSTED_POLICY_FOUNDRY_ONBOARDING_WORKFLOW_ROUTE =
   '/api/v1/shadow/policy-foundry/hosted-onboarding-workflow';
+export const HOSTED_POLICY_FOUNDRY_ONBOARDING_WORKFLOW_VIEW_ROUTE =
+  '/api/v1/shadow/policy-foundry/hosted-onboarding-workflow/view';
 
 const MAX_HOSTED_MANIFESTS = 20;
 const MAX_HOSTED_DECLARATIONS = 500;
@@ -361,6 +364,30 @@ function problem(
   return c.json(payload, input.status);
 }
 
+function problemStatusFor(detail: string): HostedPolicyFoundryProblemStatus {
+  return detail.includes('hosted onboarding route') ||
+    detail.includes('Policy Foundry') ||
+    detail.includes('must be') ||
+    detail.includes('requires') ||
+    detail.includes('is required')
+    ? 400
+    : 503;
+}
+
+function renderFailedProblem(c: Context, error: unknown): Response {
+  const detail =
+    error instanceof Error
+      ? error.message
+      : 'The Policy Foundry hosted onboarding workflow could not be rendered.';
+  return problem(c, {
+    type: 'https://attestor.dev/problems/policy-foundry-hosted-onboarding-render-failed',
+    title: 'Policy Foundry hosted onboarding render failed',
+    status: problemStatusFor(detail),
+    detail,
+    reasonCodes: ['policy-foundry-hosted-onboarding-render-failed'],
+  });
+}
+
 async function readBody(c: Context): Promise<HostedPolicyFoundryOnboardingRequestBody | Response> {
   try {
     const parsed = await c.req.json<unknown>();
@@ -385,6 +412,106 @@ async function readBody(c: Context): Promise<HostedPolicyFoundryOnboardingReques
   }
 }
 
+function createHostedPolicyFoundryOnboardingMaterial(
+  c: Context,
+  deps: PolicyFoundryHostedOnboardingRouteDeps,
+  body: HostedPolicyFoundryOnboardingRequestBody,
+) {
+  const tenant = deps.currentTenant(c);
+  const generatedAt = optionalIsoTimestamp(body.generatedAt, deps.now?.() ?? new Date().toISOString());
+  const includeShadowEvents = optionalBoolean(body.includeShadowEvents, 'includeShadowEvents', true);
+  const events = includeShadowEvents ? deps.listShadowEvents({ tenant }) : [];
+  const selfOnboardingPacket = createPolicyFoundrySelfOnboardingCliPacket({
+    generatedAt,
+    sessionId: optionalString(body.sessionId, 'sessionId'),
+    tenantId: tenant.tenantId,
+    reviewerRef: optionalString(body.reviewerRef, 'reviewerRef'),
+    attestorBaseUrl: optionalString(body.attestorBaseUrl, 'attestorBaseUrl'),
+    manifests: normalizeManifestInputs(body),
+    declarations: normalizeDeclarations(body.declarations),
+    events,
+    readinessOverrides: normalizeReadinessOverrides(body.readinessOverrides),
+  });
+  const replayObservations = normalizeReplayObservations(body.adversarialReplayObservations);
+  const adversarialReplay = replayObservations === null
+    ? null
+    : createPolicyFoundryAdversarialReplayExecutor({
+      generatedAt,
+      fixtureBundle: selfOnboardingPacket.redTeamFixtures,
+      observations: replayObservations,
+    });
+  const commercialBoundary = createPolicyFoundryCommercialBoundary({
+    generatedAt,
+    plan: normalizeCommercialPlan(body.commercialPlan, tenant.planId),
+    requestedCapabilities: normalizeCapabilities(body.requestedCapabilities),
+    blockedSafetyMinimums: normalizeStringArray(
+      body.blockedSafetyMinimums,
+      'blockedSafetyMinimums',
+      MAX_HOSTED_CAPABILITIES,
+    ),
+    requestedProductionWorkflowCount:
+      optionalNonNegativeInteger(body.requestedProductionWorkflowCount, 'requestedProductionWorkflowCount'),
+    requestedHostedProduction:
+      optionalBoolean(body.requestedHostedProduction, 'requestedHostedProduction', false),
+    requestedCustomerOperatedDeployment:
+      optionalBoolean(body.requestedCustomerOperatedDeployment, 'requestedCustomerOperatedDeployment', false),
+    shadowAutoEnforceRequested:
+      optionalBoolean(body.autoEnforceRequested, 'autoEnforceRequested', false),
+  });
+  const workflow = createPolicyFoundryHostedOnboardingWorkflow({
+    generatedAt,
+    workflowId: optionalString(body.workflowId, 'workflowId'),
+    tenantId: tenant.tenantId,
+    selfOnboardingPacket,
+    adversarialReplay,
+    commercialBoundary,
+    reviewedStepIds: normalizeReviewedStepIds(body.reviewedStepIds),
+    customerApprovalRecorded:
+      optionalBoolean(body.customerApprovalRecorded, 'customerApprovalRecorded', false),
+    autoEnforceRequested:
+      optionalBoolean(body.autoEnforceRequested, 'autoEnforceRequested', false),
+    credentialIssuanceRequested:
+      optionalBoolean(body.credentialIssuanceRequested, 'credentialIssuanceRequested', false),
+    infrastructureDeployRequested:
+      optionalBoolean(body.infrastructureDeployRequested, 'infrastructureDeployRequested', false),
+    productionTrafficExecutionRequested:
+      optionalBoolean(body.productionTrafficExecutionRequested, 'productionTrafficExecutionRequested', false),
+    rawPayloadStorageRequested:
+      optionalBoolean(body.rawPayloadStorageRequested, 'rawPayloadStorageRequested', false),
+  });
+  const reviewSurface = createPolicyFoundryHostedReviewSurface({
+    generatedAt,
+    workflow,
+  });
+
+  return Object.freeze({
+    tenant: tenantDigest(tenant),
+    storageMode: 'stateless-review-workflow',
+    route: HOSTED_POLICY_FOUNDRY_ONBOARDING_WORKFLOW_ROUTE,
+    viewRoute: HOSTED_POLICY_FOUNDRY_ONBOARDING_WORKFLOW_VIEW_ROUTE,
+    routeSurface: 'policy-foundry-hosted-onboarding-workflow',
+    hostedWorkflowRouteImplemented: true,
+    hostedUiFlowRendered: true,
+    approvalRequired: true,
+    autoEnforce: false,
+    rawPayloadStored: false,
+    productionReady: false,
+    hostedUiImplemented: false,
+    executionPlanOnly: true,
+    deploysInfrastructure: false,
+    issuesCredentials: false,
+    activatesEnforcement: false,
+    executesProductionTraffic: false,
+    appliesPatches: false,
+    includedShadowEvents: includeShadowEvents,
+    selfOnboardingPacket,
+    adversarialReplay,
+    commercialBoundary,
+    workflow,
+    reviewSurface,
+  });
+}
+
 export function registerPolicyFoundryHostedOnboardingRoutes(
   app: Hono,
   deps: PolicyFoundryHostedOnboardingRouteDeps,
@@ -395,117 +522,24 @@ export function registerPolicyFoundryHostedOnboardingRoutes(
     if (body instanceof Response) return body;
 
     try {
-      const tenant = deps.currentTenant(c);
-      const generatedAt = optionalIsoTimestamp(body.generatedAt, deps.now?.() ?? new Date().toISOString());
-      const includeShadowEvents = optionalBoolean(body.includeShadowEvents, 'includeShadowEvents', true);
-      const events = includeShadowEvents ? deps.listShadowEvents({ tenant }) : [];
-      const selfOnboardingPacket = createPolicyFoundrySelfOnboardingCliPacket({
-        generatedAt,
-        sessionId: optionalString(body.sessionId, 'sessionId'),
-        tenantId: tenant.tenantId,
-        reviewerRef: optionalString(body.reviewerRef, 'reviewerRef'),
-        attestorBaseUrl: optionalString(body.attestorBaseUrl, 'attestorBaseUrl'),
-        manifests: normalizeManifestInputs(body),
-        declarations: normalizeDeclarations(body.declarations),
-        events,
-        readinessOverrides: normalizeReadinessOverrides(body.readinessOverrides),
-      });
-      const replayObservations = normalizeReplayObservations(body.adversarialReplayObservations);
-      const adversarialReplay = replayObservations === null
-        ? null
-        : createPolicyFoundryAdversarialReplayExecutor({
-          generatedAt,
-          fixtureBundle: selfOnboardingPacket.redTeamFixtures,
-          observations: replayObservations,
-        });
-      const commercialBoundary = createPolicyFoundryCommercialBoundary({
-        generatedAt,
-        plan: normalizeCommercialPlan(body.commercialPlan, tenant.planId),
-        requestedCapabilities: normalizeCapabilities(body.requestedCapabilities),
-        blockedSafetyMinimums: normalizeStringArray(
-          body.blockedSafetyMinimums,
-          'blockedSafetyMinimums',
-          MAX_HOSTED_CAPABILITIES,
-        ),
-        requestedProductionWorkflowCount:
-          optionalNonNegativeInteger(body.requestedProductionWorkflowCount, 'requestedProductionWorkflowCount'),
-        requestedHostedProduction:
-          optionalBoolean(body.requestedHostedProduction, 'requestedHostedProduction', false),
-        requestedCustomerOperatedDeployment:
-          optionalBoolean(body.requestedCustomerOperatedDeployment, 'requestedCustomerOperatedDeployment', false),
-        shadowAutoEnforceRequested:
-          optionalBoolean(body.autoEnforceRequested, 'autoEnforceRequested', false),
-      });
-      const workflow = createPolicyFoundryHostedOnboardingWorkflow({
-        generatedAt,
-        workflowId: optionalString(body.workflowId, 'workflowId'),
-        tenantId: tenant.tenantId,
-        selfOnboardingPacket,
-        adversarialReplay,
-        commercialBoundary,
-        reviewedStepIds: normalizeReviewedStepIds(body.reviewedStepIds),
-        customerApprovalRecorded:
-          optionalBoolean(body.customerApprovalRecorded, 'customerApprovalRecorded', false),
-        autoEnforceRequested:
-          optionalBoolean(body.autoEnforceRequested, 'autoEnforceRequested', false),
-        credentialIssuanceRequested:
-          optionalBoolean(body.credentialIssuanceRequested, 'credentialIssuanceRequested', false),
-        infrastructureDeployRequested:
-          optionalBoolean(body.infrastructureDeployRequested, 'infrastructureDeployRequested', false),
-        productionTrafficExecutionRequested:
-          optionalBoolean(body.productionTrafficExecutionRequested, 'productionTrafficExecutionRequested', false),
-        rawPayloadStorageRequested:
-          optionalBoolean(body.rawPayloadStorageRequested, 'rawPayloadStorageRequested', false),
-      });
-      const reviewSurface = createPolicyFoundryHostedReviewSurface({
-        generatedAt,
-        workflow,
-      });
+      return c.json(createHostedPolicyFoundryOnboardingMaterial(c, deps, body));
+    } catch (error) {
+      return renderFailedProblem(c, error);
+    }
+  });
 
-      return c.json({
-        tenant: tenantDigest(tenant),
-        storageMode: 'stateless-review-workflow',
-        route: HOSTED_POLICY_FOUNDRY_ONBOARDING_WORKFLOW_ROUTE,
-        routeSurface: 'policy-foundry-hosted-onboarding-workflow',
-        hostedWorkflowRouteImplemented: true,
-        approvalRequired: true,
-        autoEnforce: false,
-        rawPayloadStored: false,
-        productionReady: false,
-        hostedUiImplemented: false,
-        executionPlanOnly: true,
-        deploysInfrastructure: false,
-        issuesCredentials: false,
-        activatesEnforcement: false,
-        executesProductionTraffic: false,
-        appliesPatches: false,
-        includedShadowEvents: includeShadowEvents,
-        selfOnboardingPacket,
-        adversarialReplay,
-        commercialBoundary,
-        workflow,
-        reviewSurface,
+  app.post(HOSTED_POLICY_FOUNDRY_ONBOARDING_WORKFLOW_VIEW_ROUTE, async (c) => {
+    c.header('cache-control', 'no-store');
+    const body = await readBody(c);
+    if (body instanceof Response) return body;
+
+    try {
+      const material = createHostedPolicyFoundryOnboardingMaterial(c, deps, body);
+      return c.body(renderPolicyFoundryHostedUiFlow(material.reviewSurface), 200, {
+        'content-type': 'text/html; charset=utf-8',
       });
     } catch (error) {
-      const detail =
-        error instanceof Error
-          ? error.message
-          : 'The Policy Foundry hosted onboarding workflow could not be rendered.';
-      const status: HostedPolicyFoundryProblemStatus =
-        detail.includes('hosted onboarding route') ||
-        detail.includes('Policy Foundry') ||
-        detail.includes('must be') ||
-        detail.includes('requires') ||
-        detail.includes('is required')
-          ? 400
-          : 503;
-      return problem(c, {
-        type: 'https://attestor.dev/problems/policy-foundry-hosted-onboarding-render-failed',
-        title: 'Policy Foundry hosted onboarding render failed',
-        status,
-        detail,
-        reasonCodes: ['policy-foundry-hosted-onboarding-render-failed'],
-      });
+      return renderFailedProblem(c, error);
     }
   });
 }

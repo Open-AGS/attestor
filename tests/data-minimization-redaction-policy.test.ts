@@ -96,6 +96,9 @@ function testDescriptorCoversCriticalSurfaces(): void {
   const hostedReviewSurface = descriptor.surfaces.find((surface) =>
     surface.surfaceKind === 'policy-foundry-hosted-review-surface'
   );
+  const hostedUiFlow = descriptor.surfaces.find((surface) =>
+    surface.surfaceKind === 'policy-foundry-hosted-ui-flow'
+  );
   const externalReview = descriptor.surfaces.find((surface) =>
     surface.surfaceKind === 'external-review-packet'
   );
@@ -262,6 +265,19 @@ function testDescriptorCoversCriticalSurfaces(): void {
   ok(
     hostedReviewSurface?.allowedUnits.includes('counts'),
     'Data minimization policy: hosted review surface allows aggregate counts',
+  );
+  ok(hostedUiFlow, 'Data minimization policy: hosted UI flow surface is present');
+  ok(
+    hostedUiFlow?.allowedUnits.includes('safe-instruction'),
+    'Data minimization policy: hosted UI flow allows safe instructions',
+  );
+  ok(
+    hostedUiFlow?.allowedUnits.includes('digests'),
+    'Data minimization policy: hosted UI flow allows source digests',
+  );
+  ok(
+    hostedUiFlow?.allowedUnits.includes('counts'),
+    'Data minimization policy: hosted UI flow allows aggregate counts',
   );
   ok(externalReview, 'Data minimization policy: external review packet surface is present');
   ok(
@@ -488,6 +504,11 @@ function testDocsAndScriptsExposePolicy(): void {
     doc,
     'policy-foundry-hosted-review-surface',
     'Data minimization policy: doc lists hosted review surface',
+  );
+  includes(
+    doc,
+    'policy-foundry-hosted-ui-flow',
+    'Data minimization policy: doc lists hosted UI flow surface',
   );
   includes(
     doc,

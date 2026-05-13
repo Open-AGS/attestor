@@ -564,6 +564,23 @@ safe step. It is intentionally smaller than the full self-onboarding packet: it
 does not expose raw source material or raw tenant ids, and it is not enough to
 apply implementation changes without the underlying digest-bound packet.
 
+The hosted UI flow renderer lives in `src/service/policy-foundry-hosted-ui.ts`,
+is covered by `tests/policy-foundry-hosted-ui-flow.test.ts`, and is exposed
+through `test:policy-foundry-hosted-ui-flow`. The route:
+
+```http
+POST /api/v1/shadow/policy-foundry/hosted-onboarding-workflow/view
+```
+
+renders the same hosted review surface as HTML. The UI follows a task-list
+pattern: current work, no-go conditions, evidence digests, and automation
+boundaries are visible without parsing the full packet. Research anchors for
+this shape are the NIST AI RMF monitor/manage discipline, OWASP API tenant and
+data minimization boundaries, W3C WCAG status-message guidance, and GOV.UK
+task-list pages. The renderer does not store raw payloads, issue credentials,
+apply patches, deploy infrastructure, execute production traffic, activate
+enforcement, or prove production readiness.
+
 ```text
 coverageScore
 coverageDimensions
@@ -643,6 +660,13 @@ taskCards
 noGoCards
 evidenceCards
 fullPacketRequiredForImplementation: true
+hostedUiFlow
+viewRoute
+taskList
+statusRegion
+noGoPanel
+automationBoundary
+rendersFromReviewSurfaceOnly: true
 readinessScore
 sampleSize
 actorDistributionHealth
@@ -722,6 +746,11 @@ render without parsing every nested packet. It keeps the same review-only
 boundary: no patch application, no credential issuance, no infrastructure
 deployment, no production traffic, and no enforcement activation.
 
+The hosted UI flow renderer is the first actual HTML rendering of that compact
+surface. It is still stateless review material. It renders from the review
+surface only, keeps no customer-owned raw payload, and uses status/no-go panels
+so a customer can see what blocks onboarding before any implementation step.
+
 ## Current Status
 
 Repository foundations already exist in:
@@ -741,11 +770,11 @@ candidate registry, counterexample ledger, Policy Twin v2 summary, authority
 relationship context, review-only patch pack, one-command self-onboarding CLI,
 outcome feedback loop, drift/policy-debt detector, and the commercial boundary
 contract. It now has the first local/synthetic adversarial replay executor. It
-now also has the first hosted onboarding workflow contract. It does not yet have
-production/live downstream adversarial replay execution, a hosted UI
-implementation, or hosted billing-provider entitlement enforcement for Foundry
-capabilities. It now has the first stateless hosted workflow route wrapper for
-review material and the first compact hosted review surface for UI/API
-rendering.
+now also has the first hosted onboarding workflow contract, the first stateless
+hosted workflow route wrapper for review material, the first compact hosted
+review surface for UI/API rendering, and the first hosted UI flow renderer for
+that surface. It does not yet have production/live downstream adversarial replay
+execution, a persistent hosted wizard, hosted billing-provider entitlement
+enforcement for Foundry capabilities, or production rollout automation.
 The deeper self-onboarding track is tracked in
 [Policy Foundry Self-Onboarding Deepening](policy-foundry-self-onboarding-deepening.md).

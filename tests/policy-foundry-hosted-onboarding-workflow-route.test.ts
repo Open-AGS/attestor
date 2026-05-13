@@ -10,6 +10,7 @@ import {
 } from '../src/consequence-admission/index.js';
 import {
   HOSTED_POLICY_FOUNDRY_ONBOARDING_WORKFLOW_ROUTE,
+  HOSTED_POLICY_FOUNDRY_ONBOARDING_WORKFLOW_VIEW_ROUTE,
   registerPolicyFoundryHostedOnboardingRoutes,
 } from '../src/service/http/routes/policy-foundry-hosted-onboarding-routes.js';
 import type { TenantContext } from '../src/service/tenant-isolation.js';
@@ -229,6 +230,33 @@ async function testHostedRouteRendersStatelessReviewWorkflow(): Promise<void> {
   excludes(text, /rk_live_must_not_escape/u, 'Policy Foundry hosted route: secret-like manifest text is not emitted');
   excludes(text, /C:\/Users\/thedi\/private/u, 'Policy Foundry hosted route: caller source path is not emitted');
   excludes(text, /tenant_foundry_route_a/u, 'Policy Foundry hosted route: raw tenant id is not emitted');
+}
+
+async function testHostedRouteRendersHtmlViewFromSameWorkflow(): Promise<void> {
+  const app = createApp();
+  const response = await app.request(HOSTED_POLICY_FOUNDRY_ONBOARDING_WORKFLOW_VIEW_ROUTE, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(baseRequestBody()),
+  });
+  const html = await response.text();
+
+  equal(response.status, 200, 'Policy Foundry hosted view route: request succeeds');
+  equal(response.headers.get('cache-control'), 'no-store', 'Policy Foundry hosted view route: response is no-store');
+  includes(
+    response.headers.get('content-type') ?? '',
+    'text/html',
+    'Policy Foundry hosted view route: content type is HTML',
+  );
+  includes(html, 'Policy Foundry hosted onboarding', 'Policy Foundry hosted view route: HTML identity is visible');
+  includes(html, 'Customer action required', 'Policy Foundry hosted view route: review surface headline renders');
+  includes(html, 'Adversarial replay', 'Policy Foundry hosted view route: current task renders');
+  includes(html, 'adversarial-replay-missing', 'Policy Foundry hosted view route: no-go condition renders');
+  includes(html, 'Review material only', 'Policy Foundry hosted view route: review-only boundary renders');
+  excludes(html, /raw_prompt_must_not_escape/u, 'Policy Foundry hosted view route: raw OpenAPI descriptions are not emitted');
+  excludes(html, /rk_live_must_not_escape/u, 'Policy Foundry hosted view route: secret-like manifest text is not emitted');
+  excludes(html, /C:\/Users\/thedi\/private/u, 'Policy Foundry hosted view route: caller source path is not emitted');
+  excludes(html, /tenant_foundry_route_a/u, 'Policy Foundry hosted view route: raw tenant id is not emitted');
 }
 
 async function testHostedRouteCanAcceptPassingReplayObservations(): Promise<void> {
@@ -464,6 +492,7 @@ function testDocsAndScriptsExposeHostedWorkflowRoute(): void {
 
 try {
   await testHostedRouteRendersStatelessReviewWorkflow();
+  await testHostedRouteRendersHtmlViewFromSameWorkflow();
   await testHostedRouteCanAcceptPassingReplayObservations();
   await testHostedRouteKeepsTenantScopedShadowEvents();
   await testHostedRouteRejectsInvalidReplayOutcome();

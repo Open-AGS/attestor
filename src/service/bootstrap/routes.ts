@@ -33,6 +33,7 @@ import {
   createFileBackedShadowPolicyCandidateStore,
   createFileBackedShadowPolicySimulationReportStore,
 } from '../shadow-persistence-store.js';
+import { createFileBackedPolicyFoundryHostedWizardStateStore } from '../policy-foundry-hosted-wizard-state.js';
 import { installProductionSharedRequestGuard } from './production-shared-request-guard.js';
 import type { AppRuntime } from './runtime.js';
 
@@ -162,10 +163,12 @@ export function createPolicyFoundryHostedOnboardingRouteDeps<Packet>(
   runtime: AppRuntime<Packet>,
 ): PolicyFoundryHostedOnboardingRouteDeps {
   const shadowEventStore = createFileBackedShadowAdmissionEventStore();
+  const wizardStateStore = createFileBackedPolicyFoundryHostedWizardStateStore();
   return {
     currentTenant: runtime.services.httpRoutes.pipeline.currentTenant,
     listShadowEvents: ({ tenant }) =>
       shadowEventStore.list({ tenantId: tenant.tenantId }).events,
+    wizardStateStore,
     now: () => new Date().toISOString(),
   };
 }

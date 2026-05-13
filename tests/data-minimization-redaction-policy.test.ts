@@ -99,6 +99,9 @@ function testDescriptorCoversCriticalSurfaces(): void {
   const hostedUiFlow = descriptor.surfaces.find((surface) =>
     surface.surfaceKind === 'policy-foundry-hosted-ui-flow'
   );
+  const hostedWizardState = descriptor.surfaces.find((surface) =>
+    surface.surfaceKind === 'policy-foundry-hosted-wizard-state'
+  );
   const externalReview = descriptor.surfaces.find((surface) =>
     surface.surfaceKind === 'external-review-packet'
   );
@@ -278,6 +281,19 @@ function testDescriptorCoversCriticalSurfaces(): void {
   ok(
     hostedUiFlow?.allowedUnits.includes('counts'),
     'Data minimization policy: hosted UI flow allows aggregate counts',
+  );
+  ok(hostedWizardState, 'Data minimization policy: hosted wizard state surface is present');
+  ok(
+    hostedWizardState?.allowedUnits.includes('digests'),
+    'Data minimization policy: hosted wizard state allows source digests',
+  );
+  ok(
+    hostedWizardState?.allowedUnits.includes('timestamps'),
+    'Data minimization policy: hosted wizard state allows TTL timestamps',
+  );
+  ok(
+    hostedWizardState?.allowedUnits.includes('approval-state'),
+    'Data minimization policy: hosted wizard state allows approval state',
   );
   ok(externalReview, 'Data minimization policy: external review packet surface is present');
   ok(
@@ -509,6 +525,11 @@ function testDocsAndScriptsExposePolicy(): void {
     doc,
     'policy-foundry-hosted-ui-flow',
     'Data minimization policy: doc lists hosted UI flow surface',
+  );
+  includes(
+    doc,
+    'policy-foundry-hosted-wizard-state',
+    'Data minimization policy: doc lists hosted wizard state surface',
   );
   includes(
     doc,

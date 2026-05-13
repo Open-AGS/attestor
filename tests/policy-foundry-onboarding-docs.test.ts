@@ -159,6 +159,11 @@ function testPolicyFoundryArchitectureIsGrounded(): void {
   );
   includes(
     doc,
+    'src/service/policy-foundry-hosted-wizard-state.ts',
+    'Policy Foundry docs: hosted wizard state evidence is named',
+  );
+  includes(
+    doc,
     'scripts/render-policy-foundry-self-onboarding.ts',
     'Policy Foundry docs: self-onboarding renderer evidence is named',
   );
@@ -226,6 +231,11 @@ function testReadmeNamesPolicyFoundryWithoutOverclaiming(): void {
     readme,
     'hosted UI flow',
     'README: hosted UI flow is named without production overclaim',
+  );
+  includes(
+    readme,
+    'persistent hosted wizard state',
+    'README: persistent hosted wizard state is named without production overclaim',
   );
   includes(
     readme,
@@ -493,6 +503,16 @@ function testPackageScriptIsExposed(): void {
     pkg.scripts['test:policy-foundry-hosted-ui-flow'] ?? '',
     'tsx tests/policy-foundry-hosted-ui-flow.test.ts',
     'Package: Policy Foundry hosted UI flow test command is stable',
+  );
+  includes(
+    JSON.stringify(pkg.scripts),
+    'test:policy-foundry-hosted-wizard-state',
+    'Package: Policy Foundry hosted wizard state test is exposed',
+  );
+  includes(
+    pkg.scripts['test:policy-foundry-hosted-wizard-state'] ?? '',
+    'tsx tests/policy-foundry-hosted-wizard-state.test.ts',
+    'Package: Policy Foundry hosted wizard state test command is stable',
   );
 }
 

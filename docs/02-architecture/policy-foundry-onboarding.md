@@ -581,6 +581,26 @@ task-list pages. The renderer does not store raw payloads, issue credentials,
 apply patches, deploy infrastructure, execute production traffic, activate
 enforcement, or prove production readiness.
 
+The persistent hosted wizard state store lives in
+`src/service/policy-foundry-hosted-wizard-state.ts`, is covered by
+`tests/policy-foundry-hosted-wizard-state.test.ts`, and is exposed through
+`test:policy-foundry-hosted-wizard-state`. When the hosted workflow route
+receives `persistWizardState: true`, it stores only compact digest-bound wizard
+state in a local file-backed evaluation store. The resume route is:
+
+```http
+GET /api/v1/shadow/policy-foundry/hosted-onboarding-workflow/sessions/:sessionId
+```
+
+The session state is tenant-bound by tenant digest, has TTL expiry, keeps an
+append-only created/updated event trail, and stores task cards, no-go cards,
+evidence digest cards, status, timestamps, and safe instructions. It does not
+store raw manifests, raw tenant ids, caller session refs, shadow payloads, or
+the full review packet. It is not shared production workflow storage and does
+not apply patches, issue credentials, deploy infrastructure, execute production
+traffic, activate enforcement, enforce billing-provider entitlements, or prove
+production readiness.
+
 ```text
 coverageScore
 coverageDimensions
@@ -667,6 +687,11 @@ statusRegion
 noGoPanel
 automationBoundary
 rendersFromReviewSurfaceOnly: true
+hostedWizardState
+sessionId
+expiresAt
+tenantBoundLookup: true
+rawReviewSurfaceStored: false
 readinessScore
 sampleSize
 actorDistributionHealth
@@ -773,8 +798,10 @@ contract. It now has the first local/synthetic adversarial replay executor. It
 now also has the first hosted onboarding workflow contract, the first stateless
 hosted workflow route wrapper for review material, the first compact hosted
 review surface for UI/API rendering, and the first hosted UI flow renderer for
-that surface. It does not yet have production/live downstream adversarial replay
-execution, a persistent hosted wizard, hosted billing-provider entitlement
-enforcement for Foundry capabilities, or production rollout automation.
+that surface. It also has a local file-backed evaluation store for persistent
+hosted wizard state and tenant-bound resume. It does not yet have
+production/live downstream adversarial replay execution, shared production
+wizard storage, hosted billing-provider entitlement enforcement for Foundry
+capabilities, or production rollout automation.
 The deeper self-onboarding track is tracked in
 [Policy Foundry Self-Onboarding Deepening](policy-foundry-self-onboarding-deepening.md).

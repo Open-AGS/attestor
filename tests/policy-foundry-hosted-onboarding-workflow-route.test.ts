@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
+import { tmpdir } from 'node:os';
 import { Hono } from 'hono';
 import {
   createGenericAdmissionEnvelope,
@@ -10,9 +11,11 @@ import {
 } from '../src/consequence-admission/index.js';
 import {
   HOSTED_POLICY_FOUNDRY_ONBOARDING_WORKFLOW_ROUTE,
+  HOSTED_POLICY_FOUNDRY_ONBOARDING_WORKFLOW_SESSION_ROUTE,
   HOSTED_POLICY_FOUNDRY_ONBOARDING_WORKFLOW_VIEW_ROUTE,
   registerPolicyFoundryHostedOnboardingRoutes,
 } from '../src/service/http/routes/policy-foundry-hosted-onboarding-routes.js';
+import { createFileBackedPolicyFoundryHostedWizardStateStore } from '../src/service/policy-foundry-hosted-wizard-state.js';
 import type { TenantContext } from '../src/service/tenant-isolation.js';
 
 let passed = 0;
@@ -84,6 +87,7 @@ function createEvent(tenant: TenantContext): ShadowAdmissionEvent {
 function createApp(input: {
   readonly routeTenant?: TenantContext;
   readonly events?: readonly ShadowAdmissionEvent[];
+  readonly wizardStateStore?: ReturnType<typeof createFileBackedPolicyFoundryHostedWizardStateStore>;
 } = {}): Hono {
   const app = new Hono();
   const events = input.events ?? [createEvent(tenantA)];
@@ -91,6 +95,7 @@ function createApp(input: {
     currentTenant: () => input.routeTenant ?? tenantA,
     listShadowEvents: ({ tenant }) =>
       events.filter((event) => event.tenantId === tenant.tenantId || event.tenantId === null),
+    wizardStateStore: input.wizardStateStore,
     now: () => '2026-05-13T09:01:00.000Z',
   });
   return app;
@@ -257,6 +262,95 @@ async function testHostedRouteRendersHtmlViewFromSameWorkflow(): Promise<void> {
   excludes(html, /rk_live_must_not_escape/u, 'Policy Foundry hosted view route: secret-like manifest text is not emitted');
   excludes(html, /C:\/Users\/thedi\/private/u, 'Policy Foundry hosted view route: caller source path is not emitted');
   excludes(html, /tenant_foundry_route_a/u, 'Policy Foundry hosted view route: raw tenant id is not emitted');
+}
+
+async function testHostedRoutePersistsAndResumesWizardState(): Promise<void> {
+  const workspace = mkdtempSync(join(tmpdir(), 'attestor-pfwiz-route-'));
+  try {
+    const storePath = join(workspace, 'wizard-state.json');
+    const wizardStateStore = createFileBackedPolicyFoundryHostedWizardStateStore({ path: storePath });
+    const app = createApp({ wizardStateStore });
+    const response = await app.request(HOSTED_POLICY_FOUNDRY_ONBOARDING_WORKFLOW_ROUTE, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        ...baseRequestBody(),
+        persistWizardState: true,
+        wizardSessionId: 'customer-visible-session-ref',
+        wizardStateTtlHours: 12,
+      }),
+    });
+    const text = await response.text();
+    const body = JSON.parse(text) as {
+      readonly storageMode: string;
+      readonly wizardState: {
+        readonly kind: string;
+        readonly session: {
+          readonly sessionId: string;
+          readonly tenantDigest: string;
+          readonly workflowDigest: string;
+          readonly reviewSurfaceDigest: string;
+          readonly rawPayloadStored: boolean;
+          readonly rawReviewSurfaceStored: boolean;
+          readonly productionReady: boolean;
+          readonly autoEnforce: boolean;
+          readonly taskCards: readonly unknown[];
+        };
+      };
+      readonly reviewSurface: {
+        readonly digest: string;
+        readonly workflowDigest: string;
+      };
+    };
+    const sessionRoute = HOSTED_POLICY_FOUNDRY_ONBOARDING_WORKFLOW_SESSION_ROUTE
+      .replace(':sessionId', body.wizardState.session.sessionId);
+    const resume = await app.request(sessionRoute);
+    const resumeText = await resume.text();
+    const resumed = JSON.parse(resumeText) as {
+      readonly tenant: { readonly tenantDigest: string };
+      readonly storageMode: string;
+      readonly rawPayloadStored: boolean;
+      readonly productionReady: boolean;
+      readonly wizardState: {
+        readonly sessionId: string;
+        readonly reviewSurfaceDigest: string;
+        readonly rawPayloadStored: boolean;
+        readonly productionReady: boolean;
+      };
+    };
+    const foreignTenantResponse = await createApp({
+      routeTenant: tenantB,
+      wizardStateStore,
+    }).request(sessionRoute);
+    const fileText = readFileSync(storePath, 'utf8');
+
+    equal(response.status, 200, 'Policy Foundry hosted route: persisted wizard request succeeds');
+    equal(body.storageMode, 'file-backed-wizard-state', 'Policy Foundry hosted route: storage mode changes when wizard state persists');
+    equal(body.wizardState.kind, 'created', 'Policy Foundry hosted route: wizard state is created');
+    ok(body.wizardState.session.sessionId.startsWith('pfwiz_'), 'Policy Foundry hosted route: wizard session id is generated');
+    equal(body.wizardState.session.tenantDigest, digest(tenantA.tenantId), 'Policy Foundry hosted route: wizard tenant is digest-only');
+    equal(body.wizardState.session.workflowDigest, body.reviewSurface.workflowDigest, 'Policy Foundry hosted route: wizard binds workflow digest');
+    equal(body.wizardState.session.reviewSurfaceDigest, body.reviewSurface.digest, 'Policy Foundry hosted route: wizard binds review surface digest');
+    equal(body.wizardState.session.rawPayloadStored, false, 'Policy Foundry hosted route: wizard state stores no raw payload');
+    equal(body.wizardState.session.rawReviewSurfaceStored, false, 'Policy Foundry hosted route: wizard state stores no raw review surface');
+    equal(body.wizardState.session.productionReady, false, 'Policy Foundry hosted route: wizard state is not production-ready');
+    equal(body.wizardState.session.autoEnforce, false, 'Policy Foundry hosted route: wizard state does not auto-enforce');
+    ok(body.wizardState.session.taskCards.length > 0, 'Policy Foundry hosted route: wizard state stores compact task state');
+    equal(resume.status, 200, 'Policy Foundry hosted route: wizard state resume succeeds');
+    equal(resume.headers.get('cache-control'), 'no-store', 'Policy Foundry hosted route: resume response is no-store');
+    equal(resumed.tenant.tenantDigest, digest(tenantA.tenantId), 'Policy Foundry hosted route: resume response is tenant-bound');
+    equal(resumed.storageMode, 'file-backed-evaluation', 'Policy Foundry hosted route: resume exposes evaluation storage mode');
+    equal(resumed.rawPayloadStored, false, 'Policy Foundry hosted route: resume stores no raw payload');
+    equal(resumed.productionReady, false, 'Policy Foundry hosted route: resume does not claim production readiness');
+    equal(resumed.wizardState.sessionId, body.wizardState.session.sessionId, 'Policy Foundry hosted route: resume returns the same session');
+    equal(resumed.wizardState.reviewSurfaceDigest, body.reviewSurface.digest, 'Policy Foundry hosted route: resume returns digest-bound state');
+    equal(foreignTenantResponse.status, 404, 'Policy Foundry hosted route: foreign tenant cannot resume session');
+    excludes(text, /raw_prompt_must_not_escape|rk_live_must_not_escape|C:\/Users\/thedi\/private|customer-visible-session-ref/u, 'Policy Foundry hosted route: persisted response exposes no raw manifest path or caller session ref');
+    excludes(resumeText, /raw_prompt_must_not_escape|rk_live_must_not_escape|C:\/Users\/thedi\/private|tenant_foundry_route_a/u, 'Policy Foundry hosted route: resumed state exposes no raw manifest or tenant id');
+    excludes(fileText, /raw_prompt_must_not_escape|rk_live_must_not_escape|C:\/Users\/thedi\/private|tenant_foundry_route_a|customer-visible-session-ref/u, 'Policy Foundry hosted route: wizard file stores no raw manifest, tenant id, or caller session ref');
+  } finally {
+    rmSync(workspace, { recursive: true, force: true });
+  }
 }
 
 async function testHostedRouteCanAcceptPassingReplayObservations(): Promise<void> {
@@ -493,6 +587,7 @@ function testDocsAndScriptsExposeHostedWorkflowRoute(): void {
 try {
   await testHostedRouteRendersStatelessReviewWorkflow();
   await testHostedRouteRendersHtmlViewFromSameWorkflow();
+  await testHostedRoutePersistsAndResumesWizardState();
   await testHostedRouteCanAcceptPassingReplayObservations();
   await testHostedRouteKeepsTenantScopedShadowEvents();
   await testHostedRouteRejectsInvalidReplayOutcome();

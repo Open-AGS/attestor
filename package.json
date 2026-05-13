@@ -156,6 +156,7 @@
     "test:policy-foundry-drift-policy-debt-detector": "tsx tests/policy-foundry-drift-policy-debt-detector.test.ts",
     "test:policy-foundry-commercial-boundary": "tsx tests/policy-foundry-commercial-boundary.test.ts",
     "test:policy-foundry-adversarial-replay-executor": "tsx tests/policy-foundry-adversarial-replay-executor.test.ts",
+    "test:policy-foundry-hosted-onboarding-workflow": "tsx tests/policy-foundry-hosted-onboarding-workflow.test.ts",
     "test:integration-mode-readiness": "tsx tests/integration-mode-readiness.test.ts",
     "test:shadow-policy-foundry-readiness-routes": "tsx tests/shadow-policy-foundry-readiness-routes.test.ts",
     "test:shadow-persistence-store": "tsx tests/shadow-persistence-store.test.ts",

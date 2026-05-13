@@ -523,6 +523,20 @@ pass/fail/no-go report. It does not call customer infrastructure, use
 credentials, mutate downstream systems, execute production traffic, activate
 enforcement, or prove production readiness.
 
+The Policy Foundry Hosted Onboarding Workflow is the first hosted workflow
+contract for this path. It lives in
+`src/consequence-admission/policy-foundry-hosted-onboarding-workflow.ts`, is
+covered by `tests/policy-foundry-hosted-onboarding-workflow.test.ts`, and is
+exposed through `test:policy-foundry-hosted-onboarding-workflow`. It turns the
+self-onboarding packet, local adversarial replay report, and commercial boundary
+context into digest-bound hosted workflow steps: source intake, surface map,
+active questions, coverage review, gate plan, adversarial replay, patch review,
+customer approval, and scoped rollout review. This is a hosted workflow
+contract, not a hosted UI implementation or hosted route. It does not deploy
+infrastructure, issue credentials, apply patches, execute production traffic,
+activate enforcement, enforce billing-provider entitlements, or prove production
+readiness.
+
 ```text
 coverageScore
 coverageDimensions
@@ -589,6 +603,13 @@ downstreamMutationAllowed: false
 credentialUseAllowed: false
 executesProductionTraffic: false
 localExecutionOnly: true
+hostedOnboardingWorkflow
+currentStepIds
+eventuallyDueStepIds
+blockedStepIds
+hostedUiImplemented: false
+hostedRouteImplemented: false
+deploymentEntitlementEnforcementImplemented: false
 readinessScore
 sampleSize
 actorDistributionHealth
@@ -656,6 +677,12 @@ credential material use, invalid evidence digests, or downstream mutation
 attempts. It is not a production attack runner and does not prove
 non-bypassability.
 
+The hosted onboarding workflow contract composes the self-onboarding packet,
+local replay report, and commercial boundary into a step model that a hosted UI
+or API can render later. It makes currently due versus eventually due work
+explicit and keeps safe automations separate from approval-gated or prohibited
+automation. It does not implement a hosted UI or route by itself.
+
 ## Current Status
 
 Repository foundations already exist in:
@@ -675,8 +702,9 @@ candidate registry, counterexample ledger, Policy Twin v2 summary, authority
 relationship context, review-only patch pack, one-command self-onboarding CLI,
 outcome feedback loop, drift/policy-debt detector, and the commercial boundary
 contract. It now has the first local/synthetic adversarial replay executor. It
-does not yet have production/live downstream adversarial replay execution, UI
-workflow, or hosted billing-provider entitlement enforcement for Foundry
+now also has the first hosted onboarding workflow contract. It does not yet have
+production/live downstream adversarial replay execution, a hosted UI/route
+implementation, or hosted billing-provider entitlement enforcement for Foundry
 capabilities.
 The deeper self-onboarding track is tracked in
 [Policy Foundry Self-Onboarding Deepening](policy-foundry-self-onboarding-deepening.md).

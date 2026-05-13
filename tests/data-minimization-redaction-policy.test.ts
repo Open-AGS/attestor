@@ -90,6 +90,9 @@ function testDescriptorCoversCriticalSurfaces(): void {
   const adversarialReplayExecutor = descriptor.surfaces.find((surface) =>
     surface.surfaceKind === 'policy-foundry-adversarial-replay-executor'
   );
+  const hostedOnboardingWorkflow = descriptor.surfaces.find((surface) =>
+    surface.surfaceKind === 'policy-foundry-hosted-onboarding-workflow'
+  );
   const externalReview = descriptor.surfaces.find((surface) =>
     surface.surfaceKind === 'external-review-packet'
   );
@@ -230,6 +233,19 @@ function testDescriptorCoversCriticalSurfaces(): void {
   ok(
     adversarialReplayExecutor?.allowedUnits.includes('counts'),
     'Data minimization policy: adversarial replay executor allows aggregate counts',
+  );
+  ok(hostedOnboardingWorkflow, 'Data minimization policy: hosted onboarding workflow surface is present');
+  ok(
+    hostedOnboardingWorkflow?.allowedUnits.includes('digests'),
+    'Data minimization policy: hosted onboarding workflow allows source digests',
+  );
+  ok(
+    hostedOnboardingWorkflow?.allowedUnits.includes('safe-instruction'),
+    'Data minimization policy: hosted onboarding workflow allows safe instructions',
+  );
+  ok(
+    hostedOnboardingWorkflow?.allowedUnits.includes('approval-state'),
+    'Data minimization policy: hosted onboarding workflow allows approval state',
   );
   ok(externalReview, 'Data minimization policy: external review packet surface is present');
   ok(
@@ -446,6 +462,11 @@ function testDocsAndScriptsExposePolicy(): void {
     doc,
     'policy-foundry-adversarial-replay-executor',
     'Data minimization policy: doc lists adversarial replay executor surface',
+  );
+  includes(
+    doc,
+    'policy-foundry-hosted-onboarding-workflow',
+    'Data minimization policy: doc lists hosted onboarding workflow surface',
   );
   includes(
     doc,

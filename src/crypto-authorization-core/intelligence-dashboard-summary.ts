@@ -3,6 +3,7 @@ import {
   canonicalizeReleaseJson,
   type CanonicalReleaseJsonValue,
 } from '../release-kernel/release-canonicalization.js';
+import { stripTrailingSlashes } from '../platform/string-normalization.js';
 import {
   assertCryptoIntelligencePrivacyMinimized,
 } from './intelligence-privacy-minimization.js';
@@ -434,14 +435,6 @@ function normalizeOptionalDigest(
 ): string | null {
   if (value === undefined || value === null) return null;
   return normalizeDigest(value, fieldName);
-}
-
-function stripTrailingSlashes(value: string): string {
-  let end = value.length;
-  while (end > 0 && value.charCodeAt(end - 1) === 47) {
-    end -= 1;
-  }
-  return value.slice(0, end);
 }
 
 function normalizeLabel(value: string | null | undefined, fieldName: string): string {

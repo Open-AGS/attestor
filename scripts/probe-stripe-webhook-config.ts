@@ -3,6 +3,7 @@ import {
   STRIPE_SUPPORTED_WEBHOOK_EVENTS,
   STRIPE_WEBHOOK_ROUTE,
 } from '../src/service/stripe-webhook-events.js';
+import { trimAndStripTrailingSlashes } from '../src/platform/string-normalization.js';
 
 function arg(name: string): string | null {
   const prefix = `--${name}=`;
@@ -28,7 +29,7 @@ function requireStripeApiKey(): string {
 }
 
 function normalizeUrl(value: string): string {
-  return value.trim().replace(/\/+$/, '');
+  return trimAndStripTrailingSlashes(value);
 }
 
 function expectedWebhookUrl(): string | null {

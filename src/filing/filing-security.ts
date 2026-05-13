@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { stripTrailingSlashes } from '../platform/string-normalization.js';
 
 const DEFAULT_FETCH_TIMEOUT_MS = 30000;
 const MAX_QRDA3_XML_BYTES = 10 * 1024 * 1024;
@@ -84,7 +85,7 @@ export function resolvePinnedHttpsBaseUrl(
     throw new Error(`${options.serviceName} base URL host is not allowlisted.`);
   }
 
-  return parsed.toString().replace(/\/+$/u, '');
+  return stripTrailingSlashes(parsed.toString());
 }
 
 export function resolveSafeCypressValidatorUrl(baseUrl: string, path: string): string {

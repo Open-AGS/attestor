@@ -5,6 +5,7 @@ import {
   safeErrorMessage,
   stringifySecretSafe,
 } from './secret-safe-output.ts';
+import { trimAndStripTrailingSlashes } from '../src/platform/string-normalization.js';
 
 import {
   COUNTERPARTY_FIXTURE,
@@ -63,7 +64,7 @@ async function archiveAccount(baseUrl: string, adminApiKey: string, accountId: s
 }
 
 async function main(): Promise<void> {
-  const baseUrl = (process.env.ATTESTOR_BASE_URL?.trim() || 'http://127.0.0.1:3000').replace(/\/+$/, '');
+  const baseUrl = trimAndStripTrailingSlashes(process.env.ATTESTOR_BASE_URL || 'http://127.0.0.1:3000');
   const adminApiKey = requiredEnv('ATTESTOR_ADMIN_API_KEY');
   const stripeApiKey = requiredEnv('STRIPE_API_KEY');
   const stripeWebhookSecret = requiredEnv('STRIPE_WEBHOOK_SECRET');

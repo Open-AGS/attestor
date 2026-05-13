@@ -16,6 +16,7 @@
 import { randomBytes, randomUUID, scryptSync, timingSafeEqual } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
+import { trimAndStripTrailingSlashes } from '../platform/string-normalization.js';
 import { withFileLock, writeTextFileAtomic } from './file-store.js';
 
 export type AccountUserRole = 'account_admin' | 'billing_admin' | 'read_only';
@@ -538,25 +539,25 @@ export function findAccountUserByPasskeyCredentialId(credentialId: string): Acco
 }
 
 export function findAccountUserByOidcIdentity(issuer: string, subject: string): AccountUserRecord | null {
-  const normalizedIssuer = issuer.trim().replace(/\/+$/, '');
+  const normalizedIssuer = trimAndStripTrailingSlashes(issuer);
   const normalizedSubject = subject.trim();
   if (!normalizedIssuer || !normalizedSubject) return null;
   const store = loadStore();
   const record = store.records.find((entry) =>
     entry.federation?.oidc?.identities?.some((identity) =>
-      identity.issuer.trim().replace(/\/+$/, '') === normalizedIssuer
+      trimAndStripTrailingSlashes(identity.issuer) === normalizedIssuer
       && identity.subject.trim() === normalizedSubject)) ?? null;
   return record ? normalizeRecord(record) : null;
 }
 
 export function findAccountUserBySamlIdentity(issuer: string, subject: string): AccountUserRecord | null {
-  const normalizedIssuer = issuer.trim().replace(/\/+$/, '');
+  const normalizedIssuer = trimAndStripTrailingSlashes(issuer);
   const normalizedSubject = subject.trim();
   if (!normalizedIssuer || !normalizedSubject) return null;
   const store = loadStore();
   const record = store.records.find((entry) =>
     entry.federation?.saml?.identities?.some((identity) =>
-      identity.issuer.trim().replace(/\/+$/, '') === normalizedIssuer
+      trimAndStripTrailingSlashes(identity.issuer) === normalizedIssuer
       && identity.subject.trim() === normalizedSubject)) ?? null;
   return record ? normalizeRecord(record) : null;
 }

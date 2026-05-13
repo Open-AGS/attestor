@@ -5,6 +5,7 @@ import {
   HOSTED_POLICY_FOUNDRY_ONBOARDING_WORKFLOW_ROUTE,
   HOSTED_POLICY_FOUNDRY_ONBOARDING_WORKFLOW_VIEW_ROUTE,
 } from '../src/service/http/routes/policy-foundry-hosted-onboarding-routes.js';
+import { trimAndStripTrailingSlashes } from '../src/platform/string-normalization.js';
 import {
   digestReference,
   safeErrorMessage,
@@ -62,7 +63,7 @@ function digest(value: string): string {
 }
 
 function normalizeBaseUrl(value: string): string {
-  const normalized = value.trim().replace(/\/+$/u, '');
+  const normalized = trimAndStripTrailingSlashes(value);
   if (!/^https?:\/\//iu.test(normalized)) {
     throw new Error('ATTESTOR_BASE_URL must be an http or https URL.');
   }

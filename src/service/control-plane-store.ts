@@ -9,6 +9,7 @@
  */
 
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
+import { trimAndStripTrailingSlashes } from '../platform/string-normalization.js';
 import {
   AccountStoreError,
   applyStripeCheckoutCompletion as applyStripeCheckoutCompletionFile,
@@ -2567,11 +2568,11 @@ export async function findAccountUserByOidcIdentityState(
 ): Promise<AccountUserRecord | null> {
   if (!isSharedControlPlaneConfigured()) return findAccountUserByOidcIdentityFile(issuer, subject);
   const records = await listAllAccountUsersPg();
-  const normalizedIssuer = issuer.trim().replace(/\/+$/, '');
+  const normalizedIssuer = trimAndStripTrailingSlashes(issuer);
   const normalizedSubject = subject.trim();
   return records.find((record) =>
     record.federation?.oidc?.identities?.some((identity) =>
-      identity.issuer.trim().replace(/\/+$/, '') === normalizedIssuer
+      trimAndStripTrailingSlashes(identity.issuer) === normalizedIssuer
       && identity.subject.trim() === normalizedSubject)) ?? null;
 }
 
@@ -2581,11 +2582,11 @@ export async function findAccountUserBySamlIdentityState(
 ): Promise<AccountUserRecord | null> {
   if (!isSharedControlPlaneConfigured()) return findAccountUserBySamlIdentityFile(issuer, subject);
   const records = await listAllAccountUsersPg();
-  const normalizedIssuer = issuer.trim().replace(/\/+$/, '');
+  const normalizedIssuer = trimAndStripTrailingSlashes(issuer);
   const normalizedSubject = subject.trim();
   return records.find((record) =>
     record.federation?.saml?.identities?.some((identity) =>
-      identity.issuer.trim().replace(/\/+$/, '') === normalizedIssuer
+      trimAndStripTrailingSlashes(identity.issuer) === normalizedIssuer
       && identity.subject.trim() === normalizedSubject)) ?? null;
 }
 

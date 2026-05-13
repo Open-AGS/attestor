@@ -21,6 +21,7 @@ import type {
   AccountUserOidcIdentityRecord,
   AccountUserRecord,
 } from './account-user-store.js';
+import { trimAndStripTrailingSlashes } from '../platform/string-normalization.js';
 import { isProductionLikeRuntimeEnv } from './deployment-safety.js';
 import { deriveServiceKey } from './secret-derivation.js';
 
@@ -111,7 +112,7 @@ function decodeBase64Url(value: string): Buffer {
 }
 
 function normalizeIssuerUrl(value: string): string {
-  return value.trim().replace(/\/+$/, '');
+  return trimAndStripTrailingSlashes(value);
 }
 
 function hostedOidcAllowsInsecureRequests(config: HostedOidcConfig): boolean {

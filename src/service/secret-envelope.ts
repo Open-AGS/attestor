@@ -1,4 +1,5 @@
 import { stableJsonStringify } from './json-stable.js';
+import { stripTrailingSlashes } from '../platform/string-normalization.js';
 import { isProductionLikeRuntimeEnv } from './deployment-safety.js';
 
 export type SecretEnvelopeProvider = 'vault_transit';
@@ -107,8 +108,8 @@ function normalizeVaultBaseUrl(raw: string): string {
   }
   url.search = '';
   url.hash = '';
-  url.pathname = url.pathname.replace(/\/+$/u, '');
-  return url.toString().replace(/\/+$/u, '');
+  url.pathname = stripTrailingSlashes(url.pathname);
+  return stripTrailingSlashes(url.toString());
 }
 
 function normalizeVaultPath(value: string, name: string): string[] {
@@ -130,7 +131,7 @@ function normalizeVaultPath(value: string, name: string): string[] {
 
 function vaultTransitUrl(config: ReturnType<typeof vaultConfig>, pathSegments: readonly string[]): string {
   const url = new URL(config.baseUrl);
-  const basePath = url.pathname.replace(/\/+$/u, '');
+  const basePath = stripTrailingSlashes(url.pathname);
   const mountSegments = normalizeVaultPath(config.mountPath, 'ATTESTOR_VAULT_TRANSIT_MOUNT_PATH');
   const normalizedPathSegments = pathSegments.flatMap((segment, index) => (
     normalizeVaultPath(segment, `Vault Transit request path segment ${index + 1}`)

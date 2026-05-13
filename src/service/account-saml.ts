@@ -22,6 +22,7 @@ import type {
   AccountUserRecord,
   AccountUserSamlIdentityRecord,
 } from './account-user-store.js';
+import { trimAndStripTrailingSlashes } from '../platform/string-normalization.js';
 import { isProductionLikeRuntimeEnv } from './deployment-safety.js';
 import { deriveServiceKey } from './secret-derivation.js';
 
@@ -99,7 +100,7 @@ function normalizeEmail(value: string | null | undefined): string | null {
 }
 
 function normalizeIssuer(value: string): string {
-  return value.trim().replace(/\/+$/, '');
+  return trimAndStripTrailingSlashes(value);
 }
 
 function normalizeStringArray(value: unknown): string[] {

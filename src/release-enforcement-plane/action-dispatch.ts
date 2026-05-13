@@ -12,6 +12,7 @@ import {
 } from '../release-kernel/release-canonicalization.js';
 import type { ReleaseTargetReference } from '../release-kernel/object-model.js';
 import type { OutputContractDescriptor } from '../release-kernel/types.js';
+import { stripTrailingSlashes } from '../platform/string-normalization.js';
 import {
   createEnforcementDecision,
   createEnforcementReceipt,
@@ -463,7 +464,7 @@ function normalizeDispatchBaseUri(dispatchBaseUri?: string | null): string {
   const parsed = new URL(base);
   parsed.hash = '';
   parsed.search = '';
-  return parsed.toString().replace(/\/+$/u, '');
+  return stripTrailingSlashes(parsed.toString());
 }
 
 export function actionDispatchUri(

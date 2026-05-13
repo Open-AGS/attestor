@@ -5,6 +5,7 @@ import {
   STRIPE_SUPPORTED_WEBHOOK_EVENTS,
   STRIPE_WEBHOOK_ROUTE,
 } from '../src/service/stripe-webhook-events.js';
+import { trimAndStripTrailingSlashes } from '../src/platform/string-normalization.js';
 
 type PaidPlanId = 'starter' | 'pro' | 'scale';
 
@@ -88,7 +89,7 @@ async function tryRetrieveAccount(stripe: Stripe): Promise<BootstrapAccountSumma
 }
 
 function normalizeUrl(value: string): string {
-  return value.trim().replace(/\/+$/, '');
+  return trimAndStripTrailingSlashes(value);
 }
 
 function expectedWebhookUrl(): string | null {

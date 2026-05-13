@@ -32,6 +32,7 @@ import {
   ATTR_SERVICE_NAME,
   ATTR_SERVICE_VERSION,
 } from '@opentelemetry/semantic-conventions';
+import { stripTrailingSlashes } from '../platform/string-normalization.js';
 import { ATTESTOR_SERVICE_VERSION } from './version.js';
 
 const HTTP_DURATION_BUCKETS = [0.01, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10] as const;
@@ -387,7 +388,7 @@ function resolveTraceExporterConfig(): TelemetryConfig['traces'] {
   const exporterSetting = process.env.OTEL_TRACES_EXPORTER?.trim().toLowerCase() || '';
   const enabled = explicitEndpoint !== null || baseEndpoint !== null || exporterSetting === 'otlp';
   const endpoint = explicitEndpoint
-    ?? (baseEndpoint ? `${baseEndpoint.replace(/\/+$/, '')}/v1/traces` : null)
+    ?? (baseEndpoint ? `${stripTrailingSlashes(baseEndpoint)}/v1/traces` : null)
     ?? (enabled ? 'http://127.0.0.1:4318/v1/traces' : null);
 
   return {
@@ -429,7 +430,7 @@ function resolveLogsExporterConfig(): TelemetryConfig['logs'] {
   const exporterSetting = process.env.OTEL_LOGS_EXPORTER?.trim().toLowerCase() || '';
   const enabled = explicitEndpoint !== null || baseEndpoint !== null || exporterSetting === 'otlp';
   const endpoint = explicitEndpoint
-    ?? (baseEndpoint ? `${baseEndpoint.replace(/\/+$/, '')}/v1/logs` : null)
+    ?? (baseEndpoint ? `${stripTrailingSlashes(baseEndpoint)}/v1/logs` : null)
     ?? (enabled ? 'http://127.0.0.1:4318/v1/logs' : null);
 
   return {
@@ -472,7 +473,7 @@ function resolveMetricsExporterConfig(): TelemetryConfig['metrics'] {
   const exporterSetting = process.env.OTEL_METRICS_EXPORTER?.trim().toLowerCase() || '';
   const enabled = explicitEndpoint !== null || baseEndpoint !== null || exporterSetting === 'otlp';
   const endpoint = explicitEndpoint
-    ?? (baseEndpoint ? `${baseEndpoint.replace(/\/+$/, '')}/v1/metrics` : null)
+    ?? (baseEndpoint ? `${stripTrailingSlashes(baseEndpoint)}/v1/metrics` : null)
     ?? (enabled ? 'http://127.0.0.1:4318/v1/metrics' : null);
 
   return {

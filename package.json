@@ -157,6 +157,7 @@
     "test:policy-foundry-commercial-boundary": "tsx tests/policy-foundry-commercial-boundary.test.ts",
     "test:policy-foundry-billing-entitlement-enforcement": "tsx tests/policy-foundry-billing-entitlement-enforcement.test.ts",
     "test:policy-foundry-adversarial-replay-executor": "tsx tests/policy-foundry-adversarial-replay-executor.test.ts",
+    "test:policy-foundry-live-downstream-replay": "tsx tests/policy-foundry-live-downstream-replay.test.ts",
     "test:policy-foundry-hosted-onboarding-workflow": "tsx tests/policy-foundry-hosted-onboarding-workflow.test.ts",
     "test:policy-foundry-hosted-onboarding-workflow-route": "tsx tests/policy-foundry-hosted-onboarding-workflow-route.test.ts",
     "test:policy-foundry-hosted-review-surface": "tsx tests/policy-foundry-hosted-review-surface.test.ts",

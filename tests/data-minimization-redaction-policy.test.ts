@@ -90,6 +90,9 @@ function testDescriptorCoversCriticalSurfaces(): void {
   const adversarialReplayExecutor = descriptor.surfaces.find((surface) =>
     surface.surfaceKind === 'policy-foundry-adversarial-replay-executor'
   );
+  const liveDownstreamReplay = descriptor.surfaces.find((surface) =>
+    surface.surfaceKind === 'policy-foundry-live-downstream-replay'
+  );
   const hostedOnboardingWorkflow = descriptor.surfaces.find((surface) =>
     surface.surfaceKind === 'policy-foundry-hosted-onboarding-workflow'
   );
@@ -242,6 +245,19 @@ function testDescriptorCoversCriticalSurfaces(): void {
   ok(
     adversarialReplayExecutor?.allowedUnits.includes('counts'),
     'Data minimization policy: adversarial replay executor allows aggregate counts',
+  );
+  ok(liveDownstreamReplay, 'Data minimization policy: live downstream replay surface is present');
+  ok(
+    liveDownstreamReplay?.allowedUnits.includes('digests'),
+    'Data minimization policy: live downstream replay allows evidence digests',
+  );
+  ok(
+    liveDownstreamReplay?.allowedUnits.includes('environment-scope'),
+    'Data minimization policy: live downstream replay allows environment scope',
+  );
+  ok(
+    liveDownstreamReplay?.allowedUnits.includes('safe-instruction'),
+    'Data minimization policy: live downstream replay allows safe instructions',
   );
   ok(hostedOnboardingWorkflow, 'Data minimization policy: hosted onboarding workflow surface is present');
   ok(
@@ -510,6 +526,11 @@ function testDocsAndScriptsExposePolicy(): void {
     doc,
     'policy-foundry-adversarial-replay-executor',
     'Data minimization policy: doc lists adversarial replay executor surface',
+  );
+  includes(
+    doc,
+    'policy-foundry-live-downstream-replay',
+    'Data minimization policy: doc lists live downstream replay surface',
   );
   includes(
     doc,

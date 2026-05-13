@@ -144,6 +144,11 @@ function testPolicyFoundryArchitectureIsGrounded(): void {
   );
   includes(
     doc,
+    'src/consequence-admission/policy-foundry-live-downstream-replay.ts',
+    'Policy Foundry docs: live downstream replay contract evidence is named',
+  );
+  includes(
+    doc,
     'src/consequence-admission/policy-foundry-hosted-onboarding-workflow.ts',
     'Policy Foundry docs: hosted onboarding workflow contract evidence is named',
   );
@@ -221,6 +226,11 @@ function testReadmeNamesPolicyFoundryWithoutOverclaiming(): void {
     readme,
     'local adversarial replay reports',
     'README: local adversarial replay executor is named without production overclaim',
+  );
+  includes(
+    readme,
+    'live downstream replay reports',
+    'README: live downstream replay evidence is named without production overclaim',
   );
   includes(
     readme,
@@ -489,6 +499,16 @@ function testPackageScriptIsExposed(): void {
     pkg.scripts['test:policy-foundry-adversarial-replay-executor'] ?? '',
     'tsx tests/policy-foundry-adversarial-replay-executor.test.ts',
     'Package: Policy Foundry adversarial replay executor test command is stable',
+  );
+  includes(
+    JSON.stringify(pkg.scripts),
+    'test:policy-foundry-live-downstream-replay',
+    'Package: Policy Foundry live downstream replay test is exposed',
+  );
+  includes(
+    pkg.scripts['test:policy-foundry-live-downstream-replay'] ?? '',
+    'tsx tests/policy-foundry-live-downstream-replay.test.ts',
+    'Package: Policy Foundry live downstream replay test command is stable',
   );
   includes(
     JSON.stringify(pkg.scripts),

@@ -47,6 +47,9 @@ preserve these boundaries:
   into an application-side provisioning/read model; the hosted Foundry route
   therefore treats billing-provider state as a commercial access gate, not as
   policy authority or production readiness evidence.
+- Terraform plan/apply separation, Kubernetes dry-run guarantees, and
+  Envoy/OPA external authorization patterns show why live replay evidence must
+  stay non-mutating, dry-run bounded, and separate from approval or execution.
 
 These sources are engineering anchors only. They do not certify Attestor.
 
@@ -72,6 +75,7 @@ These sources are engineering anchors only. They do not certify Attestor.
 | Step 16 | complete | Add Hosted UI Flow Renderer | HTML task-list/status/no-go/evidence rendering from the hosted review surface |
 | Step 17 | complete | Add Persistent Hosted Wizard State | File-backed evaluation store and tenant-bound resume route for digest-only hosted wizard state |
 | Step 18 | complete | Add Billing-Provider Entitlement Enforcement | Hosted Foundry route gates commercial plan/capability and production workflow requests against billing-provider entitlement state without paywalling safety minimums |
+| Step 19 | complete | Add Live Downstream Replay Evidence | Non-mutating sandbox/staging replay evidence contract with dry-run proof, no-go reasons, and digest-only outputs |
 
 ## Step 01 Scope
 
@@ -388,8 +392,9 @@ synthetic fixture bundle
 
 It is deliberately local and synthetic. It does not call customer
 infrastructure, use credentials, mutate downstream systems, execute production
-traffic, activate enforcement, or prove production readiness. Production/live
-downstream adversarial replay remains a separate unresolved rollout task.
+traffic, activate enforcement, or prove production readiness. The later live
+downstream replay evidence contract remains separate and must also be
+non-mutating.
 
 ## Step 14 Scope
 
@@ -512,6 +517,34 @@ not activate enforcement, does not issue credentials, does not deploy
 infrastructure, does not prove production readiness, and does not replace the
 separate deployment/smoke-test gates.
 
+## Step 19 Scope
+
+Step 19 adds `attestor.policy-foundry-live-downstream-replay.v1`.
+
+The contract accepts downstream replay observations from sandbox, staging, or
+ephemeral-preview harnesses and turns them into digest-bound review evidence:
+
+```text
+red-team fixture bundle
++ sandbox/staging dry-run observations
++ dry-run proof digests
+-> case results
+-> no-go reasons
+-> rollout review evidence
+```
+
+This is the repo-side bridge between purely local synthetic replay and a real
+downstream verifier/gateway harness. It is still not production traffic. The
+contract fails closed when observations show raw payload storage, downstream
+mutation, credential material, production traffic attempts, missing dry-run
+proof, unverified sandbox boundary, unapproved network egress, invalid digests,
+missing cases, or unexpected allows.
+
+The output is review material only. It does not call customer infrastructure by
+itself, does not issue credentials, does not activate enforcement, does not
+deploy infrastructure, does not prove production readiness, and does not replace
+deployment wiring or smoke tests.
+
 ## Protected Principles
 
 - customer authority
@@ -536,11 +569,12 @@ contracts, or shared product positioning are touched.
 
 ## Current Status
 
-Step 01 through Step 12 are complete. Step 13 through Step 18 are also complete
+Step 01 through Step 12 are complete. Step 13 through Step 19 are also complete
 repo-side: the repo-side self-onboarding deepening list now includes the local
 adversarial replay executor, hosted workflow contract, stateless hosted workflow
 route wrapper, compact hosted review surface, hosted UI flow renderer, and
 local file-backed persistent hosted wizard state, plus hosted route
-billing-provider entitlement enforcement for commercial Foundry requests. Live
-adversarial replay execution, shared production wizard storage, deployment
-wiring, and production smoke tests remain outside this tracker.
+billing-provider entitlement enforcement for commercial Foundry requests and
+non-mutating live downstream replay evidence for sandbox/staging harnesses.
+Shared production wizard storage, deployment wiring, production smoke tests,
+and any production traffic execution remain outside this tracker.

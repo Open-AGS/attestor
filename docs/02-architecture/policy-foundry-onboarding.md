@@ -523,6 +523,19 @@ pass/fail/no-go report. It does not call customer infrastructure, use
 credentials, mutate downstream systems, execute production traffic, activate
 enforcement, or prove production readiness.
 
+The Policy Foundry Live Downstream Replay contract is the first non-mutating
+sandbox/staging replay evidence layer for this path. It lives in
+`src/consequence-admission/policy-foundry-live-downstream-replay.ts`, is covered
+by `tests/policy-foundry-live-downstream-replay.test.ts`, and is exposed through
+`test:policy-foundry-live-downstream-replay`. It normalizes downstream
+verifier/gateway replay observations from sandbox, staging, or ephemeral
+preview harnesses. It requires dry-run proof digests and verified sandbox
+boundaries, fails closed on raw payload storage, credential material, downstream
+mutation, production traffic attempts, invalid digests, missing cases, or
+unexpected allows, and remains review evidence only. It does not call customer
+infrastructure by itself, issue credentials, activate enforcement, deploy
+infrastructure, execute production traffic, or prove production readiness.
+
 The Policy Foundry Hosted Onboarding Workflow is the first hosted workflow
 contract for this path. It lives in
 `src/consequence-admission/policy-foundry-hosted-onboarding-workflow.ts`, is
@@ -681,6 +694,11 @@ downstreamMutationAllowed: false
 credentialUseAllowed: false
 executesProductionTraffic: false
 localExecutionOnly: true
+liveDownstreamReplay
+dryRunRequired: true
+sandboxOrStagingOnly: true
+dryRunProofDigest
+downstreamReceiptDigest
 hostedOnboardingWorkflow
 currentStepIds
 eventuallyDueStepIds
@@ -821,9 +839,9 @@ review surface for UI/API rendering, and the first hosted UI flow renderer for
 that surface. It also has a local file-backed evaluation store for persistent
 hosted wizard state and tenant-bound resume, plus route-level
 billing-provider entitlement enforcement for hosted Foundry commercial
-capability and production workflow requests. It does not yet have
-production/live downstream adversarial replay execution, shared production
-wizard storage, deployment wiring, production smoke tests, or production
-rollout automation.
+capability and production workflow requests and non-mutating live downstream
+replay evidence for sandbox/staging harnesses. It does not yet have shared
+production wizard storage, deployment wiring, production smoke tests,
+production traffic execution, or production rollout automation.
 The deeper self-onboarding track is tracked in
 [Policy Foundry Self-Onboarding Deepening](policy-foundry-self-onboarding-deepening.md).

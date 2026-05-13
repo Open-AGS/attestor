@@ -2114,6 +2114,7 @@ export * from './policy-foundry-outcome-feedback-loop.js';
 export * from './policy-foundry-drift-policy-debt-detector.js';
 export * from './policy-foundry-commercial-boundary.js';
 export * from './policy-foundry-adversarial-replay-executor.js';
+export * from './policy-foundry-live-downstream-replay.js';
 export * from './policy-foundry-hosted-onboarding-workflow.js';
 export * from './policy-foundry-hosted-review-surface.js';
 export * from './integration-mode-readiness.js';

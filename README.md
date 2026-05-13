@@ -338,7 +338,7 @@ Onboarding automation:
 
 - [Action surface manifest intake](docs/02-architecture/action-surface-manifest-intake.md), [Action surface declaration ingestors](docs/02-architecture/action-surface-declaration-ingestors.md), and [Action surface profiler](docs/02-architecture/action-surface-profiler.md) turn customer-owned metadata and shadow events into a data-minimized action-surface map.
 - [Action surface integration artifacts](docs/02-architecture/action-surface-integration-artifacts.md), [Action surface onboarding packet](docs/02-architecture/action-surface-onboarding-packet.md), action-surface review handoff, and red-team fixture bundle reduce adoption friction with review-required plans. They do not deploy infrastructure, issue credentials, activate enforcement, or make a non-bypassable claim by themselves.
-- [Policy Foundry onboarding](docs/02-architecture/policy-foundry-onboarding.md) and [Integration mode readiness](docs/02-architecture/integration-mode-readiness.md) turn shadow traffic into policy candidates, readiness/no-go evidence, active questions, Policy Twin work, reviewed outcome feedback, and reviewed paths toward scoped enforcement. The path where customers self-attest readiness controls is not allowed.
+- [Policy Foundry onboarding](docs/02-architecture/policy-foundry-onboarding.md) and [Integration mode readiness](docs/02-architecture/integration-mode-readiness.md) turn shadow traffic into policy candidates, readiness/no-go evidence, active questions, Policy Twin work, reviewed outcome feedback, drift/policy-debt findings, and reviewed paths toward scoped enforcement. The path where customers self-attest readiness controls is not allowed.
 
 Runtime and packs:
 

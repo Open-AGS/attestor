@@ -53,7 +53,7 @@ These sources are engineering anchors only. They do not certify Attestor.
 | Step 08 | complete | Add Review-Only Integration Patch Pack | Render SDK/gateway/MCP/sidecar/provider draft patches as review material only |
 | Step 09 | complete | Add One-Command Self-Onboarding CLI | Render session, coverage, blockers, patch pack, handoff, and red-team fixtures from customer-owned manifests and shadow data |
 | Step 10 | complete | Add Outcome Feedback Loop | Feed reviewed decisions and downstream receipts back into scoring through digest-first, data-minimized signals |
-| Step 11 | not started | Add Drift And Policy Debt Detector | Detect new surfaces, stale policies, verifier coverage drift, actor concentration, and policy/shadow mismatch |
+| Step 11 | complete | Add Drift And Policy Debt Detector | Detect new surfaces, stale policies, verifier coverage drift, actor concentration, and policy/shadow mismatch |
 | Step 12 | not started | Add Commercial Boundary Contract | Separate evaluation, Starter, Pro, Scale, and Enterprise Foundry capabilities without paywalling safety minimums |
 
 ## Step 01 Scope
@@ -291,6 +291,35 @@ The feedback loop is scoring input only. It does not train a model, mutate
 scores automatically, approve a policy, activate enforcement, or prove
 production readiness.
 
+## Step 11 Scope
+
+Step 11 adds `attestor.policy-foundry-drift-policy-debt-detector.v1`.
+
+The detector turns existing Foundry evidence into a review-only drift and policy
+debt packet:
+
+```text
+coverage + gate planner + candidate registry
++ counterexample ledger + Policy Twin summary + outcome feedback
+-> drift/debt entries
+-> no-go reasons
+-> next safe review step
+```
+
+It detects:
+
+- new or unregistered action surfaces
+- stale Policy Twin windows
+- verifier/gateway coverage drift
+- actor concentration
+- policy/shadow mismatch
+- negative outcome feedback
+- unbound schema/template candidates
+- replay/idempotency debt
+
+It is not an auto-remediation engine. It does not mutate policy, deploy
+gateways, activate enforcement, or prove production readiness.
+
 ## Protected Principles
 
 - customer authority
@@ -315,5 +344,5 @@ contracts, or shared product positioning are touched.
 
 ## Current Status
 
-Step 01 through Step 10 are complete. Step 11 is the next implementation step.
+Step 01 through Step 11 are complete. Step 12 is the next implementation step.
 The rest of the list remains open.

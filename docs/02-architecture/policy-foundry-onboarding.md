@@ -96,6 +96,12 @@ standard certifies Attestor:
   https://opentelemetry.io/docs/concepts/signals/,
   https://www.nist.gov/itl/ai-risk-management-framework, and
   https://docs.cloud.google.com/policy-intelligence/docs/role-recommendations-overview
+- Drift detection follows preview-before-change discipline. Terraform plan
+  drift detection and policy-access analyzers are engineering anchors for
+  comparing declared/reviewed posture to observed usage before any customer
+  action:
+  https://developer.hashicorp.com/terraform/cli/commands/plan and
+  https://docs.aws.amazon.com/IAM/latest/UserGuide/access-analyzer-policy-generation.html
 
 ## Core Versus Packs
 
@@ -455,6 +461,18 @@ and missing receipt coverage. It is scoring input only: it does not train a
 model, mutate scores automatically, approve policies, activate enforcement, or
 prove production readiness.
 
+The Drift And Policy Debt Detector is the first review-only detector for stale
+Foundry assumptions. It lives in
+`src/consequence-admission/policy-foundry-drift-policy-debt-detector.ts`, is
+covered by `tests/policy-foundry-drift-policy-debt-detector.test.ts`, and is
+exposed through `test:policy-foundry-drift-policy-debt-detector`. It combines
+coverage, gate-planner, candidate-registry, counterexample-ledger, Policy Twin,
+and outcome-feedback evidence to detect new surfaces, stale policy windows,
+verifier/gateway coverage drift, actor concentration, policy/shadow mismatch,
+negative outcome feedback, schema/template debt, and replay/idempotency debt.
+It is review material only: it does not mutate policy, deploy infrastructure,
+activate enforcement, or prove production readiness.
+
 ```text
 coverageScore
 coverageDimensions
@@ -505,6 +523,11 @@ reviewerAgreementRate
 downstreamSuccessRate
 feedbackCompletenessRate
 automaticScoreMutationAllowed: false
+driftPolicyDebtDetector
+driftStatus
+driftEntries
+driftNoGoReasons
+automaticRemediationAllowed: false
 readinessScore
 sampleSize
 actorDistributionHealth
@@ -583,7 +606,8 @@ onboarding red-team fixture generation, and the first onboarding session
 contract plus the first coverage score, minimum viable gate planner, and
 schema-bound candidate registry, counterexample ledger, and Policy Twin v2
 summary plus authority relationship context, review-only patch pack, and
-one-command self-onboarding CLI plus the first outcome feedback loop
+one-command self-onboarding CLI plus the first outcome feedback loop and drift
+policy-debt detector
 contracts. It does not yet have a live
 adversarial replay executor, UI workflow, or full commercial entitlement
 contract for Foundry capabilities. The deeper self-onboarding track is tracked in

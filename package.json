@@ -216,6 +216,7 @@
     "test:consequence-admission-customer-gate": "tsx tests/consequence-admission-customer-gate.test.ts",
     "test:ai-action-control-plane-architecture": "tsx tests/ai-action-control-plane-architecture.test.ts",
     "test:architecture-boundary-imports": "tsx tests/architecture-boundary-imports.test.ts",
+    "test:platform-string-normalization": "tsx tests/platform-string-normalization.test.ts",
     "test:pipeline-connector-fail-closed": "tsx tests/pipeline-connector-fail-closed.test.ts",
     "test:tenant-isolation-production-guard": "tsx tests/tenant-isolation-production-guard.test.ts",
     "test:account-auth-abuse-guard": "tsx tests/account-auth-abuse-guard.test.ts",

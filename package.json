@@ -118,6 +118,7 @@
     "test:consequence-admission-crypto": "tsx tests/consequence-admission-crypto.test.ts",
     "test:consequence-admission-facade": "tsx tests/consequence-admission-facade.test.ts",
     "test:consequence-admission-readiness": "tsx tests/consequence-admission-readiness.test.ts",
+    "test:control-plane-role-naming": "tsx tests/control-plane-role-naming.test.ts",
     "test:consequence-admission-pack-decision-profile": "tsx tests/consequence-admission-pack-decision-profile.test.ts",
     "test:generic-admission-mode-ladder": "tsx tests/generic-admission-mode-ladder.test.ts",
     "test:generic-admission-routes": "tsx tests/generic-admission-routes.test.ts",

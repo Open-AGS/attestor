@@ -206,6 +206,22 @@ assert.equal(
   'attestor.consequence-admission-pack-decision-profile.v1',
 );
 assert.equal(
+  admission.consequenceAdmissionDescriptor().controlPlaneRoleVersion,
+  'attestor.control-plane-roles.v1',
+);
+assert.equal(
+  admission.consequenceAdmissionDescriptor().controlPlaneRoles.includes('pdp'),
+  true,
+);
+assert.equal(
+  admission.attestorControlPlaneRoleDescriptor('pep').name,
+  'Policy Enforcement Point',
+);
+assert.equal(
+  admission.attestorControlPlaneRoleDescriptor('pip').mayApproveActionByItself,
+  false,
+);
+assert.equal(
   admission.consequenceAdmissionPackDecisionProfileDescriptor().signalKinds.includes(
     'crypto-adapter-readiness-posture',
   ),

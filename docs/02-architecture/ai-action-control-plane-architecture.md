@@ -95,6 +95,11 @@ These are engineering anchors. They do not certify Attestor.
 | Packs | Add domain defaults, evidence shapes, templates, adapters, and replay examples without owning a separate decision engine. | finance, crypto, filing, and future consequence packs |
 | Hosted service | Composes routes, account state, billing, storage, and runtime wiring without becoming the authority model. | `src/service` |
 
+The machine-readable naming contract for these roles lives in
+`src/consequence-admission/control-plane-roles.ts`. It is exported from
+`attestor/consequence-admission` so docs, package consumers, and tests refer to
+the same role names and boundary prohibitions.
+
 ## Boundary Rules
 
 These rules are the architecture target for future boundary tests.
@@ -177,9 +182,9 @@ New top-level directories should be added only when a repeated boundary is
 already proven by code, tests, and docs. Until then, prefer narrow extraction
 inside the existing bounded context.
 
-## Immediate Refactor Implication
+## First Refactor Proof
 
-The trailing-slash normalizer cleanup should be the first small platform
+The completed trailing-slash normalizer cleanup is the first small platform
 primitive extraction:
 
 - create a domain-neutral deterministic helper under `src/platform`

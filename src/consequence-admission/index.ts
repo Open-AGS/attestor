@@ -81,6 +81,11 @@ import {
   CONSEQUENCE_ADMISSION_PACK_DECISION_RECOMMENDED_ACTIONS,
   CONSEQUENCE_ADMISSION_PACK_DECISION_SIGNAL_KINDS,
 } from './pack-decision-profile.js';
+import {
+  ATTESTOR_CONTROL_PLANE_ROLES,
+  ATTESTOR_CONTROL_PLANE_ROLE_VERSION,
+  ATTESTOR_CONTROL_PLANE_ROLE_DESCRIPTORS,
+} from './control-plane-roles.js';
 
 export const CONSEQUENCE_ADMISSION_CONTRACT_VERSION =
   'attestor.consequence-admission.v1';
@@ -445,6 +450,7 @@ export interface ConsequenceAdmissionDescriptor {
   readonly correctionCatalogVersion: typeof CONSEQUENCE_ADMISSION_CORRECTION_CATALOG_VERSION;
   readonly dataMinimizationPolicyVersion: typeof CONSEQUENCE_DATA_MINIMIZATION_REDACTION_POLICY_VERSION;
   readonly packDecisionProfileVersion: typeof CONSEQUENCE_ADMISSION_PACK_DECISION_PROFILE_VERSION;
+  readonly controlPlaneRoleVersion: typeof ATTESTOR_CONTROL_PLANE_ROLE_VERSION;
   readonly retryDefaultMaxAttempts: typeof CONSEQUENCE_ADMISSION_RETRY_DEFAULT_MAX_ATTEMPTS;
   readonly retryDefaultWindowSeconds: typeof CONSEQUENCE_ADMISSION_RETRY_DEFAULT_WINDOW_SECONDS;
   readonly decisions: typeof CONSEQUENCE_ADMISSION_DECISIONS;
@@ -460,6 +466,8 @@ export interface ConsequenceAdmissionDescriptor {
   readonly feedbackDisclosureLevels: typeof CONSEQUENCE_ADMISSION_FEEDBACK_DISCLOSURE_LEVELS;
   readonly correctionAudiences: typeof CONSEQUENCE_ADMISSION_CORRECTION_AUDIENCES;
   readonly correctionReasonCodes: readonly string[];
+  readonly controlPlaneRoles: typeof ATTESTOR_CONTROL_PLANE_ROLES;
+  readonly controlPlaneRoleDescriptors: typeof ATTESTOR_CONTROL_PLANE_ROLE_DESCRIPTORS;
   readonly dataMinimizationSurfaceKinds: typeof CONSEQUENCE_DATA_MINIMIZATION_SURFACE_KINDS;
   readonly dataMinimizationForbiddenRawClasses: typeof CONSEQUENCE_DATA_MINIMIZATION_FORBIDDEN_RAW_CLASSES;
   readonly packDecisionPostures: typeof CONSEQUENCE_ADMISSION_PACK_DECISION_POSTURES;
@@ -2012,6 +2020,7 @@ ConsequenceAdmissionDescriptor {
     correctionCatalogVersion: CONSEQUENCE_ADMISSION_CORRECTION_CATALOG_VERSION,
     dataMinimizationPolicyVersion: CONSEQUENCE_DATA_MINIMIZATION_REDACTION_POLICY_VERSION,
     packDecisionProfileVersion: CONSEQUENCE_ADMISSION_PACK_DECISION_PROFILE_VERSION,
+    controlPlaneRoleVersion: ATTESTOR_CONTROL_PLANE_ROLE_VERSION,
     retryDefaultMaxAttempts: CONSEQUENCE_ADMISSION_RETRY_DEFAULT_MAX_ATTEMPTS,
     retryDefaultWindowSeconds: CONSEQUENCE_ADMISSION_RETRY_DEFAULT_WINDOW_SECONDS,
     decisions: CONSEQUENCE_ADMISSION_DECISIONS,
@@ -2027,6 +2036,8 @@ ConsequenceAdmissionDescriptor {
     feedbackDisclosureLevels: CONSEQUENCE_ADMISSION_FEEDBACK_DISCLOSURE_LEVELS,
     correctionAudiences: CONSEQUENCE_ADMISSION_CORRECTION_AUDIENCES,
     correctionReasonCodes: consequenceAdmissionCorrectionCatalog().reasonCodes,
+    controlPlaneRoles: ATTESTOR_CONTROL_PLANE_ROLES,
+    controlPlaneRoleDescriptors: ATTESTOR_CONTROL_PLANE_ROLE_DESCRIPTORS,
     dataMinimizationSurfaceKinds: CONSEQUENCE_DATA_MINIMIZATION_SURFACE_KINDS,
     dataMinimizationForbiddenRawClasses: CONSEQUENCE_DATA_MINIMIZATION_FORBIDDEN_RAW_CLASSES,
     packDecisionPostures: CONSEQUENCE_ADMISSION_PACK_DECISION_POSTURES,
@@ -2083,6 +2094,7 @@ export * from './dashboard-api-summary.js';
 export * from './external-review-packet.js';
 export * from './data-minimization-redaction-policy.js';
 export * from './pack-decision-profile.js';
+export * from './control-plane-roles.js';
 export * from './downstream-enforcement-contract.js';
 export * from './verifier-helper.js';
 export * from './shadow-events.js';

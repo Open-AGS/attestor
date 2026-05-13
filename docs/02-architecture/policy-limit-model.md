@@ -1,6 +1,6 @@
 # Policy Limit Model
 
-Policy limits are the bounded part of the AI Consequence Gateway.
+Policy limits are the bounded part of consequence admission inside the AI Action Control Plane.
 
 An admission should not be a broad permission like:
 

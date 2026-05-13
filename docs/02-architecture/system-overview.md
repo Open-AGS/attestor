@@ -16,7 +16,7 @@ The core pattern is:
 AI proposes -> policy, authority, evidence, and enforcement checks -> admitted, narrowed, reviewed, or blocked consequence
 ```
 
-That same pattern spans AI-output release, programmable-money authorization, data export, authority change, communication, filing, and operational execution. The architecture therefore has one shared action-authorization core and multiple packs, not multiple unrelated products hiding in one repository.
+That same pattern spans AI-output release, programmable-money authorization, data export, authority change, communication, filing, and operational execution. The architecture therefore has one shared consequence-admission core and multiple packs, not multiple unrelated products hiding in one repository.
 
 The security target is reference-monitor-style, not a blanket claim that Attestor is a classical reference monitor in every customer deployment. A workflow only earns that posture when a real PEP, gateway, verifier, or adapter catches the action before downstream execution and the path is tested against the admission proof, binding, replay, and failure-mode controls.
 
@@ -214,7 +214,7 @@ The following distinctions matter:
 
 So the honest architectural statement is:
 
-**Attestor is one AI action authorization layer with a real consequence-gateway core and modular packs, but not every pack or supporting slice is equally mature.**
+**Attestor is one AI Action Control Plane with a shared consequence-admission core and modular packs, but not every pack or supporting slice is equally mature.**
 
 ## Current Work Posture
 

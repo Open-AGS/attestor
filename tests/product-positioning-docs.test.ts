@@ -29,7 +29,7 @@ function testTopLevelPositioningStaysAligned(): void {
   const packaging = readProjectFile('docs', '01-overview', 'product-packaging.md');
   const useCases = readProjectFile('docs', '01-overview', 'what-you-can-do.md');
 
-  includes(readme, 'Attestor is the authorization layer for AI actions before they become consequences.', 'Product docs: README keeps action authorization framing');
+  includes(readme, 'Attestor decides when AI intent is allowed to become business consequence.', 'Product docs: README keeps AI Action Control Plane framing');
   includes(readme, 'Start in shadow mode. See what your AI agents would have done before you let them act.', 'Product docs: README makes shadow mode the adoption wedge');
   includes(readme, 'observe -> recommend -> simulate -> approve -> enforce -> prove', 'Product docs: README keeps the shadow-to-enforcement path');
   includes(readme, 'Attestor can start in `observe` or `warn` mode.', 'Product docs: README makes non-blocking adoption concrete');
@@ -39,22 +39,25 @@ function testTopLevelPositioningStaysAligned(): void {
   includes(readme, 'Some failures are deliberately not model-retryable.', 'Product docs: README blocks retry-loop overclaim');
   includes(readme, 'This is the route-level entry point for the shadow-to-enforcement ladder described above.', 'Product docs: README avoids repeating the route mode explanation');
   includes(readme, 'a treasury or wallet workflow prepares a programmable-money transaction', 'Product docs: README uses consequence-pack examples');
-  includes(readme, 'Attestor is one product: an AI Action Control Plane with a shared authorization core and modular packs for specific consequence domains.', 'Product docs: README keeps one-product control-plane framing');
+  includes(readme, 'Attestor is one product: an AI Action Control Plane with a shared consequence-admission core and modular packs for specific consequence domains.', 'Product docs: README keeps one-product control-plane framing');
   includes(readme, 'The deeper architecture decision is [AI Action Control Plane architecture](docs/02-architecture/ai-action-control-plane-architecture.md).', 'Product docs: README links the control-plane ADR');
+  includes(readme, '[Attestor language contract](docs/02-architecture/attestor-language-contract.md)', 'Product docs: README links the language contract');
   includes(readme, '[Domain pack boundary](docs/02-architecture/domain-pack-boundary.md)', 'Product docs: README links the domain-pack boundary');
   includes(readme, 'The machine-readable domain-pack boundary is exported from `attestor/consequence-admission`.', 'Product docs: README names the packaged domain-pack boundary contract');
   includes(readme, 'This is not a claim that every customer workflow is already non-bypassable', 'Product docs: README keeps reference-monitor non-claim visible');
-  includes(readme, 'AI action authorization infrastructure', 'Product docs: README names the infrastructure category');
+  includes(readme, 'AI action control-plane infrastructure', 'Product docs: README names the infrastructure category');
   includes(readme, '## Consequence Packs', 'Product docs: README names consequence packs before architecture');
   includes(readme, 'A pack does not answer "is this finance or crypto?" It answers the control question:', 'Product docs: README blocks industry-pack framing');
   includes(readme, 'The pack is the consequence class. Adapters sit underneath it.', 'Product docs: README keeps adapters below consequence packs');
-  includes(actionPositioning, 'AI action authorization is the market category.', 'Product docs: action authorization positioning names the category');
-  includes(actionPositioning, 'AI Consequence Gateway is the Attestor operating model.', 'Product docs: action authorization positioning preserves consequence-gateway language');
+  includes(actionPositioning, 'AI Action Control Plane is the product category.', 'Product docs: action authorization positioning names the category');
+  includes(actionPositioning, 'The operating model is consequence admission:', 'Product docs: action authorization positioning preserves consequence-admission language');
+  includes(actionPositioning, 'Authorization remains valid inside Attestor, but it is not the whole product category.', 'Product docs: action authorization positioning scopes authorization language');
   includes(actionPositioning, 'This is the pack language.', 'Product docs: action authorization positioning names consequence-class pack language');
   includes(actionPositioning, 'observe -> recommend -> simulate -> approve -> enforce -> prove', 'Product docs: action authorization positioning keeps shadow mode adoption path');
   includes(actionPositioning, 'Current implementation note: `POST /api/v1/admissions` already has the first mode ladder', 'Product docs: action authorization positioning bounds shadow implementation');
   includes(actionPositioning, 'Attestor returns bounded correction feedback so agents can retry safely without learning sensitive data or bypassing policy.', 'Product docs: action authorization positioning frames safe retry correctly');
   includes(purpose, 'Attestor is one product:', 'Product docs: purpose keeps one-product framing');
+  includes(purpose, '[Attestor language contract](../02-architecture/attestor-language-contract.md)', 'Product docs: purpose links the language contract');
   includes(purpose, '[Domain pack boundary](../02-architecture/domain-pack-boundary.md)', 'Product docs: purpose links domain pack boundary');
   includes(purpose, '`attestor/consequence-admission`', 'Product docs: purpose names consequence admission package surface');
   includes(purpose, 'The domain-pack boundary keeps finance, crypto, filing, general admission, and future packs as bounded extensions over the shared admission core.', 'Product docs: purpose keeps pack boundary explicit');
@@ -112,6 +115,8 @@ function testCoreAndPackStatusStayConsistent(): void {
   excludes(readme, /separate product per domain/iu, 'Product docs: README should not imply domain products');
   excludes(readme, /a finance assistant prepares a report from live warehouse data/u, 'Product docs: README should not lead use cases with finance-only wording');
   excludes(readme, /a crypto workflow prepares a Safe transaction/u, 'Product docs: README should not lead use cases with crypto-only wording');
+  excludes(readme, /\*\*AI Action Authorization Layer\.\*\*/u, 'Product docs: README should not lead with old authorization-layer category');
+  excludes(readme, /Attestor is the authorization layer for AI actions before they become consequences/u, 'Product docs: README should not use old authorization-layer headline sentence');
   includes(purpose, 'The finance pack remains the deepest proven wedge today.', 'Product docs: purpose keeps finance as strongest wedge');
   includes(purpose, 'not a public hosted crypto HTTP route', 'Product docs: purpose keeps crypto hosted-route guardrail');
   includes(firstIntegrations, 'Do not describe crypto as generally available through a public hosted route', 'Product docs: first integrations keep crypto hosted-route guardrail');

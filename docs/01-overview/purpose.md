@@ -3,7 +3,8 @@
 Use this page as the shortest internal orientation note.
 
 For the public product framing, use the [README](../../README.md).
-For the category framing, use [AI action authorization positioning](action-authorization-positioning.md).
+For the category framing, use [AI Action Control Plane positioning](action-authorization-positioning.md).
+For the naming and claim boundary, use [Attestor language contract](../02-architecture/attestor-language-contract.md).
 For the customer-facing operating model, use [Operating model](operating-model.md).
 For the architecture map, use [System overview](../02-architecture/system-overview.md).
 For the consequence domain vocabulary, use [Consequence taxonomy](../02-architecture/consequence-taxonomy.md).
@@ -23,7 +24,7 @@ For commercial packaging, use [Commercial packaging, pricing, and evaluation](pr
 
 Attestor is one product:
 
-**an AI action authorization layer implemented as an AI consequence gateway: a policy-bound admission layer before important AI actions become real system changes.**
+**an AI Action Control Plane with a shared consequence-admission core before important AI actions become real system changes.**
 
 The repository currently contains a shared platform core with curated package surfaces:
 
@@ -52,11 +53,11 @@ Supporting slices such as healthcare, Snowflake, VSAC, observability, HA/DR, OID
 
 ## What It Is
 
-Attestor is an AI action authorization layer for high-risk actions, implemented as an AI consequence gateway.
+Attestor is an AI Action Control Plane for high-risk actions, implemented through a shared consequence-admission core and enforcement points.
 
 It is used when a customer-controlled system has a proposed output, record, communication, action, filing-like artifact, data export, authority change, infrastructure change, or programmable-money execution path that should not proceed on informal trust.
 
-The customer system calls Attestor before the downstream system writes, sends, files, executes, signs, broadcasts, settles, or routes the consequence. Attestor evaluates policy, authority, evidence, freshness, and enforcement posture, then returns a bounded authorization decision and proof material.
+The customer system calls Attestor before the downstream system writes, sends, files, executes, signs, broadcasts, settles, or routes the consequence. Attestor evaluates policy, authority, evidence, freshness, scope, replay posture, and enforcement posture, then returns a bounded admission decision and proof material.
 
 The consequence taxonomy names the domains behind that boundary: financial records, money movement, programmable money, data disclosure, authority change, external communication, regulated filing, system operation, decision support, and custom customer surfaces.
 

@@ -254,6 +254,30 @@ assert.equal(
   true,
 );
 assert.equal(
+  admission.consequenceAdmissionDescriptor().guardActivationReadinessVersion,
+  'attestor.consequence-guard-activation-readiness.v1',
+);
+assert.equal(
+  admission.consequenceGuardActivationReadinessDescriptor().separatesDecisionRenderingFromEnforcement,
+  true,
+);
+assert.equal(
+  admission.consequenceGuardActivationReadinessDescriptor().guardIds.includes(
+    'tool-result-poisoning-guard',
+  ),
+  true,
+);
+assert.equal(
+  admission.consequenceGuardActivationReadinessDescriptor().criterionIds.includes(
+    'downstream-verifier-integrated',
+  ),
+  true,
+);
+assert.equal(
+  admission.evaluateConsequenceGuardActivationReadiness().productionReady,
+  false,
+);
+assert.equal(
   admission.consequenceDomainPackBoundaryDescriptor().primaryRole,
   'pack',
 );

@@ -94,6 +94,7 @@ function architectureScriptNames() {
     'test:failure-mode-control-bindings',
     'test:failure-mode-replay-fixtures',
     'test:replay-layer-placement',
+    'test:guard-activation-readiness',
     'test:consequence-admission-readiness',
     'test:product-positioning-docs',
     'test:hosted-product-flow-docs',

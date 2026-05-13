@@ -93,6 +93,9 @@ function testDescriptorCoversCriticalSurfaces(): void {
   const hostedOnboardingWorkflow = descriptor.surfaces.find((surface) =>
     surface.surfaceKind === 'policy-foundry-hosted-onboarding-workflow'
   );
+  const hostedReviewSurface = descriptor.surfaces.find((surface) =>
+    surface.surfaceKind === 'policy-foundry-hosted-review-surface'
+  );
   const externalReview = descriptor.surfaces.find((surface) =>
     surface.surfaceKind === 'external-review-packet'
   );
@@ -246,6 +249,19 @@ function testDescriptorCoversCriticalSurfaces(): void {
   ok(
     hostedOnboardingWorkflow?.allowedUnits.includes('approval-state'),
     'Data minimization policy: hosted onboarding workflow allows approval state',
+  );
+  ok(hostedReviewSurface, 'Data minimization policy: hosted review surface is present');
+  ok(
+    hostedReviewSurface?.allowedUnits.includes('safe-instruction'),
+    'Data minimization policy: hosted review surface allows safe instructions',
+  );
+  ok(
+    hostedReviewSurface?.allowedUnits.includes('digests'),
+    'Data minimization policy: hosted review surface allows source digests',
+  );
+  ok(
+    hostedReviewSurface?.allowedUnits.includes('counts'),
+    'Data minimization policy: hosted review surface allows aggregate counts',
   );
   ok(externalReview, 'Data minimization policy: external review packet surface is present');
   ok(
@@ -467,6 +483,11 @@ function testDocsAndScriptsExposePolicy(): void {
     doc,
     'policy-foundry-hosted-onboarding-workflow',
     'Data minimization policy: doc lists hosted onboarding workflow surface',
+  );
+  includes(
+    doc,
+    'policy-foundry-hosted-review-surface',
+    'Data minimization policy: doc lists hosted review surface',
   );
   includes(
     doc,

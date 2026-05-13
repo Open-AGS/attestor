@@ -399,8 +399,31 @@ It separates safe automation from approval-gated and prohibited automation. It
 can render current work, prefill from digest-bound sources, and show next safe
 steps. It must not apply patches, issue credentials, deploy infrastructure,
 execute production traffic, activate enforcement, or make a non-bypassable
-claim. Hosted UI/route implementation and billing-provider entitlement
-enforcement remain separate unresolved tasks.
+claim. The hosted workflow route wrapper exists as stateless review material,
+but hosted UI implementation and billing-provider entitlement enforcement remain
+separate unresolved tasks.
+
+## Step 15 Scope
+
+Step 15 adds `attestor.policy-foundry-hosted-review-surface.v1`.
+
+The hosted review surface turns the hosted onboarding workflow into a compact
+UI/API shape:
+
+```text
+hosted onboarding workflow
+-> headline
+-> task cards
+-> no-go cards
+-> evidence digest cards
+-> next safe step
+```
+
+It is intentionally smaller than the full packet and avoids raw onboarding
+inputs. It does not apply patches, issue credentials, deploy infrastructure,
+execute production traffic, activate enforcement, implement the hosted UI, or
+prove production readiness. The full digest-bound packet remains required for
+implementation review.
 
 ## Protected Principles
 
@@ -426,7 +449,9 @@ contracts, or shared product positioning are touched.
 
 ## Current Status
 
-Step 01 through Step 12 are complete. The repo-side self-onboarding deepening
-list is complete. Hosted UI flows, live adversarial replay execution, billing
-provider entitlement enforcement, deployment wiring, and production smoke tests
-remain outside this tracker.
+Step 01 through Step 12 are complete. Step 13 through Step 15 are also complete
+repo-side: the repo-side self-onboarding deepening list now includes the local
+adversarial replay executor, hosted workflow contract, stateless hosted workflow
+route wrapper, and compact hosted review surface. Hosted UI flows, live
+adversarial replay execution, billing provider entitlement enforcement,
+deployment wiring, and production smoke tests remain outside this tracker.

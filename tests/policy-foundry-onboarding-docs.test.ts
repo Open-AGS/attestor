@@ -149,6 +149,11 @@ function testPolicyFoundryArchitectureIsGrounded(): void {
   );
   includes(
     doc,
+    'src/consequence-admission/policy-foundry-hosted-review-surface.ts',
+    'Policy Foundry docs: hosted review surface contract evidence is named',
+  );
+  includes(
+    doc,
     'scripts/render-policy-foundry-self-onboarding.ts',
     'Policy Foundry docs: self-onboarding renderer evidence is named',
   );
@@ -206,6 +211,11 @@ function testReadmeNamesPolicyFoundryWithoutOverclaiming(): void {
     readme,
     'hosted onboarding workflow contract',
     'README: hosted onboarding workflow contract is named without UI overclaim',
+  );
+  includes(
+    readme,
+    'hosted review surface',
+    'README: hosted review surface is named without UI overclaim',
   );
   includes(
     readme,
@@ -453,6 +463,16 @@ function testPackageScriptIsExposed(): void {
     pkg.scripts['test:policy-foundry-hosted-onboarding-workflow'] ?? '',
     'tsx tests/policy-foundry-hosted-onboarding-workflow.test.ts',
     'Package: Policy Foundry hosted onboarding workflow test command is stable',
+  );
+  includes(
+    JSON.stringify(pkg.scripts),
+    'test:policy-foundry-hosted-review-surface',
+    'Package: Policy Foundry hosted review surface test is exposed',
+  );
+  includes(
+    pkg.scripts['test:policy-foundry-hosted-review-surface'] ?? '',
+    'tsx tests/policy-foundry-hosted-review-surface.test.ts',
+    'Package: Policy Foundry hosted review surface test command is stable',
   );
 }
 

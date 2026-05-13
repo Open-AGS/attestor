@@ -13,6 +13,7 @@ import {
   createPolicyFoundryAdversarialReplayExecutor,
   createPolicyFoundryCommercialBoundary,
   createPolicyFoundryHostedOnboardingWorkflow,
+  createPolicyFoundryHostedReviewSurface,
   createPolicyFoundrySelfOnboardingCliPacket,
   type ActionSurfaceDeclaration,
   type ActionSurfaceDeclaredCredentialPosture,
@@ -456,6 +457,10 @@ export function registerPolicyFoundryHostedOnboardingRoutes(
         rawPayloadStorageRequested:
           optionalBoolean(body.rawPayloadStorageRequested, 'rawPayloadStorageRequested', false),
       });
+      const reviewSurface = createPolicyFoundryHostedReviewSurface({
+        generatedAt,
+        workflow,
+      });
 
       return c.json({
         tenant: tenantDigest(tenant),
@@ -479,6 +484,7 @@ export function registerPolicyFoundryHostedOnboardingRoutes(
         adversarialReplay,
         commercialBoundary,
         workflow,
+        reviewSurface,
       });
     } catch (error) {
       const detail =

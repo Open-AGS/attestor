@@ -157,6 +157,18 @@ async function testHostedRouteRendersStatelessReviewWorkflow(): Promise<void> {
       readonly noGoReasons: readonly string[];
       readonly currentStepIds: readonly string[];
       readonly productionReady: boolean;
+      readonly digest: string;
+    };
+    readonly reviewSurface: {
+      readonly status: string;
+      readonly workflowDigest: string;
+      readonly headline: string;
+      readonly taskCards: readonly { readonly stepId: string; readonly priority: string }[];
+      readonly noGoCards: readonly { readonly reason: string }[];
+      readonly evidenceCards: readonly { readonly evidenceKind: string }[];
+      readonly fullPacketRequiredForImplementation: boolean;
+      readonly productionReady: boolean;
+      readonly hostedUiImplemented: boolean;
     };
     readonly adversarialReplay: null;
     readonly commercialBoundary: {
@@ -185,6 +197,12 @@ async function testHostedRouteRendersStatelessReviewWorkflow(): Promise<void> {
   equal(body.workflow.hostedRouteImplemented, false, 'Policy Foundry hosted route: workflow contract still does not claim its own route');
   equal(body.workflow.hostedUiImplemented, false, 'Policy Foundry hosted route: hosted UI is not claimed');
   equal(body.workflow.productionReady, false, 'Policy Foundry hosted route: workflow is not production-ready');
+  equal(body.reviewSurface.status, body.workflow.status, 'Policy Foundry hosted route: review surface status follows workflow');
+  equal(body.reviewSurface.workflowDigest, body.workflow.digest, 'Policy Foundry hosted route: review surface binds workflow digest');
+  equal(body.reviewSurface.headline, 'Customer action required', 'Policy Foundry hosted route: review surface headline is compact');
+  equal(body.reviewSurface.fullPacketRequiredForImplementation, true, 'Policy Foundry hosted route: compact surface requires full packet for implementation');
+  equal(body.reviewSurface.productionReady, false, 'Policy Foundry hosted route: review surface is not production-ready');
+  equal(body.reviewSurface.hostedUiImplemented, false, 'Policy Foundry hosted route: review surface does not claim UI');
   ok(
     body.workflow.noGoReasons.includes('adversarial-replay-missing'),
     'Policy Foundry hosted route: missing replay is a no-go',
@@ -192,6 +210,18 @@ async function testHostedRouteRendersStatelessReviewWorkflow(): Promise<void> {
   ok(
     body.workflow.currentStepIds.includes('adversarial-replay'),
     'Policy Foundry hosted route: adversarial replay remains due',
+  );
+  ok(
+    body.reviewSurface.taskCards.some((task) => task.stepId === 'adversarial-replay'),
+    'Policy Foundry hosted route: review surface exposes adversarial replay task',
+  );
+  ok(
+    body.reviewSurface.noGoCards.some((card) => card.reason === 'adversarial-replay-missing'),
+    'Policy Foundry hosted route: review surface exposes replay no-go',
+  );
+  ok(
+    body.reviewSurface.evidenceCards.some((card) => card.evidenceKind === 'selfOnboardingPacketDigest'),
+    'Policy Foundry hosted route: review surface exposes source evidence digest card',
   );
   equal(body.commercialBoundary.plan, 'starter', 'Policy Foundry hosted route: commercial boundary uses tenant plan');
   equal(body.commercialBoundary.noGoReasons.length, 0, 'Policy Foundry hosted route: starter request is allowed for requested review capabilities');
@@ -252,6 +282,11 @@ async function testHostedRouteCanAcceptPassingReplayObservations(): Promise<void
       readonly sourceDigests: { readonly adversarialReplayDigest: string | null };
       readonly productionReady: boolean;
     };
+    readonly reviewSurface: {
+      readonly workflowDigest: string;
+      readonly noGoCards: readonly { readonly reason: string }[];
+      readonly productionReady: boolean;
+    };
   };
 
   equal(second.status, 200, 'Policy Foundry hosted route: passing replay request succeeds');
@@ -269,6 +304,8 @@ async function testHostedRouteCanAcceptPassingReplayObservations(): Promise<void
     'Policy Foundry hosted route: replay digest is bound into workflow',
   );
   equal(secondBody.workflow.productionReady, false, 'Policy Foundry hosted route: passing replay still does not prove production readiness');
+  equal(secondBody.reviewSurface.noGoCards.some((card) => card.reason === 'adversarial-replay-missing'), false, 'Policy Foundry hosted route: review surface clears replay-missing no-go');
+  equal(secondBody.reviewSurface.productionReady, false, 'Policy Foundry hosted route: review surface still does not prove production readiness');
 }
 
 async function testHostedRouteKeepsTenantScopedShadowEvents(): Promise<void> {
@@ -357,6 +394,10 @@ async function testHostedRouteBlocksUnsafeAutomationRequests(): Promise<void> {
       readonly status: string;
       readonly noGoReasons: readonly string[];
     };
+    readonly reviewSurface: {
+      readonly status: string;
+      readonly noGoCards: readonly { readonly reason: string }[];
+    };
     readonly commercialBoundary: {
       readonly noGoReasons: readonly string[];
     };
@@ -371,6 +412,7 @@ async function testHostedRouteBlocksUnsafeAutomationRequests(): Promise<void> {
   equal(body.deploysInfrastructure, false, 'Policy Foundry hosted route: deploy remains false');
   equal(body.executesProductionTraffic, false, 'Policy Foundry hosted route: production execution remains false');
   equal(body.workflow.status, 'blocked', 'Policy Foundry hosted route: unsafe requests block workflow');
+  equal(body.reviewSurface.status, 'blocked', 'Policy Foundry hosted route: unsafe requests block review surface');
   for (const reason of [
     'auto-enforce-requested',
     'credential-issuance-requested',
@@ -383,6 +425,10 @@ async function testHostedRouteBlocksUnsafeAutomationRequests(): Promise<void> {
   ok(
     body.commercialBoundary.noGoReasons.includes('shadow-auto-enforce-requested'),
     'Policy Foundry hosted route: commercial boundary also rejects shadow auto-enforce',
+  );
+  ok(
+    body.reviewSurface.noGoCards.some((card) => card.reason === 'auto-enforce-requested'),
+    'Policy Foundry hosted route: review surface exposes unsafe automation blocker',
   );
 }
 

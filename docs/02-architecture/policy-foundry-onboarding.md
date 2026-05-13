@@ -554,6 +554,16 @@ does not store raw payloads, issue credentials, apply patches, deploy
 infrastructure, execute production traffic, activate enforcement, implement a
 hosted UI, enforce billing-provider entitlements, or prove production readiness.
 
+The compact hosted review surface lives in
+`src/consequence-admission/policy-foundry-hosted-review-surface.ts`, is covered
+by `tests/policy-foundry-hosted-review-surface.test.ts`, and is exposed through
+`test:policy-foundry-hosted-review-surface`. It summarizes the hosted workflow
+into UI/API-friendly task cards, no-go cards, evidence digest cards, safe
+automations, approval-gated automations, prohibited automations, and one next
+safe step. It is intentionally smaller than the full self-onboarding packet: it
+does not expose raw source material or raw tenant ids, and it is not enough to
+apply implementation changes without the underlying digest-bound packet.
+
 ```text
 coverageScore
 coverageDimensions
@@ -627,6 +637,12 @@ blockedStepIds
 hostedUiImplemented: false
 hostedRouteImplemented: false
 deploymentEntitlementEnforcementImplemented: false
+hostedReviewSurface
+headline
+taskCards
+noGoCards
+evidenceCards
+fullPacketRequiredForImplementation: true
 readinessScore
 sampleSize
 actorDistributionHealth
@@ -701,6 +717,11 @@ explicit and keeps safe automations separate from approval-gated or prohibited
 automation. The contract does not implement a hosted UI or route by itself; the
 stateless route above renders it as review material.
 
+The hosted review surface is the compact API shape that a future hosted UI can
+render without parsing every nested packet. It keeps the same review-only
+boundary: no patch application, no credential issuance, no infrastructure
+deployment, no production traffic, and no enforcement activation.
+
 ## Current Status
 
 Repository foundations already exist in:
@@ -724,6 +745,7 @@ now also has the first hosted onboarding workflow contract. It does not yet have
 production/live downstream adversarial replay execution, a hosted UI
 implementation, or hosted billing-provider entitlement enforcement for Foundry
 capabilities. It now has the first stateless hosted workflow route wrapper for
-review material.
+review material and the first compact hosted review surface for UI/API
+rendering.
 The deeper self-onboarding track is tracked in
 [Policy Foundry Self-Onboarding Deepening](policy-foundry-self-onboarding-deepening.md).

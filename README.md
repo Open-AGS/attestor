@@ -187,7 +187,10 @@ optional local adversarial replay observations, and commercial boundary context
 into one stateless review workflow. It returns digest-bound review material only:
 no raw payload is stored, no credential is issued, no patch is applied, no
 infrastructure is deployed, no production traffic is executed, and enforcement
-is not activated.
+is not activated. The response includes a compact hosted review surface with
+task cards, no-go cards, evidence digest cards, and the next safe step, so a UI
+or integrator does not need to parse the full nested packet for the first
+review screen.
 
 Minimal request shape:
 

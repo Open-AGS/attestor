@@ -194,6 +194,19 @@ review screen. The hosted UI flow route renders that same review surface as
 HTML for a first customer-facing onboarding screen while keeping the same
 review-only boundary.
 
+When `persistWizardState: true` is supplied, the hosted workflow route also
+creates persistent hosted wizard state in a local file-backed evaluation store.
+The resume route is:
+
+```http
+GET /api/v1/shadow/policy-foundry/hosted-onboarding-workflow/sessions/:sessionId
+```
+
+That state is tenant-bound, TTL-limited, and digest-only: it stores compact task
+state, no-go state, evidence digests, status, and safe next steps, not raw
+manifests, raw tenant ids, caller session refs, credentials, or shadow payloads.
+It is not shared production wizard storage and does not activate enforcement.
+
 Minimal request shape:
 
 ```json

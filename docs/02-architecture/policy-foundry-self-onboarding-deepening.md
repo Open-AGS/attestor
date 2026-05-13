@@ -33,6 +33,9 @@ preserve these boundaries:
 - Stripe CLI, OpenAPI Generator, Terraform `plan`, and Kubernetes dry-run
   patterns show that one-command onboarding should render reviewable output,
   not silently apply infrastructure, credentials, or enforcement.
+- OWASP session management and API authorization guidance show why hosted
+  wizard state must live server-side with TTL expiry and tenant-bound object
+  lookup rather than trusting client-held state.
 - OPA decision logs, OpenTelemetry signals, NIST AI RMF monitor/manage, and
   IAM Recommender observed-usage recommendations show that outcome feedback
   should be structured scoring input, not automatic authority.
@@ -59,6 +62,11 @@ These sources are engineering anchors only. They do not certify Attestor.
 | Step 10 | complete | Add Outcome Feedback Loop | Feed reviewed decisions and downstream receipts back into scoring through digest-first, data-minimized signals |
 | Step 11 | complete | Add Drift And Policy Debt Detector | Detect new surfaces, stale policies, verifier coverage drift, actor concentration, and policy/shadow mismatch |
 | Step 12 | complete | Add Commercial Boundary Contract | Separate evaluation, Starter, Pro, Scale, and Enterprise Foundry capabilities without paywalling safety minimums |
+| Step 13 | complete | Add Local Adversarial Replay Executor | Normalize local synthetic replay observations into pass/fail/no-go review material |
+| Step 14 | complete | Add Hosted Onboarding Workflow Contract | Model currently due, eventually due, and blocked hosted workflow steps |
+| Step 15 | complete | Add Hosted Review Surface | Compact task/no-go/evidence review surface for UI/API rendering |
+| Step 16 | complete | Add Hosted UI Flow Renderer | HTML task-list/status/no-go/evidence rendering from the hosted review surface |
+| Step 17 | complete | Add Persistent Hosted Wizard State | File-backed evaluation store and tenant-bound resume route for digest-only hosted wizard state |
 
 ## Step 01 Scope
 
@@ -446,6 +454,30 @@ manifests, issue credentials, deploy infrastructure, apply patches, execute
 production traffic, activate enforcement, persist a hosted wizard state, or
 prove production readiness.
 
+## Step 17 Scope
+
+Step 17 adds `attestor.policy-foundry-hosted-wizard-state.v1`.
+
+The persistent hosted wizard state slice stores compact digest-bound workflow
+state so a customer can resume the hosted onboarding wizard without resubmitting
+or exposing raw manifests:
+
+```text
+hosted review surface
++ tenant digest
+-> file-backed wizard state
+-> tenant-bound resume route
+```
+
+It stores session id, workflow digest, review-surface digest, task cards,
+no-go cards, evidence digest cards, status, safe next step, created/updated
+timestamps, expiry, and a created/updated event trail. It does not store raw
+manifests, raw tenant ids, caller session refs, shadow payloads, full packets,
+or raw review surfaces. It is local file-backed evaluation persistence only:
+shared production wizard storage, deployment wiring, billing-provider
+entitlement enforcement, live downstream replay, and production smoke tests
+remain separate unresolved tasks.
+
 ## Protected Principles
 
 - customer authority
@@ -470,10 +502,11 @@ contracts, or shared product positioning are touched.
 
 ## Current Status
 
-Step 01 through Step 12 are complete. Step 13 through Step 16 are also complete
+Step 01 through Step 12 are complete. Step 13 through Step 17 are also complete
 repo-side: the repo-side self-onboarding deepening list now includes the local
 adversarial replay executor, hosted workflow contract, stateless hosted workflow
-route wrapper, compact hosted review surface, and hosted UI flow renderer. A
-persistent hosted wizard, live adversarial replay execution, billing provider
-entitlement enforcement, deployment wiring, and production smoke tests remain
-outside this tracker.
+route wrapper, compact hosted review surface, hosted UI flow renderer, and
+local file-backed persistent hosted wizard state. Live adversarial replay
+execution, shared production wizard storage, billing provider entitlement
+enforcement, deployment wiring, and production smoke tests remain outside this
+tracker.

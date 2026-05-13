@@ -29,12 +29,18 @@ import {
   type ShadowAdmissionEvent,
 } from '../../../consequence-admission/index.js';
 import { renderPolicyFoundryHostedUiFlow } from '../../policy-foundry-hosted-ui.js';
+import type {
+  PolicyFoundryHostedWizardStateRecord,
+  PolicyFoundryHostedWizardStateStore,
+} from '../../policy-foundry-hosted-wizard-state.js';
 import type { TenantContext } from '../../tenant-isolation.js';
 
 export const HOSTED_POLICY_FOUNDRY_ONBOARDING_WORKFLOW_ROUTE =
   '/api/v1/shadow/policy-foundry/hosted-onboarding-workflow';
 export const HOSTED_POLICY_FOUNDRY_ONBOARDING_WORKFLOW_VIEW_ROUTE =
   '/api/v1/shadow/policy-foundry/hosted-onboarding-workflow/view';
+export const HOSTED_POLICY_FOUNDRY_ONBOARDING_WORKFLOW_SESSION_ROUTE =
+  '/api/v1/shadow/policy-foundry/hosted-onboarding-workflow/sessions/:sessionId';
 
 const MAX_HOSTED_MANIFESTS = 20;
 const MAX_HOSTED_DECLARATIONS = 500;
@@ -44,7 +50,7 @@ const MAX_HOSTED_REVIEWED_STEPS = 32;
 const MAX_HOSTED_CAPABILITIES = 64;
 const DEFAULT_HOSTED_MANIFEST_MAX_BYTES = 512 * 1024;
 
-type HostedPolicyFoundryProblemStatus = 400 | 503;
+type HostedPolicyFoundryProblemStatus = 400 | 404 | 503;
 
 type HostedPolicyFoundryOnboardingRequestBody = {
   readonly generatedAt?: unknown;
@@ -73,11 +79,15 @@ type HostedPolicyFoundryOnboardingRequestBody = {
   readonly infrastructureDeployRequested?: unknown;
   readonly productionTrafficExecutionRequested?: unknown;
   readonly rawPayloadStorageRequested?: unknown;
+  readonly persistWizardState?: unknown;
+  readonly wizardSessionId?: unknown;
+  readonly wizardStateTtlHours?: unknown;
 };
 
 export interface PolicyFoundryHostedOnboardingRouteDeps {
   currentTenant(context: Context): TenantContext;
   listShadowEvents(input: { readonly tenant: TenantContext }): readonly ShadowAdmissionEvent[];
+  wizardStateStore?: PolicyFoundryHostedWizardStateStore;
   now?(): string;
 }
 
@@ -127,6 +137,14 @@ function optionalNonNegativeInteger(value: unknown, fieldName: string): number |
   if (value === undefined || value === null) return null;
   if (typeof value !== 'number' || !Number.isInteger(value) || value < 0) {
     throw new Error(`Policy Foundry hosted onboarding route ${fieldName} must be a non-negative integer.`);
+  }
+  return value;
+}
+
+function optionalPositiveNumber(value: unknown, fieldName: string): number | null {
+  if (value === undefined || value === null) return null;
+  if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {
+    throw new Error(`Policy Foundry hosted onboarding route ${fieldName} must be a positive number.`);
   }
   return value;
 }
@@ -365,6 +383,7 @@ function problem(
 }
 
 function problemStatusFor(detail: string): HostedPolicyFoundryProblemStatus {
+  if (detail.includes('not found')) return 404;
   return detail.includes('hosted onboarding route') ||
     detail.includes('Policy Foundry') ||
     detail.includes('must be') ||
@@ -512,6 +531,40 @@ function createHostedPolicyFoundryOnboardingMaterial(
   });
 }
 
+function persistWizardStateIfRequested(
+  deps: PolicyFoundryHostedOnboardingRouteDeps,
+  body: HostedPolicyFoundryOnboardingRequestBody,
+  material: ReturnType<typeof createHostedPolicyFoundryOnboardingMaterial>,
+): {
+  readonly wizardState: {
+    readonly kind: 'created' | 'updated';
+    readonly session: PolicyFoundryHostedWizardStateRecord;
+  } | null;
+} {
+  if (!optionalBoolean(body.persistWizardState, 'persistWizardState', false)) {
+    return { wizardState: null };
+  }
+  if (!deps.wizardStateStore) {
+    throw new Error('Policy Foundry hosted onboarding route wizard state store is not configured.');
+  }
+  const result = deps.wizardStateStore.upsert({
+    sessionId: optionalString(body.wizardSessionId, 'wizardSessionId') ??
+      optionalString(body.sessionId, 'sessionId'),
+    tenantDigest: material.tenant.tenantDigest,
+    tenantSource: material.tenant.source,
+    planId: material.tenant.planId,
+    reviewSurface: material.reviewSurface,
+    ttlHours: optionalPositiveNumber(body.wizardStateTtlHours, 'wizardStateTtlHours'),
+    recordedAt: material.reviewSurface.generatedAt,
+  });
+  return {
+    wizardState: {
+      kind: result.kind,
+      session: result.record,
+    },
+  };
+}
+
 export function registerPolicyFoundryHostedOnboardingRoutes(
   app: Hono,
   deps: PolicyFoundryHostedOnboardingRouteDeps,
@@ -522,7 +575,14 @@ export function registerPolicyFoundryHostedOnboardingRoutes(
     if (body instanceof Response) return body;
 
     try {
-      return c.json(createHostedPolicyFoundryOnboardingMaterial(c, deps, body));
+      const material = createHostedPolicyFoundryOnboardingMaterial(c, deps, body);
+      const persisted = persistWizardStateIfRequested(deps, body, material);
+      if (!persisted.wizardState) return c.json(material);
+      return c.json({
+        ...material,
+        storageMode: 'file-backed-wizard-state',
+        wizardState: persisted.wizardState,
+      });
     } catch (error) {
       return renderFailedProblem(c, error);
     }
@@ -537,6 +597,45 @@ export function registerPolicyFoundryHostedOnboardingRoutes(
       const material = createHostedPolicyFoundryOnboardingMaterial(c, deps, body);
       return c.body(renderPolicyFoundryHostedUiFlow(material.reviewSurface), 200, {
         'content-type': 'text/html; charset=utf-8',
+      });
+    } catch (error) {
+      return renderFailedProblem(c, error);
+    }
+  });
+
+  app.get(HOSTED_POLICY_FOUNDRY_ONBOARDING_WORKFLOW_SESSION_ROUTE, (c) => {
+    c.header('cache-control', 'no-store');
+    try {
+      if (!deps.wizardStateStore) {
+        throw new Error('Policy Foundry hosted onboarding route wizard state store is not configured.');
+      }
+      const tenant = deps.currentTenant(c);
+      const tenantState = tenantDigest(tenant);
+      const sessionId = c.req.param('sessionId');
+      const found = deps.wizardStateStore.find({
+        tenantDigest: tenantState.tenantDigest,
+        sessionId,
+        now: deps.now?.() ?? new Date().toISOString(),
+      });
+      if (!found.record) {
+        return problem(c, {
+          type: 'https://attestor.dev/problems/policy-foundry-hosted-wizard-state-not-found',
+          title: 'Policy Foundry hosted wizard state not found',
+          status: 404,
+          detail: 'The requested Policy Foundry hosted wizard state was not found for this tenant.',
+          reasonCodes: ['policy-foundry-hosted-wizard-state-not-found'],
+        });
+      }
+      return c.json({
+        tenant: tenantState,
+        route: HOSTED_POLICY_FOUNDRY_ONBOARDING_WORKFLOW_SESSION_ROUTE,
+        storageMode: found.record.storageMode,
+        routeSurface: 'policy-foundry-hosted-wizard-state',
+        rawPayloadStored: false,
+        productionReady: false,
+        approvalRequired: true,
+        autoEnforce: false,
+        wizardState: found.record,
       });
     } catch (error) {
       return renderFailedProblem(c, error);

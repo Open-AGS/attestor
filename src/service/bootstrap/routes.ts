@@ -15,6 +15,10 @@ import {
   type GenericAdmissionRouteDeps,
 } from '../http/routes/generic-admission-routes.js';
 import { registerPipelineRoutes } from '../http/routes/pipeline-routes.js';
+import {
+  registerPolicyFoundryHostedOnboardingRoutes,
+  type PolicyFoundryHostedOnboardingRouteDeps,
+} from '../http/routes/policy-foundry-hosted-onboarding-routes.js';
 import { registerPublicSiteRoutes } from '../http/routes/public-site-routes.js';
 import { registerReleasePolicyControlRoutes } from '../http/routes/release-policy-control-routes.js';
 import { registerReleaseReviewRoutes } from '../http/routes/release-review-routes.js';
@@ -154,6 +158,18 @@ export function createActionSurfaceOnboardingRouteDeps<Packet>(
   };
 }
 
+export function createPolicyFoundryHostedOnboardingRouteDeps<Packet>(
+  runtime: AppRuntime<Packet>,
+): PolicyFoundryHostedOnboardingRouteDeps {
+  const shadowEventStore = createFileBackedShadowAdmissionEventStore();
+  return {
+    currentTenant: runtime.services.httpRoutes.pipeline.currentTenant,
+    listShadowEvents: ({ tenant }) =>
+      shadowEventStore.list({ tenantId: tenant.tenantId }).events,
+    now: () => new Date().toISOString(),
+  };
+}
+
 export function createWebhookRouteDeps<Packet>(runtime: AppRuntime<Packet>) {
   return runtime.services.httpRoutes.webhook;
 }
@@ -175,6 +191,7 @@ export function registerAllRoutes<Packet>(app: Hono, runtime: AppRuntime<Packet>
   registerGenericAdmissionRoutes(app, createGenericAdmissionRouteDeps(runtime));
   registerShadowRoutes(app, createShadowRouteDeps(runtime));
   registerActionSurfaceOnboardingRoutes(app, createActionSurfaceOnboardingRouteDeps(runtime));
+  registerPolicyFoundryHostedOnboardingRoutes(app, createPolicyFoundryHostedOnboardingRouteDeps(runtime));
   registerReleaseReviewRoutes(app, createReleaseReviewRouteDeps(runtime));
   registerReleasePolicyControlRoutes(app, createReleasePolicyControlRouteDeps(runtime));
   registerWebhookRoutes(app, createWebhookRouteDeps(runtime));

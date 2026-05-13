@@ -176,6 +176,19 @@ It is stateless review material: no raw manifest payload is stored, no
 credentials are issued, no gateway is deployed, and enforcement is not
 activated.
 
+The hosted Policy Foundry onboarding workflow renderer is:
+
+```http
+POST /api/v1/shadow/policy-foundry/hosted-onboarding-workflow
+```
+
+It composes bounded manifests, declarations, tenant-scoped shadow events,
+optional local adversarial replay observations, and commercial boundary context
+into one stateless review workflow. It returns digest-bound review material only:
+no raw payload is stored, no credential is issued, no patch is applied, no
+infrastructure is deployed, no production traffic is executed, and enforcement
+is not activated.
+
 Minimal request shape:
 
 ```json

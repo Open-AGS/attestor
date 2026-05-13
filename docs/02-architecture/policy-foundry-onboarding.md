@@ -537,6 +537,23 @@ infrastructure, issue credentials, apply patches, execute production traffic,
 activate enforcement, enforce billing-provider entitlements, or prove production
 readiness.
 
+The first hosted route wrapper for that contract is:
+
+```http
+POST /api/v1/shadow/policy-foundry/hosted-onboarding-workflow
+```
+
+It lives in
+`src/service/http/routes/policy-foundry-hosted-onboarding-routes.ts`, is covered
+by `tests/policy-foundry-hosted-onboarding-workflow-route.test.ts`, and is
+exposed through `test:policy-foundry-hosted-onboarding-workflow-route`. The
+route composes bounded manifests, declarations, tenant-scoped shadow events,
+optional local replay observations, and commercial boundary context into one
+stateless review workflow. It returns tenant digests, not raw tenant ids, and it
+does not store raw payloads, issue credentials, apply patches, deploy
+infrastructure, execute production traffic, activate enforcement, implement a
+hosted UI, enforce billing-provider entitlements, or prove production readiness.
+
 ```text
 coverageScore
 coverageDimensions
@@ -681,7 +698,8 @@ The hosted onboarding workflow contract composes the self-onboarding packet,
 local replay report, and commercial boundary into a step model that a hosted UI
 or API can render later. It makes currently due versus eventually due work
 explicit and keeps safe automations separate from approval-gated or prohibited
-automation. It does not implement a hosted UI or route by itself.
+automation. The contract does not implement a hosted UI or route by itself; the
+stateless route above renders it as review material.
 
 ## Current Status
 
@@ -703,8 +721,9 @@ relationship context, review-only patch pack, one-command self-onboarding CLI,
 outcome feedback loop, drift/policy-debt detector, and the commercial boundary
 contract. It now has the first local/synthetic adversarial replay executor. It
 now also has the first hosted onboarding workflow contract. It does not yet have
-production/live downstream adversarial replay execution, a hosted UI/route
+production/live downstream adversarial replay execution, a hosted UI
 implementation, or hosted billing-provider entitlement enforcement for Foundry
-capabilities.
+capabilities. It now has the first stateless hosted workflow route wrapper for
+review material.
 The deeper self-onboarding track is tracked in
 [Policy Foundry Self-Onboarding Deepening](policy-foundry-self-onboarding-deepening.md).

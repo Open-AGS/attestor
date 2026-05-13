@@ -154,6 +154,7 @@
     "test:failure-mode-registry": "tsx tests/failure-mode-registry.test.ts",
     "test:failure-mode-control-bindings": "tsx tests/failure-mode-control-bindings.test.ts",
     "test:failure-mode-replay-fixtures": "tsx tests/failure-mode-replay-fixtures.test.ts",
+    "test:failure-mode-guard-coverage": "tsx tests/failure-mode-guard-coverage.test.ts",
     "test:replay-layer-placement": "tsx tests/replay-layer-placement.test.ts",
     "test:guard-activation-readiness": "tsx tests/guard-activation-readiness.test.ts",
     "test:untrusted-content-authority-guard": "tsx tests/untrusted-content-authority-guard.test.ts",

@@ -106,6 +106,11 @@ import {
   consequenceGuardActivationReadinessDescriptor,
   type ConsequenceGuardActivationReadinessDescriptor,
 } from './guard-activation-readiness.js';
+import {
+  CONSEQUENCE_FAILURE_MODE_GUARD_COVERAGE_VERSION,
+  consequenceFailureModeGuardCoverageMatrix,
+  type ConsequenceFailureModeGuardCoverageMatrix,
+} from './failure-mode-guard-coverage.js';
 
 export const CONSEQUENCE_ADMISSION_CONTRACT_VERSION =
   'attestor.consequence-admission.v1';
@@ -475,6 +480,7 @@ export interface ConsequenceAdmissionDescriptor {
   readonly failureModeRegistryPlacementVersion: typeof CONSEQUENCE_FAILURE_MODE_REGISTRY_PLACEMENT_VERSION;
   readonly replayLayerPlacementVersion: typeof CONSEQUENCE_REPLAY_LAYER_PLACEMENT_VERSION;
   readonly guardActivationReadinessVersion: typeof CONSEQUENCE_GUARD_ACTIVATION_READINESS_VERSION;
+  readonly failureModeGuardCoverageVersion: typeof CONSEQUENCE_FAILURE_MODE_GUARD_COVERAGE_VERSION;
   readonly retryDefaultMaxAttempts: typeof CONSEQUENCE_ADMISSION_RETRY_DEFAULT_MAX_ATTEMPTS;
   readonly retryDefaultWindowSeconds: typeof CONSEQUENCE_ADMISSION_RETRY_DEFAULT_WINDOW_SECONDS;
   readonly decisions: typeof CONSEQUENCE_ADMISSION_DECISIONS;
@@ -496,6 +502,7 @@ export interface ConsequenceAdmissionDescriptor {
   readonly failureModeRegistryPlacement: ConsequenceFailureModeRegistryPlacementDescriptor;
   readonly replayLayerPlacement: ConsequenceReplayLayerPlacementDescriptor;
   readonly guardActivationReadiness: ConsequenceGuardActivationReadinessDescriptor;
+  readonly failureModeGuardCoverage: ConsequenceFailureModeGuardCoverageMatrix;
   readonly dataMinimizationSurfaceKinds: typeof CONSEQUENCE_DATA_MINIMIZATION_SURFACE_KINDS;
   readonly dataMinimizationForbiddenRawClasses: typeof CONSEQUENCE_DATA_MINIMIZATION_FORBIDDEN_RAW_CLASSES;
   readonly packDecisionPostures: typeof CONSEQUENCE_ADMISSION_PACK_DECISION_POSTURES;
@@ -2053,6 +2060,7 @@ ConsequenceAdmissionDescriptor {
     failureModeRegistryPlacementVersion: CONSEQUENCE_FAILURE_MODE_REGISTRY_PLACEMENT_VERSION,
     replayLayerPlacementVersion: CONSEQUENCE_REPLAY_LAYER_PLACEMENT_VERSION,
     guardActivationReadinessVersion: CONSEQUENCE_GUARD_ACTIVATION_READINESS_VERSION,
+    failureModeGuardCoverageVersion: CONSEQUENCE_FAILURE_MODE_GUARD_COVERAGE_VERSION,
     retryDefaultMaxAttempts: CONSEQUENCE_ADMISSION_RETRY_DEFAULT_MAX_ATTEMPTS,
     retryDefaultWindowSeconds: CONSEQUENCE_ADMISSION_RETRY_DEFAULT_WINDOW_SECONDS,
     decisions: CONSEQUENCE_ADMISSION_DECISIONS,
@@ -2074,6 +2082,7 @@ ConsequenceAdmissionDescriptor {
     failureModeRegistryPlacement: consequenceFailureModeRegistryPlacementDescriptor(),
     replayLayerPlacement: consequenceReplayLayerPlacementDescriptor(),
     guardActivationReadiness: consequenceGuardActivationReadinessDescriptor(),
+    failureModeGuardCoverage: consequenceFailureModeGuardCoverageMatrix(),
     dataMinimizationSurfaceKinds: CONSEQUENCE_DATA_MINIMIZATION_SURFACE_KINDS,
     dataMinimizationForbiddenRawClasses: CONSEQUENCE_DATA_MINIMIZATION_FORBIDDEN_RAW_CLASSES,
     packDecisionPostures: CONSEQUENCE_ADMISSION_PACK_DECISION_POSTURES,
@@ -2157,6 +2166,7 @@ export * from './policy-foundry-candidate-registry.js';
 export * from './failure-mode-registry.js';
 export * from './failure-mode-control-bindings.js';
 export * from './failure-mode-replay-fixtures.js';
+export * from './failure-mode-guard-coverage.js';
 export * from './replay-layer-placement.js';
 export * from './guard-activation-readiness.js';
 export * from './untrusted-content-authority-guard.js';

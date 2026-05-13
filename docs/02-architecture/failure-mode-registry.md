@@ -37,6 +37,7 @@ Placement source files:
 - `src/consequence-admission/failure-mode-registry.ts`
 - `src/consequence-admission/failure-mode-control-bindings.ts`
 - `src/consequence-admission/failure-mode-replay-fixtures.ts`
+- `src/consequence-admission/failure-mode-guard-coverage.ts`
 
 Ownership:
 
@@ -96,6 +97,7 @@ Current use:
 - prevent undocumented failure modes from becoming vague product claims
 - give the next Control Binding Contract step stable ids
 - give the Replay Fixture Matrix step stable scenario targets
+- give the guard coverage matrix a stable list of failure modes to classify by repository evidence
 - keep limitations explicit when repository evidence is partial
 
 ## Current Limitations

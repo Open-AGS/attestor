@@ -278,6 +278,21 @@ assert.equal(
   false,
 );
 assert.equal(
+  admission.consequenceAdmissionDescriptor().failureModeGuardCoverageVersion,
+  'attestor.consequence-failure-mode-guard-coverage.v1',
+);
+assert.equal(
+  admission.consequenceFailureModeGuardCoverageMatrix().productionReady,
+  false,
+);
+assert.equal(
+  admission.consequenceFailureModeGuardCoverageMatrix().entries.some((entry) =>
+    entry.failureModeId === 'agentic-supply-chain-compromise' &&
+    entry.coverageKind === 'integration-required'
+  ),
+  true,
+);
+assert.equal(
   admission.consequenceDomainPackBoundaryDescriptor().primaryRole,
   'pack',
 );

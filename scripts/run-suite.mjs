@@ -93,6 +93,7 @@ function architectureScriptNames() {
     'test:failure-mode-registry',
     'test:failure-mode-control-bindings',
     'test:failure-mode-replay-fixtures',
+    'test:failure-mode-guard-coverage',
     'test:replay-layer-placement',
     'test:guard-activation-readiness',
     'test:consequence-admission-readiness',

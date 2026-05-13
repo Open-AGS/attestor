@@ -18,6 +18,7 @@ export const CONSEQUENCE_FAILURE_MODE_REGISTRY_PLACEMENT_SOURCE_FILES = [
   'src/consequence-admission/failure-mode-registry.ts',
   'src/consequence-admission/failure-mode-control-bindings.ts',
   'src/consequence-admission/failure-mode-replay-fixtures.ts',
+  'src/consequence-admission/failure-mode-guard-coverage.ts',
 ] as const;
 export type ConsequenceFailureModeRegistryPlacementSourceFile =
   typeof CONSEQUENCE_FAILURE_MODE_REGISTRY_PLACEMENT_SOURCE_FILES[number];

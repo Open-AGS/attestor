@@ -2111,6 +2111,7 @@ export * from './failure-mode-replay-fixtures.js';
 export * from './untrusted-content-authority-guard.js';
 export * from './tool-result-poisoning-guard.js';
 export * from './approval-provenance-guard.js';
+export * from './stale-authority-policy-guard.js';
 export * from './policy-foundry-counterexample-ledger.js';
 export * from './policy-foundry-policy-twin-summary.js';
 export * from './policy-foundry-authority-relationship-context.js';

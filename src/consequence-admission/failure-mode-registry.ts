@@ -447,9 +447,11 @@ Object.freeze([
     repositoryEvidence: [
       evidence('test', 'tests/release-enforcement-plane-freshness.test.ts', 'stale authorization failure'),
       evidence('code', 'src/consequence-admission/policy-foundry-drift-policy-debt-detector.ts', 'stale policy and policy debt'),
+      evidence('code', 'src/consequence-admission/stale-authority-policy-guard.ts', 'stale authority and policy guard'),
       evidence('test', 'tests/policy-foundry-drift-policy-debt-detector.test.ts', 'policy/shadow mismatch no-go'),
+      evidence('test', 'tests/stale-authority-policy-guard.test.ts', 'policy version, approval validity, authority freshness, and no-go checks'),
     ],
-    limitation: 'Freshness controls exist; the failure registry now makes stale authority a general AI-action failure class.',
+    limitation: 'A dedicated stale authority/policy guard exists; customer policy stores, IdP checks, approval workflows, and downstream verifiers still need source-of-truth integration.',
   }),
   entry({
     id: 'no-go-hold-bypass',

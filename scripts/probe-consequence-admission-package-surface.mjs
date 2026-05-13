@@ -230,6 +230,26 @@ assert.equal(
   true,
 );
 assert.equal(
+  admission.consequenceAdmissionDescriptor().replayLayerPlacementVersion,
+  'attestor.consequence-replay-layer-placement.v1',
+);
+assert.equal(
+  admission.consequenceReplayLayerPlacementDescriptor().primaryRole,
+  'replay',
+);
+assert.equal(
+  admission.consequenceAdmissionDescriptor().replayLayerPlacement.surfaces.some((surface) =>
+    surface.kind === 'presentation-replay-consumption'
+  ),
+  true,
+);
+assert.equal(
+  admission.consequenceAdmissionDescriptor().replayLayerPlacement.nonOwningRoles.includes(
+    'hosted-service',
+  ),
+  true,
+);
+assert.equal(
   admission.consequenceAdmissionDescriptor().controlPlaneRoles.includes('pdp'),
   true,
 );

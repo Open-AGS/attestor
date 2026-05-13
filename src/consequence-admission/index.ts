@@ -91,6 +91,11 @@ import {
   consequenceFailureModeRegistryPlacementDescriptor,
   type ConsequenceFailureModeRegistryPlacementDescriptor,
 } from './failure-mode-registry.js';
+import {
+  CONSEQUENCE_REPLAY_LAYER_PLACEMENT_VERSION,
+  consequenceReplayLayerPlacementDescriptor,
+  type ConsequenceReplayLayerPlacementDescriptor,
+} from './replay-layer-placement.js';
 
 export const CONSEQUENCE_ADMISSION_CONTRACT_VERSION =
   'attestor.consequence-admission.v1';
@@ -457,6 +462,7 @@ export interface ConsequenceAdmissionDescriptor {
   readonly packDecisionProfileVersion: typeof CONSEQUENCE_ADMISSION_PACK_DECISION_PROFILE_VERSION;
   readonly controlPlaneRoleVersion: typeof ATTESTOR_CONTROL_PLANE_ROLE_VERSION;
   readonly failureModeRegistryPlacementVersion: typeof CONSEQUENCE_FAILURE_MODE_REGISTRY_PLACEMENT_VERSION;
+  readonly replayLayerPlacementVersion: typeof CONSEQUENCE_REPLAY_LAYER_PLACEMENT_VERSION;
   readonly retryDefaultMaxAttempts: typeof CONSEQUENCE_ADMISSION_RETRY_DEFAULT_MAX_ATTEMPTS;
   readonly retryDefaultWindowSeconds: typeof CONSEQUENCE_ADMISSION_RETRY_DEFAULT_WINDOW_SECONDS;
   readonly decisions: typeof CONSEQUENCE_ADMISSION_DECISIONS;
@@ -475,6 +481,7 @@ export interface ConsequenceAdmissionDescriptor {
   readonly controlPlaneRoles: typeof ATTESTOR_CONTROL_PLANE_ROLES;
   readonly controlPlaneRoleDescriptors: typeof ATTESTOR_CONTROL_PLANE_ROLE_DESCRIPTORS;
   readonly failureModeRegistryPlacement: ConsequenceFailureModeRegistryPlacementDescriptor;
+  readonly replayLayerPlacement: ConsequenceReplayLayerPlacementDescriptor;
   readonly dataMinimizationSurfaceKinds: typeof CONSEQUENCE_DATA_MINIMIZATION_SURFACE_KINDS;
   readonly dataMinimizationForbiddenRawClasses: typeof CONSEQUENCE_DATA_MINIMIZATION_FORBIDDEN_RAW_CLASSES;
   readonly packDecisionPostures: typeof CONSEQUENCE_ADMISSION_PACK_DECISION_POSTURES;
@@ -2029,6 +2036,7 @@ ConsequenceAdmissionDescriptor {
     packDecisionProfileVersion: CONSEQUENCE_ADMISSION_PACK_DECISION_PROFILE_VERSION,
     controlPlaneRoleVersion: ATTESTOR_CONTROL_PLANE_ROLE_VERSION,
     failureModeRegistryPlacementVersion: CONSEQUENCE_FAILURE_MODE_REGISTRY_PLACEMENT_VERSION,
+    replayLayerPlacementVersion: CONSEQUENCE_REPLAY_LAYER_PLACEMENT_VERSION,
     retryDefaultMaxAttempts: CONSEQUENCE_ADMISSION_RETRY_DEFAULT_MAX_ATTEMPTS,
     retryDefaultWindowSeconds: CONSEQUENCE_ADMISSION_RETRY_DEFAULT_WINDOW_SECONDS,
     decisions: CONSEQUENCE_ADMISSION_DECISIONS,
@@ -2047,6 +2055,7 @@ ConsequenceAdmissionDescriptor {
     controlPlaneRoles: ATTESTOR_CONTROL_PLANE_ROLES,
     controlPlaneRoleDescriptors: ATTESTOR_CONTROL_PLANE_ROLE_DESCRIPTORS,
     failureModeRegistryPlacement: consequenceFailureModeRegistryPlacementDescriptor(),
+    replayLayerPlacement: consequenceReplayLayerPlacementDescriptor(),
     dataMinimizationSurfaceKinds: CONSEQUENCE_DATA_MINIMIZATION_SURFACE_KINDS,
     dataMinimizationForbiddenRawClasses: CONSEQUENCE_DATA_MINIMIZATION_FORBIDDEN_RAW_CLASSES,
     packDecisionPostures: CONSEQUENCE_ADMISSION_PACK_DECISION_POSTURES,
@@ -2129,6 +2138,7 @@ export * from './policy-foundry-candidate-registry.js';
 export * from './failure-mode-registry.js';
 export * from './failure-mode-control-bindings.js';
 export * from './failure-mode-replay-fixtures.js';
+export * from './replay-layer-placement.js';
 export * from './untrusted-content-authority-guard.js';
 export * from './tool-result-poisoning-guard.js';
 export * from './approval-provenance-guard.js';

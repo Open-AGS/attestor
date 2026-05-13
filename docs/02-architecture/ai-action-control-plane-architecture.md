@@ -123,6 +123,9 @@ These rules are the architecture target for future boundary tests.
    placement contract lives in
    `src/consequence-admission/failure-mode-registry.ts` as
    `attestor.consequence-failure-mode-registry-placement.v1`.
+   The replay layer placement contract lives in
+   `src/consequence-admission/replay-layer-placement.ts` as
+   `attestor.consequence-replay-layer-placement.v1`.
 9. Public/package entrypoints should be explicit. Deep imports across bounded
    contexts should be treated as architecture debt unless a tracker explicitly
    allows them.

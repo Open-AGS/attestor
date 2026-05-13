@@ -13,6 +13,8 @@ It does not execute customer infrastructure, does not activate enforcement, does
 - Test command: `npm run test:failure-mode-replay-fixtures`
 - Runtime stance: synthetic only, review material only, no auto-enforce, no production-ready claim, no raw payload storage
 
+Placement is defined by [Replay layer placement](replay-layer-placement.md). Failure-mode replay fixtures are synthetic review material; they are not the same thing as presentation replay consumption or sandbox downstream replay.
+
 Each fixture includes:
 
 - `failureModeId`

@@ -81,6 +81,9 @@ function testDescriptorCoversCriticalSurfaces(): void {
   const outcomeFeedbackLoop = descriptor.surfaces.find((surface) =>
     surface.surfaceKind === 'policy-foundry-outcome-feedback-loop'
   );
+  const driftPolicyDebtDetector = descriptor.surfaces.find((surface) =>
+    surface.surfaceKind === 'policy-foundry-drift-policy-debt-detector'
+  );
   const externalReview = descriptor.surfaces.find((surface) =>
     surface.surfaceKind === 'external-review-packet'
   );
@@ -190,6 +193,15 @@ function testDescriptorCoversCriticalSurfaces(): void {
   ok(
     outcomeFeedbackLoop?.allowedUnits.includes('counts'),
     'Data minimization policy: outcome feedback loop allows aggregate counts',
+  );
+  ok(driftPolicyDebtDetector, 'Data minimization policy: drift/policy debt detector surface is present');
+  ok(
+    driftPolicyDebtDetector?.allowedUnits.includes('digests'),
+    'Data minimization policy: drift/policy debt detector allows source digests',
+  );
+  ok(
+    driftPolicyDebtDetector?.allowedUnits.includes('counts'),
+    'Data minimization policy: drift/policy debt detector allows aggregate counts',
   );
   ok(externalReview, 'Data minimization policy: external review packet surface is present');
   ok(

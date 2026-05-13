@@ -515,6 +515,26 @@ assert.equal(
   typeof admission.createPolicyFoundryOutcomeFeedbackLoop,
   'function',
 );
+assert.equal(
+  admission.POLICY_FOUNDRY_DRIFT_POLICY_DEBT_DETECTOR_VERSION,
+  'attestor.policy-foundry-drift-policy-debt-detector.v1',
+);
+assert.equal(
+  admission.policyFoundryDriftPolicyDebtDetectorDescriptor().dataMinimizationSurfaceKind,
+  'policy-foundry-drift-policy-debt-detector',
+);
+assert.equal(
+  admission.policyFoundryDriftPolicyDebtDetectorDescriptor().automaticRemediationAllowed,
+  false,
+);
+assert.equal(
+  admission.policyFoundryDriftPolicyDebtDetectorDescriptor().policyMutationAllowed,
+  false,
+);
+assert.equal(
+  typeof admission.createPolicyFoundryDriftPolicyDebtDetector,
+  'function',
+);
 
 let blockedInternalPath = false;
 try {

@@ -129,6 +129,11 @@ function testPolicyFoundryArchitectureIsGrounded(): void {
   );
   includes(
     doc,
+    'src/consequence-admission/policy-foundry-drift-policy-debt-detector.ts',
+    'Policy Foundry docs: drift/policy debt detector contract evidence is named',
+  );
+  includes(
+    doc,
     'scripts/render-policy-foundry-self-onboarding.ts',
     'Policy Foundry docs: self-onboarding renderer evidence is named',
   );
@@ -166,6 +171,11 @@ function testReadmeNamesPolicyFoundryWithoutOverclaiming(): void {
     readme,
     'reviewed outcome feedback',
     'README: outcome feedback is named without automation overclaim',
+  );
+  includes(
+    readme,
+    'drift/policy-debt findings',
+    'README: drift/policy debt detector is named without automation overclaim',
   );
   includes(
     readme,
@@ -219,6 +229,7 @@ function testOnboardingResearchAnchorsAreRecorded(): void {
     'Kubernetes dry-run',
     'OpenTelemetry-style correlated signals',
     'NIST AI RMF monitor/manage discipline',
+    'Terraform plan',
   ]) {
     includes(doc, anchor, `Policy Foundry docs: research anchor ${anchor} is recorded`);
   }
@@ -368,6 +379,16 @@ function testPackageScriptIsExposed(): void {
     pkg.scripts['test:policy-foundry-outcome-feedback-loop'] ?? '',
     'tsx tests/policy-foundry-outcome-feedback-loop.test.ts',
     'Package: Policy Foundry outcome feedback loop test command is stable',
+  );
+  includes(
+    JSON.stringify(pkg.scripts),
+    'test:policy-foundry-drift-policy-debt-detector',
+    'Package: Policy Foundry drift/policy debt detector test is exposed',
+  );
+  includes(
+    pkg.scripts['test:policy-foundry-drift-policy-debt-detector'] ?? '',
+    'tsx tests/policy-foundry-drift-policy-debt-detector.test.ts',
+    'Package: Policy Foundry drift/policy debt detector test command is stable',
   );
 }
 

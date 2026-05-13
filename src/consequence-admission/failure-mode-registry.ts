@@ -337,9 +337,11 @@ Object.freeze([
     repositoryEvidence: [
       evidence('code', 'src/consequence-admission/index.ts', 'ConsequenceAdmissionEvidenceRef'),
       evidence('code', 'src/consequence-admission/policy-foundry-coverage-score.ts', 'evidence-binding'),
+      evidence('code', 'src/consequence-admission/tool-result-poisoning-guard.ts', 'tool result trust classification guard'),
       evidence('test', 'tests/policy-foundry-coverage-score.test.ts', 'missing evidence binding is visible'),
+      evidence('test', 'tests/tool-result-poisoning-guard.test.ts', 'tool result source, timestamp, integrity, and evidence class checks'),
     ],
-    limitation: 'Evidence references exist, but tool-result trust classification is not yet a dedicated registry-bound control.',
+    limitation: 'A dedicated tool-result trust classification guard exists; individual tools and adapters still need source-specific validators and metadata emission.',
   }),
   entry({
     id: 'sensitive-data-disclosure',

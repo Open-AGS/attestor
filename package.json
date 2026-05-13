@@ -151,6 +151,7 @@
     "test:failure-mode-control-bindings": "tsx tests/failure-mode-control-bindings.test.ts",
     "test:failure-mode-replay-fixtures": "tsx tests/failure-mode-replay-fixtures.test.ts",
     "test:untrusted-content-authority-guard": "tsx tests/untrusted-content-authority-guard.test.ts",
+    "test:tool-result-poisoning-guard": "tsx tests/tool-result-poisoning-guard.test.ts",
     "test:policy-foundry-counterexample-ledger": "tsx tests/policy-foundry-counterexample-ledger.test.ts",
     "test:policy-foundry-policy-twin-summary": "tsx tests/policy-foundry-policy-twin-summary.test.ts",
     "test:policy-foundry-authority-relationship-context": "tsx tests/policy-foundry-authority-relationship-context.test.ts",

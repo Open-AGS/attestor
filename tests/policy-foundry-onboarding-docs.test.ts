@@ -144,6 +144,11 @@ function testPolicyFoundryArchitectureIsGrounded(): void {
   );
   includes(
     doc,
+    'src/consequence-admission/policy-foundry-hosted-onboarding-workflow.ts',
+    'Policy Foundry docs: hosted onboarding workflow contract evidence is named',
+  );
+  includes(
+    doc,
     'scripts/render-policy-foundry-self-onboarding.ts',
     'Policy Foundry docs: self-onboarding renderer evidence is named',
   );
@@ -196,6 +201,11 @@ function testReadmeNamesPolicyFoundryWithoutOverclaiming(): void {
     readme,
     'local adversarial replay reports',
     'README: local adversarial replay executor is named without production overclaim',
+  );
+  includes(
+    readme,
+    'hosted onboarding workflow contract',
+    'README: hosted onboarding workflow contract is named without UI overclaim',
   );
   includes(
     readme,
@@ -433,6 +443,16 @@ function testPackageScriptIsExposed(): void {
     pkg.scripts['test:policy-foundry-adversarial-replay-executor'] ?? '',
     'tsx tests/policy-foundry-adversarial-replay-executor.test.ts',
     'Package: Policy Foundry adversarial replay executor test command is stable',
+  );
+  includes(
+    JSON.stringify(pkg.scripts),
+    'test:policy-foundry-hosted-onboarding-workflow',
+    'Package: Policy Foundry hosted onboarding workflow test is exposed',
+  );
+  includes(
+    pkg.scripts['test:policy-foundry-hosted-onboarding-workflow'] ?? '',
+    'tsx tests/policy-foundry-hosted-onboarding-workflow.test.ts',
+    'Package: Policy Foundry hosted onboarding workflow test command is stable',
   );
 }
 

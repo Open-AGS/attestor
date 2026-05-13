@@ -579,6 +579,34 @@ assert.equal(
   typeof admission.createPolicyFoundryAdversarialReplayExecutor,
   'function',
 );
+assert.equal(
+  admission.POLICY_FOUNDRY_HOSTED_ONBOARDING_WORKFLOW_VERSION,
+  'attestor.policy-foundry-hosted-onboarding-workflow.v1',
+);
+assert.equal(
+  admission.policyFoundryHostedOnboardingWorkflowDescriptor().dataMinimizationSurfaceKind,
+  'policy-foundry-hosted-onboarding-workflow',
+);
+assert.equal(
+  admission.policyFoundryHostedOnboardingWorkflowDescriptor().hostedUiWorkflowContract,
+  true,
+);
+assert.equal(
+  admission.policyFoundryHostedOnboardingWorkflowDescriptor().hostedUiImplemented,
+  false,
+);
+assert.equal(
+  admission.policyFoundryHostedOnboardingWorkflowDescriptor().hostedRouteImplemented,
+  false,
+);
+assert.equal(
+  admission.policyFoundryHostedOnboardingWorkflowDescriptor().deploymentEntitlementEnforcementImplemented,
+  false,
+);
+assert.equal(
+  typeof admission.createPolicyFoundryHostedOnboardingWorkflow,
+  'function',
+);
 
 let blockedInternalPath = false;
 try {

@@ -378,6 +378,30 @@ infrastructure, use credentials, mutate downstream systems, execute production
 traffic, activate enforcement, or prove production readiness. Production/live
 downstream adversarial replay remains a separate unresolved rollout task.
 
+## Step 14 Scope
+
+Step 14 adds `attestor.policy-foundry-hosted-onboarding-workflow.v1`.
+
+The hosted onboarding workflow contract turns the existing review packets into
+hosted wizard/API state without implementing the hosted UI or route:
+
+```text
+self-onboarding packet
++ local adversarial replay report
++ commercial boundary context
+-> currently due steps
+-> eventually due steps
+-> blocked steps
+-> next safe step
+```
+
+It separates safe automation from approval-gated and prohibited automation. It
+can render current work, prefill from digest-bound sources, and show next safe
+steps. It must not apply patches, issue credentials, deploy infrastructure,
+execute production traffic, activate enforcement, or make a non-bypassable
+claim. Hosted UI/route implementation and billing-provider entitlement
+enforcement remain separate unresolved tasks.
+
 ## Protected Principles
 
 - customer authority

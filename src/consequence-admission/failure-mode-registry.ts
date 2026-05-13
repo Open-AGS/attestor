@@ -3,9 +3,53 @@ import {
   canonicalizeReleaseJson,
   type CanonicalReleaseJsonValue,
 } from '../release-kernel/release-canonicalization.js';
+import {
+  ATTESTOR_CONTROL_PLANE_ROLES,
+  type AttestorControlPlaneRole,
+} from './control-plane-roles.js';
 
 export const CONSEQUENCE_FAILURE_MODE_REGISTRY_VERSION =
   'attestor.consequence-failure-mode-registry.v1';
+
+export const CONSEQUENCE_FAILURE_MODE_REGISTRY_PLACEMENT_VERSION =
+  'attestor.consequence-failure-mode-registry-placement.v1';
+
+export const CONSEQUENCE_FAILURE_MODE_REGISTRY_PLACEMENT_SOURCE_FILES = [
+  'src/consequence-admission/failure-mode-registry.ts',
+  'src/consequence-admission/failure-mode-control-bindings.ts',
+  'src/consequence-admission/failure-mode-replay-fixtures.ts',
+] as const;
+export type ConsequenceFailureModeRegistryPlacementSourceFile =
+  typeof CONSEQUENCE_FAILURE_MODE_REGISTRY_PLACEMENT_SOURCE_FILES[number];
+
+export type ConsequenceFailureModeRegistryOwningRole =
+  Extract<AttestorControlPlaneRole, 'pdp'>;
+
+export interface ConsequenceFailureModeRegistryPlacementDescriptor {
+  readonly version: typeof CONSEQUENCE_FAILURE_MODE_REGISTRY_PLACEMENT_VERSION;
+  readonly owningLayer: 'shared-control-layer';
+  readonly primaryRole: ConsequenceFailureModeRegistryOwningRole;
+  readonly supportingRoles: readonly AttestorControlPlaneRole[];
+  readonly consumerRoles: readonly AttestorControlPlaneRole[];
+  readonly nonOwningRoles: readonly AttestorControlPlaneRole[];
+  readonly sourceFiles: typeof CONSEQUENCE_FAILURE_MODE_REGISTRY_PLACEMENT_SOURCE_FILES;
+  readonly publicPackageSurface: 'attestor/consequence-admission';
+  readonly packExtensionBoundary: string;
+  readonly hostedServiceBoundary: string;
+  readonly autoEnforce: false;
+  readonly productionReady: false;
+  readonly activatesEnforcement: false;
+  readonly limitation: string;
+}
+
+const CONSEQUENCE_FAILURE_MODE_REGISTRY_PLACEMENT_SUPPORTING_ROLES =
+  ['audit-proof', 'replay'] as const satisfies readonly AttestorControlPlaneRole[];
+
+const CONSEQUENCE_FAILURE_MODE_REGISTRY_PLACEMENT_CONSUMER_ROLES =
+  ['pep', 'pip', 'pap', 'pack', 'hosted-service'] as const satisfies readonly AttestorControlPlaneRole[];
+
+const CONSEQUENCE_FAILURE_MODE_REGISTRY_PLACEMENT_NON_OWNING_ROLES =
+  ['pack', 'hosted-service'] as const satisfies readonly AttestorControlPlaneRole[];
 
 export const CONSEQUENCE_FAILURE_MODE_SEVERITIES = [
   'medium',
@@ -147,6 +191,48 @@ function canonicalObject(value: CanonicalReleaseJsonValue): {
     canonical,
     digest: `sha256:${createHash('sha256').update(canonical).digest('hex')}`,
   });
+}
+
+function assertKnownControlPlaneRoles(
+  roles: readonly AttestorControlPlaneRole[],
+  label: string,
+): void {
+  const knownRoles = new Set(ATTESTOR_CONTROL_PLANE_ROLES);
+  for (const role of roles) {
+    if (!knownRoles.has(role)) {
+      throw new Error(`Failure mode registry placement ${label} references unknown role: ${role}`);
+    }
+  }
+}
+
+export function consequenceFailureModeRegistryPlacementDescriptor():
+ConsequenceFailureModeRegistryPlacementDescriptor {
+  const descriptor = Object.freeze({
+    version: CONSEQUENCE_FAILURE_MODE_REGISTRY_PLACEMENT_VERSION,
+    owningLayer: 'shared-control-layer',
+    primaryRole: 'pdp',
+    supportingRoles: CONSEQUENCE_FAILURE_MODE_REGISTRY_PLACEMENT_SUPPORTING_ROLES,
+    consumerRoles: CONSEQUENCE_FAILURE_MODE_REGISTRY_PLACEMENT_CONSUMER_ROLES,
+    nonOwningRoles: CONSEQUENCE_FAILURE_MODE_REGISTRY_PLACEMENT_NON_OWNING_ROLES,
+    sourceFiles: CONSEQUENCE_FAILURE_MODE_REGISTRY_PLACEMENT_SOURCE_FILES,
+    publicPackageSurface: 'attestor/consequence-admission',
+    packExtensionBoundary:
+      'Packs may contribute domain templates, evidence defaults, adapters, and replay examples, but they must not fork the shared failure-mode registry, binding contract, replay matrix, or decision vocabulary.',
+    hostedServiceBoundary:
+      'Hosted routes may compose and expose the shared failure-mode contracts, but they must not own, mutate, or fork them per route.',
+    autoEnforce: false,
+    productionReady: false,
+    activatesEnforcement: false,
+    limitation:
+      'Placement records ownership of the registry, binding contract, and replay matrix. It does not activate enforcement, prove customer workflow coverage, or certify production readiness.',
+  } as const);
+
+  assertKnownControlPlaneRoles([descriptor.primaryRole], 'primaryRole');
+  assertKnownControlPlaneRoles(descriptor.supportingRoles, 'supportingRoles');
+  assertKnownControlPlaneRoles(descriptor.consumerRoles, 'consumerRoles');
+  assertKnownControlPlaneRoles(descriptor.nonOwningRoles, 'nonOwningRoles');
+
+  return descriptor;
 }
 
 const SOURCE_REFS: readonly ConsequenceFailureModeSourceRef[] = Object.freeze([

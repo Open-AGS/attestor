@@ -119,7 +119,10 @@ These rules are the architecture target for future boundary tests.
 7. Packs may provide domain templates, evidence defaults, adapters, and replay
    fixtures; packs must not fork the admission decision vocabulary.
 8. Failure-mode registry, control binding, and replay targets belong to the
-   shared control layer, not to individual packs or hosted service routes.
+   shared control layer, not to individual packs or hosted service routes. The
+   placement contract lives in
+   `src/consequence-admission/failure-mode-registry.ts` as
+   `attestor.consequence-failure-mode-registry-placement.v1`.
 9. Public/package entrypoints should be explicit. Deep imports across bounded
    contexts should be treated as architecture debt unless a tracker explicitly
    allows them.
@@ -218,6 +221,6 @@ Policy Foundry, failure-mode, replay, or authority graph refactors continue.
 4. Continue naming alignment only where it clarifies PDP, PEP, PIP, PAP,
    failure-registry, replay, pack, or hosted-service boundaries; do not perform
    broad renames without a local boundary test.
-5. Place failure-mode registry, control binding, and replay work in the shared
+5. Keep failure-mode registry, control binding, and replay work in the shared
    control layer unless a tracker proves that a pack-specific extension is the
    safer boundary.

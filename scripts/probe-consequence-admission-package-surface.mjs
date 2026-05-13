@@ -210,6 +210,26 @@ assert.equal(
   'attestor.control-plane-roles.v1',
 );
 assert.equal(
+  admission.consequenceAdmissionDescriptor().failureModeRegistryPlacementVersion,
+  'attestor.consequence-failure-mode-registry-placement.v1',
+);
+assert.equal(
+  admission.consequenceFailureModeRegistryPlacementDescriptor().owningLayer,
+  'shared-control-layer',
+);
+assert.equal(
+  admission.consequenceAdmissionDescriptor().failureModeRegistryPlacement.sourceFiles.includes(
+    'src/consequence-admission/failure-mode-control-bindings.ts',
+  ),
+  true,
+);
+assert.equal(
+  admission.consequenceAdmissionDescriptor().failureModeRegistryPlacement.nonOwningRoles.includes(
+    'pack',
+  ),
+  true,
+);
+assert.equal(
   admission.consequenceAdmissionDescriptor().controlPlaneRoles.includes('pdp'),
   true,
 );

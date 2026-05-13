@@ -2109,6 +2109,7 @@ export * from './failure-mode-registry.js';
 export * from './failure-mode-control-bindings.js';
 export * from './failure-mode-replay-fixtures.js';
 export * from './untrusted-content-authority-guard.js';
+export * from './tool-result-poisoning-guard.js';
 export * from './policy-foundry-counterexample-ledger.js';
 export * from './policy-foundry-policy-twin-summary.js';
 export * from './policy-foundry-authority-relationship-context.js';

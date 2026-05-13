@@ -50,6 +50,8 @@ The safe-retry accounting shape lives in [Retry attempt ledger](retry-attempt-le
 
 The automatic retry abuse boundary lives in [Agent loop abuse guard](agent-loop-abuse-guard.md). Use it when a model-safe retry loop needs rate, window, and correction-signature limits so it cannot become DoS or policy probing.
 
+The guard activation boundary lives in [Guard activation readiness](guard-activation-readiness.md). Use it when a guard can already render fail-closed decisions but must not be described as production enforcement-active until shared state, signed decision binding, PEP/verifier integration, replay fixtures, audit output, runbooks, and customer approval are proven.
+
 The production storage truth gate lives in [Production storage path](production-storage-path.md). Use it when deciding whether shadow events, simulations, candidates, activation receipts, retry/replay ledgers, loop-guard counters, audit exports, and dashboards are still evaluation-backed or ready to support a `production-shared` claim.
 
 The execution handoff vocabulary lives in [Downstream presentation binding](downstream-presentation-binding.md). Use it when the enforcement point must bind an allowed admission to the exact target, body digest, replay key, nonce, freshness window, proof references, and acknowledged constraints it is about to present to a real system.

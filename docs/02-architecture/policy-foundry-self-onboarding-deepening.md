@@ -357,6 +357,27 @@ The contract is commercial context only. It does not read a billing provider,
 enforce hosted entitlements, activate enforcement, or prove production
 readiness.
 
+## Step 13 Scope
+
+Step 13 starts the post-list executor track with
+`attestor.policy-foundry-adversarial-replay-executor.v1`.
+
+The executor consumes the synthetic red-team fixture bundle plus local replay
+observations and emits a digest-bound pass/fail/no-go report:
+
+```text
+synthetic fixture bundle
++ local replay observations
+-> case results
+-> no-go reasons
+-> next safe step
+```
+
+It is deliberately local and synthetic. It does not call customer
+infrastructure, use credentials, mutate downstream systems, execute production
+traffic, activate enforcement, or prove production readiness. Production/live
+downstream adversarial replay remains a separate unresolved rollout task.
+
 ## Protected Principles
 
 - customer authority

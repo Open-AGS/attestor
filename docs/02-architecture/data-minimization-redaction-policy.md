@@ -1,6 +1,6 @@
 # Data Minimization And Redaction Policy
 
-The data minimization and redaction policy is the shared privacy boundary for model feedback, proof, audit, tamper-history, dashboard, dashboard summaries, Policy Foundry active questions, Policy Foundry onboarding sessions, Policy Foundry coverage scores, Policy Foundry gate plans, Policy Foundry candidate registries, Policy Foundry counterexample ledgers, Policy Twin summaries, authority relationship contexts, review-only patch packs, outcome feedback loops, drift/policy-debt detectors, commercial boundary packets, external review, retry, and downstream receipt surfaces.
+The data minimization and redaction policy is the shared privacy boundary for model feedback, proof, audit, tamper-history, dashboard, dashboard summaries, Policy Foundry active questions, Policy Foundry onboarding sessions, Policy Foundry coverage scores, Policy Foundry gate plans, Policy Foundry candidate registries, Policy Foundry counterexample ledgers, Policy Twin summaries, authority relationship contexts, review-only patch packs, outcome feedback loops, drift/policy-debt detectors, commercial boundary packets, adversarial replay executor reports, external review, retry, and downstream receipt surfaces.
 
 It answers a narrow question:
 
@@ -56,6 +56,7 @@ The versioned package descriptor covers these surfaces:
 - `policy-foundry-outcome-feedback-loop`
 - `policy-foundry-drift-policy-debt-detector`
 - `policy-foundry-commercial-boundary`
+- `policy-foundry-adversarial-replay-executor`
 - `audit-evidence-export`
 - `tamper-evident-history`
 - `business-risk-dashboard`

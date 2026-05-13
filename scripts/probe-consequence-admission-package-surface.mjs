@@ -555,6 +555,30 @@ assert.equal(
   typeof admission.createPolicyFoundryCommercialBoundary,
   'function',
 );
+assert.equal(
+  admission.POLICY_FOUNDRY_ADVERSARIAL_REPLAY_EXECUTOR_VERSION,
+  'attestor.policy-foundry-adversarial-replay-executor.v1',
+);
+assert.equal(
+  admission.policyFoundryAdversarialReplayExecutorDescriptor().dataMinimizationSurfaceKind,
+  'policy-foundry-adversarial-replay-executor',
+);
+assert.equal(
+  admission.policyFoundryAdversarialReplayExecutorDescriptor().downstreamMutationAllowed,
+  false,
+);
+assert.equal(
+  admission.policyFoundryAdversarialReplayExecutorDescriptor().credentialUseAllowed,
+  false,
+);
+assert.equal(
+  admission.policyFoundryAdversarialReplayExecutorDescriptor().executesProductionTraffic,
+  false,
+);
+assert.equal(
+  typeof admission.createPolicyFoundryAdversarialReplayExecutor,
+  'function',
+);
 
 let blockedInternalPath = false;
 try {

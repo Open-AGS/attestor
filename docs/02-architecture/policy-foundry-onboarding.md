@@ -513,6 +513,16 @@ Pro, Scale, and Enterprise Foundry capabilities from non-paywalled safety
 minimums. It is not billing-provider state, hosted entitlement enforcement, or
 production readiness evidence.
 
+The Policy Foundry Adversarial Replay Executor is the first local/synthetic
+adversarial replay executor for this path. It lives in
+`src/consequence-admission/policy-foundry-adversarial-replay-executor.ts`, is
+covered by `tests/policy-foundry-adversarial-replay-executor.test.ts`, and is
+exposed through `test:policy-foundry-adversarial-replay-executor`. It
+normalizes synthetic red-team fixture execution observations into a
+pass/fail/no-go report. It does not call customer infrastructure, use
+credentials, mutate downstream systems, execute production traffic, activate
+enforcement, or prove production readiness.
+
 ```text
 coverageScore
 coverageDimensions
@@ -573,6 +583,12 @@ commercialPlan
 allowedCapabilities
 unavailableCapabilities
 safetyMinimumsPaidOnlyAllowed: false
+adversarialReplayExecutor
+adversarialReplayStatus
+downstreamMutationAllowed: false
+credentialUseAllowed: false
+executesProductionTraffic: false
+localExecutionOnly: true
 readinessScore
 sampleSize
 actorDistributionHealth
@@ -633,6 +649,13 @@ summary, high-risk auto-admit, review-required auto-promote, direct credential
 bypass, and missing verifier paths. It does not execute against customer
 infrastructure or prove production readiness.
 
+The local adversarial replay executor consumes that fixture bundle plus
+customer-owned local observations and turns the result into review material. It
+fails closed on missing case results, unexpected allows, raw payload capture,
+credential material use, invalid evidence digests, or downstream mutation
+attempts. It is not a production attack runner and does not prove
+non-bypassability.
+
 ## Current Status
 
 Repository foundations already exist in:
@@ -651,7 +674,9 @@ red-team fixture generation, onboarding session, coverage score, gate planner,
 candidate registry, counterexample ledger, Policy Twin v2 summary, authority
 relationship context, review-only patch pack, one-command self-onboarding CLI,
 outcome feedback loop, drift/policy-debt detector, and the commercial boundary
-contract. It does not yet have a live adversarial replay executor, UI workflow,
-or hosted billing-provider entitlement enforcement for Foundry capabilities.
+contract. It now has the first local/synthetic adversarial replay executor. It
+does not yet have production/live downstream adversarial replay execution, UI
+workflow, or hosted billing-provider entitlement enforcement for Foundry
+capabilities.
 The deeper self-onboarding track is tracked in
 [Policy Foundry Self-Onboarding Deepening](policy-foundry-self-onboarding-deepening.md).

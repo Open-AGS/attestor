@@ -87,6 +87,9 @@ function testDescriptorCoversCriticalSurfaces(): void {
   const commercialBoundary = descriptor.surfaces.find((surface) =>
     surface.surfaceKind === 'policy-foundry-commercial-boundary'
   );
+  const adversarialReplayExecutor = descriptor.surfaces.find((surface) =>
+    surface.surfaceKind === 'policy-foundry-adversarial-replay-executor'
+  );
   const externalReview = descriptor.surfaces.find((surface) =>
     surface.surfaceKind === 'external-review-packet'
   );
@@ -214,6 +217,19 @@ function testDescriptorCoversCriticalSurfaces(): void {
   ok(
     commercialBoundary?.allowedUnits.includes('safe-instruction'),
     'Data minimization policy: commercial boundary allows safe instructions',
+  );
+  ok(adversarialReplayExecutor, 'Data minimization policy: adversarial replay executor surface is present');
+  ok(
+    adversarialReplayExecutor?.allowedUnits.includes('digests'),
+    'Data minimization policy: adversarial replay executor allows evidence digests',
+  );
+  ok(
+    adversarialReplayExecutor?.allowedUnits.includes('safe-instruction'),
+    'Data minimization policy: adversarial replay executor allows safe instructions',
+  );
+  ok(
+    adversarialReplayExecutor?.allowedUnits.includes('counts'),
+    'Data minimization policy: adversarial replay executor allows aggregate counts',
   );
   ok(externalReview, 'Data minimization policy: external review packet surface is present');
   ok(
@@ -425,6 +441,11 @@ function testDocsAndScriptsExposePolicy(): void {
     doc,
     'policy-foundry-commercial-boundary',
     'Data minimization policy: doc lists commercial boundary surface',
+  );
+  includes(
+    doc,
+    'policy-foundry-adversarial-replay-executor',
+    'Data minimization policy: doc lists adversarial replay executor surface',
   );
   includes(
     doc,

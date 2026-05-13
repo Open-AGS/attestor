@@ -139,6 +139,11 @@ function testPolicyFoundryArchitectureIsGrounded(): void {
   );
   includes(
     doc,
+    'src/consequence-admission/policy-foundry-adversarial-replay-executor.ts',
+    'Policy Foundry docs: adversarial replay executor contract evidence is named',
+  );
+  includes(
+    doc,
     'scripts/render-policy-foundry-self-onboarding.ts',
     'Policy Foundry docs: self-onboarding renderer evidence is named',
   );
@@ -186,6 +191,11 @@ function testReadmeNamesPolicyFoundryWithoutOverclaiming(): void {
     readme,
     'commercial-boundary review material',
     'README: commercial boundary is named without entitlement overclaim',
+  );
+  includes(
+    readme,
+    'local adversarial replay reports',
+    'README: local adversarial replay executor is named without production overclaim',
   );
   includes(
     readme,
@@ -413,6 +423,16 @@ function testPackageScriptIsExposed(): void {
     pkg.scripts['test:policy-foundry-commercial-boundary'] ?? '',
     'tsx tests/policy-foundry-commercial-boundary.test.ts',
     'Package: Policy Foundry commercial boundary test command is stable',
+  );
+  includes(
+    JSON.stringify(pkg.scripts),
+    'test:policy-foundry-adversarial-replay-executor',
+    'Package: Policy Foundry adversarial replay executor test is exposed',
+  );
+  includes(
+    pkg.scripts['test:policy-foundry-adversarial-replay-executor'] ?? '',
+    'tsx tests/policy-foundry-adversarial-replay-executor.test.ts',
+    'Package: Policy Foundry adversarial replay executor test command is stable',
   );
 }
 

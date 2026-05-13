@@ -436,6 +436,14 @@ function normalizeOptionalDigest(
   return normalizeDigest(value, fieldName);
 }
 
+function stripTrailingSlashes(value: string): string {
+  let end = value.length;
+  while (end > 0 && value.charCodeAt(end - 1) === 47) {
+    end -= 1;
+  }
+  return value.slice(0, end);
+}
+
 function normalizeLabel(value: string | null | undefined, fieldName: string): string {
   const normalized = value?.trim().replaceAll(/\s+/gu, ' ') ?? '';
   if (normalized.length === 0) {
@@ -452,7 +460,8 @@ function normalizeLabel(value: string | null | undefined, fieldName: string): st
 
 function normalizeProofRoute(value: string | null | undefined, fieldName: string): string | null {
   if (value === undefined || value === null) return null;
-  const normalized = normalizeCompactRef(value, fieldName).replaceAll(/\/+$/gu, '');
+  const normalized = stripTrailingSlashes(normalizeCompactRef(value, fieldName));
+  if (normalized === '') return '/';
   if (!normalized.startsWith('/')) {
     throw new Error(`Crypto intelligence dashboard summary ${fieldName} must be a local route path.`);
   }
@@ -462,7 +471,7 @@ function normalizeProofRoute(value: string | null | undefined, fieldName: string
   if (/(?:raw|payload|secret|customer|provider-response|wallet-metadata)/iu.test(normalized)) {
     throw new Error(`Crypto intelligence dashboard summary ${fieldName} must not expose raw-data drilldown routes.`);
   }
-  return normalized === '' ? '/' : normalized;
+  return normalized;
 }
 
 function normalizeReasonCode(value: string): string {

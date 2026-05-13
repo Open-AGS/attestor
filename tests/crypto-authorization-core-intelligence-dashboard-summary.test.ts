@@ -447,6 +447,37 @@ function testEmptyDashboardFailsIntoReviewWithoutInventedImpact(): void {
 }
 
 function testValidationRejectsUnsafeProofSurfaces(): void {
+  const repeatedSlashSuffix = '/'.repeat(10_000);
+  const normalizedSlashSummary = createCryptoIntelligenceDashboardSummary({
+    generatedAt: '2026-05-11T12:19:00.000Z',
+    scopeRef: 'crypto-intelligence:slash-normalization',
+    signalAssessments: [riskSignalsFixture()],
+    routeBase: `/crypto-intelligence/dashboard${repeatedSlashSuffix}`,
+    proofLinks: [
+      {
+        kind: 'privacy-minimization',
+        label: 'slash normalized route',
+        digest: digestFor('slash-normalized-route'),
+        route: repeatedSlashSuffix,
+      },
+    ],
+  });
+
+  ok(
+    normalizedSlashSummary.proofLinks.some((link) =>
+      link.label === 'slash normalized route' &&
+      link.route === '/',
+    ),
+    'crypto dashboard summary: slash-only proof routes normalize without regex backtracking',
+  );
+  ok(
+    normalizedSlashSummary.proofLinks.some((link) =>
+      link.kind === 'risk-signal-assessment' &&
+      link.route === '/crypto-intelligence/dashboard/risk-signals',
+    ),
+    'crypto dashboard summary: long slash route bases normalize before generated proof links',
+  );
+
   assert.throws(
     () =>
       createCryptoIntelligenceDashboardSummary({

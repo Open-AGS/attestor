@@ -562,9 +562,11 @@ Object.freeze([
     repositoryEvidence: [
       evidence('code', 'src/consequence-admission/policy-foundry-hosted-review-surface.ts', 'hosted review surface'),
       evidence('code', 'src/consequence-admission/external-review-packet.ts', 'external review packet'),
+      evidence('code', 'src/consequence-admission/human-review-fatigue-guard.ts', 'review packet fatigue guard'),
+      evidence('test', 'tests/human-review-fatigue-guard.test.ts', 'no-go, missing-evidence, noise, and raw-payload fatigue checks'),
       evidence('test', 'tests/policy-foundry-hosted-review-surface.test.ts', 'no-go cards and evidence digest cards'),
     ],
-    limitation: 'Review surfaces are compact, but there is no explicit fatigue scoring or reviewer-load no-go yet.',
+    limitation: 'Review fatigue scoring is now deterministic; live reviewer workload calibration still needs customer environment telemetry.',
   }),
   entry({
     id: 'model-tool-config-drift',

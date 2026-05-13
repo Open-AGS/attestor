@@ -156,6 +156,7 @@
     "test:stale-authority-policy-guard": "tsx tests/stale-authority-policy-guard.test.ts",
     "test:recipient-tenant-boundary-replay": "tsx tests/recipient-tenant-boundary-replay.test.ts",
     "test:scope-explosion-guard": "tsx tests/scope-explosion-guard.test.ts",
+    "test:human-review-fatigue-guard": "tsx tests/human-review-fatigue-guard.test.ts",
     "test:policy-foundry-counterexample-ledger": "tsx tests/policy-foundry-counterexample-ledger.test.ts",
     "test:policy-foundry-policy-twin-summary": "tsx tests/policy-foundry-policy-twin-summary.test.ts",
     "test:policy-foundry-authority-relationship-context": "tsx tests/policy-foundry-authority-relationship-context.test.ts",

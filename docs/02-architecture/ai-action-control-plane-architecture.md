@@ -204,8 +204,8 @@ Policy Foundry, failure-mode, replay, or authority graph refactors continue.
 
 ## Next Steps
 
-1. Add a boundary guard test for the architecture rules that can be checked from
-   repository imports.
+1. Keep the boundary guard test green for the architecture rules that can be
+   checked from repository imports: `npm run test:architecture-boundary-imports`.
 2. Extract the deterministic trailing-slash platform primitive.
 3. Refactor repeated normalization call sites in a narrow PR.
 4. Keep README and `system-overview.md` aligned with this architecture without

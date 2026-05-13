@@ -183,16 +183,17 @@ POST /api/v1/shadow/policy-foundry/hosted-onboarding-workflow
 ```
 
 It composes bounded manifests, declarations, tenant-scoped shadow events,
-optional local adversarial replay observations, and commercial boundary context
-into one stateless review workflow. It returns digest-bound review material only:
-no raw payload is stored, no credential is issued, no patch is applied, no
+optional local adversarial replay observations, billing-provider entitlement
+context when wired by the hosted runtime, and commercial boundary context into
+one stateless review workflow. It returns digest-bound review material only: no
+raw payload is stored, no credential is issued, no patch is applied, no
 infrastructure is deployed, no production traffic is executed, and enforcement
 is not activated. The response includes a compact hosted review surface with
-task cards, no-go cards, evidence digest cards, and the next safe step, so a UI
-or integrator does not need to parse the full nested packet for the first
-review screen. The hosted UI flow route renders that same review surface as
-HTML for a first customer-facing onboarding screen while keeping the same
-review-only boundary.
+task cards, no-go cards, evidence digest cards, billing entitlement no-go
+context, and the next safe step, so a UI or integrator does not need to parse
+the full nested packet for the first review screen. The hosted UI flow route
+renders that same review surface as HTML for a first customer-facing onboarding
+screen while keeping the same review-only boundary.
 
 When `persistWizardState: true` is supplied, the hosted workflow route also
 creates persistent hosted wizard state in a local file-backed evaluation store.
@@ -369,7 +370,7 @@ Onboarding automation:
 
 - [Action surface manifest intake](docs/02-architecture/action-surface-manifest-intake.md), [Action surface declaration ingestors](docs/02-architecture/action-surface-declaration-ingestors.md), and [Action surface profiler](docs/02-architecture/action-surface-profiler.md) turn customer-owned metadata and shadow events into a data-minimized action-surface map.
 - [Action surface integration artifacts](docs/02-architecture/action-surface-integration-artifacts.md), [Action surface onboarding packet](docs/02-architecture/action-surface-onboarding-packet.md), action-surface review handoff, red-team fixture bundle, local adversarial replay executor, and hosted onboarding workflow contract reduce adoption friction with review-required plans. They do not deploy infrastructure, issue credentials, activate enforcement, execute production traffic, or make a non-bypassable claim by themselves.
-- [Policy Foundry onboarding](docs/02-architecture/policy-foundry-onboarding.md) and [Integration mode readiness](docs/02-architecture/integration-mode-readiness.md) turn shadow traffic into policy candidates, readiness/no-go evidence, active questions, Policy Twin work, reviewed outcome feedback, drift/policy-debt findings, commercial-boundary review material, local adversarial replay reports, hosted workflow steps, and reviewed paths toward scoped enforcement. The path where customers self-attest readiness controls is not allowed.
+- [Policy Foundry onboarding](docs/02-architecture/policy-foundry-onboarding.md) and [Integration mode readiness](docs/02-architecture/integration-mode-readiness.md) turn shadow traffic into policy candidates, readiness/no-go evidence, active questions, Policy Twin work, reviewed outcome feedback, drift/policy-debt findings, commercial-boundary review material, billing-entitlement review material, local adversarial replay reports, hosted workflow steps, and reviewed paths toward scoped enforcement. The path where customers self-attest readiness controls is not allowed.
 
 Runtime and packs:
 

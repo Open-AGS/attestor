@@ -214,6 +214,11 @@ function testReadmeNamesPolicyFoundryWithoutOverclaiming(): void {
   );
   includes(
     readme,
+    'billing-entitlement review material',
+    'README: billing entitlement gate is named without production overclaim',
+  );
+  includes(
+    readme,
     'local adversarial replay reports',
     'README: local adversarial replay executor is named without production overclaim',
   );
@@ -308,7 +313,8 @@ function testCommercialBoundaryMatchesPackaging(): void {
   includes(packaging, 'Policy Twin simulation preview', 'Product packaging: Trial carries Policy Twin preview');
   includes(packaging, 'Security minimums must not become paid-only features', 'Product packaging: safety floor is preserved');
   includes(packaging, 'repo-side commercial boundary contract is implemented', 'Product packaging: repo-side commercial boundary is explicit');
-  includes(packaging, 'hosted entitlement enforcement remains a deployment/product integration task', 'Product packaging: hosted entitlement limitation is explicit');
+  includes(packaging, 'hosted Policy Foundry route now also includes', 'Product packaging: hosted entitlement implementation is explicit');
+  includes(packaging, 'commercial access gating, not policy', 'Product packaging: hosted entitlement limitation is explicit');
 
   for (const plan of ['developer', 'trial', 'starter', 'pro', 'scale', 'enterprise']) {
     includes(doc, `- ${plan[0]?.toUpperCase()}${plan.slice(1)}`, `Policy Foundry docs: ${plan} commercial posture is recorded`);
@@ -463,6 +469,16 @@ function testPackageScriptIsExposed(): void {
     pkg.scripts['test:policy-foundry-commercial-boundary'] ?? '',
     'tsx tests/policy-foundry-commercial-boundary.test.ts',
     'Package: Policy Foundry commercial boundary test command is stable',
+  );
+  includes(
+    JSON.stringify(pkg.scripts),
+    'test:policy-foundry-billing-entitlement-enforcement',
+    'Package: Policy Foundry billing entitlement enforcement test is exposed',
+  );
+  includes(
+    pkg.scripts['test:policy-foundry-billing-entitlement-enforcement'] ?? '',
+    'tsx tests/policy-foundry-billing-entitlement-enforcement.test.ts',
+    'Package: Policy Foundry billing entitlement enforcement test command is stable',
   );
   includes(
     JSON.stringify(pkg.scripts),

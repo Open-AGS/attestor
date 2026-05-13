@@ -169,12 +169,19 @@ and the rule that shadow reads never auto-enforce must apply across all plans.
 The repo-side commercial boundary contract is implemented as
 `attestor.policy-foundry-commercial-boundary.v1`. It separates plan capabilities
 from the safety floor and explicitly states that billing state is not required
-for safety minimums. The implementation boundary is still important: hosted entitlement enforcement remains a deployment/product integration task, and the contract does not claim production readiness. Current repo-side foundations
-include shadow events, action risk inventory, policy discovery candidates,
-simulation reports, promotion drafts, activation readiness gates, readiness and
-no-go scoring, candidate red-team replay, active questions, review-only patch
-packs, one-command self-onboarding, outcome feedback, drift/policy-debt
-detection, and the commercial boundary contract.
+for safety minimums. The hosted Policy Foundry route now also includes
+`attestor.policy-foundry-billing-entitlement-enforcement.v1`, which uses the
+billing-provider entitlement read model when it is available to prevent
+request-body plan elevation and to fail closed for commercial/production
+Foundry requests when billing access is missing or disabled. The implementation
+boundary is still important: this is commercial access gating, not policy
+authority, deployment readiness, or production activation. Current repo-side
+foundations include shadow events, action risk inventory, policy discovery
+candidates, simulation reports, promotion drafts, activation readiness gates,
+readiness and no-go scoring, candidate red-team replay, active questions,
+review-only patch packs, one-command self-onboarding, outcome feedback,
+drift/policy-debt detection, the commercial boundary contract, and hosted
+Foundry billing entitlement enforcement.
 
 ### Starter
 

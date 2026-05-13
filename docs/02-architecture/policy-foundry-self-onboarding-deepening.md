@@ -43,6 +43,10 @@ preserve these boundaries:
   evaluation, and LaunchDarkly progressive rollouts show why commercial access
   should gate plan capabilities and rollout limits without paywalling the
   minimum safety floor.
+- Stripe Billing Entitlements recommend syncing active entitlement summaries
+  into an application-side provisioning/read model; the hosted Foundry route
+  therefore treats billing-provider state as a commercial access gate, not as
+  policy authority or production readiness evidence.
 
 These sources are engineering anchors only. They do not certify Attestor.
 
@@ -67,6 +71,7 @@ These sources are engineering anchors only. They do not certify Attestor.
 | Step 15 | complete | Add Hosted Review Surface | Compact task/no-go/evidence review surface for UI/API rendering |
 | Step 16 | complete | Add Hosted UI Flow Renderer | HTML task-list/status/no-go/evidence rendering from the hosted review surface |
 | Step 17 | complete | Add Persistent Hosted Wizard State | File-backed evaluation store and tenant-bound resume route for digest-only hosted wizard state |
+| Step 18 | complete | Add Billing-Provider Entitlement Enforcement | Hosted Foundry route gates commercial plan/capability and production workflow requests against billing-provider entitlement state without paywalling safety minimums |
 
 ## Step 01 Scope
 
@@ -474,9 +479,38 @@ no-go cards, evidence digest cards, status, safe next step, created/updated
 timestamps, expiry, and a created/updated event trail. It does not store raw
 manifests, raw tenant ids, caller session refs, shadow payloads, full packets,
 or raw review surfaces. It is local file-backed evaluation persistence only:
-shared production wizard storage, deployment wiring, billing-provider
-entitlement enforcement, live downstream replay, and production smoke tests
-remain separate unresolved tasks.
+shared production wizard storage, deployment wiring, live downstream replay,
+and production smoke tests remain separate unresolved tasks.
+
+## Step 18 Scope
+
+Step 18 adds
+`attestor.policy-foundry-billing-entitlement-enforcement.v1`.
+
+The hosted Foundry route now evaluates commercial access against
+billing-provider entitlement state when an entitlement resolver is configured:
+
+```text
+hosted tenant
++ billing entitlement read model
++ requested plan/capabilities/production workflow count
+-> commercial plan for boundary
+-> entitlement no-go reasons
+-> review-only route output
+```
+
+This closes the previous route-level gap where a request body could provide a
+higher `commercialPlan` than the hosted account was entitled to. When billing
+state is present, the hosted route uses the effective billing plan for the
+commercial boundary. When provider state is missing or access is disabled, paid
+Foundry capability and production workflow requests fail closed to the
+Developer commercial boundary. Safety minimums remain available and cannot be
+made paid-only.
+
+This is commercial access enforcement only. It is not policy authority, does
+not activate enforcement, does not issue credentials, does not deploy
+infrastructure, does not prove production readiness, and does not replace the
+separate deployment/smoke-test gates.
 
 ## Protected Principles
 
@@ -502,11 +536,11 @@ contracts, or shared product positioning are touched.
 
 ## Current Status
 
-Step 01 through Step 12 are complete. Step 13 through Step 17 are also complete
+Step 01 through Step 12 are complete. Step 13 through Step 18 are also complete
 repo-side: the repo-side self-onboarding deepening list now includes the local
 adversarial replay executor, hosted workflow contract, stateless hosted workflow
 route wrapper, compact hosted review surface, hosted UI flow renderer, and
-local file-backed persistent hosted wizard state. Live adversarial replay
-execution, shared production wizard storage, billing provider entitlement
-enforcement, deployment wiring, and production smoke tests remain outside this
-tracker.
+local file-backed persistent hosted wizard state, plus hosted route
+billing-provider entitlement enforcement for commercial Foundry requests. Live
+adversarial replay execution, shared production wizard storage, deployment
+wiring, and production smoke tests remain outside this tracker.

@@ -548,11 +548,14 @@ It lives in
 by `tests/policy-foundry-hosted-onboarding-workflow-route.test.ts`, and is
 exposed through `test:policy-foundry-hosted-onboarding-workflow-route`. The
 route composes bounded manifests, declarations, tenant-scoped shadow events,
-optional local replay observations, and commercial boundary context into one
-stateless review workflow. It returns tenant digests, not raw tenant ids, and it
+optional local replay observations, billing-provider entitlement context, and
+commercial boundary context into one stateless review workflow. It returns
+tenant digests, not raw tenant ids. When the hosted runtime wires a billing
+entitlement resolver, the route uses the billing-provider effective plan rather
+than any request-body `commercialPlan` to evaluate commercial capabilities. It
 does not store raw payloads, issue credentials, apply patches, deploy
-infrastructure, execute production traffic, activate enforcement, implement a
-hosted UI, enforce billing-provider entitlements, or prove production readiness.
+infrastructure, execute production traffic, activate enforcement, or prove
+production readiness.
 
 The compact hosted review surface lives in
 `src/consequence-admission/policy-foundry-hosted-review-surface.ts`, is covered
@@ -598,8 +601,19 @@ evidence digest cards, status, timestamps, and safe instructions. It does not
 store raw manifests, raw tenant ids, caller session refs, shadow payloads, or
 the full review packet. It is not shared production workflow storage and does
 not apply patches, issue credentials, deploy infrastructure, execute production
-traffic, activate enforcement, enforce billing-provider entitlements, or prove
-production readiness.
+traffic, activate enforcement, or prove production readiness.
+
+The hosted billing-provider entitlement enforcement helper lives in
+`src/service/policy-foundry-billing-entitlement-enforcement.ts`, is covered by
+`tests/policy-foundry-billing-entitlement-enforcement.test.ts`, and is exposed
+through `test:policy-foundry-billing-entitlement-enforcement`. The hosted
+workflow route includes its output as `billingEntitlementEnforcement`. That
+output gates commercial Foundry plan/capability and production workflow
+requests against the hosted billing entitlement read model when the runtime
+provides one. It prevents request-body plan elevation, fails closed for
+commercial/production requests when billing-provider state is missing or access
+is disabled, and keeps safety minimums available. It is not policy authority,
+does not activate enforcement, and does not prove deployment readiness.
 
 ```text
 coverageScore
@@ -692,6 +706,12 @@ sessionId
 expiresAt
 tenantBoundLookup: true
 rawReviewSurfaceStored: false
+billingEntitlementEnforcement
+enforcementMode
+commercialPlanForBoundary
+effectiveBillingPlanId
+commercialCapabilitiesAllowed
+safetyMinimumsRemainAvailable: true
 readinessScore
 sampleSize
 actorDistributionHealth
@@ -799,9 +819,11 @@ now also has the first hosted onboarding workflow contract, the first stateless
 hosted workflow route wrapper for review material, the first compact hosted
 review surface for UI/API rendering, and the first hosted UI flow renderer for
 that surface. It also has a local file-backed evaluation store for persistent
-hosted wizard state and tenant-bound resume. It does not yet have
+hosted wizard state and tenant-bound resume, plus route-level
+billing-provider entitlement enforcement for hosted Foundry commercial
+capability and production workflow requests. It does not yet have
 production/live downstream adversarial replay execution, shared production
-wizard storage, hosted billing-provider entitlement enforcement for Foundry
-capabilities, or production rollout automation.
+wizard storage, deployment wiring, production smoke tests, or production
+rollout automation.
 The deeper self-onboarding track is tracked in
 [Policy Foundry Self-Onboarding Deepening](policy-foundry-self-onboarding-deepening.md).

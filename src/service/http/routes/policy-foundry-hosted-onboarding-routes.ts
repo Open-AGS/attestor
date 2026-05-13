@@ -29,6 +29,10 @@ import {
   type ShadowAdmissionEvent,
 } from '../../../consequence-admission/index.js';
 import { renderPolicyFoundryHostedUiFlow } from '../../policy-foundry-hosted-ui.js';
+import type { HostedBillingEntitlementRecord } from '../../billing-entitlement-store.js';
+import {
+  createPolicyFoundryBillingEntitlementEnforcement,
+} from '../../policy-foundry-billing-entitlement-enforcement.js';
 import type {
   PolicyFoundryHostedWizardStateRecord,
   PolicyFoundryHostedWizardStateStore,
@@ -87,6 +91,9 @@ type HostedPolicyFoundryOnboardingRequestBody = {
 export interface PolicyFoundryHostedOnboardingRouteDeps {
   currentTenant(context: Context): TenantContext;
   listShadowEvents(input: { readonly tenant: TenantContext }): readonly ShadowAdmissionEvent[];
+  resolveBillingEntitlement?(input: {
+    readonly tenant: TenantContext;
+  }): Promise<HostedBillingEntitlementRecord | null> | HostedBillingEntitlementRecord | null;
   wizardStateStore?: PolicyFoundryHostedWizardStateStore;
   now?(): string;
 }
@@ -431,13 +438,34 @@ async function readBody(c: Context): Promise<HostedPolicyFoundryOnboardingReques
   }
 }
 
-function createHostedPolicyFoundryOnboardingMaterial(
+async function createHostedPolicyFoundryOnboardingMaterial(
   c: Context,
   deps: PolicyFoundryHostedOnboardingRouteDeps,
   body: HostedPolicyFoundryOnboardingRequestBody,
 ) {
   const tenant = deps.currentTenant(c);
   const generatedAt = optionalIsoTimestamp(body.generatedAt, deps.now?.() ?? new Date().toISOString());
+  const requestedCommercialPlan = normalizeCommercialPlan(body.commercialPlan, null);
+  const requestedCapabilities = normalizeCapabilities(body.requestedCapabilities);
+  const requestedProductionWorkflowCount =
+    optionalNonNegativeInteger(body.requestedProductionWorkflowCount, 'requestedProductionWorkflowCount');
+  const requestedHostedProduction =
+    optionalBoolean(body.requestedHostedProduction, 'requestedHostedProduction', false);
+  const requestedCustomerOperatedDeployment =
+    optionalBoolean(body.requestedCustomerOperatedDeployment, 'requestedCustomerOperatedDeployment', false);
+  const billingEntitlement = await deps.resolveBillingEntitlement?.({ tenant }) ?? null;
+  const billingEntitlementEnforcement = createPolicyFoundryBillingEntitlementEnforcement({
+    evaluatedAt: generatedAt,
+    tenantPlanId: tenant.planId,
+    requestedPlan: requestedCommercialPlan,
+    requestedPlanExplicit: body.commercialPlan !== undefined && body.commercialPlan !== null,
+    requestedCapabilities,
+    requestedProductionWorkflowCount,
+    requestedHostedProduction,
+    requestedCustomerOperatedDeployment,
+    entitlement: billingEntitlement,
+    entitlementResolverConfigured: Boolean(deps.resolveBillingEntitlement),
+  });
   const includeShadowEvents = optionalBoolean(body.includeShadowEvents, 'includeShadowEvents', true);
   const events = includeShadowEvents ? deps.listShadowEvents({ tenant }) : [];
   const selfOnboardingPacket = createPolicyFoundrySelfOnboardingCliPacket({
@@ -461,19 +489,16 @@ function createHostedPolicyFoundryOnboardingMaterial(
     });
   const commercialBoundary = createPolicyFoundryCommercialBoundary({
     generatedAt,
-    plan: normalizeCommercialPlan(body.commercialPlan, tenant.planId),
-    requestedCapabilities: normalizeCapabilities(body.requestedCapabilities),
+    plan: billingEntitlementEnforcement.commercialPlanForBoundary,
+    requestedCapabilities,
     blockedSafetyMinimums: normalizeStringArray(
       body.blockedSafetyMinimums,
       'blockedSafetyMinimums',
       MAX_HOSTED_CAPABILITIES,
     ),
-    requestedProductionWorkflowCount:
-      optionalNonNegativeInteger(body.requestedProductionWorkflowCount, 'requestedProductionWorkflowCount'),
-    requestedHostedProduction:
-      optionalBoolean(body.requestedHostedProduction, 'requestedHostedProduction', false),
-    requestedCustomerOperatedDeployment:
-      optionalBoolean(body.requestedCustomerOperatedDeployment, 'requestedCustomerOperatedDeployment', false),
+    requestedProductionWorkflowCount,
+    requestedHostedProduction,
+    requestedCustomerOperatedDeployment,
     shadowAutoEnforceRequested:
       optionalBoolean(body.autoEnforceRequested, 'autoEnforceRequested', false),
   });
@@ -523,6 +548,7 @@ function createHostedPolicyFoundryOnboardingMaterial(
     executesProductionTraffic: false,
     appliesPatches: false,
     includedShadowEvents: includeShadowEvents,
+    billingEntitlementEnforcement,
     selfOnboardingPacket,
     adversarialReplay,
     commercialBoundary,
@@ -534,7 +560,7 @@ function createHostedPolicyFoundryOnboardingMaterial(
 function persistWizardStateIfRequested(
   deps: PolicyFoundryHostedOnboardingRouteDeps,
   body: HostedPolicyFoundryOnboardingRequestBody,
-  material: ReturnType<typeof createHostedPolicyFoundryOnboardingMaterial>,
+  material: Awaited<ReturnType<typeof createHostedPolicyFoundryOnboardingMaterial>>,
 ): {
   readonly wizardState: {
     readonly kind: 'created' | 'updated';
@@ -575,7 +601,7 @@ export function registerPolicyFoundryHostedOnboardingRoutes(
     if (body instanceof Response) return body;
 
     try {
-      const material = createHostedPolicyFoundryOnboardingMaterial(c, deps, body);
+      const material = await createHostedPolicyFoundryOnboardingMaterial(c, deps, body);
       const persisted = persistWizardStateIfRequested(deps, body, material);
       if (!persisted.wizardState) return c.json(material);
       return c.json({
@@ -594,7 +620,7 @@ export function registerPolicyFoundryHostedOnboardingRoutes(
     if (body instanceof Response) return body;
 
     try {
-      const material = createHostedPolicyFoundryOnboardingMaterial(c, deps, body);
+      const material = await createHostedPolicyFoundryOnboardingMaterial(c, deps, body);
       return c.body(renderPolicyFoundryHostedUiFlow(material.reviewSurface), 200, {
         'content-type': 'text/html; charset=utf-8',
       });

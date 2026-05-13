@@ -3,6 +3,14 @@ import {
   createShadowAdmissionEvent,
 } from '../../consequence-admission/index.js';
 import { createServiceAgentLoopAbuseGuard } from '../agent-loop-abuse-guard.js';
+import {
+  projectHostedBillingEntitlement,
+} from '../billing-entitlement-store.js';
+import {
+  findHostedAccountByTenantIdState,
+  findHostedBillingEntitlementByAccountIdState,
+  findTenantRecordByTenantIdState,
+} from '../control-plane-store.js';
 import { registerAccountRoutes } from '../http/routes/account-routes.js';
 import { registerAdminRoutes } from '../http/routes/admin-routes.js';
 import { registerCoreRoutes } from '../http/routes/core-routes.js';
@@ -168,6 +176,21 @@ export function createPolicyFoundryHostedOnboardingRouteDeps<Packet>(
     currentTenant: runtime.services.httpRoutes.pipeline.currentTenant,
     listShadowEvents: ({ tenant }) =>
       shadowEventStore.list({ tenantId: tenant.tenantId }).events,
+    async resolveBillingEntitlement({ tenant }) {
+      const account = await findHostedAccountByTenantIdState(tenant.tenantId);
+      if (!account) return null;
+      const existing = await findHostedBillingEntitlementByAccountIdState(account.id);
+      if (existing) return existing;
+      const tenantRecord = await findTenantRecordByTenantIdState(account.primaryTenantId);
+      return projectHostedBillingEntitlement(null, {
+        account,
+        currentPlanId:
+          tenantRecord?.planId ??
+          account.billing.lastCheckoutPlanId ??
+          tenant.planId,
+        currentMonthlyRunQuota: tenantRecord?.monthlyRunQuota ?? tenant.monthlyRunQuota,
+      });
+    },
     wizardStateStore,
     now: () => new Date().toISOString(),
   };

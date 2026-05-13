@@ -219,7 +219,7 @@ function testDescriptorDocsAndPackageSurfaceStayAligned(): void {
   includes(dataMinDoc, 'policy-foundry-drift-policy-debt-detector', 'Data minimization docs: drift detector surface is named');
   includes(tracker, 'complete | Add Drift And Policy Debt Detector', 'Deepening tracker: Step 11 is complete');
   includes(tracker, 'attestor.policy-foundry-drift-policy-debt-detector.v1', 'Deepening tracker: drift detector version is named');
-  includes(tracker, 'Step 12 is the next implementation step', 'Deepening tracker: Step 12 is next');
+  includes(tracker, 'Step 01 through Step 12 are complete', 'Deepening tracker: self-onboarding list is complete');
   equal(
     pkg.scripts['test:policy-foundry-drift-policy-debt-detector'],
     'tsx tests/policy-foundry-drift-policy-debt-detector.test.ts',

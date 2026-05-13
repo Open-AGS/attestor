@@ -134,6 +134,11 @@ function testPolicyFoundryArchitectureIsGrounded(): void {
   );
   includes(
     doc,
+    'src/consequence-admission/policy-foundry-commercial-boundary.ts',
+    'Policy Foundry docs: commercial boundary contract evidence is named',
+  );
+  includes(
+    doc,
     'scripts/render-policy-foundry-self-onboarding.ts',
     'Policy Foundry docs: self-onboarding renderer evidence is named',
   );
@@ -176,6 +181,11 @@ function testReadmeNamesPolicyFoundryWithoutOverclaiming(): void {
     readme,
     'drift/policy-debt findings',
     'README: drift/policy debt detector is named without automation overclaim',
+  );
+  includes(
+    readme,
+    'commercial-boundary review material',
+    'README: commercial boundary is named without entitlement overclaim',
   );
   includes(
     readme,
@@ -230,6 +240,9 @@ function testOnboardingResearchAnchorsAreRecorded(): void {
     'OpenTelemetry-style correlated signals',
     'NIST AI RMF monitor/manage discipline',
     'Terraform plan',
+    'Stripe entitlement-style feature boundaries',
+    'OpenFeature context-bound evaluation',
+    'LaunchDarkly progressive rollouts',
   ]) {
     includes(doc, anchor, `Policy Foundry docs: research anchor ${anchor} is recorded`);
   }
@@ -244,7 +257,8 @@ function testCommercialBoundaryMatchesPackaging(): void {
   includes(packaging, 'missing controls from observed shadow actions', 'Product packaging: external language avoids training claims');
   includes(packaging, 'Policy Twin simulation preview', 'Product packaging: Trial carries Policy Twin preview');
   includes(packaging, 'Security minimums must not become paid-only features', 'Product packaging: safety floor is preserved');
-  includes(packaging, 'not fully implemented yet', 'Product packaging: implementation limitation is explicit');
+  includes(packaging, 'repo-side commercial boundary contract is implemented', 'Product packaging: repo-side commercial boundary is explicit');
+  includes(packaging, 'hosted entitlement enforcement remains a deployment/product integration task', 'Product packaging: hosted entitlement limitation is explicit');
 
   for (const plan of ['developer', 'trial', 'starter', 'pro', 'scale', 'enterprise']) {
     includes(doc, `- ${plan[0]?.toUpperCase()}${plan.slice(1)}`, `Policy Foundry docs: ${plan} commercial posture is recorded`);
@@ -389,6 +403,16 @@ function testPackageScriptIsExposed(): void {
     pkg.scripts['test:policy-foundry-drift-policy-debt-detector'] ?? '',
     'tsx tests/policy-foundry-drift-policy-debt-detector.test.ts',
     'Package: Policy Foundry drift/policy debt detector test command is stable',
+  );
+  includes(
+    JSON.stringify(pkg.scripts),
+    'test:policy-foundry-commercial-boundary',
+    'Package: Policy Foundry commercial boundary test is exposed',
+  );
+  includes(
+    pkg.scripts['test:policy-foundry-commercial-boundary'] ?? '',
+    'tsx tests/policy-foundry-commercial-boundary.test.ts',
+    'Package: Policy Foundry commercial boundary test command is stable',
   );
 }
 

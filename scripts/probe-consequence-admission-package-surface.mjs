@@ -535,6 +535,26 @@ assert.equal(
   typeof admission.createPolicyFoundryDriftPolicyDebtDetector,
   'function',
 );
+assert.equal(
+  admission.POLICY_FOUNDRY_COMMERCIAL_BOUNDARY_VERSION,
+  'attestor.policy-foundry-commercial-boundary.v1',
+);
+assert.equal(
+  admission.policyFoundryCommercialBoundaryDescriptor().dataMinimizationSurfaceKind,
+  'policy-foundry-commercial-boundary',
+);
+assert.equal(
+  admission.policyFoundryCommercialBoundaryDescriptor().safetyMinimumsPaidOnlyAllowed,
+  false,
+);
+assert.equal(
+  admission.policyFoundryCommercialBoundaryDescriptor().billingStateRequiredForSafetyMinimums,
+  false,
+);
+assert.equal(
+  typeof admission.createPolicyFoundryCommercialBoundary,
+  'function',
+);
 
 let blockedInternalPath = false;
 try {

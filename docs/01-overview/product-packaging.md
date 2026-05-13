@@ -162,15 +162,19 @@ The commercial boundary is:
 | `enterprise` | Customer-operated, dedicated, air-gapped, regulated, or custom pack deployment boundaries. |
 
 Security minimums must not become paid-only features. Redaction, proof
-verification, tenant isolation, fail-closed semantics, and the rule that shadow
-reads never auto-enforce must apply across all plans.
+verification, tenant isolation, fail-closed semantics, offline verifier access,
+replay/idempotency safety, deterministic controls, approval-required promotion,
+and the rule that shadow reads never auto-enforce must apply across all plans.
 
-The implementation boundary is still important: Policy Foundry as a full
-readiness engine, active-question contract, candidate-specific red-team replay
-suite, and entitlement-aware rollout layer is not fully implemented yet. Current
-repo-side foundations include shadow events, action risk inventory, policy
-discovery candidates, simulation reports, promotion drafts, and activation
-readiness gates.
+The repo-side commercial boundary contract is implemented as
+`attestor.policy-foundry-commercial-boundary.v1`. It separates plan capabilities
+from the safety floor and explicitly states that billing state is not required
+for safety minimums. The implementation boundary is still important: hosted entitlement enforcement remains a deployment/product integration task, and the contract does not claim production readiness. Current repo-side foundations
+include shadow events, action risk inventory, policy discovery candidates,
+simulation reports, promotion drafts, activation readiness gates, readiness and
+no-go scoring, candidate red-team replay, active questions, review-only patch
+packs, one-command self-onboarding, outcome feedback, drift/policy-debt
+detection, and the commercial boundary contract.
 
 ### Starter
 

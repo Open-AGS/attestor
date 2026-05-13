@@ -84,6 +84,9 @@ function testDescriptorCoversCriticalSurfaces(): void {
   const driftPolicyDebtDetector = descriptor.surfaces.find((surface) =>
     surface.surfaceKind === 'policy-foundry-drift-policy-debt-detector'
   );
+  const commercialBoundary = descriptor.surfaces.find((surface) =>
+    surface.surfaceKind === 'policy-foundry-commercial-boundary'
+  );
   const externalReview = descriptor.surfaces.find((surface) =>
     surface.surfaceKind === 'external-review-packet'
   );
@@ -202,6 +205,15 @@ function testDescriptorCoversCriticalSurfaces(): void {
   ok(
     driftPolicyDebtDetector?.allowedUnits.includes('counts'),
     'Data minimization policy: drift/policy debt detector allows aggregate counts',
+  );
+  ok(commercialBoundary, 'Data minimization policy: commercial boundary surface is present');
+  ok(
+    commercialBoundary?.allowedUnits.includes('counts'),
+    'Data minimization policy: commercial boundary allows aggregate counts',
+  );
+  ok(
+    commercialBoundary?.allowedUnits.includes('safe-instruction'),
+    'Data minimization policy: commercial boundary allows safe instructions',
   );
   ok(externalReview, 'Data minimization policy: external review packet surface is present');
   ok(
@@ -408,6 +420,11 @@ function testDocsAndScriptsExposePolicy(): void {
     doc,
     'policy-foundry-review-only-patch-pack',
     'Data minimization policy: doc lists review-only patch pack surface',
+  );
+  includes(
+    doc,
+    'policy-foundry-commercial-boundary',
+    'Data minimization policy: doc lists commercial boundary surface',
   );
   includes(
     doc,

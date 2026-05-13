@@ -235,3 +235,6 @@ Policy Foundry, failure-mode, replay, or authority graph refactors continue.
    [Domain pack boundary](domain-pack-boundary.md) and
    `npm run test:domain-pack-boundary` before adding a pack surface or changing
    pack responsibilities.
+7. Before merging architecture-boundary, failure-registry, replay-layer, pack,
+   or product-positioning changes, run the focused architecture suite:
+   `npm run verify:architecture`.

@@ -296,6 +296,7 @@
     "test:crypto-execution-admission-negative-conformance-fixtures": "tsx tests/crypto-execution-admission-negative-conformance-fixtures.test.ts",
     "test:crypto-execution-admission-adapter-readiness-manifest": "tsx tests/crypto-execution-admission-adapter-readiness-manifest.test.ts",
     "test:crypto-execution-admission-platform-surface": "tsx tests/crypto-execution-admission-platform-surface.test.ts",
+    "verify:architecture": "node scripts/run-suite.mjs architecture",
     "verify": "node scripts/run-suite.mjs verify",
     "verify:live-local": "node scripts/run-live-ops-gate.mjs local-live",
     "verify:ops": "node scripts/run-live-ops-gate.mjs ops",

@@ -8,7 +8,7 @@ type SuiteItem = {
 };
 
 const { resolveSuite } = await import('../scripts/run-suite.mjs') as {
-  readonly resolveSuite: (suiteName: 'test' | 'verify') => readonly SuiteItem[];
+  readonly resolveSuite: (suiteName: 'architecture' | 'test' | 'verify') => readonly SuiteItem[];
 };
 
 let passed = 0;
@@ -59,13 +59,13 @@ function packageJson(): {
   };
 }
 
-function suiteText(suiteName: 'test' | 'verify'): string {
+function suiteText(suiteName: 'architecture' | 'test' | 'verify'): string {
   return resolveSuite(suiteName)
     .map((item) => `${item.label}\n${item.command}`)
     .join('\n');
 }
 
-function suiteCommands(suiteName: 'test' | 'verify'): readonly string[] {
+function suiteCommands(suiteName: 'architecture' | 'test' | 'verify'): readonly string[] {
   return resolveSuite(suiteName).map((item) => item.command);
 }
 
@@ -74,6 +74,7 @@ function testPackageJsonDelegatesLargeSuitesToRunner(): void {
 
   equal(pkg.scripts.test, 'node scripts/run-suite.mjs test', 'Package runner: npm test delegates to suite runner');
   equal(pkg.scripts.verify, 'node scripts/run-suite.mjs verify', 'Package runner: npm run verify delegates to suite runner');
+  equal(pkg.scripts['verify:architecture'], 'node scripts/run-suite.mjs architecture', 'Package runner: architecture verification delegates to suite runner');
   equal(pkg.scripts['verify:full'], 'npm run verify && node scripts/run-live-ops-gate.mjs full', 'Package runner: full verification delegates live/ops work to the live/ops runner');
   equal(pkg.scripts['typecheck:hygiene'], 'tsc --noEmit --noUnusedLocals --noUnusedParameters', 'Package runner: strict unused-code hygiene is available as an explicit check');
   equal(pkg.scripts['test:package-script-runner'], 'tsx tests/package-script-runner.test.ts', 'Package runner: runner contract test is exposed');
@@ -149,7 +150,37 @@ function testVerifySuiteKeepsGateOrdering(): void {
   }
 }
 
+function testArchitectureSuiteKeepsBoundaryCoverage(): void {
+  const commands = suiteCommands('architecture');
+  const text = commands.join('\n');
+
+  for (const expected of [
+    'npm run test:ai-action-control-plane-architecture',
+    'npm run test:architecture-boundary-imports',
+    'npm run test:platform-string-normalization',
+    'npm run test:control-plane-role-naming',
+    'npm run test:domain-pack-boundary',
+    'npm run test:failure-mode-registry',
+    'npm run test:failure-mode-control-bindings',
+    'npm run test:failure-mode-replay-fixtures',
+    'npm run test:replay-layer-placement',
+    'npm run test:consequence-admission-readiness',
+    'npm run test:product-positioning-docs',
+    'npm run test:hosted-product-flow-docs',
+  ]) {
+    includes(text, expected, `Package runner: architecture suite includes ${expected}`);
+  }
+
+  includes(text, 'npm run build', 'Package runner: architecture suite builds before package-surface probe');
+  includes(text, 'npm run test:consequence-admission-package-surface', 'Package runner: architecture suite probes consequence-admission package surface');
+  ok(
+    commands.indexOf('npm run test:consequence-admission-package-surface') > commands.indexOf('npm run build'),
+    'Package runner: architecture suite runs package-surface probe after build',
+  );
+}
+
 function testDefaultSuitesExcludeLiveAndOpsGates(): void {
+  const architectureText = suiteText('architecture');
   const testText = suiteText('test');
   const verifyText = suiteText('verify');
 
@@ -164,6 +195,7 @@ function testDefaultSuitesExcludeLiveAndOpsGates(): void {
     'test:production-readiness-packet',
     'test:secret-manager-bootstrap-render',
   ]) {
+    excludes(architectureText, excluded, `Package runner: architecture suite excludes live/ops gate ${excluded}`);
     excludes(testText, excluded, `Package runner: npm test excludes live/ops gate ${excluded}`);
     excludes(verifyText, excluded, `Package runner: npm run verify excludes live/ops gate ${excluded}`);
   }
@@ -186,6 +218,7 @@ function testPrivatePackageBoundaryIsDocumented(): void {
 testPackageJsonDelegatesLargeSuitesToRunner();
 testFastSuiteKeepsCriticalCoverage();
 testVerifySuiteKeepsGateOrdering();
+testArchitectureSuiteKeepsBoundaryCoverage();
 testDefaultSuitesExcludeLiveAndOpsGates();
 testPrivatePackageBoundaryIsDocumented();
 

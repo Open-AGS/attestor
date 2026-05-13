@@ -83,9 +83,34 @@ function packageSurfaceProbeScriptNames(packageJson) {
     .filter((scriptName) => isPackageSurfaceProbe(scriptName));
 }
 
+function architectureScriptNames() {
+  return [
+    'test:ai-action-control-plane-architecture',
+    'test:architecture-boundary-imports',
+    'test:platform-string-normalization',
+    'test:control-plane-role-naming',
+    'test:domain-pack-boundary',
+    'test:failure-mode-registry',
+    'test:failure-mode-control-bindings',
+    'test:failure-mode-replay-fixtures',
+    'test:replay-layer-placement',
+    'test:consequence-admission-readiness',
+    'test:product-positioning-docs',
+    'test:hosted-product-flow-docs',
+  ];
+}
+
 export function resolveSuite(suiteName, options = {}) {
   const root = options.root ?? rootDir;
   const packageJson = readPackageJson(root);
+
+  if (suiteName === 'architecture') {
+    return [
+      ...architectureScriptNames().map(npmCommand),
+      shellCommand('build', 'npm run build'),
+      npmCommand('test:consequence-admission-package-surface'),
+    ];
+  }
 
   if (suiteName === 'test') {
     return [
@@ -104,7 +129,7 @@ export function resolveSuite(suiteName, options = {}) {
     ];
   }
 
-  throw new Error(`Unknown suite "${suiteName}". Expected "test" or "verify".`);
+  throw new Error(`Unknown suite "${suiteName}". Expected "architecture", "test", or "verify".`);
 }
 
 export function runSuite(suiteName, options = {}) {

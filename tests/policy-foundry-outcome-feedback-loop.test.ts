@@ -185,7 +185,7 @@ function testDescriptorDocsAndPackageSurfaceStayAligned(): void {
   includes(dataMinDoc, 'policy-foundry-outcome-feedback-loop', 'Data minimization docs: outcome feedback surface is named');
   includes(tracker, 'complete | Add Outcome Feedback Loop', 'Deepening tracker: Step 10 is complete');
   includes(tracker, 'attestor.policy-foundry-outcome-feedback-loop.v1', 'Deepening tracker: outcome feedback version is named');
-  includes(tracker, 'Step 12 is the next implementation step', 'Deepening tracker: Step 12 is next');
+  includes(tracker, 'Step 01 through Step 12 are complete', 'Deepening tracker: self-onboarding list is complete');
   equal(
     pkg.scripts['test:policy-foundry-outcome-feedback-loop'],
     'tsx tests/policy-foundry-outcome-feedback-loop.test.ts',

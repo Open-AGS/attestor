@@ -36,6 +36,10 @@ preserve these boundaries:
 - OPA decision logs, OpenTelemetry signals, NIST AI RMF monitor/manage, and
   IAM Recommender observed-usage recommendations show that outcome feedback
   should be structured scoring input, not automatic authority.
+- Stripe entitlement-style feature boundaries, OpenFeature context-bound
+  evaluation, and LaunchDarkly progressive rollouts show why commercial access
+  should gate plan capabilities and rollout limits without paywalling the
+  minimum safety floor.
 
 These sources are engineering anchors only. They do not certify Attestor.
 
@@ -54,7 +58,7 @@ These sources are engineering anchors only. They do not certify Attestor.
 | Step 09 | complete | Add One-Command Self-Onboarding CLI | Render session, coverage, blockers, patch pack, handoff, and red-team fixtures from customer-owned manifests and shadow data |
 | Step 10 | complete | Add Outcome Feedback Loop | Feed reviewed decisions and downstream receipts back into scoring through digest-first, data-minimized signals |
 | Step 11 | complete | Add Drift And Policy Debt Detector | Detect new surfaces, stale policies, verifier coverage drift, actor concentration, and policy/shadow mismatch |
-| Step 12 | not started | Add Commercial Boundary Contract | Separate evaluation, Starter, Pro, Scale, and Enterprise Foundry capabilities without paywalling safety minimums |
+| Step 12 | complete | Add Commercial Boundary Contract | Separate evaluation, Starter, Pro, Scale, and Enterprise Foundry capabilities without paywalling safety minimums |
 
 ## Step 01 Scope
 
@@ -320,6 +324,39 @@ It detects:
 It is not an auto-remediation engine. It does not mutate policy, deploy
 gateways, activate enforcement, or prove production readiness.
 
+## Step 12 Scope
+
+Step 12 adds `attestor.policy-foundry-commercial-boundary.v1`.
+
+The commercial boundary contract separates plan capabilities from safety
+minimums:
+
+```text
+Developer / Trial -> evaluation and shadow discovery only
+Starter -> one production workflow commercial boundary
+Pro -> multiple workflows and collaboration controls
+Scale -> higher-volume discovery, custom templates, and drift detection
+Enterprise -> customer-operated and regulated deployment boundaries
+```
+
+It explicitly keeps safety minimums out of the paywall:
+
+```text
+redaction
+proof-verification
+tenant-isolation
+fail-closed-semantics
+shadow-never-auto-enforces
+approval-required-promotion
+deterministic-controls
+offline-verifier-access
+replay-idempotency-safety
+```
+
+The contract is commercial context only. It does not read a billing provider,
+enforce hosted entitlements, activate enforcement, or prove production
+readiness.
+
 ## Protected Principles
 
 - customer authority
@@ -344,5 +381,7 @@ contracts, or shared product positioning are touched.
 
 ## Current Status
 
-Step 01 through Step 11 are complete. Step 12 is the next implementation step.
-The rest of the list remains open.
+Step 01 through Step 12 are complete. The repo-side self-onboarding deepening
+list is complete. Hosted UI flows, live adversarial replay execution, billing
+provider entitlement enforcement, deployment wiring, and production smoke tests
+remain outside this tracker.

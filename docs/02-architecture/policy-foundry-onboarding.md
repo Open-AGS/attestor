@@ -102,6 +102,14 @@ standard certifies Attestor:
   action:
   https://developer.hashicorp.com/terraform/cli/commands/plan and
   https://docs.aws.amazon.com/IAM/latest/UserGuide/access-analyzer-policy-generation.html
+- Commercial entitlements should govern product capabilities and limits, not
+  the safety floor itself. Stripe entitlement-style feature boundaries,
+  OpenFeature context-bound evaluation, and LaunchDarkly progressive rollouts
+  are engineering anchors for separating plan access from runtime safety
+  invariants:
+  https://docs.stripe.com/billing/entitlements,
+  https://openfeature.dev/docs/reference/concepts/evaluation-context, and
+  https://launchdarkly.com/docs/home/releases/progressive-rollouts
 
 ## Core Versus Packs
 
@@ -330,6 +338,29 @@ Security minimums stay available across plans: redaction, proof verification,
 tenant isolation, fail-closed semantics, and no auto-enforcement from shadow
 reads must not become paid-only safety features.
 
+The first repo-side commercial boundary contract lives in
+`src/consequence-admission/policy-foundry-commercial-boundary.ts`, is covered by
+`tests/policy-foundry-commercial-boundary.test.ts`, and is exposed through
+`test:policy-foundry-commercial-boundary`. It maps Developer, Trial, Starter,
+Pro, Scale, and Enterprise Foundry capabilities while keeping these safety
+minimums out of the paywall:
+
+```text
+redaction
+proof-verification
+tenant-isolation
+fail-closed-semantics
+shadow-never-auto-enforces
+approval-required-promotion
+deterministic-controls
+offline-verifier-access
+replay-idempotency-safety
+```
+
+The contract is commercial context only. It does not read Stripe or another
+billing provider, enforce hosted entitlements, activate enforcement, or prove
+production readiness.
+
 ## Readiness Contract
 
 The first runtime slice is the Policy Foundry readiness contract, not a UI
@@ -473,6 +504,15 @@ negative outcome feedback, schema/template debt, and replay/idempotency debt.
 It is review material only: it does not mutate policy, deploy infrastructure,
 activate enforcement, or prove production readiness.
 
+The Commercial Boundary Contract is the first repo-side plan/capability
+boundary for Policy Foundry. It lives in
+`src/consequence-admission/policy-foundry-commercial-boundary.ts`, is covered by
+`tests/policy-foundry-commercial-boundary.test.ts`, and is exposed through
+`test:policy-foundry-commercial-boundary`. It separates evaluation, Starter,
+Pro, Scale, and Enterprise Foundry capabilities from non-paywalled safety
+minimums. It is not billing-provider state, hosted entitlement enforcement, or
+production readiness evidence.
+
 ```text
 coverageScore
 coverageDimensions
@@ -528,6 +568,11 @@ driftStatus
 driftEntries
 driftNoGoReasons
 automaticRemediationAllowed: false
+commercialBoundary
+commercialPlan
+allowedCapabilities
+unavailableCapabilities
+safetyMinimumsPaidOnlyAllowed: false
 readinessScore
 sampleSize
 actorDistributionHealth
@@ -597,18 +642,16 @@ Repository foundations already exist in:
 - `src/consequence-admission/shadow-simulation.ts`
 - `src/consequence-admission/shadow-activation-readiness-gate.ts`
 
-Policy Foundry as described here is not fully implemented. The current system
-has shadow events, action risk inventory, policy discovery candidates,
-simulation reports, promotion drafts, activation readiness gates, and the first
-readiness/no-go contract with a read-only shadow route, candidate-specific
-evidence replay, active questions, action-surface review handoff, synthetic
-onboarding red-team fixture generation, and the first onboarding session
-contract plus the first coverage score, minimum viable gate planner, and
-schema-bound candidate registry, counterexample ledger, and Policy Twin v2
-summary plus authority relationship context, review-only patch pack, and
-one-command self-onboarding CLI plus the first outcome feedback loop and drift
-policy-debt detector
-contracts. It does not yet have a live
-adversarial replay executor, UI workflow, or full commercial entitlement
-contract for Foundry capabilities. The deeper self-onboarding track is tracked in
+Policy Foundry as described here is not fully implemented as a hosted product
+workflow. The current repo-side system has shadow events, action risk
+inventory, policy discovery candidates, simulation reports, promotion drafts,
+activation readiness gates, readiness/no-go routes, candidate-specific evidence
+replay, active questions, action-surface review handoff, synthetic onboarding
+red-team fixture generation, onboarding session, coverage score, gate planner,
+candidate registry, counterexample ledger, Policy Twin v2 summary, authority
+relationship context, review-only patch pack, one-command self-onboarding CLI,
+outcome feedback loop, drift/policy-debt detector, and the commercial boundary
+contract. It does not yet have a live adversarial replay executor, UI workflow,
+or hosted billing-provider entitlement enforcement for Foundry capabilities.
+The deeper self-onboarding track is tracked in
 [Policy Foundry Self-Onboarding Deepening](policy-foundry-self-onboarding-deepening.md).

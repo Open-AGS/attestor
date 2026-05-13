@@ -154,6 +154,7 @@
     "test:policy-foundry-self-onboarding-cli": "tsx tests/policy-foundry-self-onboarding-cli.test.ts",
     "test:policy-foundry-outcome-feedback-loop": "tsx tests/policy-foundry-outcome-feedback-loop.test.ts",
     "test:policy-foundry-drift-policy-debt-detector": "tsx tests/policy-foundry-drift-policy-debt-detector.test.ts",
+    "test:policy-foundry-commercial-boundary": "tsx tests/policy-foundry-commercial-boundary.test.ts",
     "test:integration-mode-readiness": "tsx tests/integration-mode-readiness.test.ts",
     "test:shadow-policy-foundry-readiness-routes": "tsx tests/shadow-policy-foundry-readiness-routes.test.ts",
     "test:shadow-persistence-store": "tsx tests/shadow-persistence-store.test.ts",

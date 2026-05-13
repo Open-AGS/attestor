@@ -76,7 +76,7 @@ Shadow mode is for discovering the real action surface before asking production 
 - which actions would create review load
 - which consequences would have been blocked before execution
 
-Policy Foundry is the onboarding layer for this path. It identifies policy candidates and missing controls from data-minimized shadow action traffic, simulates impact through Policy Twin, runs candidate-specific red-team replay, and keeps promotion approval-required. It is observed-action policy mining, not model training, not automatic policy writing, and not a production-readiness claim.
+Policy Foundry is the onboarding layer for this path. It identifies policy candidates and missing controls from data-minimized shadow action traffic, simulates impact through Policy Twin, runs candidate-specific red-team replay, keeps promotion approval-required, detects drift/policy debt, and separates commercial capabilities from non-paywalled safety minimums. It is observed-action policy mining, not model training, not automatic policy writing, and not a production-readiness claim.
 
 The current generic admission route implements the first control ladder for this path. Recommendation, simulation, and reporting surfaces build on top of that ladder; they should make enforcement easier to approve before a workflow is asked to stop.
 
@@ -338,7 +338,7 @@ Onboarding automation:
 
 - [Action surface manifest intake](docs/02-architecture/action-surface-manifest-intake.md), [Action surface declaration ingestors](docs/02-architecture/action-surface-declaration-ingestors.md), and [Action surface profiler](docs/02-architecture/action-surface-profiler.md) turn customer-owned metadata and shadow events into a data-minimized action-surface map.
 - [Action surface integration artifacts](docs/02-architecture/action-surface-integration-artifacts.md), [Action surface onboarding packet](docs/02-architecture/action-surface-onboarding-packet.md), action-surface review handoff, and red-team fixture bundle reduce adoption friction with review-required plans. They do not deploy infrastructure, issue credentials, activate enforcement, or make a non-bypassable claim by themselves.
-- [Policy Foundry onboarding](docs/02-architecture/policy-foundry-onboarding.md) and [Integration mode readiness](docs/02-architecture/integration-mode-readiness.md) turn shadow traffic into policy candidates, readiness/no-go evidence, active questions, Policy Twin work, reviewed outcome feedback, drift/policy-debt findings, and reviewed paths toward scoped enforcement. The path where customers self-attest readiness controls is not allowed.
+- [Policy Foundry onboarding](docs/02-architecture/policy-foundry-onboarding.md) and [Integration mode readiness](docs/02-architecture/integration-mode-readiness.md) turn shadow traffic into policy candidates, readiness/no-go evidence, active questions, Policy Twin work, reviewed outcome feedback, drift/policy-debt findings, commercial-boundary review material, and reviewed paths toward scoped enforcement. The path where customers self-attest readiness controls is not allowed.
 
 Runtime and packs:
 

@@ -2112,6 +2112,7 @@ export * from './policy-foundry-review-only-patch-pack.js';
 export * from './policy-foundry-self-onboarding-cli.js';
 export * from './policy-foundry-outcome-feedback-loop.js';
 export * from './policy-foundry-drift-policy-debt-detector.js';
+export * from './policy-foundry-commercial-boundary.js';
 export * from './integration-mode-readiness.js';
 export * from './shadow-policy-promotion-draft.js';
 export * from './shadow-policy-promotion-packet.js';

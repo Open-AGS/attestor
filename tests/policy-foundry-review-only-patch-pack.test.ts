@@ -167,7 +167,7 @@ function testDescriptorDocsAndPackageScriptStayAligned(): void {
   includes(doc, 'test:policy-foundry-review-only-patch-pack', 'Policy Foundry docs: review-only patch pack test command is named');
   includes(tracker, 'Step 08', 'Deepening tracker: Step 08 is present');
   includes(tracker, 'complete | Add Review-Only Integration Patch Pack', 'Deepening tracker: Step 08 is complete');
-  includes(tracker, 'Step 12 is the next implementation step', 'Deepening tracker: Step 12 is next');
+  includes(tracker, 'Step 01 through Step 12 are complete', 'Deepening tracker: self-onboarding list is complete');
   includes(
     pkg.scripts['test:policy-foundry-review-only-patch-pack'] ?? '',
     'tsx tests/policy-foundry-review-only-patch-pack.test.ts',

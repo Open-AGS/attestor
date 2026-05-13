@@ -2106,6 +2106,7 @@ export * from './policy-foundry-coverage-score.js';
 export * from './policy-foundry-gate-planner.js';
 export * from './policy-foundry-candidate-registry.js';
 export * from './failure-mode-registry.js';
+export * from './failure-mode-control-bindings.js';
 export * from './policy-foundry-counterexample-ledger.js';
 export * from './policy-foundry-policy-twin-summary.js';
 export * from './policy-foundry-authority-relationship-context.js';

@@ -70,6 +70,8 @@ The platform core is made of reusable layers:
 | PAP | Release policy control plane and Policy Foundry surfaces | controls policy lifecycle, simulation, rollout, activation, reviewer constraints, and provenance |
 | Audit and replay | Audit evidence export, tamper-evident history, presentation replay ledger, execution receipt, and replay fixtures | records why a decision happened and whether the allowed action was presented and consumed safely |
 
+The machine-readable naming contract lives in `src/consequence-admission/control-plane-roles.ts`. It keeps PDP, PEP, PIP, PAP, audit-proof, replay, pack, and hosted-service vocabulary aligned across package exports, docs, and tests.
+
 | Layer | Role | Status |
 |---|---|---|
 | Release layer | decides whether a proposed consequence may proceed | evaluation-packaged |

@@ -378,6 +378,7 @@ Runtime and packs:
 - The PAP surfaces control policy lifecycle through signed bundles, simulation, rollout, activation rules, reviewer constraints, and provenance checks.
 - Pack-specific adapters live below this layer. They provide native evidence, simulations, verifier bindings, conformance fixtures, and downstream handoff details for a consequence class without getting a separate product identity or trust story.
 - Attestor does not guess what to run automatically, and it does not bypass the customer's own enforcement point.
+- The machine-readable role contract is exported from `attestor/consequence-admission`. Package consumers, docs, and tests use the same PDP / PEP / PIP / PAP vocabulary.
 - [Crypto intelligence buildout](docs/02-architecture/crypto-intelligence-buildout.md) and [crypto intelligence surface](docs/02-architecture/crypto-intelligence-platform-surface.md) apply the same summary discipline to programmable-money surfaces without turning Attestor into a hosted crypto execution provider.
 
 ## Data And Security Posture

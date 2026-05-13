@@ -94,13 +94,28 @@ function testInvariantsAndRefactorImplicationArePresent(): void {
 
   includes(
     doc,
-    'The trailing-slash normalizer cleanup should be the first small platform',
-    'AI action control-plane docs: immediate refactor implication is explicit',
+    'The completed trailing-slash normalizer cleanup is the first small platform',
+    'AI action control-plane docs: first refactor proof is explicit',
   );
   includes(
     doc,
     'do not turn `src/platform` into a broad utility dumping ground',
     'AI action control-plane docs: platform primitive boundary blocks utils sprawl',
+  );
+}
+
+function testRoleNamingContractIsMachineReadable(): void {
+  const doc = readProjectFile('docs', '02-architecture', 'ai-action-control-plane-architecture.md');
+
+  includes(
+    doc,
+    '`src/consequence-admission/control-plane-roles.ts`',
+    'AI action control-plane docs: role naming contract points at source',
+  );
+  includes(
+    doc,
+    '`attestor/consequence-admission`',
+    'AI action control-plane docs: role naming contract is exported through the admission package',
   );
 }
 
@@ -122,6 +137,7 @@ function testSystemOverviewLinksArchitectureDecision(): void {
 testArchitectureDecisionIsExplicitAndBounded();
 testControlPlaneRolesStayMapped();
 testInvariantsAndRefactorImplicationArePresent();
+testRoleNamingContractIsMachineReadable();
 testSystemOverviewLinksArchitectureDecision();
 
 console.log(`AI action control-plane architecture tests: ${passed} passed, 0 failed`);

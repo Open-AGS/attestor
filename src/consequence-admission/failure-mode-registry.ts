@@ -423,9 +423,11 @@ Object.freeze([
     repositoryEvidence: [
       evidence('code', 'src/release-kernel/reviewer-queue.ts', 'reviewer authority and token issuance'),
       evidence('code', 'src/consequence-admission/policy-foundry-authority-relationship-context.ts', 'approver-binding-missing'),
+      evidence('code', 'src/consequence-admission/approval-provenance-guard.ts', 'approval provenance guard'),
       evidence('test', 'tests/policy-foundry-authority-relationship-context.test.ts', 'missing approver is a no-go'),
+      evidence('test', 'tests/approval-provenance-guard.test.ts', 'fake chat/email/model approval is blocked'),
     ],
-    limitation: 'Approval provenance exists in several places; fake Slack/email approval replay is not yet a first-class fixture.',
+    limitation: 'A dedicated approval provenance guard exists; live IdP, approval workflow, reviewer queue, and downstream verifier integrations still need customer setup and route integration.',
   }),
   entry({
     id: 'stale-authority-or-policy',

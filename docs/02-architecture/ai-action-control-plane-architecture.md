@@ -208,7 +208,11 @@ Policy Foundry, failure-mode, replay, or authority graph refactors continue.
    checked from repository imports: `npm run test:architecture-boundary-imports`.
 2. Keep the deterministic trailing-slash platform primitive covered by
    `npm run test:platform-string-normalization`.
-3. Refactor repeated normalization call sites to use the platform primitive in a
-   narrow PR.
-4. Keep README and `system-overview.md` aligned with this architecture without
+3. Keep README and `system-overview.md` aligned with this architecture without
    expanding public readiness claims.
+4. Continue naming alignment only where it clarifies PDP, PEP, PIP, PAP,
+   failure-registry, replay, pack, or hosted-service boundaries; do not perform
+   broad renames without a local boundary test.
+5. Place failure-mode registry, control binding, and replay work in the shared
+   control layer unless a tracker proves that a pack-specific extension is the
+   safer boundary.

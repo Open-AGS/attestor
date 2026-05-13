@@ -8,7 +8,7 @@ This document is the short architectural truth source. The README gives the prod
 
 Attestor should be understood as one product:
 
-**an AI action authorization layer implemented as an AI consequence gateway for high-consequence systems**
+**an AI Action Control Plane for proposed AI actions before business consequences**
 
 The core pattern is:
 
@@ -17,6 +17,8 @@ AI proposes -> policy, authority, evidence, and enforcement checks -> admitted, 
 ```
 
 That same pattern spans AI-output release, programmable-money authorization, data export, authority change, communication, filing, and operational execution. The architecture therefore has one shared action-authorization core and multiple packs, not multiple unrelated products hiding in one repository.
+
+The security target is reference-monitor-style, not a blanket claim that Attestor is a classical reference monitor in every customer deployment. A workflow only earns that posture when a real PEP, gateway, verifier, or adapter catches the action before downstream execution and the path is tested against the admission proof, binding, replay, and failure-mode controls.
 
 The customer-facing operating model and decision vocabulary live in [Operating model](../01-overview/operating-model.md). Use that page when deciding how domain-native finance or crypto outcomes map to the shared `admit`, `narrow`, `review`, and `block` language.
 
@@ -59,6 +61,14 @@ The post-consequence result shape lives in [Downstream execution receipt](downst
 ## Shared Platform Core
 
 The platform core is made of reusable layers:
+
+| Control-plane role | Attestor surface | Boundary |
+|---|---|---|
+| PDP | Consequence admission, release kernel, and release layer | decides `admit`, `narrow`, `review`, or `block` from structured action intent, policy, evidence, authority, scope, and failure-mode controls |
+| PEP | Enforcement plane, verifier helper, adapter framework, customer gateways | verifies proof, binding, replay, and decision posture before downstream execution |
+| PIP | Evidence, authority, tenant, recipient, freshness, policy-version, no-go, and runtime context providers | supplies facts without silently approving an action |
+| PAP | Release policy control plane and Policy Foundry surfaces | controls policy lifecycle, simulation, rollout, activation, reviewer constraints, and provenance |
+| Audit and replay | Audit evidence export, tamper-evident history, presentation replay ledger, execution receipt, and replay fixtures | records why a decision happened and whether the allowed action was presented and consumed safely |
 
 | Layer | Role | Status |
 |---|---|---|
@@ -206,6 +216,7 @@ Active priority:
 
 - move through the [Production rehearsal buildout](production-rehearsal-buildout.md) so `production-shared` becomes real-environment evidence, not just repo-embedded PostgreSQL proof
 - keep the completed [Production shared authority plane buildout](production-shared-authority-plane-buildout.md) aligned with production promotion gates so `production-shared` remains a tested shared authority plane, not a loose marketing claim
+- keep the [AI Action Control Plane architecture](ai-action-control-plane-architecture.md) aligned with the README, package boundaries, failure registry, replay fixtures, and customer-side enforcement contract
 - keep the product story centered on one Attestor platform
 - keep the README and architecture docs aligned with the trackers
 - preserve the completed consequence-admission contract, quickstart, and readiness gates before widening public API claims

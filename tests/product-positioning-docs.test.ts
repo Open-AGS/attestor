@@ -39,7 +39,9 @@ function testTopLevelPositioningStaysAligned(): void {
   includes(readme, 'Some failures are deliberately not model-retryable.', 'Product docs: README blocks retry-loop overclaim');
   includes(readme, 'This is the route-level entry point for the shadow-to-enforcement ladder described above.', 'Product docs: README avoids repeating the route mode explanation');
   includes(readme, 'a treasury or wallet workflow prepares a programmable-money transaction', 'Product docs: README uses consequence-pack examples');
-  includes(readme, 'Attestor is one product with a shared AI action authorization core and modular packs for specific consequence domains.', 'Product docs: README keeps one-product framing');
+  includes(readme, 'Attestor is one product: an AI Action Control Plane with a shared authorization core and modular packs for specific consequence domains.', 'Product docs: README keeps one-product control-plane framing');
+  includes(readme, 'The deeper architecture decision is [AI Action Control Plane architecture](docs/02-architecture/ai-action-control-plane-architecture.md).', 'Product docs: README links the control-plane ADR');
+  includes(readme, 'This is not a claim that every customer workflow is already non-bypassable', 'Product docs: README keeps reference-monitor non-claim visible');
   includes(readme, 'AI action authorization infrastructure', 'Product docs: README names the infrastructure category');
   includes(readme, '## Consequence Packs', 'Product docs: README names consequence packs before architecture');
   includes(readme, 'A pack does not answer "is this finance or crypto?" It answers the control question:', 'Product docs: README blocks industry-pack framing');
@@ -52,6 +54,12 @@ function testTopLevelPositioningStaysAligned(): void {
   includes(actionPositioning, 'Attestor returns bounded correction feedback so agents can retry safely without learning sensitive data or bypassing policy.', 'Product docs: action authorization positioning frames safe retry correctly');
   includes(purpose, 'Attestor is one product:', 'Product docs: purpose keeps one-product framing');
   includes(systemOverview, 'Attestor should be understood as one product:', 'Product docs: system overview keeps one-product framing');
+  includes(systemOverview, 'an AI Action Control Plane for proposed AI actions before business consequences', 'Product docs: system overview keeps AI Action Control Plane framing');
+  includes(systemOverview, 'The security target is reference-monitor-style', 'Product docs: system overview keeps reference-monitor-style boundary explicit');
+  includes(systemOverview, '| PDP | Consequence admission, release kernel, and release layer |', 'Product docs: system overview names the PDP surface');
+  includes(systemOverview, '| PEP | Enforcement plane, verifier helper, adapter framework, customer gateways |', 'Product docs: system overview names the PEP surface');
+  includes(systemOverview, '| PIP | Evidence, authority, tenant, recipient, freshness, policy-version, no-go, and runtime context providers |', 'Product docs: system overview names the PIP surface');
+  includes(systemOverview, '| PAP | Release policy control plane and Policy Foundry surfaces |', 'Product docs: system overview names the PAP surface');
   includes(packaging, 'Attestor is one product:', 'Product docs: packaging keeps one-product framing');
   includes(useCases, 'Attestor owns the control point before consequence:', 'Product docs: use-case bridge keeps control-point framing');
   includes(readme, 'docs/01-overview/what-you-can-do.md', 'Product docs: README links the use-case bridge');
@@ -79,9 +87,10 @@ function testCoreAndPackStatusStayConsistent(): void {
     includes(systemOverview, packageSurface, `Product docs: system overview names ${packageSurface}`);
   }
 
-  includes(readme, 'The release layer turns a decision into something the rest of the system can inspect', 'Product docs: README release layer role is concrete');
-  includes(readme, 'The policy control plane is where authority changes are controlled', 'Product docs: README policy control-plane role is concrete');
-  includes(readme, 'The enforcement plane is the downstream edge.', 'Product docs: README enforcement-plane role is concrete');
+  includes(readme, 'The PDP surfaces turn structured action intent, policy, evidence, authority, scope, and failure-mode controls into `admit`, `narrow`, `review`, or `block`.', 'Product docs: README PDP role is concrete');
+  includes(readme, 'The PEP surfaces sit at the downstream edge and verify the decision, proof, binding, and replay posture before execution.', 'Product docs: README PEP role is concrete');
+  includes(readme, 'The PIP surfaces supply evidence, authority, tenant, recipient, freshness, policy-version, no-go, and context facts; they do not approve actions by themselves.', 'Product docs: README PIP role is concrete');
+  includes(readme, 'The PAP surfaces control policy lifecycle through signed bundles, simulation, rollout, activation rules, reviewer constraints, and provenance checks.', 'Product docs: README PAP role is concrete');
   includes(readme, 'Pack-specific adapters live below this layer.', 'Product docs: README keeps adapter role below consequence packs');
   includes(readme, 'Money Movement', 'Product docs: README names Money Movement pack');
   includes(readme, 'Data Movement', 'Product docs: README names Data Movement pack');

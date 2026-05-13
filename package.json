@@ -154,6 +154,7 @@
     "test:tool-result-poisoning-guard": "tsx tests/tool-result-poisoning-guard.test.ts",
     "test:approval-provenance-guard": "tsx tests/approval-provenance-guard.test.ts",
     "test:stale-authority-policy-guard": "tsx tests/stale-authority-policy-guard.test.ts",
+    "test:recipient-tenant-boundary-replay": "tsx tests/recipient-tenant-boundary-replay.test.ts",
     "test:policy-foundry-counterexample-ledger": "tsx tests/policy-foundry-counterexample-ledger.test.ts",
     "test:policy-foundry-policy-twin-summary": "tsx tests/policy-foundry-policy-twin-summary.test.ts",
     "test:policy-foundry-authority-relationship-context": "tsx tests/policy-foundry-authority-relationship-context.test.ts",

@@ -382,8 +382,10 @@ Object.freeze([
       evidence('test', 'tests/shadow-route-tenant-boundary.test.ts', 'foreign records rejected before serialization'),
       evidence('doc', 'docs/02-architecture/tenant-isolation-boundary.md', 'Tenant isolation boundary'),
       evidence('code', 'src/consequence-admission/action-surface-onboarding-red-team-fixtures.ts', 'foreign-tenant-record'),
+      evidence('code', 'src/consequence-admission/recipient-tenant-boundary-replay.ts', 'recipient and tenant boundary replay contract'),
+      evidence('test', 'tests/recipient-tenant-boundary-replay.test.ts', 'foreign tenant replay blocks without raw tenant output'),
     ],
-    limitation: 'Shadow route coverage is strong; all future review/export/dashboard surfaces need the same boundary evidence.',
+    limitation: 'Shadow route coverage is strong and a dedicated boundary replay contract exists; all future review/export/dashboard surfaces still need route-level integration evidence.',
   }),
   entry({
     id: 'wrong-recipient-disclosure',
@@ -402,9 +404,11 @@ Object.freeze([
     repositoryEvidence: [
       evidence('code', 'src/consequence-admission/index.ts', 'recipient-scope-missing'),
       evidence('code', 'src/consequence-admission/data-minimization-redaction-policy.ts', 'raw-recipient-details'),
+      evidence('code', 'src/consequence-admission/recipient-tenant-boundary-replay.ts', 'recipient and tenant boundary replay contract'),
       evidence('test', 'tests/downstream-enforcement-contract.test.ts', 'scope and constraint checks'),
+      evidence('test', 'tests/recipient-tenant-boundary-replay.test.ts', 'wrong recipient and disallowed data class replay blocks'),
     ],
-    limitation: 'Recipient scope exists, but a dedicated wrong-recipient replay case is still missing.',
+    limitation: 'A dedicated wrong-recipient replay contract exists; downstream senders must still enforce equivalent recipient checks before delivery.',
   }),
   entry({
     id: 'fake-approval-laundering',

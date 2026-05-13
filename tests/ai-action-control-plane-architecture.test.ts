@@ -149,10 +149,26 @@ function testSystemOverviewLinksArchitectureDecision(): void {
   );
 }
 
+function testLanguageContractAnchorsInfrastructureSurface(): void {
+  const doc = readProjectFile('docs', '02-architecture', 'attestor-language-contract.md');
+
+  for (const expected of [
+    'Attestor is an **AI Action Control Plane**.',
+    'Attestor decides when AI intent is allowed to become business consequence.',
+    'A gateway is a PEP, not the product category.',
+    'authorization layer as the product category',
+    'reference-monitor-style',
+    'Calling the admission API alone makes downstream execution non-bypassable.',
+  ]) {
+    includes(doc, expected, `AI action control-plane docs: language contract includes ${expected}`);
+  }
+}
+
 testArchitectureDecisionIsExplicitAndBounded();
 testControlPlaneRolesStayMapped();
 testInvariantsAndRefactorImplicationArePresent();
 testRoleNamingContractIsMachineReadable();
 testSystemOverviewLinksArchitectureDecision();
+testLanguageContractAnchorsInfrastructureSurface();
 
 console.log(`AI action control-plane architecture tests: ${passed} passed, 0 failed`);

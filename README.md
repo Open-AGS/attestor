@@ -2,11 +2,11 @@
 
 ![Attestor: proof before consequence](docs/assets/attestor-readme-hero.png)
 
-**AI Action Authorization Layer.**
+**AI Action Control Plane.**
 
-Attestor is the authorization layer for AI actions before they become consequences.
+Attestor decides when AI intent is allowed to become business consequence.
 
-Models propose actions. Systems change state. Attestor authorizes the gap between them.
+Models propose actions. Systems change state. Attestor controls the consequence boundary between them.
 
 Start in shadow mode. See what your AI agents would have done before you let them act.
 
@@ -14,14 +14,14 @@ AI systems now reach tools that write to ledgers, CRMs, filing paths, wallets, t
 
 Attestor sits at that boundary. A model, agent, workflow, wallet, or application proposes an action; Attestor admits it, narrows it, sends it to review, or blocks it before the downstream system writes, sends, files, settles, grants access, releases data, or executes.
 
-Attestor does not replace the model, agent runtime, wallet, custody platform, orchestration layer, or downstream system. It is the authorization layer before a proposed AI action becomes a real-world consequence.
+Attestor does not replace the model, agent runtime, wallet, custody platform, orchestration layer, or downstream system. It is the control plane before a proposed AI action becomes a real-world consequence.
 
 > [!NOTE]
 > This repository is source-available under Business Source License 1.1. Non-production use is allowed. Production use requires a commercial license until the Change Date in [LICENSE](LICENSE).
 
 ## Current Status
 
-Attestor is currently an **evaluation release**: reviewer-runnable, CI-backed, and useful for technical evaluation. It demonstrates the AI action authorization model, consequence-gateway proof artifacts, consequence-pack surfaces, programmable-money extension surfaces, hosted account and billing surfaces, and current fail-closed boundaries.
+Attestor is currently an **evaluation release**: reviewer-runnable, CI-backed, and useful for technical evaluation. It demonstrates the AI Action Control Plane model, consequence-admission proof artifacts, consequence-pack surfaces, programmable-money extension surfaces, hosted account and billing surfaces, and current fail-closed boundaries.
 
 It is not a finished public SaaS, a production-use guarantee, a completed customer-operated deployment, or a substitute for an external security audit.
 
@@ -92,7 +92,7 @@ bad instruction -> plausible model output -> tool call -> real system changed
 
 Attestor treats the proposed consequence as the object of control. It does not need the model to become perfectly reliable. It requires the action to pass a bounded admission decision before the system of record, payment layer, wallet, filing path, admin plane, or operational workflow is allowed to act.
 
-This is AI action authorization infrastructure: not a chatbot feature, not a prompt wrapper, not a generic agent workspace, and not a governance checklist. A gateway before important AI actions become real.
+This is AI action control-plane infrastructure: not a chatbot feature, not a prompt wrapper, not a generic agent workspace, and not a governance checklist. Gateways, verifiers, and adapters are enforcement points; the product is the control plane before important AI actions become real.
 
 ## Try It In 60 Seconds
 
@@ -334,7 +334,7 @@ The pack is the consequence class. Adapters sit underneath it. A refund service,
 
 ## Architecture: Core And Packs
 
-Attestor is one product: an AI Action Control Plane with a shared authorization core and modular packs for specific consequence domains.
+Attestor is one product: an AI Action Control Plane with a shared consequence-admission core and modular packs for specific consequence domains.
 
 One product. One platform core.
 
@@ -356,6 +356,7 @@ proposed consequence
 Core contracts:
 
 - [AI Action Control Plane architecture](docs/02-architecture/ai-action-control-plane-architecture.md) defines the product abstraction, reference-monitor-style admission target, PDP / PEP / PIP / PAP role split, package-boundary posture, and non-claims.
+- [Attestor language contract](docs/02-architecture/attestor-language-contract.md) keeps the public category, enforcement terminology, proof language, pack language, and non-claims consistent across GitHub, README, docs, and PRs.
 - [Consequence taxonomy](docs/02-architecture/consequence-taxonomy.md) and the consequence-admission core keep every pack on the same `admit` / `narrow` / `review` / `block` language.
 - [Domain pack boundary](docs/02-architecture/domain-pack-boundary.md) keeps finance, crypto, filing, general admission, and future packs as bounded extensions over the shared admission core instead of separate products or separate decision engines.
 - [Failure mode registry](docs/02-architecture/failure-mode-registry.md), [failure mode control bindings](docs/02-architecture/failure-mode-control-bindings.md), and [failure mode replay fixtures](docs/02-architecture/failure-mode-replay-fixtures.md) turn known AI-action failure modes into explicit controls, evidence requirements, authority requirements, audit records, default decisions, and replay cases.

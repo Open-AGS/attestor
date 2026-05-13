@@ -149,6 +149,7 @@
     "test:policy-foundry-candidate-registry": "tsx tests/policy-foundry-candidate-registry.test.ts",
     "test:failure-mode-registry": "tsx tests/failure-mode-registry.test.ts",
     "test:failure-mode-control-bindings": "tsx tests/failure-mode-control-bindings.test.ts",
+    "test:failure-mode-replay-fixtures": "tsx tests/failure-mode-replay-fixtures.test.ts",
     "test:policy-foundry-counterexample-ledger": "tsx tests/policy-foundry-counterexample-ledger.test.ts",
     "test:policy-foundry-policy-twin-summary": "tsx tests/policy-foundry-policy-twin-summary.test.ts",
     "test:policy-foundry-authority-relationship-context": "tsx tests/policy-foundry-authority-relationship-context.test.ts",

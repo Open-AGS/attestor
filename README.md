@@ -78,6 +78,8 @@ Shadow mode is for discovering the real action surface before asking production 
 
 Policy Foundry is the onboarding layer for this path. It identifies policy candidates and missing controls from data-minimized shadow action traffic, simulates impact through Policy Twin, runs candidate-specific red-team replay, keeps promotion approval-required, detects drift/policy debt, and separates commercial capabilities from non-paywalled safety minimums. It is observed-action policy mining, not model training, not automatic policy writing, and not a production-readiness claim.
 
+The failure-mode registry turns known AI-action failure modes into controls before business action. Untrusted content, poisoned tool results, fake approvals, stale policy, tenant or recipient boundary mistakes, scope explosion, review fatigue, drift, no-go holds, and missing replay evidence become explicit control, evidence, authority, audit, and replay checks.
+
 The current generic admission route implements the first control ladder for this path. Recommendation, simulation, and reporting surfaces build on top of that ladder; they should make enforcement easier to approve before a workflow is asked to stop.
 
 ## Why It Exists
@@ -109,7 +111,7 @@ You will see:
 - a non-bypassable gateway demo where a payment adapter cannot dispatch without verifier allow
 - an agent retry wrapper demo where model-safe feedback becomes one bounded correction attempt
 - an action-surface onboarding packet rendered from a safe OpenAPI example without deploying anything
-- a Policy Foundry self-onboarding packet with session, coverage, blockers, gate plan, handoff, red-team fixtures, and review-only patch drafts
+- a Policy Foundry self-onboarding packet with session, coverage, blockers, gate plan, handoff, red-team fixtures, failure-mode gaps, and review-only patch drafts
 
 For a guided first run, see [Try Attestor first](docs/01-overview/try-attestor-first.md).
 
@@ -170,51 +172,13 @@ POST /api/v1/admissions
 
 It accepts an explicit consequence domain and adoption mode: `observe`, `warn`, `review`, or `enforce`. This is the route-level entry point for the shadow-to-enforcement ladder described above.
 
-The hosted action-surface onboarding renderer is:
+Hosted onboarding entry points:
 
-```http
-POST /api/v1/shadow/action-surface/onboarding-packet
-```
+- `POST /api/v1/shadow/action-surface/onboarding-packet` renders a review-required action-surface packet from bounded manifests, declarations, and tenant-scoped shadow events.
+- `POST /api/v1/shadow/policy-foundry/hosted-onboarding-workflow` is the hosted onboarding workflow contract. It composes the self-onboarding packet, local adversarial replay reports, optional live downstream replay reports, billing-entitlement review material, commercial-boundary review material, and hosted wizard storage readiness gating into digest-bound review material.
+- `GET /api/v1/shadow/policy-foundry/hosted-onboarding-workflow/sessions/:sessionId` resumes persistent hosted wizard state from the current local file-backed evaluation store.
 
-It renders the same review-required packet as the local CLI from bounded
-manifests, declarations, and the authenticated tenant's stored shadow events.
-It is stateless review material: no raw manifest payload is stored, no
-credentials are issued, no gateway is deployed, and enforcement is not
-activated.
-
-The hosted Policy Foundry onboarding workflow renderer is:
-
-```http
-POST /api/v1/shadow/policy-foundry/hosted-onboarding-workflow
-```
-
-It composes bounded manifests, declarations, tenant-scoped shadow events,
-optional local adversarial replay observations, billing-provider entitlement
-context when wired by the hosted runtime, and commercial boundary context into
-one stateless review workflow. It returns digest-bound review material only: no
-raw payload is stored, no credential is issued, no patch is applied, no
-infrastructure is deployed, no production traffic is executed, and enforcement
-is not activated. The response includes a compact hosted review surface with
-task cards, no-go cards, evidence digest cards, billing entitlement no-go
-context, and the next safe step, so a UI or integrator does not need to parse
-the full nested packet for the first review screen. The hosted UI flow route
-renders that same review surface as HTML for a first customer-facing onboarding
-screen while keeping the same review-only boundary.
-
-When `persistWizardState: true` is supplied, the hosted workflow route also
-creates persistent hosted wizard state in a local file-backed evaluation store.
-The resume route is:
-
-```http
-GET /api/v1/shadow/policy-foundry/hosted-onboarding-workflow/sessions/:sessionId
-```
-
-That state is tenant-bound, TTL-limited, and digest-only: it stores compact task
-state, no-go state, evidence digests, status, and safe next steps, not raw
-manifests, raw tenant ids, caller session refs, credentials, or shadow payloads.
-It is not shared production wizard storage and does not activate enforcement.
-The production storage path now inventories this hosted wizard resume state as a
-separate `production-shared` blocker until shared TTL/session storage exists.
+These routes return review material only: no raw manifest payload is stored, no credentials are issued, no patch is applied, no gateway or infrastructure is deployed, no production traffic is executed, and enforcement is not activated. The compact hosted review surface and hosted UI flow help a customer see task cards, no-go cards, evidence digests, and the next safe step without parsing the full packet. Customers cannot self-attest readiness controls into enforcement.
 
 For an already deployed hosted runtime, the opt-in Policy Foundry production
 smoke probe is:
@@ -390,7 +354,9 @@ proposed consequence
 Core contracts:
 
 - [Consequence taxonomy](docs/02-architecture/consequence-taxonomy.md) and the consequence-admission core keep every pack on the same `admit` / `narrow` / `review` / `block` language.
+- [Failure mode registry](docs/02-architecture/failure-mode-registry.md), [failure mode control bindings](docs/02-architecture/failure-mode-control-bindings.md), and [failure mode replay fixtures](docs/02-architecture/failure-mode-replay-fixtures.md) turn known AI-action failure modes into explicit controls, evidence requirements, authority requirements, audit records, default decisions, and replay cases.
 - [Downstream enforcement contract](docs/02-architecture/downstream-enforcement-contract.md), [verifier helper](docs/02-architecture/verifier-helper.md), and [adapter framework](docs/02-architecture/adapter-framework.md) define the customer-side fail-closed edge: verify before execute.
+- [Untrusted content authority guard](docs/02-architecture/untrusted-content-authority-guard.md), [tool result poisoning guard](docs/02-architecture/tool-result-poisoning-guard.md), [approval provenance guard](docs/02-architecture/approval-provenance-guard.md), [stale authority policy guard](docs/02-architecture/stale-authority-policy-guard.md), [recipient tenant boundary replay](docs/02-architecture/recipient-tenant-boundary-replay.md), [scope explosion guard](docs/02-architecture/scope-explosion-guard.md), [human review fatigue guard](docs/02-architecture/human-review-fatigue-guard.md), [decision context drift binding](docs/02-architecture/decision-context-drift-binding.md), and [no-go condition ledger](docs/02-architecture/no-go-condition-ledger.md) keep the failure-mode controls concrete instead of leaving them as broad governance language.
 - [Audit evidence export](docs/02-architecture/audit-evidence-export.md), [tamper-evident history](docs/02-architecture/tamper-evident-history.md), [business risk dashboard](docs/02-architecture/business-risk-dashboard.md), [dashboard API summary](docs/02-architecture/dashboard-api-summary.md), and [external review packet](docs/02-architecture/external-review-packet.md) turn decisions and shadow evidence into digest-first review material without claiming audit certification.
 - [Data minimization and redaction policy](docs/02-architecture/data-minimization-redaction-policy.md), [policy limit model](docs/02-architecture/policy-limit-model.md), [retry attempt ledger](docs/02-architecture/retry-attempt-ledger.md), and [agent loop abuse guard](docs/02-architecture/agent-loop-abuse-guard.md) keep retries, feedback, and proof surfaces bounded.
 - [Downstream presentation binding](docs/02-architecture/downstream-presentation-binding.md), [presentation replay ledger](docs/02-architecture/presentation-replay-ledger.md), and [downstream execution receipt](docs/02-architecture/downstream-execution-receipt.md) bind an allowed admission to the exact downstream execution attempt and outcome.
@@ -399,7 +365,7 @@ Onboarding automation:
 
 - [Action surface manifest intake](docs/02-architecture/action-surface-manifest-intake.md), [Action surface declaration ingestors](docs/02-architecture/action-surface-declaration-ingestors.md), and [Action surface profiler](docs/02-architecture/action-surface-profiler.md) turn customer-owned metadata and shadow events into a data-minimized action-surface map.
 - [Action surface integration artifacts](docs/02-architecture/action-surface-integration-artifacts.md), [Action surface onboarding packet](docs/02-architecture/action-surface-onboarding-packet.md), action-surface review handoff, red-team fixture bundle, local adversarial replay executor, live downstream replay evidence, and hosted onboarding workflow contract reduce adoption friction with review-required plans. The hosted route can bind sandbox/staging live replay evidence into review output, but these contracts do not deploy infrastructure, issue credentials, activate enforcement, execute production traffic, or make a non-bypassable claim by themselves.
-- [Policy Foundry onboarding](docs/02-architecture/policy-foundry-onboarding.md) and [Integration mode readiness](docs/02-architecture/integration-mode-readiness.md) turn shadow traffic into policy candidates, readiness/no-go evidence, active questions, Policy Twin work, reviewed outcome feedback, drift/policy-debt findings, commercial-boundary review material, billing-entitlement review material, local adversarial replay reports, live downstream replay reports, hosted workflow steps, hosted wizard storage readiness gating, and reviewed paths toward scoped enforcement. The path where customers self-attest readiness controls is not allowed.
+- [Policy Foundry onboarding](docs/02-architecture/policy-foundry-onboarding.md), [Policy Foundry failure gap map](docs/02-architecture/policy-foundry-failure-gap-map.md), and [Integration mode readiness](docs/02-architecture/integration-mode-readiness.md) turn shadow traffic into policy candidates, readiness/no-go evidence, active questions, Policy Twin work, reviewed outcome feedback, drift/policy-debt findings, commercial-boundary review material, billing-entitlement review material, local adversarial replay reports, live downstream replay reports, hosted workflow steps, hosted wizard storage readiness gating, and reviewed paths toward scoped enforcement. The path where customers self-attest readiness controls is not allowed.
 
 Runtime and packs:
 
@@ -455,5 +421,6 @@ Use this as a map, not a full index:
 - Admission and hosted entry points: [Consequence admission quickstart](docs/01-overview/consequence-admission-quickstart.md), [Customer admission gate](docs/01-overview/customer-admission-gate.md), [Non-bypassable gateway demo](docs/01-overview/non-bypassable-gateway-demo.md), [Agent retry wrapper demo](docs/01-overview/agent-retry-wrapper-demo.md), [Hosted action authorization API](docs/01-overview/hosted-action-authorization-api.md), [First hosted API call](docs/01-overview/hosted-first-api-call.md), [Finance and crypto first integrations](docs/01-overview/finance-and-crypto-first-integrations.md).
 - Hosted product and billing: [Commercial packaging, pricing, and evaluation](docs/01-overview/product-packaging.md), [Pricing ROI calculator](docs/01-overview/pricing-roi-calculator.md), [Hosted customer journey](docs/01-overview/hosted-customer-journey.md), [Hosted account visibility](docs/01-overview/hosted-account-visibility.md).
 - Core architecture: [System overview](docs/02-architecture/system-overview.md), [Consequence taxonomy](docs/02-architecture/consequence-taxonomy.md), [Downstream enforcement contract](docs/02-architecture/downstream-enforcement-contract.md), [Verifier helper](docs/02-architecture/verifier-helper.md), [Adapter framework](docs/02-architecture/adapter-framework.md), [Action surface manifest intake](docs/02-architecture/action-surface-manifest-intake.md), [Action surface declaration ingestors](docs/02-architecture/action-surface-declaration-ingestors.md), [Action surface profiler](docs/02-architecture/action-surface-profiler.md), [Action surface integration artifacts](docs/02-architecture/action-surface-integration-artifacts.md), [Action surface onboarding packet](docs/02-architecture/action-surface-onboarding-packet.md), [Policy Foundry onboarding](docs/02-architecture/policy-foundry-onboarding.md), [Integration mode readiness](docs/02-architecture/integration-mode-readiness.md), [Crypto intelligence buildout](docs/02-architecture/crypto-intelligence-buildout.md), [Crypto intelligence surface](docs/02-architecture/crypto-intelligence-platform-surface.md).
+- Failure-mode controls: [Failure mode registry](docs/02-architecture/failure-mode-registry.md), [Failure mode control bindings](docs/02-architecture/failure-mode-control-bindings.md), [Failure mode replay fixtures](docs/02-architecture/failure-mode-replay-fixtures.md), [Policy Foundry failure gap map](docs/02-architecture/policy-foundry-failure-gap-map.md), [Untrusted content authority guard](docs/02-architecture/untrusted-content-authority-guard.md), [Tool result poisoning guard](docs/02-architecture/tool-result-poisoning-guard.md), [Approval provenance guard](docs/02-architecture/approval-provenance-guard.md), [Stale authority policy guard](docs/02-architecture/stale-authority-policy-guard.md), [Recipient tenant boundary replay](docs/02-architecture/recipient-tenant-boundary-replay.md), [Scope explosion guard](docs/02-architecture/scope-explosion-guard.md), [Human review fatigue guard](docs/02-architecture/human-review-fatigue-guard.md), [Decision context drift binding](docs/02-architecture/decision-context-drift-binding.md), [No-go condition ledger](docs/02-architecture/no-go-condition-ledger.md).
 - Evidence and safety ledgers: [Audit evidence export](docs/02-architecture/audit-evidence-export.md), [Tamper-evident history](docs/02-architecture/tamper-evident-history.md), [Business risk dashboard](docs/02-architecture/business-risk-dashboard.md), [Dashboard API summary](docs/02-architecture/dashboard-api-summary.md), [External review packet](docs/02-architecture/external-review-packet.md), [Data minimization and redaction policy](docs/02-architecture/data-minimization-redaction-policy.md), [Policy limit model](docs/02-architecture/policy-limit-model.md), [Retry attempt ledger](docs/02-architecture/retry-attempt-ledger.md), [Agent loop abuse guard](docs/02-architecture/agent-loop-abuse-guard.md), [Downstream presentation binding](docs/02-architecture/downstream-presentation-binding.md), [Presentation replay ledger](docs/02-architecture/presentation-replay-ledger.md), [Downstream execution receipt](docs/02-architecture/downstream-execution-receipt.md).
 - Runtime and promotion: [Production storage path](docs/02-architecture/production-storage-path.md), [Proof console buildout](docs/02-architecture/proof-console-buildout.md), [Production runtime hardening buildout](docs/02-architecture/production-runtime-hardening-buildout.md), [Production shared authority plane buildout](docs/02-architecture/production-shared-authority-plane-buildout.md), [Production rehearsal buildout](docs/02-architecture/production-rehearsal-buildout.md), [Proof model](docs/05-proof/proof-model.md), [Signing and verification](docs/06-signing/signing-verification.md), [Production readiness](docs/08-deployment/production-readiness.md), [Tenant isolation boundary](docs/02-architecture/tenant-isolation-boundary.md).

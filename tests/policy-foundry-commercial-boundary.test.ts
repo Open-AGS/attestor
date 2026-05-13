@@ -145,7 +145,8 @@ function testDescriptorDocsAndPackageSurfaceStayAligned(): void {
   includes(tracker, 'complete | Add Commercial Boundary Contract', 'Deepening tracker: Step 12 is complete');
   includes(tracker, 'Step 01 through Step 12 are complete', 'Deepening tracker: list completion is explicit');
   includes(packaging, 'repo-side commercial boundary contract is implemented', 'Product packaging: repo-side commercial boundary is stated');
-  includes(packaging, 'hosted entitlement enforcement remains a deployment/product integration task', 'Product packaging: hosted entitlement implementation limitation is explicit');
+  includes(packaging, 'hosted Policy Foundry route now also includes', 'Product packaging: hosted entitlement implementation is explicit');
+  includes(packaging, 'commercial access gating, not policy', 'Product packaging: hosted entitlement limitation is explicit');
   equal(
     pkg.scripts['test:policy-foundry-commercial-boundary'],
     'tsx tests/policy-foundry-commercial-boundary.test.ts',

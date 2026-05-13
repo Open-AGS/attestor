@@ -16,6 +16,7 @@ import {
   registerPolicyFoundryHostedOnboardingRoutes,
 } from '../src/service/http/routes/policy-foundry-hosted-onboarding-routes.js';
 import { createFileBackedPolicyFoundryHostedWizardStateStore } from '../src/service/policy-foundry-hosted-wizard-state.js';
+import type { HostedBillingEntitlementRecord } from '../src/service/billing-entitlement-store.js';
 import type { TenantContext } from '../src/service/tenant-isolation.js';
 
 let passed = 0;
@@ -88,6 +89,8 @@ function createApp(input: {
   readonly routeTenant?: TenantContext;
   readonly events?: readonly ShadowAdmissionEvent[];
   readonly wizardStateStore?: ReturnType<typeof createFileBackedPolicyFoundryHostedWizardStateStore>;
+  readonly billingEntitlement?: HostedBillingEntitlementRecord | null;
+  readonly billingResolverConfigured?: boolean;
 } = {}): Hono {
   const app = new Hono();
   const events = input.events ?? [createEvent(tenantA)];
@@ -95,10 +98,49 @@ function createApp(input: {
     currentTenant: () => input.routeTenant ?? tenantA,
     listShadowEvents: ({ tenant }) =>
       events.filter((event) => event.tenantId === tenant.tenantId || event.tenantId === null),
+    resolveBillingEntitlement: input.billingResolverConfigured
+      ? () => input.billingEntitlement ?? null
+      : undefined,
     wizardStateStore: input.wizardStateStore,
     now: () => '2026-05-13T09:01:00.000Z',
   });
   return app;
+}
+
+function entitlement(overrides: Partial<HostedBillingEntitlementRecord> = {}): HostedBillingEntitlementRecord {
+  return {
+    id: 'ent_foundry_route',
+    accountId: 'acct_foundry_route',
+    tenantId: tenantA.tenantId,
+    provider: 'stripe',
+    status: 'active',
+    accessEnabled: true,
+    effectivePlanId: 'starter',
+    requestedPlanId: 'starter',
+    monthlyRunQuota: 100,
+    requestsPerWindow: 100,
+    asyncPendingJobsPerTenant: 2,
+    accountStatus: 'active',
+    stripeCustomerId: 'cus_foundry_route',
+    stripeSubscriptionId: 'sub_foundry_route',
+    stripeSubscriptionStatus: 'active',
+    stripePriceId: 'price_starter_monthly',
+    stripeCheckoutSessionId: 'cs_foundry_route',
+    stripeInvoiceId: 'in_foundry_route',
+    stripeInvoiceStatus: 'paid',
+    stripeEntitlementLookupKeys: ['attestor.starter.api'],
+    stripeEntitlementFeatureIds: ['feat_starter_api'],
+    stripeEntitlementSummaryUpdatedAt: '2026-05-13T08:59:00.000Z',
+    lastEventId: 'evt_foundry_route',
+    lastEventType: 'entitlements.active_entitlement_summary.updated',
+    lastEventAt: '2026-05-13T08:59:00.000Z',
+    effectiveAt: '2026-05-13T08:59:00.000Z',
+    delinquentSince: null,
+    reason: 'subscription_active',
+    createdAt: '2026-05-13T08:00:00.000Z',
+    updatedAt: '2026-05-13T08:59:00.000Z',
+    ...overrides,
+  };
 }
 
 function openApiManifest(): string {
@@ -181,6 +223,13 @@ async function testHostedRouteRendersStatelessReviewWorkflow(): Promise<void> {
       readonly plan: string;
       readonly noGoReasons: readonly string[];
     };
+    readonly billingEntitlementEnforcement: {
+      readonly enforcementMode: string;
+      readonly entitlementResolverConfigured: boolean;
+      readonly commercialPlanForBoundary: string;
+      readonly noGoReasons: readonly string[];
+      readonly productionReady: boolean;
+    };
   };
 
   equal(response.status, 200, 'Policy Foundry hosted route: request succeeds');
@@ -231,6 +280,11 @@ async function testHostedRouteRendersStatelessReviewWorkflow(): Promise<void> {
   );
   equal(body.commercialBoundary.plan, 'starter', 'Policy Foundry hosted route: commercial boundary uses tenant plan');
   equal(body.commercialBoundary.noGoReasons.length, 0, 'Policy Foundry hosted route: starter request is allowed for requested review capabilities');
+  equal(body.billingEntitlementEnforcement.enforcementMode, 'tenant-context-only', 'Policy Foundry hosted route: entitlement enforcement mode is explicit when resolver is absent');
+  equal(body.billingEntitlementEnforcement.entitlementResolverConfigured, false, 'Policy Foundry hosted route: missing resolver is not hidden');
+  equal(body.billingEntitlementEnforcement.commercialPlanForBoundary, 'starter', 'Policy Foundry hosted route: tenant plan feeds boundary without resolver');
+  equal(body.billingEntitlementEnforcement.noGoReasons.length, 0, 'Policy Foundry hosted route: evaluation request is not blocked by absent resolver');
+  equal(body.billingEntitlementEnforcement.productionReady, false, 'Policy Foundry hosted route: billing entitlement enforcement does not claim readiness');
   excludes(text, /raw_prompt_must_not_escape/u, 'Policy Foundry hosted route: raw OpenAPI descriptions are not emitted');
   excludes(text, /rk_live_must_not_escape/u, 'Policy Foundry hosted route: secret-like manifest text is not emitted');
   excludes(text, /C:\/Users\/thedi\/private/u, 'Policy Foundry hosted route: caller source path is not emitted');
@@ -554,6 +608,106 @@ async function testHostedRouteBlocksUnsafeAutomationRequests(): Promise<void> {
   );
 }
 
+async function testHostedRouteUsesBillingProviderPlanForCommercialBoundary(): Promise<void> {
+  const app = createApp({
+    billingResolverConfigured: true,
+    billingEntitlement: entitlement({ effectivePlanId: 'starter' }),
+  });
+  const response = await app.request(HOSTED_POLICY_FOUNDRY_ONBOARDING_WORKFLOW_ROUTE, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      ...baseRequestBody(),
+      commercialPlan: 'enterprise',
+      requestedCapabilities: ['customer-operated-deployment'],
+      requestedCustomerOperatedDeployment: true,
+    }),
+  });
+  const body = await response.json() as {
+    readonly commercialBoundary: {
+      readonly plan: string;
+      readonly noGoReasons: readonly string[];
+    };
+    readonly billingEntitlementEnforcement: {
+      readonly enforcementMode: string;
+      readonly entitlementPresent: boolean;
+      readonly accessEnabled: boolean;
+      readonly effectiveBillingPlanId: string;
+      readonly commercialPlanForBoundary: string;
+      readonly noGoReasons: readonly string[];
+      readonly commercialCapabilitiesAllowed: boolean;
+      readonly entitlementDecisionAuthority: boolean;
+      readonly safetyMinimumsRemainAvailable: boolean;
+    };
+  };
+
+  equal(response.status, 200, 'Policy Foundry hosted route: billing-entitled request returns review material');
+  equal(body.billingEntitlementEnforcement.enforcementMode, 'billing-provider-enforced', 'Policy Foundry hosted route: billing provider enforcement is active');
+  equal(body.billingEntitlementEnforcement.entitlementPresent, true, 'Policy Foundry hosted route: entitlement presence is visible');
+  equal(body.billingEntitlementEnforcement.accessEnabled, true, 'Policy Foundry hosted route: active entitlement enables commercial review context');
+  equal(body.billingEntitlementEnforcement.effectiveBillingPlanId, 'starter', 'Policy Foundry hosted route: effective billing plan comes from provider record');
+  equal(body.billingEntitlementEnforcement.commercialPlanForBoundary, 'starter', 'Policy Foundry hosted route: boundary plan cannot be elevated by request body');
+  ok(
+    body.billingEntitlementEnforcement.noGoReasons.includes('requested-plan-not-entitled'),
+    'Policy Foundry hosted route: requested plan elevation is blocked',
+  );
+  ok(
+    body.billingEntitlementEnforcement.noGoReasons.includes('customer-operated-not-entitled'),
+    'Policy Foundry hosted route: customer-operated request needs enterprise entitlement',
+  );
+  equal(body.billingEntitlementEnforcement.commercialCapabilitiesAllowed, false, 'Policy Foundry hosted route: unavailable commercial capability is held');
+  equal(body.billingEntitlementEnforcement.entitlementDecisionAuthority, false, 'Policy Foundry hosted route: billing is not policy authority');
+  equal(body.billingEntitlementEnforcement.safetyMinimumsRemainAvailable, true, 'Policy Foundry hosted route: safety minimums stay available');
+  equal(body.commercialBoundary.plan, 'starter', 'Policy Foundry hosted route: commercial boundary uses billing provider plan');
+  ok(
+    body.commercialBoundary.noGoReasons.includes('customer-operated-deployment-not-in-plan'),
+    'Policy Foundry hosted route: commercial boundary blocks customer-operated request on starter',
+  );
+}
+
+async function testHostedRouteFailsClosedWhenBillingProviderStateIsMissing(): Promise<void> {
+  const app = createApp({
+    billingResolverConfigured: true,
+    billingEntitlement: null,
+  });
+  const response = await app.request(HOSTED_POLICY_FOUNDRY_ONBOARDING_WORKFLOW_ROUTE, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      ...baseRequestBody(),
+      requestedCapabilities: ['review-enforce-ladder'],
+      requestedProductionWorkflowCount: 1,
+      requestedHostedProduction: true,
+    }),
+  });
+  const body = await response.json() as {
+    readonly commercialBoundary: {
+      readonly plan: string;
+      readonly noGoReasons: readonly string[];
+    };
+    readonly billingEntitlementEnforcement: {
+      readonly entitlementPresent: boolean;
+      readonly commercialPlanForBoundary: string;
+      readonly noGoReasons: readonly string[];
+      readonly commercialCapabilitiesAllowed: boolean;
+    };
+  };
+
+  equal(response.status, 200, 'Policy Foundry hosted route: missing billing state returns review material');
+  equal(body.billingEntitlementEnforcement.entitlementPresent, false, 'Policy Foundry hosted route: missing entitlement is explicit');
+  equal(body.billingEntitlementEnforcement.commercialPlanForBoundary, 'developer', 'Policy Foundry hosted route: missing entitlement fails closed to developer boundary');
+  ok(
+    body.billingEntitlementEnforcement.noGoReasons.includes('billing-entitlement-missing'),
+    'Policy Foundry hosted route: missing entitlement is a no-go',
+  );
+  equal(body.billingEntitlementEnforcement.commercialCapabilitiesAllowed, false, 'Policy Foundry hosted route: commercial capability is held without entitlement');
+  equal(body.commercialBoundary.plan, 'developer', 'Policy Foundry hosted route: commercial boundary is not elevated without billing provider state');
+  ok(
+    body.commercialBoundary.noGoReasons.includes('production-enforcement-not-in-plan'),
+    'Policy Foundry hosted route: production request is blocked without entitlement',
+  );
+}
+
 function testDocsAndScriptsExposeHostedWorkflowRoute(): void {
   const pkg = JSON.parse(readProjectFile('package.json')) as {
     readonly scripts: Record<string, string>;
@@ -592,6 +746,8 @@ try {
   await testHostedRouteKeepsTenantScopedShadowEvents();
   await testHostedRouteRejectsInvalidReplayOutcome();
   await testHostedRouteBlocksUnsafeAutomationRequests();
+  await testHostedRouteUsesBillingProviderPlanForCommercialBoundary();
+  await testHostedRouteFailsClosedWhenBillingProviderStateIsMissing();
   testDocsAndScriptsExposeHostedWorkflowRoute();
   console.log(`Policy Foundry hosted onboarding workflow route tests: ${passed} passed, 0 failed`);
 } catch (error) {

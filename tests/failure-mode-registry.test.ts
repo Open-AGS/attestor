@@ -3,7 +3,10 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   CONSEQUENCE_FAILURE_MODE_IDS,
+  CONSEQUENCE_FAILURE_MODE_REGISTRY_PLACEMENT_VERSION,
   CONSEQUENCE_FAILURE_MODE_REGISTRY_VERSION,
+  consequenceAdmissionDescriptor,
+  consequenceFailureModeRegistryPlacementDescriptor,
   consequenceFailureModeRegistry,
   type ConsequenceFailureModeId,
 } from '../src/consequence-admission/index.js';
@@ -52,6 +55,79 @@ function testRegistryShapeIsDeterministicAndConservative(): void {
   equal(registry.rawPayloadStored, false, 'Failure registry: raw payload storage is false');
   ok(registry.digest.startsWith('sha256:'), 'Failure registry: digest is generated');
   includes(registry.canonical, '"version":"attestor.consequence-failure-mode-registry.v1"', 'Failure registry: canonical payload includes version');
+}
+
+function testRegistryPlacementIsSharedControlLayerOwned(): void {
+  const placement = consequenceFailureModeRegistryPlacementDescriptor();
+  const admission = consequenceAdmissionDescriptor();
+
+  equal(
+    placement.version,
+    CONSEQUENCE_FAILURE_MODE_REGISTRY_PLACEMENT_VERSION,
+    'Failure registry placement: version is explicit',
+  );
+  equal(
+    placement.version,
+    'attestor.consequence-failure-mode-registry-placement.v1',
+    'Failure registry placement: version literal is stable',
+  );
+  equal(
+    placement.owningLayer,
+    'shared-control-layer',
+    'Failure registry placement: owning layer is shared control layer',
+  );
+  equal(placement.primaryRole, 'pdp', 'Failure registry placement: PDP is the primary owner');
+  ok(
+    placement.supportingRoles.includes('audit-proof'),
+    'Failure registry placement: audit proof supports registry placement',
+  );
+  ok(
+    placement.supportingRoles.includes('replay'),
+    'Failure registry placement: replay supports registry placement',
+  );
+  ok(
+    placement.consumerRoles.includes('pack'),
+    'Failure registry placement: packs consume the shared registry',
+  );
+  ok(
+    placement.consumerRoles.includes('hosted-service'),
+    'Failure registry placement: hosted service consumes the shared registry',
+  );
+  ok(
+    placement.nonOwningRoles.includes('pack'),
+    'Failure registry placement: packs are not registry owners',
+  );
+  ok(
+    placement.nonOwningRoles.includes('hosted-service'),
+    'Failure registry placement: hosted service is not a registry owner',
+  );
+  ok(
+    placement.sourceFiles.includes('src/consequence-admission/failure-mode-control-bindings.ts'),
+    'Failure registry placement: control binding source file is listed',
+  );
+  ok(
+    placement.sourceFiles.includes('src/consequence-admission/failure-mode-replay-fixtures.ts'),
+    'Failure registry placement: replay fixture source file is listed',
+  );
+  equal(placement.autoEnforce, false, 'Failure registry placement: auto-enforce is false');
+  equal(placement.productionReady, false, 'Failure registry placement: production readiness is false');
+  equal(placement.activatesEnforcement, false, 'Failure registry placement: activation is false');
+  includes(
+    placement.limitation,
+    'does not activate enforcement',
+    'Failure registry placement: limitation prevents enforcement overclaim',
+  );
+
+  equal(
+    admission.failureModeRegistryPlacementVersion,
+    CONSEQUENCE_FAILURE_MODE_REGISTRY_PLACEMENT_VERSION,
+    'Failure registry placement: admission descriptor exposes placement version',
+  );
+  equal(
+    admission.failureModeRegistryPlacement.owningLayer,
+    'shared-control-layer',
+    'Failure registry placement: admission descriptor exposes owning layer',
+  );
 }
 
 function testAllEntriesHaveEvidenceAndControls(): void {
@@ -118,7 +194,10 @@ function testDocsAndPackageScriptStayAligned(): void {
   };
 
   includes(doc, 'attestor.consequence-failure-mode-registry.v1', 'Failure registry docs: version is named');
+  includes(doc, 'attestor.consequence-failure-mode-registry-placement.v1', 'Failure registry docs: placement version is named');
   includes(doc, 'src/consequence-admission/failure-mode-registry.ts', 'Failure registry docs: source file is named');
+  includes(doc, 'src/consequence-admission/failure-mode-control-bindings.ts', 'Failure registry docs: control binding source file is named');
+  includes(doc, 'src/consequence-admission/failure-mode-replay-fixtures.ts', 'Failure registry docs: replay fixture source file is named');
   includes(doc, 'test:failure-mode-registry', 'Failure registry docs: test command is named');
   includes(doc, 'untrusted-content-authorizes-action', 'Failure registry docs: untrusted content mode is named');
   includes(doc, 'fake-approval-laundering', 'Failure registry docs: approval laundering mode is named');
@@ -132,6 +211,7 @@ function testDocsAndPackageScriptStayAligned(): void {
 
 try {
   testRegistryShapeIsDeterministicAndConservative();
+  testRegistryPlacementIsSharedControlLayerOwned();
   testAllEntriesHaveEvidenceAndControls();
   testCriticalFailureModesAreBoundToSafeDefaults();
   testDocsAndPackageScriptStayAligned();

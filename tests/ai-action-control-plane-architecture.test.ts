@@ -74,6 +74,11 @@ function testControlPlaneRolesStayMapped(): void {
   );
   includes(
     doc,
+    'attestor.consequence-failure-mode-registry-placement.v1',
+    'AI action control-plane docs: failure registry placement contract is named',
+  );
+  includes(
+    doc,
     '`src/service` is a composition root',
     'AI action control-plane docs: hosted service composition boundary is explicit',
   );

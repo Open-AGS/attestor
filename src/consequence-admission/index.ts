@@ -86,6 +86,11 @@ import {
   ATTESTOR_CONTROL_PLANE_ROLE_VERSION,
   ATTESTOR_CONTROL_PLANE_ROLE_DESCRIPTORS,
 } from './control-plane-roles.js';
+import {
+  CONSEQUENCE_FAILURE_MODE_REGISTRY_PLACEMENT_VERSION,
+  consequenceFailureModeRegistryPlacementDescriptor,
+  type ConsequenceFailureModeRegistryPlacementDescriptor,
+} from './failure-mode-registry.js';
 
 export const CONSEQUENCE_ADMISSION_CONTRACT_VERSION =
   'attestor.consequence-admission.v1';
@@ -451,6 +456,7 @@ export interface ConsequenceAdmissionDescriptor {
   readonly dataMinimizationPolicyVersion: typeof CONSEQUENCE_DATA_MINIMIZATION_REDACTION_POLICY_VERSION;
   readonly packDecisionProfileVersion: typeof CONSEQUENCE_ADMISSION_PACK_DECISION_PROFILE_VERSION;
   readonly controlPlaneRoleVersion: typeof ATTESTOR_CONTROL_PLANE_ROLE_VERSION;
+  readonly failureModeRegistryPlacementVersion: typeof CONSEQUENCE_FAILURE_MODE_REGISTRY_PLACEMENT_VERSION;
   readonly retryDefaultMaxAttempts: typeof CONSEQUENCE_ADMISSION_RETRY_DEFAULT_MAX_ATTEMPTS;
   readonly retryDefaultWindowSeconds: typeof CONSEQUENCE_ADMISSION_RETRY_DEFAULT_WINDOW_SECONDS;
   readonly decisions: typeof CONSEQUENCE_ADMISSION_DECISIONS;
@@ -468,6 +474,7 @@ export interface ConsequenceAdmissionDescriptor {
   readonly correctionReasonCodes: readonly string[];
   readonly controlPlaneRoles: typeof ATTESTOR_CONTROL_PLANE_ROLES;
   readonly controlPlaneRoleDescriptors: typeof ATTESTOR_CONTROL_PLANE_ROLE_DESCRIPTORS;
+  readonly failureModeRegistryPlacement: ConsequenceFailureModeRegistryPlacementDescriptor;
   readonly dataMinimizationSurfaceKinds: typeof CONSEQUENCE_DATA_MINIMIZATION_SURFACE_KINDS;
   readonly dataMinimizationForbiddenRawClasses: typeof CONSEQUENCE_DATA_MINIMIZATION_FORBIDDEN_RAW_CLASSES;
   readonly packDecisionPostures: typeof CONSEQUENCE_ADMISSION_PACK_DECISION_POSTURES;
@@ -2021,6 +2028,7 @@ ConsequenceAdmissionDescriptor {
     dataMinimizationPolicyVersion: CONSEQUENCE_DATA_MINIMIZATION_REDACTION_POLICY_VERSION,
     packDecisionProfileVersion: CONSEQUENCE_ADMISSION_PACK_DECISION_PROFILE_VERSION,
     controlPlaneRoleVersion: ATTESTOR_CONTROL_PLANE_ROLE_VERSION,
+    failureModeRegistryPlacementVersion: CONSEQUENCE_FAILURE_MODE_REGISTRY_PLACEMENT_VERSION,
     retryDefaultMaxAttempts: CONSEQUENCE_ADMISSION_RETRY_DEFAULT_MAX_ATTEMPTS,
     retryDefaultWindowSeconds: CONSEQUENCE_ADMISSION_RETRY_DEFAULT_WINDOW_SECONDS,
     decisions: CONSEQUENCE_ADMISSION_DECISIONS,
@@ -2038,6 +2046,7 @@ ConsequenceAdmissionDescriptor {
     correctionReasonCodes: consequenceAdmissionCorrectionCatalog().reasonCodes,
     controlPlaneRoles: ATTESTOR_CONTROL_PLANE_ROLES,
     controlPlaneRoleDescriptors: ATTESTOR_CONTROL_PLANE_ROLE_DESCRIPTORS,
+    failureModeRegistryPlacement: consequenceFailureModeRegistryPlacementDescriptor(),
     dataMinimizationSurfaceKinds: CONSEQUENCE_DATA_MINIMIZATION_SURFACE_KINDS,
     dataMinimizationForbiddenRawClasses: CONSEQUENCE_DATA_MINIMIZATION_FORBIDDEN_RAW_CLASSES,
     packDecisionPostures: CONSEQUENCE_ADMISSION_PACK_DECISION_POSTURES,

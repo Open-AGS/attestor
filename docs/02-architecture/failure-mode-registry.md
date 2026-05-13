@@ -8,6 +8,7 @@ It is not a certification, not an independent audit, not a production-readiness 
 
 - Registry file: `src/consequence-admission/failure-mode-registry.ts`
 - Version: `attestor.consequence-failure-mode-registry.v1`
+- Placement version: `attestor.consequence-failure-mode-registry-placement.v1`
 - Test command: `npm run test:failure-mode-registry`
 - Runtime stance: no auto-enforce, no production-ready claim, no raw payload storage
 
@@ -23,6 +24,30 @@ Each entry contains:
 - explicit limitation
 
 The registry intentionally has no `admit` default. A failure mode can only narrow, require review, or block until later controls prove a safer outcome.
+
+## Placement
+
+The failure-mode registry, control binding contract, and replay fixture matrix
+belong to the shared control layer. The machine-readable placement descriptor is
+exported from `src/consequence-admission/failure-mode-registry.ts` through
+`attestor/consequence-admission`.
+
+Placement source files:
+
+- `src/consequence-admission/failure-mode-registry.ts`
+- `src/consequence-admission/failure-mode-control-bindings.ts`
+- `src/consequence-admission/failure-mode-replay-fixtures.ts`
+
+Ownership:
+
+- Primary role: PDP / shared decision control.
+- Supporting roles: audit proof and replay.
+- Consumers: PEP, PIP, PAP, packs, and hosted service composition.
+- Packs and hosted routes consume this contract; they do not own or fork it.
+
+Packs may add domain templates, evidence defaults, adapters, and replay examples.
+Hosted routes may compose the shared contracts. Neither should create a separate
+failure-mode registry, binding vocabulary, replay matrix, or decision vocabulary.
 
 ## Source Anchors
 

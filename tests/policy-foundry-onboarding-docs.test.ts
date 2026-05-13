@@ -164,6 +164,11 @@ function testPolicyFoundryArchitectureIsGrounded(): void {
   );
   includes(
     doc,
+    'scripts/preview-policy-foundry-hosted-ui.ts',
+    'Policy Foundry docs: hosted UI browser preview evidence is named',
+  );
+  includes(
+    doc,
     'src/service/policy-foundry-hosted-wizard-state.ts',
     'Policy Foundry docs: hosted wizard state evidence is named',
   );
@@ -261,6 +266,16 @@ function testReadmeNamesPolicyFoundryWithoutOverclaiming(): void {
     readme,
     'persistent hosted wizard state',
     'README: persistent hosted wizard state is named without production overclaim',
+  );
+  includes(
+    readme,
+    'preview:policy-foundry-hosted-ui',
+    'README: local browser QA preview is named',
+  );
+  includes(
+    readme,
+    'not a hosted deployment, credential flow, enforcement activation, or',
+    'README: local browser QA preview limitation is explicit',
   );
   includes(
     readme,
@@ -569,6 +584,16 @@ function testPackageScriptIsExposed(): void {
     pkg.scripts['test:policy-foundry-hosted-wizard-state'] ?? '',
     'tsx tests/policy-foundry-hosted-wizard-state.test.ts',
     'Package: Policy Foundry hosted wizard state test command is stable',
+  );
+  includes(
+    JSON.stringify(pkg.scripts),
+    'preview:policy-foundry-hosted-ui',
+    'Package: Policy Foundry hosted UI preview script is exposed',
+  );
+  includes(
+    pkg.scripts['preview:policy-foundry-hosted-ui'] ?? '',
+    'tsx scripts/preview-policy-foundry-hosted-ui.ts',
+    'Package: Policy Foundry hosted UI preview command is stable',
   );
   includes(
     JSON.stringify(pkg.scripts),

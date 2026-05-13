@@ -600,6 +600,17 @@ task-list pages. The renderer does not store raw payloads, issue credentials,
 apply patches, deploy infrastructure, execute production traffic, activate
 enforcement, or prove production readiness.
 
+The local browser QA preview harness lives in
+`scripts/preview-policy-foundry-hosted-ui.ts` and is exposed through
+`preview:policy-foundry-hosted-ui`. It renders the same hosted review surface
+through a local-only GET route so a reviewer can inspect blocked and ready
+states in a real browser before a hosted deployment exists. The renderer now
+includes stable `data-testid` anchors, a keyboard skip link, responsive mobile
+layout rules, status/alert live regions, and long-text wrapping for evidence
+digests. This harness is browser QA only; it does not call customer
+infrastructure, issue credentials, deploy infrastructure, execute production
+traffic, activate enforcement, or prove production readiness.
+
 The persistent hosted wizard state store lives in
 `src/service/policy-foundry-hosted-wizard-state.ts`, is covered by
 `tests/policy-foundry-hosted-wizard-state.test.ts`, and is exposed through
@@ -852,7 +863,8 @@ contract. It now has the first local/synthetic adversarial replay executor. It
 now also has the first hosted onboarding workflow contract, the first stateless
 hosted workflow route wrapper for review material, the first compact hosted
 review surface for UI/API rendering, and the first hosted UI flow renderer for
-that surface. It also has a local file-backed evaluation store for persistent
+that surface with a local browser QA preview harness. It also has a local
+file-backed evaluation store for persistent
 hosted wizard state and tenant-bound resume, plus route-level
 billing-provider entitlement enforcement for hosted Foundry commercial
 capability and production workflow requests and non-mutating live downstream

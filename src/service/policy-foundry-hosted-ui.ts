@@ -158,6 +158,18 @@ export function renderPolicyFoundryHostedUiFlow(
         --done: #17643a;
       }
       * { box-sizing: border-box; }
+      .skip-link {
+        position: absolute;
+        left: 16px;
+        top: 8px;
+        transform: translateY(-140%);
+        background: var(--ink);
+        color: #ffffff;
+        padding: 8px 12px;
+        border-radius: 6px;
+        z-index: 10;
+      }
+      .skip-link:focus { transform: translateY(0); }
       body {
         margin: 0;
         font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
@@ -184,6 +196,7 @@ export function renderPolicyFoundryHostedUiFlow(
       }
       h2, h3 { margin: 0; }
       p { line-height: 1.6; }
+      h1, h2, h3, p, li, code { overflow-wrap: anywhere; }
       .summary {
         margin: 18px 0 24px;
         color: var(--muted);
@@ -253,6 +266,7 @@ export function renderPolicyFoundryHostedUiFlow(
         font-weight: 700;
         font-size: 12px;
       }
+      .tag[aria-label] { white-space: nowrap; }
       .tag.blocked { background: #ffe4e8; color: var(--blocked); }
       .tag.due { background: #fff0c2; color: var(--due); }
       .tag.later { background: #edf2ff; color: var(--accent); }
@@ -301,14 +315,15 @@ export function renderPolicyFoundryHostedUiFlow(
     </style>
   </head>
   <body>
+    <a class="skip-link" href="#tasks">Skip to onboarding tasks</a>
     <main id="main-content">
       <p class="eyebrow">Policy Foundry hosted onboarding</p>
       <h1>${escapeHtml(surface.headline)}</h1>
       <p class="summary">${escapeHtml(surface.nextSafeStep)}</p>
 
-      <section class="status-panel ${surface.noGoCount > 0 ? 'alert' : ''}" role="${statusRole}" aria-live="${statusLive}" aria-atomic="true">
-        <h2>Current state</h2>
-        <p>${escapeHtml(surface.status)}. ${surface.noGoCount} no-go item(s), ${surface.currentTaskCount} current task(s).</p>
+      <section class="status-panel ${surface.noGoCount > 0 ? 'alert' : ''}" role="${statusRole}" aria-live="${statusLive}" aria-atomic="true" aria-labelledby="current-state-heading" data-testid="policy-foundry-status-panel">
+        <h2 id="current-state-heading">Current state</h2>
+        <p>${escapeHtml(surface.headline)}. ${surface.noGoCount} no-go item(s), ${surface.currentTaskCount} current task(s).</p>
       </section>
 
       <section class="metrics" aria-label="Onboarding summary">
@@ -318,27 +333,27 @@ export function renderPolicyFoundryHostedUiFlow(
         <div class="metric"><span>No-go</span><strong>${surface.noGoCount}</strong></div>
       </section>
 
-      <section class="panel">
+      <section class="panel" id="tasks" data-testid="policy-foundry-task-list">
         <h2>Tasks</h2>
         ${taskCards}
       </section>
 
-      <section class="panel">
+      <section class="panel" data-testid="policy-foundry-no-go-list">
         <h2>No-go conditions</h2>
         ${noGoCards}
       </section>
 
-      <section class="panel">
+      <section class="panel" data-testid="policy-foundry-evidence-list">
         <h2>Evidence digests</h2>
         ${evidenceCards}
       </section>
 
-      <section class="panel">
+      <section class="panel" data-testid="policy-foundry-automation-boundary">
         <h2>Automation boundary</h2>
         ${automationBoundary}
       </section>
 
-      <section class="panel boundary">
+      <section class="panel boundary" data-testid="policy-foundry-boundary-statement">
         <h2>Boundary</h2>
         <p>Review material only. Full digest-bound packet required for implementation. No raw payload storage, patch application, credential issuance, infrastructure deployment, production traffic execution, enforcement activation, or production-readiness claim.</p>
         <p>Review surface digest: <code>${escapeHtml(surface.digest)}</code></p>

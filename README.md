@@ -137,6 +137,9 @@ npm run render:action-surface-onboarding-packet -- --openapi=path/to/openapi.yam
 # Render the one-command Policy Foundry self-onboarding review packet
 npm run policy-foundry:self-onboard -- --openapi=path/to/openapi.yaml
 
+# Local browser QA preview for the hosted Policy Foundry review UI
+npm run preview:policy-foundry-hosted-ui
+
 # Local cross-pack proof surface
 npm run proof:surface
 
@@ -225,6 +228,12 @@ passing live downstream replay evidence, and failed live replay blocking with
 secret-safe output. It does not deploy infrastructure, issue credentials,
 activate enforcement, execute production traffic, or prove production
 readiness.
+
+For local browser QA before deployment, run
+`npm run preview:policy-foundry-hosted-ui` and open the printed localhost URL.
+The preview renders blocked and ready hosted review states from safe fixtures
+only. It is not a hosted deployment, credential flow, enforcement activation, or
+production-readiness proof.
 
 Minimal request shape:
 

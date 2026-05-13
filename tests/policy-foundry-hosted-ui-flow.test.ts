@@ -17,6 +17,10 @@ import {
   policyFoundryHostedUiFlowDescriptor,
   renderPolicyFoundryHostedUiFlow,
 } from '../src/service/policy-foundry-hosted-ui.js';
+import {
+  createPolicyFoundryHostedUiPreviewApp,
+  createPolicyFoundryHostedUiPreviewHtml,
+} from '../scripts/preview-policy-foundry-hosted-ui.ts';
 
 let passed = 0;
 
@@ -122,6 +126,9 @@ function testHostedUiFlowRendersAccessibleReviewMaterial(): void {
 
   includes(html, '<!doctype html>', 'Hosted UI flow: HTML document is rendered');
   includes(html, 'Policy Foundry hosted onboarding', 'Hosted UI flow: page identity is visible');
+  includes(html, 'Skip to onboarding tasks', 'Hosted UI flow: skip link is present for browser navigation');
+  includes(html, 'data-testid="policy-foundry-status-panel"', 'Hosted UI flow: status panel has a stable browser QA selector');
+  includes(html, 'data-testid="policy-foundry-task-list"', 'Hosted UI flow: task list has a stable browser QA selector');
   includes(html, 'role="alert"', 'Hosted UI flow: missing no-go state is announced as alert');
   includes(html, 'aria-live="assertive"', 'Hosted UI flow: blocker status uses assertive live region');
   includes(html, '<ol class="task-list">', 'Hosted UI flow: tasks render as ordered task list');
@@ -160,10 +167,33 @@ function testHostedUiFlowKeepsRolloutReviewNonProduction(): void {
   includes(html, 'aria-live="polite"', 'Hosted UI flow: non-blocked state uses polite live region');
   includes(html, 'No no-go blocker is present in this review surface.', 'Hosted UI flow: no-go absence is explicit');
   includes(html, 'No raw payload storage', 'Hosted UI flow: raw payload boundary is visible');
+  includes(html, 'data-testid="policy-foundry-boundary-statement"', 'Hosted UI flow: boundary statement has a stable browser QA selector');
   excludes(
     html,
     /production-ready|Production ready|activates enforcement|executes production traffic/u,
     'Hosted UI flow: rollout review does not overclaim production readiness or activation',
+  );
+}
+
+async function testHostedUiFlowBrowserPreviewHarness(): Promise<void> {
+  const blockedHtml = createPolicyFoundryHostedUiPreviewHtml('blocked');
+  const readyHtml = createPolicyFoundryHostedUiPreviewHtml('ready');
+  const app = createPolicyFoundryHostedUiPreviewApp();
+  const readyResponse = await app.request('/policy-foundry/hosted-ui-preview?state=ready');
+  const readyRouteHtml = await readyResponse.text();
+
+  includes(blockedHtml, 'class="skip-link"', 'Hosted UI browser QA: preview includes keyboard skip link');
+  includes(blockedHtml, 'id="tasks"', 'Hosted UI browser QA: task section has a stable jump target');
+  includes(blockedHtml, 'overflow-wrap: anywhere', 'Hosted UI browser QA: long text and digests cannot force horizontal overflow');
+  includes(blockedHtml, '@media (max-width: 640px)', 'Hosted UI browser QA: mobile viewport CSS is present');
+  includes(blockedHtml, 'role="alert"', 'Hosted UI browser QA: blocked preview announces no-go state');
+  includes(readyHtml, 'role="status"', 'Hosted UI browser QA: ready preview announces non-blocked state');
+  includes(readyRouteHtml, 'Scoped rollout review ready', 'Hosted UI browser QA: preview route can render ready state');
+  equal(readyResponse.headers.get('cache-control'), 'no-store', 'Hosted UI browser QA: preview route is no-store');
+  excludes(
+    `${blockedHtml}\n${readyHtml}\n${readyRouteHtml}`,
+    /tenant_policy_foundry_preview|raw_prompt_must_not_escape|rk_live_|sk_live_|whsec_/u,
+    'Hosted UI browser QA: preview output remains data-minimized and secret-safe',
   );
 }
 
@@ -187,6 +217,11 @@ function testHostedUiFlowDescriptorDocsAndScript(): void {
     'Policy Foundry docs: hosted UI renderer evidence is named',
   );
   includes(
+    docs,
+    'scripts/preview-policy-foundry-hosted-ui.ts',
+    'Policy Foundry docs: hosted UI browser preview evidence is named',
+  );
+  includes(
     dataMinimizationDocs,
     'policy-foundry-hosted-ui-flow',
     'Data minimization docs: hosted UI flow surface is listed',
@@ -201,10 +236,16 @@ function testHostedUiFlowDescriptorDocsAndScript(): void {
     'tsx tests/policy-foundry-hosted-ui-flow.test.ts',
     'Package: hosted UI flow test is exposed',
   );
+  equal(
+    pkg.scripts['preview:policy-foundry-hosted-ui'],
+    'tsx scripts/preview-policy-foundry-hosted-ui.ts',
+    'Package: hosted UI preview script is exposed',
+  );
 }
 
 testHostedUiFlowRendersAccessibleReviewMaterial();
 testHostedUiFlowKeepsRolloutReviewNonProduction();
+await testHostedUiFlowBrowserPreviewHarness();
 testHostedUiFlowDescriptorDocsAndScript();
 
 ok(passed > 0, 'Policy Foundry hosted UI flow tests executed');

@@ -53,6 +53,10 @@ preserve these boundaries:
 - Kubernetes readiness/liveness probe guidance and Google SRE black-box
   monitoring patterns show why deployed smoke probes should verify externally
   observable behavior without claiming full production readiness.
+- W3C WCAG status-message guidance, GOV.UK task-list patterns, and Playwright
+  screenshot/visual-check guidance show why browser QA needs stable selectors,
+  status/alert semantics, keyboard navigation, responsive layout, and real
+  rendered-page inspection rather than HTML string checks alone.
 
 These sources are engineering anchors only. They do not certify Attestor.
 
@@ -81,6 +85,7 @@ These sources are engineering anchors only. They do not certify Attestor.
 | Step 19 | complete | Add Live Downstream Replay Evidence | Non-mutating sandbox/staging replay evidence contract with dry-run proof, no-go reasons, and digest-only outputs |
 | Step 20 | complete | Wire Live Replay Into Hosted Runtime | Hosted route and review surface bind live replay evidence and block failed replay before scoped rollout review |
 | Step 21 | complete | Add Policy Foundry Production Smoke Probe | Opt-in deployed-runtime smoke probe for health, readiness, hosted workflow, hosted view, live replay evidence, failed replay blocking, and secret-safe output |
+| Step 22 | complete | Add Hosted UI Browser QA Harness | Local browser preview route plus UI hardening for status semantics, stable selectors, keyboard skip link, responsive layout, and long-digest wrapping |
 
 ## Step 01 Scope
 
@@ -600,6 +605,31 @@ return digest-bound review evidence and fail closed on failed live replay. It
 does not deploy infrastructure, issue credentials, activate enforcement,
 execute production traffic, or prove production readiness.
 
+## Step 22 Scope
+
+Step 22 adds hosted UI browser QA hardening and a local preview harness.
+
+The UI renderer now has stable browser selectors, a skip link, responsive layout
+constraints, long-text wrapping, and explicit status/alert live-region
+semantics:
+
+```text
+hosted review surface
++ browser-stable selectors
++ status/alert semantics
++ keyboard skip link
++ mobile layout constraints
++ local preview route
+-> real-browser QA target
+```
+
+The preview harness is exposed through `preview:policy-foundry-hosted-ui`. It
+serves blocked and ready review states locally so browser QA can inspect the
+rendered page without a hosted deployment, secrets, customer payloads, or
+production traffic. This is UI/browser evidence only. It does not deploy
+infrastructure, issue credentials, activate enforcement, execute production
+traffic, or prove production readiness.
+
 ## Protected Principles
 
 - customer authority
@@ -624,7 +654,7 @@ contracts, or shared product positioning are touched.
 
 ## Current Status
 
-Step 01 through Step 12 are complete. Step 13 through Step 21 are also complete
+Step 01 through Step 12 are complete. Step 13 through Step 22 are also complete
 repo-side: the repo-side self-onboarding deepening list now includes the local
 adversarial replay executor, hosted workflow contract, stateless hosted workflow
 route wrapper, compact hosted review surface, hosted UI flow renderer, and
@@ -633,6 +663,7 @@ billing-provider entitlement enforcement for commercial Foundry requests and
 non-mutating live downstream replay evidence for sandbox/staging harnesses. The
 hosted route now binds that live replay evidence into workflow/review output and
 blocks failed replay before scoped rollout review. The track also includes an
-opt-in production smoke probe for an already deployed hosted runtime. Shared
-production wizard storage and any production traffic execution remain outside
-this tracker, and smoke evidence is not a production-readiness claim.
+opt-in production smoke probe for an already deployed hosted runtime and a
+local browser QA preview harness for the hosted UI. Shared production wizard
+storage and any production traffic execution remain outside this tracker, and
+smoke/browser evidence is not a production-readiness claim.

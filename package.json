@@ -342,6 +342,7 @@
     "render:observability-credentials": "tsx scripts/render-observability-credentials.ts",
     "benchmark:observability": "tsx scripts/benchmark-observability.ts",
     "benchmark:crypto-intelligence-performance": "tsx scripts/benchmark-crypto-intelligence-performance.ts",
+    "preview:policy-foundry-hosted-ui": "tsx scripts/preview-policy-foundry-hosted-ui.ts",
     "render:observability-profile": "tsx scripts/render-observability-profile.ts",
     "render:observability-release-bundle": "tsx scripts/render-observability-release-bundle.ts",
     "render:observability-promotion-packet": "tsx scripts/render-observability-promotion-packet.ts",

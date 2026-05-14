@@ -101,6 +101,7 @@
     "test:f7-shadow-origin-redaction-witness-validation": "tsx tests/f7-shadow-origin-redaction-witness-validation.test.ts",
     "test:f7-shadow-simulation-floor-validation": "tsx tests/f7-shadow-simulation-floor-validation.test.ts",
     "test:f7-break-glass-hardening-validation": "tsx tests/f7-break-glass-hardening-validation.test.ts",
+    "test:f7-high-risk-two-person-activation-validation": "tsx tests/f7-high-risk-two-person-activation-validation.test.ts",
     "test:f1-backlog-closure-validation": "tsx tests/f1-backlog-closure-validation.test.ts",
     "test:f2-customer-gate-validation": "tsx tests/f2-customer-gate-validation.test.ts",
     "test:f2-agent-payment-settlement-validation": "tsx tests/f2-agent-payment-settlement-validation.test.ts",

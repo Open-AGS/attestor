@@ -4,6 +4,9 @@ import {
   type CanonicalReleaseJsonValue,
 } from '../release-kernel/release-canonicalization.js';
 import type {
+  ConsequenceAdmissionDownstreamBoundaryKind,
+} from './downstream-enforcement-contract.js';
+import type {
   ShadowActivationReadinessGate,
 } from './shadow-activation-readiness-gate.js';
 
@@ -20,6 +23,16 @@ export const SHADOW_CUSTOMER_ACTIVATION_ROLLOUT_STRATEGIES = [
 ] as const;
 export type ShadowCustomerActivationRolloutStrategy =
   typeof SHADOW_CUSTOMER_ACTIVATION_ROLLOUT_STRATEGIES[number];
+
+export const SHADOW_CUSTOMER_ACTIVATION_HIGH_RISK_BOUNDARY_KINDS = [
+  'record-writer',
+  'communication-sender',
+  'action-dispatcher',
+  'wallet-adapter',
+  'payment-adapter',
+  'artifact-exporter',
+  'custom',
+] as const satisfies readonly ConsequenceAdmissionDownstreamBoundaryKind[];
 
 export const SHADOW_CUSTOMER_ACTIVATION_CONTROL_KINDS = [
   'operator-approval',
@@ -72,6 +85,9 @@ export interface ShadowCustomerActivationHandoff {
   readonly activationRef: string;
   readonly operatorRef: string;
   readonly secondaryApproverRef: string | null;
+  readonly activationBoundaryKind: ConsequenceAdmissionDownstreamBoundaryKind | null;
+  readonly twoPersonApprovalRequired: boolean;
+  readonly twoPersonApprovalReady: boolean;
   readonly rolloutStrategy: ShadowCustomerActivationRolloutStrategy;
   readonly expiresAt: string | null;
   readonly breakGlassWindowSeconds: number | null;
@@ -98,6 +114,7 @@ export interface CreateShadowCustomerActivationHandoffInput {
   readonly activationRef: string;
   readonly operatorRef: string;
   readonly secondaryApproverRef?: string | null;
+  readonly activationBoundaryKind?: ConsequenceAdmissionDownstreamBoundaryKind | null;
   readonly rolloutStrategy: ShadowCustomerActivationRolloutStrategy;
   readonly rollbackRef?: ShadowCustomerActivationControlRef | null;
   readonly killSwitchRef?: ShadowCustomerActivationControlRef | null;
@@ -182,6 +199,13 @@ function normalizeRolloutStrategy(
   return value;
 }
 
+function normalizeOptionalBoundaryKind(
+  value: ConsequenceAdmissionDownstreamBoundaryKind | null | undefined,
+): ConsequenceAdmissionDownstreamBoundaryKind | null {
+  if (value === undefined || value === null) return null;
+  return value;
+}
+
 function normalizeRefKind(value: ShadowCustomerActivationRefKind): ShadowCustomerActivationRefKind {
   if (!SHADOW_CUSTOMER_ACTIVATION_REF_KINDS.includes(value)) {
     throw new Error(
@@ -202,6 +226,29 @@ function normalizeControlRef(
     digest: normalizeDigest(value.digest, `${fieldName}.digest`),
     uri: normalizeOptionalIdentifier(value.uri, `${fieldName}.uri`),
   });
+}
+
+function isHighRiskBoundaryKind(value: ConsequenceAdmissionDownstreamBoundaryKind | null): boolean {
+  return value !== null &&
+    (SHADOW_CUSTOMER_ACTIVATION_HIGH_RISK_BOUNDARY_KINDS as readonly ConsequenceAdmissionDownstreamBoundaryKind[])
+      .includes(value);
+}
+
+function twoPersonApprovalRequired(input: {
+  readonly rolloutStrategy: ShadowCustomerActivationRolloutStrategy;
+  readonly activationBoundaryKind: ConsequenceAdmissionDownstreamBoundaryKind | null;
+}): boolean {
+  return input.rolloutStrategy === 'break-glass' ||
+    isHighRiskBoundaryKind(input.activationBoundaryKind);
+}
+
+function twoPersonApprovalReady(input: {
+  readonly operatorRef: string;
+  readonly secondaryApproverRef: string | null;
+  readonly required: boolean;
+}): boolean {
+  if (!input.required) return true;
+  return input.secondaryApproverRef !== null && input.secondaryApproverRef !== input.operatorRef;
 }
 
 function createControl(
@@ -259,6 +306,7 @@ function remainingBlockers(input: {
   readonly rolloutStrategy: ShadowCustomerActivationRolloutStrategy;
   readonly operatorRef: string;
   readonly secondaryApproverRef: string | null;
+  readonly activationBoundaryKind: ConsequenceAdmissionDownstreamBoundaryKind | null;
   readonly breakGlassJustificationRef: ShadowCustomerActivationControlRef | null;
   readonly breakGlassReconciliationRef: ShadowCustomerActivationControlRef | null;
 }): readonly string[] {
@@ -271,6 +319,13 @@ function remainingBlockers(input: {
   }
   if (input.expiresAt !== null && Date.parse(input.expiresAt) <= Date.parse(input.generatedAt)) {
     blockers.add('activation-window-expired');
+  }
+  if (isHighRiskBoundaryKind(input.activationBoundaryKind) && input.rolloutStrategy !== 'break-glass') {
+    if (input.secondaryApproverRef === null) {
+      blockers.add('high-risk-secondary-approver-required');
+    } else if (input.secondaryApproverRef === input.operatorRef) {
+      blockers.add('high-risk-secondary-approver-must-differ');
+    }
   }
   if (input.rolloutStrategy === 'break-glass') {
     if (input.secondaryApproverRef === null) {
@@ -311,6 +366,9 @@ function handoffIdFor(input: {
   readonly activationRef: string;
   readonly operatorRef: string;
   readonly secondaryApproverRef: string | null;
+  readonly activationBoundaryKind: ConsequenceAdmissionDownstreamBoundaryKind | null;
+  readonly twoPersonApprovalRequired: boolean;
+  readonly twoPersonApprovalReady: boolean;
   readonly rolloutStrategy: ShadowCustomerActivationRolloutStrategy;
   readonly controlDigest: string;
   readonly expiresAt: string | null;
@@ -341,7 +399,17 @@ export function createShadowCustomerActivationHandoff(
     input.secondaryApproverRef,
     'secondaryApproverRef',
   );
+  const activationBoundaryKind = normalizeOptionalBoundaryKind(input.activationBoundaryKind);
   const rolloutStrategy = normalizeRolloutStrategy(input.rolloutStrategy);
+  const requiresTwoPersonApproval = twoPersonApprovalRequired({
+    rolloutStrategy,
+    activationBoundaryKind,
+  });
+  const twoPersonReady = twoPersonApprovalReady({
+    operatorRef,
+    secondaryApproverRef,
+    required: requiresTwoPersonApproval,
+  });
   const rollbackRef = normalizeControlRef(input.rollbackRef, 'rollbackRef');
   const killSwitchRef = normalizeControlRef(input.killSwitchRef, 'killSwitchRef');
   const monitoringRef = normalizeControlRef(input.monitoringRef, 'monitoringRef');
@@ -376,6 +444,7 @@ export function createShadowCustomerActivationHandoff(
     rolloutStrategy,
     operatorRef,
     secondaryApproverRef,
+    activationBoundaryKind,
     breakGlassJustificationRef,
     breakGlassReconciliationRef,
   });
@@ -390,6 +459,9 @@ export function createShadowCustomerActivationHandoff(
       activationRef,
       operatorRef,
       secondaryApproverRef,
+      activationBoundaryKind,
+      twoPersonApprovalRequired: requiresTwoPersonApproval,
+      twoPersonApprovalReady: twoPersonReady,
       rolloutStrategy,
       controlDigest,
       expiresAt,
@@ -407,6 +479,9 @@ export function createShadowCustomerActivationHandoff(
     activationRef,
     operatorRef,
     secondaryApproverRef,
+    activationBoundaryKind,
+    twoPersonApprovalRequired: requiresTwoPersonApproval,
+    twoPersonApprovalReady: twoPersonReady,
     rolloutStrategy,
     expiresAt,
     breakGlassWindowSeconds: breakGlassWindow,

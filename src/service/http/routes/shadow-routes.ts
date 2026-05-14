@@ -2451,6 +2451,7 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
         activationRef: body.activationRef,
         operatorRef: body.operatorRef,
         secondaryApproverRef: body.secondaryApproverRef,
+        activationBoundaryKind: body.integration.boundaryKind,
         rolloutStrategy: body.rolloutStrategy,
         rollbackRef: body.rollbackRef,
         killSwitchRef: body.killSwitchRef,

@@ -2297,6 +2297,7 @@ export * from './tool-result-poisoning-guard.js';
 export * from './approval-provenance-guard.js';
 export * from './stale-authority-policy-guard.js';
 export * from './recipient-tenant-boundary-replay.js';
+export * from './recipient-tenant-boundary-runtime.js';
 export * from './scope-explosion-guard.js';
 export * from './human-review-fatigue-guard.js';
 export * from './agentic-supply-chain-guard.js';

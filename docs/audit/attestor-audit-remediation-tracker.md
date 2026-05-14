@@ -52,7 +52,7 @@ later implementation pass does not re-open already-retired issues.
 Remaining work after the final claim-alignment slice: 0 planned
 PR-sized or validation-sized units in the current F1-F5 audit queue.
 
-Remaining F6 queue after usage-meter shared-store boundary slice: 1 planned PR-sized
+Remaining F6 queue after recipient/tenant runtime boundary bridge: 0 planned PR-sized
 or validation-sized units.
 
 Completion rule through F5: every F1-F5 row must end as `fixed`,
@@ -242,9 +242,10 @@ F6-T3/F6-T9; anonymous fallback now uses a reserved sentinel for F6-T10;
 bypass routes now clear and refuse unverified tenant/account headers for F6-T5;
 RLS wording is narrowed to sample/probe status for F6-T2; usage-meter wording
 now separates the local file ledger from shared control-plane usage state for
-F6-T4.
-Per-tenant signer isolation and later F6 runtime boundaries remain separate
-work.
+F6-T4; recipient/tenant replay-only coverage now has a runtime decision bridge
+for F6-T8.
+Per-tenant signer isolation and route-by-route enforcement adoption remain
+separate work.
 
 | ID | Current status | Evidence / overlap | Remaining action |
 |---|---|---|---|
@@ -255,7 +256,7 @@ work.
 | F6-T5 bypass route tenant-header spoofing | `fixed` | F6 Bypass Route Tenant Context Invariant; `clearTenantContextHeaders`; `hasVerifiedTenantContext`; `test:f6-bypass-route-tenant-context-invariant`. Bypass routes strip client-supplied internal tenant/account headers, and request-context helpers refuse unverified headers. | No remaining repository action for this scoped finding. |
 | F6-T6 runtime signer all-tenant blast radius | `partial` | F6 Tenant-Bound Release Token Validation binds release tokens and verification results to `tenant_id`, but runtime signer and verification key are still shared runtime material; revocation remains runtime-wide. | Add per-tenant leaf signer or KMS/HSM tenant-scoped signer strategy before claiming signer-compromise blast-radius isolation. |
 | F6-T7 anonymous fallback env-gated | `invalid-as-stated` | Production-like tenant fallback guard and explicit runtime-profile guard already exist. | Sentinel naming is closed under F6-T10. |
-| F6-T8 recipient/tenant boundary replay-only | `partial` | Replay contract exists; some runtime routes have concrete tenant checks. | Promote replay cases into runtime guard/conformance for declared output surfaces. |
+| F6-T8 recipient/tenant boundary replay-only | `partial` | F6 Recipient/Tenant Runtime Boundary Bridge; `evaluateConsequenceRecipientTenantRuntimeBoundary`; `failure-mode-guard-coverage.ts`; `test:f6-recipient-tenant-runtime-boundary`. Replay-only coverage now has a central runtime decision bridge. | Surface-by-surface hosted route, dashboard, export, review-packet, downstream sender, and customer-gateway adoption remains future integration work before universal output enforcement can be claimed. |
 | F6-T9 plaintext env API keys in memory | `fixed` | F6 Tenant Key Cache Hardening stores env tenant keys by `tenant.api-key` lookup hash and stores only a secret-derived env config digest for reload detection. | No remaining repository action for this scoped finding. |
 | F6-T10 `default` tenant sentinel collision | `fixed` | F6 Anonymous Tenant Sentinel Validation; `ANONYMOUS_TENANT_ID`; `isAnonymousTenantContext`; `test:f6-anonymous-tenant-sentinel`. Anonymous `default` headers normalize to `__attestor_anonymous__`, while a real API-key tenant named `default` remains distinct. | No remaining repository action for this scoped finding. |
 
@@ -275,4 +276,4 @@ F6 is now the active queue. Planned order:
 5. F6-T5 bypass route tenant-context invariant. Done.
 6. F6-T2 RLS/data-path claim alignment or integration. Done as claim alignment; real store wiring remains a future storage-isolation project.
 7. F6-T4 usage-meter shared-store claim boundary. Done as claim boundary; live shared quota proof remains deployment work.
-8. F6-T8 recipient/tenant runtime boundary bridge.
+8. F6-T8 recipient/tenant runtime boundary bridge. Done as repository bridge; surface-by-surface enforcement adoption remains integration work.

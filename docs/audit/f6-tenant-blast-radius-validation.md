@@ -26,6 +26,7 @@ Repository baseline inspected:
 - `src/release-kernel/object-model.ts`
 - `src/service/http/routes/generic-admission-routes.ts`
 - `src/consequence-admission/recipient-tenant-boundary-replay.ts`
+- `src/consequence-admission/recipient-tenant-boundary-runtime.ts`
 - relevant tests and deployment docs listed below
 
 Primary research anchors:
@@ -50,7 +51,7 @@ Primary research anchors:
 | F6-T5 | Bypass routes can accept client-supplied tenant headers. | `fixed` | Non-bypass tenant middleware overwrites `x-attestor-tenant-id`. Admin routes use `currentAdminAuthorized` and do not depend on `currentTenant`. F6 Bypass Route Tenant Context Invariant now also clears spoofed internal tenant/account headers on bypass routes and makes request-context helpers require a middleware-written verified marker. | No remaining repository action for this scoped finding. |
 | F6-T6 | Compromise of runtime signer affects all tenants. | `partial` | Tenant-bound release-token claims narrow token reuse, but runtime signer and release-token verification key are still shared runtime material. Revoking that signer is runtime-wide. | Add per-tenant leaf signer or KMS/HSM tenant-scoped signer strategy before claiming signer-compromise blast-radius isolation. |
 | F6-T7 | Anonymous fallback is env-gated, not profile-gated. | `invalid-as-stated` | `tenant-isolation-production-guard.test.ts` proves anonymous fallback is rejected for `NODE_ENV=production`, `ATTESTOR_HA_MODE`, and public-hosted flags. `runtime-profile.ts` requires explicit `ATTESTOR_RUNTIME_PROFILE` for production-like envs. | Sentinel naming is closed under F6-T10. |
-| F6-T8 | Recipient/tenant boundary replay is not runtime enforcement. | `partial` | `recipient-tenant-boundary-replay.ts` is a replay contract. Runtime routes also contain concrete tenant checks, for example shadow route tenant mismatch handling and audit export boundaries. | Promote replay cases into runtime guard/conformance for declared output surfaces where payloads can cross tenant or recipient boundaries. |
+| F6-T8 | Recipient/tenant boundary replay is not runtime enforcement. | `partial` | F6 Recipient/Tenant Runtime Boundary Bridge; `evaluateConsequenceRecipientTenantRuntimeBoundary`; `failure-mode-guard-coverage.ts`; `test:f6-recipient-tenant-runtime-boundary`. Replay-only coverage is now bridged into a deterministic runtime decision surface. | Wire hosted dashboards, exports, review packets, downstream senders, and customer gateways to the runtime bridge or equivalent checks before claiming universal output enforcement. |
 | F6-T9 | Env tenant API keys are stored plaintext in memory. | `fixed` | `tenant-isolation.ts` stores env-loaded API keys by `tenant.api-key` lookup hash and stores only a secret-derived config digest for reload detection. File/PG-backed tenant keys are also hashed via `tenant-key-store.ts` / control-plane store. | No remaining repository action for this scoped finding. |
 | F6-T10 | `default` tenant fallback can collide with real tenants. | `fixed` | `tenant-isolation.ts` exports `ANONYMOUS_TENANT_ID = "__attestor_anonymous__"` and `isAnonymousTenantContext`. Anonymous fallback and missing headers use the reserved sentinel. Legacy anonymous `default` headers normalize to the sentinel, while `api_key` tenant id `default` remains a real tenant. | No remaining repository action for this scoped finding. |
 
@@ -66,7 +67,7 @@ verified slices. The current queue is eight PR-sized units:
 5. Bypass-route tenant-context invariant for F6-T5. Done.
 6. RLS/data-path claim alignment or real store integration for F6-T2. Done as claim alignment; real store wiring remains future work.
 7. Usage-meter shared-store claim boundary for F6-T4. Done as claim boundary; live shared quota proof remains deployment work.
-8. Recipient/tenant runtime boundary bridge for F6-T8.
+8. Recipient/tenant runtime boundary bridge for F6-T8. Done as repository bridge; surface-by-surface enforcement adoption remains integration work.
 
 F6-T9 and F6-T10 are fixed by later remediation slices. Other F6 items remain
 fixed, invalid-as-stated, or partial as shown in the tracker.
@@ -80,12 +81,13 @@ Do not claim:
 - Attestor is cryptographically tenant-isolated end to end.
 - The sample RLS helper protects the main control-plane data path.
 - File-backed usage metering is multi-node safe.
-- Recipient/tenant replay fixtures are equivalent to universal runtime output
-  enforcement.
+- Recipient/tenant runtime bridge adoption is universal across all hosted and
+  downstream output surfaces.
 
 Allowed claim:
 
 - Current master has request-level tenant identity, generic-admission tenant
   mismatch rejection, shared control-plane store support, production-shared
-  storage diagnostics, and concrete route-level tenant tests.
+  storage diagnostics, concrete route-level tenant tests, and a central
+  recipient/tenant runtime boundary bridge.
 

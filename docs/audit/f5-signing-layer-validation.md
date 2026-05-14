@@ -31,7 +31,7 @@ Known limitations: repository evidence only; no live HSM, TUF, Rekor, or multi-r
 | F-5.7 HA shared PKI | accepted limitation | high | File-backed PKI and local lock are documented as not production-ready when external KMS/HSM is required. External KMS still fails closed as not implemented. |
 | F5-A1 out-of-band trust root | remediated in follow-up | high | Kit-contained CA material proves chain integrity only. Follow-up validation now requires an out-of-band trusted CA fingerprint by default and reserves kit-contained-root checks for explicit developer mode. |
 | F5-A2 legacy flat verify escape | remediated in follow-up | medium | Env-var legacy downgrades were removed. CLI legacy flat verification remains only as explicit `--allow-legacy-verify`. |
-| F5-A3 truncated fingerprint length | accepted limitation | medium | Fingerprints remain 16 hex chars; widening is backlog because it affects public identifiers and fixtures. |
+| F5-A3 truncated fingerprint length | remediated in follow-up | medium | Signing key identity fingerprints now use 32 hex chars / 128-bit truncated SHA-256. Historical compact evidence IDs and already-issued artifacts are not widened by this scoped fix. |
 | F5-A4 homegrown canonicalization | accepted limitation | medium | Signing uses repository canonical JSON, not RFC 8785 JCS. Interop with external sigstore/in-toto verifiers is not claimed. |
 | F5-A6 transparency log missing | accepted limitation | medium | No transparency log exists yet. Do not claim Rekor-equivalent witness semantics. |
 
@@ -64,5 +64,5 @@ Remaining limitation: legacy flat verification remains only as an explicit CLI f
 - External KMS/HSM signer implementation remains not implemented and must continue to fail closed.
 - Parent-directory fsync and startup orphan sweep for file-backed critical stores remain durability hardening.
 - Full transparency-log or witness model is not implemented.
-- Fingerprint width migration is backlog because it is a compatibility-affecting identity change.
+- Signing key fingerprint width is remediated in follow-up; historical artifacts with older compact fingerprints remain historical evidence.
 - RFC 8785/JCS interoperability is not claimed until signing canonicalization is migrated or formally documented as Attestor-specific.

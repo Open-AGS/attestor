@@ -117,7 +117,7 @@ export interface AttestationCertificate {
     algorithm: 'ed25519';
     /** Public key of the signer (hex-encoded, 32 bytes). */
     publicKey: string;
-    /** Key fingerprint (truncated SHA-256 of SPKI DER). */
+    /** Key fingerprint (128-bit truncated SHA-256 of SPKI DER). */
     fingerprint: string;
     /** Signature over the canonicalized certificate body (hex-encoded, 64 bytes). */
     signature: string;

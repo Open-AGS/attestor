@@ -130,7 +130,7 @@ function testLeafFingerprintMismatchFailsBinding(): void {
     ...pki.chains.signer,
     leaf: {
       ...pki.chains.signer.leaf,
-      subjectFingerprint: '0000000000000000',
+      subjectFingerprint: '00000000000000000000000000000000',
     },
   };
   const result = verifyPkiBoundCertificate({

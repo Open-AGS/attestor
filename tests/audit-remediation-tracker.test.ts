@@ -30,7 +30,7 @@ try {
   includes(tracker, '# Attestor Audit Remediation Tracker', 'Tracker: title is present');
   includes(tracker, 'not a certification', 'Tracker: no-certification disclaimer is present');
   includes(tracker, '`origin/master` is the source of truth', 'Tracker: origin/master rule is present');
-  includes(tracker, 'Estimated remaining work after this tracker lands: about 14 to 22', 'Tracker: remaining estimate is explicit');
+  includes(tracker, 'Estimated remaining work after this tracker lands: about 13 to 21', 'Tracker: remaining estimate is explicit');
 
   for (const pr of [
     '#220',
@@ -61,6 +61,7 @@ try {
     '#315',
     '#316',
     '#317',
+    '#318',
   ]) {
     includes(tracker, pr, `Tracker: ${pr} is referenced`);
   }
@@ -107,6 +108,8 @@ try {
   includes(tracker, 'F5 CA Pin Required Validation', 'Tracker: F5 CA pin validation evidence is linked');
   includes(tracker, 'F5-A2 legacy flat verify escape via env | `fixed`', 'Tracker: F5 legacy env downgrade validation is fixed');
   includes(tracker, 'F5 Legacy Env Downgrade Validation', 'Tracker: F5 legacy env downgrade evidence is linked');
+  includes(tracker, 'F5-A3 truncated fingerprint width | `fixed`', 'Tracker: F5 fingerprint width validation is fixed');
+  includes(tracker, 'F5 Fingerprint Width Validation', 'Tracker: F5 fingerprint width evidence is linked');
   includes(tracker, 'F5-NEW-4 duplicate verify helper calls in CLI', 'Tracker: detailed F5 redo is tracked');
   includes(tracker, 'No `needs-revalidation` row can remain before starting F6', 'Tracker: F6 gate is explicit');
   excludes(tracker, /production ready|certified|fully complete/iu, 'Tracker: avoids production/certification overclaim wording');
@@ -114,6 +117,7 @@ try {
   includes(packageJson, '"test:f4-prompt-leakage-marker-validation"', 'Package: F4 prompt leakage validation script is exposed');
   includes(packageJson, '"test:f5-ca-pin-required-validation"', 'Package: F5 CA pin validation script is exposed');
   includes(packageJson, '"test:f5-legacy-env-downgrade-validation"', 'Package: F5 legacy env downgrade validation script is exposed');
+  includes(packageJson, '"test:f5-fingerprint-width-validation"', 'Package: F5 fingerprint width validation script is exposed');
 
   ok(tracker.split('\n').length > 120, 'Tracker: enough rows to cover supplied audit reports');
   console.log(`Audit remediation tracker tests: ${passed} passed, 0 failed`);

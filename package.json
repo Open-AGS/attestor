@@ -57,6 +57,7 @@
     "test:pki-trust-binding": "tsx tests/pki-trust-binding.test.ts",
     "test:f5-ca-pin-required-validation": "tsx tests/f5-ca-pin-required-validation.test.ts",
     "test:f5-legacy-env-downgrade-validation": "tsx tests/f5-legacy-env-downgrade-validation.test.ts",
+    "test:f5-fingerprint-width-validation": "tsx tests/f5-fingerprint-width-validation.test.ts",
     "test:stripe-commercial": "tsx tests/stripe-commercial-config.test.ts",
     "test:stripe-webhook-events": "tsx tests/stripe-webhook-events.test.ts",
     "test:stripe-live-readiness-probe": "tsx tests/stripe-live-readiness-probe.test.ts",

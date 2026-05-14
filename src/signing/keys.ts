@@ -20,6 +20,10 @@ import { generateKeyPairSync, createHash, createPublicKey } from 'node:crypto';
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 
+export const ATTESTOR_SIGNING_FINGERPRINT_HEX_LENGTH = 32;
+export const ATTESTOR_SIGNING_FINGERPRINT_SECURITY_BITS =
+  ATTESTOR_SIGNING_FINGERPRINT_HEX_LENGTH * 4;
+
 export interface AttestorKeyPair {
   /** PEM-encoded Ed25519 private key */
   privateKeyPem: string;
@@ -27,8 +31,15 @@ export interface AttestorKeyPair {
   publicKeyPem: string;
   /** Raw 32-byte public key as hex (compact identity) */
   publicKeyHex: string;
-  /** Key fingerprint: truncated SHA-256 of the public key (16 hex chars) */
+  /** Key fingerprint: 128-bit truncated SHA-256 of the public key (32 hex chars) */
   fingerprint: string;
+}
+
+function fingerprintPublicKeyDer(publicKeyDer: Buffer | Uint8Array): string {
+  return createHash('sha256')
+    .update(publicKeyDer)
+    .digest('hex')
+    .slice(0, ATTESTOR_SIGNING_FINGERPRINT_HEX_LENGTH);
 }
 
 /**
@@ -42,7 +53,7 @@ export function generateKeyPair(): AttestorKeyPair {
   const publicKeyRaw = publicKey.export({ type: 'spki', format: 'der' });
   // Ed25519 SPKI DER is 44 bytes: 12 bytes header + 32 bytes key
   const publicKeyHex = publicKeyRaw.subarray(12).toString('hex');
-  const fingerprint = createHash('sha256').update(publicKeyRaw).digest('hex').slice(0, 16);
+  const fingerprint = fingerprintPublicKeyDer(publicKeyRaw);
 
   return { privateKeyPem, publicKeyPem, publicKeyHex, fingerprint };
 }
@@ -78,7 +89,7 @@ export function derivePublicKeyIdentity(publicKeyPem: string): { publicKeyHex: s
   const key = createPublicKey(publicKeyPem);
   const der = key.export({ type: 'spki', format: 'der' });
   const publicKeyHex = der.subarray(12).toString('hex');
-  const fingerprint = createHash('sha256').update(der).digest('hex').slice(0, 16);
+  const fingerprint = fingerprintPublicKeyDer(der);
 
   return { publicKeyHex, fingerprint };
 }

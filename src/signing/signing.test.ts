@@ -6,7 +6,11 @@
  */
 
 import { strict as assert } from 'node:assert';
-import { generateKeyPair, derivePublicKeyIdentity } from './keys.js';
+import {
+  ATTESTOR_SIGNING_FINGERPRINT_HEX_LENGTH,
+  derivePublicKeyIdentity,
+  generateKeyPair,
+} from './keys.js';
 import { signPayload, verifySignature, canonicalize } from './sign.js';
 import { issueCertificate, verifyCertificate, type CertificateInput } from './certificate.js';
 
@@ -47,7 +51,10 @@ async function runSigningTests(): Promise<number> {
   assert(kp.privateKeyPem.includes('BEGIN PRIVATE KEY'), 'Private key is PEM');
   assert(kp.publicKeyPem.includes('BEGIN PUBLIC KEY'), 'Public key is PEM');
   assert(kp.publicKeyHex.length === 64, 'Public key hex is 32 bytes (64 hex chars)');
-  assert(kp.fingerprint.length === 16, 'Fingerprint is 16 hex chars');
+  assert(
+    kp.fingerprint.length === ATTESTOR_SIGNING_FINGERPRINT_HEX_LENGTH,
+    'Fingerprint is 32 hex chars',
+  );
   passed += 4;
   console.log(`    KeyGen: pub=${kp.publicKeyHex.slice(0, 8)}... fp=${kp.fingerprint}`);
 

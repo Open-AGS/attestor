@@ -85,6 +85,7 @@
     "test:f2-evidence-confidence-validation": "tsx tests/f2-evidence-confidence-validation.test.ts",
     "test:f2-llm-provider-supply-chain-validation": "tsx tests/f2-llm-provider-supply-chain-validation.test.ts",
     "test:f2-constraint-kind-registry-validation": "tsx tests/f2-constraint-kind-registry-validation.test.ts",
+    "test:f2-model-tool-config-drift-validation": "tsx tests/f2-model-tool-config-drift-validation.test.ts",
     "test:supply-chain-baseline": "npm run security:supply-chain-baseline",
     "test:tenant-admin-secret-output": "tsx tests/tenant-admin-secret-output.test.ts",
     "test:container-security-baseline": "tsx tests/container-security-baseline.test.ts",

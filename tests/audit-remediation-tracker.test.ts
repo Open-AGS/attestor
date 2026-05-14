@@ -30,7 +30,7 @@ try {
   includes(tracker, '# Attestor Audit Remediation Tracker', 'Tracker: title is present');
   includes(tracker, 'not a certification', 'Tracker: no-certification disclaimer is present');
   includes(tracker, '`origin/master` is the source of truth', 'Tracker: origin/master rule is present');
-  includes(tracker, 'Estimated remaining work after this tracker lands: about 26 to 34', 'Tracker: remaining estimate is explicit');
+  includes(tracker, 'Estimated remaining work after this tracker lands: about 25 to 33', 'Tracker: remaining estimate is explicit');
 
   for (const pr of [
     '#220',
@@ -51,6 +51,7 @@ try {
     '#305',
     '#306',
     '#307',
+    '#308',
   ]) {
     includes(tracker, pr, `Tracker: ${pr} is referenced`);
   }
@@ -75,6 +76,7 @@ try {
   includes(tracker, 'F2-AG-7 agentic supply-chain and LLM provider dependency | `partial`', 'Tracker: F2 LLM provider supply-chain validation is closed as partial');
   includes(tracker, 'F2-AG-8 multimodal vision input future risk | `backlog`', 'Tracker: F2 multimodal vision future risk is backlogged');
   includes(tracker, 'F2-AG-9 free-text narrow constraints | `fixed`', 'Tracker: F2 constraint kind registry validation is fixed');
+  includes(tracker, 'F2-AG-10 model/tool/config drift | `partial`', 'Tracker: F2 model/tool/config drift validation is closed as partial');
   includes(tracker, 'F3-CC-10 agentic supply-chain guard missing', 'Tracker: final F3 item is tracked');
   includes(tracker, 'F4-LLM10-B retry-attempt ledger storage claim', 'Tracker: detailed F4 redo is tracked');
   includes(tracker, 'F4-LLM09-A hallucinated evidence / unsupported confidence | `partial`', 'Tracker: F4 LLM09 evidence confidence validation is closed as partial');

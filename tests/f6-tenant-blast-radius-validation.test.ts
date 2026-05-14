@@ -28,6 +28,7 @@ const anonymousSentinelValidation = readProjectFile('docs', 'audit', 'f6-anonymo
 const bypassRouteValidation = readProjectFile('docs', 'audit', 'f6-bypass-route-tenant-context-invariant.md');
 const rlsClaimAlignment = readProjectFile('docs', 'audit', 'f6-rls-claim-alignment.md');
 const usageMeterBoundary = readProjectFile('docs', 'audit', 'f6-usage-meter-shared-store-boundary.md');
+const recipientRuntimeBoundary = readProjectFile('docs', 'audit', 'f6-recipient-tenant-runtime-boundary.md');
 const tracker = readProjectFile('docs', 'audit', 'attestor-audit-remediation-tracker.md');
 const tenantIsolation = readProjectFile('src', 'service', 'tenant-isolation.ts');
 const genericAdmissionRoutes = readProjectFile(
@@ -55,6 +56,11 @@ const recipientReplay = readProjectFile(
   'consequence-admission',
   'recipient-tenant-boundary-replay.ts',
 );
+const recipientRuntime = readProjectFile(
+  'src',
+  'consequence-admission',
+  'recipient-tenant-boundary-runtime.ts',
+);
 const packageJson = readProjectFile('package.json');
 
 includes(validation, '# F6 Tenant Blast Radius Validation', 'F6 validation: title exists');
@@ -72,7 +78,7 @@ excludes(validation, /certified|SOC 2 evidence packet/iu, 'F6 validation: avoids
 includes(tracker, 'F6 Multi-Tenant Blast Radius', 'Tracker: F6 section exists');
 includes(tracker, 'F6-T1 shared PKI tenant binding', 'Tracker: F6-T1 is tracked');
 includes(tracker, 'F6-T10 `default` tenant sentinel collision', 'Tracker: F6-T10 is tracked');
-includes(tracker, 'Remaining F6 queue after usage-meter shared-store boundary slice: 1 planned', 'Tracker: F6 remaining count is explicit');
+includes(tracker, 'Remaining F6 queue after recipient/tenant runtime boundary bridge: 0 planned', 'Tracker: F6 remaining count is explicit');
 includes(tracker, 'F6 validation and tracker sync', 'Tracker: F6 queue names the current validation slice');
 includes(tracker, 'F6-T2 RLS declared but not data-path wired | `accepted-limitation`', 'Tracker: F6-T2 is accepted limitation');
 includes(tracker, 'F6-T5 bypass route tenant-header spoofing | `fixed`', 'Tracker: F6-T5 is fixed');
@@ -106,11 +112,14 @@ includes(runtimeProfile, 'isProductionLikeRuntimeEnv', 'Repo evidence: productio
 includes(adminRoutes, 'currentAdminAuthorized', 'Repo evidence: admin routes use admin auth dependency');
 ok(!adminRoutes.includes('currentTenant('), 'Repo evidence: admin routes do not call currentTenant directly');
 includes(recipientReplay, 'CONSEQUENCE_RECIPIENT_TENANT_BOUNDARY_REPLAY_VERSION', 'Repo evidence: recipient tenant boundary module is replay-scoped');
+includes(recipientRuntime, 'CONSEQUENCE_RECIPIENT_TENANT_BOUNDARY_RUNTIME_VERSION', 'Repo evidence: recipient tenant boundary runtime bridge exists');
+includes(recipientRuntime, 'allowed: result.outcome ===', 'Repo evidence: runtime boundary emits allow/deny decision');
 includes(packageJson, '"test:f6-tenant-blast-radius-validation"', 'Package: F6 validation test script is exposed');
 includes(packageJson, '"test:f6-anonymous-tenant-sentinel"', 'Package: F6 anonymous sentinel test script is exposed');
 includes(packageJson, '"test:f6-bypass-route-tenant-context-invariant"', 'Package: F6 bypass route tenant-context test script is exposed');
 includes(packageJson, '"test:f6-rls-claim-alignment"', 'Package: F6 RLS claim alignment test script is exposed');
 includes(packageJson, '"test:f6-usage-meter-shared-store-boundary"', 'Package: F6 usage-meter shared-store boundary test script is exposed');
+includes(packageJson, '"test:f6-recipient-tenant-runtime-boundary"', 'Package: F6 recipient/tenant runtime boundary test script is exposed');
 
 includes(anonymousSentinelValidation, '# F6 Anonymous Tenant Sentinel Validation', 'F6 anonymous sentinel validation: title exists');
 includes(anonymousSentinelValidation, '__attestor_anonymous__', 'F6 anonymous sentinel validation: reserved sentinel is documented');
@@ -122,5 +131,7 @@ includes(rlsClaimAlignment, '# F6 RLS Claim Alignment', 'F6 RLS claim alignment:
 includes(rlsClaimAlignment, 'does not wire PostgreSQL Row-Level Security into Attestor', 'F6 RLS claim alignment: non-goal is documented');
 includes(usageMeterBoundary, '# F6 Usage Meter Shared-Store Boundary', 'F6 usage-meter boundary: title exists');
 includes(usageMeterBoundary, 'file-backed usage meter is local/single-node only', 'F6 usage-meter boundary: file ledger scope is documented');
+includes(recipientRuntimeBoundary, '# F6 Recipient/Tenant Runtime Boundary Bridge', 'F6 recipient runtime boundary: title exists');
+includes(recipientRuntimeBoundary, 'central runtime decision surface', 'F6 recipient runtime boundary: central bridge is documented');
 
 console.log(`F6 tenant blast-radius validation tests: ${passed} passed, 0 failed`);

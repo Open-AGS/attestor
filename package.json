@@ -96,6 +96,7 @@
     "test:f6-bypass-route-tenant-context-invariant": "tsx tests/f6-bypass-route-tenant-context-invariant.test.ts",
     "test:f6-rls-claim-alignment": "tsx tests/f6-rls-claim-alignment.test.ts",
     "test:f6-usage-meter-shared-store-boundary": "tsx tests/f6-usage-meter-shared-store-boundary.test.ts",
+    "test:f6-recipient-tenant-runtime-boundary": "tsx tests/f6-recipient-tenant-runtime-boundary.test.ts",
     "test:f1-backlog-closure-validation": "tsx tests/f1-backlog-closure-validation.test.ts",
     "test:f2-customer-gate-validation": "tsx tests/f2-customer-gate-validation.test.ts",
     "test:f2-agent-payment-settlement-validation": "tsx tests/f2-agent-payment-settlement-validation.test.ts",

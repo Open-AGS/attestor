@@ -1,6 +1,8 @@
 # Recipient Tenant Boundary Replay
 
-This document describes `attestor.consequence-recipient-tenant-boundary-replay.v1`.
+This document describes `attestor.consequence-recipient-tenant-boundary-replay.v1`
+and its repository-side runtime bridge,
+`attestor.consequence-recipient-tenant-boundary-runtime.v1`.
 
 The replay contract turns the failure modes `cross-tenant-leakage`, `wrong-recipient-disclosure`, and `sensitive-data-disclosure` into deterministic synthetic cases for tenant, recipient, and redaction boundaries.
 
@@ -19,12 +21,14 @@ Source file:
 
 ```text
 src/consequence-admission/recipient-tenant-boundary-replay.ts
+src/consequence-admission/recipient-tenant-boundary-runtime.ts
 ```
 
 Test command:
 
 ```bash
 npm run test:recipient-tenant-boundary-replay
+npm run test:f6-recipient-tenant-runtime-boundary
 ```
 
 The replay evaluates synthetic cases across:
@@ -72,6 +76,21 @@ Each case computes one of:
 
 The report passes only when computed outcomes match the expected replay outcomes. The replay never activates enforcement and never executes production traffic.
 
+## Runtime Bridge
+
+The runtime bridge reuses the replay evaluator against live route/export/send
+metadata and returns a deterministic decision:
+
+- `allowed: true` only when the outcome is `pass`
+- `failClosed: true` when the outcome is `review` or `block`
+- raw tenant ids, recipient ids, runtime surface refs, and communication
+  contexts are represented only by digests
+
+The bridge is intentionally not marked production-ready and does not mutate
+downstream systems. It renders the central decision that route handlers,
+gateways, dashboards, exports, review packets, and downstream senders must
+enforce before releasing data or sending communication.
+
 ## Binding
 
 The replay reuses the Control Binding Contract for:
@@ -97,12 +116,15 @@ src/consequence-admission/failure-mode-control-bindings.ts
 
 ## Limitations
 
-This is a central replay contract, not full route or downstream coverage.
+This is a central replay contract plus a runtime decision bridge, not full route
+or downstream coverage.
 
 Remaining work:
 
-- hosted dashboard/export/review routes must consume equivalent tenant-boundary checks
-- downstream sender helpers must reject wrong-recipient and disallowed-data-class cases
+- hosted dashboard/export/review routes must consume the runtime bridge or an
+  equivalent tenant-boundary check
+- downstream sender helpers must reject wrong-recipient and
+  disallowed-data-class runtime decisions
 - customer integrations must provide approved recipient scope and data-class metadata
 - production stores still need tenant partitioning through the selected storage model
 - README positioning is handled in the final docs alignment step

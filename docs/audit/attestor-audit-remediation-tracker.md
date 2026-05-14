@@ -48,7 +48,7 @@ later implementation pass does not re-open already-retired issues.
 | F5 signing layer redo | 21 | 14 | 7 | 0 |
 | Final docs / claim alignment | 2 | 2 | 0 | 0 |
 | F6 multi-tenant blast radius | 10 | 4 | 6 | 0 |
-| F7 shadow infrastructure red-team | 10 | 3 | 5 | 2 |
+| F7 shadow infrastructure red-team | 10 | 4 | 4 | 2 |
 
 Remaining work after the final claim-alignment slice: 0 planned
 PR-sized or validation-sized units in the current F1-F5 audit queue.
@@ -56,7 +56,7 @@ PR-sized or validation-sized units in the current F1-F5 audit queue.
 Remaining F6 queue after recipient/tenant runtime boundary bridge: 0 planned PR-sized
 or validation-sized units.
 
-Remaining F7 queue after shadow origin and redaction witness: 5 planned
+Remaining F7 queue after shadow simulation policy floor: 4 planned
 PR-sized or validation-sized units.
 
 Completion rule through F5: every F1-F5 row must end as `fixed`,
@@ -270,20 +270,21 @@ Source report: project-owner supplied F7 shadow infrastructure red-team report.
 
 Validation record: `docs/audit/f7-shadow-infrastructure-validation.md`.
 
-Current F7 status: validation pass complete for the report as supplied, and the
-shadow event origin/redaction witness slice is implemented. Several claims were
-narrowed against `origin/master`: shadow routes do not accept arbitrary
-caller-supplied event arrays for simulations; shadow event feature values are
-digested rather than raw-stored; `customerControlsReady` uses strict
-required-control aggregation; and selected-profile storage readiness blocks
-file-backed shadow stores for `production-shared`. The active F7 repository
-queue is therefore five units, not ten.
+Current F7 status: validation pass complete for the report as supplied. The
+shadow event origin/redaction witness slice and shadow simulation policy-floor
+slice are implemented. Several claims were narrowed against `origin/master`:
+shadow routes do not accept arbitrary caller-supplied event arrays for
+simulations; shadow event feature values are digested rather than raw-stored;
+`customerControlsReady` uses strict required-control aggregation; and
+selected-profile storage readiness blocks file-backed shadow stores for
+`production-shared`. The active F7 repository queue is therefore four units, not
+ten.
 
 | ID | Current status | Evidence / overlap | Remaining action |
 |---|---|---|---|
 | F7-S1 shadow event injection without origin-binding | `fixed` | F7 Shadow Event Origin And Redaction Witness Validation; `originWitness`; `originWitnessDigest`; `test:shadow-admission-events`. Direct public route-injection wording was too strong because simulation routes read events through `deps.listShadowEvents({ tenant })`. | Repository-side origin witness is closed. A third-party signed production-path witness remains outside this scoped repository claim. |
 | F7-S2 operator-supplied redaction self-attest | `fixed` | F7 Shadow Event Origin And Redaction Witness Validation; `redactionWitness`; `redactionWitnessDigest`; data-minimization policy version binding; `test:shadow-admission-events`. Raw feature values are not persisted as stated. | Repository-side redaction witness is closed. External redaction attestations remain outside this scoped repository claim. |
-| F7-S3 simulation window / threshold manipulation | `partial` | F7 Shadow Infrastructure Validation; simulation routes use persisted tenant events; `minimumPromotionEvents` remains request-controlled within validation bounds. | Move promotion thresholds to a server-owned policy floor or require operator-authority evidence for overrides. |
+| F7-S3 simulation window / threshold manipulation | `fixed` | F7 Shadow Simulation Policy Floor Validation; simulation routes use persisted tenant events; `SHADOW_POLICY_SIMULATION_MINIMUM_PROMOTION_EVENTS_FLOOR`; `minimumPromotionEventsSource`; `test:shadow-policy-simulation`. | No remaining repository action for this scoped finding. |
 | F7-S4 break-glass rollout has no extra gate | `open` | F7 Shadow Infrastructure Validation; `break-glass` is an equal rollout strategy. | Add secondary approver, expiry, and post-incident reconciliation requirements for break-glass activation. |
 | F7-S5 customer controls readiness aggregation | `invalid-as-stated` | `customerControlsReady = controlRefs.every((control) => control.present)`; shadow customer activation handoff tests. | No action for the supplied claim unless a fresh source inspection finds a bypass. |
 | F7-S6 shadow persistence per-node single-host | `accepted-limitation` | F7 Shadow Infrastructure Validation; `production-storage-path.ts`; `test:production-storage-path`. File-backed evaluation storage exists, but `production-shared` readiness requires `shared-durable` shadow stores and blocks by default. | Shared shadow persistence remains future deployment/storage work, not a current production-shared claim. |
@@ -304,7 +305,7 @@ order:
 
 1. F7 validation and tracker sync. Done.
 2. F7-S1/F7-S2 shadow event origin and redaction witness. Done in this slice.
-3. F7-S3 server-owned simulation policy floor.
+3. F7-S3 server-owned simulation policy floor. Done in this slice.
 4. F7-S4 break-glass hardening.
 5. F7-S8 two-person high-risk activation handoff.
 6. F7-S9 shadow bundle signing boundary validation.

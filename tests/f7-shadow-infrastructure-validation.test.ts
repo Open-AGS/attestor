@@ -50,12 +50,13 @@ try {
   includes(validation, 'OWASP API Security Top 10 2023', 'F7 validation: external source anchor is present');
   includes(validation, 'NIST SP 800-53 Rev. 5', 'F7 validation: NIST source anchor is present');
 
-  includes(tracker, '| F7 shadow infrastructure red-team | 10 | 3 | 5 | 2 |', 'Tracker: F7 current count row is present');
-  includes(tracker, 'Remaining F7 queue after shadow origin and redaction witness: 5 planned', 'Tracker: remaining F7 count is explicit');
+  includes(tracker, '| F7 shadow infrastructure red-team | 10 | 4 | 4 | 2 |', 'Tracker: F7 current count row is present');
+  includes(tracker, 'Remaining F7 queue after shadow simulation policy floor: 4 planned', 'Tracker: remaining F7 count is explicit');
   includes(tracker, 'F6 is closed for planned repository slices', 'Tracker: F6 closed statement is present');
   includes(tracker, 'F7 is now the active queue', 'Tracker: F7 active queue statement is present');
   includes(tracker, 'F7 validation and tracker sync. Done.', 'Tracker: F7 first queue item is marked done');
   includes(tracker, 'F7-S1/F7-S2 shadow event origin and redaction witness. Done in this slice.', 'Tracker: F7 second queue item is marked done');
+  includes(tracker, 'F7-S3 server-owned simulation policy floor. Done in this slice.', 'Tracker: F7 third queue item is marked done');
   includes(tracker, 'F7-S4 break-glass rollout has no extra gate | `open`', 'Tracker: F7 break-glass finding remains open');
   includes(tracker, 'F7-S8 single-operator shadow activation | `open`', 'Tracker: F7 single-operator finding remains open');
   includes(tracker, 'F7-S5 customer controls readiness aggregation | `invalid-as-stated`', 'Tracker: F7 S5 is invalid as stated');
@@ -64,6 +65,7 @@ try {
 
   includes(packageJson, '"test:f7-shadow-infrastructure-validation"', 'Package: F7 validation test script is exposed');
   includes(packageJson, '"test:f7-shadow-origin-redaction-witness-validation"', 'Package: F7 witness validation test script is exposed');
+  includes(packageJson, '"test:f7-shadow-simulation-floor-validation"', 'Package: F7 simulation floor validation test script is exposed');
 
   includes(shadowEvents, 'SHADOW_ADMISSION_REDACTION_LEVELS', 'Repo evidence: shadow redaction levels exist');
   includes(shadowEvents, "'operator-supplied'", 'Repo evidence: operator-supplied redaction level exists');

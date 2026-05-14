@@ -3,6 +3,7 @@ import {
   createGenericAdmissionEnvelope,
   createShadowAdmissionEvent,
   createShadowPolicySimulationReport,
+  SHADOW_POLICY_SIMULATION_MINIMUM_PROMOTION_EVENTS_FLOOR,
   SHADOW_POLICY_SIMULATION_MAX_EVENTS,
 } from '../src/consequence-admission/index.js';
 
@@ -102,6 +103,10 @@ function testSimulationReplaysShadowDecisions(): void {
   equal(report.version, 'attestor.shadow-policy-simulation.v1', 'Shadow simulation: version is explicit');
   equal(report.proposedMode, 'enforce', 'Shadow simulation: proposed mode is retained');
   equal(report.eventCount, 3, 'Shadow simulation: event count is retained');
+  equal(report.requestedMinimumPromotionEvents, null, 'Shadow simulation: requested promotion threshold is null by default');
+  equal(report.minimumPromotionEvents, SHADOW_POLICY_SIMULATION_MINIMUM_PROMOTION_EVENTS_FLOOR, 'Shadow simulation: default threshold uses server-owned floor');
+  equal(report.minimumPromotionEventsFloor, SHADOW_POLICY_SIMULATION_MINIMUM_PROMOTION_EVENTS_FLOOR, 'Shadow simulation: threshold floor is explicit');
+  equal(report.minimumPromotionEventsSource, 'server-default-floor', 'Shadow simulation: default threshold source is explicit');
   equal(report.windowStart, '2026-05-01T20:01:02.000Z', 'Shadow simulation: window start is derived');
   equal(report.windowEnd, '2026-05-01T20:03:02.000Z', 'Shadow simulation: window end is derived');
   equal(report.simulatedDecisionCounts.admit, 1, 'Shadow simulation: would-admit count is replayed');
@@ -167,6 +172,38 @@ function testPromotionRecommendationRequiresCleanShadowTraffic(): void {
   );
 }
 
+function testCallerThresholdBelowFloorDoesNotPromote(): void {
+  const event = createShadowAdmissionEvent({
+    admission: createGenericAdmissionEnvelope({
+      mode: 'observe',
+      actor: 'ops-ai-agent',
+      action: 'rotate_secret',
+      domain: 'system-operation',
+      downstreamSystem: 'secret-manager',
+      requestedAt: '2026-05-01T20:40:00.000Z',
+      decidedAt: '2026-05-01T20:40:01.000Z',
+      policyRef: 'policy:ops:v1',
+      evidenceRefs: ['change:below-floor'],
+    }),
+    occurredAt: '2026-05-01T20:40:02.000Z',
+    downstreamOutcome: 'proceeded',
+  });
+  const report = createShadowPolicySimulationReport({
+    events: [event],
+    proposedMode: 'review',
+    generatedAt: '2026-05-01T20:41:00.000Z',
+    minimumPromotionEvents: 1,
+  });
+
+  equal(report.requestedMinimumPromotionEvents, 1, 'Shadow simulation: caller-requested threshold is recorded');
+  equal(report.minimumPromotionEvents, SHADOW_POLICY_SIMULATION_MINIMUM_PROMOTION_EVENTS_FLOOR, 'Shadow simulation: caller threshold below floor is raised');
+  equal(report.minimumPromotionEventsSource, 'caller-request-raised-to-floor', 'Shadow simulation: raised threshold source is explicit');
+  ok(
+    !report.recommendations.some((item) => item.kind === 'promote-to-enforce'),
+    'Shadow simulation: one clean event cannot bypass the promotion floor',
+  );
+}
+
 function testInvalidModeFailsClosed(): void {
   throws(
     () =>
@@ -201,9 +238,24 @@ function testOversizedSimulationFailsClosed(): void {
   );
 }
 
+function testInvalidPromotionThresholdFailsClosed(): void {
+  throws(
+    () =>
+      createShadowPolicySimulationReport({
+        events: [],
+        proposedMode: 'review',
+        minimumPromotionEvents: 0,
+      }),
+    /minimumPromotionEvents must be a positive integer/u,
+    'Shadow simulation: invalid promotion threshold fails closed',
+  );
+}
+
 testSimulationReplaysShadowDecisions();
 testPromotionRecommendationRequiresCleanShadowTraffic();
+testCallerThresholdBelowFloorDoesNotPromote();
 testInvalidModeFailsClosed();
+testInvalidPromotionThresholdFailsClosed();
 testOversizedSimulationFailsClosed();
 
 console.log(`Shadow policy simulation tests: ${passed} passed, 0 failed`);

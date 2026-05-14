@@ -14,6 +14,9 @@ import type {
 export const SHADOW_POLICY_SIMULATION_VERSION =
   'attestor.shadow-policy-simulation.v1';
 export const SHADOW_POLICY_SIMULATION_MAX_EVENTS = 10_000;
+export const SHADOW_POLICY_SIMULATION_MINIMUM_PROMOTION_EVENTS_FLOOR = 5;
+export const SHADOW_POLICY_SIMULATION_DEFAULT_MINIMUM_PROMOTION_EVENTS =
+  SHADOW_POLICY_SIMULATION_MINIMUM_PROMOTION_EVENTS_FLOOR;
 
 export const SHADOW_POLICY_RECOMMENDATION_KINDS = [
   'define-policy',
@@ -94,6 +97,13 @@ export interface ShadowPolicySimulationReport {
   readonly proposedMode: GenericAdmissionMode;
   readonly eventCount: number;
   readonly eventDigests: readonly string[];
+  readonly requestedMinimumPromotionEvents: number | null;
+  readonly minimumPromotionEvents: number;
+  readonly minimumPromotionEventsFloor: typeof SHADOW_POLICY_SIMULATION_MINIMUM_PROMOTION_EVENTS_FLOOR;
+  readonly minimumPromotionEventsSource:
+    | 'server-default-floor'
+    | 'caller-request'
+    | 'caller-request-raised-to-floor';
   readonly simulatedDecisionCounts: ShadowPolicyDecisionCounts;
   readonly gapCounts: ShadowPolicyGapCounts;
   readonly reviewLoadCount: number;
@@ -147,6 +157,46 @@ function normalizeMode(value: GenericAdmissionMode | null | undefined): GenericA
     throw new Error('Shadow policy simulation proposedMode must be observe, warn, review, or enforce.');
   }
   return value;
+}
+
+function normalizeMinimumPromotionEvents(
+  value: number | null | undefined,
+): {
+  readonly requested: number | null;
+  readonly effective: number;
+  readonly source:
+    | 'server-default-floor'
+    | 'caller-request'
+    | 'caller-request-raised-to-floor';
+} {
+  if (value === undefined || value === null) {
+    return Object.freeze({
+      requested: null,
+      effective: SHADOW_POLICY_SIMULATION_DEFAULT_MINIMUM_PROMOTION_EVENTS,
+      source: 'server-default-floor',
+    });
+  }
+  if (
+    !Number.isInteger(value) ||
+    value <= 0 ||
+    value > SHADOW_POLICY_SIMULATION_MAX_EVENTS
+  ) {
+    throw new Error(
+      `Shadow policy simulation minimumPromotionEvents must be a positive integer no larger than ${SHADOW_POLICY_SIMULATION_MAX_EVENTS}.`,
+    );
+  }
+  if (value < SHADOW_POLICY_SIMULATION_MINIMUM_PROMOTION_EVENTS_FLOOR) {
+    return Object.freeze({
+      requested: value,
+      effective: SHADOW_POLICY_SIMULATION_MINIMUM_PROMOTION_EVENTS_FLOOR,
+      source: 'caller-request-raised-to-floor',
+    });
+  }
+  return Object.freeze({
+    requested: value,
+    effective: value,
+    source: 'caller-request',
+  });
 }
 
 function emptyDecisionCounts(): ShadowPolicyDecisionCounts {
@@ -434,7 +484,7 @@ export function createShadowPolicySimulationReport(
     new Date().toISOString(),
     'generatedAt',
   );
-  const minimumPromotionEvents = Math.max(1, input.minimumPromotionEvents ?? 5);
+  const minimumPromotionEvents = normalizeMinimumPromotionEvents(input.minimumPromotionEvents);
   const eventDigests = Object.freeze(input.events.map((event) => event.digest).sort());
   const reportId = input.reportId
     ? normalizeIdentifier(input.reportId, 'reportId')
@@ -477,7 +527,7 @@ export function createShadowPolicySimulationReport(
   );
   const recommendations = Object.freeze(
     surfaceSimulations.flatMap((surface) =>
-      recommendationsForSurface(surface, minimumPromotionEvents),
+      recommendationsForSurface(surface, minimumPromotionEvents.effective),
     ),
   );
   const payload = {
@@ -489,6 +539,10 @@ export function createShadowPolicySimulationReport(
     proposedMode,
     eventCount: input.events.length,
     eventDigests,
+    requestedMinimumPromotionEvents: minimumPromotionEvents.requested,
+    minimumPromotionEvents: minimumPromotionEvents.effective,
+    minimumPromotionEventsFloor: SHADOW_POLICY_SIMULATION_MINIMUM_PROMOTION_EVENTS_FLOOR,
+    minimumPromotionEventsSource: minimumPromotionEvents.source,
     simulatedDecisionCounts,
     gapCounts,
     reviewLoadCount: simulatedDecisionCounts.review,

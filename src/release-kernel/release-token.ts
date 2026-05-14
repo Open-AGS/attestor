@@ -53,6 +53,7 @@ export interface ReleaseTokenIssueInput {
   readonly tokenId?: string;
   readonly ttlSeconds?: number;
   readonly audience?: string;
+  readonly tenantId?: string | null;
   readonly scope?: string;
   readonly resource?: string;
   readonly actor?: ReleaseTokenActorClaim;
@@ -94,6 +95,7 @@ export interface VerifyReleaseTokenInput {
   readonly token: string;
   readonly verificationKey: ReleaseTokenVerificationKey;
   readonly audience?: string;
+  readonly expectedTenantId?: string | null;
   readonly currentDate?: string;
 }
 
@@ -228,6 +230,20 @@ function parseOptionalEpochSeconds(value: string | undefined, fieldName: string)
   return Math.floor(parsed.getTime() / 1000);
 }
 
+function normalizeOptionalExpectedTenantId(value: string | null | undefined): string | null {
+  if (value === undefined || value === null) {
+    return null;
+  }
+  const normalized = value.trim();
+  if (normalized.length === 0) {
+    throw new ReleaseTokenVerificationFailure(
+      'invalid',
+      'Release token expected tenant_id cannot be blank.',
+    );
+  }
+  return normalized;
+}
+
 function resolveTokenTtlSeconds(decision: ReleaseDecision, issuedAt: Date, requestedTtl?: number): number {
   const maxExpiry = releaseDecisionExpiresAt(decision);
 
@@ -280,6 +296,7 @@ export function createReleaseTokenIssuer(
         ttlSeconds,
         decision: issueInput.decision,
         audience: issueInput.audience,
+        tenantId: issueInput.tenantId,
         scope: issueInput.scope,
         resource: issueInput.resource,
         actor: issueInput.actor,
@@ -412,10 +429,19 @@ export async function verifyIssuedReleaseToken(
     );
   }
 
+  const claims = verified.payload as unknown as ReleaseTokenClaims;
+  const expectedTenantId = normalizeOptionalExpectedTenantId(input.expectedTenantId);
+  if (expectedTenantId !== null && claims.tenant_id !== expectedTenantId) {
+    throw new ReleaseTokenVerificationFailure(
+      'invalid',
+      'Release token tenant_id does not match the expected tenant.',
+    );
+  }
+
   return {
     version: RELEASE_TOKEN_VERIFICATION_SPEC_VERSION,
     valid: true,
-    claims: verified.payload as unknown as ReleaseTokenClaims,
+    claims,
     protectedHeader: verified.protectedHeader,
     keyId: verified.protectedHeader.kid ?? null,
     publicKeyFingerprint: input.verificationKey.publicKeyFingerprint,

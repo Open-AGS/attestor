@@ -31,7 +31,7 @@ try {
   includes(tracker, 'not a certification', 'Tracker: no-certification disclaimer is present');
   includes(tracker, '`origin/master` is the source of truth', 'Tracker: origin/master rule is present');
   includes(tracker, 'Remaining work after the final claim-alignment slice: 0 planned', 'Tracker: final remaining estimate is explicit');
-  includes(tracker, 'Remaining F6 queue after validation slice: 7 planned', 'Tracker: F6 remaining estimate is explicit');
+  includes(tracker, 'Remaining F6 queue after tenant-bound release-token slice: 6 planned', 'Tracker: F6 remaining estimate is explicit');
 
   for (const pr of [
     '#220',
@@ -131,7 +131,7 @@ try {
   includes(tracker, 'F6-T3 env tenant key registry per-pod cache | `open`', 'Tracker: F6-T3 status is tracked');
   includes(tracker, 'F6-T4 usage-meter single-node quota | `partial`', 'Tracker: F6-T4 status is tracked');
   includes(tracker, 'F6-T5 bypass route tenant-header spoofing | `invalid-as-stated`', 'Tracker: F6-T5 status is tracked');
-  includes(tracker, 'F6-T6 runtime signer all-tenant blast radius | `open`', 'Tracker: F6-T6 status is tracked');
+  includes(tracker, 'F6-T6 runtime signer all-tenant blast radius | `partial`', 'Tracker: F6-T6 status is tracked');
   includes(tracker, 'F6-T7 anonymous fallback env-gated | `invalid-as-stated`', 'Tracker: F6-T7 status is tracked');
   includes(tracker, 'F6-T8 recipient/tenant boundary replay-only | `partial`', 'Tracker: F6-T8 status is tracked');
   includes(tracker, 'F6-T9 plaintext env API keys in memory | `open`', 'Tracker: F6-T9 status is tracked');
@@ -174,6 +174,7 @@ try {
   includes(packageJson, '"test:f1-backlog-closure-validation"', 'Package: F1 backlog closure validation script is exposed');
   includes(packageJson, '"test:final-claim-alignment-validation"', 'Package: final claim-alignment validation script is exposed');
   includes(packageJson, '"test:f6-tenant-blast-radius-validation"', 'Package: F6 tenant blast-radius validation script is exposed');
+  includes(packageJson, '"test:f6-tenant-bound-release-token"', 'Package: F6 tenant-bound release-token validation script is exposed');
 
   ok(tracker.split('\n').length > 120, 'Tracker: enough rows to cover supplied audit reports');
   console.log(`Audit remediation tracker tests: ${passed} passed, 0 failed`);

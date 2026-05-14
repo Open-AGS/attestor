@@ -641,6 +641,7 @@ export async function exchangeReleaseToken(
     ttlSeconds,
     tokenId: input.request.tokenId ?? `rtx_${randomUUID()}`,
     audience,
+    tenantId: claims.tenant_id ?? null,
     scope: scopeText(scope),
     resource: resource ?? undefined,
     actor: actor ?? undefined,

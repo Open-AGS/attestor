@@ -58,6 +58,7 @@ export interface RegisteredReleaseToken {
   readonly issuer: string;
   readonly subject: string;
   readonly audience: string;
+  readonly tenantId?: string | null;
   readonly issuedAt: string;
   readonly notBefore: string;
   readonly expiresAt: string;
@@ -161,6 +162,7 @@ export interface ActiveReleaseTokenIntrospectionResult
   readonly iss: string;
   readonly sub: string;
   readonly aud: string;
+  readonly tenant_id?: string;
   readonly jti: string;
   readonly iat: number;
   readonly nbf: number;
@@ -288,6 +290,7 @@ function registeredReleaseTokenMatchesClaims(
     record.issuer === claims.iss &&
     record.subject === claims.sub &&
     record.audience === claims.aud &&
+    (record.tenantId ?? null) === (claims.tenant_id ?? null) &&
     record.decisionId === claims.decision_id &&
     record.decisionStatus === claims.decision &&
     record.consequenceType === claims.consequence_type &&
@@ -341,6 +344,7 @@ function buildRegisteredReleaseToken(
     issuer: issuedToken.claims.iss,
     subject: issuedToken.claims.sub,
     audience: issuedToken.claims.aud,
+    tenantId: issuedToken.claims.tenant_id ?? null,
     issuedAt: issuedToken.issuedAt,
     notBefore: new Date(issuedToken.claims.nbf * 1000).toISOString(),
     expiresAt: issuedToken.expiresAt,
@@ -754,6 +758,7 @@ export async function introspectReleaseToken(
     iss: verified.claims.iss,
     sub: verified.claims.sub,
     aud: verified.claims.aud,
+    ...(verified.claims.tenant_id ? { tenant_id: verified.claims.tenant_id } : {}),
     jti: verified.claims.jti,
     iat: verified.claims.iat,
     nbf: verified.claims.nbf,

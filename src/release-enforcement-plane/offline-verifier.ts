@@ -70,6 +70,7 @@ export type OfflineReleaseVerificationStatus =
 
 export interface OfflineVerifierExpectedBinding {
   readonly audience?: string;
+  readonly tenantId?: string | null;
   readonly releaseTokenId?: string;
   readonly releaseDecisionId?: string;
   readonly consequenceType?: EnforcementRequest['enforcementPoint']['consequenceType'];
@@ -138,6 +139,7 @@ export interface OfflineReleaseVerification {
 
 interface ResolvedOfflineVerifierExpectedBinding {
   readonly audience: string;
+  readonly tenantId: string | null;
   readonly releaseTokenId: string;
   readonly releaseDecisionId: string;
   readonly consequenceType: EnforcementRequest['enforcementPoint']['consequenceType'];
@@ -178,6 +180,7 @@ function expectedBindingForRequest(
   const request = input.request;
   return {
     audience: input.expected?.audience ?? request.targetId,
+    tenantId: input.expected?.tenantId ?? null,
     releaseTokenId: input.expected?.releaseTokenId ?? request.releaseTokenId ?? '',
     releaseDecisionId: input.expected?.releaseDecisionId ?? request.releaseDecisionId ?? '',
     consequenceType: input.expected?.consequenceType ?? request.enforcementPoint.consequenceType,
@@ -350,6 +353,10 @@ function bindingFailureReasons(
 
   if (claims.aud !== expected.audience) {
     reasons.push('wrong-audience');
+  }
+
+  if (expected.tenantId !== null && claims.tenant_id !== expected.tenantId) {
+    reasons.push('binding-mismatch');
   }
 
   if (expected.releaseTokenId && claims.jti !== expected.releaseTokenId) {
@@ -903,6 +910,7 @@ export async function verifyOfflineReleaseAuthorization(
     degradedState: freshness?.degradedState ?? 'normal',
     presentation: input.presentation,
     releaseDecisionId: claims?.decision_id ?? input.request.releaseDecisionId,
+    tenantId: claims?.tenant_id ?? null,
     outputHash: claims?.output_hash ?? null,
     consequenceHash: claims?.consequence_hash ?? null,
     policyHash: claims?.policy_hash ?? null,

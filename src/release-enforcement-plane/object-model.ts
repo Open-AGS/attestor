@@ -157,6 +157,7 @@ export interface IntrospectionSnapshot {
   readonly issuer: string | null;
   readonly subject: string | null;
   readonly audience: string | null;
+  readonly tenantId: string | null;
   readonly scope: readonly string[];
   readonly issuedAt: string | null;
   readonly expiresAt: string | null;
@@ -187,6 +188,7 @@ export interface VerificationResult {
   readonly issuer: string | null;
   readonly subject: string | null;
   readonly audience: string | null;
+  readonly tenantId: string | null;
   readonly outputHash: string | null;
   readonly consequenceHash: string | null;
   readonly policyHash: string | null;
@@ -306,6 +308,7 @@ export interface CreateIntrospectionSnapshotInput {
   readonly issuer?: string | null;
   readonly subject?: string | null;
   readonly audience?: string | null;
+  readonly tenantId?: string | null;
   readonly scope?: readonly string[];
   readonly issuedAt?: string | null;
   readonly expiresAt?: string | null;
@@ -338,6 +341,7 @@ export interface CreateVerificationResultInput {
   readonly policyProvenanceSource?: ReleasePolicyProvenanceSource | null;
   readonly compiledPolicyIndexVersion?: string | null;
   readonly compiledPolicyIrVersion?: string | null;
+  readonly tenantId?: string | null;
   readonly failureReasons?: readonly EnforcementFailureReason[];
   readonly introspection?: IntrospectionSnapshot | null;
 }
@@ -756,6 +760,7 @@ export function createIntrospectionSnapshot(
     issuer: normalizeOptionalIdentifier(input.issuer, 'introspectionSnapshot.issuer'),
     subject: normalizeOptionalIdentifier(input.subject, 'introspectionSnapshot.subject'),
     audience: normalizeOptionalIdentifier(input.audience, 'introspectionSnapshot.audience'),
+    tenantId: normalizeOptionalIdentifier(input.tenantId, 'introspectionSnapshot.tenantId'),
     scope: normalizeScope(input.scope),
     issuedAt: normalizeOptionalIsoTimestamp(input.issuedAt, 'introspectionSnapshot.issuedAt'),
     expiresAt: normalizeOptionalIsoTimestamp(input.expiresAt, 'introspectionSnapshot.expiresAt'),
@@ -836,6 +841,10 @@ export function createVerificationResult(
     issuer: input.presentation.issuer,
     subject: input.presentation.subject,
     audience: input.presentation.audience,
+    tenantId:
+      normalizeOptionalIdentifier(input.tenantId, 'verificationResult.tenantId') ??
+      input.introspection?.tenantId ??
+      null,
     outputHash: normalizeOptionalIdentifier(input.outputHash, 'verificationResult.outputHash'),
     consequenceHash: normalizeOptionalIdentifier(
       input.consequenceHash,

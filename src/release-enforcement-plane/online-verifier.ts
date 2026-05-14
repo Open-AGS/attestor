@@ -132,6 +132,7 @@ function activeIntrospectionClaimMismatch(
     introspection.iss !== claims.iss ||
     introspection.sub !== claims.sub ||
     introspection.aud !== claims.aud ||
+    (introspection.tenant_id ?? null) !== (claims.tenant_id ?? null) ||
     introspection.decision_id !== claims.decision_id ||
     introspection.decision !== claims.decision ||
     introspection.consequence_type !== claims.consequence_type ||
@@ -214,6 +215,7 @@ function snapshotFromIntrospection(
     issuer: introspection.iss,
     subject: introspection.sub,
     audience: introspection.aud,
+    tenantId: introspection.tenant_id ?? null,
     scope: [introspection.scope],
     issuedAt: new Date(introspection.iat * 1000).toISOString(),
     expiresAt: new Date(introspection.exp * 1000).toISOString(),
@@ -340,6 +342,9 @@ function createFinalVerificationResult(input: {
     releaseDecisionId:
       input.offline.claims?.decision_id ??
       input.verifierInput.request.releaseDecisionId,
+    tenantId:
+      input.offline.claims?.tenant_id ??
+      input.offline.verificationResult.tenantId,
     outputHash:
       input.offline.claims?.output_hash ??
       input.offline.verificationResult.outputHash,

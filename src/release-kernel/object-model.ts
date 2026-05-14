@@ -204,6 +204,7 @@ export interface ReleaseTokenClaims {
   readonly iss: string;
   readonly sub: string;
   readonly aud: string;
+  readonly tenant_id?: string;
   readonly jti: string;
   readonly iat: number;
   readonly nbf: number;
@@ -264,6 +265,7 @@ export interface BuildReleaseTokenClaimsInput {
   readonly ttlSeconds: number;
   readonly decision: ReleaseDecision;
   readonly audience?: string;
+  readonly tenantId?: string | null;
   readonly scope?: string;
   readonly resource?: string;
   readonly actor?: ReleaseTokenActorClaim;
@@ -407,12 +409,14 @@ export function releaseDecisionMaxUses(decision: ReleaseDecision): number | null
 
 export function buildReleaseTokenClaims(input: BuildReleaseTokenClaimsInput): ReleaseTokenClaims {
   const policyProvenance = input.decision.policyProvenance ?? null;
+  const tenantId = normalizeOptionalReleaseTokenClaim(input.tenantId);
 
   return {
     version: RELEASE_TOKEN_SPEC_VERSION,
     iss: input.issuer,
     sub: input.subject,
     aud: input.audience ?? input.decision.target.id,
+    ...(tenantId ? { tenant_id: tenantId } : {}),
     jti: input.tokenId,
     iat: input.issuedAtEpochSeconds,
     nbf: input.issuedAtEpochSeconds,
@@ -455,6 +459,19 @@ export function buildReleaseTokenClaims(input: BuildReleaseTokenClaimsInput): Re
     ...(input.tokenUse ? { token_use: input.tokenUse } : {}),
     ...(input.confirmation ? { cnf: input.confirmation } : {}),
   };
+}
+
+function normalizeOptionalReleaseTokenClaim(
+  value: string | null | undefined,
+): string | undefined {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+  const normalized = value.trim();
+  if (normalized.length === 0) {
+    throw new Error('Release token claim cannot be blank when provided.');
+  }
+  return normalized;
 }
 
 export function isTerminalReleaseDecisionStatus(status: ReleaseDecisionStatus): boolean {

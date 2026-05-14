@@ -540,9 +540,11 @@ function derivePresentationDefaults(input: {
 
 function expectedBindingFor(
   releaseBinding: CryptoReleaseDecisionBinding,
+  tenantId: string | null,
 ): Required<OfflineVerifierExpectedBinding> {
   return Object.freeze({
     audience: defaultAudience(releaseBinding),
+    tenantId,
     releaseTokenId: releaseBinding.releaseTokenPosture.tokenId ?? '',
     releaseDecisionId: releaseBinding.releaseDecisionId,
     consequenceType: releaseBinding.releaseDecision.consequenceType,
@@ -700,7 +702,10 @@ export function createCryptoEnforcementVerificationBinding(
     riskClass: enforcementRequest.enforcementPoint.riskClass,
     boundaryKind: enforcementRequest.enforcementPoint.boundaryKind,
   });
-  const expectedBinding = expectedBindingFor(input.releaseBinding);
+  const expectedBinding = expectedBindingFor(
+    input.releaseBinding,
+    enforcementRequest.enforcementPoint.tenantId,
+  );
   const presentationDefaults = derivePresentationDefaults({
     releaseBinding: input.releaseBinding,
     verificationProfile,

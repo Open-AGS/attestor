@@ -32,6 +32,7 @@ Start review with:
 - [Security Policy](SECURITY.md)
 - [Evaluation Smoke workflow](.github/workflows/evaluation-smoke.yml)
 - [Artifact attestation plan](docs/08-deployment/artifact-attestation-plan.md)
+- [Audit remediation tracker](docs/audit/attestor-audit-remediation-tracker.md)
 
 ## What Attestor Does
 

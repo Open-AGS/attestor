@@ -362,6 +362,22 @@ The entries above are the most concrete PR/commit-linked hardening records. The 
 - Remaining limitation or no-go condition: Attestor does not become a wallet, custody platform, bundler, paymaster, bridge, facilitator, solver, relayer, oracle, sanctions provider, fraud provider, or market-data vendor. Customer-operated integrations and third-party signals must be digest-bound and scoped before execution claims.
 - Status: crypto authorization, execution, and intelligence trackers complete for current package scope; engine hardening Step 10 remains blocked on production rollout infrastructure.
 
+### 18. F1-F5 Audit Remediation Closure
+
+- Step / PR / commit: F1-F5 project-owner supplied audit remediation queue; PR #326 merge commit `7029ea2afeec41a3afe29b9359dbdf2f844bfc99`; PR #327 merge commit `e4bca21903df7dd7ce144aefc5c7aebc559387e8`; final claim-alignment PR records this ledger update but cannot pre-record its own merge commit.
+- Date if available: 2026-05-14.
+- Trust surface: public README positioning, audit remediation tracker, research provenance ledger, F1 backlog closure, F5 crypto trust-delegation boundary, and final non-claim language.
+- Protected principle: no overclaim; proof integrity; auditability; runtime readiness; customer authority.
+- Research anchor / source used, if recorded: repository-internal validation over project-owner supplied audit reports F1 through F5, plus the external standards already recorded in the F1-F5 validation notes. This closure step does not introduce a new external standard.
+- Repository evidence:
+  - Contract/documentation evidence: `docs/audit/attestor-audit-remediation-tracker.md`, `docs/audit/f1-backlog-closure-validation.md`, `docs/audit/f5-crypto-trust-delegation-boundary-validation.md`, `docs/audit/final-claim-alignment-validation.md`, `README.md`, and this provenance ledger.
+  - Test evidence: `tests/f1-backlog-closure-validation.test.ts`, `tests/f5-crypto-trust-delegation-boundary-validation.test.ts`, `tests/final-claim-alignment-validation.test.ts`, `tests/audit-remediation-tracker.test.ts`, and `tests/research-provenance-ledger.test.ts`.
+  - PR evidence: PR #326 closes the F5 crypto authorization trust-delegation accepted limitation; PR #327 closes the F1 backlog evidence pass.
+- Implemented control: Converts the F1-F5 report queue into a machine-checked tracker state where each row is fixed, invalid-as-stated, superseded, accepted as a limitation, partial with a stated live/customer boundary, or backlogged with evidence. Public docs keep the AI Action Control Plane positioning while preserving evaluation-release, customer-enforcement, and no-certification boundaries.
+- Tests / verification: `npm run test:final-claim-alignment-validation`, `npm run test:audit-remediation-tracker`, and `npm run test:research-provenance-ledger`.
+- Remaining limitation or no-go condition: This closes the repository-side F1-F5 queue only. It does not prove external compliance certification, production deployment readiness, universal non-bypassability, public transparency-log semantics, external WORM/SIEM anchoring, external KMS/HSM custody, live multi-provider LLM resilience, or chain-authoritative crypto verification without verifiable adapter evidence.
+- Status: complete for F1-F5 repository-side audit remediation tracking once the final claim-alignment PR is merged and verified on `origin/master`.
+
 ## Strong Recorded Research Support
 
 The strongest recorded research support appears in:

@@ -80,6 +80,41 @@ function testLedgerIndexesHostedAuditEvidence(): void {
   );
 }
 
+function testLedgerIndexesAuditRemediationClosure(): void {
+  const content = ledger();
+
+  includes(
+    content,
+    '### 18. F1-F5 Audit Remediation Closure',
+    'Research provenance ledger: final F1-F5 closure entry is present',
+  );
+  includes(
+    content,
+    'PR #326 merge commit `7029ea2afeec41a3afe29b9359dbdf2f844bfc99`',
+    'Research provenance ledger: PR #326 merge evidence is recorded',
+  );
+  includes(
+    content,
+    'PR #327 merge commit `e4bca21903df7dd7ce144aefc5c7aebc559387e8`',
+    'Research provenance ledger: PR #327 merge evidence is recorded',
+  );
+  includes(
+    content,
+    'docs/audit/final-claim-alignment-validation.md',
+    'Research provenance ledger: final claim-alignment doc is indexed',
+  );
+  includes(
+    content,
+    'tests/final-claim-alignment-validation.test.ts',
+    'Research provenance ledger: final claim-alignment test is indexed',
+  );
+  includes(
+    content,
+    'does not prove external compliance certification',
+    'Research provenance ledger: final closure keeps certification non-claim explicit',
+  );
+}
+
 function testLedgerKeepsEvidenceBoundaryExplicit(): void {
   const content = ledger();
 
@@ -116,6 +151,7 @@ function testLedgerDoesNotExposeLiveSecrets(): void {
 testLedgerIndexesAllResearchNotes();
 testLedgerIndexesArchitectureResearchTrackers();
 testLedgerIndexesHostedAuditEvidence();
+testLedgerIndexesAuditRemediationClosure();
 testLedgerKeepsEvidenceBoundaryExplicit();
 testLedgerDoesNotExposeLiveSecrets();
 

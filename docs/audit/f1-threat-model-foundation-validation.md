@@ -200,7 +200,7 @@ Exact file/path: src/consequence-admission/tamper-evident-history.ts; src/releas
 Exact function/route/test/contract: tamper-evident history; release decision log; policy mutation audit log
 Affected modules or chain: multiple self-contained audit/evidence histories
 Observed behavior: several stores already use digest chains or shared-store options, but there is no common meta-anchor spanning all relevant histories.
-Expected behavior: production-grade evidence packets should be able to cross-check source histories against an anchored digest set.
+Expected behavior: stronger evidence packets should be able to cross-check source histories against an anchored digest set.
 Risk: a self-consistent rewrite of one history may be harder to detect without an external or cross-store anchor.
 Validation evidence: existing release/policy audit tests and consequence tamper-evident history tests; production storage path still records some consequence histories as evaluation-grade.
 Dispute rationale: the finding overstated the absence of tamper evidence; the refined issue is absence of cross-store anchoring.

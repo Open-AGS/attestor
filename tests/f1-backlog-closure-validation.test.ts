@@ -115,8 +115,8 @@ try {
 
   includes(
     tracker,
-    'Remaining work after the current F1 backlog closure slice: 1 planned',
-    'F1 tracker: remaining work count is updated',
+    'Remaining work after the final claim-alignment slice: 0 planned',
+    'F1 tracker: final remaining work count is updated',
   );
   includes(tracker, '#326', 'F1 tracker: previous PR #326 is recorded');
   includes(

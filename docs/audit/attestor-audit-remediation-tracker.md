@@ -46,11 +46,10 @@ later implementation pass does not re-open already-retired issues.
 | F4 OWASP LLM redo, active findings | 14 | 5 | 9 | 0 |
 | F4 stale worktree findings retired by fresh main | 3 | 0 | 3 | 0 |
 | F5 signing layer redo | 21 | 14 | 7 | 0 |
-| Final docs / claim alignment | 2 | 0 | 0 | 2 |
+| Final docs / claim alignment | 2 | 2 | 0 | 0 |
 
-Remaining work after the current F1 backlog closure slice: 1 planned
-PR-sized or validation-sized units. Several items overlap and may close
-together, but no item is treated as closed until repository evidence proves it.
+Remaining work after the final claim-alignment slice: 0 planned
+PR-sized or validation-sized units in the current F1-F5 audit queue.
 
 Completion rule through F5: every F1-F5 row must end as `fixed`,
 `invalid-as-stated`, `superseded`, `accepted-limitation`, or `backlog` with
@@ -97,6 +96,7 @@ evidence. No `needs-revalidation` row can remain before starting F6.
 | [#324](https://github.com/AI-gateway-systems/attestor/pull/324) | `c626224ec7ea17ba46e30a4dba8bac92d21506e8` | F5 legacy unbounded certificate warning |
 | [#325](https://github.com/AI-gateway-systems/attestor/pull/325) | `3798a66e18aaff254a45275c349d9fc95948a1c9` | F5 transparency log claim boundary |
 | [#326](https://github.com/AI-gateway-systems/attestor/pull/326) | `7029ea2afeec41a3afe29b9359dbdf2f844bfc99` | F5 crypto authorization trust-delegation boundary |
+| [#327](https://github.com/AI-gateway-systems/attestor/pull/327) | `e4bca21903df7dd7ce144aefc5c7aebc559387e8` | F1 backlog closure evidence pass |
 
 ## F1 Threat-Model Foundation
 
@@ -155,9 +155,9 @@ and readiness controls, not proof of live customer enforcement.
 Source report: project-owner supplied F4 redo using OWASP LLM Top 10 v2.0
 2025 IDs.
 
-Current state: not remediated as a series. Each active item must be revalidated
-against current `origin/master` before any fix. Prior worktree-F4 findings that
-fresh main retired are listed separately to avoid duplicate work.
+Current state: remediated, narrowed, invalidated, or intentionally backlogged
+for the repository-side F1-F5 queue. Prior worktree-F4 findings that fresh main
+retired are listed separately to avoid duplicate work.
 
 | ID | Current status | Overlap / evidence | Remaining action |
 |---|---|---|---|
@@ -222,14 +222,13 @@ backlogged.
 
 | ID | Current status | Remaining action |
 |---|---|---|
-| FINAL-1 README / public docs claim alignment | `needs-revalidation` | Ensure public language matches fixed/partial/backlog status. |
-| FINAL-2 research provenance / remediation ledger sync | `needs-revalidation` | Link final fixed/backlog statuses into provenance docs without certification claims. |
+| FINAL-1 README / public docs claim alignment | `fixed` | Final Claim Alignment Validation (`docs/audit/final-claim-alignment-validation.md`); `test:final-claim-alignment-validation`; README current-status language; architecture docs wording cleanup. Public docs keep AI Action Control Plane framing, evaluation-release boundary, and no production/compliance overclaim. |
+| FINAL-2 research provenance / remediation ledger sync | `fixed` | Final Claim Alignment Validation (`docs/audit/final-claim-alignment-validation.md`); research provenance ledger F1-F5 closure entry; `test:research-provenance-ledger`; tracker PR #327 merge record. |
 
 ## Next Work Queue
 
-Do not start new reports until the existing queue is closed or intentionally
-backlogged.
-
-Recommended next order through F5:
-
-1. Final README/docs/provenance claim alignment.
+The current F1-F5 project-owner supplied audit queue is closed for repository
+evidence: every row is fixed, invalid-as-stated, superseded, accepted as a
+limitation, partial with a stated live/customer boundary, or backlogged with
+evidence. New reports should start as a new queue, beginning with F6 or another
+user-approved scope.

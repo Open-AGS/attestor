@@ -105,6 +105,6 @@ The adapter framework has three outcomes:
 - [Downstream enforcement contract](downstream-enforcement-contract.md) defines what the edge must bind.
 - [Verifier helper](verifier-helper.md) evaluates that contract.
 - The adapter framework makes the helper operational by putting the verifier in front of the executor.
-- [Downstream presentation binding](downstream-presentation-binding.md), [presentation replay ledger](presentation-replay-ledger.md), and [downstream execution receipt](downstream-execution-receipt.md) provide the deeper handoff and post-execution trail for production-grade customer edges.
+- [Downstream presentation binding](downstream-presentation-binding.md), [presentation replay ledger](presentation-replay-ledger.md), and [downstream execution receipt](downstream-execution-receipt.md) provide the deeper handoff and post-execution trail for customer enforcement edges.
 
 The adapter framework is not a replacement for signed release-token verification, DPoP, HTTP message signatures, online introspection, or customer-operated enforcement infrastructure. It is the common wrapper shape that keeps AI tool execution from bypassing the consequence gateway.

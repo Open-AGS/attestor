@@ -30,7 +30,7 @@ try {
   includes(tracker, '# Attestor Audit Remediation Tracker', 'Tracker: title is present');
   includes(tracker, 'not a certification', 'Tracker: no-certification disclaimer is present');
   includes(tracker, '`origin/master` is the source of truth', 'Tracker: origin/master rule is present');
-  includes(tracker, 'Remaining work after the current F1 backlog closure slice: 1 planned', 'Tracker: remaining estimate is explicit');
+  includes(tracker, 'Remaining work after the final claim-alignment slice: 0 planned', 'Tracker: final remaining estimate is explicit');
 
   for (const pr of [
     '#220',
@@ -70,6 +70,7 @@ try {
     '#324',
     '#325',
     '#326',
+    '#327',
   ]) {
     includes(tracker, pr, `Tracker: ${pr} is referenced`);
   }
@@ -118,6 +119,10 @@ try {
   includes(tracker, 'F5 Transparency Log Claim Boundary Validation', 'Tracker: F5 transparency claim boundary evidence is linked');
   includes(tracker, 'F5-B1 crypto-authorization adapter trust delegation | `accepted-limitation`', 'Tracker: F5 crypto trust-delegation boundary is accepted');
   includes(tracker, 'F5 Crypto Trust Delegation Boundary Validation', 'Tracker: F5 crypto trust-delegation validation evidence is linked');
+  includes(tracker, 'FINAL-1 README / public docs claim alignment | `fixed`', 'Tracker: final README/docs alignment is fixed');
+  includes(tracker, 'FINAL-2 research provenance / remediation ledger sync | `fixed`', 'Tracker: final provenance sync is fixed');
+  includes(tracker, 'Final Claim Alignment Validation', 'Tracker: final claim-alignment validation evidence is linked');
+  includes(tracker, 'The current F1-F5 project-owner supplied audit queue is closed for repository', 'Tracker: current queue closure is explicit');
   includes(tracker, 'F5-A1 out-of-band trust root optional | `fixed`', 'Tracker: F5 CA pin validation is fixed');
   includes(tracker, 'F5 CA Pin Required Validation', 'Tracker: F5 CA pin validation evidence is linked');
   includes(tracker, 'F5-A2 legacy flat verify escape via env | `fixed`', 'Tracker: F5 legacy env downgrade validation is fixed');
@@ -154,6 +159,7 @@ try {
   includes(packageJson, '"test:f5-transparency-log-claim-boundary-validation"', 'Package: F5 transparency claim boundary validation script is exposed');
   includes(packageJson, '"test:f5-crypto-trust-delegation-boundary-validation"', 'Package: F5 crypto trust-delegation boundary validation script is exposed');
   includes(packageJson, '"test:f1-backlog-closure-validation"', 'Package: F1 backlog closure validation script is exposed');
+  includes(packageJson, '"test:final-claim-alignment-validation"', 'Package: final claim-alignment validation script is exposed');
 
   ok(tracker.split('\n').length > 120, 'Tracker: enough rows to cover supplied audit reports');
   console.log(`Audit remediation tracker tests: ${passed} passed, 0 failed`);

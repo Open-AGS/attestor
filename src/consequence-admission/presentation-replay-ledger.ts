@@ -93,9 +93,36 @@ export interface ConsequenceAdmissionPresentationReplayLedgerSnapshot {
   readonly entries: readonly ConsequenceAdmissionPresentationReplayLedgerEntry[];
 }
 
+export type ConsequenceAdmissionPresentationReplayLedgerStoreKind =
+  | 'in-memory-reference'
+  | 'shared-atomic';
+
+export interface ConsequenceAdmissionPresentationReplayLedgerStoreDescriptor {
+  readonly version: typeof CONSEQUENCE_ADMISSION_PRESENTATION_REPLAY_LEDGER_VERSION;
+  readonly storeId: string;
+  readonly storeKind: ConsequenceAdmissionPresentationReplayLedgerStoreKind;
+  readonly replayKeyIndex: 'sha256-digest';
+  readonly atomicSetIfAbsent: true;
+  readonly storesRawReplayKeys: false;
+  readonly productionReady: boolean;
+}
+
+export interface ConsequenceAdmissionPresentationReplayLedgerStore {
+  readonly descriptor: ConsequenceAdmissionPresentationReplayLedgerStoreDescriptor;
+  readonly get: (
+    replayKeyDigest: string,
+  ) => ConsequenceAdmissionPresentationReplayLedgerEntry | null;
+  readonly setIfAbsent: (
+    entry: ConsequenceAdmissionPresentationReplayLedgerEntry,
+  ) => boolean;
+  readonly delete: (replayKeyDigest: string) => boolean;
+  readonly entries: () => readonly ConsequenceAdmissionPresentationReplayLedgerEntry[];
+}
+
 export interface ConsequenceAdmissionPresentationReplayLedger {
   readonly version: typeof CONSEQUENCE_ADMISSION_PRESENTATION_REPLAY_LEDGER_VERSION;
   readonly ledgerId: string;
+  readonly storeDescriptor: ConsequenceAdmissionPresentationReplayLedgerStoreDescriptor;
   readonly consume: (
     input: ConsumeConsequenceAdmissionPresentationReplayInput,
   ) => ConsequenceAdmissionPresentationReplayLedgerDecision;
@@ -110,6 +137,11 @@ export interface CreateConsequenceAdmissionPresentationReplayLedgerInput {
   readonly ledgerId?: string | null;
   readonly retentionSeconds?: number | null;
   readonly now?: (() => string) | null;
+  readonly store?: ConsequenceAdmissionPresentationReplayLedgerStore | null;
+}
+
+export interface CreateConsequenceAdmissionPresentationReplayLedgerInMemoryStoreInput {
+  readonly storeId?: string | null;
 }
 
 export interface ConsequenceAdmissionPresentationReplayLedgerDescriptor {
@@ -122,6 +154,9 @@ export interface ConsequenceAdmissionPresentationReplayLedgerDescriptor {
   readonly storesRawTargetsExternally: false;
   readonly storesRawNoncesExternally: false;
   readonly inMemoryReferenceImplementation: true;
+  readonly sharedStoreContractIncluded: true;
+  readonly sharedStoreAtomicConsumeRequired: true;
+  readonly defaultStoreKind: 'in-memory-reference';
   readonly productionSharedStoreIncluded: false;
   readonly failClosed: true;
 }
@@ -192,6 +227,16 @@ function digestText(value: string): string {
 
 function defaultNow(): string {
   return new Date().toISOString();
+}
+
+function normalizeReplayKeyDigest(value: string, fieldName: string): string {
+  const digest = normalizeIdentifier(value, fieldName);
+  if (!digest.startsWith('sha256:')) {
+    throw new Error(
+      `Consequence admission presentation replay ledger ${fieldName} must be a sha256 digest.`,
+    );
+  }
+  return digest;
 }
 
 function retentionLimit(input: {
@@ -285,6 +330,46 @@ function reasonFor(
   return 'Presentation replay ledger held the consequence because replay consumption could not close safely.';
 }
 
+export function createConsequenceAdmissionPresentationReplayLedgerInMemoryStore(
+  input: CreateConsequenceAdmissionPresentationReplayLedgerInMemoryStoreInput = {},
+): ConsequenceAdmissionPresentationReplayLedgerStore {
+  const storeId = normalizeOptionalIdentifier(input.storeId, 'storeId') ??
+    'consequence-admission-presentation-replay-ledger-store:memory';
+  const entriesByReplayKeyDigest =
+    new Map<string, ConsequenceAdmissionPresentationReplayLedgerEntry>();
+
+  return Object.freeze({
+    descriptor: Object.freeze({
+      version: CONSEQUENCE_ADMISSION_PRESENTATION_REPLAY_LEDGER_VERSION,
+      storeId,
+      storeKind: 'in-memory-reference',
+      replayKeyIndex: 'sha256-digest',
+      atomicSetIfAbsent: true,
+      storesRawReplayKeys: false,
+      productionReady: false,
+    }),
+    get(replayKeyDigest: string): ConsequenceAdmissionPresentationReplayLedgerEntry | null {
+      const digest = normalizeReplayKeyDigest(replayKeyDigest, 'replayKeyDigest');
+      return entriesByReplayKeyDigest.get(digest) ?? null;
+    },
+    setIfAbsent(entry: ConsequenceAdmissionPresentationReplayLedgerEntry): boolean {
+      const digest = normalizeReplayKeyDigest(entry.replayKeyDigest, 'entry.replayKeyDigest');
+      if (entriesByReplayKeyDigest.has(digest)) {
+        return false;
+      }
+      entriesByReplayKeyDigest.set(digest, entry);
+      return true;
+    },
+    delete(replayKeyDigest: string): boolean {
+      const digest = normalizeReplayKeyDigest(replayKeyDigest, 'replayKeyDigest');
+      return entriesByReplayKeyDigest.delete(digest);
+    },
+    entries(): readonly ConsequenceAdmissionPresentationReplayLedgerEntry[] {
+      return Object.freeze([...entriesByReplayKeyDigest.values()]);
+    },
+  });
+}
+
 function decision(input: {
   readonly outcome: ConsequenceAdmissionPresentationReplayLedgerOutcome;
   readonly ledgerId: string;
@@ -349,15 +434,17 @@ export function createConsequenceAdmissionPresentationReplayLedger(
     3600,
   );
   const now = input.now ?? defaultNow;
-  const entriesByReplayKeyDigest =
-    new Map<string, ConsequenceAdmissionPresentationReplayLedgerEntry>();
+  const store = input.store ??
+    createConsequenceAdmissionPresentationReplayLedgerInMemoryStore({
+      storeId: `${ledgerId}:store`,
+    });
 
   function prune(nowValue: string | null = null): number {
     const prunedAt = new Date(normalizeIsoTimestamp(nowValue ?? now(), 'now')).getTime();
     let removed = 0;
-    for (const [replayKeyDigest, entry] of entriesByReplayKeyDigest.entries()) {
+    for (const entry of store.entries()) {
       if (new Date(entry.retainedUntil).getTime() < prunedAt) {
-        entriesByReplayKeyDigest.delete(replayKeyDigest);
+        store.delete(entry.replayKeyDigest);
         removed += 1;
       }
     }
@@ -366,13 +453,13 @@ export function createConsequenceAdmissionPresentationReplayLedger(
 
   function activeReplayKeyDigests(nowValue: string): readonly string[] {
     prune(nowValue);
-    return Object.freeze([...entriesByReplayKeyDigest.keys()].sort());
+    return Object.freeze(store.entries().map((entry) => entry.replayKeyDigest).sort());
   }
 
   function has(replayKey: string, nowValue: string | null = null): boolean {
     const replayKeyDigest = digestText(normalizeIdentifier(replayKey, 'replayKey'));
     prune(nowValue ?? now());
-    return entriesByReplayKeyDigest.has(replayKeyDigest);
+    return store.get(replayKeyDigest) !== null;
   }
 
   function snapshot(
@@ -380,7 +467,7 @@ export function createConsequenceAdmissionPresentationReplayLedger(
   ): ConsequenceAdmissionPresentationReplayLedgerSnapshot {
     prune(nowValue ?? now());
     const redactedEntries = Object.freeze(
-      [...entriesByReplayKeyDigest.values()]
+      [...store.entries()]
         .sort((a, b) => a.replayKeyDigest.localeCompare(b.replayKeyDigest)),
     );
     return Object.freeze({
@@ -420,7 +507,7 @@ export function createConsequenceAdmissionPresentationReplayLedger(
       now: consumedAt,
     });
     const replayAlreadyConsumed = replayKeyDigest !== null &&
-      (entriesByReplayKeyDigest.has(replayKeyDigest) ||
+      (store.get(replayKeyDigest) !== null ||
         (replayKey !== null && (consumeInput.expected?.usedReplayKeys ?? []).includes(replayKey)) ||
         expectedUsedReplayKeyDigests.includes(replayKeyDigest));
     const failureReasons = orderedFailureReasons([
@@ -470,7 +557,19 @@ export function createConsequenceAdmissionPresentationReplayLedger(
       ...entryBase,
       entryDigest: entryDigest(entryBase),
     });
-    entriesByReplayKeyDigest.set(consumedReplayKeyDigest, entry);
+    const stored = store.setIfAbsent(entry);
+    if (!stored) {
+      return decision({
+        outcome: 'held',
+        ledgerId,
+        replayKeyDigest: consumedReplayKeyDigest,
+        presentation: consumeInput.presentation,
+        consumedAt,
+        presentationDecision,
+        entry: null,
+        failureReasons: ['replay-key-already-consumed'],
+      });
+    }
 
     return decision({
       outcome: 'consumed',
@@ -487,6 +586,7 @@ export function createConsequenceAdmissionPresentationReplayLedger(
   return Object.freeze({
     version: CONSEQUENCE_ADMISSION_PRESENTATION_REPLAY_LEDGER_VERSION,
     ledgerId,
+    storeDescriptor: store.descriptor,
     consume,
     has,
     snapshot,
@@ -506,6 +606,9 @@ ConsequenceAdmissionPresentationReplayLedgerDescriptor {
     storesRawTargetsExternally: false,
     storesRawNoncesExternally: false,
     inMemoryReferenceImplementation: true,
+    sharedStoreContractIncluded: true,
+    sharedStoreAtomicConsumeRequired: true,
+    defaultStoreKind: 'in-memory-reference',
     productionSharedStoreIncluded: false,
     failClosed: true,
   });

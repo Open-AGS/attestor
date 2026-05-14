@@ -8,6 +8,7 @@ import {
   createConsequenceAdmissionDownstreamContract,
   createConsequenceAdmissionPresentationBinding,
   createConsequenceAdmissionPresentationReplayLedger,
+  createConsequenceAdmissionPresentationReplayLedgerInMemoryStore,
   createConsequenceAdmissionRequest,
   createConsequenceAdmissionResponse,
   type ConsequenceAdmissionCheck,
@@ -207,6 +208,16 @@ function testDescriptor(): void {
     false,
     'Replay ledger: descriptor does not overclaim production shared store',
   );
+  equal(
+    descriptor.sharedStoreContractIncluded,
+    true,
+    'Replay ledger: descriptor exposes the shared store contract',
+  );
+  equal(
+    descriptor.sharedStoreAtomicConsumeRequired,
+    true,
+    'Replay ledger: descriptor requires atomic consume semantics for shared stores',
+  );
 }
 
 function testFirstConsumeStoresRedactedEntry(): void {
@@ -259,6 +270,11 @@ function testFirstConsumeStoresRedactedEntry(): void {
     true,
     'Replay ledger: has detects consumed key inside retention window',
   );
+  equal(
+    ledger.storeDescriptor.storeKind,
+    'in-memory-reference',
+    'Replay ledger: default store remains the in-memory reference implementation',
+  );
 }
 
 function testSecondConsumeHoldsAsReplay(): void {
@@ -292,6 +308,58 @@ function testSecondConsumeHoldsAsReplay(): void {
   ok(
     replay.presentationDecision.failureReasons.includes('replay-key-reused'),
     'Replay ledger: attached presentation decision preserves replay-key-reused reason',
+  );
+}
+
+function testSharedStoreContractBlocksReplayAcrossLedgerInstances(): void {
+  const admission = admittedPayment();
+  const sharedStore = createConsequenceAdmissionPresentationReplayLedgerInMemoryStore({
+    storeId: 'presentation-replay-ledger:shared-contract-test',
+  });
+  const ledgerA = createConsequenceAdmissionPresentationReplayLedger({
+    ledgerId: 'ledger:payment-adapter:shared',
+    store: sharedStore,
+    now: () => '2026-05-01T13:00:30.000Z',
+  });
+  const ledgerB = createConsequenceAdmissionPresentationReplayLedger({
+    ledgerId: 'ledger:payment-adapter:shared',
+    store: sharedStore,
+    now: () => '2026-05-01T13:00:40.000Z',
+  });
+  const binding = paymentBinding({
+    admission,
+    replayKey: 'payment:tenant_a:invoice_1938:attempt_shared_store',
+  });
+
+  const first = ledgerA.consume({
+    admission,
+    contract: paymentContract(),
+    presentation: binding,
+    expected: EXPECTED,
+  });
+  const second = ledgerB.consume({
+    admission,
+    contract: paymentContract(),
+    presentation: binding,
+    expected: EXPECTED,
+  });
+
+  equal(first.outcome, 'consumed', 'Replay ledger: first shared-store consume succeeds');
+  equal(second.outcome, 'held', 'Replay ledger: second ledger instance observes shared replay');
+  deepEqual(
+    second.failureReasons,
+    ['presentation-held', 'replay-key-already-consumed'],
+    'Replay ledger: shared store duplicate failure is explicit across instances',
+  );
+  equal(
+    ledgerB.snapshot('2026-05-01T13:00:41.000Z').entryCount,
+    1,
+    'Replay ledger: shared store snapshot is visible across ledger instances',
+  );
+  equal(
+    sharedStore.descriptor.productionReady,
+    false,
+    'Replay ledger: in-memory shared-store contract test does not claim production readiness',
   );
 }
 
@@ -449,6 +517,7 @@ function testDocsAndScriptsExposeReplayLedger(): void {
 testDescriptor();
 testFirstConsumeStoresRedactedEntry();
 testSecondConsumeHoldsAsReplay();
+testSharedStoreContractBlocksReplayAcrossLedgerInstances();
 testInvalidPresentationDoesNotConsume();
 testMissingReplayKeyAndExpiryHold();
 testPruneRemovesEntriesAfterRetention();

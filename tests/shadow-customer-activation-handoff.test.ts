@@ -547,6 +547,112 @@ async function testBreakGlassCanBecomeReadyWithExtraControls(): Promise<void> {
   equal(body.handoff.remainingActivationBlockers.length, 0, 'Customer activation handoff route: complete break-glass has no blockers');
 }
 
+async function testHighRiskActivationRequiresSecondaryApprover(): Promise<void> {
+  const app = createApp({
+    events: Array.from({ length: 5 }, (_, index) => createSafeEvent(index + 1)),
+    productionSigner: true,
+  });
+  const candidateId = await materializeCandidate(app);
+  await activateCandidate(app, candidateId);
+
+  const response = await postHandoff(
+    app,
+    completeHandoffBody({
+      boundaryKind: 'action-dispatcher',
+      rolloutStrategy: 'canary',
+    }),
+    'activated',
+  );
+  const body = await response.json() as {
+    readonly handoff: {
+      readonly handoffReady: boolean;
+      readonly activationBoundaryKind: string | null;
+      readonly twoPersonApprovalRequired: boolean;
+      readonly twoPersonApprovalReady: boolean;
+      readonly remainingActivationBlockers: readonly string[];
+    };
+  };
+
+  equal(response.status, 200, 'Customer activation handoff route: high-risk activation without secondary approver returns 200');
+  equal(body.handoff.handoffReady, false, 'Customer activation handoff route: high-risk activation without secondary approver blocks handoff');
+  equal(body.handoff.activationBoundaryKind, 'action-dispatcher', 'Customer activation handoff route: high-risk boundary kind is carried');
+  equal(body.handoff.twoPersonApprovalRequired, true, 'Customer activation handoff route: high-risk activation requires two-person approval');
+  equal(body.handoff.twoPersonApprovalReady, false, 'Customer activation handoff route: missing secondary approver is not ready');
+  ok(body.handoff.remainingActivationBlockers.includes('high-risk-secondary-approver-required'), 'Customer activation handoff route: high-risk secondary approver blocker remains');
+}
+
+async function testHighRiskActivationRejectsSameApprover(): Promise<void> {
+  const app = createApp({
+    events: Array.from({ length: 5 }, (_, index) => createSafeEvent(index + 1)),
+    productionSigner: true,
+  });
+  const candidateId = await materializeCandidate(app);
+  await activateCandidate(app, candidateId);
+
+  const response = await postHandoff(
+    app,
+    completeHandoffBody({
+      boundaryKind: 'payment-adapter',
+      rolloutStrategy: 'phased',
+      secondaryApproverRef: 'operator:security-reviewer',
+    }),
+    'activated',
+  );
+  const body = await response.json() as {
+    readonly handoff: {
+      readonly handoffReady: boolean;
+      readonly activationBoundaryKind: string | null;
+      readonly twoPersonApprovalRequired: boolean;
+      readonly twoPersonApprovalReady: boolean;
+      readonly remainingActivationBlockers: readonly string[];
+    };
+  };
+
+  equal(response.status, 200, 'Customer activation handoff route: high-risk activation with same approver returns 200');
+  equal(body.handoff.handoffReady, false, 'Customer activation handoff route: high-risk activation with same approver blocks handoff');
+  equal(body.handoff.activationBoundaryKind, 'payment-adapter', 'Customer activation handoff route: payment boundary kind is carried');
+  equal(body.handoff.twoPersonApprovalRequired, true, 'Customer activation handoff route: payment boundary requires two-person approval');
+  equal(body.handoff.twoPersonApprovalReady, false, 'Customer activation handoff route: same secondary approver is not ready');
+  ok(body.handoff.remainingActivationBlockers.includes('high-risk-secondary-approver-must-differ'), 'Customer activation handoff route: high-risk approvers must differ');
+}
+
+async function testHighRiskActivationCanBecomeReadyWithSecondaryApprover(): Promise<void> {
+  const app = createApp({
+    events: Array.from({ length: 5 }, (_, index) => createSafeEvent(index + 1)),
+    productionSigner: true,
+  });
+  const candidateId = await materializeCandidate(app);
+  await activateCandidate(app, candidateId);
+
+  const response = await postHandoff(
+    app,
+    completeHandoffBody({
+      boundaryKind: 'record-writer',
+      rolloutStrategy: 'canary',
+      secondaryApproverRef: 'operator:activation-approver',
+    }),
+    'activated',
+  );
+  const body = await response.json() as {
+    readonly handoff: {
+      readonly handoffReady: boolean;
+      readonly activationBoundaryKind: string | null;
+      readonly secondaryApproverRef: string | null;
+      readonly twoPersonApprovalRequired: boolean;
+      readonly twoPersonApprovalReady: boolean;
+      readonly remainingActivationBlockers: readonly string[];
+    };
+  };
+
+  equal(response.status, 200, 'Customer activation handoff route: complete high-risk activation returns 200');
+  equal(body.handoff.handoffReady, true, 'Customer activation handoff route: high-risk activation can become ready with a second approver');
+  equal(body.handoff.activationBoundaryKind, 'record-writer', 'Customer activation handoff route: record-writer boundary kind is carried');
+  equal(body.handoff.secondaryApproverRef, 'operator:activation-approver', 'Customer activation handoff route: high-risk secondary approver is carried');
+  equal(body.handoff.twoPersonApprovalRequired, true, 'Customer activation handoff route: record-writer requires two-person approval');
+  equal(body.handoff.twoPersonApprovalReady, true, 'Customer activation handoff route: high-risk two-person approval is ready');
+  equal(body.handoff.remainingActivationBlockers.length, 0, 'Customer activation handoff route: complete high-risk activation has no blockers');
+}
+
 async function testInvalidCustomerControlDigestIsRejected(): Promise<void> {
   const app = createApp({
     events: Array.from({ length: 5 }, (_, index) => createSafeEvent(index + 1)),
@@ -593,6 +699,12 @@ try {
   await testBreakGlassRejectsSameApproverAndLongWindow();
   resetShadowPersistenceStoresForTests({ policyCandidatePath: candidatePath });
   await testBreakGlassCanBecomeReadyWithExtraControls();
+  resetShadowPersistenceStoresForTests({ policyCandidatePath: candidatePath });
+  await testHighRiskActivationRequiresSecondaryApprover();
+  resetShadowPersistenceStoresForTests({ policyCandidatePath: candidatePath });
+  await testHighRiskActivationRejectsSameApprover();
+  resetShadowPersistenceStoresForTests({ policyCandidatePath: candidatePath });
+  await testHighRiskActivationCanBecomeReadyWithSecondaryApprover();
   resetShadowPersistenceStoresForTests({ policyCandidatePath: candidatePath });
   await testInvalidCustomerControlDigestIsRejected();
 

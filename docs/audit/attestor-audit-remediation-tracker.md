@@ -48,7 +48,7 @@ later implementation pass does not re-open already-retired issues.
 | F5 signing layer redo | 21 | 14 | 7 | 0 |
 | Final docs / claim alignment | 2 | 2 | 0 | 0 |
 | F6 multi-tenant blast radius | 10 | 4 | 6 | 0 |
-| F7 shadow infrastructure red-team | 10 | 7 | 3 | 0 |
+| F7 shadow infrastructure red-team | 10 | 8 | 2 | 0 |
 
 Remaining work after the final claim-alignment slice: 0 planned
 PR-sized or validation-sized units in the current F1-F5 audit queue.
@@ -56,7 +56,7 @@ PR-sized or validation-sized units in the current F1-F5 audit queue.
 Remaining F6 queue after recipient/tenant runtime boundary bridge: 0 planned PR-sized
 or validation-sized units.
 
-Remaining F7 queue after shadow bundle signing boundary validation: 1 planned
+Remaining F7 queue after shadow readiness and claim alignment: 0 planned
 PR-sized or validation-sized units.
 
 Completion rule through F5: every F1-F5 row must end as `fixed`,
@@ -272,15 +272,15 @@ Validation record: `docs/audit/f7-shadow-infrastructure-validation.md`.
 
 Current F7 status: validation pass complete for the report as supplied. The
 shadow event origin/redaction witness slice, shadow simulation policy-floor
-slice, break-glass hardening slice, high-risk two-person activation slice, and
-shadow bundle signing boundary slice are implemented. Several claims were
+slice, break-glass hardening slice, high-risk two-person activation slice,
+shadow bundle signing boundary slice, and shadow readiness claim-alignment slice
+are implemented. Several claims were
 narrowed against `origin/master`:
 shadow routes do not accept arbitrary caller-supplied event arrays for
 simulations; shadow event feature values are digested rather than raw-stored;
 `customerControlsReady` uses strict required-control aggregation; and
 selected-profile storage readiness blocks file-backed shadow stores for
-`production-shared`. The active F7 repository queue is therefore four units, not
-ten.
+`production-shared`. The F7 planned repository queue is now closed.
 
 | ID | Current status | Evidence / overlap | Remaining action |
 |---|---|---|---|
@@ -293,7 +293,7 @@ ten.
 | F7-S7 red-team replay is not runtime enforcement | `accepted-limitation` | F7 Shadow Infrastructure Validation; Policy Foundry red-team replay tests. | Keep documented as evidence and design feedback, not runtime enforcement. |
 | F7-S8 single-operator shadow activation | `fixed` | F7 High-Risk Two-Person Activation Validation; `SHADOW_CUSTOMER_ACTIVATION_HIGH_RISK_BOUNDARY_KINDS`; `activationBoundaryKind`; `twoPersonApprovalRequired`; `twoPersonApprovalReady`; `test:shadow-customer-activation-handoff`. | No remaining repository action for this scoped finding. |
 | F7-S9 shadow bundle signing boundary | `fixed` | F7 Shadow Bundle Signing Boundary Validation; `SHADOW_POLICY_BUNDLE_PRODUCTION_SIGNING_BOUNDARIES`; `productionSigningBoundaryRequired`; `productionSigningBoundaryReady`; `production-signing-boundary-invalid`; `test:shadow-policy-bundle-publication`. | Repository-side production signing boundary split is closed. Tenant-specific signer isolation remains covered by F6-T1/F6-T6 limitations. |
-| F7-S10 production-ready descriptor enforcement | `partial` | F7 Shadow Infrastructure Validation; `production-storage-path.ts`; `guard-activation-readiness.ts`. Storage readiness is enforced for selected profile, but no universal boot-time aggregator covers every shadow module descriptor. | Add claim alignment or a unified startup/readiness gate for required shadow descriptors. |
+| F7-S10 production-ready descriptor enforcement | `fixed` | F7 Shadow Readiness Claim Alignment Validation; `shadow-readiness-claim-alignment.ts`; `/api/v1/ready` `checks.shadowReadinessClaimAlignment`; `production-storage-path.ts`; `test:shadow-readiness-claim-alignment`. | No remaining repository action for this scoped finding. `productionReady: false` remains intentional; live production/customer activation evidence is not claimed. |
 
 ## Next Work Queue
 
@@ -302,8 +302,8 @@ evidence: every row is fixed, invalid-as-stated, superseded, accepted as a
 limitation, partial with a stated live/customer boundary, or backlogged with
 evidence.
 
-F6 is closed for planned repository slices. F7 is now the active queue. Planned
-order:
+F6 is closed for planned repository slices. F7 is closed for planned repository slices.
+Planned F7 order:
 
 1. F7 validation and tracker sync. Done.
 2. F7-S1/F7-S2 shadow event origin and redaction witness. Done in this slice.
@@ -311,4 +311,4 @@ order:
 4. F7-S4 break-glass hardening. Done in this slice.
 5. F7-S8 two-person high-risk activation handoff. Done in this slice.
 6. F7-S9 shadow bundle signing boundary validation. Done in this slice.
-7. F7-S10 shadow readiness and claim alignment.
+7. F7-S10 shadow readiness and claim alignment. Done in this slice.

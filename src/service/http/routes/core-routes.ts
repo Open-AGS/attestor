@@ -1,5 +1,8 @@
 import type { Hono } from 'hono';
 import {
+  evaluateConsequenceShadowReadinessClaimAlignment,
+} from '../../../consequence-admission/shadow-readiness-claim-alignment.js';
+import {
   releaseTokenVerificationKeysToJwks,
   type ReleaseTokenVerificationKey,
 } from '../../../release-layer/index.js';
@@ -210,6 +213,13 @@ export function registerCoreRoutes(app: Hono, deps: CoreRouteDeps): void {
       sharedControlPlane: isSharedControlPlaneConfigured(),
       sharedBillingLedger: !!process.env.ATTESTOR_BILLING_LEDGER_PG_URL?.trim(),
     });
+    const productionStoragePath = evaluateProductionStoragePath({
+      runtimeProfileId: runtimeProfileDiagnostics.profile.id,
+    });
+    const shadowReadinessClaimAlignment = evaluateConsequenceShadowReadinessClaimAlignment({
+      runtimeProfileId: runtimeProfileDiagnostics.profile.id,
+      productionStoragePath,
+    });
     return c.json({
       status: 'healthy',
       version: serviceVersion,
@@ -250,9 +260,8 @@ export function registerCoreRoutes(app: Hono, deps: CoreRouteDeps): void {
         requestPathUsesSharedStores:
           releaseRuntimeRequestPathDiagnostics.usesSharedAuthorityStores,
       }),
-      productionStoragePath: evaluateProductionStoragePath({
-        runtimeProfileId: runtimeProfileDiagnostics.profile.id,
-      }),
+      productionStoragePath,
+      shadowReadinessClaimAlignment,
       highAvailability,
       engine: 'attestor',
     });
@@ -346,6 +355,14 @@ export function registerCoreRoutes(app: Hono, deps: CoreRouteDeps): void {
     checks.productionStoragePath = productionStoragePath.readyForSelectedProfile;
     if (!checks.productionStoragePath) ready = false;
 
+    const shadowReadinessClaimAlignment = evaluateConsequenceShadowReadinessClaimAlignment({
+      runtimeProfileId: runtimeProfileDiagnostics.profile.id,
+      productionStoragePath,
+    });
+    checks.shadowReadinessClaimAlignment =
+      shadowReadinessClaimAlignment.readyForSelectedProfile;
+    if (!checks.shadowReadinessClaimAlignment) ready = false;
+
     checks.domains = domainRegistry.listIds().length > 0;
     if (!checks.domains) ready = false;
 
@@ -375,6 +392,7 @@ export function registerCoreRoutes(app: Hono, deps: CoreRouteDeps): void {
       },
       sharedAuthorityRuntime,
       productionStoragePath,
+      shadowReadinessClaimAlignment,
       highAvailability,
     }, status);
   });

@@ -35,8 +35,8 @@ try {
   includes(validation, '| F7-S4 break-glass rollout has no extra gate | `open` | `fixed` |', 'F7 break-glass validation: S4 transition is recorded');
   includes(validation, 'three planned', 'F7 break-glass validation: remaining queue count is explicit');
 
-  includes(tracker, '| F7 shadow infrastructure red-team | 10 | 7 | 3 | 0 |', 'Tracker: F7 count is updated after signing-boundary slice');
-  includes(tracker, 'Remaining F7 queue after shadow bundle signing boundary validation: 1 planned', 'Tracker: F7 remaining count is updated');
+  includes(tracker, '| F7 shadow infrastructure red-team | 10 | 8 | 2 | 0 |', 'Tracker: F7 count is updated after signing-boundary slice');
+  includes(tracker, 'Remaining F7 queue after shadow readiness and claim alignment: 0 planned', 'Tracker: F7 remaining count is updated');
   includes(tracker, 'F7-S4 break-glass rollout has no extra gate | `fixed`', 'Tracker: F7-S4 is fixed');
   includes(tracker, 'F7 Break-Glass Hardening Validation', 'Tracker: F7 break-glass validation evidence is linked');
 

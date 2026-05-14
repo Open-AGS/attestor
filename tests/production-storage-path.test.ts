@@ -166,7 +166,7 @@ function testDocsAndRuntimeWiring(): void {
   ok(productionReadiness.includes('## Production Storage Path Gate'), 'Production readiness docs: storage gate section exists');
   ok(productionReadiness.includes('productionStoragePath'), 'Production readiness docs: readiness response field is documented');
   ok(coreRoutes.includes('checks.productionStoragePath'), 'Production storage path: ready route checks storage path');
-  ok(coreRoutes.includes('productionStoragePath: evaluateProductionStoragePath'), 'Production storage path: health route exposes diagnostics');
+  ok(coreRoutes.includes('productionStoragePath,'), 'Production storage path: health route exposes diagnostics');
   ok(apiRuntime.includes('evaluateProductionStoragePathState'), 'Production storage path: API runtime wires evaluator');
   equal(
     packageJson.scripts['test:production-storage-path'],

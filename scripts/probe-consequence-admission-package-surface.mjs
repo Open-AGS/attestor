@@ -326,6 +326,36 @@ assert.equal(
   false,
 );
 assert.equal(
+  admission.consequenceAdmissionDescriptor().shadowReadinessClaimAlignmentVersion,
+  'attestor.shadow-readiness-claim-alignment.v1',
+);
+assert.equal(
+  admission.consequenceShadowReadinessClaimAlignmentDescriptor().stageIds.includes(
+    'shadow-customer-activation-receipt',
+  ),
+  true,
+);
+assert.equal(
+  admission.consequenceShadowReadinessClaimAlignmentDescriptor().criterionIds.includes(
+    'selected-profile-storage-ready',
+  ),
+  true,
+);
+assert.equal(
+  admission.evaluateConsequenceShadowReadinessClaimAlignment({
+    runtimeProfileId: 'production-shared',
+    productionStoragePath: {
+      readyForSelectedProfile: false,
+      blockers: [{ code: 'evaluation-store-not-shared', component: 'shadow-admission-events' }],
+    },
+  }).readyForSelectedProfile,
+  false,
+);
+assert.equal(
+  admission.evaluateConsequenceShadowReadinessClaimAlignment().productionReady,
+  false,
+);
+assert.equal(
   admission.consequenceAdmissionDescriptor().failureModeGuardCoverageVersion,
   'attestor.consequence-failure-mode-guard-coverage.v1',
 );

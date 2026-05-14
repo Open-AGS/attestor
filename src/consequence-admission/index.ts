@@ -113,6 +113,11 @@ import {
   type ConsequenceGuardActivationReadinessDescriptor,
 } from './guard-activation-readiness.js';
 import {
+  CONSEQUENCE_SHADOW_READINESS_CLAIM_ALIGNMENT_VERSION,
+  consequenceShadowReadinessClaimAlignmentDescriptor,
+  type ConsequenceShadowReadinessClaimAlignmentDescriptor,
+} from './shadow-readiness-claim-alignment.js';
+import {
   CONSEQUENCE_FAILURE_MODE_GUARD_COVERAGE_VERSION,
   consequenceFailureModeGuardCoverageMatrix,
   type ConsequenceFailureModeGuardCoverageMatrix,
@@ -511,6 +516,8 @@ export interface ConsequenceAdmissionDescriptor {
   readonly failureModeRegistryPlacementVersion: typeof CONSEQUENCE_FAILURE_MODE_REGISTRY_PLACEMENT_VERSION;
   readonly replayLayerPlacementVersion: typeof CONSEQUENCE_REPLAY_LAYER_PLACEMENT_VERSION;
   readonly guardActivationReadinessVersion: typeof CONSEQUENCE_GUARD_ACTIVATION_READINESS_VERSION;
+  readonly shadowReadinessClaimAlignmentVersion:
+    typeof CONSEQUENCE_SHADOW_READINESS_CLAIM_ALIGNMENT_VERSION;
   readonly failureModeGuardCoverageVersion: typeof CONSEQUENCE_FAILURE_MODE_GUARD_COVERAGE_VERSION;
   readonly failureModeRuntimeExtensionVersion: typeof CONSEQUENCE_FAILURE_MODE_RUNTIME_EXTENSION_VERSION;
   readonly agenticSupplyChainGuardVersion: typeof CONSEQUENCE_AGENTIC_SUPPLY_CHAIN_GUARD_VERSION;
@@ -536,6 +543,7 @@ export interface ConsequenceAdmissionDescriptor {
   readonly failureModeRegistryPlacement: ConsequenceFailureModeRegistryPlacementDescriptor;
   readonly replayLayerPlacement: ConsequenceReplayLayerPlacementDescriptor;
   readonly guardActivationReadiness: ConsequenceGuardActivationReadinessDescriptor;
+  readonly shadowReadinessClaimAlignment: ConsequenceShadowReadinessClaimAlignmentDescriptor;
   readonly failureModeGuardCoverage: ConsequenceFailureModeGuardCoverageMatrix;
   readonly dataMinimizationSurfaceKinds: typeof CONSEQUENCE_DATA_MINIMIZATION_SURFACE_KINDS;
   readonly dataMinimizationForbiddenRawClasses: typeof CONSEQUENCE_DATA_MINIMIZATION_FORBIDDEN_RAW_CLASSES;
@@ -2171,6 +2179,8 @@ ConsequenceAdmissionDescriptor {
     failureModeRegistryPlacementVersion: CONSEQUENCE_FAILURE_MODE_REGISTRY_PLACEMENT_VERSION,
     replayLayerPlacementVersion: CONSEQUENCE_REPLAY_LAYER_PLACEMENT_VERSION,
     guardActivationReadinessVersion: CONSEQUENCE_GUARD_ACTIVATION_READINESS_VERSION,
+    shadowReadinessClaimAlignmentVersion:
+      CONSEQUENCE_SHADOW_READINESS_CLAIM_ALIGNMENT_VERSION,
     failureModeGuardCoverageVersion: CONSEQUENCE_FAILURE_MODE_GUARD_COVERAGE_VERSION,
     failureModeRuntimeExtensionVersion: CONSEQUENCE_FAILURE_MODE_RUNTIME_EXTENSION_VERSION,
     agenticSupplyChainGuardVersion: CONSEQUENCE_AGENTIC_SUPPLY_CHAIN_GUARD_VERSION,
@@ -2196,6 +2206,7 @@ ConsequenceAdmissionDescriptor {
     failureModeRegistryPlacement: consequenceFailureModeRegistryPlacementDescriptor(),
     replayLayerPlacement: consequenceReplayLayerPlacementDescriptor(),
     guardActivationReadiness: consequenceGuardActivationReadinessDescriptor(),
+    shadowReadinessClaimAlignment: consequenceShadowReadinessClaimAlignmentDescriptor(),
     failureModeGuardCoverage: consequenceFailureModeGuardCoverageMatrix(),
     dataMinimizationSurfaceKinds: CONSEQUENCE_DATA_MINIMIZATION_SURFACE_KINDS,
     dataMinimizationForbiddenRawClasses: CONSEQUENCE_DATA_MINIMIZATION_FORBIDDEN_RAW_CLASSES,
@@ -2292,6 +2303,7 @@ export * from './failure-mode-guard-coverage.js';
 export * from './failure-mode-runtime-extensions.js';
 export * from './replay-layer-placement.js';
 export * from './guard-activation-readiness.js';
+export * from './shadow-readiness-claim-alignment.js';
 export * from './untrusted-content-authority-guard.js';
 export * from './tool-result-poisoning-guard.js';
 export * from './approval-provenance-guard.js';

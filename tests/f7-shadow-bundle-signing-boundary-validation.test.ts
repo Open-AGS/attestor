@@ -34,8 +34,8 @@ try {
   includes(validation, '| F7-S9 shadow bundle signing boundary | `partial` | `fixed` |', 'F7 signing-boundary validation: S9 transition is recorded');
   includes(validation, 'one planned', 'F7 signing-boundary validation: remaining queue count is explicit');
 
-  includes(tracker, '| F7 shadow infrastructure red-team | 10 | 7 | 3 | 0 |', 'Tracker: F7 count is updated after signing-boundary slice');
-  includes(tracker, 'Remaining F7 queue after shadow bundle signing boundary validation: 1 planned', 'Tracker: F7 remaining count is updated');
+  includes(tracker, '| F7 shadow infrastructure red-team | 10 | 8 | 2 | 0 |', 'Tracker: F7 count is updated after signing-boundary slice');
+  includes(tracker, 'Remaining F7 queue after shadow readiness and claim alignment: 0 planned', 'Tracker: F7 remaining count is updated');
   includes(tracker, 'F7-S9 shadow bundle signing boundary | `fixed`', 'Tracker: F7-S9 is fixed');
   includes(tracker, 'F7 Shadow Bundle Signing Boundary Validation', 'Tracker: F7 signing-boundary validation evidence is linked');
 

@@ -44,16 +44,16 @@ try {
   includes(validation, 'F7-S5 | `customerControlsReady` can flip true with missing required controls', 'F7 validation: S5 claim is described');
   includes(validation, '`invalid-as-stated`', 'F7 validation: invalid-as-stated status is used');
   includes(validation, '`accepted-limitation`', 'F7 validation: accepted limitation status is used');
-  includes(validation, 'six planned repository units', 'F7 validation: remaining unit count is explicit');
-  includes(validation, 'Shadow event origin and redaction witness', 'F7 validation: next remediation unit is named');
-  includes(validation, 'Two-person high-risk activation handoff', 'F7 validation: two-person unit is named');
+  includes(validation, 'zero planned repository units', 'F7 validation: final remaining unit count is explicit');
+  includes(validation, 'Shadow event data cannot poison promotion', 'F7 validation: shadow data claim is named');
+  includes(validation, 'Break-glass activation is specially gated', 'F7 validation: break-glass claim is named');
   includes(validation, 'OWASP API Security Top 10 2023', 'F7 validation: external source anchor is present');
   includes(validation, 'NIST SP 800-53 Rev. 5', 'F7 validation: NIST source anchor is present');
 
-  includes(tracker, '| F7 shadow infrastructure red-team | 10 | 7 | 3 | 0 |', 'Tracker: F7 current count row is present');
-  includes(tracker, 'Remaining F7 queue after shadow bundle signing boundary validation: 1 planned', 'Tracker: remaining F7 count is explicit');
+  includes(tracker, '| F7 shadow infrastructure red-team | 10 | 8 | 2 | 0 |', 'Tracker: F7 current count row is present');
+  includes(tracker, 'Remaining F7 queue after shadow readiness and claim alignment: 0 planned', 'Tracker: remaining F7 count is explicit');
   includes(tracker, 'F6 is closed for planned repository slices', 'Tracker: F6 closed statement is present');
-  includes(tracker, 'F7 is now the active queue', 'Tracker: F7 active queue statement is present');
+  includes(tracker, 'F7 is closed for planned repository slices', 'Tracker: F7 closed statement is present');
   includes(tracker, 'F7 validation and tracker sync. Done.', 'Tracker: F7 first queue item is marked done');
   includes(tracker, 'F7-S1/F7-S2 shadow event origin and redaction witness. Done in this slice.', 'Tracker: F7 second queue item is marked done');
   includes(tracker, 'F7-S3 server-owned simulation policy floor. Done in this slice.', 'Tracker: F7 third queue item is marked done');
@@ -66,6 +66,7 @@ try {
   includes(tracker, 'F7 Break-Glass Hardening Validation', 'Tracker: F7 break-glass validation evidence is linked');
   includes(tracker, 'F7 High-Risk Two-Person Activation Validation', 'Tracker: F7 high-risk activation validation evidence is linked');
   includes(tracker, 'F7 Shadow Bundle Signing Boundary Validation', 'Tracker: F7 signing-boundary validation evidence is linked');
+  includes(tracker, 'F7 Shadow Readiness Claim Alignment Validation', 'Tracker: F7 readiness validation evidence is linked');
 
   includes(packageJson, '"test:f7-shadow-infrastructure-validation"', 'Package: F7 validation test script is exposed');
   includes(packageJson, '"test:f7-shadow-origin-redaction-witness-validation"', 'Package: F7 witness validation test script is exposed');
@@ -73,6 +74,7 @@ try {
   includes(packageJson, '"test:f7-break-glass-hardening-validation"', 'Package: F7 break-glass validation test script is exposed');
   includes(packageJson, '"test:f7-high-risk-two-person-activation-validation"', 'Package: F7 high-risk activation validation test script is exposed');
   includes(packageJson, '"test:f7-shadow-bundle-signing-boundary-validation"', 'Package: F7 signing-boundary validation test script is exposed');
+  includes(packageJson, '"test:f7-shadow-readiness-claim-alignment-validation"', 'Package: F7 readiness validation test script is exposed');
 
   includes(shadowEvents, 'SHADOW_ADMISSION_REDACTION_LEVELS', 'Repo evidence: shadow redaction levels exist');
   includes(shadowEvents, "'operator-supplied'", 'Repo evidence: operator-supplied redaction level exists');

@@ -33,6 +33,8 @@ The guard classifies each source by:
 - trust class
 - digest-only source reference
 - optional evidence digest
+- rejected trust-class override state
+- trusted-authority evidence presence
 
 Raw prompt, email, ticket, document, tool, or model-summary content is not stored in the decision output.
 
@@ -41,7 +43,7 @@ Raw prompt, email, ticket, document, tool, or model-summary content is not store
 The guard returns one of:
 
 - `pass`: a trusted authority source is present, and content is separated from authority
-- `review`: authority is missing, evidence exists without authority, or trusted and untrusted authority claims are mixed
+- `review`: authority is missing, trusted-authority evidence is missing, evidence exists without authority, a trust-class override was rejected, or trusted and untrusted authority claims are mixed
 - `block`: untrusted content or model-generated text is the only authority source for authorization, approval, or policy
 
 Only `pass` is `allowed=true`. `review` and `block` are fail-closed.
@@ -58,6 +60,9 @@ Trusted authority can come from:
 - manual review
 
 Trusted evidence can support a decision, but it is not the same as authority.
+Trusted authority sources must carry an evidence digest. A source kind such as
+`verified-approval` without digest-bound approval evidence is not enough for a
+`pass`; it returns `review`.
 
 ## Untrusted Or Model-Generated Sources
 
@@ -74,6 +79,11 @@ These cannot authorize action:
 - retrieved content
 
 If one of these sources claims authorization, approval, or policy authority, the guard returns `block` unless a trusted authority source is also present. Mixed trusted and untrusted authority claims return `review`.
+
+Untrusted or model-generated source kinds cannot be promoted by a supplied
+`trustClass`. For example, a `customer-email` source with
+`trustClass: trusted-authority` is still treated as `untrusted-content`, records
+`trust-class-override-rejected`, and cannot authorize action.
 
 ## Binding
 

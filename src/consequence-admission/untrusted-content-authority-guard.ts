@@ -71,6 +71,8 @@ export const CONSEQUENCE_UNTRUSTED_CONTENT_AUTHORITY_REASON_CODES = [
   'trusted-evidence-not-authority',
   'authority-content-separated',
   'mixed-trusted-and-untrusted-authority-source',
+  'trust-class-override-rejected',
+  'trusted-authority-evidence-missing',
   'authority-pass',
   'authority-review-required',
   'authority-block',
@@ -100,6 +102,8 @@ export interface ConsequenceUntrustedContentAuthorityObservedSource {
   readonly trustClass: ConsequenceUntrustedContentAuthorityTrustClass;
   readonly sourceRefDigest: string;
   readonly evidenceDigest?: string;
+  readonly trustClassOverrideRejected: boolean;
+  readonly trustEvidencePresent: boolean;
 }
 
 export interface ConsequenceUntrustedContentAuthorityDecision {
@@ -129,6 +133,8 @@ export interface ConsequenceUntrustedContentAuthorityDecision {
     readonly untrustedAuthoritySourceCount: number;
     readonly modelGeneratedAuthoritySourceCount: number;
     readonly trustedAuthoritySourceCount: number;
+    readonly trustedAuthorityMissingEvidenceCount: number;
+    readonly trustClassOverrideRejectedCount: number;
     readonly trustedEvidenceOnlyCount: number;
   };
   readonly observedSources: readonly ConsequenceUntrustedContentAuthorityObservedSource[];
@@ -154,6 +160,8 @@ export interface ConsequenceUntrustedContentAuthorityGuardDescriptor {
   readonly allowsModelSelfApproval: false;
   readonly storesRawPayload: false;
   readonly digestOnly: true;
+  readonly rejectsUntrustedPromotion: true;
+  readonly requiresTrustedAuthorityEvidence: true;
   readonly approvalRequired: true;
   readonly autoEnforce: false;
   readonly productionReady: false;
@@ -217,16 +225,69 @@ function uniqueReasonCodes(
   return readonlyCopy([...new Set(items)]);
 }
 
+const UNTRUSTED_OR_MODEL_CLASSES = new Set<ConsequenceUntrustedContentAuthorityTrustClass>([
+  'untrusted-content',
+  'model-generated',
+]);
+
+const PROMOTION_TARGET_CLASSES = new Set<ConsequenceUntrustedContentAuthorityTrustClass>([
+  'trusted-authority',
+  'trusted-evidence',
+  'trusted-system-context',
+]);
+
+function resolveTrustClass(
+  sourceKind: ConsequenceUntrustedContentAuthoritySourceKind,
+  suppliedTrustClass: ConsequenceUntrustedContentAuthorityTrustClass | null,
+): {
+  readonly trustClass: ConsequenceUntrustedContentAuthorityTrustClass;
+  readonly overrideRejected: boolean;
+} {
+  const defaultTrustClass = TRUST_CLASS_BY_SOURCE_KIND[sourceKind];
+  if (!suppliedTrustClass || suppliedTrustClass === defaultTrustClass) {
+    return Object.freeze({ trustClass: defaultTrustClass, overrideRejected: false });
+  }
+
+  if (
+    UNTRUSTED_OR_MODEL_CLASSES.has(defaultTrustClass) &&
+    PROMOTION_TARGET_CLASSES.has(suppliedTrustClass)
+  ) {
+    return Object.freeze({ trustClass: defaultTrustClass, overrideRejected: true });
+  }
+
+  if (
+    defaultTrustClass === 'trusted-evidence' &&
+    suppliedTrustClass !== 'untrusted-content' &&
+    suppliedTrustClass !== 'model-generated'
+  ) {
+    return Object.freeze({ trustClass: defaultTrustClass, overrideRejected: true });
+  }
+
+  if (
+    defaultTrustClass === 'trusted-authority' &&
+    suppliedTrustClass === 'trusted-system-context'
+  ) {
+    return Object.freeze({ trustClass: defaultTrustClass, overrideRejected: true });
+  }
+
+  return Object.freeze({ trustClass: suppliedTrustClass, overrideRejected: false });
+}
+
 function normalizedSource(
   source: ConsequenceUntrustedContentAuthoritySource,
 ): ConsequenceUntrustedContentAuthorityObservedSource {
-  const trustClass = source.trustClass ?? TRUST_CLASS_BY_SOURCE_KIND[source.sourceKind];
+  const suppliedTrustClass = source.trustClass ?? null;
+  const { trustClass, overrideRejected } = resolveTrustClass(source.sourceKind, suppliedTrustClass);
+  const trustEvidencePresent =
+    typeof source.evidenceDigest === 'string' && source.evidenceDigest.trim().length > 0;
   const observed: ConsequenceUntrustedContentAuthorityObservedSource = {
     sourceKind: source.sourceKind,
     claimKind: source.claimKind,
     trustClass,
     sourceRefDigest: digestRawRef(source.sourceRef),
     ...(source.evidenceDigest ? { evidenceDigest: source.evidenceDigest } : {}),
+    trustClassOverrideRejected: overrideRejected,
+    trustEvidencePresent,
   };
   return Object.freeze(observed);
 }
@@ -237,13 +298,21 @@ function evaluateOutcome(params: {
   readonly untrustedAuthoritySourceCount: number;
   readonly modelGeneratedAuthoritySourceCount: number;
   readonly trustedAuthoritySourceCount: number;
+  readonly trustedAuthorityMissingEvidenceCount: number;
+  readonly trustClassOverrideRejectedCount: number;
 }): ConsequenceUntrustedContentAuthorityDecisionOutcome {
   const unsafeAuthoritySourceCount =
     params.untrustedAuthoritySourceCount + params.modelGeneratedAuthoritySourceCount;
   if (unsafeAuthoritySourceCount > 0 && params.trustedAuthoritySourceCount === 0) {
     return 'block';
   }
+  if (params.trustClassOverrideRejectedCount > 0) {
+    return 'review';
+  }
   if (unsafeAuthoritySourceCount > 0 && params.trustedAuthoritySourceCount > 0) {
+    return 'review';
+  }
+  if (params.trustedAuthorityMissingEvidenceCount > 0) {
     return 'review';
   }
   if (params.requiredAuthority && params.trustedAuthoritySourceCount === 0) {
@@ -261,6 +330,8 @@ function decisionReasonCodes(params: {
   readonly untrustedAuthoritySourceCount: number;
   readonly modelGeneratedAuthoritySourceCount: number;
   readonly trustedAuthoritySourceCount: number;
+  readonly trustedAuthorityMissingEvidenceCount: number;
+  readonly trustClassOverrideRejectedCount: number;
   readonly trustedEvidenceOnlyCount: number;
 }): readonly ConsequenceUntrustedContentAuthorityReasonCode[] {
   const codes: ConsequenceUntrustedContentAuthorityReasonCode[] = [];
@@ -275,6 +346,12 @@ function decisionReasonCodes(params: {
   }
   if (params.trustedAuthoritySourceCount > 0) {
     codes.push('trusted-authority-source-present');
+  }
+  if (params.trustClassOverrideRejectedCount > 0) {
+    codes.push('trust-class-override-rejected');
+  }
+  if (params.trustedAuthorityMissingEvidenceCount > 0) {
+    codes.push('trusted-authority-evidence-missing');
   }
   if (params.trustedEvidenceOnlyCount > 0 && params.trustedAuthoritySourceCount === 0) {
     codes.push('trusted-evidence-not-authority');
@@ -322,6 +399,12 @@ export function evaluateConsequenceUntrustedContentAuthority(
   const trustedAuthoritySources = authorityClaims.filter(
     (source) => source.trustClass === 'trusted-authority',
   );
+  const trustedAuthorityMissingEvidenceSources = trustedAuthoritySources.filter(
+    (source) => !source.trustEvidencePresent,
+  );
+  const trustClassOverrideRejectedSources = observedSources.filter(
+    (source) => source.trustClassOverrideRejected,
+  );
   const trustedEvidenceOnlySources = observedSources.filter(
     (source) =>
       source.trustClass === 'trusted-evidence' &&
@@ -333,6 +416,8 @@ export function evaluateConsequenceUntrustedContentAuthority(
     untrustedAuthoritySourceCount: untrustedAuthoritySources.length,
     modelGeneratedAuthoritySourceCount: modelGeneratedAuthoritySources.length,
     trustedAuthoritySourceCount: trustedAuthoritySources.length,
+    trustedAuthorityMissingEvidenceCount: trustedAuthorityMissingEvidenceSources.length,
+    trustClassOverrideRejectedCount: trustClassOverrideRejectedSources.length,
   });
   const binding = failureModeBinding();
   const payload = {
@@ -350,6 +435,8 @@ export function evaluateConsequenceUntrustedContentAuthority(
       untrustedAuthoritySourceCount: untrustedAuthoritySources.length,
       modelGeneratedAuthoritySourceCount: modelGeneratedAuthoritySources.length,
       trustedAuthoritySourceCount: trustedAuthoritySources.length,
+      trustedAuthorityMissingEvidenceCount: trustedAuthorityMissingEvidenceSources.length,
+      trustClassOverrideRejectedCount: trustClassOverrideRejectedSources.length,
       trustedEvidenceOnlyCount: trustedEvidenceOnlySources.length,
     }),
     failureModeId: 'untrusted-content-authorizes-action',
@@ -369,6 +456,8 @@ export function evaluateConsequenceUntrustedContentAuthority(
       untrustedAuthoritySourceCount: untrustedAuthoritySources.length,
       modelGeneratedAuthoritySourceCount: modelGeneratedAuthoritySources.length,
       trustedAuthoritySourceCount: trustedAuthoritySources.length,
+      trustedAuthorityMissingEvidenceCount: trustedAuthorityMissingEvidenceSources.length,
+      trustClassOverrideRejectedCount: trustClassOverrideRejectedSources.length,
       trustedEvidenceOnlyCount: trustedEvidenceOnlySources.length,
     },
     observedSources,
@@ -401,6 +490,8 @@ export function consequenceUntrustedContentAuthorityGuardDescriptor(): Consequen
     allowsModelSelfApproval: false,
     storesRawPayload: false,
     digestOnly: true,
+    rejectsUntrustedPromotion: true,
+    requiresTrustedAuthorityEvidence: true,
     approvalRequired: true,
     autoEnforce: false,
     productionReady: false,

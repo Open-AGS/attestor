@@ -32,7 +32,8 @@ Known limitations: repository evidence only; no live HSM, TUF, Rekor, or multi-r
 | F5-A1 out-of-band trust root | remediated in follow-up | high | Kit-contained CA material proves chain integrity only. Follow-up validation now requires an out-of-band trusted CA fingerprint by default and reserves kit-contained-root checks for explicit developer mode. |
 | F5-A2 legacy flat verify escape | remediated in follow-up | medium | Env-var legacy downgrades were removed. CLI legacy flat verification remains only as explicit `--allow-legacy-verify`. |
 | F5-A3 truncated fingerprint length | remediated in follow-up | medium | Signing key identity fingerprints now use 32 hex chars / 128-bit truncated SHA-256. Historical compact evidence IDs and already-issued artifacts are not widened by this scoped fix. |
-| F5-A4 homegrown canonicalization | accepted limitation | medium | Signing uses repository canonical JSON, not RFC 8785 JCS. Interop with external sigstore/in-toto verifiers is not claimed. |
+| F5-A4 homegrown canonicalization | accepted limitation | medium | Signing uses versioned, strict Attestor-specific canonical JSON, not RFC 8785 JCS. Interop with external sigstore/in-toto/JCS verifiers is not claimed. |
+| F5-A8 numeric canonicalization edge cases | remediated in follow-up | low | Signing canonicalization now rejects `NaN`, `Infinity`, and other lossy JSON values before signing. |
 | F5-A6 transparency log missing | accepted limitation | medium | No transparency log exists yet. Do not claim Rekor-equivalent witness semantics. |
 
 ## Remediation Slice In This PR
@@ -65,4 +66,4 @@ Remaining limitation: legacy flat verification remains only as an explicit CLI f
 - Parent-directory fsync and startup orphan sweep for file-backed critical stores remain durability hardening.
 - Full transparency-log or witness model is not implemented.
 - Signing key fingerprint width is remediated in follow-up; historical artifacts with older compact fingerprints remain historical evidence.
-- RFC 8785/JCS interoperability is not claimed until signing canonicalization is migrated or formally documented as Attestor-specific.
+- RFC 8785/JCS interoperability is formally documented as not claimed; signing canonicalization is Attestor-specific and fail-fast for lossy JSON values.

@@ -11,7 +11,12 @@ import {
   derivePublicKeyIdentity,
   generateKeyPair,
 } from './keys.js';
-import { signPayload, verifySignature, canonicalize } from './sign.js';
+import {
+  ATTESTOR_SIGNING_CANONICALIZATION_SPEC_VERSION,
+  canonicalize,
+  signPayload,
+  verifySignature,
+} from './sign.js';
 import { issueCertificate, verifyCertificate, type CertificateInput } from './certificate.js';
 
 function makeCertInput(): CertificateInput {
@@ -96,6 +101,31 @@ async function runSigningTests(): Promise<number> {
   // Deterministic
   assert(canonicalize(obj) === canonicalize({ c: { y: 4, z: 3 }, a: 1, b: 2 }), 'Different key order → same canonical');
   passed++;
+  assert(
+    ATTESTOR_SIGNING_CANONICALIZATION_SPEC_VERSION === 'attestor.signing-canonical-json.v1',
+    'Signing canonicalization has explicit spec version',
+  );
+  assert.throws(
+    () => canonicalize({ bad: Number.NaN }),
+    /number must be finite/,
+    'Signing canonicalization rejects NaN instead of converting it to null',
+  );
+  assert.throws(
+    () => canonicalize({ bad: Number.POSITIVE_INFINITY }),
+    /number must be finite/,
+    'Signing canonicalization rejects Infinity instead of converting it to null',
+  );
+  assert.throws(
+    () => canonicalize({ bad: undefined }),
+    /undefined/,
+    'Signing canonicalization rejects undefined instead of dropping it',
+  );
+  assert.throws(
+    () => canonicalize({ bad: new Date('2026-05-14T00:00:00.000Z') }),
+    /plain objects/,
+    'Signing canonicalization rejects custom objects instead of coercing them',
+  );
+  passed += 5;
   console.log('    Canonical: deterministic');
 
   console.log('\n  [Certificate Issuance]');

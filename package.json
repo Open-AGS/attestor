@@ -94,6 +94,7 @@
     "test:f6-tenant-key-cache-hardening": "tsx tests/f6-tenant-key-cache-hardening.test.ts",
     "test:f6-anonymous-tenant-sentinel": "tsx tests/f6-anonymous-tenant-sentinel.test.ts",
     "test:f6-bypass-route-tenant-context-invariant": "tsx tests/f6-bypass-route-tenant-context-invariant.test.ts",
+    "test:f6-rls-claim-alignment": "tsx tests/f6-rls-claim-alignment.test.ts",
     "test:f1-backlog-closure-validation": "tsx tests/f1-backlog-closure-validation.test.ts",
     "test:f2-customer-gate-validation": "tsx tests/f2-customer-gate-validation.test.ts",
     "test:f2-agent-payment-settlement-validation": "tsx tests/f2-agent-payment-settlement-validation.test.ts",

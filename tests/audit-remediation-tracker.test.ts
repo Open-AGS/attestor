@@ -31,7 +31,7 @@ try {
   includes(tracker, 'not a certification', 'Tracker: no-certification disclaimer is present');
   includes(tracker, '`origin/master` is the source of truth', 'Tracker: origin/master rule is present');
   includes(tracker, 'Remaining work after the final claim-alignment slice: 0 planned', 'Tracker: final remaining estimate is explicit');
-  includes(tracker, 'Remaining F6 queue after bypass-route tenant-context invariant slice: 3 planned', 'Tracker: F6 remaining estimate is explicit');
+  includes(tracker, 'Remaining F6 queue after RLS claim-alignment slice: 2 planned', 'Tracker: F6 remaining estimate is explicit');
 
   for (const pr of [
     '#220',
@@ -127,7 +127,7 @@ try {
   includes(tracker, 'The current F1-F5 project-owner supplied audit queue is closed for repository', 'Tracker: F1-F5 queue closure is explicit');
   includes(tracker, 'F6 is now the active queue', 'Tracker: F6 active queue is explicit');
   includes(tracker, 'F6-T1 shared PKI tenant binding | `partial`', 'Tracker: F6-T1 status is tracked');
-  includes(tracker, 'F6-T2 RLS declared but not data-path wired | `partial`', 'Tracker: F6-T2 status is tracked');
+  includes(tracker, 'F6-T2 RLS declared but not data-path wired | `accepted-limitation`', 'Tracker: F6-T2 status is tracked');
   includes(tracker, 'F6-T3 env tenant key registry per-pod cache | `partial`', 'Tracker: F6-T3 status is tracked');
   includes(tracker, 'F6-T4 usage-meter single-node quota | `partial`', 'Tracker: F6-T4 status is tracked');
   includes(tracker, 'F6-T5 bypass route tenant-header spoofing | `fixed`', 'Tracker: F6-T5 status is tracked');
@@ -178,6 +178,7 @@ try {
   includes(packageJson, '"test:f6-tenant-key-cache-hardening"', 'Package: F6 tenant key cache hardening script is exposed');
   includes(packageJson, '"test:f6-anonymous-tenant-sentinel"', 'Package: F6 anonymous tenant sentinel script is exposed');
   includes(packageJson, '"test:f6-bypass-route-tenant-context-invariant"', 'Package: F6 bypass route tenant-context invariant script is exposed');
+  includes(packageJson, '"test:f6-rls-claim-alignment"', 'Package: F6 RLS claim alignment script is exposed');
 
   ok(tracker.split('\n').length > 120, 'Tracker: enough rows to cover supplied audit reports');
   console.log(`Audit remediation tracker tests: ${passed} passed, 0 failed`);

@@ -47,12 +47,12 @@ later implementation pass does not re-open already-retired issues.
 | F4 stale worktree findings retired by fresh main | 3 | 0 | 3 | 0 |
 | F5 signing layer redo | 21 | 14 | 7 | 0 |
 | Final docs / claim alignment | 2 | 2 | 0 | 0 |
-| F6 multi-tenant blast radius | 10 | 5 | 5 | 0 |
+| F6 multi-tenant blast radius | 10 | 4 | 6 | 0 |
 
 Remaining work after the final claim-alignment slice: 0 planned
 PR-sized or validation-sized units in the current F1-F5 audit queue.
 
-Remaining F6 queue after bypass-route tenant-context invariant slice: 3 planned PR-sized
+Remaining F6 queue after RLS claim-alignment slice: 2 planned PR-sized
 or validation-sized units.
 
 Completion rule through F5: every F1-F5 row must end as `fixed`,
@@ -239,14 +239,15 @@ Validation record: `docs/audit/f6-tenant-blast-radius-validation.md`.
 Current F6 status: validation pass complete; tenant-bound release-token
 semantics added for F6-T1/F6-T6; env tenant-key cache hardening added for
 F6-T3/F6-T9; anonymous fallback now uses a reserved sentinel for F6-T10;
-bypass routes now clear and refuse unverified tenant/account headers for F6-T5.
+bypass routes now clear and refuse unverified tenant/account headers for F6-T5;
+RLS wording is narrowed to sample/probe status for F6-T2.
 Per-tenant signer isolation and later F6 runtime boundaries remain separate
 work.
 
 | ID | Current status | Evidence / overlap | Remaining action |
 |---|---|---|---|
 | F6-T1 shared PKI tenant binding | `partial` | Runtime-wide PKI and release-token issuer are real; generic admission tenant-spoofing subclaim is stale because `/api/v1/admissions` overwrites or rejects mismatched `tenantId`. F6 Tenant-Bound Release Token Validation adds `tenant_id` release-token claims, expected-tenant verification, introspection propagation, offline verifier binding, and token-exchange preservation. | Add per-tenant leaf signer or KMS/HSM tenant-scoped signer strategy before claiming cryptographic signer isolation. |
-| F6-T2 RLS declared but not data-path wired | `partial` | `tenant-rls.ts` provides RLS SQL/helper and runtime activation probe; main control-plane stores do not use `withTenantTransaction`. | Wire RLS into real stores or narrow RLS docs/comments to sample/probe status. |
+| F6-T2 RLS declared but not data-path wired | `accepted-limitation` | F6 RLS Claim Alignment; `tenant-rls.ts`; `runtime/rls-runtime.ts`; deployment docs; `test:f6-rls-claim-alignment`. The helper is now documented as sample/probe substrate and does not claim to protect main control-plane stores. | Future production data-path RLS wiring remains a separate storage-isolation project. |
 | F6-T3 env tenant key registry per-pod cache | `partial` | F6 Tenant Key Cache Hardening hashes env tenant-key lookup material, avoids raw env config retention, exposes cache age/expiry metadata, and refuses env keys in `production-shared`. Shared file/PG-backed lookup exists separately. | Env keys remain per-pod local identity state outside `production-shared`; shared deployments must use shared control-plane tenant key state. |
 | F6-T4 usage-meter single-node quota | `partial` | `usage-meter.ts` is single-node, but API-facing `control-plane-store.ts` uses PostgreSQL when `ATTESTOR_CONTROL_PLANE_PG_URL` is configured. | Keep file ledger scoped to local/single-node and add claim/profile tests around shared quota posture. |
 | F6-T5 bypass route tenant-header spoofing | `fixed` | F6 Bypass Route Tenant Context Invariant; `clearTenantContextHeaders`; `hasVerifiedTenantContext`; `test:f6-bypass-route-tenant-context-invariant`. Bypass routes strip client-supplied internal tenant/account headers, and request-context helpers refuse unverified headers. | No remaining repository action for this scoped finding. |
@@ -270,6 +271,6 @@ F6 is now the active queue. Planned order:
 3. F6-T3/F6-T9 tenant API key cache hardening. Done for hashed lookup and production-shared env-key refusal; cross-pod env revocation remains partial.
 4. F6-T7/F6-T10 anonymous sentinel and fallback hardening. Done.
 5. F6-T5 bypass route tenant-context invariant. Done.
-6. F6-T2 RLS/data-path claim alignment or integration.
+6. F6-T2 RLS/data-path claim alignment or integration. Done as claim alignment; real store wiring remains a future storage-isolation project.
 7. F6-T4 usage-meter shared-store claim boundary.
 8. F6-T8 recipient/tenant runtime boundary bridge.

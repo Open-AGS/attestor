@@ -1,5 +1,10 @@
 import { autoActivateRLS } from '../tenant-rls.js';
 
+/**
+ * Activates only the RLS sample/probe tables from tenant-rls.ts.
+ * This is not evidence that the main control-plane stores use RLS.
+ */
+
 export interface RlsActivationResult {
   activated: boolean;
   policiesFound: number;

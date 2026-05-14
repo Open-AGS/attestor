@@ -1,8 +1,10 @@
 /**
  * Database-Level Multi-Tenant Isolation — PostgreSQL Row-Level Security
  *
- * Implements tenant isolation at the database level using PostgreSQL RLS.
- * Even if application code has a bug, Postgres blocks cross-tenant data access.
+ * Provides a PostgreSQL RLS sample/probe substrate for tenant-scoped tables
+ * owned by this module. This helper does not protect Attestor's main
+ * control-plane stores unless those stores explicitly execute through
+ * withTenantTransaction and tables created by TENANT_SCHEMA_SQL.
  *
  * PATTERN (from research: 0.4ms overhead, production-proven):
  * 1. All tenant-scoped tables have a `tenant_id` column
@@ -10,6 +12,7 @@
  * 3. Per-transaction: SET app.tenant_id = ? (transaction-scoped, PgBouncer safe)
  *
  * BOUNDARY:
+ * - Sample/probe tables only until a concrete store is wired to this helper
  * - Shared schema + RLS (not schema-per-tenant)
  * - Composite indexes on (tenant_id, ...) for performance
  * - Transaction-scoped settings (not session-scoped)

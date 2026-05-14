@@ -41,7 +41,10 @@ Starts 4 services: `api`, `worker`, `postgres`, `redis`.
 
 - API healthcheck uses `/api/v1/ready` (returns 503 until backend ready)
 - Worker auto-restarts on crash (`restart: unless-stopped`)
-- PostgreSQL RLS auto-activated on API startup when `ATTESTOR_PG_URL` is set
+- PostgreSQL RLS sample/probe tables can auto-activate on API startup when
+  `ATTESTOR_PG_URL` is set. This is not a claim that main control-plane stores
+  are protected by RLS unless those stores are explicitly wired through the RLS
+  transaction helper.
 
 The HA compose topology is a rehearsal pattern and requires explicit database credentials:
 
@@ -76,7 +79,7 @@ docker run \
 |---|---|---|---|
 | `PORT` | No | `3700` | API listen port |
 | `REDIS_URL` | No | Auto-resolved | Redis connection URL (Tier 1 of 3-tier resolution) |
-| `ATTESTOR_PG_URL` | No | None | PostgreSQL for RLS tenant isolation |
+| `ATTESTOR_PG_URL` | No | None | PostgreSQL for connector proof paths and the RLS sample/probe substrate. It does not by itself move main control-plane stores onto database-enforced RLS |
 | `SNOWFLAKE_ALLOWED_SCHEMAS` | No | None | Optional comma-separated Snowflake schema allowlist. When set, Snowflake connector queries must use schema-qualified or database.schema-qualified table references in the allowlist |
 | `SNOWFLAKE_TIMEOUT_MS` | No | `30000` | Snowflake connector client-side query timeout in milliseconds |
 | `ATTESTOR_TENANT_KEYS` | No | `""` | API key to tenant-id mapping (`key:id:name[:plan][:quota],...`). Empty keys allow the reserved anonymous tenant sentinel `__attestor_anonymous__` only in local development; production-like runtimes (`NODE_ENV=production`, `ATTESTOR_HA_MODE`, public hostname/base URL) reject anonymous tenant fallback on non-public routes. Legacy anonymous `default` headers normalize to the reserved sentinel, but an authenticated tenant id `default` remains distinct |
@@ -302,7 +305,9 @@ What is deployed today:
 - Still needs production-traffic calibration data and real cloud credential material, but the shipped renderer now materializes the expected runtime Secret/ExternalSecret, cert-manager, GKE, and AWS ACM patch artifacts
 - Kubernetes / Gateway HA bundle first slice via `ops/kubernetes/ha/`, with Deployments, Services, HPAs, PDBs, Gateway, and HTTPRoute manifests for multi-instance API + worker rollout
 - Shared Redis queue between API and worker
-- PostgreSQL RLS tenant isolation
+- PostgreSQL RLS sample/probe substrate for tenant-scoped tables owned by
+  `tenant-rls.ts`; main control-plane data paths remain separate unless a store
+  is explicitly wired through the RLS transaction helper
 - Hosted tenant key lifecycle with rotate -> deactivate/reactivate -> revoke, `lastUsedAt`, and max-2 active overlap
 - Hosted tenant key break-glass recovery first slice: when the shared PostgreSQL control-plane is active and `ATTESTOR_SECRET_ENVELOPE_PROVIDER=vault_transit`, hosted tenant API keys are sealed through Vault Transit at issuance/rotation time and can be recovered via audited admin/CLI flows only when `ATTESTOR_TENANT_KEY_RECOVERY_ENABLED=true`
 - Hosted customer auth/RBAC first slice with bootstrap admin, opaque account sessions, password change, invite/password-reset flows with manual or SMTP delivery, SendGrid- and Mailgun-signed delivery analytics at `GET /api/v1/account/email/deliveries`, `GET /api/v1/admin/email/deliveries`, `POST /api/v1/email/sendgrid/webhook`, and `POST /api/v1/email/mailgun/webhook`, TOTP MFA enrollment/verify/disable + recovery codes, hosted OIDC authorization-code + PKCE SSO first slice, hosted SAML SP-initiated Redirect/POST SSO first slice with signed-response verification + replay protection, hosted WebAuthn/passkeys first slice, idle session timeout, and `account_admin` / `billing_admin` / `read_only` role boundaries on account-facing routes

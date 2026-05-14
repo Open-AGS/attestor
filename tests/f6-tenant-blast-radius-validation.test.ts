@@ -26,6 +26,7 @@ function readProjectFile(...segments: string[]): string {
 const validation = readProjectFile('docs', 'audit', 'f6-tenant-blast-radius-validation.md');
 const anonymousSentinelValidation = readProjectFile('docs', 'audit', 'f6-anonymous-tenant-sentinel.md');
 const bypassRouteValidation = readProjectFile('docs', 'audit', 'f6-bypass-route-tenant-context-invariant.md');
+const rlsClaimAlignment = readProjectFile('docs', 'audit', 'f6-rls-claim-alignment.md');
 const tracker = readProjectFile('docs', 'audit', 'attestor-audit-remediation-tracker.md');
 const tenantIsolation = readProjectFile('src', 'service', 'tenant-isolation.ts');
 const genericAdmissionRoutes = readProjectFile(
@@ -70,8 +71,9 @@ excludes(validation, /certified|SOC 2 evidence packet/iu, 'F6 validation: avoids
 includes(tracker, 'F6 Multi-Tenant Blast Radius', 'Tracker: F6 section exists');
 includes(tracker, 'F6-T1 shared PKI tenant binding', 'Tracker: F6-T1 is tracked');
 includes(tracker, 'F6-T10 `default` tenant sentinel collision', 'Tracker: F6-T10 is tracked');
-includes(tracker, 'Remaining F6 queue after bypass-route tenant-context invariant slice: 3 planned', 'Tracker: F6 remaining count is explicit');
+includes(tracker, 'Remaining F6 queue after RLS claim-alignment slice: 2 planned', 'Tracker: F6 remaining count is explicit');
 includes(tracker, 'F6 validation and tracker sync', 'Tracker: F6 queue names the current validation slice');
+includes(tracker, 'F6-T2 RLS declared but not data-path wired | `accepted-limitation`', 'Tracker: F6-T2 is accepted limitation');
 includes(tracker, 'F6-T5 bypass route tenant-header spoofing | `fixed`', 'Tracker: F6-T5 is fixed');
 includes(tracker, 'F6-T10 `default` tenant sentinel collision | `fixed`', 'Tracker: F6-T10 is fixed');
 
@@ -95,6 +97,7 @@ includes(controlPlaneStore, 'consumePipelineRunState', 'Repo evidence: API-facin
 includes(usageMeter, 'Local single-node JSON ledger', 'Repo evidence: file usage meter is single-node');
 includes(tenantRls, 'withTenantTransaction', 'Repo evidence: RLS helper exists');
 includes(tenantRls, "set_config('app.tenant_id'", 'Repo evidence: RLS helper sets tenant context');
+includes(tenantRls, 'sample/probe substrate', 'Repo evidence: RLS helper claim is narrowed');
 includes(productionStoragePath, 'production-shared-blocked', 'Repo evidence: production-shared storage gate can block evaluation stores');
 includes(runtimeProfile, 'ATTESTOR_RUNTIME_PROFILE_ENV', 'Repo evidence: runtime profile env is explicit');
 includes(runtimeProfile, 'isProductionLikeRuntimeEnv', 'Repo evidence: production-like runtime requires explicit profile');
@@ -104,6 +107,7 @@ includes(recipientReplay, 'CONSEQUENCE_RECIPIENT_TENANT_BOUNDARY_REPLAY_VERSION'
 includes(packageJson, '"test:f6-tenant-blast-radius-validation"', 'Package: F6 validation test script is exposed');
 includes(packageJson, '"test:f6-anonymous-tenant-sentinel"', 'Package: F6 anonymous sentinel test script is exposed');
 includes(packageJson, '"test:f6-bypass-route-tenant-context-invariant"', 'Package: F6 bypass route tenant-context test script is exposed');
+includes(packageJson, '"test:f6-rls-claim-alignment"', 'Package: F6 RLS claim alignment test script is exposed');
 
 includes(anonymousSentinelValidation, '# F6 Anonymous Tenant Sentinel Validation', 'F6 anonymous sentinel validation: title exists');
 includes(anonymousSentinelValidation, '__attestor_anonymous__', 'F6 anonymous sentinel validation: reserved sentinel is documented');
@@ -111,5 +115,7 @@ includes(anonymousSentinelValidation, 'an API-key tenant named `default` remains
 includes(bypassRouteValidation, '# F6 Bypass Route Tenant Context Invariant', 'F6 bypass route validation: title exists');
 includes(bypassRouteValidation, 'x-attestor-tenant-context-verified', 'F6 bypass route validation: verified marker is documented');
 includes(bypassRouteValidation, 'currentTenant` refuses spoofed bypass-route tenant ids', 'F6 bypass route validation: runtime invariant is documented');
+includes(rlsClaimAlignment, '# F6 RLS Claim Alignment', 'F6 RLS claim alignment: title exists');
+includes(rlsClaimAlignment, 'does not wire PostgreSQL Row-Level Security into Attestor', 'F6 RLS claim alignment: non-goal is documented');
 
 console.log(`F6 tenant blast-radius validation tests: ${passed} passed, 0 failed`);

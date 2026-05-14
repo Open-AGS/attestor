@@ -81,6 +81,7 @@
     "test:f2-customer-gate-validation": "tsx tests/f2-customer-gate-validation.test.ts",
     "test:f2-agent-payment-settlement-validation": "tsx tests/f2-agent-payment-settlement-validation.test.ts",
     "test:f2-eip7702-scope-validation": "tsx tests/f2-eip7702-scope-validation.test.ts",
+    "test:f2-downstream-receipt-omission-validation": "tsx tests/f2-downstream-receipt-omission-validation.test.ts",
     "test:supply-chain-baseline": "npm run security:supply-chain-baseline",
     "test:tenant-admin-secret-output": "tsx tests/tenant-admin-secret-output.test.ts",
     "test:container-security-baseline": "tsx tests/container-security-baseline.test.ts",

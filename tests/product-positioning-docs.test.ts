@@ -97,10 +97,10 @@ function testCoreAndPackStatusStayConsistent(): void {
     includes(systemOverview, packageSurface, `Product docs: system overview names ${packageSurface}`);
   }
 
-  includes(readme, 'The PDP surfaces turn structured action intent, policy, evidence, authority, scope, and failure-mode controls into `admit`, `narrow`, `review`, or `block`.', 'Product docs: README PDP role is concrete');
-  includes(readme, 'The PEP surfaces sit at the downstream edge and verify the decision, proof, binding, and replay posture before execution.', 'Product docs: README PEP role is concrete');
-  includes(readme, 'The PIP surfaces supply evidence, authority, tenant, recipient, freshness, policy-version, no-go, and context facts; they do not approve actions by themselves.', 'Product docs: README PIP role is concrete');
-  includes(readme, 'The PAP surfaces control policy lifecycle through signed bundles, simulation, rollout, activation rules, reviewer constraints, and provenance checks.', 'Product docs: README PAP role is concrete');
+  includes(readme, '**PDP:** turns structured action intent, policy, evidence, authority, scope, and failure-mode controls into `admit`, `narrow`, `review`, or `block`.', 'Product docs: README PDP role is concrete');
+  includes(readme, '**PEP:** sits at the downstream edge and verifies the decision, proof, binding, and replay posture before execution.', 'Product docs: README PEP role is concrete');
+  includes(readme, '**PIP:** supplies evidence, authority, tenant, recipient, freshness, policy-version, no-go, and context facts.', 'Product docs: README PIP role is concrete');
+  includes(readme, '**PAP:** handles policy lifecycle: signed bundles, simulation, rollout, activation rules, reviewer constraints, and provenance checks.', 'Product docs: README PAP role is concrete');
   includes(readme, 'Pack-specific adapters live below this layer.', 'Product docs: README keeps adapter role below consequence packs');
   includes(readme, 'keeps finance, crypto, filing, general admission, and future packs as bounded extensions over the shared admission core', 'Product docs: README keeps domain pack boundary summary');
   includes(readme, 'Money Movement', 'Product docs: README names Money Movement pack');

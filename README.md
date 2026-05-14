@@ -59,7 +59,7 @@ Attestor can start in `observe` or `warn` mode. It receives proposed AI actions,
 observe -> warn -> review -> enforce
 ```
 
-The shadow-to-enforcement path stays explicit:
+That is the runtime adoption ladder. The promotion workflow is longer because policy needs evidence, review, and proof:
 
 ```text
 observe -> recommend -> simulate -> approve -> enforce -> prove
@@ -67,7 +67,15 @@ observe -> recommend -> simulate -> approve -> enforce -> prove
 
 Shadow mode discovers the real action surface first: which high-risk AI actions exist, which actions have no policy, which downstream tools have too much authority, and which consequences would have been blocked before execution.
 
-Policy Foundry is the onboarding layer for this path. It identifies policy candidates and missing controls from shadow traffic, simulates impact through Policy Twin, runs candidate-specific red-team replay through the local adversarial replay executor, keeps promotion approval-required, captures reviewed outcome feedback, emits drift/policy-debt findings, and separates commercial capabilities from non-paywalled safety minimums. It is observed-action policy mining, not model training, not automatic policy writing, and not a production-readiness claim.
+Policy Foundry is the onboarding layer for this path. It turns shadow traffic into observed-action policy mining, not model training, not automatic policy writing, and not a production-readiness claim. It identifies policy candidates, produces a red-team fixture bundle, runs candidate-specific local adversarial replay reports through the local adversarial replay executor, can include live downstream replay evidence in live downstream replay reports, keeps promotion approval-required, records reviewed outcome feedback, prepares review handoff material, and emits drift/policy-debt findings.
+
+The hosted onboarding workflow contract adds billing-entitlement review material, commercial-boundary review material, hosted review surface output, hosted UI flow output, persistent hosted wizard state, and hosted wizard storage readiness gating. The path where customers self-attest readiness controls is not allowed.
+
+Safety boundary: hosted onboarding returns review material only. It does not store raw manifest payloads, issue credentials, apply patches, deploy infrastructure or a gateway, execute production traffic, activate enforcement, or prove production readiness. Rendered packets can include next steps such as `add-shadow-capture`, but `applies patches: false` is the default.
+
+For local browser QA before deployment, run `npm run preview:policy-foundry-hosted-ui` and open the printed localhost URL. The preview renders blocked and ready hosted review states from safe fixtures only; it is not a hosted deployment, credential flow, enforcement activation, or production-readiness proof.
+
+For an already deployed hosted runtime, the opt-in Policy Foundry production smoke probe checks health, readiness, hosted workflow rendering, hosted HTML rendering, passing live replay evidence, and failed replay blocking with secret-safe output.
 
 The failure-mode registry turns known AI-action failure modes into controls before business action. Untrusted content, poisoned tool results, fake approvals, stale policy, tenant or recipient boundary mistakes, scope explosion, review fatigue, drift, no-go holds, and missing replay evidence become explicit control, evidence, authority, audit, and replay checks.
 
@@ -108,46 +116,16 @@ For a guided first run, see [Try Attestor first](docs/01-overview/try-attestor-f
 
 ## What You Can Run Today
 
+Use the first four commands when evaluating the repo:
+
 ```bash
-# First useful admission demo
-npm run example:admission
-
-# Customer-side enforcement demo
-npm run example:customer-gate
-
-# Non-bypassable gateway demo
-npm run example:non-bypassable-gateway
-
-# Agent retry wrapper demo
-npm run example:agent-retry-wrapper
-
-# 60-second action-surface onboarding packet from a safe OpenAPI example
-npm run example:action-surface-onboarding
-
-# Render a review-required action-surface onboarding packet
-npm run render:action-surface-onboarding-packet -- --openapi=path/to/openapi.yaml
-
-# Render the one-command Policy Foundry self-onboarding review packet
-npm run policy-foundry:self-onboard -- --openapi=path/to/openapi.yaml
-
-# Local browser QA preview for the hosted Policy Foundry review UI
-npm run preview:policy-foundry-hosted-ui
-
-# Local cross-pack proof surface
-npm run proof:surface
-
-# Portable proof-showcase packet
-npm run showcase:proof
-
-# Verify a generated kit
-npm run verify:cert -- .attestor/showcase/latest/evidence/kit.json
-
-# Local verification gate
-npm run verify
-
-# Opt-in deployed Policy Foundry smoke probe, requires ATTESTOR_BASE_URL and ATTESTOR_API_KEY
-npm run probe:policy-foundry-production-smoke
+npm run example:admission                         # First useful admission demo
+npm run example:customer-gate                     # Customer-side enforcement demo
+npm run example:non-bypassable-gateway           # Verifier-before-dispatch demo
+npm run example:agent-retry-wrapper              # Bounded correction retry demo
 ```
+
+The rest are useful once the first path makes sense: `npm run example:action-surface-onboarding`, `npm run render:action-surface-onboarding-packet`, `npm run policy-foundry:self-onboard`, `npm run preview:policy-foundry-hosted-ui`, `npm run proof:surface`, `npm run showcase:proof`, `npm run verify:cert`, `npm run verify`, and `npm run probe:policy-foundry-production-smoke`.
 
 `npm run proof:surface` writes `.attestor/proof-surface/latest/` with `.attestor/proof-surface/latest/manifest.json`, a machine-readable bundle, markdown summary, and one unified proof output per runnable scenario. It is a local static proof surface; it does not start a hosted console or claim a public hosted crypto route.
 
@@ -185,24 +163,16 @@ Minimal request shape:
 Hosted onboarding entry points:
 
 - `POST /api/v1/shadow/action-surface/onboarding-packet` renders a review-required action-surface packet from bounded manifests, declarations, and tenant-scoped shadow events.
-- `POST /api/v1/shadow/policy-foundry/hosted-onboarding-workflow` is the hosted onboarding workflow contract. It composes the self-onboarding packet, local adversarial replay reports, optional live downstream replay reports, billing-entitlement review material, commercial-boundary review material, and hosted wizard storage readiness gating.
+- `POST /api/v1/shadow/policy-foundry/hosted-onboarding-workflow` renders the hosted onboarding workflow contract.
 - `GET /api/v1/shadow/policy-foundry/hosted-onboarding-workflow/sessions/:sessionId` resumes persistent hosted wizard state from the current local file-backed evaluation store.
 
-Safety boundary: hosted onboarding returns review material only. It does not store raw manifest payloads, issue credentials, apply patches, deploy a gateway, execute production traffic, or activate enforcement. Rendered packets can include next steps such as `add-shadow-capture`, but `applies patches: false` is the default. The hosted review surface and local hosted UI flow help a customer inspect task cards, no-go cards, evidence digests, and the next safe step; they are not production-readiness proof. The path where customers self-attest readiness controls is not allowed.
-
-For local browser QA before deployment, run `npm run preview:policy-foundry-hosted-ui` and open the printed localhost URL. The preview renders blocked and ready hosted review states from safe fixtures only. It is not a hosted deployment, credential flow, enforcement activation, or production-readiness proof.
-
-For an already deployed hosted runtime, the opt-in Policy Foundry production smoke probe is:
+For an already deployed hosted runtime, run the smoke probe with `ATTESTOR_BASE_URL` and `ATTESTOR_API_KEY`:
 
 ```bash
 ATTESTOR_BASE_URL=https://your-attestor-host \
 ATTESTOR_API_KEY=... \
 npm run probe:policy-foundry-production-smoke
 ```
-
-It checks health, readiness, hosted workflow rendering, hosted HTML rendering, passing live downstream replay evidence, and failed live replay blocking with secret-safe output.
-
-It does not deploy infrastructure, issue credentials, activate enforcement, execute production traffic, or prove production readiness.
 
 ## Decision Model
 
@@ -238,35 +208,20 @@ Admission responses also carry model-safe feedback. This is not raw policy discl
 ```json
 {
   "feedback": {
-    "disclosureLevel": "actionable",
     "safeForModel": true,
-    "missingFields": [
-      "evidenceRefs"
-    ],
-    "requiredEvidenceKinds": [
-      "evidence_ref"
-    ],
-    "safeInstruction": "Retry only with bounded references for the missing fields. Do not include raw customer, bank, wallet, credential, secret, or private policy data."
+    "missingFields": ["evidenceRefs"],
+    "safeInstruction": "Retry only with bounded references for the missing fields."
   },
   "retry": {
     "retryAllowed": true,
-    "retryCategory": "safe-correction",
     "maxAttempts": 2,
     "requiresChangedRequest": true,
-    "sameRequestReplayAllowed": false,
-    "retryBindingRequired": true,
-    "retryBindingFields": [
-      "previousAdmissionId",
-      "previousAdmissionDigest",
-      "previousRequestId",
-      "attemptNumber",
-      "correctionReasonCodes"
-    ]
+    "sameRequestReplayAllowed": false
   }
 }
 ```
 
-The corrected request must carry a `retryAttempt` binding back to the held admission. That binding makes a retry an auditable continuation, not a fresh probe against the gateway. Some failures are deliberately not model-retryable. `policy-blocked`, unsafe signals, custom-domain review, and adapter readiness gaps route to customer review or operator control instead of teaching the model how to probe the boundary.
+The corrected request must bind back to the held admission. That makes a retry an auditable continuation, not a fresh probe. Some failures are deliberately not model-retryable. `policy-blocked`, unsafe signals, custom-domain review, and adapter readiness gaps route to customer review or operator control instead of teaching the model how to probe the boundary.
 
 Retry budget and loop-abuse controls are documented in the [retry attempt ledger](docs/02-architecture/retry-attempt-ledger.md) and [agent loop abuse guard](docs/02-architecture/agent-loop-abuse-guard.md).
 
@@ -274,14 +229,7 @@ Retry budget and loop-abuse controls are documented in the [retry attempt ledger
 
 Attestor is built around proof before consequence. A consequence should not merely happen; it should leave a bounded record of why it was allowed, narrowed, reviewed, or blocked.
 
-A decision can include:
-
-- decision outcome
-- policy context
-- authority and evidence status
-- reason codes
-- verification references when available
-- local proof artifacts that can be reviewed later
+A decision can include outcome, policy context, authority and evidence status, reason codes, verification references, and local proof artifacts that can be reviewed later.
 
 The current evaluation baseline includes local proof packets, verification kits, signed proof paths, CI-backed smoke checks, and release artifact attestation for tagged evaluation releases. The exact boundary and non-claims are documented in the [Evaluation Packet](docs/00-evaluation/v0.1-evaluation-packet.md), [v0.1.2 release notes](docs/00-evaluation/v0.1.2-evaluation-release-notes.md), and [Artifact attestation plan](docs/08-deployment/artifact-attestation-plan.md).
 
@@ -325,21 +273,18 @@ proposed consequence
   -> downstream verification
 ```
 
-The PDP surfaces turn structured action intent, policy, evidence, authority, scope, and failure-mode controls into `admit`, `narrow`, `review`, or `block`.
+The roles are simple enough to keep in your head:
 
-The PEP surfaces sit at the downstream edge and verify the decision, proof, binding, and replay posture before execution.
-
-The PIP surfaces supply evidence, authority, tenant, recipient, freshness, policy-version, no-go, and context facts; they do not approve actions by themselves.
-
-The PAP surfaces control policy lifecycle through signed bundles, simulation, rollout, activation rules, reviewer constraints, and provenance checks.
+- **PDP:** turns structured action intent, policy, evidence, authority, scope, and failure-mode controls into `admit`, `narrow`, `review`, or `block`.
+- **PEP:** sits at the downstream edge and verifies the decision, proof, binding, and replay posture before execution.
+- **PIP:** supplies evidence, authority, tenant, recipient, freshness, policy-version, no-go, and context facts. It does not approve actions by itself.
+- **PAP:** handles policy lifecycle: signed bundles, simulation, rollout, activation rules, reviewer constraints, and provenance checks.
 
 Pack-specific adapters live below this layer. They provide native evidence, simulations, verifier bindings, conformance fixtures, and downstream handoff details for a consequence class without getting a separate product identity or trust story.
 
 Attestor does not guess what to run automatically, and it does not bypass the customer's own enforcement point.
 
-The machine-readable role contract is exported from `attestor/consequence-admission`. Package consumers, docs, and tests use the same PDP / PEP / PIP / PAP vocabulary.
-
-The machine-readable domain-pack boundary is exported from `attestor/consequence-admission`. It keeps finance, crypto, filing, general admission, and future packs as bounded extensions over the shared admission core, with pack-specific defaults below the shared decision vocabulary, failure registry, control bindings, and replay layer.
+The machine-readable role contract is exported from `attestor/consequence-admission`. The machine-readable domain-pack boundary is exported from `attestor/consequence-admission`. That boundary keeps finance, crypto, filing, general admission, and future packs as bounded extensions over the shared admission core.
 
 ## Data And Security Posture
 
@@ -365,16 +310,21 @@ Attestor is not:
 
 ## Deeper Docs
 
-Use this as a map, not a wall of links.
+Use this as a map, not a wall of links. Start with the small set below; the expandable index is for maintainers changing the contract surface.
 
-**Evaluation and first run.** Start here when you want to run the repo and understand exactly what the evaluation release proves: [Attestor Evaluation Packet v0.1](docs/00-evaluation/v0.1-evaluation-packet.md), [v0.1.2 evaluation release notes](docs/00-evaluation/v0.1.2-evaluation-release-notes.md), [Try Attestor first](docs/01-overview/try-attestor-first.md), [What you can do with Attestor](docs/01-overview/what-you-can-do.md), [Consequence admission quickstart](docs/01-overview/consequence-admission-quickstart.md), [Customer admission gate](docs/01-overview/customer-admission-gate.md), [Non-bypassable gateway demo](docs/01-overview/non-bypassable-gateway-demo.md), [Agent retry wrapper demo](docs/01-overview/agent-retry-wrapper-demo.md), [Proof model](docs/05-proof/proof-model.md), [Signing and verification](docs/06-signing/signing-verification.md).
+**Evaluate the repo.** Run this path first if you want to know what is real today: [Attestor Evaluation Packet v0.1](docs/00-evaluation/v0.1-evaluation-packet.md), [v0.1.2 evaluation release notes](docs/00-evaluation/v0.1.2-evaluation-release-notes.md), [Try Attestor first](docs/01-overview/try-attestor-first.md), [Consequence admission quickstart](docs/01-overview/consequence-admission-quickstart.md), [Customer admission gate](docs/01-overview/customer-admission-gate.md), [Non-bypassable gateway demo](docs/01-overview/non-bypassable-gateway-demo.md), [Agent retry wrapper demo](docs/01-overview/agent-retry-wrapper-demo.md), [Proof model](docs/05-proof/proof-model.md), [Signing and verification](docs/06-signing/signing-verification.md).
 
-**Product and integration path.** Use these when deciding how Attestor fits into a customer workflow: [AI action authorization positioning](docs/01-overview/action-authorization-positioning.md), [Attestor operating model](docs/01-overview/operating-model.md), [Customer integration recipes](docs/01-overview/customer-integration-recipes.md), [Hosted action authorization API](docs/01-overview/hosted-action-authorization-api.md), [First hosted API call](docs/01-overview/hosted-first-api-call.md), [Finance and crypto first integrations](docs/01-overview/finance-and-crypto-first-integrations.md), [Commercial packaging, pricing, and evaluation](docs/01-overview/product-packaging.md), [Pricing ROI calculator](docs/01-overview/pricing-roi-calculator.md), [Hosted customer journey](docs/01-overview/hosted-customer-journey.md), [Hosted account visibility](docs/01-overview/hosted-account-visibility.md).
+**Place it in a customer system.** These docs answer where the control point sits and how an evaluator should think about rollout: [What you can do with Attestor](docs/01-overview/what-you-can-do.md), [Attestor operating model](docs/01-overview/operating-model.md), [Customer integration recipes](docs/01-overview/customer-integration-recipes.md), [Hosted action authorization API](docs/01-overview/hosted-action-authorization-api.md), [First hosted API call](docs/01-overview/hosted-first-api-call.md), [Finance and crypto first integrations](docs/01-overview/finance-and-crypto-first-integrations.md), [Commercial packaging, pricing, and evaluation](docs/01-overview/product-packaging.md), [Pricing ROI calculator](docs/01-overview/pricing-roi-calculator.md), [Hosted customer journey](docs/01-overview/hosted-customer-journey.md), [Hosted account visibility](docs/01-overview/hosted-account-visibility.md).
 
-**Core contracts.** These are the documents to read before changing the admission engine, package surface, or public language: [AI Action Control Plane architecture](docs/02-architecture/ai-action-control-plane-architecture.md), [Attestor language contract](docs/02-architecture/attestor-language-contract.md), [Consequence taxonomy](docs/02-architecture/consequence-taxonomy.md), [Domain pack boundary](docs/02-architecture/domain-pack-boundary.md), [Downstream enforcement contract](docs/02-architecture/downstream-enforcement-contract.md), [Verifier helper](docs/02-architecture/verifier-helper.md), [Adapter framework](docs/02-architecture/adapter-framework.md), [Crypto intelligence buildout](docs/02-architecture/crypto-intelligence-buildout.md), [Crypto intelligence surface](docs/02-architecture/crypto-intelligence-platform-surface.md).
+**Change the core carefully.** Read these before changing public language, package boundaries, or admission semantics: [AI Action Control Plane architecture](docs/02-architecture/ai-action-control-plane-architecture.md), [Attestor language contract](docs/02-architecture/attestor-language-contract.md), [Consequence taxonomy](docs/02-architecture/consequence-taxonomy.md), [Domain pack boundary](docs/02-architecture/domain-pack-boundary.md), [Downstream enforcement contract](docs/02-architecture/downstream-enforcement-contract.md), [Verifier helper](docs/02-architecture/verifier-helper.md), [Adapter framework](docs/02-architecture/adapter-framework.md).
 
-**Action surface and Policy Foundry.** These explain how OpenAPI/manifests, shadow traffic, review handoff, red-team fixture bundle output, and live downstream replay evidence become review material: [Action surface manifest intake](docs/02-architecture/action-surface-manifest-intake.md), [Action surface declaration ingestors](docs/02-architecture/action-surface-declaration-ingestors.md), [Action surface profiler](docs/02-architecture/action-surface-profiler.md), [Action surface integration artifacts](docs/02-architecture/action-surface-integration-artifacts.md), [Action surface onboarding packet](docs/02-architecture/action-surface-onboarding-packet.md), [Policy Foundry onboarding](docs/02-architecture/policy-foundry-onboarding.md), [Policy Foundry failure gap map](docs/02-architecture/policy-foundry-failure-gap-map.md), [Integration mode readiness](docs/02-architecture/integration-mode-readiness.md).
+**Onboard a new action surface.** This is the Policy Foundry path from API/manifests to review material: [Action surface manifest intake](docs/02-architecture/action-surface-manifest-intake.md), [Action surface declaration ingestors](docs/02-architecture/action-surface-declaration-ingestors.md), [Action surface profiler](docs/02-architecture/action-surface-profiler.md), [Action surface integration artifacts](docs/02-architecture/action-surface-integration-artifacts.md), [Action surface onboarding packet](docs/02-architecture/action-surface-onboarding-packet.md), [Policy Foundry onboarding](docs/02-architecture/policy-foundry-onboarding.md), [Policy Foundry failure gap map](docs/02-architecture/policy-foundry-failure-gap-map.md), [Integration mode readiness](docs/02-architecture/integration-mode-readiness.md).
 
-**Failure controls, evidence, and replay.** Read these when a finding needs to become a control, fixture, proof packet, or runtime check: [Failure mode registry](docs/02-architecture/failure-mode-registry.md), [Failure mode control bindings](docs/02-architecture/failure-mode-control-bindings.md), [Failure mode replay fixtures](docs/02-architecture/failure-mode-replay-fixtures.md), [Untrusted content authority guard](docs/02-architecture/untrusted-content-authority-guard.md), [Tool result poisoning guard](docs/02-architecture/tool-result-poisoning-guard.md), [Approval provenance guard](docs/02-architecture/approval-provenance-guard.md), [Stale authority policy guard](docs/02-architecture/stale-authority-policy-guard.md), [Recipient tenant boundary replay](docs/02-architecture/recipient-tenant-boundary-replay.md), [Scope explosion guard](docs/02-architecture/scope-explosion-guard.md), [Human review fatigue guard](docs/02-architecture/human-review-fatigue-guard.md), [Decision context drift binding](docs/02-architecture/decision-context-drift-binding.md), [No-go condition ledger](docs/02-architecture/no-go-condition-ledger.md), [Audit evidence export](docs/02-architecture/audit-evidence-export.md), [Tamper-evident history](docs/02-architecture/tamper-evident-history.md), [Business risk dashboard](docs/02-architecture/business-risk-dashboard.md), [Dashboard API summary](docs/02-architecture/dashboard-api-summary.md), [External review packet](docs/02-architecture/external-review-packet.md), [Policy limit model](docs/02-architecture/policy-limit-model.md), [Downstream presentation binding](docs/02-architecture/downstream-presentation-binding.md), [Presentation replay ledger](docs/02-architecture/presentation-replay-ledger.md), [Downstream execution receipt](docs/02-architecture/downstream-execution-receipt.md).
+<details>
+<summary>Maintainer reference index</summary>
 
-**Runtime and production boundary.** These are for operators moving beyond local evaluation: [Production storage path](docs/02-architecture/production-storage-path.md), [Proof console buildout](docs/02-architecture/proof-console-buildout.md), [Production runtime hardening buildout](docs/02-architecture/production-runtime-hardening-buildout.md), [Production shared authority plane buildout](docs/02-architecture/production-shared-authority-plane-buildout.md), [Production rehearsal buildout](docs/02-architecture/production-rehearsal-buildout.md), [Production readiness](docs/08-deployment/production-readiness.md), [Tenant isolation boundary](docs/02-architecture/tenant-isolation-boundary.md), [Artifact attestation plan](docs/08-deployment/artifact-attestation-plan.md), [Evaluation Smoke workflow](.github/workflows/evaluation-smoke.yml).
+**Controls, evidence, and replay.** [Failure mode registry](docs/02-architecture/failure-mode-registry.md), [Failure mode control bindings](docs/02-architecture/failure-mode-control-bindings.md), [Failure mode replay fixtures](docs/02-architecture/failure-mode-replay-fixtures.md), [Untrusted content authority guard](docs/02-architecture/untrusted-content-authority-guard.md), [Tool result poisoning guard](docs/02-architecture/tool-result-poisoning-guard.md), [Approval provenance guard](docs/02-architecture/approval-provenance-guard.md), [Stale authority policy guard](docs/02-architecture/stale-authority-policy-guard.md), [Agent loop abuse guard](docs/02-architecture/agent-loop-abuse-guard.md), [Scope explosion guard](docs/02-architecture/scope-explosion-guard.md), [Human review fatigue guard](docs/02-architecture/human-review-fatigue-guard.md), [Decision context drift binding](docs/02-architecture/decision-context-drift-binding.md), [No-go condition ledger](docs/02-architecture/no-go-condition-ledger.md), [Recipient tenant boundary replay](docs/02-architecture/recipient-tenant-boundary-replay.md), [Audit evidence export](docs/02-architecture/audit-evidence-export.md), [Tamper-evident history](docs/02-architecture/tamper-evident-history.md), [Business risk dashboard](docs/02-architecture/business-risk-dashboard.md), [Dashboard API summary](docs/02-architecture/dashboard-api-summary.md), [External review packet](docs/02-architecture/external-review-packet.md), [Policy limit model](docs/02-architecture/policy-limit-model.md), [Downstream presentation binding](docs/02-architecture/downstream-presentation-binding.md), [Presentation replay ledger](docs/02-architecture/presentation-replay-ledger.md), [Downstream execution receipt](docs/02-architecture/downstream-execution-receipt.md).
+
+**Crypto and runtime boundaries.** [Crypto intelligence buildout](docs/02-architecture/crypto-intelligence-buildout.md), [Crypto intelligence surface](docs/02-architecture/crypto-intelligence-platform-surface.md), [Production storage path](docs/02-architecture/production-storage-path.md), [Proof console buildout](docs/02-architecture/proof-console-buildout.md), [Production runtime hardening buildout](docs/02-architecture/production-runtime-hardening-buildout.md), [Production shared authority plane buildout](docs/02-architecture/production-shared-authority-plane-buildout.md), [Production rehearsal buildout](docs/02-architecture/production-rehearsal-buildout.md), [Tenant isolation boundary](docs/02-architecture/tenant-isolation-boundary.md), [Artifact attestation plan](docs/08-deployment/artifact-attestation-plan.md), [Evaluation Smoke workflow](.github/workflows/evaluation-smoke.yml).
+
+</details>

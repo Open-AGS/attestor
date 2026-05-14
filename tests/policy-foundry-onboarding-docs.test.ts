@@ -294,8 +294,8 @@ function testReadmeNamesPolicyFoundryWithoutOverclaiming(): void {
   );
   includes(
     readme,
-    'activate enforcement, execute production traffic, or prove production',
-    'README: production smoke probe limitation is explicit',
+    'Safety boundary: hosted onboarding returns review material only.',
+    'README: hosted onboarding limitation is stated once in the safety boundary',
   );
   includes(
     readme,

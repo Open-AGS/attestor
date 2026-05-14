@@ -35,8 +35,8 @@ try {
   includes(validation, '| F7-S8 single-operator shadow activation | `open` | `fixed` |', 'F7 high-risk validation: S8 transition is recorded');
   includes(validation, 'two planned', 'F7 high-risk validation: remaining queue count is explicit');
 
-  includes(tracker, '| F7 shadow infrastructure red-team | 10 | 7 | 3 | 0 |', 'Tracker: F7 count is updated after signing-boundary slice');
-  includes(tracker, 'Remaining F7 queue after shadow bundle signing boundary validation: 1 planned', 'Tracker: F7 remaining count is updated');
+  includes(tracker, '| F7 shadow infrastructure red-team | 10 | 8 | 2 | 0 |', 'Tracker: F7 count is updated after signing-boundary slice');
+  includes(tracker, 'Remaining F7 queue after shadow readiness and claim alignment: 0 planned', 'Tracker: F7 remaining count is updated');
   includes(tracker, 'F7-S8 single-operator shadow activation | `fixed`', 'Tracker: F7-S8 is fixed');
   includes(tracker, 'F7 High-Risk Two-Person Activation Validation', 'Tracker: F7 high-risk validation evidence is linked');
 

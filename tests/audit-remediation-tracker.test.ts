@@ -32,7 +32,7 @@ try {
   includes(tracker, '`origin/master` is the source of truth', 'Tracker: origin/master rule is present');
   includes(tracker, 'Remaining work after the final claim-alignment slice: 0 planned', 'Tracker: final remaining estimate is explicit');
   includes(tracker, 'Remaining F6 queue after recipient/tenant runtime boundary bridge: 0 planned', 'Tracker: F6 remaining estimate is explicit');
-  includes(tracker, 'Remaining F7 queue after shadow bundle signing boundary validation: 1 planned', 'Tracker: F7 remaining estimate is explicit');
+  includes(tracker, 'Remaining F7 queue after shadow readiness and claim alignment: 0 planned', 'Tracker: F7 remaining estimate is explicit');
 
   for (const pr of [
     '#220',
@@ -128,7 +128,7 @@ try {
   includes(tracker, 'Final Claim Alignment Validation', 'Tracker: final claim-alignment validation evidence is linked');
   includes(tracker, 'The current F1-F5 project-owner supplied audit queue is closed for repository', 'Tracker: F1-F5 queue closure is explicit');
   includes(tracker, 'F6 is closed for planned repository slices', 'Tracker: F6 closure is explicit');
-  includes(tracker, 'F7 is now the active queue', 'Tracker: F7 active queue is explicit');
+  includes(tracker, 'F7 is closed for planned repository slices', 'Tracker: F7 closure is explicit');
   includes(tracker, 'F6-T1 shared PKI tenant binding | `partial`', 'Tracker: F6-T1 status is tracked');
   includes(tracker, 'F6-T2 RLS declared but not data-path wired | `accepted-limitation`', 'Tracker: F6-T2 status is tracked');
   includes(tracker, 'F6-T3 env tenant key registry per-pod cache | `partial`', 'Tracker: F6-T3 status is tracked');
@@ -148,7 +148,8 @@ try {
   includes(tracker, 'F7-S7 red-team replay is not runtime enforcement | `accepted-limitation`', 'Tracker: F7-S7 status is tracked');
   includes(tracker, 'F7-S8 single-operator shadow activation | `fixed`', 'Tracker: F7-S8 status is tracked');
   includes(tracker, 'F7-S9 shadow bundle signing boundary | `fixed`', 'Tracker: F7-S9 status is tracked');
-  includes(tracker, 'F7-S10 production-ready descriptor enforcement | `partial`', 'Tracker: F7-S10 status is tracked');
+  includes(tracker, 'F7-S10 production-ready descriptor enforcement | `fixed`', 'Tracker: F7-S10 status is tracked');
+  includes(tracker, 'F7 Shadow Readiness Claim Alignment Validation', 'Tracker: F7 readiness validation evidence is linked');
   includes(tracker, 'F5-A1 out-of-band trust root optional | `fixed`', 'Tracker: F5 CA pin validation is fixed');
   includes(tracker, 'F5 CA Pin Required Validation', 'Tracker: F5 CA pin validation evidence is linked');
   includes(tracker, 'F5-A2 legacy flat verify escape via env | `fixed`', 'Tracker: F5 legacy env downgrade validation is fixed');
@@ -200,6 +201,8 @@ try {
   includes(packageJson, '"test:f7-break-glass-hardening-validation"', 'Package: F7 break-glass hardening validation script is exposed');
   includes(packageJson, '"test:f7-high-risk-two-person-activation-validation"', 'Package: F7 high-risk two-person activation validation script is exposed');
   includes(packageJson, '"test:f7-shadow-bundle-signing-boundary-validation"', 'Package: F7 shadow bundle signing boundary validation script is exposed');
+  includes(packageJson, '"test:shadow-readiness-claim-alignment"', 'Package: shadow readiness claim-alignment script is exposed');
+  includes(packageJson, '"test:f7-shadow-readiness-claim-alignment-validation"', 'Package: F7 shadow readiness validation script is exposed');
 
   ok(tracker.split('\n').length > 120, 'Tracker: enough rows to cover supplied audit reports');
   console.log(`Audit remediation tracker tests: ${passed} passed, 0 failed`);

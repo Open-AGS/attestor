@@ -42,27 +42,20 @@ The repository currently has these relevant surfaces:
 
 | ID | Report claim | Repository status | Validation result |
 |---|---|---|---|
-| F7-S1 | Shadow event injection without origin-binding | Shadow events carry `admissionId` and `admissionDigest`; no production-path cryptographic witness is required. The direct public route-injection wording is too strong because shadow simulation routes read events through `deps.listShadowEvents({ tenant })`, not arbitrary event arrays from the caller. | `partial` |
-| F7-S2 | `redactionLevel: operator-supplied` is a self-attest hole | `operator-supplied` exists, but `createShadowAdmissionEvent` stores feature keys and a digest, not raw observed feature values. The raw-leak wording is too broad. A redaction-policy witness is still absent. | `partial` |
-| F7-S3 | Simulation report window can be widened/narrowed by attacker | Core simulation accepts caller-provided events and threshold, but HTTP routes use persisted tenant events. `minimumPromotionEvents` is still request-controlled within validation bounds. | `partial` |
-| F7-S4 | Break-glass rollout has no extra gate | `break-glass` is an equal rollout strategy and does not require a distinct secondary approver, expiry, or reconciliation record. | `open` |
+| F7-S1 | Shadow event injection without origin-binding | Shadow events now carry origin witness binding. The direct public route-injection wording is also too strong because shadow simulation routes read events through `deps.listShadowEvents({ tenant })`, not arbitrary caller arrays. | `fixed` |
+| F7-S2 | `redactionLevel: operator-supplied` is a self-attest hole | Shadow events now carry redaction witness binding; feature values are digested rather than raw-stored as stated. | `fixed` |
+| F7-S3 | Simulation report window can be widened/narrowed by attacker | Simulation routes use persisted tenant events, and the core enforces a server-owned promotion floor. | `fixed` |
+| F7-S4 | Break-glass rollout has no extra gate | Break-glass activation now requires independent approval, bounded expiry, justification, and reconciliation. | `fixed` |
 | F7-S5 | `customerControlsReady` can flip true with missing required controls | Current code computes `customerControlsReady = controlRefs.every((control) => control.present)`, and tests cover missing controls. | `invalid-as-stated` |
 | F7-S6 | Shadow persistence is per-node single-host | File-backed shadow persistence is real, but `production-storage-path.ts` explicitly marks shadow stores as `shared-durable` requirements and blocks `production-shared` by default. | `accepted-limitation` |
 | F7-S7 | Policy Foundry red-team replay is not a runtime gate | Correct boundary. Replay tests exist; they do not replace production runtime guards. | `accepted-limitation` |
-| F7-S8 | Shadow-to-enforce promotion is single-operator gated | `shadow-customer-activation-handoff.ts` has `operatorRef`, not a required two-person high-risk promotion contract. | `open` |
-| F7-S9 | Shadow bundle signing inherits signing-layer blast radius | The shadow bundle publication has a signing boundary, but it is not independently tenant-isolated by default. This overlaps F6-T1/F6-T6 and needs a dedicated boundary validation before stronger claims. | `partial` |
-| F7-S10 | `productionReady: false` flags are descriptive only | Storage readiness is enforced for selected profile through `production-storage-path.ts`. There is not yet a universal boot-time aggregator for every shadow module's production-readiness descriptor. | `partial` |
+| F7-S8 | Shadow-to-enforce promotion is single-operator gated | High-risk activation now requires an independent second approver before handoff readiness. | `fixed` |
+| F7-S9 | Shadow bundle signing inherits signing-layer blast radius | Shadow bundle publication now separates evaluation signatures from production-boundary signatures. Tenant-specific signer isolation remains tracked under F6-T1/F6-T6. | `fixed` |
+| F7-S10 | `productionReady: false` flags are descriptive only | `shadow-readiness-claim-alignment.ts` now aggregates shadow stage descriptors and `/api/v1/ready` exposes `checks.shadowReadinessClaimAlignment`; `productionReady: false` remains intentional. | `fixed` |
 
 ## Corrected Queue
 
-After this validation slice, F7 has six planned repository units:
-
-1. Shadow event origin and redaction witness: F7-S1 plus F7-S2.
-2. Server-owned simulation policy floor: F7-S3.
-3. Break-glass hardening: F7-S4.
-4. Two-person high-risk activation handoff: F7-S8.
-5. Shadow bundle signing boundary validation: F7-S9.
-6. Shadow readiness and claim alignment: F7-S10.
+After the follow-up F7 slices, F7 has zero planned repository units.
 
 F7-S5 is invalid as stated. F7-S6 is an accepted repository limitation because
 selected-profile storage readiness already blocks `production-shared` when
@@ -74,11 +67,11 @@ evidence and design feedback, not a runtime guard.
 | Claim | Verdict |
 |---|---|
 | Attestor has a typed shadow-to-enforce pipeline | Holds. The pipeline has staged contracts and tests. |
-| Shadow event data cannot poison promotion | Not yet. Origin witness and redaction witness remain partial. |
+| Shadow event data cannot poison promotion | Repository-side witness and simulation-floor controls hold. External production-path witnessing is not claimed. |
 | Customer controls can be marked ready while a required control is missing | Invalid as stated. Current code uses strict `every(...)`. |
 | File-backed shadow stores are allowed for `production-shared` readiness | Invalid as stated. Selected-profile storage readiness blocks this by default. |
-| Break-glass activation is specially gated | Not yet. |
-| High-risk shadow activation requires two people | Not yet. |
+| Break-glass activation is specially gated | Holds for the repository contract. |
+| High-risk shadow activation requires two people | Holds for high-risk activation handoff readiness. |
 | Red-team replay equals runtime enforcement | No. It is evidence, not runtime enforcement. |
 
 ## Sources

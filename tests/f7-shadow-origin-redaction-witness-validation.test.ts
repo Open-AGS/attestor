@@ -32,8 +32,8 @@ try {
   includes(validation, '| F7-S2 operator-supplied redaction self-attest | `partial` | `fixed` |', 'F7 witness validation: S2 transition is recorded');
   includes(validation, 'five planned', 'F7 witness validation: remaining queue count is explicit');
 
-  includes(tracker, '| F7 shadow infrastructure red-team | 10 | 7 | 3 | 0 |', 'Tracker: F7 count is updated after signing-boundary slice');
-  includes(tracker, 'Remaining F7 queue after shadow bundle signing boundary validation: 1 planned', 'Tracker: F7 remaining count is updated');
+  includes(tracker, '| F7 shadow infrastructure red-team | 10 | 8 | 2 | 0 |', 'Tracker: F7 count is updated after signing-boundary slice');
+  includes(tracker, 'Remaining F7 queue after shadow readiness and claim alignment: 0 planned', 'Tracker: F7 remaining count is updated');
   includes(tracker, 'F7-S1 shadow event injection without origin-binding | `fixed`', 'Tracker: F7-S1 is fixed');
   includes(tracker, 'F7-S2 operator-supplied redaction self-attest | `fixed`', 'Tracker: F7-S2 is fixed');
   includes(tracker, 'F7 Shadow Event Origin And Redaction Witness Validation', 'Tracker: F7 witness validation evidence is linked');

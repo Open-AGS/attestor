@@ -97,6 +97,7 @@ function architectureScriptNames() {
     'test:failure-mode-runtime-extensions',
     'test:replay-layer-placement',
     'test:guard-activation-readiness',
+    'test:shadow-readiness-claim-alignment',
     'test:agentic-supply-chain-guard',
     'test:multi-agent-delegation-guard',
     'test:consequence-admission-readiness',

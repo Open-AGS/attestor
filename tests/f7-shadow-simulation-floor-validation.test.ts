@@ -30,8 +30,8 @@ try {
   includes(validation, '| F7-S3 simulation window / threshold manipulation | `partial` | `fixed` |', 'F7 simulation floor validation: S3 transition is recorded');
   includes(validation, 'four planned', 'F7 simulation floor validation: remaining queue count is explicit');
 
-  includes(tracker, '| F7 shadow infrastructure red-team | 10 | 7 | 3 | 0 |', 'Tracker: F7 count is updated after signing-boundary slice');
-  includes(tracker, 'Remaining F7 queue after shadow bundle signing boundary validation: 1 planned', 'Tracker: F7 remaining count is updated');
+  includes(tracker, '| F7 shadow infrastructure red-team | 10 | 8 | 2 | 0 |', 'Tracker: F7 count is updated after signing-boundary slice');
+  includes(tracker, 'Remaining F7 queue after shadow readiness and claim alignment: 0 planned', 'Tracker: F7 remaining count is updated');
   includes(tracker, 'F7-S3 simulation window / threshold manipulation | `fixed`', 'Tracker: F7-S3 is fixed');
   includes(tracker, 'F7 Shadow Simulation Policy Floor Validation', 'Tracker: F7 simulation floor validation evidence is linked');
 

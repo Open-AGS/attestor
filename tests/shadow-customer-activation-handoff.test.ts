@@ -54,6 +54,8 @@ const evidenceDigest = 'sha256:ccccccccccccccccccccccccccccccccccccccccccccccccc
 const rollbackDigest = 'sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd';
 const killSwitchDigest = 'sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
 const monitoringDigest = 'sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff';
+const breakGlassJustificationDigest = 'sha256:1111111111111111111111111111111111111111111111111111111111111111';
+const breakGlassReconciliationDigest = 'sha256:2222222222222222222222222222222222222222222222222222222222222222';
 
 function createSafeEvent(index: number): ShadowAdmissionEvent {
   return createShadowAdmissionEvent({
@@ -413,6 +415,138 @@ async function testExpiredActivationWindowBlocksHandoff(): Promise<void> {
   ok(body.handoff.remainingActivationBlockers.includes('activation-window-expired'), 'Customer activation handoff route: expired window blocker remains');
 }
 
+async function testBreakGlassRequiresExtraControls(): Promise<void> {
+  const app = createApp({
+    events: Array.from({ length: 5 }, (_, index) => createSafeEvent(index + 1)),
+    productionSigner: true,
+  });
+  const candidateId = await materializeCandidate(app);
+  await activateCandidate(app, candidateId);
+
+  const response = await postHandoff(
+    app,
+    completeHandoffBody({
+      rolloutStrategy: 'break-glass',
+      expiresAt: null,
+    }),
+    'activated',
+  );
+  const body = await response.json() as {
+    readonly handoff: {
+      readonly handoffReady: boolean;
+      readonly breakGlassControlsReady: boolean;
+      readonly breakGlassWindowSeconds: number | null;
+      readonly remainingActivationBlockers: readonly string[];
+    };
+  };
+
+  equal(response.status, 200, 'Customer activation handoff route: incomplete break-glass returns 200');
+  equal(body.handoff.handoffReady, false, 'Customer activation handoff route: incomplete break-glass blocks handoff');
+  equal(body.handoff.breakGlassControlsReady, false, 'Customer activation handoff route: incomplete break-glass controls are not ready');
+  equal(body.handoff.breakGlassWindowSeconds, null, 'Customer activation handoff route: missing break-glass expiry has no window');
+  ok(body.handoff.remainingActivationBlockers.includes('break-glass-secondary-approver-required'), 'Customer activation handoff route: break-glass requires secondary approver');
+  ok(body.handoff.remainingActivationBlockers.includes('break-glass-expiry-required'), 'Customer activation handoff route: break-glass requires expiry');
+  ok(body.handoff.remainingActivationBlockers.includes('break-glass-justification-required'), 'Customer activation handoff route: break-glass requires justification');
+  ok(body.handoff.remainingActivationBlockers.includes('break-glass-reconciliation-required'), 'Customer activation handoff route: break-glass requires reconciliation');
+}
+
+async function testBreakGlassRejectsSameApproverAndLongWindow(): Promise<void> {
+  const app = createApp({
+    events: Array.from({ length: 5 }, (_, index) => createSafeEvent(index + 1)),
+    productionSigner: true,
+  });
+  const candidateId = await materializeCandidate(app);
+  await activateCandidate(app, candidateId);
+
+  const response = await postHandoff(
+    app,
+    completeHandoffBody({
+      rolloutStrategy: 'break-glass',
+      secondaryApproverRef: 'operator:security-reviewer',
+      expiresAt: '2026-05-02T22:06:00.000Z',
+      breakGlassJustificationRef: {
+        id: 'incident:shadow-break-glass-789',
+        kind: 'incident-channel',
+        digest: breakGlassJustificationDigest,
+        uri: 'https://example.invalid/attestor/incidents/shadow-break-glass-789',
+      },
+      breakGlassReconciliationRef: {
+        id: 'postmortem:shadow-break-glass-789',
+        kind: 'manual-runbook',
+        digest: breakGlassReconciliationDigest,
+        uri: 'https://example.invalid/attestor/postmortems/shadow-break-glass-789',
+      },
+    }),
+    'activated',
+  );
+  const body = await response.json() as {
+    readonly handoff: {
+      readonly handoffReady: boolean;
+      readonly breakGlassControlsReady: boolean;
+      readonly breakGlassWindowSeconds: number | null;
+      readonly remainingActivationBlockers: readonly string[];
+    };
+  };
+
+  equal(response.status, 200, 'Customer activation handoff route: unsafe break-glass returns 200');
+  equal(body.handoff.handoffReady, false, 'Customer activation handoff route: unsafe break-glass blocks handoff');
+  equal(body.handoff.breakGlassControlsReady, false, 'Customer activation handoff route: unsafe break-glass controls are not ready');
+  equal(body.handoff.breakGlassWindowSeconds, 18060, 'Customer activation handoff route: break-glass window is reported in seconds');
+  ok(body.handoff.remainingActivationBlockers.includes('break-glass-secondary-approver-must-differ'), 'Customer activation handoff route: break-glass secondary approver must differ');
+  ok(body.handoff.remainingActivationBlockers.includes('break-glass-window-too-long'), 'Customer activation handoff route: break-glass window is capped');
+}
+
+async function testBreakGlassCanBecomeReadyWithExtraControls(): Promise<void> {
+  const app = createApp({
+    events: Array.from({ length: 5 }, (_, index) => createSafeEvent(index + 1)),
+    productionSigner: true,
+  });
+  const candidateId = await materializeCandidate(app);
+  await activateCandidate(app, candidateId);
+
+  const response = await postHandoff(
+    app,
+    completeHandoffBody({
+      rolloutStrategy: 'break-glass',
+      secondaryApproverRef: 'operator:incident-commander',
+      expiresAt: '2026-05-02T20:05:00.000Z',
+      breakGlassJustificationRef: {
+        id: 'incident:shadow-break-glass-789',
+        kind: 'incident-channel',
+        digest: breakGlassJustificationDigest,
+        uri: 'https://example.invalid/attestor/incidents/shadow-break-glass-789',
+      },
+      breakGlassReconciliationRef: {
+        id: 'postmortem:shadow-break-glass-789',
+        kind: 'manual-runbook',
+        digest: breakGlassReconciliationDigest,
+        uri: 'https://example.invalid/attestor/postmortems/shadow-break-glass-789',
+      },
+    }),
+    'activated',
+  );
+  const body = await response.json() as {
+    readonly handoff: {
+      readonly handoffReady: boolean;
+      readonly secondaryApproverRef: string | null;
+      readonly breakGlassControlsReady: boolean;
+      readonly breakGlassWindowSeconds: number | null;
+      readonly breakGlassJustificationRef: { readonly digest: string } | null;
+      readonly breakGlassReconciliationRef: { readonly digest: string } | null;
+      readonly remainingActivationBlockers: readonly string[];
+    };
+  };
+
+  equal(response.status, 200, 'Customer activation handoff route: complete break-glass returns 200');
+  equal(body.handoff.handoffReady, true, 'Customer activation handoff route: complete break-glass can become ready');
+  equal(body.handoff.secondaryApproverRef, 'operator:incident-commander', 'Customer activation handoff route: break-glass secondary approver is carried');
+  equal(body.handoff.breakGlassControlsReady, true, 'Customer activation handoff route: complete break-glass controls are ready');
+  equal(body.handoff.breakGlassWindowSeconds, 10800, 'Customer activation handoff route: complete break-glass window is reported');
+  equal(body.handoff.breakGlassJustificationRef?.digest ?? null, breakGlassJustificationDigest, 'Customer activation handoff route: break-glass justification is carried');
+  equal(body.handoff.breakGlassReconciliationRef?.digest ?? null, breakGlassReconciliationDigest, 'Customer activation handoff route: break-glass reconciliation is carried');
+  equal(body.handoff.remainingActivationBlockers.length, 0, 'Customer activation handoff route: complete break-glass has no blockers');
+}
+
 async function testInvalidCustomerControlDigestIsRejected(): Promise<void> {
   const app = createApp({
     events: Array.from({ length: 5 }, (_, index) => createSafeEvent(index + 1)),
@@ -453,6 +587,12 @@ try {
   await testMissingKillSwitchBlocksHandoff();
   resetShadowPersistenceStoresForTests({ policyCandidatePath: candidatePath });
   await testExpiredActivationWindowBlocksHandoff();
+  resetShadowPersistenceStoresForTests({ policyCandidatePath: candidatePath });
+  await testBreakGlassRequiresExtraControls();
+  resetShadowPersistenceStoresForTests({ policyCandidatePath: candidatePath });
+  await testBreakGlassRejectsSameApproverAndLongWindow();
+  resetShadowPersistenceStoresForTests({ policyCandidatePath: candidatePath });
+  await testBreakGlassCanBecomeReadyWithExtraControls();
   resetShadowPersistenceStoresForTests({ policyCandidatePath: candidatePath });
   await testInvalidCustomerControlDigestIsRejected();
 

@@ -9,6 +9,8 @@ import type {
 
 export const SHADOW_CUSTOMER_ACTIVATION_HANDOFF_VERSION =
   'attestor.shadow-customer-activation-handoff.v1';
+export const SHADOW_CUSTOMER_ACTIVATION_BREAK_GLASS_MAX_WINDOW_MS =
+  4 * 60 * 60 * 1000;
 
 export const SHADOW_CUSTOMER_ACTIVATION_ROLLOUT_STRATEGIES = [
   'manual',
@@ -69,8 +71,13 @@ export interface ShadowCustomerActivationHandoff {
   readonly sourceSimulationDigest: string;
   readonly activationRef: string;
   readonly operatorRef: string;
+  readonly secondaryApproverRef: string | null;
   readonly rolloutStrategy: ShadowCustomerActivationRolloutStrategy;
   readonly expiresAt: string | null;
+  readonly breakGlassWindowSeconds: number | null;
+  readonly breakGlassJustificationRef: ShadowCustomerActivationControlRef | null;
+  readonly breakGlassReconciliationRef: ShadowCustomerActivationControlRef | null;
+  readonly breakGlassControlsReady: boolean;
   readonly controlRefs: readonly ShadowCustomerActivationControl[];
   readonly controlDigest: string;
   readonly customerControlsReady: boolean;
@@ -90,10 +97,13 @@ export interface CreateShadowCustomerActivationHandoffInput {
   readonly activationReadiness: ShadowActivationReadinessGate;
   readonly activationRef: string;
   readonly operatorRef: string;
+  readonly secondaryApproverRef?: string | null;
   readonly rolloutStrategy: ShadowCustomerActivationRolloutStrategy;
   readonly rollbackRef?: ShadowCustomerActivationControlRef | null;
   readonly killSwitchRef?: ShadowCustomerActivationControlRef | null;
   readonly monitoringRef?: ShadowCustomerActivationControlRef | null;
+  readonly breakGlassJustificationRef?: ShadowCustomerActivationControlRef | null;
+  readonly breakGlassReconciliationRef?: ShadowCustomerActivationControlRef | null;
   readonly expiresAt?: string | null;
   readonly generatedAt?: string | null;
 }
@@ -246,6 +256,11 @@ function remainingBlockers(input: {
   readonly controlRefs: readonly ShadowCustomerActivationControl[];
   readonly expiresAt: string | null;
   readonly generatedAt: string;
+  readonly rolloutStrategy: ShadowCustomerActivationRolloutStrategy;
+  readonly operatorRef: string;
+  readonly secondaryApproverRef: string | null;
+  readonly breakGlassJustificationRef: ShadowCustomerActivationControlRef | null;
+  readonly breakGlassReconciliationRef: ShadowCustomerActivationControlRef | null;
 }): readonly string[] {
   const blockers = new Set(input.activationReadiness.remainingActivationBlockers);
   if (!input.activationReadiness.activationReady) {
@@ -257,7 +272,37 @@ function remainingBlockers(input: {
   if (input.expiresAt !== null && Date.parse(input.expiresAt) <= Date.parse(input.generatedAt)) {
     blockers.add('activation-window-expired');
   }
+  if (input.rolloutStrategy === 'break-glass') {
+    if (input.secondaryApproverRef === null) {
+      blockers.add('break-glass-secondary-approver-required');
+    } else if (input.secondaryApproverRef === input.operatorRef) {
+      blockers.add('break-glass-secondary-approver-must-differ');
+    }
+    if (input.expiresAt === null) {
+      blockers.add('break-glass-expiry-required');
+    } else {
+      const windowMs = Date.parse(input.expiresAt) - Date.parse(input.generatedAt);
+      if (windowMs > SHADOW_CUSTOMER_ACTIVATION_BREAK_GLASS_MAX_WINDOW_MS) {
+        blockers.add('break-glass-window-too-long');
+      }
+    }
+    if (input.breakGlassJustificationRef === null) {
+      blockers.add('break-glass-justification-required');
+    }
+    if (input.breakGlassReconciliationRef === null) {
+      blockers.add('break-glass-reconciliation-required');
+    }
+  }
   return Object.freeze([...blockers].sort());
+}
+
+function breakGlassWindowSeconds(input: {
+  readonly rolloutStrategy: ShadowCustomerActivationRolloutStrategy;
+  readonly generatedAt: string;
+  readonly expiresAt: string | null;
+}): number | null {
+  if (input.rolloutStrategy !== 'break-glass' || input.expiresAt === null) return null;
+  return Math.floor((Date.parse(input.expiresAt) - Date.parse(input.generatedAt)) / 1000);
 }
 
 function handoffIdFor(input: {
@@ -265,9 +310,13 @@ function handoffIdFor(input: {
   readonly sourceActivationReadinessDigest: string;
   readonly activationRef: string;
   readonly operatorRef: string;
+  readonly secondaryApproverRef: string | null;
   readonly rolloutStrategy: ShadowCustomerActivationRolloutStrategy;
   readonly controlDigest: string;
   readonly expiresAt: string | null;
+  readonly breakGlassWindowSeconds: number | null;
+  readonly breakGlassJustificationDigest: string | null;
+  readonly breakGlassReconciliationDigest: string | null;
 }): string {
   return `customer-activation-handoff:${hashCanonical(input as unknown as CanonicalReleaseJsonValue)}`;
 }
@@ -288,11 +337,28 @@ export function createShadowCustomerActivationHandoff(
   );
   const activationRef = normalizeIdentifier(input.activationRef, 'activationRef');
   const operatorRef = normalizeIdentifier(input.operatorRef, 'operatorRef');
+  const secondaryApproverRef = normalizeOptionalIdentifier(
+    input.secondaryApproverRef,
+    'secondaryApproverRef',
+  );
   const rolloutStrategy = normalizeRolloutStrategy(input.rolloutStrategy);
   const rollbackRef = normalizeControlRef(input.rollbackRef, 'rollbackRef');
   const killSwitchRef = normalizeControlRef(input.killSwitchRef, 'killSwitchRef');
   const monitoringRef = normalizeControlRef(input.monitoringRef, 'monitoringRef');
+  const breakGlassJustificationRef = normalizeControlRef(
+    input.breakGlassJustificationRef,
+    'breakGlassJustificationRef',
+  );
+  const breakGlassReconciliationRef = normalizeControlRef(
+    input.breakGlassReconciliationRef,
+    'breakGlassReconciliationRef',
+  );
   const expiresAt = normalizeOptionalIsoTimestamp(input.expiresAt, 'expiresAt');
+  const breakGlassWindow = breakGlassWindowSeconds({
+    rolloutStrategy,
+    generatedAt,
+    expiresAt,
+  });
   const controlRefs = createControls({
     activationRef,
     operatorRef,
@@ -307,8 +373,15 @@ export function createShadowCustomerActivationHandoff(
     controlRefs,
     expiresAt,
     generatedAt,
+    rolloutStrategy,
+    operatorRef,
+    secondaryApproverRef,
+    breakGlassJustificationRef,
+    breakGlassReconciliationRef,
   });
   const handoffReady = input.activationReadiness.activationReady && customerControlsReady && blockers.length === 0;
+  const breakGlassControlsReady = rolloutStrategy !== 'break-glass' ||
+    !blockers.some((blocker) => blocker.startsWith('break-glass-'));
   const payload = {
     version: SHADOW_CUSTOMER_ACTIVATION_HANDOFF_VERSION,
     handoffId: handoffIdFor({
@@ -316,9 +389,13 @@ export function createShadowCustomerActivationHandoff(
       sourceActivationReadinessDigest: input.activationReadiness.digest,
       activationRef,
       operatorRef,
+      secondaryApproverRef,
       rolloutStrategy,
       controlDigest,
       expiresAt,
+      breakGlassWindowSeconds: breakGlassWindow,
+      breakGlassJustificationDigest: breakGlassJustificationRef?.digest ?? null,
+      breakGlassReconciliationDigest: breakGlassReconciliationRef?.digest ?? null,
     }),
     generatedAt,
     tenantId: input.activationReadiness.tenantId,
@@ -329,8 +406,13 @@ export function createShadowCustomerActivationHandoff(
     sourceSimulationDigest: input.activationReadiness.sourceSimulationDigest,
     activationRef,
     operatorRef,
+    secondaryApproverRef,
     rolloutStrategy,
     expiresAt,
+    breakGlassWindowSeconds: breakGlassWindow,
+    breakGlassJustificationRef,
+    breakGlassReconciliationRef,
+    breakGlassControlsReady,
     controlRefs,
     controlDigest,
     customerControlsReady,

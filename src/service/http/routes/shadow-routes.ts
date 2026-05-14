@@ -612,10 +612,13 @@ async function readCustomerActivationHandoffBody(c: Context): Promise<{
   readonly integration: DownstreamIntegrationProofRouteBody;
   readonly activationRef: string;
   readonly operatorRef: string;
+  readonly secondaryApproverRef: string | null;
   readonly rolloutStrategy: ShadowCustomerActivationRolloutStrategy;
   readonly rollbackRef: ShadowCustomerActivationControlRef | null;
   readonly killSwitchRef: ShadowCustomerActivationControlRef | null;
   readonly monitoringRef: ShadowCustomerActivationControlRef | null;
+  readonly breakGlassJustificationRef: ShadowCustomerActivationControlRef | null;
+  readonly breakGlassReconciliationRef: ShadowCustomerActivationControlRef | null;
   readonly expiresAt: string | null;
 } | Response> {
   const contentType = c.req.header('content-type') ?? '';
@@ -663,6 +666,11 @@ async function readCustomerActivationHandoffBody(c: Context): Promise<{
     : '';
   const activationRef = typeof bodyRecord.activationRef === 'string' ? bodyRecord.activationRef.trim() : '';
   const operatorRef = typeof bodyRecord.operatorRef === 'string' ? bodyRecord.operatorRef.trim() : '';
+  const secondaryApproverRef = bodyRecord.secondaryApproverRef === undefined || bodyRecord.secondaryApproverRef === null
+    ? null
+    : typeof bodyRecord.secondaryApproverRef === 'string'
+      ? bodyRecord.secondaryApproverRef.trim()
+      : '';
   const rolloutStrategy = typeof bodyRecord.rolloutStrategy === 'string'
     ? parseCustomerActivationRolloutStrategy(bodyRecord.rolloutStrategy)
     : null;
@@ -671,7 +679,7 @@ async function readCustomerActivationHandoffBody(c: Context): Promise<{
     : typeof bodyRecord.expiresAt === 'string'
       ? bodyRecord.expiresAt.trim()
       : '';
-  if (!enforcementPointId || !boundaryKind || !verifierRef || !activationRef || !operatorRef || !rolloutStrategy || expiresAt === '') {
+  if (!enforcementPointId || !boundaryKind || !verifierRef || !activationRef || !operatorRef || secondaryApproverRef === '' || !rolloutStrategy || expiresAt === '') {
     return problem(c, {
       type: 'https://attestor.dev/problems/customer-activation-handoff-input-invalid',
       title: 'Invalid customer activation handoff input',
@@ -800,6 +808,10 @@ async function readCustomerActivationHandoffBody(c: Context): Promise<{
   if (killSwitchRef instanceof Response) return killSwitchRef;
   const monitoringRef = readControlRef('monitoringRef');
   if (monitoringRef instanceof Response) return monitoringRef;
+  const breakGlassJustificationRef = readControlRef('breakGlassJustificationRef');
+  if (breakGlassJustificationRef instanceof Response) return breakGlassJustificationRef;
+  const breakGlassReconciliationRef = readControlRef('breakGlassReconciliationRef');
+  if (breakGlassReconciliationRef instanceof Response) return breakGlassReconciliationRef;
 
   return {
     integration: {
@@ -811,10 +823,13 @@ async function readCustomerActivationHandoffBody(c: Context): Promise<{
     },
     activationRef,
     operatorRef,
+    secondaryApproverRef,
     rolloutStrategy,
     rollbackRef,
     killSwitchRef,
     monitoringRef,
+    breakGlassJustificationRef,
+    breakGlassReconciliationRef,
     expiresAt,
   };
 }
@@ -2435,10 +2450,13 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
         activationReadiness,
         activationRef: body.activationRef,
         operatorRef: body.operatorRef,
+        secondaryApproverRef: body.secondaryApproverRef,
         rolloutStrategy: body.rolloutStrategy,
         rollbackRef: body.rollbackRef,
         killSwitchRef: body.killSwitchRef,
         monitoringRef: body.monitoringRef,
+        breakGlassJustificationRef: body.breakGlassJustificationRef,
+        breakGlassReconciliationRef: body.breakGlassReconciliationRef,
         expiresAt: body.expiresAt,
         generatedAt: deps.now?.() ?? null,
       });

@@ -54,7 +54,7 @@ try {
   equal(existsSync(orphanPath), false, 'F-5.2: orphan temp file no longer exists');
   equal(existsSync(orphanDirectoryPath), false, 'F-5.2: orphan temp directory no longer exists');
   equal(existsSync(unrelatedPath), true, 'F-5.2: unrelated temp-like files are not removed');
-  ok(typeof result.directoryFsynced === 'boolean', 'F-5.2: parent directory fsync is attempted and reported');
+  equal(result.directoryFsynced, false, 'F-5.2: parent directory fsync is not claimed by the portable helper');
   ok(result.tempPath.endsWith('.tmp'), 'F-5.2: write result exposes the random temp path used');
   equal(existsSync(dirname(result.tempPath)), false, 'F-5.2: secure temp directory is removed after rename');
 
@@ -81,12 +81,12 @@ try {
   includes(keysSource, 'writeTextFileAtomic(publicKeyPath', 'F5-A5: saveKeyPair writes public key through atomic helper');
 
   const tracker = readFileSync(join(process.cwd(), 'docs', 'audit', 'attestor-audit-remediation-tracker.md'), 'utf8');
-  includes(tracker, 'F-5.2 parent-directory fsync / orphan sweep | `fixed`', 'Tracker: F-5.2 is marked fixed');
+  includes(tracker, 'F-5.2 parent-directory fsync / orphan sweep | `partial`', 'Tracker: F-5.2 is marked partial');
   includes(tracker, 'F5-A5 non-atomic `saveKeyPair` | `fixed`', 'Tracker: F5-A5 is marked fixed');
   includes(tracker, 'F5 File Durability And Key Atomicity Validation', 'Tracker: file durability validation evidence is linked');
 
   const validationDoc = readFileSync(join(process.cwd(), 'docs', 'audit', 'f5-file-durability-key-atomicity-validation.md'), 'utf8');
-  includes(validationDoc, 'Status: fixed', 'F5 file durability validation doc: fixed status is explicit');
+  includes(validationDoc, 'Status: partial', 'F5 file durability validation doc: partial status is explicit');
 
   const packageJson = readFileSync(join(process.cwd(), 'package.json'), 'utf8');
   includes(packageJson, '"test:f5-file-store-key-atomicity-validation"', 'Package: F5 file/key atomicity validation script is exposed');

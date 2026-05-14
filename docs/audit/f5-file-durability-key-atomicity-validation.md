@@ -1,6 +1,6 @@
 # F5 File Durability And Key Atomicity Validation
 
-Status: fixed.
+Status: partial.
 
 This document validates the scoped F-5.2 / F5-A5 remediation. It is not a
 certification, not a cross-host filesystem safety claim, and not a production
@@ -26,7 +26,7 @@ It does not close the F-5.7 multi-host/shared-filesystem lock finding.
   `mkdtempSync(...)` temp directory
 - fsyncs the temp file before rename
 - renames into place
-- attempts parent-directory fsync after rename and reports whether it succeeded
+- reports `directoryFsynced: false` instead of claiming parent-directory fsync
 - removes prior matching atomic-write temp files for the same target before a
   new write
 
@@ -38,9 +38,11 @@ enforceable.
 ## Claim Boundary
 
 Parent-directory fsync is best-effort because platform behavior differs,
-especially on Windows and some network filesystems. The helper reports whether
-the directory fsync succeeded, but it does not convert unsupported directory
-fsync into a failed write.
+especially on Windows and some network filesystems. This slice does not
+implement parent-directory fsync because the portable Node path conflicts with
+the repository's required CodeQL temporary-file gate when file-store tests use
+OS temp directories. Attestor therefore keeps parent-directory fsync as an
+explicit limitation instead of silently claiming it.
 
 This does not make local mkdir locks safe across NFS, SMB, FUSE, EFS, or
 multi-host shared filesystems. That remains F-5.7.
@@ -59,7 +61,7 @@ The targeted test proves:
 
 - orphan temp files matching the target path are swept
 - unrelated temp-like files are not removed
-- parent-directory fsync is attempted and reported
+- parent-directory fsync is not claimed
 - signing key material is persisted through the atomic helper
 - `saveKeyPair(...)` no longer writes key PEMs through direct `writeFileSync`
 

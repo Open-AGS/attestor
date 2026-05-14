@@ -45,7 +45,7 @@ later implementation pass does not re-open already-retired issues.
 | F3 cross-cutting guard readiness | 10 | 10 | 0 | 0 |
 | F4 OWASP LLM redo, active findings | 14 | 5 | 9 | 0 |
 | F4 stale worktree findings retired by fresh main | 3 | 0 | 3 | 0 |
-| F5 signing layer redo | 21 | 11 | 3 | 7 |
+| F5 signing layer redo | 21 | 10 | 4 | 7 |
 | Final docs / claim alignment | 2 | 0 | 0 | 2 |
 
 Estimated remaining work after this tracker lands: about 11 to 19 PR-sized or
@@ -188,7 +188,7 @@ earlier stale-worktree F5 is not authoritative.
 | ID | Current status | Evidence / overlap | Remaining action |
 |---|---|---|---|
 | F-5.1 leaf validity rounding | `invalid-as-stated` | Fresh F5 redo: duration-based leaf validity exists | No action unless fresh source inspection contradicts the redo. |
-| F-5.2 parent-directory fsync / orphan sweep | `fixed` | F5 File Durability And Key Atomicity Validation (`docs/audit/f5-file-durability-key-atomicity-validation.md`); `writeTextFileAtomic`; `cleanupAtomicWriteTempFiles`; `test:f5-file-store-key-atomicity-validation` | Atomic writes now sweep matching target temp files, fsync the temp file, rename, and attempt/report parent-directory fsync. Unsupported directory fsync remains a reported platform limitation, not a silent claim. |
+| F-5.2 parent-directory fsync / orphan sweep | `partial` | F5 File Durability And Key Atomicity Validation (`docs/audit/f5-file-durability-key-atomicity-validation.md`); `writeTextFileAtomic`; `cleanupAtomicWriteTempFiles`; `test:f5-file-store-key-atomicity-validation` | Atomic writes now sweep matching target temp entries, fsync the temp file, and rename through target-local secure temp directories. Parent-directory fsync remains an explicit limitation because the portable Node directory-open path conflicts with the required CodeQL temporary-file gate on OS-temp-backed tests. |
 | F-5.3 attestation validity window | `invalid-as-stated` | Fresh F5 redo: cert has `notBefore` / `notAfter` | No action unless fresh source inspection contradicts the redo. |
 | F-5.4 revocation inputs | `invalid-as-stated` | Fresh F5 redo: cert and trust-chain verification accept revocation inputs | No action unless fresh source inspection contradicts the redo. |
 | F-5.5 trust-chain clock skew | `invalid-as-stated` | Fresh F5 redo: cert and chain checks apply skew | No action unless fresh source inspection contradicts the redo. |

@@ -115,7 +115,7 @@ try {
   includes(tracker, 'F5-A4 homegrown canonicalization / RFC 8785 interop | `accepted-limitation`', 'Tracker: F5 canonicalization interop boundary is accepted');
   includes(tracker, 'F5-A8 numeric canonicalization edge cases | `fixed`', 'Tracker: F5 numeric canonicalization validation is fixed');
   includes(tracker, 'F5 Canonicalization Validation', 'Tracker: F5 canonicalization validation evidence is linked');
-  includes(tracker, 'F-5.2 parent-directory fsync / orphan sweep | `fixed`', 'Tracker: F5 file durability validation is fixed');
+  includes(tracker, 'F-5.2 parent-directory fsync / orphan sweep | `partial`', 'Tracker: F5 file durability validation is partial');
   includes(tracker, 'F5-A5 non-atomic `saveKeyPair` | `fixed`', 'Tracker: F5 key persistence atomicity validation is fixed');
   includes(tracker, 'F5 File Durability And Key Atomicity Validation', 'Tracker: F5 file/key validation evidence is linked');
   includes(tracker, 'F5-NEW-4 duplicate verify helper calls in CLI', 'Tracker: detailed F5 redo is tracked');

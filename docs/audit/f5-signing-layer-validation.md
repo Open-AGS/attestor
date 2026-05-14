@@ -27,7 +27,7 @@ Known limitations: repository evidence only; no live HSM, TUF, Rekor, or multi-r
 | F-5.4 certificate revocation inputs | disputed as stated | medium | Current `verifyCertificate` and `verifyTrustChain` accept revoked certificate IDs and fingerprints. |
 | F-5.5 trust-chain clock skew | disputed as stated | low-medium | Current `verifyTrustChain` uses `clockSkewMs` with 60s default. |
 | F-5.6 anti-self-attest primitive | refined | high | Low-level `verifyCertificate` has `expectedFingerprint`, but the CLI and `/api/v1/verify` needed stronger PKI-bound overall semantics. This PR fixes that slice. |
-| F-5.2 file persistence durability | remediated in follow-up | medium | `writeTextFileAtomic` uses temp file, exclusive open, file fsync, rename, matching orphan-temp cleanup, and best-effort parent-directory fsync. Multi-host shared-filesystem locking remains tracked separately under F-5.7. |
+| F-5.2 file persistence durability | partial | medium | `writeTextFileAtomic` uses target-local secure temp directories, exclusive open, file fsync, rename, and matching orphan-temp cleanup. Parent-directory fsync remains an explicit limitation; multi-host shared-filesystem locking remains tracked separately under F-5.7. |
 | F-5.7 HA shared PKI | accepted limitation | high | File-backed PKI and local lock are documented as not production-ready when external KMS/HSM is required. External KMS still fails closed as not implemented. |
 | F5-A1 out-of-band trust root | remediated in follow-up | high | Kit-contained CA material proves chain integrity only. Follow-up validation now requires an out-of-band trusted CA fingerprint by default and reserves kit-contained-root checks for explicit developer mode. |
 | F5-A2 legacy flat verify escape | remediated in follow-up | medium | Env-var legacy downgrades were removed. CLI legacy flat verification remains only as explicit `--allow-legacy-verify`. |
@@ -64,6 +64,7 @@ Remaining limitation: legacy flat verification remains only as an explicit CLI f
 ## Remaining Backlog
 
 - External KMS/HSM signer implementation remains not implemented and must continue to fail closed.
+- Parent-directory fsync remains a documented limitation for file-backed critical stores.
 - Multi-host/shared-filesystem locking remains separate F-5.7 hardening.
 - Full transparency-log or witness model is not implemented.
 - Signing key fingerprint width is remediated in follow-up; historical artifacts with older compact fingerprints remain historical evidence.

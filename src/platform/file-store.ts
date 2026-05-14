@@ -1,7 +1,6 @@
 import { randomBytes } from 'node:crypto';
 import {
   closeSync,
-  constants as fsConstants,
   fsyncSync,
   mkdtempSync,
   mkdirSync,
@@ -183,25 +182,6 @@ export function cleanupAtomicWriteTempFiles(path: string): number {
   return removed;
 }
 
-export function fsyncDirectoryBestEffort(directoryPath: string): boolean {
-  let directoryFd: number | null = null;
-  try {
-    directoryFd = openSync(directoryPath, fsConstants.O_RDONLY);
-    fsyncSync(directoryFd);
-    return true;
-  } catch {
-    return false;
-  } finally {
-    if (directoryFd !== null) {
-      try {
-        closeSync(directoryFd);
-      } catch {
-        // Best-effort durability helper. Close failure should not mask the write.
-      }
-    }
-  }
-}
-
 export function withFileLock<T>(
   targetPath: string,
   action: () => T,
@@ -265,8 +245,7 @@ export function writeTextFileAtomic(
       closeSync(fd);
     }
     renameSync(tempPath, path);
-    const directoryFsynced = fsyncDirectoryBestEffort(directoryPath);
-    return { tempPath, directoryFsynced, orphanTempFilesRemoved };
+    return { tempPath, directoryFsynced: false, orphanTempFilesRemoved };
   } finally {
     rmSync(tempDirectoryPath, { recursive: true, force: true });
   }

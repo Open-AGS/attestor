@@ -48,12 +48,16 @@ later implementation pass does not re-open already-retired issues.
 | F5 signing layer redo | 21 | 14 | 7 | 0 |
 | Final docs / claim alignment | 2 | 2 | 0 | 0 |
 | F6 multi-tenant blast radius | 10 | 4 | 6 | 0 |
+| F7 shadow infrastructure red-team | 10 | 1 | 7 | 2 |
 
 Remaining work after the final claim-alignment slice: 0 planned
 PR-sized or validation-sized units in the current F1-F5 audit queue.
 
 Remaining F6 queue after recipient/tenant runtime boundary bridge: 0 planned PR-sized
 or validation-sized units.
+
+Remaining F7 queue after shadow validation and tracker sync: 6 planned
+PR-sized or validation-sized units.
 
 Completion rule through F5: every F1-F5 row must end as `fixed`,
 `invalid-as-stated`, `superseded`, `accepted-limitation`, or `backlog` with
@@ -260,6 +264,33 @@ separate work.
 | F6-T9 plaintext env API keys in memory | `fixed` | F6 Tenant Key Cache Hardening stores env tenant keys by `tenant.api-key` lookup hash and stores only a secret-derived env config digest for reload detection. | No remaining repository action for this scoped finding. |
 | F6-T10 `default` tenant sentinel collision | `fixed` | F6 Anonymous Tenant Sentinel Validation; `ANONYMOUS_TENANT_ID`; `isAnonymousTenantContext`; `test:f6-anonymous-tenant-sentinel`. Anonymous `default` headers normalize to `__attestor_anonymous__`, while a real API-key tenant named `default` remains distinct. | No remaining repository action for this scoped finding. |
 
+## F7 Shadow Infrastructure Red-Team
+
+Source report: project-owner supplied F7 shadow infrastructure red-team report.
+
+Validation record: `docs/audit/f7-shadow-infrastructure-validation.md`.
+
+Current F7 status: validation pass complete for the report as supplied. Several
+claims were narrowed against `origin/master`: shadow routes do not accept
+arbitrary caller-supplied event arrays for simulations; shadow event feature
+values are digested rather than raw-stored; `customerControlsReady` uses strict
+required-control aggregation; and selected-profile storage readiness blocks
+file-backed shadow stores for `production-shared`. The active F7 repository
+queue is therefore six units, not ten.
+
+| ID | Current status | Evidence / overlap | Remaining action |
+|---|---|---|---|
+| F7-S1 shadow event injection without origin-binding | `partial` | F7 Shadow Infrastructure Validation; `shadow-events.ts`; `shadow-routes.ts`. Shadow events carry `admissionId` and `admissionDigest`, but no production-path cryptographic witness is required. Direct public route-injection wording is too strong because simulation routes read events through `deps.listShadowEvents({ tenant })`. | Add a shadow event origin witness or signed production-path binding before promotion data can be treated as tamper-resistant. |
+| F7-S2 operator-supplied redaction self-attest | `partial` | F7 Shadow Infrastructure Validation; `SHADOW_ADMISSION_REDACTION_LEVELS`; `observedFeatureDigest`; `rawPayloadStored: false`. Raw feature values are not persisted as stated, but `operator-supplied` has no redaction-policy witness. | Bind shadow event redaction to a policy digest or server-side scanner result. |
+| F7-S3 simulation window / threshold manipulation | `partial` | F7 Shadow Infrastructure Validation; simulation routes use persisted tenant events; `minimumPromotionEvents` remains request-controlled within validation bounds. | Move promotion thresholds to a server-owned policy floor or require operator-authority evidence for overrides. |
+| F7-S4 break-glass rollout has no extra gate | `open` | F7 Shadow Infrastructure Validation; `break-glass` is an equal rollout strategy. | Add secondary approver, expiry, and post-incident reconciliation requirements for break-glass activation. |
+| F7-S5 customer controls readiness aggregation | `invalid-as-stated` | `customerControlsReady = controlRefs.every((control) => control.present)`; shadow customer activation handoff tests. | No action for the supplied claim unless a fresh source inspection finds a bypass. |
+| F7-S6 shadow persistence per-node single-host | `accepted-limitation` | F7 Shadow Infrastructure Validation; `production-storage-path.ts`; `test:production-storage-path`. File-backed evaluation storage exists, but `production-shared` readiness requires `shared-durable` shadow stores and blocks by default. | Shared shadow persistence remains future deployment/storage work, not a current production-shared claim. |
+| F7-S7 red-team replay is not runtime enforcement | `accepted-limitation` | F7 Shadow Infrastructure Validation; Policy Foundry red-team replay tests. | Keep documented as evidence and design feedback, not runtime enforcement. |
+| F7-S8 single-operator shadow activation | `open` | F7 Shadow Infrastructure Validation; `operatorRef` is singular in customer activation handoff. | Add two-person approval semantics for high-risk shadow-to-enforce activation. |
+| F7-S9 shadow bundle signing boundary | `partial` | F7 Shadow Infrastructure Validation; overlaps F6-T1/F6-T6 tenant-bound signing limitations. | Validate or split shadow bundle signing trust boundary before claiming tenant-isolated policy publication. |
+| F7-S10 production-ready descriptor enforcement | `partial` | F7 Shadow Infrastructure Validation; `production-storage-path.ts`; `guard-activation-readiness.ts`. Storage readiness is enforced for selected profile, but no universal boot-time aggregator covers every shadow module descriptor. | Add claim alignment or a unified startup/readiness gate for required shadow descriptors. |
+
 ## Next Work Queue
 
 The current F1-F5 project-owner supplied audit queue is closed for repository
@@ -267,13 +298,13 @@ evidence: every row is fixed, invalid-as-stated, superseded, accepted as a
 limitation, partial with a stated live/customer boundary, or backlogged with
 evidence.
 
-F6 is now the active queue. Planned order:
+F6 is closed for planned repository slices. F7 is now the active queue. Planned
+order:
 
-1. F6 validation and tracker sync. Done.
-2. F6-T1/F6-T6 tenant-bound token/signing semantics. Done for token semantics; per-tenant signer isolation remains partial.
-3. F6-T3/F6-T9 tenant API key cache hardening. Done for hashed lookup and production-shared env-key refusal; cross-pod env revocation remains partial.
-4. F6-T7/F6-T10 anonymous sentinel and fallback hardening. Done.
-5. F6-T5 bypass route tenant-context invariant. Done.
-6. F6-T2 RLS/data-path claim alignment or integration. Done as claim alignment; real store wiring remains a future storage-isolation project.
-7. F6-T4 usage-meter shared-store claim boundary. Done as claim boundary; live shared quota proof remains deployment work.
-8. F6-T8 recipient/tenant runtime boundary bridge. Done as repository bridge; surface-by-surface enforcement adoption remains integration work.
+1. F7 validation and tracker sync. Done in this slice.
+2. F7-S1/F7-S2 shadow event origin and redaction witness.
+3. F7-S3 server-owned simulation policy floor.
+4. F7-S4 break-glass hardening.
+5. F7-S8 two-person high-risk activation handoff.
+6. F7-S9 shadow bundle signing boundary validation.
+7. F7-S10 shadow readiness and claim alignment.

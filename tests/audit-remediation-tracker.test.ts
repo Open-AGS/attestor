@@ -30,7 +30,7 @@ try {
   includes(tracker, '# Attestor Audit Remediation Tracker', 'Tracker: title is present');
   includes(tracker, 'not a certification', 'Tracker: no-certification disclaimer is present');
   includes(tracker, '`origin/master` is the source of truth', 'Tracker: origin/master rule is present');
-  includes(tracker, 'Estimated remaining work after this tracker lands: about 21 to 29', 'Tracker: remaining estimate is explicit');
+  includes(tracker, 'Estimated remaining work after this tracker lands: about 20 to 28', 'Tracker: remaining estimate is explicit');
 
   for (const pr of [
     '#220',
@@ -56,6 +56,7 @@ try {
     '#310',
     '#311',
     '#312',
+    '#313',
   ]) {
     includes(tracker, pr, `Tracker: ${pr} is referenced`);
   }
@@ -89,6 +90,7 @@ try {
   includes(tracker, 'F4-LLM02-A data-minimization evaluation operator-driven | `fixed`', 'Tracker: F4 data minimization scanning is fixed');
   includes(tracker, 'F4-LLM02-B redaction policy not activated as an enforcement claim | `accepted-limitation`', 'Tracker: F4 data minimization readiness boundary is accepted');
   includes(tracker, 'F4-LLM05-A presentation freshness relies on operator clock | `fixed`', 'Tracker: F4 presentation freshness nonce is fixed');
+  includes(tracker, 'F4-LLM05-B presentation replay ledger in-memory reference path | `partial`', 'Tracker: F4 replay shared-ledger validation is partial');
   includes(tracker, 'F4-LLM03-A agentic supply-chain coverage gap / single LLM provider | `partial`', 'Tracker: F4 LLM03 provider split is closed as partial');
   includes(tracker, 'F4-D Attestor-owned OpenAI usage / budget / prompt leakage scope | `backlog`', 'Tracker: F4-D OpenAI usage is backlogged');
   includes(tracker, 'F5-A6 transparency log missing', 'Tracker: F5 transparency limitation is tracked');

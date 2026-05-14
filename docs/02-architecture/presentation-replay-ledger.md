@@ -38,9 +38,10 @@ The package surface is exported through `attestor/consequence-admission`.
 Core functions:
 
 - `createConsequenceAdmissionPresentationReplayLedger(...)`
+- `createConsequenceAdmissionPresentationReplayLedgerInMemoryStore(...)`
 - `consequenceAdmissionPresentationReplayLedgerDescriptor()`
 
-The included ledger is an in-memory reference implementation for evaluation, tests, local demos, and adapter shape. It is not a production shared store. Production deployments should back the same contract with a shared, atomic store at the enforcement boundary.
+The included ledger is an in-memory reference implementation for evaluation, tests, local demos, and adapter shape. It is not a production shared store. The ledger now exposes a shared-store contract, but production deployments still need to back that contract with a customer-owned atomic store at the enforcement boundary.
 
 ## Digest-Indexed Ledger Entries
 
@@ -52,6 +53,21 @@ The ledger normalizes the replay key only long enough to derive a digest, then i
 - body is never stored; only the already supplied body digest participates in the presentation binding
 
 This keeps the replay proof useful without turning the ledger into a leak of payment routes, wallet details, customer data, nonce material, or downstream request bodies.
+
+## Shared-Store Contract
+
+The store contract is deliberately small:
+
+```text
+get(replayKeyDigest)
+setIfAbsent(entry)
+delete(replayKeyDigest)
+entries()
+```
+
+`setIfAbsent(entry)` is the important operation. A production backend must implement it atomically with a uniqueness constraint or equivalent compare-and-insert primitive. If two enforcement points try to consume the same replay key, exactly one may store the entry; the other must receive `replay-key-already-consumed`.
+
+The default store remains `in-memory-reference` and `productionReady: false`. Passing the same store instance to two ledgers is useful for contract tests, but it is not a multi-pod production backend.
 
 ## Example: Supplier Payment
 
@@ -94,7 +110,7 @@ The presentation decision remains attached to the replay decision, so the caller
 
 The in-memory ledger proves the contract shape. It does not claim distributed replay protection.
 
-Production money, crypto, data export, admin, and operations flows should use a shared store with atomic consume semantics. The important rule is that replay consumption must happen at the same customer-owned enforcement boundary that is about to call the downstream system.
+Production money, crypto, data export, admin, and operations flows should use a shared store with atomic consume semantics. The important rule is that replay consumption must happen at the same customer-owned enforcement boundary that is about to call the downstream system. The repository exposes the contract and a reference implementation; it does not claim a live shared replay service until a real backend is configured and probed.
 
 ## Relationship To Other Layers
 

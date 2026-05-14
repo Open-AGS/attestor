@@ -228,6 +228,7 @@
     "test:policy-limit-model": "tsx tests/policy-limit-model.test.ts",
     "test:downstream-presentation-binding": "tsx tests/downstream-presentation-binding.test.ts",
     "test:presentation-replay-ledger": "tsx tests/presentation-replay-ledger.test.ts",
+    "test:f4-presentation-replay-shared-ledger-validation": "tsx tests/f4-presentation-replay-shared-ledger-validation.test.ts",
     "test:downstream-execution-receipt": "tsx tests/downstream-execution-receipt.test.ts",
     "test:retry-attempt-ledger": "tsx tests/retry-attempt-ledger.test.ts",
     "test:agent-loop-abuse-guard": "tsx tests/consequence-admission-agent-loop-abuse-guard.test.ts",

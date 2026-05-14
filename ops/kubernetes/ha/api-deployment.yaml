@@ -207,7 +207,7 @@ spec:
               name: http
           startupProbe:
             httpGet:
-              path: /api/v1/health
+              path: /api/v1/startup
               port: http
             failureThreshold: 30
             periodSeconds: 5

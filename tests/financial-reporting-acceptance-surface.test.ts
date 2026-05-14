@@ -48,7 +48,9 @@ async function main(): Promise<void> {
   ok(certificateVerification.overall === 'valid', 'Finance acceptance surface: committed certificate verifies against the committed signer public key');
 
   const caPublicKeyPem = readFileSync(resolve(evidenceRoot, 'evidence', 'ca-public.pem'), 'utf8');
-  const chainVerification = verifyTrustChain(trustChain, caPublicKeyPem);
+  const chainVerification = verifyTrustChain(trustChain, caPublicKeyPem, {
+    allowLegacyCompactFingerprints: true,
+  });
   ok(chainVerification.overall === 'valid', 'Finance acceptance surface: committed trust chain verifies against the committed CA public key');
 
   console.log(`\nFinancial reporting acceptance surface tests: ${passed} passed, 0 failed`);

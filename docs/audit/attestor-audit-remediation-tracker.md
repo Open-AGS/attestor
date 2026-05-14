@@ -56,6 +56,13 @@ PR-sized or validation-sized units in the current F1-F5 audit queue.
 Remaining F6 queue after recipient/tenant runtime boundary bridge: 0 planned PR-sized
 or validation-sized units.
 
+F6 validation and tracker sync is the current closure record for the
+multi-tenant blast-radius queue.
+
+Historical F6 queue checkpoints retained for validation continuity:
+Remaining F6 queue after RLS claim-alignment slice: 2 planned.
+Remaining F6 queue after usage-meter shared-store boundary slice: 1 planned.
+
 Remaining F7 queue after shadow readiness and claim alignment: 0 planned
 PR-sized or validation-sized units.
 

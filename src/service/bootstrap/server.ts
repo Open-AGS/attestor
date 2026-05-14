@@ -37,6 +37,14 @@ export interface HttpServerStartupDiagnostics {
       summary: string;
     };
   };
+  productionStoragePath?: {
+    readonly readyForSelectedProfile: boolean;
+    readonly blockers?: readonly {
+      readonly code: string;
+      readonly component: string;
+      readonly message: string;
+    }[];
+  };
 }
 
 export interface StartHttpServerOptions {
@@ -80,11 +88,32 @@ function logRuntimeStartupDiagnostics(
   console.log(`[runtime] release stores: ${storeModes}`);
 }
 
+function assertProductionSharedStartupStorageReady(
+  diagnostics?: HttpServerStartupDiagnostics,
+): void {
+  if (diagnostics?.runtimeProfileDiagnostics?.profile.id !== 'production-shared') {
+    return;
+  }
+  const storagePath = diagnostics.productionStoragePath;
+  if (!storagePath || storagePath.readyForSelectedProfile) {
+    return;
+  }
+
+  const blockerText = (storagePath.blockers ?? [])
+    .map((blocker) => `${blocker.component}:${blocker.code}`)
+    .join(', ');
+  throw new Error(
+    `Production-shared startup storage gate failed: ${blockerText || 'production storage path is not ready'}`,
+  );
+}
+
 export function startHttpServer(
   app: Hono,
   port: number = 3700,
   options: StartHttpServerOptions = {},
 ): HttpServerHandle {
+  assertProductionSharedStartupStorageReady(options.startupDiagnostics);
+
   const telemetry = initializeTelemetry(ATTESTOR_SERVICE_VERSION);
   configureTenantRuntimeBackends();
 

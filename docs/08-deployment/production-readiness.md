@@ -67,7 +67,7 @@ The runtime diagnostics are visible at:
 - `GET /api/v1/health`
 - `GET /api/v1/ready`
 
-Both responses include `runtimeProfile` and `releaseRuntime`. Treat `releaseRuntime.durability.ready=false` or `/api/v1/ready` returning `503` as a stop condition.
+`GET /api/v1/startup` is the process startup probe and is intentionally narrower than readiness. Health and readiness responses include `runtimeProfile` and `releaseRuntime`. Treat `releaseRuntime.durability.ready=false` or `/api/v1/ready` returning `503` as a stop condition.
 
 The repo-side Production runtime health contract lives in:
 
@@ -104,7 +104,7 @@ productionStoragePath
 checks.productionStoragePath
 ```
 
-For `local-dev` and `single-node-durable`, file-backed evaluation stores can be accepted for evaluation. For `production-shared`, `/api/v1/ready` must report `checks.productionStoragePath=true`. If it is false, inspect `productionStoragePath.blockers` before promoting the environment.
+For `local-dev` and `single-node-durable`, file-backed evaluation stores can be accepted for evaluation. For `production-shared`, the process refuses startup when `productionStoragePath.readyForSelectedProfile=false`; if you are inspecting a preflight runtime, `/api/v1/ready` must also report `checks.productionStoragePath=true`. If it is false, inspect `productionStoragePath.blockers` before promoting the environment.
 
 Current `production-shared` blockers can include:
 

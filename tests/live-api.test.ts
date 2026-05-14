@@ -213,12 +213,11 @@ async function run() {
       ok(body.domains.includes('healthcare'), 'Health: healthcare domain registered');
       ok(typeof body.uptime === 'number', 'Health: uptime is number');
       ok(body.pki?.ready === true, 'Health: PKI ready');
-      ok(body.pki?.caName === 'Attestor Keyless CA', 'Health: PKI CA name');
-      ok(typeof body.pki?.caFingerprint === 'string', 'Health: PKI CA fingerprint');
+      ok(body.pki?.publicTrustRootRoute === '/api/v1/pki/ca', 'Health: PKI trust-root route is exposed');
       ok(body.runtimeProfile?.id === 'local-dev', 'Health: runtime profile is exposed');
       ok(body.releaseRuntime?.durability?.ready === true, 'Health: release runtime durability is exposed');
       ok(Array.isArray(body.releaseRuntime?.stores), 'Health: release runtime store diagnostics are exposed');
-      console.log(`    status=${body.status}, pki=${body.pki.caName} (${body.pki.caFingerprint}), domains=${body.domains.join(',')}, uptime=${body.uptime}s`);
+      console.log(`    status=${body.status}, pkiReady=${body.pki.ready}, trustRoot=${body.pki.publicTrustRootRoute}, domains=${body.domains.join(',')}, uptime=${body.uptime}s`);
     }
 
     // ═══ DOMAINS ENDPOINT ═══

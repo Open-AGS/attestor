@@ -105,6 +105,7 @@
     "test:f7-shadow-bundle-signing-boundary-validation": "tsx tests/f7-shadow-bundle-signing-boundary-validation.test.ts",
     "test:shadow-readiness-claim-alignment": "tsx tests/shadow-readiness-claim-alignment.test.ts",
     "test:f7-shadow-readiness-claim-alignment-validation": "tsx tests/f7-shadow-readiness-claim-alignment-validation.test.ts",
+    "test:f8-operational-resilience-validation": "tsx tests/f8-operational-resilience-validation.test.ts",
     "test:f1-backlog-closure-validation": "tsx tests/f1-backlog-closure-validation.test.ts",
     "test:f2-customer-gate-validation": "tsx tests/f2-customer-gate-validation.test.ts",
     "test:f2-agent-payment-settlement-validation": "tsx tests/f2-agent-payment-settlement-validation.test.ts",

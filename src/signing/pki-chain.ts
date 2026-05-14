@@ -100,6 +100,26 @@ export interface VerifyTrustChainOptions {
   readonly clockSkewMs?: number;
   readonly revokedCertificateIds?: readonly string[];
   readonly revokedFingerprints?: readonly string[];
+  /**
+   * Compatibility mode for committed pre-F5 evidence that used 64-bit
+   * fingerprint prefixes. New trust chains should leave this false.
+   */
+  readonly allowLegacyCompactFingerprints?: boolean;
+}
+
+function matchesFingerprint(
+  actual: string,
+  claimed: string,
+  allowLegacyCompactFingerprints: boolean,
+): boolean {
+  if (actual === claimed) {
+    return true;
+  }
+  return (
+    allowLegacyCompactFingerprints &&
+    /^[a-f0-9]{16}$/u.test(claimed) &&
+    actual.startsWith(claimed)
+  );
 }
 
 // ─── CA Certificate ─────────────────────────────────────────────────────────
@@ -225,6 +245,7 @@ export function verifyTrustChain(
   const nowMs = now.getTime();
   const revokedCertificateIds = new Set(options.revokedCertificateIds ?? []);
   const revokedFingerprints = new Set(options.revokedFingerprints ?? []);
+  const allowLegacyCompactFingerprints = options.allowLegacyCompactFingerprints === true;
 
   // 1. Verify CA self-signature
   const { signature: caSig, ...caBody } = chain.ca;
@@ -233,7 +254,11 @@ export function verifyTrustChain(
 
   // 2. Verify CA fingerprint
   const caIdentity = derivePublicKeyIdentity(caPublicKeyPem);
-  const caFpMatch = caIdentity.fingerprint === chain.ca.fingerprint;
+  const caFpMatch = matchesFingerprint(
+    caIdentity.fingerprint,
+    chain.ca.fingerprint,
+    allowLegacyCompactFingerprints,
+  );
 
   // 3. Check CA expiry
   const caExpired =

@@ -87,7 +87,7 @@ export const HOSTED_API_AUTHORIZATION_RULES = [
   {
     id: 'core.public-metadata.read',
     methods: ['GET'],
-    pathPattern: /^\/api\/v1\/(?:health|ready|domains|connectors|release-token\/jwks|pki\/ca)$/u,
+    pathPattern: /^\/api\/v1\/(?:startup|health|ready|domains|connectors|release-token\/jwks|pki\/ca)$/u,
     surface: 'public_metadata',
     authBoundary: 'none',
     tenantBoundary: 'none',

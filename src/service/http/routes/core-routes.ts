@@ -205,6 +205,21 @@ export function registerCoreRoutes(app: Hono, deps: CoreRouteDeps): void {
     rlsActivationResult,
   } = deps;
 
+  app.get('/api/v1/startup', (c) => {
+    c.header('cache-control', 'no-store');
+    return c.json({
+      status: 'started',
+      version: serviceVersion,
+      instanceId: serviceInstanceId,
+      uptime: Math.floor((Date.now() - startTime) / 1000),
+      runtimeProfile: {
+        id: runtimeProfileDiagnostics.profile.id,
+        production: runtimeProfileDiagnostics.profile.production,
+      },
+      engine: 'attestor',
+    });
+  });
+
   app.get('/api/v1/health', async (c) => {
     c.header('cache-control', 'no-store');
     const highAvailability = evaluateApiHighAvailabilityState({
@@ -230,10 +245,7 @@ export function registerCoreRoutes(app: Hono, deps: CoreRouteDeps): void {
       filingAdapters: filingRegistry.list().map((adapter) => adapter.id),
       pki: {
         ready: pkiReady,
-        caName: pki.ca.certificate.name,
-        caFingerprint: pki.ca.certificate.fingerprint,
-        signerSubject: pki.signer.certificate.subject,
-        reviewerSubject: pki.reviewer.certificate.subject,
+        publicTrustRootRoute: '/api/v1/pki/ca',
       },
       tenantIsolation: {
         requestLevel: true,

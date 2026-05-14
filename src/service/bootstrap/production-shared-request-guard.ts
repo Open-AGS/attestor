@@ -5,6 +5,7 @@ export const PRODUCTION_SHARED_REQUEST_GUARD_SPEC_VERSION =
   'attestor.production-shared-request-guard.v1';
 
 const ALLOWED_PREFLIGHT_PATHS = Object.freeze([
+  '/api/v1/startup',
   '/api/v1/health',
   '/api/v1/ready',
 ]);

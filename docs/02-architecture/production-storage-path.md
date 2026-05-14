@@ -109,8 +109,10 @@ GET /api/v1/ready
 
 `/api/v1/ready` includes `checks.productionStoragePath`.
 
-For `production-shared`, that check must be `true` before the runtime can be
-treated as ready. If it is `false`, the response includes
+For `production-shared`, the selected storage path must be ready before the
+HTTP server starts. Preflight route-runtime checks can still inspect
+`/api/v1/ready`, where `checks.productionStoragePath` must be `true` before the
+runtime can be treated as ready. If it is `false`, the response includes
 `productionStoragePath.blockers` with component-level blocker codes.
 
 ## Promotion Packet

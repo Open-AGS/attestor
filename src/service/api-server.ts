@@ -12,7 +12,8 @@
  * - GET  /api/v1/pipeline/status/:id — async job status/result
  * - POST /api/v1/verify              — certificate + PKI chain verification
  * - POST /api/v1/filing/export       — XBRL taxonomy mapping export
- * - GET  /api/v1/health              — service health + PKI + registries
+ * - GET  /api/v1/startup             — process startup probe
+ * - GET  /api/v1/health              — service health + registries
  * - GET  /api/v1/domains             — registered domain packs
  * - GET  /api/v1/connectors          — registered database connectors
  * - GET  /api/v1/account             — current hosted account summary for tenant-authenticated callers

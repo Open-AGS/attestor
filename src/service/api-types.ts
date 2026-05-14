@@ -237,10 +237,7 @@ export interface ServiceHealth {
   filingAdapters: string[];
   pki: {
     ready: boolean;
-    caName: string;
-    caFingerprint: string;
-    signerSubject: string;
-    reviewerSubject: string;
+    publicTrustRootRoute: '/api/v1/pki/ca';
   };
   tenantIsolation: {
     requestLevel: boolean;
@@ -1655,6 +1652,7 @@ export const API_ROUTES = {
   BILLING_STRIPE_WEBHOOK: '/api/v1/billing/stripe/webhook',
   EMAIL_MAILGUN_WEBHOOK: '/api/v1/email/mailgun/webhook',
   EMAIL_SENDGRID_WEBHOOK: '/api/v1/email/sendgrid/webhook',
+  STARTUP: '/api/v1/startup',
   HEALTH: '/api/v1/health',
   DOMAINS: '/api/v1/domains',
   CONNECTORS: '/api/v1/connectors',

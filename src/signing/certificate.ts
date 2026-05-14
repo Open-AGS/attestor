@@ -341,10 +341,17 @@ export function verifyCertificate(
 
   // Fingerprint consistency
   const derived = derivePublicKeyIdentity(publicKeyPem);
-  const fingerprintConsistent = derived.fingerprint === certificate.signing.fingerprint;
+  const legacyFingerprintAccepted =
+    options.allowLegacyUnbounded === true &&
+    /^[a-f0-9]{16}$/u.test(certificate.signing.fingerprint) &&
+    derived.fingerprint.startsWith(certificate.signing.fingerprint);
+  const fingerprintConsistent =
+    derived.fingerprint === certificate.signing.fingerprint || legacyFingerprintAccepted;
   const expectedFingerprint = options.expectedFingerprint?.trim() || null;
   const expectedFingerprintMatch =
-    expectedFingerprint === null || expectedFingerprint === derived.fingerprint;
+    expectedFingerprint === null ||
+    expectedFingerprint === derived.fingerprint ||
+    (legacyFingerprintAccepted && expectedFingerprint === certificate.signing.fingerprint);
 
   const nowMs = (options.now ?? new Date()).getTime();
   const clockSkewMs = Math.max(0, options.clockSkewMs ?? DEFAULT_CERTIFICATE_CLOCK_SKEW_MS);

@@ -369,6 +369,7 @@ async function setupIssuer(): Promise<{
   readonly issue: (input: {
     readonly tokenId: string;
     readonly decision: CryptoReleaseDecisionBinding['releaseDecision'];
+    readonly tenantId?: string | null;
   }) => Promise<IssuedReleaseToken>;
 }> {
   const keyPair = generateKeyPair();
@@ -384,6 +385,7 @@ async function setupIssuer(): Promise<{
         decision: input.decision,
         issuedAt: '2026-04-21T09:01:30.000Z',
         tokenId: input.tokenId,
+        tenantId: input.tenantId ?? null,
         confirmation: createMtlsReleaseTokenConfirmation({
           certificateThumbprint: CERT_THUMBPRINT,
           spiffeId: SPIFFE_ID,
@@ -406,6 +408,7 @@ async function issuedPresentationFixture(): Promise<{
   const issued = await issuer.issue({
     tokenId: 'rt_crypto_enforcement_001',
     decision: releaseDecision,
+    tenantId: binding.enforcementRequest.enforcementPoint.tenantId,
   });
 
   return {
@@ -743,6 +746,7 @@ async function testConformanceAndDegradedModeReuse(): Promise<void> {
   const issued = await issuer.issue({
     tokenId: 'rt_crypto_enforcement_002',
     decision: releaseDecision,
+    tenantId: binding.enforcementRequest.enforcementPoint.tenantId,
   });
   const presentation = createCryptoReleasePresentation({
     binding,

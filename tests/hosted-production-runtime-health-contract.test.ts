@@ -160,6 +160,7 @@ function testImplementationEvidenceMatchesSource(): void {
   };
 
   includes(coreRoutes, "app.get('/api/v1/health'", 'Hosted runtime health evidence: API health route exists');
+  includes(coreRoutes, "app.get('/api/v1/startup'", 'Hosted runtime health evidence: API startup route exists');
   includes(coreRoutes, "c.header('cache-control', 'no-store')", 'Hosted runtime health evidence: API probes are no-store');
   includes(coreRoutes, "app.get('/api/v1/ready'", 'Hosted runtime health evidence: API ready route exists');
   includes(coreRoutes, 'checks.releaseRuntime', 'Hosted runtime health evidence: readiness checks release runtime durability');

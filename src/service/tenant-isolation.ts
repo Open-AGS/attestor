@@ -301,6 +301,7 @@ export function tenantMiddleware() {
       c.req.path === '/api/v1/billing/stripe/webhook' ||
       c.req.path === '/api/v1/email/mailgun/webhook' ||
       c.req.path === '/api/v1/email/sendgrid/webhook' ||
+      c.req.path === '/api/v1/startup' ||
       c.req.path === '/api/v1/health' ||
       c.req.path === '/api/v1/ready' ||
       c.req.path === '/api/v1/domains' ||

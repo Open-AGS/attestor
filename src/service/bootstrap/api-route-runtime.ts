@@ -354,6 +354,9 @@ export async function createApiHttpRouteRuntime(
     runtimeProfile,
     allowPreflightOnDurabilityViolation: runtimeProfile.id === 'production-shared',
   });
+  const productionStoragePath = evaluateProductionStoragePathState({
+    runtimeProfileId: runtimeProfile.id,
+  });
   const {
     currentHostedAccount,
     readHostedBillingEntitlement,
@@ -780,6 +783,7 @@ export async function createApiHttpRouteRuntime(
         },
         releaseRuntimeRequestPathDiagnostics,
         runtimeProfileDiagnostics,
+        productionStoragePath,
         rlsActivationResult,
         pkiReady,
         releaseSigningProvider,

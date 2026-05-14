@@ -72,7 +72,7 @@ export const HOSTED_PRODUCTION_RUNTIME_HEALTH_GUARDS: readonly HostedProductionR
     id: 'api.process-health',
     title: 'API process health and startup visibility',
     surface: 'api_process_health',
-    probes: ['GET /api/v1/health'],
+    probes: ['GET /api/v1/startup', 'GET /api/v1/health'],
     runtimeRisks: [
       'liveness_depends_on_external_substrate',
       'startup_routes_traffic_too_early',
@@ -87,11 +87,11 @@ export const HOSTED_PRODUCTION_RUNTIME_HEALTH_GUARDS: readonly HostedProductionR
       'bounded_probe_work',
     ],
     livenessBoundary:
-      'The API health route reports process, version, instance, uptime, PKI public state, runtime diagnostics, and non-secret runtime posture; it does not become the dependency readiness gate.',
+      'The API startup and health routes report process, version, instance, uptime, registry, and non-secret runtime posture; they do not become the dependency readiness gate.',
     readinessBoundary:
       'Dependency and promotion blockers are visible in the health payload but are enforced by /api/v1/ready, not by treating liveness as routability.',
     startupBoundary:
-      'Startup diagnostics expose selected runtime profile and release-runtime durability so an operator can distinguish booted process from traffic-ready service.',
+      'The startup probe is separate from readiness and returns only process bootstrap state so an operator can distinguish booted process from traffic-ready service.',
     privacyBoundary:
       'Health output is no-store and diagnostic-only; it must not expose credentials, raw connection strings, webhook secrets, private keys, raw provider bodies, or customer payloads.',
     implementationEvidence: [

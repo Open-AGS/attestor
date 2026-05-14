@@ -260,12 +260,13 @@ docker run \
 
 | Endpoint | Purpose | Response |
 |---|---|---|
-| `GET /api/v1/health` | Detailed system state | Always 200, includes PKI/RLS/async status |
+| `GET /api/v1/startup` | Process startup probe | Always 200 once the HTTP process is booted; does not imply dependency readiness |
+| `GET /api/v1/health` | Detailed non-secret system state | Always 200, includes RLS/async/runtime status and the public CA route, not signer fingerprints |
 | `GET /api/v1/ready` | Orchestrator readiness probe | 200 when ready, 503 when not |
 | `GET /api/v1/release-token/jwks` | Public release-token verification key set | JWKS with the active public verification key plus retained rollover verification keys, each with `kid`, `alg`, `use=sig`, and `key_ops=["verify"]`; private issuer material is never returned |
 | `GET /api/v1/pki/ca` | Public Attestor CA trust-root material | Active CA certificate and public key PEM for PKI trust-chain verification; private issuer material is never returned |
 
-`/api/v1/health` and `/api/v1/ready` also report `releaseRuntime.signingProvider`. File-backed PEM is restart-recoverable for evaluation and single-node durable rehearsal, but it is reported as `productionReady: false` because the private signing key remains exportable runtime material. Setting `ATTESTOR_RELEASE_SIGNING_PROVIDER=external-kms` before KMS/HSM signing is implemented fails closed instead of silently falling back to file-backed PEM.
+`/api/v1/health` and `/api/v1/ready` also report `releaseRuntime.signingProvider`. File-backed PEM is restart-recoverable for evaluation and single-node durable rehearsal, but it is reported as `productionReady: false` because the private signing key remains exportable runtime material. The CA trust root is served through `/api/v1/pki/ca`; `/api/v1/health` only points to that route. Setting `ATTESTOR_RELEASE_SIGNING_PROVIDER=external-kms` before KMS/HSM signing is implemented fails closed instead of silently falling back to file-backed PEM.
 
 The readiness probe checks:
 - Async backend initialized (BullMQ or in-process)

@@ -67,7 +67,7 @@ observe -> recommend -> simulate -> approve -> enforce -> prove
 
 Shadow mode discovers the real action surface first: which high-risk AI actions exist, which actions have no policy, which downstream tools have too much authority, and which consequences would have been blocked before execution.
 
-Policy Foundry is the onboarding layer for this path. It identifies policy candidates and missing controls from shadow traffic, simulates impact through Policy Twin, runs candidate-specific red-team replay, keeps promotion approval-required, captures reviewed outcome feedback, emits drift/policy-debt findings, and separates commercial capabilities from non-paywalled safety minimums. It is observed-action policy mining, not model training, not automatic policy writing, and not a production-readiness claim.
+Policy Foundry is the onboarding layer for this path. It identifies policy candidates and missing controls from shadow traffic, simulates impact through Policy Twin, runs candidate-specific red-team replay through the local adversarial replay executor, keeps promotion approval-required, captures reviewed outcome feedback, emits drift/policy-debt findings, and separates commercial capabilities from non-paywalled safety minimums. It is observed-action policy mining, not model training, not automatic policy writing, and not a production-readiness claim.
 
 The failure-mode registry turns known AI-action failure modes into controls before business action. Untrusted content, poisoned tool results, fake approvals, stale policy, tenant or recipient boundary mistakes, scope explosion, review fatigue, drift, no-go holds, and missing replay evidence become explicit control, evidence, authority, audit, and replay checks.
 

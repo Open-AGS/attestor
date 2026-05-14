@@ -1,0 +1,117 @@
+import assert from 'node:assert/strict';
+import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { join } from 'node:path';
+
+import {
+  CONSEQUENCE_AGENTIC_SUPPLY_CHAIN_COMPONENT_KINDS,
+  consequenceAgenticSupplyChainGuardDescriptor,
+} from '../src/consequence-admission/index.js';
+
+let passed = 0;
+
+function equal<T>(actual: T, expected: T, message: string): void {
+  assert.equal(actual, expected, message);
+  passed += 1;
+}
+
+function ok(condition: unknown, message: string): void {
+  assert.ok(condition, message);
+  passed += 1;
+}
+
+function includes(value: string, expected: string, message: string): void {
+  assert.ok(value.includes(expected), `${message}\nExpected to include: ${expected}`);
+  passed += 1;
+}
+
+function excludes(value: string, unexpected: RegExp, message: string): void {
+  assert.doesNotMatch(value, unexpected, message);
+  passed += 1;
+}
+
+function readProjectFile(...segments: string[]): string {
+  return readFileSync(join(process.cwd(), ...segments), 'utf8');
+}
+
+function projectFiles(root: string): readonly string[] {
+  const absRoot = join(process.cwd(), root);
+  const output: string[] = [];
+  function walk(dir: string): void {
+    for (const entry of readdirSync(dir)) {
+      const abs = join(dir, entry);
+      const stat = statSync(abs);
+      if (stat.isDirectory()) {
+        if (entry === 'node_modules' || entry === '.git' || entry === 'dist') continue;
+        walk(abs);
+      } else if (/\.(ts|tsx|js|mjs|md|json)$/u.test(entry)) {
+        output.push(abs);
+      }
+    }
+  }
+  walk(absRoot);
+  return Object.freeze(output);
+}
+
+function countOccurrencesOutsideOpenAi(pattern: RegExp): number {
+  let count = 0;
+  for (const file of projectFiles('src')) {
+    if (file.endsWith(join('src', 'api', 'openai.ts'))) continue;
+    const text = readFileSync(file, 'utf8');
+    count += [...text.matchAll(pattern)].length;
+  }
+  return count;
+}
+
+try {
+  const doc = readProjectFile('docs', 'audit', 'f2-llm-provider-supply-chain-validation.md');
+  const tracker = readProjectFile('docs', 'audit', 'attestor-audit-remediation-tracker.md');
+  const packageJson = readProjectFile('package.json');
+  const openai = readProjectFile('src', 'api', 'openai.ts');
+  const financialCli = readProjectFile('src', 'financial', 'cli.ts');
+  const financialTypes = readProjectFile('src', 'financial', 'types.ts');
+  const evaluationPacket = readProjectFile('docs', '00-evaluation', 'v0.1-evaluation-packet.md');
+  const descriptor = consequenceAgenticSupplyChainGuardDescriptor();
+
+  ok(
+    CONSEQUENCE_AGENTIC_SUPPLY_CHAIN_COMPONENT_KINDS.includes('model-provider-sdk'),
+    'LLM provider supply-chain validation: model provider SDK is a supply-chain component kind',
+  );
+  equal(descriptor.requiresPinnedSource, true, 'LLM provider supply-chain validation: pinned source is required');
+  equal(descriptor.requiresVerifiedProvenance, true, 'LLM provider supply-chain validation: verified provenance is required');
+  equal(descriptor.productionReady, false, 'LLM provider supply-chain validation: guard does not claim production readiness');
+  equal(descriptor.activatesEnforcement, false, 'LLM provider supply-chain validation: guard does not activate enforcement');
+
+  includes(openai, "export const GPT_MODEL = 'o3' as const", 'LLM provider supply-chain validation: OpenAI reasoning model is single configured model');
+  includes(openai, "export const GPT_VISION_MODEL = 'gpt-4o' as const", 'LLM provider supply-chain validation: OpenAI vision model is present');
+  includes(openai, "new OpenAI({ apiKey })", 'LLM provider supply-chain validation: OpenAI SDK client is used directly');
+  excludes(openai, /Anthropic|LlmProviderRegistry|providerRegistry/u, 'LLM provider supply-chain validation: OpenAI wrapper has no provider registry');
+
+  equal(countOccurrencesOutsideOpenAi(/\bcallGpt\(/gu), 1, 'LLM provider supply-chain validation: callGpt has one caller outside the wrapper');
+  equal(countOccurrencesOutsideOpenAi(/\bcallGptVision\(/gu), 0, 'LLM provider supply-chain validation: callGptVision has no caller outside the wrapper');
+  includes(financialCli, 'OPENAI_API_KEY is required for live financial SQL generation.', 'LLM provider supply-chain validation: live model CLI requires OpenAI key');
+  includes(financialTypes, 'ANTHROPIC_API_KEY', 'LLM provider supply-chain validation: readiness mentions Anthropic credentials');
+  excludes(financialTypes, /from ['"].*anthropic/iu, 'LLM provider supply-chain validation: no Anthropic client import exists in readiness types');
+  includes(evaluationPacket, 'Optional live-upstream variant', 'LLM provider supply-chain validation: live upstream path is optional');
+  includes(evaluationPacket, 'Optional live-model variant, not the default reviewer path.', 'LLM provider supply-chain validation: live model is not default reviewer path');
+
+  includes(doc, 'F2-AG-7 agentic supply-chain and LLM provider dependency: `partial`.', 'LLM provider supply-chain validation doc: F2-AG-7 status is partial');
+  includes(doc, 'F2-AG-8 multimodal vision input future risk: `backlog`.', 'LLM provider supply-chain validation doc: F2-AG-8 status is backlog');
+  includes(doc, 'F4-LLM03-A agentic supply-chain coverage gap / single LLM provider: `partial`.', 'LLM provider supply-chain validation doc: F4-LLM03-A status is partial');
+  includes(doc, 'F4-D Attestor-owned OpenAI usage / budget / prompt leakage scope: `backlog`.', 'LLM provider supply-chain validation doc: F4-D status is backlog');
+  includes(doc, 'No hosted production, multi-provider resilience, or prompt-leakage closure claim is made.', 'LLM provider supply-chain validation doc: no overclaim is present');
+
+  includes(tracker, 'F2-AG-7 agentic supply-chain and LLM provider dependency | `partial`', 'Tracker: F2-AG-7 remains partial');
+  includes(tracker, 'F2-AG-8 multimodal vision input future risk | `backlog`', 'Tracker: F2-AG-8 is backlog');
+  includes(tracker, 'F4-LLM03-A agentic supply-chain coverage gap / single LLM provider | `partial`', 'Tracker: F4-LLM03-A is partial');
+  includes(tracker, 'F4-D Attestor-owned OpenAI usage / budget / prompt leakage scope | `backlog`', 'Tracker: F4-D is backlog');
+  includes(tracker, 'docs/audit/f2-llm-provider-supply-chain-validation.md', 'Tracker: validation doc is linked');
+  includes(packageJson, '"test:f2-llm-provider-supply-chain-validation"', 'Package: validation test is exposed');
+
+  excludes(tracker, /F4-D Attestor-owned OpenAI usage .*`fixed`/u, 'Tracker: F4-D is not overclaimed as fixed');
+  excludes(tracker, /F2-AG-8 multimodal vision input future risk .*`fixed`/u, 'Tracker: F2-AG-8 is not overclaimed as fixed');
+
+  console.log(`F2 LLM provider supply-chain validation tests: ${passed} passed, 0 failed`);
+} catch (error) {
+  console.error('F2 LLM provider supply-chain validation tests failed:', error);
+  process.exitCode = 1;
+}

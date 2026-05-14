@@ -31,7 +31,7 @@ try {
   includes(tracker, 'not a certification', 'Tracker: no-certification disclaimer is present');
   includes(tracker, '`origin/master` is the source of truth', 'Tracker: origin/master rule is present');
   includes(tracker, 'Remaining work after the final claim-alignment slice: 0 planned', 'Tracker: final remaining estimate is explicit');
-  includes(tracker, 'Remaining F6 queue after RLS claim-alignment slice: 2 planned', 'Tracker: F6 remaining estimate is explicit');
+  includes(tracker, 'Remaining F6 queue after usage-meter shared-store boundary slice: 1 planned', 'Tracker: F6 remaining estimate is explicit');
 
   for (const pr of [
     '#220',
@@ -179,6 +179,7 @@ try {
   includes(packageJson, '"test:f6-anonymous-tenant-sentinel"', 'Package: F6 anonymous tenant sentinel script is exposed');
   includes(packageJson, '"test:f6-bypass-route-tenant-context-invariant"', 'Package: F6 bypass route tenant-context invariant script is exposed');
   includes(packageJson, '"test:f6-rls-claim-alignment"', 'Package: F6 RLS claim alignment script is exposed');
+  includes(packageJson, '"test:f6-usage-meter-shared-store-boundary"', 'Package: F6 usage-meter shared-store boundary script is exposed');
 
   ok(tracker.split('\n').length > 120, 'Tracker: enough rows to cover supplied audit reports');
   console.log(`Audit remediation tracker tests: ${passed} passed, 0 failed`);

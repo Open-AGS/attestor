@@ -7,7 +7,9 @@
  * - Monthly counters keyed by tenantId + month
  * - Local single-node JSON ledger, persisted on disk
  * - Local file lock around write mutations; no shared multi-node billing datastore
- * - Intended for hosted-product shell and quota enforcement
+ * - Intended for local/single-node hosted-product shell and quota enforcement
+ * - Production-shared API paths must use control-plane-store usage state with
+ *   ATTESTOR_CONTROL_PLANE_PG_URL configured, not this file ledger
  */
 
 import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
@@ -41,6 +43,22 @@ interface UsageLedgerFile {
   // Storage key retained for backward-compatible ledger files; the public meter
   // exposed by API responses is monthly_admission_runs.
   monthlyPipelineRuns: UsageLedgerRecord[];
+}
+
+export function usageMeterStorageDescriptor(): {
+  backend: 'file-json-ledger';
+  profileScope: 'local-or-single-node';
+  multiNodeSafe: false;
+  sharedStorePath: 'control-plane-store';
+  sharedStoreEnv: 'ATTESTOR_CONTROL_PLANE_PG_URL';
+} {
+  return {
+    backend: 'file-json-ledger',
+    profileScope: 'local-or-single-node',
+    multiNodeSafe: false,
+    sharedStorePath: 'control-plane-store',
+    sharedStoreEnv: 'ATTESTOR_CONTROL_PLANE_PG_URL',
+  };
 }
 
 function currentPeriod(): string {

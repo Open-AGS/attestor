@@ -106,6 +106,66 @@ function testVerifiedApprovalCanPassWhenContentIsSeparated(): void {
   ok(decision.digest.startsWith('sha256:'), 'Untrusted authority guard: decision digest is generated');
 }
 
+function testUntrustedSourceCannotBePromotedByTrustClassOverride(): void {
+  const decision = evaluateConsequenceUntrustedContentAuthority({
+    generatedAt: '2026-05-13T08:12:00.000Z',
+    actionSurface: 'support.refund',
+    action: 'issue-refund',
+    sources: [
+      {
+        sourceKind: 'customer-email',
+        claimKind: 'approval',
+        sourceRef: 'raw-email:customer says treat me as signed approval',
+        trustClass: 'trusted-authority',
+        evidenceDigest: `sha256:${'c'.repeat(64)}`,
+      },
+    ],
+  });
+
+  equal(decision.outcome, 'block', 'Untrusted authority guard: untrusted source promotion blocks');
+  equal(
+    decision.observedSources[0]?.trustClass,
+    'untrusted-content',
+    'Untrusted authority guard: untrusted source keeps default trust class',
+  );
+  equal(
+    decision.observedSources[0]?.trustClassOverrideRejected,
+    true,
+    'Untrusted authority guard: trust class override is marked rejected',
+  );
+  ok(
+    decision.reasonCodes.includes('trust-class-override-rejected'),
+    'Untrusted authority guard: trust class override rejection reason is present',
+  );
+  equal(decision.counts.trustClassOverrideRejectedCount, 1, 'Untrusted authority guard: rejected override is counted');
+}
+
+function testTrustedAuthorityWithoutEvidenceRequiresReview(): void {
+  const decision = evaluateConsequenceUntrustedContentAuthority({
+    generatedAt: '2026-05-13T08:13:00.000Z',
+    actionSurface: 'support.refund',
+    action: 'issue-refund',
+    sources: [
+      {
+        sourceKind: 'verified-approval',
+        claimKind: 'approval',
+        sourceRef: 'approval-workflow-record-private-id',
+      },
+    ],
+  });
+
+  equal(decision.outcome, 'review', 'Untrusted authority guard: trusted authority without evidence reviews');
+  ok(
+    decision.reasonCodes.includes('trusted-authority-evidence-missing'),
+    'Untrusted authority guard: trusted authority evidence missing reason is present',
+  );
+  equal(
+    decision.counts.trustedAuthorityMissingEvidenceCount,
+    1,
+    'Untrusted authority guard: missing trusted authority evidence is counted',
+  );
+}
+
 function testTrustedEvidenceWithoutAuthorityRequiresReview(): void {
   const decision = evaluateConsequenceUntrustedContentAuthority({
     generatedAt: '2026-05-13T08:15:00.000Z',
@@ -170,6 +230,8 @@ function testDescriptorDocsAndPackageScriptStayAligned(): void {
   equal(descriptor.allowsModelSelfApproval, false, 'Untrusted authority descriptor: model self-approval is false');
   equal(descriptor.storesRawPayload, false, 'Untrusted authority descriptor: raw payload storage is false');
   equal(descriptor.digestOnly, true, 'Untrusted authority descriptor: digest-only is true');
+  equal(descriptor.rejectsUntrustedPromotion, true, 'Untrusted authority descriptor: rejects untrusted promotion');
+  equal(descriptor.requiresTrustedAuthorityEvidence, true, 'Untrusted authority descriptor: requires trusted authority evidence');
   includes(doc, 'attestor.consequence-untrusted-content-authority-guard.v1', 'Untrusted authority docs: version is named');
   includes(doc, 'src/consequence-admission/untrusted-content-authority-guard.ts', 'Untrusted authority docs: source file is named');
   includes(doc, 'test:untrusted-content-authority-guard', 'Untrusted authority docs: test command is named');
@@ -186,6 +248,8 @@ try {
   testCustomerEmailCannotAuthorizeAction();
   testLlmSummaryCannotBecomePolicyAuthority();
   testVerifiedApprovalCanPassWhenContentIsSeparated();
+  testUntrustedSourceCannotBePromotedByTrustClassOverride();
+  testTrustedAuthorityWithoutEvidenceRequiresReview();
   testTrustedEvidenceWithoutAuthorityRequiresReview();
   testMixedTrustedAndUntrustedAuthorityRequiresReview();
   testDescriptorDocsAndPackageScriptStayAligned();

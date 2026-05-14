@@ -293,6 +293,29 @@ assert.equal(
   true,
 );
 assert.equal(
+  admission.consequenceUntrustedContentAuthorityGuardDescriptor().rejectsUntrustedPromotion,
+  true,
+);
+assert.equal(
+  admission.consequenceUntrustedContentAuthorityGuardDescriptor().requiresTrustedAuthorityEvidence,
+  true,
+);
+assert.equal(
+  admission.evaluateConsequenceUntrustedContentAuthority({
+    generatedAt: '2026-05-14T00:00:00.000Z',
+    sources: [
+      {
+        sourceKind: 'customer-email',
+        claimKind: 'approval',
+        sourceRef: 'raw-private-email',
+        trustClass: 'trusted-authority',
+        evidenceDigest: `sha256:${'0'.repeat(64)}`,
+      },
+    ],
+  }).reasonCodes.includes('trust-class-override-rejected'),
+  true,
+);
+assert.equal(
   admission.consequenceGuardActivationReadinessDescriptor().criterionIds.includes(
     'downstream-verifier-integrated',
   ),

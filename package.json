@@ -88,6 +88,7 @@
     "test:agent-guidance-contract": "tsx tests/agent-guidance-contract.test.ts",
     "test:research-provenance-ledger": "tsx tests/research-provenance-ledger.test.ts",
     "test:audit-remediation-tracker": "tsx tests/audit-remediation-tracker.test.ts",
+    "test:f1-backlog-closure-validation": "tsx tests/f1-backlog-closure-validation.test.ts",
     "test:f2-customer-gate-validation": "tsx tests/f2-customer-gate-validation.test.ts",
     "test:f2-agent-payment-settlement-validation": "tsx tests/f2-agent-payment-settlement-validation.test.ts",
     "test:f2-eip7702-scope-validation": "tsx tests/f2-eip7702-scope-validation.test.ts",

@@ -48,7 +48,7 @@ later implementation pass does not re-open already-retired issues.
 | F5 signing layer redo | 21 | 14 | 7 | 0 |
 | Final docs / claim alignment | 2 | 0 | 0 | 2 |
 
-Remaining work after the current crypto trust-delegation boundary slice: 2 planned
+Remaining work after the current F1 backlog closure slice: 1 planned
 PR-sized or validation-sized units. Several items overlap and may close
 together, but no item is treated as closed until repository evidence proves it.
 
@@ -96,6 +96,7 @@ evidence. No `needs-revalidation` row can remain before starting F6.
 | [#323](https://github.com/AI-gateway-systems/attestor/pull/323) | `994a1bbcf6263a77fe611dbe45cb25895bca3264` | F5 production-shared PKI path boundary |
 | [#324](https://github.com/AI-gateway-systems/attestor/pull/324) | `c626224ec7ea17ba46e30a4dba8bac92d21506e8` | F5 legacy unbounded certificate warning |
 | [#325](https://github.com/AI-gateway-systems/attestor/pull/325) | `3798a66e18aaff254a45275c349d9fc95948a1c9` | F5 transparency log claim boundary |
+| [#326](https://github.com/AI-gateway-systems/attestor/pull/326) | `7029ea2afeec41a3afe29b9359dbdf2f844bfc99` | F5 crypto authorization trust-delegation boundary |
 
 ## F1 Threat-Model Foundation
 
@@ -107,10 +108,10 @@ Validation record: `docs/audit/f1-threat-model-foundation-validation.md`.
 |---|---|---|---|
 | F1-CC-1 agent-loop HA/shared-store bypass | `partial` | PR #220, PR #293 | Shared agent-loop guard path exists; broader replay/presentation/shared durability remains tracked elsewhere. |
 | F1-CC-2 review-required auto-promote | `accepted-limitation` | PR #220; `customer-gate.ts`; downstream enforcement docs | Needs protected downstream wrapper/gateway adoption proof. Related to F2-AG-1. |
-| F1-CC-3 cross-vector replay correlation | `backlog` | PR #220 validation | Needs common replay-event/correlation contract and selected shared durable consume paths. |
-| F1-CC-4 data-minimization fan-out | `backlog` | PR #220 validation; data-minimization policy | Needs mandatory surface-level conformance across every declared output surface. |
+| F1-CC-3 cross-vector replay correlation | `backlog` | F1 Backlog Closure Validation (`docs/audit/f1-backlog-closure-validation.md`); replay layer placement; retry-attempt ledger; presentation replay ledger; tamper-evident history; `test:f1-backlog-closure-validation` | Point replay/idempotency controls exist. Universal cross-vector replay correlation remains a future digest-only correlation bus, not a current production claim. |
+| F1-CC-4 data-minimization fan-out | `backlog` | F1 Backlog Closure Validation (`docs/audit/f1-backlog-closure-validation.md`); data-minimization scanner; prompt leakage markers; F4 scanner validation; `test:f1-backlog-closure-validation` | Central scanner and broad surface policy exist. Mandatory conformance over every declared and future output constructor remains future work. |
 | F1-CC-5 tenant boundary fan-out concrete route bug | `fixed` | PR #220 | Body tenant mismatch on generic admission route was remediated in the scoped slice. |
-| F1-CC-6 cross-log integrity anchor | `backlog` | PR #220 validation | Needs cross-store/meta-anchor design if pursued. |
+| F1-CC-6 cross-log integrity anchor | `accepted-limitation` | F1 Backlog Closure Validation (`docs/audit/f1-backlog-closure-validation.md`); tamper-evident history; audit evidence export; `test:f1-backlog-closure-validation` | Evaluation-grade linear hash-chain history exists. It is not an external WORM store, SIEM, transparency log, or cross-store meta-anchor. |
 
 ## F2 Agentic Consequence Surface
 
@@ -231,5 +232,4 @@ backlogged.
 
 Recommended next order through F5:
 
-1. F1 backlog closure pass for replay correlation, fan-out, and cross-log integrity.
-2. Final README/docs/provenance claim alignment.
+1. Final README/docs/provenance claim alignment.

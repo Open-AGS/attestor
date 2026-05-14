@@ -30,7 +30,7 @@ try {
   includes(tracker, '# Attestor Audit Remediation Tracker', 'Tracker: title is present');
   includes(tracker, 'not a certification', 'Tracker: no-certification disclaimer is present');
   includes(tracker, '`origin/master` is the source of truth', 'Tracker: origin/master rule is present');
-  includes(tracker, 'Remaining work after the current crypto trust-delegation boundary slice: 2 planned', 'Tracker: remaining estimate is explicit');
+  includes(tracker, 'Remaining work after the current F1 backlog closure slice: 1 planned', 'Tracker: remaining estimate is explicit');
 
   for (const pr of [
     '#220',
@@ -69,6 +69,7 @@ try {
     '#323',
     '#324',
     '#325',
+    '#326',
   ]) {
     includes(tracker, pr, `Tracker: ${pr} is referenced`);
   }
@@ -85,6 +86,9 @@ try {
   }
 
   includes(tracker, 'F2-AG-4 multi-agent delegation confusion', 'Tracker: completed F2 remediation is named');
+  includes(tracker, 'F1-CC-3 cross-vector replay correlation | `backlog` | F1 Backlog Closure Validation', 'Tracker: F1 replay correlation backlog is evidence-qualified');
+  includes(tracker, 'F1-CC-4 data-minimization fan-out | `backlog` | F1 Backlog Closure Validation', 'Tracker: F1 data-minimization fan-out backlog is evidence-qualified');
+  includes(tracker, 'F1-CC-6 cross-log integrity anchor | `accepted-limitation` | F1 Backlog Closure Validation', 'Tracker: F1 cross-log integrity boundary is accepted');
   includes(tracker, 'F2-AG-1 customer-gate honor-system | `partial`', 'Tracker: F2 customer-gate validation is closed as partial');
   includes(tracker, 'F2-AG-2 agent-payment settlement post-condition | `partial`', 'Tracker: F2 agent-payment settlement validation is closed as partial');
   includes(tracker, 'F2-AG-3 account-delegation / EIP-7702 scope | `partial`', 'Tracker: F2 EIP-7702 scope validation is closed as partial');
@@ -149,6 +153,7 @@ try {
   includes(packageJson, '"test:f5-legacy-unbounded-certificate-validation"', 'Package: F5 legacy unbounded certificate validation script is exposed');
   includes(packageJson, '"test:f5-transparency-log-claim-boundary-validation"', 'Package: F5 transparency claim boundary validation script is exposed');
   includes(packageJson, '"test:f5-crypto-trust-delegation-boundary-validation"', 'Package: F5 crypto trust-delegation boundary validation script is exposed');
+  includes(packageJson, '"test:f1-backlog-closure-validation"', 'Package: F1 backlog closure validation script is exposed');
 
   ok(tracker.split('\n').length > 120, 'Tracker: enough rows to cover supplied audit reports');
   console.log(`Audit remediation tracker tests: ${passed} passed, 0 failed`);

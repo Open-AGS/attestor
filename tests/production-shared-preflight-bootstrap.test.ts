@@ -3,6 +3,10 @@ import { Hono } from 'hono';
 import {
   ATTESTOR_RUNTIME_PROFILE_ENV,
 } from '../src/service/bootstrap/runtime-profile.js';
+import {
+  ATTESTOR_RELEASE_RUNTIME_PKI_PATH_ENV,
+  ATTESTOR_RELEASE_RUNTIME_PKI_SHARED_PATH_ENV,
+} from '../src/service/bootstrap/release-runtime.js';
 import { createApiHttpRouteRuntime } from '../src/service/bootstrap/api-route-runtime.js';
 import { createRegistries } from '../src/service/bootstrap/registries.js';
 import { registerAllRoutes } from '../src/service/bootstrap/routes.js';
@@ -22,7 +26,11 @@ function ok(condition: unknown, message: string): void {
 
 async function run(): Promise<void> {
   const previousProfile = process.env[ATTESTOR_RUNTIME_PROFILE_ENV];
+  const previousPkiPath = process.env[ATTESTOR_RELEASE_RUNTIME_PKI_PATH_ENV];
+  const previousPkiShared = process.env[ATTESTOR_RELEASE_RUNTIME_PKI_SHARED_PATH_ENV];
   process.env[ATTESTOR_RUNTIME_PROFILE_ENV] = 'production-shared';
+  delete process.env[ATTESTOR_RELEASE_RUNTIME_PKI_PATH_ENV];
+  delete process.env[ATTESTOR_RELEASE_RUNTIME_PKI_SHARED_PATH_ENV];
 
   try {
     const runtime = await createApiHttpRouteRuntime({
@@ -37,6 +45,7 @@ async function run(): Promise<void> {
         usesSharedAuthorityStores: boolean;
         blockers: readonly string[];
       };
+      pkiReady: boolean;
     };
 
     equal(
@@ -54,6 +63,11 @@ async function run(): Promise<void> {
       false,
       'Production-shared preflight: request path cutover remains false',
     );
+    equal(
+      security.pkiReady,
+      false,
+      'Production-shared preflight: shared PKI readiness remains false without explicit shared-path attestation',
+    );
 
     const app = new Hono();
     registerAllRoutes(app, runtime);
@@ -62,6 +76,7 @@ async function run(): Promise<void> {
     equal(health.status, 200, 'Production-shared preflight: health endpoint is available');
     const healthBody = await health.json() as {
       releaseRuntime: { durability: { ready: boolean } };
+      pki: { ready: boolean };
       sharedAuthorityRuntime: { ready: boolean };
       productionStoragePath: { state: string; readyForSelectedProfile: boolean };
     };
@@ -69,6 +84,11 @@ async function run(): Promise<void> {
       healthBody.releaseRuntime.durability.ready,
       false,
       'Production-shared preflight: health exposes release runtime not-ready state',
+    );
+    equal(
+      healthBody.pki.ready,
+      false,
+      'Production-shared preflight: health exposes shared PKI not-ready state',
     );
     equal(
       healthBody.sharedAuthorityRuntime.ready,
@@ -90,6 +110,11 @@ async function run(): Promise<void> {
       productionStoragePath: { blockers: readonly { code: string }[] };
     };
     equal(readyBody.ready, false, 'Production-shared preflight: ready=false is explicit');
+    equal(
+      readyBody.checks.pki,
+      false,
+      'Production-shared preflight: PKI readiness check is false without shared path attestation',
+    );
     equal(
       readyBody.checks.releaseRuntime,
       false,
@@ -139,6 +164,16 @@ async function run(): Promise<void> {
       delete process.env[ATTESTOR_RUNTIME_PROFILE_ENV];
     } else {
       process.env[ATTESTOR_RUNTIME_PROFILE_ENV] = previousProfile;
+    }
+    if (previousPkiPath === undefined) {
+      delete process.env[ATTESTOR_RELEASE_RUNTIME_PKI_PATH_ENV];
+    } else {
+      process.env[ATTESTOR_RELEASE_RUNTIME_PKI_PATH_ENV] = previousPkiPath;
+    }
+    if (previousPkiShared === undefined) {
+      delete process.env[ATTESTOR_RELEASE_RUNTIME_PKI_SHARED_PATH_ENV];
+    } else {
+      process.env[ATTESTOR_RELEASE_RUNTIME_PKI_SHARED_PATH_ENV] = previousPkiShared;
     }
   }
 

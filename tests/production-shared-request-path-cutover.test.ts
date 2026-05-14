@@ -16,6 +16,8 @@ import {
 } from '../src/service/bootstrap/runtime-profile.js';
 import {
   buildReleaseRuntimeRequestPathDiagnostics,
+  ATTESTOR_RELEASE_RUNTIME_PKI_PATH_ENV,
+  ATTESTOR_RELEASE_RUNTIME_PKI_SHARED_PATH_ENV,
 } from '../src/service/bootstrap/release-runtime.js';
 import { createApiHttpRouteRuntime } from '../src/service/bootstrap/api-route-runtime.js';
 import { createRegistries } from '../src/service/bootstrap/registries.js';
@@ -137,6 +139,8 @@ async function testActualRequestPathWritesSharedStore(): Promise<void> {
     process.env[ATTESTOR_RUNTIME_PROFILE_ENV] = 'production-shared';
     process.env[ATTESTOR_RELEASE_AUTHORITY_PG_URL_ENV] =
       `postgres://release_authority:release_authority@localhost:${pgPort}/attestor_release_authority`;
+    process.env[ATTESTOR_RELEASE_RUNTIME_PKI_PATH_ENV] = join(tempRoot, 'release-runtime-pki.json');
+    process.env[ATTESTOR_RELEASE_RUNTIME_PKI_SHARED_PATH_ENV] = 'true';
 
     const runtime = await createApiHttpRouteRuntime({
       registries: createRegistries(),
@@ -220,6 +224,8 @@ async function testActualRequestPathWritesSharedStore(): Promise<void> {
     );
   } finally {
     delete process.env[ATTESTOR_RELEASE_AUTHORITY_PG_URL_ENV];
+    delete process.env[ATTESTOR_RELEASE_RUNTIME_PKI_PATH_ENV];
+    delete process.env[ATTESTOR_RELEASE_RUNTIME_PKI_SHARED_PATH_ENV];
     await resetReleaseAuthorityStoreForTests();
     try {
       await pg.stop();
@@ -233,6 +239,8 @@ async function testActualRequestPathWritesSharedStore(): Promise<void> {
 async function run(): Promise<void> {
   const previousProfile = process.env[ATTESTOR_RUNTIME_PROFILE_ENV];
   const previousAuthorityUrl = process.env[ATTESTOR_RELEASE_AUTHORITY_PG_URL_ENV];
+  const previousPkiPath = process.env[ATTESTOR_RELEASE_RUNTIME_PKI_PATH_ENV];
+  const previousPkiShared = process.env[ATTESTOR_RELEASE_RUNTIME_PKI_SHARED_PATH_ENV];
   const previousAdminKey = process.env.ATTESTOR_ADMIN_API_KEY;
   process.env.ATTESTOR_ADMIN_API_KEY = 'step07-admin';
 
@@ -259,6 +267,16 @@ async function run(): Promise<void> {
       delete process.env[ATTESTOR_RELEASE_AUTHORITY_PG_URL_ENV];
     } else {
       process.env[ATTESTOR_RELEASE_AUTHORITY_PG_URL_ENV] = previousAuthorityUrl;
+    }
+    if (previousPkiPath === undefined) {
+      delete process.env[ATTESTOR_RELEASE_RUNTIME_PKI_PATH_ENV];
+    } else {
+      process.env[ATTESTOR_RELEASE_RUNTIME_PKI_PATH_ENV] = previousPkiPath;
+    }
+    if (previousPkiShared === undefined) {
+      delete process.env[ATTESTOR_RELEASE_RUNTIME_PKI_SHARED_PATH_ENV];
+    } else {
+      process.env[ATTESTOR_RELEASE_RUNTIME_PKI_SHARED_PATH_ENV] = previousPkiShared;
     }
     if (previousAdminKey === undefined) {
       delete process.env.ATTESTOR_ADMIN_API_KEY;

@@ -20,6 +20,7 @@ export interface VerifyPkiBoundCertificateInput {
   readonly trustChain: TrustChain;
   readonly caPublicKeyPem: string;
   readonly trustedCaFingerprint?: string | null;
+  readonly allowKitContainedCaForDeveloperMode?: boolean;
   readonly now?: Date;
   readonly clockSkewMs?: number;
   readonly revokedCertificateIds?: readonly string[];
@@ -35,6 +36,8 @@ export interface PkiTrustBindingVerification {
   readonly expectedSignerFingerprint: string;
   readonly trustedCaFingerprint: string | null;
   readonly trustedCaFingerprintMatch: boolean;
+  readonly independentTrustRootVerified: boolean;
+  readonly kitContainedCaDeveloperMode: boolean;
   readonly leafMatchesCertificateKey: boolean;
   readonly leafMatchesCertificateFingerprint: boolean;
   readonly pkiBound: boolean;
@@ -52,6 +55,7 @@ export function verifyPkiBoundCertificate(
   input: VerifyPkiBoundCertificateInput,
 ): PkiTrustBindingVerification {
   const trustedCaFingerprint = normalizeFingerprint(input.trustedCaFingerprint);
+  const kitContainedCaDeveloperMode = input.allowKitContainedCaForDeveloperMode === true;
   const signerIdentity = derivePublicKeyIdentity(input.publicKeyPem);
   const caIdentity = derivePublicKeyIdentity(input.caPublicKeyPem);
   const chainOptions: VerifyTrustChainOptions = {
@@ -79,16 +83,21 @@ export function verifyPkiBoundCertificate(
     input.trustChain.leaf.subjectFingerprint === signerIdentity.fingerprint;
   const leafMatchesCertificateFingerprint =
     input.certificate.signing?.fingerprint === input.trustChain.leaf.subjectFingerprint;
+  const trustedCaFingerprintProvided = trustedCaFingerprint !== null;
   const trustedCaFingerprintMatch =
-    trustedCaFingerprint === null ||
-    caIdentity.fingerprint.toLowerCase() === trustedCaFingerprint ||
-    input.trustChain.ca.fingerprint.toLowerCase() === trustedCaFingerprint;
+    trustedCaFingerprintProvided &&
+    (
+      caIdentity.fingerprint.toLowerCase() === trustedCaFingerprint ||
+      input.trustChain.ca.fingerprint.toLowerCase() === trustedCaFingerprint
+    );
+  const independentTrustRootVerified = trustedCaFingerprintMatch;
+  const trustedCaSatisfied = trustedCaFingerprintMatch || kitContainedCaDeveloperMode;
 
   const pkiBound =
     chainVerification.overall === 'valid' &&
     leafMatchesCertificateKey &&
     leafMatchesCertificateFingerprint &&
-    trustedCaFingerprintMatch;
+    trustedCaSatisfied;
   const pkiVerified = certificateVerification.overall === 'valid' && pkiBound;
   const failureReasons: string[] = [];
 
@@ -104,8 +113,13 @@ export function verifyPkiBoundCertificate(
   if (!leafMatchesCertificateFingerprint) {
     failureReasons.push('certificate-fingerprint-does-not-match-leaf');
   }
+  if (!trustedCaFingerprintProvided && !kitContainedCaDeveloperMode) {
+    failureReasons.push('trusted-ca-fingerprint-required');
+  }
   if (!trustedCaFingerprintMatch) {
-    failureReasons.push('trusted-ca-fingerprint-mismatch');
+    if (trustedCaFingerprintProvided) {
+      failureReasons.push('trusted-ca-fingerprint-mismatch');
+    }
   }
 
   return Object.freeze({
@@ -117,13 +131,17 @@ export function verifyPkiBoundCertificate(
     expectedSignerFingerprint: input.trustChain.leaf.subjectFingerprint,
     trustedCaFingerprint,
     trustedCaFingerprintMatch,
+    independentTrustRootVerified,
+    kitContainedCaDeveloperMode,
     leafMatchesCertificateKey,
     leafMatchesCertificateFingerprint,
     pkiBound,
     pkiVerified,
     failureReasons: Object.freeze(failureReasons),
-    explanation: pkiVerified
-      ? 'Certificate, trust chain, leaf binding, and optional trusted CA pin verified.'
+    explanation: pkiVerified && independentTrustRootVerified
+      ? 'Certificate, trust chain, leaf binding, and trusted CA pin verified.'
+      : pkiVerified
+        ? 'Certificate, trust chain, and leaf binding verified in developer mode; independent trust root not established.'
       : `PKI trust binding failed: ${failureReasons.join(', ') || 'unknown'}`,
   });
 }

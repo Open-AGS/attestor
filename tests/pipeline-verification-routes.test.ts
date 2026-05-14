@@ -85,6 +85,7 @@ async function testPkiBoundVerificationPasses(): Promise<void> {
     publicKeyPem: pki.signer.keyPair.publicKeyPem,
     trustChain: pki.chains.signer,
     caPublicKeyPem: pki.ca.keyPair.publicKeyPem,
+    trustedCaFingerprint: pki.ca.certificate.fingerprint,
   });
 
   equal(result.status, 200, 'PKI verification route: valid request returns 200');
@@ -93,6 +94,11 @@ async function testPkiBoundVerificationPasses(): Promise<void> {
     (result.body.trustBinding as { pkiVerified: boolean }).pkiVerified,
     true,
     'PKI verification route: valid chain is fully PKI verified',
+  );
+  equal(
+    (result.body.chainVerification as { independentTrustRootVerified: boolean }).independentTrustRootVerified,
+    true,
+    'PKI verification route: pinned CA establishes independent trust root',
   );
 }
 
@@ -111,6 +117,7 @@ async function testPkiBindingFailureControlsOverall(): Promise<void> {
     publicKeyPem: pki.signer.keyPair.publicKeyPem,
     trustChain: tamperedChain,
     caPublicKeyPem: pki.ca.keyPair.publicKeyPem,
+    trustedCaFingerprint: pki.ca.certificate.fingerprint,
   });
 
   equal(result.status, 200, 'PKI verification route: binding failure is reported as verification result');
@@ -123,6 +130,24 @@ async function testPkiBindingFailureControlsOverall(): Promise<void> {
   ok(
     String(result.body.explanation).includes('PKI trust binding failed'),
     'PKI verification route: explanation names trust-binding failure',
+  );
+}
+
+async function testMissingTrustedCaFingerprintFailsClosed(): Promise<void> {
+  const pki = generatePkiHierarchy('Route Test CA', 'Route Test Signer', 'Route Test Reviewer');
+  const certificate = issueCertificate(certInput(), pki.signer.keyPair);
+  const result = await postVerify(routeApp(), {
+    certificate,
+    publicKeyPem: pki.signer.keyPair.publicKeyPem,
+    trustChain: pki.chains.signer,
+    caPublicKeyPem: pki.ca.keyPair.publicKeyPem,
+  });
+
+  equal(result.status, 422, 'PKI verification route: missing trusted CA fingerprint returns 422');
+  equal(
+    result.body.error,
+    'trustedCaFingerprint is required for independent PKI verification.',
+    'PKI verification route: trusted CA pin is required for third-party verification',
   );
 }
 
@@ -144,6 +169,7 @@ async function testMissingPkiMaterialFailsClosed(): Promise<void> {
 
 await testPkiBoundVerificationPasses();
 await testPkiBindingFailureControlsOverall();
+await testMissingTrustedCaFingerprintFailsClosed();
 await testMissingPkiMaterialFailsClosed();
 
 console.log(`pipeline-verification-routes.test.ts: ${passed} assertions passed`);

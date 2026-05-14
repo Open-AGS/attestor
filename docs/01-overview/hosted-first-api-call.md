@@ -192,7 +192,7 @@ curl -sS -X POST "$ATTESTOR_BASE_URL/api/v1/verify" \
   --data-binary @verify-payload.json
 ```
 
-The verify payload is built from the signed pipeline response. A valid verification response includes `overall`, `signatureValid`, and trust-binding fields.
+The verify payload is built from the signed pipeline response and must include a `trustedCaFingerprint` pinned from an out-of-band trusted source. A valid verification response includes `overall`, `signatureValid`, and trust-binding fields.
 
 ## Failure Signals
 

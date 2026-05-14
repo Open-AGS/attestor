@@ -133,6 +133,7 @@ export interface VerifyRequest {
   publicKeyPem: string;
   trustChain?: Record<string, unknown>;
   caPublicKeyPem?: string;
+  trustedCaFingerprint?: string;
 }
 
 export interface VerifyResponse {
@@ -152,6 +153,8 @@ export interface VerifyResponse {
     leafRevoked: boolean;
     leafMatchesCertificateKey: boolean;
     leafMatchesCertificateFingerprint: boolean;
+    trustedCaFingerprintMatch: boolean;
+    independentTrustRootVerified: boolean;
     pkiBound: boolean;
     overall: string;
     caName: string | null;

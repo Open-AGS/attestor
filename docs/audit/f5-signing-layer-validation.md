@@ -29,7 +29,7 @@ Known limitations: repository evidence only; no live HSM, TUF, Rekor, or multi-r
 | F-5.6 anti-self-attest primitive | refined | high | Low-level `verifyCertificate` has `expectedFingerprint`, but the CLI and `/api/v1/verify` needed stronger PKI-bound overall semantics. This PR fixes that slice. |
 | F-5.2 file persistence durability | accepted limitation | medium | `writeTextFileAtomic` uses temp file, exclusive open, file fsync, and rename. Parent-directory fsync and startup orphan sweep remain backlog. |
 | F-5.7 HA shared PKI | accepted limitation | high | File-backed PKI and local lock are documented as not production-ready when external KMS/HSM is required. External KMS still fails closed as not implemented. |
-| F5-A1 out-of-band trust root | confirmed limitation | high | Kits include `caPublicKeyPem`; this proves chain integrity but is not an independent third-party trust root unless a CA fingerprint is pinned out-of-band. |
+| F5-A1 out-of-band trust root | remediated in follow-up | high | Kit-contained CA material proves chain integrity only. Follow-up validation now requires an out-of-band trusted CA fingerprint by default and reserves kit-contained-root checks for explicit developer mode. |
 | F5-A2 legacy flat verify escape | accepted limitation | medium | Legacy CLI/API escape hatches remain for compatibility and are explicitly deprecated. |
 | F5-A3 truncated fingerprint length | accepted limitation | medium | Fingerprints remain 16 hex chars; widening is backlog because it affects public identifiers and fixtures. |
 | F5-A4 homegrown canonicalization | accepted limitation | medium | Signing uses repository canonical JSON, not RFC 8785 JCS. Interop with external sigstore/in-toto verifiers is not claimed. |
@@ -56,7 +56,7 @@ Validation evidence: targeted tests in tests/pipeline-verification-routes.test.t
 Research anchors for fix: Sigstore trust-root model; SLSA artifact verification guidance; NIST SP 800-57 key lifecycle guidance.
 Smallest safe fix: central PKI trust-binding helper and route/CLI use of the helper for overall decisions.
 Regression test or probe: npm run test:pipeline-verification-routes; npm run test:signing
-Remaining limitation: kit-contained CA roots still require out-of-band CA fingerprint pinning for independent third-party trust.
+Remaining limitation: legacy flat verification remains a separate deprecated escape hatch tracked under F5-A2.
 ```
 
 ## Remaining Backlog

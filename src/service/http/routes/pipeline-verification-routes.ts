@@ -9,6 +9,7 @@ import type {
   TrustChain,
   VerifyTrustChainOptions,
 } from '../../../signing/pki-chain.js';
+import { verifyPkiBoundCertificate } from '../../../signing/verification-trust-binding.js';
 
 interface PublicKeyIdentity {
   publicKeyHex: string;
@@ -32,8 +33,6 @@ export interface PipelineVerificationRoutesDeps {
 export function registerPipelineVerificationRoutes(app: Hono, deps: PipelineVerificationRoutesDeps): void {
   const {
     verifyCertificate,
-    verifyTrustChain,
-    derivePublicKeyIdentity,
   } = deps;
 
 
@@ -42,7 +41,13 @@ export function registerPipelineVerificationRoutes(app: Hono, deps: PipelineVeri
 app.post('/api/v1/verify', async (c) => {
   try {
     const body = await c.req.json();
-    const { certificate, publicKeyPem, trustChain, caPublicKeyPem } = body;
+    const {
+      certificate,
+      publicKeyPem,
+      trustChain,
+      caPublicKeyPem,
+      trustedCaFingerprint,
+    } = body;
     if (!certificate || !publicKeyPem) {
       return c.json({ error: 'certificate and publicKeyPem are required' }, 400);
     }
@@ -58,25 +63,35 @@ app.post('/api/v1/verify', async (c) => {
         legacyEscape: 'Set ATTESTOR_ALLOW_LEGACY_API=true to allow flat Ed25519 verification (deprecated).',
       }, 422);
     }
+    const normalizedTrustedCaFingerprint =
+      typeof trustedCaFingerprint === 'string' && trustedCaFingerprint.trim().length > 0
+        ? trustedCaFingerprint.trim()
+        : null;
+    if (hasPkiMaterial && !normalizedTrustedCaFingerprint) {
+      console.log(`[verify] Rejected: no trusted CA fingerprint submitted`);
+      return c.json({
+        error: 'trustedCaFingerprint is required for independent PKI verification.',
+        hint: 'Submit trustedCaFingerprint from an out-of-band trusted source alongside trustChain and caPublicKeyPem.',
+      }, 422);
+    }
 
     // 1. Verify PKI trust chain if provided
     let chainVerification = null;
     let pkiBound = false;
     let expectedFingerprint: string | null = null;
+    let certResult: CertificateVerification | null = null;
     if (hasPkiMaterial) {
-      const chainResult = verifyTrustChain(trustChain, caPublicKeyPem);
+      const trustBinding = verifyPkiBoundCertificate({
+        certificate,
+        publicKeyPem,
+        trustChain,
+        caPublicKeyPem,
+        trustedCaFingerprint: normalizedTrustedCaFingerprint,
+      });
+      const chainResult = trustBinding.chainVerification;
       expectedFingerprint = trustChain.leaf.subjectFingerprint;
-
-      // 2. CRITICAL: Bind certificate to chain leaf
-      // The leaf's subject key must be the same key that signed the certificate
-      const signerIdentity = derivePublicKeyIdentity(publicKeyPem);
-      const leafMatchesCertificateKey = trustChain.leaf.subjectFingerprint === signerIdentity.fingerprint;
-      const leafMatchesCertificateFingerprint = certificate.signing?.fingerprint === trustChain.leaf.subjectFingerprint;
-
-      pkiBound =
-        chainResult.overall === 'valid' &&
-        leafMatchesCertificateKey &&
-        leafMatchesCertificateFingerprint;
+      pkiBound = trustBinding.pkiBound;
+      certResult = trustBinding.certificateVerification;
 
       chainVerification = {
         caValid: chainResult.caValid,
@@ -88,8 +103,10 @@ app.post('/api/v1/verify', async (c) => {
         caRevoked: chainResult.caRevoked,
         leafRevoked: chainResult.leafRevoked,
         // Certificate-to-leaf binding
-        leafMatchesCertificateKey,
-        leafMatchesCertificateFingerprint,
+        leafMatchesCertificateKey: trustBinding.leafMatchesCertificateKey,
+        leafMatchesCertificateFingerprint: trustBinding.leafMatchesCertificateFingerprint,
+        trustedCaFingerprintMatch: trustBinding.trustedCaFingerprintMatch,
+        independentTrustRootVerified: trustBinding.independentTrustRootVerified,
         pkiBound,
         overall: chainResult.overall,
         caName: trustChain.ca.name ?? null,
@@ -98,7 +115,7 @@ app.post('/api/v1/verify', async (c) => {
     }
 
     // 3. Verify certificate signature with PKI-derived signer pin when available.
-    const certResult = verifyCertificate(certificate, publicKeyPem, {
+    certResult ??= verifyCertificate(certificate, publicKeyPem, {
       expectedFingerprint,
     });
 

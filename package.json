@@ -55,6 +55,7 @@
     "test:financial-hmac-verification": "tsx tests/financial-hmac-verification.test.ts",
     "test:signing": "tsx src/signing/signing.test.ts",
     "test:pki-trust-binding": "tsx tests/pki-trust-binding.test.ts",
+    "test:f5-ca-pin-required-validation": "tsx tests/f5-ca-pin-required-validation.test.ts",
     "test:stripe-commercial": "tsx tests/stripe-commercial-config.test.ts",
     "test:stripe-webhook-events": "tsx tests/stripe-webhook-events.test.ts",
     "test:stripe-live-readiness-probe": "tsx tests/stripe-live-readiness-probe.test.ts",

@@ -67,7 +67,7 @@ It defines the supported customer sequence, route ownership, auth boundary, succ
 | `GET /api/v1/account/entitlement` | account session or tenant API key | account/tenant context | account entitlement view |
 | `GET /api/v1/account/features` | account session or tenant API key | account/tenant context | `AccountFeaturesResponse` |
 | `POST /api/v1/pipeline/run` | tenant API key for hosted use | `PipelineRunRequest` | `PipelineRunResponse` |
-| `POST /api/v1/verify` | tenant API key for hosted use | certificate, public key, and PKI material | `VerifyResponse` |
+| `POST /api/v1/verify` | tenant API key for hosted use | certificate, public key, PKI material, and trusted CA fingerprint | `VerifyResponse` |
 | `POST /api/v1/account/billing/checkout` | account session with account or billing admin role | `planId` plus `Idempotency-Key` | `AccountBillingCheckoutResponse` |
 | `POST /api/v1/account/billing/portal` | account session with account or billing admin role | account session | `AccountBillingPortalResponse` |
 | `GET /api/v1/account/billing/export` | account session or tenant API key | `format=json|csv`, optional `limit` | `AccountBillingExportResponse` or CSV export |

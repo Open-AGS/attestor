@@ -81,6 +81,48 @@ function testTrustedCaFingerprintMismatchFailsBinding(): void {
   );
 }
 
+function testTrustedCaFingerprintRequiredByDefault(): void {
+  const pki = generatePkiHierarchy('Trust Binding CA', 'Trust Binding Signer', 'Trust Binding Reviewer');
+  const certificate = issueCertificate(certInput(), pki.signer.keyPair);
+  const result = verifyPkiBoundCertificate({
+    certificate,
+    publicKeyPem: pki.signer.keyPair.publicKeyPem,
+    trustChain: pki.chains.signer,
+    caPublicKeyPem: pki.ca.keyPair.publicKeyPem,
+  });
+
+  equal(result.pkiVerified, false, 'PKI trust binding: missing CA pin fails by default');
+  equal(
+    result.independentTrustRootVerified,
+    false,
+    'PKI trust binding: missing CA pin does not establish independent trust',
+  );
+  ok(
+    result.failureReasons.includes('trusted-ca-fingerprint-required'),
+    'PKI trust binding: missing CA pin is recorded as required',
+  );
+}
+
+function testDeveloperModeAllowsKitContainedCaWithoutIndependentTrust(): void {
+  const pki = generatePkiHierarchy('Trust Binding CA', 'Trust Binding Signer', 'Trust Binding Reviewer');
+  const certificate = issueCertificate(certInput(), pki.signer.keyPair);
+  const result = verifyPkiBoundCertificate({
+    certificate,
+    publicKeyPem: pki.signer.keyPair.publicKeyPem,
+    trustChain: pki.chains.signer,
+    caPublicKeyPem: pki.ca.keyPair.publicKeyPem,
+    allowKitContainedCaForDeveloperMode: true,
+  });
+
+  equal(result.pkiVerified, true, 'PKI trust binding: developer mode permits kit-contained CA checks');
+  equal(
+    result.independentTrustRootVerified,
+    false,
+    'PKI trust binding: developer mode does not establish independent trust',
+  );
+  equal(result.kitContainedCaDeveloperMode, true, 'PKI trust binding: developer mode is explicit');
+}
+
 function testLeafFingerprintMismatchFailsBinding(): void {
   const pki = generatePkiHierarchy('Trust Binding CA', 'Trust Binding Signer', 'Trust Binding Reviewer');
   const certificate = issueCertificate(certInput(), pki.signer.keyPair);
@@ -96,6 +138,7 @@ function testLeafFingerprintMismatchFailsBinding(): void {
     publicKeyPem: pki.signer.keyPair.publicKeyPem,
     trustChain: tamperedChain,
     caPublicKeyPem: pki.ca.keyPair.publicKeyPem,
+    trustedCaFingerprint: pki.ca.certificate.fingerprint,
   });
 
   equal(result.pkiVerified, false, 'PKI trust binding: tampered leaf fingerprint fails verification');
@@ -111,6 +154,8 @@ function testLeafFingerprintMismatchFailsBinding(): void {
 
 testValidTrustBindingWithPinnedCa();
 testTrustedCaFingerprintMismatchFailsBinding();
+testTrustedCaFingerprintRequiredByDefault();
+testDeveloperModeAllowsKitContainedCaWithoutIndependentTrust();
 testLeafFingerprintMismatchFailsBinding();
 
 console.log(`pki-trust-binding.test.ts: ${passed} assertions passed`);

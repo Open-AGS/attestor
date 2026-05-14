@@ -5,6 +5,7 @@
  *   npx tsx src/signing/verify-cli.ts <certificate.json> <public-key.pem>
  *   npx tsx src/signing/verify-cli.ts <kit.json>
  *   npx tsx src/signing/verify-cli.ts <kit.json> --trusted-ca-fingerprint <fingerprint>
+ *   npx tsx src/signing/verify-cli.ts <kit.json> --developer-mode
  */
 
 import { readFileSync } from 'node:fs';
@@ -23,6 +24,7 @@ function main(): void {
     npx tsx src/signing/verify-cli.ts <certificate.json> <public-key.pem>
     npx tsx src/signing/verify-cli.ts <kit.json>
     npx tsx src/signing/verify-cli.ts <kit.json> --trusted-ca-fingerprint <fingerprint>
+    npx tsx src/signing/verify-cli.ts <kit.json> --developer-mode
 
   Exit codes:
     0  Fully verified
@@ -68,6 +70,10 @@ function trustedCaFingerprintFromArgs(): string | null {
   }
   const envValue = process.env.ATTESTOR_TRUSTED_CA_FINGERPRINT?.trim();
   return envValue && envValue.length > 0 ? envValue : null;
+}
+
+function developerModeFromArgs(): boolean {
+  return process.argv.slice(2).includes('--developer-mode');
 }
 
 function verifyCertificateStandalone(cert: AttestationCertificate, publicKeyPem: string): void {
@@ -157,17 +163,28 @@ function verifyKit(kit: VerificationKit): void {
 
   const kitAny = kit as VerificationKit;
   const trustedCaFingerprint = trustedCaFingerprintFromArgs();
+  const allowKitContainedCaForDeveloperMode = developerModeFromArgs();
   let pkiVerified = false;
   let pkiVerificationRequired = true;
   let crypto = verifyCertificate(kit.certificate, kit.signerPublicKeyPem);
+  let trustBinding: ReturnType<typeof verifyPkiBoundCertificate> | null = null;
 
   if (kitAny.trustChain && kitAny.caPublicKeyPem) {
-    const trustBinding = verifyPkiBoundCertificate({
+    if (!trustedCaFingerprint && !allowKitContainedCaForDeveloperMode) {
+      console.log('\n  PKI Trust Chain');
+      console.log('  FAIL Trusted CA fingerprint is required for independent third-party kit verification.');
+      console.log('  Use --trusted-ca-fingerprint <fingerprint> from an out-of-band trusted source.');
+      console.log('  For local developer chain-integrity checks only, rerun with --developer-mode.');
+      console.log('\n  Overall: TRUST_ROOT_REQUIRED\n');
+      process.exit(2);
+    }
+    trustBinding = verifyPkiBoundCertificate({
       certificate: kit.certificate,
       publicKeyPem: kit.signerPublicKeyPem,
       trustChain: kitAny.trustChain,
       caPublicKeyPem: kitAny.caPublicKeyPem,
       trustedCaFingerprint,
+      allowKitContainedCaForDeveloperMode,
     });
     crypto = trustBinding.certificateVerification;
     pkiVerified = trustBinding.pkiVerified;
@@ -183,14 +200,7 @@ function verifyKit(kit: VerificationKit): void {
   printSummary(summary);
 
   console.log('\n  PKI Trust Chain');
-  if (kitAny.trustChain && kitAny.caPublicKeyPem) {
-    const trustBinding = verifyPkiBoundCertificate({
-      certificate: kit.certificate,
-      publicKeyPem: kit.signerPublicKeyPem,
-      trustChain: kitAny.trustChain,
-      caPublicKeyPem: kitAny.caPublicKeyPem,
-      trustedCaFingerprint,
-    });
+  if (kitAny.trustChain && kitAny.caPublicKeyPem && trustBinding) {
     const chainResult = trustBinding.chainVerification;
     const leafBound =
       trustBinding.leafMatchesCertificateKey &&
@@ -200,10 +210,10 @@ function verifyKit(kit: VerificationKit): void {
     console.log(`  Leaf:       ${chainResult.leafValid ? 'valid' : 'INVALID'} (${kitAny.trustChain.leaf?.subject ?? 'unknown'})`);
     console.log(`  Chain:      ${chainResult.chainIntact ? 'intact' : 'BROKEN'}`);
     console.log(`  Cert bound: ${leafBound ? 'certificate matches leaf' : 'MISMATCH'}`);
-    if (trustedCaFingerprint) {
+    if (trustBinding.independentTrustRootVerified) {
       console.log(`  CA pin:     ${trustBinding.trustedCaFingerprintMatch ? 'trusted fingerprint matches' : 'MISMATCH'}`);
     } else {
-      console.log('  CA pin:     not provided; kit-contained root checks integrity, not independent third-party trust');
+      console.log('  CA pin:     developer mode; kit-contained root checks integrity only');
     }
     console.log(`  PKI:        ${pkiVerified ? 'VERIFIED' : trustBinding.failureReasons.join(', ')}`);
   } else {

@@ -87,6 +87,7 @@
     "test:f2-constraint-kind-registry-validation": "tsx tests/f2-constraint-kind-registry-validation.test.ts",
     "test:f2-model-tool-config-drift-validation": "tsx tests/f2-model-tool-config-drift-validation.test.ts",
     "test:f4-trust-class-pki-proof-validation": "tsx tests/f4-trust-class-pki-proof-validation.test.ts",
+    "test:f4-hosted-llm-boundary-conformance-validation": "tsx tests/f4-hosted-llm-boundary-conformance-validation.test.ts",
     "test:supply-chain-baseline": "npm run security:supply-chain-baseline",
     "test:tenant-admin-secret-output": "tsx tests/tenant-admin-secret-output.test.ts",
     "test:container-security-baseline": "tsx tests/container-security-baseline.test.ts",

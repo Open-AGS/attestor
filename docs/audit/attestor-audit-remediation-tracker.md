@@ -43,12 +43,12 @@ later implementation pass does not re-open already-retired issues.
 | F1 threat-model foundation | 6 | 1 | 5 | 0 |
 | F2 agentic consequence surface | 10 | 2 | 8 | 0 |
 | F3 cross-cutting guard readiness | 10 | 10 | 0 | 0 |
-| F4 OWASP LLM redo, active findings | 14 | 1 | 4 | 9 |
+| F4 OWASP LLM redo, active findings | 14 | 2 | 4 | 8 |
 | F4 stale worktree findings retired by fresh main | 3 | 0 | 3 | 0 |
 | F5 signing layer redo | 21 | 5 | 3 | 13 |
 | Final docs / claim alignment | 2 | 0 | 0 | 2 |
 
-Estimated remaining work after this tracker lands: about 24 to 32 PR-sized or
+Estimated remaining work after this tracker lands: about 23 to 31 PR-sized or
 validation-sized units. Several items overlap and may close together, but no
 item is treated as closed until repository evidence proves it.
 
@@ -80,6 +80,7 @@ evidence. No `needs-revalidation` row can remain before starting F6.
 | [#307](https://github.com/AI-gateway-systems/attestor/pull/307) | `d8ac6f0615f4c3877b111be45b025f280f0dcd4b` | F2 / F4 LLM provider supply-chain validation |
 | [#308](https://github.com/AI-gateway-systems/attestor/pull/308) | `d8788fe5b0d8f753fb5d1f1e3b2d09f521760b26` | F2 constraint kind registry |
 | [#309](https://github.com/AI-gateway-systems/attestor/pull/309) | `acaac7002bffcffcf0b117742490b087e03b33df` | F2 model/tool/config drift binding validation |
+| [#310](https://github.com/AI-gateway-systems/attestor/pull/310) | `35b8b61c493b066bcf83c08d7ac6d385984c60a1` | F4 signed trust-class PKI proof validation |
 
 ## F1 Threat-Model Foundation
 
@@ -145,7 +146,7 @@ fresh main retired are listed separately to avoid duplicate work.
 | ID | Current status | Overlap / evidence | Remaining action |
 |---|---|---|---|
 | F4-LLM01-A indirect prompt injection via operator-asserted trust class | `fixed` | `docs/audit/f4-trust-class-pki-proof-validation.md`; `tool-result-poisoning-guard.ts`; `approval-provenance-guard.ts`; `test:f4-trust-class-pki-proof-validation` | Signed trust classes now require PKI-bound `verifyPkiBoundCertificate` input; caller-supplied booleans are insufficient. Customer adapter proof material remains a runtime integration boundary. |
-| F4-LLM01-B hosted LLM agent tool boundary descriptor-only | `needs-revalidation` | `hosted-llm-agent-tool-boundary-guard` descriptor | Decide whether runtime conformance tests exist or must be added for the declared controls. |
+| F4-LLM01-B hosted LLM agent tool boundary descriptor-only | `invalid-as-stated` | `docs/audit/f4-hosted-llm-boundary-conformance-validation.md`; `test:hosted-llm-agent-tool-boundary-guard`; `test:f4-hosted-llm-boundary-conformance-validation` | Current master already has repo-side conformance checks that validate descriptor evidence, validation files, source anchors, material scanning, OpenAPI markers, and docs alignment. Live hosted deployment proof remains outside this scoped claim. |
 | F4-LLM02-A data-minimization evaluation operator-driven | `needs-revalidation` | `data-minimization-redaction-policy` | Verify whether server-side marker scanning exists; if not, add a scanner or explicit surface-conformance contract. |
 | F4-LLM02-B redaction policy not activated as an enforcement claim | `needs-revalidation` | `data-minimization-redaction-policy` lifecycle metadata | Keep docs honest and decide whether activation readiness is proven by code or remains backlog. |
 | F4-LLM03-A agentic supply-chain coverage gap / single LLM provider | `partial` | PR #297 added `agentic-supply-chain-guard`; `docs/audit/f2-llm-provider-supply-chain-validation.md`; `src/api/openai.ts` remains separate | OWASP LLM03 risk is valid. Agentic supply-chain guard covers repo-side component evidence; Attestor-owned OpenAI wrapper remains single-provider optional live-model path. |
@@ -215,21 +216,20 @@ backlogged.
 
 Recommended next order through F5:
 
-1. F4-LLM01-B hosted LLM boundary runtime conformance.
-2. F4-LLM02-A / F4-LLM02-B data-minimization scanning and activation readiness.
-3. F4-LLM05-A presentation freshness nonce.
-4. F4-LLM05-B shared replay ledger.
-5. F4-LLM06-B / F4-LLM10-A / F4-LLM10-B shared velocity and retry-budget validation.
-6. F4-LLM07-A prompt leakage marker expansion.
-7. F5-A1 require trusted CA pin or explicit developer-mode bypass.
-8. F5-A2 remove or sunset legacy env downgrade.
-9. F5-A3 fingerprint width migration.
-10. F5-A4 / F5-A8 canonicalization and numeric payload behavior.
-11. F-5.2 / F5-A5 file durability and key persistence atomicity.
-12. F5-A7 / F5-NEW-1 keyless CA singleton and test-only injection.
-13. F-5.7 / F5-NEW-2 HA shared PKI and production-shared local-PKI closure.
-14. F5-NEW-3 legacy unbounded certificate telemetry and sunset.
-15. F5-A6 transparency log design decision and claim boundary.
-16. F5-B1 crypto-authorization trust-delegation documentation.
-17. F1 backlog closure pass for replay correlation, fan-out, and cross-log integrity.
-18. Final README/docs/provenance claim alignment.
+1. F4-LLM02-A / F4-LLM02-B data-minimization scanning and activation readiness.
+2. F4-LLM05-A presentation freshness nonce.
+3. F4-LLM05-B shared replay ledger.
+4. F4-LLM06-B / F4-LLM10-A / F4-LLM10-B shared velocity and retry-budget validation.
+5. F4-LLM07-A prompt leakage marker expansion.
+6. F5-A1 require trusted CA pin or explicit developer-mode bypass.
+7. F5-A2 remove or sunset legacy env downgrade.
+8. F5-A3 fingerprint width migration.
+9. F5-A4 / F5-A8 canonicalization and numeric payload behavior.
+10. F-5.2 / F5-A5 file durability and key persistence atomicity.
+11. F5-A7 / F5-NEW-1 keyless CA singleton and test-only injection.
+12. F-5.7 / F5-NEW-2 HA shared PKI and production-shared local-PKI closure.
+13. F5-NEW-3 legacy unbounded certificate telemetry and sunset.
+14. F5-A6 transparency log design decision and claim boundary.
+15. F5-B1 crypto-authorization trust-delegation documentation.
+16. F1 backlog closure pass for replay correlation, fan-out, and cross-log integrity.
+17. Final README/docs/provenance claim alignment.

@@ -14,7 +14,7 @@ Certificates are JSON documents that bind the full authority chain, evidence anc
 - **WHAT** evidence exists (evidence chain root/terminal, audit chain integrity, SQL hash, snapshot hash)
 - **WHETHER** execution was live or fixture-based (live proof mode + consistency)
 
-**Verification is portable and offline — no platform access, no database, no API call. The default verifier path is PKI-first: kit verification requires trust chain material (CA → leaf → certificate binding) and a trusted CA fingerprint pinned out of band. When chain material is absent, the CLI exits with code 2 (`PKI_REQUIRED`). When a kit provides a CA but no trusted CA fingerprint is supplied, the CLI exits with code 2 (`TRUST_ROOT_REQUIRED`) unless the caller explicitly chooses developer mode. Legacy flat Ed25519 verification (certificate JSON + signer public key only) remains available as an explicit override (`--allow-legacy-verify` or `ATTESTOR_ALLOW_LEGACY=true`).**
+**Verification is portable and offline — no platform access, no database, no API call. The default verifier path is PKI-first: kit verification requires trust chain material (CA → leaf → certificate binding) and a trusted CA fingerprint pinned out of band. When chain material is absent, the CLI exits with code 2 (`PKI_REQUIRED`). When a kit provides a CA but no trusted CA fingerprint is supplied, the CLI exits with code 2 (`TRUST_ROOT_REQUIRED`) unless the caller explicitly chooses developer mode. Legacy flat Ed25519 verification (certificate JSON + signer public key only) remains available only as an explicit CLI override (`--allow-legacy-verify`).**
 
 For independent third-party trust, the verifier must pin the expected CA fingerprint out-of-band with `--trusted-ca-fingerprint` or `ATTESTOR_TRUSTED_CA_FINGERPRINT`. A kit-contained `caPublicKeyPem` can prove internal chain consistency only when `--developer-mode` is explicitly selected; it is not by itself an out-of-band trust root.
 
@@ -58,7 +58,7 @@ PKI chain verification is now **mandatory** across both CLI and API.
 - When a trusted CA fingerprint is absent: verification fails closed with `TRUST_ROOT_REQUIRED`
 - Developer mode (`--developer-mode`) allows kit-contained CA chain-integrity checks for local development only; independent third-party trust is not claimed
 - When PKI chain material is absent: **exit code 2** (`PKI_REQUIRED`) — verification impossible
-- Legacy flat Ed25519 override: `--allow-legacy-verify` or `ATTESTOR_ALLOW_LEGACY=true`
+- Legacy flat Ed25519 override: `--allow-legacy-verify` only; no env-var downgrade is supported
 
 **API verify behavior (mandatory):**
 - `/api/v1/verify` requires `trustChain` + `caPublicKeyPem` alongside `certificate` + `publicKeyPem`
@@ -67,7 +67,6 @@ PKI chain verification is now **mandatory** across both CLI and API.
 - If certificate signature verification succeeds but PKI binding fails, the response `overall` is `invalid`
 - When trust chain is absent: **422 rejection** with error message and hint
 - When the trusted CA fingerprint is absent: **422 rejection** with error message and hint
-- Legacy flat Ed25519 override: `ATTESTOR_ALLOW_LEGACY_API=true` (deprecated, will be removed)
 - Returns `verificationMode` (`'pki'` or `'legacy_ed25519'`), `chainVerification`, and `trustBinding`
 
 **API issuance:**
@@ -77,7 +76,7 @@ PKI chain verification is now **mandatory** across both CLI and API.
 
 **Current boundary:**
 - CLI: PKI chain and trusted CA pin mandatory for third-party verification (exit code 2 without chain or pin; `--developer-mode` is local chain-integrity only)
-- API: PKI chain and trusted CA pin mandatory for PKI verification (422 without chain or pin; `ATTESTOR_ALLOW_LEGACY_API=true` legacy escape remains deprecated)
+- API: PKI chain and trusted CA pin mandatory for PKI verification (422 without chain or pin; no legacy env-var downgrade)
 - `verifyCertificate()` low-level primitive remains flat Ed25519 (intentional — cryptographic primitive, no PKI awareness)
 - All public verification surfaces (CLI, API, kit) require PKI chain material and an out-of-band trust root by default
 

@@ -579,7 +579,7 @@ async function run() {
       const v = await verifyRes.json() as any;
       ok(v.error.includes('PKI trust chain required'), 'Verify(flat): error says PKI required');
       ok(v.hint !== undefined, 'Verify(flat): hint present');
-      ok(v.legacyEscape !== undefined, 'Verify(flat): legacy escape documented');
+      ok(v.legacyEscape === undefined, 'Verify(flat): no legacy env escape is exposed');
       console.log(`    status=422, error=${v.error}`);
     }
 

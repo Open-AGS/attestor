@@ -52,15 +52,13 @@ app.post('/api/v1/verify', async (c) => {
       return c.json({ error: 'certificate and publicKeyPem are required' }, 400);
     }
 
-    // PKI mandatory gate: reject flat Ed25519 unless legacy escape is set
-    const allowLegacyApi = process.env.ATTESTOR_ALLOW_LEGACY_API === 'true';
+    // PKI mandatory gate: reject flat Ed25519 on the hosted API.
     const hasPkiMaterial = trustChain && trustChain.ca && trustChain.leaf && caPublicKeyPem;
-    if (!hasPkiMaterial && !allowLegacyApi) {
+    if (!hasPkiMaterial) {
       console.log(`[verify] Rejected: no PKI chain material submitted`);
       return c.json({
         error: 'PKI trust chain required for verification.',
         hint: 'Submit trustChain and caPublicKeyPem alongside certificate and publicKeyPem.',
-        legacyEscape: 'Set ATTESTOR_ALLOW_LEGACY_API=true to allow flat Ed25519 verification (deprecated).',
       }, 422);
     }
     const normalizedTrustedCaFingerprint =
@@ -133,17 +131,6 @@ app.post('/api/v1/verify', async (c) => {
       pkiVerified,
     };
 
-    // 5. Deprecation notice when legacy flat Ed25519 path is used
-    const deprecationNotice = verificationMode === 'legacy_ed25519'
-      ? 'Flat Ed25519 verification without PKI trust chain is deprecated. ' +
-        'Submit trustChain + caPublicKeyPem for full PKI-backed verification. ' +
-        'Legacy mode will be removed in a future version.'
-      : null;
-
-    if (verificationMode === 'legacy_ed25519') {
-      console.log(`[verify] Legacy flat Ed25519 verification used (no trust chain submitted)`);
-    }
-
     return c.json({
       signatureValid: certResult.signatureValid,
       fingerprintConsistent: certResult.fingerprintConsistent,
@@ -151,7 +138,7 @@ app.post('/api/v1/verify', async (c) => {
       overall,
       explanation,
       verificationMode,
-      deprecationNotice,
+      deprecationNotice: null,
       chainVerification,
       trustBinding,
     });

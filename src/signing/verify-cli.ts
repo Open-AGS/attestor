@@ -6,6 +6,7 @@
  *   npx tsx src/signing/verify-cli.ts <kit.json>
  *   npx tsx src/signing/verify-cli.ts <kit.json> --trusted-ca-fingerprint <fingerprint>
  *   npx tsx src/signing/verify-cli.ts <kit.json> --developer-mode
+ *   npx tsx src/signing/verify-cli.ts <legacy-kit.json> --allow-legacy-verify
  */
 
 import { readFileSync } from 'node:fs';
@@ -25,6 +26,7 @@ function main(): void {
     npx tsx src/signing/verify-cli.ts <kit.json>
     npx tsx src/signing/verify-cli.ts <kit.json> --trusted-ca-fingerprint <fingerprint>
     npx tsx src/signing/verify-cli.ts <kit.json> --developer-mode
+    npx tsx src/signing/verify-cli.ts <legacy-kit.json> --allow-legacy-verify
 
   Exit codes:
     0  Fully verified
@@ -217,9 +219,7 @@ function verifyKit(kit: VerificationKit): void {
     }
     console.log(`  PKI:        ${pkiVerified ? 'VERIFIED' : trustBinding.failureReasons.join(', ')}`);
   } else {
-    const allowLegacy =
-      process.argv.includes('--allow-legacy-verify') ||
-      process.env.ATTESTOR_ALLOW_LEGACY === 'true';
+    const allowLegacy = process.argv.includes('--allow-legacy-verify');
     if (allowLegacy) {
       pkiVerificationRequired = false;
       console.log('  No PKI chain - using legacy flat Ed25519 verification (deprecated)');
@@ -227,7 +227,7 @@ function verifyKit(kit: VerificationKit): void {
     } else {
       console.log('  FAIL No PKI chain material - PKI verification is mandatory.');
       console.log('  This kit was issued without trust chain and cannot be fully verified.');
-      console.log('  Override: --allow-legacy-verify or ATTESTOR_ALLOW_LEGACY=true');
+      console.log('  Override: --allow-legacy-verify');
       console.log('\n  Overall: PKI_REQUIRED\n');
       process.exit(2);
     }

@@ -89,6 +89,7 @@
     "test:f4-trust-class-pki-proof-validation": "tsx tests/f4-trust-class-pki-proof-validation.test.ts",
     "test:f4-hosted-llm-boundary-conformance-validation": "tsx tests/f4-hosted-llm-boundary-conformance-validation.test.ts",
     "test:f4-data-minimization-scanning-readiness-validation": "tsx tests/f4-data-minimization-scanning-readiness-validation.test.ts",
+    "test:f4-presentation-freshness-nonce-validation": "tsx tests/f4-presentation-freshness-nonce-validation.test.ts",
     "test:supply-chain-baseline": "npm run security:supply-chain-baseline",
     "test:tenant-admin-secret-output": "tsx tests/tenant-admin-secret-output.test.ts",
     "test:container-security-baseline": "tsx tests/container-security-baseline.test.ts",

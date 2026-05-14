@@ -8,6 +8,7 @@ import {
   createConsequenceAdmissionCheck,
   createConsequenceAdmissionDownstreamContract,
   createConsequenceAdmissionPresentationBinding,
+  createConsequenceAdmissionPresentationFreshnessNonce,
   createConsequenceAdmissionRequest,
   createConsequenceAdmissionResponse,
   evaluateConsequenceAdmissionPresentationBinding,
@@ -284,6 +285,16 @@ function testDescriptor(): void {
     true,
     'Presentation binding: canonical payload binds constraint acknowledgements by digest',
   );
+  equal(
+    descriptor.supportsAttestorIssuedFreshnessNonce,
+    true,
+    'Presentation binding: descriptor supports Attestor-issued freshness nonces',
+  );
+  equal(
+    descriptor.freshnessNonceExposesRawNonceInDecision,
+    false,
+    'Presentation binding: freshness nonce decisions do not expose raw nonce material',
+  );
   equal(descriptor.failClosed, true, 'Presentation binding: descriptor is fail-closed');
 }
 
@@ -528,6 +539,73 @@ function testTargetBodyAndNonceMustMatch(): void {
   );
 }
 
+function testAttestorIssuedFreshnessNonceCanBindPresentation(): void {
+  const admission = admittedPayment();
+  const freshnessNonce = createConsequenceAdmissionPresentationFreshnessNonce({
+    issuedAt: '2026-05-01T12:00:05.000Z',
+    maxFreshnessSeconds: 60,
+    nonce: 'nonce:payment-adapter:attestor-issued',
+  });
+  const binding = createConsequenceAdmissionPresentationBinding({
+    admission,
+    contract: paymentContract(),
+    target: {
+      uri: 'https://payments.example.internal/supplier-payments',
+      method: 'POST',
+      bodyDigest: 'sha256:payment-body',
+    },
+    replayKey: 'payment:tenant_a:invoice_1938:attempt_nonce_issued',
+    nonce: freshnessNonce.nonce,
+    presentedAt: freshnessNonce.issuedAt,
+    expiresAt: freshnessNonce.expiresAt,
+  });
+  const allowed = evaluateConsequenceAdmissionPresentationBinding({
+    admission,
+    contract: paymentContract(),
+    presentation: binding,
+    expected: {
+      targetUri: 'https://payments.example.internal/supplier-payments',
+      method: 'POST',
+      bodyDigest: 'sha256:payment-body',
+      nonceDigest: freshnessNonce.nonceDigest,
+      requireBodyDigest: true,
+      requireReplayKey: true,
+      requireNonce: true,
+      maxFreshnessSeconds: freshnessNonce.maxFreshnessSeconds,
+    },
+    now: '2026-05-01T12:00:30.000Z',
+  });
+  const wrongDigest = evaluateConsequenceAdmissionPresentationBinding({
+    admission,
+    contract: paymentContract(),
+    presentation: binding,
+    expected: {
+      nonceDigest: digestText('nonce:payment-adapter:different'),
+      requireNonce: true,
+      maxFreshnessSeconds: freshnessNonce.maxFreshnessSeconds,
+    },
+    now: '2026-05-01T12:00:30.000Z',
+  });
+  const serializedDecision = JSON.stringify(allowed);
+
+  equal(allowed.outcome, 'allow', 'Presentation binding: Attestor-issued nonce digest allows');
+  equal(
+    binding.nonceDigest,
+    freshnessNonce.nonceDigest,
+    'Presentation binding: binding nonce digest matches Attestor-issued nonce digest',
+  );
+  equal(
+    serializedDecision.includes(freshnessNonce.nonce),
+    false,
+    'Presentation binding: decision serialization omits raw Attestor-issued nonce',
+  );
+  deepEqual(
+    wrongDigest.failureReasons,
+    ['nonce-mismatch'],
+    'Presentation binding: wrong expected nonce digest holds',
+  );
+}
+
 function testRawBodyDigestMaterialIsRejected(): void {
   const admission = admittedPayment();
   const rawBodyMarker = 'raw_payment_body_must_not_escape';
@@ -725,6 +803,7 @@ testDescriptor();
 testMatchingPresentationAllows();
 testReplayAndExpiryHold();
 testTargetBodyAndNonceMustMatch();
+testAttestorIssuedFreshnessNonceCanBindPresentation();
 testRawBodyDigestMaterialIsRejected();
 testNarrowPresentationRequiresConstraintAcknowledgement();
 testDocsAndScriptsExposePresentationBinding();

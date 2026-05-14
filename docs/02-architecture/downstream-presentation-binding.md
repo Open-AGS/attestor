@@ -45,6 +45,18 @@ The point is not to create another proof format for its own sake. The point is t
 
 Executable body material must be supplied as a digest reference such as `sha256:...`. If raw request body material is placed in `bodyDigest`, binding creation rejects it, and presentation evaluation holds fail-closed rather than treating raw material as proof.
 
+## Freshness Nonce Boundary
+
+For high-impact presentations, the enforcement point should use an
+Attestor-issued freshness nonce created with
+`createConsequenceAdmissionPresentationFreshnessNonce(...)`. The helper returns
+a short-lived nonce, its digest, the issued/expires window, and the allowed
+freshness duration.
+
+Presentation evaluation can compare `expected.nonceDigest` instead of a raw
+nonce. This lets runtime enforcement compare the nonce while stable decision,
+audit, dashboard, and review material stay digest-only.
+
 ## Replay Observation Boundary
 
 The binding object carries the short-lived replay key that the customer-owned enforcement point is about to consume. Decision and proof surfaces should not echo raw replay keys back out.
@@ -136,6 +148,7 @@ The evaluator returns explicit failure reasons:
 - `replay-key-reused`
 - `nonce-missing`
 - `nonce-mismatch`
+- `nonce-digest-invalid`
 - `presentation-not-yet-valid`
 - `presentation-expired`
 - `freshness-window-too-long`

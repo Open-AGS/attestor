@@ -43,12 +43,12 @@ later implementation pass does not re-open already-retired issues.
 | F1 threat-model foundation | 6 | 1 | 5 | 0 |
 | F2 agentic consequence surface | 10 | 2 | 8 | 0 |
 | F3 cross-cutting guard readiness | 10 | 10 | 0 | 0 |
-| F4 OWASP LLM redo, active findings | 14 | 3 | 5 | 6 |
+| F4 OWASP LLM redo, active findings | 14 | 4 | 5 | 5 |
 | F4 stale worktree findings retired by fresh main | 3 | 0 | 3 | 0 |
 | F5 signing layer redo | 21 | 5 | 3 | 13 |
 | Final docs / claim alignment | 2 | 0 | 0 | 2 |
 
-Estimated remaining work after this tracker lands: about 22 to 30 PR-sized or
+Estimated remaining work after this tracker lands: about 21 to 29 PR-sized or
 validation-sized units. Several items overlap and may close together, but no
 item is treated as closed until repository evidence proves it.
 
@@ -82,6 +82,7 @@ evidence. No `needs-revalidation` row can remain before starting F6.
 | [#309](https://github.com/AI-gateway-systems/attestor/pull/309) | `acaac7002bffcffcf0b117742490b087e03b33df` | F2 model/tool/config drift binding validation |
 | [#310](https://github.com/AI-gateway-systems/attestor/pull/310) | `35b8b61c493b066bcf83c08d7ac6d385984c60a1` | F4 signed trust-class PKI proof validation |
 | [#311](https://github.com/AI-gateway-systems/attestor/pull/311) | `31ecf2b1f5a0017ec1eb83476093e77e085e26eb` | F4 hosted LLM boundary conformance validation |
+| [#312](https://github.com/AI-gateway-systems/attestor/pull/312) | `d32624c0e996e803bbda9b1a0190a862389eed86` | F4 data-minimization scanner readiness validation |
 
 ## F1 Threat-Model Foundation
 
@@ -151,7 +152,7 @@ fresh main retired are listed separately to avoid duplicate work.
 | F4-LLM02-A data-minimization evaluation operator-driven | `fixed` | `docs/audit/f4-data-minimization-scanning-readiness-validation.md`; `evaluateConsequenceDataMinimizationArtifact`; `test:f4-data-minimization-scanning-readiness-validation` | Artifact evaluation now runs the central material scanner when material is supplied and returns stable non-secret reason codes. |
 | F4-LLM02-B redaction policy not activated as an enforcement claim | `accepted-limitation` | `docs/audit/f4-data-minimization-scanning-readiness-validation.md`; `consequenceDataMinimizationRedactionPolicyDescriptor().productionReady === false` | The repo-side policy intentionally avoids production-ready enforcement claims. Live deployment, retention, access-control, and external audit readiness remain out of scope for this repository slice. |
 | F4-LLM03-A agentic supply-chain coverage gap / single LLM provider | `partial` | PR #297 added `agentic-supply-chain-guard`; `docs/audit/f2-llm-provider-supply-chain-validation.md`; `src/api/openai.ts` remains separate | OWASP LLM03 risk is valid. Agentic supply-chain guard covers repo-side component evidence; Attestor-owned OpenAI wrapper remains single-provider optional live-model path. |
-| F4-LLM05-A presentation freshness relies on operator clock | `needs-revalidation` | `presentation-binding` | Verify whether Attestor-issued nonce or server-rendered freshness binding exists; add if missing. |
+| F4-LLM05-A presentation freshness relies on operator clock | `fixed` | `docs/audit/f4-presentation-freshness-nonce-validation.md`; `createConsequenceAdmissionPresentationFreshnessNonce`; `expected.nonceDigest`; `test:f4-presentation-freshness-nonce-validation` | Presentation binding now has an Attestor-issued freshness nonce helper and digest-based expected nonce verification. Live shared nonce consumption remains tracked under replay/shared-ledger work. |
 | F4-LLM05-B presentation replay ledger in-memory reference path | `needs-revalidation` | `presentation-replay-ledger`; overlaps F1-CC-3 | Verify durable/shared replay consume path; add shared ledger plan or implementation. |
 | F4-LLM06-A customer gate honor-system | `partial` | Same root as F2-AG-1 and F1-CC-2; `docs/audit/f2-customer-gate-enforcement-validation.md` | The LLM06 claim is narrowed: helper-only use remains honor-system; protected release-enforcement path exists separately. |
 | F4-LLM06-B agent-loop budget per process | `needs-revalidation` | Overlaps F3-CC-2, PR #293 | Confirm whether shared storage readiness fully closes the LLM06/LLM10 angle or only the descriptor. |
@@ -217,19 +218,18 @@ backlogged.
 
 Recommended next order through F5:
 
-1. F4-LLM05-A presentation freshness nonce.
-2. F4-LLM05-B shared replay ledger.
-3. F4-LLM06-B / F4-LLM10-A / F4-LLM10-B shared velocity and retry-budget validation.
-4. F4-LLM07-A prompt leakage marker expansion.
-5. F5-A1 require trusted CA pin or explicit developer-mode bypass.
-6. F5-A2 remove or sunset legacy env downgrade.
-7. F5-A3 fingerprint width migration.
-8. F5-A4 / F5-A8 canonicalization and numeric payload behavior.
-9. F-5.2 / F5-A5 file durability and key persistence atomicity.
-10. F5-A7 / F5-NEW-1 keyless CA singleton and test-only injection.
-11. F-5.7 / F5-NEW-2 HA shared PKI and production-shared local-PKI closure.
-12. F5-NEW-3 legacy unbounded certificate telemetry and sunset.
-13. F5-A6 transparency log design decision and claim boundary.
-14. F5-B1 crypto-authorization trust-delegation documentation.
-15. F1 backlog closure pass for replay correlation, fan-out, and cross-log integrity.
-16. Final README/docs/provenance claim alignment.
+1. F4-LLM05-B shared replay ledger.
+2. F4-LLM06-B / F4-LLM10-A / F4-LLM10-B shared velocity and retry-budget validation.
+3. F4-LLM07-A prompt leakage marker expansion.
+4. F5-A1 require trusted CA pin or explicit developer-mode bypass.
+5. F5-A2 remove or sunset legacy env downgrade.
+6. F5-A3 fingerprint width migration.
+7. F5-A4 / F5-A8 canonicalization and numeric payload behavior.
+8. F-5.2 / F5-A5 file durability and key persistence atomicity.
+9. F5-A7 / F5-NEW-1 keyless CA singleton and test-only injection.
+10. F-5.7 / F5-NEW-2 HA shared PKI and production-shared local-PKI closure.
+11. F5-NEW-3 legacy unbounded certificate telemetry and sunset.
+12. F5-A6 transparency log design decision and claim boundary.
+13. F5-B1 crypto-authorization trust-delegation documentation.
+14. F1 backlog closure pass for replay correlation, fan-out, and cross-log integrity.
+15. Final README/docs/provenance claim alignment.

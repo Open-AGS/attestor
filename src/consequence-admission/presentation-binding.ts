@@ -1,4 +1,4 @@
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import {
   canonicalizeReleaseJson,
   type CanonicalReleaseJsonValue,
@@ -57,6 +57,7 @@ export const CONSEQUENCE_ADMISSION_PRESENTATION_FAILURE_REASONS = [
   'replay-key-reused',
   'nonce-missing',
   'nonce-mismatch',
+  'nonce-digest-invalid',
   'presentation-not-yet-valid',
   'presentation-expired',
   'freshness-window-too-long',
@@ -130,6 +131,7 @@ export interface ConsequenceAdmissionPresentationExpectation {
   readonly requireBodyDigest?: boolean | null;
   readonly requireReplayKey?: boolean | null;
   readonly requireNonce?: boolean | null;
+  readonly nonceDigest?: string | null;
   readonly maxFreshnessSeconds?: number | null;
   readonly usedReplayKeys?: readonly string[];
   readonly usedReplayKeyDigests?: readonly string[];
@@ -164,6 +166,24 @@ export interface ConsequenceAdmissionPresentationDecision {
   readonly receiptDigest: string;
 }
 
+export interface ConsequenceAdmissionPresentationFreshnessNonce {
+  readonly version: typeof CONSEQUENCE_ADMISSION_PRESENTATION_BINDING_VERSION;
+  readonly issuer: 'attestor';
+  readonly nonce: string;
+  readonly nonceDigest: string;
+  readonly issuedAt: string;
+  readonly expiresAt: string;
+  readonly maxFreshnessSeconds: number;
+  readonly canonical: string;
+  readonly digest: string;
+}
+
+export interface CreateConsequenceAdmissionPresentationFreshnessNonceInput {
+  readonly issuedAt: string;
+  readonly maxFreshnessSeconds: number;
+  readonly nonce?: string | null;
+}
+
 export interface ConsequenceAdmissionPresentationBindingDescriptor {
   readonly version: typeof CONSEQUENCE_ADMISSION_PRESENTATION_BINDING_VERSION;
   readonly bindingFields: typeof CONSEQUENCE_ADMISSION_PRESENTATION_BINDING_FIELDS;
@@ -183,6 +203,8 @@ export interface ConsequenceAdmissionPresentationBindingDescriptor {
   readonly canonicalUsesReplayKeyDigest: true;
   readonly canonicalUsesNonceDigest: true;
   readonly canonicalUsesConstraintIdDigests: true;
+  readonly supportsAttestorIssuedFreshnessNonce: true;
+  readonly freshnessNonceExposesRawNonceInDecision: false;
   readonly replayLedgerIncluded: false;
   readonly failClosed: true;
 }
@@ -313,6 +335,41 @@ function canonicalObject<T extends CanonicalReleaseJsonValue>(value: T): {
 
 function digestText(value: string): string {
   return `sha256:${createHash('sha256').update(value).digest('hex')}`;
+}
+
+export function createConsequenceAdmissionPresentationFreshnessNonce(
+  input: CreateConsequenceAdmissionPresentationFreshnessNonceInput,
+): ConsequenceAdmissionPresentationFreshnessNonce {
+  const issuedAt = normalizeIsoTimestamp(input.issuedAt, 'freshnessNonce.issuedAt');
+  const maxFreshnessSeconds = normalizePositiveInteger(
+    input.maxFreshnessSeconds,
+    'freshnessNonce.maxFreshnessSeconds',
+  );
+  if (maxFreshnessSeconds === null) {
+    throw new Error(
+      'Consequence admission presentation binding freshnessNonce.maxFreshnessSeconds is required.',
+    );
+  }
+  const nonce = normalizeOptionalIdentifier(input.nonce, 'freshnessNonce.nonce') ??
+    `attestor-presentation-nonce:${randomUUID()}`;
+  const expiresAt = new Date(new Date(issuedAt).getTime() + maxFreshnessSeconds * 1000)
+    .toISOString();
+  const payload = {
+    version: CONSEQUENCE_ADMISSION_PRESENTATION_BINDING_VERSION,
+    issuer: 'attestor',
+    nonceDigest: digestText(nonce),
+    issuedAt,
+    expiresAt,
+    maxFreshnessSeconds,
+  } as const;
+  const canonical = canonicalObject(payload as CanonicalReleaseJsonValue);
+
+  return Object.freeze({
+    ...payload,
+    nonce,
+    canonical: canonical.canonical,
+    digest: canonical.digest,
+  });
 }
 
 function bindingCanonicalPayload(
@@ -560,6 +617,10 @@ export function evaluateConsequenceAdmissionPresentationBinding(
     'expected.bodyDigest',
   );
   const expectedNonce = normalizeOptionalIdentifier(expected?.nonce, 'expected.nonce');
+  const expectedNonceDigest = normalizeOptionalDigestReference(
+    expected?.nonceDigest,
+    'expected.nonceDigest',
+  );
   const expectedUsedReplayKeyDigests = uniqueDigestReferences(
     expected?.usedReplayKeyDigests ?? [],
     'expected.usedReplayKeyDigests[]',
@@ -624,6 +685,12 @@ export function evaluateConsequenceAdmissionPresentationBinding(
     ...(replayKeyReused ? ['replay-key-reused' as const] : []),
     ...(requireNonce && presentation.nonce === null ? ['nonce-missing' as const] : []),
     ...(expectedNonce !== null && presentation.nonce !== expectedNonce
+      ? ['nonce-mismatch' as const]
+      : []),
+    ...(expectedNonceDigest.invalid ? ['nonce-digest-invalid' as const] : []),
+    ...(!expectedNonceDigest.invalid &&
+      expectedNonceDigest.digest !== null &&
+      presentation.nonceDigest !== expectedNonceDigest.digest
       ? ['nonce-mismatch' as const]
       : []),
     ...(nowMs < presentedAtMs ? ['presentation-not-yet-valid' as const] : []),
@@ -704,6 +771,8 @@ ConsequenceAdmissionPresentationBindingDescriptor {
     canonicalUsesReplayKeyDigest: true,
     canonicalUsesNonceDigest: true,
     canonicalUsesConstraintIdDigests: true,
+    supportsAttestorIssuedFreshnessNonce: true,
+    freshnessNonceExposesRawNonceInDecision: false,
     replayLedgerIncluded: false,
     failClosed: true,
   });

@@ -91,6 +91,7 @@
     "test:final-claim-alignment-validation": "tsx tests/final-claim-alignment-validation.test.ts",
     "test:f6-tenant-blast-radius-validation": "tsx tests/f6-tenant-blast-radius-validation.test.ts",
     "test:f6-tenant-bound-release-token": "tsx tests/f6-tenant-bound-release-token.test.ts",
+    "test:f6-tenant-key-cache-hardening": "tsx tests/f6-tenant-key-cache-hardening.test.ts",
     "test:f1-backlog-closure-validation": "tsx tests/f1-backlog-closure-validation.test.ts",
     "test:f2-customer-gate-validation": "tsx tests/f2-customer-gate-validation.test.ts",
     "test:f2-agent-payment-settlement-validation": "tsx tests/f2-agent-payment-settlement-validation.test.ts",

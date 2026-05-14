@@ -34,6 +34,7 @@ import {
 import { isProductionLikeRuntimeEnv } from './deployment-safety.js';
 import { DEFAULT_HOSTED_PLAN_ID, SELF_HOST_PLAN_ID, resolvePlanSpec } from './plan-catalog.js';
 import type { AccountUserRole } from './account-user-store.js';
+import { hashSecretForLookup } from './secret-derivation.js';
 
 export interface TenantContext {
   tenantId: string;
@@ -52,14 +53,85 @@ export interface AccountAccessContext {
   source: 'account_session';
 }
 
-/** Tenant registry — maps API keys to tenants. */
+/** Tenant registry: maps hashed API keys to tenants. */
+export const TENANT_ENV_KEY_CACHE_DEFAULT_TTL_MS = 30_000;
+const TENANT_API_KEY_LOOKUP_PURPOSE = 'tenant.api-key';
+const TENANT_ENV_KEY_CONFIG_LOOKUP_PURPOSE = 'tenant.env-key-config';
+
 const tenantKeys = new Map<string, {
   tenantId: string;
   tenantName: string;
   planId: string | null;
   monthlyRunQuota: number | null;
 }>();
-let loadedTenantKeyConfig: string | null = null;
+let loadedTenantKeyConfigDigest: string | null = null;
+let loadedTenantKeyConfigAtMs: number | null = null;
+let loadedTenantKeyConfigExpiresAtMs: number | null = null;
+let envTenantKeyCacheDisabledReason: string | null = null;
+
+function tenantKeyEnvCacheTtlMs(): number {
+  const raw = Number.parseInt(process.env.ATTESTOR_TENANT_KEY_ENV_CACHE_TTL_MS ?? '', 10);
+  return Number.isFinite(raw) && raw > 0 ? raw : TENANT_ENV_KEY_CACHE_DEFAULT_TTL_MS;
+}
+
+function tenantApiKeyLookupHash(apiKey: string): string {
+  return hashSecretForLookup(apiKey, TENANT_API_KEY_LOOKUP_PURPOSE);
+}
+
+function tenantEnvKeyConfigDigest(rawConfig: string): string {
+  return rawConfig.length === 0
+    ? 'empty'
+    : hashSecretForLookup(rawConfig, TENANT_ENV_KEY_CONFIG_LOOKUP_PURPOSE);
+}
+
+function envTenantKeysDisabledForRuntime(): string | null {
+  return process.env.ATTESTOR_RUNTIME_PROFILE?.trim() === 'production-shared'
+    ? 'production-shared runtime requires shared control-plane tenant key state; env tenant keys are per-pod only'
+    : null;
+}
+
+export function tenantEnvKeyCacheStatus(nowMs = Date.now()): {
+  readonly source: 'env';
+  readonly keyCount: number;
+  readonly lookupMaterial: 'hashed-api-key';
+  readonly plaintextKeysStored: false;
+  readonly sharedInvalidation: false;
+  readonly loadedAt: string | null;
+  readonly expiresAt: string | null;
+  readonly cacheAgeMs: number | null;
+  readonly ttlMs: number;
+  readonly disabledReason: string | null;
+} {
+  return {
+    source: 'env',
+    keyCount: tenantKeys.size,
+    lookupMaterial: 'hashed-api-key',
+    plaintextKeysStored: false,
+    sharedInvalidation: false,
+    loadedAt:
+      loadedTenantKeyConfigAtMs === null
+        ? null
+        : new Date(loadedTenantKeyConfigAtMs).toISOString(),
+    expiresAt:
+      loadedTenantKeyConfigExpiresAtMs === null
+        ? null
+        : new Date(loadedTenantKeyConfigExpiresAtMs).toISOString(),
+    cacheAgeMs:
+      loadedTenantKeyConfigAtMs === null
+        ? null
+        : Math.max(0, nowMs - loadedTenantKeyConfigAtMs),
+    ttlMs: tenantKeyEnvCacheTtlMs(),
+    disabledReason: envTenantKeyCacheDisabledReason,
+  };
+}
+
+export function resetTenantEnvKeyCacheForTests(): void {
+  tenantKeys.clear();
+  loadedTenantKeyConfigDigest = null;
+  loadedTenantKeyConfigAtMs = null;
+  loadedTenantKeyConfigExpiresAtMs = null;
+  envTenantKeyCacheDisabledReason = null;
+}
 
 /**
  * Register an API key for a tenant.
@@ -77,7 +149,7 @@ export function registerTenantKey(
     defaultPlanId: SELF_HOST_PLAN_ID,
     allowCustomPlan: true,
   });
-  tenantKeys.set(apiKey, {
+  tenantKeys.set(tenantApiKeyLookupHash(apiKey), {
     tenantId,
     tenantName,
     planId: resolvedPlan.planId,
@@ -90,11 +162,31 @@ export function registerTenantKey(
  * Format: ATTESTOR_TENANT_KEYS=key1:tenant1:name1[:plan][:quota],key2:tenant2:name2[:plan][:quota]
  */
 export function loadTenantKeysFromEnv(): void {
+  const nowMs = Date.now();
   const raw = process.env.ATTESTOR_TENANT_KEYS?.trim() ?? '';
-  if (raw === loadedTenantKeyConfig) return;
+  const rawConfigDigest = tenantEnvKeyConfigDigest(raw);
+  const disabledReason = envTenantKeysDisabledForRuntime();
+  if (disabledReason) {
+    tenantKeys.clear();
+    loadedTenantKeyConfigDigest = rawConfigDigest;
+    loadedTenantKeyConfigAtMs = nowMs;
+    loadedTenantKeyConfigExpiresAtMs = nowMs + tenantKeyEnvCacheTtlMs();
+    envTenantKeyCacheDisabledReason = disabledReason;
+    return;
+  }
+  if (
+    rawConfigDigest === loadedTenantKeyConfigDigest &&
+    loadedTenantKeyConfigExpiresAtMs !== null &&
+    nowMs < loadedTenantKeyConfigExpiresAtMs
+  ) {
+    return;
+  }
 
   tenantKeys.clear();
-  loadedTenantKeyConfig = raw;
+  loadedTenantKeyConfigDigest = rawConfigDigest;
+  loadedTenantKeyConfigAtMs = nowMs;
+  loadedTenantKeyConfigExpiresAtMs = nowMs + tenantKeyEnvCacheTtlMs();
+  envTenantKeyCacheDisabledReason = null;
   if (!raw) return;
   for (const entry of raw.split(',')) {
     const [key, id, name, planId, quotaRaw] = entry.trim().split(':');
@@ -112,7 +204,7 @@ export async function extractTenantContext(authHeader: string | undefined): Prom
   const token = authHeader.replace(/^Bearer\s+/i, '').trim();
   if (!token) return null;
 
-  const tenant = tenantKeys.get(token);
+  const tenant = tenantKeys.get(tenantApiKeyLookupHash(token));
   if (tenant) {
     return {
       tenantId: tenant.tenantId,

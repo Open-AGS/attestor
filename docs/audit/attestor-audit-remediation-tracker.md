@@ -47,12 +47,12 @@ later implementation pass does not re-open already-retired issues.
 | F4 stale worktree findings retired by fresh main | 3 | 0 | 3 | 0 |
 | F5 signing layer redo | 21 | 14 | 7 | 0 |
 | Final docs / claim alignment | 2 | 2 | 0 | 0 |
-| F6 multi-tenant blast radius | 10 | 2 | 5 | 3 |
+| F6 multi-tenant blast radius | 10 | 3 | 6 | 1 |
 
 Remaining work after the final claim-alignment slice: 0 planned
 PR-sized or validation-sized units in the current F1-F5 audit queue.
 
-Remaining F6 queue after tenant-bound release-token slice: 6 planned PR-sized
+Remaining F6 queue after tenant-key cache hardening slice: 5 planned PR-sized
 or validation-sized units.
 
 Completion rule through F5: every F1-F5 row must end as `fixed`,
@@ -237,20 +237,21 @@ cross-tenant key/state isolation audit.
 Validation record: `docs/audit/f6-tenant-blast-radius-validation.md`.
 
 Current F6 status: validation pass complete; tenant-bound release-token
-semantics added for F6-T1/F6-T6, while per-tenant signer isolation remains a
-separate boundary.
+semantics added for F6-T1/F6-T6; env tenant-key cache hardening added for
+F6-T3/F6-T9. Per-tenant signer isolation and later F6 runtime boundaries remain
+separate work.
 
 | ID | Current status | Evidence / overlap | Remaining action |
 |---|---|---|---|
 | F6-T1 shared PKI tenant binding | `partial` | Runtime-wide PKI and release-token issuer are real; generic admission tenant-spoofing subclaim is stale because `/api/v1/admissions` overwrites or rejects mismatched `tenantId`. F6 Tenant-Bound Release Token Validation adds `tenant_id` release-token claims, expected-tenant verification, introspection propagation, offline verifier binding, and token-exchange preservation. | Add per-tenant leaf signer or KMS/HSM tenant-scoped signer strategy before claiming cryptographic signer isolation. |
 | F6-T2 RLS declared but not data-path wired | `partial` | `tenant-rls.ts` provides RLS SQL/helper and runtime activation probe; main control-plane stores do not use `withTenantTransaction`. | Wire RLS into real stores or narrow RLS docs/comments to sample/probe status. |
-| F6-T3 env tenant key registry per-pod cache | `open` | `tenant-isolation.ts` stores env tenant keys in module-level memory; shared file/PG-backed lookup exists separately. | Hash and age env cache entries, or remove env-key path from shared profiles. |
+| F6-T3 env tenant key registry per-pod cache | `partial` | F6 Tenant Key Cache Hardening hashes env tenant-key lookup material, avoids raw env config retention, exposes cache age/expiry metadata, and refuses env keys in `production-shared`. Shared file/PG-backed lookup exists separately. | Env keys remain per-pod local identity state outside `production-shared`; shared deployments must use shared control-plane tenant key state. |
 | F6-T4 usage-meter single-node quota | `partial` | `usage-meter.ts` is single-node, but API-facing `control-plane-store.ts` uses PostgreSQL when `ATTESTOR_CONTROL_PLANE_PG_URL` is configured. | Keep file ledger scoped to local/single-node and add claim/profile tests around shared quota posture. |
 | F6-T5 bypass route tenant-header spoofing | `invalid-as-stated` | Admin routes use `currentAdminAuthorized`; no current admin route evidence shows `currentTenant` use on bypassed routes. | Add invariant test preventing bypass routes from reading tenant context from unverified headers. |
 | F6-T6 runtime signer all-tenant blast radius | `partial` | F6 Tenant-Bound Release Token Validation binds release tokens and verification results to `tenant_id`, but runtime signer and verification key are still shared runtime material; revocation remains runtime-wide. | Add per-tenant leaf signer or KMS/HSM tenant-scoped signer strategy before claiming signer-compromise blast-radius isolation. |
 | F6-T7 anonymous fallback env-gated | `invalid-as-stated` | Production-like tenant fallback guard and explicit runtime-profile guard already exist. | Remaining issue is sentinel naming, tracked as F6-T10. |
 | F6-T8 recipient/tenant boundary replay-only | `partial` | Replay contract exists; some runtime routes have concrete tenant checks. | Promote replay cases into runtime guard/conformance for declared output surfaces. |
-| F6-T9 plaintext env API keys in memory | `open` | Env API keys are raw `Map` keys; file/PG-backed keys are hashed. | Hash env lookup keys or retire env keys for shared profiles. |
+| F6-T9 plaintext env API keys in memory | `fixed` | F6 Tenant Key Cache Hardening stores env tenant keys by `tenant.api-key` lookup hash and stores only a secret-derived env config digest for reload detection. | No remaining repository action for this scoped finding. |
 | F6-T10 `default` tenant sentinel collision | `open` | Anonymous fallback uses literal `default` and request context treats it specially. | Add reserved anonymous sentinel plus compatibility tests. |
 
 ## Next Work Queue
@@ -264,7 +265,7 @@ F6 is now the active queue. Planned order:
 
 1. F6 validation and tracker sync. Done.
 2. F6-T1/F6-T6 tenant-bound token/signing semantics. Done for token semantics; per-tenant signer isolation remains partial.
-3. F6-T3/F6-T9 tenant API key cache hardening.
+3. F6-T3/F6-T9 tenant API key cache hardening. Done for hashed lookup and production-shared env-key refusal; cross-pod env revocation remains partial.
 4. F6-T7/F6-T10 anonymous sentinel and fallback hardening.
 5. F6-T5 bypass route tenant-context invariant.
 6. F6-T2 RLS/data-path claim alignment or integration.

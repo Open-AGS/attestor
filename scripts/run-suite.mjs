@@ -96,6 +96,7 @@ function architectureScriptNames() {
     'test:failure-mode-guard-coverage',
     'test:replay-layer-placement',
     'test:guard-activation-readiness',
+    'test:agentic-supply-chain-guard',
     'test:consequence-admission-readiness',
     'test:product-positioning-docs',
     'test:hosted-product-flow-docs',

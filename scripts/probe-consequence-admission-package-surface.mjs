@@ -288,9 +288,28 @@ assert.equal(
 assert.equal(
   admission.consequenceFailureModeGuardCoverageMatrix().entries.some((entry) =>
     entry.failureModeId === 'agentic-supply-chain-compromise' &&
-    entry.coverageKind === 'integration-required'
+    entry.coverageKind === 'dedicated-guard'
   ),
   true,
+);
+assert.equal(
+  admission.consequenceAdmissionDescriptor().agenticSupplyChainGuardVersion,
+  'attestor.consequence-agentic-supply-chain-guard.v1',
+);
+assert.equal(
+  admission.consequenceAgenticSupplyChainGuardDescriptor().requiresVerifiedProvenance,
+  true,
+);
+assert.equal(
+  admission.consequenceAgenticSupplyChainGuardDescriptor().rejectsOverbroadPermissions,
+  true,
+);
+assert.equal(
+  admission.evaluateConsequenceAgenticSupplyChain({
+    generatedAt: '2026-05-14T00:00:00.000Z',
+    components: [],
+  }).outcome,
+  'review',
 );
 assert.equal(
   admission.consequenceDomainPackBoundaryDescriptor().primaryRole,

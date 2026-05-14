@@ -111,6 +111,11 @@ import {
   consequenceFailureModeGuardCoverageMatrix,
   type ConsequenceFailureModeGuardCoverageMatrix,
 } from './failure-mode-guard-coverage.js';
+import {
+  CONSEQUENCE_AGENTIC_SUPPLY_CHAIN_GUARD_OUTCOMES,
+  CONSEQUENCE_AGENTIC_SUPPLY_CHAIN_GUARD_VERSION,
+  CONSEQUENCE_AGENTIC_SUPPLY_CHAIN_REASON_CODES,
+} from './agentic-supply-chain-guard.js';
 
 export const CONSEQUENCE_ADMISSION_CONTRACT_VERSION =
   'attestor.consequence-admission.v1';
@@ -481,6 +486,7 @@ export interface ConsequenceAdmissionDescriptor {
   readonly replayLayerPlacementVersion: typeof CONSEQUENCE_REPLAY_LAYER_PLACEMENT_VERSION;
   readonly guardActivationReadinessVersion: typeof CONSEQUENCE_GUARD_ACTIVATION_READINESS_VERSION;
   readonly failureModeGuardCoverageVersion: typeof CONSEQUENCE_FAILURE_MODE_GUARD_COVERAGE_VERSION;
+  readonly agenticSupplyChainGuardVersion: typeof CONSEQUENCE_AGENTIC_SUPPLY_CHAIN_GUARD_VERSION;
   readonly retryDefaultMaxAttempts: typeof CONSEQUENCE_ADMISSION_RETRY_DEFAULT_MAX_ATTEMPTS;
   readonly retryDefaultWindowSeconds: typeof CONSEQUENCE_ADMISSION_RETRY_DEFAULT_WINDOW_SECONDS;
   readonly decisions: typeof CONSEQUENCE_ADMISSION_DECISIONS;
@@ -516,6 +522,8 @@ export interface ConsequenceAdmissionDescriptor {
   readonly agentLoopAbuseGuardReasonCodes: typeof CONSEQUENCE_ADMISSION_AGENT_LOOP_ABUSE_GUARD_REASON_CODES;
   readonly adapterKinds: typeof CONSEQUENCE_ADMISSION_ADAPTER_KINDS;
   readonly adapterOutcomes: typeof CONSEQUENCE_ADMISSION_ADAPTER_OUTCOMES;
+  readonly agenticSupplyChainGuardOutcomes: typeof CONSEQUENCE_AGENTIC_SUPPLY_CHAIN_GUARD_OUTCOMES;
+  readonly agenticSupplyChainGuardReasonCodes: typeof CONSEQUENCE_AGENTIC_SUPPLY_CHAIN_REASON_CODES;
   readonly auditEvidenceArtifactKinds: typeof CONSEQUENCE_AUDIT_EVIDENCE_ARTIFACT_KINDS;
   readonly auditEvidenceFindingKinds: typeof CONSEQUENCE_AUDIT_EVIDENCE_FINDING_KINDS;
   readonly tamperEvidentHistoryVersion: typeof CONSEQUENCE_TAMPER_EVIDENT_HISTORY_VERSION;
@@ -2061,6 +2069,7 @@ ConsequenceAdmissionDescriptor {
     replayLayerPlacementVersion: CONSEQUENCE_REPLAY_LAYER_PLACEMENT_VERSION,
     guardActivationReadinessVersion: CONSEQUENCE_GUARD_ACTIVATION_READINESS_VERSION,
     failureModeGuardCoverageVersion: CONSEQUENCE_FAILURE_MODE_GUARD_COVERAGE_VERSION,
+    agenticSupplyChainGuardVersion: CONSEQUENCE_AGENTIC_SUPPLY_CHAIN_GUARD_VERSION,
     retryDefaultMaxAttempts: CONSEQUENCE_ADMISSION_RETRY_DEFAULT_MAX_ATTEMPTS,
     retryDefaultWindowSeconds: CONSEQUENCE_ADMISSION_RETRY_DEFAULT_WINDOW_SECONDS,
     decisions: CONSEQUENCE_ADMISSION_DECISIONS,
@@ -2096,6 +2105,8 @@ ConsequenceAdmissionDescriptor {
     agentLoopAbuseGuardReasonCodes: CONSEQUENCE_ADMISSION_AGENT_LOOP_ABUSE_GUARD_REASON_CODES,
     adapterKinds: CONSEQUENCE_ADMISSION_ADAPTER_KINDS,
     adapterOutcomes: CONSEQUENCE_ADMISSION_ADAPTER_OUTCOMES,
+    agenticSupplyChainGuardOutcomes: CONSEQUENCE_AGENTIC_SUPPLY_CHAIN_GUARD_OUTCOMES,
+    agenticSupplyChainGuardReasonCodes: CONSEQUENCE_AGENTIC_SUPPLY_CHAIN_REASON_CODES,
     auditEvidenceArtifactKinds: CONSEQUENCE_AUDIT_EVIDENCE_ARTIFACT_KINDS,
     auditEvidenceFindingKinds: CONSEQUENCE_AUDIT_EVIDENCE_FINDING_KINDS,
     tamperEvidentHistoryVersion: CONSEQUENCE_TAMPER_EVIDENT_HISTORY_VERSION,
@@ -2176,6 +2187,7 @@ export * from './stale-authority-policy-guard.js';
 export * from './recipient-tenant-boundary-replay.js';
 export * from './scope-explosion-guard.js';
 export * from './human-review-fatigue-guard.js';
+export * from './agentic-supply-chain-guard.js';
 export * from './decision-context-drift-binding.js';
 export * from './no-go-condition-ledger.js';
 export * from './policy-foundry-failure-gap-map.js';

@@ -164,6 +164,7 @@
     "test:recipient-tenant-boundary-replay": "tsx tests/recipient-tenant-boundary-replay.test.ts",
     "test:scope-explosion-guard": "tsx tests/scope-explosion-guard.test.ts",
     "test:human-review-fatigue-guard": "tsx tests/human-review-fatigue-guard.test.ts",
+    "test:agentic-supply-chain-guard": "tsx tests/agentic-supply-chain-guard.test.ts",
     "test:decision-context-drift-binding": "tsx tests/decision-context-drift-binding.test.ts",
     "test:no-go-condition-ledger": "tsx tests/no-go-condition-ledger.test.ts",
     "test:policy-foundry-failure-gap-map": "tsx tests/policy-foundry-failure-gap-map.test.ts",

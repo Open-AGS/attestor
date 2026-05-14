@@ -19,6 +19,7 @@ export const CONSEQUENCE_FAILURE_MODE_REGISTRY_PLACEMENT_SOURCE_FILES = [
   'src/consequence-admission/failure-mode-control-bindings.ts',
   'src/consequence-admission/failure-mode-replay-fixtures.ts',
   'src/consequence-admission/failure-mode-guard-coverage.ts',
+  'src/consequence-admission/agentic-supply-chain-guard.ts',
 ] as const;
 export type ConsequenceFailureModeRegistryPlacementSourceFile =
   typeof CONSEQUENCE_FAILURE_MODE_REGISTRY_PLACEMENT_SOURCE_FILES[number];
@@ -762,11 +763,13 @@ Object.freeze([
     ],
     defaultDecision: 'block',
     repositoryEvidence: [
+      evidence('code', 'src/consequence-admission/agentic-supply-chain-guard.ts', 'agentic supply-chain guard'),
       evidence('code', 'src/consequence-admission/adapter-framework.ts', 'adapter readiness'),
       evidence('code', 'src/consequence-admission/action-surface-integration-artifacts.ts', 'review-required generated artifacts'),
+      evidence('test', 'tests/agentic-supply-chain-guard.test.ts', 'provenance, pinning, integrity, least privilege, and generated artifact checks'),
       evidence('test', 'tests/action-surface-onboarding-review-handoff.test.ts', 'generated artifacts reviewed'),
     ],
-    limitation: 'Repo can require review/provenance; it cannot prove third-party pack behavior without customer-supplied evidence and runtime tests.',
+    limitation: 'A dedicated supply-chain guard can classify review/provenance gaps; it cannot prove third-party pack behavior without customer-supplied evidence and runtime tests.',
   }),
 ]);
 

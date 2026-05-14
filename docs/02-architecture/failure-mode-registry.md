@@ -38,6 +38,7 @@ Placement source files:
 - `src/consequence-admission/failure-mode-control-bindings.ts`
 - `src/consequence-admission/failure-mode-replay-fixtures.ts`
 - `src/consequence-admission/failure-mode-guard-coverage.ts`
+- `src/consequence-admission/agentic-supply-chain-guard.ts`
 
 Ownership:
 
@@ -98,6 +99,7 @@ Current use:
 - give the next Control Binding Contract step stable ids
 - give the Replay Fixture Matrix step stable scenario targets
 - give the guard coverage matrix a stable list of failure modes to classify by repository evidence
+- bind agentic supply-chain compromise to a dedicated provenance and least-privilege guard
 - keep limitations explicit when repository evidence is partial
 
 ## Current Limitations

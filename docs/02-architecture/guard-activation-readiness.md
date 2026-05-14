@@ -41,6 +41,7 @@ The readiness contract covers:
 - `stale-authority-policy-guard`
 - `scope-explosion-guard`
 - `human-review-fatigue-guard`
+- `agentic-supply-chain-guard`
 
 ## Required Criteria
 

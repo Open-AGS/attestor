@@ -101,8 +101,8 @@ function testKnownGapsAreExplicitlyNotOverclaimed(): void {
   equal(indirectPrompt.coverageKind, 'integration-required', 'Guard coverage: indirect prompt injection remains integration-required');
   equal(modelDrift.coverageKind, 'deterministic-contract', 'Guard coverage: model/tool/config drift has deterministic contract coverage');
   equal(modelDrift.primaryImplementationPath, 'src/consequence-admission/decision-context-drift-binding.ts', 'Guard coverage: model/tool/config drift points to actual binding module');
-  equal(supplyChain.coverageKind, 'integration-required', 'Guard coverage: supply-chain compromise remains integration-required');
-  equal(supplyChain.dedicatedGuardPresent, false, 'Guard coverage: supply-chain compromise is not falsely marked as dedicated guard');
+  equal(supplyChain.coverageKind, 'dedicated-guard', 'Guard coverage: supply-chain compromise has dedicated guard coverage');
+  equal(supplyChain.dedicatedGuardPresent, true, 'Guard coverage: supply-chain compromise is marked as dedicated guard');
   equal(untrusted.dedicatedGuardPresent, true, 'Guard coverage: untrusted content has dedicated guard');
   equal(toolResult.dedicatedGuardPresent, true, 'Guard coverage: tool result poisoning has dedicated guard');
   equal(approval.dedicatedGuardPresent, true, 'Guard coverage: fake approval laundering has dedicated guard');

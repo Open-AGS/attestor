@@ -113,6 +113,10 @@ function testRegistryPlacementIsSharedControlLayerOwned(): void {
     placement.sourceFiles.includes('src/consequence-admission/failure-mode-guard-coverage.ts'),
     'Failure registry placement: guard coverage source file is listed',
   );
+  ok(
+    placement.sourceFiles.includes('src/consequence-admission/agentic-supply-chain-guard.ts'),
+    'Failure registry placement: agentic supply-chain guard source file is listed',
+  );
   equal(placement.autoEnforce, false, 'Failure registry placement: auto-enforce is false');
   equal(placement.productionReady, false, 'Failure registry placement: production readiness is false');
   equal(placement.activatesEnforcement, false, 'Failure registry placement: activation is false');
@@ -207,6 +211,7 @@ function testDocsAndPackageScriptStayAligned(): void {
   includes(doc, 'src/consequence-admission/failure-mode-control-bindings.ts', 'Failure registry docs: control binding source file is named');
   includes(doc, 'src/consequence-admission/failure-mode-replay-fixtures.ts', 'Failure registry docs: replay fixture source file is named');
   includes(doc, 'src/consequence-admission/failure-mode-guard-coverage.ts', 'Failure registry docs: guard coverage source file is named');
+  includes(doc, 'src/consequence-admission/agentic-supply-chain-guard.ts', 'Failure registry docs: agentic supply-chain guard source file is named');
   includes(doc, 'test:failure-mode-registry', 'Failure registry docs: test command is named');
   includes(doc, 'untrusted-content-authorizes-action', 'Failure registry docs: untrusted content mode is named');
   includes(doc, 'fake-approval-laundering', 'Failure registry docs: approval laundering mode is named');

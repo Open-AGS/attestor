@@ -69,6 +69,7 @@ function testDescriptorIsExplicitlyReadinessOnly(): void {
   equal(descriptor.rawPayloadStored, false, 'Guard activation readiness: raw payload storage is false');
   ok(descriptor.guardIds.includes('agent-loop-abuse-guard'), 'Guard activation readiness: agent-loop guard is covered');
   ok(descriptor.guardIds.includes('tool-result-poisoning-guard'), 'Guard activation readiness: tool-result guard is covered');
+  ok(descriptor.guardIds.includes('agentic-supply-chain-guard'), 'Guard activation readiness: agentic supply-chain guard is covered');
   ok(descriptor.criterionIds.includes('signed-decision-binding'), 'Guard activation readiness: signed decision criterion is required');
   ok(descriptor.criterionIds.includes('downstream-verifier-integrated'), 'Guard activation readiness: downstream verifier criterion is required');
   ok(

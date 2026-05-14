@@ -427,28 +427,31 @@ const COVERAGE_PROFILES = {
       'Evidence exports organize proof references; source-system verification is still domain/customer specific.',
   },
   'agentic-supply-chain-compromise': {
-    coverageKind: 'integration-required',
-    runtimeClaim: 'requires-integration',
-    dedicatedGuardPresent: false,
+    coverageKind: 'dedicated-guard',
+    runtimeClaim: 'renders-decision',
+    dedicatedGuardPresent: true,
     customerIntegrationRequired: true,
-    primaryImplementationPath: 'src/consequence-admission/action-surface-integration-artifacts.ts',
+    primaryImplementationPath: 'src/consequence-admission/agentic-supply-chain-guard.ts',
     codeEvidencePaths: [
+      'src/consequence-admission/agentic-supply-chain-guard.ts',
       'src/consequence-admission/adapter-framework.ts',
       'src/consequence-admission/action-surface-integration-artifacts.ts',
       'src/consequence-admission/domain-pack-boundary.ts',
     ],
     testEvidencePaths: [
+      'tests/agentic-supply-chain-guard.test.ts',
       'tests/consequence-admission-adapter-framework.test.ts',
       'tests/action-surface-integration-artifacts.test.ts',
       'tests/domain-pack-boundary.test.ts',
     ],
     docEvidencePaths: [
+      'docs/02-architecture/agentic-supply-chain-guard.md',
       'docs/02-architecture/adapter-framework.md',
       'docs/02-architecture/domain-pack-boundary.md',
     ],
     notProven: COMMON_NOT_PROVEN,
     limitation:
-      'Adapter and pack review contracts exist; third-party code behavior cannot be proven without customer-supplied evidence and runtime tests.',
+      'The guard renders deterministic supply-chain evidence decisions; third-party code behavior still cannot be proven without customer-supplied runtime evidence and enforcement integration.',
   },
 } satisfies Record<ConsequenceFailureModeId, CoverageProfile>;
 

@@ -16,6 +16,7 @@ export const CONSEQUENCE_GUARD_ACTIVATION_GUARD_IDS = [
   'stale-authority-policy-guard',
   'scope-explosion-guard',
   'human-review-fatigue-guard',
+  'agentic-supply-chain-guard',
 ] as const;
 export type ConsequenceGuardActivationGuardId =
   typeof CONSEQUENCE_GUARD_ACTIVATION_GUARD_IDS[number];
@@ -275,6 +276,14 @@ const GUARD_PROFILES: readonly ConsequenceGuardActivationGuardProfile[] = Object
     docFile: 'docs/02-architecture/human-review-fatigue-guard.md',
     testFile: 'tests/human-review-fatigue-guard.test.ts',
     failureModeIds: ['human-review-fatigue', 'review-required-auto-promote'],
+    staticPassedCriteria: COMMON_STATIC_PASSED_CRITERIA,
+  }),
+  profile({
+    guardId: 'agentic-supply-chain-guard',
+    sourceFile: 'src/consequence-admission/agentic-supply-chain-guard.ts',
+    docFile: 'docs/02-architecture/agentic-supply-chain-guard.md',
+    testFile: 'tests/agentic-supply-chain-guard.test.ts',
+    failureModeIds: ['agentic-supply-chain-compromise'],
     staticPassedCriteria: COMMON_STATIC_PASSED_CRITERIA,
   }),
 ]);

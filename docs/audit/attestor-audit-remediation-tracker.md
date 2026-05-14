@@ -48,7 +48,7 @@ later implementation pass does not re-open already-retired issues.
 | F5 signing layer redo | 21 | 14 | 7 | 0 |
 | Final docs / claim alignment | 2 | 0 | 0 | 2 |
 
-Remaining work after the current legacy unbounded certificate validation slice: 4 planned
+Remaining work after the current transparency-log claim-boundary slice: 3 planned
 PR-sized or validation-sized units. Several items overlap and may close
 together, but no item is treated as closed until repository evidence proves it.
 
@@ -94,6 +94,7 @@ evidence. No `needs-revalidation` row can remain before starting F6.
 | [#321](https://github.com/AI-gateway-systems/attestor/pull/321) | `4f1e4c933099db345af3f35e2ad7a8b5b6e9f9b9` | F5 file durability and key persistence atomicity |
 | [#322](https://github.com/AI-gateway-systems/attestor/pull/322) | `18f98e72b1755391a58ad85bae3cdf077b048b12` | F5 keyless CA runtime configuration boundary |
 | [#323](https://github.com/AI-gateway-systems/attestor/pull/323) | `994a1bbcf6263a77fe611dbe45cb25895bca3264` | F5 production-shared PKI path boundary |
+| [#324](https://github.com/AI-gateway-systems/attestor/pull/324) | `c626224ec7ea17ba46e30a4dba8bac92d21506e8` | F5 legacy unbounded certificate warning |
 
 ## F1 Threat-Model Foundation
 
@@ -202,7 +203,7 @@ earlier stale-worktree F5 is not authoritative.
 | F5-A3 truncated fingerprint width | `fixed` | F5 Fingerprint Width Validation (`docs/audit/f5-fingerprint-width-validation.md`); `ATTESTOR_SIGNING_FINGERPRINT_HEX_LENGTH`; `test:f5-fingerprint-width-validation` | Signing key identity fingerprints now use 32 hex characters / 128-bit truncated SHA-256. Historical compact evidence IDs and previously-issued artifacts are not widened by this scoped fix. |
 | F5-A4 homegrown canonicalization / RFC 8785 interop | `accepted-limitation` | F5 Canonicalization Validation (`docs/audit/f5-canonicalization-validation.md`); `ATTESTOR_SIGNING_CANONICALIZATION_SPEC_VERSION`; `test:f5-canonicalization-validation` | Attestor signing canonicalization is now explicitly versioned, strict, and tested, but it remains Attestor-specific canonical JSON. RFC 8785/JCS interoperability is not claimed. |
 | F5-A5 non-atomic `saveKeyPair` | `fixed` | F5 File Durability And Key Atomicity Validation (`docs/audit/f5-file-durability-key-atomicity-validation.md`); `saveKeyPair`; `test:f5-file-store-key-atomicity-validation` | `saveKeyPair` now routes private and public key PEM persistence through `writeTextFileAtomic` with explicit file modes. |
-| F5-A6 transparency log missing | `backlog` | No Rekor-equivalent claim | Keep out of current readiness claims; design internal witness/transparency log separately. |
+| F5-A6 transparency log missing | `accepted-limitation` | F5 Transparency Log Claim Boundary Validation (`docs/audit/f5-transparency-log-claim-boundary-validation.md`); signing docs; `test:f5-transparency-log-claim-boundary-validation` | Attestor does not implement a public Rekor-equivalent transparency log. Internal release-enforcement transparency receipts are explicitly scoped as internal receipts, not public append-only witness semantics. |
 | F5-A7 module-level CA singleton / injection point | `fixed` | F5 Keyless CA Injection Boundary Validation (`docs/audit/f5-keyless-ca-injection-boundary-validation.md`); `configureReleaseRuntimeKeylessCa`; `test:f5-keyless-ca-injection-boundary-validation` | Generic `setKeylessCa` is removed. Release-runtime CA configuration is explicit, validates CA/key consistency, is idempotent for the same fingerprint, and refuses silent replacement with a different CA fingerprint unless the release-runtime path explicitly allows and explains the replacement. |
 | F5-A8 numeric canonicalization edge cases | `fixed` | F5 Canonicalization Validation (`docs/audit/f5-canonicalization-validation.md`); `canonicalize`; `test:f5-canonicalization-validation` | Signing canonicalization rejects `NaN`, `Infinity`, `undefined`, `bigint`, functions, symbols, and custom objects before signing. |
 | F5-A9 verifier helper absent | `partial` | Fresh F5 redo says helper now exists | Close absence claim; keep consumer footgun risk under F5-A1. |
@@ -229,7 +230,6 @@ backlogged.
 
 Recommended next order through F5:
 
-1. F5-A6 transparency log design decision and claim boundary.
-2. F5-B1 crypto-authorization trust-delegation documentation.
-3. F1 backlog closure pass for replay correlation, fan-out, and cross-log integrity.
-4. Final README/docs/provenance claim alignment.
+1. F5-B1 crypto-authorization trust-delegation documentation.
+2. F1 backlog closure pass for replay correlation, fan-out, and cross-log integrity.
+3. Final README/docs/provenance claim alignment.

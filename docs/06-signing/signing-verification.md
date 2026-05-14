@@ -80,6 +80,32 @@ PKI chain verification is now **mandatory** across both CLI and API.
 - `verifyCertificate()` low-level primitive remains flat Ed25519 (intentional — cryptographic primitive, no PKI awareness)
 - All public verification surfaces (CLI, API, kit) require PKI chain material and an out-of-band trust root by default
 
+## Transparency Log Boundary
+
+Attestor does not implement a public Rekor-equivalent transparency log today.
+Signing verification proves certificate signature validity, PKI chain binding,
+revocation inputs supplied by the verifier, and out-of-band CA pinning. It does
+not prove that a signing event was witnessed by a public append-only log.
+
+Internal release-enforcement transparency receipts are Attestor receipts, not a
+public transparency log. They can bind high-consequence enforcement evidence to
+a deterministic digest and local inclusion proof, but they do not replace Rekor,
+TUF, an external timestamp authority, SCITT, WORM storage, or a monitored public
+append-only log.
+
+Do not claim:
+
+- Rekor-equivalent witness semantics
+- public transparency-log immutability
+- external timestamp authority coverage
+- public third-party monitoring of signing identities
+
+Current claim boundary:
+
+- offline-verifiable signatures and PKI-bound verification kits
+- explicit out-of-band CA pinning for third-party trust
+- no public transparency log or public witness service yet
+
 ## 6-Dimensional Verification
 
 The verify CLI checks six dimensions:

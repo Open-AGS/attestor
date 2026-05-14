@@ -30,7 +30,7 @@ try {
   includes(tracker, '# Attestor Audit Remediation Tracker', 'Tracker: title is present');
   includes(tracker, 'not a certification', 'Tracker: no-certification disclaimer is present');
   includes(tracker, '`origin/master` is the source of truth', 'Tracker: origin/master rule is present');
-  includes(tracker, 'Remaining work after the current legacy unbounded certificate validation slice: 4 planned', 'Tracker: remaining estimate is explicit');
+  includes(tracker, 'Remaining work after the current transparency-log claim-boundary slice: 3 planned', 'Tracker: remaining estimate is explicit');
 
   for (const pr of [
     '#220',
@@ -67,6 +67,7 @@ try {
     '#321',
     '#322',
     '#323',
+    '#324',
   ]) {
     includes(tracker, pr, `Tracker: ${pr} is referenced`);
   }
@@ -108,7 +109,8 @@ try {
   includes(tracker, 'F4-LLM07-A prompt leakage second-pass markers missing | `fixed`', 'Tracker: F4 prompt leakage marker validation is fixed');
   includes(tracker, 'F4 Prompt Leakage Marker Validation', 'Tracker: F4 prompt leakage marker validation evidence is linked');
   includes(tracker, 'F4-D Attestor-owned OpenAI usage / budget / prompt leakage scope | `backlog`', 'Tracker: F4-D OpenAI usage is backlogged');
-  includes(tracker, 'F5-A6 transparency log missing', 'Tracker: F5 transparency limitation is tracked');
+  includes(tracker, 'F5-A6 transparency log missing | `accepted-limitation`', 'Tracker: F5 transparency limitation is accepted');
+  includes(tracker, 'F5 Transparency Log Claim Boundary Validation', 'Tracker: F5 transparency claim boundary evidence is linked');
   includes(tracker, 'F5-A1 out-of-band trust root optional | `fixed`', 'Tracker: F5 CA pin validation is fixed');
   includes(tracker, 'F5 CA Pin Required Validation', 'Tracker: F5 CA pin validation evidence is linked');
   includes(tracker, 'F5-A2 legacy flat verify escape via env | `fixed`', 'Tracker: F5 legacy env downgrade validation is fixed');
@@ -142,6 +144,7 @@ try {
   includes(packageJson, '"test:f5-keyless-ca-injection-boundary-validation"', 'Package: F5 keyless CA injection validation script is exposed');
   includes(packageJson, '"test:f5-ha-shared-pki-closure-validation"', 'Package: F5 HA shared PKI validation script is exposed');
   includes(packageJson, '"test:f5-legacy-unbounded-certificate-validation"', 'Package: F5 legacy unbounded certificate validation script is exposed');
+  includes(packageJson, '"test:f5-transparency-log-claim-boundary-validation"', 'Package: F5 transparency claim boundary validation script is exposed');
 
   ok(tracker.split('\n').length > 120, 'Tracker: enough rows to cover supplied audit reports');
   console.log(`Audit remediation tracker tests: ${passed} passed, 0 failed`);

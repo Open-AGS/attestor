@@ -30,7 +30,7 @@ try {
   includes(tracker, '# Attestor Audit Remediation Tracker', 'Tracker: title is present');
   includes(tracker, 'not a certification', 'Tracker: no-certification disclaimer is present');
   includes(tracker, '`origin/master` is the source of truth', 'Tracker: origin/master rule is present');
-  includes(tracker, 'Estimated remaining work after this tracker lands: about 34 to 42', 'Tracker: remaining estimate is explicit');
+  includes(tracker, 'Estimated remaining work after this tracker lands: about 33 to 41', 'Tracker: remaining estimate is explicit');
 
   for (const pr of ['#220', '#291', '#292', '#293', '#294', '#295', '#296', '#297', '#298', '#299', '#300']) {
     includes(tracker, pr, `Tracker: ${pr} is referenced`);
@@ -48,6 +48,7 @@ try {
   }
 
   includes(tracker, 'F2-AG-4 multi-agent delegation confusion', 'Tracker: completed F2 remediation is named');
+  includes(tracker, 'F2-AG-1 customer-gate honor-system | `partial`', 'Tracker: F2 customer-gate validation is closed as partial');
   includes(tracker, 'F3-CC-10 agentic supply-chain guard missing', 'Tracker: final F3 item is tracked');
   includes(tracker, 'F4-LLM10-B retry-attempt ledger storage claim', 'Tracker: detailed F4 redo is tracked');
   includes(tracker, 'F5-A6 transparency log missing', 'Tracker: F5 transparency limitation is tracked');

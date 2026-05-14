@@ -108,11 +108,26 @@ export const CONSEQUENCE_DATA_MINIMIZATION_RUNTIME_SECRET_MARKERS = [
 export type ConsequenceDataMinimizationRuntimeSecretMarker =
   typeof CONSEQUENCE_DATA_MINIMIZATION_RUNTIME_SECRET_MARKERS[number];
 
+export const CONSEQUENCE_DATA_MINIMIZATION_PROMPT_LEAKAGE_MARKERS = [
+  'system_prompt',
+  'system prompt',
+  'developer_message',
+  'developer instructions',
+  'tool instructions',
+  'prompt_template',
+  'hidden instructions',
+  '<|im_start|>system',
+  'role: system',
+] as const;
+export type ConsequenceDataMinimizationPromptLeakageMarker =
+  typeof CONSEQUENCE_DATA_MINIMIZATION_PROMPT_LEAKAGE_MARKERS[number];
+
 export const CONSEQUENCE_DATA_MINIMIZATION_GOVERNANCE_REFS = [
   'nist-ai-rmf-risk-documentation',
   'nist-sp-800-122-pii-confidentiality',
   'gdpr-art-5-data-minimisation',
   'owasp-llm02-sensitive-information-disclosure',
+  'owasp-llm07-system-prompt-leakage',
   'pci-dss-sensitive-authentication-data-not-stored',
   'rfc9457-problem-details-not-debugging',
 ] as const;
@@ -137,6 +152,8 @@ export interface ConsequenceDataMinimizationRedactionPolicyDescriptor {
   readonly audiences: typeof CONSEQUENCE_DATA_MINIMIZATION_AUDIENCES;
   readonly allowedUnits: typeof CONSEQUENCE_DATA_MINIMIZATION_ALLOWED_UNITS;
   readonly forbiddenRawClasses: typeof CONSEQUENCE_DATA_MINIMIZATION_FORBIDDEN_RAW_CLASSES;
+  readonly runtimeSecretMarkers: typeof CONSEQUENCE_DATA_MINIMIZATION_RUNTIME_SECRET_MARKERS;
+  readonly promptLeakageMarkers: typeof CONSEQUENCE_DATA_MINIMIZATION_PROMPT_LEAKAGE_MARKERS;
   readonly governanceRefs: typeof CONSEQUENCE_DATA_MINIMIZATION_GOVERNANCE_REFS;
   readonly modelFeedbackIsRedacted: true;
   readonly proofSurfacesAreDigestFirst: true;
@@ -643,6 +660,7 @@ export function consequenceDataMinimizationMaterialSafetyFindings(
   const findingSubject = input.findingSubject?.trim() || 'material';
   const markers = new Set([
     ...CONSEQUENCE_DATA_MINIMIZATION_RUNTIME_SECRET_MARKERS,
+    ...CONSEQUENCE_DATA_MINIMIZATION_PROMPT_LEAKAGE_MARKERS,
     ...CONSEQUENCE_DATA_MINIMIZATION_FORBIDDEN_RAW_CLASSES,
     ...(input.extraSensitiveMarkers ?? []),
   ].map((marker) => marker.toLowerCase()));
@@ -672,6 +690,8 @@ ConsequenceDataMinimizationRedactionPolicyDescriptor {
     audiences: CONSEQUENCE_DATA_MINIMIZATION_AUDIENCES,
     allowedUnits: CONSEQUENCE_DATA_MINIMIZATION_ALLOWED_UNITS,
     forbiddenRawClasses: CONSEQUENCE_DATA_MINIMIZATION_FORBIDDEN_RAW_CLASSES,
+    runtimeSecretMarkers: CONSEQUENCE_DATA_MINIMIZATION_RUNTIME_SECRET_MARKERS,
+    promptLeakageMarkers: CONSEQUENCE_DATA_MINIMIZATION_PROMPT_LEAKAGE_MARKERS,
     governanceRefs: CONSEQUENCE_DATA_MINIMIZATION_GOVERNANCE_REFS,
     modelFeedbackIsRedacted: true,
     proofSurfacesAreDigestFirst: true,

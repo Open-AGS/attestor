@@ -30,7 +30,7 @@ try {
   includes(tracker, '# Attestor Audit Remediation Tracker', 'Tracker: title is present');
   includes(tracker, 'not a certification', 'Tracker: no-certification disclaimer is present');
   includes(tracker, '`origin/master` is the source of truth', 'Tracker: origin/master rule is present');
-  includes(tracker, 'Estimated remaining work after this tracker lands: about 17 to 25', 'Tracker: remaining estimate is explicit');
+  includes(tracker, 'Estimated remaining work after this tracker lands: about 16 to 24', 'Tracker: remaining estimate is explicit');
 
   for (const pr of [
     '#220',
@@ -58,6 +58,7 @@ try {
     '#312',
     '#313',
     '#314',
+    '#315',
   ]) {
     includes(tracker, pr, `Tracker: ${pr} is referenced`);
   }
@@ -96,12 +97,15 @@ try {
   includes(tracker, 'F4-LLM03-A agentic supply-chain coverage gap / single LLM provider | `partial`', 'Tracker: F4 LLM03 provider split is closed as partial');
   includes(tracker, 'F4-LLM10-A velocity limits depend on shared counter enforcement | `partial`', 'Tracker: F4 velocity source validation is partial');
   includes(tracker, 'F4-LLM10-B retry-attempt ledger storage claim | `partial`', 'Tracker: F4 retry ledger storage validation is partial');
+  includes(tracker, 'F4-LLM07-A prompt leakage second-pass markers missing | `fixed`', 'Tracker: F4 prompt leakage marker validation is fixed');
+  includes(tracker, 'F4 Prompt Leakage Marker Validation', 'Tracker: F4 prompt leakage marker validation evidence is linked');
   includes(tracker, 'F4-D Attestor-owned OpenAI usage / budget / prompt leakage scope | `backlog`', 'Tracker: F4-D OpenAI usage is backlogged');
   includes(tracker, 'F5-A6 transparency log missing', 'Tracker: F5 transparency limitation is tracked');
   includes(tracker, 'F5-NEW-4 duplicate verify helper calls in CLI', 'Tracker: detailed F5 redo is tracked');
   includes(tracker, 'No `needs-revalidation` row can remain before starting F6', 'Tracker: F6 gate is explicit');
   excludes(tracker, /production ready|certified|fully complete/iu, 'Tracker: avoids production/certification overclaim wording');
   includes(packageJson, '"test:audit-remediation-tracker"', 'Package: tracker test script is exposed');
+  includes(packageJson, '"test:f4-prompt-leakage-marker-validation"', 'Package: F4 prompt leakage validation script is exposed');
 
   ok(tracker.split('\n').length > 120, 'Tracker: enough rows to cover supplied audit reports');
   console.log(`Audit remediation tracker tests: ${passed} passed, 0 failed`);

@@ -117,6 +117,23 @@ These classes must not appear in model feedback, reviewer packets, tamper histor
 
 If a surface needs to refer to one of these items, it should use a digest, opaque reference, scoped identifier, or customer-owned evidence reference.
 
+## Prompt Leakage Markers
+
+Prompt leakage markers are a second-pass hygiene check for surfaces that may contain model-visible text, problem details, review packets, dashboard summaries, or exported proof metadata.
+
+The central scanner includes markers for system prompt and developer/tool instruction leakage, including forms such as:
+
+- `system_prompt`
+- `developer_message`
+- `developer instructions`
+- `tool instructions`
+- `prompt_template`
+- `hidden instructions`
+- `<|im_start|>system`
+- `role: system`
+
+These markers support the OWASP LLM07 System Prompt Leakage boundary. They are intentionally a small marker-based check, not a complete prompt-injection classifier and not production certification. Scanner hits fail closed through stable reason codes such as `unsafe-material-detected`; returned reason codes do not echo the raw marker text.
+
 ## Model Feedback Boundary
 
 Model-safe feedback is not training data, not policy disclosure, and not a debug dump.
@@ -197,6 +214,7 @@ This policy follows the direction of current privacy and AI-security guidance:
 - PII should be protected against inappropriate access, use, and disclosure.
 - Personal data should be adequate, relevant, and limited to what is necessary for the stated purpose.
 - LLM applications should sanitize data and prevent sensitive information disclosure.
+- LLM applications should prevent system prompt and developer instruction leakage from model-visible or externally visible surfaces.
 - Payment-sensitive authentication data should not be stored after authorization.
 - Problem details are for HTTP interface detail, not implementation debugging internals.
 

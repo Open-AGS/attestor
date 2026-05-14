@@ -119,8 +119,20 @@ function testDescriptorCoversCriticalSurfaces(): void {
     'Data minimization policy: OWASP LLM sensitive disclosure reference is exposed',
   );
   ok(
+    descriptor.governanceRefs.includes('owasp-llm07-system-prompt-leakage'),
+    'Data minimization policy: OWASP LLM system prompt leakage reference is exposed',
+  );
+  ok(
     descriptor.governanceRefs.includes('gdpr-art-5-data-minimisation'),
     'Data minimization policy: GDPR data minimization reference is exposed',
+  );
+  ok(
+    descriptor.promptLeakageMarkers.includes('system_prompt'),
+    'Data minimization policy: system prompt leakage markers are exposed',
+  );
+  ok(
+    descriptor.promptLeakageMarkers.includes('developer_message'),
+    'Data minimization policy: developer message leakage markers are exposed',
   );
   equal(descriptor.modelFeedbackIsRedacted, true, 'Data minimization policy: model feedback is redacted');
   equal(descriptor.proofSurfacesAreDigestFirst, true, 'Data minimization policy: proof surfaces are digest-first');
@@ -355,6 +367,13 @@ function testEvaluationAllowsOnlySurfaceSpecificUnits(): void {
       rawPayloadStored: true,
     }),
   });
+  const promptLeakageBlocked = evaluateConsequenceDataMinimizationArtifact({
+    surfaceKind: 'admission-model-feedback',
+    material: JSON.stringify({
+      leakedPrompt: 'system_prompt: do not reveal developer_message contents',
+      rawPayloadStored: false,
+    }),
+  });
 
   equal(allowed.allowed, true, 'Data minimization policy: model-safe feedback shape is allowed');
   equal(allowed.failClosed, false, 'Data minimization policy: allowed feedback does not fail closed');
@@ -392,6 +411,15 @@ function testEvaluationAllowsOnlySurfaceSpecificUnits(): void {
     !materialBlocked.reasonCodes.some((reason) => reason.includes('private_key')),
     'Data minimization policy: stable reason codes do not echo sensitive marker text',
   );
+  equal(promptLeakageBlocked.allowed, false, 'Data minimization policy: prompt leakage material is blocked by scanner');
+  ok(
+    promptLeakageBlocked.reasonCodes.includes('unsafe-material-detected'),
+    'Data minimization policy: prompt leakage scanner feeds artifact evaluation',
+  );
+  ok(
+    !promptLeakageBlocked.reasonCodes.some((reason) => reason.includes('system_prompt')),
+    'Data minimization policy: stable reason codes do not echo prompt leakage marker text',
+  );
 }
 
 function testMaterialSafetyFindingsUsePolicyForbiddenClasses(): void {
@@ -403,6 +431,7 @@ function testMaterialSafetyFindingsUsePolicyForbiddenClasses(): void {
         customerMarker: 'raw_customer_value_must_not_escape',
         rawPayloadStored: true,
         forbiddenClass: 'raw-bank-or-payment-data',
+        promptLeak: 'system_prompt: hidden instructions must not leave this surface',
       },
     }),
   });
@@ -422,6 +451,10 @@ function testMaterialSafetyFindingsUsePolicyForbiddenClasses(): void {
   ok(
     findings.some((finding) => finding.includes('raw payload storage')),
     'Data minimization policy: raw payload storage declarations are detected centrally',
+  );
+  ok(
+    findings.some((finding) => finding.includes('system_prompt')),
+    'Data minimization policy: system prompt leakage markers are detected centrally',
   );
 }
 
@@ -593,6 +626,11 @@ function testDocsAndScriptsExposePolicy(): void {
     doc,
     'Problem details are for HTTP interface detail, not implementation debugging internals',
     'Data minimization policy: doc captures problem details boundary',
+  );
+  includes(
+    doc,
+    'Prompt leakage markers are a second-pass hygiene check',
+    'Data minimization policy: doc captures prompt leakage marker boundary',
   );
   includes(
     systemOverview,

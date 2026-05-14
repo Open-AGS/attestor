@@ -30,7 +30,7 @@ try {
   includes(tracker, '# Attestor Audit Remediation Tracker', 'Tracker: title is present');
   includes(tracker, 'not a certification', 'Tracker: no-certification disclaimer is present');
   includes(tracker, '`origin/master` is the source of truth', 'Tracker: origin/master rule is present');
-  includes(tracker, 'Estimated remaining work after this tracker lands: about 26', 'Tracker: remaining estimate is explicit');
+  includes(tracker, 'Estimated remaining work after this tracker lands: about 34 to 42', 'Tracker: remaining estimate is explicit');
 
   for (const pr of ['#220', '#291', '#292', '#293', '#294', '#295', '#296', '#297', '#298', '#299', '#300']) {
     includes(tracker, pr, `Tracker: ${pr} is referenced`);
@@ -49,7 +49,10 @@ try {
 
   includes(tracker, 'F2-AG-4 multi-agent delegation confusion', 'Tracker: completed F2 remediation is named');
   includes(tracker, 'F3-CC-10 agentic supply-chain guard missing', 'Tracker: final F3 item is tracked');
+  includes(tracker, 'F4-LLM10-B retry-attempt ledger storage claim', 'Tracker: detailed F4 redo is tracked');
   includes(tracker, 'F5-A6 transparency log missing', 'Tracker: F5 transparency limitation is tracked');
+  includes(tracker, 'F5-NEW-4 duplicate verify helper calls in CLI', 'Tracker: detailed F5 redo is tracked');
+  includes(tracker, 'No `needs-revalidation` row can remain before starting F6', 'Tracker: F6 gate is explicit');
   excludes(tracker, /production ready|certified|fully complete/iu, 'Tracker: avoids production/certification overclaim wording');
   includes(packageJson, '"test:audit-remediation-tracker"', 'Package: tracker test script is exposed');
 

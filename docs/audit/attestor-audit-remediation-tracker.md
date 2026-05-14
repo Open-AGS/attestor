@@ -34,18 +34,27 @@ external audit, and not a claim of full production readiness.
 
 ## Current Count
 
-| Group | Total tracked | Fixed | Partial / limitation / backlog | Needs revalidation / open |
+The report count below includes the detailed F4 redo and F5 redo reports. The
+count intentionally separates stale worktree claims from active findings so a
+later implementation pass does not re-open already-retired issues.
+
+| Group | Total tracked | Closed / invalid-as-stated | Partial / limitation / backlog | Needs revalidation / open |
 |---|---:|---:|---:|---:|
 | F1 threat-model foundation | 6 | 1 | 5 | 0 |
 | F2 agentic consequence surface | 10 | 1 | 1 | 8 |
 | F3 cross-cutting guard readiness | 10 | 10 | 0 | 0 |
-| F4 OWASP LLM / input surface | 4 | 0 | 0 | 4 |
-| F5 signing layer | 12 | 5 | 7 | 0 |
+| F4 OWASP LLM redo, active findings | 14 | 0 | 0 | 14 |
+| F4 stale worktree findings retired by fresh main | 3 | 0 | 3 | 0 |
+| F5 signing layer redo | 21 | 5 | 3 | 13 |
 | Final docs / claim alignment | 2 | 0 | 0 | 2 |
 
-Estimated remaining work after this tracker lands: about 26 PR-sized or
-validation-sized units. Some will close as `invalid-as-stated`, `superseded`, or
-`accepted-limitation` after fresh inspection.
+Estimated remaining work after this tracker lands: about 34 to 42 PR-sized or
+validation-sized units. Several items overlap and may close together, but no
+item is treated as closed until repository evidence proves it.
+
+Completion rule through F5: every F1-F5 row must end as `fixed`,
+`invalid-as-stated`, `superseded`, `accepted-limitation`, or `backlog` with
+evidence. No `needs-revalidation` row can remain before starting F6.
 
 ## Verified Merged Remediations
 
@@ -117,37 +126,68 @@ and readiness controls, not proof of live customer enforcement.
 
 ## F4 OWASP LLM / Input Surface Redo
 
-Source report: project-owner supplied F4 redo.
+Source report: project-owner supplied F4 redo using OWASP LLM Top 10 v2.0
+2025 IDs.
 
-Current state: not remediated as a series. Each item must be revalidated against
-current `origin/master` before any fix.
+Current state: not remediated as a series. Each active item must be revalidated
+against current `origin/master` before any fix. Prior worktree-F4 findings that
+fresh main retired are listed separately to avoid duplicate work.
 
-| ID | Current status | Remaining action |
+| ID | Current status | Overlap / evidence | Remaining action |
+|---|---|---|---|
+| F4-LLM01-A indirect prompt injection via operator-asserted trust class | `needs-revalidation` | Overlaps F3-CC-3, F3-CC-6, F3-CC-7, PR #292, PR #299 | Verify whether `signed-attestation` and authority trust labels now require PKI-bound proof in every referenced guard. |
+| F4-LLM01-B hosted LLM agent tool boundary descriptor-only | `needs-revalidation` | `hosted-llm-agent-tool-boundary-guard` descriptor | Decide whether runtime conformance tests exist or must be added for the declared controls. |
+| F4-LLM02-A data-minimization evaluation operator-driven | `needs-revalidation` | `data-minimization-redaction-policy` | Verify whether server-side marker scanning exists; if not, add a scanner or explicit surface-conformance contract. |
+| F4-LLM02-B redaction policy not activated as an enforcement claim | `needs-revalidation` | `data-minimization-redaction-policy` lifecycle metadata | Keep docs honest and decide whether activation readiness is proven by code or remains backlog. |
+| F4-LLM03-A agentic supply-chain coverage gap / single LLM provider | `needs-revalidation` | PR #297 added `agentic-supply-chain-guard`; `src/api/openai.ts` remains separate | Split adapter supply-chain coverage from runtime LLM provider dependency; close only the repo-proven part. |
+| F4-LLM05-A presentation freshness relies on operator clock | `needs-revalidation` | `presentation-binding` | Verify whether Attestor-issued nonce or server-rendered freshness binding exists; add if missing. |
+| F4-LLM05-B presentation replay ledger in-memory reference path | `needs-revalidation` | `presentation-replay-ledger`; overlaps F1-CC-3 | Verify durable/shared replay consume path; add shared ledger plan or implementation. |
+| F4-LLM06-A customer gate honor-system | `needs-revalidation` | Same root as F2-AG-1 and F1-CC-2 | Validate generic consequence path and decide whether signed admission token / verifier helper is required. |
+| F4-LLM06-B agent-loop budget per process | `needs-revalidation` | Overlaps F3-CC-2, PR #293 | Confirm whether shared storage readiness fully closes the LLM06/LLM10 angle or only the descriptor. |
+| F4-LLM07-A prompt leakage second-pass markers missing | `needs-revalidation` | `raw-model-prompt` class exists | Check marker list for `system_prompt`, `instructions`, prompt-template leakage, and add tests if needed. |
+| F4-LLM09-A hallucinated evidence / unsupported confidence | `needs-revalidation` | Same root as F2-AG-6 | Verify re-fetch/re-hash or source-system evidence proof before adding a dedicated guard. |
+| F4-LLM10-A velocity limits depend on shared counter enforcement | `needs-revalidation` | `policy-limits`; overlaps F3-CC-2 | Validate that velocity enforcement is not per-pod only. |
+| F4-LLM10-B retry-attempt ledger storage claim | `needs-revalidation` | `retry-attempt-ledger` not yet read in this tracker | Read and classify ledger storage before deciding fix scope. |
+| F4-D Attestor-owned OpenAI usage / budget / prompt leakage scope | `needs-revalidation` | `src/api/openai.ts` and callers | Audit callers, model/provider config, timeout/budget handling, and logging; likely low-risk if CLI-only. |
+
+### Retired Worktree-F4 Claims
+
+These are not active findings unless a fresh source inspection re-opens them.
+
+| Retired claim | Current status | Reason |
 |---|---|---|
-| F4-A prompt/free-text input hygiene | `needs-revalidation` | Re-check generic admission schema, prompt marker handling, and review-packet exposure. |
-| F4-B / F4-C error-message disclosure and admission-problem redaction | `needs-revalidation` | Re-check route error handling and data-minimization surface enforcement. |
-| F4-D Attestor-owned OpenAI usage / budget / prompt leakage scope | `needs-revalidation` | Audit `src/api/openai.ts` callers, provider usage, budget gates, and logging. |
-| F4 taxonomy correction | `needs-revalidation` | Ensure docs/ledger use verified OWASP LLM 2025 names and do not overclaim compliance evidence. |
+| No sensitive-information disclosure control exists | `superseded` | Fresh main has `data-minimization-redaction-policy`; active issue is enforcement/conformance, not absence. |
+| No replay/binding control exists | `superseded` | Fresh main has presentation binding, replay ledger, downstream contract, and execution receipt. |
+| No system-prompt leakage axis exists | `superseded` | Fresh main includes `raw-model-prompt` in forbidden raw classes. |
 
 ## F5 Signing Layer
 
-Source report: project-owner supplied F5 signing-layer audit plus fresh validation
-in `docs/audit/f5-signing-layer-validation.md`.
+Source report: project-owner supplied F5 redo for the fresh main state. The
+earlier stale-worktree F5 is not authoritative.
 
-| ID | Current status | Evidence / PR | Remaining action |
+| ID | Current status | Evidence / overlap | Remaining action |
 |---|---|---|---|
-| F-5.1 leaf validity rounding | `invalid-as-stated` | F5 validation doc | Current code uses duration-based leaf validity. |
-| F-5.3 attestation validity window | `invalid-as-stated` | F5 validation doc | Current cert includes and verifies `notBefore` / `notAfter`. |
-| F-5.4 revocation inputs | `invalid-as-stated` | F5 validation doc | Current verification accepts revoked certificate IDs/fingerprints. |
-| F-5.5 trust-chain clock skew | `invalid-as-stated` | F5 validation doc | Current trust-chain verification has clock skew. |
-| F-5.6 PKI-bound overall verification | `fixed` | PR #291 | Helper/CLI/API use PKI-bound verification semantics. |
-| F-5.2 parent-directory fsync / orphan sweep | `accepted-limitation` | F5 validation doc | Backlog durability hardening. |
-| F-5.7 HA shared PKI / KMS | `accepted-limitation` | F5 validation doc | External KMS/HSM remains not implemented and must fail closed. |
-| F5-A1 out-of-band trust root | `partial` | PR #291 | Pinned CA fingerprint path exists; independent trust-root distribution is still customer/operator responsibility. |
-| F5-A2 legacy flat verify escape | `accepted-limitation` | F5 validation doc | Backlog: removal/sunset or stronger warning gate. |
-| F5-A3 fingerprint width | `accepted-limitation` | F5 validation doc | Backlog compatibility-affecting identity migration. |
-| F5-A4 canonicalization / RFC 8785 interop | `accepted-limitation` | F5 validation doc | Backlog or document Attestor-specific canonicalization more explicitly. |
-| F5-A6 transparency log missing | `accepted-limitation` | F5 validation doc | No Rekor-equivalent claim; future witness/transparency work only. |
+| F-5.1 leaf validity rounding | `invalid-as-stated` | Fresh F5 redo: duration-based leaf validity exists | No action unless fresh source inspection contradicts the redo. |
+| F-5.2 parent-directory fsync / orphan sweep | `open` | `platform/file-store.ts` durability path | Add parent-directory fsync where supported and startup orphan-tmp sweep, or document platform-specific fallback with tests. |
+| F-5.3 attestation validity window | `invalid-as-stated` | Fresh F5 redo: cert has `notBefore` / `notAfter` | No action unless fresh source inspection contradicts the redo. |
+| F-5.4 revocation inputs | `invalid-as-stated` | Fresh F5 redo: cert and trust-chain verification accept revocation inputs | No action unless fresh source inspection contradicts the redo. |
+| F-5.5 trust-chain clock skew | `invalid-as-stated` | Fresh F5 redo: cert and chain checks apply skew | No action unless fresh source inspection contradicts the redo. |
+| F-5.6 anti-self-attest / PKI-bound verification | `fixed` | PR #291; `verification-trust-binding` | Keep as fixed; related third-party pin behavior tracked under F5-A1. |
+| F-5.7 HA shared PKI / shared lock | `open` | Strict path opt-in exists; lock remains local/mkdir-style per report | Validate current lock path; implement durable shared lock or fail-closed production-shared local-PKI profile. |
+| F5-A1 out-of-band trust root optional | `partial` | PR #291 gives trusted CA fingerprint path | Decide whether foreign-kit verification must require a CA pin, with explicit developer-mode bypass if kept. |
+| F5-A2 legacy flat verify escape via env | `open` | `ATTESTOR_ALLOW_LEGACY=true` path in report | Remove env-only downgrade or add explicit telemetry/sunset gate. |
+| F5-A3 truncated fingerprint width | `open` | 64-bit fingerprint report | Validate compatibility impact, then migrate to at least 128-bit or full SHA-256 fingerprint. |
+| F5-A4 homegrown canonicalization / RFC 8785 interop | `open` | `sign.ts` canonicalizer report | Choose JCS adoption or explicitly document Attestor-specific canonicalization with tests. |
+| F5-A5 non-atomic `saveKeyPair` | `open` | `keys.ts` direct writes report | Route key persistence through the atomic file-store helper or add equivalent fsync/temp-rename. |
+| F5-A6 transparency log missing | `backlog` | No Rekor-equivalent claim | Keep out of current readiness claims; design internal witness/transparency log separately. |
+| F5-A7 module-level CA singleton / injection point | `open` | `setKeylessCa` report | Move test injection out of production exports or add guard/logging/idempotence tests. |
+| F5-A8 numeric canonicalization edge cases | `open` | Same root as F5-A4 | Reject non-finite numbers and pin signed payload numeric behavior. |
+| F5-A9 verifier helper absent | `partial` | Fresh F5 redo says helper now exists | Close absence claim; keep consumer footgun risk under F5-A1. |
+| F5-B1 crypto-authorization adapter trust delegation | `accepted-limitation` | Architecture states adapters supply observations | Document this as a trust boundary; do not claim chain-state verification without adapter proof. |
+| F5-NEW-1 exported `setKeylessCa` runtime injection | `open` | Same root as F5-A7 | Include with F5-A7 implementation, not as a separate PR unless needed. |
+| F5-NEW-2 strict PKI path enforcement opt-in | `open` | release-runtime strict path flag report | Make strict path implicit for production-shared profile or prove the current mode is safe. |
+| F5-NEW-3 `allowLegacyUnbounded` escape hatch | `open` | certificate compatibility flag report | Add structured warning/telemetry and sunset documentation/tests. |
+| F5-NEW-4 duplicate verify helper calls in CLI | `backlog` | Low-risk maintainability issue | Refactor only when touching `verify-cli.ts` for F5-A1/A2. |
 
 ## Final Docs And Claim Alignment
 
@@ -164,16 +204,33 @@ backlogged.
 Do not start new reports until the existing queue is closed or intentionally
 backlogged.
 
-Recommended next order:
+Recommended next order through F5:
 
-1. F2-AG-1 customer-gate honor-system revalidation.
-2. F2-AG-2 agent-payment settlement post-condition revalidation.
-3. F2-AG-3 account-delegation / EIP-7702 scope revalidation.
-4. F2-AG-5 hidden downstream side-effect receipt-deadline revalidation.
-5. F2-AG-6 hallucinated evidence / unsupported confidence revalidation.
-6. F2-AG-9 constraint registry revalidation.
-7. F2-AG-10 model/tool/config drift dedicated-guard decision.
-8. F1 backlog closure pass.
-9. F4 redo remediation pass.
-10. F5 accepted-limitation/backlog pass.
-11. Final docs/README/claim alignment.
+1. Merge this tracker update so the queue count is canonical.
+2. F2-AG-1 / F4-LLM06-A customer-gate honor-system revalidation.
+3. F2-AG-2 agent-payment settlement post-condition revalidation.
+4. F2-AG-3 account-delegation / EIP-7702 scope revalidation.
+5. F2-AG-5 hidden downstream side-effect receipt-deadline revalidation.
+6. F2-AG-6 / F4-LLM09-A hallucinated evidence and unsupported confidence.
+7. F2-AG-7 / F4-LLM03-A / F4-D runtime LLM provider and supply-chain split.
+8. F2-AG-9 free-text narrow constraints and constraint-kind registry.
+9. F2-AG-10 model/tool/config drift guard decision.
+10. F4-LLM01-A trust-class PKI proof revalidation.
+11. F4-LLM01-B hosted LLM boundary runtime conformance.
+12. F4-LLM02-A / F4-LLM02-B data-minimization scanning and activation readiness.
+13. F4-LLM05-A presentation freshness nonce.
+14. F4-LLM05-B shared replay ledger.
+15. F4-LLM06-B / F4-LLM10-A / F4-LLM10-B shared velocity and retry-budget validation.
+16. F4-LLM07-A prompt leakage marker expansion.
+17. F5-A1 require trusted CA pin or explicit developer-mode bypass.
+18. F5-A2 remove or sunset legacy env downgrade.
+19. F5-A3 fingerprint width migration.
+20. F5-A4 / F5-A8 canonicalization and numeric payload behavior.
+21. F-5.2 / F5-A5 file durability and key persistence atomicity.
+22. F5-A7 / F5-NEW-1 keyless CA singleton and test-only injection.
+23. F-5.7 / F5-NEW-2 HA shared PKI and production-shared local-PKI closure.
+24. F5-NEW-3 legacy unbounded certificate telemetry and sunset.
+25. F5-A6 transparency log design decision and claim boundary.
+26. F5-B1 crypto-authorization trust-delegation documentation.
+27. F1 backlog closure pass for replay correlation, fan-out, and cross-log integrity.
+28. Final README/docs/provenance claim alignment.

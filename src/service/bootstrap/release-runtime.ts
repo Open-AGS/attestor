@@ -237,8 +237,9 @@ function releaseRuntimePkiPathConfigured(): boolean {
   return Boolean(process.env[ATTESTOR_RELEASE_RUNTIME_PKI_PATH_ENV]?.trim());
 }
 
-function releaseRuntimePkiSharedPathRequired(): boolean {
-  return envTruthy(process.env.ATTESTOR_HA_MODE)
+function releaseRuntimePkiSharedPathRequired(runtimeProfile?: AttestorRuntimeProfile): boolean {
+  return runtimeProfile?.id === 'production-shared'
+    || envTruthy(process.env.ATTESTOR_HA_MODE)
     || envTruthy(process.env[ATTESTOR_RELEASE_RUNTIME_PKI_REQUIRE_SHARED_PATH_ENV]);
 }
 
@@ -246,11 +247,13 @@ function releaseRuntimePkiSharedPathAttested(): boolean {
   return envTruthy(process.env[ATTESTOR_RELEASE_RUNTIME_PKI_SHARED_PATH_ENV]);
 }
 
-function assertReleaseRuntimePkiSharedPathBoundary(): {
+function assertReleaseRuntimePkiSharedPathBoundary(
+  runtimeProfile?: AttestorRuntimeProfile,
+): {
   readonly sharedPathRequired: boolean;
   readonly sharedPathAttested: boolean;
 } {
-  const sharedPathRequired = releaseRuntimePkiSharedPathRequired();
+  const sharedPathRequired = releaseRuntimePkiSharedPathRequired(runtimeProfile);
   const sharedPathAttested = releaseRuntimePkiSharedPathAttested();
   if (!sharedPathRequired) return { sharedPathRequired, sharedPathAttested };
 
@@ -364,12 +367,15 @@ function parseStoredReleaseRuntimePki(content: string): {
   };
 }
 
-function loadOrCreateFileBackedReleaseRuntimePki(path: string): {
+function loadOrCreateFileBackedReleaseRuntimePki(
+  path: string,
+  runtimeProfile?: AttestorRuntimeProfile,
+): {
   pki: ReleaseRuntimePki;
   retiredVerificationKeys: readonly StoredReleaseRuntimeVerificationKey[];
   persistence: ReleaseRuntimePkiPersistence;
 } {
-  const sharedPathBoundary = assertReleaseRuntimePkiSharedPathBoundary();
+  const sharedPathBoundary = assertReleaseRuntimePkiSharedPathBoundary(runtimeProfile);
   mkdirSync(dirname(path), { recursive: true });
   return withFileLock(path, () => {
     const rotationId = releaseRuntimePkiRotationId();
@@ -462,13 +468,41 @@ function loadOrCreateFileBackedReleaseRuntimePki(path: string): {
   });
 }
 
-function resolveReleaseRuntimePki(runtimeProfile: AttestorRuntimeProfile): {
+function resolveReleaseRuntimePki(
+  runtimeProfile: AttestorRuntimeProfile,
+  options: {
+    readonly allowPreflightOnSharedPathViolation?: boolean;
+  } = {},
+): {
   pki: ReleaseRuntimePki;
   retiredVerificationKeys: readonly StoredReleaseRuntimeVerificationKey[];
   persistence: ReleaseRuntimePkiPersistence;
 } {
-  if (releaseRuntimePkiSharedPathRequired()) {
-    assertReleaseRuntimePkiSharedPathBoundary();
+  if (releaseRuntimePkiSharedPathRequired(runtimeProfile)) {
+    try {
+      assertReleaseRuntimePkiSharedPathBoundary(runtimeProfile);
+    } catch (error) {
+      if (
+        runtimeProfile.id === 'production-shared' &&
+        options.allowPreflightOnSharedPathViolation === true
+      ) {
+        return {
+          pki: generatePkiHierarchy(API_CA_SUBJECT, API_SIGNER_SUBJECT, API_REVIEWER_SUBJECT),
+          retiredVerificationKeys: [],
+          persistence: {
+            mode: 'ephemeral',
+            path: null,
+            sharedPathRequired: true,
+            sharedPathAttested: false,
+            generated: true,
+            rotated: false,
+            rotationId: null,
+            retiredVerificationKeyCount: 0,
+          },
+        };
+      }
+      throw error;
+    }
   }
 
   if (
@@ -491,7 +525,7 @@ function resolveReleaseRuntimePki(runtimeProfile: AttestorRuntimeProfile): {
     };
   }
 
-  return loadOrCreateFileBackedReleaseRuntimePki(releaseRuntimePkiPath());
+  return loadOrCreateFileBackedReleaseRuntimePki(releaseRuntimePkiPath(), runtimeProfile);
 }
 
 function createReleaseDecisionLogWriterForProfile(
@@ -1099,7 +1133,9 @@ export async function createReleaseRuntimeBootstrap(
     pki,
     retiredVerificationKeys,
     persistence: pkiPersistence,
-  } = resolveReleaseRuntimePki(runtimeProfile);
+  } = resolveReleaseRuntimePki(runtimeProfile, {
+    allowPreflightOnSharedPathViolation: input.allowPreflightOnDurabilityViolation === true,
+  });
   configureReleaseRuntimeKeylessCa(pki.ca, {
     allowReplace: true,
     replacementReason: 'release-runtime-bootstrap',
@@ -1108,7 +1144,11 @@ export async function createReleaseRuntimeBootstrap(
     runtimeProfile,
     pkiPersistence,
   });
-  const pkiReady = true;
+  const pkiReady = runtimeProfile.id === 'production-shared'
+    ? pkiPersistence.mode === 'file' &&
+      pkiPersistence.sharedPathRequired &&
+      pkiPersistence.sharedPathAttested
+    : true;
   const financeReleaseDecisionLog =
     sharedAuthorityRequestPath?.financeReleaseDecisionLog ??
     (runtimeProfile.id === 'production-shared'

@@ -45,12 +45,12 @@ later implementation pass does not re-open already-retired issues.
 | F3 cross-cutting guard readiness | 10 | 10 | 0 | 0 |
 | F4 OWASP LLM redo, active findings | 14 | 5 | 9 | 0 |
 | F4 stale worktree findings retired by fresh main | 3 | 0 | 3 | 0 |
-| F5 signing layer redo | 21 | 12 | 4 | 5 |
+| F5 signing layer redo | 21 | 13 | 7 | 1 |
 | Final docs / claim alignment | 2 | 0 | 0 | 2 |
 
-Estimated remaining work after this tracker lands: about 10 to 18 PR-sized or
-validation-sized units. Several items overlap and may close together, but no
-item is treated as closed until repository evidence proves it.
+Remaining work after the current F5 HA shared PKI validation slice: 5 planned
+PR-sized or validation-sized units. Several items overlap and may close
+together, but no item is treated as closed until repository evidence proves it.
 
 Completion rule through F5: every F1-F5 row must end as `fixed`,
 `invalid-as-stated`, `superseded`, `accepted-limitation`, or `backlog` with
@@ -92,6 +92,7 @@ evidence. No `needs-revalidation` row can remain before starting F6.
 | [#319](https://github.com/AI-gateway-systems/attestor/pull/319) | `0b96f2ae8b60ba94569dd915064964a1bd8b4f72` | F5 signing key fingerprint width |
 | [#320](https://github.com/AI-gateway-systems/attestor/pull/320) | `cedb2ce4d53d247820ac5726e247afe82cc3d4e0` | F5 signing canonicalization |
 | [#321](https://github.com/AI-gateway-systems/attestor/pull/321) | `4f1e4c933099db345af3f35e2ad7a8b5b6e9f9b9` | F5 file durability and key persistence atomicity |
+| [#322](https://github.com/AI-gateway-systems/attestor/pull/322) | `18f98e72b1755391a58ad85bae3cdf077b048b12` | F5 keyless CA runtime configuration boundary |
 
 ## F1 Threat-Model Foundation
 
@@ -194,7 +195,7 @@ earlier stale-worktree F5 is not authoritative.
 | F-5.4 revocation inputs | `invalid-as-stated` | Fresh F5 redo: cert and trust-chain verification accept revocation inputs | No action unless fresh source inspection contradicts the redo. |
 | F-5.5 trust-chain clock skew | `invalid-as-stated` | Fresh F5 redo: cert and chain checks apply skew | No action unless fresh source inspection contradicts the redo. |
 | F-5.6 anti-self-attest / PKI-bound verification | `fixed` | PR #291; `verification-trust-binding` | Keep as fixed; related third-party pin behavior tracked under F5-A1. |
-| F-5.7 HA shared PKI / shared lock | `open` | Strict path opt-in exists; lock remains local/mkdir-style per report | Validate current lock path; implement durable shared lock or fail-closed production-shared local-PKI profile. |
+| F-5.7 HA shared PKI / shared lock | `partial` | F5 HA Shared PKI Closure Validation (`docs/audit/f5-ha-shared-pki-closure-validation.md`); `test:f5-ha-shared-pki-closure-validation` | `production-shared` now implicitly requires an explicit shared PKI path and shared-path attestation. Preflight does not persist default local issuer material and reports `pkiReady=false`. The broader distributed lock / KMS-HSM production boundary remains unresolved. |
 | F5-A1 out-of-band trust root optional | `fixed` | F5 CA Pin Required Validation (`docs/audit/f5-ca-pin-required-validation.md`); `verifyPkiBoundCertificate`; `verify-cli.ts`; `/api/v1/verify`; `test:f5-ca-pin-required-validation` | Foreign-kit verification now requires an out-of-band trusted CA fingerprint by default. CLI kit-contained-root checks require explicit `--developer-mode` and do not claim independent trust. |
 | F5-A2 legacy flat verify escape via env | `fixed` | F5 Legacy Env Downgrade Validation (`docs/audit/f5-legacy-env-downgrade-validation.md`); `verify-cli.ts`; `/api/v1/verify`; `test:f5-legacy-env-downgrade-validation` | Env-var legacy downgrade is removed. CLI legacy flat verification remains only as the explicit `--allow-legacy-verify` flag for intentional legacy kit checks. |
 | F5-A3 truncated fingerprint width | `fixed` | F5 Fingerprint Width Validation (`docs/audit/f5-fingerprint-width-validation.md`); `ATTESTOR_SIGNING_FINGERPRINT_HEX_LENGTH`; `test:f5-fingerprint-width-validation` | Signing key identity fingerprints now use 32 hex characters / 128-bit truncated SHA-256. Historical compact evidence IDs and previously-issued artifacts are not widened by this scoped fix. |
@@ -206,7 +207,7 @@ earlier stale-worktree F5 is not authoritative.
 | F5-A9 verifier helper absent | `partial` | Fresh F5 redo says helper now exists | Close absence claim; keep consumer footgun risk under F5-A1. |
 | F5-B1 crypto-authorization adapter trust delegation | `accepted-limitation` | Architecture states adapters supply observations | Document this as a trust boundary; do not claim chain-state verification without adapter proof. |
 | F5-NEW-1 exported `setKeylessCa` runtime injection | `fixed` | Same F5 Keyless CA Injection Boundary Validation as F5-A7 | The generic setter no longer exists; keyless signer internals remain outside package `exports`. |
-| F5-NEW-2 strict PKI path enforcement opt-in | `open` | release-runtime strict path flag report | Make strict path implicit for production-shared profile or prove the current mode is safe. |
+| F5-NEW-2 strict PKI path enforcement opt-in | `fixed` | F5 HA Shared PKI Closure Validation (`docs/audit/f5-ha-shared-pki-closure-validation.md`); `release-runtime.ts`; `test:f5-ha-shared-pki-closure-validation` | `production-shared` is now an implicit shared-PKI-required profile. Explicit local-PKI fallback is no longer silently used for production-shared startup. |
 | F5-NEW-3 `allowLegacyUnbounded` escape hatch | `open` | certificate compatibility flag report | Add structured warning/telemetry and sunset documentation/tests. |
 | F5-NEW-4 duplicate verify helper calls in CLI | `backlog` | Low-risk maintainability issue | Refactor only when touching `verify-cli.ts` for F5-A1/A2. |
 
@@ -227,9 +228,8 @@ backlogged.
 
 Recommended next order through F5:
 
-1. F-5.7 / F5-NEW-2 HA shared PKI and production-shared local-PKI closure.
-2. F5-NEW-3 legacy unbounded certificate telemetry and sunset.
-3. F5-A6 transparency log design decision and claim boundary.
-4. F5-B1 crypto-authorization trust-delegation documentation.
-5. F1 backlog closure pass for replay correlation, fan-out, and cross-log integrity.
-6. Final README/docs/provenance claim alignment.
+1. F5-NEW-3 legacy unbounded certificate telemetry and sunset.
+2. F5-A6 transparency log design decision and claim boundary.
+3. F5-B1 crypto-authorization trust-delegation documentation.
+4. F1 backlog closure pass for replay correlation, fan-out, and cross-log integrity.
+5. Final README/docs/provenance claim alignment.

@@ -61,6 +61,7 @@
     "test:f5-canonicalization-validation": "tsx tests/f5-canonicalization-validation.test.ts",
     "test:f5-file-store-key-atomicity-validation": "tsx tests/f5-file-store-key-atomicity-validation.test.ts",
     "test:f5-keyless-ca-injection-boundary-validation": "tsx tests/f5-keyless-ca-injection-boundary-validation.test.ts",
+    "test:f5-ha-shared-pki-closure-validation": "tsx tests/f5-ha-shared-pki-closure-validation.test.ts",
     "test:stripe-commercial": "tsx tests/stripe-commercial-config.test.ts",
     "test:stripe-webhook-events": "tsx tests/stripe-webhook-events.test.ts",
     "test:stripe-live-readiness-probe": "tsx tests/stripe-live-readiness-probe.test.ts",

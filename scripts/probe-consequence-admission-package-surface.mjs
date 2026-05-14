@@ -360,6 +360,25 @@ assert.equal(
   'review',
 );
 assert.equal(
+  admission.consequenceAdmissionDescriptor().multiAgentDelegationGuardVersion,
+  'attestor.consequence-multi-agent-delegation-guard.v1',
+);
+assert.equal(
+  admission.consequenceMultiAgentDelegationGuardDescriptor().requiresPrincipalChain,
+  true,
+);
+assert.equal(
+  admission.consequenceMultiAgentDelegationGuardDescriptor().rejectsSelfApproval,
+  true,
+);
+assert.equal(
+  admission.evaluateConsequenceMultiAgentDelegation({
+    generatedAt: '2026-05-14T00:00:00.000Z',
+    principalChain: [],
+  }).outcome,
+  'review',
+);
+assert.equal(
   admission.consequenceDomainPackBoundaryDescriptor().primaryRole,
   'pack',
 );

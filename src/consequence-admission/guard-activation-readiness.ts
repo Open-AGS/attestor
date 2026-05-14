@@ -17,6 +17,7 @@ export const CONSEQUENCE_GUARD_ACTIVATION_GUARD_IDS = [
   'scope-explosion-guard',
   'human-review-fatigue-guard',
   'agentic-supply-chain-guard',
+  'multi-agent-delegation-guard',
 ] as const;
 export type ConsequenceGuardActivationGuardId =
   typeof CONSEQUENCE_GUARD_ACTIVATION_GUARD_IDS[number];
@@ -284,6 +285,14 @@ const GUARD_PROFILES: readonly ConsequenceGuardActivationGuardProfile[] = Object
     docFile: 'docs/02-architecture/agentic-supply-chain-guard.md',
     testFile: 'tests/agentic-supply-chain-guard.test.ts',
     failureModeIds: ['agentic-supply-chain-compromise'],
+    staticPassedCriteria: COMMON_STATIC_PASSED_CRITERIA,
+  }),
+  profile({
+    guardId: 'multi-agent-delegation-guard',
+    sourceFile: 'src/consequence-admission/multi-agent-delegation-guard.ts',
+    docFile: 'docs/02-architecture/multi-agent-delegation-guard.md',
+    testFile: 'tests/multi-agent-delegation-guard.test.ts',
+    failureModeIds: ['multi-agent-delegation-confusion'],
     staticPassedCriteria: COMMON_STATIC_PASSED_CRITERIA,
   }),
 ]);

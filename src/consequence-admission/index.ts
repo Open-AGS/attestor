@@ -117,6 +117,11 @@ import {
   CONSEQUENCE_AGENTIC_SUPPLY_CHAIN_REASON_CODES,
 } from './agentic-supply-chain-guard.js';
 import {
+  CONSEQUENCE_MULTI_AGENT_DELEGATION_GUARD_OUTCOMES,
+  CONSEQUENCE_MULTI_AGENT_DELEGATION_GUARD_VERSION,
+  CONSEQUENCE_MULTI_AGENT_DELEGATION_REASON_CODES,
+} from './multi-agent-delegation-guard.js';
+import {
   CONSEQUENCE_FAILURE_MODE_RUNTIME_EXTENSION_OUTCOMES,
   CONSEQUENCE_FAILURE_MODE_RUNTIME_EXTENSION_REASON_CODES,
   CONSEQUENCE_FAILURE_MODE_RUNTIME_EXTENSION_VERSION,
@@ -493,6 +498,7 @@ export interface ConsequenceAdmissionDescriptor {
   readonly failureModeGuardCoverageVersion: typeof CONSEQUENCE_FAILURE_MODE_GUARD_COVERAGE_VERSION;
   readonly failureModeRuntimeExtensionVersion: typeof CONSEQUENCE_FAILURE_MODE_RUNTIME_EXTENSION_VERSION;
   readonly agenticSupplyChainGuardVersion: typeof CONSEQUENCE_AGENTIC_SUPPLY_CHAIN_GUARD_VERSION;
+  readonly multiAgentDelegationGuardVersion: typeof CONSEQUENCE_MULTI_AGENT_DELEGATION_GUARD_VERSION;
   readonly retryDefaultMaxAttempts: typeof CONSEQUENCE_ADMISSION_RETRY_DEFAULT_MAX_ATTEMPTS;
   readonly retryDefaultWindowSeconds: typeof CONSEQUENCE_ADMISSION_RETRY_DEFAULT_WINDOW_SECONDS;
   readonly decisions: typeof CONSEQUENCE_ADMISSION_DECISIONS;
@@ -530,6 +536,8 @@ export interface ConsequenceAdmissionDescriptor {
   readonly adapterOutcomes: typeof CONSEQUENCE_ADMISSION_ADAPTER_OUTCOMES;
   readonly agenticSupplyChainGuardOutcomes: typeof CONSEQUENCE_AGENTIC_SUPPLY_CHAIN_GUARD_OUTCOMES;
   readonly agenticSupplyChainGuardReasonCodes: typeof CONSEQUENCE_AGENTIC_SUPPLY_CHAIN_REASON_CODES;
+  readonly multiAgentDelegationGuardOutcomes: typeof CONSEQUENCE_MULTI_AGENT_DELEGATION_GUARD_OUTCOMES;
+  readonly multiAgentDelegationGuardReasonCodes: typeof CONSEQUENCE_MULTI_AGENT_DELEGATION_REASON_CODES;
   readonly failureModeRuntimeExtensionOutcomes: typeof CONSEQUENCE_FAILURE_MODE_RUNTIME_EXTENSION_OUTCOMES;
   readonly failureModeRuntimeExtensionReasonCodes: typeof CONSEQUENCE_FAILURE_MODE_RUNTIME_EXTENSION_REASON_CODES;
   readonly auditEvidenceArtifactKinds: typeof CONSEQUENCE_AUDIT_EVIDENCE_ARTIFACT_KINDS;
@@ -2079,6 +2087,7 @@ ConsequenceAdmissionDescriptor {
     failureModeGuardCoverageVersion: CONSEQUENCE_FAILURE_MODE_GUARD_COVERAGE_VERSION,
     failureModeRuntimeExtensionVersion: CONSEQUENCE_FAILURE_MODE_RUNTIME_EXTENSION_VERSION,
     agenticSupplyChainGuardVersion: CONSEQUENCE_AGENTIC_SUPPLY_CHAIN_GUARD_VERSION,
+    multiAgentDelegationGuardVersion: CONSEQUENCE_MULTI_AGENT_DELEGATION_GUARD_VERSION,
     retryDefaultMaxAttempts: CONSEQUENCE_ADMISSION_RETRY_DEFAULT_MAX_ATTEMPTS,
     retryDefaultWindowSeconds: CONSEQUENCE_ADMISSION_RETRY_DEFAULT_WINDOW_SECONDS,
     decisions: CONSEQUENCE_ADMISSION_DECISIONS,
@@ -2116,6 +2125,8 @@ ConsequenceAdmissionDescriptor {
     adapterOutcomes: CONSEQUENCE_ADMISSION_ADAPTER_OUTCOMES,
     agenticSupplyChainGuardOutcomes: CONSEQUENCE_AGENTIC_SUPPLY_CHAIN_GUARD_OUTCOMES,
     agenticSupplyChainGuardReasonCodes: CONSEQUENCE_AGENTIC_SUPPLY_CHAIN_REASON_CODES,
+    multiAgentDelegationGuardOutcomes: CONSEQUENCE_MULTI_AGENT_DELEGATION_GUARD_OUTCOMES,
+    multiAgentDelegationGuardReasonCodes: CONSEQUENCE_MULTI_AGENT_DELEGATION_REASON_CODES,
     failureModeRuntimeExtensionOutcomes: CONSEQUENCE_FAILURE_MODE_RUNTIME_EXTENSION_OUTCOMES,
     failureModeRuntimeExtensionReasonCodes: CONSEQUENCE_FAILURE_MODE_RUNTIME_EXTENSION_REASON_CODES,
     auditEvidenceArtifactKinds: CONSEQUENCE_AUDIT_EVIDENCE_ARTIFACT_KINDS,
@@ -2200,6 +2211,7 @@ export * from './recipient-tenant-boundary-replay.js';
 export * from './scope-explosion-guard.js';
 export * from './human-review-fatigue-guard.js';
 export * from './agentic-supply-chain-guard.js';
+export * from './multi-agent-delegation-guard.js';
 export * from './decision-context-drift-binding.js';
 export * from './no-go-condition-ledger.js';
 export * from './policy-foundry-failure-gap-map.js';

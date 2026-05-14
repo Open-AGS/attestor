@@ -370,17 +370,26 @@ const COVERAGE_PROFILES = {
       'Decision-context drift binding checks supplied context evidence; it does not independently scan every runtime or evaluate model quality.',
   },
   'multi-agent-delegation-confusion': {
-    coverageKind: 'policy-foundry-contract',
-    runtimeClaim: 'detects-gap',
-    dedicatedGuardPresent: false,
+    coverageKind: 'dedicated-guard',
+    runtimeClaim: 'renders-decision',
+    dedicatedGuardPresent: true,
     customerIntegrationRequired: true,
-    primaryImplementationPath: 'src/consequence-admission/policy-foundry-authority-relationship-context.ts',
-    codeEvidencePaths: ['src/consequence-admission/policy-foundry-authority-relationship-context.ts'],
-    testEvidencePaths: ['tests/policy-foundry-authority-relationship-context.test.ts'],
-    docEvidencePaths: ['docs/02-architecture/policy-foundry-onboarding.md'],
+    primaryImplementationPath: 'src/consequence-admission/multi-agent-delegation-guard.ts',
+    codeEvidencePaths: [
+      'src/consequence-admission/multi-agent-delegation-guard.ts',
+      'src/consequence-admission/policy-foundry-authority-relationship-context.ts',
+    ],
+    testEvidencePaths: [
+      'tests/multi-agent-delegation-guard.test.ts',
+      'tests/policy-foundry-authority-relationship-context.test.ts',
+    ],
+    docEvidencePaths: [
+      'docs/02-architecture/multi-agent-delegation-guard.md',
+      'docs/02-architecture/policy-foundry-onboarding.md',
+    ],
     notProven: COMMON_NOT_PROVEN,
     limitation:
-      'Policy Foundry flags unscoped delegation; inter-agent transport authentication and per-agent authority enforcement remain future hardening.',
+      'The guard renders delegation-chain decisions; inter-agent transport authentication and per-agent authority enforcement remain customer integration responsibilities.',
   },
   'hidden-downstream-side-effect': {
     coverageKind: 'deterministic-contract',

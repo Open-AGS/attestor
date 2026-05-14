@@ -92,6 +92,7 @@ function testKnownGapsAreExplicitlyNotOverclaimed(): void {
   const directPrompt = coverage('direct-prompt-injection');
   const indirectPrompt = coverage('indirect-prompt-injection');
   const modelDrift = coverage('model-tool-config-drift');
+  const multiAgent = coverage('multi-agent-delegation-confusion');
   const supplyChain = coverage('agentic-supply-chain-compromise');
   const untrusted = coverage('untrusted-content-authorizes-action');
   const toolResult = coverage('tool-result-poisoning');
@@ -101,6 +102,8 @@ function testKnownGapsAreExplicitlyNotOverclaimed(): void {
   equal(indirectPrompt.coverageKind, 'integration-required', 'Guard coverage: indirect prompt injection remains integration-required');
   equal(modelDrift.coverageKind, 'deterministic-contract', 'Guard coverage: model/tool/config drift has deterministic contract coverage');
   equal(modelDrift.primaryImplementationPath, 'src/consequence-admission/decision-context-drift-binding.ts', 'Guard coverage: model/tool/config drift points to actual binding module');
+  equal(multiAgent.coverageKind, 'dedicated-guard', 'Guard coverage: multi-agent delegation has dedicated guard coverage');
+  equal(multiAgent.dedicatedGuardPresent, true, 'Guard coverage: multi-agent delegation is marked as dedicated guard');
   equal(supplyChain.coverageKind, 'dedicated-guard', 'Guard coverage: supply-chain compromise has dedicated guard coverage');
   equal(supplyChain.dedicatedGuardPresent, true, 'Guard coverage: supply-chain compromise is marked as dedicated guard');
   equal(untrusted.dedicatedGuardPresent, true, 'Guard coverage: untrusted content has dedicated guard');

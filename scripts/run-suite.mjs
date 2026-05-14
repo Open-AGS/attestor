@@ -98,6 +98,7 @@ function architectureScriptNames() {
     'test:replay-layer-placement',
     'test:guard-activation-readiness',
     'test:agentic-supply-chain-guard',
+    'test:multi-agent-delegation-guard',
     'test:consequence-admission-readiness',
     'test:product-positioning-docs',
     'test:hosted-product-flow-docs',

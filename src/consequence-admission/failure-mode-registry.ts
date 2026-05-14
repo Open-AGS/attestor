@@ -699,10 +699,12 @@ Object.freeze([
     ],
     defaultDecision: 'review',
     repositoryEvidence: [
+      evidence('code', 'src/consequence-admission/multi-agent-delegation-guard.ts', 'principal-chain decision guard'),
+      evidence('test', 'tests/multi-agent-delegation-guard.test.ts', 'missing chain, scope mismatch, cycle, and self-approval cases'),
       evidence('code', 'src/consequence-admission/policy-foundry-authority-relationship-context.ts', 'unscoped-delegation'),
       evidence('test', 'tests/policy-foundry-authority-relationship-context.test.ts', 'unscoped delegation is a no-go'),
     ],
-    limitation: 'Delegation no-go exists in authority context; inter-agent communication replay is not yet complete.',
+    limitation: 'Delegation guard renders principal-chain decisions; inter-agent transport authentication and live downstream enforcement are not yet complete.',
   }),
   entry({
     id: 'hidden-downstream-side-effect',

@@ -65,3 +65,4 @@ This prevents vague claims such as "all failure modes are enforced" when the rea
 - The matrix does not certify production readiness.
 - Some failure modes intentionally remain `integration-required`, especially where customer source systems must provide evidence.
 - `agentic-supply-chain-compromise` now has `dedicated-guard` coverage through `src/consequence-admission/agentic-supply-chain-guard.ts`, but third-party code behavior and live adapter execution are still not proven without customer runtime evidence.
+- `multi-agent-delegation-confusion` now has `dedicated-guard` coverage through `src/consequence-admission/multi-agent-delegation-guard.ts`, but inter-agent transport authentication and live downstream enforcement are still not proven without customer runtime evidence.

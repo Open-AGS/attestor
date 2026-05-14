@@ -164,6 +164,7 @@ function testArchitectureSuiteKeepsBoundaryCoverage(): void {
     'npm run test:failure-mode-control-bindings',
     'npm run test:failure-mode-replay-fixtures',
     'npm run test:failure-mode-guard-coverage',
+    'npm run test:failure-mode-runtime-extensions',
     'npm run test:replay-layer-placement',
     'npm run test:guard-activation-readiness',
     'npm run test:agentic-supply-chain-guard',

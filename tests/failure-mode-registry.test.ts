@@ -114,6 +114,10 @@ function testRegistryPlacementIsSharedControlLayerOwned(): void {
     'Failure registry placement: guard coverage source file is listed',
   );
   ok(
+    placement.sourceFiles.includes('src/consequence-admission/failure-mode-runtime-extensions.ts'),
+    'Failure registry placement: runtime extension source file is listed',
+  );
+  ok(
     placement.sourceFiles.includes('src/consequence-admission/agentic-supply-chain-guard.ts'),
     'Failure registry placement: agentic supply-chain guard source file is listed',
   );
@@ -211,7 +215,9 @@ function testDocsAndPackageScriptStayAligned(): void {
   includes(doc, 'src/consequence-admission/failure-mode-control-bindings.ts', 'Failure registry docs: control binding source file is named');
   includes(doc, 'src/consequence-admission/failure-mode-replay-fixtures.ts', 'Failure registry docs: replay fixture source file is named');
   includes(doc, 'src/consequence-admission/failure-mode-guard-coverage.ts', 'Failure registry docs: guard coverage source file is named');
+  includes(doc, 'src/consequence-admission/failure-mode-runtime-extensions.ts', 'Failure registry docs: runtime extension source file is named');
   includes(doc, 'src/consequence-admission/agentic-supply-chain-guard.ts', 'Failure registry docs: agentic supply-chain guard source file is named');
+  includes(doc, 'runtime extension overlays', 'Failure registry docs: runtime extension overlays are named');
   includes(doc, 'test:failure-mode-registry', 'Failure registry docs: test command is named');
   includes(doc, 'untrusted-content-authorizes-action', 'Failure registry docs: untrusted content mode is named');
   includes(doc, 'fake-approval-laundering', 'Failure registry docs: approval laundering mode is named');

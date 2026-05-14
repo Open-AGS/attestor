@@ -19,6 +19,7 @@ export const CONSEQUENCE_FAILURE_MODE_REGISTRY_PLACEMENT_SOURCE_FILES = [
   'src/consequence-admission/failure-mode-control-bindings.ts',
   'src/consequence-admission/failure-mode-replay-fixtures.ts',
   'src/consequence-admission/failure-mode-guard-coverage.ts',
+  'src/consequence-admission/failure-mode-runtime-extensions.ts',
   'src/consequence-admission/agentic-supply-chain-guard.ts',
 ] as const;
 export type ConsequenceFailureModeRegistryPlacementSourceFile =
@@ -219,7 +220,7 @@ ConsequenceFailureModeRegistryPlacementDescriptor {
     sourceFiles: CONSEQUENCE_FAILURE_MODE_REGISTRY_PLACEMENT_SOURCE_FILES,
     publicPackageSurface: 'attestor/consequence-admission',
     packExtensionBoundary:
-      'Packs may contribute domain templates, evidence defaults, adapters, and replay examples, but they must not fork the shared failure-mode registry, binding contract, replay matrix, or decision vocabulary.',
+      'Packs may contribute domain templates, evidence defaults, adapters, replay examples, and scoped runtime extension overlays, but they must not fork the shared failure-mode registry, binding contract, replay matrix, or decision vocabulary.',
     hostedServiceBoundary:
       'Hosted routes may compose and expose the shared failure-mode contracts, but they must not own, mutate, or fork them per route.',
     autoEnforce: false,

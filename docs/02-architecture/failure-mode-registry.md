@@ -11,6 +11,7 @@ It is not a certification, not an independent audit, not a production-readiness 
 - Placement version: `attestor.consequence-failure-mode-registry-placement.v1`
 - Test command: `npm run test:failure-mode-registry`
 - Runtime stance: no auto-enforce, no production-ready claim, no raw payload storage
+- Runtime extension file: `src/consequence-admission/failure-mode-runtime-extensions.ts`
 
 Each entry contains:
 
@@ -38,6 +39,7 @@ Placement source files:
 - `src/consequence-admission/failure-mode-control-bindings.ts`
 - `src/consequence-admission/failure-mode-replay-fixtures.ts`
 - `src/consequence-admission/failure-mode-guard-coverage.ts`
+- `src/consequence-admission/failure-mode-runtime-extensions.ts`
 - `src/consequence-admission/agentic-supply-chain-guard.ts`
 
 Ownership:
@@ -48,8 +50,10 @@ Ownership:
 - Packs and hosted routes consume this contract; they do not own or fork it.
 
 Packs may add domain templates, evidence defaults, adapters, and replay examples.
-Hosted routes may compose the shared contracts. Neither should create a separate
-failure-mode registry, binding vocabulary, replay matrix, or decision vocabulary.
+They may also provide runtime extension overlays for scoped customer-specific
+failure modes. Hosted routes may compose the shared contracts. Neither should
+create a separate failure-mode registry, binding vocabulary, replay matrix, or
+decision vocabulary.
 
 ## Source Anchors
 
@@ -99,6 +103,7 @@ Current use:
 - give the next Control Binding Contract step stable ids
 - give the Replay Fixture Matrix step stable scenario targets
 - give the guard coverage matrix a stable list of failure modes to classify by repository evidence
+- allow scoped runtime extension overlays without mutating the canonical registry
 - bind agentic supply-chain compromise to a dedicated provenance and least-privilege guard
 - keep limitations explicit when repository evidence is partial
 
@@ -107,5 +112,6 @@ Current use:
 - The registry is not a coverage audit by itself.
 - Repository evidence means the repo has a related control or test; it does not prove full customer deployment coverage.
 - Some controls are present as contracts or tests, while others remain future binding/replay work.
+- Runtime extension overlays still require owner authority, approval, source record, replay binding, and customer-specific workflow evidence before enforcement claims.
 - Customer-specific workflows still need shadow evidence, authority evidence, replay results, and deployment checks before enforcement claims.
 

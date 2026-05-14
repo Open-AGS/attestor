@@ -94,6 +94,7 @@ function architectureScriptNames() {
     'test:failure-mode-control-bindings',
     'test:failure-mode-replay-fixtures',
     'test:failure-mode-guard-coverage',
+    'test:failure-mode-runtime-extensions',
     'test:replay-layer-placement',
     'test:guard-activation-readiness',
     'test:agentic-supply-chain-guard',

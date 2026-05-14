@@ -228,10 +228,35 @@ assert.equal(
   true,
 );
 assert.equal(
+  admission.consequenceAdmissionDescriptor().failureModeRegistryPlacement.sourceFiles.includes(
+    'src/consequence-admission/failure-mode-runtime-extensions.ts',
+  ),
+  true,
+);
+assert.equal(
   admission.consequenceAdmissionDescriptor().failureModeRegistryPlacement.nonOwningRoles.includes(
     'pack',
   ),
   true,
+);
+assert.equal(
+  admission.consequenceAdmissionDescriptor().failureModeRuntimeExtensionVersion,
+  'attestor.consequence-failure-mode-runtime-extension.v1',
+);
+assert.equal(
+  admission.consequenceFailureModeRuntimeExtensionDescriptor().mutatesCanonicalRegistry,
+  false,
+);
+assert.equal(
+  admission.consequenceFailureModeRuntimeExtensionDescriptor().requiresOwnerAuthorityDigest,
+  true,
+);
+assert.equal(
+  admission.evaluateConsequenceFailureModeRuntimeExtensions({
+    generatedAt: '2026-05-14T00:00:00.000Z',
+    extensions: [],
+  }).outcome,
+  'review',
 );
 assert.equal(
   admission.consequenceAdmissionDescriptor().replayLayerPlacementVersion,

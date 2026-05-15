@@ -177,6 +177,7 @@
     "test:consequence-admission-pack-decision-profile": "tsx tests/consequence-admission-pack-decision-profile.test.ts",
     "test:domain-pack-boundary": "tsx tests/domain-pack-boundary.test.ts",
     "test:generic-admission-mode-ladder": "tsx tests/generic-admission-mode-ladder.test.ts",
+    "test:generic-admission-protected-route": "tsx tests/generic-admission-protected-route.test.ts",
     "test:generic-admission-protected-release-token": "tsx tests/generic-admission-protected-release-token.test.ts",
     "test:generic-admission-routes": "tsx tests/generic-admission-routes.test.ts",
     "test:shadow-admission-events": "tsx tests/shadow-admission-events.test.ts",

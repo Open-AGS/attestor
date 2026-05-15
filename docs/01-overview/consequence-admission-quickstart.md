@@ -130,6 +130,8 @@ const issued = await issueGenericAdmissionProtectedReleaseToken({
 
 The final admission receives a `release-token` proof reference by token id and digest. R3 issuance requires an explicit `reviewerRef`; R4 issuance requires distinct reviewer and signer references. The sanitized envelope records only token metadata; the raw token is returned only to the immediate caller as authorization material and must be presented through `attestor/release-enforcement-plane` with sender constraint, online introspection, and replay consumption before the protected consequence executes.
 
+Hosted bootstrap now requires the protected release-token route for high-risk generic admissions. If the hosted route has no protected issuer and sender-confirmation source wired, protected high-risk requests fail closed with `protected-release-token-issuer-missing` instead of falling back to a compatibility admission. `/api/v1/health` and `/api/v1/ready` expose `genericAdmissionProtectedRoute` so operators can see that production-shared readiness remains blocked until issuer and sender-proof wiring are present.
+
 This is still not customer PEP activation by itself. A production integration must configure the issuer, token-introspection authority, replay store, sender-proof verifier, and non-bypassable downstream enforcement point.
 
 When an action is held for missing policy, evidence, amount, recipient, data scope, or authority shape, the admission response includes model-safe feedback. The feedback names fields and evidence kinds, not raw customer data or private policy internals. A safe retry must send a changed request; replaying the same request is not treated as model repair.

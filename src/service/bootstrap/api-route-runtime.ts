@@ -300,6 +300,9 @@ import {
   evaluateConsequenceSharedStoreProfile as evaluateConsequenceSharedStoreProfileState,
 } from './consequence-shared-store-profile.js';
 import {
+  evaluateGenericAdmissionProtectedRoute,
+} from '../generic-admission-protected-route.js';
+import {
   releaseRuntimeDurabilitySummary,
   resolveRuntimeProfile,
 } from './runtime-profile.js';
@@ -366,6 +369,16 @@ export async function createApiHttpRouteRuntime(
   const consequenceSharedStoreProfile = evaluateConsequenceSharedStoreProfileState({
     runtimeProfileId: runtimeProfile.id,
     productionStoragePath,
+  });
+  const genericAdmissionProtectedRoute = evaluateGenericAdmissionProtectedRoute({
+    runtimeProfileId: runtimeProfile.id,
+    requireProtectedReleaseTokenForHighRisk: true,
+    issuerConfigured: false,
+    senderConfirmationSource: 'none',
+    failClosedOnMissingIssuer: true,
+    shadowRecordsRawToken: false,
+    admissionOrShadowStoresRawToken: false,
+    rawTokenReturnedOnlyToCaller: true,
   });
   const {
     currentHostedAccount,
@@ -437,6 +450,7 @@ export async function createApiHttpRouteRuntime(
       evaluateConsequenceSharedStoreProfileState({
         runtimeProfileId: runtimeProfileId === runtimeProfile.id ? runtimeProfile.id : null,
       }),
+    genericAdmissionProtectedRoute,
     rlsActivationResult,
     accountAuthKeySources: {
       mfa: safeAccountAuthKeySource(accountMfaEncryptionKeySource),
@@ -814,6 +828,7 @@ export async function createApiHttpRouteRuntime(
         runtimeProfileDiagnostics,
         productionStoragePath,
         consequenceSharedStoreProfile,
+        genericAdmissionProtectedRoute,
         rlsActivationResult,
         pkiReady,
         releaseSigningProvider,

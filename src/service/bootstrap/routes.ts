@@ -42,6 +42,11 @@ import {
   createFileBackedShadowPolicySimulationReportStore,
 } from '../shadow-persistence-store.js';
 import { createFileBackedPolicyFoundryHostedWizardStateStore } from '../policy-foundry-hosted-wizard-state.js';
+import {
+  GENERIC_ADMISSION_PROTECTED_ROUTE_SPEC_VERSION,
+  evaluateGenericAdmissionProtectedRoute,
+  type GenericAdmissionProtectedRouteEvaluation,
+} from '../generic-admission-protected-route.js';
 import { installProductionSharedRequestGuard } from './production-shared-request-guard.js';
 import type { AppRuntime } from './runtime.js';
 
@@ -65,11 +70,39 @@ export function createPipelineRouteDeps<Packet>(runtime: AppRuntime<Packet>) {
   return runtime.services.httpRoutes.pipeline;
 }
 
+interface RuntimeSecurityWithGenericAdmissionProtectedRoute {
+  readonly genericAdmissionProtectedRoute?: GenericAdmissionProtectedRouteEvaluation;
+}
+
+function genericAdmissionProtectedRouteFor<Packet>(
+  runtime: AppRuntime<Packet>,
+): GenericAdmissionProtectedRouteEvaluation {
+  const security =
+    runtime.infra.security as RuntimeSecurityWithGenericAdmissionProtectedRoute | undefined;
+  const configured = security?.genericAdmissionProtectedRoute;
+  if (configured?.version === GENERIC_ADMISSION_PROTECTED_ROUTE_SPEC_VERSION) {
+    return configured;
+  }
+
+  return evaluateGenericAdmissionProtectedRoute({
+    runtimeProfileId: null,
+    requireProtectedReleaseTokenForHighRisk: true,
+    issuerConfigured: false,
+    senderConfirmationSource: 'none',
+    failClosedOnMissingIssuer: true,
+    shadowRecordsRawToken: false,
+    admissionOrShadowStoresRawToken: false,
+    rawTokenReturnedOnlyToCaller: true,
+  });
+}
+
 export function createGenericAdmissionRouteDeps<Packet>(
   runtime: AppRuntime<Packet>,
 ): GenericAdmissionRouteDeps {
   const shadowEventStore = createFileBackedShadowAdmissionEventStore();
   const agentLoopAbuseGuard = createServiceAgentLoopAbuseGuard();
+  const genericAdmissionProtectedRoute =
+    genericAdmissionProtectedRouteFor(runtime);
   return {
     currentTenant: runtime.services.httpRoutes.pipeline.currentTenant,
     evaluateAgentLoopAbuse: async ({ tenant, envelope, receivedAt }) =>
@@ -86,6 +119,8 @@ export function createGenericAdmissionRouteDeps<Packet>(
         }),
       });
     },
+    requireProtectedReleaseTokenForHighRisk:
+      genericAdmissionProtectedRoute.requireProtectedReleaseTokenForHighRisk,
   };
 }
 

@@ -36,7 +36,8 @@ export type GenericAdmissionProtectedRouteBlocker =
   | 'admission-or-shadow-raw-token-storage-risk'
   | 'raw-token-not-limited-to-immediate-caller'
   | 'protected-release-token-issuer-not-configured'
-  | 'sender-confirmation-source-not-configured';
+  | 'sender-confirmation-source-not-configured'
+  | 'production-issuer-boundary-not-external';
 
 export type GenericAdmissionProtectedRouteNoGoCondition =
   | 'hosted-route-issuer-missing'
@@ -61,6 +62,7 @@ export interface GenericAdmissionProtectedRouteEvaluation {
   readonly admissionOrShadowStoresRawToken: boolean;
   readonly rawTokenReturnedOnlyToCaller: boolean;
   readonly protectedRouteGuardReady: boolean;
+  readonly productionIssuerBoundaryReady: boolean;
   readonly readyForSelectedProfile: boolean;
   readonly productionReady: false;
   readonly activatesIssuer: boolean;
@@ -116,8 +118,10 @@ export function evaluateGenericAdmissionProtectedRoute(
     rawTokenReturnedOnlyToCaller;
   const issuerReady =
     input.issuerConfigured && senderConfirmationSource !== 'none';
+  const productionIssuerBoundaryReady =
+    !productionSharedSelected || issuerBoundary === 'external-kms-hsm';
   const readyForSelectedProfile = productionSharedSelected
-    ? protectedRouteGuardReady && issuerReady
+    ? protectedRouteGuardReady && issuerReady && productionIssuerBoundaryReady
     : true;
   const state: GenericAdmissionProtectedRouteState = productionSharedSelected
     ? readyForSelectedProfile
@@ -142,6 +146,9 @@ export function evaluateGenericAdmissionProtectedRoute(
   }
   if (productionSharedSelected && senderConfirmationSource === 'none') {
     blockers.push('sender-confirmation-source-not-configured');
+  }
+  if (productionSharedSelected && issuerBoundary !== 'external-kms-hsm') {
+    blockers.push('production-issuer-boundary-not-external');
   }
 
   const noGoConditions: GenericAdmissionProtectedRouteNoGoCondition[] = [
@@ -171,6 +178,7 @@ export function evaluateGenericAdmissionProtectedRoute(
     admissionOrShadowStoresRawToken,
     rawTokenReturnedOnlyToCaller,
     protectedRouteGuardReady,
+    productionIssuerBoundaryReady,
     readyForSelectedProfile,
     productionReady: false,
     activatesIssuer: input.issuerConfigured,
@@ -178,6 +186,6 @@ export function evaluateGenericAdmissionProtectedRoute(
     noGoConditions: unique(noGoConditions),
     requiredProofs: GENERIC_ADMISSION_PROTECTED_ROUTE_REQUIRED_PROOFS,
     limitation:
-      'This proves hosted route fail-closed configuration for protected high-risk generic admissions, not a live authorization server, customer PEP deployment, durable replay/introspection backend, or production deployment.',
+      'This proves hosted route fail-closed configuration for protected high-risk generic admissions, not a live authorization server, customer PEP deployment, external KMS/HSM signer, durable replay/introspection backend, or production deployment.',
   });
 }

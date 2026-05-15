@@ -5,10 +5,16 @@ import {
   issueGenericAdmissionProtectedReleaseToken,
   type GenericAdmissionEnvelope,
 } from '../src/consequence-admission/index.js';
-import { generateDpopKeyPair } from '../src/release-enforcement-plane/dpop.js';
+import {
+  createDpopProof,
+  generateDpopKeyPair,
+} from '../src/release-enforcement-plane/dpop.js';
 import { createReleaseTokenIssuer } from '../src/release-kernel/release-token.js';
 import { generateKeyPair } from '../src/signing/keys.js';
 import { registerGenericAdmissionRoutes } from '../src/service/http/routes/generic-admission-routes.js';
+import {
+  resolveHostedGenericAdmissionDpopSenderConfirmation,
+} from '../src/service/hosted-generic-admission-sender-confirmation.js';
 
 let passed = 0;
 
@@ -647,6 +653,152 @@ async function testProtectedReleaseTokenRequiredFailsClosedWithoutIssuer(): Prom
   equal(shadowRecords, 0, 'Generic admission route: missing protected token issuer is not shadow recorded');
 }
 
+async function testProtectedReleaseTokenIssuerUsesRouteResolvedDpopConfirmation(): Promise<void> {
+  const app = new Hono();
+  const issuer = releaseTokenIssuerFixture();
+  const dpop = await generateDpopKeyPair();
+  const routeUrl = 'https://attestor.test/api/v1/admissions';
+  const proof = await createDpopProof({
+    privateJwk: dpop.privateJwk,
+    publicJwk: dpop.publicJwk,
+    httpMethod: 'POST',
+    httpUri: routeUrl,
+    proofJti: 'dpop-generic-route-issuer-bridge',
+    issuedAt: new Date().toISOString(),
+  });
+  let resolvedThumbprint: string | null = null;
+  registerGenericAdmissionRoutes(app, {
+    currentTenant: () => ({
+      tenantId: 'tenant_route',
+      tenantName: 'Route Tenant',
+      authenticatedAt: '2026-05-01T18:00:00.000Z',
+      source: 'api_key',
+      planId: 'starter',
+      monthlyRunQuota: 100,
+    }),
+    resolveProtectedReleaseTokenConfirmation: async ({ context, receivedAt }) => {
+      const confirmation =
+        await resolveHostedGenericAdmissionDpopSenderConfirmation({
+          proofJwt: context.req.header('DPoP') ?? null,
+          httpMethod: context.req.method,
+          httpUri: context.req.url,
+          now: receivedAt,
+        });
+      resolvedThumbprint = confirmation.confirmation?.jkt ?? null;
+      return confirmation.confirmation;
+    },
+    issueProtectedReleaseToken: ({ envelope, receivedAt, senderConfirmation }) =>
+      issueGenericAdmissionProtectedReleaseToken({
+        envelope,
+        issuer,
+        confirmation: senderConfirmation ?? null,
+        issuedAt: receivedAt,
+      }),
+  });
+  const response = await app.request(routeUrl, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      DPoP: proof.proofJwt,
+    },
+    body: JSON.stringify(validAdmissionPayload()),
+  });
+  const body = await response.json() as {
+    protectedReleaseToken: {
+      senderConstrained: boolean;
+      rawReleaseTokenStored: boolean;
+    };
+    protectedReleaseTokenAuthorization: {
+      token: string;
+      storeRawTokenInAdmissionOrShadow: boolean;
+    };
+  };
+
+  equal(response.status, 200, 'Generic admission route: DPoP-confirmed issuer returns 200');
+  equal(
+    resolvedThumbprint,
+    dpop.publicKeyThumbprint,
+    'Generic admission route: DPoP proof resolver returns the token cnf jkt',
+  );
+  equal(
+    body.protectedReleaseToken.senderConstrained,
+    true,
+    'Generic admission route: issued route token is sender-constrained',
+  );
+  equal(
+    body.protectedReleaseToken.rawReleaseTokenStored,
+    false,
+    'Generic admission route: sanitized summary stores no raw token',
+  );
+  equal(
+    JSON.stringify(body).includes(proof.proofJwt),
+    false,
+    'Generic admission route: response excludes raw DPoP proof JWT',
+  );
+  equal(
+    body.protectedReleaseTokenAuthorization.storeRawTokenInAdmissionOrShadow,
+    false,
+    'Generic admission route: DPoP-confirmed authorization remains caller-only material',
+  );
+}
+
+async function testProtectedReleaseTokenIssuerFailsClosedWithoutDpopConfirmation(): Promise<void> {
+  const app = new Hono();
+  const issuer = releaseTokenIssuerFixture();
+  let shadowRecords = 0;
+  registerGenericAdmissionRoutes(app, {
+    currentTenant: () => ({
+      tenantId: 'tenant_route',
+      tenantName: 'Route Tenant',
+      authenticatedAt: '2026-05-01T18:00:00.000Z',
+      source: 'api_key',
+      planId: 'starter',
+      monthlyRunQuota: 100,
+    }),
+    resolveProtectedReleaseTokenConfirmation: async ({ context, receivedAt }) => {
+      const confirmation =
+        await resolveHostedGenericAdmissionDpopSenderConfirmation({
+          proofJwt: context.req.header('DPoP') ?? null,
+          httpMethod: context.req.method,
+          httpUri: context.req.url,
+          now: receivedAt,
+        });
+      return confirmation.confirmation;
+    },
+    issueProtectedReleaseToken: ({ envelope, receivedAt, senderConfirmation }) =>
+      issueGenericAdmissionProtectedReleaseToken({
+        envelope,
+        issuer,
+        confirmation: senderConfirmation ?? null,
+        issuedAt: receivedAt,
+      }),
+    recordShadowAdmission: () => {
+      shadowRecords += 1;
+    },
+  });
+  const response = await app.request('https://attestor.test/api/v1/admissions', {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify(validAdmissionPayload()),
+  });
+  const body = await response.json() as {
+    decision: string;
+    failClosed: boolean;
+    reasonCodes: readonly string[];
+  };
+
+  equal(response.status, 503, 'Generic admission route: missing DPoP confirmation returns 503');
+  equal(body.decision, 'block', 'Generic admission route: missing DPoP confirmation blocks');
+  equal(body.failClosed, true, 'Generic admission route: missing DPoP confirmation fails closed');
+  ok(
+    body.reasonCodes.includes('protected-release-token-sender-confirmation-required'),
+    'Generic admission route: missing DPoP confirmation reason is explicit',
+  );
+  equal(shadowRecords, 0, 'Generic admission route: missing DPoP confirmation is not shadow recorded');
+}
+
 await testEvaluationPlansRejectEnforcingModes();
 await testPostAdmissionRouteReturnsEnvelope();
 await testTenantMismatchFailsClosedBeforeShadowRecording();
@@ -657,5 +809,7 @@ await testPostAdmissionRouteCarriesRetryAttemptBinding();
 await testLoopGuardThrottlesRetryAttemptBeyondBudget();
 await testProtectedReleaseTokenIssuerReturnsAuthorizationWithoutRecordingRawToken();
 await testProtectedReleaseTokenRequiredFailsClosedWithoutIssuer();
+await testProtectedReleaseTokenIssuerUsesRouteResolvedDpopConfirmation();
+await testProtectedReleaseTokenIssuerFailsClosedWithoutDpopConfirmation();
 
 console.log(`Generic admission route tests: ${passed} passed, 0 failed`);

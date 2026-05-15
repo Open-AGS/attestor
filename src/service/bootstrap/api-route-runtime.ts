@@ -373,8 +373,11 @@ export async function createApiHttpRouteRuntime(
   const genericAdmissionProtectedRoute = evaluateGenericAdmissionProtectedRoute({
     runtimeProfileId: runtimeProfile.id,
     requireProtectedReleaseTokenForHighRisk: true,
-    issuerConfigured: false,
-    senderConfirmationSource: 'none',
+    issuerConfigured: true,
+    issuerBoundary: releaseSigningProvider.signingBoundary === 'external-kms-hsm'
+      ? 'external-kms-hsm'
+      : 'runtime-release-token-issuer',
+    senderConfirmationSource: 'dpop-jkt',
     failClosedOnMissingIssuer: true,
     shadowRecordsRawToken: false,
     admissionOrShadowStoresRawToken: false,
@@ -843,6 +846,9 @@ export async function createApiHttpRouteRuntime(
       releasePolicyControl: releasePolicyControlRouteDeps,
       pipeline: pipelineRouteDeps,
       webhook: webhookRouteDeps,
+    },
+    extraServices: {
+      genericAdmissionProtectedIssuer: apiReleaseTokenIssuer,
     },
   });
 }

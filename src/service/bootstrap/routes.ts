@@ -1,7 +1,11 @@
 import type { Hono } from 'hono';
 import {
   createShadowAdmissionEvent,
+  issueGenericAdmissionProtectedReleaseToken,
 } from '../../consequence-admission/index.js';
+import type {
+  ReleaseTokenIssuer,
+} from '../../release-layer/index.js';
 import { createServiceAgentLoopAbuseGuard } from '../agent-loop-abuse-guard.js';
 import {
   projectHostedBillingEntitlement,
@@ -47,6 +51,9 @@ import {
   evaluateGenericAdmissionProtectedRoute,
   type GenericAdmissionProtectedRouteEvaluation,
 } from '../generic-admission-protected-route.js';
+import {
+  resolveHostedGenericAdmissionDpopSenderConfirmation,
+} from '../hosted-generic-admission-sender-confirmation.js';
 import { installProductionSharedRequestGuard } from './production-shared-request-guard.js';
 import type { AppRuntime } from './runtime.js';
 
@@ -74,6 +81,10 @@ interface RuntimeSecurityWithGenericAdmissionProtectedRoute {
   readonly genericAdmissionProtectedRoute?: GenericAdmissionProtectedRouteEvaluation;
 }
 
+interface RuntimeServicesWithGenericAdmissionProtectedIssuer {
+  readonly genericAdmissionProtectedIssuer?: ReleaseTokenIssuer;
+}
+
 function genericAdmissionProtectedRouteFor<Packet>(
   runtime: AppRuntime<Packet>,
 ): GenericAdmissionProtectedRouteEvaluation {
@@ -96,6 +107,14 @@ function genericAdmissionProtectedRouteFor<Packet>(
   });
 }
 
+function genericAdmissionProtectedIssuerFor<Packet>(
+  runtime: AppRuntime<Packet>,
+): ReleaseTokenIssuer | null {
+  const services =
+    runtime.services as RuntimeServicesWithGenericAdmissionProtectedIssuer;
+  return services.genericAdmissionProtectedIssuer ?? null;
+}
+
 export function createGenericAdmissionRouteDeps<Packet>(
   runtime: AppRuntime<Packet>,
 ): GenericAdmissionRouteDeps {
@@ -103,6 +122,8 @@ export function createGenericAdmissionRouteDeps<Packet>(
   const agentLoopAbuseGuard = createServiceAgentLoopAbuseGuard();
   const genericAdmissionProtectedRoute =
     genericAdmissionProtectedRouteFor(runtime);
+  const genericAdmissionProtectedIssuer =
+    genericAdmissionProtectedIssuerFor(runtime);
   return {
     currentTenant: runtime.services.httpRoutes.pipeline.currentTenant,
     evaluateAgentLoopAbuse: async ({ tenant, envelope, receivedAt }) =>
@@ -119,6 +140,27 @@ export function createGenericAdmissionRouteDeps<Packet>(
         }),
       });
     },
+    ...(genericAdmissionProtectedIssuer
+      ? {
+          resolveProtectedReleaseTokenConfirmation: async ({ context, receivedAt }) => {
+            const confirmation =
+              await resolveHostedGenericAdmissionDpopSenderConfirmation({
+                proofJwt: context.req.header('DPoP') ?? null,
+                httpMethod: context.req.method,
+                httpUri: context.req.url,
+                now: receivedAt,
+              });
+            return confirmation.confirmation;
+          },
+          issueProtectedReleaseToken: ({ envelope, receivedAt, senderConfirmation }) =>
+            issueGenericAdmissionProtectedReleaseToken({
+              envelope,
+              issuer: genericAdmissionProtectedIssuer,
+              confirmation: senderConfirmation ?? null,
+              issuedAt: receivedAt,
+            }),
+        }
+      : {}),
     requireProtectedReleaseTokenForHighRisk:
       genericAdmissionProtectedRoute.requireProtectedReleaseTokenForHighRisk,
   };

@@ -8,6 +8,9 @@ import {
   type GenericAdmissionProtectedReleaseTokenIssueResult,
   type GenericAdmissionEnvelope,
 } from '../../../consequence-admission/index.js';
+import type {
+  ReleaseTokenConfirmationClaim,
+} from '../../../release-layer/index.js';
 import { resolvePlanGenericAdmissionMode } from '../../plan-catalog.js';
 import type { TenantContext } from '../../tenant-isolation.js';
 
@@ -23,10 +26,18 @@ export interface GenericAdmissionRouteDeps {
     readonly receivedAt: string;
   }): ConsequenceAdmissionAgentLoopAbuseGuardDecision | Promise<ConsequenceAdmissionAgentLoopAbuseGuardDecision>;
   issueProtectedReleaseToken?(input: {
+    readonly context: Context;
     readonly tenant: TenantContext;
     readonly envelope: GenericAdmissionEnvelope;
     readonly receivedAt: string;
+    readonly senderConfirmation?: ReleaseTokenConfirmationClaim | null;
   }): GenericAdmissionProtectedReleaseTokenIssueResult | Promise<GenericAdmissionProtectedReleaseTokenIssueResult>;
+  resolveProtectedReleaseTokenConfirmation?(input: {
+    readonly context: Context;
+    readonly tenant: TenantContext;
+    readonly envelope: GenericAdmissionEnvelope;
+    readonly receivedAt: string;
+  }): ReleaseTokenConfirmationClaim | null | Promise<ReleaseTokenConfirmationClaim | null>;
   readonly requireProtectedReleaseTokenForHighRisk?: boolean;
 }
 
@@ -160,10 +171,20 @@ export function registerGenericAdmissionRoutes(
       }) = envelope;
       if (protectedReleaseTokenRequirement.required && deps.issueProtectedReleaseToken) {
         try {
+          const receivedAt = new Date().toISOString();
+          const senderConfirmation =
+            await deps.resolveProtectedReleaseTokenConfirmation?.({
+              context: c,
+              tenant,
+              envelope,
+              receivedAt,
+            }) ?? null;
           const issued = await deps.issueProtectedReleaseToken({
+            context: c,
             tenant,
             envelope,
-            receivedAt: new Date().toISOString(),
+            receivedAt,
+            senderConfirmation,
           });
           envelopeForShadow = issued.envelope;
           responseEnvelope = {

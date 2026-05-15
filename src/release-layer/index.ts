@@ -49,6 +49,7 @@ export type ReleaseDecision = model.ReleaseDecision;
 export type ReleaseEvidencePolicyContext = model.ReleaseEvidencePolicyContext;
 export type ReleasePolicyProvenance = model.ReleasePolicyProvenance;
 export type ReleasePolicyProvenanceSource = model.ReleasePolicyProvenanceSource;
+export type ReleaseTokenConfirmationClaim = model.ReleaseTokenConfirmationClaim;
 export type ReleaseDecisionLogAppendInput = decisionLog.ReleaseDecisionLogAppendInput;
 export type ReleaseDecisionLogEntry = decisionLog.ReleaseDecisionLogEntry;
 export type ReleaseDecisionLogMetadata = decisionLog.ReleaseDecisionLogMetadata;

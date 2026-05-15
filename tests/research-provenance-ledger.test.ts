@@ -485,13 +485,43 @@ function testLedgerIndexesAuditRemediationClosure(): void {
   );
   includes(
     content,
-    'without an issuer, the route fails closed instead of returning a compatibility admission',
-    'Research provenance ledger: hosted generic protected route guard behavior is recorded',
+    'route readiness remains blocked while the issuer boundary is runtime-local',
+    'Research provenance ledger: hosted generic protected route guard issuer-boundary behavior is recorded',
   );
   includes(
     content,
-    'This is not a live authorization server',
-    'Research provenance ledger: hosted generic protected route guard live auth-server non-claim is explicit',
+    'The hosted route can issue DPoP-confirmed protected tokens in non-production profiles',
+    'Research provenance ledger: hosted generic protected route guard non-production issuance boundary is recorded',
+  );
+  includes(
+    content,
+    '### 34. Hosted Generic Admission DPoP Issuer Bridge',
+    'Research provenance ledger: hosted generic DPoP issuer bridge entry is present',
+  );
+  includes(
+    content,
+    'src/service/hosted-generic-admission-sender-confirmation.ts',
+    'Research provenance ledger: hosted generic DPoP issuer bridge code evidence is indexed',
+  );
+  includes(
+    content,
+    'tests/hosted-generic-admission-sender-confirmation.test.ts',
+    'Research provenance ledger: hosted generic DPoP issuer bridge test evidence is indexed',
+  );
+  includes(
+    content,
+    'OAuth DPoP RFC 9449 defines the `DPoP` HTTP header',
+    'Research provenance ledger: hosted generic DPoP issuer bridge DPoP anchor is recorded',
+  );
+  includes(
+    content,
+    'missing or invalid proof fails closed before shadow recording',
+    'Research provenance ledger: hosted generic DPoP issuer bridge fail-closed behavior is recorded',
+  );
+  includes(
+    content,
+    'not durable DPoP replay consumption for the token-request proof',
+    'Research provenance ledger: hosted generic DPoP issuer bridge replay limitation is explicit',
   );
 }
 

@@ -32,6 +32,7 @@ function readProjectFile(...segments: string[]): string {
 
 function runtimeWith(
   genericAdmissionProtectedRoute?: GenericAdmissionProtectedRouteEvaluation,
+  genericAdmissionProtectedIssuer?: unknown,
 ): AppRuntime<unknown> {
   return {
     registries: {},
@@ -46,6 +47,7 @@ function runtimeWith(
     },
     stores: {},
     services: {
+      ...(genericAdmissionProtectedIssuer ? { genericAdmissionProtectedIssuer } : {}),
       httpRoutes: {
         pipeline: {
           currentTenant: () => ({
@@ -109,6 +111,11 @@ function testProductionSharedBlocksUntilIssuerAndSenderProofAreConfigured(): voi
     'sender-confirmation-source-not-configured',
     'Generic protected route: missing sender proof source blocker is explicit',
   );
+  includes(
+    proof.blockers,
+    'production-issuer-boundary-not-external',
+    'Generic protected route: production-shared requires an external issuer boundary',
+  );
   equal(
     proof.productionReady,
     false,
@@ -143,9 +150,9 @@ function testCompatibilityModeIsAProductionSharedBlocker(): void {
   );
 }
 
-function testConfiguredIssuerAndSenderProofClearSelectedRouteReadiness(): void {
+function testConfiguredRuntimeIssuerAndSenderProofClearEvaluationReadiness(): void {
   const proof = evaluateGenericAdmissionProtectedRoute({
-    runtimeProfileId: 'production-shared',
+    runtimeProfileId: 'single-node-durable',
     requireProtectedReleaseTokenForHighRisk: true,
     issuerConfigured: true,
     issuerBoundary: 'runtime-release-token-issuer',
@@ -159,12 +166,12 @@ function testConfiguredIssuerAndSenderProofClearSelectedRouteReadiness(): void {
   equal(
     proof.readyForSelectedProfile,
     true,
-    'Generic protected route: issuer plus sender proof source clears route readiness',
+    'Generic protected route: runtime issuer plus sender proof source clears non-production route readiness',
   );
   equal(
     proof.state,
-    'hosted-protected-route-ready',
-    'Generic protected route: state records hosted protected route readiness',
+    'evaluation-protected-route-guarded',
+    'Generic protected route: state records non-production guarded route readiness',
   );
   equal(
     proof.blockers.length,
@@ -183,6 +190,47 @@ function testConfiguredIssuerAndSenderProofClearSelectedRouteReadiness(): void {
   );
 }
 
+function testProductionSharedNeedsExternalIssuerBoundary(): void {
+  const runtimeIssuer = evaluateGenericAdmissionProtectedRoute({
+    runtimeProfileId: 'production-shared',
+    requireProtectedReleaseTokenForHighRisk: true,
+    issuerConfigured: true,
+    issuerBoundary: 'runtime-release-token-issuer',
+    senderConfirmationSource: 'dpop-jkt',
+    failClosedOnMissingIssuer: true,
+    shadowRecordsRawToken: false,
+    admissionOrShadowStoresRawToken: false,
+    rawTokenReturnedOnlyToCaller: true,
+  });
+  const externalIssuer = evaluateGenericAdmissionProtectedRoute({
+    runtimeProfileId: 'production-shared',
+    requireProtectedReleaseTokenForHighRisk: true,
+    issuerConfigured: true,
+    issuerBoundary: 'external-kms-hsm',
+    senderConfirmationSource: 'dpop-jkt',
+    failClosedOnMissingIssuer: true,
+    shadowRecordsRawToken: false,
+    admissionOrShadowStoresRawToken: false,
+    rawTokenReturnedOnlyToCaller: true,
+  });
+
+  equal(
+    runtimeIssuer.readyForSelectedProfile,
+    false,
+    'Generic protected route: production-shared stays blocked on runtime-local issuer boundary',
+  );
+  includes(
+    runtimeIssuer.blockers,
+    'production-issuer-boundary-not-external',
+    'Generic protected route: runtime-local issuer blocker is explicit',
+  );
+  equal(
+    externalIssuer.readyForSelectedProfile,
+    true,
+    'Generic protected route: production-shared route readiness requires external issuer boundary',
+  );
+}
+
 function testHostedBootstrapRequiresProtectedIssuerByDefault(): void {
   const deps = createGenericAdmissionRouteDeps(runtimeWith());
 
@@ -190,6 +238,28 @@ function testHostedBootstrapRequiresProtectedIssuerByDefault(): void {
     deps.requireProtectedReleaseTokenForHighRisk,
     true,
     'Generic protected route: hosted bootstrap requires protected token for high-risk admissions by default',
+  );
+}
+
+function testHostedBootstrapWiresIssuerBridgeWhenRuntimeProvidesIssuer(): void {
+  const deps = createGenericAdmissionRouteDeps(runtimeWith(undefined, {
+    issue: async () => {
+      throw new Error('issuer fixture should not be called by wiring test');
+    },
+    exportVerificationKey: async () => {
+      throw new Error('issuer fixture should not export by wiring test');
+    },
+  }));
+
+  equal(
+    typeof deps.resolveProtectedReleaseTokenConfirmation,
+    'function',
+    'Generic protected route: hosted bootstrap wires DPoP sender-confirmation resolver when issuer is present',
+  );
+  equal(
+    typeof deps.issueProtectedReleaseToken,
+    'function',
+    'Generic protected route: hosted bootstrap wires protected release-token issuer when runtime provides issuer',
   );
 }
 
@@ -201,6 +271,18 @@ function testHostedBootstrapAndReadinessExposeRouteProof(): void {
   ok(
     /requireProtectedReleaseTokenForHighRisk:\s*true/u.test(apiRouteRuntime),
     'Generic protected route: API runtime sets the hosted protected-token requirement',
+  );
+  ok(
+    /issuerConfigured:\s*true/u.test(apiRouteRuntime),
+    'Generic protected route: API runtime records the active hosted issuer bridge',
+  );
+  ok(
+    /senderConfirmationSource:\s*'dpop-jkt'/u.test(apiRouteRuntime),
+    'Generic protected route: API runtime records the DPoP sender-confirmation source',
+  );
+  ok(
+    /genericAdmissionProtectedIssuer:\s*apiReleaseTokenIssuer/u.test(apiRouteRuntime),
+    'Generic protected route: API runtime passes the release-token issuer as a private service',
   );
   ok(
     /genericAdmissionProtectedRoute,/u.test(apiRouteRuntime),
@@ -218,8 +300,10 @@ function testHostedBootstrapAndReadinessExposeRouteProof(): void {
 
 testProductionSharedBlocksUntilIssuerAndSenderProofAreConfigured();
 testCompatibilityModeIsAProductionSharedBlocker();
-testConfiguredIssuerAndSenderProofClearSelectedRouteReadiness();
+testConfiguredRuntimeIssuerAndSenderProofClearEvaluationReadiness();
+testProductionSharedNeedsExternalIssuerBoundary();
 testHostedBootstrapRequiresProtectedIssuerByDefault();
+testHostedBootstrapWiresIssuerBridgeWhenRuntimeProvidesIssuer();
 testHostedBootstrapAndReadinessExposeRouteProof();
 
 console.log(`Generic admission protected route tests: ${passed} passed, 0 failed`);

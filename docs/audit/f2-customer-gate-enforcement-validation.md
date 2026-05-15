@@ -51,6 +51,7 @@ customer-gate helper alone: partial / honor-system risk remains
 downstream contract helper: fail-closed structural verifier, not cryptographic
 release-enforcement plane: signed-token enforcement pattern exists
 generic consequence admission path: not proven to auto-issue protected tokens
+protected enforcement profile: routes high-risk/customer-sensitive paths to the release-enforcement plane
 ```
 
 ## Corrected Finding
@@ -83,12 +84,20 @@ closures:
 
 Current repo evidence supports `partial`, not `fixed`.
 
+The protected customer enforcement profile narrows the remaining gap by making
+the adoption rule machine-readable: R3/R4 and other production-sensitive
+consequences must use the release-enforcement plane, require sender-constrained
+presentation, require online introspection, require replay consumption, and
+forbid bearer-only/helper-only protected execution. That profile is a contract
+selector, not token issuance or customer-runtime activation by itself.
+
 ## Tests
 
 Focused test:
 
 ```bash
 npm run test:f2-customer-gate-validation
+npm run test:consequence-admission-protected-enforcement-profile
 ```
 
 Related tests:

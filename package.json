@@ -85,7 +85,7 @@
     "test:evaluation-packet-docs": "tsx tests/evaluation-packet-docs.test.ts",
     "test:evaluation-release-notes": "tsx tests/evaluation-release-notes.test.ts",
     "test:security-baseline-docs": "tsx tests/security-baseline-docs.test.ts",
-    "test:agent-guidance-contract": "tsx tests/agent-guidance-contract.test.ts",
+    "test:public-agent-surface-boundary": "tsx tests/public-agent-surface-boundary.test.ts",
     "test:research-provenance-ledger": "tsx tests/research-provenance-ledger.test.ts",
     "test:audit-remediation-tracker": "tsx tests/audit-remediation-tracker.test.ts",
     "test:final-claim-alignment-validation": "tsx tests/final-claim-alignment-validation.test.ts",

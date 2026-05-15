@@ -38,13 +38,13 @@ function testReadmeHasAFirstImpressionPath(): void {
   const readme = readProjectFile('README.md');
 
   includes(readme, 'AI Action Control Plane.', 'README: opens with the AI Action Control Plane category');
-  includes(readme, 'Attestor decides when AI intent is allowed to become business consequence.', 'README: opens with the canonical control-plane sentence');
+  includes(readme, 'Attestor decides whether a proposed AI action can become a real business consequence.', 'README: opens with the canonical control-plane sentence');
   includes(readme, 'The trust boundary is not the model response. The trust boundary is the action that reaches a real system.', 'README: frames the risk before architecture');
   includes(readme, 'Attestor sits at that boundary.', 'README: explains placement before architecture');
   includes(readme, 'Start in shadow mode. See what your AI agents would have done before you let them act.', 'README: makes shadow mode visible immediately');
-  includes(readme, 'It is the control plane before a proposed AI action becomes a real-world consequence.', 'README: keeps the control-plane framing cold and direct');
+  includes(readme, 'Attestor is the control plane between that intent and the system that can actually change state.', 'README: keeps the control-plane framing cold and direct');
   includes(readme, 'If policy, authority, evidence, freshness, scope, or verification cannot close, the consequence does not proceed silently.', 'README: explains the fail-closed gateway result');
-  includes(readme, 'Attestor does not replace the model, agent runtime, wallet, custody platform, orchestration layer, or downstream system.', 'README: keeps replacement non-claim near the top');
+  includes(readme, 'It does not replace the model, agent runtime, wallet, custody platform, orchestration layer, or downstream system.', 'README: keeps replacement non-claim near the top');
   includes(readme, '## Current Status', 'README: exposes the evaluation boundary near the top');
   includes(readme, 'not a finished public SaaS', 'README: avoids public SaaS overclaim');
   includes(readme, '## What Attestor Does', 'README: names the operating model before architecture');

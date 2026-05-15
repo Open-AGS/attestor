@@ -5,6 +5,8 @@ dist/
 .attestor/
 .attestor-financial/
 .claude/
+.github/copilot-instructions.md
+docs/ai/
 art/
 AGENTS.md
 CLAUDE.md

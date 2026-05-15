@@ -4,22 +4,24 @@
 
 **AI Action Control Plane.**
 
-Your AI agent is about to issue a $50k refund to the wrong customer. Another one read a changed supplier bank-account instruction and wants to pay it. A third is preparing a wallet transaction. Attestor sits before those requests reach systems that write, send, file, settle, grant access, release data, or execute.
+Your AI agent is about to issue a $50k refund to the wrong customer. Another has read a changed supplier bank-account instruction and is ready to pay it. A third is preparing a wallet transaction.
 
-Attestor decides when AI intent is allowed to become business consequence.
+Attestor is the control plane between that intent and the system that can actually change state.
 
-Models propose actions. Systems change state. Attestor controls the consequence boundary between them. Start in shadow mode. See what your AI agents would have done before you let them act.
+Attestor decides whether a proposed AI action can become a real business consequence.
+
+Models propose actions. Systems change state. Attestor controls the consequence boundary between them: write, send, file, settle, grant access, release data, or execute. Start in shadow mode. See what your AI agents would have done before you let them act.
 
 The trust boundary is not the model response. The trust boundary is the action that reaches a real system.
 
-Attestor sits at that boundary. It admits, narrows, routes to review, or blocks proposed consequences before downstream execution. Attestor does not replace the model, agent runtime, wallet, custody platform, orchestration layer, or downstream system. It is the control plane before a proposed AI action becomes a real-world consequence.
+Attestor sits at that boundary. It admits, narrows, routes to review, or blocks proposed consequences before downstream execution. It does not replace the model, agent runtime, wallet, custody platform, orchestration layer, or downstream system.
 
 > [!NOTE]
 > This repository is source-available under Business Source License 1.1. Non-production use is allowed. Production use requires a commercial license until the Change Date in [LICENSE](LICENSE).
 
 ## Current Status
 
-Attestor is an **evaluation release**: reviewer-runnable, CI-backed, and useful for technical evaluation. It demonstrates the AI Action Control Plane model, consequence-admission proof artifacts, consequence-pack surfaces, programmable-money extension surfaces, hosted account and billing surfaces, and current fail-closed boundaries.
+Attestor is an **evaluation release**: reviewer-runnable, CI-backed, and useful for technical evaluation. It demonstrates the AI Action Control Plane model, consequence-admission proof artifacts, consequence packs, programmable-money extension surfaces, hosted account and billing surfaces, and current fail-closed boundaries.
 
 It is not a finished public SaaS, a production-use guarantee, a completed customer-operated deployment, or a substitute for an external security audit.
 
@@ -59,7 +61,7 @@ Attestor can start in `observe` or `warn` mode. It receives proposed AI actions,
 observe -> warn -> review -> enforce
 ```
 
-That is the runtime adoption ladder. The promotion workflow is longer because policy needs evidence, review, and proof:
+That is the runtime mode ladder. The policy promotion path is longer because enforcement needs evidence, approval, and proof:
 
 ```text
 observe -> recommend -> simulate -> approve -> enforce -> prove
@@ -69,15 +71,15 @@ Shadow mode discovers the real action surface first: which high-risk AI actions 
 
 Policy Foundry is the onboarding layer for this path. It turns shadow traffic into observed-action policy mining, not model training, not automatic policy writing, and not a production-readiness claim. It identifies policy candidates, produces a red-team fixture bundle, runs candidate-specific local adversarial replay reports through the local adversarial replay executor, can include live downstream replay evidence in live downstream replay reports, keeps promotion approval-required, records reviewed outcome feedback, prepares review handoff material, and emits drift/policy-debt findings.
 
-The hosted onboarding workflow contract adds billing-entitlement review material, commercial-boundary review material, hosted review surface output, hosted UI flow output, persistent hosted wizard state, and hosted wizard storage readiness gating. The path where customers self-attest readiness controls is not allowed.
+The hosted onboarding workflow adds billing-entitlement review material, commercial-boundary review material, hosted review surface output, hosted UI flow output, persistent hosted wizard state, and hosted wizard storage readiness gating. Customers cannot self-attest readiness controls.
 
 Safety boundary: hosted onboarding returns review material only. It does not store raw manifest payloads, issue credentials, apply patches, deploy infrastructure or a gateway, execute production traffic, activate enforcement, or prove production readiness. Rendered packets can include next steps such as `add-shadow-capture`, but `applies patches: false` is the default.
 
-For local browser QA before deployment, run `npm run preview:policy-foundry-hosted-ui` and open the printed localhost URL. The preview renders blocked and ready hosted review states from safe fixtures only; it is not a hosted deployment, credential flow, enforcement activation, or production-readiness proof.
+For local browser QA, run `npm run preview:policy-foundry-hosted-ui` and open the printed localhost URL. The preview renders blocked and ready hosted review states from safe fixtures only.
 
 For an already deployed hosted runtime, the opt-in Policy Foundry production smoke probe checks health, readiness, hosted workflow rendering, hosted HTML rendering, passing live replay evidence, and failed replay blocking with secret-safe output.
 
-The failure-mode registry turns known AI-action failure modes into controls before business action. Untrusted content, poisoned tool results, fake approvals, stale policy, tenant or recipient boundary mistakes, scope explosion, review fatigue, drift, no-go holds, and missing replay evidence become explicit control, evidence, authority, audit, and replay checks.
+The failure-mode registry turns known AI-action failure modes into controls before business action. Untrusted content, poisoned tool results, fake approvals, stale policy, tenant or recipient boundary mistakes, scope explosion, review fatigue, drift, no-go holds, and missing replay evidence become explicit checks.
 
 The current generic admission route implements the first control ladder for this path. Recommendation, simulation, and reporting surfaces build on top of that ladder so enforcement can be approved before a workflow is asked to stop.
 

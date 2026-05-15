@@ -20,7 +20,7 @@ AI Action Control Plane
 Canonical sentence:
 
 ```text
-Attestor decides when AI intent is allowed to become business consequence.
+Attestor decides whether a proposed AI action can become a real business consequence.
 ```
 
 This is stronger than using `gateway` or `authorization layer` as the primary

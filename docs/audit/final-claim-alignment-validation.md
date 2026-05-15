@@ -25,7 +25,7 @@ in the operator response after GitHub checks and merge.
 The public-facing language must keep these claims true:
 
 - Attestor is an AI Action Control Plane.
-- Attestor decides when AI intent is allowed to become business consequence.
+- Attestor decides whether a proposed AI action can become a real business consequence.
 - The current release is an evaluation release.
 - The repository is not a production-use guarantee.
 - The repository is not a substitute for an external security audit.

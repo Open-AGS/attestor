@@ -29,7 +29,7 @@ function testTopLevelPositioningStaysAligned(): void {
   const packaging = readProjectFile('docs', '01-overview', 'product-packaging.md');
   const useCases = readProjectFile('docs', '01-overview', 'what-you-can-do.md');
 
-  includes(readme, 'Attestor decides when AI intent is allowed to become business consequence.', 'Product docs: README keeps AI Action Control Plane framing');
+  includes(readme, 'Attestor decides whether a proposed AI action can become a real business consequence.', 'Product docs: README keeps AI Action Control Plane framing');
   includes(readme, 'Start in shadow mode. See what your AI agents would have done before you let them act.', 'Product docs: README makes shadow mode the adoption wedge');
   includes(readme, 'observe -> recommend -> simulate -> approve -> enforce -> prove', 'Product docs: README keeps the shadow-to-enforcement path');
   includes(readme, 'Attestor can start in `observe` or `warn` mode.', 'Product docs: README makes non-blocking adoption concrete');

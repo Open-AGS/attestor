@@ -219,7 +219,7 @@ function testReadmeNamesPolicyFoundryWithoutOverclaiming(): void {
   );
   includes(
     readme,
-    'customers self-attest readiness controls',
+    'Customers cannot self-attest readiness controls',
     'README: readiness evidence cannot be self-attested',
   );
   includes(
@@ -254,7 +254,7 @@ function testReadmeNamesPolicyFoundryWithoutOverclaiming(): void {
   );
   includes(
     readme,
-    'hosted onboarding workflow contract',
+    'hosted onboarding workflow',
     'README: hosted onboarding workflow contract is named without UI overclaim',
   );
   includes(
@@ -284,8 +284,8 @@ function testReadmeNamesPolicyFoundryWithoutOverclaiming(): void {
   );
   includes(
     readme,
-    'not a hosted deployment, credential flow, enforcement activation, or',
-    'README: local browser QA preview limitation is explicit',
+    'safe fixtures only',
+    'README: local browser QA preview limitation is explicit without repeating the full safety boundary',
   );
   includes(
     readme,

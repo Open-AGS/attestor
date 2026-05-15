@@ -24,7 +24,7 @@ function testReadmePublicClaimBoundary(): void {
   includes(readme, '**AI Action Control Plane.**', 'Final claim alignment: README keeps primary category');
   includes(
     readme,
-    'Attestor decides when AI intent is allowed to become business consequence.',
+    'Attestor decides whether a proposed AI action can become a real business consequence.',
     'Final claim alignment: README keeps core consequence sentence',
   );
   includes(readme, 'evaluation release', 'Final claim alignment: README keeps evaluation-release status');

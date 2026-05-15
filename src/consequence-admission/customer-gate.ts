@@ -7,6 +7,8 @@ import {
 import type {
   ReleaseTokenClaims,
 } from '../release-kernel/object-model.js';
+import type { OnlineReleaseVerification } from '../release-enforcement-plane/online-verifier.js';
+import type { ReleasePresentationMode } from '../release-enforcement-plane/types.js';
 import type {
   ConsequenceAdmissionConstraint,
   ConsequenceAdmissionDecision,
@@ -18,6 +20,8 @@ export const CONSEQUENCE_ADMISSION_CUSTOMER_GATE_VERSION =
   'attestor.consequence-admission-customer-gate.v1';
 export const CONSEQUENCE_ADMISSION_CUSTOMER_GATE_SIGNED_BEARER_VERSION =
   'attestor.consequence-admission-customer-gate-signed-bearer.v1';
+export const CONSEQUENCE_ADMISSION_CUSTOMER_GATE_RELEASE_ENFORCEMENT_VERSION =
+  'attestor.consequence-admission-customer-gate-release-enforcement.v1';
 
 export type ConsequenceAdmissionCustomerGateOutcome = 'proceed' | 'hold';
 export type ConsequenceAdmissionCustomerGateSignedBearerFailureReason =
@@ -30,6 +34,17 @@ export type ConsequenceAdmissionCustomerGateSignedBearerFailureReason =
   | 'decision-not-accepted'
   | 'introspection-required'
   | 'sender-constrained-token-unsupported';
+export type ConsequenceAdmissionCustomerGateReleaseEnforcementFailureReason =
+  | 'base-gate-held'
+  | 'missing-release-enforcement-verification'
+  | 'release-enforcement-invalid'
+  | 'release-token-digest-missing'
+  | 'proof-ref-missing'
+  | 'tenant-mismatch'
+  | 'audience-mismatch'
+  | 'sender-constrained-presentation-required'
+  | 'online-introspection-required'
+  | 'replay-consumption-required';
 
 export interface EvaluateConsequenceAdmissionGateInput {
   readonly admission: ConsequenceAdmissionResponse;
@@ -45,6 +60,17 @@ export interface EvaluateConsequenceAdmissionSignedBearerGateInput
   readonly audience?: string | null;
   readonly expectedTenantId?: string | null;
   readonly currentDate?: string;
+}
+
+export interface EvaluateConsequenceAdmissionReleaseEnforcementGateInput
+  extends EvaluateConsequenceAdmissionGateInput {
+  readonly releaseEnforcement?: OnlineReleaseVerification | null;
+  readonly releaseTokenDigest?: string | null;
+  readonly audience?: string | null;
+  readonly expectedTenantId?: string | null;
+  readonly requireSenderConstrained?: boolean;
+  readonly requireOnlineIntrospection?: boolean;
+  readonly requireReplayConsumption?: boolean;
 }
 
 export interface ConsequenceAdmissionCustomerGateDecision {
@@ -91,6 +117,34 @@ export interface ConsequenceAdmissionCustomerGateSignedBearerDecision
   readonly signedBearer: ConsequenceAdmissionCustomerGateSignedBearerVerification;
 }
 
+export interface ConsequenceAdmissionCustomerGateReleaseEnforcementVerification {
+  readonly version: typeof CONSEQUENCE_ADMISSION_CUSTOMER_GATE_RELEASE_ENFORCEMENT_VERSION;
+  readonly presented: boolean;
+  readonly valid: boolean;
+  readonly status: OnlineReleaseVerification['status'] | null;
+  readonly onlineChecked: boolean;
+  readonly replayConsumed: boolean;
+  readonly presentationMode: ReleasePresentationMode | null;
+  readonly senderConstrained: boolean | null;
+  readonly tokenDigest: string | null;
+  readonly tokenId: string | null;
+  readonly releaseDecisionId: string | null;
+  readonly audience: string;
+  readonly claimsAudience: string | null;
+  readonly expectedTenantId: string | null;
+  readonly claimsTenantId: string | null;
+  readonly proofRefMatched: boolean;
+  readonly rawReleaseTokenStored: false;
+  readonly failureReasons: readonly ConsequenceAdmissionCustomerGateReleaseEnforcementFailureReason[];
+}
+
+export interface ConsequenceAdmissionCustomerGateReleaseEnforcementDecision
+  extends Omit<ConsequenceAdmissionCustomerGateDecision, 'version'> {
+  readonly version: typeof CONSEQUENCE_ADMISSION_CUSTOMER_GATE_RELEASE_ENFORCEMENT_VERSION;
+  readonly baseGateVersion: typeof CONSEQUENCE_ADMISSION_CUSTOMER_GATE_VERSION;
+  readonly releaseEnforcement: ConsequenceAdmissionCustomerGateReleaseEnforcementVerification;
+}
+
 function normalizeDownstreamAction(value: string): string {
   const normalized = value.trim();
   if (!normalized) {
@@ -111,6 +165,10 @@ function normalizeOptionalIdentifier(value: string | null | undefined): string |
 
 function digestBearerToken(token: string): string {
   return `sha256:${createHash('sha256').update(token).digest('hex')}`;
+}
+
+function isSha256Digest(value: string | null): value is `sha256:${string}` {
+  return value !== null && /^sha256:[a-f0-9]{64}$/u.test(value);
 }
 
 function extractBearerToken(input: {
@@ -145,10 +203,36 @@ function releaseTokenProofRefMatched(input: {
   );
 }
 
+function releaseTokenProofRefMatchedByTokenId(input: {
+  readonly admission: ConsequenceAdmissionResponse;
+  readonly tokenId: string;
+  readonly tokenDigest: string;
+}): boolean {
+  return input.admission.proof.some((proofRef) =>
+    proofRef.kind === 'release-token' &&
+    proofRef.id === input.tokenId &&
+    proofRef.digest === input.tokenDigest,
+  );
+}
+
 function uniqueFailureReasons(
   reasons: readonly ConsequenceAdmissionCustomerGateSignedBearerFailureReason[],
 ): readonly ConsequenceAdmissionCustomerGateSignedBearerFailureReason[] {
   return Object.freeze(Array.from(new Set(reasons)));
+}
+
+function uniqueReleaseEnforcementFailureReasons(
+  reasons: readonly ConsequenceAdmissionCustomerGateReleaseEnforcementFailureReason[],
+): readonly ConsequenceAdmissionCustomerGateReleaseEnforcementFailureReason[] {
+  return Object.freeze(Array.from(new Set(reasons)));
+}
+
+function isSenderConstrainedPresentationMode(mode: ReleasePresentationMode | null): boolean {
+  return mode === 'dpop-bound-token' ||
+    mode === 'mtls-bound-token' ||
+    mode === 'spiffe-bound-token' ||
+    mode === 'http-message-signature' ||
+    mode === 'signed-json-envelope';
 }
 
 export class ConsequenceAdmissionGateHeldError extends Error {
@@ -167,6 +251,16 @@ export class ConsequenceAdmissionSignedBearerGateHeldError extends Error {
   constructor(gateDecision: ConsequenceAdmissionCustomerGateSignedBearerDecision) {
     super(gateDecision.reason);
     this.name = 'ConsequenceAdmissionSignedBearerGateHeldError';
+    this.gateDecision = gateDecision;
+  }
+}
+
+export class ConsequenceAdmissionReleaseEnforcementGateHeldError extends Error {
+  readonly gateDecision: ConsequenceAdmissionCustomerGateReleaseEnforcementDecision;
+
+  constructor(gateDecision: ConsequenceAdmissionCustomerGateReleaseEnforcementDecision) {
+    super(gateDecision.reason);
+    this.name = 'ConsequenceAdmissionReleaseEnforcementGateHeldError';
     this.gateDecision = gateDecision;
   }
 }
@@ -363,12 +457,145 @@ export async function evaluateConsequenceAdmissionGateWithSignedBearerToken(
   });
 }
 
+export function evaluateConsequenceAdmissionGateWithReleaseEnforcement(
+  input: EvaluateConsequenceAdmissionReleaseEnforcementGateInput,
+): ConsequenceAdmissionCustomerGateReleaseEnforcementDecision {
+  const baseGate = evaluateConsequenceAdmissionGate(input);
+  const enforcement = input.releaseEnforcement ?? null;
+  const audience = normalizeOptionalIdentifier(input.audience) ?? baseGate.downstreamAction;
+  const expectedTenantId =
+    input.expectedTenantId === null
+      ? null
+      : normalizeOptionalIdentifier(input.expectedTenantId) ??
+        normalizeOptionalIdentifier(input.admission.request.policyScope.tenantId);
+  const requireSenderConstrained = input.requireSenderConstrained ?? true;
+  const requireOnlineIntrospection = input.requireOnlineIntrospection ?? true;
+  const requireReplayConsumption = input.requireReplayConsumption ?? true;
+  const tokenDigest = normalizeOptionalIdentifier(input.releaseTokenDigest);
+  const validTokenDigest = isSha256Digest(tokenDigest) ? tokenDigest : null;
+  const failureReasons: ConsequenceAdmissionCustomerGateReleaseEnforcementFailureReason[] = [];
+  const tokenId = enforcement?.offline.claims?.jti ?? enforcement?.verificationResult.releaseTokenId ?? null;
+  const releaseDecisionId =
+    enforcement?.offline.claims?.decision_id ?? enforcement?.verificationResult.releaseDecisionId ?? null;
+  const claimsAudience = enforcement?.offline.claims?.aud ?? enforcement?.verificationResult.audience ?? null;
+  const claimsTenantId = enforcement?.offline.claims?.tenant_id ?? enforcement?.verificationResult.tenantId ?? null;
+  const presentationMode = enforcement?.verificationResult.presentationMode ?? null;
+  const senderConstrained =
+    presentationMode === null ? null : isSenderConstrainedPresentationMode(presentationMode);
+
+  if (baseGate.outcome !== 'proceed') {
+    failureReasons.push('base-gate-held');
+  }
+  if (enforcement === null) {
+    failureReasons.push('missing-release-enforcement-verification');
+  } else if (enforcement.status !== 'valid') {
+    failureReasons.push('release-enforcement-invalid');
+  }
+  if (validTokenDigest === null) {
+    failureReasons.push('release-token-digest-missing');
+  }
+
+  const proofRefMatched = tokenId !== null && validTokenDigest !== null
+    ? releaseTokenProofRefMatchedByTokenId({
+        admission: input.admission,
+        tokenId,
+        tokenDigest: validTokenDigest,
+      })
+    : false;
+  if (enforcement !== null && !proofRefMatched) {
+    failureReasons.push('proof-ref-missing');
+  }
+  if (enforcement !== null && expectedTenantId !== null && claimsTenantId !== expectedTenantId) {
+    failureReasons.push('tenant-mismatch');
+  }
+  if (enforcement !== null && claimsAudience !== audience) {
+    failureReasons.push('audience-mismatch');
+  }
+  if (requireSenderConstrained && senderConstrained !== true) {
+    failureReasons.push('sender-constrained-presentation-required');
+  }
+  if (requireOnlineIntrospection && enforcement?.onlineChecked !== true) {
+    failureReasons.push('online-introspection-required');
+  }
+  if (requireReplayConsumption && enforcement?.consumed !== true) {
+    failureReasons.push('replay-consumption-required');
+  }
+
+  const releaseEnforcementFailures = uniqueReleaseEnforcementFailureReasons(failureReasons);
+  const releaseEnforcementValid = releaseEnforcementFailures.length === 0;
+  const outcome: ConsequenceAdmissionCustomerGateOutcome =
+    baseGate.outcome === 'proceed' && releaseEnforcementValid ? 'proceed' : 'hold';
+  const reasonCodes = Object.freeze([
+    ...baseGate.reasonCodes,
+    ...releaseEnforcementFailures.map((reason) => `customer-gate-release-enforcement-${reason}`),
+    releaseEnforcementValid
+      ? 'customer-gate-release-enforcement-valid'
+      : 'customer-gate-release-enforcement-invalid',
+    `customer-gate-release-enforcement-${outcome}`,
+  ]);
+  const reason = outcome === 'proceed'
+    ? 'Customer gate may run the downstream action because Attestor admitted the consequence and the release-enforcement verifier proved sender constraint, online liveness, replay consumption, and admission proof binding.'
+    : releaseEnforcementFailures.includes('sender-constrained-presentation-required') ||
+        releaseEnforcementFailures.includes('online-introspection-required') ||
+        releaseEnforcementFailures.includes('replay-consumption-required')
+      ? 'Customer gate held the consequence because protected release-enforcement verification did not prove sender constraint, online liveness, and replay consumption.'
+      : releaseEnforcementFailures.includes('proof-ref-missing') ||
+          releaseEnforcementFailures.includes('release-token-digest-missing')
+        ? 'Customer gate held the consequence because the release-enforcement result did not match an admission release-token proof reference by token id and digest.'
+        : releaseEnforcementFailures.includes('release-enforcement-invalid')
+          ? 'Customer gate held the consequence because release-enforcement verification was invalid.'
+          : baseGate.reason;
+
+  return Object.freeze({
+    ...baseGate,
+    version: CONSEQUENCE_ADMISSION_CUSTOMER_GATE_RELEASE_ENFORCEMENT_VERSION,
+    baseGateVersion: CONSEQUENCE_ADMISSION_CUSTOMER_GATE_VERSION,
+    outcome,
+    failClosed: baseGate.failClosed || outcome === 'hold',
+    reason,
+    reasonCodes,
+    instruction: outcome === 'proceed'
+      ? `Run downstream action: ${baseGate.downstreamAction}`
+      : `Do not run downstream action: ${baseGate.downstreamAction}`,
+    releaseEnforcement: Object.freeze({
+      version: CONSEQUENCE_ADMISSION_CUSTOMER_GATE_RELEASE_ENFORCEMENT_VERSION,
+      presented: enforcement !== null,
+      valid: releaseEnforcementValid,
+      status: enforcement?.status ?? null,
+      onlineChecked: enforcement?.onlineChecked ?? false,
+      replayConsumed: enforcement?.consumed ?? false,
+      presentationMode,
+      senderConstrained,
+      tokenDigest: validTokenDigest,
+      tokenId,
+      releaseDecisionId,
+      audience,
+      claimsAudience,
+      expectedTenantId,
+      claimsTenantId,
+      proofRefMatched,
+      rawReleaseTokenStored: false,
+      failureReasons: releaseEnforcementFailures,
+    }),
+  });
+}
+
 export async function assertConsequenceAdmissionGateAllowsSignedBearerToken(
   input: EvaluateConsequenceAdmissionSignedBearerGateInput,
 ): Promise<ConsequenceAdmissionCustomerGateSignedBearerDecision> {
   const gateDecision = await evaluateConsequenceAdmissionGateWithSignedBearerToken(input);
   if (gateDecision.outcome !== 'proceed') {
     throw new ConsequenceAdmissionSignedBearerGateHeldError(gateDecision);
+  }
+  return gateDecision;
+}
+
+export function assertConsequenceAdmissionGateAllowsReleaseEnforcement(
+  input: EvaluateConsequenceAdmissionReleaseEnforcementGateInput,
+): ConsequenceAdmissionCustomerGateReleaseEnforcementDecision {
+  const gateDecision = evaluateConsequenceAdmissionGateWithReleaseEnforcement(input);
+  if (gateDecision.outcome !== 'proceed') {
+    throw new ConsequenceAdmissionReleaseEnforcementGateHeldError(gateDecision);
   }
   return gateDecision;
 }

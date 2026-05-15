@@ -388,6 +388,31 @@ function testLedgerIndexesAuditRemediationClosure(): void {
     'This is still not a live multi-provider client implementation.',
     'Research provenance ledger: LLM live failover non-claim is explicit',
   );
+  includes(
+    content,
+    '### 30. Customer Gate Release-Enforcement Proof Consumer',
+    'Research provenance ledger: customer gate release-enforcement entry is present',
+  );
+  includes(
+    content,
+    'OAuth Token Introspection RFC 7662',
+    'Research provenance ledger: customer gate release-enforcement introspection anchor is recorded',
+  );
+  includes(
+    content,
+    'src/release-enforcement-plane/online-verifier.ts',
+    'Research provenance ledger: customer gate release-enforcement code evidence is indexed',
+  );
+  includes(
+    content,
+    'tests/f2-customer-gate-validation.test.ts',
+    'Research provenance ledger: customer gate release-enforcement validation test evidence is indexed',
+  );
+  includes(
+    content,
+    'This is not a customer PEP runtime',
+    'Research provenance ledger: customer gate release-enforcement runtime non-claim is explicit',
+  );
 }
 
 function testLedgerKeepsEvidenceBoundaryExplicit(): void {

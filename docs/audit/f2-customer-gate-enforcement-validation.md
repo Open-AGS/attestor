@@ -36,6 +36,14 @@ token id and token digest. It records digest/token metadata only and fails
 closed for introspection-required or sender-constrained tokens that require the
 release-enforcement plane.
 
+`evaluateConsequenceAdmissionGateWithReleaseEnforcement(...)` adds a protected
+bridge for customer-operated release-enforcement verifiers. It does not
+reimplement DPoP, mTLS, SPIFFE, HTTP Message Signature, online introspection, or
+replay consumption. It requires a supplied release-enforcement verification
+result to be valid, sender-constrained, online-checked, replay-consumed,
+tenant/audience matched, and bound to an admission `release-token` proof
+reference by token id and digest.
+
 A customer runtime that ignores the helper can still execute the downstream
 action. The signed bearer path also does not consume replay, perform online
 introspection, or prove sender constraint.
@@ -58,6 +66,7 @@ Therefore, the accurate status is:
 ```text
 customer-gate helper alone: partial / honor-system risk remains
 signed-bearer customer-gate helper: cryptographic compatibility verifier for low-risk paths, no replay/introspection/sender constraint
+release-enforcement customer-gate helper: consumes a proven release-enforcement verifier result for protected paths, but does not operate the customer PEP
 downstream contract helper: fail-closed structural verifier, not cryptographic
 release-enforcement plane: signed-token enforcement pattern exists
 generic consequence admission path: not proven to auto-issue protected tokens
@@ -84,19 +93,21 @@ such a token for every admitted consequence.
 
 ## Remaining Work
 
-Before this can be marked `fixed`, Attestor needs one of these repo-proven
-closures:
+Before this can be marked `fixed`, Attestor still needs repo-proven protected
+runtime closure:
 
 1. Generic consequence-admission responses for executable high-risk actions
    issue a signed, audience-scoped downstream authorization token, and
    downstream verifiers reject execution without it.
-2. Public docs and tests make the customer-gate helper explicitly non-enforcing
-   and require users to choose the release-enforcement plane or downstream
-   contract helper for protected execution.
+2. Customer-operated PEP/runtime adoption proof shows the release-enforcement
+   verifier, replay store, token-introspection authority, and sender-constrained
+   proof validation are active before protected consequences can execute.
 
 Current repo evidence supports `partial`, not `fixed`. The signed bearer helper
-narrows the low-risk cryptographic compatibility gap, but does not close
-protected downstream enforcement.
+narrows the low-risk cryptographic compatibility gap, and the
+release-enforcement customer-gate helper narrows the protected verifier-consumer
+gap, but generic consequence admission still does not auto-issue protected
+tokens or activate a customer runtime.
 
 The protected customer enforcement profile narrows the remaining gap by making
 the adoption rule machine-readable: R3/R4 and other production-sensitive

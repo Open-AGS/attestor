@@ -542,6 +542,21 @@ The entries above are the most concrete PR/commit-linked hardening records. The 
 - Remaining limitation or no-go condition: This is still not a live multi-provider client implementation. It does not prove Anthropic, Vertex AI, or Azure OpenAI calls; runtime failover execution; OpenAI vision smoke proof; non-OpenAI smoke proof; provider-specific credential isolation; customer provider approval; or hosted LLM runtime readiness.
 - Status: complete for repository-side failover compatibility gating once this PR is merged and verified on `origin/master`.
 
+### 30. Customer Gate Release-Enforcement Proof Consumer
+
+- Step / PR / commit: Customer-gate protected release-enforcement verifier consumer; this PR records repository-side contract evidence but cannot pre-record its own merge commit.
+- Date if available: 2026-05-15.
+- Trust surface: customer-side consequence gate, signed release-token presentation, DPoP/mTLS/SPIFFE/HTTP Message Signature sender-constrained verifier output, token introspection liveness, replay consumption, tenant/audience binding, and admission proof binding.
+- Protected principle: customer authority; fail-closed boundary; proof integrity; replay and idempotency safety; data minimization and redaction; no overclaim.
+- Research anchor / source used, if recorded: OAuth DPoP RFC 9449, OAuth mTLS-bound tokens RFC 8705, OAuth Token Introspection RFC 7662, OAuth Bearer Token Usage RFC 6750, SPIFFE overview, and existing release-enforcement-plane DPoP / mTLS / SPIFFE repository evidence. These are engineering anchors only, not OAuth certification, SPIFFE certification, customer runtime adoption, or production enforcement evidence.
+- Repository evidence:
+  - Contract/code evidence: `src/consequence-admission/customer-gate.ts`, `src/release-enforcement-plane/offline-verifier.ts`, `src/release-enforcement-plane/online-verifier.ts`, `docs/01-overview/customer-admission-gate.md`, `docs/audit/f2-customer-gate-enforcement-validation.md`, and `docs/audit/attestor-audit-remediation-tracker.md`.
+  - Test evidence: `tests/consequence-admission-customer-gate.test.ts`, `tests/f2-customer-gate-validation.test.ts`, `tests/audit-remediation-tracker.test.ts`, and `tests/research-provenance-ledger.test.ts`.
+- Implemented control: Adds a customer-gate release-enforcement proof consumer that accepts an already verified release-enforcement result only when it is valid, sender-constrained, online-checked, replay-consumed, tenant/audience matched, and bound to an admission `release-token` proof reference by token id and digest. The returned decision stores digest/token/verifier metadata only, not the raw release token or DPoP/sender proof.
+- Tests / verification: `npm run test:consequence-admission-customer-gate`, `npm run test:f2-customer-gate-validation`, `npm run test:audit-remediation-tracker`, and `npm run test:research-provenance-ledger`.
+- Remaining limitation or no-go condition: This is not a customer PEP runtime, not generic consequence-to-token issuance, not a hosted enforcement service, and not a new DPoP/mTLS/SPIFFE verifier. The helper consumes release-enforcement verifier evidence produced elsewhere; customer deployment, replay store durability, token-introspection authority, trust anchors, and runtime adoption remain required before a production enforcement claim.
+- Status: complete for repository-side protected verifier-consumer contract once this PR is merged and verified on `origin/master`.
+
 ## Strong Recorded Research Support
 
 The strongest recorded research support appears in:

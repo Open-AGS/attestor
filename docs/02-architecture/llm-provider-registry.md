@@ -37,7 +37,9 @@ Checked on 2026-05-15.
 - credential reference names only, never values;
 - proof-context binding for provider id, configured model, observed model, prompt digest, config digest, and tool/schema digests.
 
-The registry does not instantiate SDK clients, execute provider calls, or perform failover. It evaluates whether a requested provider route is selectable or blocked.
+The registry does not instantiate Anthropic, Vertex AI, or Azure OpenAI clients,
+execute provider failover, or prove production readiness. It evaluates whether a
+requested provider route is selectable or blocked.
 
 ## Current Decision
 
@@ -52,9 +54,11 @@ Default state:
 Production or failover-required state:
 
 - blocked by `llm-provider-failover-provider-not-wired`;
-- blocked by `llm-provider-production-timeout-budget-not-wired`;
-- blocked by `llm-provider-production-cost-budget-not-wired`;
 - blocked by `llm-provider-live-smoke-proof-required`.
+
+OpenAI timeout and output-token budget enforcement are wired in
+`src/api/openai.ts`. They are not a production readiness claim because provider
+smoke proof and multi-provider failover remain absent.
 
 ## Proof Context Contract
 
@@ -80,12 +84,13 @@ The binding helper rejects non-digest prompt/config fields and records:
 - No Anthropic, Vertex AI, or Azure OpenAI client is implemented by this PR.
 - No live provider failover is active.
 - No hosted production LLM runtime readiness is claimed.
-- No timeout or cost-budget enforcement is wired into `src/api/openai.ts` yet.
+- No live provider smoke proof is wired into `src/api/openai.ts` yet.
 - No hosted consequence-admission route depends on a live LLM provider.
 
 ## Verification
 
 - `npm run test:llm-provider-registry`
+- `npm run test:openai-runtime-policy`
 - `npm run test:f2-llm-provider-supply-chain-validation`
 - `npm run test:f2-model-tool-config-drift-validation`
 - `npm run test:f11-supply-chain-depth-validation`

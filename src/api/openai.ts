@@ -8,6 +8,13 @@
  */
 
 import OpenAI from 'openai';
+import {
+  bindLlmProviderProofContext,
+  digestLlmProviderContextValue,
+  type LlmProviderProofContextBinding,
+  type LlmProviderPurpose,
+} from './llm-provider-registry.js';
+import { OPENAI_REASONING_MODEL, OPENAI_VISION_MODEL } from './llm-provider-models.js';
 import { ApiError, ParseError } from '../utils/errors.js';
 import { logger } from '../utils/logger.js';
 
@@ -19,7 +26,7 @@ function getClient(): OpenAI {
     if (!apiKey) {
       throw new ApiError('api', 'openai', 'OPENAI_API_KEY is not set in environment');
     }
-    client = new OpenAI({ apiKey });
+    client = new OpenAI({ apiKey, maxRetries: 0 });
   }
   return client;
 }
@@ -44,11 +51,60 @@ export interface GptCallResult {
   observedModel: string | null;
   /** True when the provider-returned model differs from Attestor's configured model. */
   modelDriftObserved: boolean;
+  /** Digest-only provider/model/prompt/config binding for live-model proof. */
+  providerProofContext: LlmProviderProofContextBinding;
+  /** Non-secret runtime policy metadata applied to this provider call. */
+  runtimePolicy: OpenAiRuntimePolicySummary;
 }
 
-const RETRY_DELAY_MS = 5000;
+export const OPENAI_RUNTIME_POLICY_VERSION = 'openai-runtime-policy.v1' as const;
+export const DEFAULT_OPENAI_TIMEOUT_MS = 120_000;
+export const DEFAULT_OPENAI_MAX_ATTEMPTS = 2;
+export const DEFAULT_OPENAI_RETRY_INITIAL_DELAY_MS = 1_000;
+export const DEFAULT_OPENAI_RETRY_MAX_DELAY_MS = 8_000;
+export const DEFAULT_OPENAI_REASONING_MAX_OUTPUT_TOKENS = 32_000;
+export const DEFAULT_OPENAI_VISION_MAX_OUTPUT_TOKENS = 4_000;
+
+export type OpenAiRuntimePurpose = Extract<LlmProviderPurpose, 'reasoning' | 'vision'>;
+
+export interface OpenAiRuntimePolicy {
+  readonly version: typeof OPENAI_RUNTIME_POLICY_VERSION;
+  readonly providerId: 'openai';
+  readonly purpose: OpenAiRuntimePurpose;
+  readonly configuredModel: string;
+  readonly timeoutMs: number;
+  readonly maxAttempts: number;
+  readonly retryInitialDelayMs: number;
+  readonly retryMaxDelayMs: number;
+  readonly maxOutputTokens: number;
+  readonly configuredMaxOutputTokens: number;
+  readonly requestedMaxOutputTokens: number | null;
+  readonly sdkMaxRetries: 0;
+  readonly responseStore: false;
+  readonly productionLikeRuntime: boolean;
+  readonly productionReady: false;
+  readonly configDigest: string;
+  readonly blockers: readonly string[];
+}
+
+export type OpenAiRuntimePolicySummary = Pick<
+  OpenAiRuntimePolicy,
+  | 'version'
+  | 'providerId'
+  | 'purpose'
+  | 'configuredModel'
+  | 'timeoutMs'
+  | 'maxAttempts'
+  | 'maxOutputTokens'
+  | 'sdkMaxRetries'
+  | 'responseStore'
+  | 'productionLikeRuntime'
+  | 'productionReady'
+  | 'configDigest'
+>;
+
 /** Primary GPT model used for upstream analysis and verification. */
-export const GPT_MODEL = 'o3' as const;
+export const GPT_MODEL = OPENAI_REASONING_MODEL;
 const MODEL = GPT_MODEL;
 
 export interface OpenAiModelObservation {
@@ -86,6 +142,207 @@ function logOpenAiModelObservation(stage: string, observation: OpenAiModelObserv
   logger.info(stage, 'OpenAI response model observation recorded', fields);
 }
 
+export function isOpenAiProductionLikeRuntime(
+  env: Readonly<Record<string, string | undefined>> = process.env,
+): boolean {
+  const nodeEnv = env.NODE_ENV?.trim().toLowerCase();
+  return nodeEnv === 'production'
+    || envTruthy(env.ATTESTOR_HA_MODE)
+    || env.ATTESTOR_RUNTIME_PROFILE?.trim() === 'production-shared'
+    || Boolean(env.ATTESTOR_PUBLIC_HOSTNAME?.trim())
+    || Boolean(env.ATTESTOR_PUBLIC_BASE_URL?.trim());
+}
+
+export function resolveOpenAiRuntimePolicy(input: {
+  readonly purpose: OpenAiRuntimePurpose;
+  readonly requestedMaxTokens?: number;
+  readonly env?: Readonly<Record<string, string | undefined>>;
+}): OpenAiRuntimePolicy {
+  const env = input.env ?? process.env;
+  const blockers: string[] = [];
+  const configuredModel = input.purpose === 'reasoning' ? MODEL : VISION_MODEL;
+  const configuredMaxOutputTokens = readBoundedIntegerEnv({
+    env,
+    name: input.purpose === 'reasoning'
+      ? 'ATTESTOR_OPENAI_REASONING_MAX_OUTPUT_TOKENS'
+      : 'ATTESTOR_OPENAI_VISION_MAX_OUTPUT_TOKENS',
+    defaultValue: input.purpose === 'reasoning'
+      ? DEFAULT_OPENAI_REASONING_MAX_OUTPUT_TOKENS
+      : DEFAULT_OPENAI_VISION_MAX_OUTPUT_TOKENS,
+    min: 1,
+    max: input.purpose === 'reasoning' ? 128_000 : 16_000,
+    blockerPrefix: 'openai-output-token-budget',
+    blockers,
+  });
+  const timeoutMs = readBoundedIntegerEnv({
+    env,
+    name: 'ATTESTOR_OPENAI_TIMEOUT_MS',
+    defaultValue: DEFAULT_OPENAI_TIMEOUT_MS,
+    min: 1_000,
+    max: 600_000,
+    blockerPrefix: 'openai-timeout-budget',
+    blockers,
+  });
+  const maxAttempts = readBoundedIntegerEnv({
+    env,
+    name: 'ATTESTOR_OPENAI_MAX_ATTEMPTS',
+    defaultValue: DEFAULT_OPENAI_MAX_ATTEMPTS,
+    min: 1,
+    max: 4,
+    blockerPrefix: 'openai-retry-budget',
+    blockers,
+  });
+  const retryInitialDelayMs = readBoundedIntegerEnv({
+    env,
+    name: 'ATTESTOR_OPENAI_RETRY_INITIAL_DELAY_MS',
+    defaultValue: DEFAULT_OPENAI_RETRY_INITIAL_DELAY_MS,
+    min: 100,
+    max: 60_000,
+    blockerPrefix: 'openai-retry-initial-delay',
+    blockers,
+  });
+  const retryMaxDelayMs = readBoundedIntegerEnv({
+    env,
+    name: 'ATTESTOR_OPENAI_RETRY_MAX_DELAY_MS',
+    defaultValue: DEFAULT_OPENAI_RETRY_MAX_DELAY_MS,
+    min: retryInitialDelayMs,
+    max: 120_000,
+    blockerPrefix: 'openai-retry-max-delay',
+    blockers,
+  });
+
+  const requestedMaxOutputTokens = input.requestedMaxTokens ?? null;
+  let maxOutputTokens = configuredMaxOutputTokens;
+  if (requestedMaxOutputTokens !== null) {
+    if (!Number.isInteger(requestedMaxOutputTokens) || requestedMaxOutputTokens < 1) {
+      blockers.push('openai-output-token-budget:invalid-requested-max-tokens');
+    } else if (requestedMaxOutputTokens > configuredMaxOutputTokens) {
+      blockers.push('openai-output-token-budget:requested-max-tokens-exceeds-budget');
+    } else {
+      maxOutputTokens = requestedMaxOutputTokens;
+    }
+  }
+
+  const productionLikeRuntime = isOpenAiProductionLikeRuntime(env);
+  if (productionLikeRuntime) {
+    blockers.push('openai-production-runtime-live-smoke-proof-not-wired');
+  }
+
+  const digestMaterial = {
+    version: OPENAI_RUNTIME_POLICY_VERSION,
+    providerId: 'openai' as const,
+    purpose: input.purpose,
+    configuredModel,
+    timeoutMs,
+    maxAttempts,
+    retryInitialDelayMs,
+    retryMaxDelayMs,
+    maxOutputTokens,
+    configuredMaxOutputTokens,
+    sdkMaxRetries: 0 as const,
+    responseStore: false as const,
+    productionLikeRuntime,
+  };
+
+  return Object.freeze({
+    ...digestMaterial,
+    requestedMaxOutputTokens,
+    productionReady: false,
+    blockers: Object.freeze(blockers),
+    configDigest: digestLlmProviderContextValue(stableJson(digestMaterial)),
+  });
+}
+
+export function summarizeOpenAiRuntimePolicy(policy: OpenAiRuntimePolicy): OpenAiRuntimePolicySummary {
+  return Object.freeze({
+    version: policy.version,
+    providerId: policy.providerId,
+    purpose: policy.purpose,
+    configuredModel: policy.configuredModel,
+    timeoutMs: policy.timeoutMs,
+    maxAttempts: policy.maxAttempts,
+    maxOutputTokens: policy.maxOutputTokens,
+    sdkMaxRetries: policy.sdkMaxRetries,
+    responseStore: policy.responseStore,
+    productionLikeRuntime: policy.productionLikeRuntime,
+    productionReady: policy.productionReady,
+    configDigest: policy.configDigest,
+  });
+}
+
+export function computeOpenAiRetryDelayMs(
+  attemptIndex: number,
+  policy: Pick<OpenAiRuntimePolicy, 'retryInitialDelayMs' | 'retryMaxDelayMs'>,
+  jitter: number = Math.random(),
+): number {
+  const boundedJitter = Math.max(0, Math.min(1, jitter));
+  const exponentialDelay = policy.retryInitialDelayMs * (2 ** Math.max(0, attemptIndex));
+  const jitterDelay = Math.floor(exponentialDelay * 0.25 * boundedJitter);
+  return Math.min(policy.retryMaxDelayMs, exponentialDelay + jitterDelay);
+}
+
+function assertOpenAiRuntimePolicyAllowsCall(stage: string, policy: OpenAiRuntimePolicy): void {
+  if (policy.blockers.length === 0) return;
+  throw new ApiError(
+    stage,
+    'openai',
+    `OpenAI runtime policy blocked call: ${policy.blockers.join(', ')}`,
+  );
+}
+
+function openAiRequestOptions(policy: OpenAiRuntimePolicy): { readonly timeout: number; readonly maxRetries: 0 } {
+  return { timeout: policy.timeoutMs, maxRetries: 0 };
+}
+
+function envTruthy(raw: string | undefined): boolean {
+  const value = raw?.trim().toLowerCase();
+  return value === '1' || value === 'true' || value === 'yes' || value === 'on';
+}
+
+function readBoundedIntegerEnv(input: {
+  readonly env: Readonly<Record<string, string | undefined>>;
+  readonly name: string;
+  readonly defaultValue: number;
+  readonly min: number;
+  readonly max: number;
+  readonly blockerPrefix: string;
+  readonly blockers: string[];
+}): number {
+  const raw = input.env[input.name]?.trim();
+  if (!raw) return input.defaultValue;
+  const parsed = Number(raw);
+  if (!Number.isInteger(parsed) || parsed < input.min || parsed > input.max) {
+    input.blockers.push(`${input.blockerPrefix}:invalid-${input.name.toLowerCase()}`);
+    return input.defaultValue;
+  }
+  return parsed;
+}
+
+function stableJson(value: Record<string, unknown>): string {
+  const sorted = Object.keys(value).sort().reduce<Record<string, unknown>>((acc, key) => {
+    acc[key] = value[key];
+    return acc;
+  }, {});
+  return JSON.stringify(sorted);
+}
+
+function buildOpenAiProviderProofContext(input: {
+  readonly purpose: OpenAiRuntimePurpose;
+  readonly configuredModel: string;
+  readonly observedModel: string | null;
+  readonly runtimePolicy: OpenAiRuntimePolicy;
+  readonly promptDigest: string;
+}): LlmProviderProofContextBinding {
+  return bindLlmProviderProofContext({
+    providerId: 'openai',
+    configuredModel: input.configuredModel,
+    observedModel: input.observedModel,
+    purpose: input.purpose,
+    promptDigest: input.promptDigest,
+    configDigest: input.runtimePolicy.configDigest,
+  });
+}
+
 /**
  * Call the configured OpenAI reasoning model via the Responses API.
  *
@@ -99,28 +356,39 @@ function logOpenAiModelObservation(stage: string, observation: OpenAiModelObserv
  * Exported so tests can verify the exact request shape
  * without making real API calls.
  */
-export function buildGptRequestBody(params: GptCallParams) {
-  const { systemPrompt, userMessage, effort = 'high', maxTokens = 32000 } = params;
+export function buildGptRequestBody(
+  params: GptCallParams,
+  runtimePolicy = resolveOpenAiRuntimePolicy({ purpose: 'reasoning', requestedMaxTokens: params.maxTokens }),
+) {
+  const { systemPrompt, userMessage, effort = 'high' } = params;
   return {
     model: MODEL,
-    max_output_tokens: maxTokens,
+    max_output_tokens: runtimePolicy.maxOutputTokens,
     reasoning: { effort },
     instructions: systemPrompt,
     input: userMessage,
+    store: false,
   };
 }
 
 export async function callGpt(params: GptCallParams): Promise<GptCallResult> {
   const { stage, effort = 'high' } = params;
+  const runtimePolicy = resolveOpenAiRuntimePolicy({ purpose: 'reasoning', requestedMaxTokens: params.maxTokens });
+  assertOpenAiRuntimePolicyAllowsCall(stage, runtimePolicy);
 
-  logger.info(stage, `Calling OpenAI reasoning model ${MODEL} (effort: ${effort})...`);
+  logger.info(stage, `Calling OpenAI reasoning model ${MODEL} (effort: ${effort})...`, {
+    timeoutMs: runtimePolicy.timeoutMs,
+    maxOutputTokens: runtimePolicy.maxOutputTokens,
+    maxAttempts: runtimePolicy.maxAttempts,
+    responseStore: runtimePolicy.responseStore,
+  });
 
   let lastError: unknown;
 
-  for (let attempt = 0; attempt < 2; attempt++) {
+  for (let attempt = 0; attempt < runtimePolicy.maxAttempts; attempt++) {
     try {
-      const requestBody = buildGptRequestBody(params);
-      const response = await getClient().responses.create(requestBody);
+      const requestBody = buildGptRequestBody(params, runtimePolicy);
+      const response = await getClient().responses.create(requestBody, openAiRequestOptions(runtimePolicy));
 
       // Extract text output from response — handle both message and text output items
       let content: string | undefined;
@@ -153,11 +421,22 @@ export async function callGpt(params: GptCallParams): Promise<GptCallResult> {
       const cachedInputTokens = (usage as any)?.input_tokens_details?.cached_tokens ?? 0;
       const modelObservation = observeOpenAiModel(MODEL, response);
       logOpenAiModelObservation(stage, modelObservation);
+      const providerProofContext = buildOpenAiProviderProofContext({
+        purpose: 'reasoning',
+        configuredModel: MODEL,
+        observedModel: modelObservation.observedModel,
+        runtimePolicy,
+        promptDigest: digestLlmProviderContextValue(stableJson({
+          systemPrompt: params.systemPrompt,
+          userMessage: params.userMessage,
+        })),
+      });
 
       logger.info(stage, `OpenAI model ${MODEL} response received`, {
         tokens: inputTokens + outputTokens,
         effort,
         cached: cachedInputTokens,
+        providerConfigDigest: providerProofContext.configDigest,
       });
 
       return {
@@ -168,17 +447,21 @@ export async function callGpt(params: GptCallParams): Promise<GptCallResult> {
         cachedInputTokens,
         observedModel: modelObservation.observedModel,
         modelDriftObserved: modelObservation.modelDriftObserved,
+        providerProofContext,
+        runtimePolicy: summarizeOpenAiRuntimePolicy(runtimePolicy),
       };
     } catch (err) {
       lastError = err;
 
       if (err instanceof ParseError) throw err;
 
-      if (attempt === 0) {
-        logger.warn(stage, `OpenAI model ${MODEL} call failed, retrying in ${RETRY_DELAY_MS}ms...`, {
+      const hasRetryBudget = attempt < runtimePolicy.maxAttempts - 1;
+      if (hasRetryBudget) {
+        const retryDelayMs = computeOpenAiRetryDelayMs(attempt, runtimePolicy);
+        logger.warn(stage, `OpenAI model ${MODEL} call failed, retrying in ${retryDelayMs}ms...`, {
           error: err instanceof Error ? err.message : String(err),
         });
-        await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
+        await new Promise((r) => setTimeout(r, retryDelayMs));
       }
     }
   }
@@ -186,14 +469,14 @@ export async function callGpt(params: GptCallParams): Promise<GptCallResult> {
   throw new ApiError(
     stage,
     'openai',
-    `Failed after 2 attempts: ${lastError instanceof Error ? lastError.message : String(lastError)}`,
+    `Failed after ${runtimePolicy.maxAttempts} attempts: ${lastError instanceof Error ? lastError.message : String(lastError)}`,
   );
 }
 
 // ─── Multimodal Vision API ──────────────────────────────────────────────────
 
 /** Vision model used for multimodal observation (reference images). */
-export const GPT_VISION_MODEL = 'gpt-4o' as const;
+export const GPT_VISION_MODEL = OPENAI_VISION_MODEL;
 const VISION_MODEL = GPT_VISION_MODEL;
 
 export interface GptVisionCallParams {
@@ -214,18 +497,26 @@ export interface GptVisionCallParams {
 export async function callGptVision(params: GptVisionCallParams): Promise<GptCallResult> {
   const {
     systemPrompt, userText, imageBase64, stage,
-    mediaType = 'image/png', maxTokens = 4000,
+    mediaType = 'image/png',
   } = params;
+  const runtimePolicy = resolveOpenAiRuntimePolicy({ purpose: 'vision', requestedMaxTokens: params.maxTokens });
+  assertOpenAiRuntimePolicyAllowsCall(stage, runtimePolicy);
 
-  logger.info(stage, 'Calling GPT-4o Vision...');
+  logger.info(stage, 'Calling GPT-4o Vision...', {
+    timeoutMs: runtimePolicy.timeoutMs,
+    maxOutputTokens: runtimePolicy.maxOutputTokens,
+    maxAttempts: runtimePolicy.maxAttempts,
+    responseStore: runtimePolicy.responseStore,
+  });
 
   let lastError: unknown;
 
-  for (let attempt = 0; attempt < 2; attempt++) {
+  for (let attempt = 0; attempt < runtimePolicy.maxAttempts; attempt++) {
     try {
       const response = await getClient().chat.completions.create({
         model: VISION_MODEL,
-        max_tokens: maxTokens,
+        max_tokens: runtimePolicy.maxOutputTokens,
+        store: false,
         messages: [
           { role: 'system', content: systemPrompt },
           {
@@ -242,7 +533,7 @@ export async function callGptVision(params: GptVisionCallParams): Promise<GptCal
             ],
           },
         ],
-      });
+      }, openAiRequestOptions(runtimePolicy));
 
       const choice = response.choices[0];
       if (!choice?.message?.content) {
@@ -252,8 +543,21 @@ export async function callGptVision(params: GptVisionCallParams): Promise<GptCal
       const usage = response.usage;
       const modelObservation = observeOpenAiModel(VISION_MODEL, response);
       logOpenAiModelObservation(stage, modelObservation);
+      const providerProofContext = buildOpenAiProviderProofContext({
+        purpose: 'vision',
+        configuredModel: VISION_MODEL,
+        observedModel: modelObservation.observedModel,
+        runtimePolicy,
+        promptDigest: digestLlmProviderContextValue(stableJson({
+          imageDigest: digestLlmProviderContextValue(imageBase64),
+          mediaType,
+          systemPrompt,
+          userText,
+        })),
+      });
       logger.info(stage, 'GPT-4o Vision response received', {
         tokens: usage?.total_tokens ?? 0,
+        providerConfigDigest: providerProofContext.configDigest,
       });
 
       return {
@@ -264,22 +568,26 @@ export async function callGptVision(params: GptVisionCallParams): Promise<GptCal
         cachedInputTokens: 0,
         observedModel: modelObservation.observedModel,
         modelDriftObserved: modelObservation.modelDriftObserved,
+        providerProofContext,
+        runtimePolicy: summarizeOpenAiRuntimePolicy(runtimePolicy),
       };
     } catch (err) {
       lastError = err;
       if (err instanceof ParseError) throw err;
-      if (attempt === 0) {
-        logger.warn(stage, `GPT-4o Vision call failed, retrying in ${RETRY_DELAY_MS}ms...`, {
+      const hasRetryBudget = attempt < runtimePolicy.maxAttempts - 1;
+      if (hasRetryBudget) {
+        const retryDelayMs = computeOpenAiRetryDelayMs(attempt, runtimePolicy);
+        logger.warn(stage, `GPT-4o Vision call failed, retrying in ${retryDelayMs}ms...`, {
           error: err instanceof Error ? err.message : String(err),
         });
-        await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
+        await new Promise((r) => setTimeout(r, retryDelayMs));
       }
     }
   }
 
   throw new ApiError(
     stage, 'openai',
-    `Vision failed after 2 attempts: ${lastError instanceof Error ? lastError.message : String(lastError)}`,
+    `Vision failed after ${runtimePolicy.maxAttempts} attempts: ${lastError instanceof Error ? lastError.message : String(lastError)}`,
   );
 }
 

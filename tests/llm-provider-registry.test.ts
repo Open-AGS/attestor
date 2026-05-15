@@ -54,14 +54,19 @@ try {
     'Registry: failover is fail-closed until two providers are wired',
   );
   equal(
+    descriptor.runtimePolicy.retryBackoff,
+    'openai-wrapper-jittered-exponential',
+    'Registry: OpenAI wrapper has bounded jittered retry policy',
+  );
+  equal(
     descriptor.runtimePolicy.timeoutBudget,
-    'required-before-production',
-    'Registry: production timeout budget is required before production',
+    'openai-wrapper-wired',
+    'Registry: OpenAI wrapper timeout budget is wired',
   );
   equal(
     descriptor.runtimePolicy.costBudget,
-    'required-before-production',
-    'Registry: production cost budget is required before production',
+    'openai-output-token-budget-wired',
+    'Registry: OpenAI output token budget is wired',
   );
 
   const openai = providers.find((provider) => provider.id === 'openai');
@@ -139,16 +144,6 @@ try {
     productionEvaluation.blockers,
     'llm-provider-failover-provider-not-wired',
     'Evaluation: failover blocker is explicit',
-  );
-  includes(
-    productionEvaluation.blockers,
-    'llm-provider-production-timeout-budget-not-wired',
-    'Evaluation: timeout blocker is explicit',
-  );
-  includes(
-    productionEvaluation.blockers,
-    'llm-provider-production-cost-budget-not-wired',
-    'Evaluation: cost blocker is explicit',
   );
   includes(
     productionEvaluation.blockers,

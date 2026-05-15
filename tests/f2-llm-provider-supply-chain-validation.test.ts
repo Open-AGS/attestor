@@ -72,6 +72,7 @@ try {
   const tracker = readProjectFile('docs', 'audit', 'attestor-audit-remediation-tracker.md');
   const packageJson = readProjectFile('package.json');
   const openai = readProjectFile('src', 'api', 'openai.ts');
+  const models = readProjectFile('src', 'api', 'llm-provider-models.ts');
   const financialCli = readProjectFile('src', 'financial', 'cli.ts');
   const financialTypes = readProjectFile('src', 'financial', 'types.ts');
   const evaluationPacket = readProjectFile('docs', '00-evaluation', 'v0.1-evaluation-packet.md');
@@ -90,9 +91,12 @@ try {
   equal(descriptor.productionReady, false, 'LLM provider supply-chain validation: guard does not claim production readiness');
   equal(descriptor.activatesEnforcement, false, 'LLM provider supply-chain validation: guard does not activate enforcement');
 
-  includes(openai, "export const GPT_MODEL = 'o3' as const", 'LLM provider supply-chain validation: OpenAI reasoning model is single configured model');
-  includes(openai, "export const GPT_VISION_MODEL = 'gpt-4o' as const", 'LLM provider supply-chain validation: OpenAI vision model is present');
-  includes(openai, "new OpenAI({ apiKey })", 'LLM provider supply-chain validation: OpenAI SDK client is used directly');
+  includes(models, "OPENAI_REASONING_MODEL = 'o3' as const", 'LLM provider supply-chain validation: OpenAI reasoning model is single configured model');
+  includes(models, "OPENAI_VISION_MODEL = 'gpt-4o' as const", 'LLM provider supply-chain validation: OpenAI vision model is present');
+  includes(openai, 'new OpenAI({ apiKey, maxRetries: 0 })', 'LLM provider supply-chain validation: OpenAI SDK client is used directly without hidden retries');
+  includes(openai, 'resolveOpenAiRuntimePolicy', 'LLM provider supply-chain validation: OpenAI wrapper has runtime policy');
+  includes(openai, 'store: false', 'LLM provider supply-chain validation: provider-side response storage is disabled');
+  includes(openai, 'providerProofContext', 'LLM provider supply-chain validation: live model result carries provider proof context');
   excludes(openai, /Anthropic|LlmProviderRegistry|providerRegistry/u, 'LLM provider supply-chain validation: OpenAI wrapper has no provider registry');
   includes(
     registry.providers.map((provider) => provider.id).join(','),
@@ -126,7 +130,7 @@ try {
   includes(doc, 'F4-D Attestor-owned OpenAI usage / budget / prompt leakage scope: `partial`.', 'LLM provider supply-chain validation doc: F4-D status is partial');
   includes(doc, 'No hosted production, multi-provider resilience, or prompt-leakage closure claim is made.', 'LLM provider supply-chain validation doc: no overclaim is present');
   includes(registryDoc, 'Status: repository-side contract only. Not a live multi-provider runtime.', 'LLM provider registry doc: runtime non-claim is explicit');
-  includes(registryDoc, 'No timeout or cost-budget enforcement is wired into `src/api/openai.ts` yet.', 'LLM provider registry doc: timeout/cost limit is explicit');
+  includes(registryDoc, 'OpenAI timeout and output-token budget enforcement are wired', 'LLM provider registry doc: OpenAI timeout/cost boundary is explicit');
 
   includes(tracker, 'F2-AG-7 agentic supply-chain and LLM provider dependency | `partial`', 'Tracker: F2-AG-7 remains partial');
   includes(tracker, 'F2-AG-8 multimodal vision input future risk | `backlog`', 'Tracker: F2-AG-8 is backlog');
@@ -135,6 +139,7 @@ try {
   includes(tracker, 'docs/audit/f2-llm-provider-supply-chain-validation.md', 'Tracker: validation doc is linked');
   includes(packageJson, '"test:f2-llm-provider-supply-chain-validation"', 'Package: validation test is exposed');
   includes(packageJson, '"test:llm-provider-registry"', 'Package: registry test is exposed');
+  includes(packageJson, '"test:openai-runtime-policy"', 'Package: OpenAI runtime policy test is exposed');
 
   excludes(tracker, /F4-D Attestor-owned OpenAI usage .*`fixed`/u, 'Tracker: F4-D is not overclaimed as fixed');
   excludes(tracker, /F2-AG-8 multimodal vision input future risk .*`fixed`/u, 'Tracker: F2-AG-8 is not overclaimed as fixed');

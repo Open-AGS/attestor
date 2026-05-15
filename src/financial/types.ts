@@ -1,3 +1,5 @@
+import type { LlmProviderProofContextBinding } from '../api/llm-provider-registry.js';
+
 /**
  * Financial Reference Implementation — Domain Types (v6)
  *
@@ -726,6 +728,7 @@ export interface LiveProofUpstreamEvidence {
   tokenUsage: { input: number; output: number } | null;
   latencyMs: number | null;
   requestId: string | null;
+  providerProofContext: LlmProviderProofContextBinding | null;
   live: boolean;
 }
 
@@ -831,6 +834,7 @@ export function buildLiveProof(runId: string, replayIdentity: string, input: Liv
     tokenUsage: null,
     latencyMs: null,
     requestId: null,
+    providerProofContext: null,
     live: false,
     ...input.upstream,
   };

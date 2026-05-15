@@ -118,6 +118,10 @@ function testOpenAiModelObservation(): void {
   equal(missing.observedModel, null, 'F11-SC-6: missing response model remains explicit null');
   includes(openai, 'OpenAI response model drift observed', 'F11-SC-6: drift warning is logged');
   includes(openai, 'modelDriftObserved', 'F11-SC-6: call result carries model drift metadata');
+  includes(openai, 'resolveOpenAiRuntimePolicy', 'F11-SC-4: OpenAI wrapper resolves runtime policy');
+  includes(openai, 'maxRetries: 0', 'F11-SC-4: OpenAI SDK hidden retries are disabled');
+  includes(openai, 'store: false', 'F11-SC-4: OpenAI provider-side response storage is disabled');
+  includes(openai, 'providerProofContext', 'F11-SC-6: OpenAI call result carries digest-only provider context');
 }
 
 function testExistingSupplyChainControlsRemainScoped(): void {
@@ -173,6 +177,7 @@ function testDocsTrackerAndPackageStayAligned(): void {
   includes(validation, '# F11 Supply Chain Depth Validation', 'F11 doc: title exists');
   includes(validation, '| F11-SC-1 container base images use floating tags | `fixed` |', 'F11 doc: SC-1 is fixed');
   includes(validation, '| F11-SC-4 single OpenAI provider / provider registry contract | `partial` |', 'F11 doc: SC-4 boundary remains partial');
+  includes(validation, 'apply timeout/output-token runtime policy', 'F11 doc: SC-4 runtime policy is documented');
   includes(validation, '| F11-SC-11 SBOM packaging not located | `invalid-as-stated` |', 'F11 doc: SC-11 stale claim is invalidated');
   includes(validation, 'F11 is closed for planned repository-side work in this slice.', 'F11 doc: closure statement is explicit');
   includes(tracker, 'F11 supply-chain depth | 12 | 7 | 5 | 0', 'Tracker: F11 count row exists');

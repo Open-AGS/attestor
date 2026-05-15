@@ -359,6 +359,7 @@ async function generateLiveCounterpartySql(bindings: SqliteSchemaBinding[]): Pro
             tokenUsage: { input: totalInputTokens, output: totalOutputTokens },
             latencyMs: totalLatencyMs,
             requestId: null,
+            providerProofContext: result.providerProofContext,
             live: true,
           },
         },

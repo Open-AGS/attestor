@@ -318,6 +318,26 @@ function testLedgerIndexesAuditRemediationClosure(): void {
     'This is bearer-only compatibility for lower-risk customer integrations.',
     'Research provenance ledger: signed bearer customer gate non-claim is explicit',
   );
+  includes(
+    content,
+    '### 27. Tenant KMS Provider Capability Contract',
+    'Research provenance ledger: tenant KMS provider capability entry is present',
+  );
+  includes(
+    content,
+    'provider-native algorithm and input-mode contract',
+    'Research provenance ledger: tenant KMS capability contract scope is indexed',
+  );
+  includes(
+    content,
+    'Azure Key Vault Ed25519',
+    'Research provenance ledger: unsupported Azure Ed25519 boundary is recorded',
+  );
+  includes(
+    content,
+    'signature-format conversion',
+    'Research provenance ledger: tenant KMS capability remaining adapter limitation is explicit',
+  );
 }
 
 function testLedgerKeepsEvidenceBoundaryExplicit(): void {

@@ -141,11 +141,13 @@ try {
   includes(tracker, 'F6 is closed for planned repository slices', 'Tracker: F6 closure is explicit');
   includes(tracker, 'F7 is closed for planned repository slices', 'Tracker: F7 closure is explicit');
   includes(tracker, 'F6-T1 shared PKI tenant binding | `partial`', 'Tracker: F6-T1 status is tracked');
+  includes(tracker, 'provider-native algorithm/input-mode capability', 'Tracker: F6 tenant signer provider capability boundary is tracked');
   includes(tracker, 'F6-T2 RLS declared but not data-path wired | `accepted-limitation`', 'Tracker: F6-T2 status is tracked');
   includes(tracker, 'F6-T3 env tenant key registry per-pod cache | `partial`', 'Tracker: F6-T3 status is tracked');
   includes(tracker, 'F6-T4 usage-meter single-node quota | `partial`', 'Tracker: F6-T4 status is tracked');
   includes(tracker, 'F6-T5 bypass route tenant-header spoofing | `fixed`', 'Tracker: F6-T5 status is tracked');
   includes(tracker, 'F6-T6 runtime signer all-tenant blast radius | `partial`', 'Tracker: F6-T6 status is tracked');
+  includes(tracker, 'unsupported provider/algorithm rejection', 'Tracker: F6 signer capability rejection is tracked');
   includes(tracker, 'F6-T7 anonymous fallback env-gated | `invalid-as-stated`', 'Tracker: F6-T7 status is tracked');
   includes(tracker, 'F6-T8 recipient/tenant boundary replay-only | `partial`', 'Tracker: F6-T8 status is tracked');
   includes(tracker, 'F6-T9 plaintext env API keys in memory | `fixed`', 'Tracker: F6-T9 status is tracked');

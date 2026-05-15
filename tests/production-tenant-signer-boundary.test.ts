@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import {
   RELEASE_TENANT_SIGNER_BOUNDARY_SPEC_VERSION,
   RELEASE_TENANT_SIGNER_LIVE_PROVIDER_PROOF_SPEC_VERSION,
+  RELEASE_TENANT_SIGNER_PROVIDER_CAPABILITY_SPEC_VERSION,
   ReleaseTenantSignerBoundaryError,
   assertReleaseTenantSignerProductionReady,
   createExternalKmsReleaseTenantSignerDescriptor,
@@ -12,6 +13,7 @@ import {
   createRuntimeSharedReleaseTenantSignerDescriptor,
   evaluateReleaseTenantSignerLiveProviderProof,
   releaseTenantSignerLiveProviderProofChallengeDigest,
+  resolveReleaseTenantSignerProviderCapability,
 } from '../src/service/bootstrap/release-tenant-signer-boundary.js';
 
 let passed = 0;
@@ -124,6 +126,21 @@ function testFakeExternalKmsSignerIsContractOnly(): void {
     'Tenant signer boundary: fake external signer descriptor is non-exportable',
   );
   equal(
+    signer.descriptor.releaseTokenJoseAlgorithm,
+    'EdDSA',
+    'Tenant signer boundary: fake signer descriptor binds release-token JOSE algorithm',
+  );
+  equal(
+    signer.descriptor.providerNativeAlgorithm,
+    'fake-ed25519',
+    'Tenant signer boundary: fake signer descriptor binds provider-native algorithm',
+  );
+  equal(
+    signer.descriptor.providerSignInputMode,
+    'raw',
+    'Tenant signer boundary: fake signer descriptor binds provider input mode',
+  );
+  equal(
     signer.descriptor.rawTenantIdStored,
     false,
     'Tenant signer boundary: fake descriptor does not store raw tenant id',
@@ -164,6 +181,16 @@ function testFakeExternalKmsSignerIsContractOnly(): void {
     false,
     'Tenant signer boundary: signature does not store raw key ref',
   );
+  equal(
+    signature.providerNativeAlgorithm,
+    'fake-ed25519',
+    'Tenant signer boundary: fake signature carries provider-native algorithm',
+  );
+  equal(
+    signature.providerSignInputMode,
+    'raw',
+    'Tenant signer boundary: fake signature carries provider input mode',
+  );
   excludes(
     signature.canonical,
     'tenant-a',
@@ -193,6 +220,113 @@ function testFakeExternalKmsFailsClosedOnTenantMismatch(): void {
       error instanceof ReleaseTenantSignerBoundaryError &&
       error.message.includes('mismatched tenant'),
     'Tenant signer boundary: fake signer refuses tenant mismatch',
+  );
+  passed += 1;
+}
+
+function testProviderCapabilityMapsNativeSigningAlgorithms(): void {
+  const awsEd25519 = resolveReleaseTenantSignerProviderCapability({
+    providerClass: 'aws-kms',
+    algorithm: 'Ed25519',
+  });
+  equal(
+    awsEd25519.version,
+    RELEASE_TENANT_SIGNER_PROVIDER_CAPABILITY_SPEC_VERSION,
+    'Tenant signer boundary: provider capability version is stable',
+  );
+  equal(
+    awsEd25519.releaseTokenJoseAlgorithm,
+    'EdDSA',
+    'Tenant signer boundary: AWS Ed25519 maps to the release-token EdDSA JOSE algorithm',
+  );
+  equal(
+    awsEd25519.providerNativeAlgorithm,
+    'ED25519_SHA_512',
+    'Tenant signer boundary: AWS Ed25519 pins the KMS native signing algorithm',
+  );
+  equal(
+    awsEd25519.providerSignInputMode,
+    'raw',
+    'Tenant signer boundary: AWS Ed25519 uses raw signing input',
+  );
+
+  const gcpEs256 = resolveReleaseTenantSignerProviderCapability({
+    providerClass: 'gcp-kms',
+    algorithm: 'ES256',
+  });
+  equal(
+    gcpEs256.providerNativeAlgorithm,
+    'EC_SIGN_P256_SHA256',
+    'Tenant signer boundary: GCP ES256 pins the Cloud KMS native algorithm',
+  );
+  equal(
+    gcpEs256.providerSignInputMode,
+    'digest-sha256',
+    'Tenant signer boundary: GCP ES256 requires SHA-256 digest signing input',
+  );
+
+  const azurePs256 = resolveReleaseTenantSignerProviderCapability({
+    providerClass: 'azure-managed-hsm',
+    algorithm: 'PS256',
+  });
+  equal(
+    azurePs256.providerNativeAlgorithm,
+    'PS256',
+    'Tenant signer boundary: Azure PS256 pins the Key Vault / Managed HSM algorithm id',
+  );
+  equal(
+    azurePs256.providerSignInputMode,
+    'digest-sha256',
+    'Tenant signer boundary: Azure PS256 signs a caller-provided SHA-256 digest',
+  );
+}
+
+function testUnsupportedProviderAlgorithmFailsClosed(): void {
+  const azureEd25519 = resolveReleaseTenantSignerProviderCapability({
+    providerClass: 'azure-key-vault',
+    algorithm: 'Ed25519',
+  });
+  equal(
+    azureEd25519.supported,
+    false,
+    'Tenant signer boundary: Azure Key Vault Ed25519 is not marked supported',
+  );
+
+  const descriptor = createExternalKmsReleaseTenantSignerDescriptor({
+    tenantId: 'tenant-a',
+    providerClass: 'azure-key-vault',
+    keyRef: 'azure:key-vault:tenant-a-release',
+    keyId: 'release-key-v1',
+    algorithm: 'Ed25519',
+    nowMs: Date.parse('2026-05-15T09:30:00.000Z'),
+  });
+  equal(
+    descriptor.contractSatisfied,
+    false,
+    'Tenant signer boundary: unsupported provider algorithm does not satisfy the contract',
+  );
+  ok(
+    descriptor.contractBlockers.includes('provider-algorithm-unsupported'),
+    'Tenant signer boundary: unsupported provider algorithm blocker is explicit',
+  );
+  equal(
+    descriptor.providerNativeAlgorithm,
+    null,
+    'Tenant signer boundary: unsupported provider algorithm has no native algorithm claim',
+  );
+  assert.throws(
+    () =>
+      createReleaseTenantSignerLiveProviderProof({
+        tenantId: 'tenant-a',
+        providerClass: 'azure-key-vault',
+        keyRef: 'azure:key-vault:tenant-a-release',
+        keyId: 'release-key-v1',
+        algorithm: 'Ed25519',
+        signatureDigest: 'sha256:azure-ed25519-signature',
+        verificationDigest: 'sha256:azure-ed25519-verification',
+      }),
+    /does not support algorithm/u,
+    'Tenant signer boundary: unsupported provider algorithm cannot produce a live proof envelope',
   );
   passed += 1;
 }
@@ -263,6 +397,21 @@ function testProductionReadinessRequiresLiveProviderProof(): void {
     'Tenant signer boundary: live provider proof signs the standard challenge digest',
   );
   equal(
+    liveProof.releaseTokenJoseAlgorithm,
+    'EdDSA',
+    'Tenant signer boundary: live provider proof binds the release-token JOSE algorithm',
+  );
+  equal(
+    liveProof.providerNativeAlgorithm,
+    'EC_SIGN_ED25519',
+    'Tenant signer boundary: live provider proof binds the provider-native algorithm',
+  );
+  equal(
+    liveProof.providerSignInputMode,
+    'raw',
+    'Tenant signer boundary: live provider proof binds the provider input mode',
+  );
+  equal(
     liveProof.rawProviderResponseStored,
     false,
     'Tenant signer boundary: live provider proof does not store raw provider response',
@@ -308,9 +457,49 @@ function testProductionReadinessRequiresLiveProviderProof(): void {
     'Tenant signer boundary: descriptor stores live proof by digest',
   );
   equal(
+    liveVerified.providerNativeAlgorithm,
+    'EC_SIGN_ED25519',
+    'Tenant signer boundary: descriptor records the provider-native signing algorithm',
+  );
+  equal(
     liveVerified.activatesRuntimeSigning,
     false,
     'Tenant signer boundary: descriptor still does not activate runtime signing',
+  );
+}
+
+function testLiveProviderProofFailsClosedOnCapabilityMismatch(): void {
+  const checkedAt = '2026-05-15T09:30:00.000Z';
+  const proof = createReleaseTenantSignerLiveProviderProof({
+    tenantId: 'tenant-a',
+    providerClass: 'aws-kms',
+    keyRef: 'aws:kms:us-east-1:111122223333:key/tenant-a-release',
+    keyId: 'release-key-v1',
+    algorithm: 'Ed25519',
+    providerNativeAlgorithm: 'ED25519_PH_SHA_512',
+    signatureDigest: 'sha256:aws-prehash-signature',
+    verificationDigest: 'sha256:aws-prehash-verification',
+    signedAt: checkedAt,
+    verifiedAt: checkedAt,
+  });
+  const descriptor = createExternalKmsReleaseTenantSignerDescriptor({
+    tenantId: 'tenant-a',
+    providerClass: 'aws-kms',
+    keyRef: 'aws:kms:us-east-1:111122223333:key/tenant-a-release',
+    keyId: 'release-key-v1',
+    algorithm: 'Ed25519',
+    liveProviderProof: proof,
+    nowMs: Date.parse(checkedAt),
+  });
+
+  equal(
+    descriptor.liveProviderProofState,
+    'invalid',
+    'Tenant signer boundary: provider-native algorithm mismatch invalidates live proof',
+  );
+  ok(
+    descriptor.productionBlockers.includes('live-provider-proof-descriptor-mismatch'),
+    'Tenant signer boundary: provider-native algorithm mismatch blocks production readiness',
   );
 }
 
@@ -480,9 +669,24 @@ function testDocsAndPackageExposeBoundary(): void {
     'Tenant signer boundary: cryptography policy requires structured proof',
   );
   includes(
+    cryptoPolicy,
+    'provider-native signing',
+    'Tenant signer boundary: cryptography policy requires provider-native capability pinning',
+  );
+  includes(
+    cryptoPolicy,
+    'Azure Ed25519',
+    'Tenant signer boundary: cryptography policy records unsupported Azure Ed25519 boundary',
+  );
+  includes(
     f6Validation,
     'tenant signer boundary contract',
     'Tenant signer boundary: F6 validation mentions contract slice',
+  );
+  includes(
+    f6Validation,
+    'provider-native algorithm/input-mode capability checks',
+    'Tenant signer boundary: F6 validation mentions provider capability checks',
   );
   includes(
     f6Validation,
@@ -499,7 +703,10 @@ function testDocsAndPackageExposeBoundary(): void {
 testRuntimeSharedSignerIsNotTenantIsolated();
 testFakeExternalKmsSignerIsContractOnly();
 testFakeExternalKmsFailsClosedOnTenantMismatch();
+testProviderCapabilityMapsNativeSigningAlgorithms();
+testUnsupportedProviderAlgorithmFailsClosed();
 testProductionReadinessRequiresLiveProviderProof();
+testLiveProviderProofFailsClosedOnCapabilityMismatch();
 testLiveProviderProofFailsClosedOnStaleOrMismatch();
 testConfidentialSignerRequiresAttestationEvidence();
 testKeyIdMustBeOpaque();

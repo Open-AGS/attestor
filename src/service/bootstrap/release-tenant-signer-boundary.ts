@@ -12,6 +12,8 @@ export const RELEASE_TENANT_SIGNER_BOUNDARY_SPEC_VERSION =
   'attestor.release-tenant-signer-boundary.v1';
 export const RELEASE_TENANT_SIGNER_LIVE_PROVIDER_PROOF_SPEC_VERSION =
   'attestor.release-tenant-signer-live-provider-proof.v1';
+export const RELEASE_TENANT_SIGNER_PROVIDER_CAPABILITY_SPEC_VERSION =
+  'attestor.release-tenant-signer-provider-capability.v1';
 export const RELEASE_TENANT_SIGNER_LIVE_PROVIDER_PROOF_CHALLENGE =
   'attestor.release-tenant-signer-live-provider-proof.challenge.v1';
 export const DEFAULT_RELEASE_TENANT_SIGNER_LIVE_PROVIDER_PROOF_MAX_AGE_MINUTES =
@@ -48,6 +50,20 @@ export const RELEASE_TENANT_SIGNER_ALGORITHMS = [
 export type ReleaseTenantSignerAlgorithm =
   typeof RELEASE_TENANT_SIGNER_ALGORITHMS[number];
 
+export const RELEASE_TENANT_SIGNER_PROVIDER_SIGN_INPUT_MODES = [
+  'raw',
+  'digest-sha256',
+  'digest-sha384',
+] as const;
+export type ReleaseTenantSignerProviderSignInputMode =
+  typeof RELEASE_TENANT_SIGNER_PROVIDER_SIGN_INPUT_MODES[number];
+
+export type ReleaseTenantSignerJoseAlgorithm =
+  | 'EdDSA'
+  | 'ES256'
+  | 'ES384'
+  | 'PS256';
+
 export const RELEASE_TENANT_SIGNER_BOUNDARIES = [
   'runtime-memory',
   'runtime-file-pem',
@@ -70,6 +86,7 @@ export const RELEASE_TENANT_SIGNER_CONTRACT_BLOCKERS = [
   'key-id-missing',
   'key-id-contains-raw-tenant-id',
   'unsupported-algorithm',
+  'provider-algorithm-unsupported',
   'non-external-signing-boundary',
   'private-key-exportable',
   'tenant-scoped-isolation-missing',
@@ -139,6 +156,8 @@ export interface CreateReleaseTenantSignerLiveProviderProofInput {
   readonly keyRef: string;
   readonly keyId: string;
   readonly algorithm: ReleaseTenantSignerAlgorithm;
+  readonly providerNativeAlgorithm?: string | null;
+  readonly providerSignInputMode?: ReleaseTenantSignerProviderSignInputMode | null;
   readonly payloadDigest?: string | null;
   readonly signingContextDigest?: string | null;
   readonly publicVerificationKeyRef?: string | null;
@@ -160,6 +179,9 @@ export interface ReleaseTenantSignerLiveProviderProof {
   readonly keyRefDigest: string;
   readonly keyId: string;
   readonly algorithm: ReleaseTenantSignerAlgorithm;
+  readonly releaseTokenJoseAlgorithm: ReleaseTenantSignerJoseAlgorithm;
+  readonly providerNativeAlgorithm: string;
+  readonly providerSignInputMode: ReleaseTenantSignerProviderSignInputMode;
   readonly signingBoundary: Extract<ReleaseTenantSignerBoundary, 'external-kms-hsm'>;
   readonly payloadDigest: string;
   readonly signingContextDigest: string | null;
@@ -196,6 +218,10 @@ export interface ReleaseTenantSignerDescriptor {
   readonly keyRefDigest: string | null;
   readonly publicVerificationKeyRefDigest: string | null;
   readonly algorithm: ReleaseTenantSignerAlgorithm | null;
+  readonly providerAlgorithmSupported: boolean;
+  readonly releaseTokenJoseAlgorithm: ReleaseTenantSignerJoseAlgorithm | null;
+  readonly providerNativeAlgorithm: string | null;
+  readonly providerSignInputMode: ReleaseTenantSignerProviderSignInputMode | null;
   readonly isolationMode: ReleaseTenantSignerIsolationMode;
   readonly signingBoundary: ReleaseTenantSignerBoundary;
   readonly privateKeyExportable: boolean;
@@ -240,6 +266,9 @@ export interface ReleaseTenantSignature {
   readonly keyId: string;
   readonly keyRefDigest: string;
   readonly algorithm: ReleaseTenantSignerAlgorithm;
+  readonly releaseTokenJoseAlgorithm: ReleaseTenantSignerJoseAlgorithm;
+  readonly providerNativeAlgorithm: string;
+  readonly providerSignInputMode: ReleaseTenantSignerProviderSignInputMode;
   readonly signingBoundary: Extract<ReleaseTenantSignerBoundary, 'external-kms-hsm'>;
   readonly signedAt: string;
   readonly signature: string;
@@ -256,6 +285,17 @@ export interface ReleaseTenantSignature {
 export interface FakeExternalKmsReleaseTenantSigner {
   readonly descriptor: ReleaseTenantSignerDescriptor;
   readonly sign: (payload: ReleaseTenantSignerPayload) => ReleaseTenantSignature;
+}
+
+export interface ReleaseTenantSignerProviderCapability {
+  readonly version: typeof RELEASE_TENANT_SIGNER_PROVIDER_CAPABILITY_SPEC_VERSION;
+  readonly providerClass: ReleaseTenantSignerProviderClass;
+  readonly algorithm: ReleaseTenantSignerAlgorithm;
+  readonly supported: boolean;
+  readonly releaseTokenJoseAlgorithm: ReleaseTenantSignerJoseAlgorithm | null;
+  readonly providerNativeAlgorithm: string | null;
+  readonly providerSignInputMode: ReleaseTenantSignerProviderSignInputMode | null;
+  readonly sourceAnchor: string;
 }
 
 export class ReleaseTenantSignerBoundaryError extends Error {
@@ -359,6 +399,247 @@ function assertAlgorithm(value: ReleaseTenantSignerAlgorithm): void {
   }
 }
 
+function normalizeProviderNativeAlgorithm(value: string | null | undefined): string | null {
+  return normalizeOptionalIdentifier(value, 'providerNativeAlgorithm');
+}
+
+function normalizeProviderSignInputMode(
+  value: ReleaseTenantSignerProviderSignInputMode | null | undefined,
+): ReleaseTenantSignerProviderSignInputMode | null {
+  if (value === undefined || value === null) return null;
+  if (!RELEASE_TENANT_SIGNER_PROVIDER_SIGN_INPUT_MODES.includes(value)) {
+    throw new ReleaseTenantSignerBoundaryError(
+      `Release tenant signer boundary providerSignInputMode must be one of: ${RELEASE_TENANT_SIGNER_PROVIDER_SIGN_INPUT_MODES.join(', ')}.`,
+    );
+  }
+  return value;
+}
+
+function capability(
+  input: {
+    readonly providerClass: ReleaseTenantSignerProviderClass;
+    readonly algorithm: ReleaseTenantSignerAlgorithm;
+    readonly releaseTokenJoseAlgorithm: ReleaseTenantSignerJoseAlgorithm;
+    readonly providerNativeAlgorithm: string;
+    readonly providerSignInputMode: ReleaseTenantSignerProviderSignInputMode;
+    readonly sourceAnchor: string;
+  },
+): ReleaseTenantSignerProviderCapability {
+  return Object.freeze({
+    version: RELEASE_TENANT_SIGNER_PROVIDER_CAPABILITY_SPEC_VERSION,
+    providerClass: input.providerClass,
+    algorithm: input.algorithm,
+    supported: true,
+    releaseTokenJoseAlgorithm: input.releaseTokenJoseAlgorithm,
+    providerNativeAlgorithm: input.providerNativeAlgorithm,
+    providerSignInputMode: input.providerSignInputMode,
+    sourceAnchor: input.sourceAnchor,
+  });
+}
+
+function unsupportedCapability(input: {
+  readonly providerClass: ReleaseTenantSignerProviderClass;
+  readonly algorithm: ReleaseTenantSignerAlgorithm;
+  readonly sourceAnchor: string;
+}): ReleaseTenantSignerProviderCapability {
+  return Object.freeze({
+    version: RELEASE_TENANT_SIGNER_PROVIDER_CAPABILITY_SPEC_VERSION,
+    providerClass: input.providerClass,
+    algorithm: input.algorithm,
+    supported: false,
+    releaseTokenJoseAlgorithm: null,
+    providerNativeAlgorithm: null,
+    providerSignInputMode: null,
+    sourceAnchor: input.sourceAnchor,
+  });
+}
+
+export function resolveReleaseTenantSignerProviderCapability(input: {
+  readonly providerClass: ReleaseTenantSignerProviderClass;
+  readonly algorithm: ReleaseTenantSignerAlgorithm;
+}): ReleaseTenantSignerProviderCapability {
+  assertAlgorithm(input.algorithm);
+  const sourceAnchor =
+    input.providerClass === 'aws-kms'
+      ? 'AWS KMS Sign API'
+      : input.providerClass === 'gcp-kms'
+        ? 'Google Cloud KMS asymmetricSign API'
+        : input.providerClass === 'azure-key-vault' ||
+            input.providerClass === 'azure-managed-hsm'
+          ? 'Azure Key Vault / Managed HSM Sign API'
+          : input.providerClass === 'fake-external-kms-test'
+            ? 'Attestor fake external KMS test adapter'
+            : input.providerClass === 'runtime-local'
+              ? 'Attestor runtime local signer'
+              : 'Generic external KMS/HSM provider';
+
+  if (input.providerClass === 'runtime-local') {
+    if (input.algorithm === 'Ed25519') {
+      return capability({
+        providerClass: input.providerClass,
+        algorithm: input.algorithm,
+        releaseTokenJoseAlgorithm: 'EdDSA',
+        providerNativeAlgorithm: 'local-ed25519',
+        providerSignInputMode: 'raw',
+        sourceAnchor,
+      });
+    }
+    return unsupportedCapability({ ...input, sourceAnchor });
+  }
+
+  if (input.providerClass === 'fake-external-kms-test') {
+    const fakeCapabilities: Record<
+      ReleaseTenantSignerAlgorithm,
+      {
+        readonly releaseTokenJoseAlgorithm: ReleaseTenantSignerJoseAlgorithm;
+        readonly providerNativeAlgorithm: string;
+        readonly providerSignInputMode: ReleaseTenantSignerProviderSignInputMode;
+      }
+    > = {
+      Ed25519: {
+        releaseTokenJoseAlgorithm: 'EdDSA',
+        providerNativeAlgorithm: 'fake-ed25519',
+        providerSignInputMode: 'raw',
+      },
+      ES256: {
+        releaseTokenJoseAlgorithm: 'ES256',
+        providerNativeAlgorithm: 'fake-es256',
+        providerSignInputMode: 'digest-sha256',
+      },
+      ES384: {
+        releaseTokenJoseAlgorithm: 'ES384',
+        providerNativeAlgorithm: 'fake-es384',
+        providerSignInputMode: 'digest-sha384',
+      },
+      PS256: {
+        releaseTokenJoseAlgorithm: 'PS256',
+        providerNativeAlgorithm: 'fake-ps256',
+        providerSignInputMode: 'digest-sha256',
+      },
+    };
+    return capability({
+      providerClass: input.providerClass,
+      algorithm: input.algorithm,
+      ...fakeCapabilities[input.algorithm],
+      sourceAnchor,
+    });
+  }
+
+  if (input.providerClass === 'aws-kms') {
+    const awsCapabilities: Record<
+      ReleaseTenantSignerAlgorithm,
+      {
+        readonly releaseTokenJoseAlgorithm: ReleaseTenantSignerJoseAlgorithm;
+        readonly providerNativeAlgorithm: string;
+        readonly providerSignInputMode: ReleaseTenantSignerProviderSignInputMode;
+      }
+    > = {
+      Ed25519: {
+        releaseTokenJoseAlgorithm: 'EdDSA',
+        providerNativeAlgorithm: 'ED25519_SHA_512',
+        providerSignInputMode: 'raw',
+      },
+      ES256: {
+        releaseTokenJoseAlgorithm: 'ES256',
+        providerNativeAlgorithm: 'ECDSA_SHA_256',
+        providerSignInputMode: 'digest-sha256',
+      },
+      ES384: {
+        releaseTokenJoseAlgorithm: 'ES384',
+        providerNativeAlgorithm: 'ECDSA_SHA_384',
+        providerSignInputMode: 'digest-sha384',
+      },
+      PS256: {
+        releaseTokenJoseAlgorithm: 'PS256',
+        providerNativeAlgorithm: 'RSASSA_PSS_SHA_256',
+        providerSignInputMode: 'digest-sha256',
+      },
+    };
+    return capability({
+      providerClass: input.providerClass,
+      algorithm: input.algorithm,
+      ...awsCapabilities[input.algorithm],
+      sourceAnchor,
+    });
+  }
+
+  if (input.providerClass === 'gcp-kms') {
+    const gcpCapabilities: Record<
+      ReleaseTenantSignerAlgorithm,
+      {
+        readonly releaseTokenJoseAlgorithm: ReleaseTenantSignerJoseAlgorithm;
+        readonly providerNativeAlgorithm: string;
+        readonly providerSignInputMode: ReleaseTenantSignerProviderSignInputMode;
+      }
+    > = {
+      Ed25519: {
+        releaseTokenJoseAlgorithm: 'EdDSA',
+        providerNativeAlgorithm: 'EC_SIGN_ED25519',
+        providerSignInputMode: 'raw',
+      },
+      ES256: {
+        releaseTokenJoseAlgorithm: 'ES256',
+        providerNativeAlgorithm: 'EC_SIGN_P256_SHA256',
+        providerSignInputMode: 'digest-sha256',
+      },
+      ES384: {
+        releaseTokenJoseAlgorithm: 'ES384',
+        providerNativeAlgorithm: 'EC_SIGN_P384_SHA384',
+        providerSignInputMode: 'digest-sha384',
+      },
+      PS256: {
+        releaseTokenJoseAlgorithm: 'PS256',
+        providerNativeAlgorithm: 'RSA_SIGN_PSS_3072_SHA256',
+        providerSignInputMode: 'digest-sha256',
+      },
+    };
+    return capability({
+      providerClass: input.providerClass,
+      algorithm: input.algorithm,
+      ...gcpCapabilities[input.algorithm],
+      sourceAnchor,
+    });
+  }
+
+  if (input.providerClass === 'azure-key-vault' || input.providerClass === 'azure-managed-hsm') {
+    if (input.algorithm === 'Ed25519') {
+      return unsupportedCapability({ ...input, sourceAnchor });
+    }
+    const azureCapabilities: Record<
+      Exclude<ReleaseTenantSignerAlgorithm, 'Ed25519'>,
+      {
+        readonly releaseTokenJoseAlgorithm: ReleaseTenantSignerJoseAlgorithm;
+        readonly providerNativeAlgorithm: string;
+        readonly providerSignInputMode: ReleaseTenantSignerProviderSignInputMode;
+      }
+    > = {
+      ES256: {
+        releaseTokenJoseAlgorithm: 'ES256',
+        providerNativeAlgorithm: 'ES256',
+        providerSignInputMode: 'digest-sha256',
+      },
+      ES384: {
+        releaseTokenJoseAlgorithm: 'ES384',
+        providerNativeAlgorithm: 'ES384',
+        providerSignInputMode: 'digest-sha384',
+      },
+      PS256: {
+        releaseTokenJoseAlgorithm: 'PS256',
+        providerNativeAlgorithm: 'PS256',
+        providerSignInputMode: 'digest-sha256',
+      },
+    };
+    return capability({
+      providerClass: input.providerClass,
+      algorithm: input.algorithm,
+      ...azureCapabilities[input.algorithm],
+      sourceAnchor,
+    });
+  }
+
+  return unsupportedCapability({ ...input, sourceAnchor });
+}
+
 function descriptorDigest(descriptor: ReleaseTenantSignerDescriptor): string {
   return digestCanonical({
     version: descriptor.version,
@@ -369,6 +650,10 @@ function descriptorDigest(descriptor: ReleaseTenantSignerDescriptor): string {
     keyRefDigest: descriptor.keyRefDigest,
     publicVerificationKeyRefDigest: descriptor.publicVerificationKeyRefDigest,
     algorithm: descriptor.algorithm,
+    providerAlgorithmSupported: descriptor.providerAlgorithmSupported,
+    releaseTokenJoseAlgorithm: descriptor.releaseTokenJoseAlgorithm,
+    providerNativeAlgorithm: descriptor.providerNativeAlgorithm,
+    providerSignInputMode: descriptor.providerSignInputMode,
     isolationMode: descriptor.isolationMode,
     signingBoundary: descriptor.signingBoundary,
     privateKeyExportable: descriptor.privateKeyExportable,
@@ -396,6 +681,30 @@ export function createReleaseTenantSignerLiveProviderProof(
   const keyRef = normalizeIdentifier(input.keyRef, 'keyRef');
   const keyId = normalizeIdentifier(input.keyId, 'keyId');
   assertAlgorithm(input.algorithm);
+  const providerCapability = resolveReleaseTenantSignerProviderCapability({
+    providerClass: input.providerClass,
+    algorithm: input.algorithm,
+  });
+  if (!providerCapability.supported) {
+    throw new ReleaseTenantSignerBoundaryError(
+      `Release tenant signer boundary provider ${input.providerClass} does not support algorithm ${input.algorithm}.`,
+    );
+  }
+  const providerNativeAlgorithm =
+    normalizeProviderNativeAlgorithm(input.providerNativeAlgorithm) ??
+    providerCapability.providerNativeAlgorithm;
+  const providerSignInputMode =
+    normalizeProviderSignInputMode(input.providerSignInputMode) ??
+    providerCapability.providerSignInputMode;
+  if (
+    providerNativeAlgorithm === null ||
+    providerSignInputMode === null ||
+    providerCapability.releaseTokenJoseAlgorithm === null
+  ) {
+    throw new ReleaseTenantSignerBoundaryError(
+      'Release tenant signer boundary provider capability is incomplete.',
+    );
+  }
 
   const payloadDigest = normalizeRequiredDigest(
     input.payloadDigest ?? releaseTenantSignerLiveProviderProofChallengeDigest(),
@@ -428,6 +737,9 @@ export function createReleaseTenantSignerLiveProviderProof(
     keyRefDigest: digestString(keyRef),
     keyId,
     algorithm: input.algorithm,
+    releaseTokenJoseAlgorithm: providerCapability.releaseTokenJoseAlgorithm,
+    providerNativeAlgorithm,
+    providerSignInputMode,
     signingBoundary: 'external-kms-hsm' as const,
     payloadDigest,
     signingContextDigest,
@@ -459,6 +771,9 @@ export function evaluateReleaseTenantSignerLiveProviderProof(input: {
   readonly keyRefDigest: string;
   readonly keyId: string;
   readonly algorithm: ReleaseTenantSignerAlgorithm;
+  readonly releaseTokenJoseAlgorithm?: ReleaseTenantSignerJoseAlgorithm | null;
+  readonly providerNativeAlgorithm?: string | null;
+  readonly providerSignInputMode?: ReleaseTenantSignerProviderSignInputMode | null;
   readonly publicVerificationKeyRefDigest?: string | null;
   readonly nowMs?: number | null;
   readonly maxAgeMinutes?: number | null;
@@ -486,12 +801,25 @@ export function evaluateReleaseTenantSignerLiveProviderProof(input: {
   if (!proof.verificationSucceeded) {
     blockers.push('live-provider-proof-verification-failed');
   }
+  const expectedCapability = resolveReleaseTenantSignerProviderCapability({
+    providerClass: input.providerClass,
+    algorithm: input.algorithm,
+  });
+  const expectedReleaseTokenJoseAlgorithm =
+    input.releaseTokenJoseAlgorithm ?? expectedCapability.releaseTokenJoseAlgorithm;
+  const expectedProviderNativeAlgorithm =
+    input.providerNativeAlgorithm ?? expectedCapability.providerNativeAlgorithm;
+  const expectedProviderSignInputMode =
+    input.providerSignInputMode ?? expectedCapability.providerSignInputMode;
   if (
     proof.providerClass !== input.providerClass ||
     proof.tenantIdDigest !== input.tenantIdDigest ||
     proof.keyRefDigest !== input.keyRefDigest ||
     proof.keyId !== input.keyId ||
     proof.algorithm !== input.algorithm ||
+    proof.releaseTokenJoseAlgorithm !== expectedReleaseTokenJoseAlgorithm ||
+    proof.providerNativeAlgorithm !== expectedProviderNativeAlgorithm ||
+    proof.providerSignInputMode !== expectedProviderSignInputMode ||
     proof.signingBoundary !== 'external-kms-hsm' ||
     proof.payloadDigest !== releaseTenantSignerLiveProviderProofChallengeDigest() ||
     proof.publicVerificationKeyRefDigest !== (input.publicVerificationKeyRefDigest ?? null)
@@ -544,6 +872,10 @@ export function createRuntimeSharedReleaseTenantSignerDescriptor(
     keyRefDigest: pkiPath ? digestString(pkiPath) : null,
     publicVerificationKeyRefDigest: null,
     algorithm: 'Ed25519',
+    providerAlgorithmSupported: true,
+    releaseTokenJoseAlgorithm: 'EdDSA',
+    providerNativeAlgorithm: null,
+    providerSignInputMode: null,
     isolationMode: 'tenant-claim-bound-shared-signer',
     signingBoundary,
     privateKeyExportable: true,
@@ -603,6 +935,10 @@ export function createExternalKmsReleaseTenantSignerDescriptor(
   const rotationRef = normalizeOptionalIdentifier(input.rotationRef, 'rotationRef');
   const algorithm = input.algorithm;
   assertAlgorithm(algorithm);
+  const providerCapability = resolveReleaseTenantSignerProviderCapability({
+    providerClass: input.providerClass,
+    algorithm,
+  });
   const isolationMode = input.isolationMode ?? 'tenant-scoped-external-kms';
   const attestationRequired =
     input.attestationRequired ?? isolationMode === 'confidential-attested-tenant-kms';
@@ -616,6 +952,9 @@ export function createExternalKmsReleaseTenantSignerDescriptor(
 
   if (keyId.toLowerCase().includes(tenantId.toLowerCase())) {
     contractBlockers.push('key-id-contains-raw-tenant-id');
+  }
+  if (!providerCapability.supported) {
+    contractBlockers.push('provider-algorithm-unsupported');
   }
   if (
     isolationMode !== 'tenant-scoped-external-kms' &&
@@ -637,6 +976,9 @@ export function createExternalKmsReleaseTenantSignerDescriptor(
     keyRefDigest,
     keyId,
     algorithm,
+    releaseTokenJoseAlgorithm: providerCapability.releaseTokenJoseAlgorithm,
+    providerNativeAlgorithm: providerCapability.providerNativeAlgorithm,
+    providerSignInputMode: providerCapability.providerSignInputMode,
     publicVerificationKeyRefDigest,
     nowMs: input.nowMs,
     maxAgeMinutes: input.liveProviderProofMaxAgeMinutes,
@@ -656,6 +998,10 @@ export function createExternalKmsReleaseTenantSignerDescriptor(
     keyRefDigest,
     publicVerificationKeyRefDigest,
     algorithm,
+    providerAlgorithmSupported: providerCapability.supported,
+    releaseTokenJoseAlgorithm: providerCapability.releaseTokenJoseAlgorithm,
+    providerNativeAlgorithm: providerCapability.providerNativeAlgorithm,
+    providerSignInputMode: providerCapability.providerSignInputMode,
     isolationMode,
     signingBoundary: 'external-kms-hsm',
     privateKeyExportable: false,
@@ -738,6 +1084,15 @@ export function createFakeExternalKmsReleaseTenantSigner(input: {
         'Release tenant signer boundary descriptor is missing external signer key material references.',
       );
     }
+    if (
+      descriptor.releaseTokenJoseAlgorithm === null ||
+      descriptor.providerNativeAlgorithm === null ||
+      descriptor.providerSignInputMode === null
+    ) {
+      throw new ReleaseTenantSignerBoundaryError(
+        'Release tenant signer boundary descriptor is missing provider capability material.',
+      );
+    }
     const canonical = digestCanonical({
       version: RELEASE_TENANT_SIGNER_BOUNDARY_SPEC_VERSION,
       tenantIdDigest: descriptor.tenantIdDigest,
@@ -746,6 +1101,9 @@ export function createFakeExternalKmsReleaseTenantSigner(input: {
       keyId: descriptor.keyId,
       keyRefDigest: descriptor.keyRefDigest,
       algorithm: descriptor.algorithm,
+      releaseTokenJoseAlgorithm: descriptor.releaseTokenJoseAlgorithm,
+      providerNativeAlgorithm: descriptor.providerNativeAlgorithm,
+      providerSignInputMode: descriptor.providerSignInputMode,
       signingBoundary: 'external-kms-hsm',
       signedAt,
       descriptorDigest: descriptorDigestValue,
@@ -760,6 +1118,9 @@ export function createFakeExternalKmsReleaseTenantSigner(input: {
       keyId: descriptor.keyId,
       keyRefDigest: descriptor.keyRefDigest,
       algorithm: descriptor.algorithm,
+      releaseTokenJoseAlgorithm: descriptor.releaseTokenJoseAlgorithm,
+      providerNativeAlgorithm: descriptor.providerNativeAlgorithm,
+      providerSignInputMode: descriptor.providerSignInputMode,
       signingBoundary: 'external-kms-hsm',
       signedAt,
       signature: `fake-external-kms-signature:${canonical.digest}`,

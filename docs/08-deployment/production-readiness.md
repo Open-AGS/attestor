@@ -165,6 +165,12 @@ that matches tenant digest, key reference digest, key id, algorithm, and the
 standard Attestor challenge digest. A bare `liveProviderVerified=true` value is
 not enough to clear the boundary.
 
+That proof must also match Attestor's provider capability contract: the portable
+release-token algorithm, provider-native signing algorithm, and provider input
+mode are all pinned. Do not promote a KMS/HSM adapter that cannot prove whether
+it signed raw data or a provider-required digest, or that maps an unsupported
+provider/algorithm pair such as Azure Key Vault Ed25519.
+
 For `production-shared`, do not paper over the gate with file paths. Use it only when the dedicated release-authority PostgreSQL substrate is configured, reachable, and reflected in `/api/v1/ready`.
 
 ```bash

@@ -497,6 +497,21 @@ The entries above are the most concrete PR/commit-linked hardening records. The 
 - Remaining limitation or no-go condition: This is bearer-only compatibility for lower-risk customer integrations. It does not consume replay, perform online introspection, verify DPoP/mTLS/SPIFFE/HTTP Message Signature sender constraints, auto-issue tokens from generic consequence-admission responses, or prove customer runtime adoption. R3/R4 or production-sensitive paths still require `attestor/release-enforcement-plane` or equivalent customer-operated protected enforcement.
 - Status: complete for repository-side signed bearer customer-gate compatibility once this PR is merged and verified on `origin/master`.
 
+### 27. Tenant KMS Provider Capability Contract
+
+- Step / PR / commit: Tenant signer provider-native algorithm and input-mode contract; this PR records repository-side contract evidence but cannot pre-record its own merge commit.
+- Date if available: 2026-05-15.
+- Trust surface: per-tenant release signing boundary, external KMS/HSM adapter portability, provider algorithm mapping, raw-vs-digest signing input, and unsupported provider/algorithm downgrade risk.
+- Protected principle: tenant isolation; release provenance; proof integrity; fail-closed boundary; data minimization and redaction; no overclaim.
+- Research anchor / source used, if recorded: AWS KMS Sign API records that callers must record the KMS key and signing algorithm and must choose RAW versus DIGEST message type; Google Cloud KMS algorithms and asymmetricSign docs distinguish raw Ed25519 from digest-based ECDSA/RSA signing and expose protection levels; Azure Key Vault / Managed HSM Sign docs describe digest signing and ES/PS/RS algorithm ids; Azure Managed HSM docs record single-tenant HSM isolation. These are engineering anchors only, not live cloud-provider evidence.
+- Repository evidence:
+  - Contract/code evidence: `src/service/bootstrap/release-tenant-signer-boundary.ts`, `docs/03-governance/cryptography-policy.md`, `docs/08-deployment/production-readiness.md`, `docs/audit/f6-tenant-blast-radius-validation.md`, and `docs/audit/attestor-audit-remediation-tracker.md`.
+  - Test evidence: `tests/production-tenant-signer-boundary.test.ts`, `tests/research-provenance-ledger.test.ts`, and `tests/audit-remediation-tracker.test.ts`.
+- Implemented control: Adds a provider capability resolver that maps Attestor release signer algorithms to provider-native algorithm ids and sign-input modes for AWS KMS, Google Cloud KMS, Azure Key Vault / Managed HSM, runtime-local, and the fake external KMS test adapter. Descriptors and live provider proofs now bind the portable JOSE algorithm, provider-native algorithm, and raw/digest input mode. Unsupported provider/algorithm pairs, including Azure Key Vault Ed25519, fail closed before satisfying the tenant signer contract.
+- Tests / verification: `npm run test:production-tenant-signer-boundary`, `npm run test:audit-remediation-tracker`, and `npm run test:research-provenance-ledger`.
+- Remaining limitation or no-go condition: This is not a live AWS, Google Cloud, Azure, HSM, or confidential-compute signer adapter. Runtime release-token issuance still uses the existing release signing provider path, and external KMS/HSM-backed release signing remains unproven until a real provider adapter, live sign/verify probe, signature-format conversion, rotation plan, compromise response, and deployment evidence exist.
+- Status: complete for repository-side provider capability contract once this PR is merged and verified on `origin/master`.
+
 ## Strong Recorded Research Support
 
 The strongest recorded research support appears in:

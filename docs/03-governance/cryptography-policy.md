@@ -41,6 +41,10 @@ can narrow signer-compromise blast radius:
   rotated, live sign/verify probed, and fail closed without local fallback
 - live provider verification must come from a structured digest-only proof
   envelope, not from a bare boolean claim
+- each external provider contract must pin the provider-native signing
+  algorithm and input mode, not only the portable release-token algorithm; this
+  prevents accidental double hashing, unsupported provider/algorithm pairings,
+  and ambiguous adapter behavior
 - confidential-compute signing additionally requires verified attestation
   evidence before the boundary contract is satisfied
 
@@ -48,18 +52,25 @@ Official provider anchors:
 
 - AWS KMS supports asymmetric signing keys, including Ed25519, where the
   private signing key does not leave KMS unencrypted, and the `Sign` API
-  records the asymmetric sign operation:
+  requires callers to record the KMS key and signing algorithm. `MessageType`
+  must distinguish raw messages from precomputed digests:
   [AWS KMS asymmetric keys](https://docs.aws.amazon.com/kms/latest/developerguide/symmetric-asymmetric.html),
   [AWS KMS Sign](https://docs.aws.amazon.com/kms/latest/APIReference/API_Sign.html)
 - Google Cloud KMS supports asymmetric signing algorithms including Ed25519,
   and separates SOFTWARE, HSM, HSM_SINGLE_TENANT, EXTERNAL, and EXTERNAL_VPC
-  protection levels:
+  protection levels. Its asymmetric signing API accepts either raw data or a
+  digest that must match the key version algorithm:
   [Google Cloud KMS algorithms](https://cloud.google.com/kms/docs/algorithms),
+  [Google Cloud KMS asymmetricSign](https://cloud.google.com/kms/docs/reference/rest/v1/projects.locations.keyRings.cryptoKeys.cryptoKeyVersions/asymmetricSign),
   [Google Cloud KMS protection levels](https://cloud.google.com/kms/docs/protection-levels)
 - Azure Key Vault and Managed HSM support sign/verify over locally hashed
-  inputs, and Managed HSM provides single-tenant HSM-backed key isolation:
+  inputs, and Managed HSM provides single-tenant HSM-backed key isolation.
+  Current repository policy does not mark Azure Ed25519 as supported because
+  the public Key Vault signature algorithm set records ES*/PS*/RS*/HS* ids but
+  not EdDSA:
   [Azure Key Vault key operations](https://learn.microsoft.com/en-us/azure/key-vault/keys/about-keys-details),
-  [Azure Key Vault keys](https://learn.microsoft.com/en-us/azure/key-vault/keys/about-keys)
+  [Azure Key Vault Sign](https://learn.microsoft.com/en-us/rest/api/keyvault/keys/sign/sign),
+  [Azure Managed HSM overview](https://learn.microsoft.com/en-us/azure/key-vault/managed-hsm/overview)
 
 This is a contract and fake-adapter test boundary. It does not wire a live AWS,
 GCP, Azure, HSM, or confidential-compute signer into release-token issuance.

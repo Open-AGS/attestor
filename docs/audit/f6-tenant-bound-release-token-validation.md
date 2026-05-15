@@ -18,6 +18,8 @@ route overwrites or rejects mismatched body tenant IDs.
 The remaining valid issue is the token/signing layer: prior release-token claims
 did not carry a first-class tenant claim, so downstream verification could not
 cryptographically compare the token tenant to the enforcement point tenant.
+The later tenant signer boundary contract narrows the next implementation
+shape, but it still does not replace the runtime-wide release signer.
 
 ## Repository Changes
 
@@ -56,5 +58,11 @@ adds one of the following:
 - KMS/HSM-backed tenant-scoped signing keys;
 - or a production profile that refuses tenant-scoped claims without tenant
   signer isolation.
+
+`src/service/bootstrap/release-tenant-signer-boundary.ts` now defines that
+future KMS/HSM contract and a fake external KMS test adapter. That contract
+keeps raw tenant ids, raw key refs, and raw payloads out of the descriptor and
+fake signature artifacts, but it does not activate runtime release-token signing
+or prove a live cloud/HSM provider.
 
 Therefore F6-T1 remains `partial`, and F6-T6 moves from `open` to `partial`.

@@ -144,6 +144,7 @@
     "test:production-rehearsal-promotion-bundle": "tsx tests/production-rehearsal-promotion-bundle.test.ts",
     "test:production-runtime-pki-rotation": "tsx tests/production-runtime-pki-rotation.test.ts",
     "test:production-release-signing-provider": "tsx tests/production-release-signing-provider.test.ts",
+    "test:production-tenant-signer-boundary": "tsx tests/production-tenant-signer-boundary.test.ts",
     "test:pipeline-verification-routes": "tsx tests/pipeline-verification-routes.test.ts",
     "test:production-shared-authority-plane-docs": "tsx tests/production-shared-authority-plane-docs.test.ts",
     "test:release-authority-store": "tsx tests/release-authority-store.test.ts",

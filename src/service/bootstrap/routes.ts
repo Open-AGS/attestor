@@ -4,6 +4,7 @@ import {
   issueGenericAdmissionProtectedReleaseToken,
 } from '../../consequence-admission/index.js';
 import type {
+  AwaitableReleaseTokenIntrospectionStore,
   ReleaseTokenIssuer,
 } from '../../release-layer/index.js';
 import { createServiceAgentLoopAbuseGuard } from '../agent-loop-abuse-guard.js';
@@ -83,6 +84,7 @@ interface RuntimeSecurityWithGenericAdmissionProtectedRoute {
 
 interface RuntimeServicesWithGenericAdmissionProtectedIssuer {
   readonly genericAdmissionProtectedIssuer?: ReleaseTokenIssuer;
+  readonly genericAdmissionProtectedIntrospectionStore?: AwaitableReleaseTokenIntrospectionStore;
 }
 
 function genericAdmissionProtectedRouteFor<Packet>(
@@ -115,6 +117,14 @@ function genericAdmissionProtectedIssuerFor<Packet>(
   return services.genericAdmissionProtectedIssuer ?? null;
 }
 
+function genericAdmissionProtectedIntrospectionStoreFor<Packet>(
+  runtime: AppRuntime<Packet>,
+): AwaitableReleaseTokenIntrospectionStore | null {
+  const services =
+    runtime.services as RuntimeServicesWithGenericAdmissionProtectedIssuer;
+  return services.genericAdmissionProtectedIntrospectionStore ?? null;
+}
+
 export function createGenericAdmissionRouteDeps<Packet>(
   runtime: AppRuntime<Packet>,
 ): GenericAdmissionRouteDeps {
@@ -124,6 +134,8 @@ export function createGenericAdmissionRouteDeps<Packet>(
     genericAdmissionProtectedRouteFor(runtime);
   const genericAdmissionProtectedIssuer =
     genericAdmissionProtectedIssuerFor(runtime);
+  const genericAdmissionProtectedIntrospectionStore =
+    genericAdmissionProtectedIntrospectionStoreFor(runtime);
   return {
     currentTenant: runtime.services.httpRoutes.pipeline.currentTenant,
     evaluateAgentLoopAbuse: async ({ tenant, envelope, receivedAt }) =>
@@ -140,7 +152,7 @@ export function createGenericAdmissionRouteDeps<Packet>(
         }),
       });
     },
-    ...(genericAdmissionProtectedIssuer
+    ...(genericAdmissionProtectedIssuer && genericAdmissionProtectedIntrospectionStore
       ? {
           resolveProtectedReleaseTokenConfirmation: async ({ context, receivedAt }) => {
             const confirmation =
@@ -156,6 +168,7 @@ export function createGenericAdmissionRouteDeps<Packet>(
             issueGenericAdmissionProtectedReleaseToken({
               envelope,
               issuer: genericAdmissionProtectedIssuer,
+              introspectionStore: genericAdmissionProtectedIntrospectionStore,
               confirmation: senderConfirmation ?? null,
               issuedAt: receivedAt,
             }),

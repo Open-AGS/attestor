@@ -1,7 +1,7 @@
 import type {
   ActiveReleaseTokenIntrospectionResult,
+  AwaitableReleaseTokenIntrospectionStore,
   ReleaseTokenIntrospectionResult,
-  ReleaseTokenIntrospectionStore,
   ReleaseTokenIntrospector,
   ReleaseTokenInactiveReason,
 } from '../release-kernel/release-introspection.js';
@@ -49,7 +49,7 @@ export interface OnlineReleaseVerificationInput
   readonly introspector?: ReleaseTokenIntrospector;
   readonly tokenTypeHint?: string;
   readonly resourceServerId?: string;
-  readonly usageStore?: ReleaseTokenIntrospectionStore;
+  readonly usageStore?: AwaitableReleaseTokenIntrospectionStore;
   readonly consumeOnSuccess?: boolean;
   readonly forceOnlineIntrospection?: boolean;
   readonly introspectionSnapshotId?: string;
@@ -552,7 +552,7 @@ export async function verifyOnlineReleaseAuthorization(
     if (!input.usageStore || !offline.claims) {
       usageFailures.push('introspection-unavailable');
     } else {
-      const usage = input.usageStore.recordTokenUse({
+      const usage = await input.usageStore.recordTokenUse({
         tokenId: offline.claims.jti,
         usedAt: checkedAt,
         resourceServerId: expectedResourceServerId(input),

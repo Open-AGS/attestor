@@ -78,6 +78,11 @@ includes(
 );
 includes(
   validationDoc,
+  'hosted durable introspection/replay wiring: registers issued protected tokens',
+  'F2 customer gate validation: hosted durable introspection bridge is explicit',
+);
+includes(
+  validationDoc,
   'Current repo evidence supports `partial`, not `fixed`.',
   'F2 customer gate validation: no overclaim is present',
 );

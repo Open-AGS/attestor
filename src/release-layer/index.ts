@@ -78,6 +78,8 @@ export type ReleaseTokenIntrospectionPolicyContext =
   introspection.ReleaseTokenIntrospectionPolicyContext;
 export type ReleaseTokenInactiveReason = introspection.ReleaseTokenInactiveReason;
 export type ReleaseTokenIntrospectionStore = introspection.ReleaseTokenIntrospectionStore;
+export type AwaitableReleaseTokenIntrospectionStore =
+  introspection.AwaitableReleaseTokenIntrospectionStore;
 export type ReleaseTokenIntrospector = introspection.ReleaseTokenIntrospector;
 export type ReleaseVerificationContext = verification.ReleaseVerificationContext;
 export type ReleaseVerificationErrorConstructor = typeof verification.ReleaseVerificationError;

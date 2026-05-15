@@ -14,6 +14,7 @@ Files inspected:
 - `src/consequence-admission/generic-protected-release-token.ts`
 - `src/consequence-admission/customer-pep-runtime-adoption.ts`
 - `src/service/generic-admission-protected-route.ts`
+- `src/service/release-token-introspection-store.ts`
 - `src/consequence-admission/downstream-enforcement-contract.ts`
 - `src/consequence-admission/verifier-helper.ts`
 - `src/release-kernel/release-token.ts`
@@ -22,6 +23,7 @@ Files inspected:
 - `tests/downstream-enforcement-contract.test.ts`
 - `tests/consequence-verifier-helper.test.ts`
 - `tests/release-enforcement-plane-online-verifier.test.ts`
+- `tests/release-token-introspection-store.test.ts`
 - `docs/08-deployment/release-enforcement-plane-envoy.md`
 
 ## Validation Result
@@ -54,11 +56,20 @@ tenant-bound, audience-scoped release token and recreates the admission with a
 `release-token` proof reference by token id and digest. The sanitized envelope
 does not store the raw token.
 
+When `issueGenericAdmissionProtectedReleaseToken(...)` receives the hosted
+release-token introspection authority, it registers the issued token by token id
+and release-decision metadata. This narrows the repo-side gap between generic
+consequence authorization and online introspection without storing the raw token
+in admission or shadow records.
+
 The hosted generic admission route now has an active DPoP sender-confirmation
 bridge. It validates a token-request DPoP proof from the `DPoP` header, derives
 the `cnf.jkt` confirmation, and uses the runtime release-token issuer to issue
 caller-only protected authorization material for high-risk generic admissions.
-Missing or invalid DPoP proof fails closed before shadow recording.
+Missing or invalid DPoP proof fails closed before shadow recording. Hosted
+bootstrap wires the release-token introspection store into this issuer path and
+the route readiness proof now blocks `production-shared` when token
+introspection or replay-consumption storage is missing or runtime-local.
 
 `evaluateCustomerPepRuntimeAdoption(...)` adds a customer PEP runtime adoption
 proof contract. It is ready only when the scoped customer runtime uses the
@@ -99,6 +110,7 @@ generic protected release-token issuance helper: can issue sender-constrained pr
 hosted generic DPoP issuer bridge: validates token-request DPoP proof and issues caller-only protected tokens in hosted non-production profiles
 customer PEP runtime adoption proof: can prove scoped fail-closed runtime adoption evidence, but does not deploy or operate the PEP
 protected enforcement profile: routes high-risk/customer-sensitive paths to the release-enforcement plane
+hosted durable introspection/replay wiring: registers issued protected tokens in the release-token introspection authority and blocks production-shared readiness unless token introspection and replay-consumption storage are shared
 hosted generic admission protected route: requires the protected issuer for high-risk hosted generic admissions and blocks production-shared readiness until the issuer boundary has structured external live provider proof
 ```
 
@@ -159,15 +171,17 @@ presentation, require online introspection, require replay consumption, and
 forbid bearer-only/helper-only protected execution. That profile is a contract
 selector, not token issuance or customer-runtime activation by itself.
 
-The hosted generic admission protected route proof and DPoP issuer bridge
+The hosted generic admission protected route proof, DPoP issuer bridge, and
+durable introspection/replay wiring
 narrow the hosted configuration gap: the service bootstrap now requires
 protected release-token issuance for high-risk generic admissions, validates
-token-request DPoP proof into `cnf.jkt`, exposes the route proof through
-health/readiness diagnostics, and fails closed when sender confirmation is
-absent. It still does not configure a live external KMS/HSM signer, durable
-replay/introspection backend, or customer-operated PEP; production-shared route
-readiness remains blocked while the issuer boundary is runtime-local or lacks
-structured live provider proof.
+token-request DPoP proof into `cnf.jkt`, registers issued protected tokens in
+the release-token introspection authority, exposes the route proof through
+health/readiness diagnostics, and fails closed when sender confirmation or
+shared replay/introspection storage is absent. It still does not configure a
+live external KMS/HSM signer, deployed customer-operated PEP, or live production
+environment; production-shared route readiness remains blocked while the issuer
+boundary is runtime-local or lacks structured live provider proof.
 
 ## Tests
 
@@ -181,6 +195,7 @@ npm run test:consequence-admission-customer-gate
 npm run test:generic-admission-protected-route
 npm run test:hosted-generic-admission-sender-confirmation
 npm run test:generic-admission-protected-release-token
+npm run test:release-token-introspection-store
 ```
 
 Related tests:
@@ -189,5 +204,5 @@ Related tests:
 npm run test:consequence-admission-customer-gate
 npm run test:downstream-enforcement-contract
 npm run test:consequence-verifier-helper
-npm run test:release-enforcement-plane-online-verifier
+npx tsx tests/release-enforcement-plane-online-verifier.test.ts
 ```

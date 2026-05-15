@@ -32,6 +32,11 @@ export type GenericAdmissionProtectedRouteIssuerLiveProofState =
   | 'invalid'
   | 'stale';
 
+export type GenericAdmissionProtectedRouteAuthorityStoreDurability =
+  | 'shared'
+  | 'local'
+  | 'missing';
+
 export type GenericAdmissionProtectedRouteSenderConfirmationSource =
   | 'dpop-jkt'
   | 'mtls-certificate-thumbprint'
@@ -53,7 +58,11 @@ export type GenericAdmissionProtectedRouteBlocker =
   | 'external-issuer-boundary-proof-mismatch'
   | 'external-issuer-boundary-proof-not-production-ready'
   | 'external-issuer-live-provider-proof-not-valid'
-  | 'external-issuer-provider-response-storage-risk';
+  | 'external-issuer-provider-response-storage-risk'
+  | 'token-introspection-store-not-configured'
+  | 'replay-consumption-store-not-configured'
+  | 'production-token-introspection-store-not-shared'
+  | 'production-replay-consumption-store-not-shared';
 
 export type GenericAdmissionProtectedRouteNoGoCondition =
   | 'hosted-route-issuer-missing'
@@ -73,6 +82,12 @@ export interface GenericAdmissionProtectedRouteEvaluation {
   readonly issuerBoundary: GenericAdmissionProtectedRouteIssuerBoundary;
   readonly issuerBoundaryEvidenceSource: GenericAdmissionProtectedRouteIssuerBoundaryEvidenceSource;
   readonly externalIssuerLiveProviderVerified: boolean;
+  readonly tokenIntrospectionStoreConfigured: boolean;
+  readonly tokenIntrospectionStoreDurability: GenericAdmissionProtectedRouteAuthorityStoreDurability;
+  readonly replayConsumptionStoreConfigured: boolean;
+  readonly replayConsumptionStoreDurability: GenericAdmissionProtectedRouteAuthorityStoreDurability;
+  readonly tokenIntrospectionStoreReady: boolean;
+  readonly replayConsumptionStoreReady: boolean;
   readonly senderConfirmationSource: GenericAdmissionProtectedRouteSenderConfirmationSource;
   readonly failClosedOnMissingIssuer: boolean;
   readonly compatibilityModeAllowed: boolean;
@@ -109,6 +124,10 @@ export interface EvaluateGenericAdmissionProtectedRouteInput {
   readonly issuerConfigured: boolean;
   readonly issuerBoundary?: GenericAdmissionProtectedRouteIssuerBoundary | null;
   readonly issuerBoundaryEvidence?: GenericAdmissionProtectedRouteIssuerBoundaryEvidence | null;
+  readonly tokenIntrospectionStoreConfigured?: boolean | null;
+  readonly tokenIntrospectionStoreDurability?: GenericAdmissionProtectedRouteAuthorityStoreDurability | null;
+  readonly replayConsumptionStoreConfigured?: boolean | null;
+  readonly replayConsumptionStoreDurability?: GenericAdmissionProtectedRouteAuthorityStoreDurability | null;
   readonly senderConfirmationSource?: GenericAdmissionProtectedRouteSenderConfirmationSource | null;
   readonly failClosedOnMissingIssuer: boolean;
   readonly shadowRecordsRawToken?: boolean | null;
@@ -143,6 +162,24 @@ export function evaluateGenericAdmissionProtectedRoute(
     issuerBoundaryEvidence.liveProviderVerified &&
     issuerBoundaryEvidence.liveProviderProofState === 'valid' &&
     issuerBoundaryEvidence.rawProviderResponseStored === false;
+  const tokenIntrospectionStoreConfigured =
+    input.tokenIntrospectionStoreConfigured === true;
+  const tokenIntrospectionStoreDurability =
+    tokenIntrospectionStoreConfigured
+      ? input.tokenIntrospectionStoreDurability ?? 'local'
+      : 'missing';
+  const replayConsumptionStoreConfigured =
+    input.replayConsumptionStoreConfigured === true;
+  const replayConsumptionStoreDurability =
+    replayConsumptionStoreConfigured
+      ? input.replayConsumptionStoreDurability ?? 'local'
+      : 'missing';
+  const tokenIntrospectionStoreReady =
+    tokenIntrospectionStoreConfigured &&
+    (!productionSharedSelected || tokenIntrospectionStoreDurability === 'shared');
+  const replayConsumptionStoreReady =
+    replayConsumptionStoreConfigured &&
+    (!productionSharedSelected || replayConsumptionStoreDurability === 'shared');
   const senderConfirmationSource = input.senderConfirmationSource ?? 'none';
   const shadowRecordsRawToken = input.shadowRecordsRawToken === true;
   const admissionOrShadowStoresRawToken =
@@ -162,7 +199,11 @@ export function evaluateGenericAdmissionProtectedRoute(
   const productionIssuerBoundaryReady =
     !productionSharedSelected || externalIssuerEvidenceReady;
   const readyForSelectedProfile = productionSharedSelected
-    ? protectedRouteGuardReady && issuerReady && productionIssuerBoundaryReady
+    ? protectedRouteGuardReady &&
+      issuerReady &&
+      productionIssuerBoundaryReady &&
+      tokenIntrospectionStoreReady &&
+      replayConsumptionStoreReady
     : true;
   const state: GenericAdmissionProtectedRouteState = productionSharedSelected
     ? readyForSelectedProfile
@@ -188,8 +229,28 @@ export function evaluateGenericAdmissionProtectedRoute(
   if (productionSharedSelected && senderConfirmationSource === 'none') {
     blockers.push('sender-confirmation-source-not-configured');
   }
+  if (!tokenIntrospectionStoreConfigured) {
+    blockers.push('token-introspection-store-not-configured');
+  }
+  if (!replayConsumptionStoreConfigured) {
+    blockers.push('replay-consumption-store-not-configured');
+  }
   if (productionSharedSelected && issuerBoundary !== 'external-kms-hsm') {
     blockers.push('production-issuer-boundary-not-external');
+  }
+  if (
+    productionSharedSelected &&
+    tokenIntrospectionStoreConfigured &&
+    tokenIntrospectionStoreDurability !== 'shared'
+  ) {
+    blockers.push('production-token-introspection-store-not-shared');
+  }
+  if (
+    productionSharedSelected &&
+    replayConsumptionStoreConfigured &&
+    replayConsumptionStoreDurability !== 'shared'
+  ) {
+    blockers.push('production-replay-consumption-store-not-shared');
   }
   if (productionSharedSelected && issuerBoundary === 'external-kms-hsm') {
     if (issuerBoundaryEvidence === null) {
@@ -215,9 +276,11 @@ export function evaluateGenericAdmissionProtectedRoute(
 
   const noGoConditions: GenericAdmissionProtectedRouteNoGoCondition[] = [
     'customer-pep-not-proven',
-    'durable-introspection-replay-store-not-proven',
     'live-production-deployment-not-proven',
   ];
+  if (!tokenIntrospectionStoreReady || !replayConsumptionStoreReady) {
+    noGoConditions.push('durable-introspection-replay-store-not-proven');
+  }
   if (!input.issuerConfigured) noGoConditions.push('hosted-route-issuer-missing');
   if (senderConfirmationSource === 'none') {
     noGoConditions.push('sender-proof-verifier-missing');
@@ -236,6 +299,12 @@ export function evaluateGenericAdmissionProtectedRoute(
     issuerBoundaryEvidenceSource: issuerBoundaryEvidence?.source ?? 'none',
     externalIssuerLiveProviderVerified:
       issuerBoundaryEvidence?.liveProviderVerified ?? false,
+    tokenIntrospectionStoreConfigured,
+    tokenIntrospectionStoreDurability,
+    replayConsumptionStoreConfigured,
+    replayConsumptionStoreDurability,
+    tokenIntrospectionStoreReady,
+    replayConsumptionStoreReady,
     senderConfirmationSource,
     failClosedOnMissingIssuer: input.failClosedOnMissingIssuer,
     compatibilityModeAllowed: !protectedIssuerRequired,
@@ -251,6 +320,6 @@ export function evaluateGenericAdmissionProtectedRoute(
     noGoConditions: unique(noGoConditions),
     requiredProofs: GENERIC_ADMISSION_PROTECTED_ROUTE_REQUIRED_PROOFS,
     limitation:
-      'This proves hosted route fail-closed configuration for protected high-risk generic admissions, not a live authorization server, customer PEP deployment, external KMS/HSM signer adapter, durable replay/introspection backend, or production deployment.',
+      'This proves hosted route fail-closed configuration and repository-side introspection/replay store wiring for protected high-risk generic admissions, not a live authorization server, customer PEP deployment, external KMS/HSM signer adapter, or production deployment.',
   });
 }

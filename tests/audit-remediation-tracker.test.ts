@@ -110,6 +110,8 @@ try {
   includes(tracker, 'customer PEP runtime adoption proof in `src/consequence-admission/customer-pep-runtime-adoption.ts`', 'Tracker: F2 customer PEP runtime adoption proof is recorded');
   includes(tracker, 'hosted route proof in `src/service/generic-admission-protected-route.ts`', 'Tracker: F2 hosted generic route proof is recorded');
   includes(tracker, 'hosted DPoP sender-confirmation bridge in `src/service/hosted-generic-admission-sender-confirmation.ts`', 'Tracker: F2 hosted DPoP sender-confirmation bridge is recorded');
+  includes(tracker, 'hosted durable introspection/replay wiring through `src/service/release-token-introspection-store.ts`', 'Tracker: F2 hosted durable introspection bridge is recorded');
+  includes(tracker, 'registers issued protected tokens in the release-token introspection authority', 'Tracker: F2 issued-token introspection registration is recorded');
   includes(tracker, 'external KMS/HSM issuer boundary with structured live provider proof', 'Tracker: F2 hosted issuer external live-proof boundary is recorded');
   includes(tracker, 'F2-AG-2 agent-payment settlement post-condition | `partial`', 'Tracker: F2 agent-payment settlement validation is closed as partial');
   includes(tracker, 'F2-AG-3 account-delegation / EIP-7702 scope | `partial`', 'Tracker: F2 EIP-7702 scope validation is closed as partial');

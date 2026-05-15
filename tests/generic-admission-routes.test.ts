@@ -9,6 +9,9 @@ import {
   createDpopProof,
   generateDpopKeyPair,
 } from '../src/release-enforcement-plane/dpop.js';
+import {
+  createInMemoryReleaseTokenIntrospectionStore,
+} from '../src/release-kernel/release-introspection.js';
 import { createReleaseTokenIssuer } from '../src/release-kernel/release-token.js';
 import { generateKeyPair } from '../src/signing/keys.js';
 import { registerGenericAdmissionRoutes } from '../src/service/http/routes/generic-admission-routes.js';
@@ -525,6 +528,7 @@ async function testLoopGuardThrottlesRetryAttemptBeyondBudget(): Promise<void> {
 async function testProtectedReleaseTokenIssuerReturnsAuthorizationWithoutRecordingRawToken(): Promise<void> {
   const app = new Hono();
   const issuer = releaseTokenIssuerFixture();
+  const introspectionStore = createInMemoryReleaseTokenIntrospectionStore();
   const dpop = await generateDpopKeyPair();
   let recordedEnvelope: GenericAdmissionEnvelope | null = null;
   registerGenericAdmissionRoutes(app, {
@@ -540,6 +544,7 @@ async function testProtectedReleaseTokenIssuerReturnsAuthorizationWithoutRecordi
       issueGenericAdmissionProtectedReleaseToken({
         envelope,
         issuer,
+        introspectionStore,
         confirmation: { jkt: dpop.publicKeyThumbprint },
         issuedAt: '2026-05-01T18:00:02.000Z',
       }),
@@ -559,6 +564,7 @@ async function testProtectedReleaseTokenIssuerReturnsAuthorizationWithoutRecordi
       tokenId: string;
       tokenDigest: string;
       rawReleaseTokenStored: boolean;
+      introspectionAuthorityRegistered: boolean;
     };
     protectedReleaseTokenAuthorization: {
       token: string;
@@ -591,6 +597,16 @@ async function testProtectedReleaseTokenIssuerReturnsAuthorizationWithoutRecordi
     body.protectedReleaseToken.tokenId,
     body.protectedReleaseTokenAuthorization.tokenId,
     'Generic admission route: sanitized summary and authorization token id match',
+  );
+  equal(
+    body.protectedReleaseToken.introspectionAuthorityRegistered,
+    true,
+    'Generic admission route: protected token is registered for online introspection',
+  );
+  equal(
+    introspectionStore.findToken(body.protectedReleaseTokenAuthorization.tokenId)?.status,
+    'issued',
+    'Generic admission route: route issuer registers the token in the introspection store',
   );
   equal(
     body.admission.proof.some((proof) =>
@@ -656,6 +672,7 @@ async function testProtectedReleaseTokenRequiredFailsClosedWithoutIssuer(): Prom
 async function testProtectedReleaseTokenIssuerUsesRouteResolvedDpopConfirmation(): Promise<void> {
   const app = new Hono();
   const issuer = releaseTokenIssuerFixture();
+  const introspectionStore = createInMemoryReleaseTokenIntrospectionStore();
   const dpop = await generateDpopKeyPair();
   const routeUrl = 'https://attestor.test/api/v1/admissions';
   const proof = await createDpopProof({
@@ -691,6 +708,7 @@ async function testProtectedReleaseTokenIssuerUsesRouteResolvedDpopConfirmation(
       issueGenericAdmissionProtectedReleaseToken({
         envelope,
         issuer,
+        introspectionStore,
         confirmation: senderConfirmation ?? null,
         issuedAt: receivedAt,
       }),
@@ -705,8 +723,10 @@ async function testProtectedReleaseTokenIssuerUsesRouteResolvedDpopConfirmation(
   });
   const body = await response.json() as {
     protectedReleaseToken: {
+      tokenId: string;
       senderConstrained: boolean;
       rawReleaseTokenStored: boolean;
+      introspectionAuthorityRegistered: boolean;
     };
     protectedReleaseTokenAuthorization: {
       token: string;
@@ -724,6 +744,16 @@ async function testProtectedReleaseTokenIssuerUsesRouteResolvedDpopConfirmation(
     body.protectedReleaseToken.senderConstrained,
     true,
     'Generic admission route: issued route token is sender-constrained',
+  );
+  equal(
+    body.protectedReleaseToken.introspectionAuthorityRegistered,
+    true,
+    'Generic admission route: DPoP-confirmed token is registered for online introspection',
+  );
+  equal(
+    introspectionStore.findToken(body.protectedReleaseToken.tokenId)?.status,
+    'issued',
+    'Generic admission route: DPoP-confirmed token authority state is active',
   );
   equal(
     body.protectedReleaseToken.rawReleaseTokenStored,
@@ -745,6 +775,7 @@ async function testProtectedReleaseTokenIssuerUsesRouteResolvedDpopConfirmation(
 async function testProtectedReleaseTokenIssuerFailsClosedWithoutDpopConfirmation(): Promise<void> {
   const app = new Hono();
   const issuer = releaseTokenIssuerFixture();
+  const introspectionStore = createInMemoryReleaseTokenIntrospectionStore();
   let shadowRecords = 0;
   registerGenericAdmissionRoutes(app, {
     currentTenant: () => ({
@@ -769,6 +800,7 @@ async function testProtectedReleaseTokenIssuerFailsClosedWithoutDpopConfirmation
       issueGenericAdmissionProtectedReleaseToken({
         envelope,
         issuer,
+        introspectionStore,
         confirmation: senderConfirmation ?? null,
         issuedAt: receivedAt,
       }),

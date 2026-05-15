@@ -19,6 +19,9 @@ import {
 import type {
   ReleaseTokenIssuer,
 } from '../release-kernel/release-token.js';
+import type {
+  AwaitableReleaseTokenIntrospectionStore,
+} from '../release-kernel/release-introspection.js';
 import {
   createConsequenceAdmissionResponse,
   type ConsequenceAdmissionProofRef,
@@ -86,6 +89,7 @@ export interface GenericAdmissionProtectedReleaseTokenSummary {
   readonly senderConstrained: true;
   readonly introspectionRequired: boolean;
   readonly replayConsumptionRequired: true;
+  readonly introspectionAuthorityRegistered: boolean;
   readonly proofRefMatched: true;
   readonly profileVersion: typeof CONSEQUENCE_ADMISSION_PROTECTED_ENFORCEMENT_PROFILE_VERSION;
   readonly rawReleaseTokenStored: false;
@@ -117,6 +121,10 @@ export interface IssueGenericAdmissionProtectedReleaseTokenInput
   readonly tokenId?: string | null;
   readonly audience?: string | null;
   readonly ttlSeconds?: number;
+  readonly introspectionStore?: Pick<
+    AwaitableReleaseTokenIntrospectionStore,
+    'registerIssuedToken'
+  > | null;
 }
 
 export interface GenericAdmissionProtectedReleaseTokenIssueResult {
@@ -462,6 +470,12 @@ export async function issueGenericAdmissionProtectedReleaseToken(
     },
     confirmation: input.confirmation ?? undefined,
   });
+  const registeredToken = input.introspectionStore
+    ? await input.introspectionStore.registerIssuedToken({
+        issuedToken,
+        decision: releaseDecision,
+      })
+    : null;
   const tokenDigest = releaseTokenDigest(issuedToken.token);
   const proofRef = Object.freeze({
     kind: 'release-token',
@@ -482,6 +496,9 @@ export async function issueGenericAdmissionProtectedReleaseToken(
       'protected-release-token-sender-constrained',
       'protected-release-token-online-introspection-required',
       'protected-release-token-replay-consume-required',
+      ...(registeredToken
+        ? ['protected-release-token-introspection-authority-registered']
+        : []),
     ],
     checks: admission.checks,
     constraints: admission.constraints,
@@ -496,6 +513,7 @@ export async function issueGenericAdmissionProtectedReleaseToken(
       protectedReleaseTokenSenderConstrained: true,
       protectedReleaseTokenIntrospectionRequired: issuedToken.claims.introspection_required,
       protectedReleaseTokenReplayConsumeRequired: true,
+      protectedReleaseTokenIntrospectionAuthorityRegistered: registeredToken !== null,
       protectedReleaseTokenRawStored: false,
       protectedEnforcementProfileVersion: CONSEQUENCE_ADMISSION_PROTECTED_ENFORCEMENT_PROFILE_VERSION,
       protectedReleaseTokenIssuanceVersion:
@@ -516,6 +534,7 @@ export async function issueGenericAdmissionProtectedReleaseToken(
     senderConstrained: true,
     introspectionRequired: issuedToken.claims.introspection_required,
     replayConsumptionRequired: true,
+    introspectionAuthorityRegistered: registeredToken !== null,
     proofRefMatched: true,
     profileVersion: CONSEQUENCE_ADMISSION_PROTECTED_ENFORCEMENT_PROFILE_VERSION,
     rawReleaseTokenStored: false,

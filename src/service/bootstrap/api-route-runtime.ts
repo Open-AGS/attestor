@@ -387,6 +387,16 @@ export async function createApiHttpRouteRuntime(
       liveProviderProofState: 'not-provided',
       rawProviderResponseStored: false,
     },
+    tokenIntrospectionStoreConfigured: true,
+    tokenIntrospectionStoreDurability:
+      releaseRuntimeStoreModes['release-token-introspection'] === 'shared'
+        ? 'shared'
+        : 'local',
+    replayConsumptionStoreConfigured: true,
+    replayConsumptionStoreDurability:
+      releaseRuntimeStoreModes['release-token-introspection'] === 'shared'
+        ? 'shared'
+        : 'local',
     senderConfirmationSource: 'dpop-jkt',
     failClosedOnMissingIssuer: true,
     shadowRecordsRawToken: false,
@@ -859,6 +869,7 @@ export async function createApiHttpRouteRuntime(
     },
     extraServices: {
       genericAdmissionProtectedIssuer: apiReleaseTokenIssuer,
+      genericAdmissionProtectedIntrospectionStore: apiReleaseIntrospectionStore,
     },
   });
 }

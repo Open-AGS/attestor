@@ -11,6 +11,9 @@ import {
   createReleaseTokenIssuer,
   verifyIssuedReleaseToken,
 } from '../src/release-kernel/release-token.js';
+import {
+  createInMemoryReleaseTokenIntrospectionStore,
+} from '../src/release-kernel/release-introspection.js';
 import { generateKeyPair } from '../src/signing/keys.js';
 
 let passed = 0;
@@ -61,9 +64,11 @@ async function testHighRiskAdmissionIssuesSenderConstrainedReleaseToken(): Promi
   const envelope = createGenericAdmissionEnvelope(highRiskPayload());
   const dpop = await generateDpopKeyPair();
   const issuer = issuerFixture();
+  const introspectionStore = createInMemoryReleaseTokenIntrospectionStore();
   const result = await issueGenericAdmissionProtectedReleaseToken({
     envelope,
     issuer,
+    introspectionStore,
     confirmation: { jkt: dpop.publicKeyThumbprint },
     issuedAt: '2026-05-01T18:00:02.000Z',
   });
@@ -94,6 +99,7 @@ async function testHighRiskAdmissionIssuesSenderConstrainedReleaseToken(): Promi
   equal(result.envelope.protectedReleaseToken.senderConstrained, true, 'Generic protected release token: summary records sender constraint');
   equal(result.envelope.protectedReleaseToken.introspectionRequired, true, 'Generic protected release token: R3 token requires introspection');
   equal(result.envelope.protectedReleaseToken.replayConsumptionRequired, true, 'Generic protected release token: replay consumption is required');
+  equal(result.envelope.protectedReleaseToken.introspectionAuthorityRegistered, true, 'Generic protected release token: issued token is registered for online introspection');
   equal(result.authorization.presentationRequired, 'sender-constrained', 'Generic protected release token: authorization requires sender-constrained presentation');
   equal(result.authorization.storeRawTokenInAdmissionOrShadow, false, 'Generic protected release token: authorization forbids raw-token storage');
   equal(serializedAdmission.includes(result.authorization.token), false, 'Generic protected release token: raw token is not stored in admission');
@@ -101,6 +107,11 @@ async function testHighRiskAdmissionIssuesSenderConstrainedReleaseToken(): Promi
   equal(verified.claims.tenant_id, 'tenant_route', 'Generic protected release token: token carries tenant binding');
   equal(verified.claims.risk_class, 'R3', 'Generic protected release token: token carries high-risk class');
   equal(verified.claims.cnf?.jkt, dpop.publicKeyThumbprint, 'Generic protected release token: token carries DPoP confirmation thumbprint');
+  equal(
+    introspectionStore.findToken(result.authorization.tokenId)?.status,
+    'issued',
+    'Generic protected release token: introspection store records issued token as active',
+  );
   equal(
     verified.claims.policy_provenance_source,
     'compiled-admission-policy-index',

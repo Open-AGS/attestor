@@ -543,6 +543,36 @@ function testLedgerIndexesAuditRemediationClosure(): void {
     'does not activate external release-token signing',
     'Research provenance ledger: hosted generic external issuer activation non-claim is explicit',
   );
+  includes(
+    content,
+    '### 36. Hosted Generic Admission Durable Introspection And Replay Wiring',
+    'Research provenance ledger: hosted generic durable introspection entry is present',
+  );
+  includes(
+    content,
+    'OAuth Token Introspection RFC 7662 anchors protected-resource active-token liveness',
+    'Research provenance ledger: hosted generic durable introspection RFC 7662 anchor is recorded',
+  );
+  includes(
+    content,
+    'PostgreSQL `SELECT ... FOR UPDATE` anchors the shared-store row-lock pattern',
+    'Research provenance ledger: hosted generic durable replay PostgreSQL anchor is recorded',
+  );
+  includes(
+    content,
+    'register issued tokens with the release-token introspection authority',
+    'Research provenance ledger: hosted generic issued-token registration is recorded',
+  );
+  includes(
+    content,
+    'blocks `production-shared` when either store is missing or runtime-local',
+    'Research provenance ledger: hosted generic shared-store readiness blocker is recorded',
+  );
+  includes(
+    content,
+    'not a live customer PEP',
+    'Research provenance ledger: hosted generic durable introspection live PEP non-claim is explicit',
+  );
 }
 
 function testLedgerKeepsEvidenceBoundaryExplicit(): void {

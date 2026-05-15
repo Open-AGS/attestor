@@ -26,6 +26,11 @@ function includes<T>(values: readonly T[], value: T, message: string): void {
   passed += 1;
 }
 
+function excludes<T>(values: readonly T[], value: T, message: string): void {
+  assert.ok(!values.includes(value), message);
+  passed += 1;
+}
+
 function readProjectFile(...segments: string[]): string {
   return readFileSync(join(process.cwd(), ...segments), 'utf8');
 }
@@ -33,6 +38,7 @@ function readProjectFile(...segments: string[]): string {
 function runtimeWith(
   genericAdmissionProtectedRoute?: GenericAdmissionProtectedRouteEvaluation,
   genericAdmissionProtectedIssuer?: unknown,
+  genericAdmissionProtectedIntrospectionStore?: unknown,
 ): AppRuntime<unknown> {
   return {
     registries: {},
@@ -48,6 +54,9 @@ function runtimeWith(
     stores: {},
     services: {
       ...(genericAdmissionProtectedIssuer ? { genericAdmissionProtectedIssuer } : {}),
+      ...(genericAdmissionProtectedIntrospectionStore
+        ? { genericAdmissionProtectedIntrospectionStore }
+        : {}),
       httpRoutes: {
         pipeline: {
           currentTenant: () => ({
@@ -116,6 +125,16 @@ function testProductionSharedBlocksUntilIssuerAndSenderProofAreConfigured(): voi
     'production-issuer-boundary-not-external',
     'Generic protected route: production-shared requires an external issuer boundary',
   );
+  includes(
+    proof.blockers,
+    'token-introspection-store-not-configured',
+    'Generic protected route: missing introspection store blocker is explicit',
+  );
+  includes(
+    proof.blockers,
+    'replay-consumption-store-not-configured',
+    'Generic protected route: missing replay consumption store blocker is explicit',
+  );
   equal(
     proof.productionReady,
     false,
@@ -129,6 +148,10 @@ function testCompatibilityModeIsAProductionSharedBlocker(): void {
     requireProtectedReleaseTokenForHighRisk: false,
     issuerConfigured: true,
     issuerBoundary: 'runtime-release-token-issuer',
+    tokenIntrospectionStoreConfigured: true,
+    tokenIntrospectionStoreDurability: 'shared',
+    replayConsumptionStoreConfigured: true,
+    replayConsumptionStoreDurability: 'shared',
     senderConfirmationSource: 'dpop-jkt',
     failClosedOnMissingIssuer: true,
   });
@@ -156,6 +179,10 @@ function testConfiguredRuntimeIssuerAndSenderProofClearEvaluationReadiness(): vo
     requireProtectedReleaseTokenForHighRisk: true,
     issuerConfigured: true,
     issuerBoundary: 'runtime-release-token-issuer',
+    tokenIntrospectionStoreConfigured: true,
+    tokenIntrospectionStoreDurability: 'local',
+    replayConsumptionStoreConfigured: true,
+    replayConsumptionStoreDurability: 'local',
     senderConfirmationSource: 'dpop-jkt',
     failClosedOnMissingIssuer: true,
     shadowRecordsRawToken: false,
@@ -196,6 +223,10 @@ function testProductionSharedNeedsExternalIssuerBoundary(): void {
     requireProtectedReleaseTokenForHighRisk: true,
     issuerConfigured: true,
     issuerBoundary: 'runtime-release-token-issuer',
+    tokenIntrospectionStoreConfigured: true,
+    tokenIntrospectionStoreDurability: 'shared',
+    replayConsumptionStoreConfigured: true,
+    replayConsumptionStoreDurability: 'shared',
     senderConfirmationSource: 'dpop-jkt',
     failClosedOnMissingIssuer: true,
     shadowRecordsRawToken: false,
@@ -207,6 +238,10 @@ function testProductionSharedNeedsExternalIssuerBoundary(): void {
     requireProtectedReleaseTokenForHighRisk: true,
     issuerConfigured: true,
     issuerBoundary: 'external-kms-hsm',
+    tokenIntrospectionStoreConfigured: true,
+    tokenIntrospectionStoreDurability: 'shared',
+    replayConsumptionStoreConfigured: true,
+    replayConsumptionStoreDurability: 'shared',
     senderConfirmationSource: 'dpop-jkt',
     failClosedOnMissingIssuer: true,
     shadowRecordsRawToken: false,
@@ -227,6 +262,10 @@ function testProductionSharedNeedsExternalIssuerBoundary(): void {
       proofDigest: 'sha256:provider-live-proof',
       rawProviderResponseStored: false,
     },
+    tokenIntrospectionStoreConfigured: true,
+    tokenIntrospectionStoreDurability: 'shared',
+    replayConsumptionStoreConfigured: true,
+    replayConsumptionStoreDurability: 'shared',
     senderConfirmationSource: 'dpop-jkt',
     failClosedOnMissingIssuer: true,
     shadowRecordsRawToken: false,
@@ -269,6 +308,69 @@ function testProductionSharedNeedsExternalIssuerBoundary(): void {
     true,
     'Generic protected route: production-shared records live provider verification evidence',
   );
+  equal(
+    externalIssuerWithStructuredProof.tokenIntrospectionStoreReady,
+    true,
+    'Generic protected route: production-shared records shared token introspection readiness',
+  );
+  equal(
+    externalIssuerWithStructuredProof.replayConsumptionStoreReady,
+    true,
+    'Generic protected route: production-shared records shared replay consumption readiness',
+  );
+  excludes(
+    externalIssuerWithStructuredProof.noGoConditions,
+    'durable-introspection-replay-store-not-proven',
+    'Generic protected route: shared introspection and replay stores clear durable-store no-go',
+  );
+}
+
+function testProductionSharedNeedsSharedIntrospectionAndReplayStores(): void {
+  const proof = evaluateGenericAdmissionProtectedRoute({
+    runtimeProfileId: 'production-shared',
+    requireProtectedReleaseTokenForHighRisk: true,
+    issuerConfigured: true,
+    issuerBoundary: 'external-kms-hsm',
+    issuerBoundaryEvidence: {
+      source: 'release-tenant-signer-boundary-descriptor',
+      issuerBoundary: 'external-kms-hsm',
+      productionReady: true,
+      liveProviderVerified: true,
+      liveProviderProofState: 'valid',
+      proofDigest: 'sha256:provider-live-proof',
+      rawProviderResponseStored: false,
+    },
+    tokenIntrospectionStoreConfigured: true,
+    tokenIntrospectionStoreDurability: 'local',
+    replayConsumptionStoreConfigured: true,
+    replayConsumptionStoreDurability: 'local',
+    senderConfirmationSource: 'dpop-jkt',
+    failClosedOnMissingIssuer: true,
+    shadowRecordsRawToken: false,
+    admissionOrShadowStoresRawToken: false,
+    rawTokenReturnedOnlyToCaller: true,
+  });
+
+  equal(
+    proof.readyForSelectedProfile,
+    false,
+    'Generic protected route: production-shared blocks local token authority stores',
+  );
+  includes(
+    proof.blockers,
+    'production-token-introspection-store-not-shared',
+    'Generic protected route: production-shared requires shared token introspection store',
+  );
+  includes(
+    proof.blockers,
+    'production-replay-consumption-store-not-shared',
+    'Generic protected route: production-shared requires shared replay consumption store',
+  );
+  includes(
+    proof.noGoConditions,
+    'durable-introspection-replay-store-not-proven',
+    'Generic protected route: local introspection and replay stores keep durable-store no-go',
+  );
 }
 
 function testHostedBootstrapRequiresProtectedIssuerByDefault(): void {
@@ -282,6 +384,19 @@ function testHostedBootstrapRequiresProtectedIssuerByDefault(): void {
 }
 
 function testHostedBootstrapWiresIssuerBridgeWhenRuntimeProvidesIssuer(): void {
+  const introspectionStore = {
+    registerIssuedToken: async () => {
+      throw new Error('introspection fixture should not be called by wiring test');
+    },
+    findToken: async () => null,
+    revokeToken: async () => null,
+    syncLifecycle: async () => [],
+    recordTokenUse: async () => ({
+      accepted: false,
+      inactiveReason: 'unknown',
+      record: null,
+    }),
+  };
   const deps = createGenericAdmissionRouteDeps(runtimeWith(undefined, {
     issue: async () => {
       throw new Error('issuer fixture should not be called by wiring test');
@@ -289,7 +404,7 @@ function testHostedBootstrapWiresIssuerBridgeWhenRuntimeProvidesIssuer(): void {
     exportVerificationKey: async () => {
       throw new Error('issuer fixture should not export by wiring test');
     },
-  }));
+  }, introspectionStore));
 
   equal(
     typeof deps.resolveProtectedReleaseTokenConfirmation,
@@ -325,6 +440,15 @@ function testHostedBootstrapAndReadinessExposeRouteProof(): void {
     'Generic protected route: API runtime passes the release-token issuer as a private service',
   );
   ok(
+    /genericAdmissionProtectedIntrospectionStore:\s*apiReleaseIntrospectionStore/u.test(apiRouteRuntime),
+    'Generic protected route: API runtime passes token introspection store as a private service',
+  );
+  ok(
+    /tokenIntrospectionStoreDurability:/u.test(apiRouteRuntime) &&
+      /release-token-introspection/u.test(apiRouteRuntime),
+    'Generic protected route: API runtime records token introspection store durability',
+  );
+  ok(
     /issuerBoundaryEvidence:\s*\{/u.test(apiRouteRuntime) &&
       /runtime-signing-provider-diagnostics/u.test(apiRouteRuntime),
     'Generic protected route: API runtime records issuer boundary evidence instead of a bare boundary label',
@@ -347,6 +471,7 @@ testProductionSharedBlocksUntilIssuerAndSenderProofAreConfigured();
 testCompatibilityModeIsAProductionSharedBlocker();
 testConfiguredRuntimeIssuerAndSenderProofClearEvaluationReadiness();
 testProductionSharedNeedsExternalIssuerBoundary();
+testProductionSharedNeedsSharedIntrospectionAndReplayStores();
 testHostedBootstrapRequiresProtectedIssuerByDefault();
 testHostedBootstrapWiresIssuerBridgeWhenRuntimeProvidesIssuer();
 testHostedBootstrapAndReadinessExposeRouteProof();

@@ -53,6 +53,7 @@ later implementation pass does not re-open already-retired issues.
 | F9 compliance gap analysis | 12 | 11 | 1 | 0 |
 | F10 customer escape-hatch abuse | 12 | 8 | 4 | 0 |
 | F11 supply-chain depth | 12 | 7 | 5 | 0 |
+| F12 continuous red-team automation | 12 | 3 | 9 | 0 |
 
 Remaining work after the final claim-alignment slice: 0 planned
 PR-sized or validation-sized units in the current F1-F5 audit queue.
@@ -80,6 +81,9 @@ Remaining F10 queue after escape-hatch validation: 0 planned
 repository-side units.
 
 Remaining F11 queue after supply-chain depth validation: 0 planned
+repository-side units.
+
+Remaining F12 queue after continuous red-team validation: 0 planned
 repository-side units.
 
 Completion rule through F5: every F1-F5 row must end as `fixed`,
@@ -436,6 +440,34 @@ claiming SLSA level, multi-provider LLM resilience, or live production proof.
 | F11-SC-11 SBOM packaging not located | `invalid-as-stated` | `sbom:cyclonedx` writes `.attestor/release-provenance/sbom.cyclonedx.json`; release provenance packages and attests it. | No action unless a future release workflow removes the artifact. |
 | F11-SC-12 release-provenance token boundary | `fixed` | `release-provenance.yml` keeps `attestations: write` and `id-token: write` isolated to release provenance, with evaluation tag trigger plus explicit manual dispatch. | No remaining repository action for this scoped finding. |
 
+## F12 Continuous Red-Team Automation
+
+Source report: project-owner supplied F12 continuous red-team automation audit.
+
+Validation record: `docs/audit/f12-continuous-red-team-validation.md`.
+
+Current F12 status: validation pass complete for the report as supplied. The
+repository now has a secretless F-series continuous validation runner, a read-only
+nightly / PR workflow, deterministic canonicalizer/signature fuzz smoke, and a
+public coordinated-disclosure entry point. External benchmark execution, paid
+bug-bounty operations, production-traffic pattern intake, and full live runtime
+red-team execution remain non-claims.
+
+| ID | Current status | Evidence / overlap | Remaining action |
+|---|---|---|---|
+| F12-RT-1 external AI safety benchmarks cited but not integrated | `backlog` | External benchmarks remain registry research anchors, not executable jobs. | Add an AgentDojo or equivalent benchmark adapter before claiming benchmark execution. |
+| F12-RT-2 no nightly drift / regression cron | `fixed` | `f-series-continuous-validation.yml`; `audit:f-series-continuous-validation`; `test:f12-continuous-red-team-validation`. | No remaining repository action for this scoped finding. |
+| F12-RT-3 no fuzz harness for canonicalizer / verifier | `partial` | `test:f12-canonicalizer-fuzz-smoke` covers deterministic generated JSON, invalid inputs, stable signed bytes, and tamper rejection. | Property-based/random-byte fuzzing remains future hardening. |
+| F12-RT-4 no cross-finding regression matrix | `partial` | The F-series runner executes all F validation scripts plus adjacent guard/replay/tracker invariants. | Formal finding-to-adjacent-finding matrix remains future work. |
+| F12-RT-5 bug bounty / public VDP missing | `partial` | `/.well-known/security.txt`; `SECURITY.md` coordinated disclosure targets. | Paid public bug-bounty program is not claimed. |
+| F12-RT-6 red-team fixtures are decision-only, not live runtime | `partial` | Continuous runner includes action-surface red-team fixtures, policy-foundry replay, adversarial replay executor, and downstream replay fixtures. | Full live runtime red-team execution remains future work. |
+| F12-RT-7 no production-traffic shadow replay for emerging attack patterns | `backlog` | Existing shadow path remains customer-policy focused. | Production-traffic pattern intake must be separately designed with data minimization. |
+| F12-RT-8 no public AI safety leaderboard participation | `backlog` | No repository evidence of public leaderboard participation. | Publish only after real benchmark execution. |
+| F12-RT-9 no pre-merge red-team replay against changed surface | `partial` | F-series workflow runs on PRs touching source, tests, audit docs, scripts, workflows, package files, `SECURITY.md`, or `security.txt`. | Changed-surface fixture subset mapping remains future work. |
+| F12-RT-10 tracker verification scope unverified | `partial` | Tracker and research-ledger self-tests now check F12 closure evidence and run in the F-series job. | Network proof of every historical PR URL / merge commit remains outside secretless local validation. |
+| F12-RT-11 external pentest cadence undocumented | `invalid-as-stated` | `security-testing.md` already records annual or release-gated pentest recommendation and evidence-handling fields. | Independent pentest reports remain external evidence. |
+| F12-RT-12 coordinated disclosure timeline / SLA not declared | `fixed` | `SECURITY.md` response targets; `/.well-known/security.txt`; `test:security-baseline-docs`; `test:f12-continuous-red-team-validation`. | Hosted service SLA remains explicitly out of scope. |
+
 ## Next Work Queue
 
 The current F1-F5 project-owner supplied audit queue is closed for repository
@@ -446,7 +478,7 @@ evidence.
 F6 is closed for planned repository slices. F7 is closed for planned repository slices.
 F8 is closed for planned repository slices. F9 is closed for planned repository
 documentation and validation slices. F10 is closed for planned repository
-validation slices. F11 is closed for planned repository validation slices.
+validation slices. F11 is closed for planned repository validation slices. F12 is closed for planned repository validation slices.
 Planned F7 order:
 
 1. F7 validation and tracker sync. Done.
@@ -474,6 +506,6 @@ Planned F11 order:
 
 1. F11 supply-chain depth validation and tracker sync. Done in this slice.
 
-Next planned report queue:
+Planned F12 order:
 
-1. F12 continuous red-team automation. Not started.
+1. F12 continuous red-team validation and tracker sync. Done in this slice.

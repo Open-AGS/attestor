@@ -39,10 +39,21 @@ function testSecurityPolicyExplainsEvaluationBoundary(): void {
 
 function testSecurityPolicyKeepsReportingPathHonest(): void {
   const security = readProjectFile('SECURITY.md');
+  const securityTxt = readProjectFile('.well-known', 'security.txt');
 
   includes(security, 'Use GitHub private vulnerability reporting for this repository if it is enabled in repository settings.', 'Security baseline: preferred private reporting route is documented honestly');
+  includes(security, 'The repository also publishes `/.well-known/security.txt`', 'Security baseline: security.txt entry point is documented');
   includes(security, 'Do not post exploit details, secrets, proof-of-concept payloads, or reproduction steps in a public GitHub issue.', 'Security baseline: public disclosure guard is explicit');
   includes(security, 'Open a minimal public issue only to request a private reporting path', 'Security baseline: fallback reporting path does not overclaim a private inbox');
+  includes(security, 'acknowledge: 48 hours', 'Security baseline: vulnerability acknowledgement target is documented');
+  includes(security, 'initial triage: 7 days', 'Security baseline: vulnerability triage target is documented');
+  includes(security, 'high or critical repository-side fix target: 90 days', 'Security baseline: high/critical fix target is documented');
+  includes(security, 'medium or low repository-side fix target: 180 days', 'Security baseline: medium/low fix target is documented');
+  includes(security, 'not a cash-reward promise', 'Security baseline: no paid bounty overclaim is explicit');
+  includes(securityTxt, 'Contact: https://github.com/AI-gateway-systems/attestor/security/advisories/new', 'Security baseline: security.txt contact points to private advisory flow');
+  includes(securityTxt, 'Policy: https://github.com/AI-gateway-systems/attestor/blob/master/SECURITY.md', 'Security baseline: security.txt points to SECURITY.md');
+  includes(securityTxt, 'Preferred-Languages: en, hu', 'Security baseline: security.txt language preference is explicit');
+  matches(securityTxt, /^Expires: 2027-05-15T00:00:00Z$/mu, 'Security baseline: security.txt expiry is explicit');
 }
 
 function testReadmePinsReviewerAndSecurityEntry(): void {
@@ -59,10 +70,13 @@ function testCurrentReviewerWorkflowsStayReadOnly(): void {
   const smoke = readProjectFile('.github', 'workflows', 'evaluation-smoke.yml');
   const verify = readProjectFile('.github', 'workflows', 'full-verify.yml');
   const securityScan = readProjectFile('.github', 'workflows', 'security-scan.yml');
+  const fSeries = readProjectFile('.github', 'workflows', 'f-series-continuous-validation.yml');
 
   includes(smoke, 'permissions:\n  contents: read', 'Security baseline: evaluation smoke stays read-only');
   includes(verify, 'permissions:\n  contents: read', 'Security baseline: full verify stays read-only');
   includes(securityScan, 'permissions:\n  contents: read', 'Security baseline: security scan stays read-only');
+  includes(fSeries, 'permissions:\n  contents: read', 'Security baseline: F-series continuous validation stays read-only');
+  includes(fSeries, 'npm run audit:f-series-continuous-validation', 'Security baseline: F-series continuous validation runs the secretless audit runner');
   excludes(smoke, /attestations:\s*write/iu, 'Security baseline: evaluation smoke must not yet request attestation write');
   excludes(smoke, /id-token:\s*write/iu, 'Security baseline: evaluation smoke must not yet request id-token write');
   excludes(verify, /attestations:\s*write/iu, 'Security baseline: full verify must not yet request attestation write');
@@ -70,6 +84,9 @@ function testCurrentReviewerWorkflowsStayReadOnly(): void {
   excludes(securityScan, /attestations:\s*write/iu, 'Security baseline: security scan must not request attestation write');
   excludes(securityScan, /id-token:\s*write/iu, 'Security baseline: security scan must not request id-token write');
   excludes(securityScan, /pull-requests:\s*write/iu, 'Security baseline: dependency review must not write PR comments');
+  excludes(fSeries, /attestations:\s*write/iu, 'Security baseline: F-series workflow must not request attestation write');
+  excludes(fSeries, /id-token:\s*write/iu, 'Security baseline: F-series workflow must not request id-token write');
+  excludes(fSeries, /contents:\s*write/iu, 'Security baseline: F-series workflow must not request contents write');
 }
 
 function testSupplyChainSecurityGatesStayPresent(): void {

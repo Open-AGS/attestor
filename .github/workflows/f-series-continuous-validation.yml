@@ -1,0 +1,47 @@
+name: F-Series Continuous Validation
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 3 * * *"
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+    paths:
+      - ".github/workflows/**"
+      - "docs/audit/**"
+      - "docs/research/**"
+      - "scripts/**"
+      - "src/**"
+      - "tests/**"
+      - "package.json"
+      - "package-lock.json"
+      - "SECURITY.md"
+      - ".well-known/security.txt"
+
+permissions:
+  contents: read
+
+jobs:
+  f-series-continuous-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Setup Node
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: F-series regression and red-team replay
+        run: npm run audit:f-series-continuous-validation

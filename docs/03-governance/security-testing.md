@@ -16,7 +16,7 @@ Official anchor: [NIST SP 800-115](https://csrc.nist.gov/pubs/sp/800/115/final).
 | Architecture checks | `npm run verify:architecture`. |
 | Build and package surface | `npm run build`, package-surface probes. |
 | Supply-chain checks | `npm run security:supply-chain-baseline`, `npm run security:audit-high`. |
-| Audit validation | F1-F9 validation tests and remediation tracker. |
+| Audit validation | F1-F12 validation tests, continuous red-team runner, and remediation tracker. |
 | Production rehearsal | `tests/production-rehearsal-*.test.ts` and rehearsal scripts. |
 
 ## Recommended External Tests
@@ -24,6 +24,8 @@ Official anchor: [NIST SP 800-115](https://csrc.nist.gov/pubs/sp/800/115/final).
 For a production deployment, add:
 
 - annual or release-gated penetration test
+- quarterly internal red-team review
+- nightly F-series regression and red-team replay
 - API authorization and tenant-isolation test
 - webhook signature bypass test
 - downstream enforcement bypass test

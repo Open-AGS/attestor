@@ -15,6 +15,7 @@ Attestor `v0.1.2-evaluation` is an evaluation pre-release. It is reviewer-runnab
 Preferred path:
 
 - Use GitHub private vulnerability reporting for this repository if it is enabled in repository settings.
+- The repository also publishes `/.well-known/security.txt` with the same policy entry point.
 
 If private vulnerability reporting is not available:
 
@@ -27,6 +28,18 @@ When reporting, include:
 - impact summary
 - reproduction conditions
 - whether the issue affects local evaluation only or a customer-operated runtime path
+
+Attestor does not currently run a paid public bug-bounty program. The public
+VDP path is for coordinated disclosure and triage, not a cash-reward promise.
+
+Response targets:
+
+- acknowledge: 48 hours
+- initial triage: 7 days
+- high or critical repository-side fix target: 90 days when the issue is valid and reproducible
+- medium or low repository-side fix target: 180 days when the issue is valid and reproducible
+
+These are evaluation-project targets, not hosted service SLA commitments.
 
 ## Scope
 

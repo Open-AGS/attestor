@@ -437,6 +437,21 @@ The entries above are the most concrete PR/commit-linked hardening records. The 
 - Remaining limitation or no-go condition: This closes the repository-side F11 validation queue only. It does not prove multi-provider LLM failover, persisted model drift enforcement, universal evidence re-fetch/re-hash, signed generated-adapter provenance, MCP registry implementation, external production image-refresh operations, or an independently assessed SLSA level.
 - Status: complete for F11 repository-side validation once this PR is merged and verified on `origin/master`.
 
+### 23. F12 Continuous Red-Team Automation Closure
+
+- Step / PR / commit: F12 project-owner supplied continuous red-team automation report; this closure PR records validation evidence but cannot pre-record its own merge commit.
+- Date if available: 2026-05-15.
+- Trust surface: F-series regression tests, red-team replay fixtures, canonicalizer/signature verifier robustness smoke, coordinated disclosure path, audit tracker, and research provenance ledger.
+- Protected principle: auditability; proof integrity; fail-closed boundary; no overclaim; operational boundedness; release provenance.
+- Research anchor / source used, if recorded: NIST SP 800-115, NIST SP 800-216, NIST SP 800-218 SSDF, ISO/IEC 29147, ISO/IEC 30111, OWASP DSOMM, OWASP ASVS, AgentDojo, The Agent Company, DEF CON Generative Red Team, OpenAI Preparedness Framework, Anthropic Responsible Scaling Policy, MITRE Engenuity ATT&CK Evaluations, and EU AI Act Art. 60. These are engineering anchors only, not benchmark or certification claims.
+- Repository evidence:
+  - Contract/code evidence: `.github/workflows/f-series-continuous-validation.yml`, `scripts/run-f-series-continuous-validation.mjs`, `SECURITY.md`, `/.well-known/security.txt`, `docs/audit/f12-continuous-red-team-validation.md`, and `docs/audit/attestor-audit-remediation-tracker.md`.
+  - Test evidence: `tests/f12-continuous-red-team-validation.test.ts`, `tests/f12-canonicalizer-fuzz-smoke.test.ts`, `tests/security-baseline-docs.test.ts`, `tests/audit-remediation-tracker.test.ts`, and `tests/research-provenance-ledger.test.ts`.
+- Implemented control: Converts F12 from a point-in-time red-team automation report into machine-checked repository evidence. F-series validation and red-team replay now have a secretless nightly / PR workflow; canonical JSON signing has deterministic fuzz smoke; coordinated disclosure has public metadata and response targets; and the tracker records remaining benchmark, live-runtime, paid-bounty, and production-traffic intake boundaries without overclaim.
+- Tests / verification: `npm run test:f12-continuous-red-team-validation`, `npm run test:f12-canonicalizer-fuzz-smoke`, `npm run audit:f-series-continuous-validation`, `npm run test:audit-remediation-tracker`, and `npm run test:research-provenance-ledger`.
+- Remaining limitation or no-go condition: This closes the repository-side F12 validation queue only. It does not prove AgentDojo benchmark execution, public leaderboard participation, paid bug-bounty operation, random-byte fuzzing at scale, production-traffic pattern intake, live customer-runtime red-team execution, or external penetration-test completion.
+- Status: complete for F12 repository-side validation once this PR is merged and verified on `origin/master`.
+
 ## Strong Recorded Research Support
 
 The strongest recorded research support appears in:

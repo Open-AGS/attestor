@@ -84,7 +84,8 @@ function testTrackerAndValidationClosure(): void {
   includes(remediationTracker, 'F9 compliance gap analysis | 12 | 11 | 1 | 0', 'Tracker: F9 count row is present');
   includes(remediationTracker, 'Remaining F9 queue after compliance gap validation: 0 planned', 'Tracker: F9 remaining queue is explicit');
   includes(remediationTracker, 'F9-C2 SOC 2 Type II evidence-pack implication | `accepted-limitation`', 'Tracker: F9-C2 accepted limitation is tracked');
-  includes(remediationTracker, 'F10 customer escape-hatch abuse. Not started.', 'Tracker: next F10 queue marker is explicit');
+  includes(remediationTracker, 'F10 customer escape-hatch abuse | 12 | 8 | 4 | 0', 'Tracker: F10 count row is present');
+  includes(remediationTracker, 'F10 is closed for planned repository', 'Tracker: F10 closure is explicit');
 }
 
 function testDocsAvoidComplianceOverclaim(): void {

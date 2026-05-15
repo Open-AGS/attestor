@@ -1,0 +1,4 @@
+Contact: https://github.com/AI-gateway-systems/attestor/security/advisories/new
+Policy: https://github.com/AI-gateway-systems/attestor/blob/master/SECURITY.md
+Preferred-Languages: en, hu
+Expires: 2027-05-15T00:00:00Z

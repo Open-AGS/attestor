@@ -37,6 +37,7 @@ try {
   includes(tracker, 'Remaining F9 queue after compliance gap validation: 0 planned', 'Tracker: F9 remaining estimate is explicit');
   includes(tracker, 'Remaining F10 queue after escape-hatch validation: 0 planned', 'Tracker: F10 remaining estimate is explicit');
   includes(tracker, 'Remaining F11 queue after supply-chain depth validation: 0 planned', 'Tracker: F11 remaining estimate is explicit');
+  includes(tracker, 'Remaining F12 queue after continuous red-team validation: 0 planned', 'Tracker: F12 remaining estimate is explicit');
 
   for (const pr of [
     '#220',
@@ -94,6 +95,7 @@ try {
     'F9 Compliance Gap Analysis',
     'F10 Customer Escape-Hatch Abuse',
     'F11 Supply Chain Depth',
+    'F12 Continuous Red-Team Automation',
   ]) {
     includes(tracker, group, `Tracker: ${group} section exists`);
   }
@@ -215,7 +217,21 @@ try {
   includes(tracker, 'F11-SC-11 SBOM packaging not located | `invalid-as-stated`', 'Tracker: F11-SC-11 status is tracked');
   includes(tracker, 'F11-SC-12 release-provenance token boundary | `fixed`', 'Tracker: F11-SC-12 status is tracked');
   includes(tracker, 'F11 Supply Chain Depth', 'Tracker: F11 section is present');
-  includes(tracker, 'F12 continuous red-team automation. Not started.', 'Tracker: F12 next work marker is explicit');
+  includes(tracker, 'F12 continuous red-team automation | 12 | 3 | 9 | 0', 'Tracker: F12 count row is tracked');
+  includes(tracker, 'F12-RT-1 external AI safety benchmarks cited but not integrated | `backlog`', 'Tracker: F12-RT-1 status is tracked');
+  includes(tracker, 'F12-RT-2 no nightly drift / regression cron | `fixed`', 'Tracker: F12-RT-2 status is tracked');
+  includes(tracker, 'F12-RT-3 no fuzz harness for canonicalizer / verifier | `partial`', 'Tracker: F12-RT-3 status is tracked');
+  includes(tracker, 'F12-RT-4 no cross-finding regression matrix | `partial`', 'Tracker: F12-RT-4 status is tracked');
+  includes(tracker, 'F12-RT-5 bug bounty / public VDP missing | `partial`', 'Tracker: F12-RT-5 status is tracked');
+  includes(tracker, 'F12-RT-6 red-team fixtures are decision-only, not live runtime | `partial`', 'Tracker: F12-RT-6 status is tracked');
+  includes(tracker, 'F12-RT-7 no production-traffic shadow replay for emerging attack patterns | `backlog`', 'Tracker: F12-RT-7 status is tracked');
+  includes(tracker, 'F12-RT-8 no public AI safety leaderboard participation | `backlog`', 'Tracker: F12-RT-8 status is tracked');
+  includes(tracker, 'F12-RT-9 no pre-merge red-team replay against changed surface | `partial`', 'Tracker: F12-RT-9 status is tracked');
+  includes(tracker, 'F12-RT-10 tracker verification scope unverified | `partial`', 'Tracker: F12-RT-10 status is tracked');
+  includes(tracker, 'F12-RT-11 external pentest cadence undocumented | `invalid-as-stated`', 'Tracker: F12-RT-11 status is tracked');
+  includes(tracker, 'F12-RT-12 coordinated disclosure timeline / SLA not declared | `fixed`', 'Tracker: F12-RT-12 status is tracked');
+  includes(tracker, 'F12 is closed for planned repository validation slices', 'Tracker: F12 closure is explicit');
+  excludes(tracker, /F12 continuous red-team automation\. Not started\./u, 'Tracker: stale F12 not-started marker is absent');
   includes(tracker, 'F5-A1 out-of-band trust root optional | `fixed`', 'Tracker: F5 CA pin validation is fixed');
   includes(tracker, 'F5 CA Pin Required Validation', 'Tracker: F5 CA pin validation evidence is linked');
   includes(tracker, 'F5-A2 legacy flat verify escape via env | `fixed`', 'Tracker: F5 legacy env downgrade validation is fixed');
@@ -273,6 +289,9 @@ try {
   includes(packageJson, '"test:f9-compliance-gap-validation"', 'Package: F9 compliance gap validation script is exposed');
   includes(packageJson, '"test:f10-escape-hatch-validation"', 'Package: F10 escape-hatch validation script is exposed');
   includes(packageJson, '"test:f11-supply-chain-depth-validation"', 'Package: F11 supply-chain depth validation script is exposed');
+  includes(packageJson, '"test:f12-continuous-red-team-validation"', 'Package: F12 continuous red-team validation script is exposed');
+  includes(packageJson, '"test:f12-canonicalizer-fuzz-smoke"', 'Package: F12 canonicalizer fuzz smoke script is exposed');
+  includes(packageJson, '"audit:f-series-continuous-validation"', 'Package: F-series continuous validation runner is exposed');
 
   ok(tracker.split('\n').length > 120, 'Tracker: enough rows to cover supplied audit reports');
   console.log(`Audit remediation tracker tests: ${passed} passed, 0 failed`);

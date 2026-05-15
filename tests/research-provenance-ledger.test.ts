@@ -203,6 +203,36 @@ function testLedgerIndexesAuditRemediationClosure(): void {
     'NIST SP 800-161 Rev. 1',
     'Research provenance ledger: F11 supply-chain anchor is recorded',
   );
+  includes(
+    content,
+    '### 23. F12 Continuous Red-Team Automation Closure',
+    'Research provenance ledger: F12 closure entry is present',
+  );
+  includes(
+    content,
+    'docs/audit/f12-continuous-red-team-validation.md',
+    'Research provenance ledger: F12 validation doc is indexed',
+  );
+  includes(
+    content,
+    'tests/f12-continuous-red-team-validation.test.ts',
+    'Research provenance ledger: F12 validation test is indexed',
+  );
+  includes(
+    content,
+    'tests/f12-canonicalizer-fuzz-smoke.test.ts',
+    'Research provenance ledger: F12 fuzz smoke test is indexed',
+  );
+  includes(
+    content,
+    'does not prove AgentDojo benchmark execution',
+    'Research provenance ledger: F12 external benchmark non-claim is explicit',
+  );
+  includes(
+    content,
+    'ISO/IEC 29147',
+    'Research provenance ledger: F12 coordinated disclosure anchor is recorded',
+  );
 }
 
 function testLedgerKeepsEvidenceBoundaryExplicit(): void {

@@ -677,6 +677,21 @@ The entries above are the most concrete PR/commit-linked hardening records. The 
 - Remaining limitation or no-go condition: This is not a shared durable backend implementation. It does not create PostgreSQL schemas, migrate file histories, wire RLS policies, run Debezium, prove backup/restore, prove multi-worker recovery, inspect SQL bodies, or verify any customer production environment.
 - Status: complete for repository-side consequence shared-store operational evidence contract once this PR is merged and verified on `origin/master`.
 
+### 39. Hosted Generic DPoP Proof Replay Readiness Gate
+
+- Step / PR / commit: Hosted generic DPoP proof replay readiness gate; this PR records repository-side sender-proof replay readiness requirements but cannot pre-record its own merge commit.
+- Date if available: 2026-05-15.
+- Trust surface: hosted generic admission route, token-request DPoP proof `jti` replay resistance, sender-constrained release-token issuance, production-shared readiness, token-use replay separation from sender-proof replay, and secret-safe route diagnostics.
+- Protected principle: fail-closed boundary; customer authority; proof integrity; replay and idempotency safety; runtime readiness; data minimization and redaction; no overclaim.
+- Research anchor / source used, if recorded: OAuth DPoP RFC 9449 requires resource servers to validate DPoP proof `jti`, `htm`, `htu`, `iat`, `ath`, and key confirmation and to reject replayed proofs within the accepted window. Attestor uses this as an engineering anchor for a separate DPoP sender-proof replay store. This is not OAuth certification, authorization-server proof, live customer PEP deployment, or a production replay backend.
+- Repository evidence:
+  - Contract/code evidence: `src/service/generic-admission-protected-route.ts`, `src/service/bootstrap/api-route-runtime.ts`, `src/service/bootstrap/routes.ts`, `docs/01-overview/consequence-admission-quickstart.md`, `docs/audit/f2-customer-gate-enforcement-validation.md`, and `docs/audit/attestor-audit-remediation-tracker.md`.
+  - Test evidence: `tests/generic-admission-protected-route.test.ts`, `tests/hosted-generic-admission-sender-confirmation.test.ts`, `tests/release-enforcement-plane-dpop.test.ts`, `tests/f2-customer-gate-validation.test.ts`, `tests/audit-remediation-tracker.test.ts`, and `tests/research-provenance-ledger.test.ts`.
+- Implemented control: Splits DPoP sender-proof replay readiness from release-token introspection and token-use replay readiness. `genericAdmissionProtectedRoute` now records `senderProofReplayRequired`, `senderProofReplayStoreConfigured`, `senderProofReplayStoreDurability`, and `senderProofReplayStoreReady`. With `senderConfirmationSource='dpop-jkt'`, `production-shared` cannot clear if the DPoP proof replay store is missing or local-only; it emits `sender-proof-replay-store-not-configured`, `production-sender-proof-replay-store-not-shared`, and `sender-proof-replay-store-not-proven` instead of treating token-use replay storage as proof of token-request proof replay protection.
+- Tests / verification: `npm run test:generic-admission-protected-route`, `npm run test:hosted-generic-admission-sender-confirmation`, `npm run test:release-enforcement-plane-dpop`, `npm run test:f2-customer-gate-validation`, `npm run test:audit-remediation-tracker`, `npm run test:research-provenance-ledger`, `npm run typecheck`, and `npm run typecheck:hygiene`.
+- Remaining limitation or no-go condition: This is not a durable DPoP proof replay backend implementation. It does not consume DPoP `jti` values in PostgreSQL or Redis, deploy a customer PEP, operate a live authorization server, activate external KMS/HSM signing, or prove a production environment.
+- Status: complete for repository-side hosted generic DPoP proof replay readiness gate once this PR is merged and verified on `origin/master`.
+
 ## Strong Recorded Research Support
 
 The strongest recorded research support appears in:

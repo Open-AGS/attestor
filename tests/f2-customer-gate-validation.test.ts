@@ -83,6 +83,11 @@ includes(
 );
 includes(
   validationDoc,
+  'hosted DPoP proof replay readiness: blocks production-shared readiness',
+  'F2 customer gate validation: hosted DPoP proof replay readiness is explicit',
+);
+includes(
+  validationDoc,
   'Current repo evidence supports `partial`, not `fixed`.',
   'F2 customer gate validation: no overclaim is present',
 );

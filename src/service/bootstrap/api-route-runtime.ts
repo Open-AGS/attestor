@@ -398,6 +398,7 @@ export async function createApiHttpRouteRuntime(
         ? 'shared'
         : 'local',
     senderConfirmationSource: 'dpop-jkt',
+    senderProofReplayStoreConfigured: false,
     failClosedOnMissingIssuer: true,
     shadowRecordsRawToken: false,
     admissionOrShadowStoresRawToken: false,

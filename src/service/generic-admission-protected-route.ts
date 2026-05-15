@@ -5,6 +5,8 @@ export const HOSTED_GENERIC_ADMISSION_ROUTE_ID = 'POST /api/v1/admissions';
 
 export const GENERIC_ADMISSION_PROTECTED_ROUTE_REQUIRED_PROOFS = Object.freeze([
   'npm run test:generic-admission-protected-route',
+  'npm run test:hosted-generic-admission-sender-confirmation',
+  'npm run test:release-enforcement-plane-dpop',
   'npm run test:generic-admission-routes',
   'npm run test:generic-admission-protected-release-token',
   'GET /api/v1/ready',
@@ -61,12 +63,15 @@ export type GenericAdmissionProtectedRouteBlocker =
   | 'external-issuer-provider-response-storage-risk'
   | 'token-introspection-store-not-configured'
   | 'replay-consumption-store-not-configured'
+  | 'sender-proof-replay-store-not-configured'
   | 'production-token-introspection-store-not-shared'
-  | 'production-replay-consumption-store-not-shared';
+  | 'production-replay-consumption-store-not-shared'
+  | 'production-sender-proof-replay-store-not-shared';
 
 export type GenericAdmissionProtectedRouteNoGoCondition =
   | 'hosted-route-issuer-missing'
   | 'sender-proof-verifier-missing'
+  | 'sender-proof-replay-store-not-proven'
   | 'customer-pep-not-proven'
   | 'durable-introspection-replay-store-not-proven'
   | 'live-production-deployment-not-proven';
@@ -89,6 +94,10 @@ export interface GenericAdmissionProtectedRouteEvaluation {
   readonly tokenIntrospectionStoreReady: boolean;
   readonly replayConsumptionStoreReady: boolean;
   readonly senderConfirmationSource: GenericAdmissionProtectedRouteSenderConfirmationSource;
+  readonly senderProofReplayRequired: boolean;
+  readonly senderProofReplayStoreConfigured: boolean;
+  readonly senderProofReplayStoreDurability: GenericAdmissionProtectedRouteAuthorityStoreDurability;
+  readonly senderProofReplayStoreReady: boolean;
   readonly failClosedOnMissingIssuer: boolean;
   readonly compatibilityModeAllowed: boolean;
   readonly shadowRecordsRawToken: boolean;
@@ -129,6 +138,8 @@ export interface EvaluateGenericAdmissionProtectedRouteInput {
   readonly replayConsumptionStoreConfigured?: boolean | null;
   readonly replayConsumptionStoreDurability?: GenericAdmissionProtectedRouteAuthorityStoreDurability | null;
   readonly senderConfirmationSource?: GenericAdmissionProtectedRouteSenderConfirmationSource | null;
+  readonly senderProofReplayStoreConfigured?: boolean | null;
+  readonly senderProofReplayStoreDurability?: GenericAdmissionProtectedRouteAuthorityStoreDurability | null;
   readonly failClosedOnMissingIssuer: boolean;
   readonly shadowRecordsRawToken?: boolean | null;
   readonly admissionOrShadowStoresRawToken?: boolean | null;
@@ -181,6 +192,17 @@ export function evaluateGenericAdmissionProtectedRoute(
     replayConsumptionStoreConfigured &&
     (!productionSharedSelected || replayConsumptionStoreDurability === 'shared');
   const senderConfirmationSource = input.senderConfirmationSource ?? 'none';
+  const senderProofReplayRequired = senderConfirmationSource === 'dpop-jkt';
+  const senderProofReplayStoreConfigured =
+    input.senderProofReplayStoreConfigured === true;
+  const senderProofReplayStoreDurability =
+    senderProofReplayStoreConfigured
+      ? input.senderProofReplayStoreDurability ?? 'local'
+      : 'missing';
+  const senderProofReplayStoreReady =
+    !senderProofReplayRequired ||
+    (senderProofReplayStoreConfigured &&
+      (!productionSharedSelected || senderProofReplayStoreDurability === 'shared'));
   const shadowRecordsRawToken = input.shadowRecordsRawToken === true;
   const admissionOrShadowStoresRawToken =
     input.admissionOrShadowStoresRawToken === true;
@@ -203,7 +225,8 @@ export function evaluateGenericAdmissionProtectedRoute(
       issuerReady &&
       productionIssuerBoundaryReady &&
       tokenIntrospectionStoreReady &&
-      replayConsumptionStoreReady
+      replayConsumptionStoreReady &&
+      senderProofReplayStoreReady
     : true;
   const state: GenericAdmissionProtectedRouteState = productionSharedSelected
     ? readyForSelectedProfile
@@ -235,6 +258,9 @@ export function evaluateGenericAdmissionProtectedRoute(
   if (!replayConsumptionStoreConfigured) {
     blockers.push('replay-consumption-store-not-configured');
   }
+  if (senderProofReplayRequired && !senderProofReplayStoreConfigured) {
+    blockers.push('sender-proof-replay-store-not-configured');
+  }
   if (productionSharedSelected && issuerBoundary !== 'external-kms-hsm') {
     blockers.push('production-issuer-boundary-not-external');
   }
@@ -251,6 +277,14 @@ export function evaluateGenericAdmissionProtectedRoute(
     replayConsumptionStoreDurability !== 'shared'
   ) {
     blockers.push('production-replay-consumption-store-not-shared');
+  }
+  if (
+    productionSharedSelected &&
+    senderProofReplayRequired &&
+    senderProofReplayStoreConfigured &&
+    senderProofReplayStoreDurability !== 'shared'
+  ) {
+    blockers.push('production-sender-proof-replay-store-not-shared');
   }
   if (productionSharedSelected && issuerBoundary === 'external-kms-hsm') {
     if (issuerBoundaryEvidence === null) {
@@ -281,6 +315,9 @@ export function evaluateGenericAdmissionProtectedRoute(
   if (!tokenIntrospectionStoreReady || !replayConsumptionStoreReady) {
     noGoConditions.push('durable-introspection-replay-store-not-proven');
   }
+  if (!senderProofReplayStoreReady) {
+    noGoConditions.push('sender-proof-replay-store-not-proven');
+  }
   if (!input.issuerConfigured) noGoConditions.push('hosted-route-issuer-missing');
   if (senderConfirmationSource === 'none') {
     noGoConditions.push('sender-proof-verifier-missing');
@@ -306,6 +343,10 @@ export function evaluateGenericAdmissionProtectedRoute(
     tokenIntrospectionStoreReady,
     replayConsumptionStoreReady,
     senderConfirmationSource,
+    senderProofReplayRequired,
+    senderProofReplayStoreConfigured,
+    senderProofReplayStoreDurability,
+    senderProofReplayStoreReady,
     failClosedOnMissingIssuer: input.failClosedOnMissingIssuer,
     compatibilityModeAllowed: !protectedIssuerRequired,
     shadowRecordsRawToken,
@@ -320,6 +361,6 @@ export function evaluateGenericAdmissionProtectedRoute(
     noGoConditions: unique(noGoConditions),
     requiredProofs: GENERIC_ADMISSION_PROTECTED_ROUTE_REQUIRED_PROOFS,
     limitation:
-      'This proves hosted route fail-closed configuration and repository-side introspection/replay store wiring for protected high-risk generic admissions, not a live authorization server, customer PEP deployment, external KMS/HSM signer adapter, or production deployment.',
+      'This proves hosted route fail-closed configuration and repository-side introspection/token-use replay readiness for protected high-risk generic admissions. DPoP sender-proof replay needs a separate shared proof replay store before production-shared readiness can clear. This is not a live authorization server, customer PEP deployment, external KMS/HSM signer adapter, or production deployment.',
   });
 }

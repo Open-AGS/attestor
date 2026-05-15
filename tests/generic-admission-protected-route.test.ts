@@ -153,6 +153,8 @@ function testCompatibilityModeIsAProductionSharedBlocker(): void {
     replayConsumptionStoreConfigured: true,
     replayConsumptionStoreDurability: 'shared',
     senderConfirmationSource: 'dpop-jkt',
+    senderProofReplayStoreConfigured: true,
+    senderProofReplayStoreDurability: 'shared',
     failClosedOnMissingIssuer: true,
   });
 
@@ -184,6 +186,8 @@ function testConfiguredRuntimeIssuerAndSenderProofClearEvaluationReadiness(): vo
     replayConsumptionStoreConfigured: true,
     replayConsumptionStoreDurability: 'local',
     senderConfirmationSource: 'dpop-jkt',
+    senderProofReplayStoreConfigured: true,
+    senderProofReplayStoreDurability: 'local',
     failClosedOnMissingIssuer: true,
     shadowRecordsRawToken: false,
     admissionOrShadowStoresRawToken: false,
@@ -228,6 +232,8 @@ function testProductionSharedNeedsExternalIssuerBoundary(): void {
     replayConsumptionStoreConfigured: true,
     replayConsumptionStoreDurability: 'shared',
     senderConfirmationSource: 'dpop-jkt',
+    senderProofReplayStoreConfigured: true,
+    senderProofReplayStoreDurability: 'shared',
     failClosedOnMissingIssuer: true,
     shadowRecordsRawToken: false,
     admissionOrShadowStoresRawToken: false,
@@ -243,6 +249,8 @@ function testProductionSharedNeedsExternalIssuerBoundary(): void {
     replayConsumptionStoreConfigured: true,
     replayConsumptionStoreDurability: 'shared',
     senderConfirmationSource: 'dpop-jkt',
+    senderProofReplayStoreConfigured: true,
+    senderProofReplayStoreDurability: 'shared',
     failClosedOnMissingIssuer: true,
     shadowRecordsRawToken: false,
     admissionOrShadowStoresRawToken: false,
@@ -267,6 +275,8 @@ function testProductionSharedNeedsExternalIssuerBoundary(): void {
     replayConsumptionStoreConfigured: true,
     replayConsumptionStoreDurability: 'shared',
     senderConfirmationSource: 'dpop-jkt',
+    senderProofReplayStoreConfigured: true,
+    senderProofReplayStoreDurability: 'shared',
     failClosedOnMissingIssuer: true,
     shadowRecordsRawToken: false,
     admissionOrShadowStoresRawToken: false,
@@ -325,6 +335,80 @@ function testProductionSharedNeedsExternalIssuerBoundary(): void {
   );
 }
 
+function testProductionSharedNeedsSharedDpopProofReplayStore(): void {
+  const missing = evaluateGenericAdmissionProtectedRoute({
+    runtimeProfileId: 'production-shared',
+    requireProtectedReleaseTokenForHighRisk: true,
+    issuerConfigured: true,
+    issuerBoundary: 'external-kms-hsm',
+    issuerBoundaryEvidence: {
+      source: 'release-tenant-signer-boundary-descriptor',
+      issuerBoundary: 'external-kms-hsm',
+      productionReady: true,
+      liveProviderVerified: true,
+      liveProviderProofState: 'valid',
+      proofDigest: 'sha256:provider-live-proof',
+      rawProviderResponseStored: false,
+    },
+    tokenIntrospectionStoreConfigured: true,
+    tokenIntrospectionStoreDurability: 'shared',
+    replayConsumptionStoreConfigured: true,
+    replayConsumptionStoreDurability: 'shared',
+    senderConfirmationSource: 'dpop-jkt',
+    senderProofReplayStoreConfigured: false,
+    failClosedOnMissingIssuer: true,
+  });
+  const local = evaluateGenericAdmissionProtectedRoute({
+    runtimeProfileId: 'production-shared',
+    requireProtectedReleaseTokenForHighRisk: true,
+    issuerConfigured: true,
+    issuerBoundary: 'external-kms-hsm',
+    issuerBoundaryEvidence: {
+      source: 'release-tenant-signer-boundary-descriptor',
+      issuerBoundary: 'external-kms-hsm',
+      productionReady: true,
+      liveProviderVerified: true,
+      liveProviderProofState: 'valid',
+      proofDigest: 'sha256:provider-live-proof',
+      rawProviderResponseStored: false,
+    },
+    tokenIntrospectionStoreConfigured: true,
+    tokenIntrospectionStoreDurability: 'shared',
+    replayConsumptionStoreConfigured: true,
+    replayConsumptionStoreDurability: 'shared',
+    senderConfirmationSource: 'dpop-jkt',
+    senderProofReplayStoreConfigured: true,
+    senderProofReplayStoreDurability: 'local',
+    failClosedOnMissingIssuer: true,
+  });
+
+  equal(
+    missing.readyForSelectedProfile,
+    false,
+    'Generic protected route: production-shared blocks missing DPoP proof replay store',
+  );
+  includes(
+    missing.blockers,
+    'sender-proof-replay-store-not-configured',
+    'Generic protected route: missing DPoP replay store blocker is explicit',
+  );
+  includes(
+    missing.noGoConditions,
+    'sender-proof-replay-store-not-proven',
+    'Generic protected route: missing DPoP replay store keeps no-go condition',
+  );
+  equal(
+    local.readyForSelectedProfile,
+    false,
+    'Generic protected route: production-shared blocks local-only DPoP proof replay store',
+  );
+  includes(
+    local.blockers,
+    'production-sender-proof-replay-store-not-shared',
+    'Generic protected route: local-only DPoP replay store blocker is explicit',
+  );
+}
+
 function testProductionSharedNeedsSharedIntrospectionAndReplayStores(): void {
   const proof = evaluateGenericAdmissionProtectedRoute({
     runtimeProfileId: 'production-shared',
@@ -345,6 +429,8 @@ function testProductionSharedNeedsSharedIntrospectionAndReplayStores(): void {
     replayConsumptionStoreConfigured: true,
     replayConsumptionStoreDurability: 'local',
     senderConfirmationSource: 'dpop-jkt',
+    senderProofReplayStoreConfigured: true,
+    senderProofReplayStoreDurability: 'shared',
     failClosedOnMissingIssuer: true,
     shadowRecordsRawToken: false,
     admissionOrShadowStoresRawToken: false,
@@ -436,6 +522,10 @@ function testHostedBootstrapAndReadinessExposeRouteProof(): void {
     'Generic protected route: API runtime records the DPoP sender-confirmation source',
   );
   ok(
+    /senderProofReplayStoreConfigured:\s*false/u.test(apiRouteRuntime),
+    'Generic protected route: API runtime records missing DPoP proof replay store instead of overclaiming',
+  );
+  ok(
     /genericAdmissionProtectedIssuer:\s*apiReleaseTokenIssuer/u.test(apiRouteRuntime),
     'Generic protected route: API runtime passes the release-token issuer as a private service',
   );
@@ -471,6 +561,7 @@ testProductionSharedBlocksUntilIssuerAndSenderProofAreConfigured();
 testCompatibilityModeIsAProductionSharedBlocker();
 testConfiguredRuntimeIssuerAndSenderProofClearEvaluationReadiness();
 testProductionSharedNeedsExternalIssuerBoundary();
+testProductionSharedNeedsSharedDpopProofReplayStore();
 testProductionSharedNeedsSharedIntrospectionAndReplayStores();
 testHostedBootstrapRequiresProtectedIssuerByDefault();
 testHostedBootstrapWiresIssuerBridgeWhenRuntimeProvidesIssuer();

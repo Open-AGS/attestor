@@ -618,6 +618,31 @@ function testLedgerIndexesAuditRemediationClosure(): void {
     'not an implemented shared schema',
     'Research provenance ledger: consequence shared-store operational non-claim is explicit',
   );
+  includes(
+    content,
+    '### 39. Hosted Generic DPoP Proof Replay Readiness Gate',
+    'Research provenance ledger: hosted generic DPoP proof replay readiness entry is present',
+  );
+  includes(
+    content,
+    'sender-proof-replay-store-not-configured',
+    'Research provenance ledger: hosted generic missing DPoP proof replay blocker is recorded',
+  );
+  includes(
+    content,
+    'production-sender-proof-replay-store-not-shared',
+    'Research provenance ledger: hosted generic shared DPoP proof replay blocker is recorded',
+  );
+  includes(
+    content,
+    'token-use replay separation from sender-proof replay',
+    'Research provenance ledger: DPoP proof replay is separated from token-use replay',
+  );
+  includes(
+    content,
+    'not a durable DPoP proof replay backend implementation',
+    'Research provenance ledger: DPoP proof replay backend non-claim is explicit',
+  );
 }
 
 function testLedgerKeepsEvidenceBoundaryExplicit(): void {

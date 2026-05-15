@@ -102,6 +102,7 @@ function genericAdmissionProtectedRouteFor<Packet>(
     requireProtectedReleaseTokenForHighRisk: true,
     issuerConfigured: false,
     senderConfirmationSource: 'none',
+    senderProofReplayStoreConfigured: false,
     failClosedOnMissingIssuer: true,
     shadowRecordsRawToken: false,
     admissionOrShadowStoresRawToken: false,

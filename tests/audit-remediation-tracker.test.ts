@@ -111,6 +111,7 @@ try {
   includes(tracker, 'hosted route proof in `src/service/generic-admission-protected-route.ts`', 'Tracker: F2 hosted generic route proof is recorded');
   includes(tracker, 'hosted DPoP sender-confirmation bridge in `src/service/hosted-generic-admission-sender-confirmation.ts`', 'Tracker: F2 hosted DPoP sender-confirmation bridge is recorded');
   includes(tracker, 'hosted durable introspection/replay wiring through `src/service/release-token-introspection-store.ts`', 'Tracker: F2 hosted durable introspection bridge is recorded');
+  includes(tracker, 'shared DPoP sender-proof replay storage is absent', 'Tracker: F2 hosted DPoP proof replay blocker is recorded');
   includes(tracker, 'registers issued protected tokens in the release-token introspection authority', 'Tracker: F2 issued-token introspection registration is recorded');
   includes(tracker, 'external KMS/HSM issuer boundary with structured live provider proof', 'Tracker: F2 hosted issuer external live-proof boundary is recorded');
   includes(tracker, 'F2-AG-2 agent-payment settlement post-condition | `partial`', 'Tracker: F2 agent-payment settlement validation is closed as partial');
@@ -133,6 +134,7 @@ try {
   includes(tracker, 'consequence shared-store request guard', 'Tracker: consequence shared-store request guard bridge is tracked');
   includes(tracker, 'generic high-risk protected release-token issuance contract', 'Tracker: generic protected release-token issuance contract is tracked');
   includes(tracker, 'hosted bootstrap requires the protected issuer route, validates token-request DPoP proof', 'Tracker: F4 hosted protected route DPoP narrowing is tracked');
+  includes(tracker, 'blocks production-shared readiness without shared DPoP proof replay storage', 'Tracker: F4 DPoP proof replay readiness blocker is tracked');
   includes(tracker, 'customer PEP runtime adoption can be proven for a scoped runtime', 'Tracker: F4 customer PEP runtime adoption narrowing is tracked');
   includes(tracker, 'F4-LLM06-B agent-loop budget per process | `partial`', 'Tracker: F4 shared agent-loop validation is partial');
   includes(tracker, 'F4-LLM03-A agentic supply-chain coverage gap / single LLM provider | `partial`', 'Tracker: F4 LLM03 provider split is closed as partial');

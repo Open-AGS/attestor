@@ -108,6 +108,7 @@ try {
   includes(tracker, 'signed bearer and release-enforcement customer-gate verifiers', 'Tracker: F2 customer-gate signed bearer verifier is recorded');
   includes(tracker, 'protected release-enforcement verifier-consumer path', 'Tracker: F2 customer-gate release-enforcement verifier consumer is recorded');
   includes(tracker, 'customer PEP runtime adoption proof in `src/consequence-admission/customer-pep-runtime-adoption.ts`', 'Tracker: F2 customer PEP runtime adoption proof is recorded');
+  includes(tracker, 'hosted route proof in `src/service/generic-admission-protected-route.ts`', 'Tracker: F2 hosted generic route proof is recorded');
   includes(tracker, 'F2-AG-2 agent-payment settlement post-condition | `partial`', 'Tracker: F2 agent-payment settlement validation is closed as partial');
   includes(tracker, 'F2-AG-3 account-delegation / EIP-7702 scope | `partial`', 'Tracker: F2 EIP-7702 scope validation is closed as partial');
   includes(tracker, 'F2-AG-5 hidden downstream side effects / receipt omission | `partial`', 'Tracker: F2 downstream receipt omission validation is closed as partial');
@@ -127,6 +128,7 @@ try {
   includes(tracker, 'F4-LLM05-B presentation replay ledger in-memory reference path | `partial`', 'Tracker: F4 replay shared-ledger validation is partial');
   includes(tracker, 'consequence shared-store request guard', 'Tracker: consequence shared-store request guard bridge is tracked');
   includes(tracker, 'generic high-risk protected release-token issuance contract', 'Tracker: generic protected release-token issuance contract is tracked');
+  includes(tracker, 'hosted bootstrap requires the protected issuer route and fails closed when it is missing', 'Tracker: F4 hosted protected route narrowing is tracked');
   includes(tracker, 'customer PEP runtime adoption can be proven for a scoped runtime', 'Tracker: F4 customer PEP runtime adoption narrowing is tracked');
   includes(tracker, 'F4-LLM06-B agent-loop budget per process | `partial`', 'Tracker: F4 shared agent-loop validation is partial');
   includes(tracker, 'F4-LLM03-A agentic supply-chain coverage gap / single LLM provider | `partial`', 'Tracker: F4 LLM03 provider split is closed as partial');

@@ -435,7 +435,7 @@ function testLedgerIndexesAuditRemediationClosure(): void {
   );
   includes(
     content,
-    'compatibility mode can still return an admission without a protected token',
+    'Standalone route imports can still choose compatibility behavior',
     'Research provenance ledger: generic protected release-token runtime limitation is explicit',
   );
   includes(
@@ -462,6 +462,36 @@ function testLedgerIndexesAuditRemediationClosure(): void {
     content,
     'This is not a deployed customer PEP',
     'Research provenance ledger: customer PEP runtime adoption live deployment non-claim is explicit',
+  );
+  includes(
+    content,
+    '### 33. Hosted Generic Admission Protected Route Guard',
+    'Research provenance ledger: hosted generic protected route guard entry is present',
+  );
+  includes(
+    content,
+    'src/service/generic-admission-protected-route.ts',
+    'Research provenance ledger: hosted generic protected route guard code evidence is indexed',
+  );
+  includes(
+    content,
+    'tests/generic-admission-protected-route.test.ts',
+    'Research provenance ledger: hosted generic protected route guard test evidence is indexed',
+  );
+  includes(
+    content,
+    'Envoy external authorization failure-mode documentation',
+    'Research provenance ledger: hosted generic protected route guard fail-closed anchor is recorded',
+  );
+  includes(
+    content,
+    'without an issuer, the route fails closed instead of returning a compatibility admission',
+    'Research provenance ledger: hosted generic protected route guard behavior is recorded',
+  );
+  includes(
+    content,
+    'This is not a live authorization server',
+    'Research provenance ledger: hosted generic protected route guard live auth-server non-claim is explicit',
   );
 }
 

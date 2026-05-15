@@ -6,6 +6,9 @@ import {
   releaseTokenVerificationKeysToJwks,
   type ReleaseTokenVerificationKey,
 } from '../../../release-layer/index.js';
+import type {
+  GenericAdmissionProtectedRouteEvaluation,
+} from '../../generic-admission-protected-route.js';
 
 type DomainRegistryLike = {
   listIds(): string[];
@@ -206,6 +209,7 @@ export interface CoreRouteDeps {
     runtimeProfileId?: string | null;
     productionStoragePath?: ProductionStoragePathEvaluation | null;
   }): ConsequenceSharedStoreProfileEvaluation;
+  genericAdmissionProtectedRoute?: GenericAdmissionProtectedRouteEvaluation;
   rlsActivationResult: {
     activated: boolean;
     policiesFound: number;
@@ -236,6 +240,7 @@ export function registerCoreRoutes(app: Hono, deps: CoreRouteDeps): void {
     evaluateSharedAuthorityRuntimeReadiness,
     evaluateProductionStoragePath,
     evaluateConsequenceSharedStoreProfile,
+    genericAdmissionProtectedRoute,
     rlsActivationResult,
     accountAuthKeySources,
   } = deps;
@@ -320,6 +325,7 @@ export function registerCoreRoutes(app: Hono, deps: CoreRouteDeps): void {
       }),
       productionStoragePath,
       consequenceSharedStoreProfile,
+      genericAdmissionProtectedRoute,
       shadowReadinessClaimAlignment,
       highAvailability,
       engine: 'attestor',
@@ -424,6 +430,12 @@ export function registerCoreRoutes(app: Hono, deps: CoreRouteDeps): void {
       if (!checks.consequenceSharedStoreProfile) ready = false;
     }
 
+    if (genericAdmissionProtectedRoute) {
+      checks.genericAdmissionProtectedRoute =
+        genericAdmissionProtectedRoute.readyForSelectedProfile;
+      if (!checks.genericAdmissionProtectedRoute) ready = false;
+    }
+
     const shadowReadinessClaimAlignment = evaluateConsequenceShadowReadinessClaimAlignment({
       runtimeProfileId: runtimeProfileDiagnostics.profile.id,
       productionStoragePath,
@@ -462,6 +474,7 @@ export function registerCoreRoutes(app: Hono, deps: CoreRouteDeps): void {
       sharedAuthorityRuntime,
       productionStoragePath,
       consequenceSharedStoreProfile,
+      genericAdmissionProtectedRoute,
       shadowReadinessClaimAlignment,
       highAvailability,
     }, status);

@@ -13,6 +13,7 @@ Files inspected:
 - `src/consequence-admission/customer-gate.ts`
 - `src/consequence-admission/generic-protected-release-token.ts`
 - `src/consequence-admission/customer-pep-runtime-adoption.ts`
+- `src/service/generic-admission-protected-route.ts`
 - `src/consequence-admission/downstream-enforcement-contract.ts`
 - `src/consequence-admission/verifier-helper.ts`
 - `src/release-kernel/release-token.ts`
@@ -91,6 +92,7 @@ release-enforcement plane: signed-token enforcement pattern exists
 generic protected release-token issuance helper: can issue sender-constrained protected tokens for allowed high-risk generic admissions when configured
 customer PEP runtime adoption proof: can prove scoped fail-closed runtime adoption evidence, but does not deploy or operate the PEP
 protected enforcement profile: routes high-risk/customer-sensitive paths to the release-enforcement plane
+hosted generic admission protected route: requires the protected issuer for high-risk hosted generic admissions and fails closed when issuer/sender-proof wiring is absent
 ```
 
 ## Corrected Finding
@@ -124,9 +126,9 @@ closure beyond the repository-side contract:
    release-enforcement verifier, replay store, token-introspection authority,
    and sender-constrained proof validation are active before protected
    consequences can execute.
-2. Hosted production configuration proves the generic admission route requires
-   the protected release-token issuer for protected profiles instead of running
-   in compatibility mode.
+2. Hosted production configuration still needs live issuer and sender-proof
+   wiring so protected high-risk generic admissions issue protected tokens
+   instead of failing closed on missing issuer.
 
 Current repo evidence supports `partial`, not `fixed`. The signed bearer helper
 narrows the low-risk cryptographic compatibility gap, and the
@@ -149,6 +151,14 @@ presentation, require online introspection, require replay consumption, and
 forbid bearer-only/helper-only protected execution. That profile is a contract
 selector, not token issuance or customer-runtime activation by itself.
 
+The hosted generic admission protected route proof narrows the hosted
+configuration gap: the service bootstrap now requires protected release-token
+issuance for high-risk generic admissions, exposes the route proof through
+health/readiness diagnostics, and fails closed when the issuer or
+sender-confirmation source is absent. It still does not configure a live
+authorization server, sender-proof verifier, durable replay/introspection
+backend, or customer-operated PEP.
+
 ## Tests
 
 Focused test:
@@ -158,6 +168,7 @@ npm run test:f2-customer-gate-validation
 npm run test:consequence-admission-protected-enforcement-profile
 npm run test:customer-pep-runtime-adoption
 npm run test:consequence-admission-customer-gate
+npm run test:generic-admission-protected-route
 npm run test:generic-admission-protected-release-token
 ```
 

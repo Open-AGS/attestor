@@ -105,6 +105,7 @@ try {
   includes(tracker, 'F1-CC-4 data-minimization fan-out | `backlog` | F1 Backlog Closure Validation', 'Tracker: F1 data-minimization fan-out backlog is evidence-qualified');
   includes(tracker, 'F1-CC-6 cross-log integrity anchor | `accepted-limitation` | F1 Backlog Closure Validation', 'Tracker: F1 cross-log integrity boundary is accepted');
   includes(tracker, 'F2-AG-1 customer-gate honor-system | `partial`', 'Tracker: F2 customer-gate validation is closed as partial');
+  includes(tracker, 'signed bearer customer-gate verifier', 'Tracker: F2 customer-gate signed bearer verifier is recorded');
   includes(tracker, 'F2-AG-2 agent-payment settlement post-condition | `partial`', 'Tracker: F2 agent-payment settlement validation is closed as partial');
   includes(tracker, 'F2-AG-3 account-delegation / EIP-7702 scope | `partial`', 'Tracker: F2 EIP-7702 scope validation is closed as partial');
   includes(tracker, 'F2-AG-5 hidden downstream side effects / receipt omission | `partial`', 'Tracker: F2 downstream receipt omission validation is closed as partial');

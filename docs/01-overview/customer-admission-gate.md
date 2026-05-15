@@ -31,6 +31,35 @@ success path.
 
 The downstream system should only write, send, file, execute, broadcast, sign, or settle after the customer gate returns `PROCEED`.
 
+## Signed bearer compatibility path
+
+For low-risk compatibility integrations, the customer gate can also verify a
+signed bearer release token:
+
+```ts
+import {
+  assertConsequenceAdmissionGateAllowsSignedBearerToken,
+} from 'attestor/consequence-admission';
+
+await assertConsequenceAdmissionGateAllowsSignedBearerToken({
+  admission,
+  downstreamAction: 'customer_reporting_store.write',
+  authorizationHeader: request.headers.authorization,
+  verificationKey,
+  currentDate: new Date().toISOString(),
+});
+```
+
+This path verifies the release-token signature, audience, tenant binding, and
+the admission `release-token` proof reference by token id and token digest. The
+gate records only digest/token metadata and does not store the raw bearer token.
+
+It is still bearer-only compatibility, not protected production enforcement. If
+the token requires online introspection, replay consumption, DPoP, mTLS,
+SPIFFE, or HTTP Message Signature binding, the helper holds the consequence and
+the integration must use `attestor/release-enforcement-plane` or an equivalent
+customer-operated verifier.
+
 ## Protected customer enforcement profile
 
 The customer gate is the smallest local helper. It is not the protected production path for high-risk consequences.
@@ -72,6 +101,8 @@ assertConsequenceAdmissionGateAllows({
 - This does not add a public hosted crypto route.
 - This does not auto-detect packs from payload shape.
 - This does not make Attestor the downstream system.
-- This does not perform cryptographic token verification, sender-constrained presentation checks, online introspection, or replay consumption.
+- The signed-bearer helper verifies compact signed release tokens for
+  compatibility paths, but it does not perform sender-constrained presentation
+  checks, online introspection, or replay consumption.
 
 Attestor supplies the decision and proof. The customer system enforces the final gate before consequence.

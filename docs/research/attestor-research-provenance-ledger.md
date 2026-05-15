@@ -482,6 +482,21 @@ The entries above are the most concrete PR/commit-linked hardening records. The 
 - Remaining limitation or no-go condition: This is not a live AWS, Google Cloud, Azure, HSM, or confidential-compute signer adapter. Runtime release-token issuance still uses the existing release signing provider path, and external KMS/HSM-backed release signing remains unproven until a real provider adapter, live sign/verify probe, rotation plan, compromise response, and deployment evidence exist.
 - Status: complete for repository-side structured proof gate once this PR is merged and verified on `origin/master`.
 
+### 26. Signed Bearer Customer Gate
+
+- Step / PR / commit: Signed bearer token customer-gate compatibility path; this PR records repository-side contract evidence but cannot pre-record its own merge commit.
+- Date if available: 2026-05-15.
+- Trust surface: customer-side consequence gate, signed release-token presentation, admission proof binding, tenant/audience binding, bearer-token downgrade risk, and protected enforcement routing.
+- Protected principle: customer authority; fail-closed boundary; proof integrity; replay and idempotency safety; data minimization and redaction; no overclaim.
+- Research anchor / source used, if recorded: OAuth 2.0 Bearer Token Usage RFC 6750, JWT Best Current Practices RFC 8725, OAuth DPoP RFC 9449, OAuth mTLS-bound tokens RFC 8705, and existing release-enforcement-plane DPoP / mTLS / HTTP Message Signature repository evidence. These are engineering anchors only, not OAuth certification or production customer-enforcement evidence.
+- Repository evidence:
+  - Contract/code evidence: `src/consequence-admission/customer-gate.ts`, `src/release-kernel/release-token.ts`, `docs/01-overview/customer-admission-gate.md`, `docs/audit/f2-customer-gate-enforcement-validation.md`, and `docs/audit/attestor-audit-remediation-tracker.md`.
+  - Test evidence: `tests/consequence-admission-customer-gate.test.ts`, `tests/research-provenance-ledger.test.ts`, and `tests/audit-remediation-tracker.test.ts`.
+- Implemented control: Adds an optional signed bearer release-token verifier to the customer gate. It verifies the compact signed release token, audience, tenant binding, and admission `release-token` proof reference by token id and digest, while recording only token digest/id metadata. It fails closed when the base customer gate holds, the token is missing/malformed/invalid, proof binding is absent, the token requires online introspection, or sender-constrained confirmation is present.
+- Tests / verification: `npm run test:consequence-admission-customer-gate`, `npm run test:audit-remediation-tracker`, and `npm run test:research-provenance-ledger`.
+- Remaining limitation or no-go condition: This is bearer-only compatibility for lower-risk customer integrations. It does not consume replay, perform online introspection, verify DPoP/mTLS/SPIFFE/HTTP Message Signature sender constraints, auto-issue tokens from generic consequence-admission responses, or prove customer runtime adoption. R3/R4 or production-sensitive paths still require `attestor/release-enforcement-plane` or equivalent customer-operated protected enforcement.
+- Status: complete for repository-side signed bearer customer-gate compatibility once this PR is merged and verified on `origin/master`.
+
 ## Strong Recorded Research Support
 
 The strongest recorded research support appears in:

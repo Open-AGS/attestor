@@ -293,6 +293,31 @@ function testLedgerIndexesAuditRemediationClosure(): void {
     'This is not a live AWS, Google Cloud, Azure, HSM, or confidential-compute signer adapter.',
     'Research provenance ledger: tenant signer live adapter non-claim is explicit',
   );
+  includes(
+    content,
+    '### 26. Signed Bearer Customer Gate',
+    'Research provenance ledger: signed bearer customer gate entry is present',
+  );
+  includes(
+    content,
+    'src/consequence-admission/customer-gate.ts',
+    'Research provenance ledger: signed bearer customer gate code evidence is indexed',
+  );
+  includes(
+    content,
+    'tests/consequence-admission-customer-gate.test.ts',
+    'Research provenance ledger: signed bearer customer gate test evidence is indexed',
+  );
+  includes(
+    content,
+    'OAuth 2.0 Bearer Token Usage RFC 6750',
+    'Research provenance ledger: signed bearer customer gate bearer-token anchor is recorded',
+  );
+  includes(
+    content,
+    'This is bearer-only compatibility for lower-risk customer integrations.',
+    'Research provenance ledger: signed bearer customer gate non-claim is explicit',
+  );
 }
 
 function testLedgerKeepsEvidenceBoundaryExplicit(): void {

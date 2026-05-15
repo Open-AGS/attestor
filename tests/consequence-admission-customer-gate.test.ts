@@ -1,13 +1,21 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { runCustomerAdmissionGateExample } from '../examples/customer-admission-gate.js';
+import { createReleaseDecisionSkeleton } from '../src/release-kernel/object-model.js';
+import { createReleaseTokenIssuer } from '../src/release-kernel/release-token.js';
+import { generateKeyPair } from '../src/signing/keys.js';
 import {
   CONSEQUENCE_ADMISSION_CUSTOMER_GATE_VERSION,
+  CONSEQUENCE_ADMISSION_CUSTOMER_GATE_SIGNED_BEARER_VERSION,
   ConsequenceAdmissionGateHeldError,
+  ConsequenceAdmissionSignedBearerGateHeldError,
   assertConsequenceAdmissionGateAllows,
+  assertConsequenceAdmissionGateAllowsSignedBearerToken,
   createConsequenceAdmissionFacadeResponse,
   evaluateConsequenceAdmissionGate,
+  evaluateConsequenceAdmissionGateWithSignedBearerToken,
   type FinancePipelineAdmissionRun,
 } from '../src/consequence-admission/index.js';
 
@@ -33,6 +41,10 @@ function equal<T>(actual: T, expected: T, message: string): void {
 function ok(condition: unknown, message: string): void {
   assert.ok(condition, message);
   passed += 1;
+}
+
+function digestBearerToken(token: string): string {
+  return `sha256:${createHash('sha256').update(token).digest('hex')}`;
 }
 
 function financeRunFixture(
@@ -177,6 +189,183 @@ function testAssertGateThrowsWhenHeld(): void {
   passed += 1;
 }
 
+async function issueCustomerGateReleaseToken(input: {
+  readonly downstreamAction: string;
+  readonly tenantId: string;
+  readonly riskClass?: 'R1' | 'R3';
+  readonly confirmation?: { readonly jkt: string };
+}) {
+  const keyPair = generateKeyPair();
+  const issuer = createReleaseTokenIssuer({
+    issuer: 'attestor.customer-gate.test',
+    privateKeyPem: keyPair.privateKeyPem,
+    publicKeyPem: keyPair.publicKeyPem,
+  });
+  const decision = createReleaseDecisionSkeleton({
+    id: `decision-${input.downstreamAction}`,
+    createdAt: '2026-05-15T10:00:00.000Z',
+    status: 'accepted',
+    policyVersion: 'customer.gate.release.v1',
+    policyHash: 'sha256:customer-gate-policy',
+    outputHash: 'sha256:customer-gate-output',
+    consequenceHash: 'sha256:customer-gate-consequence',
+    outputContract: {
+      artifactType: 'customer-gate.release-token',
+      expectedShape: 'signed bearer release token for a customer gate downstream action',
+      consequenceType: 'action',
+      riskClass: input.riskClass ?? 'R1',
+    },
+    capabilityBoundary: {
+      allowedTools: ['customer-gate'],
+      allowedTargets: [input.downstreamAction],
+      allowedDataDomains: ['customer-gate-test'],
+    },
+    requester: {
+      id: 'svc.customer-gate-test',
+      type: 'service',
+    },
+    target: {
+      kind: 'custom',
+      id: input.downstreamAction,
+    },
+  });
+  const issued = await issuer.issue({
+    decision,
+    audience: input.downstreamAction,
+    tenantId: input.tenantId,
+    issuedAt: '2026-05-15T10:00:00.000Z',
+    ttlSeconds: 300,
+    confirmation: input.confirmation,
+  });
+
+  return {
+    issued,
+    verificationKey: await issuer.exportVerificationKey(),
+  };
+}
+
+async function testSignedBearerGateAllowsMatchingReleaseToken(): Promise<void> {
+  const downstreamAction = 'customer_reporting_store.write';
+  const tenantId = 'tenant_customer_gate';
+  const { issued, verificationKey } = await issueCustomerGateReleaseToken({
+    downstreamAction,
+    tenantId,
+  });
+  const baseAdmission = admissionFor(financeRunFixture());
+  const admission = {
+    ...baseAdmission,
+    proof: Object.freeze([
+      ...baseAdmission.proof,
+      {
+        kind: 'release-token' as const,
+        id: issued.tokenId,
+        digest: digestBearerToken(issued.token),
+        uri: null,
+        verifyHint: 'Verify the signed bearer release token before running the customer gate action.',
+      },
+    ]),
+  };
+  const gate = await evaluateConsequenceAdmissionGateWithSignedBearerToken({
+    admission,
+    downstreamAction,
+    authorizationHeader: `Bearer ${issued.token}`,
+    verificationKey,
+    currentDate: '2026-05-15T10:01:00.000Z',
+  });
+  const serialized = JSON.stringify(gate);
+
+  equal(
+    gate.version,
+    CONSEQUENCE_ADMISSION_CUSTOMER_GATE_SIGNED_BEARER_VERSION,
+    'Customer gate signed bearer: version is stable',
+  );
+  equal(gate.baseGateVersion, CONSEQUENCE_ADMISSION_CUSTOMER_GATE_VERSION, 'Customer gate signed bearer: base gate version is retained');
+  equal(gate.outcome, 'proceed', 'Customer gate signed bearer: matching release token proceeds');
+  equal(gate.signedBearer.valid, true, 'Customer gate signed bearer: signed bearer verification is valid');
+  equal(gate.signedBearer.signatureVerified, true, 'Customer gate signed bearer: signature is verified');
+  equal(gate.signedBearer.proofRefMatched, true, 'Customer gate signed bearer: token matches admission proof ref');
+  equal(gate.signedBearer.rawBearerTokenStored, false, 'Customer gate signed bearer: raw bearer token is not stored');
+  equal(serialized.includes(issued.token), false, 'Customer gate signed bearer: decision does not serialize raw token');
+  ok(gate.reasonCodes.includes('customer-gate-signed-bearer-valid'), 'Customer gate signed bearer: valid reason code is present');
+}
+
+async function testSignedBearerGateFailsClosedWithoutProofMatch(): Promise<void> {
+  const downstreamAction = 'customer_reporting_store.write';
+  const { issued, verificationKey } = await issueCustomerGateReleaseToken({
+    downstreamAction,
+    tenantId: 'tenant_customer_gate',
+  });
+  const gate = await evaluateConsequenceAdmissionGateWithSignedBearerToken({
+    admission: admissionFor(financeRunFixture()),
+    downstreamAction,
+    bearerToken: issued.token,
+    verificationKey,
+    currentDate: '2026-05-15T10:01:00.000Z',
+  });
+
+  equal(gate.outcome, 'hold', 'Customer gate signed bearer: missing release-token proof holds');
+  equal(gate.signedBearer.valid, false, 'Customer gate signed bearer: missing proof ref invalidates token presentation');
+  ok(
+    gate.signedBearer.failureReasons.includes('proof-ref-missing'),
+    'Customer gate signed bearer: missing proof ref failure is explicit',
+  );
+}
+
+async function testSignedBearerGateRejectsBearerOnlyUpgradeForProtectedTokens(): Promise<void> {
+  const downstreamAction = 'customer_reporting_store.write';
+  const tenantId = 'tenant_customer_gate';
+  const { issued, verificationKey } = await issueCustomerGateReleaseToken({
+    downstreamAction,
+    tenantId,
+    riskClass: 'R3',
+  });
+  const baseAdmission = admissionFor(financeRunFixture());
+  const admission = {
+    ...baseAdmission,
+    proof: Object.freeze([
+      ...baseAdmission.proof,
+      {
+        kind: 'release-token' as const,
+        id: issued.tokenId,
+        digest: digestBearerToken(issued.token),
+        uri: null,
+        verifyHint: 'Use release-enforcement-plane for protected token presentation.',
+      },
+    ]),
+  };
+  const gate = await evaluateConsequenceAdmissionGateWithSignedBearerToken({
+    admission,
+    downstreamAction,
+    bearerToken: issued.token,
+    verificationKey,
+    currentDate: '2026-05-15T10:01:00.000Z',
+  });
+
+  equal(gate.outcome, 'hold', 'Customer gate signed bearer: introspection-required token holds');
+  equal(gate.signedBearer.introspectionRequired, true, 'Customer gate signed bearer: introspection requirement is visible');
+  ok(
+    gate.signedBearer.failureReasons.includes('introspection-required'),
+    'Customer gate signed bearer: introspection-required failure is explicit',
+  );
+
+  await assert.rejects(
+    () =>
+      assertConsequenceAdmissionGateAllowsSignedBearerToken({
+        admission,
+        downstreamAction,
+        bearerToken: issued.token,
+        verificationKey,
+        currentDate: '2026-05-15T10:01:00.000Z',
+      }),
+    (error: unknown) => {
+      assert.ok(error instanceof ConsequenceAdmissionSignedBearerGateHeldError);
+      assert.ok(error.gateDecision.signedBearer.failureReasons.includes('introspection-required'));
+      return true;
+    },
+  );
+  passed += 1;
+}
+
 function testExampleAndDocs(): void {
   const result = runCustomerAdmissionGateExample();
   const readme = readProjectFile('README.md');
@@ -198,6 +387,9 @@ function testExampleAndDocs(): void {
   includes(doc, '`POST /api/v1/admissions`', 'Customer gate doc: points to the generic route');
   includes(doc, 'This does not add a public hosted crypto route.', 'Customer gate doc: keeps crypto boundary honest');
   includes(doc, 'This does not auto-detect packs from payload shape.', 'Customer gate doc: rejects auto detection');
+  includes(doc, 'Signed bearer compatibility path', 'Customer gate doc: documents signed bearer compatibility');
+  includes(doc, 'does not store the raw bearer token', 'Customer gate doc: signed bearer path is secret-safe');
+  includes(doc, 'not protected production enforcement', 'Customer gate doc: bearer-only path does not overclaim production enforcement');
   includes(tryFirst, '[Customer admission gate](customer-admission-gate.md)', 'Try-first doc: links the next integration step');
 
   equal(packageJson.scripts['example:customer-gate'], 'tsx examples/customer-admission-gate.ts', 'Package: customer gate example script exists');
@@ -212,6 +404,9 @@ testRequiredProofHoldsEvenWhenNativeDecisionPassed();
 testDefaultProofRequirementHoldsAdmittedResponseWithoutProof();
 testRequiredCheckFailureHoldsEvenWithProof();
 testAssertGateThrowsWhenHeld();
+await testSignedBearerGateAllowsMatchingReleaseToken();
+await testSignedBearerGateFailsClosedWithoutProofMatch();
+await testSignedBearerGateRejectsBearerOnlyUpgradeForProtectedTokens();
 testExampleAndDocs();
 
 console.log(`Consequence admission customer gate tests: ${passed} passed, 0 failed`);

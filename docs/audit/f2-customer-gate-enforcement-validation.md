@@ -27,9 +27,18 @@ The finding is valid for `customer-gate.ts` by itself.
 
 `evaluateConsequenceAdmissionGate(...)` returns a structured decision and an
 instruction string. It can throw through
-`assertConsequenceAdmissionGateAllows(...)`, but it does not issue, verify, or
-consume a cryptographic downstream authorization token. A customer runtime that
-ignores the helper can still execute the downstream action.
+`assertConsequenceAdmissionGateAllows(...)`.
+
+`evaluateConsequenceAdmissionGateWithSignedBearerToken(...)` adds a
+compatibility path for signed bearer release tokens. It verifies the release
+token signature, audience, tenant binding, and admission proof reference by
+token id and token digest. It records digest/token metadata only and fails
+closed for introspection-required or sender-constrained tokens that require the
+release-enforcement plane.
+
+A customer runtime that ignores the helper can still execute the downstream
+action. The signed bearer path also does not consume replay, perform online
+introspection, or prove sender constraint.
 
 The finding is too broad if it is applied to the entire repository.
 
@@ -48,6 +57,7 @@ Therefore, the accurate status is:
 
 ```text
 customer-gate helper alone: partial / honor-system risk remains
+signed-bearer customer-gate helper: cryptographic compatibility verifier for low-risk paths, no replay/introspection/sender constraint
 downstream contract helper: fail-closed structural verifier, not cryptographic
 release-enforcement plane: signed-token enforcement pattern exists
 generic consequence admission path: not proven to auto-issue protected tokens
@@ -63,11 +73,13 @@ It should say:
 
 ```text
 The customer-gate helper is not the protected enforcement path. It is a
-convenience wrapper around an admission response. High-impact downstream systems
-must use the downstream contract verifier and, where cryptographic enforcement
-is required, the release-enforcement plane or an equivalent signed-token
-verifier. The generic consequence-admission route is not yet proven to
-automatically issue or require such a token for every admitted consequence.
+convenience wrapper around an admission response, with an optional signed bearer
+release-token verifier for low-risk compatibility paths. High-impact downstream
+systems must use the downstream contract verifier and, where protected
+cryptographic enforcement is required, the release-enforcement plane or an
+equivalent sender-constrained signed-token verifier. The generic
+consequence-admission route is not yet proven to automatically issue or require
+such a token for every admitted consequence.
 ```
 
 ## Remaining Work
@@ -82,7 +94,9 @@ closures:
    and require users to choose the release-enforcement plane or downstream
    contract helper for protected execution.
 
-Current repo evidence supports `partial`, not `fixed`.
+Current repo evidence supports `partial`, not `fixed`. The signed bearer helper
+narrows the low-risk cryptographic compatibility gap, but does not close
+protected downstream enforcement.
 
 The protected customer enforcement profile narrows the remaining gap by making
 the adoption rule machine-readable: R3/R4 and other production-sensitive
@@ -98,6 +112,7 @@ Focused test:
 ```bash
 npm run test:f2-customer-gate-validation
 npm run test:consequence-admission-protected-enforcement-profile
+npm run test:consequence-admission-customer-gate
 ```
 
 Related tests:

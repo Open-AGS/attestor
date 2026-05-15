@@ -39,24 +39,33 @@ can narrow signer-compromise blast radius:
   are not production-ready tenant isolation
 - tenant-scoped external KMS/HSM signers must be non-exportable, externally
   rotated, live sign/verify probed, and fail closed without local fallback
+- live provider verification must come from a structured digest-only proof
+  envelope, not from a bare boolean claim
 - confidential-compute signing additionally requires verified attestation
   evidence before the boundary contract is satisfied
 
 Official provider anchors:
 
 - AWS KMS supports asymmetric signing keys, including Ed25519, where the
-  private signing key does not leave KMS unencrypted:
-  [AWS KMS asymmetric key specs](https://docs.aws.amazon.com/kms/latest/developerguide/symm-asymm-choose-key-spec.html)
+  private signing key does not leave KMS unencrypted, and the `Sign` API
+  records the asymmetric sign operation:
+  [AWS KMS asymmetric keys](https://docs.aws.amazon.com/kms/latest/developerguide/symmetric-asymmetric.html),
+  [AWS KMS Sign](https://docs.aws.amazon.com/kms/latest/APIReference/API_Sign.html)
 - Google Cloud KMS supports asymmetric signing algorithms including Ed25519,
   and separates SOFTWARE, HSM, HSM_SINGLE_TENANT, EXTERNAL, and EXTERNAL_VPC
   protection levels:
-  [Google Cloud KMS algorithms](https://cloud.google.com/kms/docs/algorithms)
+  [Google Cloud KMS algorithms](https://cloud.google.com/kms/docs/algorithms),
+  [Google Cloud KMS protection levels](https://cloud.google.com/kms/docs/protection-levels)
 - Azure Key Vault and Managed HSM support sign/verify over locally hashed
-  inputs, and Key Vault keys are not exported after provisioning:
-  [Azure Key Vault key operations](https://learn.microsoft.com/en-us/azure/key-vault/keys/about-keys-details)
+  inputs, and Managed HSM provides single-tenant HSM-backed key isolation:
+  [Azure Key Vault key operations](https://learn.microsoft.com/en-us/azure/key-vault/keys/about-keys-details),
+  [Azure Key Vault keys](https://learn.microsoft.com/en-us/azure/key-vault/keys/about-keys)
 
 This is a contract and fake-adapter test boundary. It does not wire a live AWS,
 GCP, Azure, HSM, or confidential-compute signer into release-token issuance.
+The structured proof envelope is the required shape for a future live adapter;
+it is not itself evidence that a provider was called unless an operator or
+adapter supplies fresh provider-derived sign/verify evidence.
 
 ## Key Boundary
 

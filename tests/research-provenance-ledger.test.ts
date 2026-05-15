@@ -268,6 +268,31 @@ function testLedgerIndexesAuditRemediationClosure(): void {
     'does not prove Anthropic, Vertex AI, or Azure OpenAI calls',
     'Research provenance ledger: LLM provider live-client non-claim is explicit',
   );
+  includes(
+    content,
+    '### 25. Tenant Signer Live Provider Proof Gate',
+    'Research provenance ledger: tenant signer live proof entry is present',
+  );
+  includes(
+    content,
+    'src/service/bootstrap/release-tenant-signer-boundary.ts',
+    'Research provenance ledger: tenant signer proof gate code evidence is indexed',
+  );
+  includes(
+    content,
+    'tests/production-tenant-signer-boundary.test.ts',
+    'Research provenance ledger: tenant signer proof gate test evidence is indexed',
+  );
+  includes(
+    content,
+    'AWS KMS asymmetric keys and Sign API',
+    'Research provenance ledger: tenant signer proof gate AWS KMS anchor is recorded',
+  );
+  includes(
+    content,
+    'This is not a live AWS, Google Cloud, Azure, HSM, or confidential-compute signer adapter.',
+    'Research provenance ledger: tenant signer live adapter non-claim is explicit',
+  );
 }
 
 function testLedgerKeepsEvidenceBoundaryExplicit(): void {

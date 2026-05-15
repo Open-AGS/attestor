@@ -158,6 +158,13 @@ ATTESTOR_REQUIRE_PRODUCTION_RELEASE_SIGNING_PROVIDER=true
 
 `file-pem` is restart-recoverable and useful for evaluation rehearsal, but `/api/v1/health` reports it as `productionReady: false` because the private release signer remains exportable runtime material. `ATTESTOR_RELEASE_SIGNING_PROVIDER=external-kms` currently fails closed because no KMS/HSM-backed signer is implemented yet; this prevents a deployment from claiming external key custody while the runtime still signs with local PEM material. `ATTESTOR_REQUIRE_PRODUCTION_RELEASE_SIGNING_PROVIDER=true` is the promotion guard: it refuses local signing material until a real external provider is wired.
 
+The per-tenant signer boundary also has a structured live provider proof
+contract. Future AWS KMS, Google Cloud KMS, Azure Key Vault / Managed HSM, or
+confidential signing adapters must provide fresh digest-only sign/verify proof
+that matches tenant digest, key reference digest, key id, algorithm, and the
+standard Attestor challenge digest. A bare `liveProviderVerified=true` value is
+not enough to clear the boundary.
+
 For `production-shared`, do not paper over the gate with file paths. Use it only when the dedicated release-authority PostgreSQL substrate is configured, reachable, and reflected in `/api/v1/ready`.
 
 ```bash

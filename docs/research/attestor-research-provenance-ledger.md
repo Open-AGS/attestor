@@ -467,6 +467,21 @@ The entries above are the most concrete PR/commit-linked hardening records. The 
 - Remaining limitation or no-go condition: This is not a live multi-provider client implementation. It does not prove Anthropic, Vertex AI, or Azure OpenAI calls; live failover; hosted consequence-admission dependence on live LLMs; OpenAI vision smoke proof; non-OpenAI smoke proof; or production provider readiness.
 - Status: complete for repository-side registry, OpenAI runtime-policy, and OpenAI reasoning live-smoke contract once this PR is merged and verified on `origin/master`.
 
+### 25. Tenant Signer Live Provider Proof Gate
+
+- Step / PR / commit: Tenant signer / external KMS structured live-proof gate; this PR records repository-side contract evidence but cannot pre-record its own merge commit.
+- Date if available: 2026-05-15.
+- Trust surface: per-tenant release signing boundary, external KMS/HSM provider proof, confidential signing attestation input, key-reference minimization, signer compromise blast-radius claims, and fail-closed production promotion gates.
+- Protected principle: tenant isolation; release provenance; proof integrity; fail-closed boundary; data minimization and redaction; no overclaim.
+- Research anchor / source used, if recorded: AWS KMS asymmetric keys and Sign API, Google Cloud KMS algorithms and protection levels, Azure Key Vault key operations and Managed HSM key isolation, and Azure Attestation concepts. These are engineering anchors only, not cloud-provider certification or live deployment evidence.
+- Repository evidence:
+  - Contract/code evidence: `src/service/bootstrap/release-tenant-signer-boundary.ts`, `docs/03-governance/cryptography-policy.md`, `docs/08-deployment/production-readiness.md`, `docs/audit/f6-tenant-blast-radius-validation.md`, and `docs/audit/attestor-audit-remediation-tracker.md`.
+  - Test evidence: `tests/production-tenant-signer-boundary.test.ts` and `tests/research-provenance-ledger.test.ts`.
+- Implemented control: Replaces the previous bare `liveProviderVerified` readiness input with a structured digest-only live provider proof evaluation. The descriptor only marks live provider verification when the proof is fresh, sign/verify successful, bound to the tenant digest, key-reference digest, key id, provider class, algorithm, public verification key reference, and the standard Attestor challenge digest. Missing, stale, failed, or mismatched proof fails closed.
+- Tests / verification: `npm run test:production-tenant-signer-boundary` and `npm run test:research-provenance-ledger`.
+- Remaining limitation or no-go condition: This is not a live AWS, Google Cloud, Azure, HSM, or confidential-compute signer adapter. Runtime release-token issuance still uses the existing release signing provider path, and external KMS/HSM-backed release signing remains unproven until a real provider adapter, live sign/verify probe, rotation plan, compromise response, and deployment evidence exist.
+- Status: complete for repository-side structured proof gate once this PR is merged and verified on `origin/master`.
+
 ## Strong Recorded Research Support
 
 The strongest recorded research support appears in:

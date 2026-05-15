@@ -60,6 +60,32 @@ SPIFFE, or HTTP Message Signature binding, the helper holds the consequence and
 the integration must use `attestor/release-enforcement-plane` or an equivalent
 customer-operated verifier.
 
+## Release-enforcement proof path
+
+For protected customer gateways, the customer gate can consume the result of a
+customer-operated `attestor/release-enforcement-plane` verifier:
+
+```ts
+import {
+  assertConsequenceAdmissionGateAllowsReleaseEnforcement,
+} from 'attestor/consequence-admission';
+
+assertConsequenceAdmissionGateAllowsReleaseEnforcement({
+  admission,
+  downstreamAction: 'customer_reporting_store.write',
+  releaseEnforcement: verified,
+  releaseTokenDigest,
+});
+```
+
+This path does not reimplement DPoP, mTLS, SPIFFE, HTTP Message Signature,
+online introspection, or replay consumption inside the customer-gate helper.
+Instead, it requires the supplied release-enforcement verifier result to be
+`valid`, sender-constrained, online-checked, replay-consumed, tenant/audience
+matched, and bound to an admission `release-token` proof reference by token id
+and digest. The gate records only digest/token/verifier metadata and does not
+store the raw release token or sender proof.
+
 ## Protected customer enforcement profile
 
 The customer gate is the smallest local helper. It is not the protected production path for high-risk consequences.
@@ -104,5 +130,9 @@ assertConsequenceAdmissionGateAllows({
 - The signed-bearer helper verifies compact signed release tokens for
   compatibility paths, but it does not perform sender-constrained presentation
   checks, online introspection, or replay consumption.
+- The release-enforcement proof helper consumes an already verified
+  release-enforcement result; it does not operate the customer's PEP, replay
+  store, token introspection authority, DPoP key, mTLS trust anchors, or SPIFFE
+  bundle.
 
 Attestor supplies the decision and proof. The customer system enforces the final gate before consequence.

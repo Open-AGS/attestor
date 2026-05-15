@@ -3,23 +3,44 @@ import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { runCustomerAdmissionGateExample } from '../examples/customer-admission-gate.js';
-import { createReleaseDecisionSkeleton } from '../src/release-kernel/object-model.js';
+import { createReleaseDecisionSkeleton, type ReleasePolicyProvenance } from '../src/release-kernel/object-model.js';
+import {
+  createInMemoryReleaseTokenIntrospectionStore,
+  createReleaseTokenIntrospector,
+} from '../src/release-kernel/release-introspection.js';
 import { createReleaseTokenIssuer } from '../src/release-kernel/release-token.js';
 import { generateKeyPair } from '../src/signing/keys.js';
+import { createEnforcementRequest, type EnforcementRequest } from '../src/release-enforcement-plane/object-model.js';
+import {
+  createDpopBoundPresentationFromIssuedToken,
+  createDpopProof,
+  generateDpopKeyPair,
+} from '../src/release-enforcement-plane/dpop.js';
+import { verifyOnlineReleaseAuthorization } from '../src/release-enforcement-plane/online-verifier.js';
 import {
   CONSEQUENCE_ADMISSION_CUSTOMER_GATE_VERSION,
+  CONSEQUENCE_ADMISSION_CUSTOMER_GATE_RELEASE_ENFORCEMENT_VERSION,
   CONSEQUENCE_ADMISSION_CUSTOMER_GATE_SIGNED_BEARER_VERSION,
   ConsequenceAdmissionGateHeldError,
+  ConsequenceAdmissionReleaseEnforcementGateHeldError,
   ConsequenceAdmissionSignedBearerGateHeldError,
+  assertConsequenceAdmissionGateAllowsReleaseEnforcement,
   assertConsequenceAdmissionGateAllows,
   assertConsequenceAdmissionGateAllowsSignedBearerToken,
   createConsequenceAdmissionFacadeResponse,
   evaluateConsequenceAdmissionGate,
+  evaluateConsequenceAdmissionGateWithReleaseEnforcement,
   evaluateConsequenceAdmissionGateWithSignedBearerToken,
   type FinancePipelineAdmissionRun,
 } from '../src/consequence-admission/index.js';
 
 let passed = 0;
+const PROTECTED_POLICY_HASH = 'sha256:customer-gate-protected-policy';
+const PROTECTED_POLICY_IR_HASH = 'sha256:customer-gate-protected-policy-ir';
+const PROTECTED_OUTPUT_HASH = 'sha256:customer-gate-protected-output';
+const PROTECTED_CONSEQUENCE_HASH = 'sha256:customer-gate-protected-consequence';
+const PROTECTED_COMPILED_POLICY_INDEX_VERSION = 'attestor.customer-gate.policy-index.test.v1';
+const PROTECTED_COMPILED_POLICY_IR_VERSION = 'attestor.customer-gate.policy-ir.test.v1';
 
 function readProjectFile(...segments: string[]): string {
   return readFileSync(join(process.cwd(), ...segments), 'utf8');
@@ -244,6 +265,153 @@ async function issueCustomerGateReleaseToken(input: {
   };
 }
 
+function protectedPolicyProvenance(): ReleasePolicyProvenance {
+  return {
+    source: 'compiled-admission-policy-index',
+    policyId: 'policy.customer-gate-release-enforcement-test',
+    policySpecVersion: 'attestor.release-policy.v1',
+    policyHash: PROTECTED_POLICY_HASH,
+    compiledPolicyHash: PROTECTED_POLICY_HASH,
+    compiledPolicyIrHash: PROTECTED_POLICY_IR_HASH,
+    compiledPolicyIndexVersion: PROTECTED_COMPILED_POLICY_INDEX_VERSION,
+    compiledPolicyIrVersion: PROTECTED_COMPILED_POLICY_IR_VERSION,
+    verificationValid: true,
+    verificationErrorCodes: [],
+    verificationWarningCodes: [],
+  };
+}
+
+function protectedCustomerGateRequest(input: {
+  readonly downstreamAction: string;
+  readonly tokenId: string;
+  readonly decisionId: string;
+  readonly uri?: string;
+}): EnforcementRequest {
+  return createEnforcementRequest({
+    id: 'customer-gate-protected-request',
+    receivedAt: '2026-05-15T10:01:00.000Z',
+    enforcementPoint: {
+      environment: 'test',
+      enforcementPointId: 'customer-gate-protected-pep',
+      pointKind: 'record-write-gateway',
+      boundaryKind: 'record-write',
+      consequenceType: 'record',
+      riskClass: 'R4',
+      tenantId: 'tenant_customer_gate',
+      accountId: 'acct_customer_gate',
+      workloadId: 'spiffe://attestor.test/ns/customer-gate/sa/record-writer',
+      audience: input.downstreamAction,
+    },
+    targetId: input.downstreamAction,
+    outputHash: PROTECTED_OUTPUT_HASH,
+    consequenceHash: PROTECTED_CONSEQUENCE_HASH,
+    releaseTokenId: input.tokenId,
+    releaseDecisionId: input.decisionId,
+    transport: {
+      kind: 'http',
+      method: 'POST',
+      uri: input.uri ?? 'https://customer.example.test/reporting/write?debug=true#discarded',
+      headersDigest: 'sha256:customer-gate-protected-headers',
+      bodyDigest: 'sha256:customer-gate-protected-body',
+    },
+  });
+}
+
+async function createProtectedDpopReleaseEnforcement(input: {
+  readonly downstreamAction: string;
+  readonly tenantId: string;
+  readonly consumeOnSuccess: boolean;
+}) {
+  const dpopKey = await generateDpopKeyPair();
+  const keyPair = generateKeyPair();
+  const issuer = createReleaseTokenIssuer({
+    issuer: 'attestor.customer-gate.protected.test',
+    privateKeyPem: keyPair.privateKeyPem,
+    publicKeyPem: keyPair.publicKeyPem,
+  });
+  const decision = createReleaseDecisionSkeleton({
+    id: 'decision-customer-gate-protected',
+    createdAt: '2026-05-15T10:00:00.000Z',
+    status: 'accepted',
+    policyVersion: 'customer.gate.release-enforcement.v1',
+    policyHash: PROTECTED_POLICY_HASH,
+    policyProvenance: protectedPolicyProvenance(),
+    outputHash: PROTECTED_OUTPUT_HASH,
+    consequenceHash: PROTECTED_CONSEQUENCE_HASH,
+    outputContract: {
+      artifactType: 'customer-gate.release-enforcement',
+      expectedShape: 'sender-constrained release-enforcement proof for protected customer gate execution',
+      consequenceType: 'record',
+      riskClass: 'R4',
+    },
+    capabilityBoundary: {
+      allowedTools: ['customer-gate'],
+      allowedTargets: [input.downstreamAction],
+      allowedDataDomains: ['customer-gate-test'],
+    },
+    requester: {
+      id: 'svc.customer-gate-test',
+      type: 'service',
+    },
+    target: {
+      kind: 'record-store',
+      id: input.downstreamAction,
+    },
+  });
+  const issued = await issuer.issue({
+    decision,
+    audience: input.downstreamAction,
+    tenantId: input.tenantId,
+    issuedAt: '2026-05-15T10:00:00.000Z',
+    ttlSeconds: 300,
+    confirmation: { jkt: dpopKey.publicKeyThumbprint },
+  });
+  const request = protectedCustomerGateRequest({
+    downstreamAction: input.downstreamAction,
+    tokenId: issued.tokenId,
+    decisionId: decision.id,
+  });
+  const proof = await createDpopProof({
+    privateJwk: dpopKey.privateJwk,
+    publicJwk: dpopKey.publicJwk,
+    httpMethod: 'POST',
+    httpUri: request.transport?.kind === 'http' ? request.transport.uri : '',
+    accessToken: issued.token,
+    nonce: 'nonce-customer-gate-protected',
+    proofJti: 'dpop-proof-customer-gate-protected',
+    issuedAt: '2026-05-15T10:01:00.000Z',
+  });
+  const store = createInMemoryReleaseTokenIntrospectionStore();
+  const introspector = createReleaseTokenIntrospector(store);
+  store.registerIssuedToken({ issuedToken: issued, decision });
+  const releaseEnforcement = await verifyOnlineReleaseAuthorization({
+    request,
+    presentation: createDpopBoundPresentationFromIssuedToken({
+      issuedToken: issued,
+      proof,
+      presentedAt: '2026-05-15T10:01:00.000Z',
+    }),
+    verificationKey: await issuer.exportVerificationKey(),
+    now: '2026-05-15T10:01:10.000Z',
+    introspector,
+    usageStore: store,
+    consumeOnSuccess: input.consumeOnSuccess,
+    replayLedgerEntry: null,
+    nonceLedgerEntry: {
+      nonce: 'nonce-customer-gate-protected',
+      issuedAt: '2026-05-15T10:00:50.000Z',
+      expiresAt: '2026-05-15T10:01:30.000Z',
+    },
+    resourceServerId: 'customer-gate-protected-pep',
+  });
+
+  return {
+    issued,
+    proof,
+    releaseEnforcement,
+  };
+}
+
 async function testSignedBearerGateAllowsMatchingReleaseToken(): Promise<void> {
   const downstreamAction = 'customer_reporting_store.write';
   const tenantId = 'tenant_customer_gate';
@@ -366,6 +534,142 @@ async function testSignedBearerGateRejectsBearerOnlyUpgradeForProtectedTokens():
   passed += 1;
 }
 
+async function testReleaseEnforcementGateAllowsSenderConstrainedVerifiedToken(): Promise<void> {
+  const downstreamAction = 'customer_reporting_store.write';
+  const tenantId = 'tenant_customer_gate';
+  const { issued, proof, releaseEnforcement } = await createProtectedDpopReleaseEnforcement({
+    downstreamAction,
+    tenantId,
+    consumeOnSuccess: true,
+  });
+  const baseAdmission = admissionFor(financeRunFixture());
+  const admission = {
+    ...baseAdmission,
+    proof: Object.freeze([
+      ...baseAdmission.proof,
+      {
+        kind: 'release-token' as const,
+        id: issued.tokenId,
+        digest: digestBearerToken(issued.token),
+        uri: null,
+        verifyHint: 'Use release-enforcement-plane online verification before running the protected customer gate action.',
+      },
+    ]),
+  };
+  const gate = evaluateConsequenceAdmissionGateWithReleaseEnforcement({
+    admission,
+    downstreamAction,
+    releaseEnforcement,
+    releaseTokenDigest: digestBearerToken(issued.token),
+  });
+  const serialized = JSON.stringify(gate);
+
+  equal(
+    gate.version,
+    CONSEQUENCE_ADMISSION_CUSTOMER_GATE_RELEASE_ENFORCEMENT_VERSION,
+    'Customer gate release enforcement: version is stable',
+  );
+  equal(gate.baseGateVersion, CONSEQUENCE_ADMISSION_CUSTOMER_GATE_VERSION, 'Customer gate release enforcement: base gate version is retained');
+  equal(gate.outcome, 'proceed', 'Customer gate release enforcement: verified sender-constrained token proceeds');
+  equal(gate.releaseEnforcement.valid, true, 'Customer gate release enforcement: release-enforcement proof is valid');
+  equal(gate.releaseEnforcement.status, 'valid', 'Customer gate release enforcement: online verifier status is valid');
+  equal(gate.releaseEnforcement.onlineChecked, true, 'Customer gate release enforcement: online introspection was checked');
+  equal(gate.releaseEnforcement.replayConsumed, true, 'Customer gate release enforcement: replay usage was consumed');
+  equal(gate.releaseEnforcement.presentationMode, 'dpop-bound-token', 'Customer gate release enforcement: DPoP presentation mode is recorded');
+  equal(gate.releaseEnforcement.senderConstrained, true, 'Customer gate release enforcement: sender constraint is recorded');
+  equal(gate.releaseEnforcement.proofRefMatched, true, 'Customer gate release enforcement: admission proof ref is matched');
+  equal(gate.releaseEnforcement.rawReleaseTokenStored, false, 'Customer gate release enforcement: raw release token is not stored');
+  equal(serialized.includes(issued.token), false, 'Customer gate release enforcement: decision does not serialize raw token');
+  equal(serialized.includes(proof.proofJwt), false, 'Customer gate release enforcement: decision does not serialize raw DPoP proof JWT');
+  ok(
+    gate.reasonCodes.includes('customer-gate-release-enforcement-valid'),
+    'Customer gate release enforcement: valid reason code is present',
+  );
+
+  const asserted = assertConsequenceAdmissionGateAllowsReleaseEnforcement({
+    admission,
+    downstreamAction,
+    releaseEnforcement,
+    releaseTokenDigest: digestBearerToken(issued.token),
+  });
+  equal(asserted.outcome, 'proceed', 'Customer gate release enforcement: assert helper returns proceed decision');
+}
+
+async function testReleaseEnforcementGateRequiresReplayConsumption(): Promise<void> {
+  const downstreamAction = 'customer_reporting_store.write';
+  const tenantId = 'tenant_customer_gate';
+  const { issued, releaseEnforcement } = await createProtectedDpopReleaseEnforcement({
+    downstreamAction,
+    tenantId,
+    consumeOnSuccess: false,
+  });
+  const baseAdmission = admissionFor(financeRunFixture());
+  const admission = {
+    ...baseAdmission,
+    proof: Object.freeze([
+      ...baseAdmission.proof,
+      {
+        kind: 'release-token' as const,
+        id: issued.tokenId,
+        digest: digestBearerToken(issued.token),
+        uri: null,
+        verifyHint: 'Use release-enforcement-plane online verification before running the protected customer gate action.',
+      },
+    ]),
+  };
+  const gate = evaluateConsequenceAdmissionGateWithReleaseEnforcement({
+    admission,
+    downstreamAction,
+    releaseEnforcement,
+    releaseTokenDigest: digestBearerToken(issued.token),
+  });
+
+  equal(gate.outcome, 'hold', 'Customer gate release enforcement: missing replay consumption holds');
+  equal(gate.releaseEnforcement.valid, false, 'Customer gate release enforcement: missing replay consumption is invalid');
+  ok(
+    gate.releaseEnforcement.failureReasons.includes('replay-consumption-required'),
+    'Customer gate release enforcement: replay consumption failure is explicit',
+  );
+
+  assert.throws(
+    () =>
+      assertConsequenceAdmissionGateAllowsReleaseEnforcement({
+        admission,
+        downstreamAction,
+        releaseEnforcement,
+        releaseTokenDigest: digestBearerToken(issued.token),
+      }),
+    (error: unknown) => {
+      assert.ok(error instanceof ConsequenceAdmissionReleaseEnforcementGateHeldError);
+      assert.ok(error.gateDecision.releaseEnforcement.failureReasons.includes('replay-consumption-required'));
+      return true;
+    },
+  );
+  passed += 1;
+}
+
+async function testReleaseEnforcementGateRequiresAdmissionProofBinding(): Promise<void> {
+  const downstreamAction = 'customer_reporting_store.write';
+  const tenantId = 'tenant_customer_gate';
+  const { issued, releaseEnforcement } = await createProtectedDpopReleaseEnforcement({
+    downstreamAction,
+    tenantId,
+    consumeOnSuccess: true,
+  });
+  const gate = evaluateConsequenceAdmissionGateWithReleaseEnforcement({
+    admission: admissionFor(financeRunFixture()),
+    downstreamAction,
+    releaseEnforcement,
+    releaseTokenDigest: digestBearerToken(issued.token),
+  });
+
+  equal(gate.outcome, 'hold', 'Customer gate release enforcement: missing release-token proof ref holds');
+  ok(
+    gate.releaseEnforcement.failureReasons.includes('proof-ref-missing'),
+    'Customer gate release enforcement: missing proof ref failure is explicit',
+  );
+}
+
 function testExampleAndDocs(): void {
   const result = runCustomerAdmissionGateExample();
   const readme = readProjectFile('README.md');
@@ -390,6 +694,10 @@ function testExampleAndDocs(): void {
   includes(doc, 'Signed bearer compatibility path', 'Customer gate doc: documents signed bearer compatibility');
   includes(doc, 'does not store the raw bearer token', 'Customer gate doc: signed bearer path is secret-safe');
   includes(doc, 'not protected production enforcement', 'Customer gate doc: bearer-only path does not overclaim production enforcement');
+  includes(doc, 'Release-enforcement proof path', 'Customer gate doc: documents release-enforcement proof path');
+  includes(doc, 'assertConsequenceAdmissionGateAllowsReleaseEnforcement', 'Customer gate doc: includes release-enforcement helper');
+  includes(doc, 'sender-constrained, online-checked, replay-consumed', 'Customer gate doc: protected path requires sender constraint, online liveness, and replay consumption');
+  includes(doc, 'store the raw release token or sender proof', 'Customer gate doc: release-enforcement path is secret-safe');
   includes(tryFirst, '[Customer admission gate](customer-admission-gate.md)', 'Try-first doc: links the next integration step');
 
   equal(packageJson.scripts['example:customer-gate'], 'tsx examples/customer-admission-gate.ts', 'Package: customer gate example script exists');
@@ -407,6 +715,9 @@ testAssertGateThrowsWhenHeld();
 await testSignedBearerGateAllowsMatchingReleaseToken();
 await testSignedBearerGateFailsClosedWithoutProofMatch();
 await testSignedBearerGateRejectsBearerOnlyUpgradeForProtectedTokens();
+await testReleaseEnforcementGateAllowsSenderConstrainedVerifiedToken();
+await testReleaseEnforcementGateRequiresReplayConsumption();
+await testReleaseEnforcementGateRequiresAdmissionProofBinding();
 testExampleAndDocs();
 
 console.log(`Consequence admission customer gate tests: ${passed} passed, 0 failed`);

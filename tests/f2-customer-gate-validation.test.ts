@@ -58,6 +58,11 @@ includes(
 );
 includes(
   validationDoc,
+  'release-enforcement customer-gate helper: consumes a proven release-enforcement verifier result',
+  'F2 customer gate validation: release-enforcement verifier consumer is explicit',
+);
+includes(
+  validationDoc,
   'Current repo evidence supports `partial`, not `fixed`.',
   'F2 customer gate validation: no overclaim is present',
 );
@@ -68,6 +73,11 @@ includes(
 );
 includes(
   tracker,
+  'protected release-enforcement verifier-consumer path',
+  'Tracker: F2-AG-1 protected verifier consumer is recorded',
+);
+includes(
+  tracker,
   '| F4-LLM06-A customer gate honor-system | `partial` |',
   'Tracker: F4 overlap status is updated',
 );
@@ -75,6 +85,11 @@ includes(
   customerGate,
   'Run downstream action',
   'Customer gate source: instruction path remains visible',
+);
+includes(
+  customerGate,
+  'evaluateConsequenceAdmissionGateWithReleaseEnforcement',
+  'Customer gate source: release-enforcement verifier consumer exists',
 );
 equal(
   verifierDescriptor.cryptographicTokenVerification,

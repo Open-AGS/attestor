@@ -227,6 +227,13 @@ function testDocsAndPackageWiring(): void {
     'consequence-shared-store-profile.ts',
   );
   const apiRuntime = readProjectFile('src', 'service', 'bootstrap', 'api-route-runtime.ts');
+  const requestGuard = readProjectFile(
+    'src',
+    'service',
+    'bootstrap',
+    'production-shared-request-guard.ts',
+  );
+  const server = readProjectFile('src', 'service', 'bootstrap', 'server.ts');
   const coreRoutes = readProjectFile('src', 'service', 'http', 'routes', 'core-routes.ts');
   const docs = readProjectFile('docs', '02-architecture', 'production-storage-path.md');
   const productionReadiness = readProjectFile('docs', '08-deployment', 'production-readiness.md');
@@ -246,6 +253,18 @@ function testDocsAndPackageWiring(): void {
   ok(
     apiRuntime.includes('evaluateConsequenceSharedStoreProfileState'),
     'Consequence shared-store profile: API runtime wires evaluator',
+  );
+  ok(
+    apiRuntime.includes('consequenceSharedStoreProfile,'),
+    'Consequence shared-store profile: API runtime exposes profile in security diagnostics',
+  );
+  ok(
+    requestGuard.includes('consequenceSharedStoreProfileReady'),
+    'Consequence shared-store profile: production-shared request guard checks profile readiness',
+  );
+  ok(
+    server.includes('Production-shared startup consequence storage gate failed'),
+    'Consequence shared-store profile: startup diagnostics can fail closed on profile blockers',
   );
   ok(
     coreRoutes.includes('checks.consequenceSharedStoreProfile'),

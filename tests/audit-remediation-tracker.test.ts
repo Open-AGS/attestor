@@ -123,6 +123,7 @@ try {
   includes(tracker, 'F4-LLM02-B redaction policy not activated as an enforcement claim | `accepted-limitation`', 'Tracker: F4 data minimization readiness boundary is accepted');
   includes(tracker, 'F4-LLM05-A presentation freshness relies on operator clock | `fixed`', 'Tracker: F4 presentation freshness nonce is fixed');
   includes(tracker, 'F4-LLM05-B presentation replay ledger in-memory reference path | `partial`', 'Tracker: F4 replay shared-ledger validation is partial');
+  includes(tracker, 'consequence shared-store request guard', 'Tracker: consequence shared-store request guard bridge is tracked');
   includes(tracker, 'F4-LLM06-B agent-loop budget per process | `partial`', 'Tracker: F4 shared agent-loop validation is partial');
   includes(tracker, 'F4-LLM03-A agentic supply-chain coverage gap / single LLM provider | `partial`', 'Tracker: F4 LLM03 provider split is closed as partial');
   includes(tracker, 'F4-LLM10-A velocity limits depend on shared counter enforcement | `partial`', 'Tracker: F4 velocity source validation is partial');

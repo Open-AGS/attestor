@@ -76,14 +76,45 @@ interface SharedRuntimeSecurity {
     contract: string;
     blockers: readonly string[];
   };
+  consequenceSharedStoreProfile: {
+    readyForSelectedProfile: boolean;
+    state: string;
+    blockers: readonly unknown[];
+    blockingComponentIds: readonly string[];
+  };
 }
 
-async function createRuntimeWithApp(instanceId: string) {
+function markConsequenceSharedStoreProfileReady(
+  label: string,
+  runtime: RuntimeWithApp['runtime'],
+): void {
+  const security = runtimeSecurity(runtime);
+  equal(
+    security.consequenceSharedStoreProfile.readyForSelectedProfile,
+    false,
+    `${label}: consequence shared-store profile blocks before test override`,
+  );
+  security.consequenceSharedStoreProfile = {
+    ...security.consequenceSharedStoreProfile,
+    readyForSelectedProfile: true,
+    state: 'production-shared-consequence-ready',
+    blockers: [],
+    blockingComponentIds: [],
+  };
+}
+
+async function createRuntimeWithApp(
+  instanceId: string,
+  input: { consequenceProfileReady?: boolean } = {},
+) {
   const runtime = await createApiHttpRouteRuntime({
     registries: createRegistries(),
     serviceInstanceId: instanceId,
     startTime: Date.now(),
   });
+  if (input.consequenceProfileReady !== false) {
+    markConsequenceSharedStoreProfileReady(instanceId, runtime);
+  }
   const app = new Hono();
   registerAllRoutes(app, runtime);
   return { runtime, app };
@@ -290,6 +321,20 @@ async function run(): Promise<void> {
     process.env.ATTESTOR_ADMIN_API_KEY = 'step08-admin';
     process.env[ATTESTOR_RELEASE_RUNTIME_PKI_PATH_ENV] = join(tempRoot, 'release-runtime-pki.json');
     process.env[ATTESTOR_RELEASE_RUNTIME_PKI_SHARED_PATH_ENV] = 'true';
+
+    const blockedRuntime = await createRuntimeWithApp('production-shared-step08-blocked', {
+      consequenceProfileReady: false,
+    });
+    await assertRuntimeCutover('Blocked runtime', blockedRuntime.runtime);
+    const blockedControlPlane = await blockedRuntime.app.request(
+      '/api/v1/admin/release-policy/control-plane',
+      { headers: adminHeaders() },
+    );
+    equal(
+      blockedControlPlane.status,
+      503,
+      'Step 08: shared authority route remains closed while consequence shared-store profile blocks',
+    );
 
     const runtimeA = await createRuntimeWithApp('production-shared-step08-a');
     const runtimeB = await createRuntimeWithApp('production-shared-step08-b');

@@ -35,6 +35,13 @@ activation history, wizard resume state, or audit/dashboard source history.
 - PostgreSQL advisory locks can model application-defined coordination, but the
   application must use them correctly; they are not a readiness claim by
   themselves: <https://www.postgresql.org/docs/current/explicit-locking.html>
+- PostgreSQL `FOR UPDATE ... SKIP LOCKED` can support queue-like workers by
+  skipping locked rows, but it is explicitly not a general-purpose consistent
+  view: <https://www.postgresql.org/docs/current/sql-select.html>
+- Debezium's outbox event router documents an insert-oriented outbox table with
+  a unique event id used for de-duplication, which is a useful future model for
+  append-only event export without claiming that Attestor has a connector today:
+  <https://debezium.io/documentation/reference/stable/transformations/outbox-event-router.html>
 - PostgreSQL row security policies are the right anchor for tenant-scoped shared
   data-path hardening, but this profile does not prove RLS wiring:
   <https://www.postgresql.org/docs/current/ddl-rowsecurity.html>
@@ -43,6 +50,8 @@ activation history, wizard resume state, or audit/dashboard source history.
 
 - `src/service/bootstrap/production-storage-path.ts`
 - `src/service/bootstrap/consequence-shared-store-profile.ts`
+- `src/service/bootstrap/production-shared-request-guard.ts`
+- `src/service/bootstrap/server.ts`
 - `src/consequence-admission/retry-attempt-ledger.ts`
 - `src/consequence-admission/presentation-replay-ledger.ts`
 - `src/consequence-admission/agent-loop-abuse-guard.ts`
@@ -65,11 +74,19 @@ and returns:
 - secret-safe diagnostics with no connection strings, hostnames, raw payloads,
   prompts, provider bodies, or customer records
 
+Wire that evaluator into the `production-shared` protected request guard and
+startup diagnostics so non-preflight API routes do not open when the release
+authority path is shared but consequence-admission retry/replay/history state
+is still evaluation-backed.
+
 ## Regression proof
 
 ```text
 npm run test:consequence-shared-store-profile
 npm run test:production-storage-path
+npm run test:production-shared-request-guard
+npm run test:production-shared-preflight-bootstrap
+npm run test:f8-operational-resilience-validation
 npm run test:retry-attempt-ledger
 npm run test:presentation-replay-ledger
 npm run test:agent-loop-abuse-guard-shared

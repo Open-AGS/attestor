@@ -512,6 +512,21 @@ The entries above are the most concrete PR/commit-linked hardening records. The 
 - Remaining limitation or no-go condition: This is not a live AWS, Google Cloud, Azure, HSM, or confidential-compute signer adapter. Runtime release-token issuance still uses the existing release signing provider path, and external KMS/HSM-backed release signing remains unproven until a real provider adapter, live sign/verify probe, signature-format conversion, rotation plan, compromise response, and deployment evidence exist.
 - Status: complete for repository-side provider capability contract once this PR is merged and verified on `origin/master`.
 
+### 28. Consequence Shared-Store Request Guard
+
+- Step / PR / commit: `production-shared` consequence shared-store request-guard bridge; this PR records repository-side guard evidence but cannot pre-record its own merge commit.
+- Date if available: 2026-05-15.
+- Trust surface: multi-node consequence-admission state, retry/replay/idempotency ledgers, shadow history, Policy Foundry hosted wizard state, audit/dashboard source history, protected API request handling, and startup diagnostics.
+- Protected principle: fail-closed boundary; tenant isolation; replay and idempotency safety; auditability; runtime readiness; data minimization and redaction; no overclaim.
+- Research anchor / source used, if recorded: PostgreSQL `INSERT ... ON CONFLICT` for atomic conflict arbitration, PostgreSQL transaction isolation and row/advisory locking, PostgreSQL `FOR UPDATE ... SKIP LOCKED` queue-like worker semantics, PostgreSQL row security policies for tenant-scoped data paths, and Debezium Outbox Event Router insert-oriented event export/de-duplication shape. These are engineering anchors only, not an implemented shared database, RLS policy set, Debezium connector, or production deployment proof.
+- Repository evidence:
+  - Contract/code evidence: `src/service/bootstrap/consequence-shared-store-profile.ts`, `src/service/bootstrap/production-storage-path.ts`, `src/service/bootstrap/production-shared-request-guard.ts`, `src/service/bootstrap/api-route-runtime.ts`, `src/service/bootstrap/server.ts`, `docs/02-architecture/production-storage-path.md`, `docs/08-deployment/production-readiness.md`, and `docs/audit/consequence-shared-store-profile-validation.md`.
+  - Test evidence: `tests/consequence-shared-store-profile.test.ts`, `tests/production-storage-path.test.ts`, `tests/production-shared-request-guard.test.ts`, `tests/production-shared-preflight-bootstrap.test.ts`, `tests/f8-operational-resilience-validation.test.ts`, and `tests/research-provenance-ledger.test.ts`.
+- Implemented control: Promotes the existing consequence shared-store profile from readiness-only diagnostics into the `production-shared` protected request and startup boundary. Non-preflight `/api/v1/*` routes now require both async shared release/policy authority stores and `consequenceSharedStoreProfile.readyForSelectedProfile=true`; startup diagnostics can fail closed on consequence shared-store blockers even if the broad production storage path is otherwise ready.
+- Tests / verification: `npm run test:consequence-shared-store-profile`, `npm run test:production-storage-path`, `npm run test:production-shared-request-guard`, `npm run test:production-shared-preflight-bootstrap`, `npm run test:f8-operational-resilience-validation`, and `npm run test:research-provenance-ledger`.
+- Remaining limitation or no-go condition: This is not a shared durable backend implementation. It does not create PostgreSQL schemas, migrate file histories, wire RLS policies, add Redis-backed retry/replay stores, run Debezium, prove backup/restore, or verify a customer production environment.
+- Status: complete for repository-side consequence shared-store guard bridge once this PR is merged and verified on `origin/master`.
+
 ## Strong Recorded Research Support
 
 The strongest recorded research support appears in:

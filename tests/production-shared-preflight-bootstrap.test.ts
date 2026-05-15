@@ -45,6 +45,10 @@ async function run(): Promise<void> {
         usesSharedAuthorityStores: boolean;
         blockers: readonly string[];
       };
+      consequenceSharedStoreProfile: {
+        readyForSelectedProfile: boolean;
+        blockingComponentIds: readonly string[];
+      };
       pkiReady: boolean;
     };
 
@@ -64,6 +68,15 @@ async function run(): Promise<void> {
       'Production-shared preflight: request path cutover remains false',
     );
     equal(
+      security.consequenceSharedStoreProfile.readyForSelectedProfile,
+      false,
+      'Production-shared preflight: consequence shared-store profile remains false',
+    );
+    ok(
+      security.consequenceSharedStoreProfile.blockingComponentIds.includes('retry-attempt-ledger'),
+      'Production-shared preflight: consequence shared-store profile carries ledger blockers',
+    );
+    equal(
       security.pkiReady,
       false,
       'Production-shared preflight: shared PKI readiness remains false without explicit shared-path attestation',
@@ -79,6 +92,7 @@ async function run(): Promise<void> {
       pki: { ready: boolean };
       sharedAuthorityRuntime: { ready: boolean };
       productionStoragePath: { state: string; readyForSelectedProfile: boolean };
+      consequenceSharedStoreProfile: { readyForSelectedProfile: boolean };
     };
     equal(
       healthBody.releaseRuntime.durability.ready,
@@ -100,6 +114,11 @@ async function run(): Promise<void> {
       false,
       'Production-shared preflight: health exposes production storage path not-ready state',
     );
+    equal(
+      healthBody.consequenceSharedStoreProfile.readyForSelectedProfile,
+      false,
+      'Production-shared preflight: health exposes consequence shared-store not-ready state',
+    );
 
     const ready = await app.request('/api/v1/ready');
     equal(ready.status, 503, 'Production-shared preflight: readiness fails closed');
@@ -108,6 +127,7 @@ async function run(): Promise<void> {
       checks: Record<string, boolean>;
       sharedAuthorityRuntime: { checks: Record<string, boolean> };
       productionStoragePath: { blockers: readonly { code: string }[] };
+      consequenceSharedStoreProfile: { blockingComponentIds: readonly string[] };
     };
     equal(readyBody.ready, false, 'Production-shared preflight: ready=false is explicit');
     equal(
@@ -131,6 +151,11 @@ async function run(): Promise<void> {
       'Production-shared preflight: production storage path readiness check is false',
     );
     equal(
+      readyBody.checks.consequenceSharedStoreProfile,
+      false,
+      'Production-shared preflight: consequence shared-store readiness check is false',
+    );
+    equal(
       readyBody.sharedAuthorityRuntime.checks.requestPathUsesSharedStores,
       false,
       'Production-shared preflight: shared authority readiness carries request-path truth',
@@ -140,6 +165,12 @@ async function run(): Promise<void> {
         (blocker) => blocker.code === 'evaluation-store-not-shared',
       ),
       'Production-shared preflight: production storage path names evaluation store blockers',
+    );
+    ok(
+      readyBody.consequenceSharedStoreProfile.blockingComponentIds.includes(
+        'presentation-replay-ledger',
+      ),
+      'Production-shared preflight: consequence shared-store profile names replay blockers',
     );
 
     const blocked = await app.request('/api/v1/domains');

@@ -163,8 +163,11 @@ function testDocsAndRuntimeWiring(): void {
   ok(docs.includes('production-shared-blocked'), 'Production storage path docs: blocked state is documented');
   ok(docs.includes('file-backed evaluation stores'), 'Production storage path docs: evaluation store boundary is named');
   ok(docs.includes('Policy Foundry hosted wizard resume state'), 'Production storage path docs: hosted wizard state is inventoried');
+  ok(docs.includes('protected request'), 'Production storage path docs: request guard boundary is documented');
+  ok(docs.includes('Debezium Outbox Event Router'), 'Production storage path docs: outbox primary anchor is documented');
   ok(productionReadiness.includes('## Production Storage Path Gate'), 'Production readiness docs: storage gate section exists');
   ok(productionReadiness.includes('productionStoragePath'), 'Production readiness docs: readiness response field is documented');
+  ok(productionReadiness.includes('non-preflight `/api/v1/*` routes'), 'Production readiness docs: protected route guard boundary is documented');
   ok(coreRoutes.includes('checks.productionStoragePath'), 'Production storage path: ready route checks storage path');
   ok(coreRoutes.includes('productionStoragePath,'), 'Production storage path: health route exposes diagnostics');
   ok(apiRuntime.includes('evaluateProductionStoragePathState'), 'Production storage path: API runtime wires evaluator');

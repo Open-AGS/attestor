@@ -154,6 +154,12 @@ async function testActualRequestPathWritesSharedStore(): Promise<void> {
         contract: string;
         blockers: readonly string[];
       };
+      consequenceSharedStoreProfile: {
+        readyForSelectedProfile: boolean;
+        state: string;
+        blockers: readonly unknown[];
+        blockingComponentIds: readonly string[];
+      };
     };
     equal(
       security.releaseRuntimeDurability.ready,
@@ -175,6 +181,11 @@ async function testActualRequestPathWritesSharedStore(): Promise<void> {
       0,
       'Production-shared cutover: actual shared request path has no cutover blockers',
     );
+    equal(
+      security.consequenceSharedStoreProfile.readyForSelectedProfile,
+      false,
+      'Production-shared cutover: consequence shared-store profile still blocks protected routes',
+    );
 
     const components = await listReleaseAuthorityComponents();
     ok(
@@ -182,12 +193,35 @@ async function testActualRequestPathWritesSharedStore(): Promise<void> {
       'Production-shared cutover: every shared authority component is marked bootstrap-wired',
     );
 
+    const blockedApp = new Hono();
+    registerAllRoutes(blockedApp, runtime);
+    const blockedControlPlane = await blockedApp.request('/api/v1/admin/release-policy/control-plane', {
+      headers: { authorization: 'Bearer step07-admin' },
+    });
+    equal(
+      blockedControlPlane.status,
+      503,
+      'Production-shared cutover: guarded release-policy route stays closed until consequence stores are ready',
+    );
+
+    security.consequenceSharedStoreProfile = {
+      ...security.consequenceSharedStoreProfile,
+      readyForSelectedProfile: true,
+      state: 'production-shared-consequence-ready',
+      blockers: [],
+      blockingComponentIds: [],
+    };
+
     const app = new Hono();
     registerAllRoutes(app, runtime);
     const controlPlane = await app.request('/api/v1/admin/release-policy/control-plane', {
       headers: { authorization: 'Bearer step07-admin' },
     });
-    equal(controlPlane.status, 200, 'Production-shared cutover: guarded release-policy route opens after cutover');
+    equal(
+      controlPlane.status,
+      200,
+      'Production-shared cutover: guarded release-policy route opens only after consequence profile also clears',
+    );
     const controlPlaneBody = await controlPlane.json() as { storeKind: string };
     equal(
       controlPlaneBody.storeKind,

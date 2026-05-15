@@ -22,7 +22,15 @@ function runtimeFor(input: {
   runtimeProfile: string;
   requestPathUsesSharedStores: boolean;
   blockers?: readonly string[];
+  consequenceSharedStoreReady?: boolean;
+  consequenceSharedStoreState?: string | null;
+  consequenceSharedStoreBlockingComponentIds?: readonly string[];
 }): AppRuntime<unknown> {
+  const consequenceSharedStoreReady = input.consequenceSharedStoreReady ?? true;
+  const consequenceSharedStoreState = input.consequenceSharedStoreState ??
+    (consequenceSharedStoreReady
+      ? 'production-shared-consequence-ready'
+      : 'production-shared-consequence-blocked');
   return {
     registries: {},
     infra: {
@@ -36,6 +44,19 @@ function runtimeFor(input: {
           version: 'attestor.release-runtime-request-path-diagnostics.v1',
           usesSharedAuthorityStores: input.requestPathUsesSharedStores,
           blockers: input.blockers ?? [],
+        },
+        consequenceSharedStoreProfile: {
+          version: 'attestor.consequence-shared-store-profile.v1',
+          readyForSelectedProfile: consequenceSharedStoreReady,
+          state: consequenceSharedStoreState,
+          blockingComponentIds: input.consequenceSharedStoreBlockingComponentIds ?? [],
+          blockers: (input.consequenceSharedStoreBlockingComponentIds ?? []).map(
+            (component) => ({
+              code: 'evaluation-store-not-shared',
+              component,
+              message: 'component is not on shared durable storage',
+            }),
+          ),
         },
       },
     },
@@ -76,6 +97,11 @@ async function run(): Promise<void> {
     blockedDecision.requestPathUsesSharedStores,
     false,
     'Production-shared guard: exposes request-path cutover truth',
+  );
+  equal(
+    blockedDecision.consequenceSharedStoreProfileReady,
+    true,
+    'Production-shared guard: exposes consequence shared-store readiness truth',
   );
 
   const health = await appResponseFor(blockedRuntime, '/api/v1/health', 'GET');
@@ -120,6 +146,68 @@ async function run(): Promise<void> {
     'POST',
   );
   equal(sharedReady.status, 200, 'Production-shared guard: shared cutover signal allows request path');
+
+  const consequenceBlockedRuntime = runtimeFor({
+    runtimeProfile: 'production-shared',
+    requestPathUsesSharedStores: true,
+    consequenceSharedStoreReady: false,
+    consequenceSharedStoreBlockingComponentIds: [
+      'retry-attempt-ledger',
+      'presentation-replay-ledger',
+    ],
+  });
+  const consequenceBlockedDecision =
+    evaluateProductionSharedRequestGuard(consequenceBlockedRuntime);
+  equal(
+    consequenceBlockedDecision.blocked,
+    true,
+    'Production-shared guard: blocks when consequence shared-store profile is not ready',
+  );
+  equal(
+    consequenceBlockedDecision.requestPathUsesSharedStores,
+    true,
+    'Production-shared guard: release/policy shared cutover can be true while consequence profile blocks',
+  );
+  equal(
+    consequenceBlockedDecision.consequenceSharedStoreProfileReady,
+    false,
+    'Production-shared guard: consequence shared-store readiness is explicit when it blocks',
+  );
+  ok(
+    consequenceBlockedDecision.blockers.includes(
+      'consequence-shared-store:retry-attempt-ledger',
+    ),
+    'Production-shared guard: consequence shared-store component blocker is carried',
+  );
+  const consequenceBlocked = await appResponseFor(
+    consequenceBlockedRuntime,
+    '/api/v1/pipeline/run',
+    'POST',
+  );
+  equal(
+    consequenceBlocked.status,
+    503,
+    'Production-shared guard: protected request path fails closed on consequence profile blockers',
+  );
+  const consequenceBlockedBody = await consequenceBlocked.json() as {
+    error: string;
+    message: string;
+    guard: { consequenceSharedStoreProfileReady: boolean };
+  };
+  equal(
+    consequenceBlockedBody.error,
+    'production_shared_request_path_not_ready',
+    'Production-shared guard: consequence blocker uses the shared request-path error',
+  );
+  equal(
+    consequenceBlockedBody.guard.consequenceSharedStoreProfileReady,
+    false,
+    'Production-shared guard: response exposes consequence shared-store readiness false',
+  );
+  ok(
+    consequenceBlockedBody.message.includes('consequence shared-store profile'),
+    'Production-shared guard: response message names consequence shared-store profile',
+  );
 
   const readOnlyButNonPreflight = await appResponseFor(
     blockedRuntime,

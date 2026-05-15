@@ -363,6 +363,10 @@ export async function createApiHttpRouteRuntime(
   const productionStoragePath = evaluateProductionStoragePathState({
     runtimeProfileId: runtimeProfile.id,
   });
+  const consequenceSharedStoreProfile = evaluateConsequenceSharedStoreProfileState({
+    runtimeProfileId: runtimeProfile.id,
+    productionStoragePath,
+  });
   const {
     currentHostedAccount,
     readHostedBillingEntitlement,
@@ -809,6 +813,7 @@ export async function createApiHttpRouteRuntime(
         releaseRuntimeRequestPathDiagnostics,
         runtimeProfileDiagnostics,
         productionStoragePath,
+        consequenceSharedStoreProfile,
         rlsActivationResult,
         pkiReady,
         releaseSigningProvider,

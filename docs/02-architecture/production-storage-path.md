@@ -130,6 +130,18 @@ consequence shared-store gate. External deployment proof, backup/restore,
 readiness probes, worker recovery, and customer-environment rehearsal remain
 separate production gates.
 
+The same profile is now also part of the `production-shared` protected request
+guard. Outside the explicit startup/health/readiness preflight paths, `/api/v1/*`
+requests stay fail-closed until both conditions are true:
+
+- the release/policy runtime request path uses the async shared authority-store
+  contract
+- `consequenceSharedStoreProfile.readyForSelectedProfile=true`
+
+This avoids a partial cutover where release and policy records use shared
+PostgreSQL, but retry/replay/shadow/audit state is still process-local,
+file-backed, or derived from evaluation stores.
+
 ## Runtime Surface
 
 The storage path is exposed in:
@@ -171,6 +183,13 @@ The design follows three stable production-storage principles:
 - PostgreSQL advisory locks can coordinate application-defined locks, but their
   correct use is application responsibility; the profile therefore requires a
   tested primitive, not just "uses a shared database".
+- PostgreSQL `FOR UPDATE ... SKIP LOCKED` is appropriate for queue-like
+  consumers that need to avoid lock contention, but it intentionally skips
+  locked rows and is not a general-purpose consistency proof.
+- Debezium's outbox event router treats the outbox row id as a de-duplication
+  header and expects outbox-table changes to be inserts, which is a useful
+  model for future append-only event export. This profile does not implement a
+  Debezium connector or claim event-bus delivery.
 - Security logging guidance treats log integrity, access control, and data
   minimization as part of the system, not after-the-fact cleanup.
 - AI risk governance needs repeatable evidence and explicit operational
@@ -180,8 +199,10 @@ Primary anchors:
 
 - [PostgreSQL INSERT / ON CONFLICT](https://www.postgresql.org/docs/current/sql-insert.html)
 - [PostgreSQL explicit locking and advisory locks](https://www.postgresql.org/docs/current/explicit-locking.html)
+- [PostgreSQL SELECT locking clauses / SKIP LOCKED](https://www.postgresql.org/docs/current/sql-select.html)
 - [PostgreSQL transaction isolation](https://www.postgresql.org/docs/current/transaction-iso.html)
 - [PostgreSQL row security policies](https://www.postgresql.org/docs/current/ddl-rowsecurity.html)
+- [Debezium Outbox Event Router](https://debezium.io/documentation/reference/stable/transformations/outbox-event-router.html)
 
 ## Non-Claims
 

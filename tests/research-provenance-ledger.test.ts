@@ -338,6 +338,31 @@ function testLedgerIndexesAuditRemediationClosure(): void {
     'signature-format conversion',
     'Research provenance ledger: tenant KMS capability remaining adapter limitation is explicit',
   );
+  includes(
+    content,
+    '### 28. Consequence Shared-Store Request Guard',
+    'Research provenance ledger: consequence shared-store guard entry is present',
+  );
+  includes(
+    content,
+    'src/service/bootstrap/production-shared-request-guard.ts',
+    'Research provenance ledger: consequence shared-store guard code evidence is indexed',
+  );
+  includes(
+    content,
+    'tests/production-shared-request-guard.test.ts',
+    'Research provenance ledger: consequence shared-store guard test evidence is indexed',
+  );
+  includes(
+    content,
+    'Debezium Outbox Event Router',
+    'Research provenance ledger: consequence shared-store outbox anchor is recorded',
+  );
+  includes(
+    content,
+    'This is not a shared durable backend implementation.',
+    'Research provenance ledger: consequence shared-store backend non-claim is explicit',
+  );
 }
 
 function testLedgerKeepsEvidenceBoundaryExplicit(): void {

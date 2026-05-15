@@ -113,6 +113,14 @@ behind that gate. It reports the backlog components, required shared-store
 primitive, no-go conditions, and required proofs without exposing connection
 strings or raw payloads. It does not migrate data or create stores.
 
+For protected API requests in `production-shared`, readiness is not only a
+diagnostic. The request guard keeps non-preflight `/api/v1/*` routes closed
+until the release/policy request path reports shared authority stores and
+`consequenceSharedStoreProfile.readyForSelectedProfile=true`. The preflight
+paths remain `GET /api/v1/startup`, `GET /api/v1/health`, and
+`GET /api/v1/ready` so operators can inspect blockers without opening action
+routes.
+
 Current `production-shared` blockers can include:
 
 - shadow admission event history still file-backed

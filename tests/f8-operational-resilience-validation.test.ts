@@ -236,6 +236,42 @@ function testProductionSharedStartupFailFast(): void {
     /Production-shared startup storage gate failed: shadow-admission-events:evaluation-store-not-shared/u,
     'F8-R11: production-shared startup fails fast on storage blockers',
   );
+
+  rejects(
+    () => startHttpServer(new Hono(), 0, {
+      startupDiagnostics: {
+        runtimeProfileDiagnostics: {
+          profile: {
+            id: 'production-shared',
+            label: 'Production shared',
+            production: true,
+          },
+          releaseStores: [],
+          durability: {
+            ready: true,
+            summary: 'shared release authority ready',
+          },
+        },
+        productionStoragePath: {
+          readyForSelectedProfile: true,
+          blockers: [],
+        },
+        consequenceSharedStoreProfile: {
+          readyForSelectedProfile: false,
+          blockingComponentIds: ['retry-attempt-ledger'],
+          blockers: [
+            {
+              code: 'in-memory-reference-not-shared',
+              component: 'retry-attempt-ledger',
+              message: 'retry ledger is not backed by shared storage',
+            },
+          ],
+        },
+      },
+    }),
+    /Production-shared startup consequence storage gate failed: retry-attempt-ledger:in-memory-reference-not-shared/u,
+    'F8-R11: production-shared startup fails fast on consequence shared-store blockers',
+  );
 }
 
 function testReportClaimsThatAreAlreadyClosed(): void {

@@ -45,6 +45,15 @@ export interface HttpServerStartupDiagnostics {
       readonly message: string;
     }[];
   };
+  consequenceSharedStoreProfile?: {
+    readonly readyForSelectedProfile: boolean;
+    readonly blockers?: readonly {
+      readonly code?: string;
+      readonly component?: string;
+      readonly message?: string;
+    }[];
+    readonly blockingComponentIds?: readonly string[];
+  };
 }
 
 export interface StartHttpServerOptions {
@@ -96,7 +105,24 @@ function assertProductionSharedStartupStorageReady(
   }
   const storagePath = diagnostics.productionStoragePath;
   if (!storagePath || storagePath.readyForSelectedProfile) {
-    return;
+    const consequenceProfile = diagnostics.consequenceSharedStoreProfile;
+    if (!consequenceProfile || consequenceProfile.readyForSelectedProfile) {
+      return;
+    }
+
+    const blockerText = [
+      ...(consequenceProfile.blockers ?? []).map((blocker) => {
+        const component = blocker.component ?? 'consequence-shared-store';
+        const code = blocker.code ?? 'profile-not-ready';
+        return `${component}:${code}`;
+      }),
+      ...(consequenceProfile.blockingComponentIds ?? []).map((component) =>
+        `${component}:consequence-shared-store-not-ready`
+      ),
+    ].join(', ');
+    throw new Error(
+      `Production-shared startup consequence storage gate failed: ${blockerText || 'consequence shared-store profile is not ready'}`,
+    );
   }
 
   const blockerText = (storagePath.blockers ?? [])

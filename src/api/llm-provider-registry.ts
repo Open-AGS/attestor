@@ -137,6 +137,60 @@ export interface LlmProviderRouteDecision {
   readonly activatesLiveProviderCall: false;
 }
 
+export type LlmProviderLiveSmokeProofState =
+  | 'not-configured'
+  | 'valid'
+  | 'invalid'
+  | 'stale';
+
+export type LlmProviderRoutingReadinessState =
+  | 'evaluation-route-ready'
+  | 'production-route-contract-ready'
+  | 'blocked';
+
+export interface LlmProviderRuntimeEvidence {
+  readonly providerId: LlmProviderId;
+  readonly purpose: LlmProviderPurpose;
+  readonly configuredModel: string;
+  readonly observedModel?: string | null;
+  readonly liveSmokeProofState?: LlmProviderLiveSmokeProofState | null;
+  readonly liveSmokeProofDigest?: string | null;
+  readonly customerApprovalDigest?: string | null;
+  readonly dataResidencyApprovalDigest?: string | null;
+  readonly retentionApprovalDigest?: string | null;
+  readonly rateLimitPolicyDigest?: string | null;
+  readonly timeoutPolicyDigest?: string | null;
+  readonly budgetPolicyDigest?: string | null;
+  readonly outputSchemaDigest?: string | null;
+  readonly toolSchemaDigest?: string | null;
+  readonly sdkRetriesDisabled?: boolean | null;
+  readonly responseStorageDisabled?: boolean | null;
+  readonly rawPromptStored?: boolean | null;
+  readonly rawProviderBodyStored?: boolean | null;
+  readonly credentialValuesExposed?: boolean | null;
+}
+
+export interface EvaluateLlmProviderRoutingReadinessInput {
+  readonly request: LlmProviderRouteRequest;
+  readonly primaryEvidence?: LlmProviderRuntimeEvidence | null;
+  readonly failoverEvidence?: readonly LlmProviderRuntimeEvidence[];
+}
+
+export interface LlmProviderRoutingReadinessEvaluation {
+  readonly version: typeof LLM_PROVIDER_REGISTRY_VERSION;
+  readonly state: LlmProviderRoutingReadinessState;
+  readonly purpose: LlmProviderPurpose;
+  readonly selectedPrimaryProviderId: LlmProviderId | null;
+  readonly selectedPrimaryModel: string | null;
+  readonly failoverProviderIds: readonly LlmProviderId[];
+  readonly evidenceProviderIds: readonly LlmProviderId[];
+  readonly readyForSelectedProfile: boolean;
+  readonly productionReady: false;
+  readonly activatesLiveProviderCall: false;
+  readonly blockers: readonly string[];
+  readonly nonClaims: readonly string[];
+}
+
 export interface LlmProviderProofContextInput {
   readonly providerId: LlmProviderId;
   readonly configuredModel: string;
@@ -449,6 +503,83 @@ export function evaluateLlmProviderRoute(request: LlmProviderRouteRequest): LlmP
   };
 }
 
+export function evaluateLlmProviderRoutingReadiness(
+  input: EvaluateLlmProviderRoutingReadinessInput,
+): LlmProviderRoutingReadinessEvaluation {
+  const route = evaluateLlmProviderRoute(input.request);
+  const requireProductionRuntime = input.request.requireProductionRuntime === true;
+  const requireFailover = input.request.requireFailover === true;
+  const blockers = route.blockers.filter((blocker) => {
+    return blocker !== 'llm-provider-live-smoke-proof-required';
+  });
+  const evidenceProviderIds: LlmProviderId[] = [];
+
+  if (route.providerId && route.model) {
+    const primaryBlockers = runtimeEvidenceBlockers({
+      role: 'primary',
+      evidence: input.primaryEvidence ?? null,
+      expectedProviderId: route.providerId,
+      expectedPurpose: input.request.purpose,
+      expectedModel: route.model,
+      requireProductionRuntime,
+      requireRateLimitPolicy: route.requiredCapabilities.rateLimitPolicy,
+      requireStructuredOutput: route.requiredCapabilities.structuredOutput,
+      requireToolSchema: route.requiredCapabilities.toolCalling,
+    });
+    blockers.push(...primaryBlockers);
+    if (input.primaryEvidence) evidenceProviderIds.push(input.primaryEvidence.providerId);
+  }
+
+  const failoverEvidence = input.failoverEvidence ?? [];
+  if (requireFailover) {
+    for (const providerId of route.failoverProviderIds) {
+      const provider = (input.request.providers ?? DEFAULT_LLM_PROVIDER_REGISTRATIONS)
+        .find((registration) => registration.id === providerId);
+      const model = provider?.defaultModelsByPurpose[input.request.purpose] ?? null;
+      if (!model) continue;
+      const evidence = failoverEvidence.find((candidate) => {
+        return candidate.providerId === providerId && candidate.purpose === input.request.purpose;
+      }) ?? null;
+      const failoverBlockers = runtimeEvidenceBlockers({
+        role: 'failover',
+        evidence,
+        expectedProviderId: providerId,
+        expectedPurpose: input.request.purpose,
+        expectedModel: model,
+        requireProductionRuntime,
+        requireRateLimitPolicy: true,
+        requireStructuredOutput: route.requiredCapabilities.structuredOutput,
+        requireToolSchema: route.requiredCapabilities.toolCalling,
+      });
+      blockers.push(...failoverBlockers);
+      if (evidence) evidenceProviderIds.push(evidence.providerId);
+    }
+  }
+
+  const uniqueBlockers = unique(blockers);
+  const readyForSelectedProfile = uniqueBlockers.length === 0;
+  const state: LlmProviderRoutingReadinessState = readyForSelectedProfile
+    ? requireProductionRuntime
+      ? 'production-route-contract-ready'
+      : 'evaluation-route-ready'
+    : 'blocked';
+
+  return Object.freeze({
+    version: LLM_PROVIDER_REGISTRY_VERSION,
+    state,
+    purpose: input.request.purpose,
+    selectedPrimaryProviderId: route.providerId,
+    selectedPrimaryModel: route.model,
+    failoverProviderIds: route.failoverProviderIds,
+    evidenceProviderIds: unique(evidenceProviderIds),
+    readyForSelectedProfile,
+    productionReady: false,
+    activatesLiveProviderCall: false,
+    blockers: uniqueBlockers,
+    nonClaims: registryNonClaims(),
+  });
+}
+
 export function bindLlmProviderProofContext(input: LlmProviderProofContextInput): LlmProviderProofContextBinding {
   requireDigest('promptDigest', input.promptDigest);
   requireDigest('configDigest', input.configDigest);
@@ -592,10 +723,100 @@ function providerRouteBlockers(
   return Object.freeze(blockers);
 }
 
+function runtimeEvidenceBlockers(input: {
+  readonly role: 'primary' | 'failover';
+  readonly evidence: LlmProviderRuntimeEvidence | null;
+  readonly expectedProviderId: LlmProviderId;
+  readonly expectedPurpose: LlmProviderPurpose;
+  readonly expectedModel: string;
+  readonly requireProductionRuntime: boolean;
+  readonly requireRateLimitPolicy: boolean;
+  readonly requireStructuredOutput: boolean;
+  readonly requireToolSchema: boolean;
+}): readonly string[] {
+  const blockers: string[] = [];
+  const requiredForRuntimeEvidence =
+    input.requireProductionRuntime ||
+    input.requireRateLimitPolicy ||
+    input.requireStructuredOutput ||
+    input.requireToolSchema;
+
+  if (!input.evidence) {
+    if (requiredForRuntimeEvidence) {
+      pushBlocker(blockers, `llm-provider-${input.role}-runtime-evidence-missing`);
+    }
+    return Object.freeze(blockers);
+  }
+
+  if (input.evidence.providerId !== input.expectedProviderId) {
+    pushBlocker(blockers, `llm-provider-${input.role}-provider-evidence-mismatch`);
+  }
+  if (input.evidence.purpose !== input.expectedPurpose) {
+    pushBlocker(blockers, `llm-provider-${input.role}-purpose-evidence-mismatch`);
+  }
+  if (input.evidence.configuredModel !== input.expectedModel) {
+    pushBlocker(blockers, `llm-provider-${input.role}-model-evidence-mismatch`);
+  }
+  if (input.evidence.rawPromptStored === true) {
+    pushBlocker(blockers, `llm-provider-${input.role}-raw-prompt-storage-risk`);
+  }
+  if (input.evidence.rawProviderBodyStored === true) {
+    pushBlocker(blockers, `llm-provider-${input.role}-raw-provider-body-storage-risk`);
+  }
+  if (input.evidence.credentialValuesExposed === true) {
+    pushBlocker(blockers, `llm-provider-${input.role}-credential-value-exposure-risk`);
+  }
+
+  if (input.requireProductionRuntime) {
+    requireEvidenceDigest(blockers, input.role, 'customer-approval', input.evidence.customerApprovalDigest);
+    requireEvidenceDigest(blockers, input.role, 'data-residency-approval', input.evidence.dataResidencyApprovalDigest);
+    requireEvidenceDigest(blockers, input.role, 'retention-approval', input.evidence.retentionApprovalDigest);
+    requireEvidenceDigest(blockers, input.role, 'timeout-policy', input.evidence.timeoutPolicyDigest);
+    requireEvidenceDigest(blockers, input.role, 'budget-policy', input.evidence.budgetPolicyDigest);
+    requireEvidenceDigest(blockers, input.role, 'live-smoke-proof', input.evidence.liveSmokeProofDigest);
+    if (input.evidence.liveSmokeProofState !== 'valid') {
+      pushBlocker(blockers, `llm-provider-${input.role}-live-smoke-proof-not-valid`);
+    }
+    if (input.evidence.sdkRetriesDisabled !== true) {
+      pushBlocker(blockers, `llm-provider-${input.role}-sdk-retries-not-disabled`);
+    }
+    if (input.evidence.responseStorageDisabled !== true) {
+      pushBlocker(blockers, `llm-provider-${input.role}-response-storage-not-disabled`);
+    }
+  }
+
+  if (input.requireRateLimitPolicy) {
+    requireEvidenceDigest(blockers, input.role, 'rate-limit-policy', input.evidence.rateLimitPolicyDigest);
+  }
+  if (input.requireStructuredOutput) {
+    requireEvidenceDigest(blockers, input.role, 'output-schema', input.evidence.outputSchemaDigest);
+  }
+  if (input.requireToolSchema) {
+    requireEvidenceDigest(blockers, input.role, 'tool-schema', input.evidence.toolSchemaDigest);
+  }
+
+  return Object.freeze(blockers);
+}
+
+function requireEvidenceDigest(
+  blockers: string[],
+  role: 'primary' | 'failover',
+  name: string,
+  value: string | null | undefined,
+): void {
+  if (!value || !SHA256_DIGEST_PATTERN.test(value)) {
+    pushBlocker(blockers, `llm-provider-${role}-${name}-digest-required`);
+  }
+}
+
 function pushBlocker(blockers: string[], blocker: string): void {
   if (!blockers.includes(blocker)) {
     blockers.push(blocker);
   }
+}
+
+function unique<T extends string>(values: readonly T[]): readonly T[] {
+  return Object.freeze([...new Set(values)]);
 }
 
 function digestText(value: string): string {

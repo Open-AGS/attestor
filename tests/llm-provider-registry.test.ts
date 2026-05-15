@@ -6,7 +6,9 @@ import {
   digestLlmProviderContextValue,
   evaluateLlmProviderRegistry,
   evaluateLlmProviderRoute,
+  evaluateLlmProviderRoutingReadiness,
   llmProviderRegistryDescriptor,
+  type LlmProviderRuntimeEvidence,
   type LlmProviderRegistration,
 } from '../src/api/llm-provider-registry.js';
 
@@ -332,6 +334,99 @@ try {
     'Route: fallback rate-limit incompatibility is explicit',
   );
 
+  const defaultReadiness = evaluateLlmProviderRoutingReadiness({
+    request: { purpose: 'reasoning' },
+  });
+  equal(
+    defaultReadiness.state,
+    'evaluation-route-ready',
+    'Routing readiness: default non-production route is ready without live evidence',
+  );
+  equal(
+    defaultReadiness.activatesLiveProviderCall,
+    false,
+    'Routing readiness: readiness evaluation does not activate provider calls',
+  );
+
+  const productionReadinessWithoutEvidence = evaluateLlmProviderRoutingReadiness({
+    request: {
+      purpose: 'structured-output',
+      requireProductionRuntime: true,
+      requireStructuredOutput: true,
+    },
+  });
+  equal(
+    productionReadinessWithoutEvidence.state,
+    'blocked',
+    'Routing readiness: production structured-output route blocks without runtime evidence',
+  );
+  includes(
+    productionReadinessWithoutEvidence.blockers,
+    'llm-provider-primary-runtime-evidence-missing',
+    'Routing readiness: missing primary runtime evidence is explicit',
+  );
+
+  const validOpenAiStructuredEvidence: LlmProviderRuntimeEvidence = {
+    providerId: 'openai',
+    purpose: 'structured-output',
+    configuredModel: 'o3',
+    observedModel: 'o3',
+    liveSmokeProofState: 'valid',
+    liveSmokeProofDigest: digestLlmProviderContextValue('openai-structured-live-smoke-proof'),
+    customerApprovalDigest: digestLlmProviderContextValue('customer-approval'),
+    dataResidencyApprovalDigest: digestLlmProviderContextValue('data-residency-approval'),
+    retentionApprovalDigest: digestLlmProviderContextValue('retention-approval'),
+    rateLimitPolicyDigest: digestLlmProviderContextValue('rate-limit-policy'),
+    timeoutPolicyDigest: digestLlmProviderContextValue('timeout-policy'),
+    budgetPolicyDigest: digestLlmProviderContextValue('budget-policy'),
+    outputSchemaDigest: digestLlmProviderContextValue('output-schema'),
+    sdkRetriesDisabled: true,
+    responseStorageDisabled: true,
+    rawPromptStored: false,
+    rawProviderBodyStored: false,
+    credentialValuesExposed: false,
+  };
+  const productionReadinessWithEvidence = evaluateLlmProviderRoutingReadiness({
+    request: {
+      purpose: 'structured-output',
+      requireProductionRuntime: true,
+      requireStructuredOutput: true,
+    },
+    primaryEvidence: validOpenAiStructuredEvidence,
+  });
+  equal(
+    productionReadinessWithEvidence.state,
+    'production-route-contract-ready',
+    'Routing readiness: complete primary evidence clears the production route contract',
+  );
+  equal(
+    productionReadinessWithEvidence.readyForSelectedProfile,
+    true,
+    'Routing readiness: complete evidence marks the selected profile ready',
+  );
+  equal(
+    productionReadinessWithEvidence.productionReady,
+    false,
+    'Routing readiness: complete evidence still does not claim production readiness',
+  );
+
+  const rawPromptEvidence = evaluateLlmProviderRoutingReadiness({
+    request: {
+      purpose: 'structured-output',
+      requireProductionRuntime: true,
+      requireStructuredOutput: true,
+    },
+    primaryEvidence: {
+      ...validOpenAiStructuredEvidence,
+      rawPromptStored: true,
+    },
+  });
+  includes(
+    rawPromptEvidence.blockers,
+    'llm-provider-primary-raw-prompt-storage-risk',
+    'Routing readiness: raw prompt storage blocks provider readiness',
+  );
+
   const twoProviderEvaluation = evaluateLlmProviderRegistry({
     providers: [openAiProvider, anthropicWired],
     requireFailover: true,
@@ -359,6 +454,66 @@ try {
     compatibleFailoverRoute.failoverCompatibilityReady,
     true,
     'Route: failover compatibility is true only after purpose, capability, and rate-limit parity',
+  );
+
+  const openAiReasoningEvidence: LlmProviderRuntimeEvidence = {
+    providerId: 'openai',
+    purpose: 'reasoning',
+    configuredModel: 'o3',
+    rateLimitPolicyDigest: digestLlmProviderContextValue('openai-rate-limit-policy'),
+    rawPromptStored: false,
+    rawProviderBodyStored: false,
+    credentialValuesExposed: false,
+  };
+  const anthropicReasoningEvidence: LlmProviderRuntimeEvidence = {
+    providerId: 'anthropic',
+    purpose: 'reasoning',
+    configuredModel: 'claude-sonnet-placeholder',
+    rateLimitPolicyDigest: digestLlmProviderContextValue('anthropic-rate-limit-policy'),
+    rawPromptStored: false,
+    rawProviderBodyStored: false,
+    credentialValuesExposed: false,
+  };
+  const failoverReadinessWithoutEvidence = evaluateLlmProviderRoutingReadiness({
+    request: {
+      purpose: 'reasoning',
+      providers: [openAiProvider, anthropicWired],
+      requireFailover: true,
+    },
+  });
+  equal(
+    failoverReadinessWithoutEvidence.state,
+    'blocked',
+    'Routing readiness: compatible failover route still blocks without runtime evidence',
+  );
+  includes(
+    failoverReadinessWithoutEvidence.blockers,
+    'llm-provider-primary-runtime-evidence-missing',
+    'Routing readiness: failover requires primary provider evidence',
+  );
+  includes(
+    failoverReadinessWithoutEvidence.blockers,
+    'llm-provider-failover-runtime-evidence-missing',
+    'Routing readiness: failover requires fallback provider evidence',
+  );
+  const failoverReadinessWithEvidence = evaluateLlmProviderRoutingReadiness({
+    request: {
+      purpose: 'reasoning',
+      providers: [openAiProvider, anthropicWired],
+      requireFailover: true,
+    },
+    primaryEvidence: openAiReasoningEvidence,
+    failoverEvidence: [anthropicReasoningEvidence],
+  });
+  equal(
+    failoverReadinessWithEvidence.state,
+    'evaluation-route-ready',
+    'Routing readiness: failover route clears after primary and fallback evidence',
+  );
+  deepEqual(
+    failoverReadinessWithEvidence.evidenceProviderIds,
+    ['openai', 'anthropic'],
+    'Routing readiness: evidence provider ids are recorded without credentials',
   );
 
   console.log(`LLM provider registry tests: ${passed} passed, 0 failed`);

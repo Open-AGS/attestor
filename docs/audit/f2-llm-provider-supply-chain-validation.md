@@ -82,6 +82,11 @@ registry contract:
 - failover compatibility requires the same requested purpose, model mapping,
   route capabilities, structured-output support when required, and provider
   rate-limit signals.
+- route-readiness evidence now separates route selection from production-like or
+  failover claims by requiring digest-only primary/fallback runtime evidence,
+  live smoke proof, customer/data/retention approvals, timeout/budget/rate-limit
+  policy digests, schema digests, SDK retry/storage controls, and raw
+  prompt/provider-body minimization before those claims can clear.
 - proof-context binding accepts prompt/config/tool/schema digests, not raw prompt
   bodies or raw provider response bodies.
 - `callGpt(...)` and `callGptVision(...)` return a digest-only provider proof
@@ -141,6 +146,10 @@ Reason:
 - `LlmProviderRegistry` records provider inventory, wire status, structured-output mechanisms, credential reference names, rate-limit signal names, and proof-context digest binding.
 - Route evaluation now rejects a generic second wired provider unless it is
   purpose/model/capability/structured-output/rate-limit compatible.
+- Route-readiness evaluation now blocks production-like, structured-output,
+  tool-routing, and failover claims unless primary and fallback providers carry
+  digest-only runtime evidence with live smoke, approval, policy, schema,
+  retry/storage, and minimization controls.
 - The OpenAI wrapper now has explicit per-call timeout and output-token budget enforcement, disables provider SDK hidden retries, sets provider response storage to `false`, and can produce digest-only OpenAI reasoning smoke proof.
 - The OpenAI wrapper still has no live failover provider, no OpenAI vision smoke proof, and no non-OpenAI smoke proof.
 - It should block future claims that Attestor has production-grade multi-provider live-model resilience.

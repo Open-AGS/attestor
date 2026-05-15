@@ -136,6 +136,7 @@ try {
   includes(tracker, 'customer PEP runtime adoption can be proven for a scoped runtime', 'Tracker: F4 customer PEP runtime adoption narrowing is tracked');
   includes(tracker, 'F4-LLM06-B agent-loop budget per process | `partial`', 'Tracker: F4 shared agent-loop validation is partial');
   includes(tracker, 'F4-LLM03-A agentic supply-chain coverage gap / single LLM provider | `partial`', 'Tracker: F4 LLM03 provider split is closed as partial');
+  includes(tracker, 'route-readiness evidence gating', 'Tracker: F4 LLM provider route-readiness evidence gate is tracked');
   includes(tracker, 'F4-LLM10-A velocity limits depend on shared counter enforcement | `partial`', 'Tracker: F4 velocity source validation is partial');
   includes(tracker, 'F4-LLM10-B retry-attempt ledger storage claim | `partial`', 'Tracker: F4 retry ledger storage validation is partial');
   includes(tracker, 'F4-LLM07-A prompt leakage second-pass markers missing | `fixed`', 'Tracker: F4 prompt leakage marker validation is fixed');

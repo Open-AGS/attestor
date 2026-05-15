@@ -647,6 +647,21 @@ The entries above are the most concrete PR/commit-linked hardening records. The 
 - Remaining limitation or no-go condition: This is not a live customer PEP, not a live authorization server, not durable DPoP replay consumption for the token-request proof, not live external KMS/HSM signing, and not production deployment proof. It proves repository-side issued-token registration and shared-store replay/introspection readiness gating; live traffic routing, deployment probes, customer operation, and external signer proof remain required.
 - Status: complete for repository-side hosted generic durable introspection and replay wiring once this PR is merged and verified on `origin/master`.
 
+### 37. LLM Provider Route Readiness Evidence Gate
+
+- Step / PR / commit: LLM provider route readiness evidence gate; this PR records repository-side routing evidence requirements but cannot pre-record its own merge commit.
+- Date if available: 2026-05-15.
+- Trust surface: Attestor-owned optional live-model proof path, provider route selection, production-like provider routing claims, structured-output schema binding, tool schema binding, failover provider evidence, live smoke proof, provider retry/storage controls, and raw prompt/provider-body minimization.
+- Protected principle: fail-closed boundary; customer authority; data minimization and redaction; runtime readiness; auditability; operational boundedness; no overclaim.
+- Research anchor / source used, if recorded: OpenAI Responses API and Structured Outputs docs, OpenAI rate-limit retry guidance, Anthropic Messages/tool-use/rate-limit docs, Vertex AI structured output and quotas, and Azure OpenAI structured outputs/quotas. These are engineering anchors only, not provider certification, live provider evidence, or production-readiness evidence.
+- Repository evidence:
+  - Contract/code evidence: `src/api/llm-provider-registry.ts`, `docs/02-architecture/llm-provider-registry.md`, `docs/audit/f2-llm-provider-supply-chain-validation.md`, and `docs/audit/attestor-audit-remediation-tracker.md`.
+  - Test evidence: `tests/llm-provider-registry.test.ts`, `tests/f2-llm-provider-supply-chain-validation.test.ts`, `tests/audit-remediation-tracker.test.ts`, and `tests/research-provenance-ledger.test.ts`.
+- Implemented control: Adds `evaluateLlmProviderRoutingReadiness(...)` so route selection is no longer enough for production-like, structured-output, tool-routing, or failover claims. The evidence gate requires digest-only primary and fallback runtime evidence, live smoke proof, customer/data/retention approvals, timeout/budget/rate-limit policy digests, output/tool schema digests where relevant, SDK hidden retries disabled, provider response storage disabled, and no raw prompt/provider body or credential value exposure. Missing or risky evidence fails closed with machine-readable blockers such as `llm-provider-primary-runtime-evidence-missing`, `llm-provider-primary-output-schema-digest-required`, or `llm-provider-failover-runtime-evidence-missing`.
+- Tests / verification: `npm run test:llm-provider-registry`, `npm run test:f2-llm-provider-supply-chain-validation`, `npm run test:audit-remediation-tracker`, and `npm run test:research-provenance-ledger`.
+- Remaining limitation or no-go condition: This is still not a live multi-provider client implementation. It does not prove Anthropic, Vertex AI, or Azure OpenAI calls; runtime failover execution; OpenAI vision smoke proof; non-OpenAI smoke proof; hosted consequence-admission dependence on live LLMs; or production provider readiness.
+- Status: complete for repository-side LLM provider route-readiness evidence gating once this PR is merged and verified on `origin/master`.
+
 ## Strong Recorded Research Support
 
 The strongest recorded research support appears in:

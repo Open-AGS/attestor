@@ -390,6 +390,26 @@ function testLedgerIndexesAuditRemediationClosure(): void {
   );
   includes(
     content,
+    '### 37. LLM Provider Route Readiness Evidence Gate',
+    'Research provenance ledger: LLM route-readiness evidence entry is present',
+  );
+  includes(
+    content,
+    'evaluateLlmProviderRoutingReadiness',
+    'Research provenance ledger: LLM route-readiness evaluator is recorded',
+  );
+  includes(
+    content,
+    'llm-provider-primary-output-schema-digest-required',
+    'Research provenance ledger: LLM structured-output schema evidence blocker is recorded',
+  );
+  includes(
+    content,
+    'not a live multi-provider client implementation',
+    'Research provenance ledger: LLM route-readiness live-client non-claim is explicit',
+  );
+  includes(
+    content,
     '### 30. Customer Gate Release-Enforcement Proof Consumer',
     'Research provenance ledger: customer gate release-enforcement entry is present',
   );

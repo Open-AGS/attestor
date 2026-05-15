@@ -54,6 +54,32 @@ provider must be wired and compatible with the requested route:
 If a second provider is wired but cannot satisfy the route profile, the contract
 fails closed with `llm-provider-compatible-failover-provider-not-ready`.
 
+## Route Readiness Evidence Gate
+
+`evaluateLlmProviderRoutingReadiness(...)` separates route selection from runtime
+evidence. A non-production single-provider route can be selected by the registry
+contract, but production-like, failover, tool-routing, and structured-output
+claims require digest-only runtime evidence.
+
+The readiness gate requires:
+
+- primary provider evidence when production, failover, tool schema, structured
+  output, or rate-limit policy matters;
+- failover provider evidence for each compatible fallback provider before
+  failover readiness can clear;
+- live smoke proof, customer approval, data residency approval, retention
+  approval, timeout policy, budget policy, and rate-limit policy digests before
+  production-like route readiness can clear;
+- output schema digest when structured output matters;
+- tool schema digest when tool routing matters;
+- SDK hidden retries disabled and provider response storage disabled before
+  production-like route readiness can clear;
+- raw prompt, raw provider body, and credential value exposure all absent.
+
+This is still only a repository-side readiness contract. It does not call a
+provider, install a provider client, switch hosted traffic, or prove live
+production routing.
+
 ## Current Decision
 
 OpenAI remains the only wired provider. Anthropic, Vertex AI, and Azure OpenAI are registered as planned provider surfaces only.
@@ -70,6 +96,15 @@ Production or failover-required state:
 - blocked by `llm-provider-compatible-failover-provider-not-ready` if a second
   wired provider is not route-compatible;
 - blocked by `llm-provider-live-smoke-proof-required`.
+
+Route-readiness state:
+
+- default single-provider evaluation route: `evaluation-route-ready`;
+- production-like route with complete digest-only runtime evidence:
+  `production-route-contract-ready`;
+- missing primary/fallback evidence, schema digest, rate-limit policy digest, or
+  storage minimization proof: `blocked`;
+- always `productionReady: false`.
 
 OpenAI timeout and output-token budget enforcement are wired in
 `src/api/openai.ts`. OpenAI reasoning live smoke proof is wired as an explicit
@@ -105,6 +140,7 @@ The binding helper rejects non-digest prompt/config fields and records:
 - No hosted production LLM runtime readiness is claimed.
 - No OpenAI vision or non-OpenAI live provider smoke proof is wired yet.
 - No hosted consequence-admission route depends on a live LLM provider.
+- No route-readiness evidence evaluation activates a live provider call.
 
 ## Verification
 

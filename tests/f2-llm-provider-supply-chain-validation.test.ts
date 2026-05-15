@@ -9,6 +9,7 @@ import {
 import {
   evaluateLlmProviderRegistry,
   evaluateLlmProviderRoute,
+  evaluateLlmProviderRoutingReadiness,
   llmProviderRegistryDescriptor,
 } from '../src/api/llm-provider-registry.js';
 
@@ -82,6 +83,13 @@ try {
   const registry = llmProviderRegistryDescriptor();
   const registryEvaluation = evaluateLlmProviderRegistry({ requireProductionRuntime: true, requireFailover: true });
   const failoverRoute = evaluateLlmProviderRoute({ purpose: 'reasoning', requireFailover: true });
+  const routeReadiness = evaluateLlmProviderRoutingReadiness({
+    request: {
+      purpose: 'structured-output',
+      requireProductionRuntime: true,
+      requireStructuredOutput: true,
+    },
+  });
 
   ok(
     CONSEQUENCE_AGENTIC_SUPPLY_CHAIN_COMPONENT_KINDS.includes('model-provider-sdk'),
@@ -126,6 +134,12 @@ try {
   );
   equal(failoverRoute.status, 'blocked', 'LLM provider supply-chain validation: failover route fails closed');
   equal(failoverRoute.failoverCompatibilityReady, false, 'LLM provider supply-chain validation: failover compatibility is not ready');
+  equal(routeReadiness.state, 'blocked', 'LLM provider supply-chain validation: production route readiness blocks without evidence');
+  includes(
+    routeReadiness.blockers.join(','),
+    'llm-provider-primary-runtime-evidence-missing',
+    'LLM provider supply-chain validation: production route readiness requires primary runtime evidence',
+  );
 
   equal(countOccurrencesOutsideOpenAi(/\bcallGpt\(/gu), 1, 'LLM provider supply-chain validation: callGpt has one caller outside the wrapper');
   equal(countOccurrencesOutsideOpenAi(/\bcallGptVision\(/gu), 0, 'LLM provider supply-chain validation: callGptVision has no caller outside the wrapper');
@@ -140,8 +154,10 @@ try {
   includes(doc, 'F4-LLM03-A agentic supply-chain coverage gap / single LLM provider: `partial`.', 'LLM provider supply-chain validation doc: F4-LLM03-A status is partial');
   includes(doc, 'F4-D Attestor-owned OpenAI usage / budget / prompt leakage scope: `partial`.', 'LLM provider supply-chain validation doc: F4-D status is partial');
   includes(doc, 'No hosted production, multi-provider resilience, or prompt-leakage closure claim is made.', 'LLM provider supply-chain validation doc: no overclaim is present');
+  includes(doc, 'route-readiness evidence now separates route selection from production-like or', 'LLM provider supply-chain validation doc: route-readiness evidence gate is recorded');
   includes(registryDoc, 'Status: repository-side contract only. Not a live multi-provider runtime.', 'LLM provider registry doc: runtime non-claim is explicit');
   includes(registryDoc, 'Failover Compatibility Rule', 'LLM provider registry doc: compatible failover rule is documented');
+  includes(registryDoc, 'Route Readiness Evidence Gate', 'LLM provider registry doc: route-readiness evidence gate is documented');
   includes(
     registryDoc,
     'llm-provider-compatible-failover-provider-not-ready',
@@ -149,11 +165,13 @@ try {
   );
   includes(registryDoc, 'OpenAI timeout and output-token budget enforcement are wired', 'LLM provider registry doc: OpenAI timeout/cost boundary is explicit');
   includes(registryDoc, 'OpenAI reasoning live smoke proof is wired as an explicit', 'LLM provider registry doc: OpenAI reasoning smoke proof boundary is explicit');
+  includes(registryDoc, 'No route-readiness evidence evaluation activates a live provider call.', 'LLM provider registry doc: live call non-activation is explicit');
 
   includes(tracker, 'F2-AG-7 agentic supply-chain and LLM provider dependency | `partial`', 'Tracker: F2-AG-7 remains partial');
   includes(tracker, 'F2-AG-8 multimodal vision input future risk | `backlog`', 'Tracker: F2-AG-8 is backlog');
   includes(tracker, 'F4-LLM03-A agentic supply-chain coverage gap / single LLM provider | `partial`', 'Tracker: F4-LLM03-A is partial');
   includes(tracker, 'F4-D Attestor-owned OpenAI usage / budget / prompt leakage scope | `partial`', 'Tracker: F4-D is partial');
+  includes(tracker, 'route-readiness evidence gating', 'Tracker: F4-D route-readiness evidence gate is recorded');
   includes(tracker, 'docs/audit/f2-llm-provider-supply-chain-validation.md', 'Tracker: validation doc is linked');
   includes(packageJson, '"test:f2-llm-provider-supply-chain-validation"', 'Package: validation test is exposed');
   includes(packageJson, '"test:llm-provider-registry"', 'Package: registry test is exposed');

@@ -10,6 +10,12 @@ type CanonicalReleaseJsonValue = canonicalization.CanonicalReleaseJsonValue;
 
 export const RELEASE_TENANT_SIGNER_BOUNDARY_SPEC_VERSION =
   'attestor.release-tenant-signer-boundary.v1';
+export const RELEASE_TENANT_SIGNER_LIVE_PROVIDER_PROOF_SPEC_VERSION =
+  'attestor.release-tenant-signer-live-provider-proof.v1';
+export const RELEASE_TENANT_SIGNER_LIVE_PROVIDER_PROOF_CHALLENGE =
+  'attestor.release-tenant-signer-live-provider-proof.challenge.v1';
+export const DEFAULT_RELEASE_TENANT_SIGNER_LIVE_PROVIDER_PROOF_MAX_AGE_MINUTES =
+  24 * 60;
 
 export const RELEASE_TENANT_SIGNER_PROVIDER_CLASSES = [
   'runtime-local',
@@ -75,11 +81,22 @@ export type ReleaseTenantSignerContractBlocker =
 export const RELEASE_TENANT_SIGNER_PRODUCTION_BLOCKERS = [
   ...RELEASE_TENANT_SIGNER_CONTRACT_BLOCKERS,
   'live-provider-sign-verify-probe-missing',
+  'live-provider-proof-invalid',
+  'live-provider-proof-stale',
+  'live-provider-proof-descriptor-mismatch',
+  'live-provider-proof-checked-at-in-future',
+  'live-provider-proof-verification-failed',
   'fake-external-kms-test-only',
   'runtime-shared-signer-blast-radius',
 ] as const;
 export type ReleaseTenantSignerProductionBlocker =
   typeof RELEASE_TENANT_SIGNER_PRODUCTION_BLOCKERS[number];
+
+export type ReleaseTenantSignerLiveProviderProofState =
+  | 'not-provided'
+  | 'valid'
+  | 'invalid'
+  | 'stale';
 
 export interface CreateRuntimeSharedReleaseTenantSignerDescriptorInput {
   readonly tenantId: string;
@@ -99,11 +116,75 @@ export interface CreateExternalKmsReleaseTenantSignerDescriptorInput {
   > | null;
   readonly publicVerificationKeyRef?: string | null;
   readonly rotationRef?: string | null;
+  /**
+   * Legacy caller hint only. Production readiness is derived from
+   * liveProviderProof, not from this boolean.
+   */
   readonly liveProviderVerified?: boolean | null;
+  readonly liveProviderProof?: ReleaseTenantSignerLiveProviderProof | null;
+  readonly liveProviderProofMaxAgeMinutes?: number | null;
+  readonly nowMs?: number | null;
   readonly attestationRequired?: boolean | null;
   readonly attestationVerified?: boolean | null;
   readonly attestationEvidenceDigest?: string | null;
   readonly testOnly?: boolean | null;
+}
+
+export interface CreateReleaseTenantSignerLiveProviderProofInput {
+  readonly tenantId: string;
+  readonly providerClass: Exclude<
+    ReleaseTenantSignerProviderClass,
+    'runtime-local' | 'fake-external-kms-test'
+  >;
+  readonly keyRef: string;
+  readonly keyId: string;
+  readonly algorithm: ReleaseTenantSignerAlgorithm;
+  readonly payloadDigest?: string | null;
+  readonly signingContextDigest?: string | null;
+  readonly publicVerificationKeyRef?: string | null;
+  readonly signatureDigest: string;
+  readonly verificationDigest: string;
+  readonly providerRequestDigest?: string | null;
+  readonly signedAt?: string | null;
+  readonly verifiedAt?: string | null;
+  readonly verificationSucceeded?: boolean | null;
+}
+
+export interface ReleaseTenantSignerLiveProviderProof {
+  readonly version: typeof RELEASE_TENANT_SIGNER_LIVE_PROVIDER_PROOF_SPEC_VERSION;
+  readonly providerClass: Exclude<
+    ReleaseTenantSignerProviderClass,
+    'runtime-local' | 'fake-external-kms-test'
+  >;
+  readonly tenantIdDigest: string;
+  readonly keyRefDigest: string;
+  readonly keyId: string;
+  readonly algorithm: ReleaseTenantSignerAlgorithm;
+  readonly signingBoundary: Extract<ReleaseTenantSignerBoundary, 'external-kms-hsm'>;
+  readonly payloadDigest: string;
+  readonly signingContextDigest: string | null;
+  readonly publicVerificationKeyRefDigest: string | null;
+  readonly signatureDigest: string;
+  readonly verificationDigest: string;
+  readonly providerRequestDigest: string | null;
+  readonly signedAt: string;
+  readonly verifiedAt: string;
+  readonly verificationSucceeded: boolean;
+  readonly proofDigest: string;
+  readonly rawTenantIdStored: false;
+  readonly rawKeyRefStored: false;
+  readonly rawPayloadStored: false;
+  readonly rawProviderResponseStored: false;
+}
+
+export interface ReleaseTenantSignerLiveProviderProofEvaluation {
+  readonly version: typeof RELEASE_TENANT_SIGNER_LIVE_PROVIDER_PROOF_SPEC_VERSION;
+  readonly state: ReleaseTenantSignerLiveProviderProofState;
+  readonly proofDigest: string | null;
+  readonly checkedAt: string | null;
+  readonly maxAgeMinutes: number;
+  readonly blockers: readonly ReleaseTenantSignerProductionBlocker[];
+  readonly rawProviderResponseStored: false;
 }
 
 export interface ReleaseTenantSignerDescriptor {
@@ -121,6 +202,9 @@ export interface ReleaseTenantSignerDescriptor {
   readonly rotationManagedBy: ReleaseTenantSignerRotationManager;
   readonly rotationRefDigest: string | null;
   readonly liveProviderVerified: boolean;
+  readonly liveProviderProofDigest: string | null;
+  readonly liveProviderProofCheckedAt: string | null;
+  readonly liveProviderProofState: ReleaseTenantSignerLiveProviderProofState;
   readonly attestationRequired: boolean;
   readonly attestationVerified: boolean;
   readonly attestationEvidenceDigest: string | null;
@@ -185,6 +269,10 @@ function digestString(value: string): string {
   return `sha256:${createHash('sha256').update(value).digest('hex')}`;
 }
 
+export function releaseTenantSignerLiveProviderProofChallengeDigest(): string {
+  return digestString(RELEASE_TENANT_SIGNER_LIVE_PROVIDER_PROOF_CHALLENGE);
+}
+
 function digestCanonical(value: CanonicalReleaseJsonValue): {
   readonly canonical: string;
   readonly digest: string;
@@ -230,6 +318,16 @@ function normalizeDigest(value: string | null | undefined, fieldName: string): s
   return normalized;
 }
 
+function normalizeRequiredDigest(value: string | null | undefined, fieldName: string): string {
+  const normalized = normalizeDigest(value, fieldName);
+  if (normalized === null) {
+    throw new ReleaseTenantSignerBoundaryError(
+      `Release tenant signer boundary ${fieldName} is required.`,
+    );
+  }
+  return normalized;
+}
+
 function normalizeIsoTimestamp(value: string | null | undefined): string {
   const raw = value ?? new Date().toISOString();
   const timestamp = new Date(raw);
@@ -239,6 +337,18 @@ function normalizeIsoTimestamp(value: string | null | undefined): string {
     );
   }
   return timestamp.toISOString();
+}
+
+function normalizeMaxAgeMinutes(value: number | null | undefined): number {
+  if (value === undefined || value === null) {
+    return DEFAULT_RELEASE_TENANT_SIGNER_LIVE_PROVIDER_PROOF_MAX_AGE_MINUTES;
+  }
+  if (!Number.isInteger(value) || value < 1 || value > 7 * 24 * 60) {
+    throw new ReleaseTenantSignerBoundaryError(
+      'Release tenant signer boundary liveProviderProofMaxAgeMinutes must be an integer between 1 and 10080.',
+    );
+  }
+  return value;
 }
 
 function assertAlgorithm(value: ReleaseTenantSignerAlgorithm): void {
@@ -265,6 +375,9 @@ function descriptorDigest(descriptor: ReleaseTenantSignerDescriptor): string {
     rotationManagedBy: descriptor.rotationManagedBy,
     rotationRefDigest: descriptor.rotationRefDigest,
     liveProviderVerified: descriptor.liveProviderVerified,
+    liveProviderProofDigest: descriptor.liveProviderProofDigest,
+    liveProviderProofCheckedAt: descriptor.liveProviderProofCheckedAt,
+    liveProviderProofState: descriptor.liveProviderProofState,
     attestationRequired: descriptor.attestationRequired,
     attestationVerified: descriptor.attestationVerified,
     attestationEvidenceDigest: descriptor.attestationEvidenceDigest,
@@ -274,6 +387,143 @@ function descriptorDigest(descriptor: ReleaseTenantSignerDescriptor): string {
     contractBlockers: descriptor.contractBlockers,
     productionBlockers: descriptor.productionBlockers,
   } as CanonicalReleaseJsonValue).digest;
+}
+
+export function createReleaseTenantSignerLiveProviderProof(
+  input: CreateReleaseTenantSignerLiveProviderProofInput,
+): ReleaseTenantSignerLiveProviderProof {
+  const tenantId = normalizeIdentifier(input.tenantId, 'tenantId');
+  const keyRef = normalizeIdentifier(input.keyRef, 'keyRef');
+  const keyId = normalizeIdentifier(input.keyId, 'keyId');
+  assertAlgorithm(input.algorithm);
+
+  const payloadDigest = normalizeRequiredDigest(
+    input.payloadDigest ?? releaseTenantSignerLiveProviderProofChallengeDigest(),
+    'payloadDigest',
+  );
+  const signingContextDigest = normalizeDigest(
+    input.signingContextDigest,
+    'signingContextDigest',
+  );
+  const publicVerificationKeyRef = normalizeOptionalIdentifier(
+    input.publicVerificationKeyRef,
+    'publicVerificationKeyRef',
+  );
+  const signatureDigest = normalizeRequiredDigest(input.signatureDigest, 'signatureDigest');
+  const verificationDigest = normalizeRequiredDigest(
+    input.verificationDigest,
+    'verificationDigest',
+  );
+  const providerRequestDigest = normalizeDigest(
+    input.providerRequestDigest,
+    'providerRequestDigest',
+  );
+  const signedAt = normalizeIsoTimestamp(input.signedAt);
+  const verifiedAt = normalizeIsoTimestamp(input.verifiedAt ?? signedAt);
+  const proofMaterial = {
+    version: RELEASE_TENANT_SIGNER_LIVE_PROVIDER_PROOF_SPEC_VERSION as typeof
+      RELEASE_TENANT_SIGNER_LIVE_PROVIDER_PROOF_SPEC_VERSION,
+    providerClass: input.providerClass,
+    tenantIdDigest: digestString(tenantId),
+    keyRefDigest: digestString(keyRef),
+    keyId,
+    algorithm: input.algorithm,
+    signingBoundary: 'external-kms-hsm' as const,
+    payloadDigest,
+    signingContextDigest,
+    publicVerificationKeyRefDigest: publicVerificationKeyRef
+      ? digestString(publicVerificationKeyRef)
+      : null,
+    signatureDigest,
+    verificationDigest,
+    providerRequestDigest,
+    signedAt,
+    verifiedAt,
+    verificationSucceeded: input.verificationSucceeded ?? true,
+  };
+
+  return Object.freeze({
+    ...proofMaterial,
+    proofDigest: digestCanonical(proofMaterial as CanonicalReleaseJsonValue).digest,
+    rawTenantIdStored: false,
+    rawKeyRefStored: false,
+    rawPayloadStored: false,
+    rawProviderResponseStored: false,
+  });
+}
+
+export function evaluateReleaseTenantSignerLiveProviderProof(input: {
+  readonly proof?: ReleaseTenantSignerLiveProviderProof | null;
+  readonly tenantIdDigest: string;
+  readonly providerClass: ReleaseTenantSignerProviderClass;
+  readonly keyRefDigest: string;
+  readonly keyId: string;
+  readonly algorithm: ReleaseTenantSignerAlgorithm;
+  readonly publicVerificationKeyRefDigest?: string | null;
+  readonly nowMs?: number | null;
+  readonly maxAgeMinutes?: number | null;
+}): ReleaseTenantSignerLiveProviderProofEvaluation {
+  const maxAgeMinutes = normalizeMaxAgeMinutes(input.maxAgeMinutes);
+  const blockers: ReleaseTenantSignerProductionBlocker[] = [];
+  const proof = input.proof ?? null;
+
+  if (proof === null) {
+    blockers.push('live-provider-sign-verify-probe-missing');
+    return Object.freeze({
+      version: RELEASE_TENANT_SIGNER_LIVE_PROVIDER_PROOF_SPEC_VERSION,
+      state: 'not-provided',
+      proofDigest: null,
+      checkedAt: null,
+      maxAgeMinutes,
+      blockers: Object.freeze(blockers),
+      rawProviderResponseStored: false,
+    });
+  }
+
+  if (proof.version !== RELEASE_TENANT_SIGNER_LIVE_PROVIDER_PROOF_SPEC_VERSION) {
+    blockers.push('live-provider-proof-invalid');
+  }
+  if (!proof.verificationSucceeded) {
+    blockers.push('live-provider-proof-verification-failed');
+  }
+  if (
+    proof.providerClass !== input.providerClass ||
+    proof.tenantIdDigest !== input.tenantIdDigest ||
+    proof.keyRefDigest !== input.keyRefDigest ||
+    proof.keyId !== input.keyId ||
+    proof.algorithm !== input.algorithm ||
+    proof.signingBoundary !== 'external-kms-hsm' ||
+    proof.payloadDigest !== releaseTenantSignerLiveProviderProofChallengeDigest() ||
+    proof.publicVerificationKeyRefDigest !== (input.publicVerificationKeyRefDigest ?? null)
+  ) {
+    blockers.push('live-provider-proof-descriptor-mismatch');
+  }
+
+  const verifiedAtMs = Date.parse(proof.verifiedAt);
+  const nowMs = input.nowMs ?? Date.now();
+  let state: ReleaseTenantSignerLiveProviderProofState = 'invalid';
+  if (!Number.isFinite(verifiedAtMs)) {
+    blockers.push('live-provider-proof-invalid');
+  } else if (verifiedAtMs - nowMs > 5 * 60 * 1000) {
+    blockers.push('live-provider-proof-checked-at-in-future');
+  } else if (nowMs - verifiedAtMs > maxAgeMinutes * 60 * 1000) {
+    blockers.push('live-provider-proof-stale');
+    state = 'stale';
+  }
+
+  if (blockers.length === 0) {
+    state = 'valid';
+  }
+
+  return Object.freeze({
+    version: RELEASE_TENANT_SIGNER_LIVE_PROVIDER_PROOF_SPEC_VERSION,
+    state,
+    proofDigest: proof.proofDigest,
+    checkedAt: proof.verifiedAt,
+    maxAgeMinutes,
+    blockers: Object.freeze(blockers),
+    rawProviderResponseStored: false,
+  });
 }
 
 export function createRuntimeSharedReleaseTenantSignerDescriptor(
@@ -302,6 +552,9 @@ export function createRuntimeSharedReleaseTenantSignerDescriptor(
       : 'runtime-file-store',
     rotationRefDigest: null,
     liveProviderVerified: false,
+    liveProviderProofDigest: null,
+    liveProviderProofCheckedAt: null,
+    liveProviderProofState: 'not-provided',
     attestationRequired: false,
     attestationVerified: false,
     attestationEvidenceDigest: null,
@@ -338,10 +591,15 @@ export function createExternalKmsReleaseTenantSignerDescriptor(
   const tenantId = normalizeIdentifier(input.tenantId, 'tenantId');
   const keyRef = normalizeIdentifier(input.keyRef, 'keyRef');
   const keyId = normalizeIdentifier(input.keyId, 'keyId');
+  const tenantIdDigest = digestString(tenantId);
+  const keyRefDigest = digestString(keyRef);
   const publicVerificationKeyRef = normalizeOptionalIdentifier(
     input.publicVerificationKeyRef,
     'publicVerificationKeyRef',
   );
+  const publicVerificationKeyRefDigest = publicVerificationKeyRef
+    ? digestString(publicVerificationKeyRef)
+    : null;
   const rotationRef = normalizeOptionalIdentifier(input.rotationRef, 'rotationRef');
   const algorithm = input.algorithm;
   assertAlgorithm(algorithm);
@@ -353,7 +611,6 @@ export function createExternalKmsReleaseTenantSignerDescriptor(
     input.attestationEvidenceDigest,
     'attestationEvidenceDigest',
   );
-  const liveProviderVerified = input.liveProviderVerified ?? false;
   const testOnly = input.testOnly ?? input.providerClass === 'fake-external-kms-test';
   const contractBlockers: ReleaseTenantSignerContractBlocker[] = [];
 
@@ -373,9 +630,19 @@ export function createExternalKmsReleaseTenantSignerDescriptor(
   const productionBlockers: ReleaseTenantSignerProductionBlocker[] = [
     ...contractBlockers,
   ];
-  if (!liveProviderVerified) {
-    productionBlockers.push('live-provider-sign-verify-probe-missing');
-  }
+  const liveProviderProof = evaluateReleaseTenantSignerLiveProviderProof({
+    proof: input.liveProviderProof ?? null,
+    tenantIdDigest,
+    providerClass: input.providerClass,
+    keyRefDigest,
+    keyId,
+    algorithm,
+    publicVerificationKeyRefDigest,
+    nowMs: input.nowMs,
+    maxAgeMinutes: input.liveProviderProofMaxAgeMinutes,
+  });
+  const liveProviderVerified = liveProviderProof.state === 'valid';
+  productionBlockers.push(...liveProviderProof.blockers);
   if (testOnly) {
     productionBlockers.push('fake-external-kms-test-only');
   }
@@ -384,12 +651,10 @@ export function createExternalKmsReleaseTenantSignerDescriptor(
     version: RELEASE_TENANT_SIGNER_BOUNDARY_SPEC_VERSION,
     providerKind: 'external-kms',
     providerClass: input.providerClass,
-    tenantIdDigest: digestString(tenantId),
+    tenantIdDigest,
     keyId,
-    keyRefDigest: digestString(keyRef),
-    publicVerificationKeyRefDigest: publicVerificationKeyRef
-      ? digestString(publicVerificationKeyRef)
-      : null,
+    keyRefDigest,
+    publicVerificationKeyRefDigest,
     algorithm,
     isolationMode,
     signingBoundary: 'external-kms-hsm',
@@ -397,6 +662,9 @@ export function createExternalKmsReleaseTenantSignerDescriptor(
     rotationManagedBy: 'external-provider',
     rotationRefDigest: rotationRef ? digestString(rotationRef) : null,
     liveProviderVerified,
+    liveProviderProofDigest: liveProviderProof.proofDigest,
+    liveProviderProofCheckedAt: liveProviderProof.checkedAt,
+    liveProviderProofState: liveProviderProof.state,
     attestationRequired,
     attestationVerified,
     attestationEvidenceDigest,

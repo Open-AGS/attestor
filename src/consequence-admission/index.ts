@@ -2276,6 +2276,7 @@ export * from './domain-pack-boundary.js';
 export * from './control-plane-roles.js';
 export * from './downstream-enforcement-contract.js';
 export * from './verifier-helper.js';
+export * from './protected-enforcement-profile.js';
 export * from './shadow-events.js';
 export * from './shadow-simulation.js';
 export * from './money-movement-shadow.js';

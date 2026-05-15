@@ -31,6 +31,18 @@ success path.
 
 The downstream system should only write, send, file, execute, broadcast, sign, or settle after the customer gate returns `PROCEED`.
 
+## Protected customer enforcement profile
+
+The customer gate is the smallest local helper. It is not the protected production path for high-risk consequences.
+
+Use the protected customer enforcement profile when an integration needs to decide which enforcement path is required:
+
+- `customer-gate` for low-risk, non-production-sensitive compatibility paths
+- `downstream-contract` when the customer enforcement point must bind admission id, digest, downstream system, proof, policy, idempotency, and constraint acknowledgement
+- `attestor/release-enforcement-plane` when production-sensitive, R3, or R4 execution requires sender-constrained presentation, online introspection, and replay consumption
+
+For R3/R4 consequences, bearer-only or helper-only enforcement is not sufficient. The integration must use `attestor/release-enforcement-plane` or an equivalent customer-operated verifier that fails closed on missing sender constraint, stale introspection, replay, target mismatch, or authorization downgrade.
+
 ## Minimal Shape
 
 ```ts
@@ -60,5 +72,6 @@ assertConsequenceAdmissionGateAllows({
 - This does not add a public hosted crypto route.
 - This does not auto-detect packs from payload shape.
 - This does not make Attestor the downstream system.
+- This does not perform cryptographic token verification, sender-constrained presentation checks, online introspection, or replay consumption.
 
 Attestor supplies the decision and proof. The customer system enforces the final gate before consequence.

@@ -253,6 +253,7 @@
     "test:consequence-taxonomy": "tsx tests/consequence-taxonomy.test.ts",
     "test:downstream-enforcement-contract": "tsx tests/downstream-enforcement-contract.test.ts",
     "test:consequence-verifier-helper": "tsx tests/consequence-verifier-helper.test.ts",
+    "test:consequence-admission-protected-enforcement-profile": "tsx tests/consequence-admission-protected-enforcement-profile.test.ts",
     "test:consequence-admission-adapter-framework": "tsx tests/consequence-admission-adapter-framework.test.ts",
     "test:consequence-audit-evidence-export": "tsx tests/consequence-audit-evidence-export.test.ts",
     "test:consequence-tamper-evident-history": "tsx tests/consequence-tamper-evident-history.test.ts",

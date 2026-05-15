@@ -113,6 +113,16 @@ behind that gate. It reports the backlog components, required shared-store
 primitive, no-go conditions, and required proofs without exposing connection
 strings or raw payloads. It does not migrate data or create stores.
 
+For `production-shared`, `shared-durable` mode alone is not enough for this
+profile. The profile also requires digest-only operational evidence for the
+shared schema, tenant-scope/RLS boundary, idempotency constraints, append-only
+outbox contract, worker-claim query, and advisory-lock keyspace where the
+component's primitive needs them. Missing proof blocks the selected profile with
+codes such as `shared-store-outbox-contract-digest-required`,
+`shared-store-worker-claim-query-digest-required`, or
+`shared-store-advisory-lock-keyspace-digest-required`. Evidence that reports raw
+payload storage or connection-string exposure is a no-go.
+
 For protected API requests in `production-shared`, readiness is not only a
 diagnostic. The request guard keeps non-preflight `/api/v1/*` routes closed
 until the release/policy request path reports shared authority stores and
@@ -131,6 +141,9 @@ Current `production-shared` blockers can include:
 - presentation replay ledger still an in-memory reference implementation
 - agent-loop abuse guard counters still in-memory or Redis configured but not yet proven reachable
 - audit/dashboard source history still derived from evaluation stores
+- shared-durable consequence stores missing operational proof digests for
+  schema, tenant scope, idempotency, outbox, worker claim, or advisory-lock
+  coordination
 
 This gate prevents a green HA or observability packet from being read as proof that the consequence-admission storage path is production shared. See [Production storage path](../02-architecture/production-storage-path.md).
 

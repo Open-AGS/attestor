@@ -115,6 +115,25 @@ The profile groups the current backlog into explicit primitives:
 - shared source history for audit evidence exports and business-risk dashboard
   inputs
 
+For the narrowed consequence profile, a shared-durable component mode is not
+enough to clear `production-shared-consequence-ready`. Each shared consequence
+surface must also provide secret-safe operational proof digests:
+
+- `schema-digest` for the table or migration contract
+- `tenant-scope-digest` for the tenant boundary, including RLS or equivalent
+  policy shape
+- `idempotency-constraint-digest` for retry/replay/counter stores that depend on
+  `INSERT ... ON CONFLICT` or equivalent atomic conflict arbitration
+- `outbox-contract-digest` for append-only history and read-model export
+  sources
+- `worker-claim-query-digest` for queue-like export/dashboard workers that use
+  `FOR UPDATE ... SKIP LOCKED` or an equivalent claim primitive
+- `advisory-lock-keyspace-digest` for session or counter coordination that uses
+  PostgreSQL advisory locks or an equivalent shared lock namespace
+
+The evidence is digest-only. Reporting raw payload storage or connection-string
+exposure keeps the profile blocked.
+
 The profile depends on the shared control plane and shared release-authority
 substrate, but it does not activate a migration, create PostgreSQL tables,
 configure Redis, or rewrite any file-backed history. It is a decision contract:
@@ -140,7 +159,8 @@ requests stay fail-closed until both conditions are true:
 
 This avoids a partial cutover where release and policy records use shared
 PostgreSQL, but retry/replay/shadow/audit state is still process-local,
-file-backed, or derived from evaluation stores.
+file-backed, derived from evaluation stores, or missing operational
+outbox/idempotency/lock proof.
 
 ## Runtime Surface
 
@@ -182,14 +202,17 @@ The design follows three stable production-storage principles:
   needed by retry and replay ledgers.
 - PostgreSQL advisory locks can coordinate application-defined locks, but their
   correct use is application responsibility; the profile therefore requires a
-  tested primitive, not just "uses a shared database".
+  digest of the keyspace/coordination primitive, not just "uses a shared
+  database".
 - PostgreSQL `FOR UPDATE ... SKIP LOCKED` is appropriate for queue-like
   consumers that need to avoid lock contention, but it intentionally skips
-  locked rows and is not a general-purpose consistency proof.
+  locked rows and is not a general-purpose consistency proof; the profile only
+  accepts it as a worker-claim primitive when the query contract is digested.
 - Debezium's outbox event router treats the outbox row id as a de-duplication
   header and expects outbox-table changes to be inserts, which is a useful
-  model for future append-only event export. This profile does not implement a
-  Debezium connector or claim event-bus delivery.
+  model for future append-only event export. This profile can require an
+  outbox contract digest, but it does not implement a Debezium connector or
+  claim event-bus delivery.
 - Security logging guidance treats log integrity, access control, and data
   minimization as part of the system, not after-the-fact cleanup.
 - AI risk governance needs repeatable evidence and explicit operational

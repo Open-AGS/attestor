@@ -662,6 +662,21 @@ The entries above are the most concrete PR/commit-linked hardening records. The 
 - Remaining limitation or no-go condition: This is still not a live multi-provider client implementation. It does not prove Anthropic, Vertex AI, or Azure OpenAI calls; runtime failover execution; OpenAI vision smoke proof; non-OpenAI smoke proof; hosted consequence-admission dependence on live LLMs; or production provider readiness.
 - Status: complete for repository-side LLM provider route-readiness evidence gating once this PR is merged and verified on `origin/master`.
 
+### 38. Consequence Shared-Store Operational Evidence Contract
+
+- Step / PR / commit: Consequence shared-store operational evidence contract; this PR records repository-side outbox/idempotency/lock proof requirements but cannot pre-record its own merge commit.
+- Date if available: 2026-05-15.
+- Trust surface: multi-node consequence-admission state, tenant-scoped shared schemas, retry/replay idempotency, shadow history append-only export, audit/dashboard worker claims, advisory-lock coordination, protected API request handling, and secret-safe readiness diagnostics.
+- Protected principle: fail-closed boundary; tenant isolation; replay and idempotency safety; auditability; runtime readiness; data minimization and redaction; no overclaim.
+- Research anchor / source used, if recorded: PostgreSQL `INSERT ... ON CONFLICT` anchors atomic idempotency constraints; PostgreSQL row security policies anchor tenant-scope hardening; PostgreSQL advisory locks anchor application-defined lock keyspaces; PostgreSQL `FOR UPDATE ... SKIP LOCKED` anchors queue-like worker claim semantics with its consistency limitation; Debezium Outbox Event Router anchors insert-oriented outbox rows and event id de-duplication. These are engineering anchors only, not an implemented shared schema, RLS policy set, Debezium connector, multi-worker deployment, or customer production database proof.
+- Repository evidence:
+  - Contract/code evidence: `src/service/bootstrap/consequence-shared-store-profile.ts`, `docs/02-architecture/production-storage-path.md`, `docs/08-deployment/production-readiness.md`, and `docs/audit/consequence-shared-store-profile-validation.md`.
+  - Test evidence: `tests/consequence-shared-store-profile.test.ts` and `tests/research-provenance-ledger.test.ts`.
+- Implemented control: Tightens the consequence shared-store profile so `shared-durable` storage mode alone cannot clear `production-shared-consequence-ready`. Shared consequence components must provide digest-only operational evidence for schema, tenant scope, idempotency constraints, outbox contracts, worker-claim queries, and advisory-lock keyspaces as required by their primitive. Missing proof fails closed with machine-readable blockers such as `shared-store-outbox-contract-digest-required`, `shared-store-worker-claim-query-digest-required`, and `shared-store-advisory-lock-keyspace-digest-required`; evidence reporting raw payload storage or connection-string exposure remains a no-go.
+- Tests / verification: `npm run test:consequence-shared-store-profile`, `npm run test:research-provenance-ledger`, `npm run typecheck`, and `npm run typecheck:hygiene`.
+- Remaining limitation or no-go condition: This is not a shared durable backend implementation. It does not create PostgreSQL schemas, migrate file histories, wire RLS policies, run Debezium, prove backup/restore, prove multi-worker recovery, inspect SQL bodies, or verify any customer production environment.
+- Status: complete for repository-side consequence shared-store operational evidence contract once this PR is merged and verified on `origin/master`.
+
 ## Strong Recorded Research Support
 
 The strongest recorded research support appears in:

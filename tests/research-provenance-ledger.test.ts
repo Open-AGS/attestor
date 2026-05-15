@@ -438,6 +438,31 @@ function testLedgerIndexesAuditRemediationClosure(): void {
     'compatibility mode can still return an admission without a protected token',
     'Research provenance ledger: generic protected release-token runtime limitation is explicit',
   );
+  includes(
+    content,
+    '### 32. Customer PEP Runtime Adoption Proof',
+    'Research provenance ledger: customer PEP runtime adoption entry is present',
+  );
+  includes(
+    content,
+    'src/consequence-admission/customer-pep-runtime-adoption.ts',
+    'Research provenance ledger: customer PEP runtime adoption code evidence is indexed',
+  );
+  includes(
+    content,
+    'tests/customer-pep-runtime-adoption.test.ts',
+    'Research provenance ledger: customer PEP runtime adoption test evidence is indexed',
+  );
+  includes(
+    content,
+    'Envoy external authorization filter delegates HTTP authorization checks',
+    'Research provenance ledger: customer PEP runtime adoption Envoy anchor is recorded',
+  );
+  includes(
+    content,
+    'This is not a deployed customer PEP',
+    'Research provenance ledger: customer PEP runtime adoption live deployment non-claim is explicit',
+  );
 }
 
 function testLedgerKeepsEvidenceBoundaryExplicit(): void {

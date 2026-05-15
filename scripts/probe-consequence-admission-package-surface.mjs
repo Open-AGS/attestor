@@ -603,6 +603,26 @@ assert.equal(
   'function',
 );
 assert.equal(
+  admission.CUSTOMER_PEP_RUNTIME_ADOPTION_VERSION,
+  'attestor.customer-pep-runtime-adoption.v1',
+);
+assert.equal(
+  admission.customerPepRuntimeAdoptionDescriptor().requiresSenderConstrainedPresentation,
+  true,
+);
+assert.equal(
+  admission.customerPepRuntimeAdoptionDescriptor().productionReady,
+  false,
+);
+assert.equal(
+  typeof admission.evaluateCustomerPepRuntimeAdoption,
+  'function',
+);
+assert.equal(
+  typeof admission.assertCustomerPepRuntimeAdoptionReady,
+  'function',
+);
+assert.equal(
   admission.POLICY_FOUNDRY_COVERAGE_SCORE_VERSION,
   'attestor.policy-foundry-coverage-score.v1',
 );

@@ -137,6 +137,11 @@ import {
   CONSEQUENCE_FAILURE_MODE_RUNTIME_EXTENSION_REASON_CODES,
   CONSEQUENCE_FAILURE_MODE_RUNTIME_EXTENSION_VERSION,
 } from './failure-mode-runtime-extensions.js';
+import {
+  CUSTOMER_PEP_RUNTIME_ADOPTION_VERSION,
+  customerPepRuntimeAdoptionDescriptor,
+  type CustomerPepRuntimeAdoptionDescriptor,
+} from './customer-pep-runtime-adoption.js';
 
 export const CONSEQUENCE_ADMISSION_CONTRACT_VERSION =
   'attestor.consequence-admission.v1';
@@ -520,6 +525,7 @@ export interface ConsequenceAdmissionDescriptor {
     typeof CONSEQUENCE_SHADOW_READINESS_CLAIM_ALIGNMENT_VERSION;
   readonly failureModeGuardCoverageVersion: typeof CONSEQUENCE_FAILURE_MODE_GUARD_COVERAGE_VERSION;
   readonly failureModeRuntimeExtensionVersion: typeof CONSEQUENCE_FAILURE_MODE_RUNTIME_EXTENSION_VERSION;
+  readonly customerPepRuntimeAdoptionVersion: typeof CUSTOMER_PEP_RUNTIME_ADOPTION_VERSION;
   readonly agenticSupplyChainGuardVersion: typeof CONSEQUENCE_AGENTIC_SUPPLY_CHAIN_GUARD_VERSION;
   readonly multiAgentDelegationGuardVersion: typeof CONSEQUENCE_MULTI_AGENT_DELEGATION_GUARD_VERSION;
   readonly retryDefaultMaxAttempts: typeof CONSEQUENCE_ADMISSION_RETRY_DEFAULT_MAX_ATTEMPTS;
@@ -545,6 +551,7 @@ export interface ConsequenceAdmissionDescriptor {
   readonly guardActivationReadiness: ConsequenceGuardActivationReadinessDescriptor;
   readonly shadowReadinessClaimAlignment: ConsequenceShadowReadinessClaimAlignmentDescriptor;
   readonly failureModeGuardCoverage: ConsequenceFailureModeGuardCoverageMatrix;
+  readonly customerPepRuntimeAdoption: CustomerPepRuntimeAdoptionDescriptor;
   readonly dataMinimizationSurfaceKinds: typeof CONSEQUENCE_DATA_MINIMIZATION_SURFACE_KINDS;
   readonly dataMinimizationForbiddenRawClasses: typeof CONSEQUENCE_DATA_MINIMIZATION_FORBIDDEN_RAW_CLASSES;
   readonly packDecisionPostures: typeof CONSEQUENCE_ADMISSION_PACK_DECISION_POSTURES;
@@ -2183,6 +2190,7 @@ ConsequenceAdmissionDescriptor {
       CONSEQUENCE_SHADOW_READINESS_CLAIM_ALIGNMENT_VERSION,
     failureModeGuardCoverageVersion: CONSEQUENCE_FAILURE_MODE_GUARD_COVERAGE_VERSION,
     failureModeRuntimeExtensionVersion: CONSEQUENCE_FAILURE_MODE_RUNTIME_EXTENSION_VERSION,
+    customerPepRuntimeAdoptionVersion: CUSTOMER_PEP_RUNTIME_ADOPTION_VERSION,
     agenticSupplyChainGuardVersion: CONSEQUENCE_AGENTIC_SUPPLY_CHAIN_GUARD_VERSION,
     multiAgentDelegationGuardVersion: CONSEQUENCE_MULTI_AGENT_DELEGATION_GUARD_VERSION,
     retryDefaultMaxAttempts: CONSEQUENCE_ADMISSION_RETRY_DEFAULT_MAX_ATTEMPTS,
@@ -2208,6 +2216,7 @@ ConsequenceAdmissionDescriptor {
     guardActivationReadiness: consequenceGuardActivationReadinessDescriptor(),
     shadowReadinessClaimAlignment: consequenceShadowReadinessClaimAlignmentDescriptor(),
     failureModeGuardCoverage: consequenceFailureModeGuardCoverageMatrix(),
+    customerPepRuntimeAdoption: customerPepRuntimeAdoptionDescriptor(),
     dataMinimizationSurfaceKinds: CONSEQUENCE_DATA_MINIMIZATION_SURFACE_KINDS,
     dataMinimizationForbiddenRawClasses: CONSEQUENCE_DATA_MINIMIZATION_FORBIDDEN_RAW_CLASSES,
     packDecisionPostures: CONSEQUENCE_ADMISSION_PACK_DECISION_POSTURES,
@@ -2302,6 +2311,7 @@ export * from './failure-mode-control-bindings.js';
 export * from './failure-mode-replay-fixtures.js';
 export * from './failure-mode-guard-coverage.js';
 export * from './failure-mode-runtime-extensions.js';
+export * from './customer-pep-runtime-adoption.js';
 export * from './replay-layer-placement.js';
 export * from './guard-activation-readiness.js';
 export * from './shadow-readiness-claim-alignment.js';

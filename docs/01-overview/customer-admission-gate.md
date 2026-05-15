@@ -98,6 +98,14 @@ Use the protected customer enforcement profile when an integration needs to deci
 
 For R3/R4 consequences, bearer-only or helper-only enforcement is not sufficient. The integration must use `attestor/release-enforcement-plane` or an equivalent customer-operated verifier that fails closed on missing sender constraint, stale introspection, replay, target mismatch, or authorization downgrade.
 
+## Customer PEP Runtime Adoption Proof
+
+Use `evaluateCustomerPepRuntimeAdoption(...)` after a customer has configured a real PEP path and wants a machine-readable adoption artifact for that scoped runtime.
+
+The proof is held unless the runtime uses the release-enforcement-plane protected profile, covers all protected routes, is fail-closed, has no bypass routes, integrates the verifier, requires sender-constrained presentation, requires online introspection, requires replay consumption, binds proof/audience/tenant fields, uses durable replay and token-introspection stores, has health/rollback/kill-switch/monitoring/audit/customer-approval evidence, carries activation handoff and receipt digests, and stores no raw token, raw payload, or provider body.
+
+This proof can support a scoped customer-runtime adoption claim. It does not deploy Envoy, Istio, OPA, Hono, or Node middleware; operate the customer PEP; migrate stores; or prove hosted production configuration.
+
 ## Minimal Shape
 
 ```ts
@@ -134,5 +142,7 @@ assertConsequenceAdmissionGateAllows({
   release-enforcement result; it does not operate the customer's PEP, replay
   store, token introspection authority, DPoP key, mTLS trust anchors, or SPIFFE
   bundle.
+- The customer PEP runtime adoption proof records scoped customer runtime
+  evidence; it does not deploy or operate that runtime.
 
 Attestor supplies the decision and proof. The customer system enforces the final gate before consequence.

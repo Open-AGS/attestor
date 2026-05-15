@@ -36,6 +36,11 @@ const genericProtectedReleaseToken = readProjectFile(
   'consequence-admission',
   'generic-protected-release-token.ts',
 );
+const customerPepRuntimeAdoption = readProjectFile(
+  'src',
+  'consequence-admission',
+  'customer-pep-runtime-adoption.ts',
+);
 const packageJson = JSON.parse(readProjectFile('package.json')) as {
   readonly scripts: Readonly<Record<string, string>>;
 };
@@ -60,6 +65,11 @@ includes(
   validationDoc,
   'generic protected release-token issuance helper: can issue sender-constrained protected tokens',
   'F2 customer gate validation: generic protected token issuance is explicit',
+);
+includes(
+  validationDoc,
+  'customer PEP runtime adoption proof',
+  'F2 customer gate validation: customer PEP runtime adoption proof is explicit',
 );
 includes(
   validationDoc,
@@ -88,6 +98,11 @@ includes(
 );
 includes(
   tracker,
+  'scoped customer PEP runtime adoption proof contract',
+  'Tracker: F2-AG-1 customer PEP runtime adoption proof is recorded',
+);
+includes(
+  tracker,
   '| F4-LLM06-A customer gate honor-system | `partial` |',
   'Tracker: F4 overlap status is updated',
 );
@@ -110,6 +125,16 @@ includes(
   genericProtectedReleaseToken,
   'sender-confirmation-required',
   'Generic protected release-token source: sender constraint is required',
+);
+includes(
+  customerPepRuntimeAdoption,
+  'evaluateCustomerPepRuntimeAdoption',
+  'Customer PEP runtime adoption source: evaluator exists',
+);
+includes(
+  customerPepRuntimeAdoption,
+  'sender-constraint-not-required',
+  'Customer PEP runtime adoption source: sender constraint blocker exists',
 );
 equal(
   verifierDescriptor.cryptographicTokenVerification,

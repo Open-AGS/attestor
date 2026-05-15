@@ -73,11 +73,19 @@ and returns:
   shared store modes
 - secret-safe diagnostics with no connection strings, hostnames, raw payloads,
   prompts, provider bodies, or customer records
+- operational proof digests for every shared-durable consequence component:
+  `schema-digest`, `tenant-scope-digest`,
+  `idempotency-constraint-digest`, `outbox-contract-digest`,
+  `worker-claim-query-digest`, and `advisory-lock-keyspace-digest` as required
+  by that component's primitive
+- no-go blockers when evidence reports raw payload storage or connection-string
+  exposure
 
 Wire that evaluator into the `production-shared` protected request guard and
 startup diagnostics so non-preflight API routes do not open when the release
 authority path is shared but consequence-admission retry/replay/history state
-is still evaluation-backed.
+is still evaluation-backed or missing the relevant outbox/idempotency/lock
+proof.
 
 ## Regression proof
 
@@ -96,6 +104,8 @@ npm run test:agent-loop-abuse-guard-shared
 
 This profile does not create shared durable backends. It does not migrate file
 history, add PostgreSQL schemas, configure Redis, prove backup/restore, prove
-multi-worker recovery, or verify any customer production environment. Until
-those proofs exist, the consequence shared-store migration remains backlog even
-when this repository-side profile is present.
+multi-worker recovery, run Debezium, or verify any customer production
+environment. It accepts only digest-level operational evidence and does not
+inspect SQL bodies or deployment secrets. Until those proofs exist, the
+consequence shared-store migration remains backlog even when this
+repository-side profile is present.

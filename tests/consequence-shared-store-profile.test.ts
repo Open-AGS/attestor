@@ -2,8 +2,10 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
+  CONSEQUENCE_SHARED_STORE_COMPONENTS,
   CONSEQUENCE_SHARED_STORE_PROFILE_SPEC_VERSION,
   evaluateConsequenceSharedStoreProfile,
+  type ConsequenceSharedStoreOperationalEvidence,
 } from '../src/service/bootstrap/consequence-shared-store-profile.js';
 import type {
   ProductionStorageMode,
@@ -11,6 +13,15 @@ import type {
 } from '../src/service/bootstrap/production-storage-path.js';
 
 let passed = 0;
+
+const DIGESTS = Object.freeze({
+  schemaDigest: `sha256:${'a'.repeat(64)}`,
+  tenantScopeDigest: `sha256:${'b'.repeat(64)}`,
+  idempotencyConstraintDigest: `sha256:${'c'.repeat(64)}`,
+  outboxContractDigest: `sha256:${'d'.repeat(64)}`,
+  workerClaimQueryDigest: `sha256:${'e'.repeat(64)}`,
+  advisoryLockKeyspaceDigest: `sha256:${'f'.repeat(64)}`,
+} as const);
 
 function equal<T>(actual: T, expected: T, message: string): void {
   assert.equal(actual, expected, message);
@@ -43,6 +54,15 @@ Readonly<Record<ProductionStoragePathComponentId, ProductionStorageMode>>
   };
 }
 
+function completeOperationalEvidence(): readonly ConsequenceSharedStoreOperationalEvidence[] {
+  return CONSEQUENCE_SHARED_STORE_COMPONENTS.map((component) => Object.freeze({
+    component,
+    ...DIGESTS,
+    rawPayloadStored: false,
+    exposesConnectionStrings: false,
+  }));
+}
+
 function testEvaluationProfileAcceptsBacklogWithoutProductionClaim(): void {
   const profile = evaluateConsequenceSharedStoreProfile({
     runtimeProfileId: 'local-dev',
@@ -66,6 +86,7 @@ function testEvaluationProfileAcceptsBacklogWithoutProductionClaim(): void {
   );
   equal(profile.readyForSelectedProfile, true, 'Consequence shared-store profile: local-dev stays runnable');
   equal(profile.productionReady, false, 'Consequence shared-store profile: local-dev is not production ready');
+  equal(profile.operationalEvidenceReady, false, 'Consequence shared-store profile: local-dev does not overclaim operational proof');
   equal(profile.blockers.length, 0, 'Consequence shared-store profile: local-dev emits no production blockers');
   equal(profile.authorityComponents.length, 2, 'Consequence shared-store profile: authority substrate is inventoried');
   equal(profile.components.length, 10, 'Consequence shared-store profile: consequence/read-model surfaces are inventoried');
@@ -104,6 +125,7 @@ function testProductionSharedBlocksCurrentConsequenceStores(): void {
   );
   equal(profile.authorityStoreReady, true, 'Consequence shared-store profile: authority substrate can be ready');
   equal(profile.consequenceStoreReady, false, 'Consequence shared-store profile: consequence stores are not ready by default');
+  equal(profile.operationalEvidenceReady, false, 'Consequence shared-store profile: missing shared stores do not get operational proof');
   equal(profile.readyForSelectedProfile, false, 'Consequence shared-store profile: selected production profile is blocked');
   ok(
     profile.blockingComponentIds.includes('retry-attempt-ledger'),
@@ -161,7 +183,7 @@ function testAuthoritySubstrateStillBlocksSelectedProfile(): void {
   );
 }
 
-function testReadyOnlyWhenEveryRelevantSurfaceIsShared(): void {
+function testSharedStorageStillNeedsOperationalEvidence(): void {
   const profile = evaluateConsequenceSharedStoreProfile({
     runtimeProfileId: 'production-shared',
     controlPlaneMode: 'postgres',
@@ -176,12 +198,64 @@ function testReadyOnlyWhenEveryRelevantSurfaceIsShared(): void {
 
   equal(
     profile.state,
+    'production-shared-consequence-blocked',
+    'Consequence shared-store profile: shared storage alone does not clear operational proof',
+  );
+  equal(profile.productionReady, false, 'Consequence shared-store profile: operational proof is required');
+  equal(profile.consequenceStoreReady, true, 'Consequence shared-store profile: storage inventory can be shared');
+  equal(profile.operationalEvidenceReady, false, 'Consequence shared-store profile: operational evidence is missing');
+  ok(
+    profile.operationalBlockingComponentIds.includes('audit-evidence-export'),
+    'Consequence shared-store profile: audit export needs operational proof',
+  );
+  ok(
+    profile.blockers.some((blocker) =>
+      blocker.code === 'shared-store-worker-claim-query-digest-required'
+    ),
+    'Consequence shared-store profile: worker claim digest blocks read-model sources',
+  );
+  ok(
+    profile.blockers.some((blocker) =>
+      blocker.code === 'shared-store-outbox-contract-digest-required'
+    ),
+    'Consequence shared-store profile: outbox contract digest blocks append-only stores',
+  );
+  ok(
+    profile.blockers.some((blocker) =>
+      blocker.code === 'shared-store-advisory-lock-keyspace-digest-required'
+    ),
+    'Consequence shared-store profile: advisory lock digest blocks coordinated stores',
+  );
+  ok(
+    profile.noGoConditions.includes('shared-store-operational-evidence-not-proven'),
+    'Consequence shared-store profile: missing operational proof is a no-go condition',
+  );
+}
+
+function testReadyOnlyWhenEveryRelevantSurfaceIsSharedAndProven(): void {
+  const profile = evaluateConsequenceSharedStoreProfile({
+    runtimeProfileId: 'production-shared',
+    controlPlaneMode: 'postgres',
+    releaseAuthorityMode: 'postgres',
+    componentModes: {
+      'control-plane-state': 'shared-postgres',
+      'release-authority-state': 'shared-postgres',
+      ...allSharedComponentModes(),
+    },
+    operationalEvidence: completeOperationalEvidence(),
+    evaluatedAt: '2026-05-15T08:04:00.000Z',
+  });
+
+  equal(
+    profile.state,
     'production-shared-consequence-ready',
-    'Consequence shared-store profile: all shared surfaces clear this profile',
+    'Consequence shared-store profile: shared surfaces plus operational proof clear this profile',
   );
   equal(profile.productionReady, true, 'Consequence shared-store profile: all relevant surfaces are ready');
+  equal(profile.operationalEvidenceReady, true, 'Consequence shared-store profile: operational proof clears');
   equal(profile.readyForSelectedProfile, true, 'Consequence shared-store profile: selected profile readiness clears');
   equal(profile.backlogComponentIds.length, 0, 'Consequence shared-store profile: no backlog remains');
+  equal(profile.operationalBlockingComponentIds.length, 0, 'Consequence shared-store profile: no operational blocker remains');
   equal(profile.blockers.length, 0, 'Consequence shared-store profile: no production blockers remain');
   equal(profile.noGoConditions.length, 0, 'Consequence shared-store profile: no no-go condition remains');
   ok(
@@ -191,6 +265,51 @@ function testReadyOnlyWhenEveryRelevantSurfaceIsShared(): void {
   ok(
     profile.components.every((component) => component.exposesStorageSecret === false),
     'Consequence shared-store profile: components do not expose storage secrets',
+  );
+}
+
+function testRawPayloadAndConnectionStringEvidenceBlockReadiness(): void {
+  const [first, ...rest] = completeOperationalEvidence();
+  const profile = evaluateConsequenceSharedStoreProfile({
+    runtimeProfileId: 'production-shared',
+    controlPlaneMode: 'postgres',
+    releaseAuthorityMode: 'postgres',
+    componentModes: {
+      'control-plane-state': 'shared-postgres',
+      'release-authority-state': 'shared-postgres',
+      ...allSharedComponentModes(),
+    },
+    operationalEvidence: [
+      {
+        ...first,
+        rawPayloadStored: true,
+        exposesConnectionStrings: true,
+      },
+      ...rest,
+    ],
+    evaluatedAt: '2026-05-15T08:05:00.000Z',
+  });
+
+  equal(profile.readyForSelectedProfile, false, 'Consequence shared-store profile: unsafe evidence blocks readiness');
+  ok(
+    profile.blockers.some((blocker) =>
+      blocker.code === 'shared-store-raw-payload-storage-risk'
+    ),
+    'Consequence shared-store profile: raw payload evidence risk blocks readiness',
+  );
+  ok(
+    profile.blockers.some((blocker) =>
+      blocker.code === 'shared-store-connection-string-exposure-risk'
+    ),
+    'Consequence shared-store profile: connection string exposure risk blocks readiness',
+  );
+  ok(
+    profile.noGoConditions.includes('shared-store-raw-payload-storage-risk'),
+    'Consequence shared-store profile: raw payload risk is a no-go condition',
+  );
+  ok(
+    profile.noGoConditions.includes('shared-store-connection-string-exposure-risk'),
+    'Consequence shared-store profile: connection string exposure is a no-go condition',
   );
 }
 
@@ -251,6 +370,14 @@ function testDocsAndPackageWiring(): void {
     'Consequence shared-store profile: replay ledger primitive is encoded',
   );
   ok(
+    source.includes('worker-claim-query-digest'),
+    'Consequence shared-store profile: SKIP LOCKED worker proof is encoded',
+  );
+  ok(
+    source.includes('advisory-lock-keyspace-digest'),
+    'Consequence shared-store profile: advisory lock proof is encoded',
+  );
+  ok(
     apiRuntime.includes('evaluateConsequenceSharedStoreProfileState'),
     'Consequence shared-store profile: API runtime wires evaluator',
   );
@@ -283,12 +410,20 @@ function testDocsAndPackageWiring(): void {
     'Consequence shared-store profile docs: migration non-claim is explicit',
   );
   ok(
+    docs.includes('operational proof digests'),
+    'Consequence shared-store profile docs: operational proof contract is documented',
+  );
+  ok(
     audit.includes('Protected principles'),
     'Consequence shared-store profile audit: protected principles are documented',
   );
   ok(
     audit.includes('PostgreSQL `INSERT ... ON CONFLICT`'),
     'Consequence shared-store profile audit: PostgreSQL primary anchor is documented',
+  );
+  ok(
+    audit.includes('worker-claim-query-digest'),
+    'Consequence shared-store profile audit: worker claim proof is documented',
   );
   ok(
     productionReadiness.includes('consequenceSharedStoreProfile'),
@@ -305,7 +440,9 @@ function run(): void {
   testEvaluationProfileAcceptsBacklogWithoutProductionClaim();
   testProductionSharedBlocksCurrentConsequenceStores();
   testAuthoritySubstrateStillBlocksSelectedProfile();
-  testReadyOnlyWhenEveryRelevantSurfaceIsShared();
+  testSharedStorageStillNeedsOperationalEvidence();
+  testReadyOnlyWhenEveryRelevantSurfaceIsSharedAndProven();
+  testRawPayloadAndConnectionStringEvidenceBlockReadiness();
   testNoSecretLeakageInDiagnostics();
   testDocsAndPackageWiring();
   console.log(`Consequence shared-store profile tests: ${passed} passed, 0 failed`);

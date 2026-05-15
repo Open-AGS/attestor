@@ -593,6 +593,31 @@ function testLedgerIndexesAuditRemediationClosure(): void {
     'not a live customer PEP',
     'Research provenance ledger: hosted generic durable introspection live PEP non-claim is explicit',
   );
+  includes(
+    content,
+    '### 38. Consequence Shared-Store Operational Evidence Contract',
+    'Research provenance ledger: consequence shared-store operational contract entry is present',
+  );
+  includes(
+    content,
+    'shared-store-outbox-contract-digest-required',
+    'Research provenance ledger: consequence shared-store outbox proof blocker is recorded',
+  );
+  includes(
+    content,
+    'shared-store-worker-claim-query-digest-required',
+    'Research provenance ledger: consequence shared-store worker claim proof blocker is recorded',
+  );
+  includes(
+    content,
+    'shared-store-advisory-lock-keyspace-digest-required',
+    'Research provenance ledger: consequence shared-store advisory lock proof blocker is recorded',
+  );
+  includes(
+    content,
+    'not an implemented shared schema',
+    'Research provenance ledger: consequence shared-store operational non-claim is explicit',
+  );
 }
 
 function testLedgerKeepsEvidenceBoundaryExplicit(): void {

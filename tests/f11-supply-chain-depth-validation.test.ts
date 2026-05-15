@@ -6,6 +6,7 @@ import {
   consequenceAgenticSupplyChainGuardDescriptor,
 } from '../src/consequence-admission/index.js';
 import { observeOpenAiModel } from '../src/api/openai.js';
+import { evaluateLlmProviderRegistry, llmProviderRegistryDescriptor } from '../src/api/llm-provider-registry.js';
 
 let passed = 0;
 
@@ -121,11 +122,19 @@ function testOpenAiModelObservation(): void {
 
 function testExistingSupplyChainControlsRemainScoped(): void {
   const descriptor = consequenceAgenticSupplyChainGuardDescriptor();
+  const providerRegistry = llmProviderRegistryDescriptor();
+  const providerEvaluation = evaluateLlmProviderRegistry({ requireFailover: true });
   const kinds = CONSEQUENCE_AGENTIC_SUPPLY_CHAIN_COMPONENT_KINDS;
   const releaseProvenance = readProjectFile('.github', 'workflows', 'release-provenance.yml');
   const securityBaseline = readProjectFile('tests', 'security-baseline-docs.test.ts');
 
   ok(kinds.includes('model-provider-sdk'), 'F11-SC-4: model-provider-sdk is a supply-chain component kind');
+  equal(providerRegistry.providers.filter((provider) => provider.wireStatus === 'wired').length, 1, 'F11-SC-4: only one LLM provider is wired');
+  equal(providerEvaluation.productionReady, false, 'F11-SC-4: provider registry does not claim production readiness');
+  ok(
+    providerEvaluation.blockers.includes('llm-provider-failover-provider-not-wired'),
+    'F11-SC-4: provider registry fails closed without failover provider',
+  );
   ok(kinds.includes('generated-adapter'), 'F11-SC-5: generated-adapter is a supply-chain component kind');
   ok(kinds.includes('mcp-server'), 'F11-SC-9: mcp-server is a supply-chain component kind');
   ok(kinds.includes('connector'), 'F11-SC-10: connector is a supply-chain component kind');
@@ -163,7 +172,7 @@ function testDocsTrackerAndPackageStayAligned(): void {
 
   includes(validation, '# F11 Supply Chain Depth Validation', 'F11 doc: title exists');
   includes(validation, '| F11-SC-1 container base images use floating tags | `fixed` |', 'F11 doc: SC-1 is fixed');
-  includes(validation, '| F11-SC-4 single OpenAI provider, no provider registry | `partial` |', 'F11 doc: SC-4 boundary remains partial');
+  includes(validation, '| F11-SC-4 single OpenAI provider / provider registry contract | `partial` |', 'F11 doc: SC-4 boundary remains partial');
   includes(validation, '| F11-SC-11 SBOM packaging not located | `invalid-as-stated` |', 'F11 doc: SC-11 stale claim is invalidated');
   includes(validation, 'F11 is closed for planned repository-side work in this slice.', 'F11 doc: closure statement is explicit');
   includes(tracker, 'F11 supply-chain depth | 12 | 7 | 5 | 0', 'Tracker: F11 count row exists');

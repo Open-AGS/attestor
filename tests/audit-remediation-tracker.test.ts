@@ -128,7 +128,7 @@ try {
   includes(tracker, 'F4-LLM10-B retry-attempt ledger storage claim | `partial`', 'Tracker: F4 retry ledger storage validation is partial');
   includes(tracker, 'F4-LLM07-A prompt leakage second-pass markers missing | `fixed`', 'Tracker: F4 prompt leakage marker validation is fixed');
   includes(tracker, 'F4 Prompt Leakage Marker Validation', 'Tracker: F4 prompt leakage marker validation evidence is linked');
-  includes(tracker, 'F4-D Attestor-owned OpenAI usage / budget / prompt leakage scope | `backlog`', 'Tracker: F4-D OpenAI usage is backlogged');
+  includes(tracker, 'F4-D Attestor-owned OpenAI usage / budget / prompt leakage scope | `partial`', 'Tracker: F4-D OpenAI usage is partial');
   includes(tracker, 'F5-A6 transparency log missing | `accepted-limitation`', 'Tracker: F5 transparency limitation is accepted');
   includes(tracker, 'F5 Transparency Log Claim Boundary Validation', 'Tracker: F5 transparency claim boundary evidence is linked');
   includes(tracker, 'F5-B1 crypto-authorization adapter trust delegation | `accepted-limitation`', 'Tracker: F5 crypto trust-delegation boundary is accepted');
@@ -207,7 +207,7 @@ try {
   includes(tracker, 'F11-SC-1 container base images use floating tags | `fixed`', 'Tracker: F11-SC-1 status is tracked');
   includes(tracker, 'F11-SC-2 observability stack uses `:latest` tags | `fixed`', 'Tracker: F11-SC-2 status is tracked');
   includes(tracker, 'F11-SC-3 high-trust npm dependency caret pinning | `fixed`', 'Tracker: F11-SC-3 status is tracked');
-  includes(tracker, 'F11-SC-4 single OpenAI provider, no provider registry | `partial`', 'Tracker: F11-SC-4 status is tracked');
+  includes(tracker, 'F11-SC-4 single OpenAI provider / provider registry contract | `partial`', 'Tracker: F11-SC-4 status is tracked');
   includes(tracker, 'F11-SC-5 generated-adapter verification path | `partial`', 'Tracker: F11-SC-5 status is tracked');
   includes(tracker, 'F11-SC-6 model drift binding for Attestor-owned OpenAI usage | `partial`', 'Tracker: F11-SC-6 status is tracked');
   includes(tracker, 'F11-SC-7 customer-supplied evidence re-fetch | `partial`', 'Tracker: F11-SC-7 status is tracked');

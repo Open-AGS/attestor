@@ -10,7 +10,7 @@ approved these providers.
 
 | Provider class | Current repository use | Boundary |
 |---|---|---|
-| LLM provider | `src/api/openai.ts` uses OpenAI for optional analysis paths. | Single-provider by default; customer must approve data-use, region, retention, and model policy before hosted use. |
+| LLM provider | `src/api/openai.ts` uses OpenAI for optional analysis paths; `src/api/llm-provider-registry.ts` records OpenAI, Anthropic, Vertex AI, and Azure OpenAI provider boundaries. | OpenAI is the only wired provider; customer must approve data-use, region, retention, model policy, timeout, budget, and live smoke proof before hosted use. |
 | Payments | Stripe billing and webhook surfaces. | Stripe live mode requires separate go-live verification, webhook secret, portal/product setup, and smoke tests. |
 | Database | PostgreSQL for shared authority/control-plane paths. | Customer/operator owns managed database, backups, access, encryption, and region. |
 | Queue/cache | Redis/BullMQ for async and shared runtime paths. | Customer/operator owns Redis durability, auth, failover, and monitoring. |
@@ -30,9 +30,11 @@ approved these providers.
 - fallback or degradation behavior
 - incident contact and escalation path
 
-## OpenAI Boundary
+## LLM Provider Boundary
 
 The repository contains an OpenAI wrapper, but Attestor should not claim
-multi-provider LLM resilience until a provider registry and failover policy
-exist. For now, OpenAI use is a named provider dependency that must be approved
-or disabled by the operator for the deployment.
+multi-provider LLM resilience until provider clients, failover, timeout,
+budget, rate-limit handling, and live smoke proof are wired and verified.
+The repository now contains a provider registry contract, but OpenAI remains
+the only wired provider. Anthropic, Vertex AI, and Azure OpenAI are planned
+provider surfaces, not active runtime dependencies.

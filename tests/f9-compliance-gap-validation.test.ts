@@ -57,7 +57,7 @@ function testGovernanceDocsCoverAllF9Findings(): void {
   includes(governance('shared-responsibility-matrix.md'), 'Tenant isolation', 'F9-C12: shared responsibility matrix covers tenant isolation');
   includes(governance('shared-responsibility-matrix.md'), 'Compliance mapping', 'F9-C12: shared responsibility matrix covers compliance mapping ownership');
   includes(governance('segregation-of-duties.md'), 'Required Two-Person Boundaries', 'F9-C5: SoD doc includes two-person boundaries');
-  includes(governance('third-party-providers.md'), 'OpenAI Boundary', 'F9-C6: provider inventory names OpenAI boundary');
+  includes(governance('third-party-providers.md'), 'LLM Provider Boundary', 'F9-C6: provider inventory names LLM provider boundary');
   includes(governance('data-residency.md'), 'does not implement per-tenant regional pinning', 'F9-C3: data residency posture is explicit');
   includes(governance('retention-policy.md'), 'does not impose a universal legal retention schedule', 'F9-C4: retention boundary is explicit');
   includes(governance('security-testing.md'), 'NIST SP 800-115', 'F9-C9: security testing doc cites testing guidance');

@@ -6,6 +6,11 @@ import {
   CONSEQUENCE_AGENTIC_SUPPLY_CHAIN_COMPONENT_KINDS,
   consequenceAgenticSupplyChainGuardDescriptor,
 } from '../src/consequence-admission/index.js';
+import {
+  evaluateLlmProviderRegistry,
+  evaluateLlmProviderRoute,
+  llmProviderRegistryDescriptor,
+} from '../src/api/llm-provider-registry.js';
 
 let passed = 0;
 
@@ -70,7 +75,11 @@ try {
   const financialCli = readProjectFile('src', 'financial', 'cli.ts');
   const financialTypes = readProjectFile('src', 'financial', 'types.ts');
   const evaluationPacket = readProjectFile('docs', '00-evaluation', 'v0.1-evaluation-packet.md');
+  const registryDoc = readProjectFile('docs', '02-architecture', 'llm-provider-registry.md');
   const descriptor = consequenceAgenticSupplyChainGuardDescriptor();
+  const registry = llmProviderRegistryDescriptor();
+  const registryEvaluation = evaluateLlmProviderRegistry({ requireProductionRuntime: true, requireFailover: true });
+  const failoverRoute = evaluateLlmProviderRoute({ purpose: 'reasoning', requireFailover: true });
 
   ok(
     CONSEQUENCE_AGENTIC_SUPPLY_CHAIN_COMPONENT_KINDS.includes('model-provider-sdk'),
@@ -85,6 +94,23 @@ try {
   includes(openai, "export const GPT_VISION_MODEL = 'gpt-4o' as const", 'LLM provider supply-chain validation: OpenAI vision model is present');
   includes(openai, "new OpenAI({ apiKey })", 'LLM provider supply-chain validation: OpenAI SDK client is used directly');
   excludes(openai, /Anthropic|LlmProviderRegistry|providerRegistry/u, 'LLM provider supply-chain validation: OpenAI wrapper has no provider registry');
+  includes(
+    registry.providers.map((provider) => provider.id).join(','),
+    'openai,anthropic,vertex-ai,azure-openai',
+    'LLM provider supply-chain validation: registry records expected provider inventory',
+  );
+  equal(registry.providers.filter((provider) => provider.wireStatus === 'wired').length, 1, 'LLM provider supply-chain validation: only one provider is wired');
+  equal(registry.providers.find((provider) => provider.id === 'openai')?.wireStatus, 'wired', 'LLM provider supply-chain validation: OpenAI is wired');
+  equal(registry.providers.find((provider) => provider.id === 'anthropic')?.wireStatus, 'planned', 'LLM provider supply-chain validation: Anthropic is planned');
+  equal(registry.runtimePolicy.storesRawPrompt, false, 'LLM provider supply-chain validation: registry does not store raw prompts');
+  equal(registry.proofContextContract.requiresPromptDigest, true, 'LLM provider supply-chain validation: proof context requires prompt digest');
+  equal(registryEvaluation.productionReady, false, 'LLM provider supply-chain validation: registry does not claim production readiness');
+  includes(
+    registryEvaluation.blockers.join(','),
+    'llm-provider-failover-provider-not-wired',
+    'LLM provider supply-chain validation: production/failover readiness blocks without second provider',
+  );
+  equal(failoverRoute.status, 'blocked', 'LLM provider supply-chain validation: failover route fails closed');
 
   equal(countOccurrencesOutsideOpenAi(/\bcallGpt\(/gu), 1, 'LLM provider supply-chain validation: callGpt has one caller outside the wrapper');
   equal(countOccurrencesOutsideOpenAi(/\bcallGptVision\(/gu), 0, 'LLM provider supply-chain validation: callGptVision has no caller outside the wrapper');
@@ -97,15 +123,18 @@ try {
   includes(doc, 'F2-AG-7 agentic supply-chain and LLM provider dependency: `partial`.', 'LLM provider supply-chain validation doc: F2-AG-7 status is partial');
   includes(doc, 'F2-AG-8 multimodal vision input future risk: `backlog`.', 'LLM provider supply-chain validation doc: F2-AG-8 status is backlog');
   includes(doc, 'F4-LLM03-A agentic supply-chain coverage gap / single LLM provider: `partial`.', 'LLM provider supply-chain validation doc: F4-LLM03-A status is partial');
-  includes(doc, 'F4-D Attestor-owned OpenAI usage / budget / prompt leakage scope: `backlog`.', 'LLM provider supply-chain validation doc: F4-D status is backlog');
+  includes(doc, 'F4-D Attestor-owned OpenAI usage / budget / prompt leakage scope: `partial`.', 'LLM provider supply-chain validation doc: F4-D status is partial');
   includes(doc, 'No hosted production, multi-provider resilience, or prompt-leakage closure claim is made.', 'LLM provider supply-chain validation doc: no overclaim is present');
+  includes(registryDoc, 'Status: repository-side contract only. Not a live multi-provider runtime.', 'LLM provider registry doc: runtime non-claim is explicit');
+  includes(registryDoc, 'No timeout or cost-budget enforcement is wired into `src/api/openai.ts` yet.', 'LLM provider registry doc: timeout/cost limit is explicit');
 
   includes(tracker, 'F2-AG-7 agentic supply-chain and LLM provider dependency | `partial`', 'Tracker: F2-AG-7 remains partial');
   includes(tracker, 'F2-AG-8 multimodal vision input future risk | `backlog`', 'Tracker: F2-AG-8 is backlog');
   includes(tracker, 'F4-LLM03-A agentic supply-chain coverage gap / single LLM provider | `partial`', 'Tracker: F4-LLM03-A is partial');
-  includes(tracker, 'F4-D Attestor-owned OpenAI usage / budget / prompt leakage scope | `backlog`', 'Tracker: F4-D is backlog');
+  includes(tracker, 'F4-D Attestor-owned OpenAI usage / budget / prompt leakage scope | `partial`', 'Tracker: F4-D is partial');
   includes(tracker, 'docs/audit/f2-llm-provider-supply-chain-validation.md', 'Tracker: validation doc is linked');
   includes(packageJson, '"test:f2-llm-provider-supply-chain-validation"', 'Package: validation test is exposed');
+  includes(packageJson, '"test:llm-provider-registry"', 'Package: registry test is exposed');
 
   excludes(tracker, /F4-D Attestor-owned OpenAI usage .*`fixed`/u, 'Tracker: F4-D is not overclaimed as fixed');
   excludes(tracker, /F2-AG-8 multimodal vision input future risk .*`fixed`/u, 'Tracker: F2-AG-8 is not overclaimed as fixed');

@@ -452,6 +452,21 @@ The entries above are the most concrete PR/commit-linked hardening records. The 
 - Remaining limitation or no-go condition: This closes the repository-side F12 validation queue only. It does not prove AgentDojo benchmark execution, public leaderboard participation, paid bug-bounty operation, random-byte fuzzing at scale, production-traffic pattern intake, live customer-runtime red-team execution, or external penetration-test completion.
 - Status: complete for F12 repository-side validation once this PR is merged and verified on `origin/master`.
 
+### 24. LLM Provider Registry Contract
+
+- Step / PR / commit: LLM provider registry unlock; this PR records repository-side contract evidence but cannot pre-record its own merge commit.
+- Date if available: 2026-05-15.
+- Trust surface: Attestor-owned optional live-model proof path, provider selection, provider credentials, rate-limit/backoff policy, structured-output capability, provider/model drift context, and proof-context minimization.
+- Protected principle: fail-closed boundary; customer authority; data minimization and redaction; runtime readiness; auditability; operational boundedness; no overclaim.
+- Research anchor / source used, if recorded: OpenAI Responses API, OpenAI structured outputs, OpenAI rate-limit guidance, Anthropic Messages/tool-use/rate-limit docs, Vertex AI structured output and quotas, and Azure OpenAI structured outputs/quotas. These are engineering anchors only, not provider certification or production-readiness claims.
+- Repository evidence:
+  - Contract/code evidence: `src/api/llm-provider-registry.ts`, `src/api/openai.ts`, `docs/02-architecture/llm-provider-registry.md`, `docs/03-governance/third-party-providers.md`, `docs/audit/f2-llm-provider-supply-chain-validation.md`, `docs/audit/f11-supply-chain-depth-validation.md`, and `docs/audit/attestor-audit-remediation-tracker.md`.
+  - Test evidence: `tests/llm-provider-registry.test.ts`, `tests/f2-llm-provider-supply-chain-validation.test.ts`, `tests/f11-supply-chain-depth-validation.test.ts`, `tests/audit-remediation-tracker.test.ts`, and `tests/research-provenance-ledger.test.ts`.
+- Implemented control: Adds a deterministic provider registry contract that records OpenAI as the only wired provider and Anthropic, Vertex AI, and Azure OpenAI as planned provider surfaces. Production/failover-required route evaluation fails closed until a second provider, timeout budget, cost budget, and live smoke proof are wired. The proof-context helper accepts digest-bound prompt/config/tool/schema references instead of raw prompt or provider bodies.
+- Tests / verification: `npm run test:llm-provider-registry`, `npm run test:f2-llm-provider-supply-chain-validation`, `npm run test:f11-supply-chain-depth-validation`, `npm run test:audit-remediation-tracker`, and `npm run test:research-provenance-ledger`.
+- Remaining limitation or no-go condition: This is not a live multi-provider client implementation. It does not prove Anthropic, Vertex AI, or Azure OpenAI calls; live failover; timeout/cost-budget enforcement in `src/api/openai.ts`; hosted consequence-admission dependence on live LLMs; or production provider readiness.
+- Status: complete for repository-side registry contract once this PR is merged and verified on `origin/master`.
+
 ## Strong Recorded Research Support
 
 The strongest recorded research support appears in:

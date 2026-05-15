@@ -5,7 +5,7 @@ Statuses:
 - F2-AG-7 agentic supply-chain and LLM provider dependency: `partial`.
 - F2-AG-8 multimodal vision input future risk: `backlog`.
 - F4-LLM03-A agentic supply-chain coverage gap / single LLM provider: `partial`.
-- F4-D Attestor-owned OpenAI usage / budget / prompt leakage scope: `backlog`.
+- F4-D Attestor-owned OpenAI usage / budget / prompt leakage scope: `partial`.
 
 This validation separates three concerns that were conflated in the supplied audit reports:
 
@@ -64,9 +64,19 @@ This closes the original "no guard module" wording as stale. It does not close a
 - `GPT_MODEL = 'o3'`
 - `GPT_VISION_MODEL = 'gpt-4o'`
 - two attempts with a fixed retry delay
-- no provider registry
 - no failover provider implementation
 - no explicit per-call timeout or budget guard in the wrapper
+
+`src/api/llm-provider-registry.ts` now defines a repository-side provider
+registry contract:
+
+- OpenAI is the only `wired` provider.
+- Anthropic, Vertex AI, and Azure OpenAI are registered as `planned` provider
+  surfaces only.
+- production/failover-required evaluation fails closed until a second provider,
+  timeout budget, cost budget, and live smoke proof are wired.
+- proof-context binding accepts prompt/config/tool/schema digests, not raw prompt
+  bodies or raw provider response bodies.
 
 Current caller evidence:
 
@@ -75,7 +85,7 @@ Current caller evidence:
 - `docs/00-evaluation/v0.1-evaluation-packet.md` labels the live upstream path as optional and not the default reviewer path.
 - `src/financial/types.ts` mentions `ANTHROPIC_API_KEY` in readiness reporting, but there is no Anthropic client implementation equivalent to `src/api/openai.ts`.
 
-So the live-model risk is scope-bounded today: it is not part of the hosted consequence-admission API path based on current repo evidence. It remains a backlog architecture item before any broader runtime-provider resilience claim.
+So the live-model risk is scope-bounded today: it is not part of the hosted consequence-admission API path based on current repo evidence. The provider registry narrows the contract gap, but runtime provider resilience remains incomplete before any broader claim.
 
 ## Status Decisions
 
@@ -113,22 +123,23 @@ Reason:
 - Single-provider runtime dependency remains true for `src/api/openai.ts`.
 - The report must be split: adapter/tool supply chain is partially covered; Attestor-owned live-model provider resilience remains backlog.
 
-### F4-D: `backlog`
+### F4-D: `partial`
 
 Reason:
 
 - Current OpenAI usage is optional and CLI-scoped.
-- It should not block the consequence-admission guard series.
+- `LlmProviderRegistry` records provider inventory, wire status, structured-output mechanisms, credential reference names, rate-limit signal names, and proof-context digest binding.
+- The OpenAI wrapper still lacks explicit per-call timeout/cost budget enforcement and has no live failover provider.
 - It should block future claims that Attestor has production-grade multi-provider live-model resilience.
 
 ## Required Follow-Up
 
-To close the runtime LLM provider side as `fixed`, Attestor needs a provider boundary contract:
+To close the runtime LLM provider side as `fixed`, Attestor still needs runtime wiring beyond the registry contract:
 
-1. Define a `LlmProviderRegistry` or equivalent provider abstraction.
-2. Make model/provider selection configurable by environment and purpose.
-3. Add timeout, budget, retry, and failover policy.
-4. Bind provider/model/version and prompt/template digests into the proof context where live model output matters.
+1. Wire model/provider selection from environment and purpose into live callers.
+2. Add per-call timeout, budget, retry, and failover enforcement in the live wrapper path.
+3. Bind provider/model/version and prompt/template digests into every proof packet where live model output matters.
+4. Add live smoke tests for each production-enabled provider profile.
 5. Keep optional live-model proof paths separate from hosted consequence-admission enforcement claims.
 
 ## Tracker Effect
@@ -136,5 +147,5 @@ To close the runtime LLM provider side as `fixed`, Attestor needs a provider bou
 - F2-AG-7 remains `partial`, with clearer split evidence.
 - F2-AG-8 moves from `needs-revalidation` to `backlog`.
 - F4-LLM03-A moves from `needs-revalidation` to `partial`.
-- F4-D moves from `needs-revalidation` to `backlog`.
+- F4-D moves from `backlog` to `partial`.
 - No hosted production, multi-provider resilience, or prompt-leakage closure claim is made.

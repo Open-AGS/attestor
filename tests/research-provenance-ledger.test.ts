@@ -233,6 +233,26 @@ function testLedgerIndexesAuditRemediationClosure(): void {
     'ISO/IEC 29147',
     'Research provenance ledger: F12 coordinated disclosure anchor is recorded',
   );
+  includes(
+    content,
+    '### 24. LLM Provider Registry Contract',
+    'Research provenance ledger: LLM provider registry entry is present',
+  );
+  includes(
+    content,
+    'src/api/llm-provider-registry.ts',
+    'Research provenance ledger: LLM provider registry code evidence is indexed',
+  );
+  includes(
+    content,
+    'tests/llm-provider-registry.test.ts',
+    'Research provenance ledger: LLM provider registry test evidence is indexed',
+  );
+  includes(
+    content,
+    'does not prove Anthropic, Vertex AI, or Azure OpenAI calls',
+    'Research provenance ledger: LLM provider live-client non-claim is explicit',
+  );
 }
 
 function testLedgerKeepsEvidenceBoundaryExplicit(): void {

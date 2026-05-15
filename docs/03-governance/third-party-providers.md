@@ -10,7 +10,7 @@ approved these providers.
 
 | Provider class | Current repository use | Boundary |
 |---|---|---|
-| LLM provider | `src/api/openai.ts` uses OpenAI for optional analysis paths; `src/api/llm-provider-registry.ts` records OpenAI, Anthropic, Vertex AI, and Azure OpenAI provider boundaries. | OpenAI is the only wired provider; customer must approve data-use, region, retention, model policy, timeout, budget, and live smoke proof before hosted use. OpenAI wrapper calls set `store: false`, enforce timeout/output-token budgets, and still do not prove production readiness. |
+| LLM provider | `src/api/openai.ts` uses OpenAI for optional analysis paths; `src/api/llm-provider-registry.ts` records OpenAI, Anthropic, Vertex AI, and Azure OpenAI provider boundaries. | OpenAI is the only wired provider; customer must approve data-use, region, retention, model policy, timeout, budget, and live smoke proof before hosted use. OpenAI wrapper calls set `store: false`, enforce timeout/output-token budgets, and require fresh reasoning smoke-proof env evidence in production-like runtimes; this still does not prove production readiness. |
 | Payments | Stripe billing and webhook surfaces. | Stripe live mode requires separate go-live verification, webhook secret, portal/product setup, and smoke tests. |
 | Database | PostgreSQL for shared authority/control-plane paths. | Customer/operator owns managed database, backups, access, encryption, and region. |
 | Queue/cache | Redis/BullMQ for async and shared runtime paths. | Customer/operator owns Redis durability, auth, failover, and monitoring. |
@@ -34,9 +34,10 @@ approved these providers.
 
 The repository contains an OpenAI wrapper, but Attestor should not claim
 multi-provider LLM resilience until provider clients, failover,
-provider-parity rate-limit handling, and live smoke proof are wired and verified.
+provider-parity rate-limit handling, and per-provider live smoke proof are wired
+and verified.
 The repository now contains a provider registry contract, but OpenAI remains
 the only wired provider. Anthropic, Vertex AI, and Azure OpenAI are planned
 provider surfaces, not active runtime dependencies. The OpenAI wrapper has a
-bounded runtime policy envelope; that is narrower than a production multi-provider
-resilience claim.
+bounded runtime policy envelope plus an opt-in reasoning live smoke probe; that
+is narrower than a production multi-provider resilience claim.

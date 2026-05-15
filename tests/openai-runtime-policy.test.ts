@@ -61,6 +61,7 @@ try {
   equal(defaultPolicy.sdkMaxRetries, 0, 'OpenAI runtime policy: SDK hidden retries are disabled');
   equal(defaultPolicy.responseStore, false, 'OpenAI runtime policy: provider response storage is disabled');
   equal(defaultPolicy.productionReady, false, 'OpenAI runtime policy: production readiness is not claimed');
+  equal(defaultPolicy.liveSmokeProof.state, 'not-configured', 'OpenAI runtime policy: live smoke proof state is explicit');
   ok(/^sha256:[a-f0-9]{64}$/u.test(defaultPolicy.configDigest), 'OpenAI runtime policy: config digest is machine-checkable');
 
   const requestBudget = resolveOpenAiRuntimePolicy({ purpose: 'reasoning', requestedMaxTokens: 600, env: {} });
@@ -138,6 +139,7 @@ try {
 
   includes(openai, 'new OpenAI({ apiKey, maxRetries: 0 })', 'OpenAI runtime policy: SDK hidden retries are disabled in the client');
   includes(openai, 'responses.create(requestBody, openAiRequestOptions(runtimePolicy))', 'OpenAI runtime policy: Responses calls receive request options');
+  includes(openai, 'runOpenAiLiveSmokeProof', 'OpenAI runtime policy: live smoke proof can be generated explicitly');
   includes(openai, 'chat.completions.create({', 'OpenAI runtime policy: vision call remains Chat Completions based');
   includes(openai, 'store: false', 'OpenAI runtime policy: provider-side response storage is disabled');
   includes(openai, 'providerProofContext', 'OpenAI runtime policy: call result carries provider proof context');

@@ -288,6 +288,7 @@ try {
   includes(packageJson, '"test:f8-operational-resilience-validation"', 'Package: F8 operational resilience validation script is exposed');
   includes(packageJson, '"test:f9-compliance-gap-validation"', 'Package: F9 compliance gap validation script is exposed');
   includes(packageJson, '"test:openai-runtime-policy"', 'Package: OpenAI runtime policy script is exposed');
+  includes(packageJson, '"test:openai-live-smoke-proof"', 'Package: OpenAI live smoke proof script is exposed');
   includes(packageJson, '"test:f10-escape-hatch-validation"', 'Package: F10 escape-hatch validation script is exposed');
   includes(packageJson, '"test:f11-supply-chain-depth-validation"', 'Package: F11 supply-chain depth validation script is exposed');
   includes(packageJson, '"test:f12-continuous-red-team-validation"', 'Package: F12 continuous red-team validation script is exposed');

@@ -39,13 +39,13 @@ runs `npm run verify`, then the local live/integration checks and the ops
 render/probe checks. This proves the repo-side live and deployment-shaped
 paths that can be exercised without customer secrets.
 
-External live checks are opt-in. Snowflake, VSAC, ONC Cypress validation, and
-Policy Foundry production smoke probes must run through
+External live checks are opt-in. Snowflake, VSAC, ONC Cypress validation,
+Policy Foundry production smoke probes, and OpenAI live smoke probes must run through
 `npm run verify:external-live` with `ATTESTOR_RUN_EXTERNAL_LIVE_TESTS=true` in
 an explicit live environment. In GitHub Actions, use the `Full Verify`
 workflow's `external-live` mode and a protected GitHub Environment that holds
 those credentials. Do not treat a green `verify` or default `verify:full` run
-as proof that external cloud, healthcare, hosted Policy Foundry, or
+as proof that external cloud, healthcare, hosted Policy Foundry, OpenAI, or
 customer-operated substrates were reached.
 
 ## Runtime Profile Gate
@@ -293,6 +293,28 @@ is a **single OTLP gateway**, not a split metrics/logs/traces credential set:
 - `ATTESTOR_PUBLIC_HOSTNAME`
 - `ATTESTOR_API_IMAGE`
 - `ATTESTOR_WORKER_IMAGE`
+
+### OpenAI live smoke proof inputs
+
+Run the OpenAI probe only in an explicit live environment:
+
+```bash
+npm run probe:openai-live-smoke
+```
+
+It requires `OPENAI_API_KEY`, calls the OpenAI Responses API with `store: false`,
+uses the wrapper timeout/output-token budget, and prints digest-only evidence.
+For production-like OpenAI reasoning calls, set the printed:
+
+- `ATTESTOR_OPENAI_LIVE_SMOKE_PROOF_DIGEST`
+- `ATTESTOR_OPENAI_LIVE_SMOKE_PROOF_CHECKED_AT`
+- `ATTESTOR_OPENAI_LIVE_SMOKE_PROOF_MODEL`
+- `ATTESTOR_OPENAI_LIVE_SMOKE_PROOF_PURPOSE`
+
+This clears the OpenAI reasoning smoke-proof gate only for fresh matching proof
+evidence. It does not prove OpenAI vision readiness, non-OpenAI provider
+readiness, live failover, hosted consequence-admission dependence on LLMs, or
+production LLM readiness.
 
 ### Trusted proxy headers
 

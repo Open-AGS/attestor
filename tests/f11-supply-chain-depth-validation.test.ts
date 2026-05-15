@@ -119,6 +119,7 @@ function testOpenAiModelObservation(): void {
   includes(openai, 'OpenAI response model drift observed', 'F11-SC-6: drift warning is logged');
   includes(openai, 'modelDriftObserved', 'F11-SC-6: call result carries model drift metadata');
   includes(openai, 'resolveOpenAiRuntimePolicy', 'F11-SC-4: OpenAI wrapper resolves runtime policy');
+  includes(openai, 'runOpenAiLiveSmokeProof', 'F11-SC-4: OpenAI wrapper exposes explicit live smoke proof');
   includes(openai, 'maxRetries: 0', 'F11-SC-4: OpenAI SDK hidden retries are disabled');
   includes(openai, 'store: false', 'F11-SC-4: OpenAI provider-side response storage is disabled');
   includes(openai, 'providerProofContext', 'F11-SC-6: OpenAI call result carries digest-only provider context');
@@ -178,12 +179,14 @@ function testDocsTrackerAndPackageStayAligned(): void {
   includes(validation, '| F11-SC-1 container base images use floating tags | `fixed` |', 'F11 doc: SC-1 is fixed');
   includes(validation, '| F11-SC-4 single OpenAI provider / provider registry contract | `partial` |', 'F11 doc: SC-4 boundary remains partial');
   includes(validation, 'apply timeout/output-token runtime policy', 'F11 doc: SC-4 runtime policy is documented');
+  includes(validation, 'OpenAI reasoning live smoke probe', 'F11 doc: SC-4 live smoke proof is documented');
   includes(validation, '| F11-SC-11 SBOM packaging not located | `invalid-as-stated` |', 'F11 doc: SC-11 stale claim is invalidated');
   includes(validation, 'F11 is closed for planned repository-side work in this slice.', 'F11 doc: closure statement is explicit');
   includes(tracker, 'F11 supply-chain depth | 12 | 7 | 5 | 0', 'Tracker: F11 count row exists');
   includes(tracker, 'Remaining F11 queue after supply-chain depth validation: 0 planned', 'Tracker: F11 remaining queue is explicit');
   includes(research, '### 22. F11 Supply Chain Depth Closure', 'Research ledger: F11 closure exists');
   includes(pkg, '"test:f11-supply-chain-depth-validation"', 'Package: F11 validation script exists');
+  includes(pkg, '"test:openai-live-smoke-proof"', 'Package: OpenAI live smoke proof test exists');
 
   excludes(validation, /\bSLSA Level [0-9]+ achieved\b/iu, 'F11 doc: avoids SLSA overclaim');
   excludes(tracker, /\bmulti-provider LLM resilience.*`fixed`/iu, 'Tracker: avoids multi-provider overclaim');

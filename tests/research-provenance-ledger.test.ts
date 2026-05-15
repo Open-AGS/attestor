@@ -255,6 +255,16 @@ function testLedgerIndexesAuditRemediationClosure(): void {
   );
   includes(
     content,
+    'scripts/probe-openai-live-smoke.ts',
+    'Research provenance ledger: OpenAI live smoke probe evidence is indexed',
+  );
+  includes(
+    content,
+    'tests/openai-live-smoke-proof.test.ts',
+    'Research provenance ledger: OpenAI live smoke proof test evidence is indexed',
+  );
+  includes(
+    content,
     'does not prove Anthropic, Vertex AI, or Azure OpenAI calls',
     'Research provenance ledger: LLM provider live-client non-claim is explicit',
   );

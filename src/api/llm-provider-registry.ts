@@ -60,6 +60,7 @@ export interface LlmProviderRuntimePolicy {
   readonly retryBackoff: 'openai-wrapper-jittered-exponential' | 'jittered-exponential-required-before-production';
   readonly timeoutBudget: 'openai-wrapper-wired' | 'required-before-production';
   readonly costBudget: 'openai-output-token-budget-wired' | 'required-before-production';
+  readonly liveSmokeProof: 'openai-reasoning-external-live-probe-wired' | 'required-before-production';
   readonly failoverMode: 'disabled-single-provider' | 'fail-closed-until-two-wired-providers';
   readonly storesRawPrompt: false;
   readonly storesRawProviderBody: false;
@@ -318,6 +319,7 @@ export function llmProviderRegistryDescriptor(): LlmProviderRegistryDescriptor {
       retryBackoff: 'openai-wrapper-jittered-exponential',
       timeoutBudget: 'openai-wrapper-wired',
       costBudget: 'openai-output-token-budget-wired',
+      liveSmokeProof: 'openai-reasoning-external-live-probe-wired',
       failoverMode: 'fail-closed-until-two-wired-providers',
       storesRawPrompt: false,
       storesRawProviderBody: false,

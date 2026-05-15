@@ -72,6 +72,7 @@ try {
   const tracker = readProjectFile('docs', 'audit', 'attestor-audit-remediation-tracker.md');
   const packageJson = readProjectFile('package.json');
   const openai = readProjectFile('src', 'api', 'openai.ts');
+  const openaiSmoke = readProjectFile('scripts', 'probe-openai-live-smoke.ts');
   const models = readProjectFile('src', 'api', 'llm-provider-models.ts');
   const financialCli = readProjectFile('src', 'financial', 'cli.ts');
   const financialTypes = readProjectFile('src', 'financial', 'types.ts');
@@ -95,8 +96,12 @@ try {
   includes(models, "OPENAI_VISION_MODEL = 'gpt-4o' as const", 'LLM provider supply-chain validation: OpenAI vision model is present');
   includes(openai, 'new OpenAI({ apiKey, maxRetries: 0 })', 'LLM provider supply-chain validation: OpenAI SDK client is used directly without hidden retries');
   includes(openai, 'resolveOpenAiRuntimePolicy', 'LLM provider supply-chain validation: OpenAI wrapper has runtime policy');
+  includes(openai, 'runOpenAiLiveSmokeProof', 'LLM provider supply-chain validation: OpenAI wrapper has explicit live smoke proof');
   includes(openai, 'store: false', 'LLM provider supply-chain validation: provider-side response storage is disabled');
   includes(openai, 'providerProofContext', 'LLM provider supply-chain validation: live model result carries provider proof context');
+  includes(openai, 'ATTESTOR_OPENAI_LIVE_SMOKE_PROOF_DIGEST', 'LLM provider supply-chain validation: OpenAI runtime policy names the smoke proof digest env');
+  includes(openaiSmoke, 'stringifySecretSafe', 'LLM provider supply-chain validation: OpenAI smoke proof output is secret-safe');
+  includes(openaiSmoke, 'runtimeGateValues', 'LLM provider supply-chain validation: OpenAI smoke proof emits runtime gate values');
   excludes(openai, /Anthropic|LlmProviderRegistry|providerRegistry/u, 'LLM provider supply-chain validation: OpenAI wrapper has no provider registry');
   includes(
     registry.providers.map((provider) => provider.id).join(','),
@@ -131,6 +136,7 @@ try {
   includes(doc, 'No hosted production, multi-provider resilience, or prompt-leakage closure claim is made.', 'LLM provider supply-chain validation doc: no overclaim is present');
   includes(registryDoc, 'Status: repository-side contract only. Not a live multi-provider runtime.', 'LLM provider registry doc: runtime non-claim is explicit');
   includes(registryDoc, 'OpenAI timeout and output-token budget enforcement are wired', 'LLM provider registry doc: OpenAI timeout/cost boundary is explicit');
+  includes(registryDoc, 'OpenAI reasoning live smoke proof is wired as an explicit', 'LLM provider registry doc: OpenAI reasoning smoke proof boundary is explicit');
 
   includes(tracker, 'F2-AG-7 agentic supply-chain and LLM provider dependency | `partial`', 'Tracker: F2-AG-7 remains partial');
   includes(tracker, 'F2-AG-8 multimodal vision input future risk | `backlog`', 'Tracker: F2-AG-8 is backlog');
@@ -140,6 +146,8 @@ try {
   includes(packageJson, '"test:f2-llm-provider-supply-chain-validation"', 'Package: validation test is exposed');
   includes(packageJson, '"test:llm-provider-registry"', 'Package: registry test is exposed');
   includes(packageJson, '"test:openai-runtime-policy"', 'Package: OpenAI runtime policy test is exposed');
+  includes(packageJson, '"test:openai-live-smoke-proof"', 'Package: OpenAI live smoke proof test is exposed');
+  includes(packageJson, '"probe:openai-live-smoke"', 'Package: OpenAI live smoke probe is exposed');
 
   excludes(tracker, /F4-D Attestor-owned OpenAI usage .*`fixed`/u, 'Tracker: F4-D is not overclaimed as fixed');
   excludes(tracker, /F2-AG-8 multimodal vision input future risk .*`fixed`/u, 'Tracker: F2-AG-8 is not overclaimed as fixed');

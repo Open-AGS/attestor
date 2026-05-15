@@ -68,6 +68,11 @@ try {
     'openai-output-token-budget-wired',
     'Registry: OpenAI output token budget is wired',
   );
+  equal(
+    descriptor.runtimePolicy.liveSmokeProof,
+    'openai-reasoning-external-live-probe-wired',
+    'Registry: OpenAI reasoning live smoke proof is wired as an external live probe',
+  );
 
   const openai = providers.find((provider) => provider.id === 'openai');
   const anthropic = providers.find((provider) => provider.id === 'anthropic');

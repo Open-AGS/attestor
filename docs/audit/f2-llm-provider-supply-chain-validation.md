@@ -68,6 +68,7 @@ This closes the original "no guard module" wording as stale. It does not close a
 - per-request timeout policy through OpenAI SDK request options
 - output-token budget enforcement before live calls
 - `store: false` on OpenAI Responses and Chat Completions requests
+- opt-in OpenAI reasoning live smoke proof through `scripts/probe-openai-live-smoke.ts`
 - no failover provider implementation
 
 `src/api/llm-provider-registry.ts` now defines a repository-side provider
@@ -135,8 +136,8 @@ Reason:
 
 - Current OpenAI usage is optional and CLI-scoped.
 - `LlmProviderRegistry` records provider inventory, wire status, structured-output mechanisms, credential reference names, rate-limit signal names, and proof-context digest binding.
-- The OpenAI wrapper now has explicit per-call timeout and output-token budget enforcement, disables provider SDK hidden retries, and sets provider response storage to `false`.
-- The OpenAI wrapper still has no live failover provider or live provider smoke proof.
+- The OpenAI wrapper now has explicit per-call timeout and output-token budget enforcement, disables provider SDK hidden retries, sets provider response storage to `false`, and can produce digest-only OpenAI reasoning smoke proof.
+- The OpenAI wrapper still has no live failover provider, no OpenAI vision smoke proof, and no non-OpenAI smoke proof.
 - It should block future claims that Attestor has production-grade multi-provider live-model resilience.
 
 ## Required Follow-Up
@@ -146,7 +147,7 @@ To close the runtime LLM provider side as `fixed`, Attestor still needs runtime 
 1. Wire non-OpenAI providers only after each client has timeout, budget, retry, redaction, and smoke-proof parity.
 2. Add live failover policy and route execution after at least two providers are wired.
 3. Bind provider/model/version and prompt/template digests into every proof packet where live model output matters.
-4. Add live smoke tests for each production-enabled provider profile.
+4. Add live smoke tests for each production-enabled provider profile beyond OpenAI reasoning.
 5. Keep optional live-model proof paths separate from hosted consequence-admission enforcement claims.
 
 ## Tracker Effect

@@ -64,8 +64,74 @@ export const DEFAULT_OPENAI_RETRY_INITIAL_DELAY_MS = 1_000;
 export const DEFAULT_OPENAI_RETRY_MAX_DELAY_MS = 8_000;
 export const DEFAULT_OPENAI_REASONING_MAX_OUTPUT_TOKENS = 32_000;
 export const DEFAULT_OPENAI_VISION_MAX_OUTPUT_TOKENS = 4_000;
+export const OPENAI_LIVE_SMOKE_PROOF_VERSION = 'openai-live-smoke-proof.v1' as const;
+export const OPENAI_LIVE_SMOKE_EXPECTED_OUTPUT = 'ATTESTOR_OPENAI_SMOKE_OK' as const;
+export const DEFAULT_OPENAI_LIVE_SMOKE_MAX_OUTPUT_TOKENS = 64;
+export const DEFAULT_OPENAI_LIVE_SMOKE_PROOF_MAX_AGE_MINUTES = 24 * 60;
+
+const SHA256_DIGEST_PATTERN = /^sha256:[a-f0-9]{64}$/u;
+
+export const OPENAI_LIVE_SMOKE_PROOF_ENV = Object.freeze({
+  digest: 'ATTESTOR_OPENAI_LIVE_SMOKE_PROOF_DIGEST',
+  checkedAt: 'ATTESTOR_OPENAI_LIVE_SMOKE_PROOF_CHECKED_AT',
+  model: 'ATTESTOR_OPENAI_LIVE_SMOKE_PROOF_MODEL',
+  purpose: 'ATTESTOR_OPENAI_LIVE_SMOKE_PROOF_PURPOSE',
+  maxAgeMinutes: 'ATTESTOR_OPENAI_LIVE_SMOKE_PROOF_MAX_AGE_MINUTES',
+} as const);
 
 export type OpenAiRuntimePurpose = Extract<LlmProviderPurpose, 'reasoning' | 'vision'>;
+
+export type OpenAiLiveSmokeProofState = 'not-configured' | 'valid' | 'invalid' | 'stale';
+
+export interface OpenAiLiveSmokeProofEnvEvaluation {
+  readonly version: typeof OPENAI_LIVE_SMOKE_PROOF_VERSION;
+  readonly state: OpenAiLiveSmokeProofState;
+  readonly proofDigest: string | null;
+  readonly checkedAt: string | null;
+  readonly model: string | null;
+  readonly purpose: OpenAiRuntimePurpose | null;
+  readonly maxAgeMinutes: number;
+  readonly rawPromptStored: false;
+  readonly rawProviderBodyStored: false;
+  readonly blockers: readonly string[];
+}
+
+export interface OpenAiLiveSmokeProof {
+  readonly version: typeof OPENAI_LIVE_SMOKE_PROOF_VERSION;
+  readonly providerId: 'openai';
+  readonly purpose: 'reasoning';
+  readonly configuredModel: string;
+  readonly observedModel: string | null;
+  readonly modelDriftObserved: boolean;
+  readonly checkedAt: string;
+  readonly requestStore: false;
+  readonly sdkMaxRetries: 0;
+  readonly timeoutMs: number;
+  readonly maxOutputTokens: number;
+  readonly responseAccepted: boolean;
+  readonly responseDigest: string;
+  readonly providerProofContext: LlmProviderProofContextBinding;
+  readonly proofDigest: string;
+  readonly env: Readonly<typeof OPENAI_LIVE_SMOKE_PROOF_ENV>;
+  readonly rawPromptStored: false;
+  readonly rawProviderBodyStored: false;
+  readonly productionReady: false;
+}
+
+export interface OpenAiLiveSmokeClient {
+  readonly responses: {
+    create(
+      requestBody: ReturnType<typeof buildOpenAiLiveSmokeRequestBody>,
+      options: ReturnType<typeof openAiRequestOptions>,
+    ): Promise<any>;
+  };
+}
+
+export interface RunOpenAiLiveSmokeProofOptions {
+  readonly client?: OpenAiLiveSmokeClient;
+  readonly env?: Readonly<Record<string, string | undefined>>;
+  readonly checkedAt?: string;
+}
 
 export interface OpenAiRuntimePolicy {
   readonly version: typeof OPENAI_RUNTIME_POLICY_VERSION;
@@ -83,6 +149,7 @@ export interface OpenAiRuntimePolicy {
   readonly responseStore: false;
   readonly productionLikeRuntime: boolean;
   readonly productionReady: false;
+  readonly liveSmokeProof: OpenAiLiveSmokeProofEnvEvaluation;
   readonly configDigest: string;
   readonly blockers: readonly string[];
 }
@@ -100,6 +167,7 @@ export type OpenAiRuntimePolicySummary = Pick<
   | 'responseStore'
   | 'productionLikeRuntime'
   | 'productionReady'
+  | 'liveSmokeProof'
   | 'configDigest'
 >;
 
@@ -157,6 +225,8 @@ export function resolveOpenAiRuntimePolicy(input: {
   readonly purpose: OpenAiRuntimePurpose;
   readonly requestedMaxTokens?: number;
   readonly env?: Readonly<Record<string, string | undefined>>;
+  readonly nowMs?: number;
+  readonly allowMissingLiveSmokeProof?: boolean;
 }): OpenAiRuntimePolicy {
   const env = input.env ?? process.env;
   const blockers: string[] = [];
@@ -224,8 +294,14 @@ export function resolveOpenAiRuntimePolicy(input: {
   }
 
   const productionLikeRuntime = isOpenAiProductionLikeRuntime(env);
-  if (productionLikeRuntime) {
-    blockers.push('openai-production-runtime-live-smoke-proof-not-wired');
+  const liveSmokeProof = evaluateOpenAiLiveSmokeProofEnv({
+    env,
+    purpose: input.purpose,
+    configuredModel,
+    nowMs: input.nowMs ?? Date.now(),
+  });
+  if (productionLikeRuntime && input.allowMissingLiveSmokeProof !== true && liveSmokeProof.state !== 'valid') {
+    blockers.push(...liveSmokeProof.blockers);
   }
 
   const digestMaterial = {
@@ -242,14 +318,104 @@ export function resolveOpenAiRuntimePolicy(input: {
     sdkMaxRetries: 0 as const,
     responseStore: false as const,
     productionLikeRuntime,
+    liveSmokeProofState: liveSmokeProof.state,
+    liveSmokeProofDigest: liveSmokeProof.proofDigest,
   };
 
   return Object.freeze({
     ...digestMaterial,
     requestedMaxOutputTokens,
     productionReady: false,
+    liveSmokeProof,
     blockers: Object.freeze(blockers),
     configDigest: digestLlmProviderContextValue(stableJson(digestMaterial)),
+  });
+}
+
+export function evaluateOpenAiLiveSmokeProofEnv(input: {
+  readonly env?: Readonly<Record<string, string | undefined>>;
+  readonly purpose: OpenAiRuntimePurpose;
+  readonly configuredModel: string;
+  readonly nowMs?: number;
+}): OpenAiLiveSmokeProofEnvEvaluation {
+  const env = input.env ?? process.env;
+  const blockers: string[] = [];
+  const proofDigest = trimmedEnvValue(env, OPENAI_LIVE_SMOKE_PROOF_ENV.digest);
+  const checkedAt = trimmedEnvValue(env, OPENAI_LIVE_SMOKE_PROOF_ENV.checkedAt);
+  const model = trimmedEnvValue(env, OPENAI_LIVE_SMOKE_PROOF_ENV.model);
+  const rawPurpose = trimmedEnvValue(env, OPENAI_LIVE_SMOKE_PROOF_ENV.purpose);
+  const purpose = normalizeOpenAiRuntimePurpose(rawPurpose);
+  const maxAgeMinutes = readBoundedIntegerEnv({
+    env,
+    name: OPENAI_LIVE_SMOKE_PROOF_ENV.maxAgeMinutes,
+    defaultValue: DEFAULT_OPENAI_LIVE_SMOKE_PROOF_MAX_AGE_MINUTES,
+    min: 1,
+    max: 7 * 24 * 60,
+    blockerPrefix: 'openai-live-smoke-proof',
+    blockers,
+  });
+  const anyConfigured = Boolean(proofDigest || checkedAt || model || rawPurpose);
+
+  if (!anyConfigured) {
+    blockers.push('openai-production-runtime-live-smoke-proof-not-wired');
+    return Object.freeze({
+      version: OPENAI_LIVE_SMOKE_PROOF_VERSION,
+      state: 'not-configured',
+      proofDigest: null,
+      checkedAt: null,
+      model: null,
+      purpose: null,
+      maxAgeMinutes,
+      rawPromptStored: false,
+      rawProviderBodyStored: false,
+      blockers: Object.freeze(blockers),
+    });
+  }
+
+  if (!proofDigest || !SHA256_DIGEST_PATTERN.test(proofDigest)) {
+    blockers.push('openai-live-smoke-proof:invalid-proof-digest');
+  }
+  if (!checkedAt) {
+    blockers.push('openai-live-smoke-proof:checked-at-missing');
+  }
+  if (!model) {
+    blockers.push('openai-live-smoke-proof:model-missing');
+  } else if (model !== input.configuredModel) {
+    blockers.push('openai-live-smoke-proof:model-mismatch');
+  }
+  if (!purpose) {
+    blockers.push('openai-live-smoke-proof:purpose-missing-or-invalid');
+  } else if (purpose !== input.purpose) {
+    blockers.push('openai-live-smoke-proof:purpose-mismatch');
+  }
+
+  let state: OpenAiLiveSmokeProofState = 'invalid';
+  if (checkedAt) {
+    const checkedAtMs = Date.parse(checkedAt);
+    const nowMs = input.nowMs ?? Date.now();
+    if (!Number.isFinite(checkedAtMs)) {
+      blockers.push('openai-live-smoke-proof:checked-at-invalid');
+    } else if (checkedAtMs - nowMs > 5 * 60 * 1000) {
+      blockers.push('openai-live-smoke-proof:checked-at-in-future');
+    } else if (nowMs - checkedAtMs > maxAgeMinutes * 60 * 1000) {
+      blockers.push('openai-live-smoke-proof:stale');
+      state = 'stale';
+    }
+  }
+
+  if (blockers.length === 0) state = 'valid';
+
+  return Object.freeze({
+    version: OPENAI_LIVE_SMOKE_PROOF_VERSION,
+    state,
+    proofDigest: proofDigest ?? null,
+    checkedAt: checkedAt ?? null,
+    model: model ?? null,
+    purpose,
+    maxAgeMinutes,
+    rawPromptStored: false,
+    rawProviderBodyStored: false,
+    blockers: Object.freeze(blockers),
   });
 }
 
@@ -266,6 +432,7 @@ export function summarizeOpenAiRuntimePolicy(policy: OpenAiRuntimePolicy): OpenA
     responseStore: policy.responseStore,
     productionLikeRuntime: policy.productionLikeRuntime,
     productionReady: policy.productionReady,
+    liveSmokeProof: policy.liveSmokeProof,
     configDigest: policy.configDigest,
   });
 }
@@ -299,6 +466,16 @@ function envTruthy(raw: string | undefined): boolean {
   return value === '1' || value === 'true' || value === 'yes' || value === 'on';
 }
 
+function trimmedEnvValue(env: Readonly<Record<string, string | undefined>>, name: string): string | null {
+  const value = env[name]?.trim();
+  return value ? value : null;
+}
+
+function normalizeOpenAiRuntimePurpose(value: string | null): OpenAiRuntimePurpose | null {
+  if (value === 'reasoning' || value === 'vision') return value;
+  return null;
+}
+
 function readBoundedIntegerEnv(input: {
   readonly env: Readonly<Record<string, string | undefined>>;
   readonly name: string;
@@ -324,6 +501,31 @@ function stableJson(value: Record<string, unknown>): string {
     return acc;
   }, {});
   return JSON.stringify(sorted);
+}
+
+function normalizeIsoTimestamp(value: string | undefined): string {
+  const raw = value ?? new Date().toISOString();
+  const timestamp = new Date(raw);
+  if (Number.isNaN(timestamp.getTime())) {
+    throw new ApiError('openai-live-smoke-proof', 'openai', 'OpenAI live smoke checkedAt must be an ISO timestamp.');
+  }
+  return timestamp.toISOString();
+}
+
+function extractOpenAiResponseText(response: any): string | undefined {
+  for (const item of response.output ?? []) {
+    if (item?.type === 'message') {
+      const msgContent = item.content;
+      if (Array.isArray(msgContent)) {
+        const textPart = msgContent.find((entry: any) => entry?.type === 'output_text');
+        if (textPart?.text) return textPart.text;
+      }
+    }
+    if (item?.type === 'output_text' && item.text) {
+      return item.text;
+    }
+  }
+  return response.output_text;
 }
 
 function buildOpenAiProviderProofContext(input: {
@@ -371,6 +573,86 @@ export function buildGptRequestBody(
   };
 }
 
+export function buildOpenAiLiveSmokeRequestBody(
+  runtimePolicy = resolveOpenAiRuntimePolicy({
+    purpose: 'reasoning',
+    requestedMaxTokens: DEFAULT_OPENAI_LIVE_SMOKE_MAX_OUTPUT_TOKENS,
+    allowMissingLiveSmokeProof: true,
+  }),
+) {
+  return {
+    model: MODEL,
+    max_output_tokens: runtimePolicy.maxOutputTokens,
+    reasoning: { effort: 'low' as const },
+    instructions: 'Return exactly the requested sentinel string. Do not include markdown or additional text.',
+    input: `Return exactly: ${OPENAI_LIVE_SMOKE_EXPECTED_OUTPUT}`,
+    store: false,
+  };
+}
+
+export async function runOpenAiLiveSmokeProof(
+  options: RunOpenAiLiveSmokeProofOptions = {},
+): Promise<OpenAiLiveSmokeProof> {
+  const checkedAt = normalizeIsoTimestamp(options.checkedAt);
+  const runtimePolicy = resolveOpenAiRuntimePolicy({
+    purpose: 'reasoning',
+    requestedMaxTokens: DEFAULT_OPENAI_LIVE_SMOKE_MAX_OUTPUT_TOKENS,
+    env: options.env,
+    nowMs: Date.parse(checkedAt),
+    allowMissingLiveSmokeProof: true,
+  });
+  assertOpenAiRuntimePolicyAllowsCall('openai-live-smoke-proof', runtimePolicy);
+
+  const clientForProbe = options.client ?? getClient();
+  const response = await clientForProbe.responses.create(
+    buildOpenAiLiveSmokeRequestBody(runtimePolicy),
+    openAiRequestOptions(runtimePolicy),
+  );
+  const content = extractOpenAiResponseText(response);
+  if (content?.trim() !== OPENAI_LIVE_SMOKE_EXPECTED_OUTPUT) {
+    throw new ParseError('openai-live-smoke-proof', 'OpenAI live smoke response did not match the expected sentinel.');
+  }
+
+  const modelObservation = observeOpenAiModel(MODEL, response);
+  const providerProofContext = buildOpenAiProviderProofContext({
+    purpose: 'reasoning',
+    configuredModel: MODEL,
+    observedModel: modelObservation.observedModel,
+    runtimePolicy,
+    promptDigest: digestLlmProviderContextValue(stableJson({
+      expectedOutput: OPENAI_LIVE_SMOKE_EXPECTED_OUTPUT,
+      version: OPENAI_LIVE_SMOKE_PROOF_VERSION,
+    })),
+  });
+  const proofMaterial = {
+    version: OPENAI_LIVE_SMOKE_PROOF_VERSION,
+    providerId: 'openai' as const,
+    purpose: 'reasoning' as const,
+    configuredModel: MODEL,
+    observedModel: modelObservation.observedModel,
+    modelDriftObserved: modelObservation.modelDriftObserved,
+    checkedAt,
+    requestStore: false as const,
+    sdkMaxRetries: 0 as const,
+    timeoutMs: runtimePolicy.timeoutMs,
+    maxOutputTokens: runtimePolicy.maxOutputTokens,
+    responseAccepted: true,
+    responseDigest: digestLlmProviderContextValue(content.trim()),
+    promptDigest: providerProofContext.promptDigest,
+    configDigest: providerProofContext.configDigest,
+  };
+
+  return Object.freeze({
+    ...proofMaterial,
+    providerProofContext,
+    proofDigest: digestLlmProviderContextValue(stableJson(proofMaterial)),
+    env: OPENAI_LIVE_SMOKE_PROOF_ENV,
+    rawPromptStored: false,
+    rawProviderBodyStored: false,
+    productionReady: false,
+  });
+}
+
 export async function callGpt(params: GptCallParams): Promise<GptCallResult> {
   const { stage, effort = 'high' } = params;
   const runtimePolicy = resolveOpenAiRuntimePolicy({ purpose: 'reasoning', requestedMaxTokens: params.maxTokens });
@@ -391,25 +673,7 @@ export async function callGpt(params: GptCallParams): Promise<GptCallResult> {
       const response = await getClient().responses.create(requestBody, openAiRequestOptions(runtimePolicy));
 
       // Extract text output from response — handle both message and text output items
-      let content: string | undefined;
-      for (const item of response.output) {
-        if ((item as any).type === 'message') {
-          const msgContent = (item as any).content;
-          if (Array.isArray(msgContent)) {
-            const textPart = msgContent.find((c: any) => c.type === 'output_text');
-            if (textPart?.text) { content = textPart.text; break; }
-          }
-        }
-        // Direct text output
-        if ((item as any).type === 'output_text' && (item as any).text) {
-          content = (item as any).text;
-          break;
-        }
-      }
-      // Fallback: try output_text at top level
-      if (!content) {
-        content = (response as any).output_text;
-      }
+      const content = extractOpenAiResponseText(response);
 
       if (!content) {
         throw new ParseError(stage, `Empty response from OpenAI model ${MODEL}`);

@@ -57,8 +57,12 @@ Production or failover-required state:
 - blocked by `llm-provider-live-smoke-proof-required`.
 
 OpenAI timeout and output-token budget enforcement are wired in
-`src/api/openai.ts`. They are not a production readiness claim because provider
-smoke proof and multi-provider failover remain absent.
+`src/api/openai.ts`. OpenAI reasoning live smoke proof is wired as an explicit
+external-live probe in `scripts/probe-openai-live-smoke.ts`; production-like
+OpenAI reasoning calls remain fail-closed until a fresh proof digest, timestamp,
+model, and purpose are present in the runtime environment. This is still not a
+production readiness claim because vision smoke proof, non-OpenAI providers, and
+multi-provider failover remain absent.
 
 ## Proof Context Contract
 
@@ -84,13 +88,14 @@ The binding helper rejects non-digest prompt/config fields and records:
 - No Anthropic, Vertex AI, or Azure OpenAI client is implemented by this PR.
 - No live provider failover is active.
 - No hosted production LLM runtime readiness is claimed.
-- No live provider smoke proof is wired into `src/api/openai.ts` yet.
+- No OpenAI vision or non-OpenAI live provider smoke proof is wired yet.
 - No hosted consequence-admission route depends on a live LLM provider.
 
 ## Verification
 
 - `npm run test:llm-provider-registry`
 - `npm run test:openai-runtime-policy`
+- `npm run test:openai-live-smoke-proof`
 - `npm run test:f2-llm-provider-supply-chain-validation`
 - `npm run test:f2-model-tool-config-drift-validation`
 - `npm run test:f11-supply-chain-depth-validation`

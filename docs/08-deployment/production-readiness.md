@@ -101,10 +101,17 @@ It is the machine-readable boundary for privacy-safe request telemetry, low-card
 
 ```text
 productionStoragePath
+consequenceSharedStoreProfile
 checks.productionStoragePath
+checks.consequenceSharedStoreProfile
 ```
 
 For `local-dev` and `single-node-durable`, file-backed evaluation stores can be accepted for evaluation. For `production-shared`, the process refuses startup when `productionStoragePath.readyForSelectedProfile=false`; if you are inspecting a preflight runtime, `/api/v1/ready` must also report `checks.productionStoragePath=true`. If it is false, inspect `productionStoragePath.blockers` before promoting the environment.
+
+`consequenceSharedStoreProfile` is the narrower consequence-admission contract
+behind that gate. It reports the backlog components, required shared-store
+primitive, no-go conditions, and required proofs without exposing connection
+strings or raw payloads. It does not migrate data or create stores.
 
 Current `production-shared` blockers can include:
 

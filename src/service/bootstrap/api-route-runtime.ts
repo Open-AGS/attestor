@@ -297,6 +297,9 @@ import {
   evaluateProductionStoragePath as evaluateProductionStoragePathState,
 } from './production-storage-path.js';
 import {
+  evaluateConsequenceSharedStoreProfile as evaluateConsequenceSharedStoreProfileState,
+} from './consequence-shared-store-profile.js';
+import {
   releaseRuntimeDurabilitySummary,
   resolveRuntimeProfile,
 } from './runtime-profile.js';
@@ -424,6 +427,10 @@ export async function createApiHttpRouteRuntime(
       }),
     evaluateProductionStoragePath: ({ runtimeProfileId }) =>
       evaluateProductionStoragePathState({
+        runtimeProfileId: runtimeProfileId === runtimeProfile.id ? runtimeProfile.id : null,
+      }),
+    evaluateConsequenceSharedStoreProfile: ({ runtimeProfileId }) =>
+      evaluateConsequenceSharedStoreProfileState({
         runtimeProfileId: runtimeProfileId === runtimeProfile.id ? runtimeProfile.id : null,
       }),
     rlsActivationResult,

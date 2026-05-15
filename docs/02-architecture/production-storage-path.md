@@ -98,6 +98,38 @@ The current Policy Foundry wizard state is a digest-only file-backed evaluation
 store; it is useful for local resume tests, but it is an explicit
 `production-shared` blocker until backed by shared TTL/session storage.
 
+## Consequence Shared Store Profile
+
+`evaluateConsequenceSharedStoreProfile()` narrows the storage-path inventory to
+the consequence-admission and audit read-model surfaces that decide whether a
+multi-node runtime can truthfully rely on shared state.
+
+The profile groups the current backlog into explicit primitives:
+
+- tenant-scoped append-only history for shadow events, simulations, policy
+  candidates, and activation receipts
+- tenant-scoped TTL/session state for hosted Policy Foundry resume flows
+- atomic record-if-absent semantics for retry attempts
+- atomic set-if-absent semantics for downstream presentation replay keys
+- atomic counters and correction-signature sets for agent-loop abuse control
+- shared source history for audit evidence exports and business-risk dashboard
+  inputs
+
+The profile depends on the shared control plane and shared release-authority
+substrate, but it does not activate a migration, create PostgreSQL tables,
+configure Redis, or rewrite any file-backed history. It is a decision contract:
+
+```text
+evaluation-shared-store-backlog-accepted
+production-shared-consequence-blocked
+production-shared-consequence-ready
+```
+
+`production-shared-consequence-ready` only clears this repository-side
+consequence shared-store gate. External deployment proof, backup/restore,
+readiness probes, worker recovery, and customer-environment rehearsal remain
+separate production gates.
+
 ## Runtime Surface
 
 The storage path is exposed in:
@@ -134,10 +166,22 @@ The design follows three stable production-storage principles:
 
 - PostgreSQL row-level security and transaction controls are the right shape for
   tenant-scoped shared records; a shared database alone is not enough.
+- PostgreSQL `INSERT ... ON CONFLICT` provides the atomic insert/conflict shape
+  needed by retry and replay ledgers.
+- PostgreSQL advisory locks can coordinate application-defined locks, but their
+  correct use is application responsibility; the profile therefore requires a
+  tested primitive, not just "uses a shared database".
 - Security logging guidance treats log integrity, access control, and data
   minimization as part of the system, not after-the-fact cleanup.
 - AI risk governance needs repeatable evidence and explicit operational
   boundaries; a simulation or dashboard must not become authority by accident.
+
+Primary anchors:
+
+- [PostgreSQL INSERT / ON CONFLICT](https://www.postgresql.org/docs/current/sql-insert.html)
+- [PostgreSQL explicit locking and advisory locks](https://www.postgresql.org/docs/current/explicit-locking.html)
+- [PostgreSQL transaction isolation](https://www.postgresql.org/docs/current/transaction-iso.html)
+- [PostgreSQL row security policies](https://www.postgresql.org/docs/current/ddl-rowsecurity.html)
 
 ## Non-Claims
 

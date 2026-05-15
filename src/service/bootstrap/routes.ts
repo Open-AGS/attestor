@@ -53,6 +53,7 @@ import {
   type GenericAdmissionProtectedRouteEvaluation,
 } from '../generic-admission-protected-route.js';
 import {
+  type HostedGenericAdmissionDpopProofReplayStore,
   resolveHostedGenericAdmissionDpopSenderConfirmation,
 } from '../hosted-generic-admission-sender-confirmation.js';
 import { installProductionSharedRequestGuard } from './production-shared-request-guard.js';
@@ -85,6 +86,7 @@ interface RuntimeSecurityWithGenericAdmissionProtectedRoute {
 interface RuntimeServicesWithGenericAdmissionProtectedIssuer {
   readonly genericAdmissionProtectedIssuer?: ReleaseTokenIssuer;
   readonly genericAdmissionProtectedIntrospectionStore?: AwaitableReleaseTokenIntrospectionStore;
+  readonly genericAdmissionDpopProofReplayStore?: HostedGenericAdmissionDpopProofReplayStore;
 }
 
 function genericAdmissionProtectedRouteFor<Packet>(
@@ -126,6 +128,14 @@ function genericAdmissionProtectedIntrospectionStoreFor<Packet>(
   return services.genericAdmissionProtectedIntrospectionStore ?? null;
 }
 
+function genericAdmissionDpopProofReplayStoreFor<Packet>(
+  runtime: AppRuntime<Packet>,
+): HostedGenericAdmissionDpopProofReplayStore | null {
+  const services =
+    runtime.services as RuntimeServicesWithGenericAdmissionProtectedIssuer;
+  return services.genericAdmissionDpopProofReplayStore ?? null;
+}
+
 export function createGenericAdmissionRouteDeps<Packet>(
   runtime: AppRuntime<Packet>,
 ): GenericAdmissionRouteDeps {
@@ -137,6 +147,8 @@ export function createGenericAdmissionRouteDeps<Packet>(
     genericAdmissionProtectedIssuerFor(runtime);
   const genericAdmissionProtectedIntrospectionStore =
     genericAdmissionProtectedIntrospectionStoreFor(runtime);
+  const genericAdmissionDpopProofReplayStore =
+    genericAdmissionDpopProofReplayStoreFor(runtime);
   return {
     currentTenant: runtime.services.httpRoutes.pipeline.currentTenant,
     evaluateAgentLoopAbuse: async ({ tenant, envelope, receivedAt }) =>
@@ -162,6 +174,7 @@ export function createGenericAdmissionRouteDeps<Packet>(
                 httpMethod: context.req.method,
                 httpUri: context.req.url,
                 now: receivedAt,
+                proofReplayStore: genericAdmissionDpopProofReplayStore,
               });
             return confirmation.confirmation;
           },

@@ -692,6 +692,21 @@ The entries above are the most concrete PR/commit-linked hardening records. The 
 - Remaining limitation or no-go condition: This is not a durable DPoP proof replay backend implementation. It does not consume DPoP `jti` values in PostgreSQL or Redis, deploy a customer PEP, operate a live authorization server, activate external KMS/HSM signing, or prove a production environment.
 - Status: complete for repository-side hosted generic DPoP proof replay readiness gate once this PR is merged and verified on `origin/master`.
 
+### 40. Hosted Generic Runtime-Local DPoP Proof Replay Consumption
+
+- Step / PR / commit: Hosted generic runtime-local DPoP proof replay consumption; this PR records repository-side replay consumption wiring but cannot pre-record its own merge commit.
+- Date if available: 2026-05-15.
+- Trust surface: hosted generic admission route, token-request DPoP proof `jti` consumption, sender-constrained release-token issuance, raw-proof minimization, production-shared readiness diagnostics, and replay-store durability separation.
+- Protected principle: fail-closed boundary; customer authority; proof integrity; replay and idempotency safety; runtime readiness; data minimization and redaction; no overclaim.
+- Research anchor / source used, if recorded: OAuth DPoP RFC 9449 requires DPoP proof `jti` uniqueness within the accepted time window and binds proof validation to method, target URI, issued-at time, token hash, and key confirmation. This is an engineering anchor only, not OAuth certification, customer PEP deployment, or shared production replay backend evidence.
+- Repository evidence:
+  - Contract/code evidence: `src/service/hosted-generic-admission-sender-confirmation.ts`, `src/service/bootstrap/routes.ts`, `src/service/bootstrap/api-route-runtime.ts`, `src/service/generic-admission-protected-route.ts`, `docs/01-overview/consequence-admission-quickstart.md`, `docs/audit/f2-customer-gate-enforcement-validation.md`, and `docs/audit/attestor-audit-remediation-tracker.md`.
+  - Test evidence: `tests/hosted-generic-admission-sender-confirmation.test.ts`, `tests/generic-admission-protected-route.test.ts`, `tests/f2-customer-gate-validation.test.ts`, `tests/audit-remediation-tracker.test.ts`, and `tests/research-provenance-ledger.test.ts`.
+- Implemented control: Adds a raw-proof-free hosted DPoP proof replay store interface plus a runtime-local in-memory implementation. The hosted sender-confirmation resolver now consumes valid DPoP proof replay keys after signature/method/URI/time validation and rejects repeated proof `jti` values with `dpop-replayed-authorization`. API bootstrap wires the local store into the generic admission route and records `senderProofReplayStoreConfigured=true` with local durability, so non-production hosted DPoP requests get single-use proof behavior while `production-shared` remains blocked until a shared replay store exists.
+- Tests / verification: `npm run test:hosted-generic-admission-sender-confirmation`, `npm run test:generic-admission-protected-route`, `npm run test:f2-customer-gate-validation`, `npm run test:audit-remediation-tracker`, `npm run test:research-provenance-ledger`, `npm run typecheck`, and `npm run typecheck:hygiene`.
+- Remaining limitation or no-go condition: This is runtime-local replay protection only. It does not create a PostgreSQL or Redis DPoP proof replay backend, prove cross-instance replay resistance, deploy a customer PEP, operate a live authorization server, activate external KMS/HSM signing, or prove production readiness.
+- Status: complete for repository-side hosted runtime-local DPoP proof replay consumption once this PR is merged and verified on `origin/master`.
+
 ## Strong Recorded Research Support
 
 The strongest recorded research support appears in:

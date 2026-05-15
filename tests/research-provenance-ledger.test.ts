@@ -643,6 +643,26 @@ function testLedgerIndexesAuditRemediationClosure(): void {
     'not a durable DPoP proof replay backend implementation',
     'Research provenance ledger: DPoP proof replay backend non-claim is explicit',
   );
+  includes(
+    content,
+    '### 40. Hosted Generic Runtime-Local DPoP Proof Replay Consumption',
+    'Research provenance ledger: hosted generic runtime-local DPoP replay entry is present',
+  );
+  includes(
+    content,
+    'dpop-replayed-authorization',
+    'Research provenance ledger: hosted generic DPoP replay reason code is recorded',
+  );
+  includes(
+    content,
+    'senderProofReplayStoreConfigured=true',
+    'Research provenance ledger: hosted generic DPoP replay store local wiring is recorded',
+  );
+  includes(
+    content,
+    'runtime-local replay protection only',
+    'Research provenance ledger: hosted generic DPoP local replay limitation is explicit',
+  );
 }
 
 function testLedgerKeepsEvidenceBoundaryExplicit(): void {

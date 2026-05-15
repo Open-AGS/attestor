@@ -2,6 +2,10 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
+  createInMemoryHostedGenericAdmissionDpopProofReplayStore,
+  type HostedGenericAdmissionDpopProofReplayStore,
+} from '../src/service/hosted-generic-admission-sender-confirmation.js';
+import {
   GENERIC_ADMISSION_PROTECTED_ROUTE_SPEC_VERSION,
   evaluateGenericAdmissionProtectedRoute,
   type GenericAdmissionProtectedRouteEvaluation,
@@ -39,6 +43,7 @@ function runtimeWith(
   genericAdmissionProtectedRoute?: GenericAdmissionProtectedRouteEvaluation,
   genericAdmissionProtectedIssuer?: unknown,
   genericAdmissionProtectedIntrospectionStore?: unknown,
+  genericAdmissionDpopProofReplayStore?: HostedGenericAdmissionDpopProofReplayStore,
 ): AppRuntime<unknown> {
   return {
     registries: {},
@@ -56,6 +61,9 @@ function runtimeWith(
       ...(genericAdmissionProtectedIssuer ? { genericAdmissionProtectedIssuer } : {}),
       ...(genericAdmissionProtectedIntrospectionStore
         ? { genericAdmissionProtectedIntrospectionStore }
+        : {}),
+      ...(genericAdmissionDpopProofReplayStore
+        ? { genericAdmissionDpopProofReplayStore }
         : {}),
       httpRoutes: {
         pipeline: {
@@ -483,14 +491,20 @@ function testHostedBootstrapWiresIssuerBridgeWhenRuntimeProvidesIssuer(): void {
       record: null,
     }),
   };
-  const deps = createGenericAdmissionRouteDeps(runtimeWith(undefined, {
-    issue: async () => {
-      throw new Error('issuer fixture should not be called by wiring test');
+  const proofReplayStore = createInMemoryHostedGenericAdmissionDpopProofReplayStore();
+  const deps = createGenericAdmissionRouteDeps(runtimeWith(
+    undefined,
+    {
+      issue: async () => {
+        throw new Error('issuer fixture should not be called by wiring test');
+      },
+      exportVerificationKey: async () => {
+        throw new Error('issuer fixture should not export by wiring test');
+      },
     },
-    exportVerificationKey: async () => {
-      throw new Error('issuer fixture should not export by wiring test');
-    },
-  }, introspectionStore));
+    introspectionStore,
+    proofReplayStore,
+  ));
 
   equal(
     typeof deps.resolveProtectedReleaseTokenConfirmation,
@@ -522,8 +536,14 @@ function testHostedBootstrapAndReadinessExposeRouteProof(): void {
     'Generic protected route: API runtime records the DPoP sender-confirmation source',
   );
   ok(
-    /senderProofReplayStoreConfigured:\s*false/u.test(apiRouteRuntime),
-    'Generic protected route: API runtime records missing DPoP proof replay store instead of overclaiming',
+    /senderProofReplayStoreConfigured:\s*true/u.test(apiRouteRuntime) &&
+      /senderProofReplayStoreDurability:\s*genericAdmissionDpopProofReplayStore\.durability/u.test(apiRouteRuntime),
+    'Generic protected route: API runtime records runtime-local DPoP proof replay store durability',
+  );
+  ok(
+    /genericAdmissionDpopProofReplayStore,/u.test(apiRouteRuntime) &&
+      /proofReplayStore:\s*genericAdmissionDpopProofReplayStore/u.test(routes),
+    'Generic protected route: bootstrap passes DPoP proof replay store into sender-confirmation resolver',
   );
   ok(
     /genericAdmissionProtectedIssuer:\s*apiReleaseTokenIssuer/u.test(apiRouteRuntime),

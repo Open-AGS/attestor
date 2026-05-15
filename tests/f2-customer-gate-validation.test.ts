@@ -83,8 +83,8 @@ includes(
 );
 includes(
   validationDoc,
-  'hosted DPoP proof replay readiness: blocks production-shared readiness',
-  'F2 customer gate validation: hosted DPoP proof replay readiness is explicit',
+  'hosted DPoP proof replay consumption: consumes token-request DPoP proof jti values',
+  'F2 customer gate validation: hosted DPoP proof replay consumption is explicit',
 );
 includes(
   validationDoc,

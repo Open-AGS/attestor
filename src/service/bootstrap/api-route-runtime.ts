@@ -303,6 +303,9 @@ import {
   evaluateGenericAdmissionProtectedRoute,
 } from '../generic-admission-protected-route.js';
 import {
+  createInMemoryHostedGenericAdmissionDpopProofReplayStore,
+} from '../hosted-generic-admission-sender-confirmation.js';
+import {
   releaseRuntimeDurabilitySummary,
   resolveRuntimeProfile,
 } from './runtime-profile.js';
@@ -374,6 +377,8 @@ export async function createApiHttpRouteRuntime(
     releaseSigningProvider.signingBoundary === 'external-kms-hsm'
       ? 'external-kms-hsm'
       : 'runtime-release-token-issuer';
+  const genericAdmissionDpopProofReplayStore =
+    createInMemoryHostedGenericAdmissionDpopProofReplayStore();
   const genericAdmissionProtectedRoute = evaluateGenericAdmissionProtectedRoute({
     runtimeProfileId: runtimeProfile.id,
     requireProtectedReleaseTokenForHighRisk: true,
@@ -398,7 +403,8 @@ export async function createApiHttpRouteRuntime(
         ? 'shared'
         : 'local',
     senderConfirmationSource: 'dpop-jkt',
-    senderProofReplayStoreConfigured: false,
+    senderProofReplayStoreConfigured: true,
+    senderProofReplayStoreDurability: genericAdmissionDpopProofReplayStore.durability,
     failClosedOnMissingIssuer: true,
     shadowRecordsRawToken: false,
     admissionOrShadowStoresRawToken: false,
@@ -871,6 +877,7 @@ export async function createApiHttpRouteRuntime(
     extraServices: {
       genericAdmissionProtectedIssuer: apiReleaseTokenIssuer,
       genericAdmissionProtectedIntrospectionStore: apiReleaseIntrospectionStore,
+      genericAdmissionDpopProofReplayStore,
     },
   });
 }

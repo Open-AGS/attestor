@@ -20,7 +20,7 @@ authorization library.
 Canonical sentence:
 
 ```text
-Attestor decides whether a proposed AI action can become a real business consequence.
+Attestor controls the boundary between AI intent and real-world consequence.
 ```
 
 ## Canonical Technical Terms
@@ -44,9 +44,9 @@ Attestor decides whether a proposed AI action can become a real business consequ
 Use:
 
 ```text
-AI Action Control Plane.
+AI Action Control Plane for high-risk AI actions.
 
-Attestor decides whether a proposed AI action can become a real business consequence.
+Attestor controls the boundary between AI intent and real-world consequence.
 ```
 
 Acceptable supporting language:
@@ -120,7 +120,7 @@ These analogies may guide architecture and copy, but they must stay bounded:
 Allowed:
 
 - "Attestor is an AI Action Control Plane."
-- "Attestor decides whether a proposed AI action can become a real business consequence."
+- "Attestor controls the boundary between AI intent and real-world consequence."
 - "The current repository provides evaluation-ready contracts, tests, replay
   fixtures, proof surfaces, and package boundaries."
 - "A workflow needs a real PEP, gateway, verifier, or adapter before claiming

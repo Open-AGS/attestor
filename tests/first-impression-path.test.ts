@@ -37,18 +37,18 @@ function appearsBefore(content: string, earlier: string, later: string, message:
 function testReadmeHasAFirstImpressionPath(): void {
   const readme = readProjectFile('README.md');
 
-  includes(readme, 'AI Action Control Plane.', 'README: opens with the AI Action Control Plane category');
-  includes(readme, 'Attestor decides whether a proposed AI action can become a real business consequence.', 'README: opens with the canonical control-plane sentence');
-  includes(readme, 'The trust boundary is not the model response. The trust boundary is the action that reaches a real system.', 'README: frames the risk before architecture');
-  includes(readme, 'Attestor sits at that boundary.', 'README: explains placement before architecture');
+  includes(readme, 'AI Action Control Plane for high-risk AI actions.', 'README: opens with the AI Action Control Plane category');
+  includes(readme, 'Attestor controls the boundary between AI intent and real-world consequence.', 'README: opens with the canonical control-plane sentence');
+  includes(readme, 'The model can propose. The system can act. Attestor decides whether that action is allowed to become real.', 'README: explains the control point before architecture');
+  includes(readme, 'The trust boundary is the action, not the model response.', 'README: frames the risk before architecture');
   includes(readme, 'Start in shadow mode. See what your AI agents would have done before you let them act.', 'README: makes shadow mode visible immediately');
-  includes(readme, 'Attestor is the control plane between that intent and the system that can actually change state.', 'README: keeps the control-plane framing cold and direct');
+  includes(readme, 'AI proposes -> Attestor checks -> consequence is admitted, narrowed, reviewed, or blocked -> proof remains', 'README: keeps the front-page control flow short');
   includes(readme, 'If policy, authority, evidence, freshness, scope, or verification cannot close, the consequence does not proceed silently.', 'README: explains the fail-closed gateway result');
-  includes(readme, 'It does not replace the model, agent runtime, wallet, custody platform, orchestration layer, or downstream system.', 'README: keeps replacement non-claim near the top');
+  includes(readme, 'Attestor does not replace the model, agent runtime, wallet, custody platform, orchestration layer, or downstream system.', 'README: keeps replacement non-claim near the top');
   includes(readme, '## Current Status', 'README: exposes the evaluation boundary near the top');
   includes(readme, 'not a finished public SaaS', 'README: avoids public SaaS overclaim');
   includes(readme, '## What Attestor Does', 'README: names the operating model before architecture');
-  includes(readme, 'AI proposes -> Attestor admits / narrows / reviews / blocks -> allowed consequences proceed -> proof remains', 'README: explains the control flow in one line');
+  includes(readme, 'Use Attestor where a capable AI-assisted system should not be able to act just because it can form a request:', 'README: moves quickly from category to use cases');
   includes(readme, 'a procurement agent proposes paying a supplier after reading a changed bank-account instruction', 'README: frames money movement by consequence');
   includes(readme, 'an analytics agent requests a customer-data export or live database-backed report', 'README: frames data movement by consequence');
   includes(readme, 'a treasury or wallet workflow prepares a programmable-money transaction', 'README: frames programmable money by consequence');

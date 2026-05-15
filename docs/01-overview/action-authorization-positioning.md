@@ -20,7 +20,7 @@ AI Action Control Plane
 Canonical sentence:
 
 ```text
-Attestor decides whether a proposed AI action can become a real business consequence.
+Attestor controls the boundary between AI intent and real-world consequence.
 ```
 
 This is stronger than using `gateway` or `authorization layer` as the primary
@@ -34,7 +34,7 @@ The buyer-level explanation is:
 ```text
 AI wants to act.
 The action needs policy, authority, evidence, scope, replay safety, and audit proof.
-Attestor is the control plane before the action reaches the real system.
+The model can propose. The system can act. Attestor decides whether that action is allowed to become real.
 ```
 
 ## Operating Model
@@ -42,7 +42,7 @@ Attestor is the control plane before the action reaches the real system.
 The operating model is consequence admission:
 
 ```text
-AI proposes -> Attestor admits / narrows / reviews / blocks -> allowed consequences proceed -> proof remains
+AI proposes -> Attestor checks -> consequence is admitted, narrowed, reviewed, or blocked -> proof remains
 ```
 
 The word `consequence` matters because not every tool call deserves the same

@@ -2,19 +2,23 @@
 
 ![Attestor: proof before consequence](docs/assets/attestor-readme-hero.png)
 
-**AI Action Control Plane.**
+**AI Action Control Plane for high-risk AI actions.**
 
-Your AI agent is about to issue a $50k refund to the wrong customer. Another has read a changed supplier bank-account instruction and is ready to pay it. A third is preparing a wallet transaction.
+AI agents are starting to do more than answer questions.
 
-Attestor is the control plane between that intent and the system that can actually change state.
+They draft refunds. Prepare supplier payments. Request data exports. Trigger operational changes. Build wallet transactions. In many systems, the dangerous moment is not the model output; it is the point where that output becomes a real action.
 
-Attestor decides whether a proposed AI action can become a real business consequence.
+Attestor controls the boundary between AI intent and real-world consequence.
 
-Models propose actions. Systems change state. Attestor controls the consequence boundary between them: write, send, file, settle, grant access, release data, or execute. Start in shadow mode. See what your AI agents would have done before you let them act.
+The model can propose. The system can act. Attestor decides whether that action is allowed to become real. It evaluates proposed AI actions before they reach systems that can change state, and it can admit, narrow, route to review, or block the proposed consequence while leaving proof of what happened and why.
 
-The trust boundary is not the model response. The trust boundary is the action that reaches a real system.
+```text
+AI proposes -> Attestor checks -> consequence is admitted, narrowed, reviewed, or blocked -> proof remains
+```
 
-Attestor sits at that boundary. It admits, narrows, routes to review, or blocks proposed consequences before downstream execution. It does not replace the model, agent runtime, wallet, custody platform, orchestration layer, or downstream system.
+Start in shadow mode. See what your AI agents would have done before you let them act.
+
+The trust boundary is the action, not the model response. Attestor does not replace the model, agent runtime, wallet, custody platform, orchestration layer, or downstream system.
 
 > [!NOTE]
 > This repository is source-available under Business Source License 1.1. Non-production use is allowed. Production use requires a commercial license until the Change Date in [LICENSE](LICENSE).
@@ -36,13 +40,7 @@ Start review with:
 
 ## What Attestor Does
 
-Attestor authorizes high-risk AI actions before they become consequences that matter:
-
-```text
-AI proposes -> Attestor admits / narrows / reviews / blocks -> allowed consequences proceed -> proof remains
-```
-
-Use it where a capable AI-assisted system should not be able to act just because it can form a request:
+Use Attestor where a capable AI-assisted system should not be able to act just because it can form a request:
 
 - a support copilot drafts a refund, credit, suspension, or account-status change
 - a procurement agent proposes paying a supplier after reading a changed bank-account instruction
@@ -69,13 +67,15 @@ observe -> recommend -> simulate -> approve -> enforce -> prove
 
 Shadow mode discovers the real action surface first: which high-risk AI actions exist, which actions have no policy, which downstream tools have too much authority, and which consequences would have been blocked before execution.
 
-Policy Foundry is the onboarding layer for this path. It turns shadow traffic into observed-action policy mining, not model training, not automatic policy writing, and not a production-readiness claim. It identifies policy candidates, produces a red-team fixture bundle, runs candidate-specific local adversarial replay reports through the local adversarial replay executor, can include live downstream replay evidence in live downstream replay reports, keeps promotion approval-required, records reviewed outcome feedback, prepares review handoff material, and emits drift/policy-debt findings.
+Policy Foundry is the onboarding layer for this adoption path. It mines observed actions into policy candidates. It does not train models, write policy automatically, or prove production readiness.
 
-The hosted onboarding workflow adds billing-entitlement review material, commercial-boundary review material, hosted review surface output, hosted UI flow output, persistent hosted wizard state, and hosted wizard storage readiness gating. Customers cannot self-attest readiness controls.
+It identifies policy candidates, generates a red-team fixture bundle and local replay reports through the local adversarial replay executor, can attach live downstream replay evidence when configured, prepares review handoff material, keeps promotion approval-required, and records reviewed outcome feedback plus drift/policy-debt findings.
+
+The hosted onboarding workflow contract packages the hosted review surface, wizard state, entitlement context, and storage-readiness checks. Customers cannot self-attest readiness controls.
 
 Safety boundary: hosted onboarding returns review material only. It does not store raw manifest payloads, issue credentials, apply patches, deploy infrastructure or a gateway, execute production traffic, activate enforcement, or prove production readiness. Rendered packets can include next steps such as `add-shadow-capture`, but `applies patches: false` is the default.
 
-For local browser QA, run `npm run preview:policy-foundry-hosted-ui` and open the printed localhost URL. The preview renders blocked and ready hosted review states from safe fixtures only.
+For local browser QA, run `npm run preview:policy-foundry-hosted-ui` and open the printed localhost URL. The hosted UI flow preview renders blocked and ready hosted review states from safe fixtures only.
 
 For an already deployed hosted runtime, the opt-in Policy Foundry production smoke probe checks health, readiness, hosted workflow rendering, hosted HTML rendering, passing live replay evidence, and failed replay blocking with secret-safe output.
 

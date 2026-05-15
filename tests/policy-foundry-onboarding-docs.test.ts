@@ -209,12 +209,12 @@ function testReadmeNamesPolicyFoundryWithoutOverclaiming(): void {
 
   includes(
     readme,
-    'Policy Foundry is the onboarding layer for this path.',
+    'Policy Foundry is the onboarding layer for this adoption path.',
     'README: Policy Foundry is named in the adoption path',
   );
   includes(
     readme,
-    'observed-action policy mining, not model training, not automatic policy writing',
+    'It does not train models, write policy automatically, or prove production readiness.',
     'README: Policy Foundry avoids ML-training and auto-policy claims',
   );
   includes(
@@ -234,22 +234,12 @@ function testReadmeNamesPolicyFoundryWithoutOverclaiming(): void {
   );
   includes(
     readme,
-    'commercial-boundary review material',
-    'README: commercial boundary is named without entitlement overclaim',
-  );
-  includes(
-    readme,
-    'billing-entitlement review material',
-    'README: billing entitlement gate is named without production overclaim',
-  );
-  includes(
-    readme,
-    'local adversarial replay reports',
+    'generates a red-team fixture bundle and local replay reports through the local adversarial replay executor',
     'README: local adversarial replay executor is named without production overclaim',
   );
   includes(
     readme,
-    'live downstream replay reports',
+    'can attach live downstream replay evidence when configured',
     'README: live downstream replay evidence is named without production overclaim',
   );
   includes(
@@ -259,23 +249,8 @@ function testReadmeNamesPolicyFoundryWithoutOverclaiming(): void {
   );
   includes(
     readme,
-    'hosted review surface',
-    'README: hosted review surface is named without UI overclaim',
-  );
-  includes(
-    readme,
-    'hosted UI flow',
-    'README: hosted UI flow is named without production overclaim',
-  );
-  includes(
-    readme,
-    'persistent hosted wizard state',
+    'packages the hosted review surface, wizard state, entitlement context, and storage-readiness checks',
     'README: persistent hosted wizard state is named without production overclaim',
-  );
-  includes(
-    readme,
-    'hosted wizard storage readiness gating',
-    'README: hosted wizard storage readiness gate is named without claiming shared storage',
   );
   includes(
     readme,

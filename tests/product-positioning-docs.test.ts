@@ -29,7 +29,7 @@ function testTopLevelPositioningStaysAligned(): void {
   const packaging = readProjectFile('docs', '01-overview', 'product-packaging.md');
   const useCases = readProjectFile('docs', '01-overview', 'what-you-can-do.md');
 
-  includes(readme, 'Attestor decides whether a proposed AI action can become a real business consequence.', 'Product docs: README keeps AI Action Control Plane framing');
+  includes(readme, 'Attestor controls the boundary between AI intent and real-world consequence.', 'Product docs: README keeps AI Action Control Plane framing');
   includes(readme, 'Start in shadow mode. See what your AI agents would have done before you let them act.', 'Product docs: README makes shadow mode the adoption wedge');
   includes(readme, 'observe -> recommend -> simulate -> approve -> enforce -> prove', 'Product docs: README keeps the shadow-to-enforcement path');
   includes(readme, 'Attestor can start in `observe` or `warn` mode.', 'Product docs: README makes non-blocking adoption concrete');
@@ -51,6 +51,7 @@ function testTopLevelPositioningStaysAligned(): void {
   includes(readme, 'The pack is the consequence class. Adapters sit underneath it.', 'Product docs: README keeps adapters below consequence packs');
   includes(actionPositioning, 'AI Action Control Plane is the product category.', 'Product docs: action authorization positioning names the category');
   includes(actionPositioning, 'The operating model is consequence admission:', 'Product docs: action authorization positioning preserves consequence-admission language');
+  includes(actionPositioning, 'AI proposes -> Attestor checks -> consequence is admitted, narrowed, reviewed, or blocked -> proof remains', 'Product docs: action authorization positioning keeps the front-page control flow');
   includes(actionPositioning, 'Authorization remains valid inside Attestor, but it is not the whole product category.', 'Product docs: action authorization positioning scopes authorization language');
   includes(actionPositioning, 'This is the pack language.', 'Product docs: action authorization positioning names consequence-class pack language');
   includes(actionPositioning, 'observe -> recommend -> simulate -> approve -> enforce -> prove', 'Product docs: action authorization positioning keeps shadow mode adoption path');

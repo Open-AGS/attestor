@@ -21,10 +21,10 @@ function excludes(content: string, unexpected: RegExp, message: string): void {
 function testReadmePublicClaimBoundary(): void {
   const readme = readProjectFile('README.md');
 
-  includes(readme, '**AI Action Control Plane.**', 'Final claim alignment: README keeps primary category');
+  includes(readme, '**AI Action Control Plane for high-risk AI actions.**', 'Final claim alignment: README keeps primary category');
   includes(
     readme,
-    'Attestor decides whether a proposed AI action can become a real business consequence.',
+    'Attestor controls the boundary between AI intent and real-world consequence.',
     'Final claim alignment: README keeps core consequence sentence',
   );
   includes(readme, 'evaluation release', 'Final claim alignment: README keeps evaluation-release status');
@@ -35,7 +35,7 @@ function testReadmePublicClaimBoundary(): void {
   );
   includes(
     readme,
-    'observed-action policy mining, not model training, not automatic policy writing, and not a production-readiness claim',
+    'It does not train models, write policy automatically, or prove production readiness.',
     'Final claim alignment: README keeps Policy Foundry non-claim boundary',
   );
   includes(

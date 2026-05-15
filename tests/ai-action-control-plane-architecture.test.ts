@@ -154,7 +154,7 @@ function testLanguageContractAnchorsInfrastructureSurface(): void {
 
   for (const expected of [
     'Attestor is an **AI Action Control Plane**.',
-    'Attestor decides whether a proposed AI action can become a real business consequence.',
+    'Attestor controls the boundary between AI intent and real-world consequence.',
     'A gateway is a PEP, not the product category.',
     'authorization layer as the product category',
     'reference-monitor-style',

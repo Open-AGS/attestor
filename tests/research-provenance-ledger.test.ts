@@ -250,6 +250,11 @@ function testLedgerIndexesAuditRemediationClosure(): void {
   );
   includes(
     content,
+    'tests/openai-runtime-policy.test.ts',
+    'Research provenance ledger: OpenAI runtime policy test evidence is indexed',
+  );
+  includes(
+    content,
     'does not prove Anthropic, Vertex AI, or Azure OpenAI calls',
     'Research provenance ledger: LLM provider live-client non-claim is explicit',
   );

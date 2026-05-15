@@ -63,9 +63,12 @@ This closes the original "no guard module" wording as stale. It does not close a
 
 - `GPT_MODEL = 'o3'`
 - `GPT_VISION_MODEL = 'gpt-4o'`
-- two attempts with a fixed retry delay
+- bounded wrapper-controlled retry attempts with jittered exponential backoff
+- OpenAI SDK hidden retries disabled with `maxRetries: 0`
+- per-request timeout policy through OpenAI SDK request options
+- output-token budget enforcement before live calls
+- `store: false` on OpenAI Responses and Chat Completions requests
 - no failover provider implementation
-- no explicit per-call timeout or budget guard in the wrapper
 
 `src/api/llm-provider-registry.ts` now defines a repository-side provider
 registry contract:
@@ -77,6 +80,9 @@ registry contract:
   timeout budget, cost budget, and live smoke proof are wired.
 - proof-context binding accepts prompt/config/tool/schema digests, not raw prompt
   bodies or raw provider response bodies.
+- `callGpt(...)` and `callGptVision(...)` return a digest-only provider proof
+  context; the optional financial live-model proof stores that context without
+  storing the raw prompt or provider body.
 
 Current caller evidence:
 
@@ -129,15 +135,16 @@ Reason:
 
 - Current OpenAI usage is optional and CLI-scoped.
 - `LlmProviderRegistry` records provider inventory, wire status, structured-output mechanisms, credential reference names, rate-limit signal names, and proof-context digest binding.
-- The OpenAI wrapper still lacks explicit per-call timeout/cost budget enforcement and has no live failover provider.
+- The OpenAI wrapper now has explicit per-call timeout and output-token budget enforcement, disables provider SDK hidden retries, and sets provider response storage to `false`.
+- The OpenAI wrapper still has no live failover provider or live provider smoke proof.
 - It should block future claims that Attestor has production-grade multi-provider live-model resilience.
 
 ## Required Follow-Up
 
 To close the runtime LLM provider side as `fixed`, Attestor still needs runtime wiring beyond the registry contract:
 
-1. Wire model/provider selection from environment and purpose into live callers.
-2. Add per-call timeout, budget, retry, and failover enforcement in the live wrapper path.
+1. Wire non-OpenAI providers only after each client has timeout, budget, retry, redaction, and smoke-proof parity.
+2. Add live failover policy and route execution after at least two providers are wired.
 3. Bind provider/model/version and prompt/template digests into every proof packet where live model output matters.
 4. Add live smoke tests for each production-enabled provider profile.
 5. Keep optional live-model proof paths separate from hosted consequence-admission enforcement claims.

@@ -120,6 +120,7 @@
     "test:f2-evidence-confidence-validation": "tsx tests/f2-evidence-confidence-validation.test.ts",
     "test:f2-llm-provider-supply-chain-validation": "tsx tests/f2-llm-provider-supply-chain-validation.test.ts",
     "test:llm-provider-registry": "tsx tests/llm-provider-registry.test.ts",
+    "test:openai-runtime-policy": "tsx tests/openai-runtime-policy.test.ts",
     "test:f2-constraint-kind-registry-validation": "tsx tests/f2-constraint-kind-registry-validation.test.ts",
     "test:f2-model-tool-config-drift-validation": "tsx tests/f2-model-tool-config-drift-validation.test.ts",
     "test:f4-trust-class-pki-proof-validation": "tsx tests/f4-trust-class-pki-proof-validation.test.ts",

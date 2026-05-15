@@ -82,6 +82,12 @@ docker run \
 | `ATTESTOR_PG_URL` | No | None | PostgreSQL for connector proof paths and the RLS sample/probe substrate. It does not by itself move main control-plane stores onto database-enforced RLS |
 | `SNOWFLAKE_ALLOWED_SCHEMAS` | No | None | Optional comma-separated Snowflake schema allowlist. When set, Snowflake connector queries must use schema-qualified or database.schema-qualified table references in the allowlist |
 | `SNOWFLAKE_TIMEOUT_MS` | No | `30000` | Snowflake connector client-side query timeout in milliseconds |
+| `ATTESTOR_OPENAI_TIMEOUT_MS` | No | `120000` | Optional OpenAI wrapper per-request timeout in milliseconds. Invalid values fail closed before a live provider call |
+| `ATTESTOR_OPENAI_MAX_ATTEMPTS` | No | `2` | Optional OpenAI wrapper retry budget. SDK hidden retries are disabled; this bounded wrapper retry loop is the only retry budget |
+| `ATTESTOR_OPENAI_RETRY_INITIAL_DELAY_MS` | No | `1000` | Initial jittered retry delay for OpenAI wrapper calls |
+| `ATTESTOR_OPENAI_RETRY_MAX_DELAY_MS` | No | `8000` | Maximum jittered retry delay for OpenAI wrapper calls |
+| `ATTESTOR_OPENAI_REASONING_MAX_OUTPUT_TOKENS` | No | `32000` | Maximum output-token budget for OpenAI reasoning calls. A call-requested `maxTokens` above this budget fails closed |
+| `ATTESTOR_OPENAI_VISION_MAX_OUTPUT_TOKENS` | No | `4000` | Maximum output-token budget for OpenAI vision calls. A call-requested `maxTokens` above this budget fails closed |
 | `ATTESTOR_TENANT_KEYS` | No | `""` | API key to tenant-id mapping (`key:id:name[:plan][:quota],...`). Empty keys allow the reserved anonymous tenant sentinel `__attestor_anonymous__` only in local development; production-like runtimes (`NODE_ENV=production`, `ATTESTOR_HA_MODE`, public hostname/base URL) reject anonymous tenant fallback on non-public routes. Legacy anonymous `default` headers normalize to the reserved sentinel, but an authenticated tenant id `default` remains distinct |
 | `ATTESTOR_ALLOWED_HOSTS` | No | None | Optional comma-separated HTTP Host allowlist. In production-like runtimes, this is combined with `ATTESTOR_PUBLIC_HOSTNAME` and `ATTESTOR_PUBLIC_BASE_URL` hostnames and rejects non-matching Host headers |
 | `ATTESTOR_TRUST_PROXY_HEADERS` | No | `false` | Enables trusted proxy header processing for source IP resolution. Only enable when the direct peer is a trusted proxy that overwrites or strips inbound forwarded headers |

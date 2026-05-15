@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 
-import { GPT_MODEL, GPT_VISION_MODEL } from './openai.js';
+import { OPENAI_REASONING_MODEL, OPENAI_VISION_MODEL } from './llm-provider-models.js';
 
 export const LLM_PROVIDER_REGISTRY_VERSION = 'llm-provider-registry.v1' as const;
 
@@ -57,9 +57,9 @@ export interface LlmProviderRegistration {
 
 export interface LlmProviderRuntimePolicy {
   readonly maxAttempts: number;
-  readonly retryBackoff: 'fixed-delay-current-openai-wrapper' | 'jittered-exponential-required-before-production';
-  readonly timeoutBudget: 'not-wired' | 'required-before-production';
-  readonly costBudget: 'not-wired' | 'required-before-production';
+  readonly retryBackoff: 'openai-wrapper-jittered-exponential' | 'jittered-exponential-required-before-production';
+  readonly timeoutBudget: 'openai-wrapper-wired' | 'required-before-production';
+  readonly costBudget: 'openai-output-token-budget-wired' | 'required-before-production';
   readonly failoverMode: 'disabled-single-provider' | 'fail-closed-until-two-wired-providers';
   readonly storesRawPrompt: false;
   readonly storesRawProviderBody: false;
@@ -172,9 +172,9 @@ export const DEFAULT_LLM_PROVIDER_REGISTRATIONS: readonly LlmProviderRegistratio
     displayName: 'OpenAI',
     wireStatus: 'wired',
     defaultModelsByPurpose: Object.freeze({
-      reasoning: GPT_MODEL,
-      vision: GPT_VISION_MODEL,
-      'structured-output': GPT_MODEL,
+      reasoning: OPENAI_REASONING_MODEL,
+      vision: OPENAI_VISION_MODEL,
+      'structured-output': OPENAI_REASONING_MODEL,
     }),
     credentialRefs: Object.freeze(['OPENAI_API_KEY']),
     capability: Object.freeze({
@@ -315,9 +315,9 @@ export function llmProviderRegistryDescriptor(): LlmProviderRegistryDescriptor {
     providers: DEFAULT_LLM_PROVIDER_REGISTRATIONS,
     runtimePolicy: Object.freeze({
       maxAttempts: 2,
-      retryBackoff: 'jittered-exponential-required-before-production',
-      timeoutBudget: 'required-before-production',
-      costBudget: 'required-before-production',
+      retryBackoff: 'openai-wrapper-jittered-exponential',
+      timeoutBudget: 'openai-wrapper-wired',
+      costBudget: 'openai-output-token-budget-wired',
       failoverMode: 'fail-closed-until-two-wired-providers',
       storesRawPrompt: false,
       storesRawProviderBody: false,
@@ -478,11 +478,7 @@ function collectReadinessBlockers(input: {
   }
 
   if (input.requireProductionRuntime) {
-    blockers.push(
-      'llm-provider-production-timeout-budget-not-wired',
-      'llm-provider-production-cost-budget-not-wired',
-      'llm-provider-live-smoke-proof-required',
-    );
+    blockers.push('llm-provider-live-smoke-proof-required');
   }
 
   return blockers;

@@ -1,11 +1,12 @@
 import { createHash } from 'node:crypto';
 import {
-  canonicalizeReleaseJson,
-  type CanonicalReleaseJsonValue,
-} from '../../release-kernel/release-canonicalization.js';
+  canonicalization,
+} from '../../release-layer/index.js';
 import type {
   ReleaseSigningProviderKind,
 } from './release-signing-provider.js';
+
+type CanonicalReleaseJsonValue = canonicalization.CanonicalReleaseJsonValue;
 
 export const RELEASE_TENANT_SIGNER_BOUNDARY_SPEC_VERSION =
   'attestor.release-tenant-signer-boundary.v1';
@@ -188,7 +189,7 @@ function digestCanonical(value: CanonicalReleaseJsonValue): {
   readonly canonical: string;
   readonly digest: string;
 } {
-  const canonical = canonicalizeReleaseJson(value);
+  const canonical = canonicalization.canonicalizeReleaseJson(value);
   return Object.freeze({
     canonical,
     digest: digestString(canonical),

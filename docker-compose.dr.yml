@@ -2,7 +2,7 @@ version: '3.9'
 
 services:
   postgres-dr:
-    image: postgres:16
+    image: postgres:16.11@sha256:468e1f126ca5af849799cda06ac9b03d8090aae9fa5163408b3e8da44fad0702
     restart: unless-stopped
     environment:
       POSTGRES_USER: attestor
@@ -25,7 +25,7 @@ services:
       retries: 20
 
   redis-dr:
-    image: redis:7
+    image: redis:7.4.7@sha256:976ab0f0939b78c06d802bcd3bea44c5142ea9a756a57b861e08819817f768c8
     restart: unless-stopped
     command: ['redis-server', '/usr/local/etc/redis/redis.conf']
     volumes:

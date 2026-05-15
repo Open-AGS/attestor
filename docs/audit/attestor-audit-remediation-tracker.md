@@ -52,6 +52,7 @@ later implementation pass does not re-open already-retired issues.
 | F8 operational resilience / chaos | 12 | 6 | 6 | 0 |
 | F9 compliance gap analysis | 12 | 11 | 1 | 0 |
 | F10 customer escape-hatch abuse | 12 | 8 | 4 | 0 |
+| F11 supply-chain depth | 12 | 7 | 5 | 0 |
 
 Remaining work after the final claim-alignment slice: 0 planned
 PR-sized or validation-sized units in the current F1-F5 audit queue.
@@ -76,6 +77,9 @@ Remaining F9 queue after compliance gap validation: 0 planned
 documentation or validation units.
 
 Remaining F10 queue after escape-hatch validation: 0 planned
+repository-side units.
+
+Remaining F11 queue after supply-chain depth validation: 0 planned
 repository-side units.
 
 Completion rule through F5: every F1-F5 row must end as `fixed`,
@@ -401,6 +405,37 @@ export, and adds a digest-only escape-hatch telemetry summary contract.
 | F10-E11 shared counter default | `partial` | Existing F4 shared velocity validation and production storage gates keep this as a claim boundary. | Pure policy default remains single-process compatible. |
 | F10-E12 aggregate escape-hatch usage view | `partial` | `escape-hatch-telemetry.ts` catalog, event, and summary builder. | Persisted admin route / SIEM export remains future integration work. |
 
+## F11 Supply Chain Depth
+
+Source report: project-owner supplied F11 runtime / model / data supply-chain
+depth audit, extending the earlier R13 build-chain work.
+
+Validation record: `docs/audit/f11-supply-chain-depth-validation.md`.
+
+Current F11 status: validation pass complete for the report as supplied. The
+Dockerfile image-pin finding was stale for fresh `origin/master`; Dockerfile
+base images were already digest-pinned. The repository now also digest-pins the
+HA, DR, observability compose, and observability Kubernetes external images;
+blocks `:latest` and missing digests in the supply-chain baseline; exact-pins
+critical runtime dependencies; records OpenAI response-model drift telemetry;
+and records SBOM / release-provenance / webhook evidence boundaries without
+claiming SLSA level, multi-provider LLM resilience, or live production proof.
+
+| ID | Current status | Evidence / overlap | Remaining action |
+|---|---|---|---|
+| F11-SC-1 container base images use floating tags | `fixed` | `Dockerfile` was already digest-pinned; HA/DR compose images are now digest-pinned; `scripts/check-supply-chain-baseline.mjs`; `test:f11-supply-chain-depth-validation`. | No remaining repository action for this scoped finding. Image refresh automation remains operational work. |
+| F11-SC-2 observability stack uses `:latest` tags | `fixed` | `docker-compose.observability.yml`; Kubernetes observability deployment and Grafana Alloy patch; supply-chain baseline image checks. | No remaining repository action for this scoped finding. |
+| F11-SC-3 high-trust npm dependency caret pinning | `fixed` | Critical runtime dependencies are exact-pinned in `package.json` and root `package-lock.json`; supply-chain baseline checks the critical list. | Dev/noncritical dependency ranges remain lockfile-governed. |
+| F11-SC-4 single OpenAI provider, no provider registry | `partial` | `src/api/openai.ts` still uses OpenAI directly, but now records provider-returned model observations and drift warnings. | Multi-provider provider selection, failover, and policy remain future work before resilience claims. |
+| F11-SC-5 generated-adapter verification path | `partial` | `agentic-supply-chain-guard.ts` has `generated-adapter` component kind and blocks unreviewed generated artifacts. | Signed generated-adapter provenance, diff-review activation, and rollback semantics remain future hardening. |
+| F11-SC-6 model drift binding for Attestor-owned OpenAI usage | `partial` | `observeOpenAiModel(...)` records response-model drift telemetry for reasoning and vision calls. | Persisted model-context drift binding and admission-time enforcement are not claimed. |
+| F11-SC-7 customer-supplied evidence re-fetch | `partial` | Same root as F2-AG-6 and F4-LLM09-A; evidence-confidence validation keeps source-system verification explicit. | Universal source-system re-fetch/re-hash remains future work. |
+| F11-SC-8 webhook ingress signature spot-check | `fixed` | F8 webhook service tests reject missing/invalid Stripe, SendGrid, and Mailgun signatures before mutation. | No remaining repository action for this scoped finding. |
+| F11-SC-9 MCP server registry missing | `backlog` | `mcp-server` is already a component kind in the agentic supply-chain guard. | Build an MCP server registry only when MCP becomes an active product integration. |
+| F11-SC-10 connector/plugin component criticality | `fixed` | Critical connector/provider libraries are exact-pinned; agentic supply-chain guard covers connector/plugin kinds and criticality. | No remaining repository action for this scoped package-level finding. |
+| F11-SC-11 SBOM packaging not located | `invalid-as-stated` | `sbom:cyclonedx` writes `.attestor/release-provenance/sbom.cyclonedx.json`; release provenance packages and attests it. | No action unless a future release workflow removes the artifact. |
+| F11-SC-12 release-provenance token boundary | `fixed` | `release-provenance.yml` keeps `attestations: write` and `id-token: write` isolated to release provenance, with evaluation tag trigger plus explicit manual dispatch. | No remaining repository action for this scoped finding. |
+
 ## Next Work Queue
 
 The current F1-F5 project-owner supplied audit queue is closed for repository
@@ -411,7 +446,7 @@ evidence.
 F6 is closed for planned repository slices. F7 is closed for planned repository slices.
 F8 is closed for planned repository slices. F9 is closed for planned repository
 documentation and validation slices. F10 is closed for planned repository
-validation slices.
+validation slices. F11 is closed for planned repository validation slices.
 Planned F7 order:
 
 1. F7 validation and tracker sync. Done.
@@ -435,6 +470,10 @@ Planned F10 order:
 
 1. F10 escape-hatch validation and tracker sync. Done in this slice.
 
+Planned F11 order:
+
+1. F11 supply-chain depth validation and tracker sync. Done in this slice.
+
 Next planned report queue:
 
-1. F11 supply-chain depth. Not started.
+1. F12 continuous red-team automation. Not started.

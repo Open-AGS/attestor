@@ -40,12 +40,51 @@ export interface GptCallResult {
   totalTokens: number;
   /** Whether the response used cached input tokens (provider-side). */
   cachedInputTokens: number;
+  /** Provider-returned model name, when the API response exposes one. */
+  observedModel: string | null;
+  /** True when the provider-returned model differs from Attestor's configured model. */
+  modelDriftObserved: boolean;
 }
 
 const RETRY_DELAY_MS = 5000;
 /** Primary GPT model used for upstream analysis and verification. */
 export const GPT_MODEL = 'o3' as const;
 const MODEL = GPT_MODEL;
+
+export interface OpenAiModelObservation {
+  configuredModel: string;
+  observedModel: string | null;
+  modelDriftObserved: boolean;
+}
+
+function extractObservedModel(response: unknown): string | null {
+  const model = (response as { readonly model?: unknown } | null)?.model;
+  return typeof model === 'string' && model.trim() ? model.trim() : null;
+}
+
+export function observeOpenAiModel(configuredModel: string, response: unknown): OpenAiModelObservation {
+  const observedModel = extractObservedModel(response);
+  return {
+    configuredModel,
+    observedModel,
+    modelDriftObserved: Boolean(observedModel && observedModel !== configuredModel),
+  };
+}
+
+function logOpenAiModelObservation(stage: string, observation: OpenAiModelObservation): void {
+  const fields = {
+    configuredModel: observation.configuredModel,
+    observedModel: observation.observedModel,
+    modelDriftObserved: observation.modelDriftObserved,
+  };
+
+  if (observation.modelDriftObserved) {
+    logger.warn(stage, 'OpenAI response model drift observed', fields);
+    return;
+  }
+
+  logger.info(stage, 'OpenAI response model observation recorded', fields);
+}
 
 /**
  * Call the configured OpenAI reasoning model via the Responses API.
@@ -112,6 +151,8 @@ export async function callGpt(params: GptCallParams): Promise<GptCallResult> {
       const inputTokens = usage?.input_tokens ?? 0;
       const outputTokens = usage?.output_tokens ?? 0;
       const cachedInputTokens = (usage as any)?.input_tokens_details?.cached_tokens ?? 0;
+      const modelObservation = observeOpenAiModel(MODEL, response);
+      logOpenAiModelObservation(stage, modelObservation);
 
       logger.info(stage, `OpenAI model ${MODEL} response received`, {
         tokens: inputTokens + outputTokens,
@@ -125,6 +166,8 @@ export async function callGpt(params: GptCallParams): Promise<GptCallResult> {
         outputTokens,
         totalTokens: inputTokens + outputTokens,
         cachedInputTokens,
+        observedModel: modelObservation.observedModel,
+        modelDriftObserved: modelObservation.modelDriftObserved,
       };
     } catch (err) {
       lastError = err;
@@ -207,6 +250,8 @@ export async function callGptVision(params: GptVisionCallParams): Promise<GptCal
       }
 
       const usage = response.usage;
+      const modelObservation = observeOpenAiModel(VISION_MODEL, response);
+      logOpenAiModelObservation(stage, modelObservation);
       logger.info(stage, 'GPT-4o Vision response received', {
         tokens: usage?.total_tokens ?? 0,
       });
@@ -217,6 +262,8 @@ export async function callGptVision(params: GptVisionCallParams): Promise<GptCal
         outputTokens: usage?.completion_tokens ?? 0,
         totalTokens: usage?.total_tokens ?? 0,
         cachedInputTokens: 0,
+        observedModel: modelObservation.observedModel,
+        modelDriftObserved: modelObservation.modelDriftObserved,
       };
     } catch (err) {
       lastError = err;

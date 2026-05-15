@@ -149,7 +149,7 @@ function main(): void {
     const alloyDeployment = readFileSync(resolve(alloyOut, 'deployment.yaml'), 'utf8');
     const alloyConfigmap = readFileSync(resolve(alloyOut, 'configmap.yaml'), 'utf8');
     const alloySummary = JSON.parse(readFileSync(resolve(alloyOut, 'summary.json'), 'utf8')) as any;
-    ok(alloyDeployment.includes('grafana/alloy:latest') && alloyDeployment.includes('bin/otelcol'), 'Observability release bundle: Grafana Alloy provider swaps the runtime image and command');
+    ok(alloyDeployment.includes('grafana/alloy:v1.16.1@sha256:') && alloyDeployment.includes('bin/otelcol'), 'Observability release bundle: Grafana Alloy provider swaps the digest-pinned runtime image and command');
     ok(alloyConfigmap.includes('otlphttp/grafana_cloud') && alloyConfigmap.includes('basicauth/grafana_cloud'), 'Observability release bundle: Grafana Alloy provider reuses the managed OTLP basicauth pipeline');
     ok(alloySummary.provider === 'grafana-alloy' && alloySummary.runtimeEngine === 'grafana-alloy-otel', 'Observability release bundle: summary captures the Grafana Alloy runtime engine');
 

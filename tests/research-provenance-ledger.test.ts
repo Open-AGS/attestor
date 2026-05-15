@@ -178,6 +178,31 @@ function testLedgerIndexesAuditRemediationClosure(): void {
     'does not prove persisted SIEM/admin reporting',
     'Research provenance ledger: F10 closure keeps live reporting non-claim explicit',
   );
+  includes(
+    content,
+    '### 22. F11 Supply Chain Depth Closure',
+    'Research provenance ledger: F11 closure entry is present',
+  );
+  includes(
+    content,
+    'docs/audit/f11-supply-chain-depth-validation.md',
+    'Research provenance ledger: F11 validation doc is indexed',
+  );
+  includes(
+    content,
+    'tests/f11-supply-chain-depth-validation.test.ts',
+    'Research provenance ledger: F11 validation test is indexed',
+  );
+  includes(
+    content,
+    'does not prove multi-provider LLM failover',
+    'Research provenance ledger: F11 closure keeps live provider-resilience non-claim explicit',
+  );
+  includes(
+    content,
+    'NIST SP 800-161 Rev. 1',
+    'Research provenance ledger: F11 supply-chain anchor is recorded',
+  );
 }
 
 function testLedgerKeepsEvidenceBoundaryExplicit(): void {

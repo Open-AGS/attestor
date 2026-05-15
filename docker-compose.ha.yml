@@ -1,6 +1,6 @@
 services:
   proxy:
-    image: nginx:1.27-alpine
+    image: nginx:1.30.1-alpine@sha256:5c5ea33561790f4d9fbcebb9ecfd4bbb781c760815b4d8b4f80b9d36c6da2659
     ports:
       - "3700:8080"
     volumes:
@@ -94,7 +94,7 @@ services:
     restart: unless-stopped
 
   postgres:
-    image: postgres:16-alpine
+    image: postgres:16.11-alpine@sha256:4327b9fd295502f326f44153a1045a7170ddbfffed1c3829798328556cfd09e2
     environment:
       POSTGRES_USER: ${ATTESTOR_DB_USER:?set ATTESTOR_DB_USER}
       POSTGRES_PASSWORD: ${ATTESTOR_DB_PASSWORD:?set ATTESTOR_DB_PASSWORD}
@@ -108,7 +108,7 @@ services:
       retries: 5
 
   redis:
-    image: redis:7-alpine
+    image: redis:7.4.7-alpine@sha256:02f2cc4882f8bf87c79a220ac958f58c700bdec0dfb9b9ea61b62fb0e8f1bfcf
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s

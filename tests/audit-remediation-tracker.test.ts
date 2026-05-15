@@ -36,6 +36,7 @@ try {
   includes(tracker, 'Remaining F8 queue after operational resilience validation: 0 planned', 'Tracker: F8 remaining estimate is explicit');
   includes(tracker, 'Remaining F9 queue after compliance gap validation: 0 planned', 'Tracker: F9 remaining estimate is explicit');
   includes(tracker, 'Remaining F10 queue after escape-hatch validation: 0 planned', 'Tracker: F10 remaining estimate is explicit');
+  includes(tracker, 'Remaining F11 queue after supply-chain depth validation: 0 planned', 'Tracker: F11 remaining estimate is explicit');
 
   for (const pr of [
     '#220',
@@ -92,6 +93,7 @@ try {
     'F8 Operational Resilience / Chaos',
     'F9 Compliance Gap Analysis',
     'F10 Customer Escape-Hatch Abuse',
+    'F11 Supply Chain Depth',
   ]) {
     includes(tracker, group, `Tracker: ${group} section exists`);
   }
@@ -199,7 +201,21 @@ try {
   includes(tracker, 'F10-E11 shared counter default | `partial`', 'Tracker: F10-E11 status is tracked');
   includes(tracker, 'F10-E12 aggregate escape-hatch usage view | `partial`', 'Tracker: F10-E12 status is tracked');
   includes(tracker, 'F10 Customer Escape-Hatch Abuse', 'Tracker: F10 section is present');
-  includes(tracker, 'F11 supply-chain depth. Not started.', 'Tracker: F11 next work marker is explicit');
+  includes(tracker, 'F11 supply-chain depth | 12 | 7 | 5 | 0', 'Tracker: F11 count row is tracked');
+  includes(tracker, 'F11-SC-1 container base images use floating tags | `fixed`', 'Tracker: F11-SC-1 status is tracked');
+  includes(tracker, 'F11-SC-2 observability stack uses `:latest` tags | `fixed`', 'Tracker: F11-SC-2 status is tracked');
+  includes(tracker, 'F11-SC-3 high-trust npm dependency caret pinning | `fixed`', 'Tracker: F11-SC-3 status is tracked');
+  includes(tracker, 'F11-SC-4 single OpenAI provider, no provider registry | `partial`', 'Tracker: F11-SC-4 status is tracked');
+  includes(tracker, 'F11-SC-5 generated-adapter verification path | `partial`', 'Tracker: F11-SC-5 status is tracked');
+  includes(tracker, 'F11-SC-6 model drift binding for Attestor-owned OpenAI usage | `partial`', 'Tracker: F11-SC-6 status is tracked');
+  includes(tracker, 'F11-SC-7 customer-supplied evidence re-fetch | `partial`', 'Tracker: F11-SC-7 status is tracked');
+  includes(tracker, 'F11-SC-8 webhook ingress signature spot-check | `fixed`', 'Tracker: F11-SC-8 status is tracked');
+  includes(tracker, 'F11-SC-9 MCP server registry missing | `backlog`', 'Tracker: F11-SC-9 status is tracked');
+  includes(tracker, 'F11-SC-10 connector/plugin component criticality | `fixed`', 'Tracker: F11-SC-10 status is tracked');
+  includes(tracker, 'F11-SC-11 SBOM packaging not located | `invalid-as-stated`', 'Tracker: F11-SC-11 status is tracked');
+  includes(tracker, 'F11-SC-12 release-provenance token boundary | `fixed`', 'Tracker: F11-SC-12 status is tracked');
+  includes(tracker, 'F11 Supply Chain Depth', 'Tracker: F11 section is present');
+  includes(tracker, 'F12 continuous red-team automation. Not started.', 'Tracker: F12 next work marker is explicit');
   includes(tracker, 'F5-A1 out-of-band trust root optional | `fixed`', 'Tracker: F5 CA pin validation is fixed');
   includes(tracker, 'F5 CA Pin Required Validation', 'Tracker: F5 CA pin validation evidence is linked');
   includes(tracker, 'F5-A2 legacy flat verify escape via env | `fixed`', 'Tracker: F5 legacy env downgrade validation is fixed');
@@ -256,6 +272,7 @@ try {
   includes(packageJson, '"test:f8-operational-resilience-validation"', 'Package: F8 operational resilience validation script is exposed');
   includes(packageJson, '"test:f9-compliance-gap-validation"', 'Package: F9 compliance gap validation script is exposed');
   includes(packageJson, '"test:f10-escape-hatch-validation"', 'Package: F10 escape-hatch validation script is exposed');
+  includes(packageJson, '"test:f11-supply-chain-depth-validation"', 'Package: F11 supply-chain depth validation script is exposed');
 
   ok(tracker.split('\n').length > 120, 'Tracker: enough rows to cover supplied audit reports');
   console.log(`Audit remediation tracker tests: ${passed} passed, 0 failed`);

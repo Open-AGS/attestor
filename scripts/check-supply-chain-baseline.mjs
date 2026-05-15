@@ -48,6 +48,27 @@ function stableJson(value) {
 const packageJson = readJson('package.json');
 const lock = readJson('package-lock.json');
 const rootLockPackage = lock.packages?.[''];
+const criticalExactPinnedRuntimeDependencies = [
+  '@hono/node-server',
+  'bullmq',
+  'hono',
+  'ioredis',
+  'jose',
+  'node-forge',
+  'openai',
+  'openid-client',
+  'pg',
+  'snowflake-sdk',
+  'stripe',
+];
+const digestPinnedContainerFiles = [
+  'Dockerfile',
+  'docker-compose.ha.yml',
+  'docker-compose.dr.yml',
+  'docker-compose.observability.yml',
+  'ops/kubernetes/observability/deployment.yaml',
+  'ops/kubernetes/observability/providers/grafana-alloy/patch-deployment.yaml',
+];
 
 assert(lock.lockfileVersion === 3, 'package-lock.json must remain lockfileVersion 3.');
 assert(lock.name === packageJson.name, 'package-lock.json name must match package.json.');
@@ -66,6 +87,14 @@ assert(
     packageJson.scripts['sbom:cyclonedx'].includes('npm sbom'),
   'package.json must expose a CycloneDX SBOM generation script.',
 );
+
+for (const dependencyName of criticalExactPinnedRuntimeDependencies) {
+  const range = packageJson.dependencies?.[dependencyName];
+  assert(
+    typeof range === 'string' && /^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/u.test(range),
+    `Critical runtime dependency must be exact-pinned in package.json: ${dependencyName}`,
+  );
+}
 
 const allowedInstallScriptPackages = new Set([
   'esbuild',
@@ -141,6 +170,34 @@ for (const workflowFile of workflowFiles) {
     assert(
       /@[0-9a-f]{40}$/u.test(actionRef),
       `${workflowFile} must pin GitHub Actions by full commit SHA: ${actionRef}`,
+    );
+  }
+}
+
+function containerRefsFromFile(fileName) {
+  const text = readText(fileName);
+  const refs = [];
+
+  for (const match of text.matchAll(/^\s*FROM\s+([^\s]+)(?:\s+AS\s+\S+)?\s*$/gimu)) {
+    refs.push(match[1]);
+  }
+
+  for (const match of text.matchAll(/^\s*image:\s*([^\s#]+)\s*$/gmu)) {
+    refs.push(match[1]);
+  }
+
+  return refs;
+}
+
+for (const fileName of digestPinnedContainerFiles) {
+  const imageRefs = containerRefsFromFile(fileName);
+  assert(imageRefs.length > 0, `${fileName} must expose at least one container image reference.`);
+
+  for (const imageRef of imageRefs) {
+    assert(!/:latest(?:@|$)/u.test(imageRef), `${fileName} must not use a floating :latest image: ${imageRef}`);
+    assert(
+      /@sha256:[0-9a-f]{64}$/u.test(imageRef),
+      `${fileName} image must be digest-pinned: ${imageRef}`,
     );
   }
 }

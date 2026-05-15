@@ -422,6 +422,21 @@ The entries above are the most concrete PR/commit-linked hardening records. The 
 - Remaining limitation or no-go condition: This closes the repository-side F10 queue only. It does not prove persisted SIEM/admin reporting, live OIDC provider operation, customer downstream gateway enforcement, every upstream text extraction path into the no-go scanner, or live production operator monitoring.
 - Status: complete for F10 repository-side validation once this PR is merged and verified on `origin/master`.
 
+### 22. F11 Supply Chain Depth Closure
+
+- Step / PR / commit: F11 project-owner supplied runtime / model / data supply-chain depth report; this closure PR records validation evidence but cannot pre-record its own merge commit.
+- Date if available: 2026-05-15.
+- Trust surface: container base images, observability runtime images, critical runtime dependencies, release SBOM packaging, release provenance permissions, OpenAI model observation, generated adapter / MCP vocabulary, webhook ingress, and connector/plugin supply-chain posture.
+- Protected principle: proof integrity; release provenance; runtime readiness; auditability; no overclaim; data minimization and redaction.
+- Research anchor / source used, if recorded: SLSA v1.0, NIST SP 800-161 Rev. 1, NIST SP 800-218 SSDF, CycloneDX SBOM, Sigstore in-toto attestation concepts, OWASP LLM03 supply chain, and Docker Hub tag/digest lookups for the pinned reference images. These are engineering anchors only, not assurance claims.
+- Repository evidence:
+  - Contract/code evidence: `Dockerfile`, `docker-compose.ha.yml`, `docker-compose.dr.yml`, `docker-compose.observability.yml`, `ops/kubernetes/observability/deployment.yaml`, `ops/kubernetes/observability/providers/grafana-alloy/patch-deployment.yaml`, `scripts/check-supply-chain-baseline.mjs`, `src/api/openai.ts`, `.github/workflows/release-provenance.yml`, `package.json`, `package-lock.json`, `docs/audit/f11-supply-chain-depth-validation.md`, and `docs/audit/attestor-audit-remediation-tracker.md`.
+  - Test evidence: `tests/f11-supply-chain-depth-validation.test.ts`, `tests/security-baseline-docs.test.ts`, `tests/agentic-supply-chain-guard.test.ts`, `tests/f2-llm-provider-supply-chain-validation.test.ts`, `tests/audit-remediation-tracker.test.ts`, and `tests/research-provenance-ledger.test.ts`.
+- Implemented control: Converts F11 from a runtime supply-chain report into machine-checked repository evidence. External runtime images in shipped compose/Kubernetes references are digest-pinned; critical runtime dependencies are exact-pinned; the supply-chain baseline rejects missing image digests and `:latest`; OpenAI responses now emit configured-vs-observed model telemetry; and SBOM/release provenance/webhook evidence is indexed without overclaim.
+- Tests / verification: `npm run test:f11-supply-chain-depth-validation`, `npm run security:supply-chain-baseline`, `npm run test:security-baseline-docs`, `npm run test:agentic-supply-chain-guard`, `npm run test:f2-llm-provider-supply-chain-validation`, `npm run test:audit-remediation-tracker`, and `npm run test:research-provenance-ledger`.
+- Remaining limitation or no-go condition: This closes the repository-side F11 validation queue only. It does not prove multi-provider LLM failover, persisted model drift enforcement, universal evidence re-fetch/re-hash, signed generated-adapter provenance, MCP registry implementation, external production image-refresh operations, or an independently assessed SLSA level.
+- Status: complete for F11 repository-side validation once this PR is merged and verified on `origin/master`.
+
 ## Strong Recorded Research Support
 
 The strongest recorded research support appears in:

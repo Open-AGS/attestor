@@ -44,7 +44,7 @@ function main(): void {
   ok(readme.includes('gateway deployment pattern') && readme.includes('kubectl apply -k ops/kubernetes/observability'), 'Kubernetes observability bundle: README documents gateway rollout');
   ok(configmap.includes('k8sattributes:') && configmap.includes('resourcedetection:'), 'Kubernetes observability bundle: collector config uses Kubernetes/resource metadata processors');
   ok(configmap.includes('TEMPO_OTLP_ENDPOINT') && configmap.includes('LOKI_OTLP_ENDPOINT'), 'Kubernetes observability bundle: collector config is backend-endpoint aware');
-  ok(deployment.includes('replicas: 2') && deployment.includes('otel/opentelemetry-collector-contrib:latest'), 'Kubernetes observability bundle: deployment runs a multi-replica collector gateway');
+  ok(deployment.includes('replicas: 2') && deployment.includes('otel/opentelemetry-collector-contrib:0.152.0@sha256:'), 'Kubernetes observability bundle: deployment runs a multi-replica digest-pinned collector gateway');
   ok(deployment.includes('readinessProbe:') && deployment.includes('livenessProbe:') && deployment.includes('startupProbe:'), 'Kubernetes observability bundle: deployment defines health probes');
   ok(deployment.includes('prometheus.io/scrape') && deployment.includes('containerPort: 8889'), 'Kubernetes observability bundle: deployment exposes Prometheus scrape annotations');
   ok(service.includes('port: 4317') && service.includes('port: 4318') && service.includes('port: 8889'), 'Kubernetes observability bundle: service exposes OTLP and metrics ports');
@@ -60,7 +60,7 @@ function main(): void {
   ok(grafanaAlloyKustomization.includes('../../') && grafanaAlloyKustomization.includes('patch-deployment.yaml'), 'Kubernetes observability bundle: Grafana Alloy overlay composes and patches the base bundle');
   ok(grafanaAlloyReadme.includes('Grafana-supported') && grafanaAlloyReadme.includes('bin/otelcol'), 'Kubernetes observability bundle: Grafana Alloy overlay documents the supported OTel Engine runtime');
   ok(grafanaAlloySecretTemplate.includes('grafana-cloud-otlp-endpoint') && grafanaAlloySecretTemplate.includes('grafana-cloud-otlp-token'), 'Kubernetes observability bundle: Grafana Alloy overlay reuses the managed OTLP secret contract');
-  ok(grafanaAlloyDeploymentPatch.includes('grafana/alloy:latest') && grafanaAlloyDeploymentPatch.includes('bin/otelcol'), 'Kubernetes observability bundle: Grafana Alloy overlay swaps the runtime image and command');
+  ok(grafanaAlloyDeploymentPatch.includes('grafana/alloy:v1.16.1@sha256:') && grafanaAlloyDeploymentPatch.includes('bin/otelcol'), 'Kubernetes observability bundle: Grafana Alloy overlay swaps the digest-pinned runtime image and command');
   ok(grafanaAlloyConfigPatch.includes('basicauth/grafana_cloud') && grafanaAlloyConfigPatch.includes('otlphttp/grafana_cloud'), 'Kubernetes observability bundle: Grafana Alloy overlay keeps the managed OTLP pipeline');
   ok(externalSecretsReadme.includes('ExternalSecret') && externalSecretsReadme.includes('attestor-alertmanager-routing'), 'Kubernetes observability bundle: external-secrets README documents collector and alertmanager secret sync');
   ok(externalSecretsKustomization.includes('grafana-cloud-external-secret.yaml') && externalSecretsKustomization.includes('alertmanager-routing-external-secret.yaml'), 'Kubernetes observability bundle: external-secrets overlay includes both secret resources');

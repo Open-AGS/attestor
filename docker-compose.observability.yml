@@ -16,7 +16,7 @@ services:
       - otel-collector
 
   otel-collector:
-    image: otel/opentelemetry-collector-contrib:latest
+    image: otel/opentelemetry-collector-contrib:0.152.0@sha256:f41d7995565df3733b7568702073a9c490792f9c6ac60684fe6a4da21a313f8d
     command: ["--config=/etc/otelcol-contrib/config.yaml"]
     volumes:
       - ./ops/otel/collector-config.yaml:/etc/otelcol-contrib/config.yaml:ro
@@ -30,7 +30,7 @@ services:
       - loki
 
   prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus:v3.11.3@sha256:e4254400b85610324913f0dc4acf92603d9984e7519414c5a12811aa6146acc3
     command:
       - --config.file=/etc/prometheus/prometheus.yml
       - --storage.tsdb.path=/prometheus
@@ -51,7 +51,7 @@ services:
       - alertmanager
 
   alertmanager-config-renderer:
-    image: node:22-alpine
+    image: node:22.22.3-alpine@sha256:968df39aedcea65eeb078fb336ed7191baf48f972b4479711397108be0966920
     working_dir: /workspace
     command: ["node", "scripts/render-alertmanager-config.mjs", "/generated/alertmanager.yml"]
     restart: "no"
@@ -69,7 +69,7 @@ services:
       - alertmanager-config:/generated
 
   alertmanager:
-    image: prom/alertmanager:latest
+    image: prom/alertmanager:v0.32.1@sha256:51a825c2a40acc3e338fdd00d622e01ec090f72be2b3ea46be0839cd47a4d286
     command:
       - sh
       - -c
@@ -83,7 +83,7 @@ services:
       - alertmanager-config-renderer
 
   loki:
-    image: grafana/loki:latest
+    image: grafana/loki:3.5.8@sha256:00981fd9455db8589c3aa6d06744af3138c4b2c32fdec62101e92c7a704b2642
     command: ["-config.file=/etc/loki/config.yml"]
     volumes:
       - ./ops/observability/loki/loki.yml:/etc/loki/config.yml:ro
@@ -92,7 +92,7 @@ services:
       - "3100:3100"
 
   tempo:
-    image: grafana/tempo:latest
+    image: grafana/tempo:2.9.0@sha256:65a5789759435f1ef696f1953258b9bbdb18eb571d5ce711ff812d2e128288a4
     command: ["-config.file=/etc/tempo/tempo.yml", "-config.expand-env=true"]
     environment:
       ATTESTOR_OBSERVABILITY_TEMPO_RETENTION_PERIOD: ${ATTESTOR_OBSERVABILITY_TEMPO_RETENTION_PERIOD:-336h}
@@ -104,7 +104,7 @@ services:
       - "3200:3200"
 
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana:12.3.0@sha256:70d9599b186ce287be0d2c5ba9a78acb2e86c1a68c9c41449454d0fc3eeb84e8
     environment:
       GF_SECURITY_ADMIN_USER: admin
       GF_SECURITY_ADMIN_PASSWORD: admin

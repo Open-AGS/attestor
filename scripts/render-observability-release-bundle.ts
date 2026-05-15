@@ -7,6 +7,11 @@ import { inferObservabilityRemoteSecretProvider, remoteSecretKey } from './remot
 type Provider = 'generic' | 'grafana-cloud' | 'grafana-alloy';
 type SecretMode = 'secret' | 'external-secret';
 
+const UPSTREAM_OTEL_COLLECTOR_IMAGE =
+  'otel/opentelemetry-collector-contrib:0.152.0@sha256:f41d7995565df3733b7568702073a9c490792f9c6ac60684fe6a4da21a313f8d';
+const GRAFANA_ALLOY_IMAGE =
+  'grafana/alloy:v1.16.1@sha256:51aeb9d829239345070619dad3edd6873186f913c84f45b365b74574fcb38ec0';
+
 function arg(name: string, fallback?: string): string | undefined {
   const prefixed = `--${name}=`;
   const found = process.argv.find((entry) => entry.startsWith(prefixed));
@@ -90,7 +95,7 @@ function main(): void {
   const outputDir = resolve(arg('output-dir', `.attestor/observability/release/${provider}`)!);
   const namespace = env('ATTESTOR_OBSERVABILITY_NAMESPACE') ?? 'attestor-observability';
   const collectorImage = env('ATTESTOR_OBSERVABILITY_COLLECTOR_IMAGE')
-    ?? (provider === 'grafana-alloy' ? 'grafana/alloy:latest' : 'otel/opentelemetry-collector-contrib:latest');
+    ?? (provider === 'grafana-alloy' ? GRAFANA_ALLOY_IMAGE : UPSTREAM_OTEL_COLLECTOR_IMAGE);
   const imagePullPolicy = env('ATTESTOR_OBSERVABILITY_COLLECTOR_IMAGE_PULL_POLICY') ?? 'IfNotPresent';
   const tempoEndpoint = env('ATTESTOR_OBSERVABILITY_TEMPO_OTLP_ENDPOINT') ?? 'tempo.monitoring.svc.cluster.local:4317';
   const lokiEndpoint = env('ATTESTOR_OBSERVABILITY_LOKI_OTLP_ENDPOINT') ?? 'http://loki.monitoring.svc.cluster.local:3100/otlp';
@@ -164,7 +169,7 @@ function main(): void {
 
     deployment = replaceAll(
       deployment,
-      /image:\s*otel\/opentelemetry-collector-contrib:latest/,
+      /image:\s*otel\/opentelemetry-collector-contrib:[^\s]+/,
       `image: ${collectorImage}`,
     );
     if (imagePullPolicy !== 'IfNotPresent') {

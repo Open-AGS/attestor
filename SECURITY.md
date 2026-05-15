@@ -58,6 +58,7 @@ That matches GitHub's least-privilege guidance for `GITHUB_TOKEN`. Elevated perm
 The evaluation baseline now includes a dedicated `Security Scan` workflow:
 
 - `npm run security:supply-chain-baseline` blocks lockfile drift, non-registry dependency resolutions, missing registry integrity metadata, unexpected dependency install scripts, non-SHA-pinned GitHub Actions, missing release SBOM packaging, and workflow permission regressions before dependency installation
+- The same guard also rejects floating `:latest` runtime images, missing SHA-256 image digests in shipped compose/Kubernetes runtime references, and non-exact pins for critical runtime dependencies such as OpenAI, JOSE, Redis/Postgres clients, Stripe, Snowflake, Hono, and BullMQ
 - `npm run security:audit-high` blocks high and critical npm advisories in CI
 - SHA-pinned `actions/dependency-review-action` blocks pull requests that introduce high or critical dependency vulnerabilities
 - [codeql.yml](.github/workflows/codeql.yml) runs CodeQL JavaScript/TypeScript analysis on `master`, schedule, and manual dispatch with `security-events: write` scoped to code scanning upload

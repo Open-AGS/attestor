@@ -303,8 +303,8 @@ import {
   evaluateGenericAdmissionProtectedRoute,
 } from '../generic-admission-protected-route.js';
 import {
-  createInMemoryHostedGenericAdmissionDpopProofReplayStore,
-} from '../hosted-generic-admission-sender-confirmation.js';
+  createRuntimeHostedGenericAdmissionDpopProofReplayStore,
+} from '../hosted-generic-admission-dpop-proof-replay-store.js';
 import {
   releaseRuntimeDurabilitySummary,
   resolveRuntimeProfile,
@@ -378,7 +378,11 @@ export async function createApiHttpRouteRuntime(
       ? 'external-kms-hsm'
       : 'runtime-release-token-issuer';
   const genericAdmissionDpopProofReplayStore =
-    createInMemoryHostedGenericAdmissionDpopProofReplayStore();
+    await createRuntimeHostedGenericAdmissionDpopProofReplayStore({
+      runtimeProfileId: runtimeProfile.id,
+      sharedAuthorityRequestPathReady:
+        releaseRuntimeRequestPathDiagnostics.usesSharedAuthorityStores,
+    });
   const genericAdmissionProtectedRoute = evaluateGenericAdmissionProtectedRoute({
     runtimeProfileId: runtimeProfile.id,
     requireProtectedReleaseTokenForHighRisk: true,

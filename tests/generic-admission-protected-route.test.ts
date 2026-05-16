@@ -538,7 +538,12 @@ function testHostedBootstrapAndReadinessExposeRouteProof(): void {
   ok(
     /senderProofReplayStoreConfigured:\s*true/u.test(apiRouteRuntime) &&
       /senderProofReplayStoreDurability:\s*genericAdmissionDpopProofReplayStore\.durability/u.test(apiRouteRuntime),
-    'Generic protected route: API runtime records runtime-local DPoP proof replay store durability',
+    'Generic protected route: API runtime records runtime-selected DPoP proof replay store durability',
+  );
+  ok(
+    /createRuntimeHostedGenericAdmissionDpopProofReplayStore/u.test(apiRouteRuntime) &&
+      /sharedAuthorityRequestPathReady:\s*releaseRuntimeRequestPathDiagnostics\.usesSharedAuthorityStores/u.test(apiRouteRuntime),
+    'Generic protected route: API runtime selects shared DPoP proof replay store after shared authority cutover',
   );
   ok(
     /genericAdmissionDpopProofReplayStore,/u.test(apiRouteRuntime) &&

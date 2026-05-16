@@ -663,6 +663,31 @@ function testLedgerIndexesAuditRemediationClosure(): void {
     'runtime-local replay protection only',
     'Research provenance ledger: hosted generic DPoP local replay limitation is explicit',
   );
+  includes(
+    content,
+    '### 41. Hosted Generic Shared DPoP Proof Replay Store',
+    'Research provenance ledger: hosted generic shared DPoP replay store entry is present',
+  );
+  includes(
+    content,
+    'PostgreSQL `INSERT ... ON CONFLICT DO NOTHING` anchors atomic first-writer-wins',
+    'Research provenance ledger: hosted generic shared DPoP replay store records PostgreSQL conflict anchor',
+  );
+  includes(
+    content,
+    'tests/hosted-generic-admission-dpop-proof-replay-store.test.ts',
+    'Research provenance ledger: hosted generic shared DPoP replay store test evidence is indexed',
+  );
+  includes(
+    content,
+    'without persisting the raw proof JWT',
+    'Research provenance ledger: hosted generic shared DPoP replay store raw-proof minimization is explicit',
+  );
+  includes(
+    content,
+    'not live production readiness',
+    'Research provenance ledger: hosted generic shared DPoP replay store no-overclaim is explicit',
+  );
 }
 
 function testLedgerKeepsEvidenceBoundaryExplicit(): void {

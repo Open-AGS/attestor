@@ -688,6 +688,31 @@ function testLedgerIndexesAuditRemediationClosure(): void {
     'not live production readiness',
     'Research provenance ledger: hosted generic shared DPoP replay store no-overclaim is explicit',
   );
+  includes(
+    content,
+    '### 45. Google Cloud KMS Release Signer Adapter',
+    'Research provenance ledger: GCP KMS signer adapter entry is present',
+  );
+  includes(
+    content,
+    'src/service/bootstrap/gcp-kms-release-signer.ts',
+    'Research provenance ledger: GCP KMS signer adapter code evidence is indexed',
+  );
+  includes(
+    content,
+    'tests/gcp-kms-release-signer-adapter.test.ts',
+    'Research provenance ledger: GCP KMS signer adapter test evidence is indexed',
+  );
+  includes(
+    content,
+    'Google Cloud KMS `asymmetricSign` anchors raw `data`, `dataCrc32c`, `verifiedDataCrc32c`, `signature`, `signatureCrc32c`, `name`, and `protectionLevel`',
+    'Research provenance ledger: GCP KMS asymmetricSign source fields are recorded',
+  );
+  includes(
+    content,
+    'not runtime external-KMS release-token issuance',
+    'Research provenance ledger: GCP KMS adapter runtime issuance non-claim is explicit',
+  );
 }
 
 function testLedgerKeepsEvidenceBoundaryExplicit(): void {

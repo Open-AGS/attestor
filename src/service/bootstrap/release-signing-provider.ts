@@ -105,7 +105,7 @@ export function buildReleaseSigningProviderDiagnostics(input: {
   }
   if (kind === 'external-kms') {
     blockers.push(
-      'external KMS/HSM release signing provider is declared but not implemented in this runtime',
+      'external KMS/HSM release signing provider is declared, but runtime release-token issuance is not wired to an external signer yet',
     );
   }
   if (configuredProvider !== null && configuredProvider !== 'external-kms' && configuredProvider !== derivedProvider) {
@@ -154,7 +154,7 @@ export function assertReleaseSigningProviderPreflight(input: {
 
   if (configuredProvider === 'external-kms') {
     throw new ReleaseSigningProviderConfigurationError(
-      `${ATTESTOR_RELEASE_SIGNING_PROVIDER_ENV}=external-kms is not implemented yet; refusing to fall back to local release signer material`,
+      `${ATTESTOR_RELEASE_SIGNING_PROVIDER_ENV}=external-kms is not wired into runtime release-token issuance yet; refusing to fall back to local release signer material`,
     );
   }
   if (booleanEnv(env, ATTESTOR_REQUIRE_PRODUCTION_RELEASE_SIGNING_PROVIDER_ENV)) {
@@ -173,7 +173,7 @@ export function assertReleaseSigningProviderAllowed(input: {
 
   if (diagnostics.kind === 'external-kms') {
     throw new ReleaseSigningProviderConfigurationError(
-      `${ATTESTOR_RELEASE_SIGNING_PROVIDER_ENV}=external-kms is not implemented yet; refusing to fall back to local release signer material`,
+      `${ATTESTOR_RELEASE_SIGNING_PROVIDER_ENV}=external-kms is not wired into runtime release-token issuance yet; refusing to fall back to local release signer material`,
       diagnostics,
     );
   }

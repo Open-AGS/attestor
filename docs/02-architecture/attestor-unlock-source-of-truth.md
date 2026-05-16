@@ -35,7 +35,7 @@ orchestration layer.
 | Release and policy authority | Shared PostgreSQL release/policy authority is implemented and tested under embedded multi-instance recovery. | External customer-operated production still needs real environment inputs, probes, and rehearsal. |
 | Enforcement plane | `attestor/release-enforcement-plane` exposes Node, Hono, webhook, record-write, communication-send, action-dispatch, Envoy, and Istio enforcement surfaces. | A scoped customer runtime still has to prove route coverage, no bypasses, online checks, replay consumption, monitoring, kill switch, and customer approval. |
 | Hosted generic admission | Protected high-risk generic admissions now require sender-confirmed release authorization; DPoP proof replay has local and shared PostgreSQL store paths. | `production-shared` still needs structured external issuer proof, customer PEP proof, and live deployment evidence. |
-| Tenant signer boundary | The contract defines tenant-scoped external KMS/HSM proof requirements and fake-adapter conformance. | No live AWS, Google Cloud, Azure, HSM, or confidential-compute signer adapter is wired into issuance. |
+| Tenant signer boundary | The contract defines tenant-scoped external KMS/HSM proof requirements, fake-adapter conformance, and the first Google Cloud KMS Ed25519 sign/verify proof adapter. | Runtime release-token issuance is still not wired to external KMS/HSM signing; live Google Cloud credentials, IAM, workload identity, deployment probes, rotation, and compromise response remain unproven. |
 | Consequence storage | The production storage path names the shared-store primitives and blocks `production-shared` when consequence stores remain evaluation-backed. | Shadow history, simulations, candidates, activation receipts, retry/replay ledgers, audit/dashboard source history, and wizard state still need shared operational implementations. |
 | LLM provider registry | OpenAI is wired; provider inventory and route-readiness evidence gates exist for OpenAI, Anthropic, Vertex AI, and Azure OpenAI. | No live multi-provider runtime, no compatible fallback execution, no non-OpenAI smoke proof, and no hosted consequence route depends on a live LLM provider. |
 | Production rehearsal | Repo-side readiness packets, HA probes, and production rehearsal planning exist. | A real target environment must still prove deployment, restart, probes, backup/restore, observability, and external control boundaries. |
@@ -60,9 +60,9 @@ production readiness.
 | Metric | Value |
 |---|---|
 | Total unlock rounds | 12 |
-| Complete in this tracker | 3 |
-| Remaining after this tracker | 9 |
-| Current posture | Step 01 established the source-of-truth tracker and no-overclaim decision map. Step 02 selects Google Cloud KMS as the first external signer adapter target. Step 03 closes the external signer proof envelope and diagnostics contract. Steps 04-12 remain implementation or research backlog until each has repo evidence, tests, docs, and merge verification on `origin/master`. |
+| Complete in this tracker | 4 |
+| Remaining after this tracker | 8 |
+| Current posture | Step 01 established the source-of-truth tracker and no-overclaim decision map. Step 02 selects Google Cloud KMS as the first external signer adapter target. Step 03 closes the external signer proof envelope and diagnostics contract. Step 04 adds the first Google Cloud KMS Ed25519 adapter/probe contract while keeping runtime bootstrap fail-closed. Steps 05-12 remain implementation or research backlog until each has repo evidence, tests, docs, and merge verification on `origin/master`. |
 
 ## Unlock Sequence
 
@@ -71,7 +71,7 @@ production readiness.
 | 01 | complete | Source-of-truth tracker | `docs/02-architecture/attestor-unlock-source-of-truth.md`, `tests/attestor-unlock-source-of-truth.test.ts`, README/system-overview links, research ledger entry, package script. | This does not implement any production control by itself. |
 | 02 | complete | External KMS/HSM provider decision | `docs/02-architecture/external-kms-hsm-provider-decision.md`, `tests/external-kms-hsm-provider-decision.test.ts`, cryptography policy link, research ledger entry, package script. First adapter target: Google Cloud KMS with `EC_SIGN_ED25519` and raw signing input. | Do not pick a provider that cannot prove algorithm and input-mode semantics. |
 | 03 | complete | External signer contract closure | `src/service/bootstrap/release-tenant-signer-boundary.ts`, `docs/02-architecture/external-signer-contract-closure.md`, `tests/production-tenant-signer-boundary.test.ts`, `tests/external-signer-contract-closure.test.ts`, cryptography policy link, research ledger entry, package script. | Do not let a boolean or local PEM path satisfy external custody. |
-| 04 | planned | First KMS/HSM adapter PR | One real provider adapter, environment contract, sign/verify probe, fail-closed bootstrap, rotation/compromise notes, focused tests. | Do not claim multi-cloud or customer production readiness from one adapter. |
+| 04 | complete | First KMS/HSM adapter PR | `src/service/bootstrap/gcp-kms-release-signer.ts`, `docs/02-architecture/gcp-kms-release-signer-adapter.md`, `tests/gcp-kms-release-signer-adapter.test.ts`, deployment docs, cryptography policy link, research ledger entry, package script. First adapter: Google Cloud KMS `EC_SIGN_ED25519` over raw challenge data with CRC32C checks, local verification, digest-only proof output, and fail-closed bootstrap. | Do not claim multi-cloud, customer custody, live GCP deployment, runtime external-KMS issuance, or customer production readiness from one adapter/probe. |
 | 05 | planned | Protected admission end-to-end proof plan | Route contract for admission -> DPoP-bound release token -> introspection -> replay -> PEP -> downstream receipt, with narrow fixture. | Do not treat a signed bearer helper as sufficient for R3/R4 enforcement. |
 | 06 | planned | Customer PEP adoption package | Customer-runtime adoption proof using release-enforcement-plane, route coverage, no-bypass checks, health, rollback, kill switch, monitoring, audit, customer approval. | Do not claim customer enforcement until a scoped runtime proves it. |
 | 07 | planned | Consequence shared-store inventory | File/in-memory/shared inventory across shadow events, simulations, candidates, activation receipts, wizard state, retry, presentation replay, audit, and dashboard sources. | Do not clear `production-shared` while consequence state is evaluation-backed. |
@@ -83,18 +83,16 @@ production readiness.
 
 ## First PR Decision
 
-The first implementation unlock after this tracker should be Step 02, not a
-large adapter PR. The provider decision has to settle the signing algorithm,
-provider-native input mode, non-exportability, live sign/verify proof shape,
-tenant isolation, rotation/compromise behavior, and proof redaction before code
-selects an external signer path.
+The next implementation unlock after Step 04 should be Step 05, not runtime
+external-KMS issuance yet. The signer path now has a provider-specific proof
+adapter, but Attestor still needs an end-to-end consequence path that proves
+admission, sender-constrained release-token presentation, online
+introspection, replay consumption, PEP enforcement, and downstream receipt.
 
-The strongest likely first adapter candidates are AWS KMS or Google Cloud KMS
-because the current repo policy centers Ed25519 release signing and both have
-documented asymmetric signing support that can be mapped into the existing
-tenant signer boundary. Azure Key Vault or Managed HSM should remain in the
-matrix, but it needs explicit algorithm-fit evidence before it can be treated
-as equivalent for the current Ed25519 path.
+Runtime release-token issuance can be wired to external KMS only after the
+protected admission proof path is narrow enough to consume the resulting
+authority. Otherwise the system would have a stronger signer without proving
+where that authority is enforced.
 
 ## Work Rules For Future Steps
 
@@ -121,6 +119,7 @@ This tracker does not claim:
 - OAuth, cloud-provider, SOC 2, ISO, or security audit certification
 - multi-provider LLM resilience
 - multi-region or customer-operated deployment readiness
-- completion of steps 04-12
+- runtime external-KMS release-token issuance
+- completion of steps 05-12
 
 It is only the decision map for the next unlock sequence.

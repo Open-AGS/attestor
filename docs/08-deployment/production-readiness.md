@@ -177,7 +177,7 @@ ATTESTOR_RELEASE_SIGNING_PROVIDER=file-pem
 ATTESTOR_REQUIRE_PRODUCTION_RELEASE_SIGNING_PROVIDER=true
 ```
 
-`file-pem` is restart-recoverable and useful for evaluation rehearsal, but `/api/v1/health` reports it as `productionReady: false` because the private release signer remains exportable runtime material. `ATTESTOR_RELEASE_SIGNING_PROVIDER=external-kms` currently fails closed because no KMS/HSM-backed signer is implemented yet; this prevents a deployment from claiming external key custody while the runtime still signs with local PEM material. `ATTESTOR_REQUIRE_PRODUCTION_RELEASE_SIGNING_PROVIDER=true` is the promotion guard: it refuses local signing material until a real external provider is wired.
+`file-pem` is restart-recoverable and useful for evaluation rehearsal, but `/api/v1/health` reports it as `productionReady: false` because the private release signer remains exportable runtime material. `ATTESTOR_RELEASE_SIGNING_PROVIDER=external-kms` currently fails closed because the GCP KMS proof adapter is not yet wired into runtime release-token issuance; this prevents a deployment from claiming external key custody while the runtime still signs with local PEM material. `ATTESTOR_REQUIRE_PRODUCTION_RELEASE_SIGNING_PROVIDER=true` is the promotion guard: it refuses local signing material until a real external provider is wired into issuance.
 
 The per-tenant signer boundary also has a structured live provider proof
 contract. Future AWS KMS, Google Cloud KMS, Azure Key Vault / Managed HSM, or
@@ -191,6 +191,16 @@ release-token algorithm, provider-native signing algorithm, and provider input
 mode are all pinned. Do not promote a KMS/HSM adapter that cannot prove whether
 it signed raw data or a provider-required digest, or that maps an unsupported
 provider/algorithm pair such as Azure Key Vault Ed25519.
+
+The first provider-specific probe is Google Cloud KMS Ed25519. Its environment
+contract requires `ATTESTOR_RELEASE_SIGNING_PROVIDER=external-kms`,
+`ATTESTOR_EXTERNAL_KMS_PROVIDER=gcp-kms`, a full
+`ATTESTOR_GCP_KMS_KEY_VERSION_NAME`, opaque `ATTESTOR_GCP_KMS_KEY_ID`,
+non-secret `ATTESTOR_GCP_KMS_PUBLIC_KEY_REF`, and an expected protection level
+of `hsm`, `external`, or `external-vpc`. The probe signs the standard challenge
+through Cloud KMS `asymmetricSign`, verifies CRC32C integrity, verifies the
+signature locally, and returns digest-only proof evidence. It still does not
+make the runtime issuer external-KMS-backed.
 
 For `production-shared`, do not paper over the gate with file paths. Use it only when the dedicated release-authority PostgreSQL substrate is configured, reachable, and reflected in `/api/v1/ready`.
 

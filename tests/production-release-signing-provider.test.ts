@@ -187,7 +187,7 @@ async function testExternalKmsDeclarationFailsClosed(): Promise<void> {
     process.env[ATTESTOR_RELEASE_SIGNING_PROVIDER_ENV] = 'external-kms';
     await expectBootstrapError({
       root,
-      messageIncludes: 'external-kms is not implemented yet',
+      messageIncludes: 'external-kms is not wired into runtime release-token issuance yet',
     });
   } finally {
     restoreEnvironment(previousEnv);

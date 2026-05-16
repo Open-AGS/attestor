@@ -767,6 +767,21 @@ The entries above are the most concrete PR/commit-linked hardening records. The 
 - Remaining limitation or no-go condition: This is not a live Google Cloud KMS adapter, not external KMS/HSM custody evidence, not customer-owned key custody, not production readiness, not multi-cloud signer support, not confidential-compute signing, and not public transparency-log inclusion.
 - Status: complete for repository-side external signer proof contract closure once this PR is merged and verified on `origin/master`.
 
+### 45. Google Cloud KMS Release Signer Adapter
+
+- Step / PR / commit: First KMS/HSM adapter PR; this PR adds the repository-side Google Cloud KMS Ed25519 proof adapter but cannot pre-record its own merge commit.
+- Date if available: 2026-05-16.
+- Trust surface: external release signer adapter, Cloud KMS asymmetric signing request, CRC32C request/response integrity, local signature verification, provider protection-level enforcement, digest-only proof emission, runtime bootstrap no-fallback boundary, and GCP environment contract.
+- Protected principle: tenant isolation; proof integrity; fail-closed boundary; release provenance; runtime readiness; data minimization and redaction; no overclaim.
+- Research anchor / source used, if recorded: Google Cloud KMS algorithms anchor `EC_SIGN_ED25519`; Google Cloud KMS `asymmetricSign` anchors raw `data`, `dataCrc32c`, `verifiedDataCrc32c`, `signature`, `signatureCrc32c`, `name`, and `protectionLevel`; Google Cloud KMS protection-level docs anchor SOFTWARE/HSM/EXTERNAL/EXTERNAL_VPC distinctions. These are engineering anchors only, not live Google Cloud project, IAM, workload identity, or production deployment evidence.
+- Repository evidence:
+  - Contract/code evidence: `src/service/bootstrap/gcp-kms-release-signer.ts`, `src/service/bootstrap/release-signing-provider.ts`, `docs/02-architecture/gcp-kms-release-signer-adapter.md`, `docs/02-architecture/attestor-unlock-source-of-truth.md`, `docs/03-governance/cryptography-policy.md`, `docs/08-deployment/deployment.md`, `docs/08-deployment/production-readiness.md`, and `docs/research/attestor-research-provenance-ledger.md`.
+  - Test evidence: `tests/gcp-kms-release-signer-adapter.test.ts`, `tests/production-release-signing-provider.test.ts`, `tests/attestor-unlock-source-of-truth.test.ts`, and `tests/research-provenance-ledger.test.ts`.
+- Implemented control: Adds a GCP KMS Ed25519 REST adapter/probe that builds an `EC_SIGN_ED25519` `asymmetricSign` request with raw challenge data and CRC32C, sends the access token only in the transport header, verifies provider response name, request CRC confirmation, signature CRC32C, configured protection level, and local Ed25519 signature verification, then emits the existing structured live-provider proof with provider request/response digests. Runtime bootstrap continues to fail closed for `external-kms` because release-token issuance is not yet wired to the external signer.
+- Tests / verification: `npm run test:gcp-kms-release-signer-adapter`, `npm run test:production-release-signing-provider`, `npm run test:attestor-unlock-source-of-truth`, `npm run test:research-provenance-ledger`, `npm run test:production-tenant-signer-boundary`, `npm run typecheck`, and `npm run typecheck:hygiene`.
+- Remaining limitation or no-go condition: This is not runtime external-KMS release-token issuance, not live Google Cloud deployment evidence, not customer-owned key custody, not multi-cloud signer support, not confidential-compute signing, and not production readiness.
+- Status: complete for repository-side first GCP KMS adapter/probe once this PR is merged and verified on `origin/master`.
+
 ## Strong Recorded Research Support
 
 The strongest recorded research support appears in:
@@ -800,5 +815,5 @@ These entries are primarily repository-internal hardening evidence rather than e
 - Many frozen buildout steps have tracker-level research anchors and per-step repository evidence but are not expanded here into one entry per historical PR or commit. Their exact PR/commit mapping is therefore marked not expanded rather than invented.
 - Some repository research notes are source-indexed only. If a later commit, PR body, tracker row, or test does not explicitly reference them, this ledger does not claim direct source-to-commit causality.
 - Complete production readiness is not proven. The repository records this as blocked on target-specific deployment env, service restart, readiness probes, webhook smoke tests, hosted product smoke tests, and production rehearsal evidence.
-- External KMS/HSM-backed release signing is not proven or implemented.
+- External KMS/HSM-backed runtime release signing is not proven or wired into release-token issuance.
 - Customer-operated replay/idempotency storage at every downstream enforcement edge is not proven by evaluation helper tests alone.

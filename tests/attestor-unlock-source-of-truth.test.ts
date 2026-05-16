@@ -40,12 +40,12 @@ function testTrackerExistsAndFreezesTheSequence(): void {
   );
   includes(
     tracker,
-    '| Complete in this tracker | 3 |',
+    '| Complete in this tracker | 4 |',
     'Unlock tracker: current completion count is explicit',
   );
   includes(
     tracker,
-    '| Remaining after this tracker | 9 |',
+    '| Remaining after this tracker | 8 |',
     'Unlock tracker: remaining count is explicit',
   );
 
@@ -53,7 +53,7 @@ function testTrackerExistsAndFreezesTheSequence(): void {
     '| 01 | complete | Source-of-truth tracker |',
     '| 02 | complete | External KMS/HSM provider decision |',
     '| 03 | complete | External signer contract closure |',
-    '| 04 | planned | First KMS/HSM adapter PR |',
+    '| 04 | complete | First KMS/HSM adapter PR |',
     '| 05 | planned | Protected admission end-to-end proof plan |',
     '| 06 | planned | Customer PEP adoption package |',
     '| 07 | planned | Consequence shared-store inventory |',
@@ -77,11 +77,11 @@ function testTrackerRecordsCurrentTruthAndNoGos(): void {
   for (const expected of [
     'One AI Action Control Plane with a shared consequence-admission core and modular packs.',
     '`attestor/release-enforcement-plane` exposes Node, Hono, webhook, record-write, communication-send, action-dispatch, Envoy, and Istio enforcement surfaces.',
-    'No live AWS, Google Cloud, Azure, HSM, or confidential-compute signer adapter is wired into issuance.',
+    'The contract defines tenant-scoped external KMS/HSM proof requirements, fake-adapter conformance, and the first Google Cloud KMS Ed25519 sign/verify proof adapter.',
     'No live multi-provider runtime, no compatible fallback execution, no non-OpenAI smoke proof',
     'Do not clear `production-shared` while consequence state is evaluation-backed.',
     'Do not treat a signed bearer helper as sufficient for R3/R4 enforcement.',
-    'Do not claim multi-cloud or customer production readiness from one adapter.',
+    'Do not claim multi-cloud, customer custody, live GCP deployment, runtime external-KMS issuance, or customer production readiness from one adapter/probe.',
     'First adapter target: Google Cloud KMS with `EC_SIGN_ED25519` and raw signing input.',
   ]) {
     includes(tracker, expected, `Unlock tracker: records boundary ${expected}`);
@@ -92,7 +92,8 @@ function testTrackerRecordsCurrentTruthAndNoGos(): void {
     'external KMS/HSM custody',
     'live customer PEP deployment',
     'multi-provider LLM resilience',
-    'completion of steps 04-12',
+    'runtime external-KMS release-token issuance',
+    'completion of steps 05-12',
   ]) {
     includes(tracker, nonClaim, `Unlock tracker: non-claim includes ${nonClaim}`);
   }
@@ -167,6 +168,11 @@ function testTrackerHasPrimaryAnchorsAndRepoLinks(): void {
     researchLedger,
     'docs/02-architecture/external-signer-contract-closure.md',
     'Unlock tracker: research provenance ledger indexes the external signer contract closure',
+  );
+  includes(
+    researchLedger,
+    'docs/02-architecture/gcp-kms-release-signer-adapter.md',
+    'Unlock tracker: research provenance ledger indexes the GCP KMS adapter',
   );
   assert.equal(
     packageJson.scripts['test:attestor-unlock-source-of-truth'],

@@ -61,6 +61,15 @@ Future live adapters must bind provider protection level, provider request
 digest, provider response digest, and raw-provider-response redaction state
 before a descriptor can clear production-oriented signer readiness.
 
+The first provider-specific adapter/probe is documented in
+[Google Cloud KMS release signer adapter](../02-architecture/gcp-kms-release-signer-adapter.md).
+It uses Cloud KMS `asymmetricSign` with `EC_SIGN_ED25519`, raw `data` input,
+CRC32C request/response integrity checks, local signature verification, and
+digest-only proof output. Runtime release-token issuance is still not wired to
+external KMS/HSM material, so `ATTESTOR_RELEASE_SIGNING_PROVIDER=external-kms`
+continues to fail closed during bootstrap rather than falling back to local PEM
+material.
+
 Official provider anchors:
 
 - AWS KMS supports asymmetric signing keys, including Ed25519, where the
@@ -85,11 +94,10 @@ Official provider anchors:
   [Azure Key Vault Sign](https://learn.microsoft.com/en-us/rest/api/keyvault/keys/sign/sign),
   [Azure Managed HSM overview](https://learn.microsoft.com/en-us/azure/key-vault/managed-hsm/overview)
 
-This is a contract and fake-adapter test boundary. It does not wire a live AWS,
-GCP, Azure, HSM, or confidential-compute signer into release-token issuance.
-The structured proof envelope is the required shape for a future live adapter;
-it is not itself evidence that a provider was called unless an operator or
-adapter supplies fresh provider-derived sign/verify evidence.
+This is a contract plus first GCP adapter/probe boundary. It does not wire a
+live AWS, GCP, Azure, HSM, or confidential-compute signer into release-token
+issuance. The structured proof envelope is the required shape for live adapter
+evidence; it is not itself production deployment evidence.
 
 ## Key Boundary
 

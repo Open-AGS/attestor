@@ -88,8 +88,9 @@ external-kms
 ```
 
 `external-kms` still fails closed in runtime bootstrap until a real provider is
-wired. This prevents a deployment from claiming external custody while the
-runtime signs with local material.
+wired into runtime release-token issuance. Step 04 adds the first Google Cloud
+KMS proof adapter, but bootstrap still refuses to fall back to local signing
+material until issuance itself is external-signer-backed.
 
 Step 04 may add a provider-specific Google Cloud KMS runtime path, but it must
 use this proof contract and must not silently fall back to `file-pem` or

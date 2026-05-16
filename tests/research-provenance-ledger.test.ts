@@ -738,6 +738,36 @@ function testLedgerIndexesAuditRemediationClosure(): void {
     'not live customer PEP deployment',
     'Research provenance ledger: protected admission E2E live customer PEP non-claim is explicit',
   );
+  includes(
+    content,
+    '### 47. Customer PEP Adoption Package',
+    'Research provenance ledger: customer PEP adoption package entry is present',
+  );
+  includes(
+    content,
+    'src/consequence-admission/customer-pep-adoption-package.ts',
+    'Research provenance ledger: customer PEP adoption package code evidence is indexed',
+  );
+  includes(
+    content,
+    'tests/customer-pep-adoption-package.test.ts',
+    'Research provenance ledger: customer PEP adoption package test evidence is indexed',
+  );
+  includes(
+    content,
+    'Envoy ext_authz anchors enforcement-edge external authorization',
+    'Research provenance ledger: customer PEP adoption package Envoy source anchor is recorded',
+  );
+  includes(
+    content,
+    'A ready package allows only a scoped customer PEP adoption claim',
+    'Research provenance ledger: customer PEP adoption package claim boundary is recorded',
+  );
+  includes(
+    content,
+    'not customer traffic cutover',
+    'Research provenance ledger: customer PEP adoption package traffic cutover non-claim is explicit',
+  );
 }
 
 function testLedgerKeepsEvidenceBoundaryExplicit(): void {

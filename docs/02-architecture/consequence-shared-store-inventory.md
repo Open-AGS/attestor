@@ -5,10 +5,13 @@ this document and its paired evaluator do not create a database schema, migrate
 file-backed history, start workers, configure Redis/PostgreSQL, run Debezium,
 activate enforcement, or prove production readiness.
 
-Step 08 now adds the first PostgreSQL-backed atomic retry/replay store slice in
-[Consequence Shared Atomic Stores](consequence-shared-atomic-stores.md). This
-inventory remains the broader map because the default runtime path and the
-remaining append-only/read-model/shared-session surfaces are still not cleared
+Step 08 adds the first PostgreSQL-backed atomic retry/replay store slice in
+[Consequence Shared Atomic Stores](consequence-shared-atomic-stores.md).
+Step 09 adds the shared source-history and outbox primitive in
+[Consequence Shared History Outbox Store](consequence-shared-history-outbox-store.md).
+This inventory remains the broader map because the default runtime path,
+hosted wizard shared session state, agent-loop proof, read-model workers,
+connector delivery, migration jobs, and deployment probes are still not cleared
 for `production-shared`.
 
 ## Decision
@@ -18,7 +21,8 @@ now moves to shared source history:
 
 ```text
 08 -> atomic replay/idempotency stores (repository-side slice implemented)
-09 -> append-only history, receipts, outbox, and read-model source history
+09 -> append-only history, receipts, outbox, and read-model source primitive (repository-side slice implemented)
+10 -> LLM provider runtime decision
 ```
 
 Step 08 targeted:
@@ -28,10 +32,11 @@ Step 08 targeted:
 
 Those two surfaces are the most direct multi-node correctness risk because an
 in-memory reference ledger lets each process see a different retry/replay
-history. Step 09 should now target append-only source history and receipt/read-
-model evidence. A shared database is not enough evidence by itself; each PR must
-prove tenant scope, schema digest, and the relevant conflict/outbox/worker
-arbitration.
+history. Step 09 now proves the shared source-history and outbox primitive with
+tenant scope, schema digest, outbox digest, worker claim query digest, and
+advisory-lock keyspace digest. A shared database is not enough evidence by
+itself; later runtime migration PRs still have to wire producers, read-model
+workers, deployment probes, and recovery checks.
 
 ## Inventory
 
@@ -41,19 +46,19 @@ Shadow-to-Policy and production-shared readiness.
 
 | Surface | Current mode | Target primitive | First target |
 |---|---|---|---|
-| shadow admission events | file-backed evaluation | tenant-scoped append-only history | Step 09 |
-| shadow policy simulations | file-backed evaluation | tenant-scoped append-only history | Step 09 |
-| shadow policy candidates | file-backed evaluation | tenant-scoped append-only history | Step 09 |
-| shadow activation receipts | file-backed evaluation | tenant-scoped append-only history | Step 09 |
-| Policy Foundry hosted wizard state | file-backed evaluation | tenant-scoped TTL session state | Step 09 |
+| shadow admission events | file-backed evaluation; shared primitive now exists | tenant-scoped append-only history | Step 09 primitive done |
+| shadow policy simulations | file-backed evaluation; shared primitive now exists | tenant-scoped append-only history | Step 09 primitive done |
+| shadow policy candidates | file-backed evaluation; shared primitive now exists | tenant-scoped append-only history | Step 09 primitive done |
+| shadow activation receipts | file-backed evaluation; shared primitive now exists | tenant-scoped append-only history | Step 09 primitive done |
+| Policy Foundry hosted wizard state | file-backed evaluation | tenant-scoped TTL session state | later shared-session work |
 | retry attempt ledger | in-memory reference | atomic record-if-absent | Step 08 |
 | presentation replay ledger | in-memory reference | atomic set-if-absent | Step 08 |
 | agent-loop abuse guard | in-memory reference unless shared guard is configured and proven | atomic counter and signature set | existing shared path plus proof |
-| audit evidence export | derived evaluation read model | shared source history | Step 09 |
-| business risk dashboard | derived evaluation read model | shared source history | Step 09 |
-| dashboard API summary | derived view | shared source history | Step 09 |
-| downstream execution receipt | contract only | tenant-scoped receipt history | Step 09 |
-| tamper-evident history | contract only | tenant-scoped tamper-evident history | Step 09 |
+| audit evidence export | derived evaluation read model; shared source primitive now exists | shared source history | Step 09 primitive done |
+| business risk dashboard | derived evaluation read model; shared source primitive now exists | shared source history | Step 09 primitive done |
+| dashboard API summary | derived view; shared source primitive now exists | shared source history | Step 09 primitive done |
+| downstream execution receipt | contract only; shared source primitive now exists | tenant-scoped receipt history | Step 09 primitive done |
+| tamper-evident history | contract only; shared source primitive now exists | tenant-scoped tamper-evident history | Step 09 primitive done |
 | crypto execution-admission telemetry and receipts | local ephemeral sink | domain-adapter event history | later domain projection |
 
 The crypto row is intentional. Crypto execution admission is a domain adapter
@@ -76,10 +81,12 @@ Step 08 proves `schema-digest`, `tenant-scope-digest`, and
 `src/service/consequence-shared-atomic-stores.ts` and
 `tests/consequence-shared-atomic-stores.test.ts`.
 
-Step 09 should prove append-only history, receipt history, read-model source
-history, outbox contracts, worker claim queries, and recovery behavior. It may
-define an outbox contract digest, but it must not claim Debezium or event-bus
-delivery unless a connector is actually wired and tested.
+Step 09 proves append-only history, receipt/read-model source history, outbox
+contracts, worker claim queries, and advisory-lock keyspace through
+`src/service/consequence-shared-history-outbox-store.ts` and
+`tests/consequence-shared-history-outbox-store.test.ts`. It does not claim
+Debezium, event-bus delivery, read-model worker operation, runtime migration, or
+production readiness.
 
 ## Research Anchors
 

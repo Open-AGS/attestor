@@ -99,8 +99,8 @@ function testFirstAndSecondSlicesAreExplicit(): void {
   );
   equal(
     evaluation.recommendedNextPr,
-    '09-append-only-history-outbox',
-    'Consequence shared-store inventory: next PR recommendation moves to append-only history after Step 08',
+    '10-llm-provider-runtime-decision',
+    'Consequence shared-store inventory: next PR recommendation moves to provider runtime decision after Step 09',
   );
 }
 
@@ -210,6 +210,11 @@ function testEvidencePathsAndDocsAreWired(): void {
     '02-architecture',
     'consequence-shared-atomic-stores.md',
   );
+  const historyOutboxDoc = readProjectFile(
+    'docs',
+    '02-architecture',
+    'consequence-shared-history-outbox-store.md',
+  );
   const packageJson = JSON.parse(readProjectFile('package.json')) as {
     scripts: Record<string, string>;
   };
@@ -227,7 +232,7 @@ function testEvidencePathsAndDocsAreWired(): void {
     'Consequence shared-store inventory docs: crypto projection boundary is documented',
   );
   ok(
-    tracker.includes('| Complete in this tracker | 8 |'),
+    tracker.includes('| Complete in this tracker | 9 |'),
     'Unlock tracker: completion count is updated',
   );
   ok(
@@ -239,7 +244,11 @@ function testEvidencePathsAndDocsAreWired(): void {
     'Unlock tracker: step 08 is complete',
   );
   ok(
-    masterPlan.includes('| Complete | 8 |'),
+    tracker.includes('| 09 | complete | Consequence shared-store PR slice 2 |'),
+    'Unlock tracker: step 09 is complete',
+  );
+  ok(
+    masterPlan.includes('| Complete | 9 |'),
     'Unified master plan: completion count is updated',
   );
   ok(
@@ -251,8 +260,16 @@ function testEvidencePathsAndDocsAreWired(): void {
     'Unified master plan: step 08 is complete',
   );
   ok(
+    masterPlan.includes('| 09 | complete | Consequence shared-store PR slice 2 |'),
+    'Unified master plan: step 09 is complete',
+  );
+  ok(
     atomicStoreDoc.includes('PostgreSQL-backed shared atomic store slice'),
     'Consequence shared atomic stores docs: Step 08 implementation doc exists',
+  );
+  ok(
+    historyOutboxDoc.includes('PostgreSQL-backed shared source-history and outbox primitive'),
+    'Consequence shared history outbox docs: Step 09 implementation doc exists',
   );
   ok(
     researchLedger.includes('### 49. Consequence Shared-Store Inventory'),
@@ -261,6 +278,10 @@ function testEvidencePathsAndDocsAreWired(): void {
   ok(
     researchLedger.includes('### 50. Consequence Shared Atomic Stores'),
     'Research ledger: step 08 atomic store entry is recorded',
+  );
+  ok(
+    researchLedger.includes('### 51. Consequence Shared History Outbox Store'),
+    'Research ledger: step 09 history outbox entry is recorded',
   );
   equal(
     packageJson.scripts['test:consequence-shared-store-inventory'],
@@ -271,6 +292,11 @@ function testEvidencePathsAndDocsAreWired(): void {
     packageJson.scripts['test:consequence-shared-atomic-stores'],
     'tsx tests/consequence-shared-atomic-stores.test.ts',
     'Consequence shared atomic stores: package script is registered',
+  );
+  equal(
+    packageJson.scripts['test:consequence-shared-history-outbox-store'],
+    'tsx tests/consequence-shared-history-outbox-store.test.ts',
+    'Consequence shared history outbox store: package script is registered',
   );
 }
 

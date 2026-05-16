@@ -853,6 +853,31 @@ function testLedgerIndexesAuditRemediationClosure(): void {
     'runtime consequence ledgers still default to in-memory reference stores',
     'Research provenance ledger: consequence shared atomic store runtime cutover non-claim is explicit',
   );
+  includes(
+    content,
+    '### 51. Consequence Shared History Outbox Store',
+    'Research provenance ledger: consequence shared history outbox entry is present',
+  );
+  includes(
+    content,
+    'src/service/consequence-shared-history-outbox-store.ts',
+    'Research provenance ledger: consequence shared history outbox code evidence is indexed',
+  );
+  includes(
+    content,
+    'tests/consequence-shared-history-outbox-store.test.ts',
+    'Research provenance ledger: consequence shared history outbox test evidence is indexed',
+  );
+  includes(
+    content,
+    'FOR UPDATE SKIP LOCKED',
+    'Research provenance ledger: consequence shared history outbox worker claim anchor is recorded',
+  );
+  includes(
+    content,
+    'does not wire Debezium, event-bus delivery, read-model workers, runtime migration, or production readiness',
+    'Research provenance ledger: consequence shared history outbox non-claim is explicit',
+  );
 }
 
 function testLedgerKeepsEvidenceBoundaryExplicit(): void {

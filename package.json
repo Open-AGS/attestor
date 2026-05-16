@@ -278,6 +278,7 @@
     "test:consequence-shared-store-profile": "tsx tests/consequence-shared-store-profile.test.ts",
     "test:consequence-shared-store-inventory": "tsx tests/consequence-shared-store-inventory.test.ts",
     "test:consequence-shared-atomic-stores": "tsx tests/consequence-shared-atomic-stores.test.ts",
+    "test:consequence-shared-history-outbox-store": "tsx tests/consequence-shared-history-outbox-store.test.ts",
     "test:consequence-dashboard-api-summary": "tsx tests/consequence-dashboard-api-summary.test.ts",
     "test:consequence-external-review-packet": "tsx tests/consequence-external-review-packet.test.ts",
     "test:data-minimization-redaction-policy": "tsx tests/data-minimization-redaction-policy.test.ts",

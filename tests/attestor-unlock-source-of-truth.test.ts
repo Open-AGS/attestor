@@ -40,12 +40,12 @@ function testTrackerExistsAndFreezesTheSequence(): void {
   );
   includes(
     tracker,
-    '| Complete in this tracker | 8 |',
+    '| Complete in this tracker | 9 |',
     'Unlock tracker: current completion count is explicit',
   );
   includes(
     tracker,
-    '| Remaining after this tracker | 4 |',
+    '| Remaining after this tracker | 3 |',
     'Unlock tracker: remaining count is explicit',
   );
 
@@ -58,7 +58,7 @@ function testTrackerExistsAndFreezesTheSequence(): void {
     '| 06 | complete | Customer PEP adoption package |',
     '| 07 | complete | Consequence shared-store inventory |',
     '| 08 | complete | Consequence shared-store PR slice 1 |',
-    '| 09 | planned | Consequence shared-store PR slice 2 |',
+    '| 09 | complete | Consequence shared-store PR slice 2 |',
     '| 10 | planned | LLM provider runtime decision |',
     '| 11 | planned | LLM provider runtime PR |',
     '| 12 | planned | Production rehearsal go/no-go packet |',
@@ -85,7 +85,7 @@ function testTrackerRecordsCurrentTruthAndNoGos(): void {
     'First adapter target: Google Cloud KMS with `EC_SIGN_ED25519` and raw signing input.',
     'Route contract: admission -> DPoP-bound release token -> introspection -> token-use replay -> customer PEP -> downstream receipt.',
     'The package combines runtime adoption proof, protected E2E proof, route coverage, no-bypass review, fail-closed config, verifier integration, health, rollback, kill switch, monitoring, audit, customer approval, activation evidence, and downstream receipt.',
-    'Step 08 now adds PostgreSQL-backed atomic retry/replay stores with tenant-scope, schema, and idempotency proof digests.',
+    'Step 09 adds PostgreSQL-backed shared source-history and outbox primitives with append-only sequence, tenant-scope, schema, outbox, worker-claim, and advisory-lock proof digests.',
     'Atomic retry/replay stores use tenant-scope digest, PostgreSQL `ON CONFLICT`, unique idempotency/replay indexes',
   ]) {
     includes(tracker, expected, `Unlock tracker: records boundary ${expected}`);
@@ -97,7 +97,7 @@ function testTrackerRecordsCurrentTruthAndNoGos(): void {
     'live customer PEP deployment',
     'multi-provider LLM resilience',
     'runtime external-KMS release-token issuance',
-    'completion of steps 09-12',
+    'completion of steps 10-12',
   ]) {
     includes(tracker, nonClaim, `Unlock tracker: non-claim includes ${nonClaim}`);
   }
@@ -197,6 +197,11 @@ function testTrackerHasPrimaryAnchorsAndRepoLinks(): void {
     researchLedger,
     'docs/02-architecture/consequence-shared-atomic-stores.md',
     'Unlock tracker: research provenance ledger indexes the consequence shared atomic stores',
+  );
+  includes(
+    researchLedger,
+    'docs/02-architecture/consequence-shared-history-outbox-store.md',
+    'Unlock tracker: research provenance ledger indexes the consequence shared history outbox store',
   );
   assert.equal(
     packageJson.scripts['test:attestor-unlock-source-of-truth'],

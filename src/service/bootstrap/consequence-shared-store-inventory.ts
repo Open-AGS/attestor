@@ -97,7 +97,7 @@ export interface ConsequenceSharedStoreInventoryEvaluation {
   readonly missingProfileComponentIds: readonly ConsequenceSharedStoreComponentId[];
   readonly items: readonly ConsequenceSharedStoreInventoryItem[];
   readonly noGoConditions: readonly ConsequenceSharedStoreInventoryNoGo[];
-  readonly recommendedNextPr: '09-append-only-history-outbox';
+  readonly recommendedNextPr: '10-llm-provider-runtime-decision';
   readonly limitation: string;
 }
 
@@ -148,8 +148,11 @@ export const CONSEQUENCE_SHARED_STORE_INVENTORY_ITEMS = Object.freeze([
     cryptoCompatible: true,
     repositoryEvidence: Object.freeze([
       'src/service/shadow-persistence-store.ts',
+      'src/service/consequence-shared-history-outbox-store.ts',
       'tests/shadow-persistence-store.test.ts',
+      'tests/consequence-shared-history-outbox-store.test.ts',
       'docs/02-architecture/shadow-persistence-stores.md',
+      'docs/02-architecture/consequence-shared-history-outbox-store.md',
     ]),
     blockerCodes: Object.freeze([
       'file-backed-evaluation-history',
@@ -172,8 +175,11 @@ export const CONSEQUENCE_SHARED_STORE_INVENTORY_ITEMS = Object.freeze([
     cryptoCompatible: true,
     repositoryEvidence: Object.freeze([
       'src/service/shadow-persistence-store.ts',
+      'src/service/consequence-shared-history-outbox-store.ts',
       'tests/shadow-policy-simulation.test.ts',
+      'tests/consequence-shared-history-outbox-store.test.ts',
       'docs/02-architecture/shadow-policy-simulation.md',
+      'docs/02-architecture/consequence-shared-history-outbox-store.md',
     ]),
     blockerCodes: Object.freeze([
       'file-backed-evaluation-history',
@@ -196,10 +202,13 @@ export const CONSEQUENCE_SHARED_STORE_INVENTORY_ITEMS = Object.freeze([
     cryptoCompatible: true,
     repositoryEvidence: Object.freeze([
       'src/service/shadow-persistence-store.ts',
+      'src/service/consequence-shared-history-outbox-store.ts',
       'src/consequence-admission/policy-discovery-candidates.ts',
       'src/consequence-admission/policy-foundry-candidate-registry.ts',
       'tests/policy-discovery-candidates.test.ts',
       'tests/policy-foundry-candidate-registry.test.ts',
+      'tests/consequence-shared-history-outbox-store.test.ts',
+      'docs/02-architecture/consequence-shared-history-outbox-store.md',
     ]),
     blockerCodes: Object.freeze([
       'file-backed-evaluation-history',
@@ -222,8 +231,11 @@ export const CONSEQUENCE_SHARED_STORE_INVENTORY_ITEMS = Object.freeze([
     cryptoCompatible: true,
     repositoryEvidence: Object.freeze([
       'src/service/shadow-persistence-store.ts',
+      'src/service/consequence-shared-history-outbox-store.ts',
       'src/consequence-admission/shadow-customer-activation-receipt.ts',
       'tests/shadow-customer-activation-receipt.test.ts',
+      'tests/consequence-shared-history-outbox-store.test.ts',
+      'docs/02-architecture/consequence-shared-history-outbox-store.md',
     ]),
     blockerCodes: Object.freeze([
       'file-backed-evaluation-history',
@@ -347,8 +359,11 @@ export const CONSEQUENCE_SHARED_STORE_INVENTORY_ITEMS = Object.freeze([
     cryptoCompatible: true,
     repositoryEvidence: Object.freeze([
       'src/consequence-admission/audit-evidence-export.ts',
+      'src/service/consequence-shared-history-outbox-store.ts',
       'tests/consequence-audit-evidence-export.test.ts',
+      'tests/consequence-shared-history-outbox-store.test.ts',
       'docs/02-architecture/audit-evidence-export.md',
+      'docs/02-architecture/consequence-shared-history-outbox-store.md',
     ]),
     blockerCodes: Object.freeze([
       'derived-evaluation-read-model',
@@ -371,8 +386,11 @@ export const CONSEQUENCE_SHARED_STORE_INVENTORY_ITEMS = Object.freeze([
     cryptoCompatible: true,
     repositoryEvidence: Object.freeze([
       'src/consequence-admission/business-risk-dashboard.ts',
+      'src/service/consequence-shared-history-outbox-store.ts',
       'tests/consequence-business-risk-dashboard.test.ts',
+      'tests/consequence-shared-history-outbox-store.test.ts',
       'docs/02-architecture/business-risk-dashboard.md',
+      'docs/02-architecture/consequence-shared-history-outbox-store.md',
     ]),
     blockerCodes: Object.freeze([
       'derived-evaluation-read-model',
@@ -395,8 +413,11 @@ export const CONSEQUENCE_SHARED_STORE_INVENTORY_ITEMS = Object.freeze([
     cryptoCompatible: true,
     repositoryEvidence: Object.freeze([
       'src/consequence-admission/dashboard-api-summary.ts',
+      'src/service/consequence-shared-history-outbox-store.ts',
       'tests/consequence-dashboard-api-summary.test.ts',
+      'tests/consequence-shared-history-outbox-store.test.ts',
       'docs/02-architecture/dashboard-api-summary.md',
+      'docs/02-architecture/consequence-shared-history-outbox-store.md',
     ]),
     blockerCodes: Object.freeze([
       'derived-evaluation-read-model',
@@ -422,8 +443,11 @@ export const CONSEQUENCE_SHARED_STORE_INVENTORY_ITEMS = Object.freeze([
     cryptoCompatible: true,
     repositoryEvidence: Object.freeze([
       'src/consequence-admission/downstream-execution-receipt.ts',
+      'src/service/consequence-shared-history-outbox-store.ts',
       'tests/downstream-execution-receipt.test.ts',
+      'tests/consequence-shared-history-outbox-store.test.ts',
       'docs/02-architecture/downstream-execution-receipt.md',
+      'docs/02-architecture/consequence-shared-history-outbox-store.md',
     ]),
     blockerCodes: Object.freeze([
       'contract-only-receipt-history',
@@ -446,8 +470,11 @@ export const CONSEQUENCE_SHARED_STORE_INVENTORY_ITEMS = Object.freeze([
     cryptoCompatible: true,
     repositoryEvidence: Object.freeze([
       'src/consequence-admission/tamper-evident-history.ts',
+      'src/service/consequence-shared-history-outbox-store.ts',
       'tests/consequence-tamper-evident-history.test.ts',
+      'tests/consequence-shared-history-outbox-store.test.ts',
       'docs/02-architecture/tamper-evident-history.md',
+      'docs/02-architecture/consequence-shared-history-outbox-store.md',
     ]),
     blockerCodes: Object.freeze([
       'contract-only-receipt-history',
@@ -538,7 +565,7 @@ export function evaluateConsequenceSharedStoreInventory(input: {
       'do-not-claim-outbox-delivery-without-a-wired-connector',
       'do-not-use-shared-database-without-tenant-and-idempotency-proof',
     ] as const),
-    recommendedNextPr: '09-append-only-history-outbox',
+    recommendedNextPr: '10-llm-provider-runtime-decision',
     limitation:
       'Inventory only: this contract selects the next shared-store slices, but it does not create schemas, migrate file histories, run workers, configure Redis/PostgreSQL, or prove production readiness.',
   });

@@ -43,7 +43,7 @@ the no-overclaim boundary here.
 | Enforcement plane | `attestor/release-enforcement-plane` exposes Node, Hono, webhook, record-write, communication-send, action-dispatch, Envoy, and Istio enforcement surfaces; the customer PEP adoption package now combines scoped runtime proof, protected E2E proof, route coverage, no-bypass review, operations controls, customer approval, and downstream receipt evidence. | A real customer runtime still has to deploy the PEP, operate it, prove target-specific probes, and rehearse rollback outside the repository. |
 | Hosted generic admission | Protected high-risk generic admissions now require sender-confirmed release authorization; DPoP proof replay has local and shared PostgreSQL store paths; the protected admission E2E proof plan defines the route chain from admission to downstream receipt; scoped customer PEP adoption can be packaged for review. | `production-shared` still needs live deployment evidence, target-specific PEP operation, and a runtime proving no bypasses under real traffic. |
 | Tenant signer boundary | The contract defines tenant-scoped external KMS/HSM proof requirements, fake-adapter conformance, and the first Google Cloud KMS Ed25519 sign/verify proof adapter. | Runtime release-token issuance is still not wired to external KMS/HSM signing; live Google Cloud credentials, IAM, workload identity, deployment probes, rotation, and compromise response remain unproven. |
-| Consequence storage | The production storage path names the shared-store primitives and blocks `production-shared` when consequence stores remain evaluation-backed. Step 08 now adds PostgreSQL-backed atomic retry/replay stores with tenant-scope, schema, and idempotency proof digests. | Shadow history, simulations, candidates, activation receipts, audit/dashboard source history, dashboard summary, downstream receipts, tamper-evident history, crypto domain projections, wizard state, runtime cutover, and deployment probes still need shared operational implementations. |
+| Consequence storage | The production storage path names the shared-store primitives and blocks `production-shared` when consequence stores remain evaluation-backed. Step 08 adds PostgreSQL-backed atomic retry/replay stores with tenant-scope, schema, and idempotency proof digests. Step 09 adds PostgreSQL-backed shared source-history and outbox primitives with append-only sequence, tenant-scope, schema, outbox, worker-claim, and advisory-lock proof digests. | Runtime cutover, shadow producer migration, read-model workers, downstream receipt reconciliation, tamper-evident external immutability, crypto domain projections, hosted wizard shared session state, agent-loop proof, deployment probes, and backup/restore rehearsal still need shared operational implementations. |
 | LLM provider registry | OpenAI is wired; provider inventory and route-readiness evidence gates exist for OpenAI, Anthropic, Vertex AI, and Azure OpenAI. | No live multi-provider runtime, no compatible fallback execution, no non-OpenAI smoke proof, and no hosted consequence route depends on a live LLM provider. |
 | Production rehearsal | Repo-side readiness packets, HA probes, and production rehearsal planning exist. | A real target environment must still prove deployment, restart, probes, backup/restore, observability, and external control boundaries. |
 
@@ -67,9 +67,9 @@ production readiness.
 | Metric | Value |
 |---|---|
 | Total unlock rounds | 12 |
-| Complete in this tracker | 8 |
-| Remaining after this tracker | 4 |
-| Current posture | Step 01 established the source-of-truth tracker and no-overclaim decision map. Step 02 selects Google Cloud KMS as the first external signer adapter target. Step 03 closes the external signer proof envelope and diagnostics contract. Step 04 adds the first Google Cloud KMS Ed25519 adapter/probe contract while keeping runtime bootstrap fail-closed. Step 05 defines the protected admission E2E route contract and narrow fixture evaluator. Step 06 packages scoped customer PEP adoption evidence without claiming live deployment. Step 07 records the consequence shared-store inventory. Step 08 adds PostgreSQL-backed atomic retry/replay stores with digest-only operational evidence while keeping runtime cutover unclaimed. Steps 09-12 remain implementation or research backlog until each has repo evidence, tests, docs, and merge verification on `origin/master`. |
+| Complete in this tracker | 9 |
+| Remaining after this tracker | 3 |
+| Current posture | Step 01 established the source-of-truth tracker and no-overclaim decision map. Step 02 selects Google Cloud KMS as the first external signer adapter target. Step 03 closes the external signer proof envelope and diagnostics contract. Step 04 adds the first Google Cloud KMS Ed25519 adapter/probe contract while keeping runtime bootstrap fail-closed. Step 05 defines the protected admission E2E route contract and narrow fixture evaluator. Step 06 packages scoped customer PEP adoption evidence without claiming live deployment. Step 07 records the consequence shared-store inventory. Step 08 adds PostgreSQL-backed atomic retry/replay stores with digest-only operational evidence while keeping runtime cutover unclaimed. Step 09 adds PostgreSQL-backed shared source-history and outbox primitives with digest-only operational evidence while keeping runtime migration, workers, Debezium/event-bus delivery, and production readiness unclaimed. Steps 10-12 remain implementation or research backlog until each has repo evidence, tests, docs, and merge verification on `origin/master`. |
 
 ## Unlock Sequence
 
@@ -83,19 +83,20 @@ production readiness.
 | 06 | complete | Customer PEP adoption package | `src/consequence-admission/customer-pep-adoption-package.ts`, `docs/02-architecture/customer-pep-adoption-package.md`, `tests/customer-pep-adoption-package.test.ts`, research ledger entry, tracker update, and package script. The package combines runtime adoption proof, protected E2E proof, route coverage, no-bypass review, fail-closed config, verifier integration, health, rollback, kill switch, monitoring, audit, customer approval, activation evidence, and downstream receipt. | Do not claim live customer enforcement, production readiness, or universal non-bypassability from repo-side adoption packaging. |
 | 07 | complete | Consequence shared-store inventory | `src/service/bootstrap/consequence-shared-store-inventory.ts`, `docs/02-architecture/consequence-shared-store-inventory.md`, `tests/consequence-shared-store-inventory.test.ts`, research ledger entry, tracker update, and package script. Inventory covers shadow events, simulations, candidates, activation receipts, wizard state, retry, presentation replay, agent-loop guard, audit/dashboard sources, dashboard summary, downstream receipts, tamper-evident history, and crypto execution-admission telemetry as one-engine domain projection. | Do not clear `production-shared` while consequence state is evaluation-backed. |
 | 08 | complete | Consequence shared-store PR slice 1 | `src/service/consequence-shared-atomic-stores.ts`, `tests/consequence-shared-atomic-stores.test.ts`, `docs/02-architecture/consequence-shared-atomic-stores.md`, retry/replay descriptor/doc updates, research ledger entry, tracker update, and package script. Atomic retry/replay stores use tenant-scope digest, PostgreSQL `ON CONFLICT`, unique idempotency/replay indexes, raw-idempotency-key-free and raw-replay-key-free storage, and digest-only diagnostics. Runtime cutover remains unclaimed. | Do not use a shared database as proof without constraints and tenant boundary evidence. |
-| 09 | planned | Consequence shared-store PR slice 2 | Append-only shadow/audit history, outbox contract, worker claim query, advisory-lock keyspace, migration and recovery tests. | Do not claim event-bus or Debezium delivery unless a connector is actually wired. |
+| 09 | complete | Consequence shared-store PR slice 2 | `src/service/consequence-shared-history-outbox-store.ts`, `tests/consequence-shared-history-outbox-store.test.ts`, `docs/02-architecture/consequence-shared-history-outbox-store.md`, inventory/tracker/master-plan updates, research ledger entry, and package script. Append-only source history and outbox rows use tenant-scope digest, digest-only source/payload refs, per-tenant sequence allocation under advisory lock, RLS policy shape, `FOR UPDATE SKIP LOCKED` worker claim, claim-token publish marker, and digest-only diagnostics. Runtime migration and worker delivery remain unclaimed. | Do not claim event-bus or Debezium delivery unless a connector is actually wired. |
 | 10 | planned | LLM provider runtime decision | Second-provider choice, route compatibility rule, structured-output adapter shape, rate-limit signal mapping, timeout/budget behavior. | Do not prioritize provider diversity ahead of the consequence enforcement chain. |
 | 11 | planned | LLM provider runtime PR | Anthropic, Vertex AI, or Azure OpenAI adapter; digest-only runtime evidence; live smoke probe behind external-live gate; no raw prompt/provider-body storage. | Do not claim live failover or resilience until both providers execute compatible routes. |
 | 12 | planned | Production rehearsal go/no-go packet | Combined readiness packet for signer, shared stores, PEP, provider route, probes, backup/restore, observability, and incident/runbook evidence. | Do not call the repo, a branch, or a rehearsal target production-ready without real target proof. |
 
 ## Next PR Decision
 
-The next implementation unlock after Step 08 should be Step 09: shared
-append-only shadow/audit history, receipt history, outbox contracts, and
-read-model source history. The inventory confirms that `production-shared`
-still cannot be cleared while consequence state remains split across
-file-backed, in-memory, contract-only, local ephemeral, or evaluation-only
-histories and while runtime cutover/probes remain unproven.
+The next implementation unlock after Step 09 should be Step 10: LLM provider
+runtime decision. The shared-store track now has repository-side primitives for
+atomic retry/replay and source-history/outbox, but `production-shared` still
+cannot be cleared while consequence state remains split across file-backed,
+in-memory, contract-only, local ephemeral, or evaluation-only histories and
+while runtime cutover, read-model workers, connector delivery, deployment
+probes, and recovery rehearsals remain unproven.
 
 Runtime release-token issuance can be wired to external KMS only after the
 protected admission proof path is narrow enough to consume the resulting
@@ -128,6 +129,6 @@ This tracker does not claim:
 - multi-provider LLM resilience
 - multi-region or customer-operated deployment readiness
 - runtime external-KMS release-token issuance
-- completion of steps 09-12
+- completion of steps 10-12
 
 It is only the decision map for the next unlock sequence.

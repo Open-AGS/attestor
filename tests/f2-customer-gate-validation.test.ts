@@ -88,6 +88,11 @@ includes(
 );
 includes(
   validationDoc,
+  'PostgreSQL shared store',
+  'F2 customer gate validation: shared DPoP proof replay store is explicit',
+);
+includes(
+  validationDoc,
   'Current repo evidence supports `partial`, not `fixed`.',
   'F2 customer gate validation: no overclaim is present',
 );

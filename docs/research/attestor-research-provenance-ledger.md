@@ -707,6 +707,21 @@ The entries above are the most concrete PR/commit-linked hardening records. The 
 - Remaining limitation or no-go condition: This is runtime-local replay protection only. It does not create a PostgreSQL or Redis DPoP proof replay backend, prove cross-instance replay resistance, deploy a customer PEP, operate a live authorization server, activate external KMS/HSM signing, or prove production readiness.
 - Status: complete for repository-side hosted runtime-local DPoP proof replay consumption once this PR is merged and verified on `origin/master`.
 
+### 41. Hosted Generic Shared DPoP Proof Replay Store
+
+- Step / PR / commit: Hosted generic shared DPoP proof replay store; this PR records repository-side shared replay storage but cannot pre-record its own merge commit.
+- Date if available: 2026-05-16.
+- Trust surface: hosted generic admission route, token-request DPoP proof `jti` single-use enforcement, PostgreSQL shared replay state, raw-proof minimization, production-shared route readiness, and replay-store cutover from runtime-local to shared substrate.
+- Protected principle: fail-closed boundary; customer authority; proof integrity; replay and idempotency safety; runtime readiness; data minimization and redaction; no overclaim.
+- Research anchor / source used, if recorded: OAuth DPoP RFC 9449 anchors proof `jti` uniqueness and replay rejection within the accepted proof window; PostgreSQL `INSERT ... ON CONFLICT DO NOTHING` anchors atomic first-writer-wins conflict arbitration for a shared replay key. These are engineering anchors only, not OAuth certification, live authorization-server proof, customer PEP deployment, or production database operation.
+- Repository evidence:
+  - Contract/code evidence: `src/service/hosted-generic-admission-dpop-proof-replay-store.ts`, `src/service/hosted-generic-admission-sender-confirmation.ts`, `src/service/bootstrap/api-route-runtime.ts`, `src/service/generic-admission-protected-route.ts`, `docs/01-overview/consequence-admission-quickstart.md`, `docs/audit/f2-customer-gate-enforcement-validation.md`, and `docs/audit/attestor-audit-remediation-tracker.md`.
+  - Test evidence: `tests/hosted-generic-admission-dpop-proof-replay-store.test.ts`, `tests/generic-admission-protected-route.test.ts`, `tests/production-shared-request-path-cutover.test.ts`, `tests/f2-customer-gate-validation.test.ts`, `tests/audit-remediation-tracker.test.ts`, and `tests/research-provenance-ledger.test.ts`.
+- Implemented control: Adds a PostgreSQL shared DPoP proof replay store that stores replay keys, proof `jti`, first-seen time, expiry time, and digest-safe ledger JSON without persisting the raw proof JWT. `claimProofReplay` deletes expired rows for the same replay key and then uses `INSERT ... ON CONFLICT DO NOTHING` so concurrent shared-store claims accept exactly one proof. API bootstrap selects the PostgreSQL shared replay store only when `production-shared` has completed the shared authority request-path cutover; otherwise the runtime-local store remains explicit and keeps `production-shared` blocked.
+- Tests / verification: `npm run test:hosted-generic-admission-dpop-proof-replay-store`, `npm run test:generic-admission-protected-route`, `npm run test:production-shared-request-path-cutover`, `npm run test:f2-customer-gate-validation`, `npm run test:audit-remediation-tracker`, `npm run test:research-provenance-ledger`, `npm run typecheck`, and `npm run typecheck:hygiene`.
+- Remaining limitation or no-go condition: This is repository-side shared replay storage, not live production readiness. It does not deploy a customer PEP, operate a live authorization server, activate external KMS/HSM signing, prove backup/restore or multi-region PostgreSQL operation, or certify OAuth DPoP conformance. Production-shared remains blocked without structured external issuer proof and live deployment evidence.
+- Status: complete for repository-side hosted shared DPoP proof replay store once this PR is merged and verified on `origin/master`.
+
 ## Strong Recorded Research Support
 
 The strongest recorded research support appears in:

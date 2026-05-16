@@ -64,14 +64,16 @@ in admission or shadow records.
 
 The hosted generic admission route now has an active DPoP sender-confirmation
 bridge. It validates a token-request DPoP proof from the `DPoP` header, derives
-the `cnf.jkt` confirmation, consumes the proof `jti` in a runtime-local DPoP
+the `cnf.jkt` confirmation, consumes the proof `jti` in a raw-proof-free DPoP
 proof replay store, and uses the runtime release-token issuer to issue
 caller-only protected authorization material for high-risk generic admissions.
+Local profiles use the runtime-local store; `production-shared` selects the
+PostgreSQL shared replay store after the shared authority request path is active.
 Missing, invalid, or replayed DPoP proof fails closed before shadow recording.
 Hosted bootstrap wires the release-token introspection store into this issuer
 path and the route readiness proof now blocks `production-shared` when token
-introspection, token-use replay-consumption, or shared DPoP sender-proof replay
-storage is missing or runtime-local.
+introspection, token-use replay-consumption, shared DPoP sender-proof replay
+storage, or external issuer proof is missing.
 
 `evaluateCustomerPepRuntimeAdoption(...)` adds a customer PEP runtime adoption
 proof contract. It is ready only when the scoped customer runtime uses the
@@ -113,7 +115,7 @@ hosted generic DPoP issuer bridge: validates token-request DPoP proof and issues
 customer PEP runtime adoption proof: can prove scoped fail-closed runtime adoption evidence, but does not deploy or operate the PEP
 protected enforcement profile: routes high-risk/customer-sensitive paths to the release-enforcement plane
 hosted durable introspection/replay wiring: registers issued protected tokens in the release-token introspection authority and blocks production-shared readiness unless token introspection and token-use replay-consumption storage are shared
-hosted DPoP proof replay consumption: consumes token-request DPoP proof jti values in a runtime-local store and blocks production-shared readiness unless the DPoP sender-proof replay store is configured as shared
+hosted DPoP proof replay consumption: consumes token-request DPoP proof jti values in local profiles and has a PostgreSQL shared store for production-shared shared-authority cutover
 hosted generic admission protected route: requires the protected issuer for high-risk hosted generic admissions and blocks production-shared readiness until the issuer boundary has structured external live provider proof
 ```
 
@@ -179,15 +181,15 @@ durable introspection/replay wiring
 narrow the hosted configuration gap: the service bootstrap now requires
 protected release-token issuance for high-risk generic admissions, validates
 token-request DPoP proof into `cnf.jkt`, consumes the DPoP proof `jti` in a
-runtime-local replay store, registers issued protected tokens in the
-release-token introspection authority, exposes the route proof through
-health/readiness diagnostics, and fails closed when sender confirmation,
-shared token replay/introspection storage, or shared DPoP proof replay storage
-is absent. It still does not configure a live external KMS/HSM signer, deployed
-customer-operated PEP, shared DPoP proof replay backend, or live production
-environment; production-shared route readiness remains blocked while the issuer
-boundary is runtime-local, lacks structured live provider proof, or lacks shared
-sender-proof replay storage.
+runtime-local replay store for local profiles and a PostgreSQL shared replay
+store after production-shared shared-authority cutover, registers issued
+protected tokens in the release-token introspection authority, exposes the route
+proof through health/readiness diagnostics, and fails closed when sender
+confirmation, shared token replay/introspection storage, or shared DPoP proof
+replay storage is absent. It still does not configure a live external KMS/HSM
+signer, deployed customer-operated PEP, or live production environment;
+production-shared route readiness remains blocked while the issuer boundary is
+runtime-local or lacks structured live provider proof.
 
 ## Tests
 

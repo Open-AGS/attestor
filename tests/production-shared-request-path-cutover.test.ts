@@ -160,6 +160,11 @@ async function testActualRequestPathWritesSharedStore(): Promise<void> {
         blockers: readonly unknown[];
         blockingComponentIds: readonly string[];
       };
+      genericAdmissionProtectedRoute: {
+        senderProofReplayStoreDurability: string;
+        senderProofReplayStoreReady: boolean;
+        blockers: readonly string[];
+      };
     };
     equal(
       security.releaseRuntimeDurability.ready,
@@ -185,6 +190,22 @@ async function testActualRequestPathWritesSharedStore(): Promise<void> {
       security.consequenceSharedStoreProfile.readyForSelectedProfile,
       false,
       'Production-shared cutover: consequence shared-store profile still blocks protected routes',
+    );
+    equal(
+      security.genericAdmissionProtectedRoute.senderProofReplayStoreDurability,
+      'shared',
+      'Production-shared cutover: hosted DPoP proof replay store uses the shared PostgreSQL path',
+    );
+    equal(
+      security.genericAdmissionProtectedRoute.senderProofReplayStoreReady,
+      true,
+      'Production-shared cutover: shared hosted DPoP proof replay clears sender-proof replay store readiness',
+    );
+    ok(
+      !security.genericAdmissionProtectedRoute.blockers.includes(
+        'production-sender-proof-replay-store-not-shared',
+      ),
+      'Production-shared cutover: hosted DPoP replay no longer blocks on local-only sender-proof storage',
     );
 
     const components = await listReleaseAuthorityComponents();

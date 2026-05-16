@@ -322,8 +322,11 @@ function testUnsupportedProviderAlgorithmFailsClosed(): void {
         keyRef: 'azure:key-vault:tenant-a-release',
         keyId: 'release-key-v1',
         algorithm: 'Ed25519',
+        providerProtectionLevel: 'hsm',
         signatureDigest: 'sha256:azure-ed25519-signature',
         verificationDigest: 'sha256:azure-ed25519-verification',
+        providerRequestDigest: 'sha256:azure-ed25519-request',
+        providerResponseDigest: 'sha256:azure-ed25519-response',
       }),
     /does not support algorithm/u,
     'Tenant signer boundary: unsupported provider algorithm cannot produce a live proof envelope',
@@ -380,9 +383,11 @@ function testProductionReadinessRequiresLiveProviderProof(): void {
     keyRef: 'gcp:kms:projects/p/locations/us/keyRings/r/cryptoKeys/tenant-a',
     keyId: 'release-key-v1',
     algorithm: 'Ed25519',
+    providerProtectionLevel: 'hsm',
     signatureDigest: 'sha256:gcp-signature',
     verificationDigest: 'sha256:gcp-verification',
     providerRequestDigest: 'sha256:gcp-request',
+    providerResponseDigest: 'sha256:gcp-response',
     signedAt: checkedAt,
     verifiedAt: checkedAt,
   });
@@ -410,6 +415,16 @@ function testProductionReadinessRequiresLiveProviderProof(): void {
     liveProof.providerSignInputMode,
     'raw',
     'Tenant signer boundary: live provider proof binds the provider input mode',
+  );
+  equal(
+    liveProof.providerProtectionLevel,
+    'hsm',
+    'Tenant signer boundary: live provider proof binds the provider protection level',
+  );
+  equal(
+    liveProof.providerResponseDigest,
+    'sha256:gcp-response',
+    'Tenant signer boundary: live provider proof records the provider response by digest',
   );
   equal(
     liveProof.rawProviderResponseStored,
@@ -462,6 +477,26 @@ function testProductionReadinessRequiresLiveProviderProof(): void {
     'Tenant signer boundary: descriptor records the provider-native signing algorithm',
   );
   equal(
+    liveVerified.providerProtectionLevel,
+    'hsm',
+    'Tenant signer boundary: descriptor records the live proof provider protection level',
+  );
+  equal(
+    liveVerified.liveProviderProofProviderRequestDigest,
+    'sha256:gcp-request',
+    'Tenant signer boundary: descriptor records provider request digest only',
+  );
+  equal(
+    liveVerified.liveProviderProofProviderResponseDigest,
+    'sha256:gcp-response',
+    'Tenant signer boundary: descriptor records provider response digest only',
+  );
+  equal(
+    liveVerified.rawProviderResponseStored,
+    false,
+    'Tenant signer boundary: descriptor never stores raw provider responses',
+  );
+  equal(
     liveVerified.activatesRuntimeSigning,
     false,
     'Tenant signer boundary: descriptor still does not activate runtime signing',
@@ -477,8 +512,11 @@ function testLiveProviderProofFailsClosedOnCapabilityMismatch(): void {
     keyId: 'release-key-v1',
     algorithm: 'Ed25519',
     providerNativeAlgorithm: 'ED25519_PH_SHA_512',
+    providerProtectionLevel: 'aws-kms-hsm',
     signatureDigest: 'sha256:aws-prehash-signature',
     verificationDigest: 'sha256:aws-prehash-verification',
+    providerRequestDigest: 'sha256:aws-prehash-request',
+    providerResponseDigest: 'sha256:aws-prehash-response',
     signedAt: checkedAt,
     verifiedAt: checkedAt,
   });
@@ -503,6 +541,48 @@ function testLiveProviderProofFailsClosedOnCapabilityMismatch(): void {
   );
 }
 
+function testLiveProviderProofFailsClosedOnInsufficientProtectionLevel(): void {
+  const checkedAt = '2026-05-15T09:30:00.000Z';
+  const softwareProof = createReleaseTenantSignerLiveProviderProof({
+    tenantId: 'tenant-a',
+    providerClass: 'gcp-kms',
+    keyRef: 'gcp:kms:projects/p/locations/us/keyRings/r/cryptoKeys/tenant-a',
+    keyId: 'release-key-v1',
+    algorithm: 'Ed25519',
+    providerProtectionLevel: 'software',
+    signatureDigest: 'sha256:gcp-software-signature',
+    verificationDigest: 'sha256:gcp-software-verification',
+    providerRequestDigest: 'sha256:gcp-software-request',
+    providerResponseDigest: 'sha256:gcp-software-response',
+    signedAt: checkedAt,
+    verifiedAt: checkedAt,
+  });
+  const descriptor = createExternalKmsReleaseTenantSignerDescriptor({
+    tenantId: 'tenant-a',
+    providerClass: 'gcp-kms',
+    keyRef: 'gcp:kms:projects/p/locations/us/keyRings/r/cryptoKeys/tenant-a',
+    keyId: 'release-key-v1',
+    algorithm: 'Ed25519',
+    liveProviderProof: softwareProof,
+    nowMs: Date.parse(checkedAt),
+  });
+
+  equal(
+    descriptor.liveProviderProofState,
+    'invalid',
+    'Tenant signer boundary: insufficient provider protection invalidates live proof',
+  );
+  ok(
+    descriptor.productionBlockers.includes('live-provider-protection-level-insufficient'),
+    'Tenant signer boundary: software provider protection blocks production readiness',
+  );
+  equal(
+    descriptor.productionReady,
+    false,
+    'Tenant signer boundary: software protection cannot satisfy production readiness',
+  );
+}
+
 function testLiveProviderProofFailsClosedOnStaleOrMismatch(): void {
   const proof = createReleaseTenantSignerLiveProviderProof({
     tenantId: 'tenant-a',
@@ -510,8 +590,11 @@ function testLiveProviderProofFailsClosedOnStaleOrMismatch(): void {
     keyRef: 'aws:kms:us-east-1:111122223333:key/tenant-a-release',
     keyId: 'release-key-v1',
     algorithm: 'Ed25519',
+    providerProtectionLevel: 'aws-kms-hsm',
     signatureDigest: 'sha256:aws-signature',
     verificationDigest: 'sha256:aws-verification',
+    providerRequestDigest: 'sha256:aws-request',
+    providerResponseDigest: 'sha256:aws-response',
     signedAt: '2026-05-13T09:30:00.000Z',
     verifiedAt: '2026-05-13T09:30:00.000Z',
   });
@@ -569,8 +652,11 @@ function testConfidentialSignerRequiresAttestationEvidence(): void {
       keyRef: 'azure:managed-hsm:tenant-a-release',
       keyId: 'release-key-v1',
       algorithm: 'ES256',
+      providerProtectionLevel: 'azure-managed-hsm',
       signatureDigest: 'sha256:azure-signature',
       verificationDigest: 'sha256:azure-verification',
+      providerRequestDigest: 'sha256:azure-request',
+      providerResponseDigest: 'sha256:azure-response',
       signedAt: checkedAt,
       verifiedAt: checkedAt,
     }),
@@ -602,8 +688,11 @@ function testConfidentialSignerRequiresAttestationEvidence(): void {
       keyRef: 'azure:managed-hsm:tenant-a-release',
       keyId: 'release-key-v1',
       algorithm: 'ES256',
+      providerProtectionLevel: 'azure-managed-hsm',
       signatureDigest: 'sha256:azure-signature',
       verificationDigest: 'sha256:azure-verification',
+      providerRequestDigest: 'sha256:azure-request',
+      providerResponseDigest: 'sha256:azure-response',
       signedAt: checkedAt,
       verifiedAt: checkedAt,
     }),
@@ -707,6 +796,7 @@ testProviderCapabilityMapsNativeSigningAlgorithms();
 testUnsupportedProviderAlgorithmFailsClosed();
 testProductionReadinessRequiresLiveProviderProof();
 testLiveProviderProofFailsClosedOnCapabilityMismatch();
+testLiveProviderProofFailsClosedOnInsufficientProtectionLevel();
 testLiveProviderProofFailsClosedOnStaleOrMismatch();
 testConfidentialSignerRequiresAttestationEvidence();
 testKeyIdMustBeOpaque();

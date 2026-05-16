@@ -60,9 +60,9 @@ production readiness.
 | Metric | Value |
 |---|---|
 | Total unlock rounds | 12 |
-| Complete in this tracker | 2 |
-| Remaining after this tracker | 10 |
-| Current posture | Step 01 established the source-of-truth tracker and no-overclaim decision map. Step 02 selects Google Cloud KMS as the first external signer adapter target. Steps 03-12 remain implementation or research backlog until each has repo evidence, tests, docs, and merge verification on `origin/master`. |
+| Complete in this tracker | 3 |
+| Remaining after this tracker | 9 |
+| Current posture | Step 01 established the source-of-truth tracker and no-overclaim decision map. Step 02 selects Google Cloud KMS as the first external signer adapter target. Step 03 closes the external signer proof envelope and diagnostics contract. Steps 04-12 remain implementation or research backlog until each has repo evidence, tests, docs, and merge verification on `origin/master`. |
 
 ## Unlock Sequence
 
@@ -70,7 +70,7 @@ production readiness.
 |---|---|---|---|---|
 | 01 | complete | Source-of-truth tracker | `docs/02-architecture/attestor-unlock-source-of-truth.md`, `tests/attestor-unlock-source-of-truth.test.ts`, README/system-overview links, research ledger entry, package script. | This does not implement any production control by itself. |
 | 02 | complete | External KMS/HSM provider decision | `docs/02-architecture/external-kms-hsm-provider-decision.md`, `tests/external-kms-hsm-provider-decision.test.ts`, cryptography policy link, research ledger entry, package script. First adapter target: Google Cloud KMS with `EC_SIGN_ED25519` and raw signing input. | Do not pick a provider that cannot prove algorithm and input-mode semantics. |
-| 03 | planned | External signer contract closure | Live proof envelope, stale-proof behavior, provider response redaction, tenant descriptor constraints, fake adapter conformance, signer diagnostics. | Do not let a boolean or local PEM path satisfy external custody. |
+| 03 | complete | External signer contract closure | `src/service/bootstrap/release-tenant-signer-boundary.ts`, `docs/02-architecture/external-signer-contract-closure.md`, `tests/production-tenant-signer-boundary.test.ts`, `tests/external-signer-contract-closure.test.ts`, cryptography policy link, research ledger entry, package script. | Do not let a boolean or local PEM path satisfy external custody. |
 | 04 | planned | First KMS/HSM adapter PR | One real provider adapter, environment contract, sign/verify probe, fail-closed bootstrap, rotation/compromise notes, focused tests. | Do not claim multi-cloud or customer production readiness from one adapter. |
 | 05 | planned | Protected admission end-to-end proof plan | Route contract for admission -> DPoP-bound release token -> introspection -> replay -> PEP -> downstream receipt, with narrow fixture. | Do not treat a signed bearer helper as sufficient for R3/R4 enforcement. |
 | 06 | planned | Customer PEP adoption package | Customer-runtime adoption proof using release-enforcement-plane, route coverage, no-bypass checks, health, rollback, kill switch, monitoring, audit, customer approval. | Do not claim customer enforcement until a scoped runtime proves it. |
@@ -121,6 +121,6 @@ This tracker does not claim:
 - OAuth, cloud-provider, SOC 2, ISO, or security audit certification
 - multi-provider LLM resilience
 - multi-region or customer-operated deployment readiness
-- completion of steps 03-12
+- completion of steps 04-12
 
 It is only the decision map for the next unlock sequence.

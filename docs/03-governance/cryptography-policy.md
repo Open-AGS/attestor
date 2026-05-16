@@ -55,6 +55,12 @@ AWS KMS remains the next compatible candidate; Azure Key Vault / Managed HSM
 remains a future ES256/PS256 or algorithm-migration path, not the first
 Ed25519 release-token adapter.
 
+The repository-side proof envelope and diagnostics contract is closed in
+[External signer contract closure](../02-architecture/external-signer-contract-closure.md).
+Future live adapters must bind provider protection level, provider request
+digest, provider response digest, and raw-provider-response redaction state
+before a descriptor can clear production-oriented signer readiness.
+
 Official provider anchors:
 
 - AWS KMS supports asymmetric signing keys, including Ed25519, where the

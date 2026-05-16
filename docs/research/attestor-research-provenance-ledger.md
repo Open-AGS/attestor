@@ -752,6 +752,21 @@ The entries above are the most concrete PR/commit-linked hardening records. The 
 - Remaining limitation or no-go condition: This is not a live Google Cloud KMS adapter, not external KMS/HSM custody evidence, not customer-owned key custody, not multi-cloud signer support, not confidential-compute signing, not an AWS or Azure adapter, and not production readiness.
 - Status: complete for repository-side provider selection once this PR is merged and verified on `origin/master`.
 
+### 44. External Signer Contract Closure
+
+- Step / PR / commit: External signer contract closure; this PR closes the repository-side live provider proof envelope and diagnostics contract but cannot pre-record its own merge commit.
+- Date if available: 2026-05-16.
+- Trust surface: external release signer proof envelope, per-tenant signer descriptor, provider protection level, provider-native algorithm, raw-vs-digest input mode, provider request/response redaction, stale proof handling, fake adapter conformance, and runtime signing-provider diagnostics.
+- Protected principle: tenant isolation; proof integrity; fail-closed boundary; release provenance; runtime readiness; data minimization and redaction; no overclaim.
+- Research anchor / source used, if recorded: Google Cloud KMS algorithms, asymmetricSign, and protection-level docs anchor the GCP proof fields; AWS KMS Sign anchors the raw-vs-digest comparison for the second provider; Azure Key Vault Sign anchors why Azure remains outside the first Ed25519 adapter path. These are contract-design anchors only, not live provider evidence or production-readiness evidence.
+- Repository evidence:
+  - Contract/code evidence: `src/service/bootstrap/release-tenant-signer-boundary.ts`, `src/service/bootstrap/release-signing-provider.ts`, `docs/02-architecture/external-signer-contract-closure.md`, `docs/02-architecture/attestor-unlock-source-of-truth.md`, `docs/03-governance/cryptography-policy.md`, and `docs/research/attestor-research-provenance-ledger.md`.
+  - Test evidence: `tests/production-tenant-signer-boundary.test.ts`, `tests/external-signer-contract-closure.test.ts`, `tests/attestor-unlock-source-of-truth.test.ts`, and `tests/research-provenance-ledger.test.ts`.
+- Implemented control: Extends the live provider proof envelope and descriptor diagnostics to bind provider protection level, provider request digest, provider response digest, and raw-provider-response redaction. The proof evaluator now fails closed on insufficient provider protection such as `software` or `unknown`, while preserving existing stale, future timestamp, verification failure, descriptor mismatch, unsupported algorithm, confidential attestation, fake-adapter, and raw-tenant/key/payload blockers.
+- Tests / verification: `npm run test:production-tenant-signer-boundary`, `npm run test:external-signer-contract-closure`, `npm run test:attestor-unlock-source-of-truth`, `npm run test:research-provenance-ledger`, `npm run test:production-release-signing-provider`, `npm run typecheck`, and `npm run typecheck:hygiene`.
+- Remaining limitation or no-go condition: This is not a live Google Cloud KMS adapter, not external KMS/HSM custody evidence, not customer-owned key custody, not production readiness, not multi-cloud signer support, not confidential-compute signing, and not public transparency-log inclusion.
+- Status: complete for repository-side external signer proof contract closure once this PR is merged and verified on `origin/master`.
+
 ## Strong Recorded Research Support
 
 The strongest recorded research support appears in:

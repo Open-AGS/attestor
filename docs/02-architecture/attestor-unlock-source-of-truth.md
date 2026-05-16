@@ -45,7 +45,7 @@ the no-overclaim boundary here.
 | Tenant signer boundary | The contract defines tenant-scoped external KMS/HSM proof requirements, fake-adapter conformance, and the first Google Cloud KMS Ed25519 sign/verify proof adapter. | Runtime release-token issuance is still not wired to external KMS/HSM signing; live Google Cloud credentials, IAM, workload identity, deployment probes, rotation, and compromise response remain unproven. |
 | Consequence storage | The production storage path names the shared-store primitives and blocks `production-shared` when consequence stores remain evaluation-backed. Step 08 adds PostgreSQL-backed atomic retry/replay stores with tenant-scope, schema, and idempotency proof digests. Step 09 adds PostgreSQL-backed shared source-history and outbox primitives with append-only sequence, tenant-scope, schema, outbox, worker-claim, and advisory-lock proof digests. | Runtime cutover, shadow producer migration, read-model workers, downstream receipt reconciliation, tamper-evident external immutability, crypto domain projections, hosted wizard shared session state, agent-loop proof, deployment probes, and backup/restore rehearsal still need shared operational implementations. |
 | LLM provider registry | OpenAI and Anthropic runtime wrappers are wired repository-side; provider inventory and route-readiness evidence gates exist for OpenAI, Anthropic, Vertex AI, and Azure OpenAI. Step 10 selects Anthropic Claude Messages API as the first non-OpenAI runtime adapter target, and Step 11 implements the narrow Anthropic Messages API runtime slice with digest-only evidence and external-live smoke proof. | No live provider failover, no hosted production LLM runtime readiness, no Vertex AI or Azure OpenAI runtime, no OpenAI vision smoke proof, and no hosted consequence route depends on a live LLM provider. |
-| Production rehearsal | Repo-side readiness packets, HA probes, and production rehearsal planning exist. | A real target environment must still prove deployment, restart, probes, backup/restore, observability, and external control boundaries. |
+| Production rehearsal | Repo-side readiness packets, HA probes, production rehearsal planning, signed production-promotion candidate packaging, and the Step 12 production go/no-go packet exist. | A real target environment must still run the packet with target signer proof, scoped PEP proof when in scope, provider-route proof when in scope, human approval, and real evidence before any production promotion decision. |
 
 ## Primary Source Anchors
 
@@ -57,6 +57,7 @@ Reviewed on 2026-05-16 for this planning pass:
 - Shared store primitives: [PostgreSQL INSERT / ON CONFLICT](https://www.postgresql.org/docs/current/sql-insert.html), [PostgreSQL row security](https://www.postgresql.org/docs/current/ddl-rowsecurity.html), [PostgreSQL advisory locks](https://www.postgresql.org/docs/current/explicit-locking.html), [PostgreSQL SELECT locking clauses](https://www.postgresql.org/docs/current/sql-select.html), and [Debezium Outbox Event Router](https://debezium.io/documentation/reference/stable/transformations/outbox-event-router.html).
 - Provider routing and structured output: [OpenAI Structured Outputs](https://platform.openai.com/docs/guides/structured-outputs), [OpenAI rate limits](https://platform.openai.com/docs/guides/rate-limits), [Anthropic tool use](https://docs.anthropic.com/en/docs/agents-and-tools/tool-use/overview), [Anthropic rate limits](https://docs.anthropic.com/en/api/rate-limits), [Vertex AI structured output](https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/control-generated-output), [Azure OpenAI structured outputs](https://learn.microsoft.com/en-us/azure/ai-foundry/openai/how-to/structured-outputs), and [Azure OpenAI quotas](https://learn.microsoft.com/en-us/azure/ai-foundry/openai/quotas-limits).
 - AI risk framing: [NIST AI RMF](https://www.nist.gov/itl/ai-risk-management-framework) and [OWASP Top 10 for LLM Applications](https://owasp.org/www-project-top-10-for-large-language-model-applications/).
+- Production go/no-go discipline: [NIST SP 800-218](https://csrc.nist.gov/pubs/sp/800/218/final), [SLSA requirements](https://slsa.dev/spec/v1.0/requirements), [GitHub artifact attestations](https://docs.github.com/en/actions/how-tos/secure-your-work/use-artifact-attestations/use-artifact-attestations), [Kubernetes production environment](https://kubernetes.io/docs/setup/production-environment/), [PostgreSQL high availability](https://www.postgresql.org/docs/current/high-availability.html), [BullMQ going to production](https://docs.bullmq.io/guide/going-to-production), and [GitHub deployment environments](https://docs.github.com/en/actions/reference/workflows-and-actions/deployments-and-environments).
 
 These sources anchor engineering choices only. They do not prove OAuth
 certification, cloud-provider certification, compliance certification, or
@@ -67,9 +68,9 @@ production readiness.
 | Metric | Value |
 |---|---|
 | Total unlock rounds | 12 |
-| Complete in this tracker | 11 |
-| Remaining after this tracker | 1 |
-| Current posture | Step 01 established the source-of-truth tracker and no-overclaim decision map. Step 02 selects Google Cloud KMS as the first external signer adapter target. Step 03 closes the external signer proof envelope and diagnostics contract. Step 04 adds the first Google Cloud KMS Ed25519 adapter/probe contract while keeping runtime bootstrap fail-closed. Step 05 defines the protected admission E2E route contract and narrow fixture evaluator. Step 06 packages scoped customer PEP adoption evidence without claiming live deployment. Step 07 records the consequence shared-store inventory. Step 08 adds PostgreSQL-backed atomic retry/replay stores with digest-only operational evidence while keeping runtime cutover unclaimed. Step 09 adds PostgreSQL-backed shared source-history and outbox primitives with digest-only operational evidence while keeping runtime migration, workers, Debezium/event-bus delivery, and production readiness unclaimed. Step 10 selects Anthropic Claude Messages API as the first non-OpenAI runtime adapter target. Step 11 wires the narrow Anthropic Messages API runtime slice with digest-only evidence, strict tool-schema tests, bounded runtime policy, and an opt-in external-live smoke probe while keeping live failover and production readiness unclaimed. Step 12 remains backlog until it has repo evidence, tests, docs, and merge verification on `origin/master`. |
+| Complete in this tracker | 12 |
+| Remaining after this tracker | 0 |
+| Current posture | Step 01 established the source-of-truth tracker and no-overclaim decision map. Step 02 selects Google Cloud KMS as the first external signer adapter target. Step 03 closes the external signer proof envelope and diagnostics contract. Step 04 adds the first Google Cloud KMS Ed25519 adapter/probe contract while keeping runtime bootstrap fail-closed. Step 05 defines the protected admission E2E route contract and narrow fixture evaluator. Step 06 packages scoped customer PEP adoption evidence without claiming live deployment. Step 07 records the consequence shared-store inventory. Step 08 adds PostgreSQL-backed atomic retry/replay stores with digest-only operational evidence while keeping runtime cutover unclaimed. Step 09 adds PostgreSQL-backed shared source-history and outbox primitives with digest-only operational evidence while keeping runtime migration, workers, Debezium/event-bus delivery, and production readiness unclaimed. Step 10 selects Anthropic Claude Messages API as the first non-OpenAI runtime adapter target. Step 11 wires the narrow Anthropic Messages API runtime slice with digest-only evidence, strict tool-schema tests, bounded runtime policy, and an opt-in external-live smoke probe while keeping live failover and production readiness unclaimed. Step 12 adds the production go/no-go packet that consumes a signed production-promotion candidate plus target signer proof, scoped PEP/provider-route proof when in scope, runbook/observability evidence, and digest-only human approval; it still does not claim production readiness until a real target runs and passes it. |
 
 ## Unlock Sequence
 
@@ -86,29 +87,20 @@ production readiness.
 | 09 | complete | Consequence shared-store PR slice 2 | `src/service/consequence-shared-history-outbox-store.ts`, `tests/consequence-shared-history-outbox-store.test.ts`, `docs/02-architecture/consequence-shared-history-outbox-store.md`, inventory/tracker/master-plan updates, research ledger entry, and package script. Append-only source history and outbox rows use tenant-scope digest, digest-only source/payload refs, per-tenant sequence allocation under advisory lock, RLS policy shape, `FOR UPDATE SKIP LOCKED` worker claim, claim-token publish marker, and digest-only diagnostics. Runtime migration and worker delivery remain unclaimed. | Do not claim event-bus or Debezium delivery unless a connector is actually wired. |
 | 10 | complete | LLM provider runtime decision | `docs/02-architecture/llm-provider-runtime-decision.md`, `tests/llm-provider-runtime-decision.test.ts`, `docs/02-architecture/llm-provider-registry.md`, research ledger entry, tracker update, master-plan update, and package script. First non-OpenAI adapter target: Anthropic Claude Messages API for the reasoning route, with strict tool-schema structured output as a route-specific follow-up. | Do not treat a provider decision as a wired runtime, live failover, or production readiness. |
 | 11 | complete | Anthropic runtime PR | `src/api/anthropic.ts`, `scripts/probe-anthropic-live-smoke.ts`, `tests/anthropic-runtime-policy.test.ts`, `tests/anthropic-live-smoke-proof.test.ts`, `tests/llm-provider-registry.test.ts`, deployment/provider docs, research ledger entry, tracker update, master-plan update, and package scripts. The adapter uses Anthropic Messages API, `claude-sonnet-4-6`, digest-only proof context, bounded timeout/output-token/retry policy, rate-limit signal digests, strict tool-schema route tests, and opt-in external-live smoke proof. | Do not claim live failover, production LLM runtime readiness, customer approval, or hosted consequence-route dependence on live LLMs from this adapter. |
-| 12 | planned | Production rehearsal go/no-go packet | Combined readiness packet for signer, shared stores, PEP, provider route, probes, backup/restore, observability, and incident/runbook evidence. | Do not call the repo, a branch, or a rehearsal target production-ready without real target proof. |
+| 12 | complete | Production rehearsal go/no-go packet | `scripts/render-production-go-no-go-packet.ts`, `tests/production-go-no-go-packet.test.ts`, `docs/08-deployment/production-go-no-go-packet.md`, production readiness/manifest docs, research ledger entry, tracker update, master-plan update, and package scripts. The packet combines the signed production-promotion candidate, target rehearsal evidence, external signer runtime proof, shared-store boundary, scoped customer PEP proof, scoped LLM provider-route proof, incident/runbook evidence, and digest-only human approval into one `go` or `no-go` verdict. | Do not call the repo, a branch, or a rehearsal target production-ready without real target proof and a passing target-bound packet. |
 
 ## Next PR Decision
 
-The next implementation unlock after Step 11 should be Step 12: Production
-rehearsal go/no-go packet. The shared-store track now has repository-side primitives for
-atomic retry/replay and source-history/outbox, but `production-shared` still
-cannot be cleared while consequence state remains split across file-backed,
-in-memory, contract-only, local ephemeral, or evaluation-only histories and
-while runtime cutover, read-model workers, connector delivery, deployment
-probes, and recovery rehearsals remain unproven.
+The 12-step unlock tracker is complete at the repository side. The next
+implementation source is the [Unified Shadow-To-Policy Master Plan](unified-shadow-to-policy-master-plan.md),
+starting with Step 13: target-system compatibility matrix.
 
-Step 11 implements Anthropic first because it gives provider-family diversity
-with the smallest second-provider adapter surface: direct Messages API,
-documented strict tool use, documented rate-limit headers, and no customer
-cloud project bootstrap before the first non-OpenAI proof. Vertex AI remains
-the next cloud/IAM target; Azure OpenAI remains the later enterprise mirror
-target.
-
-Runtime release-token issuance can be wired to external KMS only after the
-protected admission proof path is narrow enough to consume the resulting
-authority. Otherwise the system would have a stronger signer without proving
-where that authority is enforced.
+Step 12 does not remove the live-production boundary. It only gives operators
+one packet that refuses to issue `go` unless the named target supplies the
+signed production-promotion candidate, target external signer runtime proof,
+shared-store proof through the environment packet, scoped PEP proof when
+customer enforcement is in scope, scoped provider-route proof when live LLM
+provider dependence is in scope, incident/runbook evidence, and human approval.
 
 ## Work Rules For Future Steps
 
@@ -136,6 +128,6 @@ This tracker does not claim:
 - multi-provider LLM resilience
 - multi-region or customer-operated deployment readiness
 - runtime external-KMS release-token issuance
-- completion of step 12
+- target-bound production promotion without a passing go/no-go packet
 
 It is only the decision map for the next unlock sequence.

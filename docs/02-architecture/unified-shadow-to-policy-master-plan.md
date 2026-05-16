@@ -88,9 +88,9 @@ operations.
 | Metric | Value |
 |---|---|
 | Total master-plan rounds | 26 |
-| Complete | 11 |
-| Remaining | 15 |
-| Current state | Steps 01-06 are complete on `origin/master`; Step 07 records the shared-store inventory; Step 08 adds the PostgreSQL-backed atomic retry/replay store slice; Step 09 adds the PostgreSQL-backed shared source-history and outbox primitive. Step 10 selects Anthropic Claude Messages API as the first non-OpenAI runtime adapter target. Step 11 implements the narrow Anthropic Messages API runtime slice with digest-only evidence, strict tool-schema tests, bounded runtime policy, and an opt-in external-live smoke probe while keeping live failover and production readiness unclaimed. Step 12 preserves the remaining unlock sequence. Steps 13-26 extend the plan into a unified Shadow-to-Policy engine and domain adapter recipes. |
+| Complete | 12 |
+| Remaining | 14 |
+| Current state | Steps 01-06 are complete on `origin/master`; Step 07 records the shared-store inventory; Step 08 adds the PostgreSQL-backed atomic retry/replay store slice; Step 09 adds the PostgreSQL-backed shared source-history and outbox primitive. Step 10 selects Anthropic Claude Messages API as the first non-OpenAI runtime adapter target. Step 11 implements the narrow Anthropic Messages API runtime slice with digest-only evidence, strict tool-schema tests, bounded runtime policy, and an opt-in external-live smoke probe while keeping live failover and production readiness unclaimed. Step 12 adds the production go/no-go packet, preserving the target-bound production boundary while closing the first unlock tracker. Steps 13-26 extend the plan into a unified Shadow-to-Policy engine and domain adapter recipes. |
 
 ## Master List
 
@@ -107,7 +107,7 @@ operations.
 | 09 | complete | Consequence shared-store PR slice 2 | PostgreSQL-backed shared source-history and outbox primitive with tenant-scope digest, digest-only source/payload refs, append-only sequence, outbox contract digest, `FOR UPDATE SKIP LOCKED` worker claim digest, advisory-lock keyspace digest, embedded PostgreSQL tests, and runtime-delivery non-claim. | Do not claim event-bus or Debezium delivery unless a connector is actually wired. |
 | 10 | complete | LLM provider runtime decision | Anthropic Claude Messages API selected as the first non-OpenAI runtime adapter target; route compatibility rule, strict tool-schema structured-output path, rate-limit signal mapping, timeout/budget behavior, no-raw-provider-body boundary, tests, registry doc, and research ledger entry recorded. | Do not treat a provider decision as a wired runtime, live failover, or production readiness. |
 | 11 | complete | Anthropic runtime PR | Anthropic Messages API adapter, `claude-sonnet-4-6` model mapping, digest-only runtime evidence, fake-client conformance, timeout/output-budget/rate-limit policy, strict tool-schema route tests, and live smoke probe behind external-live gate. | Do not claim live failover, customer approval, or production LLM runtime readiness from repository-side adapter wiring. |
-| 12 | planned | Production rehearsal go/no-go packet | Readiness packet for signer, shared stores, PEP, provider route, probes, backup/restore, observability, incident/runbook evidence. | Do not call the repo or a rehearsal target production-ready without target proof. |
+| 12 | complete | Production rehearsal go/no-go packet | `render:production-go-no-go-packet`, typed packet tests, deployment docs, tracker/master-plan updates, and research ledger entry. The packet consumes the signed production-promotion candidate plus target signer proof, shared-store boundary, scoped customer PEP proof, scoped provider-route proof, incident/runbook evidence, and digest-only human approval to emit `go` or `no-go`. | Do not call the repo or a rehearsal target production-ready without target proof and a passing target-bound packet. |
 | 13 | planned | Target-system compatibility matrix | Matrix for CRM/support, ITSM/workflow, data/IAM, procurement/spend, health/insurance, and crypto integrations. | Do not optimize for one vendor API as if it were the Attestor model. |
 | 14 | planned | Shadow event canonical schema | Versioned event envelope for action, tenant, actor, resource, observed/inferred fields, evidence refs, raw-data prohibitions, and receipt refs. | Do not store raw prompts, private payloads, secrets, wallet material, provider bodies, or customer identifiers beyond the minimum digest-safe contract. |
 | 15 | planned | Action surface graph | Tenant-bound graph of observed action types, systems, tools, resources, consequence classes, and route coverage. | Do not infer enforcement readiness from observation alone. |
@@ -125,13 +125,7 @@ operations.
 
 ## Implementation Order
 
-Keep the next near-term sequence:
-
-```text
-12
-```
-
-Then build the unified Shadow-to-Policy core:
+Build the unified Shadow-to-Policy core next:
 
 ```text
 13 -> 14 -> 15 -> 16 -> 17 -> 18 -> 19 -> 20 -> 21 -> 22
@@ -158,6 +152,7 @@ Reviewed on 2026-05-16:
 - Agentic orchestration and human-in-the-loop patterns: [Camunda agentic orchestration](https://docs.camunda.io/docs/components/agentic-orchestration/agentic-orchestration-overview/), [n8n human-in-the-loop tools](https://docs.n8n.io/advanced-ai/human-in-the-loop-tools/).
 - Crypto policy, signing, and receipt surfaces: [Fireblocks transaction authorization policy](https://developers.fireblocks.com/docs/set-transaction-authorization-policy), [Coinbase CDP Policy Engine](https://docs.cdp.coinbase.com/wallets/security-and-policies/policy-engine/overview), [Safe Transaction Service API](https://docs.safe.global/core-api/api-safe-transaction-service), [OpenZeppelin Defender transaction proposals](https://docs.openzeppelin.com/defender/module/transaction-proposals).
 - General crypto transaction standards and risks: [EIP-712 typed data](https://eips.ethereum.org/EIPS/eip-712), [EIP-2612 permit](https://eips.ethereum.org/EIPS/eip-2612), [ERC-4337 account abstraction](https://eips.ethereum.org/EIPS/eip-4337), [ERC-7715 wallet permissions](https://eips.ethereum.org/EIPS/eip-7715).
+- Production go/no-go evidence and target-readiness discipline: [NIST SP 800-218](https://csrc.nist.gov/pubs/sp/800/218/final), [SLSA requirements](https://slsa.dev/spec/v1.0/requirements), [GitHub artifact attestations](https://docs.github.com/en/actions/how-tos/secure-your-work/use-artifact-attestations/use-artifact-attestations), [Kubernetes production environment](https://kubernetes.io/docs/setup/production-environment/), [PostgreSQL high availability](https://www.postgresql.org/docs/current/high-availability.html), [BullMQ going to production](https://docs.bullmq.io/guide/going-to-production), and [GitHub deployment environments](https://docs.github.com/en/actions/reference/workflows-and-actions/deployments-and-environments).
 
 These sources are engineering anchors only. They do not prove integration
 coverage, OAuth certification, crypto custody readiness, compliance
@@ -172,9 +167,10 @@ This plan does not claim:
 - live target-system integrations
 - live multi-provider LLM resilience
 - runtime external-KMS release-token issuance
+- target-bound production promotion without a passing go/no-go packet
 - crypto custody, wallet, exchange, or transaction broadcasting capability
 - healthcare, insurance, procurement, or finance compliance certification
 - automatic policy activation
-- completion of steps 12-26
+- completion of steps 13-26
 
 It is the saved master list for the next work sequence.

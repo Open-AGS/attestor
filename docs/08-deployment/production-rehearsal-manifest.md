@@ -57,6 +57,7 @@ The template composes existing commands before adding new machinery:
 - `npm run rehearse:production-backup-restore-dr`
 - `npm run rehearse:production-observability-alerting`
 - `npm run package:production-promotion-candidate`
+- `npm run render:production-go-no-go-packet`
 - `gh attestation verify evaluation-artifacts.tar.gz -R AI-gateway-systems/attestor --signer-workflow AI-gateway-systems/attestor/.github/workflows/release-provenance.yml`
 
 The manifest now covers the full production rehearsal chain through Step 10. A filled manifest must still be bound to a real target environment before its evidence can be packaged as a production-promotion candidate.
@@ -85,13 +86,16 @@ The manual workflow [`production-rehearsal.yml`](../../.github/workflows/product
 It has two modes:
 
 - `plan-only` installs the repo, runs the production rehearsal documentation guards, and runs `npm run plan:production-rehearsal -- --manifest <path>`. It does not access target secrets and it does not run any rehearsal command.
-- `execute` first requires a filled manifest, a `release_provenance_run_id`, and a protected GitHub Environment. The execute job downloads the release provenance artifact, verifies its GitHub artifact attestation, runs the target-bound rehearsal command chain, packages the promotion candidate, and uploads `.attestor/rehearsal/` as the workflow artifact.
+- `execute` first requires a filled manifest, a `release_provenance_run_id`, and a protected GitHub Environment. The execute job downloads the release provenance artifact, verifies its GitHub artifact attestation, runs the target-bound rehearsal command chain, packages the promotion candidate, renders the final production go/no-go packet, and uploads `.attestor/rehearsal/` as the workflow artifact.
 
 The execute job references the selected GitHub Environment so environment protection rules and environment-scoped secrets gate the run. The job uses read-only repository permissions plus `actions: read` for artifact download. It does not request `contents: write`, `id-token: write`, or `attestations: write`.
 
 The workflow intentionally uses `deployment: false` for the environment because it is a rehearsal, not a deployment. If an operator later adds a custom deployment protection rule that requires GitHub deployment objects, that operator must intentionally change this workflow and document the new promotion semantics.
 
 This workflow is still not proof that production readiness has happened. A real claim requires a filled manifest, a protected environment with real target secrets, passing execute-mode evidence, and human review of the generated production-promotion candidate bundle.
+Step 12 also requires the protected environment to supply the external signer
+proof digest and any scoped customer PEP or provider-route proof digest before
+the go/no-go packet can return `go`.
 
 ## Target Profile Binding
 
@@ -272,3 +276,20 @@ It writes:
 - `.attestor/rehearsal/gke-production-rehearsal/production-promotion-candidate/production-promotion-public-key.pem`
 
 This is a target-bound production-promotion candidate evidence bundle. It is not market validation, not a hosted public SaaS launch, not a blanket production guarantee, and not a substitute for independent security/compliance approval.
+
+## Final Go/No-Go Packet
+
+Step 12 adds the final operator decision packet:
+
+```bash
+npm run render:production-go-no-go-packet -- \
+  --promotion-summary=.attestor/rehearsal/gke-production-rehearsal/production-promotion-candidate/summary.json
+```
+
+The command consumes the Step 10 production-promotion candidate summary and
+adds the remaining decision gates: target runtime external signer proof,
+shared-store boundary, scoped customer PEP cutover proof when customer
+enforcement is in scope, live LLM provider-route proof when a production route
+depends on a live provider, incident/runbook evidence, and digest-only human
+approval. It writes a final `go` or `no-go` packet; a `go` verdict remains
+target-bound and is not a blanket production-readiness claim.

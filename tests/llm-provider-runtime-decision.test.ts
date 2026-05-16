@@ -125,22 +125,23 @@ function testTrackersAndIndexesAreUpdated(): void {
   };
 
   for (const expected of [
-    '| Complete in this tracker | 11 |',
-    '| Remaining after this tracker | 1 |',
+    '| Complete in this tracker | 12 |',
+    '| Remaining after this tracker | 0 |',
     '| 10 | complete | LLM provider runtime decision |',
     '| 11 | complete | Anthropic runtime PR |',
-    'Step 11 implements Anthropic first because it gives provider-family diversity',
-    'completion of step 12',
+    '| 12 | complete | Production rehearsal go/no-go packet |',
+    'Step 12 adds the production go/no-go packet',
   ]) {
     includes(tracker, expected, `Runtime decision: unlock tracker records ${expected}`);
   }
 
   for (const expected of [
-    '| Complete | 11 |',
-    '| Remaining | 15 |',
+    '| Complete | 12 |',
+    '| Remaining | 14 |',
     '| 10 | complete | LLM provider runtime decision |',
     '| 11 | complete | Anthropic runtime PR |',
-    'completion of steps 12-26',
+    '| 12 | complete | Production rehearsal go/no-go packet |',
+    'completion of steps 13-26',
   ]) {
     includes(plan, expected, `Runtime decision: unified plan records ${expected}`);
   }

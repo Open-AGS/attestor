@@ -92,6 +92,9 @@ function testWorkflowRunsTargetBoundChain(): void {
   includes(yaml, 'npm run rehearse:production-backup-restore-dr', 'Production rehearsal workflow: execute rehearses backup/restore/DR');
   includes(yaml, 'npm run rehearse:production-observability-alerting', 'Production rehearsal workflow: execute rehearses observability and alerting');
   includes(yaml, 'npm run package:production-promotion-candidate -- --manifest "$MANIFEST_PATH"', 'Production rehearsal workflow: execute packages the promotion candidate from the selected manifest');
+  includes(yaml, 'npm run render:production-go-no-go-packet', 'Production rehearsal workflow: execute renders the final go/no-go packet');
+  includes(yaml, 'ATTESTOR_PRODUCTION_GO_NO_GO_EXTERNAL_SIGNER_PROOF_DIGEST', 'Production rehearsal workflow: execute requires target signer proof env');
+  includes(yaml, '--approved-by="$GITHUB_ACTOR"', 'Production rehearsal workflow: execute binds human approval actor to the protected environment reviewer');
   includes(yaml, 'path: .attestor/rehearsal/', 'Production rehearsal workflow: execute uploads rehearsal artifacts');
 }
 

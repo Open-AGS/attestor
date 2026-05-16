@@ -137,6 +137,11 @@ jobs:
       ATTESTOR_DR_REPLACEMENT_API_READY_URL: ${{ secrets.ATTESTOR_DR_REPLACEMENT_API_READY_URL }}
       ATTESTOR_DR_REPLACEMENT_WORKER_READY_URL: ${{ secrets.ATTESTOR_DR_REPLACEMENT_WORKER_READY_URL }}
       ATTESTOR_PRODUCTION_PROMOTION_SIGNING_PRIVATE_KEY_PATH: ${{ secrets.ATTESTOR_PRODUCTION_PROMOTION_SIGNING_PRIVATE_KEY_PATH }}
+      ATTESTOR_PRODUCTION_GO_NO_GO_TARGET_SCOPE: ${{ vars.ATTESTOR_PRODUCTION_GO_NO_GO_TARGET_SCOPE }}
+      ATTESTOR_PRODUCTION_GO_NO_GO_PROVIDER_ROUTE_MODE: ${{ vars.ATTESTOR_PRODUCTION_GO_NO_GO_PROVIDER_ROUTE_MODE }}
+      ATTESTOR_PRODUCTION_GO_NO_GO_EXTERNAL_SIGNER_PROOF_DIGEST: ${{ secrets.ATTESTOR_PRODUCTION_GO_NO_GO_EXTERNAL_SIGNER_PROOF_DIGEST }}
+      ATTESTOR_PRODUCTION_GO_NO_GO_CUSTOMER_PEP_PROOF_DIGEST: ${{ secrets.ATTESTOR_PRODUCTION_GO_NO_GO_CUSTOMER_PEP_PROOF_DIGEST }}
+      ATTESTOR_PRODUCTION_GO_NO_GO_PROVIDER_ROUTE_PROOF_DIGEST: ${{ secrets.ATTESTOR_PRODUCTION_GO_NO_GO_PROVIDER_ROUTE_PROOF_DIGEST }}
 
     steps:
       - name: Checkout
@@ -198,6 +203,14 @@ jobs:
 
       - name: Package production promotion candidate
         run: npm run package:production-promotion-candidate -- --manifest "$MANIFEST_PATH"
+
+      - name: Render production go/no-go packet
+        run: |
+          npm run render:production-go-no-go-packet -- \
+            --promotion-summary=.attestor/rehearsal/gke-production-rehearsal/production-promotion-candidate/summary.json \
+            --output-dir=.attestor/rehearsal/gke-production-rehearsal/production-go-no-go \
+            --approved-by="$GITHUB_ACTOR" \
+            --approved-at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
       - name: Upload production rehearsal artifacts
         if: always()

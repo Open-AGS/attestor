@@ -17,6 +17,13 @@ AWS remains supported. This guide chooses GKE because it is currently the cleane
 
 The repo-side shared release/policy authority-plane buildout is tracked in [Production shared authority plane buildout](../02-architecture/production-shared-authority-plane-buildout.md). That track now proves the shared authority plane with embedded PostgreSQL; the next evidence track is [Production rehearsal buildout](../02-architecture/production-rehearsal-buildout.md), which turns this guide into a real target-environment proof path.
 
+The final operator decision handoff is the
+[Production go/no-go packet](production-go-no-go-packet.md). It consumes the
+signed production-promotion candidate bundle plus target signer proof, scoped
+customer PEP proof when in scope, provider-route proof when in scope,
+observability/runbook evidence, and human approval. It returns `go` or `no-go`
+without widening the claim beyond the named target.
+
 ## What "Ready" Means Here
 
 Attestor is ready for production promotion when all four are true:
@@ -27,6 +34,8 @@ Attestor is ready for production promotion when all four are true:
 4. the selected **runtime profile** truthfully matches the deployment claim
 
 That is the practical line between "good code" and "rollout-ready system".
+The go/no-go packet is the final written form of that line; it is still
+target-bound and does not create a blanket production guarantee.
 
 ## Verification Gates
 

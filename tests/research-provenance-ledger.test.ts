@@ -290,6 +290,31 @@ function testLedgerIndexesAuditRemediationClosure(): void {
   );
   includes(
     content,
+    '### 54. Production Rehearsal Go/No-Go Packet',
+    'Research provenance ledger: production go/no-go packet entry is present',
+  );
+  includes(
+    content,
+    'scripts/render-production-go-no-go-packet.ts',
+    'Research provenance ledger: production go/no-go packet code evidence is indexed',
+  );
+  includes(
+    content,
+    'tests/production-go-no-go-packet.test.ts',
+    'Research provenance ledger: production go/no-go packet test evidence is indexed',
+  );
+  includes(
+    content,
+    'GitHub deployment environments anchor protected workflow execution and human approval',
+    'Research provenance ledger: go/no-go approval source anchor is recorded',
+  );
+  includes(
+    content,
+    'does not make a blanket production-readiness claim',
+    'Research provenance ledger: go/no-go production non-claim is explicit',
+  );
+  includes(
+    content,
     'does not prove Anthropic, Vertex AI, or Azure OpenAI calls',
     'Research provenance ledger: LLM provider live-client non-claim is explicit',
   );

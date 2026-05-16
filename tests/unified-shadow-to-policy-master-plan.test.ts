@@ -56,14 +56,14 @@ function testMasterPlanRecordsCountsAndLegacySteps(): void {
 
   for (const expected of [
     '| Total master-plan rounds | 26 |',
-    '| Complete | 11 |',
-    '| Remaining | 15 |',
+    '| Complete | 12 |',
+    '| Remaining | 14 |',
     '| 07 | complete | Consequence shared-store inventory |',
     '| 08 | complete | Consequence shared-store PR slice 1 |',
     '| 09 | complete | Consequence shared-store PR slice 2 |',
     '| 10 | complete | LLM provider runtime decision |',
     '| 11 | complete | Anthropic runtime PR |',
-    '| 12 | planned | Production rehearsal go/no-go packet |',
+    '| 12 | complete | Production rehearsal go/no-go packet |',
   ]) {
     includes(plan, expected, `Unified plan: records ${expected}`);
   }
@@ -139,6 +139,8 @@ function testMasterPlanRecordsResearchAnchorsAndNonClaims(): void {
     'Coinbase CDP Policy Engine',
     'EIP-712 typed data',
     'ERC-4337 account abstraction',
+    'Production go/no-go evidence and target-readiness discipline',
+    'GitHub deployment environments',
   ]) {
     includes(plan, expected, `Unified plan: source anchor ${expected} is recorded`);
   }
@@ -149,7 +151,7 @@ function testMasterPlanRecordsResearchAnchorsAndNonClaims(): void {
     'Unlock tracker: links the unified master plan',
   );
   includes(plan, 'automatic policy activation', 'Unified plan: automatic activation non-claim is explicit');
-  includes(plan, 'completion of steps 12-26', 'Unified plan: remaining step non-claim is explicit');
+  includes(plan, 'completion of steps 13-26', 'Unified plan: remaining step non-claim is explicit');
   assert.equal(
     packageJson.scripts['test:unified-shadow-to-policy-master-plan'],
     'tsx tests/unified-shadow-to-policy-master-plan.test.ts',

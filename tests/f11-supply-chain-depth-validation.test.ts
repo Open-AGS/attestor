@@ -134,7 +134,7 @@ function testExistingSupplyChainControlsRemainScoped(): void {
   const securityBaseline = readProjectFile('tests', 'security-baseline-docs.test.ts');
 
   ok(kinds.includes('model-provider-sdk'), 'F11-SC-4: model-provider-sdk is a supply-chain component kind');
-  equal(providerRegistry.providers.filter((provider) => provider.wireStatus === 'wired').length, 1, 'F11-SC-4: only one LLM provider is wired');
+  equal(providerRegistry.providers.filter((provider) => provider.wireStatus === 'wired').length, 2, 'F11-SC-4: OpenAI and Anthropic are wired repository-side');
   equal(
     providerRegistry.runtimePolicy.failoverCompatibility,
     'same-purpose-model-capability-rate-limit-required',
@@ -142,8 +142,13 @@ function testExistingSupplyChainControlsRemainScoped(): void {
   );
   equal(providerEvaluation.productionReady, false, 'F11-SC-4: provider registry does not claim production readiness');
   ok(
-    providerEvaluation.blockers.includes('llm-provider-failover-provider-not-wired'),
-    'F11-SC-4: provider registry fails closed without failover provider',
+    providerEvaluation.multiProviderResilienceReady,
+    'F11-SC-4: provider registry has a repository-side compatible fallback contract',
+  );
+  const productionProviderEvaluation = evaluateLlmProviderRegistry({ requireFailover: true, requireProductionRuntime: true });
+  ok(
+    productionProviderEvaluation.blockers.includes('llm-provider-live-smoke-proof-required'),
+    'F11-SC-4: provider registry still fails closed for production-like routing without live smoke proof',
   );
   ok(kinds.includes('generated-adapter'), 'F11-SC-5: generated-adapter is a supply-chain component kind');
   ok(kinds.includes('mcp-server'), 'F11-SC-9: mcp-server is a supply-chain component kind');
@@ -186,6 +191,7 @@ function testDocsTrackerAndPackageStayAligned(): void {
   includes(validation, 'apply timeout/output-token runtime policy', 'F11 doc: SC-4 runtime policy is documented');
   includes(validation, 'same-purpose model/capability/rate-limit compatibility', 'F11 doc: SC-4 compatible fallback gate is documented');
   includes(validation, 'OpenAI reasoning live smoke probe', 'F11 doc: SC-4 live smoke proof is documented');
+  includes(validation, 'Anthropic reasoning live smoke probe', 'F11 doc: SC-4 Anthropic live smoke proof is documented');
   includes(validation, '| F11-SC-11 SBOM packaging not located | `invalid-as-stated` |', 'F11 doc: SC-11 stale claim is invalidated');
   includes(validation, 'F11 is closed for planned repository-side work in this slice.', 'F11 doc: closure statement is explicit');
   includes(tracker, 'F11 supply-chain depth | 12 | 7 | 5 | 0', 'Tracker: F11 count row exists');
@@ -193,6 +199,7 @@ function testDocsTrackerAndPackageStayAligned(): void {
   includes(research, '### 22. F11 Supply Chain Depth Closure', 'Research ledger: F11 closure exists');
   includes(pkg, '"test:f11-supply-chain-depth-validation"', 'Package: F11 validation script exists');
   includes(pkg, '"test:openai-live-smoke-proof"', 'Package: OpenAI live smoke proof test exists');
+  includes(pkg, '"test:anthropic-live-smoke-proof"', 'Package: Anthropic live smoke proof test exists');
 
   excludes(validation, /\bSLSA Level [0-9]+ achieved\b/iu, 'F11 doc: avoids SLSA overclaim');
   excludes(tracker, /\bmulti-provider LLM resilience.*`fixed`/iu, 'Tracker: avoids multi-provider overclaim');

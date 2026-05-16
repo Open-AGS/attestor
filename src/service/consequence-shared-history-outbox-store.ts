@@ -2,7 +2,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import {
   canonicalizeReleaseJson,
   type CanonicalReleaseJsonValue,
-} from '../release-kernel/release-canonicalization.js';
+} from '../release-layer/index.js';
 import {
   RELEASE_AUTHORITY_SCHEMA,
   ensureReleaseAuthorityStore,

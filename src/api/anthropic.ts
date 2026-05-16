@@ -1,0 +1,991 @@
+import {
+  bindLlmProviderProofContext,
+  digestLlmProviderContextValue,
+  type LlmProviderProofContextBinding,
+  type LlmProviderPurpose,
+} from './llm-provider-registry.js';
+import { ANTHROPIC_REASONING_MODEL } from './llm-provider-models.js';
+import { ApiError, ParseError } from '../utils/errors.js';
+import { logger } from '../utils/logger.js';
+
+export const ANTHROPIC_RUNTIME_POLICY_VERSION = 'anthropic-runtime-policy.v1' as const;
+export const ANTHROPIC_LIVE_SMOKE_PROOF_VERSION = 'anthropic-live-smoke-proof.v1' as const;
+export const ANTHROPIC_API_VERSION = '2023-06-01' as const;
+export const DEFAULT_ANTHROPIC_TIMEOUT_MS = 120_000;
+export const DEFAULT_ANTHROPIC_MAX_ATTEMPTS = 2;
+export const DEFAULT_ANTHROPIC_RETRY_INITIAL_DELAY_MS = 1_000;
+export const DEFAULT_ANTHROPIC_RETRY_MAX_DELAY_MS = 8_000;
+export const DEFAULT_ANTHROPIC_REASONING_MAX_OUTPUT_TOKENS = 16_000;
+export const DEFAULT_ANTHROPIC_LIVE_SMOKE_MAX_OUTPUT_TOKENS = 64;
+export const DEFAULT_ANTHROPIC_LIVE_SMOKE_PROOF_MAX_AGE_MINUTES = 24 * 60;
+export const ANTHROPIC_LIVE_SMOKE_EXPECTED_OUTPUT = 'ATTESTOR_ANTHROPIC_SMOKE_OK' as const;
+
+const ANTHROPIC_MESSAGES_URL = 'https://api.anthropic.com/v1/messages' as const;
+const SHA256_DIGEST_PATTERN = /^sha256:[a-f0-9]{64}$/u;
+
+export const ANTHROPIC_LIVE_SMOKE_PROOF_ENV = Object.freeze({
+  digest: 'ATTESTOR_ANTHROPIC_LIVE_SMOKE_PROOF_DIGEST',
+  checkedAt: 'ATTESTOR_ANTHROPIC_LIVE_SMOKE_PROOF_CHECKED_AT',
+  model: 'ATTESTOR_ANTHROPIC_LIVE_SMOKE_PROOF_MODEL',
+  purpose: 'ATTESTOR_ANTHROPIC_LIVE_SMOKE_PROOF_PURPOSE',
+  maxAgeMinutes: 'ATTESTOR_ANTHROPIC_LIVE_SMOKE_PROOF_MAX_AGE_MINUTES',
+} as const);
+
+export const ANTHROPIC_RATE_LIMIT_HEADER_NAMES = Object.freeze([
+  'retry-after',
+  'anthropic-ratelimit-requests-remaining',
+  'anthropic-ratelimit-input-tokens-remaining',
+  'anthropic-ratelimit-output-tokens-remaining',
+] as const);
+
+export type AnthropicRuntimePurpose = Extract<LlmProviderPurpose, 'reasoning' | 'structured-output' | 'tool-routing'>;
+export type AnthropicLiveSmokeProofState = 'not-configured' | 'valid' | 'invalid' | 'stale';
+
+export interface AnthropicCallParams {
+  readonly systemPrompt: string;
+  readonly userMessage: string;
+  readonly stage: string;
+  readonly maxTokens?: number;
+}
+
+export interface AnthropicCallResult {
+  readonly content: string;
+  readonly inputTokens: number;
+  readonly outputTokens: number;
+  readonly totalTokens: number;
+  readonly cachedInputTokens: number;
+  readonly observedModel: string | null;
+  readonly modelDriftObserved: boolean;
+  readonly providerProofContext: LlmProviderProofContextBinding;
+  readonly runtimePolicy: AnthropicRuntimePolicySummary;
+  readonly rateLimitSignals: readonly AnthropicRateLimitSignal[];
+  readonly rateLimitSignalDigest: string;
+}
+
+export interface AnthropicStrictToolDefinition {
+  readonly name: string;
+  readonly description: string;
+  readonly input_schema: Readonly<Record<string, unknown>>;
+}
+
+export interface AnthropicStrictToolCallParams extends AnthropicCallParams {
+  readonly tool: AnthropicStrictToolDefinition;
+}
+
+export interface AnthropicStrictToolCallResult {
+  readonly toolName: string;
+  readonly input: Readonly<Record<string, unknown>>;
+  readonly inputDigest: string;
+  readonly observedModel: string | null;
+  readonly modelDriftObserved: boolean;
+  readonly providerProofContext: LlmProviderProofContextBinding;
+  readonly runtimePolicy: AnthropicRuntimePolicySummary;
+  readonly rateLimitSignals: readonly AnthropicRateLimitSignal[];
+  readonly rateLimitSignalDigest: string;
+}
+
+export interface AnthropicRuntimePolicy {
+  readonly version: typeof ANTHROPIC_RUNTIME_POLICY_VERSION;
+  readonly providerId: 'anthropic';
+  readonly purpose: AnthropicRuntimePurpose;
+  readonly configuredModel: string;
+  readonly timeoutMs: number;
+  readonly maxAttempts: number;
+  readonly retryInitialDelayMs: number;
+  readonly retryMaxDelayMs: number;
+  readonly maxOutputTokens: number;
+  readonly configuredMaxOutputTokens: number;
+  readonly requestedMaxOutputTokens: number | null;
+  readonly transportMaxRetries: 0;
+  readonly responseStorageDisabled: true;
+  readonly productionLikeRuntime: boolean;
+  readonly productionReady: false;
+  readonly liveSmokeProof: AnthropicLiveSmokeProofEnvEvaluation;
+  readonly configDigest: string;
+  readonly blockers: readonly string[];
+}
+
+export type AnthropicRuntimePolicySummary = Pick<
+  AnthropicRuntimePolicy,
+  | 'version'
+  | 'providerId'
+  | 'purpose'
+  | 'configuredModel'
+  | 'timeoutMs'
+  | 'maxAttempts'
+  | 'maxOutputTokens'
+  | 'transportMaxRetries'
+  | 'responseStorageDisabled'
+  | 'productionLikeRuntime'
+  | 'productionReady'
+  | 'liveSmokeProof'
+  | 'configDigest'
+>;
+
+export interface AnthropicLiveSmokeProofEnvEvaluation {
+  readonly version: typeof ANTHROPIC_LIVE_SMOKE_PROOF_VERSION;
+  readonly state: AnthropicLiveSmokeProofState;
+  readonly proofDigest: string | null;
+  readonly checkedAt: string | null;
+  readonly model: string | null;
+  readonly purpose: AnthropicRuntimePurpose | null;
+  readonly maxAgeMinutes: number;
+  readonly rawPromptStored: false;
+  readonly rawProviderBodyStored: false;
+  readonly blockers: readonly string[];
+}
+
+export interface AnthropicLiveSmokeProof {
+  readonly version: typeof ANTHROPIC_LIVE_SMOKE_PROOF_VERSION;
+  readonly providerId: 'anthropic';
+  readonly purpose: 'reasoning';
+  readonly configuredModel: string;
+  readonly observedModel: string | null;
+  readonly modelDriftObserved: boolean;
+  readonly checkedAt: string;
+  readonly transportMaxRetries: 0;
+  readonly timeoutMs: number;
+  readonly maxOutputTokens: number;
+  readonly responseAccepted: boolean;
+  readonly responseDigest: string;
+  readonly rateLimitSignalDigest: string;
+  readonly providerProofContext: LlmProviderProofContextBinding;
+  readonly proofDigest: string;
+  readonly env: Readonly<typeof ANTHROPIC_LIVE_SMOKE_PROOF_ENV>;
+  readonly rawPromptStored: false;
+  readonly rawProviderBodyStored: false;
+  readonly productionReady: false;
+}
+
+export interface AnthropicRateLimitSignal {
+  readonly name: string;
+  readonly valueDigest: string;
+}
+
+export interface AnthropicMessageTextBlock {
+  readonly type: 'text';
+  readonly text: string;
+}
+
+export interface AnthropicMessageToolUseBlock {
+  readonly type: 'tool_use';
+  readonly id?: string;
+  readonly name: string;
+  readonly input: unknown;
+}
+
+export type AnthropicMessageContentBlock = AnthropicMessageTextBlock | AnthropicMessageToolUseBlock;
+
+export interface AnthropicMessageResponse {
+  readonly id?: string;
+  readonly type?: 'message';
+  readonly role?: 'assistant';
+  readonly content?: readonly AnthropicMessageContentBlock[];
+  readonly model?: string;
+  readonly stop_reason?: string | null;
+  readonly usage?: {
+    readonly input_tokens?: number;
+    readonly output_tokens?: number;
+    readonly cache_creation_input_tokens?: number;
+    readonly cache_read_input_tokens?: number;
+  };
+}
+
+export interface AnthropicMessagesRequestOptions {
+  readonly timeoutMs: number;
+}
+
+export interface AnthropicMessagesTransportResponse {
+  readonly body: AnthropicMessageResponse;
+  readonly headers: Readonly<Record<string, string | null | undefined>>;
+  readonly statusCode: number;
+}
+
+export interface AnthropicMessagesClient {
+  createMessage(
+    requestBody: ReturnType<typeof buildAnthropicMessagesRequestBody> | ReturnType<typeof buildAnthropicStrictToolRequestBody>,
+    options: AnthropicMessagesRequestOptions,
+  ): Promise<AnthropicMessagesTransportResponse>;
+}
+
+export interface RunAnthropicOptions {
+  readonly client?: AnthropicMessagesClient;
+  readonly env?: Readonly<Record<string, string | undefined>>;
+  readonly nowMs?: number;
+  readonly sleep?: (ms: number) => Promise<void>;
+  readonly allowMissingLiveSmokeProof?: boolean;
+}
+
+export interface RunAnthropicLiveSmokeProofOptions extends RunAnthropicOptions {
+  readonly checkedAt?: string;
+}
+
+export const ANTHROPIC_REASONING_MODEL_ID = ANTHROPIC_REASONING_MODEL;
+
+export function isAnthropicProductionLikeRuntime(
+  env: Readonly<Record<string, string | undefined>> = process.env,
+): boolean {
+  const nodeEnv = env.NODE_ENV?.trim().toLowerCase();
+  return nodeEnv === 'production'
+    || envTruthy(env.ATTESTOR_HA_MODE)
+    || env.ATTESTOR_RUNTIME_PROFILE?.trim() === 'production-shared'
+    || Boolean(env.ATTESTOR_PUBLIC_HOSTNAME?.trim())
+    || Boolean(env.ATTESTOR_PUBLIC_BASE_URL?.trim());
+}
+
+export function resolveAnthropicRuntimePolicy(input: {
+  readonly purpose: AnthropicRuntimePurpose;
+  readonly requestedMaxTokens?: number;
+  readonly env?: Readonly<Record<string, string | undefined>>;
+  readonly nowMs?: number;
+  readonly allowMissingLiveSmokeProof?: boolean;
+}): AnthropicRuntimePolicy {
+  const env = input.env ?? process.env;
+  const blockers: string[] = [];
+  const configuredModel = ANTHROPIC_REASONING_MODEL;
+  const configuredMaxOutputTokens = readBoundedIntegerEnv({
+    env,
+    name: 'ATTESTOR_ANTHROPIC_REASONING_MAX_OUTPUT_TOKENS',
+    defaultValue: DEFAULT_ANTHROPIC_REASONING_MAX_OUTPUT_TOKENS,
+    min: 1,
+    max: 64_000,
+    blockerPrefix: 'anthropic-output-token-budget',
+    blockers,
+  });
+  const timeoutMs = readBoundedIntegerEnv({
+    env,
+    name: 'ATTESTOR_ANTHROPIC_TIMEOUT_MS',
+    defaultValue: DEFAULT_ANTHROPIC_TIMEOUT_MS,
+    min: 1_000,
+    max: 600_000,
+    blockerPrefix: 'anthropic-timeout-budget',
+    blockers,
+  });
+  const maxAttempts = readBoundedIntegerEnv({
+    env,
+    name: 'ATTESTOR_ANTHROPIC_MAX_ATTEMPTS',
+    defaultValue: DEFAULT_ANTHROPIC_MAX_ATTEMPTS,
+    min: 1,
+    max: 4,
+    blockerPrefix: 'anthropic-retry-budget',
+    blockers,
+  });
+  const retryInitialDelayMs = readBoundedIntegerEnv({
+    env,
+    name: 'ATTESTOR_ANTHROPIC_RETRY_INITIAL_DELAY_MS',
+    defaultValue: DEFAULT_ANTHROPIC_RETRY_INITIAL_DELAY_MS,
+    min: 100,
+    max: 60_000,
+    blockerPrefix: 'anthropic-retry-initial-delay',
+    blockers,
+  });
+  const retryMaxDelayMs = readBoundedIntegerEnv({
+    env,
+    name: 'ATTESTOR_ANTHROPIC_RETRY_MAX_DELAY_MS',
+    defaultValue: DEFAULT_ANTHROPIC_RETRY_MAX_DELAY_MS,
+    min: retryInitialDelayMs,
+    max: 120_000,
+    blockerPrefix: 'anthropic-retry-max-delay',
+    blockers,
+  });
+
+  const requestedMaxOutputTokens = input.requestedMaxTokens ?? null;
+  let maxOutputTokens = configuredMaxOutputTokens;
+  if (requestedMaxOutputTokens !== null) {
+    if (!Number.isInteger(requestedMaxOutputTokens) || requestedMaxOutputTokens < 1) {
+      blockers.push('anthropic-output-token-budget:invalid-requested-max-tokens');
+    } else if (requestedMaxOutputTokens > configuredMaxOutputTokens) {
+      blockers.push('anthropic-output-token-budget:requested-max-tokens-exceeds-budget');
+    } else {
+      maxOutputTokens = requestedMaxOutputTokens;
+    }
+  }
+
+  const productionLikeRuntime = isAnthropicProductionLikeRuntime(env);
+  const liveSmokeProof = evaluateAnthropicLiveSmokeProofEnv({
+    env,
+    purpose: input.purpose,
+    configuredModel,
+    nowMs: input.nowMs ?? Date.now(),
+  });
+  if (productionLikeRuntime && input.allowMissingLiveSmokeProof !== true && liveSmokeProof.state !== 'valid') {
+    blockers.push(...liveSmokeProof.blockers);
+  }
+
+  const digestMaterial = {
+    version: ANTHROPIC_RUNTIME_POLICY_VERSION,
+    providerId: 'anthropic' as const,
+    purpose: input.purpose,
+    configuredModel,
+    timeoutMs,
+    maxAttempts,
+    retryInitialDelayMs,
+    retryMaxDelayMs,
+    maxOutputTokens,
+    configuredMaxOutputTokens,
+    transportMaxRetries: 0 as const,
+    responseStorageDisabled: true as const,
+    productionLikeRuntime,
+    liveSmokeProofState: liveSmokeProof.state,
+    liveSmokeProofDigest: liveSmokeProof.proofDigest,
+  };
+
+  return Object.freeze({
+    ...digestMaterial,
+    requestedMaxOutputTokens,
+    productionReady: false,
+    liveSmokeProof,
+    blockers: Object.freeze(blockers),
+    configDigest: digestLlmProviderContextValue(stableJson(digestMaterial)),
+  });
+}
+
+export function evaluateAnthropicLiveSmokeProofEnv(input: {
+  readonly env?: Readonly<Record<string, string | undefined>>;
+  readonly purpose: AnthropicRuntimePurpose;
+  readonly configuredModel: string;
+  readonly nowMs?: number;
+}): AnthropicLiveSmokeProofEnvEvaluation {
+  const env = input.env ?? process.env;
+  const blockers: string[] = [];
+  const proofDigest = trimmedEnvValue(env, ANTHROPIC_LIVE_SMOKE_PROOF_ENV.digest);
+  const checkedAt = trimmedEnvValue(env, ANTHROPIC_LIVE_SMOKE_PROOF_ENV.checkedAt);
+  const model = trimmedEnvValue(env, ANTHROPIC_LIVE_SMOKE_PROOF_ENV.model);
+  const rawPurpose = trimmedEnvValue(env, ANTHROPIC_LIVE_SMOKE_PROOF_ENV.purpose);
+  const purpose = normalizeAnthropicRuntimePurpose(rawPurpose);
+  const maxAgeMinutes = readBoundedIntegerEnv({
+    env,
+    name: ANTHROPIC_LIVE_SMOKE_PROOF_ENV.maxAgeMinutes,
+    defaultValue: DEFAULT_ANTHROPIC_LIVE_SMOKE_PROOF_MAX_AGE_MINUTES,
+    min: 1,
+    max: 7 * 24 * 60,
+    blockerPrefix: 'anthropic-live-smoke-proof',
+    blockers,
+  });
+  const anyConfigured = Boolean(proofDigest || checkedAt || model || rawPurpose);
+
+  if (!anyConfigured) {
+    blockers.push('anthropic-production-runtime-live-smoke-proof-not-wired');
+    return Object.freeze({
+      version: ANTHROPIC_LIVE_SMOKE_PROOF_VERSION,
+      state: 'not-configured',
+      proofDigest: null,
+      checkedAt: null,
+      model: null,
+      purpose: null,
+      maxAgeMinutes,
+      rawPromptStored: false,
+      rawProviderBodyStored: false,
+      blockers: Object.freeze(blockers),
+    });
+  }
+
+  if (!proofDigest || !SHA256_DIGEST_PATTERN.test(proofDigest)) {
+    blockers.push('anthropic-live-smoke-proof:invalid-proof-digest');
+  }
+  if (!checkedAt) {
+    blockers.push('anthropic-live-smoke-proof:checked-at-missing');
+  }
+  if (!model) {
+    blockers.push('anthropic-live-smoke-proof:model-missing');
+  } else if (model !== input.configuredModel) {
+    blockers.push('anthropic-live-smoke-proof:model-mismatch');
+  }
+  if (!purpose) {
+    blockers.push('anthropic-live-smoke-proof:purpose-missing-or-invalid');
+  } else if (purpose !== input.purpose) {
+    blockers.push('anthropic-live-smoke-proof:purpose-mismatch');
+  }
+
+  let state: AnthropicLiveSmokeProofState = 'invalid';
+  if (checkedAt) {
+    const checkedAtMs = Date.parse(checkedAt);
+    const nowMs = input.nowMs ?? Date.now();
+    if (!Number.isFinite(checkedAtMs)) {
+      blockers.push('anthropic-live-smoke-proof:checked-at-invalid');
+    } else if (checkedAtMs - nowMs > 5 * 60 * 1000) {
+      blockers.push('anthropic-live-smoke-proof:checked-at-in-future');
+    } else if (nowMs - checkedAtMs > maxAgeMinutes * 60 * 1000) {
+      blockers.push('anthropic-live-smoke-proof:stale');
+      state = 'stale';
+    }
+  }
+
+  if (blockers.length === 0) state = 'valid';
+
+  return Object.freeze({
+    version: ANTHROPIC_LIVE_SMOKE_PROOF_VERSION,
+    state,
+    proofDigest: proofDigest ?? null,
+    checkedAt: checkedAt ?? null,
+    model: model ?? null,
+    purpose,
+    maxAgeMinutes,
+    rawPromptStored: false,
+    rawProviderBodyStored: false,
+    blockers: Object.freeze(blockers),
+  });
+}
+
+export function summarizeAnthropicRuntimePolicy(policy: AnthropicRuntimePolicy): AnthropicRuntimePolicySummary {
+  return Object.freeze({
+    version: policy.version,
+    providerId: policy.providerId,
+    purpose: policy.purpose,
+    configuredModel: policy.configuredModel,
+    timeoutMs: policy.timeoutMs,
+    maxAttempts: policy.maxAttempts,
+    maxOutputTokens: policy.maxOutputTokens,
+    transportMaxRetries: policy.transportMaxRetries,
+    responseStorageDisabled: policy.responseStorageDisabled,
+    productionLikeRuntime: policy.productionLikeRuntime,
+    productionReady: policy.productionReady,
+    liveSmokeProof: policy.liveSmokeProof,
+    configDigest: policy.configDigest,
+  });
+}
+
+export function computeAnthropicRetryDelayMs(
+  attemptIndex: number,
+  policy: Pick<AnthropicRuntimePolicy, 'retryInitialDelayMs' | 'retryMaxDelayMs'>,
+  retryAfterSeconds: string | null | undefined = null,
+  jitter: number = Math.random(),
+): number {
+  const retryAfterMs = retryAfterSeconds ? Number(retryAfterSeconds) * 1000 : NaN;
+  if (Number.isFinite(retryAfterMs) && retryAfterMs >= 0) {
+    return Math.min(policy.retryMaxDelayMs, Math.floor(retryAfterMs));
+  }
+  const boundedJitter = Math.max(0, Math.min(1, jitter));
+  const exponentialDelay = policy.retryInitialDelayMs * (2 ** Math.max(0, attemptIndex));
+  const jitterDelay = Math.floor(exponentialDelay * 0.25 * boundedJitter);
+  return Math.min(policy.retryMaxDelayMs, exponentialDelay + jitterDelay);
+}
+
+export function buildAnthropicMessagesRequestBody(
+  params: AnthropicCallParams,
+  runtimePolicy = resolveAnthropicRuntimePolicy({
+    purpose: 'reasoning',
+    requestedMaxTokens: params.maxTokens,
+  }),
+) {
+  return {
+    model: ANTHROPIC_REASONING_MODEL,
+    max_tokens: runtimePolicy.maxOutputTokens,
+    system: params.systemPrompt,
+    messages: [
+      {
+        role: 'user' as const,
+        content: params.userMessage,
+      },
+    ],
+  };
+}
+
+export function buildAnthropicStrictToolRequestBody(
+  params: AnthropicStrictToolCallParams,
+  runtimePolicy = resolveAnthropicRuntimePolicy({
+    purpose: 'structured-output',
+    requestedMaxTokens: params.maxTokens,
+  }),
+) {
+  return {
+    ...buildAnthropicMessagesRequestBody(params, runtimePolicy),
+    tools: [
+      {
+        ...params.tool,
+        strict: true as const,
+      },
+    ],
+    tool_choice: {
+      type: 'tool' as const,
+      name: params.tool.name,
+    },
+  };
+}
+
+export function buildAnthropicLiveSmokeRequestBody(
+  runtimePolicy = resolveAnthropicRuntimePolicy({
+    purpose: 'reasoning',
+    requestedMaxTokens: DEFAULT_ANTHROPIC_LIVE_SMOKE_MAX_OUTPUT_TOKENS,
+    allowMissingLiveSmokeProof: true,
+  }),
+) {
+  return buildAnthropicMessagesRequestBody({
+    stage: 'anthropic-live-smoke-proof',
+    systemPrompt: 'Return exactly the requested sentinel string. Do not include markdown or additional text.',
+    userMessage: `Return exactly: ${ANTHROPIC_LIVE_SMOKE_EXPECTED_OUTPUT}`,
+    maxTokens: DEFAULT_ANTHROPIC_LIVE_SMOKE_MAX_OUTPUT_TOKENS,
+  }, runtimePolicy);
+}
+
+export function collectAnthropicRateLimitSignals(
+  headers: Readonly<Record<string, string | null | undefined>>,
+): readonly AnthropicRateLimitSignal[] {
+  const normalizedHeaders = new Map<string, string>();
+  for (const [name, value] of Object.entries(headers)) {
+    if (typeof value === 'string' && value.trim()) {
+      normalizedHeaders.set(name.toLowerCase(), value.trim());
+    }
+  }
+
+  return Object.freeze(ANTHROPIC_RATE_LIMIT_HEADER_NAMES.flatMap((name) => {
+    const value = normalizedHeaders.get(name);
+    return value
+      ? [{
+          name,
+          valueDigest: digestLlmProviderContextValue(value),
+        }]
+      : [];
+  }));
+}
+
+export function createAnthropicFetchMessagesClient(
+  env: Readonly<Record<string, string | undefined>> = process.env,
+): AnthropicMessagesClient {
+  return {
+    createMessage: async (requestBody, options) => {
+      const apiKey = env.ANTHROPIC_API_KEY?.trim();
+      if (!apiKey) {
+        throw new ApiError('api', 'anthropic', 'ANTHROPIC_API_KEY is not set in environment');
+      }
+
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), options.timeoutMs);
+      try {
+        const response = await fetch(ANTHROPIC_MESSAGES_URL, {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/json',
+            'x-api-key': apiKey,
+            'anthropic-version': ANTHROPIC_API_VERSION,
+          },
+          body: JSON.stringify(requestBody),
+          signal: controller.signal,
+        });
+
+        if (!response.ok) {
+          throw new ApiError(
+            'api',
+            'anthropic',
+            `Messages API returned HTTP ${response.status}`,
+            response.status,
+          );
+        }
+
+        const body = await response.json() as AnthropicMessageResponse;
+        return Object.freeze({
+          body,
+          headers: readAnthropicResponseHeaders(response.headers),
+          statusCode: response.status,
+        });
+      } catch (error) {
+        if (error instanceof ApiError) throw error;
+        if (isAbortError(error)) {
+          throw new ApiError('api', 'anthropic', `Messages API timed out after ${options.timeoutMs}ms`);
+        }
+        throw error;
+      } finally {
+        clearTimeout(timeout);
+      }
+    },
+  };
+}
+
+export async function runAnthropicLiveSmokeProof(
+  options: RunAnthropicLiveSmokeProofOptions = {},
+): Promise<AnthropicLiveSmokeProof> {
+  const checkedAt = normalizeIsoTimestamp(options.checkedAt);
+  const runtimePolicy = resolveAnthropicRuntimePolicy({
+    purpose: 'reasoning',
+    requestedMaxTokens: DEFAULT_ANTHROPIC_LIVE_SMOKE_MAX_OUTPUT_TOKENS,
+    env: options.env,
+    nowMs: Date.parse(checkedAt),
+    allowMissingLiveSmokeProof: true,
+  });
+  assertAnthropicRuntimePolicyAllowsCall('anthropic-live-smoke-proof', runtimePolicy);
+
+  const client = options.client ?? createAnthropicFetchMessagesClient(options.env);
+  const response = await client.createMessage(
+    buildAnthropicLiveSmokeRequestBody(runtimePolicy),
+    { timeoutMs: runtimePolicy.timeoutMs },
+  );
+  const content = extractAnthropicResponseText(response.body);
+  if (content?.trim() !== ANTHROPIC_LIVE_SMOKE_EXPECTED_OUTPUT) {
+    throw new ParseError('anthropic-live-smoke-proof', 'Anthropic live smoke response did not match the expected sentinel.');
+  }
+
+  const modelObservation = observeAnthropicModel(ANTHROPIC_REASONING_MODEL, response.body);
+  const providerProofContext = buildAnthropicProviderProofContext({
+    purpose: 'reasoning',
+    configuredModel: ANTHROPIC_REASONING_MODEL,
+    observedModel: modelObservation.observedModel,
+    runtimePolicy,
+    promptDigest: digestLlmProviderContextValue(stableJson({
+      expectedOutput: ANTHROPIC_LIVE_SMOKE_EXPECTED_OUTPUT,
+      version: ANTHROPIC_LIVE_SMOKE_PROOF_VERSION,
+    })),
+  });
+  const rateLimitSignals = collectAnthropicRateLimitSignals(response.headers);
+  const rateLimitSignalDigest = digestLlmProviderContextValue(stableJson({ rateLimitSignals }));
+  const proofMaterial = {
+    version: ANTHROPIC_LIVE_SMOKE_PROOF_VERSION,
+    providerId: 'anthropic' as const,
+    purpose: 'reasoning' as const,
+    configuredModel: ANTHROPIC_REASONING_MODEL,
+    observedModel: modelObservation.observedModel,
+    modelDriftObserved: modelObservation.modelDriftObserved,
+    checkedAt,
+    transportMaxRetries: 0 as const,
+    timeoutMs: runtimePolicy.timeoutMs,
+    maxOutputTokens: runtimePolicy.maxOutputTokens,
+    responseAccepted: true,
+    responseDigest: digestLlmProviderContextValue(content.trim()),
+    rateLimitSignalDigest,
+    promptDigest: providerProofContext.promptDigest,
+    configDigest: providerProofContext.configDigest,
+  };
+
+  return Object.freeze({
+    ...proofMaterial,
+    providerProofContext,
+    proofDigest: digestLlmProviderContextValue(stableJson(proofMaterial)),
+    env: ANTHROPIC_LIVE_SMOKE_PROOF_ENV,
+    rawPromptStored: false,
+    rawProviderBodyStored: false,
+    productionReady: false,
+  });
+}
+
+export async function callAnthropicReasoning(
+  params: AnthropicCallParams,
+  options: RunAnthropicOptions = {},
+): Promise<AnthropicCallResult> {
+  const runtimePolicy = resolveAnthropicRuntimePolicy({
+    purpose: 'reasoning',
+    requestedMaxTokens: params.maxTokens,
+    env: options.env,
+    nowMs: options.nowMs,
+    allowMissingLiveSmokeProof: options.allowMissingLiveSmokeProof,
+  });
+  assertAnthropicRuntimePolicyAllowsCall(params.stage, runtimePolicy);
+  const transport = options.client ?? createAnthropicFetchMessagesClient(options.env);
+
+  logger.info(params.stage, `Calling Anthropic reasoning model ${ANTHROPIC_REASONING_MODEL}...`, {
+    timeoutMs: runtimePolicy.timeoutMs,
+    maxOutputTokens: runtimePolicy.maxOutputTokens,
+    maxAttempts: runtimePolicy.maxAttempts,
+  });
+
+  const response = await runAnthropicWithRetry({
+    stage: params.stage,
+    runtimePolicy,
+    client: transport,
+    requestBody: buildAnthropicMessagesRequestBody(params, runtimePolicy),
+    sleep: options.sleep,
+  });
+  const content = extractAnthropicResponseText(response.body);
+  if (!content) {
+    throw new ParseError(params.stage, `Empty response from Anthropic model ${ANTHROPIC_REASONING_MODEL}`);
+  }
+
+  const modelObservation = observeAnthropicModel(ANTHROPIC_REASONING_MODEL, response.body);
+  logAnthropicModelObservation(params.stage, modelObservation);
+  const providerProofContext = buildAnthropicProviderProofContext({
+    purpose: 'reasoning',
+    configuredModel: ANTHROPIC_REASONING_MODEL,
+    observedModel: modelObservation.observedModel,
+    runtimePolicy,
+    promptDigest: digestLlmProviderContextValue(stableJson({
+      systemPrompt: params.systemPrompt,
+      userMessage: params.userMessage,
+    })),
+  });
+  const usage = response.body.usage;
+  const inputTokens = usage?.input_tokens ?? 0;
+  const outputTokens = usage?.output_tokens ?? 0;
+  const cachedInputTokens = usage?.cache_read_input_tokens ?? 0;
+  const rateLimitSignals = collectAnthropicRateLimitSignals(response.headers);
+
+  logger.info(params.stage, `Anthropic model ${ANTHROPIC_REASONING_MODEL} response received`, {
+    tokens: inputTokens + outputTokens,
+    providerConfigDigest: providerProofContext.configDigest,
+  });
+
+  return Object.freeze({
+    content,
+    inputTokens,
+    outputTokens,
+    totalTokens: inputTokens + outputTokens,
+    cachedInputTokens,
+    observedModel: modelObservation.observedModel,
+    modelDriftObserved: modelObservation.modelDriftObserved,
+    providerProofContext,
+    runtimePolicy: summarizeAnthropicRuntimePolicy(runtimePolicy),
+    rateLimitSignals,
+    rateLimitSignalDigest: digestLlmProviderContextValue(stableJson({ rateLimitSignals })),
+  });
+}
+
+export async function callAnthropicStrictTool(
+  params: AnthropicStrictToolCallParams,
+  options: RunAnthropicOptions = {},
+): Promise<AnthropicStrictToolCallResult> {
+  const runtimePolicy = resolveAnthropicRuntimePolicy({
+    purpose: 'structured-output',
+    requestedMaxTokens: params.maxTokens,
+    env: options.env,
+    nowMs: options.nowMs,
+    allowMissingLiveSmokeProof: options.allowMissingLiveSmokeProof,
+  });
+  assertAnthropicRuntimePolicyAllowsCall(params.stage, runtimePolicy);
+  const transport = options.client ?? createAnthropicFetchMessagesClient(options.env);
+  const requestBody = buildAnthropicStrictToolRequestBody(params, runtimePolicy);
+
+  const response = await runAnthropicWithRetry({
+    stage: params.stage,
+    runtimePolicy,
+    client: transport,
+    requestBody,
+    sleep: options.sleep,
+  });
+  const input = extractAnthropicStrictToolInput(response.body, params.tool.name, params.stage);
+  const modelObservation = observeAnthropicModel(ANTHROPIC_REASONING_MODEL, response.body);
+  const toolSchemaDigest = digestLlmProviderContextValue(stableJson(params.tool.input_schema));
+  const providerProofContext = bindLlmProviderProofContext({
+    providerId: 'anthropic',
+    configuredModel: ANTHROPIC_REASONING_MODEL,
+    observedModel: modelObservation.observedModel,
+    purpose: 'structured-output',
+    promptDigest: digestLlmProviderContextValue(stableJson({
+      systemPrompt: params.systemPrompt,
+      userMessage: params.userMessage,
+      toolName: params.tool.name,
+    })),
+    configDigest: runtimePolicy.configDigest,
+    toolSchemaDigest,
+    outputSchemaDigest: toolSchemaDigest,
+  });
+  const rateLimitSignals = collectAnthropicRateLimitSignals(response.headers);
+
+  return Object.freeze({
+    toolName: params.tool.name,
+    input,
+    inputDigest: digestLlmProviderContextValue(stableJson(input)),
+    observedModel: modelObservation.observedModel,
+    modelDriftObserved: modelObservation.modelDriftObserved,
+    providerProofContext,
+    runtimePolicy: summarizeAnthropicRuntimePolicy(runtimePolicy),
+    rateLimitSignals,
+    rateLimitSignalDigest: digestLlmProviderContextValue(stableJson({ rateLimitSignals })),
+  });
+}
+
+function assertAnthropicRuntimePolicyAllowsCall(stage: string, policy: AnthropicRuntimePolicy): void {
+  if (policy.blockers.length === 0) return;
+  throw new ApiError(
+    stage,
+    'anthropic',
+    `Anthropic runtime policy blocked call: ${policy.blockers.join(', ')}`,
+  );
+}
+
+function buildAnthropicProviderProofContext(input: {
+  readonly purpose: AnthropicRuntimePurpose;
+  readonly configuredModel: string;
+  readonly observedModel: string | null;
+  readonly runtimePolicy: AnthropicRuntimePolicy;
+  readonly promptDigest: string;
+}): LlmProviderProofContextBinding {
+  return bindLlmProviderProofContext({
+    providerId: 'anthropic',
+    configuredModel: input.configuredModel,
+    observedModel: input.observedModel,
+    purpose: input.purpose,
+    promptDigest: input.promptDigest,
+    configDigest: input.runtimePolicy.configDigest,
+  });
+}
+
+async function runAnthropicWithRetry(input: {
+  readonly stage: string;
+  readonly runtimePolicy: AnthropicRuntimePolicy;
+  readonly client: AnthropicMessagesClient;
+  readonly requestBody: ReturnType<typeof buildAnthropicMessagesRequestBody> | ReturnType<typeof buildAnthropicStrictToolRequestBody>;
+  readonly sleep?: (ms: number) => Promise<void>;
+}): Promise<AnthropicMessagesTransportResponse> {
+  let lastError: unknown;
+  let lastHeaders: Readonly<Record<string, string | null | undefined>> = {};
+
+  for (let attempt = 0; attempt < input.runtimePolicy.maxAttempts; attempt++) {
+    try {
+      return await input.client.createMessage(input.requestBody, { timeoutMs: input.runtimePolicy.timeoutMs });
+    } catch (error) {
+      lastError = error;
+      lastHeaders = errorHeaders(error);
+
+      if (error instanceof ParseError || !isRetryableAnthropicError(error)) throw error;
+
+      const hasRetryBudget = attempt < input.runtimePolicy.maxAttempts - 1;
+      if (hasRetryBudget) {
+        const retryDelayMs = computeAnthropicRetryDelayMs(
+          attempt,
+          input.runtimePolicy,
+          lastHeaders['retry-after'],
+        );
+        logger.warn(input.stage, `Anthropic model ${ANTHROPIC_REASONING_MODEL} call failed, retrying in ${retryDelayMs}ms...`, {
+          error: error instanceof Error ? error.message : String(error),
+        });
+        await (input.sleep ?? defaultSleep)(retryDelayMs);
+      }
+    }
+  }
+
+  throw new ApiError(
+    input.stage,
+    'anthropic',
+    `Failed after ${input.runtimePolicy.maxAttempts} attempts: ${lastError instanceof Error ? lastError.message : String(lastError)}`,
+  );
+}
+
+function extractAnthropicResponseText(response: AnthropicMessageResponse): string | undefined {
+  const text = response.content
+    ?.filter((block): block is AnthropicMessageTextBlock => block.type === 'text')
+    .map((block) => block.text)
+    .join('');
+  return text?.trim() ? text : undefined;
+}
+
+function extractAnthropicStrictToolInput(
+  response: AnthropicMessageResponse,
+  toolName: string,
+  stage: string,
+): Readonly<Record<string, unknown>> {
+  const toolUse = response.content?.find((block): block is AnthropicMessageToolUseBlock => {
+    return block.type === 'tool_use' && block.name === toolName;
+  });
+  if (!toolUse) {
+    throw new ParseError(stage, `Anthropic response did not include expected tool_use block ${toolName}`);
+  }
+  if (!isRecord(toolUse.input)) {
+    throw new ParseError(stage, `Anthropic tool_use input for ${toolName} was not an object`);
+  }
+  return Object.freeze({ ...toolUse.input });
+}
+
+function observeAnthropicModel(configuredModel: string, response: AnthropicMessageResponse): {
+  readonly configuredModel: string;
+  readonly observedModel: string | null;
+  readonly modelDriftObserved: boolean;
+} {
+  const observedModel = response.model?.trim() || null;
+  return {
+    configuredModel,
+    observedModel,
+    modelDriftObserved: Boolean(observedModel && observedModel !== configuredModel),
+  };
+}
+
+function logAnthropicModelObservation(
+  stage: string,
+  observation: ReturnType<typeof observeAnthropicModel>,
+): void {
+  const fields = {
+    configuredModel: observation.configuredModel,
+    observedModel: observation.observedModel,
+    modelDriftObserved: observation.modelDriftObserved,
+  };
+
+  if (observation.modelDriftObserved) {
+    logger.warn(stage, 'Anthropic response model drift observed', fields);
+    return;
+  }
+
+  logger.info(stage, 'Anthropic response model observation recorded', fields);
+}
+
+function readAnthropicResponseHeaders(headers: Headers): Readonly<Record<string, string | null>> {
+  return Object.freeze(Object.fromEntries(ANTHROPIC_RATE_LIMIT_HEADER_NAMES.map((name) => {
+    return [name, headers.get(name)];
+  })));
+}
+
+function errorHeaders(error: unknown): Readonly<Record<string, string | null | undefined>> {
+  return isRecord(error) && isRecord(error.headers) ? error.headers as Readonly<Record<string, string | null | undefined>> : {};
+}
+
+function isRetryableAnthropicError(error: unknown): boolean {
+  if (error instanceof ApiError) {
+    return error.statusCode === 429 || (typeof error.statusCode === 'number' && error.statusCode >= 500);
+  }
+  return isAbortError(error);
+}
+
+function isAbortError(error: unknown): boolean {
+  return isRecord(error) && error.name === 'AbortError';
+}
+
+function envTruthy(raw: string | undefined): boolean {
+  const value = raw?.trim().toLowerCase();
+  return value === '1' || value === 'true' || value === 'yes' || value === 'on';
+}
+
+function trimmedEnvValue(env: Readonly<Record<string, string | undefined>>, name: string): string | null {
+  const value = env[name]?.trim();
+  return value ? value : null;
+}
+
+function normalizeAnthropicRuntimePurpose(value: string | null): AnthropicRuntimePurpose | null {
+  if (value === 'reasoning' || value === 'structured-output' || value === 'tool-routing') return value;
+  return null;
+}
+
+function readBoundedIntegerEnv(input: {
+  readonly env: Readonly<Record<string, string | undefined>>;
+  readonly name: string;
+  readonly defaultValue: number;
+  readonly min: number;
+  readonly max: number;
+  readonly blockerPrefix: string;
+  readonly blockers: string[];
+}): number {
+  const raw = input.env[input.name]?.trim();
+  if (!raw) return input.defaultValue;
+  const parsed = Number(raw);
+  if (!Number.isInteger(parsed) || parsed < input.min || parsed > input.max) {
+    input.blockers.push(`${input.blockerPrefix}:invalid-${input.name.toLowerCase()}`);
+    return input.defaultValue;
+  }
+  return parsed;
+}
+
+function stableJson(value: unknown): string {
+  return JSON.stringify(sortJson(value));
+}
+
+function sortJson(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(sortJson);
+  if (isRecord(value)) {
+    return Object.keys(value).sort().reduce<Record<string, unknown>>((acc, key) => {
+      acc[key] = sortJson(value[key]);
+      return acc;
+    }, {});
+  }
+  return value;
+}
+
+function normalizeIsoTimestamp(value: string | undefined): string {
+  const raw = value ?? new Date().toISOString();
+  const timestamp = new Date(raw);
+  if (Number.isNaN(timestamp.getTime())) {
+    throw new ApiError('anthropic-live-smoke-proof', 'anthropic', 'Anthropic live smoke checkedAt must be an ISO timestamp.');
+  }
+  return timestamp.toISOString();
+}
+
+function defaultSleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}

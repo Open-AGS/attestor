@@ -62,23 +62,23 @@ try {
   );
   equal(
     descriptor.runtimePolicy.retryBackoff,
-    'openai-wrapper-jittered-exponential',
-    'Registry: OpenAI wrapper has bounded jittered retry policy',
+    'openai-and-anthropic-wrapper-jittered-exponential',
+    'Registry: OpenAI and Anthropic wrappers have bounded jittered retry policy',
   );
   equal(
     descriptor.runtimePolicy.timeoutBudget,
-    'openai-wrapper-wired',
-    'Registry: OpenAI wrapper timeout budget is wired',
+    'openai-and-anthropic-wrapper-wired',
+    'Registry: OpenAI and Anthropic wrapper timeout budgets are wired',
   );
   equal(
     descriptor.runtimePolicy.costBudget,
-    'openai-output-token-budget-wired',
-    'Registry: OpenAI output token budget is wired',
+    'openai-and-anthropic-output-token-budget-wired',
+    'Registry: OpenAI and Anthropic output token budgets are wired',
   );
   equal(
     descriptor.runtimePolicy.liveSmokeProof,
-    'openai-reasoning-external-live-probe-wired',
-    'Registry: OpenAI reasoning live smoke proof is wired as an external live probe',
+    'openai-and-anthropic-reasoning-external-live-probes-wired',
+    'Registry: OpenAI and Anthropic reasoning live smoke proofs are wired as external live probes',
   );
 
   const openai = providers.find((provider) => provider.id === 'openai');
@@ -90,12 +90,17 @@ try {
   ok(vertex, 'Registry: Vertex AI registration exists');
   ok(azure, 'Registry: Azure OpenAI registration exists');
 
-  equal(openai?.wireStatus, 'wired', 'Registry: only OpenAI is wired today');
-  equal(anthropic?.wireStatus, 'planned', 'Registry: Anthropic is planned, not wired');
+  equal(openai?.wireStatus, 'wired', 'Registry: OpenAI is wired');
+  equal(anthropic?.wireStatus, 'wired', 'Registry: Anthropic is wired');
   equal(vertex?.wireStatus, 'planned', 'Registry: Vertex AI is planned, not wired');
   equal(azure?.wireStatus, 'planned', 'Registry: Azure OpenAI is planned, not wired');
   equal(openai?.defaultModelsByPurpose.reasoning, 'o3', 'Registry: OpenAI reasoning model matches wrapper default');
   equal(openai?.defaultModelsByPurpose.vision, 'gpt-4o', 'Registry: OpenAI vision model matches wrapper default');
+  equal(
+    anthropic?.defaultModelsByPurpose.reasoning,
+    'claude-sonnet-4-6',
+    'Registry: Anthropic reasoning model matches wrapper default',
+  );
   equal(
     openai?.capability.structuredOutputMode,
     'openai-response-format-json-schema',
@@ -139,24 +144,19 @@ try {
   );
 
   const defaultEvaluation = evaluateLlmProviderRegistry();
-  equal(defaultEvaluation.state, 'single-provider-evaluation-ready', 'Evaluation: default is single-provider evaluation ready');
-  deepEqual(defaultEvaluation.wiredProviderIds, ['openai'], 'Evaluation: OpenAI is the only wired provider');
+  equal(defaultEvaluation.state, 'routing-contract-ready', 'Evaluation: default has a two-provider repository routing contract');
+  deepEqual(defaultEvaluation.wiredProviderIds, ['openai', 'anthropic'], 'Evaluation: OpenAI and Anthropic are wired providers');
   deepEqual(
     defaultEvaluation.plannedProviderIds,
-    ['anthropic', 'vertex-ai', 'azure-openai'],
-    'Evaluation: non-OpenAI providers remain planned',
+    ['vertex-ai', 'azure-openai'],
+    'Evaluation: cloud mirror providers remain planned',
   );
   equal(defaultEvaluation.selectedPrimaryProviderId, 'openai', 'Evaluation: OpenAI is selected for reasoning');
-  equal(defaultEvaluation.multiProviderResilienceReady, false, 'Evaluation: multi-provider resilience is not ready');
+  equal(defaultEvaluation.multiProviderResilienceReady, true, 'Evaluation: repository-level multi-provider routing contract is ready');
   equal(defaultEvaluation.productionReady, false, 'Evaluation: no production readiness is claimed');
 
   const productionEvaluation = evaluateLlmProviderRegistry({ requireProductionRuntime: true, requireFailover: true });
   equal(productionEvaluation.state, 'blocked', 'Evaluation: production runtime is blocked');
-  includes(
-    productionEvaluation.blockers,
-    'llm-provider-failover-provider-not-wired',
-    'Evaluation: failover blocker is explicit',
-  );
   includes(
     productionEvaluation.blockers,
     'llm-provider-live-smoke-proof-required',
@@ -177,29 +177,21 @@ try {
   equal(openAiRoute.activatesLiveProviderCall, false, 'Route: route evaluation does not activate live provider calls');
   equal(openAiRoute.productionReady, false, 'Route: route evaluation does not claim production readiness');
 
-  const blockedAnthropicRoute = evaluateLlmProviderRoute({ purpose: 'reasoning', providerId: 'anthropic' });
-  equal(blockedAnthropicRoute.status, 'blocked', 'Route: planned Anthropic route is blocked');
-  includes(
-    blockedAnthropicRoute.blockers,
-    'llm-provider-selected-provider-not-wired',
-    'Route: planned provider blocker is explicit',
-  );
-  includes(
-    blockedAnthropicRoute.blockers,
-    'llm-provider-model-not-configured-for-purpose',
-    'Route: missing planned-provider model is explicit',
+  const anthropicRoute = evaluateLlmProviderRoute({ purpose: 'reasoning', providerId: 'anthropic' });
+  equal(anthropicRoute.status, 'selected', 'Route: Anthropic reasoning route is selectable');
+  equal(anthropicRoute.providerId, 'anthropic', 'Route: explicit Anthropic route uses Anthropic');
+  equal(anthropicRoute.model, 'claude-sonnet-4-6', 'Route: explicit Anthropic route uses Claude Sonnet 4.6');
+  equal(
+    anthropicRoute.selectedProviderStructuredOutputMode,
+    'anthropic-strict-tool-schema',
+    'Route: Anthropic structured-output mode is exposed',
   );
 
   const failoverRoute = evaluateLlmProviderRoute({ purpose: 'reasoning', requireFailover: true });
-  equal(failoverRoute.status, 'blocked', 'Route: failover route blocks until a second provider is wired');
+  equal(failoverRoute.status, 'selected', 'Route: failover route can be selected after Anthropic is wired');
   equal(failoverRoute.requiredCapabilities.rateLimitPolicy, true, 'Route: failover requires provider rate-limit policy');
-  deepEqual(failoverRoute.failoverProviderIds, [], 'Route: failover providers only include compatible wired providers');
-  equal(failoverRoute.failoverCompatibilityReady, false, 'Route: failover compatibility is not ready with one wired provider');
-  includes(
-    failoverRoute.blockers,
-    'llm-provider-failover-provider-not-wired',
-    'Route: failover requires at least two wired providers',
-  );
+  deepEqual(failoverRoute.failoverProviderIds, ['anthropic'], 'Route: failover providers include compatible wired providers');
+  equal(failoverRoute.failoverCompatibilityReady, true, 'Route: failover compatibility is ready with two wired providers');
 
   const promptDigest = digestLlmProviderContextValue('prompt-template-v1');
   const configDigest = digestLlmProviderContextValue('provider-config-v1');

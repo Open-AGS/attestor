@@ -265,6 +265,31 @@ function testLedgerIndexesAuditRemediationClosure(): void {
   );
   includes(
     content,
+    '### 53. Anthropic Runtime PR',
+    'Research provenance ledger: Anthropic runtime entry is present',
+  );
+  includes(
+    content,
+    'src/api/anthropic.ts',
+    'Research provenance ledger: Anthropic runtime code evidence is indexed',
+  );
+  includes(
+    content,
+    'scripts/probe-anthropic-live-smoke.ts',
+    'Research provenance ledger: Anthropic live smoke probe evidence is indexed',
+  );
+  includes(
+    content,
+    'tests/anthropic-live-smoke-proof.test.ts',
+    'Research provenance ledger: Anthropic live smoke proof test evidence is indexed',
+  );
+  includes(
+    content,
+    'This is not live provider failover',
+    'Research provenance ledger: Anthropic live-failover non-claim is explicit',
+  );
+  includes(
+    content,
     'does not prove Anthropic, Vertex AI, or Azure OpenAI calls',
     'Research provenance ledger: LLM provider live-client non-claim is explicit',
   );

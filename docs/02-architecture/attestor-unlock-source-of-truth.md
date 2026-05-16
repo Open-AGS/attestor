@@ -44,7 +44,7 @@ the no-overclaim boundary here.
 | Hosted generic admission | Protected high-risk generic admissions now require sender-confirmed release authorization; DPoP proof replay has local and shared PostgreSQL store paths; the protected admission E2E proof plan defines the route chain from admission to downstream receipt; scoped customer PEP adoption can be packaged for review. | `production-shared` still needs live deployment evidence, target-specific PEP operation, and a runtime proving no bypasses under real traffic. |
 | Tenant signer boundary | The contract defines tenant-scoped external KMS/HSM proof requirements, fake-adapter conformance, and the first Google Cloud KMS Ed25519 sign/verify proof adapter. | Runtime release-token issuance is still not wired to external KMS/HSM signing; live Google Cloud credentials, IAM, workload identity, deployment probes, rotation, and compromise response remain unproven. |
 | Consequence storage | The production storage path names the shared-store primitives and blocks `production-shared` when consequence stores remain evaluation-backed. Step 08 adds PostgreSQL-backed atomic retry/replay stores with tenant-scope, schema, and idempotency proof digests. Step 09 adds PostgreSQL-backed shared source-history and outbox primitives with append-only sequence, tenant-scope, schema, outbox, worker-claim, and advisory-lock proof digests. | Runtime cutover, shadow producer migration, read-model workers, downstream receipt reconciliation, tamper-evident external immutability, crypto domain projections, hosted wizard shared session state, agent-loop proof, deployment probes, and backup/restore rehearsal still need shared operational implementations. |
-| LLM provider registry | OpenAI is wired; provider inventory and route-readiness evidence gates exist for OpenAI, Anthropic, Vertex AI, and Azure OpenAI. Step 10 selects Anthropic Claude Messages API as the first non-OpenAI runtime adapter target. | No live multi-provider runtime, no compatible fallback execution, no non-OpenAI smoke proof, and no hosted consequence route depends on a live LLM provider. Anthropic remains planned until Step 11 implements and proves the runtime adapter contract. |
+| LLM provider registry | OpenAI and Anthropic runtime wrappers are wired repository-side; provider inventory and route-readiness evidence gates exist for OpenAI, Anthropic, Vertex AI, and Azure OpenAI. Step 10 selects Anthropic Claude Messages API as the first non-OpenAI runtime adapter target, and Step 11 implements the narrow Anthropic Messages API runtime slice with digest-only evidence and external-live smoke proof. | No live provider failover, no hosted production LLM runtime readiness, no Vertex AI or Azure OpenAI runtime, no OpenAI vision smoke proof, and no hosted consequence route depends on a live LLM provider. |
 | Production rehearsal | Repo-side readiness packets, HA probes, and production rehearsal planning exist. | A real target environment must still prove deployment, restart, probes, backup/restore, observability, and external control boundaries. |
 
 ## Primary Source Anchors
@@ -67,9 +67,9 @@ production readiness.
 | Metric | Value |
 |---|---|
 | Total unlock rounds | 12 |
-| Complete in this tracker | 10 |
-| Remaining after this tracker | 2 |
-| Current posture | Step 01 established the source-of-truth tracker and no-overclaim decision map. Step 02 selects Google Cloud KMS as the first external signer adapter target. Step 03 closes the external signer proof envelope and diagnostics contract. Step 04 adds the first Google Cloud KMS Ed25519 adapter/probe contract while keeping runtime bootstrap fail-closed. Step 05 defines the protected admission E2E route contract and narrow fixture evaluator. Step 06 packages scoped customer PEP adoption evidence without claiming live deployment. Step 07 records the consequence shared-store inventory. Step 08 adds PostgreSQL-backed atomic retry/replay stores with digest-only operational evidence while keeping runtime cutover unclaimed. Step 09 adds PostgreSQL-backed shared source-history and outbox primitives with digest-only operational evidence while keeping runtime migration, workers, Debezium/event-bus delivery, and production readiness unclaimed. Step 10 selects Anthropic Claude Messages API as the first non-OpenAI runtime adapter target while keeping Anthropic planned, not wired. Steps 11-12 remain implementation or research backlog until each has repo evidence, tests, docs, and merge verification on `origin/master`. |
+| Complete in this tracker | 11 |
+| Remaining after this tracker | 1 |
+| Current posture | Step 01 established the source-of-truth tracker and no-overclaim decision map. Step 02 selects Google Cloud KMS as the first external signer adapter target. Step 03 closes the external signer proof envelope and diagnostics contract. Step 04 adds the first Google Cloud KMS Ed25519 adapter/probe contract while keeping runtime bootstrap fail-closed. Step 05 defines the protected admission E2E route contract and narrow fixture evaluator. Step 06 packages scoped customer PEP adoption evidence without claiming live deployment. Step 07 records the consequence shared-store inventory. Step 08 adds PostgreSQL-backed atomic retry/replay stores with digest-only operational evidence while keeping runtime cutover unclaimed. Step 09 adds PostgreSQL-backed shared source-history and outbox primitives with digest-only operational evidence while keeping runtime migration, workers, Debezium/event-bus delivery, and production readiness unclaimed. Step 10 selects Anthropic Claude Messages API as the first non-OpenAI runtime adapter target. Step 11 wires the narrow Anthropic Messages API runtime slice with digest-only evidence, strict tool-schema tests, bounded runtime policy, and an opt-in external-live smoke probe while keeping live failover and production readiness unclaimed. Step 12 remains backlog until it has repo evidence, tests, docs, and merge verification on `origin/master`. |
 
 ## Unlock Sequence
 
@@ -85,24 +85,25 @@ production readiness.
 | 08 | complete | Consequence shared-store PR slice 1 | `src/service/consequence-shared-atomic-stores.ts`, `tests/consequence-shared-atomic-stores.test.ts`, `docs/02-architecture/consequence-shared-atomic-stores.md`, retry/replay descriptor/doc updates, research ledger entry, tracker update, and package script. Atomic retry/replay stores use tenant-scope digest, PostgreSQL `ON CONFLICT`, unique idempotency/replay indexes, raw-idempotency-key-free and raw-replay-key-free storage, and digest-only diagnostics. Runtime cutover remains unclaimed. | Do not use a shared database as proof without constraints and tenant boundary evidence. |
 | 09 | complete | Consequence shared-store PR slice 2 | `src/service/consequence-shared-history-outbox-store.ts`, `tests/consequence-shared-history-outbox-store.test.ts`, `docs/02-architecture/consequence-shared-history-outbox-store.md`, inventory/tracker/master-plan updates, research ledger entry, and package script. Append-only source history and outbox rows use tenant-scope digest, digest-only source/payload refs, per-tenant sequence allocation under advisory lock, RLS policy shape, `FOR UPDATE SKIP LOCKED` worker claim, claim-token publish marker, and digest-only diagnostics. Runtime migration and worker delivery remain unclaimed. | Do not claim event-bus or Debezium delivery unless a connector is actually wired. |
 | 10 | complete | LLM provider runtime decision | `docs/02-architecture/llm-provider-runtime-decision.md`, `tests/llm-provider-runtime-decision.test.ts`, `docs/02-architecture/llm-provider-registry.md`, research ledger entry, tracker update, master-plan update, and package script. First non-OpenAI adapter target: Anthropic Claude Messages API for the reasoning route, with strict tool-schema structured output as a route-specific follow-up. | Do not treat a provider decision as a wired runtime, live failover, or production readiness. |
-| 11 | planned | Anthropic runtime PR | Anthropic Messages API adapter; digest-only runtime evidence; fake-client conformance; timeout/output-budget/rate-limit policy; strict tool-schema route tests; live smoke probe behind external-live gate; no raw prompt/provider-body storage. | Do not claim live failover or resilience until both providers execute compatible routes. |
+| 11 | complete | Anthropic runtime PR | `src/api/anthropic.ts`, `scripts/probe-anthropic-live-smoke.ts`, `tests/anthropic-runtime-policy.test.ts`, `tests/anthropic-live-smoke-proof.test.ts`, `tests/llm-provider-registry.test.ts`, deployment/provider docs, research ledger entry, tracker update, master-plan update, and package scripts. The adapter uses Anthropic Messages API, `claude-sonnet-4-6`, digest-only proof context, bounded timeout/output-token/retry policy, rate-limit signal digests, strict tool-schema route tests, and opt-in external-live smoke proof. | Do not claim live failover, production LLM runtime readiness, customer approval, or hosted consequence-route dependence on live LLMs from this adapter. |
 | 12 | planned | Production rehearsal go/no-go packet | Combined readiness packet for signer, shared stores, PEP, provider route, probes, backup/restore, observability, and incident/runbook evidence. | Do not call the repo, a branch, or a rehearsal target production-ready without real target proof. |
 
 ## Next PR Decision
 
-The next implementation unlock after Step 10 should be Step 11: Anthropic
-runtime PR. The shared-store track now has repository-side primitives for
+The next implementation unlock after Step 11 should be Step 12: Production
+rehearsal go/no-go packet. The shared-store track now has repository-side primitives for
 atomic retry/replay and source-history/outbox, but `production-shared` still
 cannot be cleared while consequence state remains split across file-backed,
 in-memory, contract-only, local ephemeral, or evaluation-only histories and
 while runtime cutover, read-model workers, connector delivery, deployment
 probes, and recovery rehearsals remain unproven.
 
-Step 10 chooses Anthropic first because it gives provider-family diversity with
-the smallest second-provider adapter surface: direct Messages API, documented
-tool use, documented rate-limit headers, and no customer cloud project bootstrap
-before the first non-OpenAI proof. Vertex AI remains the next cloud/IAM target;
-Azure OpenAI remains the later enterprise mirror target.
+Step 11 implements Anthropic first because it gives provider-family diversity
+with the smallest second-provider adapter surface: direct Messages API,
+documented strict tool use, documented rate-limit headers, and no customer
+cloud project bootstrap before the first non-OpenAI proof. Vertex AI remains
+the next cloud/IAM target; Azure OpenAI remains the later enterprise mirror
+target.
 
 Runtime release-token issuance can be wired to external KMS only after the
 protected admission proof path is narrow enough to consume the resulting
@@ -135,6 +136,6 @@ This tracker does not claim:
 - multi-provider LLM resilience
 - multi-region or customer-operated deployment readiness
 - runtime external-KMS release-token issuance
-- completion of steps 11-12
+- completion of step 12
 
 It is only the decision map for the next unlock sequence.

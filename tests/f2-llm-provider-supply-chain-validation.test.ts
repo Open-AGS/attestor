@@ -74,6 +74,8 @@ try {
   const packageJson = readProjectFile('package.json');
   const openai = readProjectFile('src', 'api', 'openai.ts');
   const openaiSmoke = readProjectFile('scripts', 'probe-openai-live-smoke.ts');
+  const anthropic = readProjectFile('src', 'api', 'anthropic.ts');
+  const anthropicSmoke = readProjectFile('scripts', 'probe-anthropic-live-smoke.ts');
   const models = readProjectFile('src', 'api', 'llm-provider-models.ts');
   const financialCli = readProjectFile('src', 'financial', 'cli.ts');
   const financialTypes = readProjectFile('src', 'financial', 'types.ts');
@@ -102,6 +104,7 @@ try {
 
   includes(models, "OPENAI_REASONING_MODEL = 'o3' as const", 'LLM provider supply-chain validation: OpenAI reasoning model is single configured model');
   includes(models, "OPENAI_VISION_MODEL = 'gpt-4o' as const", 'LLM provider supply-chain validation: OpenAI vision model is present');
+  includes(models, "ANTHROPIC_REASONING_MODEL = 'claude-sonnet-4-6' as const", 'LLM provider supply-chain validation: Anthropic reasoning model is configured');
   includes(openai, 'new OpenAI({ apiKey, maxRetries: 0 })', 'LLM provider supply-chain validation: OpenAI SDK client is used directly without hidden retries');
   includes(openai, 'resolveOpenAiRuntimePolicy', 'LLM provider supply-chain validation: OpenAI wrapper has runtime policy');
   includes(openai, 'runOpenAiLiveSmokeProof', 'LLM provider supply-chain validation: OpenAI wrapper has explicit live smoke proof');
@@ -111,14 +114,21 @@ try {
   includes(openaiSmoke, 'stringifySecretSafe', 'LLM provider supply-chain validation: OpenAI smoke proof output is secret-safe');
   includes(openaiSmoke, 'runtimeGateValues', 'LLM provider supply-chain validation: OpenAI smoke proof emits runtime gate values');
   excludes(openai, /Anthropic|LlmProviderRegistry|providerRegistry/u, 'LLM provider supply-chain validation: OpenAI wrapper has no provider registry');
+  includes(anthropic, 'fetch(ANTHROPIC_MESSAGES_URL', 'LLM provider supply-chain validation: Anthropic wrapper uses direct Messages API fetch boundary');
+  includes(anthropic, "'anthropic-version': ANTHROPIC_API_VERSION", 'LLM provider supply-chain validation: Anthropic API version header is explicit');
+  includes(anthropic, 'resolveAnthropicRuntimePolicy', 'LLM provider supply-chain validation: Anthropic wrapper has runtime policy');
+  includes(anthropic, 'runAnthropicLiveSmokeProof', 'LLM provider supply-chain validation: Anthropic wrapper has explicit live smoke proof');
+  includes(anthropic, 'rawProviderBodyStored: false', 'LLM provider supply-chain validation: Anthropic wrapper keeps provider-body storage false');
+  includes(anthropicSmoke, 'stringifySecretSafe', 'LLM provider supply-chain validation: Anthropic smoke proof output is secret-safe');
+  includes(anthropicSmoke, 'runtimeGateValues', 'LLM provider supply-chain validation: Anthropic smoke proof emits runtime gate values');
   includes(
     registry.providers.map((provider) => provider.id).join(','),
     'openai,anthropic,vertex-ai,azure-openai',
     'LLM provider supply-chain validation: registry records expected provider inventory',
   );
-  equal(registry.providers.filter((provider) => provider.wireStatus === 'wired').length, 1, 'LLM provider supply-chain validation: only one provider is wired');
+  equal(registry.providers.filter((provider) => provider.wireStatus === 'wired').length, 2, 'LLM provider supply-chain validation: two providers are wired repository-side');
   equal(registry.providers.find((provider) => provider.id === 'openai')?.wireStatus, 'wired', 'LLM provider supply-chain validation: OpenAI is wired');
-  equal(registry.providers.find((provider) => provider.id === 'anthropic')?.wireStatus, 'planned', 'LLM provider supply-chain validation: Anthropic is planned');
+  equal(registry.providers.find((provider) => provider.id === 'anthropic')?.wireStatus, 'wired', 'LLM provider supply-chain validation: Anthropic is wired');
   equal(registry.runtimePolicy.storesRawPrompt, false, 'LLM provider supply-chain validation: registry does not store raw prompts');
   equal(
     registry.runtimePolicy.failoverCompatibility,
@@ -129,11 +139,11 @@ try {
   equal(registryEvaluation.productionReady, false, 'LLM provider supply-chain validation: registry does not claim production readiness');
   includes(
     registryEvaluation.blockers.join(','),
-    'llm-provider-failover-provider-not-wired',
-    'LLM provider supply-chain validation: production/failover readiness blocks without second provider',
+    'llm-provider-live-smoke-proof-required',
+    'LLM provider supply-chain validation: production/failover readiness blocks without smoke proof evidence',
   );
-  equal(failoverRoute.status, 'blocked', 'LLM provider supply-chain validation: failover route fails closed');
-  equal(failoverRoute.failoverCompatibilityReady, false, 'LLM provider supply-chain validation: failover compatibility is not ready');
+  equal(failoverRoute.status, 'selected', 'LLM provider supply-chain validation: repository failover route can be selected');
+  equal(failoverRoute.failoverCompatibilityReady, true, 'LLM provider supply-chain validation: repository failover compatibility is ready');
   equal(routeReadiness.state, 'blocked', 'LLM provider supply-chain validation: production route readiness blocks without evidence');
   includes(
     routeReadiness.blockers.join(','),
@@ -155,7 +165,7 @@ try {
   includes(doc, 'F4-D Attestor-owned OpenAI usage / budget / prompt leakage scope: `partial`.', 'LLM provider supply-chain validation doc: F4-D status is partial');
   includes(doc, 'No hosted production, multi-provider resilience, or prompt-leakage closure claim is made.', 'LLM provider supply-chain validation doc: no overclaim is present');
   includes(doc, 'route-readiness evidence now separates route selection from production-like or', 'LLM provider supply-chain validation doc: route-readiness evidence gate is recorded');
-  includes(registryDoc, 'Status: repository-side contract only. Not a live multi-provider runtime.', 'LLM provider registry doc: runtime non-claim is explicit');
+  includes(registryDoc, 'Status: repository-side provider contract with OpenAI and Anthropic runtime', 'LLM provider registry doc: runtime boundary is explicit');
   includes(registryDoc, 'Failover Compatibility Rule', 'LLM provider registry doc: compatible failover rule is documented');
   includes(registryDoc, 'Route Readiness Evidence Gate', 'LLM provider registry doc: route-readiness evidence gate is documented');
   includes(
@@ -164,7 +174,8 @@ try {
     'LLM provider registry doc: incompatible fallback blocker is documented',
   );
   includes(registryDoc, 'OpenAI timeout and output-token budget enforcement are wired', 'LLM provider registry doc: OpenAI timeout/cost boundary is explicit');
-  includes(registryDoc, 'OpenAI reasoning live smoke proof is wired as an explicit', 'LLM provider registry doc: OpenAI reasoning smoke proof boundary is explicit');
+  includes(registryDoc, 'Anthropic timeout, retry, output-token, strict-tool, and', 'LLM provider registry doc: Anthropic timeout/cost boundary is explicit');
+  includes(registryDoc, 'reasoning live smoke proofs are wired as explicit external-live probes', 'LLM provider registry doc: provider smoke proof boundary is explicit');
   includes(registryDoc, 'No route-readiness evidence evaluation activates a live provider call.', 'LLM provider registry doc: live call non-activation is explicit');
 
   includes(tracker, 'F2-AG-7 agentic supply-chain and LLM provider dependency | `partial`', 'Tracker: F2-AG-7 remains partial');
@@ -178,6 +189,9 @@ try {
   includes(packageJson, '"test:openai-runtime-policy"', 'Package: OpenAI runtime policy test is exposed');
   includes(packageJson, '"test:openai-live-smoke-proof"', 'Package: OpenAI live smoke proof test is exposed');
   includes(packageJson, '"probe:openai-live-smoke"', 'Package: OpenAI live smoke probe is exposed');
+  includes(packageJson, '"test:anthropic-runtime-policy"', 'Package: Anthropic runtime policy test is exposed');
+  includes(packageJson, '"test:anthropic-live-smoke-proof"', 'Package: Anthropic live smoke proof test is exposed');
+  includes(packageJson, '"probe:anthropic-live-smoke"', 'Package: Anthropic live smoke probe is exposed');
 
   excludes(tracker, /F4-D Attestor-owned OpenAI usage .*`fixed`/u, 'Tracker: F4-D is not overclaimed as fixed');
   excludes(tracker, /F2-AG-8 multimodal vision input future risk .*`fixed`/u, 'Tracker: F2-AG-8 is not overclaimed as fixed');

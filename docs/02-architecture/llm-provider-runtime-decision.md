@@ -1,8 +1,9 @@
 # LLM Provider Runtime Decision
 
-Status: repository-side provider runtime decision for unlock Step 10. This is
-not a live non-OpenAI runtime implementation, not live failover evidence, and
-not production readiness.
+Status: repository-side provider runtime decision for unlock Step 10. Step 11
+has now implemented the selected Anthropic runtime slice, but this document
+remains the decision record. It is still not live failover evidence and not
+production readiness.
 
 ## Decision
 
@@ -89,18 +90,38 @@ approval, failover, or production readiness.
 
 ## Repository Evidence
 
-Current repo state:
+Current repo state after Step 11:
 
-- `src/api/openai.ts` is the only wired provider runtime.
+- `src/api/openai.ts` is the existing OpenAI provider runtime wrapper.
+- `src/api/anthropic.ts` is the narrow Anthropic Messages API runtime wrapper
+  selected by this decision.
 - `src/api/llm-provider-registry.ts` already records OpenAI, Anthropic, Vertex
   AI, and Azure OpenAI provider boundaries.
 - `docs/02-architecture/llm-provider-registry.md` already records route
   compatibility and route-readiness evidence gates.
-- `tests/llm-provider-registry.test.ts` already proves that Anthropic, Vertex
-  AI, and Azure OpenAI remain planned, not wired.
+- `tests/llm-provider-registry.test.ts` proves that OpenAI and Anthropic are
+  wired repository-side providers while Vertex AI and Azure OpenAI remain
+  planned.
 
-Step 10 adds a decision, not runtime code. Anthropic must stay `planned` in the
-registry until Step 11 implements and tests an adapter.
+Step 10 added a decision, not runtime code. Step 11 moved Anthropic from
+`planned` to `wired` only after adding the wrapper, fake-client conformance,
+strict tool-schema path, digest-only runtime evidence, and external-live smoke
+probe contract.
+
+## Step 11 Implementation Status
+
+The selected adapter contract is now represented by:
+
+- `src/api/anthropic.ts`
+- `scripts/probe-anthropic-live-smoke.ts`
+- `tests/anthropic-runtime-policy.test.ts`
+- `tests/anthropic-live-smoke-proof.test.ts`
+- updated provider registry route tests
+
+The implementation uses `claude-sonnet-4-6`, the Anthropic Messages API, the
+`anthropic-version: 2023-06-01` header, top-level strict tool schemas, bounded
+wrapper retries, digest-only provider proof context, and explicit
+production-like live-smoke env gates. It does not activate live failover.
 
 ## Step 11 Contract
 
@@ -123,8 +144,9 @@ The next PR should implement a narrow Anthropic runtime slice:
 
 ## No-Go Boundaries
 
-- Do not claim live multi-provider LLM resilience from this decision.
-- Do not claim Anthropic, Vertex AI, or Azure OpenAI runtime execution.
+- Do not claim live multi-provider LLM resilience from this decision or from
+  the Step 11 adapter alone.
+- Do not claim Vertex AI or Azure OpenAI runtime execution.
 - Do not claim live failover until OpenAI and Anthropic both execute compatible
   routes with digest-only evidence.
 - Do not let the provider adapter store raw prompts, raw provider bodies,
@@ -137,6 +159,8 @@ The next PR should implement a narrow Anthropic runtime slice:
 
 - `npm run test:llm-provider-runtime-decision`
 - `npm run test:llm-provider-registry`
+- `npm run test:anthropic-runtime-policy`
+- `npm run test:anthropic-live-smoke-proof`
 - `npm run test:attestor-unlock-source-of-truth`
 - `npm run test:unified-shadow-to-policy-master-plan`
 - `npm run test:research-provenance-ledger`

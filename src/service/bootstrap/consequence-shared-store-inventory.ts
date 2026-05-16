@@ -97,7 +97,7 @@ export interface ConsequenceSharedStoreInventoryEvaluation {
   readonly missingProfileComponentIds: readonly ConsequenceSharedStoreComponentId[];
   readonly items: readonly ConsequenceSharedStoreInventoryItem[];
   readonly noGoConditions: readonly ConsequenceSharedStoreInventoryNoGo[];
-  readonly recommendedNextPr: '08-atomic-replay-idempotency';
+  readonly recommendedNextPr: '09-append-only-history-outbox';
   readonly limitation: string;
 }
 
@@ -269,8 +269,11 @@ export const CONSEQUENCE_SHARED_STORE_INVENTORY_ITEMS = Object.freeze([
     cryptoCompatible: true,
     repositoryEvidence: Object.freeze([
       'src/consequence-admission/retry-attempt-ledger.ts',
+      'src/service/consequence-shared-atomic-stores.ts',
       'tests/retry-attempt-ledger.test.ts',
+      'tests/consequence-shared-atomic-stores.test.ts',
       'docs/02-architecture/retry-attempt-ledger.md',
+      'docs/02-architecture/consequence-shared-atomic-stores.md',
     ]),
     blockerCodes: Object.freeze([
       'in-memory-reference-ledger',
@@ -293,8 +296,11 @@ export const CONSEQUENCE_SHARED_STORE_INVENTORY_ITEMS = Object.freeze([
     cryptoCompatible: true,
     repositoryEvidence: Object.freeze([
       'src/consequence-admission/presentation-replay-ledger.ts',
+      'src/service/consequence-shared-atomic-stores.ts',
       'tests/presentation-replay-ledger.test.ts',
+      'tests/consequence-shared-atomic-stores.test.ts',
       'docs/02-architecture/presentation-replay-ledger.md',
+      'docs/02-architecture/consequence-shared-atomic-stores.md',
     ]),
     blockerCodes: Object.freeze([
       'in-memory-reference-ledger',
@@ -532,7 +538,7 @@ export function evaluateConsequenceSharedStoreInventory(input: {
       'do-not-claim-outbox-delivery-without-a-wired-connector',
       'do-not-use-shared-database-without-tenant-and-idempotency-proof',
     ] as const),
-    recommendedNextPr: '08-atomic-replay-idempotency',
+    recommendedNextPr: '09-append-only-history-outbox',
     limitation:
       'Inventory only: this contract selects the next shared-store slices, but it does not create schemas, migrate file histories, run workers, configure Redis/PostgreSQL, or prove production readiness.',
   });

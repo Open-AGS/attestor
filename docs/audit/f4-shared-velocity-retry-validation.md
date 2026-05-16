@@ -14,7 +14,7 @@ F4-LLM06-B is stale as a blanket statement for the hosted route. The service wra
 
 F4-LLM10-A is valid as a policy-limit source concern. A velocity observation without source provenance can be caller-asserted. This slice adds a `requireSharedCounter` policy flag and velocity measurement sources. When `requireSharedCounter: true`, only `shared-durable-counter` satisfies the velocity limit; `operator-asserted`, `single-process-counter`, and `unknown` fail closed.
 
-F4-LLM10-B is valid as a production-readiness concern. The retry-attempt ledger was an in-memory reference path. This slice adds a shared-store contract with atomic `recordIfAbsent(record, idempotencyScope, maxRecords)` semantics and cross-instance tests. The default store remains `in-memory-reference`.
+F4-LLM10-B is valid as a production-readiness concern. The retry-attempt ledger was an in-memory reference path. The first remediation slice added a shared-store contract with atomic `recordIfAbsent(record, idempotencyScope, maxRecords)` semantics and cross-instance tests. Step 08 now adds the PostgreSQL-backed `recordSharedConsequenceRetryAttemptIfAbsent(...)` path with tenant-scope digest, unique retry attempt and idempotency constraints, and raw-idempotency-key-free storage. The default package store remains `in-memory-reference`, and runtime cutover remains unclaimed.
 
 ## Research Notes
 
@@ -38,7 +38,9 @@ Sources:
 - `src/consequence-admission/policy-limits.ts`
 - `tests/policy-limit-model.test.ts`
 - `src/consequence-admission/retry-attempt-ledger.ts`
+- `src/service/consequence-shared-atomic-stores.ts`
 - `tests/retry-attempt-ledger.test.ts`
+- `tests/consequence-shared-atomic-stores.test.ts`
 - `tests/f4-shared-velocity-retry-validation.test.ts`
 - `docs/02-architecture/agent-loop-abuse-guard.md`
 - `docs/02-architecture/policy-limit-model.md`
@@ -46,4 +48,4 @@ Sources:
 
 ## Remaining Gap
 
-This is not a full shared consequence-admission storage migration. Production-shared still needs real shared durable backing for retry-attempt ledger and related consequence-admission stores, plus deployment probes. Therefore these findings are closed only as repository-side partials, not full production fixes.
+This is not a full shared consequence-admission storage migration. Production-shared still needs runtime wiring, related consequence-admission stores, append-only history/outbox/read-model work, configuration, and deployment probes. Therefore these findings are closed only as repository-side partials, not full production fixes.

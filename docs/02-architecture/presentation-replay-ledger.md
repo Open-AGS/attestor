@@ -40,8 +40,9 @@ Core functions:
 - `createConsequenceAdmissionPresentationReplayLedger(...)`
 - `createConsequenceAdmissionPresentationReplayLedgerInMemoryStore(...)`
 - `consequenceAdmissionPresentationReplayLedgerDescriptor()`
+- `consumeSharedConsequencePresentationReplayIfAbsent(...)` from `src/service/consequence-shared-atomic-stores.ts`
 
-The included ledger is an in-memory reference implementation for evaluation, tests, local demos, and adapter shape. It is not a production shared store. The ledger now exposes a shared-store contract, but production deployments still need to back that contract with a customer-owned atomic store at the enforcement boundary.
+The consequence-admission package ledger remains an in-memory reference implementation for evaluation, tests, local demos, and adapter shape. Step 08 adds a PostgreSQL-backed shared atomic replay store under the service layer. The descriptor exposes that shared store but keeps `productionSharedStoreRuntimeWired: false`, because default runtime cutover and deployment probes are still separate work.
 
 ## Digest-Indexed Ledger Entries
 
@@ -65,9 +66,9 @@ delete(replayKeyDigest)
 entries()
 ```
 
-`setIfAbsent(entry)` is the important operation. A production backend must implement it atomically with a uniqueness constraint or equivalent compare-and-insert primitive. If two enforcement points try to consume the same replay key, exactly one may store the entry; the other must receive `replay-key-already-consumed`.
+`setIfAbsent(entry)` is the important operation. The Step 08 shared backend implements it with PostgreSQL `INSERT ... ON CONFLICT`, a tenant-scope digest, and a unique `(tenant_scope_digest, replay_key_digest)` index. If two enforcement points try to consume the same replay key inside the same tenant scope, exactly one may store the entry; the other receives a duplicate result that maps to `replay-key-already-consumed`.
 
-The default store remains `in-memory-reference` and `productionReady: false`. Passing the same store instance to two ledgers is useful for contract tests, but it is not a multi-pod production backend.
+The default package store remains `in-memory-reference` and `productionReady: false`. Passing the same store instance to two ledgers is useful for synchronous contract tests. The service-layer shared store proves the durable atomic primitive with embedded PostgreSQL tests; it does not by itself cut over every runtime path.
 
 ## Example: Supplier Payment
 
@@ -108,9 +109,11 @@ The presentation decision remains attached to the replay decision, so the caller
 
 ## Production Boundary
 
-The in-memory ledger proves the contract shape. It does not claim distributed replay protection.
+The in-memory ledger proves the contract shape. The service-layer shared atomic store proves a PostgreSQL-backed consume-if-absent primitive for this slice. Neither one claims a live deployed production profile by itself.
 
-Production money, crypto, data export, admin, and operations flows should use a shared store with atomic consume semantics. The important rule is that replay consumption must happen at the same customer-owned enforcement boundary that is about to call the downstream system. The repository exposes the contract and a reference implementation; it does not claim a live shared replay service until a real backend is configured and probed.
+Production money, crypto, data export, admin, and operations flows should use a shared store with atomic consume semantics. The important rule is that replay consumption must happen at the same customer-owned enforcement boundary that is about to call the downstream system. The repository now exposes the contract, the reference implementation, and the first PostgreSQL-backed shared primitive; it does not claim a live shared replay service until runtime cutover, target configuration, and probes are complete.
+
+Primary implementation anchors for the shared store are PostgreSQL `INSERT ... ON CONFLICT`, unique constraints, row-security policy shape, and transaction-scoped session settings. These are engineering anchors, not a compliance or production-readiness claim.
 
 ## Relationship To Other Layers
 

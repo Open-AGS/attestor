@@ -8,15 +8,17 @@ Finding under review: the presentation replay ledger was an in-memory reference 
 
 The finding is valid as a production-readiness concern. `presentation-replay-ledger` previously closed replay only inside one process-local map. That is sufficient for local evaluation and adapter-shape tests, but it is not a shared multi-pod consume path.
 
-This slice adds a repository-side shared-store contract:
+This slice adds a repository-side shared-store contract and Step 08 adds the
+first PostgreSQL-backed atomic store path:
 
 - replay keys remain indexed only by `replayKeyDigest`
 - the required consume primitive is `setIfAbsent(entry)`
 - cross-instance tests prove that two ledger instances sharing the same store cannot consume the same replay key twice
 - the default store remains `in-memory-reference`
-- `productionSharedStoreIncluded` remains `false`
+- `consumeSharedConsequencePresentationReplayIfAbsent(...)` inserts with `ON CONFLICT`
+- `productionSharedStoreIncluded` is now `true`, but `productionSharedStoreRuntimeWired` remains `false`
 
-The implementation intentionally does not claim production shared storage. A real backend still needs atomic insert-or-conflict semantics, durability, operator configuration, readiness probing, and deployment evidence before this can be marked fixed.
+The implementation intentionally does not claim runtime cutover. The repository now has atomic insert-or-conflict semantics and embedded PostgreSQL tests for this slice, but operator configuration, readiness probing, customer enforcement-boundary wiring, and deployment evidence are still required before this can be marked fixed.
 
 ## Research Notes
 
@@ -25,7 +27,7 @@ Two external patterns matter for this control:
 - Stripe idempotency keys bind retry behavior to one recorded result for a given key.
 - PostgreSQL `INSERT ... ON CONFLICT` is the database shape this contract expects from a durable backend: one insert wins, later inserts for the same unique digest conflict.
 
-The repository slice implements the contract and tests the duplicate-consume behavior. It does not wire a PostgreSQL table in this PR.
+The repository slice implements the contract, tests duplicate-consume behavior, and now wires a PostgreSQL table for the shared atomic primitive. It does not wire the runtime enforcement boundary to that table.
 
 Sources:
 
@@ -35,7 +37,9 @@ Sources:
 ## Evidence
 
 - `src/consequence-admission/presentation-replay-ledger.ts`
+- `src/service/consequence-shared-atomic-stores.ts`
 - `tests/presentation-replay-ledger.test.ts`
+- `tests/consequence-shared-atomic-stores.test.ts`
 - `tests/f4-presentation-replay-shared-ledger-validation.test.ts`
 - `docs/02-architecture/presentation-replay-ledger.md`
 

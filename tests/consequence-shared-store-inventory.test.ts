@@ -99,8 +99,8 @@ function testFirstAndSecondSlicesAreExplicit(): void {
   );
   equal(
     evaluation.recommendedNextPr,
-    '08-atomic-replay-idempotency',
-    'Consequence shared-store inventory: next PR recommendation is explicit',
+    '09-append-only-history-outbox',
+    'Consequence shared-store inventory: next PR recommendation moves to append-only history after Step 08',
   );
 }
 
@@ -205,6 +205,11 @@ function testEvidencePathsAndDocsAreWired(): void {
     'research',
     'attestor-research-provenance-ledger.md',
   );
+  const atomicStoreDoc = readProjectFile(
+    'docs',
+    '02-architecture',
+    'consequence-shared-atomic-stores.md',
+  );
   const packageJson = JSON.parse(readProjectFile('package.json')) as {
     scripts: Record<string, string>;
   };
@@ -222,7 +227,7 @@ function testEvidencePathsAndDocsAreWired(): void {
     'Consequence shared-store inventory docs: crypto projection boundary is documented',
   );
   ok(
-    tracker.includes('| Complete in this tracker | 7 |'),
+    tracker.includes('| Complete in this tracker | 8 |'),
     'Unlock tracker: completion count is updated',
   );
   ok(
@@ -230,7 +235,11 @@ function testEvidencePathsAndDocsAreWired(): void {
     'Unlock tracker: step 07 is complete',
   );
   ok(
-    masterPlan.includes('| Complete | 7 |'),
+    tracker.includes('| 08 | complete | Consequence shared-store PR slice 1 |'),
+    'Unlock tracker: step 08 is complete',
+  );
+  ok(
+    masterPlan.includes('| Complete | 8 |'),
     'Unified master plan: completion count is updated',
   );
   ok(
@@ -238,13 +247,30 @@ function testEvidencePathsAndDocsAreWired(): void {
     'Unified master plan: step 07 is complete',
   );
   ok(
+    masterPlan.includes('| 08 | complete | Consequence shared-store PR slice 1 |'),
+    'Unified master plan: step 08 is complete',
+  );
+  ok(
+    atomicStoreDoc.includes('PostgreSQL-backed shared atomic store slice'),
+    'Consequence shared atomic stores docs: Step 08 implementation doc exists',
+  );
+  ok(
     researchLedger.includes('### 49. Consequence Shared-Store Inventory'),
     'Research ledger: step 07 inventory entry is recorded',
+  );
+  ok(
+    researchLedger.includes('### 50. Consequence Shared Atomic Stores'),
+    'Research ledger: step 08 atomic store entry is recorded',
   );
   equal(
     packageJson.scripts['test:consequence-shared-store-inventory'],
     'tsx tests/consequence-shared-store-inventory.test.ts',
     'Consequence shared-store inventory: package script is registered',
+  );
+  equal(
+    packageJson.scripts['test:consequence-shared-atomic-stores'],
+    'tsx tests/consequence-shared-atomic-stores.test.ts',
+    'Consequence shared atomic stores: package script is registered',
   );
 }
 

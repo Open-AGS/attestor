@@ -23,6 +23,7 @@ try {
   const packageGuard = readProjectFile('src', 'consequence-admission', 'agent-loop-abuse-guard.ts');
   const policyLimits = readProjectFile('src', 'consequence-admission', 'policy-limits.ts');
   const retryLedger = readProjectFile('src', 'consequence-admission', 'retry-attempt-ledger.ts');
+  const sharedAtomicStores = readProjectFile('src', 'service', 'consequence-shared-atomic-stores.ts');
   const sharedGuardTest = readProjectFile(
     'tests',
     'consequence-admission-agent-loop-abuse-guard-shared.test.ts',
@@ -82,6 +83,21 @@ try {
     retryLedger,
     'recordIfAbsent',
     'F4 shared velocity/retry: retry ledger requires atomic record-if-absent semantics',
+  );
+  includes(
+    retryLedger,
+    'productionSharedStoreIncluded: true',
+    'F4 shared velocity/retry: retry ledger descriptor exposes the shared atomic store slice',
+  );
+  includes(
+    retryLedger,
+    'productionSharedStoreRuntimeWired: false',
+    'F4 shared velocity/retry: retry ledger descriptor preserves runtime cutover non-claim',
+  );
+  includes(
+    sharedAtomicStores,
+    'recordSharedConsequenceRetryAttemptIfAbsent',
+    'F4 shared velocity/retry: PostgreSQL retry atomic store exists',
   );
   includes(
     retryTest,

@@ -205,8 +205,13 @@ function testDescriptor(): void {
   );
   equal(
     descriptor.productionSharedStoreIncluded,
+    true,
+    'Replay ledger: descriptor exposes the shared atomic PostgreSQL store slice',
+  );
+  equal(
+    descriptor.productionSharedStoreRuntimeWired,
     false,
-    'Replay ledger: descriptor does not overclaim production shared store',
+    'Replay ledger: descriptor avoids runtime cutover overclaiming',
   );
   equal(
     descriptor.sharedStoreContractIncluded,

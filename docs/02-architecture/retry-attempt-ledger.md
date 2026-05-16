@@ -44,8 +44,12 @@ Core functions:
 - `createConsequenceAdmissionRetryAttemptLedger(...)`
 - `createConsequenceAdmissionRetryAttemptLedgerInMemoryStore(...)`
 - `consequenceAdmissionRetryAttemptLedgerDescriptor()`
+- `recordSharedConsequenceRetryAttemptIfAbsent(...)` from `src/service/consequence-shared-atomic-stores.ts`
 
-The included ledger is an in-memory reference implementation for evaluation, tests, local demos, and agent-wrapper shape. It is not a production shared store. The ledger exposes a shared-store contract, but production deployments still need to back that contract with a shared atomic store at the admission edge.
+The consequence-admission package ledger remains an in-memory reference implementation for evaluation, tests, local demos, and agent-wrapper shape. Step 08 adds the PostgreSQL-backed shared atomic store slice under the service layer. The descriptor exposes that shared store but keeps `productionSharedStoreRuntimeWired: false`, because default runtime cutover and deployment probes are still separate work.
+
+The shared-store contract remains part of the package surface so older audit
+validation can still distinguish the contract from runtime cutover.
 
 ## Redacted Records
 
@@ -96,9 +100,9 @@ The core operation is:
 recordIfAbsent(record, idempotencyScope, maxRecords)
 ```
 
-If the attempt already exists, the store returns the original record as `duplicate`. If another attempt already owns the same idempotency scope, the store returns `idempotency-key-conflict`. A production backend should implement this with unique constraints or equivalent atomic compare-and-insert behavior.
+If the attempt already exists, the store returns the original record as `duplicate`. If another attempt already owns the same idempotency scope, the store returns `idempotency-key-conflict`. The Step 08 shared backend implements this with PostgreSQL `INSERT ... ON CONFLICT`, a tenant-scope digest, a unique `(tenant_scope_digest, retry_attempt_id)` index, and a partial unique `(tenant_scope_digest, idempotency_scope_digest)` index. It stores the retry record JSON with `rawPayloadStored=false`, but it does not store raw idempotency keys.
 
-The default store remains `in-memory-reference` and `productionReady: false`. Passing the same store instance to two ledgers proves the contract shape in tests; it is not a multi-pod production backend.
+The default package store remains `in-memory-reference` and `productionReady: false`. Passing the same store instance to two ledgers still proves the synchronous contract shape in package tests. The service-layer shared store proves the durable atomic primitive with embedded PostgreSQL tests; it does not by itself cut over every runtime path.
 
 ## Budget-Held Attempts
 
@@ -134,7 +138,7 @@ These are ledger failures. Lower-level retry-budget reason codes such as `retry-
 
 ## Production Boundary
 
-The in-memory ledger proves the contract shape. It does not claim distributed retry accounting.
+The in-memory ledger proves the contract shape. The service-layer shared atomic store proves a PostgreSQL-backed record-if-absent primitive for this slice. Neither one claims a live deployed production profile by itself.
 
 Production money, data export, authority change, communication, operations, and programmable-money flows should use a shared store with atomic insert and unique constraints over:
 
@@ -142,6 +146,8 @@ Production money, data export, authority change, communication, operations, and 
 - tenant plus previous admission plus idempotency key digest
 
 The important rule is that retry recording happens before a corrected request is treated as an eligible retry.
+
+Primary implementation anchors for the shared store are PostgreSQL `INSERT ... ON CONFLICT`, unique constraints, row-security policy shape, and transaction-scoped session settings. These are engineering anchors, not a compliance or production-readiness claim.
 
 ## Relationship To Other Layers
 

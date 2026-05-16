@@ -5,25 +5,33 @@ this document and its paired evaluator do not create a database schema, migrate
 file-backed history, start workers, configure Redis/PostgreSQL, run Debezium,
 activate enforcement, or prove production readiness.
 
+Step 08 now adds the first PostgreSQL-backed atomic retry/replay store slice in
+[Consequence Shared Atomic Stores](consequence-shared-atomic-stores.md). This
+inventory remains the broader map because the default runtime path and the
+remaining append-only/read-model/shared-session surfaces are still not cleared
+for `production-shared`.
+
 ## Decision
 
-The next production-shared work should start with the smallest runtime safety
-slice:
+The production-shared work started with the smallest runtime safety slice and
+now moves to shared source history:
 
 ```text
-08 -> atomic replay/idempotency stores
+08 -> atomic replay/idempotency stores (repository-side slice implemented)
 09 -> append-only history, receipts, outbox, and read-model source history
 ```
 
-That means the first implementation PR should target:
+Step 08 targeted:
 
 - `retry-attempt-ledger`
 - `presentation-replay-ledger`
 
 Those two surfaces are the most direct multi-node correctness risk because an
 in-memory reference ledger lets each process see a different retry/replay
-history. A shared database is not enough evidence by itself; the PR must prove
-tenant scope, schema digest, and atomic conflict arbitration.
+history. Step 09 should now target append-only source history and receipt/read-
+model evidence. A shared database is not enough evidence by itself; each PR must
+prove tenant scope, schema digest, and the relevant conflict/outbox/worker
+arbitration.
 
 ## Inventory
 
@@ -63,8 +71,10 @@ shared-store profile:
 - `worker-claim-query-digest`
 - `advisory-lock-keyspace-digest`
 
-Step 08 should prove `schema-digest`, `tenant-scope-digest`, and
-`idempotency-constraint-digest` for both retry and presentation replay.
+Step 08 proves `schema-digest`, `tenant-scope-digest`, and
+`idempotency-constraint-digest` for both retry and presentation replay through
+`src/service/consequence-shared-atomic-stores.ts` and
+`tests/consequence-shared-atomic-stores.test.ts`.
 
 Step 09 should prove append-only history, receipt history, read-model source
 history, outbox contracts, worker claim queries, and recovery behavior. It may

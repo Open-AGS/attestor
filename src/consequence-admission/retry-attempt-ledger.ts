@@ -188,7 +188,9 @@ export interface ConsequenceAdmissionRetryAttemptLedgerDescriptor {
   readonly sharedStoreContractIncluded: true;
   readonly sharedStoreAtomicRecordRequired: true;
   readonly defaultStoreKind: 'in-memory-reference';
-  readonly productionSharedStoreIncluded: false;
+  readonly productionSharedStoreIncluded: true;
+  readonly productionSharedStoreRuntimeWired: false;
+  readonly productionSharedStoreContractRef: 'src/service/consequence-shared-atomic-stores.ts';
   readonly failClosed: true;
 }
 
@@ -789,7 +791,9 @@ ConsequenceAdmissionRetryAttemptLedgerDescriptor {
     sharedStoreContractIncluded: true,
     sharedStoreAtomicRecordRequired: true,
     defaultStoreKind: 'in-memory-reference',
-    productionSharedStoreIncluded: false,
+    productionSharedStoreIncluded: true,
+    productionSharedStoreRuntimeWired: false,
+    productionSharedStoreContractRef: 'src/service/consequence-shared-atomic-stores.ts',
     failClosed: true,
   });
 }

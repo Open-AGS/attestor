@@ -148,8 +148,13 @@ function testDescriptorAndContractSurface(): void {
   );
   equal(
     descriptor.productionSharedStoreIncluded,
+    true,
+    'Retry attempt ledger: descriptor exposes the shared atomic PostgreSQL store slice',
+  );
+  equal(
+    descriptor.productionSharedStoreRuntimeWired,
     false,
-    'Retry attempt ledger: descriptor avoids production shared-store overclaiming',
+    'Retry attempt ledger: descriptor avoids runtime cutover overclaiming',
   );
   equal(
     descriptor.sharedStoreContractIncluded,

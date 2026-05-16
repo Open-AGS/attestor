@@ -20,6 +20,7 @@ function readProjectFile(...segments: string[]): string {
 
 try {
   const source = readProjectFile('src', 'consequence-admission', 'presentation-replay-ledger.ts');
+  const sharedAtomicStores = readProjectFile('src', 'service', 'consequence-shared-atomic-stores.ts');
   const unitTest = readProjectFile('tests', 'presentation-replay-ledger.test.ts');
   const doc = readProjectFile('docs', '02-architecture', 'presentation-replay-ledger.md');
   const audit = readProjectFile(
@@ -47,8 +48,18 @@ try {
   );
   includes(
     source,
-    'productionSharedStoreIncluded: false',
-    'F4 replay ledger: source does not overclaim production shared storage',
+    'productionSharedStoreIncluded: true',
+    'F4 replay ledger: source exposes the shared atomic store slice',
+  );
+  includes(
+    source,
+    'productionSharedStoreRuntimeWired: false',
+    'F4 replay ledger: source preserves runtime cutover non-claim',
+  );
+  includes(
+    sharedAtomicStores,
+    'consumeSharedConsequencePresentationReplayIfAbsent',
+    'F4 replay ledger: PostgreSQL replay atomic store exists',
   );
   includes(
     unitTest,
@@ -72,7 +83,7 @@ try {
   );
   includes(
     audit,
-    'does not claim production shared storage',
+    'does not claim runtime cutover',
     'F4 replay ledger: audit doc preserves the production-readiness boundary',
   );
   includes(

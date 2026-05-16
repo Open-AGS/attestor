@@ -88,9 +88,9 @@ operations.
 | Metric | Value |
 |---|---|
 | Total master-plan rounds | 26 |
-| Complete | 7 |
-| Remaining | 19 |
-| Current state | Steps 01-06 are complete on `origin/master`; Step 07 is complete for this repository-side inventory once this PR is merged and verified on `origin/master`. Steps 08-12 preserve the existing unlock sequence. Steps 13-26 extend the plan into a unified Shadow-to-Policy engine and domain adapter recipes. |
+| Complete | 8 |
+| Remaining | 18 |
+| Current state | Steps 01-06 are complete on `origin/master`; Step 07 records the shared-store inventory; Step 08 adds the PostgreSQL-backed atomic retry/replay store slice once this PR is merged and verified on `origin/master`. Steps 09-12 preserve the remaining unlock sequence. Steps 13-26 extend the plan into a unified Shadow-to-Policy engine and domain adapter recipes. |
 
 ## Master List
 
@@ -103,7 +103,7 @@ operations.
 | 05 | complete | Protected admission E2E proof plan | Seven-stage route contract from admission to downstream receipt. | Do not treat signed bearer helper as sufficient for R3/R4. |
 | 06 | complete | Customer PEP adoption package | Scoped customer PEP adoption package, tests, docs, ledger. | Do not claim live customer enforcement or production readiness. |
 | 07 | complete | Consequence shared-store inventory | Inventory contract, architecture doc, tests, and research ledger entry covering file/in-memory/derived/contract-only/local-ephemeral state across shadow events, simulations, candidates, activation receipts, wizard state, retry, presentation replay, agent-loop guard, audit/dashboard sources, dashboard summary, downstream receipts, tamper-evident history, and crypto execution-admission telemetry as one-engine domain projection. | Do not clear `production-shared` while consequence state is evaluation-backed. |
-| 08 | planned | Consequence shared-store PR slice 1 | Atomic replay/idempotency stores with tenant scope, schema digest, conflict arbitration, and raw-payload-free diagnostics. | Do not use a shared database as proof without constraints and tenant boundary evidence. |
+| 08 | complete | Consequence shared-store PR slice 1 | PostgreSQL-backed atomic retry/replay stores with tenant scope, schema digest, conflict arbitration, raw-idempotency-key-free/raw-replay-key-free storage, embedded PostgreSQL tests, and runtime-cutover non-claim. | Do not use a shared database as proof without constraints and tenant boundary evidence. |
 | 09 | planned | Consequence shared-store PR slice 2 | Append-only shadow/audit history, outbox contract, worker claim query, advisory-lock keyspace, migration and recovery tests. | Do not claim event-bus or Debezium delivery unless a connector is actually wired. |
 | 10 | planned | LLM provider runtime decision | Second-provider choice, route compatibility rule, structured-output adapter shape, rate-limit signal mapping, timeout/budget behavior. | Do not prioritize provider diversity ahead of consequence enforcement. |
 | 11 | planned | LLM provider runtime PR | Anthropic, Vertex AI, or Azure OpenAI adapter; digest-only runtime evidence; live smoke probe behind external-live gate. | Do not claim live failover until both providers execute compatible routes. |
@@ -128,7 +128,7 @@ operations.
 Keep the next near-term sequence:
 
 ```text
-08 -> 09 -> 10 -> 11 -> 12
+09 -> 10 -> 11 -> 12
 ```
 
 Then build the unified Shadow-to-Policy core:
@@ -175,6 +175,6 @@ This plan does not claim:
 - crypto custody, wallet, exchange, or transaction broadcasting capability
 - healthcare, insurance, procurement, or finance compliance certification
 - automatic policy activation
-- completion of steps 08-26
+- completion of steps 09-26
 
 It is the saved master list for the next work sequence.

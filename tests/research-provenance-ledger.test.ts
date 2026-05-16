@@ -815,7 +815,7 @@ function testLedgerIndexesAuditRemediationClosure(): void {
   );
   includes(
     content,
-    'Step 08 for atomic retry/replay idempotency',
+    'Step 08 covers atomic retry/replay idempotency',
     'Research provenance ledger: consequence shared-store next implementation slice is recorded',
   );
   includes(
@@ -827,6 +827,31 @@ function testLedgerIndexesAuditRemediationClosure(): void {
     content,
     'not an implemented shared schema',
     'Research provenance ledger: consequence shared-store inventory backend non-claim is explicit',
+  );
+  includes(
+    content,
+    '### 50. Consequence Shared Atomic Stores',
+    'Research provenance ledger: consequence shared atomic stores entry is present',
+  );
+  includes(
+    content,
+    'src/service/consequence-shared-atomic-stores.ts',
+    'Research provenance ledger: consequence shared atomic stores code evidence is indexed',
+  );
+  includes(
+    content,
+    'tests/consequence-shared-atomic-stores.test.ts',
+    'Research provenance ledger: consequence shared atomic stores test evidence is indexed',
+  );
+  includes(
+    content,
+    'PostgreSQL-backed atomic retry/replay stores',
+    'Research provenance ledger: consequence shared atomic store implementation is recorded',
+  );
+  includes(
+    content,
+    'runtime consequence ledgers still default to in-memory reference stores',
+    'Research provenance ledger: consequence shared atomic store runtime cutover non-claim is explicit',
   );
 }
 

@@ -713,6 +713,31 @@ function testLedgerIndexesAuditRemediationClosure(): void {
     'not runtime external-KMS release-token issuance',
     'Research provenance ledger: GCP KMS adapter runtime issuance non-claim is explicit',
   );
+  includes(
+    content,
+    '### 46. Protected Admission End-To-End Proof Plan',
+    'Research provenance ledger: protected admission E2E proof-plan entry is present',
+  );
+  includes(
+    content,
+    'src/consequence-admission/protected-admission-e2e-proof-plan.ts',
+    'Research provenance ledger: protected admission E2E proof-plan code evidence is indexed',
+  );
+  includes(
+    content,
+    'tests/protected-admission-e2e-proof-plan.test.ts',
+    'Research provenance ledger: protected admission E2E proof-plan test evidence is indexed',
+  );
+  includes(
+    content,
+    'OAuth DPoP RFC 9449 anchors sender-constrained proof validation and proof `jti` replay consumption',
+    'Research provenance ledger: protected admission E2E DPoP source anchor is recorded',
+  );
+  includes(
+    content,
+    'not live customer PEP deployment',
+    'Research provenance ledger: protected admission E2E live customer PEP non-claim is explicit',
+  );
 }
 
 function testLedgerKeepsEvidenceBoundaryExplicit(): void {

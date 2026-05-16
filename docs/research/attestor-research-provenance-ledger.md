@@ -782,6 +782,21 @@ The entries above are the most concrete PR/commit-linked hardening records. The 
 - Remaining limitation or no-go condition: This is not runtime external-KMS release-token issuance, not live Google Cloud deployment evidence, not customer-owned key custody, not multi-cloud signer support, not confidential-compute signing, and not production readiness.
 - Status: complete for repository-side first GCP KMS adapter/probe once this PR is merged and verified on `origin/master`.
 
+### 46. Protected Admission End-To-End Proof Plan
+
+- Step / PR / commit: Protected admission end-to-end proof plan; this PR adds the repository-side route contract and narrow fixture evaluator but cannot pre-record its own merge commit.
+- Date if available: 2026-05-16.
+- Trust surface: high-risk generic admission, DPoP-bound protected release-token request, release-token proof reference, online introspection, token-use replay consumption, customer PEP enforcement, downstream receipt binding, and raw-material minimization.
+- Protected principle: customer authority; proof integrity; fail-closed boundary; replay and idempotency safety; runtime readiness; auditability; data minimization and redaction; no overclaim.
+- Research anchor / source used, if recorded: OAuth DPoP RFC 9449 anchors sender-constrained proof validation and proof `jti` replay consumption; OAuth Token Introspection RFC 7662 anchors active-token liveness; OAuth Token Exchange RFC 8693 anchors admission-to-release-token delegation; JWT BCP RFC 8725 anchors explicit token validation and downgrade avoidance; Envoy ext_authz and Istio custom authorization anchor PEP placement at the enforcement edge. These are engineering anchors only, not OAuth certification, customer deployment, or production-readiness evidence.
+- Repository evidence:
+  - Contract/code evidence: `src/consequence-admission/protected-admission-e2e-proof-plan.ts`, `src/consequence-admission/index.ts`, `docs/02-architecture/protected-admission-e2e-proof-plan.md`, `docs/02-architecture/attestor-unlock-source-of-truth.md`, and `docs/research/attestor-research-provenance-ledger.md`.
+  - Test evidence: `tests/protected-admission-e2e-proof-plan.test.ts`, `tests/attestor-unlock-source-of-truth.test.ts`, and `tests/research-provenance-ledger.test.ts`.
+- Implemented control: Defines a seven-stage protected route contract: admission decision, sender-confirmed token request, protected release-token issuance, online introspection, token-use replay consumption, customer PEP enforcement, and downstream receipt. The evaluator fails closed on signed-bearer-only posture, missing DPoP proof replay, missing sender constraint, missing online liveness, missing replay consumption, PEP bypass or fail-open posture, missing customer approval, missing receipt binding, raw proof/token/payload storage, and non-shared production-shared stores.
+- Tests / verification: `npm run test:protected-admission-e2e-proof-plan`, `npm run test:attestor-unlock-source-of-truth`, `npm run test:research-provenance-ledger`, `npm run test:generic-admission-protected-release-token`, `npm run test:generic-admission-protected-route`, `npm run test:hosted-generic-admission-sender-confirmation`, `npm run test:release-enforcement-plane-dpop`, `npm run test:f2-customer-gate-validation`, `npm run test:customer-pep-runtime-adoption`, `npm run typecheck`, and `npm run typecheck:hygiene`.
+- Remaining limitation or no-go condition: This is not live customer PEP deployment, not universal route non-bypassability, not runtime external-KMS release-token issuance, not live authorization-server operation, not complete downstream receipt reconciliation, and not production readiness.
+- Status: complete for repository-side protected admission end-to-end proof planning once this PR is merged and verified on `origin/master`.
+
 ## Strong Recorded Research Support
 
 The strongest recorded research support appears in:

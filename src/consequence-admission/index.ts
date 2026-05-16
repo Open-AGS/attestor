@@ -142,6 +142,11 @@ import {
   customerPepRuntimeAdoptionDescriptor,
   type CustomerPepRuntimeAdoptionDescriptor,
 } from './customer-pep-runtime-adoption.js';
+import {
+  PROTECTED_ADMISSION_E2E_PROOF_PLAN_VERSION,
+  protectedAdmissionE2eProofPlanDescriptor,
+  type ProtectedAdmissionE2eProofPlanDescriptor,
+} from './protected-admission-e2e-proof-plan.js';
 
 export const CONSEQUENCE_ADMISSION_CONTRACT_VERSION =
   'attestor.consequence-admission.v1';
@@ -526,6 +531,8 @@ export interface ConsequenceAdmissionDescriptor {
   readonly failureModeGuardCoverageVersion: typeof CONSEQUENCE_FAILURE_MODE_GUARD_COVERAGE_VERSION;
   readonly failureModeRuntimeExtensionVersion: typeof CONSEQUENCE_FAILURE_MODE_RUNTIME_EXTENSION_VERSION;
   readonly customerPepRuntimeAdoptionVersion: typeof CUSTOMER_PEP_RUNTIME_ADOPTION_VERSION;
+  readonly protectedAdmissionE2eProofPlanVersion:
+    typeof PROTECTED_ADMISSION_E2E_PROOF_PLAN_VERSION;
   readonly agenticSupplyChainGuardVersion: typeof CONSEQUENCE_AGENTIC_SUPPLY_CHAIN_GUARD_VERSION;
   readonly multiAgentDelegationGuardVersion: typeof CONSEQUENCE_MULTI_AGENT_DELEGATION_GUARD_VERSION;
   readonly retryDefaultMaxAttempts: typeof CONSEQUENCE_ADMISSION_RETRY_DEFAULT_MAX_ATTEMPTS;
@@ -552,6 +559,7 @@ export interface ConsequenceAdmissionDescriptor {
   readonly shadowReadinessClaimAlignment: ConsequenceShadowReadinessClaimAlignmentDescriptor;
   readonly failureModeGuardCoverage: ConsequenceFailureModeGuardCoverageMatrix;
   readonly customerPepRuntimeAdoption: CustomerPepRuntimeAdoptionDescriptor;
+  readonly protectedAdmissionE2eProofPlan: ProtectedAdmissionE2eProofPlanDescriptor;
   readonly dataMinimizationSurfaceKinds: typeof CONSEQUENCE_DATA_MINIMIZATION_SURFACE_KINDS;
   readonly dataMinimizationForbiddenRawClasses: typeof CONSEQUENCE_DATA_MINIMIZATION_FORBIDDEN_RAW_CLASSES;
   readonly packDecisionPostures: typeof CONSEQUENCE_ADMISSION_PACK_DECISION_POSTURES;
@@ -2191,6 +2199,7 @@ ConsequenceAdmissionDescriptor {
     failureModeGuardCoverageVersion: CONSEQUENCE_FAILURE_MODE_GUARD_COVERAGE_VERSION,
     failureModeRuntimeExtensionVersion: CONSEQUENCE_FAILURE_MODE_RUNTIME_EXTENSION_VERSION,
     customerPepRuntimeAdoptionVersion: CUSTOMER_PEP_RUNTIME_ADOPTION_VERSION,
+    protectedAdmissionE2eProofPlanVersion: PROTECTED_ADMISSION_E2E_PROOF_PLAN_VERSION,
     agenticSupplyChainGuardVersion: CONSEQUENCE_AGENTIC_SUPPLY_CHAIN_GUARD_VERSION,
     multiAgentDelegationGuardVersion: CONSEQUENCE_MULTI_AGENT_DELEGATION_GUARD_VERSION,
     retryDefaultMaxAttempts: CONSEQUENCE_ADMISSION_RETRY_DEFAULT_MAX_ATTEMPTS,
@@ -2217,6 +2226,7 @@ ConsequenceAdmissionDescriptor {
     shadowReadinessClaimAlignment: consequenceShadowReadinessClaimAlignmentDescriptor(),
     failureModeGuardCoverage: consequenceFailureModeGuardCoverageMatrix(),
     customerPepRuntimeAdoption: customerPepRuntimeAdoptionDescriptor(),
+    protectedAdmissionE2eProofPlan: protectedAdmissionE2eProofPlanDescriptor(),
     dataMinimizationSurfaceKinds: CONSEQUENCE_DATA_MINIMIZATION_SURFACE_KINDS,
     dataMinimizationForbiddenRawClasses: CONSEQUENCE_DATA_MINIMIZATION_FORBIDDEN_RAW_CLASSES,
     packDecisionPostures: CONSEQUENCE_ADMISSION_PACK_DECISION_POSTURES,
@@ -2356,3 +2366,4 @@ export * from './crypto.js';
 export * from './facade.js';
 export * from './customer-gate.js';
 export * from './generic-protected-release-token.js';
+export * from './protected-admission-e2e-proof-plan.js';

@@ -872,6 +872,21 @@ The entries above are the most concrete PR/commit-linked hardening records. The 
 - Remaining limitation or no-go condition: This does not wire Debezium, event-bus delivery, read-model workers, runtime migration, or production readiness. Runtime shadow producers still default to their existing evaluation paths; downstream receipt reconciliation, external tamper-evident/immutable inclusion, hosted wizard shared TTL state, agent-loop abuse shared proof, crypto domain projections, deployment probes, backup/restore rehearsal, and merge verification on `origin/master` remain required.
 - Status: complete for repository-side shared source-history and outbox primitive once this PR is merged and verified on `origin/master`.
 
+### 52. LLM Provider Runtime Decision
+
+- Step / PR / commit: LLM provider runtime decision; this PR records the repository-side Step 10 provider choice and adapter contract but cannot pre-record its own merge commit.
+- Date if available: 2026-05-16.
+- Trust surface: Attestor-owned optional live-model proof path, second-provider runtime selection, provider credential boundary, timeout and output-budget controls, rate-limit mapping, strict tool-schema structured-output route, digest-only evidence, and no-overclaim routing posture.
+- Protected principle: fail-closed boundary; customer authority; data minimization and redaction; runtime readiness; auditability; operational boundedness; no overclaim.
+- Research anchor / source used, if recorded: OpenAI Responses API, OpenAI Structured Outputs, and OpenAI rate-limit guidance anchor the current wired baseline. Anthropic Messages API, tool-use, and rate-limit docs anchor the first non-OpenAI adapter target. Vertex AI structured output, function calling, and quota docs anchor the next cloud/IAM target. Azure OpenAI structured outputs and quotas anchor the later enterprise mirror target. These are engineering anchors only, not provider certification, live provider execution, failover evidence, customer approval, or production-readiness evidence.
+- Repository evidence:
+  - Contract/doc evidence: `docs/02-architecture/llm-provider-runtime-decision.md`, `docs/02-architecture/llm-provider-registry.md`, `docs/02-architecture/attestor-unlock-source-of-truth.md`, `docs/02-architecture/unified-shadow-to-policy-master-plan.md`, `docs/02-architecture/system-overview.md`, `README.md`, and `docs/research/attestor-research-provenance-ledger.md`.
+  - Test evidence: `tests/llm-provider-runtime-decision.test.ts`, `tests/llm-provider-registry.test.ts`, `tests/attestor-unlock-source-of-truth.test.ts`, `tests/unified-shadow-to-policy-master-plan.test.ts`, and `tests/research-provenance-ledger.test.ts`.
+- Implemented control: Selects Anthropic Claude Messages API as the first non-OpenAI runtime adapter target while keeping Anthropic `planned`, not `wired`, in the registry. The Step 11 contract requires a narrow Anthropic Messages wrapper, reasoning-route model mapping re-verified at implementation time, digest-only proof context, no raw prompt/provider-body storage, Attestor-owned timeout and output-token budget, bounded retry and rate-limit signal mapping, strict tool-schema route tests, fake-client conformance, and an opt-in external-live smoke probe before runtime wiring can be claimed. Vertex AI remains the next cloud/IAM target and Azure OpenAI remains the later enterprise mirror target.
+- Tests / verification: `npm run test:llm-provider-runtime-decision`, `npm run test:llm-provider-registry`, `npm run test:attestor-unlock-source-of-truth`, `npm run test:unified-shadow-to-policy-master-plan`, `npm run test:research-provenance-ledger`, `npm run typecheck`, and `npm run typecheck:hygiene`.
+- Remaining limitation or no-go condition: This is a provider runtime decision, not a runtime adapter. It does not prove Anthropic, Vertex AI, or Azure OpenAI calls; live failover; non-OpenAI smoke proof; provider-specific customer approval; hosted consequence-admission dependence on live LLMs; or production readiness.
+- Status: complete for repository-side LLM provider runtime decision once this PR is merged and verified on `origin/master`.
+
 ## Strong Recorded Research Support
 
 The strongest recorded research support appears in:

@@ -14,7 +14,7 @@ Status: repository-side contract only. Not a live multi-provider runtime.
 
 ## Primary Source Anchors
 
-Checked on 2026-05-15.
+Checked on 2026-05-16.
 
 - OpenAI Responses API supports text, image, JSON output, and tool-capable response creation: https://platform.openai.com/docs/api-reference/responses
 - OpenAI structured outputs use JSON schema response formatting for supported models: https://platform.openai.com/docs/guides/structured-outputs
@@ -83,6 +83,25 @@ production routing.
 ## Current Decision
 
 OpenAI remains the only wired provider. Anthropic, Vertex AI, and Azure OpenAI are registered as planned provider surfaces only.
+
+## Runtime Adapter Target Decision
+
+Step 10 selects Anthropic Claude Messages API as the first non-OpenAI runtime
+adapter target. The decision is recorded in
+[LLM Provider Runtime Decision](llm-provider-runtime-decision.md).
+
+Anthropic is the next adapter target because it provides provider-family
+diversity from OpenAI with a narrower first runtime surface than Vertex AI or
+Azure OpenAI: direct Messages API, documented tool use, documented rate-limit
+headers, and no customer cloud project bootstrap before the first non-OpenAI
+proof. Vertex AI remains the next cloud/IAM target. Azure OpenAI remains the
+later enterprise mirror target.
+
+This is still not a wiring change. Anthropic remains `planned` in
+`src/api/llm-provider-registry.ts` until an adapter, fake-client conformance
+tests, digest-only runtime evidence, timeout/output-budget/rate-limit policy,
+strict tool-schema route tests, and an opt-in external-live smoke probe are
+implemented.
 
 Default state:
 

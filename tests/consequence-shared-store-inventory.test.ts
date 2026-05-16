@@ -232,8 +232,8 @@ function testEvidencePathsAndDocsAreWired(): void {
     'Consequence shared-store inventory docs: crypto projection boundary is documented',
   );
   ok(
-    tracker.includes('| Complete in this tracker | 9 |'),
-    'Unlock tracker: completion count is updated',
+    tracker.includes('| Complete in this tracker | 10 |'),
+    'Unlock tracker: completion count includes the provider runtime decision',
   );
   ok(
     tracker.includes('| 07 | complete | Consequence shared-store inventory |'),
@@ -248,8 +248,8 @@ function testEvidencePathsAndDocsAreWired(): void {
     'Unlock tracker: step 09 is complete',
   );
   ok(
-    masterPlan.includes('| Complete | 9 |'),
-    'Unified master plan: completion count is updated',
+    masterPlan.includes('| Complete | 10 |'),
+    'Unified master plan: completion count includes the provider runtime decision',
   );
   ok(
     masterPlan.includes('| 07 | complete | Consequence shared-store inventory |'),

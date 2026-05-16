@@ -127,6 +127,7 @@
     "test:f2-downstream-receipt-omission-validation": "tsx tests/f2-downstream-receipt-omission-validation.test.ts",
     "test:f2-evidence-confidence-validation": "tsx tests/f2-evidence-confidence-validation.test.ts",
     "test:f2-llm-provider-supply-chain-validation": "tsx tests/f2-llm-provider-supply-chain-validation.test.ts",
+    "test:llm-provider-runtime-decision": "tsx tests/llm-provider-runtime-decision.test.ts",
     "test:llm-provider-registry": "tsx tests/llm-provider-registry.test.ts",
     "test:customer-pep-runtime-adoption": "tsx tests/customer-pep-runtime-adoption.test.ts",
     "test:openai-runtime-policy": "tsx tests/openai-runtime-policy.test.ts",

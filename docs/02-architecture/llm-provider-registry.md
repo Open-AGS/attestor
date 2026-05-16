@@ -1,6 +1,7 @@
 # LLM Provider Registry Contract
 
-Status: repository-side contract only. Not a live multi-provider runtime.
+Status: repository-side provider contract with OpenAI and Anthropic runtime
+wrappers. Not live provider failover and not production LLM runtime readiness.
 
 ## Protected Principles
 
@@ -19,7 +20,10 @@ Checked on 2026-05-16.
 - OpenAI Responses API supports text, image, JSON output, and tool-capable response creation: https://platform.openai.com/docs/api-reference/responses
 - OpenAI structured outputs use JSON schema response formatting for supported models: https://platform.openai.com/docs/guides/structured-outputs
 - OpenAI rate-limit guidance recommends retry with exponential backoff and a maximum retry bound: https://platform.openai.com/docs/guides/rate-limits
-- Anthropic Messages and tool-use docs separate model-returned tool calls from application-executed client tools, and strict tool use can enforce schema conformance: https://docs.anthropic.com/en/docs/agents-and-tools/tool-use/overview
+- Anthropic Messages API anchors the first non-OpenAI request surface and the
+  required `anthropic-version` header: https://docs.anthropic.com/en/api/messages
+- Anthropic model overview lists `claude-sonnet-4-6` as the Claude Sonnet 4.6 API id: https://platform.claude.com/docs/en/about-claude/models/overview
+- Anthropic strict tool-use docs define top-level `strict: true` and validated `input_schema` tool inputs: https://platform.claude.com/docs/en/agents-and-tools/tool-use/strict-tool-use
 - Anthropic rate-limit docs expose retry and rate-limit headers such as `retry-after` and `anthropic-ratelimit-*`: https://docs.anthropic.com/en/api/rate-limits
 - Vertex AI structured output uses `responseMimeType` and `responseSchema`: https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/control-generated-output
 - Azure OpenAI structured outputs use `response_format` with `json_schema` and `strict: true`: https://learn.microsoft.com/en-us/azure/ai-foundry/openai/how-to/structured-outputs
@@ -37,8 +41,8 @@ Checked on 2026-05-16.
 - credential reference names only, never values;
 - proof-context binding for provider id, configured model, observed model, prompt digest, config digest, and tool/schema digests.
 
-The registry does not instantiate Anthropic, Vertex AI, or Azure OpenAI clients,
-execute provider failover, or prove production readiness. It evaluates whether a
+The registry does not instantiate Vertex AI or Azure OpenAI clients, execute
+live provider failover, or prove production readiness. It evaluates whether a
 requested provider route is selectable or blocked.
 
 ## Failover Compatibility Rule
@@ -82,11 +86,12 @@ production routing.
 
 ## Current Decision
 
-OpenAI remains the only wired provider. Anthropic, Vertex AI, and Azure OpenAI are registered as planned provider surfaces only.
+OpenAI and Anthropic are wired repository-side runtime wrappers. Vertex AI and
+Azure OpenAI are registered as planned provider surfaces only.
 
 ## Runtime Adapter Target Decision
 
-Step 10 selects Anthropic Claude Messages API as the first non-OpenAI runtime
+Step 10 selected Anthropic Claude Messages API as the first non-OpenAI runtime
 adapter target. The decision is recorded in
 [LLM Provider Runtime Decision](llm-provider-runtime-decision.md).
 
@@ -97,21 +102,22 @@ headers, and no customer cloud project bootstrap before the first non-OpenAI
 proof. Vertex AI remains the next cloud/IAM target. Azure OpenAI remains the
 later enterprise mirror target.
 
-This is still not a wiring change. Anthropic remains `planned` in
-`src/api/llm-provider-registry.ts` until an adapter, fake-client conformance
-tests, digest-only runtime evidence, timeout/output-budget/rate-limit policy,
-strict tool-schema route tests, and an opt-in external-live smoke probe are
-implemented.
+Step 11 wires the narrow Anthropic runtime slice in `src/api/anthropic.ts`.
+That wrapper uses the Messages API directly, pins the API version header,
+targets `claude-sonnet-4-6`, enforces Attestor-owned timeout/output-token/retry
+budgets, maps rate-limit headers into digest-only evidence, exposes a strict
+tool-schema path, and adds an opt-in external-live smoke probe. This is still
+not a production routing claim.
 
 Default state:
 
-- `single-provider-evaluation-ready`
+- `routing-contract-ready`
 - `productionReady: false`
-- `multiProviderResilienceReady: false`
+- `multiProviderResilienceReady: true` as a repository-side routing contract,
+  not as active live failover
 
 Production or failover-required state:
 
-- blocked by `llm-provider-failover-provider-not-wired`;
 - blocked by `llm-provider-compatible-failover-provider-not-ready` if a second
   wired provider is not route-compatible;
 - blocked by `llm-provider-live-smoke-proof-required`.
@@ -126,12 +132,15 @@ Route-readiness state:
 - always `productionReady: false`.
 
 OpenAI timeout and output-token budget enforcement are wired in
-`src/api/openai.ts`. OpenAI reasoning live smoke proof is wired as an explicit
-external-live probe in `scripts/probe-openai-live-smoke.ts`; production-like
-OpenAI reasoning calls remain fail-closed until a fresh proof digest, timestamp,
-model, and purpose are present in the runtime environment. This is still not a
-production readiness claim because vision smoke proof, non-OpenAI providers, and
-multi-provider failover remain absent.
+`src/api/openai.ts`. Anthropic timeout, retry, output-token, strict-tool, and
+rate-limit mapping are wired in `src/api/anthropic.ts`. OpenAI and Anthropic
+reasoning live smoke proofs are wired as explicit external-live probes in
+`scripts/probe-openai-live-smoke.ts` and
+`scripts/probe-anthropic-live-smoke.ts`; production-like calls remain
+fail-closed until a fresh proof digest, timestamp, model, and purpose are
+present in the runtime environment. This is still not a production readiness
+claim because live failover execution, customer approval evidence, OpenAI
+vision smoke proof, Vertex AI, and Azure OpenAI remain outside this slice.
 
 ## Proof Context Contract
 
@@ -154,10 +163,10 @@ The binding helper rejects non-digest prompt/config fields and records:
 
 ## Not Claimed
 
-- No Anthropic, Vertex AI, or Azure OpenAI client is implemented by this PR.
+- No Vertex AI or Azure OpenAI client is implemented by this PR.
 - No live provider failover is active.
 - No hosted production LLM runtime readiness is claimed.
-- No OpenAI vision or non-OpenAI live provider smoke proof is wired yet.
+- No OpenAI vision live provider smoke proof is wired yet.
 - No hosted consequence-admission route depends on a live LLM provider.
 - No route-readiness evidence evaluation activates a live provider call.
 
@@ -166,6 +175,8 @@ The binding helper rejects non-digest prompt/config fields and records:
 - `npm run test:llm-provider-registry`
 - `npm run test:openai-runtime-policy`
 - `npm run test:openai-live-smoke-proof`
+- `npm run test:anthropic-runtime-policy`
+- `npm run test:anthropic-live-smoke-proof`
 - `npm run test:f2-llm-provider-supply-chain-validation`
 - `npm run test:f2-model-tool-config-drift-validation`
 - `npm run test:f11-supply-chain-depth-validation`

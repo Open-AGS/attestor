@@ -88,9 +88,9 @@ operations.
 | Metric | Value |
 |---|---|
 | Total master-plan rounds | 26 |
-| Complete | 10 |
-| Remaining | 16 |
-| Current state | Steps 01-06 are complete on `origin/master`; Step 07 records the shared-store inventory; Step 08 adds the PostgreSQL-backed atomic retry/replay store slice; Step 09 adds the PostgreSQL-backed shared source-history and outbox primitive. Step 10 selects Anthropic Claude Messages API as the first non-OpenAI runtime adapter target while keeping Anthropic planned, not wired. Steps 11-12 preserve the remaining unlock sequence. Steps 13-26 extend the plan into a unified Shadow-to-Policy engine and domain adapter recipes. |
+| Complete | 11 |
+| Remaining | 15 |
+| Current state | Steps 01-06 are complete on `origin/master`; Step 07 records the shared-store inventory; Step 08 adds the PostgreSQL-backed atomic retry/replay store slice; Step 09 adds the PostgreSQL-backed shared source-history and outbox primitive. Step 10 selects Anthropic Claude Messages API as the first non-OpenAI runtime adapter target. Step 11 implements the narrow Anthropic Messages API runtime slice with digest-only evidence, strict tool-schema tests, bounded runtime policy, and an opt-in external-live smoke probe while keeping live failover and production readiness unclaimed. Step 12 preserves the remaining unlock sequence. Steps 13-26 extend the plan into a unified Shadow-to-Policy engine and domain adapter recipes. |
 
 ## Master List
 
@@ -106,7 +106,7 @@ operations.
 | 08 | complete | Consequence shared-store PR slice 1 | PostgreSQL-backed atomic retry/replay stores with tenant scope, schema digest, conflict arbitration, raw-idempotency-key-free/raw-replay-key-free storage, embedded PostgreSQL tests, and runtime-cutover non-claim. | Do not use a shared database as proof without constraints and tenant boundary evidence. |
 | 09 | complete | Consequence shared-store PR slice 2 | PostgreSQL-backed shared source-history and outbox primitive with tenant-scope digest, digest-only source/payload refs, append-only sequence, outbox contract digest, `FOR UPDATE SKIP LOCKED` worker claim digest, advisory-lock keyspace digest, embedded PostgreSQL tests, and runtime-delivery non-claim. | Do not claim event-bus or Debezium delivery unless a connector is actually wired. |
 | 10 | complete | LLM provider runtime decision | Anthropic Claude Messages API selected as the first non-OpenAI runtime adapter target; route compatibility rule, strict tool-schema structured-output path, rate-limit signal mapping, timeout/budget behavior, no-raw-provider-body boundary, tests, registry doc, and research ledger entry recorded. | Do not treat a provider decision as a wired runtime, live failover, or production readiness. |
-| 11 | planned | Anthropic runtime PR | Anthropic Messages API adapter; digest-only runtime evidence; fake-client conformance; timeout/output-budget/rate-limit policy; strict tool-schema route tests; live smoke probe behind external-live gate. | Do not claim live failover until both providers execute compatible routes. |
+| 11 | complete | Anthropic runtime PR | Anthropic Messages API adapter, `claude-sonnet-4-6` model mapping, digest-only runtime evidence, fake-client conformance, timeout/output-budget/rate-limit policy, strict tool-schema route tests, and live smoke probe behind external-live gate. | Do not claim live failover, customer approval, or production LLM runtime readiness from repository-side adapter wiring. |
 | 12 | planned | Production rehearsal go/no-go packet | Readiness packet for signer, shared stores, PEP, provider route, probes, backup/restore, observability, incident/runbook evidence. | Do not call the repo or a rehearsal target production-ready without target proof. |
 | 13 | planned | Target-system compatibility matrix | Matrix for CRM/support, ITSM/workflow, data/IAM, procurement/spend, health/insurance, and crypto integrations. | Do not optimize for one vendor API as if it were the Attestor model. |
 | 14 | planned | Shadow event canonical schema | Versioned event envelope for action, tenant, actor, resource, observed/inferred fields, evidence refs, raw-data prohibitions, and receipt refs. | Do not store raw prompts, private payloads, secrets, wallet material, provider bodies, or customer identifiers beyond the minimum digest-safe contract. |
@@ -128,7 +128,7 @@ operations.
 Keep the next near-term sequence:
 
 ```text
-11 -> 12
+12
 ```
 
 Then build the unified Shadow-to-Policy core:
@@ -175,6 +175,6 @@ This plan does not claim:
 - crypto custody, wallet, exchange, or transaction broadcasting capability
 - healthcare, insurance, procurement, or finance compliance certification
 - automatic policy activation
-- completion of steps 11-26
+- completion of steps 12-26
 
 It is the saved master list for the next work sequence.

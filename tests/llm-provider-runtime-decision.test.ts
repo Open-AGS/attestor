@@ -39,6 +39,7 @@ function testDecisionDocRecordsTheRuntimeTarget(): void {
     'The goal is not provider-count vanity.',
     'Vertex AI remains the next cloud/IAM target',
     'enterprise mirror target.',
+    'selected Anthropic runtime slice',
   ]) {
     includes(decision, expected, `Runtime decision: records ${expected}`);
   }
@@ -71,8 +72,8 @@ function testDecisionDocRecordsPrimarySourcesAndContract(): void {
   }
 
   for (const expected of [
-    'Do not claim live multi-provider LLM resilience from this decision.',
-    'Do not claim Anthropic, Vertex AI, or Azure OpenAI runtime execution.',
+    'Do not claim live multi-provider LLM resilience from this decision or from',
+    'Do not claim Vertex AI or Azure OpenAI runtime execution.',
     'Do not claim live failover until OpenAI and Anthropic both execute compatible',
     'Do not let the provider adapter store raw prompts, raw provider bodies',
   ]) {
@@ -92,14 +93,14 @@ function testRegistryStillBlocksRuntimeClaims(): void {
   const vertex = DEFAULT_LLM_PROVIDER_REGISTRATIONS.find((provider) => provider.id === 'vertex-ai');
   const azure = DEFAULT_LLM_PROVIDER_REGISTRATIONS.find((provider) => provider.id === 'azure-openai');
 
-  assert.equal(openai?.wireStatus, 'wired', 'Runtime decision: OpenAI remains the only wired provider');
-  assert.equal(anthropic?.wireStatus, 'planned', 'Runtime decision: Anthropic remains planned after the decision');
+  assert.equal(openai?.wireStatus, 'wired', 'Runtime decision: OpenAI remains wired');
+  assert.equal(anthropic?.wireStatus, 'wired', 'Runtime decision: Anthropic is wired after Step 11');
   assert.equal(vertex?.wireStatus, 'planned', 'Runtime decision: Vertex AI remains planned after the decision');
   assert.equal(azure?.wireStatus, 'planned', 'Runtime decision: Azure OpenAI remains planned after the decision');
   assert.equal(
     anthropic?.defaultModelsByPurpose.reasoning,
-    undefined,
-    'Runtime decision: Anthropic runtime model mapping is not configured before the adapter PR',
+    'claude-sonnet-4-6',
+    'Runtime decision: Anthropic runtime model mapping is configured by Step 11',
   );
   passed += 5;
 }
@@ -124,22 +125,22 @@ function testTrackersAndIndexesAreUpdated(): void {
   };
 
   for (const expected of [
-    '| Complete in this tracker | 10 |',
-    '| Remaining after this tracker | 2 |',
+    '| Complete in this tracker | 11 |',
+    '| Remaining after this tracker | 1 |',
     '| 10 | complete | LLM provider runtime decision |',
-    '| 11 | planned | Anthropic runtime PR |',
-    'Step 10 chooses Anthropic first because it gives provider-family diversity',
-    'completion of steps 11-12',
+    '| 11 | complete | Anthropic runtime PR |',
+    'Step 11 implements Anthropic first because it gives provider-family diversity',
+    'completion of step 12',
   ]) {
     includes(tracker, expected, `Runtime decision: unlock tracker records ${expected}`);
   }
 
   for (const expected of [
-    '| Complete | 10 |',
-    '| Remaining | 16 |',
+    '| Complete | 11 |',
+    '| Remaining | 15 |',
     '| 10 | complete | LLM provider runtime decision |',
-    '| 11 | planned | Anthropic runtime PR |',
-    'completion of steps 11-26',
+    '| 11 | complete | Anthropic runtime PR |',
+    'completion of steps 12-26',
   ]) {
     includes(plan, expected, `Runtime decision: unified plan records ${expected}`);
   }

@@ -6,9 +6,9 @@ audit, extending the earlier build-chain R13 posture.
 Validation date: 2026-05-15.
 
 Scope: container image pinning, observability runtime references, critical
-runtime dependency pinning, Attestor-owned OpenAI model observation, generated
-adapter / MCP vocabulary, webhook ingress proof, release provenance, and SBOM
-evidence. This is repository-side evidence only. It is not a SLSA level claim,
+runtime dependency pinning, Attestor-owned OpenAI and Anthropic model-provider
+boundaries, generated adapter / MCP vocabulary, webhook ingress proof, release
+provenance, and SBOM evidence. This is repository-side evidence only. It is not a SLSA level claim,
 not an external supply-chain attestation review, and not production deployment
 proof.
 
@@ -44,7 +44,9 @@ External anchors:
   `snowflake-sdk`, `stripe`, `bullmq`, `openid-client`, and `node-forge`.
 - `src/api/openai.ts` now records provider-returned model metadata through
   `observeOpenAiModel(...)` and emits a drift warning if the observed model name
-  differs from the configured model.
+  differs from the configured model. `src/api/anthropic.ts` records equivalent
+  provider proof context and model observation for the Anthropic Messages API
+  wrapper.
 - `.github/workflows/release-provenance.yml` generates and packages
   `.attestor/release-provenance/sbom.cyclonedx.json` and keeps attestation/OIDC
   write permissions isolated to the release provenance workflow.
@@ -61,7 +63,7 @@ External anchors:
 | F11-SC-1 container base images use floating tags | `fixed` | Dockerfile digest pin was already present. HA/DR compose images are now digest-pinned and checked by `security:supply-chain-baseline`. |
 | F11-SC-2 observability stack uses `:latest` tags | `fixed` | Compose and Kubernetes observability image refs now use version tags plus SHA-256 digests. |
 | F11-SC-3 high-trust npm dependency caret pinning | `fixed` | Critical runtime dependencies are exact-pinned in `package.json` and root `package-lock.json`. Dev/noncritical transitive ranges remain governed by `npm ci` and lockfile integrity. |
-| F11-SC-4 single OpenAI provider / provider registry contract | `partial` | Attestor-owned OpenAI calls now record response-model drift telemetry, apply timeout/output-token runtime policy, disable provider-side response storage, and expose an opt-in OpenAI reasoning live smoke probe. `src/api/llm-provider-registry.ts` records provider inventory plus fail-closed route evaluation, including same-purpose model/capability/rate-limit compatibility before a fallback provider can count. Multi-provider live client selection, failover, OpenAI vision smoke proof, and non-OpenAI smoke proof remain backlog. |
+| F11-SC-4 single OpenAI provider / provider registry contract | `partial` | Attestor-owned OpenAI and Anthropic calls now record digest-only provider context, apply timeout/output-token runtime policy, and expose opt-in OpenAI reasoning live smoke probe and Anthropic reasoning live smoke probe paths. `src/api/llm-provider-registry.ts` records provider inventory plus fail-closed route evaluation, including same-purpose model/capability/rate-limit compatibility before a fallback provider can count. Live failover execution, customer provider approval, OpenAI vision smoke proof, Vertex AI, and Azure OpenAI remain backlog. |
 | F11-SC-5 generated-adapter verification path | `partial` | The agentic supply-chain guard blocks unreviewed generated adapters. Signed generated-adapter provenance and activation rollback remain future hardening. |
 | F11-SC-6 decision-context drift not wired to Attestor-owned OpenAI call | `partial` | OpenAI response model observation is now logged. Persisted drift binding and enforcement are not claimed. |
 | F11-SC-7 customer-supplied evidence re-fetch | `partial` | Existing evidence-confidence validation keeps source-system verification as a required evidence kind, but universal re-fetch/re-hash is still future work. |
@@ -74,7 +76,7 @@ External anchors:
 ## Remaining Boundary
 
 F11 is closed for planned repository-side work in this slice. The remaining
-supply-chain items are not claimed as solved: multi-provider LLM failover,
+supply-chain items are not claimed as solved: live multi-provider LLM failover,
 persisted model-context drift enforcement, universal source-system evidence
 re-fetch, signed generated-adapter provenance, MCP registry implementation, and
 external production image refresh operations.

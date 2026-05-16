@@ -57,9 +57,9 @@ Existing proof:
 
 This closes the original "no guard module" wording as stale. It does not close all runtime provider dependency risk.
 
-### Attestor-owned OpenAI usage
+### Attestor-owned OpenAI and Anthropic usage
 
-`src/api/openai.ts` is still a single OpenAI SDK wrapper:
+`src/api/openai.ts` is the OpenAI SDK wrapper:
 
 - `GPT_MODEL = 'o3'`
 - `GPT_VISION_MODEL = 'gpt-4o'`
@@ -69,16 +69,28 @@ This closes the original "no guard module" wording as stale. It does not close a
 - output-token budget enforcement before live calls
 - `store: false` on OpenAI Responses and Chat Completions requests
 - opt-in OpenAI reasoning live smoke proof through `scripts/probe-openai-live-smoke.ts`
-- no failover provider implementation
+- no active live failover execution
+
+`src/api/anthropic.ts` is the first non-OpenAI provider wrapper:
+
+- `ANTHROPIC_REASONING_MODEL = 'claude-sonnet-4-6'`
+- direct Anthropic Messages API fetch boundary
+- explicit `anthropic-version: 2023-06-01` header
+- bounded wrapper-controlled retry attempts with `retry-after` handling
+- per-request timeout and output-token budget enforcement
+- strict tool-schema path with top-level `strict: true`
+- digest-only provider proof context
+- opt-in Anthropic reasoning live smoke proof through `scripts/probe-anthropic-live-smoke.ts`
+- no raw prompt or raw provider-body storage in evidence
 
 `src/api/llm-provider-registry.ts` now defines a repository-side provider
 registry contract:
 
-- OpenAI is the only `wired` provider.
-- Anthropic, Vertex AI, and Azure OpenAI are registered as `planned` provider
-  surfaces only.
-- production/failover-required evaluation fails closed until a compatible
-  second provider, timeout budget, cost budget, and live smoke proof are wired.
+- OpenAI and Anthropic are `wired` repository-side providers.
+- Vertex AI and Azure OpenAI are registered as `planned` provider surfaces only.
+- production/failover-required evaluation fails closed until compatible runtime
+  evidence, live smoke proof, approval, timeout, budget, and rate-limit proof
+  are present for the selected route.
 - failover compatibility requires the same requested purpose, model mapping,
   route capabilities, structured-output support when required, and provider
   rate-limit signals.
@@ -98,9 +110,11 @@ Current caller evidence:
 - `callGpt(...)` is called from `src/financial/cli.ts` only.
 - `callGptVision(...)` currently has no repo caller outside its own definition.
 - `docs/00-evaluation/v0.1-evaluation-packet.md` labels the live upstream path as optional and not the default reviewer path.
-- `src/financial/types.ts` mentions `ANTHROPIC_API_KEY` in readiness reporting, but there is no Anthropic client implementation equivalent to `src/api/openai.ts`.
+- `src/financial/types.ts` mentions `ANTHROPIC_API_KEY` in readiness reporting,
+  but the hosted consequence-admission API still does not depend on live LLM
+  providers for enforcement.
 
-So the live-model risk is scope-bounded today: it is not part of the hosted consequence-admission API path based on current repo evidence. The provider registry narrows the contract gap, but runtime provider resilience remains incomplete before any broader claim.
+So the live-model risk is scope-bounded today: it is not part of the hosted consequence-admission API path based on current repo evidence. The provider registry and Anthropic wrapper narrow the contract gap, but live provider failover and production provider resilience remain incomplete before any broader claim.
 
 ## Status Decisions
 
@@ -135,14 +149,18 @@ Required future guard if exposed:
 Reason:
 
 - Agentic supply-chain guard coverage is real.
-- Single-provider runtime dependency remains true for `src/api/openai.ts`.
-- The report must be split: adapter/tool supply chain is partially covered; Attestor-owned live-model provider resilience remains backlog.
+- The original single-provider statement is now stale for repository-side
+  wrappers because OpenAI and Anthropic are both wired.
+- The report must still be split: adapter/tool supply chain is partially
+  covered; live-model provider resilience remains backlog until failover
+  execution, customer approval, and production evidence exist.
 
 ### F4-D: `partial`
 
 Reason:
 
-- Current OpenAI usage is optional and CLI-scoped.
+- Current live-model usage remains optional and CLI-scoped for the existing
+  financial proof path.
 - `LlmProviderRegistry` records provider inventory, wire status, structured-output mechanisms, credential reference names, rate-limit signal names, and proof-context digest binding.
 - Route evaluation now rejects a generic second wired provider unless it is
   purpose/model/capability/structured-output/rate-limit compatible.
@@ -151,17 +169,20 @@ Reason:
   digest-only runtime evidence with live smoke, approval, policy, schema,
   retry/storage, and minimization controls.
 - The OpenAI wrapper now has explicit per-call timeout and output-token budget enforcement, disables provider SDK hidden retries, sets provider response storage to `false`, and can produce digest-only OpenAI reasoning smoke proof.
-- The OpenAI wrapper still has no live failover provider, no OpenAI vision smoke proof, and no non-OpenAI smoke proof.
+- The Anthropic wrapper now has explicit per-call timeout, retry, and output-token budget enforcement, strict tool-schema tests, digest-only proof context, and can produce digest-only Anthropic reasoning smoke proof.
+- The repository still has no live failover execution, no OpenAI vision smoke proof, and no Vertex AI or Azure OpenAI runtime.
 - It should block future claims that Attestor has production-grade multi-provider live-model resilience.
 
 ## Required Follow-Up
 
 To close the runtime LLM provider side as `fixed`, Attestor still needs runtime wiring beyond the registry contract:
 
-1. Wire non-OpenAI providers only after each client has timeout, budget, retry, redaction, and smoke-proof parity.
-2. Add live failover policy and route execution after at least two providers are wired.
+1. Add live failover policy and route execution after the repository-side
+   OpenAI and Anthropic wrappers have customer-approved runtime evidence.
+2. Wire Vertex AI and Azure OpenAI only after each client has timeout, budget,
+   retry, redaction, and smoke-proof parity.
 3. Bind provider/model/version and prompt/template digests into every proof packet where live model output matters.
-4. Add live smoke tests for each production-enabled provider profile beyond OpenAI reasoning.
+4. Add live smoke tests for each production-enabled provider profile beyond OpenAI and Anthropic reasoning.
 5. Keep optional live-model proof paths separate from hosted consequence-admission enforcement claims.
 
 ## Tracker Effect

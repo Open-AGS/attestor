@@ -92,6 +92,7 @@ export type ReleaseEvidencePackVerificationResult =
   evidence.ReleaseEvidencePackVerificationResult;
 export type ReleaseEvidenceTokenPolicyContext =
   evidence.ReleaseEvidenceTokenPolicyContext;
+export type CanonicalReleaseJsonValue = canonicalization.CanonicalReleaseJsonValue;
 
 /**
  * Curated public platform surface for the Attestor release layer.
@@ -204,6 +205,7 @@ export type ShadowModeReleaseEvaluator = shadow.ShadowModeReleaseEvaluator;
 export const releaseTokenVerificationKeyToJwks = token.releaseTokenVerificationKeyToJwks;
 export const releaseTokenVerificationKeysToJwks = token.releaseTokenVerificationKeysToJwks;
 export const createReleaseTokenVerificationKey = token.createReleaseTokenVerificationKey;
+export const canonicalizeReleaseJson = canonicalization.canonicalizeReleaseJson;
 
 export function releaseLayerPublicSurface(): ReleaseLayerPublicSurfaceDescriptor {
   return Object.freeze({

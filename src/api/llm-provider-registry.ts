@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 
-import { OPENAI_REASONING_MODEL, OPENAI_VISION_MODEL } from './llm-provider-models.js';
+import { ANTHROPIC_REASONING_MODEL, OPENAI_REASONING_MODEL, OPENAI_VISION_MODEL } from './llm-provider-models.js';
 
 export const LLM_PROVIDER_REGISTRY_VERSION = 'llm-provider-registry.v1' as const;
 
@@ -57,10 +57,10 @@ export interface LlmProviderRegistration {
 
 export interface LlmProviderRuntimePolicy {
   readonly maxAttempts: number;
-  readonly retryBackoff: 'openai-wrapper-jittered-exponential' | 'jittered-exponential-required-before-production';
-  readonly timeoutBudget: 'openai-wrapper-wired' | 'required-before-production';
-  readonly costBudget: 'openai-output-token-budget-wired' | 'required-before-production';
-  readonly liveSmokeProof: 'openai-reasoning-external-live-probe-wired' | 'required-before-production';
+  readonly retryBackoff: 'openai-and-anthropic-wrapper-jittered-exponential' | 'jittered-exponential-required-before-production';
+  readonly timeoutBudget: 'openai-and-anthropic-wrapper-wired' | 'required-before-production';
+  readonly costBudget: 'openai-and-anthropic-output-token-budget-wired' | 'required-before-production';
+  readonly liveSmokeProof: 'openai-and-anthropic-reasoning-external-live-probes-wired' | 'required-before-production';
   readonly failoverMode: 'disabled-single-provider' | 'fail-closed-until-two-wired-providers';
   readonly failoverCompatibility: 'same-purpose-model-capability-rate-limit-required';
   readonly storesRawPrompt: false;
@@ -274,8 +274,12 @@ export const DEFAULT_LLM_PROVIDER_REGISTRATIONS: readonly LlmProviderRegistratio
   {
     id: 'anthropic',
     displayName: 'Anthropic Claude',
-    wireStatus: 'planned',
-    defaultModelsByPurpose: Object.freeze({}),
+    wireStatus: 'wired',
+    defaultModelsByPurpose: Object.freeze({
+      reasoning: ANTHROPIC_REASONING_MODEL,
+      'structured-output': ANTHROPIC_REASONING_MODEL,
+      'tool-routing': ANTHROPIC_REASONING_MODEL,
+    }),
     credentialRefs: Object.freeze(['ANTHROPIC_API_KEY']),
     capability: Object.freeze({
       textGeneration: true,
@@ -382,10 +386,10 @@ export function llmProviderRegistryDescriptor(): LlmProviderRegistryDescriptor {
     providers: DEFAULT_LLM_PROVIDER_REGISTRATIONS,
     runtimePolicy: Object.freeze({
       maxAttempts: 2,
-      retryBackoff: 'openai-wrapper-jittered-exponential',
-      timeoutBudget: 'openai-wrapper-wired',
-      costBudget: 'openai-output-token-budget-wired',
-      liveSmokeProof: 'openai-reasoning-external-live-probe-wired',
+      retryBackoff: 'openai-and-anthropic-wrapper-jittered-exponential',
+      timeoutBudget: 'openai-and-anthropic-wrapper-wired',
+      costBudget: 'openai-and-anthropic-output-token-budget-wired',
+      liveSmokeProof: 'openai-and-anthropic-reasoning-external-live-probes-wired',
       failoverMode: 'fail-closed-until-two-wired-providers',
       failoverCompatibility: 'same-purpose-model-capability-rate-limit-required',
       storesRawPrompt: false,
@@ -836,7 +840,7 @@ function requireOptionalDigest(field: string, value: string | undefined): void {
 
 function registryNonClaims(): readonly string[] {
   return Object.freeze([
-    'No Anthropic, Vertex AI, or Azure OpenAI client is implemented by this registry contract.',
+    'No Vertex AI or Azure OpenAI client is implemented by this registry contract.',
     'No live provider failover is active.',
     'No hosted production LLM runtime readiness is claimed.',
     'No raw prompt or provider response body is stored by the proof-context binding.',

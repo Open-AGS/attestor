@@ -40,12 +40,12 @@ function testTrackerExistsAndFreezesTheSequence(): void {
   );
   includes(
     tracker,
-    '| Complete in this tracker | 10 |',
+    '| Complete in this tracker | 11 |',
     'Unlock tracker: current completion count is explicit',
   );
   includes(
     tracker,
-    '| Remaining after this tracker | 2 |',
+    '| Remaining after this tracker | 1 |',
     'Unlock tracker: remaining count is explicit',
   );
 
@@ -60,7 +60,7 @@ function testTrackerExistsAndFreezesTheSequence(): void {
     '| 08 | complete | Consequence shared-store PR slice 1 |',
     '| 09 | complete | Consequence shared-store PR slice 2 |',
     '| 10 | complete | LLM provider runtime decision |',
-    '| 11 | planned | Anthropic runtime PR |',
+    '| 11 | complete | Anthropic runtime PR |',
     '| 12 | planned | Production rehearsal go/no-go packet |',
   ]) {
     includes(tracker, expected, `Unlock tracker: records ${expected}`);
@@ -78,8 +78,8 @@ function testTrackerRecordsCurrentTruthAndNoGos(): void {
     'One AI Action Control Plane with a shared consequence-admission core and modular packs.',
     '`attestor/release-enforcement-plane` exposes Node, Hono, webhook, record-write, communication-send, action-dispatch, Envoy, and Istio enforcement surfaces; the customer PEP adoption package now combines scoped runtime proof',
     'The contract defines tenant-scoped external KMS/HSM proof requirements, fake-adapter conformance, and the first Google Cloud KMS Ed25519 sign/verify proof adapter.',
-    'No live multi-provider runtime, no compatible fallback execution, no non-OpenAI smoke proof',
-    'Step 10 selects Anthropic Claude Messages API as the first non-OpenAI runtime adapter target.',
+    'No live provider failover, no hosted production LLM runtime readiness, no Vertex AI or Azure OpenAI runtime',
+    'Step 10 selects Anthropic Claude Messages API as the first non-OpenAI runtime adapter target, and Step 11 implements the narrow Anthropic Messages API runtime slice',
     'Do not clear `production-shared` while consequence state is evaluation-backed.',
     'Do not treat a signed bearer helper as sufficient for R3/R4 enforcement.',
     'Do not claim multi-cloud, customer custody, live GCP deployment, runtime external-KMS issuance, or customer production readiness from one adapter/probe.',
@@ -88,6 +88,7 @@ function testTrackerRecordsCurrentTruthAndNoGos(): void {
     'The package combines runtime adoption proof, protected E2E proof, route coverage, no-bypass review, fail-closed config, verifier integration, health, rollback, kill switch, monitoring, audit, customer approval, activation evidence, and downstream receipt.',
     'Step 09 adds PostgreSQL-backed shared source-history and outbox primitives with append-only sequence, tenant-scope, schema, outbox, worker-claim, and advisory-lock proof digests.',
     'First non-OpenAI adapter target: Anthropic Claude Messages API for the reasoning route',
+    'The adapter uses Anthropic Messages API, `claude-sonnet-4-6`, digest-only proof context',
     'Atomic retry/replay stores use tenant-scope digest, PostgreSQL `ON CONFLICT`, unique idempotency/replay indexes',
   ]) {
     includes(tracker, expected, `Unlock tracker: records boundary ${expected}`);
@@ -99,7 +100,7 @@ function testTrackerRecordsCurrentTruthAndNoGos(): void {
     'live customer PEP deployment',
     'multi-provider LLM resilience',
     'runtime external-KMS release-token issuance',
-    'completion of steps 11-12',
+    'completion of step 12',
   ]) {
     includes(tracker, nonClaim, `Unlock tracker: non-claim includes ${nonClaim}`);
   }

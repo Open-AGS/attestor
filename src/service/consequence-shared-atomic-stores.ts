@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import {
   canonicalizeReleaseJson,
   type CanonicalReleaseJsonValue,
-} from '../release-kernel/release-canonicalization.js';
+} from '../release-layer/index.js';
 import {
   CONSEQUENCE_ADMISSION_PRESENTATION_REPLAY_LEDGER_VERSION,
   type ConsequenceAdmissionPresentationReplayLedgerEntry,

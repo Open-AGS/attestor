@@ -40,13 +40,14 @@ render/probe checks. This proves the repo-side live and deployment-shaped
 paths that can be exercised without customer secrets.
 
 External live checks are opt-in. Snowflake, VSAC, ONC Cypress validation,
-Policy Foundry production smoke probes, and OpenAI live smoke probes must run through
+Policy Foundry production smoke probes, OpenAI live smoke probes, and Anthropic
+live smoke probes must run through
 `npm run verify:external-live` with `ATTESTOR_RUN_EXTERNAL_LIVE_TESTS=true` in
 an explicit live environment. In GitHub Actions, use the `Full Verify`
 workflow's `external-live` mode and a protected GitHub Environment that holds
 those credentials. Do not treat a green `verify` or default `verify:full` run
-as proof that external cloud, healthcare, hosted Policy Foundry, OpenAI, or
-customer-operated substrates were reached.
+as proof that external cloud, healthcare, hosted Policy Foundry, OpenAI,
+Anthropic, or customer-operated substrates were reached.
 
 ## Runtime Profile Gate
 
@@ -356,8 +357,30 @@ For production-like OpenAI reasoning calls, set the printed:
 - `ATTESTOR_OPENAI_LIVE_SMOKE_PROOF_PURPOSE`
 
 This clears the OpenAI reasoning smoke-proof gate only for fresh matching proof
-evidence. It does not prove OpenAI vision readiness, non-OpenAI provider
-readiness, live failover, hosted consequence-admission dependence on LLMs, or
+evidence. It does not prove OpenAI vision readiness, live failover, hosted
+consequence-admission dependence on LLMs, or production LLM readiness.
+
+### Anthropic live smoke proof inputs
+
+Run the Anthropic probe only in an explicit live environment:
+
+```bash
+npm run probe:anthropic-live-smoke
+```
+
+It requires `ANTHROPIC_API_KEY`, calls the Anthropic Messages API with the
+`anthropic-version: 2023-06-01` header, uses the wrapper timeout/output-token
+budget, and prints digest-only evidence. For production-like Anthropic
+reasoning calls, set the printed:
+
+- `ATTESTOR_ANTHROPIC_LIVE_SMOKE_PROOF_DIGEST`
+- `ATTESTOR_ANTHROPIC_LIVE_SMOKE_PROOF_CHECKED_AT`
+- `ATTESTOR_ANTHROPIC_LIVE_SMOKE_PROOF_MODEL`
+- `ATTESTOR_ANTHROPIC_LIVE_SMOKE_PROOF_PURPOSE`
+
+This clears the Anthropic reasoning smoke-proof gate only for fresh matching
+proof evidence. It does not prove live failover, customer provider approval,
+hosted consequence-admission dependence on LLMs, Vertex AI, Azure OpenAI, or
 production LLM readiness.
 
 ### Trusted proxy headers

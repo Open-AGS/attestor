@@ -14,7 +14,7 @@ AI / caller proposes a consequence
   -> release / policy decision block
   -> consequence admission block
   -> enforcement / customer gate block
-  -> downstream consequence or hold
+  -> downstream consequence proceeds or holds
 ```
 
 The most compact internal model is:
@@ -27,13 +27,14 @@ The release PDP decides whether a proposed output can become a release. The admi
 
 ## One-Picture Internal Map
 
-This is the visual index for the repository. It is one picture: every current top-level source area, route lane, decision axis, decision point, module group, shared store, side loop, and terminal outcome represented by this map should be readable from left to right. The tables and path sections below unpack the same picture.
+This is the visual index for the repository. It is one picture: every current top-level source area, route lane, decision axis, decision point, module group, shared store, side loop, and terminal outcome represented by this map should be readable as a dark system-design projection. The tables and path sections below unpack the same picture.
 
 Decision points are diamond nodes. Structural components and stores are rectangular nodes.
 
 ![Attestor one-picture internal machine map](../assets/attestor-internal-machine-map.svg)
 
 [Open full-size SVG](../assets/attestor-internal-machine-map.svg)
+
 ## Main Parts
 
 | Part | Main code | What it does inside the machine |
@@ -45,7 +46,7 @@ Decision points are diamond nodes. Structural components and stores are rectangu
 | Consequence admission core | `src/consequence-admission/index.ts` | Defines the shared admission request/response contract, decisions, checks, proof refs, generic mode ladder, retry guidance, feedback, canonical digest, and descriptor. |
 | Domain admission projections | `src/consequence-admission/finance.ts`, `src/consequence-admission/crypto.ts`, `src/consequence-admission/facade.ts` | Converts finance and crypto native results into the shared admission vocabulary. |
 | Enforcement plane | `src/release-enforcement-plane/*` | Verifies release authorization at downstream boundaries through offline verification, online introspection, replay, sender-bound presentation, middleware, webhooks, Envoy/Istio, record-write, communication-send, and action-dispatch gateways. |
-| Customer gate | `src/consequence-admission/customer-gate.ts` | Last local allow/hold decision before customer-side execution. It can evaluate plain admission, signed bearer token, or release-enforcement verification. |
+| Customer gate | `src/consequence-admission/customer-gate.ts` | Last local proceed/hold decision before customer-side execution. It can evaluate plain admission, signed bearer token, or release-enforcement verification. |
 | Crypto execution admission | `src/crypto-execution-admission/*` | Packages wallet/RPC/Safe/ERC-4337/modular-account/delegated-EOA/x402/custody/intent-solver execution plans into admission-ready evidence and handoff objects. |
 | Crypto authorization core | `src/crypto-authorization-core/*` | Models programmable-money authorization objects, risk mappings, simulations, replay/freshness, and signing/account abstraction surfaces. |
 | Crypto intelligence | `src/crypto-intelligence/*` | Adds crypto risk, adapter-readiness, privacy, performance, and package-surface summaries. |
@@ -62,7 +63,7 @@ Decision points are diamond nodes. Structural components and stores are rectangu
 
 ## The Ten Decision Axes
 
-The same proposed consequence is viewed across ten axes before a final run/hold result appears.
+The same proposed consequence is viewed across ten axes before a final proceed/hold result appears.
 
 | Axis | Question answered | Main structures | What it contributes |
 |---|---|---|---|
@@ -101,7 +102,7 @@ Every current high-level decision point is a diamond node in the one-picture map
 | Offline verification valid? | Does local cryptographic verification close? | valid, invalid |
 | Online verification required and valid? | Does freshness, introspection, replay, or usage verification close? | valid/not-required, invalid/replayed/stale |
 | Enforcement result | What does the PEP return before customer-side execution? | allow, deny, shadow-allow, needs-introspection, break-glass-allow |
-| Customer gate | Does the customer-side gate let the consequence run? | proceed, hold |
+| Customer gate | Does the customer-side gate let the consequence proceed? | proceed, hold |
 
 ## Aggregators
 

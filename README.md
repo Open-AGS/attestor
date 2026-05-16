@@ -264,7 +264,7 @@ One product. One platform core.
 
 The current engine shape is a reference-monitor-style consequence admission path, not a prompt filter. The deeper architecture decision is [AI Action Control Plane architecture](docs/02-architecture/ai-action-control-plane-architecture.md). It uses PDP / PEP / PIP / PAP-style separation inside a contract-first modular monolith. This is not a claim that every customer workflow is already non-bypassable; that posture requires a real customer-side enforcement point, gateway, verifier, or adapter.
 
-For one visual map of the whole internal machine, start with the [Attestor internal machine map](docs/02-architecture/attestor-internal-machine-map.md). It shows the route lanes, all ten decision axes, current decision points, module groups, stores, packs, side loops, and terminal outcomes in one Mermaid diagram.
+For one visual map of the whole internal machine, start with the [Attestor internal machine map](docs/02-architecture/attestor-internal-machine-map.md). It shows the route lanes, all ten decision axes, current decision points, module groups, stores, packs, side loops, and terminal outcomes in one dark system-design SVG map.
 
 Read the architecture as a path, not a stack diagram:
 

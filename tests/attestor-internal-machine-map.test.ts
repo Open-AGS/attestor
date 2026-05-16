@@ -99,7 +99,7 @@ function testMachineMapExistsAndNamesTheCoreShape(): void {
     'Shared Stores',
     'Support Surfaces',
     'Shadow-To-Policy Loop',
-    'RUN',
+    'PROCEED',
     'HOLD',
   ]) {
     includes(svg, expected, `Machine map SVG: one-picture map includes ${expected}`);

@@ -222,6 +222,7 @@ So the honest architectural statement is:
 
 Active priority:
 
+- follow the [Attestor unlock source of truth](attestor-unlock-source-of-truth.md) for the next signer, customer PEP, consequence shared-store, LLM provider, and production rehearsal decisions
 - move through the [Production rehearsal buildout](production-rehearsal-buildout.md) so `production-shared` becomes real-environment evidence, not just repo-embedded PostgreSQL proof
 - keep the completed [Production shared authority plane buildout](production-shared-authority-plane-buildout.md) aligned with production promotion gates so `production-shared` remains a tested shared authority plane, not a loose marketing claim
 - keep the [AI Action Control Plane architecture](ai-action-control-plane-architecture.md) aligned with the README, package boundaries, failure registry, replay fixtures, and customer-side enforcement contract

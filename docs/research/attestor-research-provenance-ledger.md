@@ -722,6 +722,21 @@ The entries above are the most concrete PR/commit-linked hardening records. The 
 - Remaining limitation or no-go condition: This is repository-side shared replay storage, not live production readiness. It does not deploy a customer PEP, operate a live authorization server, activate external KMS/HSM signing, prove backup/restore or multi-region PostgreSQL operation, or certify OAuth DPoP conformance. Production-shared remains blocked without structured external issuer proof and live deployment evidence.
 - Status: complete for repository-side hosted shared DPoP proof replay store once this PR is merged and verified on `origin/master`.
 
+### 42. Attestor Unlock Source Of Truth
+
+- Step / PR / commit: Attestor unlock source-of-truth tracker; this PR records the next 12-step engineering unlock sequence but cannot pre-record its own merge commit.
+- Date if available: 2026-05-16.
+- Trust surface: product positioning, release-token issuer boundary, customer PEP adoption, consequence shared-store promotion, LLM provider routing, production rehearsal, and no-overclaim language.
+- Protected principle: fail-closed boundary; tenant isolation; customer authority; proof integrity; replay and idempotency safety; runtime readiness; data minimization and redaction; auditability; operational boundedness; no overclaim.
+- Research anchor / source used, if recorded: OAuth DPoP, mTLS-bound tokens, token introspection, token exchange, RAR, and JWT BCP anchor sender constraint and token liveness; Envoy, OPA, Istio, and SPIFFE/SPIRE anchor PEP placement; AWS KMS, Google Cloud KMS, and Azure Key Vault/Managed HSM anchor external signer decision criteria; PostgreSQL and Debezium anchor shared-store idempotency, locks, row security, queue claims, and outbox shape; OpenAI, Anthropic, Vertex AI, and Azure OpenAI docs anchor provider routing and structured-output differences; NIST AI RMF and OWASP LLM Top 10 anchor AI risk framing. These are engineering anchors only, not certification, live provider evidence, or production-readiness evidence.
+- Repository evidence:
+  - Contract/doc evidence: `docs/02-architecture/attestor-unlock-source-of-truth.md`, `README.md`, `docs/02-architecture/system-overview.md`, and `docs/research/attestor-research-provenance-ledger.md`.
+  - Test evidence: `tests/attestor-unlock-source-of-truth.test.ts` and `tests/research-provenance-ledger.test.ts`.
+- Implemented control: Adds a single repo-indexed decision tracker that records current truth across release/policy authority, enforcement plane, hosted generic admission, tenant signer boundary, consequence storage, LLM provider registry, and production rehearsal. The tracker freezes a 12-step unlock sequence and keeps steps 02-12 as planned backlog until each has repository evidence, tests, docs, and merge verification on `origin/master`.
+- Tests / verification: `npm run test:attestor-unlock-source-of-truth`, `npm run test:research-provenance-ledger`, `npm run typecheck`, and `npm run typecheck:hygiene`.
+- Remaining limitation or no-go condition: This is not an implementation of external KMS/HSM signing, live customer PEP deployment, consequence shared stores, multi-provider LLM runtime, production rehearsal, compliance certification, or production readiness.
+- Status: complete for repository-side unlock sequencing once this PR is merged and verified on `origin/master`.
+
 ## Strong Recorded Research Support
 
 The strongest recorded research support appears in:

@@ -812,6 +812,21 @@ The entries above are the most concrete PR/commit-linked hardening records. The 
 - Remaining limitation or no-go condition: This is not live customer PEP deployment, not customer traffic cutover, not universal route non-bypassability, not customer-operated monitoring proof, not runtime external-KMS release-token issuance, not live authorization-server operation, not complete downstream receipt reconciliation, and not production readiness.
 - Status: complete for repository-side customer PEP adoption packaging once this PR is merged and verified on `origin/master`.
 
+### 48. Unified Shadow-To-Policy Master Plan
+
+- Step / PR / commit: Unified Shadow-to-Policy master plan; this PR saves the extended post-step-06 work list but cannot pre-record its own merge commit.
+- Date if available: 2026-05-16.
+- Trust surface: AI-action shadow capture, action surface discovery, policy candidate generation, evidence requirement inference, active human questions, replay and counterexample testing, review-by-exception approval, domain adapters, general crypto transaction understanding, and no-auto-enforcement posture.
+- Protected principle: customer authority; proof integrity; fail-closed boundary; replay and idempotency safety; auditability; operational boundedness; data minimization and redaction; runtime readiness; no overclaim.
+- Research anchor / source used, if recorded: AWS IAM Access Analyzer policy generation and Google Cloud role recommendations anchor usage-based recommendation with human review instead of silent application; Cedar policy validation and OPA decision logs anchor schema-bound and auditable policy execution; Microsoft HAX and Google People + AI Guidebook anchor human workload minimization; Salesforce Agentforce, Microsoft Copilot Studio, ServiceNow IntegrationHub, Workato approvals, Camunda agentic orchestration, and n8n human-in-the-loop tools anchor target-system action/workflow integration; Fireblocks, Coinbase CDP, Safe, and OpenZeppelin Defender anchor crypto policy, signing, proposal, and receipt surfaces; EIP-712, EIP-2612, ERC-4337, and ERC-7715 anchor general crypto transaction/signature/delegation forms. These are engineering anchors only, not integration coverage, certification, customer deployment, or production-readiness evidence.
+- Repository evidence:
+  - Contract/doc evidence: `docs/02-architecture/unified-shadow-to-policy-master-plan.md`, `docs/02-architecture/attestor-unlock-source-of-truth.md`, and `docs/research/attestor-research-provenance-ledger.md`.
+  - Test evidence: `tests/unified-shadow-to-policy-master-plan.test.ts`, `tests/attestor-unlock-source-of-truth.test.ts`, and `tests/research-provenance-ledger.test.ts`.
+- Implemented control: Records one unified engine instead of separate finance, crypto, enterprise, or support products. The plan preserves the existing steps 07-12, then adds steps 13-26 for target-system compatibility, shadow event canonical schema, action surface graph, evidence state model, policy candidate PR contract, active question engine, counterexample replay, Policy Twin backtest, review-by-exception inbox, feedback loop, enterprise recipes, General Crypto Transaction Gate, additional domain recipes, and pilot readiness. It explicitly treats crypto as a domain adapter covering general transaction risks such as ERC-20 approval, permit signatures, swaps, bridges, Safe transactions, account-abstraction UserOperations, session-key grants, and x402 payments rather than only high-value treasury movement.
+- Tests / verification: `npm run test:unified-shadow-to-policy-master-plan`, `npm run test:attestor-unlock-source-of-truth`, `npm run test:research-provenance-ledger`, `npm run typecheck`, and `npm run typecheck:hygiene`.
+- Remaining limitation or no-go condition: This is a saved plan, not an implementation. It does not implement shadow-event shared storage, policy candidate generation, active question ranking, counterexample replay, target-system integrations, general crypto transaction decoding, live customer enforcement, automatic policy activation, or production readiness.
+- Status: complete for repository-side master-list capture once this PR is merged and verified on `origin/master`.
+
 ## Strong Recorded Research Support
 
 The strongest recorded research support appears in:

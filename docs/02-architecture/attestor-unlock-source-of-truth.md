@@ -27,6 +27,13 @@ packs. Finance and crypto are packs, not separate products. Attestor should not
 be widened into a wallet, custody platform, file workspace, or general
 orchestration layer.
 
+The extended post-step-06 master list now lives in
+[Unified Shadow-To-Policy Master Plan](unified-shadow-to-policy-master-plan.md).
+That document preserves steps 07-12 from this tracker and adds the unified
+Shadow-to-Policy engine and domain-adapter sequence. It is the planning source
+for future work after this tracker's immediate sequence, but it does not change
+the no-overclaim boundary here.
+
 ## Current Repository Truth
 
 | Area | Current truth | What remains blocked |

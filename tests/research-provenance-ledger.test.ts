@@ -768,6 +768,36 @@ function testLedgerIndexesAuditRemediationClosure(): void {
     'not customer traffic cutover',
     'Research provenance ledger: customer PEP adoption package traffic cutover non-claim is explicit',
   );
+  includes(
+    content,
+    '### 48. Unified Shadow-To-Policy Master Plan',
+    'Research provenance ledger: unified Shadow-to-Policy master plan entry is present',
+  );
+  includes(
+    content,
+    'docs/02-architecture/unified-shadow-to-policy-master-plan.md',
+    'Research provenance ledger: unified Shadow-to-Policy master plan doc evidence is indexed',
+  );
+  includes(
+    content,
+    'tests/unified-shadow-to-policy-master-plan.test.ts',
+    'Research provenance ledger: unified Shadow-to-Policy master plan test evidence is indexed',
+  );
+  includes(
+    content,
+    'one unified engine instead of separate finance, crypto, enterprise, or support products',
+    'Research provenance ledger: unified engine boundary is recorded',
+  );
+  includes(
+    content,
+    'General Crypto Transaction Gate',
+    'Research provenance ledger: general crypto transaction gate is recorded',
+  );
+  includes(
+    content,
+    'not an implementation',
+    'Research provenance ledger: master plan non-implementation boundary is explicit',
+  );
 }
 
 function testLedgerKeepsEvidenceBoundaryExplicit(): void {

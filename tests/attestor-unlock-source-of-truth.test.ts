@@ -40,18 +40,18 @@ function testTrackerExistsAndFreezesTheSequence(): void {
   );
   includes(
     tracker,
-    '| Complete in this tracker | 1 |',
+    '| Complete in this tracker | 2 |',
     'Unlock tracker: current completion count is explicit',
   );
   includes(
     tracker,
-    '| Remaining after this tracker | 11 |',
+    '| Remaining after this tracker | 10 |',
     'Unlock tracker: remaining count is explicit',
   );
 
   for (const expected of [
     '| 01 | complete | Source-of-truth tracker |',
-    '| 02 | planned | External KMS/HSM provider decision |',
+    '| 02 | complete | External KMS/HSM provider decision |',
     '| 03 | planned | External signer contract closure |',
     '| 04 | planned | First KMS/HSM adapter PR |',
     '| 05 | planned | Protected admission end-to-end proof plan |',
@@ -82,6 +82,7 @@ function testTrackerRecordsCurrentTruthAndNoGos(): void {
     'Do not clear `production-shared` while consequence state is evaluation-backed.',
     'Do not treat a signed bearer helper as sufficient for R3/R4 enforcement.',
     'Do not claim multi-cloud or customer production readiness from one adapter.',
+    'First adapter target: Google Cloud KMS with `EC_SIGN_ED25519` and raw signing input.',
   ]) {
     includes(tracker, expected, `Unlock tracker: records boundary ${expected}`);
   }
@@ -91,7 +92,7 @@ function testTrackerRecordsCurrentTruthAndNoGos(): void {
     'external KMS/HSM custody',
     'live customer PEP deployment',
     'multi-provider LLM resilience',
-    'completion of steps 02-12',
+    'completion of steps 03-12',
   ]) {
     includes(tracker, nonClaim, `Unlock tracker: non-claim includes ${nonClaim}`);
   }
@@ -156,6 +157,11 @@ function testTrackerHasPrimaryAnchorsAndRepoLinks(): void {
     researchLedger,
     'docs/02-architecture/attestor-unlock-source-of-truth.md',
     'Unlock tracker: research provenance ledger indexes the tracker',
+  );
+  includes(
+    researchLedger,
+    'docs/02-architecture/external-kms-hsm-provider-decision.md',
+    'Unlock tracker: research provenance ledger indexes the KMS/HSM provider decision',
   );
   assert.equal(
     packageJson.scripts['test:attestor-unlock-source-of-truth'],

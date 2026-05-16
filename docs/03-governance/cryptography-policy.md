@@ -48,6 +48,13 @@ can narrow signer-compromise blast radius:
 - confidential-compute signing additionally requires verified attestation
   evidence before the boundary contract is satisfied
 
+The first external provider adapter target is Google Cloud KMS with
+`EC_SIGN_ED25519` and raw signing input, as recorded in
+[External KMS/HSM provider decision](../02-architecture/external-kms-hsm-provider-decision.md).
+AWS KMS remains the next compatible candidate; Azure Key Vault / Managed HSM
+remains a future ES256/PS256 or algorithm-migration path, not the first
+Ed25519 release-token adapter.
+
 Official provider anchors:
 
 - AWS KMS supports asymmetric signing keys, including Ed25519, where the

@@ -737,6 +737,21 @@ The entries above are the most concrete PR/commit-linked hardening records. The 
 - Remaining limitation or no-go condition: This is not an implementation of external KMS/HSM signing, live customer PEP deployment, consequence shared stores, multi-provider LLM runtime, production rehearsal, compliance certification, or production readiness.
 - Status: complete for repository-side unlock sequencing once this PR is merged and verified on `origin/master`.
 
+### 43. External KMS/HSM Provider Decision
+
+- Step / PR / commit: External KMS/HSM provider decision; this PR selects the first provider target for a future live adapter but cannot pre-record its own merge commit.
+- Date if available: 2026-05-16.
+- Trust surface: release-token issuer boundary, per-tenant signer isolation, provider-native signing algorithm, raw-vs-digest input mode, live sign/verify proof, provider response redaction, runtime fail-closed behavior, and future production promotion gates.
+- Protected principle: tenant isolation; proof integrity; fail-closed boundary; release provenance; runtime readiness; data minimization and redaction; no overclaim.
+- Research anchor / source used, if recorded: Google Cloud KMS algorithms and asymmetricSign API anchor `EC_SIGN_ED25519` and raw `data` signing for the first adapter target; Google Cloud KMS protection levels anchor the required protection-level proof field; AWS KMS Sign anchors `ED25519_SHA_512` and `MessageType` as the second compatible provider; AWS KMS key store docs keep customer-operated CloudHSM limitations visible for asymmetric keys; Azure Key Vault Sign and key details anchor why Azure remains a future ES256/PS256 or algorithm-migration path instead of the first Ed25519 adapter. These are provider-selection anchors only, not live provider evidence or production-readiness evidence.
+- Repository evidence:
+  - Contract/doc evidence: `docs/02-architecture/external-kms-hsm-provider-decision.md`, `docs/02-architecture/attestor-unlock-source-of-truth.md`, `docs/03-governance/cryptography-policy.md`, and `docs/research/attestor-research-provenance-ledger.md`.
+  - Test evidence: `tests/external-kms-hsm-provider-decision.test.ts`, `tests/attestor-unlock-source-of-truth.test.ts`, and `tests/research-provenance-ledger.test.ts`.
+- Implemented control: Selects Google Cloud KMS as the first real external release signer adapter target and records the minimum adapter contract: `gcp-kms`, Ed25519 / EdDSA, provider-native `EC_SIGN_ED25519`, raw signing input, protection-level binding, digest-only live sign/verify proof, provider request/response redaction, no local fallback, and fail-closed readiness on stale, missing, mismatched, or downgraded proof.
+- Tests / verification: `npm run test:external-kms-hsm-provider-decision`, `npm run test:attestor-unlock-source-of-truth`, `npm run test:research-provenance-ledger`, `npm run typecheck`, and `npm run typecheck:hygiene`.
+- Remaining limitation or no-go condition: This is not a live Google Cloud KMS adapter, not external KMS/HSM custody evidence, not customer-owned key custody, not multi-cloud signer support, not confidential-compute signing, not an AWS or Azure adapter, and not production readiness.
+- Status: complete for repository-side provider selection once this PR is merged and verified on `origin/master`.
+
 ## Strong Recorded Research Support
 
 The strongest recorded research support appears in:

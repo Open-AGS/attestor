@@ -40,12 +40,12 @@ function testTrackerExistsAndFreezesTheSequence(): void {
   );
   includes(
     tracker,
-    '| Complete in this tracker | 4 |',
+    '| Complete in this tracker | 5 |',
     'Unlock tracker: current completion count is explicit',
   );
   includes(
     tracker,
-    '| Remaining after this tracker | 8 |',
+    '| Remaining after this tracker | 7 |',
     'Unlock tracker: remaining count is explicit',
   );
 
@@ -54,7 +54,7 @@ function testTrackerExistsAndFreezesTheSequence(): void {
     '| 02 | complete | External KMS/HSM provider decision |',
     '| 03 | complete | External signer contract closure |',
     '| 04 | complete | First KMS/HSM adapter PR |',
-    '| 05 | planned | Protected admission end-to-end proof plan |',
+    '| 05 | complete | Protected admission end-to-end proof plan |',
     '| 06 | planned | Customer PEP adoption package |',
     '| 07 | planned | Consequence shared-store inventory |',
     '| 08 | planned | Consequence shared-store PR slice 1 |',
@@ -83,6 +83,7 @@ function testTrackerRecordsCurrentTruthAndNoGos(): void {
     'Do not treat a signed bearer helper as sufficient for R3/R4 enforcement.',
     'Do not claim multi-cloud, customer custody, live GCP deployment, runtime external-KMS issuance, or customer production readiness from one adapter/probe.',
     'First adapter target: Google Cloud KMS with `EC_SIGN_ED25519` and raw signing input.',
+    'Route contract: admission -> DPoP-bound release token -> introspection -> token-use replay -> customer PEP -> downstream receipt.',
   ]) {
     includes(tracker, expected, `Unlock tracker: records boundary ${expected}`);
   }
@@ -93,7 +94,7 @@ function testTrackerRecordsCurrentTruthAndNoGos(): void {
     'live customer PEP deployment',
     'multi-provider LLM resilience',
     'runtime external-KMS release-token issuance',
-    'completion of steps 05-12',
+    'completion of steps 06-12',
   ]) {
     includes(tracker, nonClaim, `Unlock tracker: non-claim includes ${nonClaim}`);
   }
@@ -173,6 +174,11 @@ function testTrackerHasPrimaryAnchorsAndRepoLinks(): void {
     researchLedger,
     'docs/02-architecture/gcp-kms-release-signer-adapter.md',
     'Unlock tracker: research provenance ledger indexes the GCP KMS adapter',
+  );
+  includes(
+    researchLedger,
+    'docs/02-architecture/protected-admission-e2e-proof-plan.md',
+    'Unlock tracker: research provenance ledger indexes the protected admission E2E proof plan',
   );
   assert.equal(
     packageJson.scripts['test:attestor-unlock-source-of-truth'],

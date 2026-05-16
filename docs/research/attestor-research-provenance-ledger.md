@@ -827,6 +827,21 @@ The entries above are the most concrete PR/commit-linked hardening records. The 
 - Remaining limitation or no-go condition: This is a saved plan, not an implementation. It does not implement shadow-event shared storage, policy candidate generation, active question ranking, counterexample replay, target-system integrations, general crypto transaction decoding, live customer enforcement, automatic policy activation, or production readiness.
 - Status: complete for repository-side master-list capture once this PR is merged and verified on `origin/master`.
 
+### 49. Consequence Shared-Store Inventory
+
+- Step / PR / commit: Consequence shared-store inventory; this PR adds the repository-side inventory contract but cannot pre-record its own merge commit.
+- Date if available: 2026-05-16.
+- Trust surface: consequence-admission shadow history, policy simulations, policy candidates, activation receipts, hosted wizard state, retry/replay ledgers, agent-loop guard, audit/dashboard source history, downstream receipts, tamper-evident history, crypto execution-admission telemetry, and shared-store migration sequencing.
+- Protected principle: fail-closed boundary; tenant isolation; replay and idempotency safety; auditability; data minimization and redaction; operational boundedness; runtime readiness; no overclaim.
+- Research anchor / source used, if recorded: PostgreSQL `INSERT ... ON CONFLICT` anchors atomic retry/replay and idempotency arbitration; PostgreSQL row security anchors tenant-scoped shared records; PostgreSQL advisory locks anchor application-defined shared coordination; PostgreSQL `FOR UPDATE ... SKIP LOCKED` anchors worker claim patterns; Debezium Outbox Event Router anchors insert-oriented outbox design without claiming connector delivery. These are engineering anchors only, not a live schema, migration, connector, worker, or production-readiness proof.
+- Repository evidence:
+  - Contract/code evidence: `src/service/bootstrap/consequence-shared-store-inventory.ts`, `src/service/bootstrap/consequence-shared-store-profile.ts`, `src/service/bootstrap/production-storage-path.ts`, `docs/02-architecture/consequence-shared-store-inventory.md`, `docs/02-architecture/attestor-unlock-source-of-truth.md`, `docs/02-architecture/unified-shadow-to-policy-master-plan.md`, and `docs/research/attestor-research-provenance-ledger.md`.
+  - Test evidence: `tests/consequence-shared-store-inventory.test.ts`, `tests/consequence-shared-store-profile.test.ts`, `tests/attestor-unlock-source-of-truth.test.ts`, `tests/unified-shadow-to-policy-master-plan.test.ts`, and `tests/research-provenance-ledger.test.ts`.
+- Implemented control: Adds a deterministic inventory that maps file-backed, in-memory, derived, contract-only, local ephemeral, and existing shared-path surfaces to their required primitives and operational proof digests. The recommended next PR is Step 08 for atomic retry/replay idempotency, while Step 09 covers append-only history, outbox, receipt history, tamper-evident history, and read-model sources. Crypto execution-admission telemetry is explicitly recorded as a domain projection into the same shared event/receipt history, not a separate storage engine.
+- Tests / verification: `npm run test:consequence-shared-store-inventory`, `npm run test:consequence-shared-store-profile`, `npm run test:attestor-unlock-source-of-truth`, `npm run test:unified-shadow-to-policy-master-plan`, `npm run test:research-provenance-ledger`, `npm run typecheck`, and `npm run typecheck:hygiene`.
+- Remaining limitation or no-go condition: This is not an implemented shared schema, not migration from existing evaluation files, not worker recovery proof, not event-bus or Debezium delivery, not Redis/PostgreSQL configuration, not live customer deployment, not crypto custody/wallet/exchange capability, and not production readiness.
+- Status: complete for repository-side consequence shared-store inventory once this PR is merged and verified on `origin/master`.
+
 ## Strong Recorded Research Support
 
 The strongest recorded research support appears in:

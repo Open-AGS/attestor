@@ -1,6 +1,6 @@
 # Unified Shadow-To-Policy Master Plan
 
-Status: saved repository-side master list after Attestor unlock step 06. This
+Status: saved repository-side master list after Attestor unlock step 07. This
 is a planning and sequencing artifact, not a production readiness claim and not
 a new product split.
 
@@ -88,9 +88,9 @@ operations.
 | Metric | Value |
 |---|---|
 | Total master-plan rounds | 26 |
-| Complete | 6 |
-| Remaining | 20 |
-| Current state | Steps 01-06 are complete on `origin/master`. Steps 07-12 preserve the existing unlock sequence. Steps 13-26 extend the plan into a unified Shadow-to-Policy engine and domain adapter recipes. |
+| Complete | 7 |
+| Remaining | 19 |
+| Current state | Steps 01-06 are complete on `origin/master`; Step 07 is complete for this repository-side inventory once this PR is merged and verified on `origin/master`. Steps 08-12 preserve the existing unlock sequence. Steps 13-26 extend the plan into a unified Shadow-to-Policy engine and domain adapter recipes. |
 
 ## Master List
 
@@ -102,7 +102,7 @@ operations.
 | 04 | complete | First GCP KMS adapter | GCP KMS Ed25519 adapter/probe, tests, deployment docs. | Do not claim live GCP deployment or runtime external-KMS issuance. |
 | 05 | complete | Protected admission E2E proof plan | Seven-stage route contract from admission to downstream receipt. | Do not treat signed bearer helper as sufficient for R3/R4. |
 | 06 | complete | Customer PEP adoption package | Scoped customer PEP adoption package, tests, docs, ledger. | Do not claim live customer enforcement or production readiness. |
-| 07 | planned | Consequence shared-store inventory | File/in-memory/shared inventory across shadow events, simulations, candidates, activation receipts, wizard state, retry, presentation replay, audit, and dashboard sources. | Do not clear `production-shared` while consequence state is evaluation-backed. |
+| 07 | complete | Consequence shared-store inventory | Inventory contract, architecture doc, tests, and research ledger entry covering file/in-memory/derived/contract-only/local-ephemeral state across shadow events, simulations, candidates, activation receipts, wizard state, retry, presentation replay, agent-loop guard, audit/dashboard sources, dashboard summary, downstream receipts, tamper-evident history, and crypto execution-admission telemetry as one-engine domain projection. | Do not clear `production-shared` while consequence state is evaluation-backed. |
 | 08 | planned | Consequence shared-store PR slice 1 | Atomic replay/idempotency stores with tenant scope, schema digest, conflict arbitration, and raw-payload-free diagnostics. | Do not use a shared database as proof without constraints and tenant boundary evidence. |
 | 09 | planned | Consequence shared-store PR slice 2 | Append-only shadow/audit history, outbox contract, worker claim query, advisory-lock keyspace, migration and recovery tests. | Do not claim event-bus or Debezium delivery unless a connector is actually wired. |
 | 10 | planned | LLM provider runtime decision | Second-provider choice, route compatibility rule, structured-output adapter shape, rate-limit signal mapping, timeout/budget behavior. | Do not prioritize provider diversity ahead of consequence enforcement. |
@@ -128,7 +128,7 @@ operations.
 Keep the next near-term sequence:
 
 ```text
-07 -> 08 -> 09 -> 10 -> 11 -> 12
+08 -> 09 -> 10 -> 11 -> 12
 ```
 
 Then build the unified Shadow-to-Policy core:
@@ -175,6 +175,6 @@ This plan does not claim:
 - crypto custody, wallet, exchange, or transaction broadcasting capability
 - healthcare, insurance, procurement, or finance compliance certification
 - automatic policy activation
-- completion of steps 07-26
+- completion of steps 08-26
 
 It is the saved master list for the next work sequence.

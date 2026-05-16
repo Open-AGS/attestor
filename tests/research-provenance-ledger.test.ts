@@ -798,6 +798,36 @@ function testLedgerIndexesAuditRemediationClosure(): void {
     'not an implementation',
     'Research provenance ledger: master plan non-implementation boundary is explicit',
   );
+  includes(
+    content,
+    '### 49. Consequence Shared-Store Inventory',
+    'Research provenance ledger: consequence shared-store inventory entry is present',
+  );
+  includes(
+    content,
+    'src/service/bootstrap/consequence-shared-store-inventory.ts',
+    'Research provenance ledger: consequence shared-store inventory code evidence is indexed',
+  );
+  includes(
+    content,
+    'tests/consequence-shared-store-inventory.test.ts',
+    'Research provenance ledger: consequence shared-store inventory test evidence is indexed',
+  );
+  includes(
+    content,
+    'Step 08 for atomic retry/replay idempotency',
+    'Research provenance ledger: consequence shared-store next implementation slice is recorded',
+  );
+  includes(
+    content,
+    'not a separate storage engine',
+    'Research provenance ledger: crypto one-engine storage projection is recorded',
+  );
+  includes(
+    content,
+    'not an implemented shared schema',
+    'Research provenance ledger: consequence shared-store inventory backend non-claim is explicit',
+  );
 }
 
 function testLedgerKeepsEvidenceBoundaryExplicit(): void {

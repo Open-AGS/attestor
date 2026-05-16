@@ -143,6 +143,11 @@ import {
   type CustomerPepRuntimeAdoptionDescriptor,
 } from './customer-pep-runtime-adoption.js';
 import {
+  CUSTOMER_PEP_ADOPTION_PACKAGE_VERSION,
+  customerPepAdoptionPackageDescriptor,
+  type CustomerPepAdoptionPackageDescriptor,
+} from './customer-pep-adoption-package.js';
+import {
   PROTECTED_ADMISSION_E2E_PROOF_PLAN_VERSION,
   protectedAdmissionE2eProofPlanDescriptor,
   type ProtectedAdmissionE2eProofPlanDescriptor,
@@ -531,6 +536,7 @@ export interface ConsequenceAdmissionDescriptor {
   readonly failureModeGuardCoverageVersion: typeof CONSEQUENCE_FAILURE_MODE_GUARD_COVERAGE_VERSION;
   readonly failureModeRuntimeExtensionVersion: typeof CONSEQUENCE_FAILURE_MODE_RUNTIME_EXTENSION_VERSION;
   readonly customerPepRuntimeAdoptionVersion: typeof CUSTOMER_PEP_RUNTIME_ADOPTION_VERSION;
+  readonly customerPepAdoptionPackageVersion: typeof CUSTOMER_PEP_ADOPTION_PACKAGE_VERSION;
   readonly protectedAdmissionE2eProofPlanVersion:
     typeof PROTECTED_ADMISSION_E2E_PROOF_PLAN_VERSION;
   readonly agenticSupplyChainGuardVersion: typeof CONSEQUENCE_AGENTIC_SUPPLY_CHAIN_GUARD_VERSION;
@@ -559,6 +565,7 @@ export interface ConsequenceAdmissionDescriptor {
   readonly shadowReadinessClaimAlignment: ConsequenceShadowReadinessClaimAlignmentDescriptor;
   readonly failureModeGuardCoverage: ConsequenceFailureModeGuardCoverageMatrix;
   readonly customerPepRuntimeAdoption: CustomerPepRuntimeAdoptionDescriptor;
+  readonly customerPepAdoptionPackage: CustomerPepAdoptionPackageDescriptor;
   readonly protectedAdmissionE2eProofPlan: ProtectedAdmissionE2eProofPlanDescriptor;
   readonly dataMinimizationSurfaceKinds: typeof CONSEQUENCE_DATA_MINIMIZATION_SURFACE_KINDS;
   readonly dataMinimizationForbiddenRawClasses: typeof CONSEQUENCE_DATA_MINIMIZATION_FORBIDDEN_RAW_CLASSES;
@@ -2199,6 +2206,7 @@ ConsequenceAdmissionDescriptor {
     failureModeGuardCoverageVersion: CONSEQUENCE_FAILURE_MODE_GUARD_COVERAGE_VERSION,
     failureModeRuntimeExtensionVersion: CONSEQUENCE_FAILURE_MODE_RUNTIME_EXTENSION_VERSION,
     customerPepRuntimeAdoptionVersion: CUSTOMER_PEP_RUNTIME_ADOPTION_VERSION,
+    customerPepAdoptionPackageVersion: CUSTOMER_PEP_ADOPTION_PACKAGE_VERSION,
     protectedAdmissionE2eProofPlanVersion: PROTECTED_ADMISSION_E2E_PROOF_PLAN_VERSION,
     agenticSupplyChainGuardVersion: CONSEQUENCE_AGENTIC_SUPPLY_CHAIN_GUARD_VERSION,
     multiAgentDelegationGuardVersion: CONSEQUENCE_MULTI_AGENT_DELEGATION_GUARD_VERSION,
@@ -2226,6 +2234,7 @@ ConsequenceAdmissionDescriptor {
     shadowReadinessClaimAlignment: consequenceShadowReadinessClaimAlignmentDescriptor(),
     failureModeGuardCoverage: consequenceFailureModeGuardCoverageMatrix(),
     customerPepRuntimeAdoption: customerPepRuntimeAdoptionDescriptor(),
+    customerPepAdoptionPackage: customerPepAdoptionPackageDescriptor(),
     protectedAdmissionE2eProofPlan: protectedAdmissionE2eProofPlanDescriptor(),
     dataMinimizationSurfaceKinds: CONSEQUENCE_DATA_MINIMIZATION_SURFACE_KINDS,
     dataMinimizationForbiddenRawClasses: CONSEQUENCE_DATA_MINIMIZATION_FORBIDDEN_RAW_CLASSES,
@@ -2322,6 +2331,7 @@ export * from './failure-mode-replay-fixtures.js';
 export * from './failure-mode-guard-coverage.js';
 export * from './failure-mode-runtime-extensions.js';
 export * from './customer-pep-runtime-adoption.js';
+export * from './customer-pep-adoption-package.js';
 export * from './replay-layer-placement.js';
 export * from './guard-activation-readiness.js';
 export * from './shadow-readiness-claim-alignment.js';

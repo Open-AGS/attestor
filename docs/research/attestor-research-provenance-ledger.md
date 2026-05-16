@@ -797,6 +797,21 @@ The entries above are the most concrete PR/commit-linked hardening records. The 
 - Remaining limitation or no-go condition: This is not live customer PEP deployment, not universal route non-bypassability, not runtime external-KMS release-token issuance, not live authorization-server operation, not complete downstream receipt reconciliation, and not production readiness.
 - Status: complete for repository-side protected admission end-to-end proof planning once this PR is merged and verified on `origin/master`.
 
+### 47. Customer PEP Adoption Package
+
+- Step / PR / commit: Customer PEP adoption package; this PR adds the repository-side scoped adoption package contract but cannot pre-record its own merge commit.
+- Date if available: 2026-05-16.
+- Trust surface: customer-operated PEP adoption evidence, route coverage, no-bypass review, verifier integration, sender-constrained presentation, online introspection, token-use replay, operations controls, customer approval, activation evidence, downstream receipt evidence, and raw-material minimization.
+- Protected principle: fail-closed boundary; customer authority; proof integrity; replay and idempotency safety; runtime readiness; auditability; data minimization and redaction; no overclaim.
+- Research anchor / source used, if recorded: Envoy ext_authz anchors enforcement-edge external authorization; Istio custom authorization anchors mesh-level delegation to an external authorizer; OPA Envoy anchors policy-agent integration with Envoy external authorization; OAuth DPoP RFC 9449 anchors sender-constrained proof validation and replay handling; OAuth Token Introspection RFC 7662 anchors online active-token liveness. These are engineering anchors only, not OAuth certification, live customer deployment, compliance certification, or production-readiness evidence.
+- Repository evidence:
+  - Contract/code evidence: `src/consequence-admission/customer-pep-adoption-package.ts`, `src/consequence-admission/customer-pep-runtime-adoption.ts`, `src/consequence-admission/protected-admission-e2e-proof-plan.ts`, `src/consequence-admission/index.ts`, `docs/02-architecture/customer-pep-adoption-package.md`, `docs/02-architecture/attestor-unlock-source-of-truth.md`, and `docs/research/attestor-research-provenance-ledger.md`.
+  - Test evidence: `tests/customer-pep-adoption-package.test.ts`, `tests/customer-pep-runtime-adoption.test.ts`, `tests/protected-admission-e2e-proof-plan.test.ts`, `tests/attestor-unlock-source-of-truth.test.ts`, and `tests/research-provenance-ledger.test.ts`.
+- Implemented control: Adds `evaluateCustomerPepAdoptionPackage(...)`, which combines a ready `CustomerPepRuntimeAdoptionProof`, a satisfied `ProtectedAdmissionE2eProofPlanEvaluation`, and digest-only package evidence refs. The package fails closed on runtime/e2e version mismatch, invalid proof digest, runtime adoption gaps, protected E2E blockers, customer PEP or downstream receipt stage blockers, tenant/runtime/environment/route mismatch, missing runtime profile id, live enforcement or production-readiness claim attempts, incomplete package evidence, missing customer approval, missing activation evidence, missing downstream receipt evidence, and raw token/sender-proof/payload/provider-body storage. A ready package allows only a scoped customer PEP adoption claim and still reports `productionReady: false`, `activatesRuntime: false`, and `deploysInfrastructure: false`.
+- Tests / verification: `npm run test:customer-pep-adoption-package`, `npm run test:customer-pep-runtime-adoption`, `npm run test:protected-admission-e2e-proof-plan`, `npm run test:attestor-unlock-source-of-truth`, `npm run test:research-provenance-ledger`, `npm run typecheck`, and `npm run typecheck:hygiene`.
+- Remaining limitation or no-go condition: This is not live customer PEP deployment, not customer traffic cutover, not universal route non-bypassability, not customer-operated monitoring proof, not runtime external-KMS release-token issuance, not live authorization-server operation, not complete downstream receipt reconciliation, and not production readiness.
+- Status: complete for repository-side customer PEP adoption packaging once this PR is merged and verified on `origin/master`.
+
 ## Strong Recorded Research Support
 
 The strongest recorded research support appears in:

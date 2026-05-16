@@ -92,6 +92,7 @@
     "test:external-signer-contract-closure": "tsx tests/external-signer-contract-closure.test.ts",
     "test:gcp-kms-release-signer-adapter": "tsx tests/gcp-kms-release-signer-adapter.test.ts",
     "test:protected-admission-e2e-proof-plan": "tsx tests/protected-admission-e2e-proof-plan.test.ts",
+    "test:customer-pep-adoption-package": "tsx tests/customer-pep-adoption-package.test.ts",
     "test:audit-remediation-tracker": "tsx tests/audit-remediation-tracker.test.ts",
     "test:final-claim-alignment-validation": "tsx tests/final-claim-alignment-validation.test.ts",
     "test:f6-tenant-blast-radius-validation": "tsx tests/f6-tenant-blast-radius-validation.test.ts",

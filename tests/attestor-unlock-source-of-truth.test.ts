@@ -40,12 +40,12 @@ function testTrackerExistsAndFreezesTheSequence(): void {
   );
   includes(
     tracker,
-    '| Complete in this tracker | 5 |',
+    '| Complete in this tracker | 6 |',
     'Unlock tracker: current completion count is explicit',
   );
   includes(
     tracker,
-    '| Remaining after this tracker | 7 |',
+    '| Remaining after this tracker | 6 |',
     'Unlock tracker: remaining count is explicit',
   );
 
@@ -55,7 +55,7 @@ function testTrackerExistsAndFreezesTheSequence(): void {
     '| 03 | complete | External signer contract closure |',
     '| 04 | complete | First KMS/HSM adapter PR |',
     '| 05 | complete | Protected admission end-to-end proof plan |',
-    '| 06 | planned | Customer PEP adoption package |',
+    '| 06 | complete | Customer PEP adoption package |',
     '| 07 | planned | Consequence shared-store inventory |',
     '| 08 | planned | Consequence shared-store PR slice 1 |',
     '| 09 | planned | Consequence shared-store PR slice 2 |',
@@ -76,7 +76,7 @@ function testTrackerRecordsCurrentTruthAndNoGos(): void {
 
   for (const expected of [
     'One AI Action Control Plane with a shared consequence-admission core and modular packs.',
-    '`attestor/release-enforcement-plane` exposes Node, Hono, webhook, record-write, communication-send, action-dispatch, Envoy, and Istio enforcement surfaces.',
+    '`attestor/release-enforcement-plane` exposes Node, Hono, webhook, record-write, communication-send, action-dispatch, Envoy, and Istio enforcement surfaces; the customer PEP adoption package now combines scoped runtime proof',
     'The contract defines tenant-scoped external KMS/HSM proof requirements, fake-adapter conformance, and the first Google Cloud KMS Ed25519 sign/verify proof adapter.',
     'No live multi-provider runtime, no compatible fallback execution, no non-OpenAI smoke proof',
     'Do not clear `production-shared` while consequence state is evaluation-backed.',
@@ -84,6 +84,7 @@ function testTrackerRecordsCurrentTruthAndNoGos(): void {
     'Do not claim multi-cloud, customer custody, live GCP deployment, runtime external-KMS issuance, or customer production readiness from one adapter/probe.',
     'First adapter target: Google Cloud KMS with `EC_SIGN_ED25519` and raw signing input.',
     'Route contract: admission -> DPoP-bound release token -> introspection -> token-use replay -> customer PEP -> downstream receipt.',
+    'The package combines runtime adoption proof, protected E2E proof, route coverage, no-bypass review, fail-closed config, verifier integration, health, rollback, kill switch, monitoring, audit, customer approval, activation evidence, and downstream receipt.',
   ]) {
     includes(tracker, expected, `Unlock tracker: records boundary ${expected}`);
   }
@@ -94,7 +95,7 @@ function testTrackerRecordsCurrentTruthAndNoGos(): void {
     'live customer PEP deployment',
     'multi-provider LLM resilience',
     'runtime external-KMS release-token issuance',
-    'completion of steps 06-12',
+    'completion of steps 07-12',
   ]) {
     includes(tracker, nonClaim, `Unlock tracker: non-claim includes ${nonClaim}`);
   }
@@ -179,6 +180,11 @@ function testTrackerHasPrimaryAnchorsAndRepoLinks(): void {
     researchLedger,
     'docs/02-architecture/protected-admission-e2e-proof-plan.md',
     'Unlock tracker: research provenance ledger indexes the protected admission E2E proof plan',
+  );
+  includes(
+    researchLedger,
+    'docs/02-architecture/customer-pep-adoption-package.md',
+    'Unlock tracker: research provenance ledger indexes the customer PEP adoption package',
   );
   assert.equal(
     packageJson.scripts['test:attestor-unlock-source-of-truth'],

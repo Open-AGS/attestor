@@ -33,8 +33,8 @@ orchestration layer.
 |---|---|---|
 | Product shape | One AI Action Control Plane with a shared consequence-admission core and modular packs. | Do not widen into a generic AI gateway, dashboard-only governance tool, wallet, custody layer, or orchestration workspace. |
 | Release and policy authority | Shared PostgreSQL release/policy authority is implemented and tested under embedded multi-instance recovery. | External customer-operated production still needs real environment inputs, probes, and rehearsal. |
-| Enforcement plane | `attestor/release-enforcement-plane` exposes Node, Hono, webhook, record-write, communication-send, action-dispatch, Envoy, and Istio enforcement surfaces. | A scoped customer runtime still has to prove route coverage, no bypasses, online checks, replay consumption, monitoring, kill switch, and customer approval. |
-| Hosted generic admission | Protected high-risk generic admissions now require sender-confirmed release authorization; DPoP proof replay has local and shared PostgreSQL store paths; the protected admission E2E proof plan defines the route chain from admission to downstream receipt. | `production-shared` still needs customer PEP adoption evidence, live deployment evidence, and a scoped runtime proving no bypasses. |
+| Enforcement plane | `attestor/release-enforcement-plane` exposes Node, Hono, webhook, record-write, communication-send, action-dispatch, Envoy, and Istio enforcement surfaces; the customer PEP adoption package now combines scoped runtime proof, protected E2E proof, route coverage, no-bypass review, operations controls, customer approval, and downstream receipt evidence. | A real customer runtime still has to deploy the PEP, operate it, prove target-specific probes, and rehearse rollback outside the repository. |
+| Hosted generic admission | Protected high-risk generic admissions now require sender-confirmed release authorization; DPoP proof replay has local and shared PostgreSQL store paths; the protected admission E2E proof plan defines the route chain from admission to downstream receipt; scoped customer PEP adoption can be packaged for review. | `production-shared` still needs live deployment evidence, target-specific PEP operation, and a runtime proving no bypasses under real traffic. |
 | Tenant signer boundary | The contract defines tenant-scoped external KMS/HSM proof requirements, fake-adapter conformance, and the first Google Cloud KMS Ed25519 sign/verify proof adapter. | Runtime release-token issuance is still not wired to external KMS/HSM signing; live Google Cloud credentials, IAM, workload identity, deployment probes, rotation, and compromise response remain unproven. |
 | Consequence storage | The production storage path names the shared-store primitives and blocks `production-shared` when consequence stores remain evaluation-backed. | Shadow history, simulations, candidates, activation receipts, retry/replay ledgers, audit/dashboard source history, and wizard state still need shared operational implementations. |
 | LLM provider registry | OpenAI is wired; provider inventory and route-readiness evidence gates exist for OpenAI, Anthropic, Vertex AI, and Azure OpenAI. | No live multi-provider runtime, no compatible fallback execution, no non-OpenAI smoke proof, and no hosted consequence route depends on a live LLM provider. |
@@ -60,9 +60,9 @@ production readiness.
 | Metric | Value |
 |---|---|
 | Total unlock rounds | 12 |
-| Complete in this tracker | 5 |
-| Remaining after this tracker | 7 |
-| Current posture | Step 01 established the source-of-truth tracker and no-overclaim decision map. Step 02 selects Google Cloud KMS as the first external signer adapter target. Step 03 closes the external signer proof envelope and diagnostics contract. Step 04 adds the first Google Cloud KMS Ed25519 adapter/probe contract while keeping runtime bootstrap fail-closed. Step 05 defines the protected admission E2E route contract and narrow fixture evaluator. Steps 06-12 remain implementation or research backlog until each has repo evidence, tests, docs, and merge verification on `origin/master`. |
+| Complete in this tracker | 6 |
+| Remaining after this tracker | 6 |
+| Current posture | Step 01 established the source-of-truth tracker and no-overclaim decision map. Step 02 selects Google Cloud KMS as the first external signer adapter target. Step 03 closes the external signer proof envelope and diagnostics contract. Step 04 adds the first Google Cloud KMS Ed25519 adapter/probe contract while keeping runtime bootstrap fail-closed. Step 05 defines the protected admission E2E route contract and narrow fixture evaluator. Step 06 packages scoped customer PEP adoption evidence without claiming live deployment. Steps 07-12 remain implementation or research backlog until each has repo evidence, tests, docs, and merge verification on `origin/master`. |
 
 ## Unlock Sequence
 
@@ -73,7 +73,7 @@ production readiness.
 | 03 | complete | External signer contract closure | `src/service/bootstrap/release-tenant-signer-boundary.ts`, `docs/02-architecture/external-signer-contract-closure.md`, `tests/production-tenant-signer-boundary.test.ts`, `tests/external-signer-contract-closure.test.ts`, cryptography policy link, research ledger entry, package script. | Do not let a boolean or local PEM path satisfy external custody. |
 | 04 | complete | First KMS/HSM adapter PR | `src/service/bootstrap/gcp-kms-release-signer.ts`, `docs/02-architecture/gcp-kms-release-signer-adapter.md`, `tests/gcp-kms-release-signer-adapter.test.ts`, deployment docs, cryptography policy link, research ledger entry, package script. First adapter: Google Cloud KMS `EC_SIGN_ED25519` over raw challenge data with CRC32C checks, local verification, digest-only proof output, and fail-closed bootstrap. | Do not claim multi-cloud, customer custody, live GCP deployment, runtime external-KMS issuance, or customer production readiness from one adapter/probe. |
 | 05 | complete | Protected admission end-to-end proof plan | `src/consequence-admission/protected-admission-e2e-proof-plan.ts`, `docs/02-architecture/protected-admission-e2e-proof-plan.md`, `tests/protected-admission-e2e-proof-plan.test.ts`, research ledger entry, tracker update, and package script. Route contract: admission -> DPoP-bound release token -> introspection -> token-use replay -> customer PEP -> downstream receipt. | Do not treat a signed bearer helper as sufficient for R3/R4 enforcement. |
-| 06 | planned | Customer PEP adoption package | Customer-runtime adoption proof using release-enforcement-plane, route coverage, no-bypass checks, health, rollback, kill switch, monitoring, audit, customer approval. | Do not claim customer enforcement until a scoped runtime proves it. |
+| 06 | complete | Customer PEP adoption package | `src/consequence-admission/customer-pep-adoption-package.ts`, `docs/02-architecture/customer-pep-adoption-package.md`, `tests/customer-pep-adoption-package.test.ts`, research ledger entry, tracker update, and package script. The package combines runtime adoption proof, protected E2E proof, route coverage, no-bypass review, fail-closed config, verifier integration, health, rollback, kill switch, monitoring, audit, customer approval, activation evidence, and downstream receipt. | Do not claim live customer enforcement, production readiness, or universal non-bypassability from repo-side adoption packaging. |
 | 07 | planned | Consequence shared-store inventory | File/in-memory/shared inventory across shadow events, simulations, candidates, activation receipts, wizard state, retry, presentation replay, audit, and dashboard sources. | Do not clear `production-shared` while consequence state is evaluation-backed. |
 | 08 | planned | Consequence shared-store PR slice 1 | Atomic replay/idempotency stores with tenant scope, schema digest, `ON CONFLICT` or equivalent arbitration, and raw-payload-free diagnostics. | Do not use a shared database as proof without constraints and tenant boundary evidence. |
 | 09 | planned | Consequence shared-store PR slice 2 | Append-only shadow/audit history, outbox contract, worker claim query, advisory-lock keyspace, migration and recovery tests. | Do not claim event-bus or Debezium delivery unless a connector is actually wired. |
@@ -81,13 +81,13 @@ production readiness.
 | 11 | planned | LLM provider runtime PR | Anthropic, Vertex AI, or Azure OpenAI adapter; digest-only runtime evidence; live smoke probe behind external-live gate; no raw prompt/provider-body storage. | Do not claim live failover or resilience until both providers execute compatible routes. |
 | 12 | planned | Production rehearsal go/no-go packet | Combined readiness packet for signer, shared stores, PEP, provider route, probes, backup/restore, observability, and incident/runbook evidence. | Do not call the repo, a branch, or a rehearsal target production-ready without real target proof. |
 
-## First PR Decision
+## Next PR Decision
 
-The next implementation unlock after Step 05 should be Step 06: customer PEP
-adoption package. The protected admission route contract now defines the
-evidence chain, but a scoped customer runtime still has to prove route
-coverage, fail-closed behavior, no bypasses, verifier integration, monitoring,
-rollback, kill switch, audit, customer approval, and receipt evidence.
+The next implementation unlock after Step 06 should be Step 07: consequence
+shared-store inventory. The customer PEP adoption package closes the
+repo-side scoped adoption claim, but `production-shared` still cannot be
+cleared while consequence state remains split across file-backed, in-memory,
+or evaluation-only histories.
 
 Runtime release-token issuance can be wired to external KMS only after the
 protected admission proof path is narrow enough to consume the resulting
@@ -120,6 +120,6 @@ This tracker does not claim:
 - multi-provider LLM resilience
 - multi-region or customer-operated deployment readiness
 - runtime external-KMS release-token issuance
-- completion of steps 06-12
+- completion of steps 07-12
 
 It is only the decision map for the next unlock sequence.

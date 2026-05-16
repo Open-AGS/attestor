@@ -55,10 +55,12 @@ function countLine(label: string, count: number): string {
 
 function testMachineMapExistsAndNamesTheCoreShape(): void {
   const doc = readProjectFile('docs', '02-architecture', 'attestor-internal-machine-map.md');
+  const svg = readProjectFile('docs', 'assets', 'attestor-internal-machine-map.svg');
 
   includes(doc, '# Attestor Internal Machine Map', 'Machine map: document exists');
   includes(doc, 'release PDP -> admission PDP -> enforcement PEP', 'Machine map: core shape is explicit');
   includes(doc, '## One-Picture Internal Map', 'Machine map: one-picture diagram section is present');
+  includes(doc, '../assets/attestor-internal-machine-map.svg', 'Machine map: readable SVG poster is embedded');
   includes(doc, '## The Ten Decision Axes', 'Machine map: decision axes section is present');
   includes(doc, '## Axis Fan-Out / Fan-In', 'Machine map: fan-out/fan-in section is present');
   includes(doc, '## Decision Points In The Picture', 'Machine map: decision-point section is present');
@@ -72,14 +74,15 @@ function testMachineMapExistsAndNamesTheCoreShape(): void {
   const mermaidBlocks = doc.match(/```mermaid/g) ?? [];
   assert.equal(
     mermaidBlocks.length,
-    1,
-    'Machine map: document keeps the visual representation in one Mermaid picture',
+    0,
+    'Machine map: document uses the readable SVG poster instead of a dense Mermaid block',
   );
   passed += 1;
 
   for (const expected of [
-    'Callers and proposed consequences',
-    'Service ingress and tenant runtime',
+    '<svg',
+    'Attestor Internal Machine Map',
+    'Callers, Route Lanes, And Runtime Ingress',
     'Core route group',
     'Public site and proof route group',
     'Auth and account route group',
@@ -87,18 +90,19 @@ function testMachineMapExistsAndNamesTheCoreShape(): void {
     'Pipeline route group',
     'Admission and shadow route group',
     'Webhook route group',
-    'Ten decision axes applied to the same candidate',
-    'Policy control plane and authority material',
+    'Ten Decision Axes Applied To The Same Candidate',
+    'Policy Control Plane',
     'Release PDP',
-    'Domain packs projected into the shared machine',
+    'Domain Packs Into Admission PDP',
     'Admission PDP',
-    'Enforcement PEP and customer gate',
-    'Shared storage, audit, and redaction surfaces',
-    'Shared support and non-decision surfaces',
-    'Shadow-to-policy side loop',
-    'Terminal outcomes',
+    'Enforcement PEP, Customer Gate, Terminal Outcomes',
+    'Shared Stores',
+    'Support Surfaces',
+    'Shadow-To-Policy Loop',
+    'RUN',
+    'HOLD',
   ]) {
-    includes(doc, expected, `Machine map: one-picture map includes ${expected}`);
+    includes(svg, expected, `Machine map SVG: one-picture map includes ${expected}`);
   }
 
   for (const axis of [
@@ -119,30 +123,33 @@ function testMachineMapExistsAndNamesTheCoreShape(): void {
 
 function testMachineMapNamesEveryHighLevelDecisionPoint(): void {
   const doc = readProjectFile('docs', '02-architecture', 'attestor-internal-machine-map.md');
+  const svg = readProjectFile('docs', 'assets', 'attestor-internal-machine-map.svg');
 
   for (const expected of [
-    'Entry path / route lane',
-    'Policy resolution',
-    'Rollout resolution',
-    'Deterministic release check aggregate',
-    'ReleaseDecision',
-    'Admission mode ladder',
-    'Required admission checks satisfied?',
-    'Canonical decision',
-    'Protected release token required?',
-    'Enforcement path',
-    'Presentation mode acceptable?',
-    'Offline verification valid?',
-    'Online verification required and valid?',
-    'Enforcement result',
-    'Customer gate',
+    ['Entry path / route lane', 'Entry path'],
+    ['Policy resolution', 'Policy resolution'],
+    ['Rollout resolution', 'Rollout resolution'],
+    ['Deterministic release check aggregate', 'Deterministic checks'],
+    ['ReleaseDecision', 'ReleaseDecision'],
+    ['Admission mode ladder', 'Admission mode ladder'],
+    ['Required admission checks satisfied?', 'Required admission checks'],
+    ['Canonical decision', 'Canonical decision'],
+    ['Protected release token required?', 'Protected token required?'],
+    ['Enforcement path', 'Enforcement path'],
+    ['Presentation mode acceptable?', 'Presentation mode ok?'],
+    ['Offline verification valid?', 'Offline verification'],
+    ['Online verification required and valid?', 'Online verification'],
+    ['Enforcement result', 'Enforcement result'],
+    ['Customer gate', 'Customer gate'],
   ]) {
-    includes(doc, expected, `Machine map: decision point ${expected} is named`);
+    const [docText, svgText] = expected;
+    includes(doc, docText, `Machine map: decision point ${docText} is named`);
+    includes(svg, svgText, `Machine map SVG: decision point ${svgText} is visible`);
   }
 }
 
 function testMachineMapNamesEveryTopLevelSourceDirectory(): void {
-  const doc = readProjectFile('docs', '02-architecture', 'attestor-internal-machine-map.md');
+  const svg = readProjectFile('docs', 'assets', 'attestor-internal-machine-map.svg');
   const sourceRoot = join(process.cwd(), 'src');
   const sourceDirectories = readdirSync(sourceRoot)
     .filter((entry) => statSync(join(sourceRoot, entry)).isDirectory())
@@ -150,9 +157,9 @@ function testMachineMapNamesEveryTopLevelSourceDirectory(): void {
 
   for (const directory of sourceDirectories) {
     includes(
-      doc,
+      svg,
       `src/${directory}`,
-      `Machine map: top-level source directory src/${directory} is named`,
+      `Machine map SVG: top-level source directory src/${directory} is visible`,
     );
   }
 }

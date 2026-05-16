@@ -58,6 +58,19 @@ export const RELEASE_TENANT_SIGNER_PROVIDER_SIGN_INPUT_MODES = [
 export type ReleaseTenantSignerProviderSignInputMode =
   typeof RELEASE_TENANT_SIGNER_PROVIDER_SIGN_INPUT_MODES[number];
 
+export const RELEASE_TENANT_SIGNER_PROVIDER_PROTECTION_LEVELS = [
+  'software',
+  'hsm',
+  'hsm-single-tenant',
+  'external',
+  'external-vpc',
+  'aws-kms-hsm',
+  'azure-managed-hsm',
+  'unknown',
+] as const;
+export type ReleaseTenantSignerProviderProtectionLevel =
+  typeof RELEASE_TENANT_SIGNER_PROVIDER_PROTECTION_LEVELS[number];
+
 export type ReleaseTenantSignerJoseAlgorithm =
   | 'EdDSA'
   | 'ES256'
@@ -103,6 +116,7 @@ export const RELEASE_TENANT_SIGNER_PRODUCTION_BLOCKERS = [
   'live-provider-proof-descriptor-mismatch',
   'live-provider-proof-checked-at-in-future',
   'live-provider-proof-verification-failed',
+  'live-provider-protection-level-insufficient',
   'fake-external-kms-test-only',
   'runtime-shared-signer-blast-radius',
 ] as const;
@@ -158,12 +172,14 @@ export interface CreateReleaseTenantSignerLiveProviderProofInput {
   readonly algorithm: ReleaseTenantSignerAlgorithm;
   readonly providerNativeAlgorithm?: string | null;
   readonly providerSignInputMode?: ReleaseTenantSignerProviderSignInputMode | null;
+  readonly providerProtectionLevel: ReleaseTenantSignerProviderProtectionLevel;
   readonly payloadDigest?: string | null;
   readonly signingContextDigest?: string | null;
   readonly publicVerificationKeyRef?: string | null;
   readonly signatureDigest: string;
   readonly verificationDigest: string;
-  readonly providerRequestDigest?: string | null;
+  readonly providerRequestDigest: string;
+  readonly providerResponseDigest: string;
   readonly signedAt?: string | null;
   readonly verifiedAt?: string | null;
   readonly verificationSucceeded?: boolean | null;
@@ -182,13 +198,15 @@ export interface ReleaseTenantSignerLiveProviderProof {
   readonly releaseTokenJoseAlgorithm: ReleaseTenantSignerJoseAlgorithm;
   readonly providerNativeAlgorithm: string;
   readonly providerSignInputMode: ReleaseTenantSignerProviderSignInputMode;
+  readonly providerProtectionLevel: ReleaseTenantSignerProviderProtectionLevel;
   readonly signingBoundary: Extract<ReleaseTenantSignerBoundary, 'external-kms-hsm'>;
   readonly payloadDigest: string;
   readonly signingContextDigest: string | null;
   readonly publicVerificationKeyRefDigest: string | null;
   readonly signatureDigest: string;
   readonly verificationDigest: string;
-  readonly providerRequestDigest: string | null;
+  readonly providerRequestDigest: string;
+  readonly providerResponseDigest: string;
   readonly signedAt: string;
   readonly verifiedAt: string;
   readonly verificationSucceeded: boolean;
@@ -222,6 +240,7 @@ export interface ReleaseTenantSignerDescriptor {
   readonly releaseTokenJoseAlgorithm: ReleaseTenantSignerJoseAlgorithm | null;
   readonly providerNativeAlgorithm: string | null;
   readonly providerSignInputMode: ReleaseTenantSignerProviderSignInputMode | null;
+  readonly providerProtectionLevel: ReleaseTenantSignerProviderProtectionLevel | null;
   readonly isolationMode: ReleaseTenantSignerIsolationMode;
   readonly signingBoundary: ReleaseTenantSignerBoundary;
   readonly privateKeyExportable: boolean;
@@ -231,6 +250,8 @@ export interface ReleaseTenantSignerDescriptor {
   readonly liveProviderProofDigest: string | null;
   readonly liveProviderProofCheckedAt: string | null;
   readonly liveProviderProofState: ReleaseTenantSignerLiveProviderProofState;
+  readonly liveProviderProofProviderRequestDigest: string | null;
+  readonly liveProviderProofProviderResponseDigest: string | null;
   readonly attestationRequired: boolean;
   readonly attestationVerified: boolean;
   readonly attestationEvidenceDigest: string | null;
@@ -241,6 +262,7 @@ export interface ReleaseTenantSignerDescriptor {
   readonly rawTenantIdStored: false;
   readonly rawKeyRefStored: false;
   readonly rawPayloadStored: false;
+  readonly rawProviderResponseStored: false;
   readonly activatesRuntimeSigning: false;
   readonly protectedPrinciples: readonly [
     'tenant isolation',
@@ -413,6 +435,27 @@ function normalizeProviderSignInputMode(
     );
   }
   return value;
+}
+
+function normalizeProviderProtectionLevel(
+  value: ReleaseTenantSignerProviderProtectionLevel | null | undefined,
+): ReleaseTenantSignerProviderProtectionLevel {
+  if (
+    value === undefined ||
+    value === null ||
+    !RELEASE_TENANT_SIGNER_PROVIDER_PROTECTION_LEVELS.includes(value)
+  ) {
+    throw new ReleaseTenantSignerBoundaryError(
+      `Release tenant signer boundary providerProtectionLevel must be one of: ${RELEASE_TENANT_SIGNER_PROVIDER_PROTECTION_LEVELS.join(', ')}.`,
+    );
+  }
+  return value;
+}
+
+function providerProtectionLevelProductionReady(
+  value: ReleaseTenantSignerProviderProtectionLevel,
+): boolean {
+  return value !== 'software' && value !== 'unknown';
 }
 
 function capability(
@@ -654,6 +697,7 @@ function descriptorDigest(descriptor: ReleaseTenantSignerDescriptor): string {
     releaseTokenJoseAlgorithm: descriptor.releaseTokenJoseAlgorithm,
     providerNativeAlgorithm: descriptor.providerNativeAlgorithm,
     providerSignInputMode: descriptor.providerSignInputMode,
+    providerProtectionLevel: descriptor.providerProtectionLevel,
     isolationMode: descriptor.isolationMode,
     signingBoundary: descriptor.signingBoundary,
     privateKeyExportable: descriptor.privateKeyExportable,
@@ -663,12 +707,17 @@ function descriptorDigest(descriptor: ReleaseTenantSignerDescriptor): string {
     liveProviderProofDigest: descriptor.liveProviderProofDigest,
     liveProviderProofCheckedAt: descriptor.liveProviderProofCheckedAt,
     liveProviderProofState: descriptor.liveProviderProofState,
+    liveProviderProofProviderRequestDigest:
+      descriptor.liveProviderProofProviderRequestDigest,
+    liveProviderProofProviderResponseDigest:
+      descriptor.liveProviderProofProviderResponseDigest,
     attestationRequired: descriptor.attestationRequired,
     attestationVerified: descriptor.attestationVerified,
     attestationEvidenceDigest: descriptor.attestationEvidenceDigest,
     testOnly: descriptor.testOnly,
     contractSatisfied: descriptor.contractSatisfied,
     productionReady: descriptor.productionReady,
+    rawProviderResponseStored: descriptor.rawProviderResponseStored,
     contractBlockers: descriptor.contractBlockers,
     productionBlockers: descriptor.productionBlockers,
   } as CanonicalReleaseJsonValue).digest;
@@ -696,6 +745,9 @@ export function createReleaseTenantSignerLiveProviderProof(
   const providerSignInputMode =
     normalizeProviderSignInputMode(input.providerSignInputMode) ??
     providerCapability.providerSignInputMode;
+  const providerProtectionLevel = normalizeProviderProtectionLevel(
+    input.providerProtectionLevel,
+  );
   if (
     providerNativeAlgorithm === null ||
     providerSignInputMode === null ||
@@ -723,9 +775,13 @@ export function createReleaseTenantSignerLiveProviderProof(
     input.verificationDigest,
     'verificationDigest',
   );
-  const providerRequestDigest = normalizeDigest(
+  const providerRequestDigest = normalizeRequiredDigest(
     input.providerRequestDigest,
     'providerRequestDigest',
+  );
+  const providerResponseDigest = normalizeRequiredDigest(
+    input.providerResponseDigest,
+    'providerResponseDigest',
   );
   const signedAt = normalizeIsoTimestamp(input.signedAt);
   const verifiedAt = normalizeIsoTimestamp(input.verifiedAt ?? signedAt);
@@ -740,6 +796,7 @@ export function createReleaseTenantSignerLiveProviderProof(
     releaseTokenJoseAlgorithm: providerCapability.releaseTokenJoseAlgorithm,
     providerNativeAlgorithm,
     providerSignInputMode,
+    providerProtectionLevel,
     signingBoundary: 'external-kms-hsm' as const,
     payloadDigest,
     signingContextDigest,
@@ -749,6 +806,7 @@ export function createReleaseTenantSignerLiveProviderProof(
     signatureDigest,
     verificationDigest,
     providerRequestDigest,
+    providerResponseDigest,
     signedAt,
     verifiedAt,
     verificationSucceeded: input.verificationSucceeded ?? true,
@@ -801,6 +859,9 @@ export function evaluateReleaseTenantSignerLiveProviderProof(input: {
   if (!proof.verificationSucceeded) {
     blockers.push('live-provider-proof-verification-failed');
   }
+  if (!providerProtectionLevelProductionReady(proof.providerProtectionLevel)) {
+    blockers.push('live-provider-protection-level-insufficient');
+  }
   const expectedCapability = resolveReleaseTenantSignerProviderCapability({
     providerClass: input.providerClass,
     algorithm: input.algorithm,
@@ -820,6 +881,9 @@ export function evaluateReleaseTenantSignerLiveProviderProof(input: {
     proof.releaseTokenJoseAlgorithm !== expectedReleaseTokenJoseAlgorithm ||
     proof.providerNativeAlgorithm !== expectedProviderNativeAlgorithm ||
     proof.providerSignInputMode !== expectedProviderSignInputMode ||
+    !RELEASE_TENANT_SIGNER_PROVIDER_PROTECTION_LEVELS.includes(
+      proof.providerProtectionLevel,
+    ) ||
     proof.signingBoundary !== 'external-kms-hsm' ||
     proof.payloadDigest !== releaseTenantSignerLiveProviderProofChallengeDigest() ||
     proof.publicVerificationKeyRefDigest !== (input.publicVerificationKeyRefDigest ?? null)
@@ -876,6 +940,7 @@ export function createRuntimeSharedReleaseTenantSignerDescriptor(
     releaseTokenJoseAlgorithm: 'EdDSA',
     providerNativeAlgorithm: null,
     providerSignInputMode: null,
+    providerProtectionLevel: null,
     isolationMode: 'tenant-claim-bound-shared-signer',
     signingBoundary,
     privateKeyExportable: true,
@@ -887,6 +952,8 @@ export function createRuntimeSharedReleaseTenantSignerDescriptor(
     liveProviderProofDigest: null,
     liveProviderProofCheckedAt: null,
     liveProviderProofState: 'not-provided',
+    liveProviderProofProviderRequestDigest: null,
+    liveProviderProofProviderResponseDigest: null,
     attestationRequired: false,
     attestationVerified: false,
     attestationEvidenceDigest: null,
@@ -897,6 +964,7 @@ export function createRuntimeSharedReleaseTenantSignerDescriptor(
     rawTenantIdStored: false,
     rawKeyRefStored: false,
     rawPayloadStored: false,
+    rawProviderResponseStored: false,
     activatesRuntimeSigning: false,
     protectedPrinciples: [
       'tenant isolation',
@@ -969,8 +1037,9 @@ export function createExternalKmsReleaseTenantSignerDescriptor(
   const productionBlockers: ReleaseTenantSignerProductionBlocker[] = [
     ...contractBlockers,
   ];
+  const liveProviderProofInput = input.liveProviderProof ?? null;
   const liveProviderProof = evaluateReleaseTenantSignerLiveProviderProof({
-    proof: input.liveProviderProof ?? null,
+    proof: liveProviderProofInput,
     tenantIdDigest,
     providerClass: input.providerClass,
     keyRefDigest,
@@ -1002,6 +1071,7 @@ export function createExternalKmsReleaseTenantSignerDescriptor(
     releaseTokenJoseAlgorithm: providerCapability.releaseTokenJoseAlgorithm,
     providerNativeAlgorithm: providerCapability.providerNativeAlgorithm,
     providerSignInputMode: providerCapability.providerSignInputMode,
+    providerProtectionLevel: liveProviderProofInput?.providerProtectionLevel ?? null,
     isolationMode,
     signingBoundary: 'external-kms-hsm',
     privateKeyExportable: false,
@@ -1011,6 +1081,10 @@ export function createExternalKmsReleaseTenantSignerDescriptor(
     liveProviderProofDigest: liveProviderProof.proofDigest,
     liveProviderProofCheckedAt: liveProviderProof.checkedAt,
     liveProviderProofState: liveProviderProof.state,
+    liveProviderProofProviderRequestDigest:
+      liveProviderProofInput?.providerRequestDigest ?? null,
+    liveProviderProofProviderResponseDigest:
+      liveProviderProofInput?.providerResponseDigest ?? null,
     attestationRequired,
     attestationVerified,
     attestationEvidenceDigest,
@@ -1021,6 +1095,7 @@ export function createExternalKmsReleaseTenantSignerDescriptor(
     rawTenantIdStored: false,
     rawKeyRefStored: false,
     rawPayloadStored: false,
+    rawProviderResponseStored: false,
     activatesRuntimeSigning: false,
     protectedPrinciples: [
       'tenant isolation',

@@ -89,6 +89,7 @@
     "test:research-provenance-ledger": "tsx tests/research-provenance-ledger.test.ts",
     "test:attestor-unlock-source-of-truth": "tsx tests/attestor-unlock-source-of-truth.test.ts",
     "test:external-kms-hsm-provider-decision": "tsx tests/external-kms-hsm-provider-decision.test.ts",
+    "test:external-signer-contract-closure": "tsx tests/external-signer-contract-closure.test.ts",
     "test:audit-remediation-tracker": "tsx tests/audit-remediation-tracker.test.ts",
     "test:final-claim-alignment-validation": "tsx tests/final-claim-alignment-validation.test.ts",
     "test:f6-tenant-blast-radius-validation": "tsx tests/f6-tenant-blast-radius-validation.test.ts",

@@ -100,6 +100,7 @@
     "test:human-comprehension-gate": "tsx tests/human-comprehension-gate.test.ts",
     "test:signed-assurance-packet": "tsx tests/signed-assurance-packet.test.ts",
     "test:outcome-incident-feedback-contract": "tsx tests/outcome-incident-feedback-contract.test.ts",
+    "test:assurance-measurement-plane": "tsx tests/assurance-measurement-plane.test.ts",
     "test:target-system-compatibility-matrix": "tsx tests/target-system-compatibility-matrix.test.ts",
     "test:shadow-event-canonical-schema": "tsx tests/shadow-event-canonical-schema.test.ts",
     "test:action-surface-graph": "tsx tests/action-surface-graph.test.ts",

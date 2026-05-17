@@ -759,6 +759,38 @@ assert.equal(
   'function',
 );
 assert.equal(
+  admission.ASSURANCE_MEASUREMENT_PLANE_VERSION,
+  'attestor.assurance-measurement-plane.v1',
+);
+assert.equal(
+  admission.assuranceMeasurementPlaneDescriptor().readOnly,
+  true,
+);
+assert.equal(
+  admission.assuranceMeasurementPlaneDescriptor().writesAuditPlane,
+  false,
+);
+assert.equal(
+  admission.assuranceMeasurementPlaneDescriptor().goodhartProtected,
+  true,
+);
+assert.equal(
+  admission.assuranceMeasurementPlaneDescriptor().driftDetectionSupported,
+  true,
+);
+assert.equal(
+  admission.assuranceMeasurementPlaneDescriptor().scopedBudgetAccountingSupported,
+  true,
+);
+assert.equal(
+  admission.assuranceMeasurementPlaneDescriptor().canAdmit,
+  false,
+);
+assert.equal(
+  typeof admission.createAssuranceMeasurementPlane,
+  'function',
+);
+assert.equal(
   admission.financePipelineAdmissionDescriptor().route,
   '/api/v1/pipeline/run',
 );

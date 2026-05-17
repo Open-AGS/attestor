@@ -358,7 +358,7 @@ Shadow-to-Policy master plan.
 | 07 | complete | Human comprehension gate | `src/consequence-admission/human-comprehension-gate.ts`, [Human Comprehension Gate](human-comprehension-gate.md), `tests/human-comprehension-gate.test.ts`, package script, max-7 reason-line limit, default max-3 active-question cap, escalation posture, review-load visibility, and no-admit invariant tests. | Do not create a noisy dashboard that shifts work to humans. |
 | 08 | complete | Signed assurance packet | `src/consequence-admission/signed-assurance-packet.ts`, [Signed Assurance Packet](signed-assurance-packet.md), `tests/signed-assurance-packet.test.ts`, package script, digest-only refs, tamper-history binding, optional signature record, production-boundary downgrade, and no-authority invariant tests. | Do not store raw payloads, claim external immutability, or turn packet signing into execution authority. |
 | 09 | complete | Outcome and incident feedback contract | `src/consequence-admission/outcome-incident-feedback-contract.ts`, [Outcome And Incident Feedback Contract](outcome-incident-feedback-contract.md), `tests/outcome-incident-feedback-contract.test.ts`, package script, separated source classes, incident path states, blocked mutation requests, replay regression triggers, and no-authority invariant tests. | Do not retrain, activate, or mutate policy directly from feedback. |
-| 10 | planned | Assurance measurement plane | Read-only metrics, drift/regression/degraded-state reporting, scoped budget accounting, dashboard contract. | Do not let measurement output become decision authority. |
+| 10 | complete | Assurance measurement plane | `src/consequence-admission/assurance-measurement-plane.ts`, [Assurance Measurement Plane](assurance-measurement-plane.md), `tests/assurance-measurement-plane.test.ts`, package script, read-only metrics, CUSUM-style drift reporting, replay regression reporting, scoped budget accounting, degraded-state visibility, dashboard contract, Goodhart boundary, and no-authority invariant tests. | Do not let measurement output become decision authority. |
 
 ## First Code PR Scope
 
@@ -658,11 +658,44 @@ incident-response completion claim
 NIST SP 800-61 or NIST AI RMF conformance claim
 ```
 
-The next implementation PR should be the Assurance measurement plane:
+The tenth implementation slice is complete as the Assurance measurement plane:
 
 ```text
 src/consequence-admission/assurance-measurement-plane.ts
 tests/assurance-measurement-plane.test.ts
+docs/02-architecture/assurance-measurement-plane.md
+```
+
+Allowed in the completed Step 10 slice:
+
+```text
+pure deterministic measurement builder
+descriptors
+read-only metric tests
+CUSUM-style drift signal tests
+replay regression reporting tests
+scoped budget pressure tests
+degraded-state visibility tests
+Goodhart boundary tests
+no-authority invariant tests
+package export wiring
+```
+
+Not allowed in Step 10:
+
+```text
+decision authority
+audit-plane writes
+policy relaxation
+policy activation
+runtime enforcement
+learning
+model training
+automatic score or calibration mutation
+downstream calls
+new production dependency
+production monitoring readiness claim
+NIST AI RMF, SRE, or statistical conformance claim
 ```
 
 ## Primary Source Anchors
@@ -678,6 +711,7 @@ Reviewed on 2026-05-17:
 - Human review and alert load discipline: [NIST AI RMF Appendix C](https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.100-1.pdf), [NASA Human Systems Integration Handbook](https://ntrs.nasa.gov/citations/20210010952), [Google SRE Practical Alerting](https://sre.google/sre-book/practical-alerting/), and [Microsoft Human-AI Interaction Guidelines](https://www.microsoft.com/en-us/research/wp-content/uploads/2019/01/Guidelines-for-Human-AI-Interaction-camera-ready.pdf).
 - Signed packet and digest-bound artifact framing: [RFC 8785 JSON Canonicalization Scheme](https://www.rfc-editor.org/rfc/rfc8785), [RFC 7515 JSON Web Signature](https://www.rfc-editor.org/rfc/rfc7515), [RFC 8725 JWT Best Current Practices](https://www.rfc-editor.org/rfc/rfc8725), [in-toto Attestation Statement](https://github.com/in-toto/attestation/blob/main/spec/v1/statement.md), and [DSSE](https://github.com/secure-systems-lab/dsse).
 - Outcome and incident feedback framing: [NIST SP 800-61 Rev. 3](https://csrc.nist.gov/pubs/sp/800/61/r3/final), [Google SRE Postmortem Culture](https://sre.google/sre-book/postmortem-culture/), [NIST AI RMF Core](https://airc.nist.gov/airmf-resources/airmf/5-sec-core/), and [MIT STPA Handbook](http://psas.scripts.mit.edu/home/get_file.php?name=STPA_handbook.pdf).
+- Assurance measurement framing: [NIST AI RMF Core](https://airc.nist.gov/airmf-resources/airmf/5-sec-core/), [Google SRE Service Level Objectives](https://sre.google/sre-book/service-level-objectives/), [Google SRE Embracing Risk](https://sre.google/sre-book/embracing-risk/), [NIST CUSUM Control Charts](https://www.itl.nist.gov/div898/handbook/pmc/section3/pmc323.htm), [NIST SP 800-61 Rev. 3](https://csrc.nist.gov/pubs/sp/800/61/r3/final), and [OWASP Agentic AI threats and mitigations](https://genai.owasp.org/resource/agentic-ai-threats-and-mitigations/).
 - Agentic threat and tool-action risk framing: [OWASP Agentic AI threats and mitigations](https://genai.owasp.org/resource/agentic-ai-threats-and-mitigations/).
 - Causal dependency framing: [Pearl, Causality](https://bayes.cs.ucla.edu/BOOK-2K/causality.html).
 - Feedback loop and dynamic-system framing: [System Dynamics Society](https://systemdynamics.org/what-is-system-dynamics-old/).
@@ -700,7 +734,7 @@ This overview does not claim:
 - trained hazard models
 - automatic policy activation
 - that measurement metrics can tune enforcement
-- that the current repository implements the full runtime assurance system
+- that the current repository implements a production runtime assurance system
 
 It records the next sequenced implementation plan after the completed
 Shadow-to-Policy master list.

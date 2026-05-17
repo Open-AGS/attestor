@@ -88,9 +88,9 @@ operations.
 | Metric | Value |
 |---|---|
 | Total master-plan rounds | 26 |
-| Complete | 16 |
-| Remaining | 10 |
-| Current state | Steps 01-06 are complete on `origin/master`; Step 07 records the shared-store inventory; Step 08 adds the PostgreSQL-backed atomic retry/replay store slice; Step 09 adds the PostgreSQL-backed shared source-history and outbox primitive. Step 10 selects Anthropic Claude Messages API as the first non-OpenAI runtime adapter target. Step 11 implements the narrow Anthropic Messages API runtime slice with digest-only evidence, strict tool-schema tests, bounded runtime policy, and an opt-in external-live smoke probe while keeping live failover and production readiness unclaimed. Step 12 adds the production go/no-go packet, preserving the target-bound production boundary while closing the first unlock tracker. Step 13 records the [Target-System Compatibility Matrix](target-system-compatibility-matrix.md), keeping Salesforce, Microsoft, ServiceNow, workflow/iPaaS, data/IAM, spend/procurement, health/insurance, and crypto target families as adapters into one engine. Step 14 records the [Shadow Event Canonical Schema](shadow-event-canonical-schema.md), adding the versioned digest-only event envelope and the bridge from existing admission shadow events. Step 15 records the [Action Surface Graph](action-surface-graph.md), adding the tenant-bound graph of systems, actions, resources, route coverage, and missing proof links. Step 16 records the [Evidence State Model](evidence-state-model.md), making observed, inferred, missing, conflicting, stale, untrusted, approved, and enforceable evidence states explicit before policy candidate work. Steps 17-26 extend the plan into policy candidate, review, and recipe sequence. |
+| Complete | 17 |
+| Remaining | 9 |
+| Current state | Steps 01-06 are complete on `origin/master`; Step 07 records the shared-store inventory; Step 08 adds the PostgreSQL-backed atomic retry/replay store slice; Step 09 adds the PostgreSQL-backed shared source-history and outbox primitive. Step 10 selects Anthropic Claude Messages API as the first non-OpenAI runtime adapter target. Step 11 implements the narrow Anthropic Messages API runtime slice with digest-only evidence, strict tool-schema tests, bounded runtime policy, and an opt-in external-live smoke probe while keeping live failover and production readiness unclaimed. Step 12 adds the production go/no-go packet, preserving the target-bound production boundary while closing the first unlock tracker. Step 13 records the [Target-System Compatibility Matrix](target-system-compatibility-matrix.md), keeping Salesforce, Microsoft, ServiceNow, workflow/iPaaS, data/IAM, spend/procurement, health/insurance, and crypto target families as adapters into one engine. Step 14 records the [Shadow Event Canonical Schema](shadow-event-canonical-schema.md), adding the versioned digest-only event envelope and the bridge from existing admission shadow events. Step 15 records the [Action Surface Graph](action-surface-graph.md), adding the tenant-bound graph of systems, actions, resources, route coverage, and missing proof links. Step 16 records the [Evidence State Model](evidence-state-model.md), making observed, inferred, missing, conflicting, stale, untrusted, approved, and enforceable evidence states explicit before policy candidate work. Step 17 records the [Policy Candidate PR Contract](policy-candidate-pr-contract.md), adding review-only candidate diffs with schema digest, source-event digest set, inferred fields, missing evidence, risk score, replay digest, questions, and approval state. Steps 18-26 extend the plan into active questions, replay, review, feedback, recipes, and pilot sequence. |
 
 ## Master List
 
@@ -112,7 +112,7 @@ operations.
 | 14 | complete | Shadow event canonical schema | Versioned event envelope for action, tenant, actor, resource, observed/inferred fields, evidence refs, raw-data prohibitions, and receipt refs in `src/consequence-admission/canonical-shadow-event-schema.ts`, `docs/02-architecture/shadow-event-canonical-schema.md`, `tests/shadow-event-canonical-schema.test.ts`, research ledger entry, tracker updates, and package script. | Do not store raw prompts, private payloads, secrets, wallet material, provider bodies, or customer identifiers beyond the minimum digest-safe contract. |
 | 15 | complete | Action surface graph | Tenant-bound graph of observed action types, systems, tools, resources, consequence classes, route coverage, missing proof links, next safe onboarding step, code contract, docs, package script, research ledger entry, and tests. | Do not infer enforcement readiness from observation alone. |
 | 16 | complete | Evidence state model | `attestor.evidence-state-model.v1`, `src/consequence-admission/evidence-state-model.ts`, `docs/02-architecture/evidence-state-model.md`, `tests/evidence-state-model.test.ts`, research ledger entry, package script, and tracker/doc links for `observed`, `inferred`, `missing`, `conflicting`, `stale`, `untrusted`, `approved`, and `enforceable` states. | Do not mix facts with model inference in the same field. |
-| 17 | planned | Policy Candidate PR contract | Candidate policy diff with schema digest, source-event digest set, inferred fields, missing evidence, risk score, replay digest, questions, and approval state. | Do not let generated candidates become enforceable policy without approval. |
+| 17 | complete | Policy Candidate PR contract | `attestor.policy-candidate-pr-contract.v1`, `src/consequence-admission/policy-candidate-pr-contract.ts`, `docs/02-architecture/policy-candidate-pr-contract.md`, `tests/policy-candidate-pr-contract.test.ts`, research ledger entry, package script, and tracker/doc links for review-only candidate diffs with schema digest, source-event digest set, inferred fields, missing evidence, risk score, replay digest, questions, approval state, and no-auto-enforcement invariants. | Do not let generated candidates become enforceable policy without approval. |
 | 18 | planned | Active Question Engine | Rank the smallest high-impact human questions by risk reduction, event coverage, review-load delta, and uncertainty. | Do not ask broad policy-writing questions when a narrow business decision can resolve the gap. |
 | 19 | planned | Counterexample replay generator | Tenant mismatch, stale approval, missing evidence, bypass route, repeated action, prompt/tool poisoning, unsafe approval, and crypto transaction abuse fixtures. | Do not learn only from historical normal traffic. |
 | 20 | planned | Policy Twin backtest | Replay prior shadow events against candidate policies and report admit/review/block deltas, missed evidence, false-admit risks, and review-load impact. | Do not promote candidates that only pass happy-path replay. |
@@ -128,7 +128,7 @@ operations.
 Build the unified Shadow-to-Policy core next:
 
 ```text
-17 -> 18 -> 19 -> 20 -> 21 -> 22
+18 -> 19 -> 20 -> 21 -> 22
 ```
 
 Then add domain recipes and pilot packaging:
@@ -173,6 +173,6 @@ This plan does not claim:
 - crypto custody, wallet, exchange, or transaction broadcasting capability
 - healthcare, insurance, procurement, or finance compliance certification
 - automatic policy activation
-- completion of steps 17-26
+- completion of steps 18-26
 
 It is the saved master list for the next work sequence.

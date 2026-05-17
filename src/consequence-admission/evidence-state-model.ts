@@ -85,6 +85,7 @@ export interface EvidenceStateModelSurface {
   readonly tenantRefDigest: string;
   readonly coverageStatus: string;
   readonly graphNextStep: string;
+  readonly sourceEventDigests: readonly string[];
   readonly states: readonly EvidenceStateAssignment[];
   readonly stateCounts: Readonly<Record<EvidenceStateKind, number>>;
   readonly promotionBlockers: readonly EvidenceStateBlocker[];
@@ -583,6 +584,7 @@ function createSurfaceState(input: {
     tenantRefDigest: surface.tenantRefDigest,
     coverageStatus: surface.coverageStatus,
     graphNextStep: surface.nextStep,
+    sourceEventDigests: Object.freeze([...surface.eventDigests].sort()),
     states,
     stateCounts: counts,
     promotionBlockers: blockers,

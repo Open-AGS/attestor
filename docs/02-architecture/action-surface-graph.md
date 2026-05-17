@@ -245,7 +245,7 @@ This graph does not claim:
 - downstream receipt correctness
 - compliance certification
 - automatic policy activation
-- completion of Step 17 Policy Candidate PR contract
+- completion of Step 18 Active Question Engine
 
 It is the tenant-bound action map consumed by the evidence-state, candidate,
 replay, and review work.

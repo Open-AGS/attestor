@@ -36,6 +36,8 @@ The protected adapter shape lives in [Adapter framework](adapter-framework.md). 
 
 The reviewer-facing evidence package lives in [Audit evidence export](audit-evidence-export.md). Use it when shadow events, simulations, policy candidates, promotion packets, and downstream proof references need to be handed to a reviewer without raw customer payloads or fake compliance claims.
 
+The review-only candidate diff contract lives in [policy candidate PR contract](policy-candidate-pr-contract.md). Use it when evidence-state surfaces need to become schema-bound, digest-only candidate PR material without activating enforcement.
+
 The append-only proof trail lives in [Tamper-evident history](tamper-evident-history.md). Use it when digest-first evidence needs a linear history root that can detect modified, deleted, or reordered entries before a reviewer trusts an export.
 
 The operator-facing risk summary lives in [Business risk dashboard](business-risk-dashboard.md). Use it when a customer needs to see action volume, review load, blocked actions, policy gaps, consequence-domain risk, downstream proof coverage, and operator-supplied impact without turning raw logs into the product.

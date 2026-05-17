@@ -21,6 +21,9 @@ Its job is narrow: take the tenant-bound [Action Surface Graph](action-surface-g
 and label every proof-relevant field with a machine-readable state. It does
 not decide policy, generate a rule, or activate enforcement.
 
+The next repository-side layer is the [Policy Candidate PR Contract](policy-candidate-pr-contract.md),
+which consumes these states as review-only candidate diff input.
+
 ## Runtime Contract
 
 The machine-readable contract lives in
@@ -180,7 +183,7 @@ This model does not claim:
 - compliance certification
 - automatic policy activation
 - policy candidate correctness
-- completion of Step 17 Policy Candidate PR contract
+- completion of Step 18 Active Question Engine
 
 It is the explicit evidence-state layer that lets the next step generate
 candidate diffs without hiding uncertainty.

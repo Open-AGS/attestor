@@ -188,6 +188,7 @@ function testCompleteApprovedSurfaceCanBecomeExplicitlyEnforceable(): void {
   equal(model.autoEnforce, false, 'Evidence state model: model never auto-enforces');
   equal(model.productionReady, false, 'Evidence state model: production readiness is not claimed');
   equal(modeledSurface?.readyForEnforcement, true, 'Evidence state model: surface is ready only after explicit enforceability input');
+  equal(modeledSurface?.sourceEventDigests.length, graph.surfaces[0]?.eventDigests.length, 'Evidence state model: source event digest set is retained');
   equal(modeledSurface?.promotionBlockers.length, 0, 'Evidence state model: no blockers on complete approved surface');
   equal(stateFor(modeledSurface!, 'approval-ref'), 'approved', 'Evidence state model: approval state is explicit');
   equal(stateFor(modeledSurface!, 'producer-trust'), 'approved', 'Evidence state model: trusted producer approval is explicit');
@@ -347,12 +348,13 @@ function testDescriptorDocsAndTrackersStayAligned(): void {
   }
 
   for (const expected of [
-    '| Complete | 16 |',
-    '| Remaining | 10 |',
+    '| Complete | 17 |',
+    '| Remaining | 9 |',
     '| 15 | complete | Action surface graph |',
     '| 16 | complete | Evidence state model |',
-    '| 17 | planned | Policy Candidate PR contract |',
-    'completion of steps 17-26',
+    '| 17 | complete | Policy Candidate PR contract |',
+    '| 18 | planned | Active Question Engine |',
+    'completion of steps 18-26',
   ]) {
     includes(masterPlan, expected, `Evidence state model: master plan records ${expected}`);
   }

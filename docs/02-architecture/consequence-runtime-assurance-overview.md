@@ -356,7 +356,7 @@ Shadow-to-Policy master plan.
 | 05 | complete | Relationship-aware monotone fusion | `src/consequence-admission/relationship-aware-monotone-fusion.ts`, [Relationship-Aware Monotone Fusion](relationship-aware-monotone-fusion.md), `tests/relationship-aware-monotone-fusion.test.ts`, package script, duplicate discount, confirmation boost, hard-floor preservation, monotone risk aggregation, and property-style no-loosening tests. | Do not average away strong hazards or count duplicate evidence twice. |
 | 06 | complete | Conflict and abstention gate | `src/consequence-admission/conflict-abstention-gate.ts`, [Conflict And Abstention Gate](conflict-abstention-gate.md), `tests/conflict-abstention-gate.test.ts`, package script, review/block-pressure/abstain-hold outcomes for high conflict, low coverage, high uncertainty, and weighted abstention, and no-admit invariant tests. | Do not turn uncertainty into admit. |
 | 07 | complete | Human comprehension gate | `src/consequence-admission/human-comprehension-gate.ts`, [Human Comprehension Gate](human-comprehension-gate.md), `tests/human-comprehension-gate.test.ts`, package script, max-7 reason-line limit, default max-3 active-question cap, escalation posture, review-load visibility, and no-admit invariant tests. | Do not create a noisy dashboard that shifts work to humans. |
-| 08 | planned | Signed assurance packet | Digest-bound packet tied to tamper-evident history, policy, evidence, signals, relationships, and replay refs. | Do not store raw payloads or claim external immutability. |
+| 08 | complete | Signed assurance packet | `src/consequence-admission/signed-assurance-packet.ts`, [Signed Assurance Packet](signed-assurance-packet.md), `tests/signed-assurance-packet.test.ts`, package script, digest-only refs, tamper-history binding, optional signature record, production-boundary downgrade, and no-authority invariant tests. | Do not store raw payloads, claim external immutability, or turn packet signing into execution authority. |
 | 09 | planned | Outcome and incident feedback contract | Outcome source classes, incident path states, bounded mutation rules, replay regression triggers. | Do not retrain, activate, or mutate policy directly from feedback. |
 | 10 | planned | Assurance measurement plane | Read-only metrics, drift/regression/degraded-state reporting, scoped budget accounting, dashboard contract. | Do not let measurement output become decision authority. |
 
@@ -586,11 +586,47 @@ new production dependency
 human-factors certification claim
 ```
 
-The next implementation PR should be the Signed assurance packet:
+The eighth implementation slice is complete as the Signed assurance packet:
 
 ```text
 src/consequence-admission/signed-assurance-packet.ts
 tests/signed-assurance-packet.test.ts
+docs/02-architecture/signed-assurance-packet.md
+```
+
+Allowed in the completed Step 08 slice:
+
+```text
+pure deterministic packet builder
+descriptors
+digest-only ref tests
+tamper-history binding tests
+signature payload digest tests
+production-boundary downgrade tests
+no-authority invariant tests
+package export wiring
+```
+
+Not allowed in Step 08:
+
+```text
+live signing service
+admit decisions
+policy activation
+runtime enforcement
+learning
+downstream calls
+new production dependency
+external immutability claim
+JWS, JWT, DSSE, in-toto, or NIST conformance claim
+```
+
+The next implementation PR should be the Outcome and incident feedback
+contract:
+
+```text
+src/consequence-admission/outcome-incident-feedback-contract.ts
+tests/outcome-incident-feedback-contract.test.ts
 ```
 
 ## Primary Source Anchors
@@ -604,6 +640,7 @@ Reviewed on 2026-05-17:
 - Govern/map/measure/manage risk lifecycle framing: [NIST AI RMF](https://www.nist.gov/itl/ai-risk-management-framework) and [NIST AI RMF Playbook](https://www.nist.gov/itl/ai-risk-management-framework/nist-ai-rmf-playbook).
 - Risk budget and operational measurement discipline: [Google SRE, Embracing Risk](https://sre.google/sre-book/embracing-risk/) and [Google SRE, Monitoring Distributed Systems](https://sre.google/sre-book/monitoring-distributed-systems/).
 - Human review and alert load discipline: [NIST AI RMF Appendix C](https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.100-1.pdf), [NASA Human Systems Integration Handbook](https://ntrs.nasa.gov/citations/20210010952), [Google SRE Practical Alerting](https://sre.google/sre-book/practical-alerting/), and [Microsoft Human-AI Interaction Guidelines](https://www.microsoft.com/en-us/research/wp-content/uploads/2019/01/Guidelines-for-Human-AI-Interaction-camera-ready.pdf).
+- Signed packet and digest-bound artifact framing: [RFC 8785 JSON Canonicalization Scheme](https://www.rfc-editor.org/rfc/rfc8785), [RFC 7515 JSON Web Signature](https://www.rfc-editor.org/rfc/rfc7515), [RFC 8725 JWT Best Current Practices](https://www.rfc-editor.org/rfc/rfc8725), [in-toto Attestation Statement](https://github.com/in-toto/attestation/blob/main/spec/v1/statement.md), and [DSSE](https://github.com/secure-systems-lab/dsse).
 - Agentic threat and tool-action risk framing: [OWASP Agentic AI threats and mitigations](https://genai.owasp.org/resource/agentic-ai-threats-and-mitigations/).
 - Causal dependency framing: [Pearl, Causality](https://bayes.cs.ucla.edu/BOOK-2K/causality.html).
 - Feedback loop and dynamic-system framing: [System Dynamics Society](https://systemdynamics.org/what-is-system-dynamics-old/).
@@ -626,7 +663,7 @@ This overview does not claim:
 - trained hazard models
 - automatic policy activation
 - that measurement metrics can tune enforcement
-- that the current repository implements the Signal Relationship Fabric
+- that the current repository implements the full runtime assurance system
 
 It records the next sequenced implementation plan after the completed
 Shadow-to-Policy master list.

@@ -2319,6 +2319,7 @@ export * from './modulator-authority-tier.js';
 export * from './relationship-aware-monotone-fusion.js';
 export * from './conflict-abstention-gate.js';
 export * from './human-comprehension-gate.js';
+export * from './signed-assurance-packet.js';
 export * from './evidence-state-model.js';
 export * from './policy-candidate-pr-contract.js';
 export * from './active-question-engine.js';

@@ -66,7 +66,8 @@ function testOverviewRecordsContractShapeAndSequence(): void {
     '| 05 | complete | Relationship-aware monotone fusion |',
     '| 06 | complete | Conflict and abstention gate |',
     '| 07 | complete | Human comprehension gate |',
-    '| 08 | planned | Signed assurance packet |',
+    '| 08 | complete | Signed assurance packet |',
+    '| 09 | planned | Outcome and incident feedback contract |',
     '| 10 | planned | Assurance measurement plane |',
     'src/consequence-admission/consequence-envelope-contract.ts',
     'tests/consequence-envelope-contract.test.ts',
@@ -83,6 +84,8 @@ function testOverviewRecordsContractShapeAndSequence(): void {
     'src/consequence-admission/human-comprehension-gate.ts',
     'tests/human-comprehension-gate.test.ts',
     'src/consequence-admission/signed-assurance-packet.ts',
+    'tests/signed-assurance-packet.test.ts',
+    'src/consequence-admission/outcome-incident-feedback-contract.ts',
   ]) {
     includes(overview, expected, `Overview: records ${expected}`);
   }
@@ -104,7 +107,7 @@ function testOverviewRecordsFoundryMeasurementAndNonClaims(): void {
     'NIST AI RMF conformance',
     'automatic policy activation',
     'that measurement metrics can tune enforcement',
-    'that the current repository implements the Signal Relationship Fabric',
+    'that the current repository implements the full runtime assurance system',
   ]) {
     includes(overview, expected, `Overview: records ${expected}`);
   }

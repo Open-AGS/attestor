@@ -703,6 +703,34 @@ assert.equal(
   'function',
 );
 assert.equal(
+  admission.SIGNED_ASSURANCE_PACKET_VERSION,
+  'attestor.signed-assurance-packet.v1',
+);
+assert.equal(
+  admission.signedAssurancePacketDescriptor().digestOnlyRefs,
+  true,
+);
+assert.equal(
+  admission.signedAssurancePacketDescriptor().tamperEvidentHistoryBound,
+  true,
+);
+assert.equal(
+  admission.signedAssurancePacketDescriptor().signatureRequired,
+  true,
+);
+assert.equal(
+  admission.signedAssurancePacketDescriptor().canAdmit,
+  false,
+);
+assert.equal(
+  typeof admission.createSignedAssurancePacketSigningPayload,
+  'function',
+);
+assert.equal(
+  typeof admission.createSignedAssurancePacket,
+  'function',
+);
+assert.equal(
   admission.financePipelineAdmissionDescriptor().route,
   '/api/v1/pipeline/run',
 );

@@ -375,6 +375,36 @@ function testLedgerIndexesAuditRemediationClosure(): void {
   );
   includes(
     content,
+    '### 57. Action Surface Graph',
+    'Research provenance ledger: action surface graph entry is present',
+  );
+  includes(
+    content,
+    'src/consequence-admission/action-surface-graph.ts',
+    'Research provenance ledger: action surface graph code evidence is indexed',
+  );
+  includes(
+    content,
+    'tests/action-surface-graph.test.ts',
+    'Research provenance ledger: action surface graph test evidence is indexed',
+  );
+  includes(
+    content,
+    'OpenAPI anchors HTTP API action surfaces',
+    'Research provenance ledger: action surface graph OpenAPI anchor is recorded',
+  );
+  includes(
+    content,
+    'W3C PROV anchors graph-like provenance relationships',
+    'Research provenance ledger: action surface graph PROV anchor is recorded',
+  );
+  includes(
+    content,
+    'not a production graph store',
+    'Research provenance ledger: action surface graph production graph non-claim is explicit',
+  );
+  includes(
+    content,
     'does not prove Anthropic, Vertex AI, or Azure OpenAI calls',
     'Research provenance ledger: LLM provider live-client non-claim is explicit',
   );

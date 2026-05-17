@@ -94,8 +94,8 @@ production readiness.
 The 12-step unlock tracker is complete at the repository side. The next
 implementation source is the [Unified Shadow-To-Policy Master Plan](unified-shadow-to-policy-master-plan.md),
 where Step 13 records the target-system compatibility matrix, Step 14 records
-the canonical shadow event schema, and Step 15 is the next planned action
-surface graph.
+the canonical shadow event schema, Step 15 records the action surface graph,
+and Step 16 is the next planned evidence state model.
 
 Step 12 does not remove the live-production boundary. It only gives operators
 one packet that refuses to issue `go` unless the named target supplies the

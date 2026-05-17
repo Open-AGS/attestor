@@ -227,17 +227,18 @@ function testDescriptorAndDocsStayAligned(): void {
     'raw provider bodies',
     'raw wallet material',
     'raw customer identifiers',
-    'Step 15',
+    'Action Surface Graph',
   ]) {
     includes(doc, expected, `Canonical shadow event doc: records ${expected}`);
   }
 
   for (const expected of [
-    '| Complete | 14 |',
-    '| Remaining | 12 |',
+    '| Complete | 15 |',
+    '| Remaining | 11 |',
     '| 14 | complete | Shadow event canonical schema |',
-    '| 15 | planned | Action surface graph |',
-    'completion of steps 15-26',
+    '| 15 | complete | Action surface graph |',
+    '| 16 | planned | Evidence state model |',
+    'completion of steps 16-26',
   ]) {
     includes(masterPlan, expected, `Canonical shadow event: master plan records ${expected}`);
   }

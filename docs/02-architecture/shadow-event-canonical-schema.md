@@ -82,8 +82,8 @@ approvalRequiredForPromotion = true
 ```
 
 Some fields may be `null` when the event source cannot truthfully provide them.
-They still remain present so Step 15 can distinguish "not observed" from
-"forgotten by the adapter."
+They still remain present so the [Action Surface Graph](action-surface-graph.md)
+can distinguish "not observed" from "forgotten by the adapter."
 
 ## Observed Versus Inferred
 
@@ -229,7 +229,7 @@ This schema does not claim:
 - automatic policy activation
 - raw-payload retention safety
 - live downstream receipt reconciliation
-- completion of Step 15 action surface graph
+- completion of Step 16 evidence state model
 
-It is the canonical event input for the next graph, evidence, candidate, replay,
-and review-by-exception work.
+It is the canonical event input for graph, evidence, candidate, replay, and
+review-by-exception work.

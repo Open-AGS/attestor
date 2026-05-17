@@ -154,17 +154,19 @@ function testTrackersAndScriptsAreUpdated(): void {
   const ledger = readProjectFile('docs', 'research', 'attestor-research-provenance-ledger.md');
   const integrationRecipes = readProjectFile('docs', '01-overview', 'customer-integration-recipes.md');
   const systemOverview = readProjectFile('docs', '02-architecture', 'system-overview.md');
+  const targetMatrix = readProjectFile('docs', '02-architecture', 'target-system-compatibility-matrix.md');
   const packageJson = JSON.parse(readProjectFile('package.json')) as {
     readonly scripts: Readonly<Record<string, string>>;
   };
 
   for (const expected of [
-    '| Complete | 14 |',
-    '| Remaining | 12 |',
+    '| Complete | 15 |',
+    '| Remaining | 11 |',
     '| 13 | complete | Target-system compatibility matrix |',
     '| 14 | complete | Shadow event canonical schema |',
-    '| 15 | planned | Action surface graph |',
-    'completion of steps 15-26',
+    '| 15 | complete | Action surface graph |',
+    '| 16 | planned | Evidence state model |',
+    'completion of steps 16-26',
     'Target-System Compatibility Matrix',
   ]) {
     includes(plan, expected, `Compatibility matrix: unified plan records ${expected}`);
@@ -189,6 +191,11 @@ function testTrackersAndScriptsAreUpdated(): void {
     systemOverview,
     '[target-system compatibility matrix](target-system-compatibility-matrix.md)',
     'Compatibility matrix: system overview links the matrix',
+  );
+  includes(
+    targetMatrix,
+    '[action surface graph](action-surface-graph.md)',
+    'Compatibility matrix: links the Step 15 action surface graph',
   );
   assert.equal(
     packageJson.scripts['test:target-system-compatibility-matrix'],

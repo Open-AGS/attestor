@@ -947,6 +947,21 @@ The entries above are the most concrete PR/commit-linked hardening records. The 
 - Remaining limitation or no-go condition: This is not a production event store, not SIEM/export integration, not native target-system connector coverage, not live downstream receipt reconciliation, not customer deployment, not compliance certification, and not automatic policy activation. It only proves the repository-side canonical event contract for Step 15 action-surface graph work.
 - Status: complete for repository-side Step 14 once this PR is merged and verified on `origin/master`.
 
+### 57. Action Surface Graph
+
+- Step / PR / commit: Action surface graph; this PR records the repository-side Step 15 tenant-bound action graph but cannot pre-record its own merge commit.
+- Date if available: 2026-05-17.
+- Trust surface: canonical shadow event clustering, tenant-bound action topology, source/producer route coverage, target system and action surface grouping, resource/evidence/policy/approval/receipt references, coverage gap reporting, and no-enforcement-readiness posture.
+- Protected principle: tenant isolation; proof integrity; auditability; data minimization and redaction; customer authority; fail-closed boundary; no overclaim.
+- Research anchor / source used, if recorded: OpenAPI anchors HTTP API action surfaces through paths, operations, methods, tags, and operation identifiers; AsyncAPI anchors event-driven action surfaces through channels, operations, messages, correlation ids, and protocol bindings; Model Context Protocol tools anchor model-invokable tool discovery and invocation through `tools/list`, tool names, input schemas, output schemas, and `tools/call`; CloudEvents and OpenTelemetry Logs Data Model anchor event source, observed timestamp, trace context, and attributes; W3C PROV anchors graph-like provenance relationships across entities, activities, and agents. These are engineering anchors only, not connector certification, telemetry compliance, graph database deployment, customer integration proof, or production-readiness evidence.
+- Repository evidence:
+  - Contract/code evidence: `src/consequence-admission/action-surface-graph.ts`, `src/consequence-admission/index.ts`, `docs/02-architecture/action-surface-graph.md`, `docs/02-architecture/shadow-event-canonical-schema.md`, `docs/02-architecture/target-system-compatibility-matrix.md`, `docs/02-architecture/unified-shadow-to-policy-master-plan.md`, `docs/02-architecture/system-overview.md`, `README.md`, and `docs/research/attestor-research-provenance-ledger.md`.
+  - Test evidence: `tests/action-surface-graph.test.ts`, `tests/unified-shadow-to-policy-master-plan.test.ts`, and `tests/research-provenance-ledger.test.ts`.
+- Implemented control: Adds `attestor.action-surface-graph.v1`, a tenant-bound graph contract that consumes canonical shadow events and emits surfaces, nodes, edges, route coverage, coverage status, gap counts, and next safe onboarding steps. The graph fails closed on mixed tenants, stores no raw payloads, keeps enforcement disabled, separates observed and inferred consequence-class counts, and reports missing shadow capture, declarations, policy refs, evidence refs, approval refs, receipt refs, resources, and target-system shadow coverage without claiming that any surface is enforcement-ready.
+- Tests / verification: `npm run test:action-surface-graph`, `npm run test:unified-shadow-to-policy-master-plan`, `npm run test:research-provenance-ledger`, `npm run typecheck`, and `npm run typecheck:hygiene`.
+- Remaining limitation or no-go condition: This is not a production graph store, not graph database deployment, not native target-system connector coverage, not live target-system shadow capture, not downstream receipt correctness, not customer deployment, not compliance certification, and not automatic policy activation. It only proves the repository-side tenant-bound graph contract for Step 16 evidence-state work.
+- Status: complete for repository-side Step 15 once this PR is merged and verified on `origin/master`.
+
 ## Strong Recorded Research Support
 
 The strongest recorded research support appears in:

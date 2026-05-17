@@ -56,8 +56,8 @@ function testMasterPlanRecordsCountsAndLegacySteps(): void {
 
   for (const expected of [
     '| Total master-plan rounds | 26 |',
-    '| Complete | 14 |',
-    '| Remaining | 12 |',
+    '| Complete | 15 |',
+    '| Remaining | 11 |',
     '| 07 | complete | Consequence shared-store inventory |',
     '| 08 | complete | Consequence shared-store PR slice 1 |',
     '| 09 | complete | Consequence shared-store PR slice 2 |',
@@ -66,6 +66,7 @@ function testMasterPlanRecordsCountsAndLegacySteps(): void {
     '| 12 | complete | Production rehearsal go/no-go packet |',
     '| 13 | complete | Target-system compatibility matrix |',
     '| 14 | complete | Shadow event canonical schema |',
+    '| 15 | complete | Action surface graph |',
   ]) {
     includes(plan, expected, `Unified plan: records ${expected}`);
   }
@@ -79,7 +80,6 @@ function testMasterPlanRecordsNewWorkSequence(): void {
   );
 
   for (const expected of [
-    '| 15 | planned | Action surface graph |',
     '| 16 | planned | Evidence state model |',
     '| 17 | planned | Policy Candidate PR contract |',
     '| 18 | planned | Active Question Engine |',
@@ -148,6 +148,9 @@ function testMasterPlanRecordsResearchAnchorsAndNonClaims(): void {
     'OpenTelemetry Logs Data Model',
     'Open Cybersecurity Schema Framework',
     'W3C PROV Data Model',
+    'OpenAPI Specification',
+    'AsyncAPI Specification',
+    'Model Context Protocol tools',
     'EIP-712 typed data',
     'ERC-4337 account abstraction',
     'Production go/no-go evidence and target-readiness discipline',
@@ -162,7 +165,7 @@ function testMasterPlanRecordsResearchAnchorsAndNonClaims(): void {
     'Unlock tracker: links the unified master plan',
   );
   includes(plan, 'automatic policy activation', 'Unified plan: automatic activation non-claim is explicit');
-  includes(plan, 'completion of steps 15-26', 'Unified plan: remaining step non-claim is explicit');
+  includes(plan, 'completion of steps 16-26', 'Unified plan: remaining step non-claim is explicit');
   assert.equal(
     packageJson.scripts['test:unified-shadow-to-policy-master-plan'],
     'tsx tests/unified-shadow-to-policy-master-plan.test.ts',

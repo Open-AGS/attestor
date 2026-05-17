@@ -713,7 +713,7 @@ creating live enforcement.
 | W05 | complete | Shadow Runtime Pipeline Dry Run | `src/consequence-admission/shadow-runtime-pipeline.ts`, [Shadow Runtime Pipeline](shadow-runtime-pipeline.md), `tests/shadow-runtime-pipeline.test.ts`, package script, package-surface probe, shadow-only event -> envelope -> signals -> relationships -> fusion -> conflict gate -> human gate -> unsigned packet path, bounded review output, and no-authority invariants. | Do not emit live enforcement decisions, sign production packets, activate policy, call downstream systems, learn, aggregate cross-tenant data, or claim production readiness. |
 | W06 | complete | Decision Trace Logger | `src/consequence-admission/decision-trace-logger.ts`, [Decision Trace Logger](decision-trace-logger.md), `tests/decision-trace-logger.test.ts`, package script, package-surface probe, digest-only eight-phase decision trace, linear hash chain, TTL-bound verification, replay rejection, and no-authority invariants. | Do not store raw payloads, write the audit plane, claim production log integrity, activate policy, sign packets, or claim formal verification. |
 | W07 | complete | TLA+ Admission State Machine Skeleton | `specs/admission-state-machine.tla`, `specs/MCAdmission.cfg`, [Admission State Machine Spec](admission-state-machine-spec.md), `tests/admission-state-machine-spec.test.ts`, package script, manual design-first state machine, and seven named initial safety invariants. | Do not claim formal verification of the TypeScript implementation, generated-code equivalence, production certification, or model-checker execution in CI. |
-| W08 | planned | Alloy Tenant Isolation Model | Small-scope non-interference relation model. | Do not mix behavior/state-machine proof with tenant relation proof. |
+| W08 | complete | Alloy Tenant Isolation Model | `specs/tenant-isolation.als`, [Tenant Isolation Model](tenant-isolation-model.md), `tests/tenant-isolation-model.test.ts`, package script, manual small-scope relation model, tenant-owned envelope/trace/signal/packet/review/decision relations, and seven non-interference assertions. | Do not mix behavior/state-machine proof with tenant relation proof, claim Alloy Analyzer execution in CI, replace runtime PEP/RLS enforcement, or claim production isolation certification. |
 | W09 | planned | Baseline Cohort Contract | Explicit cohort shape and promotion gate for baseline candidates. | Do not learn from blocked traffic or auto-promote invariants. |
 | W10 | planned | Candidate Invariants Catalog | Safe invariant candidate taxonomy and danger flags. | Do not encode "frequent means safe." |
 | W11 | planned | Invariant Calibration Contract | Calibration metadata and thresholds for invariant candidates. | Do not let raw classifier scores become authority. |
@@ -984,6 +984,45 @@ new production dependency
 runtime deployment readiness claim
 ```
 
+The eighth wiring slice is complete as the Alloy Tenant Isolation Model:
+
+```text
+specs/tenant-isolation.als
+tests/tenant-isolation-model.test.ts
+docs/02-architecture/tenant-isolation-model.md
+```
+
+Allowed in the completed W08 slice:
+
+```text
+manual Alloy relation model
+tenant-owned Actor, Resource, Reviewer, Envelope, Trace, Signal, Packet,
+Access, ReviewAssignment, and Decision signatures
+TenantScopedReferences fact
+NoSignalCycles structural fact
+small-scope check commands
+non-interference assertion names
+static repository alignment test
+package script wiring
+```
+
+Not allowed in W08:
+
+```text
+TypeScript implementation verification claim
+generated-code equivalence claim
+behavior or temporal proof
+TLA+ replacement
+Alloy Analyzer execution claim
+Alloy Analyzer CI dependency
+production isolation certificate
+PostgreSQL RLS replacement
+runtime PEP replacement
+cross-tenant aggregation
+new production dependency
+runtime deployment readiness claim
+```
+
 ## Primary Source Anchors
 
 Reviewed on 2026-05-17:
@@ -1002,6 +1041,7 @@ Reviewed on 2026-05-17:
 - Causal dependency framing: [Pearl, Causality](https://bayes.cs.ucla.edu/BOOK-2K/causality.html).
 - Feedback loop and dynamic-system framing: [System Dynamics Society](https://systemdynamics.org/what-is-system-dynamics-old/).
 - Design-first formal specification framing: [Microsoft Research, Specifying Systems](https://www.microsoft.com/en-us/research/publication/specifying-systems-the-tla-language-and-tools-for-hardware-and-software-engineers/), [How Amazon Web Services uses formal methods](https://cacm.acm.org/research/how-amazon-web-services-uses-formal-methods/), [Systems Correctness Practices at AWS](https://cacm.acm.org/practice/systems-correctness-practices-at-amazon-web-services/), and [Apalache TLA+ model checker documentation](https://apalache-mc.org/docs/).
+- Tenant isolation and relation-model framing: [Alloy language reference](https://alloytools.org/download/alloy-language-reference.pdf), [Alloy in CACM](https://cacm.acm.org/research/alloy/), [AWS SaaS tenant isolation concepts](https://docs.aws.amazon.com/whitepapers/latest/saas-tenant-isolation-strategies/core-isolation-concepts.html), [AWS Lambda tenant isolation](https://docs.aws.amazon.com/lambda/latest/dg/tenant-isolation.html), and [NIST SP 800-207A](https://csrc.nist.gov/pubs/sp/800/207/a/final).
 
 These sources are engineering anchors only. They do not prove production
 readiness, compliance certification, customer deployment, target-system

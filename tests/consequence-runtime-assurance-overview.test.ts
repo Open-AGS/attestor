@@ -97,6 +97,7 @@ function testOverviewRecordsContractShapeAndSequence(): void {
     '| W05 | complete | Shadow Runtime Pipeline Dry Run |',
     '| W06 | complete | Decision Trace Logger |',
     '| W07 | complete | TLA+ Admission State Machine Skeleton |',
+    '| W08 | complete | Alloy Tenant Isolation Model |',
     'src/consequence-admission/shadow-envelope-projector.ts',
     'tests/shadow-envelope-projector.test.ts',
     'src/consequence-admission/signal-extractor-contract.ts',
@@ -115,6 +116,9 @@ function testOverviewRecordsContractShapeAndSequence(): void {
     'specs/MCAdmission.cfg',
     'tests/admission-state-machine-spec.test.ts',
     'docs/02-architecture/admission-state-machine-spec.md',
+    'specs/tenant-isolation.als',
+    'tests/tenant-isolation-model.test.ts',
+    'docs/02-architecture/tenant-isolation-model.md',
   ]) {
     includes(overview, expected, `Overview: records ${expected}`);
   }

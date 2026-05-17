@@ -708,7 +708,7 @@ creating live enforcement.
 |---|---|---|---|---|
 | W01 | complete | Shadow Envelope Projector | `src/consequence-admission/shadow-envelope-projector.ts`, [Shadow Envelope Projector](shadow-envelope-projector.md), `tests/shadow-envelope-projector.test.ts`, package script, package-surface probe, deterministic source-event-to-envelope projection, tenant binding, redaction preservation, idempotency digest, and no-authority invariants. | Do not extract signals, detect relationships, run fusion, sign packets, activate enforcement, learn, or grant authority. |
 | W02 | complete | Signal Extractor Contract | `src/consequence-admission/signal-extractor-contract.ts`, [Signal Extractor Contract](signal-extractor-contract.md), `tests/signal-extractor-contract.test.ts`, package script, package-surface probe, category-bound extractor declarations, digest-only signal batches, source-plane preservation, authority-mode preservation, and no-authority invariants. | Do not let an extractor upgrade advisory evidence into hard authority. |
-| W03 | planned | Existing Checks To Signal Adapter Registry | Adapters from existing checks into typed signals with source evidence digests. | Do not double-count duplicate evidence. |
+| W03 | complete | Existing Checks To Signal Adapter Registry | `src/consequence-admission/signal-adapter-registry.ts`, [Signal Adapter Registry](signal-adapter-registry.md), `tests/signal-adapter-registry.test.ts`, package script, package-surface probe, complete coverage for the six `CONSEQUENCE_ADMISSION_CHECK_KINDS`, pass-outcome exclusion, duplicate-evidence dedupe keys, and no-authority invariants. | Do not double-count duplicate evidence. |
 | W04 | planned | Relationship Detector Contract | Rule-based detector for explicit `confirms`, `contradicts`, `duplicates`, and directed relationship shapes. | Do not add learned relationship inference in v1. |
 | W05 | planned | Shadow Runtime Pipeline Dry Run | Shadow-only event -> envelope -> signals -> relationships -> fusion -> gate -> packet path. | Do not emit live enforcement decisions. |
 | W06 | planned | Decision Trace Logger | Digest-bound decision trace suitable for offline replay/spec checks. | Do not store raw payloads or write production audit claims. |
@@ -785,6 +785,40 @@ packet signing
 live enforcement
 learning
 raw payload access
+new production dependency
+runtime deployment readiness claim
+```
+
+The third wiring slice is complete as the Signal Adapter Registry:
+
+```text
+src/consequence-admission/signal-adapter-registry.ts
+tests/signal-adapter-registry.test.ts
+docs/02-architecture/signal-adapter-registry.md
+```
+
+Allowed in the completed W03 slice:
+
+```text
+built-in registrations for existing admission checks
+source-check coverage tests
+check-to-signal mapping tests
+pass-outcome exclusion tests
+duplicate-evidence registry tests
+no-authority invariant tests
+package export wiring
+```
+
+Not allowed in W03:
+
+```text
+runtime adaptation
+relationship detection
+fusion
+packet signing
+live enforcement
+learning
+pass-to-safe signal generation
 new production dependency
 runtime deployment readiness claim
 ```

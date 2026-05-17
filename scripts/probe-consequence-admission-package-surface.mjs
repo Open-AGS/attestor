@@ -859,6 +859,42 @@ assert.equal(
   'function',
 );
 assert.equal(
+  admission.SIGNAL_ADAPTER_REGISTRY_VERSION,
+  'attestor.signal-adapter-registry.v1',
+);
+assert.equal(
+  admission.signalAdapterRegistryDescriptor().signalExtractorContractVersion,
+  admission.SIGNAL_EXTRACTOR_CONTRACT_VERSION,
+);
+assert.equal(
+  admission.signalAdapterRegistryDescriptor().signalRelationshipContractVersion,
+  admission.SIGNAL_RELATIONSHIP_CONTRACT_VERSION,
+);
+assert.equal(
+  admission.signalAdapterRegistryDescriptor().coverageComplete,
+  true,
+);
+assert.equal(
+  admission.signalAdapterRegistryDescriptor().passOutcomeMayMarkSafe,
+  false,
+);
+assert.equal(
+  admission.signalAdapterRegistryDescriptor().relationshipDetectionIncluded,
+  false,
+);
+assert.equal(
+  admission.signalAdapterRegistryDescriptor().canAdmit,
+  false,
+);
+assert.equal(
+  typeof admission.createBuiltinSignalAdapterRegistry,
+  'function',
+);
+assert.equal(
+  admission.createBuiltinSignalAdapterRegistry().registrations.length,
+  6,
+);
+assert.equal(
   admission.financePipelineAdmissionDescriptor().route,
   '/api/v1/pipeline/run',
 );

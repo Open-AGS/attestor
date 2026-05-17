@@ -404,12 +404,12 @@ function testDescriptorDocsAndTrackersStayAligned(): void {
   }
 
   for (const expected of [
-    '| Complete | 21 |',
-    '| Remaining | 5 |',
+    '| Complete | 22 |',
+    '| Remaining | 4 |',
     '| 19 | complete | Counterexample replay generator |',
     '| 20 | complete | Policy Twin backtest |',
     '| 21 | complete | Review-by-exception inbox |',
-    'completion of steps 22-26',
+    'completion of steps 23-26',
   ]) {
     includes(masterPlan, expected, `Policy Twin backtest: master plan records ${expected}`);
   }

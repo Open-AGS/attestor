@@ -183,7 +183,7 @@ This model does not claim:
 - compliance certification
 - automatic policy activation
 - policy candidate correctness
-- completion of Step 22 Approval/dismiss feedback loop
+- completion of Step 23 Enterprise integration recipes
 
 It is the explicit evidence-state layer that lets the next step generate
 candidate diffs without hiding uncertainty.

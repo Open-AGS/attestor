@@ -229,7 +229,7 @@ This schema does not claim:
 - automatic policy activation
 - raw-payload retention safety
 - live downstream receipt reconciliation
-- completion of Step 22 Approval/dismiss feedback loop
+- completion of Step 23 Enterprise integration recipes
 
 It is the canonical event input for graph, evidence, candidate, replay, and
 review-by-exception work.

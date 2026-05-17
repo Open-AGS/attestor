@@ -187,7 +187,7 @@ This engine does not claim:
 
 - policy correctness
 - replay or backtest completion
-- approval/dismiss feedback loop completion
+- enterprise integration recipe completion
 - approval automation
 - production policy-store readiness
 - native target-system connector coverage
@@ -196,7 +196,7 @@ This engine does not claim:
 - downstream receipt correctness
 - compliance certification
 - automatic policy activation
-- completion of Step 22 Approval/dismiss feedback loop
+- completion of Step 23 Enterprise integration recipes
 
 It is the ranked human-question layer that lets the next step generate
 counterexamples and replay fixtures against the right unresolved decisions.

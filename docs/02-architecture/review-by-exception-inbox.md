@@ -187,7 +187,7 @@ This inbox does not claim:
 
 - policy correctness
 - approval automation
-- approval/dismiss feedback loop completion
+- enterprise integration recipe completion
 - production task queue readiness
 - production policy-store readiness
 - live target-system connector coverage
@@ -197,8 +197,9 @@ This inbox does not claim:
 - crypto custody, wallet, exchange, or transaction broadcasting capability
 - compliance certification
 - automatic policy activation
-- completion of Step 22 Approval/dismiss feedback loop
+- completion of Step 23 Enterprise integration recipes
 
 It is the digest-bound triage layer that lets the next step turn approvals,
 dismissals, stricter-version requests, threshold edits, and rollback decisions
-into structured feedback.
+into structured feedback. That next contract is the
+[Approval/Dismiss Feedback Loop](approval-dismiss-feedback-loop.md).

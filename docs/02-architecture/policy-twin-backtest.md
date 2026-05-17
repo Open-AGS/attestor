@@ -236,7 +236,7 @@ deployment, live replay execution, crypto custody, or compliance readiness.
 This backtest does not claim:
 
 - policy correctness
-- approval/dismiss feedback loop completion
+- enterprise integration recipe completion
 - approval automation
 - production policy-store readiness
 - live target-system connector coverage
@@ -246,7 +246,7 @@ This backtest does not claim:
 - crypto custody, wallet, exchange, or transaction broadcasting capability
 - compliance certification
 - automatic policy activation
-- completion of Step 22 Approval/dismiss feedback loop
+- completion of Step 23 Enterprise integration recipes
 
 It is the digest-bound backtest layer that lets the next step route only the
 exceptions that still need human work.

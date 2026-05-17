@@ -99,6 +99,7 @@
     "test:counterexample-replay-generator": "tsx tests/counterexample-replay-generator.test.ts",
     "test:policy-twin-backtest": "tsx tests/policy-twin-backtest.test.ts",
     "test:review-by-exception-inbox": "tsx tests/review-by-exception-inbox.test.ts",
+    "test:approval-dismiss-feedback-loop": "tsx tests/approval-dismiss-feedback-loop.test.ts",
     "test:external-kms-hsm-provider-decision": "tsx tests/external-kms-hsm-provider-decision.test.ts",
     "test:external-signer-contract-closure": "tsx tests/external-signer-contract-closure.test.ts",
     "test:gcp-kms-release-signer-adapter": "tsx tests/gcp-kms-release-signer-adapter.test.ts",

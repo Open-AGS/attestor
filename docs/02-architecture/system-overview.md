@@ -46,6 +46,8 @@ The digest-bound backtest layer lives in [Policy Twin backtest](policy-twin-back
 
 The candidate-level review queue lives in [Review-by-exception inbox](review-by-exception-inbox.md). Use it when Policy Twin results need to become one bounded item per candidate across failed-replay, blocked-by-evidence, needs-answer, ready-to-approve, and monitoring-only lanes without asking humans to inspect every raw event.
 
+The reviewer-decision feedback layer lives in [Approval/dismiss feedback loop](approval-dismiss-feedback-loop.md). Use it when approvals, dismissals, stricter-version requests, threshold edits, and rollback requests need to become digest-bound feedback without mutating a policy bundle, retraining a model, or activating enforcement.
+
 The append-only proof trail lives in [Tamper-evident history](tamper-evident-history.md). Use it when digest-first evidence needs a linear history root that can detect modified, deleted, or reordered entries before a reviewer trusts an export.
 
 The operator-facing risk summary lives in [Business risk dashboard](business-risk-dashboard.md). Use it when a customer needs to see action volume, review load, blocked actions, policy gaps, consequence-domain risk, downstream proof coverage, and operator-supplied impact without turning raw logs into the product.

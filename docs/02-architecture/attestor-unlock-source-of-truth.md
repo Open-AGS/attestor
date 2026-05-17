@@ -98,8 +98,8 @@ the canonical shadow event schema, Step 15 records the action surface graph,
 Step 16 records the evidence state model, Step 17 records the Policy Candidate
 PR contract, Step 18 records the Active Question Engine, Step 19 records the
 Counterexample replay generator, Step 20 records the Policy Twin backtest, Step
-21 records the Review-by-exception inbox, and Step 22 is the next planned
-Approval/dismiss feedback loop.
+21 records the Review-by-exception inbox, Step 22 records the Approval/dismiss
+feedback loop, and Step 23 is the next planned Enterprise integration recipes.
 
 Step 12 does not remove the live-production boundary. It only gives operators
 one packet that refuses to issue `go` unless the named target supplies the

@@ -248,7 +248,7 @@ function testEvidencePathsAndDocsAreWired(): void {
     'Unlock tracker: step 09 is complete',
   );
   ok(
-    masterPlan.includes('| Complete | 21 |'),
+    masterPlan.includes('| Complete | 22 |'),
     'Unified master plan: completion count includes the Policy Twin backtest',
   );
   ok(

@@ -349,7 +349,7 @@ Shadow-to-Policy master plan.
 | Step | Status | Work item | Required evidence | No-go boundary |
 |---|---|---|---|---|
 | 00 | saved in this doc | Cross-domain research annex | Source matrix covering STPA, FMEA, fault tree, runtime assurance, NIST AI RMF, SRE, OWASP Agentic AI, causal/dependency modeling, and system dynamics. | Do not treat analogies as production proof. |
-| 01 | next | Consequence Envelope Contract | Types, docs, digest-only field rules, tests for required fields and forbidden raw material. | Do not run relationship/fusion on untyped action input. |
+| 01 | complete | Consequence Envelope Contract | `src/consequence-admission/consequence-envelope-contract.ts`, [Consequence Envelope Contract](consequence-envelope-contract.md), `tests/consequence-envelope-contract.test.ts`, package script, digest-only field rules, required context fields, and no-authority invariants. | Do not run relationship/fusion on untyped action input. |
 | 02 | planned | Signal Relationship Contract | `SignalCategory`, category-bound `SignalKind`, directed/symmetric/unary relationship types, interaction rule shape, tests. | Do not use a flat signal enum or directionless relationships. |
 | 03 | planned | LayerOpinion schema | Opinion type as a special advisory signal, with uncertainty, source-dependence, abstention, and no-loosening invariants. | Do not let advisory output grant authority. |
 | 04 | planned | Modulator authority tier | Context modulators for reversibility, blast radius, tenant maturity, coverage, and freshness. | Do not let context modulators override hard denies. |
@@ -362,26 +362,25 @@ Shadow-to-Policy master plan.
 
 ## First Code PR Scope
 
-The first implementation PR should be narrow:
+The first implementation slice is complete as the consequence envelope
+contract:
 
 ```text
 src/consequence-admission/consequence-envelope-contract.ts
-src/consequence-admission/signal-relationship-contract.ts
-tests/consequence-runtime-assurance-contract.test.ts
+tests/consequence-envelope-contract.test.ts
+docs/02-architecture/consequence-envelope-contract.md
 ```
 
-Allowed:
+Allowed in the completed Step 01 slice:
 
 ```text
 types only
 descriptors
-normalizers for allowed enum values
-digest-only validation helpers
 contract invariant tests
 package export wiring
 ```
 
-Not allowed in the first PR:
+Not allowed in Step 01:
 
 ```text
 runtime behavior
@@ -391,6 +390,13 @@ policy activation
 measurement feedback
 downstream calls
 new production dependency
+```
+
+The next implementation PR should be the Signal Relationship Contract:
+
+```text
+src/consequence-admission/signal-relationship-contract.ts
+tests/signal-relationship-contract.test.ts
 ```
 
 ## Primary Source Anchors

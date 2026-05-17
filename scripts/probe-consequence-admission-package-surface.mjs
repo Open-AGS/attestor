@@ -555,6 +555,28 @@ assert.equal(
   'function',
 );
 assert.equal(
+  admission.CONSEQUENCE_ENVELOPE_CONTRACT_VERSION,
+  'attestor.consequence-envelope-contract.v1',
+);
+assert.equal(
+  admission.consequenceEnvelopeContractDescriptor().requiredFields.includes(
+    'canonicalActionType',
+  ),
+  true,
+);
+assert.equal(
+  admission.consequenceEnvelopeContractDescriptor().digestOnlyRefsRequired,
+  true,
+);
+assert.equal(
+  admission.consequenceEnvelopeContractDescriptor().grantsAuthority,
+  false,
+);
+assert.equal(
+  admission.consequenceEnvelopeContractDescriptor().rawWalletMaterialStored,
+  false,
+);
+assert.equal(
   admission.financePipelineAdmissionDescriptor().route,
   '/api/v1/pipeline/run',
 );

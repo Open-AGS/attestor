@@ -90,6 +90,7 @@
     "test:research-provenance-ledger": "tsx tests/research-provenance-ledger.test.ts",
     "test:attestor-unlock-source-of-truth": "tsx tests/attestor-unlock-source-of-truth.test.ts",
     "test:unified-shadow-to-policy-master-plan": "tsx tests/unified-shadow-to-policy-master-plan.test.ts",
+    "test:consequence-runtime-assurance-overview": "tsx tests/consequence-runtime-assurance-overview.test.ts",
     "test:target-system-compatibility-matrix": "tsx tests/target-system-compatibility-matrix.test.ts",
     "test:shadow-event-canonical-schema": "tsx tests/shadow-event-canonical-schema.test.ts",
     "test:action-surface-graph": "tsx tests/action-surface-graph.test.ts",

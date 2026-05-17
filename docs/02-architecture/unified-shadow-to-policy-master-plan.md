@@ -139,6 +139,13 @@ defined:
 new scoped tracker
 ```
 
+The next repository-side architecture tracker is
+[Consequence Runtime Assurance Overview](consequence-runtime-assurance-overview.md).
+It keeps the same one-engine posture and records the post-master-plan sequence
+for consequence envelopes, signal relationships, relationship-aware fusion,
+human comprehension, signed assurance packets, incident feedback, and
+measurement without claiming production readiness.
+
 The ordering matters. The Shadow-to-Policy engine depends on shared, tenant-
 bound, replayable event and receipt history. Building policy candidates before
 shared state would create a polished recommendation surface on weak evidence.

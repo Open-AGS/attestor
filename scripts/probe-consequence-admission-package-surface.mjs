@@ -895,6 +895,50 @@ assert.equal(
   6,
 );
 assert.equal(
+  admission.RELATIONSHIP_DETECTOR_CONTRACT_VERSION,
+  'attestor.relationship-detector-contract.v1',
+);
+assert.equal(
+  admission.relationshipDetectorDescriptor().signalRelationshipContractVersion,
+  admission.SIGNAL_RELATIONSHIP_CONTRACT_VERSION,
+);
+assert.equal(
+  admission.relationshipDetectorDescriptor().ruleBasedOnly,
+  true,
+);
+assert.equal(
+  admission.relationshipDetectorDescriptor().sameEnvelopeOnly,
+  true,
+);
+assert.equal(
+  admission.relationshipDetectorDescriptor().learnedInferenceIncluded,
+  false,
+);
+assert.equal(
+  admission.relationshipDetectorDescriptor().correlationLearningIncluded,
+  false,
+);
+assert.equal(
+  admission.relationshipDetectorDescriptor().fusionIncluded,
+  false,
+);
+assert.equal(
+  admission.relationshipDetectorDescriptor().packetSigningIncluded,
+  false,
+);
+assert.equal(
+  admission.relationshipDetectorDescriptor().canAdmit,
+  false,
+);
+assert.equal(
+  typeof admission.createRelationshipDetectorRule,
+  'function',
+);
+assert.equal(
+  typeof admission.detectSignalRelationships,
+  'function',
+);
+assert.equal(
   admission.financePipelineAdmissionDescriptor().route,
   '/api/v1/pipeline/run',
 );

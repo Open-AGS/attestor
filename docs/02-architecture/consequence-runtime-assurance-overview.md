@@ -709,7 +709,7 @@ creating live enforcement.
 | W01 | complete | Shadow Envelope Projector | `src/consequence-admission/shadow-envelope-projector.ts`, [Shadow Envelope Projector](shadow-envelope-projector.md), `tests/shadow-envelope-projector.test.ts`, package script, package-surface probe, deterministic source-event-to-envelope projection, tenant binding, redaction preservation, idempotency digest, and no-authority invariants. | Do not extract signals, detect relationships, run fusion, sign packets, activate enforcement, learn, or grant authority. |
 | W02 | complete | Signal Extractor Contract | `src/consequence-admission/signal-extractor-contract.ts`, [Signal Extractor Contract](signal-extractor-contract.md), `tests/signal-extractor-contract.test.ts`, package script, package-surface probe, category-bound extractor declarations, digest-only signal batches, source-plane preservation, authority-mode preservation, and no-authority invariants. | Do not let an extractor upgrade advisory evidence into hard authority. |
 | W03 | complete | Existing Checks To Signal Adapter Registry | `src/consequence-admission/signal-adapter-registry.ts`, [Signal Adapter Registry](signal-adapter-registry.md), `tests/signal-adapter-registry.test.ts`, package script, package-surface probe, complete coverage for the six `CONSEQUENCE_ADMISSION_CHECK_KINDS`, pass-outcome exclusion, duplicate-evidence dedupe keys, and no-authority invariants. | Do not double-count duplicate evidence. |
-| W04 | planned | Relationship Detector Contract | Rule-based detector for explicit `confirms`, `contradicts`, `duplicates`, and directed relationship shapes. | Do not add learned relationship inference in v1. |
+| W04 | complete | Relationship Detector Contract | `src/consequence-admission/relationship-detector-contract.ts`, [Relationship Detector Contract](relationship-detector-contract.md), `tests/relationship-detector-contract.test.ts`, package script, package-surface probe, deterministic rule-based relationship detection, same-envelope boundary, duplicate/conflict/directed/unary relationship output, interaction-rule output, and no-authority invariants. | Do not add learned relationship inference, correlation learning, fusion, packet signing, live enforcement, or authority upgrade in v1. |
 | W05 | planned | Shadow Runtime Pipeline Dry Run | Shadow-only event -> envelope -> signals -> relationships -> fusion -> gate -> packet path. | Do not emit live enforcement decisions. |
 | W06 | planned | Decision Trace Logger | Digest-bound decision trace suitable for offline replay/spec checks. | Do not store raw payloads or write production audit claims. |
 | W07 | planned | TLA+ Admission State Machine Skeleton | Manual design-first spec and initial invariants. | Do not claim formal verification of the TypeScript implementation. |
@@ -819,6 +819,43 @@ packet signing
 live enforcement
 learning
 pass-to-safe signal generation
+new production dependency
+runtime deployment readiness claim
+```
+
+The fourth wiring slice is complete as the Relationship Detector Contract:
+
+```text
+src/consequence-admission/relationship-detector-contract.ts
+tests/relationship-detector-contract.test.ts
+docs/02-architecture/relationship-detector-contract.md
+```
+
+Allowed in the completed W04 slice:
+
+```text
+rule-based relationship detector descriptor
+deterministic signal-to-relationship batch builder
+duplicate-evidence relationship tests
+confirmation and contradiction relationship tests
+directed relationship shape tests
+unary requires-review relationship tests
+same-envelope boundary tests
+no-authority invariant tests
+package export wiring
+```
+
+Not allowed in W04:
+
+```text
+learned relationship inference
+correlation learning
+fusion
+packet signing
+live enforcement
+policy activation
+authority upgrade
+cross-envelope relationship detection
 new production dependency
 runtime deployment readiness claim
 ```

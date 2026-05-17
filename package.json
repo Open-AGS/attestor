@@ -104,6 +104,7 @@
     "test:shadow-envelope-projector": "tsx tests/shadow-envelope-projector.test.ts",
     "test:signal-extractor-contract": "tsx tests/signal-extractor-contract.test.ts",
     "test:signal-adapter-registry": "tsx tests/signal-adapter-registry.test.ts",
+    "test:relationship-detector-contract": "tsx tests/relationship-detector-contract.test.ts",
     "test:target-system-compatibility-matrix": "tsx tests/target-system-compatibility-matrix.test.ts",
     "test:shadow-event-canonical-schema": "tsx tests/shadow-event-canonical-schema.test.ts",
     "test:action-surface-graph": "tsx tests/action-surface-graph.test.ts",

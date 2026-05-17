@@ -96,6 +96,7 @@ function testOverviewRecordsContractShapeAndSequence(): void {
     '| W04 | complete | Relationship Detector Contract |',
     '| W05 | complete | Shadow Runtime Pipeline Dry Run |',
     '| W06 | complete | Decision Trace Logger |',
+    '| W07 | complete | TLA+ Admission State Machine Skeleton |',
     'src/consequence-admission/shadow-envelope-projector.ts',
     'tests/shadow-envelope-projector.test.ts',
     'src/consequence-admission/signal-extractor-contract.ts',
@@ -110,6 +111,10 @@ function testOverviewRecordsContractShapeAndSequence(): void {
     'src/consequence-admission/decision-trace-logger.ts',
     'tests/decision-trace-logger.test.ts',
     'docs/02-architecture/decision-trace-logger.md',
+    'specs/admission-state-machine.tla',
+    'specs/MCAdmission.cfg',
+    'tests/admission-state-machine-spec.test.ts',
+    'docs/02-architecture/admission-state-machine-spec.md',
   ]) {
     includes(overview, expected, `Overview: records ${expected}`);
   }

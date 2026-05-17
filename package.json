@@ -107,6 +107,7 @@
     "test:relationship-detector-contract": "tsx tests/relationship-detector-contract.test.ts",
     "test:shadow-runtime-pipeline": "tsx tests/shadow-runtime-pipeline.test.ts",
     "test:decision-trace-logger": "tsx tests/decision-trace-logger.test.ts",
+    "test:admission-state-machine-spec": "tsx tests/admission-state-machine-spec.test.ts",
     "test:target-system-compatibility-matrix": "tsx tests/target-system-compatibility-matrix.test.ts",
     "test:shadow-event-canonical-schema": "tsx tests/shadow-event-canonical-schema.test.ts",
     "test:action-surface-graph": "tsx tests/action-surface-graph.test.ts",

@@ -712,7 +712,7 @@ creating live enforcement.
 | W04 | complete | Relationship Detector Contract | `src/consequence-admission/relationship-detector-contract.ts`, [Relationship Detector Contract](relationship-detector-contract.md), `tests/relationship-detector-contract.test.ts`, package script, package-surface probe, deterministic rule-based relationship detection, same-envelope boundary, duplicate/conflict/directed/unary relationship output, interaction-rule output, and no-authority invariants. | Do not add learned relationship inference, correlation learning, fusion, packet signing, live enforcement, or authority upgrade in v1. |
 | W05 | complete | Shadow Runtime Pipeline Dry Run | `src/consequence-admission/shadow-runtime-pipeline.ts`, [Shadow Runtime Pipeline](shadow-runtime-pipeline.md), `tests/shadow-runtime-pipeline.test.ts`, package script, package-surface probe, shadow-only event -> envelope -> signals -> relationships -> fusion -> conflict gate -> human gate -> unsigned packet path, bounded review output, and no-authority invariants. | Do not emit live enforcement decisions, sign production packets, activate policy, call downstream systems, learn, aggregate cross-tenant data, or claim production readiness. |
 | W06 | complete | Decision Trace Logger | `src/consequence-admission/decision-trace-logger.ts`, [Decision Trace Logger](decision-trace-logger.md), `tests/decision-trace-logger.test.ts`, package script, package-surface probe, digest-only eight-phase decision trace, linear hash chain, TTL-bound verification, replay rejection, and no-authority invariants. | Do not store raw payloads, write the audit plane, claim production log integrity, activate policy, sign packets, or claim formal verification. |
-| W07 | planned | TLA+ Admission State Machine Skeleton | Manual design-first spec and initial invariants. | Do not claim formal verification of the TypeScript implementation. |
+| W07 | complete | TLA+ Admission State Machine Skeleton | `specs/admission-state-machine.tla`, `specs/MCAdmission.cfg`, [Admission State Machine Spec](admission-state-machine-spec.md), `tests/admission-state-machine-spec.test.ts`, package script, manual design-first state machine, and seven named initial safety invariants. | Do not claim formal verification of the TypeScript implementation, generated-code equivalence, production certification, or model-checker execution in CI. |
 | W08 | planned | Alloy Tenant Isolation Model | Small-scope non-interference relation model. | Do not mix behavior/state-machine proof with tenant relation proof. |
 | W09 | planned | Baseline Cohort Contract | Explicit cohort shape and promotion gate for baseline candidates. | Do not learn from blocked traffic or auto-promote invariants. |
 | W10 | planned | Candidate Invariants Catalog | Safe invariant candidate taxonomy and danger flags. | Do not encode "frequent means safe." |
@@ -942,6 +942,48 @@ new production dependency
 runtime deployment readiness claim
 ```
 
+The seventh wiring slice is complete as the TLA+ Admission State Machine
+Skeleton:
+
+```text
+specs/admission-state-machine.tla
+specs/MCAdmission.cfg
+tests/admission-state-machine-spec.test.ts
+docs/02-architecture/admission-state-machine-spec.md
+```
+
+Allowed in the completed W07 slice:
+
+```text
+manual design-first TLA+ module
+small TLC config
+state variables for request stage, authority, trace, packet, nonce, review,
+hazard, and enforcement state
+initial invariant names for authority, packet, tenant, review, monotonicity,
+and replay safety
+static repository alignment test
+package script wiring
+```
+
+Not allowed in W07:
+
+```text
+TypeScript implementation verification claim
+generated-code equivalence claim
+production certification
+live enforcement
+policy activation
+downstream execution
+packet signing
+model-checker execution claim
+TLC or Apalache CI dependency
+learning
+baseline extraction
+cross-tenant aggregation
+new production dependency
+runtime deployment readiness claim
+```
+
 ## Primary Source Anchors
 
 Reviewed on 2026-05-17:
@@ -959,6 +1001,7 @@ Reviewed on 2026-05-17:
 - Agentic threat and tool-action risk framing: [OWASP Agentic AI threats and mitigations](https://genai.owasp.org/resource/agentic-ai-threats-and-mitigations/).
 - Causal dependency framing: [Pearl, Causality](https://bayes.cs.ucla.edu/BOOK-2K/causality.html).
 - Feedback loop and dynamic-system framing: [System Dynamics Society](https://systemdynamics.org/what-is-system-dynamics-old/).
+- Design-first formal specification framing: [Microsoft Research, Specifying Systems](https://www.microsoft.com/en-us/research/publication/specifying-systems-the-tla-language-and-tools-for-hardware-and-software-engineers/), [How Amazon Web Services uses formal methods](https://cacm.acm.org/research/how-amazon-web-services-uses-formal-methods/), [Systems Correctness Practices at AWS](https://cacm.acm.org/practice/systems-correctness-practices-at-amazon-web-services/), and [Apalache TLA+ model checker documentation](https://apalache-mc.org/docs/).
 
 These sources are engineering anchors only. They do not prove production
 readiness, compliance certification, customer deployment, target-system

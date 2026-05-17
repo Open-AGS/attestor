@@ -2316,6 +2316,7 @@ export * from './consequence-envelope-contract.js';
 export * from './signal-relationship-contract.js';
 export * from './layer-opinion-schema.js';
 export * from './modulator-authority-tier.js';
+export * from './relationship-aware-monotone-fusion.js';
 export * from './evidence-state-model.js';
 export * from './policy-candidate-pr-contract.js';
 export * from './active-question-engine.js';

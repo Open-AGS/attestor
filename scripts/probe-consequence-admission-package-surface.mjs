@@ -643,6 +643,26 @@ assert.equal(
   false,
 );
 assert.equal(
+  admission.RELATIONSHIP_AWARE_MONOTONE_FUSION_VERSION,
+  'attestor.relationship-aware-monotone-fusion.v1',
+);
+assert.equal(
+  admission.relationshipAwareMonotoneFusionDescriptor().duplicateDiscountSupported,
+  true,
+);
+assert.equal(
+  admission.relationshipAwareMonotoneFusionDescriptor().hardFloorPreservationRequired,
+  true,
+);
+assert.equal(
+  admission.relationshipAwareMonotoneFusionDescriptor().grantsAuthority,
+  false,
+);
+assert.equal(
+  typeof admission.fuseRelationshipAwareMonotoneHazard,
+  'function',
+);
+assert.equal(
   admission.financePipelineAdmissionDescriptor().route,
   '/api/v1/pipeline/run',
 );

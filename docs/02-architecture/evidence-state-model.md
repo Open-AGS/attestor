@@ -183,7 +183,7 @@ This model does not claim:
 - compliance certification
 - automatic policy activation
 - policy candidate correctness
-- completion of Step 23 Enterprise integration recipes
+- completion of Step 24 General Crypto Transaction Gate
 
 It is the explicit evidence-state layer that lets the next step generate
 candidate diffs without hiding uncertainty.

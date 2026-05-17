@@ -197,7 +197,7 @@ This inbox does not claim:
 - crypto custody, wallet, exchange, or transaction broadcasting capability
 - compliance certification
 - automatic policy activation
-- completion of Step 23 Enterprise integration recipes
+- completion of Step 24 General Crypto Transaction Gate
 
 It is the digest-bound triage layer that lets the next step turn approvals,
 dismissals, stricter-version requests, threshold edits, and rollback decisions

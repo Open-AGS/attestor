@@ -160,8 +160,8 @@ function testTrackersAndScriptsAreUpdated(): void {
   };
 
   for (const expected of [
-    '| Complete | 22 |',
-    '| Remaining | 4 |',
+    '| Complete | 23 |',
+    '| Remaining | 3 |',
     '| 13 | complete | Target-system compatibility matrix |',
     '| 14 | complete | Shadow event canonical schema |',
     '| 15 | complete | Action surface graph |',
@@ -169,7 +169,7 @@ function testTrackersAndScriptsAreUpdated(): void {
     '| 17 | complete | Policy Candidate PR contract |',
     '| 18 | complete | Active Question Engine |',
     '| 19 | complete | Counterexample replay generator |',
-    'completion of steps 23-26',
+    'completion of steps 24-26',
     'Target-System Compatibility Matrix',
   ]) {
     includes(plan, expected, `Compatibility matrix: unified plan records ${expected}`);

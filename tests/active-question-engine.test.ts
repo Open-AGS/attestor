@@ -311,13 +311,13 @@ function testDescriptorDocsAndTrackersStayAligned(): void {
   }
 
   for (const expected of [
-    '| Complete | 22 |',
-    '| Remaining | 4 |',
+    '| Complete | 23 |',
+    '| Remaining | 3 |',
     '| 17 | complete | Policy Candidate PR contract |',
     '| 18 | complete | Active Question Engine |',
     '| 19 | complete | Counterexample replay generator |',
     '| 20 | complete | Policy Twin backtest |',
-    'completion of steps 23-26',
+    'completion of steps 24-26',
   ]) {
     includes(masterPlan, expected, `Active question engine: master plan records ${expected}`);
   }

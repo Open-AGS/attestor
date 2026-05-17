@@ -7,6 +7,10 @@ For source-backed target-system placement across Salesforce, Microsoft,
 ServiceNow, Workato, MuleSoft, n8n, Camunda, data/IAM, spend, health, and
 crypto systems, use the
 [target-system compatibility matrix](../02-architecture/target-system-compatibility-matrix.md).
+For the current enterprise target placement catalog across Salesforce,
+Microsoft Copilot/Power Automate, ServiceNow, Workato, MuleSoft, n8n, Zapier,
+Zendesk, Intercom, Snowflake, Databricks, Okta, Entra, and SailPoint, use
+[Enterprise integration recipes](../02-architecture/enterprise-integration-recipes.md).
 
 ```text
 prepare proposed consequence

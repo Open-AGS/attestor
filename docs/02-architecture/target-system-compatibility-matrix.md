@@ -52,7 +52,7 @@ repository-side compatibility:
 |---|---|---|---|---|---|---|---|
 | Salesforce Agentforce | Agentforce actions expose Apex REST, AuraEnabled, named query, and Apex invocable methods as actions. | Custom action or API action calls Attestor before Apex/REST/Invocable mutation. | `case.refund`, `opportunity.update`, `customer.email.prepare`, `subscription.cancel`. | tenant, Salesforce org digest, actor digest, customer/case/opportunity resource digest, action kind, data class, evidence refs. | Case/order/payment proof refs, approval queue ref, Salesforce record/event receipt digest. | High. Existing consequence-admission facade and customer PEP package already match pre-action gating. | No native Salesforce package or org deployment is proven. |
 | Microsoft Copilot Studio / Power Platform | Copilot Studio tools can be connectors, agent flows, REST APIs, MCP servers, and other tool mechanisms. | REST API/custom connector/agent flow calls Attestor before the tool executes the external side effect. | `dataverse.record.update`, `outlook.email.send`, `teams.message.post`, `approval.route`. | tenant, environment digest, tool/action name, user/maker auth mode, resource digest, data class. | Connector auth context, approval refs, tool response receipt digest, Power Automate run digest. | High. Sender-constrained presentation and customer gate can protect REST/custom connector edges. | Built-in "ask user before running" is not enough proof by itself. No Power Platform connector is shipped. |
-| Zendesk / Intercom style support systems | Not researched as a vendor-specific source in this step; included only as a family shape. | Webhook, app action, or API write before ticket/message/customer mutation. | `ticket.reply`, `ticket.priority.update`, `customer.note.write`. | tenant, workspace digest, ticket/customer digest, message/action digest, data class. | Ticket state evidence, approval ref, target event/record receipt digest. | Medium-high as a recipe family. | No native Zendesk or Intercom connector claim. |
+| Zendesk / Intercom style support systems | Step 23 records vendor-specific recipe anchors for Zendesk AI Agents and Intercom Conversations; this Step 13 matrix remains the family-level compatibility shape. | Webhook, app action, or API write before ticket/message/customer mutation. | `ticket.reply`, `ticket.priority.update`, `customer.note.write`. | tenant, workspace digest, ticket/customer digest, message/action digest, data class. | Ticket state evidence, approval ref, target event/record receipt digest. | Medium-high as a recipe family. | No native Zendesk or Intercom connector claim. |
 
 ### ITSM, Workflow, And iPaaS
 
@@ -137,8 +137,9 @@ clusters `targetSystem`, `actionName`, `resourceRefDigest`, `consequenceClass`,
 route coverage, and missing proof links across these families. Step 16 defines
 the [evidence state model](evidence-state-model.md) that labels those links as
 observed, inferred, missing, conflicting, stale, untrusted, approved, or
-enforceable before candidate generation. Step 23-25 should become recipes, not
-one-off engines.
+enforceable before candidate generation. Step 23 now records the enterprise
+placement recipes; Steps 24-25 should continue as recipes, not one-off
+engines.
 
 ## Primary Research Anchors
 

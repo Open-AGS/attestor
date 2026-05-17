@@ -56,8 +56,8 @@ function testMasterPlanRecordsCountsAndLegacySteps(): void {
 
   for (const expected of [
     '| Total master-plan rounds | 26 |',
-    '| Complete | 22 |',
-    '| Remaining | 4 |',
+    '| Complete | 23 |',
+    '| Remaining | 3 |',
     '| 07 | complete | Consequence shared-store inventory |',
     '| 08 | complete | Consequence shared-store PR slice 1 |',
     '| 09 | complete | Consequence shared-store PR slice 2 |',
@@ -87,7 +87,7 @@ function testMasterPlanRecordsNewWorkSequence(): void {
     '| 20 | complete | Policy Twin backtest |',
     '| 21 | complete | Review-by-exception inbox |',
     '| 22 | complete | Approval/dismiss feedback loop |',
-    '| 23 | planned | Enterprise integration recipes |',
+    '| 23 | complete | Enterprise integration recipes |',
     '| 24 | planned | General Crypto Transaction Gate |',
     '| 25 | planned | Spend, procurement, data, IAM, health, and insurance recipes |',
     '| 26 | planned | Pilot readiness packet |',
@@ -136,14 +136,17 @@ function testMasterPlanRecordsResearchAnchorsAndNonClaims(): void {
     'Salesforce Agentforce actions',
     'Microsoft Copilot Studio tools',
     'MuleSoft Agentforce API actions',
-    'Zapier AI Actions reference',
+    'Zapier MCP',
+    'Zendesk AI Agents API',
+    'Intercom Conversations API',
     'Fireblocks transaction authorization policy',
     'BitGo policies overview',
     'Coinbase CDP Policy Engine',
     'Snowflake Cortex Agents REST API',
     'Databricks AI agent tools',
-    'Okta Workflows connector building blocks',
-    'Microsoft Entra Lifecycle Workflow extensibility',
+    'Okta Workflows Okta connector',
+    'Microsoft Entra ID Governance',
+    'SailPoint workflow triggers',
     'CloudEvents specification',
     'OpenTelemetry Logs Data Model',
     'Open Cybersecurity Schema Framework',
@@ -165,7 +168,7 @@ function testMasterPlanRecordsResearchAnchorsAndNonClaims(): void {
     'Unlock tracker: links the unified master plan',
   );
   includes(plan, 'automatic policy activation', 'Unified plan: automatic activation non-claim is explicit');
-  includes(plan, 'completion of steps 23-26', 'Unified plan: remaining step non-claim is explicit');
+  includes(plan, 'completion of steps 24-26', 'Unified plan: remaining step non-claim is explicit');
   assert.equal(
     packageJson.scripts['test:unified-shadow-to-policy-master-plan'],
     'tsx tests/unified-shadow-to-policy-master-plan.test.ts',

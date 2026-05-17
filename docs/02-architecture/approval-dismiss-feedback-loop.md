@@ -212,7 +212,7 @@ This feedback loop does not claim:
 - crypto custody, wallet, exchange, or transaction broadcasting capability
 - compliance certification
 - automatic policy activation
-- completion of Step 23 Enterprise integration recipes
+- completion of Step 24 General Crypto Transaction Gate
 
 It is the digest-bound feedback layer that lets the next step package
 enterprise integration recipes around structured approvals, dismissals,

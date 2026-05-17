@@ -245,7 +245,7 @@ This graph does not claim:
 - downstream receipt correctness
 - compliance certification
 - automatic policy activation
-- completion of Step 23 Enterprise integration recipes
+- completion of Step 24 General Crypto Transaction Gate
 
 It is the tenant-bound action map consumed by the evidence-state, candidate,
 replay, and review work.

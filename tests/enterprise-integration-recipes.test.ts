@@ -213,12 +213,12 @@ function testDescriptorDocsAndTrackersStayAligned(): void {
   }
 
   for (const expected of [
-    '| Complete | 23 |',
-    '| Remaining | 3 |',
+    '| Complete | 24 |',
+    '| Remaining | 2 |',
     '| 22 | complete | Approval/dismiss feedback loop |',
     '| 23 | complete | Enterprise integration recipes |',
-    '| 24 | planned | General Crypto Transaction Gate |',
-    'completion of steps 24-26',
+    '| 24 | complete | General Crypto Transaction Gate |',
+    'completion of steps 25-26',
   ]) {
     includes(masterPlan, expected, `Enterprise recipes: master plan records ${expected}`);
   }

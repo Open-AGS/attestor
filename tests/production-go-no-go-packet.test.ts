@@ -329,8 +329,8 @@ function testDocsAndScriptsExposeStep12(): void {
   includes(tracker, '| Complete in this tracker | 12 |', 'Unlock tracker: Step 12 completion count is updated');
   includes(tracker, '| Remaining after this tracker | 0 |', 'Unlock tracker: no remaining tracker steps');
   includes(tracker, '| 12 | complete | Production rehearsal go/no-go packet |', 'Unlock tracker: Step 12 is complete');
-  includes(masterPlan, '| Complete | 23 |', 'Unified plan: Step 23 completion count is updated');
-  includes(masterPlan, '| Remaining | 3 |', 'Unified plan: remaining count moves to 3');
+  includes(masterPlan, '| Complete | 24 |', 'Unified plan: Step 23 completion count is updated');
+  includes(masterPlan, '| Remaining | 2 |', 'Unified plan: remaining count moves to 3');
   includes(masterPlan, '| 12 | complete | Production rehearsal go/no-go packet |', 'Unified plan: Step 12 is complete');
   includes(masterPlan, '| 13 | complete | Target-system compatibility matrix |', 'Unified plan: Step 13 is complete');
   includes(masterPlan, '| 14 | complete | Shadow event canonical schema |', 'Unified plan: Step 14 is complete');

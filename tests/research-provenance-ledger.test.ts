@@ -960,6 +960,26 @@ function testLedgerIndexesAuditRemediationClosure(): void {
   );
   includes(
     content,
+    '### 66. General Crypto Transaction Gate',
+    'Research provenance ledger: implemented general crypto gate entry is present',
+  );
+  includes(
+    content,
+    'src/consequence-admission/general-crypto-transaction-gate.ts',
+    'Research provenance ledger: general crypto gate code evidence is indexed',
+  );
+  includes(
+    content,
+    'tests/general-crypto-transaction-gate.test.ts',
+    'Research provenance ledger: general crypto gate test evidence is indexed',
+  );
+  includes(
+    content,
+    'signsTransaction=false',
+    'Research provenance ledger: general crypto gate no-signing boundary is recorded',
+  );
+  includes(
+    content,
     'not an implementation',
     'Research provenance ledger: master plan non-implementation boundary is explicit',
   );

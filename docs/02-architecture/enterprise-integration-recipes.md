@@ -22,6 +22,7 @@ canonical shadow event
   -> approval/dismiss feedback loop
   -> enterprise integration recipes
   -> general crypto transaction gate
+  -> spend / procurement / data / IAM / health / insurance recipes
 ```
 
 The job is narrow: make the target-system placement concrete enough for a
@@ -213,8 +214,9 @@ This recipe catalog does not claim:
 - downstream receipt correctness
 - compliance certification
 - automatic policy activation
-- completion of Step 24 General Crypto Transaction Gate
+- completion of Step 25 Spend, procurement, data, IAM, health, and insurance
+  recipes
 
 It is the source-backed placement catalog for enterprise target systems. The
-next step is the general crypto transaction gate, which must stay inside the
-same consequence grammar instead of becoming a wallet or broadcaster.
+next step is the domain recipe pack, which must stay inside the same
+consequence grammar instead of becoming a workflow workspace or records system.

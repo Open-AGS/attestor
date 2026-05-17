@@ -50,6 +50,8 @@ The reviewer-decision feedback layer lives in [Approval/dismiss feedback loop](a
 
 The enterprise placement catalog lives in [Enterprise integration recipes](enterprise-integration-recipes.md). Use it when Salesforce, Microsoft Copilot/Power Automate, ServiceNow, Workato, MuleSoft, n8n, Zapier, Zendesk, Intercom, Snowflake, Databricks, Okta, Entra, or SailPoint needs a concrete pre-side-effect Attestor gate without claiming native connector coverage.
 
+The general crypto decision contract lives in [General Crypto Transaction Gate](general-crypto-transaction-gate.md). Use it when native transfers, ERC-20 transfer/approve, permit signing, swaps, bridges, Safe transaction proposals, ERC-4337 UserOperations, session-key grants, delegated EOA authorization, or x402 payments need digest-only admit/review/block material before customer-owned execution.
+
 The append-only proof trail lives in [Tamper-evident history](tamper-evident-history.md). Use it when digest-first evidence needs a linear history root that can detect modified, deleted, or reordered entries before a reviewer trusts an export.
 
 The operator-facing risk summary lives in [Business risk dashboard](business-risk-dashboard.md). Use it when a customer needs to see action volume, review load, blocked actions, policy gaps, consequence-domain risk, downstream proof coverage, and operator-supplied impact without turning raw logs into the product.

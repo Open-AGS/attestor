@@ -229,7 +229,7 @@ This schema does not claim:
 - automatic policy activation
 - raw-payload retention safety
 - live downstream receipt reconciliation
-- completion of Step 24 General Crypto Transaction Gate
+- completion of Step 25 Spend, procurement, data, IAM, health, and insurance recipes
 
 It is the canonical event input for graph, evidence, candidate, replay, and
 review-by-exception work.

@@ -56,8 +56,8 @@ function testMasterPlanRecordsCountsAndLegacySteps(): void {
 
   for (const expected of [
     '| Total master-plan rounds | 26 |',
-    '| Complete | 23 |',
-    '| Remaining | 3 |',
+    '| Complete | 24 |',
+    '| Remaining | 2 |',
     '| 07 | complete | Consequence shared-store inventory |',
     '| 08 | complete | Consequence shared-store PR slice 1 |',
     '| 09 | complete | Consequence shared-store PR slice 2 |',
@@ -88,7 +88,7 @@ function testMasterPlanRecordsNewWorkSequence(): void {
     '| 21 | complete | Review-by-exception inbox |',
     '| 22 | complete | Approval/dismiss feedback loop |',
     '| 23 | complete | Enterprise integration recipes |',
-    '| 24 | planned | General Crypto Transaction Gate |',
+    '| 24 | complete | General Crypto Transaction Gate |',
     '| 25 | planned | Spend, procurement, data, IAM, health, and insurance recipes |',
     '| 26 | planned | Pilot readiness packet |',
   ]) {
@@ -106,7 +106,8 @@ function testMasterPlanRecordsGeneralCryptoScope(): void {
   for (const expected of [
     '`native.transfer`, `erc20.approve`, `permit.sign`, `swap.execute`, `bridge.transfer`, `safe.tx.propose`, `userop.submit`, `session_key.grant`, `x402.pay`',
     'unlimited approval, malicious spender, permit/domain mismatch',
-    'EVM transaction decoder, ERC-20 transfer/approve/permit, native transfer, Safe transaction, simulation binding',
+    '`attestor.general-crypto-transaction-gate.v1`',
+    'EIP-7702 delegated authorization',
     'Do not make Attestor a wallet, custodian, exchange, chain analytics provider, or transaction broadcaster.',
   ]) {
     includes(plan, expected, `Unified plan: crypto scope records ${expected}`);
@@ -168,7 +169,7 @@ function testMasterPlanRecordsResearchAnchorsAndNonClaims(): void {
     'Unlock tracker: links the unified master plan',
   );
   includes(plan, 'automatic policy activation', 'Unified plan: automatic activation non-claim is explicit');
-  includes(plan, 'completion of steps 24-26', 'Unified plan: remaining step non-claim is explicit');
+  includes(plan, 'completion of steps 25-26', 'Unified plan: remaining step non-claim is explicit');
   assert.equal(
     packageJson.scripts['test:unified-shadow-to-policy-master-plan'],
     'tsx tests/unified-shadow-to-policy-master-plan.test.ts',

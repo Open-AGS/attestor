@@ -663,6 +663,26 @@ assert.equal(
   'function',
 );
 assert.equal(
+  admission.CONFLICT_ABSTENTION_GATE_VERSION,
+  'attestor.conflict-abstention-gate.v1',
+);
+assert.equal(
+  admission.conflictAbstentionGateDescriptor().uncertaintyCannotAdmit,
+  true,
+);
+assert.equal(
+  admission.conflictAbstentionGateDescriptor().canAdmit,
+  false,
+);
+assert.equal(
+  admission.conflictAbstentionGateDescriptor().grantsAuthority,
+  false,
+);
+assert.equal(
+  typeof admission.evaluateConflictAbstentionGate,
+  'function',
+);
+assert.equal(
   admission.financePipelineAdmissionDescriptor().route,
   '/api/v1/pipeline/run',
 );

@@ -354,7 +354,7 @@ Shadow-to-Policy master plan.
 | 03 | complete | LayerOpinion schema | `src/consequence-admission/layer-opinion-schema.ts`, [LayerOpinion Schema](layer-opinion-schema.md), `tests/layer-opinion-schema.test.ts`, package script, advisory-only positions, uncertainty, source-dependence, abstention, belief mass, and no-loosening invariants. | Do not let advisory output grant authority. |
 | 04 | complete | Modulator authority tier | `src/consequence-admission/modulator-authority-tier.ts`, [Modulator Authority Tier](modulator-authority-tier.md), `tests/modulator-authority-tier.test.ts`, package script, context-only dimensions for reversibility, blast radius, tenant maturity, coverage, and freshness, and hard-floor preservation invariants. | Do not let context modulators override hard denies. |
 | 05 | complete | Relationship-aware monotone fusion | `src/consequence-admission/relationship-aware-monotone-fusion.ts`, [Relationship-Aware Monotone Fusion](relationship-aware-monotone-fusion.md), `tests/relationship-aware-monotone-fusion.test.ts`, package script, duplicate discount, confirmation boost, hard-floor preservation, monotone risk aggregation, and property-style no-loosening tests. | Do not average away strong hazards or count duplicate evidence twice. |
-| 06 | planned | Conflict and abstention gate | Review/block outcomes for high conflict, low coverage, high uncertainty, and weighted abstention. | Do not turn uncertainty into admit. |
+| 06 | complete | Conflict and abstention gate | `src/consequence-admission/conflict-abstention-gate.ts`, [Conflict And Abstention Gate](conflict-abstention-gate.md), `tests/conflict-abstention-gate.test.ts`, package script, review/block-pressure/abstain-hold outcomes for high conflict, low coverage, high uncertainty, and weighted abstention, and no-admit invariant tests. | Do not turn uncertainty into admit. |
 | 07 | planned | Human comprehension gate | Reason-line limit, active question cap, escalation and review-load visibility tests. | Do not create a noisy dashboard that shifts work to humans. |
 | 08 | planned | Signed assurance packet | Digest-bound packet tied to tamper-evident history, policy, evidence, signals, relationships, and replay refs. | Do not store raw payloads or claim external immutability. |
 | 09 | planned | Outcome and incident feedback contract | Outcome source classes, incident path states, bounded mutation rules, replay regression triggers. | Do not retrain, activate, or mutate policy directly from feedback. |
@@ -519,11 +519,44 @@ new production dependency
 calibrated production scoring claim
 ```
 
-The next implementation PR should be the Conflict and abstention gate:
+The sixth implementation slice is complete as the Conflict and abstention gate:
 
 ```text
 src/consequence-admission/conflict-abstention-gate.ts
 tests/conflict-abstention-gate.test.ts
+docs/02-architecture/conflict-abstention-gate.md
+```
+
+Allowed in the completed Step 06 slice:
+
+```text
+pure deterministic gate function
+descriptors
+conflict pressure tests
+weighted abstention tests
+coverage and uncertainty tests
+fusion block-pressure preservation tests
+no-admit invariant tests
+package export wiring
+```
+
+Not allowed in Step 06:
+
+```text
+admit decisions
+policy activation
+runtime enforcement
+learning
+downstream calls
+new production dependency
+calibrated probability or conformal validity claim
+```
+
+The next implementation PR should be the Human comprehension gate:
+
+```text
+src/consequence-admission/human-comprehension-gate.ts
+tests/human-comprehension-gate.test.ts
 ```
 
 ## Primary Source Anchors

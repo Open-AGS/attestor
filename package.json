@@ -96,6 +96,7 @@
     "test:layer-opinion-schema": "tsx tests/layer-opinion-schema.test.ts",
     "test:modulator-authority-tier": "tsx tests/modulator-authority-tier.test.ts",
     "test:relationship-aware-monotone-fusion": "tsx tests/relationship-aware-monotone-fusion.test.ts",
+    "test:conflict-abstention-gate": "tsx tests/conflict-abstention-gate.test.ts",
     "test:target-system-compatibility-matrix": "tsx tests/target-system-compatibility-matrix.test.ts",
     "test:shadow-event-canonical-schema": "tsx tests/shadow-event-canonical-schema.test.ts",
     "test:action-surface-graph": "tsx tests/action-surface-graph.test.ts",

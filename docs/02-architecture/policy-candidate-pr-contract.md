@@ -199,7 +199,7 @@ This contract does not claim:
 - downstream receipt correctness
 - compliance certification
 - automatic policy activation
-- completion of Step 20 Policy Twin backtest
+- completion of Step 21 Review-by-exception inbox
 - completion of replay, backtest, review-inbox, or feedback-loop work
 
 It is the review-only candidate diff layer that lets the next step ask the

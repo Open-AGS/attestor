@@ -30,6 +30,10 @@ toward normal usage. A candidate that only passes normal historical traffic can
 still admit the exact case Attestor must catch. Step 19 therefore creates
 synthetic counterexamples before Step 20 runs backtests.
 
+The next repository-side layer is [Policy Twin Backtest](policy-twin-backtest.md):
+it consumes these fixtures, records historical decision deltas, and blocks
+promotion when any `mustNotAdmit` fixture is admitted.
+
 ## Runtime Contract
 
 The machine-readable contract lives in
@@ -218,7 +222,7 @@ This generator does not claim:
 - crypto custody, wallet, exchange, or transaction broadcasting capability
 - compliance certification
 - automatic policy activation
-- completion of Step 20 Policy Twin backtest
+- completion of Step 21 Review-by-exception inbox
 
-It is the negative-fixture layer that makes Step 20 backtesting harder to fool
-than happy-path replay.
+It is the negative-fixture layer that makes Policy Twin backtesting harder to
+fool than happy-path replay.

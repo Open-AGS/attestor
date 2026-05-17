@@ -97,8 +97,8 @@ where Step 13 records the target-system compatibility matrix, Step 14 records
 the canonical shadow event schema, Step 15 records the action surface graph,
 Step 16 records the evidence state model, Step 17 records the Policy Candidate
 PR contract, Step 18 records the Active Question Engine, Step 19 records the
-Counterexample replay generator, and Step 20 is the next planned Policy Twin
-backtest.
+Counterexample replay generator, Step 20 records the Policy Twin backtest, and
+Step 21 is the next planned Review-by-exception inbox.
 
 Step 12 does not remove the live-production boundary. It only gives operators
 one packet that refuses to issue `go` unless the named target supplies the

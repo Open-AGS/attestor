@@ -97,6 +97,7 @@
     "test:policy-candidate-pr-contract": "tsx tests/policy-candidate-pr-contract.test.ts",
     "test:active-question-engine": "tsx tests/active-question-engine.test.ts",
     "test:counterexample-replay-generator": "tsx tests/counterexample-replay-generator.test.ts",
+    "test:policy-twin-backtest": "tsx tests/policy-twin-backtest.test.ts",
     "test:external-kms-hsm-provider-decision": "tsx tests/external-kms-hsm-provider-decision.test.ts",
     "test:external-signer-contract-closure": "tsx tests/external-signer-contract-closure.test.ts",
     "test:gcp-kms-release-signer-adapter": "tsx tests/gcp-kms-release-signer-adapter.test.ts",

@@ -42,6 +42,8 @@ The ranked human-question layer lives in [Active Question Engine](active-questio
 
 The negative replay-fixture layer lives in [Counterexample replay generator](counterexample-replay-generator.md). Use it when candidate PR material and active questions need synthetic tenant-mismatch, stale-approval, missing-evidence, bypass, replay, prompt/tool poisoning, unsafe-approval, and crypto-abuse cases before backtesting.
 
+The digest-bound backtest layer lives in [Policy Twin backtest](policy-twin-backtest.md). Use it when candidate PR material and counterexample fixtures need historical admit/review/hold/block projection, false-admit checks, missed-evidence accounting, and review-load impact before the review inbox.
+
 The append-only proof trail lives in [Tamper-evident history](tamper-evident-history.md). Use it when digest-first evidence needs a linear history root that can detect modified, deleted, or reordered entries before a reviewer trusts an export.
 
 The operator-facing risk summary lives in [Business risk dashboard](business-risk-dashboard.md). Use it when a customer needs to see action volume, review load, blocked actions, policy gaps, consequence-domain risk, downstream proof coverage, and operator-supplied impact without turning raw logs into the product.

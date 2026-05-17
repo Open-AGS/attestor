@@ -422,12 +422,12 @@ function testDescriptorDocsAndTrackersStayAligned(): void {
   }
 
   for (const expected of [
-    '| Complete | 19 |',
-    '| Remaining | 7 |',
+    '| Complete | 20 |',
+    '| Remaining | 6 |',
     '| 18 | complete | Active Question Engine |',
     '| 19 | complete | Counterexample replay generator |',
-    '| 20 | planned | Policy Twin backtest |',
-    'completion of steps 20-26',
+    '| 20 | complete | Policy Twin backtest |',
+    'completion of steps 21-26',
   ]) {
     includes(masterPlan, expected, `Counterexample replay generator: master plan records ${expected}`);
   }

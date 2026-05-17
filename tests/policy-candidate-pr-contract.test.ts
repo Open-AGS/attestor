@@ -348,13 +348,13 @@ function testDescriptorDocsAndTrackersStayAligned(): void {
   }
 
   for (const expected of [
-    '| Complete | 20 |',
-    '| Remaining | 6 |',
+    '| Complete | 21 |',
+    '| Remaining | 5 |',
     '| 16 | complete | Evidence state model |',
     '| 17 | complete | Policy Candidate PR contract |',
     '| 18 | complete | Active Question Engine |',
     '| 19 | complete | Counterexample replay generator |',
-    'completion of steps 21-26',
+    'completion of steps 22-26',
   ]) {
     includes(masterPlan, expected, `Policy candidate PR: master plan records ${expected}`);
   }

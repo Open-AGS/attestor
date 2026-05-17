@@ -212,7 +212,7 @@ This generator does not claim:
 
 - policy correctness
 - replay or backtest completion
-- review-by-exception inbox completion
+- approval/dismiss feedback loop completion
 - approval automation
 - production policy-store readiness
 - live target-system connector coverage
@@ -222,7 +222,7 @@ This generator does not claim:
 - crypto custody, wallet, exchange, or transaction broadcasting capability
 - compliance certification
 - automatic policy activation
-- completion of Step 21 Review-by-exception inbox
+- completion of Step 22 Approval/dismiss feedback loop
 
 It is the negative-fixture layer that makes Policy Twin backtesting harder to
 fool than happy-path replay.

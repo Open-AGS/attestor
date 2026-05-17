@@ -2317,6 +2317,7 @@ export * from './policy-candidate-pr-contract.js';
 export * from './active-question-engine.js';
 export * from './counterexample-replay-generator.js';
 export * from './policy-twin-backtest.js';
+export * from './review-by-exception-inbox.js';
 export * from './action-surface-profiler.js';
 export * from './action-surface-declaration-ingestors.js';
 export * from './action-surface-manifest-intake.js';

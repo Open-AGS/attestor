@@ -245,7 +245,7 @@ This graph does not claim:
 - downstream receipt correctness
 - compliance certification
 - automatic policy activation
-- completion of Step 21 Review-by-exception inbox
+- completion of Step 22 Approval/dismiss feedback loop
 
 It is the tenant-bound action map consumed by the evidence-state, candidate,
 replay, and review work.

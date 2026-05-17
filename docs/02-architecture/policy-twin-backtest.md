@@ -174,6 +174,9 @@ Any no-go reason blocks promotion from the backtest layer. The next
 review-by-exception layer can group these into ready-to-approve, needs-answer,
 blocked-by-evidence, failed-replay, and monitoring-only queues.
 
+That queue is defined by the [Review-by-Exception Inbox](review-by-exception-inbox.md).
+It consumes this backtest report as review material, not as approval authority.
+
 ## Invariants
 
 Every result and candidate result carries:
@@ -233,7 +236,7 @@ deployment, live replay execution, crypto custody, or compliance readiness.
 This backtest does not claim:
 
 - policy correctness
-- review-by-exception inbox completion
+- approval/dismiss feedback loop completion
 - approval automation
 - production policy-store readiness
 - live target-system connector coverage
@@ -243,7 +246,7 @@ This backtest does not claim:
 - crypto custody, wallet, exchange, or transaction broadcasting capability
 - compliance certification
 - automatic policy activation
-- completion of Step 21 Review-by-exception inbox
+- completion of Step 22 Approval/dismiss feedback loop
 
 It is the digest-bound backtest layer that lets the next step route only the
 exceptions that still need human work.

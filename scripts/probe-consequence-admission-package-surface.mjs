@@ -1007,6 +1007,42 @@ assert.equal(
   'function',
 );
 assert.equal(
+  admission.BASELINE_COHORT_CONTRACT_VERSION,
+  'attestor.baseline-cohort-contract.v1',
+);
+assert.equal(
+  admission.baselineCohortContractDescriptor().canonicalShadowEventSchemaVersion,
+  admission.CANONICAL_SHADOW_EVENT_SCHEMA_VERSION,
+);
+assert.equal(
+  admission.baselineCohortContractDescriptor().shadowRuntimePipelineVersion,
+  admission.SHADOW_RUNTIME_PIPELINE_VERSION,
+);
+assert.equal(
+  admission.baselineCohortContractDescriptor().excludesBlockedTraffic,
+  true,
+);
+assert.equal(
+  admission.baselineCohortContractDescriptor().noAutoPromotion,
+  true,
+);
+assert.equal(
+  admission.baselineCohortContractDescriptor().learnsFromTraffic,
+  false,
+);
+assert.equal(
+  typeof admission.createBaselineCohortSourceFromShadowEvent,
+  'function',
+);
+assert.equal(
+  typeof admission.createBaselineCohortCandidate,
+  'function',
+);
+assert.equal(
+  typeof admission.evaluateBaselineCohortPromotion,
+  'function',
+);
+assert.equal(
   admission.financePipelineAdmissionDescriptor().route,
   '/api/v1/pipeline/run',
 );

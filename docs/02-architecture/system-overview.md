@@ -225,6 +225,7 @@ So the honest architectural statement is:
 Active priority:
 
 - follow the [Attestor unlock source of truth](attestor-unlock-source-of-truth.md) for the next signer, customer PEP, consequence shared-store, LLM provider, and production rehearsal decisions
+- use the [target-system compatibility matrix](target-system-compatibility-matrix.md) before adding enterprise or crypto recipes so target integrations stay one-engine adapters instead of vendor-specific products
 - use the [LLM provider runtime decision](llm-provider-runtime-decision.md) before starting the Anthropic adapter so provider diversity does not outrun proof minimization, rate-limit handling, timeout/budget controls, or the consequence enforcement chain
 - move through the [Production rehearsal buildout](production-rehearsal-buildout.md) so `production-shared` becomes real-environment evidence, not just repo-embedded PostgreSQL proof
 - keep the completed [Production shared authority plane buildout](production-shared-authority-plane-buildout.md) aligned with production promotion gates so `production-shared` remains a tested shared authority plane, not a loose marketing claim

@@ -329,9 +329,10 @@ function testDocsAndScriptsExposeStep12(): void {
   includes(tracker, '| Complete in this tracker | 12 |', 'Unlock tracker: Step 12 completion count is updated');
   includes(tracker, '| Remaining after this tracker | 0 |', 'Unlock tracker: no remaining tracker steps');
   includes(tracker, '| 12 | complete | Production rehearsal go/no-go packet |', 'Unlock tracker: Step 12 is complete');
-  includes(masterPlan, '| Complete | 12 |', 'Unified plan: Step 12 completion count is updated');
-  includes(masterPlan, '| Remaining | 14 |', 'Unified plan: remaining count moves to 14');
+  includes(masterPlan, '| Complete | 13 |', 'Unified plan: Step 13 completion count is updated');
+  includes(masterPlan, '| Remaining | 13 |', 'Unified plan: remaining count moves to 13');
   includes(masterPlan, '| 12 | complete | Production rehearsal go/no-go packet |', 'Unified plan: Step 12 is complete');
+  includes(masterPlan, '| 13 | complete | Target-system compatibility matrix |', 'Unified plan: Step 13 is complete');
   includes(ledger, '### 54. Production Rehearsal Go/No-Go Packet', 'Research ledger: Step 12 entry is present');
 }
 

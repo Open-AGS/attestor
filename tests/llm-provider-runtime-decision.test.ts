@@ -136,12 +136,13 @@ function testTrackersAndIndexesAreUpdated(): void {
   }
 
   for (const expected of [
-    '| Complete | 12 |',
-    '| Remaining | 14 |',
+    '| Complete | 13 |',
+    '| Remaining | 13 |',
     '| 10 | complete | LLM provider runtime decision |',
     '| 11 | complete | Anthropic runtime PR |',
     '| 12 | complete | Production rehearsal go/no-go packet |',
-    'completion of steps 13-26',
+    '| 13 | complete | Target-system compatibility matrix |',
+    'completion of steps 14-26',
   ]) {
     includes(plan, expected, `Runtime decision: unified plan records ${expected}`);
   }

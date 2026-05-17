@@ -315,6 +315,36 @@ function testLedgerIndexesAuditRemediationClosure(): void {
   );
   includes(
     content,
+    '### 55. Target-System Compatibility Matrix',
+    'Research provenance ledger: target-system compatibility matrix entry is present',
+  );
+  includes(
+    content,
+    'docs/02-architecture/target-system-compatibility-matrix.md',
+    'Research provenance ledger: target-system compatibility matrix doc evidence is indexed',
+  );
+  includes(
+    content,
+    'tests/target-system-compatibility-matrix.test.ts',
+    'Research provenance ledger: target-system compatibility matrix test evidence is indexed',
+  );
+  includes(
+    content,
+    'Salesforce Agentforce actions, Microsoft Copilot Studio tools, ServiceNow IntegrationHub',
+    'Research provenance ledger: target-system action source anchors are recorded',
+  );
+  includes(
+    content,
+    'Fireblocks transaction authorization policies, BitGo policy rules, Coinbase CDP Policy Engine',
+    'Research provenance ledger: crypto target-system source anchors are recorded',
+  );
+  includes(
+    content,
+    'not native connector coverage',
+    'Research provenance ledger: target-system native connector non-claim is explicit',
+  );
+  includes(
+    content,
     'does not prove Anthropic, Vertex AI, or Azure OpenAI calls',
     'Research provenance ledger: LLM provider live-client non-claim is explicit',
   );

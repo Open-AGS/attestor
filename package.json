@@ -90,6 +90,7 @@
     "test:research-provenance-ledger": "tsx tests/research-provenance-ledger.test.ts",
     "test:attestor-unlock-source-of-truth": "tsx tests/attestor-unlock-source-of-truth.test.ts",
     "test:unified-shadow-to-policy-master-plan": "tsx tests/unified-shadow-to-policy-master-plan.test.ts",
+    "test:target-system-compatibility-matrix": "tsx tests/target-system-compatibility-matrix.test.ts",
     "test:external-kms-hsm-provider-decision": "tsx tests/external-kms-hsm-provider-decision.test.ts",
     "test:external-signer-contract-closure": "tsx tests/external-signer-contract-closure.test.ts",
     "test:gcp-kms-release-signer-adapter": "tsx tests/gcp-kms-release-signer-adapter.test.ts",

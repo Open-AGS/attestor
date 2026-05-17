@@ -3,6 +3,10 @@
 Use this when you understand the Attestor model but still ask: where do I put it in my own system?
 
 The answer is simple: put Attestor at the last customer-owned gate before a real side effect.
+For source-backed target-system placement across Salesforce, Microsoft,
+ServiceNow, Workato, MuleSoft, n8n, Camunda, data/IAM, spend, health, and
+crypto systems, use the
+[target-system compatibility matrix](../02-architecture/target-system-compatibility-matrix.md).
 
 ```text
 prepare proposed consequence

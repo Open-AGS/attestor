@@ -248,8 +248,8 @@ function testEvidencePathsAndDocsAreWired(): void {
     'Unlock tracker: step 09 is complete',
   );
   ok(
-    masterPlan.includes('| Complete | 12 |'),
-    'Unified master plan: completion count includes the production go/no-go packet',
+    masterPlan.includes('| Complete | 13 |'),
+    'Unified master plan: completion count includes the target-system compatibility matrix',
   );
   ok(
     masterPlan.includes('| 07 | complete | Consequence shared-store inventory |'),

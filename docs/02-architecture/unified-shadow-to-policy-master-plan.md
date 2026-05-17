@@ -88,9 +88,9 @@ operations.
 | Metric | Value |
 |---|---|
 | Total master-plan rounds | 26 |
-| Complete | 12 |
-| Remaining | 14 |
-| Current state | Steps 01-06 are complete on `origin/master`; Step 07 records the shared-store inventory; Step 08 adds the PostgreSQL-backed atomic retry/replay store slice; Step 09 adds the PostgreSQL-backed shared source-history and outbox primitive. Step 10 selects Anthropic Claude Messages API as the first non-OpenAI runtime adapter target. Step 11 implements the narrow Anthropic Messages API runtime slice with digest-only evidence, strict tool-schema tests, bounded runtime policy, and an opt-in external-live smoke probe while keeping live failover and production readiness unclaimed. Step 12 adds the production go/no-go packet, preserving the target-bound production boundary while closing the first unlock tracker. Steps 13-26 extend the plan into a unified Shadow-to-Policy engine and domain adapter recipes. |
+| Complete | 13 |
+| Remaining | 13 |
+| Current state | Steps 01-06 are complete on `origin/master`; Step 07 records the shared-store inventory; Step 08 adds the PostgreSQL-backed atomic retry/replay store slice; Step 09 adds the PostgreSQL-backed shared source-history and outbox primitive. Step 10 selects Anthropic Claude Messages API as the first non-OpenAI runtime adapter target. Step 11 implements the narrow Anthropic Messages API runtime slice with digest-only evidence, strict tool-schema tests, bounded runtime policy, and an opt-in external-live smoke probe while keeping live failover and production readiness unclaimed. Step 12 adds the production go/no-go packet, preserving the target-bound production boundary while closing the first unlock tracker. Step 13 records the [Target-System Compatibility Matrix](target-system-compatibility-matrix.md), keeping Salesforce, Microsoft, ServiceNow, workflow/iPaaS, data/IAM, spend/procurement, health/insurance, and crypto target families as adapters into one engine. Steps 14-26 extend the plan into the canonical shadow event, action graph, policy candidate, review, and recipe sequence. |
 
 ## Master List
 
@@ -108,7 +108,7 @@ operations.
 | 10 | complete | LLM provider runtime decision | Anthropic Claude Messages API selected as the first non-OpenAI runtime adapter target; route compatibility rule, strict tool-schema structured-output path, rate-limit signal mapping, timeout/budget behavior, no-raw-provider-body boundary, tests, registry doc, and research ledger entry recorded. | Do not treat a provider decision as a wired runtime, live failover, or production readiness. |
 | 11 | complete | Anthropic runtime PR | Anthropic Messages API adapter, `claude-sonnet-4-6` model mapping, digest-only runtime evidence, fake-client conformance, timeout/output-budget/rate-limit policy, strict tool-schema route tests, and live smoke probe behind external-live gate. | Do not claim live failover, customer approval, or production LLM runtime readiness from repository-side adapter wiring. |
 | 12 | complete | Production rehearsal go/no-go packet | `render:production-go-no-go-packet`, typed packet tests, deployment docs, tracker/master-plan updates, and research ledger entry. The packet consumes the signed production-promotion candidate plus target signer proof, shared-store boundary, scoped customer PEP proof, scoped provider-route proof, incident/runbook evidence, and digest-only human approval to emit `go` or `no-go`. | Do not call the repo or a rehearsal target production-ready without target proof and a passing target-bound packet. |
-| 13 | planned | Target-system compatibility matrix | Matrix for CRM/support, ITSM/workflow, data/IAM, procurement/spend, health/insurance, and crypto integrations. | Do not optimize for one vendor API as if it were the Attestor model. |
+| 13 | complete | Target-system compatibility matrix | Matrix for CRM/support, ITSM/workflow, data/IAM, procurement/spend, health/insurance, and crypto integrations, with source-backed insertion points, normalized fields, evidence/receipt expectations, readiness classes, and native-connector non-claims in `docs/02-architecture/target-system-compatibility-matrix.md`. | Do not optimize for one vendor API as if it were the Attestor model. |
 | 14 | planned | Shadow event canonical schema | Versioned event envelope for action, tenant, actor, resource, observed/inferred fields, evidence refs, raw-data prohibitions, and receipt refs. | Do not store raw prompts, private payloads, secrets, wallet material, provider bodies, or customer identifiers beyond the minimum digest-safe contract. |
 | 15 | planned | Action surface graph | Tenant-bound graph of observed action types, systems, tools, resources, consequence classes, and route coverage. | Do not infer enforcement readiness from observation alone. |
 | 16 | planned | Evidence state model | `observed`, `inferred`, `missing`, `conflicting`, `stale`, `untrusted`, `approved`, and `enforceable` states. | Do not mix facts with model inference in the same field. |
@@ -128,7 +128,7 @@ operations.
 Build the unified Shadow-to-Policy core next:
 
 ```text
-13 -> 14 -> 15 -> 16 -> 17 -> 18 -> 19 -> 20 -> 21 -> 22
+14 -> 15 -> 16 -> 17 -> 18 -> 19 -> 20 -> 21 -> 22
 ```
 
 Then add domain recipes and pilot packaging:
@@ -143,14 +143,15 @@ shared state would create a polished recommendation surface on weak evidence.
 
 ## Primary Source Anchors
 
-Reviewed on 2026-05-16:
+Reviewed on 2026-05-16 and 2026-05-17:
 
 - Usage-based policy recommendation and no-auto-apply posture: [AWS IAM Access Analyzer policy generation](https://docs.aws.amazon.com/IAM/latest/UserGuide/access-analyzer-policy-generation.html), [Google Cloud role recommendations](https://cloud.google.com/policy-intelligence/docs/role-recommendations-overview).
 - Schema-bound and auditable policy execution: [Cedar policy validation](https://docs.cedarpolicy.com/policies/validation.html), [OPA decision logs](https://www.openpolicyagent.org/docs/management-decision-logs).
 - Human workload minimization patterns: [Microsoft Human-AI Experience Toolkit](https://www.microsoft.com/en-us/haxtoolkit/), [Google People + AI Guidebook](https://pair.withgoogle.com/guidebook/).
-- Workflow/action integration surfaces: [Salesforce Agentforce actions](https://developer.salesforce.com/docs/ai/agentforce/guide/get-started-actions.html), [Microsoft Copilot Studio actions](https://learn.microsoft.com/en-us/microsoft-copilot-studio/advanced-plugin-actions), [ServiceNow IntegrationHub](https://www.servicenow.com/docs/bundle/yokohama-integrate-applications/page/administer/integrationhub/concept/integrationhub.html), [Workato business approvals](https://docs.workato.com/agentic/agent-studio/business-approvals.html).
+- Workflow/action integration surfaces: [Salesforce Agentforce actions](https://developer.salesforce.com/docs/ai/agentforce/guide/get-started-actions.html), [Microsoft Copilot Studio tools](https://learn.microsoft.com/en-us/microsoft-copilot-studio/add-tools-custom-agent), [ServiceNow IntegrationHub](https://www.servicenow.com/docs/r//yokohama/integrate-applications/integration-hub/integrationhub.html), [Workato business approvals](https://docs.workato.com/agentic/agent-studio/business-approvals.html), [MuleSoft Agentforce API actions](https://docs.mulesoft.com/anypoint-code-builder/ai-enabling-api-project-topic-center), [Zapier AI Actions reference](https://docs.zapier.com/platform/reference/ai-actions), and [Zapier AI Actions hub](https://actions.zapier.com/).
 - Agentic orchestration and human-in-the-loop patterns: [Camunda agentic orchestration](https://docs.camunda.io/docs/components/agentic-orchestration/agentic-orchestration-overview/), [n8n human-in-the-loop tools](https://docs.n8n.io/advanced-ai/human-in-the-loop-tools/).
-- Crypto policy, signing, and receipt surfaces: [Fireblocks transaction authorization policy](https://developers.fireblocks.com/docs/set-transaction-authorization-policy), [Coinbase CDP Policy Engine](https://docs.cdp.coinbase.com/wallets/security-and-policies/policy-engine/overview), [Safe Transaction Service API](https://docs.safe.global/core-api/api-safe-transaction-service), [OpenZeppelin Defender transaction proposals](https://docs.openzeppelin.com/defender/module/transaction-proposals).
+- Crypto policy, signing, and receipt surfaces: [Fireblocks transaction authorization policy](https://developers.fireblocks.com/docs/set-transaction-authorization-policy), [BitGo policies overview](https://developers.bitgo.com/guides/policies/overview), [Coinbase CDP Policy Engine](https://docs.cdp.coinbase.com/wallets/security-and-policies/policy-engine/overview), [Safe Transaction Service API](https://docs.safe.global/core-api/api-safe-transaction-service), [OpenZeppelin Defender transaction proposals](https://docs.openzeppelin.com/defender/module/transaction-proposals).
+- Data/IAM/spend/health target-system surfaces: [Snowflake Cortex Agents REST API](https://docs.snowflake.com/en/user-guide/snowflake-cortex/cortex-agents-rest-api), [Databricks AI agent tools](https://docs.databricks.com/en/generative-ai/agent-framework/agent-tool.html), [Okta Workflows connector building blocks](https://help.okta.com/wf/en-us/content/topics/workflows/connector-builder/about-building-blocks.htm), [Microsoft Entra Lifecycle Workflow extensibility](https://learn.microsoft.com/en-us/entra/id-governance/lifecycle-workflow-extensibility), [Coupa approvals API](https://docs.coupa.com/en/developer-documentation/the-coupa-core-api/resources/transactional-resources/approvals-api-approvals), [SAP S/4HANA manage purchase orders](https://help.sap.com/docs/SAP_S4HANA_CLOUD/0e602d466b99490187fcbb30d1dc897c/38cbf557c328be12e10000000a4450e5.html), and [HL7 FHIR Subscriptions](https://hl7.org/fhir/subscriptions.html).
 - General crypto transaction standards and risks: [EIP-712 typed data](https://eips.ethereum.org/EIPS/eip-712), [EIP-2612 permit](https://eips.ethereum.org/EIPS/eip-2612), [ERC-4337 account abstraction](https://eips.ethereum.org/EIPS/eip-4337), [ERC-7715 wallet permissions](https://eips.ethereum.org/EIPS/eip-7715).
 - Production go/no-go evidence and target-readiness discipline: [NIST SP 800-218](https://csrc.nist.gov/pubs/sp/800/218/final), [SLSA requirements](https://slsa.dev/spec/v1.0/requirements), [GitHub artifact attestations](https://docs.github.com/en/actions/how-tos/secure-your-work/use-artifact-attestations/use-artifact-attestations), [Kubernetes production environment](https://kubernetes.io/docs/setup/production-environment/), [PostgreSQL high availability](https://www.postgresql.org/docs/current/high-availability.html), [BullMQ going to production](https://docs.bullmq.io/guide/going-to-production), and [GitHub deployment environments](https://docs.github.com/en/actions/reference/workflows-and-actions/deployments-and-environments).
 
@@ -171,6 +172,6 @@ This plan does not claim:
 - crypto custody, wallet, exchange, or transaction broadcasting capability
 - healthcare, insurance, procurement, or finance compliance certification
 - automatic policy activation
-- completion of steps 13-26
+- completion of steps 14-26
 
 It is the saved master list for the next work sequence.

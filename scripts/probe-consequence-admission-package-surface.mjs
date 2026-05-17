@@ -577,6 +577,30 @@ assert.equal(
   false,
 );
 assert.equal(
+  admission.SIGNAL_RELATIONSHIP_CONTRACT_VERSION,
+  'attestor.signal-relationship-contract.v1',
+);
+assert.equal(
+  admission.signalRelationshipContractDescriptor().categoryBoundSignalKindsRequired,
+  true,
+);
+assert.equal(
+  admission.signalRelationshipContractDescriptor().directedRelationshipKinds.includes(
+    'overrides',
+  ),
+  true,
+);
+assert.equal(
+  admission.signalRelationshipContractDescriptor().unaryRelationshipKinds.includes(
+    'requires_review',
+  ),
+  true,
+);
+assert.equal(
+  admission.signalRelationshipContractDescriptor().grantsAuthority,
+  false,
+);
+assert.equal(
   admission.financePipelineAdmissionDescriptor().route,
   '/api/v1/pipeline/run',
 );

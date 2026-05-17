@@ -60,12 +60,14 @@ function testOverviewRecordsContractShapeAndSequence(): void {
     '`overrides` | directed',
     '`requires_review` | unary',
     '| 01 | complete | Consequence Envelope Contract |',
-    '| 02 | planned | Signal Relationship Contract |',
+    '| 02 | complete | Signal Relationship Contract |',
     '| 05 | planned | Relationship-aware monotone fusion |',
     '| 10 | planned | Assurance measurement plane |',
     'src/consequence-admission/consequence-envelope-contract.ts',
     'tests/consequence-envelope-contract.test.ts',
     'src/consequence-admission/signal-relationship-contract.ts',
+    'tests/signal-relationship-contract.test.ts',
+    'src/consequence-admission/layer-opinion-schema.ts',
   ]) {
     includes(overview, expected, `Overview: records ${expected}`);
   }

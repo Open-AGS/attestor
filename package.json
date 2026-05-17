@@ -94,6 +94,7 @@
     "test:consequence-envelope-contract": "tsx tests/consequence-envelope-contract.test.ts",
     "test:signal-relationship-contract": "tsx tests/signal-relationship-contract.test.ts",
     "test:layer-opinion-schema": "tsx tests/layer-opinion-schema.test.ts",
+    "test:modulator-authority-tier": "tsx tests/modulator-authority-tier.test.ts",
     "test:target-system-compatibility-matrix": "tsx tests/target-system-compatibility-matrix.test.ts",
     "test:shadow-event-canonical-schema": "tsx tests/shadow-event-canonical-schema.test.ts",
     "test:action-surface-graph": "tsx tests/action-surface-graph.test.ts",

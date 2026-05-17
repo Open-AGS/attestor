@@ -623,6 +623,26 @@ assert.equal(
   false,
 );
 assert.equal(
+  admission.MODULATOR_AUTHORITY_TIER_VERSION,
+  'attestor.modulator-authority-tier.v1',
+);
+assert.equal(
+  admission.modulatorAuthorityTierDescriptor().dimensions.includes('freshness'),
+  true,
+);
+assert.equal(
+  admission.modulatorAuthorityTierDescriptor().preservesHardFloor,
+  true,
+);
+assert.equal(
+  admission.modulatorAuthorityTierDescriptor().maySuppressHardDeny,
+  false,
+);
+assert.equal(
+  admission.modulatorAuthorityTierDescriptor().mayMarkSafe,
+  false,
+);
+assert.equal(
   admission.financePipelineAdmissionDescriptor().route,
   '/api/v1/pipeline/run',
 );

@@ -352,7 +352,7 @@ Shadow-to-Policy master plan.
 | 01 | complete | Consequence Envelope Contract | `src/consequence-admission/consequence-envelope-contract.ts`, [Consequence Envelope Contract](consequence-envelope-contract.md), `tests/consequence-envelope-contract.test.ts`, package script, digest-only field rules, required context fields, and no-authority invariants. | Do not run relationship/fusion on untyped action input. |
 | 02 | complete | Signal Relationship Contract | `src/consequence-admission/signal-relationship-contract.ts`, [Signal Relationship Contract](signal-relationship-contract.md), `tests/signal-relationship-contract.test.ts`, package script, category-bound `SignalKind`, directed/symmetric/unary relationship types, monotone interaction rule shape, and no-authority invariants. | Do not use a flat signal enum or directionless relationships. |
 | 03 | complete | LayerOpinion schema | `src/consequence-admission/layer-opinion-schema.ts`, [LayerOpinion Schema](layer-opinion-schema.md), `tests/layer-opinion-schema.test.ts`, package script, advisory-only positions, uncertainty, source-dependence, abstention, belief mass, and no-loosening invariants. | Do not let advisory output grant authority. |
-| 04 | planned | Modulator authority tier | Context modulators for reversibility, blast radius, tenant maturity, coverage, and freshness. | Do not let context modulators override hard denies. |
+| 04 | complete | Modulator authority tier | `src/consequence-admission/modulator-authority-tier.ts`, [Modulator Authority Tier](modulator-authority-tier.md), `tests/modulator-authority-tier.test.ts`, package script, context-only dimensions for reversibility, blast radius, tenant maturity, coverage, and freshness, and hard-floor preservation invariants. | Do not let context modulators override hard denies. |
 | 05 | planned | Relationship-aware monotone fusion | Duplicate discount, confirmation boost, formal override, monotone risk aggregation, property tests. | Do not average away strong hazards or count duplicate evidence twice. |
 | 06 | planned | Conflict and abstention gate | Review/block outcomes for high conflict, low coverage, high uncertainty, and weighted abstention. | Do not turn uncertainty into admit. |
 | 07 | planned | Human comprehension gate | Reason-line limit, active question cap, escalation and review-load visibility tests. | Do not create a noisy dashboard that shifts work to humans. |
@@ -456,11 +456,42 @@ downstream calls
 new production dependency
 ```
 
-The next implementation PR should be the Modulator authority tier:
+The fourth implementation slice is complete as the Modulator authority tier:
 
 ```text
 src/consequence-admission/modulator-authority-tier.ts
 tests/modulator-authority-tier.test.ts
+docs/02-architecture/modulator-authority-tier.md
+```
+
+Allowed in the completed Step 04 slice:
+
+```text
+types only
+descriptors
+context-only dimension tests
+hard-floor preservation tests
+no-loosening invariant tests
+package export wiring
+```
+
+Not allowed in Step 04:
+
+```text
+runtime behavior
+fusion math
+learning
+policy activation
+measurement feedback
+downstream calls
+new production dependency
+```
+
+The next implementation PR should be relationship-aware monotone fusion:
+
+```text
+src/consequence-admission/relationship-aware-monotone-fusion.ts
+tests/relationship-aware-monotone-fusion.test.ts
 ```
 
 ## Primary Source Anchors

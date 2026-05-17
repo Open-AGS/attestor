@@ -710,7 +710,7 @@ creating live enforcement.
 | W02 | complete | Signal Extractor Contract | `src/consequence-admission/signal-extractor-contract.ts`, [Signal Extractor Contract](signal-extractor-contract.md), `tests/signal-extractor-contract.test.ts`, package script, package-surface probe, category-bound extractor declarations, digest-only signal batches, source-plane preservation, authority-mode preservation, and no-authority invariants. | Do not let an extractor upgrade advisory evidence into hard authority. |
 | W03 | complete | Existing Checks To Signal Adapter Registry | `src/consequence-admission/signal-adapter-registry.ts`, [Signal Adapter Registry](signal-adapter-registry.md), `tests/signal-adapter-registry.test.ts`, package script, package-surface probe, complete coverage for the six `CONSEQUENCE_ADMISSION_CHECK_KINDS`, pass-outcome exclusion, duplicate-evidence dedupe keys, and no-authority invariants. | Do not double-count duplicate evidence. |
 | W04 | complete | Relationship Detector Contract | `src/consequence-admission/relationship-detector-contract.ts`, [Relationship Detector Contract](relationship-detector-contract.md), `tests/relationship-detector-contract.test.ts`, package script, package-surface probe, deterministic rule-based relationship detection, same-envelope boundary, duplicate/conflict/directed/unary relationship output, interaction-rule output, and no-authority invariants. | Do not add learned relationship inference, correlation learning, fusion, packet signing, live enforcement, or authority upgrade in v1. |
-| W05 | planned | Shadow Runtime Pipeline Dry Run | Shadow-only event -> envelope -> signals -> relationships -> fusion -> gate -> packet path. | Do not emit live enforcement decisions. |
+| W05 | complete | Shadow Runtime Pipeline Dry Run | `src/consequence-admission/shadow-runtime-pipeline.ts`, [Shadow Runtime Pipeline](shadow-runtime-pipeline.md), `tests/shadow-runtime-pipeline.test.ts`, package script, package-surface probe, shadow-only event -> envelope -> signals -> relationships -> fusion -> conflict gate -> human gate -> unsigned packet path, bounded review output, and no-authority invariants. | Do not emit live enforcement decisions, sign production packets, activate policy, call downstream systems, learn, aggregate cross-tenant data, or claim production readiness. |
 | W06 | planned | Decision Trace Logger | Digest-bound decision trace suitable for offline replay/spec checks. | Do not store raw payloads or write production audit claims. |
 | W07 | planned | TLA+ Admission State Machine Skeleton | Manual design-first spec and initial invariants. | Do not claim formal verification of the TypeScript implementation. |
 | W08 | planned | Alloy Tenant Isolation Model | Small-scope non-interference relation model. | Do not mix behavior/state-machine proof with tenant relation proof. |
@@ -856,6 +856,47 @@ live enforcement
 policy activation
 authority upgrade
 cross-envelope relationship detection
+new production dependency
+runtime deployment readiness claim
+```
+
+The fifth wiring slice is complete as the Shadow Runtime Pipeline Dry Run:
+
+```text
+src/consequence-admission/shadow-runtime-pipeline.ts
+tests/shadow-runtime-pipeline.test.ts
+docs/02-architecture/shadow-runtime-pipeline.md
+```
+
+Allowed in the completed W05 slice:
+
+```text
+pure deterministic shadow-only runner
+canonical shadow event projection
+built-in adapter registry use
+typed signal extraction batches
+rule-based relationship detection
+relationship-aware monotone fusion
+conflict and abstention gate evaluation
+human comprehension gate evaluation
+unsigned assurance packet creation
+bounded reason lines and active questions
+no-authority invariant tests
+package export wiring
+```
+
+Not allowed in W05:
+
+```text
+live enforcement
+policy activation
+downstream execution
+packet signing
+TLA+ validation claim
+Alloy validation claim
+learning
+baseline extraction
+cross-tenant aggregation
 new production dependency
 runtime deployment readiness claim
 ```

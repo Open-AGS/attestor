@@ -939,6 +939,38 @@ assert.equal(
   'function',
 );
 assert.equal(
+  admission.SHADOW_RUNTIME_PIPELINE_VERSION,
+  'attestor.shadow-runtime-pipeline.v1',
+);
+assert.equal(
+  admission.shadowRuntimePipelineDescriptor().executionMode,
+  'shadow-only',
+);
+assert.equal(
+  admission.shadowRuntimePipelineDescriptor().relationshipEvaluationBeforeFusion,
+  true,
+);
+assert.equal(
+  admission.shadowRuntimePipelineDescriptor().unsignedPacketOnly,
+  true,
+);
+assert.equal(
+  admission.shadowRuntimePipelineDescriptor().canAdmit,
+  false,
+);
+assert.equal(
+  admission.shadowRuntimePipelineDescriptor().activatesEnforcement,
+  false,
+);
+assert.equal(
+  admission.shadowRuntimePipelineDescriptor().learnsFromTraffic,
+  false,
+);
+assert.equal(
+  typeof admission.runShadowRuntimePipelineDryRun,
+  'function',
+);
+assert.equal(
   admission.financePipelineAdmissionDescriptor().route,
   '/api/v1/pipeline/run',
 );

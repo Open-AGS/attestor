@@ -134,8 +134,11 @@ rawMaterialPolicy
 
 Step 15 defines the [action surface graph](action-surface-graph.md) that
 clusters `targetSystem`, `actionName`, `resourceRefDigest`, `consequenceClass`,
-route coverage, and missing proof links across these families. Step 23-25
-should become recipes, not one-off engines.
+route coverage, and missing proof links across these families. Step 16 defines
+the [evidence state model](evidence-state-model.md) that labels those links as
+observed, inferred, missing, conflicting, stale, untrusted, approved, or
+enforceable before candidate generation. Step 23-25 should become recipes, not
+one-off engines.
 
 ## Primary Research Anchors
 

@@ -105,9 +105,9 @@ Examples:
 | Snowflake export | account/database/schema digest, action name, data class | data-movement class |
 
 Do not place model guesses, policy recommendations, or risk labels in
-`observed`. Step 16 will add the richer evidence state vocabulary such as
-`observed`, `inferred`, `missing`, `conflicting`, `stale`, `untrusted`,
-`approved`, and `enforceable`.
+`observed`. The [Evidence State Model](evidence-state-model.md) adds the richer
+state vocabulary: `observed`, `inferred`, `missing`, `conflicting`, `stale`,
+`untrusted`, `approved`, and `enforceable`.
 
 ## Source Kinds
 
@@ -229,7 +229,7 @@ This schema does not claim:
 - automatic policy activation
 - raw-payload retention safety
 - live downstream receipt reconciliation
-- completion of Step 16 evidence state model
+- completion of Step 17 Policy Candidate PR contract
 
 It is the canonical event input for graph, evidence, candidate, replay, and
 review-by-exception work.

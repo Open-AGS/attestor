@@ -136,15 +136,16 @@ function testTrackersAndIndexesAreUpdated(): void {
   }
 
   for (const expected of [
-    '| Complete | 15 |',
-    '| Remaining | 11 |',
+    '| Complete | 16 |',
+    '| Remaining | 10 |',
     '| 10 | complete | LLM provider runtime decision |',
     '| 11 | complete | Anthropic runtime PR |',
     '| 12 | complete | Production rehearsal go/no-go packet |',
     '| 13 | complete | Target-system compatibility matrix |',
     '| 14 | complete | Shadow event canonical schema |',
     '| 15 | complete | Action surface graph |',
-    'completion of steps 16-26',
+    '| 16 | complete | Evidence state model |',
+    'completion of steps 17-26',
   ]) {
     includes(plan, expected, `Runtime decision: unified plan records ${expected}`);
   }

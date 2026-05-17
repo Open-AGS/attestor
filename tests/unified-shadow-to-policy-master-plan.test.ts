@@ -56,8 +56,8 @@ function testMasterPlanRecordsCountsAndLegacySteps(): void {
 
   for (const expected of [
     '| Total master-plan rounds | 26 |',
-    '| Complete | 15 |',
-    '| Remaining | 11 |',
+    '| Complete | 16 |',
+    '| Remaining | 10 |',
     '| 07 | complete | Consequence shared-store inventory |',
     '| 08 | complete | Consequence shared-store PR slice 1 |',
     '| 09 | complete | Consequence shared-store PR slice 2 |',
@@ -67,6 +67,7 @@ function testMasterPlanRecordsCountsAndLegacySteps(): void {
     '| 13 | complete | Target-system compatibility matrix |',
     '| 14 | complete | Shadow event canonical schema |',
     '| 15 | complete | Action surface graph |',
+    '| 16 | complete | Evidence state model |',
   ]) {
     includes(plan, expected, `Unified plan: records ${expected}`);
   }
@@ -80,7 +81,6 @@ function testMasterPlanRecordsNewWorkSequence(): void {
   );
 
   for (const expected of [
-    '| 16 | planned | Evidence state model |',
     '| 17 | planned | Policy Candidate PR contract |',
     '| 18 | planned | Active Question Engine |',
     '| 19 | planned | Counterexample replay generator |',
@@ -165,7 +165,7 @@ function testMasterPlanRecordsResearchAnchorsAndNonClaims(): void {
     'Unlock tracker: links the unified master plan',
   );
   includes(plan, 'automatic policy activation', 'Unified plan: automatic activation non-claim is explicit');
-  includes(plan, 'completion of steps 16-26', 'Unified plan: remaining step non-claim is explicit');
+  includes(plan, 'completion of steps 17-26', 'Unified plan: remaining step non-claim is explicit');
   assert.equal(
     packageJson.scripts['test:unified-shadow-to-policy-master-plan'],
     'tsx tests/unified-shadow-to-policy-master-plan.test.ts',

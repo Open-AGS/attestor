@@ -192,7 +192,7 @@ log stream or a blank policy editor.
 The existing [Action Surface Profiler](action-surface-profiler.md) groups
 shadow events and declared API/tool/workflow metadata into onboarding profiles.
 The graph is the canonical-event-native layer that sits after the Step 14
-schema and before Step 16 evidence state:
+schema and before the [Evidence State Model](evidence-state-model.md):
 
 ```text
 OpenAPI / AsyncAPI / MCP / workflow declarations
@@ -245,7 +245,7 @@ This graph does not claim:
 - downstream receipt correctness
 - compliance certification
 - automatic policy activation
-- completion of Step 16 evidence state model
+- completion of Step 17 Policy Candidate PR contract
 
-It is the tenant-bound action map for the next evidence-state, candidate,
+It is the tenant-bound action map consumed by the evidence-state, candidate,
 replay, and review work.

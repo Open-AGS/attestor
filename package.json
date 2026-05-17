@@ -93,6 +93,7 @@
     "test:target-system-compatibility-matrix": "tsx tests/target-system-compatibility-matrix.test.ts",
     "test:shadow-event-canonical-schema": "tsx tests/shadow-event-canonical-schema.test.ts",
     "test:action-surface-graph": "tsx tests/action-surface-graph.test.ts",
+    "test:evidence-state-model": "tsx tests/evidence-state-model.test.ts",
     "test:external-kms-hsm-provider-decision": "tsx tests/external-kms-hsm-provider-decision.test.ts",
     "test:external-signer-contract-closure": "tsx tests/external-signer-contract-closure.test.ts",
     "test:gcp-kms-release-signer-adapter": "tsx tests/gcp-kms-release-signer-adapter.test.ts",

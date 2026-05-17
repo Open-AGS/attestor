@@ -2312,6 +2312,7 @@ export * from './money-movement-shadow.js';
 export * from './shadow-summary.js';
 export * from './action-risk-inventory.js';
 export * from './action-surface-graph.js';
+export * from './evidence-state-model.js';
 export * from './action-surface-profiler.js';
 export * from './action-surface-declaration-ingestors.js';
 export * from './action-surface-manifest-intake.js';

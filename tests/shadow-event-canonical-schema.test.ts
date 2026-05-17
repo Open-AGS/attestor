@@ -228,17 +228,19 @@ function testDescriptorAndDocsStayAligned(): void {
     'raw wallet material',
     'raw customer identifiers',
     'Action Surface Graph',
+    '[Evidence State Model](evidence-state-model.md)',
   ]) {
     includes(doc, expected, `Canonical shadow event doc: records ${expected}`);
   }
 
   for (const expected of [
-    '| Complete | 15 |',
-    '| Remaining | 11 |',
+    '| Complete | 16 |',
+    '| Remaining | 10 |',
     '| 14 | complete | Shadow event canonical schema |',
     '| 15 | complete | Action surface graph |',
-    '| 16 | planned | Evidence state model |',
-    'completion of steps 16-26',
+    '| 16 | complete | Evidence state model |',
+    '| 17 | planned | Policy Candidate PR contract |',
+    'completion of steps 17-26',
   ]) {
     includes(masterPlan, expected, `Canonical shadow event: master plan records ${expected}`);
   }

@@ -405,6 +405,31 @@ function testLedgerIndexesAuditRemediationClosure(): void {
   );
   includes(
     content,
+    '### 58. Evidence State Model',
+    'Research provenance ledger: evidence state model entry is present',
+  );
+  includes(
+    content,
+    'src/consequence-admission/evidence-state-model.ts',
+    'Research provenance ledger: evidence state model code evidence is indexed',
+  );
+  includes(
+    content,
+    'tests/evidence-state-model.test.ts',
+    'Research provenance ledger: evidence state model test evidence is indexed',
+  );
+  includes(
+    content,
+    'Cedar policy validation anchors schema-backed policy/request contracts',
+    'Research provenance ledger: evidence state Cedar anchor is recorded',
+  );
+  includes(
+    content,
+    'not a production evidence store',
+    'Research provenance ledger: evidence state production store non-claim is explicit',
+  );
+  includes(
+    content,
     'does not prove Anthropic, Vertex AI, or Azure OpenAI calls',
     'Research provenance ledger: LLM provider live-client non-claim is explicit',
   );

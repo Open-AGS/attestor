@@ -248,8 +248,8 @@ function testEvidencePathsAndDocsAreWired(): void {
     'Unlock tracker: step 09 is complete',
   );
   ok(
-    masterPlan.includes('| Complete | 15 |'),
-    'Unified master plan: completion count includes the action surface graph',
+    masterPlan.includes('| Complete | 16 |'),
+    'Unified master plan: completion count includes the evidence state model',
   );
   ok(
     masterPlan.includes('| 07 | complete | Consequence shared-store inventory |'),

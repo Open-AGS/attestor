@@ -698,6 +698,62 @@ production monitoring readiness claim
 NIST AI RMF, SRE, or statistical conformance claim
 ```
 
+## Runtime Assurance Wiring V1
+
+The completed Step 00-10 contract stack defines the language. Runtime
+Assurance Wiring v1 connects that language to canonical shadow events without
+creating live enforcement.
+
+| Step | Status | Work item | Required evidence | No-go boundary |
+|---|---|---|---|---|
+| W01 | complete | Shadow Envelope Projector | `src/consequence-admission/shadow-envelope-projector.ts`, [Shadow Envelope Projector](shadow-envelope-projector.md), `tests/shadow-envelope-projector.test.ts`, package script, package-surface probe, deterministic source-event-to-envelope projection, tenant binding, redaction preservation, idempotency digest, and no-authority invariants. | Do not extract signals, detect relationships, run fusion, sign packets, activate enforcement, learn, or grant authority. |
+| W02 | planned | Signal Extractor Contract | Typed extractor interface that emits category-bound signals from digest-only evidence refs. | Do not let an extractor upgrade advisory evidence into hard authority. |
+| W03 | planned | Existing Checks To Signal Adapter Registry | Adapters from existing checks into typed signals with source evidence digests. | Do not double-count duplicate evidence. |
+| W04 | planned | Relationship Detector Contract | Rule-based detector for explicit `confirms`, `contradicts`, `duplicates`, and directed relationship shapes. | Do not add learned relationship inference in v1. |
+| W05 | planned | Shadow Runtime Pipeline Dry Run | Shadow-only event -> envelope -> signals -> relationships -> fusion -> gate -> packet path. | Do not emit live enforcement decisions. |
+| W06 | planned | Decision Trace Logger | Digest-bound decision trace suitable for offline replay/spec checks. | Do not store raw payloads or write production audit claims. |
+| W07 | planned | TLA+ Admission State Machine Skeleton | Manual design-first spec and initial invariants. | Do not claim formal verification of the TypeScript implementation. |
+| W08 | planned | Alloy Tenant Isolation Model | Small-scope non-interference relation model. | Do not mix behavior/state-machine proof with tenant relation proof. |
+| W09 | planned | Baseline Cohort Contract | Explicit cohort shape and promotion gate for baseline candidates. | Do not learn from blocked traffic or auto-promote invariants. |
+| W10 | planned | Candidate Invariants Catalog | Safe invariant candidate taxonomy and danger flags. | Do not encode "frequent means safe." |
+| W11 | planned | Invariant Calibration Contract | Calibration metadata and thresholds for invariant candidates. | Do not let raw classifier scores become authority. |
+| W12 | planned | Invariant Promotion Gate | Reviewer signoff and no-relaxation promotion boundary. | Do not auto-promote, auto-relax, or activate learned policy. |
+
+The first wiring slice is complete as the Shadow Envelope Projector:
+
+```text
+src/consequence-admission/shadow-envelope-projector.ts
+tests/shadow-envelope-projector.test.ts
+docs/02-architecture/shadow-envelope-projector.md
+```
+
+Allowed in the completed W01 slice:
+
+```text
+pure deterministic projection builder
+descriptors
+source-event digest binding tests
+tenant-binding tests
+redaction-preservation tests
+idempotency digest tests
+no-mutation tests
+no-authority invariant tests
+package export wiring
+```
+
+Not allowed in W01:
+
+```text
+signal extraction
+relationship detection
+fusion
+packet signing
+live enforcement
+learning
+new production dependency
+runtime deployment readiness claim
+```
+
 ## Primary Source Anchors
 
 Reviewed on 2026-05-17:

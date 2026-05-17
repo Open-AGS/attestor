@@ -791,6 +791,38 @@ assert.equal(
   'function',
 );
 assert.equal(
+  admission.SHADOW_ENVELOPE_PROJECTOR_VERSION,
+  'attestor.shadow-envelope-projector.v1',
+);
+assert.equal(
+  admission.shadowEnvelopeProjectorDescriptor().accepts,
+  admission.CANONICAL_SHADOW_EVENT_SCHEMA_VERSION,
+);
+assert.equal(
+  admission.shadowEnvelopeProjectorDescriptor().produces,
+  admission.CONSEQUENCE_ENVELOPE_CONTRACT_VERSION,
+);
+assert.equal(
+  admission.shadowEnvelopeProjectorDescriptor().projectionMode,
+  'shadow-only',
+);
+assert.equal(
+  admission.shadowEnvelopeProjectorDescriptor().rawPayloadRead,
+  false,
+);
+assert.equal(
+  admission.shadowEnvelopeProjectorDescriptor().canAdmit,
+  false,
+);
+assert.equal(
+  admission.shadowEnvelopeProjectorDescriptor().activatesEnforcement,
+  false,
+);
+assert.equal(
+  typeof admission.createShadowEnvelopeProjection,
+  'function',
+);
+assert.equal(
   admission.financePipelineAdmissionDescriptor().route,
   '/api/v1/pipeline/run',
 );

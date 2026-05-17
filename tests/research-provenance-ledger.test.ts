@@ -1005,6 +1005,36 @@ function testLedgerIndexesAuditRemediationClosure(): void {
   );
   includes(
     content,
+    '### 68. Pilot Readiness Packet',
+    'Research provenance ledger: pilot readiness packet entry is present',
+  );
+  includes(
+    content,
+    'src/consequence-admission/pilot-readiness-packet.ts',
+    'Research provenance ledger: pilot readiness packet code evidence is indexed',
+  );
+  includes(
+    content,
+    'tests/pilot-readiness-packet.test.ts',
+    'Research provenance ledger: pilot readiness packet test evidence is indexed',
+  );
+  includes(
+    content,
+    'Microsoft HAX Toolkit',
+    'Research provenance ledger: pilot readiness human-AI source anchor is recorded',
+  );
+  includes(
+    content,
+    'customerDeploymentRequired=true',
+    'Research provenance ledger: pilot readiness deployment boundary is recorded',
+  );
+  includes(
+    content,
+    'live customer pilot execution',
+    'Research provenance ledger: pilot readiness live pilot non-claim is recorded',
+  );
+  includes(
+    content,
     'not an implementation',
     'Research provenance ledger: master plan non-implementation boundary is explicit',
   );

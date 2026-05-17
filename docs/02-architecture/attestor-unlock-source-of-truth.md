@@ -101,7 +101,12 @@ Counterexample replay generator, Step 20 records the Policy Twin backtest, Step
 21 records the Review-by-exception inbox, Step 22 records the Approval/dismiss
 feedback loop, Step 23 records the Enterprise integration recipes, Step 24
 records the General Crypto Transaction Gate, Step 25 records the Domain consequence recipes,
-and Step 26 is the next planned Pilot readiness packet.
+and Step 26 records the Pilot readiness packet. The 26-step master plan is
+complete repository-side; future customer-specific pilot, native connector,
+live deployment, or production-promotion work should start from a new scoped
+tracker.
+
+The 26-step master plan is complete repository-side.
 
 Step 12 does not remove the live-production boundary. It only gives operators
 one packet that refuses to issue `go` unless the named target supplies the

@@ -268,11 +268,11 @@ function testDescriptorValidationDocsAndTrackersStayAligned(): void {
   }
 
   for (const expected of [
-    '| Complete | 25 |',
-    '| Remaining | 1 |',
+    '| Complete | 26 |',
+    '| Remaining | 0 |',
     '| 24 | complete | General Crypto Transaction Gate |',
     '| 25 | complete | Spend, procurement, data, IAM, health, and insurance recipes |',
-    'completion of Step 26 Pilot readiness packet',
+    'live customer pilot execution',
   ]) {
     includes(masterPlan, expected, `General crypto master plan: records ${expected}`);
   }

@@ -199,7 +199,7 @@ This contract does not claim:
 - downstream receipt correctness
 - compliance certification
 - automatic policy activation
-- completion of Step 26 Pilot readiness packet
+- live customer pilot execution
 - completion of replay, backtest, review-inbox, or feedback-loop work
 
 It is the review-only candidate diff layer that lets the next step ask the

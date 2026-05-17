@@ -214,8 +214,8 @@ This recipe catalog does not claim:
 - downstream receipt correctness
 - compliance certification
 - automatic policy activation
-- completion of Step 26 Pilot readiness packet
+- live customer pilot execution
 
 It is the source-backed placement catalog for enterprise target systems. The
-domain recipe pack is now recorded separately; the remaining master-plan step
-is the pilot readiness packet.
+domain recipe pack and pilot readiness packet are now recorded separately; live
+customer pilot execution remains outside this repository-side catalog.

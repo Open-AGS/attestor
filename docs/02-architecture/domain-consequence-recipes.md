@@ -232,9 +232,9 @@ This recipe catalog does not claim:
 - downstream receipt correctness
 - compliance certification
 - automatic policy activation
-- completion of Step 26 Pilot readiness packet
+- live customer pilot execution
 
 It is the source-backed domain placement catalog for high-friction enterprise
-consequence surfaces. The next step is the pilot readiness packet, which must
-state what is repository-proven, what remains customer-deployment work, and
-what is still a production no-go.
+consequence surfaces. The pilot readiness packet now records what is
+repository-proven, what remains customer-deployment work, and what is still a
+production no-go.

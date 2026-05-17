@@ -2322,6 +2322,7 @@ export * from './approval-dismiss-feedback-loop.js';
 export * from './enterprise-integration-recipes.js';
 export * from './general-crypto-transaction-gate.js';
 export * from './domain-consequence-recipes.js';
+export * from './pilot-readiness-packet.js';
 export * from './action-surface-profiler.js';
 export * from './action-surface-declaration-ingestors.js';
 export * from './action-surface-manifest-intake.js';

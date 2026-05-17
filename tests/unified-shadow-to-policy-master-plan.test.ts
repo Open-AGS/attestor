@@ -56,8 +56,8 @@ function testMasterPlanRecordsCountsAndLegacySteps(): void {
 
   for (const expected of [
     '| Total master-plan rounds | 26 |',
-    '| Complete | 25 |',
-    '| Remaining | 1 |',
+    '| Complete | 26 |',
+    '| Remaining | 0 |',
     '| 07 | complete | Consequence shared-store inventory |',
     '| 08 | complete | Consequence shared-store PR slice 1 |',
     '| 09 | complete | Consequence shared-store PR slice 2 |',
@@ -90,7 +90,7 @@ function testMasterPlanRecordsNewWorkSequence(): void {
     '| 23 | complete | Enterprise integration recipes |',
     '| 24 | complete | General Crypto Transaction Gate |',
     '| 25 | complete | Spend, procurement, data, IAM, health, and insurance recipes |',
-    '| 26 | planned | Pilot readiness packet |',
+    '| 26 | complete | Pilot readiness packet |',
   ]) {
     includes(plan, expected, `Unified plan: records ${expected}`);
   }
@@ -169,7 +169,7 @@ function testMasterPlanRecordsResearchAnchorsAndNonClaims(): void {
     'Unlock tracker: links the unified master plan',
   );
   includes(plan, 'automatic policy activation', 'Unified plan: automatic activation non-claim is explicit');
-  includes(plan, 'completion of Step 26 Pilot readiness packet', 'Unified plan: remaining step non-claim is explicit');
+  includes(plan, 'live customer pilot execution', 'Unified plan: live pilot non-claim is explicit');
   assert.equal(
     packageJson.scripts['test:unified-shadow-to-policy-master-plan'],
     'tsx tests/unified-shadow-to-policy-master-plan.test.ts',

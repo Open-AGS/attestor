@@ -216,12 +216,12 @@ function testDescriptorDocsAndTrackersStayAligned(): void {
   }
 
   for (const expected of [
-    '| Complete | 25 |',
-    '| Remaining | 1 |',
+    '| Complete | 26 |',
+    '| Remaining | 0 |',
     '| 24 | complete | General Crypto Transaction Gate |',
     '| 25 | complete | Spend, procurement, data, IAM, health, and insurance recipes |',
-    '| 26 | planned | Pilot readiness packet |',
-    'completion of Step 26 Pilot readiness packet',
+    '| 26 | complete | Pilot readiness packet |',
+    'live customer pilot execution',
   ]) {
     includes(masterPlan, expected, `Domain recipes: master plan records ${expected}`);
   }
@@ -233,8 +233,8 @@ function testDescriptorDocsAndTrackersStayAligned(): void {
   );
   includes(
     tracker,
-    'Step 26 is the next planned Pilot readiness packet',
-    'Domain recipes: unlock tracker points to Step 26 next',
+    'Step 26 records the Pilot readiness packet',
+    'Domain recipes: unlock tracker points to Step 26 completion',
   );
   includes(
     systemOverview,

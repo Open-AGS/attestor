@@ -136,8 +136,8 @@ function testTrackersAndIndexesAreUpdated(): void {
   }
 
   for (const expected of [
-    '| Complete | 25 |',
-    '| Remaining | 1 |',
+    '| Complete | 26 |',
+    '| Remaining | 0 |',
     '| 10 | complete | LLM provider runtime decision |',
     '| 11 | complete | Anthropic runtime PR |',
     '| 12 | complete | Production rehearsal go/no-go packet |',
@@ -145,7 +145,7 @@ function testTrackersAndIndexesAreUpdated(): void {
     '| 14 | complete | Shadow event canonical schema |',
     '| 15 | complete | Action surface graph |',
     '| 16 | complete | Evidence state model |',
-    'completion of Step 26 Pilot readiness packet',
+    'live customer pilot execution',
   ]) {
     includes(plan, expected, `Runtime decision: unified plan records ${expected}`);
   }

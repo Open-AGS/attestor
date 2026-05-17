@@ -399,6 +399,7 @@
     "test:crypto-execution-admission-platform-surface": "tsx tests/crypto-execution-admission-platform-surface.test.ts",
     "test:general-crypto-transaction-gate": "tsx tests/general-crypto-transaction-gate.test.ts",
     "test:domain-consequence-recipes": "tsx tests/domain-consequence-recipes.test.ts",
+    "test:pilot-readiness-packet": "tsx tests/pilot-readiness-packet.test.ts",
     "verify:architecture": "node scripts/run-suite.mjs architecture",
     "verify": "node scripts/run-suite.mjs verify",
     "verify:live-local": "node scripts/run-live-ops-gate.mjs local-live",

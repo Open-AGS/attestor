@@ -199,7 +199,7 @@ This gate does not claim:
 - compliance certification
 - production readiness
 - automatic policy activation
-- completion of Step 26 Pilot readiness packet
+- live customer pilot execution
 
 It proves a repository-side, digest-only gate contract for general crypto
 consequences inside the same Shadow-to-Policy engine. The domain recipe pack is

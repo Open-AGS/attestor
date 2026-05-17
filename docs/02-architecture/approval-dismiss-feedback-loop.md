@@ -212,7 +212,7 @@ This feedback loop does not claim:
 - crypto custody, wallet, exchange, or transaction broadcasting capability
 - compliance certification
 - automatic policy activation
-- completion of Step 26 Pilot readiness packet
+- live customer pilot execution
 
 It is the digest-bound feedback layer that lets the next step package
 enterprise integration recipes around structured approvals, dismissals,

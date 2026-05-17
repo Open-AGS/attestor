@@ -291,14 +291,14 @@ function testDescriptorDocsAndTrackersStayAligned(): void {
   }
 
   for (const expected of [
-    '| Complete | 25 |',
-    '| Remaining | 1 |',
+    '| Complete | 26 |',
+    '| Remaining | 0 |',
     '| 15 | complete | Action surface graph |',
     '| 16 | complete | Evidence state model |',
     '| 17 | complete | Policy Candidate PR contract |',
     '| 18 | complete | Active Question Engine |',
     '| 19 | complete | Counterexample replay generator |',
-    'completion of Step 26 Pilot readiness packet',
+    'live customer pilot execution',
   ]) {
     includes(masterPlan, expected, `Action surface graph: master plan records ${expected}`);
   }

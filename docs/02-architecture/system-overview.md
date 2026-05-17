@@ -54,6 +54,8 @@ The general crypto decision contract lives in [General Crypto Transaction Gate](
 
 The domain placement catalog lives in [Domain consequence recipes](domain-consequence-recipes.md). Use it when spend, procurement, data/AI, IAM, health, clinical decision-support, claim, or policy-administration surfaces need a concrete pre-side-effect Attestor gate without claiming native connector coverage, records-system ownership, workflow-workspace ownership, clinical authority, insurance-system ownership, customer deployment, or production readiness.
 
+The customer-pilot packaging boundary lives in [Pilot readiness packet](pilot-readiness-packet.md). Use it when a source-backed domain recipe needs to become a digest-only shadow-entry or scoped-enforcement-entry pilot packet without claiming live customer pilot execution, native connector coverage, customer deployment, compliance certification, or production readiness.
+
 The append-only proof trail lives in [Tamper-evident history](tamper-evident-history.md). Use it when digest-first evidence needs a linear history root that can detect modified, deleted, or reordered entries before a reviewer trusts an export.
 
 The operator-facing risk summary lives in [Business risk dashboard](business-risk-dashboard.md). Use it when a customer needs to see action volume, review load, blocked actions, policy gaps, consequence-domain risk, downstream proof coverage, and operator-supplied impact without turning raw logs into the product.

@@ -197,7 +197,7 @@ This inbox does not claim:
 - crypto custody, wallet, exchange, or transaction broadcasting capability
 - compliance certification
 - automatic policy activation
-- completion of Step 26 Pilot readiness packet
+- live customer pilot execution
 
 It is the digest-bound triage layer that lets the next step turn approvals,
 dismissals, stricter-version requests, threshold edits, and rollback decisions

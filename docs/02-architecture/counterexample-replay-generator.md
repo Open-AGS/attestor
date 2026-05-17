@@ -222,7 +222,7 @@ This generator does not claim:
 - crypto custody, wallet, exchange, or transaction broadcasting capability
 - compliance certification
 - automatic policy activation
-- completion of Step 26 Pilot readiness packet
+- live customer pilot execution
 
 It is the negative-fixture layer that makes Policy Twin backtesting harder to
 fool than happy-path replay.

@@ -61,6 +61,8 @@ function testOverviewRecordsContractShapeAndSequence(): void {
     '`requires_review` | unary',
     '| 01 | complete | Consequence Envelope Contract |',
     '| 02 | complete | Signal Relationship Contract |',
+    '| 03 | complete | LayerOpinion schema |',
+    '| 04 | planned | Modulator authority tier |',
     '| 05 | planned | Relationship-aware monotone fusion |',
     '| 10 | planned | Assurance measurement plane |',
     'src/consequence-admission/consequence-envelope-contract.ts',
@@ -68,6 +70,8 @@ function testOverviewRecordsContractShapeAndSequence(): void {
     'src/consequence-admission/signal-relationship-contract.ts',
     'tests/signal-relationship-contract.test.ts',
     'src/consequence-admission/layer-opinion-schema.ts',
+    'tests/layer-opinion-schema.test.ts',
+    'src/consequence-admission/modulator-authority-tier.ts',
   ]) {
     includes(overview, expected, `Overview: records ${expected}`);
   }

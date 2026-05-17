@@ -601,6 +601,28 @@ assert.equal(
   false,
 );
 assert.equal(
+  admission.LAYER_OPINION_SCHEMA_VERSION,
+  'attestor.layer-opinion-schema.v1',
+);
+assert.equal(
+  admission.layerOpinionSchemaDescriptor().advisoryOnly,
+  true,
+);
+assert.equal(
+  admission.layerOpinionSchemaDescriptor().positions.includes(
+    'no-advisory-objection',
+  ),
+  true,
+);
+assert.equal(
+  admission.layerOpinionSchemaDescriptor().abstentionIsFirstClass,
+  true,
+);
+assert.equal(
+  admission.layerOpinionSchemaDescriptor().mayMarkSafe,
+  false,
+);
+assert.equal(
   admission.financePipelineAdmissionDescriptor().route,
   '/api/v1/pipeline/run',
 );

@@ -99,6 +99,7 @@ function testOverviewRecordsContractShapeAndSequence(): void {
     '| W07 | complete | TLA+ Admission State Machine Skeleton |',
     '| W08 | complete | Alloy Tenant Isolation Model |',
     '| W09 | complete | Baseline Cohort Contract |',
+    '| W10 | complete | Candidate Invariants Catalog |',
     'src/consequence-admission/shadow-envelope-projector.ts',
     'tests/shadow-envelope-projector.test.ts',
     'src/consequence-admission/signal-extractor-contract.ts',
@@ -123,6 +124,9 @@ function testOverviewRecordsContractShapeAndSequence(): void {
     'src/consequence-admission/baseline-cohort-contract.ts',
     'tests/baseline-cohort-contract.test.ts',
     'docs/02-architecture/baseline-cohort-contract.md',
+    'src/consequence-admission/candidate-invariants-catalog.ts',
+    'tests/candidate-invariants-catalog.test.ts',
+    'docs/02-architecture/candidate-invariants-catalog.md',
   ]) {
     includes(overview, expected, `Overview: records ${expected}`);
   }

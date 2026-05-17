@@ -1043,6 +1043,38 @@ assert.equal(
   'function',
 );
 assert.equal(
+  admission.CANDIDATE_INVARIANTS_CATALOG_VERSION,
+  'attestor.candidate-invariants-catalog.v1',
+);
+assert.equal(
+  admission.candidateInvariantsCatalogDescriptor().baselineCohortContractVersion,
+  admission.BASELINE_COHORT_CONTRACT_VERSION,
+);
+assert.equal(
+  admission.candidateInvariantsCatalogDescriptor().frequencyImpliesSafetyRejected,
+  true,
+);
+assert.equal(
+  admission.candidateInvariantsCatalogDescriptor().counterexampleReplayRequired,
+  true,
+);
+assert.equal(
+  admission.candidateInvariantsCatalogDescriptor().noAutoPromotion,
+  true,
+);
+assert.equal(
+  admission.candidateInvariantsCatalogDescriptor().learnsFromTraffic,
+  false,
+);
+assert.equal(
+  typeof admission.createCandidateInvariantFromBaseline,
+  'function',
+);
+assert.equal(
+  typeof admission.evaluateCandidateInvariantReviewReadiness,
+  'function',
+);
+assert.equal(
   admission.financePipelineAdmissionDescriptor().route,
   '/api/v1/pipeline/run',
 );

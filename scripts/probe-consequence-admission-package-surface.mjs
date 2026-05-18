@@ -1579,6 +1579,30 @@ assert.equal(
   'function',
 );
 assert.equal(
+  admission.AUTHORITY_CREEP_GUARD_VERSION,
+  'attestor.authority-creep-guard.v1',
+);
+assert.equal(
+  admission.authorityCreepGuardDescriptor().decisionLineageGraphVersion,
+  admission.DECISION_LINEAGE_GRAPH_VERSION,
+);
+assert.equal(
+  admission.authorityCreepGuardDescriptor().measurementIsNotAuthority,
+  true,
+);
+assert.equal(
+  admission.authorityCreepGuardDescriptor().opensUndercuttingDefeater,
+  true,
+);
+assert.equal(
+  admission.authorityCreepGuardDescriptor().canAdmit,
+  false,
+);
+assert.equal(
+  typeof admission.createAuthorityCreepGuard,
+  'function',
+);
+assert.equal(
   admission.financePipelineAdmissionDescriptor().route,
   '/api/v1/pipeline/run',
 );

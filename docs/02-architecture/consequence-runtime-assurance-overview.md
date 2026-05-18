@@ -1040,7 +1040,7 @@ shadow / replay / formal / calibration / outcome material
         -> promotion gate can review what remains unknown
 ```
 
-Progress: 12/14 complete after I11. 2 steps remain.
+Progress: 13/14 complete after I12. 1 step remains.
 
 | Step | Status | Slice | Evidence |
 |---|---|---|---|
@@ -1056,7 +1056,7 @@ Progress: 12/14 complete after I11. 2 steps remain.
 | I09 | complete | TLA+ Trace Validator Bridge | `src/consequence-admission/tla-trace-validator-bridge.ts`; `tests/tla-trace-validator-bridge.test.ts`; `docs/02-architecture/tla-trace-validator-bridge.md` |
 | I10 | complete | Runtime Monitor Skeleton | `src/consequence-admission/runtime-monitor-skeleton.ts`; `tests/runtime-monitor-skeleton.test.ts`; `docs/02-architecture/runtime-monitor-skeleton.md` |
 | I11 | complete | Decision Lineage Graph | `src/consequence-admission/decision-lineage-graph.ts`; `tests/decision-lineage-graph.test.ts`; `docs/02-architecture/decision-lineage-graph.md` |
-| I12 | planned | Goodhart / Authority-Creep Guard | Undercutting defeaters for measurement-as-authority |
+| I12 | complete | Goodhart / Authority-Creep Guard | `src/consequence-admission/authority-creep-guard.ts`; `tests/authority-creep-guard.test.ts`; `docs/02-architecture/authority-creep-guard.md` |
 | I13 | planned | Outcome Feedback / COE Wiring | Outcome-triggered rebutting defeaters |
 
 I00 is SACM 2.3-aligned, GSN render-view compatible, and grounded in
@@ -1134,6 +1134,14 @@ defeat visible and signature coverage explicit. It does not export OpenLineage,
 claim PROV/SACM conformance, create DSSE or in-toto signatures, write audit,
 activate policy, admit, learn, train, or enforce.
 
+I12 turns the I11 decision lineage graph and optional assurance measurement
+plane material into authority-creep evidence or open undercutting defeaters. It
+detects measurement-as-authority paths such as measurement artifacts supporting
+claim/strategy nodes, blocked metric uses, policy-relaxation requests,
+lineage-side authority actions, and direct boundary requests. It does not mutate
+the lineage graph, close defeat, decide review, activate policy, admit, learn,
+train, or enforce.
+
 ## Primary Source Anchors
 
 Reviewed on 2026-05-17 and 2026-05-18:
@@ -1168,6 +1176,7 @@ Reviewed on 2026-05-17 and 2026-05-18:
 - TLA+ trace-validation bridge framing: [Microsoft Research, Specifying Systems](https://www.microsoft.com/en-us/research/publication/specifying-systems-the-tla-language-and-tools-for-hardware-and-software-engineers/), [How Amazon Web Services uses formal methods](https://cacm.acm.org/research/how-amazon-web-services-uses-formal-methods/), [Systems Correctness Practices at AWS](https://cacm.acm.org/practice/systems-correctness-practices-at-amazon-web-services/), [Apalache TLA+ model checker documentation](https://apalache-mc.org/docs/), and the W06 decision trace logger contract.
 - Runtime monitor skeleton framing: [NASA Runtime Assurance of Aeronautical Products](https://ntrs.nasa.gov/citations/20220015734), [NASA Robust Software Engineering](https://www.nasa.gov/intelligent-systems-division/robust-software-engineering/), [ENTRUST dynamic assurance cases](https://arxiv.org/abs/1703.06350), [OpenTelemetry Logs Data Model](https://opentelemetry.io/docs/specs/otel/logs/data-model/), [Google SRE Monitoring Distributed Systems](https://sre.google/sre-book/monitoring-distributed-systems/), [NIST SP 800-61 Rev. 3](https://csrc.nist.gov/pubs/sp/800/61/r3/final), and [OMG SACM 2.3](https://www.omg.org/spec/SACM).
 - Decision lineage graph framing: [W3C PROV-DM](https://www.w3.org/TR/prov-dm/), [OpenLineage core specification](https://github.com/OpenLineage/OpenLineage/blob/main/spec/OpenLineage.md), [OpenLineage API](https://openlineage.io/apidocs/openapi/), [in-toto Attestation Statement](https://github.com/in-toto/attestation/blob/main/spec/v1/statement.md), [DSSE Envelope](https://github.com/secure-systems-lab/dsse/blob/master/envelope.md), [W3C Trace Context](https://www.w3.org/TR/trace-context/), and [OMG SACM 2.1](https://www.omg.org/spec/SACM/2.1/PDF).
+- Authority-creep guard framing: [Goodhart variants](https://arxiv.org/abs/1803.04585), [NIST AI RMF](https://www.nist.gov/itl/ai-risk-management-framework), [Google SRE Embracing Risk](https://sre.google/sre-book/embracing-risk/), [Google SRE Service Level Objectives](https://sre.google/sre-book/service-level-objectives/), [CISA SSVC](https://www.cisa.gov/stakeholder-specific-vulnerability-categorization-ssvc), [SRI Assurance 2.0](https://www.csl.sri.com/users/rushby/assurance2.0), and [CMU SEI Eliminative Argumentation](https://www.sei.cmu.edu/library/eliminative-argumentation-a-basis-for-arguing-confidence-in-system-properties/).
 - Tenant isolation and relation-model framing: [Alloy language reference](https://alloytools.org/download/alloy-language-reference.pdf), [Alloy in CACM](https://cacm.acm.org/research/alloy/), [AWS SaaS tenant isolation concepts](https://docs.aws.amazon.com/whitepapers/latest/saas-tenant-isolation-strategies/core-isolation-concepts.html), [AWS Lambda tenant isolation](https://docs.aws.amazon.com/lambda/latest/dg/tenant-isolation.html), and [NIST SP 800-207A](https://csrc.nist.gov/pubs/sp/800/207/a/final).
 - Assurance-case argument structure and exchange framing: [GSN Community Standard v3](https://scsc.uk/gsn), [OMG SACM 2.3](https://www.omg.org/spec/SACM), [CMU SEI Eliminative Argumentation](https://www.sei.cmu.edu/library/eliminative-argumentation-a-basis-for-arguing-confidence-in-system-properties/), [SRI Assurance 2.0](https://www.csl.sri.com/users/rushby/assurance2.0), [ENTRUST dynamic assurance cases](https://arxiv.org/abs/1703.06350), and [University of York AMLAS](https://www.york.ac.uk/assuring-autonomy/guidance/amlas/).
 - Learned artifact privacy and reconstruction-risk framing: [NIST SP 800-226](https://csrc.nist.gov/pubs/sp/800/226/final), [OpenDP Context](https://docs.opendp.org/en/stable/api/user-guide/context/index.html), [OpenDP typical workflow](https://docs.opendp.org/en/stable/getting-started/typical-workflow.html), [U.S. Census reconstruction and reidentification attack](https://www.census.gov/library/working-papers/2023/adrm/CES-WP-23-63.html), and [Google Differential Privacy libraries](https://github.com/google/differential-privacy).

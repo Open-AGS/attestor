@@ -365,7 +365,7 @@ function testDocsAndPackageSurface(): void {
   includes(docs, 'attestor.runtime-monitor-skeleton.v1', 'Runtime monitor docs: version is present');
   includes(docs, 'not-runtime-enforcement-monitor', 'Runtime monitor docs: enforcement non-claim is present');
   includes(docs, 'not-siem-or-otel-conformance', 'Runtime monitor docs: OTel conformance non-claim is present');
-  includes(overview, 'Progress: 12/14 complete after I11. 2 steps remain.', 'Overview: I10 progress is updated');
+  includes(overview, 'Progress: 13/14 complete after I12. 1 step remains.', 'Overview: I10 progress is updated');
   includes(overview, '| I10 | complete | Runtime Monitor Skeleton |', 'Overview: I10 is complete');
   includes(overview, 'src/consequence-admission/runtime-monitor-skeleton.ts', 'Overview: I10 source file is tracked');
   includes(overview, 'I10 turns W05/W06 runtime observations', 'Overview: I10 explanation is present');

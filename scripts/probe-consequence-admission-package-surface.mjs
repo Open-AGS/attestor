@@ -1423,6 +1423,18 @@ assert.equal(
   admission.ASSURANCE_CASE_CONTRACT_VERSION,
 );
 assert.equal(
+  admission.PROMOTION_GATE_RUNNER_VERSION,
+  'attestor.promotion-gate-runner.v1',
+);
+assert.equal(
+  admission.promotionGateRunnerDescriptor().reviewerOpenDefeaterViewVersion,
+  admission.REVIEWER_OPEN_DEFEATER_VIEW_VERSION,
+);
+assert.equal(
+  admission.promotionGateRunnerDescriptor().invariantPromotionGateVersion,
+  admission.INVARIANT_PROMOTION_GATE_VERSION,
+);
+assert.equal(
   admission.reviewerOpenDefeaterViewDescriptor().candidateInvariantSynthesizerVersion,
   admission.CANDIDATE_INVARIANT_SYNTHESIZER_VERSION,
 );

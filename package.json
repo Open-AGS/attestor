@@ -125,6 +125,7 @@
     "test:runtime-monitor-skeleton": "tsx tests/runtime-monitor-skeleton.test.ts",
     "test:decision-lineage-graph": "tsx tests/decision-lineage-graph.test.ts",
     "test:authority-creep-guard": "tsx tests/authority-creep-guard.test.ts",
+    "test:outcome-feedback-coe-wiring": "tsx tests/outcome-feedback-coe-wiring.test.ts",
     "test:admission-state-machine-spec": "tsx tests/admission-state-machine-spec.test.ts",
     "test:tenant-isolation-model": "tsx tests/tenant-isolation-model.test.ts",
     "test:target-system-compatibility-matrix": "tsx tests/target-system-compatibility-matrix.test.ts",

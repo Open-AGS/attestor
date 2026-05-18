@@ -354,7 +354,7 @@ function testDocsPackageAndOverview(): void {
     includes(docs, expected, `Shadow data quality docs: records ${expected}`);
   }
 
-  includes(overview, 'Progress: 13/14 complete after I12. 1 step remains.', 'Overview: progress is updated');
+  includes(overview, 'Progress: 14/14 complete after I13. 0 steps remain.', 'Overview: progress is updated');
   includes(overview, '| I02 | complete | Shadow Data Quality Gate |', 'Overview: I02 is complete');
   includes(overview, 'src/consequence-admission/shadow-data-quality-gate.ts', 'Overview: I02 source file is tracked');
   includes(overview, 'tests/shadow-data-quality-gate.test.ts', 'Overview: I02 test file is tracked');

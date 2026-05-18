@@ -1603,6 +1603,30 @@ assert.equal(
   'function',
 );
 assert.equal(
+  admission.OUTCOME_FEEDBACK_COE_WIRING_VERSION,
+  'attestor.outcome-feedback-coe-wiring.v1',
+);
+assert.equal(
+  admission.outcomeFeedbackCoeWiringDescriptor().outcomeIncidentFeedbackContractVersion,
+  admission.OUTCOME_INCIDENT_FEEDBACK_CONTRACT_VERSION,
+);
+assert.equal(
+  admission.outcomeFeedbackCoeWiringDescriptor().mapsOutcomeToRebuttingDefeater,
+  true,
+);
+assert.equal(
+  admission.outcomeFeedbackCoeWiringDescriptor().feedbackIsNotAuthority,
+  true,
+);
+assert.equal(
+  admission.outcomeFeedbackCoeWiringDescriptor().canAdmit,
+  false,
+);
+assert.equal(
+  typeof admission.createOutcomeFeedbackCoeWiring,
+  'function',
+);
+assert.equal(
   admission.financePipelineAdmissionDescriptor().route,
   '/api/v1/pipeline/run',
 );

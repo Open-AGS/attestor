@@ -444,7 +444,7 @@ function testDocsAndPackageSurface(): void {
   includes(docs, '# Authority-Creep Guard', 'Authority creep docs: title is present');
   includes(docs, 'attestor.authority-creep-guard.v1', 'Authority creep docs: version is present');
   includes(docs, 'not-measurement-authority', 'Authority creep docs: measurement-authority non-claim is present');
-  includes(overview, 'Progress: 13/14 complete after I12. 1 step remains.', 'Overview: I12 progress is updated');
+  includes(overview, 'Progress: 14/14 complete after I13. 0 steps remain.', 'Overview: I12 progress is updated');
   includes(overview, '| I12 | complete | Goodhart / Authority-Creep Guard |', 'Overview: I12 is complete');
   includes(overview, 'src/consequence-admission/authority-creep-guard.ts', 'Overview: I12 source file is tracked');
   includes(annex, 'Authority-creep guard', 'Research annex: I12 anchor is present');

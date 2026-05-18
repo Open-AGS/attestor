@@ -612,7 +612,7 @@ function testDocsPackageOverviewAndProbe(): void {
     includes(docs, expected, `Reviewer open-defeater docs: records ${expected}`);
   }
 
-  includes(overview, 'Progress: 13/14 complete after I12. 1 step remains.', 'Overview: progress is updated');
+  includes(overview, 'Progress: 14/14 complete after I13. 0 steps remain.', 'Overview: progress is updated');
   includes(overview, '| I07 | complete | Reviewer Packet / Open Defeater View |', 'Overview: I07 is complete');
   includes(overview, 'src/consequence-admission/reviewer-open-defeater-view.ts', 'Overview: I07 source file is tracked');
   includes(overview, 'tests/reviewer-open-defeater-view.test.ts', 'Overview: I07 test file is tracked');

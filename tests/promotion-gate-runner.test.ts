@@ -270,7 +270,7 @@ function testDocsAndPackageSurface(): void {
   includes(docs, 'not-review-decision', 'Promotion gate docs: review decision non-claim is present');
   includes(docs, 'not-defeater-closure', 'Promotion gate docs: defeater closure non-claim is present');
   includes(docs, 'not-policy-activation', 'Promotion gate docs: policy activation non-claim is present');
-  includes(overview, 'Progress: 13/14 complete after I12. 1 step remains.', 'Overview: I08 progress is updated');
+  includes(overview, 'Progress: 14/14 complete after I13. 0 steps remain.', 'Overview: I08 progress is updated');
   includes(overview, 'src/consequence-admission/promotion-gate-runner.ts', 'Overview: I08 source file is tracked');
   includes(overview, 'I08 runs the bounded indefeasibility predicate', 'Overview: I08 explanation is present');
   includes(annex, 'Promotion gate runner', 'Research annex: I08 anchor is present');

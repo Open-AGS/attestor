@@ -313,7 +313,7 @@ function testDocsAndPackageSurface(): void {
   includes(docs, 'not-tlc-runner', 'TLA bridge docs: TLC runner non-claim is present');
   includes(docs, 'not-apalache-runner', 'TLA bridge docs: Apalache runner non-claim is present');
   includes(docs, 'not-formal-proof', 'TLA bridge docs: formal proof non-claim is present');
-  includes(overview, 'Progress: 13/14 complete after I12. 1 step remains.', 'Overview: I09 progress is updated');
+  includes(overview, 'Progress: 14/14 complete after I13. 0 steps remain.', 'Overview: I09 progress is updated');
   includes(overview, '| I09 | complete | TLA+ Trace Validator Bridge |', 'Overview: I09 is complete');
   includes(overview, 'src/consequence-admission/tla-trace-validator-bridge.ts', 'Overview: I09 source file is tracked');
   includes(overview, 'I09 turns W06 decision trace snapshots', 'Overview: I09 explanation is present');

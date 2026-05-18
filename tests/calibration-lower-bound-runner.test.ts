@@ -547,7 +547,7 @@ function testDocsPackageOverviewAndProbe(): void {
     includes(docs, expected, `Calibration lower bound docs: records ${expected}`);
   }
 
-  includes(overview, 'Progress: 13/14 complete after I12. 1 step remains.', 'Overview: progress is updated');
+  includes(overview, 'Progress: 14/14 complete after I13. 0 steps remain.', 'Overview: progress is updated');
   includes(overview, '| I06 | complete | Calibration Lower-Bound Runner |', 'Overview: I06 is complete');
   includes(overview, 'src/consequence-admission/calibration-lower-bound-runner.ts', 'Overview: I06 source file is tracked');
   includes(overview, 'tests/calibration-lower-bound-runner.test.ts', 'Overview: I06 test file is tracked');

@@ -136,7 +136,7 @@ function testOverviewRecordsContractShapeAndSequence(): void {
     'tests/invariant-promotion-gate.test.ts',
     'docs/02-architecture/invariant-promotion-gate.md',
     '| I00 | complete | Assurance Case Contract |',
-    'Progress: 13/14 complete after I12. 1 step remains.',
+    'Progress: 14/14 complete after I13. 0 steps remain.',
     '| I01 | complete | Learned Artifact Release Budget |',
     '| I02 | complete | Shadow Data Quality Gate |',
     '| I03 | complete | Baseline Cohort Builder |',
@@ -149,7 +149,7 @@ function testOverviewRecordsContractShapeAndSequence(): void {
     '| I10 | complete | Runtime Monitor Skeleton |',
     '| I11 | complete | Decision Lineage Graph |',
     '| I12 | complete | Goodhart / Authority-Creep Guard |',
-    '| I13 | planned | Outcome Feedback / COE Wiring |',
+    '| I13 | complete | Outcome Feedback / COE Wiring |',
     'src/consequence-admission/assurance-case-contract.ts',
     'tests/assurance-case-contract.test.ts',
     'docs/02-architecture/assurance-case-contract.md',
@@ -189,6 +189,9 @@ function testOverviewRecordsContractShapeAndSequence(): void {
     'src/consequence-admission/authority-creep-guard.ts',
     'tests/authority-creep-guard.test.ts',
     'docs/02-architecture/authority-creep-guard.md',
+    'src/consequence-admission/outcome-feedback-coe-wiring.ts',
+    'tests/outcome-feedback-coe-wiring.test.ts',
+    'docs/02-architecture/outcome-feedback-coe-wiring.md',
     'SACM 2.3-aligned',
     'Eliminative Argumentation / Assurance 2.0',
     'I01 makes learned artifact release an explicit information-release budget',
@@ -204,6 +207,7 @@ function testOverviewRecordsContractShapeAndSequence(): void {
     'I10 turns W05/W06 runtime observations',
     'I11 turns the I00 assurance-case material',
     'I12 turns the I11 decision lineage graph',
+    'I13 turns I00 assurance-case material',
   ]) {
     includes(overview, expected, `Overview: records ${expected}`);
   }
@@ -277,6 +281,8 @@ function testResearchAnnexRecordsCrossDomainAnchors(): void {
     'Runtime monitors should stay simple, read-only, trace-bound',
     'Authority-creep guard',
     'Measurement, budget, calibration, and lineage artifacts must not become authority',
+    'Outcome feedback / COE wiring',
+    'Negative outcome feedback should open rebutting defeat',
     'Only AI RMF-mappable language is claimed, not conformance.',
     'Every future fabric mutation must run replay/backtest regression.',
   ]) {

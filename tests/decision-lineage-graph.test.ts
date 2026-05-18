@@ -369,7 +369,7 @@ function testDocsAndPackageSurface(): void {
   includes(docs, 'attestor.decision-lineage-graph.v1', 'Decision lineage docs: version is present');
   includes(docs, 'not-openlineage-export', 'Decision lineage docs: OpenLineage export non-claim is present');
   includes(docs, 'not-dsse-or-in-toto-signer', 'Decision lineage docs: signer non-claim is present');
-  includes(overview, 'Progress: 13/14 complete after I12. 1 step remains.', 'Overview: I11 progress is updated');
+  includes(overview, 'Progress: 14/14 complete after I13. 0 steps remain.', 'Overview: I11 progress is updated');
   includes(overview, '| I11 | complete | Decision Lineage Graph |', 'Overview: I11 is complete');
   includes(overview, 'src/consequence-admission/decision-lineage-graph.ts', 'Overview: I11 source file is tracked');
   includes(overview, 'I11 turns the I00 assurance-case material', 'Overview: I11 explanation is present');

@@ -43,6 +43,7 @@ source domain pattern
 | Promotion gate runner | [CMU SEI Eliminative Argumentation](https://www.sei.cmu.edu/library/eliminative-argumentation-a-basis-for-arguing-confidence-in-system-properties/), [SRI Assurance 2.0](https://www.csl.sri.com/users/rushby/assurance2.0), [OMG SACM 2.3](https://www.omg.org/spec/SACM), [CISA SSVC](https://www.cisa.gov/stakeholder-specific-vulnerability-categorization-ssvc), [GitHub code scanning alert resolution](https://docs.github.com/en/code-security/how-tos/manage-security-alerts/manage-code-scanning-alerts/resolving-code-scanning-alerts) | Execute a bounded indefeasibility predicate over open-defeater review material and map it to one next action without closing defeat or activating policy. | Promotion Gate Runner. | No reviewer decision, no defeater closure, no policy patch generation, no policy activation, no live enforcement, and no authority claim. |
 | TLA+ trace validator bridge | [Microsoft Research Specifying Systems](https://www.microsoft.com/en-us/research/publication/specifying-systems-the-tla-language-and-tools-for-hardware-and-software-engineers/), [How Amazon Web Services uses formal methods](https://cacm.acm.org/research/how-amazon-web-services-uses-formal-methods/), [Systems Correctness Practices at AWS](https://cacm.acm.org/practice/systems-correctness-practices-at-amazon-web-services/), [Apalache documentation](https://apalache-mc.org/docs/) | Treat formal trace validation as review evidence against a manual design-first spec; valid reports create evidence, invalid/unknown reports open defeaters. | TLA+ Trace Validator Bridge. | No TLC runner, no Apalache runner, no runtime oracle, no formal proof, no policy activation, no live enforcement, and no production readiness claim. |
 | Runtime monitor skeleton | [NASA Runtime Assurance of Aeronautical Products](https://ntrs.nasa.gov/citations/20220015734), [NASA Robust Software Engineering](https://www.nasa.gov/intelligent-systems-division/robust-software-engineering/), [ENTRUST dynamic assurance cases](https://arxiv.org/abs/1703.06350), [OpenTelemetry Logs Data Model](https://opentelemetry.io/docs/specs/otel/logs/data-model/), [Google SRE Monitoring Distributed Systems](https://sre.google/sre-book/monitoring-distributed-systems/), [NIST SP 800-61 Rev. 3](https://csrc.nist.gov/pubs/sp/800/61/r3/final), [OMG SACM 2.3](https://www.omg.org/spec/SACM) | Treat runtime observation as a simple, read-only, trace-bound source of living assurance-case evidence or open defeaters. | Runtime Monitor Skeleton. | No runtime enforcement monitor, no audit-plane write, no policy activation, no SIEM/OpenTelemetry conformance, no formal runtime verification, and no production monitoring readiness claim. |
+| Decision lineage graph | [W3C PROV-DM](https://www.w3.org/TR/prov-dm/), [OpenLineage core specification](https://github.com/OpenLineage/OpenLineage/blob/main/spec/OpenLineage.md), [OpenLineage API](https://openlineage.io/apidocs/openapi/), [in-toto Attestation Statement](https://github.com/in-toto/attestation/blob/main/spec/v1/statement.md), [DSSE Envelope](https://github.com/secure-systems-lab/dsse/blob/master/envelope.md), [W3C Trace Context](https://www.w3.org/TR/trace-context/), [OMG SACM 2.1](https://www.omg.org/spec/SACM/2.1/PDF) | Treat decision lineage as a digest-bound DAG of case nodes, defeaters, transitions, supporting artifacts, and signature references. | Decision Lineage Graph. | No OpenLineage export, no PROV/SACM conformance, no DSSE/in-toto signer, no transparency log, no audit-plane write, no policy activation, no live enforcement, and no production readiness claim. |
 
 Data Cards and Datasheets are used here as documentation anchors for cohort
 scope, provenance, maintenance, intended use, and stakeholder-readable limits.
@@ -72,6 +73,7 @@ These are the engineering rules imported from the source matrix.
 19. Promotion gates should execute a bounded indefeasibility predicate over the open-defeater view, then permit only a review-only handoff; closure, review decisions, patch generation, policy activation, and enforcement stay separate.
 20. Formal trace validation should be represented as digest-bound evidence or defeat material; the bridge that records it must not run the model checker, become a runtime oracle, or claim formal proof.
 21. Runtime monitors should stay simple, read-only, trace-bound, and actionably fail-visible; healthy observations can support claims, but degraded, stale, mismatched, or clock-skewed observations must open defeat rather than silently tune policy.
+22. Decision lineage should be a digest-bound internal graph only; external lineage standards inform the vocabulary, but export, signature creation, audit writes, and authority actions remain outside the graph contract.
 
 ## Attestor Mapping
 
@@ -98,6 +100,7 @@ These are the engineering rules imported from the source matrix.
 | Promotion gate runner | Converts a no-open-defeater reviewer view into a bounded review-only patch handoff record without closing defeat, deciding review, generating patches, activating policy, or enforcing. |
 | TLA+ trace validator bridge | Converts verified decision trace snapshots and external TLA+ validator report digests into assurance-case evidence or open rebutting/undercutting defeaters without running TLC/Apalache or claiming formal proof. |
 | Runtime monitor skeleton | Converts W05/W06 runtime observations and optional measurement-plane status into living assurance-case evidence or open undermining/undercutting defeaters without writing audit, activating policy, or enforcing. |
+| Decision lineage graph | Converts I00 assurance-case nodes, defeaters, transitions, artifact refs, and signature refs into a digest-bound lineage DAG without exporting lineage, signing, writing audit, activating policy, or enforcing. |
 
 ## Sequenced Implementation
 
@@ -123,6 +126,7 @@ The research supports the following order:
 16. reviewer open-defeater view for Runtime Intelligence Activation v1
 17. promotion gate runner for Runtime Intelligence Activation v1
 18. TLA+ trace validator bridge for Runtime Intelligence Activation v1
+19. decision lineage graph for Runtime Intelligence Activation v1
 ```
 
 Each new slice should keep the smallest pure deterministic boundary it can

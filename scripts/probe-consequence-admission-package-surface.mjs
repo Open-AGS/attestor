@@ -1551,6 +1551,34 @@ assert.equal(
   'function',
 );
 assert.equal(
+  admission.DECISION_LINEAGE_GRAPH_VERSION,
+  'attestor.decision-lineage-graph.v1',
+);
+assert.equal(
+  admission.decisionLineageGraphDescriptor().assuranceCaseContractVersion,
+  admission.ASSURANCE_CASE_CONTRACT_VERSION,
+);
+assert.equal(
+  admission.decisionLineageGraphDescriptor().buildsDigestBoundDag,
+  true,
+);
+assert.equal(
+  admission.decisionLineageGraphDescriptor().doesNotCreateSignatures,
+  true,
+);
+assert.equal(
+  admission.decisionLineageGraphDescriptor().noExternalLineageExport,
+  true,
+);
+assert.equal(
+  admission.decisionLineageGraphDescriptor().canAdmit,
+  false,
+);
+assert.equal(
+  typeof admission.createDecisionLineageGraph,
+  'function',
+);
+assert.equal(
   admission.financePipelineAdmissionDescriptor().route,
   '/api/v1/pipeline/run',
 );

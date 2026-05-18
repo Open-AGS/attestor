@@ -2327,6 +2327,7 @@ export * from './reviewer-open-defeater-view.js';
 export * from './promotion-gate-runner.js';
 export * from './tla-trace-validator-bridge.js';
 export * from './runtime-monitor-skeleton.js';
+export * from './decision-lineage-graph.js';
 export * from './shadow-simulation.js';
 export * from './money-movement-shadow.js';
 export * from './shadow-summary.js';

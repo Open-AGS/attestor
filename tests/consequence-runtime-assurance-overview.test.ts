@@ -136,7 +136,7 @@ function testOverviewRecordsContractShapeAndSequence(): void {
     'tests/invariant-promotion-gate.test.ts',
     'docs/02-architecture/invariant-promotion-gate.md',
     '| I00 | complete | Assurance Case Contract |',
-    'Progress: 11/14 complete after I10. 3 steps remain.',
+    'Progress: 12/14 complete after I11. 2 steps remain.',
     '| I01 | complete | Learned Artifact Release Budget |',
     '| I02 | complete | Shadow Data Quality Gate |',
     '| I03 | complete | Baseline Cohort Builder |',
@@ -147,6 +147,7 @@ function testOverviewRecordsContractShapeAndSequence(): void {
     '| I08 | complete | Promotion Gate Runner |',
     '| I09 | complete | TLA+ Trace Validator Bridge |',
     '| I10 | complete | Runtime Monitor Skeleton |',
+    '| I11 | complete | Decision Lineage Graph |',
     '| I13 | planned | Outcome Feedback / COE Wiring |',
     'src/consequence-admission/assurance-case-contract.ts',
     'tests/assurance-case-contract.test.ts',
@@ -181,6 +182,9 @@ function testOverviewRecordsContractShapeAndSequence(): void {
     'src/consequence-admission/runtime-monitor-skeleton.ts',
     'tests/runtime-monitor-skeleton.test.ts',
     'docs/02-architecture/runtime-monitor-skeleton.md',
+    'src/consequence-admission/decision-lineage-graph.ts',
+    'tests/decision-lineage-graph.test.ts',
+    'docs/02-architecture/decision-lineage-graph.md',
     'SACM 2.3-aligned',
     'Eliminative Argumentation / Assurance 2.0',
     'I01 makes learned artifact release an explicit information-release budget',
@@ -194,6 +198,7 @@ function testOverviewRecordsContractShapeAndSequence(): void {
     'I08 runs the bounded indefeasibility predicate',
     'I09 turns W06 decision trace snapshots',
     'I10 turns W05/W06 runtime observations',
+    'I11 turns the I00 assurance-case material',
   ]) {
     includes(overview, expected, `Overview: records ${expected}`);
   }

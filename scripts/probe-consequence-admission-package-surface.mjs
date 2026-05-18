@@ -1291,6 +1291,38 @@ assert.equal(
   'function',
 );
 assert.equal(
+  admission.CANDIDATE_INVARIANT_SYNTHESIZER_VERSION,
+  'attestor.candidate-invariant-synthesizer.v1',
+);
+assert.equal(
+  admission.candidateInvariantSynthesizerDescriptor().assuranceCaseContractVersion,
+  admission.ASSURANCE_CASE_CONTRACT_VERSION,
+);
+assert.equal(
+  admission.candidateInvariantSynthesizerDescriptor().baselineCohortBuilderVersion,
+  admission.BASELINE_COHORT_BUILDER_VERSION,
+);
+assert.equal(
+  admission.candidateInvariantSynthesizerDescriptor().candidateInvariantsCatalogVersion,
+  admission.CANDIDATE_INVARIANTS_CATALOG_VERSION,
+);
+assert.equal(
+  admission.candidateInvariantSynthesizerDescriptor().createsClaimNode,
+  true,
+);
+assert.equal(
+  admission.candidateInvariantSynthesizerDescriptor().noMining,
+  true,
+);
+assert.equal(
+  admission.candidateInvariantSynthesizerDescriptor().canAdmit,
+  false,
+);
+assert.equal(
+  typeof admission.synthesizeCandidateInvariantAssuranceCase,
+  'function',
+);
+assert.equal(
   admission.financePipelineAdmissionDescriptor().route,
   '/api/v1/pipeline/run',
 );

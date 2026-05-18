@@ -85,6 +85,7 @@
     "test:evaluation-packet-docs": "tsx tests/evaluation-packet-docs.test.ts",
     "test:evaluation-release-notes": "tsx tests/evaluation-release-notes.test.ts",
     "test:security-baseline-docs": "tsx tests/security-baseline-docs.test.ts",
+    "test:pr-contract-template": "tsx tests/pr-contract-template.test.ts",
     "test:attestor-internal-machine-map": "tsx tests/attestor-internal-machine-map.test.ts",
     "test:public-agent-surface-boundary": "tsx tests/public-agent-surface-boundary.test.ts",
     "test:research-provenance-ledger": "tsx tests/research-provenance-ledger.test.ts",

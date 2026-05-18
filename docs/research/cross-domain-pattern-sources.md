@@ -34,6 +34,7 @@ source domain pattern
 | Human-AI review | [Microsoft Human-AI Guidelines](https://www.microsoft.com/en-us/research/blog/guidelines-for-human-ai-interaction-design/), [Google People + AI Guidebook](https://pair.withgoogle.com/guidebook/) | Human attention is bounded; uncertainty and recourse should be visible. | Human comprehension gate, active questions, review-by-exception. | No claim that review UX is complete without user testing. |
 | Assurance case argumentation | [GSN Community Standard v3](https://scsc.uk/gsn), [OMG SACM 2.3](https://www.omg.org/spec/SACM), [CMU SEI Eliminative Argumentation](https://www.sei.cmu.edu/library/eliminative-argumentation-a-basis-for-arguing-confidence-in-system-properties/), [SRI Assurance 2.0](https://www.csl.sri.com/users/rushby/assurance2.0), [University of York AMLAS](https://www.york.ac.uk/assuring-autonomy/guidance/amlas/) | Claims, evidence, argument strategy, explicit defeat/uncertainty, and ML assurance case structure. | Assurance Case Contract, open defeater view, promotion gate evidence boundary. | No SACM conformance, GSN tooling, formal proof, or ML safety certification claim. |
 | Learned artifact privacy | [NIST SP 800-226](https://csrc.nist.gov/pubs/sp/800/226/final), [OpenDP Context](https://docs.opendp.org/en/stable/api/user-guide/context/index.html), [U.S. Census reconstruction and reidentification attack](https://www.census.gov/library/working-papers/2023/adrm/CES-WP-23-63.html), [Google Differential Privacy libraries](https://github.com/google/differential-privacy) | Treat learned candidates as information releases with bounded budget, mediated access, and reconstruction-risk review. | Learned Artifact Release Budget, privacy/reconstruction undermining defeaters. | No differential privacy engine, DP guarantee, public release, or cross-tenant aggregation claim. |
+| Shadow evidence quality | [CloudEvents required context and privacy](https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md), [OpenTelemetry log data model](https://opentelemetry.io/docs/specs/otel/logs/data-model/), [W3C PROV provenance data model](https://www.w3.org/TR/prov-overview/), [W3C Trace Context](https://www.w3.org/TR/trace-context/), [OpenLineage API](https://openlineage.io/apidocs/openapi/), [Great Expectations Validation Result](https://docs.greatexpectations.io/docs/0.18/reference/learn/terms/validation_result/), [AWS Deequ](https://github.com/awslabs/deequ) | Event context, observed timestamp, trace correlation, producer/schema/provenance refs, validation-result records, and data-quality checks as explicit assumptions. | Shadow Data Quality Gate and provenance/freshness/coverage undermining defeaters. | No CloudEvents/OpenTelemetry/PROV/OpenLineage conformance, data-quality platform, or production readiness claim. |
 
 ## Translation Rules
 
@@ -51,6 +52,7 @@ These are the engineering rules imported from the source matrix.
 10. Human review must be bounded and actionable.
 11. Budget exhaustion must not fall open.
 12. Every future fabric mutation must run replay/backtest regression.
+13. Shadow evidence must pass provenance/freshness/coverage gates before it can support a claim.
 
 ## Attestor Mapping
 
@@ -68,6 +70,7 @@ These are the engineering rules imported from the source matrix.
 | Assurance measurement plane | NIST/SRE-style measure/manage surface without decision authority. |
 | Assurance case contract | SACM-aligned argument substrate with GSN render view and defeater-first promotion logic. |
 | Learned artifact release budget | Bounded release-budget context and privacy/reconstruction undermining defeaters before learned candidates can progress. |
+| Shadow data quality gate | Converts weak shadow evidence into explicit undermining-defeater material instead of silently trusting logs. |
 
 ## Sequenced Implementation
 
@@ -87,6 +90,7 @@ The research supports the following order:
 10. assurance measurement plane
 11. assurance case contract for Runtime Intelligence Activation v1
 12. learned artifact release budget for Runtime Intelligence Activation v1
+13. shadow data quality gate for Runtime Intelligence Activation v1
 ```
 
 The first code PR should stay types-only. Any behavior, learning, fusion math,

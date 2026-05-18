@@ -1223,6 +1223,38 @@ assert.equal(
   'function',
 );
 assert.equal(
+  admission.SHADOW_DATA_QUALITY_GATE_VERSION,
+  'attestor.shadow-data-quality-gate.v1',
+);
+assert.equal(
+  admission.shadowDataQualityGateDescriptor().canonicalShadowEventSchemaVersion,
+  admission.CANONICAL_SHADOW_EVENT_SCHEMA_VERSION,
+);
+assert.equal(
+  admission.shadowDataQualityGateDescriptor().assuranceCaseContractVersion,
+  admission.ASSURANCE_CASE_CONTRACT_VERSION,
+);
+assert.equal(
+  admission.shadowDataQualityGateDescriptor().opensUnderminingDefeaters,
+  true,
+);
+assert.equal(
+  admission.shadowDataQualityGateDescriptor().digestOnlyEvidence,
+  true,
+);
+assert.equal(
+  admission.shadowDataQualityGateDescriptor().canAdmit,
+  false,
+);
+assert.equal(
+  typeof admission.createShadowDataQualityGate,
+  'function',
+);
+assert.equal(
+  typeof admission.evaluateShadowDataQualityGate,
+  'function',
+);
+assert.equal(
   admission.financePipelineAdmissionDescriptor().route,
   '/api/v1/pipeline/run',
 );

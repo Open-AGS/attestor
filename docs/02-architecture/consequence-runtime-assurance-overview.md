@@ -1040,13 +1040,13 @@ shadow / replay / formal / calibration / outcome material
         -> promotion gate can review what remains unknown
 ```
 
-Progress: 2/14 complete after I01. 12 steps remain.
+Progress: 3/14 complete after I02. 11 steps remain.
 
 | Step | Status | Slice | Evidence |
 |---|---|---|---|
 | I00 | complete | Assurance Case Contract | `src/consequence-admission/assurance-case-contract.ts`; `tests/assurance-case-contract.test.ts`; `docs/02-architecture/assurance-case-contract.md` |
 | I01 | complete | Learned Artifact Release Budget | `src/consequence-admission/learned-artifact-release-budget.ts`; `tests/learned-artifact-release-budget.test.ts`; `docs/02-architecture/learned-artifact-release-budget.md` |
-| I02 | planned | Shadow Data Quality Gate | Shadow evidence quality and provenance undermining defeaters |
+| I02 | complete | Shadow Data Quality Gate | `src/consequence-admission/shadow-data-quality-gate.ts`; `tests/shadow-data-quality-gate.test.ts`; `docs/02-architecture/shadow-data-quality-gate.md` |
 | I03 | planned | Baseline Cohort Builder | Cohort evidence nodes for candidate claims |
 | I04 | planned | Candidate Invariant Synthesizer | Claim and strategy nodes |
 | I05 | planned | Counterexample Replay + Minimal Witness | Rebutting defeaters and minimal witness evidence |
@@ -1070,6 +1070,12 @@ reviewer, assurance case, and reconstruction-risk context. It does not implement
 differential privacy, does not provide a DP guarantee, does not release artifacts,
 and rejects public, raw-material, and cross-tenant release paths.
 
+I02 turns shadow evidence quality into explicit undermining-defeater material.
+It evaluates canonical shadow events across schema, provenance, freshness,
+coverage, redaction, correlation, and decision-integrity checks before later
+steps use them as assurance-case evidence. It does not admit, block, enforce,
+train, claim provenance-standard conformance, or act as a data-quality platform.
+
 ## Primary Source Anchors
 
 Reviewed on 2026-05-17 and 2026-05-18:
@@ -1091,6 +1097,7 @@ Reviewed on 2026-05-17 and 2026-05-18:
 - Tenant isolation and relation-model framing: [Alloy language reference](https://alloytools.org/download/alloy-language-reference.pdf), [Alloy in CACM](https://cacm.acm.org/research/alloy/), [AWS SaaS tenant isolation concepts](https://docs.aws.amazon.com/whitepapers/latest/saas-tenant-isolation-strategies/core-isolation-concepts.html), [AWS Lambda tenant isolation](https://docs.aws.amazon.com/lambda/latest/dg/tenant-isolation.html), and [NIST SP 800-207A](https://csrc.nist.gov/pubs/sp/800/207/a/final).
 - Assurance-case argument structure and exchange framing: [GSN Community Standard v3](https://scsc.uk/gsn), [OMG SACM 2.3](https://www.omg.org/spec/SACM), [CMU SEI Eliminative Argumentation](https://www.sei.cmu.edu/library/eliminative-argumentation-a-basis-for-arguing-confidence-in-system-properties/), [SRI Assurance 2.0](https://www.csl.sri.com/users/rushby/assurance2.0), [ENTRUST dynamic assurance cases](https://arxiv.org/abs/1703.06350), and [University of York AMLAS](https://www.york.ac.uk/assuring-autonomy/guidance/amlas/).
 - Learned artifact privacy and reconstruction-risk framing: [NIST SP 800-226](https://csrc.nist.gov/pubs/sp/800/226/final), [OpenDP Context](https://docs.opendp.org/en/stable/api/user-guide/context/index.html), [OpenDP typical workflow](https://docs.opendp.org/en/stable/getting-started/typical-workflow.html), [U.S. Census reconstruction and reidentification attack](https://www.census.gov/library/working-papers/2023/adrm/CES-WP-23-63.html), and [Google Differential Privacy libraries](https://github.com/google/differential-privacy).
+- Shadow evidence quality framing: [CloudEvents specification](https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md), [OpenTelemetry Logs Data Model](https://opentelemetry.io/docs/specs/otel/logs/data-model/), [W3C PROV Overview](https://www.w3.org/TR/prov-overview/), [W3C Trace Context](https://www.w3.org/TR/trace-context/), [OpenLineage API](https://openlineage.io/apidocs/openapi/), [Great Expectations Validation Result](https://docs.greatexpectations.io/docs/0.18/reference/learn/terms/validation_result/), and [AWS Deequ](https://github.com/awslabs/deequ).
 
 These sources are engineering anchors only. They do not prove production
 readiness, compliance certification, customer deployment, target-system

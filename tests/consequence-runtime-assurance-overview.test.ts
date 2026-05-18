@@ -136,8 +136,9 @@ function testOverviewRecordsContractShapeAndSequence(): void {
     'tests/invariant-promotion-gate.test.ts',
     'docs/02-architecture/invariant-promotion-gate.md',
     '| I00 | complete | Assurance Case Contract |',
-    'Progress: 2/14 complete after I01. 12 steps remain.',
+    'Progress: 3/14 complete after I02. 11 steps remain.',
     '| I01 | complete | Learned Artifact Release Budget |',
+    '| I02 | complete | Shadow Data Quality Gate |',
     '| I13 | planned | Outcome Feedback / COE Wiring |',
     'src/consequence-admission/assurance-case-contract.ts',
     'tests/assurance-case-contract.test.ts',
@@ -145,9 +146,13 @@ function testOverviewRecordsContractShapeAndSequence(): void {
     'src/consequence-admission/learned-artifact-release-budget.ts',
     'tests/learned-artifact-release-budget.test.ts',
     'docs/02-architecture/learned-artifact-release-budget.md',
+    'src/consequence-admission/shadow-data-quality-gate.ts',
+    'tests/shadow-data-quality-gate.test.ts',
+    'docs/02-architecture/shadow-data-quality-gate.md',
     'SACM 2.3-aligned',
     'Eliminative Argumentation / Assurance 2.0',
     'I01 makes learned artifact release an explicit information-release budget',
+    'I02 turns shadow evidence quality into explicit undermining-defeater material',
   ]) {
     includes(overview, expected, `Overview: records ${expected}`);
   }
@@ -204,6 +209,11 @@ function testResearchAnnexRecordsCrossDomainAnchors(): void {
     'OpenDP Context',
     'U.S. Census reconstruction and reidentification attack',
     'Google Differential Privacy libraries',
+    'CloudEvents required context and privacy',
+    'OpenTelemetry log data model',
+    'W3C PROV provenance data model',
+    'Great Expectations Validation Result',
+    'AWS Deequ',
     'Only AI RMF-mappable language is claimed, not conformance.',
     'Every future fabric mutation must run replay/backtest regression.',
   ]) {

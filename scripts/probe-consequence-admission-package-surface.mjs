@@ -1491,6 +1491,34 @@ assert.equal(
   'function',
 );
 assert.equal(
+  admission.TLA_TRACE_VALIDATOR_BRIDGE_VERSION,
+  'attestor.tla-trace-validator-bridge.v1',
+);
+assert.equal(
+  admission.tlaTraceValidatorBridgeDescriptor().decisionTraceLoggerVersion,
+  admission.DECISION_TRACE_LOGGER_VERSION,
+);
+assert.equal(
+  admission.tlaTraceValidatorBridgeDescriptor().assuranceCaseContractVersion,
+  admission.ASSURANCE_CASE_CONTRACT_VERSION,
+);
+assert.equal(
+  admission.tlaTraceValidatorBridgeDescriptor().doesNotRunModelChecker,
+  true,
+);
+assert.equal(
+  admission.tlaTraceValidatorBridgeDescriptor().noFormalProofClaim,
+  true,
+);
+assert.equal(
+  admission.tlaTraceValidatorBridgeDescriptor().canAdmit,
+  false,
+);
+assert.equal(
+  typeof admission.createTlaTraceValidatorBridge,
+  'function',
+);
+assert.equal(
   admission.financePipelineAdmissionDescriptor().route,
   '/api/v1/pipeline/run',
 );

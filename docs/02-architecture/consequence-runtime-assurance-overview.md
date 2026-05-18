@@ -1040,7 +1040,7 @@ shadow / replay / formal / calibration / outcome material
         -> promotion gate can review what remains unknown
 ```
 
-Progress: 9/14 complete after I08. 5 steps remain.
+Progress: 10/14 complete after I09. 4 steps remain.
 
 | Step | Status | Slice | Evidence |
 |---|---|---|---|
@@ -1053,7 +1053,7 @@ Progress: 9/14 complete after I08. 5 steps remain.
 | I06 | complete | Calibration Lower-Bound Runner | `src/consequence-admission/calibration-lower-bound-runner.ts`; `tests/calibration-lower-bound-runner.test.ts`; `docs/02-architecture/calibration-lower-bound-runner.md` |
 | I07 | complete | Reviewer Packet / Open Defeater View | `src/consequence-admission/reviewer-open-defeater-view.ts`; `tests/reviewer-open-defeater-view.test.ts`; `docs/02-architecture/reviewer-open-defeater-view.md` |
 | I08 | complete | Promotion Gate Runner | `src/consequence-admission/promotion-gate-runner.ts`; `tests/promotion-gate-runner.test.ts`; `docs/02-architecture/promotion-gate-runner.md` |
-| I09 | planned | TLA+ Trace Validator Bridge | Formal-spec evidence nodes |
+| I09 | complete | TLA+ Trace Validator Bridge | `src/consequence-admission/tla-trace-validator-bridge.ts`; `tests/tla-trace-validator-bridge.test.ts`; `docs/02-architecture/tla-trace-validator-bridge.md` |
 | I10 | planned | Runtime Monitor Skeleton | Living-case update source |
 | I11 | planned | Decision Lineage Graph | Signed node and transition lineage |
 | I12 | planned | Goodhart / Authority-Creep Guard | Undercutting defeaters for measurement-as-authority |
@@ -1110,6 +1110,13 @@ defeaters remain, and no raw, closure, review-decision, policy-activation, or
 live-enforcement request is present. It does not close defeat, decide review,
 generate a patch, activate policy, admit, or enforce.
 
+I09 turns W06 decision trace snapshots plus external TLA+ validator report
+digests into I00 formal-spec evidence nodes or open rebutting/undercutting
+defeaters. It requires a verified digest-only trace, spec/config digest binding,
+an explicit invariant set, and validator report material before evidence is
+created. It does not run TLC or Apalache, act as a runtime oracle, claim formal
+proof, close defeat, activate policy, admit, or enforce.
+
 ## Primary Source Anchors
 
 Reviewed on 2026-05-17 and 2026-05-18:
@@ -1141,6 +1148,7 @@ Reviewed on 2026-05-17 and 2026-05-18:
 - Causal dependency framing: [Pearl, Causality](https://bayes.cs.ucla.edu/BOOK-2K/causality.html).
 - Feedback loop and dynamic-system framing: [System Dynamics Society](https://systemdynamics.org/what-is-system-dynamics-old/).
 - Design-first formal specification framing: [Microsoft Research, Specifying Systems](https://www.microsoft.com/en-us/research/publication/specifying-systems-the-tla-language-and-tools-for-hardware-and-software-engineers/), [How Amazon Web Services uses formal methods](https://cacm.acm.org/research/how-amazon-web-services-uses-formal-methods/), [Systems Correctness Practices at AWS](https://cacm.acm.org/practice/systems-correctness-practices-at-amazon-web-services/), and [Apalache TLA+ model checker documentation](https://apalache-mc.org/docs/).
+- TLA+ trace-validation bridge framing: [Microsoft Research, Specifying Systems](https://www.microsoft.com/en-us/research/publication/specifying-systems-the-tla-language-and-tools-for-hardware-and-software-engineers/), [How Amazon Web Services uses formal methods](https://cacm.acm.org/research/how-amazon-web-services-uses-formal-methods/), [Systems Correctness Practices at AWS](https://cacm.acm.org/practice/systems-correctness-practices-at-amazon-web-services/), [Apalache TLA+ model checker documentation](https://apalache-mc.org/docs/), and the W06 decision trace logger contract.
 - Tenant isolation and relation-model framing: [Alloy language reference](https://alloytools.org/download/alloy-language-reference.pdf), [Alloy in CACM](https://cacm.acm.org/research/alloy/), [AWS SaaS tenant isolation concepts](https://docs.aws.amazon.com/whitepapers/latest/saas-tenant-isolation-strategies/core-isolation-concepts.html), [AWS Lambda tenant isolation](https://docs.aws.amazon.com/lambda/latest/dg/tenant-isolation.html), and [NIST SP 800-207A](https://csrc.nist.gov/pubs/sp/800/207/a/final).
 - Assurance-case argument structure and exchange framing: [GSN Community Standard v3](https://scsc.uk/gsn), [OMG SACM 2.3](https://www.omg.org/spec/SACM), [CMU SEI Eliminative Argumentation](https://www.sei.cmu.edu/library/eliminative-argumentation-a-basis-for-arguing-confidence-in-system-properties/), [SRI Assurance 2.0](https://www.csl.sri.com/users/rushby/assurance2.0), [ENTRUST dynamic assurance cases](https://arxiv.org/abs/1703.06350), and [University of York AMLAS](https://www.york.ac.uk/assuring-autonomy/guidance/amlas/).
 - Learned artifact privacy and reconstruction-risk framing: [NIST SP 800-226](https://csrc.nist.gov/pubs/sp/800/226/final), [OpenDP Context](https://docs.opendp.org/en/stable/api/user-guide/context/index.html), [OpenDP typical workflow](https://docs.opendp.org/en/stable/getting-started/typical-workflow.html), [U.S. Census reconstruction and reidentification attack](https://www.census.gov/library/working-papers/2023/adrm/CES-WP-23-63.html), and [Google Differential Privacy libraries](https://github.com/google/differential-privacy).

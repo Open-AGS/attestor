@@ -41,6 +41,7 @@ source domain pattern
 | Calibration lower-bound runner | [FDA Data Mining White Paper](https://www.fda.gov/science-research/data-mining/data-mining-fda-white-paper), [NIST/SEMATECH Engineering Statistics Handbook](https://www.nist.gov/programs-projects/nistsematech-engineering-statistics-handbook), [scikit-learn probability calibration](https://scikit-learn.org/stable/modules/calibration.html), [NIST AI RMF 1.0](https://www.nist.gov/publications/artificial-intelligence-risk-management-framework-ai-rmf-10) | Treat calibrated confidence as uncertainty-bearing measurement evidence; require lower-bound framing and keep point estimates outside authority paths. | Calibration Lower-Bound Runner evidence nodes and weak-confidence undercutting defeaters. | No calibration training engine, no statistical guarantee, no promotion gate, no policy activation, and no authority claim. |
 | Reviewer open-defeater view | [Microsoft Human-AI Interaction Guidelines](https://www.microsoft.com/en-us/research/blog/guidelines-for-human-ai-interaction-design/), [Google People + AI Guidebook](https://pair.withgoogle.com/guidebook/), [GitHub code scanning alert resolution](https://docs.github.com/en/code-security/how-tos/manage-security-alerts/manage-code-scanning-alerts/resolving-code-scanning-alerts), [GSN Community Standard v3](https://scsc.uk/gsn) | Render only the remaining open defeat material, bound the reviewer workload, keep uncertainty visible, and separate display from review/dismissal decisions. | Reviewer Open Defeater View packets. | No reviewer UI, no review decision, no defeater closure, no promotion gate, no live enforcement, and no production readiness claim. |
 | Promotion gate runner | [CMU SEI Eliminative Argumentation](https://www.sei.cmu.edu/library/eliminative-argumentation-a-basis-for-arguing-confidence-in-system-properties/), [SRI Assurance 2.0](https://www.csl.sri.com/users/rushby/assurance2.0), [OMG SACM 2.3](https://www.omg.org/spec/SACM), [CISA SSVC](https://www.cisa.gov/stakeholder-specific-vulnerability-categorization-ssvc), [GitHub code scanning alert resolution](https://docs.github.com/en/code-security/how-tos/manage-security-alerts/manage-code-scanning-alerts/resolving-code-scanning-alerts) | Execute a bounded indefeasibility predicate over open-defeater review material and map it to one next action without closing defeat or activating policy. | Promotion Gate Runner. | No reviewer decision, no defeater closure, no policy patch generation, no policy activation, no live enforcement, and no authority claim. |
+| TLA+ trace validator bridge | [Microsoft Research Specifying Systems](https://www.microsoft.com/en-us/research/publication/specifying-systems-the-tla-language-and-tools-for-hardware-and-software-engineers/), [How Amazon Web Services uses formal methods](https://cacm.acm.org/research/how-amazon-web-services-uses-formal-methods/), [Systems Correctness Practices at AWS](https://cacm.acm.org/practice/systems-correctness-practices-at-amazon-web-services/), [Apalache documentation](https://apalache-mc.org/docs/) | Treat formal trace validation as review evidence against a manual design-first spec; valid reports create evidence, invalid/unknown reports open defeaters. | TLA+ Trace Validator Bridge. | No TLC runner, no Apalache runner, no runtime oracle, no formal proof, no policy activation, no live enforcement, and no production readiness claim. |
 
 Data Cards and Datasheets are used here as documentation anchors for cohort
 scope, provenance, maintenance, intended use, and stakeholder-readable limits.
@@ -68,6 +69,7 @@ These are the engineering rules imported from the source matrix.
 17. Calibration evidence must use lower bounds and uncertainty context; point estimates can never become authority.
 18. Reviewer packets should render open defeaters only, cap visible reason lines and questions, and leave closure, dismissal, and promotion decisions to later authority-bound steps.
 19. Promotion gates should execute a bounded indefeasibility predicate over the open-defeater view, then permit only a review-only handoff; closure, review decisions, patch generation, policy activation, and enforcement stay separate.
+20. Formal trace validation should be represented as digest-bound evidence or defeat material; the bridge that records it must not run the model checker, become a runtime oracle, or claim formal proof.
 
 ## Attestor Mapping
 
@@ -92,6 +94,7 @@ These are the engineering rules imported from the source matrix.
 | Calibration lower-bound runner | Converts ready calibration records into lower-bound confidence evidence, or weak-confidence undercutting defeaters, without making confidence authoritative. |
 | Reviewer open-defeater view | Converts I05 and I06 open defeaters into a bounded digest-only reviewer packet without closing defeat, deciding review, promoting policy, or activating enforcement. |
 | Promotion gate runner | Converts a no-open-defeater reviewer view into a bounded review-only patch handoff record without closing defeat, deciding review, generating patches, activating policy, or enforcing. |
+| TLA+ trace validator bridge | Converts verified decision trace snapshots and external TLA+ validator report digests into assurance-case evidence or open rebutting/undercutting defeaters without running TLC/Apalache or claiming formal proof. |
 
 ## Sequenced Implementation
 
@@ -116,6 +119,7 @@ The research supports the following order:
 15. calibration lower-bound runner for Runtime Intelligence Activation v1
 16. reviewer open-defeater view for Runtime Intelligence Activation v1
 17. promotion gate runner for Runtime Intelligence Activation v1
+18. TLA+ trace validator bridge for Runtime Intelligence Activation v1
 ```
 
 Each new slice should keep the smallest pure deterministic boundary it can

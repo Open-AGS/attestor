@@ -35,6 +35,10 @@ source domain pattern
 | Assurance case argumentation | [GSN Community Standard v3](https://scsc.uk/gsn), [OMG SACM 2.3](https://www.omg.org/spec/SACM), [CMU SEI Eliminative Argumentation](https://www.sei.cmu.edu/library/eliminative-argumentation-a-basis-for-arguing-confidence-in-system-properties/), [SRI Assurance 2.0](https://www.csl.sri.com/users/rushby/assurance2.0), [University of York AMLAS](https://www.york.ac.uk/assuring-autonomy/guidance/amlas/) | Claims, evidence, argument strategy, explicit defeat/uncertainty, and ML assurance case structure. | Assurance Case Contract, open defeater view, promotion gate evidence boundary. | No SACM conformance, GSN tooling, formal proof, or ML safety certification claim. |
 | Learned artifact privacy | [NIST SP 800-226](https://csrc.nist.gov/pubs/sp/800/226/final), [OpenDP Context](https://docs.opendp.org/en/stable/api/user-guide/context/index.html), [U.S. Census reconstruction and reidentification attack](https://www.census.gov/library/working-papers/2023/adrm/CES-WP-23-63.html), [Google Differential Privacy libraries](https://github.com/google/differential-privacy) | Treat learned candidates as information releases with bounded budget, mediated access, and reconstruction-risk review. | Learned Artifact Release Budget, privacy/reconstruction undermining defeaters. | No differential privacy engine, DP guarantee, public release, or cross-tenant aggregation claim. |
 | Shadow evidence quality | [CloudEvents required context and privacy](https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md), [OpenTelemetry log data model](https://opentelemetry.io/docs/specs/otel/logs/data-model/), [W3C PROV provenance data model](https://www.w3.org/TR/prov-overview/), [W3C Trace Context](https://www.w3.org/TR/trace-context/), [OpenLineage API](https://openlineage.io/apidocs/openapi/), [Great Expectations Validation Result](https://docs.greatexpectations.io/docs/0.18/reference/learn/terms/validation_result/), [AWS Deequ](https://github.com/awslabs/deequ) | Event context, observed timestamp, trace correlation, producer/schema/provenance refs, validation-result records, and data-quality checks as explicit assumptions. | Shadow Data Quality Gate and provenance/freshness/coverage undermining defeaters. | No CloudEvents/OpenTelemetry/PROV/OpenLineage conformance, data-quality platform, or production readiness claim. |
+| Baseline cohort evidence | [TensorFlow Data Validation anomaly gate](https://www.tensorflow.org/tfx/data_validation/anomalies), [TFX ML Metadata artifact lineage](https://tensorflow.github.io/tfx/guide/mlmd/), [Google Data Cards Playbook](https://sites.research.google/datacardsplaybook/), [Datasheets for Datasets](https://www.microsoft.com/en-us/research/publication/datasheets-for-datasets/), [DVC data versioning](https://doc.dvc.org/user-guide), [lakeFS versioning internals](https://docs.lakefs.io/dev/understand/how/versioning-internals/), [OpenLineage core model](https://github.com/OpenLineage/OpenLineage) | Treat cohorts as documented, digest-addressed, lineage-bound dataset artifacts whose anomalies and scope gaps remain explicit. | Baseline Cohort Builder and assurance-case evidence nodes for candidate claims. | No TFDV/MLMD/Data Cards/DVC/lakeFS/OpenLineage conformance, no baseline mining engine, and no automatic invariant synthesis claim. |
+
+Data Cards and Datasheets are used here as documentation anchors for cohort
+scope, provenance, maintenance, intended use, and stakeholder-readable limits.
 
 ## Translation Rules
 
@@ -53,6 +57,7 @@ These are the engineering rules imported from the source matrix.
 11. Budget exhaustion must not fall open.
 12. Every future fabric mutation must run replay/backtest regression.
 13. Shadow evidence must pass provenance/freshness/coverage gates before it can support a claim.
+14. Baseline cohorts become evidence only after every source event has a quality gate and the cohort summary has a release budget.
 
 ## Attestor Mapping
 
@@ -71,6 +76,7 @@ These are the engineering rules imported from the source matrix.
 | Assurance case contract | SACM-aligned argument substrate with GSN render view and defeater-first promotion logic. |
 | Learned artifact release budget | Bounded release-budget context and privacy/reconstruction undermining defeaters before learned candidates can progress. |
 | Shadow data quality gate | Converts weak shadow evidence into explicit undermining-defeater material instead of silently trusting logs. |
+| Baseline cohort builder | Converts budgeted, quality-gated cohort material into assurance-case evidence nodes without mining, training, or granting authority. |
 
 ## Sequenced Implementation
 

@@ -114,6 +114,7 @@
     "test:assurance-case-contract": "tsx tests/assurance-case-contract.test.ts",
     "test:learned-artifact-release-budget": "tsx tests/learned-artifact-release-budget.test.ts",
     "test:shadow-data-quality-gate": "tsx tests/shadow-data-quality-gate.test.ts",
+    "test:baseline-cohort-builder": "tsx tests/baseline-cohort-builder.test.ts",
     "test:admission-state-machine-spec": "tsx tests/admission-state-machine-spec.test.ts",
     "test:tenant-isolation-model": "tsx tests/tenant-isolation-model.test.ts",
     "test:target-system-compatibility-matrix": "tsx tests/target-system-compatibility-matrix.test.ts",

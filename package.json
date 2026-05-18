@@ -113,6 +113,7 @@
     "test:shadow-dispatch-claim-contract": "tsx tests/shadow-dispatch-claim-contract.test.ts",
     "test:shadow-runtime-activation-runner": "tsx tests/shadow-runtime-activation-runner.test.ts",
     "test:shadow-runtime-observability-hooks": "tsx tests/shadow-runtime-observability-hooks.test.ts",
+    "test:shadow-runtime-outcome-feedback-hook": "tsx tests/shadow-runtime-outcome-feedback-hook.test.ts",
     "test:decision-trace-logger": "tsx tests/decision-trace-logger.test.ts",
     "test:baseline-cohort-contract": "tsx tests/baseline-cohort-contract.test.ts",
     "test:candidate-invariants-catalog": "tsx tests/candidate-invariants-catalog.test.ts",

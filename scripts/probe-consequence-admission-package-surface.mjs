@@ -1239,6 +1239,58 @@ assert.equal(
   'function',
 );
 assert.equal(
+  admission.SHADOW_RUNTIME_OUTCOME_FEEDBACK_HOOK_VERSION,
+  'attestor.shadow-runtime-outcome-feedback-hook.v1',
+);
+assert.equal(
+  admission.shadowRuntimeOutcomeFeedbackHookDescriptor().shadowRuntimeObservabilityHooksVersion,
+  admission.SHADOW_RUNTIME_OBSERVABILITY_HOOKS_VERSION,
+);
+assert.equal(
+  admission.shadowRuntimeOutcomeFeedbackHookDescriptor().outcomeIncidentFeedbackContractVersion,
+  admission.OUTCOME_INCIDENT_FEEDBACK_CONTRACT_VERSION,
+);
+assert.equal(
+  admission.shadowRuntimeOutcomeFeedbackHookDescriptor().outcomeFeedbackCoeWiringVersion,
+  admission.OUTCOME_FEEDBACK_COE_WIRING_VERSION,
+);
+assert.equal(
+  admission.shadowRuntimeOutcomeFeedbackHookDescriptor().assuranceCaseContractVersion,
+  admission.ASSURANCE_CASE_CONTRACT_VERSION,
+);
+assert.equal(
+  admission.shadowRuntimeOutcomeFeedbackHookDescriptor().decisionLineageGraphVersion,
+  admission.DECISION_LINEAGE_GRAPH_VERSION,
+);
+assert.equal(
+  admission.shadowRuntimeOutcomeFeedbackHookDescriptor().requiresR06Observability,
+  true,
+);
+assert.equal(
+  admission.shadowRuntimeOutcomeFeedbackHookDescriptor().requiresPacketDigestBinding,
+  true,
+);
+assert.equal(
+  admission.shadowRuntimeOutcomeFeedbackHookDescriptor().writesAuditPlane,
+  false,
+);
+assert.equal(
+  admission.shadowRuntimeOutcomeFeedbackHookDescriptor().mutatesPolicy,
+  false,
+);
+assert.equal(
+  admission.shadowRuntimeOutcomeFeedbackHookDescriptor().activatesLearning,
+  false,
+);
+assert.equal(
+  admission.shadowRuntimeOutcomeFeedbackHookDescriptor().canAdmit,
+  false,
+);
+assert.equal(
+  typeof admission.runShadowRuntimeOutcomeFeedbackHook,
+  'function',
+);
+assert.equal(
   admission.DECISION_TRACE_LOGGER_VERSION,
   'attestor.decision-trace-logger.v1',
 );

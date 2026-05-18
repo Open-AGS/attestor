@@ -334,9 +334,11 @@ function testDocsOverviewLedgerAndPackageSurfaceStayAligned(): void {
   }
 
   for (const expected of [
-    'Progress: 6/8 complete after R06. 2 steps remain.',
+    'Progress: 7/8 complete after R07. 1 step remains.',
     '| R06 | complete | Trace / Lineage / Measurement Hooks |',
+    '| R07 | complete | Outcome Feedback Hook |',
     'src/consequence-admission/shadow-runtime-observability-hooks.ts',
+    'src/consequence-admission/shadow-runtime-outcome-feedback-hook.ts',
     'tests/shadow-runtime-observability-hooks.test.ts',
     'docs/02-architecture/shadow-runtime-observability-hooks.md',
   ]) {
@@ -344,10 +346,11 @@ function testDocsOverviewLedgerAndPackageSurfaceStayAligned(): void {
   }
 
   for (const expected of [
-    'Current progress after R06:',
-    '6/8 complete, 2 steps remain.',
+    'Current progress after R07:',
+    '7/8 complete, 1 step remains.',
     '| R06 | complete | Trace / Lineage / Measurement Hooks |',
-    'The next safe step is R07',
+    '| R07 | complete | Outcome Feedback Hook |',
+    'The next safe step is R08',
   ]) {
     includes(decisionPacket, expected, `Runtime activation packet: records ${expected}`);
   }

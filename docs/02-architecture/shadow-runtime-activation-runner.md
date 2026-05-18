@@ -94,4 +94,5 @@ R05 does not claim:
 
 ## Next
 
-R06 is now complete. The next safe step is R07: Outcome Feedback Hook.
+R06 and R07 are now complete. The next safe step is R08: End-to-End Fixture
+Replay Smoke.

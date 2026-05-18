@@ -1175,7 +1175,7 @@ semantics. It does not claim exactly-once delivery, global total ordering, live
 enforcement, production worker readiness, audit-plane write integration, or
 customer deployment readiness.
 
-Progress: 6/8 complete after R06. 2 steps remain.
+Progress: 7/8 complete after R07. 1 step remains.
 
 | Step | Status | Slice | Evidence |
 |---|---|---|---|
@@ -1185,7 +1185,7 @@ Progress: 6/8 complete after R06. 2 steps remain.
 | R04 | complete | Dispatcher / Reconcile Claim Contract | `src/consequence-admission/shadow-dispatch-claim-contract.ts`; `tests/shadow-dispatch-claim-contract.test.ts`; `docs/02-architecture/shadow-dispatch-claim-contract.md`; time-bounded lease, `FOR UPDATE SKIP LOCKED` semantics, tenant/source partition advisory-lock scope, bounded attempt increment, digest-only claim token, and no runner invocation |
 | R05 | complete | Shadow Runtime Activation Runner | `src/consequence-admission/shadow-runtime-activation-runner.ts`; `tests/shadow-runtime-activation-runner.test.ts`; `docs/02-architecture/shadow-runtime-activation-runner.md`; validates R04 claim/event binding, checks lease window, calls W05 dry-run, and binds pipeline/projection/packet digests, still shadow-only |
 | R06 | complete | Trace / Lineage / Measurement Hooks | `src/consequence-admission/shadow-runtime-observability-hooks.ts`; `tests/shadow-runtime-observability-hooks.test.ts`; `docs/02-architecture/shadow-runtime-observability-hooks.md`; binds R05 activation to W06 decision trace, I10 runtime monitor / optional measurement, assurance case, and I11 lineage graph without audit write or authority |
-| R07 | planned | Outcome Feedback Hook | connects I13 feedback material as read-only post-outcome input |
+| R07 | complete | Outcome Feedback Hook | `src/consequence-admission/shadow-runtime-outcome-feedback-hook.ts`; `tests/shadow-runtime-outcome-feedback-hook.test.ts`; `docs/02-architecture/shadow-runtime-outcome-feedback-hook.md`; connects I13 feedback material as read-only post-outcome input and derives an outcome-feedback assurance case / lineage graph without policy mutation or learning activation |
 | R08 | planned | End-to-End Fixture Replay Smoke | synthetic fixture replay through R02-R07, no live target system |
 
 ## Primary Source Anchors

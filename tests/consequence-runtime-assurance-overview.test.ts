@@ -136,9 +136,10 @@ function testOverviewRecordsContractShapeAndSequence(): void {
     'tests/invariant-promotion-gate.test.ts',
     'docs/02-architecture/invariant-promotion-gate.md',
     '| I00 | complete | Assurance Case Contract |',
-    'Progress: 3/14 complete after I02. 11 steps remain.',
+    'Progress: 4/14 complete after I03. 10 steps remain.',
     '| I01 | complete | Learned Artifact Release Budget |',
     '| I02 | complete | Shadow Data Quality Gate |',
+    '| I03 | complete | Baseline Cohort Builder |',
     '| I13 | planned | Outcome Feedback / COE Wiring |',
     'src/consequence-admission/assurance-case-contract.ts',
     'tests/assurance-case-contract.test.ts',
@@ -149,10 +150,15 @@ function testOverviewRecordsContractShapeAndSequence(): void {
     'src/consequence-admission/shadow-data-quality-gate.ts',
     'tests/shadow-data-quality-gate.test.ts',
     'docs/02-architecture/shadow-data-quality-gate.md',
+    'src/consequence-admission/baseline-cohort-builder.ts',
+    'tests/baseline-cohort-builder.test.ts',
+    'docs/02-architecture/baseline-cohort-builder.md',
     'SACM 2.3-aligned',
     'Eliminative Argumentation / Assurance 2.0',
     'I01 makes learned artifact release an explicit information-release budget',
     'I02 turns shadow evidence quality into explicit undermining-defeater material',
+    'I03 turns a W09 baseline cohort candidate into an',
+    'I00 assurance-case evidence',
   ]) {
     includes(overview, expected, `Overview: records ${expected}`);
   }

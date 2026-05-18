@@ -1255,6 +1255,42 @@ assert.equal(
   'function',
 );
 assert.equal(
+  admission.BASELINE_COHORT_BUILDER_VERSION,
+  'attestor.baseline-cohort-builder.v1',
+);
+assert.equal(
+  admission.baselineCohortBuilderDescriptor().assuranceCaseContractVersion,
+  admission.ASSURANCE_CASE_CONTRACT_VERSION,
+);
+assert.equal(
+  admission.baselineCohortBuilderDescriptor().baselineCohortContractVersion,
+  admission.BASELINE_COHORT_CONTRACT_VERSION,
+);
+assert.equal(
+  admission.baselineCohortBuilderDescriptor().shadowDataQualityGateVersion,
+  admission.SHADOW_DATA_QUALITY_GATE_VERSION,
+);
+assert.equal(
+  admission.baselineCohortBuilderDescriptor().learnedArtifactReleaseBudgetVersion,
+  admission.LEARNED_ARTIFACT_RELEASE_BUDGET_VERSION,
+);
+assert.equal(
+  admission.baselineCohortBuilderDescriptor().createsAssuranceEvidenceNode,
+  true,
+);
+assert.equal(
+  admission.baselineCohortBuilderDescriptor().noLearning,
+  true,
+);
+assert.equal(
+  admission.baselineCohortBuilderDescriptor().canAdmit,
+  false,
+);
+assert.equal(
+  typeof admission.createBaselineCohortEvidence,
+  'function',
+);
+assert.equal(
   admission.financePipelineAdmissionDescriptor().route,
   '/api/v1/pipeline/run',
 );

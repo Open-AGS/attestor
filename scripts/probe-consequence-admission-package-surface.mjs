@@ -1071,6 +1071,54 @@ assert.equal(
   'function',
 );
 assert.equal(
+  admission.SHADOW_DISPATCH_CLAIM_CONTRACT_VERSION,
+  'attestor.shadow-dispatch-claim-contract.v1',
+);
+assert.equal(
+  admission.SHADOW_DISPATCH_CLAIM_TOKEN_VERSION,
+  'attestor.shadow-dispatch-claim-token.v1',
+);
+assert.equal(
+  admission.shadowDispatchClaimContractDescriptor().sourceWorkItemContractVersion,
+  admission.SHADOW_OUTBOX_WORK_ITEM_CONTRACT_VERSION,
+);
+assert.equal(
+  admission.shadowDispatchClaimContractDescriptor().sourceWorkItemEventType,
+  admission.SHADOW_OUTBOX_WORK_ITEM_EVENT_TYPE,
+);
+assert.equal(
+  admission.shadowDispatchClaimContractDescriptor().rowLockSemantics,
+  'for-update-skip-locked',
+);
+assert.equal(
+  admission.shadowDispatchClaimContractDescriptor().claimLeaseSemantics,
+  'time-bounded-lease',
+);
+assert.equal(
+  admission.shadowDispatchClaimContractDescriptor().retrySemantics,
+  'bounded-attempt-increment',
+);
+assert.equal(
+  admission.shadowDispatchClaimContractDescriptor().claimContractIncluded,
+  true,
+);
+assert.equal(
+  admission.shadowDispatchClaimContractDescriptor().claimStorageMutationIncluded,
+  false,
+);
+assert.equal(
+  admission.shadowDispatchClaimContractDescriptor().runnerInvocationIncluded,
+  false,
+);
+assert.equal(
+  admission.shadowDispatchClaimContractDescriptor().canAdmit,
+  false,
+);
+assert.equal(
+  typeof admission.createShadowDispatchClaimContract,
+  'function',
+);
+assert.equal(
   admission.DECISION_TRACE_LOGGER_VERSION,
   'attestor.decision-trace-logger.v1',
 );

@@ -110,6 +110,7 @@
     "test:runtime-activation-decision-packet": "tsx tests/runtime-activation-decision-packet.test.ts",
     "test:shadow-activation-profile-contract": "tsx tests/shadow-activation-profile-contract.test.ts",
     "test:shadow-outbox-work-item-contract": "tsx tests/shadow-outbox-work-item-contract.test.ts",
+    "test:shadow-dispatch-claim-contract": "tsx tests/shadow-dispatch-claim-contract.test.ts",
     "test:decision-trace-logger": "tsx tests/decision-trace-logger.test.ts",
     "test:baseline-cohort-contract": "tsx tests/baseline-cohort-contract.test.ts",
     "test:candidate-invariants-catalog": "tsx tests/candidate-invariants-catalog.test.ts",

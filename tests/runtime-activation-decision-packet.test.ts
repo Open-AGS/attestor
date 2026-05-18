@@ -120,16 +120,16 @@ function testDecisionPacketRecordsRSeriesAndNonClaims(): void {
 
   for (const expected of [
     'R01 defines the next runtime activation series.',
-    '3/8 complete, 5 steps remain.',
+    '4/8 complete, 4 steps remain.',
     '| R01 | complete | Runtime Activation Decision Packet |',
     '| R02 | complete | Shadow Activation Profile Contract |',
     '| R03 | complete | Shadow Outbox Work Item Contract |',
-    '| R04 | planned | Dispatcher / Reconcile Claim Contract |',
+    '| R04 | complete | Dispatcher / Reconcile Claim Contract |',
     '| R05 | planned | Shadow Runtime Activation Runner |',
     '| R06 | planned | Trace / Lineage / Measurement Hooks |',
     '| R07 | planned | Outcome Feedback Hook |',
     '| R08 | planned | End-to-End Fixture Replay Smoke |',
-    'The next safe step is R04',
+    'The next safe step is R05',
     'live enforcement',
     'production worker readiness',
     'exactly-once delivery',
@@ -167,13 +167,15 @@ function testOverviewLedgerAndPackageSurfaceStayAligned(): void {
 
   for (const expected of [
     '## Runtime Activation Series',
-    'Progress: 3/8 complete after R03. 5 steps remain.',
+    'Progress: 4/8 complete after R04. 4 steps remain.',
     '| R01 | complete | Runtime Activation Decision Packet |',
     '| R02 | complete | Shadow Activation Profile Contract |',
     '| R03 | complete | Shadow Outbox Work Item Contract |',
+    '| R04 | complete | Dispatcher / Reconcile Claim Contract |',
     'docs/02-architecture/runtime-activation-decision-packet.md',
     'src/consequence-admission/shadow-activation-profile-contract.ts',
     'src/consequence-admission/shadow-outbox-work-item-contract.ts',
+    'src/consequence-admission/shadow-dispatch-claim-contract.ts',
   ]) {
     includes(overview, expected, `Overview: records ${expected}`);
   }

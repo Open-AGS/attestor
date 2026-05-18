@@ -334,8 +334,9 @@ function testDocsOverviewLedgerAndPackageSurfaceStayAligned(): void {
   }
 
   for (const expected of [
-    'Progress: 3/8 complete after R03. 5 steps remain.',
+    'Progress: 4/8 complete after R04. 4 steps remain.',
     '| R03 | complete | Shadow Outbox Work Item Contract |',
+    '| R04 | complete | Dispatcher / Reconcile Claim Contract |',
     'src/consequence-admission/shadow-outbox-work-item-contract.ts',
     'tests/shadow-outbox-work-item-contract.test.ts',
     'docs/02-architecture/shadow-outbox-work-item-contract.md',
@@ -344,10 +345,11 @@ function testDocsOverviewLedgerAndPackageSurfaceStayAligned(): void {
   }
 
   for (const expected of [
-    'Current progress after R03:',
-    '3/8 complete, 5 steps remain.',
+    'Current progress after R04:',
+    '4/8 complete, 4 steps remain.',
     '| R03 | complete | Shadow Outbox Work Item Contract |',
-    'The next safe step is R04',
+    '| R04 | complete | Dispatcher / Reconcile Claim Contract |',
+    'The next safe step is R05',
   ]) {
     includes(decisionPacket, expected, `Runtime activation packet: records ${expected}`);
   }

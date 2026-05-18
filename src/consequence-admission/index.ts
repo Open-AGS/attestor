@@ -2314,6 +2314,7 @@ export * from './relationship-detector-contract.js';
 export * from './shadow-runtime-pipeline.js';
 export * from './shadow-activation-profile-contract.js';
 export * from './shadow-outbox-work-item-contract.js';
+export * from './shadow-dispatch-claim-contract.js';
 export * from './decision-trace-logger.js';
 export * from './baseline-cohort-contract.js';
 export * from './candidate-invariants-catalog.js';

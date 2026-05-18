@@ -156,5 +156,5 @@ R02 does not claim:
 - production readiness
 - customer deployment readiness
 
-R03 is now complete. The next safe step is R04: a Dispatcher / Reconcile Claim
-Contract with no runner invocation.
+R03 and R04 are now complete. The next safe step is R05: Shadow Runtime
+Activation Runner.

@@ -117,4 +117,5 @@ R03 does not claim:
 - production readiness
 - customer deployment readiness
 
-The next safe step is R04: Dispatcher / Reconcile Claim Contract.
+R04 is now complete. The next safe step is R05: Shadow Runtime Activation
+Runner.

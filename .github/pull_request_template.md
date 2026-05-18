@@ -41,7 +41,8 @@ Files intentionally not touched:
 - [ ] targeted tests:
 - [ ] npm run typecheck:
 - [ ] npm run typecheck:hygiene:
-- [ ] npm run verify, if broad trust-sensitive change:
+- [ ] package-surface check, if package.json changed:
+- [ ] npm run verify, only for Tier 4 full gate:
 
 ### Readiness classification
 - [ ] contract-ready

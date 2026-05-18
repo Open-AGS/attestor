@@ -107,6 +107,7 @@
     "test:signal-adapter-registry": "tsx tests/signal-adapter-registry.test.ts",
     "test:relationship-detector-contract": "tsx tests/relationship-detector-contract.test.ts",
     "test:shadow-runtime-pipeline": "tsx tests/shadow-runtime-pipeline.test.ts",
+    "test:runtime-activation-decision-packet": "tsx tests/runtime-activation-decision-packet.test.ts",
     "test:decision-trace-logger": "tsx tests/decision-trace-logger.test.ts",
     "test:baseline-cohort-contract": "tsx tests/baseline-cohort-contract.test.ts",
     "test:candidate-invariants-catalog": "tsx tests/candidate-invariants-catalog.test.ts",

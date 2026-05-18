@@ -1151,6 +1151,43 @@ remain digest-bound findings and action-item requirements. I13 does not mutate
 the assurance case, close defeat, decide review, activate policy, admit, learn,
 train, or enforce.
 
+## Runtime Activation Series
+
+The W-series and I-series made the runtime assurance components callable and
+reviewable. The R-series is the next sequence: it decides and then implements
+how canonical shadow events automatically trigger the existing W05 shadow
+runtime pipeline without granting authority.
+
+R01 selects a hybrid event-driven plus reconcile-loop activation model:
+
+```text
+canonical shadow event
+  -> digest-only source history
+  -> pending outbox work item
+  -> leased worker claim
+  -> shadow runtime dry-run
+  -> trace / lineage / measurement hooks
+  -> reconcile expired or failed work
+```
+
+The R-series keeps at-least-once, idempotent, per-tenant/source-partition
+semantics. It does not claim exactly-once delivery, global total ordering, live
+enforcement, production worker readiness, audit-plane write integration, or
+customer deployment readiness.
+
+Progress: 1/8 complete after R01. 7 steps remain.
+
+| Step | Status | Slice | Evidence |
+|---|---|---|---|
+| R01 | complete | Runtime Activation Decision Packet | `docs/02-architecture/runtime-activation-decision-packet.md`; `tests/runtime-activation-decision-packet.test.ts` |
+| R02 | planned | Shadow Activation Profile Contract | activation profile version, trigger mode, idempotency binding, no-authority flags |
+| R03 | planned | Shadow Outbox Work Item Contract | digest-only work item shape over canonical shadow events |
+| R04 | planned | Dispatcher / Reconcile Claim Contract | lease, retry, partial-order, and duplicate handling contract |
+| R05 | planned | Shadow Runtime Activation Runner | calls W05 dry-run from claimed work, still shadow-only |
+| R06 | planned | Trace / Lineage / Measurement Hooks | connects W06/I11/I10 without audit write or authority |
+| R07 | planned | Outcome Feedback Hook | connects I13 feedback material as read-only post-outcome input |
+| R08 | planned | End-to-End Fixture Replay Smoke | synthetic fixture replay through R02-R07, no live target system |
+
 ## Primary Source Anchors
 
 Reviewed on 2026-05-17 and 2026-05-18:

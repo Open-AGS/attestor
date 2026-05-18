@@ -111,6 +111,7 @@
     "test:candidate-invariants-catalog": "tsx tests/candidate-invariants-catalog.test.ts",
     "test:invariant-calibration-contract": "tsx tests/invariant-calibration-contract.test.ts",
     "test:invariant-promotion-gate": "tsx tests/invariant-promotion-gate.test.ts",
+    "test:assurance-case-contract": "tsx tests/assurance-case-contract.test.ts",
     "test:admission-state-machine-spec": "tsx tests/admission-state-machine-spec.test.ts",
     "test:tenant-isolation-model": "tsx tests/tenant-isolation-model.test.ts",
     "test:target-system-compatibility-matrix": "tsx tests/target-system-compatibility-matrix.test.ts",

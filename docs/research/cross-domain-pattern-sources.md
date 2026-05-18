@@ -32,6 +32,7 @@ source domain pattern
 | Causal dependency | [Pearl, Causality](https://bayes.cs.ucla.edu/BOOK-2K/causality.html) | Separate correlation from causal/dependency structure before inference. | Directed relationships, duplicate/dependence discount, modulator rules. | No causal discovery engine is implemented by this plan. |
 | System dynamics | [System Dynamics Society](https://systemdynamics.org/what-is-system-dynamics-old/) | Stocks, flows, delays, feedback loops, drift as system behavior. | Outcome feedback, drift signals, measurement plane. | No dynamic simulation is shipped in the first contract PR. |
 | Human-AI review | [Microsoft Human-AI Guidelines](https://www.microsoft.com/en-us/research/blog/guidelines-for-human-ai-interaction-design/), [Google People + AI Guidebook](https://pair.withgoogle.com/guidebook/) | Human attention is bounded; uncertainty and recourse should be visible. | Human comprehension gate, active questions, review-by-exception. | No claim that review UX is complete without user testing. |
+| Assurance case argumentation | [GSN Community Standard v3](https://scsc.uk/gsn), [OMG SACM 2.3](https://www.omg.org/spec/SACM), [CMU SEI Eliminative Argumentation](https://www.sei.cmu.edu/library/eliminative-argumentation-a-basis-for-arguing-confidence-in-system-properties/), [SRI Assurance 2.0](https://www.csl.sri.com/users/rushby/assurance2.0), [University of York AMLAS](https://www.york.ac.uk/assuring-autonomy/guidance/amlas/) | Claims, evidence, argument strategy, explicit defeat/uncertainty, and ML assurance case structure. | Assurance Case Contract, open defeater view, promotion gate evidence boundary. | No SACM conformance, GSN tooling, formal proof, or ML safety certification claim. |
 
 ## Translation Rules
 
@@ -64,6 +65,7 @@ These are the engineering rules imported from the source matrix.
 | Assurance packet | Digest-bound assurance case and audit export material. |
 | Outcome / incident feedback | Post-event learning path that does not silently activate policy. |
 | Assurance measurement plane | NIST/SRE-style measure/manage surface without decision authority. |
+| Assurance case contract | SACM-aligned argument substrate with GSN render view and defeater-first promotion logic. |
 
 ## Sequenced Implementation
 
@@ -81,6 +83,7 @@ The research supports the following order:
 8. signed assurance packet
 9. outcome and incident feedback contract
 10. assurance measurement plane
+11. assurance case contract for Runtime Intelligence Activation v1
 ```
 
 The first code PR should stay types-only. Any behavior, learning, fusion math,

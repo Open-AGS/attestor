@@ -1023,9 +1023,50 @@ new production dependency
 runtime deployment readiness claim
 ```
 
+## Runtime Intelligence Activation v1
+
+The Runtime Assurance Wiring track made real shadow events speak the existing
+contract language. Runtime Intelligence Activation v1 uses the same Attestor core
+and adds the argument form that learned, replayed, formal, calibrated, and
+human-reviewed artifacts must share.
+
+This is not a new product, a second policy engine, or a separate governance
+system. It is the assurance-case layer inside the same consequence runtime:
+
+```text
+shadow / replay / formal / calibration / outcome material
+        -> Assurance Case Contract
+        -> open defeaters and closed evidence
+        -> promotion gate can review what remains unknown
+```
+
+Progress: 1/14 complete after I00. 13 steps remain.
+
+| Step | Status | Slice | Evidence |
+|---|---|---|---|
+| I00 | complete | Assurance Case Contract | `src/consequence-admission/assurance-case-contract.ts`; `tests/assurance-case-contract.test.ts`; `docs/02-architecture/assurance-case-contract.md` |
+| I01 | planned | Learned Artifact Release Budget | Privacy/reconstruction budget context and undermining defeaters |
+| I02 | planned | Shadow Data Quality Gate | Shadow evidence quality and provenance undermining defeaters |
+| I03 | planned | Baseline Cohort Builder | Cohort evidence nodes for candidate claims |
+| I04 | planned | Candidate Invariant Synthesizer | Claim and strategy nodes |
+| I05 | planned | Counterexample Replay + Minimal Witness | Rebutting defeaters and minimal witness evidence |
+| I06 | planned | Calibration Lower-Bound Runner | Evidence confidence annotations |
+| I07 | planned | Reviewer Packet / Open Defeater View | Human-readable open-defeater packet |
+| I08 | planned | Promotion Gate Runner | Indefeasibility predicate execution |
+| I09 | planned | TLA+ Trace Validator Bridge | Formal-spec evidence nodes |
+| I10 | planned | Runtime Monitor Skeleton | Living-case update source |
+| I11 | planned | Decision Lineage Graph | Signed node and transition lineage |
+| I12 | planned | Goodhart / Authority-Creep Guard | Undercutting defeaters for measurement-as-authority |
+| I13 | planned | Outcome Feedback / COE Wiring | Outcome-triggered rebutting defeaters |
+
+I00 is SACM 2.3-aligned, GSN render-view compatible, and grounded in
+Eliminative Argumentation / Assurance 2.0 style defeasibility. It does not claim
+SACM conformance, formal proof, runtime assurance, reviewer UI, learned model
+deployment, live enforcement, or production readiness.
+
 ## Primary Source Anchors
 
-Reviewed on 2026-05-17:
+Reviewed on 2026-05-17 and 2026-05-18:
 
 - STPA and unsafe control action framing: [MIT STPA Handbook](http://psas.scripts.mit.edu/home/get_file.php?name=STPA_handbook.pdf).
 - Runtime assurance framing for trusted safety monitors around untrusted or advanced autonomy: [NASA Runtime Assurance](https://ntrs.nasa.gov/citations/20240006522).
@@ -1042,6 +1083,7 @@ Reviewed on 2026-05-17:
 - Feedback loop and dynamic-system framing: [System Dynamics Society](https://systemdynamics.org/what-is-system-dynamics-old/).
 - Design-first formal specification framing: [Microsoft Research, Specifying Systems](https://www.microsoft.com/en-us/research/publication/specifying-systems-the-tla-language-and-tools-for-hardware-and-software-engineers/), [How Amazon Web Services uses formal methods](https://cacm.acm.org/research/how-amazon-web-services-uses-formal-methods/), [Systems Correctness Practices at AWS](https://cacm.acm.org/practice/systems-correctness-practices-at-amazon-web-services/), and [Apalache TLA+ model checker documentation](https://apalache-mc.org/docs/).
 - Tenant isolation and relation-model framing: [Alloy language reference](https://alloytools.org/download/alloy-language-reference.pdf), [Alloy in CACM](https://cacm.acm.org/research/alloy/), [AWS SaaS tenant isolation concepts](https://docs.aws.amazon.com/whitepapers/latest/saas-tenant-isolation-strategies/core-isolation-concepts.html), [AWS Lambda tenant isolation](https://docs.aws.amazon.com/lambda/latest/dg/tenant-isolation.html), and [NIST SP 800-207A](https://csrc.nist.gov/pubs/sp/800/207/a/final).
+- Assurance-case argument structure and exchange framing: [GSN Community Standard v3](https://scsc.uk/gsn), [OMG SACM 2.3](https://www.omg.org/spec/SACM), [CMU SEI Eliminative Argumentation](https://www.sei.cmu.edu/library/eliminative-argumentation-a-basis-for-arguing-confidence-in-system-properties/), [SRI Assurance 2.0](https://www.csl.sri.com/users/rushby/assurance2.0), [ENTRUST dynamic assurance cases](https://arxiv.org/abs/1703.06350), and [University of York AMLAS](https://www.york.ac.uk/assuring-autonomy/guidance/amlas/).
 
 These sources are engineering anchors only. They do not prove production
 readiness, compliance certification, customer deployment, target-system

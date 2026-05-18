@@ -1147,6 +1147,46 @@ assert.equal(
   'function',
 );
 assert.equal(
+  admission.ASSURANCE_CASE_CONTRACT_VERSION,
+  'attestor.assurance-case-contract.v1',
+);
+assert.equal(
+  admission.assuranceCaseContractDescriptor().sacmVersionTarget,
+  'SACM 2.3',
+);
+assert.equal(
+  admission.assuranceCaseContractDescriptor().sacmAlignedNotConformant,
+  true,
+);
+assert.equal(
+  admission.assuranceCaseContractDescriptor().eliminativeArgumentation,
+  true,
+);
+assert.equal(
+  admission.assuranceCaseContractDescriptor().assurance2Defeasibility,
+  true,
+);
+assert.equal(
+  admission.assuranceCaseContractDescriptor().canAdmit,
+  false,
+);
+assert.equal(
+  admission.assuranceCaseContractDescriptor().activatesEnforcement,
+  false,
+);
+assert.equal(
+  typeof admission.createAssuranceCaseContract,
+  'function',
+);
+assert.equal(
+  typeof admission.createAssuranceCaseDefeater,
+  'function',
+);
+assert.equal(
+  typeof admission.evaluateAssuranceCaseScopeChange,
+  'function',
+);
+assert.equal(
   admission.financePipelineAdmissionDescriptor().route,
   '/api/v1/pipeline/run',
 );

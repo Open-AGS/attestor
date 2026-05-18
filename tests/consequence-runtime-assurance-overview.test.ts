@@ -135,6 +135,14 @@ function testOverviewRecordsContractShapeAndSequence(): void {
     'src/consequence-admission/invariant-promotion-gate.ts',
     'tests/invariant-promotion-gate.test.ts',
     'docs/02-architecture/invariant-promotion-gate.md',
+    '| I00 | complete | Assurance Case Contract |',
+    '| I01 | planned | Learned Artifact Release Budget |',
+    '| I13 | planned | Outcome Feedback / COE Wiring |',
+    'src/consequence-admission/assurance-case-contract.ts',
+    'tests/assurance-case-contract.test.ts',
+    'docs/02-architecture/assurance-case-contract.md',
+    'SACM 2.3-aligned',
+    'Eliminative Argumentation / Assurance 2.0',
   ]) {
     includes(overview, expected, `Overview: records ${expected}`);
   }
@@ -183,6 +191,10 @@ function testResearchAnnexRecordsCrossDomainAnchors(): void {
     'OWASP Agentic AI threats and mitigations',
     'Pearl, Causality',
     'System Dynamics Society',
+    'OMG SACM 2.3',
+    'CMU SEI Eliminative Argumentation',
+    'SRI Assurance 2.0',
+    'University of York AMLAS',
     'Only AI RMF-mappable language is claimed, not conformance.',
     'Every future fabric mutation must run replay/backtest regression.',
   ]) {

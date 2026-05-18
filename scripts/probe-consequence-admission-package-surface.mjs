@@ -1255,6 +1255,330 @@ assert.equal(
   'function',
 );
 assert.equal(
+  admission.BASELINE_COHORT_BUILDER_VERSION,
+  'attestor.baseline-cohort-builder.v1',
+);
+assert.equal(
+  admission.baselineCohortBuilderDescriptor().assuranceCaseContractVersion,
+  admission.ASSURANCE_CASE_CONTRACT_VERSION,
+);
+assert.equal(
+  admission.baselineCohortBuilderDescriptor().baselineCohortContractVersion,
+  admission.BASELINE_COHORT_CONTRACT_VERSION,
+);
+assert.equal(
+  admission.baselineCohortBuilderDescriptor().shadowDataQualityGateVersion,
+  admission.SHADOW_DATA_QUALITY_GATE_VERSION,
+);
+assert.equal(
+  admission.baselineCohortBuilderDescriptor().learnedArtifactReleaseBudgetVersion,
+  admission.LEARNED_ARTIFACT_RELEASE_BUDGET_VERSION,
+);
+assert.equal(
+  admission.baselineCohortBuilderDescriptor().createsAssuranceEvidenceNode,
+  true,
+);
+assert.equal(
+  admission.baselineCohortBuilderDescriptor().noLearning,
+  true,
+);
+assert.equal(
+  admission.baselineCohortBuilderDescriptor().canAdmit,
+  false,
+);
+assert.equal(
+  typeof admission.createBaselineCohortEvidence,
+  'function',
+);
+assert.equal(
+  admission.CANDIDATE_INVARIANT_SYNTHESIZER_VERSION,
+  'attestor.candidate-invariant-synthesizer.v1',
+);
+assert.equal(
+  admission.candidateInvariantSynthesizerDescriptor().assuranceCaseContractVersion,
+  admission.ASSURANCE_CASE_CONTRACT_VERSION,
+);
+assert.equal(
+  admission.candidateInvariantSynthesizerDescriptor().baselineCohortBuilderVersion,
+  admission.BASELINE_COHORT_BUILDER_VERSION,
+);
+assert.equal(
+  admission.candidateInvariantSynthesizerDescriptor().candidateInvariantsCatalogVersion,
+  admission.CANDIDATE_INVARIANTS_CATALOG_VERSION,
+);
+assert.equal(
+  admission.candidateInvariantSynthesizerDescriptor().createsClaimNode,
+  true,
+);
+assert.equal(
+  admission.candidateInvariantSynthesizerDescriptor().noMining,
+  true,
+);
+assert.equal(
+  admission.candidateInvariantSynthesizerDescriptor().canAdmit,
+  false,
+);
+assert.equal(
+  typeof admission.synthesizeCandidateInvariantAssuranceCase,
+  'function',
+);
+assert.equal(
+  admission.COUNTEREXAMPLE_MINIMAL_WITNESS_VERSION,
+  'attestor.counterexample-minimal-witness.v1',
+);
+assert.equal(
+  admission.counterexampleMinimalWitnessDescriptor().assuranceCaseContractVersion,
+  admission.ASSURANCE_CASE_CONTRACT_VERSION,
+);
+assert.equal(
+  admission.counterexampleMinimalWitnessDescriptor().candidateInvariantSynthesizerVersion,
+  admission.CANDIDATE_INVARIANT_SYNTHESIZER_VERSION,
+);
+assert.equal(
+  admission.counterexampleMinimalWitnessDescriptor().createsEvidenceNode,
+  true,
+);
+assert.equal(
+  admission.counterexampleMinimalWitnessDescriptor().opensRebuttingDefeater,
+  true,
+);
+assert.equal(
+  admission.counterexampleMinimalWitnessDescriptor().noReplayExecution,
+  true,
+);
+assert.equal(
+  admission.counterexampleMinimalWitnessDescriptor().noProductionTraffic,
+  true,
+);
+assert.equal(
+  admission.counterexampleMinimalWitnessDescriptor().noCredentialUse,
+  true,
+);
+assert.equal(
+  admission.counterexampleMinimalWitnessDescriptor().noAutoClaimRejection,
+  true,
+);
+assert.equal(
+  admission.counterexampleMinimalWitnessDescriptor().canAdmit,
+  false,
+);
+assert.equal(
+  typeof admission.createCounterexampleMinimalWitness,
+  'function',
+);
+assert.equal(
+  admission.CALIBRATION_LOWER_BOUND_RUNNER_VERSION,
+  'attestor.calibration-lower-bound-runner.v1',
+);
+assert.equal(
+  admission.calibrationLowerBoundRunnerDescriptor().assuranceCaseContractVersion,
+  admission.ASSURANCE_CASE_CONTRACT_VERSION,
+);
+assert.equal(
+  admission.calibrationLowerBoundRunnerDescriptor().candidateInvariantSynthesizerVersion,
+  admission.CANDIDATE_INVARIANT_SYNTHESIZER_VERSION,
+);
+assert.equal(
+  admission.calibrationLowerBoundRunnerDescriptor().invariantCalibrationContractVersion,
+  admission.INVARIANT_CALIBRATION_CONTRACT_VERSION,
+);
+assert.equal(
+  admission.calibrationLowerBoundRunnerDescriptor().counterexampleMinimalWitnessVersion,
+  admission.COUNTEREXAMPLE_MINIMAL_WITNESS_VERSION,
+);
+assert.equal(
+  admission.calibrationLowerBoundRunnerDescriptor().requiresLowerBound,
+  true,
+);
+assert.equal(
+  admission.calibrationLowerBoundRunnerDescriptor().opensUndercuttingDefeaterOnWeakLowerBound,
+  true,
+);
+assert.equal(
+  admission.calibrationLowerBoundRunnerDescriptor().pointEstimateAuthorityAllowed,
+  false,
+);
+assert.equal(
+  admission.calibrationLowerBoundRunnerDescriptor().lowerBoundAuthorityAllowed,
+  false,
+);
+assert.equal(
+  admission.calibrationLowerBoundRunnerDescriptor().measurementMutationAllowed,
+  false,
+);
+assert.equal(
+  admission.calibrationLowerBoundRunnerDescriptor().canAdmit,
+  false,
+);
+assert.equal(
+  typeof admission.createCalibrationLowerBoundRunner,
+  'function',
+);
+assert.equal(
+  admission.REVIEWER_OPEN_DEFEATER_VIEW_VERSION,
+  'attestor.reviewer-open-defeater-view.v1',
+);
+assert.equal(
+  admission.reviewerOpenDefeaterViewDescriptor().assuranceCaseContractVersion,
+  admission.ASSURANCE_CASE_CONTRACT_VERSION,
+);
+assert.equal(
+  admission.PROMOTION_GATE_RUNNER_VERSION,
+  'attestor.promotion-gate-runner.v1',
+);
+assert.equal(
+  admission.promotionGateRunnerDescriptor().reviewerOpenDefeaterViewVersion,
+  admission.REVIEWER_OPEN_DEFEATER_VIEW_VERSION,
+);
+assert.equal(
+  admission.promotionGateRunnerDescriptor().invariantPromotionGateVersion,
+  admission.INVARIANT_PROMOTION_GATE_VERSION,
+);
+assert.equal(
+  admission.reviewerOpenDefeaterViewDescriptor().candidateInvariantSynthesizerVersion,
+  admission.CANDIDATE_INVARIANT_SYNTHESIZER_VERSION,
+);
+assert.equal(
+  admission.reviewerOpenDefeaterViewDescriptor().counterexampleMinimalWitnessVersion,
+  admission.COUNTEREXAMPLE_MINIMAL_WITNESS_VERSION,
+);
+assert.equal(
+  admission.reviewerOpenDefeaterViewDescriptor().calibrationLowerBoundRunnerVersion,
+  admission.CALIBRATION_LOWER_BOUND_RUNNER_VERSION,
+);
+assert.equal(
+  admission.reviewerOpenDefeaterViewDescriptor().maxReasonLines,
+  7,
+);
+assert.equal(
+  admission.reviewerOpenDefeaterViewDescriptor().maxQuestions,
+  3,
+);
+assert.equal(
+  admission.reviewerOpenDefeaterViewDescriptor().rendersOpenDefeatersOnly,
+  true,
+);
+assert.equal(
+  admission.reviewerOpenDefeaterViewDescriptor().digestOnly,
+  true,
+);
+assert.equal(
+  admission.reviewerOpenDefeaterViewDescriptor().boundedHumanReview,
+  true,
+);
+assert.equal(
+  admission.reviewerOpenDefeaterViewDescriptor().noRawEvidence,
+  true,
+);
+assert.equal(
+  admission.reviewerOpenDefeaterViewDescriptor().noReviewerDecision,
+  true,
+);
+assert.equal(
+  admission.reviewerOpenDefeaterViewDescriptor().noDefeaterClosure,
+  true,
+);
+assert.equal(
+  admission.reviewerOpenDefeaterViewDescriptor().noPromotion,
+  true,
+);
+assert.equal(
+  admission.reviewerOpenDefeaterViewDescriptor().canAdmit,
+  false,
+);
+assert.equal(
+  typeof admission.createReviewerOpenDefeaterView,
+  'function',
+);
+assert.equal(
+  admission.TLA_TRACE_VALIDATOR_BRIDGE_VERSION,
+  'attestor.tla-trace-validator-bridge.v1',
+);
+assert.equal(
+  admission.tlaTraceValidatorBridgeDescriptor().decisionTraceLoggerVersion,
+  admission.DECISION_TRACE_LOGGER_VERSION,
+);
+assert.equal(
+  admission.tlaTraceValidatorBridgeDescriptor().assuranceCaseContractVersion,
+  admission.ASSURANCE_CASE_CONTRACT_VERSION,
+);
+assert.equal(
+  admission.tlaTraceValidatorBridgeDescriptor().doesNotRunModelChecker,
+  true,
+);
+assert.equal(
+  admission.tlaTraceValidatorBridgeDescriptor().noFormalProofClaim,
+  true,
+);
+assert.equal(
+  admission.tlaTraceValidatorBridgeDescriptor().canAdmit,
+  false,
+);
+assert.equal(
+  typeof admission.createTlaTraceValidatorBridge,
+  'function',
+);
+assert.equal(
+  admission.RUNTIME_MONITOR_SKELETON_VERSION,
+  'attestor.runtime-monitor-skeleton.v1',
+);
+assert.equal(
+  admission.runtimeMonitorSkeletonDescriptor().shadowRuntimePipelineVersion,
+  admission.SHADOW_RUNTIME_PIPELINE_VERSION,
+);
+assert.equal(
+  admission.runtimeMonitorSkeletonDescriptor().decisionTraceLoggerVersion,
+  admission.DECISION_TRACE_LOGGER_VERSION,
+);
+assert.equal(
+  admission.runtimeMonitorSkeletonDescriptor().assuranceCaseContractVersion,
+  admission.ASSURANCE_CASE_CONTRACT_VERSION,
+);
+assert.equal(
+  admission.runtimeMonitorSkeletonDescriptor().noAuditWrite,
+  true,
+);
+assert.equal(
+  admission.runtimeMonitorSkeletonDescriptor().notRuntimeOracle,
+  true,
+);
+assert.equal(
+  admission.runtimeMonitorSkeletonDescriptor().canAdmit,
+  false,
+);
+assert.equal(
+  typeof admission.createRuntimeMonitorSkeleton,
+  'function',
+);
+assert.equal(
+  admission.DECISION_LINEAGE_GRAPH_VERSION,
+  'attestor.decision-lineage-graph.v1',
+);
+assert.equal(
+  admission.decisionLineageGraphDescriptor().assuranceCaseContractVersion,
+  admission.ASSURANCE_CASE_CONTRACT_VERSION,
+);
+assert.equal(
+  admission.decisionLineageGraphDescriptor().buildsDigestBoundDag,
+  true,
+);
+assert.equal(
+  admission.decisionLineageGraphDescriptor().doesNotCreateSignatures,
+  true,
+);
+assert.equal(
+  admission.decisionLineageGraphDescriptor().noExternalLineageExport,
+  true,
+);
+assert.equal(
+  admission.decisionLineageGraphDescriptor().canAdmit,
+  false,
+);
+assert.equal(
+  typeof admission.createDecisionLineageGraph,
+  'function',
+);
+assert.equal(
   admission.financePipelineAdmissionDescriptor().route,
   '/api/v1/pipeline/run',
 );

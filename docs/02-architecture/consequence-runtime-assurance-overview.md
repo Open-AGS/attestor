@@ -1040,22 +1040,22 @@ shadow / replay / formal / calibration / outcome material
         -> promotion gate can review what remains unknown
 ```
 
-Progress: 3/14 complete after I02. 11 steps remain.
+Progress: 12/14 complete after I11. 2 steps remain.
 
 | Step | Status | Slice | Evidence |
 |---|---|---|---|
 | I00 | complete | Assurance Case Contract | `src/consequence-admission/assurance-case-contract.ts`; `tests/assurance-case-contract.test.ts`; `docs/02-architecture/assurance-case-contract.md` |
 | I01 | complete | Learned Artifact Release Budget | `src/consequence-admission/learned-artifact-release-budget.ts`; `tests/learned-artifact-release-budget.test.ts`; `docs/02-architecture/learned-artifact-release-budget.md` |
 | I02 | complete | Shadow Data Quality Gate | `src/consequence-admission/shadow-data-quality-gate.ts`; `tests/shadow-data-quality-gate.test.ts`; `docs/02-architecture/shadow-data-quality-gate.md` |
-| I03 | planned | Baseline Cohort Builder | Cohort evidence nodes for candidate claims |
-| I04 | planned | Candidate Invariant Synthesizer | Claim and strategy nodes |
-| I05 | planned | Counterexample Replay + Minimal Witness | Rebutting defeaters and minimal witness evidence |
-| I06 | planned | Calibration Lower-Bound Runner | Evidence confidence annotations |
-| I07 | planned | Reviewer Packet / Open Defeater View | Human-readable open-defeater packet |
-| I08 | planned | Promotion Gate Runner | Indefeasibility predicate execution |
-| I09 | planned | TLA+ Trace Validator Bridge | Formal-spec evidence nodes |
-| I10 | planned | Runtime Monitor Skeleton | Living-case update source |
-| I11 | planned | Decision Lineage Graph | Signed node and transition lineage |
+| I03 | complete | Baseline Cohort Builder | `src/consequence-admission/baseline-cohort-builder.ts`; `tests/baseline-cohort-builder.test.ts`; `docs/02-architecture/baseline-cohort-builder.md` |
+| I04 | complete | Candidate Invariant Synthesizer | `src/consequence-admission/candidate-invariant-synthesizer.ts`; `tests/candidate-invariant-synthesizer.test.ts`; `docs/02-architecture/candidate-invariant-synthesizer.md` |
+| I05 | complete | Counterexample Minimal Witness | `src/consequence-admission/counterexample-minimal-witness.ts`; `tests/counterexample-minimal-witness.test.ts`; `docs/02-architecture/counterexample-minimal-witness.md` |
+| I06 | complete | Calibration Lower-Bound Runner | `src/consequence-admission/calibration-lower-bound-runner.ts`; `tests/calibration-lower-bound-runner.test.ts`; `docs/02-architecture/calibration-lower-bound-runner.md` |
+| I07 | complete | Reviewer Packet / Open Defeater View | `src/consequence-admission/reviewer-open-defeater-view.ts`; `tests/reviewer-open-defeater-view.test.ts`; `docs/02-architecture/reviewer-open-defeater-view.md` |
+| I08 | complete | Promotion Gate Runner | `src/consequence-admission/promotion-gate-runner.ts`; `tests/promotion-gate-runner.test.ts`; `docs/02-architecture/promotion-gate-runner.md` |
+| I09 | complete | TLA+ Trace Validator Bridge | `src/consequence-admission/tla-trace-validator-bridge.ts`; `tests/tla-trace-validator-bridge.test.ts`; `docs/02-architecture/tla-trace-validator-bridge.md` |
+| I10 | complete | Runtime Monitor Skeleton | `src/consequence-admission/runtime-monitor-skeleton.ts`; `tests/runtime-monitor-skeleton.test.ts`; `docs/02-architecture/runtime-monitor-skeleton.md` |
+| I11 | complete | Decision Lineage Graph | `src/consequence-admission/decision-lineage-graph.ts`; `tests/decision-lineage-graph.test.ts`; `docs/02-architecture/decision-lineage-graph.md` |
 | I12 | planned | Goodhart / Authority-Creep Guard | Undercutting defeaters for measurement-as-authority |
 | I13 | planned | Outcome Feedback / COE Wiring | Outcome-triggered rebutting defeaters |
 
@@ -1076,11 +1076,82 @@ coverage, redaction, correlation, and decision-integrity checks before later
 steps use them as assurance-case evidence. It does not admit, block, enforce,
 train, claim provenance-standard conformance, or act as a data-quality platform.
 
+I03 turns a W09 baseline cohort candidate into an I00 assurance-case evidence
+node only when I02 quality gates cover every source event and I01 release budget
+permits the cohort-summary artifact for assurance review. It does not mine
+baselines, synthesize invariants, train, promote, aggregate tenants, activate
+policy, or enforce.
+
+I04 turns a review-ready W10 candidate invariant plus ready I03 cohort evidence
+into I00 claim and strategy nodes for open-defeater review. It does not mine
+invariants, accept claims automatically, promote policy, train, enforce, or
+claim proof.
+
+I05 turns a minimal reproducing counterexample witness into I00 evidence and an
+open rebutting defeater against the I04 claim node. It keeps the witness
+digest-only, deterministic, tenant-bound, and review-only. It does not execute
+replay, reject claims automatically, use credentials, touch target systems,
+activate policy, or enforce.
+
+I06 turns W11 calibration records into I00 lower-bound confidence evidence, or
+opens an undercutting defeater when the lower bound is too weak. It treats point
+estimates as context, not authority, and never promotes, admits, activates
+policy, trains a calibrator, or enforces.
+
+I07 turns I05 and I06 open defeaters into a bounded reviewer-facing packet. It
+renders only open defeat material, caps the packet at 7 reason lines and 3
+questions, and rejects raw-evidence or authority-action requests. It does not
+close defeat, decide review, promote, admit, activate policy, or enforce.
+
+I08 runs the bounded indefeasibility predicate over the I07
+reviewer-open-defeater view. It allows only a review-only patch handoff when the
+claim is ready, assurance-case/claim/strategy digests are bound, no open
+defeaters remain, and no raw, closure, review-decision, policy-activation, or
+live-enforcement request is present. It does not close defeat, decide review,
+generate a patch, activate policy, admit, or enforce.
+
+I09 turns W06 decision trace snapshots plus external TLA+ validator report
+digests into I00 formal-spec evidence nodes or open rebutting/undercutting
+defeaters. It requires a verified digest-only trace, spec/config digest binding,
+an explicit invariant set, and validator report material before evidence is
+created. It does not run TLC or Apalache, act as a runtime oracle, claim formal
+proof, close defeat, activate policy, admit, or enforce.
+
+I10 turns W05/W06 runtime observations into I00 living-case update material. It
+binds the shadow runtime pipeline digest, envelope digest, unsigned assurance
+packet digest, decision trace snapshot digest, optional measurement-plane digest,
+observed timestamp, freshness window, and operator-visible monitor findings. A
+healthy observation creates an evidence node; invalid/stale/mismatched evidence
+opens an undermining defeater; monitor or measurement degradation opens an
+undercutting defeater. It does not write the audit plane, act as an enforcement
+monitor, claim OpenTelemetry/SIEM conformance, activate policy, admit, learn,
+train, or enforce.
+
+I11 turns the I00 assurance-case material, artifact references, and signature
+references into a digest-bound decision lineage graph. It links case nodes,
+defeaters, transitions, artifact refs, and signature refs while keeping open
+defeat visible and signature coverage explicit. It does not export OpenLineage,
+claim PROV/SACM conformance, create DSSE or in-toto signatures, write audit,
+activate policy, admit, learn, train, or enforce.
+
 ## Primary Source Anchors
 
 Reviewed on 2026-05-17 and 2026-05-18:
 
 - STPA and unsafe control action framing: [MIT STPA Handbook](http://psas.scripts.mit.edu/home/get_file.php?name=STPA_handbook.pdf).
+- Calibration lower-bound framing: [FDA Data Mining White Paper](https://www.fda.gov/science-research/data-mining/data-mining-fda-white-paper),
+  [NIST/SEMATECH Engineering Statistics Handbook](https://www.nist.gov/programs-projects/nistsematech-engineering-statistics-handbook),
+  [scikit-learn Probability calibration](https://scikit-learn.org/stable/modules/calibration.html),
+  and [NIST AI RMF 1.0](https://www.nist.gov/publications/artificial-intelligence-risk-management-framework-ai-rmf-10).
+- Reviewer open-defeater framing: [Microsoft Human-AI Interaction Guidelines](https://www.microsoft.com/en-us/research/blog/guidelines-for-human-ai-interaction-design/),
+  [Google People + AI Guidebook](https://pair.withgoogle.com/guidebook/),
+  [GitHub code scanning alert resolution](https://docs.github.com/en/code-security/how-tos/manage-security-alerts/manage-code-scanning-alerts/resolving-code-scanning-alerts),
+  and [GSN Community Standard v3](https://scsc.uk/gsn).
+- Promotion-gate predicate framing: [CMU SEI Eliminative Argumentation](https://www.sei.cmu.edu/library/eliminative-argumentation-a-basis-for-arguing-confidence-in-system-properties/),
+  [SRI Assurance 2.0](https://www.csl.sri.com/users/rushby/assurance2.0),
+  [OMG SACM 2.3](https://www.omg.org/spec/SACM),
+  [CISA SSVC](https://www.cisa.gov/stakeholder-specific-vulnerability-categorization-ssvc),
+  and [GitHub code scanning alert resolution](https://docs.github.com/en/code-security/how-tos/manage-security-alerts/manage-code-scanning-alerts/resolving-code-scanning-alerts).
 - Runtime assurance framing for trusted safety monitors around untrusted or advanced autonomy: [NASA Runtime Assurance](https://ntrs.nasa.gov/citations/20240006522).
 - Failure modes and upstream/downstream dependency modeling: [NASA FMEA Tool](https://software.nasa.gov/software/MSC-25379-1) and [NASA SW Failure Modes and Effects Analysis](https://swehb.nasa.gov/display/SWEHBVD/8.05%2B-%2BSW%2BFailure%2BModes%2Band%2BEffects%2BAnalysis).
 - Fault/event tree analysis: [NRC Fault Tree Handbook, NUREG-0492](https://www.nrc.gov/reading-rm/doc-collections/nuregs/staff/sr0492/index.html).
@@ -1094,10 +1165,16 @@ Reviewed on 2026-05-17 and 2026-05-18:
 - Causal dependency framing: [Pearl, Causality](https://bayes.cs.ucla.edu/BOOK-2K/causality.html).
 - Feedback loop and dynamic-system framing: [System Dynamics Society](https://systemdynamics.org/what-is-system-dynamics-old/).
 - Design-first formal specification framing: [Microsoft Research, Specifying Systems](https://www.microsoft.com/en-us/research/publication/specifying-systems-the-tla-language-and-tools-for-hardware-and-software-engineers/), [How Amazon Web Services uses formal methods](https://cacm.acm.org/research/how-amazon-web-services-uses-formal-methods/), [Systems Correctness Practices at AWS](https://cacm.acm.org/practice/systems-correctness-practices-at-amazon-web-services/), and [Apalache TLA+ model checker documentation](https://apalache-mc.org/docs/).
+- TLA+ trace-validation bridge framing: [Microsoft Research, Specifying Systems](https://www.microsoft.com/en-us/research/publication/specifying-systems-the-tla-language-and-tools-for-hardware-and-software-engineers/), [How Amazon Web Services uses formal methods](https://cacm.acm.org/research/how-amazon-web-services-uses-formal-methods/), [Systems Correctness Practices at AWS](https://cacm.acm.org/practice/systems-correctness-practices-at-amazon-web-services/), [Apalache TLA+ model checker documentation](https://apalache-mc.org/docs/), and the W06 decision trace logger contract.
+- Runtime monitor skeleton framing: [NASA Runtime Assurance of Aeronautical Products](https://ntrs.nasa.gov/citations/20220015734), [NASA Robust Software Engineering](https://www.nasa.gov/intelligent-systems-division/robust-software-engineering/), [ENTRUST dynamic assurance cases](https://arxiv.org/abs/1703.06350), [OpenTelemetry Logs Data Model](https://opentelemetry.io/docs/specs/otel/logs/data-model/), [Google SRE Monitoring Distributed Systems](https://sre.google/sre-book/monitoring-distributed-systems/), [NIST SP 800-61 Rev. 3](https://csrc.nist.gov/pubs/sp/800/61/r3/final), and [OMG SACM 2.3](https://www.omg.org/spec/SACM).
+- Decision lineage graph framing: [W3C PROV-DM](https://www.w3.org/TR/prov-dm/), [OpenLineage core specification](https://github.com/OpenLineage/OpenLineage/blob/main/spec/OpenLineage.md), [OpenLineage API](https://openlineage.io/apidocs/openapi/), [in-toto Attestation Statement](https://github.com/in-toto/attestation/blob/main/spec/v1/statement.md), [DSSE Envelope](https://github.com/secure-systems-lab/dsse/blob/master/envelope.md), [W3C Trace Context](https://www.w3.org/TR/trace-context/), and [OMG SACM 2.1](https://www.omg.org/spec/SACM/2.1/PDF).
 - Tenant isolation and relation-model framing: [Alloy language reference](https://alloytools.org/download/alloy-language-reference.pdf), [Alloy in CACM](https://cacm.acm.org/research/alloy/), [AWS SaaS tenant isolation concepts](https://docs.aws.amazon.com/whitepapers/latest/saas-tenant-isolation-strategies/core-isolation-concepts.html), [AWS Lambda tenant isolation](https://docs.aws.amazon.com/lambda/latest/dg/tenant-isolation.html), and [NIST SP 800-207A](https://csrc.nist.gov/pubs/sp/800/207/a/final).
 - Assurance-case argument structure and exchange framing: [GSN Community Standard v3](https://scsc.uk/gsn), [OMG SACM 2.3](https://www.omg.org/spec/SACM), [CMU SEI Eliminative Argumentation](https://www.sei.cmu.edu/library/eliminative-argumentation-a-basis-for-arguing-confidence-in-system-properties/), [SRI Assurance 2.0](https://www.csl.sri.com/users/rushby/assurance2.0), [ENTRUST dynamic assurance cases](https://arxiv.org/abs/1703.06350), and [University of York AMLAS](https://www.york.ac.uk/assuring-autonomy/guidance/amlas/).
 - Learned artifact privacy and reconstruction-risk framing: [NIST SP 800-226](https://csrc.nist.gov/pubs/sp/800/226/final), [OpenDP Context](https://docs.opendp.org/en/stable/api/user-guide/context/index.html), [OpenDP typical workflow](https://docs.opendp.org/en/stable/getting-started/typical-workflow.html), [U.S. Census reconstruction and reidentification attack](https://www.census.gov/library/working-papers/2023/adrm/CES-WP-23-63.html), and [Google Differential Privacy libraries](https://github.com/google/differential-privacy).
 - Shadow evidence quality framing: [CloudEvents specification](https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md), [OpenTelemetry Logs Data Model](https://opentelemetry.io/docs/specs/otel/logs/data-model/), [W3C PROV Overview](https://www.w3.org/TR/prov-overview/), [W3C Trace Context](https://www.w3.org/TR/trace-context/), [OpenLineage API](https://openlineage.io/apidocs/openapi/), [Great Expectations Validation Result](https://docs.greatexpectations.io/docs/0.18/reference/learn/terms/validation_result/), and [AWS Deequ](https://github.com/awslabs/deequ).
+- Baseline cohort evidence framing: [TensorFlow Data Validation anomaly reference](https://www.tensorflow.org/tfx/data_validation/anomalies), [TFX ML Metadata](https://tensorflow.github.io/tfx/guide/mlmd/), [Google Data Cards Playbook](https://sites.research.google/datacardsplaybook/), [Datasheets for Datasets](https://www.microsoft.com/en-us/research/publication/datasheets-for-datasets/), [DVC data versioning](https://doc.dvc.org/user-guide), [lakeFS versioning internals](https://docs.lakefs.io/dev/understand/how/versioning-internals/), and [OpenLineage core model](https://github.com/OpenLineage/OpenLineage).
+- Candidate invariant synthesis framing: [Daikon dynamic invariant detection](https://plse.cs.washington.edu/daikon/), [Texada LTL specification mining](https://www.cs.ubc.ca/~bestchai/papers/texada-ase15_final.pdf), [Synoptic log invariant mining](https://homes.cs.washington.edu/~mernst/pubs/invariants-logs-debs2010.pdf), [Dwyer property specification patterns](https://matthewbdwyer.github.io/psp/), and [GitHub CodeQL custom model documentation](https://docs.github.com/en/code-security/code-scanning/managing-your-code-scanning-configuration/editing-your-configuration-of-default-setup-for-code-scanning).
+- Counterexample minimal witness framing: [Jepsen Elle](https://github.com/jepsen-io/elle), [ClusterFuzz](https://google.github.io/clusterfuzz/), [QuickCheck shrinking](https://hackage.haskell.org/package/QuickCheck/docs/Test-QuickCheck.html), [Zeller and Hildebrandt delta debugging](https://www.st.cs.uni-saarland.de/papers/tse2002/), and [FoundationDB deterministic simulation](https://www.foundationdb.org/files/fdb-paper.pdf).
 
 These sources are engineering anchors only. They do not prove production
 readiness, compliance certification, customer deployment, target-system

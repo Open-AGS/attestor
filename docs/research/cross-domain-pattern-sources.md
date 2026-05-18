@@ -37,6 +37,7 @@ source domain pattern
 | Shadow evidence quality | [CloudEvents required context and privacy](https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md), [OpenTelemetry log data model](https://opentelemetry.io/docs/specs/otel/logs/data-model/), [W3C PROV provenance data model](https://www.w3.org/TR/prov-overview/), [W3C Trace Context](https://www.w3.org/TR/trace-context/), [OpenLineage API](https://openlineage.io/apidocs/openapi/), [Great Expectations Validation Result](https://docs.greatexpectations.io/docs/0.18/reference/learn/terms/validation_result/), [AWS Deequ](https://github.com/awslabs/deequ) | Event context, observed timestamp, trace correlation, producer/schema/provenance refs, validation-result records, and data-quality checks as explicit assumptions. | Shadow Data Quality Gate and provenance/freshness/coverage undermining defeaters. | No CloudEvents/OpenTelemetry/PROV/OpenLineage conformance, data-quality platform, or production readiness claim. |
 | Baseline cohort evidence | [TensorFlow Data Validation anomaly gate](https://www.tensorflow.org/tfx/data_validation/anomalies), [TFX ML Metadata artifact lineage](https://tensorflow.github.io/tfx/guide/mlmd/), [Google Data Cards Playbook](https://sites.research.google/datacardsplaybook/), [Datasheets for Datasets](https://www.microsoft.com/en-us/research/publication/datasheets-for-datasets/), [DVC data versioning](https://doc.dvc.org/user-guide), [lakeFS versioning internals](https://docs.lakefs.io/dev/understand/how/versioning-internals/), [OpenLineage core model](https://github.com/OpenLineage/OpenLineage) | Treat cohorts as documented, digest-addressed, lineage-bound dataset artifacts whose anomalies and scope gaps remain explicit. | Baseline Cohort Builder and assurance-case evidence nodes for candidate claims. | No TFDV/MLMD/Data Cards/DVC/lakeFS/OpenLineage conformance, no baseline mining engine, and no automatic invariant synthesis claim. |
 | Candidate invariant synthesis | [Daikon likely invariants](https://plse.cs.washington.edu/daikon/), [Texada LTL specification mining](https://www.cs.ubc.ca/~bestchai/papers/texada-ase15_final.pdf), [Synoptic log invariant mining](https://homes.cs.washington.edu/~mernst/pubs/invariants-logs-debs2010.pdf), [Dwyer property specification patterns](https://matthewbdwyer.github.io/psp/), [CodeQL model and sanitizer workflows](https://docs.github.com/en/code-security/code-scanning/managing-your-code-scanning-configuration/editing-your-configuration-of-default-setup-for-code-scanning) | Treat mined or template-derived invariants as likely, scoped, reviewable claim candidates with structural model effects separated from promotion. | Candidate Invariant Synthesizer claim and strategy nodes. | No invariant mining engine, no automatic claim acceptance, no CodeQL conformance, no proof, and no policy activation claim. |
+| Counterexample minimal witness | [Jepsen Elle](https://github.com/jepsen-io/elle), [ClusterFuzz](https://google.github.io/clusterfuzz/), [QuickCheck shrinking](https://hackage.haskell.org/package/QuickCheck/docs/Test-QuickCheck.html), [Zeller/Hildebrandt delta debugging](https://www.st.cs.uni-saarland.de/papers/tse2002/), [FoundationDB deterministic simulation](https://www.foundationdb.org/files/fdb-paper.pdf) | Reduce counterexamples into small, deterministic, reproducible, digest-bound witnesses before human review. | Counterexample Minimal Witness evidence and rebutting defeater nodes. | No replay execution engine, no policy correctness proof, no production traffic, and no automatic claim rejection. |
 
 Data Cards and Datasheets are used here as documentation anchors for cohort
 scope, provenance, maintenance, intended use, and stakeholder-readable limits.
@@ -60,6 +61,7 @@ These are the engineering rules imported from the source matrix.
 13. Shadow evidence must pass provenance/freshness/coverage gates before it can support a claim.
 14. Baseline cohorts become evidence only after every source event has a quality gate and the cohort summary has a release budget.
 15. Candidate invariants become claims only after baseline evidence is ready and the candidate itself is review-ready; likely invariants remain hypotheses until open defeaters are closed.
+16. Minimal counterexamples become review material only after they reproduce the violation, reduce or prove already-minimal shape, and bind to the exact tenant, cohort, invariant, replay, and claim digests.
 
 ## Attestor Mapping
 
@@ -80,6 +82,7 @@ These are the engineering rules imported from the source matrix.
 | Shadow data quality gate | Converts weak shadow evidence into explicit undermining-defeater material instead of silently trusting logs. |
 | Baseline cohort builder | Converts budgeted, quality-gated cohort material into assurance-case evidence nodes without mining, training, or granting authority. |
 | Candidate invariant synthesizer | Converts review-ready invariant candidates into assurance-case claim and strategy nodes without accepting, promoting, or enforcing the claim. |
+| Counterexample minimal witness | Converts digest-only reproducing counterexamples into evidence nodes and open rebutting defeaters without executing replay or rejecting claims automatically. |
 
 ## Sequenced Implementation
 
@@ -100,6 +103,7 @@ The research supports the following order:
 11. assurance case contract for Runtime Intelligence Activation v1
 12. learned artifact release budget for Runtime Intelligence Activation v1
 13. shadow data quality gate for Runtime Intelligence Activation v1
+14. counterexample minimal witness for Runtime Intelligence Activation v1
 ```
 
 The first code PR should stay types-only. Any behavior, learning, fusion math,

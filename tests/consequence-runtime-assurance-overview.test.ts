@@ -136,11 +136,12 @@ function testOverviewRecordsContractShapeAndSequence(): void {
     'tests/invariant-promotion-gate.test.ts',
     'docs/02-architecture/invariant-promotion-gate.md',
     '| I00 | complete | Assurance Case Contract |',
-    'Progress: 5/14 complete after I04. 9 steps remain.',
+    'Progress: 6/14 complete after I05. 8 steps remain.',
     '| I01 | complete | Learned Artifact Release Budget |',
     '| I02 | complete | Shadow Data Quality Gate |',
     '| I03 | complete | Baseline Cohort Builder |',
     '| I04 | complete | Candidate Invariant Synthesizer |',
+    '| I05 | complete | Counterexample Minimal Witness |',
     '| I13 | planned | Outcome Feedback / COE Wiring |',
     'src/consequence-admission/assurance-case-contract.ts',
     'tests/assurance-case-contract.test.ts',
@@ -157,6 +158,9 @@ function testOverviewRecordsContractShapeAndSequence(): void {
     'src/consequence-admission/candidate-invariant-synthesizer.ts',
     'tests/candidate-invariant-synthesizer.test.ts',
     'docs/02-architecture/candidate-invariant-synthesizer.md',
+    'src/consequence-admission/counterexample-minimal-witness.ts',
+    'tests/counterexample-minimal-witness.test.ts',
+    'docs/02-architecture/counterexample-minimal-witness.md',
     'SACM 2.3-aligned',
     'Eliminative Argumentation / Assurance 2.0',
     'I01 makes learned artifact release an explicit information-release budget',
@@ -164,6 +168,7 @@ function testOverviewRecordsContractShapeAndSequence(): void {
     'I03 turns a W09 baseline cohort candidate into an',
     'I00 assurance-case evidence',
     'I04 turns a review-ready W10 candidate invariant plus ready I03 cohort evidence',
+    'I05 turns a minimal reproducing counterexample witness into',
   ]) {
     includes(overview, expected, `Overview: records ${expected}`);
   }
@@ -225,6 +230,9 @@ function testResearchAnnexRecordsCrossDomainAnchors(): void {
     'W3C PROV provenance data model',
     'Great Expectations Validation Result',
     'AWS Deequ',
+    'Counterexample minimal witness',
+    'FoundationDB deterministic simulation',
+    'Minimal counterexamples become review material',
     'Only AI RMF-mappable language is claimed, not conformance.',
     'Every future fabric mutation must run replay/backtest regression.',
   ]) {

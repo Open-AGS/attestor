@@ -1323,6 +1323,50 @@ assert.equal(
   'function',
 );
 assert.equal(
+  admission.COUNTEREXAMPLE_MINIMAL_WITNESS_VERSION,
+  'attestor.counterexample-minimal-witness.v1',
+);
+assert.equal(
+  admission.counterexampleMinimalWitnessDescriptor().assuranceCaseContractVersion,
+  admission.ASSURANCE_CASE_CONTRACT_VERSION,
+);
+assert.equal(
+  admission.counterexampleMinimalWitnessDescriptor().candidateInvariantSynthesizerVersion,
+  admission.CANDIDATE_INVARIANT_SYNTHESIZER_VERSION,
+);
+assert.equal(
+  admission.counterexampleMinimalWitnessDescriptor().createsEvidenceNode,
+  true,
+);
+assert.equal(
+  admission.counterexampleMinimalWitnessDescriptor().opensRebuttingDefeater,
+  true,
+);
+assert.equal(
+  admission.counterexampleMinimalWitnessDescriptor().noReplayExecution,
+  true,
+);
+assert.equal(
+  admission.counterexampleMinimalWitnessDescriptor().noProductionTraffic,
+  true,
+);
+assert.equal(
+  admission.counterexampleMinimalWitnessDescriptor().noCredentialUse,
+  true,
+);
+assert.equal(
+  admission.counterexampleMinimalWitnessDescriptor().noAutoClaimRejection,
+  true,
+);
+assert.equal(
+  admission.counterexampleMinimalWitnessDescriptor().canAdmit,
+  false,
+);
+assert.equal(
+  typeof admission.createCounterexampleMinimalWitness,
+  'function',
+);
+assert.equal(
   admission.financePipelineAdmissionDescriptor().route,
   '/api/v1/pipeline/run',
 );

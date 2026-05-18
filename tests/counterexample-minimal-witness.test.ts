@@ -440,7 +440,7 @@ function testDocsPackageOverviewAndProbe(): void {
     includes(docs, expected, `Counterexample minimal witness docs: records ${expected}`);
   }
 
-  includes(overview, 'Progress: 10/14 complete after I09. 4 steps remain.', 'Overview: progress is updated');
+  includes(overview, 'Progress: 11/14 complete after I10. 3 steps remain.', 'Overview: progress is updated');
   includes(overview, '| I05 | complete | Counterexample Minimal Witness |', 'Overview: I05 is complete');
   includes(overview, 'src/consequence-admission/counterexample-minimal-witness.ts', 'Overview: I05 source file is tracked');
   includes(overview, 'tests/counterexample-minimal-witness.test.ts', 'Overview: I05 test file is tracked');

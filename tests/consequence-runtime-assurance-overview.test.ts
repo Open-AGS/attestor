@@ -136,7 +136,7 @@ function testOverviewRecordsContractShapeAndSequence(): void {
     'tests/invariant-promotion-gate.test.ts',
     'docs/02-architecture/invariant-promotion-gate.md',
     '| I00 | complete | Assurance Case Contract |',
-    'Progress: 10/14 complete after I09. 4 steps remain.',
+    'Progress: 11/14 complete after I10. 3 steps remain.',
     '| I01 | complete | Learned Artifact Release Budget |',
     '| I02 | complete | Shadow Data Quality Gate |',
     '| I03 | complete | Baseline Cohort Builder |',
@@ -146,6 +146,7 @@ function testOverviewRecordsContractShapeAndSequence(): void {
     '| I07 | complete | Reviewer Packet / Open Defeater View |',
     '| I08 | complete | Promotion Gate Runner |',
     '| I09 | complete | TLA+ Trace Validator Bridge |',
+    '| I10 | complete | Runtime Monitor Skeleton |',
     '| I13 | planned | Outcome Feedback / COE Wiring |',
     'src/consequence-admission/assurance-case-contract.ts',
     'tests/assurance-case-contract.test.ts',
@@ -177,6 +178,9 @@ function testOverviewRecordsContractShapeAndSequence(): void {
     'src/consequence-admission/tla-trace-validator-bridge.ts',
     'tests/tla-trace-validator-bridge.test.ts',
     'docs/02-architecture/tla-trace-validator-bridge.md',
+    'src/consequence-admission/runtime-monitor-skeleton.ts',
+    'tests/runtime-monitor-skeleton.test.ts',
+    'docs/02-architecture/runtime-monitor-skeleton.md',
     'SACM 2.3-aligned',
     'Eliminative Argumentation / Assurance 2.0',
     'I01 makes learned artifact release an explicit information-release budget',
@@ -189,6 +193,7 @@ function testOverviewRecordsContractShapeAndSequence(): void {
     'I07 turns I05 and I06 open defeaters into',
     'I08 runs the bounded indefeasibility predicate',
     'I09 turns W06 decision trace snapshots',
+    'I10 turns W05/W06 runtime observations',
   ]) {
     includes(overview, expected, `Overview: records ${expected}`);
   }
@@ -258,6 +263,8 @@ function testResearchAnnexRecordsCrossDomainAnchors(): void {
     'Reviewer packets should render open defeaters only',
     'TLA+ trace validator bridge',
     'Formal trace validation should be represented as digest-bound evidence',
+    'Runtime monitor skeleton',
+    'Runtime monitors should stay simple, read-only, trace-bound',
     'Only AI RMF-mappable language is claimed, not conformance.',
     'Every future fabric mutation must run replay/backtest regression.',
   ]) {

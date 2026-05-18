@@ -1040,7 +1040,7 @@ shadow / replay / formal / calibration / outcome material
         -> promotion gate can review what remains unknown
 ```
 
-Progress: 10/14 complete after I09. 4 steps remain.
+Progress: 11/14 complete after I10. 3 steps remain.
 
 | Step | Status | Slice | Evidence |
 |---|---|---|---|
@@ -1054,7 +1054,7 @@ Progress: 10/14 complete after I09. 4 steps remain.
 | I07 | complete | Reviewer Packet / Open Defeater View | `src/consequence-admission/reviewer-open-defeater-view.ts`; `tests/reviewer-open-defeater-view.test.ts`; `docs/02-architecture/reviewer-open-defeater-view.md` |
 | I08 | complete | Promotion Gate Runner | `src/consequence-admission/promotion-gate-runner.ts`; `tests/promotion-gate-runner.test.ts`; `docs/02-architecture/promotion-gate-runner.md` |
 | I09 | complete | TLA+ Trace Validator Bridge | `src/consequence-admission/tla-trace-validator-bridge.ts`; `tests/tla-trace-validator-bridge.test.ts`; `docs/02-architecture/tla-trace-validator-bridge.md` |
-| I10 | planned | Runtime Monitor Skeleton | Living-case update source |
+| I10 | complete | Runtime Monitor Skeleton | `src/consequence-admission/runtime-monitor-skeleton.ts`; `tests/runtime-monitor-skeleton.test.ts`; `docs/02-architecture/runtime-monitor-skeleton.md` |
 | I11 | planned | Decision Lineage Graph | Signed node and transition lineage |
 | I12 | planned | Goodhart / Authority-Creep Guard | Undercutting defeaters for measurement-as-authority |
 | I13 | planned | Outcome Feedback / COE Wiring | Outcome-triggered rebutting defeaters |
@@ -1117,6 +1117,16 @@ an explicit invariant set, and validator report material before evidence is
 created. It does not run TLC or Apalache, act as a runtime oracle, claim formal
 proof, close defeat, activate policy, admit, or enforce.
 
+I10 turns W05/W06 runtime observations into I00 living-case update material. It
+binds the shadow runtime pipeline digest, envelope digest, unsigned assurance
+packet digest, decision trace snapshot digest, optional measurement-plane digest,
+observed timestamp, freshness window, and operator-visible monitor findings. A
+healthy observation creates an evidence node; invalid/stale/mismatched evidence
+opens an undermining defeater; monitor or measurement degradation opens an
+undercutting defeater. It does not write the audit plane, act as an enforcement
+monitor, claim OpenTelemetry/SIEM conformance, activate policy, admit, learn,
+train, or enforce.
+
 ## Primary Source Anchors
 
 Reviewed on 2026-05-17 and 2026-05-18:
@@ -1149,6 +1159,7 @@ Reviewed on 2026-05-17 and 2026-05-18:
 - Feedback loop and dynamic-system framing: [System Dynamics Society](https://systemdynamics.org/what-is-system-dynamics-old/).
 - Design-first formal specification framing: [Microsoft Research, Specifying Systems](https://www.microsoft.com/en-us/research/publication/specifying-systems-the-tla-language-and-tools-for-hardware-and-software-engineers/), [How Amazon Web Services uses formal methods](https://cacm.acm.org/research/how-amazon-web-services-uses-formal-methods/), [Systems Correctness Practices at AWS](https://cacm.acm.org/practice/systems-correctness-practices-at-amazon-web-services/), and [Apalache TLA+ model checker documentation](https://apalache-mc.org/docs/).
 - TLA+ trace-validation bridge framing: [Microsoft Research, Specifying Systems](https://www.microsoft.com/en-us/research/publication/specifying-systems-the-tla-language-and-tools-for-hardware-and-software-engineers/), [How Amazon Web Services uses formal methods](https://cacm.acm.org/research/how-amazon-web-services-uses-formal-methods/), [Systems Correctness Practices at AWS](https://cacm.acm.org/practice/systems-correctness-practices-at-amazon-web-services/), [Apalache TLA+ model checker documentation](https://apalache-mc.org/docs/), and the W06 decision trace logger contract.
+- Runtime monitor skeleton framing: [NASA Runtime Assurance of Aeronautical Products](https://ntrs.nasa.gov/citations/20220015734), [NASA Robust Software Engineering](https://www.nasa.gov/intelligent-systems-division/robust-software-engineering/), [ENTRUST dynamic assurance cases](https://arxiv.org/abs/1703.06350), [OpenTelemetry Logs Data Model](https://opentelemetry.io/docs/specs/otel/logs/data-model/), [Google SRE Monitoring Distributed Systems](https://sre.google/sre-book/monitoring-distributed-systems/), [NIST SP 800-61 Rev. 3](https://csrc.nist.gov/pubs/sp/800/61/r3/final), and [OMG SACM 2.3](https://www.omg.org/spec/SACM).
 - Tenant isolation and relation-model framing: [Alloy language reference](https://alloytools.org/download/alloy-language-reference.pdf), [Alloy in CACM](https://cacm.acm.org/research/alloy/), [AWS SaaS tenant isolation concepts](https://docs.aws.amazon.com/whitepapers/latest/saas-tenant-isolation-strategies/core-isolation-concepts.html), [AWS Lambda tenant isolation](https://docs.aws.amazon.com/lambda/latest/dg/tenant-isolation.html), and [NIST SP 800-207A](https://csrc.nist.gov/pubs/sp/800/207/a/final).
 - Assurance-case argument structure and exchange framing: [GSN Community Standard v3](https://scsc.uk/gsn), [OMG SACM 2.3](https://www.omg.org/spec/SACM), [CMU SEI Eliminative Argumentation](https://www.sei.cmu.edu/library/eliminative-argumentation-a-basis-for-arguing-confidence-in-system-properties/), [SRI Assurance 2.0](https://www.csl.sri.com/users/rushby/assurance2.0), [ENTRUST dynamic assurance cases](https://arxiv.org/abs/1703.06350), and [University of York AMLAS](https://www.york.ac.uk/assuring-autonomy/guidance/amlas/).
 - Learned artifact privacy and reconstruction-risk framing: [NIST SP 800-226](https://csrc.nist.gov/pubs/sp/800/226/final), [OpenDP Context](https://docs.opendp.org/en/stable/api/user-guide/context/index.html), [OpenDP typical workflow](https://docs.opendp.org/en/stable/getting-started/typical-workflow.html), [U.S. Census reconstruction and reidentification attack](https://www.census.gov/library/working-papers/2023/adrm/CES-WP-23-63.html), and [Google Differential Privacy libraries](https://github.com/google/differential-privacy).

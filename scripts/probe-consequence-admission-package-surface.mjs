@@ -1519,6 +1519,38 @@ assert.equal(
   'function',
 );
 assert.equal(
+  admission.RUNTIME_MONITOR_SKELETON_VERSION,
+  'attestor.runtime-monitor-skeleton.v1',
+);
+assert.equal(
+  admission.runtimeMonitorSkeletonDescriptor().shadowRuntimePipelineVersion,
+  admission.SHADOW_RUNTIME_PIPELINE_VERSION,
+);
+assert.equal(
+  admission.runtimeMonitorSkeletonDescriptor().decisionTraceLoggerVersion,
+  admission.DECISION_TRACE_LOGGER_VERSION,
+);
+assert.equal(
+  admission.runtimeMonitorSkeletonDescriptor().assuranceCaseContractVersion,
+  admission.ASSURANCE_CASE_CONTRACT_VERSION,
+);
+assert.equal(
+  admission.runtimeMonitorSkeletonDescriptor().noAuditWrite,
+  true,
+);
+assert.equal(
+  admission.runtimeMonitorSkeletonDescriptor().notRuntimeOracle,
+  true,
+);
+assert.equal(
+  admission.runtimeMonitorSkeletonDescriptor().canAdmit,
+  false,
+);
+assert.equal(
+  typeof admission.createRuntimeMonitorSkeleton,
+  'function',
+);
+assert.equal(
   admission.financePipelineAdmissionDescriptor().route,
   '/api/v1/pipeline/run',
 );

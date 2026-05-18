@@ -98,7 +98,8 @@ for replay and review.
 - Source history is referenced by digest only.
 - Raw payloads and raw idempotency keys are never stored.
 - Claim fields are null because claim/lease behavior is R04.
-- Worker behavior is excluded because runner invocation is R05.
+- Worker behavior is excluded because R05 only invokes the shadow dry-run
+  runner; durable worker behavior remains outside this contract.
 - Audit-plane write and packet signing are excluded.
 - The value cannot admit, enforce, learn, or become production-ready.
 
@@ -117,5 +118,5 @@ R03 does not claim:
 - production readiness
 - customer deployment readiness
 
-R04 is now complete. The next safe step is R05: Shadow Runtime Activation
-Runner.
+R04 and R05 are now complete. The next safe step is R06: Trace / Lineage /
+Measurement Hooks.

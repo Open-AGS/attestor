@@ -1119,6 +1119,66 @@ assert.equal(
   'function',
 );
 assert.equal(
+  admission.SHADOW_RUNTIME_ACTIVATION_RUNNER_VERSION,
+  'attestor.shadow-runtime-activation-runner.v1',
+);
+assert.equal(
+  admission.shadowRuntimeActivationRunnerDescriptor().sourceClaimContractVersion,
+  admission.SHADOW_DISPATCH_CLAIM_CONTRACT_VERSION,
+);
+assert.equal(
+  admission.shadowRuntimeActivationRunnerDescriptor().shadowRuntimePipelineVersion,
+  admission.SHADOW_RUNTIME_PIPELINE_VERSION,
+);
+assert.equal(
+  admission.shadowRuntimeActivationRunnerDescriptor().calls,
+  'runShadowRuntimePipelineDryRun',
+);
+assert.equal(
+  admission.shadowRuntimeActivationRunnerDescriptor().executionMode,
+  'shadow-only',
+);
+assert.equal(
+  admission.shadowRuntimeActivationRunnerDescriptor().claimLeaseRequired,
+  true,
+);
+assert.equal(
+  admission.shadowRuntimeActivationRunnerDescriptor().eventDigestMustMatchClaim,
+  true,
+);
+assert.equal(
+  admission.shadowRuntimeActivationRunnerDescriptor().runnerInvocationIncluded,
+  true,
+);
+assert.equal(
+  admission.shadowRuntimeActivationRunnerDescriptor().workerBehaviorIncluded,
+  false,
+);
+assert.equal(
+  admission.shadowRuntimeActivationRunnerDescriptor().claimStorageMutationIncluded,
+  false,
+);
+assert.equal(
+  admission.shadowRuntimeActivationRunnerDescriptor().outboxWriteIncluded,
+  false,
+);
+assert.equal(
+  admission.shadowRuntimeActivationRunnerDescriptor().canAdmit,
+  false,
+);
+assert.equal(
+  admission.shadowRuntimeActivationRunnerDescriptor().activatesEnforcement,
+  false,
+);
+assert.equal(
+  admission.shadowRuntimeActivationRunnerDescriptor().productionReady,
+  false,
+);
+assert.equal(
+  typeof admission.runShadowRuntimeActivation,
+  'function',
+);
+assert.equal(
   admission.DECISION_TRACE_LOGGER_VERSION,
   'attestor.decision-trace-logger.v1',
 );

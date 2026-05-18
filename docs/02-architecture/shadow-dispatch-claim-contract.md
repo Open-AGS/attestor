@@ -115,4 +115,5 @@ R04 does not claim:
 - not production readiness
 - not customer deployment readiness
 
-The next safe step is R05: Shadow Runtime Activation Runner.
+R05 is now complete. The next safe step is R06: Trace / Lineage / Measurement
+Hooks.

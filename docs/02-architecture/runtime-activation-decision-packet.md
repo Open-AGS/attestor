@@ -196,8 +196,8 @@ activate production paths.
 
 ## R-Series Plan
 
-R01 defines the next runtime activation series. Current progress after R04:
-4/8 complete, 4 steps remain.
+R01 defines the next runtime activation series. Current progress after R05:
+5/8 complete, 3 steps remain.
 
 | Step | Status | Slice | Output |
 |---|---|---|---|
@@ -205,13 +205,14 @@ R01 defines the next runtime activation series. Current progress after R04:
 | R02 | complete | Shadow Activation Profile Contract | `src/consequence-admission/shadow-activation-profile-contract.ts`; activation profile version, trigger mode, idempotency binding, no-authority flags |
 | R03 | complete | Shadow Outbox Work Item Contract | `src/consequence-admission/shadow-outbox-work-item-contract.ts`; pending digest-only work item over R02 activation profile, source-history binding, stable dedupe key, null claim fields, no-authority flags |
 | R04 | complete | Dispatcher / Reconcile Claim Contract | `src/consequence-admission/shadow-dispatch-claim-contract.ts`; time-bounded lease, `FOR UPDATE SKIP LOCKED` semantics, tenant/source partition advisory-lock scope, bounded attempt increment, digest-only claim token, no runner invocation |
-| R05 | planned | Shadow Runtime Activation Runner | Calls W05 dry-run from claimed work, still shadow-only |
+| R05 | complete | Shadow Runtime Activation Runner | `src/consequence-admission/shadow-runtime-activation-runner.ts`; validates an R04 claim against a canonical event and calls W05 dry-run, still shadow-only |
 | R06 | planned | Trace / Lineage / Measurement Hooks | Connects W06/I11/I10 without audit write or authority |
 | R07 | planned | Outcome Feedback Hook | Connects I13 feedback material as read-only post-outcome input |
 | R08 | planned | End-to-End Fixture Replay Smoke | Synthetic fixture replay through R02-R07, no live target system |
 
-R05-R08 remain implementation steps after R04. R01 is only the architectural
-decision; R02-R04 are small implementation contracts.
+R06-R08 remain implementation steps after R05. R01 is only the architectural
+decision; R02-R04 are small implementation contracts; R05 is the first
+shadow-only runner invocation over claimed work.
 
 ## No-Claims
 
@@ -231,5 +232,6 @@ R01 does not claim:
 - raw event storage
 - compliance certification
 
-The next safe step is R05: a Shadow Runtime Activation Runner that calls the
-existing W05 dry-run from claimed work, still shadow-only.
+The next safe step is R06: Trace / Lineage / Measurement Hooks that bind the
+R05 activation result to W06/I10/I11 material without audit-plane write
+authority, enforcement activation, or production readiness claims.

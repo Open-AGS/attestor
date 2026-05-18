@@ -156,5 +156,5 @@ R02 does not claim:
 - production readiness
 - customer deployment readiness
 
-R03, R04, R05, and R06 are now complete. The next safe step is R07: Outcome
-Feedback Hook.
+R03, R04, R05, R06, and R07 are now complete. The next safe step is R08:
+End-to-End Fixture Replay Smoke.

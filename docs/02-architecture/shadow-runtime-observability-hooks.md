@@ -71,6 +71,5 @@ R06 does not claim:
 
 ## Next
 
-R07 is Outcome Feedback Hook. It may bind I13 outcome feedback / COE material to
-the R06 observability result, but it must remain read-only and must not mutate
-policy, measurement, calibration, or enforcement.
+R07 is now complete. R08 adds the end-to-end fixture replay smoke that exercises
+the R02-R07 path with synthetic shadow traffic.

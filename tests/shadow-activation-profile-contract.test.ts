@@ -267,15 +267,17 @@ function testDocsOverviewLedgerAndPackageSurfaceStayAligned(): void {
   }
 
   for (const expected of [
-    'Progress: 6/8 complete after R06. 2 steps remain.',
+    'Progress: 7/8 complete after R07. 1 step remains.',
     '| R02 | complete | Shadow Activation Profile Contract |',
     '| R03 | complete | Shadow Outbox Work Item Contract |',
     '| R04 | complete | Dispatcher / Reconcile Claim Contract |',
     '| R05 | complete | Shadow Runtime Activation Runner |',
     '| R06 | complete | Trace / Lineage / Measurement Hooks |',
+    '| R07 | complete | Outcome Feedback Hook |',
     'src/consequence-admission/shadow-activation-profile-contract.ts',
     'src/consequence-admission/shadow-runtime-activation-runner.ts',
     'src/consequence-admission/shadow-runtime-observability-hooks.ts',
+    'src/consequence-admission/shadow-runtime-outcome-feedback-hook.ts',
     'tests/shadow-activation-profile-contract.test.ts',
     'docs/02-architecture/shadow-activation-profile-contract.md',
   ]) {

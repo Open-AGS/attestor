@@ -2317,6 +2317,7 @@ export * from './shadow-outbox-work-item-contract.js';
 export * from './shadow-dispatch-claim-contract.js';
 export * from './shadow-runtime-activation-runner.js';
 export * from './shadow-runtime-observability-hooks.js';
+export * from './shadow-runtime-outcome-feedback-hook.js';
 export * from './decision-trace-logger.js';
 export * from './baseline-cohort-contract.js';
 export * from './candidate-invariants-catalog.js';

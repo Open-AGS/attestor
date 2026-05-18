@@ -120,16 +120,16 @@ function testDecisionPacketRecordsRSeriesAndNonClaims(): void {
 
   for (const expected of [
     'R01 defines the next runtime activation series.',
-    '6/8 complete, 2 steps remain.',
+    '7/8 complete, 1 step remains.',
     '| R01 | complete | Runtime Activation Decision Packet |',
     '| R02 | complete | Shadow Activation Profile Contract |',
     '| R03 | complete | Shadow Outbox Work Item Contract |',
     '| R04 | complete | Dispatcher / Reconcile Claim Contract |',
     '| R05 | complete | Shadow Runtime Activation Runner |',
     '| R06 | complete | Trace / Lineage / Measurement Hooks |',
-    '| R07 | planned | Outcome Feedback Hook |',
+    '| R07 | complete | Outcome Feedback Hook |',
     '| R08 | planned | End-to-End Fixture Replay Smoke |',
-    'The next safe step is R07',
+    'The next safe step is R08',
     'live enforcement',
     'production worker readiness',
     'exactly-once delivery',
@@ -167,19 +167,21 @@ function testOverviewLedgerAndPackageSurfaceStayAligned(): void {
 
   for (const expected of [
     '## Runtime Activation Series',
-    'Progress: 6/8 complete after R06. 2 steps remain.',
+    'Progress: 7/8 complete after R07. 1 step remains.',
     '| R01 | complete | Runtime Activation Decision Packet |',
     '| R02 | complete | Shadow Activation Profile Contract |',
     '| R03 | complete | Shadow Outbox Work Item Contract |',
     '| R04 | complete | Dispatcher / Reconcile Claim Contract |',
     '| R05 | complete | Shadow Runtime Activation Runner |',
     '| R06 | complete | Trace / Lineage / Measurement Hooks |',
+    '| R07 | complete | Outcome Feedback Hook |',
     'docs/02-architecture/runtime-activation-decision-packet.md',
     'src/consequence-admission/shadow-activation-profile-contract.ts',
     'src/consequence-admission/shadow-outbox-work-item-contract.ts',
     'src/consequence-admission/shadow-dispatch-claim-contract.ts',
     'src/consequence-admission/shadow-runtime-activation-runner.ts',
     'src/consequence-admission/shadow-runtime-observability-hooks.ts',
+    'src/consequence-admission/shadow-runtime-outcome-feedback-hook.ts',
   ]) {
     includes(overview, expected, `Overview: records ${expected}`);
   }

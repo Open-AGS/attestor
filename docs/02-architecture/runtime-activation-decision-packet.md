@@ -196,8 +196,8 @@ activate production paths.
 
 ## R-Series Plan
 
-R01 defines the next runtime activation series. Current progress after R06:
-6/8 complete, 2 steps remain.
+R01 defines the next runtime activation series. Current progress after R07:
+7/8 complete, 1 step remains.
 
 | Step | Status | Slice | Output |
 |---|---|---|---|
@@ -207,13 +207,14 @@ R01 defines the next runtime activation series. Current progress after R06:
 | R04 | complete | Dispatcher / Reconcile Claim Contract | `src/consequence-admission/shadow-dispatch-claim-contract.ts`; time-bounded lease, `FOR UPDATE SKIP LOCKED` semantics, tenant/source partition advisory-lock scope, bounded attempt increment, digest-only claim token, no runner invocation |
 | R05 | complete | Shadow Runtime Activation Runner | `src/consequence-admission/shadow-runtime-activation-runner.ts`; validates an R04 claim against a canonical event and calls W05 dry-run, still shadow-only |
 | R06 | complete | Trace / Lineage / Measurement Hooks | `src/consequence-admission/shadow-runtime-observability-hooks.ts`; binds R05 activation to W06 decision trace, I10 runtime monitor / optional measurement, assurance case, and I11 lineage graph without audit write or authority |
-| R07 | planned | Outcome Feedback Hook | Connects I13 feedback material as read-only post-outcome input |
+| R07 | complete | Outcome Feedback Hook | `src/consequence-admission/shadow-runtime-outcome-feedback-hook.ts`; connects I13 feedback material as read-only post-outcome input and derives an outcome-feedback assurance case / lineage graph without policy mutation or learning activation |
 | R08 | planned | End-to-End Fixture Replay Smoke | Synthetic fixture replay through R02-R07, no live target system |
 
-R07-R08 remain implementation steps after R06. R01 is only the architectural
+R08 remains an implementation step after R07. R01 is only the architectural
 decision; R02-R04 are small implementation contracts; R05 is the first
 shadow-only runner invocation over claimed work; R06 is the first observability
-hook binding over that invocation.
+hook binding over that invocation; R07 is the first outcome-feedback hook over
+the R06 evidence value.
 
 ## No-Claims
 
@@ -233,6 +234,6 @@ R01 does not claim:
 - raw event storage
 - compliance certification
 
-The next safe step is R07: Outcome Feedback Hook that binds I13 feedback
-material as read-only post-outcome input without policy mutation, measurement
-authority, enforcement activation, or production readiness claims.
+The next safe step is R08: End-to-End Fixture Replay Smoke that exercises the
+R02-R07 runtime activation path with synthetic shadow traffic and no live target
+system.

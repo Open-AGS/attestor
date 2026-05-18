@@ -1040,7 +1040,7 @@ shadow / replay / formal / calibration / outcome material
         -> promotion gate can review what remains unknown
 ```
 
-Progress: 8/14 complete after I07. 6 steps remain.
+Progress: 9/14 complete after I08. 5 steps remain.
 
 | Step | Status | Slice | Evidence |
 |---|---|---|---|
@@ -1052,7 +1052,7 @@ Progress: 8/14 complete after I07. 6 steps remain.
 | I05 | complete | Counterexample Minimal Witness | `src/consequence-admission/counterexample-minimal-witness.ts`; `tests/counterexample-minimal-witness.test.ts`; `docs/02-architecture/counterexample-minimal-witness.md` |
 | I06 | complete | Calibration Lower-Bound Runner | `src/consequence-admission/calibration-lower-bound-runner.ts`; `tests/calibration-lower-bound-runner.test.ts`; `docs/02-architecture/calibration-lower-bound-runner.md` |
 | I07 | complete | Reviewer Packet / Open Defeater View | `src/consequence-admission/reviewer-open-defeater-view.ts`; `tests/reviewer-open-defeater-view.test.ts`; `docs/02-architecture/reviewer-open-defeater-view.md` |
-| I08 | planned | Promotion Gate Runner | Indefeasibility predicate execution |
+| I08 | complete | Promotion Gate Runner | `src/consequence-admission/promotion-gate-runner.ts`; `tests/promotion-gate-runner.test.ts`; `docs/02-architecture/promotion-gate-runner.md` |
 | I09 | planned | TLA+ Trace Validator Bridge | Formal-spec evidence nodes |
 | I10 | planned | Runtime Monitor Skeleton | Living-case update source |
 | I11 | planned | Decision Lineage Graph | Signed node and transition lineage |
@@ -1103,6 +1103,13 @@ renders only open defeat material, caps the packet at 7 reason lines and 3
 questions, and rejects raw-evidence or authority-action requests. It does not
 close defeat, decide review, promote, admit, activate policy, or enforce.
 
+I08 runs the bounded indefeasibility predicate over the I07
+reviewer-open-defeater view. It allows only a review-only patch handoff when the
+claim is ready, assurance-case/claim/strategy digests are bound, no open
+defeaters remain, and no raw, closure, review-decision, policy-activation, or
+live-enforcement request is present. It does not close defeat, decide review,
+generate a patch, activate policy, admit, or enforce.
+
 ## Primary Source Anchors
 
 Reviewed on 2026-05-17 and 2026-05-18:
@@ -1116,6 +1123,11 @@ Reviewed on 2026-05-17 and 2026-05-18:
   [Google People + AI Guidebook](https://pair.withgoogle.com/guidebook/),
   [GitHub code scanning alert resolution](https://docs.github.com/en/code-security/how-tos/manage-security-alerts/manage-code-scanning-alerts/resolving-code-scanning-alerts),
   and [GSN Community Standard v3](https://scsc.uk/gsn).
+- Promotion-gate predicate framing: [CMU SEI Eliminative Argumentation](https://www.sei.cmu.edu/library/eliminative-argumentation-a-basis-for-arguing-confidence-in-system-properties/),
+  [SRI Assurance 2.0](https://www.csl.sri.com/users/rushby/assurance2.0),
+  [OMG SACM 2.3](https://www.omg.org/spec/SACM),
+  [CISA SSVC](https://www.cisa.gov/stakeholder-specific-vulnerability-categorization-ssvc),
+  and [GitHub code scanning alert resolution](https://docs.github.com/en/code-security/how-tos/manage-security-alerts/manage-code-scanning-alerts/resolving-code-scanning-alerts).
 - Runtime assurance framing for trusted safety monitors around untrusted or advanced autonomy: [NASA Runtime Assurance](https://ntrs.nasa.gov/citations/20240006522).
 - Failure modes and upstream/downstream dependency modeling: [NASA FMEA Tool](https://software.nasa.gov/software/MSC-25379-1) and [NASA SW Failure Modes and Effects Analysis](https://swehb.nasa.gov/display/SWEHBVD/8.05%2B-%2BSW%2BFailure%2BModes%2Band%2BEffects%2BAnalysis).
 - Fault/event tree analysis: [NRC Fault Tree Handbook, NUREG-0492](https://www.nrc.gov/reading-rm/doc-collections/nuregs/staff/sr0492/index.html).

@@ -1040,7 +1040,7 @@ shadow / replay / formal / calibration / outcome material
         -> promotion gate can review what remains unknown
 ```
 
-Progress: 7/14 complete after I06. 7 steps remain.
+Progress: 8/14 complete after I07. 6 steps remain.
 
 | Step | Status | Slice | Evidence |
 |---|---|---|---|
@@ -1051,7 +1051,7 @@ Progress: 7/14 complete after I06. 7 steps remain.
 | I04 | complete | Candidate Invariant Synthesizer | `src/consequence-admission/candidate-invariant-synthesizer.ts`; `tests/candidate-invariant-synthesizer.test.ts`; `docs/02-architecture/candidate-invariant-synthesizer.md` |
 | I05 | complete | Counterexample Minimal Witness | `src/consequence-admission/counterexample-minimal-witness.ts`; `tests/counterexample-minimal-witness.test.ts`; `docs/02-architecture/counterexample-minimal-witness.md` |
 | I06 | complete | Calibration Lower-Bound Runner | `src/consequence-admission/calibration-lower-bound-runner.ts`; `tests/calibration-lower-bound-runner.test.ts`; `docs/02-architecture/calibration-lower-bound-runner.md` |
-| I07 | planned | Reviewer Packet / Open Defeater View | Human-readable open-defeater packet |
+| I07 | complete | Reviewer Packet / Open Defeater View | `src/consequence-admission/reviewer-open-defeater-view.ts`; `tests/reviewer-open-defeater-view.test.ts`; `docs/02-architecture/reviewer-open-defeater-view.md` |
 | I08 | planned | Promotion Gate Runner | Indefeasibility predicate execution |
 | I09 | planned | TLA+ Trace Validator Bridge | Formal-spec evidence nodes |
 | I10 | planned | Runtime Monitor Skeleton | Living-case update source |
@@ -1098,6 +1098,11 @@ opens an undercutting defeater when the lower bound is too weak. It treats point
 estimates as context, not authority, and never promotes, admits, activates
 policy, trains a calibrator, or enforces.
 
+I07 turns I05 and I06 open defeaters into a bounded reviewer-facing packet. It
+renders only open defeat material, caps the packet at 7 reason lines and 3
+questions, and rejects raw-evidence or authority-action requests. It does not
+close defeat, decide review, promote, admit, activate policy, or enforce.
+
 ## Primary Source Anchors
 
 Reviewed on 2026-05-17 and 2026-05-18:
@@ -1107,6 +1112,10 @@ Reviewed on 2026-05-17 and 2026-05-18:
   [NIST/SEMATECH Engineering Statistics Handbook](https://www.nist.gov/programs-projects/nistsematech-engineering-statistics-handbook),
   [scikit-learn Probability calibration](https://scikit-learn.org/stable/modules/calibration.html),
   and [NIST AI RMF 1.0](https://www.nist.gov/publications/artificial-intelligence-risk-management-framework-ai-rmf-10).
+- Reviewer open-defeater framing: [Microsoft Human-AI Interaction Guidelines](https://www.microsoft.com/en-us/research/blog/guidelines-for-human-ai-interaction-design/),
+  [Google People + AI Guidebook](https://pair.withgoogle.com/guidebook/),
+  [GitHub code scanning alert resolution](https://docs.github.com/en/code-security/how-tos/manage-security-alerts/manage-code-scanning-alerts/resolving-code-scanning-alerts),
+  and [GSN Community Standard v3](https://scsc.uk/gsn).
 - Runtime assurance framing for trusted safety monitors around untrusted or advanced autonomy: [NASA Runtime Assurance](https://ntrs.nasa.gov/citations/20240006522).
 - Failure modes and upstream/downstream dependency modeling: [NASA FMEA Tool](https://software.nasa.gov/software/MSC-25379-1) and [NASA SW Failure Modes and Effects Analysis](https://swehb.nasa.gov/display/SWEHBVD/8.05%2B-%2BSW%2BFailure%2BModes%2Band%2BEffects%2BAnalysis).
 - Fault/event tree analysis: [NRC Fault Tree Handbook, NUREG-0492](https://www.nrc.gov/reading-rm/doc-collections/nuregs/staff/sr0492/index.html).

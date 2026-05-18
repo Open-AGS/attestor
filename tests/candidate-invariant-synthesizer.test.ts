@@ -422,7 +422,7 @@ function testDocsPackageAndOverview(): void {
     includes(docs, expected, `Candidate invariant synthesizer docs: records ${expected}`);
   }
 
-  includes(overview, 'Progress: 7/14 complete after I06. 7 steps remain.', 'Overview: progress is updated');
+  includes(overview, 'Progress: 8/14 complete after I07. 6 steps remain.', 'Overview: progress is updated');
   includes(overview, '| I04 | complete | Candidate Invariant Synthesizer |', 'Overview: I04 is complete');
   includes(overview, 'src/consequence-admission/candidate-invariant-synthesizer.ts', 'Overview: I04 source file is tracked');
   includes(overview, 'tests/candidate-invariant-synthesizer.test.ts', 'Overview: I04 test file is tracked');

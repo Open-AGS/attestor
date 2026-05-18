@@ -118,6 +118,7 @@
     "test:candidate-invariant-synthesizer": "tsx tests/candidate-invariant-synthesizer.test.ts",
     "test:counterexample-minimal-witness": "tsx tests/counterexample-minimal-witness.test.ts",
     "test:calibration-lower-bound-runner": "tsx tests/calibration-lower-bound-runner.test.ts",
+    "test:reviewer-open-defeater-view": "tsx tests/reviewer-open-defeater-view.test.ts",
     "test:admission-state-machine-spec": "tsx tests/admission-state-machine-spec.test.ts",
     "test:tenant-isolation-model": "tsx tests/tenant-isolation-model.test.ts",
     "test:target-system-compatibility-matrix": "tsx tests/target-system-compatibility-matrix.test.ts",

@@ -39,6 +39,7 @@ source domain pattern
 | Candidate invariant synthesis | [Daikon likely invariants](https://plse.cs.washington.edu/daikon/), [Texada LTL specification mining](https://www.cs.ubc.ca/~bestchai/papers/texada-ase15_final.pdf), [Synoptic log invariant mining](https://homes.cs.washington.edu/~mernst/pubs/invariants-logs-debs2010.pdf), [Dwyer property specification patterns](https://matthewbdwyer.github.io/psp/), [CodeQL model and sanitizer workflows](https://docs.github.com/en/code-security/code-scanning/managing-your-code-scanning-configuration/editing-your-configuration-of-default-setup-for-code-scanning) | Treat mined or template-derived invariants as likely, scoped, reviewable claim candidates with structural model effects separated from promotion. | Candidate Invariant Synthesizer claim and strategy nodes. | No invariant mining engine, no automatic claim acceptance, no CodeQL conformance, no proof, and no policy activation claim. |
 | Counterexample minimal witness | [Jepsen Elle](https://github.com/jepsen-io/elle), [ClusterFuzz](https://google.github.io/clusterfuzz/), [QuickCheck shrinking](https://hackage.haskell.org/package/QuickCheck/docs/Test-QuickCheck.html), [Zeller/Hildebrandt delta debugging](https://www.st.cs.uni-saarland.de/papers/tse2002/), [FoundationDB deterministic simulation](https://www.foundationdb.org/files/fdb-paper.pdf) | Reduce counterexamples into small, deterministic, reproducible, digest-bound witnesses before human review. | Counterexample Minimal Witness evidence and rebutting defeater nodes. | No replay execution engine, no policy correctness proof, no production traffic, and no automatic claim rejection. |
 | Calibration lower-bound runner | [FDA Data Mining White Paper](https://www.fda.gov/science-research/data-mining/data-mining-fda-white-paper), [NIST/SEMATECH Engineering Statistics Handbook](https://www.nist.gov/programs-projects/nistsematech-engineering-statistics-handbook), [scikit-learn probability calibration](https://scikit-learn.org/stable/modules/calibration.html), [NIST AI RMF 1.0](https://www.nist.gov/publications/artificial-intelligence-risk-management-framework-ai-rmf-10) | Treat calibrated confidence as uncertainty-bearing measurement evidence; require lower-bound framing and keep point estimates outside authority paths. | Calibration Lower-Bound Runner evidence nodes and weak-confidence undercutting defeaters. | No calibration training engine, no statistical guarantee, no promotion gate, no policy activation, and no authority claim. |
+| Reviewer open-defeater view | [Microsoft Human-AI Interaction Guidelines](https://www.microsoft.com/en-us/research/blog/guidelines-for-human-ai-interaction-design/), [Google People + AI Guidebook](https://pair.withgoogle.com/guidebook/), [GitHub code scanning alert resolution](https://docs.github.com/en/code-security/how-tos/manage-security-alerts/manage-code-scanning-alerts/resolving-code-scanning-alerts), [GSN Community Standard v3](https://scsc.uk/gsn) | Render only the remaining open defeat material, bound the reviewer workload, keep uncertainty visible, and separate display from review/dismissal decisions. | Reviewer Open Defeater View packets. | No reviewer UI, no review decision, no defeater closure, no promotion gate, no live enforcement, and no production readiness claim. |
 
 Data Cards and Datasheets are used here as documentation anchors for cohort
 scope, provenance, maintenance, intended use, and stakeholder-readable limits.
@@ -64,6 +65,7 @@ These are the engineering rules imported from the source matrix.
 15. Candidate invariants become claims only after baseline evidence is ready and the candidate itself is review-ready; likely invariants remain hypotheses until open defeaters are closed.
 16. Minimal counterexamples become review material only after they reproduce the violation, reduce or prove already-minimal shape, and bind to the exact tenant, cohort, invariant, replay, and claim digests.
 17. Calibration evidence must use lower bounds and uncertainty context; point estimates can never become authority.
+18. Reviewer packets should render open defeaters only, cap visible reason lines and questions, and leave closure, dismissal, and promotion decisions to later authority-bound steps.
 
 ## Attestor Mapping
 
@@ -86,6 +88,7 @@ These are the engineering rules imported from the source matrix.
 | Candidate invariant synthesizer | Converts review-ready invariant candidates into assurance-case claim and strategy nodes without accepting, promoting, or enforcing the claim. |
 | Counterexample minimal witness | Converts digest-only reproducing counterexamples into evidence nodes and open rebutting defeaters without executing replay or rejecting claims automatically. |
 | Calibration lower-bound runner | Converts ready calibration records into lower-bound confidence evidence, or weak-confidence undercutting defeaters, without making confidence authoritative. |
+| Reviewer open-defeater view | Converts I05 and I06 open defeaters into a bounded digest-only reviewer packet without closing defeat, deciding review, promoting policy, or activating enforcement. |
 
 ## Sequenced Implementation
 
@@ -108,6 +111,7 @@ The research supports the following order:
 13. shadow data quality gate for Runtime Intelligence Activation v1
 14. counterexample minimal witness for Runtime Intelligence Activation v1
 15. calibration lower-bound runner for Runtime Intelligence Activation v1
+16. reviewer open-defeater view for Runtime Intelligence Activation v1
 ```
 
 The first code PR should stay types-only. Any behavior, learning, fusion math,

@@ -1415,6 +1415,70 @@ assert.equal(
   'function',
 );
 assert.equal(
+  admission.REVIEWER_OPEN_DEFEATER_VIEW_VERSION,
+  'attestor.reviewer-open-defeater-view.v1',
+);
+assert.equal(
+  admission.reviewerOpenDefeaterViewDescriptor().assuranceCaseContractVersion,
+  admission.ASSURANCE_CASE_CONTRACT_VERSION,
+);
+assert.equal(
+  admission.reviewerOpenDefeaterViewDescriptor().candidateInvariantSynthesizerVersion,
+  admission.CANDIDATE_INVARIANT_SYNTHESIZER_VERSION,
+);
+assert.equal(
+  admission.reviewerOpenDefeaterViewDescriptor().counterexampleMinimalWitnessVersion,
+  admission.COUNTEREXAMPLE_MINIMAL_WITNESS_VERSION,
+);
+assert.equal(
+  admission.reviewerOpenDefeaterViewDescriptor().calibrationLowerBoundRunnerVersion,
+  admission.CALIBRATION_LOWER_BOUND_RUNNER_VERSION,
+);
+assert.equal(
+  admission.reviewerOpenDefeaterViewDescriptor().maxReasonLines,
+  7,
+);
+assert.equal(
+  admission.reviewerOpenDefeaterViewDescriptor().maxQuestions,
+  3,
+);
+assert.equal(
+  admission.reviewerOpenDefeaterViewDescriptor().rendersOpenDefeatersOnly,
+  true,
+);
+assert.equal(
+  admission.reviewerOpenDefeaterViewDescriptor().digestOnly,
+  true,
+);
+assert.equal(
+  admission.reviewerOpenDefeaterViewDescriptor().boundedHumanReview,
+  true,
+);
+assert.equal(
+  admission.reviewerOpenDefeaterViewDescriptor().noRawEvidence,
+  true,
+);
+assert.equal(
+  admission.reviewerOpenDefeaterViewDescriptor().noReviewerDecision,
+  true,
+);
+assert.equal(
+  admission.reviewerOpenDefeaterViewDescriptor().noDefeaterClosure,
+  true,
+);
+assert.equal(
+  admission.reviewerOpenDefeaterViewDescriptor().noPromotion,
+  true,
+);
+assert.equal(
+  admission.reviewerOpenDefeaterViewDescriptor().canAdmit,
+  false,
+);
+assert.equal(
+  typeof admission.createReviewerOpenDefeaterView,
+  'function',
+);
+assert.equal(
   admission.financePipelineAdmissionDescriptor().route,
   '/api/v1/pipeline/run',
 );

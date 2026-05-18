@@ -291,7 +291,7 @@ function testDocsPackageAndOverview(): void {
     includes(docs, expected, `Learned artifact budget docs: records ${expected}`);
   }
 
-  includes(overview, 'Progress: 7/14 complete after I06. 7 steps remain.', 'Overview: progress is updated');
+  includes(overview, 'Progress: 8/14 complete after I07. 6 steps remain.', 'Overview: progress is updated');
   includes(overview, '| I01 | complete | Learned Artifact Release Budget |', 'Overview: I01 is complete');
   includes(overview, 'src/consequence-admission/learned-artifact-release-budget.ts', 'Overview: I01 source file is tracked');
   includes(overview, 'tests/learned-artifact-release-budget.test.ts', 'Overview: I01 test file is tracked');

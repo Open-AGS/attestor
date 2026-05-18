@@ -1040,7 +1040,7 @@ shadow / replay / formal / calibration / outcome material
         -> promotion gate can review what remains unknown
 ```
 
-Progress: 5/14 complete after I04. 9 steps remain.
+Progress: 6/14 complete after I05. 8 steps remain.
 
 | Step | Status | Slice | Evidence |
 |---|---|---|---|
@@ -1049,7 +1049,7 @@ Progress: 5/14 complete after I04. 9 steps remain.
 | I02 | complete | Shadow Data Quality Gate | `src/consequence-admission/shadow-data-quality-gate.ts`; `tests/shadow-data-quality-gate.test.ts`; `docs/02-architecture/shadow-data-quality-gate.md` |
 | I03 | complete | Baseline Cohort Builder | `src/consequence-admission/baseline-cohort-builder.ts`; `tests/baseline-cohort-builder.test.ts`; `docs/02-architecture/baseline-cohort-builder.md` |
 | I04 | complete | Candidate Invariant Synthesizer | `src/consequence-admission/candidate-invariant-synthesizer.ts`; `tests/candidate-invariant-synthesizer.test.ts`; `docs/02-architecture/candidate-invariant-synthesizer.md` |
-| I05 | planned | Counterexample Replay + Minimal Witness | Rebutting defeaters and minimal witness evidence |
+| I05 | complete | Counterexample Minimal Witness | `src/consequence-admission/counterexample-minimal-witness.ts`; `tests/counterexample-minimal-witness.test.ts`; `docs/02-architecture/counterexample-minimal-witness.md` |
 | I06 | planned | Calibration Lower-Bound Runner | Evidence confidence annotations |
 | I07 | planned | Reviewer Packet / Open Defeater View | Human-readable open-defeater packet |
 | I08 | planned | Promotion Gate Runner | Indefeasibility predicate execution |
@@ -1087,6 +1087,12 @@ into I00 claim and strategy nodes for open-defeater review. It does not mine
 invariants, accept claims automatically, promote policy, train, enforce, or
 claim proof.
 
+I05 turns a minimal reproducing counterexample witness into I00 evidence and an
+open rebutting defeater against the I04 claim node. It keeps the witness
+digest-only, deterministic, tenant-bound, and review-only. It does not execute
+replay, reject claims automatically, use credentials, touch target systems,
+activate policy, or enforce.
+
 ## Primary Source Anchors
 
 Reviewed on 2026-05-17 and 2026-05-18:
@@ -1111,6 +1117,7 @@ Reviewed on 2026-05-17 and 2026-05-18:
 - Shadow evidence quality framing: [CloudEvents specification](https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md), [OpenTelemetry Logs Data Model](https://opentelemetry.io/docs/specs/otel/logs/data-model/), [W3C PROV Overview](https://www.w3.org/TR/prov-overview/), [W3C Trace Context](https://www.w3.org/TR/trace-context/), [OpenLineage API](https://openlineage.io/apidocs/openapi/), [Great Expectations Validation Result](https://docs.greatexpectations.io/docs/0.18/reference/learn/terms/validation_result/), and [AWS Deequ](https://github.com/awslabs/deequ).
 - Baseline cohort evidence framing: [TensorFlow Data Validation anomaly reference](https://www.tensorflow.org/tfx/data_validation/anomalies), [TFX ML Metadata](https://tensorflow.github.io/tfx/guide/mlmd/), [Google Data Cards Playbook](https://sites.research.google/datacardsplaybook/), [Datasheets for Datasets](https://www.microsoft.com/en-us/research/publication/datasheets-for-datasets/), [DVC data versioning](https://doc.dvc.org/user-guide), [lakeFS versioning internals](https://docs.lakefs.io/dev/understand/how/versioning-internals/), and [OpenLineage core model](https://github.com/OpenLineage/OpenLineage).
 - Candidate invariant synthesis framing: [Daikon dynamic invariant detection](https://plse.cs.washington.edu/daikon/), [Texada LTL specification mining](https://www.cs.ubc.ca/~bestchai/papers/texada-ase15_final.pdf), [Synoptic log invariant mining](https://homes.cs.washington.edu/~mernst/pubs/invariants-logs-debs2010.pdf), [Dwyer property specification patterns](https://matthewbdwyer.github.io/psp/), and [GitHub CodeQL custom model documentation](https://docs.github.com/en/code-security/code-scanning/managing-your-code-scanning-configuration/editing-your-configuration-of-default-setup-for-code-scanning).
+- Counterexample minimal witness framing: [Jepsen Elle](https://github.com/jepsen-io/elle), [ClusterFuzz](https://google.github.io/clusterfuzz/), [QuickCheck shrinking](https://hackage.haskell.org/package/QuickCheck/docs/Test-QuickCheck.html), [Zeller and Hildebrandt delta debugging](https://www.st.cs.uni-saarland.de/papers/tse2002/), and [FoundationDB deterministic simulation](https://www.foundationdb.org/files/fdb-paper.pdf).
 
 These sources are engineering anchors only. They do not prove production
 readiness, compliance certification, customer deployment, target-system

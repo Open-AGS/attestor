@@ -89,7 +89,7 @@ artifacts. They generate assurance-case material:
 | I02 shadow data quality gate | undermining defeaters against shadow evidence |
 | I03 baseline cohort builder | evidence nodes for cohort claims |
 | I04 candidate invariant synthesizer | claim and strategy nodes |
-| I05 counterexample replay | rebutting defeaters and minimal witness evidence |
+| I05 counterexample minimal witness | rebutting defeaters and minimal witness evidence |
 | I06 calibration lower-bound runner | evidence confidence annotations |
 | I07 reviewer packet | open-defeater view |
 | I08 promotion gate runner | indefeasibility predicate execution |

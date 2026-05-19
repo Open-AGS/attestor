@@ -4,13 +4,11 @@
 
 **AI Action Control Plane for high-risk AI actions.**
 
-AI agents are starting to do more than answer questions.
-
-They draft refunds. Prepare supplier payments. Request data exports. Trigger operational changes. Build wallet transactions. In many systems, the dangerous moment is not the model output; it is the point where that output becomes a real action.
-
 Attestor controls the boundary between AI intent and real-world consequence.
 
-The model can propose. The system can act. Attestor decides whether that action is allowed to become real. It evaluates proposed AI actions before they reach systems that can change state, and it can admit, narrow, route to review, or block the proposed consequence while leaving proof of what happened and why.
+AI agents draft refunds, prepare supplier payments, request data exports, trigger operational changes, and build wallet transactions. The dangerous moment is not the text the model produced. It is the point where that output becomes a real action in a downstream system.
+
+Attestor treats that proposed action as a consequence to admit, narrow, review, or block before the customer system changes state.
 
 ```text
 AI proposes -> Attestor checks -> consequence is admitted, narrowed, reviewed, or blocked -> proof remains
@@ -18,18 +16,22 @@ AI proposes -> Attestor checks -> consequence is admitted, narrowed, reviewed, o
 
 Start in shadow mode. See what your AI agents would have done before you let them act.
 
-The trust boundary is the action, not the model response. Attestor does not replace the model, agent runtime, wallet, custody platform, orchestration layer, or downstream system.
+The trust boundary is the action, not the model response. Attestor does not replace the model, agent runtime, wallet, custody platform, orchestration layer, or downstream system. It sits at the consequence boundary and returns a bounded admission decision plus proof material.
 
 > [!NOTE]
 > This repository is source-available under Business Source License 1.1. Non-production use is allowed. Production use requires a commercial license until the Change Date in [LICENSE](LICENSE).
 
-## Current Status
+## Current Repository Truth
 
-Attestor is an **evaluation release**: reviewer-runnable, CI-backed, and useful for technical evaluation. It demonstrates the AI Action Control Plane model, consequence-admission proof artifacts, consequence packs, programmable-money extension surfaces, hosted account and billing surfaces, and current fail-closed boundaries.
+Attestor is an **evaluation release**: reviewer-runnable, CI-backed, and useful for technical evaluation. The repository demonstrates one product language:
 
-The clearest repo-side path today is [Golden Path: Refund](docs/02-architecture/golden-refund-shadow-pilot.md): a synthetic, shadow-only refund scenario that runs through action-surface material, canonical shadow fixtures, runtime assurance smoke, Policy Foundry summary, pilot readiness, and a local demo output. It does not execute refunds or claim production readiness.
+```text
+proposed consequence -> consequence admission -> proof material -> customer enforcement
+```
 
-It is not a finished public SaaS, a production-use guarantee, a completed customer-operated deployment, or a substitute for an external security audit.
+The clearest repo-side path today is [Golden Path: Refund](docs/02-architecture/golden-refund-shadow-pilot.md): a synthetic, shadow-only refund scenario that runs through action-surface material, canonical shadow fixtures, runtime assurance smoke, Policy Foundry summary, pilot readiness, and a local demo output.
+
+That path does not execute refunds, activate policy, call Stripe or Shopify, deploy infrastructure, or claim production readiness. The repository is not a finished public SaaS, a production-use guarantee, a completed customer-operated deployment, or a substitute for an external security audit.
 
 Start review with:
 
@@ -40,7 +42,7 @@ Start review with:
 - [Artifact attestation plan](docs/08-deployment/artifact-attestation-plan.md)
 - [Audit remediation tracker](docs/audit/attestor-audit-remediation-tracker.md)
 
-## What Attestor Does
+## The Control Boundary
 
 Use Attestor where a capable AI-assisted system should not be able to act just because it can form a request:
 
@@ -51,9 +53,9 @@ Use Attestor where a capable AI-assisted system should not be able to act just b
 - a compliance workflow prepares a filing, notice, or customer communication
 - an operations agent proposes a deploy, secret rotation, incident action, or infrastructure change
 
-Fail-closed means the action does not proceed silently when the proof is incomplete. If policy, authority, evidence, freshness, scope, or verification cannot close, the consequence does not proceed silently.
+Every case has the same shape: a proposed consequence must pass policy, authority, evidence, freshness, scope, replay, and enforcement checks before a downstream system acts. Fail-closed means the action does not proceed silently when those checks cannot close.
 
-## Start Without Blocking
+## Adoption Path
 
 Attestor can start in `observe` or `warn` mode. It receives proposed AI actions, computes what would have been admitted, narrowed, reviewed, or blocked, and lets the customer measure risk and review load before switching to `review` or `enforce`.
 
@@ -67,7 +69,7 @@ That is the runtime mode ladder. The policy promotion path is longer because enf
 observe -> recommend -> simulate -> approve -> enforce -> prove
 ```
 
-Shadow mode discovers the real action surface first: which high-risk AI actions exist, which actions have no policy, which downstream tools have too much authority, and which consequences would have been blocked before execution.
+Shadow mode discovers the real action surface first: which high-risk AI actions exist, which actions have no policy, which downstream tools have too much authority, and which consequences would have been blocked before execution. This keeps adoption on the same consequence boundary without asking the customer to stop workflows on day one.
 
 The completed local example of this adoption shape is [Golden Path: Refund](docs/02-architecture/golden-refund-shadow-pilot.md). It is not a refund product or separate engine; it is one concrete scenario path through the same Attestor consequence engine.
 
@@ -137,7 +139,7 @@ The rest are useful once the first path makes sense: `npm run example:action-sur
 
 `npm run showcase:proof` generates a local PostgreSQL-backed proof packet. Without a live upstream model, `verify:cert` reports `PROOF_DEGRADED` and exits non-zero by design. The green local release gate remains `npm run verify`.
 
-The first generic hosted action-authorization route is:
+The first generic hosted consequence-admission route is:
 
 ```http
 POST /api/v1/admissions

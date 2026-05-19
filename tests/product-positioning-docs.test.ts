@@ -30,9 +30,15 @@ function testTopLevelPositioningStaysAligned(): void {
   const useCases = readProjectFile('docs', '01-overview', 'what-you-can-do.md');
 
   includes(readme, 'Attestor controls the boundary between AI intent and real-world consequence.', 'Product docs: README keeps AI Action Control Plane framing');
+  includes(readme, '## Where It Sits In A Customer Stack', 'Product docs: README shows real customer stack placement');
+  includes(readme, 'Customer PEP / gateway / verifier / adapter', 'Product docs: README puts customer enforcement before Attestor');
+  includes(readme, 'With that enforced downstream point, Attestor becomes the control point before consequence.', 'Product docs: README distinguishes advisory evidence from control point');
   includes(readme, 'Start in shadow mode. See what your AI agents would have done before you let them act.', 'Product docs: README makes shadow mode the adoption wedge');
   includes(readme, 'observe -> recommend -> simulate -> approve -> enforce -> prove', 'Product docs: README keeps the shadow-to-enforcement path');
   includes(readme, 'Attestor can start in `observe` or `warn` mode.', 'Product docs: README makes non-blocking adoption concrete');
+  includes(readme, '## Core Operating Loop', 'Product docs: README names the customer operating loop');
+  includes(readme, 'shadow events', 'Product docs: README starts Foundry loop with shadow traffic');
+  includes(readme, 'review-only policy candidates', 'Product docs: README keeps Foundry candidates non-authoritative');
   includes(readme, 'observe -> warn -> review -> enforce', 'Product docs: README keeps the adoption mode ladder');
   includes(readme, 'The current generic admission route implements the first control ladder for this path.', 'Product docs: README bounds implemented shadow ladder');
   includes(readme, '## Golden Path: Refund', 'Product docs: README gives the golden path its own block');
@@ -77,6 +83,9 @@ function testTopLevelPositioningStaysAligned(): void {
   includes(packaging, 'Attestor is one product: an **AI Action Control Plane for high-consequence systems**.', 'Product docs: packaging uses control-plane product category');
   includes(packaging, '[Domain pack boundary](../02-architecture/domain-pack-boundary.md)', 'Product docs: packaging links domain pack boundary');
   includes(useCases, 'Attestor owns the control point before consequence:', 'Product docs: use-case bridge keeps control-point framing');
+  includes(useCases, 'AI agent / workflow', 'Product docs: use-case bridge shows real-stack AI workflow');
+  includes(useCases, 'customer PEP, gateway, verifier, or adapter', 'Product docs: use-case bridge shows customer enforcement point');
+  includes(useCases, 'Without that customer-side enforcement point, Attestor produces advisory', 'Product docs: use-case bridge keeps advisory boundary visible');
   includes(readme, 'docs/01-overview/what-you-can-do.md', 'Product docs: README links the use-case bridge');
   includes(readme, 'Read the architecture as a path, not a stack diagram:', 'Product docs: README avoids table-first architecture framing');
   includes(readme, 'Attestor does not guess what to run automatically, and it does not bypass the customer\'s own enforcement point.', 'Product docs: README blocks automatic-pack overclaim');

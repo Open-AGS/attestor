@@ -14,14 +14,50 @@ Attestor treats that proposed action as a consequence to admit, narrow, review, 
 AI proposes -> Attestor checks -> consequence is admitted, narrowed, reviewed, or blocked -> proof remains
 ```
 
+## Where It Sits In A Customer Stack
+
+```text
+AI agent / workflow
+  -> proposed action
+Customer PEP / gateway / verifier / adapter
+  -> asks Attestor for an admission decision
+Attestor
+  -> admit / narrow / review / block + proof material
+Downstream system
+  -> executes only if the customer enforcement point allows it
+```
+
+Without an enforced customer-side PEP, gateway, verifier, or adapter in front of the downstream system, Attestor is advisory evidence, not a control point.
+With that enforced downstream point, Attestor becomes the control point before consequence.
+
 Start in shadow mode. See what your AI agents would have done before you let them act.
 
 The trust boundary is the action, not the model response. Attestor does not replace the model, agent runtime, wallet, custody platform, orchestration layer, or downstream system. It sits at the consequence boundary and returns a bounded admission decision plus proof material.
 
-Without an enforced customer-side PEP, gateway, verifier, or adapter in front of the downstream system, Attestor is advisory evidence, not a control point.
-
 > [!NOTE]
 > This repository is source-available under Business Source License 1.1. Non-production use is allowed. Production use requires a commercial license until the Change Date in [LICENSE](LICENSE).
+
+## Try It In 60 Seconds
+
+```bash
+npm ci
+npm run demo:golden-refund
+npm run demo:golden-refund -- --json
+npm run demo:golden-refund -- --determinism-check
+```
+
+You will see:
+
+- a synthetic AI refund action surface
+- digest-only canonical shadow fixtures
+- runtime assurance smoke over the refund scenarios
+- Policy Foundry summary material with named gaps
+- a pilot readiness packet that can only report shadow-pilot readiness or not-ready for this path
+- Engine Visibility over 8 scenarios, including gate order, evidence-completeness metrics, no-claims, and deterministic/shuffled-order digest stability
+- Markdown-first demo output, with JSON available for machines
+- explicit no-claims: no live Stripe or Shopify refund, no customer deployment, no policy activation, no auto-enforcement
+
+For a guided first run, see [Try Attestor first](docs/01-overview/try-attestor-first.md).
 
 ## Current Repository Truth
 
@@ -132,7 +168,22 @@ Shadow mode discovers the real action surface first: which high-risk AI actions 
 
 The completed local example of this adoption shape is [Golden Path: Refund](docs/02-architecture/golden-refund-shadow-pilot.md). It is not a refund product or separate engine; it is one concrete scenario path through the same Attestor consequence engine.
 
-Policy Foundry is the onboarding layer for this adoption path. It mines observed actions into policy candidates. It does not train models, write policy automatically, or prove production readiness.
+## Core Operating Loop
+
+Attestor's customer loop is deliberately simple:
+
+```text
+shadow events
+  -> action-surface inventory
+  -> evidence, authority, policy, and adapter gaps
+  -> review-only policy candidates
+  -> counterexamples and Policy Twin replay
+  -> reviewer approval
+  -> scoped rollout
+  -> outcome feedback and drift checks
+```
+
+Policy Foundry is the onboarding layer for this loop. It mines observed actions into policy candidates. It does not train models, write policy automatically, or prove production readiness.
 
 It identifies policy candidates, generates a red-team fixture bundle and local replay reports through the local adversarial replay executor, can attach live downstream replay evidence when configured, prepares review handoff material, keeps promotion approval-required, and records reviewed outcome feedback plus drift/policy-debt findings.
 
@@ -159,28 +210,6 @@ bad instruction -> plausible model output -> tool call -> real system changed
 Attestor treats the proposed consequence as the object of control. It does not need the model to become perfectly reliable. It requires the action to pass a bounded admission decision before the system of record, payment layer, wallet, filing path, admin plane, or operational workflow is allowed to act.
 
 This is AI action control-plane infrastructure: not a chatbot feature, not a prompt wrapper, not a generic agent workspace, and not a governance checklist. Gateways, verifiers, and adapters are enforcement points; the product is the control plane before important AI actions become real.
-
-## Try It In 60 Seconds
-
-```bash
-npm ci
-npm run demo:golden-refund
-npm run demo:golden-refund -- --json
-npm run demo:golden-refund -- --determinism-check
-```
-
-You will see:
-
-- a synthetic AI refund action surface
-- digest-only canonical shadow fixtures
-- runtime assurance smoke over the refund scenarios
-- Policy Foundry summary material with named gaps
-- a pilot readiness packet that can only report shadow-pilot readiness or not-ready for this path
-- Engine Visibility over 8 scenarios, including gate order, evidence-completeness metrics, no-claims, and deterministic/shuffled-order digest stability
-- Markdown-first demo output, with JSON available for machines
-- explicit no-claims: no live Stripe or Shopify refund, no customer deployment, no policy activation, no auto-enforcement
-
-For a guided first run, see [Try Attestor first](docs/01-overview/try-attestor-first.md).
 
 ## What You Can Run Today
 

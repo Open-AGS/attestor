@@ -8,6 +8,19 @@ The pattern is always the same:
 AI proposal -> Attestor decision and proof -> customer gate -> downstream action
 ```
 
+In a real customer stack, the enforcement point is still the customer's edge:
+
+```text
+AI agent / workflow
+  -> customer PEP, gateway, verifier, or adapter
+  -> Attestor admission decision and proof
+  -> downstream system only if the customer edge allows it
+```
+
+Without that customer-side enforcement point, Attestor produces advisory
+evidence. With that point enforced, Attestor becomes the control point before
+consequence.
+
 ## Common First Uses
 
 | Use case | What Attestor sits before | What happens |

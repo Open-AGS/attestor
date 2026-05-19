@@ -41,6 +41,11 @@ function testReadmeHasAFirstImpressionPath(): void {
   includes(readme, 'Attestor controls the boundary between AI intent and real-world consequence.', 'README: opens with the canonical control-plane sentence');
   includes(readme, 'Attestor treats that proposed action as a consequence to admit, narrow, review, or block before the customer system changes state.', 'README: explains the control point before architecture');
   includes(readme, 'The trust boundary is the action, not the model response.', 'README: frames the risk before architecture');
+  includes(readme, '## Where It Sits In A Customer Stack', 'README: shows real customer stack placement near the top');
+  includes(readme, 'AI agent / workflow', 'README: starts the real-stack diagram with the AI workflow');
+  includes(readme, 'Customer PEP / gateway / verifier / adapter', 'README: shows the customer enforcement point before Attestor');
+  includes(readme, 'Downstream system', 'README: shows the downstream system after Attestor');
+  includes(readme, 'With that enforced downstream point, Attestor becomes the control point before consequence.', 'README: explains advisory versus control posture');
   includes(readme, 'Without an enforced customer-side PEP, gateway, verifier, or adapter in front of the downstream system, Attestor is advisory evidence, not a control point.', 'README: makes the PEP dependency explicit near the top');
   includes(readme, 'Start in shadow mode. See what your AI agents would have done before you let them act.', 'README: makes shadow mode visible immediately');
   includes(readme, 'AI proposes -> Attestor checks -> consequence is admitted, narrowed, reviewed, or blocked -> proof remains', 'README: keeps the front-page control flow short');
@@ -64,6 +69,10 @@ function testReadmeHasAFirstImpressionPath(): void {
   includes(readme, '## Adoption Path', 'README: exposes shadow mode as the adoption path');
   includes(readme, 'observe -> warn -> review -> enforce', 'README: explains the adoption mode ladder');
   includes(readme, 'observe -> recommend -> simulate -> approve -> enforce -> prove', 'README: explains shadow-to-enforcement sequence');
+  includes(readme, '## Core Operating Loop', 'README: names the operating loop before deeper architecture');
+  includes(readme, 'shadow events', 'README: starts the operating loop from shadow events');
+  includes(readme, 'review-only policy candidates', 'README: keeps Policy Foundry candidate generation review-only');
+  includes(readme, 'reviewer approval', 'README: keeps policy promotion human-approved');
   includes(readme, '## Why It Exists', 'README: explains the category before architecture');
   includes(readme, 'AI action control-plane infrastructure', 'README: positions Attestor as infrastructure, not a generic tool');
   includes(readme, '## Try It In 60 Seconds', 'README: exposes a fast first run near the top');
@@ -96,6 +105,9 @@ function testReadmeHasAFirstImpressionPath(): void {
   includes(readme, '[Try Attestor first](docs/01-overview/try-attestor-first.md)', 'README: links to the guided first run');
   appearsBefore(readme, '## Current Repository Truth', '## Architecture: Core And Packs', 'README: keeps evaluation boundary before architecture');
   appearsBefore(readme, '## Golden Path: Refund', '## The Control Boundary', 'README: puts the concrete golden path before the broad domain list');
+  appearsBefore(readme, '## Where It Sits In A Customer Stack', '## Current Repository Truth', 'README: shows customer placement before repository detail');
+  appearsBefore(readme, '## Try It In 60 Seconds', '## Current Repository Truth', 'README: puts the runnable path before repository detail');
+  appearsBefore(readme, '## Core Operating Loop', '## Why It Exists', 'README: explains the loop before category argument');
   appearsBefore(readme, '## Adoption Path', '## Why It Exists', 'README: positions shadow mode before deeper category explanation');
   appearsBefore(readme, '## Try It In 60 Seconds', '## Architecture: Core And Packs', 'README: keeps the runnable path before product packaging');
   appearsBefore(readme, '## Consequence Packs', '## Architecture: Core And Packs', 'README: names consequence packs before architecture detail');

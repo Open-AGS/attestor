@@ -473,7 +473,7 @@ function testDocsPackageAndOverview(): void {
     includes(docs, expected, `Baseline cohort builder docs: records ${expected}`);
   }
 
-  includes(overview, 'Progress: 12/14 complete after I11. 2 steps remain.', 'Overview: progress is updated');
+  includes(overview, 'Progress: 14/14 complete after I13. 0 steps remain.', 'Overview: progress is updated');
   includes(overview, '| I03 | complete | Baseline Cohort Builder |', 'Overview: I03 is complete');
   includes(overview, 'src/consequence-admission/baseline-cohort-builder.ts', 'Overview: I03 source file is tracked');
   includes(overview, 'tests/baseline-cohort-builder.test.ts', 'Overview: I03 test file is tracked');

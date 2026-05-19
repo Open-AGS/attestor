@@ -1040,7 +1040,7 @@ shadow / replay / formal / calibration / outcome material
         -> promotion gate can review what remains unknown
 ```
 
-Progress: 12/14 complete after I11. 2 steps remain.
+Progress: 14/14 complete after I13. 0 steps remain.
 
 | Step | Status | Slice | Evidence |
 |---|---|---|---|
@@ -1056,8 +1056,8 @@ Progress: 12/14 complete after I11. 2 steps remain.
 | I09 | complete | TLA+ Trace Validator Bridge | `src/consequence-admission/tla-trace-validator-bridge.ts`; `tests/tla-trace-validator-bridge.test.ts`; `docs/02-architecture/tla-trace-validator-bridge.md` |
 | I10 | complete | Runtime Monitor Skeleton | `src/consequence-admission/runtime-monitor-skeleton.ts`; `tests/runtime-monitor-skeleton.test.ts`; `docs/02-architecture/runtime-monitor-skeleton.md` |
 | I11 | complete | Decision Lineage Graph | `src/consequence-admission/decision-lineage-graph.ts`; `tests/decision-lineage-graph.test.ts`; `docs/02-architecture/decision-lineage-graph.md` |
-| I12 | planned | Goodhart / Authority-Creep Guard | Undercutting defeaters for measurement-as-authority |
-| I13 | planned | Outcome Feedback / COE Wiring | Outcome-triggered rebutting defeaters |
+| I12 | complete | Goodhart / Authority-Creep Guard | `src/consequence-admission/authority-creep-guard.ts`; `tests/authority-creep-guard.test.ts`; `docs/02-architecture/authority-creep-guard.md` |
+| I13 | complete | Outcome Feedback / COE Wiring | `src/consequence-admission/outcome-feedback-coe-wiring.ts`; `tests/outcome-feedback-coe-wiring.test.ts`; `docs/02-architecture/outcome-feedback-coe-wiring.md` |
 
 I00 is SACM 2.3-aligned, GSN render-view compatible, and grounded in
 Eliminative Argumentation / Assurance 2.0 style defeasibility. It does not claim
@@ -1134,6 +1134,60 @@ defeat visible and signature coverage explicit. It does not export OpenLineage,
 claim PROV/SACM conformance, create DSSE or in-toto signatures, write audit,
 activate policy, admit, learn, train, or enforce.
 
+I12 turns the I11 decision lineage graph and optional assurance measurement
+plane material into authority-creep evidence or open undercutting defeaters. It
+detects measurement-as-authority paths such as measurement artifacts supporting
+claim/strategy nodes, blocked metric uses, policy-relaxation requests,
+lineage-side authority actions, and direct boundary requests. It does not mutate
+the lineage graph, close defeat, decide review, activate policy, admit, learn,
+train, or enforce.
+
+I13 turns I00 assurance-case material and the existing outcome/incident
+feedback contract into post-outcome evidence or open rebutting defeaters. Clean,
+direct, learning-ready feedback can create evidence. Failed, contested,
+reversed, near-miss, confirmed-incident, replay-regression, or impact feedback
+opens rebutting defeat against the target claim. COE and postmortem material
+remain digest-bound findings and action-item requirements. I13 does not mutate
+the assurance case, close defeat, decide review, activate policy, admit, learn,
+train, or enforce.
+
+## Runtime Activation Series
+
+The W-series and I-series made the runtime assurance components callable and
+reviewable. The R-series is the next sequence: it decides and then implements
+how canonical shadow events automatically trigger the existing W05 shadow
+runtime pipeline without granting authority.
+
+R01 selects a hybrid event-driven plus reconcile-loop activation model:
+
+```text
+canonical shadow event
+  -> digest-only source history
+  -> pending outbox work item
+  -> leased worker claim
+  -> shadow runtime dry-run
+  -> trace / lineage / measurement hooks
+  -> reconcile expired or failed work
+```
+
+The R-series keeps at-least-once, idempotent, per-tenant/source-partition
+semantics. It does not claim exactly-once delivery, global total ordering, live
+enforcement, production worker readiness, audit-plane write integration, or
+customer deployment readiness.
+
+Progress: 8/8 complete after R08. 0 steps remain.
+
+| Step | Status | Slice | Evidence |
+|---|---|---|---|
+| R01 | complete | Runtime Activation Decision Packet | `docs/02-architecture/runtime-activation-decision-packet.md`; `tests/runtime-activation-decision-packet.test.ts` |
+| R02 | complete | Shadow Activation Profile Contract | `src/consequence-admission/shadow-activation-profile-contract.ts`; `tests/shadow-activation-profile-contract.test.ts`; `docs/02-architecture/shadow-activation-profile-contract.md`; activation profile version, trigger mode, activation work key digest, idempotency binding, source partition binding, and no-authority flags |
+| R03 | complete | Shadow Outbox Work Item Contract | `src/consequence-admission/shadow-outbox-work-item-contract.ts`; `tests/shadow-outbox-work-item-contract.test.ts`; `docs/02-architecture/shadow-outbox-work-item-contract.md`; pending digest-only work item over R02 activation profile, source-history binding, stable dedupe key, null claim fields, and no-authority flags |
+| R04 | complete | Dispatcher / Reconcile Claim Contract | `src/consequence-admission/shadow-dispatch-claim-contract.ts`; `tests/shadow-dispatch-claim-contract.test.ts`; `docs/02-architecture/shadow-dispatch-claim-contract.md`; time-bounded lease, `FOR UPDATE SKIP LOCKED` semantics, tenant/source partition advisory-lock scope, bounded attempt increment, digest-only claim token, and no runner invocation |
+| R05 | complete | Shadow Runtime Activation Runner | `src/consequence-admission/shadow-runtime-activation-runner.ts`; `tests/shadow-runtime-activation-runner.test.ts`; `docs/02-architecture/shadow-runtime-activation-runner.md`; validates R04 claim/event binding, checks lease window, calls W05 dry-run, and binds pipeline/projection/packet digests, still shadow-only |
+| R06 | complete | Trace / Lineage / Measurement Hooks | `src/consequence-admission/shadow-runtime-observability-hooks.ts`; `tests/shadow-runtime-observability-hooks.test.ts`; `docs/02-architecture/shadow-runtime-observability-hooks.md`; binds R05 activation to W06 decision trace, I10 runtime monitor / optional measurement, assurance case, and I11 lineage graph without audit write or authority |
+| R07 | complete | Outcome Feedback Hook | `src/consequence-admission/shadow-runtime-outcome-feedback-hook.ts`; `tests/shadow-runtime-outcome-feedback-hook.test.ts`; `docs/02-architecture/shadow-runtime-outcome-feedback-hook.md`; connects I13 feedback material as read-only post-outcome input and derives an outcome-feedback assurance case / lineage graph without policy mutation or learning activation |
+| R08 | complete | End-to-End Fixture Replay Smoke | `src/consequence-admission/shadow-runtime-fixture-replay-smoke.ts`; `tests/shadow-runtime-fixture-replay-smoke.test.ts`; `docs/02-architecture/shadow-runtime-fixture-replay-smoke.md`; synthetic fixture replay through R02-R07, no live target system |
+
 ## Primary Source Anchors
 
 Reviewed on 2026-05-17 and 2026-05-18:
@@ -1168,6 +1222,8 @@ Reviewed on 2026-05-17 and 2026-05-18:
 - TLA+ trace-validation bridge framing: [Microsoft Research, Specifying Systems](https://www.microsoft.com/en-us/research/publication/specifying-systems-the-tla-language-and-tools-for-hardware-and-software-engineers/), [How Amazon Web Services uses formal methods](https://cacm.acm.org/research/how-amazon-web-services-uses-formal-methods/), [Systems Correctness Practices at AWS](https://cacm.acm.org/practice/systems-correctness-practices-at-amazon-web-services/), [Apalache TLA+ model checker documentation](https://apalache-mc.org/docs/), and the W06 decision trace logger contract.
 - Runtime monitor skeleton framing: [NASA Runtime Assurance of Aeronautical Products](https://ntrs.nasa.gov/citations/20220015734), [NASA Robust Software Engineering](https://www.nasa.gov/intelligent-systems-division/robust-software-engineering/), [ENTRUST dynamic assurance cases](https://arxiv.org/abs/1703.06350), [OpenTelemetry Logs Data Model](https://opentelemetry.io/docs/specs/otel/logs/data-model/), [Google SRE Monitoring Distributed Systems](https://sre.google/sre-book/monitoring-distributed-systems/), [NIST SP 800-61 Rev. 3](https://csrc.nist.gov/pubs/sp/800/61/r3/final), and [OMG SACM 2.3](https://www.omg.org/spec/SACM).
 - Decision lineage graph framing: [W3C PROV-DM](https://www.w3.org/TR/prov-dm/), [OpenLineage core specification](https://github.com/OpenLineage/OpenLineage/blob/main/spec/OpenLineage.md), [OpenLineage API](https://openlineage.io/apidocs/openapi/), [in-toto Attestation Statement](https://github.com/in-toto/attestation/blob/main/spec/v1/statement.md), [DSSE Envelope](https://github.com/secure-systems-lab/dsse/blob/master/envelope.md), [W3C Trace Context](https://www.w3.org/TR/trace-context/), and [OMG SACM 2.1](https://www.omg.org/spec/SACM/2.1/PDF).
+- Authority-creep guard framing: [Goodhart variants](https://arxiv.org/abs/1803.04585), [NIST AI RMF](https://www.nist.gov/itl/ai-risk-management-framework), [Google SRE Embracing Risk](https://sre.google/sre-book/embracing-risk/), [Google SRE Service Level Objectives](https://sre.google/sre-book/service-level-objectives/), [CISA SSVC](https://www.cisa.gov/stakeholder-specific-vulnerability-categorization-ssvc), [SRI Assurance 2.0](https://www.csl.sri.com/users/rushby/assurance2.0), and [CMU SEI Eliminative Argumentation](https://www.sei.cmu.edu/library/eliminative-argumentation-a-basis-for-arguing-confidence-in-system-properties/).
+- Outcome feedback / COE wiring framing: [AWS Correction of Error](https://aws.amazon.com/blogs/mt/why-you-should-develop-a-correction-of-error-coe/), [Google SRE Postmortem Culture](https://sre.google/sre-book/postmortem-culture/), [NIST SP 800-61 Rev. 3](https://csrc.nist.gov/pubs/sp/800/61/r3/final), [NIST AI RMF Core](https://airc.nist.gov/airmf-resources/airmf/5-sec-core/), [MIT STPA Handbook](http://psas.scripts.mit.edu/home/get_file.php?name=STPA_handbook.pdf), and [CMU SEI Eliminative Argumentation](https://www.sei.cmu.edu/library/eliminative-argumentation-a-basis-for-arguing-confidence-in-system-properties/).
 - Tenant isolation and relation-model framing: [Alloy language reference](https://alloytools.org/download/alloy-language-reference.pdf), [Alloy in CACM](https://cacm.acm.org/research/alloy/), [AWS SaaS tenant isolation concepts](https://docs.aws.amazon.com/whitepapers/latest/saas-tenant-isolation-strategies/core-isolation-concepts.html), [AWS Lambda tenant isolation](https://docs.aws.amazon.com/lambda/latest/dg/tenant-isolation.html), and [NIST SP 800-207A](https://csrc.nist.gov/pubs/sp/800/207/a/final).
 - Assurance-case argument structure and exchange framing: [GSN Community Standard v3](https://scsc.uk/gsn), [OMG SACM 2.3](https://www.omg.org/spec/SACM), [CMU SEI Eliminative Argumentation](https://www.sei.cmu.edu/library/eliminative-argumentation-a-basis-for-arguing-confidence-in-system-properties/), [SRI Assurance 2.0](https://www.csl.sri.com/users/rushby/assurance2.0), [ENTRUST dynamic assurance cases](https://arxiv.org/abs/1703.06350), and [University of York AMLAS](https://www.york.ac.uk/assuring-autonomy/guidance/amlas/).
 - Learned artifact privacy and reconstruction-risk framing: [NIST SP 800-226](https://csrc.nist.gov/pubs/sp/800/226/final), [OpenDP Context](https://docs.opendp.org/en/stable/api/user-guide/context/index.html), [OpenDP typical workflow](https://docs.opendp.org/en/stable/getting-started/typical-workflow.html), [U.S. Census reconstruction and reidentification attack](https://www.census.gov/library/working-papers/2023/adrm/CES-WP-23-63.html), and [Google Differential Privacy libraries](https://github.com/google/differential-privacy).

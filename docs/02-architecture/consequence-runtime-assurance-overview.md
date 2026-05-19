@@ -1188,6 +1188,12 @@ Progress: 8/8 complete after R08. 0 steps remain.
 | R07 | complete | Outcome Feedback Hook | `src/consequence-admission/shadow-runtime-outcome-feedback-hook.ts`; `tests/shadow-runtime-outcome-feedback-hook.test.ts`; `docs/02-architecture/shadow-runtime-outcome-feedback-hook.md`; connects I13 feedback material as read-only post-outcome input and derives an outcome-feedback assurance case / lineage graph without policy mutation or learning activation |
 | R08 | complete | End-to-End Fixture Replay Smoke | `src/consequence-admission/shadow-runtime-fixture-replay-smoke.ts`; `tests/shadow-runtime-fixture-replay-smoke.test.ts`; `docs/02-architecture/shadow-runtime-fixture-replay-smoke.md`; synthetic fixture replay through R02-R07, no live target system |
 
+The first concrete scenario path after R08 is
+[Golden Path: Refund](golden-refund-shadow-pilot.md). It uses the completed
+runtime assurance and activation contracts for a shadow-only refund pilot path
+without adding a separate refund engine, separate finance direction, live
+connector, or production-readiness claim.
+
 ## Primary Source Anchors
 
 Reviewed on 2026-05-17 and 2026-05-18:

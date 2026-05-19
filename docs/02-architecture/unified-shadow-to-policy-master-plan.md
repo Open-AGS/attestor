@@ -146,6 +146,13 @@ for consequence envelopes, signal relationships, relationship-aware fusion,
 human comprehension, signed assurance packets, incident feedback, and
 measurement without claiming production readiness.
 
+The first concrete post-tracker golden path is
+[Golden Path: Refund](golden-refund-shadow-pilot.md). It is a scenario path
+through the existing Attestor consequence engine, not a refund product, refund
+engine, separate finance direction, or new Attestor mode. Its stop criterion is
+shadow-only: synthetic refund actions flow through the runtime assurance and
+Policy Foundry material into a pilot readiness packet without executing refunds.
+
 The ordering matters. The Shadow-to-Policy engine depends on shared, tenant-
 bound, replayable event and receipt history. Building policy candidates before
 shared state would create a polished recommendation surface on weak evidence.

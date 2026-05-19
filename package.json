@@ -92,6 +92,7 @@
     "test:attestor-unlock-source-of-truth": "tsx tests/attestor-unlock-source-of-truth.test.ts",
     "test:unified-shadow-to-policy-master-plan": "tsx tests/unified-shadow-to-policy-master-plan.test.ts",
     "test:consequence-runtime-assurance-overview": "tsx tests/consequence-runtime-assurance-overview.test.ts",
+    "test:golden-refund-shadow-pilot": "tsx tests/golden-refund-shadow-pilot.test.ts",
     "test:consequence-envelope-contract": "tsx tests/consequence-envelope-contract.test.ts",
     "test:signal-relationship-contract": "tsx tests/signal-relationship-contract.test.ts",
     "test:layer-opinion-schema": "tsx tests/layer-opinion-schema.test.ts",

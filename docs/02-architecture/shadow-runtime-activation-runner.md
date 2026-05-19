@@ -94,5 +94,5 @@ R05 does not claim:
 
 ## Next
 
-R06 and R07 are now complete. The next safe step is R08: End-to-End Fixture
-Replay Smoke.
+R06, R07, and R08 are now complete. The R-series is complete at synthetic
+fixture replay level.

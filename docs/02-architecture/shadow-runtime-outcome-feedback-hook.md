@@ -84,5 +84,4 @@ This hook is:
 
 ## Next
 
-R08 adds the end-to-end fixture replay smoke that exercises the R02-R07 runtime
-activation path with synthetic shadow traffic.
+R08 is now complete. The R-series is complete at synthetic fixture replay level.

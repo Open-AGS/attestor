@@ -360,13 +360,15 @@ function testDocsOverviewLedgerAndPackageSurfaceStayAligned(): void {
   }
 
   for (const expected of [
-    'Progress: 7/8 complete after R07. 1 step remains.',
+    'Progress: 8/8 complete after R08. 0 steps remain.',
     '| R05 | complete | Shadow Runtime Activation Runner |',
     '| R06 | complete | Trace / Lineage / Measurement Hooks |',
     '| R07 | complete | Outcome Feedback Hook |',
+    '| R08 | complete | End-to-End Fixture Replay Smoke |',
     'src/consequence-admission/shadow-runtime-activation-runner.ts',
     'src/consequence-admission/shadow-runtime-observability-hooks.ts',
     'src/consequence-admission/shadow-runtime-outcome-feedback-hook.ts',
+    'src/consequence-admission/shadow-runtime-fixture-replay-smoke.ts',
     'tests/shadow-runtime-activation-runner.test.ts',
     'docs/02-architecture/shadow-runtime-activation-runner.md',
   ]) {
@@ -374,12 +376,13 @@ function testDocsOverviewLedgerAndPackageSurfaceStayAligned(): void {
   }
 
   for (const expected of [
-    'Current progress after R07:',
-    '7/8 complete, 1 step remains.',
+    'Current progress after R08:',
+    '8/8 complete, 0 steps remain.',
     '| R05 | complete | Shadow Runtime Activation Runner |',
     '| R06 | complete | Trace / Lineage / Measurement Hooks |',
     '| R07 | complete | Outcome Feedback Hook |',
-    'The next safe step is R08',
+    '| R08 | complete | End-to-End Fixture Replay Smoke |',
+    'The R-series is complete',
   ]) {
     includes(decisionPacket, expected, `Runtime activation packet: records ${expected}`);
   }

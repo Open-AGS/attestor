@@ -1291,6 +1291,58 @@ assert.equal(
   'function',
 );
 assert.equal(
+  admission.SHADOW_RUNTIME_FIXTURE_REPLAY_SMOKE_VERSION,
+  'attestor.shadow-runtime-fixture-replay-smoke.v1',
+);
+assert.equal(
+  admission.shadowRuntimeFixtureReplaySmokeDescriptor().canonicalShadowEventSchemaVersion,
+  admission.CANONICAL_SHADOW_EVENT_SCHEMA_VERSION,
+);
+assert.equal(
+  admission.shadowRuntimeFixtureReplaySmokeDescriptor().shadowActivationProfileContractVersion,
+  admission.SHADOW_ACTIVATION_PROFILE_CONTRACT_VERSION,
+);
+assert.equal(
+  admission.shadowRuntimeFixtureReplaySmokeDescriptor().shadowOutboxWorkItemContractVersion,
+  admission.SHADOW_OUTBOX_WORK_ITEM_CONTRACT_VERSION,
+);
+assert.equal(
+  admission.shadowRuntimeFixtureReplaySmokeDescriptor().shadowDispatchClaimContractVersion,
+  admission.SHADOW_DISPATCH_CLAIM_CONTRACT_VERSION,
+);
+assert.equal(
+  admission.shadowRuntimeFixtureReplaySmokeDescriptor().shadowRuntimeActivationRunnerVersion,
+  admission.SHADOW_RUNTIME_ACTIVATION_RUNNER_VERSION,
+);
+assert.equal(
+  admission.shadowRuntimeFixtureReplaySmokeDescriptor().shadowRuntimeObservabilityHooksVersion,
+  admission.SHADOW_RUNTIME_OBSERVABILITY_HOOKS_VERSION,
+);
+assert.equal(
+  admission.shadowRuntimeFixtureReplaySmokeDescriptor().shadowRuntimeOutcomeFeedbackHookVersion,
+  admission.SHADOW_RUNTIME_OUTCOME_FEEDBACK_HOOK_VERSION,
+);
+assert.equal(
+  admission.shadowRuntimeFixtureReplaySmokeDescriptor().runsR02ThroughR07,
+  true,
+);
+assert.equal(
+  admission.shadowRuntimeFixtureReplaySmokeDescriptor().noTargetSystemCall,
+  true,
+);
+assert.equal(
+  admission.shadowRuntimeFixtureReplaySmokeDescriptor().noAuditWrite,
+  true,
+);
+assert.equal(
+  admission.shadowRuntimeFixtureReplaySmokeDescriptor().canAdmit,
+  false,
+);
+assert.equal(
+  typeof admission.runShadowRuntimeFixtureReplaySmoke,
+  'function',
+);
+assert.equal(
   admission.DECISION_TRACE_LOGGER_VERSION,
   'attestor.decision-trace-logger.v1',
 );

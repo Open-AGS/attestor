@@ -196,8 +196,8 @@ activate production paths.
 
 ## R-Series Plan
 
-R01 defines the next runtime activation series. Current progress after R07:
-7/8 complete, 1 step remains.
+R01 defines the next runtime activation series. Current progress after R08:
+8/8 complete, 0 steps remain.
 
 | Step | Status | Slice | Output |
 |---|---|---|---|
@@ -208,13 +208,14 @@ R01 defines the next runtime activation series. Current progress after R07:
 | R05 | complete | Shadow Runtime Activation Runner | `src/consequence-admission/shadow-runtime-activation-runner.ts`; validates an R04 claim against a canonical event and calls W05 dry-run, still shadow-only |
 | R06 | complete | Trace / Lineage / Measurement Hooks | `src/consequence-admission/shadow-runtime-observability-hooks.ts`; binds R05 activation to W06 decision trace, I10 runtime monitor / optional measurement, assurance case, and I11 lineage graph without audit write or authority |
 | R07 | complete | Outcome Feedback Hook | `src/consequence-admission/shadow-runtime-outcome-feedback-hook.ts`; connects I13 feedback material as read-only post-outcome input and derives an outcome-feedback assurance case / lineage graph without policy mutation or learning activation |
-| R08 | planned | End-to-End Fixture Replay Smoke | Synthetic fixture replay through R02-R07, no live target system |
+| R08 | complete | End-to-End Fixture Replay Smoke | `src/consequence-admission/shadow-runtime-fixture-replay-smoke.ts`; synthetic fixture replay through R02-R07, no live target system |
 
-R08 remains an implementation step after R07. R01 is only the architectural
+R01 is only the architectural
 decision; R02-R04 are small implementation contracts; R05 is the first
 shadow-only runner invocation over claimed work; R06 is the first observability
 hook binding over that invocation; R07 is the first outcome-feedback hook over
-the R06 evidence value.
+the R06 evidence value; R08 is the synthetic fixture replay smoke over the
+R02-R07 chain.
 
 ## No-Claims
 
@@ -234,6 +235,6 @@ R01 does not claim:
 - raw event storage
 - compliance certification
 
-The next safe step is R08: End-to-End Fixture Replay Smoke that exercises the
-R02-R07 runtime activation path with synthetic shadow traffic and no live target
-system.
+The R-series is complete. The next safe step is a separate production-worker /
+shared-store activation decision packet, if and when we choose to move beyond
+synthetic fixture replay.

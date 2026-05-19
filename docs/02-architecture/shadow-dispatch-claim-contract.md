@@ -115,5 +115,5 @@ R04 does not claim:
 - not production readiness
 - not customer deployment readiness
 
-R05, R06, and R07 are now complete. The next safe step is R08: End-to-End
-Fixture Replay Smoke.
+R05, R06, R07, and R08 are now complete. The R-series is complete at synthetic
+fixture replay level.

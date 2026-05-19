@@ -71,5 +71,5 @@ R06 does not claim:
 
 ## Next
 
-R07 is now complete. R08 adds the end-to-end fixture replay smoke that exercises
-the R02-R07 path with synthetic shadow traffic.
+R07 and R08 are now complete. The R-series is complete at synthetic fixture
+replay level.

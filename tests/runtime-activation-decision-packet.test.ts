@@ -120,7 +120,7 @@ function testDecisionPacketRecordsRSeriesAndNonClaims(): void {
 
   for (const expected of [
     'R01 defines the next runtime activation series.',
-    '7/8 complete, 1 step remains.',
+    '8/8 complete, 0 steps remain.',
     '| R01 | complete | Runtime Activation Decision Packet |',
     '| R02 | complete | Shadow Activation Profile Contract |',
     '| R03 | complete | Shadow Outbox Work Item Contract |',
@@ -128,8 +128,8 @@ function testDecisionPacketRecordsRSeriesAndNonClaims(): void {
     '| R05 | complete | Shadow Runtime Activation Runner |',
     '| R06 | complete | Trace / Lineage / Measurement Hooks |',
     '| R07 | complete | Outcome Feedback Hook |',
-    '| R08 | planned | End-to-End Fixture Replay Smoke |',
-    'The next safe step is R08',
+    '| R08 | complete | End-to-End Fixture Replay Smoke |',
+    'The R-series is complete',
     'live enforcement',
     'production worker readiness',
     'exactly-once delivery',
@@ -167,7 +167,7 @@ function testOverviewLedgerAndPackageSurfaceStayAligned(): void {
 
   for (const expected of [
     '## Runtime Activation Series',
-    'Progress: 7/8 complete after R07. 1 step remains.',
+    'Progress: 8/8 complete after R08. 0 steps remain.',
     '| R01 | complete | Runtime Activation Decision Packet |',
     '| R02 | complete | Shadow Activation Profile Contract |',
     '| R03 | complete | Shadow Outbox Work Item Contract |',
@@ -175,6 +175,7 @@ function testOverviewLedgerAndPackageSurfaceStayAligned(): void {
     '| R05 | complete | Shadow Runtime Activation Runner |',
     '| R06 | complete | Trace / Lineage / Measurement Hooks |',
     '| R07 | complete | Outcome Feedback Hook |',
+    '| R08 | complete | End-to-End Fixture Replay Smoke |',
     'docs/02-architecture/runtime-activation-decision-packet.md',
     'src/consequence-admission/shadow-activation-profile-contract.ts',
     'src/consequence-admission/shadow-outbox-work-item-contract.ts',
@@ -182,6 +183,7 @@ function testOverviewLedgerAndPackageSurfaceStayAligned(): void {
     'src/consequence-admission/shadow-runtime-activation-runner.ts',
     'src/consequence-admission/shadow-runtime-observability-hooks.ts',
     'src/consequence-admission/shadow-runtime-outcome-feedback-hook.ts',
+    'src/consequence-admission/shadow-runtime-fixture-replay-smoke.ts',
   ]) {
     includes(overview, expected, `Overview: records ${expected}`);
   }

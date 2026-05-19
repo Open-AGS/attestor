@@ -102,6 +102,7 @@ export const DEFAULT_WEBHOOK_BREAK_GLASS_FAILURE_REASONS = Object.freeze([
   'introspection-unavailable',
   'fresh-introspection-required',
 ] as const satisfies readonly EnforcementFailureReason[]);
+export const DEFAULT_WEBHOOK_BREAK_GLASS_MAX_TTL_SECONDS = 30 * 60;
 
 export type ReleaseWebhookReceiverStatus =
   | 'accepted'
@@ -190,6 +191,7 @@ export interface ReleaseWebhookReceiverOptions {
   readonly nonceLedgerEntry?: ReleaseWebhookReceiverResolver<NonceLedgerEntry | null | undefined>;
   readonly breakGlassGrant?: ReleaseWebhookReceiverResolver<EnforcementBreakGlassGrant | null | undefined>;
   readonly breakGlassAllowedFailureReasons?: readonly EnforcementFailureReason[];
+  readonly breakGlassMaxTtlSeconds?: number;
   readonly requiredCoveredComponents?: readonly string[];
   readonly maxSignatureAgeSeconds?: number;
   readonly clockSkewSeconds?: number;
@@ -440,8 +442,12 @@ function resultFromEarlyRejection(input: {
 function activeBreakGlassGrant(
   grant: EnforcementBreakGlassGrant | null | undefined,
   checkedAt: string,
+  maxTtlSeconds = DEFAULT_WEBHOOK_BREAK_GLASS_MAX_TTL_SECONDS,
 ): EnforcementBreakGlassGrant | null {
   if (!grant) {
+    return null;
+  }
+  if (!Number.isInteger(maxTtlSeconds) || maxTtlSeconds <= 0) {
     return null;
   }
   const nowMs = new Date(checkedAt).getTime();
@@ -453,6 +459,9 @@ function activeBreakGlassGrant(
     authorizedAtMs > nowMs ||
     expiresAtMs <= nowMs
   ) {
+    return null;
+  }
+  if (expiresAtMs - authorizedAtMs > maxTtlSeconds * 1000) {
     return null;
   }
   return grant;
@@ -555,7 +564,11 @@ function resultFromVerification(input: {
     });
   }
 
-  const activeGrant = activeBreakGlassGrant(input.breakGlassGrant, input.checkedAt);
+  const activeGrant = activeBreakGlassGrant(
+    input.breakGlassGrant,
+    input.checkedAt,
+    input.options.breakGlassMaxTtlSeconds,
+  );
   const breakGlassEligible = canUseBreakGlass({
     online: input.online,
     offline: input.offline,
@@ -895,7 +908,11 @@ export async function evaluateReleaseWebhookRequest(
 
   const verifierInput = inputOrReject.input;
   const breakGlassGrant =
-    activeBreakGlassGrant(await resolveOption(options.breakGlassGrant, context), checkedAt);
+    activeBreakGlassGrant(
+      await resolveOption(options.breakGlassGrant, context),
+      checkedAt,
+      options.breakGlassMaxTtlSeconds,
+    );
 
   if (inputUsesOnlineVerifier(verifierInput, options)) {
     const online = await verifyOnlineReleaseAuthorization(verifierInput);

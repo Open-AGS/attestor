@@ -257,6 +257,7 @@ function receiverOptions(input: {
   readonly nonce?: string;
   readonly replayLedgerEntry?: ReplayLedgerEntry | null;
   readonly breakGlass?: boolean;
+  readonly breakGlassExpiresAt?: string;
 }): ReleaseWebhookReceiverOptions {
   return {
     verificationKey: input.verificationKey,
@@ -277,7 +278,7 @@ function receiverOptions(input: {
             role: 'release-operator',
           },
           authorizedAt: '2026-04-18T16:00:30.000Z',
-          expiresAt: '2026-04-18T16:05:00.000Z',
+          expiresAt: input.breakGlassExpiresAt ?? '2026-04-18T16:05:00.000Z',
           ticketId: 'INC-4242',
           rationale: 'Control-plane introspection is degraded; local signature verification remains valid.',
         }
@@ -613,6 +614,38 @@ async function testBreakGlassCanAdmitLocallyVerifiedWebhook(): Promise<void> {
   deepEqual(result.failureReasons, ['introspection-unavailable'], 'Webhook receiver: break-glass keeps original failure reasons');
 }
 
+async function testBreakGlassRejectsOverlongGrant(): Promise<void> {
+  const { signatureKey, verificationKey, envelope } = await setupValidWebhook({
+    tokenId: 'rt_webhook_receiver_break_glass_overlong',
+    decisionId: 'decision-webhook-receiver-break-glass-overlong',
+    nonce: 'nonce-webhook-break-glass-overlong',
+  });
+  const result = await evaluateReleaseWebhookRequest(
+    {
+      method: 'POST',
+      url: envelope.uri,
+      headers: new Headers(envelope.headers),
+      body: BODY,
+    },
+    receiverOptions({
+      signatureKey,
+      verificationKey,
+      nonce: 'nonce-webhook-break-glass-overlong',
+      breakGlass: true,
+      breakGlassExpiresAt: '2026-04-18T17:00:31.000Z',
+    }),
+  );
+
+  equal(result.status, 'rejected', 'Webhook receiver: overlong break-glass grant is rejected');
+  equal(result.responseStatus, 503, 'Webhook receiver: overlong break-glass grant remains retryable');
+  equal(result.breakGlass, null, 'Webhook receiver: overlong break-glass grant is not attached');
+  deepEqual(
+    result.failureReasons,
+    ['introspection-unavailable', 'break-glass-required'],
+    'Webhook receiver: overlong grant still reports explicit break-glass requirement',
+  );
+}
+
 async function testBreakGlassCannotBypassInvalidSignature(): Promise<void> {
   const { signatureKey, verificationKey, envelope } = await setupValidWebhook({
     tokenId: 'rt_webhook_receiver_break_glass_tamper',
@@ -834,6 +867,7 @@ async function main(): Promise<void> {
   await testReplayLedgerHitIsConflict();
   await testIntrospectionUnavailableRequiresBreakGlass();
   await testBreakGlassCanAdmitLocallyVerifiedWebhook();
+  await testBreakGlassRejectsOverlongGrant();
   await testBreakGlassCannotBypassInvalidSignature();
   await testRejectedResponseBodyAndHeaders();
   await testMalformedBearerCredentialFailsClosed();

@@ -65,6 +65,13 @@ classified as `signed-production`. Runtime-memory signatures remain
 `signed-evaluation`, even if the supplied signature record claims production
 readiness.
 
+For local `ed25519` packet signatures, the builder requires a verification
+public key, checks that the packet signature verifies over the canonical
+signing payload, and requires the signature's public-key fingerprint to match
+that verification key. External KMS/HSM signatures remain boundary metadata in
+this contract; verifier distribution and production KMS/HSM evidence are not
+claimed here.
+
 The packet itself never grants authority:
 
 ```text

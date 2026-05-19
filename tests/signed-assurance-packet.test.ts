@@ -276,7 +276,11 @@ function testUnsignedPacketIsDigestBoundAndHeld(): void {
 function testEvaluationSignatureVerifiesButDoesNotBecomeProduction(): void {
   const input = baseInput();
   const signature = evaluationSignature(input);
-  const packet = createSignedAssurancePacket({ ...input, signature });
+  const packet = createSignedAssurancePacket({
+    ...input,
+    signature,
+    signatureVerificationPublicKeyPem: signingKey.publicKeyPem,
+  });
 
   equal(packet.signatureStatus, 'signed-evaluation', 'Signed assurance packet: runtime signer is evaluation status');
   equal(packet.packetReady, true, 'Signed assurance packet: signed verified packet is packet-ready');
@@ -303,7 +307,11 @@ function testRuntimeProductionClaimIsDowngraded(): void {
     productionReady: true,
     signingBoundary: 'runtime-memory',
   });
-  const packet = createSignedAssurancePacket({ ...input, signature });
+  const packet = createSignedAssurancePacket({
+    ...input,
+    signature,
+    signatureVerificationPublicKeyPem: signingKey.publicKeyPem,
+  });
 
   equal(packet.signatureStatus, 'signed-evaluation', 'Signed assurance packet: runtime production claim is downgraded');
   equal(packet.productionSigningBoundaryReady, false, 'Signed assurance packet: unsafe boundary is not ready');
@@ -354,7 +362,11 @@ function testReviewDecisionAndUnverifiedHistoryStayBlocked(): void {
     humanComprehensionGate: reviewHumanGate(),
   });
   const signature = evaluationSignature(input);
-  const packet = createSignedAssurancePacket({ ...input, signature });
+  const packet = createSignedAssurancePacket({
+    ...input,
+    signature,
+    signatureVerificationPublicKeyPem: signingKey.publicKeyPem,
+  });
 
   equal(packet.packetReady, false, 'Signed assurance packet: unverified history keeps packet not ready');
   equal(packet.approvalRequired, true, 'Signed assurance packet: review path requires approval');
@@ -414,6 +426,32 @@ function testMismatchedInputsFailClosed(): void {
     }),
     /verificationDigest must match/u,
     'Signed assurance packet: verified history binding rejects mismatched verification digest',
+  );
+  rejects(
+    () => {
+      const input = baseInput();
+      return createSignedAssurancePacket({
+        ...input,
+        signature: evaluationSignature(input),
+      });
+    },
+    /ed25519 signature requires a verification public key/u,
+    'Signed assurance packet: ed25519 signature requires verification key evidence',
+  );
+  rejects(
+    () => {
+      const input = baseInput();
+      const signature = evaluationSignature(input, {
+        signature: '0'.repeat(128),
+      });
+      return createSignedAssurancePacket({
+        ...input,
+        signature,
+        signatureVerificationPublicKeyPem: signingKey.publicKeyPem,
+      });
+    },
+    /ed25519 signature verification failed/u,
+    'Signed assurance packet: invalid ed25519 signature fails closed',
   );
 }
 

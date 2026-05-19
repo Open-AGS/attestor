@@ -11,6 +11,8 @@ import {
   CONSEQUENCE_TAMPER_EVIDENT_HISTORY_VERSION,
   type ConsequenceTamperEvidentHistoryVerification,
 } from './tamper-evident-history.js';
+import { derivePublicKeyIdentity } from '../signing/keys.js';
+import { verifySignature } from '../signing/sign.js';
 
 export const SIGNED_ASSURANCE_PACKET_VERSION =
   'attestor.signed-assurance-packet.v1';
@@ -128,6 +130,7 @@ export interface CreateSignedAssurancePacketInput {
   readonly relationshipRefDigests: readonly string[];
   readonly replayRefDigests: readonly string[];
   readonly signature?: SignedAssurancePacketSignature | null;
+  readonly signatureVerificationPublicKeyPem?: string | null;
   readonly generatedAt?: string | null;
 }
 
@@ -188,6 +191,7 @@ export interface SignedAssurancePacketDescriptor {
 }
 
 const SHA256_DIGEST_PATTERN = /^sha256:[a-f0-9]{64}$/u;
+const ED25519_SIGNATURE_HEX_PATTERN = /^[a-f0-9]{128}$/iu;
 
 function canonicalObject(value: CanonicalReleaseJsonValue): {
   readonly canonical: string;
@@ -233,6 +237,19 @@ function normalizeIdentifier(value: string, fieldName: string): string {
   ) {
     throw new Error(
       `Signed assurance packet ${fieldName} must be non-empty, bounded, and control-free.`,
+    );
+  }
+  return normalized;
+}
+
+function normalizePublicKeyPem(value: string | null | undefined): string | null {
+  if (value === undefined || value === null) {
+    return null;
+  }
+  const normalized = value.trim();
+  if (normalized.length === 0 || normalized.length > 4096) {
+    throw new Error(
+      'Signed assurance packet signature verification public key must be non-empty and bounded.',
     );
   }
   return normalized;
@@ -386,6 +403,8 @@ function humanGateBinding(
 function normalizeSignature(
   signature: SignedAssurancePacketSignature | null | undefined,
   expectedPayloadDigest: string,
+  signingPayloadCanonical: string,
+  verificationPublicKeyPem?: string | null,
 ): SignedAssurancePacketSignature | null {
   if (!signature) return null;
   if (!SIGNED_ASSURANCE_PACKET_SIGNATURE_ALGORITHMS.includes(signature.algorithm)) {
@@ -404,7 +423,7 @@ function normalizeSignature(
       'Signed assurance packet signature payloadDigest must match the signing payload digest.',
     );
   }
-  return Object.freeze({
+  const normalized = Object.freeze({
     algorithm: signature.algorithm,
     signature: normalizeIdentifier(signature.signature, 'signature.signature'),
     signerRef: normalizeIdentifier(signature.signerRef, 'signature.signerRef'),
@@ -423,6 +442,37 @@ function normalizeSignature(
     payloadDigest,
     productionReady: signature.productionReady === true,
   });
+  if (normalized.algorithm === 'ed25519') {
+    if (!ED25519_SIGNATURE_HEX_PATTERN.test(normalized.signature)) {
+      throw new Error('Signed assurance packet ed25519 signature must be a 64-byte hex signature.');
+    }
+    const publicKeyPem = normalizePublicKeyPem(verificationPublicKeyPem);
+    if (publicKeyPem === null) {
+      throw new Error(
+        'Signed assurance packet ed25519 signature requires a verification public key.',
+      );
+    }
+    let identity: ReturnType<typeof derivePublicKeyIdentity>;
+    try {
+      identity = derivePublicKeyIdentity(publicKeyPem);
+    } catch {
+      throw new Error(
+        'Signed assurance packet ed25519 signature verification public key must be a valid PEM public key.',
+      );
+    }
+    if (
+      normalized.publicKeyFingerprint === null ||
+      normalized.publicKeyFingerprint !== identity.fingerprint
+    ) {
+      throw new Error(
+        'Signed assurance packet ed25519 publicKeyFingerprint must match the verification public key.',
+      );
+    }
+    if (!verifySignature(signingPayloadCanonical, normalized.signature, publicKeyPem)) {
+      throw new Error('Signed assurance packet ed25519 signature verification failed.');
+    }
+  }
+  return normalized;
 }
 
 function productionSigningBoundaryReady(
@@ -613,7 +663,12 @@ export function createSignedAssurancePacket(
     'generatedAt',
   );
   const signingPayload = createSignedAssurancePacketSigningPayload(input);
-  const signature = normalizeSignature(input.signature, signingPayload.digest);
+  const signature = normalizeSignature(
+    input.signature,
+    signingPayload.digest,
+    signingPayload.canonical,
+    input.signatureVerificationPublicKeyPem,
+  );
   const signatureStatus = signatureStatusFor(signature);
   const boundaryReady = productionSigningBoundaryReady(signature);
   const decisionBinding = normalizeDecisionBinding(input.decisionBinding);

@@ -257,8 +257,8 @@ function testDocsAndScriptsRecordG02(): void {
   };
 
   for (const expected of [
-    'Status: G05 runtime smoke',
-    'Progress after G05 lands: 5/7 complete. 2 steps remain.',
+    'Status: G06 pilot readiness probe',
+    'Progress after G06 lands: 6/7 complete. 1 step remains.',
     '| G02 | complete | Refund OpenAPI enrichment |',
     'G02 adds the prior refund signal',
   ]) {

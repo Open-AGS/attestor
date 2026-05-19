@@ -63,6 +63,10 @@ import {
   type ReleaseEnforcementRiskClass,
   type ReleasePresentationMode,
 } from './types.js';
+import {
+  strictAuthorizationCredential,
+  strictReleaseTokenCredential,
+} from './authorization-headers.js';
 
 /**
  * Envoy and Istio external-authorization bridge.
@@ -838,13 +842,13 @@ function extractAuthorization(
   const authorization = headerValue(headers, 'authorization');
   let releaseToken: string | null = null;
   if (authorization) {
-    const match = /^(Bearer|DPoP)\s+(.+)$/iu.exec(authorization);
-    if (match?.[2]) {
-      releaseToken = normalizeIdentifier(match[2]);
+    const parsed = strictAuthorizationCredential(authorization, ['bearer', 'dpop']);
+    if (parsed) {
+      releaseToken = parsed.credential;
     }
   }
 
-  releaseToken = releaseToken ?? headerValue(headers, ATTESTOR_RELEASE_TOKEN_HEADER);
+  releaseToken = releaseToken ?? strictReleaseTokenCredential(headerValue(headers, ATTESTOR_RELEASE_TOKEN_HEADER));
   if (!releaseToken) {
     return null;
   }

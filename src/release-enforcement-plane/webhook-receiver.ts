@@ -68,6 +68,10 @@ import {
   type EnforcementFailureReason,
 } from './types.js';
 import type { NonceLedgerEntry, ReplayLedgerEntry } from './freshness.js';
+import {
+  strictAuthorizationCredential,
+  strictReleaseTokenCredential,
+} from './authorization-headers.js';
 
 /**
  * Reference webhook receiver policy-enforcement point.
@@ -300,13 +304,13 @@ function headerValue(
 function bearerReleaseToken(headers: ReleaseWebhookReceiverHttpRequest['headers']): string | null {
   const authorization = headerValue(headers, 'authorization');
   if (authorization) {
-    const match = /^Bearer\s+(.+)$/iu.exec(authorization);
-    if (match?.[1]) {
-      return normalizeIdentifier(match[1]);
+    const parsed = strictAuthorizationCredential(authorization, ['bearer']);
+    if (parsed) {
+      return parsed.credential;
     }
   }
 
-  return headerValue(headers, ATTESTOR_RELEASE_TOKEN_HEADER);
+  return strictReleaseTokenCredential(headerValue(headers, ATTESTOR_RELEASE_TOKEN_HEADER));
 }
 
 async function resolveOption<T>(

@@ -609,6 +609,32 @@ async function testBearerDowngradeFailsClosed(): Promise<void> {
   equal(store.findToken(issued.tokenId)?.status, 'issued', 'Envoy bridge: denied bearer token is not consumed');
 }
 
+async function testAmbiguousAuthorizationCredentialFailsClosed(): Promise<void> {
+  const { issued, verificationKey, decision, binding } = await issueProxyToken({
+    tokenId: 'token-envoy-ambiguous-auth',
+    decisionId: 'decision-envoy-ambiguous-auth',
+  });
+  const { store, introspector } = register(issued, decision);
+  const checkRequest = withHeaders(BASE_CHECK, {
+    authorization: `Bearer ${issued.token}, Bearer ${issued.token}`,
+    ...tokenBindingHeaders({ issued, decision, binding }),
+  });
+
+  const result = await evaluateEnvoyExternalAuthorization({
+    checkRequest,
+    options: options({ verificationKey, introspector, store }),
+  });
+
+  equal(result.status, 'denied', 'Envoy bridge: combined Authorization credentials are denied');
+  equal(result.responseStatus, 401, 'Envoy bridge: combined Authorization maps to missing authorization');
+  deepEqual(
+    result.failureReasons,
+    ['missing-release-authorization'],
+    'Envoy bridge: combined Authorization is not parsed as a release credential',
+  );
+  equal(store.findToken(issued.tokenId)?.status, 'issued', 'Envoy bridge: ambiguous authorization is not consumed');
+}
+
 async function testChangedPathFailsBinding(): Promise<void> {
   const dpopKey = await generateDpopKeyPair();
   const { issued, verificationKey, decision } = await issueProxyToken({
@@ -841,6 +867,7 @@ async function run(): Promise<void> {
   await testValidMtlsProxyCheck();
   await testMissingAuthorizationFailsClosed();
   await testBearerDowngradeFailsClosed();
+  await testAmbiguousAuthorizationCredentialFailsClosed();
   await testChangedPathFailsBinding();
   await testWrongDpopUriFails();
   await testOfflineModeRequiresFreshIntrospection();

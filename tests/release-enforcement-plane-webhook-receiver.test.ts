@@ -670,6 +670,38 @@ async function testRejectedResponseBodyAndHeaders(): Promise<void> {
   equal(body.retryable, false, 'Webhook receiver: missing authorization is not retryable');
 }
 
+async function testMalformedBearerCredentialFailsClosed(): Promise<void> {
+  const { signatureKey, verificationKey, envelope } = await setupValidWebhook({
+    tokenId: 'rt_webhook_receiver_malformed_bearer',
+    decisionId: 'decision-webhook-receiver-malformed-bearer',
+    nonce: 'nonce-webhook-malformed-bearer',
+  });
+  const result = await evaluateReleaseWebhookRequest(
+    {
+      method: 'POST',
+      url: envelope.uri,
+      headers: {
+        ...envelope.headers,
+        authorization: `${envelope.headers.authorization};injection=true`,
+      },
+      body: BODY,
+    },
+    receiverOptions({
+      signatureKey,
+      verificationKey,
+      nonce: 'nonce-webhook-malformed-bearer',
+    }),
+  );
+
+  equal(result.status, 'rejected', 'Webhook receiver: parameterized bearer credential is rejected');
+  equal(result.responseStatus, 401, 'Webhook receiver: parameterized bearer maps to challenge status');
+  deepEqual(
+    result.failureReasons,
+    ['missing-release-authorization'],
+    'Webhook receiver: parameterized bearer is not parsed as release authorization',
+  );
+}
+
 async function testMethodGuardFailsBeforeVerification(): Promise<void> {
   const { signatureKey, verificationKey, envelope } = await setupValidWebhook({
     tokenId: 'rt_webhook_receiver_get',
@@ -804,6 +836,7 @@ async function main(): Promise<void> {
   await testBreakGlassCanAdmitLocallyVerifiedWebhook();
   await testBreakGlassCannotBypassInvalidSignature();
   await testRejectedResponseBodyAndHeaders();
+  await testMalformedBearerCredentialFailsClosed();
   await testMethodGuardFailsBeforeVerification();
   await testHonoReceiverAdmitsHandlerAfterVerification();
   await testHonoReceiverBlocksRejectedWebhook();

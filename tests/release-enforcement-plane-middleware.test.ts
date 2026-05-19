@@ -331,6 +331,46 @@ async function testHonoMiddlewareDeniesMissingAuthorization(): Promise<void> {
   deepEqual(body.failureReasons, ['missing-release-authorization'], 'Middleware: missing authorization failure is explicit');
 }
 
+async function testCoreEvaluatorRejectsAmbiguousAuthorizationCredentials(): Promise<void> {
+  const { issued, verificationKey, decision } = await issueToken({
+    tokenId: 'rt_middleware_core_ambiguous_auth',
+    decisionId: 'decision-middleware-core-ambiguous-auth',
+  });
+  const duplicateHeaders = Object.fromEntries(releaseHeaders(issued, decision).entries()) as Record<string, string | readonly string[]>;
+  duplicateHeaders.authorization = [`Bearer ${issued.token}`, `Bearer ${issued.token}`];
+
+  const duplicateResult = await evaluateReleaseEnforcementHttpRequest(
+    {
+      method: 'POST',
+      url: 'https://middleware.attestor.test/mutate',
+      headers: duplicateHeaders,
+    },
+    baseOptions({ verificationKey }),
+  );
+
+  equal(duplicateResult.status, 'denied', 'Middleware: duplicate Authorization headers fail closed');
+  equal(duplicateResult.responseStatus, 401, 'Middleware: duplicate Authorization maps to missing authorization');
+  deepEqual(
+    duplicateResult.failureReasons,
+    ['missing-release-authorization'],
+    'Middleware: duplicate Authorization is not parsed as a release credential',
+  );
+
+  const parameterizedHeaders = Object.fromEntries(releaseHeaders(issued, decision).entries()) as Record<string, string>;
+  parameterizedHeaders.authorization = `Bearer ${issued.token};injection=true`;
+  const parameterizedResult = await evaluateReleaseEnforcementHttpRequest(
+    {
+      method: 'POST',
+      url: 'https://middleware.attestor.test/mutate',
+      headers: parameterizedHeaders,
+    },
+    baseOptions({ verificationKey }),
+  );
+
+  equal(parameterizedResult.status, 'denied', 'Middleware: parameterized bearer credential fails closed');
+  equal(parameterizedResult.responseStatus, 401, 'Middleware: parameterized bearer maps to missing authorization');
+}
+
 async function testHonoMiddlewareDeniesBindingMismatch(): Promise<void> {
   const { issued, verificationKey, decision } = await issueToken({
     tokenId: 'rt_middleware_hono_binding',
@@ -644,6 +684,7 @@ async function main(): Promise<void> {
   await testHonoMiddlewareAllowsValidReleaseAuthorization();
   await testHonoMiddlewareBindsFullPolicyProvenanceHeaders();
   await testHonoMiddlewareDeniesMissingAuthorization();
+  await testCoreEvaluatorRejectsAmbiguousAuthorizationCredentials();
   await testHonoMiddlewareDeniesBindingMismatch();
   await testHonoMiddlewareDeniesPolicyIrMismatch();
   await testHonoMiddlewareDeniesCompiledPolicyVersionMismatch();

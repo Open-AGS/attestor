@@ -45,6 +45,10 @@ import {
   type EnforcementFailureReason,
   type CreateEnforcementPointReferenceInput,
 } from './types.js';
+import {
+  strictAuthorizationCredential,
+  strictReleaseTokenCredential,
+} from './authorization-headers.js';
 import type {
   NonceLedgerEntry,
   ReplayLedgerEntry,
@@ -218,13 +222,13 @@ function headerValue(
 function authorizationBearerToken(headers: ReleaseEnforcementHttpRequest['headers']): string | null {
   const authorization = headerValue(headers, 'authorization');
   if (authorization) {
-    const match = /^Bearer\s+(.+)$/iu.exec(authorization);
-    if (match?.[1]) {
-      return normalizeIdentifier(match[1]);
+    const parsed = strictAuthorizationCredential(authorization, ['bearer']);
+    if (parsed) {
+      return parsed.credential;
     }
   }
 
-  return headerValue(headers, ATTESTOR_RELEASE_TOKEN_HEADER);
+  return strictReleaseTokenCredential(headerValue(headers, ATTESTOR_RELEASE_TOKEN_HEADER));
 }
 
 function protectedMethods(options: ReleaseEnforcementMiddlewareOptions): ReadonlySet<string> {

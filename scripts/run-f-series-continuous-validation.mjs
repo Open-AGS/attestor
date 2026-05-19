@@ -18,6 +18,7 @@ const SUPPORTING_SECURITY_AND_REPLAY_SCRIPTS = [
   'test:security-baseline-docs',
   'test:package-script-runner',
   'test:audit-remediation-tracker',
+  'test:audit-finding-lifecycle',
   'test:research-provenance-ledger',
 ];
 

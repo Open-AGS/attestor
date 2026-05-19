@@ -6,6 +6,9 @@ This tracker exists to prevent skipped findings, duplicate work, stale-report
 confusion, and overclaiming. It is not a certification, not an independent
 external audit, and not a claim of full production readiness.
 
+Per-finding closure contract:
+`docs/audit/finding-lifecycle-and-evidence-ledger.md`.
+
 ## Tracker Rules
 
 - `origin/master` is the source of truth.

@@ -47,6 +47,9 @@ Validation evidence:
 Dispute rationale:
 Research anchors for fix:
 Mapping:
+External anchors:
+Why applicable:
+Why not overclaimed:
 Smallest safe fix:
 Negative/adversarial test:
 Positive/regression test or probe:

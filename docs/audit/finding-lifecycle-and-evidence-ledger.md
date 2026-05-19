@@ -97,6 +97,9 @@ A finding is not closed by code alone. Closure requires all of:
 8. Residual risk and no-claim boundary.
 9. Mapping to at least one accepted risk or verification taxonomy such as CWE,
    NIST, OWASP ASVS, OWASP DSOVS, STRIDE, or STPA.
+10. Control-mapping rationale: external anchors, why those anchors apply to the
+    finding, and why the mapping does not overclaim certification, compliance,
+    production readiness, or audit completion.
 
 For trust-boundary findings, a passing happy-path test is not enough. The
 closure evidence should include at least one negative or adversarial case unless
@@ -120,6 +123,9 @@ Original risk:
 Repository evidence:
 Research anchors:
 Mapping:
+External anchors:
+Why applicable:
+Why not overclaimed:
 Decision:
 Smallest safe fix:
 Files changed:
@@ -154,6 +160,11 @@ Repository evidence: requireAccountSession now rejects unsafe cookie-session
   session transport.
 Research anchors: OWASP CSRF guidance; NIST SP 800-115 mitigation reporting
 Mapping: CWE-352; OWASP CSRF guidance; NIST SP 800-115 mitigation reporting
+External anchors: NIST SP 800-115; NIST CSF Govern; OWASP ASVS
+Why applicable: the finding concerns a hosted mutation control, mitigation
+  evidence, and verification of a web security boundary.
+Why not overclaimed: the mapping supports remediation evidence only; it is not a
+  SOC 2, ISO, OWASP, or NIST certification claim.
 Decision: validated and accepted for narrow service-layer remediation.
 Smallest safe fix: require x-attestor-csrf only for unsafe methods when the
   account session was resolved from a cookie.

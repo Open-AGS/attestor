@@ -35,11 +35,18 @@ function testLifecycleContract(): void {
   includes(lifecycle, '| `closed` | Fix is merged, checks are green, and `origin/master` has been verified.', 'Finding lifecycle: closed requires merge verification');
   includes(lifecycle, 'For trust-boundary findings, a passing happy-path test is not enough.', 'Finding lifecycle: negative/adversarial evidence is required for trust boundaries');
   includes(lifecycle, 'Mapping to at least one accepted risk or verification taxonomy', 'Finding lifecycle: closure rule requires mapping');
+  includes(lifecycle, 'Control-mapping rationale: external anchors, why those anchors apply', 'Finding lifecycle: closure rule requires control-mapping rationale');
   includes(lifecycle, 'Negative/adversarial tests:', 'Finding lifecycle: remediation record requires negative/adversarial tests');
   includes(lifecycle, 'Mapping:', 'Finding lifecycle: remediation record requires mapping field');
+  includes(lifecycle, 'External anchors:', 'Finding lifecycle: remediation record requires external anchor field');
+  includes(lifecycle, 'Why applicable:', 'Finding lifecycle: remediation record requires applicability rationale');
+  includes(lifecycle, 'Why not overclaimed:', 'Finding lifecycle: remediation record requires no-overclaim rationale');
   includes(lifecycle, 'Re-audit result:', 'Finding lifecycle: remediation record requires re-audit result');
   includes(lifecycle, 'Residual risk:', 'Finding lifecycle: remediation record requires residual risk');
   includes(lifecycle, 'Mapping: CWE-352; OWASP CSRF guidance; NIST SP 800-115 mitigation reporting', 'Finding lifecycle: example record includes risk mapping');
+  includes(lifecycle, 'External anchors: NIST SP 800-115; NIST CSF Govern; OWASP ASVS', 'Finding lifecycle: example record includes external anchors');
+  includes(lifecycle, 'Why applicable: the finding concerns a hosted mutation control', 'Finding lifecycle: example record explains applicability');
+  includes(lifecycle, 'Why not overclaimed: the mapping supports remediation evidence only', 'Finding lifecycle: example record explains no-overclaim boundary');
   includes(lifecycle, 'EH-2026-SESSION-CSRF-001', 'Finding lifecycle: first evidence record example is present');
   excludes(lifecycle, /\bsecure by default for production\b/iu, 'Finding lifecycle: production security is not overclaimed');
 }
@@ -52,6 +59,9 @@ function testLedgerTemplateUsesLifecycle(): void {
   includes(template, 'Negative/adversarial test:', 'Ledger template: captures negative/adversarial evidence');
   includes(template, 'Positive/regression test or probe:', 'Ledger template: captures positive/regression evidence');
   includes(template, 'Mapping:', 'Ledger template: captures CWE/NIST/OWASP/STRIDE/STPA mapping evidence');
+  includes(template, 'External anchors:', 'Ledger template: captures external anchor evidence');
+  includes(template, 'Why applicable:', 'Ledger template: captures anchor applicability rationale');
+  includes(template, 'Why not overclaimed:', 'Ledger template: captures no-overclaim rationale');
   includes(template, 'CI checks:', 'Ledger template: captures CI evidence');
   includes(template, 'Re-audit result:', 'Ledger template: captures re-audit evidence');
   includes(template, '`closed`: merged, checks are green, and `origin/master` has been verified.', 'Ledger template: closed state requires origin/master evidence');

@@ -22,6 +22,9 @@ const REQUIRED_CLOSED_FIELDS = [
   'Repository evidence:',
   'Research anchors:',
   'Mapping:',
+  'External anchors:',
+  'Why applicable:',
+  'Why not overclaimed:',
   'Decision:',
   'Smallest safe fix:',
   'Negative/adversarial tests:',
@@ -97,6 +100,12 @@ function checkClosedLifecycleRecords() {
         const line = block.split('\n').find((entry) => entry.startsWith(field)) ?? '';
         if (line.trim() === field) {
           fail(`${filePath}: closed finding record has empty ${field}`);
+        }
+      }
+      for (const field of ['External anchors:', 'Why applicable:', 'Why not overclaimed:']) {
+        const line = block.split('\n').find((entry) => entry.startsWith(field)) ?? '';
+        if (line.trim() === field) {
+          fail(`${filePath}: closed finding record has empty control-mapping field ${field}`);
         }
       }
     }

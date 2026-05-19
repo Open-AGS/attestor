@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -33,9 +34,12 @@ function testLifecycleContract(): void {
   includes(lifecycle, 'Side exits are allowed, but they require evidence', 'Finding lifecycle: evidence-backed side exits are explicit');
   includes(lifecycle, '| `closed` | Fix is merged, checks are green, and `origin/master` has been verified.', 'Finding lifecycle: closed requires merge verification');
   includes(lifecycle, 'For trust-boundary findings, a passing happy-path test is not enough.', 'Finding lifecycle: negative/adversarial evidence is required for trust boundaries');
+  includes(lifecycle, 'Mapping to at least one accepted risk or verification taxonomy', 'Finding lifecycle: closure rule requires mapping');
   includes(lifecycle, 'Negative/adversarial tests:', 'Finding lifecycle: remediation record requires negative/adversarial tests');
+  includes(lifecycle, 'Mapping:', 'Finding lifecycle: remediation record requires mapping field');
   includes(lifecycle, 'Re-audit result:', 'Finding lifecycle: remediation record requires re-audit result');
   includes(lifecycle, 'Residual risk:', 'Finding lifecycle: remediation record requires residual risk');
+  includes(lifecycle, 'Mapping: CWE-352; OWASP CSRF guidance; NIST SP 800-115 mitigation reporting', 'Finding lifecycle: example record includes risk mapping');
   includes(lifecycle, 'EH-2026-SESSION-CSRF-001', 'Finding lifecycle: first evidence record example is present');
   excludes(lifecycle, /\bsecure by default for production\b/iu, 'Finding lifecycle: production security is not overclaimed');
 }
@@ -47,6 +51,7 @@ function testLedgerTemplateUsesLifecycle(): void {
   includes(template, 'Lifecycle state: reported | validated | disputed | duplicate | out-of-scope | blocked | accepted-limitation | superseded | accepted | fixed | tested | re-audited | closed', 'Ledger template: uses canonical state vocabulary');
   includes(template, 'Negative/adversarial test:', 'Ledger template: captures negative/adversarial evidence');
   includes(template, 'Positive/regression test or probe:', 'Ledger template: captures positive/regression evidence');
+  includes(template, 'Mapping:', 'Ledger template: captures CWE/NIST/OWASP/STRIDE/STPA mapping evidence');
   includes(template, 'CI checks:', 'Ledger template: captures CI evidence');
   includes(template, 'Re-audit result:', 'Ledger template: captures re-audit evidence');
   includes(template, '`closed`: merged, checks are green, and `origin/master` has been verified.', 'Ledger template: closed state requires origin/master evidence');
@@ -71,11 +76,26 @@ function testPackageScript(): void {
     'Package scripts: audit finding lifecycle docs guard is exposed',
   );
   passed += 1;
+  assert.equal(
+    packageJson.scripts['test:audit-finding-evidence'],
+    'node scripts/check-audit-finding-evidence.mjs',
+    'Package scripts: audit finding evidence checker is exposed',
+  );
+  passed += 1;
+}
+
+function testEvidenceChecker(): void {
+  const output = execFileSync('node', ['scripts/check-audit-finding-evidence.mjs'], {
+    cwd: process.cwd(),
+    encoding: 'utf8',
+  });
+  includes(output, 'Audit finding evidence checks: passed', 'Audit evidence checker: passes current repository docs');
 }
 
 testLifecycleContract();
 testLedgerTemplateUsesLifecycle();
 testTrackerLinksLifecycle();
 testPackageScript();
+testEvidenceChecker();
 
 console.log(`Audit finding lifecycle tests: ${passed} passed, 0 failed`);

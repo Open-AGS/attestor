@@ -95,6 +95,8 @@ A finding is not closed by code alone. Closure requires all of:
 6. CI or local verification command.
 7. Re-audit result against the original finding.
 8. Residual risk and no-claim boundary.
+9. Mapping to at least one accepted risk or verification taxonomy such as CWE,
+   NIST, OWASP ASVS, OWASP DSOVS, STRIDE, or STPA.
 
 For trust-boundary findings, a passing happy-path test is not enough. The
 closure evidence should include at least one negative or adversarial case unless
@@ -117,6 +119,7 @@ Trust surface:
 Original risk:
 Repository evidence:
 Research anchors:
+Mapping:
 Decision:
 Smallest safe fix:
 Files changed:
@@ -150,6 +153,7 @@ Repository evidence: requireAccountSession now rejects unsafe cookie-session
   mutations without x-attestor-csrf; tenant isolation records cookie vs header
   session transport.
 Research anchors: OWASP CSRF guidance; NIST SP 800-115 mitigation reporting
+Mapping: CWE-352; OWASP CSRF guidance; NIST SP 800-115 mitigation reporting
 Decision: validated and accepted for narrow service-layer remediation.
 Smallest safe fix: require x-attestor-csrf only for unsafe methods when the
   account session was resolved from a cookie.

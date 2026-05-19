@@ -46,6 +46,7 @@ Risk:
 Validation evidence:
 Dispute rationale:
 Research anchors for fix:
+Mapping:
 Smallest safe fix:
 Negative/adversarial test:
 Positive/regression test or probe:

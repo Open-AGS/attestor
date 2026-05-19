@@ -163,6 +163,7 @@
     "test:customer-pep-adoption-package": "tsx tests/customer-pep-adoption-package.test.ts",
     "test:audit-remediation-tracker": "tsx tests/audit-remediation-tracker.test.ts",
     "test:audit-finding-lifecycle": "tsx tests/audit-finding-lifecycle.test.ts",
+    "test:audit-finding-evidence": "node scripts/check-audit-finding-evidence.mjs",
     "test:final-claim-alignment-validation": "tsx tests/final-claim-alignment-validation.test.ts",
     "test:f6-tenant-blast-radius-validation": "tsx tests/f6-tenant-blast-radius-validation.test.ts",
     "test:f6-tenant-bound-release-token": "tsx tests/f6-tenant-bound-release-token.test.ts",

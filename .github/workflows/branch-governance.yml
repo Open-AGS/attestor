@@ -1,0 +1,35 @@
+name: Branch Governance
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 4 * * 1'
+
+permissions:
+  contents: read
+
+jobs:
+  branch-governance:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          fetch-depth: 0
+
+      - name: Fetch branch inventory
+        run: git fetch --prune origin '+refs/heads/*:refs/remotes/origin/*'
+
+      - name: Verify stale branch policy
+        run: node scripts/check-stale-branches.mjs --require-master-only
+
+      - name: Verify delete-branch-on-merge
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          enabled="$(gh api "repos/${GH_REPO}" --jq '.delete_branch_on_merge')"
+          if [ "$enabled" != "true" ]; then
+            echo "Repository setting delete_branch_on_merge must remain enabled." >&2
+            exit 1
+          fi

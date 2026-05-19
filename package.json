@@ -575,7 +575,7 @@
     "@opentelemetry/sdk-metrics": "^2.7.0",
     "@opentelemetry/sdk-trace-base": "^2.7.1",
     "@opentelemetry/sdk-trace-node": "^2.7.1",
-    "@opentelemetry/semantic-conventions": "^1.40.0",
+    "@opentelemetry/semantic-conventions": "^1.41.1",
     "@simplewebauthn/server": "^13.3.0",
     "@solarahealth/fhir-r4": "^1.2.0",
     "@types/node": "^22.19.18",

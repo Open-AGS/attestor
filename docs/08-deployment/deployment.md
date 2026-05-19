@@ -83,6 +83,14 @@ does not grant authority and does not replace account-session authorization.
 The pattern follows OWASP CSRF guidance for custom request headers on AJAX/API
 endpoints, while treating SameSite cookies as defense-in-depth.
 
+This is a header-presence CSRF boundary, not a synchronizer-token or
+double-submit-token implementation. Attestor does not validate the header value
+against a session-bound CSRF secret. The repository service layer also does not
+install permissive CORS response headers; deployments that add CORS must allow
+only explicit trusted origins when credentials are enabled. A wildcard,
+regex-broad, or customer-controlled `Access-Control-Allow-Origin` policy is a
+no-go for cookie-authenticated account mutations using this boundary.
+
 This boundary is repo-side service hardening only. It is not a claim that a
 customer deployment has a complete browser application, CORS policy, WAF, or
 external identity fabric.

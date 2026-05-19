@@ -1,5 +1,6 @@
 import {
   LAYER_OPINION_SCHEMA_VERSION,
+  assertLayerOpinionRuntimeInvariants,
   type LayerOpinion,
 } from './layer-opinion-schema.js';
 import {
@@ -261,6 +262,12 @@ export function relationshipAwareMonotoneFusionDescriptor():
 export function fuseRelationshipAwareMonotoneHazard(
   input: MonotoneFusionInput,
 ): RelationshipAwareMonotoneFusionResult {
+  for (const opinion of input.opinions) {
+    assertLayerOpinionRuntimeInvariants(opinion, {
+      envelopeRefDigest: input.envelopeRefDigest,
+    });
+  }
+
   const duplicateRelationships = input.relationships.filter(
     (relationship): relationship is SignalSymmetricRelationship =>
       relationship.shape === 'symmetric' && relationship.kind === 'duplicates',

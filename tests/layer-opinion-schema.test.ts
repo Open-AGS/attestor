@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   LAYER_OPINION_SCHEMA_VERSION,
+  assertLayerOpinionRuntimeInvariants,
   layerOpinionSchemaDescriptor,
   type LayerOpinion,
 } from '../src/consequence-admission/index.js';
@@ -31,8 +32,71 @@ function includes(content: string, expected: string, message: string): void {
   passed += 1;
 }
 
+function throws(fn: () => unknown, pattern: RegExp, message: string): void {
+  assert.throws(fn, pattern, message);
+  passed += 1;
+}
+
 const digestA = `sha256:${'a'.repeat(64)}`;
 const digestB = `sha256:${'b'.repeat(64)}`;
+
+function validLayerOpinion(): LayerOpinion<'gap'> {
+  return {
+    version: LAYER_OPINION_SCHEMA_VERSION,
+    opinionId: 'opinion-evidence-gap',
+    layerId: 'layer-2-shadow-baseline',
+    sourcePlane: 'shadow-baseline',
+    envelopeRefDigest: digestA,
+    projectedSignal: {
+      category: 'gap',
+      kind: 'evidence_gap',
+      authorityMode: 'advisory',
+    },
+    position: 'gap-indicated',
+    hazardScore: 0.7,
+    uncertainty: 0.25,
+    calibratedConfidence: 0.75,
+    evidenceQuality: 'moderate',
+    novelty: 'unusual',
+    contextFit: 'medium',
+    calibrationState: 'calibration-ref-present',
+    calibrationRefDigest: digestB,
+    beliefMass: {
+      hazard: 0.55,
+      noAdvisoryObjection: 0.2,
+      uncertainty: 0.25,
+      baseRate: 0.1,
+    },
+    abstention: {
+      abstained: false,
+      reasons: [],
+      neededEvidenceRefs: [],
+    },
+    sourceDependence: {
+      dependsOnEnvelope: true,
+      evidenceRefDigests: [digestB],
+      readModelDigests: [digestA],
+      relationshipIds: ['rel-gap-review'],
+      rawTrainingDataAccess: false,
+      crossTenantRawDataAccess: false,
+    },
+    evidenceRefs: [{ kind: 'evidence', digest: digestB }],
+    readModelRefs: [{ modelKind: 'shadow-baseline', digest: digestA }],
+    appliesToConsequenceClasses: ['financial'],
+    reasonCodes: ['missing-required-evidence'],
+    noLoosening: true,
+    mayGrantAuthority: false,
+    mayActivateEnforcement: false,
+    mayLowerRequiredReview: false,
+    mayMarkSafe: false,
+    mayStoreRawMaterial: false,
+    mayTrainModel: false,
+    productionReady: false,
+    rawPayloadStored: false,
+    rawPromptStored: false,
+    rawProviderBodyStored: false,
+  };
+}
 
 function testDescriptorRecordsLayerScopeAndProjection(): void {
   const descriptor = layerOpinionSchemaDescriptor();
@@ -124,67 +188,47 @@ function testDescriptorRecordsUncertaintyAbstentionAndNoLoosening(): void {
 }
 
 function testLayerOpinionShapeIsAdvisoryAndCategoryBound(): void {
-  const opinion: LayerOpinion<'gap'> = {
-    version: LAYER_OPINION_SCHEMA_VERSION,
-    opinionId: 'opinion-evidence-gap',
-    layerId: 'layer-2-shadow-baseline',
-    sourcePlane: 'shadow-baseline',
-    envelopeRefDigest: digestA,
-    projectedSignal: {
-      category: 'gap',
-      kind: 'evidence_gap',
-      authorityMode: 'advisory',
-    },
-    position: 'gap-indicated',
-    hazardScore: 0.7,
-    uncertainty: 0.25,
-    calibratedConfidence: 0.75,
-    evidenceQuality: 'moderate',
-    novelty: 'unusual',
-    contextFit: 'medium',
-    calibrationState: 'calibration-ref-present',
-    calibrationRefDigest: digestB,
-    beliefMass: {
-      hazard: 0.55,
-      noAdvisoryObjection: 0.2,
-      uncertainty: 0.25,
-      baseRate: 0.1,
-    },
-    abstention: {
-      abstained: false,
-      reasons: [],
-      neededEvidenceRefs: [],
-    },
-    sourceDependence: {
-      dependsOnEnvelope: true,
-      evidenceRefDigests: [digestB],
-      readModelDigests: [digestA],
-      relationshipIds: ['rel-gap-review'],
-      rawTrainingDataAccess: false,
-      crossTenantRawDataAccess: false,
-    },
-    evidenceRefs: [{ kind: 'evidence', digest: digestB }],
-    readModelRefs: [{ modelKind: 'shadow-baseline', digest: digestA }],
-    appliesToConsequenceClasses: ['financial'],
-    reasonCodes: ['missing-required-evidence'],
-    noLoosening: true,
-    mayGrantAuthority: false,
-    mayActivateEnforcement: false,
-    mayLowerRequiredReview: false,
-    mayMarkSafe: false,
-    mayStoreRawMaterial: false,
-    mayTrainModel: false,
-    productionReady: false,
-    rawPayloadStored: false,
-    rawPromptStored: false,
-    rawProviderBodyStored: false,
-  };
+  const opinion = validLayerOpinion();
 
   equal(opinion.projectedSignal.category, 'gap', 'LayerOpinion: projected category is preserved');
   equal(opinion.projectedSignal.kind, 'evidence_gap', 'LayerOpinion: projected kind is category-bound');
   equal(opinion.sourceDependence.rawTrainingDataAccess, false, 'LayerOpinion: raw training data access is forbidden');
   equal(opinion.noLoosening, true, 'LayerOpinion: no-loosening is part of the instance');
   equal(opinion.mayMarkSafe, false, 'LayerOpinion: instance cannot mark safe');
+}
+
+function testLayerOpinionRuntimeInvariantsValidateBeliefMassAndEnvelope(): void {
+  const opinion = validLayerOpinion();
+
+  assertLayerOpinionRuntimeInvariants(opinion, { envelopeRefDigest: digestA });
+  passed += 1;
+
+  throws(
+    () => assertLayerOpinionRuntimeInvariants({
+      ...opinion,
+      beliefMass: {
+        hazard: 0.95,
+        noAdvisoryObjection: 0.95,
+        uncertainty: 0.95,
+        baseRate: 0.1,
+      },
+    }),
+    /beliefMass hazard \+ noAdvisoryObjection \+ uncertainty must equal 1/u,
+    'LayerOpinion: runtime invariant rejects non-conserved belief mass',
+  );
+  throws(
+    () => assertLayerOpinionRuntimeInvariants(opinion, { envelopeRefDigest: digestB }),
+    /envelopeRefDigest must match fusion envelope/u,
+    'LayerOpinion: runtime invariant rejects envelope mismatch',
+  );
+  throws(
+    () => assertLayerOpinionRuntimeInvariants({
+      ...opinion,
+      reasonCodes: ['Repo Proven'],
+    }),
+    /reasonCodes\[0\] must be a stable lowercase reason code/u,
+    'LayerOpinion: runtime invariant rejects unstable reason codes',
+  );
 }
 
 function testDocsOverviewAndPackageScriptStayAligned(): void {
@@ -210,6 +254,7 @@ function testDocsOverviewAndPackageScriptStayAligned(): void {
     'LayerOpinionBeliefMass',
     'LayerOpinionAbstention',
     'LayerOpinionSourceDependence',
+    'assertLayerOpinionRuntimeInvariants()',
     'layerOpinionSchemaDescriptor()',
     'no-advisory-objection',
     'hazard + noAdvisoryObjection + uncertainty = 1',
@@ -245,6 +290,7 @@ function testDocsOverviewAndPackageScriptStayAligned(): void {
 testDescriptorRecordsLayerScopeAndProjection();
 testDescriptorRecordsUncertaintyAbstentionAndNoLoosening();
 testLayerOpinionShapeIsAdvisoryAndCategoryBound();
+testLayerOpinionRuntimeInvariantsValidateBeliefMassAndEnvelope();
 testDocsOverviewAndPackageScriptStayAligned();
 
 console.log(`LayerOpinion schema tests: ${passed} passed, 0 failed`);

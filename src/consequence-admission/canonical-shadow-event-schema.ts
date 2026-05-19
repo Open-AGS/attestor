@@ -396,9 +396,15 @@ function normalizeRefs(
   refs: readonly CanonicalShadowEventReference[] | null | undefined,
   fieldName: string,
 ): readonly CanonicalShadowEventReference[] {
-  return Object.freeze((refs ?? []).map((ref, index) =>
-    normalizeReference(ref, `${fieldName}[${index}]`)
-  ));
+  return Object.freeze((refs ?? [])
+    .map((ref, index) => normalizeReference(ref, `${fieldName}[${index}]`))
+    .sort((left, right) => {
+      const leftKey = `${left.kind}\u0000${left.digest}\u0000${left.origin}`;
+      const rightKey = `${right.kind}\u0000${right.digest}\u0000${right.origin}`;
+      if (leftKey < rightKey) return -1;
+      if (leftKey > rightKey) return 1;
+      return 0;
+    }));
 }
 
 function defaultDecision(): CanonicalShadowEventDecision {

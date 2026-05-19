@@ -37,6 +37,11 @@ function includes(content: string, expected: string, message: string): void {
   passed += 1;
 }
 
+function throws(fn: () => unknown, pattern: RegExp, message: string): void {
+  assert.throws(fn, pattern, message);
+  passed += 1;
+}
+
 const digestA = `sha256:${'a'.repeat(64)}`;
 const digestB = `sha256:${'b'.repeat(64)}`;
 
@@ -333,6 +338,33 @@ function testReviewAndBlockPressureRemainNonAuthority(): void {
   equal(result.autoEnforce, false, 'Monotone fusion: result does not auto-enforce');
 }
 
+function testFusionRejectsNonConservedLayerOpinionBeliefMass(): void {
+  const badOpinion = {
+    ...opinion({
+      id: 'opinion-bad-mass',
+      position: 'hazard-indicated',
+      hazardScore: 0.7,
+    }),
+    beliefMass: {
+      hazard: 0.8,
+      noAdvisoryObjection: 0.8,
+      uncertainty: 0.8,
+      baseRate: 0.1,
+    },
+  };
+
+  throws(
+    () => fuseRelationshipAwareMonotoneHazard({
+      envelopeRefDigest: digestA,
+      opinions: [badOpinion],
+      relationships: [],
+      modulators: [],
+    }),
+    /beliefMass hazard \+ noAdvisoryObjection \+ uncertainty must equal 1/u,
+    'Monotone fusion: rejects non-conserved LayerOpinion belief mass before scoring',
+  );
+}
+
 function testDocsOverviewAndPackageScriptStayAligned(): void {
   const contractDoc = readProjectFile(
     'docs',
@@ -390,6 +422,7 @@ testFusionPreservesMaxInputHazardAndAddsPressure();
 testDuplicateDiscountDoesNotAverageAwayStrongHazard();
 testRelationshipOnlyHazardsArePreserved();
 testReviewAndBlockPressureRemainNonAuthority();
+testFusionRejectsNonConservedLayerOpinionBeliefMass();
 testDocsOverviewAndPackageScriptStayAligned();
 
 console.log(`Relationship-aware monotone fusion tests: ${passed} passed, 0 failed`);

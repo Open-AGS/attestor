@@ -58,6 +58,9 @@ function opinion(input: {
   readonly calibrationState?: LayerOpinion['calibrationState'];
 }): LayerOpinion {
   const uncertainty = input.uncertainty ?? 0.1;
+  const hazard = input.hazardScore ?? 0;
+  const beliefUncertainty = Math.min(uncertainty, Math.max(0, 1 - hazard));
+  const noAdvisoryObjection = Math.max(0, 1 - hazard - beliefUncertainty);
   const abstentionReasons = input.abstentionReasons ?? [];
   const signalKind = input.signalKind ?? 'evidence_gap';
   return {
@@ -84,9 +87,9 @@ function opinion(input: {
     calibrationState: input.calibrationState ?? 'calibration-ref-present',
     calibrationRefDigest: digestB,
     beliefMass: {
-      hazard: input.hazardScore ?? 0,
-      noAdvisoryObjection: Math.max(0, 1 - uncertainty - (input.hazardScore ?? 0)),
-      uncertainty,
+      hazard,
+      noAdvisoryObjection,
+      uncertainty: beliefUncertainty,
       baseRate: 0.1,
     },
     abstention: {

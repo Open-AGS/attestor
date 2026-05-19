@@ -199,6 +199,45 @@ function testDirectCanonicalEventRequiresDigestReferences(): void {
   );
 }
 
+function testReferenceArraysAreCanonicalizedByValue(): void {
+  const baseInput = {
+    occurredAt: '2026-05-17T08:20:00.000Z',
+    sourceKind: 'target-system-shadow' as const,
+    producer: 'attestor.integration.test',
+    tenantRefDigest: digestA,
+    actorRefDigest: digestB,
+    observed: {
+      targetSystem: 'refund-service',
+      targetAccountRefDigest: digestC,
+      actionName: 'issue_refund',
+      actionKind: 'api-operation' as const,
+      consequenceClass: 'financial' as const,
+      resourceRefDigest: digestD,
+      dataClass: 'money-movement',
+      amountAssetChain: null,
+      authorityDelta: null,
+    },
+  };
+  const first = createCanonicalShadowEvent({
+    ...baseInput,
+    evidenceRefs: [
+      { kind: 'evidence', digest: digestB, origin: 'inferred' },
+      { kind: 'evidence', digest: digestA, origin: 'observed' },
+    ],
+  });
+  const second = createCanonicalShadowEvent({
+    ...baseInput,
+    evidenceRefs: [
+      { kind: 'evidence', digest: digestA, origin: 'observed' },
+      { kind: 'evidence', digest: digestB, origin: 'inferred' },
+    ],
+  });
+
+  equal(first.canonical, second.canonical, 'Canonical shadow event: ref order does not change canonical bytes');
+  equal(first.digest, second.digest, 'Canonical shadow event: ref order does not change digest');
+  equal(first.evidenceRefs[0]?.digest, digestA, 'Canonical shadow event: refs are sorted by kind/digest/origin');
+}
+
 function testDescriptorAndDocsStayAligned(): void {
   const descriptor = canonicalShadowEventSchemaDescriptor();
   const doc = readProjectFile('docs', '02-architecture', 'shadow-event-canonical-schema.md');
@@ -273,6 +312,7 @@ function testDescriptorAndDocsStayAligned(): void {
 
 testAdmissionShadowEventProjectsToCanonicalEnvelope();
 testDirectCanonicalEventRequiresDigestReferences();
+testReferenceArraysAreCanonicalizedByValue();
 testDescriptorAndDocsStayAligned();
 
 console.log(`Shadow event canonical schema tests: ${passed} passed, 0 failed`);

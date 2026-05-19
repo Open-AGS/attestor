@@ -38,6 +38,11 @@ directed overrides and escalations preserve stricter pressure
 modulators can only add tightening/context pressure
 ```
 
+Before scoring, the fusion function runs `assertLayerOpinionRuntimeInvariants()`
+on every `LayerOpinion`. This keeps the belief mass conservation and envelope
+binding requirements behavioral at the fusion boundary, not only TypeScript
+shape claims.
+
 The result posture is:
 
 ```text

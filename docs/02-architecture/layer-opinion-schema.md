@@ -25,6 +25,7 @@ LayerOpinionSignalProjection
 LayerOpinionBeliefMass
 LayerOpinionAbstention
 LayerOpinionSourceDependence
+assertLayerOpinionRuntimeInvariants()
 layerOpinionSchemaDescriptor()
 ```
 
@@ -77,7 +78,7 @@ abstention
 sourceDependence
 ```
 
-The belief mass contract reserves a later validation invariant:
+The belief mass contract is runtime-checked before relationship-aware fusion:
 
 ```text
 hazard + noAdvisoryObjection + uncertainty = 1

@@ -185,6 +185,10 @@ for legal, support, or incident reasons, that material must live in a separate
 customer-controlled system with its own access controls and retention policy.
 The canonical shadow event may only carry a digest reference to it.
 
+Reference arrays are sorted by `kind`, `digest`, and `origin` before canonical
+hashing. They are treated as digest-bound sets, not reviewer-authored ordered
+lists, so equivalent evidence refs produce the same canonical bytes.
+
 ## Current Bridge
 
 `createCanonicalShadowEventFromAdmissionEvent()` projects the existing

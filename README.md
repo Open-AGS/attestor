@@ -46,6 +46,33 @@ Start review with:
 - [Artifact attestation plan](docs/08-deployment/artifact-attestation-plan.md)
 - [Audit remediation tracker](docs/audit/attestor-audit-remediation-tracker.md)
 
+## Golden Path: Refund
+
+[Golden Path: Refund](docs/02-architecture/golden-refund-shadow-pilot.md) is the first end-to-end repo path a reviewer should run. It is a synthetic support refund scenario, not a refund product, finance-only product, or separate engine.
+
+It shows one concrete Money Movement consequence through the same Attestor control boundary:
+
+```text
+refund action surface -> canonical shadow fixtures -> runtime assurance smoke -> Policy Foundry summary -> pilot readiness packet -> demo output
+```
+
+Run it with:
+
+```bash
+npm run demo:golden-refund
+```
+
+It demonstrates:
+
+- action-surface material from a refund OpenAPI fixture
+- digest-only canonical shadow fixtures
+- runtime assurance smoke over the refund scenarios
+- Policy Foundry summary material with named evidence and policy gaps
+- a pilot readiness packet that can report shadow-pilot readiness or not-ready
+- Markdown-first demo output, with JSON available for machines
+
+It does not execute refunds, call Stripe or Shopify, deploy a customer PEP, activate policy, learn from traffic, or auto-enforce. Use it to inspect whether the Attestor consequence engine is coherent before looking at lower-level admission primitives.
+
 ## The Control Boundary
 
 Use Attestor where a capable AI-assisted system should not be able to act just because it can form a request:

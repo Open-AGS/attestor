@@ -35,6 +35,8 @@ function testTopLevelPositioningStaysAligned(): void {
   includes(readme, 'Attestor can start in `observe` or `warn` mode.', 'Product docs: README makes non-blocking adoption concrete');
   includes(readme, 'observe -> warn -> review -> enforce', 'Product docs: README keeps the adoption mode ladder');
   includes(readme, 'The current generic admission route implements the first control ladder for this path.', 'Product docs: README bounds implemented shadow ladder');
+  includes(readme, '## Golden Path: Refund', 'Product docs: README gives the golden path its own block');
+  includes(readme, 'not a refund product, finance-only product, or separate engine', 'Product docs: README keeps golden path scoped to one product');
   includes(readme, 'Admission responses also carry model-safe feedback.', 'Product docs: README introduces safe feedback contract');
   includes(readme, 'Some failures are deliberately not model-retryable.', 'Product docs: README blocks retry-loop overclaim');
   includes(readme, 'This is the route-level entry point for the shadow-to-enforcement ladder described above.', 'Product docs: README avoids repeating the route mode explanation');

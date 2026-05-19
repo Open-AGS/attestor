@@ -50,6 +50,11 @@ function testReadmeHasAFirstImpressionPath(): void {
   includes(readme, 'proposed consequence -> consequence admission -> proof material -> customer enforcement', 'README: keeps one product language near the top');
   includes(readme, 'not a finished public SaaS', 'README: avoids public SaaS overclaim');
   includes(readme, 'Green local checks such as `npm run verify` are repo-side evidence only.', 'README: keeps local verification separate from production readiness');
+  includes(readme, '## Golden Path: Refund', 'README: gives the golden path its own first-reading block');
+  includes(readme, 'is the first end-to-end repo path a reviewer should run', 'README: makes the golden path the first concrete story');
+  includes(readme, 'not a refund product, finance-only product, or separate engine', 'README: keeps the golden path inside the one product');
+  includes(readme, 'refund action surface -> canonical shadow fixtures -> runtime assurance smoke -> Policy Foundry summary -> pilot readiness packet -> demo output', 'README: shows the golden path pipeline in one line');
+  includes(readme, 'Use it to inspect whether the Attestor consequence engine is coherent before looking at lower-level admission primitives.', 'README: positions lower-level demos after the golden path');
   includes(readme, '## The Control Boundary', 'README: names the operating model before architecture');
   includes(readme, 'Use Attestor where a capable AI-assisted system should not be able to act just because it can form a request:', 'README: moves quickly from category to use cases');
   includes(readme, 'a procurement agent proposes paying a supplier after reading a changed bank-account instruction', 'README: frames money movement by consequence');
@@ -86,6 +91,7 @@ function testReadmeHasAFirstImpressionPath(): void {
   includes(readme, 'Attestor is designed as a control point, not a data lake.', 'README: explains data handling posture early');
   includes(readme, '[Try Attestor first](docs/01-overview/try-attestor-first.md)', 'README: links to the guided first run');
   appearsBefore(readme, '## Current Repository Truth', '## Architecture: Core And Packs', 'README: keeps evaluation boundary before architecture');
+  appearsBefore(readme, '## Golden Path: Refund', '## The Control Boundary', 'README: puts the concrete golden path before the broad domain list');
   appearsBefore(readme, '## Adoption Path', '## Why It Exists', 'README: positions shadow mode before deeper category explanation');
   appearsBefore(readme, '## Try It In 60 Seconds', '## Architecture: Core And Packs', 'README: keeps the runnable path before product packaging');
   appearsBefore(readme, '## Consequence Packs', '## Architecture: Core And Packs', 'README: names consequence packs before architecture detail');

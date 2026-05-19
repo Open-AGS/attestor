@@ -131,6 +131,7 @@ export interface CreateSignedAssurancePacketInput {
   readonly replayRefDigests: readonly string[];
   readonly signature?: SignedAssurancePacketSignature | null;
   readonly signatureVerificationPublicKeyPem?: string | null;
+  readonly signatureExpectedPublicKeyFingerprint?: string | null;
   readonly generatedAt?: string | null;
 }
 
@@ -192,6 +193,7 @@ export interface SignedAssurancePacketDescriptor {
 
 const SHA256_DIGEST_PATTERN = /^sha256:[a-f0-9]{64}$/u;
 const ED25519_SIGNATURE_HEX_PATTERN = /^[a-f0-9]{128}$/iu;
+const PUBLIC_KEY_FINGERPRINT_PATTERN = /^[a-f0-9]{32}$/iu;
 
 function canonicalObject(value: CanonicalReleaseJsonValue): {
   readonly canonical: string;
@@ -251,6 +253,20 @@ function normalizePublicKeyPem(value: string | null | undefined): string | null 
     throw new Error(
       'Signed assurance packet signature verification public key must be non-empty and bounded.',
     );
+  }
+  return normalized;
+}
+
+function normalizePublicKeyFingerprint(
+  value: string | null | undefined,
+  fieldName: string,
+): string | null {
+  if (value === undefined || value === null) {
+    return null;
+  }
+  const normalized = value.trim().toLowerCase();
+  if (!PUBLIC_KEY_FINGERPRINT_PATTERN.test(normalized)) {
+    throw new Error(`Signed assurance packet ${fieldName} must be a 128-bit public key fingerprint.`);
   }
   return normalized;
 }
@@ -405,6 +421,7 @@ function normalizeSignature(
   expectedPayloadDigest: string,
   signingPayloadCanonical: string,
   verificationPublicKeyPem?: string | null,
+  expectedPublicKeyFingerprint?: string | null,
 ): SignedAssurancePacketSignature | null {
   if (!signature) return null;
   if (!SIGNED_ASSURANCE_PACKET_SIGNATURE_ALGORITHMS.includes(signature.algorithm)) {
@@ -452,6 +469,15 @@ function normalizeSignature(
         'Signed assurance packet ed25519 signature requires a verification public key.',
       );
     }
+    const trustedFingerprint = normalizePublicKeyFingerprint(
+      expectedPublicKeyFingerprint,
+      'signatureExpectedPublicKeyFingerprint',
+    );
+    if (trustedFingerprint === null) {
+      throw new Error(
+        'Signed assurance packet ed25519 signature requires an expected public key fingerprint from a trusted source.',
+      );
+    }
     let identity: ReturnType<typeof derivePublicKeyIdentity>;
     try {
       identity = derivePublicKeyIdentity(publicKeyPem);
@@ -466,6 +492,11 @@ function normalizeSignature(
     ) {
       throw new Error(
         'Signed assurance packet ed25519 publicKeyFingerprint must match the verification public key.',
+      );
+    }
+    if (trustedFingerprint !== identity.fingerprint) {
+      throw new Error(
+        'Signed assurance packet ed25519 verification public key must match the expected trusted fingerprint.',
       );
     }
     if (!verifySignature(signingPayloadCanonical, normalized.signature, publicKeyPem)) {
@@ -668,6 +699,7 @@ export function createSignedAssurancePacket(
     signingPayload.digest,
     signingPayload.canonical,
     input.signatureVerificationPublicKeyPem,
+    input.signatureExpectedPublicKeyFingerprint,
   );
   const signatureStatus = signatureStatusFor(signature);
   const boundaryReady = productionSigningBoundaryReady(signature);

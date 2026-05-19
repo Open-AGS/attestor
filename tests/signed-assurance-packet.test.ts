@@ -280,6 +280,7 @@ function testEvaluationSignatureVerifiesButDoesNotBecomeProduction(): void {
     ...input,
     signature,
     signatureVerificationPublicKeyPem: signingKey.publicKeyPem,
+    signatureExpectedPublicKeyFingerprint: signingKey.fingerprint,
   });
 
   equal(packet.signatureStatus, 'signed-evaluation', 'Signed assurance packet: runtime signer is evaluation status');
@@ -311,6 +312,7 @@ function testRuntimeProductionClaimIsDowngraded(): void {
     ...input,
     signature,
     signatureVerificationPublicKeyPem: signingKey.publicKeyPem,
+    signatureExpectedPublicKeyFingerprint: signingKey.fingerprint,
   });
 
   equal(packet.signatureStatus, 'signed-evaluation', 'Signed assurance packet: runtime production claim is downgraded');
@@ -366,6 +368,7 @@ function testReviewDecisionAndUnverifiedHistoryStayBlocked(): void {
     ...input,
     signature,
     signatureVerificationPublicKeyPem: signingKey.publicKeyPem,
+    signatureExpectedPublicKeyFingerprint: signingKey.fingerprint,
   });
 
   equal(packet.packetReady, false, 'Signed assurance packet: unverified history keeps packet not ready');
@@ -441,6 +444,31 @@ function testMismatchedInputsFailClosed(): void {
   rejects(
     () => {
       const input = baseInput();
+      return createSignedAssurancePacket({
+        ...input,
+        signature: evaluationSignature(input),
+        signatureVerificationPublicKeyPem: signingKey.publicKeyPem,
+      });
+    },
+    /expected public key fingerprint from a trusted source/u,
+    'Signed assurance packet: ed25519 signature requires trusted fingerprint evidence',
+  );
+  rejects(
+    () => {
+      const input = baseInput();
+      return createSignedAssurancePacket({
+        ...input,
+        signature: evaluationSignature(input),
+        signatureVerificationPublicKeyPem: signingKey.publicKeyPem,
+        signatureExpectedPublicKeyFingerprint: 'f'.repeat(32),
+      });
+    },
+    /must match the expected trusted fingerprint/u,
+    'Signed assurance packet: caller-supplied public key must match trusted fingerprint',
+  );
+  rejects(
+    () => {
+      const input = baseInput();
       const signature = evaluationSignature(input, {
         signature: '0'.repeat(128),
       });
@@ -448,6 +476,7 @@ function testMismatchedInputsFailClosed(): void {
         ...input,
         signature,
         signatureVerificationPublicKeyPem: signingKey.publicKeyPem,
+        signatureExpectedPublicKeyFingerprint: signingKey.fingerprint,
       });
     },
     /ed25519 signature verification failed/u,

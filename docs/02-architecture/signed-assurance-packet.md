@@ -67,10 +67,12 @@ readiness.
 
 For local `ed25519` packet signatures, the builder requires a verification
 public key, checks that the packet signature verifies over the canonical
-signing payload, and requires the signature's public-key fingerprint to match
-that verification key. External KMS/HSM signatures remain boundary metadata in
-this contract; verifier distribution and production KMS/HSM evidence are not
-claimed here.
+signing payload, requires the signature's public-key fingerprint to match that
+verification key, and also requires a separate expected public-key fingerprint
+from a trusted source. The verification public key is not allowed to be its own
+trust anchor. External KMS/HSM signatures remain boundary metadata in this
+contract; verifier distribution and production KMS/HSM evidence are not claimed
+here.
 
 The packet itself never grants authority:
 

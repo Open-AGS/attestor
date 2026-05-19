@@ -327,6 +327,36 @@ function testDualBreakGlassRequiresTwoApprovers(): void {
 }
 
 function testFailClosedStates(): void {
+  const missingVerification = evaluateDegradedMode({
+    checkedAt: CHECKED_AT,
+    grant: sampleGrant(),
+    request: sampleRequest(),
+  });
+  equal(missingVerification.status, 'fail-closed', 'Degraded mode: missing verification fails closed');
+  equal(missingVerification.outcome, 'deny', 'Degraded mode: missing verification cannot allow through a grant');
+  ok(
+    missingVerification.failureReasons.includes('missing-release-authorization'),
+    'Degraded mode: missing verification denial carries explicit authorization failure',
+  );
+
+  const indeterminateWithoutFailures = evaluateDegradedMode({
+    checkedAt: CHECKED_AT,
+    request: sampleRequest(),
+    verification: sampleVerification({
+      status: 'indeterminate',
+      failureReasons: [],
+    }),
+  });
+  equal(
+    indeterminateWithoutFailures.status,
+    'break-glass-required',
+    'Degraded mode: indeterminate verification without explicit failures does not become normal allow',
+  );
+  ok(
+    indeterminateWithoutFailures.failureReasons.includes('fresh-introspection-required'),
+    'Degraded mode: indeterminate verification derives fresh-introspection requirement',
+  );
+
   const noGrant = evaluateDegradedMode({
     checkedAt: CHECKED_AT,
     request: sampleRequest(),

@@ -737,13 +737,27 @@ function failClosedDecision(input: {
 
 export function evaluateDegradedMode(input: EvaluateDegradedModeInput): DegradedModeDecision {
   const checkedAt = normalizeIsoTimestamp(input.checkedAt, 'checkedAt');
+  if (!input.verification) {
+    const grant = input.grant ?? null;
+    return failClosedDecision({
+      checkedAt,
+      status: 'fail-closed',
+      failures: ['missing-release-authorization'],
+      grant,
+      grantStatus: grant ? degradedModeGrantStatus(grant, checkedAt) : null,
+    });
+  }
+
+  const explicitFailures = input.failureReasons ?? input.verification.failureReasons ?? [];
   const failures = normalizeFailureReasons(
-    input.failureReasons ?? input.verification?.failureReasons ?? [],
+    explicitFailures.length > 0 || input.verification.status === 'valid'
+      ? explicitFailures
+      : ['fresh-introspection-required'],
     'failureReasons',
     true,
   );
 
-  if (failures.length === 0 && input.verification?.status !== 'invalid') {
+  if (failures.length === 0 && input.verification.status === 'valid') {
     return emptyDecision({ ...input, checkedAt });
   }
 

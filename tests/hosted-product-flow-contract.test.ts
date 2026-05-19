@@ -218,6 +218,10 @@ function testDocsReflectContract(): void {
   const contractDoc = readProjectFile('docs', '01-overview', 'hosted-journey-contract.md');
   const customerJourney = readProjectFile('docs', '01-overview', 'hosted-customer-journey.md');
   const packaging = readProjectFile('docs', '01-overview', 'product-packaging.md');
+  const deployment = readProjectFile('docs', '08-deployment', 'deployment.md');
+  const normalizedDeployment = deployment.replace(/\s+/gu, ' ');
+  const edgeContract = readProjectFile('src', 'service', 'http-production-edge-contract.ts');
+  const apiServer = readProjectFile('src', 'service', 'api-server.ts');
 
   ok(contractDoc.includes('This is the canonical customer journey contract'), 'Hosted journey contract: doc states canonical role');
   ok(contractDoc.includes('src/service/hosted-journey-contract.ts'), 'Hosted journey contract: doc links machine-readable descriptor');
@@ -231,6 +235,15 @@ function testDocsReflectContract(): void {
   ok(customerJourney.includes('Hosted journey contract](hosted-journey-contract.md)'), 'Hosted journey contract: hosted journey links contract');
   ok(customerJourney.includes('Hosted account visibility](hosted-account-visibility.md)'), 'Hosted journey contract: hosted journey links account visibility guide');
   ok(packaging.includes('Hosted journey contract](hosted-journey-contract.md)'), 'Hosted journey contract: packaging links contract');
+  ok(normalizedDeployment.includes('header-presence CSRF boundary'), 'Hosted journey contract: deployment doc names header-presence CSRF boundary');
+  ok(normalizedDeployment.includes('not a synchronizer-token or'), 'Hosted journey contract: deployment doc rejects token-binding overclaim');
+  ok(normalizedDeployment.includes('does not validate the header value'), 'Hosted journey contract: deployment doc states CSRF header value is not session-bound');
+  ok(normalizedDeployment.includes('does not install permissive CORS response headers'), 'Hosted journey contract: deployment doc states repo-side CORS boundary');
+  ok(normalizedDeployment.includes('no-go for cookie-authenticated account mutations'), 'Hosted journey contract: deployment doc states permissive CORS no-go');
+  assert.doesNotMatch(edgeContract, /Access-Control-Allow-Origin/iu, 'Hosted journey contract: edge contract does not install permissive CORS allow-origin');
+  passed += 1;
+  assert.doesNotMatch(apiServer, /hono\/cors|cors\(/iu, 'Hosted journey contract: API server does not install Hono CORS middleware');
+  passed += 1;
 }
 
 async function main(): Promise<void> {

@@ -213,6 +213,10 @@ async function main(): Promise<void> {
     equal(signupRes.status, 201, 'Hosted signup: account is created');
     const signupCookie = cookieHeaderFromResponse(signupRes);
     ok(Boolean(signupCookie), 'Hosted signup: account session cookie is issued');
+    const accountMutationHeaders = {
+      Cookie: signupCookie!,
+      'x-attestor-csrf': 'hosted-signup-first-key-flow',
+    } as const;
 
     const signupBody = await readJson(signupRes);
     equal(signupBody.signup, true, 'Hosted signup: response identifies signup flow');
@@ -328,11 +332,25 @@ async function main(): Promise<void> {
     );
     equal(keysBody.defaults.maxActiveKeysPerTenant, 2, 'Hosted API keys: active key limit is visible');
 
-    const issueKeyRes = await fetch(`${baseUrl}/api/v1/account/api-keys`, {
+    const issueKeyWithoutCsrfRes = await fetch(`${baseUrl}/api/v1/account/api-keys`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Cookie: signupCookie!,
+      },
+    });
+    equal(issueKeyWithoutCsrfRes.status, 403, 'Hosted API keys: cookie-authenticated mutation requires CSRF header');
+    const issueKeyWithoutCsrfBody = await readJson(issueKeyWithoutCsrfRes);
+    ok(
+      issueKeyWithoutCsrfBody.reasonCodes.includes('account-session-csrf-required'),
+      'Hosted API keys: CSRF rejection carries explicit reason code',
+    );
+
+    const issueKeyRes = await fetch(`${baseUrl}/api/v1/account/api-keys`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...accountMutationHeaders,
       },
     });
     equal(issueKeyRes.status, 201, 'Hosted API keys: account admin can issue a second key');
@@ -353,7 +371,7 @@ async function main(): Promise<void> {
 
     const revokeInitialKeyRes = await fetch(`${baseUrl}/api/v1/account/api-keys/${initialKeyId}/revoke`, {
       method: 'POST',
-      headers: { Cookie: signupCookie! },
+      headers: accountMutationHeaders,
     });
     equal(revokeInitialKeyRes.status, 200, 'Hosted API keys: account admin can revoke the signup key');
     const revokeInitialKeyBody = await readJson(revokeInitialKeyRes);

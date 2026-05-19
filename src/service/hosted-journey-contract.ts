@@ -230,6 +230,7 @@ export const HOSTED_JOURNEY_ROUTE_CONTRACTS = [
     requiredHeaders: [
       'Content-Type: application/json',
       'Cookie: account session',
+      'x-attestor-csrf',
       'Idempotency-Key',
     ],
     successSignals: [
@@ -253,7 +254,7 @@ export const HOSTED_JOURNEY_ROUTE_CONTRACTS = [
     authBoundary: 'account_session',
     requestContract: 'AccountBillingPortalRequest',
     responseContract: 'AccountBillingPortalResponse',
-    requiredHeaders: ['Cookie: account session'],
+    requiredHeaders: ['Cookie: account session', 'x-attestor-csrf'],
     successSignals: [
       '200 OK',
       'portalSessionId returned',
@@ -330,7 +331,7 @@ export const HOSTED_JOURNEY_ROUTE_CONTRACTS = [
     authBoundary: 'account_session',
     requestContract: 'AccountIssueApiKeyRequest',
     responseContract: 'AccountIssueApiKeyResponse',
-    requiredHeaders: ['Cookie: account session'],
+    requiredHeaders: ['Cookie: account session', 'x-attestor-csrf'],
     successSignals: [
       '201 Created',
       'new key returned with plaintext apiKey once',

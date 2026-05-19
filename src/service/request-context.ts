@@ -12,6 +12,7 @@ import {
 } from './account-session-store.js';
 import type { AccountUserRole } from './account-user-store.js';
 import {
+  ACCOUNT_SESSION_TRANSPORT_HEADER,
   anonymousTenantContext,
   getAccountAccessContextFromHeaders,
   getTenantContextFromHeaders,
@@ -21,6 +22,10 @@ import {
   type TenantContext,
 } from './tenant-isolation.js';
 import { digestSecretForComparison } from './secret-derivation.js';
+
+export const ACCOUNT_SESSION_CSRF_HEADER = 'x-attestor-csrf';
+
+const SAFE_HTTP_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 
 interface RequestSignerPair {
   signer: KeylessSigner;
@@ -127,6 +132,23 @@ export function requireAccountSession(
   if (!access) {
     if (options?.allowApiKey && currentTenant(context).source === 'api_key') return null;
     return context.json({ error: 'Account session required.' }, 401);
+  }
+  const method = context.req.method.toUpperCase();
+  if (
+    !SAFE_HTTP_METHODS.has(method)
+    && access.sessionTransport === 'cookie'
+    && !context.req.header(ACCOUNT_SESSION_CSRF_HEADER)?.trim()
+  ) {
+    return context.json(
+      {
+        error:
+          'CSRF confirmation header required for cookie-authenticated account mutations.',
+        requiredHeader: ACCOUNT_SESSION_CSRF_HEADER,
+        sessionTransportHeader: ACCOUNT_SESSION_TRANSPORT_HEADER,
+        reasonCodes: ['account-session-csrf-required'],
+      },
+      403,
+    );
   }
   if (options?.roles && !options.roles.includes(access.role)) {
     return context.json(

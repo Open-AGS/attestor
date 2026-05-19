@@ -367,6 +367,10 @@ async function main(): Promise<void> {
     equal(signupRes.status, 201, 'Hosted billing: signup creates account');
     const accountAdminCookie = cookieHeaderFromResponse(signupRes);
     ok(Boolean(accountAdminCookie), 'Hosted billing: account admin session cookie issued');
+    const accountMutationHeaders = {
+      Cookie: accountAdminCookie!,
+      'x-attestor-csrf': 'hosted-stripe-billing-convergence',
+    } as const;
     const signupBody = await readJson(signupRes);
     const accountId = signupBody.account.id as string;
     const tenantId = signupBody.account.primaryTenantId as string;
@@ -375,7 +379,7 @@ async function main(): Promise<void> {
     const missingIdempotencyRes = await postJson(
       `${baseUrl}/api/v1/account/billing/checkout`,
       { planId: 'pro' },
-      { Cookie: accountAdminCookie! },
+      accountMutationHeaders,
     );
     equal(missingIdempotencyRes.status, 400, 'Hosted checkout: Idempotency-Key is required');
 
@@ -383,7 +387,7 @@ async function main(): Promise<void> {
       `${baseUrl}/api/v1/account/billing/checkout`,
       { planId: 'developer' },
       {
-        Cookie: accountAdminCookie!,
+        ...accountMutationHeaders,
         'Idempotency-Key': 'billing-invalid-developer',
       },
     );
@@ -393,7 +397,7 @@ async function main(): Promise<void> {
       `${baseUrl}/api/v1/account/billing/checkout`,
       { planId: 'pro' },
       {
-        Cookie: accountAdminCookie!,
+        ...accountMutationHeaders,
         'Idempotency-Key': 'billing-pro-checkout-1',
       },
     );
@@ -410,7 +414,7 @@ async function main(): Promise<void> {
       `${baseUrl}/api/v1/account/billing/checkout`,
       { planId: 'pro' },
       {
-        Cookie: accountAdminCookie!,
+        ...accountMutationHeaders,
         'Idempotency-Key': 'billing-pro-checkout-1',
       },
     );
@@ -429,7 +433,7 @@ async function main(): Promise<void> {
 
     const portalBeforeCustomerRes = await fetch(`${baseUrl}/api/v1/account/billing/portal`, {
       method: 'POST',
-      headers: { Cookie: accountAdminCookie! },
+      headers: accountMutationHeaders,
     });
     equal(portalBeforeCustomerRes.status, 409, 'Hosted portal: Stripe customer is required before portal creation');
 
@@ -531,7 +535,10 @@ async function main(): Promise<void> {
 
     const suspendedPortalRes = await fetch(`${baseUrl}/api/v1/account/billing/portal`, {
       method: 'POST',
-      headers: { Cookie: suspendedCookie! },
+      headers: {
+        Cookie: suspendedCookie!,
+        'x-attestor-csrf': 'hosted-stripe-billing-suspended',
+      },
     });
     equal(suspendedPortalRes.status, 200, 'Hosted portal: suspended account can still open billing portal');
     const suspendedPortalBody = await readJson(suspendedPortalRes);

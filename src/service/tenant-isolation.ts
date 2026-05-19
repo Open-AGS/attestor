@@ -50,6 +50,7 @@ export interface AccountAccessContext {
   accountUserId: string;
   role: AccountUserRole;
   sessionId: string;
+  sessionTransport: 'cookie' | 'header';
   source: 'account_session';
 }
 
@@ -57,6 +58,7 @@ export const ANONYMOUS_TENANT_ID = '__attestor_anonymous__';
 export const LEGACY_ANONYMOUS_TENANT_ID = 'default';
 export const TENANT_CONTEXT_VERIFIED_HEADER = 'x-attestor-tenant-context-verified';
 export const TENANT_CONTEXT_VERIFIED_VALUE = 'true';
+export const ACCOUNT_SESSION_TRANSPORT_HEADER = 'x-attestor-account-session-transport';
 
 /** Tenant registry: maps hashed API keys to tenants. */
 export const TENANT_ENV_KEY_CACHE_DEFAULT_TTL_MS = 30_000;
@@ -84,6 +86,7 @@ const TENANT_CONTEXT_HEADER_NAMES = Object.freeze([
   'x-attestor-account-user-id',
   'x-attestor-account-role',
   'x-attestor-account-session-id',
+  ACCOUNT_SESSION_TRANSPORT_HEADER,
 ] as const);
 
 function tenantKeyEnvCacheTtlMs(): number {
@@ -345,6 +348,7 @@ export function tenantMiddleware() {
       c.req.raw.headers.set('x-attestor-account-user-id', session.accountUserId);
       c.req.raw.headers.set('x-attestor-account-role', session.role);
       c.req.raw.headers.set('x-attestor-account-session-id', session.sessionId);
+      c.req.raw.headers.set(ACCOUNT_SESSION_TRANSPORT_HEADER, session.sessionTransport);
     }
     markTenantContextVerified(c.req.raw.headers);
 
@@ -400,12 +404,15 @@ export function getAccountAccessContextFromHeaders(headers: Headers): AccountAcc
   const accountUserId = headers.get('x-attestor-account-user-id');
   const role = headers.get('x-attestor-account-role') as AccountUserRole | null;
   const sessionId = headers.get('x-attestor-account-session-id');
+  const sessionTransport = headers.get(ACCOUNT_SESSION_TRANSPORT_HEADER);
   if (!accountId || !accountUserId || !role || !sessionId) return null;
+  if (sessionTransport !== 'cookie' && sessionTransport !== 'header') return null;
   return {
     accountId,
     accountUserId,
     role,
     sessionId,
+    sessionTransport,
     source: 'account_session',
   };
 }
@@ -417,11 +424,13 @@ async function resolveAccountSessionContext(c: Context): Promise<{
   accountUserId: string;
   role: AccountUserRole;
   sessionId: string;
+  sessionTransport: 'cookie' | 'header';
 } | null> {
-  const sessionToken = getCookie(c, process.env.ATTESTOR_SESSION_COOKIE_NAME?.trim() || 'attestor_session')
-    ?? c.req.header('x-attestor-session')
-    ?? null;
-  if (!sessionToken) return null;
+  const cookieSessionToken = getCookie(c, process.env.ATTESTOR_SESSION_COOKIE_NAME?.trim() || 'attestor_session') ?? null;
+  const headerSessionToken = c.req.header('x-attestor-session') ?? null;
+  const sessionToken = cookieSessionToken ?? headerSessionToken;
+  const sessionTransport = cookieSessionToken ? 'cookie' : headerSessionToken ? 'header' : null;
+  if (!sessionToken || !sessionTransport) return null;
 
   const session = await findAccountSessionByTokenState(sessionToken, { touch: true });
   if (!session) return null;
@@ -477,5 +486,6 @@ async function resolveAccountSessionContext(c: Context): Promise<{
     accountUserId: user.id,
     role: user.role,
     sessionId: session.id,
+    sessionTransport,
   };
 }

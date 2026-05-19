@@ -148,11 +148,16 @@ function testAuthAndBillingBoundaries(): void {
   const firstCall = HOSTED_JOURNEY_ROUTE_CONTRACTS.find((route) => route.key === 'first_consequence_call');
   const billingExport = HOSTED_JOURNEY_ROUTE_CONTRACTS.find((route) => route.key === 'billing_export');
   const billingReconciliation = HOSTED_JOURNEY_ROUTE_CONTRACTS.find((route) => route.key === 'billing_reconciliation');
+  const billingPortal = HOSTED_JOURNEY_ROUTE_CONTRACTS.find((route) => route.key === 'billing_portal');
+  const issueApiKey = HOSTED_JOURNEY_ROUTE_CONTRACTS.find((route) => route.key === 'issue_api_key');
 
   equal(signup?.authBoundary, 'none', 'Hosted journey contract: signup starts without auth');
   equal(firstCall?.authBoundary, 'tenant_api_key', 'Hosted journey contract: first consequence call uses tenant API key');
   equal(checkout?.authBoundary, 'account_session', 'Hosted journey contract: checkout uses account session');
   ok(checkout?.requiredHeaders.includes('Idempotency-Key'), 'Hosted journey contract: checkout requires Idempotency-Key');
+  ok(checkout?.requiredHeaders.includes('x-attestor-csrf'), 'Hosted journey contract: checkout requires CSRF confirmation for cookie sessions');
+  ok(billingPortal?.requiredHeaders.includes('x-attestor-csrf'), 'Hosted journey contract: billing portal requires CSRF confirmation for cookie sessions');
+  ok(issueApiKey?.requiredHeaders.includes('x-attestor-csrf'), 'Hosted journey contract: API key issuance requires CSRF confirmation for cookie sessions');
   equal(billingExport?.authBoundary, 'account_session_or_tenant_api_key', 'Hosted journey contract: billing export can be read from account plane or tenant API key');
   equal(billingReconciliation?.authBoundary, 'account_session', 'Hosted journey contract: billing reconciliation stays account-session bound');
   equal(webhook?.authBoundary, 'stripe_signature', 'Hosted journey contract: webhook uses Stripe signature');

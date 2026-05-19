@@ -73,6 +73,20 @@ docker run \
   attestor node dist/service/worker.js
 ```
 
+## Hosted Account Session CSRF Boundary
+
+Hosted account sessions can be carried either by the `attestor_session` cookie or
+by the explicit `x-attestor-session` header. Cookie-authenticated state-changing
+account requests (`POST`, `PUT`, `PATCH`, `DELETE`) must also send
+`x-attestor-csrf`. The header is an explicit same-origin/API-client signal; it
+does not grant authority and does not replace account-session authorization.
+The pattern follows OWASP CSRF guidance for custom request headers on AJAX/API
+endpoints, while treating SameSite cookies as defense-in-depth.
+
+This boundary is repo-side service hardening only. It is not a claim that a
+customer deployment has a complete browser application, CORS policy, WAF, or
+external identity fabric.
+
 ## Environment Variables
 
 | Variable | Required | Default | Description |

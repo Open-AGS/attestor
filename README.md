@@ -183,9 +183,7 @@ shadow events
   -> outcome feedback and drift checks
 ```
 
-Policy Foundry is the onboarding layer for this loop. It mines observed actions
-into policy candidates. It does not train models, write policy automatically,
-or prove production readiness.
+Policy Foundry is the onboarding layer for this loop. It mines observed actions into policy candidates. It does not train models, write policy automatically, or prove production readiness.
 
 It identifies policy candidates, generates a red-team fixture bundle and local replay reports through the local adversarial replay executor, can attach live downstream replay evidence when configured, prepares review handoff material, keeps promotion approval-required, and records reviewed outcome feedback plus drift/policy-debt findings.
 

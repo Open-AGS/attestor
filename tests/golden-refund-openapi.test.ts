@@ -257,8 +257,8 @@ function testDocsAndScriptsRecordG02(): void {
   };
 
   for (const expected of [
-    'Status: G02 action-surface enrichment packet',
-    'Progress after G02 lands: 2/7 complete. 5 steps remain.',
+    'Status: G03 refund shadow fixture builder',
+    'Progress after G03 lands: 3/7 complete. 4 steps remain.',
     '| G02 | complete | Refund OpenAPI enrichment |',
     'G02 adds the prior refund signal',
   ]) {

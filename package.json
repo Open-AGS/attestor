@@ -94,6 +94,7 @@
     "test:consequence-runtime-assurance-overview": "tsx tests/consequence-runtime-assurance-overview.test.ts",
     "test:golden-refund-shadow-pilot": "tsx tests/golden-refund-shadow-pilot.test.ts",
     "test:golden-refund-openapi": "tsx tests/golden-refund-openapi.test.ts",
+    "test:golden-refund-shadow-fixtures": "tsx tests/golden-refund-shadow-fixtures.test.ts",
     "test:consequence-envelope-contract": "tsx tests/consequence-envelope-contract.test.ts",
     "test:signal-relationship-contract": "tsx tests/signal-relationship-contract.test.ts",
     "test:layer-opinion-schema": "tsx tests/layer-opinion-schema.test.ts",

@@ -4,6 +4,29 @@ Use this when you want the shortest local run before reading the deeper architec
 
 ```bash
 npm install
+npm run demo:golden-refund
+```
+
+The demo renders the current Golden Path: Refund as Markdown by default. It
+uses synthetic, digest-only refund fixtures and shows how one AI-proposed refund
+action class can pass through:
+
+```text
+refund action surface -> canonical shadow events -> runtime assurance smoke -> Policy Foundry summary -> pilot readiness packet
+```
+
+It does not execute a refund, call Stripe or Shopify, activate policy, write an
+audit-plane record, train a model, or claim production readiness.
+
+To see the machine-readable form, run:
+
+```bash
+npm run demo:golden-refund -- --json
+```
+
+To see the smaller admission primitive behind that path, run:
+
+```bash
 npm run example:admission
 ```
 

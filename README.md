@@ -27,6 +27,8 @@ The trust boundary is the action, not the model response. Attestor does not repl
 
 Attestor is an **evaluation release**: reviewer-runnable, CI-backed, and useful for technical evaluation. It demonstrates the AI Action Control Plane model, consequence-admission proof artifacts, consequence packs, programmable-money extension surfaces, hosted account and billing surfaces, and current fail-closed boundaries.
 
+The clearest repo-side path today is [Golden Path: Refund](docs/02-architecture/golden-refund-shadow-pilot.md): a synthetic, shadow-only refund scenario that runs through action-surface material, canonical shadow fixtures, runtime assurance smoke, Policy Foundry summary, pilot readiness, and a local demo output. It does not execute refunds or claim production readiness.
+
 It is not a finished public SaaS, a production-use guarantee, a completed customer-operated deployment, or a substitute for an external security audit.
 
 Start review with:
@@ -67,6 +69,8 @@ observe -> recommend -> simulate -> approve -> enforce -> prove
 
 Shadow mode discovers the real action surface first: which high-risk AI actions exist, which actions have no policy, which downstream tools have too much authority, and which consequences would have been blocked before execution.
 
+The completed local example of this adoption shape is [Golden Path: Refund](docs/02-architecture/golden-refund-shadow-pilot.md). It is not a refund product or separate engine; it is one concrete scenario path through the same Attestor consequence engine.
+
 Policy Foundry is the onboarding layer for this adoption path. It mines observed actions into policy candidates. It does not train models, write policy automatically, or prove production readiness.
 
 It identifies policy candidates, generates a red-team fixture bundle and local replay reports through the local adversarial replay executor, can attach live downstream replay evidence when configured, prepares review handoff material, keeps promotion approval-required, and records reviewed outcome feedback plus drift/policy-debt findings.
@@ -99,29 +103,29 @@ This is AI action control-plane infrastructure: not a chatbot feature, not a pro
 
 ```bash
 npm install
-npm run example:admission
-npm run example:action-surface-onboarding
-npm run policy-foundry:self-onboard -- --openapi=examples/action-surface-onboarding/refund.openapi.json --default-domain=money-movement --downstream-system=refund-service --credential-posture=agent-held-static-secret
+npm run demo:golden-refund
+npm run demo:golden-refund -- --json
 ```
 
 You will see:
 
-- one proposed consequence admitted with proof references
-- one proposed consequence blocked fail-closed
-- a customer-side gate that only proceeds when Attestor allows it
-- a non-bypassable gateway demo where a payment adapter cannot dispatch without verifier allow
-- an agent retry wrapper demo where model-safe feedback becomes one bounded correction attempt
-- an action-surface onboarding packet rendered from a safe OpenAPI example without deploying anything
-- a Policy Foundry self-onboarding packet with session, coverage, blockers, gate plan, handoff, red-team fixtures, failure-mode gaps, and review-only patch drafts
+- a synthetic AI refund action surface
+- digest-only canonical shadow fixtures
+- runtime assurance smoke over the refund scenarios
+- Policy Foundry summary material with named gaps
+- a pilot readiness packet that can only report shadow-pilot readiness or not-ready for this path
+- Markdown-first demo output, with JSON available for machines
+- explicit no-claims: no live Stripe or Shopify refund, no customer deployment, no policy activation, no auto-enforcement
 
 For a guided first run, see [Try Attestor first](docs/01-overview/try-attestor-first.md).
 
 ## What You Can Run Today
 
-Use the first four commands when evaluating the repo:
+Use the first command when evaluating the current end-to-end repo path, then inspect the lower-level demos:
 
 ```bash
-npm run example:admission                         # First useful admission demo
+npm run demo:golden-refund                        # Golden Path: Refund shadow-only path
+npm run example:admission                         # Basic admission decision demo
 npm run example:customer-gate                     # Customer-side enforcement demo
 npm run example:non-bypassable-gateway           # Verifier-before-dispatch demo
 npm run example:agent-retry-wrapper              # Bounded correction retry demo
@@ -316,15 +320,15 @@ Attestor is not:
 
 Use this as a map, not a wall of links. Start with the small set below; the expandable index is for maintainers changing the contract surface.
 
-**Evaluate the repo.** Run this path first if you want to know what is real today: [Attestor Evaluation Packet v0.1](docs/00-evaluation/v0.1-evaluation-packet.md), [v0.1.2 evaluation release notes](docs/00-evaluation/v0.1.2-evaluation-release-notes.md), [Try Attestor first](docs/01-overview/try-attestor-first.md), [Consequence admission quickstart](docs/01-overview/consequence-admission-quickstart.md), [Customer admission gate](docs/01-overview/customer-admission-gate.md), [Non-bypassable gateway demo](docs/01-overview/non-bypassable-gateway-demo.md), [Agent retry wrapper demo](docs/01-overview/agent-retry-wrapper-demo.md), [Proof model](docs/05-proof/proof-model.md), [Signing and verification](docs/06-signing/signing-verification.md).
+**Evaluate the repo.** Run this path first if you want to know what is real today: [Golden Path: Refund](docs/02-architecture/golden-refund-shadow-pilot.md), [Attestor Evaluation Packet v0.1](docs/00-evaluation/v0.1-evaluation-packet.md), [v0.1.2 evaluation release notes](docs/00-evaluation/v0.1.2-evaluation-release-notes.md), [Try Attestor first](docs/01-overview/try-attestor-first.md), [Consequence admission quickstart](docs/01-overview/consequence-admission-quickstart.md), [Customer admission gate](docs/01-overview/customer-admission-gate.md), [Non-bypassable gateway demo](docs/01-overview/non-bypassable-gateway-demo.md), [Agent retry wrapper demo](docs/01-overview/agent-retry-wrapper-demo.md), [Proof model](docs/05-proof/proof-model.md), [Signing and verification](docs/06-signing/signing-verification.md).
 
 **Place it in a customer system.** These docs answer where the control point sits and how an evaluator should think about rollout: [What you can do with Attestor](docs/01-overview/what-you-can-do.md), [Attestor operating model](docs/01-overview/operating-model.md), [Customer integration recipes](docs/01-overview/customer-integration-recipes.md), [Hosted action authorization API](docs/01-overview/hosted-action-authorization-api.md), [First hosted API call](docs/01-overview/hosted-first-api-call.md), [Finance and crypto first integrations](docs/01-overview/finance-and-crypto-first-integrations.md), [Commercial packaging, pricing, and evaluation](docs/01-overview/product-packaging.md), [Pricing ROI calculator](docs/01-overview/pricing-roi-calculator.md), [Hosted customer journey](docs/01-overview/hosted-customer-journey.md), [Hosted account visibility](docs/01-overview/hosted-account-visibility.md).
 
 **Change the core carefully.** Read these before changing public language, package boundaries, or admission semantics: [Attestor internal machine map](docs/02-architecture/attestor-internal-machine-map.md), [AI Action Control Plane architecture](docs/02-architecture/ai-action-control-plane-architecture.md), [Attestor language contract](docs/02-architecture/attestor-language-contract.md), [Consequence taxonomy](docs/02-architecture/consequence-taxonomy.md), [Domain pack boundary](docs/02-architecture/domain-pack-boundary.md), [Downstream enforcement contract](docs/02-architecture/downstream-enforcement-contract.md), [Verifier helper](docs/02-architecture/verifier-helper.md), [Adapter framework](docs/02-architecture/adapter-framework.md).
 
-**Plan the next trust unlocks.** Use the [Attestor unlock source of truth](docs/02-architecture/attestor-unlock-source-of-truth.md) before opening broad production, signer, customer PEP, shared-store, or LLM-provider work. For the next provider runtime slice, use the [LLM provider runtime decision](docs/02-architecture/llm-provider-runtime-decision.md). These docs record the current repo truth, the 12-step unlock order, and the non-claims that must stay intact.
+**Plan trust unlocks without reopening frozen work.** Use the [Attestor unlock source of truth](docs/02-architecture/attestor-unlock-source-of-truth.md), [Unified Shadow-to-Policy Master Plan](docs/02-architecture/unified-shadow-to-policy-master-plan.md), [Consequence Runtime Assurance Overview](docs/02-architecture/consequence-runtime-assurance-overview.md), and [Runtime Activation Decision Packet](docs/02-architecture/runtime-activation-decision-packet.md) before opening broad production, signer, customer PEP, shared-store, LLM-provider, runtime-wiring, or customer pilot work. These docs record repo truth and the non-claims that must stay intact.
 
-**Onboard a new action surface.** This is the Policy Foundry path from API/manifests to review material: [Action surface manifest intake](docs/02-architecture/action-surface-manifest-intake.md), [Action surface declaration ingestors](docs/02-architecture/action-surface-declaration-ingestors.md), [Action surface graph](docs/02-architecture/action-surface-graph.md), [Evidence state model](docs/02-architecture/evidence-state-model.md), [Policy Candidate PR contract](docs/02-architecture/policy-candidate-pr-contract.md), [Active Question Engine](docs/02-architecture/active-question-engine.md), [Counterexample replay generator](docs/02-architecture/counterexample-replay-generator.md), [Policy Twin backtest](docs/02-architecture/policy-twin-backtest.md), [Review-by-exception inbox](docs/02-architecture/review-by-exception-inbox.md), [Approval/dismiss feedback loop](docs/02-architecture/approval-dismiss-feedback-loop.md), [Enterprise integration recipes](docs/02-architecture/enterprise-integration-recipes.md), [General Crypto Transaction Gate](docs/02-architecture/general-crypto-transaction-gate.md), [Domain consequence recipes](docs/02-architecture/domain-consequence-recipes.md), [Pilot readiness packet](docs/02-architecture/pilot-readiness-packet.md), [Action surface profiler](docs/02-architecture/action-surface-profiler.md), [Action surface integration artifacts](docs/02-architecture/action-surface-integration-artifacts.md), [Action surface onboarding packet](docs/02-architecture/action-surface-onboarding-packet.md), [Policy Foundry onboarding](docs/02-architecture/policy-foundry-onboarding.md), [Policy Foundry failure gap map](docs/02-architecture/policy-foundry-failure-gap-map.md), [Integration mode readiness](docs/02-architecture/integration-mode-readiness.md).
+**Onboard a new action surface.** Start from the concrete [Golden Path: Refund](docs/02-architecture/golden-refund-shadow-pilot.md), then use the Policy Foundry path from API/manifests to review material: [Action surface manifest intake](docs/02-architecture/action-surface-manifest-intake.md), [Action surface declaration ingestors](docs/02-architecture/action-surface-declaration-ingestors.md), [Action surface graph](docs/02-architecture/action-surface-graph.md), [Evidence state model](docs/02-architecture/evidence-state-model.md), [Policy Candidate PR contract](docs/02-architecture/policy-candidate-pr-contract.md), [Active Question Engine](docs/02-architecture/active-question-engine.md), [Counterexample replay generator](docs/02-architecture/counterexample-replay-generator.md), [Policy Twin backtest](docs/02-architecture/policy-twin-backtest.md), [Review-by-exception inbox](docs/02-architecture/review-by-exception-inbox.md), [Approval/dismiss feedback loop](docs/02-architecture/approval-dismiss-feedback-loop.md), [Enterprise integration recipes](docs/02-architecture/enterprise-integration-recipes.md), [General Crypto Transaction Gate](docs/02-architecture/general-crypto-transaction-gate.md), [Domain consequence recipes](docs/02-architecture/domain-consequence-recipes.md), [Pilot readiness packet](docs/02-architecture/pilot-readiness-packet.md), [Action surface profiler](docs/02-architecture/action-surface-profiler.md), [Action surface integration artifacts](docs/02-architecture/action-surface-integration-artifacts.md), [Action surface onboarding packet](docs/02-architecture/action-surface-onboarding-packet.md), [Policy Foundry onboarding](docs/02-architecture/policy-foundry-onboarding.md), [Policy Foundry failure gap map](docs/02-architecture/policy-foundry-failure-gap-map.md), [Integration mode readiness](docs/02-architecture/integration-mode-readiness.md).
 
 <details>
 <summary>Maintainer reference index</summary>

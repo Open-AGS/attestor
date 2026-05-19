@@ -1,6 +1,6 @@
 # System Overview
 
-Architecture of Attestor as of May 1, 2026.
+Architecture of Attestor as of May 19, 2026.
 
 This document is the short architectural truth source. The README gives the product view; the trackers and platform-surface docs give the detailed implementation view.
 
@@ -55,6 +55,8 @@ The general crypto decision contract lives in [General Crypto Transaction Gate](
 The domain placement catalog lives in [Domain consequence recipes](domain-consequence-recipes.md). Use it when spend, procurement, data/AI, IAM, health, clinical decision-support, claim, or policy-administration surfaces need a concrete pre-side-effect Attestor gate without claiming native connector coverage, records-system ownership, workflow-workspace ownership, clinical authority, insurance-system ownership, customer deployment, or production readiness.
 
 The customer-pilot packaging boundary lives in [Pilot readiness packet](pilot-readiness-packet.md). Use it when a source-backed domain recipe needs to become a digest-only shadow-entry or scoped-enforcement-entry pilot packet without claiming live customer pilot execution, native connector coverage, customer deployment, compliance certification, or production readiness.
+
+The first concrete repo-side path through these pieces is [Golden Path: Refund](golden-refund-shadow-pilot.md). Use it when you need a runnable, synthetic, shadow-only scenario that carries a refund action surface through canonical shadow fixtures, runtime assurance smoke, Policy Foundry summary, and a pilot readiness packet without executing refunds, activating policy, or claiming production readiness.
 
 The append-only proof trail lives in [Tamper-evident history](tamper-evident-history.md). Use it when digest-first evidence needs a linear history root that can detect modified, deleted, or reordered entries before a reviewer trusts an export.
 
@@ -242,9 +244,12 @@ So the honest architectural statement is:
 
 ## Current Work Posture
 
-Active priority:
+Current posture:
 
-- follow the [Attestor unlock source of truth](attestor-unlock-source-of-truth.md) for the next signer, customer PEP, consequence shared-store, LLM provider, and production rehearsal decisions
+- use [Golden Path: Refund](golden-refund-shadow-pilot.md) as the first runnable repo-side scenario before widening demos or customer-pilot claims
+- keep future golden paths as scenario paths through the same consequence engine, not new products, engines, or domain identities
+
+- use the [Attestor unlock source of truth](attestor-unlock-source-of-truth.md) as completed trust-unlock history before reopening signer, customer PEP, consequence shared-store, LLM provider, or production rehearsal decisions
 - use the [target-system compatibility matrix](target-system-compatibility-matrix.md) before adding enterprise or crypto recipes so target integrations stay one-engine adapters instead of vendor-specific products
 - use the [shadow event canonical schema](shadow-event-canonical-schema.md) before building the action surface graph so observed target facts and inferred classifications do not collapse into one ambiguous event shape
 - use the [action surface graph](action-surface-graph.md) before the [evidence state model](evidence-state-model.md) so tenant-bound systems, tools, resources, route coverage, missing proof links, and observed/inferred/missing/conflicting/stale/untrusted/approved/enforceable states are explicit before candidate generation

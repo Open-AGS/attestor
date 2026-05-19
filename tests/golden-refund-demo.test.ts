@@ -120,6 +120,9 @@ function testPackageScriptRunsMarkdownAndJson(): void {
 }
 
 function testDocsAndScriptsStayAligned(): void {
+  const readme = readProjectFile('README.md');
+  const tryFirst = readProjectFile('docs', '01-overview', 'try-attestor-first.md');
+  const systemOverview = readProjectFile('docs', '02-architecture', 'system-overview.md');
   const doc = readProjectFile('docs', '02-architecture', 'golden-refund-shadow-pilot.md');
   const ledger = readProjectFile('docs', 'research', 'attestor-research-provenance-ledger.md');
   const packageJson = JSON.parse(readProjectFile('package.json')) as {
@@ -141,6 +144,28 @@ function testDocsAndScriptsStayAligned(): void {
     ledger,
     'G07 demo CLI',
     'G07 ledger: records demo CLI',
+  );
+  for (const expected of [
+    '[Golden Path: Refund](docs/02-architecture/golden-refund-shadow-pilot.md)',
+    'npm run demo:golden-refund',
+    'no live Stripe or Shopify refund',
+    'no customer deployment',
+    'no policy activation',
+    'no auto-enforcement',
+  ]) {
+    includes(readme, expected, `G07 README: records ${expected}`);
+  }
+  for (const expected of [
+    'npm run demo:golden-refund',
+    'refund action surface -> canonical shadow events -> runtime assurance smoke -> Policy Foundry summary -> pilot readiness packet',
+    'It does not execute a refund',
+  ]) {
+    includes(tryFirst, expected, `G07 try-first doc: records ${expected}`);
+  }
+  includes(
+    systemOverview,
+    '[Golden Path: Refund](golden-refund-shadow-pilot.md)',
+    'G07 system overview: links the golden refund path',
   );
   equal(
     packageJson.scripts['demo:golden-refund'],

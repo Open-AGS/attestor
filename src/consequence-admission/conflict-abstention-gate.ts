@@ -31,6 +31,7 @@ export const CONFLICT_ABSTENTION_GATE_REASON_CODES = [
   'hard-floor-preserved',
   'fusion-block-pressure',
   'fusion-review-pressure',
+  'fusion-watch-pressure',
   'conflict-pressure-high',
   'contradiction-relationship',
   'conflict-opinion',
@@ -251,6 +252,10 @@ export function conflictAbstentionGateDescriptor():
 export function evaluateConflictAbstentionGate(
   input: ConflictAbstentionGateInput,
 ): ConflictAbstentionGateResult {
+  const hasNoReviewedInputs =
+    input.opinions.length === 0 &&
+    input.relationships.length === 0 &&
+    input.modulators.length === 0;
   const contradictionCount = input.relationships.filter(
     (relationship) => relationship.kind === 'contradicts',
   ).length;
@@ -299,10 +304,11 @@ export function evaluateConflictAbstentionGate(
       ),
   );
   const coverageGapScore = clamp01(
-    input.modulators.reduce(
-      (total, modulator) => total + coverageModulatorPressure(modulator),
-      0,
-    ) +
+    (hasNoReviewedInputs ? 1 : 0) +
+      input.modulators.reduce(
+        (total, modulator) => total + coverageModulatorPressure(modulator),
+        0,
+      ) +
       input.opinions.filter((opinion) =>
         opinion.abstention.reasons.some((reason) =>
           reason === 'insufficient-coverage' ||
@@ -313,6 +319,9 @@ export function evaluateConflictAbstentionGate(
   );
 
   const reasonCodes: ConflictAbstentionGateReasonCode[] = ['no-admit-authority'];
+  const fusionWatchRequiresReview =
+    input.fusion.posture === 'watch' &&
+    input.fusion.reasonCodes.length > 0;
   if (input.fusion.reasonCodes.includes('hard-floor-preserved')) {
     reasonCodes.push('hard-floor-preserved');
   }
@@ -327,6 +336,12 @@ export function evaluateConflictAbstentionGate(
     input.fusion.reviewPressure >= CONFLICT_ABSTENTION_GATE_THRESHOLDS.fusionReviewPressure
   ) {
     reasonCodes.push('fusion-review-pressure');
+  }
+  if (fusionWatchRequiresReview) {
+    reasonCodes.push('fusion-watch-pressure');
+  }
+  if (hasNoReviewedInputs) {
+    reasonCodes.push('insufficient-coverage');
   }
   if (conflictScore >= CONFLICT_ABSTENTION_GATE_THRESHOLDS.conflictReview) {
     reasonCodes.push('conflict-pressure-high');
@@ -353,6 +368,9 @@ export function evaluateConflictAbstentionGate(
   const reviewPressure = clamp01(
     Math.max(
       input.fusion.reviewPressure,
+      fusionWatchRequiresReview
+        ? CONFLICT_ABSTENTION_GATE_THRESHOLDS.conflictReview
+        : 0,
       conflictScore,
       abstentionScore,
       uncertaintyScore,
@@ -370,20 +388,23 @@ export function evaluateConflictAbstentionGate(
     ),
   );
 
-  const outcome = blockPressure >= CONFLICT_ABSTENTION_GATE_THRESHOLDS.fusionBlockPressure ||
+  const outcome = hasNoReviewedInputs
+    ? 'abstain-hold'
+    : blockPressure >= CONFLICT_ABSTENTION_GATE_THRESHOLDS.fusionBlockPressure ||
     conflictScore >= CONFLICT_ABSTENTION_GATE_THRESHOLDS.conflictBlockPressure
-    ? 'block-pressure'
-    : abstentionScore >= CONFLICT_ABSTENTION_GATE_THRESHOLDS.abstentionHold ||
+      ? 'block-pressure'
+      : abstentionScore >= CONFLICT_ABSTENTION_GATE_THRESHOLDS.abstentionHold ||
         coverageGapScore >= 0.5 && uncertaintyScore >= 0.35
-      ? 'abstain-hold'
-      : conflictScore >= CONFLICT_ABSTENTION_GATE_THRESHOLDS.conflictReview ||
+        ? 'abstain-hold'
+        : conflictScore >= CONFLICT_ABSTENTION_GATE_THRESHOLDS.conflictReview ||
           abstentionScore >= CONFLICT_ABSTENTION_GATE_THRESHOLDS.abstentionReview ||
           uncertaintyScore >= CONFLICT_ABSTENTION_GATE_THRESHOLDS.uncertaintyReview ||
           coverageGapScore >= CONFLICT_ABSTENTION_GATE_THRESHOLDS.coverageReview ||
+          fusionWatchRequiresReview ||
           input.fusion.posture === 'review' ||
           input.fusion.reviewPressure >= CONFLICT_ABSTENTION_GATE_THRESHOLDS.fusionReviewPressure
-        ? 'review'
-        : 'continue';
+          ? 'review'
+          : 'continue';
 
   return {
     version: CONFLICT_ABSTENTION_GATE_VERSION,

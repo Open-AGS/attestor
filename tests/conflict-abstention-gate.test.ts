@@ -181,6 +181,15 @@ function gateFor(input: {
   });
 }
 
+function emptyFusion() {
+  return fuseRelationshipAwareMonotoneHazard({
+    envelopeRefDigest: digestA,
+    opinions: [],
+    relationships: [],
+    modulators: [],
+  });
+}
+
 function assertOutcome(
   actual: ConflictAbstentionGateOutcome,
   expected: ConflictAbstentionGateOutcome,
@@ -364,6 +373,42 @@ function testClearSignalsContinueWithoutAdmissionAuthority(): void {
   ok(result.reasonCodes.includes('no-admit-authority'), 'Conflict gate: no-admit reason is retained');
 }
 
+function testEmptyInputsFailClosedToAbstainHold(): void {
+  const result = evaluateConflictAbstentionGate({
+    envelopeRefDigest: digestA,
+    fusion: emptyFusion(),
+    opinions: [],
+    relationships: [],
+    modulators: [],
+  });
+
+  assertOutcome(result.outcome, 'abstain-hold', 'Conflict gate: empty reviewed inputs fail closed');
+  equal(result.reviewedInputs.opinionCount, 0, 'Conflict gate: empty input records zero opinions');
+  equal(result.reviewedInputs.relationshipCount, 0, 'Conflict gate: empty input records zero relationships');
+  equal(result.reviewedInputs.modulatorCount, 0, 'Conflict gate: empty input records zero modulators');
+  ok(result.coverageGapScore >= 1, 'Conflict gate: empty input marks full coverage gap');
+  ok(result.reasonCodes.includes('insufficient-coverage'), 'Conflict gate: empty input records insufficient coverage');
+  equal(result.canAdmit, false, 'Conflict gate: empty input cannot admit');
+}
+
+function testFusionWatchPostureEscalatesToReview(): void {
+  const watch = opinion({
+    id: 'opinion-watch',
+    position: 'hazard-indicated',
+    hazardScore: 0.1,
+    uncertainty: 0.02,
+    evidenceQuality: 'strong',
+    novelty: 'known',
+    contextFit: 'high',
+  });
+
+  const result = gateFor({ opinions: [watch] });
+
+  equal(result.outcome, 'review', 'Conflict gate: fusion watch posture is visible to reviewers');
+  ok(result.reasonCodes.includes('fusion-watch-pressure'), 'Conflict gate: fusion watch reason is retained');
+  equal(result.canAdmit, false, 'Conflict gate: fusion watch cannot admit');
+}
+
 function testFusionBlockPressureIsPreserved(): void {
   const hard = opinion({
     id: 'opinion-hard-floor',
@@ -445,6 +490,8 @@ testContradictionAndConflictEscalateToBlockPressure();
 testAbstentionAndLowCoverageHold();
 testHighUncertaintyReviewsButNeverAdmits();
 testClearSignalsContinueWithoutAdmissionAuthority();
+testEmptyInputsFailClosedToAbstainHold();
+testFusionWatchPostureEscalatesToReview();
 testFusionBlockPressureIsPreserved();
 testDocsOverviewAndPackageScriptStayAligned();
 

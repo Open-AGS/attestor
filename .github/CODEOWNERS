@@ -1,0 +1,25 @@
+# Attestor trust-sensitive surfaces.
+#
+# This repository-side owner map requests explicit review for governance,
+# provenance, security, and consequence-admission changes. Branch protection
+# decides whether CODEOWNER review is enforced.
+
+/.github/CODEOWNERS @AI-gateway-systems
+/.github/pull_request_template.md @AI-gateway-systems
+/.github/workflows/pr-contract.yml @AI-gateway-systems
+/.github/workflows/security-scan.yml @AI-gateway-systems
+/.github/workflows/release-provenance.yml @AI-gateway-systems
+/scripts/validate-pr-contract.mjs @AI-gateway-systems
+
+/LICENSE @AI-gateway-systems
+/SECURITY.md @AI-gateway-systems
+/README.md @AI-gateway-systems
+/NOTICE @AI-gateway-systems
+
+/src/consequence-admission/ @AI-gateway-systems
+/src/service/ @AI-gateway-systems
+/tests/ @AI-gateway-systems
+/docs/00-evaluation/ @AI-gateway-systems
+/docs/01-overview/ @AI-gateway-systems
+/docs/02-architecture/ @AI-gateway-systems
+/docs/audit/ @AI-gateway-systems

@@ -55,6 +55,40 @@ function lineForField(body, field) {
   return match?.[1]?.trim() ?? null;
 }
 
+function stripMarkdownFencedCodeBlocks(body) {
+  const normalizedBody = body.replace(/^\uFEFF/u, '');
+  const lines = normalizedBody.split(/\r?\n/u);
+  const kept = [];
+  let inFence = false;
+  let fenceMarker = null;
+
+  for (const line of lines) {
+    const trimmed = line.trimStart();
+    const fenceMatch = trimmed.match(/^(```+|~~~+)/u);
+    if (fenceMatch) {
+      const marker = fenceMatch[1]?.startsWith('`') ? '`' : '~';
+      if (!inFence) {
+        inFence = true;
+        fenceMarker = marker;
+        continue;
+      }
+      if (marker === fenceMarker) {
+        inFence = false;
+        fenceMarker = null;
+        continue;
+      }
+    }
+    if (!inFence) kept.push(line);
+  }
+
+  return kept.join('\n');
+}
+
+function hasRequiredSection(body, section) {
+  const escaped = section.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
+  return new RegExp(`^${escaped}\\s*$`, 'mu').test(body);
+}
+
 function hasCheckedDecision(body, label) {
   const escaped = label.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
   return new RegExp(`^- \\[[xX]\\] ${escaped}$`, 'imu').test(body);
@@ -88,18 +122,21 @@ export function validatePrContract(body, options = {}) {
     };
   }
 
-  const missingSections = REQUIRED_SECTIONS.filter((section) => !body.includes(section));
+  const contractBody = stripMarkdownFencedCodeBlocks(body);
+  const missingSections = REQUIRED_SECTIONS.filter((section) =>
+    !hasRequiredSection(contractBody, section)
+  );
   const emptyFields = REQUIRED_NON_EMPTY_FIELDS.filter((field) => {
-    const value = lineForField(body, field);
+    const value = lineForField(contractBody, field);
     return value === null || value.length === 0;
   });
 
-  const evidenceState = lineForField(body, 'Evidence state:');
+  const evidenceState = lineForField(contractBody, 'Evidence state:');
   const invalidEvidenceState = evidenceState && !ALLOWED_EVIDENCE_STATES.includes(evidenceState)
     ? evidenceState
     : null;
 
-  const mergeClassificationCount = checkedCount(body, [
+  const mergeClassificationCount = checkedCount(contractBody, [
     'safe small change',
     'trust-sensitive change',
     'contract-only',
@@ -107,12 +144,12 @@ export function validatePrContract(body, options = {}) {
     'docs/readiness claim change',
     'blocked / do not merge yet',
   ]);
-  const finalDecisionCount = checkedCount(body, [
+  const finalDecisionCount = checkedCount(contractBody, [
     'OK to merge',
     'Do not merge yet',
   ]);
 
-  const dependencyReviewMissing = hasDependencySurfaceRisk(body)
+  const dependencyReviewMissing = hasDependencySurfaceRisk(contractBody)
     ? [
         'Release notes / changelog / advisory checked:',
         'Lockfile / manifest diff checked:',

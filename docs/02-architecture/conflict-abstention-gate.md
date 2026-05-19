@@ -47,6 +47,8 @@ contradictory relationships -> conflict pressure
 abstention with missing/degraded evidence -> abstain-hold capable
 high uncertainty -> review
 low or unknown coverage -> review
+no reviewed inputs -> abstain-hold
+fusion watch posture -> review-visible pressure, never silent continue
 fusion block pressure -> preserved
 ```
 

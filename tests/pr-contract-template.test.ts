@@ -110,11 +110,56 @@ function testValidatorStillRejectsAutomationBodyFromHumanAuthor(): void {
   ok(result.missingSections.includes('## Attestor PR Contract'), 'PR contract remains required for human PRs');
 }
 
+function testValidatorRejectsContractSmuggledInsideCodeFence(): void {
+  const completed = completeTemplate(readProjectFile('.github', 'pull_request_template.md'));
+  const body = [
+    'This PR intentionally omits the real Attestor PR Contract.',
+    '',
+    '```markdown',
+    completed,
+    '```',
+  ].join('\n');
+  const result = validatePrContract(body);
+
+  equal(result.ok, false, 'PR contract validator rejects contract sections inside fenced code');
+  ok(
+    result.missingSections.includes('## Attestor PR Contract'),
+    'PR contract validator ignores fenced Attestor contract heading',
+  );
+}
+
+function testValidatorAcceptsLeadingUtf8Bom(): void {
+  const completed = completeTemplate(readProjectFile('.github', 'pull_request_template.md'));
+  const result = validatePrContract(`\uFEFF${completed}`);
+
+  equal(result.ok, true, 'PR contract validator accepts a leading UTF-8 BOM before the real heading');
+}
+
+function testValidatorRequiresAnchoredContractHeadings(): void {
+  const completed = completeTemplate(readProjectFile('.github', 'pull_request_template.md'))
+    .replace('## Attestor PR Contract', 'Intro text ## Attestor PR Contract')
+    .replace('### Status', '> ### Status');
+  const result = validatePrContract(completed);
+
+  equal(result.ok, false, 'PR contract validator rejects substring or quoted headings');
+  ok(
+    result.missingSections.includes('## Attestor PR Contract'),
+    'PR contract validator requires the contract heading on its own line',
+  );
+  ok(
+    result.missingSections.includes('### Status'),
+    'PR contract validator requires section headings on their own line',
+  );
+}
+
 testTemplateContainsRequiredContract();
 testValidatorRejectsBlankTemplate();
 testValidatorAcceptsCompletedTemplate();
 testValidatorRejectsInvalidEvidenceState();
 testValidatorAcceptsDependabotAutomationBody();
 testValidatorStillRejectsAutomationBodyFromHumanAuthor();
+testValidatorRejectsContractSmuggledInsideCodeFence();
+testValidatorAcceptsLeadingUtf8Bom();
+testValidatorRequiresAnchoredContractHeadings();
 
 console.log(`PR contract template tests: ${passed} passed, 0 failed`);

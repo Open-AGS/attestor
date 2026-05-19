@@ -96,6 +96,7 @@
     "test:golden-refund-openapi": "tsx tests/golden-refund-openapi.test.ts",
     "test:golden-refund-shadow-fixtures": "tsx tests/golden-refund-shadow-fixtures.test.ts",
     "test:golden-refund-policy-foundry-projection": "tsx tests/golden-refund-policy-foundry-projection.test.ts",
+    "test:golden-refund-runtime-smoke": "tsx tests/golden-refund-runtime-smoke.test.ts",
     "test:consequence-envelope-contract": "tsx tests/consequence-envelope-contract.test.ts",
     "test:signal-relationship-contract": "tsx tests/signal-relationship-contract.test.ts",
     "test:layer-opinion-schema": "tsx tests/layer-opinion-schema.test.ts",

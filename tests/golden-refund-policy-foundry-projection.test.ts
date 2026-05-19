@@ -148,8 +148,8 @@ function testDescriptorDocsAndScriptsStayAligned(): void {
   equal(descriptor.productionReady, false, 'G04 descriptor: production readiness is false');
 
   for (const expected of [
-    'Status: G04 Policy Foundry refund projection',
-    'Progress after G04 lands: 4/7 complete. 3 steps remain.',
+    'Status: G05 runtime smoke',
+    'Progress after G05 lands: 5/7 complete. 2 steps remain.',
     '| G04 | complete | Policy Foundry refund projection |',
     'review-only candidate',
     'named evidence/authority/relationship gaps',

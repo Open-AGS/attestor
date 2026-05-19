@@ -2321,6 +2321,7 @@ export * from './shadow-runtime-outcome-feedback-hook.js';
 export * from './shadow-runtime-fixture-replay-smoke.js';
 export * from './golden-refund-shadow-fixtures.js';
 export * from './golden-refund-policy-foundry-projection.js';
+export * from './golden-refund-runtime-smoke.js';
 export * from './decision-trace-logger.js';
 export * from './baseline-cohort-contract.js';
 export * from './candidate-invariants-catalog.js';

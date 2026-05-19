@@ -169,8 +169,8 @@ function testDescriptorAndDocsStayAligned(): void {
   ok(descriptor.nonClaims.includes('not-live-refund-execution'), 'G03 descriptor: live refund execution is a non-claim');
 
   for (const expected of [
-    'Status: G04 Policy Foundry refund projection',
-    'Progress after G04 lands: 4/7 complete. 3 steps remain.',
+    'Status: G05 runtime smoke',
+    'Progress after G05 lands: 5/7 complete. 2 steps remain.',
     '| G03 | complete | Refund shadow fixture builder |',
     'normal, missing-evidence, stale-evidence, repeated-refund, and approval-required',
   ]) {

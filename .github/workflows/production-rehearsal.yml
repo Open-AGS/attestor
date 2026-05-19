@@ -49,7 +49,7 @@ jobs:
           cache: npm
 
       - name: Install
-        run: npm ci
+        run: npm ci --ignore-scripts --no-audit --no-fund
 
       - name: Rehearsal docs guard
         run: |
@@ -154,7 +154,7 @@ jobs:
           cache: npm
 
       - name: Install
-        run: npm ci
+        run: npm ci --ignore-scripts --no-audit --no-fund
 
       - name: Download release provenance artifacts
         env:

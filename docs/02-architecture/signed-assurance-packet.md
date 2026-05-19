@@ -24,6 +24,7 @@ The package exports:
 SignedAssurancePacket
 SignedAssurancePacketSigningPayload
 signedAssurancePacketDescriptor()
+createSignedAssurancePacketHistoryBinding()
 createSignedAssurancePacketSigningPayload()
 createSignedAssurancePacket()
 ```
@@ -89,7 +90,11 @@ productionReady = false
 ```
 
 `packetReady` only means the packet is signed and the referenced
-tamper-evident history verification says it is verified. It does not mean the
+tamper-evident history verification evidence says it is verified. A caller
+cannot make a packet ready by setting `historyBinding.verified = true` alone:
+the builder requires a matching `ConsequenceTamperEvidentHistoryVerification`
+object and checks the root digest, last-entry digest, entry count, and
+verification digest before accepting the binding. It does not mean the
 consequence can execute.
 
 ## Primary Source Anchors

@@ -27,7 +27,7 @@ jobs:
           cache: npm
 
       - name: Install
-        run: npm ci
+        run: npm ci --ignore-scripts --no-audit --no-fund
 
       - name: Render proof surface
         run: npm run proof:surface

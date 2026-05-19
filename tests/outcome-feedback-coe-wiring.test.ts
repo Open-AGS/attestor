@@ -14,6 +14,7 @@ import {
   createOutcomeFeedbackCoeWiring,
   createOutcomeIncidentFeedbackContract,
   createSignedAssurancePacket,
+  createSignedAssurancePacketHistoryBinding,
   createSignedAssurancePacketSigningPayload,
   evaluateHumanComprehensionGate,
   outcomeFeedbackCoeWiringDescriptor,
@@ -164,6 +165,19 @@ function conflictGate(): ConflictAbstentionGateResult {
 }
 
 function readyPacket(): SignedAssurancePacket {
+  const historyVerification = Object.freeze({
+    version: CONSEQUENCE_TAMPER_EVIDENT_HISTORY_VERSION,
+    historyId: 'history:outcome-coe',
+    valid: true,
+    failClosed: false,
+    verifiedEntryCount: 1,
+    rootDigest: digestC,
+    firstEntryDigest: digestC,
+    lastEntryDigest: digestD,
+    failureReasons: [],
+    reasonCodes: ['tamper-history-verified'],
+    rawPayloadStored: false,
+  });
   const humanComprehensionGate = evaluateHumanComprehensionGate({
     envelopeRefDigest: digestA,
     conflictGate: conflictGate(),
@@ -190,14 +204,8 @@ function readyPacket(): SignedAssurancePacket {
       decisionSourceDigest: digestB,
       reasonCodes: ['fixture'],
     },
-    historyBinding: {
-      version: CONSEQUENCE_TAMPER_EVIDENT_HISTORY_VERSION,
-      rootDigest: digestC,
-      lastEntryDigest: digestD,
-      verificationDigest: digestE,
-      entryCount: 1,
-      verified: true,
-    },
+    historyBinding: createSignedAssurancePacketHistoryBinding(historyVerification),
+    historyVerification,
     humanComprehensionGate,
     policyRefDigests: [digestF],
     evidenceRefDigests: [digestG],

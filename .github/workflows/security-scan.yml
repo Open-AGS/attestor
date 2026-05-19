@@ -47,7 +47,7 @@ jobs:
           cache: npm
 
       - name: Install
-        run: npm ci
+        run: npm ci --ignore-scripts --no-audit --no-fund
 
       - name: Audit high and critical vulnerabilities
         run: npm run security:audit-high

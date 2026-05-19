@@ -7,6 +7,7 @@ import {
   HUMAN_COMPREHENSION_GATE_VERSION,
   SIGNED_ASSURANCE_PACKET_SIGNING_PAYLOAD_VERSION,
   SIGNED_ASSURANCE_PACKET_VERSION,
+  createSignedAssurancePacketHistoryBinding,
   createSignedAssurancePacket,
   createSignedAssurancePacketSigningPayload,
   evaluateHumanComprehensionGate,
@@ -57,6 +58,22 @@ const digest1 = `sha256:${'1'.repeat(64)}`;
 const digest2 = `sha256:${'2'.repeat(64)}`;
 const digest3 = `sha256:${'3'.repeat(64)}`;
 const signingKey = generateKeyPair();
+
+function verifiedHistory(entryCount = 4) {
+  return Object.freeze({
+    version: CONSEQUENCE_TAMPER_EVIDENT_HISTORY_VERSION,
+    historyId: 'history:packet-test',
+    valid: true,
+    failClosed: false,
+    verifiedEntryCount: entryCount,
+    rootDigest: digestC,
+    firstEntryDigest: digestB,
+    lastEntryDigest: digestD,
+    failureReasons: [],
+    reasonCodes: ['tamper-history-verified'],
+    rawPayloadStored: false,
+  });
+}
 
 function conflictGate(
   outcome: ConflictAbstentionGateResult['outcome'],
@@ -152,6 +169,7 @@ function reviewHumanGate() {
 function baseInput(
   overrides: Partial<CreateSignedAssurancePacketInput> = {},
 ): CreateSignedAssurancePacketInput {
+  const historyVerification = verifiedHistory();
   return {
     envelopeRefDigest: digestA,
     decisionBinding: {
@@ -159,14 +177,8 @@ function baseInput(
       decisionSourceDigest: digestB,
       reasonCodes: ['conflict-gate-block'],
     },
-    historyBinding: {
-      version: CONSEQUENCE_TAMPER_EVIDENT_HISTORY_VERSION,
-      rootDigest: digestC,
-      lastEntryDigest: digestD,
-      verificationDigest: digestE,
-      entryCount: 4,
-      verified: true,
-    },
+    historyBinding: createSignedAssurancePacketHistoryBinding(historyVerification),
+    historyVerification,
     humanComprehensionGate: compactHumanGate(),
     policyRefDigests: [digestF, digestF],
     evidenceRefDigests: [digest1],
@@ -384,6 +396,25 @@ function testMismatchedInputsFailClosed(): void {
     /payloadDigest must match/u,
     'Signed assurance packet: signature payload digest mismatch fails closed',
   );
+  rejects(
+    () => createSignedAssurancePacket({
+      ...baseInput(),
+      historyVerification: null,
+    }),
+    /verified historyBinding requires tamper-evident history verification evidence/u,
+    'Signed assurance packet: verified history binding requires verification evidence',
+  );
+  rejects(
+    () => createSignedAssurancePacket({
+      ...baseInput(),
+      historyBinding: {
+        ...createSignedAssurancePacketHistoryBinding(verifiedHistory()),
+        verificationDigest: digestE,
+      },
+    }),
+    /verificationDigest must match/u,
+    'Signed assurance packet: verified history binding rejects mismatched verification digest',
+  );
 }
 
 function testDocsAndPackageScriptStayAligned(): void {
@@ -400,6 +431,7 @@ function testDocsAndPackageScriptStayAligned(): void {
   for (const expected of [
     '# Signed Assurance Packet',
     'attestor.signed-assurance-packet.v1',
+    'createSignedAssurancePacketHistoryBinding()',
     'digest-only references',
     'externalImmutabilityClaimed = false',
     'production signing readiness',

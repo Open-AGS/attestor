@@ -9,6 +9,7 @@ import {
   SIGNED_ASSURANCE_PACKET_VERSION,
   createOutcomeIncidentFeedbackContract,
   createSignedAssurancePacket,
+  createSignedAssurancePacketHistoryBinding,
   createSignedAssurancePacketSigningPayload,
   evaluateHumanComprehensionGate,
   outcomeIncidentFeedbackContractDescriptor,
@@ -119,6 +120,19 @@ function compactHumanGate() {
 }
 
 function signedPacketInput(): CreateSignedAssurancePacketInput {
+  const historyVerification = Object.freeze({
+    version: CONSEQUENCE_TAMPER_EVIDENT_HISTORY_VERSION,
+    historyId: 'history:outcome-incident',
+    valid: true,
+    failClosed: false,
+    verifiedEntryCount: 3,
+    rootDigest: digestC,
+    firstEntryDigest: digestC,
+    lastEntryDigest: digestD,
+    failureReasons: [],
+    reasonCodes: ['tamper-history-verified'],
+    rawPayloadStored: false,
+  });
   return {
     envelopeRefDigest: digestA,
     decisionBinding: {
@@ -126,14 +140,8 @@ function signedPacketInput(): CreateSignedAssurancePacketInput {
       decisionSourceDigest: digestB,
       reasonCodes: ['block-decision'],
     },
-    historyBinding: {
-      version: CONSEQUENCE_TAMPER_EVIDENT_HISTORY_VERSION,
-      rootDigest: digestC,
-      lastEntryDigest: digestD,
-      verificationDigest: digestE,
-      entryCount: 3,
-      verified: true,
-    },
+    historyBinding: createSignedAssurancePacketHistoryBinding(historyVerification),
+    historyVerification,
     humanComprehensionGate: compactHumanGate(),
     policyRefDigests: [digestF],
     evidenceRefDigests: [digest1],

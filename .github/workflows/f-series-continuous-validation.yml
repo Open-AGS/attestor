@@ -41,7 +41,7 @@ jobs:
           cache: npm
 
       - name: Install
-        run: npm ci
+        run: npm ci --ignore-scripts --no-audit --no-fund
 
       - name: F-series regression and red-team replay
         run: npm run audit:f-series-continuous-validation

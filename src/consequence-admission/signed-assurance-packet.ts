@@ -9,6 +9,7 @@ import {
 } from './human-comprehension-gate.js';
 import {
   CONSEQUENCE_TAMPER_EVIDENT_HISTORY_VERSION,
+  type ConsequenceTamperEvidentHistoryVerification,
 } from './tamper-evident-history.js';
 
 export const SIGNED_ASSURANCE_PACKET_VERSION =
@@ -118,6 +119,8 @@ export interface CreateSignedAssurancePacketInput {
   readonly envelopeRefDigest: string;
   readonly decisionBinding: SignedAssurancePacketDecisionBinding;
   readonly historyBinding: SignedAssurancePacketHistoryBinding;
+  readonly historyVerification?:
+    ConsequenceTamperEvidentHistoryVerification | null;
   readonly humanComprehensionGate: HumanComprehensionGateResult;
   readonly policyRefDigests: readonly string[];
   readonly evidenceRefDigests: readonly string[];
@@ -280,13 +283,14 @@ function normalizeDecisionBinding(
 
 function normalizeHistoryBinding(
   input: SignedAssurancePacketHistoryBinding,
+  verification?: ConsequenceTamperEvidentHistoryVerification | null,
 ): SignedAssurancePacketHistoryBinding {
   if (input.version !== CONSEQUENCE_TAMPER_EVIDENT_HISTORY_VERSION) {
     throw new Error(
       'Signed assurance packet historyBinding version must match the tamper-evident history version.',
     );
   }
-  return Object.freeze({
+  const normalized = Object.freeze({
     version: CONSEQUENCE_TAMPER_EVIDENT_HISTORY_VERSION,
     rootDigest: normalizeDigest(input.rootDigest, 'historyBinding.rootDigest'),
     lastEntryDigest: normalizeDigest(
@@ -303,6 +307,39 @@ function normalizeHistoryBinding(
     ),
     verified: input.verified === true,
   });
+  if (normalized.verified) {
+    if (verification === undefined || verification === null) {
+      throw new Error(
+        'Signed assurance packet verified historyBinding requires tamper-evident history verification evidence.',
+      );
+    }
+    if (verification.version !== CONSEQUENCE_TAMPER_EVIDENT_HISTORY_VERSION) {
+      throw new Error(
+        'Signed assurance packet historyVerification version must match the tamper-evident history version.',
+      );
+    }
+    if (!verification.valid) {
+      throw new Error(
+        'Signed assurance packet verified historyBinding requires valid tamper-evident history verification.',
+      );
+    }
+    if (
+      verification.rootDigest !== normalized.rootDigest ||
+      verification.lastEntryDigest !== normalized.lastEntryDigest ||
+      verification.verifiedEntryCount !== normalized.entryCount
+    ) {
+      throw new Error(
+        'Signed assurance packet historyBinding must match tamper-evident history verification evidence.',
+      );
+    }
+    const expectedVerificationDigest = historyVerificationDigest(verification);
+    if (normalized.verificationDigest !== expectedVerificationDigest) {
+      throw new Error(
+        'Signed assurance packet historyBinding verificationDigest must match tamper-evident history verification evidence.',
+      );
+    }
+  }
+  return normalized;
 }
 
 function humanGateBinding(
@@ -485,6 +522,43 @@ export function signedAssurancePacketDescriptor():
   });
 }
 
+function historyVerificationDigest(
+  verification: ConsequenceTamperEvidentHistoryVerification,
+): string {
+  return hashCanonical(verification as unknown as CanonicalReleaseJsonValue);
+}
+
+export function createSignedAssurancePacketHistoryBinding(
+  verification: ConsequenceTamperEvidentHistoryVerification,
+): SignedAssurancePacketHistoryBinding {
+  if (verification.version !== CONSEQUENCE_TAMPER_EVIDENT_HISTORY_VERSION) {
+    throw new Error(
+      'Signed assurance packet history verification version must match the tamper-evident history version.',
+    );
+  }
+  if (!verification.valid) {
+    throw new Error(
+      'Signed assurance packet history binding requires valid tamper-evident history verification.',
+    );
+  }
+  if (
+    verification.rootDigest === null ||
+    verification.lastEntryDigest === null
+  ) {
+    throw new Error(
+      'Signed assurance packet history binding requires non-empty tamper-evident history root and last-entry digests.',
+    );
+  }
+  return Object.freeze({
+    version: CONSEQUENCE_TAMPER_EVIDENT_HISTORY_VERSION,
+    rootDigest: verification.rootDigest,
+    lastEntryDigest: verification.lastEntryDigest,
+    verificationDigest: historyVerificationDigest(verification),
+    entryCount: verification.verifiedEntryCount,
+    verified: true,
+  });
+}
+
 export function createSignedAssurancePacketSigningPayload(
   input: CreateSignedAssurancePacketInput,
 ): SignedAssurancePacketSigningPayload {
@@ -498,7 +572,10 @@ export function createSignedAssurancePacketSigningPayload(
     );
   }
   const decisionBinding = normalizeDecisionBinding(input.decisionBinding);
-  const historyBinding = normalizeHistoryBinding(input.historyBinding);
+  const historyBinding = normalizeHistoryBinding(
+    input.historyBinding,
+    input.historyVerification,
+  );
   const humanBinding = humanGateBinding(input.humanComprehensionGate);
   const payload = {
     version: SIGNED_ASSURANCE_PACKET_SIGNING_PAYLOAD_VERSION,
@@ -540,7 +617,10 @@ export function createSignedAssurancePacket(
   const signatureStatus = signatureStatusFor(signature);
   const boundaryReady = productionSigningBoundaryReady(signature);
   const decisionBinding = normalizeDecisionBinding(input.decisionBinding);
-  const historyBinding = normalizeHistoryBinding(input.historyBinding);
+  const historyBinding = normalizeHistoryBinding(
+    input.historyBinding,
+    input.historyVerification,
+  );
   const humanBinding = humanGateBinding(input.humanComprehensionGate);
   const blockers = remainingActivationBlockers({
     signature,

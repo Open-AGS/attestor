@@ -30,7 +30,7 @@ function testDecisionPacketFreezesScope(): void {
 
   for (const expected of [
     '# Golden Path: Refund',
-    'Status: G01 decision packet',
+    'Status: G02 action-surface enrichment packet',
     'Golden Path: Refund is the first concrete path.',
     'refund action surface',
     'synthetic canonical shadow events',
@@ -93,9 +93,9 @@ function testTrackerAndG06G07Boundaries(): void {
   );
 
   for (const expected of [
-    'Progress after G01 lands: 1/7 complete. 6 steps remain.',
+    'Progress after G02 lands: 2/7 complete. 5 steps remain.',
     '| G01 | complete | Golden Path decision packet |',
-    '| G02 | planned | Refund OpenAPI enrichment |',
+    '| G02 | complete | Refund OpenAPI enrichment |',
     '| G03 | planned | Refund shadow fixture builder |',
     '| G04 | planned | Policy Foundry refund projection |',
     '| G05 | planned | Runtime smoke |',

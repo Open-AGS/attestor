@@ -1,6 +1,6 @@
 # Golden Path: Refund
 
-Status: G01 decision packet for the first concrete golden path after the
+Status: G02 action-surface enrichment packet for the first concrete golden path after the
 completed Shadow-to-Policy, Consequence Runtime Assurance, and Runtime
 Activation repository-side tracks. This is a planning and evidence-shaping
 artifact. It is not runtime code, not live connector coverage, not Google Cloud
@@ -43,7 +43,7 @@ surface; it does not get independent authority.
 
 | Area | Evidence | State |
 |---|---|---|
-| Refund surface | `examples/action-surface-onboarding/refund.openapi.json` defines a refund action surface with `POST /refunds` and approval route material. | repo-proven |
+| Refund surface | `examples/action-surface-onboarding/refund.openapi.json` defines a refund action surface with `POST /refunds`, approval route material, refund reason, refund method, digest-bound evidence refs, and a prior refund signal. | repo-proven |
 | Manifest intake | `src/consequence-admission/action-surface-manifest-intake.ts` accepts OpenAPI manifests as action-surface intake material. | repo-proven |
 | Shadow replay | `src/consequence-admission/shadow-runtime-fixture-replay-smoke.ts` replays synthetic fixtures through the R02-R07 shadow runtime activation chain without target-system calls. | repo-proven |
 | Foundry summary | `src/consequence-admission/policy-foundry-policy-twin-summary.ts` summarizes candidate, evidence, replay, and review material without activating policy. | repo-proven |
@@ -73,12 +73,12 @@ Policy and audit material stay schema-bound and replayable. Source anchors:
 
 ## G-Series Tracker
 
-Progress after G01 lands: 1/7 complete. 6 steps remain.
+Progress after G02 lands: 2/7 complete. 5 steps remain.
 
 | Step | Status | Slice | Evidence target |
 |---|---|---|---|
 | G01 | complete | Golden Path decision packet | This document, package script, and architecture links. |
-| G02 | planned | Refund OpenAPI enrichment | Extend the refund surface with refund reason, payment/order evidence refs, refund method, approval refs, and a prior refund signal. |
+| G02 | complete | Refund OpenAPI enrichment | The refund surface includes refund reason, payment/order evidence refs, refund method, approval refs, and a prior refund signal. |
 | G03 | planned | Refund shadow fixture builder | Synthetic digest-only canonical shadow events for normal, missing-evidence, stale-evidence, repeated-refund, and approval-required paths. |
 | G04 | planned | Policy Foundry refund projection | Policy twin summary over refund fixtures with named gaps, review-only candidates, and backtest material. |
 | G05 | planned | Runtime smoke | Run the existing shadow runtime activation path over the refund fixtures end to end without target-system calls. |
@@ -87,9 +87,9 @@ Progress after G01 lands: 1/7 complete. 6 steps remain.
 
 ## Why G02 Matters
 
-The prior refund signal is the bridge from this golden path into the existing
-runtime assurance work. A repeated refund can create `confirms` or `escalates`
-relationship material. Contradictory payment evidence can create an
+G02 adds the prior refund signal as the bridge from this golden path into the
+existing runtime assurance work. A repeated refund can create `confirms` or
+`escalates` relationship material. Contradictory payment evidence can create an
 `undermining defeater`. This connects the refund path to the W-series and
 I-series contracts without inventing a separate refund engine.
 

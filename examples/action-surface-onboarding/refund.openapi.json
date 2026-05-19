@@ -2,7 +2,25 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Refund Action Surface Example",
-    "version": "1.0.0"
+    "version": "1.1.0",
+    "description": "Synthetic refund action surface for Attestor Golden Path: Refund. This is review-only onboarding material, not a live refund connector."
+  },
+  "x-attestor-golden-path": {
+    "name": "Golden Path: Refund",
+    "step": "G02",
+    "shadowOnly": true,
+    "rawPayloadStored": false,
+    "autoEnforce": false,
+    "productionReady": false,
+    "requiredEvidenceRefs": [
+      "orderEvidenceRefDigest",
+      "paymentEvidenceRefDigest",
+      "customerAuthorityRefDigest",
+      "policyCandidateRefDigest"
+    ],
+    "relationshipSignals": [
+      "priorRefundSignal"
+    ]
   },
   "paths": {
     "/refunds": {
@@ -10,29 +28,104 @@
         "operationId": "issueRefund",
         "tags": ["refunds"],
         "summary": "Issue a customer refund after policy, authority, and evidence review.",
+        "description": "Synthetic shadow-only refund action. Inputs are reference and digest fields so Attestor can reason about evidence without storing raw order, payment, customer, or tenant payloads.",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["orderId", "amount"],
+                "additionalProperties": false,
+                "required": [
+                  "orderRefDigest",
+                  "requestedAmount",
+                  "refundReason",
+                  "refundMethod",
+                  "orderEvidenceRefDigest",
+                  "paymentEvidenceRefDigest",
+                  "customerAuthorityRefDigest",
+                  "policyCandidateRefDigest",
+                  "priorRefundSignal"
+                ],
                 "properties": {
-                  "orderId": {
-                    "type": "string"
+                  "orderRefDigest": {
+                    "type": "string",
+                    "pattern": "^sha256:[a-f0-9]{64}$",
+                    "description": "Digest-bound order reference. Do not send raw order payloads."
                   },
-                  "amount": {
+                  "requestedAmount": {
                     "type": "object",
                     "required": ["value", "currency"],
+                    "additionalProperties": false,
                     "properties": {
                       "value": {
-                        "type": "number"
+                        "type": "number",
+                        "minimum": 0
                       },
                       "currency": {
                         "type": "string",
                         "enum": ["USD", "EUR"]
                       }
                     }
+                  },
+                  "refundReason": {
+                    "type": "string",
+                    "enum": [
+                      "duplicate",
+                      "fraudulent",
+                      "requested_by_customer",
+                      "service_failure",
+                      "policy_exception"
+                    ],
+                    "description": "Reason vocabulary includes Stripe-style refund reasons plus review-only business categories."
+                  },
+                  "refundMethod": {
+                    "type": "string",
+                    "enum": [
+                      "original_payment_method",
+                      "store_credit",
+                      "manual_review_only"
+                    ],
+                    "description": "Requested refund method. manual_review_only cannot execute a refund."
+                  },
+                  "orderEvidenceRefDigest": {
+                    "type": "string",
+                    "pattern": "^sha256:[a-f0-9]{64}$"
+                  },
+                  "paymentEvidenceRefDigest": {
+                    "type": "string",
+                    "pattern": "^sha256:[a-f0-9]{64}$"
+                  },
+                  "customerAuthorityRefDigest": {
+                    "type": "string",
+                    "pattern": "^sha256:[a-f0-9]{64}$"
+                  },
+                  "policyCandidateRefDigest": {
+                    "type": "string",
+                    "pattern": "^sha256:[a-f0-9]{64}$"
+                  },
+                  "priorRefundSignal": {
+                    "type": "object",
+                    "required": [
+                      "hasPriorRefundWithinWindow",
+                      "priorRefundCountClass",
+                      "priorRefundEvidenceRefDigest"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "hasPriorRefundWithinWindow": {
+                        "type": "boolean"
+                      },
+                      "priorRefundCountClass": {
+                        "type": "string",
+                        "enum": ["none", "single", "multiple", "unknown"]
+                      },
+                      "priorRefundEvidenceRefDigest": {
+                        "type": "string",
+                        "pattern": "^sha256:[a-f0-9]{64}$"
+                      }
+                    },
+                    "description": "Relationship input for confirms/escalates material. It is an evidence reference, not a raw event history."
                   }
                 }
               }
@@ -51,6 +144,7 @@
         "operationId": "approveRefund",
         "tags": ["refunds"],
         "summary": "Approve a queued refund after human review.",
+        "description": "Human approval route for the synthetic refund surface. Approval records review evidence only; this example does not execute refunds.",
         "parameters": [
           {
             "name": "refundId",
@@ -61,6 +155,50 @@
             }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "reviewerRefDigest",
+                  "approvalRefDigest",
+                  "reviewPacketRefDigest",
+                  "evidenceReviewedDigest",
+                  "decision"
+                ],
+                "properties": {
+                  "reviewerRefDigest": {
+                    "type": "string",
+                    "pattern": "^sha256:[a-f0-9]{64}$"
+                  },
+                  "approvalRefDigest": {
+                    "type": "string",
+                    "pattern": "^sha256:[a-f0-9]{64}$"
+                  },
+                  "reviewPacketRefDigest": {
+                    "type": "string",
+                    "pattern": "^sha256:[a-f0-9]{64}$"
+                  },
+                  "evidenceReviewedDigest": {
+                    "type": "string",
+                    "pattern": "^sha256:[a-f0-9]{64}$"
+                  },
+                  "decision": {
+                    "type": "string",
+                    "enum": ["approve_for_shadow_pilot", "request_more_evidence", "reject"]
+                  },
+                  "approvalReason": {
+                    "type": "string",
+                    "maxLength": 280
+                  }
+                }
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Refund approval recorded."

@@ -74,6 +74,10 @@ function testMarkdownAndJsonRenderers(): void {
   for (const expected of [
     '# Golden Path: Refund',
     'Verdict: ready-for-shadow-pilot',
+    '## Business Contrast',
+    'Without Attestor in this repo path:',
+    'With Attestor in this repo path:',
+    '0 target-system calls',
     'refund_service.issue_refund',
     'missing-payment-evidence',
     'stale-payment-evidence',
@@ -158,6 +162,8 @@ function testDocsAndScriptsStayAligned(): void {
     '## Golden Path: Refund',
     'is the first end-to-end repo path a reviewer should run',
     'refund action surface -> canonical shadow fixtures -> runtime assurance smoke -> Policy Foundry summary -> pilot readiness packet -> Engine Visibility -> optional reviewer sandbox -> demo output',
+    'Without Attestor in this repo path: no gate trace, no issue-code/no-claim boundary, no digest-bound shadow readiness evidence.',
+    'With Attestor in this repo path:    8 scenarios, 7 visible gate stages, named Foundry gaps, 0 target-system calls, shadow-pilot readiness verdict.',
     '[Golden Path: Refund](docs/02-architecture/golden-refund-shadow-pilot.md)',
     'npm ci',
     'npm run demo:golden-refund',
@@ -174,6 +180,7 @@ function testDocsAndScriptsStayAligned(): void {
     'refund action surface -> canonical shadow events -> runtime assurance smoke -> Policy Foundry summary -> pilot readiness packet',
     'Engine Visibility',
     'It does not execute a refund',
+    'Business contrast',
   ]) {
     includes(tryFirst, expected, `G07 try-first doc: records ${expected}`);
   }

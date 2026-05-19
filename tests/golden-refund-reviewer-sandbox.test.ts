@@ -147,7 +147,11 @@ function testRenderersAndCli(): void {
   for (const expected of [
     '# Golden Path: Refund Reviewer Sandbox',
     'Status: accepted',
+    '## Practical Contrast',
+    'Without Attestor for this local input:',
+    'With Attestor for this local input:',
     'engine ran: true',
+    'visible gate stages: 7',
     'external-fraud-signal-high',
     'target-system calls: 0',
     'production ready: false',

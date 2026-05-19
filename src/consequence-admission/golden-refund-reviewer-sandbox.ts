@@ -747,6 +747,23 @@ export function renderGoldenRefundReviewerSandboxMarkdown(
 
 Status: ${result.inputStatus}
 
+## Practical Contrast
+
+Without Attestor for this local input:
+
+- no Attestor issue-code report
+- no explicit no-claim boundary
+- no decision-relevant digest from this engine
+
+With Attestor for this local input:
+
+- result status: ${result.inputStatus}
+- engine ran: ${result.engineRan}
+- visible gate stages: ${result.gateOrder.length}
+- issue codes: ${result.issueCodes.length}
+- target-system calls: ${result.safetyBoundary.noTargetSystemCall ? '0' : 'present'}
+- decision digest: ${decision?.decisionRelevantDigest ?? 'none'}
+
 ## Input Boundary
 
 - engine scope: ${result.engineScope}

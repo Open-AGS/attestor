@@ -57,6 +57,7 @@ proposed consequence -> Attestor admission decision -> proof refs -> downstream 
 
 The Golden Path output is grouped into practical parts:
 
+- **Business contrast:** what would be missing without the Attestor path versus what the shadow run produces: gate trace, issue codes, no-claims, target-call count, and readiness evidence.
 - **Scenario coverage:** 8 synthetic refund scenarios across normal, missing evidence, stale evidence, repeated refund, approval-required, instruction-like evidence text, external risk signal, and over-policy amount.
 - **Engine Visibility:** gate order, derived gate metrics, reason codes, no-claims, and digest stability.
 - **Reviewer Sandbox:** one schema-bound local refund JSON input through the same shadow-only path.

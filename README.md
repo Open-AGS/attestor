@@ -82,6 +82,13 @@ It demonstrates:
 - a Reviewer Sandbox for one strict local refund JSON input, without turning Attestor into a generic BYO-action runtime
 - Markdown-first demo output, with JSON available for machines
 
+The first business contrast is deliberately simple:
+
+```text
+Without Attestor in this repo path: no gate trace, no issue-code/no-claim boundary, no digest-bound shadow readiness evidence.
+With Attestor in this repo path:    8 scenarios, 7 visible gate stages, named Foundry gaps, 0 target-system calls, shadow-pilot readiness verdict.
+```
+
 It does not execute refunds, call Stripe or Shopify, deploy a customer PEP, activate policy, learn from traffic, or auto-enforce. Use it to inspect whether the Attestor consequence engine is coherent before looking at lower-level admission primitives. The optional determinism check is:
 
 ```bash

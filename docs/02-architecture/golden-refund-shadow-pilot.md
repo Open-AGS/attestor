@@ -108,6 +108,29 @@ Progress after G09 lands: 9/9 complete. 0 steps remain.
 | G08 | complete | Engine visibility report | The demo output now includes an Engine Visibility section over 8 synthetic scenarios, gate order, derived gate metrics, no-claims, and a determinism check (`npm run demo:golden-refund -- --determinism-check`). |
 | G09 | complete | Reviewer Sandbox | A reviewer can run a strict local JSON input with `npm run demo:golden-refund -- --scenario fixtures/golden-refund-reviewer-sandbox.example.json`. The sandbox rejects unknown fields, handles out-of-scope inputs without running the engine, and keeps every result shadow-only. |
 
+## Business Contrast
+
+The Golden Path output starts with a simple contrast for non-specialist readers:
+
+```text
+Without Attestor in this repo path:
+  no Attestor gate trace
+  no issue-code/no-claim boundary
+  no digest-bound shadow readiness evidence
+
+With Attestor in this repo path:
+  8 synthetic refund scenarios
+  7 visible gate stages
+  named Foundry gaps
+  0 target-system calls
+  shadow-pilot readiness verdict
+```
+
+This does not claim that a real customer workflow would execute without
+Attestor. It only states what this repository-side path adds to a proposed
+refund consequence: visible checks, bounded no-claims, and digest-bound review
+material.
+
 ## Engine Visibility
 
 G08 is not a new product surface. It makes the existing Golden Path: Refund

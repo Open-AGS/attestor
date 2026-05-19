@@ -181,6 +181,22 @@ export function renderGoldenRefundDemoMarkdown(
 
 Verdict: ${summary.readinessVerdict}
 
+## Business Contrast
+
+Without Attestor in this repo path:
+
+- no Attestor gate trace
+- no issue-code/no-claim boundary
+- no digest-bound shadow readiness evidence
+
+With Attestor in this repo path:
+
+- ${summary.scenarioCount} synthetic refund scenarios
+- 7 visible gate stages
+- ${summary.namedGaps.length} named Foundry gaps
+- ${summary.noTargetSystemCall ? '0' : 'non-zero'} target-system calls
+- shadow-pilot readiness verdict: ${summary.readinessVerdict}
+
 ## What Ran
 
 - action surface: ${summary.actionSurface}

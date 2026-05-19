@@ -41,7 +41,7 @@ async function testReleaseTokenJwksRouteExposesPublicVerificationKeyOnly(): Prom
     asyncBackendMode: 'in_process',
     isSharedControlPlaneConfigured: () => false,
     serviceInstanceId: 'svc-test',
-    serviceVersion: '0.1.2-evaluation',
+    serviceVersion: '0.2.0-evaluation',
     startTime: Date.now(),
     domainRegistry: {
       listIds: () => [],

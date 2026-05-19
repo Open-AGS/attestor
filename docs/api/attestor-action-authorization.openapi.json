@@ -2,7 +2,7 @@
   "openapi": "3.2.0",
   "info": {
     "title": "Attestor Action Authorization API",
-    "version": "0.1.2-evaluation",
+    "version": "0.2.0-evaluation",
     "summary": "Bounded hosted API contract for AI action authorization before consequence.",
     "description": "This evaluation contract describes the generic admission route and the shadow-mode read surfaces that exist today. It is not a production readiness claim, a compliance certification, or a wallet/custody API."
   },

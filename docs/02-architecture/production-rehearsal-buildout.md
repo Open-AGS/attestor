@@ -13,7 +13,7 @@ The goal is not to add a new product, a new crypto branch, or another architectu
 - Keep Attestor as one product with one platform core and modular packs.
 - Do not add a new hosted crypto route as part of production rehearsal work.
 - Do not widen the public product story from rehearsal internals.
-- Treat `v0.1.2-evaluation` as an attested evaluation baseline, not a production launch.
+- Treat `v0.2.0-evaluation` as an attested evaluation baseline, not a production launch.
 - Treat the completed shared-authority track as repo-proven embedded PostgreSQL behavior, not proof that an external customer-operated environment is ready.
 - Every rehearsal step must preserve fail-closed behavior and must distinguish technical proof from market/customer validation.
 - Prefer existing render, probe, benchmark, backup, restore, and readiness commands before adding new runtime surface area.
@@ -23,7 +23,7 @@ The goal is not to add a new product, a new crypto branch, or another architectu
 Attestor now has strong repo-side foundations:
 
 - the release, policy, enforcement, crypto, consequence-admission, hosted-flow, proof-surface, runtime-hardening, shared-authority, and service-boundary tracks are complete in their stated scopes
-- `v0.1.2-evaluation` is reviewer-runnable, CI-backed, and release-artifact attested
+- `v0.2.0-evaluation` is reviewer-runnable, CI-backed, and release-artifact attested
 - the shared authority plane is proven under embedded PostgreSQL multi-instance, concurrency, restart, reconnect, and recovery pressure
 
 The remaining production gap is not another internal primitive. It is a real environment proof:

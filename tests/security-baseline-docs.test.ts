@@ -30,7 +30,7 @@ function testSecurityPolicyExplainsEvaluationBoundary(): void {
   const security = readProjectFile('SECURITY.md');
 
   includes(security, '# Security Policy', 'Security baseline: policy title is stable');
-  includes(security, 'v0.1.2-evaluation', 'Security baseline: current evaluation release is named');
+  includes(security, 'v0.2.0-evaluation', 'Security baseline: current evaluation release is named');
   includes(security, 'evaluation pre-release', 'Security baseline: evaluation status is explicit');
   includes(security, 'not a production-use guarantee', 'Security baseline: production guarantee is not overstated');
   includes(security, 'release decisions, tokens, and enforcement behavior in this repository', 'Security baseline: in-scope surface is explicit');

@@ -31,6 +31,14 @@ Attestor is an **evaluation release**: reviewer-runnable, CI-backed, and useful 
 proposed consequence -> consequence admission -> proof material -> customer enforcement
 ```
 
+Current named baseline:
+
+```text
+Package version: 0.2.0-evaluation
+Tag target:      v0.2.0-evaluation
+Release type:    GitHub pre-release / Golden Path evaluation baseline
+```
+
 The clearest repo-side path today is [Golden Path: Refund](docs/02-architecture/golden-refund-shadow-pilot.md): a synthetic, shadow-only refund scenario that runs through action-surface material, canonical shadow fixtures, runtime assurance smoke, Policy Foundry summary, pilot readiness, and a local demo output.
 
 That path does not execute refunds, activate policy, call Stripe or Shopify, deploy infrastructure, or claim production readiness. The repository is not a finished public SaaS, a production-use guarantee, a completed customer-operated deployment, or a substitute for an external security audit.
@@ -40,7 +48,7 @@ Green local checks such as `npm run verify` are repo-side evidence only. They do
 Start review with:
 
 - [Attestor Evaluation Packet v0.1](docs/00-evaluation/v0.1-evaluation-packet.md)
-- [v0.1.2 evaluation release notes](docs/00-evaluation/v0.1.2-evaluation-release-notes.md)
+- [v0.2.0 evaluation release notes](docs/00-evaluation/v0.2.0-evaluation-release-notes.md)
 - [Security Policy](SECURITY.md)
 - [Evaluation Smoke workflow](.github/workflows/evaluation-smoke.yml)
 - [Artifact attestation plan](docs/08-deployment/artifact-attestation-plan.md)
@@ -270,7 +278,7 @@ Attestor is built around proof before consequence. A consequence should not mere
 
 A decision can include outcome, policy context, authority and evidence status, reason codes, verification references, and local proof artifacts that can be reviewed later.
 
-The current evaluation baseline includes local proof packets, verification kits, signed proof paths, CI-backed smoke checks, and release artifact attestation for tagged evaluation releases. The exact boundary and non-claims are documented in the [Evaluation Packet](docs/00-evaluation/v0.1-evaluation-packet.md), [v0.1.2 release notes](docs/00-evaluation/v0.1.2-evaluation-release-notes.md), and [Artifact attestation plan](docs/08-deployment/artifact-attestation-plan.md).
+The current evaluation baseline includes local proof packets, verification kits, signed proof paths, CI-backed smoke checks, and release artifact attestation for tagged evaluation releases. The exact boundary and non-claims are documented in the [Evaluation Packet](docs/00-evaluation/v0.1-evaluation-packet.md), [v0.2.0 release notes](docs/00-evaluation/v0.2.0-evaluation-release-notes.md), and [Artifact attestation plan](docs/08-deployment/artifact-attestation-plan.md).
 
 Read "proof material" as typed evidence, not one universal cryptographic guarantee:
 
@@ -369,7 +377,7 @@ Attestor is not:
 
 Use this as a map, not a wall of links. Start with the small set below; the expandable index is for maintainers changing the contract surface.
 
-**Evaluate the repo.** Run this path first if you want to know what is real today: [Golden Path: Refund](docs/02-architecture/golden-refund-shadow-pilot.md), [Attestor Evaluation Packet v0.1](docs/00-evaluation/v0.1-evaluation-packet.md), [v0.1.2 evaluation release notes](docs/00-evaluation/v0.1.2-evaluation-release-notes.md), [Try Attestor first](docs/01-overview/try-attestor-first.md), [Consequence admission quickstart](docs/01-overview/consequence-admission-quickstart.md), [Customer admission gate](docs/01-overview/customer-admission-gate.md), [Non-bypassable gateway demo](docs/01-overview/non-bypassable-gateway-demo.md), [Agent retry wrapper demo](docs/01-overview/agent-retry-wrapper-demo.md), [Proof model](docs/05-proof/proof-model.md), [Signing and verification](docs/06-signing/signing-verification.md).
+**Evaluate the repo.** Run this path first if you want to know what is real today: [Golden Path: Refund](docs/02-architecture/golden-refund-shadow-pilot.md), [Attestor Evaluation Packet v0.1](docs/00-evaluation/v0.1-evaluation-packet.md), [v0.2.0 evaluation release notes](docs/00-evaluation/v0.2.0-evaluation-release-notes.md), [Try Attestor first](docs/01-overview/try-attestor-first.md), [Consequence admission quickstart](docs/01-overview/consequence-admission-quickstart.md), [Customer admission gate](docs/01-overview/customer-admission-gate.md), [Non-bypassable gateway demo](docs/01-overview/non-bypassable-gateway-demo.md), [Agent retry wrapper demo](docs/01-overview/agent-retry-wrapper-demo.md), [Proof model](docs/05-proof/proof-model.md), [Signing and verification](docs/06-signing/signing-verification.md).
 
 **Place it in a customer system.** These docs answer where the control point sits and how an evaluator should think about rollout: [What you can do with Attestor](docs/01-overview/what-you-can-do.md), [Attestor operating model](docs/01-overview/operating-model.md), [Customer integration recipes](docs/01-overview/customer-integration-recipes.md), [Hosted action authorization API](docs/01-overview/hosted-action-authorization-api.md), [First hosted API call](docs/01-overview/hosted-first-api-call.md), [Finance and crypto first integrations](docs/01-overview/finance-and-crypto-first-integrations.md), [Commercial packaging, pricing, and evaluation](docs/01-overview/product-packaging.md), [Pricing ROI calculator](docs/01-overview/pricing-roi-calculator.md), [Hosted customer journey](docs/01-overview/hosted-customer-journey.md), [Hosted account visibility](docs/01-overview/hosted-account-visibility.md).
 

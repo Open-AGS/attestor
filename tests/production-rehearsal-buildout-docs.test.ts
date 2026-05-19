@@ -67,7 +67,7 @@ function testTrackerFreezesTheProductionRehearsalScope(): void {
   );
   includes(
     tracker,
-    'Treat `v0.1.2-evaluation` as an attested evaluation baseline, not a production launch.',
+    'Treat `v0.2.0-evaluation` as an attested evaluation baseline, not a production launch.',
     'Production rehearsal docs: tracker preserves evaluation release truth',
   );
   includes(

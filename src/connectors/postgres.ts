@@ -20,6 +20,13 @@
 
 import { createHash } from 'node:crypto';
 
+interface PgDriverModule {
+  readonly Client?: unknown;
+  readonly default?: {
+    readonly Client?: unknown;
+  };
+}
+
 /** PostgreSQL connection configuration. */
 export interface PostgresConfig {
   /** Connection URL (postgres://user:pass@host:port/db) */
@@ -58,7 +65,7 @@ export interface PostgresExecutionResult {
 
 // ─── SQL Safety ──────────────────────────────────────────────────────────────
 
-const WRITE_PATTERNS = /\b(INSERT|UPDATE|DELETE|DROP|ALTER|TRUNCATE|CREATE|REPLACE|MERGE|UPSERT|GRANT|REVOKE|EXEC|EXECUTE|CALL)\b/i;
+const WRITE_PATTERNS = /\b(INSERT|UPDATE|DELETE|DROP|ALTER|TRUNCATE|CREATE|REPLACE|MERGE|UPSERT|GRANT|REVOKE|EXEC|EXECUTE|CALL|COPY|LOCK|VACUUM|ANALYZE|REINDEX|CLUSTER|COMMENT|LISTEN|NOTIFY|UNLISTEN|DISCARD|REFRESH\s+MATERIALIZED\s+VIEW|SECURITY\s+LABEL)\b/i;
 const FORBIDDEN_CLAUSES = /\b(INTO\s+OUTFILE|INTO\s+DUMPFILE|LOAD\s+DATA|LOAD_FILE|PG_SLEEP|WAITFOR|XP_CMDSHELL|SP_EXECUTESQL)\b/i;
 const INJECTION_PATTERNS = [
   /\bUNION\s+(?:ALL\s+)?SELECT\b[\s\S]*\b(?:INFORMATION_SCHEMA|PG_CATALOG)\b/i,
@@ -108,11 +115,59 @@ function stripSingleQuotedStrings(sql: string): string {
   return output;
 }
 
+function stripPostgresComments(sql: string): string {
+  let output = '';
+  let index = 0;
+  let blockDepth = 0;
+
+  while (index < sql.length) {
+    const current = sql[index];
+    const next = sql[index + 1];
+
+    if (blockDepth > 0) {
+      output += ' ';
+      if (current === '/' && next === '*') {
+        output += ' ';
+        blockDepth += 1;
+        index += 2;
+        continue;
+      }
+      if (current === '*' && next === '/') {
+        output += ' ';
+        blockDepth -= 1;
+        index += 2;
+        continue;
+      }
+      index += 1;
+      continue;
+    }
+
+    if (current === '-' && next === '-') {
+      output += '  ';
+      index += 2;
+      while (index < sql.length && sql[index] !== '\n') {
+        output += ' ';
+        index += 1;
+      }
+      continue;
+    }
+
+    if (current === '/' && next === '*') {
+      output += '  ';
+      blockDepth = 1;
+      index += 2;
+      continue;
+    }
+
+    output += current;
+    index += 1;
+  }
+
+  return output;
+}
+
 export function sqlForGovernance(sql: string): string {
-  return stripSingleQuotedStrings(stripDollarQuotedStrings(sql))
-    .replace(/--[^\n]*/g, ' ')
-    .replace(/\/\*[\s\S]*?\*\//g, ' ')
-    .trim();
+  return stripPostgresComments(stripSingleQuotedStrings(stripDollarQuotedStrings(sql))).trim();
 }
 
 export function sanitizeConnectorError(
@@ -138,6 +193,11 @@ function boundedPostgresStatementTimeoutMs(timeoutMs: number | undefined): numbe
   return typeof timeoutMs === 'number' && Number.isFinite(timeoutMs) && timeoutMs > 0
     ? Math.trunc(timeoutMs)
     : 10000;
+}
+
+async function loadPgDriverModule(): Promise<PgDriverModule> {
+  const moduleName = 'pg';
+  return await import(moduleName) as PgDriverModule;
 }
 
 export function validateReadOnlySql(sql: string): void {
@@ -214,8 +274,7 @@ export async function executePostgresQuery(
   // Dynamic import — pg is optional (not a build-time dependency)
   let Client: any;
   try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const pg = await (Function('return import("pg")')() as Promise<any>);
+    const pg = await loadPgDriverModule();
     Client = pg.default?.Client ?? pg.Client;
   } catch {
     return { success: false, durationMs: Date.now() - start, rowCount: 0, columns: [], columnTypes: [], rows: [], error: 'PostgreSQL driver not installed. Run: npm install pg', executionContextHash: null, executionTimestamp };
@@ -280,7 +339,7 @@ export function isPostgresConfigured(): boolean {
  */
 export async function isPostgresDriverAvailable(): Promise<boolean> {
   try {
-    await (Function('return import("pg")')() as Promise<any>);
+    await loadPgDriverModule();
     return true;
   } catch {
     return false;
@@ -369,7 +428,7 @@ export async function runPostgresProbe(): Promise<PostgresProbeResult> {
   // Step 3: Load driver
   let Client: any;
   try {
-    const pg = await (Function('return import("pg")')() as Promise<any>);
+    const pg = await loadPgDriverModule();
     Client = pg.default?.Client ?? pg.Client;
   } catch {
     steps.push({ step: 'connect', passed: false, detail: 'Failed to load pg driver module', remediation: 'Reinstall pg: npm install pg' });

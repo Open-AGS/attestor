@@ -4,6 +4,7 @@ import { analyzePlan, runPredictivePreflight } from '../src/connectors/predictiv
 import {
   enforceAllowedSchemas,
   sanitizeConnectorError,
+  sqlForGovernance,
   validateReadOnlySql,
 } from '../src/connectors/postgres.js';
 import { runPostgresProve } from '../src/connectors/postgres-prove.js';
@@ -82,16 +83,55 @@ function testConnectorGovernanceRejectsFinancialForbiddenPatterns(): void {
   passed += 1;
 }
 
+function testConnectorGovernanceRejectsPostgresOperationalCommands(): void {
+  const rejected = [
+    'COPY finance.payments TO \'/tmp/payments.csv\'',
+    'LISTEN finance_events',
+    'NOTIFY finance_events',
+    'VACUUM finance.payments',
+    'ANALYZE finance.payments',
+    'REINDEX TABLE finance.payments',
+    'CLUSTER finance.payments',
+    'LOCK TABLE finance.payments',
+    'COMMENT ON TABLE finance.payments IS \'sensitive\'',
+    'SECURITY LABEL ON TABLE finance.payments IS \'secret\'',
+    'REFRESH MATERIALIZED VIEW finance.payment_summary',
+    'DISCARD ALL',
+  ];
+
+  for (const sql of rejected) {
+    assert.throws(
+      () => validateReadOnlySql(sql),
+      /Write operation detected|Query must start with SELECT or WITH/,
+      `Expected governance SQL rejection for: ${sql}`,
+    );
+    passed += 1;
+  }
+}
+
 function testConnectorGovernanceIgnoresStringLiterals(): void {
   validateReadOnlySql("SELECT * FROM finance.notes WHERE note LIKE '%INSERT INTO ledger%'");
   validateReadOnlySql("SELECT * FROM finance.notes WHERE note = 'pg_sleep(10)'");
   validateReadOnlySql("SELECT * FROM finance.notes WHERE note = E'escaped \\' UPDATE text'");
   validateReadOnlySql("SELECT * FROM finance.notes WHERE note = 'quoted '' DELETE text'");
+  validateReadOnlySql("SELECT $$COPY finance.payments TO '/tmp/leak.csv'$$ AS quoted_text");
   enforceAllowedSchemas(
     "SELECT * FROM finance.notes WHERE note = 'FROM public.secrets'",
     ['finance'],
   );
-  passed += 5;
+  passed += 6;
+}
+
+function testConnectorGovernanceStripsNestedComments(): void {
+  const stripped = sqlForGovernance(
+    'SELECT /* outer comment /* inner UPDATE finance.payments */ still comment */ * FROM finance.notes',
+  );
+
+  ok(!stripped.includes('UPDATE'), 'Postgres governance SQL: nested block comment content is stripped');
+  validateReadOnlySql(
+    'SELECT /* outer comment /* inner DELETE FROM finance.payments */ still comment */ * FROM finance.notes',
+  );
+  passed += 1;
 }
 
 function testConnectorSchemaAllowlistRejectsCteAliasesUntilParserAware(): void {
@@ -207,7 +247,9 @@ testMissingExplainPlanFailsClosed();
 testMalformedExplainPlanFailsClosed();
 testValidLowRiskPlanCanProceed();
 testConnectorGovernanceRejectsFinancialForbiddenPatterns();
+testConnectorGovernanceRejectsPostgresOperationalCommands();
 testConnectorGovernanceIgnoresStringLiterals();
+testConnectorGovernanceStripsNestedComments();
 testConnectorSchemaAllowlistRejectsCteAliasesUntilParserAware();
 testConnectorErrorsAreSanitized();
 testPredictivePreflightSourceUsesReadOnlyTimeoutTransaction();

@@ -44,6 +44,7 @@ function testReadmeHasAFirstImpressionPath(): void {
   includes(readme, 'Without an enforced customer-side PEP, gateway, verifier, or adapter in front of the downstream system, Attestor is advisory evidence, not a control point.', 'README: makes the PEP dependency explicit near the top');
   includes(readme, 'Start in shadow mode. See what your AI agents would have done before you let them act.', 'README: makes shadow mode visible immediately');
   includes(readme, 'AI proposes -> Attestor checks -> consequence is admitted, narrowed, reviewed, or blocked -> proof remains', 'README: keeps the front-page control flow short');
+  includes(readme, '- [Golden Path: Refund](docs/02-architecture/golden-refund-shadow-pilot.md)', 'README: starts the review list with the Golden Path');
   includes(readme, 'Every case has the same shape: a proposed consequence must pass policy, authority, evidence, freshness, scope, replay, and enforcement checks before a downstream system acts.', 'README: explains the fail-closed gateway result');
   includes(readme, 'Attestor does not replace the model, agent runtime, wallet, custody platform, orchestration layer, or downstream system.', 'README: keeps replacement non-claim near the top');
   includes(readme, '## Current Repository Truth', 'README: exposes the evaluation boundary near the top');
@@ -66,6 +67,7 @@ function testReadmeHasAFirstImpressionPath(): void {
   includes(readme, '## Why It Exists', 'README: explains the category before architecture');
   includes(readme, 'AI action control-plane infrastructure', 'README: positions Attestor as infrastructure, not a generic tool');
   includes(readme, '## Try It In 60 Seconds', 'README: exposes a fast first run near the top');
+  includes(readme, 'npm ci', 'README: uses reproducible install for the reviewer path');
   includes(readme, 'npm run demo:golden-refund', 'README: shows the current golden path command');
   includes(readme, 'npm run example:admission', 'README: shows the first runnable command');
   includes(readme, 'npm run example:action-surface-onboarding', 'README: shows the first onboarding packet command');
@@ -89,6 +91,7 @@ function testReadmeHasAFirstImpressionPath(): void {
   includes(readme, 'The pack is the consequence class. Adapters sit underneath it.', 'README: keeps consequence packs above adapters');
   includes(readme, 'The pack list is taxonomy, not an equal-maturity claim.', 'README: blocks consequence-pack maturity overclaim');
   includes(readme, 'Attestor is designed as a control point, not a data lake.', 'README: explains data handling posture early');
+  appearsBefore(readme, '- [Golden Path: Refund](docs/02-architecture/golden-refund-shadow-pilot.md)', '- [Attestor Evaluation Packet v0.1](docs/00-evaluation/v0.1-evaluation-packet.md)', 'README: review list starts with the Golden Path');
   includes(readme, '[Try Attestor first](docs/01-overview/try-attestor-first.md)', 'README: links to the guided first run');
   appearsBefore(readme, '## Current Repository Truth', '## Architecture: Core And Packs', 'README: keeps evaluation boundary before architecture');
   appearsBefore(readme, '## Golden Path: Refund', '## The Control Boundary', 'README: puts the concrete golden path before the broad domain list');
@@ -102,6 +105,7 @@ function testReadmeHasAFirstImpressionPath(): void {
 function testTryFirstDocKeepsTheBoundaryHonest(): void {
   const doc = readProjectFile('docs', '01-overview', 'try-attestor-first.md');
 
+  includes(doc, 'npm ci', 'Try-first doc: uses reproducible install command');
   includes(doc, 'npm run example:admission', 'Try-first doc: includes the runnable command');
   includes(doc, 'npm run example:non-bypassable-gateway', 'Try-first doc: includes the non-bypassable gateway command');
   includes(doc, 'npm run example:action-surface-onboarding', 'Try-first doc: includes the action-surface onboarding example command');

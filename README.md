@@ -47,6 +47,7 @@ Green local checks such as `npm run verify` are repo-side evidence only. They do
 
 Start review with:
 
+- [Golden Path: Refund](docs/02-architecture/golden-refund-shadow-pilot.md)
 - [Attestor Evaluation Packet v0.1](docs/00-evaluation/v0.1-evaluation-packet.md)
 - [v0.2.0 evaluation release notes](docs/00-evaluation/v0.2.0-evaluation-release-notes.md)
 - [Security Policy](SECURITY.md)
@@ -143,7 +144,7 @@ This is AI action control-plane infrastructure: not a chatbot feature, not a pro
 ## Try It In 60 Seconds
 
 ```bash
-npm install
+npm ci
 npm run demo:golden-refund
 npm run demo:golden-refund -- --json
 ```
@@ -172,7 +173,7 @@ npm run example:non-bypassable-gateway           # Verifier-before-dispatch demo
 npm run example:agent-retry-wrapper              # Bounded correction retry demo
 ```
 
-The rest are useful once the first path makes sense: `npm run example:action-surface-onboarding`, `npm run render:action-surface-onboarding-packet`, `npm run policy-foundry:self-onboard`, `npm run preview:policy-foundry-hosted-ui`, `npm run proof:surface`, `npm run showcase:proof`, `npm run verify:cert`, `npm run verify`, and `npm run probe:policy-foundry-production-smoke`.
+The rest are useful once the first path makes sense: `npm run example:action-surface-onboarding`, `npm run render:action-surface-onboarding-packet`, `npm run policy-foundry:self-onboard`, `npm run preview:policy-foundry-hosted-ui`, `npm run proof:surface`, `npm run showcase:proof`, `npm run verify:cert`, and `npm run verify`.
 
 `npm run proof:surface` writes `.attestor/proof-surface/latest/` with `.attestor/proof-surface/latest/manifest.json`, a machine-readable bundle, markdown summary, and one unified proof output per runnable scenario. It is a local static proof surface; it does not start a hosted console or claim a public hosted crypto route.
 

@@ -3,7 +3,7 @@
 Use this when you want the shortest local run before reading the deeper architecture docs.
 
 ```bash
-npm install
+npm ci
 npm run demo:golden-refund
 ```
 

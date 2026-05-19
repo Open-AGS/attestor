@@ -150,6 +150,7 @@ function testDocsAndScriptsStayAligned(): void {
     'is the first end-to-end repo path a reviewer should run',
     'refund action surface -> canonical shadow fixtures -> runtime assurance smoke -> Policy Foundry summary -> pilot readiness packet -> demo output',
     '[Golden Path: Refund](docs/02-architecture/golden-refund-shadow-pilot.md)',
+    'npm ci',
     'npm run demo:golden-refund',
     'no live Stripe or Shopify refund',
     'no customer deployment',

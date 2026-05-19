@@ -51,7 +51,7 @@ export interface GoldenRefundRuntimeSmokeResult {
   readonly sourcePolicyFoundryProjectionDigest: string;
   readonly shadowRuntimeFixtureReplaySmokeVersion:
     typeof SHADOW_RUNTIME_FIXTURE_REPLAY_SMOKE_VERSION;
-  readonly scenarioCount: 5;
+  readonly scenarioCount: 8;
   readonly scenarioResults: readonly GoldenRefundRuntimeSmokeScenarioResult[];
   readonly smokeResults: readonly ShadowRuntimeFixtureReplaySmokeResult[];
   readonly phaseDigests: readonly string[];
@@ -86,7 +86,7 @@ export interface GoldenRefundRuntimeSmokeDescriptor {
     typeof GOLDEN_REFUND_POLICY_FOUNDRY_PROJECTION_VERSION;
   readonly shadowRuntimeFixtureReplaySmokeVersion:
     typeof SHADOW_RUNTIME_FIXTURE_REPLAY_SMOKE_VERSION;
-  readonly scenarioCount: 5;
+  readonly scenarioCount: 8;
   readonly runsG03FixturesThroughR02ToR07: true;
   readonly executionMode: 'shadow-only';
   readonly fixtureOnly: true;
@@ -246,7 +246,7 @@ export function runGoldenRefundRuntimeSmoke(
   const canonical = canonicalObject(payload as unknown as CanonicalReleaseJsonValue);
   return Object.freeze({
     ...payload,
-    scenarioCount: 5,
+    scenarioCount: 8,
     smokeResults,
     canonical: canonical.canonical,
     digest: canonical.digest,
@@ -260,7 +260,7 @@ export function goldenRefundRuntimeSmokeDescriptor(): GoldenRefundRuntimeSmokeDe
     sourceFixtureSuiteVersion: GOLDEN_REFUND_SHADOW_FIXTURES_VERSION,
     sourcePolicyFoundryProjectionVersion: GOLDEN_REFUND_POLICY_FOUNDRY_PROJECTION_VERSION,
     shadowRuntimeFixtureReplaySmokeVersion: SHADOW_RUNTIME_FIXTURE_REPLAY_SMOKE_VERSION,
-    scenarioCount: 5,
+    scenarioCount: 8,
     runsG03FixturesThroughR02ToR07: true,
     executionMode: 'shadow-only',
     fixtureOnly: true,

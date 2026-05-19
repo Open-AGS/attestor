@@ -112,7 +112,7 @@ function runtimeSmokeBlockers(smoke: GoldenRefundRuntimeSmokeResult): readonly s
     blockers.add('golden-refund-runtime-smoke-version-mismatch');
   }
   if (smoke.step !== 'G05') blockers.add('golden-refund-runtime-smoke-step-mismatch');
-  if (smoke.scenarioCount !== 5 || smoke.scenarioResults.length !== 5) {
+  if (smoke.scenarioCount !== 8 || smoke.scenarioResults.length !== 8) {
     blockers.add('golden-refund-runtime-smoke-scenario-count-invalid');
   }
   if (smoke.allScenariosCompleted !== true) {

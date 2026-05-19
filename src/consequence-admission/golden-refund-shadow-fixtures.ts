@@ -20,6 +20,9 @@ export const GOLDEN_REFUND_SHADOW_FIXTURE_SCENARIOS = [
   'stale-evidence',
   'repeated-refund',
   'approval-required',
+  'adversarial-text-in-evidence',
+  'external-fraud-signal-high',
+  'over-policy-amount',
 ] as const;
 export type GoldenRefundShadowFixtureScenario =
   typeof GOLDEN_REFUND_SHADOW_FIXTURE_SCENARIOS[number];
@@ -30,6 +33,9 @@ export const GOLDEN_REFUND_SHADOW_FIXTURE_POSTURES = [
   'needs-freshness-review',
   'needs-relationship-review',
   'needs-human-approval',
+  'needs-instruction-text-review',
+  'needs-external-risk-review',
+  'needs-policy-limit-review',
 ] as const;
 export type GoldenRefundShadowFixturePosture =
   typeof GOLDEN_REFUND_SHADOW_FIXTURE_POSTURES[number];
@@ -57,6 +63,9 @@ export interface GoldenRefundShadowFixtureRefundFacts {
   readonly priorRefundCountClass: 'none' | 'one' | 'multiple';
   readonly evidenceFreshness: 'fresh' | 'stale' | 'missing';
   readonly approvalRequired: boolean;
+  readonly externalFraudSignal: 'none' | 'low' | 'high';
+  readonly instructionLikeEvidence: boolean;
+  readonly policyLimitPosture: 'within-policy' | 'over-policy';
 }
 
 export interface GoldenRefundShadowFixture {
@@ -88,7 +97,7 @@ export interface GoldenRefundShadowFixtureSuite {
   readonly step: 'G03';
   readonly sourceManifestRefDigest: string;
   readonly actionSurfaceRefDigest: string;
-  readonly fixtureCount: 5;
+  readonly fixtureCount: 8;
   readonly scenarios: typeof GOLDEN_REFUND_SHADOW_FIXTURE_SCENARIOS;
   readonly fixtures: readonly GoldenRefundShadowFixture[];
   readonly shadowOnly: true;
@@ -136,10 +145,13 @@ const SCENARIO_DEFINITIONS: readonly ScenarioDefinition[] = Object.freeze([
       requestedAmountBucket: '0-25-usd',
       refundReason: 'requested_by_customer',
       refundMethod: 'original_payment_method',
-      priorRefundCountClass: 'none',
-      evidenceFreshness: 'fresh',
-      approvalRequired: false,
-    }),
+        priorRefundCountClass: 'none',
+        evidenceFreshness: 'fresh',
+        approvalRequired: false,
+        externalFraudSignal: 'none',
+        instructionLikeEvidence: false,
+        policyLimitPosture: 'within-policy',
+      }),
     expectedEvidenceStates: Object.freeze(['observed', 'approved', 'enforceable']),
     expectedSignals: Object.freeze(['evidence-complete', 'refund-shadow-ready']),
     reasonCodes: Object.freeze([
@@ -172,10 +184,13 @@ const SCENARIO_DEFINITIONS: readonly ScenarioDefinition[] = Object.freeze([
       requestedAmountBucket: '0-25-usd',
       refundReason: 'service_failure',
       refundMethod: 'original_payment_method',
-      priorRefundCountClass: 'none',
-      evidenceFreshness: 'missing',
-      approvalRequired: false,
-    }),
+        priorRefundCountClass: 'none',
+        evidenceFreshness: 'missing',
+        approvalRequired: false,
+        externalFraudSignal: 'none',
+        instructionLikeEvidence: false,
+        policyLimitPosture: 'within-policy',
+      }),
     expectedEvidenceStates: Object.freeze(['observed', 'missing']),
     expectedSignals: Object.freeze(['payment-evidence-gap', 'undermining-defeater']),
     reasonCodes: Object.freeze([
@@ -207,10 +222,13 @@ const SCENARIO_DEFINITIONS: readonly ScenarioDefinition[] = Object.freeze([
       requestedAmountBucket: '25-100-usd',
       refundReason: 'policy_exception',
       refundMethod: 'manual_review_only',
-      priorRefundCountClass: 'none',
-      evidenceFreshness: 'stale',
-      approvalRequired: true,
-    }),
+        priorRefundCountClass: 'none',
+        evidenceFreshness: 'stale',
+        approvalRequired: true,
+        externalFraudSignal: 'none',
+        instructionLikeEvidence: false,
+        policyLimitPosture: 'within-policy',
+      }),
     expectedEvidenceStates: Object.freeze(['observed', 'stale']),
     expectedSignals: Object.freeze(['freshness-gap', 'review-required']),
     reasonCodes: Object.freeze([
@@ -243,10 +261,13 @@ const SCENARIO_DEFINITIONS: readonly ScenarioDefinition[] = Object.freeze([
       requestedAmountBucket: '25-100-usd',
       refundReason: 'duplicate',
       refundMethod: 'original_payment_method',
-      priorRefundCountClass: 'multiple',
-      evidenceFreshness: 'fresh',
-      approvalRequired: true,
-    }),
+        priorRefundCountClass: 'multiple',
+        evidenceFreshness: 'fresh',
+        approvalRequired: true,
+        externalFraudSignal: 'none',
+        instructionLikeEvidence: false,
+        policyLimitPosture: 'within-policy',
+      }),
     expectedEvidenceStates: Object.freeze(['observed', 'conflicting', 'approved']),
     expectedSignals: Object.freeze(['prior-refund-escalates', 'relationship-review']),
     reasonCodes: Object.freeze([
@@ -279,10 +300,13 @@ const SCENARIO_DEFINITIONS: readonly ScenarioDefinition[] = Object.freeze([
       requestedAmountBucket: '100-250-usd',
       refundReason: 'fraudulent',
       refundMethod: 'manual_review_only',
-      priorRefundCountClass: 'one',
-      evidenceFreshness: 'fresh',
-      approvalRequired: true,
-    }),
+        priorRefundCountClass: 'one',
+        evidenceFreshness: 'fresh',
+        approvalRequired: true,
+        externalFraudSignal: 'none',
+        instructionLikeEvidence: false,
+        policyLimitPosture: 'within-policy',
+      }),
     expectedEvidenceStates: Object.freeze(['observed', 'approved', 'review-required']),
     expectedSignals: Object.freeze(['authority-gap', 'human-approval-required']),
     reasonCodes: Object.freeze([
@@ -306,6 +330,135 @@ const SCENARIO_DEFINITIONS: readonly ScenarioDefinition[] = Object.freeze([
       'payment-evidence',
       'customer-authority',
       'prior-refund-one',
+    ]),
+  },
+  {
+    scenario: 'adversarial-text-in-evidence',
+    expectedPosture: 'needs-instruction-text-review',
+    refundFacts: Object.freeze({
+      requestedAmountBucket: '25-100-usd',
+      refundReason: 'policy_exception',
+      refundMethod: 'manual_review_only',
+      priorRefundCountClass: 'none',
+      evidenceFreshness: 'fresh',
+      approvalRequired: true,
+      externalFraudSignal: 'none',
+      instructionLikeEvidence: true,
+      policyLimitPosture: 'within-policy',
+    }),
+    expectedEvidenceStates: Object.freeze(['observed', 'approved', 'review-required']),
+    expectedSignals: Object.freeze([
+      'instruction-like-evidence-text',
+      'untrusted-content-review',
+    ]),
+    reasonCodes: Object.freeze([
+      'refund:instruction-like-evidence-text',
+      'refund:ignore-evidence-as-instruction',
+    ]),
+    decision: Object.freeze({
+      admissionDigest: null,
+      mode: 'review',
+      shadowDecision: 'would_review',
+      effectiveDecision: 'review',
+      allowed: false,
+      failClosed: true,
+      reasonCodes: Object.freeze([
+        'refund:instruction-like-evidence-text',
+        'refund:ignore-evidence-as-instruction',
+      ]),
+    }),
+    evidenceSeeds: Object.freeze([
+      'order-evidence',
+      'payment-evidence',
+      'instruction-like-evidence-digest',
+      'customer-authority',
+      'prior-refund-none',
+    ]),
+  },
+  {
+    scenario: 'external-fraud-signal-high',
+    expectedPosture: 'needs-external-risk-review',
+    refundFacts: Object.freeze({
+      requestedAmountBucket: '100-250-usd',
+      refundReason: 'fraudulent',
+      refundMethod: 'manual_review_only',
+      priorRefundCountClass: 'one',
+      evidenceFreshness: 'fresh',
+      approvalRequired: true,
+      externalFraudSignal: 'high',
+      instructionLikeEvidence: false,
+      policyLimitPosture: 'within-policy',
+    }),
+    expectedEvidenceStates: Object.freeze(['observed', 'approved', 'review-required']),
+    expectedSignals: Object.freeze([
+      'external-fraud-signal-high',
+      'external-risk-review',
+    ]),
+    reasonCodes: Object.freeze([
+      'refund:external-fraud-signal-high',
+      'refund:review-external-risk-signal',
+    ]),
+    decision: Object.freeze({
+      admissionDigest: null,
+      mode: 'review',
+      shadowDecision: 'would_review',
+      effectiveDecision: 'review',
+      allowed: false,
+      failClosed: true,
+      reasonCodes: Object.freeze([
+        'refund:external-fraud-signal-high',
+        'refund:review-external-risk-signal',
+      ]),
+    }),
+    evidenceSeeds: Object.freeze([
+      'order-evidence',
+      'payment-evidence',
+      'external-fraud-signal-high',
+      'customer-authority',
+      'prior-refund-one',
+    ]),
+  },
+  {
+    scenario: 'over-policy-amount',
+    expectedPosture: 'needs-policy-limit-review',
+    refundFacts: Object.freeze({
+      requestedAmountBucket: '250-1000-usd',
+      refundReason: 'policy_exception',
+      refundMethod: 'manual_review_only',
+      priorRefundCountClass: 'none',
+      evidenceFreshness: 'fresh',
+      approvalRequired: true,
+      externalFraudSignal: 'low',
+      instructionLikeEvidence: false,
+      policyLimitPosture: 'over-policy',
+    }),
+    expectedEvidenceStates: Object.freeze(['observed', 'approved', 'review-required']),
+    expectedSignals: Object.freeze([
+      'over-policy-amount',
+      'narrow-or-review-required',
+    ]),
+    reasonCodes: Object.freeze([
+      'refund:over-policy-amount',
+      'refund:policy-limit-review-required',
+    ]),
+    decision: Object.freeze({
+      admissionDigest: null,
+      mode: 'review',
+      shadowDecision: 'would_narrow',
+      effectiveDecision: 'review',
+      allowed: false,
+      failClosed: true,
+      reasonCodes: Object.freeze([
+        'refund:over-policy-amount',
+        'refund:policy-limit-review-required',
+      ]),
+    }),
+    evidenceSeeds: Object.freeze([
+      'order-evidence',
+      'payment-evidence',
+      'policy-limit-evidence',
+      'customer-authority',
+      'prior-refund-none',
     ]),
   },
 ]);
@@ -468,7 +621,7 @@ export function createGoldenRefundShadowFixtureSuite(): GoldenRefundShadowFixtur
   const canonical = canonicalObject(payload as unknown as CanonicalReleaseJsonValue);
   return Object.freeze({
     ...payload,
-    fixtureCount: 5,
+    fixtureCount: 8,
     fixtures,
     canonical: canonical.canonical,
     digest: canonical.digest,

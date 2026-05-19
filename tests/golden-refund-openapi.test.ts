@@ -258,7 +258,7 @@ function testDocsAndScriptsRecordG02(): void {
 
   for (const expected of [
     'Status: complete',
-    'Progress after G07 lands: 7/7 complete. 0 steps remain.',
+    'Progress after G08 lands: 8/8 complete. 0 steps remain.',
     '| G02 | complete | Refund OpenAPI enrichment |',
     'G02 adds the prior refund signal',
   ]) {

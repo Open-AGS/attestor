@@ -47,7 +47,7 @@ function testSuiteShape(): void {
   equal(suite.version, 'attestor.golden-refund-shadow-fixtures.v1', 'G03 fixtures: version is explicit');
   equal(suite.name, 'Golden Path: Refund', 'G03 fixtures: suite is bound to the refund golden path');
   equal(suite.step, 'G03', 'G03 fixtures: step is explicit');
-  equal(suite.fixtureCount, 5, 'G03 fixtures: exactly five scenarios are emitted');
+  equal(suite.fixtureCount, 8, 'G03 fixtures: exactly eight scenarios are emitted');
   deepEqual(
     suite.scenarios,
     GOLDEN_REFUND_SHADOW_FIXTURE_SCENARIOS,
@@ -151,6 +151,49 @@ function testScenarioSemantics(): void {
     'human-approval-required',
     'G03 approval required: human approval signal is present',
   );
+
+  equal(
+    byScenario.get('adversarial-text-in-evidence')?.expectedPosture,
+    'needs-instruction-text-review',
+    'G03 adversarial evidence: expected posture is instruction-text review',
+  );
+  equal(
+    byScenario.get('adversarial-text-in-evidence')?.refundFacts.instructionLikeEvidence,
+    true,
+    'G03 adversarial evidence: instruction-like evidence flag is true',
+  );
+  includes(
+    byScenario.get('adversarial-text-in-evidence')?.reasonCodes.join('\n') ?? '',
+    'refund:ignore-evidence-as-instruction',
+    'G03 adversarial evidence: evidence is not treated as an instruction',
+  );
+
+  equal(
+    byScenario.get('external-fraud-signal-high')?.expectedPosture,
+    'needs-external-risk-review',
+    'G03 external risk: expected posture is external risk review',
+  );
+  equal(
+    byScenario.get('external-fraud-signal-high')?.refundFacts.externalFraudSignal,
+    'high',
+    'G03 external risk: high external fraud signal is modeled as evidence',
+  );
+
+  equal(
+    byScenario.get('over-policy-amount')?.expectedPosture,
+    'needs-policy-limit-review',
+    'G03 over policy: expected posture is policy limit review',
+  );
+  equal(
+    byScenario.get('over-policy-amount')?.refundFacts.policyLimitPosture,
+    'over-policy',
+    'G03 over policy: policy limit posture is over-policy',
+  );
+  equal(
+    byScenario.get('over-policy-amount')?.event.decision.shadowDecision,
+    'would_narrow',
+    'G03 over policy: shadow decision records narrow pressure',
+  );
 }
 
 function testDescriptorAndDocsStayAligned(): void {
@@ -170,9 +213,9 @@ function testDescriptorAndDocsStayAligned(): void {
 
   for (const expected of [
     'Status: complete',
-    'Progress after G07 lands: 7/7 complete. 0 steps remain.',
+    'Progress after G08 lands: 8/8 complete. 0 steps remain.',
     '| G03 | complete | Refund shadow fixture builder |',
-    'normal, missing-evidence, stale-evidence, repeated-refund, and approval-required',
+    'normal, missing-evidence, stale-evidence, repeated-refund, approval-required, adversarial-text-in-evidence, external-fraud-signal-high, and over-policy-amount',
   ]) {
     includes(doc, expected, `G03 doc: records ${expected}`);
   }

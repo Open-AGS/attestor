@@ -19,6 +19,7 @@ refund action surface
   -> shadow runtime replay
   -> Policy Foundry summary
   -> pilot readiness packet
+  -> engine visibility report
 ```
 
 This is the first path because refund is understandable, bounded, reversible in
@@ -44,11 +45,12 @@ surface; it does not get independent authority.
 | Area | Evidence | State |
 |---|---|---|
 | Refund surface | `examples/action-surface-onboarding/refund.openapi.json` defines a refund action surface with `POST /refunds`, approval route material, refund reason, refund method, digest-bound evidence refs, and a prior refund signal. | repo-proven |
-| Refund fixtures | `src/consequence-admission/golden-refund-shadow-fixtures.ts` emits five synthetic digest-only canonical shadow events: normal, missing-evidence, stale-evidence, repeated-refund, and approval-required. | repo-proven |
+| Refund fixtures | `src/consequence-admission/golden-refund-shadow-fixtures.ts` emits eight synthetic digest-only canonical shadow events: normal, missing-evidence, stale-evidence, repeated-refund, approval-required, adversarial-text-in-evidence, external-fraud-signal-high, and over-policy-amount. | repo-proven |
 | Foundry refund projection | `src/consequence-admission/golden-refund-policy-foundry-projection.ts` projects the G03 fixtures into a review-only candidate, named evidence/authority/relationship gaps, backtest material, and an existing Policy Twin summary. | repo-proven |
-| Refund runtime smoke | `src/consequence-admission/golden-refund-runtime-smoke.ts` runs all five G03 fixtures through the existing R02-R07 shadow runtime smoke chain without target-system calls, audit writes, external exports, policy activation, learning, training, or admission authority. | repo-proven |
+| Refund runtime smoke | `src/consequence-admission/golden-refund-runtime-smoke.ts` runs all eight G03 fixtures through the existing R02-R07 shadow runtime smoke chain without target-system calls, audit writes, external exports, policy activation, learning, training, or admission authority. | repo-proven |
 | Refund pilot readiness probe | `src/consequence-admission/golden-refund-pilot-readiness-probe.ts` wraps the G05 runtime smoke in a digest-bound Pilot Readiness Packet and allows only `ready-for-shadow-pilot` or `not-ready`. `ready-for-scoped-pilot` remains outside this golden path. | repo-proven |
-| Refund demo CLI | `scripts/demo-golden-refund.ts` renders the G03-G06 golden path as Markdown by default and JSON with `--json`, without writing files or calling target systems. | repo-proven |
+| Refund demo CLI | `scripts/demo-golden-refund.ts` renders the G03-G08 golden path as Markdown by default and JSON with `--json`, without writing files or calling target systems. | repo-proven |
+| Engine visibility report | `src/consequence-admission/golden-refund-engine-visibility.ts` renders the eight-scenario gate trace, derived gate metrics, no-claims, and deterministic/shuffled-order digest stability checks. | repo-proven |
 | Manifest intake | `src/consequence-admission/action-surface-manifest-intake.ts` accepts OpenAPI manifests as action-surface intake material. | repo-proven |
 | Shadow replay | `src/consequence-admission/shadow-runtime-fixture-replay-smoke.ts` replays synthetic fixtures through the R02-R07 shadow runtime activation chain without target-system calls. | repo-proven |
 | Foundry summary | `src/consequence-admission/policy-foundry-policy-twin-summary.ts` summarizes candidate, evidence, replay, and review material without activating policy. | repo-proven |
@@ -76,19 +78,43 @@ Policy and audit material stay schema-bound and replayable. Source anchors:
 [OpenAPI Specification](https://spec.openapis.org/oas/v3.1.0.html), and
 [CloudEvents specification](https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md).
 
+G08 makes the engine path visible without adding side effects. Source anchors:
+[OpenTelemetry traces and spans](https://opentelemetry.io/docs/concepts/signals/traces/),
+[Stripe idempotent requests](https://docs.stripe.com/api/idempotent_requests),
+[Reproducible Builds definition](https://reproducible-builds.org/docs/definition/),
+and [SLSA provenance](https://slsa.dev/provenance).
+
 ## G-Series Tracker
 
-Progress after G07 lands: 7/7 complete. 0 steps remain.
+Progress after G08 lands: 8/8 complete. 0 steps remain.
 
 | Step | Status | Slice | Evidence target |
 |---|---|---|---|
 | G01 | complete | Golden Path decision packet | This document, package script, and architecture links. |
 | G02 | complete | Refund OpenAPI enrichment | The refund surface includes refund reason, payment/order evidence refs, refund method, approval refs, and a prior refund signal. |
-| G03 | complete | Refund shadow fixture builder | Synthetic digest-only canonical shadow events for normal, missing-evidence, stale-evidence, repeated-refund, and approval-required paths. |
+| G03 | complete | Refund shadow fixture builder | Synthetic digest-only canonical shadow events for normal, missing-evidence, stale-evidence, repeated-refund, approval-required, adversarial-text-in-evidence, external-fraud-signal-high, and over-policy-amount paths. |
 | G04 | complete | Policy Foundry refund projection | Policy twin summary over refund fixtures with named gaps, review-only candidates, and backtest material. |
 | G05 | complete | Runtime smoke | Run the existing R02-R07 shadow runtime smoke chain over the refund fixtures end to end without target-system calls. |
 | G06 | complete | Pilot readiness probe | Emit only `ready-for-shadow-pilot` or `not-ready` for the golden path. `ready-for-scoped-pilot` is outside the G-series until real shadow observation, customer PEP, receipt evidence, and approval are present. |
 | G07 | complete | Demo CLI | `npm run demo:golden-refund` renders Markdown as the primary G07 output and JSON as secondary machine output. |
+| G08 | complete | Engine visibility report | The demo output now includes an Engine Visibility section over 8 synthetic scenarios, gate order, derived gate metrics, no-claims, and a determinism check (`npm run demo:golden-refund -- --determinism-check`). |
+
+## Engine Visibility
+
+G08 is not a new product surface. It makes the existing Golden Path: Refund
+inspectable. The report shows:
+
+- 8 synthetic scenarios across happy path, missing evidence, stale evidence,
+  repeated refund, approval-required, instruction-like evidence text, external
+  risk signal, and over-policy amount;
+- gate order from shadow envelope projection through signed assurance packet;
+- derived gate metrics, including evidence completeness from the conflict gate
+  coverage gap score;
+- explicit no-claims per run: no target-system call, no audit-plane write, no
+  policy activation, no learning/training activation, no admission authority,
+  and no production readiness;
+- deterministic decision-relevant digest checks for identical input and shuffled
+  opinion/relationship/modulator ordering.
 
 ## Why G02 Matters
 

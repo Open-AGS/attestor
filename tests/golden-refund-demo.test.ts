@@ -44,9 +44,10 @@ function testSummaryComposesGoldenPath(): void {
   equal(summary.step, 'G07', 'G07 summary: step is explicit');
   equal(summary.actionSurface, 'refund_service.issue_refund', 'G07 summary: action surface is refund');
   equal(summary.domain, 'money-movement', 'G07 summary: domain is money movement');
-  equal(summary.scenarioCount, 5, 'G07 summary: scenario count is fixed');
+  equal(summary.scenarioCount, 8, 'G07 summary: scenario count is fixed');
   equal(summary.candidateMode, 'review', 'G07 summary: candidate mode is review');
-  equal(summary.namedGaps.length, 4, 'G07 summary: four named gaps are shown');
+  equal(summary.namedGaps.length, 7, 'G07 summary: seven named gaps are shown');
+  equal(summary.engineVisibility.version, 'attestor.golden-refund-engine-visibility.v1', 'G07 summary: engine visibility is attached');
   equal(summary.readinessVerdict, 'ready-for-shadow-pilot', 'G07 summary: readiness verdict is shadow-pilot ready');
   equal(summary.readinessBlockers.length, 0, 'G07 summary: readiness blockers are empty');
   equal(summary.markdownPrimary, true, 'G07 summary: markdown is primary');
@@ -78,6 +79,11 @@ function testMarkdownAndJsonRenderers(): void {
     'stale-payment-evidence',
     'prior-refund-relationship-review',
     'human-approval-required',
+    'instruction-like-evidence-review',
+    'external-risk-signal-review',
+    'policy-limit-review',
+    '## Engine Visibility',
+    'shuffled-input unique digests: 1',
     'It does not execute refunds automatically.',
   ]) {
     includes(markdown, expected, `G07 markdown: records ${expected}`);
@@ -117,6 +123,7 @@ function testPackageScriptRunsMarkdownAndJson(): void {
   includes(markdown.stdout, 'Verdict: ready-for-shadow-pilot', 'G07 package script: markdown includes verdict');
   includes(json.stdout, '"version": "attestor.golden-refund-demo.v1"', 'G07 package script: JSON flag emits JSON');
   includes(json.stdout, '"readinessVerdict": "ready-for-shadow-pilot"', 'G07 package script: JSON includes verdict');
+  includes(json.stdout, '"engineVisibility"', 'G07 package script: JSON includes engine visibility');
 }
 
 function testDocsAndScriptsStayAligned(): void {
@@ -131,27 +138,30 @@ function testDocsAndScriptsStayAligned(): void {
 
   for (const expected of [
     'Status: complete',
-    'Progress after G07 lands: 7/7 complete. 0 steps remain.',
+    'Progress after G08 lands: 8/8 complete. 0 steps remain.',
     '| G07 | complete | Demo CLI |',
+    '| G08 | complete | Engine visibility report |',
     '`npm run demo:golden-refund`',
     'Markdown as the primary G07 output',
     'JSON as secondary machine output',
+    'determinism check',
   ]) {
     includes(doc, expected, `G07 doc: records ${expected}`);
   }
 
   includes(
     ledger,
-    'G07 demo CLI',
+    'G08 engine visibility report',
     'G07 ledger: records demo CLI',
   );
   for (const expected of [
     '## Golden Path: Refund',
     'is the first end-to-end repo path a reviewer should run',
-    'refund action surface -> canonical shadow fixtures -> runtime assurance smoke -> Policy Foundry summary -> pilot readiness packet -> demo output',
+    'refund action surface -> canonical shadow fixtures -> runtime assurance smoke -> Policy Foundry summary -> pilot readiness packet -> Engine Visibility -> demo output',
     '[Golden Path: Refund](docs/02-architecture/golden-refund-shadow-pilot.md)',
     'npm ci',
     'npm run demo:golden-refund',
+    '--determinism-check',
     'no live Stripe or Shopify refund',
     'no customer deployment',
     'no policy activation',
@@ -162,6 +172,7 @@ function testDocsAndScriptsStayAligned(): void {
   for (const expected of [
     'npm run demo:golden-refund',
     'refund action surface -> canonical shadow events -> runtime assurance smoke -> Policy Foundry summary -> pilot readiness packet',
+    'Engine Visibility',
     'It does not execute a refund',
   ]) {
     includes(tryFirst, expected, `G07 try-first doc: records ${expected}`);

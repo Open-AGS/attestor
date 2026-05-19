@@ -12,7 +12,7 @@ uses synthetic, digest-only refund fixtures and shows how one AI-proposed refund
 action class can pass through:
 
 ```text
-refund action surface -> canonical shadow events -> runtime assurance smoke -> Policy Foundry summary -> pilot readiness packet -> Engine Visibility
+refund action surface -> canonical shadow events -> runtime assurance smoke -> Policy Foundry summary -> pilot readiness packet -> Engine Visibility -> optional reviewer sandbox
 ```
 
 It does not execute a refund, call Stripe or Shopify, activate policy, write an
@@ -28,6 +28,12 @@ To see the decision-relevant determinism check, run:
 
 ```bash
 npm run demo:golden-refund -- --determinism-check
+```
+
+To try one strict, local reviewer-supplied refund input, run:
+
+```bash
+npm run demo:golden-refund -- --scenario fixtures/golden-refund-reviewer-sandbox.example.json
 ```
 
 To see the smaller admission primitive behind that path, run:
@@ -53,6 +59,7 @@ The Golden Path output is grouped into practical parts:
 
 - **Scenario coverage:** 8 synthetic refund scenarios across normal, missing evidence, stale evidence, repeated refund, approval-required, instruction-like evidence text, external risk signal, and over-policy amount.
 - **Engine Visibility:** gate order, derived gate metrics, reason codes, no-claims, and digest stability.
+- **Reviewer Sandbox:** one schema-bound local refund JSON input through the same shadow-only path.
 - **Safety boundary:** no target-system call, no audit-plane write, no policy activation, no learning/training, no auto-enforcement.
 - **Readiness:** whether the synthetic path is ready for a shadow pilot or not-ready.
 

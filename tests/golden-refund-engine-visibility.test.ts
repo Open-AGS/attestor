@@ -1,4 +1,4 @@
-import assert from 'node:assert/strict';
+﻿import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -151,7 +151,7 @@ function testDocsAndScriptsStayAligned(): void {
   };
 
   for (const expected of [
-    'Progress after G08 lands: 8/8 complete. 0 steps remain.',
+    'Progress after G09 lands: 9/9 complete. 0 steps remain.',
     '| G08 | complete | Engine visibility report |',
     'Engine Visibility',
     '8 synthetic scenarios',

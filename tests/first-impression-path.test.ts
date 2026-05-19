@@ -54,7 +54,7 @@ function testReadmeHasAFirstImpressionPath(): void {
   includes(readme, '## Golden Path: Refund', 'README: gives the golden path its own first-reading block');
   includes(readme, 'is the first end-to-end repo path a reviewer should run', 'README: makes the golden path the first concrete story');
   includes(readme, 'not a refund product, finance-only product, or separate engine', 'README: keeps the golden path inside the one product');
-  includes(readme, 'refund action surface -> canonical shadow fixtures -> runtime assurance smoke -> Policy Foundry summary -> pilot readiness packet -> Engine Visibility -> demo output', 'README: shows the golden path pipeline in one line');
+  includes(readme, 'refund action surface -> canonical shadow fixtures -> runtime assurance smoke -> Policy Foundry summary -> pilot readiness packet -> Engine Visibility -> optional reviewer sandbox -> demo output', 'README: shows the golden path pipeline in one line');
   includes(readme, 'Use it to inspect whether the Attestor consequence engine is coherent before looking at lower-level admission primitives.', 'README: positions lower-level demos after the golden path');
   includes(readme, '## The Control Boundary', 'README: names the operating model before architecture');
   includes(readme, 'Use Attestor where a capable AI-assisted system should not be able to act just because it can form a request:', 'README: moves quickly from category to use cases');

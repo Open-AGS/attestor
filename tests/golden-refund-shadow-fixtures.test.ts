@@ -213,7 +213,7 @@ function testDescriptorAndDocsStayAligned(): void {
 
   for (const expected of [
     'Status: complete',
-    'Progress after G08 lands: 8/8 complete. 0 steps remain.',
+    'Progress after G09 lands: 9/9 complete. 0 steps remain.',
     '| G03 | complete | Refund shadow fixture builder |',
     'normal, missing-evidence, stale-evidence, repeated-refund, approval-required, adversarial-text-in-evidence, external-fraud-signal-high, and over-policy-amount',
   ]) {

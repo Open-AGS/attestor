@@ -1,0 +1,13 @@
+{
+  "version": "attestor.golden-refund-reviewer-sandbox-input.v1",
+  "actionSurface": "refund_service.issue_refund",
+  "requestedAmountBucket": "100-250-usd",
+  "refundReason": "fraudulent",
+  "refundMethod": "manual_review_only",
+  "priorRefundCountClass": "one",
+  "evidenceFreshness": "fresh",
+  "approvalRequired": true,
+  "externalFraudSignal": "high",
+  "instructionLikeEvidence": false,
+  "policyLimitPosture": "within-policy"
+}

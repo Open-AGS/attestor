@@ -1,7 +1,11 @@
 import { pathToFileURL } from 'node:url';
+import { readFileSync } from 'node:fs';
 import {
   createGoldenRefundDemoSummary,
+  renderGoldenRefundReviewerSandboxJson,
+  renderGoldenRefundReviewerSandboxMarkdown,
   runGoldenRefundEngineVisibilityDeterminismCheck,
+  runGoldenRefundReviewerSandbox,
   renderGoldenRefundDemoJson,
   renderGoldenRefundDemoMarkdown,
 } from '../src/consequence-admission/index.js';
@@ -12,14 +16,29 @@ function printUsage(): void {
   npm run demo:golden-refund
   npm run demo:golden-refund -- --json
   npm run demo:golden-refund -- --determinism-check --runs=1000
+  npm run demo:golden-refund -- --scenario fixtures/golden-refund-reviewer-sandbox.example.json
 
 Default output is Markdown for copy/paste, screenshots, and demos.
 Use --json for secondary machine-readable output.
 Use --determinism-check to run the decision-relevant digest stability check.
+Use --scenario to run a strict, schema-bound reviewer-supplied refund input
+through the same shadow-only engine path.
 
 This command is fixture-only and shadow-only. It does not call Stripe, Shopify,
 Google Cloud, a worker, an audit database, or any target system. It does not
 activate policies, train models, admit actions, or prove production readiness.`);
+}
+
+function parseScenarioPath(argv: readonly string[]): string | null {
+  const inline = argv.find((arg) => arg.startsWith('--scenario='))?.slice('--scenario='.length);
+  if (inline) return inline;
+  const index = argv.indexOf('--scenario');
+  if (index === -1) return null;
+  const value = argv[index + 1];
+  if (!value || value.startsWith('--')) {
+    throw new Error('--scenario requires a JSON file path.');
+  }
+  return value;
 }
 
 function parseRuns(argv: readonly string[]): number {
@@ -35,6 +54,18 @@ function parseRuns(argv: readonly string[]): number {
 function main(): void {
   if (process.argv.includes('--help') || process.argv.includes('-h')) {
     printUsage();
+    return;
+  }
+  const scenarioPath = parseScenarioPath(process.argv);
+  if (scenarioPath) {
+    const raw = readFileSync(scenarioPath, 'utf8');
+    const input = JSON.parse(raw) as unknown;
+    const result = runGoldenRefundReviewerSandbox(input);
+    if (process.argv.includes('--json')) {
+      console.log(renderGoldenRefundReviewerSandboxJson(result).trimEnd());
+      return;
+    }
+    console.log(renderGoldenRefundReviewerSandboxMarkdown(result).trimEnd());
     return;
   }
   if (process.argv.includes('--determinism-check')) {

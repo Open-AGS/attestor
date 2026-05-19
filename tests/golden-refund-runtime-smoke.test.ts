@@ -142,7 +142,7 @@ function testDocsAndScriptsStayAligned(): void {
 
   for (const expected of [
     'Status: complete',
-    'Progress after G08 lands: 8/8 complete. 0 steps remain.',
+    'Progress after G09 lands: 9/9 complete. 0 steps remain.',
     '| G05 | complete | Runtime smoke |',
     'R02-R07 shadow runtime smoke chain',
     'without target-system calls',

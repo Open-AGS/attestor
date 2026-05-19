@@ -98,7 +98,7 @@ function testTrackerAndG06G07Boundaries(): void {
   );
 
   for (const expected of [
-    'Progress after G08 lands: 8/8 complete. 0 steps remain.',
+    'Progress after G09 lands: 9/9 complete. 0 steps remain.',
     '| G01 | complete | Golden Path decision packet |',
     '| G02 | complete | Refund OpenAPI enrichment |',
     '| G03 | complete | Refund shadow fixture builder |',

@@ -20,6 +20,7 @@ refund action surface
   -> Policy Foundry summary
   -> pilot readiness packet
   -> engine visibility report
+  -> optional reviewer sandbox
 ```
 
 This is the first path because refund is understandable, bounded, reversible in
@@ -49,8 +50,9 @@ surface; it does not get independent authority.
 | Foundry refund projection | `src/consequence-admission/golden-refund-policy-foundry-projection.ts` projects the G03 fixtures into a review-only candidate, named evidence/authority/relationship gaps, backtest material, and an existing Policy Twin summary. | repo-proven |
 | Refund runtime smoke | `src/consequence-admission/golden-refund-runtime-smoke.ts` runs all eight G03 fixtures through the existing R02-R07 shadow runtime smoke chain without target-system calls, audit writes, external exports, policy activation, learning, training, or admission authority. | repo-proven |
 | Refund pilot readiness probe | `src/consequence-admission/golden-refund-pilot-readiness-probe.ts` wraps the G05 runtime smoke in a digest-bound Pilot Readiness Packet and allows only `ready-for-shadow-pilot` or `not-ready`. `ready-for-scoped-pilot` remains outside this golden path. | repo-proven |
-| Refund demo CLI | `scripts/demo-golden-refund.ts` renders the G03-G08 golden path as Markdown by default and JSON with `--json`, without writing files or calling target systems. | repo-proven |
+| Refund demo CLI | `scripts/demo-golden-refund.ts` renders the G03-G08 golden path as Markdown by default and JSON with `--json`, and renders the G09 Reviewer Sandbox with `--scenario`, without writing files or calling target systems. | repo-proven |
 | Engine visibility report | `src/consequence-admission/golden-refund-engine-visibility.ts` renders the eight-scenario gate trace, derived gate metrics, no-claims, and deterministic/shuffled-order digest stability checks. | repo-proven |
+| Reviewer sandbox | `src/consequence-admission/golden-refund-reviewer-sandbox.ts` lets a reviewer pass a strict, schema-bound local refund JSON file through the same shadow-only engine path with `npm run demo:golden-refund -- --scenario fixtures/golden-refund-reviewer-sandbox.example.json`. | repo-proven |
 | Manifest intake | `src/consequence-admission/action-surface-manifest-intake.ts` accepts OpenAPI manifests as action-surface intake material. | repo-proven |
 | Shadow replay | `src/consequence-admission/shadow-runtime-fixture-replay-smoke.ts` replays synthetic fixtures through the R02-R07 shadow runtime activation chain without target-system calls. | repo-proven |
 | Foundry summary | `src/consequence-admission/policy-foundry-policy-twin-summary.ts` summarizes candidate, evidence, replay, and review material without activating policy. | repo-proven |
@@ -84,9 +86,15 @@ G08 makes the engine path visible without adding side effects. Source anchors:
 [Reproducible Builds definition](https://reproducible-builds.org/docs/definition/),
 and [SLSA provenance](https://slsa.dev/provenance).
 
+G09 makes the path actively testable with a reviewer-supplied local JSON file
+without turning Attestor into a generic BYO-action runtime. Source anchors:
+[JSON Schema](https://json-schema.org/learn/getting-started-step-by-step),
+[OWASP Input Validation](https://cheatsheetseries.owasp.org/cheatsheets/Input_Validation_Cheat_Sheet.html),
+and [Node.js `fs.readFileSync`](https://nodejs.org/api/fs.html#fsreadfilesyncpath-options).
+
 ## G-Series Tracker
 
-Progress after G08 lands: 8/8 complete. 0 steps remain.
+Progress after G09 lands: 9/9 complete. 0 steps remain.
 
 | Step | Status | Slice | Evidence target |
 |---|---|---|---|
@@ -98,6 +106,7 @@ Progress after G08 lands: 8/8 complete. 0 steps remain.
 | G06 | complete | Pilot readiness probe | Emit only `ready-for-shadow-pilot` or `not-ready` for the golden path. `ready-for-scoped-pilot` is outside the G-series until real shadow observation, customer PEP, receipt evidence, and approval are present. |
 | G07 | complete | Demo CLI | `npm run demo:golden-refund` renders Markdown as the primary G07 output and JSON as secondary machine output. |
 | G08 | complete | Engine visibility report | The demo output now includes an Engine Visibility section over 8 synthetic scenarios, gate order, derived gate metrics, no-claims, and a determinism check (`npm run demo:golden-refund -- --determinism-check`). |
+| G09 | complete | Reviewer Sandbox | A reviewer can run a strict local JSON input with `npm run demo:golden-refund -- --scenario fixtures/golden-refund-reviewer-sandbox.example.json`. The sandbox rejects unknown fields, handles out-of-scope inputs without running the engine, and keeps every result shadow-only. |
 
 ## Engine Visibility
 
@@ -116,6 +125,28 @@ inspectable. The report shows:
 - deterministic decision-relevant digest checks for identical input and shuffled
   opinion/relationship/modulator ordering.
 
+## Reviewer Sandbox
+
+G09 is the active reviewer path. It lets a reviewer try one local, schema-bound
+refund action input against the same shadow-only engine path:
+
+```bash
+npm run demo:golden-refund -- --scenario fixtures/golden-refund-reviewer-sandbox.example.json
+npm run demo:golden-refund -- --scenario fixtures/golden-refund-reviewer-sandbox.example.json --json
+```
+
+This is still not live execution. The sandbox:
+
+- allows only a small allowlisted refund input shape;
+- rejects unknown fields rather than storing raw customer, order, or payment
+  details;
+- handles schema-valid but logically inconsistent input as an engine finding
+  with `refund:inconsistent-input-detected`;
+- handles out-of-scope action surfaces as `outside-scope` without running the
+  refund engine path;
+- emits no target-system calls, audit writes, policy activation, learning,
+  training, or admission authority.
+
 ## Why G02 Matters
 
 G02 adds the prior refund signal as the bridge from this golden path into the
@@ -126,7 +157,7 @@ I-series contracts without inventing a separate refund engine.
 
 ## Scenario Boundary
 
-G01-G07 can be completed repo-side and locally with synthetic material.
+G01-G09 can be completed repo-side and locally with synthetic material.
 
 Required boundaries:
 

@@ -1,4 +1,4 @@
-import assert from 'node:assert/strict';
+﻿import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -138,7 +138,7 @@ function testDocsAndScriptsStayAligned(): void {
 
   for (const expected of [
     'Status: complete',
-    'Progress after G08 lands: 8/8 complete. 0 steps remain.',
+    'Progress after G09 lands: 9/9 complete. 0 steps remain.',
     '| G07 | complete | Demo CLI |',
     '| G08 | complete | Engine visibility report |',
     '`npm run demo:golden-refund`',
@@ -157,7 +157,7 @@ function testDocsAndScriptsStayAligned(): void {
   for (const expected of [
     '## Golden Path: Refund',
     'is the first end-to-end repo path a reviewer should run',
-    'refund action surface -> canonical shadow fixtures -> runtime assurance smoke -> Policy Foundry summary -> pilot readiness packet -> Engine Visibility -> demo output',
+    'refund action surface -> canonical shadow fixtures -> runtime assurance smoke -> Policy Foundry summary -> pilot readiness packet -> Engine Visibility -> optional reviewer sandbox -> demo output',
     '[Golden Path: Refund](docs/02-architecture/golden-refund-shadow-pilot.md)',
     'npm ci',
     'npm run demo:golden-refund',

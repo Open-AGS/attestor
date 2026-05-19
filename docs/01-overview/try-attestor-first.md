@@ -12,7 +12,7 @@ uses synthetic, digest-only refund fixtures and shows how one AI-proposed refund
 action class can pass through:
 
 ```text
-refund action surface -> canonical shadow events -> runtime assurance smoke -> Policy Foundry summary -> pilot readiness packet
+refund action surface -> canonical shadow events -> runtime assurance smoke -> Policy Foundry summary -> pilot readiness packet -> Engine Visibility
 ```
 
 It does not execute a refund, call Stripe or Shopify, activate policy, write an
@@ -22,6 +22,12 @@ To see the machine-readable form, run:
 
 ```bash
 npm run demo:golden-refund -- --json
+```
+
+To see the decision-relevant determinism check, run:
+
+```bash
+npm run demo:golden-refund -- --determinism-check
 ```
 
 To see the smaller admission primitive behind that path, run:
@@ -43,12 +49,12 @@ proposed consequence -> Attestor admission decision -> proof refs -> downstream 
 
 ## What You Should See
 
-The output is grouped into four practical parts:
+The Golden Path output is grouped into practical parts:
 
-- **Input:** what the customer system wants to write, send, file, or execute
-- **Attestor decision:** the native result and canonical admit / narrow / review / block decision
-- **Proof refs:** the portable evidence references returned with the decision
-- **Downstream result:** whether the customer system proceeds or holds
+- **Scenario coverage:** 8 synthetic refund scenarios across normal, missing evidence, stale evidence, repeated refund, approval-required, instruction-like evidence text, external risk signal, and over-policy amount.
+- **Engine Visibility:** gate order, derived gate metrics, reason codes, no-claims, and digest stability.
+- **Safety boundary:** no target-system call, no audit-plane write, no policy activation, no learning/training, no auto-enforcement.
+- **Readiness:** whether the synthetic path is ready for a shadow pilot or not-ready.
 
 This is the simplest way to see Attestor's role: proof first, action second.
 

@@ -4,6 +4,12 @@ import {
   type CanonicalReleaseJsonValue,
 } from '../release-kernel/release-canonicalization.js';
 import {
+  createGoldenRefundEngineVisibilityReport,
+  GOLDEN_REFUND_ENGINE_VISIBILITY_VERSION,
+  renderGoldenRefundEngineVisibilityMarkdown,
+  type GoldenRefundEngineVisibilityReport,
+} from './golden-refund-engine-visibility.js';
+import {
   createGoldenRefundPilotReadinessProbe,
   GOLDEN_REFUND_PILOT_READINESS_PROBE_VERSION,
   type GoldenRefundPilotReadinessProbeResult,
@@ -41,13 +47,16 @@ export interface GoldenRefundDemoSummary {
   readonly sourcePilotReadinessProbeVersion:
     typeof GOLDEN_REFUND_PILOT_READINESS_PROBE_VERSION;
   readonly sourcePilotReadinessProbeDigest: string;
+  readonly sourceEngineVisibilityVersion: typeof GOLDEN_REFUND_ENGINE_VISIBILITY_VERSION;
+  readonly sourceEngineVisibilityDigest: string;
   readonly actionSurface: 'refund_service.issue_refund';
   readonly domain: 'money-movement';
-  readonly scenarioCount: 5;
+  readonly scenarioCount: 8;
   readonly scenarioNames: readonly string[];
   readonly candidateId: string;
   readonly candidateMode: 'review';
   readonly namedGaps: readonly GoldenRefundPolicyFoundryNamedGap[];
+  readonly engineVisibility: GoldenRefundEngineVisibilityReport;
   readonly readinessVerdict: 'ready-for-shadow-pilot' | 'not-ready';
   readonly readinessBlockers: readonly string[];
   readonly markdownPrimary: true;
@@ -89,6 +98,7 @@ function createSummaryPayload(input: {
   readonly projection: GoldenRefundPolicyFoundryProjection;
   readonly smoke: GoldenRefundRuntimeSmokeResult;
   readonly probe: GoldenRefundPilotReadinessProbeResult;
+  readonly visibility: GoldenRefundEngineVisibilityReport;
 }): Omit<GoldenRefundDemoSummary, 'canonical' | 'digest'> {
   return Object.freeze({
     version: GOLDEN_REFUND_DEMO_VERSION,
@@ -102,6 +112,8 @@ function createSummaryPayload(input: {
     sourceRuntimeSmokeDigest: input.smoke.digest,
     sourcePilotReadinessProbeVersion: input.probe.version,
     sourcePilotReadinessProbeDigest: input.probe.digest,
+    sourceEngineVisibilityVersion: input.visibility.version,
+    sourceEngineVisibilityDigest: input.visibility.digest,
     actionSurface: input.projection.actionSurface,
     domain: input.projection.domain,
     scenarioCount: input.suite.fixtureCount,
@@ -109,6 +121,7 @@ function createSummaryPayload(input: {
     candidateId: input.projection.reviewOnlyCandidate.candidateId,
     candidateMode: input.projection.reviewOnlyCandidate.proposedMode,
     namedGaps: input.projection.namedGaps,
+    engineVisibility: input.visibility,
     readinessVerdict: input.probe.decision.verdict,
     readinessBlockers: input.probe.decision.blockers,
     markdownPrimary: true,
@@ -136,7 +149,13 @@ export function createGoldenRefundDemoSummary(): GoldenRefundDemoSummary {
   const projection = createGoldenRefundPolicyFoundryProjection(suite);
   const smoke = runGoldenRefundRuntimeSmoke(suite, projection);
   const probe = createGoldenRefundPilotReadinessProbe(smoke);
-  const payload = createSummaryPayload({ suite, projection, smoke, probe });
+  const visibility = createGoldenRefundEngineVisibilityReport({
+    suite,
+    projection,
+    smoke,
+    determinismIterations: 10,
+  });
+  const payload = createSummaryPayload({ suite, projection, smoke, probe, visibility });
   const canonical = canonicalObject(payload as unknown as CanonicalReleaseJsonValue);
   return Object.freeze({
     ...payload,
@@ -184,6 +203,7 @@ ${gapList(summary.namedGaps)}
 - Policy Foundry projection: ${summary.sourcePolicyFoundryProjectionDigest}
 - runtime smoke: ${summary.sourceRuntimeSmokeDigest}
 - pilot readiness probe: ${summary.sourcePilotReadinessProbeDigest}
+- engine visibility report: ${summary.sourceEngineVisibilityDigest}
 - demo digest: ${summary.digest}
 
 ## Readiness
@@ -203,6 +223,8 @@ ${bulletList(summary.readinessBlockers)}
 - learning/training activation: ${summary.noLearningActivation && summary.noTrainingActivation ? 'none' : 'present'}
 - can admit: ${summary.canAdmit}
 - production ready: ${summary.productionReady}
+
+${renderGoldenRefundEngineVisibilityMarkdown(summary.engineVisibility).trimEnd()}
 
 ## Plain-English Result
 

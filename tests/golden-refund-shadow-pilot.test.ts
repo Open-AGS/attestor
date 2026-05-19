@@ -37,6 +37,7 @@ function testDecisionPacketFreezesScope(): void {
     'shadow runtime replay',
     'Policy Foundry summary',
     'pilot readiness packet',
+    'engine visibility report',
     'Not a refund product.',
     'Not a refund engine.',
     'Not a separate finance direction.',
@@ -80,6 +81,10 @@ function testRepositoryEvidenceAndResearchAnchors(): void {
     'Cedar policy validation',
     'OpenAPI Specification',
     'CloudEvents specification',
+    'OpenTelemetry traces and spans',
+    'Stripe idempotent requests',
+    'Reproducible Builds definition',
+    'SLSA provenance',
   ]) {
     includes(doc, expected, `Golden refund path: records ${expected}`);
   }
@@ -93,7 +98,7 @@ function testTrackerAndG06G07Boundaries(): void {
   );
 
   for (const expected of [
-    'Progress after G07 lands: 7/7 complete. 0 steps remain.',
+    'Progress after G08 lands: 8/8 complete. 0 steps remain.',
     '| G01 | complete | Golden Path decision packet |',
     '| G02 | complete | Refund OpenAPI enrichment |',
     '| G03 | complete | Refund shadow fixture builder |',
@@ -101,11 +106,13 @@ function testTrackerAndG06G07Boundaries(): void {
     '| G05 | complete | Runtime smoke |',
     '| G06 | complete | Pilot readiness probe |',
     '| G07 | complete | Demo CLI |',
+    '| G08 | complete | Engine visibility report |',
     'ready-for-shadow-pilot',
     'not-ready',
     'ready-for-scoped-pilot` is outside the G-series',
     'Markdown as the primary G07 output',
     'JSON as secondary machine output',
+    'determinism check',
   ]) {
     includes(doc, expected, `Golden refund path: records ${expected}`);
   }

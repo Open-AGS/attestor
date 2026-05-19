@@ -40,7 +40,7 @@ function testDescriptor(): void {
 
   equal(descriptor.version, 'attestor.golden-refund-runtime-smoke.v1', 'G05 descriptor: version is explicit');
   equal(descriptor.step, 'G05', 'G05 descriptor: step is explicit');
-  equal(descriptor.scenarioCount, 5, 'G05 descriptor: scenario count is fixed');
+  equal(descriptor.scenarioCount, 8, 'G05 descriptor: scenario count is fixed');
   equal(descriptor.runsG03FixturesThroughR02ToR07, true, 'G05 descriptor: runs G03 through R02-R07');
   equal(descriptor.executionMode, 'shadow-only', 'G05 descriptor: execution mode is shadow-only');
   equal(descriptor.fixtureOnly, true, 'G05 descriptor: fixture-only is true');
@@ -59,9 +59,9 @@ function testRuntimeSmokeRunsAllScenarios(): void {
 
   equal(result.version, 'attestor.golden-refund-runtime-smoke.v1', 'G05 result: version is explicit');
   equal(result.step, 'G05', 'G05 result: step is explicit');
-  equal(result.scenarioCount, 5, 'G05 result: scenario count is fixed');
-  equal(result.smokeResults.length, 5, 'G05 result: five smoke results are emitted');
-  equal(result.phaseDigests.length, 5, 'G05 result: one phase digest per scenario is retained');
+  equal(result.scenarioCount, 8, 'G05 result: scenario count is fixed');
+  equal(result.smokeResults.length, 8, 'G05 result: eight smoke results are emitted');
+  equal(result.phaseDigests.length, 8, 'G05 result: one phase digest per scenario is retained');
   equal(result.allScenariosCompleted, true, 'G05 result: all scenarios completed');
   equal(result.executionMode, 'shadow-only', 'G05 result: execution mode is shadow-only');
   equal(result.fixtureOnly, true, 'G05 result: fixture-only is true');
@@ -83,7 +83,16 @@ function testRuntimeSmokeRunsAllScenarios(): void {
   equal(result.productionReady, false, 'G05 result: production readiness is false');
   assert.deepEqual(
     scenarios,
-    ['approval-required', 'missing-evidence', 'normal', 'repeated-refund', 'stale-evidence'],
+    [
+      'adversarial-text-in-evidence',
+      'approval-required',
+      'external-fraud-signal-high',
+      'missing-evidence',
+      'normal',
+      'over-policy-amount',
+      'repeated-refund',
+      'stale-evidence',
+    ],
     'G05 result: all G03 scenarios are represented',
   );
   passed += 1;
@@ -133,7 +142,7 @@ function testDocsAndScriptsStayAligned(): void {
 
   for (const expected of [
     'Status: complete',
-    'Progress after G07 lands: 7/7 complete. 0 steps remain.',
+    'Progress after G08 lands: 8/8 complete. 0 steps remain.',
     '| G05 | complete | Runtime smoke |',
     'R02-R07 shadow runtime smoke chain',
     'without target-system calls',

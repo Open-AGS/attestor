@@ -39,7 +39,7 @@ Tag target:      v0.2.0-evaluation
 Release type:    GitHub pre-release / Golden Path evaluation baseline
 ```
 
-The clearest repo-side path today is [Golden Path: Refund](docs/02-architecture/golden-refund-shadow-pilot.md): a synthetic, shadow-only refund scenario that runs through action-surface material, canonical shadow fixtures, runtime assurance smoke, Policy Foundry summary, pilot readiness, and a local demo output.
+The clearest repo-side path today is [Golden Path: Refund](docs/02-architecture/golden-refund-shadow-pilot.md): a synthetic, shadow-only refund scenario that runs through action-surface material, canonical shadow fixtures, runtime assurance smoke, Policy Foundry summary, pilot readiness, Engine Visibility, and a local demo output.
 
 That path does not execute refunds, activate policy, call Stripe or Shopify, deploy infrastructure, or claim production readiness. The repository is not a finished public SaaS, a production-use guarantee, a completed customer-operated deployment, or a substitute for an external security audit.
 
@@ -62,7 +62,7 @@ Start review with:
 It shows one concrete Money Movement consequence through the same Attestor control boundary:
 
 ```text
-refund action surface -> canonical shadow fixtures -> runtime assurance smoke -> Policy Foundry summary -> pilot readiness packet -> demo output
+refund action surface -> canonical shadow fixtures -> runtime assurance smoke -> Policy Foundry summary -> pilot readiness packet -> Engine Visibility -> demo output
 ```
 
 Run it with:
@@ -78,9 +78,14 @@ It demonstrates:
 - runtime assurance smoke over the refund scenarios
 - Policy Foundry summary material with named evidence and policy gaps
 - a pilot readiness packet that can report shadow-pilot readiness or not-ready
+- an Engine Visibility report with 8 scenarios, gate trace, derived gate metrics, no-claims, and deterministic/shuffled-order digest checks
 - Markdown-first demo output, with JSON available for machines
 
-It does not execute refunds, call Stripe or Shopify, deploy a customer PEP, activate policy, learn from traffic, or auto-enforce. Use it to inspect whether the Attestor consequence engine is coherent before looking at lower-level admission primitives.
+It does not execute refunds, call Stripe or Shopify, deploy a customer PEP, activate policy, learn from traffic, or auto-enforce. Use it to inspect whether the Attestor consequence engine is coherent before looking at lower-level admission primitives. The optional determinism check is:
+
+```bash
+npm run demo:golden-refund -- --determinism-check
+```
 
 ## The Control Boundary
 
@@ -147,6 +152,7 @@ This is AI action control-plane infrastructure: not a chatbot feature, not a pro
 npm ci
 npm run demo:golden-refund
 npm run demo:golden-refund -- --json
+npm run demo:golden-refund -- --determinism-check
 ```
 
 You will see:
@@ -156,6 +162,7 @@ You will see:
 - runtime assurance smoke over the refund scenarios
 - Policy Foundry summary material with named gaps
 - a pilot readiness packet that can only report shadow-pilot readiness or not-ready for this path
+- Engine Visibility over 8 scenarios, including gate order, evidence-completeness metrics, no-claims, and deterministic/shuffled-order digest stability
 - Markdown-first demo output, with JSON available for machines
 - explicit no-claims: no live Stripe or Shopify refund, no customer deployment, no policy activation, no auto-enforcement
 

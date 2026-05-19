@@ -54,7 +54,7 @@ function testReadmeHasAFirstImpressionPath(): void {
   includes(readme, '## Golden Path: Refund', 'README: gives the golden path its own first-reading block');
   includes(readme, 'is the first end-to-end repo path a reviewer should run', 'README: makes the golden path the first concrete story');
   includes(readme, 'not a refund product, finance-only product, or separate engine', 'README: keeps the golden path inside the one product');
-  includes(readme, 'refund action surface -> canonical shadow fixtures -> runtime assurance smoke -> Policy Foundry summary -> pilot readiness packet -> demo output', 'README: shows the golden path pipeline in one line');
+  includes(readme, 'refund action surface -> canonical shadow fixtures -> runtime assurance smoke -> Policy Foundry summary -> pilot readiness packet -> Engine Visibility -> demo output', 'README: shows the golden path pipeline in one line');
   includes(readme, 'Use it to inspect whether the Attestor consequence engine is coherent before looking at lower-level admission primitives.', 'README: positions lower-level demos after the golden path');
   includes(readme, '## The Control Boundary', 'README: names the operating model before architecture');
   includes(readme, 'Use Attestor where a capable AI-assisted system should not be able to act just because it can form a request:', 'README: moves quickly from category to use cases');
@@ -74,6 +74,7 @@ function testReadmeHasAFirstImpressionPath(): void {
   includes(readme, 'digest-only canonical shadow fixtures', 'README: explains digest-only golden path fixtures');
   includes(readme, 'runtime assurance smoke over the refund scenarios', 'README: explains runtime assurance golden path');
   includes(readme, 'Policy Foundry summary material with named gaps', 'README: explains Foundry summary material');
+  includes(readme, 'Engine Visibility over 8 scenarios', 'README: explains engine visibility in the golden path');
   includes(readme, 'explicit no-claims: no live Stripe or Shopify refund, no customer deployment, no policy activation, no auto-enforcement', 'README: keeps golden path no-claims visible');
   includes(readme, '## Decision Model', 'README: makes the decision vocabulary prominent');
   includes(readme, 'Admission responses also carry model-safe feedback.', 'README: exposes safe retry feedback near the decision model');
@@ -107,6 +108,8 @@ function testTryFirstDocKeepsTheBoundaryHonest(): void {
 
   includes(doc, 'npm ci', 'Try-first doc: uses reproducible install command');
   includes(doc, 'npm run example:admission', 'Try-first doc: includes the runnable command');
+  includes(doc, 'npm run demo:golden-refund -- --determinism-check', 'Try-first doc: includes the determinism check command');
+  includes(doc, 'Engine Visibility', 'Try-first doc: includes engine visibility');
   includes(doc, 'npm run example:non-bypassable-gateway', 'Try-first doc: includes the non-bypassable gateway command');
   includes(doc, 'npm run example:action-surface-onboarding', 'Try-first doc: includes the action-surface onboarding example command');
   includes(doc, 'one is admitted', 'Try-first doc: explains admitted path');

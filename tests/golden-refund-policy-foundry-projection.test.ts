@@ -40,7 +40,7 @@ function testProjectionShape(): void {
 
   equal(projection.version, 'attestor.golden-refund-policy-foundry-projection.v1', 'G04 projection: version is explicit');
   equal(projection.step, 'G04', 'G04 projection: step is explicit');
-  equal(projection.sourceFixtureCount, 5, 'G04 projection: consumes five G03 fixtures');
+  equal(projection.sourceFixtureCount, 8, 'G04 projection: consumes eight G03 fixtures');
   equal(projection.actionSurface, 'refund_service.issue_refund', 'G04 projection: action surface is refund issue');
   equal(projection.domain, 'money-movement', 'G04 projection: domain is money movement');
   equal(projection.approvalRequired, true, 'G04 projection: approval remains required');
@@ -60,12 +60,14 @@ function testPolicyTwinSummaryIsReviewOnly(): void {
   equal(summary.version, 'attestor.policy-foundry-policy-twin-summary.v1', 'G04 summary: policy twin summary version is retained');
   equal(summary.status, 'review-only', 'G04 summary: refund candidate stays review-only');
   equal(summary.recommendedRolloutStep, 'review-required', 'G04 summary: recommended rollout is review-required');
-  equal(summary.eventCount, 5, 'G04 summary: event count is fixture count');
+  equal(summary.eventCount, 8, 'G04 summary: event count is fixture count');
   equal(summary.decisionImpact.admitCount, 1, 'G04 summary: admit count comes from normal fixture');
-  equal(summary.decisionImpact.reviewCount, 3, 'G04 summary: review count comes from stale/repeated/approval fixtures');
+  equal(summary.decisionImpact.narrowCount, 1, 'G04 summary: narrow count comes from over-policy fixture');
+  equal(summary.decisionImpact.reviewCount, 5, 'G04 summary: review count comes from review-pressure fixtures');
   equal(summary.decisionImpact.blockCount, 1, 'G04 summary: block count comes from missing-evidence fixture');
+  equal(summary.gapCounts.policy, 1, 'G04 summary: over-policy gap is counted');
   equal(summary.gapCounts.evidence, 2, 'G04 summary: missing/stale evidence gaps are counted');
-  equal(summary.gapCounts.authority, 3, 'G04 summary: approval-required fixtures are counted as authority gaps');
+  equal(summary.gapCounts.authority, 6, 'G04 summary: approval-required fixtures are counted as authority gaps');
   equal(summary.policyTwinEvidenceOnly, true, 'G04 summary: policy twin output is evidence-only');
   equal(summary.autoEnforce, false, 'G04 summary: auto enforcement is false');
   equal(summary.activatesEnforcement, false, 'G04 summary: enforcement activation is false');
@@ -81,11 +83,14 @@ function testNamedGapsAndBacktestMaterial(): void {
     'stale-payment-evidence',
     'prior-refund-relationship-review',
     'human-approval-required',
+    'instruction-like-evidence-review',
+    'external-risk-signal-review',
+    'policy-limit-review',
   ]) {
     includes(gapKinds, expected, `G04 named gaps: records ${expected}`);
   }
 
-  equal(projection.namedGaps.length, 4, 'G04 named gaps: exactly four named gaps are emitted');
+  equal(projection.namedGaps.length, 7, 'G04 named gaps: exactly seven named gaps are emitted');
   ok(
     projection.namedGaps.every((gap) => gap.reviewOnly === true),
     'G04 named gaps: every gap is review-only',
@@ -107,12 +112,12 @@ function testNamedGapsAndBacktestMaterial(): void {
   );
   equal(
     projection.backtestMaterial.fixtureDigests.length,
-    5,
+    8,
     'G04 backtest material: fixture digests are retained',
   );
   equal(
     projection.backtestMaterial.eventDigests.length,
-    5,
+    8,
     'G04 backtest material: event digests are retained',
   );
   equal(
@@ -149,7 +154,7 @@ function testDescriptorDocsAndScriptsStayAligned(): void {
 
   for (const expected of [
     'Status: complete',
-    'Progress after G07 lands: 7/7 complete. 0 steps remain.',
+    'Progress after G08 lands: 8/8 complete. 0 steps remain.',
     '| G04 | complete | Policy Foundry refund projection |',
     'review-only candidate',
     'named evidence/authority/relationship gaps',

@@ -32,6 +32,9 @@ export const GOLDEN_REFUND_POLICY_FOUNDRY_NAMED_GAP_KINDS = [
   'stale-payment-evidence',
   'prior-refund-relationship-review',
   'human-approval-required',
+  'instruction-like-evidence-review',
+  'external-risk-signal-review',
+  'policy-limit-review',
 ] as const;
 export type GoldenRefundPolicyFoundryNamedGapKind =
   typeof GOLDEN_REFUND_POLICY_FOUNDRY_NAMED_GAP_KINDS[number];
@@ -70,7 +73,7 @@ export interface GoldenRefundPolicyFoundryProjection {
   readonly generatedAt: string;
   readonly sourceFixtureSuiteVersion: typeof GOLDEN_REFUND_SHADOW_FIXTURES_VERSION;
   readonly sourceFixtureSuiteDigest: string;
-  readonly sourceFixtureCount: 5;
+  readonly sourceFixtureCount: 8;
   readonly actionSurface: 'refund_service.issue_refund';
   readonly domain: 'money-movement';
   readonly report: ShadowPolicySimulationReport;
@@ -117,6 +120,7 @@ const GOLDEN_REFUND_REQUIRED_CONTROLS = [
   'customer-approval',
 ] as const;
 const GOLDEN_REFUND_SOURCE_RECOMMENDATION_KINDS = [
+  'define-policy',
   'bind-authority',
   'bind-evidence',
   'promote-to-review',
@@ -156,7 +160,9 @@ function decisionCounts(fixtures: readonly GoldenRefundShadowFixture[]): ShadowP
 
 function gapCounts(fixtures: readonly GoldenRefundShadowFixture[]): ShadowPolicyGapCounts {
   return Object.freeze({
-    policy: 0,
+    policy: fixtures.filter((fixture) =>
+      fixture.refundFacts.policyLimitPosture === 'over-policy'
+    ).length,
     evidence: fixtures.filter((fixture) =>
       fixture.expectedEvidenceStates.includes('missing') ||
       fixture.expectedEvidenceStates.includes('stale')
@@ -174,7 +180,18 @@ function namedGaps(
   const stale = byScenario.get('stale-evidence');
   const repeated = byScenario.get('repeated-refund');
   const approval = byScenario.get('approval-required');
-  if (!missing || !stale || !repeated || !approval) {
+  const adversarial = byScenario.get('adversarial-text-in-evidence');
+  const externalRisk = byScenario.get('external-fraud-signal-high');
+  const overPolicy = byScenario.get('over-policy-amount');
+  if (
+    !missing ||
+    !stale ||
+    !repeated ||
+    !approval ||
+    !adversarial ||
+    !externalRisk ||
+    !overPolicy
+  ) {
     throw new Error('Golden refund Policy Foundry projection requires the full G03 fixture suite.');
   }
   return Object.freeze([
@@ -212,6 +229,33 @@ function namedGaps(
       protectedPrinciple: 'customer authority',
       fixtureDigest: approval.digest,
       reasonCodes: approval.reasonCodes,
+      reviewOnly: true,
+    }),
+    Object.freeze({
+      kind: 'instruction-like-evidence-review',
+      scenario: adversarial.scenario,
+      severity: 'high',
+      protectedPrinciple: 'data minimization and redaction',
+      fixtureDigest: adversarial.digest,
+      reasonCodes: adversarial.reasonCodes,
+      reviewOnly: true,
+    }),
+    Object.freeze({
+      kind: 'external-risk-signal-review',
+      scenario: externalRisk.scenario,
+      severity: 'high',
+      protectedPrinciple: 'proof integrity',
+      fixtureDigest: externalRisk.digest,
+      reasonCodes: externalRisk.reasonCodes,
+      reviewOnly: true,
+    }),
+    Object.freeze({
+      kind: 'policy-limit-review',
+      scenario: overPolicy.scenario,
+      severity: 'high',
+      protectedPrinciple: 'customer authority',
+      fixtureDigest: overPolicy.digest,
+      reasonCodes: overPolicy.reasonCodes,
       reviewOnly: true,
     }),
   ]);
@@ -264,6 +308,55 @@ function recommendations(
       reasonCodes: Object.freeze(['refund:prior-refund-multiple']),
       nextMode: 'review',
       confidence: 0.8,
+    }),
+    Object.freeze({
+      kind: 'promote-to-review',
+      severity: 'high',
+      title: 'Treat instruction-like evidence text as evidence, not instructions',
+      summary: 'Adversarial or instruction-like evidence text creates review pressure only.',
+      actionSurface: 'refund_service.issue_refund',
+      domain: 'money-movement',
+      affectedEvents: gaps.filter((gap) =>
+        gap.kind === 'instruction-like-evidence-review'
+      ).length,
+      reasonCodes: Object.freeze([
+        'refund:instruction-like-evidence-text',
+        'refund:ignore-evidence-as-instruction',
+      ]),
+      nextMode: 'review',
+      confidence: 0.82,
+    }),
+    Object.freeze({
+      kind: 'bind-evidence',
+      severity: 'high',
+      title: 'Bind external risk signals before refund promotion',
+      summary: 'External fraud or risk signals are evidence inputs, not Attestor-native fraud detection.',
+      actionSurface: 'refund_service.issue_refund',
+      domain: 'money-movement',
+      affectedEvents: gaps.filter((gap) =>
+        gap.kind === 'external-risk-signal-review'
+      ).length,
+      reasonCodes: Object.freeze([
+        'refund:external-fraud-signal-high',
+        'refund:review-external-risk-signal',
+      ]),
+      nextMode: 'review',
+      confidence: 0.82,
+    }),
+    Object.freeze({
+      kind: 'define-policy',
+      severity: 'high',
+      title: 'Define policy limits for over-policy refund amounts',
+      summary: 'Over-policy refund amounts stay review-only until explicit customer policy limits are bound.',
+      actionSurface: 'refund_service.issue_refund',
+      domain: 'money-movement',
+      affectedEvents: gaps.filter((gap) => gap.kind === 'policy-limit-review').length,
+      reasonCodes: Object.freeze([
+        'refund:over-policy-amount',
+        'refund:policy-limit-review-required',
+      ]),
+      nextMode: 'review',
+      confidence: 0.84,
     }),
   ]);
 }

@@ -44,6 +44,8 @@ certification, and not production readiness.
 | R24 B-078 remediation | `REM-2026-POL-APPROVALTTL-001` | remediation | Risk-class-aware default approval expiry | fixed | `tests/release-policy-control-plane-activation-approvals.test.ts` |
 | R24 B-079 | `AUD-2026-POL-DIGEST-001` | finding | Locale-sensitive key sort in policy approval and audit digests | fixed | `src/release-policy-control-plane/activation-approvals.ts`; `src/release-policy-control-plane/audit-log.ts`; `docs/audit/REM-2026-POL-DIGEST-001.md` |
 | R24 B-079 remediation | `REM-2026-POL-DIGEST-001` | remediation | Locale-independent policy control-plane digest ordering | fixed | `tests/release-policy-control-plane-activation-approvals.test.ts`; `tests/release-policy-control-plane-audit-log.test.ts` |
+| R26 B-081 | `AUD-2026-POL-SCOPING-001` | finding | Locale-sensitive policy scope precedence tiebreak | fixed | `src/release-policy-control-plane/scoping.ts`; `docs/audit/REM-2026-POL-SCOPING-001.md` |
+| R26 B-081 remediation | `REM-2026-POL-SCOPING-001` | remediation | Locale-independent policy scope precedence and fail-closed ambiguity | fixed | `tests/release-policy-control-plane-scoping.test.ts` |
 
 ## Rules
 

@@ -24,6 +24,7 @@ function run(): void {
   const userStoreRecord = readProjectFile('docs', 'audit', 'AUD-2026-SVC-USERSTORE-001.md');
   const approvalStoreRecord = readProjectFile('docs', 'audit', 'AUD-2026-POL-APPROVALSTORE-001.md');
   const digestRemediation = readProjectFile('docs', 'audit', 'REM-2026-POL-DIGEST-001.md');
+  const scopingRemediation = readProjectFile('docs', 'audit', 'REM-2026-POL-SCOPING-001.md');
   const deployment = readProjectFile('docs', '08-deployment', 'deployment.md');
 
   includes(
@@ -58,6 +59,11 @@ function run(): void {
   );
   includes(
     registry,
+    'AUD-2026-POL-SCOPING-001',
+    'Audit alias registry: policy scoping finding has canonical ID',
+  );
+  includes(
+    registry,
     'Do not include auditor or model names in PR titles or bodies.',
     'Audit alias registry: PR naming excludes auditor/model names',
   );
@@ -85,6 +91,11 @@ function run(): void {
     digestRemediation,
     'localeCompare',
     'Policy digest remediation: original locale-sensitive failure mode is documented',
+  );
+  includes(
+    scopingRemediation,
+    'malformed persisted selector',
+    'Policy scoping remediation: malformed selector failure mode is documented',
   );
   includes(
     deployment,

@@ -123,6 +123,33 @@ function specificityScoreForSelector(selector: PolicyScopeSelector): number {
   }, selector.dimensions.length);
 }
 
+function compareCanonicalLabels(left: string, right: string): number {
+  if (left < right) return -1;
+  if (left > right) return 1;
+  return 0;
+}
+
+function samePrecedenceMatch(
+  left: PolicyScopeMatchResult,
+  right: PolicyScopeMatchResult,
+): boolean {
+  if (left.specificityScore !== right.specificityScore) {
+    return false;
+  }
+
+  if (left.precedenceVector.length !== right.precedenceVector.length) {
+    return false;
+  }
+
+  for (let index = 0; index < left.precedenceVector.length; index += 1) {
+    if ((left.precedenceVector[index] ?? 0) !== (right.precedenceVector[index] ?? 0)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 export function policyScopePrecedenceDescriptor(): PolicyScopePrecedenceDescriptor {
   return Object.freeze({
     version: POLICY_SCOPE_PRECEDENCE_SPEC_VERSION,
@@ -217,7 +244,7 @@ export function comparePolicyScopeMatches(
     }
   }
 
-  return left.selectorLabel.localeCompare(right.selectorLabel);
+  return compareCanonicalLabels(left.selectorLabel, right.selectorLabel);
 }
 
 export function resolvePolicyActivationPrecedence(
@@ -254,9 +281,7 @@ export function resolvePolicyActivationPrecedence(
   }
 
   const ambiguousTopCandidates = matchedCandidates.filter(
-    (candidate) =>
-      comparePolicyScopeMatches(candidate.match, topCandidate.match) === 0 &&
-      candidate.match.selectorLabel === topCandidate.match.selectorLabel,
+    (candidate) => samePrecedenceMatch(candidate.match, topCandidate.match),
   );
 
   return Object.freeze({

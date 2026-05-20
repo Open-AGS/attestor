@@ -63,6 +63,18 @@ function sampleActivationRecord(
   });
 }
 
+function withLocaleCompareTrap(action: () => void): void {
+  const original = String.prototype.localeCompare;
+  String.prototype.localeCompare = function localeCompareTrap(): number {
+    throw new Error('localeCompare must not be used for policy scope precedence ordering');
+  } as typeof String.prototype.localeCompare;
+  try {
+    action();
+  } finally {
+    String.prototype.localeCompare = original;
+  }
+}
+
 function testTargetHierarchyValidation(): void {
   assert.throws(
     () =>
@@ -296,6 +308,39 @@ function testResolutionDetectsAmbiguousSameSelector(): void {
   assert.equal(resolution.ambiguousTopCandidates.length, 2);
 }
 
+function testResolutionRejectsSamePrecedenceMalformedSelectorLabels(): void {
+  const request = sampleRequestTarget();
+  const target = {
+    environment: 'prod-eu',
+    tenantId: 'tenant-finance',
+  } as const;
+  const first = sampleActivationRecord('activation_malformed_istanbul', target);
+  const second = sampleActivationRecord('activation_malformed_zurich', target);
+  const malformedActivations = [
+    Object.freeze({
+      ...first,
+      selector: Object.freeze({
+        ...first.selector,
+        planId: 'İstanbul',
+      }),
+    }),
+    Object.freeze({
+      ...second,
+      selector: Object.freeze({
+        ...second.selector,
+        planId: 'Zurich',
+      }),
+    }),
+  ];
+
+  withLocaleCompareTrap(() => {
+    const resolution = resolvePolicyActivationPrecedence(request, malformedActivations);
+
+    assert.equal(resolution.winner, null);
+    assert.equal(resolution.ambiguousTopCandidates.length, 2);
+  });
+}
+
 function testDescriptorAndManifestAlignment(): void {
   const descriptor = policyScopePrecedenceDescriptor();
   const pack = createPolicyPackMetadata({
@@ -341,6 +386,7 @@ testCohortPrecedenceSitsAbovePlanDefaults();
 testResolutionNoMatch();
 testResolutionPicksMostSpecificWinner();
 testResolutionDetectsAmbiguousSameSelector();
+testResolutionRejectsSamePrecedenceMalformedSelectorLabels();
 testDescriptorAndManifestAlignment();
 
-console.log('Release policy control-plane scoping tests: 26 passed, 0 failed');
+console.log('Release policy control-plane scoping tests: 27 passed, 0 failed');

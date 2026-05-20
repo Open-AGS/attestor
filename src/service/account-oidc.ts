@@ -67,7 +67,14 @@ const OIDC_SCOPE_DEFAULT = 'openid email profile';
 const OIDC_STATE_PREFIX = 'aoidc_';
 const OIDC_STATE_VERSION = 1;
 const OIDC_STATE_TOKEN_TTL_MINUTES = 10;
-const discoveryCache = new Map<string, Promise<oidcClient.Configuration>>();
+const OIDC_DISCOVERY_CACHE_TTL_SECONDS = 60 * 60;
+
+interface OidcDiscoveryCacheEntry {
+  readonly configuration: Promise<oidcClient.Configuration>;
+  readonly expiresAtMs: number;
+}
+
+const discoveryCache = new Map<string, OidcDiscoveryCacheEntry>();
 
 function envTruthy(raw: string | undefined): boolean {
   const value = raw?.trim().toLowerCase();
@@ -164,6 +171,11 @@ export function hostedOidcStateTtlMinutes(): number {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : OIDC_STATE_TOKEN_TTL_MINUTES;
 }
 
+export function hostedOidcDiscoveryCacheTtlSeconds(): number {
+  const parsed = Number.parseInt(process.env.ATTESTOR_HOSTED_OIDC_DISCOVERY_CACHE_TTL_SECONDS ?? '', 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : OIDC_DISCOVERY_CACHE_TTL_SECONDS;
+}
+
 export function loadHostedOidcConfig(requestOrigin?: string | URL | null): HostedOidcConfig | null {
   const issuerUrl = process.env.ATTESTOR_HOSTED_OIDC_ISSUER_URL?.trim();
   const clientId = process.env.ATTESTOR_HOSTED_OIDC_CLIENT_ID?.trim();
@@ -195,21 +207,34 @@ export function hostedOidcSummary(requestOrigin?: string | URL | null): {
 
 async function discoverOidcConfiguration(config: HostedOidcConfig): Promise<oidcClient.Configuration> {
   const key = `${config.issuerUrl}|${config.clientId}|${config.clientSecret ?? ''}`;
-  let cached = discoveryCache.get(key);
-  if (!cached) {
-    const allowInsecure = hostedOidcAllowsInsecureRequests(config);
-    cached = oidcClient.discovery(
-      new URL(config.issuerUrl),
-      config.clientId,
-      config.clientSecret ?? undefined,
-      undefined,
-      allowInsecure
-        ? { execute: [oidcClient.allowInsecureRequests] }
-        : undefined,
-    );
-    discoveryCache.set(key, cached);
+  const now = Date.now();
+  const cached = discoveryCache.get(key);
+  if (cached && cached.expiresAtMs > now) {
+    return cached.configuration;
   }
-  return cached;
+  const allowInsecure = hostedOidcAllowsInsecureRequests(config);
+  const discovered = oidcClient.discovery(
+    new URL(config.issuerUrl),
+    config.clientId,
+    config.clientSecret ?? undefined,
+    undefined,
+    allowInsecure
+      ? { execute: [oidcClient.allowInsecureRequests] }
+      : undefined,
+  );
+  const entry: OidcDiscoveryCacheEntry = {
+    configuration: discovered,
+    expiresAtMs: now + (hostedOidcDiscoveryCacheTtlSeconds() * 1000),
+  };
+  discoveryCache.set(key, entry);
+  try {
+    return await discovered;
+  } catch (error) {
+    if (discoveryCache.get(key) === entry) {
+      discoveryCache.delete(key);
+    }
+    throw error;
+  }
 }
 
 function sealOidcLoginState(payload: HostedOidcLoginState): string {

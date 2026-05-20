@@ -4,6 +4,7 @@ namespace: attestor
 resources:
   - namespace.yaml
   - api-serviceaccount.yaml
+  - worker-serviceaccount.yaml
   - configmap.yaml
   - release-runtime-pki-pvc.yaml
   - api-service.yaml

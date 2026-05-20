@@ -56,6 +56,16 @@ function requireAbsoluteHttpsUrl(name: string, value: string | null, issues: str
   }
 }
 
+function requireDigestPinnedImage(name: string, value: string | null, issues: string[]): void {
+  if (!value) {
+    issues.push(`${name} is required.`);
+    return;
+  }
+  if (!/@sha256:[a-f0-9]{64}$/iu.test(value)) {
+    issues.push(`${name} must be pinned by immutable image digest (@sha256:<64 hex>) for HA promotion.`);
+  }
+}
+
 function pushInvalid(message: string, issues: string[]): void {
   issues.push(message);
 }
@@ -115,8 +125,8 @@ export async function probeHaReleaseInputs(options?: {
   const tlsMode = env('ATTESTOR_TLS_MODE') ?? 'secret';
   const issues: string[] = [];
 
-  required('ATTESTOR_API_IMAGE', env('ATTESTOR_API_IMAGE'), issues);
-  required('ATTESTOR_WORKER_IMAGE', env('ATTESTOR_WORKER_IMAGE'), issues);
+  requireDigestPinnedImage('ATTESTOR_API_IMAGE', env('ATTESTOR_API_IMAGE'), issues);
+  requireDigestPinnedImage('ATTESTOR_WORKER_IMAGE', env('ATTESTOR_WORKER_IMAGE'), issues);
   required('ATTESTOR_PUBLIC_HOSTNAME', env('ATTESTOR_PUBLIC_HOSTNAME'), issues);
   required('REDIS_URL', env('REDIS_URL'), issues);
   required('ATTESTOR_CONTROL_PLANE_PG_URL', env('ATTESTOR_CONTROL_PLANE_PG_URL'), issues);

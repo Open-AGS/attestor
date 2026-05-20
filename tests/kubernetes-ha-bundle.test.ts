@@ -21,6 +21,7 @@ function main(): void {
   const kustomization = read('ops/kubernetes/ha/kustomization.yaml');
   const apiDeployment = read('ops/kubernetes/ha/api-deployment.yaml');
   const workerDeployment = read('ops/kubernetes/ha/worker-deployment.yaml');
+  const workerServiceAccount = read('ops/kubernetes/ha/worker-serviceaccount.yaml');
   const runtimeConfigMap = read('ops/kubernetes/ha/configmap.yaml');
   const releasePkiPvc = read('ops/kubernetes/ha/release-runtime-pki-pvc.yaml');
   const apiHpa = read('ops/kubernetes/ha/api-hpa.yaml');
@@ -61,7 +62,7 @@ function main(): void {
   const gkeProfile = read('ops/kubernetes/ha/profiles/gke-production.json');
   const haReadme = read('ops/kubernetes/ha/README.md');
 
-  ok(kustomization.includes('api-deployment.yaml') && kustomization.includes('gateway.yaml') && kustomization.includes('release-runtime-pki-pvc.yaml'), 'Kubernetes HA bundle: kustomization includes deployment, gateway, and shared release-runtime PKI resources');
+  ok(kustomization.includes('api-deployment.yaml') && kustomization.includes('worker-serviceaccount.yaml') && kustomization.includes('gateway.yaml') && kustomization.includes('release-runtime-pki-pvc.yaml'), 'Kubernetes HA bundle: kustomization includes deployments, worker ServiceAccount, gateway, and shared release-runtime PKI resources');
   ok(apiDeployment.includes('ATTESTOR_HA_MODE') && apiDeployment.includes('ATTESTOR_CONTROL_PLANE_PG_URL'), 'Kubernetes HA bundle: API deployment enables HA mode and shared control-plane');
   ok(apiDeployment.includes('ATTESTOR_RELEASE_AUTHORITY_PG_URL') && apiDeployment.includes('release-authority-pg-url'), 'Kubernetes HA bundle: API deployment wires shared release-authority PostgreSQL');
   ok(apiDeployment.includes('ATTESTOR_STRIPE_PRICE_SCALE') && apiDeployment.includes('stripe-price-scale'), 'Kubernetes HA bundle: API deployment wires hosted Scale Stripe price');
@@ -72,10 +73,16 @@ function main(): void {
   ok(apiDeployment.includes('rollingUpdate:') && apiDeployment.includes('maxUnavailable: 0'), 'Kubernetes HA bundle: API deployment uses zero-downtime rolling update settings');
   ok(apiDeployment.includes('startupProbe:') && apiDeployment.includes('preStop:'), 'Kubernetes HA bundle: API deployment defines startup probe and preStop drain');
   ok(apiDeployment.includes('topologySpreadConstraints:') && apiDeployment.includes('podAntiAffinity:'), 'Kubernetes HA bundle: API deployment spreads replicas across nodes/zones');
+  ok(apiDeployment.includes('seccompProfile:') && apiDeployment.includes('type: RuntimeDefault'), 'Kubernetes HA bundle: API pod uses the runtime-default seccomp profile');
+  ok(apiDeployment.includes('allowPrivilegeEscalation: false') && apiDeployment.includes('runAsNonRoot: true') && apiDeployment.includes('drop:') && apiDeployment.includes('ALL'), 'Kubernetes HA bundle: API containers drop Linux capabilities and disallow privilege escalation');
+  ok(apiDeployment.includes('account-mfa-encryption-key') && !apiDeployment.includes('key: account-mfa-encryption-key\n                  optional: true'), 'Kubernetes HA bundle: hosted MFA encryption key is required by the API manifest');
   ok(workerDeployment.includes('ATTESTOR_HA_MODE') && workerDeployment.includes('REDIS_URL'), 'Kubernetes HA bundle: worker deployment requires shared Redis and HA mode');
+  ok(kustomization.includes('worker-serviceaccount.yaml') && workerServiceAccount.includes('name: attestor-worker-runtime') && workerServiceAccount.includes('automountServiceAccountToken: false'), 'Kubernetes HA bundle: worker has an explicit no-token ServiceAccount');
+  ok(workerDeployment.includes('serviceAccountName: attestor-worker-runtime') && workerDeployment.includes('automountServiceAccountToken: false'), 'Kubernetes HA bundle: worker does not run under the default ServiceAccount');
   ok(workerDeployment.includes('ATTESTOR_WORKER_HEALTH_PORT') && workerDeployment.includes('readinessProbe:') && workerDeployment.includes('livenessProbe:'), 'Kubernetes HA bundle: worker deployment exposes health/readiness probes');
   ok(workerDeployment.includes('OTEL_SERVICE_NAME') && workerDeployment.includes('attestor-worker'), 'Kubernetes HA bundle: worker deployment overrides OTLP service naming so worker traces stay distinct from the API');
   ok(workerDeployment.includes('topologySpreadConstraints:') && workerDeployment.includes('podAntiAffinity:'), 'Kubernetes HA bundle: worker deployment spreads replicas across nodes/zones');
+  ok(workerDeployment.includes('seccompProfile:') && workerDeployment.includes('allowPrivilegeEscalation: false') && workerDeployment.includes('runAsNonRoot: true'), 'Kubernetes HA bundle: worker uses baseline pod/container security context');
   ok(runtimeConfigMap.includes('OTEL_EXPORTER_OTLP_ENDPOINT') && runtimeConfigMap.includes('attestor-observability-receiver.attestor-observability.svc.cluster.local:4318'), 'Kubernetes HA bundle: runtime configmap points applications at the in-cluster Alloy OTLP HTTP receiver');
   ok(runtimeConfigMap.includes('ATTESTOR_RUNTIME_PROFILE') && runtimeConfigMap.includes('production-shared'), 'Kubernetes HA bundle: runtime configmap selects the production-shared profile');
   ok(runtimeConfigMap.includes('ATTESTOR_RELEASE_RUNTIME_PKI_PATH') && runtimeConfigMap.includes('ATTESTOR_RELEASE_RUNTIME_PKI_SHARED_PATH'), 'Kubernetes HA bundle: runtime configmap declares the shared release-runtime PKI boundary');
@@ -119,6 +126,7 @@ function main(): void {
   ok(awsProfile.includes('"provider": "aws"') && awsProfile.includes('"availabilityTarget": 0.995'), 'Kubernetes HA bundle: AWS calibration profile ships production SLO defaults');
   ok(gkeProfile.includes('"provider": "gke"') && gkeProfile.includes('"timeoutLatencyMultiplier": 6'), 'Kubernetes HA bundle: GKE calibration profile ships backend timeout tuning defaults');
   ok(haReadme.includes('attestor-gateway-ip') && haReadme.includes('https-gateway.example.yaml') && haReadme.includes('https-httproute.example.yaml') && haReadme.includes(dnsName('sslip', 'io')) && haReadme.includes('render:ha-credentials') && haReadme.includes('render:ha-release-bundle') && haReadme.includes('probe:ha-release-inputs'), 'Kubernetes HA bundle: README documents static-address Gateway bootstrap, hostname-aware HTTPS finalization, and renderer-driven release wiring');
+  ok(haReadme.includes('not a live-shadow or production ingress contract') && haReadme.includes('digest-pinned image refs'), 'Kubernetes HA bundle: README separates HTTP bootstrap from live-shadow HTTPS and digest-pinned release requirements');
 
   console.log(`\nKubernetes HA bundle tests: ${passed} passed, 0 failed`);
 }

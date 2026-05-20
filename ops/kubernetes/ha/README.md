@@ -22,6 +22,12 @@ The base Gateway now ships as a GKE-ready HTTP bootstrap:
 - static global `NamedAddress` placeholder: `attestor-gateway-ip`
 - HTTP listener on port `80` for immediate public smoke testing
 
+This bootstrap path is not a live-shadow or production ingress contract. Before
+live shadow traffic is allowed, render and apply a final HTTPS bundle with
+`render:ha-release-bundle` or `render:gke-domain-cutover`, and verify that the
+active Gateway listener, HTTPRoute, public base URL, and session-cookie settings
+all agree on `https://`.
+
 To finalize public HTTPS on GKE, replace:
 
 - `attestor-gateway-ip` with your reserved global static address name
@@ -97,6 +103,7 @@ Workload-aware autoscaling overlay:
 Notes:
 
 - the release-runtime PKI PVC must be backed by storage that is actually shared across API pods, such as EFS, Filestore, or another RWX-capable storage class; the runtime treats `ATTESTOR_RELEASE_RUNTIME_PKI_SHARED_PATH=true` as operator attestation and fails closed in HA mode without it
+- live shadow must use digest-pinned image refs (`@sha256:<digest>`) in the rendered HA release bundle; tag-only image refs are accepted only in bootstrap/static examples
 - the KEDA overlay replaces the base HPAs with:
   - Prometheus request-rate scaling for `attestor-api`
   - Redis waiting-list scaling for `attestor-worker`

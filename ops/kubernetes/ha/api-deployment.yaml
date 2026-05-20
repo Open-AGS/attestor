@@ -22,6 +22,9 @@ spec:
     spec:
       serviceAccountName: attestor-api-runtime
       terminationGracePeriodSeconds: 45
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       topologySpreadConstraints:
         - maxSkew: 1
           topologyKey: kubernetes.io/hostname
@@ -52,7 +55,11 @@ spec:
             - "--port=5432"
             - "project-9180cbda-d681-42d8-8ca:europe-west1:attestor-pg"
           securityContext:
+            allowPrivilegeEscalation: false
             runAsNonRoot: true
+            capabilities:
+              drop:
+                - ALL
           resources:
             requests:
               cpu: 50m
@@ -63,6 +70,12 @@ spec:
         - name: api
           image: europe-west1-docker.pkg.dev/project-9180cbda-d681-42d8-8ca/attestor/attestor-api:de677b9-gke1
           imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            capabilities:
+              drop:
+                - ALL
           command: ["node", "dist/service/api-server.js"]
           envFrom:
             - configMapRef:
@@ -114,7 +127,6 @@ spec:
                 secretKeyRef:
                   name: attestor-runtime-secrets
                   key: account-mfa-encryption-key
-                  optional: true
             - name: STRIPE_API_KEY
               valueFrom:
                 secretKeyRef:

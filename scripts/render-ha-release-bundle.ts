@@ -88,6 +88,12 @@ function required(value: string | undefined, name: string): string {
   return value;
 }
 
+function requireDigestPinnedImage(value: string, name: string): void {
+  if (!/@sha256:[a-f0-9]{64}$/iu.test(value)) {
+    throw new Error(`${name} must be pinned by immutable image digest (@sha256:<64 hex>) for production HA release bundles.`);
+  }
+}
+
 function yamlSingleQuote(value: string): string {
   return `'${value.replace(/'/gu, "''")}'`;
 }
@@ -152,6 +158,11 @@ function main(): void {
   const namespace = env('ATTESTOR_K8S_NAMESPACE') ?? 'attestor';
   const apiImage = required(arg('api-image', env('ATTESTOR_API_IMAGE')), 'ATTESTOR_API_IMAGE');
   const workerImage = required(arg('worker-image', env('ATTESTOR_WORKER_IMAGE')), 'ATTESTOR_WORKER_IMAGE');
+  const productionMode = bool(env('ATTESTOR_HA_PRODUCTION_MODE'), false);
+  if (productionMode) {
+    requireDigestPinnedImage(apiImage, 'ATTESTOR_API_IMAGE');
+    requireDigestPinnedImage(workerImage, 'ATTESTOR_WORKER_IMAGE');
+  }
   const imagePullPolicy = env('ATTESTOR_IMAGE_PULL_POLICY') ?? 'IfNotPresent';
   const hostname = normalizeDnsHostname(required(env('ATTESTOR_PUBLIC_HOSTNAME'), 'ATTESTOR_PUBLIC_HOSTNAME'));
   const gatewayClassName = env('ATTESTOR_GATEWAY_CLASS_NAME') ?? 'managed-external';
@@ -188,6 +199,7 @@ function main(): void {
       workerDeployment = replaceOne(workerDeployment, /imagePullPolicy:\s*\S+/, `imagePullPolicy: ${imagePullPolicy}`);
     }
     httpRoute = ensureHttpRouteHostname(httpRoute, hostname);
+    httpRoute = replaceYamlLine(httpRoute, 'sectionName', '      sectionName: https');
     if (otelEndpoint) {
       configmap = replaceOne(
         configmap,

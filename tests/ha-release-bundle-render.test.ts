@@ -57,8 +57,8 @@ function main(): void {
         encoding: 'utf8',
         env: {
           ...process.env,
-          ATTESTOR_API_IMAGE: 'ghcr.io/example/attestor-api:1.2.3',
-          ATTESTOR_WORKER_IMAGE: 'ghcr.io/example/attestor-worker:1.2.3',
+          ATTESTOR_API_IMAGE: 'ghcr.io/example/attestor-api@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+          ATTESTOR_WORKER_IMAGE: 'ghcr.io/example/attestor-worker@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
           ATTESTOR_PUBLIC_HOSTNAME: 'api.attestor.example.invalid',
           ATTESTOR_HA_PRODUCTION_MODE: 'true',
           ATTESTOR_TLS_MODE: 'aws-acm',
@@ -87,7 +87,7 @@ function main(): void {
     ok(awsApiDeployment.includes('ATTESTOR_RELEASE_AUTHORITY_PG_URL'), 'HA release bundle: AWS API deployment wires release-authority PostgreSQL');
     ok(awsApiDeployment.includes('claimName: attestor-release-runtime-pki') && awsPkiPvc.includes('ReadWriteMany'), 'HA release bundle: AWS API deployment mounts a shared release-runtime PKI PVC');
     ok(awsApiScaled.includes('threshold: "18"') && awsApiScaled.includes('activationThreshold: "3"'), 'HA release bundle: AWS KEDA scaler is benchmark-tuned');
-    ok(awsSummary.provider === 'aws' && awsSummary.apiImage.includes(':1.2.3'), 'HA release bundle: AWS summary captures provider and image refs');
+    ok(awsSummary.provider === 'aws' && awsSummary.apiImage.includes('@sha256:'), 'HA release bundle: AWS summary captures provider and digest-pinned image refs');
 
     const gke = spawnSync(
       process.execPath,
@@ -103,8 +103,8 @@ function main(): void {
         encoding: 'utf8',
         env: {
           ...process.env,
-          ATTESTOR_API_IMAGE: 'ghcr.io/example/attestor-api:4.5.6',
-          ATTESTOR_WORKER_IMAGE: 'ghcr.io/example/attestor-worker:4.5.6',
+          ATTESTOR_API_IMAGE: 'ghcr.io/example/attestor-api@sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc',
+          ATTESTOR_WORKER_IMAGE: 'ghcr.io/example/attestor-worker@sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd',
           ATTESTOR_PUBLIC_HOSTNAME: 'gke.attestor.example.invalid',
           ATTESTOR_HA_PRODUCTION_MODE: 'true',
           ATTESTOR_TLS_MODE: 'cert-manager',
@@ -130,8 +130,52 @@ function main(): void {
     ok(gkeKustomization.includes('gateway.yaml') && gkeKustomization.includes('certificate.yaml'), 'HA release bundle: GKE bundle includes gateway and cert-manager certificate');
     ok(gkeKustomization.includes('release-runtime-pki-pvc.yaml') && gkePkiPvc.includes('ReadWriteMany'), 'HA release bundle: GKE bundle carries the shared release-runtime PKI PVC');
     ok(gkeGateway.includes('gke.attestor.example.invalid') && gkeRoute.includes('gke.attestor.example.invalid'), 'HA release bundle: GKE bundle rewires hostname across gateway and route');
+    ok(
+      gkeGateway.includes('protocol: HTTPS') &&
+      /^\s*sectionName:\s*https\s*$/mu.test(gkeRoute) &&
+      !/^\s*sectionName:\s*http\s*$/mu.test(gkeRoute),
+      'HA release bundle: GKE route targets the HTTPS Gateway listener',
+    );
     ok(gkePolicy.includes('sslPolicy: attestor-modern-tls'), 'HA release bundle: GKE gateway policy carries SSL policy wiring');
     ok(gkeCertificate.includes('letsencrypt-prod') && gkeCertificate.includes('gke.attestor.example.invalid'), 'HA release bundle: GKE certificate carries issuer and hostname');
+
+    const tagOnlyImageOut = resolve(tempDir, 'tag-only-image-bundle');
+    const tagOnlyImage = spawnSync(
+      process.execPath,
+      [
+        resolve('node_modules/tsx/dist/cli.mjs'),
+        'scripts/render-ha-release-bundle.ts',
+        '--provider=gke',
+        `--benchmark=${benchmarkPath}`,
+        `--output-dir=${tagOnlyImageOut}`,
+      ],
+      {
+        cwd: resolve('.'),
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          ATTESTOR_API_IMAGE: 'ghcr.io/example/attestor-api:4.5.6',
+          ATTESTOR_WORKER_IMAGE: 'ghcr.io/example/attestor-worker@sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd',
+          ATTESTOR_PUBLIC_HOSTNAME: 'gke.attestor.example.invalid',
+          ATTESTOR_HA_PRODUCTION_MODE: 'true',
+          ATTESTOR_TLS_MODE: 'cert-manager',
+          ATTESTOR_TLS_CLUSTER_ISSUER: 'letsencrypt-prod',
+          ATTESTOR_GKE_SSL_POLICY: 'attestor-modern-tls',
+          REDIS_URL: 'redis://cache.example.invalid:6379/0',
+          ATTESTOR_CONTROL_PLANE_PG_URL: 'postgres://user:pass@db/control',
+          ATTESTOR_BILLING_LEDGER_PG_URL: 'postgres://user:pass@db/billing',
+          ATTESTOR_RELEASE_AUTHORITY_PG_URL: 'postgres://user:pass@db/release_authority',
+          ATTESTOR_ADMIN_API_KEY: 'admin-key',
+          ATTESTOR_TLS_CERT_PEM_FILE: certPath,
+          ATTESTOR_TLS_KEY_PEM_FILE: keyPath,
+        },
+      },
+    );
+    ok(tagOnlyImage.status !== 0, 'HA release bundle: production mode rejects tag-only image refs');
+    ok(
+      `${tagOnlyImage.stderr}\n${tagOnlyImage.stdout}`.includes('immutable image digest'),
+      'HA release bundle: tag-only image error explains digest pinning requirement',
+    );
 
     const invalidHostnameOut = resolve(tempDir, 'invalid-hostname-bundle');
     const invalidHostname = spawnSync(
@@ -148,8 +192,8 @@ function main(): void {
         encoding: 'utf8',
         env: {
           ...process.env,
-          ATTESTOR_API_IMAGE: 'ghcr.io/example/attestor-api:4.5.6',
-          ATTESTOR_WORKER_IMAGE: 'ghcr.io/example/attestor-worker:4.5.6',
+          ATTESTOR_API_IMAGE: 'ghcr.io/example/attestor-api@sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc',
+          ATTESTOR_WORKER_IMAGE: 'ghcr.io/example/attestor-worker@sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd',
           ATTESTOR_PUBLIC_HOSTNAME: 'bad.example.invalid\nmalicious.example.invalid',
           ATTESTOR_HA_PRODUCTION_MODE: 'true',
           ATTESTOR_TLS_MODE: 'cert-manager',

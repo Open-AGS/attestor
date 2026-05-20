@@ -20,7 +20,12 @@ spec:
       labels:
         app.kubernetes.io/name: attestor-worker
     spec:
+      serviceAccountName: attestor-worker-runtime
+      automountServiceAccountToken: false
       terminationGracePeriodSeconds: 90
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       topologySpreadConstraints:
         - maxSkew: 1
           topologyKey: kubernetes.io/hostname
@@ -47,6 +52,12 @@ spec:
         - name: worker
           image: europe-west1-docker.pkg.dev/project-9180cbda-d681-42d8-8ca/attestor/attestor-worker:de677b9-gke1
           imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            capabilities:
+              drop:
+                - ALL
           command: ["node", "dist/service/worker.js"]
           envFrom:
             - configMapRef:

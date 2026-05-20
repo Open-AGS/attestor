@@ -121,8 +121,8 @@ async function main(): Promise<void> {
     ok(missing.rolloutReadiness.envComplete === false, 'HA release probe: missing envs are reported');
     ok(missing.rolloutReadiness.issues.some((issue) => issue.includes('ATTESTOR_API_IMAGE')), 'HA release probe: missing image requirement is surfaced');
 
-    process.env.ATTESTOR_API_IMAGE = 'ghcr.io/example/attestor-api:1.2.3';
-    process.env.ATTESTOR_WORKER_IMAGE = 'ghcr.io/example/attestor-worker:1.2.3';
+    process.env.ATTESTOR_API_IMAGE = 'ghcr.io/example/attestor-api@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+    process.env.ATTESTOR_WORKER_IMAGE = 'ghcr.io/example/attestor-worker@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
     process.env.ATTESTOR_PUBLIC_HOSTNAME = 'ha.attestor.example.invalid';
     process.env.REDIS_URL = redisUrl;
     process.env.ATTESTOR_CONTROL_PLANE_PG_URL = `${basePg}/control_plane`;
@@ -152,6 +152,12 @@ async function main(): Promise<void> {
     delete process.env.ATTESTOR_SESSION_COOKIE_SECURE;
     delete process.env.ATTESTOR_HA_RUNTIME_SECRET_MODE;
     delete process.env.ATTESTOR_HA_SECRET_STORE;
+
+    process.env.ATTESTOR_API_IMAGE = 'ghcr.io/example/attestor-api:1.2.3';
+    const tagOnlyImage = await probeHaReleaseInputs({ provider: 'generic', benchmarkPath });
+    ok(tagOnlyImage.rolloutReadiness.envComplete === false, 'HA release probe: tag-only API image blocks promotion readiness');
+    ok(tagOnlyImage.rolloutReadiness.issues.some((issue) => issue.includes('immutable image digest')), 'HA release probe: tag-only image issue is surfaced');
+    process.env.ATTESTOR_API_IMAGE = 'ghcr.io/example/attestor-api@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
 
     const ready = await probeHaReleaseInputs({ provider: 'generic', benchmarkPath });
     ok(ready.rolloutReadiness.envComplete === true, 'HA release probe: env completeness passes with required inputs');

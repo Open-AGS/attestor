@@ -28,6 +28,12 @@ import type { TenantKeyRecord } from '../../tenant-key-store.js';
 import type { UsageContext } from '../../usage-meter.js';
 import type { InProcessAsyncJob, TenantAsyncBackendMode } from '../../runtime/tenant-runtime.js';
 import type * as TenantRuntime from '../../runtime/tenant-runtime.js';
+import {
+  adminBearerTokenFromContext,
+  configuredAdminRoleKeys,
+  constantTimeSecretEquals,
+  type AdminOperatorRole,
+} from '../../request-context.js';
 import type { ReleaseActorReference } from '../../../release-layer/index.js';
 import type {
   RequestPathDegradedModeGrantStore,
@@ -54,6 +60,243 @@ type BillingEventProviderFilter = BillingEventLedger.BillingEventProvider | null
 type BillingEventOutcomeFilter = Exclude<BillingEventLedger.BillingEventOutcome, 'pending'> | null;
 type AdminRouteResponseBody = Record<string, unknown>;
 type AdminAsyncQueue = Parameters<typeof AsyncPipeline.getAsyncQueueSummary>[0];
+type AdminRouteRoleSet = readonly AdminOperatorRole[];
+
+interface AdminRouteActor {
+  actorType: 'admin_api_key' | 'admin_operator';
+  actorLabel: string;
+  actorRole: AdminOperatorRole;
+  releaseActor: ReleaseActorReference;
+}
+
+type AdminMutationReadyResultWithActor = AdminMutationReadyResult & {
+  adminActor: AdminRouteActor;
+};
+
+const ADMIN_SUPERUSER_ROLE: AdminOperatorRole = 'admin-superuser';
+const ADMIN_READ_ROLES = Object.freeze([
+  ADMIN_SUPERUSER_ROLE,
+  'admin-read',
+] as const satisfies AdminRouteRoleSet);
+const ADMIN_AUDIT_READ_ROLES = Object.freeze([
+  ADMIN_SUPERUSER_ROLE,
+  'admin-read',
+  'admin-audit',
+] as const satisfies AdminRouteRoleSet);
+const ADMIN_ACCOUNT_ROLES = Object.freeze([
+  ADMIN_SUPERUSER_ROLE,
+  'admin-account-admin',
+] as const satisfies AdminRouteRoleSet);
+const ADMIN_ACCOUNT_READ_ROLES = Object.freeze([
+  ADMIN_SUPERUSER_ROLE,
+  'admin-read',
+  'admin-account-admin',
+] as const satisfies AdminRouteRoleSet);
+const ADMIN_KEY_ROLES = Object.freeze([
+  ADMIN_SUPERUSER_ROLE,
+  'admin-key-admin',
+] as const satisfies AdminRouteRoleSet);
+const ADMIN_KEY_READ_ROLES = Object.freeze([
+  ADMIN_SUPERUSER_ROLE,
+  'admin-read',
+  'admin-key-admin',
+] as const satisfies AdminRouteRoleSet);
+const ADMIN_BILLING_ROLES = Object.freeze([
+  ADMIN_SUPERUSER_ROLE,
+  'admin-billing-admin',
+] as const satisfies AdminRouteRoleSet);
+const ADMIN_BILLING_READ_ROLES = Object.freeze([
+  ADMIN_SUPERUSER_ROLE,
+  'admin-read',
+  'admin-billing-admin',
+] as const satisfies AdminRouteRoleSet);
+const ADMIN_OPS_ROLES = Object.freeze([
+  ADMIN_SUPERUSER_ROLE,
+  'admin-ops-admin',
+] as const satisfies AdminRouteRoleSet);
+const ADMIN_OPS_READ_ROLES = Object.freeze([
+  ADMIN_SUPERUSER_ROLE,
+  'admin-read',
+  'admin-ops-admin',
+] as const satisfies AdminRouteRoleSet);
+const ADMIN_RELEASE_ROLES = Object.freeze([
+  ADMIN_SUPERUSER_ROLE,
+  'admin-release-admin',
+  'admin-break-glass',
+] as const satisfies AdminRouteRoleSet);
+const ADMIN_RELEASE_READ_ROLES = Object.freeze([
+  ADMIN_SUPERUSER_ROLE,
+  'admin-read',
+  'admin-release-admin',
+  'admin-break-glass',
+] as const satisfies AdminRouteRoleSet);
+
+const ADMIN_AUTH_RATE_LIMIT_WINDOW_MS = 60_000;
+const ADMIN_AUTH_RATE_LIMIT_DEFAULT = 240;
+const ADMIN_AUTH_RATE_LIMIT_MAX = 10_000;
+const adminAuthAttempts = new Map<string, {
+  count: number;
+  resetAt: number;
+}>();
+const adminRouteActors = new WeakMap<object, AdminRouteActor>();
+
+function normalizeAdminRole(value: string | undefined | null): AdminOperatorRole | null {
+  const role = value?.trim() ?? '';
+  switch (role) {
+    case 'admin-superuser':
+    case 'admin-read':
+    case 'admin-audit':
+    case 'admin-account-admin':
+    case 'admin-key-admin':
+    case 'admin-billing-admin':
+    case 'admin-ops-admin':
+    case 'admin-release-admin':
+    case 'admin-break-glass':
+      return role;
+    default:
+      return null;
+  }
+}
+
+function configuredAdminRateLimit(): number {
+  const raw = process.env.ATTESTOR_ADMIN_AUTH_RATE_LIMIT_PER_MINUTE?.trim();
+  const parsed = raw ? Number.parseInt(raw, 10) : ADMIN_AUTH_RATE_LIMIT_DEFAULT;
+  if (!Number.isFinite(parsed) || parsed <= 0) return ADMIN_AUTH_RATE_LIMIT_DEFAULT;
+  return Math.min(parsed, ADMIN_AUTH_RATE_LIMIT_MAX);
+}
+
+function adminRateLimitKey(context: Context): string {
+  const forwardedFor = context.req.header('x-forwarded-for')?.split(',')[0]?.trim();
+  const client =
+    context.req.header('cf-connecting-ip')?.trim() ||
+    context.req.header('x-real-ip')?.trim() ||
+    forwardedFor ||
+    'unknown-client';
+  return `admin-auth:${client}`;
+}
+
+function adminAuthRateLimitResponse(context: Context): Response | null {
+  const limit = configuredAdminRateLimit();
+  const now = Date.now();
+  const key = adminRateLimitKey(context);
+  for (const [entryKey, entry] of adminAuthAttempts.entries()) {
+    if (entry.resetAt <= now) {
+      adminAuthAttempts.delete(entryKey);
+    }
+  }
+
+  const existing = adminAuthAttempts.get(key);
+  const entry = existing && existing.resetAt > now
+    ? existing
+    : {
+        count: 0,
+        resetAt: now + ADMIN_AUTH_RATE_LIMIT_WINDOW_MS,
+      };
+  entry.count += 1;
+  adminAuthAttempts.set(key, entry);
+
+  if (entry.count <= limit) return null;
+
+  const retryAfterSeconds = Math.max(1, Math.ceil((entry.resetAt - now) / 1000));
+  context.header('retry-after', String(retryAfterSeconds));
+  context.header('x-attestor-admin-auth-rate-limit-reset-at', new Date(entry.resetAt).toISOString());
+  return context.json({
+    error: 'Admin authentication rate limit exceeded.',
+    retryAfterSeconds,
+  }, 429);
+}
+
+function matchedAdminCredentialRoles(token: string): readonly AdminOperatorRole[] {
+  return configuredAdminRoleKeys()
+    .filter((entry) => constantTimeSecretEquals(token, entry.secret))
+    .map((entry) => entry.role);
+}
+
+function adminRouteActorFromRequest(
+  context: Context,
+  allowedRoles: AdminRouteRoleSet,
+): AdminRouteActor | Response {
+  const token = adminBearerTokenFromContext(context);
+  const matchedRoles = matchedAdminCredentialRoles(token);
+  const explicitRole = normalizeAdminRole(context.req.header('x-attestor-admin-actor-role'));
+  const credentialRole = matchedRoles.includes(ADMIN_SUPERUSER_ROLE)
+    ? ADMIN_SUPERUSER_ROLE
+    : matchedRoles[0] ?? null;
+  if (!credentialRole) {
+    return context.json({ error: 'Valid admin API key required in Authorization header.' }, 401);
+  }
+
+  const requestedRole = explicitRole ?? credentialRole;
+  if (explicitRole && credentialRole !== ADMIN_SUPERUSER_ROLE && explicitRole !== credentialRole) {
+    return context.json({
+      error: 'Admin actor role does not match the role-scoped admin API key.',
+      credentialRole,
+      requestedRole: explicitRole,
+    }, 403);
+  }
+
+  if (!allowedRoles.includes(requestedRole)) {
+    return context.json({
+      error: `Admin actor role '${requestedRole}' is not allowed for this route.`,
+      allowedRoles,
+    }, 403);
+  }
+
+  const actorId = context.req.header('x-attestor-admin-actor-id')?.trim() || requestedRole;
+  const actorName = context.req.header('x-attestor-admin-actor-name')?.trim() || actorId;
+  return {
+    actorType: actorId === 'admin-superuser' && requestedRole === ADMIN_SUPERUSER_ROLE
+      ? 'admin_api_key'
+      : 'admin_operator',
+    actorLabel: actorId,
+    actorRole: requestedRole,
+    releaseActor: {
+      id: actorId,
+      type: actorId === 'admin-superuser' ? 'service' : 'user',
+      displayName: actorName,
+      role: requestedRole,
+    },
+  };
+}
+
+function authorizeAdminRoute(
+  context: Context,
+  allowedRoles: AdminRouteRoleSet,
+  currentAdminAuthorized: AdminRouteDeps['currentAdminAuthorized'],
+): AdminRouteActor | Response {
+  const rateLimited = adminAuthRateLimitResponse(context);
+  if (rateLimited) return rateLimited;
+
+  const unauthorized = currentAdminAuthorized(context);
+  if (unauthorized) return unauthorized;
+
+  const actor = adminRouteActorFromRequest(context, allowedRoles);
+  if (actor instanceof Response) return actor;
+  adminRouteActors.set(context, actor);
+  return actor;
+}
+
+function adminActorForMutation(context: Context): AdminRouteActor {
+  const actor = adminRouteActors.get(context);
+  if (!actor) {
+    return {
+      actorType: 'admin_api_key',
+      actorLabel: 'ATTESTOR_ADMIN_API_KEY',
+      actorRole: ADMIN_SUPERUSER_ROLE,
+      releaseActor: {
+        id: 'admin-superuser',
+        type: 'service',
+        displayName: 'Admin API Key',
+        role: ADMIN_SUPERUSER_ROLE,
+      },
+    };
+  }
+  return actor;
+}
+
+export function resetAdminRouteAuthLimiterForTests(): void {
+  adminAuthAttempts.clear();
+}
 
 export interface AdminRouteDeps {
   currentAdminAuthorized(context: Context): Response | null;
@@ -188,6 +431,53 @@ function adminControlBillingEvent(
     routeId,
     occurredAt: new Date().toISOString(),
   };
+}
+
+function isJsonRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function adminJsonContentType(context: Context): boolean {
+  const contentType = context.req.header('content-type')?.toLowerCase() ?? '';
+  return contentType
+    .split(';')[0]
+    ?.trim()
+    .match(/^(application\/json|application\/[^/]+\+json)$/u) !== null;
+}
+
+async function parseAdminJsonBody(context: Context): Promise<Record<string, unknown> | Response> {
+  if (!adminJsonContentType(context)) {
+    return context.json({
+      error: 'Admin mutation routes require Content-Type: application/json.',
+    }, 415);
+  }
+  try {
+    const body = await context.req.json();
+    if (!isJsonRecord(body)) {
+      return context.json({ error: 'JSON request body must be an object.' }, 400);
+    }
+    return body;
+  } catch {
+    return context.json({ error: 'Valid JSON request body required.' }, 400);
+  }
+}
+
+function parseAdminListLimit(
+  context: Context,
+  options?: {
+    defaultLimit?: number;
+    maxLimit?: number;
+  },
+): number | Response {
+  const defaultLimit = options?.defaultLimit ?? 100;
+  const maxLimit = options?.maxLimit ?? 1000;
+  const raw = context.req.query('limit')?.trim();
+  if (raw === undefined || raw.length === 0) return defaultLimit;
+  const parsed = Number.parseInt(raw, 10);
+  if (!Number.isFinite(parsed) || parsed <= 0 || `${parsed}` !== raw) {
+    return context.json({ error: 'limit must be a positive integer.' }, 400);
+  }
+  return Math.min(parsed, maxLimit);
 }
 
 function adminAuditActionFilter(value: string | undefined): AdminAuditAction | null {
@@ -331,13 +621,19 @@ export function registerAdminRoutes(app: Hono, deps: AdminRouteDeps): void {
     context: Context,
     routeId: string,
     requestPayload: unknown,
-  ): Promise<AdminMutationReadyResult | Response> {
+  ): Promise<AdminMutationReadyResultWithActor | Response> {
+    const adminActor = adminActorForMutation(context);
     const mutation = await adminMutationService.begin({
       idempotencyKey: context.req.header('Idempotency-Key')?.trim() ?? null,
       routeId,
       requestPayload,
     });
-    if (mutation.kind === 'ready') return mutation;
+    if (mutation.kind === 'ready') {
+      return {
+        ...mutation,
+        adminActor,
+      };
+    }
     if (mutation.kind === 'conflict') {
       return context.json(mutation.responseBody, mutation.statusCode);
     }
@@ -348,31 +644,45 @@ export function registerAdminRoutes(app: Hono, deps: AdminRouteDeps): void {
   }
 
 app.get('/api/v1/admin/tenant-keys', async (c) => {
-  const unauthorized = currentAdminAuthorized(c);
-  if (unauthorized) return unauthorized;
+  const authorized = authorizeAdminRoute(c, ADMIN_KEY_READ_ROLES, currentAdminAuthorized);
+  if (authorized instanceof Response) return authorized;
 
+  const limit = parseAdminListLimit(c);
+  if (limit instanceof Response) return limit;
   const { records } = await adminQueryService.listTenantKeys();
   return c.json({
-    keys: records.map(adminTenantKeyView),
+    keys: records.slice(0, limit).map(adminTenantKeyView),
     defaults: {
       maxActiveKeysPerTenant: tenantKeyStorePolicy().maxActiveKeysPerTenant,
+    },
+    pagination: {
+      limit,
+      returned: Math.min(records.length, limit),
+      truncated: records.length > limit,
     },
   });
 });
 
 app.get('/api/v1/admin/accounts', async (c) => {
-  const unauthorized = currentAdminAuthorized(c);
-  if (unauthorized) return unauthorized;
+  const authorized = authorizeAdminRoute(c, ADMIN_ACCOUNT_READ_ROLES, currentAdminAuthorized);
+  if (authorized instanceof Response) return authorized;
 
+  const limit = parseAdminListLimit(c);
+  if (limit instanceof Response) return limit;
   const { records } = await adminQueryService.listHostedAccounts();
   return c.json({
-    accounts: records.map(adminAccountView),
+    accounts: records.slice(0, limit).map(adminAccountView),
+    pagination: {
+      limit,
+      returned: Math.min(records.length, limit),
+      truncated: records.length > limit,
+    },
   });
 });
 
 app.get('/api/v1/admin/accounts/:id/billing/export', async (c) => {
-  const unauthorized = currentAdminAuthorized(c);
-  if (unauthorized) return unauthorized;
+  const authorized = authorizeAdminRoute(c, ADMIN_BILLING_READ_ROLES, currentAdminAuthorized);
+  if (authorized instanceof Response) return authorized;
 
   const account = await adminQueryService.findHostedAccountById(c.req.param('id'));
   if (!account) {
@@ -389,13 +699,8 @@ app.get('/api/v1/admin/accounts/:id/billing/export', async (c) => {
     return c.json({ error: "format must be 'json' or 'csv'." }, 400);
   }
 
-  const rawLimit = c.req.query('limit');
-  const parsedLimit = rawLimit === undefined
-    ? null
-    : Number.parseInt(rawLimit, 10);
-  if (rawLimit !== undefined && (parsedLimit === null || !Number.isFinite(parsedLimit) || parsedLimit <= 0)) {
-    return c.json({ error: 'limit must be a positive integer.' }, 400);
-  }
+  const parsedLimit = parseAdminListLimit(c, { defaultLimit: 20, maxLimit: 100 });
+  if (parsedLimit instanceof Response) return parsedLimit;
 
   const entitlement = await readHostedBillingEntitlement(account);
   const tenantRecord = await adminQueryService.findTenantRecordByTenantId(account.primaryTenantId);
@@ -408,7 +713,7 @@ app.get('/api/v1/admin/accounts/:id/billing/export', async (c) => {
     account,
     entitlement,
     usage,
-    limit: parsedLimit ?? undefined,
+    limit: parsedLimit,
   });
   const reconciliation = buildHostedBillingReconciliation(payload);
 
@@ -427,8 +732,8 @@ app.get('/api/v1/admin/accounts/:id/billing/export', async (c) => {
 });
 
 app.get('/api/v1/admin/accounts/:id/features', async (c) => {
-  const unauthorized = currentAdminAuthorized(c);
-  if (unauthorized) return unauthorized;
+  const authorized = authorizeAdminRoute(c, ADMIN_ACCOUNT_READ_ROLES, currentAdminAuthorized);
+  if (authorized instanceof Response) return authorized;
 
   const accountId = c.req.param('id');
   const account = await adminQueryService.findHostedAccountById(accountId);
@@ -440,8 +745,8 @@ app.get('/api/v1/admin/accounts/:id/features', async (c) => {
 });
 
 app.get('/api/v1/admin/accounts/:id/billing/reconciliation', async (c) => {
-  const unauthorized = currentAdminAuthorized(c);
-  if (unauthorized) return unauthorized;
+  const authorized = authorizeAdminRoute(c, ADMIN_BILLING_READ_ROLES, currentAdminAuthorized);
+  if (authorized instanceof Response) return authorized;
 
   const account = await adminQueryService.findHostedAccountById(c.req.param('id'));
   if (!account) {
@@ -453,19 +758,14 @@ app.get('/api/v1/admin/accounts/:id/billing/reconciliation', async (c) => {
   c.set('obs.tenantId', account.primaryTenantId);
   c.set('obs.planId', account.billing.lastCheckoutPlanId ?? null);
 
-  const rawLimit = c.req.query('limit');
-  const parsedLimit = rawLimit === undefined
-    ? null
-    : Number.parseInt(rawLimit, 10);
-  if (rawLimit !== undefined && (parsedLimit === null || !Number.isFinite(parsedLimit) || parsedLimit <= 0)) {
-    return c.json({ error: 'limit must be a positive integer.' }, 400);
-  }
+  const parsedLimit = parseAdminListLimit(c, { defaultLimit: 20, maxLimit: 100 });
+  if (parsedLimit instanceof Response) return parsedLimit;
 
   const entitlement = await readHostedBillingEntitlement(account);
   const payload = await buildHostedBillingExport({
     account,
     entitlement,
-    limit: parsedLimit ?? undefined,
+    limit: parsedLimit,
   });
   const reconciliation = buildHostedBillingReconciliation(payload);
 
@@ -480,8 +780,8 @@ app.get('/api/v1/admin/accounts/:id/billing/reconciliation', async (c) => {
 });
 
 app.get('/api/v1/admin/plans', (c) => {
-  const unauthorized = currentAdminAuthorized(c);
-  if (unauthorized) return unauthorized;
+  const authorized = authorizeAdminRoute(c, ADMIN_READ_ROLES, currentAdminAuthorized);
+  if (authorized instanceof Response) return authorized;
 
   const asyncExecutionCoordinator = getTenantAsyncExecutionCoordinatorStatus();
   const asyncWeightedDispatchCoordinator = getTenantAsyncWeightedDispatchCoordinatorStatus();
@@ -500,15 +800,14 @@ app.get('/api/v1/admin/plans', (c) => {
 });
 
 app.get('/api/v1/admin/audit', async (c) => {
-  const unauthorized = currentAdminAuthorized(c);
-  if (unauthorized) return unauthorized;
+  const authorized = authorizeAdminRoute(c, ADMIN_AUDIT_READ_ROLES, currentAdminAuthorized);
+  if (authorized instanceof Response) return authorized;
 
   const action = adminAuditActionFilter(c.req.query('action')?.trim());
   const tenantId = c.req.query('tenantId')?.trim() || null;
   const accountId = c.req.query('accountId')?.trim() || null;
-  const limitRaw = c.req.query('limit')?.trim() || '';
-  const parsedLimit = limitRaw ? Number.parseInt(limitRaw, 10) : NaN;
-  const limit = Number.isFinite(parsedLimit) && parsedLimit > 0 ? parsedLimit : null;
+  const limit = parseAdminListLimit(c, { defaultLimit: 100, maxLimit: 1000 });
+  if (limit instanceof Response) return limit;
 
   const result = await adminQueryService.listAdminAuditRecords({
     action: action ?? null,
@@ -531,8 +830,8 @@ app.get('/api/v1/admin/audit', async (c) => {
 });
 
 app.get('/api/v1/admin/billing/events', async (c) => {
-  const unauthorized = currentAdminAuthorized(c);
-  if (unauthorized) return unauthorized;
+  const authorized = authorizeAdminRoute(c, ADMIN_BILLING_READ_ROLES, currentAdminAuthorized);
+  if (authorized instanceof Response) return authorized;
 
   if (!isBillingEventLedgerConfigured()) {
     return c.json({
@@ -545,9 +844,8 @@ app.get('/api/v1/admin/billing/events', async (c) => {
   const tenantId = c.req.query('tenantId')?.trim() || null;
   const eventType = c.req.query('eventType')?.trim() || null;
   const outcome = billingEventOutcomeFilter(c.req.query('outcome')?.trim());
-  const limitRaw = c.req.query('limit')?.trim() || '';
-  const parsedLimit = limitRaw ? Number.parseInt(limitRaw, 10) : NaN;
-  const limit = Number.isFinite(parsedLimit) && parsedLimit > 0 ? parsedLimit : null;
+  const limit = parseAdminListLimit(c, { defaultLimit: 100, maxLimit: 500 });
+  if (limit instanceof Response) return limit;
 
   const records = await listBillingEvents({
     provider: provider ?? null,
@@ -575,8 +873,8 @@ app.get('/api/v1/admin/billing/events', async (c) => {
 });
 
 app.get('/api/v1/admin/billing/entitlements', async (c) => {
-  const unauthorized = currentAdminAuthorized(c);
-  if (unauthorized) return unauthorized;
+  const authorized = authorizeAdminRoute(c, ADMIN_BILLING_READ_ROLES, currentAdminAuthorized);
+  if (authorized instanceof Response) return authorized;
 
   const accountId = c.req.query('accountId')?.trim() || null;
   const tenantId = c.req.query('tenantId')?.trim() || null;
@@ -586,9 +884,8 @@ app.get('/api/v1/admin/billing/entitlements', async (c) => {
     return c.json({ error: 'status filter is invalid.' }, 400);
   }
 
-  const limitRaw = c.req.query('limit')?.trim() || '';
-  const parsedLimit = limitRaw ? Number.parseInt(limitRaw, 10) : NaN;
-  const limit = Number.isFinite(parsedLimit) && parsedLimit > 0 ? parsedLimit : null;
+  const limit = parseAdminListLimit(c, { defaultLimit: 100, maxLimit: 500 });
+  if (limit instanceof Response) return limit;
 
   const result = await adminQueryService.listHostedBillingEntitlements({
     accountId,
@@ -614,8 +911,8 @@ app.get('/api/v1/admin/billing/entitlements', async (c) => {
 });
 
 app.get('/api/v1/admin/metrics', (c) => {
-  const unauthorized = currentAdminAuthorized(c);
-  if (unauthorized) return unauthorized;
+  const authorized = authorizeAdminRoute(c, ADMIN_OPS_READ_ROLES, currentAdminAuthorized);
+  if (authorized instanceof Response) return authorized;
 
   return c.body(renderPrometheusMetrics('1.0.0'), 200, {
     'content-type': 'text/plain; version=0.0.4; charset=utf-8',
@@ -634,8 +931,8 @@ app.get('/api/v1/metrics', (c) => {
 });
 
 app.get('/api/v1/admin/telemetry', (c) => {
-  const unauthorized = currentAdminAuthorized(c);
-  if (unauthorized) return unauthorized;
+  const authorized = authorizeAdminRoute(c, ADMIN_OPS_READ_ROLES, currentAdminAuthorized);
+  if (authorized instanceof Response) return authorized;
   return c.json({
     telemetry: getTelemetryStatus(),
     emailDelivery: getHostedEmailDeliveryStatus(),
@@ -644,22 +941,22 @@ app.get('/api/v1/admin/telemetry', (c) => {
 });
 
 app.get('/api/v1/admin/email/deliveries', async (c) => {
-  const unauthorized = currentAdminAuthorized(c);
-  if (unauthorized) return unauthorized;
+  const authorized = authorizeAdminRoute(c, ADMIN_OPS_READ_ROLES, currentAdminAuthorized);
+  if (authorized instanceof Response) return authorized;
   const purpose = c.req.query('purpose')?.trim();
   const status = c.req.query('status')?.trim();
   const provider = c.req.query('provider')?.trim();
   const recipient = c.req.query('recipient')?.trim();
   const accountId = c.req.query('accountId')?.trim();
-  const limitRaw = c.req.query('limit')?.trim();
-  const limit = limitRaw ? Number.parseInt(limitRaw, 10) : undefined;
+  const limit = parseAdminListLimit(c, { defaultLimit: 100, maxLimit: 500 });
+  if (limit instanceof Response) return limit;
   const deliveries = await adminQueryService.listHostedEmailDeliveries({
     accountId: accountId || null,
     purpose: purpose === 'invite' || purpose === 'password_reset' ? purpose : null,
     status: hostedEmailDeliveryStatusFilter(status),
     provider: hostedEmailDeliveryProviderFilter(provider),
     recipient: recipient || null,
-    limit: Number.isFinite(limit) ? limit : undefined,
+    limit,
   });
   return c.json({
     records: deliveries.records,
@@ -675,8 +972,8 @@ app.get('/api/v1/admin/email/deliveries', async (c) => {
 });
 
 app.get('/api/v1/admin/queue', async (c) => {
-  const unauthorized = currentAdminAuthorized(c);
-  if (unauthorized) return unauthorized;
+  const authorized = authorizeAdminRoute(c, ADMIN_OPS_READ_ROLES, currentAdminAuthorized);
+  if (authorized instanceof Response) return authorized;
 
   const tenantId = c.req.query('tenantId')?.trim() || null;
   const planId = c.req.query('planId')?.trim() || null;
@@ -716,13 +1013,12 @@ app.get('/api/v1/admin/queue', async (c) => {
 });
 
 app.get('/api/v1/admin/queue/dlq', async (c) => {
-  const unauthorized = currentAdminAuthorized(c);
-  if (unauthorized) return unauthorized;
+  const authorized = authorizeAdminRoute(c, ADMIN_OPS_READ_ROLES, currentAdminAuthorized);
+  if (authorized instanceof Response) return authorized;
 
   const tenantId = c.req.query('tenantId')?.trim() || null;
-  const limitRaw = c.req.query('limit')?.trim() || '';
-  const parsedLimit = limitRaw ? Number.parseInt(limitRaw, 10) : NaN;
-  const limit = Number.isFinite(parsedLimit) && parsedLimit > 0 ? parsedLimit : 25;
+  const limit = parseAdminListLimit(c, { defaultLimit: 25, maxLimit: 250 });
+  if (limit instanceof Response) return limit;
 
   if (asyncBackendMode === 'bullmq' && bullmqQueue) {
     const persisted = await adminQueryService.listAsyncDeadLetters({ tenantId, backendMode: 'bullmq', limit });
@@ -789,8 +1085,8 @@ app.get('/api/v1/admin/queue/dlq', async (c) => {
 });
 
 app.post('/api/v1/admin/queue/jobs/:id/retry', async (c) => {
-  const unauthorized = currentAdminAuthorized(c);
-  if (unauthorized) return unauthorized;
+  const authorized = authorizeAdminRoute(c, ADMIN_OPS_ROLES, currentAdminAuthorized);
+  if (authorized instanceof Response) return authorized;
 
   const requestPayload = { jobId: c.req.param('id') };
   const adminMutation = await beginAdminMutation(c, 'admin.queue.jobs.retry', requestPayload);
@@ -826,16 +1122,18 @@ app.post('/api/v1/admin/queue/jobs/:id/retry', async (c) => {
       },
       requestHash: adminMutation.requestHash,
     },
+    actor: adminMutation.adminActor,
   });
 
   return c.json(responseBody, 202);
 });
 
 app.post('/api/v1/admin/accounts', async (c) => {
-  const unauthorized = currentAdminAuthorized(c);
-  if (unauthorized) return unauthorized;
+  const authorized = authorizeAdminRoute(c, ADMIN_ACCOUNT_ROLES, currentAdminAuthorized);
+  if (authorized instanceof Response) return authorized;
 
-  const body = await c.req.json() as Record<string, unknown>;
+  const body = await parseAdminJsonBody(c);
+  if (body instanceof Response) return body;
   const accountName = typeof body.accountName === 'string' ? body.accountName.trim() : '';
   const contactEmail = typeof body.contactEmail === 'string' ? body.contactEmail.trim() : '';
   const tenantId = typeof body.tenantId === 'string' ? body.tenantId.trim() : '';
@@ -901,16 +1199,18 @@ app.post('/api/v1/admin/accounts', async (c) => {
         contactEmail: provisioned.account.contactEmail,
       },
     },
+    actor: adminMutation.adminActor,
   });
 
   return c.json(responseBody, 201);
 });
 
 app.post('/api/v1/admin/accounts/:id/billing/stripe', async (c) => {
-  const unauthorized = currentAdminAuthorized(c);
-  if (unauthorized) return unauthorized;
+  const authorized = authorizeAdminRoute(c, ADMIN_BILLING_ROLES, currentAdminAuthorized);
+  if (authorized instanceof Response) return authorized;
 
-  const body = await c.req.json().catch(() => ({})) as Record<string, unknown>;
+  const body = await parseAdminJsonBody(c);
+  if (body instanceof Response) return body;
   const requestPayload = {
     id: c.req.param('id'),
     stripeCustomerId: typeof body.stripeCustomerId === 'string' ? body.stripeCustomerId.trim() : '',
@@ -962,16 +1262,18 @@ app.post('/api/v1/admin/accounts/:id/billing/stripe', async (c) => {
         stripePriceId: attached.record.billing.stripePriceId,
       },
     },
+    actor: adminMutation.adminActor,
   });
 
   return c.json(responseBody);
 });
 
 app.post('/api/v1/admin/accounts/:id/suspend', async (c) => {
-  const unauthorized = currentAdminAuthorized(c);
-  if (unauthorized) return unauthorized;
+  const authorized = authorizeAdminRoute(c, ADMIN_ACCOUNT_ROLES, currentAdminAuthorized);
+  if (authorized instanceof Response) return authorized;
 
-  const body = await c.req.json().catch(() => ({})) as Record<string, unknown>;
+  const body = await parseAdminJsonBody(c);
+  if (body instanceof Response) return body;
   const requestPayload = {
     id: c.req.param('id'),
     reason: typeof body.reason === 'string' ? body.reason.trim() : '',
@@ -1010,16 +1312,18 @@ app.post('/api/v1/admin/accounts/:id/suspend', async (c) => {
         revokedSessionCount: result.revokedSessionCount,
       },
     },
+    actor: adminMutation.adminActor,
   });
 
   return c.json(responseBody);
 });
 
 app.post('/api/v1/admin/accounts/:id/reactivate', async (c) => {
-  const unauthorized = currentAdminAuthorized(c);
-  if (unauthorized) return unauthorized;
+  const authorized = authorizeAdminRoute(c, ADMIN_ACCOUNT_ROLES, currentAdminAuthorized);
+  if (authorized instanceof Response) return authorized;
 
-  const body = await c.req.json().catch(() => ({})) as Record<string, unknown>;
+  const body = await parseAdminJsonBody(c);
+  if (body instanceof Response) return body;
   const requestPayload = {
     id: c.req.param('id'),
     reason: typeof body.reason === 'string' ? body.reason.trim() : '',
@@ -1056,16 +1360,18 @@ app.post('/api/v1/admin/accounts/:id/reactivate', async (c) => {
         reason: requestPayload.reason || null,
       },
     },
+    actor: adminMutation.adminActor,
   });
 
   return c.json(responseBody);
 });
 
 app.post('/api/v1/admin/accounts/:id/archive', async (c) => {
-  const unauthorized = currentAdminAuthorized(c);
-  if (unauthorized) return unauthorized;
+  const authorized = authorizeAdminRoute(c, ADMIN_ACCOUNT_ROLES, currentAdminAuthorized);
+  if (authorized instanceof Response) return authorized;
 
-  const body = await c.req.json().catch(() => ({})) as Record<string, unknown>;
+  const body = await parseAdminJsonBody(c);
+  if (body instanceof Response) return body;
   const requestPayload = {
     id: c.req.param('id'),
     reason: typeof body.reason === 'string' ? body.reason.trim() : '',
@@ -1104,16 +1410,18 @@ app.post('/api/v1/admin/accounts/:id/archive', async (c) => {
         revokedSessionCount: result.revokedSessionCount,
       },
     },
+    actor: adminMutation.adminActor,
   });
 
   return c.json(responseBody);
 });
 
 app.post('/api/v1/admin/tenant-keys', async (c) => {
-  const unauthorized = currentAdminAuthorized(c);
-  if (unauthorized) return unauthorized;
+  const authorized = authorizeAdminRoute(c, ADMIN_KEY_ROLES, currentAdminAuthorized);
+  if (authorized instanceof Response) return authorized;
 
-  const body = await c.req.json() as Record<string, unknown>;
+  const body = await parseAdminJsonBody(c);
+  if (body instanceof Response) return body;
   const tenantId = typeof body.tenantId === 'string' ? body.tenantId.trim() : '';
   const tenantName = typeof body.tenantName === 'string' ? body.tenantName.trim() : '';
   const requestedPlanId = typeof body.planId === 'string' && body.planId.trim() !== '' ? body.planId.trim() : DEFAULT_HOSTED_PLAN_ID;
@@ -1171,16 +1479,18 @@ app.post('/api/v1/admin/tenant-keys', async (c) => {
         tenantName: issued.record.tenantName,
       },
     },
+    actor: adminMutation.adminActor,
   });
 
   return c.json(responseBody, 201);
 });
 
 app.post('/api/v1/admin/tenant-keys/:id/rotate', async (c) => {
-  const unauthorized = currentAdminAuthorized(c);
-  if (unauthorized) return unauthorized;
+  const authorized = authorizeAdminRoute(c, ADMIN_KEY_ROLES, currentAdminAuthorized);
+  if (authorized instanceof Response) return authorized;
 
-  const body = await c.req.json().catch(() => ({})) as Record<string, unknown>;
+  const body = await parseAdminJsonBody(c);
+  if (body instanceof Response) return body;
   const requestedPlanId = typeof body.planId === 'string' && body.planId.trim() !== '' ? body.planId.trim() : null;
   const monthlyRunQuota = typeof body.monthlyRunQuota === 'number' && body.monthlyRunQuota >= 0
     ? body.monthlyRunQuota
@@ -1233,14 +1543,15 @@ app.post('/api/v1/admin/tenant-keys/:id/rotate', async (c) => {
         previousLastUsedAt: rotated.previousRecord.lastUsedAt,
       },
     },
+    actor: adminMutation.adminActor,
   });
 
   return c.json(responseBody, 201);
 });
 
 app.post('/api/v1/admin/tenant-keys/:id/deactivate', async (c) => {
-  const unauthorized = currentAdminAuthorized(c);
-  if (unauthorized) return unauthorized;
+  const authorized = authorizeAdminRoute(c, ADMIN_KEY_ROLES, currentAdminAuthorized);
+  if (authorized instanceof Response) return authorized;
 
   const requestPayload = { id: c.req.param('id') };
   const adminMutation = await beginAdminMutation(c, 'admin.tenant_keys.deactivate', requestPayload);
@@ -1279,14 +1590,15 @@ app.post('/api/v1/admin/tenant-keys/:id/deactivate', async (c) => {
         deactivatedAt: result.record.deactivatedAt,
       },
     },
+    actor: adminMutation.adminActor,
   });
 
   return c.json(responseBody);
 });
 
 app.post('/api/v1/admin/tenant-keys/:id/reactivate', async (c) => {
-  const unauthorized = currentAdminAuthorized(c);
-  if (unauthorized) return unauthorized;
+  const authorized = authorizeAdminRoute(c, ADMIN_KEY_ROLES, currentAdminAuthorized);
+  if (authorized instanceof Response) return authorized;
 
   const requestPayload = { id: c.req.param('id') };
   const adminMutation = await beginAdminMutation(c, 'admin.tenant_keys.reactivate', requestPayload);
@@ -1324,16 +1636,18 @@ app.post('/api/v1/admin/tenant-keys/:id/reactivate', async (c) => {
         tenantName: result.record.tenantName,
       },
     },
+    actor: adminMutation.adminActor,
   });
 
   return c.json(responseBody);
 });
 
 app.post('/api/v1/admin/tenant-keys/:id/recover', async (c) => {
-  const unauthorized = currentAdminAuthorized(c);
-  if (unauthorized) return unauthorized;
+  const authorized = authorizeAdminRoute(c, ADMIN_KEY_ROLES, currentAdminAuthorized);
+  if (authorized instanceof Response) return authorized;
 
-  const body = await c.req.json().catch(() => ({})) as Record<string, unknown>;
+  const body = await parseAdminJsonBody(c);
+  if (body instanceof Response) return body;
   const requestPayload = {
     id: c.req.param('id'),
     reason: typeof body.reason === 'string' ? body.reason.trim() : '',
@@ -1378,14 +1692,15 @@ app.post('/api/v1/admin/tenant-keys/:id/recover', async (c) => {
         reason: requestPayload.reason || null,
       },
     },
+    actor: adminMutation.adminActor,
   });
 
   return c.json(responseBody);
 });
 
 app.post('/api/v1/admin/tenant-keys/:id/revoke', async (c) => {
-  const unauthorized = currentAdminAuthorized(c);
-  if (unauthorized) return unauthorized;
+  const authorized = authorizeAdminRoute(c, ADMIN_KEY_ROLES, currentAdminAuthorized);
+  if (authorized instanceof Response) return authorized;
 
   const requestPayload = { id: c.req.param('id') };
   const adminMutation = await beginAdminMutation(c, 'admin.tenant_keys.revoke', requestPayload);
@@ -1423,16 +1738,18 @@ app.post('/api/v1/admin/tenant-keys/:id/revoke', async (c) => {
         revokedAt: result.record.revokedAt,
       },
     },
+    actor: adminMutation.adminActor,
   });
 
   return c.json(responseBody);
 });
 
 app.post('/api/v1/admin/release-tokens/:id/revoke', async (c) => {
-  const unauthorized = currentAdminAuthorized(c);
-  if (unauthorized) return unauthorized;
+  const authorized = authorizeAdminRoute(c, ADMIN_RELEASE_ROLES, currentAdminAuthorized);
+  if (authorized instanceof Response) return authorized;
 
-  const body = await c.req.json().catch(() => ({})) as Record<string, unknown>;
+  const body = await parseAdminJsonBody(c);
+  if (body instanceof Response) return body;
   const reason = typeof body.reason === 'string' ? body.reason.trim() : '';
   const requestPayload = {
     id: c.req.param('id'),
@@ -1450,7 +1767,7 @@ app.post('/api/v1/admin/release-tokens/:id/revoke', async (c) => {
     tokenId: existing.tokenId,
     revokedAt: new Date().toISOString(),
     reason: reason || undefined,
-    revokedBy: 'admin_api_key',
+    revokedBy: adminMutation.adminActor.releaseActor.id,
   });
   if (!revoked) {
     return c.json({ error: 'Release token not found' }, 404);
@@ -1489,14 +1806,15 @@ app.post('/api/v1/admin/release-tokens/:id/revoke', async (c) => {
         revokedBy: revoked.revokedBy,
       },
     },
+    actor: adminMutation.adminActor,
   });
 
   return c.json(responseBody);
 });
 
 app.get('/api/v1/admin/release-enforcement/degraded-mode/grants', async (c) => {
-  const unauthorized = currentAdminAuthorized(c);
-  if (unauthorized) return unauthorized;
+  const authorized = authorizeAdminRoute(c, ADMIN_RELEASE_READ_ROLES, currentAdminAuthorized);
+  if (authorized instanceof Response) return authorized;
 
   const statusQuery = c.req.query('status')?.trim() as ListDegradedModeGrantOptions['status'] | undefined;
   const allowedStatuses: readonly NonNullable<ListDegradedModeGrantOptions['status']>[] = [
@@ -1510,28 +1828,34 @@ app.get('/api/v1/admin/release-enforcement/degraded-mode/grants', async (c) => {
   if (statusQuery && !allowedStatuses.includes(statusQuery)) {
     return c.json({ error: 'status must be active, not-yet-valid, expired, revoked, exhausted, or all.' }, 400);
   }
+  const limit = parseAdminListLimit(c, { defaultLimit: 100, maxLimit: 500 });
+  if (limit instanceof Response) return limit;
 
   const grants = await degradedModeGrantStore.listGrants({
     status: statusQuery ?? 'all',
   });
+  const visibleGrants = grants.slice(0, limit);
   const auditHead = await degradedModeGrantStore.auditHead();
   const now = new Date().toISOString();
   return c.json({
     version: 'attestor.release-enforcement-degraded-mode.admin.v1',
-    grants: grants.map(degradedModeGrantView),
+    grants: visibleGrants.map(degradedModeGrantView),
     summary: {
-      grantCount: grants.length,
-      activeCount: grants.filter((grant) => degradedModeGrantStatus(grant, now) === 'active').length,
+      grantCount: visibleGrants.length,
+      activeCount: visibleGrants.filter((grant) => degradedModeGrantStatus(grant, now) === 'active').length,
+      limit,
+      truncated: grants.length > limit,
       auditHead,
     },
   });
 });
 
 app.post('/api/v1/admin/release-enforcement/degraded-mode/grants', async (c) => {
-  const unauthorized = currentAdminAuthorized(c);
-  if (unauthorized) return unauthorized;
+  const authorized = authorizeAdminRoute(c, ADMIN_RELEASE_ROLES, currentAdminAuthorized);
+  if (authorized instanceof Response) return authorized;
 
-  const body = await c.req.json().catch(() => ({})) as Record<string, unknown>;
+  const body = await parseAdminJsonBody(c);
+  if (body instanceof Response) return body;
   const state = adminDegradedModeText(body.state ?? body.posture) as DegradedModeGrantState;
   const allowedFailureReasons =
     adminDegradedModeStringArray<EnforcementFailureReason>(body.allowedFailureReasons);
@@ -1562,7 +1886,7 @@ app.post('/api/v1/admin/release-enforcement/degraded-mode/grants', async (c) => 
       state,
       reason: adminDegradedModeText(body.reason) as EnforcementBreakGlassReason,
       scope: adminDegradedModeScope(body.scope),
-      authorizedBy: adminDegradedModeActor(body.authorizedBy ?? body.grantedBy),
+      authorizedBy: adminDegradedModeActor(body.authorizedBy ?? body.grantedBy ?? adminMutation.adminActor.releaseActor),
       approvedBy,
       authorizedAt: adminDegradedModeText(body.authorizedAt) || undefined,
       startsAt: adminDegradedModeText(body.startsAt) || undefined,
@@ -1602,6 +1926,7 @@ app.post('/api/v1/admin/release-enforcement/degraded-mode/grants', async (c) => 
           auditHead,
         },
       },
+      actor: adminMutation.adminActor,
     });
 
     return c.json(responseBody, 201);
@@ -1611,10 +1936,11 @@ app.post('/api/v1/admin/release-enforcement/degraded-mode/grants', async (c) => 
 });
 
 app.post('/api/v1/admin/release-enforcement/degraded-mode/grants/:id/revoke', async (c) => {
-  const unauthorized = currentAdminAuthorized(c);
-  if (unauthorized) return unauthorized;
+  const authorized = authorizeAdminRoute(c, ADMIN_RELEASE_ROLES, currentAdminAuthorized);
+  if (authorized instanceof Response) return authorized;
 
-  const body = await c.req.json().catch(() => ({})) as Record<string, unknown>;
+  const body = await parseAdminJsonBody(c);
+  if (body instanceof Response) return body;
   const reason = adminDegradedModeText(body.reason);
   if (!reason) {
     return c.json({ error: 'Release enforcement degraded mode grant revocation reason is required.' }, 400);
@@ -1634,7 +1960,7 @@ app.post('/api/v1/admin/release-enforcement/degraded-mode/grants/:id/revoke', as
     const revoked = await degradedModeGrantStore.revokeGrant({
       id: c.req.param('id'),
       revokedAt: new Date().toISOString(),
-      revokedBy: adminDegradedModeActor(body.revokedBy ?? body.actor),
+      revokedBy: adminDegradedModeActor(body.revokedBy ?? body.actor ?? adminMutation.adminActor.releaseActor),
       revocationReason: reason,
     });
     if (!revoked) {
@@ -1665,6 +1991,7 @@ app.post('/api/v1/admin/release-enforcement/degraded-mode/grants/:id/revoke', as
           auditHead,
         },
       },
+      actor: adminMutation.adminActor,
     });
 
     return c.json(responseBody);
@@ -1674,12 +2001,15 @@ app.post('/api/v1/admin/release-enforcement/degraded-mode/grants/:id/revoke', as
 });
 
 app.get('/api/v1/admin/usage', async (c) => {
-  const unauthorized = currentAdminAuthorized(c);
-  if (unauthorized) return unauthorized;
+  const authorized = authorizeAdminRoute(c, ADMIN_BILLING_READ_ROLES, currentAdminAuthorized);
+  if (authorized instanceof Response) return authorized;
 
   const tenantId = c.req.query('tenantId')?.trim() || null;
   const period = c.req.query('period')?.trim() || null;
-  const records = await adminQueryService.listUsage({ tenantId, period });
+  const limit = parseAdminListLimit(c, { defaultLimit: 100, maxLimit: 500 });
+  if (limit instanceof Response) return limit;
+  const allRecords = await adminQueryService.listUsage({ tenantId, period });
+  const records = allRecords.slice(0, limit);
 
   return c.json({
     records,
@@ -1687,6 +2017,8 @@ app.get('/api/v1/admin/usage', async (c) => {
       tenantFilter: tenantId,
       periodFilter: period,
       recordCount: records.length,
+      limit,
+      truncated: allRecords.length > limit,
       tenantCount: new Set(records.map((entry) => entry.tenantId)).size,
       totalUsed: records.reduce((sum, entry) => sum + entry.used, 0),
       totalOverageUnits: records.reduce((sum, entry) => sum + entry.overageUnits, 0),

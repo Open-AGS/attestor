@@ -410,6 +410,7 @@
     "test:service-account-api-key-service": "tsx tests/service-account-api-key-service.test.ts",
     "test:service-account-user-management-service": "tsx tests/service-account-user-management-service.test.ts",
     "test:service-admin-mutation-service": "tsx tests/service-admin-mutation-service.test.ts",
+    "test:service-admin-routes-http": "tsx tests/service-admin-routes-http.test.ts",
     "test:service-admin-control-service": "tsx tests/service-admin-control-service.test.ts",
     "test:service-admin-query-service": "tsx tests/service-admin-query-service.test.ts",
     "test:email-delivery-event-store-hardening": "tsx tests/email-delivery-event-store-hardening.test.ts",

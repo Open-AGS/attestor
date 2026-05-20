@@ -8,6 +8,7 @@ export type HostedApiAuthBoundary =
   | 'tenant_context'
   | 'tenant_context_and_release_token'
   | 'admin_api_key'
+  | 'admin_api_key_or_role_scoped_admin_key'
   | 'metrics_api_key_or_admin_api_key'
   | 'stripe_signature'
   | 'email_provider_signature';
@@ -439,15 +440,16 @@ export const HOSTED_API_AUTHORIZATION_RULES = [
     methods: ['GET'],
     pathPattern: /^\/api\/v1\/admin\/(?!metrics$|telemetry$).+$/u,
     surface: 'operator_admin',
-    authBoundary: 'admin_api_key',
+    authBoundary: 'admin_api_key_or_role_scoped_admin_key',
     tenantBoundary: 'admin_operator_explicit_lookup',
     objectBoundary: 'admin_authorized_path_id',
     mutationSafety: 'read_only',
     idempotencyBoundary: 'not_applicable',
-    privacyBoundary: 'operator reads are admin-key gated and should expose scoped references, digests, or summaries',
+    privacyBoundary: 'operator reads are admin-key and route-role gated and should expose scoped references, digests, or summaries',
     evidence: [
       'src/service/request-context.ts#currentAdminAuthorized',
       'src/service/http/routes/admin-routes.ts',
+      'tests/service-admin-routes-http.test.ts',
       'src/service/http/routes/release-review-routes.ts',
       'src/service/http/routes/release-policy-control-routes.ts',
     ],
@@ -458,15 +460,17 @@ export const HOSTED_API_AUTHORIZATION_RULES = [
     methods: ['POST', 'PATCH'],
     pathPattern: /^\/api\/v1\/admin\/.+$/u,
     surface: 'operator_admin',
-    authBoundary: 'admin_api_key',
+    authBoundary: 'admin_api_key_or_role_scoped_admin_key',
     tenantBoundary: 'admin_operator_explicit_lookup',
     objectBoundary: 'admin_authorized_path_id',
     mutationSafety: 'admin_idempotent_audited',
     idempotencyBoundary: 'admin_mutation_service',
-    privacyBoundary: 'admin mutations pass through idempotency and audit services with hashed request material',
+    privacyBoundary: 'admin mutations pass through route-role gating, idempotency, and audit services with hashed request material; account/key issuance responses may contain one-time API key material and require response-log redaction',
     evidence: [
+      'src/service/request-context.ts#configuredAdminRoleKeys',
       'src/service/http/routes/admin-routes.ts#beginAdminMutation',
       'src/service/bootstrap/http-route-builders.ts#adminMutationRequest',
+      'tests/service-admin-routes-http.test.ts',
       'src/service/http/routes/release-policy-control-routes.ts#beginMutation',
       'src/service/http/routes/release-review-routes.ts#adminMutationRequest',
     ],

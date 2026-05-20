@@ -39,6 +39,11 @@ export interface AdminMutationFinalizationInput {
   requestPayload: unknown;
   statusCode: number;
   responseBody: AdminMutationResponseBody;
+  actor?: {
+    actorType: 'admin_api_key' | 'admin_operator';
+    actorLabel: string;
+    actorRole?: string | null;
+  };
   audit: {
     action: AdminAuditAction;
     accountId?: string | null;
@@ -127,8 +132,9 @@ export function createAdminMutationService(deps: AdminMutationServiceDeps): Admi
       }
 
       await deps.appendAdminAuditRecordState({
-        actorType: 'admin_api_key',
-        actorLabel: 'ATTESTOR_ADMIN_API_KEY',
+        actorType: input.actor?.actorType ?? 'admin_api_key',
+        actorLabel: input.actor?.actorLabel ?? 'ATTESTOR_ADMIN_API_KEY',
+        actorRole: input.actor?.actorRole ?? null,
         action: input.audit.action,
         routeId: input.routeId,
         accountId: input.audit.accountId ?? null,

@@ -122,6 +122,7 @@ export function adminAuditView(record: AdminAuditRecord) {
     occurredAt: record.occurredAt,
     actorType: record.actorType,
     actorLabel: record.actorLabel,
+    actorRole: record.actorRole ?? null,
     action: record.action,
     routeId: record.routeId,
     accountId: record.accountId,

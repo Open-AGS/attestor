@@ -46,8 +46,9 @@ export type AdminAuditAction =
 export interface AdminAuditRecord {
   id: string;
   occurredAt: string;
-  actorType: 'admin_api_key' | 'stripe_webhook';
+  actorType: 'admin_api_key' | 'admin_operator' | 'stripe_webhook';
   actorLabel: string;
+  actorRole?: string | null;
   action: AdminAuditAction;
   routeId: string;
   accountId: string | null;

@@ -208,7 +208,7 @@ function testSensitiveBoundariesAreClassified(): void {
     {
       route: { method: 'POST', path: '/api/v1/admin/accounts/:id/suspend' } as const,
       id: 'admin.operator.mutation',
-      authBoundary: 'admin_api_key',
+      authBoundary: 'admin_api_key_or_role_scoped_admin_key',
       idempotencyBoundary: 'admin_mutation_service',
     },
     {

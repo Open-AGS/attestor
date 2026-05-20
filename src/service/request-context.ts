@@ -169,21 +169,53 @@ export function constantTimeSecretEquals(candidate: string, configured: string):
   return timingSafeEqual(candidateDigest, configuredDigest);
 }
 
+export const ADMIN_OPERATOR_ROLE_KEY_ENVS = Object.freeze({
+  'admin-superuser': 'ATTESTOR_ADMIN_API_KEY',
+  'admin-read': 'ATTESTOR_ADMIN_READ_API_KEY',
+  'admin-audit': 'ATTESTOR_ADMIN_AUDIT_API_KEY',
+  'admin-account-admin': 'ATTESTOR_ADMIN_ACCOUNT_API_KEY',
+  'admin-key-admin': 'ATTESTOR_ADMIN_TENANT_KEY_API_KEY',
+  'admin-billing-admin': 'ATTESTOR_ADMIN_BILLING_API_KEY',
+  'admin-ops-admin': 'ATTESTOR_ADMIN_OPERATIONS_API_KEY',
+  'admin-release-admin': 'ATTESTOR_ADMIN_RELEASE_API_KEY',
+  'admin-break-glass': 'ATTESTOR_ADMIN_BREAK_GLASS_API_KEY',
+});
+
+export type AdminOperatorRole = keyof typeof ADMIN_OPERATOR_ROLE_KEY_ENVS;
+
+export function adminBearerTokenFromContext(context: Context): string {
+  const authHeader = context.req.header('authorization') ?? '';
+  return authHeader.replace(/^Bearer\s+/i, '').trim();
+}
+
+export function configuredAdminRoleKeys(): readonly {
+  role: AdminOperatorRole;
+  envName: string;
+  secret: string;
+}[] {
+  return Object.entries(ADMIN_OPERATOR_ROLE_KEY_ENVS)
+    .map(([role, envName]) => ({
+      role: role as AdminOperatorRole,
+      envName,
+      secret: process.env[envName]?.trim() ?? '',
+    }))
+    .filter((entry) => entry.secret.length > 0);
+}
+
 export function currentAdminAuthorized(context: Context): Response | null {
-  const configured = process.env.ATTESTOR_ADMIN_API_KEY?.trim();
-  if (!configured) {
+  const configured = configuredAdminRoleKeys();
+  if (configured.length === 0) {
     return context.json(
       {
         error:
-          'Admin API disabled. Set ATTESTOR_ADMIN_API_KEY to enable tenant management endpoints.',
+          'Admin API disabled. Set ATTESTOR_ADMIN_API_KEY or a role-scoped admin API key to enable tenant management endpoints.',
       },
       503,
     );
   }
 
-  const authHeader = context.req.header('authorization') ?? '';
-  const token = authHeader.replace(/^Bearer\s+/i, '').trim();
-  if (!constantTimeSecretEquals(token, configured)) {
+  const token = adminBearerTokenFromContext(context);
+  if (!configured.some((entry) => constantTimeSecretEquals(token, entry.secret))) {
     return context.json({ error: 'Valid admin API key required in Authorization header.' }, 401);
   }
 

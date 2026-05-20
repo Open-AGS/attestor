@@ -31,6 +31,7 @@ function auditRecord(overrides: Partial<AdminAuditRecord> = {}): AdminAuditRecor
     occurredAt: now,
     actorType: 'admin_api_key',
     actorLabel: 'ATTESTOR_ADMIN_API_KEY',
+    actorRole: null,
     action: 'account.created',
     routeId: 'admin.accounts.create',
     accountId: null,
@@ -192,9 +193,52 @@ async function testFinalizeRecordsIdempotencyAndAudit(): Promise<void> {
   ]);
 }
 
+async function testFinalizeRecordsAdminActorRole(): Promise<void> {
+  let captured: Record<string, unknown> | null = null;
+  const service = createAdminMutationService(createDeps({
+    appendAdminAuditRecordState: async (input) => {
+      captured = input;
+      return {
+        record: auditRecord({
+          actorType: input.actorType,
+          actorLabel: input.actorLabel,
+          actorRole: input.actorRole,
+          action: input.action,
+          routeId: input.routeId,
+          requestHash: input.requestHash,
+        }),
+        path: null,
+      };
+    },
+  }));
+
+  await service.finalize({
+    idempotencyKey: null,
+    routeId: 'admin.tenant_keys.rotate',
+    requestPayload: { id: 'key_123' },
+    statusCode: 200,
+    responseBody: { key: { id: 'key_123' } },
+    actor: {
+      actorType: 'admin_operator',
+      actorLabel: 'operator:keys',
+      actorRole: 'admin-key-admin',
+    },
+    audit: {
+      action: 'tenant_key.rotated',
+      requestHash: 'hash-ready',
+    },
+  });
+
+  assert.ok(captured);
+  assert.equal(captured.actorType, 'admin_operator');
+  assert.equal(captured.actorLabel, 'operator:keys');
+  assert.equal(captured.actorRole, 'admin-key-admin');
+}
+
 await testBeginWithoutIdempotencyUsesDeterministicHash();
 await testBeginMapsIdempotencyConflict();
 await testBeginMapsIdempotencyReplay();
 await testFinalizeRecordsIdempotencyAndAudit();
+await testFinalizeRecordsAdminActorRole();
 
-console.log('Service admin mutation service tests: 4 passed, 0 failed');
+console.log('Service admin mutation service tests: 5 passed, 0 failed');

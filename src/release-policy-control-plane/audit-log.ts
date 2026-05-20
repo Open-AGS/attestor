@@ -113,6 +113,12 @@ function normalizeIsoTimestamp(value: string): string {
   return timestamp.toISOString();
 }
 
+function compareCanonicalKeys(left: string, right: string): number {
+  if (left < right) return -1;
+  if (left > right) return 1;
+  return 0;
+}
+
 function normalizeSubject(subject: PolicyMutationAuditSubject): PolicyMutationAuditSubject {
   return Object.freeze({
     packId: normalizeOptionalText(subject.packId),
@@ -148,7 +154,7 @@ function stableStringify(value: unknown): string {
   if (typeof value === 'object') {
     const entries = Object.entries(value as Record<string, unknown>)
       .filter(([, nested]) => nested !== undefined)
-      .sort(([left], [right]) => left.localeCompare(right));
+      .sort(([left], [right]) => compareCanonicalKeys(left, right));
     return `{${entries
       .map(([key, nested]) => `${JSON.stringify(key)}:${stableStringify(nested)}`)
       .join(',')}}`;

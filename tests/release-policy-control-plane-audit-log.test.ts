@@ -135,6 +135,18 @@ function actor() {
   } as const;
 }
 
+function withLocaleCompareTrap(action: () => void): void {
+  const original = String.prototype.localeCompare;
+  String.prototype.localeCompare = function localeCompareTrap(): number {
+    throw new Error('localeCompare must not be used for canonical audit digest ordering');
+  } as typeof String.prototype.localeCompare;
+  try {
+    action();
+  } finally {
+    String.prototype.localeCompare = original;
+  }
+}
+
 function testInMemoryAuditLogIsHashLinked(): void {
   const writer = createInMemoryPolicyMutationAuditLogWriter();
   const bundle = createSignedBundle('bundle_finance_current');
@@ -190,6 +202,36 @@ function testAuditLogDetectsTampering(): void {
   assert.equal(verification.brokenEntryId, tampered[0]?.entryId ?? null);
 }
 
+function testAuditDigestDoesNotDependOnLocaleCompare(): void {
+  const writer = createInMemoryPolicyMutationAuditLogWriter();
+
+  withLocaleCompareTrap(() => {
+    const entry = writer.append({
+      occurredAt: '2026-04-18T09:20:00.000Z',
+      action: 'create-pack',
+      actor: actor(),
+      subject: {
+        packId: 'finance-core',
+        bundleId: null,
+        bundleVersion: null,
+        activationId: null,
+        targetLabel: null,
+      },
+      mutationSnapshot: {
+        zulu: 'last',
+        alpha: 'first',
+        nested: {
+          zulu: 'last',
+          alpha: 'first',
+        },
+      },
+    });
+
+    assert.match(entry.mutationDigest, /^[a-f0-9]{64}$/u);
+    assert.match(entry.entryDigest, /^[a-f0-9]{64}$/u);
+  });
+}
+
 function testFileBackedAuditLogPersists(): void {
   const path = resolve('.attestor/tests/policy-mutation-audit-log.json');
   resetFileBackedPolicyMutationAuditLogForTests(path);
@@ -230,9 +272,10 @@ function testSubjectHelpersCaptureStableIdentity(): void {
 function run(): void {
   testInMemoryAuditLogIsHashLinked();
   testAuditLogDetectsTampering();
+  testAuditDigestDoesNotDependOnLocaleCompare();
   testFileBackedAuditLogPersists();
   testSubjectHelpersCaptureStableIdentity();
-  console.log('Release policy control-plane audit-log tests: 4 passed, 0 failed');
+  console.log('Release policy control-plane audit-log tests: 5 passed, 0 failed');
 }
 
 run();

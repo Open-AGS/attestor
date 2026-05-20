@@ -22,6 +22,8 @@ function run(): void {
   const registry = readProjectFile('docs', 'audit', 'audit-id-alias-registry.md');
   const lifecycle = readProjectFile('docs', 'audit', 'finding-lifecycle-and-evidence-ledger.md');
   const userStoreRecord = readProjectFile('docs', 'audit', 'AUD-2026-SVC-USERSTORE-001.md');
+  const approvalStoreRecord = readProjectFile('docs', 'audit', 'AUD-2026-POL-APPROVALSTORE-001.md');
+  const digestRemediation = readProjectFile('docs', 'audit', 'REM-2026-POL-DIGEST-001.md');
   const deployment = readProjectFile('docs', '08-deployment', 'deployment.md');
 
   includes(
@@ -38,6 +40,21 @@ function run(): void {
     registry,
     'AUD-2026-POL-BUNDLESIGN-001',
     'Audit alias registry: policy bundle signer limitation has canonical ID',
+  );
+  includes(
+    registry,
+    'AUD-2026-POL-APPROVALSTORE-001',
+    'Audit alias registry: policy approval store limitation has canonical ID',
+  );
+  includes(
+    registry,
+    'AUD-2026-POL-APPROVALTTL-001',
+    'Audit alias registry: policy approval TTL finding has canonical ID',
+  );
+  includes(
+    registry,
+    'AUD-2026-POL-DIGEST-001',
+    'Audit alias registry: policy digest finding has canonical ID',
   );
   includes(
     registry,
@@ -58,6 +75,16 @@ function run(): void {
     userStoreRecord,
     'ATTESTOR_CONTROL_PLANE_PG_URL',
     'Account user store limitation: shared control-plane requirement is documented',
+  );
+  includes(
+    approvalStoreRecord,
+    'Lifecycle state: accepted-limitation',
+    'Policy approval store limitation: status is accepted-limitation',
+  );
+  includes(
+    digestRemediation,
+    'localeCompare',
+    'Policy digest remediation: original locale-sensitive failure mode is documented',
   );
   includes(
     deployment,

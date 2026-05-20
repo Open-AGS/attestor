@@ -35,6 +35,18 @@ function actor(id: string, role = 'policy-admin') {
   } as const;
 }
 
+function withLocaleCompareTrap(action: () => void): void {
+  const original = String.prototype.localeCompare;
+  String.prototype.localeCompare = function localeCompareTrap(): number {
+    throw new Error('localeCompare must not be used for canonical approval digest ordering');
+  } as typeof String.prototype.localeCompare;
+  try {
+    action();
+  } finally {
+    String.prototype.localeCompare = original;
+  }
+}
+
 function bundleReference(bundleId: string) {
   return {
     packId: 'finance-core',
@@ -296,6 +308,51 @@ function testGateRejectsExpiredOrMismatchedApproval(): void {
   assert.equal(digestSubstitution.status, 'approval-bundle-digest-mismatch');
 }
 
+function testRiskClassAwareDefaultExpiry(): void {
+  const store = createInMemoryPolicyActivationApprovalStore();
+  const highRisk = createSignedBundle('R4');
+  const highRiskRequest = requestPolicyActivationApproval(store, {
+    id: 'approval_r4_default_ttl',
+    target: highRisk.target,
+    bundleRecord: highRisk.bundleRecord,
+    requestedBy: actor('requester_policy_admin'),
+    requestedAt: '2026-04-18T09:10:00.000Z',
+    rationale: 'High risk approval should not remain open for a full day by default.',
+  });
+
+  assert.equal(highRiskRequest.expiresAt, '2026-04-18T13:10:00.000Z');
+
+  const lowerRisk = createSignedBundle('R2');
+  const lowerRiskRequest = requestPolicyActivationApproval(store, {
+    id: 'approval_r2_default_ttl',
+    target: lowerRisk.target,
+    bundleRecord: lowerRisk.bundleRecord,
+    requestedBy: actor('requester_policy_admin'),
+    requestedAt: '2026-04-18T09:10:00.000Z',
+    rationale: 'Lower risk approval keeps the existing day-long default.',
+  });
+
+  assert.equal(lowerRiskRequest.expiresAt, '2026-04-19T09:10:00.000Z');
+}
+
+function testApprovalDigestDoesNotDependOnLocaleCompare(): void {
+  const store = createInMemoryPolicyActivationApprovalStore();
+  const bundle = createSignedBundle('R4');
+
+  withLocaleCompareTrap(() => {
+    const request = requestPolicyActivationApproval(store, {
+      id: 'approval_locale_independent_digest',
+      target: bundle.target,
+      bundleRecord: bundle.bundleRecord,
+      requestedBy: actor('requester_policy_admin'),
+      requestedAt: '2026-04-18T09:10:00.000Z',
+      rationale: 'Canonical digest ordering must not call localeCompare.',
+    });
+
+    assert.match(request.approvalDigest, /^[a-f0-9]{64}$/u);
+  });
+}
+
 function testFileBackedApprovalStorePersists(): void {
   const path = resolve('.attestor/tests/policy-activation-approvals.json');
   resetFileBackedPolicyActivationApprovalStoreForTests(path);
@@ -325,8 +382,10 @@ function run(): void {
   testSelfApprovalIsRejected();
   testDualApprovalRequiresTwoDistinctReviewers();
   testGateRejectsExpiredOrMismatchedApproval();
+  testRiskClassAwareDefaultExpiry();
+  testApprovalDigestDoesNotDependOnLocaleCompare();
   testFileBackedApprovalStorePersists();
-  console.log('Release policy control-plane activation-approval tests: 6 passed, 0 failed');
+  console.log('Release policy control-plane activation-approval tests: 8 passed, 0 failed');
 }
 
 run();

@@ -39,6 +39,11 @@ certification, and not production readiness.
 | R21 B-074 remediation | `REM-2026-SVC-OIDC-001` | remediation | TTL-bounded hosted OIDC discovery cache | closed | `src/service/account-oidc.ts`; `tests/account-oidc-discovery-cache.test.ts` |
 | R22 B-075 | `AUD-2026-SVC-USERSTORE-001` | accepted limitation | Hosted account user file-backed store | accepted-limitation | `src/service/account-user-store.ts`; `docs/audit/AUD-2026-SVC-USERSTORE-001.md` |
 | R23 B-076 | `AUD-2026-POL-BUNDLESIGN-001` | accepted limitation | Policy bundle signer holds PEM private key in process memory | accepted-limitation | `src/release-policy-control-plane/bundle-signing.ts`; `docs/audit/AUD-2026-POL-BUNDLESIGN-001.md` |
+| R24 B-077 | `AUD-2026-POL-APPROVALSTORE-001` | accepted limitation | Policy activation approval store path is operator-controlled | accepted-limitation | `src/release-policy-control-plane/activation-approvals.ts`; `docs/audit/AUD-2026-POL-APPROVALSTORE-001.md` |
+| R24 B-078 | `AUD-2026-POL-APPROVALTTL-001` | finding | Approval default TTL not risk-class-aware | fixed | `src/release-policy-control-plane/activation-approvals.ts`; `docs/audit/REM-2026-POL-APPROVALTTL-001.md` |
+| R24 B-078 remediation | `REM-2026-POL-APPROVALTTL-001` | remediation | Risk-class-aware default approval expiry | fixed | `tests/release-policy-control-plane-activation-approvals.test.ts` |
+| R24 B-079 | `AUD-2026-POL-DIGEST-001` | finding | Locale-sensitive key sort in policy approval and audit digests | fixed | `src/release-policy-control-plane/activation-approvals.ts`; `src/release-policy-control-plane/audit-log.ts`; `docs/audit/REM-2026-POL-DIGEST-001.md` |
+| R24 B-079 remediation | `REM-2026-POL-DIGEST-001` | remediation | Locale-independent policy control-plane digest ordering | fixed | `tests/release-policy-control-plane-activation-approvals.test.ts`; `tests/release-policy-control-plane-audit-log.test.ts` |
 
 ## Rules
 

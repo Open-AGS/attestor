@@ -23,6 +23,13 @@ export const POLICY_ACTIVATION_APPROVAL_SPEC_VERSION =
   'attestor.policy-activation-approval.v1';
 export const POLICY_ACTIVATION_APPROVAL_STORE_SPEC_VERSION =
   'attestor.policy-activation-approval-store.v1';
+export const POLICY_ACTIVATION_APPROVAL_DEFAULT_TTL_HOURS_BY_RISK_CLASS = Object.freeze({
+  R0: 24,
+  R1: 24,
+  R2: 24,
+  R3: 8,
+  R4: 4,
+} as const satisfies Record<PolicyControlRiskClass, number>);
 
 export type PolicyActivationApprovalState = 'pending' | 'approved' | 'rejected';
 export type PolicyActivationApprovalDecisionKind = 'approve' | 'reject';
@@ -179,8 +186,20 @@ function resolveTimestamp(value: string | undefined, fieldName: string): string 
   return normalizeIsoTimestamp(value ?? new Date().toISOString(), fieldName);
 }
 
-function defaultExpiresAt(requestedAt: string): string {
-  return new Date(Date.parse(requestedAt) + 24 * 60 * 60 * 1000).toISOString();
+function defaultExpiresAt(
+  requestedAt: string,
+  riskClass: PolicyControlRiskClass | null,
+): string {
+  const ttlHours = riskClass === null
+    ? 24
+    : POLICY_ACTIVATION_APPROVAL_DEFAULT_TTL_HOURS_BY_RISK_CLASS[riskClass];
+  return new Date(Date.parse(requestedAt) + ttlHours * 60 * 60 * 1000).toISOString();
+}
+
+function compareCanonicalKeys(left: string, right: string): number {
+  if (left < right) return -1;
+  if (left > right) return 1;
+  return 0;
 }
 
 function stableStringify(value: unknown): string {
@@ -202,7 +221,7 @@ function stableStringify(value: unknown): string {
   if (typeof value === 'object') {
     const entries = Object.entries(value as Record<string, unknown>)
       .filter(([, nested]) => nested !== undefined)
-      .sort(([left], [right]) => left.localeCompare(right));
+      .sort(([left], [right]) => compareCanonicalKeys(left, right));
     return `{${entries
       .map(([key, nested]) => `${JSON.stringify(key)}:${stableStringify(nested)}`)
       .join(',')}}`;
@@ -369,7 +388,10 @@ export function createPolicyActivationApprovalRequest(
     bundle: input.bundleRecord.manifest.bundle,
     requestedBy: cloneAndFreeze(input.requestedBy),
     requestedAt,
-    expiresAt: normalizeIsoTimestamp(input.expiresAt ?? defaultExpiresAt(requestedAt), 'expiresAt'),
+    expiresAt: normalizeIsoTimestamp(
+      input.expiresAt ?? defaultExpiresAt(requestedAt, requirement.riskClass),
+      'expiresAt',
+    ),
     reasonCode: input.reasonCode ?? requirement.reasonCode,
     rationale: normalizeText(input.rationale, 'request rationale'),
     requirement,

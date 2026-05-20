@@ -58,13 +58,15 @@ function main(): void {
 
     ok(secretRun.status === 0, `Observability release bundle: Grafana Cloud secret-mode render exits successfully\nstdout:\n${secretRun.stdout}\nstderr:\n${secretRun.stderr}`);
     const secretKustomization = readFileSync(resolve(secretOut, 'kustomization.yaml'), 'utf8');
+    const secretNetworkPolicy = readFileSync(resolve(secretOut, 'networkpolicy.yaml'), 'utf8');
     const secretConfigmap = readFileSync(resolve(secretOut, 'configmap.yaml'), 'utf8');
     const secretDeployment = readFileSync(resolve(secretOut, 'deployment.yaml'), 'utf8');
     const alertmanager = readFileSync(resolve(secretOut, 'alertmanager.generated.yml'), 'utf8');
     const retention = readFileSync(resolve(secretOut, 'retention.env'), 'utf8');
     const summary = JSON.parse(readFileSync(resolve(secretOut, 'summary.json'), 'utf8')) as any;
 
-    ok(secretKustomization.includes('grafana-cloud.secret.yaml') && secretKustomization.includes('alertmanager-routing.secret.yaml'), 'Observability release bundle: secret mode includes rendered Grafana Cloud and Alertmanager secrets');
+    ok(secretKustomization.includes('networkpolicy.yaml') && secretKustomization.includes('grafana-cloud.secret.yaml') && secretKustomization.includes('alertmanager-routing.secret.yaml'), 'Observability release bundle: secret mode includes NetworkPolicy plus rendered Grafana Cloud and Alertmanager secrets');
+    ok(secretNetworkPolicy.includes('name: attestor-otel-gateway-default-deny') && secretNetworkPolicy.includes('port: 443'), 'Observability release bundle: secret mode carries collector NetworkPolicy resources');
     ok(secretConfigmap.includes('basicauth/grafana_cloud') && secretConfigmap.includes('otlphttp/grafana_cloud'), 'Observability release bundle: Grafana Cloud configmap swaps to managed OTLP basicauth wiring');
     ok(secretDeployment.includes('GRAFANA_CLOUD_OTLP_ENDPOINT') && !secretDeployment.includes('TEMPO_OTLP_ENDPOINT'), 'Observability release bundle: Grafana Cloud deployment consumes secret-backed OTLP env instead of local Tempo/Loki envs');
     ok(alertmanager.includes('routing_key: \'pd-secret\'') && alertmanager.includes('url: \'https://alerts.example.invalid/default\''), 'Observability release bundle: rendered Alertmanager config carries production routing targets');
@@ -110,11 +112,13 @@ function main(): void {
     const externalGrafanaSecret = readFileSync(resolve(externalOut, 'grafana-cloud.external-secret.yaml'), 'utf8');
     const externalAlertSecret = readFileSync(resolve(externalOut, 'alertmanager-routing.external-secret.yaml'), 'utf8');
     const externalNamespace = readFileSync(resolve(externalOut, 'namespace.yaml'), 'utf8');
+    const externalNetworkPolicy = readFileSync(resolve(externalOut, 'networkpolicy.yaml'), 'utf8');
     const externalSummary = JSON.parse(readFileSync(resolve(externalOut, 'summary.json'), 'utf8')) as any;
     ok(externalKustomization.includes('grafana-cloud.external-secret.yaml') && externalKustomization.includes('alertmanager-routing.external-secret.yaml'), 'Observability release bundle: external-secret mode includes ExternalSecret resources');
     ok(externalGrafanaSecret.includes('name: corp-secrets') && externalGrafanaSecret.includes('namespace: obs-prod') && externalGrafanaSecret.includes('refreshInterval: 15m') && externalGrafanaSecret.includes('deletionPolicy: Retain') && externalGrafanaSecret.includes('key: observability-grafana-cloud'), 'Observability release bundle: Grafana Cloud ExternalSecret rewires store, lifecycle, and GKE-safe remote key naming');
     ok(externalAlertSecret.includes('name: corp-secrets') && externalAlertSecret.includes('namespace: obs-prod') && externalAlertSecret.includes('refreshInterval: 15m') && externalAlertSecret.includes('deletionPolicy: Retain') && externalAlertSecret.includes('key: observability-alertmanager'), 'Observability release bundle: Alertmanager ExternalSecret rewires store, lifecycle, and GKE-safe remote key naming');
     ok(externalNamespace.includes('name: obs-prod'), 'Observability release bundle: namespace resource is rewritten');
+    ok(externalNetworkPolicy.includes('namespace: obs-prod') && externalNetworkPolicy.includes('- obs-prod') && !externalNetworkPolicy.includes('- attestor-observability'), 'Observability release bundle: NetworkPolicy namespace and self-namespace selectors are rewritten');
     ok(externalSummary.externalSecretPolicy.refreshInterval === '15m' && externalSummary.externalSecretPolicy.deletionPolicy === 'Retain' && externalSummary.externalSecretPolicy.remoteSecretProvider === 'gke', 'Observability release bundle: summary captures lifecycle policy and remote secret provider');
 
     const alloyRun = spawnSync(

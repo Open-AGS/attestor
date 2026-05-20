@@ -10,7 +10,7 @@ function ok(condition: unknown, message: string): void {
 }
 
 function read(path: string): string {
-  return readFileSync(resolve(path), 'utf8');
+  return readFileSync(resolve(path), 'utf8').replace(/\r\n/gu, '\n');
 }
 
 function deploymentEnvValue(deployment: string, name: string): string | null {

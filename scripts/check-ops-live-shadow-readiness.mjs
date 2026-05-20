@@ -25,6 +25,9 @@ const FILES = Object.freeze({
   observabilityReadme: 'ops/observability/README.md',
   observabilityDeployment: 'ops/kubernetes/observability/deployment.yaml',
   observabilityKubernetesReadme: 'ops/kubernetes/observability/README.md',
+  observabilityNamespace: 'ops/kubernetes/observability/namespace.yaml',
+  observabilityKustomization: 'ops/kubernetes/observability/kustomization.yaml',
+  observabilityNetworkPolicy: 'ops/kubernetes/observability/networkpolicy.yaml',
   prometheusConfig: 'ops/observability/prometheus/prometheus.yml',
   prometheusAlerts: 'ops/observability/prometheus/alerts.yml',
   alertmanagerConfig: 'ops/observability/alertmanager/alertmanager.yml',
@@ -191,6 +194,18 @@ function checkRepoReadiness() {
   includes(FILES.observabilityDeployment, 'automountServiceAccountToken: true', issues, 'observability collector must make the Kubernetes metadata token dependency explicit');
   includes(FILES.observabilityDeployment, 'tempo.attestor-observability.svc.cluster.local:4317', issues, 'base observability deployment must keep Tempo endpoint namespace-aligned');
   includes(FILES.observabilityDeployment, 'http://loki.attestor-observability.svc.cluster.local:3100/otlp', issues, 'base observability deployment must keep Loki endpoint namespace-aligned');
+  includes(FILES.observabilityNamespace, 'pod-security.kubernetes.io/enforce: restricted', issues, 'observability namespace must enforce the restricted Pod Security Standard');
+  includes(FILES.observabilityNamespace, 'pod-security.kubernetes.io/audit: restricted', issues, 'observability namespace must audit against the restricted Pod Security Standard');
+  includes(FILES.observabilityNamespace, 'pod-security.kubernetes.io/warn: restricted', issues, 'observability namespace must warn against the restricted Pod Security Standard');
+  includes(FILES.observabilityKustomization, 'networkpolicy.yaml', issues, 'observability NetworkPolicy must be part of the Kubernetes observability bundle');
+  includes(FILES.observabilityNetworkPolicy, 'name: attestor-otel-gateway-default-deny', issues, 'observability namespace must carry a collector default-deny NetworkPolicy');
+  includes(FILES.observabilityNetworkPolicy, 'name: attestor-otel-gateway-ingress', issues, 'observability namespace must carry explicit collector ingress allowlist');
+  includes(FILES.observabilityNetworkPolicy, 'name: attestor-otel-gateway-egress', issues, 'observability namespace must carry explicit collector egress allowlist');
+  includes(FILES.observabilityNetworkPolicy, 'port: 4317', issues, 'observability NetworkPolicy must allow OTLP gRPC intentionally');
+  includes(FILES.observabilityNetworkPolicy, 'port: 4318', issues, 'observability NetworkPolicy must allow OTLP HTTP intentionally');
+  includes(FILES.observabilityNetworkPolicy, 'port: 8889', issues, 'observability NetworkPolicy must allow collector metrics intentionally');
+  includes(FILES.observabilityNetworkPolicy, 'port: 3100', issues, 'observability NetworkPolicy must allow local Loki OTLP HTTP intentionally');
+  includes(FILES.observabilityNetworkPolicy, 'port: 443', issues, 'observability NetworkPolicy must keep managed backend and Kubernetes API HTTPS egress explicit');
   includes(FILES.observabilityKubernetesReadme, 'Kubernetes attributes processor uses', issues, 'observability Kubernetes docs must document why the ServiceAccount token is intentionally mounted');
   includes(FILES.observabilityKubernetesReadme, 'namespace-scoped NetworkPolicy proof', issues, 'observability Kubernetes docs must document endpoint namespace alignment');
 

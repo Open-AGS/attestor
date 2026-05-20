@@ -15,6 +15,8 @@ The bundle includes:
 - OTLP gRPC/HTTP `Service`
 - `PodDisruptionBudget`
 - `HorizontalPodAutoscaler`
+- namespace-scoped `NetworkPolicy` resources with default deny plus explicit
+  OTLP, metrics, DNS, local backend, and HTTPS egress allowlists
 - `ServiceAccount` + `ClusterRole` + `ClusterRoleBinding` for the Kubernetes
   attributes processor
 - `k8sattributes` + `resourcedetection` + `memory_limiter` + `batch`
@@ -22,6 +24,7 @@ The bundle includes:
 - an explicit non-root collector security context. The ServiceAccount token is
   intentionally mounted because the Kubernetes attributes processor uses
   read-only Kubernetes metadata RBAC.
+- Pod Security Admission namespace labels for the `restricted` profile.
 
 Before applying it, replace:
 
@@ -30,12 +33,13 @@ Before applying it, replace:
 - `attestor-observability`
 
 The base manifest keeps the local Tempo/Loki endpoint placeholders in the same
-namespace as the collector gateway so namespace-scoped NetworkPolicy proof does
-not silently diverge from the rendered deployment. If a target cluster uses a
-shared `monitoring` namespace or a managed backend, render a release bundle with
-explicit `ATTESTOR_OBSERVABILITY_TEMPO_OTLP_ENDPOINT` and
-`ATTESTOR_OBSERVABILITY_LOKI_OTLP_ENDPOINT` values and include that in the live
-proof.
+namespace as the collector gateway and ships namespace-scoped NetworkPolicy
+resources so namespace-scoped NetworkPolicy proof does not silently diverge
+from the rendered deployment. If a target cluster uses a shared `monitoring`
+namespace, managed backend, service mesh, or a stricter egress gateway, render a
+release bundle with explicit `ATTESTOR_OBSERVABILITY_TEMPO_OTLP_ENDPOINT` and
+`ATTESTOR_OBSERVABILITY_LOKI_OTLP_ENDPOINT` values and include the final
+NetworkPolicy or equivalent platform policy in live proof.
 
 Typical apply flow:
 

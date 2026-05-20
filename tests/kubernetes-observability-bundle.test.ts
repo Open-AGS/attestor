@@ -10,7 +10,7 @@ function ok(condition: unknown, message: string): void {
 }
 
 function read(path: string): string {
-  return readFileSync(resolve(path), 'utf8');
+  return readFileSync(resolve(path), 'utf8').replace(/\r\n/gu, '\n');
 }
 
 function deploymentEnvValue(deployment: string, name: string): string | null {
@@ -26,7 +26,9 @@ function deploymentEnvValue(deployment: string, name: string): string | null {
 
 function main(): void {
   const kustomization = read('ops/kubernetes/observability/kustomization.yaml');
+  const namespace = read('ops/kubernetes/observability/namespace.yaml');
   const readme = read('ops/kubernetes/observability/README.md');
+  const networkPolicy = read('ops/kubernetes/observability/networkpolicy.yaml');
   const configmap = read('ops/kubernetes/observability/configmap.yaml');
   const deployment = read('ops/kubernetes/observability/deployment.yaml');
   const service = read('ops/kubernetes/observability/service.yaml');
@@ -51,8 +53,12 @@ function main(): void {
   const releaseBundleScript = read('scripts/render-observability-release-bundle.ts');
   const releaseInputProbeScript = read('scripts/probe-observability-release-inputs.ts');
 
-  ok(kustomization.includes('configmap.yaml') && kustomization.includes('deployment.yaml'), 'Kubernetes observability bundle: kustomization includes core resources');
+  ok(kustomization.includes('configmap.yaml') && kustomization.includes('deployment.yaml') && kustomization.includes('networkpolicy.yaml'), 'Kubernetes observability bundle: kustomization includes core resources and NetworkPolicy');
+  ok(namespace.includes('pod-security.kubernetes.io/enforce: restricted') && namespace.includes('pod-security.kubernetes.io/audit: restricted') && namespace.includes('pod-security.kubernetes.io/warn: restricted'), 'Kubernetes observability bundle: namespace carries restricted Pod Security Admission labels');
   ok(readme.includes('gateway deployment pattern') && readme.includes('kubectl apply -k ops/kubernetes/observability'), 'Kubernetes observability bundle: README documents gateway rollout');
+  ok(networkPolicy.includes('name: attestor-otel-gateway-default-deny') && networkPolicy.includes('policyTypes:\n    - Ingress\n    - Egress'), 'Kubernetes observability bundle: NetworkPolicy starts with default deny ingress and egress');
+  ok(networkPolicy.includes('name: attestor-otel-gateway-ingress') && networkPolicy.includes('port: 4317') && networkPolicy.includes('port: 4318') && networkPolicy.includes('port: 8889'), 'Kubernetes observability bundle: NetworkPolicy allows only intentional collector ingress ports');
+  ok(networkPolicy.includes('name: attestor-otel-gateway-egress') && networkPolicy.includes('port: 53') && networkPolicy.includes('port: 3100') && networkPolicy.includes('port: 443'), 'Kubernetes observability bundle: NetworkPolicy keeps DNS, local backend, and HTTPS egress explicit');
   ok(configmap.includes('k8sattributes:') && configmap.includes('resourcedetection:'), 'Kubernetes observability bundle: collector config uses Kubernetes/resource metadata processors');
   ok(configmap.includes('detectors: [system]') && !configmap.includes('detectors: [env, system]'), 'Kubernetes observability bundle: collector avoids env resource detector leakage');
   ok(configmap.includes('TEMPO_OTLP_ENDPOINT') && configmap.includes('LOKI_OTLP_ENDPOINT'), 'Kubernetes observability bundle: collector config is backend-endpoint aware');

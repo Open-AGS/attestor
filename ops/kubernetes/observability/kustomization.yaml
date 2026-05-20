@@ -3,6 +3,7 @@ resources:
   - serviceaccount.yaml
   - clusterrole.yaml
   - clusterrolebinding.yaml
+  - networkpolicy.yaml
   - configmap.yaml
   - deployment.yaml
   - service.yaml

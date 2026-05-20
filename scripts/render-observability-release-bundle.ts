@@ -52,6 +52,10 @@ function replaceNamespace(contents: string, namespace: string): string {
   return replaceAll(contents, /^(\s*namespace:\s*).*$/gm, `$1${namespace}`);
 }
 
+function replaceObservabilityNamespaceRefs(contents: string, namespace: string): string {
+  return replaceAll(contents, /(\s*-\s*)attestor-observability\b/g, `$1${namespace}`);
+}
+
 function replaceFirst(contents: string, pattern: RegExp, replacement: string): string {
   if (!pattern.test(contents)) {
     throw new Error(`Expected replacement did not match: ${pattern}`);
@@ -150,6 +154,7 @@ function main(): void {
     let serviceAccount = read('ops/kubernetes/observability/serviceaccount.yaml');
     let clusterRole = read('ops/kubernetes/observability/clusterrole.yaml');
     let clusterRoleBinding = read('ops/kubernetes/observability/clusterrolebinding.yaml');
+    let networkPolicy = read('ops/kubernetes/observability/networkpolicy.yaml');
     let configmap = (provider === 'grafana-cloud' || provider === 'grafana-alloy')
       ? read(`ops/kubernetes/observability/providers/${provider}/patch-configmap.yaml`)
       : read('ops/kubernetes/observability/configmap.yaml');
@@ -161,6 +166,8 @@ function main(): void {
     namespaceYaml = replaceYamlScalar(namespaceYaml, 'name', `  name: ${namespace}`);
     serviceAccount = replaceNamespace(serviceAccount, namespace);
     clusterRoleBinding = replaceAll(clusterRoleBinding, /namespace:\s*attestor-observability/g, `namespace: ${namespace}`);
+    networkPolicy = replaceNamespace(networkPolicy, namespace);
+    networkPolicy = replaceObservabilityNamespaceRefs(networkPolicy, namespace);
     configmap = replaceNamespace(configmap, namespace);
     deployment = replaceNamespace(deployment, namespace);
     service = replaceNamespace(service, namespace);
@@ -218,6 +225,7 @@ function main(): void {
     write(resolve(outputDir, 'serviceaccount.yaml'), serviceAccount);
     write(resolve(outputDir, 'clusterrole.yaml'), clusterRole);
     write(resolve(outputDir, 'clusterrolebinding.yaml'), clusterRoleBinding);
+    write(resolve(outputDir, 'networkpolicy.yaml'), networkPolicy);
     write(resolve(outputDir, 'configmap.yaml'), configmap);
     write(resolve(outputDir, 'deployment.yaml'), deployment);
     write(resolve(outputDir, 'service.yaml'), service);
@@ -229,6 +237,7 @@ function main(): void {
       'serviceaccount.yaml',
       'clusterrole.yaml',
       'clusterrolebinding.yaml',
+      'networkpolicy.yaml',
       'configmap.yaml',
       'deployment.yaml',
       'service.yaml',

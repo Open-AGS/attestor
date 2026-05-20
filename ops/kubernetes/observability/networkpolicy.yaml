@@ -1,0 +1,80 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: attestor-otel-gateway-default-deny
+  namespace: attestor-observability
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: attestor-otel-gateway-ingress
+  namespace: attestor-observability
+spec:
+  podSelector:
+    matchLabels:
+      app: attestor-otel-gateway
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchExpressions:
+              - key: kubernetes.io/metadata.name
+                operator: In
+                values:
+                  - attestor
+                  - attestor-observability
+                  - monitoring
+      ports:
+        - protocol: TCP
+          port: 4317
+        - protocol: TCP
+          port: 4318
+        - protocol: TCP
+          port: 8889
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: attestor-otel-gateway-egress
+  namespace: attestor-observability
+spec:
+  podSelector:
+    matchLabels:
+      app: attestor-otel-gateway
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    - to:
+        - namespaceSelector:
+            matchExpressions:
+              - key: kubernetes.io/metadata.name
+                operator: In
+                values:
+                  - attestor-observability
+                  - monitoring
+      ports:
+        - protocol: TCP
+          port: 4317
+        - protocol: TCP
+          port: 3100
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - protocol: TCP
+          port: 443

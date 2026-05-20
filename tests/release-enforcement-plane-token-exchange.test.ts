@@ -22,6 +22,7 @@ import {
   RELEASE_TOKEN_EXCHANGE_GRANT_TYPE,
   RELEASE_TOKEN_EXCHANGE_SPEC_VERSION,
   exchangeReleaseToken,
+  type ReleaseTokenExchangePolicy,
 } from '../src/release-enforcement-plane/token-exchange.js';
 import { verifyOfflineReleaseAuthorization } from '../src/release-enforcement-plane/offline-verifier.js';
 import { verifyOnlineReleaseAuthorization } from '../src/release-enforcement-plane/online-verifier.js';
@@ -360,6 +361,7 @@ async function testExchangeDoesNotBroadenAudience(): Promise<void> {
     policy: {
       allowedAudiences: ['analytics.memo.writer'],
       allowedScopes: ['release:decision-support'],
+      maxTtlSeconds: 120,
     },
   });
 
@@ -397,6 +399,7 @@ async function testExchangeRejectsDisallowedScopeAndResource(): Promise<void> {
       allowedAudiences: ['analytics.memo.writer'],
       allowedScopes: ['release:decision-support', 'memo:write'],
       allowedResources: ['https://api.attestor.test/memo/'],
+      maxTtlSeconds: 120,
     },
   });
 
@@ -475,6 +478,7 @@ async function testExchangeRejectsExpiredSubject(): Promise<void> {
     policy: {
       allowedAudiences: ['analytics.memo.writer'],
       allowedScopes: ['release:decision-support'],
+      maxTtlSeconds: 120,
     },
   });
 
@@ -520,6 +524,7 @@ async function testExchangePreservesActorChain(): Promise<void> {
       allowedAudiences: ['analytics.memo.writer'],
       allowedScopes: ['release:decision-support'],
       requireActor: true,
+      maxTtlSeconds: 120,
     },
   });
 
@@ -530,6 +535,43 @@ async function testExchangePreservesActorChain(): Promise<void> {
   equal(exchanged.actorChain.length, 2, 'Token exchange: actor chain keeps current and previous actors');
   equal(exchanged.issuedToken.claims.act?.sub, 'svc.memo-gateway', 'Token exchange: current actor is first in JWT actor chain');
   equal(exchanged.issuedToken.claims.act?.act?.sub, 'svc.orchestrator', 'Token exchange: parent actor is nested in JWT actor chain');
+}
+
+async function testExchangeRequiresExplicitMaxTtlPolicy(): Promise<void> {
+  const { issuer, verificationKey } = await setupIssuer();
+  const decision = makeDecision({
+    id: 'decision-missing-ttl-policy',
+    consequenceType: 'decision-support',
+    riskClass: 'R1',
+    targetId: 'attestor.release.authority',
+  });
+  const parent = await issuer.issue({
+    decision,
+    issuedAt: '2026-04-18T10:00:00.000Z',
+    tokenId: 'rt_parent_missing_ttl_policy',
+  });
+
+  const exchanged = await exchangeReleaseToken({
+    request: {
+      id: 'exchange-missing-ttl-policy',
+      requestedAt: '2026-04-18T10:01:00.000Z',
+      subjectToken: parent.token,
+      audience: 'analytics.memo.writer',
+      scope: 'release:decision-support',
+      ttlSeconds: 120,
+      tokenId: 'rtx_missing_ttl_policy',
+    },
+    issuer,
+    verificationKey,
+    policy: {
+      allowedAudiences: ['analytics.memo.writer'],
+      allowedScopes: ['release:decision-support'],
+    } as unknown as ReleaseTokenExchangePolicy,
+  });
+
+  equal(exchanged.status, 'denied', 'Token exchange: missing max TTL policy is denied');
+  deepEqual(exchanged.failureReasons, ['ttl-policy-required'], 'Token exchange: implicit 300s TTL fallback is not allowed');
+  equal(exchanged.issuedToken, null, 'Token exchange: missing max TTL policy does not issue a token');
 }
 
 async function testHighRiskExchangeRegistersForOnlineVerifier(): Promise<void> {
@@ -673,6 +715,7 @@ async function testExchangeRejectsRevokedSubjectWhenIntrospectionIsRequired(): P
       allowedAudiences: ['finance.reporting.record-store'],
       allowedSourceAudiences: ['attestor.release.authority'],
       allowedScopes: ['record:write'],
+      maxTtlSeconds: 60,
       requireActor: true,
     },
   });
@@ -709,6 +752,7 @@ async function testExchangeRejectsInvalidResourceUri(): Promise<void> {
     policy: {
       allowedAudiences: ['analytics.memo.writer'],
       allowedScopes: ['release:decision-support'],
+      maxTtlSeconds: 120,
     },
   });
 
@@ -723,6 +767,7 @@ async function main(): Promise<void> {
   await testExchangeCapsTtlToSubjectTokenLifetime();
   await testExchangeRejectsExpiredSubject();
   await testExchangePreservesActorChain();
+  await testExchangeRequiresExplicitMaxTtlPolicy();
   await testHighRiskExchangeRegistersForOnlineVerifier();
   await testExchangeRejectsRevokedSubjectWhenIntrospectionIsRequired();
   await testExchangeRejectsInvalidResourceUri();

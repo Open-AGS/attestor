@@ -55,6 +55,7 @@ export type ReleaseTokenExchangeFailureReason =
   | 'resource-not-allowed'
   | 'invalid-target'
   | 'actor-required'
+  | 'ttl-policy-required'
   | 'ttl-exhausted'
   | 'inactive-subject-token'
   | 'subject-introspection-unavailable';
@@ -68,7 +69,7 @@ export interface ReleaseTokenExchangePolicy {
   readonly allowedSourceAudiences?: readonly string[];
   readonly allowedScopes?: readonly string[];
   readonly allowedResources?: readonly string[];
-  readonly maxTtlSeconds?: number;
+  readonly maxTtlSeconds: number;
   readonly maxUses?: number;
   readonly requireActor?: boolean;
 }
@@ -228,6 +229,14 @@ function singleValueAllowed(
     return value === null;
   }
   return value !== null && allowed.includes(value);
+}
+
+function explicitPolicyMaxTtlSeconds(policy: ReleaseTokenExchangePolicy): number | null {
+  const value = policy.maxTtlSeconds;
+  if (value === undefined || !Number.isFinite(value) || value <= 0) {
+    return null;
+  }
+  return value;
 }
 
 function targetKindForClaims(claims: ReleaseTokenClaims): ReleaseTargetKind {
@@ -443,15 +452,14 @@ function deny(input: {
 
 function requestedTtlSeconds(input: {
   readonly request: ReleaseTokenExchangeRequest;
-  readonly policy: ReleaseTokenExchangePolicy;
+  readonly maxTtlSeconds: number;
   readonly claims: ReleaseTokenClaims;
   readonly requestedAt: string;
 }): number {
   const nowEpoch = epochSeconds(input.requestedAt);
   const subjectRemainingSeconds = input.claims.exp - nowEpoch;
-  const maxTtlSeconds = input.policy.maxTtlSeconds ?? 300;
-  const requested = input.request.ttlSeconds ?? maxTtlSeconds;
-  return Math.min(subjectRemainingSeconds, maxTtlSeconds, requested);
+  const requested = input.request.ttlSeconds ?? input.maxTtlSeconds;
+  return Math.min(subjectRemainingSeconds, input.maxTtlSeconds, requested);
 }
 
 export async function exchangeReleaseToken(
@@ -593,13 +601,21 @@ export async function exchangeReleaseToken(
     policyFailures.push('actor-required');
   }
 
-  const ttlSeconds = requestedTtlSeconds({
-    request: input.request,
-    policy: input.policy,
-    claims,
-    requestedAt,
-  });
-  if (ttlSeconds <= 0) {
+  const maxTtlSeconds = explicitPolicyMaxTtlSeconds(input.policy);
+  if (maxTtlSeconds === null) {
+    policyFailures.push('ttl-policy-required');
+  }
+
+  const ttlSeconds =
+    maxTtlSeconds === null
+      ? 0
+      : requestedTtlSeconds({
+          request: input.request,
+          maxTtlSeconds,
+          claims,
+          requestedAt,
+        });
+  if (maxTtlSeconds !== null && ttlSeconds <= 0) {
     policyFailures.push('ttl-exhausted');
   }
 

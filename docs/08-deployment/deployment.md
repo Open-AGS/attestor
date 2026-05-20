@@ -203,8 +203,9 @@ external identity fabric.
 | `ATTESTOR_HOSTED_OIDC_CLIENT_SECRET` | No | None | Hosted customer OIDC client secret |
 | `ATTESTOR_HOSTED_OIDC_REDIRECT_URL` | No | None | Hosted customer OIDC callback URL override; defaults from the incoming request origin when omitted |
 | `ATTESTOR_HOSTED_OIDC_SCOPES` | No | `openid email profile` | Hosted customer OIDC scopes |
-| `ATTESTOR_HOSTED_OIDC_STATE_KEY` | No | None | Dedicated secret for sealing stateless hosted OIDC login state; falls back to `ATTESTOR_ADMIN_API_KEY` |
+| `ATTESTOR_HOSTED_OIDC_STATE_KEY` | Production-like: yes; local/dev: optional | None | Dedicated secret for sealing stateless hosted OIDC login state. Production-like runtimes reject the `ATTESTOR_ADMIN_API_KEY` fallback; local/dev may use that fallback only for non-production testing. |
 | `ATTESTOR_HOSTED_OIDC_STATE_TTL_MINUTES` | No | `10` | Hosted customer OIDC login-state TTL in minutes |
+| `ATTESTOR_HOSTED_OIDC_DISCOVERY_CACHE_TTL_SECONDS` | No | `3600` | Hosted OIDC discovery metadata cache TTL. Expired discovery metadata is refreshed so IdP endpoint/JWKS rotations do not require a process restart. |
 | `ATTESTOR_HOSTED_OIDC_ALLOW_INSECURE_HTTP` | No | `false` | Localhost/test-only escape hatch allowing non-HTTPS hosted OIDC issuers; ignored and rejected in production-like runtimes |
 | `ATTESTOR_HOSTED_OIDC_ALLOW_UNVERIFIED_EMAIL_LINK` | No | None | Set to `accept-the-risk` only if automatic first-link fallback may trust OIDC emails without `email_verified=true`; default is fail-closed |
 | `ATTESTOR_HOSTED_SAML_IDP_METADATA_XML` | No | None | Inline IdP metadata XML enabling hosted SAML SSO first slice |
@@ -212,7 +213,7 @@ external identity fabric.
 | `ATTESTOR_HOSTED_SAML_ENTITY_ID` | No | Metadata URL | Hosted SAML SP entity ID override |
 | `ATTESTOR_HOSTED_SAML_METADATA_URL` | No | Request-origin derived | Hosted SAML metadata URL override |
 | `ATTESTOR_HOSTED_SAML_ACS_URL` | No | Request-origin derived | Hosted SAML ACS URL override |
-| `ATTESTOR_HOSTED_SAML_RELAY_STATE_KEY` | No | None | Dedicated secret for sealing stateless hosted SAML relay state; falls back to `ATTESTOR_ADMIN_API_KEY` |
+| `ATTESTOR_HOSTED_SAML_RELAY_STATE_KEY` | Production-like: yes; local/dev: optional | None | Dedicated secret for sealing stateless hosted SAML relay state. Production-like runtimes reject the `ATTESTOR_ADMIN_API_KEY` fallback; local/dev may use that fallback only for non-production testing. |
 | `ATTESTOR_HOSTED_SAML_RELAY_STATE_TTL_MINUTES` | No | `10` | Hosted SAML relay-state TTL in minutes |
 | `ATTESTOR_HOSTED_SAML_CLOCK_DRIFT_SECONDS` | No | `120` | Hosted SAML clock-skew tolerance in seconds for response time windows |
 | `ATTESTOR_HOSTED_SAML_SIGN_AUTHN_REQUESTS` | No | `false` | When `true`, hosted SAML AuthnRequests are signed and require SP key/cert material |

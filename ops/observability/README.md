@@ -13,18 +13,21 @@ This bundle ships a local, persisted observability stack for Attestor:
 Start it with:
 
 ```bash
+npm run render:observability-credentials
 docker compose -f docker-compose.observability.yml up --build
 ```
 
-The bundled Prometheus job scrapes `GET /api/v1/metrics` using the dedicated bearer token `metrics-secret`, so operators do not need to expose the broader admin API key to the metrics pipeline.
+The bundled Prometheus job scrapes `GET /api/v1/metrics` using a dedicated bearer token generated into `.attestor/observability/credentials/prometheus-metrics-token`, so operators do not need to expose the broader admin API key to the metrics pipeline. The default local token is generated outside the repository; set `ATTESTOR_METRICS_API_KEY` or `ATTESTOR_METRICS_API_KEY_FILE` before rendering for non-local environments.
 
 Shipped production-oriented defaults in this bundle:
 
 - Prometheus remote-write receiver enabled so Tempo metrics-generator can write span-metrics + service-graph telemetry
 - multi-window burn-rate SLO recording rules and alert rules for API availability and latency
-- Loki compactor retention enabled with a 14-day default
+- Loki compactor retention enabled with a profile/env-driven 14-day default
 - Tempo trace retention and metrics-generator enabled with 14-day defaults
-- severity-based Alertmanager routing with Watchdog and critical-over-warning inhibition
+- severity/team-based Alertmanager routing with Watchdog and critical-over-warning inhibition
+- local Loki tenant isolation enabled with the `X-Scope-OrgID` tenant header
+- explicit collector-to-backend TLS mode flags (`TEMPO_OTLP_INSECURE`, `LOKI_OTLP_INSECURE`) so plaintext in-cluster telemetry remains a deliberate deployment choice
 
 Optional Alertmanager delivery wiring comes from:
 
@@ -51,6 +54,7 @@ Credential bundle rendering:
 - `npm run render:observability-credentials`
 - emits a redacted summary plus:
   - local `.env` material for the Docker bundle
+  - a Prometheus bearer-token file consumed via `credentials_file`
   - a Grafana Cloud collector Secret manifest
   - an Alertmanager routing Secret manifest
 
@@ -124,3 +128,5 @@ Boundary:
 - This is a shipped operator bundle and collector gateway rollout, not a fully managed hosted observability service.
 - Default retention and SLO thresholds are opinionated first production defaults and should still be tuned against real traffic and compliance requirements.
 - Production paging destinations still require environment-specific webhook/SMTP credentials and escalation policy choices.
+- The local Loki/Tempo backends use local filesystem storage for evaluation and shadow rehearsal. Production storage, encryption-at-rest, and backup/restore evidence remain live ops proof unless the managed-backend provider path is used and probed.
+- Local collector-to-Loki/Tempo traffic defaults to in-cluster plaintext behind NetworkPolicy. Limited enforcement needs service-mesh mTLS, managed backend TLS, or an explicit accepted-risk proof.

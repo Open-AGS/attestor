@@ -2,10 +2,11 @@ services:
   attestor-api:
     build: .
     command: node dist/service/api-server.js
+    env_file:
+      - ./.attestor/observability/credentials/local.env
     environment:
       PORT: "3700"
       ATTESTOR_ADMIN_API_KEY: admin-secret
-      ATTESTOR_METRICS_API_KEY: metrics-secret
       OTEL_LOGS_EXPORTER: otlp
       OTEL_TRACES_EXPORTER: otlp
       OTEL_METRICS_EXPORTER: otlp
@@ -18,6 +19,10 @@ services:
   otel-collector:
     image: otel/opentelemetry-collector-contrib:0.152.0@sha256:f41d7995565df3733b7568702073a9c490792f9c6ac60684fe6a4da21a313f8d
     command: ["--config=/etc/otelcol-contrib/config.yaml"]
+    environment:
+      TEMPO_OTLP_INSECURE: "true"
+      LOKI_OTLP_INSECURE: "true"
+      LOKI_TENANT_ID: ${ATTESTOR_OBSERVABILITY_LOKI_TENANT_ID:-attestor-shadow}
     volumes:
       - ./ops/otel/collector-config.yaml:/etc/otelcol-contrib/config.yaml:ro
     ports:
@@ -42,6 +47,7 @@ services:
       - ./ops/observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./ops/observability/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
       - ./ops/observability/prometheus/recording-rules.yml:/etc/prometheus/recording-rules.yml:ro
+      - ./.attestor/observability/credentials/prometheus-metrics-token:/etc/prometheus/secrets/metrics-api-key:ro
       - prometheus-data:/prometheus
     ports:
       - "9090:9090"
@@ -55,15 +61,8 @@ services:
     working_dir: /workspace
     command: ["node", "scripts/render-alertmanager-config.mjs", "/generated/alertmanager.yml"]
     restart: "no"
-    environment:
-      ALERTMANAGER_DEFAULT_WEBHOOK_URL: ${ALERTMANAGER_DEFAULT_WEBHOOK_URL:-}
-      ALERTMANAGER_CRITICAL_WEBHOOK_URL: ${ALERTMANAGER_CRITICAL_WEBHOOK_URL:-}
-      ALERTMANAGER_WARNING_WEBHOOK_URL: ${ALERTMANAGER_WARNING_WEBHOOK_URL:-}
-      ALERTMANAGER_EMAIL_TO: ${ALERTMANAGER_EMAIL_TO:-}
-      ALERTMANAGER_EMAIL_FROM: ${ALERTMANAGER_EMAIL_FROM:-}
-      ALERTMANAGER_SMARTHOST: ${ALERTMANAGER_SMARTHOST:-}
-      ALERTMANAGER_SMTP_AUTH_USERNAME: ${ALERTMANAGER_SMTP_AUTH_USERNAME:-}
-      ALERTMANAGER_SMTP_AUTH_PASSWORD: ${ALERTMANAGER_SMTP_AUTH_PASSWORD:-}
+    env_file:
+      - ./.attestor/observability/credentials/local.env
     volumes:
       - .:/workspace:ro
       - alertmanager-config:/generated
@@ -84,7 +83,9 @@ services:
 
   loki:
     image: grafana/loki:3.5.8@sha256:00981fd9455db8589c3aa6d06744af3138c4b2c32fdec62101e92c7a704b2642
-    command: ["-config.file=/etc/loki/config.yml"]
+    command: ["-config.file=/etc/loki/config.yml", "-config.expand-env=true"]
+    environment:
+      ATTESTOR_OBSERVABILITY_LOKI_RETENTION_PERIOD: ${ATTESTOR_OBSERVABILITY_LOKI_RETENTION_PERIOD:-336h}
     volumes:
       - ./ops/observability/loki/loki.yml:/etc/loki/config.yml:ro
       - loki-data:/loki
@@ -109,6 +110,7 @@ services:
       GF_SECURITY_ADMIN_USER: admin
       GF_SECURITY_ADMIN_PASSWORD: admin
       GF_USERS_ALLOW_SIGN_UP: "false"
+      ATTESTOR_OBSERVABILITY_LOKI_TENANT_ID: ${ATTESTOR_OBSERVABILITY_LOKI_TENANT_ID:-attestor-shadow}
     volumes:
       - ./ops/observability/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
       - ./ops/observability/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro

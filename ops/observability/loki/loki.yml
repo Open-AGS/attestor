@@ -1,4 +1,4 @@
-auth_enabled: false
+auth_enabled: true
 
 server:
   http_listen_port: 3100
@@ -26,7 +26,7 @@ schema_config:
 
 limits_config:
   allow_structured_metadata: true
-  retention_period: 336h
+  retention_period: ${ATTESTOR_OBSERVABILITY_LOKI_RETENTION_PERIOD}
 
 compactor:
   working_directory: /loki/compactor

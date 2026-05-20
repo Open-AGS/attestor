@@ -61,9 +61,54 @@ groups:
         for: 5m
         labels:
           severity: warning
+          team: billing
         annotations:
           summary: Attestor billing webhooks are failing validation or reconciliation
           description: Stripe webhook processing recorded conflicts or invalid signatures in the last 15 minutes.
+
+  - name: attestor-security
+    rules:
+      - alert: AttestorAdminAuthFailure
+        expr: sum(increase(attestor_http_requests_total{route=~"/api/v1/admin.*",status_code=~"401|403"}[10m])) > 0
+        for: 2m
+        labels:
+          severity: critical
+          team: security
+        annotations:
+          summary: Attestor admin route authentication failures observed
+          description: One or more admin-surface requests failed authentication or authorization in the last 10 minutes.
+
+      - alert: AttestorSecurityRejectionSpike
+        expr: sum(increase(attestor_http_requests_total{route=~"/api/v1/(admin|account|auth|admissions|billing).*",status_code=~"401|403|429"}[10m])) > 20
+        for: 5m
+        labels:
+          severity: warning
+          team: security
+        annotations:
+          summary: Attestor security-relevant rejection rate is elevated
+          description: Auth, tenant, admission, billing, or rate-limit rejection volume exceeded the live-shadow watch threshold.
+
+      - alert: AttestorWebhookSignatureInvalid
+        expr: sum(increase(attestor_billing_webhook_events_total{outcome="signature_invalid"}[10m])) > 0
+        for: 2m
+        labels:
+          severity: critical
+          team: security
+        annotations:
+          summary: Attestor webhook signature validation failed
+          description: Webhook signature failures indicate spoofing attempts, stale webhook secrets, or provider delivery drift.
+
+  - name: attestor-cost-readiness
+    rules:
+      - alert: AttestorBudgetTelemetryMissing
+        expr: absent(attestor_cloud_budget_usage_ratio)
+        for: 30m
+        labels:
+          severity: warning
+          team: billing
+        annotations:
+          summary: Attestor cloud budget telemetry is not present
+          description: Live shadow requires a cloud budget or cost telemetry source before cost-based kill-switch claims are made.
 
   - name: attestor-slo
     rules:

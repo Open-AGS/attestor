@@ -34,6 +34,7 @@ function main(): void {
         ALERTMANAGER_EMAIL_FROM: 'attestor@example.invalid',
         ALERTMANAGER_SMARTHOST: 'smtp.example.invalid:587',
         ALERTMANAGER_PRODUCTION_MODE: 'true',
+        ATTESTOR_METRICS_API_KEY: 'metrics-token-value',
       },
     },
   );
@@ -42,15 +43,19 @@ function main(): void {
     ok(run.status === 0, 'Observability credentials render: script exits successfully');
     const summary = JSON.parse(readFileSync(resolve(outputDir, 'summary.json'), 'utf8')) as any;
     const localEnv = readFileSync(resolve(outputDir, 'local.env'), 'utf8');
+    const prometheusToken = readFileSync(resolve(outputDir, 'prometheus-metrics-token'), 'utf8');
     const grafanaSecret = readFileSync(resolve(outputDir, 'grafana-cloud.secret.yaml'), 'utf8');
     const alertSecret = readFileSync(resolve(outputDir, 'alertmanager-routing.secret.yaml'), 'utf8');
     const readme = readFileSync(resolve(outputDir, 'README.md'), 'utf8');
 
     ok(summary.grafanaCloud.configured === true, 'Observability credentials render: summary reports Grafana Cloud wiring');
     ok(summary.grafanaCloud.tokenConfigured === true, 'Observability credentials render: summary redacts token but reports presence');
+    ok(summary.metrics.apiKeyConfigured === true && summary.metrics.prometheusCredentialsFile === 'prometheus-metrics-token', 'Observability credentials render: summary reports Prometheus token file without exposing token');
     ok(summary.alertmanager.deliveryTargets.defaultWebhook === true, 'Observability credentials render: summary reports default webhook route');
     ok(summary.alertmanager.deliveryTargets.pagerDuty === true, 'Observability credentials render: summary reports PagerDuty route');
     ok(localEnv.includes('GRAFANA_CLOUD_OTLP_TOKEN=grafana-token-value'), 'Observability credentials render: local env contains Grafana token');
+    ok(localEnv.includes('ATTESTOR_METRICS_API_KEY=metrics-token-value'), 'Observability credentials render: local env carries metrics API key for the API service');
+    ok(prometheusToken === 'metrics-token-value\n', 'Observability credentials render: Prometheus token file carries only the metrics API key');
     ok(grafanaSecret.includes('grafana-cloud-otlp-username') && grafanaSecret.includes('grafana-cloud-otlp-token'), 'Observability credentials render: Grafana secret manifest contains username/token keys');
     ok(alertSecret.includes('ALERTMANAGER_DEFAULT_WEBHOOK_URL') && alertSecret.includes('ALERTMANAGER_CRITICAL_PAGERDUTY_ROUTING_KEY'), 'Observability credentials render: Alertmanager secret manifest contains routing keys');
     ok(readme.includes('do not commit'), 'Observability credentials render: README warns about secret material');

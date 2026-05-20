@@ -26,7 +26,7 @@ or independent assurance claims.
 | Proof and signing authority | proof integrity; customer authority | Ed25519 verification, trusted fingerprint matching, DSSE/in-toto policy bundle evidence. | External KMS/HSM runtime signing proof. | Wire and prove KMS-backed signer before limited enforcement. |
 | Token and replay safety | replay and idempotency safety | DPoP, TTL policy, freshness/replay primitives, token exchange remediation. | Multi-instance replay/introspection store proof. | Run HA replay/outage tests. |
 | Service/API boundary | customer authority; tenant isolation | Edge contract, auth/MFA/session/federated auth sampled; admin route gap remains. | Live route probes and customer PEP integration. | Deep audit admin routes and public route authZ. |
-| Ops and infrastructure | runtime readiness; operational boundedness | Ops Sweep 01/02 remediation and HA manifests. | Cloud/IAM/KMS/network/storage observability proof. | Continue Ops Sweep 03 and capture live proof register entries. |
+| Ops and infrastructure | runtime readiness; operational boundedness | Ops Sweep 01/02/03 remediation, HA manifests, observability alerting/token hardening, and live proof register entries. | Cloud/IAM/KMS/network/storage observability proof, alert delivery, backend auth/storage, and budget telemetry proof. | Continue ops sweep with PITR/Redis/recovery and remaining observability deployment internals. |
 | Public demo safety | data minimization and redaction; no overclaim | Baseline flags demo path traversal and redaction gaps. | Demo artifact privacy crawl before public use. | Revalidate/fix demo CLI path and redaction fixtures. |
 
 ## Update Rule

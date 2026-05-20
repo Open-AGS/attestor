@@ -50,6 +50,14 @@ function completeTemplate(template: string): string {
       'If this PR does not map to the current baseline, explain why:',
       'If this PR does not map to the current baseline, explain why: n/a',
     )
+    .replace('Finding index updated:', 'Finding index updated: yes, docs/audit/finding-index.md')
+    .replace('Report index updated:', 'Report index updated: yes, docs/audit/report-index.md')
+    .replace('Live proof register updated:', 'Live proof register updated: yes, docs/audit/live-proof-register.md')
+    .replace(
+      'Control map / research index updated:',
+      'Control map / research index updated: yes, docs/audit/control-map.md and docs/research/README.md',
+    )
+    .replace('Evidence system exception:', 'Evidence system exception: n/a')
     .replace('Files changed:', 'Files changed: docs/audit/current-posture-baseline.md')
     .replace('What this PR does NOT prove:', 'What this PR does NOT prove: production or enterprise readiness')
     .replace('- [ ] contract-only', '- [x] contract-only')
@@ -69,6 +77,7 @@ function testBlankTemplateIsNotACompletedPrBody(): void {
 
   equal(result.ok, false, 'baseline alignment rejects blank PR template as completed body');
   ok(result.emptyFields.includes('Baseline blocker addressed:'), 'baseline check reports empty blocker field');
+  ok(result.emptyFields.includes('Finding index updated:'), 'baseline check reports empty finding-index field');
   ok(result.noCheckedPhase, 'baseline check requires a selected phase');
 }
 

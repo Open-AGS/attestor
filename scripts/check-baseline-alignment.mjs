@@ -20,6 +20,11 @@ export const BASELINE_REQUIRED_FIELDS = Object.freeze([
   'Baseline blocker addressed:',
   'Baseline phase:',
   'Baseline checked against current origin/master:',
+  'Finding index updated:',
+  'Report index updated:',
+  'Live proof register updated:',
+  'Control map / research index updated:',
+  'Evidence system exception:',
 ]);
 
 const READINESS_CLAIM_PATTERN = /\b(?:production-ready|enterprise-ready)\b/iu;

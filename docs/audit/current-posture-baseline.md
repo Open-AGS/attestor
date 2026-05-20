@@ -17,7 +17,7 @@ It is the current calibrated execution baseline.
 ## Baseline Status
 
 - Source of truth: `origin/master`
-- Baseline HEAD: `7b33af4f2c10cfc18e24cf6ccd0d766ae7c4370c`
+- Baseline HEAD: `f92c905984292eafa469e00af2ae54082763cd53`
 - Package: `attestor@0.2.0-evaluation`
 - Date: 2026-05-20
 - Repository-side posture: credible
@@ -27,11 +27,26 @@ It is the current calibrated execution baseline.
 - Finding catalog estimate: about 98
 - Closed or effectively closed finding estimate: about 58
 - Evidence state: partial-repo, calibrated from audit reports plus spot repo validation
+- Evidence system: index layer active; see `docs/audit/README.md`
 
 Short verdict: Attestor has a credible repository-side core for evaluation and
 shadow-readiness work. It is not production-ready or enterprise-ready without
 live PEP, KMS, replay-store, ops/IAM, route authorization, and adversarial
 runtime proof.
+
+## Active Evidence Indexes
+
+The baseline is the operating verdict, not the only evidence file. Current
+audit and remediation work must also update the applicable index files:
+
+- `docs/audit/report-index.md`
+- `docs/audit/finding-index.md`
+- `docs/audit/live-proof-register.md`
+- `docs/audit/control-map.md`
+- `docs/research/README.md`
+
+Historical remediation notes remain valid evidence leaves, but current finding
+state is reconciled through these indexes.
 
 ## Control Mapping Anchors
 

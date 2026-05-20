@@ -52,6 +52,17 @@ Baseline checked against current origin/master:
 
 If this PR does not map to the current baseline, explain why:
 
+### Evidence system updates
+Finding index updated:
+
+Report index updated:
+
+Live proof register updated:
+
+Control map / research index updated:
+
+Evidence system exception:
+
 ### Changes
 Files changed:
 

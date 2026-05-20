@@ -13,6 +13,17 @@ function read(path: string): string {
   return readFileSync(resolve(path), 'utf8');
 }
 
+function deploymentEnvValue(deployment: string, name: string): string | null {
+  const lines = deployment.split(/\r?\n/u);
+  for (let index = 0; index < lines.length - 1; index += 1) {
+    if (lines[index]?.trim() === `- name: ${name}`) {
+      const valueLine = lines[index + 1]?.trim() ?? '';
+      return valueLine.startsWith('value: ') ? valueLine.slice('value: '.length) : null;
+    }
+  }
+  return null;
+}
+
 function main(): void {
   const deployment = read('ops/kubernetes/observability/deployment.yaml');
   const observabilityReadme = read('ops/kubernetes/observability/README.md');
@@ -49,8 +60,8 @@ function main(): void {
     'OPS-45: Kubernetes metadata token dependency is explicit and documented',
   );
   ok(
-    deployment.includes('tempo.attestor-observability.svc.cluster.local:4317')
-      && deployment.includes('http://loki.attestor-observability.svc.cluster.local:3100/otlp')
+    deploymentEnvValue(deployment, 'TEMPO_OTLP_ENDPOINT') === 'tempo.attestor-observability.svc.cluster.local:4317'
+      && deploymentEnvValue(deployment, 'LOKI_OTLP_ENDPOINT') === 'http://loki.attestor-observability.svc.cluster.local:3100/otlp'
       && observabilityReadme.includes('namespace-scoped NetworkPolicy proof'),
     'OPS-44: base Tempo/Loki endpoints are namespace-aligned and documented',
   );

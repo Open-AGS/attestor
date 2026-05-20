@@ -13,6 +13,17 @@ function read(path: string): string {
   return readFileSync(resolve(path), 'utf8');
 }
 
+function deploymentEnvValue(deployment: string, name: string): string | null {
+  const lines = deployment.split(/\r?\n/u);
+  for (let index = 0; index < lines.length - 1; index += 1) {
+    if (lines[index]?.trim() === `- name: ${name}`) {
+      const valueLine = lines[index + 1]?.trim() ?? '';
+      return valueLine.startsWith('value: ') ? valueLine.slice('value: '.length) : null;
+    }
+  }
+  return null;
+}
+
 function main(): void {
   const kustomization = read('ops/kubernetes/observability/kustomization.yaml');
   const readme = read('ops/kubernetes/observability/README.md');
@@ -52,7 +63,12 @@ function main(): void {
   ok(deployment.includes('readinessProbe:') && deployment.includes('livenessProbe:') && deployment.includes('startupProbe:'), 'Kubernetes observability bundle: deployment defines health probes');
   ok(deployment.includes('prometheus.io/scrape') && deployment.includes('containerPort: 8889'), 'Kubernetes observability bundle: deployment exposes Prometheus scrape annotations');
   ok(deployment.includes('LOKI_TENANT_ID') && deployment.includes('TEMPO_OTLP_INSECURE') && deployment.includes('LOKI_OTLP_INSECURE'), 'Kubernetes observability bundle: deployment supplies local backend tenant and TLS env');
-  ok(deployment.includes('tempo.attestor-observability.svc.cluster.local:4317') && deployment.includes('http://loki.attestor-observability.svc.cluster.local:3100/otlp') && readme.includes('namespace-scoped NetworkPolicy proof'), 'Kubernetes observability bundle: base local backend endpoints stay namespace-aligned');
+  ok(
+    deploymentEnvValue(deployment, 'TEMPO_OTLP_ENDPOINT') === 'tempo.attestor-observability.svc.cluster.local:4317'
+      && deploymentEnvValue(deployment, 'LOKI_OTLP_ENDPOINT') === 'http://loki.attestor-observability.svc.cluster.local:3100/otlp'
+      && readme.includes('namespace-scoped NetworkPolicy proof'),
+    'Kubernetes observability bundle: base local backend endpoints stay namespace-aligned',
+  );
   ok(service.includes('port: 4317') && service.includes('port: 4318') && service.includes('port: 8889'), 'Kubernetes observability bundle: service exposes OTLP and metrics ports');
   ok(hpa.includes('maxReplicas: 6') && hpa.includes('memory'), 'Kubernetes observability bundle: HPA scales on CPU and memory');
   ok(pdb.includes('PodDisruptionBudget') && pdb.includes('minAvailable: 1'), 'Kubernetes observability bundle: PDB protects collector availability');

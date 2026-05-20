@@ -17,7 +17,7 @@ It is the current calibrated execution baseline.
 ## Baseline Status
 
 - Source of truth: `origin/master`
-- Baseline HEAD: `f92c905984292eafa469e00af2ae54082763cd53`
+- Baseline HEAD: `68c5efe7901e70a38750889f0123d676fa98bfa7`
 - Package: `attestor@0.2.0-evaluation`
 - Date: 2026-05-20
 - Repository-side posture: credible
@@ -86,7 +86,7 @@ These anchors are used for control mapping only. They are not certifications.
 | Service/API security | 5 | partial-repo | Edge contract, rate limit, auth/MFA/session/federated auth sampled and generally strong. | `src/service/**` remains only partially audited; admin routes are high-value. | Deep audit `src/service/http/routes/admin-routes.ts` and remaining public routes. |
 | AI-specific attack resistance | 7 | partial-repo | LayerOpinion runtime invariants, reason-code allowlists, belief mass conservation, and producer-trust hardening. | Untrusted text and downstream evidence surfaces need broader prompt-injection review. | Add adversarial evidence fixtures and verify no model rationale becomes authority. |
 | Supply chain / release provenance | 8 | repo-proven | Workflows SHA-pinned, stale branches removed, PR contract hardened, audit evidence gate exists. | Required commit signatures and required PR reviews still need branch-protection proof. | Enable and verify branch protection requirements. |
-| Cloud / ops readiness | 5 | not proven / needs ops proof | Docs are honest about non-claims; repo has production-readiness scaffolding. | `ops/**`, IAM, KMS, secrets, Redis, Postgres, logging, and billing controls are not fully assessed. | Start `ops/**` audit and live infrastructure readiness checks. |
+| Cloud / ops readiness | 5 | not proven / needs ops proof | Docs are honest about non-claims; repo has production-readiness scaffolding, HA ops gates, PKI/TLS gates, and observability remediation indexes. | `ops/**`, IAM, KMS, Redis/Postgres recovery, managed observability backend proof, logging redaction, and billing controls are not fully assessed. | Continue ops audit with storage/recovery and live proof capture. |
 | Fail-closed / availability | 7 | partial-repo | Empty-input conflict fail-closed, degraded-mode hardening, break-glass TTL, verifier indeterminate states. | Provider outage, Redis/Vault failures, and load behavior need live tests. | Run degraded-mode and provider-outage tests. |
 | Test adequacy | 5 | partial-repo | Many targeted negative tests exist and audit evidence checks run. | Full invariant-to-test mapping is incomplete. | Build test adequacy map for P0/P1 closed findings. |
 | Docs / no-overclaim truth | 8 | partial-repo | Strong no-overclaim discipline in audit lifecycle and public readiness language. | Older docs may drift from current posture. | Use this baseline as required PR contract input and refresh on material changes. |
@@ -105,7 +105,7 @@ These anchors are used for control mapping only. They are not certifications.
 | Customer PEP no-bypass | not proven | needs live test | Repo primitives exist, but downstream non-bypassable integration is not live-proven. | Build reference integration and bypass test. |
 | External KMS runtime signing | accepted limitation | needs ops proof | In-process/private-key boundary is acceptable for evaluation, not production. | Wire external KMS/HSM signer path for live enforcement. |
 | Shared replay/introspection store | partial | needs live test | Replay/freshness primitives exist; HA/shared backend proof is missing. | Test Redis/Postgres-backed replay/introspection behavior across instances. |
-| `ops/**` audit gap | open | not proven | Ops/IAM/K8s/secrets are not fully assessed. | Start ops audit before live shadow. |
+| `ops/**` audit gap | partial | not proven | OPS-SWEEP-01/02/03 are indexed; remaining PITR/Redis/recovery, autoscaling, profiles, and live proof are incomplete. | Continue ops audit before live shadow. |
 | `src/service` admin routes gap | open | partial-repo | Service sampled; admin routes remain high-value and not deeply audited. | Deep audit admin routes before live shadow. |
 | Required commit signatures | open | open | Branch protection proof of signatures is not established. | Enable required signatures and verify unsigned commit cannot merge. |
 | Required PR reviews | open | open | Branch protection proof of required reviews is not established. | Enable required approving review count and verify self-merge is blocked. |

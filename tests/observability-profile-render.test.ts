@@ -50,7 +50,12 @@ function main(): void {
     ok(summary.slo.latencyErrorBudget === 0.05, 'Observability profile render: summary derives latency error budget');
     ok(rules.includes('/ 0.005') && rules.includes('le="0.5"'), 'Observability profile render: recording rules carry profile-specific SLO math');
     ok(alerts.includes('> 10') && alerts.includes('for: 5m') && alerts.includes('500ms latency objective'), 'Observability profile render: alerts carry profile-specific burn thresholds');
-    ok(retention.includes('ATTESTOR_OBSERVABILITY_PROMETHEUS_RETENTION_TIME=30d') && retention.includes('ATTESTOR_OBSERVABILITY_TEMPO_RETENTION_PERIOD=720h'), 'Observability profile render: retention env output is generated');
+    ok(
+      retention.includes('ATTESTOR_OBSERVABILITY_PROMETHEUS_RETENTION_TIME=30d')
+        && retention.includes('ATTESTOR_OBSERVABILITY_LOKI_RETENTION_PERIOD=720h')
+        && retention.includes('ATTESTOR_OBSERVABILITY_TEMPO_RETENTION_PERIOD=720h'),
+      'Observability profile render: retention env output is generated',
+    );
 
     console.log(`\nObservability profile render tests: ${passed} passed, 0 failed`);
   } finally {

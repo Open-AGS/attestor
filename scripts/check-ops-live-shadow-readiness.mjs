@@ -22,8 +22,16 @@ const FILES = Object.freeze({
   gkeClusterSecretStoreExample: 'ops/kubernetes/ha/providers/external-secrets/clustersecretstore.gke.example.yaml',
   releaseProbe: 'scripts/probe-ha-release-inputs.ts',
   releaseBundle: 'scripts/render-ha-release-bundle.ts',
+  observabilityReadme: 'ops/observability/README.md',
+  prometheusConfig: 'ops/observability/prometheus/prometheus.yml',
+  prometheusAlerts: 'ops/observability/prometheus/alerts.yml',
+  alertmanagerConfig: 'ops/observability/alertmanager/alertmanager.yml',
+  lokiConfig: 'ops/observability/loki/loki.yml',
+  localOtelConfig: 'ops/otel/collector-config.yaml',
+  observabilityConfigmap: 'ops/kubernetes/observability/configmap.yaml',
   remediation: 'docs/audit/ops-sweep-01-live-shadow-remediation.md',
   sweep02Remediation: 'docs/audit/ops-sweep-02-pki-tls-secrets-remediation.md',
+  sweep03Remediation: 'docs/audit/ops-sweep-03-observability-remediation.md',
 });
 
 const LIVE_PROOF_FLAGS = Object.freeze([
@@ -34,6 +42,10 @@ const LIVE_PROOF_FLAGS = Object.freeze([
   ['ATTESTOR_GCP_IAM_LEAST_PRIVILEGE_PROOF', 'GCP IAM least-privilege bindings were reviewed and verified.'],
   ['ATTESTOR_RELEASE_RUNTIME_PKI_STORAGE_PROOF', 'Release-runtime PKI storage class, encryption, RWX semantics, and backup posture were verified.'],
   ['ATTESTOR_TLS_MATERIAL_SOURCE_PROOF', 'Exactly one TLS material source was selected, applied, and verified.'],
+  ['ATTESTOR_OBSERVABILITY_ALERT_DELIVERY_PROOF', 'Alertmanager warning, critical, security, billing, and Watchdog routes were delivered or intentionally routed in the live environment.'],
+  ['ATTESTOR_OBSERVABILITY_BACKEND_AUTH_PROOF', 'Observability backend auth, tenant header behavior, and cluster/network access were verified.'],
+  ['ATTESTOR_OBSERVABILITY_STORAGE_PROOF', 'Loki/Tempo storage, retention, encryption-at-rest, and backup boundaries were verified.'],
+  ['ATTESTOR_BUDGET_ALERTING_PROOF', 'Cloud budget telemetry and alert delivery were verified.'],
 ]);
 
 function arg(name, fallback) {
@@ -143,12 +155,33 @@ function checkRepoReadiness() {
   includes(FILES.releaseBundle, 'immutable image digest', issues, 'release bundle render must reject tag-only image refs in production mode');
   includes(FILES.releaseBundle, 'sectionName: https', issues, 'GKE release bundle render must target HTTPS listener');
 
+  includes(FILES.prometheusConfig, 'credentials_file: /etc/prometheus/secrets/metrics-api-key', issues, 'Prometheus must use a mounted metrics-token credentials file');
+  includes(FILES.alertmanagerConfig, 'url_file: /etc/alertmanager/secrets/default-webhook-url', issues, 'Alertmanager default receiver must not be empty');
+  includes(FILES.alertmanagerConfig, 'team="security"', issues, 'Alertmanager must route security-team alerts');
+  includes(FILES.alertmanagerConfig, 'team="billing"', issues, 'Alertmanager must route billing-team alerts');
+  includes(FILES.prometheusAlerts, 'AttestorAdminAuthFailure', issues, 'Prometheus must alert on admin authentication failures');
+  includes(FILES.prometheusAlerts, 'AttestorSecurityRejectionSpike', issues, 'Prometheus must alert on security-relevant rejection spikes');
+  includes(FILES.prometheusAlerts, 'AttestorWebhookSignatureInvalid', issues, 'Prometheus must alert on invalid webhook signatures');
+  includes(FILES.prometheusAlerts, 'AttestorBudgetTelemetryMissing', issues, 'Prometheus must make missing budget telemetry visible');
+  includes(FILES.lokiConfig, 'auth_enabled: true', issues, 'local Loki must require tenant auth');
+  includes(FILES.lokiConfig, 'ATTESTOR_OBSERVABILITY_LOKI_RETENTION_PERIOD', issues, 'Loki retention must be profile/env driven');
+  includes(FILES.localOtelConfig, 'X-Scope-OrgID: ${LOKI_TENANT_ID}', issues, 'local OTel to Loki writes must carry a tenant header');
+  includes(FILES.observabilityConfigmap, 'X-Scope-OrgID: ${LOKI_TENANT_ID}', issues, 'Kubernetes OTel to Loki writes must carry a tenant header');
+  includes(FILES.localOtelConfig, 'insecure: ${TEMPO_OTLP_INSECURE}', issues, 'local Tempo TLS posture must be env-controlled');
+  includes(FILES.localOtelConfig, 'insecure: ${LOKI_OTLP_INSECURE}', issues, 'local Loki TLS posture must be env-controlled');
+  includes(FILES.observabilityConfigmap, 'detectors: [system]', issues, 'Kubernetes collector must avoid env resource detector leakage');
+  includes(FILES.observabilityReadme, 'Prometheus bearer-token file', issues, 'observability docs must document the Prometheus token-file contract');
+  includes(FILES.observabilityReadme, 'Production storage, encryption-at-rest, and backup/restore evidence remain live ops proof', issues, 'observability docs must keep storage limitations explicit');
+
   includes(FILES.remediation, 'OPS-02', issues, 'remediation record must account for ClusterSecretStore finding');
   includes(FILES.remediation, 'OPS-04', issues, 'remediation record must account for NetworkPolicy finding');
   includes(FILES.remediation, 'OPS-05', issues, 'remediation record must account for CloudArmor finding');
   includes(FILES.sweep02Remediation, 'OPS-17', issues, 'Sweep 02 remediation record must account for release-runtime PKI storage');
   includes(FILES.sweep02Remediation, 'OPS-18', issues, 'Sweep 02 remediation record must account for TLS material source selection');
   includes(FILES.sweep02Remediation, 'OPS-21', issues, 'Sweep 02 remediation record must account for wildcard HTTPS egress');
+  includes(FILES.sweep03Remediation, 'OPS-25', issues, 'Sweep 03 remediation record must account for Alertmanager receiver routing');
+  includes(FILES.sweep03Remediation, 'OPS-26', issues, 'Sweep 03 remediation record must account for Prometheus token-file auth');
+  includes(FILES.sweep03Remediation, 'OPS-30', issues, 'Sweep 03 remediation record must account for security event alerts');
 
   return issues;
 }

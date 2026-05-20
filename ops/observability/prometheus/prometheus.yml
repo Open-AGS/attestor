@@ -17,7 +17,7 @@ scrape_configs:
     metrics_path: /api/v1/metrics
     authorization:
       type: Bearer
-      credentials: metrics-secret
+      credentials_file: /etc/prometheus/secrets/metrics-api-key
     static_configs:
       - targets:
           - attestor-api:3700

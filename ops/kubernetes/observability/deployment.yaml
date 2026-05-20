@@ -35,8 +35,14 @@ spec:
           env:
             - name: TEMPO_OTLP_ENDPOINT
               value: tempo.monitoring.svc.cluster.local:4317
+            - name: TEMPO_OTLP_INSECURE
+              value: "true"
             - name: LOKI_OTLP_ENDPOINT
               value: http://loki.monitoring.svc.cluster.local:3100/otlp
+            - name: LOKI_OTLP_INSECURE
+              value: "true"
+            - name: LOKI_TENANT_ID
+              value: attestor-shadow
           ports:
             - name: otlp-grpc
               containerPort: 4317

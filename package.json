@@ -92,6 +92,7 @@
     "test:baseline-alignment-contract": "tsx tests/baseline-alignment-contract.test.ts",
     "test:security-evidence-system": "tsx tests/security-evidence-system.test.ts",
     "test:ops-live-shadow-readiness": "tsx tests/ops-live-shadow-readiness.test.ts",
+    "test:ops-sweep-03-observability-remediation": "tsx tests/ops-sweep-03-observability-remediation.test.ts",
     "test:attestor-internal-machine-map": "tsx tests/attestor-internal-machine-map.test.ts",
     "test:public-agent-surface-boundary": "tsx tests/public-agent-surface-boundary.test.ts",
     "test:research-provenance-ledger": "tsx tests/research-provenance-ledger.test.ts",

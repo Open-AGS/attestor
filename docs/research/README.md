@@ -24,6 +24,7 @@ or implementation plan.
 | `cms-validation-path.md` | QRDA/CMS validation constraints and claim boundaries. | No-overclaim healthcare validation context. |
 | `implementation-wave2.md` | OIDC, PKI, Redis, RLS, schema attestation, distributed deployment. | Historical implementation planning context. |
 | `final-6-features.md` | OIDC/keychain, PKI verifier, Redis default, RLS activation, distributed deployment. | Historical roadmap context. |
+| `ops-observability-readiness-anchors.md` | Prometheus auth files, Alertmanager receivers, Loki tenant auth, and OTel collector TLS config. | OPS-SWEEP-03 observability remediation source anchors. |
 
 ## Research Intake Rule
 

@@ -30,7 +30,7 @@ data:
             - k8s.node.name
             - k8s.deployment.name
       resourcedetection:
-        detectors: [env, system]
+        detectors: [system]
         timeout: 2s
         override: false
       batch:
@@ -40,9 +40,13 @@ data:
       otlp/tempo:
         endpoint: ${TEMPO_OTLP_ENDPOINT}
         tls:
-          insecure: true
+          insecure: ${TEMPO_OTLP_INSECURE}
       otlphttp/loki:
         endpoint: ${LOKI_OTLP_ENDPOINT}
+        headers:
+          X-Scope-OrgID: ${LOKI_TENANT_ID}
+        tls:
+          insecure: ${LOKI_OTLP_INSECURE}
       prometheus:
         endpoint: 0.0.0.0:8889
         resource_to_telemetry_conversion:

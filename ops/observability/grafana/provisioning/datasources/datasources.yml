@@ -14,6 +14,10 @@ datasources:
     type: loki
     access: proxy
     url: http://loki:3100
+    jsonData:
+      httpHeaderName1: X-Scope-OrgID
+    secureJsonData:
+      httpHeaderValue1: ${ATTESTOR_OBSERVABILITY_LOKI_TENANT_ID}
     editable: false
 
   - name: Tempo

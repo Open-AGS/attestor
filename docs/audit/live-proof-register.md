@@ -31,6 +31,10 @@ Do not mark these items closed from documentation-only remediation.
 | `LP-CUSTOMER-PEP-NO-BYPASS` | Limited enforcement | `required` | Reference customer PEP integration where direct downstream bypass fails. | Baseline P0 blocker. | Repository middleware alone cannot prove customer deployment enforcement. |
 | `LP-KMS-RUNTIME-SIGNING` | Limited enforcement / enterprise pilot | `required` | KMS/HSM-backed signing proof, key authority binding, and no raw private key export path. | Baseline P0 blocker; PKI PVC boundary docs. | File/PVC signing remains insufficient for production authority claims. |
 | `LP-DEGRADED-MODE-OUTAGE` | Limited enforcement | `required` | Provider/Redis/Vault/DB outage test proving fail-closed or bounded degraded behavior. | Degraded-mode repo hardening. | Static checks do not prove live outage behavior. |
+| `LP-OBSERVABILITY-ALERT-DELIVERY` | Live shadow | `repo-gated` | End-to-end Alertmanager delivery to at least one warning and one critical receiver, plus Watchdog route validation. | OPS-SWEEP-03 remediation; Alertmanager renderer/probe scripts. | Static receiver config and render tests do not prove an external pager/webhook receives alerts. |
+| `LP-OBSERVABILITY-BACKEND-AUTH` | Live shadow | `repo-gated` | Loki/managed backend auth boundary, tenant header behavior, and namespace/network access proof. | Local Loki auth enabled; OTel/Grafana `X-Scope-OrgID` contract. | Managed backend or live cluster auth behavior is environment-specific. |
+| `LP-OBSERVABILITY-STORAGE` | Live shadow / limited enforcement | `required` | Loki/Tempo storage backend, encryption-at-rest, retention, and backup/restore proof. | OPS-SWEEP-03 documentation and retention env wiring. | Local filesystem backends are evaluation/shadow rehearsal only. |
+| `LP-BUDGET-ALERTING` | Live shadow | `repo-gated` | Cloud budget telemetry source and alert delivery proof. | `AttestorBudgetTelemetryMissing` alert makes absence visible. | Real GCP billing budget integration is live cloud state. |
 
 ## Capture Rule
 

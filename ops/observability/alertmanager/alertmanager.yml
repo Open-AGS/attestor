@@ -13,6 +13,14 @@ route:
       receiver: watchdog
       repeat_interval: 1m
     - matchers:
+        - team="security"
+      receiver: security
+      continue: true
+    - matchers:
+        - team="billing"
+      receiver: billing
+      continue: true
+    - matchers:
         - severity="critical"
       receiver: critical
     - matchers:
@@ -21,9 +29,29 @@ route:
 
 receivers:
   - name: default
+    webhook_configs:
+      - send_resolved: true
+        url_file: /etc/alertmanager/secrets/default-webhook-url
   - name: watchdog
+    webhook_configs:
+      - send_resolved: true
+        url_file: /etc/alertmanager/secrets/watchdog-webhook-url
   - name: critical
+    webhook_configs:
+      - send_resolved: true
+        url_file: /etc/alertmanager/secrets/critical-webhook-url
   - name: warning
+    webhook_configs:
+      - send_resolved: true
+        url_file: /etc/alertmanager/secrets/warning-webhook-url
+  - name: security
+    webhook_configs:
+      - send_resolved: true
+        url_file: /etc/alertmanager/secrets/security-webhook-url
+  - name: billing
+    webhook_configs:
+      - send_resolved: true
+        url_file: /etc/alertmanager/secrets/billing-webhook-url
 
 inhibit_rules:
   - source_matchers:

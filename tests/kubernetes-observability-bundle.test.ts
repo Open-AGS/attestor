@@ -43,10 +43,13 @@ function main(): void {
   ok(kustomization.includes('configmap.yaml') && kustomization.includes('deployment.yaml'), 'Kubernetes observability bundle: kustomization includes core resources');
   ok(readme.includes('gateway deployment pattern') && readme.includes('kubectl apply -k ops/kubernetes/observability'), 'Kubernetes observability bundle: README documents gateway rollout');
   ok(configmap.includes('k8sattributes:') && configmap.includes('resourcedetection:'), 'Kubernetes observability bundle: collector config uses Kubernetes/resource metadata processors');
+  ok(configmap.includes('detectors: [system]') && !configmap.includes('detectors: [env, system]'), 'Kubernetes observability bundle: collector avoids env resource detector leakage');
   ok(configmap.includes('TEMPO_OTLP_ENDPOINT') && configmap.includes('LOKI_OTLP_ENDPOINT'), 'Kubernetes observability bundle: collector config is backend-endpoint aware');
+  ok(configmap.includes('LOKI_TENANT_ID') && configmap.includes('LOKI_OTLP_INSECURE') && configmap.includes('TEMPO_OTLP_INSECURE'), 'Kubernetes observability bundle: local backend tenant and TLS posture are explicit');
   ok(deployment.includes('replicas: 2') && deployment.includes('otel/opentelemetry-collector-contrib:0.152.0@sha256:'), 'Kubernetes observability bundle: deployment runs a multi-replica digest-pinned collector gateway');
   ok(deployment.includes('readinessProbe:') && deployment.includes('livenessProbe:') && deployment.includes('startupProbe:'), 'Kubernetes observability bundle: deployment defines health probes');
   ok(deployment.includes('prometheus.io/scrape') && deployment.includes('containerPort: 8889'), 'Kubernetes observability bundle: deployment exposes Prometheus scrape annotations');
+  ok(deployment.includes('LOKI_TENANT_ID') && deployment.includes('TEMPO_OTLP_INSECURE') && deployment.includes('LOKI_OTLP_INSECURE'), 'Kubernetes observability bundle: deployment supplies local backend tenant and TLS env');
   ok(service.includes('port: 4317') && service.includes('port: 4318') && service.includes('port: 8889'), 'Kubernetes observability bundle: service exposes OTLP and metrics ports');
   ok(hpa.includes('maxReplicas: 6') && hpa.includes('memory'), 'Kubernetes observability bundle: HPA scales on CPU and memory');
   ok(pdb.includes('PodDisruptionBudget') && pdb.includes('minAvailable: 1'), 'Kubernetes observability bundle: PDB protects collector availability');

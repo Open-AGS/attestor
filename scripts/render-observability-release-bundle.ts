@@ -200,8 +200,9 @@ function main(): void {
                 secretKeyRef:
                   name: attestor-otel-gateway-grafana-cloud
                   key: grafana-cloud-otlp-token`;
-      deployment = deployment.replace(
-        /          env:\n(?:            - name: TEMPO_OTLP_ENDPOINT[\s\S]*?)          ports:/,
+      deployment = replaceFirst(
+        deployment,
+        /          env:\r?\n(?:            - name: TEMPO_OTLP_ENDPOINT[\s\S]*?)          ports:/,
         `${secretEnvBlock}\n          ports:`,
       );
       if (provider === 'grafana-alloy') {

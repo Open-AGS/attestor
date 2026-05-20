@@ -23,9 +23,13 @@ exporters:
   otlp/tempo:
     endpoint: tempo:4317
     tls:
-      insecure: true
+      insecure: ${TEMPO_OTLP_INSECURE}
   otlphttp/loki:
     endpoint: http://loki:3100/otlp
+    headers:
+      X-Scope-OrgID: ${LOKI_TENANT_ID}
+    tls:
+      insecure: ${LOKI_OTLP_INSECURE}
   prometheus:
     endpoint: 0.0.0.0:8889
     resource_to_telemetry_conversion:

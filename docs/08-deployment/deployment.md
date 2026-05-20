@@ -194,7 +194,7 @@ external identity fabric.
 | `ATTESTOR_WEBAUTHN_STATE_TTL_MINUTES` | No | `10` | Hosted passkey challenge TTL in minutes |
 | `ATTESTOR_ACCOUNT_INVITE_TTL_HOURS` | No | `72` | Hosted invite token TTL in hours |
 | `ATTESTOR_PASSWORD_RESET_TTL_MINUTES` | No | `30` | Hosted password-reset token TTL in minutes |
-| `ATTESTOR_ACCOUNT_MFA_ENCRYPTION_KEY` | No | None | Dedicated secret for encrypting hosted TOTP seeds at rest; falls back to `ATTESTOR_ADMIN_API_KEY` when unset |
+| `ATTESTOR_ACCOUNT_MFA_ENCRYPTION_KEY` | Production-like: yes; local/dev: optional | None | Dedicated secret for encrypting hosted TOTP seeds at rest. Production-like runtimes reject the `ATTESTOR_ADMIN_API_KEY` fallback; local/dev may use that fallback only for non-production testing. |
 | `ATTESTOR_MFA_ISSUER` | No | `Attestor` | Issuer label embedded into generated `otpauth://` TOTP enrollment URLs |
 | `ATTESTOR_MFA_LOGIN_TTL_MINUTES` | No | `10` | Hosted MFA login challenge TTL in minutes |
 | `ATTESTOR_MFA_LOGIN_MAX_ATTEMPTS` | No | `5` | Max invalid attempts before a hosted MFA login challenge is revoked |

@@ -22,6 +22,12 @@ import type {
   RequestPathReleaseReviewerQueueStore,
   RequestPathReleaseTokenIntrospectionStore,
 } from '../../release-authority-request-path.js';
+import {
+  RELEASE_ADMIN_BREAK_GLASS_ROLES,
+  RELEASE_ADMIN_MUTATION_ROLES,
+  RELEASE_ADMIN_READ_ROLES,
+  authorizeReleaseAdminRoute,
+} from '../release-admin-authorization.js';
 
 const {
   ReleaseReviewerQueueError,
@@ -257,8 +263,8 @@ export function registerReleaseReviewRoutes(app: Hono, deps: ReleaseReviewRouteD
   } = deps;
 
   app.get('/api/v1/admin/release-evidence/:id', async (c) => {
-    const unauthorized = currentAdminAuthorized(c);
-    if (unauthorized) return unauthorized;
+    const authorized = authorizeReleaseAdminRoute(c, RELEASE_ADMIN_READ_ROLES, currentAdminAuthorized);
+    if (authorized instanceof Response) return authorized;
 
     const pack = await apiReleaseEvidencePackStore.get(c.req.param('id'));
     if (!pack) {
@@ -270,8 +276,8 @@ export function registerReleaseReviewRoutes(app: Hono, deps: ReleaseReviewRouteD
   });
 
   app.get('/api/v1/admin/release-reviews', async (c) => {
-    const unauthorized = currentAdminAuthorized(c);
-    if (unauthorized) return unauthorized;
+    const authorized = authorizeReleaseAdminRoute(c, RELEASE_ADMIN_READ_ROLES, currentAdminAuthorized);
+    if (authorized instanceof Response) return authorized;
 
     const limit = parsePositiveLimit(c.req.query('limit'));
     if (c.req.query('limit') !== undefined && limit === null) {
@@ -290,8 +296,8 @@ export function registerReleaseReviewRoutes(app: Hono, deps: ReleaseReviewRouteD
   });
 
   app.get('/api/v1/admin/release-reviews/inbox', async (c) => {
-    const unauthorized = currentAdminAuthorized(c);
-    if (unauthorized) return unauthorized;
+    const authorized = authorizeReleaseAdminRoute(c, RELEASE_ADMIN_READ_ROLES, currentAdminAuthorized);
+    if (authorized instanceof Response) return authorized;
 
     const limit = parsePositiveLimit(c.req.query('limit'));
     if (c.req.query('limit') !== undefined && limit === null) {
@@ -306,8 +312,8 @@ export function registerReleaseReviewRoutes(app: Hono, deps: ReleaseReviewRouteD
   });
 
   app.get('/api/v1/admin/release-reviews/:id', async (c) => {
-    const unauthorized = currentAdminAuthorized(c);
-    if (unauthorized) return unauthorized;
+    const authorized = authorizeReleaseAdminRoute(c, RELEASE_ADMIN_READ_ROLES, currentAdminAuthorized);
+    if (authorized instanceof Response) return authorized;
 
     const item = await apiReleaseReviewerQueueStore.get(c.req.param('id'));
     if (!item) {
@@ -319,8 +325,8 @@ export function registerReleaseReviewRoutes(app: Hono, deps: ReleaseReviewRouteD
   });
 
   app.get('/api/v1/admin/release-reviews/:id/view', async (c) => {
-    const unauthorized = currentAdminAuthorized(c);
-    if (unauthorized) return unauthorized;
+    const authorized = authorizeReleaseAdminRoute(c, RELEASE_ADMIN_READ_ROLES, currentAdminAuthorized);
+    if (authorized instanceof Response) return authorized;
 
     const item = await apiReleaseReviewerQueueStore.get(c.req.param('id'));
     if (!item) {
@@ -333,8 +339,8 @@ export function registerReleaseReviewRoutes(app: Hono, deps: ReleaseReviewRouteD
   });
 
   app.post('/api/v1/admin/release-reviews/:id/approve', async (c) => {
-    const unauthorized = currentAdminAuthorized(c);
-    if (unauthorized) return unauthorized;
+    const authorized = authorizeReleaseAdminRoute(c, RELEASE_ADMIN_MUTATION_ROLES, currentAdminAuthorized);
+    if (authorized instanceof Response) return authorized;
 
     const body = await parseReviewActionBody(c);
     const routeId = 'admin.release_review.approve';
@@ -480,8 +486,8 @@ export function registerReleaseReviewRoutes(app: Hono, deps: ReleaseReviewRouteD
   });
 
   app.post('/api/v1/admin/release-reviews/:id/reject', async (c) => {
-    const unauthorized = currentAdminAuthorized(c);
-    if (unauthorized) return unauthorized;
+    const authorized = authorizeReleaseAdminRoute(c, RELEASE_ADMIN_MUTATION_ROLES, currentAdminAuthorized);
+    if (authorized instanceof Response) return authorized;
 
     const body = await parseReviewActionBody(c);
     const routeId = 'admin.release_review.reject';
@@ -562,8 +568,8 @@ export function registerReleaseReviewRoutes(app: Hono, deps: ReleaseReviewRouteD
   });
 
   app.post('/api/v1/admin/release-reviews/:id/override', async (c) => {
-    const unauthorized = currentAdminAuthorized(c);
-    if (unauthorized) return unauthorized;
+    const authorized = authorizeReleaseAdminRoute(c, RELEASE_ADMIN_BREAK_GLASS_ROLES, currentAdminAuthorized);
+    if (authorized instanceof Response) return authorized;
 
     const body = await parseReviewActionBody(c);
     const routeId = 'admin.release_review.override';

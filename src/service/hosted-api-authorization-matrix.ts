@@ -37,7 +37,9 @@ export type HostedApiMutationSafety =
   | 'read_only'
   | 'public_metadata_read'
   | 'credential_challenge'
+  | 'credential_challenge_with_federated_callback_rate_limit'
   | 'role_gated_service_mutation'
+  | 'role_gated_service_mutation_with_account_session_audit'
   | 'tenant_quota_rate_limited'
   | 'tenant_scoped_shadow_write'
   | 'admin_idempotent_audited'
@@ -128,13 +130,14 @@ export const HOSTED_API_AUTHORIZATION_RULES = [
     authBoundary: 'credential_challenge',
     tenantBoundary: 'none',
     objectBoundary: 'path_id_service_scoped',
-    mutationSafety: 'credential_challenge',
+    mutationSafety: 'credential_challenge_with_federated_callback_rate_limit',
     idempotencyBoundary: 'action_token_or_challenge',
     privacyBoundary: 'credential and action-token material is consumed through service boundaries, not emitted as telemetry',
     evidence: [
       'src/service/http/routes/account-routes.ts',
       'src/service/auth-abuse-guard.ts',
       'src/service/application/account-auth-service.ts',
+      'tests/service-account-routes-authorization.test.ts#federated-callback-rate-limit',
     ],
     standards: ['OWASP API2:2023', 'OWASP API4:2023'],
   },
@@ -153,6 +156,7 @@ export const HOSTED_API_AUTHORIZATION_RULES = [
     evidence: [
       'src/service/http/routes/account-routes.ts#requireAccountSession',
       'src/service/tenant-isolation.ts#resolveAccountSessionContext',
+      'src/service/bootstrap/http-route-builders.ts#recordAccountMutationAudit',
     ],
     standards: ['OWASP API1:2023', 'OWASP API2:2023', 'OWASP API5:2023'],
   },
@@ -217,12 +221,13 @@ export const HOSTED_API_AUTHORIZATION_RULES = [
     authBoundary: 'account_session',
     tenantBoundary: 'account_session_account_scope',
     objectBoundary: 'account_id_from_session',
-    mutationSafety: 'role_gated_service_mutation',
+    mutationSafety: 'role_gated_service_mutation_with_account_session_audit',
     idempotencyBoundary: 'required_header',
     privacyBoundary: 'Stripe checkout session ids are handoff references; secret keys are never emitted',
     evidence: [
       'src/service/http/routes/account-routes.ts#Idempotency-Key',
       'src/service/stripe-billing.ts#createHostedCheckoutSession',
+      'src/service/bootstrap/http-route-builders.ts#recordAccountMutationAudit',
     ],
     standards: ['OWASP API1:2023', 'OWASP API4:2023', 'Stripe idempotency'],
   },
@@ -234,12 +239,13 @@ export const HOSTED_API_AUTHORIZATION_RULES = [
     authBoundary: 'account_session',
     tenantBoundary: 'account_session_account_scope',
     objectBoundary: 'account_id_from_session',
-    mutationSafety: 'role_gated_service_mutation',
+    mutationSafety: 'role_gated_service_mutation_with_account_session_audit',
     idempotencyBoundary: 'service_defined',
     privacyBoundary: 'portal response is a short-lived Stripe-hosted handoff reference',
     evidence: [
       'src/service/http/routes/account-routes.ts#requireAccountSession',
       'src/service/stripe-billing.ts#createHostedBillingPortalSession',
+      'src/service/bootstrap/http-route-builders.ts#recordAccountMutationAudit',
     ],
     standards: ['OWASP API1:2023', 'OWASP API5:2023'],
   },
@@ -252,12 +258,14 @@ export const HOSTED_API_AUTHORIZATION_RULES = [
     authBoundary: 'account_session',
     tenantBoundary: 'account_session_account_scope',
     objectBoundary: 'account_id_from_session',
-    mutationSafety: 'role_gated_service_mutation',
+    mutationSafety: 'role_gated_service_mutation_with_account_session_audit',
     idempotencyBoundary: 'service_defined',
     privacyBoundary: 'plaintext tenant API keys are returned only on issue or rotate responses',
     evidence: [
       'src/service/http/routes/account-routes.ts#apiKeyService',
       'src/service/application/account-api-key-service.ts',
+      'src/service/bootstrap/http-route-builders.ts#recordAccountMutationAudit',
+      'tests/service-account-routes-authorization.test.ts#account-api-key-audit',
     ],
     standards: ['OWASP API1:2023', 'OWASP API2:2023', 'OWASP API3:2023'],
   },
@@ -270,12 +278,13 @@ export const HOSTED_API_AUTHORIZATION_RULES = [
     authBoundary: 'account_session',
     tenantBoundary: 'account_session_account_scope',
     objectBoundary: 'account_id_from_session',
-    mutationSafety: 'role_gated_service_mutation',
+    mutationSafety: 'role_gated_service_mutation_with_account_session_audit',
     idempotencyBoundary: 'action_token_or_challenge',
     privacyBoundary: 'invite and reset tokens are returned only when delivery policy allows it',
     evidence: [
       'src/service/http/routes/account-routes.ts#userManagementService',
       'src/service/application/account-user-management-service.ts',
+      'src/service/bootstrap/http-route-builders.ts#recordAccountMutationAudit',
     ],
     standards: ['OWASP API1:2023', 'OWASP API2:2023', 'OWASP API5:2023'],
   },

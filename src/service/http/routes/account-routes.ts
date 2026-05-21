@@ -16,6 +16,7 @@ import type * as BillingReconciliation from '../../billing-reconciliation.js';
 import type { HostedEmailDeliveryProvider, HostedEmailDeliveryStatus } from '../../email-delivery-event-store.js';
 import type * as PlanCatalog from '../../plan-catalog.js';
 import type * as RateLimit from '../../rate-limit.js';
+import type { AdminAuditAction } from '../../admin-audit-log.js';
 import type { SecretEnvelopeStatus } from '../../secret-envelope.js';
 import type * as StripeBilling from '../../stripe-billing.js';
 import {
@@ -56,6 +57,20 @@ interface CurrentHostedAccountResult {
   account: HostedAccountRecord;
   usage: UsageContext;
   rateLimit: RateLimit.TenantRateLimitContext;
+}
+
+export interface AccountMutationAuditInput {
+  routeId: string;
+  action: AdminAuditAction;
+  access: AccountAccessContext;
+  requestPayload: unknown;
+  statusCode: number;
+  accountId?: string | null;
+  tenantId?: string | null;
+  tenantKeyId?: string | null;
+  planId?: string | null;
+  idempotencyKey?: string | null;
+  metadata?: Record<string, unknown>;
 }
 
 function accountRouteErrorMessage(error: unknown): string {
@@ -161,6 +176,21 @@ async function maybeRateLimitAuthAttempt(context: Context, subject: AuthAttemptS
   return decision.allowed ? null : authRateLimitResponse(context, decision);
 }
 
+async function maybeRateLimitFederatedCallback(
+  context: Context,
+  provider: 'oidc' | 'saml',
+): Promise<Response | null> {
+  const subject = authAttemptFor(context, `federated-callback:${provider}`);
+  const limited = await maybeRateLimitAuthAttempt(context, subject);
+  if (limited) return limited;
+  await recordAuthAttemptUse(subject);
+  return null;
+}
+
+function accountAuditDigest(value: string): string {
+  return `sha256:${createHash('sha256').update(value.trim().toLowerCase()).digest('hex')}`;
+}
+
 async function maybeRateLimitCurrentPasswordAttempt(
   context: Context,
   access: AccountAccessContext,
@@ -254,6 +284,7 @@ export interface AccountRouteDeps {
   buildHostedBillingReconciliation: typeof BillingReconciliation.buildHostedBillingReconciliation;
   billingEntitlementView(record: HostedBillingEntitlementRecord): Record<string, unknown>;
   currentTenant(context: Context): TenantContext;
+  recordAccountMutationAudit(input: AccountMutationAuditInput): Promise<void>;
 }
 
 export function registerAccountRoutes(app: Hono, deps: AccountRouteDeps): void {
@@ -321,6 +352,7 @@ export function registerAccountRoutes(app: Hono, deps: AccountRouteDeps): void {
     buildHostedBillingReconciliation,
     billingEntitlementView,
     currentTenant,
+    recordAccountMutationAudit,
   } = deps;
 
   async function recordPasskeyAuthenticationFailure(record: AccountUserActionTokenRecord): Promise<void> {
@@ -333,6 +365,10 @@ export function registerAccountRoutes(app: Hono, deps: AccountRouteDeps): void {
       nextRecord.revokedAt = now;
     }
     await stateService.saveAccountUserActionTokenRecord(nextRecord);
+  }
+
+  async function recordAccountSessionMutationAudit(input: AccountMutationAuditInput): Promise<void> {
+    await recordAccountMutationAudit(input);
   }
 
 app.post('/api/v1/account/users/bootstrap', async (c) => {
@@ -637,6 +673,9 @@ app.post('/api/v1/auth/saml/login', async (c) => {
 });
 
 app.post('/api/v1/auth/saml/acs', async (c) => {
+  const callbackRateLimit = await maybeRateLimitFederatedCallback(c, 'saml');
+  if (callbackRateLimit) return callbackRateLimit;
+
   const body = await c.req.parseBody();
   const samlResponse = typeof body.SAMLResponse === 'string' ? body.SAMLResponse.trim() : '';
   const relayState = typeof body.RelayState === 'string' ? body.RelayState.trim() : '';
@@ -807,6 +846,9 @@ app.post('/api/v1/auth/oidc/login', async (c) => {
 });
 
 app.get('/api/v1/auth/oidc/callback', async (c) => {
+  const callbackRateLimit = await maybeRateLimitFederatedCallback(c, 'oidc');
+  if (callbackRateLimit) return callbackRateLimit;
+
   let callback;
   try {
     callback = await completeHostedOidcAuthorization(c.req.url);
@@ -1063,6 +1105,24 @@ app.post('/api/v1/auth/password/change', async (c) => {
     role: user.role,
   });
   setSessionCookieForRecord(c, issued.sessionToken, issued.record.expiresAt);
+  const passwordChangedAt = new Date().toISOString();
+  await recordAccountSessionMutationAudit({
+    routeId: 'auth.password.change',
+    action: 'account.password.changed',
+    access,
+    requestPayload: {
+      accountId: access.accountId,
+      accountUserId: user.id,
+      revokedPriorSessions: true,
+      revokedPasswordResetTokens: true,
+    },
+    statusCode: 200,
+    metadata: {
+      sessionBoundaryAt: passwordChangedAt,
+      revokedPriorSessions: true,
+      revokedPasswordResetTokens: true,
+    },
+  });
 
   return c.json({
     changed: true,
@@ -1269,6 +1329,24 @@ app.post('/api/v1/account/passkeys/register/verify', async (c) => {
   await stateService.saveAccountUserRecord(nextUser);
   await stateService.consumeAccountUserActionToken(challengeRecord.id);
   await stateService.revokeAccountUserActionTokensForUser(nextUser.id, 'passkey_registration');
+  await recordAccountSessionMutationAudit({
+    routeId: 'account.passkeys.register.verify',
+    action: 'account.passkey.registered',
+    access,
+    requestPayload: {
+      accountId: access.accountId,
+      accountUserId: access.accountUserId,
+      challengeId: challengeRecord.id,
+      credentialIdDigest: accountAuditDigest(nextCredential.credentialId),
+    },
+    statusCode: 200,
+    metadata: {
+      credentialRecordId: nextCredential.id,
+      deviceType: nextCredential.deviceType,
+      backedUp: nextCredential.backedUp,
+      replacedExistingCredential: existingIndex >= 0,
+    },
+  });
 
   return c.json({
     registered: true,
@@ -1309,6 +1387,20 @@ app.post('/api/v1/account/passkeys/:id/delete', async (c) => {
   nextUser.passkeys.updatedAt = new Date().toISOString();
   nextUser.updatedAt = nextUser.passkeys.updatedAt;
   await stateService.saveAccountUserRecord(nextUser);
+  await recordAccountSessionMutationAudit({
+    routeId: 'account.passkeys.delete',
+    action: 'account.passkey.deleted',
+    access,
+    requestPayload: {
+      accountId: access.accountId,
+      accountUserId: access.accountUserId,
+      passkeyId,
+    },
+    statusCode: 200,
+    metadata: {
+      passkeyId,
+    },
+  });
 
   return c.json({
     deleted: true,
@@ -1361,6 +1453,19 @@ app.post('/api/v1/account/mfa/totp/enroll', async (c) => {
   nextUser.mfa.totp.updatedAt = now;
   nextUser.updatedAt = now;
   await stateService.saveAccountUserRecord(nextUser);
+  await recordAccountSessionMutationAudit({
+    routeId: 'account.mfa.totp.enroll',
+    action: 'account.mfa.totp_enrolled',
+    access,
+    requestPayload: {
+      accountId: access.accountId,
+      accountUserId: access.accountUserId,
+    },
+    statusCode: 200,
+    metadata: {
+      pendingIssuedAt: now,
+    },
+  });
 
   const issuer = process.env.ATTESTOR_MFA_ISSUER?.trim() || 'Attestor';
   return c.json({
@@ -1446,6 +1551,20 @@ app.post('/api/v1/account/mfa/totp/confirm', async (c) => {
   });
   const loginTouch = await stateService.recordAccountUserLogin(user.id);
   setSessionCookieForRecord(c, issued.sessionToken, issued.record.expiresAt);
+  await recordAccountSessionMutationAudit({
+    routeId: 'account.mfa.totp.confirm',
+    action: 'account.mfa.totp_confirmed',
+    access,
+    requestPayload: {
+      accountId: access.accountId,
+      accountUserId: user.id,
+    },
+    statusCode: 200,
+    metadata: {
+      sessionBoundaryAt: now,
+      revokedPriorSessions: true,
+    },
+  });
 
   return c.json({
     enabled: true,
@@ -1552,6 +1671,22 @@ app.post('/api/v1/account/mfa/disable', async (c) => {
   });
   const loginTouch = await stateService.recordAccountUserLogin(user.id);
   setSessionCookieForRecord(c, issued.sessionToken, issued.record.expiresAt);
+  await recordAccountSessionMutationAudit({
+    routeId: 'account.mfa.disable',
+    action: 'account.mfa.disabled',
+    access,
+    requestPayload: {
+      accountId: access.accountId,
+      accountUserId: user.id,
+      usedRecoveryCode: recoveryCodeUsed,
+    },
+    statusCode: 200,
+    metadata: {
+      sessionBoundaryAt: now,
+      revokedPriorSessions: true,
+      recoveryCodeUsed,
+    },
+  });
 
   return c.json({
     disabled: true,
@@ -1638,8 +1773,22 @@ app.post('/api/v1/account/api-keys', async (c) => {
   });
   if (unauthorized) return unauthorized;
   const access = currentAccountAccess(c)!;
+  const requestPayload = { accountId: access.accountId, action: 'issue' };
   try {
     const issued = await apiKeyService.issue(access.accountId);
+    await recordAccountSessionMutationAudit({
+      routeId: 'account.api_keys.issue',
+      action: 'account.api_key.issued',
+      access,
+      requestPayload,
+      statusCode: 201,
+      tenantId: issued.record.tenantId,
+      tenantKeyId: issued.record.id,
+      planId: issued.record.planId,
+      metadata: {
+        keyStatus: issued.record.status,
+      },
+    });
     return c.json({
       key: {
         ...accountApiKeyView(issued.record),
@@ -1659,8 +1808,23 @@ app.post('/api/v1/account/api-keys/:id/rotate', async (c) => {
   });
   if (unauthorized) return unauthorized;
   const access = currentAccountAccess(c)!;
+  const keyId = c.req.param('id');
+  const requestPayload = { accountId: access.accountId, keyId };
   try {
-    const rotated = await apiKeyService.rotate(access.accountId, c.req.param('id'));
+    const rotated = await apiKeyService.rotate(access.accountId, keyId);
+    await recordAccountSessionMutationAudit({
+      routeId: 'account.api_keys.rotate',
+      action: 'account.api_key.rotated',
+      access,
+      requestPayload,
+      statusCode: 201,
+      tenantId: rotated.record.tenantId,
+      tenantKeyId: rotated.record.id,
+      planId: rotated.record.planId,
+      metadata: {
+        rotatedFromKeyId: rotated.previousRecord.id,
+      },
+    });
     return c.json({
       previousKey: accountApiKeyView(rotated.previousRecord),
       newKey: {
@@ -1681,8 +1845,23 @@ app.post('/api/v1/account/api-keys/:id/deactivate', async (c) => {
   });
   if (unauthorized) return unauthorized;
   const access = currentAccountAccess(c)!;
+  const keyId = c.req.param('id');
+  const requestPayload = { accountId: access.accountId, keyId, status: 'inactive' };
   try {
-    const result = await apiKeyService.setStatus(access.accountId, c.req.param('id'), 'inactive');
+    const result = await apiKeyService.setStatus(access.accountId, keyId, 'inactive');
+    await recordAccountSessionMutationAudit({
+      routeId: 'account.api_keys.deactivate',
+      action: 'account.api_key.deactivated',
+      access,
+      requestPayload,
+      statusCode: 200,
+      tenantId: result.record.tenantId,
+      tenantKeyId: result.record.id,
+      planId: result.record.planId,
+      metadata: {
+        keyStatus: result.record.status,
+      },
+    });
     return c.json({
       key: accountApiKeyView(result.record),
     });
@@ -1699,8 +1878,23 @@ app.post('/api/v1/account/api-keys/:id/reactivate', async (c) => {
   });
   if (unauthorized) return unauthorized;
   const access = currentAccountAccess(c)!;
+  const keyId = c.req.param('id');
+  const requestPayload = { accountId: access.accountId, keyId, status: 'active' };
   try {
-    const result = await apiKeyService.setStatus(access.accountId, c.req.param('id'), 'active');
+    const result = await apiKeyService.setStatus(access.accountId, keyId, 'active');
+    await recordAccountSessionMutationAudit({
+      routeId: 'account.api_keys.reactivate',
+      action: 'account.api_key.reactivated',
+      access,
+      requestPayload,
+      statusCode: 200,
+      tenantId: result.record.tenantId,
+      tenantKeyId: result.record.id,
+      planId: result.record.planId,
+      metadata: {
+        keyStatus: result.record.status,
+      },
+    });
     return c.json({
       key: accountApiKeyView(result.record),
     });
@@ -1717,8 +1911,23 @@ app.post('/api/v1/account/api-keys/:id/revoke', async (c) => {
   });
   if (unauthorized) return unauthorized;
   const access = currentAccountAccess(c)!;
+  const keyId = c.req.param('id');
+  const requestPayload = { accountId: access.accountId, keyId };
   try {
-    const result = await apiKeyService.revoke(access.accountId, c.req.param('id'));
+    const result = await apiKeyService.revoke(access.accountId, keyId);
+    await recordAccountSessionMutationAudit({
+      routeId: 'account.api_keys.revoke',
+      action: 'account.api_key.revoked',
+      access,
+      requestPayload,
+      statusCode: 200,
+      tenantId: result.record.tenantId,
+      tenantKeyId: result.record.id,
+      planId: result.record.planId,
+      metadata: {
+        keyStatus: result.record.status,
+      },
+    });
     return c.json({
       key: accountApiKeyView(result.record),
     });
@@ -1758,6 +1967,12 @@ app.post('/api/v1/account/users', async (c) => {
   if (password.length < 12) {
     return c.json({ error: 'password must be at least 12 characters long.' }, 400);
   }
+  const requestPayload = {
+    accountId: access.accountId,
+    emailDigest: accountAuditDigest(email),
+    displayNameDigest: accountAuditDigest(displayName),
+    role,
+  };
 
   try {
     const created = await userManagementService.createUser({
@@ -1766,6 +1981,18 @@ app.post('/api/v1/account/users', async (c) => {
       displayName,
       password,
       role,
+    });
+    await recordAccountSessionMutationAudit({
+      routeId: 'account.users.create',
+      action: 'account.user.created',
+      access,
+      requestPayload,
+      statusCode: 201,
+      metadata: {
+        targetUserId: created.id,
+        targetRole: created.role,
+        targetEmailDigest: accountAuditDigest(created.email),
+      },
     });
     return c.json({
       user: accountUserView(created),
@@ -1803,6 +2030,13 @@ app.post('/api/v1/account/users/invites', async (c) => {
   if (!email || !displayName || !role) {
     return c.json({ error: 'email, displayName, and role are required.' }, 400);
   }
+  const requestPayload = {
+    accountId: access.accountId,
+    emailDigest: accountAuditDigest(email),
+    displayNameDigest: accountAuditDigest(displayName),
+    role,
+    expiresHours,
+  };
   try {
     const issued = await userManagementService.issueInvite({
       accountId: access.accountId,
@@ -1811,6 +2045,20 @@ app.post('/api/v1/account/users/invites', async (c) => {
       displayName,
       role,
       expiresHours,
+    });
+    await recordAccountSessionMutationAudit({
+      routeId: 'account.users.invites.issue',
+      action: 'account.user.invite_issued',
+      access,
+      requestPayload,
+      statusCode: 201,
+      metadata: {
+        inviteId: issued.record.id,
+        targetRole: issued.record.role,
+        targetEmailDigest: accountAuditDigest(issued.record.email),
+        tokenReturned: issued.delivery.tokenReturned,
+        deliveryMode: issued.delivery.mode,
+      },
     });
     return c.json({
       invite: accountUserActionTokenView(issued.record),
@@ -1830,8 +2078,22 @@ app.post('/api/v1/account/users/invites/:id/revoke', async (c) => {
   });
   if (unauthorized) return unauthorized;
   const access = currentAccountAccess(c)!;
+  const inviteId = c.req.param('id');
+  const requestPayload = { accountId: access.accountId, inviteId };
   try {
-    const revoked = await userManagementService.revokeInvite(access.accountId, c.req.param('id'));
+    const revoked = await userManagementService.revokeInvite(access.accountId, inviteId);
+    await recordAccountSessionMutationAudit({
+      routeId: 'account.users.invites.revoke',
+      action: 'account.user.invite_revoked',
+      access,
+      requestPayload,
+      statusCode: 200,
+      metadata: {
+        inviteId: revoked.id,
+        targetEmailDigest: accountAuditDigest(revoked.email),
+        targetRole: revoked.role,
+      },
+    });
     return c.json({
       invite: accountUserActionTokenView(revoked),
     });
@@ -1884,8 +2146,21 @@ app.post('/api/v1/account/users/:id/deactivate', async (c) => {
   });
   if (unauthorized) return unauthorized;
   const access = currentAccountAccess(c)!;
+  const targetUserId = c.req.param('id');
+  const requestPayload = { accountId: access.accountId, targetUserId, status: 'inactive' };
   try {
-    const updated = await userManagementService.setUserStatus(access.accountId, c.req.param('id'), 'inactive');
+    const updated = await userManagementService.setUserStatus(access.accountId, targetUserId, 'inactive');
+    await recordAccountSessionMutationAudit({
+      routeId: 'account.users.deactivate',
+      action: 'account.user.deactivated',
+      access,
+      requestPayload,
+      statusCode: 200,
+      metadata: {
+        targetUserId: updated.record.id,
+        targetRole: updated.record.role,
+      },
+    });
     return c.json({
       user: accountUserView(updated.record),
     });
@@ -1902,8 +2177,21 @@ app.post('/api/v1/account/users/:id/reactivate', async (c) => {
   });
   if (unauthorized) return unauthorized;
   const access = currentAccountAccess(c)!;
+  const targetUserId = c.req.param('id');
+  const requestPayload = { accountId: access.accountId, targetUserId, status: 'active' };
   try {
-    const updated = await userManagementService.setUserStatus(access.accountId, c.req.param('id'), 'active');
+    const updated = await userManagementService.setUserStatus(access.accountId, targetUserId, 'active');
+    await recordAccountSessionMutationAudit({
+      routeId: 'account.users.reactivate',
+      action: 'account.user.reactivated',
+      access,
+      requestPayload,
+      statusCode: 200,
+      metadata: {
+        targetUserId: updated.record.id,
+        targetRole: updated.record.role,
+      },
+    });
     return c.json({
       user: accountUserView(updated.record),
     });
@@ -1922,7 +2210,9 @@ app.post('/api/v1/account/users/:id/password-reset', async (c) => {
   const access = currentAccountAccess(c)!;
   const body = await c.req.json().catch(() => ({}));
   const ttlMinutes = typeof body.ttlMinutes === 'number' ? body.ttlMinutes : null;
-  const authAttempt = authAttemptFor(c, `password-reset-issue:${access.accountId}:${c.req.param('id')}`);
+  const targetUserId = c.req.param('id');
+  const requestPayload = { accountId: access.accountId, targetUserId, ttlMinutes };
+  const authAttempt = authAttemptFor(c, `password-reset-issue:${access.accountId}:${targetUserId}`);
   const resetIssueRateLimit = await maybeRateLimitAuthAttempt(c, authAttempt);
   if (resetIssueRateLimit) return resetIssueRateLimit;
   await recordAuthAttemptUse(authAttempt);
@@ -1930,8 +2220,22 @@ app.post('/api/v1/account/users/:id/password-reset', async (c) => {
     const issued = await userManagementService.issuePasswordReset({
       accountId: access.accountId,
       actorUserId: access.accountUserId,
-      targetUserId: c.req.param('id'),
+      targetUserId,
       ttlMinutes,
+    });
+    await recordAccountSessionMutationAudit({
+      routeId: 'account.users.password_reset.issue',
+      action: 'account.user.password_reset_issued',
+      access,
+      requestPayload,
+      statusCode: 201,
+      metadata: {
+        resetTokenId: issued.record.id,
+        targetUserId: issued.record.accountUserId,
+        targetEmailDigest: accountAuditDigest(issued.record.email),
+        tokenReturned: issued.delivery.tokenReturned,
+        deliveryMode: issued.delivery.mode,
+      },
     });
     return c.json({
       reset: accountUserActionTokenView(issued.record),
@@ -2013,6 +2317,7 @@ app.post('/api/v1/account/billing/checkout', async (c) => {
     roles: ['account_admin', 'billing_admin'],
   });
   if (roleGate) return roleGate;
+  const access = currentAccountAccess(c)!;
   const current = await currentHostedAccount(c);
   if (current instanceof Response) return current;
 
@@ -2046,6 +2351,28 @@ app.post('/api/v1/account/billing/checkout', async (c) => {
     if (mapped) return mapped;
     throw err;
   }
+  await recordAccountSessionMutationAudit({
+    routeId: 'account.billing.checkout',
+    action: 'account.billing.checkout_started',
+    access,
+    requestPayload: {
+      accountId: current.account.id,
+      tenantId: current.tenant.tenantId,
+      planId: requestedPlanId,
+    },
+    statusCode: 200,
+    tenantId: current.tenant.tenantId,
+    planId: checkout.planId,
+    idempotencyKey,
+    metadata: {
+      checkoutSessionIdDigest: accountAuditDigest(checkout.sessionId),
+      mock: checkout.mock,
+      stripePriceIdDigest: checkout.stripePriceId ? accountAuditDigest(checkout.stripePriceId) : null,
+      stripeOveragePriceIdDigest: checkout.stripeOveragePriceId
+        ? accountAuditDigest(checkout.stripeOveragePriceId)
+        : null,
+    },
+  });
 
   c.header('x-attestor-idempotency-key', idempotencyKey);
   return c.json({
@@ -2066,6 +2393,7 @@ app.post('/api/v1/account/billing/portal', async (c) => {
     roles: ['account_admin', 'billing_admin'],
   });
   if (roleGate) return roleGate;
+  const access = currentAccountAccess(c)!;
   const current = await currentHostedAccount(c);
   if (current instanceof Response) return current;
 
@@ -2079,6 +2407,21 @@ app.post('/api/v1/account/billing/portal', async (c) => {
     if (mapped) return mapped;
     throw err;
   }
+  await recordAccountSessionMutationAudit({
+    routeId: 'account.billing.portal',
+    action: 'account.billing.portal_started',
+    access,
+    requestPayload: {
+      accountId: current.account.id,
+      tenantId: current.tenant.tenantId,
+    },
+    statusCode: 200,
+    tenantId: current.tenant.tenantId,
+    metadata: {
+      portalSessionIdDigest: accountAuditDigest(portal.sessionId),
+      mock: portal.mock,
+    },
+  });
 
   return c.json({
     accountId: current.account.id,

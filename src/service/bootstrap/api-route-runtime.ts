@@ -494,6 +494,8 @@ export async function createApiHttpRouteRuntime(
   } satisfies ApiRouteDeps['core'];
 
   const accountRouteDeps = buildAccountRouteDeps({
+    hashJsonValue,
+    appendAdminAuditRecordState,
     countAccountUsersForAccountState,
     createAccountUserState,
     findAccountUserByEmailState,

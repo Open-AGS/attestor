@@ -243,7 +243,8 @@ function run() {
       );
       ok(
         routeSource.includes("app.post('/api/v1/account/users/:id/password-reset'") &&
-          routeSource.includes("`password-reset-issue:${access.accountId}:${c.req.param('id')}`") &&
+          routeSource.includes("const targetUserId = c.req.param('id');") &&
+          routeSource.includes('const authAttempt = authAttemptFor(c, `password-reset-issue:${access.accountId}:${targetUserId}`);') &&
           routeSource.includes('const resetIssueRateLimit = await maybeRateLimitAuthAttempt(c, authAttempt);') &&
           routeSource.includes('await recordAuthAttemptUse(authAttempt);'),
         'hosted password reset issue route throttles successful request flooding',

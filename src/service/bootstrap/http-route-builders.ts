@@ -24,6 +24,8 @@ import {
   type AdminMutationResponseBody,
   type AdminMutationServiceDeps,
 } from '../application/admin-mutation-service.js';
+import type * as ControlPlaneStore from '../control-plane-store.js';
+import type { hashJsonValue } from '../json-stable.js';
 import {
   createAdminQueryService,
   type AdminQueryServiceDeps,
@@ -60,9 +62,13 @@ export type BuildAccountRouteDepsInput =
   AccountApiKeyServiceDeps &
   AccountUserManagementServiceDeps &
   AccountStateServiceDeps &
+  {
+    hashJsonValue: typeof hashJsonValue;
+    appendAdminAuditRecordState: typeof ControlPlaneStore.appendAdminAuditRecordState;
+  } &
   Omit<
     AccountRouteDeps,
-    'authService' | 'apiKeyService' | 'stateService' | 'userManagementService'
+    'authService' | 'apiKeyService' | 'stateService' | 'userManagementService' | 'recordAccountMutationAudit'
   >;
 
 export function buildAccountRouteDeps(input: BuildAccountRouteDepsInput): AccountRouteDeps {
@@ -137,6 +143,31 @@ export function buildAccountRouteDeps(input: BuildAccountRouteDepsInput): Accoun
     buildHostedBillingReconciliation: input.buildHostedBillingReconciliation,
     billingEntitlementView: input.billingEntitlementView,
     currentTenant: input.currentTenant,
+    async recordAccountMutationAudit(auditInput) {
+      await input.appendAdminAuditRecordState({
+        actorType: 'account_session',
+        actorLabel: `account_user:${auditInput.access.accountUserId}`,
+        actorRole: auditInput.access.role,
+        action: auditInput.action,
+        routeId: auditInput.routeId,
+        accountId: auditInput.accountId ?? auditInput.access.accountId,
+        tenantId: auditInput.tenantId ?? null,
+        tenantKeyId: auditInput.tenantKeyId ?? null,
+        planId: auditInput.planId ?? null,
+        monthlyRunQuota: null,
+        idempotencyKey: auditInput.idempotencyKey ?? null,
+        requestHash: input.hashJsonValue({
+          routeId: auditInput.routeId,
+          payload: auditInput.requestPayload,
+        }),
+        metadata: {
+          accountUserId: auditInput.access.accountUserId,
+          accountRole: auditInput.access.role,
+          statusCode: auditInput.statusCode,
+          ...(auditInput.metadata ?? {}),
+        },
+      });
+    },
   };
 }
 

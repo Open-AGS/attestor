@@ -482,6 +482,25 @@ function parseAdminListLimit(
 
 function adminAuditActionFilter(value: string | undefined): AdminAuditAction | null {
   switch (value) {
+    case 'account.api_key.issued':
+    case 'account.api_key.rotated':
+    case 'account.api_key.deactivated':
+    case 'account.api_key.reactivated':
+    case 'account.api_key.revoked':
+    case 'account.billing.checkout_started':
+    case 'account.billing.portal_started':
+    case 'account.mfa.disabled':
+    case 'account.mfa.totp_confirmed':
+    case 'account.mfa.totp_enrolled':
+    case 'account.password.changed':
+    case 'account.passkey.deleted':
+    case 'account.passkey.registered':
+    case 'account.user.created':
+    case 'account.user.deactivated':
+    case 'account.user.invite_issued':
+    case 'account.user.invite_revoked':
+    case 'account.user.password_reset_issued':
+    case 'account.user.reactivated':
     case 'account.created':
     case 'account.suspended':
     case 'account.reactivated':

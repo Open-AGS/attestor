@@ -40,7 +40,7 @@ export interface AdminMutationFinalizationInput {
   statusCode: number;
   responseBody: AdminMutationResponseBody;
   actor?: {
-    actorType: 'admin_api_key' | 'admin_operator';
+    actorType: 'account_session' | 'admin_api_key' | 'admin_operator';
     actorLabel: string;
     actorRole?: string | null;
   };

@@ -14,6 +14,25 @@ import { withFileLock, writeTextFileAtomic } from './file-store.js';
 import { hashJsonValue } from './json-stable.js';
 
 export type AdminAuditAction =
+  | 'account.api_key.issued'
+  | 'account.api_key.rotated'
+  | 'account.api_key.deactivated'
+  | 'account.api_key.reactivated'
+  | 'account.api_key.revoked'
+  | 'account.billing.checkout_started'
+  | 'account.billing.portal_started'
+  | 'account.mfa.disabled'
+  | 'account.mfa.totp_confirmed'
+  | 'account.mfa.totp_enrolled'
+  | 'account.password.changed'
+  | 'account.passkey.deleted'
+  | 'account.passkey.registered'
+  | 'account.user.created'
+  | 'account.user.deactivated'
+  | 'account.user.invite_issued'
+  | 'account.user.invite_revoked'
+  | 'account.user.password_reset_issued'
+  | 'account.user.reactivated'
   | 'account.created'
   | 'account.suspended'
   | 'account.reactivated'
@@ -46,7 +65,7 @@ export type AdminAuditAction =
 export interface AdminAuditRecord {
   id: string;
   occurredAt: string;
-  actorType: 'admin_api_key' | 'admin_operator' | 'stripe_webhook';
+  actorType: 'account_session' | 'admin_api_key' | 'admin_operator' | 'stripe_webhook';
   actorLabel: string;
   actorRole?: string | null;
   action: AdminAuditAction;

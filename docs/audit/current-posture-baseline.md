@@ -17,14 +17,14 @@ It is the current calibrated execution baseline.
 ## Baseline Status
 
 - Source of truth: `origin/master`
-- Baseline HEAD: `065814d1a8c1b46f9fa36ed36bb0086f5847fd28`
+- Baseline HEAD: `5ebab103648967db48652949eacff4dd794ec2ce`
 - Package: `attestor@0.2.0-evaluation`
 - Date: 2026-05-21
 - Repository-side posture: credible
 - Production-side posture: not proven
 - Enterprise-side posture: not ready
 - Calibrated security score: about 6.8 / 10
-- Finding catalog estimate: about 113
+- Finding catalog estimate: about 118
 - Closed or effectively closed finding estimate: about 62
 - Evidence state: partial-repo, calibrated from audit reports plus spot repo validation
 - Evidence system: index layer active; see `docs/audit/README.md`
@@ -88,7 +88,7 @@ These anchors are used for control mapping only. They are not certifications.
 | Supply chain / release provenance | 8 | repo-proven | Workflows SHA-pinned, stale branches removed, PR contract hardened, audit evidence gate exists; OPS-SWEEP-15 audits 13 governance artifacts and confirms branch policy, CODEOWNERS, minimized workflow permissions, supply-chain gates, CodeQL, and evaluation attestation repo-side. | Required commit signatures and required PR reviews still need branch-protection proof localized as OPS-121/122. | Extend `branch-governance.yml`, enable GitHub branch-protection settings, and verify unsigned/self-merge negative paths. |
 | Cloud / ops readiness | 5 | not proven / needs ops proof | Docs are honest about non-claims; repo has production-readiness scaffolding, HA ops gates, PKI/TLS gates, observability remediation indexes, PITR/Redis recovery hardening, OPS-SWEEP-07 provider/profile hardening, OPS-SWEEP-08 webhook proof gates, OPS-SWEEP-09 account proof gates, OPS-SWEEP-10 pipeline idempotency proof gate, OPS-SWEEP-11 shadow audit proof gate, OPS-SWEEP-12 release-route role enforcement proof gate, and stage-aware live proof gates. | Live cloud/IAM/KMS/network/storage observability proof, live PITR/Redis recovery proof, KEDA scaler proof, webhook provider binding proof, account callback/audit-chain proof, pipeline idempotency proof, shadow audit-chain proof, release-route role enforcement proof, logging redaction, and billing controls are not fully assessed. | Continue ops audit with remaining provider/live proof surfaces and capture live proof artifacts. |
 | Fail-closed / availability | 7 | partial-repo | Empty-input conflict fail-closed, degraded-mode hardening, break-glass TTL, verifier indeterminate states. | Provider outage, Redis/Vault failures, and load behavior need live tests. | Run degraded-mode and provider-outage tests. |
-| Test adequacy | 5 | partial-repo | Many targeted negative tests exist and audit evidence checks run. | Full invariant-to-test mapping is incomplete. | Build test adequacy map for P0/P1 closed findings. |
+| Test adequacy | 6 | partial-repo | Many targeted negative tests exist, audit evidence checks run, and OPS-SWEEP-17 maps 37 P0/P1 finding-index rows to locking test evidence. | Automated cross-checking is still missing: OPS-136 guard and OPS-139 `Locking test:` marker are not implemented. | Land OPS-136 and OPS-139 to close the test adequacy map fully. |
 | Docs / no-overclaim truth | 8 | partial-repo | Strong no-overclaim discipline in audit lifecycle and public readiness language. | Older docs may drift from current posture. | Use this baseline as required PR contract input and refresh on material changes. |
 
 ## Finding State Reconciliation
@@ -116,7 +116,7 @@ These anchors are used for control mapping only. They are not certifications.
 | Final route surface authorization | partial | P1 open; route-layer deep audit complete | OPS-SWEEP-14 maps pipeline verification, filing export, public-site, and core routes; PKI mandatory verification, release-token consume-on-success, public evidence path traversal defense, and public trust-root contract are repo-proven. OPS-112 and OPS-113 remain route-side P1 findings. | Remediate `/health`/`/ready` diagnostic split and `/verify` rate limit; capture live proof for both. |
 | Required commit signatures | open | open | Branch protection proof of signatures is not established; OPS-SWEEP-15 localizes this as OPS-121 because `required_signatures.enabled` is not runtime-verified. | Enable required signatures, extend `branch-governance.yml`, and verify unsigned commit cannot merge. |
 | Required PR reviews | open | open | Branch protection proof of required reviews is not established; OPS-SWEEP-15 localizes this as OPS-122 because required review/CODEOWNER settings are not runtime-verified. | Enable required approving review count/CODEOWNER review, extend `branch-governance.yml`, and verify self-merge is blocked. |
-| Test adequacy gap | open | partial-repo | Targeted tests exist; full closed-finding mapping is incomplete. | Create P0/P1 finding-to-test map. |
+| Test adequacy gap | open | partial-repo | OPS-SWEEP-17 creates the P0/P1 finding-to-test map: 37 rows mapped, with 19 repo-locked, 13 live-proof-only, and 5 open/needs-test-contract. | Land OPS-136 finding-to-test guard and OPS-139 `Locking test:` marker to close the baseline finding. |
 
 ## Top Blockers
 
@@ -129,7 +129,7 @@ These anchors are used for control mapping only. They are not certifications.
 | P1 | Admin and release-route live role-key proof | Admin and release-decision routes are high-authority hosted attack surfaces even after repo-side route hardening. | Limited enforcement, enterprise pilot; recommended before live shadow | Live role-scoped key deployment, release-route role escalation denial, legacy superuser-key rotation/holding proof, and admin rate-limit abuse probe. |
 | P1 | Branch protection signatures and PR reviews | CI gates are stronger when author identity and review are enforced by platform policy; OPS-SWEEP-15 localizes this to OPS-121/122. | Enterprise pilot; recommended before live shadow | GitHub protection API proof and unsigned/self-merge negative merge tests. |
 | P1 | Demo path traversal and redaction hygiene | Public demo must not leak local paths, secrets, or misleading raw data; OPS-SWEEP-16 localizes closure to OPS-129/132/133. | Public demo / marketing | Provider redaction test matrix, public artifact scan, and demo path basedir negative tests. |
-| P1 | Test adequacy map | Closed findings must be regression-locked, not merely adapted to new code. | Limited enforcement, enterprise pilot | P0/P1 finding-to-negative-test matrix. |
+| P1 | Test adequacy map | Closed findings must be regression-locked, not merely adapted to new code; OPS-SWEEP-17 produces the matrix but not the automated guard. | Limited enforcement, enterprise pilot | OPS-136 finding-to-test guard plus OPS-139 `Locking test:` marker. |
 | P1 | Tenant proof-chain tests | Tenant confusion is high-impact for a control plane. | Limited enforcement, enterprise pilot | Tenant mismatch, cross-tenant proof, dashboard artifact tests. |
 | P2 | CORS/CSRF deployment contract | Browser-facing deployment assumptions must be explicit and tested. | Public dashboard, enterprise pilot | CORS allowlist and CSRF negative tests in staging. |
 
@@ -145,7 +145,7 @@ Required repo tasks:
 - Deep audit `src/service/http/routes/admin-routes.ts`.
 - Create current posture baseline PR contract enforcement.
 - Fix demo path traversal and expand secret redaction tests.
-- Create P0/P1 finding-to-test adequacy map.
+- Create P0/P1 finding-to-test adequacy map; OPS-SWEEP-17 produces the matrix and leaves OPS-136/139 as the closure guard work.
 
 Required ops tasks:
 
@@ -273,7 +273,7 @@ Exit criteria:
 | Day 5-6 | Admin routes deep audit | High-authority hosted surface. | Route tests and authZ review | Admin route finding map | No unresolved P0/P1 for shadow. |
 | Day 7 | Demo CLI path traversal fix | Public demo hygiene. | Adversarial scenario path tests | Closed B-025 / OPS-133 | Negative test proves out-of-basedir path blocked or explicitly override-gated. |
 | Day 8 | Secret redaction expansion | Prevent public artifact leaks. | Redaction unit tests for AWS/GCP/JWT/SSH/GitHub/provider tokens + public artifact scan | Closed B-028 / OPS-129 / OPS-132 | Redaction tests and public artifact scan pass. |
-| Day 9 | Test adequacy sample | Ensure closed findings are regression-locked. | P0/P1 finding-to-test map | Adequacy matrix | Each P0/P1 has negative/adversarial test or explicit gap. |
+| Day 9 | Test adequacy sample | Ensure closed findings are regression-locked. | P0/P1 finding-to-test map plus OPS-136 guard | OPS-SWEEP-17 adequacy matrix | Each P0/P1 has a locking test, explicit test contract, or open gap, and closed rows are machine-checked once OPS-136 lands. |
 | Day 10 | Tenant proof-chain tests | Reduce tenant confusion risk. | Tenant mismatch, cross-tenant proof artifact tests | Tenant isolation evidence | Cross-tenant attempts fail. |
 | Day 11 | Shared replay store plan | Prepare live shadow/limited enforcement. | Redis/Postgres config review | Replay-store test plan | Multi-instance test ready. |
 | Day 12 | CORS/CSRF deployment contract | Browser boundary clarity. | CORS/CSRF negative checks | Deployment contract update | Browser mutation without header fails. |

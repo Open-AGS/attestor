@@ -17,14 +17,14 @@ It is the current calibrated execution baseline.
 ## Baseline Status
 
 - Source of truth: `origin/master`
-- Baseline HEAD: `585b85445a2a73f555cd05d469392ead9abe1f19`
+- Baseline HEAD: `065814d1a8c1b46f9fa36ed36bb0086f5847fd28`
 - Package: `attestor@0.2.0-evaluation`
 - Date: 2026-05-21
 - Repository-side posture: credible
 - Production-side posture: not proven
 - Enterprise-side posture: not ready
 - Calibrated security score: about 6.8 / 10
-- Finding catalog estimate: about 106
+- Finding catalog estimate: about 113
 - Closed or effectively closed finding estimate: about 62
 - Evidence state: partial-repo, calibrated from audit reports plus spot repo validation
 - Evidence system: index layer active; see `docs/audit/README.md`
@@ -78,7 +78,7 @@ These anchors are used for control mapping only. They are not certifications.
 
 | Area | Score | Confidence | Current state | Main remaining risk | Next action |
 |---|---:|---|---|---|---|
-| Data minimization | 8 | partial-repo | Strong no-raw-data design in audited core; digest/redaction patterns present. | Local artifacts, proof output, dashboard summaries, and secret redaction coverage still need broader verification. | Expand redaction checks and audit demo/artifact output before public demo. |
+| Data minimization | 8 | partial-repo | Strong no-raw-data design in audited core; digest/redaction patterns present; OPS-SWEEP-16 confirms Stripe-focused operator-output redaction, synthetic demo fixture, and public-key-only committed evidence inventory. | Broader provider secret redaction patterns, public artifact scans, local artifacts, proof output, and dashboard summaries still need broader verification. | Remediate OPS-129 provider patterns and OPS-132 public artifact scan before public demo. |
 | Proof / signature / key authority | 8 | repo-proven for core, needs ops proof for KMS | Ed25519 verification, trusted fingerprint matching, DSSE/in-toto policy bundle signing. | Runtime production signing still needs external KMS/HSM proof. | Add KMS-backed signing path and live proof. |
 | Enforcement boundary | 7 | partial-repo | Enforcement primitives are strong: DPoP, mTLS/workload binding, token exchange, verifier composition. | Customer PEP no-bypass is not live-proven. | Build one reference PEP integration and prove direct bypass fails. |
 | Token / replay / idempotency | 8 | partial-repo | Explicit token TTL policy, DPoP binding, replay/freshness primitives, and OPS-SWEEP-10 pipeline `Idempotency-Key` replay protection for `/pipeline/run` and `/pipeline/run-async`. | Multi-instance replay/introspection stores and pipeline idempotency need live shared-store proof; async submit/consume atomicity remains a follow-up. | Run Redis/Postgres-backed replay, pipeline idempotency, and outage tests. |
@@ -99,8 +99,8 @@ These anchors are used for control mapping only. They are not certifications.
 | B-059 trusted-proxy wildcard | open | disputed/closed | Wildcard requires explicit `ATTESTOR_TRUSTED_PROXY_PEER_WILDCARD_OVERRIDE=accept-the-risk`. | Keep documented; no P0 action. |
 | B-069 Vault timeout | open | closed | Vault Transit path has timeout default and env override. | Keep covered by service checks. |
 | B-033 tenant payload optionality | open | partial-repo | Tenant binding exists, but payload omission and signature timing remain not fully proven end-to-end. | Add cross-tenant route/token/proof tests. |
-| B-025 demo CLI path traversal | open | open | Demo scenario path allowlist was not proven fixed. | Fix before public demo. |
-| B-028 secret redaction coverage | open | open | Redaction was sampled as Stripe-focused; broader AWS/GCP/JWT/SSH/GitHub token coverage needs proof. | Expand redaction patterns and tests before public demo. |
+| B-025 demo CLI path traversal | open | open | OPS-SWEEP-16 revalidates the path surface as operator-local and localizes closure to OPS-133; demo/render paths are not basedir-constrained. | Add fixtures-based allowlist or explicit override before public demo. |
+| B-028 secret redaction coverage | open | open | OPS-SWEEP-16 confirms Stripe/Bearer/Postgres/Redis redaction but localizes missing AWS/GCP/GitHub/JWT/private-key/Slack/Anthropic/OpenAI provider patterns and public-artifact scan to OPS-129/132. | Expand provider redaction patterns/tests and add public artifact scan before public demo. |
 | Admin API key blast radius | not fully elevated | partial / live-proof-only | OPS-SWEEP-06 adds role-scoped admin credentials, admin-route role allowlists, actor-role audit fields, admin auth rate limiting, and HTTP tests; OPS-SWEEP-12 extends credential-bound role enforcement to release-review and release-policy-control routes; legacy `ATTESTOR_ADMIN_API_KEY` remains a superuser compatibility fallback. | Prove live role-scoped operator key deployment, release-route role enforcement, and rotate or tightly hold the legacy superuser key. |
 | Customer PEP no-bypass | not proven | needs live test | Repo primitives exist, but downstream non-bypassable integration is not live-proven. | Build reference integration and bypass test. |
 | External KMS runtime signing | accepted limitation | needs ops proof | In-process/private-key boundary is acceptable for evaluation, not production. | Wire external KMS/HSM signer path for live enforcement. |
@@ -128,7 +128,7 @@ These anchors are used for control mapping only. They are not certifications.
 | P0 | Ops/IAM/K8s/secrets review | Deployment misconfiguration can invalidate strong repo-side controls. | Live shadow, limited enforcement, enterprise pilot | Static ops review plus live secret/IAM/KMS probes. |
 | P1 | Admin and release-route live role-key proof | Admin and release-decision routes are high-authority hosted attack surfaces even after repo-side route hardening. | Limited enforcement, enterprise pilot; recommended before live shadow | Live role-scoped key deployment, release-route role escalation denial, legacy superuser-key rotation/holding proof, and admin rate-limit abuse probe. |
 | P1 | Branch protection signatures and PR reviews | CI gates are stronger when author identity and review are enforced by platform policy; OPS-SWEEP-15 localizes this to OPS-121/122. | Enterprise pilot; recommended before live shadow | GitHub protection API proof and unsigned/self-merge negative merge tests. |
-| P1 | Demo path traversal and redaction hygiene | Public demo must not leak local paths, secrets, or misleading raw data. | Public demo / marketing | Adversarial demo CLI and redaction tests. |
+| P1 | Demo path traversal and redaction hygiene | Public demo must not leak local paths, secrets, or misleading raw data; OPS-SWEEP-16 localizes closure to OPS-129/132/133. | Public demo / marketing | Provider redaction test matrix, public artifact scan, and demo path basedir negative tests. |
 | P1 | Test adequacy map | Closed findings must be regression-locked, not merely adapted to new code. | Limited enforcement, enterprise pilot | P0/P1 finding-to-negative-test matrix. |
 | P1 | Tenant proof-chain tests | Tenant confusion is high-impact for a control plane. | Limited enforcement, enterprise pilot | Tenant mismatch, cross-tenant proof, dashboard artifact tests. |
 | P2 | CORS/CSRF deployment contract | Browser-facing deployment assumptions must be explicit and tested. | Public dashboard, enterprise pilot | CORS allowlist and CSRF negative tests in staging. |
@@ -271,8 +271,8 @@ Exit criteria:
 | Day 2 | Branch protection proof | Close OPS-121/122 signature/review governance gap. | GitHub protection API checks | Protection evidence doc | Unsigned/self-merge negative proof. |
 | Day 3-4 | `ops/**` audit start | Ops is production-side unknown. | Static review, secret/IAM/K8s checklist | Ops no-go list | No unresolved live-shadow P0. |
 | Day 5-6 | Admin routes deep audit | High-authority hosted surface. | Route tests and authZ review | Admin route finding map | No unresolved P0/P1 for shadow. |
-| Day 7 | Demo CLI path traversal fix | Public demo hygiene. | Adversarial scenario path tests | Closed B-025 | Negative test proves traversal blocked. |
-| Day 8 | Secret redaction expansion | Prevent public artifact leaks. | Redaction unit tests for AWS/GCP/JWT/SSH/GitHub tokens | Closed B-028 | Redaction tests pass. |
+| Day 7 | Demo CLI path traversal fix | Public demo hygiene. | Adversarial scenario path tests | Closed B-025 / OPS-133 | Negative test proves out-of-basedir path blocked or explicitly override-gated. |
+| Day 8 | Secret redaction expansion | Prevent public artifact leaks. | Redaction unit tests for AWS/GCP/JWT/SSH/GitHub/provider tokens + public artifact scan | Closed B-028 / OPS-129 / OPS-132 | Redaction tests and public artifact scan pass. |
 | Day 9 | Test adequacy sample | Ensure closed findings are regression-locked. | P0/P1 finding-to-test map | Adequacy matrix | Each P0/P1 has negative/adversarial test or explicit gap. |
 | Day 10 | Tenant proof-chain tests | Reduce tenant confusion risk. | Tenant mismatch, cross-tenant proof artifact tests | Tenant isolation evidence | Cross-tenant attempts fail. |
 | Day 11 | Shared replay store plan | Prepare live shadow/limited enforcement. | Redis/Postgres config review | Replay-store test plan | Multi-instance test ready. |

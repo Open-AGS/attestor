@@ -16,6 +16,7 @@ import type {
 import type { TenantRateLimitContext, TenantRateLimitDecision } from '../../rate-limit.js';
 import type { TenantContext } from '../../tenant-isolation.js';
 import type { InProcessAsyncJob, TenantAsyncBackendMode } from '../../runtime/tenant-runtime.js';
+import type { PipelineIdempotencyService } from '../../application/pipeline-idempotency-service.js';
 import type { PipelineDeadLetterService } from '../../application/pipeline-dead-letter-service.js';
 import type { PipelineUsageService } from '../../application/pipeline-usage-service.js';
 
@@ -27,6 +28,7 @@ interface RequestSignerPair {
 export interface PipelineAsyncRoutesDeps {
   currentTenant(context: Context): TenantContext;
   pipelineUsageService: PipelineUsageService;
+  pipelineIdempotencyService: PipelineIdempotencyService;
   reserveTenantPipelineRequest(
     tenantId: string,
     planId: string | null | undefined,
@@ -88,6 +90,7 @@ export function registerPipelineAsyncRoutes(app: Hono, deps: PipelineAsyncRoutes
   const {
     currentTenant,
     pipelineUsageService,
+    pipelineIdempotencyService,
     reserveTenantPipelineRequest,
     applyRateLimitHeaders,
     createRequestSigners,
@@ -119,6 +122,27 @@ app.post('/api/v1/pipeline/run-async', async (c) => {
     }
 
     const tenant = currentTenant(c);
+    const routeId = 'POST /api/v1/pipeline/run-async';
+    const idempotencyKey = c.req.header('Idempotency-Key')?.trim() || null;
+    const idempotency = await pipelineIdempotencyService.begin({
+      idempotencyKey,
+      tenantId: tenant.tenantId,
+      routeId,
+      requestPayload: body,
+    });
+    if (idempotency.kind === 'conflict') {
+      return c.json(idempotency.responseBody, idempotency.statusCode);
+    }
+    if (idempotency.kind === 'unavailable') {
+      return c.json(idempotency.responseBody, idempotency.statusCode);
+    }
+    if (idempotency.kind === 'replay') {
+      return new Response(JSON.stringify(idempotency.responseBody), {
+        status: idempotency.statusCode,
+        headers: idempotency.headers,
+      });
+    }
+
     const quotaCheck = await pipelineUsageService.check(tenant);
     if (!quotaCheck.allowed) {
       return c.json({
@@ -205,7 +229,7 @@ app.post('/api/v1/pipeline/run-async', async (c) => {
       const usageConsumption = await pipelineUsageService.consume(tenant);
       const { usage, billingMetering } = usageConsumption;
       const asyncQueue = await getAsyncQueueSummary(bullmqQueue, tenant.tenantId, tenant.planId);
-      return c.json({
+      const responseBody = {
         jobId,
         status: 'queued',
         backendMode: 'bullmq',
@@ -230,7 +254,16 @@ app.post('/api/v1/pipeline/run-async', async (c) => {
           tenantWeightedDispatchWaitMs: asyncQueue.tenant?.weightedDispatchWaitMs ?? 0,
           retryPolicy: asyncQueue.retryPolicy,
         },
-      }, 202);
+      };
+      const finalized = await pipelineIdempotencyService.finalize({
+        idempotencyKey: idempotency.idempotencyKey,
+        tenantId: tenant.tenantId,
+        routeId,
+        requestPayload: body,
+        statusCode: 202,
+        responseBody,
+      });
+      return c.json(finalized, 202);
     }
 
     // In-process fallback (explicit about mode)
@@ -351,7 +384,7 @@ app.post('/api/v1/pipeline/run-async', async (c) => {
       }
     });
 
-    return c.json({
+    const responseBody = {
       jobId,
       status: 'queued',
       backendMode: 'in_process',
@@ -383,7 +416,16 @@ app.post('/api/v1/pipeline/run-async', async (c) => {
           failedTtlSeconds: 0,
         },
       },
-    }, 202);
+    };
+    const finalized = await pipelineIdempotencyService.finalize({
+      idempotencyKey: idempotency.idempotencyKey,
+      tenantId: tenant.tenantId,
+      routeId,
+      requestPayload: body,
+      statusCode: 202,
+      responseBody,
+    });
+    return c.json(finalized, 202);
   } catch (err) {
     return c.json({ error: err instanceof Error ? err.message : String(err) }, 500);
   }

@@ -115,6 +115,10 @@ function createAsyncRouteApp(options: {
   registerPipelineAsyncRoutes(app, {
     currentTenant: () => options.currentTenant,
     pipelineUsageService: {} as never,
+    pipelineIdempotencyService: {
+      begin: async () => ({ kind: 'ready', idempotencyKey: null, requestHash: 'hash' }),
+      finalize: async (input) => input.responseBody,
+    },
     reserveTenantPipelineRequest: async () => ({ allowed: true, rateLimit: {} }) as never,
     applyRateLimitHeaders: () => {},
     createRequestSigners: () => ({}) as never,

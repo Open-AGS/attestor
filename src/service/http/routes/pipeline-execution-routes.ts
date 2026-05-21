@@ -44,6 +44,7 @@ import type {
 } from '../../../release-layer/index.js';
 import type { TenantRateLimitContext, TenantRateLimitDecision } from '../../rate-limit.js';
 import type { TenantContext } from '../../tenant-isolation.js';
+import type { PipelineIdempotencyService } from '../../application/pipeline-idempotency-service.js';
 import type { PipelineUsageService } from '../../application/pipeline-usage-service.js';
 import type {
   RequestPathReleaseDecisionEngine,
@@ -131,6 +132,7 @@ interface FinanceFilingReleaseSummary {
 export interface PipelineExecutionRoutesDeps {
   currentTenant(context: Context): TenantContext;
   pipelineUsageService: PipelineUsageService;
+  pipelineIdempotencyService: PipelineIdempotencyService;
   reserveTenantPipelineRequest(
     tenantId: string,
     planId: string | null | undefined,
@@ -275,6 +277,7 @@ export function registerPipelineExecutionRoutes(app: Hono, deps: PipelineExecuti
   const {
     currentTenant,
     pipelineUsageService,
+    pipelineIdempotencyService,
     reserveTenantPipelineRequest,
     applyRateLimitHeaders,
     connectorRegistry,
@@ -325,6 +328,27 @@ app.post('/api/v1/pipeline/run', async (c) => {
     }
 
     const tenant = currentTenant(c);
+    const routeId = 'POST /api/v1/pipeline/run';
+    const idempotencyKey = c.req.header('Idempotency-Key')?.trim() || null;
+    const idempotency = await pipelineIdempotencyService.begin({
+      idempotencyKey,
+      tenantId: tenant.tenantId,
+      routeId,
+      requestPayload: body,
+    });
+    if (idempotency.kind === 'conflict') {
+      return c.json(idempotency.responseBody, idempotency.statusCode);
+    }
+    if (idempotency.kind === 'unavailable') {
+      return c.json(idempotency.responseBody, idempotency.statusCode);
+    }
+    if (idempotency.kind === 'replay') {
+      return new Response(JSON.stringify(idempotency.responseBody), {
+        status: idempotency.statusCode,
+        headers: idempotency.headers,
+      });
+    }
+
     const quotaCheck = await pipelineUsageService.check(tenant);
     if (!quotaCheck.allowed) {
       return c.json({
@@ -665,7 +689,45 @@ app.post('/api/v1/pipeline/run', async (c) => {
     const usageConsumption = await pipelineUsageService.consume(tenant);
     const { usage, billingMetering } = usageConsumption;
 
-    return c.json({
+    const filingAuto = await (async () => {
+      if (!sign || !report.certificate) {
+        return { filingExport: null, filingPackage: null };
+      }
+      try {
+        const adapter = filingRegistry.get('xbrl-us-gaap-2024');
+        if (!adapter) return { filingExport: null, filingPackage: null };
+        const { issueFilingPackage } = await import('../../../filing/report-package.js');
+        const envelope = buildCounterpartyEnvelope(
+          report.runId, report.decision, report.certificate?.certificateId ?? null,
+          report.evidenceChain?.terminalHash ?? '', report.execution?.rows ?? [], report.liveProof.mode,
+        );
+        const mapping = adapter.mapToTaxonomy(envelope);
+        const pkg = adapter.generatePackage(mapping);
+        pkg.evidenceLink = {
+          runId: report.runId,
+          certificateId: report.certificate?.certificateId ?? null,
+          evidenceChainTerminal: report.evidenceChain?.terminalHash ?? '',
+        };
+        pkg.issuedPackage = await issueFilingPackage(pkg);
+        return {
+          filingExport: { adapterId: adapter.id, coveragePercent: mapping.coveragePercent, mappedCount: mapping.mapped.length },
+          filingPackage: {
+            adapterId: adapter.id,
+            coveragePercent: mapping.coveragePercent,
+            mappedCount: mapping.mapped.length,
+            issuedPackage: pkg.issuedPackage,
+          },
+        };
+      } catch (error) {
+        return {
+          filingExport: null,
+          filingPackage: null,
+          filingPackageError: error instanceof Error ? error.message : String(error),
+        };
+      }
+    })();
+
+    const responseBody = {
       runId: report.runId,
       decision: report.decision,
       scoring: {
@@ -706,44 +768,17 @@ app.post('/api/v1/pipeline/run', async (c) => {
         action: financeActionRelease,
       },
       // Auto-filing: when sign=true and filing adapter is available, include XBRL summary + issued report package
-      ...(await (async () => {
-        if (!sign || !report.certificate) {
-          return { filingExport: null, filingPackage: null };
-        }
-        try {
-          const adapter = filingRegistry.get('xbrl-us-gaap-2024');
-          if (!adapter) return { filingExport: null, filingPackage: null };
-          const { issueFilingPackage } = await import('../../../filing/report-package.js');
-          const envelope = buildCounterpartyEnvelope(
-            report.runId, report.decision, report.certificate?.certificateId ?? null,
-            report.evidenceChain?.terminalHash ?? '', report.execution?.rows ?? [], report.liveProof.mode,
-          );
-          const mapping = adapter.mapToTaxonomy(envelope);
-          const pkg = adapter.generatePackage(mapping);
-          pkg.evidenceLink = {
-            runId: report.runId,
-            certificateId: report.certificate?.certificateId ?? null,
-            evidenceChainTerminal: report.evidenceChain?.terminalHash ?? '',
-          };
-          pkg.issuedPackage = await issueFilingPackage(pkg);
-          return {
-            filingExport: { adapterId: adapter.id, coveragePercent: mapping.coveragePercent, mappedCount: mapping.mapped.length },
-            filingPackage: {
-              adapterId: adapter.id,
-              coveragePercent: mapping.coveragePercent,
-              mappedCount: mapping.mapped.length,
-              issuedPackage: pkg.issuedPackage,
-            },
-          };
-        } catch (error) {
-          return {
-            filingExport: null,
-            filingPackage: null,
-            filingPackageError: error instanceof Error ? error.message : String(error),
-          };
-        }
-      })()),
+      ...filingAuto,
+    };
+    const finalized = await pipelineIdempotencyService.finalize({
+      idempotencyKey: idempotency.idempotencyKey,
+      tenantId: tenant.tenantId,
+      routeId,
+      requestPayload: body,
+      statusCode: 200,
+      responseBody,
     });
+    return c.json(finalized);
   } catch (err) {
     return c.json({ error: err instanceof Error ? err.message : String(err) }, 500);
   }

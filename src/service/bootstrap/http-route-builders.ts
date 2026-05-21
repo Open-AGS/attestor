@@ -39,6 +39,10 @@ import {
   type PipelineDeadLetterServiceDeps,
 } from '../application/pipeline-dead-letter-service.js';
 import {
+  createPipelineIdempotencyService,
+  type PipelineIdempotencyServiceDeps,
+} from '../application/pipeline-idempotency-service.js';
+import {
   createPipelineUsageService,
   type PipelineUsageServiceDeps,
 } from '../application/pipeline-usage-service.js';
@@ -295,15 +299,18 @@ export function buildReleasePolicyControlRouteDeps(
 export type BuildPipelineRouteDepsInput =
   PipelineUsageServiceDeps &
   PipelineDeadLetterServiceDeps &
-  Omit<PipelineRouteDeps, 'pipelineUsageService' | 'pipelineDeadLetterService'>;
+  PipelineIdempotencyServiceDeps &
+  Omit<PipelineRouteDeps, 'pipelineUsageService' | 'pipelineIdempotencyService' | 'pipelineDeadLetterService'>;
 
 export function buildPipelineRouteDeps(input: BuildPipelineRouteDepsInput): PipelineRouteDeps {
   const pipelineUsageService = createPipelineUsageService(input);
   const pipelineDeadLetterService = createPipelineDeadLetterService(input);
+  const pipelineIdempotencyService = createPipelineIdempotencyService(input);
 
   return {
     currentTenant: input.currentTenant,
     pipelineUsageService,
+    pipelineIdempotencyService,
     reserveTenantPipelineRequest: input.reserveTenantPipelineRequest,
     applyRateLimitHeaders: input.applyRateLimitHeaders,
     connectorRegistry: input.connectorRegistry,

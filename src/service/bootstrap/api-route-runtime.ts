@@ -124,13 +124,16 @@ import {
   listHostedBillingEntitlementsState,
   listHostedEmailDeliveriesState,
   listTenantKeyRecordsState,
+  ensurePipelineIdempotencyStateReady,
   lookupAdminIdempotencyState,
+  lookupPipelineIdempotencyState,
   lookupProcessedStripeWebhookState,
   provisionHostedAccountState,
   queryUsageLedgerState,
   recordAccountUserLoginState,
   recordAccountUserTotpVerificationStepState,
   recordAdminIdempotencyState,
+  recordPipelineIdempotencyState,
   recordHostedEmailProviderEventState,
   recordHostedSamlReplayState,
   recordProcessedStripeWebhookState,
@@ -719,6 +722,10 @@ export async function createApiHttpRouteRuntime(
   const pipelineRouteDeps = buildPipelineRouteDeps({
     checkQuota: canConsumePipelineRunState,
     consumeRun: consumePipelineRunState,
+    hashJsonValue,
+    ensurePipelineIdempotencyStateReady,
+    lookupPipelineIdempotencyState,
+    recordPipelineIdempotencyState,
     async recordOverageMetering({ tenant, usage }) {
       const account = await findHostedAccountByTenantIdState(tenant.tenantId);
       return recordStripeOverageMeterEvent({ account, tenant, usage });

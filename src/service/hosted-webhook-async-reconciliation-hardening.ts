@@ -203,7 +203,7 @@ export const HOSTED_WEBHOOK_ASYNC_RECONCILIATION_GUARDS: readonly HostedWebhookA
     duplicateBoundary:
       'SendGrid event ids and Mailgun event-data ids are mandatory; duplicate ids are counted deterministically and conflicting payload hashes are rejected.',
     failureBoundary:
-      'When provider webhook shared storage is required, HA mode fails closed instead of accepting local-only duplicate state.',
+      'Provider webhook ingest requires shared storage by default; local-only duplicate state is available only through an explicit single-node evaluation override.',
     recoveryBoundary:
       'Delivery summaries can be rebuilt from provider delivery event records while preserving provider event ids and low-cardinality outcomes.',
     privacyBoundary:
@@ -211,16 +211,24 @@ export const HOSTED_WEBHOOK_ASYNC_RECONCILIATION_GUARDS: readonly HostedWebhookA
     implementationEvidence: [
       'src/service/http/routes/email-webhook-routes.ts',
       'src/service/application/email-webhook-service.ts',
+      'src/service/sendgrid-email-webhook.ts',
+      'src/service/mailgun-email-webhook.ts',
+      'src/service/webhook-rate-limit.ts',
       'src/service/email-delivery-event-store.ts',
       'src/service/control-plane-store.ts',
     ],
     validation: [
       'tests/service-email-webhook-service.test.ts',
+      'tests/service-email-webhook-signature-verifiers.test.ts',
+      'tests/service-webhook-route-rate-limit.test.ts',
       'tests/email-delivery-event-store-hardening.test.ts',
       'tests/service-route-boundary.test.ts',
     ],
     standards: [
-      'OWASP API4:2023 Unrestricted Resource Consumption: external callbacks must be deduped and bounded.',
+      'Stripe webhooks: preserve raw request bodies, verify signatures, and reject replayed payloads outside the freshness window.',
+      'Twilio SendGrid signed event webhooks: verify ECDSA signatures over timestamp plus raw payload bytes.',
+      'Mailgun webhooks: verify timestamp plus token using the account HTTP webhook signing key and SHA-256 HMAC.',
+      'OWASP API4:2023 Unrestricted Resource Consumption: external callbacks must be deduped, rate-limited, and bounded.',
       'OWASP API6:2023 Sensitive Business Flows: provider delivery automation cannot bypass replay and duplicate controls.',
     ],
   },

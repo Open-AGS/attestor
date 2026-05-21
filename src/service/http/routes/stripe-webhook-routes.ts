@@ -4,6 +4,7 @@ import type {
   StripeWebhookProcessorObservability,
 } from '../../application/stripe-webhook-billing-processor.js';
 import type { StripeWebhookService } from '../../application/stripe-webhook-service.js';
+import { webhookAuthRateLimitResponse } from '../../webhook-rate-limit.js';
 
 export interface StripeWebhookRouteDeps {
   stripeWebhookService: StripeWebhookService;
@@ -42,6 +43,9 @@ export function registerStripeWebhookRoutes(app: Hono, deps: StripeWebhookRouteD
   } = deps;
 
   app.post('/api/v1/billing/stripe/webhook', async (c) => {
+    const rateLimited = webhookAuthRateLimitResponse(c, 'stripe');
+    if (rateLimited) return rateLimited;
+
     const rawPayload = await c.req.text();
     const stripeWebhookBegin = await stripeWebhookService.begin({
       webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,

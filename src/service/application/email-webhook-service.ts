@@ -8,7 +8,6 @@ import type {
   MailgunWebhookSignatureRecord,
   MailgunWebhookStatus,
 } from '../mailgun-email-webhook.js';
-import { envTruthy } from '../deployment-safety.js';
 import type {
   SendGridWebhookEventRecord,
   SendGridWebhookStatus,
@@ -96,14 +95,16 @@ function disabled(error: string): EmailWebhookServiceResult {
   };
 }
 
-function requiresSharedEmailWebhookStore(): boolean {
-  return envTruthy(process.env.ATTESTOR_HA_MODE)
-    || envTruthy(process.env.ATTESTOR_EMAIL_WEBHOOK_REQUIRE_SHARED_STORE);
+function allowsLocalEmailWebhookStore(): boolean {
+  return process.env.ATTESTOR_EMAIL_WEBHOOK_ALLOW_LOCAL_STORE?.trim() === 'accept-the-risk';
 }
 
 function sharedStoreUnavailable(deps: EmailWebhookServiceDeps): EmailWebhookServiceResult | null {
-  if (!requiresSharedEmailWebhookStore() || deps.isSharedControlPlaneConfigured()) return null;
-  return disabled('Email provider webhooks require shared control-plane storage in HA/shared-store mode.');
+  if (deps.isSharedControlPlaneConfigured() || allowsLocalEmailWebhookStore()) return null;
+  return disabled(
+    'Email provider webhooks require shared control-plane storage. '
+      + 'Set ATTESTOR_EMAIL_WEBHOOK_ALLOW_LOCAL_STORE=accept-the-risk only for single-node evaluation.',
+  );
 }
 
 function incrementCounter(

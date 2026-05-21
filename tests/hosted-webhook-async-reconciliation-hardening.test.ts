@@ -154,7 +154,8 @@ function testImplementationEvidenceMatchesSource(): void {
   includes(emailService, 'verifySignedMailgunWebhook', 'Hosted webhook/async evidence: Mailgun signatures are verified');
   includes(emailService, 'mailgunSignatureTokenDigest', 'Hosted webhook/async evidence: Mailgun replay token is digested');
   includes(emailService, 'recordEmailProviderEvent', 'Hosted webhook/async evidence: email provider events are deduped');
-  includes(emailService, 'ATTESTOR_EMAIL_WEBHOOK_REQUIRE_SHARED_STORE', 'Hosted webhook/async evidence: HA email store fail-closed flag exists');
+  includes(emailService, 'ATTESTOR_EMAIL_WEBHOOK_ALLOW_LOCAL_STORE', 'Hosted webhook/async evidence: local email webhook store fallback is an explicit risk override');
+  includes(emailService, 'Email provider webhooks require shared control-plane storage', 'Hosted webhook/async evidence: email webhooks fail closed without shared storage');
   includes(pipelineAsyncRoutes, 'pipelineUsageService.check', 'Hosted webhook/async evidence: async route checks quota');
   includes(pipelineAsyncRoutes, 'reserveTenantPipelineRequest', 'Hosted webhook/async evidence: async route reserves rate budget');
   includes(pipelineAsyncRoutes, 'pipelineDeadLetterService.record', 'Hosted webhook/async evidence: in-process async failures enter DLQ');

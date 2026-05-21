@@ -60,6 +60,13 @@ function normalizePublicKeyPem(value: string): string {
   return `-----BEGIN PUBLIC KEY-----\n${wrapped}\n-----END PUBLIC KEY-----`;
 }
 
+function parseStrictUnixTimestampSeconds(value: string): number | null {
+  const normalized = value.trim();
+  if (!/^\d+$/u.test(normalized)) return null;
+  const parsed = Number(normalized);
+  return Number.isSafeInteger(parsed) ? parsed : null;
+}
+
 export function verifySignedSendGridWebhook(input: {
   rawPayload: string;
   signature: string;
@@ -67,21 +74,26 @@ export function verifySignedSendGridWebhook(input: {
 }): boolean {
   const publicKey = webhookPublicKey();
   if (!publicKey) return false;
-  const timestampInt = Number.parseInt(input.timestamp, 10);
-  if (!Number.isFinite(timestampInt)) return false;
+  const timestamp = input.timestamp.trim();
+  const timestampInt = parseStrictUnixTimestampSeconds(timestamp);
+  if (timestampInt === null) return false;
   const ageSeconds = Math.abs(Math.floor(Date.now() / 1000) - timestampInt);
   if (ageSeconds > sendGridWebhookMaxAgeSeconds()) return false;
 
-  const keyObject = createPublicKey(normalizePublicKeyPem(publicKey));
-  return verifySignature(
-    'sha256',
-    Buffer.concat([
-      Buffer.from(input.timestamp, 'utf8'),
-      Buffer.from(input.rawPayload, 'utf8'),
-    ]),
-    keyObject,
-    Buffer.from(input.signature, 'base64'),
-  );
+  try {
+    const keyObject = createPublicKey(normalizePublicKeyPem(publicKey));
+    return verifySignature(
+      'sha256',
+      Buffer.concat([
+        Buffer.from(timestamp, 'utf8'),
+        Buffer.from(input.rawPayload, 'utf8'),
+      ]),
+      keyObject,
+      Buffer.from(input.signature, 'base64'),
+    );
+  } catch {
+    return false;
+  }
 }
 
 function extractTopLevelString(value: unknown): string | null {

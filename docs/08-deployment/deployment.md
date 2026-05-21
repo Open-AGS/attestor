@@ -180,7 +180,8 @@ external identity fabric.
 | `ATTESTOR_SMTP_SECURE` | No | `false` | Enable SMTPS for hosted invite/reset delivery |
 | `ATTESTOR_SMTP_IGNORE_TLS` | No | `false` | Skip STARTTLS for local/test SMTP delivery only; public hosted readiness fails closed when SMTP delivery enables this |
 | `ATTESTOR_EMAIL_DELIVERY_EVENTS_PATH` | No | `.attestor/email-delivery-events.json` | File-backed hosted email-delivery event ledger used when `ATTESTOR_CONTROL_PLANE_PG_URL` is not configured |
-| `ATTESTOR_EMAIL_WEBHOOK_REQUIRE_SHARED_STORE` | No | `false` | When true, SendGrid/Mailgun provider webhooks refuse file-backed event storage and require `ATTESTOR_CONTROL_PLANE_PG_URL`; `ATTESTOR_HA_MODE=true` enforces the same gate |
+| `ATTESTOR_EMAIL_WEBHOOK_ALLOW_LOCAL_STORE` | No | None | Escape hatch for single-node evaluation only. SendGrid/Mailgun provider webhooks require shared control-plane storage by default; set exactly `accept-the-risk` only when accepting local/file-backed replay state |
+| `ATTESTOR_WEBHOOK_AUTH_RATE_LIMIT_PER_MINUTE` | No | `600` | Per-source, per-provider webhook authentication attempt limit applied before Stripe/SendGrid/Mailgun signature verification work |
 | `ATTESTOR_SENDGRID_EVENT_WEBHOOK_PUBLIC_KEY` | No | None | SendGrid Event Webhook public key enabling signed delivery analytics at `POST /api/v1/email/sendgrid/webhook` |
 | `ATTESTOR_SENDGRID_EVENT_WEBHOOK_MAX_AGE_SECONDS` | No | `300` | Max webhook timestamp age in seconds for SendGrid signature verification |
 | `ATTESTOR_MAILGUN_WEBHOOK_SIGNING_KEY` | No | None | Mailgun webhook signing key enabling signed delivery analytics at `POST /api/v1/email/mailgun/webhook`; Mailgun replay protection stores only a keyed digest of the signature token |

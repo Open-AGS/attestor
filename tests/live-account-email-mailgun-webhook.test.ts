@@ -200,6 +200,7 @@ async function main(): Promise<void> {
     process.env.ATTESTOR_ACCOUNT_INVITE_BASE_URL = 'https://attestor.dev/invite';
     process.env.ATTESTOR_MAILGUN_WEBHOOK_SIGNING_KEY = mailgunSigningKey;
     process.env.ATTESTOR_MAILGUN_WEBHOOK_MAX_AGE_SECONDS = '300';
+    process.env.ATTESTOR_EMAIL_WEBHOOK_ALLOW_LOCAL_STORE = 'accept-the-risk';
 
     resetTenantKeyStoreForTests();
     resetUsageMeter();

@@ -58,6 +58,13 @@ export function getMailgunWebhookStatus(): MailgunWebhookStatus {
   };
 }
 
+function parseStrictUnixTimestampSeconds(value: string): number | null {
+  const normalized = value.trim();
+  if (!/^\d+$/u.test(normalized)) return null;
+  const parsed = Number(normalized);
+  return Number.isSafeInteger(parsed) ? parsed : null;
+}
+
 function safeHexEquals(left: string, right: string): boolean {
   const normalizedLeft = left.trim().toLowerCase();
   const normalizedRight = right.trim().toLowerCase();
@@ -69,13 +76,15 @@ function safeHexEquals(left: string, right: string): boolean {
 export function verifySignedMailgunWebhook(input: MailgunWebhookSignatureRecord): boolean {
   const signingKey = webhookSigningKey();
   if (!signingKey) return false;
-  const timestampInt = Number.parseInt(input.timestamp, 10);
-  if (!Number.isFinite(timestampInt)) return false;
+  const timestamp = input.timestamp.trim();
+  const token = input.token.trim();
+  const timestampInt = parseStrictUnixTimestampSeconds(timestamp);
+  if (timestampInt === null) return false;
   const ageSeconds = Math.abs(Math.floor(Date.now() / 1000) - timestampInt);
   if (ageSeconds > mailgunWebhookMaxAgeSeconds()) return false;
 
   const expected = createHmac('sha256', signingKey)
-    .update(`${input.timestamp}${input.token}`, 'utf8')
+    .update(`${timestamp}${token}`, 'utf8')
     .digest('hex');
   return safeHexEquals(expected, input.signature);
 }

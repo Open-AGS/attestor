@@ -243,9 +243,9 @@ async function testSendGridWebhookRejectsMissingEventId(): Promise<void> {
   assert.match(String(result.responseBody.error), /sg_event_id/u);
 }
 
-async function testEmailWebhooksRequireSharedStoreInHaMode(): Promise<void> {
-  const saved = process.env.ATTESTOR_HA_MODE;
-  process.env.ATTESTOR_HA_MODE = 'true';
+async function testEmailWebhooksRequireSharedStoreByDefault(): Promise<void> {
+  const saved = process.env.ATTESTOR_EMAIL_WEBHOOK_ALLOW_LOCAL_STORE;
+  delete process.env.ATTESTOR_EMAIL_WEBHOOK_ALLOW_LOCAL_STORE;
   try {
     const service = createEmailWebhookService(createDeps({
       isSharedControlPlaneConfigured: () => false,
@@ -257,8 +257,27 @@ async function testEmailWebhooksRequireSharedStoreInHaMode(): Promise<void> {
     assert.equal(result.statusCode, 503);
     assert.match(String(result.responseBody.error), /shared control-plane storage/u);
   } finally {
-    if (saved === undefined) delete process.env.ATTESTOR_HA_MODE;
-    else process.env.ATTESTOR_HA_MODE = saved;
+    if (saved === undefined) delete process.env.ATTESTOR_EMAIL_WEBHOOK_ALLOW_LOCAL_STORE;
+    else process.env.ATTESTOR_EMAIL_WEBHOOK_ALLOW_LOCAL_STORE = saved;
+  }
+}
+
+async function testEmailWebhooksAllowLocalStoreWithExplicitOverride(): Promise<void> {
+  const saved = process.env.ATTESTOR_EMAIL_WEBHOOK_ALLOW_LOCAL_STORE;
+  process.env.ATTESTOR_EMAIL_WEBHOOK_ALLOW_LOCAL_STORE = 'accept-the-risk';
+  try {
+    const service = createEmailWebhookService(createDeps({
+      isSharedControlPlaneConfigured: () => false,
+    }));
+    const result = await service.handleMailgun({
+      rawPayload: '{}',
+    });
+
+    assert.equal(result.statusCode, 200);
+    assert.equal(result.responseBody.provider, 'mailgun_smtp');
+  } finally {
+    if (saved === undefined) delete process.env.ATTESTOR_EMAIL_WEBHOOK_ALLOW_LOCAL_STORE;
+    else process.env.ATTESTOR_EMAIL_WEBHOOK_ALLOW_LOCAL_STORE = saved;
   }
 }
 
@@ -285,7 +304,8 @@ await testSendGridWebhookRejectsMissingEventId();
 await testMailgunWebhookRecordsSeverityAwareEvents();
 await testMailgunWebhookRejectsMissingEventId();
 await testMailgunWebhookRejectsReplayTokenWithoutDigest();
-await testEmailWebhooksRequireSharedStoreInHaMode();
+await testEmailWebhooksRequireSharedStoreByDefault();
+await testEmailWebhooksAllowLocalStoreWithExplicitOverride();
 await testMailgunWebhookFailsClosedWhenDisabled();
 
-console.log('Service email webhook service tests: 8 passed, 0 failed');
+console.log('Service email webhook service tests: 9 passed, 0 failed');

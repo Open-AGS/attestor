@@ -1,5 +1,5 @@
 import type { Context, Hono } from 'hono';
-import { createHash, createHmac } from 'node:crypto';
+import { createHash } from 'node:crypto';
 import type {
   AuthenticationResponseJSON,
   RegistrationResponseJSON,
@@ -185,11 +185,6 @@ async function maybeRateLimitFederatedCallback(
   if (limited) return limited;
   await recordAuthAttemptUse(subject);
   return null;
-}
-
-function accountAuditDigest(value: string): string {
-  const key = process.env.ATTESTOR_AUDIT_REDACTION_KEY?.trim() || 'attestor-account-audit-redaction-v1';
-  return `hmac-sha256:${createHmac('sha256', key).update(value.trim()).digest('hex')}`;
 }
 
 async function maybeRateLimitCurrentPasswordAttempt(
@@ -1338,7 +1333,6 @@ app.post('/api/v1/account/passkeys/register/verify', async (c) => {
       accountId: access.accountId,
       accountUserId: access.accountUserId,
       challengeId: challengeRecord.id,
-      credentialIdDigest: accountAuditDigest(nextCredential.credentialId),
     },
     statusCode: 200,
     metadata: {
@@ -1970,8 +1964,6 @@ app.post('/api/v1/account/users', async (c) => {
   }
   const requestPayload = {
     accountId: access.accountId,
-    emailDigest: accountAuditDigest(email),
-    displayNameDigest: accountAuditDigest(displayName),
     role,
   };
 
@@ -1992,7 +1984,6 @@ app.post('/api/v1/account/users', async (c) => {
       metadata: {
         targetUserId: created.id,
         targetRole: created.role,
-        targetEmailDigest: accountAuditDigest(created.email),
       },
     });
     return c.json({
@@ -2033,8 +2024,6 @@ app.post('/api/v1/account/users/invites', async (c) => {
   }
   const requestPayload = {
     accountId: access.accountId,
-    emailDigest: accountAuditDigest(email),
-    displayNameDigest: accountAuditDigest(displayName),
     role,
     expiresHours,
   };
@@ -2056,7 +2045,6 @@ app.post('/api/v1/account/users/invites', async (c) => {
       metadata: {
         inviteId: issued.record.id,
         targetRole: issued.record.role,
-        targetEmailDigest: accountAuditDigest(issued.record.email),
         tokenReturned: issued.delivery.tokenReturned,
         deliveryMode: issued.delivery.mode,
       },
@@ -2091,7 +2079,6 @@ app.post('/api/v1/account/users/invites/:id/revoke', async (c) => {
       statusCode: 200,
       metadata: {
         inviteId: revoked.id,
-        targetEmailDigest: accountAuditDigest(revoked.email),
         targetRole: revoked.role,
       },
     });
@@ -2233,7 +2220,6 @@ app.post('/api/v1/account/users/:id/password-reset', async (c) => {
       metadata: {
         resetTokenId: issued.record.id,
         targetUserId: issued.record.accountUserId,
-        targetEmailDigest: accountAuditDigest(issued.record.email),
         tokenReturned: issued.delivery.tokenReturned,
         deliveryMode: issued.delivery.mode,
       },
@@ -2366,12 +2352,7 @@ app.post('/api/v1/account/billing/checkout', async (c) => {
     planId: checkout.planId,
     idempotencyKey,
     metadata: {
-      checkoutSessionIdDigest: accountAuditDigest(checkout.sessionId),
       mock: checkout.mock,
-      stripePriceIdDigest: checkout.stripePriceId ? accountAuditDigest(checkout.stripePriceId) : null,
-      stripeOveragePriceIdDigest: checkout.stripeOveragePriceId
-        ? accountAuditDigest(checkout.stripeOveragePriceId)
-        : null,
     },
   });
 
@@ -2419,7 +2400,6 @@ app.post('/api/v1/account/billing/portal', async (c) => {
     statusCode: 200,
     tenantId: current.tenant.tenantId,
     metadata: {
-      portalSessionIdDigest: accountAuditDigest(portal.sessionId),
       mock: portal.mock,
     },
   });

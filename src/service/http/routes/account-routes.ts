@@ -1,5 +1,5 @@
 import type { Context, Hono } from 'hono';
-import { createHash } from 'node:crypto';
+import { createHash, createHmac } from 'node:crypto';
 import type {
   AuthenticationResponseJSON,
   RegistrationResponseJSON,
@@ -188,7 +188,8 @@ async function maybeRateLimitFederatedCallback(
 }
 
 function accountAuditDigest(value: string): string {
-  return `sha256:${createHash('sha256').update(value.trim().toLowerCase()).digest('hex')}`;
+  const key = process.env.ATTESTOR_AUDIT_REDACTION_KEY?.trim() || 'attestor-account-audit-redaction-v1';
+  return `hmac-sha256:${createHmac('sha256', key).update(value.trim()).digest('hex')}`;
 }
 
 async function maybeRateLimitCurrentPasswordAttempt(

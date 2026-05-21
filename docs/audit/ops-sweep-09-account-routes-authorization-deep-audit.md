@@ -96,8 +96,8 @@ Repository changes:
   `actorType: 'account_session'` and account-plane action IDs.
 - Wired account-session mutation audit through `buildAccountRouteDeps` so
   runtime routes persist through `appendAdminAuditRecordState`.
-- Recorded redacted request material by hashing user-facing sensitive values
-  before they enter audit metadata.
+- Recorded redacted request material by HMAC-fingerprinting user-facing
+  sensitive values before they enter audit metadata.
 - Updated the hosted API authorization matrix for account callback rate limits
   and account-session mutation audit.
 - Added live proof flags and register entries for federated callback rate
@@ -139,7 +139,7 @@ authorization source and cannot approve, block, or bypass a route on its own.
 | Direct regression | Account callback routes now have a new 429 path before expensive callback verification. This is intentional operational boundedness and tested. |
 | Downstream caller breakage | Very bursty IdP retries can now hit the auth abuse bucket. Live IdP retry compatibility is listed as `LP-FEDERATED-CALLBACK-RATE-LIMIT`. |
 | Audit ledger schema | `AdminAuditRecord.actorType` now includes `account_session`, and `AdminAuditAction` includes account-plane actions. Existing admin actors/actions remain valid. |
-| Privacy / redaction | Audit records use request hashes and digests for sensitive account/provider reference values. One-time plaintext API keys, passwords, invite tokens, reset tokens, passkey credential IDs, raw Stripe handoff IDs, and raw provider callback bodies are not written to audit metadata. |
+| Privacy / redaction | Audit records use request hashes and HMAC fingerprints for sensitive account/provider reference values. One-time plaintext API keys, passwords, invite tokens, reset tokens, passkey credential IDs, raw Stripe handoff IDs, and raw provider callback bodies are not written to audit metadata. |
 | Live proof | New live proof flags are required for callback rate-limit behavior, account audit-chain behavior, and shared auth-abuse-store behavior. |
 
 ## 8. Verification

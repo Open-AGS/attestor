@@ -37,6 +37,13 @@ import type {
 } from '../../../release-layer/index.js';
 import { vocabulary } from '../../../release-layer/index.js';
 import type { AdminAuditAction } from '../../admin-audit-log.js';
+import {
+  RELEASE_ADMIN_BREAK_GLASS_ROLES,
+  RELEASE_ADMIN_MUTATION_ROLES,
+  RELEASE_ADMIN_READ_ROLES,
+  authorizeReleaseAdminRoute,
+  releaseAdminActorForContext,
+} from '../release-admin-authorization.js';
 
 const {
   activatePolicyBundle,
@@ -98,13 +105,6 @@ export interface ReleasePolicyControlRouteDeps {
 }
 
 const ROLLOUT_MODES = ['dry-run', 'canary', 'enforce', 'rolled-back'] as const;
-const BREAK_GLASS_ROLES = Object.freeze([
-  'policy-break-glass',
-  'security-admin',
-  'incident-commander',
-  'break-glass-admin',
-]);
-
 function noStore(c: Context): void {
   c.header('cache-control', 'no-store');
 }
@@ -397,13 +397,7 @@ function auditEntryView(
 }
 
 function routeAdminActor(c: Context): ReleaseActorReference {
-  const actorId = c.req.header('x-attestor-admin-actor-id')?.trim() || 'admin_api_key';
-  return {
-    id: actorId,
-    type: actorId === 'admin_api_key' ? 'service' : 'user',
-    displayName: c.req.header('x-attestor-admin-actor-name')?.trim() || 'Policy Admin API',
-    role: c.req.header('x-attestor-admin-actor-role')?.trim() || 'policy-admin',
-  };
+  return releaseAdminActorForContext(c).releaseActor;
 }
 
 function requireBreakGlassAuthorization(
@@ -423,12 +417,6 @@ function requireBreakGlassAuthorization(
     return c.json({
       error: 'Emergency policy control operations require breakGlass=true or x-attestor-break-glass: true.',
     }, 400);
-  }
-
-  if (!BREAK_GLASS_ROLES.includes((actor.role ?? '').trim().toLowerCase())) {
-    return c.json({
-      error: `Emergency policy control operations require one of these actor roles: ${BREAK_GLASS_ROLES.join(', ')}.`,
-    }, 403);
   }
 
   const reasonCode = optionalString(body, 'reasonCode');
@@ -631,8 +619,8 @@ export function registerReleasePolicyControlRoutes(app: Hono, deps: ReleasePolic
   } = deps;
 
   app.get('/api/v1/admin/release-policy/control-plane', async (c) => {
-    const unauthorized = deps.currentAdminAuthorized(c);
-    if (unauthorized) return unauthorized;
+    const authorized = authorizeReleaseAdminRoute(c, RELEASE_ADMIN_READ_ROLES, deps.currentAdminAuthorized);
+    if (authorized instanceof Response) return authorized;
 
     const snapshot = await store.exportSnapshot();
     const auditVerification = await auditLog.verify();
@@ -655,16 +643,16 @@ export function registerReleasePolicyControlRoutes(app: Hono, deps: ReleasePolic
   });
 
   app.get('/api/v1/admin/release-policy/packs', async (c) => {
-    const unauthorized = deps.currentAdminAuthorized(c);
-    if (unauthorized) return unauthorized;
+    const authorized = authorizeReleaseAdminRoute(c, RELEASE_ADMIN_READ_ROLES, deps.currentAdminAuthorized);
+    if (authorized instanceof Response) return authorized;
 
     noStore(c);
     return c.json({ packs: (await store.listPacks()).map(packView) });
   });
 
   app.post('/api/v1/admin/release-policy/packs', async (c) => {
-    const unauthorized = deps.currentAdminAuthorized(c);
-    if (unauthorized) return unauthorized;
+    const authorized = authorizeReleaseAdminRoute(c, RELEASE_ADMIN_MUTATION_ROLES, deps.currentAdminAuthorized);
+    if (authorized instanceof Response) return authorized;
 
     const body = await parseJsonBody(c);
     if (body instanceof Response) return body;
@@ -705,8 +693,8 @@ export function registerReleasePolicyControlRoutes(app: Hono, deps: ReleasePolic
   });
 
   app.get('/api/v1/admin/release-policy/packs/:packId', async (c) => {
-    const unauthorized = deps.currentAdminAuthorized(c);
-    if (unauthorized) return unauthorized;
+    const authorized = authorizeReleaseAdminRoute(c, RELEASE_ADMIN_READ_ROLES, deps.currentAdminAuthorized);
+    if (authorized instanceof Response) return authorized;
 
     const pack = await store.getPack(c.req.param('packId'));
     if (!pack) {
@@ -717,8 +705,8 @@ export function registerReleasePolicyControlRoutes(app: Hono, deps: ReleasePolic
   });
 
   app.get('/api/v1/admin/release-policy/packs/:packId/bundles', async (c) => {
-    const unauthorized = deps.currentAdminAuthorized(c);
-    if (unauthorized) return unauthorized;
+    const authorized = authorizeReleaseAdminRoute(c, RELEASE_ADMIN_READ_ROLES, deps.currentAdminAuthorized);
+    if (authorized instanceof Response) return authorized;
 
     noStore(c);
     return c.json({
@@ -728,19 +716,20 @@ export function registerReleasePolicyControlRoutes(app: Hono, deps: ReleasePolic
   });
 
   app.get('/api/v1/admin/release-policy/packs/:packId/versions', async (c) => {
-    const unauthorized = deps.currentAdminAuthorized(c);
-    if (unauthorized) return unauthorized;
+    const authorized = authorizeReleaseAdminRoute(c, RELEASE_ADMIN_READ_ROLES, deps.currentAdminAuthorized);
+    if (authorized instanceof Response) return authorized;
 
+    const history = await store.listBundleHistory(c.req.param('packId'));
     noStore(c);
     return c.json({
       packId: c.req.param('packId'),
-      versions: (await store.listBundleHistory(c.req.param('packId'))).map(bundleSummaryView),
+      versions: history.map(bundleSummaryView),
     });
   });
 
   app.post('/api/v1/admin/release-policy/bundles', async (c) => {
-    const unauthorized = deps.currentAdminAuthorized(c);
-    if (unauthorized) return unauthorized;
+    const authorized = authorizeReleaseAdminRoute(c, RELEASE_ADMIN_MUTATION_ROLES, deps.currentAdminAuthorized);
+    if (authorized instanceof Response) return authorized;
 
     const body = await parseJsonBody(c);
     if (body instanceof Response) return body;
@@ -792,8 +781,8 @@ export function registerReleasePolicyControlRoutes(app: Hono, deps: ReleasePolic
   });
 
   app.get('/api/v1/admin/release-policy/packs/:packId/bundles/:bundleId', async (c) => {
-    const unauthorized = deps.currentAdminAuthorized(c);
-    if (unauthorized) return unauthorized;
+    const authorized = authorizeReleaseAdminRoute(c, RELEASE_ADMIN_READ_ROLES, deps.currentAdminAuthorized);
+    if (authorized instanceof Response) return authorized;
 
     const record = await findRequiredBundle(store, c.req.param('packId'), c.req.param('bundleId'));
     if (!record) {
@@ -820,8 +809,8 @@ export function registerReleasePolicyControlRoutes(app: Hono, deps: ReleasePolic
   });
 
   app.get('/api/v1/admin/release-policy/activation-approvals', async (c) => {
-    const unauthorized = deps.currentAdminAuthorized(c);
-    if (unauthorized) return unauthorized;
+    const authorized = authorizeReleaseAdminRoute(c, RELEASE_ADMIN_READ_ROLES, deps.currentAdminAuthorized);
+    if (authorized instanceof Response) return authorized;
 
     try {
       const requests = await approvalStore.list({
@@ -838,8 +827,8 @@ export function registerReleasePolicyControlRoutes(app: Hono, deps: ReleasePolic
   });
 
   app.post('/api/v1/admin/release-policy/activation-approvals', async (c) => {
-    const unauthorized = deps.currentAdminAuthorized(c);
-    if (unauthorized) return unauthorized;
+    const authorized = authorizeReleaseAdminRoute(c, RELEASE_ADMIN_MUTATION_ROLES, deps.currentAdminAuthorized);
+    if (authorized instanceof Response) return authorized;
 
     const body = await parseJsonBody(c);
     if (body instanceof Response) return body;
@@ -911,8 +900,8 @@ export function registerReleasePolicyControlRoutes(app: Hono, deps: ReleasePolic
   });
 
   app.get('/api/v1/admin/release-policy/activation-approvals/:id', async (c) => {
-    const unauthorized = deps.currentAdminAuthorized(c);
-    if (unauthorized) return unauthorized;
+    const authorized = authorizeReleaseAdminRoute(c, RELEASE_ADMIN_READ_ROLES, deps.currentAdminAuthorized);
+    if (authorized instanceof Response) return authorized;
 
     const approvalRequest = await approvalStore.get(c.req.param('id'));
     if (!approvalRequest) {
@@ -925,8 +914,8 @@ export function registerReleasePolicyControlRoutes(app: Hono, deps: ReleasePolic
   });
 
   app.post('/api/v1/admin/release-policy/activation-approvals/:id/approve', async (c) => {
-    const unauthorized = deps.currentAdminAuthorized(c);
-    if (unauthorized) return unauthorized;
+    const authorized = authorizeReleaseAdminRoute(c, RELEASE_ADMIN_MUTATION_ROLES, deps.currentAdminAuthorized);
+    if (authorized instanceof Response) return authorized;
 
     const body = await parseJsonBody(c);
     if (body instanceof Response) return body;
@@ -986,8 +975,8 @@ export function registerReleasePolicyControlRoutes(app: Hono, deps: ReleasePolic
   });
 
   app.post('/api/v1/admin/release-policy/activation-approvals/:id/reject', async (c) => {
-    const unauthorized = deps.currentAdminAuthorized(c);
-    if (unauthorized) return unauthorized;
+    const authorized = authorizeReleaseAdminRoute(c, RELEASE_ADMIN_MUTATION_ROLES, deps.currentAdminAuthorized);
+    if (authorized instanceof Response) return authorized;
 
     const body = await parseJsonBody(c);
     if (body instanceof Response) return body;
@@ -1047,8 +1036,8 @@ export function registerReleasePolicyControlRoutes(app: Hono, deps: ReleasePolic
   });
 
   app.get('/api/v1/admin/release-policy/activations', async (c) => {
-    const unauthorized = deps.currentAdminAuthorized(c);
-    if (unauthorized) return unauthorized;
+    const authorized = authorizeReleaseAdminRoute(c, RELEASE_ADMIN_READ_ROLES, deps.currentAdminAuthorized);
+    if (authorized instanceof Response) return authorized;
 
     const targetLabel = c.req.query('targetLabel')?.trim();
     const state = c.req.query('state')?.trim();
@@ -1061,8 +1050,8 @@ export function registerReleasePolicyControlRoutes(app: Hono, deps: ReleasePolic
   });
 
   app.post('/api/v1/admin/release-policy/activations', async (c) => {
-    const unauthorized = deps.currentAdminAuthorized(c);
-    if (unauthorized) return unauthorized;
+    const authorized = authorizeReleaseAdminRoute(c, RELEASE_ADMIN_MUTATION_ROLES, deps.currentAdminAuthorized);
+    if (authorized instanceof Response) return authorized;
 
     const body = await parseJsonBody(c);
     if (body instanceof Response) return body;
@@ -1141,8 +1130,8 @@ export function registerReleasePolicyControlRoutes(app: Hono, deps: ReleasePolic
   });
 
   app.get('/api/v1/admin/release-policy/activations/:id', async (c) => {
-    const unauthorized = deps.currentAdminAuthorized(c);
-    if (unauthorized) return unauthorized;
+    const authorized = authorizeReleaseAdminRoute(c, RELEASE_ADMIN_READ_ROLES, deps.currentAdminAuthorized);
+    if (authorized instanceof Response) return authorized;
 
     const record = await store.getActivation(c.req.param('id'));
     if (!record) {
@@ -1153,8 +1142,8 @@ export function registerReleasePolicyControlRoutes(app: Hono, deps: ReleasePolic
   });
 
   app.post('/api/v1/admin/release-policy/activations/:id/rollback', async (c) => {
-    const unauthorized = deps.currentAdminAuthorized(c);
-    if (unauthorized) return unauthorized;
+    const authorized = authorizeReleaseAdminRoute(c, RELEASE_ADMIN_MUTATION_ROLES, deps.currentAdminAuthorized);
+    if (authorized instanceof Response) return authorized;
 
     const body = await parseJsonBody(c);
     if (body instanceof Response) return body;
@@ -1221,8 +1210,8 @@ export function registerReleasePolicyControlRoutes(app: Hono, deps: ReleasePolic
   });
 
   app.post('/api/v1/admin/release-policy/emergency/freeze', async (c) => {
-    const unauthorized = deps.currentAdminAuthorized(c);
-    if (unauthorized) return unauthorized;
+    const authorized = authorizeReleaseAdminRoute(c, RELEASE_ADMIN_BREAK_GLASS_ROLES, deps.currentAdminAuthorized);
+    if (authorized instanceof Response) return authorized;
 
     const body = await parseJsonBody(c);
     if (body instanceof Response) return body;
@@ -1316,8 +1305,8 @@ export function registerReleasePolicyControlRoutes(app: Hono, deps: ReleasePolic
   });
 
   app.post('/api/v1/admin/release-policy/emergency/rollback', async (c) => {
-    const unauthorized = deps.currentAdminAuthorized(c);
-    if (unauthorized) return unauthorized;
+    const authorized = authorizeReleaseAdminRoute(c, RELEASE_ADMIN_BREAK_GLASS_ROLES, deps.currentAdminAuthorized);
+    if (authorized instanceof Response) return authorized;
 
     const body = await parseJsonBody(c);
     if (body instanceof Response) return body;
@@ -1401,8 +1390,8 @@ export function registerReleasePolicyControlRoutes(app: Hono, deps: ReleasePolic
   });
 
   app.post('/api/v1/admin/release-policy/resolve', async (c) => {
-    const unauthorized = deps.currentAdminAuthorized(c);
-    if (unauthorized) return unauthorized;
+    const authorized = authorizeReleaseAdminRoute(c, RELEASE_ADMIN_MUTATION_ROLES, deps.currentAdminAuthorized);
+    if (authorized instanceof Response) return authorized;
 
     const body = await parseJsonBody(c);
     if (body instanceof Response) return body;
@@ -1417,8 +1406,8 @@ export function registerReleasePolicyControlRoutes(app: Hono, deps: ReleasePolic
   });
 
   app.post('/api/v1/admin/release-policy/simulations', async (c) => {
-    const unauthorized = deps.currentAdminAuthorized(c);
-    if (unauthorized) return unauthorized;
+    const authorized = authorizeReleaseAdminRoute(c, RELEASE_ADMIN_MUTATION_ROLES, deps.currentAdminAuthorized);
+    if (authorized instanceof Response) return authorized;
 
     const body = await parseJsonBody(c);
     if (body instanceof Response) return body;
@@ -1457,8 +1446,8 @@ export function registerReleasePolicyControlRoutes(app: Hono, deps: ReleasePolic
   });
 
   app.get('/api/v1/admin/release-policy/audit', async (c) => {
-    const unauthorized = deps.currentAdminAuthorized(c);
-    if (unauthorized) return unauthorized;
+    const authorized = authorizeReleaseAdminRoute(c, RELEASE_ADMIN_READ_ROLES, deps.currentAdminAuthorized);
+    if (authorized instanceof Response) return authorized;
 
     const entries = filterAuditEntries(await auditLog.entries(), c);
     if (entries instanceof Response) return entries;
@@ -1473,8 +1462,8 @@ export function registerReleasePolicyControlRoutes(app: Hono, deps: ReleasePolic
   });
 
   app.get('/api/v1/admin/release-policy/audit/verify', async (c) => {
-    const unauthorized = deps.currentAdminAuthorized(c);
-    if (unauthorized) return unauthorized;
+    const authorized = authorizeReleaseAdminRoute(c, RELEASE_ADMIN_READ_ROLES, deps.currentAdminAuthorized);
+    if (authorized instanceof Response) return authorized;
 
     noStore(c);
     return c.json({

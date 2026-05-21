@@ -254,6 +254,7 @@ function testImplementationEvidenceMatchesMatrix(): void {
   const tenantIsolation = readProjectFile('src', 'service', 'tenant-isolation.ts');
   const accountRoutes = readProjectFile('src', 'service', 'http', 'routes', 'account-routes.ts');
   const adminRoutes = readProjectFile('src', 'service', 'http', 'routes', 'admin-routes.ts');
+  const releaseAdminAuthorization = readProjectFile('src', 'service', 'http', 'release-admin-authorization.ts');
   const releasePolicyRoutes = readProjectFile('src', 'service', 'http', 'routes', 'release-policy-control-routes.ts');
   const releaseReviewRoutes = readProjectFile('src', 'service', 'http', 'routes', 'release-review-routes.ts');
   const stripeWebhookRoutes = readProjectFile('src', 'service', 'http', 'routes', 'stripe-webhook-routes.ts');
@@ -265,6 +266,9 @@ function testImplementationEvidenceMatchesMatrix(): void {
   ok(tenantIsolation.includes('tenantMiddleware'), 'Hosted auth evidence: tenant middleware exists');
   ok(accountRoutes.includes("c.req.header('Idempotency-Key')"), 'Hosted auth evidence: checkout requires Idempotency-Key');
   ok(adminRoutes.includes('beginAdminMutation'), 'Hosted auth evidence: admin route has mutation idempotency boundary');
+  ok(releaseAdminAuthorization.includes('authorizeReleaseAdminRoute'), 'Hosted auth evidence: release routes have credential-role helper');
+  ok(releasePolicyRoutes.includes('RELEASE_ADMIN_BREAK_GLASS_ROLES'), 'Hosted auth evidence: release policy break-glass routes are role-scoped');
+  ok(releaseReviewRoutes.includes('RELEASE_ADMIN_BREAK_GLASS_ROLES'), 'Hosted auth evidence: release review override is role-scoped');
   ok(releasePolicyRoutes.includes('adminMutationRequest'), 'Hosted auth evidence: release policy routes use admin mutation bridge');
   ok(releaseReviewRoutes.includes('adminMutationRequest'), 'Hosted auth evidence: release review routes use admin mutation bridge');
   ok(stripeWebhookRoutes.includes('stripeWebhookService.begin'), 'Hosted auth evidence: Stripe webhook begins with service verifier');

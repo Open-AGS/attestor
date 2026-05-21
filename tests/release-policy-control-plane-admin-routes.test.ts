@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { Hono, type Context } from 'hono';
+import { Hono } from 'hono';
 import { generateKeyPair } from '../src/signing/keys.js';
 import {
   createPolicyBundleEntry,
@@ -26,6 +26,8 @@ import {
 import { createPolicyActivationTarget } from '../src/release-policy-control-plane/types.js';
 import { registerReleasePolicyControlRoutes } from '../src/service/http/routes/release-policy-control-routes.js';
 import { policy } from '../src/release-layer/index.js';
+import { currentAdminAuthorized } from '../src/service/request-context.js';
+import { resetReleaseAdminRouteAuthLimiterForTests } from '../src/service/http/release-admin-authorization.js';
 
 type TestAppFixture = {
   app: Hono;
@@ -35,9 +37,9 @@ type TestAppFixture = {
   adminAuditRecords: Array<Record<string, unknown>>;
 };
 
-function adminHeaders(extra?: Record<string, string>): Record<string, string> {
+function adminHeaders(extra?: Record<string, string>, token = 'admin-secret'): Record<string, string> {
   return {
-    Authorization: 'Bearer admin-secret',
+    Authorization: `Bearer ${token}`,
     'content-type': 'application/json',
     ...extra,
   };
@@ -159,6 +161,7 @@ function sampleResolverInput() {
 }
 
 function createFixture(options?: { idempotency?: boolean }): TestAppFixture {
+  resetReleaseAdminRouteAuthLimiterForTests();
   const app = new Hono();
   const store = createInMemoryPolicyControlPlaneStore();
   const approvalStore = createInMemoryPolicyActivationApprovalStore();
@@ -172,12 +175,7 @@ function createFixture(options?: { idempotency?: boolean }): TestAppFixture {
   }>();
 
   registerReleasePolicyControlRoutes(app, {
-    currentAdminAuthorized(c: Context): Response | null {
-      const token = (c.req.header('authorization') ?? '').replace(/^Bearer\s+/i, '').trim();
-      return token === 'admin-secret'
-        ? null
-        : c.json({ error: 'Valid admin API key required.' }, 401);
-    },
+    currentAdminAuthorized,
     policyControlPlaneStore: store,
     policyActivationApprovalStore: approvalStore,
     policyMutationAuditLog: auditLog,
@@ -237,10 +235,11 @@ async function requestJson(
     headers: options?.headers ?? adminHeaders(),
     body: options?.body === undefined ? undefined : JSON.stringify(options.body),
   });
+  const body = await response.json();
   return {
     status: response.status,
     headers: response.headers,
-    body: await response.json(),
+    body,
   };
 }
 
@@ -330,7 +329,45 @@ async function testAdminAuthIsRequired(): Promise<void> {
   });
 
   assert.equal(response.status, 401);
-  assert.equal(response.body.error, 'Valid admin API key required.');
+  assert.equal(response.body.error, 'Valid admin API key required in Authorization header.');
+}
+
+async function testRoleScopedAdminKeysCannotEscalateThroughActorHeader(): Promise<void> {
+  const fixture = createFixture();
+
+  const readCanList = await requestJson(fixture.app, '/api/v1/admin/release-policy/packs', {
+    headers: adminHeaders(undefined, 'admin-read-secret'),
+  });
+  const readCannotMutate = await requestJson(fixture.app, '/api/v1/admin/release-policy/packs', {
+    method: 'POST',
+    headers: adminHeaders({
+      'x-attestor-admin-actor-role': 'admin-release-admin',
+    }, 'admin-read-secret'),
+  });
+  const releaseAdminCannotBreakGlass = await requestJson(
+    fixture.app,
+    '/api/v1/admin/release-policy/emergency/freeze',
+    {
+      method: 'POST',
+      headers: adminHeaders({
+        'x-attestor-admin-actor-id': 'release_admin_attempt',
+        'x-attestor-admin-actor-role': 'policy-break-glass',
+        'x-attestor-break-glass': 'true',
+      }, 'admin-release-secret'),
+    },
+  );
+
+  assert.equal(readCanList.status, 200);
+  assert.equal(readCannotMutate.status, 403);
+  assert.equal(
+    readCannotMutate.body.error,
+    'Admin actor role does not match the role-scoped admin API key.',
+  );
+  assert.equal(releaseAdminCannotBreakGlass.status, 403);
+  assert.equal(
+    releaseAdminCannotBreakGlass.body.error,
+    "Admin actor role 'admin-release-admin' is not allowed for this route.",
+  );
 }
 
 async function testPackAndBundleSurfaces(): Promise<void> {
@@ -488,8 +525,8 @@ async function testEmergencyFreezeAndRollbackRequireBreakGlassAndFailClosed(): P
     method: 'POST',
     headers: adminHeaders({
       'x-attestor-admin-actor-id': 'ordinary_policy_admin',
-      'x-attestor-admin-actor-role': 'policy-admin',
-    }),
+      'x-attestor-admin-actor-role': 'policy-break-glass',
+    }, 'admin-release-secret'),
     body: {
       activationId: 'freeze_blocked',
       target: sampleTarget(),
@@ -504,7 +541,7 @@ async function testEmergencyFreezeAndRollbackRequireBreakGlassAndFailClosed(): P
       'x-attestor-admin-actor-id': 'incident_commander',
       'x-attestor-admin-actor-role': 'policy-break-glass',
       'x-attestor-break-glass': 'true',
-    }),
+    }, 'admin-break-glass-secret'),
     body: {
       activationId: 'freeze_prod_current',
       target: sampleTarget(),
@@ -525,7 +562,7 @@ async function testEmergencyFreezeAndRollbackRequireBreakGlassAndFailClosed(): P
       'x-attestor-admin-actor-id': 'incident_commander',
       'x-attestor-admin-actor-role': 'policy-break-glass',
       'x-attestor-break-glass': 'true',
-    }),
+    }, 'admin-break-glass-secret'),
     body: {
       activationId: 'activation_prod_emergency_rollback',
       rollbackTargetActivationId: 'activation_prod_current',
@@ -649,17 +686,37 @@ async function testIdempotentMutationReplayDoesNotAppendAuditTwice(): Promise<vo
 }
 
 async function run(): Promise<void> {
-  await testAdminAuthIsRequired();
-  await testPackAndBundleSurfaces();
-  await testBundleDetailSupportsCacheHeadersAndConditionalRevalidation();
-  await testActivationRequiresApprovalForR4();
-  await testApprovalRoutesEnforceDualReview();
-  await testActivationAndRollbackSurfaces();
-  await testEmergencyFreezeAndRollbackRequireBreakGlassAndFailClosed();
-  await testResolveAndSimulationSurfaces();
-  await testAuditSurfaceFiltersAndSnapshotDisclosure();
-  await testIdempotentMutationReplayDoesNotAppendAuditTwice();
-  console.log('Release policy control-plane admin-route tests: 10 passed, 0 failed');
+  const originalAdminApiKey = process.env.ATTESTOR_ADMIN_API_KEY;
+  const originalAdminReadApiKey = process.env.ATTESTOR_ADMIN_READ_API_KEY;
+  const originalAdminReleaseApiKey = process.env.ATTESTOR_ADMIN_RELEASE_API_KEY;
+  const originalAdminBreakGlassApiKey = process.env.ATTESTOR_ADMIN_BREAK_GLASS_API_KEY;
+  const originalAdminRateLimit = process.env.ATTESTOR_ADMIN_AUTH_RATE_LIMIT_PER_MINUTE;
+  process.env.ATTESTOR_ADMIN_API_KEY = 'admin-secret';
+  process.env.ATTESTOR_ADMIN_READ_API_KEY = 'admin-read-secret';
+  process.env.ATTESTOR_ADMIN_RELEASE_API_KEY = 'admin-release-secret';
+  process.env.ATTESTOR_ADMIN_BREAK_GLASS_API_KEY = 'admin-break-glass-secret';
+  process.env.ATTESTOR_ADMIN_AUTH_RATE_LIMIT_PER_MINUTE = '10000';
+
+  try {
+    await testAdminAuthIsRequired();
+    await testRoleScopedAdminKeysCannotEscalateThroughActorHeader();
+    await testPackAndBundleSurfaces();
+    await testBundleDetailSupportsCacheHeadersAndConditionalRevalidation();
+    await testActivationRequiresApprovalForR4();
+    await testApprovalRoutesEnforceDualReview();
+    await testActivationAndRollbackSurfaces();
+    await testEmergencyFreezeAndRollbackRequireBreakGlassAndFailClosed();
+    await testResolveAndSimulationSurfaces();
+    await testAuditSurfaceFiltersAndSnapshotDisclosure();
+    await testIdempotentMutationReplayDoesNotAppendAuditTwice();
+    console.log('Release policy control-plane admin-route tests: 11 passed, 0 failed');
+  } finally {
+    process.env.ATTESTOR_ADMIN_API_KEY = originalAdminApiKey;
+    process.env.ATTESTOR_ADMIN_READ_API_KEY = originalAdminReadApiKey;
+    process.env.ATTESTOR_ADMIN_RELEASE_API_KEY = originalAdminReleaseApiKey;
+    process.env.ATTESTOR_ADMIN_BREAK_GLASS_API_KEY = originalAdminBreakGlassApiKey;
+    process.env.ATTESTOR_ADMIN_AUTH_RATE_LIMIT_PER_MINUTE = originalAdminRateLimit;
+  }
 }
 
 await run();

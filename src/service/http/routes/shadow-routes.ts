@@ -1,4 +1,5 @@
 import type { Context, Hono } from 'hono';
+import type { AdminAuditAction } from '../../admin-audit-log.js';
 import {
   createConsequenceAdmissionProblem,
   createActionRiskInventory,
@@ -65,6 +66,15 @@ import type { TenantContext } from '../../tenant-isolation.js';
 
 type ShadowProblemStatus = 400 | 404 | 409 | 503;
 
+export interface ShadowMutationAuditInput {
+  readonly routeId: string;
+  readonly action: AdminAuditAction;
+  readonly tenant: TenantContext;
+  readonly requestPayload: unknown;
+  readonly statusCode: number;
+  readonly metadata?: Record<string, unknown>;
+}
+
 type DownstreamIntegrationProofRouteBody = {
   readonly enforcementPointId: string;
   readonly boundaryKind: ConsequenceAdmissionDownstreamBoundaryKind;
@@ -81,6 +91,7 @@ type DownstreamIntegrationProofRouteBody = {
 export interface ShadowRouteDeps {
   currentTenant(context: Context): TenantContext;
   listShadowEvents(input: { readonly tenant: TenantContext }): readonly ShadowAdmissionEvent[];
+  recordShadowMutationAudit?(input: ShadowMutationAuditInput): Promise<void>;
   listShadowSimulations?(
     input: { readonly tenant: TenantContext },
   ): readonly ShadowPolicySimulationReport[];
@@ -270,6 +281,13 @@ function problem(c: Context, input: {
     ...input,
     instance: c.req.path,
   }), input.status);
+}
+
+async function recordShadowMutationAudit(
+  deps: ShadowRouteDeps,
+  input: ShadowMutationAuditInput,
+): Promise<void> {
+  await deps.recordShadowMutationAudit?.(input);
 }
 
 function simulationsForAuditEvidence(input: {
@@ -1229,6 +1247,22 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
         persisted.record,
         'shadow simulation',
       );
+      await recordShadowMutationAudit(deps, {
+        routeId: 'shadow.simulations.create',
+        action: 'shadow.simulation.recorded',
+        tenant,
+        requestPayload: {
+          proposedMode: body.proposedMode,
+          minimumPromotionEvents: body.minimumPromotionEvents,
+        },
+        statusCode: 200,
+        metadata: {
+          persistenceKind: persisted.kind,
+          reportId: persistedRecord.reportId,
+          reportDigest: persistedRecord.reportDigest,
+          eventCount: persistedRecord.eventCount,
+        },
+      });
       return c.json({
         tenant: tenantSummary(tenant),
         storageMode: 'file-backed-evaluation',
@@ -1640,7 +1674,7 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
     });
   });
 
-  app.post('/api/v1/shadow/policy-candidates/materialize', (c) => {
+  app.post('/api/v1/shadow/policy-candidates/materialize', async (c) => {
     const result = safeShadowSummary(c, deps);
     if (result instanceof Response) return result;
     if (!deps.materializeShadowPolicyCandidates) {
@@ -1667,6 +1701,23 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
         persisted.records,
         'shadow policy candidate',
       );
+      await recordShadowMutationAudit(deps, {
+        routeId: 'shadow.policy_candidates.materialize',
+        action: 'shadow.policy_candidate.materialized',
+        tenant: result.tenant,
+        requestPayload: {
+          source: 'latestSimulation',
+          candidateCount: bundle.candidateCount,
+        },
+        statusCode: 200,
+        metadata: {
+          candidateCount: bundle.candidateCount,
+          createdCount: persisted.createdCount,
+          updatedCount: persisted.updatedCount,
+          unchangedCount: persisted.unchangedCount,
+          candidateIds: records.map((record) => record.candidateId),
+        },
+      });
       return c.json({
         tenant: tenantSummary(result.tenant),
         version: bundle.version,
@@ -2214,6 +2265,26 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
         observedVerificationChecks: body.observedVerificationChecks,
         generatedAt: deps.now?.() ?? null,
       });
+      await recordShadowMutationAudit(deps, {
+        routeId: 'shadow.downstream_integration_proof.create',
+        action: 'shadow.downstream_integration_proof.generated',
+        tenant,
+        requestPayload: {
+          sourceStatus,
+          enforcementPointId: body.enforcementPointId,
+          boundaryKind: body.boundaryKind,
+          verifierRef: body.verifierRef,
+          evidenceRefCount: body.evidenceRefs.length,
+          observedVerificationChecks: body.observedVerificationChecks,
+        },
+        statusCode: 200,
+        metadata: {
+          integrationProofDigest: proof.digest,
+          integrationProofReady: proof.integrationProofReady,
+          activationReady: proof.activationReady,
+          observedCheckCount: proof.observedCheckCount,
+        },
+      });
       return c.json({
         tenant: tenantSummary(tenant),
         storageMode: 'file-backed-evaluation',
@@ -2328,6 +2399,25 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
         binding,
         integrationProof,
         generatedAt: deps.now?.() ?? null,
+      });
+      await recordShadowMutationAudit(deps, {
+        routeId: 'shadow.activation_readiness.create',
+        action: 'shadow.activation_readiness.generated',
+        tenant,
+        requestPayload: {
+          sourceStatus,
+          enforcementPointId: body.enforcementPointId,
+          boundaryKind: body.boundaryKind,
+          verifierRef: body.verifierRef,
+          evidenceRefCount: body.evidenceRefs.length,
+          observedVerificationChecks: body.observedVerificationChecks,
+        },
+        statusCode: 200,
+        metadata: {
+          readinessDigest: activationReadiness.digest,
+          activationReady: activationReadiness.activationReady,
+          remainingBlockerCount: activationReadiness.remainingActivationBlockers.length,
+        },
       });
       return c.json({
         tenant: tenantSummary(tenant),
@@ -2461,6 +2551,28 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
         expiresAt: body.expiresAt,
         generatedAt: deps.now?.() ?? null,
       });
+      await recordShadowMutationAudit(deps, {
+        routeId: 'shadow.customer_activation_handoff.create',
+        action: 'shadow.customer_activation_handoff.generated',
+        tenant,
+        requestPayload: {
+          sourceStatus,
+          enforcementPointId: body.integration.enforcementPointId,
+          boundaryKind: body.integration.boundaryKind,
+          verifierRef: body.integration.verifierRef,
+          evidenceRefCount: body.integration.evidenceRefs.length,
+          observedVerificationChecks: body.integration.observedVerificationChecks,
+          rolloutStrategy: body.rolloutStrategy,
+          hasSecondaryApprover: body.secondaryApproverRef !== null,
+        },
+        statusCode: 200,
+        metadata: {
+          handoffId: handoff.handoffId,
+          handoffDigest: handoff.digest,
+          sourceActivationReadinessDigest: handoff.sourceActivationReadinessDigest,
+          handoffReady: handoff.handoffReady,
+        },
+      });
       return c.json({
         tenant: tenantSummary(tenant),
         storageMode: 'file-backed-evaluation',
@@ -2531,6 +2643,28 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
       const persistedRecord = persisted
         ? assertTenantBoundRecord(tenant, persisted.record, 'shadow customer activation receipt')
         : null;
+      await recordShadowMutationAudit(deps, {
+        routeId: 'shadow.customer_activation_receipt.create',
+        action: 'shadow.customer_activation_receipt.recorded',
+        tenant,
+        requestPayload: {
+          sourceHandoffId: receipt.sourceHandoffId,
+          sourceHandoffDigest: receipt.sourceHandoffDigest,
+          activationStatus: body.activationStatus,
+          rollbackStatus: body.rollbackStatus,
+          killSwitchStatus: body.killSwitchStatus,
+          monitoringStatus: body.monitoringStatus,
+          persisted: persisted !== null,
+        },
+        statusCode: 200,
+        metadata: {
+          storageMode: persisted ? 'file-backed-evaluation' : 'stateless-receipt',
+          receiptId: receipt.receiptId,
+          receiptDigest: receipt.digest,
+          persistenceKind: persisted?.kind ?? null,
+          persistedReceiptId: persistedRecord?.receiptId ?? null,
+        },
+      });
       return c.json({
         tenant: tenantSummary(tenant),
         storageMode: persisted ? 'file-backed-evaluation' : 'stateless-receipt',
@@ -2723,6 +2857,24 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
         }),
         'shadow policy candidate',
       );
+      await recordShadowMutationAudit(deps, {
+        routeId: 'shadow.policy_candidates.status.update',
+        action: 'shadow.policy_candidate.status_transitioned',
+        tenant,
+        requestPayload: {
+          candidateId: c.req.param('candidateId'),
+          status: body.status,
+          actorRef: body.actorRef,
+          reasonLength: body.reason.length,
+        },
+        statusCode: 200,
+        metadata: {
+          candidateId: record.candidateId,
+          candidateDigest: record.candidateDigest,
+          status: record.status,
+          statusHistoryLength: record.statusHistory.length,
+        },
+      });
       return c.json({
         tenant: tenantSummary(tenant),
         approvalRequired: true,

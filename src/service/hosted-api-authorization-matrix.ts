@@ -405,7 +405,10 @@ export const HOSTED_API_AUTHORIZATION_RULES = [
     privacyBoundary: 'shadow write paths persist tenant-scoped digests, receipts, or candidates, not raw private payloads',
     evidence: [
       'src/service/http/routes/shadow-routes.ts#assertTenantBoundRecord',
+      'src/service/http/routes/shadow-routes.ts#recordShadowMutationAudit',
+      'src/service/bootstrap/routes.ts#createShadowRouteDeps',
       'tests/shadow-route-tenant-boundary.test.ts',
+      'tests/service-shadow-routes-http.test.ts',
     ],
     standards: ['OWASP API1:2023', 'OWASP API3:2023', 'OWASP LLM02:2025'],
   },

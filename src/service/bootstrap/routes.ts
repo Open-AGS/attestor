@@ -12,10 +12,12 @@ import {
   projectHostedBillingEntitlement,
 } from '../billing-entitlement-store.js';
 import {
+  appendAdminAuditRecordState,
   findHostedAccountByTenantIdState,
   findHostedBillingEntitlementByAccountIdState,
   findTenantRecordByTenantIdState,
 } from '../control-plane-store.js';
+import { hashJsonValue } from '../json-stable.js';
 import { registerAccountRoutes } from '../http/routes/account-routes.js';
 import { registerAdminRoutes } from '../http/routes/admin-routes.js';
 import { registerCoreRoutes } from '../http/routes/core-routes.js';
@@ -202,6 +204,30 @@ export function createShadowRouteDeps<Packet>(
   const shadowActivationReceiptStore = createFileBackedShadowCustomerActivationReceiptStore();
   return {
     currentTenant: runtime.services.httpRoutes.pipeline.currentTenant,
+    async recordShadowMutationAudit(auditInput) {
+      await appendAdminAuditRecordState({
+        actorType: 'tenant_context',
+        actorLabel: `tenant:${auditInput.tenant.tenantId}`,
+        actorRole: auditInput.tenant.source,
+        action: auditInput.action,
+        routeId: auditInput.routeId,
+        accountId: null,
+        tenantId: auditInput.tenant.tenantId,
+        tenantKeyId: null,
+        planId: auditInput.tenant.planId,
+        monthlyRunQuota: auditInput.tenant.monthlyRunQuota,
+        idempotencyKey: null,
+        requestHash: hashJsonValue({
+          routeId: auditInput.routeId,
+          payload: auditInput.requestPayload,
+        }),
+        metadata: {
+          tenantSource: auditInput.tenant.source,
+          statusCode: auditInput.statusCode,
+          ...(auditInput.metadata ?? {}),
+        },
+      });
+    },
     listShadowEvents: ({ tenant }) =>
       shadowEventStore.list({ tenantId: tenant.tenantId }).events,
     listShadowSimulations: ({ tenant }) =>

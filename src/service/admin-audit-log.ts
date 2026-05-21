@@ -55,6 +55,13 @@ export type AdminAuditAction =
   | 'release_review.approved'
   | 'release_review.rejected'
   | 'release_token.revoked'
+  | 'shadow.activation_readiness.generated'
+  | 'shadow.customer_activation_handoff.generated'
+  | 'shadow.customer_activation_receipt.recorded'
+  | 'shadow.downstream_integration_proof.generated'
+  | 'shadow.policy_candidate.materialized'
+  | 'shadow.policy_candidate.status_transitioned'
+  | 'shadow.simulation.recorded'
   | 'tenant_key.issued'
   | 'tenant_key.rotated'
   | 'tenant_key.deactivated'
@@ -65,7 +72,12 @@ export type AdminAuditAction =
 export interface AdminAuditRecord {
   id: string;
   occurredAt: string;
-  actorType: 'account_session' | 'admin_api_key' | 'admin_operator' | 'stripe_webhook';
+  actorType:
+    | 'account_session'
+    | 'admin_api_key'
+    | 'admin_operator'
+    | 'stripe_webhook'
+    | 'tenant_context';
   actorLabel: string;
   actorRole?: string | null;
   action: AdminAuditAction;

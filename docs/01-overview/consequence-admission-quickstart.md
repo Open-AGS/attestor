@@ -138,6 +138,14 @@ When an action is held for missing policy, evidence, amount, recipient, data sco
 
 Correction reason codes are cataloged. The catalog marks which codes are model-retryable and which must route to customer review or operator control. Model-retryable examples include `policy-ref-missing`, `evidence-ref-missing`, `amount-scope-missing`, `recipient-scope-missing`, `data-scope-missing`, `authority-mode-missing`, and `narrow-required`. Operator or customer-control examples include `adapter-readiness-missing`, `custom-domain-review-required`, `policy-blocked`, `feature-blocked`, and `feature-unsafe`.
 
+`observedFeatures` are upstream/operator-derived evidence only. They can
+support checks such as `adapter-readiness`, `feature-blocked`, or
+`feature-unsafe` when the integration can stand behind the observation, but
+they cannot grant authority, reduce evidence requirements, bypass review, or
+activate downstream execution. Stronger hosted admission claims require an
+operator-attested feature-origin marker or a route-side restriction that proves
+the feature map did not come from an untrusted model response.
+
 Example held response excerpt:
 
 ```json

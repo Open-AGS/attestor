@@ -185,7 +185,19 @@ This PR adds:
 - a consequence-admission boundary row in `control-map.md`;
 - `LP-CONSEQUENCE-RETRY-ATTEMPT-LEDGER-SHARED-STORE` in `live-proof-register.md`.
 
-No source code or tests are changed.
+The original read-only sweep did not change source code or tests.
+
+## 11.1 Remediation Follow-Up
+
+OPS-167 and OPS-168 are remediated repo-side after the original read-only sweep.
+`docs/01-overview/consequence-admission-quickstart.md` and
+`docs/01-overview/hosted-action-authorization-api.md` now document
+`observedFeatures` as upstream/operator-derived evidence only, not authority.
+`LP-CONSEQUENCE-RETRY-ATTEMPT-LEDGER-SHARED-STORE` is repo-gated by
+`ATTESTOR_CONSEQUENCE_RETRY_ATTEMPT_LEDGER_PROOF`, and
+`tests/consequence-admission-proof-discipline.test.ts` locks the no-overclaim
+boundary. Multi-instance retry-budget enforcement, RLS-forced deployment
+posture, and Customer PEP no-bypass remain live-proof-only.
 
 ## 12. Verdict
 

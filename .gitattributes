@@ -1,0 +1,2 @@
+vendor/schematron/**/*.sch text eol=lf
+vendor/schematron/**/MANIFEST.sha256 text eol=lf

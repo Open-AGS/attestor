@@ -55,7 +55,7 @@ Treat any of these as a hard stop condition:
 
 - stop if `ATTESTOR_RUNTIME_PROFILE` is missing or is not `production-shared`
 - stop if `/api/v1/health` or `/api/v1/ready` is not reachable for the target
-- stop if `/api/v1/ready` returns non-2xx or `checks.releaseRuntime=false`
+- stop if `/api/v1/ready` returns non-2xx or runtime/rehearsal evidence records `checks.releaseRuntime=false`
 - stop if `releaseRuntime.requestPath.contract` is not `async-shared-authority-stores`
 - stop if `releaseRuntime.requestPath.usesSharedAuthorityStores=false`
 - stop if `sharedAuthorityRuntime.ready=false`

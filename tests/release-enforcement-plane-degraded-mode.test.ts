@@ -24,7 +24,10 @@ import {
   resetFileBackedDegradedModeGrantStoreForTests,
   type DegradedModeGrant,
 } from '../src/release-enforcement-plane/degraded-mode.js';
-import { registerAdminRoutes } from '../src/service/http/routes/admin-routes.js';
+import {
+  registerAdminRoutes,
+  resetAdminRouteAuthLimiterForTests,
+} from '../src/service/http/routes/admin-routes.js';
 
 let passed = 0;
 
@@ -46,9 +49,42 @@ function deepEqual<T>(actual: T, expected: T, message: string): void {
 const CHECKED_AT = '2026-04-18T10:00:00.000Z';
 const EXPIRES_AT = '2026-04-18T10:15:00.000Z';
 const ADMIN_HEADERS = {
-  authorization: 'Bearer admin-secret',
+  authorization: 'Bearer admin-release-secret',
   'content-type': 'application/json',
+  'x-attestor-admin-actor-id': 'release_degraded_mode_admin',
+  'x-attestor-admin-actor-role': 'admin-release-admin',
 };
+
+function setEnv(overrides: Record<string, string | undefined>): () => void {
+  const previous = new Map<string, string | undefined>();
+  for (const key of Object.keys(overrides)) {
+    previous.set(key, process.env[key]);
+    const value = overrides[key];
+    if (value === undefined) {
+      delete process.env[key];
+    } else {
+      process.env[key] = value;
+    }
+  }
+  return () => {
+    for (const [key, value] of previous.entries()) {
+      if (value === undefined) {
+        delete process.env[key];
+      } else {
+        process.env[key] = value;
+      }
+    }
+  };
+}
+
+function configuredAdminKeys(): Set<string> {
+  return new Set([
+    process.env.ATTESTOR_ADMIN_API_KEY?.trim(),
+    process.env.ATTESTOR_ADMIN_RELEASE_API_KEY?.trim(),
+    process.env.ATTESTOR_ADMIN_BREAK_GLASS_API_KEY?.trim(),
+    process.env.ATTESTOR_ADMIN_READ_API_KEY?.trim(),
+  ].filter((value): value is string => Boolean(value)));
+}
 
 function adminActor(id = 'user_release_admin'): ReleaseActorReference {
   return {
@@ -436,7 +472,7 @@ function createAdminFixture(options?: { authorized?: boolean }) {
     releaseDegradedModeGrantStore: store,
     currentAdminAuthorized(c: Context): Response | null {
       const token = (c.req.header('authorization') ?? '').replace(/^Bearer\s+/i, '').trim();
-      if (options?.authorized === false || token !== 'admin-secret') {
+      if (options?.authorized === false || !configuredAdminKeys().has(token)) {
         return c.json({ error: 'Valid admin API key required.' }, 401);
       }
       return null;
@@ -534,20 +570,33 @@ async function testAdminRoutes(): Promise<void> {
 }
 
 async function main(): Promise<void> {
-  testSpecConstants();
-  testGrantCreation();
-  testGrantValidation();
-  testScopeMatching();
-  testCacheOnlyDecision();
-  testCacheOnlyDeniedForFreshOnlineProfiles();
-  testCacheOnlyHardFailureDenial();
-  testBreakGlassDecision();
-  testDualBreakGlassRequiresTwoApprovers();
-  testFailClosedStates();
-  testGrantStoreAuditAndUseBudget();
-  testFileBackedGrantStorePersists();
-  await testAdminRoutes();
-  console.log(`Release enforcement-plane degraded mode tests: ${passed} passed, 0 failed`);
+  resetAdminRouteAuthLimiterForTests();
+  const restore = setEnv({
+    ATTESTOR_ADMIN_API_KEY: undefined,
+    ATTESTOR_ADMIN_RELEASE_API_KEY: 'admin-release-secret',
+    ATTESTOR_ADMIN_BREAK_GLASS_API_KEY: 'admin-break-glass-secret',
+    ATTESTOR_ADMIN_READ_API_KEY: 'admin-read-secret',
+    ATTESTOR_ADMIN_AUTH_RATE_LIMIT_PER_MINUTE: '10000',
+  });
+  try {
+    testSpecConstants();
+    testGrantCreation();
+    testGrantValidation();
+    testScopeMatching();
+    testCacheOnlyDecision();
+    testCacheOnlyDeniedForFreshOnlineProfiles();
+    testCacheOnlyHardFailureDenial();
+    testBreakGlassDecision();
+    testDualBreakGlassRequiresTwoApprovers();
+    testFailClosedStates();
+    testGrantStoreAuditAndUseBudget();
+    testFileBackedGrantStorePersists();
+    await testAdminRoutes();
+    console.log(`Release enforcement-plane degraded mode tests: ${passed} passed, 0 failed`);
+  } finally {
+    restore();
+    resetAdminRouteAuthLimiterForTests();
+  }
 }
 
 main().catch((error) => {

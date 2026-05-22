@@ -87,90 +87,48 @@ async function run(): Promise<void> {
 
     const health = await app.request('/api/v1/health');
     equal(health.status, 200, 'Production-shared preflight: health endpoint is available');
-    const healthBody = await health.json() as {
-      releaseRuntime: { durability: { ready: boolean } };
-      pki: { ready: boolean };
-      sharedAuthorityRuntime: { ready: boolean };
-      productionStoragePath: { state: string; readyForSelectedProfile: boolean };
-      consequenceSharedStoreProfile: { readyForSelectedProfile: boolean };
-    };
+    const healthBody = await health.json() as Record<string, unknown>;
     equal(
-      healthBody.releaseRuntime.durability.ready,
-      false,
-      'Production-shared preflight: health exposes release runtime not-ready state',
+      healthBody.status,
+      'healthy',
+      'Production-shared preflight: health reports process liveness only',
     );
     equal(
-      healthBody.pki.ready,
-      false,
-      'Production-shared preflight: health exposes shared PKI not-ready state',
+      healthBody.engine,
+      'attestor',
+      'Production-shared preflight: health keeps Attestor product identity',
     );
-    equal(
-      healthBody.sharedAuthorityRuntime.ready,
-      false,
-      'Production-shared preflight: health exposes shared authority not-ready state',
-    );
-    equal(
-      healthBody.productionStoragePath.readyForSelectedProfile,
-      false,
-      'Production-shared preflight: health exposes production storage path not-ready state',
-    );
-    equal(
-      healthBody.consequenceSharedStoreProfile.readyForSelectedProfile,
-      false,
-      'Production-shared preflight: health exposes consequence shared-store not-ready state',
+    ok(
+      !('releaseRuntime' in healthBody) &&
+        !('pki' in healthBody) &&
+        !('sharedAuthorityRuntime' in healthBody) &&
+        !('productionStoragePath' in healthBody) &&
+        !('consequenceSharedStoreProfile' in healthBody),
+      'Production-shared preflight: public health keeps internal diagnostics out of the response',
     );
 
     const ready = await app.request('/api/v1/ready');
     equal(ready.status, 503, 'Production-shared preflight: readiness fails closed');
-    const readyBody = await ready.json() as {
-      ready: boolean;
-      checks: Record<string, boolean>;
-      sharedAuthorityRuntime: { checks: Record<string, boolean> };
-      productionStoragePath: { blockers: readonly { code: string }[] };
-      consequenceSharedStoreProfile: { blockingComponentIds: readonly string[] };
-    };
+    const readyBody = await ready.json() as Record<string, unknown>;
     equal(readyBody.ready, false, 'Production-shared preflight: ready=false is explicit');
     equal(
-      readyBody.checks.pki,
-      false,
-      'Production-shared preflight: PKI readiness check is false without shared path attestation',
+      readyBody.status,
+      'not_ready',
+      'Production-shared preflight: readiness reports minimal not-ready status label',
     );
     equal(
-      readyBody.checks.releaseRuntime,
-      false,
-      'Production-shared preflight: release runtime readiness check is false',
-    );
-    equal(
-      readyBody.checks.sharedAuthorityRuntime,
-      false,
-      'Production-shared preflight: shared authority readiness check is false',
-    );
-    equal(
-      readyBody.checks.productionStoragePath,
-      false,
-      'Production-shared preflight: production storage path readiness check is false',
-    );
-    equal(
-      readyBody.checks.consequenceSharedStoreProfile,
-      false,
-      'Production-shared preflight: consequence shared-store readiness check is false',
-    );
-    equal(
-      readyBody.sharedAuthorityRuntime.checks.requestPathUsesSharedStores,
-      false,
-      'Production-shared preflight: shared authority readiness carries request-path truth',
+      readyBody.engine,
+      'attestor',
+      'Production-shared preflight: readiness keeps Attestor product identity',
     );
     ok(
-      readyBody.productionStoragePath.blockers.some(
-        (blocker) => blocker.code === 'evaluation-store-not-shared',
-      ),
-      'Production-shared preflight: production storage path names evaluation store blockers',
-    );
-    ok(
-      readyBody.consequenceSharedStoreProfile.blockingComponentIds.includes(
-        'presentation-replay-ledger',
-      ),
-      'Production-shared preflight: consequence shared-store profile names replay blockers',
+      !('checks' in readyBody) &&
+        !('releaseRuntime' in readyBody) &&
+        !('runtimeProfile' in readyBody) &&
+        !('sharedAuthorityRuntime' in readyBody) &&
+        !('productionStoragePath' in readyBody) &&
+        !('consequenceSharedStoreProfile' in readyBody),
+      'Production-shared preflight: public readiness keeps internal diagnostics out of the response',
     );
 
     const blocked = await app.request('/api/v1/domains');

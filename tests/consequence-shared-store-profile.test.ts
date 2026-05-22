@@ -398,8 +398,8 @@ function testDocsAndPackageWiring(): void {
     'Consequence shared-store profile: ready route checks the profile when wired',
   );
   ok(
-    coreRoutes.includes('consequenceSharedStoreProfile,'),
-    'Consequence shared-store profile: health and ready routes expose diagnostics',
+    !coreRoutes.includes('consequenceSharedStoreProfile,'),
+    'Consequence shared-store profile: public health and ready routes do not expose diagnostics',
   );
   ok(
     docs.includes('## Consequence Shared Store Profile'),

@@ -17,15 +17,15 @@ It is the current calibrated execution baseline.
 ## Baseline Status
 
 - Source of truth: `origin/master`
-- Baseline HEAD: `280275ed92192d4782a7600d48f903c536f744df`
+- Baseline HEAD: `2292828d0195e6bdb1113ebdce7a16d914fe89aa`
 - Package: `attestor@0.2.0-evaluation`
 - Date: 2026-05-22
 - Repository-side posture: credible
 - Production-side posture: not proven
 - Enterprise-side posture: not ready
 - Calibrated security score: about 6.8 / 10
-- Finding catalog estimate: about 143
-- Closed or effectively closed finding estimate: about 77
+- Finding catalog estimate: about 155 high-signal indexed rows
+- Closed, effectively closed, or intentionally bounded finding estimate: about 111
 - Evidence state: partial-repo, calibrated from audit reports plus spot repo validation
 - Evidence system: index layer active; see `docs/audit/README.md`
 

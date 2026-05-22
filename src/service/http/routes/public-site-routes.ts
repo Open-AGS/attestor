@@ -1,4 +1,5 @@
 import type { Context, Hono } from 'hono';
+import { secureHtmlResponseHeaders } from '../route-response-helpers.js';
 
 export interface PublicSiteRouteDeps<Packet = unknown> {
   committedFinancialPacket: Packet;
@@ -26,32 +27,45 @@ export function registerPublicSiteRoutes<Packet>(app: Hono, deps: PublicSiteRout
     committedEvidenceContentType,
   } = deps;
 
+  const htmlResponse = (c: Context, html: string) => c.body(html, 200, secureHtmlResponseHeaders());
+
+  const committedEvidenceHeaders = (contentType: string): Record<string, string> => {
+    if (contentType.toLowerCase().split(';')[0]?.trim() === 'text/html') {
+      return secureHtmlResponseHeaders();
+    }
+
+    return {
+      'content-type': contentType,
+      'cache-control': 'no-store',
+      'x-content-type-options': 'nosniff',
+      'referrer-policy': 'no-referrer',
+    };
+  };
+
   const serveCommittedEvidence = (relativePath: string, c: Context) => {
     const file = readCommittedEvidence(relativePath);
     if (!file) return c.json({ error: 'Proof asset not found' }, 404);
-    return c.body(file.content, 200, {
-      'content-type': committedEvidenceContentType(file.path),
-    });
+    return c.body(file.content, 200, committedEvidenceHeaders(committedEvidenceContentType(file.path)));
   };
 
-  app.get('/', (c) => c.body(renderFinancialReportingLandingPage(committedFinancialPacket), 200, {
-    'content-type': 'text/html; charset=utf-8',
-  }));
+  app.get('/', (c) => htmlResponse(c, renderFinancialReportingLandingPage(committedFinancialPacket)));
 
-  app.get('/financial-reporting-acceptance', (c) => c.body(renderFinancialReportingLandingPage(committedFinancialPacket), 200, {
-    'content-type': 'text/html; charset=utf-8',
-  }));
+  app.get('/financial-reporting-acceptance', (c) => htmlResponse(
+    c,
+    renderFinancialReportingLandingPage(committedFinancialPacket),
+  ));
 
-  app.get('/proof/financial-reporting-acceptance', (c) => c.body(renderFinancialReportingProofPage(committedFinancialPacket), 200, {
-    'content-type': 'text/html; charset=utf-8',
-  }));
+  app.get('/proof/financial-reporting-acceptance', (c) => htmlResponse(
+    c,
+    renderFinancialReportingProofPage(committedFinancialPacket),
+  ));
 
   app.get('/proof/financial-reporting-acceptance/packet.json', (c) => serveCommittedEvidence('packet.json', c));
   app.get('/proof/financial-reporting-acceptance/README.md', (c) => serveCommittedEvidence('README.md', c));
   app.get('/proof/financial-reporting-acceptance/index.html', (c) => serveCommittedEvidence('index.html', c));
   app.get('/proof/financial-reporting-acceptance/evidence/:asset', (c) => serveCommittedEvidence(`evidence/${c.req.param('asset')}`, c));
 
-  app.get('/billing/success', (c) => c.body(renderHostedReturnPage({
+  app.get('/billing/success', (c) => htmlResponse(c, renderHostedReturnPage({
     eyebrow: 'Billing',
     title: 'Checkout completed',
     message: 'Your checkout finished successfully. Attestor keeps the same account and updates the plan on that account as soon as Stripe webhook reconciliation completes.',
@@ -65,11 +79,9 @@ export function registerPublicSiteRoutes<Packet>(app: Hono, deps: PublicSiteRout
       { href: '/settings/billing', label: 'Open billing summary' },
       { href: '/api/v1/account', label: 'View account summary (JSON)' },
     ],
-  }), 200, {
-    'content-type': 'text/html; charset=utf-8',
-  }));
+  })));
 
-  app.get('/billing/cancel', (c) => c.body(renderHostedReturnPage({
+  app.get('/billing/cancel', (c) => htmlResponse(c, renderHostedReturnPage({
     eyebrow: 'Billing',
     title: 'Checkout canceled',
     message: 'No plan change was applied. Your existing account stays exactly as it was before checkout started.',
@@ -82,11 +94,9 @@ export function registerPublicSiteRoutes<Packet>(app: Hono, deps: PublicSiteRout
       { href: '/settings/billing', label: 'Return to billing summary' },
       { href: '/api/v1/account', label: 'View current account (JSON)' },
     ],
-  }), 200, {
-    'content-type': 'text/html; charset=utf-8',
-  }));
+  })));
 
-  app.get('/settings/billing', (c) => c.body(renderHostedReturnPage({
+  app.get('/settings/billing', (c) => htmlResponse(c, renderHostedReturnPage({
     eyebrow: 'Hosted account',
     title: 'Billing settings',
     message: 'This is the simple return page for billing. Use it after checkout or the Stripe billing portal to confirm what happens next.',
@@ -101,9 +111,10 @@ export function registerPublicSiteRoutes<Packet>(app: Hono, deps: PublicSiteRout
       { href: '/api/v1/account', label: 'View current plan and usage (JSON)' },
       { href: '/api/v1/account/billing/export', label: 'View invoices and charges (JSON/CSV)' },
     ],
-  }), 200, {
-    'content-type': 'text/html; charset=utf-8',
-  }));
+  })));
 
-  app.get('/app', (c) => c.redirect('/settings/billing', 302));
+  app.get('/app', (c) => {
+    c.header('cache-control', 'no-store');
+    return c.redirect('/settings/billing', 302);
+  });
 }

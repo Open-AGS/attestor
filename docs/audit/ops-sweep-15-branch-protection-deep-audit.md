@@ -50,7 +50,7 @@ Sweep 14 OPS-112 and OPS-113 remain open on `origin/master`.
 | `.github/CODEOWNERS` | full | Review-enforcement intent |
 | `.github/dependabot.yml` | full | Dependency-update governance |
 | `.github/pull_request_template.md` | targeted | PR contract content |
-| `.github/workflows/branch-governance.yml` | full | Runtime repository-setting check |
+| `.github/workflows/branch-governance.yml` | full | Runtime repository-setting check with dedicated `ATTESTOR_BRANCH_GOVERNANCE_TOKEN` admin-read secret |
 | `.github/workflows/pr-contract.yml` | full | PR contract and baseline enforcement |
 | `.github/workflows/release-provenance.yml` | full | SBOM + attestation pipeline |
 | `.github/workflows/full-verify.yml` | targeted | Scheduled/manual verification and external-live gating |
@@ -85,7 +85,7 @@ No critical Sweep 15 repository file was skipped.
 | OPS15-POS-05 | `pr-contract.yml` runs on PR open, edit, synchronize, and reopen. | PR-body claim changes are checked. |
 | OPS15-POS-06 | `validate-pr-contract.mjs` enforces required sections, non-empty fields, claim vocabulary, merge classification, and a single final decision. | No-overclaim discipline is mechanical. |
 | OPS15-POS-07 | Dependabot bypass is explicit and named, not hidden. | Automation exception is auditable. |
-| OPS15-POS-08 | `branch-governance.yml` verifies `delete_branch_on_merge` through the GitHub API. | At least one live repo setting is already runtime-checked. |
+| OPS15-POS-08 | `branch-governance.yml` verifies `delete_branch_on_merge` through the GitHub API when `ATTESTOR_BRANCH_GOVERNANCE_TOKEN` is configured with GitHub Administration: read permission. | At least one live repo setting is runtime-checkable without overclaiming that the default `GITHUB_TOKEN` can read admin settings. |
 | OPS15-POS-09 | `release-provenance.yml` builds CycloneDX SBOM output and uses GitHub artifact/SBOM attestation. | Release artifacts have provenance scaffolding. |
 | OPS15-POS-10 | `security-scan.yml` layers supply-chain baseline, high-severity npm audit, and dependency review. | Dependency risk has multiple gates. |
 | OPS15-POS-11 | `codeql.yml` runs `security-extended` queries on push, PR, schedule, and manual dispatch. | Static analysis is broader than default. |
@@ -115,7 +115,7 @@ No critical Sweep 15 repository file was skipped.
 | 2 | `.github/CODEOWNERS` | policy | trust-sensitive owner map | enforcement depends on branch protection | OPS-122, OPS-125 |
 | 3 | `.github/dependabot.yml` | policy | weekly dependency updates | n/a | OPS-126 |
 | 4 | `.github/pull_request_template.md` | template | PR contract input | validator enforces | none |
-| 5 | `.github/workflows/branch-governance.yml` | workflow | weekly + manual | `delete_branch_on_merge` | OPS-121, OPS-122, OPS-124 |
+| 5 | `.github/workflows/branch-governance.yml` | workflow | weekly + manual + master governance-file pushes | `delete_branch_on_merge`, `required_signatures`, `required_pull_request_reviews`, dedicated admin-read token presence | OPS-121, OPS-122, OPS-124 |
 | 6 | `.github/workflows/pr-contract.yml` | workflow | PR body changes | PR contract shape | none |
 | 7 | `.github/workflows/codeql.yml` | workflow | push, PR, schedule, manual | CodeQL upload permission | OPS-128 |
 | 8 | `.github/workflows/security-scan.yml` | workflow | push, PR, schedule, manual | supply-chain gates | none |

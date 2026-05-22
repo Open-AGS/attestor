@@ -33,8 +33,11 @@ includes(workflow, "'.github/**'", 'Branch workflow: watches GitHub governance f
 includes(workflow, "'SECURITY.md'", 'Branch workflow: watches SECURITY.md');
 includes(workflow, 'actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6', 'Branch workflow: checkout action is SHA-pinned');
 includes(workflow, 'node scripts/check-stale-branches.mjs --require-master-only', 'Branch workflow: stale branch checker runs in master-only mode');
+includes(workflow, 'ATTESTOR_BRANCH_GOVERNANCE_TOKEN', 'Branch workflow: live governance probes require a dedicated admin-read token secret');
+includes(workflow, 'GitHub Administration: read permission', 'Branch workflow: token permission boundary is explicit');
 includes(workflow, "delete_branch_on_merge", 'Branch workflow: repository auto-delete setting is checked');
 matches(workflow, /Verify stale branch policy\s+if: github\.event_name != 'pull_request'/u, 'Branch workflow: stale branch inventory enforcement is not run from pull_request branches');
+matches(workflow, /Verify branch-governance admin-read token\s+if: github\.event_name != 'pull_request'/u, 'Branch workflow: admin-read token check is not run from pull_request branches');
 matches(workflow, /Verify delete-branch-on-merge\s+if: github\.event_name != 'pull_request'/u, 'Branch workflow: repository setting probe is not run from pull_request tokens');
 includes(workflow, "github.event_name != 'pull_request'", 'Branch workflow: live branch protection probe is not run from pull_request tokens');
 includes(workflow, 'protection/required_signatures', 'Branch workflow: required signed commits setting is checked');

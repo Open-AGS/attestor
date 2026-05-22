@@ -34,10 +34,23 @@ jobs:
         if: github.event_name != 'pull_request'
         run: node scripts/check-stale-branches.mjs --require-master-only
 
+      - name: Verify branch-governance admin-read token
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ secrets.ATTESTOR_BRANCH_GOVERNANCE_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          if [ -z "${GH_TOKEN:-}" ]; then
+            echo "ATTESTOR_BRANCH_GOVERNANCE_TOKEN must be configured with GitHub Administration: read permission for repository-setting and branch-protection probes." >&2
+            exit 1
+          fi
+
+          gh api "repos/${GH_REPO}" --jq '.id' >/dev/null
+
       - name: Verify delete-branch-on-merge
         if: github.event_name != 'pull_request'
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.ATTESTOR_BRANCH_GOVERNANCE_TOKEN }}
           GH_REPO: ${{ github.repository }}
         run: |
           enabled="$(gh api "repos/${GH_REPO}" --jq '.delete_branch_on_merge')"
@@ -49,7 +62,7 @@ jobs:
       - name: Verify branch protection signatures and reviews
         if: github.event_name != 'pull_request'
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.ATTESTOR_BRANCH_GOVERNANCE_TOKEN }}
           GH_REPO: ${{ github.repository }}
           GH_BRANCH: master
         run: |

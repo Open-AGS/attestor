@@ -397,6 +397,7 @@ export async function submitPipelineJob(
   input: FinancialPipelineInput,
   tenant: PipelineJobTenantContext,
   sign: boolean = false,
+  options?: { jobId?: string | null },
 ): Promise<{ jobId: string }> {
   const trimmedTenantId = tenant.tenantId.trim();
   const resolvedTenantId =
@@ -414,7 +415,7 @@ export async function submitPipelineJob(
       source: tenant.source,
     },
   }, {
-    jobId: buildJobId(resolvedTenantId),
+    jobId: options?.jobId ?? buildJobId(resolvedTenantId),
     priority: planPriority(tenant.planId),
   });
   return { jobId: job.id! };

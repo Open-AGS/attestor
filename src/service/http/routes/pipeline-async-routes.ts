@@ -19,6 +19,7 @@ import type { InProcessAsyncJob, TenantAsyncBackendMode } from '../../runtime/te
 import type { PipelineIdempotencyService } from '../../application/pipeline-idempotency-service.js';
 import type { PipelineDeadLetterService } from '../../application/pipeline-dead-letter-service.js';
 import type { PipelineUsageService } from '../../application/pipeline-usage-service.js';
+import { hashJsonValue } from '../../json-stable.js';
 import { acceptsJsonRequestBody, opaqueRouteRunId } from '../route-response-helpers.js';
 
 interface RequestSignerPair {
@@ -63,6 +64,7 @@ export interface PipelineAsyncRoutesDeps {
     input: FinancialPipelineInput,
     tenant: PipelineJobTenantContext,
     sign?: boolean,
+    options?: { jobId?: string | null },
   ): Promise<{ jobId: string }>;
   getTenantPipelineRateLimit(
     tenantId: string,
@@ -85,6 +87,25 @@ export interface PipelineAsyncRoutesDeps {
     tenant: PipelineJobTenantContext | null;
     failedAt: string | null;
   }>;
+}
+
+function safeAsyncJobIdSegment(value: string): string {
+  const normalized = value.trim().toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/^-+|-+$/g, '');
+  return normalized || 'tenant';
+}
+
+function idempotentBullMqJobId(input: {
+  readonly tenantId: string;
+  readonly routeId: string;
+  readonly idempotencyKey: string | null;
+}): string | null {
+  if (!input.idempotencyKey) return null;
+  const digest = hashJsonValue({
+    tenantId: input.tenantId,
+    routeId: input.routeId,
+    idempotencyKey: input.idempotencyKey,
+  }).slice(0, 32);
+  return `${safeAsyncJobIdSegment(input.tenantId)}__idem_${digest}`;
 }
 
 export function registerPipelineAsyncRoutes(app: Hono, deps: PipelineAsyncRoutesDeps): void {
@@ -213,6 +234,11 @@ app.post('/api/v1/pipeline/run-async', async (c) => {
         reportContract: body.reportContract,
         signingKeyPair: sign ? pki.signer.keyPair : undefined,
       };
+      const idempotentJobId = idempotentBullMqJobId({
+        tenantId: tenant.tenantId,
+        routeId,
+        idempotencyKey: idempotency.idempotencyKey,
+      });
       let jobId: string;
       try {
         ({ jobId } = await submitPipelineJob(
@@ -224,6 +250,7 @@ app.post('/api/v1/pipeline/run-async', async (c) => {
             source: tenant.source,
           },
           sign,
+          { jobId: idempotentJobId },
         ));
       } finally {
         releaseAsyncSubmission(tenant.tenantId);

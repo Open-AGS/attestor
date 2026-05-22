@@ -293,7 +293,7 @@ async function requestAndApproveActivation(fixture: TestAppFixture): Promise<str
     method: 'POST',
     headers: adminHeaders({
       'x-attestor-admin-actor-id': 'requester_policy_admin',
-      'x-attestor-admin-actor-role': 'policy-admin',
+      'x-attestor-policy-actor-role': 'policy-admin',
     }),
     body: {
       approvalRequestId: 'approval_prod_current',
@@ -316,7 +316,7 @@ async function requestAndApproveActivation(fixture: TestAppFixture): Promise<str
       method: 'POST',
       headers: adminHeaders({
         'x-attestor-admin-actor-id': 'risk_owner',
-        'x-attestor-admin-actor-role': 'risk-owner',
+        'x-attestor-policy-actor-role': 'risk-owner',
       }),
       body: {
         rationale: 'Risk owner approves activation.',
@@ -334,7 +334,7 @@ async function requestAndApproveActivation(fixture: TestAppFixture): Promise<str
       method: 'POST',
       headers: adminHeaders({
         'x-attestor-admin-actor-id': 'compliance_officer',
-        'x-attestor-admin-actor-role': 'compliance-officer',
+        'x-attestor-policy-actor-role': 'compliance-officer',
       }),
       body: {
         rationale: 'Compliance approves activation.',
@@ -370,6 +370,16 @@ async function testRoleScopedAdminKeysCannotEscalateThroughActorHeader(): Promis
       'x-attestor-admin-actor-role': 'admin-release-admin',
     }, 'admin-read-secret'),
   });
+  const readCannotMutateWithPolicyActorLabel = await requestJson(
+    fixture.app,
+    '/api/v1/admin/release-policy/packs',
+    {
+      method: 'POST',
+      headers: adminHeaders({
+        'x-attestor-policy-actor-role': 'policy-admin',
+      }, 'admin-read-secret'),
+    },
+  );
   const releaseAdminCannotBreakGlass = await requestJson(
     fixture.app,
     '/api/v1/admin/release-policy/emergency/freeze',
@@ -377,7 +387,7 @@ async function testRoleScopedAdminKeysCannotEscalateThroughActorHeader(): Promis
       method: 'POST',
       headers: adminHeaders({
         'x-attestor-admin-actor-id': 'release_admin_attempt',
-        'x-attestor-admin-actor-role': 'policy-break-glass',
+        'x-attestor-policy-actor-role': 'policy-break-glass',
         'x-attestor-break-glass': 'true',
       }, 'admin-release-secret'),
     },
@@ -388,6 +398,11 @@ async function testRoleScopedAdminKeysCannotEscalateThroughActorHeader(): Promis
   assert.equal(
     readCannotMutate.body.error,
     'Admin actor role does not match the role-scoped admin API key.',
+  );
+  assert.equal(readCannotMutateWithPolicyActorLabel.status, 403);
+  assert.equal(
+    readCannotMutateWithPolicyActorLabel.body.error,
+    "Admin actor role 'admin-read' is not allowed for this route.",
   );
   assert.equal(releaseAdminCannotBreakGlass.status, 403);
   assert.equal(
@@ -551,7 +566,7 @@ async function testEmergencyFreezeAndRollbackRequireBreakGlassAndFailClosed(): P
     method: 'POST',
     headers: adminHeaders({
       'x-attestor-admin-actor-id': 'ordinary_policy_admin',
-      'x-attestor-admin-actor-role': 'policy-break-glass',
+      'x-attestor-policy-actor-role': 'policy-break-glass',
     }, 'admin-release-secret'),
     body: {
       activationId: 'freeze_blocked',
@@ -565,7 +580,7 @@ async function testEmergencyFreezeAndRollbackRequireBreakGlassAndFailClosed(): P
     method: 'POST',
     headers: adminHeaders({
       'x-attestor-admin-actor-id': 'incident_commander',
-      'x-attestor-admin-actor-role': 'policy-break-glass',
+      'x-attestor-policy-actor-role': 'policy-break-glass',
       'x-attestor-break-glass': 'true',
     }, 'admin-break-glass-secret'),
     body: {
@@ -586,7 +601,7 @@ async function testEmergencyFreezeAndRollbackRequireBreakGlassAndFailClosed(): P
     method: 'POST',
     headers: adminHeaders({
       'x-attestor-admin-actor-id': 'incident_commander',
-      'x-attestor-admin-actor-role': 'policy-break-glass',
+      'x-attestor-policy-actor-role': 'policy-break-glass',
       'x-attestor-break-glass': 'true',
     }, 'admin-break-glass-secret'),
     body: {
@@ -797,7 +812,7 @@ async function testTypedErrorsUseBoundedStatusMappings(): Promise<void> {
     method: 'POST',
     headers: adminHeaders({
       'x-attestor-admin-actor-id': 'requester_policy_admin',
-      'x-attestor-admin-actor-role': 'policy-admin',
+      'x-attestor-policy-actor-role': 'policy-admin',
     }),
     body: {
       approvalRequestId: 'approval_error_mapping',
@@ -814,7 +829,7 @@ async function testTypedErrorsUseBoundedStatusMappings(): Promise<void> {
       method: 'POST',
       headers: adminHeaders({
         'x-attestor-admin-actor-id': 'requester_policy_admin',
-        'x-attestor-admin-actor-role': 'policy-admin',
+        'x-attestor-policy-actor-role': 'policy-admin',
       }),
       body: {
         rationale: 'Requester attempts to approve its own activation request.',
@@ -828,7 +843,7 @@ async function testTypedErrorsUseBoundedStatusMappings(): Promise<void> {
       method: 'POST',
       headers: adminHeaders({
         'x-attestor-admin-actor-id': 'risk_owner',
-        'x-attestor-admin-actor-role': 'risk-owner',
+        'x-attestor-policy-actor-role': 'risk-owner',
       }),
       body: {
         rationale: 'Risk owner approves activation.',
@@ -842,7 +857,7 @@ async function testTypedErrorsUseBoundedStatusMappings(): Promise<void> {
       method: 'POST',
       headers: adminHeaders({
         'x-attestor-admin-actor-id': 'risk_owner',
-        'x-attestor-admin-actor-role': 'risk-owner',
+        'x-attestor-policy-actor-role': 'risk-owner',
       }),
       body: {
         rationale: 'Risk owner attempts a duplicate approval.',

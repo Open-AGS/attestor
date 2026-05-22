@@ -61,12 +61,12 @@ production-readiness, or certification claims.
 
 | ID | Intake state | Validation result | Remediation |
 |---|---|---|---|
-| OPS-100 release-route role-scoped admin enforcement gap | P1 open | repo-proven | Closed repo-side / live-proof-only. Release-review and release-policy-control routes now require credential-bound admin roles before reads, mutations, and emergency break-glass operations. Client-supplied actor role headers can label policy-domain actors but cannot escalate the credential role. Live deployed role-key separation proof remains required. |
+| OPS-100 release-route role-scoped admin enforcement gap | P1 open | repo-proven | Closed repo-side / live-proof-only. Release-review and release-policy-control routes now require credential-bound admin roles before reads, mutations, and emergency break-glass operations. Client-supplied `x-attestor-policy-actor-role` can label policy-domain actors but cannot escalate the credential role. Live deployed role-key separation proof remains required. |
 | OPS-101 release-policy-control typed-error gap | P2 open / partial-repo | still open | Not remediated. Policy-control mutation handlers still flatten many thrown errors to 400. |
 | OPS-102 release-policy-control listing pagination gap | P2 open / partial-repo | still open | Not remediated. Several listing routes still need bounded `limit` / cursor behavior. |
 | OPS-103 release-review HTML security headers gap | P2 open / partial-repo | still open | Not remediated. Reviewer HTML routes still need CSP / `nosniff` / referrer / frame headers. |
 | OPS-104 break-glass body/header coercion inconsistency | P3 accepted limitation | unchanged | Not remediated. Both explicit body and header acknowledgement paths remain supported. |
-| OPS-105 release-policy-control default actor role | P3 open / partial-repo | narrowed | Partially closed by OPS-100. `routeAdminActor` now derives its actor from the release admin auth helper instead of silently defaulting to `policy-admin`; policy-domain actor labels are still accepted as audit labels after credential authorization. |
+| OPS-105 release-policy-control default actor role | P3 open / partial-repo | repo-side closed | `routeAdminActor` derives its actor from the release admin auth helper instead of silently defaulting to `policy-admin`. Follow-up remediation separates the admin authorization role header from the policy-domain actor label header: `x-attestor-admin-actor-role` remains credential-bound authorization input, while `x-attestor-policy-actor-role` is audit/approval metadata only. |
 
 ## 4. Remediation Summary
 
@@ -130,7 +130,7 @@ What it does not have authority to do:
 | Audit ledger | Existing admin and policy mutation audit writes remain in place; actor metadata is now derived from the credential-bound helper. |
 | Emergency operations | Freeze and rollback still require explicit break-glass acknowledgement plus reason/rationale; authorization now comes from `admin-break-glass` or superuser credentials. |
 | Live proof | New live proof flag is required before claiming deployed release-route role-key separation. |
-| Remaining gaps | OPS-101, OPS-102, OPS-103 remain open follow-ups; OPS-104 remains accepted; OPS-105 is narrowed but not promoted as a standalone closure claim. |
+| Remaining gaps | OPS-101, OPS-102, OPS-103 are remediated in later route cleanup; OPS-104 remains accepted; OPS-105 is repo-side closed by the policy actor-label/header split and regression coverage. |
 
 ## 8. Verification
 
@@ -168,8 +168,9 @@ is not claimed by this report.
 - OPS-102: open / partial-repo.
 - OPS-103: open / partial-repo.
 - OPS-104: accepted limitation.
-- OPS-105: narrowed by OPS-100, still tracked as cleanup if actor-label
-  defaults are revisited.
+- OPS-105: repo-side closed by separating the policy-domain actor role label
+  from the admin authorization role header; policy labels remain audit/approval
+  metadata only.
 
 Recommended next target: Sweep 13 on
 `action-surface-onboarding-routes.ts`, `policy-foundry-hosted-onboarding-routes.ts`,

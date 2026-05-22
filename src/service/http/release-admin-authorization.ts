@@ -34,6 +34,13 @@ export const RELEASE_ADMIN_BREAK_GLASS_ROLES = Object.freeze([
   'admin-break-glass',
 ] as const satisfies ReleaseAdminRouteRoleSet);
 
+/**
+ * Policy-domain actor label used for approval and audit semantics. This must
+ * stay separate from x-attestor-admin-actor-role, which is an authorization role
+ * bound to the admin credential.
+ */
+export const RELEASE_POLICY_ACTOR_ROLE_HEADER = 'x-attestor-policy-actor-role';
+
 const RELEASE_ADMIN_AUTH_RATE_LIMIT_WINDOW_MS = 60_000;
 const RELEASE_ADMIN_AUTH_RATE_LIMIT_DEFAULT = 240;
 const RELEASE_ADMIN_AUTH_RATE_LIMIT_MAX = 10_000;
@@ -198,7 +205,8 @@ export function authorizeReleaseAdminRoute(
 
   const actorId = context.req.header('x-attestor-admin-actor-id')?.trim() || requestedAdminRole;
   const actorName = context.req.header('x-attestor-admin-actor-name')?.trim() || actorId;
-  const releaseActorRole = context.req.header('x-attestor-admin-actor-role')?.trim() || requestedAdminRole;
+  const releaseActorRole =
+    context.req.header(RELEASE_POLICY_ACTOR_ROLE_HEADER)?.trim() || requestedAdminRole;
   const actor: ReleaseAdminRouteActor = {
     adminRole: requestedAdminRole,
     releaseActor: {

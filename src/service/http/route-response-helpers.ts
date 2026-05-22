@@ -32,3 +32,33 @@ export function secureHtmlResponseHeaders(): Record<string, string> {
     'x-frame-options': 'DENY',
   };
 }
+
+export function clientSafeProblemDetail(
+  error: string,
+  message: string,
+): { error: string; message: string } {
+  return { error, message };
+}
+
+export function clientSafeInternalError(message = 'Internal server error'): {
+  error: 'internal_error';
+  message: string;
+} {
+  return {
+    error: 'internal_error',
+    message,
+  };
+}
+
+export function safeAuthenticateDescription(description: string): string {
+  return description
+    .replace(/[\r\n\t]/gu, ' ')
+    .replace(/\\/gu, '\\\\')
+    .replace(/"/gu, '\\"')
+    .slice(0, 240);
+}
+
+export function routeErrorKind(error: unknown): string {
+  if (error instanceof Error) return error.name || 'Error';
+  return typeof error;
+}

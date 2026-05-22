@@ -22,6 +22,8 @@ function ok(condition: unknown, message: string): void {
 async function testReleaseTokenJwksRouteExposesPublicVerificationKeyOnly(): Promise<void> {
   const keyPair = generateKeyPair();
   const caKeyPair = generateKeyPair();
+  let connectorLoadConfigCalls = 0;
+  let connectorAvailabilityCalls = 0;
   const issuer = createReleaseTokenIssuer({
     issuer: 'attestor.release.local',
     privateKeyPem: keyPair.privateKeyPem,
@@ -53,8 +55,19 @@ async function testReleaseTokenJwksRouteExposesPublicVerificationKeyOnly(): Prom
       list: () => [],
     },
     connectorRegistry: {
-      listIds: () => [],
-      list: () => [],
+      listIds: () => ['snowflake'],
+      list: () => [{
+        id: 'snowflake',
+        displayName: 'Snowflake Data Cloud',
+        loadConfig: () => {
+          connectorLoadConfigCalls += 1;
+          return { provider: 'snowflake' };
+        },
+        isAvailable: async () => {
+          connectorAvailabilityCalls += 1;
+          return true;
+        },
+      }],
     },
     filingRegistry: {
       list: () => [],
@@ -157,6 +170,27 @@ async function testReleaseTokenJwksRouteExposesPublicVerificationKeyOnly(): Prom
 
   registerCoreRoutes(app, deps);
 
+  const startupResponse = await app.request('/api/v1/startup');
+  equal(startupResponse.status, 200, 'Core routes: startup route stays available');
+  equal(
+    startupResponse.headers.get('cache-control'),
+    'no-store',
+    'Core routes: startup route is explicitly no-store',
+  );
+  const startupBody = await startupResponse.json() as Record<string, unknown>;
+  equal(startupBody.status, 'started', 'Core routes: startup route reports a bounded status');
+  equal(startupBody.engine, 'attestor', 'Core routes: startup route keeps product identity visible');
+  equal(
+    'instanceId' in startupBody,
+    false,
+    'Core routes: public startup route does not expose service instance identifiers',
+  );
+  equal(
+    'runtimeProfile' in startupBody,
+    false,
+    'Core routes: public startup route does not expose runtime profile diagnostics',
+  );
+
   const healthResponse = await app.request('/api/v1/health');
   equal(healthResponse.status, 200, 'Core routes: health route stays available');
   equal(
@@ -234,6 +268,47 @@ async function testReleaseTokenJwksRouteExposesPublicVerificationKeyOnly(): Prom
       !('sharedAuthorityRuntime' in readyBody) &&
       !('productionStoragePath' in readyBody),
     'Core routes: public readiness route does not expose internal diagnostic details',
+  );
+
+  const connectorsResponse = await app.request('/api/v1/connectors');
+  equal(connectorsResponse.status, 200, 'Core routes: public connector catalog route stays available');
+  equal(
+    connectorsResponse.headers.get('cache-control'),
+    'no-store',
+    'Core routes: public connector catalog is explicitly no-store',
+  );
+  const connectorsBody = await connectorsResponse.json() as {
+    connectors?: Array<Record<string, unknown>>;
+  };
+  equal(
+    connectorsBody.connectors?.[0]?.id,
+    'snowflake',
+    'Core routes: public connector catalog keeps the connector id',
+  );
+  equal(
+    connectorsBody.connectors?.[0]?.displayName,
+    'Snowflake Data Cloud',
+    'Core routes: public connector catalog keeps the display name',
+  );
+  equal(
+    'configured' in (connectorsBody.connectors?.[0] ?? {}),
+    false,
+    'Core routes: public connector catalog does not expose configured state',
+  );
+  equal(
+    'available' in (connectorsBody.connectors?.[0] ?? {}),
+    false,
+    'Core routes: public connector catalog does not expose availability state',
+  );
+  equal(
+    connectorLoadConfigCalls,
+    0,
+    'Core routes: public connector catalog does not inspect connector configuration',
+  );
+  equal(
+    connectorAvailabilityCalls,
+    0,
+    'Core routes: public connector catalog does not probe connector availability',
   );
 
   const response = await app.request('/api/v1/release-token/jwks');

@@ -46,6 +46,31 @@ function unsupportedAdapter(flags: { mapped: boolean; packaged: boolean }): Fili
   };
 }
 
+function releaseBoundAdapter(): FilingAdapter {
+  return {
+    id: 'xbrl-us-gaap-2024',
+    format: 'xbrl',
+    taxonomyVersion: 'test',
+    description: 'Release-bound test adapter',
+    mapToTaxonomy(): TaxonomyMapping {
+      throw new Error('Release-bound redaction test should not map taxonomy.');
+    },
+    generatePackage(): FilingPackage {
+      throw new Error('Release-bound redaction test should not generate a package.');
+    },
+  };
+}
+
+function releaseMaterial(): FinanceFilingReleaseMaterial {
+  return {
+    target: { id: 'attestor.api.finance.filing-export' },
+    hashBundle: {
+      outputHash: 'sha256:output',
+      consequenceHash: 'sha256:consequence',
+    },
+  } as FinanceFilingReleaseMaterial;
+}
+
 async function testReleaseBindingPredicateIsDefaultDeny(): Promise<void> {
   equal(
     isReleaseBoundFilingAdapter('xbrl-us-gaap-2024', 'xbrl-us-gaap-2024'),
@@ -134,7 +159,126 @@ async function testRegisteredButUnboundAdapterFailsClosedBeforeExport(): Promise
   equal(flags.packaged, false, 'Filing export: unbound adapter does not generate a package');
 }
 
+async function testUnexpectedFilingFailureReturnsRedactedProblemDetail(): Promise<void> {
+  const app = new Hono();
+  const adapter = releaseBoundAdapter();
+
+  registerPipelineFilingRoutes(app, {
+    FINANCE_FILING_ADAPTER_ID: adapter.id,
+    buildFinanceFilingReleaseMaterial(): FinanceFilingReleaseMaterial {
+      throw new Error('SECRET_FILING_EXCEPTION_MARKER: downstream package builder failed');
+    },
+    apiReleaseIntrospectionStore: {} as RequestPathReleaseTokenIntrospectionStore,
+    filingRegistry: {
+      get(id: string) {
+        return id === adapter.id ? adapter : undefined;
+      },
+      list() {
+        return [adapter];
+      },
+    },
+    buildCounterpartyEnvelope() {
+      throw new Error('not reached');
+    },
+    apiReleaseVerificationKeyPromise: Promise.resolve({} as ReleaseTokenVerificationKey),
+    resolveReleaseTokenFromRequest() {
+      return 'not reached';
+    },
+    async verifyReleaseAuthorization(): Promise<ReleaseVerificationContext> {
+      throw new Error('not reached');
+    },
+    apiReleaseIntrospector: async () => ({
+      active: false,
+      reason: 'not-called',
+      claims: null,
+      checkedAt: new Date().toISOString(),
+    }),
+    ReleaseVerificationError,
+  });
+
+  const response = await app.request('/api/v1/filing/export', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      adapterId: adapter.id,
+      runId: 'run_redacted',
+      rows: [{ amount: 100 }],
+    }),
+  });
+  const body = await response.json() as Record<string, unknown>;
+
+  equal(response.status, 500, 'Filing export: unexpected failure returns 500');
+  equal(body.error, 'internal_error', 'Filing export: unexpected failure uses a bounded error code');
+  equal(body.message, 'Filing export failed.', 'Filing export: unexpected failure uses a route-owned message');
+  ok(
+    !JSON.stringify(body).includes('SECRET_FILING_EXCEPTION_MARKER'),
+    'Filing export: unexpected failure does not echo raw exception context',
+  );
+}
+
+async function testUnexpectedReleaseVerificationFailureReturnsRedactedChallenge(): Promise<void> {
+  const app = new Hono();
+  const adapter = releaseBoundAdapter();
+
+  registerPipelineFilingRoutes(app, {
+    FINANCE_FILING_ADAPTER_ID: adapter.id,
+    buildFinanceFilingReleaseMaterial: releaseMaterial,
+    apiReleaseIntrospectionStore: {} as RequestPathReleaseTokenIntrospectionStore,
+    filingRegistry: {
+      get(id: string) {
+        return id === adapter.id ? adapter : undefined;
+      },
+      list() {
+        return [adapter];
+      },
+    },
+    buildCounterpartyEnvelope() {
+      throw new Error('not reached');
+    },
+    apiReleaseVerificationKeyPromise: Promise.resolve({} as ReleaseTokenVerificationKey),
+    resolveReleaseTokenFromRequest() {
+      return 'token';
+    },
+    async verifyReleaseAuthorization(): Promise<ReleaseVerificationContext> {
+      throw new Error('SECRET_RELEASE_TOKEN_MARKER: token verifier leaked detail');
+    },
+    apiReleaseIntrospector: async () => ({
+      active: false,
+      reason: 'not-called',
+      claims: null,
+      checkedAt: new Date().toISOString(),
+    }),
+    ReleaseVerificationError,
+  });
+
+  const response = await app.request('/api/v1/filing/export', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      adapterId: adapter.id,
+      runId: 'run_redacted',
+      rows: [{ amount: 100 }],
+    }),
+  });
+  const body = await response.json() as Record<string, unknown>;
+
+  equal(response.status, 401, 'Filing export: unexpected release verification failure returns 401');
+  equal(body.error, 'invalid_token', 'Filing export: release verification failure keeps OAuth error code');
+  equal(
+    body.error_description,
+    'Release verification failed.',
+    'Filing export: release verification failure uses a route-owned description',
+  );
+  ok(
+    !JSON.stringify(body).includes('SECRET_RELEASE_TOKEN_MARKER') &&
+      !(response.headers.get('www-authenticate') ?? '').includes('SECRET_RELEASE_TOKEN_MARKER'),
+    'Filing export: release verification challenge and body do not echo raw exception context',
+  );
+}
+
 await testReleaseBindingPredicateIsDefaultDeny();
 await testRegisteredButUnboundAdapterFailsClosedBeforeExport();
+await testUnexpectedFilingFailureReturnsRedactedProblemDetail();
+await testUnexpectedReleaseVerificationFailureReturnsRedactedChallenge();
 
 console.log(`Pipeline filing default-secure tests: ${passed} passed, 0 failed`);

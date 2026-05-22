@@ -10,11 +10,53 @@ import type {
   VerifyTrustChainOptions,
 } from '../../../signing/pki-chain.js';
 import { verifyPkiBoundCertificate } from '../../../signing/verification-trust-binding.js';
+import { logger } from '../../../utils/logger.js';
 import { publicRouteRateLimitResponse } from '../../public-route-rate-limit.js';
+import {
+  clientSafeInternalError,
+  clientSafeProblemDetail,
+  routeErrorKind,
+} from '../route-response-helpers.js';
 
 interface PublicKeyIdentity {
   publicKeyHex: string;
   fingerprint: string;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function hasNonEmptyString(value: unknown): value is string {
+  return typeof value === 'string' && value.trim().length > 0;
+}
+
+function verifyRequestSummary(body: unknown): Record<string, boolean | string> {
+  const record = isRecord(body) ? body : {};
+  return {
+    route: '/api/v1/verify',
+    bodyShape: isRecord(body) ? 'object' : typeof body,
+    hasCertificate: isRecord(record.certificate),
+    hasPublicKeyPem: hasNonEmptyString(record.publicKeyPem),
+    hasTrustChain: isRecord(record.trustChain),
+    hasCaPublicKeyPem: hasNonEmptyString(record.caPublicKeyPem),
+    hasTrustedCaFingerprint: hasNonEmptyString(record.trustedCaFingerprint),
+  };
+}
+
+function logVerifyRejection(reasonCode: string, body: unknown): void {
+  logger.warn('api.verify', 'Verification request rejected before PKI verification', {
+    reasonCode,
+    ...verifyRequestSummary(body),
+  });
+}
+
+interface VerifyRequestBody {
+  certificate?: unknown;
+  publicKeyPem?: unknown;
+  trustChain?: unknown;
+  caPublicKeyPem?: unknown;
+  trustedCaFingerprint?: unknown;
 }
 
 export interface PipelineVerificationRoutesDeps {
@@ -51,22 +93,35 @@ app.post('/api/v1/verify', async (c) => {
   if (rateLimitResponse) return rateLimitResponse;
 
   try {
-    const body = await c.req.json();
+    let body: unknown;
+    try {
+      body = await c.req.json();
+    } catch {
+      return c.json(clientSafeProblemDetail(
+        'invalid_request',
+        'Request body must be valid JSON.',
+      ), 400);
+    }
+    const payload: VerifyRequestBody = isRecord(body) ? body : {};
     const {
       certificate,
       publicKeyPem,
       trustChain,
       caPublicKeyPem,
       trustedCaFingerprint,
-    } = body;
-    if (!certificate || !publicKeyPem) {
+    } = payload;
+    if (!isRecord(certificate) || !hasNonEmptyString(publicKeyPem)) {
       return c.json({ error: 'certificate and publicKeyPem are required' }, 400);
     }
 
     // PKI mandatory gate: reject flat Ed25519 on the hosted API.
-    const hasPkiMaterial = trustChain && trustChain.ca && trustChain.leaf && caPublicKeyPem;
+    const hasPkiMaterial =
+      isRecord(trustChain) &&
+      isRecord(trustChain.ca) &&
+      isRecord(trustChain.leaf) &&
+      hasNonEmptyString(caPublicKeyPem);
     if (!hasPkiMaterial) {
-      console.log(`[verify] Rejected: no PKI chain material submitted`);
+      logVerifyRejection('missing-pki-chain-material', body);
       return c.json({
         error: 'PKI trust chain required for verification.',
         hint: 'Submit trustChain and caPublicKeyPem alongside certificate and publicKeyPem.',
@@ -77,7 +132,7 @@ app.post('/api/v1/verify', async (c) => {
         ? trustedCaFingerprint.trim()
         : null;
     if (hasPkiMaterial && !normalizedTrustedCaFingerprint) {
-      console.log(`[verify] Rejected: no trusted CA fingerprint submitted`);
+      logVerifyRejection('missing-trusted-ca-fingerprint', body);
       return c.json({
         error: 'trustedCaFingerprint is required for independent PKI verification.',
         hint: 'Submit trustedCaFingerprint from an out-of-band trusted source alongside trustChain and caPublicKeyPem.',
@@ -90,15 +145,17 @@ app.post('/api/v1/verify', async (c) => {
     let expectedFingerprint: string | null = null;
     let certResult: CertificateVerification | null = null;
     if (hasPkiMaterial) {
+      const pkiTrustChain = trustChain as unknown as TrustChain;
+      const pkiCaPublicKeyPem = caPublicKeyPem as string;
       const trustBinding = verifyPkiBoundCertificate({
-        certificate,
+        certificate: certificate as unknown as AttestationCertificate,
         publicKeyPem,
-        trustChain,
-        caPublicKeyPem,
+        trustChain: pkiTrustChain,
+        caPublicKeyPem: pkiCaPublicKeyPem,
         trustedCaFingerprint: normalizedTrustedCaFingerprint,
       });
       const chainResult = trustBinding.chainVerification;
-      expectedFingerprint = trustChain.leaf.subjectFingerprint;
+      expectedFingerprint = pkiTrustChain.leaf.subjectFingerprint;
       pkiBound = trustBinding.pkiBound;
       certResult = trustBinding.certificateVerification;
 
@@ -118,13 +175,13 @@ app.post('/api/v1/verify', async (c) => {
         independentTrustRootVerified: trustBinding.independentTrustRootVerified,
         pkiBound,
         overall: chainResult.overall,
-        caName: trustChain.ca.name ?? null,
-        leafSubject: trustChain.leaf.subject ?? null,
+        caName: pkiTrustChain.ca.name ?? null,
+        leafSubject: pkiTrustChain.leaf.subject ?? null,
       };
     }
 
     // 3. Verify certificate signature with PKI-derived signer pin when available.
-    certResult ??= verifyCertificate(certificate, publicKeyPem, {
+    certResult ??= verifyCertificate(certificate as unknown as AttestationCertificate, publicKeyPem, {
       expectedFingerprint,
     });
 
@@ -154,7 +211,11 @@ app.post('/api/v1/verify', async (c) => {
       trustBinding,
     });
   } catch (err) {
-    return c.json({ error: err instanceof Error ? err.message : String(err) }, 500);
+    logger.error('api.verify', 'Verification route failed with a redacted client response', {
+      route: '/api/v1/verify',
+      errorKind: routeErrorKind(err),
+    });
+    return c.json(clientSafeInternalError('Verification failed.'), 500);
   }
 });
 }

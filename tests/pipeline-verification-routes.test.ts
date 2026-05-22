@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { Hono } from 'hono';
 import {
   issueCertificate,
@@ -12,6 +14,7 @@ import {
 import { verifyCertificate } from '../src/signing/certificate.js';
 import { registerPipelineVerificationRoutes } from '../src/service/http/routes/pipeline-verification-routes.js';
 import { resetPublicRouteRateLimiterForTests } from '../src/service/public-route-rate-limit.js';
+import { logger } from '../src/utils/logger.js';
 
 let passed = 0;
 
@@ -157,16 +160,93 @@ async function testMissingTrustedCaFingerprintFailsClosed(): Promise<void> {
 async function testMissingPkiMaterialFailsClosed(): Promise<void> {
   const pki = generatePkiHierarchy('Route Test CA', 'Route Test Signer', 'Route Test Reviewer');
   const certificate = issueCertificate(certInput(), pki.signer.keyPair);
-  const result = await postVerify(routeApp(), {
-    certificate,
-    publicKeyPem: pki.signer.keyPair.publicKeyPem,
-  });
+  const warnEvents: Array<{
+    stage: string;
+    message: string;
+    data?: Record<string, unknown>;
+  }> = [];
+  const originalWarn = logger.warn;
+  logger.warn = (stage, message, data) => {
+    warnEvents.push({ stage, message, data });
+  };
+  let result: Awaited<ReturnType<typeof postVerify>> | null = null;
+  try {
+    result = await postVerify(routeApp(), {
+      certificate,
+      publicKeyPem: pki.signer.keyPair.publicKeyPem,
+    });
+  } finally {
+    logger.warn = originalWarn;
+  }
 
+  ok(result !== null, 'PKI verification route: missing chain material returns a response');
   equal(result.status, 422, 'PKI verification route: missing chain material returns 422');
   equal(
     result.body.error,
     'PKI trust chain required for verification.',
     'PKI verification route: missing chain material is fail-closed',
+  );
+  equal(warnEvents.length, 1, 'PKI verification route: missing chain material emits one structured warning');
+  equal(warnEvents[0]?.stage, 'api.verify', 'PKI verification route: warning uses the verify stage');
+  equal(
+    warnEvents[0]?.data?.reasonCode,
+    'missing-pki-chain-material',
+    'PKI verification route: warning uses a bounded reason code',
+  );
+  equal(
+    warnEvents[0]?.data?.hasPublicKeyPem,
+    true,
+    'PKI verification route: warning records only request-shape booleans',
+  );
+  ok(
+    !JSON.stringify(warnEvents[0]?.data ?? {}).includes(pki.signer.keyPair.publicKeyPem),
+    'PKI verification route: warning does not log raw public key material',
+  );
+}
+
+async function testGenericVerifyFailureReturnsRedactedProblemDetail(): Promise<void> {
+  const result = await postVerify(routeApp(), {
+    certificate: { certificateId: 'cert_redacted' },
+    publicKeyPem: 'not a valid public key SECRET_VERIFY_EXCEPTION_MARKER',
+    trustChain: {
+      ca: { name: 'Fake CA', fingerprint: 'fake-ca' },
+      leaf: { subject: 'Fake Leaf', subjectFingerprint: 'fake-leaf' },
+    },
+    caPublicKeyPem: 'not a valid CA key SECRET_CA_EXCEPTION_MARKER',
+    trustedCaFingerprint: 'fake-ca',
+  });
+
+  equal(result.status, 500, 'PKI verification route: unexpected verifier failure returns 500');
+  equal(
+    result.body.error,
+    'internal_error',
+    'PKI verification route: unexpected verifier failure uses a bounded error code',
+  );
+  equal(
+    result.body.message,
+    'Verification failed.',
+    'PKI verification route: unexpected verifier failure uses a route-owned message',
+  );
+  ok(
+    !JSON.stringify(result.body).includes('SECRET_VERIFY_EXCEPTION_MARKER') &&
+      !JSON.stringify(result.body).includes('SECRET_CA_EXCEPTION_MARKER'),
+    'PKI verification route: unexpected verifier failure does not echo raw exception context',
+  );
+}
+
+function testVerifyRouteDoesNotUseConsoleLogging(): void {
+  const source = readFileSync(
+    join(process.cwd(), 'src', 'service', 'http', 'routes', 'pipeline-verification-routes.ts'),
+    'utf8',
+  );
+  equal(
+    source.includes('console.log'),
+    false,
+    'PKI verification route: rejection logging no longer uses console.log',
+  );
+  ok(
+    source.includes("logger.warn('api.verify'"),
+    'PKI verification route: rejection logging uses the structured logger',
   );
 }
 
@@ -209,6 +289,8 @@ await testPkiBoundVerificationPasses();
 await testPkiBindingFailureControlsOverall();
 await testMissingTrustedCaFingerprintFailsClosed();
 await testMissingPkiMaterialFailsClosed();
+await testGenericVerifyFailureReturnsRedactedProblemDetail();
 await testVerifyRouteRateLimitShortCircuitsBeforeVerificationWork();
+testVerifyRouteDoesNotUseConsoleLogging();
 
 console.log(`pipeline-verification-routes.test.ts: ${passed} assertions passed`);

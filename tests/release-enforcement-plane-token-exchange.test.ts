@@ -245,6 +245,7 @@ async function testAudienceScopedExchangeIssuesDownstreamToken(): Promise<void> 
       id: 'exchange-r1-audience',
       requestedAt: '2026-04-18T10:01:00.000Z',
       subjectToken: parent.token,
+      requestedTokenType: ATTESTOR_RELEASE_TOKEN_TYPE,
       audience: 'analytics.memo.writer',
       resource: 'https://api.attestor.test/memo/',
       scope: ['release:decision-support', 'memo:write', 'memo:write'],
@@ -274,7 +275,9 @@ async function testAudienceScopedExchangeIssuesDownstreamToken(): Promise<void> 
   equal(exchanged.version, RELEASE_TOKEN_EXCHANGE_SPEC_VERSION, 'Token exchange: result stamps stable spec version');
   equal(exchanged.grantType, RELEASE_TOKEN_EXCHANGE_GRANT_TYPE, 'Token exchange: result records token-exchange grant type');
   equal(exchanged.status, 'issued', 'Token exchange: allowed request issues a downstream token');
+  equal(exchanged.requestedTokenType, ATTESTOR_RELEASE_TOKEN_TYPE, 'Token exchange: requested token type is explicit');
   equal(exchanged.issuedTokenType, ATTESTOR_RELEASE_TOKEN_TYPE, 'Token exchange: issued token type is explicit');
+  equal(exchanged.actorTokenType, null, 'Token exchange: structured actor references are not raw actor tokens');
   equal(exchanged.audience, 'analytics.memo.writer', 'Token exchange: result is scoped to requested audience');
   deepEqual(exchanged.scope, ['memo:write', 'release:decision-support'], 'Token exchange: requested scope is normalized and narrowed');
   equal(exchanged.resource, 'https://api.attestor.test/memo/', 'Token exchange: resource URI is preserved');
@@ -368,6 +371,164 @@ async function testExchangeDoesNotBroadenAudience(): Promise<void> {
   equal(exchanged.status, 'denied', 'Token exchange: disallowed audience is denied');
   ok(exchanged.failureReasons.includes('audience-not-allowed'), 'Token exchange: audience denial reason is explicit');
   equal(exchanged.issuedToken, null, 'Token exchange: denied exchange does not issue a token');
+}
+
+async function testExchangeRejectsUnsupportedRequestedTokenType(): Promise<void> {
+  const { issuer, verificationKey } = await setupIssuer();
+  const decision = makeDecision({
+    id: 'decision-unsupported-requested-token-type',
+    consequenceType: 'decision-support',
+    riskClass: 'R1',
+    targetId: 'attestor.release.authority',
+  });
+  const parent = await issuer.issue({
+    decision,
+    issuedAt: '2026-04-18T10:00:00.000Z',
+    tokenId: 'rt_parent_unsupported_requested_token_type',
+  });
+
+  const exchanged = await exchangeReleaseToken({
+    request: {
+      id: 'exchange-unsupported-requested-token-type',
+      requestedAt: '2026-04-18T10:01:00.000Z',
+      subjectToken: parent.token,
+      requestedTokenType: 'urn:ietf:params:oauth:token-type:access_token',
+      audience: 'analytics.memo.writer',
+      scope: 'release:decision-support',
+    },
+    issuer,
+    verificationKey,
+    policy: {
+      allowedAudiences: ['analytics.memo.writer'],
+      allowedScopes: ['release:decision-support'],
+      maxTtlSeconds: 120,
+    },
+  });
+
+  equal(exchanged.status, 'denied', 'Token exchange: unsupported requested token type is denied');
+  equal(
+    exchanged.requestedTokenType,
+    'urn:ietf:params:oauth:token-type:access_token',
+    'Token exchange: denied result records the requested token type',
+  );
+  deepEqual(
+    exchanged.failureReasons,
+    ['unsupported-requested-token-type'],
+    'Token exchange: requested-token-type denial reason is explicit',
+  );
+  equal(exchanged.issuedToken, null, 'Token exchange: unsupported requested token type does not issue a token');
+}
+
+async function testExchangeRejectsUnsupportedSubjectTokenType(): Promise<void> {
+  const { issuer, verificationKey } = await setupIssuer();
+  const decision = makeDecision({
+    id: 'decision-unsupported-subject-token-type',
+    consequenceType: 'decision-support',
+    riskClass: 'R1',
+    targetId: 'attestor.release.authority',
+  });
+  const parent = await issuer.issue({
+    decision,
+    issuedAt: '2026-04-18T10:00:00.000Z',
+    tokenId: 'rt_parent_unsupported_subject_token_type',
+  });
+
+  const exchanged = await exchangeReleaseToken({
+    request: {
+      id: 'exchange-unsupported-subject-token-type',
+      requestedAt: '2026-04-18T10:01:00.000Z',
+      subjectToken: parent.token,
+      subjectTokenType: 'urn:ietf:params:oauth:token-type:access_token',
+      audience: 'analytics.memo.writer',
+      scope: 'release:decision-support',
+    },
+    issuer,
+    verificationKey,
+    policy: {
+      allowedAudiences: ['analytics.memo.writer'],
+      allowedScopes: ['release:decision-support'],
+      maxTtlSeconds: 120,
+    },
+  });
+
+  equal(exchanged.status, 'denied', 'Token exchange: unsupported subject token type is denied');
+  equal(
+    exchanged.subjectTokenType,
+    'urn:ietf:params:oauth:token-type:access_token',
+    'Token exchange: denied result records the subject token type',
+  );
+  deepEqual(
+    exchanged.failureReasons,
+    ['unsupported-subject-token-type'],
+    'Token exchange: subject-token-type denial reason is explicit',
+  );
+}
+
+async function testExchangeRejectsRawActorTokenInputs(): Promise<void> {
+  const { issuer, verificationKey } = await setupIssuer();
+  const decision = makeDecision({
+    id: 'decision-unsupported-actor-token-type',
+    consequenceType: 'decision-support',
+    riskClass: 'R1',
+    targetId: 'attestor.release.authority',
+  });
+  const parent = await issuer.issue({
+    decision,
+    issuedAt: '2026-04-18T10:00:00.000Z',
+    tokenId: 'rt_parent_unsupported_actor_token_type',
+  });
+
+  const rawActorToken = await exchangeReleaseToken({
+    request: {
+      id: 'exchange-raw-actor-token',
+      requestedAt: '2026-04-18T10:01:00.000Z',
+      subjectToken: parent.token,
+      actorToken: 'opaque-actor-token',
+      actorTokenType: ATTESTOR_RELEASE_TOKEN_TYPE,
+      audience: 'analytics.memo.writer',
+      scope: 'release:decision-support',
+    },
+    issuer,
+    verificationKey,
+    policy: {
+      allowedAudiences: ['analytics.memo.writer'],
+      allowedScopes: ['release:decision-support'],
+      maxTtlSeconds: 120,
+    },
+  });
+
+  equal(rawActorToken.status, 'denied', 'Token exchange: raw actor-token inputs are denied until validation exists');
+  deepEqual(
+    rawActorToken.failureReasons,
+    ['actor-token-not-supported'],
+    'Token exchange: raw actor-token no-support reason is explicit',
+  );
+  equal(rawActorToken.issuedToken, null, 'Token exchange: raw actor-token input does not issue a token');
+
+  const actorTokenTypeOnly = await exchangeReleaseToken({
+    request: {
+      id: 'exchange-actor-token-type-only',
+      requestedAt: '2026-04-18T10:01:00.000Z',
+      subjectToken: parent.token,
+      actorTokenType: ATTESTOR_RELEASE_TOKEN_TYPE,
+      audience: 'analytics.memo.writer',
+      scope: 'release:decision-support',
+    },
+    issuer,
+    verificationKey,
+    policy: {
+      allowedAudiences: ['analytics.memo.writer'],
+      allowedScopes: ['release:decision-support'],
+      maxTtlSeconds: 120,
+    },
+  });
+
+  equal(actorTokenTypeOnly.status, 'denied', 'Token exchange: actor token type without actor token is denied');
+  deepEqual(
+    actorTokenTypeOnly.failureReasons,
+    ['unsupported-actor-token-type'],
+    'Token exchange: orphan actor-token-type denial reason is explicit',
+  );
 }
 
 async function testExchangeRejectsDisallowedScopeAndResource(): Promise<void> {
@@ -763,6 +924,9 @@ async function testExchangeRejectsInvalidResourceUri(): Promise<void> {
 async function main(): Promise<void> {
   await testAudienceScopedExchangeIssuesDownstreamToken();
   await testExchangeDoesNotBroadenAudience();
+  await testExchangeRejectsUnsupportedRequestedTokenType();
+  await testExchangeRejectsUnsupportedSubjectTokenType();
+  await testExchangeRejectsRawActorTokenInputs();
   await testExchangeRejectsDisallowedScopeAndResource();
   await testExchangeCapsTtlToSubjectTokenLifetime();
   await testExchangeRejectsExpiredSubject();

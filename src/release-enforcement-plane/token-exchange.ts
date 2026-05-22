@@ -48,7 +48,10 @@ export type ReleaseTokenExchangeMode = 'delegation' | 'impersonation';
 export type ReleaseTokenExchangeFailureReason =
   | 'invalid-subject-token'
   | 'expired-subject-token'
+  | 'unsupported-requested-token-type'
   | 'unsupported-subject-token-type'
+  | 'unsupported-actor-token-type'
+  | 'actor-token-not-supported'
   | 'audience-not-allowed'
   | 'source-audience-not-allowed'
   | 'scope-not-allowed'
@@ -78,7 +81,10 @@ export interface ReleaseTokenExchangeRequest {
   readonly id: string;
   readonly requestedAt: string;
   readonly subjectToken: string;
+  readonly requestedTokenType?: string | null;
   readonly subjectTokenType?: string;
+  readonly actorToken?: string | null;
+  readonly actorTokenType?: string | null;
   readonly audience: string;
   readonly resource?: string | null;
   readonly scope?: string | readonly string[] | null;
@@ -104,7 +110,9 @@ interface ReleaseTokenExchangeBase {
   readonly grantType: typeof RELEASE_TOKEN_EXCHANGE_GRANT_TYPE;
   readonly requestedAt: string;
   readonly requestId: string;
+  readonly requestedTokenType: string;
   readonly subjectTokenType: string;
+  readonly actorTokenType: string | null;
   readonly issuedTokenType: typeof ATTESTOR_RELEASE_TOKEN_TYPE;
   readonly audience: string;
   readonly resource: string | null;
@@ -154,6 +162,15 @@ function normalizeOptionalIdentifier(
     return null;
   }
   return normalizeIdentifier(value, fieldName);
+}
+
+function normalizeOptionalTokenType(value: string | null | undefined): string | null {
+  if (value === undefined || value === null) {
+    return null;
+  }
+
+  const normalized = value.trim();
+  return normalized.length > 0 ? normalized : null;
 }
 
 function normalizeIsoTimestamp(value: string, fieldName: string): string {
@@ -415,7 +432,9 @@ function derivedDecisionForExchange(input: {
 function deny(input: {
   readonly request: ReleaseTokenExchangeRequest;
   readonly requestedAt: string;
+  readonly requestedTokenType: string;
   readonly subjectTokenType: string;
+  readonly actorTokenType: string | null;
   readonly audience: string;
   readonly resource: string | null;
   readonly scope: readonly string[];
@@ -430,7 +449,9 @@ function deny(input: {
     grantType: RELEASE_TOKEN_EXCHANGE_GRANT_TYPE,
     requestedAt: input.requestedAt,
     requestId: input.request.id,
+    requestedTokenType: input.requestedTokenType,
     subjectTokenType: input.subjectTokenType,
+    actorTokenType: input.actorTokenType,
     issuedTokenType: ATTESTOR_RELEASE_TOKEN_TYPE,
     audience: input.audience,
     resource: input.resource,
@@ -466,8 +487,13 @@ export async function exchangeReleaseToken(
   input: ReleaseTokenExchangeInput,
 ): Promise<ReleaseTokenExchangeResult> {
   const requestedAt = normalizeIsoTimestamp(input.request.requestedAt, 'requestedAt');
+  const requestedTokenType =
+    normalizeOptionalTokenType(input.request.requestedTokenType) ??
+    ATTESTOR_RELEASE_TOKEN_TYPE;
   const subjectTokenType =
     input.request.subjectTokenType ?? ATTESTOR_RELEASE_TOKEN_TYPE;
+  const actorToken = normalizeOptionalTokenType(input.request.actorToken);
+  const actorTokenType = normalizeOptionalTokenType(input.request.actorTokenType);
   const audience = normalizeIdentifier(input.request.audience, 'audience');
   const exchangeMode = input.request.exchangeMode ?? 'delegation';
   let resource: string | null;
@@ -479,7 +505,9 @@ export async function exchangeReleaseToken(
     return deny({
       request: input.request,
       requestedAt,
+      requestedTokenType,
       subjectTokenType,
+      actorTokenType,
       audience,
       resource,
       scope: normalizeScope(input.request.scope),
@@ -489,11 +517,64 @@ export async function exchangeReleaseToken(
     });
   }
 
+  if (requestedTokenType !== ATTESTOR_RELEASE_TOKEN_TYPE) {
+    return deny({
+      request: input.request,
+      requestedAt,
+      requestedTokenType,
+      subjectTokenType,
+      actorTokenType,
+      audience,
+      resource,
+      scope: normalizeScope(input.request.scope),
+      exchangeMode,
+      actor: null,
+      failureReasons: ['unsupported-requested-token-type'],
+    });
+  }
+
+  if (actorToken !== null) {
+    return deny({
+      request: input.request,
+      requestedAt,
+      requestedTokenType,
+      subjectTokenType,
+      actorTokenType,
+      audience,
+      resource,
+      scope: normalizeScope(input.request.scope),
+      exchangeMode,
+      actor: null,
+      failureReasons:
+        actorTokenType === ATTESTOR_RELEASE_TOKEN_TYPE
+          ? ['actor-token-not-supported']
+          : ['unsupported-actor-token-type'],
+    });
+  }
+
+  if (actorTokenType !== null) {
+    return deny({
+      request: input.request,
+      requestedAt,
+      requestedTokenType,
+      subjectTokenType,
+      actorTokenType,
+      audience,
+      resource,
+      scope: normalizeScope(input.request.scope),
+      exchangeMode,
+      actor: null,
+      failureReasons: ['unsupported-actor-token-type'],
+    });
+  }
+
   if (subjectTokenType !== ATTESTOR_RELEASE_TOKEN_TYPE) {
     return deny({
       request: input.request,
       requestedAt,
+      requestedTokenType,
       subjectTokenType,
+      actorTokenType,
       audience,
       resource,
       scope: normalizeScope(input.request.scope),
@@ -519,7 +600,9 @@ export async function exchangeReleaseToken(
     return deny({
       request: input.request,
       requestedAt,
+      requestedTokenType,
       subjectTokenType,
+      actorTokenType,
       audience,
       resource,
       scope: normalizeScope(input.request.scope),
@@ -545,7 +628,9 @@ export async function exchangeReleaseToken(
         return deny({
           request: input.request,
           requestedAt,
+          requestedTokenType,
           subjectTokenType,
+          actorTokenType,
           audience,
           resource,
           scope: normalizeScope(input.request.scope),
@@ -560,7 +645,9 @@ export async function exchangeReleaseToken(
       return deny({
         request: input.request,
         requestedAt,
+        requestedTokenType,
         subjectTokenType,
+        actorTokenType,
         audience,
         resource,
         scope: normalizeScope(input.request.scope),
@@ -623,7 +710,9 @@ export async function exchangeReleaseToken(
     return deny({
       request: input.request,
       requestedAt,
+      requestedTokenType,
       subjectTokenType,
+      actorTokenType,
       audience,
       resource,
       scope,
@@ -676,7 +765,9 @@ export async function exchangeReleaseToken(
     grantType: RELEASE_TOKEN_EXCHANGE_GRANT_TYPE,
     requestedAt,
     requestId: input.request.id,
+    requestedTokenType,
     subjectTokenType,
+    actorTokenType,
     issuedTokenType: ATTESTOR_RELEASE_TOKEN_TYPE,
     audience,
     resource,

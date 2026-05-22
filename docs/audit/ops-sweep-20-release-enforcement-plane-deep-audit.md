@@ -6,10 +6,13 @@ the runtime enforcement layer that consumes release tokens produced by the
 release-kernel decision engine.
 
 Remediation follow-up: OPS-155 is repo-side closed by the frozen DPoP default
-algorithm allowlist test. OPS-158 is repo-side closed by validated Envoy
-`attestor.risk_class` route context binding, explicit server-option precedence,
-invalid-value fail-closed behavior, and deployment docs that keep the module
-fallback risk class out of production route policy.
+algorithm allowlist test. OPS-157 is repo-side closed by dedicated token-exchange
+coverage for audience/resource/scope narrowing, requested/subject token-type
+denial, actor-chain evidence, and raw actor-token fail-closed no-support. OPS-158
+is repo-side closed by validated Envoy `attestor.risk_class` route context
+binding, explicit server-option precedence, invalid-value fail-closed behavior,
+and deployment docs that keep the module fallback risk class out of production
+route policy.
 
 ## 0. Recent Fixes Chain-Effect Check
 
@@ -102,9 +105,9 @@ tracked as OPS-154.
 | ID | Severity | State | Title | Evidence (`origin/master`) | Protected principle | Recommended next action |
 |---|---:|---|---|---|---|---|
 | OPS-154 | P2 | `not proven` | Sweep 20 did not line-by-line audit all 22 files / 16,972 lines | This sweep targeted specs, entry points, exports, and test inventory; full behavioral read of the largest files was out of budget | auditability; no overclaim | Record the limit and spawn sub-sweeps only where module-specific risk justifies the budget |
-| OPS-155 | P2 | `open / partial-repo` | DPoP default accepted-algorithm policy is per-call, not a module-level frozen policy constant | `verifyDpopProof` defaults `acceptedAlgorithms` with `input.acceptedAlgorithms ?? [DEFAULT_DPOP_SIGNING_ALGORITHM, 'EdDSA']` at `dpop.ts:350-351`; callers can pass a broader list | proof integrity; fail-closed boundary | Add `DEFAULT_ACCEPTED_DPOP_ALGORITHMS` as a frozen exported constant and document that widening the caller allowlist is an explicit operator/provider decision |
+| OPS-155 | P2 | `closed` | DPoP default accepted-algorithm policy is per-call, not a module-level frozen policy constant | `dpop.ts` now exports frozen `DEFAULT_ACCEPTED_DPOP_ALGORITHMS = [ES256, EdDSA]`; `tests/release-enforcement-plane-dpop-default-policy.test.ts` locks default accept/reject behavior and explicit caller allowlist expansion. | proof integrity; fail-closed boundary | Repo-side closed; future algorithm widening remains an explicit operator/provider policy decision with tests. |
 | OPS-156 | P2 | `accepted limitation` | HTTP Message Signatures are Ed25519-only even though RFC 9421 permits other algorithms | `http-message-signatures.ts:38` pins `HTTP_MESSAGE_SIGNATURE_ALGORITHM = 'ed25519'`; RFC 9421 includes RSA-PSS, ECDSA, HMAC-SHA256, and Ed25519 examples | proof integrity; no overclaim | Keep the deliberate narrowing; document that future provider adapters require explicit allowlist expansion and tests |
-| OPS-157 | P3 | `open / partial-repo` | RFC 8693 token-exchange behavioral depth deferred | `token-exchange.ts` declares grant type and token type, but this sweep did not deep-read every optional field binding path | release provenance; auditability | Run a dedicated token-exchange sub-sweep covering `audience`, `resource`, `scope`, requested/subject/actor token types, and actor-token binding |
+| OPS-157 | P3 | `closed` | RFC 8693 token-exchange behavioral depth deferred | `token-exchange.ts` now records requested/subject/actor token-type vocabulary, denies unsupported requested/subject token types, fail-closes raw `actorToken` / orphan `actorTokenType` inputs, and preserves structured actor references through nested `act` claims. `tests/release-enforcement-plane-token-exchange.test.ts` locks audience/resource/scope narrowing, source audience, parent token linkage, actor-chain nesting, unsupported requested/subject token types, and raw actor-token no-support. | release provenance; auditability | Repo-side closed for the Attestor token-exchange contract; do not claim OAuth certification, raw external actor-token validation support, live replay/introspection stores, or customer PEP no-bypass. |
 | OPS-158 | P3 | `closed` | Envoy bridge default risk class must not become a production route policy | `envoy-ext-authz.ts` accepts the validated `attestor.risk_class` route context extension, gives explicit server `options.riskClass` precedence, and fails closed on invalid route risk values; deployment docs state that the default is fallback-only. | release provenance; operational boundedness | Keep `tests/release-enforcement-plane-envoy-ext-authz.test.ts` green and prove live route-map deployment separately before production claims. |
 | OPS-159 | P3 | `accepted limitation` | Degraded-mode `maxUses` body path was not deep-audited | `degraded-mode.ts:38` sets `DEFAULT_DEGRADED_MODE_MAX_USES = 1`; this sweep did not line-by-line verify custom `maxUses > 1` enforcement | replay and idempotency safety; auditability | Audit the `maxUses` increment/check path in a future degraded-mode sub-sweep if operators plan to allow `maxUses > 1` |
 
@@ -149,7 +152,7 @@ freshness/replay tests confirmed.
 | Does middleware expose typed allow/deny/skip and Hono/Node variants? | `middleware.ts:80-81`, `middleware.ts:691`, `middleware.ts:752` | repo-proven |
 | Does HTTP Message Signatures pin Ed25519 and SHA-256 digest? | `http-message-signatures.ts:38-41`; RFC 9421 | repo-proven, intentional narrowing |
 | Does workload binding implement certificate thumbprint and SPIFFE binding vocabulary? | `workload-binding.ts:26`, `workload-binding.ts:132-145`; RFC 8705; SPIFFE overview | repo-proven |
-| Does token exchange use RFC 8693 grant vocabulary? | `token-exchange.ts:39-46`; RFC 8693 | repo-proven at constant/export level |
+| Does token exchange use RFC 8693 grant vocabulary and bind requested/subject/actor token-type paths? | `token-exchange.ts`; `tests/release-enforcement-plane-token-exchange.test.ts`; RFC 8693 Sections 2.1, 2.1.1, 3, and 4.1 | repo-proven for the Attestor contract; raw external actor-token validation remains unsupported and fail-closed |
 | Does Envoy bridge use canonical filter name and type URL? | `envoy-ext-authz.ts:89-94`; Envoy ext_authz docs | repo-proven |
 | Does degraded mode have bounded defaults? | `degraded-mode.ts:33-40` | repo-proven for defaults |
 | Are full 16,972 source lines line-by-line behaviorally audited? | Sweep budget and local line counts | not proven; OPS-154 |
@@ -176,7 +179,7 @@ line-by-line behavioral audit, not another broad sweep.
 |---|---|---|---|
 | OPS-155 DPoP default allowlist constant | Default policy becomes discoverable, exported, and testable | low | `tests/release-enforcement-plane-dpop.test.ts` should assert default accepted algorithms |
 | OPS-156 documentation | Avoids implying generic RFC 9421 algorithm support | low | docs-only check |
-| OPS-157 token-exchange sub-sweep | Deeper OAuth token exchange compliance evidence | medium | dedicated sub-sweep, not a quick PR |
+| OPS-157 token-exchange sub-sweep | Dedicated token-exchange field and actor-token no-support evidence | medium | closed repo-side by `tests/release-enforcement-plane-token-exchange.test.ts`; no OAuth certification or raw external actor-token support claim |
 | OPS-158 Envoy route risk-class mapping | Prevents module default from becoming production policy | low | `tests/release-enforcement-plane-envoy-ext-authz.test.ts` plus deployment doc check |
 | OPS-159 degraded-mode sub-sweep | Confirms custom `maxUses` behavior if operators need it | medium | dedicated degraded-mode test/audit |
 
@@ -214,8 +217,9 @@ PEP live-proof row already covers the operator-action gate.
   all 16,972 source lines; that limit is explicitly OPS-154.
 - Is there a repo-proven P0? No.
 - Is there a repo-proven P1? No.
-- Is remediation required? Small: OPS-155 is the main low-risk code cleanup;
-  OPS-156/158 are documentation; OPS-157/159 are sub-sweep candidates.
+- Is remediation required? OPS-155, OPS-157, and OPS-158 are now repo-side
+  closed; OPS-156/159 remain accepted limitations and OPS-154 remains the
+  sweep-budget disclosure.
 - Can the next sweep proceed without Sweep 20 remediation? Yes.
 - Recommended next target: Sweep 21 should cover
   `src/release-policy-control-plane/**`, completing the release-kernel,
@@ -227,8 +231,8 @@ PEP live-proof row already covers the operator-action gate.
   `origin/master @ 05a7cd050e842a183cfeb2747c62e9fe8f8e854a`; 22 source
   files, 20 dedicated enforcement-plane test files, and 2 related
   freshness/replay tests mapped.
-- Not done: no runtime remediation; no line-by-line behavioral audit of all
-  16,972 source lines; no OPS-155 code fix.
+- Not done: no live runtime proof; no line-by-line behavioral audit of all
+  16,972 source lines; no raw external actor-token validation support.
 - Files changed by integration: this report plus audit indexes and baseline
   docs.
 - Remaining blockers: live customer PEP no-bypass, external KMS runtime

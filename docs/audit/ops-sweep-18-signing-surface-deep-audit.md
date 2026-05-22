@@ -4,6 +4,12 @@ Status: read-only audit. No remediation was written in this sweep. No signing
 primitive, KMS adapter, test file, workflow, live-proof gate, or source file was
 changed by this report.
 
+Remediation follow-up: OPS-141 and OPS-146 are now repo-side closed by
+`src/signing/keyless-signer.ts` production-like runtime guards and
+`tests/f5-keyless-ca-injection-boundary-validation.test.ts`. OPS-142 remains an
+accepted Phase 2 limitation for external KMS/HSM runtime signing, and OPS-145
+remains a low-priority signing test layout follow-up.
+
 This is the first engine-substrate sweep after the route, ops, governance,
 redaction, and meta-audit chain covered by Sweeps 01-17.
 

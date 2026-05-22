@@ -4,6 +4,13 @@ Status: read-only meta-audit. No remediation was written in this sweep. No
 test guard, schema marker, workflow gate, live-proof gate, or source file was
 changed by this report.
 
+Remediation follow-up: current `origin/master` after PR4 adds
+`scripts/check-finding-test-coverage.mjs`, `tests/finding-test-coverage.test.ts`,
+Evaluation Smoke wiring, structured `Locking test:` markers for closed P0/P1
+rows, and future `Test contract:` paths for P0 live/ops blockers. The report's
+original OPS-136/139 gaps are therefore repo-side closed when that guard is
+green; live/ops proof blockers remain live-proof-only.
+
 This sweep maps every current P0/P1 finding-index row to its locking test
 evidence or to an explicit open test-contract gap.
 

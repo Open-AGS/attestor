@@ -118,6 +118,7 @@ function testFastSuiteKeepsCriticalCoverage(): void {
     'test:production-rollout-public-boundary',
     'test:production-readiness-secret-safe-output',
     'test:public-artifacts-redaction',
+    'test:audit-finding-test-coverage',
     'tsx tests/account-session-cookie-security.test.ts',
     'tsx tests/release-kernel-release-decision-engine.test.ts',
     'tsx tests/release-layer-platform-surface.test.ts',

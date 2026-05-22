@@ -92,6 +92,12 @@ function testPackageScript(): void {
     'Package scripts: audit finding evidence checker is exposed',
   );
   passed += 1;
+  assert.equal(
+    packageJson.scripts['test:audit-finding-test-coverage'],
+    'tsx tests/finding-test-coverage.test.ts',
+    'Package scripts: audit finding test-coverage checker is exposed',
+  );
+  passed += 1;
 }
 
 function testEvidenceChecker(): void {

@@ -46,7 +46,7 @@ function testHighSignalFindingsAreSeeded(): void {
 }
 
 function testLiveProofRegisterIsSeeded(): void {
-  for (const proofId of ['LP-HTTPS-EDGE', 'LP-CUSTOMER-PEP-NO-BYPASS', 'LP-KMS-RUNTIME-SIGNING']) {
+  for (const proofId of ['LP-HTTPS-EDGE', 'LP-CUSTOMER-PEP-NO-BYPASS', 'LP-KMS-RUNTIME-SIGNING', 'LP-FINDING-TEST-COVERAGE']) {
     ok(REQUIRED_LIVE_PROOFS.includes(proofId), `${proofId} is seeded in the live proof register`);
   }
 }

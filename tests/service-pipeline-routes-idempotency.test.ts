@@ -175,9 +175,9 @@ function executionDeps(counters: { consume: number; run: number }): PipelineExec
     verifyOidcToken: async () => ({ verified: false, identity: null, error: 'unused' }) as never,
     classifyIdentitySource: () => 'ephemeral' as never,
     createRequestSigners: () => ({}) as never,
-    runFinancialPipeline: () => {
+    runFinancialPipeline: (input) => {
       counters.run += 1;
-      return executionReport(`run-${counters.run}`);
+      return executionReport(input.runId);
     },
     buildVerificationKit: () => null,
     createFinanceCommunicationReleaseCandidateFromReport: () => null,
@@ -297,8 +297,92 @@ async function testSyncPipelineReplayReturnsSameRunAndConsumesOnce(): Promise<vo
     assert.equal(second.status, 200);
     assert.equal(second.headers.get('x-attestor-idempotent-replay'), 'true');
     assert.equal(secondBody.runId, firstBody.runId);
+    assert.match(String(firstBody.runId), /^api-[0-9a-f-]{36}$/u);
     assert.equal(counters.run, 1);
     assert.equal(counters.consume, 1);
+  } finally {
+    restore();
+  }
+}
+
+async function testPipelineRoutesRejectNonJsonMediaType(): Promise<void> {
+  const restore = withEnv();
+  try {
+    const counters = { consume: 0, run: 0 };
+    const app = new Hono();
+    registerPipelineExecutionRoutes(app, executionDeps(counters));
+    const response = await app.request('/api/v1/pipeline/run', {
+      method: 'POST',
+      headers: { 'content-type': 'text/plain' },
+      body: 'not-json',
+    });
+    const body = await response.json() as { readonly error: string };
+
+    assert.equal(response.status, 415);
+    assert.equal(body.error, 'Pipeline route requires Content-Type: application/json.');
+    assert.equal(counters.run, 0);
+    assert.equal(counters.consume, 0);
+  } finally {
+    restore();
+  }
+}
+
+async function testPipelineAsyncRouteRejectsNonJsonMediaType(): Promise<void> {
+  const restore = withEnv();
+  try {
+    const counters = { consume: 0, submit: 0 };
+    const app = new Hono();
+    registerPipelineAsyncRoutes(app, asyncDeps(counters));
+    const response = await app.request('/api/v1/pipeline/run-async', {
+      method: 'POST',
+      headers: { 'content-type': 'text/plain' },
+      body: 'not-json',
+    });
+    const body = await response.json() as { readonly error: string };
+
+    assert.equal(response.status, 415);
+    assert.equal(body.error, 'Pipeline async route requires Content-Type: application/json.');
+    assert.equal(counters.submit, 0);
+    assert.equal(counters.consume, 0);
+  } finally {
+    restore();
+  }
+}
+
+async function testPipelineConnectorErrorDetailsAreRedacted(): Promise<void> {
+  const restore = withEnv();
+  try {
+    const counters = { consume: 0, run: 0 };
+    const app = new Hono();
+    const deps = executionDeps(counters);
+    deps.connectorRegistry = {
+      get: () => ({
+        loadConfig: () => ({ configured: true }),
+        execute: async () => {
+          throw new Error('connector failure at raw-host.example.invalid with raw_secret_must_not_escape');
+        },
+      }) as never,
+      listIds: () => ['redaction-fixture'],
+    };
+    registerPipelineExecutionRoutes(app, deps);
+    const response = await app.request('/api/v1/pipeline/run', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        candidateSql: 'select 1',
+        intent: 'approve test query',
+        connector: 'redaction-fixture',
+      }),
+    });
+    const text = await response.text();
+    const body = JSON.parse(text) as { readonly detail: string; readonly proofMode: string };
+
+    assert.equal(response.status, 502);
+    assert.equal(body.detail, 'Connector execution failed before proof evidence could be collected.');
+    assert.equal(body.proofMode, 'unavailable');
+    assert.doesNotMatch(text, /raw_secret_must_not_escape|raw-host\.example\.invalid/u);
+    assert.equal(counters.run, 0);
+    assert.equal(counters.consume, 0);
   } finally {
     restore();
   }
@@ -382,8 +466,11 @@ async function testAsyncPipelineReplayReturnsSameJobAndConsumesOnce(): Promise<v
 }
 
 await testSyncPipelineReplayReturnsSameRunAndConsumesOnce();
+await testPipelineRoutesRejectNonJsonMediaType();
+await testPipelineAsyncRouteRejectsNonJsonMediaType();
+await testPipelineConnectorErrorDetailsAreRedacted();
 await testPipelineIdempotencyConflictRejectsDifferentPayload();
 await testPipelineIdempotencyConfigFailsBeforeSideEffects();
 await testAsyncPipelineReplayReturnsSameJobAndConsumesOnce();
 
-console.log('Service pipeline routes idempotency tests: 4 passed, 0 failed');
+console.log('Service pipeline routes idempotency tests: 7 passed, 0 failed');

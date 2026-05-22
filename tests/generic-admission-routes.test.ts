@@ -259,6 +259,7 @@ async function testTenantMismatchFailsClosedBeforeShadowRecording(): Promise<voi
   const body = await response.json() as {
     decision: string;
     failClosed: boolean;
+    detail: string;
     reasonCodes: readonly string[];
   };
 
@@ -311,7 +312,33 @@ async function testLoopGuardUnavailableFailsClosedBeforeShadowRecording(): Promi
     body.reasonCodes.includes('agent-loop-abuse-guard-unavailable'),
     'Generic admission route: unavailable loop guard reason is explicit',
   );
+  equal(
+    body.detail,
+    'The agent loop abuse guard could not evaluate the admission.',
+    'Generic admission route: unavailable loop guard detail is redacted',
+  );
   equal(shadowRecords, 0, 'Generic admission route: unavailable loop guard is not shadow recorded');
+}
+
+async function testNonJsonMediaTypeReturnsFailClosedProblem(): Promise<void> {
+  const app = createApp();
+  const response = await app.request('/api/v1/admissions', {
+    method: 'POST',
+    headers: {
+      'content-type': 'text/plain',
+    },
+    body: 'not-json',
+  });
+  const body = await response.json() as {
+    decision: string;
+    failClosed: boolean;
+    reasonCodes: readonly string[];
+  };
+
+  equal(response.status, 415, 'Generic admission route: non-JSON media type returns 415');
+  equal(body.decision, 'block', 'Generic admission route: non-JSON media type problem blocks');
+  equal(body.failClosed, true, 'Generic admission route: non-JSON media type problem fails closed');
+  ok(body.reasonCodes.includes('json-required'), 'Generic admission route: non-JSON media type reason is explicit');
 }
 
 async function testInvalidJsonReturnsFailClosedProblem(): Promise<void> {
@@ -361,7 +388,11 @@ async function testInvalidInputReturnsFailClosedProblem(): Promise<void> {
   equal(response.status, 400, 'Generic admission route: invalid input returns 400');
   equal(body.decision, 'block', 'Generic admission route: invalid input problem blocks');
   equal(body.failClosed, true, 'Generic admission route: invalid input problem fails closed');
-  ok(body.detail.includes('domain must be one of'), 'Generic admission route: invalid domain detail is specific');
+  equal(
+    body.detail,
+    'The generic admission request could not be evaluated.',
+    'Generic admission route: invalid input detail is redacted',
+  );
   ok(body.reasonCodes.includes('invalid-admission-input'), 'Generic admission route: invalid input reason is explicit');
 }
 
@@ -835,6 +866,7 @@ await testEvaluationPlansRejectEnforcingModes();
 await testPostAdmissionRouteReturnsEnvelope();
 await testTenantMismatchFailsClosedBeforeShadowRecording();
 await testLoopGuardUnavailableFailsClosedBeforeShadowRecording();
+await testNonJsonMediaTypeReturnsFailClosedProblem();
 await testInvalidJsonReturnsFailClosedProblem();
 await testInvalidInputReturnsFailClosedProblem();
 await testPostAdmissionRouteCarriesRetryAttemptBinding();

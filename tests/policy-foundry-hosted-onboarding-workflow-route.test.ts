@@ -350,6 +350,14 @@ async function testHostedRouteRendersHtmlViewFromSameWorkflow(): Promise<void> {
     'text/html',
     'Policy Foundry hosted view route: content type is HTML',
   );
+  equal(response.headers.get('x-content-type-options'), 'nosniff', 'Policy Foundry hosted view route: nosniff header is set');
+  equal(response.headers.get('referrer-policy'), 'no-referrer', 'Policy Foundry hosted view route: referrer policy is no-referrer');
+  equal(response.headers.get('x-frame-options'), 'DENY', 'Policy Foundry hosted view route: frame denial header is set');
+  includes(
+    response.headers.get('content-security-policy') ?? '',
+    "frame-ancestors 'none'",
+    'Policy Foundry hosted view route: CSP denies framing',
+  );
   includes(html, 'Policy Foundry hosted onboarding', 'Policy Foundry hosted view route: HTML identity is visible');
   includes(html, 'Customer action required', 'Policy Foundry hosted view route: review surface headline renders');
   includes(html, 'Adversarial replay', 'Policy Foundry hosted view route: current task renders');
@@ -359,6 +367,22 @@ async function testHostedRouteRendersHtmlViewFromSameWorkflow(): Promise<void> {
   excludes(html, /rk_live_must_not_escape/u, 'Policy Foundry hosted view route: secret-like manifest text is not emitted');
   excludes(html, /C:\/Users\/thedi\/private/u, 'Policy Foundry hosted view route: caller source path is not emitted');
   excludes(html, /tenant_foundry_route_a/u, 'Policy Foundry hosted view route: raw tenant id is not emitted');
+}
+
+async function testHostedRouteRejectsNonJsonMediaType(): Promise<void> {
+  const app = createApp();
+  const response = await app.request(HOSTED_POLICY_FOUNDRY_ONBOARDING_WORKFLOW_ROUTE, {
+    method: 'POST',
+    headers: { 'content-type': 'text/plain' },
+    body: 'not-json',
+  });
+  const body = await response.json() as { readonly reasonCodes: readonly string[] };
+
+  equal(response.status, 415, 'Policy Foundry hosted route: non-JSON media type returns 415');
+  ok(
+    body.reasonCodes.includes('policy-foundry-hosted-onboarding-json-required'),
+    'Policy Foundry hosted route: non-JSON media type reason is stable',
+  );
 }
 
 async function testHostedRoutePersistsAndResumesWizardState(): Promise<void> {
@@ -914,6 +938,7 @@ function testDocsAndScriptsExposeHostedWorkflowRoute(): void {
 try {
   await testHostedRouteRendersStatelessReviewWorkflow();
   await testHostedRouteRendersHtmlViewFromSameWorkflow();
+  await testHostedRouteRejectsNonJsonMediaType();
   await testHostedRoutePersistsAndResumesWizardState();
   await testHostedRouteCanAcceptPassingReplayObservations();
   await testHostedRouteBindsPassingLiveDownstreamReplay();

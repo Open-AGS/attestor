@@ -393,7 +393,7 @@ async function testMissingStoreAndJsonValidationRemainFailClosed(): Promise<void
   });
 
   equal(missingStore.status, 503, 'Shadow routes HTTP coverage: missing simulation store fails closed');
-  equal(badContentType.status, 400, 'Shadow routes HTTP coverage: non-JSON body remains rejected');
+  equal(badContentType.status, 415, 'Shadow routes HTTP coverage: non-JSON body returns unsupported media type');
   equal(badBody.status, 400, 'Shadow routes HTTP coverage: malformed JSON body is rejected');
   equal(auditInputs.length, 0, 'Shadow routes HTTP coverage: failed mutations do not write success audit');
 }

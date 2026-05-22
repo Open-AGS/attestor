@@ -77,13 +77,16 @@ function createEvent(tenant: TenantContext): ShadowAdmissionEvent {
 function createApp(input: {
   readonly routeTenant?: TenantContext;
   readonly events?: readonly ShadowAdmissionEvent[];
+  readonly returnUnfilteredEvents?: boolean;
 } = {}): Hono {
   const app = new Hono();
   const events = input.events ?? [createEvent(tenantA)];
   registerActionSurfaceOnboardingRoutes(app, {
     currentTenant: () => input.routeTenant ?? tenantA,
     listShadowEvents: ({ tenant }) =>
-      events.filter((event) => event.tenantId === tenant.tenantId || event.tenantId === null),
+      input.returnUnfilteredEvents
+        ? events
+        : events.filter((event) => event.tenantId === tenant.tenantId || event.tenantId === null),
     now: () => '2026-05-12T18:01:00.000Z',
   });
   return app;
@@ -222,6 +225,48 @@ async function testHostedRouteKeepsTenantScopedShadowEvents(): Promise<void> {
   );
 }
 
+async function testHostedRouteRejectsCrossTenantShadowEventsFromDependency(): Promise<void> {
+  const app = createApp({
+    routeTenant: tenantB,
+    events: [createEvent(tenantA), createEvent(tenantB)],
+    returnUnfilteredEvents: true,
+  });
+  const response = await app.request('/api/v1/shadow/action-surface/onboarding-packet', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ declarations: [] }),
+  });
+  const text = await response.text();
+  const body = JSON.parse(text) as {
+    readonly reasonCodes: readonly string[];
+    readonly detail: string;
+  };
+
+  equal(response.status, 400, 'Hosted onboarding route: cross-tenant shadow event fails closed');
+  ok(
+    body.reasonCodes.includes('action-surface-onboarding-render-failed'),
+    'Hosted onboarding route: cross-tenant dependency leak keeps stable reason code',
+  );
+  includes(body.detail, 'cross-tenant shadow event', 'Hosted onboarding route: cross-tenant detail is bounded');
+  excludes(text, /raw_prompt_must_not_escape|sk_live_must_not_escape/u, 'Hosted onboarding route: cross-tenant failure exposes no raw manifest material');
+}
+
+async function testHostedRouteRejectsNonJsonMediaType(): Promise<void> {
+  const app = createApp();
+  const response = await app.request('/api/v1/shadow/action-surface/onboarding-packet', {
+    method: 'POST',
+    headers: { 'content-type': 'text/plain' },
+    body: 'not-json',
+  });
+  const body = await response.json() as { readonly reasonCodes: readonly string[] };
+
+  equal(response.status, 415, 'Hosted onboarding route: non-JSON media type returns 415');
+  ok(
+    body.reasonCodes.includes('action-surface-onboarding-json-required'),
+    'Hosted onboarding route: non-JSON media type reason is stable',
+  );
+}
+
 async function testHostedRouteRejectsInvalidInput(): Promise<void> {
   const app = createApp();
   const response = await app.request('/api/v1/shadow/action-surface/onboarding-packet', {
@@ -287,6 +332,8 @@ try {
   await testHostedRouteRendersStatelessReviewPacket();
   await testHostedRouteCanDisableShadowEvents();
   await testHostedRouteKeepsTenantScopedShadowEvents();
+  await testHostedRouteRejectsCrossTenantShadowEventsFromDependency();
+  await testHostedRouteRejectsNonJsonMediaType();
   await testHostedRouteRejectsInvalidInput();
   testDocsAndScriptsExposeHostedRoute();
   console.log(`Action surface onboarding packet route tests: ${passed} passed, 0 failed`);

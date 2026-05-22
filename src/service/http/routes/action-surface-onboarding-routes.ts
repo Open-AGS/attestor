@@ -13,6 +13,7 @@ import {
   type ShadowAdmissionEvent,
 } from '../../../consequence-admission/index.js';
 import type { TenantContext } from '../../tenant-isolation.js';
+import { acceptsJsonRequestBody } from '../route-response-helpers.js';
 
 const HOSTED_ACTION_SURFACE_ONBOARDING_ROUTE =
   '/api/v1/shadow/action-surface/onboarding-packet';
@@ -22,7 +23,7 @@ const MAX_HOSTED_DECLARATIONS = 500;
 const MAX_HOSTED_READINESS_OVERRIDES = 500;
 const DEFAULT_HOSTED_MANIFEST_MAX_BYTES = 512 * 1024;
 
-type HostedOnboardingProblemStatus = 400 | 503;
+type HostedOnboardingProblemStatus = 400 | 415 | 503;
 
 type HostedActionSurfaceOnboardingRequestBody = {
   readonly generatedAt?: unknown;
@@ -56,6 +57,18 @@ function tenantSummary(tenant: TenantContext): {
 
 function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function assertTenantBoundShadowEvents(
+  tenant: TenantContext,
+  events: readonly ShadowAdmissionEvent[],
+): readonly ShadowAdmissionEvent[] {
+  for (const event of events) {
+    if (event.tenantId !== null && event.tenantId !== tenant.tenantId) {
+      throw new Error('Action surface onboarding hosted route received a cross-tenant shadow event.');
+    }
+  }
+  return events;
 }
 
 function optionalString(value: unknown, fieldName: string): string | null {
@@ -204,6 +217,15 @@ function problem(
 }
 
 async function readBody(c: Context): Promise<HostedActionSurfaceOnboardingRequestBody | Response> {
+  if (!acceptsJsonRequestBody(c)) {
+    return problem(c, {
+      type: 'https://attestor.dev/problems/action-surface-onboarding-json-required',
+      title: 'Action surface onboarding JSON required',
+      status: 415,
+      detail: 'The hosted action surface onboarding route requires Content-Type: application/json.',
+      reasonCodes: ['action-surface-onboarding-json-required'],
+    });
+  }
   try {
     const parsed = await c.req.json<unknown>();
     if (!isRecord(parsed)) {
@@ -240,7 +262,9 @@ export function registerActionSurfaceOnboardingRoutes(
       const tenant = deps.currentTenant(c);
       const generatedAt = optionalIsoTimestamp(body.generatedAt, deps.now?.() ?? new Date().toISOString());
       const includeShadowEvents = optionalBoolean(body.includeShadowEvents, 'includeShadowEvents', true);
-      const events = includeShadowEvents ? deps.listShadowEvents({ tenant }) : [];
+      const events = includeShadowEvents
+        ? assertTenantBoundShadowEvents(tenant, deps.listShadowEvents({ tenant }))
+        : [];
       const packet = createActionSurfaceOnboardingPacket({
         generatedAt,
         attestorBaseUrl: optionalString(body.attestorBaseUrl, 'attestorBaseUrl'),
@@ -266,14 +290,15 @@ export function registerActionSurfaceOnboardingRoutes(
       });
     } catch (error) {
       const detail =
-        error instanceof Error
+        error instanceof Error &&
+        (error.message.includes('Action surface onboarding hosted route') ||
+          error.message.includes('cross-tenant'))
           ? error.message
           : 'The action surface onboarding packet could not be rendered.';
       const status: HostedOnboardingProblemStatus =
-        detail.includes('hosted route') ||
-        detail.includes('Action surface') ||
-        detail.includes('must be') ||
-        detail.includes('requires')
+        error instanceof Error &&
+        (error.message.includes('Action surface onboarding hosted route') ||
+          error.message.includes('cross-tenant'))
           ? 400
           : 503;
       return problem(c, {

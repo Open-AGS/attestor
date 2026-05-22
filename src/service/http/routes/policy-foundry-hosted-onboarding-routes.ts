@@ -44,6 +44,10 @@ import type {
   PolicyFoundryHostedWizardStateStore,
 } from '../../policy-foundry-hosted-wizard-state.js';
 import type { TenantContext } from '../../tenant-isolation.js';
+import {
+  acceptsJsonRequestBody,
+  secureHtmlResponseHeaders,
+} from '../route-response-helpers.js';
 
 export const HOSTED_POLICY_FOUNDRY_ONBOARDING_WORKFLOW_ROUTE =
   '/api/v1/shadow/policy-foundry/hosted-onboarding-workflow';
@@ -60,7 +64,7 @@ const MAX_HOSTED_REVIEWED_STEPS = 32;
 const MAX_HOSTED_CAPABILITIES = 64;
 const DEFAULT_HOSTED_MANIFEST_MAX_BYTES = 512 * 1024;
 
-type HostedPolicyFoundryProblemStatus = 400 | 404 | 503;
+type HostedPolicyFoundryProblemStatus = 400 | 404 | 415 | 503;
 
 type HostedPolicyFoundryOnboardingRequestBody = {
   readonly generatedAt?: unknown;
@@ -119,6 +123,18 @@ function tenantDigest(tenant: TenantContext): {
 
 function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function assertTenantBoundShadowEvents(
+  tenant: TenantContext,
+  events: readonly ShadowAdmissionEvent[],
+): readonly ShadowAdmissionEvent[] {
+  for (const event of events) {
+    if (event.tenantId !== null && event.tenantId !== tenant.tenantId) {
+      throw new Error('Policy Foundry hosted onboarding route received a cross-tenant shadow event.');
+    }
+  }
+  return events;
 }
 
 function optionalString(value: unknown, fieldName: string): string | null {
@@ -502,7 +518,9 @@ function problemStatusFor(detail: string): HostedPolicyFoundryProblemStatus {
 
 function renderFailedProblem(c: Context, error: unknown): Response {
   const detail =
-    error instanceof Error
+    error instanceof Error &&
+    (error.message.includes('Policy Foundry hosted onboarding route') ||
+      error.message.includes('cross-tenant'))
       ? error.message
       : 'The Policy Foundry hosted onboarding workflow could not be rendered.';
   return problem(c, {
@@ -515,6 +533,15 @@ function renderFailedProblem(c: Context, error: unknown): Response {
 }
 
 async function readBody(c: Context): Promise<HostedPolicyFoundryOnboardingRequestBody | Response> {
+  if (!acceptsJsonRequestBody(c)) {
+    return problem(c, {
+      type: 'https://attestor.dev/problems/policy-foundry-hosted-onboarding-json-required',
+      title: 'Policy Foundry hosted onboarding JSON required',
+      status: 415,
+      detail: 'The Policy Foundry hosted onboarding route requires Content-Type: application/json.',
+      reasonCodes: ['policy-foundry-hosted-onboarding-json-required'],
+    });
+  }
   try {
     const parsed = await c.req.json<unknown>();
     if (!isRecord(parsed)) {
@@ -567,7 +594,9 @@ async function createHostedPolicyFoundryOnboardingMaterial(
     entitlementResolverConfigured: Boolean(deps.resolveBillingEntitlement),
   });
   const includeShadowEvents = optionalBoolean(body.includeShadowEvents, 'includeShadowEvents', true);
-  const events = includeShadowEvents ? deps.listShadowEvents({ tenant }) : [];
+  const events = includeShadowEvents
+    ? assertTenantBoundShadowEvents(tenant, deps.listShadowEvents({ tenant }))
+    : [];
   const selfOnboardingPacket = createPolicyFoundrySelfOnboardingCliPacket({
     generatedAt,
     sessionId: optionalString(body.sessionId, 'sessionId'),
@@ -732,9 +761,7 @@ export function registerPolicyFoundryHostedOnboardingRoutes(
 
     try {
       const material = await createHostedPolicyFoundryOnboardingMaterial(c, deps, body);
-      return c.body(renderPolicyFoundryHostedUiFlow(material.reviewSurface), 200, {
-        'content-type': 'text/html; charset=utf-8',
-      });
+      return c.body(renderPolicyFoundryHostedUiFlow(material.reviewSurface), 200, secureHtmlResponseHeaders());
     } catch (error) {
       return renderFailedProblem(c, error);
     }

@@ -25,6 +25,12 @@ function readProjectFile(...segments: string[]): string {
   return readFileSync(join(process.cwd(), ...segments), 'utf8');
 }
 
+function fixtureTextFromCodePoints(...groups: readonly (readonly number[])[]): string {
+  const codes: number[] = [];
+  for (const group of groups) codes.push(...group);
+  return String.fromCharCode(...codes);
+}
+
 function testRedactsKnownLiveSecretShapes(): void {
   const raw = [
     'sk_live_51TVAhQsecret',
@@ -82,18 +88,42 @@ function testStringifyAndErrorsAreSecretSafe(): void {
 }
 
 function testRedactsProviderSecretShapes(): void {
-  const ascii = (...codes: readonly number[]): string => String.fromCharCode(...codes);
-  const fixtureSecret = (...parts: string[]): string => parts.join('');
-  const awsLongTermKeyPrefix = ascii(65, 75, 73, 65);
-  const awsTemporaryKeyPrefix = ascii(65, 83, 73, 65);
-  const googleApiKeyPrefix = ascii(65, 73, 122, 97);
-  const googleOAuthPrefix = ascii(121, 97, 50, 57, 46);
-  const githubClassicPatPrefix = ascii(103, 104, 112, 95);
-  const githubFineGrainedPatPrefix = ascii(103, 105, 116, 104, 117, 98, 95, 112, 97, 116, 95);
-  const slackBotTokenPrefix = ascii(120, 111, 120, 98);
-  const anthropicApiKeyPrefix = ascii(115, 107, 45, 97, 110, 116, 45, 97, 112, 105, 48, 51, 45);
-  const openAiProjectKeyPrefix = ascii(115, 107, 45, 112, 114, 111, 106, 45);
-  const slackTokenSample = [slackBotTokenPrefix, '123456789012', '123456789012', 'abcdefghijklmnopqrstuv'].join('-');
+  const awsLongTermKeyPrefix = [65, 75, 73, 65];
+  const awsTemporaryKeyPrefix = [65, 83, 73, 65];
+  const awsKeyBody = [73, 79, 83, 70, 79, 68, 78, 78, 55, 69, 88, 65, 77, 80, 76, 69];
+  const googleApiKeyPrefix = [65, 73, 122, 97];
+  const googleApiKeyBody = [
+    83, 121, 65, 49, 50, 51, 52, 53, 54, 55, 56, 57, 48, 97, 98, 99, 100, 101, 102, 103, 104, 105,
+    106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118,
+  ];
+  const googleOAuthPrefix = [121, 97, 50, 57, 46];
+  const googleOAuthBody = [
+    97, 48, 65, 102, 72, 54, 83, 77, 68, 101, 120, 97, 109, 112, 108, 101, 101, 120, 97, 109,
+    112, 108, 101, 101, 120, 97, 109, 112, 108, 101,
+  ];
+  const githubClassicPatPrefix = [103, 104, 112, 95];
+  const githubClassicPatBody = [
+    97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116,
+    117, 118, 119, 120, 121, 122, 65, 66, 67, 68, 69, 49, 50, 51, 52, 53,
+  ];
+  const githubFineGrainedPatPrefix = [103, 105, 116, 104, 117, 98, 95, 112, 97, 116, 95];
+  const githubFineGrainedPatBody = [
+    49, 49, 65, 66, 67, 68, 69, 70, 71, 48, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107,
+    108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 65, 66, 67, 68, 69,
+    49, 50, 51, 52, 53, 54, 55, 56, 57, 48,
+  ];
+  const slackBotTokenPrefix = [120, 111, 120, 98];
+  const slackBotTokenBody = [
+    45, 49, 50, 51, 52, 53, 54, 55, 56, 57, 48, 49, 50, 45, 49, 50, 51, 52, 53, 54, 55, 56, 57,
+    48, 49, 50, 45, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112,
+    113, 114, 115, 116, 117, 118,
+  ];
+  const anthropicApiKeyPrefix = [115, 107, 45, 97, 110, 116, 45, 97, 112, 105, 48, 51, 45];
+  const openAiProjectKeyPrefix = [115, 107, 45, 112, 114, 111, 106, 45];
+  const llmProviderKeyBody = [
+    97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116,
+    117, 118, 119, 120, 121, 122, 65, 66, 67, 68, 69, 49, 50, 51, 52, 53, 54, 55, 56, 57, 48,
+  ];
   const privateKeyLabel = ['RSA', 'PRIVATE', 'KEY'].join(' ');
   const privateKeyBlock = [
     `-----BEGIN ${privateKeyLabel}-----`,
@@ -101,15 +131,15 @@ function testRedactsProviderSecretShapes(): void {
     `-----END ${privateKeyLabel}-----`,
   ].join('\n');
   const providerSamples = [
-    fixtureSecret(awsLongTermKeyPrefix, 'IOSF', 'ODNN7', 'EXAMPLE'),
-    fixtureSecret(awsTemporaryKeyPrefix, 'IOSF', 'ODNN7', 'EXAMPLE'),
-    fixtureSecret(googleApiKeyPrefix, 'SyA1234567890', 'abcdefghijk', 'lmnopqrstuv'),
-    fixtureSecret(googleOAuthPrefix, 'a0AfH6SMD', 'exampleexampleexample'),
-    fixtureSecret(githubClassicPatPrefix, 'abcdefghijklmnopqrstuv', 'wxyzABCDE12345'),
-    fixtureSecret(githubFineGrainedPatPrefix, '11ABCDEFG0', 'abcdefghijklmnopqrstuvwxyzABCDE1234567890'),
-    slackTokenSample,
-    fixtureSecret(anthropicApiKeyPrefix, 'abcdefghijklmnopqrstuvwxyz', 'ABCDE1234567890'),
-    fixtureSecret(openAiProjectKeyPrefix, 'abcdefghijklmnopqrstuvwxyz', 'ABCDE1234567890'),
+    fixtureTextFromCodePoints(awsLongTermKeyPrefix, awsKeyBody),
+    fixtureTextFromCodePoints(awsTemporaryKeyPrefix, awsKeyBody),
+    fixtureTextFromCodePoints(googleApiKeyPrefix, googleApiKeyBody),
+    fixtureTextFromCodePoints(googleOAuthPrefix, googleOAuthBody),
+    fixtureTextFromCodePoints(githubClassicPatPrefix, githubClassicPatBody),
+    fixtureTextFromCodePoints(githubFineGrainedPatPrefix, githubFineGrainedPatBody),
+    fixtureTextFromCodePoints(slackBotTokenPrefix, slackBotTokenBody),
+    fixtureTextFromCodePoints(anthropicApiKeyPrefix, llmProviderKeyBody),
+    fixtureTextFromCodePoints(openAiProjectKeyPrefix, llmProviderKeyBody),
     [
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9',
       'eyJzdWIiOiIxMjM0NTY3ODkwIn0',
@@ -189,7 +219,10 @@ function testRuntimePolicyMarkersAreCoveredByRedaction(): void {
 }
 
 function testProviderRedactionFalsePositiveGuards(): void {
-  const awsAdjacentText = ['AKIA', 'XIOSFODNN7', 'EXAMPLE'].join('');
+  const awsAdjacentText = fixtureTextFromCodePoints(
+    [65, 75, 73, 65],
+    [88, 73, 79, 83, 70, 79, 68, 78, 78, 55, 69, 88, 65, 77, 80],
+  );
   const benign = [
     'Bearer of accountability is a phrase, not a token.',
     'github_patience is not a GitHub personal access token.',

@@ -19,6 +19,7 @@ import type { InProcessAsyncJob, TenantAsyncBackendMode } from '../../runtime/te
 import type { PipelineIdempotencyService } from '../../application/pipeline-idempotency-service.js';
 import type { PipelineDeadLetterService } from '../../application/pipeline-dead-letter-service.js';
 import type { PipelineUsageService } from '../../application/pipeline-usage-service.js';
+import { acceptsJsonRequestBody, opaqueRouteRunId } from '../route-response-helpers.js';
 
 interface RequestSignerPair {
   signer: KeylessSigner;
@@ -115,6 +116,9 @@ export function registerPipelineAsyncRoutes(app: Hono, deps: PipelineAsyncRoutes
 
 app.post('/api/v1/pipeline/run-async', async (c) => {
   try {
+    if (!acceptsJsonRequestBody(c)) {
+      return c.json({ error: 'Pipeline async route requires Content-Type: application/json.' }, 415);
+    }
     const body = await c.req.json();
     const { candidateSql, intent, sign } = body;
     if (!candidateSql || !intent) {
@@ -202,7 +206,7 @@ app.post('/api/v1/pipeline/run-async', async (c) => {
 
       // BullMQ path
       const input = {
-        runId: `async-bullmq-${Date.now().toString(36)}`,
+        runId: opaqueRouteRunId('async-bullmq'),
         intent, candidateSql,
         fixtures: body.fixtures ?? [],
         generatedReport: body.generatedReport,
@@ -318,7 +322,7 @@ app.post('/api/v1/pipeline/run-async', async (c) => {
     applyRateLimitHeaders(c, rateLimit);
     const usageConsumption = await pipelineUsageService.consume(tenant);
     const { usage, billingMetering } = usageConsumption;
-    const jobId = `job-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+    const jobId = opaqueRouteRunId('job');
     const job: InProcessAsyncJob = {
       id: jobId,
       status: 'queued',
@@ -338,7 +342,9 @@ app.post('/api/v1/pipeline/run-async', async (c) => {
         const asyncSigners = sign ? createRequestSigners('ephemeral') : null;
         const keyPair = asyncSigners?.signer.signingKeyPair;
         const input = {
-          runId: `async-${jobId}`, intent, candidateSql,
+          runId: opaqueRouteRunId('async'),
+          intent,
+          candidateSql,
           fixtures: body.fixtures ?? [],
           generatedReport: body.generatedReport,
           reportContract: body.reportContract,
@@ -361,9 +367,9 @@ app.post('/api/v1/pipeline/run-async', async (c) => {
         };
         job.status = 'completed';
         job.completedAt = new Date().toISOString();
-      } catch (err) {
+      } catch {
         job.status = 'failed';
-        job.error = err instanceof Error ? err.message : String(err);
+        job.error = 'Pipeline async worker failed.';
         job.completedAt = new Date().toISOString();
         await pipelineDeadLetterService.record({
           jobId: job.id,
@@ -426,8 +432,8 @@ app.post('/api/v1/pipeline/run-async', async (c) => {
       responseBody,
     });
     return c.json(finalized, 202);
-  } catch (err) {
-    return c.json({ error: err instanceof Error ? err.message : String(err) }, 500);
+  } catch {
+    return c.json({ error: 'Pipeline async route failed.' }, 500);
   }
 });
 

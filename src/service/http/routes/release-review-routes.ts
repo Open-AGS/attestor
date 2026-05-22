@@ -28,6 +28,7 @@ import {
   RELEASE_ADMIN_READ_ROLES,
   authorizeReleaseAdminRoute,
 } from '../release-admin-authorization.js';
+import { secureHtmlResponseHeaders } from '../route-response-helpers.js';
 
 const {
   ReleaseReviewerQueueError,
@@ -306,9 +307,7 @@ export function registerReleaseReviewRoutes(app: Hono, deps: ReleaseReviewRouteD
 
     const result = await apiReleaseReviewerQueueStore.listPending(readReviewListOptions(c));
 
-    c.header('content-type', 'text/html; charset=utf-8');
-    c.header('cache-control', 'no-store');
-    return c.body(renderReleaseReviewerQueueInboxPage(result));
+    return c.body(renderReleaseReviewerQueueInboxPage(result), 200, secureHtmlResponseHeaders());
   });
 
   app.get('/api/v1/admin/release-reviews/:id', async (c) => {
@@ -333,9 +332,7 @@ export function registerReleaseReviewRoutes(app: Hono, deps: ReleaseReviewRouteD
       return c.json({ error: `Release review '${c.req.param('id')}' not found.` }, 404);
     }
 
-    c.header('content-type', 'text/html; charset=utf-8');
-    c.header('cache-control', 'no-store');
-    return c.body(renderReleaseReviewerQueueDetailPage(item));
+    return c.body(renderReleaseReviewerQueueDetailPage(item), 200, secureHtmlResponseHeaders());
   });
 
   app.post('/api/v1/admin/release-reviews/:id/approve', async (c) => {

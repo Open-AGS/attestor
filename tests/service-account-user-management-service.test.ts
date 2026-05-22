@@ -401,11 +401,42 @@ async function testConsumePasswordResetRecordsFailedTokenAttempt(): Promise<void
   assert.equal(savedRecord?.revokedAt, savedRecord?.lastAttemptAt);
 }
 
+async function testCreateUserRejectsCommonOrIdentifierDerivedPassword(): Promise<void> {
+  const service = createAccountUserManagementService(createDeps());
+
+  await assert.rejects(
+    () => service.createUser({
+      accountId: 'acct_123',
+      email: 'reader@example.com',
+      displayName: 'Reader',
+      password: 'password12345',
+      role: 'read_only',
+    }),
+    (error) => error instanceof AccountUserManagementServiceError
+      && error.statusCode === 400
+      && error.message === 'password must not be a commonly used password.',
+  );
+
+  await assert.rejects(
+    () => service.createUser({
+      accountId: 'acct_123',
+      email: 'reader@example.com',
+      displayName: 'Reader',
+      password: 'reader-secure-passphrase',
+      role: 'read_only',
+    }),
+    (error) => error instanceof AccountUserManagementServiceError
+      && error.statusCode === 400
+      && error.message === 'password must not be derived from account or user identifiers.',
+  );
+}
+
 await testCreateUserValidatesPasswordAndRole();
 await testInviteDeliveryFailureRevokesIssuedToken();
 await testAcceptInviteConsumesTokenAndIssuesSession();
 await testDeactivationRevokesSessionsAndTokens();
 await testConsumePasswordResetRevokesAndConsumes();
 await testConsumePasswordResetRecordsFailedTokenAttempt();
+await testCreateUserRejectsCommonOrIdentifierDerivedPassword();
 
-console.log('Service account user management service tests: 6 passed, 0 failed');
+console.log('Service account user management service tests: 7 passed, 0 failed');

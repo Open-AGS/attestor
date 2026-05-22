@@ -9,6 +9,7 @@ import type { AccountUserActionTokenRecord } from '../account-user-token-store.j
 import { TenantKeyStoreError, type TenantKeyRecord } from '../tenant-key-store.js';
 import type { TenantContext } from '../tenant-isolation.js';
 import type { UsageContext } from '../usage-meter.js';
+import { validateAccountPassword } from '../account-password-policy.js';
 
 interface SyncHostedBillingEntitlementOptions {
   lastEventId?: string | null;
@@ -132,9 +133,14 @@ function requireNonEmpty(value: string, fieldList: string): void {
   }
 }
 
-function requirePasswordLength(password: string, fieldName = 'password'): void {
-  if (password.length < 12) {
-    throw new AccountAuthServiceError(400, `${fieldName} must be at least 12 characters long.`);
+function requirePasswordPolicy(
+  password: string,
+  fieldName = 'password',
+  context: Parameters<typeof validateAccountPassword>[2] = {},
+): void {
+  const result = validateAccountPassword(password, fieldName, context);
+  if (!result.ok && result.message) {
+    throw new AccountAuthServiceError(400, result.message);
   }
 }
 
@@ -170,7 +176,11 @@ export function createAccountAuthService(deps: AccountAuthServiceDeps): AccountA
         throw new AccountAuthServiceError(403, 'Bootstrap requires a tenant API key.');
       }
       requireNonEmpty(input.email && input.displayName && input.password, 'email, displayName, and password');
-      requirePasswordLength(input.password);
+      requirePasswordPolicy(input.password, 'password', {
+        accountName: input.current.account.accountName,
+        displayName: input.displayName,
+        email: input.email,
+      });
 
       const existingUsers = await deps.countAccountUsersForAccountState(input.current.account.id);
       if (existingUsers > 0) {
@@ -201,7 +211,11 @@ export function createAccountAuthService(deps: AccountAuthServiceDeps): AccountA
         input.accountName && input.email && input.displayName && input.password,
         'accountName, email, displayName, and password',
       );
-      requirePasswordLength(input.password);
+      requirePasswordPolicy(input.password, 'password', {
+        accountName: input.accountName,
+        displayName: input.displayName,
+        email: input.email,
+      });
 
       const existingUser = await deps.findAccountUserByEmailState(input.email);
       if (existingUser) {

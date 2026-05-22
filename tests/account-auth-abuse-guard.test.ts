@@ -236,7 +236,7 @@ function run() {
       );
       ok(
         routeSource.includes("app.post('/api/v1/account/users/invites/accept'") &&
-          routeSource.includes("const authAttempt = authAttemptForActionToken(c, 'invite', inviteToken);") &&
+          routeSource.includes('const authAttempt = authAttemptForActionToken(c, AUTH_ATTEMPT_KIND.invite, inviteToken);') &&
           routeSource.includes('const inviteAcceptRateLimit = await maybeRateLimitAuthAttempt(c, authAttempt);') &&
           routeSource.includes('await recordAuthAttemptFailure(authAttempt);'),
         'hosted invite accept route is wired through action-token abuse throttling',
@@ -244,7 +244,7 @@ function run() {
       ok(
         routeSource.includes("app.post('/api/v1/account/users/:id/password-reset'") &&
           routeSource.includes("const targetUserId = c.req.param('id');") &&
-          routeSource.includes('const authAttempt = authAttemptFor(c, `password-reset-issue:${access.accountId}:${targetUserId}`);') &&
+          routeSource.includes('AUTH_ATTEMPT_KIND.passwordResetIssue') &&
           routeSource.includes('const resetIssueRateLimit = await maybeRateLimitAuthAttempt(c, authAttempt);') &&
           routeSource.includes('await recordAuthAttemptUse(authAttempt);'),
         'hosted password reset issue route throttles successful request flooding',

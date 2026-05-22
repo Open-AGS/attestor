@@ -7,6 +7,7 @@ import {
   safeErrorMessage,
   stringifySecretSafe,
 } from '../scripts/secret-safe-output.ts';
+import { CONSEQUENCE_DATA_MINIMIZATION_RUNTIME_SECRET_MARKERS } from '../src/consequence-admission/data-minimization-redaction-policy.js';
 
 let passed = 0;
 
@@ -29,7 +30,7 @@ function testRedactsKnownLiveSecretShapes(): void {
     'sk_live_51TVAhQsecret',
     'rk_live_51TVAhQrestricted',
     'whsec_F6ayeSecret',
-    'Bearer tenant_admin_secret',
+    'Authorization: Bearer tenant_admin_secret',
     'postgres://user:password@db.example/attestor',
     'redis://:password@redis.example/0',
     'cus_123',
@@ -68,7 +69,7 @@ function testStringifyAndErrorsAreSecretSafe(): void {
     apiKey: 'sk_live_private',
     webhookSecret: 'whsec_private',
     customerId: 'cus_private',
-    nested: ['Bearer private-token'],
+    nested: ['Authorization: Bearer private-token'],
   });
   const error = safeErrorMessage(new Error('failed with rk_live_private and whsec_private'));
 
@@ -78,6 +79,74 @@ function testStringifyAndErrorsAreSecretSafe(): void {
   ok(!json.includes('private-token'), 'Secret-safe output: JSON stringifier redacts bearer tokens');
   ok(!error.includes('rk_live_private'), 'Secret-safe output: error formatter redacts restricted keys');
   ok(!error.includes('whsec_private'), 'Secret-safe output: error formatter redacts webhook secrets');
+}
+
+function testRedactsProviderSecretShapes(): void {
+  const slackTokenSample = ['xoxb', '123456789012', '123456789012', 'abcdefghijklmnopqrstuv'].join('-');
+  const providerSamples = [
+    'AKIAIOSFODNN7EXAMPLE',
+    'ASIAIOSFODNN7EXAMPLE',
+    'AIzaSyA1234567890abcdefghijklmnopqrstuv',
+    'ya29.a0AfH6SMDexampleexampleexample',
+    'ghp_abcdefghijklmnopqrstuvwxyzABCDE12345',
+    'github_pat_11ABCDEFG0abcdefghijklmnopqrstuvwxyzABCDE1234567890',
+    slackTokenSample,
+    'sk-ant-api03-abcdefghijklmnopqrstuvwxyzABCDE1234567890',
+    'sk-proj-abcdefghijklmnopqrstuvwxyzABCDE1234567890',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c',
+    '-----BEGIN RSA PRIVATE KEY-----\nsecret-key-material\n-----END RSA PRIVATE KEY-----',
+  ] as const;
+  const redacted = redactSensitiveOutput(providerSamples.join('\n'));
+
+  for (const sample of providerSamples) {
+    ok(!redacted.includes(sample), `Secret-safe output: provider sample is redacted: ${sample.slice(0, 12)}`);
+  }
+  for (const expected of [
+    'AKIA[redacted]',
+    'ASIA[redacted]',
+    'AIza[redacted]',
+    'ya29.[redacted]',
+    'ghp_[redacted]',
+    'github_pat_[redacted]',
+    'xoxb-[redacted]',
+    'sk-ant-api[redacted]',
+    'sk-[redacted]',
+    'jwt.[redacted]',
+    '-----BEGIN RSA PRIVATE KEY-----\n[redacted]\n-----END RSA PRIVATE KEY-----',
+  ]) {
+    ok(redacted.includes(expected), `Secret-safe output: provider redaction marker is present: ${expected.split('\n')[0]}`);
+  }
+}
+
+function testRuntimePolicyMarkersAreCoveredByRedaction(): void {
+  const markerSamples = new Map<string, string>([
+    ['bearer ', 'Authorization: Bearer short-token'],
+    ['jwt.', 'jwt: eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhdHRlc3RvciJ9.signature123456'],
+    ['private_key', 'private_key=raw-private-key-material'],
+    ['secret=', 'secret=raw-secret-material'],
+    ['release-token=', 'release-token=raw-release-token-material'],
+    ['attestor-release-token', 'attestor-release-token=raw-attestor-release-token'],
+  ]);
+
+  for (const marker of CONSEQUENCE_DATA_MINIMIZATION_RUNTIME_SECRET_MARKERS) {
+    const sample = markerSamples.get(marker);
+    ok(sample, `Secret-safe output: policy marker ${marker} has a representative sample`);
+    if (!sample) continue;
+    const redacted = redactSensitiveOutput(sample);
+    ok(!redacted.includes('raw-'), `Secret-safe output: policy marker ${marker} sample redacts raw material`);
+    ok(redacted.includes('[redacted]'), `Secret-safe output: policy marker ${marker} sample carries redaction marker`);
+  }
+}
+
+function testProviderRedactionFalsePositiveGuards(): void {
+  const benign = [
+    'Bearer of accountability is a phrase, not a token.',
+    'github_patience is not a GitHub personal access token.',
+    'AKIAXIOSFODNN7EXAMPLE is not an AWS access key id.',
+    '-----BEGIN PUBLIC KEY-----\npublic-key-material\n-----END PUBLIC KEY-----',
+  ].join('\n');
+
+  equal(redactSensitiveOutput(benign), benign, 'Secret-safe output: benign provider-adjacent text is not redacted');
 }
 
 function testDigestReferenceIsStableAndNonReversibleInOutput(): void {
@@ -120,9 +189,35 @@ function testCriticalOpsScriptsUseSecretSafeOutput(): void {
   ok(!policyFoundrySmoke.includes('console.log(result)'), 'Secret-safe output: Policy Foundry smoke does not print raw result objects');
 }
 
+function testPublicArtifactRedactionScannerIsWired(): void {
+  const packageJson = JSON.parse(readProjectFile('package.json')) as {
+    readonly scripts: Readonly<Record<string, string>>;
+  };
+  const workflow = readProjectFile('.github', 'workflows', 'security-scan.yml');
+  const scanner = readProjectFile('scripts', 'check-public-artifacts-redaction.mjs');
+
+  equal(
+    packageJson.scripts['check:public-artifacts-redaction'],
+    'tsx scripts/check-public-artifacts-redaction.mjs',
+    'Secret-safe output: public artifact redaction scanner is exposed',
+  );
+  equal(
+    packageJson.scripts['test:public-artifacts-redaction'],
+    'npm run check:public-artifacts-redaction',
+    'Secret-safe output: public artifact scanner has a test alias',
+  );
+  ok(workflow.includes('npm run check:public-artifacts-redaction'), 'Secret-safe output: security scan runs public artifact redaction scan');
+  ok(scanner.includes('docs/evidence'), 'Secret-safe output: scanner includes public evidence artifacts');
+  ok(scanner.includes('docs/00-evaluation'), 'Secret-safe output: scanner includes evaluation artifacts');
+}
+
 testRedactsKnownLiveSecretShapes();
+testRedactsProviderSecretShapes();
+testRuntimePolicyMarkersAreCoveredByRedaction();
+testProviderRedactionFalsePositiveGuards();
 testStringifyAndErrorsAreSecretSafe();
 testDigestReferenceIsStableAndNonReversibleInOutput();
 testCriticalOpsScriptsUseSecretSafeOutput();
+testPublicArtifactRedactionScannerIsWired();
 
 console.log(`production-readiness-secret-safe-output: ${passed} assertions passed`);

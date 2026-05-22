@@ -8,30 +8,37 @@ import {
   renderProofShowcaseMarkdown,
   type SchemaAttestationLike,
 } from '../src/showcase/proof-showcase.js';
+import { resolveExistingPathInsideAllowedRoots } from './demo-path-boundary.ts';
 
 interface ScriptArgs {
   fromDir: string | null;
   skipRun: boolean;
   liveScenario: string | null;
+  allowOutsideDemoRoot: boolean;
 }
 
 function parseArgs(argv: string[]): ScriptArgs {
   let fromDir: string | null = null;
   let skipRun = false;
   let liveScenario: string | null = null;
+  let allowOutsideDemoRoot = false;
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
     if (arg === '--skip-run') {
       skipRun = true;
       continue;
     }
+    if (arg === '--allow-outside-demo-root') {
+      allowOutsideDemoRoot = true;
+      continue;
+    }
     if (arg === '--from') {
-      fromDir = argv[index + 1] ? resolve(argv[index + 1]) : null;
+      fromDir = argv[index + 1] ?? null;
       index += 1;
       continue;
     }
     if (arg.startsWith('--from=')) {
-      fromDir = resolve(arg.slice('--from='.length));
+      fromDir = arg.slice('--from='.length);
       continue;
     }
     if (arg === '--live-scenario') {
@@ -43,7 +50,7 @@ function parseArgs(argv: string[]): ScriptArgs {
       liveScenario = arg.slice('--live-scenario='.length);
     }
   }
-  return { fromDir, skipRun, liveScenario };
+  return { fromDir, skipRun, liveScenario, allowOutsideDemoRoot };
 }
 
 function realProofCommand(): { command: string; args: string[] } {
@@ -161,7 +168,19 @@ function main(): void {
     }
   }
 
-  const proofDir = args.fromDir ?? (args.liveScenario ? latestHybridProofDir(args.liveScenario) : latestRealProofDir());
+  const proofDir = args.fromDir
+    ? resolveExistingPathInsideAllowedRoots(args.fromDir, {
+      allowedRootDescriptions: ['.attestor/proofs/', '.attestor-financial/runs/', 'docs/evidence/'],
+      allowedRoots: [
+        resolve('.attestor', 'proofs'),
+        resolve('.attestor-financial', 'runs'),
+        resolve('docs', 'evidence'),
+      ],
+      allowOutsideRoot: args.allowOutsideDemoRoot,
+      overrideFlagName: '--allow-outside-demo-root',
+      purpose: 'proof showcase source',
+    })
+    : (args.liveScenario ? latestHybridProofDir(args.liveScenario) : latestRealProofDir());
   const proofBaseName = proofDir.replaceAll('\\', '/').split('/').at(-1) ?? 'latest-proof';
   const showcaseRoot = resolve('.attestor', 'showcase');
   const packetDir = join(showcaseRoot, proofBaseName);

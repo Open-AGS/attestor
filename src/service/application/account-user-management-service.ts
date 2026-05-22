@@ -11,6 +11,7 @@ import {
   HostedEmailDeliveryError,
   type HostedEmailDeliverySummary,
 } from '../email-delivery.js';
+import { validateAccountPassword } from '../account-password-policy.js';
 
 export interface AccountUserCreateInput {
   accountId: string;
@@ -116,9 +117,14 @@ export class AccountUserManagementServiceError extends Error {
   }
 }
 
-function requirePasswordLength(password: string, fieldName = 'password'): void {
-  if (password.length < 12) {
-    throw new AccountUserManagementServiceError(400, `${fieldName} must be at least 12 characters long.`);
+function requirePasswordPolicy(
+  password: string,
+  fieldName = 'password',
+  context: Parameters<typeof validateAccountPassword>[2] = {},
+): void {
+  const result = validateAccountPassword(password, fieldName, context);
+  if (!result.ok && result.message) {
+    throw new AccountUserManagementServiceError(400, result.message);
   }
 }
 
@@ -196,7 +202,10 @@ export function createAccountUserManagementService(
         input.email && input.displayName && input.password && input.role,
         'email, displayName, password, and role are required.',
       );
-      requirePasswordLength(input.password);
+      requirePasswordPolicy(input.password, 'password', {
+        displayName: input.displayName,
+        email: input.email,
+      });
       try {
         const created = await deps.createAccountUserState({
           accountId: input.accountId,
@@ -264,11 +273,14 @@ export function createAccountUserManagementService(
 
     async acceptInvite(input) {
       requireNonEmpty(input.inviteToken && input.password, 'inviteToken and password are required.');
-      requirePasswordLength(input.password);
       const invite = await deps.findAccountUserActionTokenByTokenState(input.inviteToken);
       if (!invite || invite.purpose !== 'invite' || !invite.role || !invite.displayName) {
         throw new AccountUserManagementServiceError(400, 'Invite token is invalid or expired.');
       }
+      requirePasswordPolicy(input.password, 'password', {
+        displayName: invite.displayName,
+        email: invite.email,
+      });
       const account = await deps.findHostedAccountByIdState(invite.accountId);
       if (!account || account.status === 'archived') {
         throw new AccountUserManagementServiceError(404, 'Invite account is not available.');
@@ -362,17 +374,20 @@ export function createAccountUserManagementService(
       if (!tokenRecord || tokenRecord.purpose !== 'password_reset' || !tokenRecord.accountUserId) {
         throw new AccountUserManagementServiceError(400, 'Password reset token is invalid or expired.');
       }
-      try {
-        requirePasswordLength(input.newPassword, 'newPassword');
-      } catch (error) {
-        await recordPasswordResetAttemptFailure(deps, tokenRecord);
-        throw error;
-      }
       const user = await deps.findAccountUserByIdState(tokenRecord.accountUserId);
       const account = user ? await deps.findHostedAccountByIdState(user.accountId) : null;
       if (!user || !account || account.id !== tokenRecord.accountId || account.status === 'archived') {
         await recordPasswordResetAttemptFailure(deps, tokenRecord);
         throw new AccountUserManagementServiceError(400, 'Password reset token is invalid or expired.');
+      }
+      try {
+        requirePasswordPolicy(input.newPassword, 'newPassword', {
+          displayName: user.displayName,
+          email: user.email,
+        });
+      } catch (error) {
+        await recordPasswordResetAttemptFailure(deps, tokenRecord);
+        throw error;
       }
       await deps.setAccountUserPasswordState(user.id, input.newPassword);
       await deps.revokeAccountSessionsForUserState(user.id);

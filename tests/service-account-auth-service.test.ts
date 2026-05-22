@@ -451,10 +451,39 @@ async function testLoginRejectsBadPassword(): Promise<void> {
   );
 }
 
+async function testSignupRejectsCommonOrAccountDerivedPassword(): Promise<void> {
+  const service = createAccountAuthService(createDeps());
+
+  await assert.rejects(
+    () => service.signup({
+      accountName: 'Acme',
+      email: 'ops@example.com',
+      displayName: 'Ops User',
+      password: 'password12345',
+    }),
+    (error) => error instanceof AccountAuthServiceError
+      && error.statusCode === 400
+      && error.message === 'password must not be a commonly used password.',
+  );
+
+  await assert.rejects(
+    () => service.signup({
+      accountName: 'Acme',
+      email: 'ops@example.com',
+      displayName: 'Ops User',
+      password: 'acme-secure-passphrase',
+    }),
+    (error) => error instanceof AccountAuthServiceError
+      && error.statusCode === 400
+      && error.message === 'password must not be derived from account or user identifiers.',
+  );
+}
+
 await testBootstrapRequiresTenantApiKey();
 await testSignupOrchestratesAccountAndSession();
 await testLoginIssuesSessionWithoutMfa();
 await testLoginReturnsMfaChallenge();
 await testLoginRejectsBadPassword();
+await testSignupRejectsCommonOrAccountDerivedPassword();
 
-console.log('Service account auth service tests: 5 passed, 0 failed');
+console.log('Service account auth service tests: 6 passed, 0 failed');

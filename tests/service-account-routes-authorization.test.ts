@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { Hono, type Context } from 'hono';
 import {
   registerAccountRoutes,
@@ -178,8 +179,54 @@ async function testSamlCallbackRateLimitRunsBeforeCrypto(): Promise<void> {
   }
 }
 
+async function testAccountJsonRoutesRejectNonJsonMediaType(): Promise<void> {
+  const app = new Hono();
+  registerAccountRoutes(app, testDeps());
+
+  const response = await app.request('/api/v1/auth/login', {
+    method: 'POST',
+    headers: {
+      'content-type': 'text/plain',
+    },
+    body: 'email=ops@example.com&password=secret',
+  });
+  const body = await json(response);
+
+  assert.equal(response.status, 415);
+  assert.equal(body.error, 'Content-Type must be application/json.');
+}
+
+async function testAccountJsonRoutesRejectMalformedJson(): Promise<void> {
+  const app = new Hono();
+  registerAccountRoutes(app, testDeps());
+
+  const response = await app.request('/api/v1/auth/login', {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+    },
+    body: '{',
+  });
+  const body = await json(response);
+
+  assert.equal(response.status, 400);
+  assert.equal(body.error, 'Request body must be valid JSON.');
+}
+
+async function testAccountRouteJsonAndAuthAttemptVocabularyIsLocked(): Promise<void> {
+  const source = readFileSync(new URL('../src/service/http/routes/account-routes.ts', import.meta.url), 'utf8');
+
+  assert.equal(source.includes('.json().catch(() => ({}))'), false);
+  assert.equal(source.includes('type AuthAttemptKind ='), true);
+  assert.equal(source.includes('AUTH_ATTEMPT_KIND'), true);
+  assert.equal(source.includes('acceptsJsonRequestBody'), true);
+}
+
 await testAccountApiKeyIssueWritesAccountSessionAudit();
 await testOidcCallbackRateLimitRunsBeforeCrypto();
 await testSamlCallbackRateLimitRunsBeforeCrypto();
+await testAccountJsonRoutesRejectNonJsonMediaType();
+await testAccountJsonRoutesRejectMalformedJson();
+await testAccountRouteJsonAndAuthAttemptVocabularyIsLocked();
 
-console.log('Service account routes authorization tests: 3 passed, 0 failed');
+console.log('Service account routes authorization tests: 6 passed, 0 failed');

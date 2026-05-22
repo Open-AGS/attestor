@@ -51,6 +51,8 @@ import {
   type AuthAttemptSubject,
 } from '../../auth-abuse-guard.js';
 import { directRemoteAddressFromContext } from '../../trusted-proxy.js';
+import { validateAccountPassword } from '../../account-password-policy.js';
+import { acceptsJsonRequestBody } from '../route-response-helpers.js';
 
 interface CurrentHostedAccountResult {
   tenant: TenantContext;
@@ -132,6 +134,44 @@ function hostedEmailDeliveryProviderFilter(value: string | undefined): HostedEma
   }
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+async function readAccountJsonBody(context: Context): Promise<Record<string, unknown> | Response> {
+  if (!acceptsJsonRequestBody(context)) {
+    return context.json({ error: 'Content-Type must be application/json.' }, 415);
+  }
+  try {
+    const body = await context.req.json<unknown>();
+    if (!isRecord(body)) {
+      return context.json({ error: 'Request body must be a JSON object.' }, 400);
+    }
+    return body;
+  } catch {
+    return context.json({ error: 'Request body must be valid JSON.' }, 400);
+  }
+}
+
+type AuthAttemptKind =
+  | 'current-password'
+  | 'federated-callback'
+  | 'invite'
+  | 'password-reset'
+  | 'password-reset-issue';
+
+const AUTH_ATTEMPT_KIND = Object.freeze({
+  currentPassword: 'current-password',
+  federatedCallback: 'federated-callback',
+  invite: 'invite',
+  passwordReset: 'password-reset',
+  passwordResetIssue: 'password-reset-issue',
+} satisfies Record<string, AuthAttemptKind>);
+
+function authAttemptBucket(kind: AuthAttemptKind, ...parts: string[]): string {
+  return [kind, ...parts].join(':');
+}
+
 function authAttemptFor(context: Context, email: string): AuthAttemptSubject {
   return {
     email,
@@ -142,23 +182,39 @@ function authAttemptFor(context: Context, email: string): AuthAttemptSubject {
 }
 
 function authAttemptForPasswordReset(context: Context, resetToken: string): AuthAttemptSubject {
-  return authAttemptForActionToken(context, 'password-reset', resetToken);
+  return authAttemptForActionToken(context, AUTH_ATTEMPT_KIND.passwordReset, resetToken);
 }
 
 function authAttemptForCurrentPassword(context: Context, access: AccountAccessContext): AuthAttemptSubject {
-  return authAttemptFor(context, `current-password:${access.accountId}:${access.accountUserId}`);
+  return authAttemptFor(context, authAttemptBucket(
+    AUTH_ATTEMPT_KIND.currentPassword,
+    access.accountId,
+    access.accountUserId,
+  ));
 }
 
 function authAttemptForActionToken(
   context: Context,
-  purpose: 'invite' | 'password-reset',
+  purpose: typeof AUTH_ATTEMPT_KIND.invite | typeof AUTH_ATTEMPT_KIND.passwordReset,
   token: string,
 ): AuthAttemptSubject {
   const normalized = token.trim();
   const tokenBucket = normalized
     ? createHash('sha256').update(normalized).digest('hex').slice(0, 24)
     : 'missing-token';
-  return authAttemptFor(context, `${purpose}:${tokenBucket}`);
+  return authAttemptFor(context, authAttemptBucket(purpose, tokenBucket));
+}
+
+function accountPasswordErrorResponse(
+  context: Context,
+  password: string,
+  fieldName: string,
+  policyContext: Parameters<typeof validateAccountPassword>[2],
+): Response | null {
+  const result = validateAccountPassword(password, fieldName, policyContext);
+  return result.ok
+    ? null
+    : context.json({ error: result.message ?? `${fieldName} does not meet password policy.` }, 400);
 }
 
 function authRateLimitResponse(context: Context, decision: AuthAttemptDecision): Response {
@@ -180,7 +236,7 @@ async function maybeRateLimitFederatedCallback(
   context: Context,
   provider: 'oidc' | 'saml',
 ): Promise<Response | null> {
-  const subject = authAttemptFor(context, `federated-callback:${provider}`);
+  const subject = authAttemptFor(context, authAttemptBucket(AUTH_ATTEMPT_KIND.federatedCallback, provider));
   const limited = await maybeRateLimitAuthAttempt(context, subject);
   if (limited) return limited;
   await recordAuthAttemptUse(subject);
@@ -371,7 +427,8 @@ app.post('/api/v1/account/users/bootstrap', async (c) => {
   const current = await currentHostedAccount(c);
   if (current instanceof Response) return current;
 
-  const body = await c.req.json().catch(() => ({}));
+  const body = await readAccountJsonBody(c);
+  if (body instanceof Response) return body;
   const email = typeof body.email === 'string' ? body.email.trim() : '';
   const displayName = typeof body.displayName === 'string' ? body.displayName.trim() : '';
   const password = typeof body.password === 'string' ? body.password : '';
@@ -395,7 +452,8 @@ app.post('/api/v1/account/users/bootstrap', async (c) => {
 });
 
 app.post('/api/v1/auth/signup', async (c) => {
-  const body = await c.req.json().catch(() => ({}));
+  const body = await readAccountJsonBody(c);
+  if (body instanceof Response) return body;
   const accountName = typeof body.accountName === 'string' ? body.accountName.trim() : '';
   const email = typeof body.email === 'string' ? body.email.trim() : '';
   const displayName = typeof body.displayName === 'string' ? body.displayName.trim() : '';
@@ -443,7 +501,8 @@ app.post('/api/v1/auth/signup', async (c) => {
 });
 
 app.post('/api/v1/auth/login', async (c) => {
-  const body = await c.req.json().catch(() => ({}));
+  const body = await readAccountJsonBody(c);
+  if (body instanceof Response) return body;
   const email = typeof body.email === 'string' ? body.email.trim() : '';
   const password = typeof body.password === 'string' ? body.password : '';
   const authAttempt = authAttemptFor(c, email);
@@ -490,7 +549,8 @@ app.post('/api/v1/auth/login', async (c) => {
 const HOSTED_PASSKEY_LOGIN_UNAVAILABLE_ERROR = 'Hosted passkey login is not available for that account identifier.';
 
 app.post('/api/v1/auth/passkeys/options', async (c) => {
-  const body = await c.req.json().catch(() => ({}));
+  const body = await readAccountJsonBody(c);
+  if (body instanceof Response) return body;
   const email = typeof body.email === 'string' ? body.email.trim() : '';
   const authAttempt = authAttemptFor(c, email);
   const passkeyOptionsRateLimit = await maybeRateLimitAuthAttempt(c, authAttempt);
@@ -550,7 +610,8 @@ app.post('/api/v1/auth/passkeys/options', async (c) => {
 });
 
 app.post('/api/v1/auth/passkeys/verify', async (c) => {
-  const body = await c.req.json().catch(() => ({}));
+  const body = await readAccountJsonBody(c);
+  if (body instanceof Response) return body;
   const challengeToken = typeof body.challengeToken === 'string' ? body.challengeToken.trim() : '';
   const response = asAuthenticationResponse(body.response);
   if (!challengeToken || !response) {
@@ -648,7 +709,8 @@ app.get('/api/v1/auth/saml/metadata', (c) => {
 });
 
 app.post('/api/v1/auth/saml/login', async (c) => {
-  const body = await c.req.json().catch(() => ({}));
+  const body = await readAccountJsonBody(c);
+  if (body instanceof Response) return body;
   const email = typeof body.email === 'string' ? body.email.trim() : '';
   const authAttempt = authAttemptFor(c, email);
   const samlLoginRateLimit = await maybeRateLimitAuthAttempt(c, authAttempt);
@@ -810,7 +872,8 @@ app.post('/api/v1/auth/saml/acs', async (c) => {
 });
 
 app.post('/api/v1/auth/oidc/login', async (c) => {
-  const body = await c.req.json().catch(() => ({}));
+  const body = await readAccountJsonBody(c);
+  if (body instanceof Response) return body;
   const email = typeof body.email === 'string' ? body.email.trim() : '';
   const authAttempt = authAttemptFor(c, email);
   const oidcLoginRateLimit = await maybeRateLimitAuthAttempt(c, authAttempt);
@@ -955,7 +1018,8 @@ app.get('/api/v1/auth/oidc/callback', async (c) => {
 });
 
 app.post('/api/v1/auth/mfa/verify', async (c) => {
-  const body = await c.req.json().catch(() => ({}));
+  const body = await readAccountJsonBody(c);
+  if (body instanceof Response) return body;
   const challengeToken = typeof body.challengeToken === 'string' ? body.challengeToken.trim() : '';
   const code = typeof body.code === 'string' ? body.code.trim() : '';
   const recoveryCode = typeof body.recoveryCode === 'string' ? body.recoveryCode.trim() : '';
@@ -1076,7 +1140,8 @@ app.post('/api/v1/auth/password/change', async (c) => {
     return c.json({ error: 'Current account session could not be resolved.' }, 404);
   }
 
-  const body = await c.req.json().catch(() => ({}));
+  const body = await readAccountJsonBody(c);
+  if (body instanceof Response) return body;
   const currentPassword = typeof body.currentPassword === 'string' ? body.currentPassword : '';
   const newPassword = typeof body.newPassword === 'string' ? body.newPassword : '';
   if (!currentPassword || !newPassword) {
@@ -1088,9 +1153,11 @@ app.post('/api/v1/auth/password/change', async (c) => {
     await recordAuthAttemptFailure(currentPasswordAttempt.subject);
     return c.json({ error: 'Current password is invalid.' }, 403);
   }
-  if (newPassword.length < 12) {
-    return c.json({ error: 'newPassword must be at least 12 characters long.' }, 400);
-  }
+  const passwordPolicyError = accountPasswordErrorResponse(c, newPassword, 'newPassword', {
+    displayName: user.displayName,
+    email: user.email,
+  });
+  if (passwordPolicyError) return passwordPolicyError;
 
   const updated = await stateService.setAccountUserPassword(user.id, newPassword);
   await stateService.revokeAccountSessionsForUser(user.id);
@@ -1212,7 +1279,8 @@ app.post('/api/v1/account/passkeys/register/options', async (c) => {
     return c.json({ error: 'Current account session could not be resolved.' }, 404);
   }
 
-  const body = await c.req.json().catch(() => ({}));
+  const body = await readAccountJsonBody(c);
+  if (body instanceof Response) return body;
   const password = typeof body.password === 'string' ? body.password : '';
   const preferredAuthenticatorType = normalizePasskeyAuthenticatorHint(body.preferredAuthenticatorType);
   if (!password) {
@@ -1267,7 +1335,8 @@ app.post('/api/v1/account/passkeys/register/verify', async (c) => {
     return c.json({ error: 'Current account session could not be resolved.' }, 404);
   }
 
-  const body = await c.req.json().catch(() => ({}));
+  const body = await readAccountJsonBody(c);
+  if (body instanceof Response) return body;
   const challengeToken = typeof body.challengeToken === 'string' ? body.challengeToken.trim() : '';
   const response = asRegistrationResponse(body.response);
   if (!challengeToken || !response) {
@@ -1360,7 +1429,8 @@ app.post('/api/v1/account/passkeys/:id/delete', async (c) => {
   }
 
   const passkeyId = c.req.param('id')?.trim() ?? '';
-  const body = await c.req.json().catch(() => ({}));
+  const body = await readAccountJsonBody(c);
+  if (body instanceof Response) return body;
   const password = typeof body.password === 'string' ? body.password : '';
   if (!passkeyId || !password) {
     return c.json({ error: 'passkey id and password are required.' }, 400);
@@ -1414,7 +1484,8 @@ app.post('/api/v1/account/mfa/totp/enroll', async (c) => {
     return c.json({ error: 'Current account session could not be resolved.' }, 404);
   }
 
-  const body = await c.req.json().catch(() => ({}));
+  const body = await readAccountJsonBody(c);
+  if (body instanceof Response) return body;
   const password = typeof body.password === 'string' ? body.password : '';
   if (!password) {
     return c.json({ error: 'password is required.' }, 400);
@@ -1491,7 +1562,8 @@ app.post('/api/v1/account/mfa/totp/confirm', async (c) => {
     return c.json({ error: 'Current account session could not be resolved.' }, 404);
   }
 
-  const body = await c.req.json().catch(() => ({}));
+  const body = await readAccountJsonBody(c);
+  if (body instanceof Response) return body;
   const code = typeof body.code === 'string' ? body.code.trim() : '';
   if (!code) {
     return c.json({ error: 'code is required.' }, 400);
@@ -1582,7 +1654,8 @@ app.post('/api/v1/account/mfa/disable', async (c) => {
     return c.json({ error: 'Current account session could not be resolved.' }, 404);
   }
 
-  const body = await c.req.json().catch(() => ({}));
+  const body = await readAccountJsonBody(c);
+  if (body instanceof Response) return body;
   const password = typeof body.password === 'string' ? body.password : '';
   const code = typeof body.code === 'string' ? body.code.trim() : '';
   const recoveryCode = typeof body.recoveryCode === 'string' ? body.recoveryCode.trim() : '';
@@ -1951,7 +2024,8 @@ app.post('/api/v1/account/users', async (c) => {
   });
   if (unauthorized) return unauthorized;
   const access = currentAccountAccess(c)!;
-  const body = await c.req.json().catch(() => ({}));
+  const body = await readAccountJsonBody(c);
+  if (body instanceof Response) return body;
   const email = typeof body.email === 'string' ? body.email.trim() : '';
   const displayName = typeof body.displayName === 'string' ? body.displayName.trim() : '';
   const password = typeof body.password === 'string' ? body.password : '';
@@ -1959,9 +2033,11 @@ app.post('/api/v1/account/users', async (c) => {
   if (!email || !displayName || !password || !role) {
     return c.json({ error: 'email, displayName, password, and role are required.' }, 400);
   }
-  if (password.length < 12) {
-    return c.json({ error: 'password must be at least 12 characters long.' }, 400);
-  }
+  const passwordPolicyError = accountPasswordErrorResponse(c, password, 'password', {
+    displayName,
+    email,
+  });
+  if (passwordPolicyError) return passwordPolicyError;
   const requestPayload = {
     accountId: access.accountId,
     role,
@@ -2014,7 +2090,8 @@ app.post('/api/v1/account/users/invites', async (c) => {
   });
   if (unauthorized) return unauthorized;
   const access = currentAccountAccess(c)!;
-  const body = await c.req.json().catch(() => ({}));
+  const body = await readAccountJsonBody(c);
+  if (body instanceof Response) return body;
   const email = typeof body.email === 'string' ? body.email.trim() : '';
   const displayName = typeof body.displayName === 'string' ? body.displayName.trim() : '';
   const role = accountUserRoleFilter(typeof body.role === 'string' ? body.role.trim() : null);
@@ -2093,10 +2170,11 @@ app.post('/api/v1/account/users/invites/:id/revoke', async (c) => {
 });
 
 app.post('/api/v1/account/users/invites/accept', async (c) => {
-  const body = await c.req.json().catch(() => ({}));
+  const body = await readAccountJsonBody(c);
+  if (body instanceof Response) return body;
   const inviteToken = typeof body.inviteToken === 'string' ? body.inviteToken.trim() : '';
   const password = typeof body.password === 'string' ? body.password : '';
-  const authAttempt = authAttemptForActionToken(c, 'invite', inviteToken);
+  const authAttempt = authAttemptForActionToken(c, AUTH_ATTEMPT_KIND.invite, inviteToken);
   const inviteAcceptRateLimit = await maybeRateLimitAuthAttempt(c, authAttempt);
   if (inviteAcceptRateLimit) return inviteAcceptRateLimit;
   try {
@@ -2196,11 +2274,16 @@ app.post('/api/v1/account/users/:id/password-reset', async (c) => {
   });
   if (unauthorized) return unauthorized;
   const access = currentAccountAccess(c)!;
-  const body = await c.req.json().catch(() => ({}));
+  const body = await readAccountJsonBody(c);
+  if (body instanceof Response) return body;
   const ttlMinutes = typeof body.ttlMinutes === 'number' ? body.ttlMinutes : null;
   const targetUserId = c.req.param('id');
   const requestPayload = { accountId: access.accountId, targetUserId, ttlMinutes };
-  const authAttempt = authAttemptFor(c, `password-reset-issue:${access.accountId}:${targetUserId}`);
+  const authAttempt = authAttemptFor(c, authAttemptBucket(
+    AUTH_ATTEMPT_KIND.passwordResetIssue,
+    access.accountId,
+    targetUserId,
+  ));
   const resetIssueRateLimit = await maybeRateLimitAuthAttempt(c, authAttempt);
   if (resetIssueRateLimit) return resetIssueRateLimit;
   await recordAuthAttemptUse(authAttempt);
@@ -2237,7 +2320,8 @@ app.post('/api/v1/account/users/:id/password-reset', async (c) => {
 });
 
 app.post('/api/v1/auth/password/reset', async (c) => {
-  const body = await c.req.json().catch(() => ({}));
+  const body = await readAccountJsonBody(c);
+  if (body instanceof Response) return body;
   const resetToken = typeof body.resetToken === 'string' ? body.resetToken.trim() : '';
   const newPassword = typeof body.newPassword === 'string' ? body.newPassword : '';
   const authAttempt = authAttemptForPasswordReset(c, resetToken);
@@ -2308,7 +2392,8 @@ app.post('/api/v1/account/billing/checkout', async (c) => {
   const current = await currentHostedAccount(c);
   if (current instanceof Response) return current;
 
-  const body = await c.req.json().catch(() => ({}));
+  const body = await readAccountJsonBody(c);
+  if (body instanceof Response) return body;
   const idempotencyKey = c.req.header('Idempotency-Key')?.trim() ?? '';
   if (!idempotencyKey) {
     return c.json({ error: 'Idempotency-Key header is required for hosted checkout.' }, 400);

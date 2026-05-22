@@ -43,6 +43,10 @@ export type DpopSigningAlgorithm =
   | 'PS256';
 
 export const DEFAULT_DPOP_SIGNING_ALGORITHM: DpopSigningAlgorithm = 'ES256';
+export const DEFAULT_ACCEPTED_DPOP_ALGORITHMS = Object.freeze([
+  DEFAULT_DPOP_SIGNING_ALGORITHM,
+  'EdDSA',
+] as const satisfies readonly DpopSigningAlgorithm[]);
 export const DEFAULT_DPOP_MAX_PROOF_AGE_SECONDS = 120;
 export const DEFAULT_DPOP_CLOCK_SKEW_SECONDS = 30;
 
@@ -348,7 +352,7 @@ export async function verifyDpopProof(
 ): Promise<DpopProofVerification> {
   const checkedAt = normalizeIsoTimestamp(input.now, 'now');
   const acceptedAlgorithms =
-    input.acceptedAlgorithms ?? [DEFAULT_DPOP_SIGNING_ALGORITHM, 'EdDSA'];
+    input.acceptedAlgorithms ?? DEFAULT_ACCEPTED_DPOP_ALGORITHMS;
   let header: ProtectedHeaderParameters;
   let payload: JWTPayload;
 

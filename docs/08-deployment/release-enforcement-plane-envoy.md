@@ -36,6 +36,7 @@ The bridge is designed for fail-closed proxy admission:
 - `include_tls_session: true`
 - raw headers enabled for exact check input
 - bounded request body buffering for hash binding
+- route-specific risk class mapping for every protected production route
 
 The helper `renderEnvoyExtAuthzHttpFilterConfig()` renders the reference filter object:
 
@@ -63,6 +64,45 @@ typed_config:
 ```
 
 Place the filter before later filters that could mutate routing. Envoy documents route-cache clearing after authorization as a bypass risk, so the deployment posture should keep the protected route stable after the authorization check.
+
+## Route risk class
+
+`ENVOY_EXT_AUTHZ_DEFAULT_RISK_CLASS` is a repository fallback for local tests,
+examples, and non-production embeddings. It is not a production route policy.
+Production Envoy integrations must bind each protected route to the risk class
+selected by the customer policy surface. The bridge accepts that binding from
+the Envoy per-route `check_settings.context_extensions` key
+`attestor.risk_class`; invalid values fail closed during canonical binding.
+
+Reference per-route override:
+
+```yaml
+route_config:
+  virtual_hosts:
+  - name: finance_gateway
+    domains:
+    - finance.attestor.local
+    routes:
+    - match:
+        prefix: /v1/filings/
+      route:
+        cluster: finance-api
+      typed_per_filter_config:
+        envoy.filters.http.ext_authz:
+          "@type": type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthzPerRoute
+          check_settings:
+            context_extensions:
+              attestor.target_id: finance.reporting.proxy.prepare-filing
+              attestor.risk_class: R4
+```
+
+If an embedding service keeps the risk map server-side instead of passing
+`attestor.risk_class` from Envoy, it must pass `options.riskClass` when calling
+`buildEnvoyExtAuthzCanonicalBinding()` / `evaluateEnvoyExternalAuthorization()`
+for that route. That explicit server option takes precedence over route
+context. In both cases, the route map is operator/customer policy evidence; it
+cannot grant authority, reduce required proof, or replace the customer PEP
+no-bypass live proof.
 
 ## Istio posture
 
@@ -122,6 +162,13 @@ spec:
         methods:
         - POST
 ```
+
+Istio `AuthorizationPolicy` rules select the protected workload/path/method and
+delegate to the named external authorizer. They do not, by themselves, prove the
+Attestor risk class. The Attestor authorizer deployment must therefore bind the
+matched Istio route to an explicit `options.riskClass` or an equivalent trusted
+route map before forwarding the request into the bridge. Do not rely on the
+module fallback risk class for production Istio routes.
 
 ## Presentation modes
 

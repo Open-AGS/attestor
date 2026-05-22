@@ -23,6 +23,8 @@ import {
   ATTESTOR_PROXY_ENFORCEMENT_STATUS_HEADER,
   ATTESTOR_RELEASE_PRESENTATION_MODE_HEADER,
   ENVOY_EXT_AUTHZ_DYNAMIC_METADATA_NAMESPACE,
+  ENVOY_EXT_AUTHZ_DEFAULT_RISK_CLASS,
+  ENVOY_EXT_AUTHZ_ROUTE_RISK_CLASS_CONTEXT_EXTENSION,
   RELEASE_ENVOY_EXT_AUTHZ_BRIDGE_SPEC_VERSION,
   buildEnvoyExtAuthzCanonicalBinding,
   envoyOriginalRequestUri,
@@ -335,6 +337,22 @@ function withPath(checkRequest: EnvoyExtAuthzCheckRequest, path: string): EnvoyE
   });
 }
 
+function withContextExtensions(
+  checkRequest: EnvoyExtAuthzCheckRequest,
+  extensions: Readonly<Record<string, string>>,
+): EnvoyExtAuthzCheckRequest {
+  const attributes = checkRequest.attributes ?? {};
+  return Object.freeze({
+    attributes: Object.freeze({
+      ...attributes,
+      context_extensions: Object.freeze({
+        ...(attributes.context_extensions ?? {}),
+        ...extensions,
+      }),
+    }),
+  });
+}
+
 async function dpopHeaders(input: {
   readonly issued: IssuedReleaseToken;
   readonly decision: ReleaseDecision;
@@ -387,6 +405,7 @@ async function testCanonicalBinding(): Promise<void> {
   const right = buildEnvoyExtAuthzCanonicalBinding(BASE_CHECK);
 
   equal(left.version, RELEASE_ENVOY_EXT_AUTHZ_BRIDGE_SPEC_VERSION, 'Envoy bridge: binding version is stable');
+  equal(left.outputContract.riskClass, ENVOY_EXT_AUTHZ_DEFAULT_RISK_CLASS, 'Envoy bridge: fallback risk class is explicit');
   equal(left.target.id, 'finance.reporting.proxy.prepare-filing', 'Envoy bridge: target comes from context extension');
   equal(left.target.kind, 'endpoint', 'Envoy bridge: proxy target defaults to endpoint');
   equal(left.proxyRequest.method, 'POST', 'Envoy bridge: method is normalized');
@@ -397,6 +416,38 @@ async function testCanonicalBinding(): Promise<void> {
   equal(left.hashBundle.outputHash, right.hashBundle.outputHash, 'Envoy bridge: output hash is deterministic');
   equal(left.hashBundle.consequenceHash, right.hashBundle.consequenceHash, 'Envoy bridge: consequence hash is deterministic');
   ok(left.checkHash.startsWith('sha256:'), 'Envoy bridge: check hash is recorded');
+}
+
+async function testRouteRiskClassMapping(): Promise<void> {
+  const routeScoped = buildEnvoyExtAuthzCanonicalBinding(
+    withContextExtensions(BASE_CHECK, {
+      [ENVOY_EXT_AUTHZ_ROUTE_RISK_CLASS_CONTEXT_EXTENSION]: 'R4',
+    }),
+  );
+  equal(routeScoped.outputContract.riskClass, 'R4', 'Envoy bridge: route context sets risk class');
+  equal(
+    (routeScoped.consequencePayload as { readonly riskClass?: unknown }).riskClass,
+    'R4',
+    'Envoy bridge: route risk class binds the consequence payload',
+  );
+
+  const explicitOption = buildEnvoyExtAuthzCanonicalBinding(
+    withContextExtensions(BASE_CHECK, {
+      [ENVOY_EXT_AUTHZ_ROUTE_RISK_CLASS_CONTEXT_EXTENSION]: 'R4',
+    }),
+    { riskClass: 'R2' },
+  );
+  equal(explicitOption.outputContract.riskClass, 'R2', 'Envoy bridge: explicit server option overrides route context risk');
+
+  assert.throws(
+    () => buildEnvoyExtAuthzCanonicalBinding(
+      withContextExtensions(BASE_CHECK, {
+        [ENVOY_EXT_AUTHZ_ROUTE_RISK_CLASS_CONTEXT_EXTENSION]: 'R9000',
+      }),
+    ),
+    /route risk class must be one of/u,
+  );
+  passed += 1;
 }
 
 async function testConfigRendering(): Promise<void> {
@@ -861,6 +912,7 @@ async function testMalformedCheckFailsClosed(): Promise<void> {
 
 async function run(): Promise<void> {
   await testCanonicalBinding();
+  await testRouteRiskClassMapping();
   await testConfigRendering();
   await testValidDpopProxyCheck();
   await testValidSpiffeProxyCheck();

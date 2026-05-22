@@ -5,6 +5,12 @@ source changed by this report. This is engine-substrate sweep 3/N and covers
 the runtime enforcement layer that consumes release tokens produced by the
 release-kernel decision engine.
 
+Remediation follow-up: OPS-155 is repo-side closed by the frozen DPoP default
+algorithm allowlist test. OPS-158 is repo-side closed by validated Envoy
+`attestor.risk_class` route context binding, explicit server-option precedence,
+invalid-value fail-closed behavior, and deployment docs that keep the module
+fallback risk class out of production route policy.
+
 ## 0. Recent Fixes Chain-Effect Check
 
 One merge into `origin/master` since Sweep 19 was drafted:
@@ -99,7 +105,7 @@ tracked as OPS-154.
 | OPS-155 | P2 | `open / partial-repo` | DPoP default accepted-algorithm policy is per-call, not a module-level frozen policy constant | `verifyDpopProof` defaults `acceptedAlgorithms` with `input.acceptedAlgorithms ?? [DEFAULT_DPOP_SIGNING_ALGORITHM, 'EdDSA']` at `dpop.ts:350-351`; callers can pass a broader list | proof integrity; fail-closed boundary | Add `DEFAULT_ACCEPTED_DPOP_ALGORITHMS` as a frozen exported constant and document that widening the caller allowlist is an explicit operator/provider decision |
 | OPS-156 | P2 | `accepted limitation` | HTTP Message Signatures are Ed25519-only even though RFC 9421 permits other algorithms | `http-message-signatures.ts:38` pins `HTTP_MESSAGE_SIGNATURE_ALGORITHM = 'ed25519'`; RFC 9421 includes RSA-PSS, ECDSA, HMAC-SHA256, and Ed25519 examples | proof integrity; no overclaim | Keep the deliberate narrowing; document that future provider adapters require explicit allowlist expansion and tests |
 | OPS-157 | P3 | `open / partial-repo` | RFC 8693 token-exchange behavioral depth deferred | `token-exchange.ts` declares grant type and token type, but this sweep did not deep-read every optional field binding path | release provenance; auditability | Run a dedicated token-exchange sub-sweep covering `audience`, `resource`, `scope`, requested/subject/actor token types, and actor-token binding |
-| OPS-158 | P3 | `open / partial-repo` | Envoy bridge default risk class must not become a production route policy | `envoy-ext-authz.ts:86-88` sets `ENVOY_EXT_AUTHZ_DEFAULT_RISK_CLASS = 'R3'` | release provenance; operational boundedness | Document that production Envoy filters must set risk class per route and not rely on the module default |
+| OPS-158 | P3 | `closed` | Envoy bridge default risk class must not become a production route policy | `envoy-ext-authz.ts` accepts the validated `attestor.risk_class` route context extension, gives explicit server `options.riskClass` precedence, and fails closed on invalid route risk values; deployment docs state that the default is fallback-only. | release provenance; operational boundedness | Keep `tests/release-enforcement-plane-envoy-ext-authz.test.ts` green and prove live route-map deployment separately before production claims. |
 | OPS-159 | P3 | `accepted limitation` | Degraded-mode `maxUses` body path was not deep-audited | `degraded-mode.ts:38` sets `DEFAULT_DEGRADED_MODE_MAX_USES = 1`; this sweep did not line-by-line verify custom `maxUses > 1` enforcement | replay and idempotency safety; auditability | Audit the `maxUses` increment/check path in a future degraded-mode sub-sweep if operators plan to allow `maxUses > 1` |
 
 ## 6. Release-Enforcement-Plane Surface Matrix
@@ -171,7 +177,7 @@ line-by-line behavioral audit, not another broad sweep.
 | OPS-155 DPoP default allowlist constant | Default policy becomes discoverable, exported, and testable | low | `tests/release-enforcement-plane-dpop.test.ts` should assert default accepted algorithms |
 | OPS-156 documentation | Avoids implying generic RFC 9421 algorithm support | low | docs-only check |
 | OPS-157 token-exchange sub-sweep | Deeper OAuth token exchange compliance evidence | medium | dedicated sub-sweep, not a quick PR |
-| OPS-158 Envoy route risk-class documentation | Prevents module default from becoming production policy | low | docs-only check |
+| OPS-158 Envoy route risk-class mapping | Prevents module default from becoming production policy | low | `tests/release-enforcement-plane-envoy-ext-authz.test.ts` plus deployment doc check |
 | OPS-159 degraded-mode sub-sweep | Confirms custom `maxUses` behavior if operators need it | medium | dedicated degraded-mode test/audit |
 
 ## 10. Coverage Delta

@@ -11,7 +11,11 @@ import {
   type CanonicalReleaseJsonValue,
 } from '../release-kernel/release-canonicalization.js';
 import type { ReleaseTargetReference } from '../release-kernel/object-model.js';
-import type { OutputContractDescriptor } from '../release-kernel/types.js';
+import {
+  RISK_CLASSES,
+  isRiskClass,
+  type OutputContractDescriptor,
+} from '../release-kernel/types.js';
 import {
   createEnforcementDecision,
   createEnforcementReceipt,
@@ -86,6 +90,8 @@ export const ENVOY_EXT_AUTHZ_OUTPUT_EXPECTED_SHAPE =
 export const ENVOY_EXT_AUTHZ_DEFAULT_VERIFIER_MODE = 'online';
 export const ENVOY_EXT_AUTHZ_DEFAULT_CONSEQUENCE_TYPE = 'action';
 export const ENVOY_EXT_AUTHZ_DEFAULT_RISK_CLASS = 'R3';
+export const ENVOY_EXT_AUTHZ_ROUTE_RISK_CLASS_CONTEXT_EXTENSION =
+  'attestor.risk_class';
 export const ENVOY_EXT_AUTHZ_FILTER_NAME = 'envoy.filters.http.ext_authz';
 export const ENVOY_EXT_AUTHZ_TYPE_URL =
   'type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthz';
@@ -646,6 +652,26 @@ function targetIdFromCheck(input: {
   );
 }
 
+function routeRiskClassFromCheck(
+  checkRequest: EnvoyExtAuthzCheckRequest,
+): ReleaseEnforcementRiskClass | null {
+  const raw = normalizeIdentifier(
+    checkRequest.attributes?.context_extensions?.[
+      ENVOY_EXT_AUTHZ_ROUTE_RISK_CLASS_CONTEXT_EXTENSION
+    ],
+  );
+  if (!raw) {
+    return null;
+  }
+  const normalized = raw.toUpperCase();
+  if (!isRiskClass(normalized)) {
+    throw new Error(
+      `Envoy ext_authz bridge route risk class must be one of ${RISK_CLASSES.join(', ')}.`,
+    );
+  }
+  return normalized;
+}
+
 function proxyRequestCanonical(
   checkRequest: EnvoyExtAuthzCheckRequest,
   options: EnvoyExtAuthzCanonicalBindingOptions,
@@ -705,6 +731,7 @@ export function buildEnvoyExtAuthzCanonicalBinding(
   options: EnvoyExtAuthzCanonicalBindingOptions = {},
 ): EnvoyExtAuthzCanonicalBinding {
   const proxyRequest = proxyRequestCanonical(checkRequest, options);
+  const routeRiskClass = routeRiskClassFromCheck(checkRequest);
   const headers = normalizeHeaders(checkRequest.attributes?.request?.http);
   const targetId = targetIdFromCheck({
     options,
@@ -722,7 +749,7 @@ export function buildEnvoyExtAuthzCanonicalBinding(
     artifactType: ENVOY_EXT_AUTHZ_OUTPUT_ARTIFACT_TYPE,
     expectedShape: ENVOY_EXT_AUTHZ_OUTPUT_EXPECTED_SHAPE,
     consequenceType: options.consequenceType ?? ENVOY_EXT_AUTHZ_DEFAULT_CONSEQUENCE_TYPE,
-    riskClass: options.riskClass ?? ENVOY_EXT_AUTHZ_DEFAULT_RISK_CLASS,
+    riskClass: options.riskClass ?? routeRiskClass ?? ENVOY_EXT_AUTHZ_DEFAULT_RISK_CLASS,
   });
   const outputPayload: CanonicalReleaseJsonValue = Object.freeze({
     version: RELEASE_ENVOY_EXT_AUTHZ_BRIDGE_SPEC_VERSION,

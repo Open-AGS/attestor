@@ -3,6 +3,7 @@ import { createReleaseDecisionSkeleton } from '../src/release-kernel/object-mode
 import { createReleaseDecisionEngine } from '../src/release-kernel/release-decision-engine.js';
 import {
   applyDeterministicCheckReport,
+  RELEASE_DETERMINISTIC_CHECK_OBSERVATION_BUDGET,
   RELEASE_DETERMINISTIC_CHECKS_SPEC_VERSION,
   runDeterministicReleaseChecks,
 } from '../src/release-kernel/release-deterministic-checks.js';
@@ -145,6 +146,38 @@ async function main(): Promise<void> {
       finding.message.includes('missing'),
     ),
     'Deterministic checks: missing capability observation is named as the failure',
+  );
+
+  const adversarialTools = Array.from(
+    { length: RELEASE_DETERMINISTIC_CHECK_OBSERVATION_BUDGET.usedTools + 1 },
+    (_, index) => `tool-${index}`,
+  );
+  const overBudgetObservationReport = runDeterministicReleaseChecks(firstPolicy, decision, {
+    ...passingObservation,
+    usedTools: adversarialTools,
+  });
+
+  ok(
+    !overBudgetObservationReport.allPassed,
+    'Deterministic checks: over-budget observation arrays fail closed',
+  );
+  equal(
+    overBudgetObservationReport.failCount,
+    1,
+    'Deterministic checks: over-budget observation arrays produce a bounded failure',
+  );
+  ok(
+    overBudgetObservationReport.findings.some((finding) =>
+      finding.code === 'deterministic-check-resource-budget' &&
+      finding.result === 'fail' &&
+      finding.message.includes('Observed tools'),
+    ),
+    'Deterministic checks: over-budget observation failure names the exhausted array budget',
+  );
+  equal(
+    overBudgetObservationReport.outcomes.length,
+    0,
+    'Deterministic checks: over-budget observation arrays are rejected before category iteration',
   );
 
   const communicationPolicy = createReleasePolicyDefinition({

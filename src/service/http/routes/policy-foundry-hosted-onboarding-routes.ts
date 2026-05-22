@@ -43,6 +43,10 @@ import type {
   PolicyFoundryHostedWizardStateRecord,
   PolicyFoundryHostedWizardStateStore,
 } from '../../policy-foundry-hosted-wizard-state.js';
+import type {
+  PipelineIdempotencyReadyResult,
+  PipelineIdempotencyService,
+} from '../../application/pipeline-idempotency-service.js';
 import type { TenantContext } from '../../tenant-isolation.js';
 import {
   acceptsJsonRequestBody,
@@ -55,6 +59,8 @@ export const HOSTED_POLICY_FOUNDRY_ONBOARDING_WORKFLOW_VIEW_ROUTE =
   '/api/v1/shadow/policy-foundry/hosted-onboarding-workflow/view';
 export const HOSTED_POLICY_FOUNDRY_ONBOARDING_WORKFLOW_SESSION_ROUTE =
   '/api/v1/shadow/policy-foundry/hosted-onboarding-workflow/sessions/:sessionId';
+const HOSTED_POLICY_FOUNDRY_ONBOARDING_IDEMPOTENCY_ROUTE_ID =
+  'policy_foundry.hosted_onboarding_workflow.persist';
 
 const MAX_HOSTED_MANIFESTS = 20;
 const MAX_HOSTED_DECLARATIONS = 500;
@@ -64,7 +70,7 @@ const MAX_HOSTED_REVIEWED_STEPS = 32;
 const MAX_HOSTED_CAPABILITIES = 64;
 const DEFAULT_HOSTED_MANIFEST_MAX_BYTES = 512 * 1024;
 
-type HostedPolicyFoundryProblemStatus = 400 | 404 | 415 | 503;
+type HostedPolicyFoundryProblemStatus = 400 | 404 | 409 | 415 | 503;
 
 type HostedPolicyFoundryOnboardingRequestBody = {
   readonly generatedAt?: unknown;
@@ -106,6 +112,7 @@ export interface PolicyFoundryHostedOnboardingRouteDeps {
     readonly tenant: TenantContext;
   }): Promise<HostedBillingEntitlementRecord | null> | HostedBillingEntitlementRecord | null;
   wizardStateStore?: PolicyFoundryHostedWizardStateStore;
+  pipelineIdempotencyService?: PipelineIdempotencyService;
   now?(): string;
 }
 
@@ -731,6 +738,125 @@ function persistWizardStateIfRequested(
   };
 }
 
+type HostedWizardIdempotencyBegin =
+  | { readonly kind: 'ready'; readonly ready: PipelineIdempotencyReadyResult | null }
+  | { readonly kind: 'response'; readonly response: Response };
+
+function idempotencyKeyFor(c: Context): string | null {
+  const normalized = c.req.header('Idempotency-Key')?.trim() ?? '';
+  return normalized.length > 0 ? normalized : null;
+}
+
+function replayResponse(input: {
+  readonly statusCode: number;
+  readonly responseBody: unknown;
+  readonly replay: boolean;
+}): Response {
+  return new Response(JSON.stringify(input.responseBody), {
+    status: input.statusCode,
+    headers: {
+      'content-type': 'application/json; charset=UTF-8',
+      'cache-control': 'no-store',
+      ...(input.replay ? { 'x-attestor-idempotent-replay': 'true' } : {}),
+    },
+  });
+}
+
+async function beginHostedWizardIdempotency(
+  c: Context,
+  deps: PolicyFoundryHostedOnboardingRouteDeps,
+  tenant: TenantContext,
+  body: HostedPolicyFoundryOnboardingRequestBody,
+): Promise<HostedWizardIdempotencyBegin> {
+  if (!optionalBoolean(body.persistWizardState, 'persistWizardState', false)) {
+    return { kind: 'ready', ready: null };
+  }
+
+  const idempotencyKey = idempotencyKeyFor(c);
+  if (!idempotencyKey) {
+    return { kind: 'ready', ready: null };
+  }
+
+  if (!deps.pipelineIdempotencyService) {
+    return {
+      kind: 'response',
+      response: problem(c, {
+        type: 'https://attestor.dev/problems/policy-foundry-hosted-onboarding-idempotency-unavailable',
+        title: 'Policy Foundry hosted onboarding idempotency unavailable',
+        status: 503,
+        detail: 'The Policy Foundry hosted onboarding route cannot persist idempotent wizard state in this runtime.',
+        reasonCodes: ['policy-foundry-hosted-onboarding-idempotency-unavailable'],
+      }),
+    };
+  }
+
+  const begin = await deps.pipelineIdempotencyService.begin({
+    idempotencyKey,
+    tenantId: tenant.tenantId,
+    routeId: HOSTED_POLICY_FOUNDRY_ONBOARDING_IDEMPOTENCY_ROUTE_ID,
+    requestPayload: body,
+  });
+
+  if (begin.kind === 'ready') {
+    return { kind: 'ready', ready: begin };
+  }
+
+  if (begin.kind === 'replay') {
+    return {
+      kind: 'response',
+      response: replayResponse({
+        statusCode: begin.statusCode,
+        responseBody: begin.responseBody,
+        replay: true,
+      }),
+    };
+  }
+
+  if (begin.kind === 'conflict') {
+    return {
+      kind: 'response',
+      response: problem(c, {
+        type: 'https://attestor.dev/problems/policy-foundry-hosted-onboarding-idempotency-conflict',
+        title: 'Policy Foundry hosted onboarding idempotency conflict',
+        status: 409,
+        detail: 'The Idempotency-Key was already used for a different Policy Foundry hosted onboarding wizard-state request.',
+        reasonCodes: ['policy-foundry-hosted-onboarding-idempotency-conflict'],
+      }),
+    };
+  }
+
+  return {
+    kind: 'response',
+    response: problem(c, {
+      type: 'https://attestor.dev/problems/policy-foundry-hosted-onboarding-idempotency-unavailable',
+      title: 'Policy Foundry hosted onboarding idempotency unavailable',
+      status: 503,
+      detail: 'The Policy Foundry hosted onboarding route cannot persist idempotent wizard state in this runtime.',
+      reasonCodes: ['policy-foundry-hosted-onboarding-idempotency-unavailable'],
+    }),
+  };
+}
+
+async function finalizeHostedWizardIdempotency(
+  deps: PolicyFoundryHostedOnboardingRouteDeps,
+  tenant: TenantContext,
+  body: HostedPolicyFoundryOnboardingRequestBody,
+  idempotency: PipelineIdempotencyReadyResult | null,
+  responseBody: Record<string, unknown>,
+): Promise<Record<string, unknown>> {
+  if (!idempotency?.idempotencyKey || !deps.pipelineIdempotencyService) {
+    return responseBody;
+  }
+  return deps.pipelineIdempotencyService.finalize({
+    idempotencyKey: idempotency.idempotencyKey,
+    tenantId: tenant.tenantId,
+    routeId: HOSTED_POLICY_FOUNDRY_ONBOARDING_IDEMPOTENCY_ROUTE_ID,
+    requestPayload: body,
+    statusCode: 200,
+    responseBody,
+  });
+}
+
 export function registerPolicyFoundryHostedOnboardingRoutes(
   app: Hono,
   deps: PolicyFoundryHostedOnboardingRouteDeps,
@@ -741,14 +867,18 @@ export function registerPolicyFoundryHostedOnboardingRoutes(
     if (body instanceof Response) return body;
 
     try {
+      const tenant = deps.currentTenant(c);
+      const idempotency = await beginHostedWizardIdempotency(c, deps, tenant, body);
+      if (idempotency.kind === 'response') return idempotency.response;
       const material = await createHostedPolicyFoundryOnboardingMaterial(c, deps, body);
       const persisted = persistWizardStateIfRequested(deps, body, material);
       if (!persisted.wizardState) return c.json(material);
-      return c.json({
+      const responseBody = await finalizeHostedWizardIdempotency(deps, tenant, body, idempotency.ready, {
         ...material,
         storageMode: 'file-backed-wizard-state',
         wizardState: persisted.wizardState,
       });
+      return c.json(responseBody);
     } catch (error) {
       return renderFailedProblem(c, error);
     }

@@ -322,6 +322,7 @@ export function createPolicyFoundryHostedOnboardingRouteDeps<Packet>(
       });
     },
     wizardStateStore,
+    pipelineIdempotencyService: runtime.services.httpRoutes.pipeline.pipelineIdempotencyService,
     now: () => new Date().toISOString(),
   };
 }

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -15,6 +15,15 @@ import {
   HOSTED_POLICY_FOUNDRY_ONBOARDING_WORKFLOW_VIEW_ROUTE,
   registerPolicyFoundryHostedOnboardingRoutes,
 } from '../src/service/http/routes/policy-foundry-hosted-onboarding-routes.js';
+import { createPipelineIdempotencyService } from '../src/service/application/pipeline-idempotency-service.js';
+import type { PipelineIdempotencyService } from '../src/service/application/pipeline-idempotency-service.js';
+import {
+  ensurePipelineIdempotencyStateReady,
+  lookupPipelineIdempotencyState,
+  recordPipelineIdempotencyState,
+} from '../src/service/control-plane-store.js';
+import { hashJsonValue } from '../src/service/json-stable.js';
+import { resetPipelineIdempotencyStoreForTests } from '../src/service/pipeline-idempotency-store.js';
 import { createFileBackedPolicyFoundryHostedWizardStateStore } from '../src/service/policy-foundry-hosted-wizard-state.js';
 import type { HostedBillingEntitlementRecord } from '../src/service/billing-entitlement-store.js';
 import type { TenantContext } from '../src/service/tenant-isolation.js';
@@ -28,6 +37,11 @@ function ok(condition: unknown, message: string): void {
 
 function equal<T>(actual: T, expected: T, message: string): void {
   assert.equal(actual, expected, message);
+  passed += 1;
+}
+
+function deepEqual<T>(actual: T, expected: T, message: string): void {
+  assert.deepEqual(actual, expected, message);
   passed += 1;
 }
 
@@ -89,6 +103,7 @@ function createApp(input: {
   readonly routeTenant?: TenantContext;
   readonly events?: readonly ShadowAdmissionEvent[];
   readonly wizardStateStore?: ReturnType<typeof createFileBackedPolicyFoundryHostedWizardStateStore>;
+  readonly pipelineIdempotencyService?: PipelineIdempotencyService;
   readonly billingEntitlement?: HostedBillingEntitlementRecord | null;
   readonly billingResolverConfigured?: boolean;
 } = {}): Hono {
@@ -102,9 +117,49 @@ function createApp(input: {
       ? () => input.billingEntitlement ?? null
       : undefined,
     wizardStateStore: input.wizardStateStore,
+    pipelineIdempotencyService: input.pipelineIdempotencyService,
     now: () => '2026-05-13T09:01:00.000Z',
   });
   return app;
+}
+
+function withPipelineIdempotencyEnv(): () => void {
+  const previous = new Map<string, string | undefined>();
+  const overrides: Record<string, string | undefined> = {
+    ATTESTOR_PIPELINE_IDEMPOTENCY_ENCRYPTION_KEY: 'policy-foundry-wizard-idempotency-test-key',
+    ATTESTOR_PIPELINE_IDEMPOTENCY_STORE_PATH: join(
+      tmpdir(),
+      `attestor-policy-foundry-wizard-idempotency-${randomUUID()}.json`,
+    ),
+    ATTESTOR_CONTROL_PLANE_PG_URL: undefined,
+  };
+  for (const [key, value] of Object.entries(overrides)) {
+    previous.set(key, process.env[key]);
+    if (value === undefined) {
+      delete process.env[key];
+    } else {
+      process.env[key] = value;
+    }
+  }
+  return () => {
+    resetPipelineIdempotencyStoreForTests();
+    for (const [key, value] of previous.entries()) {
+      if (value === undefined) {
+        delete process.env[key];
+      } else {
+        process.env[key] = value;
+      }
+    }
+  };
+}
+
+function pipelineIdempotencyService(): PipelineIdempotencyService {
+  return createPipelineIdempotencyService({
+    hashJsonValue,
+    ensurePipelineIdempotencyStateReady,
+    lookupPipelineIdempotencyState,
+    recordPipelineIdempotencyState,
+  });
 }
 
 function entitlement(overrides: Partial<HostedBillingEntitlementRecord> = {}): HostedBillingEntitlementRecord {
@@ -470,6 +525,142 @@ async function testHostedRoutePersistsAndResumesWizardState(): Promise<void> {
     excludes(resumeText, /raw_prompt_must_not_escape|rk_live_must_not_escape|C:\/Users\/thedi\/private|tenant_foundry_route_a/u, 'Policy Foundry hosted route: resumed state exposes no raw manifest or tenant id');
     excludes(fileText, /raw_prompt_must_not_escape|rk_live_must_not_escape|C:\/Users\/thedi\/private|tenant_foundry_route_a|customer-visible-session-ref/u, 'Policy Foundry hosted route: wizard file stores no raw manifest, tenant id, or caller session ref');
   } finally {
+    rmSync(workspace, { recursive: true, force: true });
+  }
+}
+
+async function testHostedRouteReplaysPersistedWizardStateWithIdempotencyKey(): Promise<void> {
+  const restoreEnv = withPipelineIdempotencyEnv();
+  const workspace = mkdtempSync(join(tmpdir(), 'attestor-pfwiz-route-idem-'));
+  try {
+    const storePath = join(workspace, 'wizard-state.json');
+    const wizardStateStore = createFileBackedPolicyFoundryHostedWizardStateStore({ path: storePath });
+    const app = createApp({
+      wizardStateStore,
+      pipelineIdempotencyService: pipelineIdempotencyService(),
+    });
+    const requestBody = {
+      ...baseRequestBody(),
+      generatedAt: '2026-05-13T09:01:00.000Z',
+      persistWizardState: true,
+      wizardSessionId: 'customer-visible-session-ref',
+      wizardStateTtlHours: 12,
+    };
+
+    const first = await app.request(HOSTED_POLICY_FOUNDRY_ONBOARDING_WORKFLOW_ROUTE, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'Idempotency-Key': 'policy-foundry-wizard-route-1',
+      },
+      body: JSON.stringify(requestBody),
+    });
+    const firstBody = await first.json() as {
+      readonly wizardState: {
+        readonly kind: string;
+        readonly session: { readonly sessionId: string };
+      };
+    };
+    const replay = await app.request(HOSTED_POLICY_FOUNDRY_ONBOARDING_WORKFLOW_ROUTE, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'Idempotency-Key': 'policy-foundry-wizard-route-1',
+      },
+      body: JSON.stringify(requestBody),
+    });
+    const replayBody = await replay.json() as typeof firstBody;
+    const snapshot = wizardStateStore.exportSnapshot();
+
+    equal(first.status, 200, 'Policy Foundry hosted route idempotency: first persisted request succeeds');
+    equal(replay.status, 200, 'Policy Foundry hosted route idempotency: replay succeeds');
+    equal(
+      replay.headers.get('x-attestor-idempotent-replay'),
+      'true',
+      'Policy Foundry hosted route idempotency: replay header is set',
+    );
+    equal(
+      replay.headers.get('x-attestor-idempotency-key'),
+      null,
+      'Policy Foundry hosted route idempotency: replay response does not echo the raw idempotency key',
+    );
+    deepEqual(
+      replayBody,
+      firstBody,
+      'Policy Foundry hosted route idempotency: replay returns the stored response body',
+    );
+    equal(firstBody.wizardState.kind, 'created', 'Policy Foundry hosted route idempotency: first response created state');
+    equal(
+      snapshot.records.length,
+      1,
+      'Policy Foundry hosted route idempotency: replay does not create another wizard-state record',
+    );
+    equal(
+      snapshot.records[0]?.events.length,
+      1,
+      'Policy Foundry hosted route idempotency: replay does not append another wizard-state event',
+    );
+  } finally {
+    restoreEnv();
+    rmSync(workspace, { recursive: true, force: true });
+  }
+}
+
+async function testHostedRouteRejectsIdempotencyKeyConflicts(): Promise<void> {
+  const restoreEnv = withPipelineIdempotencyEnv();
+  const workspace = mkdtempSync(join(tmpdir(), 'attestor-pfwiz-route-idem-conflict-'));
+  try {
+    const storePath = join(workspace, 'wizard-state.json');
+    const wizardStateStore = createFileBackedPolicyFoundryHostedWizardStateStore({ path: storePath });
+    const app = createApp({
+      wizardStateStore,
+      pipelineIdempotencyService: pipelineIdempotencyService(),
+    });
+    const firstBody = {
+      ...baseRequestBody(),
+      generatedAt: '2026-05-13T09:01:00.000Z',
+      persistWizardState: true,
+      wizardSessionId: 'customer-visible-session-ref',
+    };
+    const conflictingBody = {
+      ...firstBody,
+      requestedCapabilities: ['basic-shadow-summary'],
+    };
+
+    const first = await app.request(HOSTED_POLICY_FOUNDRY_ONBOARDING_WORKFLOW_ROUTE, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'Idempotency-Key': 'policy-foundry-wizard-route-conflict',
+      },
+      body: JSON.stringify(firstBody),
+    });
+    const conflict = await app.request(HOSTED_POLICY_FOUNDRY_ONBOARDING_WORKFLOW_ROUTE, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'Idempotency-Key': 'policy-foundry-wizard-route-conflict',
+      },
+      body: JSON.stringify(conflictingBody),
+    });
+    const conflictText = await conflict.text();
+    const conflictBody = JSON.parse(conflictText) as {
+      readonly reasonCodes: readonly string[];
+    };
+
+    equal(first.status, 200, 'Policy Foundry hosted route idempotency: first conflict fixture request succeeds');
+    equal(conflict.status, 409, 'Policy Foundry hosted route idempotency: key reuse with different body returns 409');
+    ok(
+      conflictBody.reasonCodes.includes('policy-foundry-hosted-onboarding-idempotency-conflict'),
+      'Policy Foundry hosted route idempotency: conflict reason is stable',
+    );
+    excludes(
+      conflictText,
+      /policy-foundry-wizard-route-conflict/u,
+      'Policy Foundry hosted route idempotency: conflict response does not expose the raw idempotency key',
+    );
+  } finally {
+    restoreEnv();
     rmSync(workspace, { recursive: true, force: true });
   }
 }
@@ -940,6 +1131,8 @@ try {
   await testHostedRouteRendersHtmlViewFromSameWorkflow();
   await testHostedRouteRejectsNonJsonMediaType();
   await testHostedRoutePersistsAndResumesWizardState();
+  await testHostedRouteReplaysPersistedWizardStateWithIdempotencyKey();
+  await testHostedRouteRejectsIdempotencyKeyConflicts();
   await testHostedRouteCanAcceptPassingReplayObservations();
   await testHostedRouteBindsPassingLiveDownstreamReplay();
   await testHostedRouteBlocksFailedLiveDownstreamReplay();

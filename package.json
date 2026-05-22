@@ -377,6 +377,7 @@
     "test:f4-presentation-replay-shared-ledger-validation": "tsx tests/f4-presentation-replay-shared-ledger-validation.test.ts",
     "test:downstream-execution-receipt": "tsx tests/downstream-execution-receipt.test.ts",
     "test:retry-attempt-ledger": "tsx tests/retry-attempt-ledger.test.ts",
+    "test:consequence-admission-proof-discipline": "tsx tests/consequence-admission-proof-discipline.test.ts",
     "test:f4-shared-velocity-retry-validation": "tsx tests/f4-shared-velocity-retry-validation.test.ts",
     "test:agent-loop-abuse-guard": "tsx tests/consequence-admission-agent-loop-abuse-guard.test.ts",
     "test:agent-loop-abuse-guard-shared": "tsx tests/consequence-admission-agent-loop-abuse-guard-shared.test.ts",

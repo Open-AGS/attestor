@@ -5,6 +5,46 @@ const SENSITIVE_OUTPUT_PATTERNS: readonly {
   readonly replacement: string | ((match: string, ...groups: string[]) => string);
 }[] = Object.freeze([
   {
+    pattern: /-----BEGIN ([A-Z0-9 ]*PRIVATE KEY)-----[\s\S]*?-----END \1-----/gu,
+    replacement: (_match, label) => `-----BEGIN ${label}-----\n[redacted]\n-----END ${label}-----`,
+  },
+  {
+    pattern: /\b(AKIA|ASIA)[A-Z0-9]{16}\b/gu,
+    replacement: (_match, prefix) => `${prefix}[redacted]`,
+  },
+  {
+    pattern: /\bAIza[0-9A-Za-z_-]{35}\b/gu,
+    replacement: 'AIza[redacted]',
+  },
+  {
+    pattern: /\bya29\.[0-9A-Za-z._-]+\b/gu,
+    replacement: 'ya29.[redacted]',
+  },
+  {
+    pattern: /\bgithub_pat_[0-9A-Za-z_]{20,}\b/gu,
+    replacement: 'github_pat_[redacted]',
+  },
+  {
+    pattern: /\bgh[pousr]_[0-9A-Za-z_]{20,}\b/gu,
+    replacement: (_match) => `${_match.slice(0, 4)}[redacted]`,
+  },
+  {
+    pattern: /\bsk-ant-api\d{2}-[0-9A-Za-z_-]{16,}\b/gu,
+    replacement: 'sk-ant-api[redacted]',
+  },
+  {
+    pattern: /\bsk-(?:proj-)?[0-9A-Za-z_-]{20,}\b/gu,
+    replacement: 'sk-[redacted]',
+  },
+  {
+    pattern: /\bxox[abprs]-[0-9A-Za-z-]{10,}\b/gu,
+    replacement: (_match) => `${_match.slice(0, 5)}[redacted]`,
+  },
+  {
+    pattern: /\beyJ[0-9A-Za-z_-]{10,}\.[0-9A-Za-z_-]{10,}\.[0-9A-Za-z_-]{10,}\b/gu,
+    replacement: 'jwt.[redacted]',
+  },
+  {
     pattern: /\b([rs]k)_(live|test)_[A-Za-z0-9_]+\b/gu,
     replacement: (_match, keyKind, mode) => `${keyKind}_${mode}_[redacted]`,
   },
@@ -13,8 +53,32 @@ const SENSITIVE_OUTPUT_PATTERNS: readonly {
     replacement: 'whsec_[redacted]',
   },
   {
-    pattern: /\bBearer\s+[A-Za-z0-9._~+/=-]+\b/gu,
+    pattern: /\b((?:Authorization|Proxy-Authorization)\s*[:=]\s*)Bearer\s+[A-Za-z0-9._~+/=-]+\b/giu,
+    replacement: '$1Bearer [redacted]',
+  },
+  {
+    pattern: /\bBearer\s+(?=[A-Za-z0-9._~+/=-]{16,}\b)(?=[A-Za-z0-9._~+/=-]*[._~+/=-])[A-Za-z0-9._~+/=-]+\b/gu,
     replacement: 'Bearer [redacted]',
+  },
+  {
+    pattern: /\b(secret=)[^\s&"']+/giu,
+    replacement: '$1[redacted]',
+  },
+  {
+    pattern: /\b(release-token=)[^\s&"']+/giu,
+    replacement: '$1[redacted]',
+  },
+  {
+    pattern: /\b(attestor-release-token\s*[:=]\s*)[A-Za-z0-9._~+/=-]+\b/giu,
+    replacement: '$1[redacted]',
+  },
+  {
+    pattern: /\b(private[_-]?key\s*[:=]\s*)[^\s,"'}]+/giu,
+    replacement: '$1[redacted]',
+  },
+  {
+    pattern: /\b(jwt[.:=]\s*)[0-9A-Za-z_-]{10,}\.[0-9A-Za-z_-]{10,}\.[0-9A-Za-z_-]{10,}\b/giu,
+    replacement: '$1[redacted]',
   },
   {
     pattern: /\b(postgres(?:ql)?:\/\/[^:\s/@]+):[^@\s/]+@/giu,

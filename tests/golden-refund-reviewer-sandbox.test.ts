@@ -168,6 +168,44 @@ function testRenderersAndCli(): void {
   excludes(json, /customerEmail|customerName|paymentIntentId|stripeChargeId|shopifyOrderId/iu, 'G09 JSON: no raw commerce fields are rendered');
 }
 
+function testDemoCliPathBoundary(): void {
+  const outsideScenario = spawnSync(
+    'npm',
+    [
+      'run',
+      'demo:golden-refund',
+      '--',
+      '--scenario',
+      'package.json',
+    ],
+    {
+      cwd: process.cwd(),
+      encoding: 'utf8',
+      shell: process.platform === 'win32',
+    },
+  );
+  const showcaseOutside = spawnSync(
+    'npx',
+    [
+      'tsx',
+      'scripts/render-proof-showcase.ts',
+      '--skip-run',
+      '--from',
+      'package.json',
+    ],
+    {
+      cwd: process.cwd(),
+      encoding: 'utf8',
+      shell: process.platform === 'win32',
+    },
+  );
+
+  equal(outsideScenario.status, 1, 'G09 CLI boundary: scenario outside fixtures is rejected');
+  includes(outsideScenario.stderr, 'outside approved demo roots', 'G09 CLI boundary: scenario rejection names approved roots');
+  equal(showcaseOutside.status, 1, 'Proof showcase boundary: source outside approved roots is rejected');
+  includes(showcaseOutside.stderr, 'outside approved demo roots', 'Proof showcase boundary: source rejection names approved roots');
+}
+
 function testDocsAndScriptsStayAligned(): void {
   const doc = readProjectFile('docs', '02-architecture', 'golden-refund-shadow-pilot.md');
   const readme = readProjectFile('README.md');
@@ -202,6 +240,7 @@ testAcceptedInputRunsShadowEngine();
 testInvalidAndOutsideScopeInputsAreBounded();
 testInconsistentInputRunsWithReasonCode();
 testRenderersAndCli();
+testDemoCliPathBoundary();
 testDocsAndScriptsStayAligned();
 
 console.log(`golden-refund-reviewer-sandbox: ${passed} assertions passed`);

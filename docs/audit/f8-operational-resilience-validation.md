@@ -55,9 +55,9 @@ Primary repository evidence:
 
 | F8 ID | Report claim | Repository status | Validation result |
 |---|---|---|---|
-| F8-R1 | `/api/v1/health` exposes CA fingerprint and signer/reviewer subjects before auth. | Health now reports `pki.ready` and points to `/api/v1/pki/ca`; it no longer exposes `caFingerprint`, `signerSubject`, or `reviewerSubject` on the health route. The public CA route remains explicit trust-root distribution. | `fixed` |
+| F8-R1 | `/api/v1/health` exposes CA fingerprint and signer/reviewer subjects before auth. | Health now reports only minimal public liveness identity and no longer exposes PKI or release-runtime diagnostics. The public CA route remains explicit trust-root distribution. | `fixed` |
 | F8-R2 | Readiness doubles as startup probing. | `/api/v1/startup` exists and returns process bootstrap state without dependency readiness or PKI metadata. Kubernetes HA manifests use `startupProbe`, and HA compose has a longer bootstrap grace period. | `fixed` |
-| F8-R3 | Health body includes dependency diagnostics that an operator could confuse with readiness. | Health still includes safe diagnostics by design, while HTTP status remains process liveness and `/api/v1/ready` is the traffic gate. This is an accepted operator-boundary limitation, not an exploit by itself. | `accepted-limitation` |
+| F8-R3 | Health body includes dependency diagnostics that an operator could confuse with readiness. | Public health is now process liveness only, and `/api/v1/ready` is the traffic gate. Internal diagnostics remain in runtime/rehearsal evidence rather than public probe bodies. | `fixed` |
 | F8-R4 | Degraded-mode grant TTL ceilings might be defaults rather than enforced ceilings. | `createDegradedModeGrant` rejects grants whose effective `expiresAt - startsAt` exceeds `maxTtlSeconds`; the F8 validation test asserts the 30-minute break-glass ceiling. | `fixed` |
 | F8-R5 | Async dead-letter records are file-backed and split across pods. | File-backed DLQ remains the local fallback. Shared control-plane PostgreSQL persistence exists for async dead-letter records, and production-shared storage gates require shared control-plane posture. Live deployment proof remains external. | `partial` |
 | F8-R6 | Worker shutdown drain behavior was not visible. | `worker.ts` exposes `/health` and `/ready`; readiness gates `shuttingDown`, Redis, and HA posture. The health contract names `worker_shutdown_not_ready`, and validation asserts the shutdown gate exists. | `fixed` |
@@ -81,9 +81,9 @@ Closed outright:
 5. F8-R11 production-shared startup fail-fast.
 6. F8-R12 webhook signature spot checks.
 
-Closed as bounded repository limitations or backlog:
+Closed as bounded repository fixes, limitations, or backlog:
 
-1. F8-R3 health diagnostics remain safe but still diagnostic-rich.
+1. F8-R3 public health diagnostics are minimized; internal diagnostics remain in runtime/rehearsal evidence.
 2. F8-R5 DLQ has a shared-store path, but live HA proof remains deployment work.
 3. F8-R7 PKI bootstrap is narrowed by shared-path attestation, not solved by distributed locking.
 4. F8-R8 PostgreSQL circuit-breaker policy remains backlog.

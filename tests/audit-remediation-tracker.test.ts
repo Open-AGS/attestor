@@ -181,7 +181,7 @@ try {
   includes(tracker, 'F7 Shadow Readiness Claim Alignment Validation', 'Tracker: F7 readiness validation evidence is linked');
   includes(tracker, 'F8-R1 health PKI fingerprint / subject disclosure | `fixed`', 'Tracker: F8-R1 status is tracked');
   includes(tracker, 'F8-R2 startup probe separation | `fixed`', 'Tracker: F8-R2 status is tracked');
-  includes(tracker, 'F8-R3 health body diagnostic richness | `accepted-limitation`', 'Tracker: F8-R3 status is tracked');
+  includes(tracker, 'F8-R3 health body diagnostic richness | `fixed`', 'Tracker: F8-R3 status is tracked');
   includes(tracker, 'F8-R4 degraded-mode TTL ceiling | `fixed`', 'Tracker: F8-R4 status is tracked');
   includes(tracker, 'F8-R5 async dead-letter HA visibility | `partial`', 'Tracker: F8-R5 status is tracked');
   includes(tracker, 'F8-R6 worker shutdown readiness | `fixed`', 'Tracker: F8-R6 status is tracked');

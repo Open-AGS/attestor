@@ -67,17 +67,17 @@ If `NODE_ENV=production`, `ATTESTOR_HA_MODE=true`, `ATTESTOR_PUBLIC_HOSTNAME`, o
 | Profile | Use today | Required proof | Do not claim |
 |---|---|---|---|
 | `local-dev` | Local development, demos, and repeatable tests. | `npm test` and local API checks may run quickly with memory-backed release state. | Production readiness |
-| `single-node-durable` | Customer-operated or hosted evaluation where one runtime must survive restart. | `npm run test:production-runtime-profile`, `npm run test:production-runtime-restart-recovery`, and `/api/v1/ready` reporting `checks.releaseRuntime=true`. | Multi-node production |
+| `single-node-durable` | Customer-operated or hosted evaluation where one runtime must survive restart. | `npm run test:production-runtime-profile`, `npm run test:production-runtime-restart-recovery`, `/api/v1/ready` returning ready, and runtime evidence recording `checks.releaseRuntime=true`. | Multi-node production |
 | `production-shared` | Multi-node release/policy authority plane target. | `ATTESTOR_RELEASE_AUTHORITY_PG_URL` must point at reachable PostgreSQL, `npm run test:production-shared-request-path-cutover` and `npm run test:production-shared-multi-instance-recovery` must pass, and `/api/v1/ready` must report shared request-path readiness. | External customer-operated rollout until real environment render/probe packets and rehearsal pass |
 
 The current repository proves `single-node-durable` restart recovery and proves `production-shared` shared authority behavior under embedded PostgreSQL multi-instance, concurrency, restart, reconnect, and recovery tests. It does not claim your external PostgreSQL, Redis, Kubernetes, secret, DNS, TLS, observability, or billing environment is production-ready until the render/probe packet chain and rehearsal pass against that environment.
 
-The runtime diagnostics are visible at:
+The public probe endpoints are:
 
 - `GET /api/v1/health`
 - `GET /api/v1/ready`
 
-`GET /api/v1/startup` is the process startup probe and is intentionally narrower than readiness. Health and readiness responses include `runtimeProfile` and `releaseRuntime`. Treat `releaseRuntime.durability.ready=false` or `/api/v1/ready` returning `503` as a stop condition.
+`GET /api/v1/startup` is the process startup probe and is intentionally narrower than readiness. `GET /api/v1/health` is public process liveness and `GET /api/v1/ready` is the public traffic gate; both intentionally avoid internal runtime diagnostics. Runtime evidence, startup diagnostics, readiness packets, and rehearsal summaries must still record the selected profile and `releaseRuntime.durability.ready=true`. Treat `releaseRuntime.durability.ready=false` in that evidence or `/api/v1/ready` returning `503` as a stop condition.
 
 The repo-side Production runtime health contract lives in:
 
@@ -107,7 +107,7 @@ It is the machine-readable boundary for privacy-safe request telemetry, low-card
 
 `production-shared` also requires the consequence-admission storage path to be truthful. The shared release authority and control plane are not enough if the AI action authorization history still depends on local evaluation stores.
 
-`GET /api/v1/health` and `GET /api/v1/ready` include:
+Internal startup diagnostics, readiness packets, and rehearsal evidence include:
 
 ```text
 productionStoragePath
@@ -116,7 +116,7 @@ checks.productionStoragePath
 checks.consequenceSharedStoreProfile
 ```
 
-For `local-dev` and `single-node-durable`, file-backed evaluation stores can be accepted for evaluation. For `production-shared`, the process refuses startup when `productionStoragePath.readyForSelectedProfile=false`; if you are inspecting a preflight runtime, `/api/v1/ready` must also report `checks.productionStoragePath=true`. If it is false, inspect `productionStoragePath.blockers` before promoting the environment.
+For `local-dev` and `single-node-durable`, file-backed evaluation stores can be accepted for evaluation. For `production-shared`, the process refuses startup when `productionStoragePath.readyForSelectedProfile=false`; if you are inspecting a preflight runtime, readiness evidence must also report `checks.productionStoragePath=true`. If it is false, inspect `productionStoragePath.blockers` before promoting the environment.
 
 `consequenceSharedStoreProfile` is the narrower consequence-admission contract
 behind that gate. It reports the backlog components, required shared-store
@@ -187,7 +187,7 @@ ATTESTOR_RELEASE_SIGNING_PROVIDER=file-pem
 ATTESTOR_REQUIRE_PRODUCTION_RELEASE_SIGNING_PROVIDER=true
 ```
 
-`file-pem` is restart-recoverable and useful for evaluation rehearsal, but `/api/v1/health` reports it as `productionReady: false` because the private release signer remains exportable runtime material. `ATTESTOR_RELEASE_SIGNING_PROVIDER=external-kms` currently fails closed because the GCP KMS proof adapter is not yet wired into runtime release-token issuance; this prevents a deployment from claiming external key custody while the runtime still signs with local PEM material. `ATTESTOR_REQUIRE_PRODUCTION_RELEASE_SIGNING_PROVIDER=true` is the promotion guard: it refuses local signing material until a real external provider is wired into issuance.
+`file-pem` is restart-recoverable and useful for evaluation rehearsal, but runtime diagnostics report it as `productionReady: false` because the private release signer remains exportable runtime material. `ATTESTOR_RELEASE_SIGNING_PROVIDER=external-kms` currently fails closed because the GCP KMS proof adapter is not yet wired into runtime release-token issuance; this prevents a deployment from claiming external key custody while the runtime still signs with local PEM material. `ATTESTOR_REQUIRE_PRODUCTION_RELEASE_SIGNING_PROVIDER=true` is the promotion guard: it refuses local signing material until a real external provider is wired into issuance.
 
 The per-tenant signer boundary also has a structured live provider proof
 contract. Future AWS KMS, Google Cloud KMS, Azure Key Vault / Managed HSM, or
@@ -524,7 +524,7 @@ Once the packet is green:
 6. only then treat Grafana Cloud / managed-backend auth errors as a destination-side credential problem rather than an app-runtime wiring problem
 7. confirm API `/api/v1/ready`
 8. confirm worker `/ready`
-9. confirm API `/api/v1/health` reports the selected `runtimeProfile` and `releaseRuntime.durability.ready=true`
+9. confirm runtime/rehearsal evidence records the selected `runtimeProfile` and `releaseRuntime.durability.ready=true`
 10. confirm traces/logs/metrics reach the backend
 11. confirm alert routing reaches the real destinations
 12. confirm Stripe / hosted auth / queue / billing critical paths still behave correctly
@@ -550,8 +550,8 @@ You can call the deployment production-ready when all of these are true:
 
 - production readiness packet is green
 - `ATTESTOR_RUNTIME_PROFILE` is explicitly set
-- `/api/v1/ready` returns ready with `checks.releaseRuntime=true`
-- `/api/v1/health` reports the expected `runtimeProfile` and `releaseRuntime.durability.ready=true`
+- `/api/v1/ready` returns ready
+- runtime/rehearsal evidence reports `checks.releaseRuntime=true`, the expected `runtimeProfile`, and `releaseRuntime.durability.ready=true`
 - `single-node-durable` restart recovery has passed if you are running one API runtime
 - `production-shared` is only used if `ATTESTOR_RELEASE_AUTHORITY_PG_URL` is reachable and the shared request path reports the `async-shared-authority-stores` contract
 - observability packet is green

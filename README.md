@@ -90,6 +90,7 @@ Start review with:
 - [Evaluation Smoke workflow](.github/workflows/evaluation-smoke.yml)
 - [Artifact attestation plan](docs/08-deployment/artifact-attestation-plan.md)
 - [Audit remediation tracker](docs/audit/attestor-audit-remediation-tracker.md)
+- [LLM provider runtime decision](docs/02-architecture/llm-provider-runtime-decision.md)
 
 ## Golden Path: Refund
 
@@ -183,9 +184,10 @@ shadow events
   -> outcome feedback and drift checks
 ```
 
-Policy Foundry is the onboarding layer for this loop. It mines observed actions into policy candidates. It does not train models, write policy automatically, or prove production readiness.
+Policy Foundry is the onboarding layer for this adoption path. It mines observed actions into policy candidates. It does not train models, write policy automatically, or prove production readiness.
 
 It identifies policy candidates, generates a red-team fixture bundle and local replay reports through the local adversarial replay executor, can attach live downstream replay evidence when configured, prepares review handoff material, keeps promotion approval-required, and records reviewed outcome feedback plus drift/policy-debt findings.
+The one-command self-onboarding path renders session, coverage, blockers, gate plan, handoff, red-team fixtures, and review-only patch material for review; it does not apply patches, deploy infrastructure, issue credentials, activate enforcement, or prove production readiness.
 
 The hosted onboarding workflow contract packages the hosted review surface, wizard state, entitlement context, and storage-readiness checks. Customers cannot self-attest readiness controls.
 
@@ -222,6 +224,8 @@ npm run example:customer-gate                     # Customer-side enforcement de
 npm run example:non-bypassable-gateway           # Verifier-before-dispatch demo
 npm run example:agent-retry-wrapper              # Bounded correction retry demo
 ```
+
+`npm run example:admission` is the First useful admission demo: a lower-level admission decision path, not the current end-to-end Golden Path.
 
 The rest are useful once the first path makes sense: `npm run example:action-surface-onboarding`, `npm run render:action-surface-onboarding-packet`, `npm run policy-foundry:self-onboard`, `npm run preview:policy-foundry-hosted-ui`, `npm run proof:surface`, `npm run showcase:proof`, `npm run verify:cert`, and `npm run verify`.
 

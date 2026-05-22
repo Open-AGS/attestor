@@ -235,7 +235,7 @@ When prerequisites pass, the rehearsal:
 - emits OTLP logs, traces, and metrics and verifies the flush
 - checks Prometheus and Alertmanager API reachability
 - runs the existing Alertmanager routing probe for warning, critical, default, security, billing, and watchdog scenarios
-- verifies API health/readiness expose `runtimeProfile=production-shared`, `releaseRuntime.durability.ready=true`, `async-shared-authority-stores`, and `usesSharedAuthorityStores=true`
+- verifies public API health/readiness are reachable and the rehearsal evidence records `runtimeProfile=production-shared`, `releaseRuntime.durability.ready=true`, `async-shared-authority-stores`, and `usesSharedAuthorityStores=true`
 - verifies the operational dashboard exposes the `attestor_runtime_profile_info` metric
 - verifies the operator runbook names stop conditions for runtime, shared authority, observability, alerting, and DR prerequisites
 

@@ -49,10 +49,61 @@ export const ALLOWED_EVIDENCE_STATES = Object.freeze([
 
 export const DEPENDABOT_PR_AUTHOR = 'dependabot[bot]';
 
+const ADDITIONAL_FIELD_LABELS = Object.freeze([
+  'Current baseline file:',
+  'Baseline blocker addressed:',
+  'Baseline phase:',
+  'Baseline checked against current origin/master:',
+  'If this PR does not map to the current baseline, explain why:',
+  'Finding index updated:',
+  'Report index updated:',
+  'Live proof register updated:',
+  'Control map / research index updated:',
+  'Evidence system exception:',
+  'Files intentionally not touched:',
+  'Remaining blockers:',
+  'Dependency PR:',
+  'Release notes / changelog / advisory checked:',
+  'Lockfile / manifest diff checked:',
+  'Runtime / security / build / action surface touched:',
+  'Merge classification:',
+  'Final decision:',
+]);
+
+const FIELD_BOUNDARY_LABELS = Object.freeze([
+  ...REQUIRED_NON_EMPTY_FIELDS,
+  ...ADDITIONAL_FIELD_LABELS,
+]);
+
 function lineForField(body, field) {
   const escaped = field.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
-  const match = body.match(new RegExp(`^${escaped}(.*)$`, 'imu'));
-  return match?.[1]?.trim() ?? null;
+  const fieldPattern = new RegExp(`^${escaped}(.*)$`, 'iu');
+  const lines = body.split(/\r?\n/u);
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const match = lines[index]?.match(fieldPattern);
+    if (!match) continue;
+
+    const inlineValue = match[1]?.trim() ?? '';
+    if (inlineValue.length > 0) return inlineValue;
+
+    const blockValue = [];
+    for (let nextIndex = index + 1; nextIndex < lines.length; nextIndex += 1) {
+      const nextLine = lines[nextIndex]?.trim() ?? '';
+      if (isFieldBlockBoundary(nextLine)) break;
+      blockValue.push(nextLine);
+    }
+    return blockValue.join('\n').trim();
+  }
+
+  return null;
+}
+
+function isFieldBlockBoundary(trimmedLine) {
+  return trimmedLine.length === 0 ||
+    /^#{1,6}\s/u.test(trimmedLine) ||
+    /^- \[[ xX]\]/u.test(trimmedLine) ||
+    FIELD_BOUNDARY_LABELS.some((label) => trimmedLine.startsWith(label));
 }
 
 function stripMarkdownFencedCodeBlocks(body) {
@@ -154,7 +205,7 @@ export function validatePrContract(body, options = {}) {
         'Release notes / changelog / advisory checked:',
         'Lockfile / manifest diff checked:',
       ].filter((field) => {
-        const value = lineForField(body, field);
+        const value = lineForField(contractBody, field);
         return value === null || value.length === 0;
       })
     : [];

@@ -64,6 +64,10 @@ function completeTemplate(template: string): string {
     .replace('- [ ] OK to merge', '- [x] OK to merge');
 }
 
+function withBlockField(body: string, field: string, inlineValue: string, blockValue: string): string {
+  return body.replace(`${field} ${inlineValue}`, `${field}\n${blockValue}`);
+}
+
 function testTemplateContainsBaselineContract(): void {
   const template = readProjectFile('.github', 'pull_request_template.md');
   const result = validateBaselineTemplate(template);
@@ -86,6 +90,44 @@ function testCompletedTemplatePasses(): void {
   const result = validateBaselineAlignment(body);
 
   equal(result.ok, true, 'baseline alignment accepts completed PR body');
+}
+
+function testCompletedTemplateWithBlockFieldsPasses(): void {
+  let body = completeTemplate(readProjectFile('.github', 'pull_request_template.md'));
+  body = withBlockField(
+    body,
+    'Repository evidence checked:',
+    'baseline doc and PR template',
+    '- baseline doc\n- PR template',
+  );
+  body = withBlockField(
+    body,
+    'Baseline blocker addressed:',
+    'current posture baseline enforcement',
+    'current posture baseline enforcement',
+  );
+  body = withBlockField(body, 'Baseline phase:', 'Baseline update only', 'Baseline update only');
+  body = withBlockField(
+    body,
+    'Baseline checked against current origin/master:',
+    '7b33af4f2c10cfc18e24cf6ccd0d766ae7c4370c',
+    '7b33af4f2c10cfc18e24cf6ccd0d766ae7c4370c',
+  );
+  body = withBlockField(
+    body,
+    'Finding index updated:',
+    'yes, docs/audit/finding-index.md',
+    '- yes\n- docs/audit/finding-index.md',
+  );
+  body = withBlockField(
+    body,
+    'What this PR does NOT prove:',
+    'production or enterprise readiness',
+    '- production readiness\n- enterprise readiness',
+  );
+  const result = validateBaselineAlignment(body);
+
+  equal(result.ok, true, 'baseline alignment accepts direct multiline field values');
 }
 
 function testBaselinePhaseIsRequired(): void {
@@ -137,6 +179,7 @@ function testDependabotBypass(): void {
 testTemplateContainsBaselineContract();
 testBlankTemplateIsNotACompletedPrBody();
 testCompletedTemplatePasses();
+testCompletedTemplateWithBlockFieldsPasses();
 testBaselinePhaseIsRequired();
 testReadinessClaimRequiresNoClaimEvidence();
 testBaselineSmugglingInsideFenceIsRejected();

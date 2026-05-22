@@ -47,6 +47,10 @@ function completeTemplate(template: string): string {
     .replace('- [ ] OK to merge', '- [x] OK to merge');
 }
 
+function withBlockField(body: string, field: string, inlineValue: string, blockValue: string): string {
+  return body.replace(`${field} ${inlineValue}`, `${field}\n${blockValue}`);
+}
+
 function testTemplateContainsRequiredContract(): void {
   const template = readProjectFile('.github', 'pull_request_template.md');
 
@@ -79,6 +83,43 @@ function testValidatorAcceptsCompletedTemplate(): void {
   const result = validatePrContract(template);
 
   equal(result.ok, true, 'PR contract validator accepts completed template');
+}
+
+function testValidatorAcceptsBlockFieldValues(): void {
+  let template = completeTemplate(readProjectFile('.github', 'pull_request_template.md'));
+  template = withBlockField(
+    template,
+    'Newest user/request in operational terms:',
+    'validate the PR contract gate',
+    'validate the PR contract gate',
+  );
+  template = withBlockField(
+    template,
+    'Repository evidence checked:',
+    'template and validator tests',
+    '- template\n- validator tests',
+  );
+  template = withBlockField(
+    template,
+    'Official / primary sources checked:',
+    'not needed for template-only test',
+    'not needed for template-only test',
+  );
+  template = withBlockField(
+    template,
+    'Files changed:',
+    '.github/pull_request_template.md',
+    '- .github/pull_request_template.md',
+  );
+  template = withBlockField(
+    template,
+    'What this PR does NOT prove:',
+    'branch protection is configured',
+    '- branch protection is configured',
+  );
+  const result = validatePrContract(template);
+
+  equal(result.ok, true, 'PR contract validator accepts direct multiline field values');
 }
 
 function testValidatorRejectsInvalidEvidenceState(): void {
@@ -155,6 +196,7 @@ function testValidatorRequiresAnchoredContractHeadings(): void {
 testTemplateContainsRequiredContract();
 testValidatorRejectsBlankTemplate();
 testValidatorAcceptsCompletedTemplate();
+testValidatorAcceptsBlockFieldValues();
 testValidatorRejectsInvalidEvidenceState();
 testValidatorAcceptsDependabotAutomationBody();
 testValidatorStillRejectsAutomationBodyFromHumanAuthor();

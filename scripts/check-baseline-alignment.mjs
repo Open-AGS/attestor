@@ -28,6 +28,37 @@ export const BASELINE_REQUIRED_FIELDS = Object.freeze([
 ]);
 
 const READINESS_CLAIM_PATTERN = /\b(?:production-ready|enterprise-ready)\b/iu;
+const ADDITIONAL_FIELD_LABELS = Object.freeze([
+  'Mode:',
+  'Tracker:',
+  'Step:',
+  'Progress:',
+  'Source of truth:',
+  'Evidence state:',
+  'Next:',
+  'Newest user/request in operational terms:',
+  'Affected trust surface:',
+  'Protected principle:',
+  'Repository evidence checked:',
+  'Official / primary sources checked:',
+  'Current baseline file:',
+  'If this PR does not map to the current baseline, explain why:',
+  'Files changed:',
+  'Files intentionally not touched:',
+  'What this PR does NOT prove:',
+  'Remaining blockers:',
+  'Dependency PR:',
+  'Release notes / changelog / advisory checked:',
+  'Lockfile / manifest diff checked:',
+  'Runtime / security / build / action surface touched:',
+  'Merge classification:',
+  'Final decision:',
+]);
+
+const FIELD_BOUNDARY_LABELS = Object.freeze([
+  ...BASELINE_REQUIRED_FIELDS,
+  ...ADDITIONAL_FIELD_LABELS,
+]);
 
 function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
@@ -67,8 +98,33 @@ function hasHeading(body, heading) {
 }
 
 function lineForField(body, field) {
-  const match = body.match(new RegExp(`^${escapeRegExp(field)}(.*)$`, 'imu'));
-  return match?.[1]?.trim() ?? null;
+  const fieldPattern = new RegExp(`^${escapeRegExp(field)}(.*)$`, 'iu');
+  const lines = body.split(/\r?\n/u);
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const match = lines[index]?.match(fieldPattern);
+    if (!match) continue;
+
+    const inlineValue = match[1]?.trim() ?? '';
+    if (inlineValue.length > 0) return inlineValue;
+
+    const blockValue = [];
+    for (let nextIndex = index + 1; nextIndex < lines.length; nextIndex += 1) {
+      const nextLine = lines[nextIndex]?.trim() ?? '';
+      if (isFieldBlockBoundary(nextLine)) break;
+      blockValue.push(nextLine);
+    }
+    return blockValue.join('\n').trim();
+  }
+
+  return null;
+}
+
+function isFieldBlockBoundary(trimmedLine) {
+  return trimmedLine.length === 0 ||
+    /^#{1,6}\s/u.test(trimmedLine) ||
+    /^- \[[ xX]\]/u.test(trimmedLine) ||
+    FIELD_BOUNDARY_LABELS.some((label) => trimmedLine.startsWith(label));
 }
 
 function hasCheckedPhase(body, label) {

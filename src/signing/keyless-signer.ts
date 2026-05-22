@@ -92,6 +92,21 @@ export interface ConfigureReleaseRuntimeKeylessCaOptions {
 
 let cachedCa: { keyPair: AttestorKeyPair; certificate: CaCertificate } | null = null;
 
+function envTruthy(raw: string | undefined): boolean {
+  const value = raw?.trim().toLowerCase();
+  return value === '1' || value === 'true' || value === 'yes' || value === 'on';
+}
+
+function isProductionLikeRuntimeEnv(
+  env: Readonly<Record<string, string | undefined>> = process.env,
+): boolean {
+  const nodeEnv = env.NODE_ENV?.trim().toLowerCase();
+  return nodeEnv === 'production'
+    || envTruthy(env.ATTESTOR_HA_MODE)
+    || Boolean(env.ATTESTOR_PUBLIC_HOSTNAME?.trim())
+    || Boolean(env.ATTESTOR_PUBLIC_BASE_URL?.trim());
+}
+
 function assertCaMatchesKeyPair(ca: { keyPair: AttestorKeyPair; certificate: CaCertificate }): void {
   if (ca.certificate.type !== 'attestor.ca_certificate.v1' || ca.certificate.isCA !== true) {
     throw new Error('Keyless CA runtime configuration requires an Attestor CA certificate.');
@@ -135,6 +150,11 @@ export function configureReleaseRuntimeKeylessCa(
 
 function getOrCreateCa(config?: KeylessSignerConfig): { keyPair: AttestorKeyPair; certificate: CaCertificate } {
   if (!cachedCa) {
+    if (isProductionLikeRuntimeEnv()) {
+      throw new Error(
+        'Keyless CA auto-generation is disabled in production-like runtime; configure the release-runtime keyless CA before creating keyless signers.',
+      );
+    }
     const caKeyPair = generateKeyPair();
     const caCert = createCaCertificate(
       config?.caName ?? 'Attestor Keyless CA',
@@ -151,6 +171,9 @@ function getOrCreateCa(config?: KeylessSignerConfig): { keyPair: AttestorKeyPair
  * through configureReleaseRuntimeKeylessCa instead of resetting the singleton.
  */
 export function resetKeylessCaForTesting(testOnlyReason: string): void {
+  if (isProductionLikeRuntimeEnv()) {
+    throw new Error('resetKeylessCaForTesting is disabled in production-like runtime.');
+  }
   if (!testOnlyReason.trim()) {
     throw new Error('resetKeylessCaForTesting requires a non-empty test-only reason.');
   }

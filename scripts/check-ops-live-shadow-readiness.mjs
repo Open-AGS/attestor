@@ -102,6 +102,8 @@ const LIVE_PROOF_FLAGS = Object.freeze([
   { name: 'ATTESTOR_SHARED_INTROSPECTION_STORE_PROOF', minStage: 'limited-enforcement', description: 'Introspection cache/store behavior was verified under restart, outage, and stale-token scenarios.' },
   { name: 'ATTESTOR_CUSTOMER_PEP_NO_BYPASS_PROOF', minStage: 'limited-enforcement', description: 'Reference customer PEP integration rejects direct downstream bypass attempts.' },
   { name: 'ATTESTOR_KMS_RUNTIME_SIGNING_PROOF', minStage: 'limited-enforcement', description: 'KMS/HSM-backed runtime signing and key identity were verified without raw private key export.' },
+  { name: 'ATTESTOR_POLICY_MUTATION_AUDIT_CHAIN_PROOF', minStage: 'limited-enforcement', description: 'Policy-control mutation audit records were verified through shared storage across API replicas.' },
+  { name: 'ATTESTOR_POLICY_ACTIVATION_APPROVAL_STORE_PROOF', minStage: 'limited-enforcement', description: 'Policy activation approval requests and decisions were verified through shared durable storage across API replicas.' },
   { name: 'ATTESTOR_DEGRADED_MODE_OUTAGE_PROOF', minStage: 'limited-enforcement', description: 'Provider/Redis/Vault/DB outage behavior was verified as fail-closed or bounded break-glass with TTL/audit trail.' },
 ]);
 

@@ -4,6 +4,16 @@ Status: read-only audit integrated as a report. No runtime remediation was
 written by this sweep. Engine-substrate sweep 4/N completes the
 release-{kernel decision, enforcement runtime, policy-control authoring} triad.
 
+Remediation follow-up, 2026-05-22: OPS-160 is repo-side closed by
+proof-discipline docs and `tests/release-policy-control-plane-proof-discipline.test.ts`.
+OPS-161 is closed repo-side and remains live-proof-only behind
+`LP-POLICY-MUTATION-AUDIT-CHAIN-SHARED-STORE` /
+`ATTESTOR_POLICY_MUTATION_AUDIT_CHAIN_PROOF`. OPS-162 remains accepted
+limitation / live-proof-only behind
+`LP-POLICY-ACTIVATION-APPROVAL-SHARED-STORE` /
+`ATTESTOR_POLICY_ACTIVATION_APPROVAL_STORE_PROOF`. This follow-up does not
+claim production readiness, enterprise readiness, or multi-instance durability.
+
 ## 0. Recent Fixes Chain-Effect Check
 
 One merge into `origin/master` since Sweep 20 was drafted:

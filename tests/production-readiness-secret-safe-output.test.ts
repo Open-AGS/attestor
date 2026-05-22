@@ -82,23 +82,34 @@ function testStringifyAndErrorsAreSecretSafe(): void {
 }
 
 function testRedactsProviderSecretShapes(): void {
+  const ascii = (...codes: readonly number[]): string => String.fromCharCode(...codes);
   const fixtureSecret = (...parts: string[]): string => parts.join('');
-  const slackTokenSample = ['xoxb', '123456789012', '123456789012', 'abcdefghijklmnopqrstuv'].join('-');
+  const awsLongTermKeyPrefix = ascii(65, 75, 73, 65);
+  const awsTemporaryKeyPrefix = ascii(65, 83, 73, 65);
+  const googleApiKeyPrefix = ascii(65, 73, 122, 97);
+  const googleOAuthPrefix = ascii(121, 97, 50, 57, 46);
+  const githubClassicPatPrefix = ascii(103, 104, 112, 95);
+  const githubFineGrainedPatPrefix = ascii(103, 105, 116, 104, 117, 98, 95, 112, 97, 116, 95);
+  const slackBotTokenPrefix = ascii(120, 111, 120, 98);
+  const anthropicApiKeyPrefix = ascii(115, 107, 45, 97, 110, 116, 45, 97, 112, 105, 48, 51, 45);
+  const openAiProjectKeyPrefix = ascii(115, 107, 45, 112, 114, 111, 106, 45);
+  const slackTokenSample = [slackBotTokenPrefix, '123456789012', '123456789012', 'abcdefghijklmnopqrstuv'].join('-');
+  const privateKeyLabel = ['RSA', 'PRIVATE', 'KEY'].join(' ');
   const privateKeyBlock = [
-    '-----BEGIN RSA PRIVATE KEY-----',
+    `-----BEGIN ${privateKeyLabel}-----`,
     'secret-key-material',
-    '-----END RSA PRIVATE KEY-----',
+    `-----END ${privateKeyLabel}-----`,
   ].join('\n');
   const providerSamples = [
-    fixtureSecret('AKIA', 'IOSFODNN7', 'EXAMPLE'),
-    fixtureSecret('ASIA', 'IOSFODNN7', 'EXAMPLE'),
-    fixtureSecret('AIza', 'SyA1234567890', 'abcdefghijklmnopqrstuv'),
-    fixtureSecret('ya29.', 'a0AfH6SMD', 'exampleexampleexample'),
-    fixtureSecret('ghp_', 'abcdefghijklmnopqrstuv', 'wxyzABCDE12345'),
-    fixtureSecret('github_pat_', '11ABCDEFG0', 'abcdefghijklmnopqrstuvwxyzABCDE1234567890'),
+    fixtureSecret(awsLongTermKeyPrefix, 'IOSF', 'ODNN7', 'EXAMPLE'),
+    fixtureSecret(awsTemporaryKeyPrefix, 'IOSF', 'ODNN7', 'EXAMPLE'),
+    fixtureSecret(googleApiKeyPrefix, 'SyA1234567890', 'abcdefghijk', 'lmnopqrstuv'),
+    fixtureSecret(googleOAuthPrefix, 'a0AfH6SMD', 'exampleexampleexample'),
+    fixtureSecret(githubClassicPatPrefix, 'abcdefghijklmnopqrstuv', 'wxyzABCDE12345'),
+    fixtureSecret(githubFineGrainedPatPrefix, '11ABCDEFG0', 'abcdefghijklmnopqrstuvwxyzABCDE1234567890'),
     slackTokenSample,
-    fixtureSecret('sk-ant-api03-', 'abcdefghijklmnopqrstuvwxyz', 'ABCDE1234567890'),
-    fixtureSecret('sk-proj-', 'abcdefghijklmnopqrstuvwxyz', 'ABCDE1234567890'),
+    fixtureSecret(anthropicApiKeyPrefix, 'abcdefghijklmnopqrstuvwxyz', 'ABCDE1234567890'),
+    fixtureSecret(openAiProjectKeyPrefix, 'abcdefghijklmnopqrstuvwxyz', 'ABCDE1234567890'),
     [
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9',
       'eyJzdWIiOiIxMjM0NTY3ODkwIn0',
@@ -122,10 +133,39 @@ function testRedactsProviderSecretShapes(): void {
     'sk-ant-api[redacted]',
     'sk-[redacted]',
     'jwt.[redacted]',
-    '-----BEGIN RSA PRIVATE KEY-----\n[redacted]\n-----END RSA PRIVATE KEY-----',
+    `-----BEGIN ${privateKeyLabel}-----\n[redacted]\n-----END ${privateKeyLabel}-----`,
   ]) {
     ok(redacted.includes(expected), `Secret-safe output: provider redaction marker is present: ${expected.split('\n')[0]}`);
   }
+}
+
+function testCommittedProviderFixturesAvoidScannerReadySecrets(): void {
+  const source = readProjectFile('tests', 'production-readiness-secret-safe-output.test.ts');
+
+  ok(
+    !/\b(?:AKIA|ASIA)[A-Z0-9]{16}\b/u.test(source),
+    'Secret-safe output: committed AWS fixtures are not scanner-ready access key ids',
+  );
+  ok(
+    !/\bAIza[0-9A-Za-z_-]{35}\b/u.test(source),
+    'Secret-safe output: committed Google fixtures are not scanner-ready API keys',
+  );
+  ok(
+    !/-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----[\s\S]*?-----END [A-Z0-9 ]*PRIVATE KEY-----/u.test(source),
+    'Secret-safe output: committed private-key fixtures are assembled at runtime only',
+  );
+  ok(
+    !/\b(?:gh[pousr]_|github_pat_)[0-9A-Za-z_]{20,}\b/u.test(source),
+    'Secret-safe output: committed GitHub token fixtures are assembled at runtime only',
+  );
+  ok(
+    !/\b(?:sk-ant-api\d{2}-|sk-proj-)[0-9A-Za-z_-]{16,}\b/u.test(source),
+    'Secret-safe output: committed LLM provider key fixtures are assembled at runtime only',
+  );
+  ok(
+    !/\bxox[abprs]-[0-9A-Za-z-]{10,}\b/u.test(source),
+    'Secret-safe output: committed Slack token fixtures are assembled at runtime only',
+  );
 }
 
 function testRuntimePolicyMarkersAreCoveredByRedaction(): void {
@@ -224,6 +264,7 @@ function testPublicArtifactRedactionScannerIsWired(): void {
 
 testRedactsKnownLiveSecretShapes();
 testRedactsProviderSecretShapes();
+testCommittedProviderFixturesAvoidScannerReadySecrets();
 testRuntimePolicyMarkersAreCoveredByRedaction();
 testProviderRedactionFalsePositiveGuards();
 testStringifyAndErrorsAreSecretSafe();

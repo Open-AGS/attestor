@@ -204,8 +204,8 @@ function testHealthKeySourcesAndEscapeHatchTelemetry(): void {
   });
   const summary = summarizeConsequenceEscapeHatchUsage([event], '2026-05-14T10:01:00.000Z');
 
-  includes(coreRoutes, 'accountAuth', 'F10-E7: health exposes account auth section');
-  includes(coreRoutes, 'keySources', 'F10-E7: health exposes key-source labels');
+  ok(!coreRoutes.includes('accountAuth: {'), 'F10-E7: health no longer exposes account auth section');
+  ok(!coreRoutes.includes('keySources:'), 'F10-E7: health no longer exposes key-source labels');
   equal(descriptor.escapeHatchIds.length, 12, 'F10-E12: telemetry descriptor covers the 12 escape-hatch classes');
   equal(CONSEQUENCE_ESCAPE_HATCH_IDS.length, 12, 'F10-E12: escape-hatch id list is stable');
   equal(summary.totalUsageCount, 1, 'F10-E12: usage summary counts events');

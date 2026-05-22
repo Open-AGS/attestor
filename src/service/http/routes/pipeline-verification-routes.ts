@@ -10,6 +10,7 @@ import type {
   VerifyTrustChainOptions,
 } from '../../../signing/pki-chain.js';
 import { verifyPkiBoundCertificate } from '../../../signing/verification-trust-binding.js';
+import { publicRouteRateLimitResponse } from '../../public-route-rate-limit.js';
 
 interface PublicKeyIdentity {
   publicKeyHex: string;
@@ -39,6 +40,16 @@ export function registerPipelineVerificationRoutes(app: Hono, deps: PipelineVeri
 // Verify Certificate
 
 app.post('/api/v1/verify', async (c) => {
+  const rateLimitResponse = publicRouteRateLimitResponse(c, {
+    scope: 'verify',
+    envVar: 'ATTESTOR_VERIFY_RATE_LIMIT_PER_MINUTE',
+    defaultLimit: 120,
+    maxLimit: 50_000,
+    errorMessage: 'Verification route rate limit exceeded.',
+    resetHeaderName: 'x-attestor-verify-rate-limit-reset-at',
+  });
+  if (rateLimitResponse) return rateLimitResponse;
+
   try {
     const body = await c.req.json();
     const {

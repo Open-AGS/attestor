@@ -14,6 +14,11 @@ function equal<T>(actual: T, expected: T, message: string): void {
   passed += 1;
 }
 
+function ok(condition: unknown, message: string): void {
+  assert.ok(condition, message);
+  passed += 1;
+}
+
 async function testReleaseTokenJwksRouteExposesPublicVerificationKeyOnly(): Promise<void> {
   const keyPair = generateKeyPair();
   const caKeyPair = generateKeyPair();
@@ -159,51 +164,46 @@ async function testReleaseTokenJwksRouteExposesPublicVerificationKeyOnly(): Prom
     'no-store',
     'Core routes: health route is explicitly no-store',
   );
-  const healthBody = await healthResponse.json() as {
-    accountAuth?: {
-      keySources?: {
-        mfa?: string;
-        oidc?: string;
-        saml?: string;
-      };
-    };
-    releaseRuntime?: {
-      signingProvider?: {
-        kind?: string;
-        productionReady?: boolean;
-        privateKeyExportable?: boolean;
-      };
-    };
-  };
+  const healthBody = await healthResponse.json() as Record<string, unknown>;
   equal(
-    healthBody.releaseRuntime?.signingProvider?.kind,
-    'file-pem',
-    'Core routes: health route reports the active release signing provider kind',
+    healthBody.status,
+    'healthy',
+    'Core routes: public health route reports only liveness status',
   );
   equal(
-    healthBody.releaseRuntime?.signingProvider?.productionReady,
+    healthBody.engine,
+    'attestor',
+    'Core routes: public health route keeps the product identity visible',
+  );
+  equal(
+    healthBody.version,
+    '0.2.0-evaluation',
+    'Core routes: public health route reports service version',
+  );
+  equal(
+    'releaseRuntime' in healthBody,
     false,
-    'Core routes: health route does not overclaim file-backed PEM as production-ready signing',
+    'Core routes: public health route does not expose release runtime diagnostics',
   );
   equal(
-    healthBody.releaseRuntime?.signingProvider?.privateKeyExportable,
-    true,
-    'Core routes: health route reports exportable local release signer material',
+    'runtimeProfile' in healthBody,
+    false,
+    'Core routes: public health route does not expose runtime profile diagnostics',
   );
   equal(
-    healthBody.accountAuth?.keySources?.mfa,
-    'dedicated',
-    'Core routes: health route reports MFA key source label',
+    'connectors' in healthBody,
+    false,
+    'Core routes: public health route does not expose connector inventory',
   );
   equal(
-    healthBody.accountAuth?.keySources?.oidc,
-    'local-admin-fallback',
-    'Core routes: health route reports OIDC key source label',
+    'accountAuth' in healthBody,
+    false,
+    'Core routes: public health route does not expose account auth key-source labels',
   );
   equal(
-    healthBody.accountAuth?.keySources?.saml,
-    'not-configured',
-    'Core routes: health route reports missing SAML key source label',
+    'productionStoragePath' in healthBody,
+    false,
+    'Core routes: public health route does not expose production storage path diagnostics',
   );
 
   const readyResponse = await app.request('/api/v1/ready');
@@ -211,6 +211,29 @@ async function testReleaseTokenJwksRouteExposesPublicVerificationKeyOnly(): Prom
     readyResponse.headers.get('cache-control'),
     'no-store',
     'Core routes: readiness route is explicitly no-store',
+  );
+  const readyBody = await readyResponse.json() as Record<string, unknown>;
+  ok(
+    readyResponse.status === 200 || readyResponse.status === 503,
+    'Core routes: readiness route preserves bounded readiness status codes',
+  );
+  equal(
+    typeof readyBody.ready,
+    'boolean',
+    'Core routes: readiness route reports public readiness boolean',
+  );
+  equal(
+    readyBody.status,
+    readyBody.ready === true ? 'ready' : 'not_ready',
+    'Core routes: readiness route reports minimal readiness status label',
+  );
+  ok(
+    !('checks' in readyBody) &&
+      !('releaseRuntime' in readyBody) &&
+      !('runtimeProfile' in readyBody) &&
+      !('sharedAuthorityRuntime' in readyBody) &&
+      !('productionStoragePath' in readyBody),
+    'Core routes: public readiness route does not expose internal diagnostic details',
   );
 
   const response = await app.request('/api/v1/release-token/jwks');

@@ -11,6 +11,7 @@ import {
 } from '../src/signing/pki-chain.js';
 import { verifyCertificate } from '../src/signing/certificate.js';
 import { registerPipelineVerificationRoutes } from '../src/service/http/routes/pipeline-verification-routes.js';
+import { resetPublicRouteRateLimiterForTests } from '../src/service/public-route-rate-limit.js';
 
 let passed = 0;
 
@@ -62,17 +63,19 @@ function routeApp(): Hono {
   return app;
 }
 
-async function postVerify(app: Hono, body: unknown): Promise<{
+async function postVerify(app: Hono, body: unknown, headers?: Record<string, string>): Promise<{
   readonly status: number;
+  readonly headers: Headers;
   readonly body: Record<string, unknown>;
 }> {
   const response = await app.request('/api/v1/verify', {
     method: 'POST',
-    headers: { 'content-type': 'application/json' },
+    headers: { 'content-type': 'application/json', ...headers },
     body: JSON.stringify(body),
   });
   return {
     status: response.status,
+    headers: response.headers,
     body: await response.json() as Record<string, unknown>,
   };
 }
@@ -167,9 +170,45 @@ async function testMissingPkiMaterialFailsClosed(): Promise<void> {
   );
 }
 
+async function testVerifyRouteRateLimitShortCircuitsBeforeVerificationWork(): Promise<void> {
+  const previousLimit = process.env.ATTESTOR_VERIFY_RATE_LIMIT_PER_MINUTE;
+  process.env.ATTESTOR_VERIFY_RATE_LIMIT_PER_MINUTE = '1';
+  resetPublicRouteRateLimiterForTests();
+  try {
+    const app = routeApp();
+    const headers = { 'x-real-ip': '198.51.100.20' };
+    const first = await postVerify(app, {}, headers);
+    equal(first.status, 400, 'PKI verification route rate limit: first request reaches route validation');
+
+    const second = await postVerify(app, {}, headers);
+    equal(second.status, 429, 'PKI verification route rate limit: second same-source request is throttled');
+    equal(
+      second.body.error,
+      'Verification route rate limit exceeded.',
+      'PKI verification route rate limit: over-limit response is explicit and bounded',
+    );
+    ok(
+      Number.parseInt(second.headers.get('retry-after') ?? '', 10) > 0,
+      'PKI verification route rate limit: over-limit response includes Retry-After',
+    );
+    ok(
+      !!second.headers.get('x-attestor-verify-rate-limit-reset-at'),
+      'PKI verification route rate limit: over-limit response includes reset timestamp',
+    );
+  } finally {
+    resetPublicRouteRateLimiterForTests();
+    if (previousLimit === undefined) {
+      delete process.env.ATTESTOR_VERIFY_RATE_LIMIT_PER_MINUTE;
+    } else {
+      process.env.ATTESTOR_VERIFY_RATE_LIMIT_PER_MINUTE = previousLimit;
+    }
+  }
+}
+
 await testPkiBoundVerificationPasses();
 await testPkiBindingFailureControlsOverall();
 await testMissingTrustedCaFingerprintFailsClosed();
 await testMissingPkiMaterialFailsClosed();
+await testVerifyRouteRateLimitShortCircuitsBeforeVerificationWork();
 
 console.log(`pipeline-verification-routes.test.ts: ${passed} assertions passed`);

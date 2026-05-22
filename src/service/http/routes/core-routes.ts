@@ -230,7 +230,6 @@ export function registerCoreRoutes(app: Hono, deps: CoreRouteDeps): void {
     startTime,
     domainRegistry,
     connectorRegistry,
-    filingRegistry,
     pkiReady,
     pki,
     apiReleaseVerificationKeysPromise,
@@ -241,8 +240,6 @@ export function registerCoreRoutes(app: Hono, deps: CoreRouteDeps): void {
     evaluateProductionStoragePath,
     evaluateConsequenceSharedStoreProfile,
     genericAdmissionProtectedRoute,
-    rlsActivationResult,
-    accountAuthKeySources,
   } = deps;
 
   app.get('/api/v1/startup', (c) => {
@@ -262,72 +259,9 @@ export function registerCoreRoutes(app: Hono, deps: CoreRouteDeps): void {
 
   app.get('/api/v1/health', async (c) => {
     c.header('cache-control', 'no-store');
-    const highAvailability = evaluateApiHighAvailabilityState({
-      redisMode: redisMode as 'external' | 'localhost' | 'embedded' | 'none' | 'unavailable',
-      asyncBackendMode: asyncBackendMode as 'bullmq' | 'in_process' | 'none',
-      sharedControlPlane: isSharedControlPlaneConfigured(),
-      sharedBillingLedger: !!process.env.ATTESTOR_BILLING_LEDGER_PG_URL?.trim(),
-    });
-    const productionStoragePath = evaluateProductionStoragePath({
-      runtimeProfileId: runtimeProfileDiagnostics.profile.id,
-    });
-    const consequenceSharedStoreProfile = evaluateConsequenceSharedStoreProfile?.({
-      runtimeProfileId: runtimeProfileDiagnostics.profile.id,
-      productionStoragePath,
-    });
-    const shadowReadinessClaimAlignment = evaluateConsequenceShadowReadinessClaimAlignment({
-      runtimeProfileId: runtimeProfileDiagnostics.profile.id,
-      productionStoragePath,
-    });
     return c.json({
       status: 'healthy',
       version: serviceVersion,
-      instanceId: serviceInstanceId,
-      uptime: Math.floor((Date.now() - startTime) / 1000),
-      domains: domainRegistry.listIds(),
-      connectors: connectorRegistry.listIds(),
-      filingAdapters: filingRegistry.list().map((adapter) => adapter.id),
-      pki: {
-        ready: pkiReady,
-        publicTrustRootRoute: '/api/v1/pki/ca',
-      },
-      tenantIsolation: {
-        requestLevel: true,
-        databaseRls: {
-          schemaAvailable: true,
-          configured: !!process.env.ATTESTOR_PG_URL,
-          activated: rlsActivationResult.activated,
-          policiesFound: rlsActivationResult.policiesFound,
-          tablesProtected: rlsActivationResult.tablesProtected,
-          error: rlsActivationResult.error,
-        },
-      },
-      asyncBackend: { mode: asyncBackendMode, redisMode },
-      accountAuth: {
-        keySources: accountAuthKeySources ?? {
-          mfa: 'not-configured',
-          oidc: 'not-configured',
-          saml: 'not-configured',
-        },
-      },
-      runtimeProfile: runtimeProfileDiagnostics.profile,
-      releaseRuntime: {
-        diagnosticsVersion: runtimeProfileDiagnostics.version,
-        durability: runtimeProfileDiagnostics.durability,
-        stores: runtimeProfileDiagnostics.releaseStores,
-        requestPath: releaseRuntimeRequestPathDiagnostics,
-        signingProvider: releaseSigningProvider,
-      },
-      sharedAuthorityRuntime: await evaluateSharedAuthorityRuntimeReadiness({
-        runtimeProfileId: runtimeProfileDiagnostics.profile.id,
-        requestPathUsesSharedStores:
-          releaseRuntimeRequestPathDiagnostics.usesSharedAuthorityStores,
-      }),
-      productionStoragePath,
-      consequenceSharedStoreProfile,
-      genericAdmissionProtectedRoute,
-      shadowReadinessClaimAlignment,
-      highAvailability,
       engine: 'attestor',
     });
   });
@@ -460,23 +394,8 @@ export function registerCoreRoutes(app: Hono, deps: CoreRouteDeps): void {
     const status = ready ? 200 : 503;
     return c.json({
       ready,
-      checks,
-      instanceId: serviceInstanceId,
-      asyncBackendMode,
-      redisMode,
-      runtimeProfile: runtimeProfileDiagnostics.profile,
-      releaseRuntime: {
-        durability: runtimeProfileDiagnostics.durability,
-        stores: runtimeProfileDiagnostics.releaseStores,
-        requestPath: releaseRuntimeRequestPathDiagnostics,
-        signingProvider: releaseSigningProvider,
-      },
-      sharedAuthorityRuntime,
-      productionStoragePath,
-      consequenceSharedStoreProfile,
-      genericAdmissionProtectedRoute,
-      shadowReadinessClaimAlignment,
-      highAvailability,
+      status: ready ? 'ready' : 'not_ready',
+      engine: 'attestor',
     }, status);
   });
 }

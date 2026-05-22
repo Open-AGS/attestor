@@ -174,28 +174,39 @@ async function testStartupProbeAndHealthRedaction(): Promise<void> {
   const health = await app.request('/api/v1/health');
   equal(health.status, 200, 'F8-R1: health route remains available');
   const healthBody = await health.json() as {
+    status?: string;
+    version?: string;
+    engine?: string;
     pki?: Record<string, unknown>;
+    runtimeProfile?: unknown;
+    releaseRuntime?: unknown;
+    productionStoragePath?: unknown;
   };
-  equal(healthBody.pki?.ready, true, 'F8-R1: health still reports PKI readiness');
+  equal(healthBody.status, 'healthy', 'F8-R1: health reports minimal liveness status');
   equal(
-    healthBody.pki?.publicTrustRootRoute,
-    '/api/v1/pki/ca',
-    'F8-R1: health points to the public trust-root route',
+    healthBody.engine,
+    'attestor',
+    'F8-R1: health keeps public product identity without diagnostics',
   );
   equal(
-    'caFingerprint' in (healthBody.pki ?? {}),
+    'pki' in healthBody,
     false,
-    'F8-R1: health no longer exposes the CA fingerprint',
+    'F8-R1: health no longer exposes PKI readiness or trust-root metadata',
   );
   equal(
-    'signerSubject' in (healthBody.pki ?? {}),
+    'runtimeProfile' in healthBody,
     false,
-    'F8-R1: health no longer exposes signer subject metadata',
+    'F8-R1: health no longer exposes runtime profile diagnostics',
   );
   equal(
-    'reviewerSubject' in (healthBody.pki ?? {}),
+    'releaseRuntime' in healthBody,
     false,
-    'F8-R1: health no longer exposes reviewer subject metadata',
+    'F8-R1: health no longer exposes release runtime diagnostics',
+  );
+  equal(
+    'productionStoragePath' in healthBody,
+    false,
+    'F8-R1: health no longer exposes production storage path diagnostics',
   );
 
   const ca = await app.request('/api/v1/pki/ca');

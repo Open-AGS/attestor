@@ -286,7 +286,7 @@ function compareRequests(
 ): number {
   return (
     Date.parse(right.requestedAt) - Date.parse(left.requestedAt) ||
-    right.id.localeCompare(left.id)
+    compareCanonicalKeys(right.id, left.id)
   );
 }
 
@@ -607,6 +607,10 @@ export function recordPolicyActivationApprovalDecision(
   if (request.state !== 'pending') {
     throw new Error(`Policy activation approval request '${input.requestId}' is already ${request.state}.`);
   }
+  const decidedAt = resolveTimestamp(input.decidedAt, 'decidedAt');
+  if (Date.parse(request.expiresAt) < Date.parse(decidedAt)) {
+    throw new Error(`Policy activation approval request '${input.requestId}' has expired.`);
+  }
   if (request.requirement.requiresRequesterSeparation && request.requestedBy.id === input.reviewer.id) {
     throw new Error('Policy activation approval cannot be granted by the same actor that requested activation.');
   }
@@ -622,7 +626,7 @@ export function recordPolicyActivationApprovalDecision(
     throw new Error(`Reviewer '${input.reviewer.id}' has already approved this activation request.`);
   }
 
-  const decision = createDecision(input);
+  const decision = createDecision({ ...input, decidedAt });
   return store.upsert(finalizeRequestWithDecision(request, decision));
 }
 

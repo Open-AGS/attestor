@@ -14,6 +14,18 @@ limitation / live-proof-only behind
 `ATTESTOR_POLICY_ACTIVATION_APPROVAL_STORE_PROOF`. This follow-up does not
 claim production readiness, enterprise readiness, or multi-instance durability.
 
+Remediation follow-up, 2026-05-22 (OPS-163): focused approval-state and
+scope-precedence depth is repo-side closed. `activation-approvals.ts` now
+rejects post-expiry approval decisions and uses binary request ordering for
+same-timestamp approval requests; `tests/release-policy-control-plane-activation-approvals.test.ts`
+and `tests/release-policy-control-plane-scoping.test.ts` lock the approval
+state machine, late-decision denial, reviewer separation, risk TTLs, scope
+hierarchy, precedence, ambiguity, and descriptor alignment. Source anchors:
+NIST SP 800-162 ABAC and OWASP Authorization Cheat Sheet guidance. This does
+not claim multi-instance approval-store durability, live policy activation,
+customer PEP no-bypass, production readiness, or a full line-by-line audit of
+all release-policy-control-plane files.
+
 ## 0. Recent Fixes Chain-Effect Check
 
 One merge into `origin/master` since Sweep 20 was drafted:
@@ -60,7 +72,7 @@ scope.
 
 | File / path | Why skipped | Risk of skipping | Queue priority |
 |---|---|---|---|
-| Full body of `activation-approvals.ts` and `scoping.ts` | Targeted reads covered spec, types, constants, digest fields, tie-break logic, and ambiguity surfacing; every state-machine branch was not line-by-line audited | medium | OPS-SWEEP-21A approval state machine; OPS-SWEEP-21B scope precedence body |
+| Full body of `activation-approvals.ts` and `scoping.ts` | OPS-163 follow-up now covers the approval state machine and scope-precedence traversal at focused behavioral depth with dedicated tests; a full line-by-line audit of every branch is still not claimed | low | No immediate queue unless new module-specific risk appears |
 | Full body of `bundle-signing.ts`, `audit-log.ts`, `resolver.ts`, `runtime.ts`, `simulation.ts` | Entry contracts and critical constants verified; implementation details rely on dedicated tests for this sweep | medium | Dedicated sub-sweep if interop or runtime activation risk appears |
 | `src/service/http/routes/release-policy-control-routes.ts` | Route layer was already audited by Sweep 12 and OPS-100 remediation | low | No immediate queue |
 
@@ -97,7 +109,7 @@ lines. OPS-165 tracks that depth limit.
 | OPS-160 | P2 | `open / partial-repo` | Sweep 19 OPS-147 DSSE/in-toto clarification should extend to policy bundles | `bundle-format.ts:22-24` declares DSSE/in-toto policy-bundle constants; `bundle-signing.ts:62-66` defines `PolicyBundleDsseEnvelope` | proof integrity; no overclaim | Update audit docs to state DSSE/in-toto interop is repo-proven for release-kernel evidence packs and release-policy-control-plane policy bundles |
 | OPS-161 | P2 | `open / partial-repo` | Policy mutation audit log file-backed writer is not multi-instance proof | `audit-log.ts` uses `withFileLock` and default local path `.attestor/release-policy-mutation-audit-log.json` | replay and idempotency safety; auditability | Document production bootstrap requirement and add `LP-POLICY-MUTATION-AUDIT-CHAIN-SHARED-STORE` |
 | OPS-162 | P2 | `accepted limitation` | Activation approval store production bootstrap requires shared backing for multi-instance claims | `activation-approvals.ts:475-527` has in-memory/file-backed constructors and reset-for-tests; shared-control-plane behavior is outside this file | replay and idempotency safety | Keep as bootstrap discipline; do not claim multi-instance approval durability from file-backed/in-memory stores |
-| OPS-163 | P2 | `open / partial-repo` | Approval state-machine and scope-precedence full body audit deferred | `activation-approvals.ts:115-748` and `scoping.ts:151-296` not fully deep-read line-by-line | release provenance; auditability | Spawn OPS-SWEEP-21A/21B only if module-specific risk warrants it |
+| OPS-163 | P2 | `closed` | Approval state-machine and scope-precedence focused behavioral depth | `activation-approvals.ts` rejects approval decisions after request expiry and uses binary `compareCanonicalKeys` for same-timestamp request ordering; `tests/release-policy-control-plane-activation-approvals.test.ts` covers R4 dual approval, requester separation, post-expiry denial, distinct reviewers, expired/mismatched/bundle-digest gates, risk TTLs, locale-independent digest and list ordering, and file-backed persistence; `tests/release-policy-control-plane-scoping.test.ts` covers environment boundaries, wildcard matching, hierarchy validation, precedence, no-match handling, most-specific winner selection, same-precedence ambiguity, malformed-label ambiguity, and descriptor alignment | release provenance; auditability | Repo-side closed. Keep OPS-165 as the full-line-by-line depth disclosure; keep multi-instance approval durability live-proof-only under OPS-162. |
 | OPS-164 | P3 | `accepted limitation` | Approval TTL defaults are hardcoded by risk class | `activation-approvals.ts:26-32` hardcodes 24h/8h/4h defaults; per-request `expiresAt` can override | operational boundedness; auditability | Keep; document deliberate hardcoding as safer than environment-wide loosening |
 | OPS-165 | P3 | `not proven` | Sweep-budget line-by-line gap | 18 source files / 6,656 source lines; this sweep targeted 5 critical modules and inventoried the rest | auditability; no overclaim | Keep the disclosure; future sub-sweeps drill into specific modules |
 
@@ -140,11 +152,15 @@ Additional tests: `tests/release-policy-control-plane-admin-routes.test.ts` and
 | Are ambiguous top policy candidates surfaced? | `scoping.ts:283-294` | repo-proven |
 | Are approval gate outcomes typed? | `activation-approvals.ts:40-51` | repo-proven |
 | Are approval TTLs risk-class bounded? | `activation-approvals.ts:26-32` | repo-proven |
+| Are post-expiry approval decisions rejected before state mutation? | `activation-approvals.ts`; `tests/release-policy-control-plane-activation-approvals.test.ts` | repo-proven; OPS-163 closed |
+| Does approval request listing avoid locale-sensitive tie-breaks? | `activation-approvals.ts`; `tests/release-policy-control-plane-activation-approvals.test.ts` | repo-proven; OPS-163 closed |
+| Does scope precedence cover environment, hierarchy, specificity, and ambiguity behavior? | `scoping.ts`; `tests/release-policy-control-plane-scoping.test.ts`; NIST SP 800-162 ABAC; OWASP Authorization Cheat Sheet | repo-proven for repository behavior; source-backed for the access-control framing |
 | Are full 6,656 lines line-by-line audited? | local line count + sweep scope | not proven; OPS-165 |
 
 Verdict: the release-policy-control-plane is repo-proven at spec,
-entry-point, targeted-deep, and test-inventory level. The main gaps are
-production bootstrap discipline and deferred line-by-line behavioral sub-sweeps.
+entry-point, targeted-deep, approval/scoping focused behavioral, and
+test-inventory level. The main gaps are production bootstrap discipline and
+the explicit OPS-165 line-by-line depth disclosure.
 
 ## 8. Discrepancy Check Against Indexes
 
@@ -163,7 +179,7 @@ production bootstrap discipline and deferred line-by-line behavioral sub-sweeps.
 | OPS-160 doc extension | Proof/signing docs align with policy-bundle implementation | low | docs/evidence checks |
 | OPS-161 live-proof row | Multi-instance policy mutation audit proof becomes explicit | low | live operator proof later |
 | OPS-162 bootstrap discipline | Avoids claiming file-backed/in-memory approval store as HA proof | low | docs only |
-| OPS-163 sub-sweeps | Deeper branch/state-machine assurance | medium | focused audit only if needed |
+| OPS-163 approval/scoping locks | Late approval decisions fail closed and approval/scope ordering stays deterministic | low | activation/scoping tests; no production or shared-store proof claim |
 
 ## 10. Coverage Delta
 
@@ -172,6 +188,10 @@ production bootstrap discipline and deferred line-by-line behavioral sub-sweeps.
 - After this sweep: 18/18 source files inventoried; 5 critical modules
   targeted-deep; 19 tests inventoried; DSSE/in-toto policy-bundle support and
   B-081 closure verified.
+- After OPS-163 follow-up: activation approval late-decision denial and
+  deterministic request ordering are runtime-wired and tested; scoping
+  precedence, ambiguity, and descriptor alignment remain locked by dedicated
+  tests.
 - Corrected count: 6,656 source lines, not approximately 5,500.
 - No production proof claim: KMS, customer PEP, shared replay/introspection,
   and multi-instance policy mutation audit proof remain external/runtime work.
@@ -187,6 +207,10 @@ This PR integrates:
   text, and release-policy-control substrate row.
 - `docs/audit/control-map.md`: proof/signing authority text.
 - `docs/audit/live-proof-register.md`: `LP-POLICY-MUTATION-AUDIT-CHAIN-SHARED-STORE`.
+- OPS-163 follow-up: `activation-approvals.ts`,
+  `tests/release-policy-control-plane-activation-approvals.test.ts`, and
+  `tests/release-policy-control-plane-scoping.test.ts` plus audit index/report
+  alignment.
 
 ## 12. Verdict
 
@@ -195,20 +219,26 @@ This PR integrates:
   all 6,656 source lines.
 - Is there a repo-proven P0? No.
 - Is there a repo-proven P1? No.
-- Is remediation required? Small: OPS-160/161 are docs + live-proof-register
-  integration; no immediate runtime code is required.
-- Can the next sweep proceed without Sweep 21 remediation? Yes.
-- Recommended next target: Sweep 22 should audit `src/consequence-admission/**`,
-  the action/admission engine that feeds into the release triad.
+- Is remediation required? OPS-160/161 and OPS-163 are repo-side remediated;
+  OPS-162 remains an accepted live-proof-only limitation and OPS-165 remains a
+  no-overclaim depth disclosure.
+- Can the next sweep proceed without reopening Sweep 21 P2? Yes; keep only
+  live proof and explicit depth-disclosure items visible.
+- Recommended next target: continue the current remaining open/partial backlog
+  rather than reopening closed Sweep 21 items without new evidence.
 
 ## Final Checkpoint
 
 - Done: Sweep 21 report integrated for
   `origin/master @ f1d79d28797c3daea5d95eb145b3d3834a5b3155`; 18 source files,
   19 tests, DSSE/in-toto policy-bundle support, B-081 closure, approval state
-  machine, and policy mutation audit log mapped.
-- Not done: no runtime remediation; no line-by-line behavioral audit of all
-  6,656 source lines; no production/shared-store proof.
+  machine, and policy mutation audit log mapped. OPS-163 follow-up adds
+  runtime-wired late-decision denial and deterministic approval ordering plus
+  approval/scoping behavioral tests.
+- Not done: no line-by-line behavioral audit of all 6,656 source lines; no
+  production/shared-store proof; no customer PEP/no-bypass proof.
 - Files changed by integration: this report plus audit indexes, baseline,
   control map, and live proof register.
-- Next action: operator decision on Sweep 22 or small OPS-160/161 follow-up.
+- Next action: continue remaining open/partial backlog; do not claim
+  production, enterprise, multi-instance approval durability, or full
+  line-by-line release-policy-control-plane audit.

@@ -202,6 +202,33 @@ function testSelfApprovalIsRejected(): void {
   );
 }
 
+function testExpiredApprovalRequestCannotBeDecided(): void {
+  const store = createInMemoryPolicyActivationApprovalStore();
+  const bundle = createSignedBundle('R4');
+  const request = requestPolicyActivationApproval(store, {
+    id: 'approval_expired_before_decision',
+    target: bundle.target,
+    bundleRecord: bundle.bundleRecord,
+    requestedBy: actor('requester_policy_admin'),
+    requestedAt: '2026-04-18T09:00:00.000Z',
+    expiresAt: '2026-04-18T09:10:00.000Z',
+    rationale: 'Approval request should not accept decisions after expiry.',
+  });
+
+  assert.throws(
+    () =>
+      recordPolicyActivationApprovalDecision(store, {
+        requestId: request.id,
+        decision: 'approve',
+        reviewer: actor('risk_owner', 'risk-owner'),
+        decidedAt: '2026-04-18T09:11:00.000Z',
+        rationale: 'Late approval.',
+      }),
+    /expired/,
+  );
+  assert.equal(store.get(request.id)?.state, 'pending');
+}
+
 function testDualApprovalRequiresTwoDistinctReviewers(): void {
   const { store, bundle, request } = requestApproval();
 
@@ -353,6 +380,39 @@ function testApprovalDigestDoesNotDependOnLocaleCompare(): void {
   });
 }
 
+function testApprovalListOrderingDoesNotDependOnLocaleCompare(): void {
+  const store = createInMemoryPolicyActivationApprovalStore();
+  const bundle = createSignedBundle('R4');
+
+  withLocaleCompareTrap(() => {
+    requestPolicyActivationApproval(store, {
+      id: 'approval_istanbul',
+      target: bundle.target,
+      bundleRecord: bundle.bundleRecord,
+      requestedBy: actor('requester_policy_admin'),
+      requestedAt: '2026-04-18T09:10:00.000Z',
+      rationale: 'First approval request with shared timestamp.',
+    });
+    requestPolicyActivationApproval(store, {
+      id: 'approval_zurich',
+      target: bundle.target,
+      bundleRecord: bundle.bundleRecord,
+      requestedBy: actor('requester_policy_admin'),
+      requestedAt: '2026-04-18T09:10:00.000Z',
+      rationale: 'Second approval request with shared timestamp.',
+    });
+
+    assert.deepEqual(
+      store.list().map((request) => request.id),
+      ['approval_zurich', 'approval_istanbul'],
+    );
+    assert.deepEqual(
+      store.exportSnapshot().requests.map((request) => request.id),
+      ['approval_zurich', 'approval_istanbul'],
+    );
+  });
+}
+
 function testFileBackedApprovalStorePersists(): void {
   const path = resolve('.attestor/tests/policy-activation-approvals.json');
   resetFileBackedPolicyActivationApprovalStoreForTests(path);
@@ -380,12 +440,14 @@ function run(): void {
   testR4RequiresDualApproval();
   testLowRiskDoesNotRequireApproval();
   testSelfApprovalIsRejected();
+  testExpiredApprovalRequestCannotBeDecided();
   testDualApprovalRequiresTwoDistinctReviewers();
   testGateRejectsExpiredOrMismatchedApproval();
   testRiskClassAwareDefaultExpiry();
   testApprovalDigestDoesNotDependOnLocaleCompare();
+  testApprovalListOrderingDoesNotDependOnLocaleCompare();
   testFileBackedApprovalStorePersists();
-  console.log('Release policy control-plane activation-approval tests: 8 passed, 0 failed');
+  console.log('Release policy control-plane activation-approval tests: 10 passed, 0 failed');
 }
 
 run();

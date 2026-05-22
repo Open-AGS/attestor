@@ -63,8 +63,9 @@ import {
   type UpsertShadowPolicyCandidateBundleResult,
 } from '../../shadow-persistence-store.js';
 import type { TenantContext } from '../../tenant-isolation.js';
+import { acceptsJsonRequestBody } from '../route-response-helpers.js';
 
-type ShadowProblemStatus = 400 | 404 | 409 | 503;
+type ShadowProblemStatus = 400 | 404 | 409 | 415 | 503;
 
 export interface ShadowMutationAuditInput {
   readonly routeId: string;
@@ -303,6 +304,15 @@ async function readStatusTransitionBody(c: Context): Promise<{
   readonly actorRef: string;
   readonly reason: string;
 } | Response> {
+  if (!acceptsJsonRequestBody(c)) {
+    return problem(c, {
+      type: 'https://attestor.dev/problems/policy-candidate-status-json-required',
+      title: 'Policy candidate status JSON required',
+      status: 415,
+      detail: 'The policy candidate status route requires Content-Type: application/json.',
+      reasonCodes: ['policy-candidate-status-json-required'],
+    });
+  }
   let body: unknown;
   try {
     body = await c.req.json<unknown>();
@@ -344,13 +354,12 @@ async function readSimulationRequestBody(c: Context): Promise<{
   readonly proposedMode: GenericAdmissionMode;
   readonly minimumPromotionEvents: number | null;
 } | Response> {
-  const contentType = c.req.header('content-type') ?? '';
-  if (!contentType.includes('application/json')) {
+  if (!acceptsJsonRequestBody(c)) {
     return problem(c, {
       type: 'https://attestor.dev/problems/shadow-simulation-json-required',
       title: 'Shadow simulation JSON required',
-      status: 400,
-      detail: 'The shadow simulation route requires a JSON object body with an explicit proposedMode.',
+      status: 415,
+      detail: 'The shadow simulation route requires Content-Type: application/json.',
       reasonCodes: ['shadow-simulation-json-required'],
     });
   }
@@ -458,13 +467,12 @@ function parseDownstreamVerificationCheck(
 }
 
 async function readDownstreamIntegrationProofBody(c: Context): Promise<DownstreamIntegrationProofRouteBody | Response> {
-  const contentType = c.req.header('content-type') ?? '';
-  if (!contentType.includes('application/json')) {
+  if (!acceptsJsonRequestBody(c)) {
     return problem(c, {
       type: 'https://attestor.dev/problems/downstream-integration-proof-json-required',
       title: 'Downstream integration proof JSON required',
-      status: 400,
-      detail: 'The downstream integration proof route requires a JSON object body.',
+      status: 415,
+      detail: 'The downstream integration proof route requires Content-Type: application/json.',
       reasonCodes: ['downstream-integration-proof-json-required'],
     });
   }
@@ -639,13 +647,12 @@ async function readCustomerActivationHandoffBody(c: Context): Promise<{
   readonly breakGlassReconciliationRef: ShadowCustomerActivationControlRef | null;
   readonly expiresAt: string | null;
 } | Response> {
-  const contentType = c.req.header('content-type') ?? '';
-  if (!contentType.includes('application/json')) {
+  if (!acceptsJsonRequestBody(c)) {
     return problem(c, {
       type: 'https://attestor.dev/problems/customer-activation-handoff-json-required',
       title: 'Customer activation handoff JSON required',
-      status: 400,
-      detail: 'The customer activation handoff route requires a JSON object body.',
+      status: 415,
+      detail: 'The customer activation handoff route requires Content-Type: application/json.',
       reasonCodes: ['customer-activation-handoff-json-required'],
     });
   }
@@ -923,13 +930,12 @@ async function readCustomerActivationReceiptBody(c: Context): Promise<{
   readonly errorDigest: string | null;
   readonly skipReasonCode: string | null;
 } | Response> {
-  const contentType = c.req.header('content-type') ?? '';
-  if (!contentType.includes('application/json')) {
+  if (!acceptsJsonRequestBody(c)) {
     return problem(c, {
       type: 'https://attestor.dev/problems/customer-activation-receipt-json-required',
       title: 'Customer activation receipt JSON required',
-      status: 400,
-      detail: 'The customer activation receipt route requires a JSON object body.',
+      status: 415,
+      detail: 'The customer activation receipt route requires Content-Type: application/json.',
       reasonCodes: ['customer-activation-receipt-json-required'],
     });
   }

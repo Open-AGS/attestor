@@ -15,7 +15,7 @@ function adminHeaders(extra?: Record<string, string>, token = 'admin-secret'): R
   };
 }
 
-function createFixture(): Hono {
+function createFixture(input: { readonly reviewDetail?: unknown } = {}): Hono {
   resetReleaseAdminRouteAuthLimiterForTests();
   const app = new Hono();
   const deps: ReleaseReviewRouteDeps = {
@@ -33,7 +33,7 @@ function createFixture(): Hono {
         },
         items: [],
       }),
-      get: async () => null,
+      get: async () => input.reviewDetail ?? null,
       getRecord: async () => null,
       upsert: async (record: unknown) => record,
     } as never,
@@ -70,6 +70,17 @@ function createFixture(): Hono {
 
   registerReleaseReviewRoutes(app, deps);
   return app;
+}
+
+function assertHtmlSecurityHeaders(response: Response, label: string): void {
+  assert.equal(response.headers.get('x-content-type-options'), 'nosniff', `${label}: nosniff header is set`);
+  assert.equal(response.headers.get('referrer-policy'), 'no-referrer', `${label}: referrer policy is set`);
+  assert.equal(response.headers.get('x-frame-options'), 'DENY', `${label}: frame denial header is set`);
+  assert.match(
+    response.headers.get('content-security-policy') ?? '',
+    /frame-ancestors 'none'/u,
+    `${label}: CSP denies framing`,
+  );
 }
 
 async function requestJson(
@@ -168,6 +179,21 @@ async function testReleaseReviewRoleScopedAdminKeys(): Promise<void> {
   assert.equal(breakGlassReachesOverride.status, 404);
 }
 
+async function testReleaseReviewHtmlRoutesCarrySecurityHeaders(): Promise<void> {
+  const app = createFixture({ reviewDetail: { id: 'review_001' } });
+  const inbox = await app.request('/api/v1/admin/release-reviews/inbox', {
+    headers: adminHeaders(undefined, 'admin-read-secret'),
+  });
+  const detail = await app.request('/api/v1/admin/release-reviews/review_001/view', {
+    headers: adminHeaders(undefined, 'admin-read-secret'),
+  });
+
+  assert.equal(inbox.status, 200);
+  assert.equal(detail.status, 200);
+  assertHtmlSecurityHeaders(inbox, 'Release review inbox HTML');
+  assertHtmlSecurityHeaders(detail, 'Release review detail HTML');
+}
+
 async function run(): Promise<void> {
   const originalAdminApiKey = process.env.ATTESTOR_ADMIN_API_KEY;
   const originalAdminReadApiKey = process.env.ATTESTOR_ADMIN_READ_API_KEY;
@@ -182,7 +208,8 @@ async function run(): Promise<void> {
 
   try {
     await testReleaseReviewRoleScopedAdminKeys();
-    console.log('Release review admin-route tests: 1 passed, 0 failed');
+    await testReleaseReviewHtmlRoutesCarrySecurityHeaders();
+    console.log('Release review admin-route tests: 2 passed, 0 failed');
   } finally {
     process.env.ATTESTOR_ADMIN_API_KEY = originalAdminApiKey;
     process.env.ATTESTOR_ADMIN_READ_API_KEY = originalAdminReadApiKey;

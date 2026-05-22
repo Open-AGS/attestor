@@ -13,6 +13,7 @@ import type {
 } from '../../../release-layer/index.js';
 import { resolvePlanGenericAdmissionMode } from '../../plan-catalog.js';
 import type { TenantContext } from '../../tenant-isolation.js';
+import { acceptsJsonRequestBody } from '../route-response-helpers.js';
 
 export interface GenericAdmissionRouteDeps {
   currentTenant(context: Context): TenantContext;
@@ -76,6 +77,17 @@ export function registerGenericAdmissionRoutes(
     c.header('cache-control', 'no-store');
 
     let payload: unknown;
+    if (!acceptsJsonRequestBody(c)) {
+      const problem = createConsequenceAdmissionProblem({
+        type: 'https://attestor.dev/problems/admission-json-required',
+        title: 'Admission JSON required',
+        status: 415,
+        detail: 'The generic admission route requires Content-Type: application/json.',
+        instance: '/api/v1/admissions',
+        reasonCodes: ['json-required'],
+      });
+      return c.json(problem, 415);
+    }
     try {
       payload = await c.req.json<unknown>();
     } catch {
@@ -130,16 +142,12 @@ export function registerGenericAdmissionRoutes(
           envelope,
           receivedAt: new Date().toISOString(),
         });
-      } catch (error) {
-        const detail =
-          error instanceof Error
-            ? error.message
-            : 'The agent loop abuse guard could not evaluate the admission.';
+      } catch {
         const problem = createConsequenceAdmissionProblem({
           type: 'https://attestor.dev/problems/agent-loop-abuse-guard-unavailable',
           title: 'Agent loop abuse guard unavailable',
           status: 503,
-          detail,
+          detail: 'The agent loop abuse guard could not evaluate the admission.',
           instance: '/api/v1/admissions',
           reasonCodes: ['agent-loop-abuse-guard-unavailable'],
         });
@@ -198,15 +206,11 @@ export function registerGenericAdmissionRoutes(
                 ...error.reasonCodes,
               ]
             : ['protected-release-token-issuance-unavailable'];
-          const detail =
-            error instanceof Error
-              ? error.message
-              : 'The protected release-token issuer could not issue a token.';
           const problem = createConsequenceAdmissionProblem({
             type: 'https://attestor.dev/problems/protected-release-token-issuance-unavailable',
             title: 'Protected release-token issuance unavailable',
             status: 503,
-            detail,
+            detail: 'The protected release-token issuer could not issue a token.',
             instance: '/api/v1/admissions',
             reasonCodes,
           });
@@ -232,32 +236,24 @@ export function registerGenericAdmissionRoutes(
       }
       try {
         deps.recordShadowAdmission?.({ tenant, envelope: envelopeForShadow });
-      } catch (error) {
-        const detail =
-          error instanceof Error
-            ? error.message
-            : 'The shadow admission event could not be recorded.';
+      } catch {
         const problem = createConsequenceAdmissionProblem({
           type: 'https://attestor.dev/problems/shadow-recording-unavailable',
           title: 'Shadow recording unavailable',
           status: 503,
-          detail,
+          detail: 'The shadow admission event could not be recorded.',
           instance: '/api/v1/admissions',
           reasonCodes: ['shadow-recording-unavailable'],
         });
         return c.json(problem, 503);
       }
       return c.json(responseEnvelope);
-    } catch (error) {
-      const detail =
-        error instanceof Error
-          ? error.message
-          : 'The generic admission request could not be evaluated.';
+    } catch {
       const problem = createConsequenceAdmissionProblem({
         type: 'https://attestor.dev/problems/admission-input-invalid',
         title: 'Invalid admission input',
         status: 400,
-        detail,
+        detail: 'The generic admission request could not be evaluated.',
         instance: '/api/v1/admissions',
         reasonCodes: ['invalid-admission-input'],
       });

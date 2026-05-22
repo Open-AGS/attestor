@@ -46,6 +46,7 @@ import type { TenantRateLimitContext, TenantRateLimitDecision } from '../../rate
 import type { TenantContext } from '../../tenant-isolation.js';
 import type { PipelineIdempotencyService } from '../../application/pipeline-idempotency-service.js';
 import type { PipelineUsageService } from '../../application/pipeline-usage-service.js';
+import { acceptsJsonRequestBody, opaqueRouteRunId } from '../route-response-helpers.js';
 import type {
   RequestPathReleaseDecisionEngine,
   RequestPathReleaseDecisionLogWriter,
@@ -320,6 +321,9 @@ export function registerPipelineExecutionRoutes(app: Hono, deps: PipelineExecuti
 
 app.post('/api/v1/pipeline/run', async (c) => {
   try {
+    if (!acceptsJsonRequestBody(c)) {
+      return c.json({ error: 'Pipeline route requires Content-Type: application/json.' }, 415);
+    }
     const body = await c.req.json();
     const { candidateSql, intent, sign } = body;
 
@@ -397,11 +401,11 @@ app.post('/api/v1/pipeline/run', async (c) => {
         };
         connectorProvider = 'postgres';
         fullSchemaAttestation = pgResult.schemaAttestation;
-      } catch (error) {
+      } catch {
         return c.json({
           error: "Connector 'postgres-prove' execution failed.",
           connector: 'postgres-prove',
-          detail: error instanceof Error ? error.message : 'Unknown connector failure.',
+          detail: 'Connector execution failed before proof evidence could be collected.',
           proofMode: 'unavailable',
         }, 502);
       }
@@ -420,17 +424,17 @@ app.post('/api/v1/pipeline/run', async (c) => {
           return c.json({
             error: `Connector '${body.connector}' execution failed.`,
             connector: body.connector,
-            detail: result.error ?? 'Connector returned an unsuccessful execution result.',
+            detail: 'Connector returned an unsuccessful execution result.',
             proofMode: 'unavailable',
           }, 502);
         }
         connectorExecution = connectorExecutionEvidenceFromResult(result);
         connectorProvider = result.provider;
-      } catch (error) {
+      } catch {
         return c.json({
           error: `Connector '${body.connector}' execution failed.`,
           connector: body.connector,
-          detail: error instanceof Error ? error.message : 'Unknown connector failure.',
+          detail: 'Connector execution failed before proof evidence could be collected.',
           proofMode: 'unavailable',
         }, 502);
       }
@@ -472,7 +476,7 @@ app.post('/api/v1/pipeline/run', async (c) => {
     const reviewerKeyPair = (sign && reviewerIdentity && keylessPair) ? keylessPair.reviewer.signingKeyPair : undefined;
 
     const input: FinancialPipelineInput = {
-      runId: `api-${Date.now().toString(36)}`,
+      runId: opaqueRouteRunId('api'),
       intent,
       candidateSql,
       fixtures: body.fixtures ?? [],
@@ -718,11 +722,11 @@ app.post('/api/v1/pipeline/run', async (c) => {
             issuedPackage: pkg.issuedPackage,
           },
         };
-      } catch (error) {
+      } catch {
         return {
           filingExport: null,
           filingPackage: null,
-          filingPackageError: error instanceof Error ? error.message : String(error),
+          filingPackageError: 'Filing package generation failed.',
         };
       }
     })();
@@ -779,8 +783,8 @@ app.post('/api/v1/pipeline/run', async (c) => {
       responseBody,
     });
     return c.json(finalized);
-  } catch (err) {
-    return c.json({ error: err instanceof Error ? err.message : String(err) }, 500);
+  } catch {
+    return c.json({ error: 'Pipeline route failed.' }, 500);
   }
 });
 }

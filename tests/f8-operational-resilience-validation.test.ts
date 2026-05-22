@@ -161,13 +161,19 @@ async function testStartupProbeAndHealthRedaction(): Promise<void> {
   const startupBody = await startup.json() as {
     status?: string;
     runtimeProfile?: { id?: string };
+    instanceId?: string;
     pki?: unknown;
   };
   equal(startupBody.status, 'started', 'F8-R2: startup probe has a distinct started status');
   equal(
-    startupBody.runtimeProfile?.id,
-    'single-node-durable',
-    'F8-R2: startup probe exposes the selected profile without dependency readiness',
+    'runtimeProfile' in startupBody,
+    false,
+    'F8-R2: startup probe does not expose runtime profile diagnostics',
+  );
+  equal(
+    'instanceId' in startupBody,
+    false,
+    'F8-R2: startup probe does not expose service instance identifiers',
   );
   equal('pki' in startupBody, false, 'F8-R2: startup probe does not expose PKI metadata');
 

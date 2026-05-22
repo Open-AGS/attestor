@@ -225,7 +225,6 @@ export function registerCoreRoutes(app: Hono, deps: CoreRouteDeps): void {
     redisMode,
     asyncBackendMode,
     isSharedControlPlaneConfigured,
-    serviceInstanceId,
     serviceVersion,
     startTime,
     domainRegistry,
@@ -247,12 +246,7 @@ export function registerCoreRoutes(app: Hono, deps: CoreRouteDeps): void {
     return c.json({
       status: 'started',
       version: serviceVersion,
-      instanceId: serviceInstanceId,
       uptime: Math.floor((Date.now() - startTime) / 1000),
-      runtimeProfile: {
-        id: runtimeProfileDiagnostics.profile.id,
-        production: runtimeProfileDiagnostics.profile.production,
-      },
       engine: 'attestor',
     });
   });
@@ -279,14 +273,12 @@ export function registerCoreRoutes(app: Hono, deps: CoreRouteDeps): void {
   });
 
   app.get('/api/v1/connectors', async (c) => {
-    const connectors = await Promise.all(
-      connectorRegistry.list().map(async (connector) => ({
+    c.header('cache-control', 'no-store');
+    const connectors =
+      connectorRegistry.list().map((connector) => ({
         id: connector.id,
         displayName: connector.displayName,
-        configured: connector.loadConfig() !== null,
-        available: await connector.isAvailable(),
-      })),
-    );
+      }));
     return c.json({ connectors });
   });
 

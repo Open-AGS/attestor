@@ -6,6 +6,12 @@ This tracker exists to prevent skipped findings, duplicate work, stale-report
 confusion, and overclaiming. It is not a certification, not an independent
 external audit, and not a claim of full production readiness.
 
+Scope note: this tracker records the F1-F12 project-owner supplied audit queue
+and its historical remediation PRs. Ops Sweep 01-22 remediation state is tracked
+through `docs/audit/report-index.md`, `docs/audit/finding-index.md`, and
+`docs/audit/live-proof-register.md`; do not infer Ops Sweep PR completion from
+the `Verified Merged Remediations` table below.
+
 Per-finding closure contract:
 `docs/audit/finding-lifecycle-and-evidence-ledger.md`.
 

@@ -34,6 +34,16 @@ shadow-readiness work. It is not production-ready or enterprise-ready without
 live PEP, KMS, replay-store, ops/IAM, route authorization, and adversarial
 runtime proof.
 
+Scope note: completed remediation-batch counts refer to the scoped Ops Sweep
+P0/P1 repository-side cycle. They do not mean every lower-severity follow-up in
+`finding-index.md` is closed; P2/P3 `open / partial-repo` rows remain backlog
+unless separately remediated, accepted, contradicted, or live-proof-gated.
+
+Baseline HEAD note: `Baseline HEAD` records the last stable reconciliation
+input used by this baseline. A baseline-only PR can therefore advance
+`origin/master` by one merge commit after this file is written; current
+`origin/master` remains the source of truth for new work.
+
 ## Active Evidence Indexes
 
 The baseline is the operating verdict, not the only evidence file. Current

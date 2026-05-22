@@ -14,6 +14,12 @@ import type { ReleasePolicyDefinition } from './release-policy.js';
 export const RELEASE_DETERMINISTIC_CHECKS_SPEC_VERSION =
   'attestor.release-deterministic-checks.v1';
 
+export const RELEASE_DETERMINISTIC_CHECK_OBSERVATION_BUDGET = Object.freeze({
+  usedTools: 32,
+  usedDataDomains: 32,
+  evidenceKinds: 64,
+});
+
 export type DeterministicCheckPhase =
   | 'deterministic-checks'
   | 'review'
@@ -52,17 +58,59 @@ export interface DeterministicCheckReport {
   readonly nextPhase: DeterministicCheckPhase;
 }
 
+function buildReleaseFinding(
+  code: string,
+  passed: boolean,
+  message: string,
+): ReleaseFinding {
+  return {
+    code,
+    result: passed ? 'pass' : 'fail',
+    message,
+    source: 'deterministic-check',
+  };
+}
+
 function buildDeterministicFinding(
   category: DeterministicControlCategory,
   passed: boolean,
   message: string,
 ): ReleaseFinding {
-  return {
-    code: category,
-    result: passed ? 'pass' : 'fail',
-    message,
-    source: 'deterministic-check',
-  };
+  return buildReleaseFinding(category, passed, message);
+}
+
+type DeterministicCheckObservationArrayField =
+  | 'usedTools'
+  | 'usedDataDomains'
+  | 'evidenceKinds';
+
+const OBSERVATION_ARRAY_BUDGET_FIELDS = Object.freeze([
+  { field: 'usedTools', label: 'Observed tools' },
+  { field: 'usedDataDomains', label: 'Observed data domains' },
+  { field: 'evidenceKinds', label: 'Evidence kinds' },
+] satisfies readonly {
+  readonly field: DeterministicCheckObservationArrayField;
+  readonly label: string;
+}[]);
+
+function observationBudgetFindings(
+  observation: DeterministicCheckObservation,
+): readonly ReleaseFinding[] {
+  return OBSERVATION_ARRAY_BUDGET_FIELDS.flatMap(({ field, label }) => {
+    const observedCount = observation[field].length;
+    const maxCount = RELEASE_DETERMINISTIC_CHECK_OBSERVATION_BUDGET[field];
+    if (observedCount <= maxCount) {
+      return [];
+    }
+
+    return [
+      buildReleaseFinding(
+        'deterministic-check-resource-budget',
+        false,
+        `${label} exceeded the deterministic-check resource budget (${observedCount}/${maxCount}).`,
+      ),
+    ];
+  });
 }
 
 function categoryOutcome(
@@ -261,11 +309,34 @@ function terminalStatusAfterChecks(
   }
 }
 
+function resourceBudgetFailureReport(
+  policy: ReleasePolicyDefinition,
+  findings: readonly ReleaseFinding[],
+): DeterministicCheckReport {
+  const terminal = terminalStatusAfterChecks(policy, false);
+
+  return {
+    version: RELEASE_DETERMINISTIC_CHECKS_SPEC_VERSION,
+    allPassed: false,
+    passCount: 0,
+    failCount: findings.length,
+    outcomes: [],
+    findings,
+    resultingStatus: terminal.status,
+    nextPhase: terminal.nextPhase,
+  };
+}
+
 export function runDeterministicReleaseChecks(
   policy: ReleasePolicyDefinition,
   decision: ReleaseDecision,
   observation: DeterministicCheckObservation,
 ): DeterministicCheckReport {
+  const budgetFindings = observationBudgetFindings(observation);
+  if (budgetFindings.length > 0) {
+    return resourceBudgetFailureReport(policy, budgetFindings);
+  }
+
   const outcomes = policy.acceptance.requiredChecks.map((category) =>
     categoryOutcome(category, decision, policy, observation),
   );

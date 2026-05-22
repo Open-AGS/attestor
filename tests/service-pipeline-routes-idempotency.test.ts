@@ -272,6 +272,102 @@ function asyncDeps(counters: { consume: number; submit: number }): PipelineAsync
   };
 }
 
+async function testAsyncBullmqRetryAfterUsageFailureUsesIdempotentQueueClaim(): Promise<void> {
+  const restore = withEnv();
+  try {
+    const counters = { consume: 0, submit: 0 };
+    let consumeAttempts = 0;
+    const submittedJobIds: string[] = [];
+    const uniqueJobIds = new Set<string>();
+    const baseUsageService = usageService(counters);
+    const app = new Hono();
+    const deps = asyncDeps(counters);
+    const tenantSnapshot = {
+      tenantId: tenant.tenantId,
+      planId: tenant.planId,
+      pendingJobs: 0,
+      pendingLimit: 10,
+      enforced: true,
+      activeExecutions: 0,
+      activeExecutionLimit: 1,
+      activeExecutionEnforced: true,
+      activeExecutionBackend: 'memory',
+      weightedDispatchEnforced: false,
+      weightedDispatchBackend: 'memory',
+      weightedDispatchWeight: null,
+      weightedDispatchWindowMs: null,
+      weightedDispatchNextEligibleAt: null,
+      weightedDispatchWaitMs: 0,
+      scanLimit: 100,
+      scanTruncated: false,
+      states: {
+        waiting: 0,
+        active: 0,
+        delayed: 0,
+        prioritized: 0,
+        failed: 0,
+      },
+    } as const;
+    deps.asyncBackendMode = 'bullmq';
+    deps.bullmqQueue = {} as never;
+    deps.canEnqueueTenantAsyncJob = async () => ({ allowed: true, snapshot: tenantSnapshot }) as never;
+    deps.getAsyncQueueSummary = async () => ({
+      queueName: 'attestor-pipeline',
+      backend: 'bullmq',
+      counts: {
+        waiting: 0,
+        active: 0,
+        delayed: 0,
+        prioritized: 0,
+        completed: 0,
+        failed: 0,
+        paused: 0,
+      },
+      retryPolicy: deps.getAsyncRetryPolicy(),
+      tenant: tenantSnapshot,
+    }) as never;
+    deps.pipelineUsageService = {
+      check: baseUsageService.check,
+      async consume(input) {
+        consumeAttempts += 1;
+        if (consumeAttempts === 1) {
+          throw new Error('usage ledger unavailable after async queue admission');
+        }
+        return baseUsageService.consume(input);
+      },
+    };
+    deps.submitPipelineJob = async (_queue, _input, _tenant, _sign, options) => {
+      const jobId = options?.jobId ?? `job-${submittedJobIds.length + 1}`;
+      submittedJobIds.push(jobId);
+      uniqueJobIds.add(jobId);
+      counters.submit = uniqueJobIds.size;
+      return { jobId };
+    };
+    registerPipelineAsyncRoutes(app, deps);
+    const request = {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'Idempotency-Key': 'pipeline-async-usage-failure' },
+      body: JSON.stringify({ candidateSql: 'select 1', intent: 'approve test query' }),
+    };
+
+    const first = await app.request('/api/v1/pipeline/run-async', request);
+    const second = await app.request('/api/v1/pipeline/run-async', request);
+    const secondBody = await readJson(second);
+
+    assert.equal(first.status, 500);
+    assert.equal(second.status, 202);
+    assert.equal(submittedJobIds.length, 2);
+    assert.equal(uniqueJobIds.size, 1);
+    assert.equal(counters.submit, 1);
+    assert.equal(counters.consume, 1);
+    assert.equal(secondBody.jobId, submittedJobIds[0]);
+    assert.match(String(secondBody.jobId), /^tenant_pipeline_idem__idem_[0-9a-f]{32}$/u);
+    assert(!String(secondBody.jobId).includes('pipeline-async-usage-failure'));
+  } finally {
+    restore();
+  }
+}
+
 async function readJson(response: Response): Promise<Record<string, unknown>> {
   return await response.json() as Record<string, unknown>;
 }
@@ -472,5 +568,6 @@ await testPipelineConnectorErrorDetailsAreRedacted();
 await testPipelineIdempotencyConflictRejectsDifferentPayload();
 await testPipelineIdempotencyConfigFailsBeforeSideEffects();
 await testAsyncPipelineReplayReturnsSameJobAndConsumesOnce();
+await testAsyncBullmqRetryAfterUsageFailureUsesIdempotentQueueClaim();
 
-console.log('Service pipeline routes idempotency tests: 7 passed, 0 failed');
+console.log('Service pipeline routes idempotency tests: 8 passed, 0 failed');

@@ -94,6 +94,7 @@ const LIVE_PROOF_FLAGS = Object.freeze([
   { name: 'ATTESTOR_PIPELINE_IDEMPOTENCY_PROOF', minStage: 'live-shadow', description: 'Pipeline run/run-async idempotency was verified across retries and shared control-plane storage.' },
   { name: 'ATTESTOR_SHADOW_MUTATION_AUDIT_CHAIN_PROOF', minStage: 'live-shadow', description: 'Shadow POST/PATCH mutations write hash-linked audit records through shared storage with tenant-context actor attribution.' },
   { name: 'ATTESTOR_SHADOW_MUTATION_RATE_LIMIT_PROOF', minStage: 'live-shadow', description: 'Shadow POST/PATCH mutation abuse probes return 429 per tenant and route while separate mutation route scopes remain available.' },
+  { name: 'ATTESTOR_SHADOW_MUTATION_IDEMPOTENCY_PROOF', minStage: 'live-shadow', description: 'Shadow POST/PATCH mutation Idempotency-Key replay/conflict behavior was verified across retries and shared control-plane storage.' },
   { name: 'ATTESTOR_RELEASE_ROUTE_ROLE_ENFORCEMENT_PROOF', minStage: 'live-shadow', description: 'Release-review and release-policy-control routes reject role escalation attempts across deployed role-scoped admin keys.' },
   { name: 'ATTESTOR_HEALTH_DIAGNOSTIC_SPLIT_PROOF', minStage: 'live-shadow', description: 'Public health/ready probes expose only the minimal unauthenticated response through the deployed edge path.' },
   { name: 'ATTESTOR_VERIFY_RATE_LIMIT_PROOF', minStage: 'live-shadow', description: 'Public /api/v1/verify abuse probes return 429 before expensive verification work through the deployed edge path.' },

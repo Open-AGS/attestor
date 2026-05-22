@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { randomUUID } from 'node:crypto';
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -20,6 +21,15 @@ import {
   createFileBackedShadowPolicyCandidateStore,
   createFileBackedShadowPolicySimulationReportStore,
 } from '../src/service/shadow-persistence-store.js';
+import { createPipelineIdempotencyService } from '../src/service/application/pipeline-idempotency-service.js';
+import type { PipelineIdempotencyService } from '../src/service/application/pipeline-idempotency-service.js';
+import {
+  ensurePipelineIdempotencyStateReady,
+  lookupPipelineIdempotencyState,
+  recordPipelineIdempotencyState,
+} from '../src/service/control-plane-store.js';
+import { hashJsonValue } from '../src/service/json-stable.js';
+import { resetPipelineIdempotencyStoreForTests } from '../src/service/pipeline-idempotency-store.js';
 import type { TenantContext } from '../src/service/tenant-isolation.js';
 
 let passed = 0;
@@ -31,6 +41,11 @@ function equal<T>(actual: T, expected: T, message: string): void {
 
 function ok(condition: unknown, message: string): void {
   assert.ok(condition, message);
+  passed += 1;
+}
+
+function deepEqual<T>(actual: T, expected: T, message: string): void {
+  assert.deepEqual(actual, expected, message);
   passed += 1;
 }
 
@@ -76,7 +91,10 @@ function createEvent(index: number): ShadowAdmissionEvent {
 
 function createApp(
   auditInputs: ShadowMutationAuditInput[],
-  options?: { readonly now?: () => string },
+  options?: {
+    readonly now?: () => string;
+    readonly pipelineIdempotencyService?: PipelineIdempotencyService;
+  },
 ): Hono {
   const simulationStore = createFileBackedShadowPolicySimulationReportStore({
     path: join(tempDir, `simulations-${auditInputs.length}-${Date.now()}.json`),
@@ -98,6 +116,7 @@ function createApp(
     recordShadowMutationAudit: async (input) => {
       auditInputs.push(input);
     },
+    pipelineIdempotencyService: options?.pipelineIdempotencyService,
     recordShadowPolicySimulationReport: ({ tenant: routeTenant, report }) =>
       simulationStore.append({
         tenantId: routeTenant.tenantId,
@@ -151,6 +170,46 @@ function createApp(
     now: options?.now ?? (() => '2026-05-21T09:10:00.000Z'),
   });
   return app;
+}
+
+function withPipelineIdempotencyEnv(): () => void {
+  const previous = new Map<string, string | undefined>();
+  const overrides: Record<string, string | undefined> = {
+    ATTESTOR_PIPELINE_IDEMPOTENCY_ENCRYPTION_KEY: 'shadow-mutation-idempotency-test-key',
+    ATTESTOR_PIPELINE_IDEMPOTENCY_STORE_PATH: join(
+      tmpdir(),
+      `attestor-shadow-mutation-idempotency-${randomUUID()}.json`,
+    ),
+    ATTESTOR_CONTROL_PLANE_PG_URL: undefined,
+  };
+  for (const [key, value] of Object.entries(overrides)) {
+    previous.set(key, process.env[key]);
+    if (value === undefined) {
+      delete process.env[key];
+    } else {
+      process.env[key] = value;
+    }
+  }
+  resetPipelineIdempotencyStoreForTests();
+  return () => {
+    resetPipelineIdempotencyStoreForTests();
+    for (const [key, value] of previous.entries()) {
+      if (value === undefined) {
+        delete process.env[key];
+      } else {
+        process.env[key] = value;
+      }
+    }
+  };
+}
+
+function pipelineIdempotencyService(): PipelineIdempotencyService {
+  return createPipelineIdempotencyService({
+    hashJsonValue,
+    ensurePipelineIdempotencyStateReady,
+    lookupPipelineIdempotencyState,
+    recordPipelineIdempotencyState,
+  });
 }
 
 async function postJson(app: Hono, path: string, body: unknown): Promise<Response> {
@@ -437,8 +496,9 @@ async function testShadowMutationRateLimitIsTenantRouteScoped(): Promise<void> {
       'shadow.customer_activation_receipt.create',
     ]) {
       ok(
-        routeSource.includes(`currentTenantForShadowMutation(c, deps, '${routeId}')`),
-        `Shadow mutation rate limit: ${routeId} is wired through the route-scoped guard`,
+        routeSource.includes(`beginShadowMutationIdempotency(c, deps, routeId, requestPayload);`) &&
+          routeSource.includes(`const routeId = '${routeId}';`),
+        `Shadow mutation idempotency/rate limit: ${routeId} is wired through the route-scoped guard`,
       );
     }
   } finally {
@@ -448,6 +508,103 @@ async function testShadowMutationRateLimitIsTenantRouteScoped(): Promise<void> {
       process.env.ATTESTOR_SHADOW_MUTATION_RATE_LIMIT_PER_MINUTE = previousLimit;
     }
     resetShadowMutationRateLimiterForTests();
+  }
+}
+
+async function testShadowSimulationReplaysWithIdempotencyKey(): Promise<void> {
+  const restoreEnv = withPipelineIdempotencyEnv();
+  const previousLimit = process.env.ATTESTOR_SHADOW_MUTATION_RATE_LIMIT_PER_MINUTE;
+  process.env.ATTESTOR_SHADOW_MUTATION_RATE_LIMIT_PER_MINUTE = '1';
+  resetShadowMutationRateLimiterForTests();
+  try {
+    const auditInputs: ShadowMutationAuditInput[] = [];
+    const app = createApp(auditInputs, {
+      pipelineIdempotencyService: pipelineIdempotencyService(),
+    });
+    const body = { proposedMode: 'review' };
+    const headers = {
+      'content-type': 'application/json',
+      'Idempotency-Key': 'shadow-simulation-idempotent-replay',
+    };
+
+    const first = await app.request('/api/v1/shadow/simulations', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body),
+    });
+    const replay = await app.request('/api/v1/shadow/simulations', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body),
+    });
+    const firstBody = await first.json();
+    const replayBody = await replay.json();
+    const list = await app.request('/api/v1/shadow/simulations');
+    const listed = await list.json() as { readonly recordCount: number };
+
+    equal(first.status, 200, 'Shadow mutation idempotency: first simulation mutation succeeds');
+    equal(replay.status, 200, 'Shadow mutation idempotency: same-key retry replays');
+    deepEqual(replayBody, firstBody, 'Shadow mutation idempotency: replay response body is stored response');
+    equal(replay.headers.get('x-attestor-idempotent-replay'), 'true', 'Shadow mutation idempotency: replay header is set');
+    equal(replay.headers.get('x-attestor-idempotency-key'), null, 'Shadow mutation idempotency: replay does not echo raw key');
+    equal(listed.recordCount, 1, 'Shadow mutation idempotency: replay does not duplicate persistence');
+    equal(
+      auditInputs.filter((input) => input.routeId === 'shadow.simulations.create').length,
+      1,
+      'Shadow mutation idempotency: replay does not duplicate audit',
+    );
+  } finally {
+    if (previousLimit === undefined) {
+      delete process.env.ATTESTOR_SHADOW_MUTATION_RATE_LIMIT_PER_MINUTE;
+    } else {
+      process.env.ATTESTOR_SHADOW_MUTATION_RATE_LIMIT_PER_MINUTE = previousLimit;
+    }
+    resetShadowMutationRateLimiterForTests();
+    restoreEnv();
+  }
+}
+
+async function testShadowSimulationRejectsIdempotencyConflicts(): Promise<void> {
+  const restoreEnv = withPipelineIdempotencyEnv();
+  try {
+    const auditInputs: ShadowMutationAuditInput[] = [];
+    const app = createApp(auditInputs, {
+      pipelineIdempotencyService: pipelineIdempotencyService(),
+    });
+    const key = 'shadow-simulation-idempotent-conflict';
+    const headers = {
+      'content-type': 'application/json',
+      'Idempotency-Key': key,
+    };
+    const first = await app.request('/api/v1/shadow/simulations', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ proposedMode: 'review' }),
+    });
+    const conflict = await app.request('/api/v1/shadow/simulations', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ proposedMode: 'warn' }),
+    });
+    const conflictBody = await conflict.json() as { readonly reasonCodes: readonly string[] };
+    const conflictText = JSON.stringify(conflictBody);
+
+    equal(first.status, 200, 'Shadow mutation idempotency conflict: first request succeeds');
+    equal(conflict.status, 409, 'Shadow mutation idempotency conflict: same-key different-body request is rejected');
+    equal(
+      conflictBody.reasonCodes.includes('shadow-mutation-idempotency-conflict'),
+      true,
+      'Shadow mutation idempotency conflict: bounded conflict reason is returned',
+    );
+    equal(conflict.headers.get('x-attestor-idempotency-key'), null, 'Shadow mutation idempotency conflict: raw key is not echoed in headers');
+    ok(!conflictText.includes(key), 'Shadow mutation idempotency conflict: raw key is not echoed in body');
+    equal(
+      auditInputs.filter((input) => input.routeId === 'shadow.simulations.create').length,
+      1,
+      'Shadow mutation idempotency conflict: rejected conflict does not duplicate audit',
+    );
+  } finally {
+    restoreEnv();
   }
 }
 
@@ -557,6 +714,8 @@ try {
   await testShadowMutationsEmitRedactedTenantAudit();
   await testMissingStoreAndJsonValidationRemainFailClosed();
   await testShadowMutationRateLimitIsTenantRouteScoped();
+  await testShadowSimulationReplaysWithIdempotencyKey();
+  await testShadowSimulationRejectsIdempotencyConflicts();
   await testShadowListRoutesApplyPaginationBounds();
   await testShadowProblemDetailsAreBounded();
 

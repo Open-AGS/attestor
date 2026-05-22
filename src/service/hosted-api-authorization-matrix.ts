@@ -50,6 +50,7 @@ export type HostedApiIdempotencyBoundary =
   | 'not_applicable'
   | 'required_header'
   | 'admin_mutation_service'
+  | 'tenant_shadow_idempotency_service'
   | 'provider_event_dedupe'
   | 'release_token_consume'
   | 'action_token_or_challenge'
@@ -401,16 +402,17 @@ export const HOSTED_API_AUTHORIZATION_RULES = [
     tenantBoundary: 'tenant_middleware',
     objectBoundary: 'tenant_scoped_path_id',
     mutationSafety: 'tenant_scoped_shadow_write',
-    idempotencyBoundary: 'service_defined',
+    idempotencyBoundary: 'tenant_shadow_idempotency_service',
     privacyBoundary: 'shadow write paths persist tenant-scoped digests, receipts, or candidates, not raw private payloads',
     evidence: [
       'src/service/http/routes/shadow-routes.ts#assertTenantBoundRecord',
       'src/service/http/routes/shadow-routes.ts#recordShadowMutationAudit',
+      'src/service/http/routes/shadow-routes.ts#beginShadowMutationIdempotency',
       'src/service/bootstrap/routes.ts#createShadowRouteDeps',
       'tests/shadow-route-tenant-boundary.test.ts',
       'tests/service-shadow-routes-http.test.ts',
     ],
-    standards: ['OWASP API1:2023', 'OWASP API3:2023', 'OWASP LLM02:2025'],
+    standards: ['OWASP API1:2023', 'OWASP API3:2023', 'OWASP LLM02:2025', 'IETF HTTPAPI Idempotency-Key draft'],
   },
   {
     id: 'webhook.stripe.billing',

@@ -282,6 +282,7 @@ export function createShadowRouteDeps<Packet>(
         tenantId: tenant.tenantId,
         receiptId,
       }).record,
+    pipelineIdempotencyService: runtime.services.httpRoutes.pipeline.pipelineIdempotencyService,
   };
 }
 

@@ -62,6 +62,10 @@ import {
   type ShadowPolicySimulationReportStoreRecord,
   type UpsertShadowPolicyCandidateBundleResult,
 } from '../../shadow-persistence-store.js';
+import type {
+  PipelineIdempotencyReadyResult,
+  PipelineIdempotencyService,
+} from '../../application/pipeline-idempotency-service.js';
 import type { TenantContext } from '../../tenant-isolation.js';
 import { acceptsJsonRequestBody } from '../route-response-helpers.js';
 
@@ -115,6 +119,7 @@ export interface ShadowRouteDeps {
   currentTenant(context: Context): TenantContext;
   listShadowEvents(input: { readonly tenant: TenantContext }): readonly ShadowAdmissionEvent[];
   recordShadowMutationAudit?(input: ShadowMutationAuditInput): Promise<void>;
+  pipelineIdempotencyService?: PipelineIdempotencyService;
   listShadowSimulations?(
     input: { readonly tenant: TenantContext },
   ): readonly ShadowPolicySimulationReport[];
@@ -222,13 +227,131 @@ function shadowMutationRateLimitResponse(
   });
 }
 
-function currentTenantForShadowMutation(
+type ShadowMutationIdempotencyBegin =
+  | {
+      readonly kind: 'ready';
+      readonly tenant: TenantContext;
+      readonly ready: PipelineIdempotencyReadyResult | null;
+    }
+  | { readonly kind: 'response'; readonly response: Response };
+
+function shadowIdempotencyKeyFor(c: Context): string | null {
+  const normalized = c.req.header('Idempotency-Key')?.trim() ?? '';
+  return normalized.length > 0 ? normalized : null;
+}
+
+function shadowReplayResponse(input: {
+  readonly statusCode: number;
+  readonly responseBody: unknown;
+  readonly replay: boolean;
+}): Response {
+  return new Response(JSON.stringify(input.responseBody), {
+    status: input.statusCode,
+    headers: {
+      'content-type': 'application/json; charset=UTF-8',
+      'cache-control': 'no-store',
+      ...(input.replay ? { 'x-attestor-idempotent-replay': 'true' } : {}),
+    },
+  });
+}
+
+async function beginShadowMutationIdempotency(
   c: Context,
   deps: ShadowRouteDeps,
   routeId: string,
-): TenantContext | Response {
+  requestPayload: unknown,
+): Promise<ShadowMutationIdempotencyBegin> {
   const tenant = deps.currentTenant(c);
-  return shadowMutationRateLimitResponse(c, tenant, routeId) ?? tenant;
+  const idempotencyKey = shadowIdempotencyKeyFor(c);
+
+  if (idempotencyKey) {
+    if (!deps.pipelineIdempotencyService) {
+      return {
+        kind: 'response',
+        response: problem(c, {
+          type: 'https://attestor.dev/problems/shadow-mutation-idempotency-unavailable',
+          title: 'Shadow mutation idempotency unavailable',
+          status: 503,
+          detail: 'The shadow mutation route cannot persist idempotent mutation responses in this runtime.',
+          reasonCodes: ['shadow-mutation-idempotency-unavailable'],
+        }),
+      };
+    }
+
+    const begin = await deps.pipelineIdempotencyService.begin({
+      idempotencyKey,
+      tenantId: tenant.tenantId,
+      routeId,
+      requestPayload,
+    });
+
+    if (begin.kind === 'replay') {
+      return {
+        kind: 'response',
+        response: shadowReplayResponse({
+          statusCode: begin.statusCode,
+          responseBody: begin.responseBody,
+          replay: true,
+        }),
+      };
+    }
+
+    if (begin.kind === 'conflict') {
+      return {
+        kind: 'response',
+        response: problem(c, {
+          type: 'https://attestor.dev/problems/shadow-mutation-idempotency-conflict',
+          title: 'Shadow mutation idempotency conflict',
+          status: 409,
+          detail: 'The Idempotency-Key was already used for a different shadow mutation request.',
+          reasonCodes: ['shadow-mutation-idempotency-conflict'],
+        }),
+      };
+    }
+
+    if (begin.kind === 'unavailable') {
+      return {
+        kind: 'response',
+        response: problem(c, {
+          type: 'https://attestor.dev/problems/shadow-mutation-idempotency-unavailable',
+          title: 'Shadow mutation idempotency unavailable',
+          status: 503,
+          detail: 'The shadow mutation route cannot persist idempotent mutation responses in this runtime.',
+          reasonCodes: ['shadow-mutation-idempotency-unavailable'],
+        }),
+      };
+    }
+
+    const rateLimited = shadowMutationRateLimitResponse(c, tenant, routeId);
+    if (rateLimited) return { kind: 'response', response: rateLimited };
+    return { kind: 'ready', tenant, ready: begin };
+  }
+
+  const rateLimited = shadowMutationRateLimitResponse(c, tenant, routeId);
+  if (rateLimited) return { kind: 'response', response: rateLimited };
+  return { kind: 'ready', tenant, ready: null };
+}
+
+async function finalizeShadowMutationIdempotency(
+  deps: ShadowRouteDeps,
+  tenant: TenantContext,
+  routeId: string,
+  requestPayload: unknown,
+  idempotency: PipelineIdempotencyReadyResult | null,
+  statusCode: number,
+  responseBody: Record<string, unknown>,
+): Promise<Record<string, unknown>> {
+  if (!idempotency?.idempotencyKey || !deps.pipelineIdempotencyService) {
+    return responseBody;
+  }
+  return deps.pipelineIdempotencyService.finalize({
+    idempotencyKey: idempotency.idempotencyKey,
+    tenantId: tenant.tenantId,
+    routeId,
+    requestPayload,
+    statusCode,
+    responseBody,
+  });
 }
 
 export function resetShadowMutationRateLimiterForTests(): void {
@@ -1394,8 +1517,14 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
     }
 
     try {
-      const tenant = currentTenantForShadowMutation(c, deps, 'shadow.simulations.create');
-      if (tenant instanceof Response) return tenant;
+      const routeId = 'shadow.simulations.create';
+      const requestPayload = {
+        proposedMode: body.proposedMode,
+        minimumPromotionEvents: body.minimumPromotionEvents,
+      };
+      const idempotency = await beginShadowMutationIdempotency(c, deps, routeId, requestPayload);
+      if (idempotency.kind === 'response') return idempotency.response;
+      const { tenant } = idempotency;
       const events = assertTenantBoundRecords(
         tenant,
         deps.listShadowEvents({ tenant }),
@@ -1418,13 +1547,10 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
         'shadow simulation',
       );
       await recordShadowMutationAudit(deps, {
-        routeId: 'shadow.simulations.create',
+        routeId,
         action: 'shadow.simulation.recorded',
         tenant,
-        requestPayload: {
-          proposedMode: body.proposedMode,
-          minimumPromotionEvents: body.minimumPromotionEvents,
-        },
+        requestPayload,
         statusCode: 200,
         metadata: {
           persistenceKind: persisted.kind,
@@ -1433,17 +1559,26 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
           eventCount: persistedRecord.eventCount,
         },
       });
-      return c.json({
-        tenant: tenantSummary(tenant),
-        storageMode: 'file-backed-evaluation',
-        productionReady: false,
-        rawPayloadStored: false,
-        report,
-        persisted: {
-          kind: persisted.kind,
-          record: persistedRecord,
+      const responseBody = await finalizeShadowMutationIdempotency(
+        deps,
+        tenant,
+        routeId,
+        requestPayload,
+        idempotency.ready,
+        200,
+        {
+          tenant: tenantSummary(tenant),
+          storageMode: 'file-backed-evaluation',
+          productionReady: false,
+          rawPayloadStored: false,
+          report,
+          persisted: {
+            kind: persisted.kind,
+            record: persistedRecord,
+          },
         },
-      });
+      );
+      return c.json(responseBody);
     } catch (error) {
       const status = caughtErrorStatus(error, {
         statusMarkers: [{ marker: 'exceeds maximum', status: 400 }],
@@ -1858,8 +1993,11 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
         reasonCodes: ['policy-candidate-store-unavailable'],
       });
     }
-    const tenant = currentTenantForShadowMutation(c, deps, 'shadow.policy_candidates.materialize');
-    if (tenant instanceof Response) return tenant;
+    const routeId = 'shadow.policy_candidates.materialize';
+    const requestPayload = { source: 'latestSimulation' };
+    const idempotency = await beginShadowMutationIdempotency(c, deps, routeId, requestPayload);
+    if (idempotency.kind === 'response') return idempotency.response;
+    const { tenant } = idempotency;
     const result = safeShadowSummary(c, deps, tenant);
     if (result instanceof Response) return result;
 
@@ -1878,7 +2016,7 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
         'shadow policy candidate',
       );
       await recordShadowMutationAudit(deps, {
-        routeId: 'shadow.policy_candidates.materialize',
+        routeId,
         action: 'shadow.policy_candidate.materialized',
         tenant: result.tenant,
         requestPayload: {
@@ -1894,21 +2032,30 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
           candidateIds: records.map((record) => record.candidateId),
         },
       });
-      return c.json({
-        tenant: tenantSummary(result.tenant),
-        version: bundle.version,
-        generatedAt: bundle.generatedAt,
-        candidateCount: bundle.candidateCount,
-        approvalRequired: true,
-        autoEnforce: false,
-        rawPayloadStored: false,
-        persisted: {
-          records,
-          createdCount: persisted.createdCount,
-          updatedCount: persisted.updatedCount,
-          unchangedCount: persisted.unchangedCount,
+      const responseBody = await finalizeShadowMutationIdempotency(
+        deps,
+        result.tenant,
+        routeId,
+        requestPayload,
+        idempotency.ready,
+        200,
+        {
+          tenant: tenantSummary(result.tenant),
+          version: bundle.version,
+          generatedAt: bundle.generatedAt,
+          candidateCount: bundle.candidateCount,
+          approvalRequired: true,
+          autoEnforce: false,
+          rawPayloadStored: false,
+          persisted: {
+            records,
+            createdCount: persisted.createdCount,
+            updatedCount: persisted.updatedCount,
+            unchangedCount: persisted.unchangedCount,
+          },
         },
-      });
+      );
+      return c.json(responseBody);
     } catch (error) {
       return problem(c, {
         type: 'https://attestor.dev/problems/policy-candidate-materialize-failed',
@@ -2379,10 +2526,20 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
         reasonCodes: ['invalid-policy-promotion-source-status'],
       });
     }
+    const routeId = 'shadow.downstream_integration_proof.create';
+    const requestPayload = {
+      sourceStatus,
+      enforcementPointId: body.enforcementPointId,
+      boundaryKind: body.boundaryKind,
+      verifierRef: body.verifierRef,
+      evidenceRefs: body.evidenceRefs,
+      observedVerificationChecks: body.observedVerificationChecks,
+    };
 
     try {
-      const tenant = currentTenantForShadowMutation(c, deps, 'shadow.downstream_integration_proof.create');
-      if (tenant instanceof Response) return tenant;
+      const idempotency = await beginShadowMutationIdempotency(c, deps, routeId, requestPayload);
+      if (idempotency.kind === 'response') return idempotency.response;
+      const { tenant } = idempotency;
       const records = assertTenantBoundRecords(
         tenant,
         deps.listShadowPolicyCandidateRecords({
@@ -2436,16 +2593,12 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
         generatedAt: deps.now?.() ?? null,
       });
       await recordShadowMutationAudit(deps, {
-        routeId: 'shadow.downstream_integration_proof.create',
+        routeId,
         action: 'shadow.downstream_integration_proof.generated',
         tenant,
         requestPayload: {
-          sourceStatus,
-          enforcementPointId: body.enforcementPointId,
-          boundaryKind: body.boundaryKind,
-          verifierRef: body.verifierRef,
+          ...requestPayload,
           evidenceRefCount: body.evidenceRefs.length,
-          observedVerificationChecks: body.observedVerificationChecks,
         },
         statusCode: 200,
         metadata: {
@@ -2455,15 +2608,24 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
           observedCheckCount: proof.observedCheckCount,
         },
       });
-      return c.json({
-        tenant: tenantSummary(tenant),
-        storageMode: 'file-backed-evaluation',
-        productionReady: false,
-        approvalRequired: true,
-        autoEnforce: false,
-        rawPayloadStored: false,
-        proof,
-      });
+      const responseBody = await finalizeShadowMutationIdempotency(
+        deps,
+        tenant,
+        routeId,
+        requestPayload,
+        idempotency.ready,
+        200,
+        {
+          tenant: tenantSummary(tenant),
+          storageMode: 'file-backed-evaluation',
+          productionReady: false,
+          approvalRequired: true,
+          autoEnforce: false,
+          rawPayloadStored: false,
+          proof,
+        },
+      );
+      return c.json(responseBody);
     } catch (error) {
       const status = caughtErrorStatus(error, {
         statusMarkers: [
@@ -2510,10 +2672,20 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
         reasonCodes: ['invalid-policy-promotion-source-status'],
       });
     }
+    const routeId = 'shadow.activation_readiness.create';
+    const requestPayload = {
+      sourceStatus,
+      enforcementPointId: body.enforcementPointId,
+      boundaryKind: body.boundaryKind,
+      verifierRef: body.verifierRef,
+      evidenceRefs: body.evidenceRefs,
+      observedVerificationChecks: body.observedVerificationChecks,
+    };
 
     try {
-      const tenant = currentTenantForShadowMutation(c, deps, 'shadow.activation_readiness.create');
-      if (tenant instanceof Response) return tenant;
+      const idempotency = await beginShadowMutationIdempotency(c, deps, routeId, requestPayload);
+      if (idempotency.kind === 'response') return idempotency.response;
+      const { tenant } = idempotency;
       const records = assertTenantBoundRecords(
         tenant,
         deps.listShadowPolicyCandidateRecords({
@@ -2574,16 +2746,12 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
         generatedAt: deps.now?.() ?? null,
       });
       await recordShadowMutationAudit(deps, {
-        routeId: 'shadow.activation_readiness.create',
+        routeId,
         action: 'shadow.activation_readiness.generated',
         tenant,
         requestPayload: {
-          sourceStatus,
-          enforcementPointId: body.enforcementPointId,
-          boundaryKind: body.boundaryKind,
-          verifierRef: body.verifierRef,
+          ...requestPayload,
           evidenceRefCount: body.evidenceRefs.length,
-          observedVerificationChecks: body.observedVerificationChecks,
         },
         statusCode: 200,
         metadata: {
@@ -2592,15 +2760,24 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
           remainingBlockerCount: activationReadiness.remainingActivationBlockers.length,
         },
       });
-      return c.json({
-        tenant: tenantSummary(tenant),
-        storageMode: 'file-backed-evaluation',
-        productionReady: false,
-        approvalRequired: true,
-        autoEnforce: false,
-        rawPayloadStored: false,
-        activationReadiness,
-      });
+      const responseBody = await finalizeShadowMutationIdempotency(
+        deps,
+        tenant,
+        routeId,
+        requestPayload,
+        idempotency.ready,
+        200,
+        {
+          tenant: tenantSummary(tenant),
+          storageMode: 'file-backed-evaluation',
+          productionReady: false,
+          approvalRequired: true,
+          autoEnforce: false,
+          rawPayloadStored: false,
+          activationReadiness,
+        },
+      );
+      return c.json(responseBody);
     } catch (error) {
       const status = caughtErrorStatus(error, {
         statusMarkers: [
@@ -2652,10 +2829,26 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
         reasonCodes: ['invalid-policy-promotion-source-status'],
       });
     }
+    const routeId = 'shadow.customer_activation_handoff.create';
+    const requestPayload = {
+      sourceStatus,
+      integration: body.integration,
+      activationRef: body.activationRef,
+      operatorRef: body.operatorRef,
+      secondaryApproverRef: body.secondaryApproverRef,
+      rolloutStrategy: body.rolloutStrategy,
+      rollbackRef: body.rollbackRef,
+      killSwitchRef: body.killSwitchRef,
+      monitoringRef: body.monitoringRef,
+      breakGlassJustificationRef: body.breakGlassJustificationRef,
+      breakGlassReconciliationRef: body.breakGlassReconciliationRef,
+      expiresAt: body.expiresAt,
+    };
 
     try {
-      const tenant = currentTenantForShadowMutation(c, deps, 'shadow.customer_activation_handoff.create');
-      if (tenant instanceof Response) return tenant;
+      const idempotency = await beginShadowMutationIdempotency(c, deps, routeId, requestPayload);
+      if (idempotency.kind === 'response') return idempotency.response;
+      const { tenant } = idempotency;
       const records = assertTenantBoundRecords(
         tenant,
         deps.listShadowPolicyCandidateRecords({
@@ -2731,7 +2924,7 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
         generatedAt: deps.now?.() ?? null,
       });
       await recordShadowMutationAudit(deps, {
-        routeId: 'shadow.customer_activation_handoff.create',
+        routeId,
         action: 'shadow.customer_activation_handoff.generated',
         tenant,
         requestPayload: {
@@ -2752,15 +2945,24 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
           handoffReady: handoff.handoffReady,
         },
       });
-      return c.json({
-        tenant: tenantSummary(tenant),
-        storageMode: 'file-backed-evaluation',
-        productionReady: false,
-        approvalRequired: true,
-        autoEnforce: false,
-        rawPayloadStored: false,
-        handoff,
-      });
+      const responseBody = await finalizeShadowMutationIdempotency(
+        deps,
+        tenant,
+        routeId,
+        requestPayload,
+        idempotency.ready,
+        200,
+        {
+          tenant: tenantSummary(tenant),
+          storageMode: 'file-backed-evaluation',
+          productionReady: false,
+          approvalRequired: true,
+          autoEnforce: false,
+          rawPayloadStored: false,
+          handoff,
+        },
+      );
+      return c.json(responseBody);
     } catch (error) {
       const status = caughtErrorStatus(error, {
         statusMarkers: [
@@ -2795,8 +2997,26 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
     if (body instanceof Response) return body;
 
     try {
-      const tenant = currentTenantForShadowMutation(c, deps, 'shadow.customer_activation_receipt.create');
-      if (tenant instanceof Response) return tenant;
+      const routeId = 'shadow.customer_activation_receipt.create';
+      const requestPayload = {
+        sourceHandoffId: body.handoff.handoffId,
+        sourceHandoffDigest: body.handoff.digest,
+        activationStatus: body.activationStatus,
+        attemptedAt: body.attemptedAt,
+        observedAt: body.observedAt,
+        completedAt: body.completedAt,
+        activationDigest: body.activationDigest,
+        externalReceiptDigest: body.externalReceiptDigest,
+        rollbackStatus: body.rollbackStatus,
+        rollbackDigest: body.rollbackDigest,
+        killSwitchStatus: body.killSwitchStatus,
+        monitoringStatus: body.monitoringStatus,
+        errorDigest: body.errorDigest,
+        skipReasonCode: body.skipReasonCode,
+      };
+      const idempotency = await beginShadowMutationIdempotency(c, deps, routeId, requestPayload);
+      if (idempotency.kind === 'response') return idempotency.response;
+      const { tenant } = idempotency;
       const receipt = createShadowCustomerActivationReceipt({
         handoff: body.handoff,
         activationStatus: body.activationStatus,
@@ -2830,7 +3050,7 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
         ? assertTenantBoundRecord(tenant, persisted.record, 'shadow customer activation receipt')
         : null;
       await recordShadowMutationAudit(deps, {
-        routeId: 'shadow.customer_activation_receipt.create',
+        routeId,
         action: 'shadow.customer_activation_receipt.recorded',
         tenant,
         requestPayload: {
@@ -2851,21 +3071,30 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
           persistedReceiptId: persistedRecord?.receiptId ?? null,
         },
       });
-      return c.json({
-        tenant: tenantSummary(tenant),
-        storageMode: persisted ? 'file-backed-evaluation' : 'stateless-receipt',
-        productionReady: false,
-        approvalRequired: true,
-        autoEnforce: false,
-        rawPayloadStored: false,
-        receipt,
-        persisted: persisted
-          ? {
-            kind: persisted.kind,
-            record: persistedRecord,
-          }
-          : null,
-      });
+      const responseBody = await finalizeShadowMutationIdempotency(
+        deps,
+        tenant,
+        routeId,
+        requestPayload,
+        idempotency.ready,
+        200,
+        {
+          tenant: tenantSummary(tenant),
+          storageMode: persisted ? 'file-backed-evaluation' : 'stateless-receipt',
+          productionReady: false,
+          approvalRequired: true,
+          autoEnforce: false,
+          rawPayloadStored: false,
+          receipt,
+          persisted: persisted
+            ? {
+              kind: persisted.kind,
+              record: persistedRecord,
+            }
+            : null,
+        },
+      );
+      return c.json(responseBody);
     } catch (error) {
       const status = caughtErrorStatus(error, {
         statusMarkers: [{ marker: 'Shadow customer activation receipt', status: 400 }],
@@ -3021,13 +3250,22 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
     if (body instanceof Response) return body;
 
     try {
-      const tenant = currentTenantForShadowMutation(c, deps, 'shadow.policy_candidates.status.update');
-      if (tenant instanceof Response) return tenant;
+      const routeId = 'shadow.policy_candidates.status.update';
+      const candidateId = c.req.param('candidateId');
+      const requestPayload = {
+        candidateId,
+        status: body.status,
+        actorRef: body.actorRef,
+        reason: body.reason,
+      };
+      const idempotency = await beginShadowMutationIdempotency(c, deps, routeId, requestPayload);
+      if (idempotency.kind === 'response') return idempotency.response;
+      const { tenant } = idempotency;
       const record = assertTenantBoundRecord(
         tenant,
         deps.transitionShadowPolicyCandidateStatus({
           tenant,
-          candidateId: c.req.param('candidateId'),
+          candidateId,
           status: body.status,
           actorRef: body.actorRef,
           reason: body.reason,
@@ -3035,11 +3273,11 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
         'shadow policy candidate',
       );
       await recordShadowMutationAudit(deps, {
-        routeId: 'shadow.policy_candidates.status.update',
+        routeId,
         action: 'shadow.policy_candidate.status_transitioned',
         tenant,
         requestPayload: {
-          candidateId: c.req.param('candidateId'),
+          candidateId,
           status: body.status,
           actorRef: body.actorRef,
           reasonLength: body.reason.length,
@@ -3052,13 +3290,22 @@ export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
           statusHistoryLength: record.statusHistory.length,
         },
       });
-      return c.json({
-        tenant: tenantSummary(tenant),
-        approvalRequired: true,
-        autoEnforce: false,
-        rawPayloadStored: false,
-        record,
-      });
+      const responseBody = await finalizeShadowMutationIdempotency(
+        deps,
+        tenant,
+        routeId,
+        requestPayload,
+        idempotency.ready,
+        200,
+        {
+          tenant: tenantSummary(tenant),
+          approvalRequired: true,
+          autoEnforce: false,
+          rawPayloadStored: false,
+          record,
+        },
+      );
+      return c.json(responseBody);
     } catch (error) {
       const status = caughtErrorStatus(error, {
         statusMarkers: [

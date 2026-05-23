@@ -75,7 +75,7 @@ statements.
 | ID | State | Evidence | Required action |
 |---|---|---|---|
 | OPS-170 | `closed` | Focused sub-sweep validates that the large `index.ts` barrel still exposes `createConsequenceAdmissionResponse`, `createGenericAdmissionEnvelope`, `evaluateConsequenceAdmissionRetryBudget`, and `retryBudgetInstruction`, and that existing behavioral tests lock admitted/narrow/invalid response paths, generic admission modes, retry-budget mismatch handling, and shared retry-budget evidence. Locking test: `tests/consequence-admission-index-surface.test.ts`. | No repo-side action remains for OPS-170. Future splits are allowed only when they reduce real complexity and preserve these contracts. |
-| OPS-171 | `open / partial-repo` | This pass intentionally does not audit all consequence-admission families at assertion depth. | Keep OPS-171 open for family-specific sub-sweeps when module-specific risk warrants them. |
+| OPS-171 | `accepted limitation / sub-sweep backlog` | This pass intentionally does not audit all consequence-admission families at assertion depth; the follow-up OPS-171 queue now tracks those family slices and trigger conditions. | OPS-171 remains accepted limitation / sub-sweep backlog for family-specific sub-sweeps when module-specific risk warrants them. |
 
 ## Chain Reactions
 
@@ -109,8 +109,8 @@ This does not claim:
 ## Verdict
 
 OPS-170 is repo-side closed by focused sub-sweep evidence and locking coverage.
-OPS-171 remains open because family-level assertion-depth sub-sweeps are a
-different scope.
+OPS-171 remains accepted limitation / sub-sweep backlog because family-level
+assertion-depth sub-sweeps are a different scope.
 
 ## Next Locked Target
 
@@ -119,7 +119,9 @@ OPS-171 consequence-admission family sub-sweep queue.
 ## Final Checkpoint
 
 - Scoped remediation complete: yes, for OPS-170 repo-side only.
-- Another round required: yes, OPS-171 remains open.
+- Another round required: no for this 32-row remediation list; OPS-171 is
+  accepted as a sub-sweep backlog and future family sub-sweeps run only when
+  module-specific risk warrants them.
 - Repo-proven P0/P1 introduced: no.
 - Live proof needed: unchanged; retry-attempt shared-store and Customer PEP
   no-bypass remain live-proof-only.

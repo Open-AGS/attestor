@@ -102,7 +102,11 @@ includes(
   'does not change internal decision math',
   'OPS-170: report avoids decision-math overclaim',
 );
-includes(subSweepReport, 'OPS-171 remains open', 'OPS-170: report keeps OPS-171 open');
+includes(
+  subSweepReport,
+  'OPS-171 remains accepted limitation / sub-sweep backlog',
+  'OPS-170: report keeps OPS-171 backlog status explicit',
+);
 includes(findingIndex, 'OPS-170 consequence-admission `index.ts` size and barrel surface | `closed`', 'OPS-170: finding index closes OPS-170');
 includes(reportIndex, 'OPS-170-FOCUSED-SUB-SWEEP', 'OPS-170: report index tracks the focused sub-sweep');
 

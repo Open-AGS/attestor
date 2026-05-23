@@ -316,6 +316,239 @@ export function registerPipelineExecutionRoutes(app: Hono, deps: PipelineExecuti
     buildCounterpartyEnvelope,
   } = deps;
 
+  async function evaluateFinanceFilingReleaseTarget(
+    context: Context,
+    report: FinancialRunReport,
+    reviewerIdentity: ReviewerIdentity | undefined,
+    shouldSign: boolean,
+  ): Promise<FinanceFilingReleaseSummary | null> {
+    if (!shouldSign || !report.certificate) return null;
+    const filingCandidate = createFinanceFilingReleaseCandidateFromReport(report);
+    if (filingCandidate?.adapterId !== FINANCE_FILING_ADAPTER_ID) return null;
+
+    const material = buildFinanceFilingReleaseMaterial(filingCandidate);
+    const evaluation = await financeReleaseDecisionEngine.evaluateWithDeterministicChecks(
+      releaseEvaluationRequest({
+        id: `release_${randomUUID()}`,
+        createdAt: report.timestamp,
+        material,
+        requester: currentReleaseRequester(context, reviewerIdentity),
+        context: currentReleaseEvaluationContext(context),
+      }),
+      buildFinanceFilingReleaseObservation(material, report),
+    );
+    const releaseDecision = finalizeFinanceFilingReleaseDecision(
+      evaluation.decision,
+      report,
+    );
+    const reviewQueueItem =
+      releaseDecision.reviewAuthority.minimumReviewerCount > 0 &&
+      (releaseDecision.status === 'review-required' || releaseDecision.status === 'hold')
+        ? await apiReleaseReviewerQueueStore.upsert(
+            createFinanceReviewerQueueItem({
+              decision: releaseDecision,
+              candidate: filingCandidate,
+              report,
+              logEntries: await financeReleaseDecisionLog.entries(),
+            }),
+          )
+        : null;
+    const issuedReleaseToken =
+      releaseDecision.status === 'accepted'
+        ? await apiReleaseTokenIssuer.issue({
+            decision: releaseDecision,
+            issuedAt: report.timestamp,
+          })
+        : null;
+    const decisionForEvidence = issuedReleaseToken
+      ? {
+          ...releaseDecision,
+          releaseTokenId: issuedReleaseToken.tokenId,
+        }
+      : releaseDecision;
+    if (issuedReleaseToken) {
+      await apiReleaseIntrospectionStore.registerIssuedToken({
+        issuedToken: issuedReleaseToken,
+        decision: releaseDecision,
+      });
+    }
+    const issuedEvidencePack =
+      issuedReleaseToken
+        ? await apiReleaseEvidencePackIssuer.issue({
+            decision: decisionForEvidence,
+            issuedAt: report.timestamp,
+            decisionLogEntries: (await financeReleaseDecisionLog.entries())
+              .filter((entry) => entry.decisionId === releaseDecision.id),
+            decisionLogChainIntact: (await financeReleaseDecisionLog.verify()).valid,
+            releaseToken: issuedReleaseToken,
+            artifactReferences: Object.freeze(
+              report.evidenceChain?.terminalHash
+                ? [
+                    {
+                      kind: 'provenance',
+                      path: `finance-evidence-chain://${report.runId}`,
+                      digest: report.evidenceChain.terminalHash.startsWith('sha256:')
+                        ? report.evidenceChain.terminalHash
+                        : `sha256:${report.evidenceChain.terminalHash}`,
+                    },
+                  ]
+                : [],
+            ),
+          })
+        : null;
+    if (issuedEvidencePack) {
+      await apiReleaseEvidencePackStore.upsert(issuedEvidencePack);
+    }
+
+    return {
+      targetId: material.target.id,
+      decisionId: releaseDecision.id,
+      decisionStatus: releaseDecision.status,
+      policyVersion: releaseDecision.policyVersion,
+      introspectionRequired:
+        issuedReleaseToken?.claims.introspection_required ??
+        releaseDecision.releaseConditions.items.some(
+          (item) => item.kind === 'introspection' && item.required,
+        ),
+      outputHash: material.hashBundle.outputHash,
+      consequenceHash: material.hashBundle.consequenceHash,
+      tokenId: issuedReleaseToken?.tokenId ?? null,
+      token: issuedReleaseToken?.token ?? null,
+      expiresAt: issuedReleaseToken?.expiresAt ?? null,
+      evidencePackId: issuedEvidencePack?.evidencePack.id ?? null,
+      evidencePackPath: issuedEvidencePack
+        ? `/api/v1/admin/release-evidence/${issuedEvidencePack.evidencePack.id}`
+        : null,
+      evidencePackDigest: issuedEvidencePack?.bundleDigest ?? null,
+      reviewQueueId: reviewQueueItem?.id ?? null,
+      reviewQueuePath: reviewQueueItem
+        ? `/api/v1/admin/release-reviews/${reviewQueueItem.id}`
+        : null,
+      candidate: filingCandidate,
+    };
+  }
+
+  async function evaluateFinanceCommunicationReleaseTarget(
+    context: Context,
+    report: FinancialRunReport,
+    reviewerIdentity: ReviewerIdentity | undefined,
+  ): Promise<FinanceCommunicationReleaseSummary | null> {
+    const communicationCandidate = createFinanceCommunicationReleaseCandidateFromReport(report);
+    if (!communicationCandidate) return null;
+
+    const communicationMaterial = buildFinanceCommunicationReleaseMaterial(communicationCandidate);
+    const communicationShadow = await financeCommunicationReleaseShadowEvaluator.evaluate(
+      releaseEvaluationRequest({
+        id: `release_comm_${randomUUID()}`,
+        createdAt: report.timestamp,
+        material: communicationMaterial,
+        requester: currentReleaseRequester(context, reviewerIdentity),
+        context: currentReleaseEvaluationContext(context),
+      }),
+      buildFinanceCommunicationReleaseObservation(communicationMaterial, report),
+    );
+
+    return {
+      targetId: communicationMaterial.target.id,
+      decisionId: communicationShadow.evaluation.decision.id,
+      decisionStatus: communicationShadow.evaluation.decision.status,
+      policyVersion: communicationShadow.evaluation.decision.policyVersion,
+      policyRolloutMode: communicationShadow.policyRolloutMode,
+      policyEvaluationMode: communicationShadow.policyEvaluationMode,
+      wouldBlockIfEnforced: communicationShadow.wouldBlockIfEnforced,
+      wouldRequireReview: communicationShadow.wouldRequireReview,
+      wouldRequireToken: communicationShadow.wouldRequireToken,
+      outputHash: communicationMaterial.hashBundle.outputHash,
+      consequenceHash: communicationMaterial.hashBundle.consequenceHash,
+      preview: {
+        recipientId: communicationCandidate.recipientId,
+        channelId: communicationCandidate.channelId,
+        subject: communicationCandidate.subject,
+      },
+    };
+  }
+
+  async function evaluateFinanceActionReleaseTarget(
+    context: Context,
+    report: FinancialRunReport,
+    reviewerIdentity: ReviewerIdentity | undefined,
+  ): Promise<FinanceActionReleaseSummary | null> {
+    const actionCandidate = createFinanceActionReleaseCandidateFromReport(report);
+    if (!actionCandidate) return null;
+
+    const actionMaterial = buildFinanceActionReleaseMaterial(actionCandidate);
+    const actionShadow = await financeActionReleaseShadowEvaluator.evaluate(
+      releaseEvaluationRequest({
+        id: `release_action_${randomUUID()}`,
+        createdAt: report.timestamp,
+        material: actionMaterial,
+        requester: currentReleaseRequester(context, reviewerIdentity),
+        context: currentReleaseEvaluationContext(context),
+      }),
+      buildFinanceActionReleaseObservation(actionMaterial, report),
+    );
+
+    return {
+      targetId: actionMaterial.target.id,
+      decisionId: actionShadow.evaluation.decision.id,
+      decisionStatus: actionShadow.evaluation.decision.status,
+      policyVersion: actionShadow.evaluation.decision.policyVersion,
+      policyRolloutMode: actionShadow.policyRolloutMode,
+      policyEvaluationMode: actionShadow.policyEvaluationMode,
+      wouldBlockIfEnforced: actionShadow.wouldBlockIfEnforced,
+      wouldRequireReview: actionShadow.wouldRequireReview,
+      wouldRequireToken: actionShadow.wouldRequireToken,
+      outputHash: actionMaterial.hashBundle.outputHash,
+      consequenceHash: actionMaterial.hashBundle.consequenceHash,
+      preview: {
+        workflowId: actionCandidate.workflowId,
+        actionType: actionCandidate.actionType,
+        requestedTransition: actionCandidate.requestedTransition,
+      },
+    };
+  }
+
+  async function buildPipelineRunAutoFilingArtifacts(
+    report: FinancialRunReport,
+    shouldSign: boolean,
+  ) {
+    if (!shouldSign || !report.certificate) {
+      return { filingExport: null, filingPackage: null };
+    }
+    try {
+      const adapter = filingRegistry.get('xbrl-us-gaap-2024');
+      if (!adapter) return { filingExport: null, filingPackage: null };
+      const { issueFilingPackage } = await import('../../../filing/report-package.js');
+      const envelope = buildCounterpartyEnvelope(
+        report.runId, report.decision, report.certificate?.certificateId ?? null,
+        report.evidenceChain?.terminalHash ?? '', report.execution?.rows ?? [], report.liveProof.mode,
+      );
+      const mapping = adapter.mapToTaxonomy(envelope);
+      const pkg = adapter.generatePackage(mapping);
+      pkg.evidenceLink = {
+        runId: report.runId,
+        certificateId: report.certificate?.certificateId ?? null,
+        evidenceChainTerminal: report.evidenceChain?.terminalHash ?? '',
+      };
+      pkg.issuedPackage = await issueFilingPackage(pkg);
+      return {
+        filingExport: { adapterId: adapter.id, coveragePercent: mapping.coveragePercent, mappedCount: mapping.mapped.length },
+        filingPackage: {
+          adapterId: adapter.id,
+          coveragePercent: mapping.coveragePercent,
+          mappedCount: mapping.mapped.length,
+          issuedPackage: pkg.issuedPackage,
+        },
+      };
+    } catch {
+      return {
+        filingExport: null,
+        filingPackage: null,
+        filingPackageError: 'Filing package generation failed.',
+      };
+    }
+  }
+
 
 // Pipeline Run
 
@@ -503,9 +736,6 @@ app.post('/api/v1/pipeline/run', async (c) => {
     };
 
     const report = runFinancialPipeline(input);
-    let financeCommunicationRelease: FinanceCommunicationReleaseSummary | null = null;
-    let financeActionRelease: FinanceActionReleaseSummary | null = null;
-    let financeFilingRelease: FinanceFilingReleaseSummary | null = null;
 
     let kit = null;
     if (keyPair && report.certificate) {
@@ -516,220 +746,27 @@ app.post('/api/v1/pipeline/run', async (c) => {
       );
     }
 
-    if (sign && report.certificate) {
-      const filingCandidate = createFinanceFilingReleaseCandidateFromReport(report);
-      if (filingCandidate?.adapterId === FINANCE_FILING_ADAPTER_ID) {
-        const material = buildFinanceFilingReleaseMaterial(filingCandidate);
-        const evaluation = await financeReleaseDecisionEngine.evaluateWithDeterministicChecks(
-          releaseEvaluationRequest({
-            id: `release_${randomUUID()}`,
-            createdAt: report.timestamp,
-            material,
-            requester: currentReleaseRequester(c, reviewerIdentity),
-            context: currentReleaseEvaluationContext(c),
-          }),
-          buildFinanceFilingReleaseObservation(material, report),
-        );
-        const releaseDecision = finalizeFinanceFilingReleaseDecision(
-          evaluation.decision,
-          report,
-        );
-        const reviewQueueItem =
-          releaseDecision.reviewAuthority.minimumReviewerCount > 0 &&
-          (releaseDecision.status === 'review-required' || releaseDecision.status === 'hold')
-            ? await apiReleaseReviewerQueueStore.upsert(
-                createFinanceReviewerQueueItem({
-                  decision: releaseDecision,
-                  candidate: filingCandidate,
-                  report,
-                  logEntries: await financeReleaseDecisionLog.entries(),
-                }),
-              )
-            : null;
-        const issuedReleaseToken =
-          releaseDecision.status === 'accepted'
-            ? await apiReleaseTokenIssuer.issue({
-                decision: releaseDecision,
-                issuedAt: report.timestamp,
-              })
-            : null;
-        const decisionForEvidence = issuedReleaseToken
-          ? {
-              ...releaseDecision,
-              releaseTokenId: issuedReleaseToken.tokenId,
-            }
-          : releaseDecision;
-        if (issuedReleaseToken) {
-          await apiReleaseIntrospectionStore.registerIssuedToken({
-            issuedToken: issuedReleaseToken,
-            decision: releaseDecision,
-          });
-        }
-        const issuedEvidencePack =
-          issuedReleaseToken
-            ? await apiReleaseEvidencePackIssuer.issue({
-                decision: decisionForEvidence,
-                issuedAt: report.timestamp,
-                decisionLogEntries: (await financeReleaseDecisionLog.entries())
-                  .filter((entry) => entry.decisionId === releaseDecision.id),
-                decisionLogChainIntact: (await financeReleaseDecisionLog.verify()).valid,
-                releaseToken: issuedReleaseToken,
-                artifactReferences: Object.freeze(
-                  report.evidenceChain?.terminalHash
-                    ? [
-                        {
-                          kind: 'provenance',
-                          path: `finance-evidence-chain://${report.runId}`,
-                          digest: report.evidenceChain.terminalHash.startsWith('sha256:')
-                            ? report.evidenceChain.terminalHash
-                            : `sha256:${report.evidenceChain.terminalHash}`,
-                        },
-                      ]
-                    : [],
-                ),
-              })
-            : null;
-        if (issuedEvidencePack) {
-          await apiReleaseEvidencePackStore.upsert(issuedEvidencePack);
-        }
-
-        financeFilingRelease = {
-          targetId: material.target.id,
-          decisionId: releaseDecision.id,
-          decisionStatus: releaseDecision.status,
-          policyVersion: releaseDecision.policyVersion,
-          introspectionRequired:
-            issuedReleaseToken?.claims.introspection_required ??
-            releaseDecision.releaseConditions.items.some(
-              (item) => item.kind === 'introspection' && item.required,
-            ),
-          outputHash: material.hashBundle.outputHash,
-          consequenceHash: material.hashBundle.consequenceHash,
-          tokenId: issuedReleaseToken?.tokenId ?? null,
-          token: issuedReleaseToken?.token ?? null,
-          expiresAt: issuedReleaseToken?.expiresAt ?? null,
-          evidencePackId: issuedEvidencePack?.evidencePack.id ?? null,
-          evidencePackPath: issuedEvidencePack
-            ? `/api/v1/admin/release-evidence/${issuedEvidencePack.evidencePack.id}`
-            : null,
-          evidencePackDigest: issuedEvidencePack?.bundleDigest ?? null,
-          reviewQueueId: reviewQueueItem?.id ?? null,
-          reviewQueuePath: reviewQueueItem
-            ? `/api/v1/admin/release-reviews/${reviewQueueItem.id}`
-            : null,
-          candidate: filingCandidate,
-        };
-      }
-    }
-
-    const communicationCandidate = createFinanceCommunicationReleaseCandidateFromReport(report);
-    if (communicationCandidate) {
-      const communicationMaterial = buildFinanceCommunicationReleaseMaterial(communicationCandidate);
-      const communicationShadow = await financeCommunicationReleaseShadowEvaluator.evaluate(
-        releaseEvaluationRequest({
-          id: `release_comm_${randomUUID()}`,
-          createdAt: report.timestamp,
-          material: communicationMaterial,
-          requester: currentReleaseRequester(c, reviewerIdentity),
-          context: currentReleaseEvaluationContext(c),
-        }),
-        buildFinanceCommunicationReleaseObservation(communicationMaterial, report),
-      );
-
-      financeCommunicationRelease = {
-        targetId: communicationMaterial.target.id,
-        decisionId: communicationShadow.evaluation.decision.id,
-        decisionStatus: communicationShadow.evaluation.decision.status,
-        policyVersion: communicationShadow.evaluation.decision.policyVersion,
-        policyRolloutMode: communicationShadow.policyRolloutMode,
-        policyEvaluationMode: communicationShadow.policyEvaluationMode,
-        wouldBlockIfEnforced: communicationShadow.wouldBlockIfEnforced,
-        wouldRequireReview: communicationShadow.wouldRequireReview,
-        wouldRequireToken: communicationShadow.wouldRequireToken,
-        outputHash: communicationMaterial.hashBundle.outputHash,
-        consequenceHash: communicationMaterial.hashBundle.consequenceHash,
-        preview: {
-          recipientId: communicationCandidate.recipientId,
-          channelId: communicationCandidate.channelId,
-          subject: communicationCandidate.subject,
-        },
-      };
-    }
-
-    const actionCandidate = createFinanceActionReleaseCandidateFromReport(report);
-    if (actionCandidate) {
-      const actionMaterial = buildFinanceActionReleaseMaterial(actionCandidate);
-      const actionShadow = await financeActionReleaseShadowEvaluator.evaluate(
-        releaseEvaluationRequest({
-          id: `release_action_${randomUUID()}`,
-          createdAt: report.timestamp,
-          material: actionMaterial,
-          requester: currentReleaseRequester(c, reviewerIdentity),
-          context: currentReleaseEvaluationContext(c),
-        }),
-        buildFinanceActionReleaseObservation(actionMaterial, report),
-      );
-
-      financeActionRelease = {
-        targetId: actionMaterial.target.id,
-        decisionId: actionShadow.evaluation.decision.id,
-        decisionStatus: actionShadow.evaluation.decision.status,
-        policyVersion: actionShadow.evaluation.decision.policyVersion,
-        policyRolloutMode: actionShadow.policyRolloutMode,
-        policyEvaluationMode: actionShadow.policyEvaluationMode,
-        wouldBlockIfEnforced: actionShadow.wouldBlockIfEnforced,
-        wouldRequireReview: actionShadow.wouldRequireReview,
-        wouldRequireToken: actionShadow.wouldRequireToken,
-        outputHash: actionMaterial.hashBundle.outputHash,
-        consequenceHash: actionMaterial.hashBundle.consequenceHash,
-        preview: {
-          workflowId: actionCandidate.workflowId,
-          actionType: actionCandidate.actionType,
-          requestedTransition: actionCandidate.requestedTransition,
-        },
-      };
-    }
+    const financeFilingRelease = await evaluateFinanceFilingReleaseTarget(
+      c,
+      report,
+      reviewerIdentity,
+      Boolean(sign),
+    );
+    const financeCommunicationRelease = await evaluateFinanceCommunicationReleaseTarget(
+      c,
+      report,
+      reviewerIdentity,
+    );
+    const financeActionRelease = await evaluateFinanceActionReleaseTarget(
+      c,
+      report,
+      reviewerIdentity,
+    );
 
     const usageConsumption = await pipelineUsageService.consume(tenant);
     const { usage, billingMetering } = usageConsumption;
 
-    const filingAuto = await (async () => {
-      if (!sign || !report.certificate) {
-        return { filingExport: null, filingPackage: null };
-      }
-      try {
-        const adapter = filingRegistry.get('xbrl-us-gaap-2024');
-        if (!adapter) return { filingExport: null, filingPackage: null };
-        const { issueFilingPackage } = await import('../../../filing/report-package.js');
-        const envelope = buildCounterpartyEnvelope(
-          report.runId, report.decision, report.certificate?.certificateId ?? null,
-          report.evidenceChain?.terminalHash ?? '', report.execution?.rows ?? [], report.liveProof.mode,
-        );
-        const mapping = adapter.mapToTaxonomy(envelope);
-        const pkg = adapter.generatePackage(mapping);
-        pkg.evidenceLink = {
-          runId: report.runId,
-          certificateId: report.certificate?.certificateId ?? null,
-          evidenceChainTerminal: report.evidenceChain?.terminalHash ?? '',
-        };
-        pkg.issuedPackage = await issueFilingPackage(pkg);
-        return {
-          filingExport: { adapterId: adapter.id, coveragePercent: mapping.coveragePercent, mappedCount: mapping.mapped.length },
-          filingPackage: {
-            adapterId: adapter.id,
-            coveragePercent: mapping.coveragePercent,
-            mappedCount: mapping.mapped.length,
-            issuedPackage: pkg.issuedPackage,
-          },
-        };
-      } catch {
-        return {
-          filingExport: null,
-          filingPackage: null,
-          filingPackageError: 'Filing package generation failed.',
-        };
-      }
-    })();
+    const filingAuto = await buildPipelineRunAutoFilingArtifacts(report, Boolean(sign));
 
     const responseBody = {
       runId: report.runId,

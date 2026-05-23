@@ -88,12 +88,12 @@ Source-backed research notes:
 | ID | Severity | State | Title | Current evidence | Required action |
 |---|---:|---|---|---|---|
 | OPS-86 | P1 | `closed / live-proof-only` | Pipeline routes lacked an `Idempotency-Key` boundary. | New `pipeline-idempotency-store.ts`, `pipeline-idempotency-service.ts`, control-plane table/functions, route wiring, package script, and route tests close the repo-side gap for sync and async retries. Missing store config returns 503 before side effects. | Capture `ATTESTOR_PIPELINE_IDEMPOTENCY_PROOF` across live replicas/shared PostgreSQL. |
-| OPS-87 | P2 | `open / partial-repo` | Sync `/run` handler is still monolithic. | Remediation intentionally did not refactor the route body. | Decompose by stage/release target in a later behavior-preserving PR. |
-| OPS-88 | P2 | `open / partial-repo` | Pipeline JSON parsing is not strict. | Routes still call `c.req.json()` directly. | Reuse strict JSON helper from OPS-61. |
-| OPS-89 | P2 | `open / partial-repo` | Async submit/consume atomicity window remains. | OPS-86 prevents duplicate retry after finalization, but queue-success/consume-failure before finalization remains possible. | Make submit + consume + finalize bounded by one claim/transaction or compensating record. |
-| OPS-90 | P2 | `open / partial-repo` | Pipeline error messages need redaction hardening. | Generic connector/route errors can still propagate `error.message`. | Add redactor for connector/provider internal strings. |
+| OPS-87 | P2 | `closed` | Sync `/run` handler was still monolithic. | Later remediation lifts finance filing release-token/evidence-pack issuance, finance communication/action shadow evaluation, and auto-filing generation into named route-stage helpers while preserving route behavior. | Locked by `tests/service-route-boundary.test.ts` and `tests/service-pipeline-routes-idempotency.test.ts`; live HA retry/replay proof remains under `ATTESTOR_PIPELINE_IDEMPOTENCY_PROOF`. |
+| OPS-88 | P2 | `closed` | Pipeline JSON parsing was not strict. | `src/service/http/route-response-helpers.ts` adds a shared JSON media-type pre-check and both pipeline mutation routes reject non-JSON bodies with 415 before side effects. | Locked by `tests/service-pipeline-routes-idempotency.test.ts`; keep strict JSON pre-checks on future pipeline mutation routes. |
+| OPS-89 | P2 | `closed` | Async submit/consume atomicity window needed a compensating claim. | `/run-async` now derives deterministic BullMQ job IDs from tenant, route, and `Idempotency-Key` digest, so retries after queue-success / usage-consume failure reuse the same queue claim. | Repo-side queue claim only; capture `ATTESTOR_PIPELINE_IDEMPOTENCY_PROOF` before HA replay/usage claims. |
+| OPS-90 | P2 | `closed` | Pipeline error messages needed redaction hardening. | Connector failures, filing-package failures, async worker failures, and generic catches return stable bounded messages instead of raw provider/internal `error.message` values. | Locked by `tests/service-pipeline-routes-idempotency.test.ts`; keep connector/provider internals out of client problem details. |
 | OPS-91 | P2 | `accepted limitation` | Pipeline run history is the decision log + signed report. | No flat per-run tenant history row was added; this matches the consequence-engine audit substrate. | Document the limitation in the closest pipeline/consequence runtime note. |
-| OPS-92 | P3 | `open / partial-repo` | Run ID nonce hygiene. | Original draft overclaimed BullMQ public job ID risk; BullMQ public job IDs are UUID-backed. Sync `runId` and async BullMQ input `runId` still use timestamp strings. | Add random suffix or UUID when response IDs change next. |
+| OPS-92 | P3 | `closed` | Run ID nonce hygiene. | `src/service/http/route-response-helpers.ts#opaqueRouteRunId` now emits UUID-backed opaque run IDs for sync pipeline, async BullMQ input, in-process async job IDs, and in-process async run IDs. | Locked by `tests/service-pipeline-routes-idempotency.test.ts`; do not reintroduce timestamp-only public pipeline identifiers. |
 
 ## 5. Route Matrix
 
@@ -126,9 +126,9 @@ OPS-86 smallest safe fix:
 - No live proof was captured.
 - No multi-replica replay test was run.
 - No production readiness, enterprise readiness, or compliance claim is made.
-- OPS-89 remains open because queue submission and usage consume are still not
-  one failure-atomic transaction.
-- OPS-87/88/90/92 remain follow-up findings.
+- Live Redis/Postgres transaction proof is not claimed from repo-side queue
+  claims or route-stage helper decomposition.
+- OPS-91 remains an accepted limitation.
 
 ## 8. Draft Index State
 

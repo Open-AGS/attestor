@@ -491,6 +491,10 @@ function testPipelineRoutesAreSplitByUseCaseBoundary(): void {
 
   const executionRoute = readFileSync(join(ROUTE_ROOT, 'pipeline-execution-routes.ts'), 'utf8');
   assert.match(executionRoute, /export interface PipelineExecutionRoutesDeps/u);
+  assert.match(executionRoute, /evaluateFinanceFilingReleaseTarget/u);
+  assert.match(executionRoute, /evaluateFinanceCommunicationReleaseTarget/u);
+  assert.match(executionRoute, /evaluateFinanceActionReleaseTarget/u);
+  assert.match(executionRoute, /buildPipelineRunAutoFilingArtifacts/u);
   assert.doesNotMatch(executionRoute, /type RouteDependency = any/u);
   assert.doesNotMatch(executionRoute, /:\s*any\b/u);
   assert.doesNotMatch(executionRoute, /\bas any\b/u);

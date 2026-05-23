@@ -55,6 +55,8 @@ includes(script, 'mergedCodexBranches', 'Branch script: reports merged codex bra
 includes(script, 'Remote branch policy requires master-only public branches.', 'Branch script: fails non-master branch inventory when required');
 
 includes(codeowners, '/CONTRIBUTING.md @AI-gateway-systems', 'CODEOWNERS: contributing guidance requires owner review');
+includes(codeowners, 'Per-surface teams must not be added as placeholders.', 'CODEOWNERS: placeholder surface teams are forbidden');
+includes(codeowners, 'exists, is visible, and has explicit write access', 'CODEOWNERS: team-owner prerequisites are documented');
 
 includes(contributing, '## Workflow Permission Discipline', 'Contributing: workflow permission discipline section exists');
 includes(contributing, '`contents: read`', 'Contributing: contents read is the default workflow token posture');
@@ -64,6 +66,11 @@ includes(contributing, 'security-events: write', 'Contributing: CodeQL security-
 includes(contributing, 'CODEOWNER review', 'Contributing: elevated write scopes require owner review');
 includes(contributing, 'Do not add broad `write-all`, `contents: write`,', 'Contributing: broad write grants are forbidden');
 includes(contributing, 'or unrelated write permissions for convenience.', 'Contributing: unrelated write grants are forbidden');
+includes(contributing, '## CODEOWNERS Surface Ownership', 'Contributing: CODEOWNERS surface ownership section exists');
+includes(contributing, 'placeholder per-surface team slugs', 'Contributing: placeholder surface teams are forbidden');
+includes(contributing, 'create visible GitHub', 'Contributing: visible GitHub team prerequisite is documented');
+includes(contributing, 'explicit write access to this repository', 'Contributing: team write-access prerequisite is documented');
+includes(contributing, 'team membership policy', 'Contributing: team membership policy prerequisite is documented');
 
 includes(remediation, 'delete_branch_on_merge=true', 'Branch remediation: final delete-branch-on-merge state is recorded');
 matches(remediation, /branch inventory: `\["master"\]`/u, 'Branch remediation: final branch inventory is recorded');

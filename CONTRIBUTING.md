@@ -30,3 +30,19 @@ If a future workflow needs a new write scope, document why `contents: read` is
 insufficient, name the protected principle, update the closest audit or
 readiness index when posture changes, and add or update a regression check
 that prevents the permission from spreading to unrelated workflows.
+
+## CODEOWNERS Surface Ownership
+
+The current CODEOWNERS map intentionally uses the repository-wide
+`@AI-gateway-systems` owner for trust-sensitive surfaces. Do not add
+placeholder per-surface team slugs.
+
+Before splitting CODEOWNERS by surface, the operator must create visible GitHub
+teams, grant each team explicit write access to this repository, and document
+the team membership policy for the affected trust surface. GitHub will not
+assign a code owner for a team that does not exist, is not visible, or lacks
+repository write access, so invented team names would weaken review routing
+rather than harden it.
+
+After the teams and membership policy exist, update `.github/CODEOWNERS`, this
+guide, the branch governance tests, and the audit indexes in the same PR.

@@ -3,6 +3,11 @@
 # This repository-side owner map requests explicit review for governance,
 # provenance, security, and consequence-admission changes. Branch protection
 # decides whether CODEOWNER review is enforced.
+#
+# Per-surface teams must not be added as placeholders. GitHub only assigns team
+# code owners when the team exists, is visible, and has explicit write access to
+# the repository. Until that operator-owned team policy exists, keep the
+# repository-wide owner explicit instead of naming unproven team slugs.
 
 /.github/CODEOWNERS @AI-gateway-systems
 /.github/pull_request_template.md @AI-gateway-systems

@@ -264,6 +264,7 @@
     "test:production-storage-path": "tsx tests/production-storage-path.test.ts",
     "test:consequence-admission-operating-model": "tsx tests/consequence-admission-operating-model.test.ts",
     "test:consequence-admission-contract": "tsx tests/consequence-admission-contract.test.ts",
+    "test:consequence-admission-index-surface": "tsx tests/consequence-admission-index-surface.test.ts",
     "test:consequence-admission-finance": "tsx tests/consequence-admission-finance.test.ts",
     "test:consequence-admission-crypto": "tsx tests/consequence-admission-crypto.test.ts",
     "test:consequence-admission-facade": "tsx tests/consequence-admission-facade.test.ts",

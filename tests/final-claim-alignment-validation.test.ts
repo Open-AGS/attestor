@@ -21,11 +21,15 @@ function excludes(content: string, unexpected: RegExp, message: string): void {
 function testReadmePublicClaimBoundary(): void {
   const readme = readProjectFile('README.md');
 
-  includes(readme, '**AI Action Control Plane for high-risk AI actions.**', 'Final claim alignment: README keeps primary category');
   includes(
     readme,
-    'Attestor controls the boundary between AI intent and real-world consequence.',
-    'Final claim alignment: README keeps core consequence sentence',
+    '**Control infrastructure for high-risk AI actions.**',
+    'Final claim alignment: README keeps control infrastructure headline',
+  );
+  includes(
+    readme,
+    'Attestor is an AI Action Control Plane that controls the boundary between AI intent and real-world consequence.',
+    'Final claim alignment: README keeps primary category and core consequence sentence',
   );
   includes(readme, 'evaluation release', 'Final claim alignment: README keeps evaluation-release status');
   includes(

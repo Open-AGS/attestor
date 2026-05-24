@@ -6,6 +6,8 @@
 
 Attestor controls the boundary between AI intent and real-world consequence.
 
+A prompt is not a formal rule; it is linguistic context interpreted by a probabilistic model. That makes it useful for guidance, but insufficient as deterministic control. The control point has to move from the model's text to the proposed action: the action intent can be structured, checked, admitted, narrowed, reviewed, or blocked before it becomes a real consequence.
+
 AI agents draft refunds, prepare supplier payments, request data exports, trigger operational changes, and build wallet transactions. The dangerous moment is not the text the model produced. It is the point where that output becomes a real action in a downstream system.
 
 Attestor treats that proposed action as a consequence to admit, narrow, review, or block before the customer system changes state.

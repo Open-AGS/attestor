@@ -321,6 +321,7 @@
     "test:failure-mode-runtime-extensions": "tsx tests/failure-mode-runtime-extensions.test.ts",
     "test:replay-layer-placement": "tsx tests/replay-layer-placement.test.ts",
     "test:guard-activation-readiness": "tsx tests/guard-activation-readiness.test.ts",
+    "test:adversarial-evidence-fixtures": "tsx tests/adversarial-evidence-fixtures.test.ts",
     "test:untrusted-content-authority-guard": "tsx tests/untrusted-content-authority-guard.test.ts",
     "test:tool-result-poisoning-guard": "tsx tests/tool-result-poisoning-guard.test.ts",
     "test:approval-provenance-guard": "tsx tests/approval-provenance-guard.test.ts",

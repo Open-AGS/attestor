@@ -41,13 +41,13 @@ function testTopLevelPositioningStaysAligned(): void {
   includes(readme, 'review-only policy candidates', 'Product docs: README keeps Foundry candidates non-authoritative');
   includes(readme, 'observe -> warn -> review -> enforce', 'Product docs: README keeps the adoption mode ladder');
   includes(readme, 'The current generic admission route implements the first control ladder for this path.', 'Product docs: README bounds implemented shadow ladder');
-  includes(readme, '## Golden Path: Refund', 'Product docs: README gives the golden path its own block');
+  includes(readme, '## Golden Paths', 'Product docs: README gives golden paths their own block');
   includes(readme, 'not a refund product, finance-only product, or separate engine', 'Product docs: README keeps golden path scoped to one product');
   includes(readme, 'Admission responses also carry model-safe feedback.', 'Product docs: README introduces safe feedback contract');
   includes(readme, 'Some failures are deliberately not model-retryable.', 'Product docs: README blocks retry-loop overclaim');
   includes(readme, 'This is the route-level entry point for the shadow-to-enforcement ladder described above.', 'Product docs: README avoids repeating the route mode explanation');
   includes(readme, 'a treasury or wallet workflow prepares a programmable-money transaction', 'Product docs: README uses consequence-pack examples');
-  includes(readme, 'Attestor is one product: an AI Action Control Plane with a shared consequence-admission core and modular packs for specific consequence domains.', 'Product docs: README keeps one-product control-plane framing');
+  includes(readme, 'Attestor is one product: an AI Action Control Plane with a shared admission core and modular packs for specific action domains.', 'Product docs: README keeps one-product control-plane framing');
   includes(readme, 'The deeper architecture decision is [AI Action Control Plane architecture](docs/02-architecture/ai-action-control-plane-architecture.md).', 'Product docs: README links the control-plane ADR');
   includes(readme, '[Attestor language contract](docs/02-architecture/attestor-language-contract.md)', 'Product docs: README links the language contract');
   includes(readme, '[Domain pack boundary](docs/02-architecture/domain-pack-boundary.md)', 'Product docs: README links the domain-pack boundary');
@@ -57,7 +57,7 @@ function testTopLevelPositioningStaysAligned(): void {
   includes(readme, 'AI action control-plane infrastructure', 'Product docs: README names the infrastructure category');
   includes(readme, '## Consequence Packs', 'Product docs: README names consequence packs before architecture');
   includes(readme, 'A pack does not answer "is this finance or crypto?" It answers the control question:', 'Product docs: README blocks industry-pack framing');
-  includes(readme, 'The pack is the consequence class. Adapters sit underneath it.', 'Product docs: README keeps adapters below consequence packs');
+  includes(readme, 'Attestor packs are organized by the kind of real-world action an AI system can create, not by the industry the customer happens to be in.', 'Product docs: README keeps packs below action classes');
   includes(readme, 'The pack list is taxonomy, not an equal-maturity claim.', 'Product docs: README keeps consequence taxonomy separate from maturity claims');
   includes(actionPositioning, 'AI Action Control Plane is the product category.', 'Product docs: action authorization positioning names the category');
   includes(actionPositioning, 'The operating model is consequence admission:', 'Product docs: action authorization positioning preserves consequence-admission language');
@@ -118,7 +118,7 @@ function testCoreAndPackStatusStayConsistent(): void {
   includes(readme, '**PAP:** handles policy lifecycle: signed bundles, simulation, rollout, activation rules, reviewer constraints, and provenance checks.', 'Product docs: README PAP role is concrete');
   includes(readme, 'Pack-specific adapters live below this layer.', 'Product docs: README keeps adapter role below consequence packs');
   includes(readme, 'keeps finance, crypto, filing, general admission, and future packs as bounded extensions over the shared admission core', 'Product docs: README keeps domain pack boundary summary');
-  includes(readme, 'other packs name consequence classes and integration boundaries that can mature at different speeds without becoming separate products', 'Product docs: README avoids equal-maturity pack claim');
+  includes(readme, 'Other packs name action classes and integration boundaries that can mature at different speeds without becoming separate products', 'Product docs: README avoids equal-maturity pack claim');
   includes(readme, 'Money Movement', 'Product docs: README names Money Movement pack');
   includes(readme, 'Data Movement', 'Product docs: README names Data Movement pack');
   includes(readme, 'Authority Change', 'Product docs: README names Authority Change pack');

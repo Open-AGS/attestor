@@ -119,6 +119,7 @@ export * from './customer-pep-adoption-package.js';
 export * from './replay-layer-placement.js';
 export * from './guard-activation-readiness.js';
 export * from './shadow-readiness-claim-alignment.js';
+export * from './adversarial-evidence-fixtures.js';
 export * from './untrusted-content-authority-guard.js';
 export * from './tool-result-poisoning-guard.js';
 export * from './approval-provenance-guard.js';

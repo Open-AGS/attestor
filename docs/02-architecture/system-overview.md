@@ -42,6 +42,8 @@ The ranked human-question layer lives in [Active Question Engine](active-questio
 
 The negative replay-fixture layer lives in [Counterexample replay generator](counterexample-replay-generator.md). Use it when candidate PR material and active questions need synthetic tenant-mismatch, stale-approval, missing-evidence, bypass, replay, prompt/tool poisoning, unsafe-approval, and crypto-abuse cases before backtesting.
 
+The adversarial evidence fixture layer lives in [Adversarial evidence fixtures](adversarial-evidence-fixtures.md). Use it when prompt-injection-like content, tool output, model rationale, signed evidence, or mixed trusted/untrusted sources need local synthetic proof that language and evidence do not become authority by themselves.
+
 The digest-bound backtest layer lives in [Policy Twin backtest](policy-twin-backtest.md). Use it when candidate PR material and counterexample fixtures need historical admit/review/hold/block projection, false-admit checks, missed-evidence accounting, and review-load impact before the review inbox.
 
 The candidate-level review queue lives in [Review-by-exception inbox](review-by-exception-inbox.md). Use it when Policy Twin results need to become one bounded item per candidate across failed-replay, blocked-by-evidence, needs-answer, ready-to-approve, and monitoring-only lanes without asking humans to inspect every raw event.

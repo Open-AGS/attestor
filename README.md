@@ -41,6 +41,8 @@ The trust boundary is the action, not the model response. Attestor does not repl
 
 ## Try It In 60 Seconds
 
+Start with the Money Movement refund path:
+
 ```bash
 npm ci
 npm run demo:golden-refund
@@ -48,16 +50,24 @@ npm run demo:golden-refund -- --json
 npm run demo:golden-refund -- --determinism-check
 ```
 
+Then compare the Data Movement controlled-export path:
+
+```bash
+npm run demo:golden-data-export
+npm run demo:golden-data-export -- --json
+npm run demo:golden-data-export -- --scenario fixtures/golden-data-export-reviewer-sandbox.example.json
+```
+
 You will see:
 
-- a synthetic AI refund action surface
+- synthetic AI refund and controlled-data-export action surfaces
 - digest-only canonical shadow fixtures
-- runtime assurance smoke over the refund scenarios
+- runtime assurance smoke over the scenarios
 - Policy Foundry summary material with named gaps
 - a pilot readiness packet that can only report shadow-pilot readiness or not-ready for this path
-- Engine Visibility over 8 scenarios, including gate order, evidence-completeness metrics, no-claims, and deterministic/shuffled-order digest stability
+- Engine Visibility over the refund path, including gate order, evidence-completeness metrics, no-claims, and deterministic/shuffled-order digest stability
 - Markdown-first demo output, with JSON available for machines
-- explicit no-claims: no live Stripe or Shopify refund, no customer deployment, no policy activation, no auto-enforcement
+- explicit no-claims: no live Stripe, Shopify, Snowflake, or Databricks call, no customer deployment, no policy activation, no auto-enforcement
 
 For a guided first run, see [Try Attestor first](docs/01-overview/try-attestor-first.md).
 
@@ -77,15 +87,21 @@ Tag target:      v0.2.0-evaluation
 Release type:    GitHub pre-release / Golden Path evaluation baseline
 ```
 
-The clearest repo-side path today is [Golden Path: Refund](docs/02-architecture/golden-refund-shadow-pilot.md): a synthetic, shadow-only refund scenario that runs through action-surface material, canonical shadow fixtures, runtime assurance smoke, Policy Foundry summary, pilot readiness, Engine Visibility, an optional reviewer sandbox, and a local demo output.
+The current reviewer-runnable golden paths are:
 
-That path does not execute refunds, activate policy, call Stripe or Shopify, deploy infrastructure, or claim production readiness. The repository is not a finished public SaaS, a production-use guarantee, a completed customer-operated deployment, or a substitute for an external security audit.
+| Path | Pack | Command | What it shows |
+|---|---|---|---|
+| [Golden Path: Refund](docs/02-architecture/golden-refund-shadow-pilot.md) | Money Movement | `npm run demo:golden-refund` | A synthetic, shadow-only refund path through action-surface material, canonical fixtures, runtime assurance, Policy Foundry, pilot readiness, Engine Visibility, reviewer sandbox, and demo output. |
+| [Golden Path: Controlled Data Export](docs/02-architecture/golden-data-export-shadow-pilot.md) | Data Movement | `npm run demo:golden-data-export` | A synthetic, shadow-only customer export and report-release path through digest-only fixtures, Policy Foundry projection, runtime smoke, pilot readiness, reviewer sandbox, and demo output. |
+
+These paths do not execute refunds, export data, activate policy, call Stripe, Shopify, Snowflake, or Databricks, deploy infrastructure, or claim production readiness. The repository is not a finished public SaaS, a production-use guarantee, a completed customer-operated deployment, or a substitute for an external security audit.
 
 Green local checks such as `npm run verify` are repo-side evidence only. They do not prove live cloud infrastructure, hosted Policy Foundry production readiness, live OpenAI or Anthropic calls, Snowflake or healthcare substrate readiness, customer-operated deployment readiness, or non-bypassable customer enforcement unless those specific opt-in live checks and customer-side PEP evidence have also run.
 
 Start review with:
 
 - [Golden Path: Refund](docs/02-architecture/golden-refund-shadow-pilot.md)
+- [Golden Path: Controlled Data Export](docs/02-architecture/golden-data-export-shadow-pilot.md)
 - [Attestor Evaluation Packet v0.1](docs/00-evaluation/v0.1-evaluation-packet.md)
 - [v0.2.0 evaluation release notes](docs/00-evaluation/v0.2.0-evaluation-release-notes.md)
 - [Security Policy](SECURITY.md)
@@ -94,7 +110,11 @@ Start review with:
 - [Audit remediation tracker](docs/audit/attestor-audit-remediation-tracker.md)
 - [LLM provider runtime decision](docs/02-architecture/llm-provider-runtime-decision.md)
 
-## Golden Path: Refund
+## Golden Paths
+
+Golden paths are concrete repo-side examples through the same Attestor consequence engine. They are not separate products and not equal-maturity claims for every pack.
+
+### Refund: Money Movement
 
 [Golden Path: Refund](docs/02-architecture/golden-refund-shadow-pilot.md) is the first end-to-end repo path a reviewer should run. It is a synthetic support refund scenario, not a refund product, finance-only product, or separate engine.
 
@@ -140,6 +160,40 @@ To try one local reviewer-supplied refund input, run:
 npm run demo:golden-refund -- --scenario fixtures/golden-refund-reviewer-sandbox.example.json
 ```
 
+### Controlled Data Export: Data Movement
+
+[Golden Path: Controlled Data Export](docs/02-architecture/golden-data-export-shadow-pilot.md) is the second reviewer-runnable repo path. It is a synthetic customer export and report-release scenario, not a warehouse connector, data product, Snowflake or Databricks integration, or separate engine.
+
+It shows one concrete Data Movement consequence through the same Attestor control boundary:
+
+```text
+data export action surface -> digest-only shadow fixtures -> Policy Foundry projection -> runtime smoke -> pilot readiness packet -> reviewer sandbox -> demo output
+```
+
+Run it with:
+
+```bash
+npm run demo:golden-data-export
+```
+
+It demonstrates:
+
+- controlled customer export and report-release fixtures
+- digest-only event material with no raw SQL, raw rows, or customer identifiers
+- recipient, field, tenant, approval, purpose, instruction-like-evidence, and write-query gap handling
+- runtime smoke through the same shadow-only assurance chain
+- a pilot readiness packet that can report shadow-pilot readiness or not-ready
+- a strict local reviewer sandbox for one bounded JSON input
+- Markdown-first demo output, with JSON available for machines
+
+It does not query a warehouse, export customer data, call Snowflake or Databricks, deploy a customer PEP, activate policy, learn from traffic, or auto-enforce.
+
+To try one local reviewer-supplied data-export input, run:
+
+```bash
+npm run demo:golden-data-export -- --scenario fixtures/golden-data-export-reviewer-sandbox.example.json
+```
+
 ## The Control Boundary
 
 Use Attestor where a capable AI-assisted system should not be able to act just because it can form a request:
@@ -169,7 +223,7 @@ observe -> recommend -> simulate -> approve -> enforce -> prove
 
 Shadow mode discovers the real action surface first: which high-risk AI actions exist, which actions have no policy, which downstream tools have too much authority, and which consequences would have been blocked before execution. This keeps adoption on the same consequence boundary without asking the customer to stop workflows on day one.
 
-The completed local example of this adoption shape is [Golden Path: Refund](docs/02-architecture/golden-refund-shadow-pilot.md). It is not a refund product or separate engine; it is one concrete scenario path through the same Attestor consequence engine.
+The completed local examples of this adoption shape are [Golden Path: Refund](docs/02-architecture/golden-refund-shadow-pilot.md) and [Golden Path: Controlled Data Export](docs/02-architecture/golden-data-export-shadow-pilot.md). They are not separate products; they are concrete scenario paths through the same Attestor consequence engine.
 
 ## Core Operating Loop
 
@@ -217,17 +271,23 @@ This is AI action control-plane infrastructure: not a chatbot feature, not a pro
 
 ## What You Can Run Today
 
-Use the first command when evaluating the current end-to-end repo path, then inspect the lower-level demos:
+Use the golden-path commands first, then inspect the lower-level demos:
 
 ```bash
-npm run demo:golden-refund                        # Golden Path: Refund shadow-only path
-npm run example:admission                         # Basic admission decision demo
-npm run example:customer-gate                     # Customer-side enforcement demo
-npm run example:non-bypassable-gateway           # Verifier-before-dispatch demo
-npm run example:agent-retry-wrapper              # Bounded correction retry demo
+npm run demo:golden-refund
+npm run demo:golden-data-export
 ```
 
-`npm run example:admission` is the First useful admission demo: a lower-level admission decision path, not the current end-to-end Golden Path.
+Lower-level admission and customer-gate examples:
+
+```bash
+npm run example:admission
+npm run example:customer-gate
+npm run example:non-bypassable-gateway
+npm run example:agent-retry-wrapper
+```
+
+`npm run example:admission` is the first useful admission primitive: a lower-level admission decision path, not an end-to-end golden path.
 
 The rest are useful once the first path makes sense: `npm run example:action-surface-onboarding`, `npm run render:action-surface-onboarding-packet`, `npm run policy-foundry:self-onboard`, `npm run preview:policy-foundry-hosted-ui`, `npm run proof:surface`, `npm run showcase:proof`, `npm run verify:cert`, and `npm run verify`.
 
@@ -370,7 +430,7 @@ The current pack language is:
 
 The pack is the consequence class. Adapters sit underneath it. A refund service, payment processor, ERP, wallet RPC, Snowflake connector, CRM, identity provider, email sender, or deployment system can all attach to the same admission core without changing the public trust story.
 
-The pack list is taxonomy, not an equal-maturity claim. The clearest end-to-end repo path today is still Golden Path: Refund; other packs name consequence classes and integration boundaries that can mature at different speeds without becoming separate products.
+The pack list is taxonomy, not an equal-maturity claim. The current end-to-end repo paths are Golden Path: Refund and Golden Path: Controlled Data Export. Other packs name consequence classes and integration boundaries that can mature at different speeds without becoming separate products.
 
 ## Architecture: Core And Packs
 
@@ -434,7 +494,19 @@ Attestor is not:
 
 Use this as a map, not a wall of links. Start with the small set below; the expandable index is for maintainers changing the contract surface.
 
-**Evaluate the repo.** Run this path first if you want to know what is real today: [Golden Path: Refund](docs/02-architecture/golden-refund-shadow-pilot.md), [Attestor Evaluation Packet v0.1](docs/00-evaluation/v0.1-evaluation-packet.md), [v0.2.0 evaluation release notes](docs/00-evaluation/v0.2.0-evaluation-release-notes.md), [Try Attestor first](docs/01-overview/try-attestor-first.md), [Consequence admission quickstart](docs/01-overview/consequence-admission-quickstart.md), [Customer admission gate](docs/01-overview/customer-admission-gate.md), [Non-bypassable gateway demo](docs/01-overview/non-bypassable-gateway-demo.md), [Agent retry wrapper demo](docs/01-overview/agent-retry-wrapper-demo.md), [Proof model](docs/05-proof/proof-model.md), [Signing and verification](docs/06-signing/signing-verification.md).
+**Evaluate the repo.** Run the golden paths first, then use the evaluation packet and quickstarts:
+
+- [Golden Path: Refund](docs/02-architecture/golden-refund-shadow-pilot.md)
+- [Golden Path: Controlled Data Export](docs/02-architecture/golden-data-export-shadow-pilot.md)
+- [Attestor Evaluation Packet v0.1](docs/00-evaluation/v0.1-evaluation-packet.md)
+- [v0.2.0 evaluation release notes](docs/00-evaluation/v0.2.0-evaluation-release-notes.md)
+- [Try Attestor first](docs/01-overview/try-attestor-first.md)
+- [Consequence admission quickstart](docs/01-overview/consequence-admission-quickstart.md)
+- [Customer admission gate](docs/01-overview/customer-admission-gate.md)
+- [Non-bypassable gateway demo](docs/01-overview/non-bypassable-gateway-demo.md)
+- [Agent retry wrapper demo](docs/01-overview/agent-retry-wrapper-demo.md)
+- [Proof model](docs/05-proof/proof-model.md)
+- [Signing and verification](docs/06-signing/signing-verification.md)
 
 **Place it in a customer system.** These docs answer where the control point sits and how an evaluator should think about rollout: [What you can do with Attestor](docs/01-overview/what-you-can-do.md), [Attestor operating model](docs/01-overview/operating-model.md), [Customer integration recipes](docs/01-overview/customer-integration-recipes.md), [Hosted action authorization API](docs/01-overview/hosted-action-authorization-api.md), [First hosted API call](docs/01-overview/hosted-first-api-call.md), [Finance and crypto first integrations](docs/01-overview/finance-and-crypto-first-integrations.md), [Commercial packaging, pricing, and evaluation](docs/01-overview/product-packaging.md), [Pricing ROI calculator](docs/01-overview/pricing-roi-calculator.md), [Hosted customer journey](docs/01-overview/hosted-customer-journey.md), [Hosted account visibility](docs/01-overview/hosted-account-visibility.md).
 
@@ -442,7 +514,23 @@ Use this as a map, not a wall of links. Start with the small set below; the expa
 
 **Plan trust unlocks without reopening frozen work.** Use the [Attestor unlock source of truth](docs/02-architecture/attestor-unlock-source-of-truth.md), [Unified Shadow-to-Policy Master Plan](docs/02-architecture/unified-shadow-to-policy-master-plan.md), [Consequence Runtime Assurance Overview](docs/02-architecture/consequence-runtime-assurance-overview.md), and [Runtime Activation Decision Packet](docs/02-architecture/runtime-activation-decision-packet.md) before opening broad production, signer, customer PEP, shared-store, LLM-provider, runtime-wiring, or customer pilot work. These docs record repo truth and the non-claims that must stay intact.
 
-**Onboard a new action surface.** Start from the concrete [Golden Path: Refund](docs/02-architecture/golden-refund-shadow-pilot.md), then use the Policy Foundry path from API/manifests to review material: [Action surface manifest intake](docs/02-architecture/action-surface-manifest-intake.md), [Action surface declaration ingestors](docs/02-architecture/action-surface-declaration-ingestors.md), [Action surface graph](docs/02-architecture/action-surface-graph.md), [Evidence state model](docs/02-architecture/evidence-state-model.md), [Policy Candidate PR contract](docs/02-architecture/policy-candidate-pr-contract.md), [Active Question Engine](docs/02-architecture/active-question-engine.md), [Counterexample replay generator](docs/02-architecture/counterexample-replay-generator.md), [Policy Twin backtest](docs/02-architecture/policy-twin-backtest.md), [Review-by-exception inbox](docs/02-architecture/review-by-exception-inbox.md), [Approval/dismiss feedback loop](docs/02-architecture/approval-dismiss-feedback-loop.md), [Enterprise integration recipes](docs/02-architecture/enterprise-integration-recipes.md), [General Crypto Transaction Gate](docs/02-architecture/general-crypto-transaction-gate.md), [Domain consequence recipes](docs/02-architecture/domain-consequence-recipes.md), [Pilot readiness packet](docs/02-architecture/pilot-readiness-packet.md), [Action surface profiler](docs/02-architecture/action-surface-profiler.md), [Action surface integration artifacts](docs/02-architecture/action-surface-integration-artifacts.md), [Action surface onboarding packet](docs/02-architecture/action-surface-onboarding-packet.md), [Policy Foundry onboarding](docs/02-architecture/policy-foundry-onboarding.md), [Policy Foundry failure gap map](docs/02-architecture/policy-foundry-failure-gap-map.md), [Integration mode readiness](docs/02-architecture/integration-mode-readiness.md).
+**Onboard a new action surface.** Start from one golden path, then use the Policy Foundry path from API/manifests to review material:
+
+- [Action surface manifest intake](docs/02-architecture/action-surface-manifest-intake.md)
+- [Action surface declaration ingestors](docs/02-architecture/action-surface-declaration-ingestors.md)
+- [Action surface graph](docs/02-architecture/action-surface-graph.md)
+- [Evidence state model](docs/02-architecture/evidence-state-model.md)
+- [Policy Candidate PR contract](docs/02-architecture/policy-candidate-pr-contract.md)
+- [Active Question Engine](docs/02-architecture/active-question-engine.md)
+- [Counterexample replay generator](docs/02-architecture/counterexample-replay-generator.md)
+- [Policy Twin backtest](docs/02-architecture/policy-twin-backtest.md)
+- [Review-by-exception inbox](docs/02-architecture/review-by-exception-inbox.md)
+- [Approval/dismiss feedback loop](docs/02-architecture/approval-dismiss-feedback-loop.md)
+- [Enterprise integration recipes](docs/02-architecture/enterprise-integration-recipes.md)
+- [Domain consequence recipes](docs/02-architecture/domain-consequence-recipes.md)
+- [Pilot readiness packet](docs/02-architecture/pilot-readiness-packet.md)
+- [Policy Foundry onboarding](docs/02-architecture/policy-foundry-onboarding.md)
+- [Integration mode readiness](docs/02-architecture/integration-mode-readiness.md)
 
 <details>
 <summary>Maintainer reference index</summary>

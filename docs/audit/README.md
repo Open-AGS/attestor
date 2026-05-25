@@ -35,6 +35,38 @@ before changing direction.
 | `ledger-template.md` | Per-finding remediation record template. |
 | `attestor-audit-remediation-tracker.md` | Historical remediation tracker. |
 
+## Current Claim Navigation
+
+Use the narrowest current index for the claim being made:
+
+| Claim or question | Start here | Then cross-check |
+|---|---|---|
+| Current repository, production, or enterprise posture | `docs/audit/current-posture-baseline.md` | `docs/audit/report-index.md`; `docs/audit/finding-index.md` |
+| Whether a report or sweep is current | `docs/audit/report-index.md` | the linked report artifact and the current `origin/master` HEAD |
+| Whether a finding is open, closed, accepted, stale, contradicted, or live-only | `docs/audit/finding-index.md` | the cited code, test, PR, CI, or live-proof row |
+| Whether repository evidence can close a live/deployment claim | `docs/audit/live-proof-register.md` | `scripts/check-ops-live-shadow-readiness.mjs`; the relevant environment proof flag |
+| Which external control family a repo claim maps to | `docs/audit/control-map.md` | `docs/research/attestor-research-provenance-ledger.md` |
+| Whether historical remediation notes remain current | `docs/audit/report-index.md` and `docs/audit/finding-index.md` | historical notes only after an index points to them |
+| Whether a new PR updated the right evidence files | `.github/pull_request_template.md` | `npm run check:security-evidence-system` |
+
+If these files disagree, pause and reconcile the current `origin/master`
+evidence before changing code, documentation, readiness language, or audit
+state.
+
+## Consistency Guard
+
+Run these repository-side guards before claiming the evidence system is aligned:
+
+- `npm run check:security-evidence-system`
+- `npm run test:security-evidence-system`
+- `npm run test:audit-finding-lifecycle`
+- `npm run test:audit-finding-evidence`
+- `npm run test:audit-finding-test-coverage`
+
+These guards prove index discipline only. They do not prove live infrastructure,
+customer PEP enforcement, external KMS/HSM signing, production traffic behavior,
+or enterprise certification.
+
 ## Update Rule
 
 Do not treat individual remediation notes as the source of current truth.

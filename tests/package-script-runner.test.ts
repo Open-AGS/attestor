@@ -103,6 +103,7 @@ function testFastSuiteKeepsCriticalCoverage(): void {
     'test:security-baseline-docs',
     'test:public-agent-surface-boundary',
     'test:research-provenance-ledger',
+    'test:security-evidence-system',
     'test:package-script-runner',
     'test:verify-live-ops-gate',
     'test:hosted-api-authorization-matrix',

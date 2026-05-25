@@ -191,10 +191,10 @@ function testDescriptorDocsAndScriptsStayAligned(): void {
   ok(descriptor.nonClaims.includes('not-native-okta-entra-or-sailpoint-connector'), 'A01 descriptor: native connector is a non-claim');
 
   for (const expected of [
-    'Status: A01 complete once merged.',
-    '| A01 | complete once merged | Authority Change shadow fixture contract |',
+    'Status: A01-A02 complete once merged.',
+    '| A01 | complete | Authority Change shadow fixture contract |',
     'standard-group-grant-approved, privileged-role-narrowing, break-glass-unapproved, external-delegation-review, tenant-scope-mismatch, stale-approval, prompt-injection-in-ticket, and revocation-ready',
-    'not a live Okta',
+    'Microsoft Entra, or SailPoint connector',
   ]) {
     includes(doc, expected, `A01 doc: records ${expected}`);
   }

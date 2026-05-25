@@ -119,6 +119,7 @@
     "test:golden-data-export-demo": "tsx tests/golden-data-export-demo.test.ts",
     "test:golden-data-export-reviewer-sandbox": "tsx tests/golden-data-export-reviewer-sandbox.test.ts",
     "test:golden-authority-change-shadow-fixtures": "tsx tests/golden-authority-change-shadow-fixtures.test.ts",
+    "test:golden-authority-change-policy-foundry-projection": "tsx tests/golden-authority-change-policy-foundry-projection.test.ts",
     "test:consequence-envelope-contract": "tsx tests/consequence-envelope-contract.test.ts",
     "test:signal-relationship-contract": "tsx tests/signal-relationship-contract.test.ts",
     "test:layer-opinion-schema": "tsx tests/layer-opinion-schema.test.ts",

@@ -1,10 +1,10 @@
 # Golden Path: Authority Change
 
-Status: A01 complete once merged. This is the first repository-side
-contract slice for the Authority Change golden path. It is not a live Okta,
-Microsoft Entra, or SailPoint connector, not an identity provider, not an
-access-governance product, not customer PEP proof, not production readiness,
-and not enterprise readiness.
+Status: A01-A02 complete once merged. This is the first repository-side
+contract/projection slice for the Authority Change golden path. It is not a
+live Okta, Microsoft Entra, or SailPoint connector, not an identity provider,
+not an access-governance product, not customer PEP proof, not production
+readiness, and not enterprise readiness.
 
 ## Decision
 
@@ -45,6 +45,8 @@ later customer-controlled PEP/gate consumes an Attestor decision.
 | IAM authority recipes | `src/consequence-admission/domain-consequence-recipes.ts` maps Okta Workflows, Microsoft Entra Lifecycle Workflows, and SailPoint Workflows into `identity-workflow-gate` recipe entries. | repo-proven |
 | A01 fixture contract | `src/consequence-admission/golden-authority-change-shadow-fixtures.ts` emits eight synthetic digest-only canonical shadow events for authority-change scenarios. | repo-proven |
 | A01 tests | `tests/golden-authority-change-shadow-fixtures.test.ts` locks the suite shape, digest-only canonical events, scenario semantics, no-target-system-call flags, no raw identity attributes, and no raw customer identifiers. | repo-proven |
+| A02 Policy Foundry projection | `src/consequence-admission/golden-authority-change-policy-foundry-projection.ts` projects the A01 suite into review-only Policy Foundry material with named subject, resource, permission, tenant, approval, SoD, and least-privilege gaps. | repo-proven |
+| A02 tests | `tests/golden-authority-change-policy-foundry-projection.test.ts` locks the review-only candidate, decision/gap counts, Policy Twin summary, no-raw-identity posture, docs, ledger, and package script alignment. | repo-proven |
 
 ## Research Anchors
 
@@ -70,12 +72,12 @@ those operations continue in the customer-owned identity system.
 
 ## A-Series Tracker
 
-Progress after A01 lands: 1/4 complete. 3 steps remain.
+Progress after A02 lands: 2/4 complete. 2 steps remain.
 
 | Step | Status | Slice | Evidence target |
 |---|---|---|---|
-| A01 | complete once merged | Authority Change shadow fixture contract | Synthetic digest-only canonical shadow events for standard-group-grant-approved, privileged-role-narrowing, break-glass-unapproved, external-delegation-review, tenant-scope-mismatch, stale-approval, prompt-injection-in-ticket, and revocation-ready scenarios. |
-| A02 | pending | Policy Foundry authority projection | Review-only candidate, named gaps, decision counts, and Policy Twin summary over A01 fixtures. |
+| A01 | complete | Authority Change shadow fixture contract | Synthetic digest-only canonical shadow events for standard-group-grant-approved, privileged-role-narrowing, break-glass-unapproved, external-delegation-review, tenant-scope-mismatch, stale-approval, prompt-injection-in-ticket, and revocation-ready scenarios. |
+| A02 | complete once merged | Policy Foundry authority projection | Review-only candidate, named gaps, decision counts, and Policy Twin summary over A01 fixtures. |
 | A03 | pending | Runtime smoke and pilot readiness | Run the existing shadow runtime chain over A01/A02 material and emit only `ready-for-shadow-pilot` or `not-ready`. |
 | A04 | pending | Demo CLI and reviewer sandbox | Markdown-first local demo plus strict local JSON reviewer input, with no identity-provider calls and no raw identity material. |
 
@@ -126,12 +128,46 @@ auto enforcement
 production readiness claims
 ```
 
+## A02 Policy Foundry Projection
+
+A02 projects the A01 fixtures into Policy Foundry review material. The
+projection emits a review-only candidate for `authority_change.identity_workflow`,
+a Policy Twin summary, decision counts, gap counts, fixture/event digests, and
+named gaps.
+
+The review-only candidate binds the same consequence boundary as A01:
+
+```text
+AI-prepared identity/access-change intent
+  -> digest-only shadow fixture material
+  -> review-only Policy Foundry projection
+  -> subject, resource, permission, tenant, approval, SoD, and least-privilege gaps
+  -> later runtime smoke and reviewer demo material
+```
+
+Named A02 gaps:
+
+```text
+overbroad-privilege
+break-glass-approval-missing
+external-delegation-unapproved
+tenant-scope-mismatch
+stale-approval
+instruction-like-ticket-review
+separation-of-duties-conflict
+```
+
+A02 remains review material only. It cannot activate enforcement, mutate
+policy, execute an identity workflow, grant or revoke access, call Okta,
+Microsoft Entra, or SailPoint, or prove a customer PEP/gate.
+
 ## A01 No-Claims
 
-A01 does not prove live identity-provider execution, native Okta/Entra/SailPoint
+A01-A02 do not prove live identity-provider execution, native Okta/Entra/SailPoint
 connector coverage, customer deployment, system-of-record ownership, customer
 PEP no-bypass, live replay/idempotency storage, compliance certification,
 production readiness, or enterprise readiness.
 
 This path is repo-side evidence only: a deterministic shadow fixture contract
-for later Authority Change projection, runtime smoke, and demo material.
+and review-only projection for later Authority Change runtime smoke and demo
+material.

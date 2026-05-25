@@ -113,6 +113,7 @@ function testFastSuiteKeepsCriticalCoverage(): void {
     'test:hosted-release-provenance-slsa-alignment',
     'test:hosted-observability-privacy-incident-evidence',
     'test:account-route-helper-split',
+    'test:admin-route-helper-split',
     'test:crypto-intelligence-surface-consistency',
     'test:crypto-authorization-core-noble-hashes-dependency-risk',
     'test:node-26-runtime-validation',

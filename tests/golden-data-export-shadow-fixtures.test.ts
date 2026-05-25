@@ -204,8 +204,8 @@ function testDescriptorDocsAndScriptsStayAligned(): void {
   ok(descriptor.nonClaims.includes('not-live-data-export'), 'D01 descriptor: live data export is a non-claim');
 
   for (const expected of [
-    'Status: D02 complete. D01-D02 are repository-side only.',
-    'Progress after D02 lands: 2/4 complete. 2 steps remain.',
+    'Status: D03 complete. D01-D03 are repository-side only.',
+    'Progress after D03 lands: 3/4 complete. 1 step remains.',
     '| D01 | complete | Controlled data export shadow fixture contract |',
     'aggregate-report-release, customer-export-approved, pii-column-narrowing, external-recipient-review, tenant-scope-mismatch, stale-approval, prompt-injection-in-evidence, and write-query-blocked',
   ]) {

@@ -1,10 +1,10 @@
 # Golden Path: Controlled Data Export
 
-Status: D02 complete. D01-D02 are repository-side only. This is the first
-repository-side contract/projection slice for the Data Movement golden path. It
-is not a live Snowflake or Databricks connector, not a data warehouse, not a
-customer export service, not customer PEP proof, not production readiness, and
-not enterprise readiness.
+Status: D03 complete. D01-D03 are repository-side only. This is the first
+repository-side contract/projection/smoke slice for the Data Movement golden
+path. It is not a live Snowflake or Databricks connector, not a data warehouse,
+not a customer export service, not customer PEP proof, not production readiness,
+and not enterprise readiness.
 
 ## Decision
 
@@ -45,6 +45,8 @@ customer-controlled PEP/gate consumes an Attestor decision.
 | D01 tests | `tests/golden-data-export-shadow-fixtures.test.ts` locks the suite shape, digest-only canonical events, scenario semantics, no-target-system-call flags, and no raw SQL/row/customer identifier posture. | repo-proven |
 | D02 Policy Foundry projection | `src/consequence-admission/golden-data-export-policy-foundry-projection.ts` projects the D01 suite into review-only Policy Foundry material with named recipient, field, tenant, approval, and purpose gaps. | repo-proven |
 | D02 tests | `tests/golden-data-export-policy-foundry-projection.test.ts` locks the review-only candidate, decision/gap counts, Policy Twin summary, no-raw-data posture, docs, ledger, and package script alignment. | repo-proven |
+| D03 runtime smoke | `src/consequence-admission/golden-data-export-runtime-smoke.ts` runs the D01 fixture suite plus D02 projection through the R02-R07 shadow runtime smoke chain without target-system calls, audit writes, policy activation, or raw data reads. | repo-proven |
+| D03 pilot readiness probe | `src/consequence-admission/golden-data-export-pilot-readiness-probe.ts` wraps the runtime smoke in a shadow-entry readiness packet that can emit only `ready-for-shadow-pilot` or `not-ready`. | repo-proven |
 
 ## Research Anchors
 
@@ -76,13 +78,13 @@ engineering anchors only, not compliance certification.
 
 ## D-Series Tracker
 
-Progress after D02 lands: 2/4 complete. 2 steps remain.
+Progress after D03 lands: 3/4 complete. 1 step remains.
 
 | Step | Status | Slice | Evidence target |
 |---|---|---|---|
 | D01 | complete | Controlled data export shadow fixture contract | Synthetic digest-only canonical shadow events for aggregate-report-release, customer-export-approved, pii-column-narrowing, external-recipient-review, tenant-scope-mismatch, stale-approval, prompt-injection-in-evidence, and write-query-blocked scenarios. |
 | D02 | complete | Policy Foundry data export projection | Review-only candidate, named gaps, decision counts, and Policy Twin summary over D01 fixtures. |
-| D03 | planned | Runtime smoke and pilot readiness | Run the existing shadow runtime chain over D01/D02 material and emit only `ready-for-shadow-pilot` or `not-ready`. |
+| D03 | complete | Runtime smoke and pilot readiness | Run the existing shadow runtime chain over D01/D02 material and emit only `ready-for-shadow-pilot` or `not-ready`. |
 | D04 | planned | Demo CLI and reviewer sandbox | Markdown-first local demo plus strict local JSON reviewer input, with no target-system calls and no raw data material. |
 
 ## D01 Scenario Contract
@@ -163,6 +165,35 @@ purpose-binding-missing
 D02 remains review material only. It cannot activate enforcement, mutate policy,
 execute a warehouse query, export rows, call Snowflake or Databricks, or prove a
 customer PEP/gate.
+
+## D03 Runtime Smoke And Pilot Readiness
+
+D03 runs D01 fixture material and the D02 projection through the existing
+R02-R07 shadow runtime smoke chain. The output is deterministic replay evidence
+only:
+
+```text
+D01 controlled export fixture
+  -> D02 review-only projection
+  -> R02-R07 shadow runtime smoke chain
+  -> digest-only runtime artifacts
+  -> shadow-entry readiness packet
+```
+
+The readiness probe may emit only:
+
+```text
+ready-for-shadow-pilot
+not-ready
+```
+
+`ready-for-scoped-pilot` is outside D03 because scoped enforcement needs a
+customer PEP/gate, live replay/idempotency storage, deployment probes, and
+operator/customer proof.
+
+D03 forbids target-system calls, audit writes, external event buses, external
+trace/lineage export, policy activation, learning/training activation, raw
+payload reads, raw payload storage, warehouse execution, and data export.
 
 ## No-Claims
 

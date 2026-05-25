@@ -208,7 +208,7 @@ async function main(): Promise<void> {
       accountName,
       email,
       displayName: 'Hosted Evaluation Owner',
-      password: 'HostedSignupPass123!',
+      password: 'CedarRiverPass123!',
     });
     equal(signupRes.status, 201, 'Hosted signup: account is created');
     const signupCookie = cookieHeaderFromResponse(signupRes);

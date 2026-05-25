@@ -24,8 +24,10 @@ import {
 import { digestSecretForComparison } from './secret-derivation.js';
 
 export const ACCOUNT_SESSION_CSRF_HEADER = 'x-attestor-csrf';
+export const ACCOUNT_SESSION_ALLOWED_ORIGINS_ENV = 'ATTESTOR_ACCOUNT_SESSION_ALLOWED_ORIGINS';
 
 const SAFE_HTTP_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
+const CROSS_SITE_FETCH_SITE = 'cross-site';
 
 interface RequestSignerPair {
   signer: KeylessSigner;
@@ -121,6 +123,121 @@ export function setSessionCookieForRecord(
   });
 }
 
+interface OriginSetResult {
+  origins: ReadonlySet<string>;
+  invalidConfig: boolean;
+}
+
+function normalizeHeaderOrigin(raw: string | undefined): string | null {
+  const value = raw?.trim();
+  if (!value || value === 'null') return null;
+  try {
+    return new URL(value).origin;
+  } catch {
+    return null;
+  }
+}
+
+function addExactOrigin(origins: Set<string>, raw: string | undefined): boolean {
+  const value = raw?.trim();
+  if (!value) return true;
+  if (value === '*' || value.includes('*')) return false;
+  let parsed: URL;
+  try {
+    parsed = new URL(value);
+  } catch {
+    return false;
+  }
+  if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return false;
+  if ((parsed.pathname && parsed.pathname !== '/') || parsed.search || parsed.hash) {
+    return false;
+  }
+  origins.add(parsed.origin);
+  return true;
+}
+
+function addHttpsOriginFromHostname(origins: Set<string>, raw: string | undefined): boolean {
+  const value = raw?.trim();
+  if (!value) return true;
+  if (value === '*' || value.includes('*') || value.includes('/') || value.includes('\\')) {
+    return false;
+  }
+  return addExactOrigin(origins, `https://${value}`);
+}
+
+export function accountSessionAllowedOrigins(
+  requestUrl: string,
+  env: Readonly<Record<string, string | undefined>> = process.env,
+): OriginSetResult {
+  const origins = new Set<string>();
+  let invalidConfig = false;
+  try {
+    origins.add(new URL(requestUrl).origin);
+  } catch {
+    invalidConfig = true;
+  }
+  invalidConfig = !addExactOrigin(origins, env.ATTESTOR_PUBLIC_BASE_URL) || invalidConfig;
+  invalidConfig = !addHttpsOriginFromHostname(origins, env.ATTESTOR_PUBLIC_HOSTNAME) || invalidConfig;
+  for (const origin of (env[ACCOUNT_SESSION_ALLOWED_ORIGINS_ENV] ?? '').split(',')) {
+    if (!addExactOrigin(origins, origin)) invalidConfig = true;
+  }
+  return { origins, invalidConfig };
+}
+
+function accountSessionBrowserBoundaryResponse(context: Context): Response | null {
+  const fetchSite = context.req.header('sec-fetch-site')?.trim().toLowerCase();
+  if (fetchSite === CROSS_SITE_FETCH_SITE) {
+    return context.json(
+      {
+        error: 'Cross-site browser request rejected for cookie-authenticated account mutation.',
+        requiredHeader: ACCOUNT_SESSION_CSRF_HEADER,
+        sessionTransportHeader: ACCOUNT_SESSION_TRANSPORT_HEADER,
+        reasonCodes: ['account-session-cross-site-request'],
+      },
+      403,
+    );
+  }
+
+  const rawOrigin = context.req.header('origin');
+  const origin = normalizeHeaderOrigin(rawOrigin);
+  if (rawOrigin?.trim() && !origin) {
+    return context.json(
+      {
+        error: 'Origin not allowed for cookie-authenticated account mutation.',
+        requiredHeader: ACCOUNT_SESSION_CSRF_HEADER,
+        requiredOriginPolicy: 'same-origin-or-configured-account-session-origin',
+        reasonCodes: ['account-session-origin-not-allowed'],
+      },
+      403,
+    );
+  }
+  if (!origin) return null;
+
+  const allowedOrigins = accountSessionAllowedOrigins(context.req.url);
+  if (allowedOrigins.invalidConfig) {
+    return context.json(
+      {
+        error: 'Account-session browser origin allowlist is invalid.',
+        requiredEnv: ACCOUNT_SESSION_ALLOWED_ORIGINS_ENV,
+        reasonCodes: ['account-session-origin-config-invalid'],
+      },
+      500,
+    );
+  }
+  if (!allowedOrigins.origins.has(origin)) {
+    return context.json(
+      {
+        error: 'Origin not allowed for cookie-authenticated account mutation.',
+        requiredHeader: ACCOUNT_SESSION_CSRF_HEADER,
+        requiredOriginPolicy: 'same-origin-or-configured-account-session-origin',
+        reasonCodes: ['account-session-origin-not-allowed'],
+      },
+      403,
+    );
+  }
+  return null;
+}
+
 export function requireAccountSession(
   context: Context,
   options?: {
@@ -137,18 +254,21 @@ export function requireAccountSession(
   if (
     !SAFE_HTTP_METHODS.has(method)
     && access.sessionTransport === 'cookie'
-    && !context.req.header(ACCOUNT_SESSION_CSRF_HEADER)?.trim()
   ) {
-    return context.json(
-      {
-        error:
-          'CSRF confirmation header required for cookie-authenticated account mutations.',
-        requiredHeader: ACCOUNT_SESSION_CSRF_HEADER,
-        sessionTransportHeader: ACCOUNT_SESSION_TRANSPORT_HEADER,
-        reasonCodes: ['account-session-csrf-required'],
-      },
-      403,
-    );
+    const browserBoundary = accountSessionBrowserBoundaryResponse(context);
+    if (browserBoundary) return browserBoundary;
+    if (!context.req.header(ACCOUNT_SESSION_CSRF_HEADER)?.trim()) {
+      return context.json(
+        {
+          error:
+            'CSRF confirmation header required for cookie-authenticated account mutations.',
+          requiredHeader: ACCOUNT_SESSION_CSRF_HEADER,
+          sessionTransportHeader: ACCOUNT_SESSION_TRANSPORT_HEADER,
+          reasonCodes: ['account-session-csrf-required'],
+        },
+        403,
+      );
+    }
   }
   if (options?.roles && !options.roles.includes(access.role)) {
     return context.json(

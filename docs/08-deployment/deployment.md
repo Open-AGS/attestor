@@ -83,6 +83,17 @@ does not grant authority and does not replace account-session authorization.
 The pattern follows OWASP CSRF guidance for custom request headers on AJAX/API
 endpoints, while treating SameSite cookies as defense-in-depth.
 
+Cookie-authenticated account mutations also reject explicit cross-site browser
+evidence before the mutation handler runs:
+
+- `Sec-Fetch-Site: cross-site` fails closed.
+- An `Origin` header must match the request origin, `ATTESTOR_PUBLIC_BASE_URL`,
+  `ATTESTOR_PUBLIC_HOSTNAME` as an HTTPS origin, or an exact origin listed in
+  `ATTESTOR_ACCOUNT_SESSION_ALLOWED_ORIGINS`.
+- `ATTESTOR_ACCOUNT_SESSION_ALLOWED_ORIGINS` is comma-separated and exact only:
+  no wildcard, regex-like, path-bearing, query-bearing, or fragment-bearing
+  entries. A bad entry fails closed for cookie-authenticated account mutations.
+
 This is a header-presence CSRF boundary, not a synchronizer-token or
 double-submit-token implementation. Attestor does not validate the header value
 against a session-bound CSRF secret. The repository service layer also does not

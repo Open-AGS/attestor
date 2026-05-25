@@ -146,7 +146,7 @@ These anchors are used for control mapping only. They are not certifications.
 | P1 | Demo path traversal and redaction hygiene | Public demo must not leak local paths, secrets, or misleading raw data; OPS-SWEEP-16 remediation closes the repo-side provider redaction, public artifact scan, and demo path basedir gaps. | Public demo / marketing | Keep scanner/test gates green and review any new generated public artifacts before publication. |
 | P1 | Test adequacy map | Closed findings must be regression-locked, not merely adapted to new code; the repo now has a machine-checked `Locking test:` guard for current high-signal P0/P1 rows. | Limited enforcement, enterprise pilot | Keep `test:audit-finding-test-coverage` green and require markers before future P0/P1 closure. |
 | P1 | Tenant live shared-store/RLS proof | Tenant confusion is high-impact for a control plane; repo-side route/token/proof/dashboard tests now cover B-033, but deployed storage and route probes are not live-proven. | Limited enforcement, enterprise pilot | Live cross-tenant route, proof, dashboard, and shared-store/RLS tenant-boundary probes. |
-| P2 | CORS/CSRF deployment contract | Browser-facing deployment assumptions must be explicit and tested. | Public dashboard, enterprise pilot | CORS allowlist and CSRF negative tests in staging. |
+| P2 | CORS/CSRF deployment contract | Repo-side account-session browser mutation guard is runtime-wired: cookie-authenticated unsafe account mutations require `x-attestor-csrf`, reject `Sec-Fetch-Site: cross-site`, and require exact same-origin or configured browser origins. | Public dashboard, enterprise pilot | Capture `LP-CORS-CSRF-DEPLOYMENT-CONTRACT` with staging CORS allowlist and browser negative tests before live dashboard claims. |
 
 ## Execution Phases
 
@@ -196,7 +196,7 @@ Required repo tasks:
 - Wire or document external KMS/HSM signing path for production authority.
 - Add shared replay/introspection store configuration and tests.
 - Keep tenant proof-chain tests green for admission, token, evidence, and dashboard scope; capture live shared-store/RLS tenant-boundary proof before stronger claims.
-- Harden or document CORS/CSRF deployment contract.
+- Keep CORS/CSRF deployment contract tests green and capture staging CORS/browser negative proof before dashboard/live claims.
 
 Required live tests:
 
@@ -291,7 +291,7 @@ Exit criteria:
 | Day 9 | Test adequacy sample | Ensure closed findings are regression-locked. | P0/P1 finding-to-test map plus OPS-136/139 guard | OPS-SWEEP-17 adequacy matrix plus `test:audit-finding-test-coverage` | Each current high-signal P0/P1 has a locking test, explicit live test contract, or an open/accepted/non-repo state; closed rows are machine-checked. |
 | Day 10 | Tenant proof-chain tests | Reduce tenant confusion risk. | Tenant mismatch, cross-tenant proof artifact tests | Tenant isolation evidence | Repo-side cross-tenant attempts fail; live shared-store/RLS proof remains. |
 | Day 11 | Shared replay store plan | Prepare live shadow/limited enforcement. | Redis/Postgres config review | Replay-store test plan | Multi-instance test ready. |
-| Day 12 | CORS/CSRF deployment contract | Browser boundary clarity. | CORS/CSRF negative checks | Deployment contract update | Browser mutation without header fails. |
+| Day 12 | CORS/CSRF deployment contract | Browser boundary clarity. | CORS/CSRF negative checks | Deployment contract update plus live proof capture | Browser mutation without CSRF, cross-site Fetch Metadata, and untrusted Origin fail. |
 | Day 13 | Live shadow rehearsal plan | Turn repo proof into live test plan. | Dry-run checklist | Shadow runbook | All no-go conditions explicit. |
 | Day 14 | Baseline refresh | Keep source of truth current. | `git fetch`, checks, status reconciliation | Baseline update PR if needed | Only material changes update baseline. |
 

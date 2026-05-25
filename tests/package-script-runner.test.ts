@@ -140,6 +140,7 @@ function testVerifySuiteKeepsGateOrdering(): void {
   const text = commands.join('\n');
 
   equal(commands[0], 'npm run typecheck', 'Package runner: verify starts with typecheck');
+  includes(text, 'npm run test:service-account-cors-csrf-boundary', 'Package runner: verify includes account CORS/CSRF boundary');
   includes(text, 'npm run test:service-bootstrap-boundary', 'Package runner: verify includes service bootstrap boundary');
   includes(text, 'npm run test:service-route-boundary', 'Package runner: verify includes service route boundary');
   includes(text, 'npm run build', 'Package runner: verify includes build before package probes');

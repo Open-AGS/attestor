@@ -240,6 +240,9 @@ function testDocsReflectContract(): void {
   ok(normalizedDeployment.includes('does not validate the header value'), 'Hosted journey contract: deployment doc states CSRF header value is not session-bound');
   ok(normalizedDeployment.includes('does not install permissive CORS response headers'), 'Hosted journey contract: deployment doc states repo-side CORS boundary');
   ok(normalizedDeployment.includes('no-go for cookie-authenticated account mutations'), 'Hosted journey contract: deployment doc states permissive CORS no-go');
+  ok(normalizedDeployment.includes('Sec-Fetch-Site: cross-site'), 'Hosted journey contract: deployment doc states Fetch Metadata cross-site rejection');
+  ok(normalizedDeployment.includes('ATTESTOR_ACCOUNT_SESSION_ALLOWED_ORIGINS'), 'Hosted journey contract: deployment doc names account-session allowed origin env');
+  ok(normalizedDeployment.includes('exact only'), 'Hosted journey contract: deployment doc rejects wildcard-style allowed origins');
   assert.doesNotMatch(edgeContract, /Access-Control-Allow-Origin/iu, 'Hosted journey contract: edge contract does not install permissive CORS allow-origin');
   passed += 1;
   assert.doesNotMatch(apiServer, /hono\/cors|cors\(/iu, 'Hosted journey contract: API server does not install Hono CORS middleware');

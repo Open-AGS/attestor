@@ -26,6 +26,7 @@ or implementation plan.
 | `final-6-features.md` | OIDC/keychain, PKI verifier, Redis default, RLS activation, distributed deployment. | Historical roadmap context. |
 | `ops-observability-readiness-anchors.md` | Prometheus auth files, Alertmanager receivers, Loki tenant auth, and OTel collector TLS config. | OPS-SWEEP-03 observability remediation source anchors. |
 | `ops-storage-recovery-readiness-anchors.md` | Kubernetes image/security context, Redis auth, PostgreSQL PITR, and OTel collector deployment anchors. | OPS-SWEEP-04 storage and collector remediation source anchors. |
+| `cors-csrf-deployment-boundary.md` | OWASP/MDN/Fetch Metadata/Hono CORS and CSRF anchors for hosted account-session browser boundaries. | CORS/CSRF deployment contract and live-proof separation. |
 
 ## Research Intake Rule
 

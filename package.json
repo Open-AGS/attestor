@@ -424,6 +424,7 @@
     "test:hosted-signup-first-api-key-flow": "tsx tests/hosted-signup-first-api-key-flow.test.ts",
     "test:hosted-stripe-billing-convergence-flow": "tsx tests/hosted-stripe-billing-convergence-flow.test.ts",
     "test:account-user-password-hash-policy": "tsx tests/account-user-password-hash-policy.test.ts",
+    "test:service-account-cors-csrf-boundary": "tsx tests/account-session-cors-csrf-boundary.test.ts",
     "test:service-account-auth-service": "tsx tests/service-account-auth-service.test.ts",
     "test:service-account-routes-authorization": "tsx tests/service-account-routes-authorization.test.ts",
     "test:service-account-state-service": "tsx tests/service-account-state-service.test.ts",

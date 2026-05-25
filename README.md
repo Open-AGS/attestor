@@ -12,7 +12,7 @@ That is the short version of Attestor: proof before consequence. Before an AI-pr
 
 AI agents draft refunds, prepare supplier payments, request data exports, trigger operational changes, and build wallet transactions. The dangerous moment is not the text the model produced. It is the point where that output becomes a real action in a downstream system.
 
-Attestor treats that proposed action as a consequence to admit, narrow, review, or block before the customer system changes state.
+Attestor evaluates that proposed action before the customer system changes state, then admits, narrows, sends to review, or blocks it.
 
 ```text
 AI proposes -> Attestor checks -> consequence is admitted, narrowed, reviewed, or blocked -> proof remains
@@ -120,13 +120,13 @@ Start review with:
 
 ## Golden Paths
 
-Golden paths are concrete repo-side examples through the same Attestor consequence engine. They are not separate products and not equal-maturity claims for every pack.
+Golden paths are concrete repo-side examples through the same Attestor control engine. They are not separate products and not equal-maturity claims for every pack.
 
 ### Refund: Money Movement
 
 [Golden Path: Refund](docs/02-architecture/golden-refund-shadow-pilot.md) is the first end-to-end repo path a reviewer should run. It is a synthetic support refund scenario, not a refund product, finance-only product, or separate engine.
 
-It shows one concrete Money Movement consequence through the same Attestor control boundary:
+It shows one concrete Money Movement action through the same Attestor control boundary:
 
 ```text
 refund action surface -> canonical shadow fixtures -> runtime assurance smoke -> Policy Foundry summary -> pilot readiness packet -> Engine Visibility -> optional reviewer sandbox -> demo output
@@ -156,7 +156,7 @@ Without Attestor in this repo path: no gate trace, no issue-code/no-claim bounda
 With Attestor in this repo path:    8 scenarios, 7 visible gate stages, named Foundry gaps, 0 target-system calls, shadow-pilot readiness verdict.
 ```
 
-It does not execute refunds, call Stripe or Shopify, deploy a customer PEP, activate policy, learn from traffic, or auto-enforce. Use it to inspect whether the Attestor consequence engine is coherent before looking at lower-level admission primitives. The optional determinism check is:
+It does not execute refunds, call Stripe or Shopify, deploy a customer PEP, activate policy, learn from traffic, or auto-enforce. Use it to inspect whether the Attestor control engine is coherent before looking at lower-level admission primitives. The optional determinism check is:
 
 ```bash
 npm run demo:golden-refund -- --determinism-check
@@ -172,7 +172,7 @@ npm run demo:golden-refund -- --scenario fixtures/golden-refund-reviewer-sandbox
 
 [Golden Path: Controlled Data Export](docs/02-architecture/golden-data-export-shadow-pilot.md) is the second reviewer-runnable repo path. It is a synthetic customer export and report-release scenario, not a warehouse connector, data product, Snowflake or Databricks integration, or separate engine.
 
-It shows one concrete Data Movement consequence through the same Attestor control boundary:
+It shows one concrete Data Movement action through the same Attestor control boundary:
 
 ```text
 data export action surface -> digest-only shadow fixtures -> Policy Foundry projection -> runtime smoke -> pilot readiness packet -> reviewer sandbox -> demo output
@@ -213,7 +213,7 @@ Use Attestor where a capable AI-assisted system should not be able to act just b
 - a compliance workflow prepares a filing, notice, or customer communication
 - an operations agent proposes a deploy, secret rotation, incident action, or infrastructure change
 
-Every case has the same shape: a proposed consequence must pass policy, authority, evidence, freshness, scope, replay, and enforcement checks before a downstream system acts. Fail-closed means the action does not proceed silently when those checks cannot close.
+Every case has the same shape: a proposed action must pass policy, authority, evidence, freshness, scope, replay, and enforcement checks before a downstream system acts. Fail-closed means the action does not proceed silently when those checks cannot close.
 
 ## Adoption Path
 
@@ -229,9 +229,9 @@ That is the runtime mode ladder. The policy promotion path is longer because enf
 observe -> recommend -> simulate -> approve -> enforce -> prove
 ```
 
-Shadow mode discovers the real action surface first: which high-risk AI actions exist, which actions have no policy, which downstream tools have too much authority, and which consequences would have been blocked before execution. This keeps adoption on the same consequence boundary without asking the customer to stop workflows on day one.
+Shadow mode discovers the real action surface first: which high-risk AI actions exist, which actions have no policy, which downstream tools have too much authority, and which actions would have been blocked before execution. This keeps adoption on the same control boundary without asking the customer to stop workflows on day one.
 
-The completed local examples of this adoption shape are [Golden Path: Refund](docs/02-architecture/golden-refund-shadow-pilot.md) and [Golden Path: Controlled Data Export](docs/02-architecture/golden-data-export-shadow-pilot.md). They are not separate products; they are concrete scenario paths through the same Attestor consequence engine.
+The completed local examples of this adoption shape are [Golden Path: Refund](docs/02-architecture/golden-refund-shadow-pilot.md) and [Golden Path: Controlled Data Export](docs/02-architecture/golden-data-export-shadow-pilot.md). They are not separate products; they are concrete scenario paths through the same Attestor control engine.
 
 ## Core Operating Loop
 
@@ -273,7 +273,7 @@ Most AI safety layers focus on prompts, outputs, model behavior, or tool routing
 bad instruction -> plausible model output -> tool call -> real system changed
 ```
 
-Attestor treats the proposed consequence as the object of control. It does not need the model to become perfectly reliable. It requires the action to pass a bounded admission decision before the system of record, payment layer, wallet, filing path, admin plane, or operational workflow is allowed to act.
+Attestor treats the proposed action as the object of control. It does not need the model to become perfectly reliable. It requires the action to pass a bounded admission decision before the system of record, payment layer, wallet, filing path, admin plane, or operational workflow is allowed to act.
 
 This is AI action control-plane infrastructure: not a chatbot feature, not a prompt wrapper, not a generic agent workspace, and not a governance checklist. Gateways, verifiers, and adapters are enforcement points; the product is the control plane before important AI actions become real.
 
@@ -303,13 +303,13 @@ The rest are useful once the first path makes sense: `npm run example:action-sur
 
 `npm run showcase:proof` generates a local PostgreSQL-backed proof packet. Without a live upstream model, `verify:cert` reports `PROOF_DEGRADED` and exits non-zero by design. The green local release gate remains `npm run verify`.
 
-The first generic hosted consequence-admission route is:
+The first generic hosted admission route is:
 
 ```http
 POST /api/v1/admissions
 ```
 
-It accepts an explicit consequence domain and adoption mode: `observe`, `warn`, `review`, or `enforce`. This is the route-level entry point for the shadow-to-enforcement ladder described above.
+It accepts an explicit action domain and adoption mode: `observe`, `warn`, `review`, or `enforce`. This is the route-level entry point for the shadow-to-enforcement ladder described above.
 
 Minimal request shape:
 
@@ -352,10 +352,10 @@ Attestor never returns an open-ended "looks good." It returns one of four bounde
 
 | Decision | Meaning |
 |---|---|
-| `admit` | The proposed consequence may proceed. |
+| `admit` | The proposed action may proceed. |
 | `narrow` | Only a safer bounded version may proceed. |
-| `review` | The consequence must wait for review. |
-| `block` | The consequence is rejected fail-closed. |
+| `review` | The action must wait for review. |
+| `block` | The action is rejected fail-closed. |
 
 Example decision payload:
 
@@ -364,7 +364,7 @@ Example decision payload:
   "decision": "block",
   "allowed": false,
   "failClosed": true,
-  "reason": "Customer gate held the consequence because Attestor returned block.",
+  "reason": "Customer gate held the action because Attestor returned block.",
   "reasonCodes": [
     "policy-fail",
     "customer-gate-hold"
@@ -399,7 +399,7 @@ Retry budget and loop-abuse controls are documented in the [retry attempt ledger
 
 ## Proof Model
 
-Attestor is built around proof before consequence. A consequence should not merely happen; it should leave a bounded record of why it was allowed, narrowed, reviewed, or blocked.
+Attestor is built around proof before consequence. A high-risk action should not merely happen; it should leave a bounded record of why it was allowed, narrowed, reviewed, or blocked.
 
 A decision can include outcome, policy context, authority and evidence status, reason codes, verification references, and local proof artifacts that can be reviewed later.
 
@@ -419,12 +419,12 @@ When a live upstream model or external verifier is absent, proof verification ca
 
 ## Consequence Packs
 
-Attestor packs are organized by the type of consequence an AI action can create, not by the industry the customer happens to be in.
+Attestor packs are organized by the kind of real-world action an AI system can create, not by the industry the customer happens to be in.
 
 A pack does not answer "is this finance or crypto?" It answers the control question:
 
 ```text
-What real system consequence is this AI action trying to create?
+What real system action is this AI trying to create?
 ```
 
 The current pack language is:
@@ -436,17 +436,17 @@ The current pack language is:
 - **Operational Execution** - deploys, secret rotations, infrastructure changes, incident actions, and live operations.
 - **Programmable Money** - wallet calls, Safe transactions, account-abstraction flows, custody callbacks, payment middleware, and intent settlement.
 
-The pack is the consequence class. Adapters sit underneath it. A refund service, payment processor, ERP, wallet RPC, Snowflake connector, CRM, identity provider, email sender, or deployment system can all attach to the same admission core without changing the public trust story.
+The pack is the action class. Adapters sit underneath it. A refund service, payment processor, ERP, wallet RPC, Snowflake connector, CRM, identity provider, email sender, or deployment system can all attach to the same admission core without changing the public trust story.
 
-The pack list is taxonomy, not an equal-maturity claim. The current end-to-end repo paths are Golden Path: Refund and Golden Path: Controlled Data Export. Other packs name consequence classes and integration boundaries that can mature at different speeds without becoming separate products.
+The pack list is taxonomy, not an equal-maturity claim. The current end-to-end repo paths are Golden Path: Refund and Golden Path: Controlled Data Export. Other packs name action classes and integration boundaries that can mature at different speeds without becoming separate products.
 
 ## Architecture: Core And Packs
 
-Attestor is one product: an AI Action Control Plane with a shared consequence-admission core and modular packs for specific consequence domains.
+Attestor is one product: an AI Action Control Plane with a shared admission core and modular packs for specific action domains.
 
 One product. One platform core.
 
-The current engine shape is a reference-monitor-style consequence admission path, not a prompt filter. The deeper architecture decision is [AI Action Control Plane architecture](docs/02-architecture/ai-action-control-plane-architecture.md). It uses PDP / PEP / PIP / PAP-style separation inside a contract-first modular monolith. This is not a claim that every customer workflow is already non-bypassable; that posture requires a real customer-side enforcement point, gateway, verifier, or adapter.
+The current engine shape is a reference-monitor-style admission path, not a prompt filter. The deeper architecture decision is [AI Action Control Plane architecture](docs/02-architecture/ai-action-control-plane-architecture.md). It uses PDP / PEP / PIP / PAP-style separation inside a contract-first modular monolith. This is not a claim that every customer workflow is already non-bypassable; that posture requires a real customer-side enforcement point, gateway, verifier, or adapter.
 
 Attestor without that enforced downstream PEP is advisory, not control.
 
@@ -455,8 +455,8 @@ For one visual map of the whole internal machine, start with the [Attestor inter
 Read the architecture as a path, not a stack diagram:
 
 ```text
-proposed consequence
-  -> consequence admission
+proposed action
+  -> admission
   -> policy, authority, evidence, freshness, and enforcement checks
   -> bounded decision
   -> proof material
@@ -470,7 +470,7 @@ The roles are simple enough to keep in your head:
 - **PIP:** supplies evidence, authority, tenant, recipient, freshness, policy-version, no-go, and context facts. It does not approve actions by itself.
 - **PAP:** handles policy lifecycle: signed bundles, simulation, rollout, activation rules, reviewer constraints, and provenance checks.
 
-Pack-specific adapters live below this layer. They provide native evidence, simulations, verifier bindings, conformance fixtures, and downstream handoff details for a consequence class without getting a separate product identity or trust story.
+Pack-specific adapters live below this layer. They provide native evidence, simulations, verifier bindings, conformance fixtures, and downstream handoff details for an action class without getting a separate product identity or trust story.
 
 Attestor does not guess what to run automatically, and it does not bypass the customer's own enforcement point.
 
@@ -480,7 +480,7 @@ The machine-readable role contract is exported from `attestor/consequence-admiss
 
 Attestor is designed as a control point, not a data lake.
 
-It receives the proposed consequence and the evidence needed to decide whether that consequence may proceed. Customer systems keep ownership of the model, agent, workflow, wallet, database, and downstream execution path. Attestor returns a bounded decision, reasons, and proof references.
+It receives the proposed action and the evidence needed to decide whether that action may proceed. Customer systems keep ownership of the model, agent, workflow, wallet, database, and downstream execution path. Attestor returns a bounded decision, reasons, and proof references.
 
 The [data minimization and redaction policy](docs/02-architecture/data-minimization-redaction-policy.md) defines forbidden raw classes for raw prompts, raw tool payloads, raw customer identifiers, bank/payment data, wallet material, credentials, private policy thresholds, and downstream error bodies. Model feedback, retry records, audit evidence, dashboard summaries, and downstream receipts should expose structural control evidence, not raw business data.
 

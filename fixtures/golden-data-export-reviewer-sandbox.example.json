@@ -1,0 +1,15 @@
+{
+  "version": "attestor.golden-data-export-reviewer-sandbox-input.v1",
+  "actionSurface": "data_movement.controlled_export",
+  "queryClass": "external-share",
+  "dataClass": "customer-financial-data",
+  "recipientClass": "unapproved-external-recipient",
+  "requestedFieldsClass": "approved-minimal",
+  "rowCountBucket": "100-1k",
+  "approvalFreshness": "missing",
+  "tenantScope": "tenant-bound",
+  "purposeBound": true,
+  "instructionLikeEvidence": false,
+  "externalSideEffect": true,
+  "writeSideEffect": false
+}

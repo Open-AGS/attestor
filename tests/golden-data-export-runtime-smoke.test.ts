@@ -140,8 +140,8 @@ function testDocsAndScriptsStayAligned(): void {
   };
 
   for (const expected of [
-    'Status: D03 complete. D01-D03 are repository-side only.',
-    'Progress after D03 lands: 3/4 complete. 1 step remains.',
+    'Status: complete. D01-D04 are repository-side only.',
+    'Progress after D04 lands: 4/4 complete. 0 steps remain.',
     '| D03 | complete | Runtime smoke and pilot readiness |',
     'R02-R07 shadow runtime smoke chain',
     'ready-for-shadow-pilot',

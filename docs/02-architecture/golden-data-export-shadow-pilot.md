@@ -1,10 +1,10 @@
 # Golden Path: Controlled Data Export
 
-Status: D03 complete. D01-D03 are repository-side only. This is the first
-repository-side contract/projection/smoke slice for the Data Movement golden
-path. It is not a live Snowflake or Databricks connector, not a data warehouse,
-not a customer export service, not customer PEP proof, not production readiness,
-and not enterprise readiness.
+Status: complete. D01-D04 are repository-side only. This is the first
+repository-side contract/projection/smoke/demo slice for the Data Movement
+golden path. It is not a live Snowflake or Databricks connector, not a data
+warehouse, not a customer export service, not customer PEP proof, not production
+readiness, and not enterprise readiness.
 
 ## Decision
 
@@ -47,6 +47,8 @@ customer-controlled PEP/gate consumes an Attestor decision.
 | D02 tests | `tests/golden-data-export-policy-foundry-projection.test.ts` locks the review-only candidate, decision/gap counts, Policy Twin summary, no-raw-data posture, docs, ledger, and package script alignment. | repo-proven |
 | D03 runtime smoke | `src/consequence-admission/golden-data-export-runtime-smoke.ts` runs the D01 fixture suite plus D02 projection through the R02-R07 shadow runtime smoke chain without target-system calls, audit writes, policy activation, or raw data reads. | repo-proven |
 | D03 pilot readiness probe | `src/consequence-admission/golden-data-export-pilot-readiness-probe.ts` wraps the runtime smoke in a shadow-entry readiness packet that can emit only `ready-for-shadow-pilot` or `not-ready`. | repo-proven |
+| D04 demo CLI | `scripts/demo-golden-data-export.ts` renders Markdown-first and JSON-secondary demo output from the D01-D03 material, plus bounded `--scenario` reviewer input. | repo-proven |
+| D04 reviewer sandbox | `src/consequence-admission/golden-data-export-reviewer-sandbox.ts` validates a strict allowlisted local JSON shape and runs in-scope reviewer inputs through the same shadow-only runtime path without target-system calls or raw data material. | repo-proven |
 
 ## Research Anchors
 
@@ -78,14 +80,14 @@ engineering anchors only, not compliance certification.
 
 ## D-Series Tracker
 
-Progress after D03 lands: 3/4 complete. 1 step remains.
+Progress after D04 lands: 4/4 complete. 0 steps remain.
 
 | Step | Status | Slice | Evidence target |
 |---|---|---|---|
 | D01 | complete | Controlled data export shadow fixture contract | Synthetic digest-only canonical shadow events for aggregate-report-release, customer-export-approved, pii-column-narrowing, external-recipient-review, tenant-scope-mismatch, stale-approval, prompt-injection-in-evidence, and write-query-blocked scenarios. |
 | D02 | complete | Policy Foundry data export projection | Review-only candidate, named gaps, decision counts, and Policy Twin summary over D01 fixtures. |
 | D03 | complete | Runtime smoke and pilot readiness | Run the existing shadow runtime chain over D01/D02 material and emit only `ready-for-shadow-pilot` or `not-ready`. |
-| D04 | planned | Demo CLI and reviewer sandbox | Markdown-first local demo plus strict local JSON reviewer input, with no target-system calls and no raw data material. |
+| D04 | complete | Demo CLI and reviewer sandbox | Markdown-first local demo plus strict local JSON reviewer input, with no target-system calls and no raw data material. |
 
 ## D01 Scenario Contract
 
@@ -194,6 +196,44 @@ operator/customer proof.
 D03 forbids target-system calls, audit writes, external event buses, external
 trace/lineage export, policy activation, learning/training activation, raw
 payload reads, raw payload storage, warehouse execution, and data export.
+
+## D04 Demo CLI And Reviewer Sandbox
+
+D04 adds a Markdown-first local demo and a strict reviewer sandbox:
+
+```text
+npm run demo:golden-data-export
+npm run demo:golden-data-export -- --json
+npm run demo:golden-data-export -- --scenario fixtures/golden-data-export-reviewer-sandbox.example.json
+```
+
+The default demo output is Markdown for screenshots, review, and copy/paste.
+JSON as secondary machine output is available with `--json`.
+
+The reviewer sandbox accepts only a bounded JSON Schema-style allowlist:
+
+```text
+version
+actionSurface
+queryClass
+dataClass
+recipientClass
+requestedFieldsClass
+rowCountBucket
+approvalFreshness
+tenantScope
+purposeBound
+instructionLikeEvidence
+externalSideEffect
+writeSideEffect
+```
+
+The sandbox rejects unknown fields, outside-scope action surfaces, control
+characters, and non-enum values. The `--scenario` file path is constrained to
+`fixtures/` by the same local demo path-boundary helper used by the refund demo.
+
+D04 research anchors are inherited from D01-D03; the implementation pattern is
+the repo-local refund demo/sandbox and OWASP Input Validation style allowlisting.
 
 ## No-Claims
 

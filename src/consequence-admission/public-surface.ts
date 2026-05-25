@@ -47,6 +47,8 @@ export * from './golden-data-export-shadow-fixtures.js';
 export * from './golden-data-export-policy-foundry-projection.js';
 export * from './golden-data-export-runtime-smoke.js';
 export * from './golden-data-export-pilot-readiness-probe.js';
+export * from './golden-data-export-demo.js';
+export * from './golden-data-export-reviewer-sandbox.js';
 export * from './decision-trace-logger.js';
 export * from './baseline-cohort-contract.js';
 export * from './candidate-invariants-catalog.js';

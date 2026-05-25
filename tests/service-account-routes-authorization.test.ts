@@ -277,11 +277,13 @@ async function testAccountJsonRoutesRejectMalformedJson(): Promise<void> {
 
 async function testAccountRouteJsonAndAuthAttemptVocabularyIsLocked(): Promise<void> {
   const source = readFileSync(new URL('../src/service/http/routes/account-routes.ts', import.meta.url), 'utf8');
+  const helper = readFileSync(new URL('../src/service/http/routes/account-route-helpers.ts', import.meta.url), 'utf8');
 
   assert.equal(source.includes('.json().catch(() => ({}))'), false);
-  assert.equal(source.includes('type AuthAttemptKind ='), true);
-  assert.equal(source.includes('AUTH_ATTEMPT_KIND'), true);
-  assert.equal(source.includes('acceptsJsonRequestBody'), true);
+  assert.equal(source.includes("from './account-route-helpers.js';"), true);
+  assert.equal(helper.includes('export type AuthAttemptKind ='), true);
+  assert.equal(helper.includes('AUTH_ATTEMPT_KIND'), true);
+  assert.equal(helper.includes('acceptsJsonRequestBody'), true);
 }
 
 async function testAccountApiKeyIssueReplaysWithIdempotencyKey(): Promise<void> {

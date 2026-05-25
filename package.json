@@ -403,6 +403,7 @@
     "test:account-oidc-linking-policy": "tsx tests/account-oidc-linking-policy.test.ts",
     "test:account-oidc-discovery-cache": "tsx tests/account-oidc-discovery-cache.test.ts",
     "test:account-user-action-token-store": "tsx tests/account-user-action-token-store.test.ts",
+    "test:account-route-helper-split": "tsx tests/account-route-helper-split.test.ts",
     "test:file-store-race-hardening": "tsx tests/file-store-race-hardening.test.ts",
     "test:connectors-and-filing": "tsx tests/connectors-and-filing.test.ts",
     "test:predictive-guardrails-fail-closed": "tsx tests/predictive-guardrails-fail-closed.test.ts",

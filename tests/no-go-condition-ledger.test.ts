@@ -223,7 +223,7 @@ function testDescriptorDocsAndRegistryStayAligned(): void {
   const bindings = readProjectFile('src', 'consequence-admission', 'failure-mode-control-bindings.ts');
   const docs = readProjectFile('docs', '02-architecture', 'no-go-condition-ledger.md');
   const pkg = readProjectFile('package.json');
-  const index = readProjectFile('src', 'consequence-admission', 'index.ts');
+  const publicSurface = readProjectFile('src', 'consequence-admission', 'public-surface.ts');
 
   equal(
     descriptor.version,
@@ -263,9 +263,9 @@ function testDescriptorDocsAndRegistryStayAligned(): void {
     'No-go condition ledger package: script is registered',
   );
   includes(
-    index,
+    publicSurface,
     "export * from './no-go-condition-ledger.js';",
-    'No-go condition ledger index: module is exported',
+    'No-go condition ledger public surface: module is exported',
   );
 }
 

@@ -389,7 +389,7 @@ function testDescriptorAndDocsStayAligned(): void {
   const bindings = readProjectFile('src', 'consequence-admission', 'failure-mode-control-bindings.ts');
   const docs = readProjectFile('docs', '02-architecture', 'human-review-fatigue-guard.md');
   const packageJson = readProjectFile('package.json');
-  const index = readProjectFile('src', 'consequence-admission', 'index.ts');
+  const publicSurface = readProjectFile('src', 'consequence-admission', 'public-surface.ts');
 
   equal(
     descriptor.version,
@@ -446,9 +446,9 @@ function testDescriptorAndDocsStayAligned(): void {
     'Human review fatigue guard package: script is registered',
   );
   includes(
-    index,
+    publicSurface,
     "export * from './human-review-fatigue-guard.js';",
-    'Human review fatigue guard index: module is exported',
+    'Human review fatigue guard public surface: module is exported',
   );
 }
 

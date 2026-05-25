@@ -160,7 +160,7 @@ function testDescriptorDocsAndPackageStayAligned(): void {
   const descriptor = policyFoundryFailureGapMapDescriptor();
   const docs = readProjectFile('docs', '02-architecture', 'policy-foundry-failure-gap-map.md');
   const pkg = readProjectFile('package.json');
-  const index = readProjectFile('src', 'consequence-admission', 'index.ts');
+  const publicSurface = readProjectFile('src', 'consequence-admission', 'public-surface.ts');
 
   equal(descriptor.version, 'attestor.policy-foundry-failure-gap-map.v1', 'Failure gap map descriptor: version is stable');
   equal(descriptor.mapsFailureModesToControls, true, 'Failure gap map descriptor: failure mode control mapping is explicit');
@@ -170,7 +170,7 @@ function testDescriptorDocsAndPackageStayAligned(): void {
   includes(docs, 'failure mode -> control -> evidence -> authority -> audit -> replay', 'Failure gap map docs: purpose is documented');
   includes(docs, 'test:policy-foundry-failure-gap-map', 'Failure gap map docs: test command is documented');
   includes(pkg, '"test:policy-foundry-failure-gap-map"', 'Failure gap map package: script is registered');
-  includes(index, "export * from './policy-foundry-failure-gap-map.js';", 'Failure gap map index: module is exported');
+  includes(publicSurface, "export * from './policy-foundry-failure-gap-map.js';", 'Failure gap map public surface: module is exported');
 }
 
 function run(): void {

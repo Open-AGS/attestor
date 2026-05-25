@@ -24,6 +24,15 @@ and retry-budget branches.
 - Smallest safe fix: keep the barrel intact and add focused evidence that its
   high-risk exported builders are covered by existing behavioral tests.
 
+## Post-closure maintenance note
+
+A later auditability-only refactor split the broad package-surface re-export
+catalogue into `src/consequence-admission/public-surface.ts` while keeping the
+implementation-bearing builders in `src/consequence-admission/index.ts`. This
+does not change runtime behavior, internal decision math, retry semantics, store
+selection, route handling, Customer PEP authority, or the public package
+contract; it only makes the broad re-export surface easier to inspect.
+
 ## Inspected Files
 
 - `src/consequence-admission/index.ts`
@@ -99,7 +108,7 @@ Added a machine-checkable coverage guard for the OPS-170 focused sub-sweep:
 
 This does not claim:
 
-- does not split `index.ts`;
+- full modular decomposition of `index.ts`;
 - full line-by-line behavioral audit of every consequence-admission file;
 - full assertion-depth review of every admission/consequence test;
 - production readiness, enterprise readiness, Customer PEP no-bypass proof, or

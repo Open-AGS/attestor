@@ -29,7 +29,7 @@ function testTopLevelPositioningStaysAligned(): void {
   const packaging = readProjectFile('docs', '01-overview', 'product-packaging.md');
   const useCases = readProjectFile('docs', '01-overview', 'what-you-can-do.md');
 
-  includes(readme, 'Attestor controls the boundary between AI intent and real-world consequence.', 'Product docs: README keeps AI Action Control Plane framing');
+  includes(readme, 'Attestor is an AI Action Control Plane that controls the boundary between AI intent and real-world consequence.', 'Product docs: README keeps AI Action Control Plane framing');
   includes(readme, '## Where It Sits In A Customer Stack', 'Product docs: README shows real customer stack placement');
   includes(readme, 'Customer PEP / gateway / verifier / adapter', 'Product docs: README puts customer enforcement before Attestor');
   includes(readme, 'With that enforced downstream point, Attestor becomes the control point before consequence.', 'Product docs: README distinguishes advisory evidence from control point');

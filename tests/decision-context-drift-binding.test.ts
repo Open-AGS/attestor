@@ -158,7 +158,7 @@ function testDescriptorDocsAndRegistryStayAligned(): void {
   const bindings = readProjectFile('src', 'consequence-admission', 'failure-mode-control-bindings.ts');
   const docs = readProjectFile('docs', '02-architecture', 'decision-context-drift-binding.md');
   const pkg = readProjectFile('package.json');
-  const index = readProjectFile('src', 'consequence-admission', 'index.ts');
+  const publicSurface = readProjectFile('src', 'consequence-admission', 'public-surface.ts');
 
   equal(
     descriptor.version,
@@ -202,9 +202,9 @@ function testDescriptorDocsAndRegistryStayAligned(): void {
     'Decision context drift binding package: script is registered',
   );
   includes(
-    index,
+    publicSurface,
     "export * from './decision-context-drift-binding.js';",
-    'Decision context drift binding index: module is exported',
+    'Decision context drift binding public surface: module is exported',
   );
 }
 

@@ -18,6 +18,7 @@ function readProjectFile(path: string): string {
 }
 
 const indexSource = readProjectFile('src/consequence-admission/index.ts');
+const publicSurfaceSource = readProjectFile('src/consequence-admission/public-surface.ts');
 const contractTest = readProjectFile('tests/consequence-admission-contract.test.ts');
 const genericModeTest = readProjectFile('tests/generic-admission-mode-ladder.test.ts');
 const retryLedgerTest = readProjectFile('tests/retry-attempt-ledger.test.ts');
@@ -26,11 +27,43 @@ const subSweepReport = readProjectFile('docs/audit/ops-170-consequence-admission
 const findingIndex = readProjectFile('docs/audit/finding-index.md');
 const reportIndex = readProjectFile('docs/audit/report-index.md');
 
-const indexLineCount = indexSource.split(/\r?\n/).length;
 const exportCount = [...indexSource.matchAll(/^export\s/gm)].length;
+const publicSurfaceExports = [
+  ...publicSurfaceSource.matchAll(/^export \* from ['"]\.\/([^'"]+)['"];$/gm),
+].map((match) => match[1]);
 
-ok(indexLineCount >= 2000, 'OPS-170: index surface remains large enough to require focused sub-sweep evidence');
-ok(exportCount >= 200, 'OPS-170: index surface remains a broad barrel export surface');
+includes(
+  indexSource,
+  "export * from './public-surface.js';",
+  'OPS-170: index delegates the broad package surface to a dedicated public-surface catalogue',
+);
+ok(exportCount < 100, 'OPS-170: index no longer owns the full broad barrel export catalogue');
+ok(
+  publicSurfaceExports.length >= 150,
+  'OPS-170: public-surface keeps the broad consequence-admission module catalogue explicit',
+);
+for (const expectedSurface of [
+  'taxonomy.js',
+  'constraint-kinds.js',
+  'domain-pack-boundary.js',
+  'failure-mode-registry.js',
+  'replay-layer-placement.js',
+  'customer-gate.js',
+  'facade.js',
+  'generic-protected-release-token.js',
+]) {
+  ok(
+    publicSurfaceExports.includes(expectedSurface),
+    `OPS-170: public-surface exports ${expectedSurface}`,
+  );
+}
+ok(
+  publicSurfaceSource
+    .split(/\r?\n/)
+    .filter((line) => line.trim() && !line.startsWith('//'))
+    .every((line) => /^export \* from ['"]\.\/[^'"]+['"];$/u.test(line)),
+  'OPS-170: public-surface remains a pure re-export catalogue with no implementation logic',
+);
 ok(
   /export function createConsequenceAdmissionResponse\s*\(/.test(indexSource),
   'OPS-170: response builder export is present',
@@ -96,7 +129,11 @@ includes(sharedAtomicStoreTest, 'retryBudget', 'OPS-170: shared atomic store tes
 includes(subSweepReport, '## Recent Fixes Chain-Effect Check', 'OPS-170: report includes chain-effect check');
 includes(subSweepReport, '## Validation Frame', 'OPS-170: report includes validation frame');
 includes(subSweepReport, '## Skipped Files', 'OPS-170: report discloses skipped files');
-includes(subSweepReport, 'does not split', 'OPS-170: report avoids claiming a split');
+includes(
+  subSweepReport,
+  'Post-closure maintenance note',
+  'OPS-170: report records the later public-surface split without changing authority claims',
+);
 includes(
   subSweepReport,
   'does not change internal decision math',

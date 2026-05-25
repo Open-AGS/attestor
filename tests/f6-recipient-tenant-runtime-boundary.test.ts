@@ -153,7 +153,7 @@ function testMissingBoundaryEvidenceReviews(): void {
 
 function testDescriptorCoverageDocsAndTrackerStayAligned(): void {
   const descriptor = consequenceRecipientTenantRuntimeBoundaryDescriptor();
-  const index = readProjectFile('src', 'consequence-admission', 'index.ts');
+  const publicSurface = readProjectFile('src', 'consequence-admission', 'public-surface.ts');
   const coverage = readProjectFile('src', 'consequence-admission', 'failure-mode-guard-coverage.ts');
   const architectureDoc = readProjectFile('docs', '02-architecture', 'recipient-tenant-boundary-replay.md');
   const auditDoc = readProjectFile('docs', 'audit', 'f6-recipient-tenant-runtime-boundary.md');
@@ -170,7 +170,7 @@ function testDescriptorCoverageDocsAndTrackerStayAligned(): void {
   equal(descriptor.rawPayloadStored, false, 'Runtime boundary descriptor: raw payload storage is false');
   equal(descriptor.digestOnly, true, 'Runtime boundary descriptor: digest-only output is explicit');
   equal(descriptor.productionReady, false, 'Runtime boundary descriptor: production readiness is false');
-  includes(index, "export * from './recipient-tenant-boundary-runtime.js';", 'Index: runtime boundary module is exported');
+  includes(publicSurface, "export * from './recipient-tenant-boundary-runtime.js';", 'Public surface: runtime boundary module is exported');
   includes(coverage, "primaryImplementationPath: 'src/consequence-admission/recipient-tenant-boundary-runtime.ts'", 'Coverage: runtime boundary is primary evidence for tenant/recipient');
   includes(coverage, "runtimeClaim: 'renders-decision'", 'Coverage: runtime decision claim is present');
   includes(architectureDoc, 'attestor.consequence-recipient-tenant-boundary-runtime.v1', 'Architecture docs: runtime bridge version is named');

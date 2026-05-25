@@ -115,7 +115,7 @@ function testDocsPackageAndPublicSurfaceStayAligned(): void {
   const docs = readProjectFile('docs', '02-architecture', 'failure-mode-guard-coverage.md');
   const registryDocs = readProjectFile('docs', '02-architecture', 'failure-mode-registry.md');
   const packageJson = readProjectFile('package.json');
-  const index = readProjectFile('src', 'consequence-admission', 'index.ts');
+  const publicSurface = readProjectFile('src', 'consequence-admission', 'public-surface.ts');
   const probe = readProjectFile('scripts', 'probe-consequence-admission-package-surface.mjs');
   const descriptor = consequenceAdmissionDescriptor();
 
@@ -124,7 +124,7 @@ function testDocsPackageAndPublicSurfaceStayAligned(): void {
   includes(docs, 'not a certification', 'Guard coverage docs: no-certification disclaimer is present');
   includes(registryDocs, 'guard coverage matrix', 'Failure registry docs: guard coverage step is referenced');
   includes(packageJson, '"test:failure-mode-guard-coverage"', 'Package: guard coverage script is exposed');
-  includes(index, "export * from './failure-mode-guard-coverage.js';", 'Consequence admission index: guard coverage module is exported');
+  includes(publicSurface, "export * from './failure-mode-guard-coverage.js';", 'Consequence admission public surface: guard coverage module is exported');
   includes(probe, 'consequenceFailureModeGuardCoverageMatrix', 'Package probe: guard coverage public surface is checked');
   equal(
     descriptor.failureModeGuardCoverageVersion,

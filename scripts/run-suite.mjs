@@ -101,6 +101,7 @@ function architectureScriptNames() {
     'test:agentic-supply-chain-guard',
     'test:multi-agent-delegation-guard',
     'test:consequence-admission-readiness',
+    'test:consequence-admission-public-surface-contract',
     'test:product-positioning-docs',
     'test:hosted-product-flow-docs',
   ];

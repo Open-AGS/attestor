@@ -171,6 +171,7 @@ function testArchitectureSuiteKeepsBoundaryCoverage(): void {
     'npm run test:guard-activation-readiness',
     'npm run test:agentic-supply-chain-guard',
     'npm run test:consequence-admission-readiness',
+    'npm run test:consequence-admission-public-surface-contract',
     'npm run test:product-positioning-docs',
     'npm run test:hosted-product-flow-docs',
   ]) {

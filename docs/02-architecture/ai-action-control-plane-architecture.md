@@ -132,7 +132,11 @@ These rules are the architecture target for future boundary tests.
    `attestor.consequence-replay-layer-placement.v1`.
 9. Public/package entrypoints should be explicit. Deep imports across bounded
    contexts should be treated as architecture debt unless a tracker explicitly
-   allows them.
+   allows them. `src/consequence-admission/public-surface.ts` is a curated
+   re-export catalogue for the broad `attestor/consequence-admission` package
+   surface; it is exposed only through `src/consequence-admission/index.ts` and
+   the package `exports` map. It does not create a second authority surface,
+   grant admission authority, or make internal module paths public.
 10. Documentation must distinguish repository evidence, evaluation readiness,
     customer-operated deployment proof, and production readiness.
 

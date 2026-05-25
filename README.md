@@ -101,8 +101,9 @@ The current reviewer-runnable golden paths are:
 |---|---|---|---|
 | [Golden Path: Refund](docs/02-architecture/golden-refund-shadow-pilot.md) | Money Movement | `npm run demo:golden-refund` | A synthetic, shadow-only refund path through action-surface material, canonical fixtures, runtime assurance, Policy Foundry, pilot readiness, Engine Visibility, reviewer sandbox, and demo output. |
 | [Golden Path: Controlled Data Export](docs/02-architecture/golden-data-export-shadow-pilot.md) | Data Movement | `npm run demo:golden-data-export` | A synthetic, shadow-only customer export and report-release path through digest-only fixtures, Policy Foundry projection, runtime smoke, pilot readiness, reviewer sandbox, and demo output. |
+| [Golden Path: Authority Change](docs/02-architecture/golden-authority-change-shadow-pilot.md) | Authority Change | `npm run demo:golden-authority-change` | A synthetic, shadow-only access-change path through digest-only fixtures, Policy Foundry projection, runtime smoke, pilot readiness, reviewer sandbox, and demo output. |
 
-These paths do not execute refunds, export data, activate policy, call Stripe, Shopify, Snowflake, or Databricks, deploy infrastructure, or claim production readiness. The repository is not a finished public SaaS, a production-use guarantee, a completed customer-operated deployment, or a substitute for an external security audit.
+These paths do not execute refunds, export data, change access, activate policy, call Stripe, Shopify, Snowflake, Databricks, Okta, Microsoft Entra, SailPoint, or any identity provider, deploy infrastructure, or claim production readiness. The repository is not a finished public SaaS, a production-use guarantee, a completed customer-operated deployment, or a substitute for an external security audit.
 
 Green local checks such as `npm run verify` are repo-side evidence only. They do not prove live cloud infrastructure, hosted Policy Foundry production readiness, live OpenAI or Anthropic calls, Snowflake or healthcare substrate readiness, customer-operated deployment readiness, or non-bypassable customer enforcement unless those specific opt-in live checks and customer-side PEP evidence have also run.
 
@@ -110,6 +111,7 @@ Start review with:
 
 - [Golden Path: Refund](docs/02-architecture/golden-refund-shadow-pilot.md)
 - [Golden Path: Controlled Data Export](docs/02-architecture/golden-data-export-shadow-pilot.md)
+- [Golden Path: Authority Change](docs/02-architecture/golden-authority-change-shadow-pilot.md)
 - [Attestor Evaluation Packet v0.1](docs/00-evaluation/v0.1-evaluation-packet.md)
 - [v0.2.0 evaluation release notes](docs/00-evaluation/v0.2.0-evaluation-release-notes.md)
 - [Security Policy](SECURITY.md)
@@ -202,6 +204,40 @@ To try one local reviewer-supplied data-export input, run:
 npm run demo:golden-data-export -- --scenario fixtures/golden-data-export-reviewer-sandbox.example.json
 ```
 
+### Authority Change: Access And Permissions
+
+[Golden Path: Authority Change](docs/02-architecture/golden-authority-change-shadow-pilot.md) is the third reviewer-runnable repo path. It is a synthetic access-change scenario, not an identity provider, access-governance product, Okta, Microsoft Entra, or SailPoint connector, or separate engine.
+
+It shows one concrete Authority Change action through the same Attestor control boundary:
+
+```text
+access-change intent -> digest-only shadow fixtures -> Policy Foundry projection -> runtime smoke -> pilot readiness packet -> reviewer sandbox -> demo output
+```
+
+Run it with:
+
+```bash
+npm run demo:golden-authority-change
+```
+
+It demonstrates:
+
+- grants, revocations, privileged-role, break-glass, delegation, stale-approval, tenant-mismatch, and instruction-like-evidence scenarios
+- digest-only subject, resource, permission, approval, policy, replay, and trace references
+- review-only Policy Foundry material for approval, least-privilege, tenant, delegation, and separation-of-duties gaps
+- runtime smoke through the same shadow-only assurance chain
+- a pilot readiness packet that can report shadow-pilot readiness or not-ready
+- a strict local reviewer sandbox for one bounded JSON input
+- Markdown-first demo output, with JSON available for machines
+
+It does not call an identity provider, grant or revoke access, write audit records, deploy a customer PEP, activate policy, learn from traffic, or auto-enforce.
+
+To try one local reviewer-supplied authority-change input, run:
+
+```bash
+npm run demo:golden-authority-change -- --scenario fixtures/golden-authority-change-reviewer-sandbox.example.json
+```
+
 ## The Control Boundary
 
 Use Attestor where a capable AI-assisted system should not be able to act just because it can form a request:
@@ -231,7 +267,7 @@ observe -> recommend -> simulate -> approve -> enforce -> prove
 
 Shadow mode discovers the real action surface first: which high-risk AI actions exist, which actions have no policy, which downstream tools have too much authority, and which actions would have been blocked before execution. This keeps adoption on the same control boundary without asking the customer to stop workflows on day one.
 
-The completed local examples of this adoption shape are [Golden Path: Refund](docs/02-architecture/golden-refund-shadow-pilot.md) and [Golden Path: Controlled Data Export](docs/02-architecture/golden-data-export-shadow-pilot.md). They are not separate products; they are concrete scenario paths through the same Attestor control engine.
+The completed local examples of this adoption shape are [Golden Path: Refund](docs/02-architecture/golden-refund-shadow-pilot.md), [Golden Path: Controlled Data Export](docs/02-architecture/golden-data-export-shadow-pilot.md), and [Golden Path: Authority Change](docs/02-architecture/golden-authority-change-shadow-pilot.md). They are not separate products; they are concrete scenario paths through the same Attestor control engine.
 
 ## Core Operating Loop
 
@@ -438,7 +474,7 @@ The current pack language is:
 
 The pack is the action class. Adapters sit underneath it. A refund service, payment processor, ERP, wallet RPC, Snowflake connector, CRM, identity provider, email sender, or deployment system can all attach to the same admission core without changing the public trust story.
 
-The pack list is taxonomy, not an equal-maturity claim. The current end-to-end repo paths are Golden Path: Refund and Golden Path: Controlled Data Export. Other packs name action classes and integration boundaries that can mature at different speeds without becoming separate products.
+The pack list is taxonomy, not an equal-maturity claim. The current end-to-end repo paths are Golden Path: Refund, Golden Path: Controlled Data Export, and Golden Path: Authority Change. Other packs name action classes and integration boundaries that can mature at different speeds without becoming separate products.
 
 ## Architecture: Core And Packs
 
@@ -506,6 +542,7 @@ Use this as a map, not a wall of links. Start with the small set below; the expa
 
 - [Golden Path: Refund](docs/02-architecture/golden-refund-shadow-pilot.md)
 - [Golden Path: Controlled Data Export](docs/02-architecture/golden-data-export-shadow-pilot.md)
+- [Golden Path: Authority Change](docs/02-architecture/golden-authority-change-shadow-pilot.md)
 - [Attestor Evaluation Packet v0.1](docs/00-evaluation/v0.1-evaluation-packet.md)
 - [v0.2.0 evaluation release notes](docs/00-evaluation/v0.2.0-evaluation-release-notes.md)
 - [Try Attestor first](docs/01-overview/try-attestor-first.md)

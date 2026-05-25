@@ -152,8 +152,8 @@ function testDescriptorDocsAndScriptsStayAligned(): void {
   equal(descriptor.productionReady, false, 'D02 descriptor: production readiness is false');
 
   for (const expected of [
-    'Status: D02 complete. D01-D02 are repository-side only.',
-    'Progress after D02 lands: 2/4 complete. 2 steps remain.',
+    'Status: D03 complete. D01-D03 are repository-side only.',
+    'Progress after D03 lands: 3/4 complete. 1 step remains.',
     '| D02 | complete | Policy Foundry data export projection |',
     'review-only candidate',
     'recipient, field, tenant, approval, and purpose gaps',

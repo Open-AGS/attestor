@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import {
   REQUIRED_FINDINGS,
+  REQUIRED_AUDIT_NAVIGATION_RULES,
   REQUIRED_LIVE_PROOFS,
   REQUIRED_PR_TEMPLATE_FIELDS,
   SECURITY_EVIDENCE_DOCS,
@@ -39,6 +40,21 @@ function testRequiredIndexesAreRegistered(): void {
   }
 }
 
+function testAuditNavigationRulesAreSeeded(): void {
+  for (const expected of [
+    '## Current Claim Navigation',
+    '`docs/audit/finding-index.md`',
+    '`docs/audit/live-proof-register.md`',
+    '`npm run check:security-evidence-system`',
+    'These guards prove index discipline only.',
+  ]) {
+    ok(
+      REQUIRED_AUDIT_NAVIGATION_RULES.some((rule) => rule.includes(expected)),
+      `${expected} is seeded in the audit navigation rules`,
+    );
+  }
+}
+
 function testHighSignalFindingsAreSeeded(): void {
   for (const finding of ['B-081', 'B-033', 'Customer PEP no-bypass', 'Required PR reviews']) {
     ok(REQUIRED_FINDINGS.includes(finding), `${finding} is seeded in the required finding index set`);
@@ -59,6 +75,7 @@ function testPrTemplateEvidenceFieldsAreSeeded(): void {
 
 testSecurityEvidenceSystemPasses();
 testRequiredIndexesAreRegistered();
+testAuditNavigationRulesAreSeeded();
 testHighSignalFindingsAreSeeded();
 testLiveProofRegisterIsSeeded();
 testPrTemplateEvidenceFieldsAreSeeded();

@@ -148,9 +148,9 @@ function testDocsAndScriptsStayAligned(): void {
   };
 
   for (const expected of [
-    'Status: A01-A03 complete once merged.',
-    'Progress after A03 lands: 3/4 complete. 1 step remains.',
-    '| A03 | complete once merged | Runtime smoke and pilot readiness |',
+    'Status: complete. A01-A04 are repository-side only.',
+    'Progress after A04 lands: 4/4 complete. 0 steps remain.',
+    '| A03 | complete | Runtime smoke and pilot readiness |',
     'R02-R07 shadow runtime smoke chain',
     'ready-for-shadow-pilot',
   ]) {

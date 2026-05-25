@@ -1,10 +1,10 @@
 # Golden Path: Authority Change
 
-Status: A01-A03 complete once merged. This is the first repository-side
-contract/projection/runtime-smoke slice for the Authority Change golden path.
-It is not a live Okta, Microsoft Entra, or SailPoint connector, not an
-identity provider, not an access-governance product, not customer PEP proof,
-not production readiness, and not enterprise readiness.
+Status: complete. A01-A04 are repository-side only. This is the first
+repository-side Authority Change golden path. It is not a live Okta, Microsoft
+Entra, or SailPoint connector, not an identity provider, not an
+access-governance product, not customer PEP proof, not production readiness,
+and not enterprise readiness.
 
 ## Decision
 
@@ -19,7 +19,7 @@ identity or access-change action intent
   -> digest-only subject, resource, permission, approval, policy, replay, and trace refs
   -> admit / narrow / review / block shadow decisions
   -> Policy Foundry projection, runtime smoke, and pilot readiness packet
-  -> later reviewer sandbox and demo output
+  -> local reviewer sandbox and demo output
 ```
 
 Non-split boundary:
@@ -50,6 +50,8 @@ later customer-controlled PEP/gate consumes an Attestor decision.
 | A02 tests | `tests/golden-authority-change-policy-foundry-projection.test.ts` locks the review-only candidate, decision/gap counts, Policy Twin summary, no-raw-identity posture, docs, ledger, and package script alignment. | repo-proven |
 | A03 runtime smoke | `src/consequence-admission/golden-authority-change-runtime-smoke.ts` runs the A01 fixture suite plus A02 projection through the R02-R07 shadow runtime smoke chain without identity-provider calls, access changes, audit writes, policy activation, or raw identity reads. | repo-proven |
 | A03 pilot readiness probe | `src/consequence-admission/golden-authority-change-pilot-readiness-probe.ts` wraps the runtime smoke in a shadow-entry readiness packet that can emit only `ready-for-shadow-pilot` or `not-ready`. | repo-proven |
+| A04 demo CLI | `scripts/demo-golden-authority-change.ts` renders a Markdown-first local Authority Change demo with JSON as secondary machine output and a bounded `--scenario` input path under `fixtures/`. | repo-proven |
+| A04 reviewer sandbox | `src/consequence-admission/golden-authority-change-reviewer-sandbox.ts` validates a strict allowlisted local JSON shape and runs in-scope reviewer inputs through the same shadow-only runtime path without identity-provider calls, access changes, or raw identity material. | repo-proven |
 
 ## Research Anchors
 
@@ -75,14 +77,14 @@ those operations continue in the customer-owned identity system.
 
 ## A-Series Tracker
 
-Progress after A03 lands: 3/4 complete. 1 step remains.
+Progress after A04 lands: 4/4 complete. 0 steps remain.
 
 | Step | Status | Slice | Evidence target |
 |---|---|---|---|
 | A01 | complete | Authority Change shadow fixture contract | Synthetic digest-only canonical shadow events for standard-group-grant-approved, privileged-role-narrowing, break-glass-unapproved, external-delegation-review, tenant-scope-mismatch, stale-approval, prompt-injection-in-ticket, and revocation-ready scenarios. |
 | A02 | complete | Policy Foundry authority projection | Review-only candidate, named gaps, decision counts, and Policy Twin summary over A01 fixtures. |
-| A03 | complete once merged | Runtime smoke and pilot readiness | Run the existing shadow runtime chain over A01/A02 material and emit only `ready-for-shadow-pilot` or `not-ready`. |
-| A04 | pending | Demo CLI and reviewer sandbox | Markdown-first local demo plus strict local JSON reviewer input, with no identity-provider calls and no raw identity material. |
+| A03 | complete | Runtime smoke and pilot readiness | Run the existing shadow runtime chain over A01/A02 material and emit only `ready-for-shadow-pilot` or `not-ready`. |
+| A04 | complete once merged | Demo CLI and reviewer sandbox | Markdown-first local demo plus strict local JSON reviewer input, with no identity-provider calls and no raw identity material. |
 
 ## A01 Scenario Contract
 
@@ -195,13 +197,53 @@ production readiness. The runtime smoke exists to prove the repository-side
 shadow chain over Authority Change material before A04 makes it locally
 reviewable.
 
+## A04 Demo CLI And Reviewer Sandbox
+
+A04 makes the Authority Change path locally inspectable without turning it into
+an identity-provider connector:
+
+```bash
+npm run demo:golden-authority-change
+npm run demo:golden-authority-change -- --json
+npm run demo:golden-authority-change -- --scenario fixtures/golden-authority-change-reviewer-sandbox.example.json
+```
+
+The demo is Markdown-first so it can be read, copied, and screenshotted without
+requiring a dashboard. JSON is secondary machine output. The `--scenario` path
+is constrained to `fixtures/` by default.
+
+The reviewer sandbox accepts only an allowlisted JSON shape:
+
+```text
+version
+actionSurface
+targetSystem
+authorityClass
+subjectClass
+resourceClass
+permissionClass
+approvalFreshness
+tenantScope
+separationOfDuties
+leastPrivilege
+instructionLikeEvidence
+externalSideEffect
+breakGlass
+```
+
+Unknown fields fail strict input validation, including raw-like identity fields.
+The sandbox rejects outside-scope action surfaces, maps in-scope class-only
+input to digest-only canonical shadow events, then runs the same R02-R07 shadow
+runtime smoke chain. This follows strict JSON allowlist and OWASP Input
+Validation discipline without claiming live identity-provider control.
+
 ## A01 No-Claims
 
-A01-A03 do not prove live identity-provider execution, native Okta/Entra/SailPoint
+A01-A04 do not prove live identity-provider execution, native Okta/Entra/SailPoint
 connector coverage, customer deployment, system-of-record ownership, customer
 PEP no-bypass, live replay/idempotency storage, compliance certification,
 production readiness, or enterprise readiness.
 
 This path is repo-side evidence only: a deterministic shadow fixture contract
-review-only projection, runtime smoke, and shadow-pilot readiness probe for
-later Authority Change demo material.
+review-only projection, runtime smoke, shadow-pilot readiness probe, local demo,
+and local reviewer sandbox.

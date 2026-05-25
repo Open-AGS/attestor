@@ -1,0 +1,16 @@
+{
+  "version": "attestor.golden-authority-change-reviewer-sandbox-input.v1",
+  "actionSurface": "authority_change.identity_workflow",
+  "targetSystem": "microsoft-entra-lifecycle-workflows",
+  "authorityClass": "privileged-role",
+  "subjectClass": "workforce-user",
+  "resourceClass": "admin-role",
+  "permissionClass": "admin",
+  "approvalFreshness": "fresh",
+  "tenantScope": "tenant-bound",
+  "separationOfDuties": "clear",
+  "leastPrivilege": "requires-narrowing",
+  "instructionLikeEvidence": false,
+  "externalSideEffect": false,
+  "breakGlass": false
+}

@@ -153,7 +153,7 @@ function testDescriptorDocsAndScriptsStayAligned(): void {
   equal(descriptor.productionReady, false, 'A02 descriptor: production readiness is false');
 
   for (const expected of [
-    'Progress after A03 lands: 3/4 complete. 1 step remains.',
+    'Progress after A04 lands: 4/4 complete. 0 steps remain.',
     '| A02 | complete | Policy Foundry authority projection |',
     'review-only candidate',
     'subject, resource, permission, tenant, approval, SoD, and least-privilege gaps',

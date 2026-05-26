@@ -1,9 +1,9 @@
 # Golden Path: Programmable Money
 
-Status: P01 complete once merged. P01 is repository-side only. This is not a
-wallet, custody platform, signer, bundler, broadcaster, x402 facilitator, Safe
-guard deployment, intent solver, customer PEP proof, chain settlement proof,
-production readiness, or enterprise readiness.
+Status: P02 complete once merged. P01/P02 are repository-side only. This is
+not a wallet, custody platform, signer, bundler, broadcaster, x402 facilitator,
+Safe guard deployment, intent solver, customer PEP proof, chain settlement
+proof, production readiness, or enterprise readiness.
 
 ## Decision
 
@@ -17,7 +17,8 @@ AI-prepared programmable-money intent
   -> synthetic canonical shadow events
   -> digest-only wallet, policy, adapter, approval, replay, simulation, and receipt refs
   -> admit / narrow / review / block shadow decisions
-  -> later Policy Foundry projection, runtime smoke, reviewer sandbox, and demo output
+  -> review-only Policy Foundry projection
+  -> later runtime smoke, reviewer sandbox, and demo output
 ```
 
 Non-split boundary:
@@ -46,8 +47,10 @@ until a later customer-controlled PEP/gate consumes an Attestor decision.
 | Canonical consequence class | `src/consequence-admission/canonical-shadow-event-schema.ts` includes `programmable-money` as a canonical shadow-event consequence class. | repo-proven |
 | Crypto authorization core | `src/crypto-authorization-core/**` defines adapter-neutral consequence kinds, account kinds, policy dimensions, risk mapping, replay/freshness, release/policy/enforcement binding, Safe, ERC-4337, EIP-7702, x402, custody, and intent-settlement adapters. | repo-proven |
 | Crypto execution admission | `src/crypto-execution-admission/**` turns crypto authorization simulations into execution-admission plans and adapter handoff contracts without becoming a wallet, custody platform, bundler, facilitator, or solver. | repo-proven |
-| P01 fixture contract | `src/consequence-admission/golden-programmable-money-shadow-fixtures.ts` emits eight synthetic digest-only canonical shadow events for programmable-money scenarios. | repo-proven once merged |
-| P01 tests | `tests/golden-programmable-money-shadow-fixtures.test.ts` locks the suite shape, digest-only canonical events, scenario semantics, no-wallet/no-signing/no-broadcast flags, no raw wallet material, no raw transaction payload, docs, ledger, and package script alignment. | repo-proven once merged |
+| P01 fixture contract | `src/consequence-admission/golden-programmable-money-shadow-fixtures.ts` emits eight synthetic digest-only canonical shadow events for programmable-money scenarios. | repo-proven |
+| P01 tests | `tests/golden-programmable-money-shadow-fixtures.test.ts` locks the suite shape, digest-only canonical events, scenario semantics, no-wallet/no-signing/no-broadcast flags, no raw wallet material, no raw transaction payload, docs, ledger, and package script alignment. | repo-proven |
+| P02 projection contract | `src/consequence-admission/golden-programmable-money-policy-foundry-projection.ts` projects the P01 fixtures into a review-only Policy Foundry candidate, named gaps, decision counts, gap counts, and Policy Twin summary. | repo-proven once merged |
+| P02 tests | `tests/golden-programmable-money-policy-foundry-projection.test.ts` locks the review-only candidate, named gap kinds, decision counts, gap counts, no-enforcement flags, no raw wallet material, no raw transaction payload, docs, ledger, README, and package script alignment. | repo-proven once merged |
 
 ## Research Anchors
 
@@ -70,12 +73,12 @@ custody, x402, bundler, chain, solver, customer PEP, or production readiness.
 
 ## P-Series Tracker
 
-Progress after P01 lands: 1/4 complete. 3 steps remain.
+Progress after P02 lands: 2/4 complete. 2 steps remain.
 
 | Step | Status | Slice | Evidence target |
 |---|---|---|---|
-| P01 | complete once merged | Programmable Money shadow fixture contract | Synthetic digest-only canonical shadow events for Safe transfer, unlimited approval, ERC-4337 paymaster evidence, EIP-7702 stale delegation, x402 settlement proof, custody quorum, intent-solver route, and wallet-memo prompt-injection scenarios. |
-| P02 | planned | Policy Foundry programmable-money projection | Review-only candidate, named gaps, decision counts, and Policy Twin summary over P01 fixtures. |
+| P01 | complete | Programmable Money shadow fixture contract | Synthetic digest-only canonical shadow events for Safe transfer, unlimited approval, ERC-4337 paymaster evidence, EIP-7702 stale delegation, x402 settlement proof, custody quorum, intent-solver route, and wallet-memo prompt-injection scenarios. |
+| P02 | complete once merged | Policy Foundry programmable-money projection | Review-only candidate, named gaps, decision counts, and Policy Twin summary over P01 fixtures. |
 | P03 | planned | Runtime smoke and pilot readiness | Run the existing shadow runtime chain over P01/P02 material and emit only `ready-for-shadow-pilot` or `not-ready`. |
 | P04 | planned | Demo CLI and reviewer sandbox | Markdown-first local demo plus strict local JSON reviewer input, with no wallet call, signing, broadcast, custody callback, facilitator call, bundler call, or solver call. |
 
@@ -144,6 +147,29 @@ concrete way to inspect how Attestor treats programmable-money intent before a
 downstream wallet, Safe, custody engine, x402 server, bundler, or solver is
 allowed to act.
 
+## P02 Policy Foundry Projection
+
+P02 consumes the P01 fixtures and emits a review-only candidate for `programmable_money.transaction_intent`.
+It records decision counts, named gaps, backtest material, and a Policy Twin
+summary while keeping `autoEnforce=false`, `activatesEnforcement=false`, and
+`productionReady=false`.
+
+The named gap set covers allowance, paymaster, stale delegation, x402 settlement, custody quorum, intent-route, and wallet-memo gaps:
+
+```text
+allowance-scope-overbroad
+account-abstraction-preflight-missing
+delegated-eoa-authority-stale
+x402-settlement-proof-missing
+custody-quorum-pending
+intent-route-slippage-review
+wallet-memo-instruction-review
+```
+
+The projection is reviewer material. It can recommend review mode and name
+missing controls; it cannot sign, broadcast, settle, call adapters, grant
+authority, reduce review requirements, or activate enforcement.
+
 ## P01 No-Claims
 
 P01 does not:
@@ -158,3 +184,11 @@ P01 does not:
 - prove chain settlement or payment finality;
 - prove customer PEP no-bypass;
 - prove production or enterprise readiness.
+
+P02 adds no live authority. It does not:
+
+- activate the Policy Foundry candidate;
+- convert review-only output into enforcement;
+- call a wallet, Safe, bundler, custody co-signer, x402 facilitator, or solver;
+- prove chain settlement or payment finality;
+- reduce review, authority, evidence, replay, or customer PEP requirements.

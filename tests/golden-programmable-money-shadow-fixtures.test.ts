@@ -216,9 +216,9 @@ function testDescriptorDocsAndScriptsStayAligned(): void {
   ok(descriptor.nonClaims.includes('not-a-wallet-custodian-signer-bundler-or-broadcaster'), 'P01 descriptor: wallet/custody/signer/bundler non-claim is explicit');
 
   for (const expected of [
-    'Status: P01 complete once merged. P01 is repository-side only.',
-    'Progress after P01 lands: 1/4 complete. 3 steps remain.',
-    '| P01 | complete once merged | Programmable Money shadow fixture contract |',
+    'Status: P02 complete once merged. P01/P02 are repository-side only.',
+    'Progress after P02 lands: 2/4 complete. 2 steps remain.',
+    '| P01 | complete | Programmable Money shadow fixture contract |',
     'safe-transfer-allowlisted-recipient',
     'unlimited-approval-review',
     'erc4337-user-operation-paymaster-missing',

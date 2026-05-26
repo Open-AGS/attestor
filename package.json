@@ -137,6 +137,7 @@
     "test:golden-operational-execution-demo": "tsx tests/golden-operational-execution-demo.test.ts",
     "test:golden-operational-execution-reviewer-sandbox": "tsx tests/golden-operational-execution-reviewer-sandbox.test.ts",
     "test:golden-programmable-money-shadow-fixtures": "tsx tests/golden-programmable-money-shadow-fixtures.test.ts",
+    "test:golden-programmable-money-policy-foundry-projection": "tsx tests/golden-programmable-money-policy-foundry-projection.test.ts",
     "test:consequence-envelope-contract": "tsx tests/consequence-envelope-contract.test.ts",
     "test:signal-relationship-contract": "tsx tests/signal-relationship-contract.test.ts",
     "test:layer-opinion-schema": "tsx tests/layer-opinion-schema.test.ts",

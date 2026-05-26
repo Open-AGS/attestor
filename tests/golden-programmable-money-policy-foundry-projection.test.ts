@@ -159,7 +159,7 @@ function testDescriptorDocsAndScriptsStayAligned(): void {
   equal(descriptor.productionReady, false, 'P02 descriptor: production readiness is false');
 
   for (const expected of [
-    'Progress after P03 lands: 3/4 complete. 1 step remains.',
+    'Progress after P04 lands: 4/4 complete. 0 steps remain.',
     '| P02 | complete | Policy Foundry programmable-money projection |',
     'review-only candidate for `programmable_money.transaction_intent`',
     'allowance, paymaster, stale delegation, x402 settlement, custody quorum, intent-route, and wallet-memo gaps',
@@ -174,8 +174,8 @@ function testDescriptorDocsAndScriptsStayAligned(): void {
   );
   includes(
     readme,
-    '`npm run test:golden-programmable-money-pilot-readiness-probe`',
-    'P02 README: names the latest programmable-money readiness test',
+    '`npm run demo:golden-programmable-money`',
+    'P02 README: names the programmable-money demo command',
   );
   equal(
     packageJson.scripts['test:golden-programmable-money-policy-foundry-projection'],

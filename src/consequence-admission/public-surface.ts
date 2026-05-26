@@ -71,6 +71,8 @@ export * from './golden-programmable-money-shadow-fixtures.js';
 export * from './golden-programmable-money-policy-foundry-projection.js';
 export * from './golden-programmable-money-runtime-smoke.js';
 export * from './golden-programmable-money-pilot-readiness-probe.js';
+export * from './golden-programmable-money-demo.js';
+export * from './golden-programmable-money-reviewer-sandbox.js';
 export * from './decision-trace-logger.js';
 export * from './baseline-cohort-contract.js';
 export * from './candidate-invariants-catalog.js';

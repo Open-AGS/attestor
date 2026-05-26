@@ -125,6 +125,7 @@
     "test:golden-authority-change-demo": "tsx tests/golden-authority-change-demo.test.ts",
     "test:golden-authority-change-reviewer-sandbox": "tsx tests/golden-authority-change-reviewer-sandbox.test.ts",
     "test:golden-external-communication-shadow-fixtures": "tsx tests/golden-external-communication-shadow-fixtures.test.ts",
+    "test:golden-external-communication-policy-foundry-projection": "tsx tests/golden-external-communication-policy-foundry-projection.test.ts",
     "test:consequence-envelope-contract": "tsx tests/consequence-envelope-contract.test.ts",
     "test:signal-relationship-contract": "tsx tests/signal-relationship-contract.test.ts",
     "test:layer-opinion-schema": "tsx tests/layer-opinion-schema.test.ts",

@@ -1,9 +1,9 @@
 # Golden Path: External Communication
 
-Status: in progress. E01 is repository-side only. It is not a live email,
-SMS, ticketing, social, CRM, SendGrid, or Mailgun connector, not customer PEP
-proof, not compliance certification, not production readiness, and not
-enterprise readiness.
+Status: in progress. E01 is repository-side only and E02 is repository-side
+review material once merged. This is not a live email, SMS, ticketing, social,
+CRM, SendGrid, or Mailgun connector, not customer PEP proof, not compliance
+certification, not production readiness, and not enterprise readiness.
 
 ## Decision
 
@@ -43,8 +43,10 @@ until a later customer-controlled PEP/gate consumes an Attestor decision.
 | External Communication taxonomy | `README.md` lists External Communication as customer-facing, legal, regulated, billing, support, or public messages, and says the pack list is taxonomy, not an equal-maturity claim. | repo-proven |
 | Canonical consequence class | `src/consequence-admission/canonical-shadow-event-schema.ts` includes `external-communication` as a canonical shadow-event consequence class. | repo-proven |
 | Action-surface inference | `src/consequence-admission/action-surface-declaration-ingestors.ts` maps message, email, ticket, notification, SMS, Slack, and reply language into `external-communication`. | repo-proven |
-| E01 fixture contract | `src/consequence-admission/golden-external-communication-shadow-fixtures.ts` emits eight synthetic digest-only canonical shadow events for external communication scenarios. | repo-proven once merged |
-| E01 tests | `tests/golden-external-communication-shadow-fixtures.test.ts` locks the suite shape, digest-only canonical events, scenario semantics, no-target-system-call flags, no raw message bodies, no raw recipient identifiers, and no raw customer identifiers. | repo-proven once merged |
+| E01 fixture contract | `src/consequence-admission/golden-external-communication-shadow-fixtures.ts` emits eight synthetic digest-only canonical shadow events for external communication scenarios. | repo-proven |
+| E01 tests | `tests/golden-external-communication-shadow-fixtures.test.ts` locks the suite shape, digest-only canonical events, scenario semantics, no-target-system-call flags, no raw message bodies, no raw recipient identifiers, and no raw customer identifiers. | repo-proven |
+| E02 Policy Foundry projection | `src/consequence-admission/golden-external-communication-policy-foundry-projection.ts` projects the E01 suite into review-only Policy Foundry material with named message, recipient, claim, evidence, public-claim, commercial-email, and replay gaps. | repo-proven once merged |
+| E02 tests | `tests/golden-external-communication-policy-foundry-projection.test.ts` locks the review-only candidate, decision/gap counts, Policy Twin summary, no-raw-message posture, docs, ledger, and package script alignment. | repo-proven once merged |
 
 ## Research Anchors
 
@@ -73,12 +75,12 @@ actions. This is an engineering anchor only, not a NIST conformance claim.
 
 ## E-Series Tracker
 
-Progress after E01 lands: 1/4 complete. 3 steps remain.
+Progress after E02 lands: 2/4 complete. 2 steps remain.
 
 | Step | Status | Slice | Evidence target |
 |---|---|---|---|
-| E01 | complete once merged | External Communication shadow fixture contract | Synthetic digest-only canonical shadow events for support-reply-approved, refund-promise-review, legal-claim-blocked, wrong-recipient-blocked, public-overclaim-narrowing, commercial-email-control-gap, prompt-injection-in-ticket, and duplicate-send-replay-blocked scenarios. |
-| E02 | pending | Policy Foundry communication projection | Review-only candidate, named gaps, decision counts, and Policy Twin summary over E01 fixtures. |
+| E01 | complete | External Communication shadow fixture contract | Synthetic digest-only canonical shadow events for support-reply-approved, refund-promise-review, legal-claim-blocked, wrong-recipient-blocked, public-overclaim-narrowing, commercial-email-control-gap, prompt-injection-in-ticket, and duplicate-send-replay-blocked scenarios. |
+| E02 | complete once merged | Policy Foundry communication projection | Review-only candidate, named gaps, decision counts, and Policy Twin summary over E01 fixtures. |
 | E03 | pending | Runtime smoke and pilot readiness | Run the existing shadow runtime chain over E01/E02 material and emit only `ready-for-shadow-pilot` or `not-ready`. |
 | E04 | pending | Demo CLI and reviewer sandbox | Markdown-first local demo plus strict local JSON reviewer input, with no provider calls and no raw message material. |
 
@@ -130,12 +132,40 @@ auto enforcement
 production readiness claims
 ```
 
-## E02-E04 Planned Shape
+## E02 Policy Foundry Projection
 
-E02 should project E01 fixtures into review-only Policy Foundry material with
-named gaps for refund or credit promises, legal claims, recipient mismatch,
-public overclaim, commercial-email control gaps, instruction-like ticket text,
-and duplicate send replay.
+E02 projects the E01 fixtures into Policy Foundry review material. The
+projection emits a review-only candidate for `external_communication.customer_message`,
+a Policy Twin summary, decision counts, gap counts, fixture/event digests, and
+named gaps.
+
+The review-only candidate binds the same consequence boundary as E01:
+
+```text
+AI-prepared outbound message intent
+  -> digest-only shadow fixture material
+  -> review-only Policy Foundry projection
+  -> recipient, tenant, claim, evidence, approval, commercial-email, public-claim, and replay gaps
+  -> later runtime smoke and reviewer demo material
+```
+
+Named E02 gaps:
+
+```text
+outbound-promise-needs-authority
+legal-claim-without-authority
+recipient-tenant-mismatch
+public-claim-overclaim
+commercial-email-control-gap
+instruction-like-ticket-review
+duplicate-send-replay
+```
+
+E02 remains review material only. It cannot activate enforcement, mutate
+policy, send a message, call SendGrid, Mailgun, a CRM, or a ticketing system,
+or prove a customer PEP/gate.
+
+## E03-E04 Planned Shape
 
 E03 should replay E01/E02 through the existing shadow runtime smoke chain and
 produce a shadow-entry pilot readiness packet only. It must not send a message,

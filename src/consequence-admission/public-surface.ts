@@ -56,6 +56,7 @@ export * from './golden-authority-change-pilot-readiness-probe.js';
 export * from './golden-authority-change-demo.js';
 export * from './golden-authority-change-reviewer-sandbox.js';
 export * from './golden-external-communication-shadow-fixtures.js';
+export * from './golden-external-communication-policy-foundry-projection.js';
 export * from './decision-trace-logger.js';
 export * from './baseline-cohort-contract.js';
 export * from './candidate-invariants-catalog.js';

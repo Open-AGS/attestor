@@ -193,8 +193,8 @@ function testDescriptorDocsAndScriptsStayAligned(): void {
   ok(descriptor.nonClaims.includes('not-native-sendgrid-mailgun-or-crm-connector'), 'E01 descriptor: native connector is a non-claim');
 
   for (const expected of [
-    'Status: in progress. E01 is repository-side only.',
-    '| E01 | complete once merged | External Communication shadow fixture contract |',
+    'Status: in progress. E01 is repository-side only and E02 is repository-side',
+    '| E01 | complete | External Communication shadow fixture contract |',
     'support-reply-approved, refund-promise-review, legal-claim-blocked, wrong-recipient-blocked, public-overclaim-narrowing, commercial-email-control-gap, prompt-injection-in-ticket, and duplicate-send-replay-blocked',
     'SendGrid',
     'Mailgun',

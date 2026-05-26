@@ -49,10 +49,17 @@ The trust boundary is the action, not the model response. Attestor does not repl
 
 ## Try It In 60 Seconds
 
-Start with the Money Movement refund path:
+Start with the all-pack evaluator:
 
 ```bash
 npm ci
+npm run demo:golden-paths
+npm run demo:golden-paths -- --json
+```
+
+Then inspect the Money Movement refund path:
+
+```bash
 npm run demo:golden-refund
 npm run demo:golden-refund -- --json
 npm run demo:golden-refund -- --determinism-check
@@ -97,6 +104,8 @@ Release type:    GitHub pre-release / Golden Path evaluation baseline
 
 The current reviewer-runnable golden paths are:
 
+For a compact all-pack view, run `npm run demo:golden-paths`. Use `npm run demo:golden-paths -- --json` when you need machine-readable output.
+
 | Path | Pack | Command | What it shows |
 |---|---|---|---|
 | [Golden Path: Refund](docs/02-architecture/golden-refund-shadow-pilot.md) | Money Movement | `npm run demo:golden-refund` | A synthetic, shadow-only refund path through action-surface material, canonical fixtures, runtime assurance, Policy Foundry, pilot readiness, Engine Visibility, reviewer sandbox, and demo output. |
@@ -112,8 +121,8 @@ Green local checks such as `npm run verify` are repo-side evidence only. They do
 
 Start review with:
 
-1. Run one or more Golden Path commands in the next section.
-2. Use the evaluation packet, release notes, security policy, smoke workflow, artifact attestation plan, and audit tracker only when you need deeper evidence.
+1. Run `npm run demo:golden-paths` for the all-pack local status.
+2. Use the evaluation packet, release notes, security policy, smoke workflow, artifact attestation plan, and [Audit remediation tracker](docs/audit/attestor-audit-remediation-tracker.md) only when you need deeper evidence.
 3. Use the LLM provider runtime decision only when evaluating provider-facing runtime work.
 
 ## Golden Paths

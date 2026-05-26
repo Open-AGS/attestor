@@ -122,7 +122,7 @@ Green local checks such as `npm run verify` are repo-side evidence only. They do
 Start review with:
 
 1. Run `npm run demo:golden-paths` for the all-pack local status.
-2. Use the evaluation packet, release notes, security policy, smoke workflow, artifact attestation plan, and audit tracker only when you need deeper evidence.
+2. Use the evaluation packet, release notes, security policy, smoke workflow, artifact attestation plan, and [Audit remediation tracker](docs/audit/attestor-audit-remediation-tracker.md) only when you need deeper evidence.
 3. Use the LLM provider runtime decision only when evaluating provider-facing runtime work.
 
 ## Golden Paths

@@ -1,0 +1,16 @@
+{
+  "version": "attestor.golden-external-communication-reviewer-sandbox-input.v1",
+  "actionSurface": "external_communication.customer_message",
+  "channelClass": "email",
+  "messageClass": "commercial-email",
+  "recipientClass": "suppression-list-contact",
+  "claimClass": "commercial-offer",
+  "approvalFreshness": "missing",
+  "tenantScope": "tenant-bound",
+  "commercialEmailPosture": "missing-unsubscribe-or-sender-controls",
+  "evidenceAuthority": "model-rationale-only",
+  "instructionLikeEvidence": false,
+  "publicClaim": false,
+  "externalSideEffect": true,
+  "duplicateSendAttempt": false
+}

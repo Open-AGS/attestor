@@ -155,8 +155,8 @@ function testDocsAndScriptsStayAligned(): void {
   };
 
   for (const expected of [
-    'Progress after E03 lands: 3/4 complete. 1 step remains.',
-    '| E03 | complete once merged | Runtime smoke and pilot readiness |',
+    'Progress after E04 lands: 4/4 complete. 0 steps remain.',
+    '| E03 | complete | Runtime smoke and pilot readiness |',
     'R02-R07 shadow runtime smoke chain',
     'ready-for-shadow-pilot',
     'no provider call, no CRM/ticketing call, and no message delivery',

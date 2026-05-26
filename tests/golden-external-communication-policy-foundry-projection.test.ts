@@ -156,7 +156,7 @@ function testDescriptorDocsAndScriptsStayAligned(): void {
   equal(descriptor.productionReady, false, 'E02 descriptor: production readiness is false');
 
   for (const expected of [
-    'Progress after E03 lands: 3/4 complete. 1 step remains.',
+    'Progress after E04 lands: 4/4 complete. 0 steps remain.',
     '| E02 | complete | Policy Foundry communication projection |',
     'review-only candidate for `external_communication.customer_message`',
     'recipient, tenant, claim, evidence, approval, commercial-email, public-claim, and replay gaps',

@@ -104,7 +104,7 @@ The current reviewer-runnable golden paths are:
 | [Golden Path: Authority Change](docs/02-architecture/golden-authority-change-shadow-pilot.md) | Authority Change | `npm run demo:golden-authority-change` | A synthetic, shadow-only access-change path through digest-only fixtures, Policy Foundry projection, runtime smoke, pilot readiness, reviewer sandbox, and demo output. |
 | [Golden Path: External Communication](docs/02-architecture/golden-external-communication-shadow-pilot.md) | External Communication | `npm run demo:golden-external-communication` | A synthetic, shadow-only customer-message path through digest-only fixtures, Policy Foundry projection, runtime smoke, pilot readiness, reviewer sandbox, and demo output. |
 | [Golden Path: Operational Execution](docs/02-architecture/golden-operational-execution-shadow-pilot.md) | Operational Execution | `npm run demo:golden-operational-execution` | A synthetic, shadow-only deploy, rollback, secret-rotation, infrastructure-change, and incident-action path through digest-only fixtures, Policy Foundry projection, runtime smoke, pilot readiness, reviewer sandbox, and demo output. |
-| [Golden Path: Programmable Money](docs/02-architecture/golden-programmable-money-shadow-pilot.md) | Programmable Money | `npm run test:golden-programmable-money-pilot-readiness-probe` | A synthetic, shadow-only P01-P03 path for Safe transactions, wallet calls, account abstraction, x402 payments, custody callbacks, and intent settlement through digest-only fixtures, review-only Policy Foundry projection, runtime smoke, and shadow-pilot readiness. It does not sign, broadcast, call a wallet, activate enforcement, or prove chain settlement. |
+| [Golden Path: Programmable Money](docs/02-architecture/golden-programmable-money-shadow-pilot.md) | Programmable Money | `npm run demo:golden-programmable-money` | A synthetic, shadow-only Safe transaction, wallet call, account-abstraction, x402 payment, custody callback, and intent-settlement path through digest-only fixtures, review-only Policy Foundry projection, runtime smoke, pilot readiness, reviewer sandbox, and demo output. It does not sign, broadcast, call a wallet, activate enforcement, or prove chain settlement. |
 
 These paths do not execute refunds, export data, change access, send messages, deploy infrastructure, rotate secrets, execute runbooks, activate policy, sign or broadcast transactions, call wallets, submit Safe transactions, call custody providers, call x402 facilitators, call intent solvers, call Stripe, Shopify, Snowflake, Databricks, Okta, Microsoft Entra, SailPoint, SendGrid, Mailgun, Kubernetes, Terraform, a CI/CD system, a cloud provider, an incident tool, or any identity provider, or claim production readiness. The repository is not a finished public SaaS, a production-use guarantee, a completed customer-operated deployment, or a substitute for an external security audit.
 
@@ -310,6 +310,38 @@ To try one local reviewer-supplied operational input, run:
 npm run demo:golden-operational-execution -- --scenario fixtures/golden-operational-execution-reviewer-sandbox.example.json
 ```
 
+### Programmable Money: Wallet-Facing Intent
+
+[Golden Path: Programmable Money](docs/02-architecture/golden-programmable-money-shadow-pilot.md) is the sixth reviewer-runnable repo path. It is a synthetic Safe transaction, wallet call, account-abstraction, x402 payment, custody callback, and intent-settlement scenario, not a wallet, custodian, signer, bundler, broadcaster, facilitator, solver, Safe guard deployment, or separate engine.
+
+It shows one concrete Programmable Money action through the same Attestor control boundary:
+
+```text
+programmable-money intent -> digest-only shadow fixtures -> Policy Foundry projection -> runtime smoke -> pilot readiness packet -> reviewer sandbox -> demo output
+```
+
+Run it with:
+
+```bash
+npm run demo:golden-programmable-money
+```
+
+It demonstrates:
+
+- Safe transfer, token approval, ERC-4337, delegated-EOA, x402, custody, intent-settlement, and wallet-memo scenarios;
+- digest-only tenant, actor, account, chain, asset, adapter, policy, replay, receipt, and trace refs;
+- review-only Policy Foundry material over allowance, paymaster, stale delegation, x402 settlement, custody quorum, intent route, and wallet-memo gaps;
+- a shadow runtime smoke path that calls no wallet, signer, bundler, facilitator, custody provider, solver, chain, or payment rail;
+- a reviewer sandbox that accepts only strict structured programmable-money facts.
+
+It does not sign, broadcast, submit a UserOperation, submit a Safe transaction, answer a custody callback, call a wallet, call an x402 facilitator, settle an intent, write audit records, activate policy, admit actions, prove chain settlement, or prove production readiness.
+
+To try one local reviewer-supplied programmable-money input, run:
+
+```bash
+npm run demo:golden-programmable-money -- --scenario fixtures/golden-programmable-money-reviewer-sandbox.example.json
+```
+
 ## The Control Boundary
 
 Use Attestor where a capable AI-assisted system should not be able to act just because it can form a request:
@@ -339,7 +371,7 @@ observe -> recommend -> simulate -> approve -> enforce -> prove
 
 Shadow mode discovers the real action surface first: which high-risk AI actions exist, which actions have no policy, which downstream tools have too much authority, and which actions would have been blocked before execution. This keeps adoption on the same control boundary without asking the customer to stop workflows on day one.
 
-The completed local examples of this adoption shape are [Golden Path: Refund](docs/02-architecture/golden-refund-shadow-pilot.md), [Golden Path: Controlled Data Export](docs/02-architecture/golden-data-export-shadow-pilot.md), [Golden Path: Authority Change](docs/02-architecture/golden-authority-change-shadow-pilot.md), [Golden Path: External Communication](docs/02-architecture/golden-external-communication-shadow-pilot.md), and [Golden Path: Operational Execution](docs/02-architecture/golden-operational-execution-shadow-pilot.md). They are not separate products; they are concrete scenario paths through the same Attestor control engine.
+The completed local examples of this adoption shape are [Golden Path: Refund](docs/02-architecture/golden-refund-shadow-pilot.md), [Golden Path: Controlled Data Export](docs/02-architecture/golden-data-export-shadow-pilot.md), [Golden Path: Authority Change](docs/02-architecture/golden-authority-change-shadow-pilot.md), [Golden Path: External Communication](docs/02-architecture/golden-external-communication-shadow-pilot.md), [Golden Path: Operational Execution](docs/02-architecture/golden-operational-execution-shadow-pilot.md), and [Golden Path: Programmable Money](docs/02-architecture/golden-programmable-money-shadow-pilot.md). They are not separate products; they are concrete scenario paths through the same Attestor control engine.
 
 ## Core Operating Loop
 
@@ -395,6 +427,7 @@ npm run demo:golden-data-export
 npm run demo:golden-authority-change
 npm run demo:golden-external-communication
 npm run demo:golden-operational-execution
+npm run demo:golden-programmable-money
 ```
 
 Lower-level admission and customer-gate examples:
@@ -549,7 +582,7 @@ The current pack language is:
 
 The pack is the action class. Adapters sit underneath it. A refund service, payment processor, ERP, wallet RPC, Snowflake connector, CRM, identity provider, email sender, or deployment system can all attach to the same admission core without changing the public trust story.
 
-The pack list is taxonomy, not an equal-maturity claim. The current end-to-end repo paths are Golden Path: Refund, Golden Path: Controlled Data Export, Golden Path: Authority Change, Golden Path: External Communication, and Golden Path: Operational Execution. Other packs name action classes and integration boundaries that can mature at different speeds without becoming separate products.
+The pack list is taxonomy, not an equal-maturity claim. The current end-to-end repo paths are Golden Path: Refund, Golden Path: Controlled Data Export, Golden Path: Authority Change, Golden Path: External Communication, Golden Path: Operational Execution, and Golden Path: Programmable Money. Other packs name action classes and integration boundaries that can mature at different speeds without becoming separate products.
 
 ## Architecture: Core And Packs
 

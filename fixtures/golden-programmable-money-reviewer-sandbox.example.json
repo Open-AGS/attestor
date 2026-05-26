@@ -1,0 +1,19 @@
+{
+  "version": "attestor.golden-programmable-money-reviewer-sandbox-input.v1",
+  "actionSurface": "programmable_money.transaction_intent",
+  "adapterKind": "x402-payment",
+  "consequenceKind": "agent-payment",
+  "accountKind": "agent-wallet",
+  "assetKind": "stablecoin",
+  "chainNamespace": "eip155",
+  "valueRisk": "medium",
+  "counterpartyPosture": "allowlisted",
+  "approvalPosture": "fresh",
+  "policyScopeStatus": "matched",
+  "replayFreshness": "fresh",
+  "adapterPreflightStatus": "missing",
+  "settlementOrReceiptStatus": "missing",
+  "instructionLikeEvidence": false,
+  "externalSideEffect": true,
+  "duplicateIntentAttempt": false
+}

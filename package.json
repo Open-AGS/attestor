@@ -130,6 +130,7 @@
     "test:golden-external-communication-pilot-readiness-probe": "tsx tests/golden-external-communication-pilot-readiness-probe.test.ts",
     "test:golden-external-communication-demo": "tsx tests/golden-external-communication-demo.test.ts",
     "test:golden-external-communication-reviewer-sandbox": "tsx tests/golden-external-communication-reviewer-sandbox.test.ts",
+    "test:golden-operational-execution-shadow-fixtures": "tsx tests/golden-operational-execution-shadow-fixtures.test.ts",
     "test:consequence-envelope-contract": "tsx tests/consequence-envelope-contract.test.ts",
     "test:signal-relationship-contract": "tsx tests/signal-relationship-contract.test.ts",
     "test:layer-opinion-schema": "tsx tests/layer-opinion-schema.test.ts",

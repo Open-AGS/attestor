@@ -61,6 +61,7 @@ export * from './golden-external-communication-runtime-smoke.js';
 export * from './golden-external-communication-pilot-readiness-probe.js';
 export * from './golden-external-communication-demo.js';
 export * from './golden-external-communication-reviewer-sandbox.js';
+export * from './golden-operational-execution-shadow-fixtures.js';
 export * from './decision-trace-logger.js';
 export * from './baseline-cohort-contract.js';
 export * from './candidate-invariants-catalog.js';

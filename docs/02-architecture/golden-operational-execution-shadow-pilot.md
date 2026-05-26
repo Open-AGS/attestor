@@ -1,6 +1,6 @@
 # Golden Path: Operational Execution
 
-Status: in progress. O01 is repository-side only. This is not a live
+Status: in progress. O01-O02 are repository-side only. This is not a live
 Kubernetes, Terraform, GitHub deployment environment, incident automation,
 secret manager, CI/CD, cloud, or runbook connector, not customer PEP proof,
 not production readiness, and not enterprise readiness.
@@ -46,6 +46,8 @@ until a later customer-controlled PEP/gate consumes an Attestor decision.
 | Action-surface inference | `src/consequence-admission/action-surface-declaration-ingestors.ts` maps deploy, release, rollout, infra, cloud, secret, rotate, restart, incident, and workflow language into system-operation / operational-execution. | repo-proven |
 | O01 fixture contract | `src/consequence-admission/golden-operational-execution-shadow-fixtures.ts` emits eight synthetic digest-only canonical shadow events for operational execution scenarios. | repo-proven once merged |
 | O01 tests | `tests/golden-operational-execution-shadow-fixtures.test.ts` locks the suite shape, digest-only canonical events, scenario semantics, no-deployment flags, no secret material, no raw runbook text, and no raw customer identifiers. | repo-proven once merged |
+| O02 Policy Foundry projection | `src/consequence-admission/golden-operational-execution-policy-foundry-projection.ts` projects the O01 suite into review-only Policy Foundry material with named rollback, dry-run, approval, drift, break-glass, secret, runbook, and replay gaps. | repo-proven once merged |
+| O02 tests | `tests/golden-operational-execution-policy-foundry-projection.test.ts` locks the review-only candidate, decision/gap counts, Policy Twin summary, no-raw-ops posture, docs, ledger, and package script alignment. | repo-proven once merged |
 
 ## Research Anchors
 
@@ -66,12 +68,12 @@ customer PEP, or production readiness.
 
 ## O-Series Tracker
 
-Progress after O01 lands: 1/4 complete. 3 steps remain.
+Progress after O02 lands: 2/4 complete. 2 steps remain.
 
 | Step | Status | Slice | Evidence target |
 |---|---|---|---|
-| O01 | complete once merged | Operational Execution shadow fixture contract | Synthetic digest-only canonical shadow events for canary deploy, production deploy without rollback, stale secret-rotation approval, infrastructure drift, incident restart, rollback, runbook prompt injection, and duplicate operation replay scenarios. |
-| O02 | pending | Policy Foundry operational projection | Review-only candidate, named gaps, decision counts, and Policy Twin summary over O01 fixtures. |
+| O01 | complete | Operational Execution shadow fixture contract | Synthetic digest-only canonical shadow events for canary deploy, production deploy without rollback, stale secret-rotation approval, infrastructure drift, incident restart, rollback, runbook prompt injection, and duplicate operation replay scenarios. |
+| O02 | complete once merged | Policy Foundry operational projection | Review-only candidate, named gaps, decision counts, and Policy Twin summary over O01 fixtures. |
 | O03 | pending | Runtime smoke and pilot readiness | Run the existing shadow runtime chain over O01/O02 material and emit only `ready-for-shadow-pilot` or `not-ready`. |
 | O04 | pending | Demo CLI and reviewer sandbox | Markdown-first local demo plus strict local JSON reviewer input, with no deployment, no provider calls, and no secret material. |
 
@@ -131,9 +133,14 @@ auto enforcement
 production readiness claims
 ```
 
-## O02 Planned Shape
+## O02 Policy Foundry Projection
 
-O02 should project the O01 fixtures into Policy Foundry review material:
+O02 projects the O01 fixtures into Policy Foundry review material. The
+projection emits a review-only candidate for `operational_execution.change_request`,
+a Policy Twin summary, decision counts, gap counts, fixture/event digests, and
+named gaps.
+
+The review-only candidate binds the same consequence boundary as O01:
 
 ```text
 O01 digest-only fixture
@@ -141,6 +148,21 @@ O01 digest-only fixture
   -> rollback, dry-run, approval, drift, break-glass, secret, runbook, and replay gaps
   -> later runtime smoke and reviewer demo material
 ```
+
+Named O02 gaps:
+
+```text
+rollback-plan-missing
+secret-rotation-stale-approval
+infrastructure-drift-review
+break-glass-secondary-approval
+runbook-instruction-review
+duplicate-operation-replay
+```
+
+O02 remains review material only. It cannot activate enforcement, mutate
+policy, deploy infrastructure, apply Terraform, call Kubernetes, write a
+secret, execute a runbook, or prove a customer PEP/gate.
 
 ## No-Claims
 

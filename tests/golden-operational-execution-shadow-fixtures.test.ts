@@ -199,9 +199,9 @@ function testDescriptorDocsAndScriptsStayAligned(): void {
   ok(descriptor.nonClaims.includes('not-live-kubernetes-terraform-or-github-deployment'), 'O01 descriptor: live deployment is a non-claim');
 
   for (const expected of [
-    'Status: in progress. O01 is repository-side only.',
-    'Progress after O01 lands: 1/4 complete. 3 steps remain.',
-    '| O01 | complete once merged | Operational Execution shadow fixture contract |',
+    'Status: in progress. O01-O02 are repository-side only.',
+    'Progress after O02 lands: 2/4 complete. 2 steps remain.',
+    '| O01 | complete | Operational Execution shadow fixture contract |',
     'canary-deploy-approved',
     'production-deploy-missing-rollback',
     'secret-rotation-stale-approval',

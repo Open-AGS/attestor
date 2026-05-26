@@ -1,6 +1,6 @@
 # Golden Path: Programmable Money
 
-Status: P02 complete once merged. P01/P02 are repository-side only. This is
+Status: P03 complete once merged. P01/P02/P03 are repository-side only. This is
 not a wallet, custody platform, signer, bundler, broadcaster, x402 facilitator,
 Safe guard deployment, intent solver, customer PEP proof, chain settlement
 proof, production readiness, or enterprise readiness.
@@ -18,7 +18,9 @@ AI-prepared programmable-money intent
   -> digest-only wallet, policy, adapter, approval, replay, simulation, and receipt refs
   -> admit / narrow / review / block shadow decisions
   -> review-only Policy Foundry projection
-  -> later runtime smoke, reviewer sandbox, and demo output
+  -> R02-R07 shadow runtime smoke chain
+  -> shadow-pilot readiness probe
+  -> later reviewer sandbox and demo output
 ```
 
 Non-split boundary:
@@ -49,8 +51,11 @@ until a later customer-controlled PEP/gate consumes an Attestor decision.
 | Crypto execution admission | `src/crypto-execution-admission/**` turns crypto authorization simulations into execution-admission plans and adapter handoff contracts without becoming a wallet, custody platform, bundler, facilitator, or solver. | repo-proven |
 | P01 fixture contract | `src/consequence-admission/golden-programmable-money-shadow-fixtures.ts` emits eight synthetic digest-only canonical shadow events for programmable-money scenarios. | repo-proven |
 | P01 tests | `tests/golden-programmable-money-shadow-fixtures.test.ts` locks the suite shape, digest-only canonical events, scenario semantics, no-wallet/no-signing/no-broadcast flags, no raw wallet material, no raw transaction payload, docs, ledger, and package script alignment. | repo-proven |
-| P02 projection contract | `src/consequence-admission/golden-programmable-money-policy-foundry-projection.ts` projects the P01 fixtures into a review-only Policy Foundry candidate, named gaps, decision counts, gap counts, and Policy Twin summary. | repo-proven once merged |
-| P02 tests | `tests/golden-programmable-money-policy-foundry-projection.test.ts` locks the review-only candidate, named gap kinds, decision counts, gap counts, no-enforcement flags, no raw wallet material, no raw transaction payload, docs, ledger, README, and package script alignment. | repo-proven once merged |
+| P02 projection contract | `src/consequence-admission/golden-programmable-money-policy-foundry-projection.ts` projects the P01 fixtures into a review-only Policy Foundry candidate, named gaps, decision counts, gap counts, and Policy Twin summary. | repo-proven |
+| P02 tests | `tests/golden-programmable-money-policy-foundry-projection.test.ts` locks the review-only candidate, named gap kinds, decision counts, gap counts, no-enforcement flags, no raw wallet material, no raw transaction payload, docs, ledger, README, and package script alignment. | repo-proven |
+| P03 runtime smoke | `src/consequence-admission/golden-programmable-money-runtime-smoke.ts` runs every P01 fixture through the existing R02-R07 shadow runtime smoke chain and binds envelope, assurance-packet, assurance-case, and lineage digests without wallet, signing, broadcast, custody, bundler, facilitator, solver, provider, audit-write, policy-activation, learning, or training side effects. | repo-proven once merged |
+| P03 readiness probe | `src/consequence-admission/golden-programmable-money-pilot-readiness-probe.ts` wraps the runtime smoke in a digest-bound pilot readiness packet and emits only `ready-for-shadow-pilot` or `not-ready`; `ready-for-scoped-pilot` is deliberately excluded. | repo-proven once merged |
+| P03 tests | `tests/golden-programmable-money-runtime-smoke.test.ts` and `tests/golden-programmable-money-pilot-readiness-probe.test.ts` lock deterministic replay, side-effect bans, no raw wallet/customer material, docs, ledger, package script, and fail-closed tamper behavior. | repo-proven once merged |
 
 ## Research Anchors
 
@@ -73,13 +78,13 @@ custody, x402, bundler, chain, solver, customer PEP, or production readiness.
 
 ## P-Series Tracker
 
-Progress after P02 lands: 2/4 complete. 2 steps remain.
+Progress after P03 lands: 3/4 complete. 1 step remains.
 
 | Step | Status | Slice | Evidence target |
 |---|---|---|---|
 | P01 | complete | Programmable Money shadow fixture contract | Synthetic digest-only canonical shadow events for Safe transfer, unlimited approval, ERC-4337 paymaster evidence, EIP-7702 stale delegation, x402 settlement proof, custody quorum, intent-solver route, and wallet-memo prompt-injection scenarios. |
-| P02 | complete once merged | Policy Foundry programmable-money projection | Review-only candidate, named gaps, decision counts, and Policy Twin summary over P01 fixtures. |
-| P03 | planned | Runtime smoke and pilot readiness | Run the existing shadow runtime chain over P01/P02 material and emit only `ready-for-shadow-pilot` or `not-ready`. |
+| P02 | complete | Policy Foundry programmable-money projection | Review-only candidate, named gaps, decision counts, and Policy Twin summary over P01 fixtures. |
+| P03 | complete once merged | Runtime smoke and pilot readiness | Run the existing R02-R07 shadow runtime smoke chain over P01/P02 material and emit only `ready-for-shadow-pilot` or `not-ready`. |
 | P04 | planned | Demo CLI and reviewer sandbox | Markdown-first local demo plus strict local JSON reviewer input, with no wallet call, signing, broadcast, custody callback, facilitator call, bundler call, or solver call. |
 
 ## P01 Scenario Contract
@@ -170,6 +175,45 @@ The projection is reviewer material. It can recommend review mode and name
 missing controls; it cannot sign, broadcast, settle, call adapters, grant
 authority, reduce review requirements, or activate enforcement.
 
+## P03 Runtime Smoke And Readiness
+
+P03 takes the P01 fixture suite and P02 review-only projection through the
+existing R02-R07 shadow runtime smoke chain. For each programmable-money
+scenario, it binds the fixture digest, source event digest, runtime smoke
+digest, envelope digest, assurance packet digest, final assurance-case digest,
+and final lineage-graph digest.
+
+The smoke contract is intentionally side-effect free:
+
+```text
+shadow-only
+fixture-only
+deterministic replay
+no target-system call
+no wallet call, no signing, no broadcast, no custody callback
+no bundler call, no facilitator call, no solver call
+no provider call, no audit write
+no external event bus, trace export, or lineage export
+no policy activation, learning activation, or training activation
+cannot grant authority
+cannot admit
+cannot activate enforcement
+not production-ready
+```
+
+The pilot readiness probe then wraps that smoke output in a digest-bound
+readiness packet. The only allowed verdicts are:
+
+```text
+ready-for-shadow-pilot
+not-ready
+```
+
+`ready-for-scoped-pilot` is deliberately excluded. A shadow-pilot verdict means
+only that the local synthetic fixture path is ready to be reviewed as shadow
+evidence. It does not mean any wallet, Safe, custody engine, x402 facilitator,
+bundler, solver, target system, customer PEP, chain, or payment rail can act.
+
 ## P01 No-Claims
 
 P01 does not:
@@ -192,3 +236,14 @@ P02 adds no live authority. It does not:
 - call a wallet, Safe, bundler, custody co-signer, x402 facilitator, or solver;
 - prove chain settlement or payment finality;
 - reduce review, authority, evidence, replay, or customer PEP requirements.
+
+P03 adds no live authority. It does not:
+
+- call a wallet, Safe, bundler, custody co-signer, x402 facilitator, or solver;
+- sign, broadcast, submit, settle, or verify a live programmable-money action;
+- write audit logs or emit external traces/events/lineage artifacts;
+- activate policy, learning, training, enforcement, or auto-enforcement;
+- grant authority or admit a real action;
+- prove live replay/idempotency store behavior;
+- prove customer PEP no-bypass;
+- prove production or enterprise readiness.

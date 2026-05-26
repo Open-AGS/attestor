@@ -1,0 +1,17 @@
+{
+  "version": "attestor.golden-operational-execution-reviewer-sandbox-input.v1",
+  "actionSurface": "operational_execution.change_request",
+  "targetSystem": "terraform-workspace",
+  "operationClass": "infrastructure-change",
+  "environmentClass": "production",
+  "changeRisk": "high",
+  "approvalFreshness": "fresh",
+  "rollbackPlanStatus": "verified",
+  "dryRunStatus": "drift-detected",
+  "incidentState": "none",
+  "tenantScope": "tenant-bound",
+  "operatorAuthority": "release-manager",
+  "instructionLikeEvidence": false,
+  "externalSideEffect": true,
+  "duplicateOperationAttempt": false
+}

@@ -1,6 +1,6 @@
 # Golden Path: Operational Execution
 
-Status: in progress. O01-O03 are repository-side only. This is not a live
+Status: complete. O01-O04 are repository-side only. This is not a live
 Kubernetes, Terraform, GitHub deployment environment, incident automation,
 secret manager, CI/CD, cloud, or runbook connector, not customer PEP proof,
 not production readiness, and not enterprise readiness.
@@ -17,7 +17,7 @@ AI-prepared operational action intent
   -> synthetic canonical shadow events
   -> digest-only deployment, plan, approval, rollback, incident, replay, and trace refs
   -> admit / narrow / review / block shadow decisions
-  -> later Policy Foundry projection, runtime smoke, reviewer sandbox, and demo output
+  -> Policy Foundry projection, runtime smoke, reviewer sandbox, and demo output
 ```
 
 Non-split boundary:
@@ -51,6 +51,9 @@ until a later customer-controlled PEP/gate consumes an Attestor decision.
 | O03 runtime smoke | `src/consequence-admission/golden-operational-execution-runtime-smoke.ts` runs all O01 fixtures through the existing R02-R07 shadow runtime smoke chain without deployment, infrastructure, secret-manager, incident-automation, runbook, provider, audit, or policy-activation side effects. | repo-proven once merged |
 | O03 pilot readiness probe | `src/consequence-admission/golden-operational-execution-pilot-readiness-probe.ts` wraps the runtime smoke in a shadow-entry Pilot Readiness Packet and allows only `ready-for-shadow-pilot` or `not-ready`. | repo-proven once merged |
 | O03 tests | `tests/golden-operational-execution-runtime-smoke.test.ts` and `tests/golden-operational-execution-pilot-readiness-probe.test.ts` lock deterministic replay, no-raw-operational-material posture, tamper fail-closed behavior, docs, ledger, and package script alignment. | repo-proven once merged |
+| O04 demo CLI | `scripts/demo-golden-operational-execution.ts` renders the Markdown-first Operational Execution demo and supports `--json` plus bounded `--scenario fixtures/golden-operational-execution-reviewer-sandbox.example.json`. | repo-proven once merged |
+| O04 reviewer sandbox | `src/consequence-admission/golden-operational-execution-reviewer-sandbox.ts` accepts only strict allowlisted structured operation facts and rejects raw manifest, Terraform, secret, runbook, or credential-shaped fields as unknown schema material. | repo-proven once merged |
+| O04 tests | `tests/golden-operational-execution-demo.test.ts` and `tests/golden-operational-execution-reviewer-sandbox.test.ts` lock the demo summary, CLI path boundary, reviewer sandbox, no-deployment/no-secret/no-runbook posture, docs, ledger, and package script alignment. | repo-proven once merged |
 
 ## Research Anchors
 
@@ -58,7 +61,8 @@ Kubernetes server-side dry-run anchors the no-side-effect validation pattern:
 validate the requested operation shape before mutating the cluster. Terraform
 plan anchors the plan-before-apply control pattern for infrastructure changes.
 GitHub deployment environments anchor protected workflow execution and human
-approval gates. NIST SP 800-61 anchors incident-response lifecycle vocabulary.
+approval gates. NIST SP 800-61 Rev. 3 anchors incident-response lifecycle
+vocabulary; Rev. 2 is no longer the current NIST publication.
 
 These are engineering anchors only. They do not prove live Kubernetes,
 Terraform, GitHub environment, cloud, secret manager, incident automation,
@@ -67,18 +71,18 @@ customer PEP, or production readiness.
 - [Kubernetes server-side dry-run](https://kubernetes.io/docs/reference/using-api/api-concepts/#dry-run)
 - [Terraform plan command](https://developer.hashicorp.com/terraform/cli/commands/plan)
 - [GitHub deployment environments](https://docs.github.com/actions/deployment/targeting-different-environments/using-environments-for-deployment)
-- [NIST SP 800-61 Computer Security Incident Handling Guide](https://csrc.nist.gov/publications/detail/sp/800-61/rev-2/final)
+- [NIST SP 800-61 Rev. 3 Incident Response Recommendations and Considerations](https://csrc.nist.gov/pubs/sp/800/61/r3/final)
 
 ## O-Series Tracker
 
-Progress after O03 lands: 3/4 complete. 1 step remains.
+Progress after O04 lands: 4/4 complete. 0 steps remain.
 
 | Step | Status | Slice | Evidence target |
 |---|---|---|---|
 | O01 | complete | Operational Execution shadow fixture contract | Synthetic digest-only canonical shadow events for canary deploy, production deploy without rollback, stale secret-rotation approval, infrastructure drift, incident restart, rollback, runbook prompt injection, and duplicate operation replay scenarios. |
 | O02 | complete | Policy Foundry operational projection | Review-only candidate, named gaps, decision counts, and Policy Twin summary over O01 fixtures. |
-| O03 | complete once merged | Runtime smoke and pilot readiness | Run the existing shadow runtime chain over O01/O02 material and emit only `ready-for-shadow-pilot` or `not-ready`. |
-| O04 | pending | Demo CLI and reviewer sandbox | Markdown-first local demo plus strict local JSON reviewer input, with no deployment, no provider calls, and no secret material. |
+| O03 | complete | Runtime smoke and pilot readiness | Run the existing shadow runtime chain over O01/O02 material and emit only `ready-for-shadow-pilot` or `not-ready`. |
+| O04 | complete once merged | Demo CLI and reviewer sandbox | Markdown-first local demo plus strict local JSON reviewer input, with no deployment, no provider calls, and no secret material. |
 
 ## O01 Scenario Contract
 
@@ -194,9 +198,65 @@ execution still needs customer PEP/gate integration, live replay/idempotency
 proof, operator approval paths, provider credentials, rollback runbooks, and
 deployment-specific proof.
 
+## O04 Demo CLI And Reviewer Sandbox
+
+O04 makes the Operational Execution path runnable for a reviewer:
+
+```bash
+npm run demo:golden-operational-execution
+npm run demo:golden-operational-execution -- --json
+npm run demo:golden-operational-execution -- --scenario fixtures/golden-operational-execution-reviewer-sandbox.example.json
+```
+
+The default output is Markdown-first for screenshots, walkthroughs, and human
+review. JSON as secondary machine output remains available for deterministic
+inspection. The reviewer sandbox accepts
+only a strict JSON allowlist of structured operation facts:
+
+```text
+actionSurface
+targetSystem
+operationClass
+environmentClass
+changeRisk
+approvalFreshness
+rollbackPlanStatus
+dryRunStatus
+incidentState
+tenantScope
+operatorAuthority
+instructionLikeEvidence
+externalSideEffect
+duplicateOperationAttempt
+```
+
+The sandbox rejects unknown fields rather than accepting raw operational
+material. That means a reviewer can test a drifted Terraform plan posture, stale
+secret-rotation approval posture, break-glass incident posture, runbook
+instruction-like evidence posture, or duplicate operation replay posture
+without sending raw manifests, raw Terraform plans, raw secrets, raw runbook
+text, kubeconfigs, provider tokens, customer identifiers, or target-system
+payloads into the demo.
+
+O04 is deliberately serious but bounded:
+
+```text
+local structured operation facts
+  -> strict JSON allowlist
+  -> digest-only canonical shadow event
+  -> R02-R07 shadow runtime smoke chain
+  -> decision summary + no-claims
+  -> Markdown or JSON demo output
+```
+
+It remains a reviewer sandbox. It cannot deploy, apply Terraform, rotate a
+secret, execute a runbook, restart an incident service, write an audit record,
+activate policy, grant authority, admit an operation, or prove production
+readiness.
+
 ## No-Claims
 
-O01-O03 do not prove:
+O01-O04 do not prove:
 
 - live Kubernetes deployment;
 - live Terraform apply;
@@ -204,6 +264,8 @@ O01-O03 do not prove:
 - live secret-manager write or rotation;
 - incident automation correctness;
 - native CI/CD, cloud, runbook, or ticketing connector coverage;
+- raw deployment manifest, Terraform plan, secret, runbook, kubeconfig, or
+  provider credential handling;
 - customer PEP no-bypass enforcement;
 - live replay/idempotency store wiring;
 - automatic policy activation;

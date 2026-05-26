@@ -160,8 +160,8 @@ function testDocsAndScriptsStayAligned(): void {
   };
 
   for (const expected of [
-    'Progress after O03 lands: 3/4 complete. 1 step remains.',
-    '| O03 | complete once merged | Runtime smoke and pilot readiness |',
+    'Progress after O04 lands: 4/4 complete. 0 steps remain.',
+    '| O03 | complete | Runtime smoke and pilot readiness |',
     'R02-R07 shadow runtime smoke chain',
     'ready-for-shadow-pilot',
     'no deployment, no infrastructure change, no',

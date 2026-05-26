@@ -155,7 +155,7 @@ function testDescriptorDocsAndScriptsStayAligned(): void {
   equal(descriptor.productionReady, false, 'O02 descriptor: production readiness is false');
 
   for (const expected of [
-    'Progress after O03 lands: 3/4 complete. 1 step remains.',
+    'Progress after O04 lands: 4/4 complete. 0 steps remain.',
     '| O02 | complete | Policy Foundry operational projection |',
     'review-only candidate for `operational_execution.change_request`',
     'rollback, dry-run, approval, drift, break-glass, secret, runbook, and replay gaps',

@@ -104,8 +104,9 @@ The current reviewer-runnable golden paths are:
 | [Golden Path: Authority Change](docs/02-architecture/golden-authority-change-shadow-pilot.md) | Authority Change | `npm run demo:golden-authority-change` | A synthetic, shadow-only access-change path through digest-only fixtures, Policy Foundry projection, runtime smoke, pilot readiness, reviewer sandbox, and demo output. |
 | [Golden Path: External Communication](docs/02-architecture/golden-external-communication-shadow-pilot.md) | External Communication | `npm run demo:golden-external-communication` | A synthetic, shadow-only customer-message path through digest-only fixtures, Policy Foundry projection, runtime smoke, pilot readiness, reviewer sandbox, and demo output. |
 | [Golden Path: Operational Execution](docs/02-architecture/golden-operational-execution-shadow-pilot.md) | Operational Execution | `npm run demo:golden-operational-execution` | A synthetic, shadow-only deploy, rollback, secret-rotation, infrastructure-change, and incident-action path through digest-only fixtures, Policy Foundry projection, runtime smoke, pilot readiness, reviewer sandbox, and demo output. |
+| [Golden Path: Programmable Money](docs/02-architecture/golden-programmable-money-shadow-pilot.md) | Programmable Money | `npm run test:golden-programmable-money-shadow-fixtures` | A synthetic, shadow-only P01 fixture contract for Safe transactions, wallet calls, account abstraction, x402 payments, custody callbacks, and intent settlement. It does not sign, broadcast, call a wallet, or prove chain settlement. |
 
-These paths do not execute refunds, export data, change access, send messages, deploy infrastructure, rotate secrets, execute runbooks, activate policy, call Stripe, Shopify, Snowflake, Databricks, Okta, Microsoft Entra, SailPoint, SendGrid, Mailgun, Kubernetes, Terraform, a CI/CD system, a cloud provider, an incident tool, or any identity provider, or claim production readiness. The repository is not a finished public SaaS, a production-use guarantee, a completed customer-operated deployment, or a substitute for an external security audit.
+These paths do not execute refunds, export data, change access, send messages, deploy infrastructure, rotate secrets, execute runbooks, activate policy, sign or broadcast transactions, call wallets, submit Safe transactions, call custody providers, call x402 facilitators, call intent solvers, call Stripe, Shopify, Snowflake, Databricks, Okta, Microsoft Entra, SailPoint, SendGrid, Mailgun, Kubernetes, Terraform, a CI/CD system, a cloud provider, an incident tool, or any identity provider, or claim production readiness. The repository is not a finished public SaaS, a production-use guarantee, a completed customer-operated deployment, or a substitute for an external security audit.
 
 Green local checks such as `npm run verify` are repo-side evidence only. They do not prove live cloud infrastructure, hosted Policy Foundry production readiness, live OpenAI or Anthropic calls, Snowflake or healthcare substrate readiness, customer-operated deployment readiness, or non-bypassable customer enforcement unless those specific opt-in live checks and customer-side PEP evidence have also run.
 
@@ -116,6 +117,7 @@ Start review with:
 - [Golden Path: Authority Change](docs/02-architecture/golden-authority-change-shadow-pilot.md)
 - [Golden Path: External Communication](docs/02-architecture/golden-external-communication-shadow-pilot.md)
 - [Golden Path: Operational Execution](docs/02-architecture/golden-operational-execution-shadow-pilot.md)
+- [Golden Path: Programmable Money](docs/02-architecture/golden-programmable-money-shadow-pilot.md)
 - [Attestor Evaluation Packet v0.1](docs/00-evaluation/v0.1-evaluation-packet.md)
 - [v0.2.0 evaluation release notes](docs/00-evaluation/v0.2.0-evaluation-release-notes.md)
 - [Security Policy](SECURITY.md)
@@ -618,6 +620,7 @@ Use this as a map, not a wall of links. Start with the small set below; the expa
 - [Golden Path: Authority Change](docs/02-architecture/golden-authority-change-shadow-pilot.md)
 - [Golden Path: External Communication](docs/02-architecture/golden-external-communication-shadow-pilot.md)
 - [Golden Path: Operational Execution](docs/02-architecture/golden-operational-execution-shadow-pilot.md)
+- [Golden Path: Programmable Money](docs/02-architecture/golden-programmable-money-shadow-pilot.md)
 - [Attestor Evaluation Packet v0.1](docs/00-evaluation/v0.1-evaluation-packet.md)
 - [v0.2.0 evaluation release notes](docs/00-evaluation/v0.2.0-evaluation-release-notes.md)
 - [Try Attestor first](docs/01-overview/try-attestor-first.md)

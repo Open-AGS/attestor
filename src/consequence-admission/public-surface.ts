@@ -67,6 +67,7 @@ export * from './golden-operational-execution-runtime-smoke.js';
 export * from './golden-operational-execution-pilot-readiness-probe.js';
 export * from './golden-operational-execution-demo.js';
 export * from './golden-operational-execution-reviewer-sandbox.js';
+export * from './golden-programmable-money-shadow-fixtures.js';
 export * from './decision-trace-logger.js';
 export * from './baseline-cohort-contract.js';
 export * from './candidate-invariants-catalog.js';

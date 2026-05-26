@@ -112,19 +112,9 @@ Green local checks such as `npm run verify` are repo-side evidence only. They do
 
 Start review with:
 
-- [Golden Path: Refund](docs/02-architecture/golden-refund-shadow-pilot.md)
-- [Golden Path: Controlled Data Export](docs/02-architecture/golden-data-export-shadow-pilot.md)
-- [Golden Path: Authority Change](docs/02-architecture/golden-authority-change-shadow-pilot.md)
-- [Golden Path: External Communication](docs/02-architecture/golden-external-communication-shadow-pilot.md)
-- [Golden Path: Operational Execution](docs/02-architecture/golden-operational-execution-shadow-pilot.md)
-- [Golden Path: Programmable Money](docs/02-architecture/golden-programmable-money-shadow-pilot.md)
-- [Attestor Evaluation Packet v0.1](docs/00-evaluation/v0.1-evaluation-packet.md)
-- [v0.2.0 evaluation release notes](docs/00-evaluation/v0.2.0-evaluation-release-notes.md)
-- [Security Policy](SECURITY.md)
-- [Evaluation Smoke workflow](.github/workflows/evaluation-smoke.yml)
-- [Artifact attestation plan](docs/08-deployment/artifact-attestation-plan.md)
-- [Audit remediation tracker](docs/audit/attestor-audit-remediation-tracker.md)
-- [LLM provider runtime decision](docs/02-architecture/llm-provider-runtime-decision.md)
+1. Run one or more Golden Path commands in the next section.
+2. Use the evaluation packet, release notes, security policy, smoke workflow, artifact attestation plan, and audit tracker only when you need deeper evidence.
+3. Use the LLM provider runtime decision only when evaluating provider-facing runtime work.
 
 ## Golden Paths
 
@@ -371,7 +361,7 @@ observe -> recommend -> simulate -> approve -> enforce -> prove
 
 Shadow mode discovers the real action surface first: which high-risk AI actions exist, which actions have no policy, which downstream tools have too much authority, and which actions would have been blocked before execution. This keeps adoption on the same control boundary without asking the customer to stop workflows on day one.
 
-The completed local examples of this adoption shape are [Golden Path: Refund](docs/02-architecture/golden-refund-shadow-pilot.md), [Golden Path: Controlled Data Export](docs/02-architecture/golden-data-export-shadow-pilot.md), [Golden Path: Authority Change](docs/02-architecture/golden-authority-change-shadow-pilot.md), [Golden Path: External Communication](docs/02-architecture/golden-external-communication-shadow-pilot.md), [Golden Path: Operational Execution](docs/02-architecture/golden-operational-execution-shadow-pilot.md), and [Golden Path: Programmable Money](docs/02-architecture/golden-programmable-money-shadow-pilot.md). They are not separate products; they are concrete scenario paths through the same Attestor control engine.
+The completed local examples of this adoption shape are the six Golden Paths above. They are not separate products; they are concrete scenario paths through the same Attestor control engine.
 
 ## Core Operating Loop
 
@@ -419,7 +409,9 @@ This is AI action control-plane infrastructure: not a chatbot feature, not a pro
 
 ## What You Can Run Today
 
-Use the golden-path commands first, then inspect the lower-level demos:
+Use the Golden Paths section above for full descriptions. This section is only a command index.
+
+Run the six reviewer paths:
 
 ```bash
 npm run demo:golden-refund
@@ -430,7 +422,7 @@ npm run demo:golden-operational-execution
 npm run demo:golden-programmable-money
 ```
 
-Lower-level admission and customer-gate examples:
+Then inspect lower-level admission and customer-gate examples only when you want the primitives:
 
 ```bash
 npm run example:admission
@@ -441,7 +433,18 @@ npm run example:agent-retry-wrapper
 
 `npm run example:admission` is the first useful admission primitive: a lower-level admission decision path, not an end-to-end golden path.
 
-The rest are useful once the first path makes sense: `npm run example:action-surface-onboarding`, `npm run render:action-surface-onboarding-packet`, `npm run policy-foundry:self-onboard`, `npm run preview:policy-foundry-hosted-ui`, `npm run proof:surface`, `npm run showcase:proof`, `npm run verify:cert`, and `npm run verify`.
+Use these only after the Golden Paths make sense:
+
+| Need | Command |
+|---|---|
+| Action surface onboarding | `npm run example:action-surface-onboarding` |
+| Action-surface packet rendering | `npm run render:action-surface-onboarding-packet` |
+| Policy Foundry self-onboarding | `npm run policy-foundry:self-onboard` |
+| Hosted UI preview | `npm run preview:policy-foundry-hosted-ui` |
+| Local proof surface | `npm run proof:surface` |
+| Local proof showcase | `npm run showcase:proof` |
+| Certificate verification path | `npm run verify:cert` |
+| Full local gate | `npm run verify` |
 
 `npm run proof:surface` writes `.attestor/proof-surface/latest/` with `.attestor/proof-surface/latest/manifest.json`, a machine-readable bundle, markdown summary, and one unified proof output per runnable scenario. It is a local static proof surface; it does not start a hosted console or claim a public hosted crypto route.
 
@@ -582,7 +585,7 @@ The current pack language is:
 
 The pack is the action class. Adapters sit underneath it. A refund service, payment processor, ERP, wallet RPC, Snowflake connector, CRM, identity provider, email sender, or deployment system can all attach to the same admission core without changing the public trust story.
 
-The pack list is taxonomy, not an equal-maturity claim. The current end-to-end repo paths are Golden Path: Refund, Golden Path: Controlled Data Export, Golden Path: Authority Change, Golden Path: External Communication, Golden Path: Operational Execution, and Golden Path: Programmable Money. Other packs name action classes and integration boundaries that can mature at different speeds without becoming separate products.
+The pack list is taxonomy, not an equal-maturity claim. The six Golden Paths above are the current completed local examples; future adapters can mature at different speeds without becoming separate products.
 
 ## Architecture: Core And Packs
 
@@ -646,14 +649,7 @@ Attestor is not:
 
 Use this as a map, not a wall of links. Start with the small set below; the expandable index is for maintainers changing the contract surface.
 
-**Evaluate the repo.** Run the golden paths first, then use the evaluation packet and quickstarts:
-
-- [Golden Path: Refund](docs/02-architecture/golden-refund-shadow-pilot.md)
-- [Golden Path: Controlled Data Export](docs/02-architecture/golden-data-export-shadow-pilot.md)
-- [Golden Path: Authority Change](docs/02-architecture/golden-authority-change-shadow-pilot.md)
-- [Golden Path: External Communication](docs/02-architecture/golden-external-communication-shadow-pilot.md)
-- [Golden Path: Operational Execution](docs/02-architecture/golden-operational-execution-shadow-pilot.md)
-- [Golden Path: Programmable Money](docs/02-architecture/golden-programmable-money-shadow-pilot.md)
+**Evaluate the repo.** Run the Golden Paths above first, then use the evaluation packet and quickstarts:
 - [Attestor Evaluation Packet v0.1](docs/00-evaluation/v0.1-evaluation-packet.md)
 - [v0.2.0 evaluation release notes](docs/00-evaluation/v0.2.0-evaluation-release-notes.md)
 - [Try Attestor first](docs/01-overview/try-attestor-first.md)

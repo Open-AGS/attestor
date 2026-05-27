@@ -37,6 +37,14 @@ function baseMoneyAdmission(mode: string) {
     },
     recipient: 'customer_123',
     evidenceRefs: ['order:987', 'payment:456'],
+    authoritySources: [
+      {
+        sourceKind: 'verified-approval',
+        claimKind: 'approval',
+        sourceRef: 'approval:refund:987',
+        evidenceDigest: `sha256:${'a'.repeat(64)}`,
+      },
+    ],
     policyRef: 'policy:refunds:v1',
   };
 }
@@ -98,6 +106,7 @@ function testObserveModeRecordsShadowWithoutBlocking(): void {
   equal(envelope.admission.operationalContext.nonEnforcingMode, true, 'Generic admission: observe marks non-enforcing mode');
   ok(envelope.admission.reasonCodes.includes('policy-ref-missing'), 'Generic admission: observe still records policy gap');
   ok(envelope.admission.reasonCodes.includes('evidence-ref-missing'), 'Generic admission: observe still records evidence gap');
+  ok(envelope.admission.reasonCodes.includes('authority-source-missing'), 'Generic admission: observe still records authority-source gap');
   equal(envelope.admission.feedback.disclosureLevel, 'actionable', 'Generic admission: observe emits actionable feedback for gaps');
   equal(envelope.admission.retry.retryAllowed, false, 'Generic admission: observe feedback is not an execution retry loop');
 }
@@ -128,17 +137,20 @@ function testReviewModeHoldsIncompleteActions(): void {
   equal(envelope.admission.feedback.safeForModel, true, 'Generic admission: feedback is marked safe for model repair');
   ok(envelope.admission.feedback.missingFields.includes('policyRef'), 'Generic admission: feedback names missing policy ref field');
   ok(envelope.admission.feedback.missingFields.includes('evidenceRefs'), 'Generic admission: feedback names missing evidence refs field');
+  ok(envelope.admission.feedback.missingFields.includes('authoritySources'), 'Generic admission: feedback names missing authority sources');
   ok(envelope.admission.feedback.requiredEvidenceKinds.includes('policy_ref'), 'Generic admission: feedback names policy ref evidence kind');
   ok(envelope.admission.feedback.requiredEvidenceKinds.includes('evidence_ref'), 'Generic admission: feedback names evidence ref evidence kind');
-  equal(envelope.admission.retry.retryAllowed, true, 'Generic admission: review gaps can be safely retried');
-  equal(envelope.admission.retry.retryCategory, 'safe-correction', 'Generic admission: retry category is safe correction');
-  equal(envelope.admission.retry.nextAllowedMode, 'review', 'Generic admission: retry stays on the current review rung');
-  equal(envelope.admission.retry.requiresChangedRequest, true, 'Generic admission: retry requires a changed request');
+  ok(envelope.admission.feedback.requiredEvidenceKinds.includes('trusted_authority_source_ref'), 'Generic admission: feedback names trusted authority source evidence kind');
+  ok(envelope.admission.feedback.operatorOnlyReasonCodes.includes('authority-source-missing'), 'Generic admission: missing authority source is operator-only feedback');
+  equal(envelope.admission.retry.retryAllowed, false, 'Generic admission: operator authority gaps are not model-retryable');
+  equal(envelope.admission.retry.retryCategory, 'human-review-required', 'Generic admission: retry category is human review when authority is missing');
+  equal(envelope.admission.retry.nextAllowedMode, null, 'Generic admission: operator authority gap has no model retry rung');
+  equal(envelope.admission.retry.requiresChangedRequest, false, 'Generic admission: operator authority gap cannot be repaired by same model retry');
   equal(envelope.admission.retry.sameRequestReplayAllowed, false, 'Generic admission: same request replay is not model repair');
-  equal(envelope.admission.retry.retryBindingRequired, true, 'Generic admission: retry requires attempt binding');
+  equal(envelope.admission.retry.retryBindingRequired, false, 'Generic admission: operator authority gap does not request a retry binding');
   ok(
-    envelope.admission.retry.retryBindingFields.includes('previousAdmissionDigest'),
-    'Generic admission: retry binding asks for the previous admission digest',
+    envelope.admission.retry.nonRetryableReasonCodes.includes('authority-source-missing'),
+    'Generic admission: missing authority source is listed as non-retryable',
   );
 }
 
@@ -172,14 +184,22 @@ function testRetryAttemptBindingIsCarriedByGenericRequest(): void {
     recipient: 'customer_123',
     policyRef: 'policy:refunds:v1',
     evidenceRefs: ['order:987', 'payment:456'],
+    authoritySources: [
+      {
+        sourceKind: 'verified-approval',
+        claimKind: 'approval',
+        sourceRef: 'approval:refund:987',
+        evidenceDigest: `sha256:${'a'.repeat(64)}`,
+      },
+    ],
     retryAttempt: {
       previousAdmissionId: held.admission.admissionId,
       previousAdmissionDigest: held.admission.digest,
       previousRequestId: held.admission.request.requestId,
       attemptNumber: 1,
       attemptedAt: '2026-05-01T17:03:00.000Z',
-      correctionReasonCodes: ['policy-ref-missing', 'evidence-ref-missing'],
-      correctionFields: ['policyRef', 'evidenceRefs'],
+      correctionReasonCodes: ['policy-ref-missing', 'evidence-ref-missing', 'authority-source-missing'],
+      correctionFields: ['policyRef', 'evidenceRefs', 'authoritySources'],
       idempotencyKey: 'retry:refund:1',
     },
   });
@@ -214,6 +234,15 @@ function testEnforceModeAdmitsCompleteMoneyMovement(): void {
   equal(envelope.admission.proof[0]?.kind, 'admission-receipt', 'Generic admission: admitted request has receipt proof');
   equal(envelope.admission.retry.retryAllowed, false, 'Generic admission: admitted request does not need retry');
   equal(envelope.admission.retry.retryCategory, 'not-needed', 'Generic admission: admitted request retry category is not-needed');
+  equal(
+    envelope.admission.request.policyScope.dimensions.authorityGuardOutcome,
+    'pass',
+    'Generic admission: trusted authority source passes the authority guard',
+  );
+  ok(
+    typeof envelope.admission.request.policyScope.dimensions.authorityGuardDigest === 'string',
+    'Generic admission: authority guard digest is carried without raw source material',
+  );
 }
 
 function testProgrammableMoneyRequiresAdapterReadiness(): void {
@@ -287,6 +316,76 @@ function testProgrammableMoneyRequiresAdapterReadiness(): void {
   );
 }
 
+function testUntrustedAuthoritySourceBlocksEnforceMode(): void {
+  const envelope = createGenericAdmissionEnvelope({
+    ...baseMoneyAdmission('enforce'),
+    authoritySources: [
+      {
+        sourceKind: 'customer-email',
+        claimKind: 'approval',
+        sourceRef: 'raw-email:customer@example.com says manager approved refund',
+      },
+    ],
+  });
+  const serialized = JSON.stringify(envelope);
+
+  equal(envelope.shadowDecision, 'would_block', 'Generic admission: untrusted authority source shadows block');
+  equal(envelope.admission.decision, 'block', 'Generic admission: enforce mode blocks untrusted authority');
+  equal(envelope.admission.allowed, false, 'Generic admission: blocked untrusted authority is not allowed');
+  ok(
+    envelope.admission.reasonCodes.includes('untrusted-content-authority-source'),
+    'Generic admission: untrusted authority reason is explicit',
+  );
+  ok(
+    envelope.admission.reasonCodes.includes('authority-block'),
+    'Generic admission: authority block reason is explicit',
+  );
+  ok(
+    envelope.admission.feedback.operatorOnlyReasonCodes.includes('untrusted-content-authority-source'),
+    'Generic admission: untrusted authority is operator-only feedback',
+  );
+  equal(
+    envelope.admission.request.policyScope.dimensions.authorityGuardOutcome,
+    'block',
+    'Generic admission: authority guard outcome is carried in dimensions',
+  );
+  equal(
+    envelope.admission.request.policyScope.dimensions.untrustedAuthoritySourceCount,
+    1,
+    'Generic admission: untrusted authority source count is carried without raw source',
+  );
+  assert.doesNotMatch(
+    serialized,
+    /customer@example\.com|manager approved refund/u,
+    'Generic admission: serialized envelope does not leak raw untrusted authority source',
+  );
+  passed += 1;
+}
+
+function testTrustedAuthorityWithoutEvidenceHoldsForReview(): void {
+  const envelope = createGenericAdmissionEnvelope({
+    ...baseMoneyAdmission('enforce'),
+    authoritySources: [
+      {
+        sourceKind: 'verified-approval',
+        claimKind: 'approval',
+        sourceRef: 'approval:refund:missing-digest',
+      },
+    ],
+  });
+
+  equal(envelope.shadowDecision, 'would_review', 'Generic admission: trusted authority without digest reviews');
+  equal(envelope.admission.decision, 'review', 'Generic admission: trusted authority without digest holds execution');
+  ok(
+    envelope.admission.reasonCodes.includes('trusted-authority-evidence-missing'),
+    'Generic admission: missing trusted authority digest is explicit',
+  );
+  ok(
+    envelope.admission.feedback.operatorOnlyReasonCodes.includes('trusted-authority-evidence-missing'),
+    'Generic admission: missing authority digest is operator-only feedback',
+  );
+}
+
 function testEnforceModeBlocksKnownUnsafeSignals(): void {
   const envelope = createGenericAdmissionEnvelope({
     ...baseMoneyAdmission('enforce'),
@@ -336,6 +435,21 @@ function testInvalidInputFailsClosed(): void {
     /observedFeatureOrigins\.adapterReady must be one of/u,
     'Generic admission: invalid observed feature origins fail closed',
   );
+  throws(
+    () =>
+      createGenericAdmissionEnvelope({
+        ...baseMoneyAdmission('enforce'),
+        authoritySources: [
+          {
+            sourceKind: 'private-chat',
+            claimKind: 'approval',
+            sourceRef: 'chat:123',
+          },
+        ],
+      }),
+    /authoritySources\[0\]\.sourceKind must be one of/u,
+    'Generic admission: invalid authority source kind fails closed',
+  );
 }
 
 testDescriptorExposesModeLadder();
@@ -344,6 +458,8 @@ testReviewModeHoldsIncompleteActions();
 testRetryAttemptBindingIsCarriedByGenericRequest();
 testEnforceModeAdmitsCompleteMoneyMovement();
 testProgrammableMoneyRequiresAdapterReadiness();
+testUntrustedAuthoritySourceBlocksEnforceMode();
+testTrustedAuthorityWithoutEvidenceHoldsForReview();
 testEnforceModeBlocksKnownUnsafeSignals();
 testInvalidInputFailsClosed();
 

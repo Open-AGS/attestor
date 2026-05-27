@@ -138,6 +138,18 @@ When an action is held for missing policy, evidence, amount, recipient, data sco
 
 Correction reason codes are cataloged. The catalog marks which codes are model-retryable and which must route to customer review or operator control. Model-retryable examples include `policy-ref-missing`, `evidence-ref-missing`, `amount-scope-missing`, `recipient-scope-missing`, `data-scope-missing`, `authority-mode-missing`, and `narrow-required`. Operator or customer-control examples include `adapter-readiness-missing`, `custom-domain-review-required`, `policy-blocked`, `feature-blocked`, and `feature-unsafe`.
 
+Generic admissions now run the untrusted-content authority guard when the
+domain profile requires the authority check, or when the request supplies
+authority-source metadata. Authority must arrive as structured `authoritySources`
+references. A customer email, ticket comment, web page, retrieved content, tool
+output, or model summary cannot become approval, policy, or authorization just
+because it appears in the request. Trusted authority sources such as
+`verified-approval`, `approval-workflow`, `customer-policy`, `idp-directory`,
+`authority-record`, or `manual-review` must carry digest evidence. Missing
+authority metadata holds the action for operator/customer control with
+`authority-source-missing`; untrusted authority claims fail closed with
+`untrusted-content-authority-source` and `authority-block`.
+
 `observedFeatures` are upstream/operator-derived evidence only. They can
 support restrictive checks such as `feature-blocked` or `feature-unsafe` when
 the integration can stand behind the observation, but they cannot grant

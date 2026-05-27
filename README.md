@@ -1,7 +1,5 @@
 # Attestor
 
-![Attestor: proof before consequence](docs/assets/attestor-readme-hero.png)
-
 **Control infrastructure for high-risk AI actions.**
 
 Attestor is an AI Action Control Plane that sits between AI intent and real-world consequence.

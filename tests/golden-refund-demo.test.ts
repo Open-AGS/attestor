@@ -161,10 +161,11 @@ function testDocsAndScriptsStayAligned(): void {
     for (const expected of [
       '## One Concrete Workflow',
       'Refund $380 to customer_123.',
-      'missing approval + duplicate-refund risk',
+      'blocked before money moves',
+      'manager approval is missing and duplicate-refund risk is present',
       'What the reviewer sees:',
       'the AI-generated refund request can reach the refund service with no gate trace',
-      'money does not move unless the action is admitted, narrowed, or approved',
+      'money does not move',
       '[Golden Path: Refund](docs/02-architecture/golden-refund-shadow-pilot.md)',
       'npm ci',
       'npm run demo:golden-refund',

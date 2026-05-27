@@ -30,10 +30,12 @@ function testReadmeStartsWithAConcreteWorkflow(): void {
   includes(readme, 'A prompt is not a formal rule; it is linguistic context interpreted by a probabilistic model.', 'Product docs: README preserves the prompt-boundary thesis');
   includes(readme, '## One Concrete Workflow', 'Product docs: README starts product understanding from one concrete workflow');
   includes(readme, 'Refund $380 to customer_123.', 'Product docs: README uses a concrete refund action');
-  includes(readme, 'missing approval + duplicate-refund risk', 'Product docs: README shows a concrete stop reason');
+  includes(readme, 'blocked before money moves', 'Product docs: README gives one concrete refund outcome');
+  includes(readme, 'manager approval is missing and duplicate-refund risk is present', 'Product docs: README shows a concrete stop reason');
   includes(readme, 'What the reviewer sees:', 'Product docs: README makes the reviewer view concrete');
   includes(readme, 'the AI-generated refund request can reach the refund service with no gate trace', 'Product docs: README shows the without-Attestor failure mode');
-  includes(readme, 'money does not move unless the action is admitted, narrowed, or approved', 'Product docs: README shows the with-Attestor gate behavior');
+  includes(readme, 'money does not move', 'Product docs: README shows the with-Attestor gate behavior');
+  includes(readme, '## Why This Matters Now', 'Product docs: README moves urgency before broad mechanism');
   includes(readme, 'the refund path is synthetic and shadow-only', 'Product docs: README keeps the refund demo no-claim visible');
   includes(readme, 'npm run demo:golden-refund', 'Product docs: README keeps the first runnable path visible');
 }

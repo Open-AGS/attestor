@@ -31,13 +31,13 @@ Attestor checks:
 Outcome:
 
 ```text
-review required / blocked
+blocked before money moves
 ```
 
 Reason:
 
 ```text
-missing approval + duplicate-refund risk
+manager approval is missing and duplicate-refund risk is present
 ```
 
 What the reviewer sees:
@@ -58,7 +58,7 @@ the AI-generated refund request can reach the refund service with no gate trace
 With Attestor and a customer enforcement point:
 
 ```text
-money does not move unless the action is admitted, narrowed, or approved
+money does not move
 proof remains
 ```
 
@@ -78,6 +78,21 @@ Then run all local golden paths:
 npm run demo:golden-paths
 npm run demo:golden-paths -- --json
 ```
+
+## Why This Matters Now
+
+AI systems are moving from chat into tools that can touch payment flows, data exports, access changes, customer messages, infrastructure, and programmable money.
+
+That pushes AI actions toward the same world as AI risk management, operational resilience, ICT risk management, third-party oversight, incident accountability, and high-risk AI governance.
+
+Reference anchors:
+
+- [NIST AI Risk Management Framework](https://www.nist.gov/itl/ai-risk-management-framework)
+- [U.S. Interagency Guidance on Third-Party Relationships](https://www.federalreserve.gov/frrs/guidance/interagency-guidance-on-third-party-relationships.htm)
+- [EU Digital Operational Resilience Act](https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A32022R2554)
+- [EU AI Act](https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A32024R1689)
+
+These links are context anchors, not compliance claims.
 
 ## What Attestor Does
 
@@ -224,21 +239,6 @@ npm run proof:surface
 
 The command writes `.attestor/proof-surface/latest/manifest.json`.
 It is a local static proof surface. It does not start a hosted console or claim a public hosted crypto route.
-
-## Why This Matters Now
-
-AI systems are moving from chat into tools that can touch payment flows, data exports, access changes, customer messages, infrastructure, and programmable money.
-
-That pushes AI actions toward the same world as AI risk management, operational resilience, ICT risk management, third-party oversight, incident accountability, and high-risk AI governance.
-
-Reference anchors:
-
-- [NIST AI Risk Management Framework](https://www.nist.gov/itl/ai-risk-management-framework)
-- [U.S. Interagency Guidance on Third-Party Relationships](https://www.federalreserve.gov/frrs/guidance/interagency-guidance-on-third-party-relationships.htm)
-- [EU Digital Operational Resilience Act](https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A32022R2554)
-- [EU AI Act](https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A32024R1689)
-
-These links are context anchors, not compliance claims.
 
 ## What Attestor Is Not
 

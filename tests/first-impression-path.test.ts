@@ -44,12 +44,18 @@ function testReadmeHasAPlainFirstThirtySeconds(): void {
   includes(readme, 'Prompts guide. They do not enforce.', 'README: keeps the prompt-control contrast');
   includes(readme, '## One Concrete Workflow', 'README: starts with one concrete workflow before abstract categories');
   includes(readme, 'Refund $380 to customer_123.', 'README: shows one high-risk action immediately');
-  includes(readme, 'missing approval + duplicate-refund risk', 'README: gives the concrete stop reason');
+  includes(readme, 'blocked before money moves', 'README: gives one concrete outcome without slash ambiguity');
+  includes(
+    readme,
+    'manager approval is missing and duplicate-refund risk is present',
+    'README: gives the concrete stop reason',
+  );
   includes(readme, 'What the reviewer sees:', 'README: shows what a user sees');
   includes(readme, 'the AI-generated refund request can reach the refund service with no gate trace', 'README: shows the without-Attestor failure mode');
-  includes(readme, 'money does not move unless the action is admitted, narrowed, or approved', 'README: shows the with-Attestor result');
+  includes(readme, 'money does not move', 'README: shows the with-Attestor result');
   includes(readme, 'the refund path is synthetic and shadow-only', 'README: keeps local-demo no-claims close to the example');
   appearsBefore(readme, '## One Concrete Workflow', '## What Attestor Does', 'README: concrete story comes before broad mechanism');
+  appearsBefore(readme, '## Why This Matters Now', '## What Attestor Does', 'README: urgency comes before broad mechanism');
   appearsBefore(readme, '## One Concrete Workflow', '## The Same Pattern Across Actions', 'README: concrete story comes before pack taxonomy');
 }
 

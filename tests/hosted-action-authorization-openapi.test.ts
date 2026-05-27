@@ -151,7 +151,11 @@ function testOpenApiContractPreservesShadowBoundaries(): void {
   includes(text, '"operator-attested"', 'Hosted OpenAPI: operator-attested feature origin is documented');
   includes(text, '"caller-supplied"', 'Hosted OpenAPI: caller-supplied feature origin is explicitly classified');
   includes(text, '"authoritySources"', 'Hosted OpenAPI: authority-source contract is documented');
+  includes(text, '"approvals"', 'Hosted OpenAPI: approval provenance contract is documented');
   includes(text, '"verified-approval"', 'Hosted OpenAPI: trusted approval source kind is documented');
+  includes(text, '"approval-workflow"', 'Hosted OpenAPI: approval workflow provenance source is documented');
+  includes(text, '"approvalDigest"', 'Hosted OpenAPI: approval digest provenance is documented');
+  includes(text, '"reviewerAuthorityDigest"', 'Hosted OpenAPI: reviewer authority digest is documented');
   includes(text, '"customer-email"', 'Hosted OpenAPI: untrusted customer email source kind is documented');
   includes(text, '"llm-summary"', 'Hosted OpenAPI: model-generated source kind is documented');
   includes(text, '"approvalRequired"', 'Hosted OpenAPI: approval boundary is documented');

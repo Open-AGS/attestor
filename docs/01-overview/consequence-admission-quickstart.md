@@ -150,6 +150,16 @@ authority metadata holds the action for operator/customer control with
 `authority-source-missing`; untrusted authority claims fail closed with
 `untrusted-content-authority-source` and `authority-block`.
 
+When an authority source claims `approval`, the generic admission path also
+runs the approval-provenance guard. Approval must arrive as structured
+`approvals` metadata: an opaque approval reference, trusted workflow/reviewer
+or system source, approved state, reviewer identity, reviewer-authority digest,
+approval digest, scope digest, and issued-at timestamp. Chat messages, customer
+emails, ticket comments, tool output, and model summaries cannot become
+approval. Missing approval provenance holds with `approval-missing`; untrusted
+or model-generated approval fails closed with `approval-source-untrusted`,
+`approval-model-generated`, and `approval-block`.
+
 `observedFeatures` are upstream/operator-derived evidence only. They can
 support restrictive checks such as `feature-blocked` or `feature-unsafe` when
 the integration can stand behind the observation, but they cannot grant

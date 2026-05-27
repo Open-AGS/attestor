@@ -50,8 +50,18 @@ function testObservedFeaturesStayEvidenceOnly(): void {
   );
   includes(
     source,
+    'approvals: normalizeGenericApprovals(input.approvals)',
+    'Consequence admission proof discipline: generic approval provenance is normalized from caller input',
+  );
+  includes(
+    source,
     'evaluateConsequenceUntrustedContentAuthority({',
     'Consequence admission proof discipline: untrusted-content authority guard is runtime-wired for generic admissions',
+  );
+  includes(
+    source,
+    'evaluateConsequenceApprovalProvenance({',
+    'Consequence admission proof discipline: approval provenance guard is runtime-wired for generic approvals',
   );
   includes(
     source,
@@ -120,6 +130,21 @@ function testObservedFeaturesStayEvidenceOnly(): void {
     '`untrusted-content-authority-source` and `authority-block`',
     'Consequence admission proof discipline: quickstart documents untrusted authority fail-closed reasons',
   );
+  includes(
+    quickstart,
+    'runs the approval-provenance guard',
+    'Consequence admission proof discipline: quickstart documents approval guard wiring',
+  );
+  includes(
+    quickstart,
+    '`approvals` metadata',
+    'Consequence admission proof discipline: quickstart documents approvals metadata',
+  );
+  includes(
+    quickstart,
+    '`approval-missing`',
+    'Consequence admission proof discipline: quickstart documents missing approval hold',
+  );
 
   const hostedApi = readProjectFile('docs', '01-overview', 'hosted-action-authorization-api.md');
   includes(
@@ -136,6 +161,11 @@ function testObservedFeaturesStayEvidenceOnly(): void {
     hostedApi,
     'authority must arrive as structured `authoritySources` references',
     'Consequence admission proof discipline: hosted API boundary documents authoritySources references',
+  );
+  includes(
+    hostedApi,
+    'approval must also arrive as structured `approvals` provenance',
+    'Consequence admission proof discipline: hosted API boundary documents approvals provenance',
   );
   includes(
     hostedApi,

@@ -451,6 +451,95 @@
               }
             }
           },
+          "approvals": {
+            "type": "array",
+            "description": "Digest-only approval provenance claims. Required when approval is used as authority; raw approval text, raw customer messages, and model summaries must not be included.",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "approvalRef",
+                "sourceKind"
+              ],
+              "properties": {
+                "approvalRef": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Opaque approval reference only."
+                },
+                "sourceKind": {
+                  "type": "string",
+                  "enum": [
+                    "chat-message",
+                    "customer-email",
+                    "ticket-comment",
+                    "user-prompt",
+                    "external-document",
+                    "tool-output",
+                    "llm-summary",
+                    "approval-workflow",
+                    "reviewer-queue",
+                    "manual-review",
+                    "signed-approval",
+                    "idp-directory",
+                    "policy-control-plane"
+                  ]
+                },
+                "state": {
+                  "type": "string",
+                  "enum": [
+                    "approved",
+                    "pending",
+                    "rejected",
+                    "revoked"
+                  ]
+                },
+                "sourceRef": {
+                  "type": "string",
+                  "description": "Opaque source-system reference only."
+                },
+                "reviewerRef": {
+                  "type": "string",
+                  "description": "Opaque reviewer identity reference."
+                },
+                "reviewerAuthorityDigest": {
+                  "type": "string"
+                },
+                "approvalDigest": {
+                  "type": "string"
+                },
+                "scopeDigest": {
+                  "type": "string"
+                },
+                "issuedAt": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "expiresAt": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "trustClass": {
+                  "type": "string",
+                  "enum": [
+                    "untrusted-content",
+                    "model-generated",
+                    "unverified-tool-output",
+                    "verified-workflow",
+                    "verified-reviewer",
+                    "signed-authority",
+                    "system-authority"
+                  ]
+                },
+                "signatureVerified": {
+                  "type": "boolean"
+                },
+                "stepUpVerified": {
+                  "type": "boolean"
+                }
+              }
+            }
+          },
           "observedFeatures": {
             "type": "object",
             "additionalProperties": {

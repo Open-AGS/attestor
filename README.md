@@ -283,6 +283,20 @@ Start here:
 - [Hosted customer journey](docs/01-overview/hosted-customer-journey.md)
 - [Hosted account visibility](docs/01-overview/hosted-account-visibility.md)
 - [Attestor internal machine map](docs/02-architecture/attestor-internal-machine-map.md)
+- [Action-surface onboarding red-team fixture bundle](docs/02-architecture/action-surface-onboarding-packet.md)
+
+Policy Foundry evaluator notes:
+
+- Policy Foundry is the onboarding layer for this adoption path. It does not train models, write policy automatically, or prove production readiness.
+- Customers cannot self-attest readiness controls; readiness evidence must come from trusted runtime, operator, reviewer, or downstream integration evidence.
+- It keeps reviewed outcome feedback, drift/policy-debt findings, active questions, and candidate evidence as review material.
+- It generates a red-team fixture bundle and local replay reports through the local adversarial replay executor.
+- It can attach live downstream replay evidence when configured, but that remains live evidence, not a repo-side production claim.
+- The hosted onboarding workflow packages the hosted review surface, wizard state, entitlement context, and storage-readiness checks.
+- Local browser QA uses `preview:policy-foundry-hosted-ui` with safe fixtures only.
+- For an already deployed hosted runtime, the opt-in Policy Foundry production smoke probe checks the route contract without proving production readiness.
+- Safety boundary: hosted onboarding returns review material only.
+- [Policy Foundry onboarding](docs/02-architecture/policy-foundry-onboarding.md)
 
 Maintainer maps:
 

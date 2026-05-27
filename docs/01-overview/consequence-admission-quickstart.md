@@ -160,6 +160,17 @@ approval. Missing approval provenance holds with `approval-missing`; untrusted
 or model-generated approval fails closed with `approval-source-untrusted`,
 `approval-model-generated`, and `approval-block`.
 
+Generic admissions can also run the no-go condition ledger guard when the
+request supplies `noGoLedgerRef`, `noGoConditions`, or no-go bypass signals.
+No-go records must be structured hold metadata such as fraud, legal,
+compliance, security, privacy, risk, production-freeze, or customer-defined
+holds. Active holds block with `active-no-go-condition-present` and
+`no-go-condition-block`; pending or incomplete hold records route to review.
+Natural-language attempts to ignore or bypass a hold block with
+`natural-language-bypass-attempted`. The admission response carries only
+safe counts and ledger digests such as `noGoConditionDigest`; it must not return
+raw case references, private hold owners, customer messages, or bypass text.
+
 `observedFeatures` are upstream/operator-derived evidence only. They can
 support restrictive checks such as `feature-blocked` or `feature-unsafe` when
 the integration can stand behind the observation, but they cannot grant

@@ -55,6 +55,11 @@ function testObservedFeaturesStayEvidenceOnly(): void {
   );
   includes(
     source,
+    'noGoConditions: normalizeGenericNoGoConditions(input.noGoConditions)',
+    'Consequence admission proof discipline: generic no-go conditions are normalized from caller input',
+  );
+  includes(
+    source,
     'evaluateConsequenceUntrustedContentAuthority({',
     'Consequence admission proof discipline: untrusted-content authority guard is runtime-wired for generic admissions',
   );
@@ -62,6 +67,11 @@ function testObservedFeaturesStayEvidenceOnly(): void {
     source,
     'evaluateConsequenceApprovalProvenance({',
     'Consequence admission proof discipline: approval provenance guard is runtime-wired for generic approvals',
+  );
+  includes(
+    source,
+    'evaluateConsequenceNoGoConditionLedger({',
+    'Consequence admission proof discipline: no-go condition ledger is runtime-wired for generic admissions',
   );
   includes(
     source,
@@ -145,6 +155,26 @@ function testObservedFeaturesStayEvidenceOnly(): void {
     '`approval-missing`',
     'Consequence admission proof discipline: quickstart documents missing approval hold',
   );
+  includes(
+    quickstart,
+    'run the no-go condition ledger guard',
+    'Consequence admission proof discipline: quickstart documents no-go ledger guard wiring',
+  );
+  includes(
+    quickstart,
+    '`noGoConditions`',
+    'Consequence admission proof discipline: quickstart documents no-go condition metadata',
+  );
+  includes(
+    quickstart,
+    '`active-no-go-condition-present`',
+    'Consequence admission proof discipline: quickstart documents active no-go block reason',
+  );
+  includes(
+    quickstart,
+    'raw case references, private hold owners, customer messages, or bypass text',
+    'Consequence admission proof discipline: quickstart documents no-go redaction boundary',
+  );
 
   const hostedApi = readProjectFile('docs', '01-overview', 'hosted-action-authorization-api.md');
   includes(
@@ -166,6 +196,16 @@ function testObservedFeaturesStayEvidenceOnly(): void {
     hostedApi,
     'approval must also arrive as structured `approvals` provenance',
     'Consequence admission proof discipline: hosted API boundary documents approvals provenance',
+  );
+  includes(
+    hostedApi,
+    'no-go condition state must arrive as structured `noGoConditions` metadata',
+    'Consequence admission proof discipline: hosted API boundary documents no-go metadata',
+  );
+  includes(
+    hostedApi,
+    'must not return raw hold references',
+    'Consequence admission proof discipline: hosted API boundary documents no-go raw-data boundary',
   );
   includes(
     hostedApi,

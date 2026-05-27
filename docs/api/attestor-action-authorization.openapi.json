@@ -540,6 +540,117 @@
               }
             }
           },
+          "noGoLedgerRef": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Opaque reference to the customer or operator no-go condition ledger. Raw hold records or case contents must not be included."
+          },
+          "noGoConditions": {
+            "type": "array",
+            "description": "Digest-first no-go hold records for the no-go condition ledger guard. Active holds and natural-language bypass attempts block generic admission; raw case details must not be returned.",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "conditionRef",
+                "kind",
+                "state",
+                "sourceKind"
+              ],
+              "properties": {
+                "conditionRef": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Opaque hold reference only."
+                },
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "fraud-hold",
+                    "legal-hold",
+                    "compliance-hold",
+                    "security-hold",
+                    "privacy-hold",
+                    "risk-hold",
+                    "production-freeze",
+                    "customer-defined-hold"
+                  ]
+                },
+                "state": {
+                  "type": "string",
+                  "enum": [
+                    "active",
+                    "pending-review",
+                    "released",
+                    "expired"
+                  ]
+                },
+                "sourceKind": {
+                  "type": "string",
+                  "enum": [
+                    "policy-control-plane",
+                    "fraud-system",
+                    "legal-system",
+                    "compliance-system",
+                    "security-system",
+                    "privacy-system",
+                    "risk-owner",
+                    "customer-admin",
+                    "chat-message",
+                    "customer-email",
+                    "llm-summary",
+                    "tool-output"
+                  ]
+                },
+                "sourceRef": {
+                  "type": "string",
+                  "description": "Opaque source reference only."
+                },
+                "ownerRef": {
+                  "type": "string",
+                  "description": "Opaque hold owner reference only."
+                },
+                "ownerAuthorityDigest": {
+                  "type": "string"
+                },
+                "scopeDigest": {
+                  "type": "string"
+                },
+                "issuedAt": {
+                  "type": "string"
+                },
+                "expiresAt": {
+                  "type": "string"
+                },
+                "releaseDigest": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "noGoNaturalLanguageBypassAttempted": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Operator/customer-attested bypass flag for no-go hold attempts."
+          },
+          "noGoNaturalLanguageSignals": {
+            "type": "array",
+            "description": "Optional text signals scanned only to produce bypass digests. Raw signal text must not be returned in admission responses or shadow reads.",
+            "items": {
+              "type": "string"
+            }
+          },
+          "noGoBypassAttemptRef": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Opaque reference to the bypass attempt review material."
+          },
           "observedFeatures": {
             "type": "object",
             "additionalProperties": {

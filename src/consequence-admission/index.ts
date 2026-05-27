@@ -166,6 +166,15 @@ import {
   type ConsequenceUntrustedContentAuthoritySource,
 } from './untrusted-content-authority-guard.js';
 import {
+  CONSEQUENCE_NO_GO_CONDITION_KINDS,
+  CONSEQUENCE_NO_GO_CONDITION_REASON_CODES,
+  CONSEQUENCE_NO_GO_CONDITION_SOURCE_KINDS,
+  CONSEQUENCE_NO_GO_CONDITION_STATES,
+  evaluateConsequenceNoGoConditionLedger,
+  type ConsequenceNoGoConditionLedgerDecision,
+  type ConsequenceNoGoConditionRecord,
+} from './no-go-condition-ledger.js';
+import {
   PROTECTED_ADMISSION_E2E_PROOF_PLAN_VERSION,
   protectedAdmissionE2eProofPlanDescriptor,
   type ProtectedAdmissionE2eProofPlanDescriptor,
@@ -227,6 +236,9 @@ ReadonlySet<string> = new Set(CONSEQUENCE_UNTRUSTED_CONTENT_AUTHORITY_REASON_COD
 
 const GENERIC_ADMISSION_APPROVAL_GUARD_REASON_CODES:
 ReadonlySet<string> = new Set(CONSEQUENCE_APPROVAL_GUARD_REASON_CODES);
+
+const GENERIC_ADMISSION_NO_GO_REASON_CODES:
+ReadonlySet<string> = new Set(CONSEQUENCE_NO_GO_CONDITION_REASON_CODES);
 
 export const GENERIC_ADMISSION_SHADOW_DECISIONS = [
   'would_admit',
@@ -727,6 +739,9 @@ export type GenericAdmissionAuthoritySource =
 export type GenericAdmissionApproval =
   ConsequenceApprovalProvenanceClaim;
 
+export type GenericAdmissionNoGoCondition =
+  ConsequenceNoGoConditionRecord;
+
 export interface CreateGenericAdmissionInput {
   readonly mode: GenericAdmissionMode;
   readonly actor: string;
@@ -750,6 +765,11 @@ export interface CreateGenericAdmissionInput {
   readonly evidenceRefs?: readonly string[];
   readonly authoritySources?: readonly GenericAdmissionAuthoritySource[];
   readonly approvals?: readonly GenericAdmissionApproval[];
+  readonly noGoLedgerRef?: string | null;
+  readonly noGoConditions?: readonly GenericAdmissionNoGoCondition[] | null;
+  readonly noGoNaturalLanguageBypassAttempted?: boolean | null;
+  readonly noGoNaturalLanguageSignals?: readonly string[];
+  readonly noGoBypassAttemptRef?: string | null;
   readonly nativeInputRefs?: readonly string[];
   readonly observedFeatures?: Readonly<Record<string, GenericAdmissionFeatureValue>>;
   readonly observedFeatureOrigins?:
@@ -767,6 +787,7 @@ export interface GenericAdmissionModeEvaluation {
   readonly reasonCodes: readonly string[];
   readonly authorityGuardDecision: ConsequenceUntrustedContentAuthorityDecision | null;
   readonly approvalGuardDecision: ConsequenceApprovalProvenanceDecision | null;
+  readonly noGoConditionLedgerDecision: ConsequenceNoGoConditionLedgerDecision | null;
 }
 
 export interface GenericAdmissionEnvelope {
@@ -1251,6 +1272,82 @@ function normalizeGenericApprovals(
   );
 }
 
+function normalizeGenericNoGoConditions(
+  value: unknown,
+): readonly GenericAdmissionNoGoCondition[] | null {
+  if (value === undefined || value === null) return null;
+  if (!Array.isArray(value)) {
+    throw new Error('Consequence admission noGoConditions must be an array when provided.');
+  }
+  return Object.freeze(
+    value.map((entry, index) => {
+      const field = `noGoConditions[${index}]`;
+      if (!isRecord(entry)) {
+        throw new Error(`Consequence admission ${field} must be an object.`);
+      }
+      const sourceRef = normalizeOptionalIdentifier(
+        entry.sourceRef as string | null | undefined,
+        `${field}.sourceRef`,
+      );
+      const ownerRef = normalizeOptionalIdentifier(
+        entry.ownerRef as string | null | undefined,
+        `${field}.ownerRef`,
+      );
+      const ownerAuthorityDigest = normalizeOptionalIdentifier(
+        entry.ownerAuthorityDigest as string | null | undefined,
+        `${field}.ownerAuthorityDigest`,
+      );
+      const scopeDigest = normalizeOptionalIdentifier(
+        entry.scopeDigest as string | null | undefined,
+        `${field}.scopeDigest`,
+      );
+      const issuedAt = normalizeOptionalIdentifier(
+        entry.issuedAt as string | null | undefined,
+        `${field}.issuedAt`,
+      );
+      const expiresAt = normalizeOptionalIdentifier(
+        entry.expiresAt as string | null | undefined,
+        `${field}.expiresAt`,
+      );
+      const releaseDigest = normalizeOptionalIdentifier(
+        entry.releaseDigest as string | null | undefined,
+        `${field}.releaseDigest`,
+      );
+      return Object.freeze({
+        conditionRef: normalizeIdentifier(
+          entry.conditionRef as string | null | undefined,
+          `${field}.conditionRef`,
+        ),
+        kind: normalizeEnumValue(
+          normalizeIdentifier(entry.kind as string | null | undefined, `${field}.kind`),
+          CONSEQUENCE_NO_GO_CONDITION_KINDS,
+          `${field}.kind`,
+        ),
+        state: normalizeEnumValue(
+          normalizeIdentifier(entry.state as string | null | undefined, `${field}.state`),
+          CONSEQUENCE_NO_GO_CONDITION_STATES,
+          `${field}.state`,
+        ),
+        sourceKind: normalizeEnumValue(
+          normalizeIdentifier(
+            entry.sourceKind as string | null | undefined,
+            `${field}.sourceKind`,
+          ),
+          CONSEQUENCE_NO_GO_CONDITION_SOURCE_KINDS,
+          `${field}.sourceKind`,
+        ),
+        ...(sourceRef === null ? {} : { sourceRef }),
+        ...(ownerRef === null ? {} : { ownerRef }),
+        ...(ownerAuthorityDigest === null ? {} : { ownerAuthorityDigest }),
+        ...(scopeDigest === null ? {} : { scopeDigest }),
+        ...(issuedAt === null ? {} : { issuedAt }),
+        ...(expiresAt === null ? {} : { expiresAt }),
+        ...(releaseDigest === null ? {} : { releaseDigest }),
+      });
+    }),
+  );
+}
+
 function retryAttemptIdFor(
   input: Omit<ConsequenceAdmissionRetryAttemptBinding, 'attemptId'>,
 ): string {
@@ -1359,6 +1456,17 @@ function normalizeCreateGenericAdmissionInput(input: unknown): CreateGenericAdmi
     evidenceRefs: normalizeStringArray(input.evidenceRefs, 'evidenceRefs'),
     authoritySources: normalizeGenericAuthoritySources(input.authoritySources),
     approvals: normalizeGenericApprovals(input.approvals),
+    noGoLedgerRef: readOptionalString(input, 'noGoLedgerRef'),
+    noGoConditions: normalizeGenericNoGoConditions(input.noGoConditions),
+    noGoNaturalLanguageBypassAttempted: readOptionalBoolean(
+      input,
+      'noGoNaturalLanguageBypassAttempted',
+    ),
+    noGoNaturalLanguageSignals: normalizeStringArray(
+      input.noGoNaturalLanguageSignals,
+      'noGoNaturalLanguageSignals',
+    ),
+    noGoBypassAttemptRef: readOptionalString(input, 'noGoBypassAttemptRef'),
     nativeInputRefs: normalizeStringArray(input.nativeInputRefs, 'nativeInputRefs'),
     observedFeatures: normalizeGenericObservedFeatures(input.observedFeatures),
     observedFeatureOrigins: normalizeGenericObservedFeatureOrigins(input.observedFeatureOrigins),
@@ -1445,10 +1553,44 @@ function approvalGuardReviewReasonCodes(
   return Object.freeze([...decision.reasonCodes]);
 }
 
+function genericAdmissionHasNoGoConditionInput(
+  input: CreateGenericAdmissionInput,
+): boolean {
+  return input.noGoLedgerRef !== null && input.noGoLedgerRef !== undefined ||
+    input.noGoConditions !== null && input.noGoConditions !== undefined ||
+    input.noGoNaturalLanguageBypassAttempted === true ||
+    (input.noGoNaturalLanguageSignals ?? []).length > 0 ||
+    input.noGoBypassAttemptRef !== null && input.noGoBypassAttemptRef !== undefined;
+}
+
+function genericAdmissionNoGoConditionLedgerDecisionFor(
+  input: CreateGenericAdmissionInput,
+): ConsequenceNoGoConditionLedgerDecision | null {
+  if (!genericAdmissionHasNoGoConditionInput(input)) return null;
+  return evaluateConsequenceNoGoConditionLedger({
+    generatedAt: input.decidedAt ?? input.requestedAt ?? null,
+    actionSurface: input.domain,
+    action: input.action,
+    ledgerRef: input.noGoLedgerRef ?? null,
+    conditions: input.noGoConditions ?? null,
+    naturalLanguageBypassAttempted: input.noGoNaturalLanguageBypassAttempted ?? null,
+    naturalLanguageSignals: input.noGoNaturalLanguageSignals ?? [],
+    bypassAttemptRef: input.noGoBypassAttemptRef ?? null,
+  });
+}
+
+function noGoConditionLedgerReviewReasonCodes(
+  decision: ConsequenceNoGoConditionLedgerDecision | null,
+): readonly string[] {
+  if (decision === null || decision.outcome === 'pass') return Object.freeze([]);
+  return Object.freeze([...decision.reasonCodes]);
+}
+
 function genericAdmissionReviewReasons(
   input: CreateGenericAdmissionInput,
   authorityGuardDecision: ConsequenceUntrustedContentAuthorityDecision | null,
   approvalGuardDecision: ConsequenceApprovalProvenanceDecision | null,
+  noGoConditionLedgerDecision: ConsequenceNoGoConditionLedgerDecision | null,
 ): readonly string[] {
   const reasons: string[] = [];
   const profile = consequenceAdmissionDomainProfile(input.domain);
@@ -1473,6 +1615,7 @@ function genericAdmissionReviewReasons(
   }
   reasons.push(...authorityGuardReviewReasonCodes(authorityGuardDecision));
   reasons.push(...approvalGuardReviewReasonCodes(approvalGuardDecision));
+  reasons.push(...noGoConditionLedgerReviewReasonCodes(noGoConditionLedgerDecision));
 
   if (profile.requiredChecks.includes('adapter-readiness')) {
     if (!observedFeatureTrue(input, 'adapterReady')) {
@@ -1494,9 +1637,11 @@ function genericAdmissionShadowDecisionFor(
   reviewReasons: readonly string[],
   authorityGuardDecision: ConsequenceUntrustedContentAuthorityDecision | null,
   approvalGuardDecision: ConsequenceApprovalProvenanceDecision | null,
+  noGoConditionLedgerDecision: ConsequenceNoGoConditionLedgerDecision | null,
 ): GenericAdmissionShadowDecision {
   if (authorityGuardDecision?.outcome === 'block') return 'would_block';
   if (approvalGuardDecision?.outcome === 'block') return 'would_block';
+  if (noGoConditionLedgerDecision?.outcome === 'block') return 'would_block';
   if (
     observedFeatureTrue(input, 'policyBlocked') ||
     observedFeatureTrue(input, 'blocked') ||
@@ -1561,16 +1706,19 @@ function createGenericAdmissionEvaluation(
 ): GenericAdmissionModeEvaluation {
   const authorityGuardDecision = genericAdmissionAuthorityGuardDecisionFor(input);
   const approvalGuardDecision = genericAdmissionApprovalGuardDecisionFor(input);
+  const noGoConditionLedgerDecision = genericAdmissionNoGoConditionLedgerDecisionFor(input);
   const reviewReasons = genericAdmissionReviewReasons(
     input,
     authorityGuardDecision,
     approvalGuardDecision,
+    noGoConditionLedgerDecision,
   );
   const shadowDecision = genericAdmissionShadowDecisionFor(
     input,
     reviewReasons,
     authorityGuardDecision,
     approvalGuardDecision,
+    noGoConditionLedgerDecision,
   );
   const effectiveDecision = effectiveDecisionForGenericMode(input.mode, shadowDecision);
   const downstreamPosture = downstreamPostureForGenericMode(input.mode, effectiveDecision);
@@ -1584,6 +1732,7 @@ function createGenericAdmissionEvaluation(
     reasonCodes: genericReasonCodes(input, shadowDecision, reviewReasons),
     authorityGuardDecision,
     approvalGuardDecision,
+    noGoConditionLedgerDecision,
   });
 }
 
@@ -1592,7 +1741,10 @@ function reasonCodesForCheck(
   reasonCodes: readonly string[],
 ): readonly string[] {
   const matches = reasonCodes.filter((reason) => {
-    if (kind === 'policy') return reason.startsWith('policy-');
+    if (kind === 'policy') {
+      return reason.startsWith('policy-') ||
+        GENERIC_ADMISSION_NO_GO_REASON_CODES.has(reason);
+    }
     if (kind === 'authority') {
       return reason.startsWith('authority-') ||
         GENERIC_ADMISSION_AUTHORITY_GUARD_REASON_CODES.has(reason) ||
@@ -1635,6 +1787,13 @@ function createGenericAdmissionChecks(
                 ? [evaluation.approvalGuardDecision.digest]
                 : []),
             ]
+          : kind === 'policy'
+            ? [
+                ...(input.evidenceRefs ?? []),
+                ...(evaluation.noGoConditionLedgerDecision !== null
+                  ? [evaluation.noGoConditionLedgerDecision.digest]
+                  : []),
+              ]
           : [...(input.evidenceRefs ?? [])];
       return createConsequenceAdmissionCheck({
         kind,
@@ -1742,6 +1901,20 @@ function genericAdmissionDimensions(
     validApprovalCount: evaluation.approvalGuardDecision?.counts.validApprovalCount ?? 0,
     untrustedApprovalCount:
       evaluation.approvalGuardDecision?.counts.untrustedApprovalCount ?? 0,
+    noGoConditionOutcome: evaluation.noGoConditionLedgerDecision?.outcome ?? null,
+    noGoConditionDigest: evaluation.noGoConditionLedgerDecision?.digest ?? null,
+    noGoConditionCount:
+      evaluation.noGoConditionLedgerDecision?.observed.conditionCount ?? 0,
+    noGoActiveConditionCount:
+      evaluation.noGoConditionLedgerDecision?.observed.activeCount ?? 0,
+    noGoPendingReviewCount:
+      evaluation.noGoConditionLedgerDecision?.observed.pendingReviewCount ?? 0,
+    noGoUntrustedSourceCount:
+      evaluation.noGoConditionLedgerDecision?.observed.untrustedSourceCount ?? 0,
+    noGoNaturalLanguageBypassAttempted:
+      evaluation.noGoConditionLedgerDecision?.observed.naturalLanguageBypassAttempted ?? false,
+    noGoNaturalLanguageBypassSignalCount:
+      evaluation.noGoConditionLedgerDecision?.observed.naturalLanguageBypassSignalCount ?? 0,
   });
 }
 
@@ -2239,6 +2412,136 @@ readonly ConsequenceAdmissionCorrectionCatalogEntry[] = Object.freeze([
     retryableByModel: false,
     operatorOnly: true,
     safeSummary: 'Custom consequence domains require customer policy review before automation.',
+  },
+  {
+    reasonCode: 'hold-ledger-missing',
+    audience: 'operator-control',
+    disclosureLevel: 'minimal',
+    missingFields: ['noGoConditions'],
+    requiredEvidenceKinds: ['no_go_condition_ledger_ref'],
+    retryableByModel: false,
+    operatorOnly: true,
+    safeSummary: 'No-go condition state must be supplied by the customer or operator boundary.',
+  },
+  {
+    reasonCode: 'active-no-go-condition-present',
+    audience: 'customer-review',
+    disclosureLevel: 'minimal',
+    missingFields: [],
+    requiredEvidenceKinds: ['no_go_condition_release_ref'],
+    retryableByModel: false,
+    operatorOnly: true,
+    safeSummary: 'An active no-go condition blocks automatic execution.',
+  },
+  {
+    reasonCode: 'pending-hold-review-required',
+    audience: 'customer-review',
+    disclosureLevel: 'minimal',
+    missingFields: [],
+    requiredEvidenceKinds: ['no_go_condition_review_ref'],
+    retryableByModel: false,
+    operatorOnly: true,
+    safeSummary: 'A pending no-go hold requires customer or operator review.',
+  },
+  {
+    reasonCode: 'hold-owner-missing',
+    audience: 'operator-control',
+    disclosureLevel: 'minimal',
+    missingFields: ['noGoConditions.ownerRef'],
+    requiredEvidenceKinds: ['no_go_hold_owner_ref'],
+    retryableByModel: false,
+    operatorOnly: true,
+    safeSummary: 'No-go hold records must bind to a responsible owner.',
+  },
+  {
+    reasonCode: 'hold-authority-missing',
+    audience: 'operator-control',
+    disclosureLevel: 'minimal',
+    missingFields: ['noGoConditions.ownerAuthorityDigest'],
+    requiredEvidenceKinds: ['no_go_hold_authority_digest'],
+    retryableByModel: false,
+    operatorOnly: true,
+    safeSummary: 'No-go hold records must bind to owner authority evidence.',
+  },
+  {
+    reasonCode: 'hold-validity-missing',
+    audience: 'operator-control',
+    disclosureLevel: 'minimal',
+    missingFields: ['noGoConditions.issuedAt', 'noGoConditions.expiresAt'],
+    requiredEvidenceKinds: ['no_go_hold_validity_window'],
+    retryableByModel: false,
+    operatorOnly: true,
+    safeSummary: 'No-go hold records must include a bounded validity window.',
+  },
+  {
+    reasonCode: 'hold-issued-at-invalid',
+    audience: 'operator-control',
+    disclosureLevel: 'minimal',
+    missingFields: ['noGoConditions.issuedAt'],
+    requiredEvidenceKinds: ['no_go_hold_validity_window'],
+    retryableByModel: false,
+    operatorOnly: true,
+    safeSummary: 'No-go hold issued-at timestamps must be valid.',
+  },
+  {
+    reasonCode: 'hold-expires-at-invalid',
+    audience: 'operator-control',
+    disclosureLevel: 'minimal',
+    missingFields: ['noGoConditions.expiresAt'],
+    requiredEvidenceKinds: ['no_go_hold_validity_window'],
+    retryableByModel: false,
+    operatorOnly: true,
+    safeSummary: 'No-go hold expiry timestamps must be valid.',
+  },
+  {
+    reasonCode: 'untrusted-hold-source',
+    audience: 'operator-control',
+    disclosureLevel: 'minimal',
+    missingFields: ['noGoConditions.sourceKind'],
+    requiredEvidenceKinds: ['trusted_no_go_hold_source_ref'],
+    retryableByModel: false,
+    operatorOnly: true,
+    safeSummary: 'Untrusted content cannot create or release a no-go hold.',
+  },
+  {
+    reasonCode: 'natural-language-bypass-attempted',
+    audience: 'operator-control',
+    disclosureLevel: 'minimal',
+    missingFields: [],
+    requiredEvidenceKinds: ['no_go_bypass_review_ref'],
+    retryableByModel: false,
+    operatorOnly: true,
+    safeSummary: 'A natural-language attempt to bypass a no-go hold blocks automatic execution.',
+  },
+  {
+    reasonCode: 'natural-language-bypass-inferred',
+    audience: 'operator-control',
+    disclosureLevel: 'minimal',
+    missingFields: [],
+    requiredEvidenceKinds: ['no_go_bypass_review_ref'],
+    retryableByModel: false,
+    operatorOnly: true,
+    safeSummary: 'Detected no-go bypass language must be reviewed outside the model loop.',
+  },
+  {
+    reasonCode: 'no-go-condition-review',
+    audience: 'customer-review',
+    disclosureLevel: 'minimal',
+    missingFields: [],
+    requiredEvidenceKinds: ['no_go_condition_review_ref'],
+    retryableByModel: false,
+    operatorOnly: true,
+    safeSummary: 'No-go condition state requires customer or operator review.',
+  },
+  {
+    reasonCode: 'no-go-condition-block',
+    audience: 'operator-control',
+    disclosureLevel: 'minimal',
+    missingFields: [],
+    requiredEvidenceKinds: ['no_go_condition_release_ref'],
+    retryableByModel: false,
+    operatorOnly: true,
+    safeSummary: 'No-go condition state blocks automatic execution.',
   },
   {
     reasonCode: 'policy-blocked',

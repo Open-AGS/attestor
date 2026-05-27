@@ -33,6 +33,8 @@ It keeps these constraints explicit:
 - authority must arrive as structured `authoritySources` references; untrusted content, tool output, retrieved content, and model summaries cannot authorize a consequence or self-promote into trusted authority
 - trusted authority source entries must carry digest evidence, and missing or untrusted authority provenance holds or blocks the generic admission before downstream execution
 - when an authority source claims `approval`, approval must also arrive as structured `approvals` provenance with digest-bound reviewer, scope, state, and issued-at evidence; raw approval text and model summaries are not accepted as approval
+- no-go condition state must arrive as structured `noGoConditions` metadata with digest-bound owner, authority, scope, and validity evidence; active holds and natural-language bypass attempts block before downstream execution
+- admission responses can expose no-go outcomes, counts, reason codes, and digests, but must not return raw hold references, private case identifiers, customer messages, or bypass text
 - shadow reads are read-only and served with `cache-control: no-store`
 - failure responses use RFC 9457-style problem details with Attestor fail-closed fields
 - shadow reads do not activate policy, approve candidates, infer business impact, or auto-enforce

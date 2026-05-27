@@ -152,6 +152,11 @@ function testOpenApiContractPreservesShadowBoundaries(): void {
   includes(text, '"caller-supplied"', 'Hosted OpenAPI: caller-supplied feature origin is explicitly classified');
   includes(text, '"authoritySources"', 'Hosted OpenAPI: authority-source contract is documented');
   includes(text, '"approvals"', 'Hosted OpenAPI: approval provenance contract is documented');
+  includes(text, '"noGoConditions"', 'Hosted OpenAPI: no-go condition contract is documented');
+  includes(text, '"noGoNaturalLanguageSignals"', 'Hosted OpenAPI: no-go bypass signal contract is documented');
+  includes(text, '"fraud-hold"', 'Hosted OpenAPI: no-go hold kind is documented');
+  includes(text, '"production-freeze"', 'Hosted OpenAPI: production freeze no-go kind is documented');
+  includes(text, '"noGoBypassAttemptRef"', 'Hosted OpenAPI: no-go bypass reference is documented');
   includes(text, '"verified-approval"', 'Hosted OpenAPI: trusted approval source kind is documented');
   includes(text, '"approval-workflow"', 'Hosted OpenAPI: approval workflow provenance source is documented');
   includes(text, '"approvalDigest"', 'Hosted OpenAPI: approval digest provenance is documented');
@@ -176,6 +181,7 @@ function testDocsPointToTheOpenApiTruthSource(): void {
   includes(doc, '`POST /api/v1/admissions`', 'Hosted OpenAPI docs: guide names the canonical admission route');
   includes(doc, '`GET /api/v1/shadow/dashboard-summary`', 'Hosted OpenAPI docs: guide names dashboard summary route');
   includes(doc, 'RFC 9457-style problem details', 'Hosted OpenAPI docs: guide names problem details boundary');
+  includes(doc, 'no-go condition state must arrive as structured `noGoConditions` metadata', 'Hosted OpenAPI docs: guide documents no-go metadata');
   includes(doc, 'no public hosted crypto HTTP route is claimed', 'Hosted OpenAPI docs: guide avoids hosted crypto overclaim');
   excludes(doc, 'POST /api/v1/admit', 'Hosted OpenAPI docs: guide does not revive old route placeholder');
 }

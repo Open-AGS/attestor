@@ -24,7 +24,9 @@ export const POLICY_FOUNDRY_RED_TEAM_REPLAY_CASE_KINDS = [
   'missing-policy-schema',
   'missing-evidence',
   'missing-authority-binding',
+  'missing-scope-binding',
   'adapter-not-ready',
+  'custom-domain-contract-missing',
   'foreign-tenant-record',
   'duplicate-replayed-request',
   'actor-burst',
@@ -282,8 +284,15 @@ export function evaluatePolicyFoundryRedTeamReplay(
   const authorityMissing = candidate?.requiredControls.includes('authority') === true ||
     (surface?.gapCounts.authority ?? 0) > 0 ||
     candidate === null;
+  const scopeMissing = candidate?.requiredControls.includes('scope') === true ||
+    (surface?.gapCounts.amountScope ?? 0) > 0 ||
+    (surface?.gapCounts.recipientScope ?? 0) > 0 ||
+    (surface?.gapCounts.dataScope ?? 0) > 0 ||
+    candidate === null;
   const adapterMissing = candidate?.requiredControls.includes('adapter') === true ||
     (surface?.gapCounts.adapter ?? 0) > 0;
+  const customDomainMissing = candidate?.requiredControls.includes('custom-domain') === true ||
+    (surface?.gapCounts.customDomain ?? 0) > 0;
   const actorBurst = actor.concentration !== null &&
     actor.concentration > maxSingleActorConcentration;
   const replayDuplicatePressure = replayRate > maxReplayDuplicateRate;
@@ -314,12 +323,28 @@ export function evaluatePolicyFoundryRedTeamReplay(
       reasonCodes: authorityMissing ? ['missing-authority-binding'] : [],
     }),
     caseResult({
+      kind: 'missing-scope-binding',
+      failedEvents: scopeMissing ? matchingEvents : [],
+      failed: scopeMissing,
+      severity: 'blocker',
+      mappedRisks: ['ASI03 Identity & Privilege Abuse', 'scope containment'],
+      reasonCodes: scopeMissing ? ['missing-scope-binding'] : [],
+    }),
+    caseResult({
       kind: 'adapter-not-ready',
       failedEvents: adapterMissing ? matchingEvents : [],
       failed: adapterMissing,
       severity: 'high',
       mappedRisks: ['ASI02 Tool Misuse & Exploitation'],
       reasonCodes: adapterMissing ? ['adapter-readiness-missing'] : [],
+    }),
+    caseResult({
+      kind: 'custom-domain-contract-missing',
+      failedEvents: customDomainMissing ? matchingEvents : [],
+      failed: customDomainMissing,
+      severity: 'high',
+      mappedRisks: ['ASI08 Cascading Failures', 'domain contract'],
+      reasonCodes: customDomainMissing ? ['custom-domain-contract-missing'] : [],
     }),
     caseResult({
       kind: 'foreign-tenant-record',

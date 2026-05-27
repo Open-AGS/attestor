@@ -42,6 +42,11 @@ function event(input: {
   readonly downstreamSystem: string;
   readonly policyRef?: string | null;
   readonly evidenceRefs?: readonly string[];
+  readonly dataScope?: {
+    readonly records: number | null;
+    readonly classification: string | null;
+    readonly fields: readonly string[];
+  } | null;
   readonly occurredAt: string;
   readonly observedFeatures?: Readonly<Record<string, string | number | boolean | null>>;
 }): ShadowAdmissionEvent {
@@ -56,7 +61,17 @@ function event(input: {
       decidedAt: '2026-05-12T09:00:01.000Z',
       policyRef: input.policyRef ?? null,
       evidenceRefs: input.evidenceRefs ?? [],
+      dataScope: input.dataScope ?? null,
       recipient: 'raw_recipient_must_not_escape',
+      authoritySources: [
+        {
+          sourceKind: 'authority-record',
+          claimKind: 'authorization',
+          sourceRef: `authority:${input.action}`,
+          trustClass: 'trusted-authority',
+          evidenceDigest: `sha256:authority-${input.action}`,
+        },
+      ],
       observedFeatures: {
         rawFeature: input.observedFeatures?.rawFeature ?? 'raw_feature_must_not_escape',
       },
@@ -187,6 +202,29 @@ function testProviderAndWorkflowRecommendations(): void {
   ok(report.recommendedNextSteps.includes('add-shadow-capture'), 'Action surface profiler: unobserved surfaces recommend shadow capture');
 }
 
+function testProfilerSurfacesScopeReasonCodes(): void {
+  const report = createActionSurfaceProfilerReport({
+    generatedAt: '2026-05-12T09:35:00.000Z',
+    events: [
+      event({
+        actor: 'analytics-ai-agent',
+        action: 'export_customer_report',
+        domain: 'data-disclosure',
+        downstreamSystem: 'warehouse-export',
+        policyRef: 'policy:data:v1',
+        evidenceRefs: ['ticket:data-scope'],
+        occurredAt: '2026-05-12T09:35:01.000Z',
+      }),
+    ],
+  });
+  const profile = report.profiles.find((item) =>
+    item.actionSurface === 'warehouse-export.export_customer_report'
+  );
+
+  ok(profile?.signals.includes('missing-scope'), 'Action surface profiler: scope reason codes are surfaced');
+  equal(profile?.nextStep, 'bind-scope', 'Action surface profiler: missing scope recommends binding scope');
+}
+
 function testDescriptorAndDocs(): void {
   const descriptor = actionSurfaceProfilerDescriptor();
   equal(descriptor.autoEnforce, false, 'Action surface profiler descriptor: auto enforce is false');
@@ -219,6 +257,7 @@ function testDescriptorAndDocs(): void {
 try {
   testProfilerCombinesShadowEventsAndDeclarations();
   testProviderAndWorkflowRecommendations();
+  testProfilerSurfacesScopeReasonCodes();
   testDescriptorAndDocs();
   console.log(`Action surface profiler tests: ${passed} passed, 0 failed`);
 } catch (error) {

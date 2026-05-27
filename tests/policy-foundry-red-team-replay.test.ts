@@ -43,7 +43,19 @@ function event(input: {
       policyRef: input.policyRef === undefined ? 'policy:ops:v1' : input.policyRef,
       evidenceRefs: input.evidenceRefs ?? ['change:approved'],
       recipient: 'raw_recipient_must_not_escape',
+      authoritySources: [
+        {
+          sourceKind: 'authority-record',
+          claimKind: 'authorization',
+          sourceRef: `authority:${input.actor}`,
+          trustClass: 'trusted-authority',
+          evidenceDigest: `sha256:authority-${input.actor}`,
+        },
+      ],
       observedFeatures: input.observedFeatures ?? { adapterReady: true },
+      observedFeatureOrigins: {
+        adapterReady: 'trusted-adapter',
+      },
     }),
     occurredAt: input.occurredAt,
     downstreamOutcome: 'proceeded',
@@ -55,7 +67,10 @@ function event(input: {
   });
 }
 
-function candidateFor(events: readonly ShadowAdmissionEvent[]) {
+function candidateFor(
+  events: readonly ShadowAdmissionEvent[],
+  actionSurface = 'secret-manager.rotate_secret',
+) {
   const report = createShadowPolicySimulationReport({
     events,
     proposedMode: 'review',
@@ -66,9 +81,7 @@ function candidateFor(events: readonly ShadowAdmissionEvent[]) {
     report,
     generatedAt: '2026-05-01T23:01:00.000Z',
   });
-  const candidate = bundle.candidates.find((item) =>
-    item.actionSurface === 'secret-manager.rotate_secret'
-  ) ?? null;
+  const candidate = bundle.candidates.find((item) => item.actionSurface === actionSurface) ?? null;
   return { report, candidate };
 }
 
@@ -100,7 +113,7 @@ function testCleanCandidatePassesEvidenceReplay(): void {
   equal(replay.evidenceReplayOnly, true, 'Policy Foundry red-team replay: evidence-only limitation is explicit');
   equal(replay.status, 'passed', 'Policy Foundry red-team replay: clean candidate passes');
   equal(replay.failedCaseCount, 0, 'Policy Foundry red-team replay: clean candidate has no failed cases');
-  equal(replay.caseCount, 10, 'Policy Foundry red-team replay: required case set is stable');
+  equal(replay.caseCount, 12, 'Policy Foundry red-team replay: required case set is stable');
   ok(replay.digest.startsWith('sha256:'), 'Policy Foundry red-team replay: digest is generated');
   ok(!serialized.includes('ops-agent-'), 'Policy Foundry red-team replay: raw actor IDs are not serialized');
   ok(!serialized.includes('raw_recipient_must_not_escape'), 'Policy Foundry red-team replay: raw recipient is not serialized');
@@ -139,6 +152,94 @@ function testMissingControlsFailReplay(): void {
   ok(
     replay.cases.some((entry) => entry.kind === 'missing-evidence' && entry.status === 'failed'),
     'Policy Foundry red-team replay: missing evidence case fails',
+  );
+}
+
+function testScopeAndCustomDomainControlsFailReplay(): void {
+  const events = [
+    createShadowAdmissionEvent({
+      admission: createGenericAdmissionEnvelope({
+        mode: 'observe',
+        actor: 'support-agent-scope',
+        action: 'issue_refund',
+        domain: 'money-movement',
+        downstreamSystem: 'refund-service',
+        requestedAt: '2026-05-02T22:10:02.000Z',
+        decidedAt: '2026-05-02T22:10:02.000Z',
+        requestId: 'request:scope-gap',
+        tenantId: 'tenant_policy_foundry',
+        policyRef: 'policy:refund:v1',
+        evidenceRefs: ['ticket:approved'],
+        authoritySources: [
+          {
+            sourceKind: 'authority-record',
+            claimKind: 'authorization',
+            sourceRef: 'authority:support-agent-scope',
+            trustClass: 'trusted-authority',
+            evidenceDigest: 'sha256:authority-support-agent-scope',
+          },
+        ],
+      }),
+      occurredAt: '2026-05-02T22:10:02.000Z',
+      downstreamOutcome: 'proceeded',
+      humanOutcome: 'approved',
+      observedFeatures: {},
+    }),
+    createShadowAdmissionEvent({
+      admission: createGenericAdmissionEnvelope({
+        mode: 'observe',
+        actor: 'custom-agent',
+        action: 'custom_action',
+        domain: 'custom',
+        downstreamSystem: 'custom-system',
+        requestedAt: '2026-05-02T22:11:02.000Z',
+        decidedAt: '2026-05-02T22:11:02.000Z',
+        requestId: 'request:custom-gap',
+        tenantId: 'tenant_policy_foundry',
+        policyRef: 'policy:custom:v1',
+        evidenceRefs: ['custom:evidence'],
+        authoritySources: [
+          {
+            sourceKind: 'authority-record',
+            claimKind: 'authorization',
+            sourceRef: 'authority:custom-agent',
+            trustClass: 'trusted-authority',
+            evidenceDigest: 'sha256:authority-custom-agent',
+          },
+        ],
+      }),
+      occurredAt: '2026-05-02T22:11:02.000Z',
+      downstreamOutcome: 'proceeded',
+      humanOutcome: 'approved',
+      observedFeatures: {},
+    }),
+  ];
+  const scopeContext = candidateFor(events, 'refund-service.issue_refund');
+  const scopeReplay = evaluatePolicyFoundryRedTeamReplay({
+    candidate: scopeContext.candidate,
+    report: scopeContext.report,
+    events,
+    tenantId: 'tenant_policy_foundry',
+    generatedAt: '2026-05-02T23:12:00.000Z',
+  });
+  const customContext = candidateFor(events, 'custom-system.custom_action');
+  const customReplay = evaluatePolicyFoundryRedTeamReplay({
+    candidate: customContext.candidate,
+    report: customContext.report,
+    events,
+    tenantId: 'tenant_policy_foundry',
+    generatedAt: '2026-05-02T23:13:00.000Z',
+  });
+
+  equal(scopeReplay.status, 'failed', 'Policy Foundry red-team replay: scope gaps fail replay');
+  ok(
+    scopeReplay.cases.some((entry) => entry.kind === 'missing-scope-binding' && entry.status === 'failed'),
+    'Policy Foundry red-team replay: missing scope case fails',
+  );
+  equal(customReplay.status, 'failed', 'Policy Foundry red-team replay: custom domain gaps fail replay');
+  ok(
+    customReplay.cases.some((entry) => entry.kind === 'custom-domain-contract-missing' && entry.status === 'failed'),
+    'Policy Foundry red-team replay: custom-domain contract case fails',
   );
 }
 
@@ -217,6 +318,7 @@ function testUnsafeSignalsFailReplay(): void {
 
 testCleanCandidatePassesEvidenceReplay();
 testMissingControlsFailReplay();
+testScopeAndCustomDomainControlsFailReplay();
 testForeignTenantDuplicateAndBurstFailReplay();
 testUnsafeSignalsFailReplay();
 

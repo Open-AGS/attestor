@@ -47,6 +47,7 @@ export const ACTION_SURFACE_PROFILE_SIGNALS = [
   'missing-policy',
   'missing-evidence',
   'missing-authority',
+  'missing-scope',
   'adapter-readiness-missing',
   'direct-credential-risk',
   'http-write-operation',
@@ -66,6 +67,7 @@ export const ACTION_SURFACE_PROFILE_NEXT_STEPS = [
   'bind-policy',
   'bind-evidence',
   'bind-authority',
+  'bind-scope',
   'prepare-adapter',
   'isolate-credential',
   'generate-gateway-config',
@@ -419,7 +421,20 @@ function profileSignals(
   }
   if (hasReason(profile, 'policy-ref-missing')) signals.add('missing-policy');
   if (hasReason(profile, 'evidence-ref-missing')) signals.add('missing-evidence');
-  if (hasReason(profile, 'authority-ref-missing')) signals.add('missing-authority');
+  if (
+    hasReason(profile, 'authority-ref-missing') ||
+    hasReason(profile, 'authority-mode-missing')
+  ) {
+    signals.add('missing-authority');
+  }
+  if (
+    hasReason(profile, 'amount-scope-missing') ||
+    hasReason(profile, 'recipient-scope-missing') ||
+    hasReason(profile, 'data-scope-missing') ||
+    hasReason(profile, 'custom-domain-review-required')
+  ) {
+    signals.add('missing-scope');
+  }
   if (hasReason(profile, 'adapter-readiness-missing')) signals.add('adapter-readiness-missing');
   if (
     credentialPosture === 'agent-held-static-secret' ||
@@ -471,6 +486,7 @@ function nextStepFor(
   if (signals.includes('missing-policy')) return 'bind-policy';
   if (signals.includes('missing-evidence')) return 'bind-evidence';
   if (signals.includes('missing-authority')) return 'bind-authority';
+  if (signals.includes('missing-scope')) return 'bind-scope';
   if (signals.includes('adapter-readiness-missing')) return 'prepare-adapter';
   if (
     mode === 'gateway-proxy' ||

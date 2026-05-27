@@ -186,7 +186,11 @@ function gapCounts(
       fixture.messageFacts.claimClass === 'legal-liability-statement' ||
       fixture.messageFacts.commercialEmailPosture === 'missing-unsubscribe-or-sender-controls'
     ).length,
+    amountScope: 0,
+    recipientScope: 0,
+    dataScope: 0,
     adapter: 0,
+    customDomain: 0,
   });
 }
 

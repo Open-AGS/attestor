@@ -168,7 +168,11 @@ function gapCounts(fixtures: readonly GoldenRefundShadowFixture[]): ShadowPolicy
       fixture.expectedEvidenceStates.includes('stale')
     ).length,
     authority: fixtures.filter((fixture) => fixture.refundFacts.approvalRequired).length,
+    amountScope: 0,
+    recipientScope: 0,
+    dataScope: 0,
     adapter: 0,
+    customDomain: 0,
   });
 }
 

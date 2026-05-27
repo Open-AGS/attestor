@@ -138,8 +138,12 @@ function expectedAnswerKind(
       return 'evidence-source-ref';
     case 'bind-authority':
       return 'authority-source-ref';
+    case 'bind-scope':
+      return 'policy-template-ref';
     case 'prepare-adapter':
       return 'adapter-readiness-ref';
+    case 'scope-custom-domain':
+      return 'policy-template-ref';
     case 'review-counterexamples':
       return 'review-disposition';
     case 'confirm-representative-sample':
@@ -160,7 +164,9 @@ function reasonCodesForQuestion(
     'choose-policy-template': ['missing-policy-schema'],
     'bind-evidence': ['missing-evidence-coverage'],
     'bind-authority': ['missing-authority-binding', 'llm-authority-source'],
+    'bind-scope': ['missing-scope-binding'],
     'prepare-adapter': ['adapter-readiness-missing'],
+    'scope-custom-domain': ['custom-domain-contract-missing'],
     'review-counterexamples': [
       'counterexamples-present',
       'high-risk-auto-admit',

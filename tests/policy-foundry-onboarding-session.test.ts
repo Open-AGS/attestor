@@ -65,6 +65,19 @@ function event(input: {
     policyRef: input.policyRef === undefined ? 'policy:ops:v1' : input.policyRef,
     evidenceRefs: input.evidenceRefs ?? ['change:approved'],
     authorityRef: input.authorityRef === undefined ? 'authority:ops' : input.authorityRef,
+    ...(input.authorityRef === null
+      ? {}
+      : {
+          authoritySources: [
+            {
+              sourceKind: 'authority-record',
+              claimKind: 'authorization',
+              sourceRef: input.authorityRef === undefined ? 'authority:ops' : input.authorityRef,
+              trustClass: 'trusted-authority',
+              evidenceDigest: 'sha256:authority-ops',
+            },
+          ],
+        }),
     observedFeatures: input.observedFeatures ?? {},
     recipient: 'raw_recipient_must_not_escape',
   });

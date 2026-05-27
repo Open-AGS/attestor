@@ -192,11 +192,15 @@ function gapCounts(
       fixture.operationFacts.consequenceKind === 'approval' ||
       fixture.operationFacts.instructionLikeEvidence
     ).length,
+    amountScope: 0,
+    recipientScope: 0,
+    dataScope: 0,
     adapter: fixtures.filter((fixture) =>
       fixture.operationFacts.adapterPreflightStatus !== 'passed' ||
       fixture.operationFacts.settlementOrReceiptStatus === 'missing' ||
       fixture.operationFacts.settlementOrReceiptStatus === 'pending'
     ).length,
+    customDomain: 0,
   });
 }
 

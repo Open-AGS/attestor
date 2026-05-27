@@ -29,7 +29,9 @@ export const ACTION_RISK_SIGNALS = [
   'policy-gap',
   'evidence-gap',
   'authority-gap',
+  'scope-gap',
   'adapter-gap',
+  'custom-domain-gap',
   'review-load',
   'block-observed',
   'human-rejection',
@@ -44,7 +46,9 @@ export const ACTION_RISK_NEXT_STEPS = [
   'define-policy',
   'bind-evidence',
   'bind-authority',
+  'bind-scope',
   'prepare-adapter',
+  'scope-custom-domain',
   'investigate-blocks',
   'reduce-review-load',
   'candidate-for-review',
@@ -69,7 +73,11 @@ export interface ActionRiskGapCounts {
   readonly policy: number;
   readonly evidence: number;
   readonly authority: number;
+  readonly amountScope: number;
+  readonly recipientScope: number;
+  readonly dataScope: number;
   readonly adapter: number;
+  readonly customDomain: number;
 }
 
 export interface ActionRiskSurface {
@@ -180,7 +188,11 @@ function emptyGapCounts(): ActionRiskGapCounts {
     policy: 0,
     evidence: 0,
     authority: 0,
+    amountScope: 0,
+    recipientScope: 0,
+    dataScope: 0,
     adapter: 0,
+    customDomain: 0,
   });
 }
 
@@ -207,8 +219,16 @@ function gapCountsFor(event: ShadowAdmissionEvent): ActionRiskGapCounts {
   return Object.freeze({
     policy: event.reasonCodes.includes('policy-ref-missing') ? 1 : 0,
     evidence: event.reasonCodes.includes('evidence-ref-missing') ? 1 : 0,
-    authority: event.reasonCodes.includes('authority-ref-missing') ? 1 : 0,
+    authority:
+      event.reasonCodes.includes('authority-ref-missing') ||
+      event.reasonCodes.includes('authority-mode-missing')
+        ? 1
+        : 0,
+    amountScope: event.reasonCodes.includes('amount-scope-missing') ? 1 : 0,
+    recipientScope: event.reasonCodes.includes('recipient-scope-missing') ? 1 : 0,
+    dataScope: event.reasonCodes.includes('data-scope-missing') ? 1 : 0,
     adapter: event.reasonCodes.includes('adapter-readiness-missing') ? 1 : 0,
+    customDomain: event.reasonCodes.includes('custom-domain-review-required') ? 1 : 0,
   });
 }
 
@@ -220,7 +240,11 @@ function addGapCounts(
     policy: left.policy + right.policy,
     evidence: left.evidence + right.evidence,
     authority: left.authority + right.authority,
+    amountScope: left.amountScope + right.amountScope,
+    recipientScope: left.recipientScope + right.recipientScope,
+    dataScope: left.dataScope + right.dataScope,
     adapter: left.adapter + right.adapter,
+    customDomain: left.customDomain + right.customDomain,
   });
 }
 
@@ -269,7 +293,15 @@ function actionRiskSignalsFor(
   if (surface.gapCounts.policy > 0) signals.push('policy-gap');
   if (surface.gapCounts.evidence > 0) signals.push('evidence-gap');
   if (surface.gapCounts.authority > 0) signals.push('authority-gap');
+  if (
+    surface.gapCounts.amountScope > 0 ||
+    surface.gapCounts.recipientScope > 0 ||
+    surface.gapCounts.dataScope > 0
+  ) {
+    signals.push('scope-gap');
+  }
   if (surface.gapCounts.adapter > 0) signals.push('adapter-gap');
+  if (surface.gapCounts.customDomain > 0) signals.push('custom-domain-gap');
   if (surface.reviewLoadCount > 0) signals.push('review-load');
   if (surface.blockedCount > 0) signals.push('block-observed');
   if (surface.humanRejectedCount > 0) signals.push('human-rejection');
@@ -295,6 +327,8 @@ function riskTierFor(signals: readonly ActionRiskSignal[]): ActionRiskTier {
   if (
     signals.includes('policy-gap') ||
     signals.includes('authority-gap') ||
+    signals.includes('scope-gap') ||
+    signals.includes('custom-domain-gap') ||
     signals.includes('adapter-gap')
   ) {
     return 'high';
@@ -320,7 +354,9 @@ function recommendedNextStepFor(
   if (signals.includes('policy-gap')) return 'define-policy';
   if (signals.includes('evidence-gap')) return 'bind-evidence';
   if (signals.includes('authority-gap')) return 'bind-authority';
+  if (signals.includes('scope-gap')) return 'bind-scope';
   if (signals.includes('adapter-gap')) return 'prepare-adapter';
+  if (signals.includes('custom-domain-gap')) return 'scope-custom-domain';
   if (signals.includes('review-load')) return 'reduce-review-load';
   if (surface.eventCount < minimumPromotionEvents) return 'stay-in-shadow';
   return surface.reviewLoadCount === 0 ? 'candidate-for-enforce' : 'candidate-for-review';

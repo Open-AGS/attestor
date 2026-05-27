@@ -40,6 +40,15 @@ function moneyAdmission(mode: string) {
     recipient: 'customer_123',
     policyRef: 'policy:refunds:v1',
     evidenceRefs: ['order:987', 'payment:456'],
+    authoritySources: [
+      {
+        sourceKind: 'authority-record',
+        claimKind: 'authorization',
+        sourceRef: 'authority:support-ai-agent',
+        trustClass: 'trusted-authority',
+        evidenceDigest: 'sha256:authority-support',
+      },
+    ],
   };
 }
 
@@ -89,6 +98,15 @@ function testSimulationReplaysShadowDecisions(): void {
         classification: 'internal',
         fields: ['ticket_id', 'status'],
       },
+      authoritySources: [
+        {
+          sourceKind: 'authority-record',
+          claimKind: 'authorization',
+          sourceRef: 'authority:analytics-ai-agent',
+          trustClass: 'trusted-authority',
+          evidenceDigest: 'sha256:authority-analytics',
+        },
+      ],
     }),
     occurredAt: '2026-05-01T20:03:02.000Z',
     downstreamOutcome: 'proceeded',
@@ -152,9 +170,18 @@ function testPromotionRecommendationRequiresCleanShadowTraffic(): void {
         downstreamSystem: 'secret-manager',
         requestedAt: `2026-05-01T20:1${index}:00.000Z`,
         decidedAt: `2026-05-01T20:1${index}:01.000Z`,
-        policyRef: 'policy:ops:v1',
-        evidenceRefs: [`change:${index}`],
-      }),
+      policyRef: 'policy:ops:v1',
+      evidenceRefs: [`change:${index}`],
+      authoritySources: [
+        {
+          sourceKind: 'authority-record',
+          claimKind: 'authorization',
+          sourceRef: 'authority:ops-ai-agent',
+          trustClass: 'trusted-authority',
+          evidenceDigest: 'sha256:authority-ops',
+        },
+      ],
+    }),
       occurredAt: `2026-05-01T20:1${index}:02.000Z`,
       downstreamOutcome: 'proceeded',
     }),
@@ -170,6 +197,151 @@ function testPromotionRecommendationRequiresCleanShadowTraffic(): void {
     report.recommendations.some((item) => item.kind === 'promote-to-enforce'),
     'Shadow simulation: clean shadow traffic can recommend enforce-mode rehearsal',
   );
+}
+
+function testSimulationMapsDomainScopeReasonsToSpecificRecommendations(): void {
+  const amountGap = createShadowAdmissionEvent({
+    admission: createGenericAdmissionEnvelope({
+      mode: 'observe',
+      actor: 'support-ai-agent',
+      action: 'issue_refund',
+      domain: 'money-movement',
+      downstreamSystem: 'refund-service',
+      requestedAt: '2026-05-01T20:21:00.000Z',
+      decidedAt: '2026-05-01T20:21:01.000Z',
+      recipient: 'customer_123',
+      policyRef: 'policy:refunds:v1',
+      evidenceRefs: ['ticket:amount-gap'],
+      authoritySources: [
+        {
+          sourceKind: 'authority-record',
+          claimKind: 'authorization',
+          sourceRef: 'authority:support-ai-agent',
+          trustClass: 'trusted-authority',
+          evidenceDigest: 'sha256:authority-support',
+        },
+      ],
+    }),
+    occurredAt: '2026-05-01T20:21:02.000Z',
+    downstreamOutcome: 'proceeded',
+  });
+  const recipientGap = createShadowAdmissionEvent({
+    admission: createGenericAdmissionEnvelope({
+      mode: 'observe',
+      actor: 'treasury-ai-agent',
+      action: 'prepare_transfer',
+      domain: 'programmable-money',
+      downstreamSystem: 'wallet-gateway',
+      requestedAt: '2026-05-01T20:22:00.000Z',
+      decidedAt: '2026-05-01T20:22:01.000Z',
+      amount: {
+        value: 2400,
+        currency: 'USD',
+        asset: null,
+        chain: null,
+      },
+      policyRef: 'policy:wallet:v1',
+      evidenceRefs: ['ticket:recipient-gap'],
+      authoritySources: [
+        {
+          sourceKind: 'authority-record',
+          claimKind: 'authorization',
+          sourceRef: 'authority:treasury-ai-agent',
+          trustClass: 'trusted-authority',
+          evidenceDigest: 'sha256:authority-treasury',
+        },
+      ],
+      observedFeatures: {
+        adapterReady: true,
+      },
+      observedFeatureOrigins: {
+        adapterReady: 'operator-attested',
+      },
+    }),
+    occurredAt: '2026-05-01T20:22:02.000Z',
+    downstreamOutcome: 'proceeded',
+  });
+  const dataGap = createShadowAdmissionEvent({
+    admission: createGenericAdmissionEnvelope({
+      mode: 'observe',
+      actor: 'analytics-ai-agent',
+      action: 'export_customer_report',
+      domain: 'data-disclosure',
+      downstreamSystem: 'report-delivery',
+      requestedAt: '2026-05-01T20:23:00.000Z',
+      decidedAt: '2026-05-01T20:23:01.000Z',
+      policyRef: 'policy:reports:v1',
+      evidenceRefs: ['ticket:data-gap'],
+      authoritySources: [
+        {
+          sourceKind: 'authority-record',
+          claimKind: 'authorization',
+          sourceRef: 'authority:analytics-ai-agent',
+          trustClass: 'trusted-authority',
+          evidenceDigest: 'sha256:authority-analytics',
+        },
+      ],
+    }),
+    occurredAt: '2026-05-01T20:23:02.000Z',
+    downstreamOutcome: 'proceeded',
+  });
+  const authorityGap = createShadowAdmissionEvent({
+    admission: createGenericAdmissionEnvelope({
+      mode: 'observe',
+      actor: 'iam-ai-agent',
+      action: 'grant_admin_role',
+      domain: 'authority-change',
+      downstreamSystem: 'identity-provider',
+      requestedAt: '2026-05-01T20:24:00.000Z',
+      decidedAt: '2026-05-01T20:24:01.000Z',
+      policyRef: 'policy:iam:v1',
+      evidenceRefs: ['ticket:authority-gap'],
+    }),
+    occurredAt: '2026-05-01T20:24:02.000Z',
+    downstreamOutcome: 'proceeded',
+  });
+  const customGap = createShadowAdmissionEvent({
+    admission: createGenericAdmissionEnvelope({
+      mode: 'observe',
+      actor: 'custom-ai-agent',
+      action: 'perform_customer_defined_action',
+      domain: 'custom',
+      downstreamSystem: 'customer-defined-system',
+      requestedAt: '2026-05-01T20:25:00.000Z',
+      decidedAt: '2026-05-01T20:25:01.000Z',
+      policyRef: 'policy:custom:v1',
+      evidenceRefs: ['ticket:custom-gap'],
+      authoritySources: [
+        {
+          sourceKind: 'authority-record',
+          claimKind: 'authorization',
+          sourceRef: 'authority:custom-ai-agent',
+          trustClass: 'trusted-authority',
+          evidenceDigest: 'sha256:authority-custom',
+        },
+      ],
+    }),
+    occurredAt: '2026-05-01T20:25:02.000Z',
+    downstreamOutcome: 'proceeded',
+  });
+
+  const report = createShadowPolicySimulationReport({
+    events: [amountGap, recipientGap, dataGap, authorityGap, customGap],
+    proposedMode: 'review',
+    generatedAt: '2026-05-01T20:26:00.000Z',
+  });
+  const kinds = report.recommendations.map((item) => item.kind);
+
+  equal(report.gapCounts.amountScope, 1, 'Shadow simulation: amount scope gaps are counted');
+  equal(report.gapCounts.recipientScope, 1, 'Shadow simulation: recipient scope gaps are counted');
+  equal(report.gapCounts.dataScope, 1, 'Shadow simulation: data scope gaps are counted');
+  equal(report.gapCounts.authority, 1, 'Shadow simulation: authority-mode gaps count as authority gaps');
+  equal(report.gapCounts.customDomain, 1, 'Shadow simulation: custom-domain gaps are counted');
+  ok(kinds.includes('bind-amount-scope'), 'Shadow simulation: amount scope gap gets a specific recommendation');
+  ok(kinds.includes('bind-recipient-scope'), 'Shadow simulation: recipient scope gap gets a specific recommendation');
+  ok(kinds.includes('bind-data-scope'), 'Shadow simulation: data scope gap gets a specific recommendation');
+  ok(kinds.includes('bind-authority'), 'Shadow simulation: authority-mode gap gets an authority recommendation');
+  ok(kinds.includes('scope-custom-domain'), 'Shadow simulation: custom domain gap gets a scoped-domain recommendation');
 }
 
 function testCallerThresholdBelowFloorDoesNotPromote(): void {
@@ -253,6 +425,7 @@ function testInvalidPromotionThresholdFailsClosed(): void {
 
 testSimulationReplaysShadowDecisions();
 testPromotionRecommendationRequiresCleanShadowTraffic();
+testSimulationMapsDomainScopeReasonsToSpecificRecommendations();
 testCallerThresholdBelowFloorDoesNotPromote();
 testInvalidModeFailsClosed();
 testInvalidPromotionThresholdFailsClosed();

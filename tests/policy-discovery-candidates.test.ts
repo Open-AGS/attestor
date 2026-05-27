@@ -41,6 +41,15 @@ function event(input: {
       policyRef: input.policyRef ?? null,
       evidenceRefs: input.evidenceRefs ?? [],
       recipient: 'raw_recipient_must_not_escape',
+      authoritySources: [
+        {
+          sourceKind: 'authority-record',
+          claimKind: 'authorization',
+          sourceRef: `authority:${input.action}`,
+          trustClass: 'trusted-authority',
+          evidenceDigest: `sha256:authority-${input.action}`,
+        },
+      ],
       observedFeatures: input.observedFeatures ?? {},
     }),
     occurredAt: input.occurredAt,
@@ -140,7 +149,53 @@ function testEmptyDiscoveryBundleIsExplicit(): void {
   equal(bundle.autoEnforce, false, 'Policy discovery: empty bundle still never auto-enforces');
 }
 
+function testCandidateSummaryTracksWinningAction(): void {
+  const report = createShadowPolicySimulationReport({
+    events: [
+      event({
+        action: 'issue_refund',
+        domain: 'money-movement',
+        downstreamSystem: 'refund-service',
+        occurredAt: '2026-05-01T22:42:02.000Z',
+      }),
+      event({
+        action: 'issue_refund',
+        domain: 'money-movement',
+        downstreamSystem: 'refund-service',
+        policyRef: 'policy:refunds:v1',
+        evidenceRefs: ['ticket:block'],
+        observedFeatures: {
+          policyBlocked: true,
+        },
+        occurredAt: '2026-05-01T22:43:02.000Z',
+        humanOutcome: 'rejected',
+      }),
+    ],
+    proposedMode: 'review',
+    generatedAt: '2026-05-01T23:03:00.000Z',
+  });
+  const bundle = createShadowPolicyDiscoveryCandidates({
+    report,
+    generatedAt: '2026-05-01T23:04:00.000Z',
+  });
+  const candidate = bundle.candidates.find((item) =>
+    item.actionSurface === 'refund-service.issue_refund'
+  );
+
+  equal(candidate?.action, 'investigate-blocks', 'Policy discovery: highest-priority action wins');
+  ok(
+    candidate?.summary.includes('would block or were rejected by humans'),
+    'Policy discovery: candidate summary describes the winning action',
+  );
+  ok(
+    candidate?.sourceRecommendationKinds.includes('define-policy') &&
+      candidate.sourceRecommendationKinds.includes('investigate-blocks'),
+    'Policy discovery: source recommendation kinds retain all contributing signals',
+  );
+}
+
 testDiscoveryCandidatesRequireApprovalAndDoNotEnforce();
 testEmptyDiscoveryBundleIsExplicit();
+testCandidateSummaryTracksWinningAction();
 
 console.log(`Policy discovery candidate tests: ${passed} passed, 0 failed`);

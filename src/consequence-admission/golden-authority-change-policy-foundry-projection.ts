@@ -183,7 +183,11 @@ function gapCounts(
       fixture.authorityFacts.approvalFreshness === 'missing' ||
       fixture.authorityFacts.approvalFreshness === 'stale'
     ).length,
+    amountScope: 0,
+    recipientScope: 0,
+    dataScope: 0,
     adapter: 0,
+    customDomain: 0,
   });
 }
 

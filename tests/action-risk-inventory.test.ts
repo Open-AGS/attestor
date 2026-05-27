@@ -25,6 +25,11 @@ function event(input: {
   readonly downstreamSystem: string;
   readonly policyRef?: string | null;
   readonly evidenceRefs?: readonly string[];
+  readonly dataScope?: {
+    readonly records: number | null;
+    readonly classification: string | null;
+    readonly fields: readonly string[];
+  } | null;
   readonly occurredAt: string;
   readonly downstreamOutcome?: 'proceeded' | 'failed' | 'blocked' | 'held';
   readonly humanOutcome?: 'not-reviewed' | 'approved' | 'rejected' | 'modified';
@@ -41,7 +46,17 @@ function event(input: {
       decidedAt: '2026-05-01T22:00:01.000Z',
       policyRef: input.policyRef ?? null,
       evidenceRefs: input.evidenceRefs ?? [],
+      dataScope: input.dataScope ?? null,
       recipient: 'raw_recipient_must_not_escape',
+      authoritySources: [
+        {
+          sourceKind: 'authority-record',
+          claimKind: 'authorization',
+          sourceRef: `authority:${input.action}`,
+          trustClass: 'trusted-authority',
+          evidenceDigest: `sha256:authority-${input.action}`,
+        },
+      ],
       observedFeatures: {
         adapterReady: input.observedFeatures?.adapterReady ?? true,
       },
@@ -95,6 +110,11 @@ function testInventoryRanksAndSummarizesActionSurfaces(): void {
       domain: 'data-disclosure',
       downstreamSystem: 'report-delivery',
       policyRef: 'policy:reports:v1',
+      dataScope: {
+        records: 12,
+        classification: 'internal',
+        fields: ['ticket_id', 'status'],
+      },
       occurredAt: '2026-05-01T22:02:02.000Z',
     }),
     ...cleanOpsEvents(),
@@ -154,7 +174,32 @@ function testEmptyInventoryIsExplicit(): void {
   equal(inventory.surfaces.length, 0, 'Action risk inventory: empty surfaces are empty');
 }
 
+function testInventorySurfacesDomainScopeGaps(): void {
+  const inventory = createActionRiskInventory({
+    events: [
+      event({
+        actor: 'analytics-ai-agent',
+        action: 'export_customer_report',
+        domain: 'data-disclosure',
+        downstreamSystem: 'report-delivery',
+        policyRef: 'policy:reports:v1',
+        evidenceRefs: ['ticket:data-scope'],
+        occurredAt: '2026-05-01T22:31:02.000Z',
+      }),
+    ],
+    generatedAt: '2026-05-01T22:32:00.000Z',
+  });
+  const surface = inventory.surfaces.find((item) =>
+    item.actionSurface === 'report-delivery.export_customer_report'
+  );
+
+  equal(surface?.gapCounts.dataScope, 1, 'Action risk inventory: data scope gaps are counted');
+  ok(surface?.riskSignals.includes('scope-gap'), 'Action risk inventory: scope gaps are surfaced');
+  equal(surface?.recommendedNextStep, 'bind-scope', 'Action risk inventory: scope gap recommends binding scope');
+}
+
 testInventoryRanksAndSummarizesActionSurfaces();
 testEmptyInventoryIsExplicit();
+testInventorySurfacesDomainScopeGaps();
 
 console.log(`Action risk inventory tests: ${passed} passed, 0 failed`);

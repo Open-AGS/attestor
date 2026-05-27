@@ -61,7 +61,9 @@ export const POLICY_FOUNDRY_NO_GO_REASONS = [
   'missing-policy-schema',
   'missing-evidence-coverage',
   'missing-authority-binding',
+  'missing-scope-binding',
   'adapter-readiness-missing',
+  'custom-domain-contract-missing',
   'sample-size-too-small',
   'single-actor-concentration',
   'high-risk-auto-admit',
@@ -80,7 +82,9 @@ export const POLICY_FOUNDRY_ACTIVE_QUESTION_KINDS = [
   'choose-policy-template',
   'bind-evidence',
   'bind-authority',
+  'bind-scope',
   'prepare-adapter',
+  'scope-custom-domain',
   'review-counterexamples',
   'confirm-representative-sample',
   'run-red-team-replay',
@@ -115,7 +119,9 @@ export interface PolicyFoundryConfidenceProfile {
   readonly evidenceCompleteness: number;
   readonly authorityCompleteness: number;
   readonly policyCompleteness: number;
+  readonly scopeCompleteness: number;
   readonly adapterReadiness: number;
+  readonly customDomainReadiness: number;
   readonly reviewerAgreement: number | null;
   readonly counterexampleCount: number;
   readonly highRiskAutoAdmitCount: number;
@@ -375,11 +381,25 @@ function questionsFor(
       'Bind the customer authority source for the actor, reviewer, signer, or delegation path.',
     ));
   }
+  if (reasons.includes('missing-scope-binding')) {
+    questions.push(activeQuestion(
+      'bind-scope',
+      68,
+      'Bind the action scope before this candidate can move toward review or enforcement.',
+    ));
+  }
   if (reasons.includes('adapter-readiness-missing')) {
     questions.push(activeQuestion(
       'prepare-adapter',
       65,
       'Prepare and verify the downstream adapter before this action can become enforceable.',
+    ));
+  }
+  if (reasons.includes('custom-domain-contract-missing')) {
+    questions.push(activeQuestion(
+      'scope-custom-domain',
+      64,
+      'Bind this custom consequence domain to a named pack contract before promotion.',
     ));
   }
   if (
@@ -432,6 +452,8 @@ function scoreFor(
   score -= Math.round((1 - confidence.evidenceCompleteness) * 12);
   score -= Math.round((1 - confidence.authorityCompleteness) * 10);
   score -= Math.round((1 - confidence.policyCompleteness) * 10);
+  score -= Math.round((1 - confidence.scopeCompleteness) * 10);
+  score -= Math.round((1 - confidence.customDomainReadiness) * 8);
   score -= Math.round(confidence.replayDuplicateRate * 10);
   score -= confidence.counterexampleCount > 0 ? 15 : 0;
   score -= confidence.highRiskAutoAdmitCount > 0 ? 20 : 0;
@@ -525,8 +547,22 @@ export function evaluatePolicyFoundryReadiness(
   if (candidate?.requiredControls.includes('authority') || (surface?.gapCounts.authority ?? 0) > 0) {
     addReason(noGoReasons, 'missing-authority-binding');
   }
+  if (
+    candidate?.requiredControls.includes('scope') ||
+    (surface?.gapCounts.amountScope ?? 0) > 0 ||
+    (surface?.gapCounts.recipientScope ?? 0) > 0 ||
+    (surface?.gapCounts.dataScope ?? 0) > 0
+  ) {
+    addReason(noGoReasons, 'missing-scope-binding');
+  }
   if (candidate?.requiredControls.includes('adapter') || (surface?.gapCounts.adapter ?? 0) > 0) {
     addReason(noGoReasons, 'adapter-readiness-missing');
+  }
+  if (
+    candidate?.requiredControls.includes('custom-domain') ||
+    (surface?.gapCounts.customDomain ?? 0) > 0
+  ) {
+    addReason(noGoReasons, 'custom-domain-contract-missing');
   }
   if (sampleSize < minimumSampleSize) addReason(noGoReasons, 'sample-size-too-small');
   if (
@@ -567,7 +603,14 @@ export function evaluatePolicyFoundryReadiness(
     evidenceCompleteness: countRatio(sampleSize, surface?.gapCounts.evidence ?? 0),
     authorityCompleteness: countRatio(sampleSize, surface?.gapCounts.authority ?? 0),
     policyCompleteness: countRatio(sampleSize, surface?.gapCounts.policy ?? 0),
+    scopeCompleteness: countRatio(
+      sampleSize,
+      (surface?.gapCounts.amountScope ?? 0) +
+        (surface?.gapCounts.recipientScope ?? 0) +
+        (surface?.gapCounts.dataScope ?? 0),
+    ),
     adapterReadiness: countRatio(sampleSize, surface?.gapCounts.adapter ?? 0),
+    customDomainReadiness: countRatio(sampleSize, surface?.gapCounts.customDomain ?? 0),
     reviewerAgreement: reviewer,
     counterexampleCount,
     highRiskAutoAdmitCount,

@@ -18,7 +18,9 @@ export const POLICY_DISCOVERY_CONTROL_CLOSURES = [
   'policy',
   'evidence',
   'authority',
+  'scope',
   'adapter',
+  'custom-domain',
   'review-load',
   'block-investigation',
   'customer-approval',
@@ -31,7 +33,11 @@ export const POLICY_DISCOVERY_CANDIDATE_ACTIONS = [
   'draft-policy',
   'bind-evidence',
   'bind-authority',
+  'bind-amount-scope',
+  'bind-recipient-scope',
+  'bind-data-scope',
   'prepare-adapter',
+  'scope-custom-domain',
   'investigate-blocks',
   'reduce-review-load',
   'review-mode-rehearsal',
@@ -91,6 +97,7 @@ interface MutableCandidate {
   confidenceSamples: number;
   reasonCodes: Set<string>;
   summaries: string[];
+  selectedSummary: string | null;
 }
 
 function canonicalObject(value: CanonicalReleaseJsonValue): {
@@ -137,7 +144,11 @@ function actionFor(
   if (recommendation.kind === 'define-policy') return 'draft-policy';
   if (recommendation.kind === 'bind-evidence') return 'bind-evidence';
   if (recommendation.kind === 'bind-authority') return 'bind-authority';
+  if (recommendation.kind === 'bind-amount-scope') return 'bind-amount-scope';
+  if (recommendation.kind === 'bind-recipient-scope') return 'bind-recipient-scope';
+  if (recommendation.kind === 'bind-data-scope') return 'bind-data-scope';
   if (recommendation.kind === 'prepare-adapter') return 'prepare-adapter';
+  if (recommendation.kind === 'scope-custom-domain') return 'scope-custom-domain';
   if (recommendation.kind === 'investigate-blocks') return 'investigate-blocks';
   if (recommendation.kind === 'reduce-review-load') return 'reduce-review-load';
   if (recommendation.kind === 'promote-to-review') return 'review-mode-rehearsal';
@@ -151,7 +162,17 @@ function controlsFor(
   if (recommendation.kind === 'define-policy') return Object.freeze(['policy', 'customer-approval']);
   if (recommendation.kind === 'bind-evidence') return Object.freeze(['evidence', 'customer-approval']);
   if (recommendation.kind === 'bind-authority') return Object.freeze(['authority', 'customer-approval']);
+  if (
+    recommendation.kind === 'bind-amount-scope' ||
+    recommendation.kind === 'bind-recipient-scope' ||
+    recommendation.kind === 'bind-data-scope'
+  ) {
+    return Object.freeze(['scope', 'customer-approval']);
+  }
   if (recommendation.kind === 'prepare-adapter') return Object.freeze(['adapter', 'customer-approval']);
+  if (recommendation.kind === 'scope-custom-domain') {
+    return Object.freeze(['custom-domain', 'customer-approval']);
+  }
   if (recommendation.kind === 'investigate-blocks') {
     return Object.freeze(['block-investigation', 'customer-approval']);
   }
@@ -171,7 +192,11 @@ function modeFor(
     action === 'draft-policy' ||
     action === 'bind-evidence' ||
     action === 'bind-authority' ||
+    action === 'bind-amount-scope' ||
+    action === 'bind-recipient-scope' ||
+    action === 'bind-data-scope' ||
     action === 'prepare-adapter' ||
+    action === 'scope-custom-domain' ||
     action === 'investigate-blocks' ||
     action === 'stay-in-shadow'
   ) {
@@ -184,8 +209,16 @@ function priorityFor(action: PolicyDiscoveryCandidateAction): number {
   if (action === 'investigate-blocks') return 9;
   if (action === 'draft-policy') return 8;
   if (action === 'bind-authority') return 7;
+  if (
+    action === 'bind-amount-scope' ||
+    action === 'bind-recipient-scope' ||
+    action === 'bind-data-scope'
+  ) {
+    return 7;
+  }
   if (action === 'bind-evidence') return 6;
   if (action === 'prepare-adapter') return 5;
+  if (action === 'scope-custom-domain') return 5;
   if (action === 'reduce-review-load') return 4;
   if (action === 'review-mode-rehearsal') return 3;
   if (action === 'enforce-mode-rehearsal') return 2;
@@ -246,7 +279,8 @@ function freezeCandidate(
     affectedEvents: candidate.affectedEvents,
     confidence,
     reasonCodes,
-    summary: candidate.summaries[0] ??
+    summary: candidate.selectedSummary ??
+      candidate.summaries[0] ??
       'Review this shadow policy candidate before any enforcement change.',
   });
 }
@@ -270,9 +304,13 @@ function addRecommendation(
     confidenceSamples: 0,
     reasonCodes: new Set<string>(),
     summaries: [],
+    selectedSummary: recommendation.summary,
   };
 
   const selectedAction = keepHigherPriorityAction(current.action, action);
+  if (selectedAction !== current.action) {
+    current.selectedSummary = recommendation.summary;
+  }
   current.action = selectedAction;
   current.proposedMode = modeFor(selectedAction, recommendation);
   for (const control of controlsFor(recommendation)) current.requiredControls.add(control);

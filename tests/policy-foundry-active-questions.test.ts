@@ -41,7 +41,22 @@ function event(input: {
       requestId: `request:${input.actor}:${input.occurredAt}`,
       policyRef: input.policyRef === undefined ? null : input.policyRef,
       evidenceRefs: input.evidenceRefs ?? [],
+      amount: {
+        value: 1200,
+        currency: 'USD',
+        asset: null,
+        chain: null,
+      },
       recipient: 'raw_recipient_must_not_escape',
+      authoritySources: [
+        {
+          sourceKind: 'authority-record',
+          claimKind: 'authorization',
+          sourceRef: `authority:${input.actor}`,
+          trustClass: 'trusted-authority',
+          evidenceDigest: `sha256:authority-${input.actor}`,
+        },
+      ],
       observedFeatures: {
         privateThreshold: 'raw_feature_must_not_escape',
       },
@@ -161,7 +176,7 @@ function testPacketCanBeEmptyWhenReadinessHasNoQuestions(): void {
   equal(readiness.noGoReasons.length, 0, 'Policy Foundry active questions: fixture is ready');
   equal(packet.status, 'no-active-questions', 'Policy Foundry active questions: clean readiness has no questions');
   equal(packet.questionCount, 0, 'Policy Foundry active questions: clean packet is empty');
-  equal(packet.nextSafeStep, 'review-required', 'Policy Foundry active questions: packet retains next safe step');
+  equal(packet.nextSafeStep, 'scoped-enforce-low-risk', 'Policy Foundry active questions: packet retains next safe step');
 }
 
 function testDescriptorExposesSafetyBoundary(): void {

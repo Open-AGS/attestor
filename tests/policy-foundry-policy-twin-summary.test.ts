@@ -65,7 +65,19 @@ function event(input: {
       policyRef: input.policyRef === undefined ? 'policy:ops:v1' : input.policyRef,
       evidenceRefs: input.evidenceRefs ?? ['change:approved'],
       recipient: 'raw_recipient_must_not_escape',
+      authoritySources: [
+        {
+          sourceKind: 'authority-record',
+          claimKind: 'authorization',
+          sourceRef: `authority:${input.actor}`,
+          trustClass: 'trusted-authority',
+          evidenceDigest: `sha256:authority-${input.actor}`,
+        },
+      ],
       observedFeatures: input.observedFeatures ?? { adapterReady: true },
+      observedFeatureOrigins: {
+        adapterReady: 'trusted-adapter',
+      },
     }),
     occurredAt: input.occurredAt,
     downstreamOutcome: input.humanOutcome === 'rejected' ? 'blocked' : 'proceeded',
@@ -164,6 +176,10 @@ function testCleanPolicyTwinSummaryIsRolloutCandidate(): void {
   equal(summary.reviewLoadImpact.simulatedReviewCount, 0, 'Policy Twin summary: simulated review count is retained');
   equal(summary.reviewLoadImpact.reviewLoadDeltaCount, -24, 'Policy Twin summary: review-load delta is explicit');
   equal(summary.reviewLoadImpact.reviewLoadReductionRate, 1, 'Policy Twin summary: review-load reduction rate is explicit');
+  equal(summary.gapCounts.amountScope, 0, 'Policy Twin summary: amount scope gaps are retained');
+  equal(summary.gapCounts.recipientScope, 0, 'Policy Twin summary: recipient scope gaps are retained');
+  equal(summary.gapCounts.dataScope, 0, 'Policy Twin summary: data scope gaps are retained');
+  equal(summary.gapCounts.customDomain, 0, 'Policy Twin summary: custom-domain gaps are retained');
   equal(summary.promotionBlocked, false, 'Policy Twin summary: clean ledger does not block promotion');
   equal(summary.approvalRequired, true, 'Policy Twin summary: approval remains required');
   equal(summary.autoEnforce, false, 'Policy Twin summary: auto enforce is false');

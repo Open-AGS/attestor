@@ -22,7 +22,11 @@ export const SHADOW_POLICY_RECOMMENDATION_KINDS = [
   'define-policy',
   'bind-evidence',
   'bind-authority',
+  'bind-amount-scope',
+  'bind-recipient-scope',
+  'bind-data-scope',
   'prepare-adapter',
+  'scope-custom-domain',
   'investigate-blocks',
   'reduce-review-load',
   'stay-in-shadow',
@@ -60,7 +64,11 @@ export interface ShadowPolicyGapCounts {
   readonly policy: number;
   readonly evidence: number;
   readonly authority: number;
+  readonly amountScope: number;
+  readonly recipientScope: number;
+  readonly dataScope: number;
   readonly adapter: number;
+  readonly customDomain: number;
 }
 
 export interface ShadowPolicySurfaceSimulation {
@@ -213,7 +221,11 @@ function emptyGapCounts(): ShadowPolicyGapCounts {
     policy: 0,
     evidence: 0,
     authority: 0,
+    amountScope: 0,
+    recipientScope: 0,
+    dataScope: 0,
     adapter: 0,
+    customDomain: 0,
   });
 }
 
@@ -231,8 +243,16 @@ function gapCountsFor(event: ShadowAdmissionEvent): ShadowPolicyGapCounts {
   return Object.freeze({
     policy: event.reasonCodes.includes('policy-ref-missing') ? 1 : 0,
     evidence: event.reasonCodes.includes('evidence-ref-missing') ? 1 : 0,
-    authority: event.reasonCodes.includes('authority-ref-missing') ? 1 : 0,
+    authority:
+      event.reasonCodes.includes('authority-ref-missing') ||
+      event.reasonCodes.includes('authority-mode-missing')
+        ? 1
+        : 0,
+    amountScope: event.reasonCodes.includes('amount-scope-missing') ? 1 : 0,
+    recipientScope: event.reasonCodes.includes('recipient-scope-missing') ? 1 : 0,
+    dataScope: event.reasonCodes.includes('data-scope-missing') ? 1 : 0,
     adapter: event.reasonCodes.includes('adapter-readiness-missing') ? 1 : 0,
+    customDomain: event.reasonCodes.includes('custom-domain-review-required') ? 1 : 0,
   });
 }
 
@@ -244,8 +264,16 @@ function addGapCounts(
     policy: left.policy + right.policy,
     evidence: left.evidence + right.evidence,
     authority: left.authority + right.authority,
+    amountScope: left.amountScope + right.amountScope,
+    recipientScope: left.recipientScope + right.recipientScope,
+    dataScope: left.dataScope + right.dataScope,
     adapter: left.adapter + right.adapter,
+    customDomain: left.customDomain + right.customDomain,
   });
+}
+
+function hasAnyGap(gapCounts: ShadowPolicyGapCounts): boolean {
+  return Object.values(gapCounts).some((count) => count > 0);
 }
 
 function simulatedDecisionFor(
@@ -364,7 +392,52 @@ function recommendationsForSurface(
       actionSurface: surface.actionSurface,
       domain: surface.domain,
       affectedEvents: surface.gapCounts.authority,
-      reasonCodes: ['authority-ref-missing'],
+      reasonCodes: ['authority-ref-missing', 'authority-mode-missing'],
+      nextMode: 'observe',
+      confidence: 0.9,
+    }));
+  }
+  if (surface.gapCounts.amountScope > 0) {
+    items.push(recommendation({
+      kind: 'bind-amount-scope',
+      severity: 'high',
+      title: 'Bind amount scope before money movement',
+      summary:
+        'Shadow traffic reached this action surface without an amount scope. Require bounded amount evidence before review or enforce mode.',
+      actionSurface: surface.actionSurface,
+      domain: surface.domain,
+      affectedEvents: surface.gapCounts.amountScope,
+      reasonCodes: ['amount-scope-missing'],
+      nextMode: 'observe',
+      confidence: 0.9,
+    }));
+  }
+  if (surface.gapCounts.recipientScope > 0) {
+    items.push(recommendation({
+      kind: 'bind-recipient-scope',
+      severity: 'high',
+      title: 'Bind recipient scope before dispatch',
+      summary:
+        'Shadow traffic reached this action surface without a recipient scope. Require recipient or destination binding before review or enforce mode.',
+      actionSurface: surface.actionSurface,
+      domain: surface.domain,
+      affectedEvents: surface.gapCounts.recipientScope,
+      reasonCodes: ['recipient-scope-missing'],
+      nextMode: 'observe',
+      confidence: 0.9,
+    }));
+  }
+  if (surface.gapCounts.dataScope > 0) {
+    items.push(recommendation({
+      kind: 'bind-data-scope',
+      severity: 'high',
+      title: 'Bind data scope before disclosure',
+      summary:
+        'Shadow traffic reached this action surface without a data scope. Require field, record, classification, or package boundaries before review or enforce mode.',
+      actionSurface: surface.actionSurface,
+      domain: surface.domain,
+      affectedEvents: surface.gapCounts.dataScope,
+      reasonCodes: ['data-scope-missing'],
       nextMode: 'observe',
       confidence: 0.9,
     }));
@@ -382,6 +455,21 @@ function recommendationsForSurface(
       reasonCodes: ['adapter-readiness-missing'],
       nextMode: 'observe',
       confidence: 0.9,
+    }));
+  }
+  if (surface.gapCounts.customDomain > 0) {
+    items.push(recommendation({
+      kind: 'scope-custom-domain',
+      severity: 'high',
+      title: 'Scope custom-domain actions before promotion',
+      summary:
+        'Shadow traffic used a custom consequence domain. Bind it to a named pack contract before review or enforce mode.',
+      actionSurface: surface.actionSurface,
+      domain: surface.domain,
+      affectedEvents: surface.gapCounts.customDomain,
+      reasonCodes: ['custom-domain-review-required'],
+      nextMode: 'observe',
+      confidence: 0.85,
     }));
   }
   if (surface.simulatedDecisionCounts.block > 0 || surface.humanRejections > 0) {
@@ -419,10 +507,7 @@ function recommendationsForSurface(
   }
   if (
     surface.eventCount >= minimumPromotionEvents &&
-    surface.gapCounts.policy === 0 &&
-    surface.gapCounts.evidence === 0 &&
-    surface.gapCounts.authority === 0 &&
-    surface.gapCounts.adapter === 0 &&
+    !hasAnyGap(surface.gapCounts) &&
     surface.simulatedDecisionCounts.block === 0 &&
     surface.humanRejections === 0
   ) {
@@ -435,7 +520,7 @@ function recommendationsForSurface(
         ? 'Candidate for enforce-mode rehearsal'
         : 'Candidate for review-mode rehearsal',
       summary:
-        'This action surface has enough shadow events without policy, evidence, authority, adapter, block, or rejection gaps. Rehearse the next mode with customer approval.',
+        'This action surface has enough shadow events without policy, evidence, authority, scope, adapter, custom-domain, block, or rejection gaps. Rehearse the next mode with customer approval.',
       actionSurface: surface.actionSurface,
       domain: surface.domain,
       affectedEvents: surface.eventCount,

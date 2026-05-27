@@ -83,7 +83,11 @@ export interface PolicyFoundryPolicyTwinSummary {
     readonly policy: number;
     readonly evidence: number;
     readonly authority: number;
+    readonly amountScope: number;
+    readonly recipientScope: number;
+    readonly dataScope: number;
     readonly adapter: number;
+    readonly customDomain: number;
   };
   readonly noGoReasons: readonly string[];
   readonly promotionBlocked: boolean;
@@ -243,7 +247,11 @@ export function createPolicyFoundryPolicyTwinSummary(
     policy: 0,
     evidence: 0,
     authority: 0,
+    amountScope: 0,
+    recipientScope: 0,
+    dataScope: 0,
     adapter: 0,
+    customDomain: 0,
   };
   const noGoReasons = Object.freeze(
     [...new Set([
@@ -286,7 +294,11 @@ export function createPolicyFoundryPolicyTwinSummary(
       policy: gaps.policy,
       evidence: gaps.evidence,
       authority: gaps.authority,
+      amountScope: gaps.amountScope,
+      recipientScope: gaps.recipientScope,
+      dataScope: gaps.dataScope,
       adapter: gaps.adapter,
+      customDomain: gaps.customDomain,
     }),
     noGoReasons,
     promotionBlocked,

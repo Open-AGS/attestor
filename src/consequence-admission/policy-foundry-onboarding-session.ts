@@ -66,7 +66,9 @@ export const POLICY_FOUNDRY_ONBOARDING_REQUIREMENT_KINDS = [
   'choose-policy-template',
   'bind-evidence',
   'bind-authority',
+  'bind-scope',
   'prepare-verifier-or-gateway',
+  'scope-custom-domain',
   'review-credential-isolation',
   'review-generated-artifacts',
   'run-red-team-replay',
@@ -221,8 +223,12 @@ function requirementPrompt(kind: PolicyFoundryOnboardingRequirementKind): string
       return 'Bind evidence coverage for the candidate action surface.';
     case 'bind-authority':
       return 'Bind the authority source for the candidate without using LLM text as authority.';
+    case 'bind-scope':
+      return 'Bind amount, recipient, data, or destination scope before the candidate can move toward review or enforcement.';
     case 'prepare-verifier-or-gateway':
       return 'Prepare the verifier, adapter, gateway, MCP gateway, or sidecar control that prevents downstream bypass.';
+    case 'scope-custom-domain':
+      return 'Bind the custom consequence domain to a named pack contract before the candidate can move toward review or enforcement.';
     case 'review-credential-isolation':
       return 'Review credential isolation so the agent cannot bypass Attestor with direct downstream credentials.';
     case 'review-generated-artifacts':
@@ -246,7 +252,9 @@ const REQUIREMENT_PRIORITY: Record<PolicyFoundryOnboardingRequirementKind, numbe
   'choose-policy-template': 86,
   'bind-evidence': 84,
   'bind-authority': 82,
+  'bind-scope': 81,
   'prepare-verifier-or-gateway': 80,
+  'scope-custom-domain': 79,
   'review-credential-isolation': 78,
   'review-generated-artifacts': 76,
   'run-red-team-replay': 74,
@@ -278,8 +286,12 @@ function policyNoGoToRequirement(
     case 'missing-authority-binding':
     case 'llm-authority-source':
       return 'bind-authority';
+    case 'missing-scope-binding':
+      return 'bind-scope';
     case 'adapter-readiness-missing':
       return 'prepare-verifier-or-gateway';
+    case 'custom-domain-contract-missing':
+      return 'scope-custom-domain';
     case 'tenant-boundary-not-proven':
       return 'prove-tenant-boundary';
     case 'red-team-replay-not-run':

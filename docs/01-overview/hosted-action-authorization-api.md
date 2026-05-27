@@ -32,6 +32,7 @@ It keeps these constraints explicit:
 - positive readiness observations such as `observedFeatures.adapterReady` reduce review pressure only when the matching `observedFeatureOrigins.adapterReady` marker is trusted (`operator-attested`, `customer-gateway`, `attestor-runtime`, or `trusted-adapter`)
 - authority must arrive as structured `authoritySources` references; untrusted content, tool output, retrieved content, and model summaries cannot authorize a consequence or self-promote into trusted authority
 - trusted authority source entries must carry digest evidence, and missing or untrusted authority provenance holds or blocks the generic admission before downstream execution
+- when an authority source claims `approval`, approval must also arrive as structured `approvals` provenance with digest-bound reviewer, scope, state, and issued-at evidence; raw approval text and model summaries are not accepted as approval
 - shadow reads are read-only and served with `cache-control: no-store`
 - failure responses use RFC 9457-style problem details with Attestor fail-closed fields
 - shadow reads do not activate policy, approve candidates, infer business impact, or auto-enforce

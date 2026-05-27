@@ -148,6 +148,15 @@ import {
   type CustomerPepAdoptionPackageDescriptor,
 } from './customer-pep-adoption-package.js';
 import {
+  CONSEQUENCE_APPROVAL_GUARD_REASON_CODES,
+  CONSEQUENCE_APPROVAL_SOURCE_KINDS,
+  CONSEQUENCE_APPROVAL_STATES,
+  CONSEQUENCE_APPROVAL_TRUST_CLASSES,
+  evaluateConsequenceApprovalProvenance,
+  type ConsequenceApprovalProvenanceClaim,
+  type ConsequenceApprovalProvenanceDecision,
+} from './approval-provenance-guard.js';
+import {
   CONSEQUENCE_UNTRUSTED_CONTENT_AUTHORITY_CLAIM_KINDS,
   CONSEQUENCE_UNTRUSTED_CONTENT_AUTHORITY_REASON_CODES,
   CONSEQUENCE_UNTRUSTED_CONTENT_AUTHORITY_SOURCE_KINDS,
@@ -215,6 +224,9 @@ ReadonlySet<GenericAdmissionObservedFeatureOrigin> = new Set([
 
 const GENERIC_ADMISSION_AUTHORITY_GUARD_REASON_CODES:
 ReadonlySet<string> = new Set(CONSEQUENCE_UNTRUSTED_CONTENT_AUTHORITY_REASON_CODES);
+
+const GENERIC_ADMISSION_APPROVAL_GUARD_REASON_CODES:
+ReadonlySet<string> = new Set(CONSEQUENCE_APPROVAL_GUARD_REASON_CODES);
 
 export const GENERIC_ADMISSION_SHADOW_DECISIONS = [
   'would_admit',
@@ -712,6 +724,9 @@ export interface GenericAdmissionDataScope {
 export type GenericAdmissionAuthoritySource =
   ConsequenceUntrustedContentAuthoritySource;
 
+export type GenericAdmissionApproval =
+  ConsequenceApprovalProvenanceClaim;
+
 export interface CreateGenericAdmissionInput {
   readonly mode: GenericAdmissionMode;
   readonly actor: string;
@@ -734,6 +749,7 @@ export interface CreateGenericAdmissionInput {
   readonly dataScope?: GenericAdmissionDataScope | null;
   readonly evidenceRefs?: readonly string[];
   readonly authoritySources?: readonly GenericAdmissionAuthoritySource[];
+  readonly approvals?: readonly GenericAdmissionApproval[];
   readonly nativeInputRefs?: readonly string[];
   readonly observedFeatures?: Readonly<Record<string, GenericAdmissionFeatureValue>>;
   readonly observedFeatureOrigins?:
@@ -750,6 +766,7 @@ export interface GenericAdmissionModeEvaluation {
   readonly enforcementActive: boolean;
   readonly reasonCodes: readonly string[];
   readonly authorityGuardDecision: ConsequenceUntrustedContentAuthorityDecision | null;
+  readonly approvalGuardDecision: ConsequenceApprovalProvenanceDecision | null;
 }
 
 export interface GenericAdmissionEnvelope {
@@ -983,6 +1000,18 @@ function readOptionalString(
   return normalizeOptionalIdentifier(value, fieldName);
 }
 
+function readOptionalBoolean(
+  record: Readonly<Record<string, unknown>>,
+  fieldName: string,
+): boolean | null {
+  const value = record[fieldName];
+  if (value === undefined || value === null) return null;
+  if (typeof value !== 'boolean') {
+    throw new Error(`Consequence admission ${fieldName} must be a boolean when provided.`);
+  }
+  return value;
+}
+
 function readOptionalTimestamp(
   record: Readonly<Record<string, unknown>>,
   fieldName: string,
@@ -1158,6 +1187,70 @@ function normalizeGenericAuthoritySources(
   );
 }
 
+function normalizeGenericApprovals(
+  value: unknown,
+): readonly GenericAdmissionApproval[] {
+  if (value === undefined || value === null) return Object.freeze([]);
+  if (!Array.isArray(value)) {
+    throw new Error('Consequence admission approvals must be an array when provided.');
+  }
+  return Object.freeze(
+    value.map((entry, index) => {
+      const field = `approvals[${index}]`;
+      if (!isRecord(entry)) {
+        throw new Error(`Consequence admission ${field} must be an object.`);
+      }
+      const sourceKind = normalizeEnumValue(
+        readRequiredString(entry, 'sourceKind'),
+        CONSEQUENCE_APPROVAL_SOURCE_KINDS,
+        `${field}.sourceKind`,
+      );
+      const stateValue = readOptionalString(entry, 'state');
+      const sourceRef = readOptionalString(entry, 'sourceRef');
+      const reviewerRef = readOptionalString(entry, 'reviewerRef');
+      const reviewerAuthorityDigest = readOptionalString(entry, 'reviewerAuthorityDigest');
+      const approvalDigest = readOptionalString(entry, 'approvalDigest');
+      const scopeDigest = readOptionalString(entry, 'scopeDigest');
+      const issuedAt = readOptionalTimestamp(entry, 'issuedAt');
+      const expiresAt = readOptionalTimestamp(entry, 'expiresAt');
+      const trustClassValue = readOptionalString(entry, 'trustClass');
+      const signatureVerified = readOptionalBoolean(entry, 'signatureVerified');
+      const stepUpVerified = readOptionalBoolean(entry, 'stepUpVerified');
+      return Object.freeze({
+        approvalRef: readRequiredString(entry, 'approvalRef'),
+        sourceKind,
+        ...(stateValue === null
+          ? {}
+          : {
+              state: normalizeEnumValue(
+                stateValue,
+                CONSEQUENCE_APPROVAL_STATES,
+                `${field}.state`,
+              ),
+            }),
+        ...(sourceRef === null ? {} : { sourceRef }),
+        ...(reviewerRef === null ? {} : { reviewerRef }),
+        ...(reviewerAuthorityDigest === null ? {} : { reviewerAuthorityDigest }),
+        ...(approvalDigest === null ? {} : { approvalDigest }),
+        ...(scopeDigest === null ? {} : { scopeDigest }),
+        ...(issuedAt === null ? {} : { issuedAt }),
+        ...(expiresAt === null ? {} : { expiresAt }),
+        ...(trustClassValue === null
+          ? {}
+          : {
+              trustClass: normalizeEnumValue(
+                trustClassValue,
+                CONSEQUENCE_APPROVAL_TRUST_CLASSES,
+                `${field}.trustClass`,
+              ),
+            }),
+        ...(signatureVerified === null ? {} : { signatureVerified }),
+        ...(stepUpVerified === null ? {} : { stepUpVerified }),
+      });
+    }),
+  );
+}
+
 function retryAttemptIdFor(
   input: Omit<ConsequenceAdmissionRetryAttemptBinding, 'attemptId'>,
 ): string {
@@ -1265,6 +1358,7 @@ function normalizeCreateGenericAdmissionInput(input: unknown): CreateGenericAdmi
     dataScope: normalizeGenericDataScope(input.dataScope),
     evidenceRefs: normalizeStringArray(input.evidenceRefs, 'evidenceRefs'),
     authoritySources: normalizeGenericAuthoritySources(input.authoritySources),
+    approvals: normalizeGenericApprovals(input.approvals),
     nativeInputRefs: normalizeStringArray(input.nativeInputRefs, 'nativeInputRefs'),
     observedFeatures: normalizeGenericObservedFeatures(input.observedFeatures),
     observedFeatureOrigins: normalizeGenericObservedFeatureOrigins(input.observedFeatureOrigins),
@@ -1325,9 +1419,36 @@ function authorityGuardReviewReasonCodes(
   return Object.freeze([...decision.reasonCodes]);
 }
 
+function genericAdmissionRequiresApprovalProvenance(
+  input: CreateGenericAdmissionInput,
+): boolean {
+  return (input.approvals ?? []).length > 0 ||
+    (input.authoritySources ?? []).some((source) => source.claimKind === 'approval');
+}
+
+function genericAdmissionApprovalGuardDecisionFor(
+  input: CreateGenericAdmissionInput,
+): ConsequenceApprovalProvenanceDecision | null {
+  if (!genericAdmissionRequiresApprovalProvenance(input)) return null;
+  return evaluateConsequenceApprovalProvenance({
+    generatedAt: input.decidedAt ?? input.requestedAt ?? null,
+    actionSurface: input.domain,
+    action: input.action,
+    approvals: input.approvals ?? [],
+  });
+}
+
+function approvalGuardReviewReasonCodes(
+  decision: ConsequenceApprovalProvenanceDecision | null,
+): readonly string[] {
+  if (decision === null || decision.outcome === 'pass') return Object.freeze([]);
+  return Object.freeze([...decision.reasonCodes]);
+}
+
 function genericAdmissionReviewReasons(
   input: CreateGenericAdmissionInput,
   authorityGuardDecision: ConsequenceUntrustedContentAuthorityDecision | null,
+  approvalGuardDecision: ConsequenceApprovalProvenanceDecision | null,
 ): readonly string[] {
   const reasons: string[] = [];
   const profile = consequenceAdmissionDomainProfile(input.domain);
@@ -1351,6 +1472,7 @@ function genericAdmissionReviewReasons(
     reasons.push('authority-mode-missing');
   }
   reasons.push(...authorityGuardReviewReasonCodes(authorityGuardDecision));
+  reasons.push(...approvalGuardReviewReasonCodes(approvalGuardDecision));
 
   if (profile.requiredChecks.includes('adapter-readiness')) {
     if (!observedFeatureTrue(input, 'adapterReady')) {
@@ -1371,8 +1493,10 @@ function genericAdmissionShadowDecisionFor(
   input: CreateGenericAdmissionInput,
   reviewReasons: readonly string[],
   authorityGuardDecision: ConsequenceUntrustedContentAuthorityDecision | null,
+  approvalGuardDecision: ConsequenceApprovalProvenanceDecision | null,
 ): GenericAdmissionShadowDecision {
   if (authorityGuardDecision?.outcome === 'block') return 'would_block';
+  if (approvalGuardDecision?.outcome === 'block') return 'would_block';
   if (
     observedFeatureTrue(input, 'policyBlocked') ||
     observedFeatureTrue(input, 'blocked') ||
@@ -1436,11 +1560,17 @@ function createGenericAdmissionEvaluation(
   input: CreateGenericAdmissionInput,
 ): GenericAdmissionModeEvaluation {
   const authorityGuardDecision = genericAdmissionAuthorityGuardDecisionFor(input);
-  const reviewReasons = genericAdmissionReviewReasons(input, authorityGuardDecision);
+  const approvalGuardDecision = genericAdmissionApprovalGuardDecisionFor(input);
+  const reviewReasons = genericAdmissionReviewReasons(
+    input,
+    authorityGuardDecision,
+    approvalGuardDecision,
+  );
   const shadowDecision = genericAdmissionShadowDecisionFor(
     input,
     reviewReasons,
     authorityGuardDecision,
+    approvalGuardDecision,
   );
   const effectiveDecision = effectiveDecisionForGenericMode(input.mode, shadowDecision);
   const downstreamPosture = downstreamPostureForGenericMode(input.mode, effectiveDecision);
@@ -1453,6 +1583,7 @@ function createGenericAdmissionEvaluation(
     enforcementActive: input.mode === 'review' || input.mode === 'enforce',
     reasonCodes: genericReasonCodes(input, shadowDecision, reviewReasons),
     authorityGuardDecision,
+    approvalGuardDecision,
   });
 }
 
@@ -1464,7 +1595,8 @@ function reasonCodesForCheck(
     if (kind === 'policy') return reason.startsWith('policy-');
     if (kind === 'authority') {
       return reason.startsWith('authority-') ||
-        GENERIC_ADMISSION_AUTHORITY_GUARD_REASON_CODES.has(reason);
+        GENERIC_ADMISSION_AUTHORITY_GUARD_REASON_CODES.has(reason) ||
+        GENERIC_ADMISSION_APPROVAL_GUARD_REASON_CODES.has(reason);
     }
     if (kind === 'evidence') return reason.startsWith('evidence-');
     if (kind === 'enforcement') return reason === 'non-enforcing-mode';
@@ -1493,8 +1625,16 @@ function createGenericAdmissionChecks(
       const checkReasons = reasonCodesForCheck(kind, evaluation.reasonCodes);
       const outcome = checkOutcomeForGenericMode(input.mode, checkReasons);
       const evidenceRefs =
-        kind === 'authority' && evaluation.authorityGuardDecision !== null
-          ? [...(input.evidenceRefs ?? []), evaluation.authorityGuardDecision.digest]
+        kind === 'authority'
+          ? [
+              ...(input.evidenceRefs ?? []),
+              ...(evaluation.authorityGuardDecision !== null
+                ? [evaluation.authorityGuardDecision.digest]
+                : []),
+              ...(evaluation.approvalGuardDecision !== null
+                ? [evaluation.approvalGuardDecision.digest]
+                : []),
+            ]
           : [...(input.evidenceRefs ?? [])];
       return createConsequenceAdmissionCheck({
         kind,
@@ -1596,6 +1736,12 @@ function genericAdmissionDimensions(
       evaluation.authorityGuardDecision?.counts.trustedAuthoritySourceCount ?? 0,
     untrustedAuthoritySourceCount:
       evaluation.authorityGuardDecision?.counts.untrustedAuthoritySourceCount ?? 0,
+    approvalGuardOutcome: evaluation.approvalGuardDecision?.outcome ?? null,
+    approvalGuardDigest: evaluation.approvalGuardDecision?.digest ?? null,
+    approvalCount: evaluation.approvalGuardDecision?.counts.approvalCount ?? 0,
+    validApprovalCount: evaluation.approvalGuardDecision?.counts.validApprovalCount ?? 0,
+    untrustedApprovalCount:
+      evaluation.approvalGuardDecision?.counts.untrustedApprovalCount ?? 0,
   });
 }
 
@@ -1843,6 +1989,216 @@ readonly ConsequenceAdmissionCorrectionCatalogEntry[] = Object.freeze([
     retryableByModel: false,
     operatorOnly: true,
     safeSummary: 'Authority provenance failed closed.',
+  },
+  {
+    reasonCode: 'approval-missing',
+    audience: 'operator-control',
+    disclosureLevel: 'minimal',
+    missingFields: ['approvals'],
+    requiredEvidenceKinds: ['approval_provenance_ref'],
+    retryableByModel: false,
+    operatorOnly: true,
+    safeSummary: 'Approval provenance is required when approval is used as authority.',
+  },
+  {
+    reasonCode: 'approval-source-missing',
+    audience: 'operator-control',
+    disclosureLevel: 'minimal',
+    missingFields: ['approvals.sourceRef'],
+    requiredEvidenceKinds: ['approval_source_ref'],
+    retryableByModel: false,
+    operatorOnly: true,
+    safeSummary: 'Approval provenance must name the source system or workflow reference.',
+  },
+  {
+    reasonCode: 'approval-source-untrusted',
+    audience: 'operator-control',
+    disclosureLevel: 'minimal',
+    missingFields: ['approvals'],
+    requiredEvidenceKinds: ['trusted_approval_provenance_ref'],
+    retryableByModel: false,
+    operatorOnly: true,
+    safeSummary: 'Untrusted content cannot be treated as approval.',
+  },
+  {
+    reasonCode: 'approval-model-generated',
+    audience: 'operator-control',
+    disclosureLevel: 'minimal',
+    missingFields: ['approvals'],
+    requiredEvidenceKinds: ['trusted_approval_provenance_ref'],
+    retryableByModel: false,
+    operatorOnly: true,
+    safeSummary: 'Model-generated text cannot be used as approval.',
+  },
+  {
+    reasonCode: 'approval-tool-output-unverified',
+    audience: 'operator-control',
+    disclosureLevel: 'minimal',
+    missingFields: ['approvals'],
+    requiredEvidenceKinds: ['verified_tool_approval_ref'],
+    retryableByModel: false,
+    operatorOnly: true,
+    safeSummary: 'Tool output must be verified before it can support approval provenance.',
+  },
+  {
+    reasonCode: 'approval-state-not-approved',
+    audience: 'customer-review',
+    disclosureLevel: 'minimal',
+    missingFields: ['approvals.state'],
+    requiredEvidenceKinds: ['approved_state_ref'],
+    retryableByModel: false,
+    operatorOnly: true,
+    safeSummary: 'Approval provenance has not reached an approved state.',
+  },
+  {
+    reasonCode: 'approval-state-rejected-or-revoked',
+    audience: 'operator-control',
+    disclosureLevel: 'minimal',
+    missingFields: ['approvals.state'],
+    requiredEvidenceKinds: ['active_approval_state_ref'],
+    retryableByModel: false,
+    operatorOnly: true,
+    safeSummary: 'Rejected or revoked approvals fail closed.',
+  },
+  {
+    reasonCode: 'reviewer-identity-missing',
+    audience: 'operator-control',
+    disclosureLevel: 'minimal',
+    missingFields: ['approvals.reviewerRef'],
+    requiredEvidenceKinds: ['reviewer_identity_ref'],
+    retryableByModel: false,
+    operatorOnly: true,
+    safeSummary: 'Approval provenance must bind to a reviewer identity.',
+  },
+  {
+    reasonCode: 'reviewer-authority-missing',
+    audience: 'operator-control',
+    disclosureLevel: 'minimal',
+    missingFields: ['approvals.reviewerAuthorityDigest'],
+    requiredEvidenceKinds: ['reviewer_authority_digest'],
+    retryableByModel: false,
+    operatorOnly: true,
+    safeSummary: 'Approval provenance must bind the reviewer authority evidence.',
+  },
+  {
+    reasonCode: 'approval-digest-missing',
+    audience: 'operator-control',
+    disclosureLevel: 'minimal',
+    missingFields: ['approvals.approvalDigest'],
+    requiredEvidenceKinds: ['approval_digest'],
+    retryableByModel: false,
+    operatorOnly: true,
+    safeSummary: 'Approval provenance must carry a digest of the approval record.',
+  },
+  {
+    reasonCode: 'approval-scope-missing',
+    audience: 'operator-control',
+    disclosureLevel: 'minimal',
+    missingFields: ['approvals.scopeDigest'],
+    requiredEvidenceKinds: ['approval_scope_digest'],
+    retryableByModel: false,
+    operatorOnly: true,
+    safeSummary: 'Approval provenance must bind the approved scope.',
+  },
+  {
+    reasonCode: 'approval-issued-at-missing',
+    audience: 'operator-control',
+    disclosureLevel: 'minimal',
+    missingFields: ['approvals.issuedAt'],
+    requiredEvidenceKinds: ['approval_issued_at'],
+    retryableByModel: false,
+    operatorOnly: true,
+    safeSummary: 'Approval provenance must include an issued-at timestamp.',
+  },
+  {
+    reasonCode: 'approval-issued-at-invalid',
+    audience: 'operator-control',
+    disclosureLevel: 'minimal',
+    missingFields: ['approvals.issuedAt'],
+    requiredEvidenceKinds: ['approval_issued_at'],
+    retryableByModel: false,
+    operatorOnly: true,
+    safeSummary: 'Approval issued-at timestamp must be valid.',
+  },
+  {
+    reasonCode: 'approval-expired',
+    audience: 'operator-control',
+    disclosureLevel: 'minimal',
+    missingFields: ['approvals.expiresAt'],
+    requiredEvidenceKinds: ['fresh_approval_ref'],
+    retryableByModel: false,
+    operatorOnly: true,
+    safeSummary: 'Expired approvals fail closed or require review.',
+  },
+  {
+    reasonCode: 'approval-step-up-missing',
+    audience: 'operator-control',
+    disclosureLevel: 'minimal',
+    missingFields: ['approvals.stepUpVerified'],
+    requiredEvidenceKinds: ['step_up_approval_proof'],
+    retryableByModel: false,
+    operatorOnly: true,
+    safeSummary: 'Step-up approval evidence is missing.',
+  },
+  {
+    reasonCode: 'approval-signature-unverified',
+    audience: 'operator-control',
+    disclosureLevel: 'minimal',
+    missingFields: ['approvals.signatureVerificationInput'],
+    requiredEvidenceKinds: ['signed_approval_verification'],
+    retryableByModel: false,
+    operatorOnly: true,
+    safeSummary: 'Signed approval provenance must verify against the configured trust binding.',
+  },
+  {
+    reasonCode: 'approval-trust-class-source-mismatch',
+    audience: 'operator-control',
+    disclosureLevel: 'minimal',
+    missingFields: ['approvals.trustClass'],
+    requiredEvidenceKinds: ['trusted_approval_provenance_ref'],
+    retryableByModel: false,
+    operatorOnly: true,
+    safeSummary: 'Approval source kind determines trust class; caller overrides cannot promote it.',
+  },
+  {
+    reasonCode: 'approval-duplicate-reviewer',
+    audience: 'operator-control',
+    disclosureLevel: 'minimal',
+    missingFields: ['approvals.reviewerRef'],
+    requiredEvidenceKinds: ['distinct_reviewer_ref'],
+    retryableByModel: false,
+    operatorOnly: true,
+    safeSummary: 'Multiple approvals must come from distinct reviewer identities when required.',
+  },
+  {
+    reasonCode: 'approval-count-insufficient',
+    audience: 'customer-review',
+    disclosureLevel: 'minimal',
+    missingFields: ['approvals'],
+    requiredEvidenceKinds: ['approval_provenance_ref'],
+    retryableByModel: false,
+    operatorOnly: true,
+    safeSummary: 'Not enough valid approvals are bound to the proposed consequence.',
+  },
+  {
+    reasonCode: 'approval-review',
+    audience: 'customer-review',
+    disclosureLevel: 'minimal',
+    missingFields: ['approvals'],
+    requiredEvidenceKinds: ['approval_provenance_ref'],
+    retryableByModel: false,
+    operatorOnly: true,
+    safeSummary: 'Approval provenance requires customer or operator review.',
+  },
+  {
+    reasonCode: 'approval-block',
+    audience: 'operator-control',
+    disclosureLevel: 'minimal',
+    missingFields: ['approvals'],
+    requiredEvidenceKinds: ['approval_provenance_ref'],
+    retryableByModel: false,
+    operatorOnly: true,
+    safeSummary: 'Approval provenance failed closed.',
   },
   {
     reasonCode: 'narrow-required',

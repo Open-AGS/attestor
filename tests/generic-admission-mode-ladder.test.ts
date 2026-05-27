@@ -7,6 +7,26 @@ import {
 
 let passed = 0;
 
+function digest(seed: string): string {
+  return `sha256:${seed.repeat(64).slice(0, 64)}`;
+}
+
+function trustedApprovals(): readonly Record<string, string | boolean>[] {
+  return [{
+    approvalRef: 'approval:refund:987',
+    sourceKind: 'approval-workflow',
+    state: 'approved',
+    sourceRef: 'workflow:refund-approval:987',
+    reviewerRef: 'reviewer:risk-owner',
+    reviewerAuthorityDigest: digest('b'),
+    approvalDigest: digest('c'),
+    scopeDigest: digest('d'),
+    issuedAt: '2026-05-01T17:00:00.000Z',
+    expiresAt: '2026-05-01T19:00:00.000Z',
+    signatureVerified: true,
+  }];
+}
+
 function equal<T>(actual: T, expected: T, message: string): void {
   assert.equal(actual, expected, message);
   passed += 1;
@@ -45,6 +65,7 @@ function baseMoneyAdmission(mode: string) {
         evidenceDigest: `sha256:${'a'.repeat(64)}`,
       },
     ],
+    approvals: trustedApprovals(),
     policyRef: 'policy:refunds:v1',
   };
 }
@@ -192,6 +213,7 @@ function testRetryAttemptBindingIsCarriedByGenericRequest(): void {
         evidenceDigest: `sha256:${'a'.repeat(64)}`,
       },
     ],
+    approvals: trustedApprovals(),
     retryAttempt: {
       previousAdmissionId: held.admission.admissionId,
       previousAdmissionDigest: held.admission.digest,
@@ -239,9 +261,18 @@ function testEnforceModeAdmitsCompleteMoneyMovement(): void {
     'pass',
     'Generic admission: trusted authority source passes the authority guard',
   );
+  equal(
+    envelope.admission.request.policyScope.dimensions.approvalGuardOutcome,
+    'pass',
+    'Generic admission: trusted approval provenance passes the approval guard',
+  );
   ok(
     typeof envelope.admission.request.policyScope.dimensions.authorityGuardDigest === 'string',
     'Generic admission: authority guard digest is carried without raw source material',
+  );
+  ok(
+    typeof envelope.admission.request.policyScope.dimensions.approvalGuardDigest === 'string',
+    'Generic admission: approval guard digest is carried without raw approval material',
   );
 }
 
@@ -386,6 +417,71 @@ function testTrustedAuthorityWithoutEvidenceHoldsForReview(): void {
   );
 }
 
+function testApprovalAuthorityRequiresApprovalProvenance(): void {
+  const envelope = createGenericAdmissionEnvelope({
+    ...baseMoneyAdmission('enforce'),
+    approvals: [],
+  });
+
+  equal(envelope.shadowDecision, 'would_review', 'Generic admission: approval authority without provenance reviews');
+  equal(envelope.admission.decision, 'review', 'Generic admission: missing approval provenance holds execution');
+  ok(
+    envelope.admission.reasonCodes.includes('approval-missing'),
+    'Generic admission: missing approval provenance reason is explicit',
+  );
+  equal(
+    envelope.admission.request.policyScope.dimensions.approvalGuardOutcome,
+    'review',
+    'Generic admission: approval guard review outcome is carried',
+  );
+  ok(
+    envelope.admission.feedback.operatorOnlyReasonCodes.includes('approval-missing'),
+    'Generic admission: missing approval provenance is operator-only feedback',
+  );
+}
+
+function testUntrustedApprovalClaimBlocksEnforceMode(): void {
+  const envelope = createGenericAdmissionEnvelope({
+    ...baseMoneyAdmission('enforce'),
+    approvals: [
+      {
+        approvalRef: 'email:customer@example.com says approved',
+        sourceKind: 'customer-email',
+        state: 'approved',
+        sourceRef: 'email:customer@example.com',
+        reviewerRef: 'reviewer:risk-owner',
+        reviewerAuthorityDigest: digest('b'),
+        approvalDigest: digest('c'),
+        scopeDigest: digest('d'),
+        issuedAt: '2026-05-01T17:00:00.000Z',
+      },
+    ],
+  });
+  const serialized = JSON.stringify(envelope);
+
+  equal(envelope.shadowDecision, 'would_block', 'Generic admission: untrusted approval shadows block');
+  equal(envelope.admission.decision, 'block', 'Generic admission: enforce mode blocks untrusted approval');
+  ok(
+    envelope.admission.reasonCodes.includes('approval-source-untrusted'),
+    'Generic admission: untrusted approval reason is explicit',
+  );
+  ok(
+    envelope.admission.reasonCodes.includes('approval-block'),
+    'Generic admission: approval block reason is explicit',
+  );
+  equal(
+    envelope.admission.request.policyScope.dimensions.approvalGuardOutcome,
+    'block',
+    'Generic admission: approval guard block outcome is carried',
+  );
+  assert.doesNotMatch(
+    serialized,
+    /customer@example\.com|says approved/u,
+    'Generic admission: serialized envelope does not leak raw untrusted approval material',
+  );
+  passed += 1;
+}
+
 function testEnforceModeBlocksKnownUnsafeSignals(): void {
   const envelope = createGenericAdmissionEnvelope({
     ...baseMoneyAdmission('enforce'),
@@ -460,6 +556,8 @@ testEnforceModeAdmitsCompleteMoneyMovement();
 testProgrammableMoneyRequiresAdapterReadiness();
 testUntrustedAuthoritySourceBlocksEnforceMode();
 testTrustedAuthorityWithoutEvidenceHoldsForReview();
+testApprovalAuthorityRequiresApprovalProvenance();
+testUntrustedApprovalClaimBlocksEnforceMode();
 testEnforceModeBlocksKnownUnsafeSignals();
 testInvalidInputFailsClosed();
 

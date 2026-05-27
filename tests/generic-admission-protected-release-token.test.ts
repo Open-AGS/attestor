@@ -18,12 +18,32 @@ import { generateKeyPair } from '../src/signing/keys.js';
 
 let passed = 0;
 
+function digest(seed: string): string {
+  return `sha256:${seed.repeat(64).slice(0, 64)}`;
+}
+
 function trustedAuthoritySources(): readonly Record<string, string>[] {
   return [{
     sourceKind: 'verified-approval',
     claimKind: 'approval',
     sourceRef: 'approval:refund:987',
     evidenceDigest: `sha256:${'a'.repeat(64)}`,
+  }];
+}
+
+function trustedApprovals(): readonly Record<string, string | boolean>[] {
+  return [{
+    approvalRef: 'approval:refund:987',
+    sourceKind: 'approval-workflow',
+    state: 'approved',
+    sourceRef: 'workflow:refund-approval:987',
+    reviewerRef: 'reviewer:risk-owner',
+    reviewerAuthorityDigest: digest('b'),
+    approvalDigest: digest('c'),
+    scopeDigest: digest('d'),
+    issuedAt: '2026-05-01T17:00:00.000Z',
+    expiresAt: '2026-05-01T19:00:00.000Z',
+    signatureVerified: true,
   }];
 }
 
@@ -52,6 +72,7 @@ function highRiskPayload(overrides: Record<string, unknown> = {}): Record<string
     policyRef: 'policy:refunds:v1',
     evidenceRefs: ['order:987', 'payment:456'],
     authoritySources: trustedAuthoritySources(),
+    approvals: trustedApprovals(),
     amount: {
       value: 38000,
       currency: 'HUF',

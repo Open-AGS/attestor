@@ -45,6 +45,16 @@ function testObservedFeaturesStayEvidenceOnly(): void {
   );
   includes(
     source,
+    'authoritySources: normalizeGenericAuthoritySources(input.authoritySources)',
+    'Consequence admission proof discipline: generic authority sources are normalized from caller input',
+  );
+  includes(
+    source,
+    'evaluateConsequenceUntrustedContentAuthority({',
+    'Consequence admission proof discipline: untrusted-content authority guard is runtime-wired for generic admissions',
+  );
+  includes(
+    source,
     "return input.observedFeatures?.[key] === true",
     'Consequence admission proof discipline: feature checks are boolean evidence reads',
   );
@@ -95,6 +105,21 @@ function testObservedFeaturesStayEvidenceOnly(): void {
     '`adapter-readiness-origin-untrusted`',
     'Consequence admission proof discipline: quickstart documents untrusted origin hold',
   );
+  includes(
+    quickstart,
+    'Generic admissions now run the untrusted-content authority guard',
+    'Consequence admission proof discipline: quickstart documents generic authority guard wiring',
+  );
+  includes(
+    quickstart,
+    '`authoritySources`',
+    'Consequence admission proof discipline: quickstart documents authoritySources contract',
+  );
+  includes(
+    quickstart,
+    '`untrusted-content-authority-source` and `authority-block`',
+    'Consequence admission proof discipline: quickstart documents untrusted authority fail-closed reasons',
+  );
 
   const hostedApi = readProjectFile('docs', '01-overview', 'hosted-action-authorization-api.md');
   includes(
@@ -106,6 +131,16 @@ function testObservedFeaturesStayEvidenceOnly(): void {
     hostedApi,
     '`observedFeatureOrigins.adapterReady` marker is trusted',
     'Consequence admission proof discipline: hosted API boundary documents trusted origin marker',
+  );
+  includes(
+    hostedApi,
+    'authority must arrive as structured `authoritySources` references',
+    'Consequence admission proof discipline: hosted API boundary documents authoritySources references',
+  );
+  includes(
+    hostedApi,
+    'untrusted content, tool output, retrieved content, and model summaries cannot authorize',
+    'Consequence admission proof discipline: hosted API boundary documents untrusted authority no-go',
   );
 }
 
@@ -208,8 +243,13 @@ function testBaselineAndControlMapKeepNoClaims(): void {
   const baseline = readProjectFile('docs', 'audit', 'current-posture-baseline.md');
   includes(
     baseline,
-    'OPS-167 is repo-side closed by a trusted-origin runtime marker for `observedFeatures.adapterReady`',
+    'OPS-167 is repo-side closed by runtime trust-origin checks',
     'Baseline records OPS-167 repo-side closure',
+  );
+  includes(
+    baseline,
+    'generic admissions now run the untrusted-content authority guard over structured `authoritySources`',
+    'Baseline records generic authority guard runtime wiring',
   );
   includes(
     baseline,

@@ -18,6 +18,15 @@ import { generateKeyPair } from '../src/signing/keys.js';
 
 let passed = 0;
 
+function trustedAuthoritySources(): readonly Record<string, string>[] {
+  return [{
+    sourceKind: 'verified-approval',
+    claimKind: 'approval',
+    sourceRef: 'approval:refund:987',
+    evidenceDigest: `sha256:${'a'.repeat(64)}`,
+  }];
+}
+
 function equal<T>(actual: T, expected: T, message: string): void {
   assert.equal(actual, expected, message);
   passed += 1;
@@ -42,6 +51,7 @@ function highRiskPayload(overrides: Record<string, unknown> = {}): Record<string
     tenantId: 'tenant_route',
     policyRef: 'policy:refunds:v1',
     evidenceRefs: ['order:987', 'payment:456'],
+    authoritySources: trustedAuthoritySources(),
     amount: {
       value: 38000,
       currency: 'HUF',

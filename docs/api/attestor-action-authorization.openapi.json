@@ -383,6 +383,74 @@
               "type": "string"
             }
           },
+          "authoritySources": {
+            "type": "array",
+            "description": "Structured authority-source references for the untrusted-content authority guard. Untrusted content, tool output, retrieved content, and model summaries cannot authorize a consequence or self-promote into trusted authority.",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "sourceKind",
+                "claimKind",
+                "sourceRef"
+              ],
+              "properties": {
+                "sourceKind": {
+                  "type": "string",
+                  "enum": [
+                    "user-prompt",
+                    "customer-email",
+                    "external-document",
+                    "web-page",
+                    "chat-message",
+                    "ticket-comment",
+                    "tool-output",
+                    "llm-summary",
+                    "retrieved-content",
+                    "verified-approval",
+                    "approval-workflow",
+                    "customer-policy",
+                    "idp-directory",
+                    "authority-record",
+                    "manual-review",
+                    "signed-evidence",
+                    "provider-record",
+                    "system-config"
+                  ]
+                },
+                "claimKind": {
+                  "type": "string",
+                  "enum": [
+                    "authorization",
+                    "approval",
+                    "policy",
+                    "evidence",
+                    "context",
+                    "instruction"
+                  ]
+                },
+                "sourceRef": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Opaque reference only. Raw customer or private source material must not be included."
+                },
+                "trustClass": {
+                  "type": "string",
+                  "enum": [
+                    "untrusted-content",
+                    "model-generated",
+                    "trusted-authority",
+                    "trusted-evidence",
+                    "trusted-system-context"
+                  ]
+                },
+                "evidenceDigest": {
+                  "type": "string",
+                  "description": "Digest of the authority evidence for trusted authority sources."
+                }
+              }
+            }
+          },
           "observedFeatures": {
             "type": "object",
             "additionalProperties": {

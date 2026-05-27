@@ -21,6 +21,15 @@ import {
 
 let passed = 0;
 
+function trustedAuthoritySources(): readonly Record<string, string>[] {
+  return [{
+    sourceKind: 'verified-approval',
+    claimKind: 'approval',
+    sourceRef: 'approval:refund:987',
+    evidenceDigest: `sha256:${'a'.repeat(64)}`,
+  }];
+}
+
 function equal<T>(actual: T, expected: T, message: string): void {
   assert.equal(actual, expected, message);
   passed += 1;
@@ -94,6 +103,7 @@ function validAdmissionPayload(overrides: Record<string, unknown> = {}): Record<
     policyRef: 'policy:refunds:v1',
     reviewerRef: 'reviewer:risk-owner',
     evidenceRefs: ['order:987', 'payment:456'],
+    authoritySources: trustedAuthoritySources(),
     amount: {
       value: 38000,
       currency: 'HUF',
@@ -181,6 +191,7 @@ async function testPostAdmissionRouteReturnsEnvelope(): Promise<void> {
       decidedAt: '2026-05-01T18:00:01.000Z',
       policyRef: 'policy:refunds:v1',
       evidenceRefs: ['order:987', 'payment:456'],
+      authoritySources: trustedAuthoritySources(),
       amount: {
         value: 38000,
         currency: 'HUF',
@@ -442,6 +453,7 @@ async function testPostAdmissionRouteCarriesRetryAttemptBinding(): Promise<void>
       decidedAt: '2026-05-01T18:11:01.000Z',
       policyRef: 'policy:refunds:v1',
       evidenceRefs: ['order:987', 'payment:456'],
+      authoritySources: trustedAuthoritySources(),
       amount: {
         value: 38000,
         currency: 'HUF',
@@ -453,8 +465,8 @@ async function testPostAdmissionRouteCarriesRetryAttemptBinding(): Promise<void>
         previousRequestId: held.admission.request.requestId,
         attemptNumber: 1,
         attemptedAt: '2026-05-01T18:11:00.000Z',
-        correctionReasonCodes: ['policy-ref-missing', 'evidence-ref-missing'],
-        correctionFields: ['policyRef', 'evidenceRefs'],
+        correctionReasonCodes: ['policy-ref-missing', 'evidence-ref-missing', 'authority-source-missing'],
+        correctionFields: ['policyRef', 'evidenceRefs', 'authoritySources'],
         idempotencyKey: 'retry:route:1',
       },
     }),

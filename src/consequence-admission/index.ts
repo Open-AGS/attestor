@@ -148,6 +148,15 @@ import {
   type CustomerPepAdoptionPackageDescriptor,
 } from './customer-pep-adoption-package.js';
 import {
+  CONSEQUENCE_UNTRUSTED_CONTENT_AUTHORITY_CLAIM_KINDS,
+  CONSEQUENCE_UNTRUSTED_CONTENT_AUTHORITY_REASON_CODES,
+  CONSEQUENCE_UNTRUSTED_CONTENT_AUTHORITY_SOURCE_KINDS,
+  CONSEQUENCE_UNTRUSTED_CONTENT_AUTHORITY_TRUST_CLASSES,
+  evaluateConsequenceUntrustedContentAuthority,
+  type ConsequenceUntrustedContentAuthorityDecision,
+  type ConsequenceUntrustedContentAuthoritySource,
+} from './untrusted-content-authority-guard.js';
+import {
   PROTECTED_ADMISSION_E2E_PROOF_PLAN_VERSION,
   protectedAdmissionE2eProofPlanDescriptor,
   type ProtectedAdmissionE2eProofPlanDescriptor,
@@ -203,6 +212,9 @@ ReadonlySet<GenericAdmissionObservedFeatureOrigin> = new Set([
   'attestor-runtime',
   'trusted-adapter',
 ]);
+
+const GENERIC_ADMISSION_AUTHORITY_GUARD_REASON_CODES:
+ReadonlySet<string> = new Set(CONSEQUENCE_UNTRUSTED_CONTENT_AUTHORITY_REASON_CODES);
 
 export const GENERIC_ADMISSION_SHADOW_DECISIONS = [
   'would_admit',
@@ -697,6 +709,9 @@ export interface GenericAdmissionDataScope {
   readonly fields: readonly string[];
 }
 
+export type GenericAdmissionAuthoritySource =
+  ConsequenceUntrustedContentAuthoritySource;
+
 export interface CreateGenericAdmissionInput {
   readonly mode: GenericAdmissionMode;
   readonly actor: string;
@@ -718,6 +733,7 @@ export interface CreateGenericAdmissionInput {
   readonly recipient?: string | null;
   readonly dataScope?: GenericAdmissionDataScope | null;
   readonly evidenceRefs?: readonly string[];
+  readonly authoritySources?: readonly GenericAdmissionAuthoritySource[];
   readonly nativeInputRefs?: readonly string[];
   readonly observedFeatures?: Readonly<Record<string, GenericAdmissionFeatureValue>>;
   readonly observedFeatureOrigins?:
@@ -733,6 +749,7 @@ export interface GenericAdmissionModeEvaluation {
   readonly downstreamPosture: GenericAdmissionDownstreamPosture;
   readonly enforcementActive: boolean;
   readonly reasonCodes: readonly string[];
+  readonly authorityGuardDecision: ConsequenceUntrustedContentAuthorityDecision | null;
 }
 
 export interface GenericAdmissionEnvelope {
@@ -1097,6 +1114,50 @@ function normalizeGenericObservedFeatureOrigins(
   return Object.freeze(normalized);
 }
 
+function normalizeGenericAuthoritySources(
+  value: unknown,
+): readonly GenericAdmissionAuthoritySource[] {
+  if (value === undefined || value === null) return Object.freeze([]);
+  if (!Array.isArray(value)) {
+    throw new Error('Consequence admission authoritySources must be an array when provided.');
+  }
+  return Object.freeze(
+    value.map((entry, index) => {
+      const field = `authoritySources[${index}]`;
+      if (!isRecord(entry)) {
+        throw new Error(`Consequence admission ${field} must be an object.`);
+      }
+      const sourceKind = normalizeEnumValue(
+        readRequiredString(entry, 'sourceKind'),
+        CONSEQUENCE_UNTRUSTED_CONTENT_AUTHORITY_SOURCE_KINDS,
+        `${field}.sourceKind`,
+      );
+      const claimKind = normalizeEnumValue(
+        readRequiredString(entry, 'claimKind'),
+        CONSEQUENCE_UNTRUSTED_CONTENT_AUTHORITY_CLAIM_KINDS,
+        `${field}.claimKind`,
+      );
+      const trustClassValue = readOptionalString(entry, 'trustClass');
+      const evidenceDigest = readOptionalString(entry, 'evidenceDigest');
+      return Object.freeze({
+        sourceKind,
+        claimKind,
+        sourceRef: readRequiredString(entry, 'sourceRef'),
+        ...(trustClassValue === null
+          ? {}
+          : {
+              trustClass: normalizeEnumValue(
+                trustClassValue,
+                CONSEQUENCE_UNTRUSTED_CONTENT_AUTHORITY_TRUST_CLASSES,
+                `${field}.trustClass`,
+              ),
+            }),
+        ...(evidenceDigest === null ? {} : { evidenceDigest }),
+      });
+    }),
+  );
+}
+
 function retryAttemptIdFor(
   input: Omit<ConsequenceAdmissionRetryAttemptBinding, 'attemptId'>,
 ): string {
@@ -1203,6 +1264,7 @@ function normalizeCreateGenericAdmissionInput(input: unknown): CreateGenericAdmi
     recipient: readOptionalString(input, 'recipient'),
     dataScope: normalizeGenericDataScope(input.dataScope),
     evidenceRefs: normalizeStringArray(input.evidenceRefs, 'evidenceRefs'),
+    authoritySources: normalizeGenericAuthoritySources(input.authoritySources),
     nativeInputRefs: normalizeStringArray(input.nativeInputRefs, 'nativeInputRefs'),
     observedFeatures: normalizeGenericObservedFeatures(input.observedFeatures),
     observedFeatureOrigins: normalizeGenericObservedFeatureOrigins(input.observedFeatureOrigins),
@@ -1240,8 +1302,32 @@ function trustedObservedFeatureTrue(
   return observedFeatureTrue(input, key) && observedFeatureHasTrustedOrigin(input, key);
 }
 
+function genericAdmissionAuthorityGuardDecisionFor(
+  input: CreateGenericAdmissionInput,
+): ConsequenceUntrustedContentAuthorityDecision | null {
+  const profile = consequenceAdmissionDomainProfile(input.domain);
+  const authorityRequired = profile.requiredChecks.includes('authority');
+  const authoritySources = input.authoritySources ?? [];
+  if (!authorityRequired && authoritySources.length === 0) return null;
+  return evaluateConsequenceUntrustedContentAuthority({
+    generatedAt: input.decidedAt ?? input.requestedAt ?? null,
+    actionSurface: input.domain,
+    action: input.action,
+    requiredAuthority: authorityRequired,
+    sources: authoritySources,
+  });
+}
+
+function authorityGuardReviewReasonCodes(
+  decision: ConsequenceUntrustedContentAuthorityDecision | null,
+): readonly string[] {
+  if (decision === null || decision.outcome === 'pass') return Object.freeze([]);
+  return Object.freeze([...decision.reasonCodes]);
+}
+
 function genericAdmissionReviewReasons(
   input: CreateGenericAdmissionInput,
+  authorityGuardDecision: ConsequenceUntrustedContentAuthorityDecision | null,
 ): readonly string[] {
   const reasons: string[] = [];
   const profile = consequenceAdmissionDomainProfile(input.domain);
@@ -1264,6 +1350,7 @@ function genericAdmissionReviewReasons(
   if (input.domain === 'authority-change' && !input.authorityMode) {
     reasons.push('authority-mode-missing');
   }
+  reasons.push(...authorityGuardReviewReasonCodes(authorityGuardDecision));
 
   if (profile.requiredChecks.includes('adapter-readiness')) {
     if (!observedFeatureTrue(input, 'adapterReady')) {
@@ -1283,7 +1370,9 @@ function genericAdmissionReviewReasons(
 function genericAdmissionShadowDecisionFor(
   input: CreateGenericAdmissionInput,
   reviewReasons: readonly string[],
+  authorityGuardDecision: ConsequenceUntrustedContentAuthorityDecision | null,
 ): GenericAdmissionShadowDecision {
+  if (authorityGuardDecision?.outcome === 'block') return 'would_block';
   if (
     observedFeatureTrue(input, 'policyBlocked') ||
     observedFeatureTrue(input, 'blocked') ||
@@ -1346,8 +1435,13 @@ function genericReasonCodes(
 function createGenericAdmissionEvaluation(
   input: CreateGenericAdmissionInput,
 ): GenericAdmissionModeEvaluation {
-  const reviewReasons = genericAdmissionReviewReasons(input);
-  const shadowDecision = genericAdmissionShadowDecisionFor(input, reviewReasons);
+  const authorityGuardDecision = genericAdmissionAuthorityGuardDecisionFor(input);
+  const reviewReasons = genericAdmissionReviewReasons(input, authorityGuardDecision);
+  const shadowDecision = genericAdmissionShadowDecisionFor(
+    input,
+    reviewReasons,
+    authorityGuardDecision,
+  );
   const effectiveDecision = effectiveDecisionForGenericMode(input.mode, shadowDecision);
   const downstreamPosture = downstreamPostureForGenericMode(input.mode, effectiveDecision);
 
@@ -1358,6 +1452,7 @@ function createGenericAdmissionEvaluation(
     downstreamPosture,
     enforcementActive: input.mode === 'review' || input.mode === 'enforce',
     reasonCodes: genericReasonCodes(input, shadowDecision, reviewReasons),
+    authorityGuardDecision,
   });
 }
 
@@ -1367,7 +1462,10 @@ function reasonCodesForCheck(
 ): readonly string[] {
   const matches = reasonCodes.filter((reason) => {
     if (kind === 'policy') return reason.startsWith('policy-');
-    if (kind === 'authority') return reason.startsWith('authority-');
+    if (kind === 'authority') {
+      return reason.startsWith('authority-') ||
+        GENERIC_ADMISSION_AUTHORITY_GUARD_REASON_CODES.has(reason);
+    }
     if (kind === 'evidence') return reason.startsWith('evidence-');
     if (kind === 'enforcement') return reason === 'non-enforcing-mode';
     if (kind === 'adapter-readiness') return reason.startsWith('adapter-');
@@ -1394,6 +1492,10 @@ function createGenericAdmissionChecks(
     profile.requiredChecks.map((kind) => {
       const checkReasons = reasonCodesForCheck(kind, evaluation.reasonCodes);
       const outcome = checkOutcomeForGenericMode(input.mode, checkReasons);
+      const evidenceRefs =
+        kind === 'authority' && evaluation.authorityGuardDecision !== null
+          ? [...(input.evidenceRefs ?? []), evaluation.authorityGuardDecision.digest]
+          : [...(input.evidenceRefs ?? [])];
       return createConsequenceAdmissionCheck({
         kind,
         label: `${kind} check`,
@@ -1404,7 +1506,7 @@ function createGenericAdmissionChecks(
             ? `${kind} closure is present for the proposed consequence.`
             : `${kind} closure is incomplete for the proposed consequence.`,
         reasonCodes: checkReasons,
-        evidenceRefs: [...(input.evidenceRefs ?? [])],
+        evidenceRefs,
       });
     }),
   );
@@ -1487,6 +1589,13 @@ function genericAdmissionDimensions(
     adapterReady: trustedObservedFeatureTrue(input, 'adapterReady'),
     adapterReadyObserved: observedFeatureTrue(input, 'adapterReady'),
     adapterReadyOrigin: observedFeatureOriginFor(input, 'adapterReady'),
+    authorityGuardOutcome: evaluation.authorityGuardDecision?.outcome ?? null,
+    authorityGuardDigest: evaluation.authorityGuardDecision?.digest ?? null,
+    authoritySourceCount: evaluation.authorityGuardDecision?.counts.sourceCount ?? 0,
+    trustedAuthoritySourceCount:
+      evaluation.authorityGuardDecision?.counts.trustedAuthoritySourceCount ?? 0,
+    untrustedAuthoritySourceCount:
+      evaluation.authorityGuardDecision?.counts.untrustedAuthoritySourceCount ?? 0,
   });
 }
 
@@ -1644,6 +1753,96 @@ readonly ConsequenceAdmissionCorrectionCatalogEntry[] = Object.freeze([
     retryableByModel: true,
     operatorOnly: false,
     safeSummary: 'Provide the customer-approved authority mode or authority reference.',
+  },
+  {
+    reasonCode: 'authority-source-missing',
+    audience: 'operator-control',
+    disclosureLevel: 'minimal',
+    missingFields: ['authoritySources'],
+    requiredEvidenceKinds: ['trusted_authority_source_ref'],
+    retryableByModel: false,
+    operatorOnly: true,
+    safeSummary: 'A trusted authority source must be supplied by the customer gateway, operator workflow, or trusted authority record.',
+  },
+  {
+    reasonCode: 'untrusted-content-authority-source',
+    audience: 'operator-control',
+    disclosureLevel: 'minimal',
+    missingFields: ['authoritySources'],
+    requiredEvidenceKinds: ['trusted_authority_source_ref'],
+    retryableByModel: false,
+    operatorOnly: true,
+    safeSummary: 'Untrusted content cannot authorize the proposed consequence.',
+  },
+  {
+    reasonCode: 'model-generated-authority-source',
+    audience: 'operator-control',
+    disclosureLevel: 'minimal',
+    missingFields: ['authoritySources'],
+    requiredEvidenceKinds: ['trusted_authority_source_ref'],
+    retryableByModel: false,
+    operatorOnly: true,
+    safeSummary: 'Model-generated text cannot be used as authority for the proposed consequence.',
+  },
+  {
+    reasonCode: 'trust-class-override-rejected',
+    audience: 'operator-control',
+    disclosureLevel: 'minimal',
+    missingFields: ['authoritySources.trustClass'],
+    requiredEvidenceKinds: ['trusted_authority_source_ref'],
+    retryableByModel: false,
+    operatorOnly: true,
+    safeSummary: 'A source cannot self-promote from untrusted content into trusted authority.',
+  },
+  {
+    reasonCode: 'trusted-authority-evidence-missing',
+    audience: 'operator-control',
+    disclosureLevel: 'minimal',
+    missingFields: ['authoritySources.evidenceDigest'],
+    requiredEvidenceKinds: ['trusted_authority_evidence_digest'],
+    retryableByModel: false,
+    operatorOnly: true,
+    safeSummary: 'Trusted authority sources must include evidence digest material.',
+  },
+  {
+    reasonCode: 'trusted-evidence-not-authority',
+    audience: 'operator-control',
+    disclosureLevel: 'minimal',
+    missingFields: ['authoritySources'],
+    requiredEvidenceKinds: ['trusted_authority_source_ref'],
+    retryableByModel: false,
+    operatorOnly: true,
+    safeSummary: 'Trusted evidence can support a decision, but it does not grant authority by itself.',
+  },
+  {
+    reasonCode: 'mixed-trusted-and-untrusted-authority-source',
+    audience: 'customer-review',
+    disclosureLevel: 'minimal',
+    missingFields: ['authoritySources'],
+    requiredEvidenceKinds: ['trusted_authority_source_ref'],
+    retryableByModel: false,
+    operatorOnly: true,
+    safeSummary: 'Mixed trusted and untrusted authority claims require customer or operator review.',
+  },
+  {
+    reasonCode: 'authority-review-required',
+    audience: 'customer-review',
+    disclosureLevel: 'minimal',
+    missingFields: ['authoritySources'],
+    requiredEvidenceKinds: ['trusted_authority_source_ref'],
+    retryableByModel: false,
+    operatorOnly: true,
+    safeSummary: 'Authority provenance is incomplete and must be reviewed before execution.',
+  },
+  {
+    reasonCode: 'authority-block',
+    audience: 'operator-control',
+    disclosureLevel: 'minimal',
+    missingFields: ['authoritySources'],
+    requiredEvidenceKinds: ['trusted_authority_source_ref'],
+    retryableByModel: false,
+    operatorOnly: true,
+    safeSummary: 'Authority provenance failed closed.',
   },
   {
     reasonCode: 'narrow-required',

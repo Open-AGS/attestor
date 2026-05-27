@@ -160,6 +160,19 @@ approval. Missing approval provenance holds with `approval-missing`; untrusted
 or model-generated approval fails closed with `approval-source-untrusted`,
 `approval-model-generated`, and `approval-block`.
 
+Generic admissions can also run the tool-result poisoning guard when the
+request supplies structured `toolResults` metadata. Tool results must be
+opaque references with source trust class, use kind, source timestamp,
+integrity digest, evidence digest, and allowed evidence-class metadata.
+Untrusted external tool results cannot authorize or instruct an action;
+model-generated tool evidence is held for review; trusted provider or system
+tool evidence can support the request only through digest-bound metadata. The
+admission response carries tool-result guard outcome, counts, reason codes,
+and a digest, not raw tool output, source URLs, provider bodies, or model
+summaries. The generic hosted route does not expose signed-attestation PKI
+verification input in this slice; signed tool-result attestation remains a
+customer/operator provenance boundary.
+
 Generic admissions can also run the no-go condition ledger guard when the
 request supplies `noGoLedgerRef`, `noGoConditions`, or no-go bypass signals.
 No-go records must be structured hold metadata such as fraud, legal,

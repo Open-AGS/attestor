@@ -264,6 +264,53 @@ async function testPostAdmissionRouteReturnsEnvelope(): Promise<void> {
   equal(body.admission.request.policyScope.environment, 'api_key', 'Generic admission route: tenant source fills environment by default');
 }
 
+async function testPostAdmissionRouteBlocksUntrustedToolResultAuthority(): Promise<void> {
+  const app = createApp();
+  const response = await app.request('/api/v1/admissions', {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify(validAdmissionPayload({
+      allowedToolResultEvidenceClasses: ['policy-record'],
+      toolResults: [
+        {
+          toolResultRef: 'tool-result:private:policy-ref',
+          toolKind: 'web-search',
+          sourceTrustClass: 'untrusted-external',
+          resultUse: 'authority',
+          sourceRef: 'https://attacker.example/private-policy',
+          sourceTimestamp: '2026-05-01T18:00:00.000Z',
+          integrityDigest: digest('e'),
+          evidenceDigest: digest('f'),
+          evidenceClass: 'policy-record',
+          toolRisk: 'high',
+        },
+      ],
+    })),
+  });
+  const body = await response.json() as GenericAdmissionEnvelope;
+  const serialized = JSON.stringify(body);
+
+  equal(response.status, 200, 'Generic admission route: tool-result guard request returns an envelope');
+  equal(body.shadowDecision, 'would_block', 'Generic admission route: untrusted tool-result authority shadows block');
+  equal(body.admission.decision, 'block', 'Generic admission route: untrusted tool-result authority blocks');
+  ok(
+    body.admission.reasonCodes.includes('tool-result-untrusted-source'),
+    'Generic admission route: untrusted tool-result source reason is explicit',
+  );
+  ok(
+    body.admission.reasonCodes.includes('tool-result-block'),
+    'Generic admission route: tool-result block reason is explicit',
+  );
+  assert.doesNotMatch(
+    serialized,
+    /tool-result:private:policy-ref|attacker\.example|private-policy/u,
+    'Generic admission route: response does not leak raw tool-result refs or source URLs',
+  );
+  passed += 1;
+}
+
 async function testTenantMismatchFailsClosedBeforeShadowRecording(): Promise<void> {
   const app = new Hono();
   let shadowRecords = 0;
@@ -910,6 +957,7 @@ async function testProtectedReleaseTokenIssuerFailsClosedWithoutDpopConfirmation
 
 await testEvaluationPlansRejectEnforcingModes();
 await testPostAdmissionRouteReturnsEnvelope();
+await testPostAdmissionRouteBlocksUntrustedToolResultAuthority();
 await testTenantMismatchFailsClosedBeforeShadowRecording();
 await testLoopGuardUnavailableFailsClosedBeforeShadowRecording();
 await testNonJsonMediaTypeReturnsFailClosedProblem();

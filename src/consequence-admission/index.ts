@@ -183,6 +183,18 @@ import {
   type ConsequenceScopeExplosionScopeInput,
 } from './scope-explosion-guard.js';
 import {
+  CONSEQUENCE_TOOL_RESULT_EVIDENCE_CLASSES,
+  CONSEQUENCE_TOOL_RESULT_GUARD_REASON_CODES,
+  CONSEQUENCE_TOOL_RESULT_RISK_LEVELS,
+  CONSEQUENCE_TOOL_RESULT_SOURCE_TRUST_CLASSES,
+  CONSEQUENCE_TOOL_RESULT_TOOL_KINDS,
+  CONSEQUENCE_TOOL_RESULT_USE_KINDS,
+  evaluateConsequenceToolResultPoisoning,
+  type ConsequenceToolResultClaim,
+  type ConsequenceToolResultEvidenceClass,
+  type ConsequenceToolResultPoisoningDecision,
+} from './tool-result-poisoning-guard.js';
+import {
   PROTECTED_ADMISSION_E2E_PROOF_PLAN_VERSION,
   protectedAdmissionE2eProofPlanDescriptor,
   type ProtectedAdmissionE2eProofPlanDescriptor,
@@ -247,6 +259,9 @@ ReadonlySet<string> = new Set(CONSEQUENCE_APPROVAL_GUARD_REASON_CODES);
 
 const GENERIC_ADMISSION_NO_GO_REASON_CODES:
 ReadonlySet<string> = new Set(CONSEQUENCE_NO_GO_CONDITION_REASON_CODES);
+
+const GENERIC_ADMISSION_TOOL_RESULT_REASON_CODES:
+ReadonlySet<string> = new Set(CONSEQUENCE_TOOL_RESULT_GUARD_REASON_CODES);
 
 export const GENERIC_ADMISSION_SHADOW_DECISIONS = [
   'would_admit',
@@ -753,6 +768,9 @@ export type GenericAdmissionNoGoCondition =
 export type GenericAdmissionScopeInput =
   ConsequenceScopeExplosionScopeInput;
 
+export type GenericAdmissionToolResult =
+  ConsequenceToolResultClaim;
+
 export interface CreateGenericAdmissionInput {
   readonly mode: GenericAdmissionMode;
   readonly actor: string;
@@ -779,6 +797,9 @@ export interface CreateGenericAdmissionInput {
   readonly scopeOwnerPolicyRef?: string | null;
   readonly requestedScope?: GenericAdmissionScopeInput | null;
   readonly approvedScope?: GenericAdmissionScopeInput | null;
+  readonly allowedToolResultEvidenceClasses?:
+    readonly ConsequenceToolResultEvidenceClass[] | null;
+  readonly toolResults?: readonly GenericAdmissionToolResult[] | null;
   readonly noGoLedgerRef?: string | null;
   readonly noGoConditions?: readonly GenericAdmissionNoGoCondition[] | null;
   readonly noGoNaturalLanguageBypassAttempted?: boolean | null;
@@ -802,6 +823,7 @@ export interface GenericAdmissionModeEvaluation {
   readonly authorityGuardDecision: ConsequenceUntrustedContentAuthorityDecision | null;
   readonly approvalGuardDecision: ConsequenceApprovalProvenanceDecision | null;
   readonly scopeExplosionGuardDecision: ConsequenceScopeExplosionDecision | null;
+  readonly toolResultGuardDecision: ConsequenceToolResultPoisoningDecision | null;
   readonly noGoConditionLedgerDecision: ConsequenceNoGoConditionLedgerDecision | null;
 }
 
@@ -1237,6 +1259,77 @@ function normalizeGenericScopeInput(
   });
 }
 
+function normalizeGenericToolResults(
+  value: unknown,
+): readonly GenericAdmissionToolResult[] | null {
+  if (value === undefined || value === null) return null;
+  if (!Array.isArray(value)) {
+    throw new Error('Consequence admission toolResults must be an array when provided.');
+  }
+  return Object.freeze(
+    value.map((entry, index) => {
+      const field = `toolResults[${index}]`;
+      if (!isRecord(entry)) {
+        throw new Error(`Consequence admission ${field} must be an object.`);
+      }
+      const sourceRef = readOptionalString(entry, 'sourceRef');
+      const sourceTimestamp = readOptionalTimestamp(entry, 'sourceTimestamp');
+      const integrityDigest = readOptionalString(entry, 'integrityDigest');
+      const evidenceDigest = readOptionalString(entry, 'evidenceDigest');
+      const evidenceClass = readOptionalString(entry, 'evidenceClass');
+      const allowedEvidenceClasses = normalizeOptionalEnumArray(
+        entry.allowedEvidenceClasses,
+        CONSEQUENCE_TOOL_RESULT_EVIDENCE_CLASSES,
+        `${field}.allowedEvidenceClasses`,
+      );
+      const signatureVerified = readOptionalBoolean(entry, 'signatureVerified');
+      const toolRisk = readOptionalString(entry, 'toolRisk');
+      return Object.freeze({
+        toolResultRef: readRequiredString(entry, 'toolResultRef'),
+        toolKind: normalizeEnumValue(
+          readRequiredString(entry, 'toolKind'),
+          CONSEQUENCE_TOOL_RESULT_TOOL_KINDS,
+          `${field}.toolKind`,
+        ),
+        sourceTrustClass: normalizeEnumValue(
+          readRequiredString(entry, 'sourceTrustClass'),
+          CONSEQUENCE_TOOL_RESULT_SOURCE_TRUST_CLASSES,
+          `${field}.sourceTrustClass`,
+        ),
+        resultUse: normalizeEnumValue(
+          readRequiredString(entry, 'resultUse'),
+          CONSEQUENCE_TOOL_RESULT_USE_KINDS,
+          `${field}.resultUse`,
+        ),
+        ...(sourceRef === null ? {} : { sourceRef }),
+        ...(sourceTimestamp === null ? {} : { sourceTimestamp }),
+        ...(integrityDigest === null ? {} : { integrityDigest }),
+        ...(evidenceDigest === null ? {} : { evidenceDigest }),
+        ...(evidenceClass === null
+          ? {}
+          : {
+              evidenceClass: normalizeEnumValue(
+                evidenceClass,
+                CONSEQUENCE_TOOL_RESULT_EVIDENCE_CLASSES,
+                `${field}.evidenceClass`,
+              ),
+            }),
+        ...(allowedEvidenceClasses === null ? {} : { allowedEvidenceClasses }),
+        ...(signatureVerified === null ? {} : { signatureVerified }),
+        ...(toolRisk === null
+          ? {}
+          : {
+              toolRisk: normalizeEnumValue(
+                toolRisk,
+                CONSEQUENCE_TOOL_RESULT_RISK_LEVELS,
+                `${field}.toolRisk`,
+              ),
+            }),
+      });
+    }),
+  );
+}
+
 function normalizeGenericObservedFeatures(
   value: unknown,
 ): Readonly<Record<string, GenericAdmissionFeatureValue>> {
@@ -1586,6 +1679,12 @@ function normalizeCreateGenericAdmissionInput(input: unknown): CreateGenericAdmi
     scopeOwnerPolicyRef: readOptionalString(input, 'scopeOwnerPolicyRef'),
     requestedScope: normalizeGenericScopeInput(input.requestedScope, 'requestedScope'),
     approvedScope: normalizeGenericScopeInput(input.approvedScope, 'approvedScope'),
+    allowedToolResultEvidenceClasses: normalizeOptionalEnumArray(
+      input.allowedToolResultEvidenceClasses,
+      CONSEQUENCE_TOOL_RESULT_EVIDENCE_CLASSES,
+      'allowedToolResultEvidenceClasses',
+    ),
+    toolResults: normalizeGenericToolResults(input.toolResults),
     noGoLedgerRef: readOptionalString(input, 'noGoLedgerRef'),
     noGoConditions: normalizeGenericNoGoConditions(input.noGoConditions),
     noGoNaturalLanguageBypassAttempted: readOptionalBoolean(
@@ -1714,6 +1813,34 @@ function scopeExplosionReviewReasonCodes(
   return Object.freeze([...decision.reasonCodes]);
 }
 
+function genericAdmissionHasToolResultInput(
+  input: CreateGenericAdmissionInput,
+): boolean {
+  return (input.allowedToolResultEvidenceClasses !== null &&
+    input.allowedToolResultEvidenceClasses !== undefined) ||
+    (input.toolResults !== null && input.toolResults !== undefined);
+}
+
+function genericAdmissionToolResultGuardDecisionFor(
+  input: CreateGenericAdmissionInput,
+): ConsequenceToolResultPoisoningDecision | null {
+  if (!genericAdmissionHasToolResultInput(input)) return null;
+  return evaluateConsequenceToolResultPoisoning({
+    generatedAt: input.decidedAt ?? input.requestedAt ?? null,
+    actionSurface: input.domain,
+    action: input.action,
+    allowedEvidenceClasses: input.allowedToolResultEvidenceClasses ?? null,
+    toolResults: input.toolResults ?? null,
+  });
+}
+
+function toolResultGuardReviewReasonCodes(
+  decision: ConsequenceToolResultPoisoningDecision | null,
+): readonly string[] {
+  if (decision === null || decision.outcome === 'pass') return Object.freeze([]);
+  return Object.freeze([...decision.reasonCodes]);
+}
+
 function genericAdmissionHasNoGoConditionInput(
   input: CreateGenericAdmissionInput,
 ): boolean {
@@ -1752,6 +1879,7 @@ function genericAdmissionReviewReasons(
   authorityGuardDecision: ConsequenceUntrustedContentAuthorityDecision | null,
   approvalGuardDecision: ConsequenceApprovalProvenanceDecision | null,
   scopeExplosionGuardDecision: ConsequenceScopeExplosionDecision | null,
+  toolResultGuardDecision: ConsequenceToolResultPoisoningDecision | null,
   noGoConditionLedgerDecision: ConsequenceNoGoConditionLedgerDecision | null,
 ): readonly string[] {
   const reasons: string[] = [];
@@ -1778,6 +1906,7 @@ function genericAdmissionReviewReasons(
   reasons.push(...authorityGuardReviewReasonCodes(authorityGuardDecision));
   reasons.push(...approvalGuardReviewReasonCodes(approvalGuardDecision));
   reasons.push(...scopeExplosionReviewReasonCodes(scopeExplosionGuardDecision));
+  reasons.push(...toolResultGuardReviewReasonCodes(toolResultGuardDecision));
   reasons.push(...noGoConditionLedgerReviewReasonCodes(noGoConditionLedgerDecision));
 
   if (profile.requiredChecks.includes('adapter-readiness')) {
@@ -1801,11 +1930,13 @@ function genericAdmissionShadowDecisionFor(
   authorityGuardDecision: ConsequenceUntrustedContentAuthorityDecision | null,
   approvalGuardDecision: ConsequenceApprovalProvenanceDecision | null,
   scopeExplosionGuardDecision: ConsequenceScopeExplosionDecision | null,
+  toolResultGuardDecision: ConsequenceToolResultPoisoningDecision | null,
   noGoConditionLedgerDecision: ConsequenceNoGoConditionLedgerDecision | null,
 ): GenericAdmissionShadowDecision {
   if (authorityGuardDecision?.outcome === 'block') return 'would_block';
   if (approvalGuardDecision?.outcome === 'block') return 'would_block';
   if (scopeExplosionGuardDecision?.outcome === 'block') return 'would_block';
+  if (toolResultGuardDecision?.outcome === 'block') return 'would_block';
   if (noGoConditionLedgerDecision?.outcome === 'block') return 'would_block';
   if (
     observedFeatureTrue(input, 'policyBlocked') ||
@@ -1849,12 +1980,14 @@ function genericReasonCodes(
   shadowDecision: GenericAdmissionShadowDecision,
   reviewReasons: readonly string[],
   scopeExplosionGuardDecision: ConsequenceScopeExplosionDecision | null,
+  toolResultGuardDecision: ConsequenceToolResultPoisoningDecision | null,
 ): readonly string[] {
   const reasons = [
     `mode-${input.mode}`,
     `shadow-${shadowDecision}`,
     ...reviewReasons,
     ...(scopeExplosionGuardDecision?.reasonCodes ?? []),
+    ...(toolResultGuardDecision?.reasonCodes ?? []),
   ];
   if (input.mode === 'observe' || input.mode === 'warn') {
     reasons.push('non-enforcing-mode');
@@ -1875,12 +2008,14 @@ function createGenericAdmissionEvaluation(
   const authorityGuardDecision = genericAdmissionAuthorityGuardDecisionFor(input);
   const approvalGuardDecision = genericAdmissionApprovalGuardDecisionFor(input);
   const scopeExplosionGuardDecision = genericAdmissionScopeExplosionGuardDecisionFor(input);
+  const toolResultGuardDecision = genericAdmissionToolResultGuardDecisionFor(input);
   const noGoConditionLedgerDecision = genericAdmissionNoGoConditionLedgerDecisionFor(input);
   const reviewReasons = genericAdmissionReviewReasons(
     input,
     authorityGuardDecision,
     approvalGuardDecision,
     scopeExplosionGuardDecision,
+    toolResultGuardDecision,
     noGoConditionLedgerDecision,
   );
   const shadowDecision = genericAdmissionShadowDecisionFor(
@@ -1889,6 +2024,7 @@ function createGenericAdmissionEvaluation(
     authorityGuardDecision,
     approvalGuardDecision,
     scopeExplosionGuardDecision,
+    toolResultGuardDecision,
     noGoConditionLedgerDecision,
   );
   const effectiveDecision = effectiveDecisionForGenericMode(input.mode, shadowDecision);
@@ -1900,10 +2036,17 @@ function createGenericAdmissionEvaluation(
     effectiveDecision,
     downstreamPosture,
     enforcementActive: input.mode === 'review' || input.mode === 'enforce',
-    reasonCodes: genericReasonCodes(input, shadowDecision, reviewReasons, scopeExplosionGuardDecision),
+    reasonCodes: genericReasonCodes(
+      input,
+      shadowDecision,
+      reviewReasons,
+      scopeExplosionGuardDecision,
+      toolResultGuardDecision,
+    ),
     authorityGuardDecision,
     approvalGuardDecision,
     scopeExplosionGuardDecision,
+    toolResultGuardDecision,
     noGoConditionLedgerDecision,
   });
 }
@@ -1922,7 +2065,10 @@ function reasonCodesForCheck(
         GENERIC_ADMISSION_AUTHORITY_GUARD_REASON_CODES.has(reason) ||
         GENERIC_ADMISSION_APPROVAL_GUARD_REASON_CODES.has(reason);
     }
-    if (kind === 'evidence') return reason.startsWith('evidence-');
+    if (kind === 'evidence') {
+      return reason.startsWith('evidence-') ||
+        GENERIC_ADMISSION_TOOL_RESULT_REASON_CODES.has(reason);
+    }
     if (kind === 'enforcement') return reason === 'non-enforcing-mode';
     if (kind === 'adapter-readiness') return reason.startsWith('adapter-');
     if (kind === 'freshness') return reason.startsWith('freshness-');
@@ -2106,6 +2252,23 @@ function genericAdmissionDimensions(
       evaluation.scopeExplosionGuardDecision?.observed.blockingDimensions.length ?? 0,
     scopeReviewDimensionCount:
       evaluation.scopeExplosionGuardDecision?.observed.reviewDimensions.length ?? 0,
+    toolResultGuardOutcome: evaluation.toolResultGuardDecision?.outcome ?? null,
+    toolResultGuardDigest: evaluation.toolResultGuardDecision?.digest ?? null,
+    toolResultCount: evaluation.toolResultGuardDecision?.counts.toolResultCount ?? 0,
+    trustedToolResultEvidenceCount:
+      evaluation.toolResultGuardDecision?.counts.trustedEvidenceCount ?? 0,
+    toolResultReviewCount: evaluation.toolResultGuardDecision?.counts.reviewCount ?? 0,
+    toolResultBlockCount: evaluation.toolResultGuardDecision?.counts.blockCount ?? 0,
+    untrustedToolResultSourceCount:
+      evaluation.toolResultGuardDecision?.counts.untrustedSourceCount ?? 0,
+    modelGeneratedToolResultSourceCount:
+      evaluation.toolResultGuardDecision?.counts.modelGeneratedSourceCount ?? 0,
+    toolResultMissingIntegrityCount:
+      evaluation.toolResultGuardDecision?.counts.missingIntegrityCount ?? 0,
+    toolResultMissingTimestampCount:
+      evaluation.toolResultGuardDecision?.counts.missingTimestampCount ?? 0,
+    toolResultEvidenceClassMismatchCount:
+      evaluation.toolResultGuardDecision?.counts.evidenceClassMismatchCount ?? 0,
   });
 }
 

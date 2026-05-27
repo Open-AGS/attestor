@@ -173,6 +173,21 @@ summaries. The generic hosted route does not expose signed-attestation PKI
 verification input in this slice; signed tool-result attestation remains a
 customer/operator provenance boundary.
 
+Generic admissions can also run the agentic supply-chain guard when the
+request supplies structured `agenticSupplyChain` metadata. This metadata binds
+the proposed action to the tool, connector, plugin, workflow, generated
+adapter, domain pack, or provider SDK that helped prepare or execute the
+action. Components need pinned source, version, integrity digest, provenance,
+review/owner authority evidence, least-privilege permission scope, adapter
+readiness where relevant, and runtime replay evidence for high-impact
+components. Missing provenance or integrity holds for review; overbroad
+permissions, unreviewed generated artifacts, unverified domain-pack boundaries,
+critical unsafe components, or untrusted publishers can fail closed. The
+admission response carries only outcome, reason codes, counts, and a digest;
+it must not return raw component refs, package names, permissions, source URLs,
+generated code, or provider bodies. This does not prove third-party code
+behavior, customer runtime execution, or production supply-chain provenance.
+
 Generic admissions can also run the stale authority/policy guard when the
 request supplies structured `staleAuthorityPolicy` metadata. This metadata
 binds the proposed action to a policy version, the current policy version,

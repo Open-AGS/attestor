@@ -748,6 +748,160 @@ function testModelGeneratedToolResultEvidenceRequiresReview(): void {
   passed += 1;
 }
 
+function cleanAgenticSupplyChainComponent(): Record<string, unknown> {
+  return {
+    componentRef: 'connector:refund-service-private',
+    componentKind: 'connector',
+    trustClass: 'first-party',
+    criticality: 'medium',
+    sourceRef: 'repo:private/refund-service-adapter',
+    sourcePinned: true,
+    version: '2026.05.01',
+    integrityDigest: digest('e'),
+    provenanceRef: 'slsa:private:refund-service-adapter',
+    provenanceVerified: true,
+    signatureVerified: true,
+    sbomRef: 'sbom:private:refund-service-adapter',
+    ownerAuthorityDigest: digest('a'),
+    reviewDigest: digest('b'),
+    permissionScopeDigest: digest('c'),
+    declaredPermissions: ['refund:create'],
+    allowedPermissions: ['refund:create'],
+    installScriptsPresent: false,
+    networkEgressDeclared: false,
+    generatedArtifact: false,
+    generatedArtifactReviewed: true,
+    domainPackBoundaryVerified: true,
+    adapterReadinessDigest: digest('d'),
+  };
+}
+
+function testCleanAgenticSupplyChainCanAdmitCompleteRequest(): void {
+  const envelope = createGenericAdmissionEnvelope({
+    ...baseMoneyAdmission('enforce'),
+    agenticSupplyChain: {
+      components: [cleanAgenticSupplyChainComponent()],
+    },
+  });
+  const serialized = JSON.stringify(envelope);
+
+  equal(envelope.shadowDecision, 'would_admit', 'Generic admission: clean supply-chain metadata still admits');
+  equal(envelope.admission.decision, 'admit', 'Generic admission: supply-chain guard pass admits complete request');
+  equal(
+    envelope.admission.request.policyScope.dimensions.agenticSupplyChainGuardOutcome,
+    'pass',
+    'Generic admission: supply-chain guard pass outcome is carried',
+  );
+  equal(
+    envelope.admission.request.policyScope.dimensions.agenticSupplyChainComponentCount,
+    1,
+    'Generic admission: supply-chain component count is carried',
+  );
+  assert.doesNotMatch(
+    serialized,
+    /refund-service-private|private\/refund-service-adapter|slsa:private/u,
+    'Generic admission: serialized envelope does not leak raw supply-chain refs',
+  );
+  passed += 1;
+}
+
+function testUnsafeAgenticSupplyChainBlocksEnforceMode(): void {
+  const envelope = createGenericAdmissionEnvelope({
+    ...baseMoneyAdmission('enforce'),
+    agenticSupplyChain: {
+      components: [
+        {
+          componentRef: 'generated-adapter:private-high-risk',
+          componentKind: 'generated-adapter',
+          trustClass: 'unknown',
+          criticality: 'critical',
+          sourceRef: 'model-output:private-generated-code',
+          sourcePinned: false,
+          declaredPermissions: ['refund:create', 'refund:admin', 'secrets:read'],
+          allowedPermissions: ['refund:create'],
+          generatedArtifact: true,
+          generatedArtifactReviewed: false,
+          domainPackBoundaryVerified: false,
+        },
+      ],
+    },
+  });
+  const serialized = JSON.stringify(envelope);
+  const evidenceCheck = envelope.admission.checks.find((check) => check.kind === 'evidence');
+  const enforcementCheck = envelope.admission.checks.find((check) => check.kind === 'enforcement');
+
+  equal(envelope.shadowDecision, 'would_block', 'Generic admission: unsafe supply-chain metadata shadows block');
+  equal(envelope.admission.decision, 'block', 'Generic admission: unsafe supply-chain metadata blocks enforce mode');
+  ok(
+    envelope.admission.reasonCodes.includes('supply-chain-permission-overbroad'),
+    'Generic admission: overbroad supply-chain permission reason is explicit',
+  );
+  ok(
+    envelope.admission.reasonCodes.includes('supply-chain-critical-component-block'),
+    'Generic admission: critical supply-chain block reason is explicit',
+  );
+  ok(
+    evidenceCheck?.reasonCodes.includes('supply-chain-critical-component-block'),
+    'Generic admission: supply-chain guard attaches block reason to evidence check',
+  );
+  ok(
+    enforcementCheck?.reasonCodes.includes('supply-chain-permission-overbroad'),
+    'Generic admission: supply-chain permission reason is attached to enforcement check',
+  );
+  equal(
+    envelope.admission.request.policyScope.dimensions.agenticSupplyChainGuardOutcome,
+    'block',
+    'Generic admission: supply-chain guard block outcome is carried',
+  );
+  equal(
+    envelope.admission.request.policyScope.dimensions.agenticSupplyChainOverbroadPermissionCount,
+    1,
+    'Generic admission: overbroad supply-chain permission count is carried',
+  );
+  assert.doesNotMatch(
+    serialized,
+    /private-high-risk|private-generated-code|refund:admin|secrets:read/u,
+    'Generic admission: serialized envelope does not leak raw unsafe supply-chain refs or permissions',
+  );
+  passed += 1;
+}
+
+function testIncompleteAgenticSupplyChainRequiresReview(): void {
+  const envelope = createGenericAdmissionEnvelope({
+    ...baseMoneyAdmission('enforce'),
+    agenticSupplyChain: {
+      components: [
+        {
+          componentRef: 'npm:@private/refund-helper',
+          componentKind: 'npm-package',
+          trustClass: 'third-party',
+          criticality: 'low',
+          sourcePinned: true,
+          declaredPermissions: ['refund:read'],
+          allowedPermissions: ['refund:read'],
+        },
+      ],
+    },
+  });
+
+  equal(envelope.shadowDecision, 'would_review', 'Generic admission: incomplete supply-chain metadata shadows review');
+  equal(envelope.admission.decision, 'review', 'Generic admission: incomplete supply-chain metadata holds enforce mode');
+  ok(
+    envelope.admission.reasonCodes.includes('supply-chain-provenance-missing'),
+    'Generic admission: missing supply-chain provenance reason is explicit',
+  );
+  equal(
+    envelope.admission.request.policyScope.dimensions.agenticSupplyChainGuardOutcome,
+    'review',
+    'Generic admission: supply-chain guard review outcome is carried',
+  );
+  equal(
+    envelope.admission.request.policyScope.dimensions.agenticSupplyChainMissingProvenanceCount,
+    1,
+    'Generic admission: missing supply-chain provenance count is carried',
+  );
+}
+
 function scopedMoneyAdmission() {
   return {
     ...baseMoneyAdmission('enforce'),
@@ -1048,6 +1202,9 @@ testCleanNoGoLedgerCanStillAdmitCompleteRequest();
 testUntrustedToolResultCannotAuthorizeEnforceMode();
 testTrustedToolResultEvidenceCanAdmitCompleteRequest();
 testModelGeneratedToolResultEvidenceRequiresReview();
+testCleanAgenticSupplyChainCanAdmitCompleteRequest();
+testUnsafeAgenticSupplyChainBlocksEnforceMode();
+testIncompleteAgenticSupplyChainRequiresReview();
 testCurrentStaleAuthorityPolicyCanAdmitCompleteRequest();
 testStalePolicyMismatchBlocksEnforceMode();
 testMissingAuthorityFreshnessRequiresReview();

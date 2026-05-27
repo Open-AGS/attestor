@@ -311,6 +311,60 @@ async function testPostAdmissionRouteBlocksUntrustedToolResultAuthority(): Promi
   passed += 1;
 }
 
+async function testPostAdmissionRouteBlocksUnsafeAgenticSupplyChain(): Promise<void> {
+  const app = createApp();
+  const response = await app.request('/api/v1/admissions', {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify(validAdmissionPayload({
+      agenticSupplyChain: {
+        components: [
+          {
+            componentRef: 'generated-adapter:private-route-risk',
+            componentKind: 'generated-adapter',
+            trustClass: 'unknown',
+            criticality: 'critical',
+            sourceRef: 'model-output:private-route-generated-code',
+            sourcePinned: false,
+            declaredPermissions: ['refund:create', 'refund:admin'],
+            allowedPermissions: ['refund:create'],
+            generatedArtifact: true,
+            generatedArtifactReviewed: false,
+            domainPackBoundaryVerified: false,
+          },
+        ],
+      },
+    })),
+  });
+  const body = await response.json() as GenericAdmissionEnvelope;
+  const serialized = JSON.stringify(body);
+
+  equal(response.status, 200, 'Generic admission route: supply-chain guard request returns an envelope');
+  equal(body.shadowDecision, 'would_block', 'Generic admission route: unsafe supply chain shadows block');
+  equal(body.admission.decision, 'block', 'Generic admission route: unsafe supply chain blocks');
+  ok(
+    body.admission.reasonCodes.includes('supply-chain-critical-component-block'),
+    'Generic admission route: critical supply-chain block reason is explicit',
+  );
+  ok(
+    body.admission.reasonCodes.includes('supply-chain-permission-overbroad'),
+    'Generic admission route: overbroad supply-chain permission reason is explicit',
+  );
+  equal(
+    body.admission.request.policyScope.dimensions.agenticSupplyChainGuardOutcome,
+    'block',
+    'Generic admission route: supply-chain outcome is dimensioned',
+  );
+  assert.doesNotMatch(
+    serialized,
+    /private-route-risk|private-route-generated-code|refund:admin/u,
+    'Generic admission route: response does not leak raw supply-chain refs or permissions',
+  );
+  passed += 1;
+}
+
 async function testPostAdmissionRouteBlocksStaleAuthorityPolicy(): Promise<void> {
   const app = createApp();
   const response = await app.request('/api/v1/admissions', {
@@ -1014,6 +1068,7 @@ async function testProtectedReleaseTokenIssuerFailsClosedWithoutDpopConfirmation
 await testEvaluationPlansRejectEnforcingModes();
 await testPostAdmissionRouteReturnsEnvelope();
 await testPostAdmissionRouteBlocksUntrustedToolResultAuthority();
+await testPostAdmissionRouteBlocksUnsafeAgenticSupplyChain();
 await testPostAdmissionRouteBlocksStaleAuthorityPolicy();
 await testTenantMismatchFailsClosedBeforeShadowRecording();
 await testLoopGuardUnavailableFailsClosedBeforeShadowRecording();

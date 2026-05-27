@@ -123,9 +123,15 @@ import {
   type ConsequenceFailureModeGuardCoverageMatrix,
 } from './failure-mode-guard-coverage.js';
 import {
+  CONSEQUENCE_AGENTIC_SUPPLY_CHAIN_COMPONENT_KINDS,
+  CONSEQUENCE_AGENTIC_SUPPLY_CHAIN_CRITICALITY,
   CONSEQUENCE_AGENTIC_SUPPLY_CHAIN_GUARD_OUTCOMES,
   CONSEQUENCE_AGENTIC_SUPPLY_CHAIN_GUARD_VERSION,
   CONSEQUENCE_AGENTIC_SUPPLY_CHAIN_REASON_CODES,
+  CONSEQUENCE_AGENTIC_SUPPLY_CHAIN_TRUST_CLASSES,
+  evaluateConsequenceAgenticSupplyChain,
+  type ConsequenceAgenticSupplyChainComponent,
+  type ConsequenceAgenticSupplyChainDecision,
 } from './agentic-supply-chain-guard.js';
 import {
   CONSEQUENCE_MULTI_AGENT_DELEGATION_GUARD_OUTCOMES,
@@ -268,6 +274,9 @@ ReadonlySet<string> = new Set(CONSEQUENCE_NO_GO_CONDITION_REASON_CODES);
 
 const GENERIC_ADMISSION_TOOL_RESULT_REASON_CODES:
 ReadonlySet<string> = new Set(CONSEQUENCE_TOOL_RESULT_GUARD_REASON_CODES);
+
+const GENERIC_ADMISSION_AGENTIC_SUPPLY_CHAIN_REASON_CODES:
+ReadonlySet<string> = new Set(CONSEQUENCE_AGENTIC_SUPPLY_CHAIN_REASON_CODES);
 
 export const GENERIC_ADMISSION_SHADOW_DECISIONS = [
   'would_admit',
@@ -780,6 +789,13 @@ export type GenericAdmissionToolResult =
 export type GenericAdmissionStaleAuthorityPolicy =
   Omit<EvaluateConsequenceStaleAuthorityPolicyInput, 'generatedAt' | 'actionSurface' | 'action'>;
 
+export type GenericAdmissionAgenticSupplyChainComponent =
+  ConsequenceAgenticSupplyChainComponent;
+
+export interface GenericAdmissionAgenticSupplyChain {
+  readonly components: readonly GenericAdmissionAgenticSupplyChainComponent[];
+}
+
 export interface CreateGenericAdmissionInput {
   readonly mode: GenericAdmissionMode;
   readonly actor: string;
@@ -809,6 +825,7 @@ export interface CreateGenericAdmissionInput {
   readonly allowedToolResultEvidenceClasses?:
     readonly ConsequenceToolResultEvidenceClass[] | null;
   readonly toolResults?: readonly GenericAdmissionToolResult[] | null;
+  readonly agenticSupplyChain?: GenericAdmissionAgenticSupplyChain | null;
   readonly staleAuthorityPolicy?: GenericAdmissionStaleAuthorityPolicy | null;
   readonly noGoLedgerRef?: string | null;
   readonly noGoConditions?: readonly GenericAdmissionNoGoCondition[] | null;
@@ -834,6 +851,7 @@ export interface GenericAdmissionModeEvaluation {
   readonly approvalGuardDecision: ConsequenceApprovalProvenanceDecision | null;
   readonly scopeExplosionGuardDecision: ConsequenceScopeExplosionDecision | null;
   readonly toolResultGuardDecision: ConsequenceToolResultPoisoningDecision | null;
+  readonly agenticSupplyChainGuardDecision: ConsequenceAgenticSupplyChainDecision | null;
   readonly staleAuthorityPolicyGuardDecision: ConsequenceStaleAuthorityPolicyDecision | null;
   readonly noGoConditionLedgerDecision: ConsequenceNoGoConditionLedgerDecision | null;
 }
@@ -1349,6 +1367,111 @@ function normalizeGenericToolResults(
   );
 }
 
+function normalizeGenericAgenticSupplyChainComponents(
+  value: unknown,
+): readonly GenericAdmissionAgenticSupplyChainComponent[] {
+  if (value === undefined || value === null) return Object.freeze([]);
+  if (!Array.isArray(value)) {
+    throw new Error('Consequence admission agenticSupplyChain.components must be an array when provided.');
+  }
+  return Object.freeze(
+    value.map((entry, index) => {
+      const field = `agenticSupplyChain.components[${index}]`;
+      if (!isRecord(entry)) {
+        throw new Error(`Consequence admission ${field} must be an object.`);
+      }
+      const componentKind = normalizeEnumValue(
+        readRequiredString(entry, 'componentKind'),
+        CONSEQUENCE_AGENTIC_SUPPLY_CHAIN_COMPONENT_KINDS,
+        `${field}.componentKind`,
+      );
+      const trustClass = readOptionalString(entry, 'trustClass');
+      const criticality = readOptionalString(entry, 'criticality');
+      const sourceRef = readOptionalString(entry, 'sourceRef');
+      const sourcePinned = readOptionalBoolean(entry, 'sourcePinned');
+      const version = readOptionalString(entry, 'version');
+      const integrityDigest = readOptionalString(entry, 'integrityDigest');
+      const provenanceRef = readOptionalString(entry, 'provenanceRef');
+      const provenanceVerified = readOptionalBoolean(entry, 'provenanceVerified');
+      const signatureVerified = readOptionalBoolean(entry, 'signatureVerified');
+      const sbomRef = readOptionalString(entry, 'sbomRef');
+      const ownerAuthorityDigest = readOptionalString(entry, 'ownerAuthorityDigest');
+      const reviewDigest = readOptionalString(entry, 'reviewDigest');
+      const permissionScopeDigest = readOptionalString(entry, 'permissionScopeDigest');
+      const installScriptsPresent = readOptionalBoolean(entry, 'installScriptsPresent');
+      const networkEgressDeclared = readOptionalBoolean(entry, 'networkEgressDeclared');
+      const generatedArtifact = readOptionalBoolean(entry, 'generatedArtifact');
+      const generatedArtifactReviewed = readOptionalBoolean(entry, 'generatedArtifactReviewed');
+      const domainPackBoundaryVerified = readOptionalBoolean(entry, 'domainPackBoundaryVerified');
+      const adapterReadinessDigest = readOptionalString(entry, 'adapterReadinessDigest');
+      const runtimeReplayTestDigest = readOptionalString(entry, 'runtimeReplayTestDigest');
+
+      return Object.freeze({
+        componentRef: readRequiredString(entry, 'componentRef'),
+        componentKind,
+        ...(trustClass === null
+          ? {}
+          : {
+              trustClass: normalizeEnumValue(
+                trustClass,
+                CONSEQUENCE_AGENTIC_SUPPLY_CHAIN_TRUST_CLASSES,
+                `${field}.trustClass`,
+              ),
+            }),
+        ...(criticality === null
+          ? {}
+          : {
+              criticality: normalizeEnumValue(
+                criticality,
+                CONSEQUENCE_AGENTIC_SUPPLY_CHAIN_CRITICALITY,
+                `${field}.criticality`,
+              ),
+            }),
+        ...(sourceRef === null ? {} : { sourceRef }),
+        ...(sourcePinned === null ? {} : { sourcePinned }),
+        ...(version === null ? {} : { version }),
+        ...(integrityDigest === null ? {} : { integrityDigest }),
+        ...(provenanceRef === null ? {} : { provenanceRef }),
+        ...(provenanceVerified === null ? {} : { provenanceVerified }),
+        ...(signatureVerified === null ? {} : { signatureVerified }),
+        ...(sbomRef === null ? {} : { sbomRef }),
+        ...(ownerAuthorityDigest === null ? {} : { ownerAuthorityDigest }),
+        ...(reviewDigest === null ? {} : { reviewDigest }),
+        ...(permissionScopeDigest === null ? {} : { permissionScopeDigest }),
+        declaredPermissions: normalizeStringArray(
+          entry.declaredPermissions,
+          `${field}.declaredPermissions`,
+        ),
+        allowedPermissions: normalizeStringArray(
+          entry.allowedPermissions,
+          `${field}.allowedPermissions`,
+        ),
+        ...(installScriptsPresent === null ? {} : { installScriptsPresent }),
+        ...(networkEgressDeclared === null ? {} : { networkEgressDeclared }),
+        ...(generatedArtifact === null ? {} : { generatedArtifact }),
+        ...(generatedArtifactReviewed === null ? {} : { generatedArtifactReviewed }),
+        ...(domainPackBoundaryVerified === null ? {} : { domainPackBoundaryVerified }),
+        ...(adapterReadinessDigest === null ? {} : { adapterReadinessDigest }),
+        ...(runtimeReplayTestDigest === null ? {} : { runtimeReplayTestDigest }),
+      });
+    }),
+  );
+}
+
+function normalizeGenericAgenticSupplyChain(
+  value: unknown,
+): GenericAdmissionAgenticSupplyChain | null {
+  if (value === undefined || value === null) return null;
+  if (!isRecord(value)) {
+    throw new Error(
+      'Consequence admission agenticSupplyChain must be an object when provided.',
+    );
+  }
+  return Object.freeze({
+    components: normalizeGenericAgenticSupplyChainComponents(value.components),
+  });
+}
+
 function normalizeGenericStaleAuthorityPolicy(
   value: unknown,
 ): GenericAdmissionStaleAuthorityPolicy | null {
@@ -1742,6 +1865,7 @@ function normalizeCreateGenericAdmissionInput(input: unknown): CreateGenericAdmi
       'allowedToolResultEvidenceClasses',
     ),
     toolResults: normalizeGenericToolResults(input.toolResults),
+    agenticSupplyChain: normalizeGenericAgenticSupplyChain(input.agenticSupplyChain),
     staleAuthorityPolicy: normalizeGenericStaleAuthorityPolicy(input.staleAuthorityPolicy),
     noGoLedgerRef: readOptionalString(input, 'noGoLedgerRef'),
     noGoConditions: normalizeGenericNoGoConditions(input.noGoConditions),
@@ -1899,6 +2023,27 @@ function toolResultGuardReviewReasonCodes(
   return Object.freeze([...decision.reasonCodes]);
 }
 
+function genericAdmissionAgenticSupplyChainGuardDecisionFor(
+  input: CreateGenericAdmissionInput,
+): ConsequenceAgenticSupplyChainDecision | null {
+  if (input.agenticSupplyChain === null || input.agenticSupplyChain === undefined) {
+    return null;
+  }
+  return evaluateConsequenceAgenticSupplyChain({
+    generatedAt: input.decidedAt ?? input.requestedAt ?? null,
+    actionSurface: input.domain,
+    action: input.action,
+    components: input.agenticSupplyChain.components,
+  });
+}
+
+function agenticSupplyChainReviewReasonCodes(
+  decision: ConsequenceAgenticSupplyChainDecision | null,
+): readonly string[] {
+  if (decision === null || decision.outcome === 'pass') return Object.freeze([]);
+  return Object.freeze([...decision.reasonCodes]);
+}
+
 function genericAdmissionStaleAuthorityPolicyGuardDecisionFor(
   input: CreateGenericAdmissionInput,
 ): ConsequenceStaleAuthorityPolicyDecision | null {
@@ -1959,6 +2104,7 @@ function genericAdmissionReviewReasons(
   approvalGuardDecision: ConsequenceApprovalProvenanceDecision | null,
   scopeExplosionGuardDecision: ConsequenceScopeExplosionDecision | null,
   toolResultGuardDecision: ConsequenceToolResultPoisoningDecision | null,
+  agenticSupplyChainGuardDecision: ConsequenceAgenticSupplyChainDecision | null,
   staleAuthorityPolicyGuardDecision: ConsequenceStaleAuthorityPolicyDecision | null,
   noGoConditionLedgerDecision: ConsequenceNoGoConditionLedgerDecision | null,
 ): readonly string[] {
@@ -1987,6 +2133,7 @@ function genericAdmissionReviewReasons(
   reasons.push(...approvalGuardReviewReasonCodes(approvalGuardDecision));
   reasons.push(...scopeExplosionReviewReasonCodes(scopeExplosionGuardDecision));
   reasons.push(...toolResultGuardReviewReasonCodes(toolResultGuardDecision));
+  reasons.push(...agenticSupplyChainReviewReasonCodes(agenticSupplyChainGuardDecision));
   reasons.push(...staleAuthorityPolicyReviewReasonCodes(staleAuthorityPolicyGuardDecision));
   reasons.push(...noGoConditionLedgerReviewReasonCodes(noGoConditionLedgerDecision));
 
@@ -2012,6 +2159,7 @@ function genericAdmissionShadowDecisionFor(
   approvalGuardDecision: ConsequenceApprovalProvenanceDecision | null,
   scopeExplosionGuardDecision: ConsequenceScopeExplosionDecision | null,
   toolResultGuardDecision: ConsequenceToolResultPoisoningDecision | null,
+  agenticSupplyChainGuardDecision: ConsequenceAgenticSupplyChainDecision | null,
   staleAuthorityPolicyGuardDecision: ConsequenceStaleAuthorityPolicyDecision | null,
   noGoConditionLedgerDecision: ConsequenceNoGoConditionLedgerDecision | null,
 ): GenericAdmissionShadowDecision {
@@ -2019,6 +2167,7 @@ function genericAdmissionShadowDecisionFor(
   if (approvalGuardDecision?.outcome === 'block') return 'would_block';
   if (scopeExplosionGuardDecision?.outcome === 'block') return 'would_block';
   if (toolResultGuardDecision?.outcome === 'block') return 'would_block';
+  if (agenticSupplyChainGuardDecision?.outcome === 'block') return 'would_block';
   if (staleAuthorityPolicyGuardDecision?.outcome === 'block') return 'would_block';
   if (noGoConditionLedgerDecision?.outcome === 'block') return 'would_block';
   if (
@@ -2064,6 +2213,7 @@ function genericReasonCodes(
   reviewReasons: readonly string[],
   scopeExplosionGuardDecision: ConsequenceScopeExplosionDecision | null,
   toolResultGuardDecision: ConsequenceToolResultPoisoningDecision | null,
+  agenticSupplyChainGuardDecision: ConsequenceAgenticSupplyChainDecision | null,
   staleAuthorityPolicyGuardDecision: ConsequenceStaleAuthorityPolicyDecision | null,
 ): readonly string[] {
   const reasons = [
@@ -2072,6 +2222,7 @@ function genericReasonCodes(
     ...reviewReasons,
     ...(scopeExplosionGuardDecision?.reasonCodes ?? []),
     ...(toolResultGuardDecision?.reasonCodes ?? []),
+    ...(agenticSupplyChainGuardDecision?.reasonCodes ?? []),
     ...(staleAuthorityPolicyGuardDecision?.reasonCodes ?? []),
   ];
   if (input.mode === 'observe' || input.mode === 'warn') {
@@ -2094,6 +2245,8 @@ function createGenericAdmissionEvaluation(
   const approvalGuardDecision = genericAdmissionApprovalGuardDecisionFor(input);
   const scopeExplosionGuardDecision = genericAdmissionScopeExplosionGuardDecisionFor(input);
   const toolResultGuardDecision = genericAdmissionToolResultGuardDecisionFor(input);
+  const agenticSupplyChainGuardDecision =
+    genericAdmissionAgenticSupplyChainGuardDecisionFor(input);
   const staleAuthorityPolicyGuardDecision =
     genericAdmissionStaleAuthorityPolicyGuardDecisionFor(input);
   const noGoConditionLedgerDecision = genericAdmissionNoGoConditionLedgerDecisionFor(input);
@@ -2103,6 +2256,7 @@ function createGenericAdmissionEvaluation(
     approvalGuardDecision,
     scopeExplosionGuardDecision,
     toolResultGuardDecision,
+    agenticSupplyChainGuardDecision,
     staleAuthorityPolicyGuardDecision,
     noGoConditionLedgerDecision,
   );
@@ -2113,6 +2267,7 @@ function createGenericAdmissionEvaluation(
     approvalGuardDecision,
     scopeExplosionGuardDecision,
     toolResultGuardDecision,
+    agenticSupplyChainGuardDecision,
     staleAuthorityPolicyGuardDecision,
     noGoConditionLedgerDecision,
   );
@@ -2131,12 +2286,14 @@ function createGenericAdmissionEvaluation(
       reviewReasons,
       scopeExplosionGuardDecision,
       toolResultGuardDecision,
+      agenticSupplyChainGuardDecision,
       staleAuthorityPolicyGuardDecision,
     ),
     authorityGuardDecision,
     approvalGuardDecision,
     scopeExplosionGuardDecision,
     toolResultGuardDecision,
+    agenticSupplyChainGuardDecision,
     staleAuthorityPolicyGuardDecision,
     noGoConditionLedgerDecision,
   });
@@ -2154,20 +2311,34 @@ function reasonCodesForCheck(
         reason === 'stale-policy-block' ||
         reason.startsWith('drift-state-') ||
         reason === 'no-go-reason-present' ||
+        reason === 'supply-chain-domain-pack-boundary-unverified' ||
         GENERIC_ADMISSION_NO_GO_REASON_CODES.has(reason);
     }
     if (kind === 'authority') {
       return reason.startsWith('authority-') ||
         reason.startsWith('approval-') ||
+        reason === 'supply-chain-owner-authority-missing' ||
+        reason === 'supply-chain-review-missing' ||
         GENERIC_ADMISSION_AUTHORITY_GUARD_REASON_CODES.has(reason) ||
         GENERIC_ADMISSION_APPROVAL_GUARD_REASON_CODES.has(reason);
     }
     if (kind === 'evidence') {
       return reason.startsWith('evidence-') ||
-        GENERIC_ADMISSION_TOOL_RESULT_REASON_CODES.has(reason);
+        GENERIC_ADMISSION_TOOL_RESULT_REASON_CODES.has(reason) ||
+        GENERIC_ADMISSION_AGENTIC_SUPPLY_CHAIN_REASON_CODES.has(reason);
     }
-    if (kind === 'enforcement') return reason === 'non-enforcing-mode';
-    if (kind === 'adapter-readiness') return reason.startsWith('adapter-');
+    if (kind === 'enforcement') {
+      return reason === 'non-enforcing-mode' ||
+        reason === 'supply-chain-permission-scope-missing' ||
+        reason === 'supply-chain-permission-overbroad' ||
+        reason === 'supply-chain-install-scripts-present' ||
+        reason === 'supply-chain-network-egress-unreviewed' ||
+        reason === 'supply-chain-runtime-replay-missing';
+    }
+    if (kind === 'adapter-readiness') {
+      return reason.startsWith('adapter-') ||
+        reason === 'supply-chain-adapter-readiness-missing';
+    }
     if (kind === 'freshness') {
       return reason.startsWith('freshness-') ||
         reason.includes('freshness') ||
@@ -2374,6 +2545,26 @@ function genericAdmissionDimensions(
       evaluation.toolResultGuardDecision?.counts.missingTimestampCount ?? 0,
     toolResultEvidenceClassMismatchCount:
       evaluation.toolResultGuardDecision?.counts.evidenceClassMismatchCount ?? 0,
+    agenticSupplyChainGuardOutcome:
+      evaluation.agenticSupplyChainGuardDecision?.outcome ?? null,
+    agenticSupplyChainGuardDigest:
+      evaluation.agenticSupplyChainGuardDecision?.digest ?? null,
+    agenticSupplyChainComponentCount:
+      evaluation.agenticSupplyChainGuardDecision?.counts.componentCount ?? 0,
+    agenticSupplyChainBlockCount:
+      evaluation.agenticSupplyChainGuardDecision?.counts.blockCount ?? 0,
+    agenticSupplyChainReviewCount:
+      evaluation.agenticSupplyChainGuardDecision?.counts.reviewCount ?? 0,
+    agenticSupplyChainUnpinnedCount:
+      evaluation.agenticSupplyChainGuardDecision?.counts.unpinnedCount ?? 0,
+    agenticSupplyChainMissingProvenanceCount:
+      evaluation.agenticSupplyChainGuardDecision?.counts.missingProvenanceCount ?? 0,
+    agenticSupplyChainUnverifiedProvenanceCount:
+      evaluation.agenticSupplyChainGuardDecision?.counts.unverifiedProvenanceCount ?? 0,
+    agenticSupplyChainOverbroadPermissionCount:
+      evaluation.agenticSupplyChainGuardDecision?.counts.overbroadPermissionCount ?? 0,
+    agenticSupplyChainUnreviewedGeneratedArtifactCount:
+      evaluation.agenticSupplyChainGuardDecision?.counts.unreviewedGeneratedArtifactCount ?? 0,
     staleAuthorityPolicyGuardOutcome:
       evaluation.staleAuthorityPolicyGuardDecision?.outcome ?? null,
     staleAuthorityPolicyGuardDigest:

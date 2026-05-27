@@ -157,6 +157,12 @@ function testOpenApiContractPreservesShadowBoundaries(): void {
   includes(text, '"provider-authoritative"', 'Hosted OpenAPI: trusted provider tool-result source class is documented');
   includes(text, '"model-generated"', 'Hosted OpenAPI: model-generated tool-result source class is documented');
   includes(text, 'tool-result poisoning guard', 'Hosted OpenAPI: tool-result guard no-raw boundary is documented');
+  includes(text, '"agenticSupplyChain"', 'Hosted OpenAPI: agentic supply-chain contract is documented');
+  includes(text, '"generated-adapter"', 'Hosted OpenAPI: generated adapter supply-chain kind is documented');
+  includes(text, '"domain-pack"', 'Hosted OpenAPI: domain pack supply-chain kind is documented');
+  includes(text, '"provenanceVerified"', 'Hosted OpenAPI: supply-chain provenance verification is documented');
+  includes(text, '"permissionScopeDigest"', 'Hosted OpenAPI: supply-chain permission-scope digest is documented');
+  includes(text, '"runtimeReplayTestDigest"', 'Hosted OpenAPI: supply-chain runtime replay evidence is documented');
   includes(text, '"staleAuthorityPolicy"', 'Hosted OpenAPI: stale authority-policy contract is documented');
   includes(text, '"currentPolicyVersion"', 'Hosted OpenAPI: current policy version binding is documented');
   includes(text, '"authorityCheckedAt"', 'Hosted OpenAPI: authority freshness timestamp is documented');
@@ -192,6 +198,7 @@ function testDocsPointToTheOpenApiTruthSource(): void {
   includes(doc, '`GET /api/v1/shadow/dashboard-summary`', 'Hosted OpenAPI docs: guide names dashboard summary route');
   includes(doc, 'RFC 9457-style problem details', 'Hosted OpenAPI docs: guide names problem details boundary');
   includes(doc, 'tool results that support evidence, policy, authority, instruction, context, or review summaries must arrive as structured `toolResults` metadata', 'Hosted OpenAPI docs: guide documents tool-result metadata');
+  includes(doc, 'agentic tool, connector, plugin, workflow, generated adapter, domain-pack, and provider-SDK supply-chain state must arrive as structured `agenticSupplyChain` metadata', 'Hosted OpenAPI docs: guide documents agentic supply-chain metadata');
   includes(doc, 'policy version, approval window, authority freshness, drift, and no-go state must arrive as structured `staleAuthorityPolicy` metadata', 'Hosted OpenAPI docs: guide documents stale authority-policy metadata');
   includes(doc, 'no-go condition state must arrive as structured `noGoConditions` metadata', 'Hosted OpenAPI docs: guide documents no-go metadata');
   includes(doc, 'no public hosted crypto HTTP route is claimed', 'Hosted OpenAPI docs: guide avoids hosted crypto overclaim');

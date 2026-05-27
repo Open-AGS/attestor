@@ -675,6 +675,142 @@
               }
             }
           },
+          "agenticSupplyChain": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "description": "Structured, digest-first agentic supply-chain metadata for tools, connectors, plugins, workflows, generated adapters, domain packs, and provider SDKs. Raw component refs, package contents, source bodies, generated code, provider bodies, and private permissions must not be returned.",
+            "additionalProperties": false,
+            "properties": {
+              "components": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "componentRef",
+                    "componentKind"
+                  ],
+                  "properties": {
+                    "componentRef": {
+                      "type": "string",
+                      "minLength": 1,
+                      "description": "Opaque component reference only. Use a private reference, not package contents or generated code."
+                    },
+                    "componentKind": {
+                      "type": "string",
+                      "enum": [
+                        "npm-package",
+                        "container-image",
+                        "github-action",
+                        "connector",
+                        "plugin",
+                        "mcp-server",
+                        "workflow",
+                        "generated-adapter",
+                        "domain-pack",
+                        "model-provider-sdk",
+                        "custom-tool"
+                      ]
+                    },
+                    "trustClass": {
+                      "type": "string",
+                      "enum": [
+                        "repo-internal",
+                        "first-party",
+                        "verified-vendor",
+                        "third-party",
+                        "community",
+                        "generated",
+                        "unknown"
+                      ]
+                    },
+                    "criticality": {
+                      "type": "string",
+                      "enum": [
+                        "low",
+                        "medium",
+                        "high",
+                        "critical"
+                      ]
+                    },
+                    "sourceRef": {
+                      "type": "string",
+                      "description": "Opaque source reference only."
+                    },
+                    "sourcePinned": {
+                      "type": "boolean"
+                    },
+                    "version": {
+                      "type": "string",
+                      "description": "Opaque version reference observed by the trusted integration."
+                    },
+                    "integrityDigest": {
+                      "type": "string",
+                      "description": "Digest binding the component artifact."
+                    },
+                    "provenanceRef": {
+                      "type": "string",
+                      "description": "Opaque provenance reference."
+                    },
+                    "provenanceVerified": {
+                      "type": "boolean"
+                    },
+                    "signatureVerified": {
+                      "type": "boolean"
+                    },
+                    "sbomRef": {
+                      "type": "string",
+                      "description": "Opaque SBOM reference."
+                    },
+                    "ownerAuthorityDigest": {
+                      "type": "string"
+                    },
+                    "reviewDigest": {
+                      "type": "string"
+                    },
+                    "permissionScopeDigest": {
+                      "type": "string"
+                    },
+                    "declaredPermissions": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "allowedPermissions": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "installScriptsPresent": {
+                      "type": "boolean"
+                    },
+                    "networkEgressDeclared": {
+                      "type": "boolean"
+                    },
+                    "generatedArtifact": {
+                      "type": "boolean"
+                    },
+                    "generatedArtifactReviewed": {
+                      "type": "boolean"
+                    },
+                    "domainPackBoundaryVerified": {
+                      "type": "boolean"
+                    },
+                    "adapterReadinessDigest": {
+                      "type": "string"
+                    },
+                    "runtimeReplayTestDigest": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
           "staleAuthorityPolicy": {
             "type": [
               "object",

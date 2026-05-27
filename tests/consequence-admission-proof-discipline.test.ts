@@ -60,6 +60,11 @@ function testObservedFeaturesStayEvidenceOnly(): void {
   );
   includes(
     source,
+    'agenticSupplyChain: normalizeGenericAgenticSupplyChain(input.agenticSupplyChain)',
+    'Consequence admission proof discipline: generic agentic supply-chain metadata is normalized from caller input',
+  );
+  includes(
+    source,
     'evaluateConsequenceUntrustedContentAuthority({',
     'Consequence admission proof discipline: untrusted-content authority guard is runtime-wired for generic admissions',
   );
@@ -72,6 +77,11 @@ function testObservedFeaturesStayEvidenceOnly(): void {
     source,
     'evaluateConsequenceNoGoConditionLedger({',
     'Consequence admission proof discipline: no-go condition ledger is runtime-wired for generic admissions',
+  );
+  includes(
+    source,
+    'evaluateConsequenceAgenticSupplyChain({',
+    'Consequence admission proof discipline: agentic supply-chain guard is runtime-wired for generic admissions',
   );
   includes(
     source,
@@ -175,6 +185,16 @@ function testObservedFeaturesStayEvidenceOnly(): void {
     'raw case references, private hold owners, customer messages, or bypass text',
     'Consequence admission proof discipline: quickstart documents no-go redaction boundary',
   );
+  includes(
+    quickstart,
+    'structured `agenticSupplyChain` metadata',
+    'Consequence admission proof discipline: quickstart documents agentic supply-chain metadata',
+  );
+  includes(
+    quickstart,
+    'raw component refs, package names, permissions, source URLs',
+    'Consequence admission proof discipline: quickstart documents supply-chain raw-data boundary',
+  );
 
   const hostedApi = readProjectFile('docs', '01-overview', 'hosted-action-authorization-api.md');
   includes(
@@ -201,6 +221,11 @@ function testObservedFeaturesStayEvidenceOnly(): void {
     hostedApi,
     'no-go condition state must arrive as structured `noGoConditions` metadata',
     'Consequence admission proof discipline: hosted API boundary documents no-go metadata',
+  );
+  includes(
+    hostedApi,
+    'agentic tool, connector, plugin, workflow, generated adapter, domain-pack, and provider-SDK supply-chain state must arrive as structured `agenticSupplyChain` metadata',
+    'Consequence admission proof discipline: hosted API boundary documents agentic supply-chain metadata',
   );
   includes(
     hostedApi,

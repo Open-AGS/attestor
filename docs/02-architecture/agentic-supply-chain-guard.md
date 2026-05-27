@@ -6,6 +6,12 @@ Source file: `src/consequence-admission/agentic-supply-chain-guard.ts`
 
 Test command: `npm run test:agentic-supply-chain-guard`
 
+Runtime path: `POST /api/v1/admissions` can run this guard when the request
+supplies structured `agenticSupplyChain` metadata. The hosted route surfaces
+only outcome, reason codes, counts, and digest evidence; it does not echo raw
+component refs, source refs, package names, permissions, generated code, or
+provider bodies.
+
 ## Purpose
 
 The Agentic Supply Chain Guard renders a deterministic decision for packages,
@@ -67,6 +73,7 @@ It remains conservative: `autoEnforce: false`, `productionReady: false`, and
 
 This guard does not certify third-party code behavior, audit a live package
 registry, verify a vendor outside supplied evidence, deploy infrastructure, or
-activate enforcement. It renders repository-side guard evidence that downstream
-integration, runtime tests, customer approval, and activation readiness must
-still consume before any production enforcement claim.
+activate enforcement. Runtime wiring in the generic admission route is
+repository-side evidence only. Downstream integration, runtime tests, customer
+approval, and activation readiness must still consume the result before any
+production enforcement claim.

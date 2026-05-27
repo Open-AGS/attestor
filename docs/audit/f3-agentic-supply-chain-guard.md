@@ -1,6 +1,7 @@
 # F3-R6 Agentic Supply Chain Guard
 
-Status: implemented as repository-side guard evidence.
+Status: implemented as repository-side guard evidence; runtime-wired for
+generic admissions when structured `agenticSupplyChain` metadata is supplied.
 
 This audit hardening step addresses the F3 gap where
 `agentic-supply-chain-compromise` was registered and covered as
@@ -55,6 +56,8 @@ After:
 - `agentic-supply-chain-compromise` has `dedicated-guard` coverage
 - the guard is included in guard activation readiness
 - the package surface exposes the guard version and reason-code vocabulary
+- the generic admission route can consume structured `agenticSupplyChain`
+  metadata and emit only outcome, reason-code, count, and digest evidence
 
 ## Limitations
 
@@ -66,6 +69,7 @@ Not proven:
 - downstream verifier integration
 - production enforcement activation
 - external audit or certification
+- live customer supply-chain provenance capture
 
 Default posture remains conservative: missing or unsafe supply-chain evidence
 leads to `review` or `block`, and the guard does not activate enforcement by

@@ -175,6 +175,14 @@ import {
   type ConsequenceNoGoConditionRecord,
 } from './no-go-condition-ledger.js';
 import {
+  CONSEQUENCE_SCOPE_EXPLOSION_DATA_CLASSES,
+  CONSEQUENCE_SCOPE_EXPLOSION_OPERATION_TYPES,
+  CONSEQUENCE_SCOPE_EXPLOSION_REVERSIBILITY_CLASSES,
+  evaluateConsequenceScopeExplosion,
+  type ConsequenceScopeExplosionDecision,
+  type ConsequenceScopeExplosionScopeInput,
+} from './scope-explosion-guard.js';
+import {
   PROTECTED_ADMISSION_E2E_PROOF_PLAN_VERSION,
   protectedAdmissionE2eProofPlanDescriptor,
   type ProtectedAdmissionE2eProofPlanDescriptor,
@@ -742,6 +750,9 @@ export type GenericAdmissionApproval =
 export type GenericAdmissionNoGoCondition =
   ConsequenceNoGoConditionRecord;
 
+export type GenericAdmissionScopeInput =
+  ConsequenceScopeExplosionScopeInput;
+
 export interface CreateGenericAdmissionInput {
   readonly mode: GenericAdmissionMode;
   readonly actor: string;
@@ -765,6 +776,9 @@ export interface CreateGenericAdmissionInput {
   readonly evidenceRefs?: readonly string[];
   readonly authoritySources?: readonly GenericAdmissionAuthoritySource[];
   readonly approvals?: readonly GenericAdmissionApproval[];
+  readonly scopeOwnerPolicyRef?: string | null;
+  readonly requestedScope?: GenericAdmissionScopeInput | null;
+  readonly approvedScope?: GenericAdmissionScopeInput | null;
   readonly noGoLedgerRef?: string | null;
   readonly noGoConditions?: readonly GenericAdmissionNoGoCondition[] | null;
   readonly noGoNaturalLanguageBypassAttempted?: boolean | null;
@@ -787,6 +801,7 @@ export interface GenericAdmissionModeEvaluation {
   readonly reasonCodes: readonly string[];
   readonly authorityGuardDecision: ConsequenceUntrustedContentAuthorityDecision | null;
   readonly approvalGuardDecision: ConsequenceApprovalProvenanceDecision | null;
+  readonly scopeExplosionGuardDecision: ConsequenceScopeExplosionDecision | null;
   readonly noGoConditionLedgerDecision: ConsequenceNoGoConditionLedgerDecision | null;
 }
 
@@ -1107,6 +1122,118 @@ function normalizeGenericDataScope(value: unknown): GenericAdmissionDataScope | 
     records: typeof rawRecords === 'number' ? rawRecords : null,
     classification: readOptionalString(value, 'classification'),
     fields: normalizeStringArray(value.fields, 'dataScope.fields'),
+  });
+}
+
+function normalizeOptionalNonNegativeFiniteNumber(
+  value: unknown,
+  fieldName: string,
+): number | null {
+  if (value === undefined || value === null) return null;
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
+    throw new Error(
+      `Consequence admission ${fieldName} must be a non-negative finite number when provided.`,
+    );
+  }
+  return value;
+}
+
+function normalizeOptionalEnumArray<T extends string>(
+  value: unknown,
+  allowed: readonly T[],
+  fieldName: string,
+): readonly T[] | null {
+  if (value === undefined || value === null) return null;
+  if (!Array.isArray(value)) {
+    throw new Error(`Consequence admission ${fieldName} must be an array when provided.`);
+  }
+  return Object.freeze(
+    value.map((entry, index) => normalizeEnumValue(
+      typeof entry === 'string' ? entry : String(entry),
+      allowed,
+      `${fieldName}[${index}]`,
+    )),
+  );
+}
+
+function normalizeGenericScopeInput(
+  value: unknown,
+  fieldName: string,
+): GenericAdmissionScopeInput | null {
+  if (value === undefined || value === null) return null;
+  if (!isRecord(value)) {
+    throw new Error(`Consequence admission ${fieldName} must be an object when provided.`);
+  }
+
+  const operationType = readOptionalString(value, 'operationType');
+  const dataClass = readOptionalString(value, 'dataClass');
+  const reversibilityClass = readOptionalString(value, 'reversibilityClass');
+
+  return Object.freeze({
+    amountMinorUnits: normalizeOptionalNonNegativeFiniteNumber(
+      value.amountMinorUnits,
+      `${fieldName}.amountMinorUnits`,
+    ),
+    maxAmountMinorUnits: normalizeOptionalNonNegativeFiniteNumber(
+      value.maxAmountMinorUnits,
+      `${fieldName}.maxAmountMinorUnits`,
+    ),
+    currency: readOptionalString(value, 'currency'),
+    recordCount: normalizeOptionalNonNegativeFiniteNumber(value.recordCount, `${fieldName}.recordCount`),
+    maxRecordCount: normalizeOptionalNonNegativeFiniteNumber(
+      value.maxRecordCount,
+      `${fieldName}.maxRecordCount`,
+    ),
+    operationType: operationType === null
+      ? null
+      : normalizeEnumValue(
+        operationType,
+        CONSEQUENCE_SCOPE_EXPLOSION_OPERATION_TYPES,
+        `${fieldName}.operationType`,
+      ),
+    operationTypes: normalizeOptionalEnumArray(
+      value.operationTypes,
+      CONSEQUENCE_SCOPE_EXPLOSION_OPERATION_TYPES,
+      `${fieldName}.operationTypes`,
+    ),
+    recipientId: readOptionalString(value, 'recipientId'),
+    recipientIds: value.recipientIds === undefined || value.recipientIds === null
+      ? null
+      : normalizeStringArray(value.recipientIds, `${fieldName}.recipientIds`),
+    tenantId: readOptionalString(value, 'tenantId'),
+    environment: readOptionalString(value, 'environment'),
+    environments: value.environments === undefined || value.environments === null
+      ? null
+      : normalizeStringArray(value.environments, `${fieldName}.environments`),
+    downstreamSystem: readOptionalString(value, 'downstreamSystem'),
+    downstreamSystems:
+      value.downstreamSystems === undefined || value.downstreamSystems === null
+        ? null
+        : normalizeStringArray(value.downstreamSystems, `${fieldName}.downstreamSystems`),
+    dataClass: dataClass === null
+      ? null
+      : normalizeEnumValue(
+        dataClass,
+        CONSEQUENCE_SCOPE_EXPLOSION_DATA_CLASSES,
+        `${fieldName}.dataClass`,
+      ),
+    dataClasses: normalizeOptionalEnumArray(
+      value.dataClasses,
+      CONSEQUENCE_SCOPE_EXPLOSION_DATA_CLASSES,
+      `${fieldName}.dataClasses`,
+    ),
+    reversibilityClass: reversibilityClass === null
+      ? null
+      : normalizeEnumValue(
+        reversibilityClass,
+        CONSEQUENCE_SCOPE_EXPLOSION_REVERSIBILITY_CLASSES,
+        `${fieldName}.reversibilityClass`,
+      ),
+    reversibilityClasses: normalizeOptionalEnumArray(
+      value.reversibilityClasses,
+      CONSEQUENCE_SCOPE_EXPLOSION_REVERSIBILITY_CLASSES,
+      `${fieldName}.reversibilityClasses`,
+    ),
   });
 }
 
@@ -1456,6 +1583,9 @@ function normalizeCreateGenericAdmissionInput(input: unknown): CreateGenericAdmi
     evidenceRefs: normalizeStringArray(input.evidenceRefs, 'evidenceRefs'),
     authoritySources: normalizeGenericAuthoritySources(input.authoritySources),
     approvals: normalizeGenericApprovals(input.approvals),
+    scopeOwnerPolicyRef: readOptionalString(input, 'scopeOwnerPolicyRef'),
+    requestedScope: normalizeGenericScopeInput(input.requestedScope, 'requestedScope'),
+    approvedScope: normalizeGenericScopeInput(input.approvedScope, 'approvedScope'),
     noGoLedgerRef: readOptionalString(input, 'noGoLedgerRef'),
     noGoConditions: normalizeGenericNoGoConditions(input.noGoConditions),
     noGoNaturalLanguageBypassAttempted: readOptionalBoolean(
@@ -1553,6 +1683,37 @@ function approvalGuardReviewReasonCodes(
   return Object.freeze([...decision.reasonCodes]);
 }
 
+function genericAdmissionHasScopeExplosionInput(
+  input: CreateGenericAdmissionInput,
+): boolean {
+  return (input.scopeOwnerPolicyRef !== null && input.scopeOwnerPolicyRef !== undefined) ||
+    (input.requestedScope !== null && input.requestedScope !== undefined) ||
+    (input.approvedScope !== null && input.approvedScope !== undefined);
+}
+
+function genericAdmissionScopeExplosionGuardDecisionFor(
+  input: CreateGenericAdmissionInput,
+): ConsequenceScopeExplosionDecision | null {
+  if (!genericAdmissionHasScopeExplosionInput(input)) return null;
+  return evaluateConsequenceScopeExplosion({
+    generatedAt: input.decidedAt ?? input.requestedAt ?? null,
+    actionSurface: input.domain,
+    action: input.action,
+    scopeOwnerPolicyRef: input.scopeOwnerPolicyRef ?? null,
+    requestedScope: input.requestedScope ?? null,
+    approvedScope: input.approvedScope ?? null,
+  });
+}
+
+function scopeExplosionReviewReasonCodes(
+  decision: ConsequenceScopeExplosionDecision | null,
+): readonly string[] {
+  if (decision === null || decision.outcome === 'pass' || decision.outcome === 'narrow') {
+    return Object.freeze([]);
+  }
+  return Object.freeze([...decision.reasonCodes]);
+}
+
 function genericAdmissionHasNoGoConditionInput(
   input: CreateGenericAdmissionInput,
 ): boolean {
@@ -1590,6 +1751,7 @@ function genericAdmissionReviewReasons(
   input: CreateGenericAdmissionInput,
   authorityGuardDecision: ConsequenceUntrustedContentAuthorityDecision | null,
   approvalGuardDecision: ConsequenceApprovalProvenanceDecision | null,
+  scopeExplosionGuardDecision: ConsequenceScopeExplosionDecision | null,
   noGoConditionLedgerDecision: ConsequenceNoGoConditionLedgerDecision | null,
 ): readonly string[] {
   const reasons: string[] = [];
@@ -1615,6 +1777,7 @@ function genericAdmissionReviewReasons(
   }
   reasons.push(...authorityGuardReviewReasonCodes(authorityGuardDecision));
   reasons.push(...approvalGuardReviewReasonCodes(approvalGuardDecision));
+  reasons.push(...scopeExplosionReviewReasonCodes(scopeExplosionGuardDecision));
   reasons.push(...noGoConditionLedgerReviewReasonCodes(noGoConditionLedgerDecision));
 
   if (profile.requiredChecks.includes('adapter-readiness')) {
@@ -1637,10 +1800,12 @@ function genericAdmissionShadowDecisionFor(
   reviewReasons: readonly string[],
   authorityGuardDecision: ConsequenceUntrustedContentAuthorityDecision | null,
   approvalGuardDecision: ConsequenceApprovalProvenanceDecision | null,
+  scopeExplosionGuardDecision: ConsequenceScopeExplosionDecision | null,
   noGoConditionLedgerDecision: ConsequenceNoGoConditionLedgerDecision | null,
 ): GenericAdmissionShadowDecision {
   if (authorityGuardDecision?.outcome === 'block') return 'would_block';
   if (approvalGuardDecision?.outcome === 'block') return 'would_block';
+  if (scopeExplosionGuardDecision?.outcome === 'block') return 'would_block';
   if (noGoConditionLedgerDecision?.outcome === 'block') return 'would_block';
   if (
     observedFeatureTrue(input, 'policyBlocked') ||
@@ -1650,6 +1815,7 @@ function genericAdmissionShadowDecisionFor(
     return 'would_block';
   }
   if (reviewReasons.length > 0) return 'would_review';
+  if (scopeExplosionGuardDecision?.outcome === 'narrow') return 'would_narrow';
   if (observedFeatureTrue(input, 'narrowRequired')) return 'would_narrow';
   return 'would_admit';
 }
@@ -1682,11 +1848,13 @@ function genericReasonCodes(
   input: CreateGenericAdmissionInput,
   shadowDecision: GenericAdmissionShadowDecision,
   reviewReasons: readonly string[],
+  scopeExplosionGuardDecision: ConsequenceScopeExplosionDecision | null,
 ): readonly string[] {
   const reasons = [
     `mode-${input.mode}`,
     `shadow-${shadowDecision}`,
     ...reviewReasons,
+    ...(scopeExplosionGuardDecision?.reasonCodes ?? []),
   ];
   if (input.mode === 'observe' || input.mode === 'warn') {
     reasons.push('non-enforcing-mode');
@@ -1706,11 +1874,13 @@ function createGenericAdmissionEvaluation(
 ): GenericAdmissionModeEvaluation {
   const authorityGuardDecision = genericAdmissionAuthorityGuardDecisionFor(input);
   const approvalGuardDecision = genericAdmissionApprovalGuardDecisionFor(input);
+  const scopeExplosionGuardDecision = genericAdmissionScopeExplosionGuardDecisionFor(input);
   const noGoConditionLedgerDecision = genericAdmissionNoGoConditionLedgerDecisionFor(input);
   const reviewReasons = genericAdmissionReviewReasons(
     input,
     authorityGuardDecision,
     approvalGuardDecision,
+    scopeExplosionGuardDecision,
     noGoConditionLedgerDecision,
   );
   const shadowDecision = genericAdmissionShadowDecisionFor(
@@ -1718,6 +1888,7 @@ function createGenericAdmissionEvaluation(
     reviewReasons,
     authorityGuardDecision,
     approvalGuardDecision,
+    scopeExplosionGuardDecision,
     noGoConditionLedgerDecision,
   );
   const effectiveDecision = effectiveDecisionForGenericMode(input.mode, shadowDecision);
@@ -1729,9 +1900,10 @@ function createGenericAdmissionEvaluation(
     effectiveDecision,
     downstreamPosture,
     enforcementActive: input.mode === 'review' || input.mode === 'enforce',
-    reasonCodes: genericReasonCodes(input, shadowDecision, reviewReasons),
+    reasonCodes: genericReasonCodes(input, shadowDecision, reviewReasons, scopeExplosionGuardDecision),
     authorityGuardDecision,
     approvalGuardDecision,
+    scopeExplosionGuardDecision,
     noGoConditionLedgerDecision,
   });
 }
@@ -1837,6 +2009,15 @@ function genericAdmissionConstraints(
   evaluation: GenericAdmissionModeEvaluation,
 ): readonly ConsequenceAdmissionConstraint[] {
   if (evaluation.effectiveDecision !== 'narrow') return Object.freeze([]);
+  const scopeConstraints =
+    evaluation.scopeExplosionGuardDecision?.constraints.map((constraint) => Object.freeze({
+      id: `constraint:${input.domain}:scope:${constraint.dimension}`,
+      kind: inferConstraintKind(`${constraint.dimension}:${constraint.reasonCode}`),
+      summary: constraint.safeSummary,
+      enforcedBy: input.downstreamSystem,
+      parameterDigest: constraint.constraintDigest,
+    })) ?? [];
+  if (scopeConstraints.length > 0) return Object.freeze(scopeConstraints);
   return Object.freeze([
     {
       id: `constraint:${input.domain}:generic-narrow`,
@@ -1915,6 +2096,16 @@ function genericAdmissionDimensions(
       evaluation.noGoConditionLedgerDecision?.observed.naturalLanguageBypassAttempted ?? false,
     noGoNaturalLanguageBypassSignalCount:
       evaluation.noGoConditionLedgerDecision?.observed.naturalLanguageBypassSignalCount ?? 0,
+    scopeExplosionGuardOutcome: evaluation.scopeExplosionGuardDecision?.outcome ?? null,
+    scopeExplosionGuardDigest: evaluation.scopeExplosionGuardDecision?.digest ?? null,
+    scopeExceededDimensionCount:
+      evaluation.scopeExplosionGuardDecision?.observed.exceededDimensions.length ?? 0,
+    scopeNarrowingDimensionCount:
+      evaluation.scopeExplosionGuardDecision?.observed.narrowingDimensions.length ?? 0,
+    scopeBlockingDimensionCount:
+      evaluation.scopeExplosionGuardDecision?.observed.blockingDimensions.length ?? 0,
+    scopeReviewDimensionCount:
+      evaluation.scopeExplosionGuardDecision?.observed.reviewDimensions.length ?? 0,
   });
 }
 

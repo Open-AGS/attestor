@@ -603,6 +603,126 @@ function testCleanNoGoLedgerCanStillAdmitCompleteRequest(): void {
   );
 }
 
+function scopedMoneyAdmission() {
+  return {
+    ...baseMoneyAdmission('enforce'),
+    scopeOwnerPolicyRef: 'policy:refund-scope-private',
+    requestedScope: {
+      amountMinorUnits: 9000,
+      currency: 'usd',
+      recordCount: 12,
+      operationType: 'refund',
+      recipientId: 'recipient_other_private',
+      tenantId: 'tenant_current_private',
+      environment: 'production',
+      downstreamSystem: 'refund-service-private',
+      dataClass: 'customer-visible',
+      reversibilityClass: 'compensating-action-available',
+    },
+    approvedScope: {
+      maxAmountMinorUnits: 5000,
+      currency: 'usd',
+      maxRecordCount: 1,
+      operationTypes: ['refund'],
+      recipientIds: ['recipient_customer_private'],
+      tenantId: 'tenant_current_private',
+      environments: ['production'],
+      downstreamSystems: ['refund-service-private'],
+      dataClasses: ['customer-visible'],
+      reversibilityClasses: ['reversible', 'compensating-action-available'],
+    },
+  };
+}
+
+function testScopeExpansionNarrowsEnforceMode(): void {
+  const envelope = createGenericAdmissionEnvelope(scopedMoneyAdmission());
+  const serialized = JSON.stringify(envelope);
+
+  equal(envelope.shadowDecision, 'would_narrow', 'Generic admission: scope expansion shadows narrow');
+  equal(envelope.admission.decision, 'narrow', 'Generic admission: enforce mode applies scope narrowing');
+  equal(envelope.admission.allowed, true, 'Generic admission: narrowed scope is allowed with constraints');
+  ok(
+    envelope.admission.reasonCodes.includes('amount-exceeds-approved-scope'),
+    'Generic admission: amount scope explosion reason is explicit',
+  );
+  ok(
+    envelope.admission.reasonCodes.includes('recipient-out-of-scope'),
+    'Generic admission: recipient scope explosion reason is explicit',
+  );
+  ok(
+    envelope.admission.reasonCodes.includes('record-count-exceeds-approved-scope'),
+    'Generic admission: record-count scope explosion reason is explicit',
+  );
+  equal(
+    envelope.admission.constraints.length,
+    3,
+    'Generic admission: scope guard emits one digest-bound constraint per narrowed dimension',
+  );
+  ok(
+    envelope.admission.constraints.some((constraint) => constraint.kind === 'max-amount'),
+    'Generic admission: scope guard emits an amount constraint',
+  );
+  ok(
+    envelope.admission.constraints.some((constraint) => constraint.kind === 'record-scope'),
+    'Generic admission: scope guard emits a record-scope constraint',
+  );
+  ok(
+    envelope.admission.constraints.every((constraint) =>
+      typeof constraint.parameterDigest === 'string' &&
+      /^sha256:[a-f0-9]{64}$/u.test(constraint.parameterDigest)
+    ),
+    'Generic admission: scope constraints are digest-bound without raw scope values',
+  );
+  equal(
+    envelope.admission.request.policyScope.dimensions.scopeExplosionGuardOutcome,
+    'narrow',
+    'Generic admission: scope guard outcome is carried as a safe dimension',
+  );
+  assert.doesNotMatch(
+    serialized,
+    /recipient_other_private|recipient_customer_private|tenant_current_private|refund-service-private|policy:refund-scope-private/u,
+    'Generic admission: serialized envelope does not leak raw scope policy, tenant, recipient, or downstream refs',
+  );
+  passed += 1;
+}
+
+function testScopeEscalationBlocksEnforceMode(): void {
+  const envelope = createGenericAdmissionEnvelope({
+    ...scopedMoneyAdmission(),
+    requestedScope: {
+      ...scopedMoneyAdmission().requestedScope,
+      operationType: 'delete',
+      dataClass: 'credential',
+      reversibilityClass: 'irreversible',
+    },
+  });
+
+  equal(envelope.shadowDecision, 'would_block', 'Generic admission: scope escalation shadows block');
+  equal(envelope.admission.decision, 'block', 'Generic admission: enforce mode blocks scope escalation');
+  equal(envelope.admission.allowed, false, 'Generic admission: blocked scope escalation is not allowed');
+  ok(
+    envelope.admission.reasonCodes.includes('scope-blocked'),
+    'Generic admission: scope-blocked reason is explicit',
+  );
+  ok(
+    envelope.admission.reasonCodes.includes('operation-out-of-scope'),
+    'Generic admission: operation out-of-scope reason is explicit',
+  );
+  ok(
+    envelope.admission.reasonCodes.includes('data-class-out-of-scope'),
+    'Generic admission: data-class out-of-scope reason is explicit',
+  );
+  ok(
+    envelope.admission.reasonCodes.includes('irreversible-action-not-approved'),
+    'Generic admission: irreversible scope reason is explicit',
+  );
+  equal(
+    envelope.admission.request.policyScope.dimensions.scopeExplosionGuardOutcome,
+    'block',
+    'Generic admission: blocking scope guard outcome is carried',
+  );
+}
+
 function testEnforceModeBlocksKnownUnsafeSignals(): void {
   const envelope = createGenericAdmissionEnvelope({
     ...baseMoneyAdmission('enforce'),
@@ -682,6 +802,8 @@ testUntrustedApprovalClaimBlocksEnforceMode();
 testActiveNoGoConditionBlocksEnforceMode();
 testNoGoNaturalLanguageBypassBlocksWithoutRawLeak();
 testCleanNoGoLedgerCanStillAdmitCompleteRequest();
+testScopeExpansionNarrowsEnforceMode();
+testScopeEscalationBlocksEnforceMode();
 testEnforceModeBlocksKnownUnsafeSignals();
 testInvalidInputFailsClosed();
 

@@ -152,6 +152,11 @@ function testOpenApiContractPreservesShadowBoundaries(): void {
   includes(text, '"caller-supplied"', 'Hosted OpenAPI: caller-supplied feature origin is explicitly classified');
   includes(text, '"authoritySources"', 'Hosted OpenAPI: authority-source contract is documented');
   includes(text, '"approvals"', 'Hosted OpenAPI: approval provenance contract is documented');
+  includes(text, '"toolResults"', 'Hosted OpenAPI: tool-result provenance contract is documented');
+  includes(text, '"allowedToolResultEvidenceClasses"', 'Hosted OpenAPI: tool-result evidence allowlist is documented');
+  includes(text, '"provider-authoritative"', 'Hosted OpenAPI: trusted provider tool-result source class is documented');
+  includes(text, '"model-generated"', 'Hosted OpenAPI: model-generated tool-result source class is documented');
+  includes(text, 'tool-result poisoning guard', 'Hosted OpenAPI: tool-result guard no-raw boundary is documented');
   includes(text, '"noGoConditions"', 'Hosted OpenAPI: no-go condition contract is documented');
   includes(text, '"noGoNaturalLanguageSignals"', 'Hosted OpenAPI: no-go bypass signal contract is documented');
   includes(text, '"fraud-hold"', 'Hosted OpenAPI: no-go hold kind is documented');
@@ -181,6 +186,7 @@ function testDocsPointToTheOpenApiTruthSource(): void {
   includes(doc, '`POST /api/v1/admissions`', 'Hosted OpenAPI docs: guide names the canonical admission route');
   includes(doc, '`GET /api/v1/shadow/dashboard-summary`', 'Hosted OpenAPI docs: guide names dashboard summary route');
   includes(doc, 'RFC 9457-style problem details', 'Hosted OpenAPI docs: guide names problem details boundary');
+  includes(doc, 'tool results that support evidence, policy, authority, instruction, context, or review summaries must arrive as structured `toolResults` metadata', 'Hosted OpenAPI docs: guide documents tool-result metadata');
   includes(doc, 'no-go condition state must arrive as structured `noGoConditions` metadata', 'Hosted OpenAPI docs: guide documents no-go metadata');
   includes(doc, 'no public hosted crypto HTTP route is claimed', 'Hosted OpenAPI docs: guide avoids hosted crypto overclaim');
   excludes(doc, 'POST /api/v1/admit', 'Hosted OpenAPI docs: guide does not revive old route placeholder');

@@ -603,6 +603,151 @@ function testCleanNoGoLedgerCanStillAdmitCompleteRequest(): void {
   );
 }
 
+function testUntrustedToolResultCannotAuthorizeEnforceMode(): void {
+  const envelope = createGenericAdmissionEnvelope({
+    ...baseMoneyAdmission('enforce'),
+    allowedToolResultEvidenceClasses: ['policy-record'],
+    toolResults: [
+      {
+        toolResultRef: 'tool-result:private:refund-policy',
+        toolKind: 'web-search',
+        sourceTrustClass: 'untrusted-external',
+        resultUse: 'authority',
+        sourceRef: 'https://attacker.example/private-policy',
+        sourceTimestamp: '2026-05-01T17:00:00.000Z',
+        integrityDigest: digest('e'),
+        evidenceDigest: digest('f'),
+        evidenceClass: 'policy-record',
+        toolRisk: 'high',
+      },
+    ],
+  });
+  const serialized = JSON.stringify(envelope);
+  const evidenceCheck = envelope.admission.checks.find((check) => check.kind === 'evidence');
+
+  equal(envelope.shadowDecision, 'would_block', 'Generic admission: untrusted tool authority shadows block');
+  equal(envelope.admission.decision, 'block', 'Generic admission: untrusted tool authority blocks enforce mode');
+  equal(envelope.admission.allowed, false, 'Generic admission: blocked tool-result authority is not allowed');
+  ok(
+    envelope.admission.reasonCodes.includes('tool-result-untrusted-source'),
+    'Generic admission: untrusted tool-result source reason is explicit',
+  );
+  ok(
+    envelope.admission.reasonCodes.includes('tool-result-authority-or-instruction'),
+    'Generic admission: tool-result authority/instruction reason is explicit',
+  );
+  ok(
+    envelope.admission.reasonCodes.includes('tool-result-block'),
+    'Generic admission: tool-result block reason is explicit',
+  );
+  ok(
+    evidenceCheck?.reasonCodes.includes('tool-result-untrusted-source'),
+    'Generic admission: tool-result guard attaches reasons to the evidence check',
+  );
+  equal(
+    envelope.admission.request.policyScope.dimensions.toolResultGuardOutcome,
+    'block',
+    'Generic admission: tool-result guard block outcome is carried',
+  );
+  equal(
+    envelope.admission.request.policyScope.dimensions.untrustedToolResultSourceCount,
+    1,
+    'Generic admission: untrusted tool-result source count is carried without raw output',
+  );
+  assert.doesNotMatch(
+    serialized,
+    /tool-result:private:refund-policy|attacker\.example|private-policy/u,
+    'Generic admission: serialized envelope does not leak raw tool-result refs or source URLs',
+  );
+  passed += 1;
+}
+
+function testTrustedToolResultEvidenceCanAdmitCompleteRequest(): void {
+  const envelope = createGenericAdmissionEnvelope({
+    ...baseMoneyAdmission('enforce'),
+    allowedToolResultEvidenceClasses: ['payment-record'],
+    toolResults: [
+      {
+        toolResultRef: 'provider-result:payment-private-ref',
+        toolKind: 'provider-api',
+        sourceTrustClass: 'provider-authoritative',
+        resultUse: 'evidence',
+        sourceRef: 'provider.payment.private-ref',
+        sourceTimestamp: '2026-05-01T17:00:00.000Z',
+        integrityDigest: digest('e'),
+        evidenceDigest: digest('f'),
+        evidenceClass: 'payment-record',
+        toolRisk: 'medium',
+      },
+    ],
+  });
+  const serialized = JSON.stringify(envelope);
+
+  equal(envelope.shadowDecision, 'would_admit', 'Generic admission: trusted tool evidence keeps complete request admissible');
+  equal(envelope.admission.decision, 'admit', 'Generic admission: trusted tool evidence admits');
+  equal(
+    envelope.admission.request.policyScope.dimensions.toolResultGuardOutcome,
+    'pass',
+    'Generic admission: tool-result guard pass outcome is carried',
+  );
+  equal(
+    envelope.admission.request.policyScope.dimensions.trustedToolResultEvidenceCount,
+    1,
+    'Generic admission: trusted tool-result evidence count is carried',
+  );
+  assert.doesNotMatch(
+    serialized,
+    /provider-result:payment-private-ref|provider\.payment\.private-ref/u,
+    'Generic admission: serialized envelope does not leak raw trusted tool-result refs',
+  );
+  passed += 1;
+}
+
+function testModelGeneratedToolResultEvidenceRequiresReview(): void {
+  const envelope = createGenericAdmissionEnvelope({
+    ...baseMoneyAdmission('enforce'),
+    allowedToolResultEvidenceClasses: ['ticket-record'],
+    toolResults: [
+      {
+        toolResultRef: 'model-summary:ticket-private-ref',
+        toolKind: 'mcp-tool',
+        sourceTrustClass: 'model-generated',
+        resultUse: 'evidence',
+        sourceRef: 'agent.summary.private-ref',
+        sourceTimestamp: '2026-05-01T17:00:00.000Z',
+        integrityDigest: digest('e'),
+        evidenceDigest: digest('f'),
+        evidenceClass: 'ticket-record',
+        toolRisk: 'medium',
+      },
+    ],
+  });
+  const serialized = JSON.stringify(envelope);
+
+  equal(envelope.shadowDecision, 'would_review', 'Generic admission: model-generated tool evidence shadows review');
+  equal(envelope.admission.decision, 'review', 'Generic admission: model-generated tool evidence does not admit directly');
+  ok(
+    envelope.admission.reasonCodes.includes('tool-result-model-generated-source'),
+    'Generic admission: model-generated tool-result source reason is explicit',
+  );
+  equal(
+    envelope.admission.request.policyScope.dimensions.toolResultGuardOutcome,
+    'review',
+    'Generic admission: tool-result guard review outcome is carried',
+  );
+  equal(
+    envelope.admission.request.policyScope.dimensions.modelGeneratedToolResultSourceCount,
+    1,
+    'Generic admission: model-generated tool-result source count is carried',
+  );
+  assert.doesNotMatch(
+    serialized,
+    /model-summary:ticket-private-ref|agent\.summary\.private-ref/u,
+    'Generic admission: serialized envelope does not leak raw model-generated tool-result refs',
+  );
+  passed += 1;
+}
+
 function scopedMoneyAdmission() {
   return {
     ...baseMoneyAdmission('enforce'),
@@ -802,6 +947,9 @@ testUntrustedApprovalClaimBlocksEnforceMode();
 testActiveNoGoConditionBlocksEnforceMode();
 testNoGoNaturalLanguageBypassBlocksWithoutRawLeak();
 testCleanNoGoLedgerCanStillAdmitCompleteRequest();
+testUntrustedToolResultCannotAuthorizeEnforceMode();
+testTrustedToolResultEvidenceCanAdmitCompleteRequest();
+testModelGeneratedToolResultEvidenceRequiresReview();
 testScopeExpansionNarrowsEnforceMode();
 testScopeEscalationBlocksEnforceMode();
 testEnforceModeBlocksKnownUnsafeSignals();

@@ -540,6 +540,141 @@
               }
             }
           },
+          "allowedToolResultEvidenceClasses": {
+            "type": "array",
+            "description": "Evidence classes the integration allows tool results to support. This is a contract allowlist, not a grant of tool authority.",
+            "items": {
+              "type": "string",
+              "enum": [
+                "payment-record",
+                "identity-record",
+                "policy-record",
+                "approval-record",
+                "ticket-record",
+                "document-record",
+                "telemetry-record",
+                "security-state",
+                "unknown"
+              ]
+            }
+          },
+          "toolResults": {
+            "type": "array",
+            "description": "Structured, digest-only tool-result provenance for the tool-result poisoning guard. Raw tool payloads, raw results, prompts, private records, and provider bodies must not be included.",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "toolResultRef",
+                "toolKind",
+                "sourceTrustClass",
+                "resultUse"
+              ],
+              "properties": {
+                "toolResultRef": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Opaque tool-result reference only."
+                },
+                "toolKind": {
+                  "type": "string",
+                  "enum": [
+                    "web-search",
+                    "file-search",
+                    "mcp-tool",
+                    "database-query",
+                    "provider-api",
+                    "browser",
+                    "email-parser",
+                    "ticketing-system",
+                    "custom"
+                  ]
+                },
+                "sourceTrustClass": {
+                  "type": "string",
+                  "enum": [
+                    "untrusted-external",
+                    "model-generated",
+                    "customer-controlled",
+                    "provider-authoritative",
+                    "system-authoritative",
+                    "signed-attestation"
+                  ]
+                },
+                "resultUse": {
+                  "type": "string",
+                  "enum": [
+                    "authority",
+                    "policy",
+                    "evidence",
+                    "instruction",
+                    "context",
+                    "review-summary"
+                  ]
+                },
+                "sourceRef": {
+                  "type": "string",
+                  "description": "Opaque source reference only."
+                },
+                "sourceTimestamp": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "integrityDigest": {
+                  "type": "string",
+                  "description": "Digest binding the tool output observed by the trusted adapter."
+                },
+                "evidenceDigest": {
+                  "type": "string",
+                  "description": "Digest binding the evidence material represented by the tool result."
+                },
+                "evidenceClass": {
+                  "type": "string",
+                  "enum": [
+                    "payment-record",
+                    "identity-record",
+                    "policy-record",
+                    "approval-record",
+                    "ticket-record",
+                    "document-record",
+                    "telemetry-record",
+                    "security-state",
+                    "unknown"
+                  ]
+                },
+                "allowedEvidenceClasses": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "payment-record",
+                      "identity-record",
+                      "policy-record",
+                      "approval-record",
+                      "ticket-record",
+                      "document-record",
+                      "telemetry-record",
+                      "security-state",
+                      "unknown"
+                    ]
+                  }
+                },
+                "signatureVerified": {
+                  "type": "boolean",
+                  "description": "Trusted-adapter assertion only. The generic hosted route does not expose signed-attestation PKI verification input in this slice."
+                },
+                "toolRisk": {
+                  "type": "string",
+                  "enum": [
+                    "low",
+                    "medium",
+                    "high",
+                    "critical"
+                  ]
+                }
+              }
+            }
+          },
           "noGoLedgerRef": {
             "type": [
               "string",

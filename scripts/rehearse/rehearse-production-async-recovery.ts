@@ -11,21 +11,21 @@ import {
   listFailedPipelineJobs,
   submitPipelineJob,
   type PipelineJobResult,
-} from '../src/service/async-pipeline.js';
+} from '../../src/service/async-pipeline.js';
 import {
   listAsyncDeadLetterRecords,
   resetAsyncDeadLetterStoreForTests,
-} from '../src/service/async-dead-letter-store.js';
+} from '../../src/service/async-dead-letter-store.js';
 import {
   configureTenantAsyncExecutionCoordinator,
   resetTenantAsyncExecutionCoordinatorForTests,
   shutdownTenantAsyncExecutionCoordinator,
-} from '../src/service/async-tenant-execution.js';
+} from '../../src/service/async-tenant-execution.js';
 import {
   configureTenantAsyncWeightedDispatchCoordinator,
   resetTenantAsyncWeightedDispatchCoordinatorForTests,
   shutdownTenantAsyncWeightedDispatchCoordinator,
-} from '../src/service/async-weighted-dispatch.js';
+} from '../../src/service/async-weighted-dispatch.js';
 
 type CheckStatus = 'pass' | 'fail' | 'skip';
 type Environment = Readonly<Record<string, string | undefined>>;

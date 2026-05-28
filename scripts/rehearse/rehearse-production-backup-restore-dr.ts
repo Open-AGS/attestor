@@ -14,7 +14,7 @@ import {
   consequenceAdmissionAllowsConsequence,
   createConsequenceAdmissionRequest,
   createConsequenceAdmissionResponse,
-} from '../src/consequence-admission/index.js';
+} from '../../src/consequence-admission/index.js';
 
 type CheckStatus = 'pass' | 'fail' | 'skip';
 type Environment = Readonly<Record<string, string | undefined>>;

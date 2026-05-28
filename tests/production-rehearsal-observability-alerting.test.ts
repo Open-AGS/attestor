@@ -6,7 +6,7 @@ import { resolve } from 'node:path';
 import {
   rehearseProductionObservabilityAlerting,
   type ProductionObservabilityAlertingSummary,
-} from '../scripts/rehearse-production-observability-alerting.ts';
+} from '../scripts/rehearse/rehearse-production-observability-alerting.ts';
 import { renderPrometheusMetrics } from '../src/service/observability.js';
 
 let passed = 0;
@@ -439,7 +439,7 @@ function testDocsPackageDashboardAndMetricsWireTheRehearsal(): void {
     requestPathUsesSharedStores: true,
   });
 
-  equal(packageJson.scripts['rehearse:production-observability-alerting'], 'tsx scripts/rehearse-production-observability-alerting.ts', 'Production observability/alerting: package exposes the rehearsal command');
+  equal(packageJson.scripts['rehearse:production-observability-alerting'], 'tsx scripts/rehearse/rehearse-production-observability-alerting.ts', 'Production observability/alerting: package exposes the rehearsal command');
   equal(packageJson.scripts['test:production-rehearsal-observability-alerting'], 'tsx tests/production-rehearsal-observability-alerting.test.ts', 'Production observability/alerting: package exposes the rehearsal test');
   includes(tracker, '| Completed | 10 |', 'Production observability/alerting: tracker marks ten steps complete');
   includes(tracker, '| Not started | 0 |', 'Production observability/alerting: tracker leaves no frozen steps pending');

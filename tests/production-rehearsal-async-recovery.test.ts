@@ -6,7 +6,7 @@ import { RedisMemoryServer } from 'redis-memory-server';
 import {
   rehearseProductionAsyncRecovery,
   type ProductionAsyncRecoverySummary,
-} from '../scripts/rehearse-production-async-recovery.ts';
+} from '../scripts/rehearse/rehearse-production-async-recovery.ts';
 
 let passed = 0;
 
@@ -206,7 +206,7 @@ function testDocsAndPackageWireTheRehearsal(): void {
   const tracker = readProjectFile('docs', '02-architecture', 'production-rehearsal-buildout.md');
   const manifest = readProjectFile('docs', '08-deployment', 'production-rehearsal-manifest.example.json');
 
-  equal(packageJson.scripts['rehearse:production-async-recovery'], 'tsx scripts/rehearse-production-async-recovery.ts', 'Production async recovery: package exposes the rehearsal command');
+  equal(packageJson.scripts['rehearse:production-async-recovery'], 'tsx scripts/rehearse/rehearse-production-async-recovery.ts', 'Production async recovery: package exposes the rehearsal command');
   equal(packageJson.scripts['test:production-rehearsal-async-recovery'], 'tsx tests/production-rehearsal-async-recovery.test.ts', 'Production async recovery: package exposes the rehearsal test');
   includes(tracker, '| Completed | 10 |', 'Production async recovery: tracker now reflects Step 10 completion');
   includes(tracker, '| Not started | 0 |', 'Production async recovery: tracker leaves no frozen steps pending');

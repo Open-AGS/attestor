@@ -17,7 +17,7 @@ import { join, resolve } from 'node:path';
 import {
   rehearseProductionBackupRestoreDr,
   type ProductionBackupRestoreDrSummary,
-} from '../scripts/rehearse-production-backup-restore-dr.ts';
+} from '../scripts/rehearse/rehearse-production-backup-restore-dr.ts';
 import {
   claimStripeBillingEvent,
   finalizeStripeBillingEvent,
@@ -675,7 +675,7 @@ function testDocsAndPackageWireTheRehearsal(): void {
   const manifest = readProjectFile('docs', '08-deployment', 'production-rehearsal-manifest.example.json');
   const manifestDoc = readProjectFile('docs', '08-deployment', 'production-rehearsal-manifest.md');
 
-  equal(packageJson.scripts['rehearse:production-backup-restore-dr'], 'tsx scripts/rehearse-production-backup-restore-dr.ts', 'Production backup/restore/DR: package exposes the rehearsal command');
+  equal(packageJson.scripts['rehearse:production-backup-restore-dr'], 'tsx scripts/rehearse/rehearse-production-backup-restore-dr.ts', 'Production backup/restore/DR: package exposes the rehearsal command');
   equal(packageJson.scripts['test:production-rehearsal-backup-restore-dr'], 'tsx tests/production-rehearsal-backup-restore-dr.test.ts', 'Production backup/restore/DR: package exposes the rehearsal test');
   includes(tracker, '| Completed | 10 |', 'Production backup/restore/DR: tracker now reflects Step 10 completion after Step 08');
   includes(tracker, '| Not started | 0 |', 'Production backup/restore/DR: tracker leaves no frozen steps pending after Step 10');

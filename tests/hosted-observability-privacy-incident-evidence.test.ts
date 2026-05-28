@@ -203,7 +203,7 @@ function testReceiverAlertDashboardAndIncidentEvidence(): void {
   const receiverProbe = readProjectFile('scripts', 'probe', 'probe-observability-receivers.ts');
   const releaseInputProbe = readProjectFile('scripts', 'probe', 'probe-observability-release-inputs.ts');
   const alertRouting = readProjectFile('scripts', 'probe', 'probe-alert-routing.ts');
-  const rehearsal = readProjectFile('scripts', 'rehearse-production-observability-alerting.ts');
+  const rehearsal = readProjectFile('scripts', 'rehearse', 'rehearse-production-observability-alerting.ts');
   const dashboard = readProjectFile('ops', 'observability', 'grafana', 'dashboards', 'attestor-overview.json');
   const alerts = readProjectFile('ops', 'observability', 'prometheus', 'alerts.yml');
   const metrics = readProjectFile('src', 'service', 'observability.ts');

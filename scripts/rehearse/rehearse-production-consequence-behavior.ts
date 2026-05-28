@@ -5,28 +5,28 @@ import {
   createFinancePipelineAdmissionResponse,
   evaluateConsequenceAdmissionGate,
   type FinancePipelineAdmissionRun,
-} from '../src/consequence-admission/index.js';
+} from '../../src/consequence-admission/index.js';
 import {
   buildFinanceFilingReleaseMaterial,
   buildFinanceFilingReleaseObservation,
   createFinanceFilingReleaseCandidateFromReport,
   finalizeFinanceFilingReleaseDecision,
-} from '../src/release-kernel/finance-record-release.js';
-import { createReleaseDecisionEngine } from '../src/release-kernel/release-decision-engine.js';
-import { createInMemoryReleaseDecisionLogWriter } from '../src/release-kernel/release-decision-log.js';
+} from '../../src/release-kernel/finance-record-release.js';
+import { createReleaseDecisionEngine } from '../../src/release-kernel/release-decision-engine.js';
+import { createInMemoryReleaseDecisionLogWriter } from '../../src/release-kernel/release-decision-log.js';
 import {
   introspectReleaseToken,
   type AwaitableReleaseTokenIntrospectionStore,
-} from '../src/release-kernel/release-introspection.js';
+} from '../../src/release-kernel/release-introspection.js';
 import {
   createReleaseTokenIssuer,
   verifyIssuedReleaseToken,
-} from '../src/release-kernel/release-token.js';
+} from '../../src/release-kernel/release-token.js';
 import {
   createReleaseEvidencePackIssuer,
   verifyIssuedReleaseEvidencePack,
   type IssuedReleaseEvidencePack,
-} from '../src/release-kernel/release-evidence-pack.js';
+} from '../../src/release-kernel/release-evidence-pack.js';
 import {
   applyReviewerDecision,
   attachIssuedTokenToReviewerQueueRecord,
@@ -35,15 +35,15 @@ import {
   type ReleaseReviewerQueueListOptions,
   type ReleaseReviewerQueueListResult,
   type ReleaseReviewerQueueRecord,
-} from '../src/release-kernel/reviewer-queue.js';
-import { generateKeyPair } from '../src/signing/keys.js';
-import { createSharedReleaseTokenIntrospectionStore } from '../src/service/release-token-introspection-store.js';
-import { createSharedReleaseEvidencePackStore } from '../src/service/release-evidence-pack-store.js';
+} from '../../src/release-kernel/reviewer-queue.js';
+import { generateKeyPair } from '../../src/signing/keys.js';
+import { createSharedReleaseTokenIntrospectionStore } from '../../src/service/release-token-introspection-store.js';
+import { createSharedReleaseEvidencePackStore } from '../../src/service/release-evidence-pack-store.js';
 import {
   createSharedReleaseReviewerQueueStore,
   type SharedReleaseReviewerQueueClaim,
   type SharedReleaseReviewerQueueClaimInput,
-} from '../src/service/release-reviewer-queue-store.js';
+} from '../../src/service/release-reviewer-queue-store.js';
 
 type CheckStatus = 'pass' | 'fail' | 'skip';
 type Environment = Readonly<Record<string, string | undefined>>;

@@ -266,7 +266,7 @@ readonly HostedObservabilityPrivacyIncidentGuard[] = [
       'The packet is an incident-response evidence shape; it is not proof that every customer-impact communication, legal notice, or external compliance duty is complete.',
     implementationEvidence: [
       'src/service/hosted-observability-privacy-incident-evidence.ts',
-      'scripts/rehearse-production-observability-alerting.ts',
+      'scripts/rehearse/rehearse-production-observability-alerting.ts',
       'src/release-layer/index.ts',
       'src/consequence-admission/audit-evidence-export.ts',
     ],
@@ -344,7 +344,7 @@ readonly HostedObservabilityPrivacyIncidentGuard[] = [
     nonClaimBoundary:
       'Repo-side rehearsal code is complete only as implementation evidence; production rollout remains blocked until a working deployment target runs the probes.',
     implementationEvidence: [
-      'scripts/rehearse-production-observability-alerting.ts',
+      'scripts/rehearse/rehearse-production-observability-alerting.ts',
       'docs/08-deployment/production-rehearsal-manifest.example.json',
       'docs/08-deployment/production-readiness.md',
     ],

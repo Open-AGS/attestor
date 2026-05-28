@@ -4,11 +4,11 @@ import { pathToFileURL } from 'node:url';
 import {
   probeAlertRouting,
   type AlertRoutingProbeSummary,
-} from './probe/probe-alert-routing.ts';
+} from '../probe/probe-alert-routing.ts';
 import {
   probeObservabilityReceivers,
   type ReceiverProbeSummary,
-} from './probe/probe-observability-receivers.ts';
+} from '../probe/probe-observability-receivers.ts';
 
 type CheckStatus = 'pass' | 'fail' | 'skip';
 type Environment = Readonly<Record<string, string | undefined>>;

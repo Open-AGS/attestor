@@ -6,7 +6,7 @@ import {
   rehearseProductionConsequenceBehavior,
   type ProductionConsequenceBehaviorStores,
   type ProductionConsequenceBehaviorSummary,
-} from '../scripts/rehearse-production-consequence-behavior.ts';
+} from '../scripts/rehearse/rehearse-production-consequence-behavior.ts';
 import {
   createInMemoryReleaseTokenIntrospectionStore,
 } from '../src/release-kernel/release-introspection.js';
@@ -241,7 +241,7 @@ function testDocsAndPackageWireTheRehearsal(): void {
   const tracker = readProjectFile('docs', '02-architecture', 'production-rehearsal-buildout.md');
   const manifest = readProjectFile('docs', '08-deployment', 'production-rehearsal-manifest.example.json');
 
-  equal(packageJson.scripts['rehearse:production-consequence'], 'tsx scripts/rehearse-production-consequence-behavior.ts', 'Production consequence rehearsal: package exposes the rehearsal command');
+  equal(packageJson.scripts['rehearse:production-consequence'], 'tsx scripts/rehearse/rehearse-production-consequence-behavior.ts', 'Production consequence rehearsal: package exposes the rehearsal command');
   equal(packageJson.scripts['test:production-rehearsal-consequence-behavior'], 'tsx tests/production-rehearsal-consequence-behavior.test.ts', 'Production consequence rehearsal: package exposes the rehearsal test');
   includes(tracker, '| Completed | 10 |', 'Production consequence rehearsal: tracker now reflects Step 10 completion');
   includes(tracker, '| Not started | 0 |', 'Production consequence rehearsal: tracker leaves no frozen steps pending');

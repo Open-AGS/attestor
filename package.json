@@ -56,7 +56,7 @@
     "check:ops-live-shadow": "node scripts/check-ops-live-shadow-readiness.mjs",
     "sbom:cyclonedx": "npm sbom --package-lock-only --sbom-format cyclonedx --sbom-type application > .attestor/release-provenance/sbom.cyclonedx.json",
     "test": "node scripts/run-suite.mjs test",
-    "test:financial": "tsx src/financial/financial.test.ts",
+    "test:financial": "tsx tests/financial.test.ts",
     "test:financial-hmac-verification": "tsx tests/financial-hmac-verification.test.ts",
     "test:signing": "tsx tests/signing-primitives.test.ts",
     "test:pki-trust-binding": "tsx tests/pki-trust-binding.test.ts",

@@ -6,10 +6,10 @@ import { strict as assert } from 'node:assert';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { runFinancialPipeline } from './pipeline.js';
-import { verifyLiveProof, buildLiveProof, buildOfflineProof, assessLiveReadiness, buildLiveProofReviewerSummary } from './types.js';
-import { runBenchmarkCorpus } from './replay.js';
-import { executeSqliteQuery, materializeSqliteFixtureDatabases } from './execution.js';
+import { runFinancialPipeline } from '../src/financial/pipeline.js';
+import { verifyLiveProof, buildLiveProof, buildOfflineProof, assessLiveReadiness, buildLiveProofReviewerSummary } from '../src/financial/types.js';
+import { runBenchmarkCorpus } from '../src/financial/replay.js';
+import { executeSqliteQuery, materializeSqliteFixtureDatabases } from '../src/financial/execution.js';
 import {
   COUNTERPARTY_SQL, COUNTERPARTY_INTENT, COUNTERPARTY_FIXTURE,
   COUNTERPARTY_REPORT_CONTRACT, COUNTERPARTY_REPORT, COUNTERPARTY_LIVE_DATABASES,
@@ -18,7 +18,7 @@ import {
   UNSAFE_SQL_WRITE, UNSAFE_SQL_INJECTION,
   HIGH_MAT_INTENT,
   CONTROL_TOTAL_INTENT,
-} from './fixtures/scenarios.js';
+} from '../src/financial/fixtures/scenarios.js';
 
 let passed = 0;
 function ok(condition: boolean, msg: string): void { assert(condition, msg); passed++; }
@@ -289,7 +289,7 @@ export async function runFinancialTests(): Promise<number> {
   // ── Semantic Clause Evaluation ──
   console.log('\n  [Semantic Clause Evaluation]');
   {
-    const { evaluateSemanticClauses } = await import('./semantic-clauses.js');
+    const { evaluateSemanticClauses } = await import('../src/financial/semantic-clauses.js');
 
     // Mock execution evidence: counterparty exposure with known values
     const execEvidence = {
@@ -373,8 +373,8 @@ export async function runFinancialTests(): Promise<number> {
   // ── Semantic Clause Pipeline Integration ──
   console.log('\n  [Semantic Clause Pipeline Integration]');
   {
-    const { runFinancialPipeline } = await import('./pipeline.js');
-    const { COUNTERPARTY_SQL, COUNTERPARTY_INTENT, COUNTERPARTY_FIXTURE, COUNTERPARTY_REPORT_CONTRACT, COUNTERPARTY_REPORT } = await import('./fixtures/scenarios.js');
+    const { runFinancialPipeline } = await import('../src/financial/pipeline.js');
+    const { COUNTERPARTY_SQL, COUNTERPARTY_INTENT, COUNTERPARTY_FIXTURE, COUNTERPARTY_REPORT_CONTRACT, COUNTERPARTY_REPORT } = await import('../src/financial/fixtures/scenarios.js');
 
     // Scenario 1: Pipeline with passing semantic clauses → decision unaffected
     // Uses actual counterparty fixture columns: counterparty_name, exposure_usd, credit_rating, sector
@@ -445,8 +445,8 @@ export async function runFinancialTests(): Promise<number> {
   // ── Workflow-Bound Reviewer Identity ──
   console.log('\n  [Workflow-Bound Reviewer Identity]');
   {
-    const { runFinancialPipeline } = await import('./pipeline.js');
-    const { COUNTERPARTY_SQL, COUNTERPARTY_INTENT, COUNTERPARTY_FIXTURE, COUNTERPARTY_REPORT_CONTRACT, COUNTERPARTY_REPORT } = await import('./fixtures/scenarios.js');
+    const { runFinancialPipeline } = await import('../src/financial/pipeline.js');
+    const { COUNTERPARTY_SQL, COUNTERPARTY_INTENT, COUNTERPARTY_FIXTURE, COUNTERPARTY_REPORT_CONTRACT, COUNTERPARTY_REPORT } = await import('../src/financial/fixtures/scenarios.js');
 
     // Scenario: Approved run with reviewer identity
     const reviewerIdentity = {
@@ -536,8 +536,8 @@ export async function runFinancialTests(): Promise<number> {
     ok(mismatchReport.dossier.reviewPath.endorsement!.signed === false, 'Dossier: endorsement unsigned');
 
     // Test: Reviewer-signed endorsement with Ed25519
-    const { generateKeyPair: genReviewerKey } = await import('../signing/keys.js');
-    const { verifyReviewerEndorsement } = await import('../signing/reviewer-endorsement.js');
+    const { generateKeyPair: genReviewerKey } = await import('../src/signing/keys.js');
+    const { verifyReviewerEndorsement } = await import('../src/signing/reviewer-endorsement.js');
     const reviewerKeyPair = genReviewerKey();
 
     const signedReport = runFinancialPipeline({
@@ -646,8 +646,8 @@ export async function runFinancialTests(): Promise<number> {
     // ═══ KIT-LEVEL VERIFICATION ═══
     console.log('\n  [Kit-Level Reviewer Verification]');
 
-    const { buildVerificationKit } = await import('../signing/bundle.js');
-    const { generatePkiHierarchy } = await import('../signing/pki-chain.js');
+    const { buildVerificationKit } = await import('../src/signing/bundle.js');
+    const { generatePkiHierarchy } = await import('../src/signing/pki-chain.js');
     const testPki = generatePkiHierarchy('Test CA', 'Test Signer', 'Test Reviewer');
     const certKeyPair = testPki.signer.keyPair;
 
@@ -731,7 +731,7 @@ export async function runFinancialTests(): Promise<number> {
     console.log(`    No endorsement: present=${kitNoEndorsement!.verification.reviewerEndorsement.present}`);
 
     // Bundle carries enriched endorsement (run binding + fingerprint)
-    const { buildAuthorityBundle } = await import('../signing/bundle.js');
+    const { buildAuthorityBundle } = await import('../src/signing/bundle.js');
     const bundle = buildAuthorityBundle(kitReport);
     ok(bundle.governance.review.endorsement !== null, 'Bundle: endorsement present');
     ok(bundle.governance.review.endorsement!.signed === true, 'Bundle: endorsement signed');
@@ -748,8 +748,8 @@ export async function runFinancialTests(): Promise<number> {
     // ═══ KIT-LEVEL BINDING MISMATCH DETECTION ═══
     console.log('\n  [Kit-Level Binding Mismatch]');
 
-    const { buildVerificationSummary } = await import('../signing/bundle.js');
-    const { verifyCertificate } = await import('../signing/certificate.js');
+    const { buildVerificationSummary } = await import('../src/signing/bundle.js');
+    const { verifyCertificate } = await import('../src/signing/certificate.js');
 
     // Take a valid signed endorsement from one run and inject it into a different run's kit
     const otherReport = runFinancialPipeline({
@@ -847,7 +847,7 @@ export async function runFinancialTests(): Promise<number> {
   // ═══ POSTGRES READINESS TRUTH ═══
   console.log('\n  [Postgres Readiness Truth]');
   {
-    const { isPostgresConfigured, reportPostgresReadiness } = await import('../connectors/postgres.js');
+    const { isPostgresConfigured, reportPostgresReadiness } = await import('../src/connectors/postgres.js');
 
     // In test environment, ATTESTOR_PG_URL is not set
     ok(!isPostgresConfigured(), 'PgReadiness: not configured in test env');
@@ -863,7 +863,7 @@ export async function runFinancialTests(): Promise<number> {
   // ═══ POSTGRES PROBE (no DB configured) ═══
   console.log('\n  [Postgres Probe - Unconfigured]');
   {
-    const { runPostgresProbe } = await import('../connectors/postgres.js');
+    const { runPostgresProbe } = await import('../src/connectors/postgres.js');
 
     const probe = await runPostgresProbe();
     ok(!probe.attempted || !probe.success, 'PgProbe: fails when not configured');
@@ -897,7 +897,7 @@ export async function runFinancialTests(): Promise<number> {
   // ═══ POSTGRES PROBE — STEP NAME INTEGRITY ═══
   console.log('\n  [Postgres Probe - Step Name Integrity]');
   {
-    const { runPostgresProbe } = await import('../connectors/postgres.js');
+    const { runPostgresProbe } = await import('../src/connectors/postgres.js');
 
     // Even in the unconfigured case, the probe should only use known step names
     const probe = await runPostgresProbe();
@@ -918,7 +918,7 @@ export async function runFinancialTests(): Promise<number> {
   // ═══ POSTGRES DEMO BOOTSTRAP PLAN ═══
   console.log('\n  [Postgres Demo Bootstrap Plan]');
   {
-    const { getDemoBootstrapPlan, getDemoCounterpartySql, getDemoAllowedSchemas } = await import('../connectors/postgres-demo.js');
+    const { getDemoBootstrapPlan, getDemoCounterpartySql, getDemoAllowedSchemas } = await import('../src/connectors/postgres-demo.js');
 
     const plan = getDemoBootstrapPlan();
 
@@ -962,7 +962,7 @@ export async function runFinancialTests(): Promise<number> {
   // ═══ POSTGRES DEMO BOOTSTRAP — NO DB ═══
   console.log('\n  [Postgres Demo Bootstrap - No DB]');
   {
-    const { runDemoBootstrap, runDemoTeardown } = await import('../connectors/postgres-demo.js');
+    const { runDemoBootstrap, runDemoTeardown } = await import('../src/connectors/postgres-demo.js');
 
     // Without ATTESTOR_PG_URL, bootstrap should fail gracefully
     const result = await runDemoBootstrap();
@@ -982,7 +982,7 @@ export async function runFinancialTests(): Promise<number> {
   // ═══ DEMO SQL CANONICAL ALIGNMENT ═══
   console.log('\n  [Demo SQL Canonical Alignment]');
   {
-    const { getDemoCounterpartySql, getDemoAllowedSchemas, getDemoBootstrapPlan } = await import('../connectors/postgres-demo.js');
+    const { getDemoCounterpartySql, getDemoAllowedSchemas, getDemoBootstrapPlan } = await import('../src/connectors/postgres-demo.js');
 
     const demoSql = getDemoCounterpartySql();
     const plan = getDemoBootstrapPlan();
@@ -1053,7 +1053,7 @@ export async function runFinancialTests(): Promise<number> {
   // ═══ CANONICAL SQL MESSAGING TRUTH ═══
   console.log('\n  [Canonical SQL Messaging]');
   {
-    const { getDemoCounterpartySql } = await import('../connectors/postgres-demo.js');
+    const { getDemoCounterpartySql } = await import('../src/connectors/postgres-demo.js');
 
     // The canonical demo SQL exists and is the single source of truth for counterparty
     const canonicalSql = getDemoCounterpartySql();
@@ -1073,8 +1073,8 @@ export async function runFinancialTests(): Promise<number> {
   // ═══ BUNDLE PROOF TRUTH — FIXTURE PATH ═══
   console.log('\n  [Bundle Proof Truth - Fixture]');
   {
-    const { buildAuthorityBundle, buildVerificationKit } = await import('../signing/bundle.js');
-    const { generateKeyPair } = await import('../signing/keys.js');
+    const { buildAuthorityBundle, buildVerificationKit } = await import('../src/signing/bundle.js');
+    const { generateKeyPair } = await import('../src/signing/keys.js');
     const kp = generateKeyPair();
 
     // Run a fixture-only pipeline with signing
@@ -1111,7 +1111,7 @@ export async function runFinancialTests(): Promise<number> {
   // ═══ MULTI-QUERY PIPELINE ═══
   console.log('\n  [Multi-Query Pipeline]');
   {
-    const { runMultiQueryPipeline } = await import('./multi-query-pipeline.js');
+    const { runMultiQueryPipeline } = await import('../src/financial/multi-query-pipeline.js');
 
     // Two-query run: counterparty (pass) + unsafe SQL (block)
     const mqResult = runMultiQueryPipeline('mq-test-1', [
@@ -1178,7 +1178,7 @@ export async function runFinancialTests(): Promise<number> {
   // ═══ MULTI-QUERY: ALL PASS ═══
   console.log('\n  [Multi-Query All Pass]');
   {
-    const { runMultiQueryPipeline } = await import('./multi-query-pipeline.js');
+    const { runMultiQueryPipeline } = await import('../src/financial/multi-query-pipeline.js');
 
     const mqPass = runMultiQueryPipeline('mq-test-2', [
       {
@@ -1206,7 +1206,7 @@ export async function runFinancialTests(): Promise<number> {
   // ═══ MULTI-QUERY: SINGLE UNIT ═══
   console.log('\n  [Multi-Query Single Unit]');
   {
-    const { runMultiQueryPipeline } = await import('./multi-query-pipeline.js');
+    const { runMultiQueryPipeline } = await import('../src/financial/multi-query-pipeline.js');
 
     const mqSingle = runMultiQueryPipeline('mq-test-3', [
       {
@@ -1227,8 +1227,8 @@ export async function runFinancialTests(): Promise<number> {
   // ═══ MULTI-QUERY PROOF ARTIFACTS ═══
   console.log('\n  [Multi-Query Proof Artifacts]');
   {
-    const { runMultiQueryPipeline } = await import('./multi-query-pipeline.js');
-    const { buildMultiQueryOutputPack, buildMultiQueryDossier, buildMultiQueryManifest, renderMultiQuerySummary } = await import('./multi-query-proof.js');
+    const { runMultiQueryPipeline } = await import('../src/financial/multi-query-pipeline.js');
+    const { buildMultiQueryOutputPack, buildMultiQueryDossier, buildMultiQueryManifest, renderMultiQuerySummary } = await import('../src/financial/multi-query-proof.js');
 
     // Mixed run: pass + fail + block
     const mqReport = runMultiQueryPipeline('mq-proof-test', [
@@ -1349,8 +1349,8 @@ export async function runFinancialTests(): Promise<number> {
   // ═══ MULTI-QUERY PROOF: ALL PASS ═══
   console.log('\n  [Multi-Query Proof: All Pass]');
   {
-    const { runMultiQueryPipeline } = await import('./multi-query-pipeline.js');
-    const { buildMultiQueryOutputPack, buildMultiQueryDossier } = await import('./multi-query-proof.js');
+    const { runMultiQueryPipeline } = await import('../src/financial/multi-query-pipeline.js');
+    const { buildMultiQueryOutputPack, buildMultiQueryDossier } = await import('../src/financial/multi-query-proof.js');
 
     const mqAllPass = runMultiQueryPipeline('mq-proof-allpass', [
       {
@@ -1375,9 +1375,9 @@ export async function runFinancialTests(): Promise<number> {
   // ═══ MULTI-QUERY SIGNED CERTIFICATE ═══
   console.log('\n  [Multi-Query Signed Certificate]');
   {
-    const { runMultiQueryPipeline } = await import('./multi-query-pipeline.js');
-    const { issueMultiQueryCertificate, verifyMultiQueryCertificate } = await import('../signing/multi-query-certificate.js');
-    const { generateKeyPair } = await import('../signing/keys.js');
+    const { runMultiQueryPipeline } = await import('../src/financial/multi-query-pipeline.js');
+    const { issueMultiQueryCertificate, verifyMultiQueryCertificate } = await import('../src/signing/multi-query-certificate.js');
+    const { generateKeyPair } = await import('../src/signing/keys.js');
 
     const keyPair = generateKeyPair();
 
@@ -1426,9 +1426,9 @@ export async function runFinancialTests(): Promise<number> {
   // ═══ MULTI-QUERY VERIFICATION KIT ═══
   console.log('\n  [Multi-Query Verification Kit]');
   {
-    const { runMultiQueryPipeline } = await import('./multi-query-pipeline.js');
-    const { buildMultiQueryVerificationKit } = await import('./multi-query-proof.js');
-    const { generateKeyPair } = await import('../signing/keys.js');
+    const { runMultiQueryPipeline } = await import('../src/financial/multi-query-pipeline.js');
+    const { buildMultiQueryVerificationKit } = await import('../src/financial/multi-query-proof.js');
+    const { generateKeyPair } = await import('../src/signing/keys.js');
 
     const keyPair = generateKeyPair();
 
@@ -1471,10 +1471,10 @@ export async function runFinancialTests(): Promise<number> {
   // ═══ MULTI-QUERY REVIEWER ENDORSEMENT ═══
   console.log('\n  [Multi-Query Reviewer Endorsement]');
   {
-    const { runMultiQueryPipeline } = await import('./multi-query-pipeline.js');
-    const { buildMultiQueryVerificationKit } = await import('./multi-query-proof.js');
-    const { buildMultiQueryReviewerEndorsement, verifyMultiQueryReviewerEndorsement } = await import('../signing/multi-query-reviewer.js');
-    const { generateKeyPair } = await import('../signing/keys.js');
+    const { runMultiQueryPipeline } = await import('../src/financial/multi-query-pipeline.js');
+    const { buildMultiQueryVerificationKit } = await import('../src/financial/multi-query-proof.js');
+    const { buildMultiQueryReviewerEndorsement, verifyMultiQueryReviewerEndorsement } = await import('../src/signing/multi-query-reviewer.js');
+    const { generateKeyPair } = await import('../src/signing/keys.js');
 
     const signingKey = generateKeyPair();
     const reviewerKey = generateKeyPair();
@@ -1560,8 +1560,8 @@ export async function runFinancialTests(): Promise<number> {
   // ═══ DIFFERENTIAL EVIDENCE ═══
   console.log('\n  [Differential Evidence]');
   {
-    const { runMultiQueryPipeline } = await import('./multi-query-pipeline.js');
-    const { buildDifferentialManifest, extractEvidenceSnapshots, renderDifferentialSummary } = await import('./differential-evidence.js');
+    const { runMultiQueryPipeline } = await import('../src/financial/multi-query-pipeline.js');
+    const { buildDifferentialManifest, extractEvidenceSnapshots, renderDifferentialSummary } = await import('../src/financial/differential-evidence.js');
 
     // Run 1: counterparty + recon
     const run1 = runMultiQueryPipeline('diff-run-1', [

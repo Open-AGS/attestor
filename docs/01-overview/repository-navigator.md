@@ -41,7 +41,7 @@ do the next action there, and come back only if you still need more context.
 | Understand the whole machine | [AI Action Control Plane architecture](../02-architecture/ai-action-control-plane-architecture.md) | [Internal machine map](../02-architecture/attestor-internal-machine-map.md) |
 | Understand one-engine domain packs | [Domain pack boundary](../02-architecture/domain-pack-boundary.md) | [Finance and crypto first integrations](finance-and-crypto-first-integrations.md) |
 | Review audit state | [Audit evidence system](../audit/README.md) | [Finding index](../audit/finding-index.md) |
-| Review public package boundaries | [Release layer platform surface](../02-architecture/release-layer-platform-surface.md) | [Crypto authorization core platform surface](../02-architecture/crypto-authorization-core-platform-surface.md) |
+| Review public package boundaries | [Consequence admission public surface](../02-architecture/consequence-admission-public-surface.md) | [Release layer platform surface](../02-architecture/release-layer-platform-surface.md) |
 
 ## Start By Role
 
@@ -78,8 +78,8 @@ do the next action there, and come back only if you still need more context.
 
 | Public import path | Purpose | Boundary doc |
 |---|---|---|
-| `attestor` | Main consequence admission package surface. | [AI Action Control Plane architecture](../02-architecture/ai-action-control-plane-architecture.md) |
-| `attestor/consequence-admission` | Compatibility package subpath for the same shared admission surface. | [Consequence admission quickstart](consequence-admission-quickstart.md) |
+| `attestor` | Main consequence admission package surface. | [Consequence admission public surface](../02-architecture/consequence-admission-public-surface.md) |
+| `attestor/consequence-admission` | Compatibility package subpath for the same shared admission surface. | [Consequence admission public surface](../02-architecture/consequence-admission-public-surface.md) |
 | `attestor/release-layer` | Release-layer contracts over release-kernel primitives. | [Release layer platform surface](../02-architecture/release-layer-platform-surface.md) |
 | `attestor/release-layer/finance` | Finance release wedge helpers. | [Finance and crypto first integrations](finance-and-crypto-first-integrations.md) |
 | `attestor/release-policy-control-plane` | Policy lifecycle package boundary. | [Release policy control plane platform surface](../02-architecture/release-policy-control-plane-platform-surface.md) |

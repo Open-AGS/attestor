@@ -161,7 +161,7 @@ function testDocsAndScriptsStayAligned(): void {
   );
   equal(
     packageJson.scripts['demo:golden-operational-execution'],
-    'tsx scripts/demo-golden-operational-execution.ts',
+    'tsx scripts/demo/demo-golden-operational-execution.ts',
     'O04 package script: demo command is registered',
   );
   equal(

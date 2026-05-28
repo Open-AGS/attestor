@@ -153,7 +153,7 @@ function testDocsAndScriptsStayAligned(): void {
   );
   equal(
     packageJson.scripts['demo:golden-authority-change'],
-    'tsx scripts/demo-golden-authority-change.ts',
+    'tsx scripts/demo/demo-golden-authority-change.ts',
     'A04 package script: demo command is registered',
   );
   equal(

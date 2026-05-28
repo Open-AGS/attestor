@@ -150,7 +150,7 @@ function testDocsAndScriptsStayAligned(): void {
   );
   equal(
     packageJson.scripts['demo:golden-data-export'],
-    'tsx scripts/demo-golden-data-export.ts',
+    'tsx scripts/demo/demo-golden-data-export.ts',
     'D04 package script: demo command is registered',
   );
   equal(

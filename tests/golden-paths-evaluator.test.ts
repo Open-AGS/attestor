@@ -169,7 +169,7 @@ function testDocsAndScriptsStayAligned(): void {
   );
   equal(
     packageJson.scripts['demo:golden-paths'],
-    'tsx scripts/demo-golden-paths.ts',
+    'tsx scripts/demo/demo-golden-paths.ts',
     'Golden paths evaluator package script: demo command is registered',
   );
   equal(

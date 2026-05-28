@@ -50,7 +50,7 @@ later customer-controlled PEP/gate consumes an Attestor decision.
 | A02 tests | `tests/golden-authority-change-policy-foundry-projection.test.ts` locks the review-only candidate, decision/gap counts, Policy Twin summary, no-raw-identity posture, docs, ledger, and package script alignment. | repo-proven |
 | A03 runtime smoke | `src/consequence-admission/golden-authority-change-runtime-smoke.ts` runs the A01 fixture suite plus A02 projection through the R02-R07 shadow runtime smoke chain without identity-provider calls, access changes, audit writes, policy activation, or raw identity reads. | repo-proven |
 | A03 pilot readiness probe | `src/consequence-admission/golden-authority-change-pilot-readiness-probe.ts` wraps the runtime smoke in a shadow-entry readiness packet that can emit only `ready-for-shadow-pilot` or `not-ready`. | repo-proven |
-| A04 demo CLI | `scripts/demo-golden-authority-change.ts` renders a Markdown-first local Authority Change demo with JSON as secondary machine output and a bounded `--scenario` input path under `fixtures/`. | repo-proven |
+| A04 demo CLI | `scripts/demo/demo-golden-authority-change.ts` renders a Markdown-first local Authority Change demo with JSON as secondary machine output and a bounded `--scenario` input path under `fixtures/`. | repo-proven |
 | A04 reviewer sandbox | `src/consequence-admission/golden-authority-change-reviewer-sandbox.ts` validates a strict allowlisted local JSON shape and runs in-scope reviewer inputs through the same shadow-only runtime path without identity-provider calls, access changes, or raw identity material. | repo-proven |
 
 ## Research Anchors

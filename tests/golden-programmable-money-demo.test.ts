@@ -165,7 +165,7 @@ function testDocsAndScriptsStayAligned(): void {
   );
   equal(
     packageJson.scripts['demo:golden-programmable-money'],
-    'tsx scripts/demo-golden-programmable-money.ts',
+    'tsx scripts/demo/demo-golden-programmable-money.ts',
     'P04 package script: demo command is registered',
   );
   equal(

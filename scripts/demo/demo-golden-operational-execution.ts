@@ -2,33 +2,34 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import {
-  createGoldenAuthorityChangeDemoSummary,
-  renderGoldenAuthorityChangeDemoJson,
-  renderGoldenAuthorityChangeDemoMarkdown,
-  renderGoldenAuthorityChangeReviewerSandboxJson,
-  renderGoldenAuthorityChangeReviewerSandboxMarkdown,
-  runGoldenAuthorityChangeReviewerSandbox,
-} from '../src/consequence-admission/index.js';
+  createGoldenOperationalExecutionDemoSummary,
+  renderGoldenOperationalExecutionDemoJson,
+  renderGoldenOperationalExecutionDemoMarkdown,
+  renderGoldenOperationalExecutionReviewerSandboxJson,
+  renderGoldenOperationalExecutionReviewerSandboxMarkdown,
+  runGoldenOperationalExecutionReviewerSandbox,
+} from '../../src/consequence-admission/index.js';
 import { resolveExistingPathInsideAllowedRoots } from './demo-path-boundary.ts';
-import { safeErrorMessage } from './secret-safe-output.ts';
+import { safeErrorMessage } from '../secret-safe-output.ts';
 
 function printUsage(): void {
   console.log(`Usage:
-  npm run demo:golden-authority-change
-  npm run demo:golden-authority-change -- --json
-  npm run demo:golden-authority-change -- --scenario fixtures/golden-authority-change-reviewer-sandbox.example.json
+  npm run demo:golden-operational-execution
+  npm run demo:golden-operational-execution -- --json
+  npm run demo:golden-operational-execution -- --scenario fixtures/golden-operational-execution-reviewer-sandbox.example.json
 
 Default output is Markdown for copy/paste, screenshots, and demos.
 Use --json for secondary machine-readable output.
-Use --scenario to run a strict allowlisted reviewer-supplied Authority Change
-input through the same shadow-only engine path. Scenario files are constrained
-to the local fixtures directory unless --allow-outside-demo-root is passed for
-an operator-local override.
+Use --scenario to run a strict allowlisted reviewer-supplied Operational
+Execution input through the same shadow-only engine path. Scenario files are
+constrained to the local fixtures directory unless --allow-outside-demo-root is
+passed for an operator-local override.
 
-This command is fixture-only and shadow-only. It does not call Okta,
-Microsoft Entra, SailPoint, an identity provider, a worker, an audit database,
-or any target system. It does not grant or revoke access, activate policies,
-train models, admit actions, or prove production readiness.`);
+This command is fixture-only and shadow-only. It does not deploy anything,
+apply Terraform, rotate secrets, execute runbooks, call Kubernetes, call a cloud
+provider, call CI/CD, call incident automation, write audit records, or mutate a
+target system. It does not activate policies, train models, admit actions,
+prove customer PEP enforcement, or prove production readiness.`);
 }
 
 function parseScenarioPath(argv: readonly string[]): string | null {
@@ -59,24 +60,24 @@ function main(): void {
       allowedRoots: [resolve('fixtures')],
       allowOutsideRoot: allowOutsideDemoRoot(process.argv),
       overrideFlagName: '--allow-outside-demo-root',
-      purpose: 'golden authority change scenario',
+      purpose: 'golden operational execution scenario',
     });
     const raw = readFileSync(boundedScenarioPath, 'utf8');
     const input = JSON.parse(raw) as unknown;
-    const result = runGoldenAuthorityChangeReviewerSandbox(input);
+    const result = runGoldenOperationalExecutionReviewerSandbox(input);
     if (process.argv.includes('--json')) {
-      console.log(renderGoldenAuthorityChangeReviewerSandboxJson(result).trimEnd());
+      console.log(renderGoldenOperationalExecutionReviewerSandboxJson(result).trimEnd());
       return;
     }
-    console.log(renderGoldenAuthorityChangeReviewerSandboxMarkdown(result).trimEnd());
+    console.log(renderGoldenOperationalExecutionReviewerSandboxMarkdown(result).trimEnd());
     return;
   }
-  const summary = createGoldenAuthorityChangeDemoSummary();
+  const summary = createGoldenOperationalExecutionDemoSummary();
   if (process.argv.includes('--json')) {
-    console.log(renderGoldenAuthorityChangeDemoJson(summary).trimEnd());
+    console.log(renderGoldenOperationalExecutionDemoJson(summary).trimEnd());
     return;
   }
-  console.log(renderGoldenAuthorityChangeDemoMarkdown(summary).trimEnd());
+  console.log(renderGoldenOperationalExecutionDemoMarkdown(summary).trimEnd());
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

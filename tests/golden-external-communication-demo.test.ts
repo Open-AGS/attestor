@@ -158,7 +158,7 @@ function testDocsAndScriptsStayAligned(): void {
   );
   equal(
     packageJson.scripts['demo:golden-external-communication'],
-    'tsx scripts/demo-golden-external-communication.ts',
+    'tsx scripts/demo/demo-golden-external-communication.ts',
     'E04 package script: demo command is registered',
   );
   equal(

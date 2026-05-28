@@ -2,34 +2,35 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import {
-  createGoldenExternalCommunicationDemoSummary,
-  renderGoldenExternalCommunicationDemoJson,
-  renderGoldenExternalCommunicationDemoMarkdown,
-  renderGoldenExternalCommunicationReviewerSandboxJson,
-  renderGoldenExternalCommunicationReviewerSandboxMarkdown,
-  runGoldenExternalCommunicationReviewerSandbox,
-} from '../src/consequence-admission/index.js';
+  createGoldenProgrammableMoneyDemoSummary,
+  renderGoldenProgrammableMoneyDemoJson,
+  renderGoldenProgrammableMoneyDemoMarkdown,
+  renderGoldenProgrammableMoneyReviewerSandboxJson,
+  renderGoldenProgrammableMoneyReviewerSandboxMarkdown,
+  runGoldenProgrammableMoneyReviewerSandbox,
+} from '../../src/consequence-admission/index.js';
 import { resolveExistingPathInsideAllowedRoots } from './demo-path-boundary.ts';
-import { safeErrorMessage } from './secret-safe-output.ts';
+import { safeErrorMessage } from '../secret-safe-output.ts';
 
 function printUsage(): void {
   console.log(`Usage:
-  npm run demo:golden-external-communication
-  npm run demo:golden-external-communication -- --json
-  npm run demo:golden-external-communication -- --scenario fixtures/golden-external-communication-reviewer-sandbox.example.json
+  npm run demo:golden-programmable-money
+  npm run demo:golden-programmable-money -- --json
+  npm run demo:golden-programmable-money -- --scenario fixtures/golden-programmable-money-reviewer-sandbox.example.json
 
 Default output is Markdown for copy/paste, screenshots, and demos.
 Use --json for secondary machine-readable output.
-Use --scenario to run a strict allowlisted reviewer-supplied External
-Communication input through the same shadow-only engine path. Scenario files
-are constrained to the local fixtures directory unless --allow-outside-demo-root
-is passed for an operator-local override.
+Use --scenario to run a strict allowlisted reviewer-supplied Programmable
+Money input through the same shadow-only engine path. Scenario files are
+constrained to the local fixtures directory unless --allow-outside-demo-root is
+passed for an operator-local override.
 
-This command is fixture-only and shadow-only. It does not send email, SMS,
-support replies, public posts, or legal notices. It does not call SendGrid,
-Mailgun, a CRM, a ticketing system, a worker, an audit database, or any target
-system. It does not activate policies, train models, admit actions, prove
-commercial-email compliance, or prove production readiness.`);
+This command is fixture-only and shadow-only. It does not call a wallet, sign,
+broadcast, submit a UserOperation, submit a Safe transaction, answer a custody
+callback, call a bundler, call an x402 facilitator, call a solver, call a
+provider, write audit records, settle a payment, or mutate a target system. It
+does not activate policies, train models, admit actions, prove customer PEP
+enforcement, prove chain settlement, or prove production readiness.`);
 }
 
 function parseScenarioPath(argv: readonly string[]): string | null {
@@ -60,24 +61,24 @@ function main(): void {
       allowedRoots: [resolve('fixtures')],
       allowOutsideRoot: allowOutsideDemoRoot(process.argv),
       overrideFlagName: '--allow-outside-demo-root',
-      purpose: 'golden external communication scenario',
+      purpose: 'golden programmable money scenario',
     });
     const raw = readFileSync(boundedScenarioPath, 'utf8');
     const input = JSON.parse(raw) as unknown;
-    const result = runGoldenExternalCommunicationReviewerSandbox(input);
+    const result = runGoldenProgrammableMoneyReviewerSandbox(input);
     if (process.argv.includes('--json')) {
-      console.log(renderGoldenExternalCommunicationReviewerSandboxJson(result).trimEnd());
+      console.log(renderGoldenProgrammableMoneyReviewerSandboxJson(result).trimEnd());
       return;
     }
-    console.log(renderGoldenExternalCommunicationReviewerSandboxMarkdown(result).trimEnd());
+    console.log(renderGoldenProgrammableMoneyReviewerSandboxMarkdown(result).trimEnd());
     return;
   }
-  const summary = createGoldenExternalCommunicationDemoSummary();
+  const summary = createGoldenProgrammableMoneyDemoSummary();
   if (process.argv.includes('--json')) {
-    console.log(renderGoldenExternalCommunicationDemoJson(summary).trimEnd());
+    console.log(renderGoldenProgrammableMoneyDemoJson(summary).trimEnd());
     return;
   }
-  console.log(renderGoldenExternalCommunicationDemoMarkdown(summary).trimEnd());
+  console.log(renderGoldenProgrammableMoneyDemoMarkdown(summary).trimEnd());
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

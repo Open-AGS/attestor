@@ -47,7 +47,7 @@ customer-controlled PEP/gate consumes an Attestor decision.
 | D02 tests | `tests/golden-data-export-policy-foundry-projection.test.ts` locks the review-only candidate, decision/gap counts, Policy Twin summary, no-raw-data posture, docs, ledger, and package script alignment. | repo-proven |
 | D03 runtime smoke | `src/consequence-admission/golden-data-export-runtime-smoke.ts` runs the D01 fixture suite plus D02 projection through the R02-R07 shadow runtime smoke chain without target-system calls, audit writes, policy activation, or raw data reads. | repo-proven |
 | D03 pilot readiness probe | `src/consequence-admission/golden-data-export-pilot-readiness-probe.ts` wraps the runtime smoke in a shadow-entry readiness packet that can emit only `ready-for-shadow-pilot` or `not-ready`. | repo-proven |
-| D04 demo CLI | `scripts/demo-golden-data-export.ts` renders Markdown-first and JSON-secondary demo output from the D01-D03 material, plus bounded `--scenario` reviewer input. | repo-proven |
+| D04 demo CLI | `scripts/demo/demo-golden-data-export.ts` renders Markdown-first and JSON-secondary demo output from the D01-D03 material, plus bounded `--scenario` reviewer input. | repo-proven |
 | D04 reviewer sandbox | `src/consequence-admission/golden-data-export-reviewer-sandbox.ts` validates a strict allowlisted local JSON shape and runs in-scope reviewer inputs through the same shadow-only runtime path without target-system calls or raw data material. | repo-proven |
 
 ## Research Anchors

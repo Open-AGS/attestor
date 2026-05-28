@@ -1,4 +1,4 @@
-﻿import assert from 'node:assert/strict';
+import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -190,7 +190,7 @@ function testDocsAndScriptsStayAligned(): void {
   );
   equal(
     packageJson.scripts['demo:golden-refund'],
-    'tsx scripts/demo-golden-refund.ts',
+    'tsx scripts/demo/demo-golden-refund.ts',
     'G07 package script: demo command is registered',
   );
   equal(

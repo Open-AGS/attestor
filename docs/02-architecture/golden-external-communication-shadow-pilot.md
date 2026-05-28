@@ -50,7 +50,7 @@ until a later customer-controlled PEP/gate consumes an Attestor decision.
 | E03 runtime smoke | `src/consequence-admission/golden-external-communication-runtime-smoke.ts` runs all E01/E02 material through the existing R02-R07 shadow runtime smoke chain without provider, delivery, CRM, ticketing, audit-write, policy-activation, or raw-message access. | repo-proven |
 | E03 pilot readiness probe | `src/consequence-admission/golden-external-communication-pilot-readiness-probe.ts` wraps the runtime smoke in a shadow-entry readiness packet that can emit only `ready-for-shadow-pilot` or `not-ready`. | repo-proven |
 | E03 tests | `tests/golden-external-communication-runtime-smoke.test.ts` and `tests/golden-external-communication-pilot-readiness-probe.test.ts` lock deterministic digests, no-claim flags, data minimization, fail-closed tamper behavior, docs, ledger, and package script alignment. | repo-proven |
-| E04 demo CLI | `scripts/demo-golden-external-communication.ts` renders a Markdown-first local External Communication demo with JSON as secondary machine output and a bounded `--scenario` input path under `fixtures/`. | repo-proven once merged |
+| E04 demo CLI | `scripts/demo/demo-golden-external-communication.ts` renders a Markdown-first local External Communication demo with JSON as secondary machine output and a bounded `--scenario` input path under `fixtures/`. | repo-proven once merged |
 | E04 reviewer sandbox | `src/consequence-admission/golden-external-communication-reviewer-sandbox.ts` validates a strict JSON allowlist and runs in-scope reviewer inputs through the same shadow-only runtime path without message delivery, provider calls, CRM/ticketing calls, or raw communication material. | repo-proven once merged |
 
 ## Research Anchors

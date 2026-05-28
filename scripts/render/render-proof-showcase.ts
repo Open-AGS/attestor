@@ -8,7 +8,7 @@ import {
   renderProofShowcaseMarkdown,
   type SchemaAttestationLike,
 } from '../../src/showcase/proof-showcase.js';
-import { resolveExistingPathInsideAllowedRoots } from '../demo-path-boundary.ts';
+import { resolveExistingPathInsideAllowedRoots } from '../demo/demo-path-boundary.ts';
 
 interface ScriptArgs {
   fromDir: string | null;

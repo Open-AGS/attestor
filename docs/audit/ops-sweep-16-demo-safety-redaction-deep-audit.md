@@ -20,7 +20,7 @@ Files changed by PR #522 are docs-only:
 - `docs/audit/current-posture-baseline.md`
 
 Chain-effect verdict: PR #522 does not touch `scripts/secret-safe-output.ts`,
-`scripts/demo-golden-refund.ts`, `examples/**`,
+`scripts/demo/demo-golden-refund.ts`, `examples/**`,
 `src/consequence-admission/data-minimization-redaction-policy.ts`,
 `src/consequence-admission/golden-refund-demo.ts`, redaction tests, demo tests,
 or committed evidence files. No regression, no config drift, no
@@ -39,7 +39,7 @@ Sweep 15 OPS-121 and OPS-122 remain open on `origin/master`.
 | Protected principles | data minimization and redaction; demo safety; no overclaim; auditability |
 | Audit driver | `current-posture-baseline.md` Phase 3 preparation + `finding-index.md` B-025/B-028 + control-map `Public demo safety` next action |
 | External anchors | NIST SP 800-122 for PII confidentiality; GDPR Article 5 data minimisation; OWASP LLM02 sensitive information disclosure; OWASP LLM07 system prompt leakage; CWE-200 / CWE-22 / CWE-532 / CWE-209 vocabulary |
-| Scope | `scripts/secret-safe-output.ts`, `scripts/demo-golden-refund.ts`, `scripts/render/render-proof-{surface,showcase}.ts`, `examples/*demo.ts`, `src/consequence-admission/{data-minimization-redaction-policy,golden-refund-demo}.ts`, `fixtures/golden-refund-reviewer-sandbox.example.json`, redaction/demo tests, and committed public evidence inventory |
+| Scope | `scripts/secret-safe-output.ts`, `scripts/demo/demo-golden-refund.ts`, `scripts/render/render-proof-{surface,showcase}.ts`, `examples/*demo.ts`, `src/consequence-admission/{data-minimization-redaction-policy,golden-refund-demo}.ts`, `fixtures/golden-refund-reviewer-sandbox.example.json`, redaction/demo tests, and committed public evidence inventory |
 
 ## 2. Inspected Files
 
@@ -47,7 +47,7 @@ Sweep 15 OPS-121 and OPS-122 remain open on `origin/master`.
 |---|---|---|
 | `scripts/secret-safe-output.ts` | full | Runtime redaction primitive |
 | `src/consequence-admission/data-minimization-redaction-policy.ts` | targeted | Architectural redaction policy and marker vocabulary |
-| `scripts/demo-golden-refund.ts` | targeted | Demo CLI `--scenario` path entry |
+| `scripts/demo/demo-golden-refund.ts` | targeted | Demo CLI `--scenario` path entry |
 | `scripts/render/render-proof-showcase.ts` | targeted | Public artifact renderer `--from` path entry |
 | `examples/first-useful-admission-demo.ts` | targeted | Pure-code demo pattern check |
 | `fixtures/golden-refund-reviewer-sandbox.example.json` | targeted | Shipped demo fixture shape |
@@ -99,7 +99,7 @@ No critical Sweep 16 file was skipped.
 
 | # | File / path | Kind | Output medium | Consumes user path | Applies redactor | Affected findings |
 |---:|---|---|---|---|---|---|
-| 1 | `scripts/demo-golden-refund.ts` | demo CLI | stdout markdown/json | yes, `--scenario` | error path uses `safeErrorMessage` | OPS-133 |
+| 1 | `scripts/demo/demo-golden-refund.ts` | demo CLI | stdout markdown/json | yes, `--scenario` | error path uses `safeErrorMessage` | OPS-133 |
 | 2 | `examples/first-useful-admission-demo.ts` | pure demo | stdout | no | n/a | none |
 | 3 | `examples/agent-retry-wrapper-demo.ts` | pure demo | stdout | no | n/a | none |
 | 4 | `examples/non-bypassable-gateway-demo.ts` | pure demo | stdout | no | n/a | none |

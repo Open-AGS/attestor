@@ -685,7 +685,7 @@ function testLedgerIndexesAuditRemediationClosure(): void {
   );
   includes(
     content,
-    'src/service/hosted-generic-admission-sender-confirmation.ts',
+    'src/service/hosted/hosted-generic-admission-sender-confirmation.ts',
     'Research provenance ledger: hosted generic DPoP issuer bridge code evidence is indexed',
   );
   includes(

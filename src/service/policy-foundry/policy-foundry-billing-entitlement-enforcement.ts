@@ -1,10 +1,10 @@
-import type { HostedBillingEntitlementRecord } from './billing/billing-entitlement-store.js';
+import type { HostedBillingEntitlementRecord } from '../billing/billing-entitlement-store.js';
 import {
   POLICY_FOUNDRY_COMMERCIAL_CAPABILITIES,
   POLICY_FOUNDRY_COMMERCIAL_PLANS,
   type PolicyFoundryCommercialCapability,
   type PolicyFoundryCommercialPlan,
-} from '../consequence-admission/index.js';
+} from '../../consequence-admission/index.js';
 
 export const POLICY_FOUNDRY_BILLING_ENTITLEMENT_ENFORCEMENT_VERSION =
   'attestor.policy-foundry-billing-entitlement-enforcement.v1';

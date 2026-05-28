@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import {
   createInMemoryHostedGenericAdmissionDpopProofReplayStore,
   type HostedGenericAdmissionDpopProofReplayStore,
-} from '../src/service/hosted-generic-admission-sender-confirmation.js';
+} from '../src/service/hosted/hosted-generic-admission-sender-confirmation.js';
 import {
   GENERIC_ADMISSION_PROTECTED_ROUTE_SPEC_VERSION,
   evaluateGenericAdmissionProtectedRoute,

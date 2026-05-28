@@ -16,7 +16,7 @@ import {
   POLICY_FOUNDRY_HOSTED_UI_FLOW_VERSION,
   policyFoundryHostedUiFlowDescriptor,
   renderPolicyFoundryHostedUiFlow,
-} from '../src/service/policy-foundry-hosted-ui.js';
+} from '../src/service/policy-foundry/policy-foundry-hosted-ui.js';
 import {
   createPolicyFoundryHostedUiPreviewApp,
   createPolicyFoundryHostedUiPreviewHtml,
@@ -213,7 +213,7 @@ function testHostedUiFlowDescriptorDocsAndScript(): void {
   equal(descriptor.productionReady, false, 'Hosted UI flow: descriptor does not claim production readiness');
   includes(
     docs,
-    'src/service/policy-foundry-hosted-ui.ts',
+    'src/service/policy-foundry/policy-foundry-hosted-ui.ts',
     'Policy Foundry docs: hosted UI renderer evidence is named',
   );
   includes(

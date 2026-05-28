@@ -589,7 +589,7 @@ safe step. It is intentionally smaller than the full self-onboarding packet: it
 does not expose raw source material or raw tenant ids, and it is not enough to
 apply implementation changes without the underlying digest-bound packet.
 
-The hosted UI flow renderer lives in `src/service/policy-foundry-hosted-ui.ts`,
+The hosted UI flow renderer lives in `src/service/policy-foundry/policy-foundry-hosted-ui.ts`,
 is covered by `tests/policy-foundry-hosted-ui-flow.test.ts`, and is exposed
 through `test:policy-foundry-hosted-ui-flow`. The route:
 
@@ -618,7 +618,7 @@ infrastructure, issue credentials, deploy infrastructure, execute production
 traffic, activate enforcement, or prove production readiness.
 
 The persistent hosted wizard state store lives in
-`src/service/policy-foundry-hosted-wizard-state.ts`, is covered by
+`src/service/policy-foundry/policy-foundry-hosted-wizard-state.ts`, is covered by
 `tests/policy-foundry-hosted-wizard-state.test.ts`, and is exposed through
 `test:policy-foundry-hosted-wizard-state`. When the hosted workflow route
 receives `persistWizardState: true`, it stores only compact digest-bound wizard
@@ -653,7 +653,7 @@ credentials, activate enforcement, execute production traffic, or prove
 production readiness.
 
 The hosted billing-provider entitlement enforcement helper lives in
-`src/service/policy-foundry-billing-entitlement-enforcement.ts`, is covered by
+`src/service/policy-foundry/policy-foundry-billing-entitlement-enforcement.ts`, is covered by
 `tests/policy-foundry-billing-entitlement-enforcement.test.ts`, and is exposed
 through `test:policy-foundry-billing-entitlement-enforcement`. The hosted
 workflow route includes its output as `billingEntitlementEnforcement`. That

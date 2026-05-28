@@ -265,7 +265,7 @@ function testApiServerUsesExtractedRouteSupport(): void {
     'utf8',
   );
   const hostedSurfaceSupport = readFileSync(
-    join(SERVICE_ROOT, 'hosted-surface-support.ts'),
+    join(SERVICE_ROOT, 'hosted', 'hosted-surface-support.ts'),
     'utf8',
   );
   const hostedAccountSupport = readFileSync(
@@ -292,7 +292,7 @@ function testApiServerUsesExtractedRouteSupport(): void {
   );
 
   assert.match(apiRouteRuntime, /from '\.\.\/account\/account-route-support\.js'/u);
-  assert.match(apiRouteRuntime, /from '\.\.\/hosted-surface-support\.js'/u);
+  assert.match(apiRouteRuntime, /from '\.\.\/hosted\/hosted-surface-support\.js'/u);
   assert.match(apiRouteRuntime, /from '\.\.\/account\/hosted-account-support\.js'/u);
   assert.match(apiRouteRuntime, /from '\.\.\/release\/finance-release-route-support\.js'/u);
   assert.match(apiRouteRuntime, /from '\.\.\/pipeline\/pipeline-route-support\.js'/u);

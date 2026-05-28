@@ -20,7 +20,7 @@ import {
   createFileBackedShadowCustomerActivationReceiptStore,
   createFileBackedShadowPolicyCandidateStore,
   createFileBackedShadowPolicySimulationReportStore,
-} from '../src/service/shadow-persistence-store.js';
+} from '../src/service/shadow/shadow-persistence-store.js';
 import { createPipelineIdempotencyService } from '../src/service/application/pipeline-idempotency-service.js';
 import type { PipelineIdempotencyService } from '../src/service/application/pipeline-idempotency-service.js';
 import {

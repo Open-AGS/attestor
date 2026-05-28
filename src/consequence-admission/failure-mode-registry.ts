@@ -361,7 +361,7 @@ Object.freeze([
     ],
     defaultDecision: 'block',
     repositoryEvidence: [
-      evidence('code', 'src/service/hosted-llm-agent-tool-boundary-guard.ts', 'hosted LLM agent tool boundary guard'),
+      evidence('code', 'src/service/hosted/hosted-llm-agent-tool-boundary-guard.ts', 'hosted LLM agent tool boundary guard'),
       evidence('test', 'tests/hosted-llm-agent-tool-boundary-guard.test.ts', 'tool boundary guard standards'),
     ],
     limitation: 'Current evidence is strongest for hosted/tool-boundary surfaces; per-customer untrusted-content isolation still has to be proven at integration time.',

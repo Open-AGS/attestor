@@ -3,7 +3,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   requireHostedApiAuthorizationRule,
-} from '../src/service/hosted-api-authorization-matrix.js';
+} from '../src/service/hosted/hosted-api-authorization-matrix.js';
 import {
   HOSTED_SENSITIVE_BUSINESS_FLOW_ABUSE_GUARD_VERSION,
   HOSTED_SENSITIVE_BUSINESS_FLOW_ABUSE_GUARDS,
@@ -12,7 +12,7 @@ import {
   requireHostedSensitiveBusinessFlowAbuseGuard,
   type HostedSensitiveBusinessFlowControl,
   type HostedSensitiveBusinessFlowRoute,
-} from '../src/service/hosted-sensitive-business-flow-abuse-guard.js';
+} from '../src/service/hosted/hosted-sensitive-business-flow-abuse-guard.js';
 
 let passed = 0;
 
@@ -256,12 +256,12 @@ function testDocsAndRunnerExposeGuard(): void {
   );
   includes(
     hostedTracker,
-    'src/service/hosted-sensitive-business-flow-abuse-guard.ts',
+    'src/service/hosted/hosted-sensitive-business-flow-abuse-guard.ts',
     'Hosted sensitive flow guard: tracker points to source',
   );
   includes(
     hostedContract,
-    'src/service/hosted-sensitive-business-flow-abuse-guard.ts',
+    'src/service/hosted/hosted-sensitive-business-flow-abuse-guard.ts',
     'Hosted sensitive flow guard: hosted contract points to source',
   );
 }

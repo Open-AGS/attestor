@@ -12,7 +12,7 @@ import { registerShadowRoutes } from '../src/service/http/routes/shadow-routes.j
 import {
   createFileBackedShadowPolicySimulationReportStore,
   resetShadowPersistenceStoresForTests,
-} from '../src/service/shadow-persistence-store.js';
+} from '../src/service/shadow/shadow-persistence-store.js';
 import type { TenantContext } from '../src/service/tenant-isolation.js';
 
 let passed = 0;
@@ -241,7 +241,7 @@ async function testExplicitModeAndEventLimitFailClosed(): Promise<void> {
     }),
   });
 
-  equal(noBody.status, 400, 'Shadow simulation history route: JSON body is required');
+  equal(noBody.status, 415, 'Shadow simulation history route: JSON content type is required');
   equal(missingMode.status, 400, 'Shadow simulation history route: proposedMode is required');
   equal(tooMany.status, 400, 'Shadow simulation history route: oversized event windows are rejected');
 }

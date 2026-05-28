@@ -7,7 +7,7 @@ import {
   hostedProductionRuntimeHealthContractProfile,
   requireHostedProductionRuntimeHealthGuard,
   type HostedProductionRuntimeHealthControl,
-} from '../src/service/hosted-production-runtime-health-contract.js';
+} from '../src/service/hosted/hosted-production-runtime-health-contract.js';
 
 let passed = 0;
 
@@ -225,7 +225,7 @@ function testDocsAndRunnerExposeContract(): void {
   );
   includes(
     hostedTracker,
-    'src/service/hosted-production-runtime-health-contract.ts',
+    'src/service/hosted/hosted-production-runtime-health-contract.ts',
     'Hosted runtime health: tracker points to source',
   );
   includes(

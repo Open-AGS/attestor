@@ -147,7 +147,7 @@ export const CONSEQUENCE_SHARED_STORE_INVENTORY_ITEMS = Object.freeze([
     blocksProductionShared: true,
     cryptoCompatible: true,
     repositoryEvidence: Object.freeze([
-      'src/service/shadow-persistence-store.ts',
+      'src/service/shadow/shadow-persistence-store.ts',
       'src/service/consequence-shared-history-outbox-store.ts',
       'tests/shadow-persistence-store.test.ts',
       'tests/consequence-shared-history-outbox-store.test.ts',
@@ -174,7 +174,7 @@ export const CONSEQUENCE_SHARED_STORE_INVENTORY_ITEMS = Object.freeze([
     blocksProductionShared: true,
     cryptoCompatible: true,
     repositoryEvidence: Object.freeze([
-      'src/service/shadow-persistence-store.ts',
+      'src/service/shadow/shadow-persistence-store.ts',
       'src/service/consequence-shared-history-outbox-store.ts',
       'tests/shadow-policy-simulation.test.ts',
       'tests/consequence-shared-history-outbox-store.test.ts',
@@ -201,7 +201,7 @@ export const CONSEQUENCE_SHARED_STORE_INVENTORY_ITEMS = Object.freeze([
     blocksProductionShared: true,
     cryptoCompatible: true,
     repositoryEvidence: Object.freeze([
-      'src/service/shadow-persistence-store.ts',
+      'src/service/shadow/shadow-persistence-store.ts',
       'src/service/consequence-shared-history-outbox-store.ts',
       'src/consequence-admission/policy-discovery-candidates.ts',
       'src/consequence-admission/policy-foundry-candidate-registry.ts',
@@ -230,7 +230,7 @@ export const CONSEQUENCE_SHARED_STORE_INVENTORY_ITEMS = Object.freeze([
     blocksProductionShared: true,
     cryptoCompatible: true,
     repositoryEvidence: Object.freeze([
-      'src/service/shadow-persistence-store.ts',
+      'src/service/shadow/shadow-persistence-store.ts',
       'src/service/consequence-shared-history-outbox-store.ts',
       'src/consequence-admission/shadow-customer-activation-receipt.ts',
       'tests/shadow-customer-activation-receipt.test.ts',
@@ -257,7 +257,7 @@ export const CONSEQUENCE_SHARED_STORE_INVENTORY_ITEMS = Object.freeze([
     blocksProductionShared: true,
     cryptoCompatible: true,
     repositoryEvidence: Object.freeze([
-      'src/service/policy-foundry-hosted-wizard-state.ts',
+      'src/service/policy-foundry/policy-foundry-hosted-wizard-state.ts',
       'tests/policy-foundry-hosted-wizard-state.test.ts',
     ]),
     blockerCodes: Object.freeze([

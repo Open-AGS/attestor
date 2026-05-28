@@ -1,7 +1,7 @@
-import type { AdminAuditRecord } from './admin-audit-log.js';
-import type { HostedAccountRecord } from './account/account-store.js';
-import type { BillingEventRecord } from './billing/billing-event-ledger.js';
-import type { HostedBillingEntitlementRecord } from './billing/billing-entitlement-store.js';
+import type { AdminAuditRecord } from '../admin-audit-log.js';
+import type { HostedAccountRecord } from '../account/account-store.js';
+import type { BillingEventRecord } from '../billing/billing-event-ledger.js';
+import type { HostedBillingEntitlementRecord } from '../billing/billing-entitlement-store.js';
 import {
   listHostedPlans,
   resolvePlanAsyncDispatch,
@@ -11,8 +11,8 @@ import {
   resolvePlanStripeOveragePrice,
   resolvePlanStripePrice,
   resolvePlanStripeTrialDays,
-} from './plan-catalog.js';
-import type { TenantKeyRecord } from './tenant-key-store.js';
+} from '../plan-catalog.js';
+import type { TenantKeyRecord } from '../tenant-key-store.js';
 
 export function adminTenantKeyView(record: TenantKeyRecord) {
   return {

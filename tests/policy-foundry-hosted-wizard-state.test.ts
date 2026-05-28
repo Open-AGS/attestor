@@ -13,7 +13,7 @@ import {
   POLICY_FOUNDRY_HOSTED_WIZARD_STATE_VERSION,
   createFileBackedPolicyFoundryHostedWizardStateStore,
   policyFoundryHostedWizardStateDescriptor,
-} from '../src/service/policy-foundry-hosted-wizard-state.js';
+} from '../src/service/policy-foundry/policy-foundry-hosted-wizard-state.js';
 
 let passed = 0;
 

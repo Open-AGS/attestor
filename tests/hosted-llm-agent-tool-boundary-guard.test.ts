@@ -14,7 +14,7 @@ import {
   hostedLlmAgentToolBoundaryGuardProfile,
   requireHostedLlmAgentToolBoundaryGuard,
   type HostedLlmAgentToolBoundaryControl,
-} from '../src/service/hosted-llm-agent-tool-boundary-guard.js';
+} from '../src/service/hosted/hosted-llm-agent-tool-boundary-guard.js';
 
 let passed = 0;
 
@@ -270,7 +270,7 @@ function testDocsAndRunnerExposeGuard(): void {
   );
   includes(
     hostedTracker,
-    'src/service/hosted-llm-agent-tool-boundary-guard.ts',
+    'src/service/hosted/hosted-llm-agent-tool-boundary-guard.ts',
     'Hosted LLM/agent boundary: tracker points to source',
   );
   includes(

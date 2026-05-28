@@ -187,7 +187,7 @@ function testCommercialTruthSourcesStayLinked(): void {
 
 function testAccountVisibilityGuideStaysGrounded(): void {
   const guide = readProjectFile('docs', '01-overview', 'hosted-account-visibility.md');
-  const contract = readProjectFile('src', 'service', 'hosted-journey-contract.ts');
+  const contract = readProjectFile('src', 'service', 'hosted', 'hosted-journey-contract.ts');
   const accountRoutes = readProjectFile('src', 'service', 'http', 'routes', 'account-routes.ts');
   const apiTypes = readProjectFile('src', 'service', 'api-types.ts');
 
@@ -220,7 +220,7 @@ function testAccountVisibilityGuideStaysGrounded(): void {
 
 function testFinanceAndCryptoFirstIntegrationsStayGrounded(): void {
   const examples = readProjectFile('docs', '01-overview', 'finance-and-crypto-first-integrations.md');
-  const contract = readProjectFile('src', 'service', 'hosted-journey-contract.ts');
+  const contract = readProjectFile('src', 'service', 'hosted', 'hosted-journey-contract.ts');
   const packageJson = readProjectFile('package.json');
   const pipelineRoute = readProjectFile('src', 'service', 'http', 'routes', 'pipeline-execution-routes.ts');
   const cryptoAdmission = readProjectFile('src', 'crypto-execution-admission', 'planner.ts');
@@ -261,7 +261,7 @@ function testFinanceAndCryptoFirstIntegrationsStayGrounded(): void {
 
 function testFirstApiCallQuickstartStaysGrounded(): void {
   const firstApiCall = readProjectFile('docs', '01-overview', 'hosted-first-api-call.md');
-  const contract = readProjectFile('src', 'service', 'hosted-journey-contract.ts');
+  const contract = readProjectFile('src', 'service', 'hosted', 'hosted-journey-contract.ts');
   const pipelineRoute = readProjectFile('src', 'service', 'http', 'routes', 'pipeline-execution-routes.ts');
   const accountRoutes = readProjectFile('src', 'service', 'http', 'routes', 'account-routes.ts');
 
@@ -319,7 +319,7 @@ function testPricingAndTrialTruthsStayAnchored(): void {
   const packaging = readProjectFile('docs', '01-overview', 'product-packaging.md');
   const stripeBootstrap = readProjectFile('docs', '01-overview', 'stripe-commercial-bootstrap.md');
   const pricingRoi = readProjectFile('docs', '01-overview', 'pricing-roi-calculator.md');
-  const contract = readProjectFile('src', 'service', 'hosted-journey-contract.ts');
+  const contract = readProjectFile('src', 'service', 'hosted', 'hosted-journey-contract.ts');
 
   includes(packaging, '`monthly_admission_runs`', 'Hosted product flow docs: billable admission meter is documented');
   includes(packaging, '| `developer` | free | `500` admissions / month |', 'Hosted product flow docs: developer plan remains free');

@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import {
   HOSTED_PRODUCT_FLOW_READINESS_GATES,
   hostedJourneyContract,
-} from '../src/service/hosted-journey-contract.js';
+} from '../src/service/hosted/hosted-journey-contract.js';
 
 let passed = 0;
 

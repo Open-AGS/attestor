@@ -11,7 +11,7 @@ import {
   type ActionSurfaceOnboardingRedTeamFixtureBundle,
   type PolicyFoundryAdversarialReplayObservation,
 } from '../../src/consequence-admission/index.js';
-import { renderPolicyFoundryHostedUiFlow } from '../../src/service/policy-foundry-hosted-ui.js';
+import { renderPolicyFoundryHostedUiFlow } from '../../src/service/policy-foundry/policy-foundry-hosted-ui.js';
 
 type PreviewState = 'blocked' | 'ready';
 

@@ -53,7 +53,7 @@ production-readiness, or certification claims.
 | `src/service/http/routes/shadow-routes.ts` | full route inventory + remediation diff | 27 shadow routes, tenant binding, mutation audit, body validation |
 | `src/service/bootstrap/routes.ts` | targeted | runtime `createShadowRouteDeps` wiring |
 | `src/service/admin-audit-log.ts` | targeted | hash-linked ledger actor/action union |
-| `src/service/hosted-api-authorization-matrix.ts` | targeted | shadow mutation rule evidence |
+| `src/service/hosted/hosted-api-authorization-matrix.ts` | targeted | shadow mutation rule evidence |
 | `scripts/check/check-ops-live-shadow-readiness.mjs` | targeted | live proof gate alignment |
 | `tests/service-shadow-routes-http.test.ts` | full | new direct HTTP route coverage |
 | `tests/shadow-route-tenant-boundary.test.ts` | full existing coverage | tenant boundary regression guard |

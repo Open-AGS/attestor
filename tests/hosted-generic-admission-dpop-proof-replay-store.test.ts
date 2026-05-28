@@ -14,7 +14,7 @@ import {
   createSharedHostedGenericAdmissionDpopProofReplayStore,
   ensureSharedHostedGenericAdmissionDpopProofReplayStore,
   resetSharedHostedGenericAdmissionDpopProofReplayStoreForTests,
-} from '../src/service/hosted-generic-admission-dpop-proof-replay-store.js';
+} from '../src/service/hosted/hosted-generic-admission-dpop-proof-replay-store.js';
 
 let passed = 0;
 

@@ -28,7 +28,7 @@ Primary repository evidence:
 - `src/service/http/routes/core-routes.ts`
 - `src/service/bootstrap/server.ts`
 - `src/service/bootstrap/production-storage-path.ts`
-- `src/service/hosted-production-runtime-health-contract.ts`
+- `src/service/hosted/hosted-production-runtime-health-contract.ts`
 - `src/service/async/worker.ts`
 - `src/service/control-plane-store.ts`
 - `src/service/async/async-dead-letter-store.ts`

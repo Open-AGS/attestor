@@ -14,15 +14,15 @@ import { dirname, resolve } from 'node:path';
 import {
   CONSEQUENCE_DATA_MINIMIZATION_REDACTION_POLICY_VERSION,
   consequenceDataMinimizationMaterialSafetyFindings,
-} from '../consequence-admission/data-minimization-redaction-policy.js';
+} from '../../consequence-admission/data-minimization-redaction-policy.js';
 import type {
   PolicyFoundryHostedReviewEvidenceCard,
   PolicyFoundryHostedReviewNoGoCard,
   PolicyFoundryHostedReviewSurface,
   PolicyFoundryHostedReviewTask,
-} from '../consequence-admission/policy-foundry-hosted-review-surface.js';
-import { withFileLock, writeTextFileAtomic } from './file-store.js';
-import { stableJsonStringify } from './json-stable.js';
+} from '../../consequence-admission/policy-foundry-hosted-review-surface.js';
+import { withFileLock, writeTextFileAtomic } from '../file-store.js';
+import { stableJsonStringify } from '../json-stable.js';
 
 export const POLICY_FOUNDRY_HOSTED_WIZARD_STATE_VERSION =
   'attestor.policy-foundry-hosted-wizard-state.v1';

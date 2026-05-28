@@ -9,7 +9,7 @@ Source report:
 
 Repository finding:
 
-- The descriptor exists in `src/service/hosted-llm-agent-tool-boundary-guard.ts`,
+- The descriptor exists in `src/service/hosted/hosted-llm-agent-tool-boundary-guard.ts`,
   but it is not unsupported prose.
 - The package exposes `test:hosted-llm-agent-tool-boundary-guard`.
 - That test validates descriptor uniqueness, declared routes, risk/control

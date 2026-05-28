@@ -265,7 +265,7 @@ readonly HostedObservabilityPrivacyIncidentGuard[] = [
     nonClaimBoundary:
       'The packet is an incident-response evidence shape; it is not proof that every customer-impact communication, legal notice, or external compliance duty is complete.',
     implementationEvidence: [
-      'src/service/hosted-observability-privacy-incident-evidence.ts',
+      'src/service/hosted/hosted-observability-privacy-incident-evidence.ts',
       'scripts/rehearse/rehearse-production-observability-alerting.ts',
       'src/release-layer/index.ts',
       'src/consequence-admission/audit-evidence-export.ts',

@@ -12,14 +12,14 @@ It defines the supported customer sequence, route ownership, auth boundary, succ
 - The first finance and crypto integration examples live in [Finance and crypto first integrations](finance-and-crypto-first-integrations.md).
 - The current account-plane visibility map lives in [Hosted account visibility](hosted-account-visibility.md).
 - Operator Stripe setup lives in [Stripe commercial bootstrap](stripe-commercial-bootstrap.md).
-- The machine-readable contract descriptor lives in `src/service/hosted-journey-contract.ts`.
-- The machine-readable route authorization matrix lives in `src/service/hosted-api-authorization-matrix.ts`.
-- The machine-readable sensitive business flow abuse guard lives in `src/service/hosted-sensitive-business-flow-abuse-guard.ts`.
-- The machine-readable webhook and async reconciliation hardening profile lives in `src/service/hosted-webhook-async-reconciliation-hardening.ts`.
-- The machine-readable LLM/agent tool-use boundary guard lives in `src/service/hosted-llm-agent-tool-boundary-guard.ts`.
-- The machine-readable production runtime health contract lives in `src/service/hosted-production-runtime-health-contract.ts`.
-- The machine-readable release provenance and SLSA alignment profile lives in `src/service/hosted-release-provenance-slsa-alignment.ts`.
-- The machine-readable observability privacy and incident evidence profile lives in `src/service/hosted-observability-privacy-incident-evidence.ts`.
+- The machine-readable contract descriptor lives in `src/service/hosted/hosted-journey-contract.ts`.
+- The machine-readable route authorization matrix lives in `src/service/hosted/hosted-api-authorization-matrix.ts`.
+- The machine-readable sensitive business flow abuse guard lives in `src/service/hosted/hosted-sensitive-business-flow-abuse-guard.ts`.
+- The machine-readable webhook and async reconciliation hardening profile lives in `src/service/hosted/hosted-webhook-async-reconciliation-hardening.ts`.
+- The machine-readable LLM/agent tool-use boundary guard lives in `src/service/hosted/hosted-llm-agent-tool-boundary-guard.ts`.
+- The machine-readable production runtime health contract lives in `src/service/hosted/hosted-production-runtime-health-contract.ts`.
+- The machine-readable release provenance and SLSA alignment profile lives in `src/service/hosted/hosted-release-provenance-slsa-alignment.ts`.
+- The machine-readable observability privacy and incident evidence profile lives in `src/service/hosted/hosted-observability-privacy-incident-evidence.ts`.
 
 ## Contract Rules
 

@@ -8,7 +8,7 @@ import {
   hostedObservabilityPrivacyIncidentEvidenceProfile,
   requireHostedObservabilityPrivacyIncidentGuard,
   type HostedObservabilityPrivacyIncidentControl,
-} from '../src/service/hosted-observability-privacy-incident-evidence.js';
+} from '../src/service/hosted/hosted-observability-privacy-incident-evidence.js';
 import { toPrivacySafeStructuredRequestLogRecord } from '../src/service/observability.js';
 
 let passed = 0;

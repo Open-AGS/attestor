@@ -67,7 +67,7 @@ coverage claims.
 | `src/service/http/routes/generic-admission-routes.ts` | full route read | Tenant-bound consequence admission entry point |
 | `src/service/http/routes/action-surface-onboarding-routes.ts` | full route read | Stateless action-surface onboarding packet generation |
 | `src/service/http/routes/policy-foundry-hosted-onboarding-routes.ts` | full route read | Hosted wizard state persistence and HTML view rendering |
-| `src/service/hosted-api-authorization-matrix.ts` | targeted | Admission matrix classification and OWASP LLM anchors |
+| `src/service/hosted/hosted-api-authorization-matrix.ts` | targeted | Admission matrix classification and OWASP LLM anchors |
 | `src/service/tenant-isolation.ts` | targeted | Upstream tenant context boundary |
 | Related tests | inventory | Action-surface, admission state-machine, agent-loop abuse guard, and consequence admission coverage signal |
 

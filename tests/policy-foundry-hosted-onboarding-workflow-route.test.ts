@@ -24,7 +24,7 @@ import {
 } from '../src/service/control-plane-store.js';
 import { hashJsonValue } from '../src/service/json-stable.js';
 import { resetPipelineIdempotencyStoreForTests } from '../src/service/pipeline/pipeline-idempotency-store.js';
-import { createFileBackedPolicyFoundryHostedWizardStateStore } from '../src/service/policy-foundry-hosted-wizard-state.js';
+import { createFileBackedPolicyFoundryHostedWizardStateStore } from '../src/service/policy-foundry/policy-foundry-hosted-wizard-state.js';
 import type { HostedBillingEntitlementRecord } from '../src/service/billing/billing-entitlement-store.js';
 import type { TenantContext } from '../src/service/tenant-isolation.js';
 

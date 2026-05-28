@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import {
   HOSTED_LLM_AGENT_TOOL_BOUNDARY_GUARDS,
   hostedLlmAgentToolBoundaryGuardProfile,
-} from '../src/service/hosted-llm-agent-tool-boundary-guard.js';
+} from '../src/service/hosted/hosted-llm-agent-tool-boundary-guard.js';
 
 let passed = 0;
 

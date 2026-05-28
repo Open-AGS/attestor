@@ -159,7 +159,7 @@ function testPolicyFoundryArchitectureIsGrounded(): void {
   );
   includes(
     doc,
-    'src/service/policy-foundry-hosted-ui.ts',
+    'src/service/policy-foundry/policy-foundry-hosted-ui.ts',
     'Policy Foundry docs: hosted UI flow renderer evidence is named',
   );
   includes(
@@ -169,7 +169,7 @@ function testPolicyFoundryArchitectureIsGrounded(): void {
   );
   includes(
     doc,
-    'src/service/policy-foundry-hosted-wizard-state.ts',
+    'src/service/policy-foundry/policy-foundry-hosted-wizard-state.ts',
     'Policy Foundry docs: hosted wizard state evidence is named',
   );
   includes(

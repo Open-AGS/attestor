@@ -17,7 +17,7 @@ import {
   createFileBackedShadowPolicyCandidateStore,
   createFileBackedShadowPolicySimulationReportStore,
   resetShadowPersistenceStoresForTests,
-} from '../src/service/shadow-persistence-store.js';
+} from '../src/service/shadow/shadow-persistence-store.js';
 import type { TenantContext } from '../src/service/tenant-isolation.js';
 
 let passed = 0;

@@ -18,9 +18,9 @@ import type {
   ShadowPolicyDiscoveryCandidate,
   ShadowPolicyDiscoveryCandidates,
   ShadowPolicySimulationReport,
-} from '../consequence-admission/index.js';
-import { hashJsonValue } from './json-stable.js';
-import { withFileLock, writeTextFileAtomic } from './file-store.js';
+} from '../../consequence-admission/index.js';
+import { hashJsonValue } from '../json-stable.js';
+import { withFileLock, writeTextFileAtomic } from '../file-store.js';
 
 export const SHADOW_ADMISSION_EVENT_STORE_VERSION =
   'attestor.shadow-admission-event-store.v1';

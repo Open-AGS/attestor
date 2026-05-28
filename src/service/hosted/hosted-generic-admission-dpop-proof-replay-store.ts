@@ -1,4 +1,4 @@
-import type { ReplayLedgerEntry } from '../release-enforcement-plane/freshness.js';
+import type { ReplayLedgerEntry } from '../../release-enforcement-plane/freshness.js';
 import {
   type HostedGenericAdmissionDpopProofReplayClaim,
   type HostedGenericAdmissionDpopProofReplayClaimInput,
@@ -10,8 +10,8 @@ import {
   ensureReleaseAuthorityStore,
   resetReleaseAuthorityStoreForTests,
   withReleaseAuthorityTransaction,
-} from './release/release-authority-store.js';
-import type { AttestorRuntimeProfileId } from './bootstrap/runtime-profile.js';
+} from '../release/release-authority-store.js';
+import type { AttestorRuntimeProfileId } from '../bootstrap/runtime-profile.js';
 
 export const HOSTED_GENERIC_ADMISSION_DPOP_PROOF_REPLAY_COMPONENT =
   'generic-admission-dpop-proof-replay';

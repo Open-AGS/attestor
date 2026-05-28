@@ -140,9 +140,9 @@ const COVERAGE_PROFILES = {
     runtimeClaim: 'requires-integration',
     dedicatedGuardPresent: false,
     customerIntegrationRequired: true,
-    primaryImplementationPath: 'src/service/hosted-llm-agent-tool-boundary-guard.ts',
+    primaryImplementationPath: 'src/service/hosted/hosted-llm-agent-tool-boundary-guard.ts',
     codeEvidencePaths: [
-      'src/service/hosted-llm-agent-tool-boundary-guard.ts',
+      'src/service/hosted/hosted-llm-agent-tool-boundary-guard.ts',
       'src/consequence-admission/failure-mode-replay-fixtures.ts',
     ],
     testEvidencePaths: [

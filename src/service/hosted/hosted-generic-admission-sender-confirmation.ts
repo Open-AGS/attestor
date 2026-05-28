@@ -1,15 +1,15 @@
 import type {
   ReleaseTokenConfirmationClaim,
-} from '../release-layer/index.js';
+} from '../../release-layer/index.js';
 import {
   DEFAULT_DPOP_CLOCK_SKEW_SECONDS,
   DEFAULT_DPOP_MAX_PROOF_AGE_SECONDS,
   DPOP_PRESENTATION_SPEC_VERSION,
   verifyDpopProof,
   type DpopProofVerification,
-} from '../release-enforcement-plane/dpop.js';
-import type { EnforcementFailureReason } from '../release-enforcement-plane/types.js';
-import type { ReplayLedgerEntry } from '../release-enforcement-plane/freshness.js';
+} from '../../release-enforcement-plane/dpop.js';
+import type { EnforcementFailureReason } from '../../release-enforcement-plane/types.js';
+import type { ReplayLedgerEntry } from '../../release-enforcement-plane/freshness.js';
 
 export const HOSTED_GENERIC_ADMISSION_SENDER_CONFIRMATION_SPEC_VERSION =
   'attestor.hosted-generic-admission-sender-confirmation.v1';

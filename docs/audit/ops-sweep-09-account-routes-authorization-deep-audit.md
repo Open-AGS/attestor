@@ -67,7 +67,7 @@ provider deployment, or production-readiness claims.
 | `src/service/account-user-store.ts` | targeted | scrypt password storage and timing-safe comparison |
 | `src/service/application/account-{auth,api-key,user-management,state}-service.ts` | targeted | service-side mutation and bootstrap behavior |
 | `src/service/admin-audit-log.ts` and `src/service/control-plane-store.ts` | targeted | existing hash-linked audit ledger reused for account-session audit |
-| `src/service/hosted-api-authorization-matrix.ts` | targeted | account route rule claims |
+| `src/service/hosted/hosted-api-authorization-matrix.ts` | targeted | account route rule claims |
 | `docs/audit/{finding-index,report-index,control-map,live-proof-register,current-posture-baseline}.md` | targeted | index and live-proof reconciliation |
 | `tests/service-account-routes-authorization.test.ts` | full | new route-level regression coverage |
 

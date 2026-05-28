@@ -9,7 +9,7 @@ import {
   HOSTED_JOURNEY_STEP_CONTRACTS,
   HOSTED_JOURNEY_TRUTH_SOURCES,
   hostedJourneyContract,
-} from '../src/service/hosted-journey-contract.js';
+} from '../src/service/hosted/hosted-journey-contract.js';
 import {
   STRIPE_SUPPORTED_WEBHOOK_EVENTS,
   STRIPE_WEBHOOK_ROUTE,
@@ -224,7 +224,7 @@ function testDocsReflectContract(): void {
   const apiServer = readProjectFile('src', 'service', 'api-server.ts');
 
   ok(contractDoc.includes('This is the canonical customer journey contract'), 'Hosted journey contract: doc states canonical role');
-  ok(contractDoc.includes('src/service/hosted-journey-contract.ts'), 'Hosted journey contract: doc links machine-readable descriptor');
+  ok(contractDoc.includes('src/service/hosted/hosted-journey-contract.ts'), 'Hosted journey contract: doc links machine-readable descriptor');
   ok(contractDoc.includes('Operating model](operating-model.md)'), 'Hosted journey contract: doc links operating model');
   ok(contractDoc.includes('First hosted API call](hosted-first-api-call.md)'), 'Hosted journey contract: doc links first API-call quickstart');
   ok(contractDoc.includes('Finance and crypto first integrations](finance-and-crypto-first-integrations.md)'), 'Hosted journey contract: doc links first integration examples');

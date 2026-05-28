@@ -7,6 +7,7 @@ import {
   createGenericAdmissionEnvelope,
   createShadowAdmissionEvent,
   createShadowPolicyBundlePublication,
+  createShadowPolicySimulationReport,
   type ShadowAdmissionEvent,
   type ShadowPolicyBundlePublicationSignature,
   type ShadowPolicyBundleSigningPayload,
@@ -16,7 +17,7 @@ import {
   createFileBackedShadowPolicyCandidateStore,
   resetShadowPersistenceStoresForTests,
   type ShadowPolicyCandidateStatus,
-} from '../src/service/shadow-persistence-store.js';
+} from '../src/service/shadow/shadow-persistence-store.js';
 import type { TenantContext } from '../src/service/tenant-isolation.js';
 import {
   derivePublicKeyIdentity,
@@ -70,6 +71,15 @@ function createSafeEvent(index: number): ShadowAdmissionEvent {
       recipient: 'raw_customer_value_must_not_escape',
       evidenceRefs: [`order:${index}`],
       policyRef: 'policy:refunds:v1',
+      authoritySources: [
+        {
+          sourceKind: 'authority-record',
+          claimKind: 'authorization',
+          sourceRef: 'authority:support-ai-agent',
+          trustClass: 'trusted-authority',
+          evidenceDigest: 'sha256:authority-support',
+        },
+      ],
       observedFeatures: {
         rawMarker: 'raw_feature_value_must_not_escape',
       },
@@ -136,7 +146,13 @@ function createApp(input: {
     currentTenant: () => tenant,
     listShadowEvents: ({ tenant: routeTenant }) =>
       routeTenant.tenantId === tenant.tenantId ? input.events : [],
-    listShadowSimulations: () => [],
+    listShadowSimulations: () => [
+      createShadowPolicySimulationReport({
+        events: input.events,
+        proposedMode: 'enforce',
+        generatedAt: '2026-05-02T14:05:00.000Z',
+      }),
+    ],
     materializeShadowPolicyCandidates: ({ tenant: routeTenant, bundle }) =>
       candidateStore.upsertBundle({
         tenantId: routeTenant.tenantId,

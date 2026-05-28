@@ -60,7 +60,7 @@ import {
   type ShadowPolicyCandidateStoreRecord,
   type ShadowPolicySimulationReportStoreRecord,
   type UpsertShadowPolicyCandidateBundleResult,
-} from '../../shadow-persistence-store.js';
+} from '../../shadow/shadow-persistence-store.js';
 import type {
   PipelineIdempotencyReadyResult,
   PipelineIdempotencyService,

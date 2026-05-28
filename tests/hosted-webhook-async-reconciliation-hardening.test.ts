@@ -7,7 +7,7 @@ import {
   hostedWebhookAsyncReconciliationHardeningProfile,
   requireHostedWebhookAsyncReconciliationGuard,
   type HostedWebhookAsyncReconciliationControl,
-} from '../src/service/hosted-webhook-async-reconciliation-hardening.js';
+} from '../src/service/hosted/hosted-webhook-async-reconciliation-hardening.js';
 
 let passed = 0;
 
@@ -195,7 +195,7 @@ function testDocsAndRunnerExposeGuard(): void {
   );
   includes(
     hostedTracker,
-    'src/service/hosted-webhook-async-reconciliation-hardening.ts',
+    'src/service/hosted/hosted-webhook-async-reconciliation-hardening.ts',
     'Hosted webhook/async reconciliation: tracker points to source',
   );
   includes(

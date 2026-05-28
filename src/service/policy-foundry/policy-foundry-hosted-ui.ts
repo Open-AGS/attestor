@@ -2,7 +2,7 @@ import {
   CONSEQUENCE_DATA_MINIMIZATION_REDACTION_POLICY_VERSION,
   type PolicyFoundryHostedReviewSurface,
   type PolicyFoundryHostedReviewSurfaceTaskPriority,
-} from '../consequence-admission/index.js';
+} from '../../consequence-admission/index.js';
 
 export const POLICY_FOUNDRY_HOSTED_UI_FLOW_VERSION =
   'attestor.policy-foundry-hosted-ui-flow.v1';

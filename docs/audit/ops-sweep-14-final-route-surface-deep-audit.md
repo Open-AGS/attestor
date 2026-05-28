@@ -70,7 +70,7 @@ coverage claims.
 | `src/service/http/routes/public-site-routes.ts` | full route read | Public HTML and committed-evidence file surface |
 | `src/service/http/routes/core-routes.ts` | final handler range | Startup, health, diagnostics, trust root, and readiness routes |
 | `src/service/site-support.ts` | targeted | `readCommittedEvidence` path traversal defense |
-| `src/service/hosted-api-authorization-matrix.ts` | targeted | Route classification coverage |
+| `src/service/hosted/hosted-api-authorization-matrix.ts` | targeted | Route classification coverage |
 
 ## 3. Skipped Files
 

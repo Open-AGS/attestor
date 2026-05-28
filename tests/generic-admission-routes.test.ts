@@ -17,7 +17,7 @@ import { generateKeyPair } from '../src/signing/keys.js';
 import { registerGenericAdmissionRoutes } from '../src/service/http/routes/generic-admission-routes.js';
 import {
   resolveHostedGenericAdmissionDpopSenderConfirmation,
-} from '../src/service/hosted-generic-admission-sender-confirmation.js';
+} from '../src/service/hosted/hosted-generic-admission-sender-confirmation.js';
 
 let passed = 0;
 

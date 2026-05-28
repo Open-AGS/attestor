@@ -82,7 +82,7 @@ The public probe endpoints are:
 The repo-side Production runtime health contract lives in:
 
 ```text
-src/service/hosted-production-runtime-health-contract.ts
+src/service/hosted/hosted-production-runtime-health-contract.ts
 ```
 
 It is the machine-readable boundary for process liveness, dependency readiness, startup diagnostics, worker readiness, queue health, storage authority readiness, webhook ingress readiness, degraded-mode visibility, and secret-safe probe output. It does not replace endpoint probes against a real deployment target.
@@ -90,7 +90,7 @@ It is the machine-readable boundary for process liveness, dependency readiness, 
 The repo-side Release provenance and SLSA alignment profile lives in:
 
 ```text
-src/service/hosted-release-provenance-slsa-alignment.ts
+src/service/hosted/hosted-release-provenance-slsa-alignment.ts
 ```
 
 It is the machine-readable boundary for the evaluation release archive, SBOM, package-surface probes, proof packets, DSSE evidence packs, tamper-evident history, GitHub attestation verification, and non-claims. It does not replace deployment provenance, live environment readiness, service restart, worker probes, Stripe/webhook smoke tests, or production rehearsal.
@@ -98,7 +98,7 @@ It is the machine-readable boundary for the evaluation release archive, SBOM, pa
 The repo-side observability privacy and incident evidence profile lives in:
 
 ```text
-src/service/hosted-observability-privacy-incident-evidence.ts
+src/service/hosted/hosted-observability-privacy-incident-evidence.ts
 ```
 
 It is the machine-readable boundary for privacy-safe request telemetry, low-cardinality metric labels, OTLP receiver probes, alert routing context, incident packet shape, dashboard runtime truth, and production rehearsal evidence. It does not replace live collector credentials, alert destination delivery, customer incident communications, backend retention policy, deployment restart, Stripe/webhook smoke tests, or target-specific production rehearsal.

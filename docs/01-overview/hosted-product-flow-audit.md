@@ -74,7 +74,7 @@ The current repo already covers important parts of the hosted product path:
 
 These are the remaining gaps that matter before calling the hosted product path truly clean:
 
-1. **Canonical hosted journey contract.** Addressed after this audit by `docs/01-overview/hosted-journey-contract.md` and `src/service/hosted-journey-contract.ts`; keep that pair as the route/auth/success/failure contract.
+1. **Canonical hosted journey contract.** Addressed after this audit by `docs/01-overview/hosted-journey-contract.md` and `src/service/hosted/hosted-journey-contract.ts`; keep that pair as the route/auth/success/failure contract.
 2. **Focused hosted flow probe.** Addressed by `tests/hosted-signup-first-api-key-flow.test.ts`, which proves signup -> first API key -> usage/quota -> first consequence call -> quota rejection -> API-key listing/issue/revoke without pulling in the entire service matrix.
 3. **Focused billing convergence probe.** Addressed by `tests/hosted-stripe-billing-convergence-flow.test.ts`, which proves checkout idempotency, checkout-completed pending posture, portal readiness, signed webhook processing, duplicate replay, payload conflict rejection, subscription suspension/reactivation, invoice delinquency/recovery, entitlement summary convergence, and fail-closed tenant API behavior.
 4. **Customer first-call quickstart.** Addressed by `docs/01-overview/hosted-first-api-call.md`, which shows the first tenant API-key usage preflight, first `POST /api/v1/pipeline/run` consequence gate, expected decision/tenant/usage shape, secret handling, failure signals, and downstream fail-closed responsibility.

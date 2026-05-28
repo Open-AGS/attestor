@@ -47,8 +47,8 @@ import {
   createFileBackedShadowCustomerActivationReceiptStore,
   createFileBackedShadowPolicyCandidateStore,
   createFileBackedShadowPolicySimulationReportStore,
-} from '../shadow-persistence-store.js';
-import { createFileBackedPolicyFoundryHostedWizardStateStore } from '../policy-foundry-hosted-wizard-state.js';
+} from '../shadow/shadow-persistence-store.js';
+import { createFileBackedPolicyFoundryHostedWizardStateStore } from '../policy-foundry/policy-foundry-hosted-wizard-state.js';
 import {
   GENERIC_ADMISSION_PROTECTED_ROUTE_SPEC_VERSION,
   evaluateGenericAdmissionProtectedRoute,
@@ -57,7 +57,7 @@ import {
 import {
   type HostedGenericAdmissionDpopProofReplayStore,
   resolveHostedGenericAdmissionDpopSenderConfirmation,
-} from '../hosted-generic-admission-sender-confirmation.js';
+} from '../hosted/hosted-generic-admission-sender-confirmation.js';
 import { installProductionSharedRequestGuard } from './production-shared-request-guard.js';
 import type { AppRuntime } from './runtime.js';
 

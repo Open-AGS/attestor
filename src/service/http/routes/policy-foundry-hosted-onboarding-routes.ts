@@ -34,15 +34,15 @@ import {
   type PolicyFoundryLiveDownstreamReplayObservation,
   type ShadowAdmissionEvent,
 } from '../../../consequence-admission/index.js';
-import { renderPolicyFoundryHostedUiFlow } from '../../policy-foundry-hosted-ui.js';
+import { renderPolicyFoundryHostedUiFlow } from '../../policy-foundry/policy-foundry-hosted-ui.js';
 import type { HostedBillingEntitlementRecord } from '../../billing/billing-entitlement-store.js';
 import {
   createPolicyFoundryBillingEntitlementEnforcement,
-} from '../../policy-foundry-billing-entitlement-enforcement.js';
+} from '../../policy-foundry/policy-foundry-billing-entitlement-enforcement.js';
 import type {
   PolicyFoundryHostedWizardStateRecord,
   PolicyFoundryHostedWizardStateStore,
-} from '../../policy-foundry-hosted-wizard-state.js';
+} from '../../policy-foundry/policy-foundry-hosted-wizard-state.js';
 import type {
   PipelineIdempotencyReadyResult,
   PipelineIdempotencyService,

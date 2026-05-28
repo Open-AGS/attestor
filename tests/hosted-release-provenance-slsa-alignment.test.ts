@@ -7,7 +7,7 @@ import {
   hostedReleaseProvenanceSlsaAlignmentProfile,
   requireHostedReleaseProvenanceSlsaGuard,
   type HostedReleaseProvenanceSlsaControl,
-} from '../src/service/hosted-release-provenance-slsa-alignment.js';
+} from '../src/service/hosted/hosted-release-provenance-slsa-alignment.js';
 
 let passed = 0;
 
@@ -261,7 +261,7 @@ function testDocsAndRunnerExposeAlignment(): void {
   );
   includes(
     tracker,
-    'src/service/hosted-release-provenance-slsa-alignment.ts',
+    'src/service/hosted/hosted-release-provenance-slsa-alignment.ts',
     'Hosted release provenance SLSA docs: tracker points to source',
   );
   includes(

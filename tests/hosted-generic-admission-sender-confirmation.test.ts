@@ -7,7 +7,7 @@ import {
   HOSTED_GENERIC_ADMISSION_SENDER_CONFIRMATION_SPEC_VERSION,
   createInMemoryHostedGenericAdmissionDpopProofReplayStore,
   resolveHostedGenericAdmissionDpopSenderConfirmation,
-} from '../src/service/hosted-generic-admission-sender-confirmation.js';
+} from '../src/service/hosted/hosted-generic-admission-sender-confirmation.js';
 
 let passed = 0;
 

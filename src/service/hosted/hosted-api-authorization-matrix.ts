@@ -191,7 +191,7 @@ export const HOSTED_API_AUTHORIZATION_RULES = [
     privacyBoundary: 'account, usage, entitlement, and billing export are resolved from current account or tenant context',
     evidence: [
       'src/service/http/routes/account-routes.ts#currentHostedAccount',
-      'src/service/hosted-journey-contract.ts',
+      'src/service/hosted/hosted-journey-contract.ts',
     ],
     standards: ['OWASP API1:2023', 'OWASP API3:2023'],
   },

@@ -9,7 +9,7 @@ import {
   hostedApiAuthorizationMatrix,
   requireHostedApiAuthorizationRule,
   type HostedApiRouteDescriptor,
-} from '../src/service/hosted-api-authorization-matrix.js';
+} from '../src/service/hosted/hosted-api-authorization-matrix.js';
 import { registerPipelineAsyncRoutes } from '../src/service/http/routes/pipeline-async-routes.js';
 import type { TenantContext } from '../src/service/tenant-isolation.js';
 import type { InProcessAsyncJob } from '../src/service/runtime/tenant-runtime.js';
@@ -329,7 +329,7 @@ function testDocsAndRunnerExposeMatrix(): void {
     'Hosted auth matrix: production trust tracker records Step 01',
   );
   ok(
-    hostedContract.includes('src/service/hosted-api-authorization-matrix.ts'),
+    hostedContract.includes('src/service/hosted/hosted-api-authorization-matrix.ts'),
     'Hosted auth matrix: hosted contract points to matrix source',
   );
   ok(

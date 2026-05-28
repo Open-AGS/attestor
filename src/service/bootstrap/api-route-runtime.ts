@@ -189,7 +189,7 @@ import {
   adminTenantKeyView,
   billingEntitlementView,
   billingEventView,
-} from '../hosted-surface-support.js';
+} from '../hosted/hosted-surface-support.js';
 import {
   accountMfaErrorResponse,
   createHostedAccountSupport,
@@ -307,7 +307,7 @@ import {
 } from '../generic-admission-protected-route.js';
 import {
   createRuntimeHostedGenericAdmissionDpopProofReplayStore,
-} from '../hosted-generic-admission-dpop-proof-replay-store.js';
+} from '../hosted/hosted-generic-admission-dpop-proof-replay-store.js';
 import {
   releaseRuntimeDurabilitySummary,
   resolveRuntimeProfile,

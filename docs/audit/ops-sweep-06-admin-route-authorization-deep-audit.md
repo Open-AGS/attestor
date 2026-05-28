@@ -47,7 +47,7 @@ weakening, or closed-finding reopening was found.
 | `src/service/admin-audit-log.ts` | targeted | mutation audit actor schema |
 | `src/service/application/admin-mutation-service.ts` | targeted | idempotency and audit finalization |
 | `src/service/control-plane-store.ts` | targeted | shared admin audit chain persistence |
-| `src/service/hosted-api-authorization-matrix.ts` | targeted | admin route control map |
+| `src/service/hosted/hosted-api-authorization-matrix.ts` | targeted | admin route control map |
 | `src/service/bootstrap/routes.ts` | targeted | middleware above `/api/v1/admin/*` |
 | `src/service/bootstrap/production-shared-request-guard.ts` | targeted | no session/cookie authority hydration on admin routes |
 | `tests/release-policy-control-plane-admin-routes.test.ts` | targeted | existing multi-actor admin header pattern |

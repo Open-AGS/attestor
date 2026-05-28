@@ -357,7 +357,7 @@ export const HOSTED_PRODUCTION_RUNTIME_HEALTH_GUARDS: readonly HostedProductionR
       'src/service/http/routes/email-webhook-routes.ts',
       'src/service/application/email-webhook-service.ts',
       'scripts/probe/probe-stripe-webhook-config.ts',
-      'src/service/hosted-webhook-async-reconciliation-hardening.ts',
+      'src/service/hosted/hosted-webhook-async-reconciliation-hardening.ts',
     ],
     validation: [
       'tests/service-stripe-webhook-service.test.ts',

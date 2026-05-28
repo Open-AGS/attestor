@@ -34,6 +34,7 @@ do the next action there, and come back only if you still need more context.
 | Wire a customer app | [Customer middleware examples](../../examples/customer-middleware/README.md) | [Customer integration recipes](customer-integration-recipes.md) |
 | Make the first hosted API call | [First hosted API call](hosted-first-api-call.md) | [Hosted action authorization API](hosted-action-authorization-api.md) |
 | Understand `admit`, `narrow`, `review`, and `block` | [Consequence admission quickstart](consequence-admission-quickstart.md) | [Reason codes](../05-proof/reason-codes.md) |
+| Decode Attestor terms | [Glossary](../02-architecture/glossary.md) | [Attestor language contract](../02-architecture/attestor-language-contract.md) |
 | Explain a review or block reason | [Reason codes](../05-proof/reason-codes.md) | [Failure modes and controls](../05-proof/failure-modes-and-controls.md) |
 | Check what is real today | [Current repository truth](../../README.md#current-repository-truth) | [Current posture baseline](../audit/current-posture-baseline.md) |
 | Check what still needs live proof | [Live proof register](../audit/live-proof-register.md) | [Production readiness](../08-deployment/production-readiness.md) |
@@ -52,6 +53,7 @@ do the next action there, and come back only if you still need more context.
 | Reviewer or auditor | [Audit evidence system](../audit/README.md) | Current baseline, finding state, live-proof separation. |
 | Maintainer | [Internal machine map](../02-architecture/attestor-internal-machine-map.md) | Where the decision planes, routes, stores, packs, and proof loops live. |
 | Product or docs editor | [Attestor language contract](../02-architecture/attestor-language-contract.md) | Public wording, no-claims, and one-engine terminology. |
+| Term lookup | [Glossary](../02-architecture/glossary.md) | Short definitions for terms that otherwise sound too similar. |
 
 ## Code Map
 

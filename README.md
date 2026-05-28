@@ -273,6 +273,7 @@ The machine-readable role contract is exported from `attestor/consequence-admiss
 
 - [AI Action Control Plane architecture](docs/02-architecture/ai-action-control-plane-architecture.md)
 - [Attestor language contract](docs/02-architecture/attestor-language-contract.md)
+- [Glossary](docs/02-architecture/glossary.md)
 - [Consequence taxonomy](docs/02-architecture/consequence-taxonomy.md)
 - [Domain pack boundary](docs/02-architecture/domain-pack-boundary.md)
 - [Downstream enforcement contract](docs/02-architecture/downstream-enforcement-contract.md)

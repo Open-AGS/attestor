@@ -346,7 +346,7 @@ function testAuditIndexesAndLiveProofGateAgree(): void {
   includes(ops167, '`closed`', 'OPS-167 is closed repo-side');
   includes(
     ops167,
-    'Locking tests: `tests/generic-admission-mode-ladder.test.ts`; `tests/generic-admission-routes.test.ts`; `tests/hosted-action-authorization-openapi.test.ts`; `tests/consequence-admission-proof-discipline.test.ts`.',
+    'Locking tests: `tests/generic-admission-mode-ladder.test.ts`; `tests/generic-admission-routes.test.ts`; `tests/generic-admission-guard-route-matrix.test.ts`; `tests/hosted-action-authorization-openapi.test.ts`; `tests/consequence-admission-proof-discipline.test.ts`.',
     'OPS-167 cites the generic admission route and proof-discipline locking tests',
   );
   includes(

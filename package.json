@@ -313,6 +313,7 @@
     "test:generic-admission-protected-release-token": "tsx tests/generic-admission-protected-release-token.test.ts",
     "test:release-enforcement-plane-dpop": "tsx tests/release-enforcement-plane-dpop.test.ts",
     "test:generic-admission-routes": "tsx tests/generic-admission-routes.test.ts",
+    "test:generic-admission-guard-route-matrix": "tsx tests/generic-admission-guard-route-matrix.test.ts",
     "test:shadow-admission-events": "tsx tests/shadow-admission-events.test.ts",
     "test:shadow-policy-simulation": "tsx tests/shadow-policy-simulation.test.ts",
     "test:money-movement-shadow-pack": "tsx tests/money-movement-shadow-pack.test.ts",

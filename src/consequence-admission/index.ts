@@ -231,6 +231,19 @@ import {
   type EvaluateConsequenceDecisionContextDriftInput,
 } from './decision-context-drift-binding.js';
 import {
+  AUTHORITY_CREEP_FINDINGS,
+  AUTHORITY_CREEP_GUARD_VERSION,
+  AUTHORITY_CREEP_OUTCOMES,
+  createAuthorityCreepGuard,
+  type AuthorityCreepGuardRecord,
+} from './authority-creep-guard.js';
+import type {
+  DecisionLineageGraphRecord,
+} from './decision-lineage-graph.js';
+import type {
+  AssuranceMeasurementPlane,
+} from './assurance-measurement-plane.js';
+import {
   PROTECTED_ADMISSION_E2E_PROOF_PLAN_VERSION,
   protectedAdmissionE2eProofPlanDescriptor,
   type ProtectedAdmissionE2eProofPlanDescriptor,
@@ -670,6 +683,7 @@ export interface ConsequenceAdmissionDescriptor {
   readonly decisionContextDriftBindingVersion:
     typeof CONSEQUENCE_DECISION_CONTEXT_DRIFT_BINDING_VERSION;
   readonly multiAgentDelegationGuardVersion: typeof CONSEQUENCE_MULTI_AGENT_DELEGATION_GUARD_VERSION;
+  readonly authorityCreepGuardVersion: typeof AUTHORITY_CREEP_GUARD_VERSION;
   readonly retryDefaultMaxAttempts: typeof CONSEQUENCE_ADMISSION_RETRY_DEFAULT_MAX_ATTEMPTS;
   readonly retryDefaultWindowSeconds: typeof CONSEQUENCE_ADMISSION_RETRY_DEFAULT_WINDOW_SECONDS;
   readonly decisions: typeof CONSEQUENCE_ADMISSION_DECISIONS;
@@ -720,6 +734,8 @@ export interface ConsequenceAdmissionDescriptor {
     typeof CONSEQUENCE_DECISION_CONTEXT_DRIFT_REASON_CODES;
   readonly multiAgentDelegationGuardOutcomes: typeof CONSEQUENCE_MULTI_AGENT_DELEGATION_GUARD_OUTCOMES;
   readonly multiAgentDelegationGuardReasonCodes: typeof CONSEQUENCE_MULTI_AGENT_DELEGATION_REASON_CODES;
+  readonly authorityCreepGuardOutcomes: typeof AUTHORITY_CREEP_OUTCOMES;
+  readonly authorityCreepGuardFindings: typeof AUTHORITY_CREEP_FINDINGS;
   readonly failureModeRuntimeExtensionOutcomes: typeof CONSEQUENCE_FAILURE_MODE_RUNTIME_EXTENSION_OUTCOMES;
   readonly failureModeRuntimeExtensionReasonCodes: typeof CONSEQUENCE_FAILURE_MODE_RUNTIME_EXTENSION_REASON_CODES;
   readonly auditEvidenceArtifactKinds: typeof CONSEQUENCE_AUDIT_EVIDENCE_ARTIFACT_KINDS;
@@ -853,6 +869,22 @@ export type GenericAdmissionMultiAgentDelegationPrincipal =
 export type GenericAdmissionMultiAgentDelegation =
   Omit<EvaluateConsequenceMultiAgentDelegationInput, 'generatedAt' | 'actionSurface' | 'action'>;
 
+export interface GenericAdmissionAuthorityCreep {
+  readonly lineageGraph: DecisionLineageGraphRecord;
+  readonly evaluatorRefDigest: string;
+  readonly guardId?: string | null;
+  readonly targetClaimNodeId?: string | null;
+  readonly measurementPlane?: AssuranceMeasurementPlane | null;
+  readonly evidenceNodeId?: string | null;
+  readonly defeaterId?: string | null;
+  readonly rawPayloadRequested?: boolean | null;
+  readonly rawEvidenceRequested?: boolean | null;
+  readonly auditWriteRequested?: boolean | null;
+  readonly policyActivationRequested?: boolean | null;
+  readonly liveEnforcementRequested?: boolean | null;
+  readonly authorityActionRequested?: boolean | null;
+}
+
 export interface CreateGenericAdmissionInput {
   readonly mode: GenericAdmissionMode;
   readonly actor: string;
@@ -887,6 +919,7 @@ export interface CreateGenericAdmissionInput {
   readonly multiAgentDelegation?: GenericAdmissionMultiAgentDelegation | null;
   readonly staleAuthorityPolicy?: GenericAdmissionStaleAuthorityPolicy | null;
   readonly decisionContextDrift?: GenericAdmissionDecisionContextDrift | null;
+  readonly authorityCreep?: GenericAdmissionAuthorityCreep | null;
   readonly noGoLedgerRef?: string | null;
   readonly noGoConditions?: readonly GenericAdmissionNoGoCondition[] | null;
   readonly noGoNaturalLanguageBypassAttempted?: boolean | null;
@@ -916,6 +949,7 @@ export interface GenericAdmissionModeEvaluation {
   readonly multiAgentDelegationGuardDecision: ConsequenceMultiAgentDelegationDecision | null;
   readonly staleAuthorityPolicyGuardDecision: ConsequenceStaleAuthorityPolicyDecision | null;
   readonly decisionContextDriftDecision: ConsequenceDecisionContextDriftDecision | null;
+  readonly authorityCreepGuardDecision: AuthorityCreepGuardRecord | null;
   readonly noGoConditionLedgerDecision: ConsequenceNoGoConditionLedgerDecision | null;
 }
 
@@ -1857,6 +1891,54 @@ function normalizeGenericDecisionContextDrift(
   });
 }
 
+function normalizeGenericAuthorityCreep(
+  value: unknown,
+): GenericAdmissionAuthorityCreep | null {
+  if (value === undefined || value === null) return null;
+  if (!isRecord(value)) {
+    throw new Error(
+      'Consequence admission authorityCreep must be an object when provided.',
+    );
+  }
+  const lineageGraph = value.lineageGraph;
+  if (!isRecord(lineageGraph)) {
+    throw new Error(
+      'Consequence admission authorityCreep.lineageGraph must be an object when provided.',
+    );
+  }
+  const measurementPlane = value.measurementPlane;
+  if (
+    measurementPlane !== undefined &&
+    measurementPlane !== null &&
+    !isRecord(measurementPlane)
+  ) {
+    throw new Error(
+      'Consequence admission authorityCreep.measurementPlane must be an object when provided.',
+    );
+  }
+
+  return Object.freeze({
+    lineageGraph: lineageGraph as unknown as DecisionLineageGraphRecord,
+    evaluatorRefDigest: readRequiredString(value, 'evaluatorRefDigest'),
+    guardId: readOptionalString(value, 'guardId'),
+    targetClaimNodeId: readOptionalString(value, 'targetClaimNodeId'),
+    measurementPlane: measurementPlane === undefined || measurementPlane === null
+      ? null
+      : measurementPlane as unknown as AssuranceMeasurementPlane,
+    evidenceNodeId: readOptionalString(value, 'evidenceNodeId'),
+    defeaterId: readOptionalString(value, 'defeaterId'),
+    rawPayloadRequested: readOptionalBoolean(value, 'rawPayloadRequested'),
+    rawEvidenceRequested: readOptionalBoolean(value, 'rawEvidenceRequested'),
+    auditWriteRequested: readOptionalBoolean(value, 'auditWriteRequested'),
+    policyActivationRequested:
+      readOptionalBoolean(value, 'policyActivationRequested'),
+    liveEnforcementRequested:
+      readOptionalBoolean(value, 'liveEnforcementRequested'),
+    authorityActionRequested:
+      readOptionalBoolean(value, 'authorityActionRequested'),
+  });
+}
+
 function normalizeGenericObservedFeatures(
   value: unknown,
 ): Readonly<Record<string, GenericAdmissionFeatureValue>> {
@@ -2217,6 +2299,7 @@ function normalizeCreateGenericAdmissionInput(input: unknown): CreateGenericAdmi
     multiAgentDelegation: normalizeGenericMultiAgentDelegation(input.multiAgentDelegation),
     staleAuthorityPolicy: normalizeGenericStaleAuthorityPolicy(input.staleAuthorityPolicy),
     decisionContextDrift: normalizeGenericDecisionContextDrift(input.decisionContextDrift),
+    authorityCreep: normalizeGenericAuthorityCreep(input.authorityCreep),
     noGoLedgerRef: readOptionalString(input, 'noGoLedgerRef'),
     noGoConditions: normalizeGenericNoGoConditions(input.noGoConditions),
     noGoNaturalLanguageBypassAttempted: readOptionalBoolean(
@@ -2478,6 +2561,56 @@ function decisionContextDriftReviewReasonCodes(
   return Object.freeze([...decision.reasonCodes]);
 }
 
+function authorityCreepFallbackGuardId(input: CreateGenericAdmissionInput): string {
+  const authorityCreep = input.authorityCreep;
+  const digest = canonicalObject({
+    version: AUTHORITY_CREEP_GUARD_VERSION,
+    domain: input.domain,
+    action: input.action,
+    requestedAt: input.requestedAt ?? null,
+    decidedAt: input.decidedAt ?? null,
+    lineageDigest: authorityCreep?.lineageGraph.digest ?? null,
+    measurementPlaneDigest: authorityCreep?.measurementPlane?.digest ?? null,
+  } as unknown as CanonicalReleaseJsonValue).digest;
+  return `guard:generic-admission:authority-creep:${digest}`;
+}
+
+function genericAdmissionAuthorityCreepGuardDecisionFor(
+  input: CreateGenericAdmissionInput,
+): AuthorityCreepGuardRecord | null {
+  if (input.authorityCreep === null || input.authorityCreep === undefined) {
+    return null;
+  }
+  return createAuthorityCreepGuard({
+    lineageGraph: input.authorityCreep.lineageGraph,
+    guardId: input.authorityCreep.guardId ?? authorityCreepFallbackGuardId(input),
+    evaluatedAt:
+      input.decidedAt ??
+      input.requestedAt ??
+      input.authorityCreep.lineageGraph.generatedAt,
+    evaluatorRefDigest: input.authorityCreep.evaluatorRefDigest,
+    targetClaimNodeId: input.authorityCreep.targetClaimNodeId ?? null,
+    measurementPlane: input.authorityCreep.measurementPlane ?? null,
+    evidenceNodeId: input.authorityCreep.evidenceNodeId ?? null,
+    defeaterId: input.authorityCreep.defeaterId ?? null,
+    rawPayloadRequested: input.authorityCreep.rawPayloadRequested ?? null,
+    rawEvidenceRequested: input.authorityCreep.rawEvidenceRequested ?? null,
+    auditWriteRequested: input.authorityCreep.auditWriteRequested ?? null,
+    policyActivationRequested: input.authorityCreep.policyActivationRequested ?? null,
+    liveEnforcementRequested: input.authorityCreep.liveEnforcementRequested ?? null,
+    authorityActionRequested: input.authorityCreep.authorityActionRequested ?? null,
+  });
+}
+
+function authorityCreepReviewReasonCodes(
+  decision: AuthorityCreepGuardRecord | null,
+): readonly string[] {
+  if (decision === null || decision.outcome === 'authority-creep-evidence-ready') {
+    return Object.freeze([]);
+  }
+  return Object.freeze([...decision.reasonCodes]);
+}
+
 function genericAdmissionHasNoGoConditionInput(
   input: CreateGenericAdmissionInput,
 ): boolean {
@@ -2522,6 +2655,7 @@ function genericAdmissionReviewReasons(
   multiAgentDelegationGuardDecision: ConsequenceMultiAgentDelegationDecision | null,
   staleAuthorityPolicyGuardDecision: ConsequenceStaleAuthorityPolicyDecision | null,
   decisionContextDriftDecision: ConsequenceDecisionContextDriftDecision | null,
+  authorityCreepGuardDecision: AuthorityCreepGuardRecord | null,
   noGoConditionLedgerDecision: ConsequenceNoGoConditionLedgerDecision | null,
 ): readonly string[] {
   const reasons: string[] = [];
@@ -2554,6 +2688,7 @@ function genericAdmissionReviewReasons(
   reasons.push(...multiAgentDelegationReviewReasonCodes(multiAgentDelegationGuardDecision));
   reasons.push(...staleAuthorityPolicyReviewReasonCodes(staleAuthorityPolicyGuardDecision));
   reasons.push(...decisionContextDriftReviewReasonCodes(decisionContextDriftDecision));
+  reasons.push(...authorityCreepReviewReasonCodes(authorityCreepGuardDecision));
   reasons.push(...noGoConditionLedgerReviewReasonCodes(noGoConditionLedgerDecision));
 
   if (profile.requiredChecks.includes('adapter-readiness')) {
@@ -2583,6 +2718,7 @@ function genericAdmissionShadowDecisionFor(
   multiAgentDelegationGuardDecision: ConsequenceMultiAgentDelegationDecision | null,
   staleAuthorityPolicyGuardDecision: ConsequenceStaleAuthorityPolicyDecision | null,
   decisionContextDriftDecision: ConsequenceDecisionContextDriftDecision | null,
+  authorityCreepGuardDecision: AuthorityCreepGuardRecord | null,
   noGoConditionLedgerDecision: ConsequenceNoGoConditionLedgerDecision | null,
 ): GenericAdmissionShadowDecision {
   if (authorityGuardDecision?.outcome === 'block') return 'would_block';
@@ -2594,6 +2730,9 @@ function genericAdmissionShadowDecisionFor(
   if (multiAgentDelegationGuardDecision?.outcome === 'block') return 'would_block';
   if (staleAuthorityPolicyGuardDecision?.outcome === 'block') return 'would_block';
   if (decisionContextDriftDecision?.outcome === 'block') return 'would_block';
+  if (authorityCreepGuardDecision?.outcome === 'authority-creep-rejected-boundary') {
+    return 'would_block';
+  }
   if (noGoConditionLedgerDecision?.outcome === 'block') return 'would_block';
   if (
     observedFeatureTrue(input, 'policyBlocked') ||
@@ -2643,6 +2782,7 @@ function genericReasonCodes(
   multiAgentDelegationGuardDecision: ConsequenceMultiAgentDelegationDecision | null,
   staleAuthorityPolicyGuardDecision: ConsequenceStaleAuthorityPolicyDecision | null,
   decisionContextDriftDecision: ConsequenceDecisionContextDriftDecision | null,
+  authorityCreepGuardDecision: AuthorityCreepGuardRecord | null,
 ): readonly string[] {
   const reasons = [
     `mode-${input.mode}`,
@@ -2655,6 +2795,7 @@ function genericReasonCodes(
     ...(multiAgentDelegationGuardDecision?.reasonCodes ?? []),
     ...(staleAuthorityPolicyGuardDecision?.reasonCodes ?? []),
     ...(decisionContextDriftDecision?.reasonCodes ?? []),
+    ...(authorityCreepGuardDecision?.reasonCodes ?? []),
   ];
   if (input.mode === 'observe' || input.mode === 'warn') {
     reasons.push('non-enforcing-mode');
@@ -2686,6 +2827,8 @@ function createGenericAdmissionEvaluation(
     genericAdmissionStaleAuthorityPolicyGuardDecisionFor(input);
   const decisionContextDriftDecision =
     genericAdmissionDecisionContextDriftDecisionFor(input);
+  const authorityCreepGuardDecision =
+    genericAdmissionAuthorityCreepGuardDecisionFor(input);
   const noGoConditionLedgerDecision = genericAdmissionNoGoConditionLedgerDecisionFor(input);
   const reviewReasons = genericAdmissionReviewReasons(
     input,
@@ -2698,6 +2841,7 @@ function createGenericAdmissionEvaluation(
     multiAgentDelegationGuardDecision,
     staleAuthorityPolicyGuardDecision,
     decisionContextDriftDecision,
+    authorityCreepGuardDecision,
     noGoConditionLedgerDecision,
   );
   const shadowDecision = genericAdmissionShadowDecisionFor(
@@ -2712,6 +2856,7 @@ function createGenericAdmissionEvaluation(
     multiAgentDelegationGuardDecision,
     staleAuthorityPolicyGuardDecision,
     decisionContextDriftDecision,
+    authorityCreepGuardDecision,
     noGoConditionLedgerDecision,
   );
   const effectiveDecision = effectiveDecisionForGenericMode(input.mode, shadowDecision);
@@ -2734,6 +2879,7 @@ function createGenericAdmissionEvaluation(
       multiAgentDelegationGuardDecision,
       staleAuthorityPolicyGuardDecision,
       decisionContextDriftDecision,
+      authorityCreepGuardDecision,
     ),
     authorityGuardDecision,
     approvalGuardDecision,
@@ -2744,6 +2890,7 @@ function createGenericAdmissionEvaluation(
     multiAgentDelegationGuardDecision,
     staleAuthorityPolicyGuardDecision,
     decisionContextDriftDecision,
+    authorityCreepGuardDecision,
     noGoConditionLedgerDecision,
   });
 }
@@ -2764,11 +2911,16 @@ function reasonCodesForCheck(
         reason === 'supply-chain-domain-pack-boundary-unverified' ||
         reason === 'policy-version-drift' ||
         reason === 'policy-digest-drift' ||
+        reason === 'authority-creep-finding:policy-activation-requested' ||
+        reason === 'authority-creep-finding:lineage-policy-activation-requested' ||
         GENERIC_ADMISSION_NO_GO_REASON_CODES.has(reason);
     }
     if (kind === 'authority') {
-      return reason.startsWith('authority-') ||
+      return (reason.startsWith('authority-') &&
+          !reason.startsWith('authority-creep-')) ||
         reason.startsWith('approval-') ||
+        reason === 'authority-creep-finding:authority-action-requested' ||
+        reason === 'authority-creep-finding:lineage-authority-action-requested' ||
         reason === 'supply-chain-owner-authority-missing' ||
         reason === 'supply-chain-review-missing' ||
         GENERIC_ADMISSION_MULTI_AGENT_DELEGATION_REASON_CODES.has(reason) ||
@@ -2777,6 +2929,11 @@ function reasonCodesForCheck(
     }
     if (kind === 'evidence') {
       return reason.startsWith('evidence-') ||
+        reason.startsWith('authority-creep-finding:') ||
+        reason.startsWith('authority-creep-blocked-metric-use:') ||
+        reason === 'authority-creep-outcome:authority-creep-open-undercutting-defeater' ||
+        reason === 'authority-creep-outcome:authority-creep-held-for-lineage-binding' ||
+        reason === 'authority-creep-outcome:authority-creep-rejected-boundary' ||
         GENERIC_ADMISSION_TOOL_RESULT_REASON_CODES.has(reason) ||
         GENERIC_ADMISSION_AGENTIC_SUPPLY_CHAIN_REASON_CODES.has(reason) ||
         GENERIC_ADMISSION_HUMAN_REVIEW_FATIGUE_REASON_CODES.has(reason) ||
@@ -2788,7 +2945,10 @@ function reasonCodesForCheck(
         reason === 'supply-chain-permission-overbroad' ||
         reason === 'supply-chain-install-scripts-present' ||
         reason === 'supply-chain-network-egress-unreviewed' ||
-        reason === 'supply-chain-runtime-replay-missing';
+        reason === 'supply-chain-runtime-replay-missing' ||
+        reason === 'authority-creep-finding:live-enforcement-requested' ||
+        reason === 'authority-creep-finding:lineage-live-enforcement-requested' ||
+        reason === 'authority-creep-outcome:authority-creep-rejected-boundary';
     }
     if (kind === 'adapter-readiness') {
       return reason.startsWith('adapter-') ||
@@ -2842,6 +3002,11 @@ function createGenericAdmissionChecks(
               ...(evaluation.multiAgentDelegationGuardDecision !== null
                 ? [evaluation.multiAgentDelegationGuardDecision.digest]
                 : []),
+              ...(evaluation.authorityCreepGuardDecision !== null &&
+              evaluation.authorityCreepGuardDecision.findings.some((finding) =>
+                finding.includes('authority-action'))
+                ? [evaluation.authorityCreepGuardDecision.digest]
+                : []),
             ]
           : kind === 'policy'
             ? [
@@ -2852,6 +3017,11 @@ function createGenericAdmissionChecks(
                 ...(evaluation.decisionContextDriftDecision !== null
                   ? [evaluation.decisionContextDriftDecision.digest]
                   : []),
+                ...(evaluation.authorityCreepGuardDecision !== null &&
+                evaluation.authorityCreepGuardDecision.findings.some((finding) =>
+                  finding.includes('policy-activation'))
+                  ? [evaluation.authorityCreepGuardDecision.digest]
+                  : []),
               ]
           : [
               ...(input.evidenceRefs ?? []),
@@ -2861,6 +3031,9 @@ function createGenericAdmissionChecks(
                 : []),
               ...(evaluation.humanReviewFatigueGuardDecision !== null && kind === 'evidence'
                 ? [evaluation.humanReviewFatigueGuardDecision.digest]
+                : []),
+              ...(evaluation.authorityCreepGuardDecision !== null && kind === 'evidence'
+                ? [evaluation.authorityCreepGuardDecision.digest]
                 : []),
             ];
       return createConsequenceAdmissionCheck({
@@ -3099,6 +3272,20 @@ function genericAdmissionDimensions(
       evaluation.decisionContextDriftDecision?.counts.reviewReasonCount ?? 0,
     decisionContextAgeHours:
       evaluation.decisionContextDriftDecision?.observed.contextAgeHours ?? null,
+    authorityCreepGuardOutcome:
+      evaluation.authorityCreepGuardDecision?.outcome ?? null,
+    authorityCreepGuardDigest:
+      evaluation.authorityCreepGuardDecision?.digest ?? null,
+    authorityCreepFindingCount:
+      evaluation.authorityCreepGuardDecision?.findings.length ?? 0,
+    authorityCreepBlockedMetricUseCount:
+      evaluation.authorityCreepGuardDecision?.blockedMetricUses.length ?? 0,
+    authorityCreepArtifactFindingCount:
+      evaluation.authorityCreepGuardDecision?.artifactFindings.length ?? 0,
+    authorityCreepOpensUndercuttingDefeater:
+      evaluation.authorityCreepGuardDecision?.opensUndercuttingDefeater ?? false,
+    authorityCreepRejectedBoundary:
+      evaluation.authorityCreepGuardDecision?.outcome === 'authority-creep-rejected-boundary',
   });
 }
 
@@ -4337,6 +4524,7 @@ ConsequenceAdmissionDescriptor {
     decisionContextDriftBindingVersion:
       CONSEQUENCE_DECISION_CONTEXT_DRIFT_BINDING_VERSION,
     multiAgentDelegationGuardVersion: CONSEQUENCE_MULTI_AGENT_DELEGATION_GUARD_VERSION,
+    authorityCreepGuardVersion: AUTHORITY_CREEP_GUARD_VERSION,
     retryDefaultMaxAttempts: CONSEQUENCE_ADMISSION_RETRY_DEFAULT_MAX_ATTEMPTS,
     retryDefaultWindowSeconds: CONSEQUENCE_ADMISSION_RETRY_DEFAULT_WINDOW_SECONDS,
     decisions: CONSEQUENCE_ADMISSION_DECISIONS,
@@ -4385,6 +4573,8 @@ ConsequenceAdmissionDescriptor {
     decisionContextDriftReasonCodes: CONSEQUENCE_DECISION_CONTEXT_DRIFT_REASON_CODES,
     multiAgentDelegationGuardOutcomes: CONSEQUENCE_MULTI_AGENT_DELEGATION_GUARD_OUTCOMES,
     multiAgentDelegationGuardReasonCodes: CONSEQUENCE_MULTI_AGENT_DELEGATION_REASON_CODES,
+    authorityCreepGuardOutcomes: AUTHORITY_CREEP_OUTCOMES,
+    authorityCreepGuardFindings: AUTHORITY_CREEP_FINDINGS,
     failureModeRuntimeExtensionOutcomes: CONSEQUENCE_FAILURE_MODE_RUNTIME_EXTENSION_OUTCOMES,
     failureModeRuntimeExtensionReasonCodes: CONSEQUENCE_FAILURE_MODE_RUNTIME_EXTENSION_REASON_CODES,
     auditEvidenceArtifactKinds: CONSEQUENCE_AUDIT_EVIDENCE_ARTIFACT_KINDS,

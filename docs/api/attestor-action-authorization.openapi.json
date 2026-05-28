@@ -842,6 +842,67 @@
               }
             }
           },
+          "authorityCreep": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "description": "Digest-first assurance measurement and decision-lineage metadata for the authority-creep guard. Measurement can add review/block pressure but cannot grant authority, write policy, activate enforcement, reduce evidence requirements, or admit an action by itself. Raw lineage graphs, raw measurement windows, raw assurance packets, customer payloads, and private reviewer material must not be returned.",
+            "additionalProperties": false,
+            "properties": {
+              "lineageGraph": {
+                "type": "object",
+                "description": "Decision-lineage graph record produced by the customer/operator integration. It must be no-authority, digest-only, read-only, and non-enforcing.",
+                "additionalProperties": true
+              },
+              "evaluatorRefDigest": {
+                "type": "string",
+                "description": "Digest binding the evaluator or adapter that evaluated the authority-creep guard input."
+              },
+              "guardId": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Optional opaque guard id. If omitted, Attestor derives a digest-bound guard id."
+              },
+              "targetClaimNodeId": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Optional lineage claim node to evaluate. Defaults to the lineage root claim."
+              },
+              "measurementPlane": {
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "description": "Optional assurance measurement-plane record. It must be no-authority, digest-only, and non-enforcing.",
+                "additionalProperties": true
+              },
+              "evidenceNodeId": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Optional opaque id for evidence-only guard output."
+              },
+              "defeaterId": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Optional opaque id for undercutting-defeater output."
+              },
+              "rawPayloadRequested": { "type": [ "boolean", "null" ] },
+              "rawEvidenceRequested": { "type": [ "boolean", "null" ] },
+              "auditWriteRequested": { "type": [ "boolean", "null" ] },
+              "policyActivationRequested": { "type": [ "boolean", "null" ] },
+              "liveEnforcementRequested": { "type": [ "boolean", "null" ] },
+              "authorityActionRequested": { "type": [ "boolean", "null" ] }
+            }
+          },
           "staleAuthorityPolicy": {
             "type": [
               "object",

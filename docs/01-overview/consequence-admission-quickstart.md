@@ -239,6 +239,24 @@ tool definitions, verifier identifiers, or simulation bodies. This does not
 prove the customer runtime inventory, change-management source, or live
 simulation runner.
 
+Generic admissions can also run the authority-creep guard when the request
+supplies structured `authorityCreep` metadata. This metadata binds the proposed
+action to digest-first assurance lineage and optional measurement-plane
+evidence. Clean lineage can add evidence-ready proof. Measurement artifacts
+that try to support a claim or strategy, blocked metric uses, missing lineage
+binding, or attempts to use measurement as authority hold for review. Direct
+requests to write audit state, activate policy, activate live enforcement,
+grant authority, or return raw payload/evidence fail closed. The guard cannot
+grant authority, write policy, activate enforcement, reduce evidence
+requirements, or admit an action by itself. Put plainly: it cannot grant
+authority, write policy, activate enforcement, reduce review, or lower proof
+requirements. The admission response carries only outcome, reason codes,
+counts, booleans, and digests; it must not return raw
+lineage graphs, raw measurement windows, raw assurance packets, customer
+payloads, or private reviewer material. This does not prove live assurance
+operations, live reviewer behavior, live policy activation, or customer PEP
+no-bypass.
+
 Generic admissions can also run the no-go condition ledger guard when the
 request supplies `noGoLedgerRef`, `noGoConditions`, or no-go bypass signals.
 No-go records must be structured hold metadata such as fraud, legal,

@@ -178,6 +178,11 @@ function testOpenApiContractPreservesShadowBoundaries(): void {
   includes(text, '"modelVersion"', 'Hosted OpenAPI: model version binding is documented');
   includes(text, '"toolSchemaDigest"', 'Hosted OpenAPI: tool schema digest binding is documented');
   includes(text, '"requireSimulationRefresh"', 'Hosted OpenAPI: simulation refresh requirement is documented');
+  includes(text, '"authorityCreep"', 'Hosted OpenAPI: authority-creep contract is documented');
+  includes(text, '"lineageGraph"', 'Hosted OpenAPI: authority-creep lineage graph is documented');
+  includes(text, '"measurementPlane"', 'Hosted OpenAPI: authority-creep measurement plane is documented');
+  includes(text, '"policyActivationRequested"', 'Hosted OpenAPI: authority-creep policy activation boundary is documented');
+  includes(text, '"authorityActionRequested"', 'Hosted OpenAPI: authority-creep authority-action boundary is documented');
   includes(text, '"staleAuthorityPolicy"', 'Hosted OpenAPI: stale authority-policy contract is documented');
   includes(text, '"currentPolicyVersion"', 'Hosted OpenAPI: current policy version binding is documented');
   includes(text, '"authorityCheckedAt"', 'Hosted OpenAPI: authority freshness timestamp is documented');
@@ -217,6 +222,7 @@ function testDocsPointToTheOpenApiTruthSource(): void {
   includes(doc, 'human review packet state must arrive as structured `humanReviewFatigue` metadata', 'Hosted OpenAPI docs: guide documents human-review metadata');
   includes(doc, 'multi-agent delegation state must arrive as structured `multiAgentDelegation` metadata', 'Hosted OpenAPI docs: guide documents delegation metadata');
   includes(doc, 'model, tool-schema, policy, config, prompt, verifier, and simulation context must arrive as structured `decisionContextDrift` metadata', 'Hosted OpenAPI docs: guide documents decision-context metadata');
+  includes(doc, 'assurance measurement and decision-lineage state must arrive as structured `authorityCreep` metadata', 'Hosted OpenAPI docs: guide documents authority-creep metadata');
   includes(doc, 'policy version, approval window, authority freshness, drift, and no-go state must arrive as structured `staleAuthorityPolicy` metadata', 'Hosted OpenAPI docs: guide documents stale authority-policy metadata');
   includes(doc, 'no-go condition state must arrive as structured `noGoConditions` metadata', 'Hosted OpenAPI docs: guide documents no-go metadata');
   includes(doc, 'no public hosted crypto HTTP route is claimed', 'Hosted OpenAPI docs: guide avoids hosted crypto overclaim');

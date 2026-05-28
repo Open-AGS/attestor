@@ -1,8 +1,15 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import {
   GENERIC_ADMISSION_MODES,
+  createAssuranceCaseContract,
+  createAssuranceCaseNode,
+  createAssuranceCaseTransition,
+  createDecisionLineageGraph,
   createGenericAdmissionEnvelope,
   consequenceAdmissionDescriptor,
+  type DecisionLineageArtifactRefInput,
+  type DecisionLineageGraphRecord,
 } from '../src/consequence-admission/index.js';
 
 let passed = 0;
@@ -10,6 +17,15 @@ let passed = 0;
 function digest(seed: string): string {
   return `sha256:${seed.repeat(64).slice(0, 64)}`;
 }
+
+function sha(seed: string): string {
+  return `sha256:${createHash('sha256').update(seed).digest('hex')}`;
+}
+
+const authorityCreepTenantDigest = sha('tenant:generic-authority-creep');
+const authorityCreepScopeDigest = sha('scope:generic-authority-creep');
+const authorityCreepActorDigest = sha('actor:generic-authority-creep');
+const authorityCreepTransitionDigest = sha('transition:generic-authority-creep');
 
 function trustedApprovals(): readonly Record<string, string | boolean>[] {
   return [{
@@ -67,6 +83,88 @@ function baseMoneyAdmission(mode: string) {
     ],
     approvals: trustedApprovals(),
     policyRef: 'policy:refunds:v1',
+  };
+}
+
+function authorityCreepLineageGraph(
+  artifacts: readonly DecisionLineageArtifactRefInput[] = [],
+): DecisionLineageGraphRecord {
+  const claim = createAssuranceCaseNode({
+    nodeId: 'claim:generic-authority-bounded',
+    kind: 'claim',
+    title: 'Generic admission authority remains bounded',
+    bodyDigest: sha('claim:generic-authority-creep'),
+    tenantRefDigest: authorityCreepTenantDigest,
+    scopeDigest: authorityCreepScopeDigest,
+    createdByRefDigest: authorityCreepActorDigest,
+    createdAt: '2026-05-01T16:58:00.000Z',
+  });
+  const evidence = createAssuranceCaseNode({
+    nodeId: 'evidence:generic-runtime-lineage',
+    kind: 'evidence',
+    title: 'Generic admission runtime lineage evidence',
+    bodyDigest: sha('evidence:generic-authority-creep'),
+    tenantRefDigest: authorityCreepTenantDigest,
+    scopeDigest: authorityCreepScopeDigest,
+    createdByRefDigest: authorityCreepActorDigest,
+    createdAt: '2026-05-01T16:58:01.000Z',
+  });
+  const assuranceCase = createAssuranceCaseContract({
+    caseId: 'case:generic-authority-creep',
+    tenantRefDigest: authorityCreepTenantDigest,
+    rootClaimId: claim.nodeId,
+    createdAt: '2026-05-01T16:58:00.000Z',
+    lastReviewedAt: '2026-05-01T16:59:00.000Z',
+    nodes: [claim, evidence],
+    defeaters: [],
+    transitions: [
+      createAssuranceCaseTransition({
+        transitionId: 'transition:generic-authority-claim',
+        transitionKind: 'create-node',
+        actorRefDigest: authorityCreepActorDigest,
+        occurredAt: '2026-05-01T16:58:02.000Z',
+        reasonDigest: authorityCreepTransitionDigest,
+        nodeId: claim.nodeId,
+        evidenceRefDigest: claim.digest,
+      }),
+      createAssuranceCaseTransition({
+        transitionId: 'transition:generic-authority-evidence',
+        transitionKind: 'create-node',
+        actorRefDigest: authorityCreepActorDigest,
+        occurredAt: '2026-05-01T16:58:03.000Z',
+        reasonDigest: authorityCreepTransitionDigest,
+        nodeId: evidence.nodeId,
+        evidenceRefDigest: evidence.digest,
+      }),
+    ],
+  });
+  return createDecisionLineageGraph({
+    assuranceCase,
+    lineageId: 'lineage:generic-authority-creep',
+    generatedAt: '2026-05-01T16:59:30.000Z',
+    builderRefDigest: authorityCreepActorDigest,
+    artifactRefs: artifacts,
+  });
+}
+
+function authorityCreepMeasurementArtifact(
+  targetNodeId: string,
+): DecisionLineageArtifactRefInput {
+  return {
+    artifactId: 'artifact:generic-measurement-plane',
+    artifactKind: 'measurement-plane-record',
+    artifactDigest: sha('artifact:generic-measurement-plane'),
+    sourceVersion: 'attestor.assurance-measurement-plane.v1',
+    producedAt: '2026-05-01T16:59:20.000Z',
+    producerRefDigest: authorityCreepActorDigest,
+    targetNodeId,
+  };
+}
+
+function cleanAuthorityCreepMetadata(): Record<string, unknown> {
+  return {
+    lineageGraph: authorityCreepLineageGraph(),
+    evaluatorRefDigest: authorityCreepActorDigest,
   };
 }
 
@@ -1383,6 +1481,126 @@ function testDecisionContextDriftRequiresReview(): void {
   );
 }
 
+function testCleanAuthorityCreepCanAdmitCompleteRequest(): void {
+  const envelope = createGenericAdmissionEnvelope({
+    ...baseMoneyAdmission('enforce'),
+    authorityCreep: cleanAuthorityCreepMetadata(),
+  });
+  const serialized = JSON.stringify(envelope);
+
+  equal(envelope.shadowDecision, 'would_admit', 'Generic admission: clean authority-creep lineage still admits');
+  equal(envelope.admission.decision, 'admit', 'Generic admission: authority-creep evidence-ready does not hold complete request');
+  equal(
+    envelope.admission.request.policyScope.dimensions.authorityCreepGuardOutcome,
+    'authority-creep-evidence-ready',
+    'Generic admission: authority-creep evidence-ready outcome is carried',
+  );
+  equal(
+    envelope.admission.request.policyScope.dimensions.authorityCreepFindingCount,
+    0,
+    'Generic admission: clean authority-creep lineage carries zero findings',
+  );
+  ok(
+    typeof envelope.admission.request.policyScope.dimensions.authorityCreepGuardDigest === 'string',
+    'Generic admission: authority-creep digest is carried without raw lineage material',
+  );
+  ok(
+    envelope.admission.checks.every((check) => check.outcome === 'pass'),
+    'Generic admission: authority-creep pass reason does not create false failing checks',
+  );
+  assert.doesNotMatch(
+    serialized,
+    /case:generic-authority-creep|claim:generic-authority-bounded/u,
+    'Generic admission: serialized envelope does not leak raw authority-creep lineage ids',
+  );
+  passed += 1;
+}
+
+function testAuthorityCreepMeasurementAsAuthorityRequiresReview(): void {
+  const envelope = createGenericAdmissionEnvelope({
+    ...baseMoneyAdmission('enforce'),
+    authorityCreep: {
+      lineageGraph: authorityCreepLineageGraph([
+        authorityCreepMeasurementArtifact('claim:generic-authority-bounded'),
+      ]),
+      evaluatorRefDigest: authorityCreepActorDigest,
+    },
+  });
+  const evidenceCheck = envelope.admission.checks.find((check) => check.kind === 'evidence');
+
+  equal(envelope.shadowDecision, 'would_review', 'Generic admission: authority-creep finding shadows review');
+  equal(envelope.admission.decision, 'review', 'Generic admission: authority-creep finding holds enforce mode');
+  ok(
+    envelope.admission.reasonCodes.includes('authority-creep-finding:measurement-artifact-targets-claim'),
+    'Generic admission: authority-creep claim-target finding is explicit',
+  );
+  ok(
+    envelope.admission.reasonCodes.includes('authority-creep-outcome:authority-creep-open-undercutting-defeater'),
+    'Generic admission: authority-creep undercutting outcome is explicit',
+  );
+  ok(
+    evidenceCheck?.reasonCodes.includes('authority-creep-finding:measurement-artifact-targets-claim'),
+    'Generic admission: authority-creep finding attaches to the evidence check',
+  );
+  equal(
+    envelope.admission.request.policyScope.dimensions.authorityCreepGuardOutcome,
+    'authority-creep-open-undercutting-defeater',
+    'Generic admission: authority-creep review outcome is carried',
+  );
+  equal(
+    envelope.admission.request.policyScope.dimensions.authorityCreepOpensUndercuttingDefeater,
+    true,
+    'Generic admission: authority-creep undercutting flag is carried',
+  );
+  equal(
+    envelope.admission.request.policyScope.dimensions.authorityCreepArtifactFindingCount,
+    1,
+    'Generic admission: authority-creep artifact finding count is carried',
+  );
+}
+
+function testAuthorityCreepBoundaryRequestBlocksEnforceMode(): void {
+  const envelope = createGenericAdmissionEnvelope({
+    ...baseMoneyAdmission('enforce'),
+    authorityCreep: {
+      ...cleanAuthorityCreepMetadata(),
+      policyActivationRequested: true,
+      authorityActionRequested: true,
+    },
+  });
+  const evidenceCheck = envelope.admission.checks.find((check) => check.kind === 'evidence');
+  const policyCheck = envelope.admission.checks.find((check) => check.kind === 'policy');
+  const authorityCheck = envelope.admission.checks.find((check) => check.kind === 'authority');
+
+  equal(envelope.shadowDecision, 'would_block', 'Generic admission: authority-creep boundary request shadows block');
+  equal(envelope.admission.decision, 'block', 'Generic admission: authority-creep boundary request blocks enforce mode');
+  ok(
+    envelope.admission.reasonCodes.includes('authority-creep-finding:policy-activation-requested'),
+    'Generic admission: authority-creep policy activation finding is explicit',
+  );
+  ok(
+    envelope.admission.reasonCodes.includes('authority-creep-finding:authority-action-requested'),
+    'Generic admission: authority-creep authority action finding is explicit',
+  );
+  ok(
+    evidenceCheck?.reasonCodes.includes('authority-creep-outcome:authority-creep-rejected-boundary'),
+    'Generic admission: authority-creep rejected boundary attaches to evidence check',
+  );
+  ok(
+    policyCheck?.reasonCodes.includes('authority-creep-finding:policy-activation-requested'),
+    'Generic admission: authority-creep policy activation attaches to policy check',
+  );
+  ok(
+    authorityCheck?.reasonCodes.includes('authority-creep-finding:authority-action-requested'),
+    'Generic admission: authority-creep authority action attaches to authority check',
+  );
+  equal(
+    envelope.admission.request.policyScope.dimensions.authorityCreepRejectedBoundary,
+    true,
+    'Generic admission: authority-creep rejected boundary flag is carried',
+  );
+}
+
 function testStalePolicyMismatchBlocksEnforceMode(): void {
   const envelope = createGenericAdmissionEnvelope({
     ...baseMoneyAdmission('enforce'),
@@ -1630,6 +1848,9 @@ testCurrentStaleAuthorityPolicyCanAdmitCompleteRequest();
 testMatchingDecisionContextCanAdmitCompleteRequest();
 testMissingDecisionContextBlocksEnforceMode();
 testDecisionContextDriftRequiresReview();
+testCleanAuthorityCreepCanAdmitCompleteRequest();
+testAuthorityCreepMeasurementAsAuthorityRequiresReview();
+testAuthorityCreepBoundaryRequestBlocksEnforceMode();
 testStalePolicyMismatchBlocksEnforceMode();
 testMissingAuthorityFreshnessRequiresReview();
 testScopeExpansionNarrowsEnforceMode();

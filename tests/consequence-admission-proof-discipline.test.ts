@@ -70,6 +70,11 @@ function testObservedFeaturesStayEvidenceOnly(): void {
   );
   includes(
     source,
+    'authorityCreep: normalizeGenericAuthorityCreep(input.authorityCreep)',
+    'Consequence admission proof discipline: generic authority-creep metadata is normalized from caller input',
+  );
+  includes(
+    source,
     'evaluateConsequenceUntrustedContentAuthority({',
     'Consequence admission proof discipline: untrusted-content authority guard is runtime-wired for generic admissions',
   );
@@ -92,6 +97,11 @@ function testObservedFeaturesStayEvidenceOnly(): void {
     source,
     'evaluateConsequenceDecisionContextDrift({',
     'Consequence admission proof discipline: decision-context drift binding is runtime-wired for generic admissions',
+  );
+  includes(
+    source,
+    'createAuthorityCreepGuard({',
+    'Consequence admission proof discipline: authority-creep guard is runtime-wired for generic admissions',
   );
   includes(
     source,
@@ -215,6 +225,16 @@ function testObservedFeaturesStayEvidenceOnly(): void {
     'raw model versions, policy versions, prompt text, config values',
     'Consequence admission proof discipline: quickstart documents decision-context raw-data boundary',
   );
+  includes(
+    quickstart,
+    'structured `authorityCreep` metadata',
+    'Consequence admission proof discipline: quickstart documents authority-creep metadata',
+  );
+  includes(
+    quickstart,
+    'write policy, activate enforcement, reduce review',
+    'Consequence admission proof discipline: quickstart documents authority-creep no-authority boundary',
+  );
 
   const hostedApi = readProjectFile('docs', '01-overview', 'hosted-action-authorization-api.md');
   includes(
@@ -251,6 +271,11 @@ function testObservedFeaturesStayEvidenceOnly(): void {
     hostedApi,
     'model, tool-schema, policy, config, prompt, verifier, and simulation context must arrive as structured `decisionContextDrift` metadata',
     'Consequence admission proof discipline: hosted API boundary documents decision-context metadata',
+  );
+  includes(
+    hostedApi,
+    'assurance measurement and decision-lineage state must arrive as structured `authorityCreep` metadata',
+    'Consequence admission proof discipline: hosted API boundary documents authority-creep metadata',
   );
   includes(
     hostedApi,
@@ -333,6 +358,11 @@ function testAuditIndexesAndLiveProofGateAgree(): void {
     ops167,
     '`multiAgentDelegation`',
     'OPS-167 records multi-agent delegation runtime wiring',
+  );
+  includes(
+    ops167,
+    '`authorityCreep`',
+    'OPS-167 records authority-creep runtime wiring',
   );
   includes(
     ops167,

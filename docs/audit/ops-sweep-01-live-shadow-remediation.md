@@ -18,7 +18,7 @@ readiness.
 - `ops/kubernetes/ha/networkpolicy.yaml`
 - `ops/kubernetes/ha/providers/gke/gcpbackendpolicy.yaml`
 - `ops/kubernetes/ha/providers/external-secrets/clustersecretstore.gke.example.yaml`
-- `scripts/check-ops-live-shadow-readiness.mjs`
+- `scripts/check/check-ops-live-shadow-readiness.mjs`
 
 ## External Anchors
 

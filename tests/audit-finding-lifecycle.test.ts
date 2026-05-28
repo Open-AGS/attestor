@@ -88,7 +88,7 @@ function testPackageScript(): void {
   passed += 1;
   assert.equal(
     packageJson.scripts['test:audit-finding-evidence'],
-    'node scripts/check-audit-finding-evidence.mjs',
+    'node scripts/check/check-audit-finding-evidence.mjs',
     'Package scripts: audit finding evidence checker is exposed',
   );
   passed += 1;
@@ -101,7 +101,7 @@ function testPackageScript(): void {
 }
 
 function testEvidenceChecker(): void {
-  const output = execFileSync('node', ['scripts/check-audit-finding-evidence.mjs'], {
+  const output = execFileSync('node', ['scripts/check/check-audit-finding-evidence.mjs'], {
     cwd: process.cwd(),
     encoding: 'utf8',
   });

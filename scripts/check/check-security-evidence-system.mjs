@@ -57,7 +57,7 @@ export const REQUIRED_AUDIT_NAVIGATION_RULES = Object.freeze([
   '## Current Claim Navigation',
   '| Current repository, production, or enterprise posture | `docs/audit/current-posture-baseline.md` | `docs/audit/report-index.md`; `docs/audit/finding-index.md` |',
   '| Whether a finding is open, closed, accepted, stale, contradicted, or live-only | `docs/audit/finding-index.md` | the cited code, test, PR, CI, or live-proof row |',
-  '| Whether repository evidence can close a live/deployment claim | `docs/audit/live-proof-register.md` | `scripts/check-ops-live-shadow-readiness.mjs`; the relevant environment proof flag |',
+  '| Whether repository evidence can close a live/deployment claim | `docs/audit/live-proof-register.md` | `scripts/check/check-ops-live-shadow-readiness.mjs`; the relevant environment proof flag |',
   '| Whether a new PR updated the right evidence files | `.github/pull_request_template.md` | `npm run check:security-evidence-system` |',
   '## Consistency Guard',
   '`npm run check:security-evidence-system`',

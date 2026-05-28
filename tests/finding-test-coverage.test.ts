@@ -7,7 +7,7 @@ import { tmpdir } from 'node:os';
 const {
   parseFindingIndexRows,
   validateFindingTestCoverage,
-} = await import('../scripts/check-finding-test-coverage.mjs') as {
+} = await import('../scripts/check/check-finding-test-coverage.mjs') as {
   readonly parseFindingIndexRows: (content: string) => readonly unknown[];
   readonly validateFindingTestCoverage: (options?: {
     readonly content?: string;
@@ -116,7 +116,7 @@ function testCurrentRepositoryPasses(): void {
   equal(result.ok, true, 'Finding test coverage: current finding-index passes');
   ok(result.checkedRows.length > 0, 'Finding test coverage: current repository has checked closed P0/P1 rows');
 
-  const output = execFileSync('node', ['scripts/check-finding-test-coverage.mjs'], {
+  const output = execFileSync('node', ['scripts/check/check-finding-test-coverage.mjs'], {
     cwd: process.cwd(),
     encoding: 'utf8',
   });

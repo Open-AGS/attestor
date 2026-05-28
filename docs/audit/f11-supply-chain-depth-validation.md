@@ -36,7 +36,7 @@ External anchors:
   `docker-compose.observability.yml`, `ops/kubernetes/observability/deployment.yaml`,
   and `ops/kubernetes/observability/providers/grafana-alloy/patch-deployment.yaml`
   now use non-`latest`, digest-pinned external images.
-- `scripts/check-supply-chain-baseline.mjs` now rejects floating `:latest`
+- `scripts/check/check-supply-chain-baseline.mjs` now rejects floating `:latest`
   image references and requires digest pins for the shipped runtime image files
   it audits.
 - Critical runtime dependencies in `package.json` are exact-pinned:

@@ -16,7 +16,7 @@ PR #512 changed only observability and audit-index evidence:
 | `docs/audit/{control-map,finding-index,live-proof-register,report-index}.md` | no admin route behavior change |
 | `docs/audit/ops-sweep-05-collector-resilience-audit-verification.md` | no admin route behavior change |
 | `ops/kubernetes/observability/**` | no admin route behavior change |
-| `scripts/check-ops-live-shadow-readiness.mjs` | no admin route behavior change |
+| `scripts/check/check-ops-live-shadow-readiness.mjs` | no admin route behavior change |
 | `scripts/render-observability-release-bundle.ts` | no admin route behavior change |
 | `tests/{kubernetes-observability-bundle,observability-release-bundle-render,ops-sweep-04-storage-collector-remediation}.test.ts` | no admin route behavior change |
 

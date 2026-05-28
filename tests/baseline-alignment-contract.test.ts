@@ -5,7 +5,7 @@ import {
   DEPENDABOT_PR_AUTHOR,
   validateBaselineAlignment,
   validateBaselineTemplate,
-} from '../scripts/check-baseline-alignment.mjs';
+} from '../scripts/check/check-baseline-alignment.mjs';
 
 let passed = 0;
 

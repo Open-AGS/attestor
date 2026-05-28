@@ -52,7 +52,7 @@ production-readiness, or certification claims.
 | `src/service/http/routes/release-policy-control-routes.ts` | full route inventory + remediation diff | 23 release-policy-control routes, activation, rollback, emergency break-glass boundary |
 | `src/service/http/routes/admin-routes.ts` | targeted | comparator for role-scoped admin-key enforcement pattern |
 | `src/service/request-context.ts` | targeted | role-scoped admin key env contract and bearer-token validation |
-| `scripts/check-ops-live-shadow-readiness.mjs` | targeted | live proof gate alignment |
+| `scripts/check/check-ops-live-shadow-readiness.mjs` | targeted | live proof gate alignment |
 | `tests/release-policy-control-plane-admin-routes.test.ts` | full | existing policy-control route flow coverage plus new role-escalation assertions |
 | `tests/release-review-admin-routes.test.ts` | full | new release-review role-escalation coverage |
 | `docs/audit/{finding-index,report-index,control-map,live-proof-register,current-posture-baseline}.md` | targeted | index and no-overclaim alignment |

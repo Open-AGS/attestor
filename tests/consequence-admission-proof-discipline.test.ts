@@ -391,7 +391,7 @@ function testAuditIndexesAndLiveProofGateAgree(): void {
     'Live proof register names the consequence retry proof flag',
   );
 
-  const opsGate = readProjectFile('scripts', 'check-ops-live-shadow-readiness.mjs');
+  const opsGate = readProjectFile('scripts', 'check', 'check-ops-live-shadow-readiness.mjs');
   includes(
     opsGate,
     'ATTESTOR_CONSEQUENCE_RETRY_ATTEMPT_LEDGER_PROOF',

@@ -6,7 +6,7 @@ import {
   REQUIRED_PR_TEMPLATE_FIELDS,
   SECURITY_EVIDENCE_DOCS,
   validateSecurityEvidenceSystem,
-} from '../scripts/check-security-evidence-system.mjs';
+} from '../scripts/check/check-security-evidence-system.mjs';
 
 let passed = 0;
 

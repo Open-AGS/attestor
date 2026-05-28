@@ -189,7 +189,7 @@ function testLiveProofRegisterAndOpsGateAgree(): void {
     'Live proof register names policy activation approval proof flag',
   );
 
-  const opsGate = readProjectFile('scripts', 'check-ops-live-shadow-readiness.mjs');
+  const opsGate = readProjectFile('scripts', 'check', 'check-ops-live-shadow-readiness.mjs');
   includes(
     opsGate,
     "ATTESTOR_POLICY_MUTATION_AUDIT_CHAIN_PROOF",

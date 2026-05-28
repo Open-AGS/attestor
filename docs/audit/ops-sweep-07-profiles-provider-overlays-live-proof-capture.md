@@ -20,7 +20,7 @@ Chain-effect verdict:
 
 - Direct regression into Sweep 07 scope: none. PR #513 did not modify
   profile renderers, provider overlays, KEDA manifests, observability provider
-  overlays, or `scripts/check-ops-live-shadow-readiness.mjs`.
+  overlays, or `scripts/check/check-ops-live-shadow-readiness.mjs`.
 - Defense-in-depth weakening: none. PR #513 added admin live proof entries and
   did not relax existing ops gates.
 - Docs/index drift: intentional. `control-map.md` now points to remaining
@@ -60,7 +60,7 @@ claims.
 |---|---|---|
 | `scripts/render-ha-profile.ts` | full | HA profile output behavior and SLO summary |
 | `scripts/render-observability-profile.ts` | full | SLO burn-rate rule generation and zero-budget divisor risk |
-| `scripts/check-ops-live-shadow-readiness.mjs` | full | live proof env gate vs register alignment |
+| `scripts/check/check-ops-live-shadow-readiness.mjs` | full | live proof env gate vs register alignment |
 | `ops/kubernetes/ha/providers/aws/**` | full | AWS ALB HTTPS/WAF parity |
 | `ops/kubernetes/ha/providers/gke/**` | targeted | GKE parity reference |
 | `ops/kubernetes/ha/providers/keda/**` | full | Redis TLS and Prometheus auth boundary |
@@ -87,7 +87,7 @@ claims.
 
 Repository changes:
 
-- Expanded `scripts/check-ops-live-shadow-readiness.mjs` to gate all live proof
+- Expanded `scripts/check/check-ops-live-shadow-readiness.mjs` to gate all live proof
   register entries through explicit env flags.
 - Added `--stage=live-shadow|limited-enforcement|enterprise-pilot` for
   cumulative proof gating without forcing Phase 2 customer PEP/KMS proof into

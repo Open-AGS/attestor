@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { extname, join, relative } from 'node:path';
-import { redactSensitiveOutput } from './secret-safe-output.ts';
+import { redactSensitiveOutput } from '../secret-safe-output.ts';
 
 const PUBLIC_ARTIFACT_ROOTS = Object.freeze([
   'README.md',

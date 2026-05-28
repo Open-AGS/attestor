@@ -75,7 +75,7 @@ provider deployment, or production-readiness claims.
 | `src/service/mailgun-email-webhook.ts` | full | Mailgun HMAC verifier, timestamp window, and replay-token digest |
 | `src/service/stripe-webhook-store.ts` | targeted | Stripe local fallback boundary |
 | `src/service/hosted-webhook-async-reconciliation-hardening.ts` | targeted | webhook/async hardening evidence contract |
-| `scripts/check-ops-live-shadow-readiness.mjs` | targeted | live proof flag set |
+| `scripts/check/check-ops-live-shadow-readiness.mjs` | targeted | live proof flag set |
 | `docs/audit/{finding-index,report-index,control-map,live-proof-register,current-posture-baseline}.md` | targeted | evidence index reconciliation |
 | `tests/service-email-webhook-service.test.ts` | full | email webhook service behavior |
 | `tests/live-account-email-{provider,mailgun}-webhook.test.ts` | targeted | local single-node live-style test compatibility |

@@ -35,7 +35,7 @@ function main(): void {
   const restoreWal = read('ops/postgres/pitr/restore-wal.sh');
   const postgresReadme = read('ops/postgres/pitr/README.md');
   const backupDr = read('docs/08-deployment/backup-restore-dr.md');
-  const readinessGate = read('scripts/check-ops-live-shadow-readiness.mjs');
+  const readinessGate = read('scripts/check/check-ops-live-shadow-readiness.mjs');
   const findingIndex = read('docs/audit/finding-index.md');
   const reportIndex = read('docs/audit/report-index.md');
   const liveProofRegister = read('docs/audit/live-proof-register.md');

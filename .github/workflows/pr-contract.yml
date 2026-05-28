@@ -25,4 +25,4 @@ jobs:
         env:
           PR_BODY: ${{ github.event.pull_request.body }}
           PR_AUTHOR: ${{ github.event.pull_request.user.login }}
-        run: node scripts/check-baseline-alignment.mjs
+        run: node scripts/check/check-baseline-alignment.mjs

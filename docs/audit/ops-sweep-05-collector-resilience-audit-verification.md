@@ -50,7 +50,7 @@ boundary around that collector bundle.
   Kubernetes observability README now describe the same boundary.
 - Test coverage drift: `tests/kubernetes-observability-bundle.test.ts`,
   `tests/observability-release-bundle-render.test.ts`, and
-  `scripts/check-ops-live-shadow-readiness.mjs` now check the new manifests.
+  `scripts/check/check-ops-live-shadow-readiness.mjs` now check the new manifests.
 
 ## No-Claims
 

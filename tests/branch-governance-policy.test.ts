@@ -15,7 +15,7 @@ function matches(haystack: string, pattern: RegExp, message: string): void {
 
 const policy = readFileSync(new URL('../.github/BRANCH_POLICY.md', import.meta.url), 'utf8');
 const workflow = readFileSync(new URL('../.github/workflows/branch-governance.yml', import.meta.url), 'utf8');
-const script = readFileSync(new URL('../scripts/check-stale-branches.mjs', import.meta.url), 'utf8');
+const script = readFileSync(new URL('../scripts/check/check-stale-branches.mjs', import.meta.url), 'utf8');
 const codeowners = readFileSync(new URL('../.github/CODEOWNERS', import.meta.url), 'utf8');
 const contributing = readFileSync(new URL('../CONTRIBUTING.md', import.meta.url), 'utf8');
 const remediation = readFileSync(
@@ -34,7 +34,7 @@ includes(workflow, 'push:', 'Branch workflow: runs on master pushes touching gov
 includes(workflow, "'.github/**'", 'Branch workflow: watches GitHub governance files');
 includes(workflow, "'SECURITY.md'", 'Branch workflow: watches SECURITY.md');
 includes(workflow, 'actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6', 'Branch workflow: checkout action is SHA-pinned');
-includes(workflow, 'node scripts/check-stale-branches.mjs --require-master-only', 'Branch workflow: stale branch checker runs in master-only mode');
+includes(workflow, 'node scripts/check/check-stale-branches.mjs --require-master-only', 'Branch workflow: stale branch checker runs in master-only mode');
 includes(workflow, 'ATTESTOR_BRANCH_GOVERNANCE_TOKEN', 'Branch workflow: live governance probes require a dedicated admin-read token secret');
 includes(workflow, 'GitHub Administration: read permission', 'Branch workflow: token permission boundary is explicit');
 includes(workflow, "delete_branch_on_merge", 'Branch workflow: repository auto-delete setting is checked');

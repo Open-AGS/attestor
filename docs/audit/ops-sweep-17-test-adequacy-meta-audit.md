@@ -5,7 +5,7 @@ test guard, schema marker, workflow gate, live-proof gate, or source file was
 changed by this report.
 
 Remediation follow-up: current `origin/master` after PR4 adds
-`scripts/check-finding-test-coverage.mjs`, `tests/finding-test-coverage.test.ts`,
+`scripts/check/check-finding-test-coverage.mjs`, `tests/finding-test-coverage.test.ts`,
 Evaluation Smoke wiring, structured `Locking test:` markers for closed P0/P1
 rows, and future `Test contract:` paths for P0 live/ops blockers. The report's
 original OPS-136/139 gaps are therefore repo-side closed when that guard is
@@ -30,7 +30,7 @@ Files changed by PR #523 were docs-only:
 - `docs/audit/report-index.md`
 
 Chain-effect verdict: PR #523 does not touch `tests/**`,
-`scripts/check-audit-finding-evidence.mjs`,
+`scripts/check/check-audit-finding-evidence.mjs`,
 `scripts/validate-pr-contract.mjs`, or any source file. No regression, config
 drift, defense-in-depth weakening, or closed-finding reopening was found in
 Sweep 17 scope.
@@ -48,7 +48,7 @@ through OPS-135 to `finding-index.md`; those rows are included in the matrix.
 | Protected principles | auditability; no overclaim; release provenance |
 | Audit driver | `current-posture-baseline.md` Phase 1 task "Create P0/P1 finding-to-test adequacy map" |
 | External anchors | NIST SP 800-218 PW.7 / PW.8; NIST SP 800-53 CA-7; OWASP ASVS verification vocabulary; CWE-1294 and CWE-693 taxonomy |
-| Scope | every P0/P1/P0-P1 row in `docs/audit/finding-index.md`; locking test files under `tests/`; `scripts/check-audit-finding-evidence.mjs`; absence of a finding-index to test-path guard |
+| Scope | every P0/P1/P0-P1 row in `docs/audit/finding-index.md`; locking test files under `tests/`; `scripts/check/check-audit-finding-evidence.mjs`; absence of a finding-index to test-path guard |
 | Method | extract current P0/P1 rows; map each to locking test evidence; classify `repo-locked`, `live-proof-only`, `open`, or `needs-test-contract`; name missing automation |
 
 External anchors are used as control vocabulary only. This report does not claim
@@ -60,7 +60,7 @@ NIST, OWASP, or CWE certification or full verification.
 |---|---|---|
 | `docs/audit/finding-index.md` | full | Source of truth for current P0/P1 finding rows |
 | `docs/audit/finding-lifecycle-and-evidence-ledger.md` | targeted | Existing per-finding closure contract |
-| `scripts/check-audit-finding-evidence.mjs` | targeted | Current ledger guard; enforces required closed-finding fields |
+| `scripts/check/check-audit-finding-evidence.mjs` | targeted | Current ledger guard; enforces required closed-finding fields |
 | `tests/` | inventory | Locking-test candidate set; repo evidence count is 543 files |
 | Route-surface HTTP tests | inventory + targeted grep | Confirm Sweep 06-12 remediation locks |
 | Ops-sweep remediation tests | inventory + targeted grep | Confirm OPS-25 through OPS-56 and live-shadow gate coverage |
@@ -81,11 +81,11 @@ No critical Sweep 17 artifact was skipped.
 
 | ID | Observation | Why it matters |
 |---|---|---|
-| OPS17-POS-01 | `scripts/check-audit-finding-evidence.mjs` enforces per-finding ledger fields including `Negative/adversarial tests:` and `Positive/regression tests:`. | The closure contract exists; the missing piece is the inverse finding-index matrix. |
+| OPS17-POS-01 | `scripts/check/check-audit-finding-evidence.mjs` enforces per-finding ledger fields including `Negative/adversarial tests:` and `Positive/regression tests:`. | The closure contract exists; the missing piece is the inverse finding-index matrix. |
 | OPS17-POS-02 | Closed P1 route findings from Sweeps 06-12 name concrete HTTP-layer tests such as `tests/service-admin-routes-http.test.ts`, `tests/service-account-routes-authorization.test.ts`, `tests/service-shadow-routes-http.test.ts`, and release admin-route tests. | Route remediation was regression-locked, not only patched. |
 | OPS17-POS-03 | Dedicated HTTP-layer tests cover admin, account, shadow, release-review, release-policy-control, pipeline idempotency, webhook signature, and webhook rate-limit surfaces. | The `/api/v1/**` route audit chain has concrete route-level test evidence. |
 | OPS17-POS-04 | `tests/ops-sweep-03-observability-remediation.test.ts` and `tests/ops-sweep-04-storage-collector-remediation.test.ts` contain explicit OPS-NN regression assertions. | Earlier ops remediation is searchable by finding ID. |
-| OPS17-POS-05 | `tests/ops-live-shadow-readiness.test.ts` and `scripts/check-ops-live-shadow-readiness.mjs` jointly lock the live-proof gate contract. | Live-proof claims are separated from repository claims. |
+| OPS17-POS-05 | `tests/ops-live-shadow-readiness.test.ts` and `scripts/check/check-ops-live-shadow-readiness.mjs` jointly lock the live-proof gate contract. | Live-proof claims are separated from repository claims. |
 | OPS17-POS-06 | The current `tests/` inventory has 543 files. | The surface is broad enough to justify a machine-readable coverage guard. |
 | OPS17-POS-07 | `finding-index.md` already carries `Test adequacy map` as a P1 item with the exact requested action. | Sweep 17 closes a documented baseline task, not a new side quest. |
 | OPS17-POS-08 | Newer remediation tests often include OPS IDs in assertion text. | A grep-based guard and future `Locking test:` convention are feasible without a heavy metadata system. |
@@ -94,7 +94,7 @@ No critical Sweep 17 artifact was skipped.
 
 | ID | Severity | State | Title | Evidence | Recommended next action |
 |---|---:|---|---|---|---|
-| OPS-136 | P1 | `open` | No automated guard asserts that each closed P0/P1 finding-index row references a locking test file that exists under `tests/`. | `scripts/check-audit-finding-evidence.mjs` validates per-finding ledger fields but does not cross-check `finding-index.md` against `tests/`; no `scripts/check-finding-test-coverage.mjs` exists. | Add `scripts/check-finding-test-coverage.mjs` and wire it to reviewer-facing checks. |
+| OPS-136 | P1 | `open` | No automated guard asserts that each closed P0/P1 finding-index row references a locking test file that exists under `tests/`. | `scripts/check/check-audit-finding-evidence.mjs` validates per-finding ledger fields but does not cross-check `finding-index.md` against `tests/`; no `scripts/check/check-finding-test-coverage.mjs` exists. | Add `scripts/check/check-finding-test-coverage.mjs` and wire it to reviewer-facing checks. |
 | OPS-137 | P2 | `open / partial-repo` | OPS-25 has no renderer-output regression test for non-empty rendered Alertmanager receivers. | Existing remediation tests verify input YAML patterns; no test invokes the renderer and asserts non-empty rendered `receivers:` output. | Add a renderer-output test with synthetic env. |
 | OPS-138 | P2 | `open / partial-repo` | Several `needs live test` / `needs ops proof` P0 rows do not name the future test contract path. | `Customer PEP no-bypass`, `External KMS runtime signing`, and `Shared replay / introspection store` rows name live-proof needs but not target test files. | Add `Test contract:` fields naming future `tests/live-*.test.ts` targets before capture. |
 | OPS-139 | P2 | `open / partial-repo` | `finding-index.md` lacks a structured `Locking test:` marker. | Test references live inside free-text evidence cells, which makes reliable automation fragile. | Introduce `Locking test:` convention and have OPS-136 consume it. |

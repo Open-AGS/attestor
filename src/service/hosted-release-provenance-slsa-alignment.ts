@@ -98,7 +98,7 @@ export const HOSTED_RELEASE_PROVENANCE_SLSA_GUARDS: readonly HostedReleaseProven
       '.github/workflows/evaluation-smoke.yml',
       '.github/workflows/full-verify.yml',
       '.github/workflows/security-scan.yml',
-      'scripts/check-supply-chain-baseline.mjs',
+      'scripts/check/check-supply-chain-baseline.mjs',
     ],
     validation: [
       'tests/security-baseline-docs.test.ts',
@@ -182,7 +182,7 @@ export const HOSTED_RELEASE_PROVENANCE_SLSA_GUARDS: readonly HostedReleaseProven
       'package-lock.json',
       '.github/workflows/release-provenance.yml',
       '.github/workflows/security-scan.yml',
-      'scripts/check-supply-chain-baseline.mjs',
+      'scripts/check/check-supply-chain-baseline.mjs',
       'SECURITY.md',
     ],
     validation: [

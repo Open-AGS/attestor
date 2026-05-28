@@ -27,6 +27,12 @@ function scriptFiles(): readonly string[] {
     .sort();
 }
 
+function checkScriptFiles(): readonly string[] {
+  return readdirSync(join(process.cwd(), 'scripts', 'check'))
+    .filter((entry) => /^check-.*\.mjs$/u.test(entry))
+    .sort();
+}
+
 function familyCounts(files: readonly string[]): Readonly<Record<string, number>> {
   const family = {
     check: files.filter((file) => file.startsWith('check-')).length,
@@ -51,13 +57,15 @@ function familyCounts(files: readonly string[]): Readonly<Record<string, number>
 function testInventoryMirrorsCurrentScriptCounts(): void {
   const doc = readProjectFile('docs', '02-architecture', 'scripts-inventory.md');
   const files = scriptFiles();
+  const checkFiles = checkScriptFiles();
   const counts = familyCounts(files);
 
   includes(doc, '# Scripts Inventory', 'Scripts inventory: title is present');
   includes(doc, `Root script files: ${files.length}.`, 'Scripts inventory: root script count matches directory');
+  includes(doc, `Check script files under \`scripts/check/\`: ${checkFiles.length}.`, 'Scripts inventory: check script count matches directory');
 
   for (const [label, count] of [
-    ['`check-*`', counts.check],
+    ['`scripts/check/check-*`', checkFiles.length],
     ['`probe-*`', counts.probe],
     ['`render-*`', counts.render],
     ['`demo-*`', counts.demo],
@@ -82,7 +90,7 @@ function testInventoryKeepsPreflightAndMoveRules(): void {
     'same mistake can pass local tests and fail in GitHub.',
     '## Move Rule',
     'Do not move scripts just to make the directory look cleaner.',
-    'Until then, prefer navigation over churn.',
+    'Move one family at a time.',
   ]) {
     includes(doc, expected, `Scripts inventory: keeps ${expected}`);
   }

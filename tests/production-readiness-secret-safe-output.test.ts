@@ -278,11 +278,11 @@ function testPublicArtifactRedactionScannerIsWired(): void {
     readonly scripts: Readonly<Record<string, string>>;
   };
   const workflow = readProjectFile('.github', 'workflows', 'security-scan.yml');
-  const scanner = readProjectFile('scripts', 'check-public-artifacts-redaction.mjs');
+  const scanner = readProjectFile('scripts', 'check', 'check-public-artifacts-redaction.mjs');
 
   equal(
     packageJson.scripts['check:public-artifacts-redaction'],
-    'tsx scripts/check-public-artifacts-redaction.mjs',
+    'tsx scripts/check/check-public-artifacts-redaction.mjs',
     'Secret-safe output: public artifact redaction scanner is exposed',
   );
   equal(

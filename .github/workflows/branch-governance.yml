@@ -32,7 +32,7 @@ jobs:
 
       - name: Verify stale branch policy
         if: github.event_name != 'pull_request'
-        run: node scripts/check-stale-branches.mjs --require-master-only
+        run: node scripts/check/check-stale-branches.mjs --require-master-only
 
       - name: Verify branch-governance admin-read token
         if: github.event_name != 'pull_request'

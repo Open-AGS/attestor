@@ -23,8 +23,8 @@ Files changed by PR #521 are docs-only:
 - `docs/audit/current-posture-baseline.md`
 
 Chain-effect verdict: PR #521 does not touch `.github/**`,
-`scripts/validate-pr-contract.mjs`, `scripts/check-stale-branches.mjs`,
-`scripts/check-baseline-alignment.mjs`, or any workflow file. No regression, no
+`scripts/validate-pr-contract.mjs`, `scripts/check/check-stale-branches.mjs`,
+`scripts/check/check-baseline-alignment.mjs`, or any workflow file. No regression, no
 config drift, no defense-in-depth weakening, and no closed-finding reopening
 was found in Sweep 15 scope.
 
@@ -40,7 +40,7 @@ Sweep 14 OPS-112 and OPS-113 remain open on `origin/master`.
 | Protected principles | release provenance; auditability; operational boundedness; fail-closed boundary; no overclaim |
 | Audit driver | `current-posture-baseline.md` + `finding-index.md` rows `Required commit signatures` and `Required PR reviews` + control-map `Release provenance` next-action |
 | External anchors | GitHub protected branches, required signed commits, required pull request reviews, CODEOWNERS, and GitHub Actions `GITHUB_TOKEN` permission scoping docs; NIST SP 800-218 PO.1 / PS.1 / PS.3 / PW.6 / PW.7; SLSA provenance vocabulary |
-| Scope | `.github/BRANCH_POLICY.md`, `.github/CODEOWNERS`, `.github/dependabot.yml`, `.github/pull_request_template.md`, `.github/workflows/*.yml`, `scripts/validate-pr-contract.mjs`, `scripts/check-stale-branches.mjs`, `scripts/check-baseline-alignment.mjs`, and audit index rows |
+| Scope | `.github/BRANCH_POLICY.md`, `.github/CODEOWNERS`, `.github/dependabot.yml`, `.github/pull_request_template.md`, `.github/workflows/*.yml`, `scripts/validate-pr-contract.mjs`, `scripts/check/check-stale-branches.mjs`, `scripts/check/check-baseline-alignment.mjs`, and audit index rows |
 
 ## 2. Inspected Files
 
@@ -60,8 +60,8 @@ Sweep 14 OPS-112 and OPS-113 remain open on `origin/master`.
 | `.github/workflows/f-series-continuous-validation.yml` | targeted | Red-team replay continuous validation |
 | `.github/workflows/production-rehearsal.yml` | targeted | Gated production rehearsal trigger shape |
 | `scripts/validate-pr-contract.mjs` | full | Claim-vocabulary and PR-template validator |
-| `scripts/check-stale-branches.mjs` | targeted | Stale branch governance |
-| `scripts/check-baseline-alignment.mjs` | targeted | Baseline alignment gate |
+| `scripts/check/check-stale-branches.mjs` | targeted | Stale branch governance |
+| `scripts/check/check-baseline-alignment.mjs` | targeted | Baseline alignment gate |
 | `docs/audit/{finding-index,report-index,current-posture-baseline,control-map,live-proof-register}.md` | targeted | Current release-provenance claim state |
 
 ## 3. Skipped Files
@@ -100,7 +100,7 @@ No critical Sweep 15 repository file was skipped.
 |---|---:|---|---|---|---|---|
 | OPS-121 | P1 | `open` | GitHub branch-protection `required_signatures` is not verified / not proven enabled. | `branch-governance.yml` verifies `delete_branch_on_merge`, but repo grep found no `required_signatures` check; `finding-index.md` still carries `Required commit signatures` as open. | release provenance | Extend `branch-governance.yml` to assert `.required_signatures.enabled == true`; operator must enable the setting; add live-proof gate during remediation. |
 | OPS-122 | P1 | `open` | GitHub branch-protection required PR reviews are not verified / not proven enabled. | CODEOWNERS exists, but enforcement depends on branch protection; repo grep found no `required_pull_request_reviews` assertions. | release provenance; auditability | Assert `required_approving_review_count >= 1`, `require_code_owner_reviews == true`, `dismiss_stale_reviews == true`, and last-push approval policy as selected by operator. |
-| OPS-123 | P2 | `open / partial-repo` | No branch-protection live-proof flags exist. | `scripts/check-ops-live-shadow-readiness.mjs` has no `ATTESTOR_BRANCH_PROTECTION_*_PROOF`; `live-proof-register.md` has no branch-protection LP rows. | runtime readiness; no overclaim | Add LP rows and gate flags when OPS-121/122 remediation lands. |
+| OPS-123 | P2 | `open / partial-repo` | No branch-protection live-proof flags exist. | `scripts/check/check-ops-live-shadow-readiness.mjs` has no `ATTESTOR_BRANCH_PROTECTION_*_PROOF`; `live-proof-register.md` has no branch-protection LP rows. | runtime readiness; no overclaim | Add LP rows and gate flags when OPS-121/122 remediation lands. |
 | OPS-124 | P2 | `open / partial-repo` | `branch-governance.yml` detects drift only weekly or manually. | Workflow triggers are schedule and `workflow_dispatch` only. | operational boundedness; auditability | Add PR/push triggers for `.github/**` and `SECURITY.md` changes. |
 | OPS-125 | P2 | `blocked / operator-decision` | CODEOWNERS uses a single org-wide owner for all trust-sensitive surfaces. | `.github/CODEOWNERS` maps all protected surfaces to `@AI-gateway-systems`; later governance guidance forbids placeholder team slugs until visible write-enabled GitHub teams and membership policy exist. | release provenance; auditability | Operator must create the teams and membership policy before a real per-surface split can be repo-proven. |
 | OPS-126 | P2 | `accepted limitation` | Dependabot PRs bypass the PR contract entirely. | `validate-pr-contract.mjs` explicitly returns a dependency automation bypass for `dependabot[bot]`. | release provenance; auditability | Keep for routine updates; require human merge approval for Dependabot PRs touching runtime/security/build/action surfaces. |

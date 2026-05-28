@@ -12,7 +12,7 @@ function ok(condition: unknown, message: string): void {
 function run(mode: 'repo' | 'live', env: NodeJS.ProcessEnv = process.env, stage?: string) {
   return spawnSync(
     process.execPath,
-    ['scripts/check-ops-live-shadow-readiness.mjs', `--mode=${mode}`, ...(stage ? [`--stage=${stage}`] : [])],
+    ['scripts/check/check-ops-live-shadow-readiness.mjs', `--mode=${mode}`, ...(stage ? [`--stage=${stage}`] : [])],
     {
       cwd: resolve('.'),
       encoding: 'utf8',

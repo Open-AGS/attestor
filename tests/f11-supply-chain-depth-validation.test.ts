@@ -66,7 +66,7 @@ function testContainerImagePins(): void {
     assertDigestPinnedRefs(file, readProjectFile(...file.split('/')));
   }
 
-  const baseline = readProjectFile('scripts', 'check-supply-chain-baseline.mjs');
+  const baseline = readProjectFile('scripts', 'check', 'check-supply-chain-baseline.mjs');
   includes(baseline, 'digestPinnedContainerFiles', 'F11-SC-1/2: supply-chain baseline checks container image files');
   includes(baseline, 'must not use a floating :latest image', 'F11-SC-2: supply-chain baseline rejects :latest');
   includes(baseline, 'image must be digest-pinned', 'F11-SC-1: supply-chain baseline rejects missing digests');
@@ -100,7 +100,7 @@ function testCriticalRuntimeDependenciesAreExactPinned(): void {
   }
 
   includes(
-    readProjectFile('scripts', 'check-supply-chain-baseline.mjs'),
+    readProjectFile('scripts', 'check', 'check-supply-chain-baseline.mjs'),
     'criticalExactPinnedRuntimeDependencies',
     'F11-SC-3/10: supply-chain baseline protects the critical exact-pin list',
   );

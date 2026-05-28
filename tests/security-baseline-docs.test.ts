@@ -183,7 +183,7 @@ function testPackageExposesSecurityDocsGuard(): void {
 
   assert.equal(
     packageJson.scripts['security:supply-chain-baseline'],
-    'node scripts/check-supply-chain-baseline.mjs',
+    'node scripts/check/check-supply-chain-baseline.mjs',
     'Security baseline: package.json exposes the supply-chain baseline guard',
   );
   passed += 1;

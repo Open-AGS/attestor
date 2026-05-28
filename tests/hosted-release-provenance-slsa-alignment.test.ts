@@ -190,7 +190,7 @@ function testSupplyChainAndPackageSurfaceEvidence(): void {
   const packageJson = JSON.parse(readProjectFile('package.json')) as {
     readonly scripts: Readonly<Record<string, string>>;
   };
-  const baseline = readProjectFile('scripts', 'check-supply-chain-baseline.mjs');
+  const baseline = readProjectFile('scripts', 'check', 'check-supply-chain-baseline.mjs');
   const securityScan = readProjectFile('.github', 'workflows', 'security-scan.yml');
   const runner = readProjectFile('scripts', 'run-suite.mjs');
   const packageRunnerTest = readProjectFile('tests', 'package-script-runner.test.ts');
@@ -204,7 +204,7 @@ function testSupplyChainAndPackageSurfaceEvidence(): void {
   includes(packageJson.scripts['sbom:cyclonedx'], 'npm sbom', 'Hosted release provenance SLSA evidence: SBOM script uses npm sbom');
   equal(
     packageJson.scripts['security:supply-chain-baseline'],
-    'node scripts/check-supply-chain-baseline.mjs',
+    'node scripts/check/check-supply-chain-baseline.mjs',
     'Hosted release provenance SLSA evidence: supply-chain baseline is exposed',
   );
   equal(

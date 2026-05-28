@@ -26,7 +26,7 @@ function excludes(content: string, unexpected: RegExp, message: string): void {
 }
 
 function extractJsonBlocks(content: string): readonly unknown[] {
-  return [...content.matchAll(/```json\n([\s\S]*?)\n```/gu)].map((match) =>
+  return [...content.matchAll(/```json\r?\n([\s\S]*?)\r?\n```/gu)].map((match) =>
     JSON.parse(match[1] ?? 'null'),
   );
 }

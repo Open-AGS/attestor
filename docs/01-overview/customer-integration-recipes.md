@@ -179,6 +179,7 @@ This is not a public hosted crypto route. It is a packaged integration boundary 
 
 1. Run `npm run example:admission`.
 2. Run `npm run example:customer-gate`.
-3. Read [First hosted API call](hosted-first-api-call.md) if you want the hosted finance path.
-4. Read [Customer admission gate](customer-admission-gate.md) when you are ready to wire the final customer-side guard.
-5. Read [Finance and crypto first integrations](finance-and-crypto-first-integrations.md) when choosing the first pack-specific surface.
+3. Read the [Customer middleware examples](../../examples/customer-middleware/README.md) for Express, FastAPI, Next.js, and LangChain copy-paste shapes.
+4. Read [First hosted API call](hosted-first-api-call.md) if you want the hosted finance path.
+5. Read [Customer admission gate](customer-admission-gate.md) when you are ready to wire the final customer-side guard.
+6. Read [Finance and crypto first integrations](finance-and-crypto-first-integrations.md) when choosing the first pack-specific surface.

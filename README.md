@@ -220,8 +220,10 @@ AI systems are moving from chat into tools that can touch payment flows, data ex
 That is no longer just a prompt-quality problem.
 Teams need to know who asked for the action, what evidence supported it, whether it was replayed, and whether a downstream gate can stop it.
 
-Attestor targets that moment.
-It is not a compliance claim, and it is not a production guarantee.
+This is the same general direction visible in serious external anchors: the [EU AI Act](https://digital-strategy.ec.europa.eu/en/policies/regulatory-framework-ai), the [NIST AI Risk Management Framework](https://www.nist.gov/itl/ai-risk-management-framework), and [DORA](https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A32022R2554).
+
+These links are context anchors, not compliance claims.
+Attestor targets the action boundary those conversations keep circling around.
 
 ## Start Here
 
@@ -260,15 +262,6 @@ Policy Foundry evaluator notes:
 - For an already deployed hosted runtime, the opt-in Policy Foundry production smoke probe checks the route contract without proving production readiness.
 - Safety boundary: hosted onboarding returns review material only.
 - [Policy Foundry onboarding](docs/02-architecture/policy-foundry-onboarding.md)
-
-### Risk and regulation anchors
-
-These links are context anchors, not compliance claims.
-
-- [NIST AI Risk Management Framework](https://www.nist.gov/itl/ai-risk-management-framework)
-- [U.S. Interagency Guidance on Third-Party Relationships](https://www.federalreserve.gov/frrs/guidance/interagency-guidance-on-third-party-relationships.htm)
-- [EU Digital Operational Resilience Act](https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A32022R2554)
-- [EU AI Act](https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A32024R1689)
 
 ### Architecture, proof, and deployment
 

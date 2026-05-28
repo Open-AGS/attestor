@@ -36,6 +36,10 @@ function testReadmeStartsWithAConcreteWorkflow(): void {
   includes(readme, 'the AI-generated refund request can reach the refund service with no gate trace', 'Product docs: README shows the without-Attestor failure mode');
   includes(readme, 'money does not move', 'Product docs: README shows the with-Attestor gate behavior');
   includes(readme, '## Why This Matters Now', 'Product docs: README keeps urgency context after the core workflow');
+  includes(readme, '[EU AI Act](https://digital-strategy.ec.europa.eu/en/policies/regulatory-framework-ai)', 'Product docs: README keeps the EU AI Act as a bounded context anchor');
+  includes(readme, '[NIST AI Risk Management Framework](https://www.nist.gov/itl/ai-risk-management-framework)', 'Product docs: README keeps NIST AI RMF as a bounded context anchor');
+  includes(readme, '[DORA](https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A32022R2554)', 'Product docs: README keeps DORA as a bounded context anchor');
+  includes(readme, 'These links are context anchors, not compliance claims.', 'Product docs: README explicitly avoids compliance overclaim');
   includes(readme, 'the refund path is synthetic and shadow-only', 'Product docs: README keeps the refund demo no-claim visible');
   includes(readme, 'npm run demo:golden-refund', 'Product docs: README keeps the first runnable path visible');
 }
@@ -135,6 +139,8 @@ function testReadmeDoesNotRegressToTheOldDenseShape(): void {
   excludes(readme, /\| Pack \| What it means today \| Status \|/u, 'Product docs: README should not use the old pack table');
   excludes(readme, /a finance assistant prepares a report from live warehouse data/u, 'Product docs: README should not lead with finance-only wording');
   excludes(readme, /a crypto workflow prepares a Safe transaction/u, 'Product docs: README should not lead with crypto-only wording');
+  excludes(readme, /U\.S\. Interagency Guidance on Third-Party Relationships/u, 'Product docs: README should keep context anchors short and not become a regulation link wall');
+  excludes(readme, /Attestor does not claim compliance; it provides/u, 'Product docs: README should avoid vendor-style compliance-positioning phrasing');
   excludes(readme, /\b\d+\s*\/\s*\d+\b/u, 'Product docs: README should not expose frozen step fractions');
   excludes(readme, /\bfirst[- ]slice\b/iu, 'Product docs: README should not use first-slice posture');
 }

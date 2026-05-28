@@ -4,7 +4,7 @@ import { STRIPE_PRICE_EXPECTATIONS } from '../probe/probe-stripe-live-readiness.
 import {
   STRIPE_SUPPORTED_WEBHOOK_EVENTS,
   STRIPE_WEBHOOK_ROUTE,
-} from '../../src/service/stripe-webhook-events.js';
+} from '../../src/service/billing/stripe/stripe-webhook-events.js';
 import { trimAndStripTrailingSlashes } from '../../src/platform/string-normalization.js';
 
 type PaidPlanId = 'starter' | 'pro' | 'scale';

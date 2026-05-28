@@ -10,8 +10,8 @@
 import { randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
-import { hashJsonValue } from './json-stable.js';
-import { withFileLock, writeTextFileAtomic } from './file-store.js';
+import { hashJsonValue } from '../../json-stable.js';
+import { withFileLock, writeTextFileAtomic } from '../../file-store.js';
 
 export interface StripeWebhookRecord {
   id: string;

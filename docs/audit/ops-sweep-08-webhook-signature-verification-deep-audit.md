@@ -73,7 +73,7 @@ provider deployment, or production-readiness claims.
 | `src/service/application/email-webhook-service.ts` | full | Email provider signature gate, shared-store requirement, and event recording |
 | `src/service/sendgrid-email-webhook.ts` | full | SendGrid ECDSA verifier and event parsing |
 | `src/service/mailgun-email-webhook.ts` | full | Mailgun HMAC verifier, timestamp window, and replay-token digest |
-| `src/service/stripe-webhook-store.ts` | targeted | Stripe local fallback boundary |
+| `src/service/billing/stripe/stripe-webhook-store.ts` | targeted | Stripe local fallback boundary |
 | `src/service/hosted-webhook-async-reconciliation-hardening.ts` | targeted | webhook/async hardening evidence contract |
 | `scripts/check/check-ops-live-shadow-readiness.mjs` | targeted | live proof flag set |
 | `docs/audit/{finding-index,report-index,control-map,live-proof-register,current-posture-baseline}.md` | targeted | evidence index reconciliation |

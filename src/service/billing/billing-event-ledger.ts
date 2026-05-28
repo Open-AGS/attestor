@@ -8,7 +8,7 @@
  */
 
 import { randomUUID } from 'node:crypto';
-import { hashJsonValue } from './json-stable.js';
+import { hashJsonValue } from '../json-stable.js';
 
 export type BillingEventProvider = 'stripe';
 export type BillingEventSource = 'stripe_webhook';

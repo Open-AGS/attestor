@@ -24,7 +24,7 @@ import {
   resetBillingEventLedgerForTests,
   upsertStripeCharges,
   upsertStripeInvoiceLineItems,
-} from '../src/service/billing-event-ledger.js';
+} from '../src/service/billing/billing-event-ledger.js';
 import {
   appendAdminAuditRecordState,
   consumePipelineRunState,

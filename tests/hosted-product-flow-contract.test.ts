@@ -13,7 +13,7 @@ import {
 import {
   STRIPE_SUPPORTED_WEBHOOK_EVENTS,
   STRIPE_WEBHOOK_ROUTE,
-} from '../src/service/stripe-webhook-events.js';
+} from '../src/service/billing/stripe/stripe-webhook-events.js';
 
 let passed = 0;
 

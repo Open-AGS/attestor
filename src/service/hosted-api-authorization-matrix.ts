@@ -227,7 +227,7 @@ export const HOSTED_API_AUTHORIZATION_RULES = [
     privacyBoundary: 'Stripe checkout session ids are handoff references; secret keys are never emitted',
     evidence: [
       'src/service/http/routes/account-routes.ts#Idempotency-Key',
-      'src/service/stripe-billing.ts#createHostedCheckoutSession',
+      'src/service/billing/stripe/stripe-billing.ts#createHostedCheckoutSession',
       'src/service/bootstrap/http-route-builders.ts#recordAccountMutationAudit',
     ],
     standards: ['OWASP API1:2023', 'OWASP API4:2023', 'Stripe idempotency'],
@@ -245,7 +245,7 @@ export const HOSTED_API_AUTHORIZATION_RULES = [
     privacyBoundary: 'portal response is a short-lived Stripe-hosted handoff reference',
     evidence: [
       'src/service/http/routes/account-routes.ts#requireAccountSession',
-      'src/service/stripe-billing.ts#createHostedBillingPortalSession',
+      'src/service/billing/stripe/stripe-billing.ts#createHostedBillingPortalSession',
       'src/service/bootstrap/http-route-builders.ts#recordAccountMutationAudit',
     ],
     standards: ['OWASP API1:2023', 'OWASP API5:2023'],

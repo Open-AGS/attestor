@@ -1,4 +1,4 @@
-import type { HostedBillingEntitlementRecord } from './billing-entitlement-store.js';
+import type { HostedBillingEntitlementRecord } from './billing/billing-entitlement-store.js';
 import {
   POLICY_FOUNDRY_COMMERCIAL_CAPABILITIES,
   POLICY_FOUNDRY_COMMERCIAL_PLANS,

@@ -4,11 +4,11 @@ import {
   type HostedAccountStatus,
   type StripeSubscriptionStatus,
 } from '../account/account-store.js';
-import type { HostedBillingEntitlementRecord } from '../billing-entitlement-store.js';
+import type { HostedBillingEntitlementRecord } from '../billing/billing-entitlement-store.js';
 import type * as ControlPlaneStore from '../control-plane-store.js';
 import type * as PlanCatalog from '../plan-catalog.js';
 import { SecretEnvelopeError } from '../secret-envelope.js';
-import { StripeBillingError } from '../stripe-billing.js';
+import { StripeBillingError } from '../billing/stripe/stripe-billing.js';
 import { TenantKeyStoreError, type TenantKeyRecord } from '../tenant-key-store.js';
 
 interface SyncHostedBillingEntitlementOptions {

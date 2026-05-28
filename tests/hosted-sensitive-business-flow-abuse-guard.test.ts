@@ -194,7 +194,7 @@ function testImplementationEvidenceMatchesContract(): void {
   const accountRoutes = readProjectFile('src', 'service', 'http', 'routes', 'account-routes.ts');
   const authAbuseGuard = readProjectFile('src', 'service', 'account', 'auth-abuse-guard.ts');
   const apiKeyService = readProjectFile('src', 'service', 'application', 'account-api-key-service.ts');
-  const stripeBilling = readProjectFile('src', 'service', 'stripe-billing.ts');
+  const stripeBilling = readProjectFile('src', 'service', 'billing', 'stripe', 'stripe-billing.ts');
   const adminRoutes = readProjectFile('src', 'service', 'http', 'routes', 'admin-routes.ts');
   const adminMutationService = readProjectFile('src', 'service', 'application', 'admin-mutation-service.ts');
   const pipelineRoutes = readProjectFile('src', 'service', 'http', 'routes', 'pipeline-execution-routes.ts');

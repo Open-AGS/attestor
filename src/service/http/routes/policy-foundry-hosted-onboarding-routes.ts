@@ -35,7 +35,7 @@ import {
   type ShadowAdmissionEvent,
 } from '../../../consequence-admission/index.js';
 import { renderPolicyFoundryHostedUiFlow } from '../../policy-foundry-hosted-ui.js';
-import type { HostedBillingEntitlementRecord } from '../../billing-entitlement-store.js';
+import type { HostedBillingEntitlementRecord } from '../../billing/billing-entitlement-store.js';
 import {
   createPolicyFoundryBillingEntitlementEnforcement,
 } from '../../policy-foundry-billing-entitlement-enforcement.js';

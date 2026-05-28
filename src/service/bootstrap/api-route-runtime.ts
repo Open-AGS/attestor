@@ -78,13 +78,13 @@ import {
   releaseStripeBillingEventClaim,
   upsertStripeCharges,
   upsertStripeInvoiceLineItems,
-} from '../billing-event-ledger.js';
-import { buildHostedFeatureServiceView } from '../billing-feature-service.js';
+} from '../billing/billing-event-ledger.js';
+import { buildHostedFeatureServiceView } from '../billing/billing-feature-service.js';
 import {
   buildHostedBillingExport,
   renderHostedBillingExportCsv,
-} from '../billing-export.js';
-import { buildHostedBillingReconciliation } from '../billing-reconciliation.js';
+} from '../billing/billing-export.js';
+import { buildHostedBillingReconciliation } from '../billing/billing-reconciliation.js';
 import {
   applyStripeCheckoutCompletionState,
   applyStripeInvoiceStateState,
@@ -279,8 +279,8 @@ import {
   listHostedStripeActiveEntitlements,
   listHostedStripeInvoiceLineItems,
   recordStripeOverageMeterEvent,
-} from '../stripe-billing.js';
-import { isSupportedStripeWebhookEvent } from '../stripe-webhook-events.js';
+} from '../billing/stripe/stripe-billing.js';
+import { isSupportedStripeWebhookEvent } from '../billing/stripe/stripe-webhook-events.js';
 import {
   metadataStringValue,
   parseStripeChargeStatus,
@@ -289,7 +289,7 @@ import {
   stripeInvoicePriceId,
   stripeReferenceId,
   unixSecondsToIso,
-} from '../stripe-webhook-support.js';
+} from '../billing/stripe/stripe-webhook-support.js';
 import { tenantKeyStorePolicy } from '../tenant-key-store.js';
 import type { AppRegistries } from './registries.js';
 import { createReleaseRuntimeBootstrap } from './release-runtime.js';

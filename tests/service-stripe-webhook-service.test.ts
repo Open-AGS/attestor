@@ -5,8 +5,8 @@ import {
   type BillingWebhookMetricOutcome,
   type StripeWebhookServiceDeps,
 } from '../src/service/application/stripe-webhook-service.js';
-import type { BillingEventRecord } from '../src/service/billing-event-ledger.js';
-import type { StripeWebhookRecord } from '../src/service/stripe-webhook-store.js';
+import type { BillingEventRecord } from '../src/service/billing/billing-event-ledger.js';
+import type { StripeWebhookRecord } from '../src/service/billing/stripe/stripe-webhook-store.js';
 
 const now = '2026-04-21T10:00:00.000Z';
 

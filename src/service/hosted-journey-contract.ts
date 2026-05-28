@@ -1,7 +1,7 @@
 import {
   STRIPE_SUPPORTED_WEBHOOK_EVENTS,
   STRIPE_WEBHOOK_ROUTE,
-} from './stripe-webhook-events.js';
+} from './billing/stripe/stripe-webhook-events.js';
 
 export const HOSTED_JOURNEY_CONTRACT_VERSION =
   'attestor.hosted-journey-contract.v1';

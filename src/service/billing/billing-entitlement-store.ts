@@ -10,19 +10,19 @@
 import { randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
-import { withFileLock, writeTextFileAtomic } from './file-store.js';
+import { withFileLock, writeTextFileAtomic } from '../file-store.js';
 import type {
   HostedAccountRecord,
   HostedAccountStatus,
   StripeInvoiceStatus,
   StripeSubscriptionStatus,
-} from './account/account-store.js';
+} from '../account/account-store.js';
 import {
   DEFAULT_HOSTED_PLAN_ID,
   resolvePlanAsyncQueue,
   resolvePlanRateLimit,
   resolvePlanSpec,
-} from './plan-catalog.js';
+} from '../plan-catalog.js';
 
 export type HostedBillingEntitlementProvider = 'manual' | 'stripe';
 export type HostedBillingEntitlementStatus =

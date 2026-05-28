@@ -1,5 +1,5 @@
 import Stripe from 'stripe';
-import type * as BillingEventLedger from '../billing-event-ledger.js';
+import type * as BillingEventLedger from '../billing/billing-event-ledger.js';
 import type * as ControlPlaneStore from '../control-plane-store.js';
 
 export type BillingWebhookMetricOutcome =

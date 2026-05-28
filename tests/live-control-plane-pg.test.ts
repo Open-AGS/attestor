@@ -14,12 +14,12 @@ import {
 import { generateCurrentTotpCode } from '../src/service/account/account-mfa.js';
 import { resetAdminAuditLogForTests } from '../src/service/admin-audit-log.js';
 import { resetAdminIdempotencyStoreForTests } from '../src/service/admin-idempotency-store.js';
-import { resetHostedBillingEntitlementStoreForTests } from '../src/service/billing-entitlement-store.js';
+import { resetHostedBillingEntitlementStoreForTests } from '../src/service/billing/billing-entitlement-store.js';
 import { resetHostedEmailDeliveryEventStoreForTests } from '../src/service/email-delivery-event-store.js';
 import { resetObservabilityForTests } from '../src/service/observability.js';
 import { resetTenantRateLimiterForTests } from '../src/service/rate-limit.js';
-import { resetStripeWebhookStoreForTests } from '../src/service/stripe-webhook-store.js';
-import { resetBillingEventLedgerForTests } from '../src/service/billing-event-ledger.js';
+import { resetStripeWebhookStoreForTests } from '../src/service/billing/stripe/stripe-webhook-store.js';
+import { resetBillingEventLedgerForTests } from '../src/service/billing/billing-event-ledger.js';
 import {
   claimProcessedStripeWebhookState,
   finalizeProcessedStripeWebhookState,

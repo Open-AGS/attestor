@@ -6,13 +6,13 @@ import { createServer as createNetServer } from 'node:net';
 import EmbeddedPostgres from 'embedded-postgres';
 import {
   resetBillingEventLedgerForTests,
-} from '../src/service/billing-event-ledger.js';
+} from '../src/service/billing/billing-event-ledger.js';
 import {
   resetSharedControlPlaneStoreForTests,
 } from '../src/service/control-plane-store.js';
 import { resetObservabilityForTests } from '../src/service/observability.js';
-import { resetStripeWebhookStoreForTests } from '../src/service/stripe-webhook-store.js';
-import { resetHostedBillingEntitlementStoreForTests } from '../src/service/billing-entitlement-store.js';
+import { resetStripeWebhookStoreForTests } from '../src/service/billing/stripe/stripe-webhook-store.js';
+import { resetHostedBillingEntitlementStoreForTests } from '../src/service/billing/billing-entitlement-store.js';
 import { resetAdminAuditLogForTests } from '../src/service/admin-audit-log.js';
 import { resetAdminIdempotencyStoreForTests } from '../src/service/admin-idempotency-store.js';
 

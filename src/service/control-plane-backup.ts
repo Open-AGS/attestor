@@ -23,7 +23,7 @@ import {
   isBillingEventLedgerConfigured,
   restoreBillingEventLedgerSnapshot,
   type BillingEventLedgerSnapshot,
-} from './billing-event-ledger.js';
+} from './billing/billing-event-ledger.js';
 import {
   exportAdminAuditLogStoreSnapshot,
   exportAsyncDeadLetterStoreSnapshot,

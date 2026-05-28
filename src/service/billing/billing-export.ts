@@ -1,4 +1,4 @@
-import type { HostedAccountRecord } from './account/account-store.js';
+import type { HostedAccountRecord } from '../account/account-store.js';
 import type { HostedBillingEntitlementRecord } from './billing-entitlement-store.js';
 import {
   isBillingEventLedgerConfigured,
@@ -13,12 +13,12 @@ import {
   type HostedStripeActiveEntitlementSnapshot,
   type HostedStripeInvoiceSnapshot,
   type HostedStripeInvoiceLineItemSnapshot,
-} from './stripe-billing.js';
+} from './stripe/stripe-billing.js';
 import {
   listBillingInvoiceLineItems,
   type BillingInvoiceLineItemRecord,
 } from './billing-event-ledger.js';
-import type { UsageContext } from './usage-meter.js';
+import type { UsageContext } from '../usage-meter.js';
 
 export interface HostedBillingExportCheckoutSummary {
   sessionId: string | null;

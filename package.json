@@ -302,6 +302,7 @@
     "test:consequence-admission-contract": "tsx tests/consequence-admission-contract.test.ts",
     "test:consequence-admission-index-surface": "tsx tests/consequence-admission-index-surface.test.ts",
     "test:consequence-admission-public-surface-contract": "tsx tests/consequence-admission-public-surface-contract.test.ts",
+    "test:consequence-admission-public-surface-docs": "tsx tests/consequence-admission-public-surface-docs.test.ts",
     "test:consequence-admission-family-sub-sweep-queue": "tsx tests/consequence-admission-family-sub-sweep-queue.test.ts",
     "test:consequence-admission-finance": "tsx tests/consequence-admission-finance.test.ts",
     "test:consequence-admission-crypto": "tsx tests/consequence-admission-crypto.test.ts",

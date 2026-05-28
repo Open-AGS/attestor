@@ -169,6 +169,9 @@ export interface CryptoExecutionAdmissionPublicSurfaceDescriptor {
   readonly integrationNamespaces: typeof CRYPTO_EXECUTION_ADMISSION_INTEGRATION_NAMESPACES;
   readonly proofNamespaces: typeof CRYPTO_EXECUTION_ADMISSION_PROOF_NAMESPACES;
   readonly fixturePaths: readonly string[];
+  readonly hostedRouteClaimed: false;
+  readonly customerSideIntegrationRequired: true;
+  readonly attestorWalletCustodySignerClaimed: false;
   readonly extractionCriteria: typeof CRYPTO_EXECUTION_ADMISSION_EXTRACTION_CRITERIA;
 }
 
@@ -853,6 +856,9 @@ CryptoExecutionAdmissionPublicSurfaceDescriptor {
       conformanceFixtures.CRYPTO_ADMISSION_CONFORMANCE_FIXTURE_PATH,
       conformanceFixtures.CRYPTO_ADMISSION_CONFORMANCE_SCHEMA_PATH,
     ]),
+    hostedRouteClaimed: false,
+    customerSideIntegrationRequired: true,
+    attestorWalletCustodySignerClaimed: false,
     extractionCriteria: CRYPTO_EXECUTION_ADMISSION_EXTRACTION_CRITERIA,
   });
 }

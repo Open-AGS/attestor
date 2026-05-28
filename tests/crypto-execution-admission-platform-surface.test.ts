@@ -73,6 +73,21 @@ function testCryptoExecutionAdmissionPublicSurfaceDescriptor(): void {
     'crypto execution admission platform surface: schema path is documented',
   );
   equal(
+    descriptor.hostedRouteClaimed,
+    false,
+    'crypto execution admission platform surface: no hosted crypto route is claimed',
+  );
+  equal(
+    descriptor.customerSideIntegrationRequired,
+    true,
+    'crypto execution admission platform surface: customer-side integration is required',
+  );
+  equal(
+    descriptor.attestorWalletCustodySignerClaimed,
+    false,
+    'crypto execution admission platform surface: no wallet/custody/signer role is claimed',
+  );
+  equal(
     CRYPTO_EXECUTION_ADMISSION_EXTRACTION_CRITERIA.length,
     5,
     'crypto execution admission platform surface: extraction criteria are enumerated',

@@ -704,6 +704,31 @@ function testPendingSettlementRequiresReview(): void {
   );
 }
 
+function testSettlementSuccessWithoutTransactionBlocks(): void {
+  const preflight = createX402AgenticPaymentPreflight({
+    ...preflightInput(),
+    facilitator: facilitator({
+      settleResponseSuccess: true,
+      settlementTransaction: null,
+    }),
+  });
+
+  equal(
+    preflight.outcome,
+    'block',
+    'x402 adapter: successful settlement without transaction evidence blocks',
+  );
+  ok(
+    preflight.observations.some(
+      (entry) =>
+        entry.check === 'x402-settlement-posture' &&
+        entry.status === 'fail' &&
+        entry.code === 'x402-settlement-invalid',
+    ),
+    'x402 adapter: missing settlement transaction is an invalid settlement reason',
+  );
+}
+
 function testBudgetExceededBlocks(): void {
   const preflight = createX402AgenticPaymentPreflight({
     ...preflightInput(),
@@ -1028,6 +1053,7 @@ testCreatesAllowPreflight();
 testSimulationAllowsPayment();
 testPermit2ExactModeAllows();
 testPendingSettlementRequiresReview();
+testSettlementSuccessWithoutTransactionBlocks();
 testBudgetExceededBlocks();
 testCadenceExceededBlocks();
 testRecipientMismatchBlocks();

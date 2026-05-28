@@ -175,6 +175,42 @@ function testUserOperationMissingPreflightNeedsEvidence(): void {
   );
 }
 
+function testMissingReleaseAuthorizationNeedsEvidence(): void {
+  const plan = createCryptoExecutionAdmissionPlan({
+    simulation: simulationFixture({
+      adapterKind: 'x402-payment',
+      outcome: 'allow-preview',
+      requiredPreflightSources: ['x402-payment'],
+      releaseReady: false,
+    }),
+    createdAt: '2026-04-22T10:02:30.000Z',
+    integrationRef: 'integration:x402:premium-api',
+  });
+
+  equal(
+    plan.outcome,
+    'needs-evidence',
+    'admission: missing release authorization cannot admit execution',
+  );
+  ok(
+    plan.steps.some(
+      (step) =>
+        step.stepId === 'release-binding-readiness' &&
+        step.status === 'required' &&
+        step.reasonCode === 'release-authorization-required',
+    ),
+    'admission: missing release authorization is a required step',
+  );
+  ok(
+    plan.nextActions.includes('release-authorization-required'),
+    'admission: missing release authorization is a next action',
+  );
+  ok(
+    plan.requiredHandoffArtifacts.includes('attestor-release-authorization'),
+    'admission: release authorization remains a required handoff artifact',
+  );
+}
+
 function testDeniedDelegationFailsClosed(): void {
   const plan = createCryptoExecutionAdmissionPlan({
     simulation: simulationFixture({
@@ -229,6 +265,7 @@ function testDescriptorAndProfiles(): void {
 
 testX402AdmitPlanCarriesHttpPaymentHandoff();
 testUserOperationMissingPreflightNeedsEvidence();
+testMissingReleaseAuthorizationNeedsEvidence();
 testDeniedDelegationFailsClosed();
 testDescriptorAndProfiles();
 

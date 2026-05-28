@@ -6,6 +6,27 @@ Attestor now exposes the first crypto execution admission layer through:
 
 This is the stable packaged surface after `attestor/crypto-authorization-core`. It is complete for the current execution-admission buildout track and remains inside the Attestor modular monolith rather than becoming a separate deployable service.
 
+## Package Boundary, Not Hosted Crypto Runtime
+
+This package is a customer-side integration surface. It is not a public hosted
+`/api/v1/crypto/*` route, not a separate crypto runtime, and not a wallet,
+custodian, signer, bundler, broadcaster, facilitator, exchange, or settlement
+verifier.
+
+A customer adapter or PEP must import the package, run the relevant crypto
+authorization preflight, and bind the downstream wallet, Safe, bundler, custody
+callback, x402 facilitator, or intent-solver call to the Attestor admission
+result. If that downstream path can bypass the customer adapter, Attestor has
+not proven a non-bypassable crypto enforcement boundary.
+
+The package can require `attestor-release-authorization`,
+`policy-scope-binding`, and `enforcement-presentation` handoff artifacts. It
+does not independently prove that arbitrary customer-supplied policy,
+authority, evidence, settlement, or receipt references are semantically valid
+against a live customer policy/evidence store. The customer adapter must verify
+those references against the active bundle, evidence store, chain receipt, or
+provider callback before allowing downstream execution.
+
 ## Final Package Boundary
 
 The package surface exposes one public subpath and one curated namespace object:

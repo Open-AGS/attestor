@@ -224,6 +224,12 @@ Primary growth-stage plan.
 
 Pro is where procurement-grade B2B features begin. SSO belongs here because it is a common deal requirement, not an exotic enterprise luxury.
 
+Crypto packs are package-boundary SDK surfaces, not hosted crypto route claims.
+Using them requires a customer-side adapter or PEP that imports the Attestor
+crypto packages and binds wallet, Safe, bundler, custody, x402, or solver
+execution to Attestor admission results. Attestor does not become the wallet,
+custodian, signer, broadcaster, facilitator, or settlement verifier.
+
 ### Scale
 
 High-volume hosted plan, still below custom enterprise deployment.

@@ -164,7 +164,7 @@ function testPolicyFoundryArchitectureIsGrounded(): void {
   );
   includes(
     doc,
-    'scripts/preview-policy-foundry-hosted-ui.ts',
+    'scripts/preview/preview-policy-foundry-hosted-ui.ts',
     'Policy Foundry docs: hosted UI browser preview evidence is named',
   );
   includes(
@@ -579,7 +579,7 @@ function testPackageScriptIsExposed(): void {
   );
   includes(
     pkg.scripts['preview:policy-foundry-hosted-ui'] ?? '',
-    'tsx scripts/preview-policy-foundry-hosted-ui.ts',
+    'tsx scripts/preview/preview-policy-foundry-hosted-ui.ts',
     'Package: Policy Foundry hosted UI preview command is stable',
   );
   includes(

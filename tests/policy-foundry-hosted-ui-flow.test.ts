@@ -20,7 +20,7 @@ import {
 import {
   createPolicyFoundryHostedUiPreviewApp,
   createPolicyFoundryHostedUiPreviewHtml,
-} from '../scripts/preview-policy-foundry-hosted-ui.ts';
+} from '../scripts/preview/preview-policy-foundry-hosted-ui.ts';
 
 let passed = 0;
 
@@ -218,7 +218,7 @@ function testHostedUiFlowDescriptorDocsAndScript(): void {
   );
   includes(
     docs,
-    'scripts/preview-policy-foundry-hosted-ui.ts',
+    'scripts/preview/preview-policy-foundry-hosted-ui.ts',
     'Policy Foundry docs: hosted UI browser preview evidence is named',
   );
   includes(
@@ -238,7 +238,7 @@ function testHostedUiFlowDescriptorDocsAndScript(): void {
   );
   equal(
     pkg.scripts['preview:policy-foundry-hosted-ui'],
-    'tsx scripts/preview-policy-foundry-hosted-ui.ts',
+    'tsx scripts/preview/preview-policy-foundry-hosted-ui.ts',
     'Package: hosted UI preview script is exposed',
   );
 }

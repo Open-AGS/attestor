@@ -1,11 +1,11 @@
 import { pathToFileURL } from 'node:url';
 import Stripe from 'stripe';
-import { STRIPE_PRICE_EXPECTATIONS } from './probe/probe-stripe-live-readiness.ts';
+import { STRIPE_PRICE_EXPECTATIONS } from '../probe/probe-stripe-live-readiness.ts';
 import {
   STRIPE_SUPPORTED_WEBHOOK_EVENTS,
   STRIPE_WEBHOOK_ROUTE,
-} from '../src/service/stripe-webhook-events.js';
-import { trimAndStripTrailingSlashes } from '../src/platform/string-normalization.js';
+} from '../../src/service/stripe-webhook-events.js';
+import { trimAndStripTrailingSlashes } from '../../src/platform/string-normalization.js';
 
 type PaidPlanId = 'starter' | 'pro' | 'scale';
 

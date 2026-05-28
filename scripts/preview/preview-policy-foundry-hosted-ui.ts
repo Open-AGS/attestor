@@ -10,8 +10,8 @@ import {
   createPolicyFoundrySelfOnboardingCliPacket,
   type ActionSurfaceOnboardingRedTeamFixtureBundle,
   type PolicyFoundryAdversarialReplayObservation,
-} from '../src/consequence-admission/index.js';
-import { renderPolicyFoundryHostedUiFlow } from '../src/service/policy-foundry-hosted-ui.js';
+} from '../../src/consequence-admission/index.js';
+import { renderPolicyFoundryHostedUiFlow } from '../../src/service/policy-foundry-hosted-ui.js';
 
 type PreviewState = 'blocked' | 'ready';
 

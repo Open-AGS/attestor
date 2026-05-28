@@ -57,7 +57,7 @@ function realProofCommand(): { command: string; args: string[] } {
   const tsxCli = join(process.cwd(), 'node_modules', 'tsx', 'dist', 'cli.mjs');
   return {
     command: process.execPath,
-    args: [tsxCli, 'scripts/real-db-proof.ts'],
+    args: [tsxCli, 'scripts/proof/real-db-proof.ts'],
   };
 }
 
@@ -96,7 +96,7 @@ function runLiveScenario(scenarioId: string): void {
 function latestRealProofDir(): string {
   const proofRoot = resolve('.attestor', 'proofs');
   if (!existsSync(proofRoot)) {
-    throw new Error('No proof directory exists yet. Run scripts/real-db-proof.ts first.');
+    throw new Error('No proof directory exists yet. Run scripts/proof/real-db-proof.ts first.');
   }
   const latest = readdirSync(proofRoot, { withFileTypes: true })
     .filter((entry) => entry.isDirectory() && entry.name.startsWith('real-pg-proof_'))
@@ -146,7 +146,7 @@ function inferProofContext(
   }
   return {
     proofLabel: 'PostgreSQL-backed financial reporting acceptance proof',
-    rerunCommand: 'npx tsx scripts/real-db-proof.ts',
+    rerunCommand: 'npx tsx scripts/proof/real-db-proof.ts',
   };
 }
 

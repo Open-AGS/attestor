@@ -5,7 +5,7 @@ import {
   createProductionRehearsalPlan,
   renderProductionRehearsalPlan,
   type ProductionRehearsalManifest,
-} from '../scripts/plan-production-rehearsal.ts';
+} from '../scripts/rehearse/plan-production-rehearsal.ts';
 
 let passed = 0;
 

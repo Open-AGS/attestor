@@ -87,6 +87,7 @@
     "test:product-positioning-docs": "tsx tests/product-positioning-docs.test.ts",
     "test:product-use-cases-docs": "tsx tests/product-use-cases-docs.test.ts",
     "test:customer-integration-recipes-docs": "tsx tests/customer-integration-recipes-docs.test.ts",
+    "test:shadow-event-payload-examples-docs": "tsx tests/shadow-event-payload-examples-docs.test.ts",
     "test:evaluation-packet-docs": "tsx tests/evaluation-packet-docs.test.ts",
     "test:evaluation-release-notes": "tsx tests/evaluation-release-notes.test.ts",
     "test:security-baseline-docs": "tsx tests/security-baseline-docs.test.ts",

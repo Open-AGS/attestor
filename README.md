@@ -230,6 +230,7 @@ Attestor targets the action boundary those conversations keep circling around.
 - [Try Attestor first](docs/01-overview/try-attestor-first.md)
 - [Golden Path: Refund](docs/02-architecture/golden-refund-shadow-pilot.md)
 - [First hosted API call](docs/01-overview/hosted-first-api-call.md)
+- [Shadow event payload examples](docs/01-overview/shadow-event-payload-examples.md)
 - [Customer admission gate](docs/01-overview/customer-admission-gate.md)
 - [Pricing and packaging](docs/01-overview/product-packaging.md)
 - [Security Policy](SECURITY.md)

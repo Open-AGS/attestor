@@ -342,6 +342,7 @@
     "test:policy-foundry-candidate-registry": "tsx tests/policy-foundry-candidate-registry.test.ts",
     "test:failure-mode-registry": "tsx tests/failure-mode-registry.test.ts",
     "test:failure-mode-control-bindings": "tsx tests/failure-mode-control-bindings.test.ts",
+    "test:public-support-reference-docs": "tsx tests/public-support-reference-docs.test.ts",
     "test:failure-mode-replay-fixtures": "tsx tests/failure-mode-replay-fixtures.test.ts",
     "test:failure-mode-guard-coverage": "tsx tests/failure-mode-guard-coverage.test.ts",
     "test:failure-mode-runtime-extensions": "tsx tests/failure-mode-runtime-extensions.test.ts",

@@ -35,7 +35,7 @@ function testReadmeStartsWithAConcreteWorkflow(): void {
   includes(readme, 'What the reviewer sees:', 'Product docs: README makes the reviewer view concrete');
   includes(readme, 'the AI-generated refund request can reach the refund service with no gate trace', 'Product docs: README shows the without-Attestor failure mode');
   includes(readme, 'money does not move', 'Product docs: README shows the with-Attestor gate behavior');
-  includes(readme, '## Why This Matters Now', 'Product docs: README moves urgency before broad mechanism');
+  includes(readme, '## Why This Matters Now', 'Product docs: README keeps urgency context after the core workflow');
   includes(readme, 'the refund path is synthetic and shadow-only', 'Product docs: README keeps the refund demo no-claim visible');
   includes(readme, 'npm run demo:golden-refund', 'Product docs: README keeps the first runnable path visible');
 }
@@ -43,9 +43,9 @@ function testReadmeStartsWithAConcreteWorkflow(): void {
 function testReadmeKeepsSingleEngineAndCustomerBoundary(): void {
   const readme = readProjectFile('README.md');
 
-  includes(readme, 'AI proposes action', 'Product docs: README keeps the core flow start');
+  includes(readme, 'AI agent', 'Product docs: README keeps the actor side of the core flow');
   includes(readme, 'Attestor checks policy, authority, evidence, scope, freshness, replay, tenant, token, and proof', 'Product docs: README keeps the core check vocabulary');
-  includes(readme, 'downstream action executes only through the customer PEP / gate', 'Product docs: README keeps the customer enforcement boundary');
+  includes(readme, 'Downstream action executes only through the customer PEP / gate.', 'Product docs: README keeps the customer enforcement boundary');
   includes(readme, 'Without an enforced customer-side PEP, gateway, verifier, or adapter, Attestor is advisory evidence.', 'Product docs: README distinguishes advisory evidence from control point');
   includes(readme, 'Start in shadow mode.', 'Product docs: README keeps shadow mode as the adoption wedge');
   includes(readme, 'These are domain packs over one Attestor engine.', 'Product docs: README keeps one-engine pack framing');
@@ -81,9 +81,16 @@ function testReadmeKeepsDomainPacksAndLocalTruth(): void {
 function testReadmeLinksTheRightDeeperDocsWithoutBecomingALinkWall(): void {
   const readme = readProjectFile('README.md');
 
-  includes(readme, '[What you can do with Attestor](docs/01-overview/what-you-can-do.md)', 'Product docs: README links the use-case bridge');
-  includes(readme, '[Attestor Evaluation Packet v0.1](docs/00-evaluation/v0.1-evaluation-packet.md)', 'Product docs: README links the evaluation packet');
+  includes(readme, '## Start Here', 'Product docs: README exposes a short first-visitor link surface');
+  includes(readme, '[Try Attestor first](docs/01-overview/try-attestor-first.md)', 'Product docs: README links the first-run guide');
+  includes(readme, '[Golden Path: Refund](docs/02-architecture/golden-refund-shadow-pilot.md)', 'Product docs: README links the first concrete workflow');
+  includes(readme, '[First hosted API call](docs/01-overview/hosted-first-api-call.md)', 'Product docs: README links the hosted first call');
+  includes(readme, '[Customer admission gate](docs/01-overview/customer-admission-gate.md)', 'Product docs: README links the customer enforcement boundary');
+  includes(readme, '[Pricing and packaging](docs/01-overview/product-packaging.md)', 'Product docs: README links commercial packaging');
   includes(readme, '[Security Policy](SECURITY.md)', 'Product docs: README links the security policy');
+  includes(readme, '<summary>Maintainer reference</summary>', 'Product docs: README puts deeper maintainer references behind an explicit disclosure');
+  includes(readme, '[What you can do with Attestor](docs/01-overview/what-you-can-do.md)', 'Product docs: README still links the use-case bridge');
+  includes(readme, '[Attestor Evaluation Packet v0.1](docs/00-evaluation/v0.1-evaluation-packet.md)', 'Product docs: README still links the evaluation packet');
   includes(readme, '[Evaluation Smoke workflow](.github/workflows/evaluation-smoke.yml)', 'Product docs: README links the reviewer CI path');
   includes(readme, '[Artifact attestation plan](docs/08-deployment/artifact-attestation-plan.md)', 'Product docs: README links the provenance plan');
   includes(readme, '[Proof surface tracker](docs/02-architecture/proof-console-buildout.md)', 'Product docs: README links the proof surface tracker');
@@ -123,7 +130,7 @@ function testReadmeDoesNotRegressToTheOldDenseShape(): void {
 
   excludes(readme, /## Core Operating Loop/u, 'Product docs: README should not reintroduce the old dense operating-loop section');
   excludes(readme, /## Architecture: Core And Packs/u, 'Product docs: README should not reintroduce the old architecture wall');
-  excludes(readme, /<details>/u, 'Product docs: README should not hide a maintainer link wall in details');
+  includes(readme, '<details>', 'Product docs: README may hide maintainer-only link depth after the short Start Here surface');
   excludes(readme, /\| Layer \| Role \| Current status \|/u, 'Product docs: README should not use the old layer table');
   excludes(readme, /\| Pack \| What it means today \| Status \|/u, 'Product docs: README should not use the old pack table');
   excludes(readme, /a finance assistant prepares a report from live warehouse data/u, 'Product docs: README should not lead with finance-only wording');

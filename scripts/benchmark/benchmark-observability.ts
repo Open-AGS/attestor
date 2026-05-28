@@ -201,7 +201,7 @@ Next steps:
 async function main(): Promise<void> {
   const prometheusUrl = arg('prometheus-url', env('ATTESTOR_OBSERVABILITY_PROMETHEUS_URL') ?? env('PROMETHEUS_BASE_URL'));
   if (!prometheusUrl) {
-    throw new Error('Usage: tsx scripts/benchmark-observability.ts --prometheus-url=<url> [--alertmanager-url=<url>] [--window=5m] [--output-dir=<dir>]');
+    throw new Error('Usage: tsx scripts/benchmark/benchmark-observability.ts --prometheus-url=<url> [--alertmanager-url=<url>] [--window=5m] [--output-dir=<dir>]');
   }
 
   const benchmark = await captureObservabilityBenchmark({

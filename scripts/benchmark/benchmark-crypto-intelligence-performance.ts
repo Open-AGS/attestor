@@ -5,43 +5,43 @@ import { performance } from 'node:perf_hooks';
 import { pathToFileURL } from 'node:url';
 import {
   canonicalizeReleaseJson,
-} from '../src/release-kernel/release-canonicalization.js';
+} from '../../src/release-kernel/release-canonicalization.js';
 import {
   createCryptoCanonicalCounterpartyReference,
-} from '../src/crypto-authorization-core/canonical-references.js';
+} from '../../src/crypto-authorization-core/canonical-references.js';
 import {
   createCryptoConsequenceRiskAssessment,
-} from '../src/crypto-authorization-core/consequence-risk-mapping.js';
+} from '../../src/crypto-authorization-core/consequence-risk-mapping.js';
 import {
   createCryptoIntelligenceRiskSignalAssessment,
-} from '../src/crypto-authorization-core/intelligence-risk-signals.js';
+} from '../../src/crypto-authorization-core/intelligence-risk-signals.js';
 import {
   createCryptoPolicyGapNarrowingAssessment,
-} from '../src/crypto-authorization-core/policy-gap-narrowing.js';
+} from '../../src/crypto-authorization-core/policy-gap-narrowing.js';
 import {
   createCryptoOperatorRiskInputBundle,
   type CryptoOperatorRiskInput,
-} from '../src/crypto-authorization-core/operator-risk-input-contract.js';
+} from '../../src/crypto-authorization-core/operator-risk-input-contract.js';
 import {
   createCryptoIntelligenceDashboardSummary,
-} from '../src/crypto-authorization-core/intelligence-dashboard-summary.js';
+} from '../../src/crypto-authorization-core/intelligence-dashboard-summary.js';
 import {
   createCryptoIntelligencePerformanceBenchmark,
   createCryptoIntelligencePerformanceEfficiencyProfile,
   type CryptoIntelligencePerformanceOperationKind,
   type CryptoIntelligencePerformanceSample,
-} from '../src/crypto-authorization-core/intelligence-performance-budget.js';
+} from '../../src/crypto-authorization-core/intelligence-performance-budget.js';
 import {
   evaluateCryptoIntelligencePrivacyMinimizationArtifact,
-} from '../src/crypto-authorization-core/intelligence-privacy-minimization.js';
+} from '../../src/crypto-authorization-core/intelligence-privacy-minimization.js';
 import {
   createCryptoAccountReference,
   createCryptoAssetReference,
   createCryptoChainReference,
-} from '../src/crypto-authorization-core/types.js';
+} from '../../src/crypto-authorization-core/types.js';
 import {
   CRYPTO_ADMISSION_NEGATIVE_CONFORMANCE_FIXTURES,
-} from '../src/crypto-execution-admission/index.js';
+} from '../../src/crypto-execution-admission/index.js';
 
 interface BenchmarkOptions {
   readonly iterations: number;

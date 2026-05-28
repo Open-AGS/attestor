@@ -197,7 +197,7 @@ function testTrackerStaysGroundedInExistingCryptoSurfaces(): void {
   );
   includes(
     tracker,
-    'scripts/benchmark-crypto-intelligence-performance.ts',
+    'scripts/benchmark/benchmark-crypto-intelligence-performance.ts',
     'Crypto intelligence docs: Step 09 evidence points to performance benchmark script',
   );
   includes(

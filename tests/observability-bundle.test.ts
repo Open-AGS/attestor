@@ -31,7 +31,7 @@ function main(): void {
   const grafanaAlloyValuesExample = read('ops/kubernetes/observability/providers/grafana-alloy/otlp-gateway.values.example.yaml');
   const alertRenderScript = read('scripts/render/render-alertmanager-config.mjs');
   const credentialsRenderScript = read('scripts/render/render-observability-credentials.ts');
-  const benchmarkScript = read('scripts/benchmark-observability.ts');
+  const benchmarkScript = read('scripts/benchmark/benchmark-observability.ts');
   const releaseBundleScript = read('scripts/render/render-observability-release-bundle.ts');
   const receiverProbeScript = read('scripts/probe/probe-observability-receivers.ts');
   const releaseInputProbeScript = read('scripts/probe/probe-observability-release-inputs.ts');

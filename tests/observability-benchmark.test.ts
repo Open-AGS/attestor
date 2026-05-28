@@ -4,7 +4,7 @@ import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
 import type { Socket } from 'node:net';
-import { captureObservabilityBenchmark } from '../scripts/benchmark-observability.ts';
+import { captureObservabilityBenchmark } from '../scripts/benchmark/benchmark-observability.ts';
 
 let passed = 0;
 

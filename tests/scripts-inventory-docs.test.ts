@@ -63,6 +63,12 @@ function runScriptFiles(): readonly string[] {
     .sort();
 }
 
+function benchmarkScriptFiles(): readonly string[] {
+  return readdirSync(join(process.cwd(), 'scripts', 'benchmark'))
+    .filter((entry) => /^benchmark-.*\.ts$/u.test(entry))
+    .sort();
+}
+
 function verifyScriptFiles(): readonly string[] {
   return readdirSync(join(process.cwd(), 'scripts', 'verify'))
     .filter((entry) => /^(?:validate|verify)-.*\.(?:mjs|ts)$/u.test(entry))
@@ -99,6 +105,7 @@ function testInventoryMirrorsCurrentScriptCounts(): void {
   const demoFiles = demoScriptFiles();
   const rehearseFiles = rehearseScriptFiles();
   const runFiles = runScriptFiles();
+  const benchmarkFiles = benchmarkScriptFiles();
   const verifyFiles = verifyScriptFiles();
   const counts = familyCounts(files);
 
@@ -110,6 +117,7 @@ function testInventoryMirrorsCurrentScriptCounts(): void {
   includes(doc, `Demo script files under \`scripts/demo/\`: ${demoFiles.length}.`, 'Scripts inventory: demo script count matches directory');
   includes(doc, `Rehearsal script files under \`scripts/rehearse/\`: ${rehearseFiles.length}.`, 'Scripts inventory: rehearse script count matches directory');
   includes(doc, `Run script files under \`scripts/run/\`: ${runFiles.length}.`, 'Scripts inventory: run script count matches directory');
+  includes(doc, `Benchmark script files under \`scripts/benchmark/\`: ${benchmarkFiles.length}.`, 'Scripts inventory: benchmark script count matches directory');
   includes(doc, `Verification script files under \`scripts/verify/\`: ${verifyFiles.length}.`, 'Scripts inventory: verify script count matches directory');
 
   for (const [label, count] of [
@@ -120,7 +128,7 @@ function testInventoryMirrorsCurrentScriptCounts(): void {
     ['`scripts/rehearse/rehearse-*`', rehearseFiles.length],
     ['`scripts/run/run-*`', runFiles.length],
     ['`scripts/verify/{validate,verify}-*`', verifyFiles.length],
-    ['`benchmark-*`', counts.benchmark],
+    ['`scripts/benchmark/benchmark-*`', benchmarkFiles.length],
     ['named ops helpers', counts.namedOps],
   ] as const) {
     includes(doc, `| ${label} | ${count} |`, `Scripts inventory: ${label} count matches directory`);

@@ -607,7 +607,7 @@ apply patches, deploy infrastructure, execute production traffic, activate
 enforcement, or prove production readiness.
 
 The local browser QA preview harness lives in
-`scripts/preview-policy-foundry-hosted-ui.ts` and is exposed through
+`scripts/preview/preview-policy-foundry-hosted-ui.ts` and is exposed through
 `preview:policy-foundry-hosted-ui`. It renders the same hosted review surface
 through a local-only GET route so a reviewer can inspect blocked and ready
 states in a real browser before a hosted deployment exists. The renderer now

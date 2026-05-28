@@ -1,4 +1,4 @@
-import { createControlPlaneBackupSnapshot } from '../src/service/control-plane-backup.js';
+import { createControlPlaneBackupSnapshot } from '../../src/service/control-plane-backup.js';
 
 function parseArgs(argv: string[]): {
   outputDir?: string;

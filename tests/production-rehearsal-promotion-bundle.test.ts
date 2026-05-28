@@ -13,7 +13,7 @@ import { createHash } from 'node:crypto';
 import {
   packageProductionPromotionCandidate,
   type ProductionPromotionCandidateSummary,
-} from '../scripts/package-production-promotion-candidate.ts';
+} from '../scripts/ops/package-production-promotion-candidate.ts';
 import { generateKeyPair } from '../src/signing/keys.js';
 import {
   canonicalize,
@@ -421,7 +421,7 @@ function testDocsAndScriptsExposeStep10(): void {
 
   equal(
     packageJson.scripts['package:production-promotion-candidate'],
-    'tsx scripts/package-production-promotion-candidate.ts',
+    'tsx scripts/ops/package-production-promotion-candidate.ts',
     'Production promotion bundle: package script is exposed',
   );
   equal(

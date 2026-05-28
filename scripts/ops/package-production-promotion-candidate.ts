@@ -24,8 +24,8 @@ import { gzipSync } from 'node:zlib';
 import {
   canonicalize,
   signPayload,
-} from '../src/signing/sign.js';
-import { derivePublicKeyIdentity } from '../src/signing/keys.js';
+} from '../../src/signing/sign.js';
+import { derivePublicKeyIdentity } from '../../src/signing/keys.js';
 
 type CheckStatus = 'pass' | 'fail' | 'skip';
 type GoNoGoVerdict = 'go' | 'no-go';

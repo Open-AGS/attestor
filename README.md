@@ -265,7 +265,7 @@ Policy Foundry evaluator notes:
 - It generates a red-team fixture bundle and local replay reports through the local adversarial replay executor.
 - It can attach live downstream replay evidence when configured, but that remains live evidence, not a repo-side production claim.
 - The hosted onboarding workflow packages the hosted review surface, wizard state, entitlement context, and storage-readiness checks.
-- Local browser QA uses `preview:policy-foundry-hosted-ui` with safe fixtures only.
+- The hosted UI flow can be previewed locally with `preview:policy-foundry-hosted-ui` and safe fixtures only.
 - Local self-onboarding uses `npm run policy-foundry:self-onboard` and renders session, coverage, blockers, gate plan, handoff, red-team fixtures.
 - For an already deployed hosted runtime, the opt-in Policy Foundry production smoke probe checks the route contract without proving production readiness.
 - Safety boundary: hosted onboarding returns review material only.

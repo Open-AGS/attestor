@@ -33,7 +33,7 @@ async function main(): Promise<void> {
         process.execPath,
         [
           'node_modules/tsx/dist/cli.mjs',
-          'scripts/ha-calibrate.ts',
+          'scripts/benchmark/ha-calibrate.ts',
           `--url=http://127.0.0.1:${address.port}/health`,
           '--duration=2',
           '--concurrency=4',

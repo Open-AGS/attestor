@@ -9,7 +9,7 @@
  * 5. Verifies the resulting certificate and kit
  * 6. Stops the embedded PostgreSQL
  *
- * Usage: npx tsx scripts/real-db-proof.ts
+ * Usage: npx tsx scripts/proof/real-db-proof.ts
  */
 
 import EmbeddedPostgres from 'embedded-postgres';
@@ -93,7 +93,7 @@ async function main() {
 
     // ── Step 2: Verify connectivity with doctor probe ──
     console.log('\n  [2/7] Running connectivity probe...');
-    const { runPostgresProbe } = await import('../src/connectors/postgres.js');
+    const { runPostgresProbe } = await import('../../src/connectors/postgres.js');
     const probe = await runPostgresProbe();
     for (const step of probe.steps) {
       console.log(`    ${step.passed ? '✓' : '✗'} ${step.step.padEnd(14)} ${step.detail}`);
@@ -107,7 +107,7 @@ async function main() {
 
     // ── Step 3: Generate signing keys ──
     console.log('\n  [3/7] Generating signing keys...');
-    const { generatePkiHierarchy } = await import('../src/signing/pki-chain.js');
+    const { generatePkiHierarchy } = await import('../../src/signing/pki-chain.js');
     const pkiHierarchy = generatePkiHierarchy('Attestor Real Proof CA', 'Real Proof Runtime Signer', 'Real Proof Reviewer');
     const signingKeyPair = pkiHierarchy.signer.keyPair;
     const reviewerKeyPair = pkiHierarchy.reviewer.keyPair;
@@ -116,7 +116,7 @@ async function main() {
 
     // ── Step 4: Bootstrap demo schema ──
     console.log('\n  [4/7] Bootstrapping demo schema...');
-    const { runDemoBootstrap } = await import('../src/connectors/postgres-demo.js');
+    const { runDemoBootstrap } = await import('../../src/connectors/postgres-demo.js');
     const bootstrap = await runDemoBootstrap();
     if (!bootstrap.success) {
       console.error(`\n  ✗ Bootstrap failed: ${bootstrap.message}`);
@@ -130,10 +130,10 @@ async function main() {
 
     // ── Step 5: Run governed proof with real PostgreSQL ──
     console.log('\n  [5/7] Running governed proof against real PostgreSQL...');
-    const { getDemoCounterpartySql } = await import('../src/connectors/postgres-demo.js');
-    const { runFinancialPipeline } = await import('../src/financial/pipeline.js');
-    const { runPostgresProve: runPgProve } = await import('../src/connectors/postgres-prove.js');
-    const { COUNTERPARTY_INTENT, COUNTERPARTY_FIXTURE, COUNTERPARTY_REPORT, COUNTERPARTY_REPORT_CONTRACT } = await import('../src/financial/fixtures/scenarios.js');
+    const { getDemoCounterpartySql } = await import('../../src/connectors/postgres-demo.js');
+    const { runFinancialPipeline } = await import('../../src/financial/pipeline.js');
+    const { runPostgresProve: runPgProve } = await import('../../src/connectors/postgres-prove.js');
+    const { COUNTERPARTY_INTENT, COUNTERPARTY_FIXTURE, COUNTERPARTY_REPORT, COUNTERPARTY_REPORT_CONTRACT } = await import('../../src/financial/fixtures/scenarios.js');
 
     // Execute against real PostgreSQL
     const demoSql = getDemoCounterpartySql();
@@ -205,8 +205,8 @@ async function main() {
 
     // ── Step 6: Build and verify certificate + kit ──
     console.log('\n  [6/7] Building and verifying portable proof artifacts...');
-    const { buildVerificationKit } = await import('../src/signing/bundle.js');
-    const { verifyCertificate } = await import('../src/signing/certificate.js');
+    const { buildVerificationKit } = await import('../../src/signing/bundle.js');
+    const { verifyCertificate } = await import('../../src/signing/certificate.js');
 
     if (!report.certificate) {
       console.error('  ✗ No certificate issued');

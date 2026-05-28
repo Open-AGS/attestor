@@ -53,7 +53,7 @@ function demoScriptFiles(): readonly string[] {
 
 function rehearseScriptFiles(): readonly string[] {
   return readdirSync(join(process.cwd(), 'scripts', 'rehearse'))
-    .filter((entry) => /^rehearse-.*\.(?:mjs|ts)$/u.test(entry))
+    .filter((entry) => /\.(?:mjs|ts)$/u.test(entry))
     .sort();
 }
 
@@ -65,7 +65,25 @@ function runScriptFiles(): readonly string[] {
 
 function benchmarkScriptFiles(): readonly string[] {
   return readdirSync(join(process.cwd(), 'scripts', 'benchmark'))
-    .filter((entry) => /^benchmark-.*\.ts$/u.test(entry))
+    .filter((entry) => /\.ts$/u.test(entry))
+    .sort();
+}
+
+function opsScriptFiles(): readonly string[] {
+  return readdirSync(join(process.cwd(), 'scripts', 'ops'))
+    .filter((entry) => /\.ts$/u.test(entry))
+    .sort();
+}
+
+function previewScriptFiles(): readonly string[] {
+  return readdirSync(join(process.cwd(), 'scripts', 'preview'))
+    .filter((entry) => /^preview-.*\.ts$/u.test(entry))
+    .sort();
+}
+
+function proofScriptFiles(): readonly string[] {
+  return readdirSync(join(process.cwd(), 'scripts', 'proof'))
+    .filter((entry) => /-proof\.ts$/u.test(entry))
     .sort();
 }
 
@@ -81,27 +99,6 @@ function verifyScriptFiles(): readonly string[] {
     .sort();
 }
 
-function familyCounts(files: readonly string[]): Readonly<Record<string, number>> {
-  const family = {
-    check: files.filter((file) => file.startsWith('check-')).length,
-    probe: files.filter((file) => file.startsWith('probe-')).length,
-    render: files.filter((file) => file.startsWith('render-')).length,
-    demo: files.filter((file) => file.startsWith('demo-')).length,
-    rehearse: files.filter((file) => file.startsWith('rehearse-')).length,
-    run: files.filter((file) => file.startsWith('run-')).length,
-    validateVerify: files.filter((file) => file.startsWith('validate-') || file.startsWith('verify-')).length,
-    benchmark: files.filter((file) => file.startsWith('benchmark-')).length,
-  };
-
-  const assigned = family.check + family.probe + family.render + family.demo +
-    family.rehearse + family.run + family.validateVerify + family.benchmark;
-
-  return {
-    ...family,
-    namedOps: files.length - assigned,
-  };
-}
-
 function testInventoryMirrorsCurrentScriptCounts(): void {
   const doc = readProjectFile('docs', '02-architecture', 'scripts-inventory.md');
   const files = scriptFiles();
@@ -112,9 +109,11 @@ function testInventoryMirrorsCurrentScriptCounts(): void {
   const rehearseFiles = rehearseScriptFiles();
   const runFiles = runScriptFiles();
   const benchmarkFiles = benchmarkScriptFiles();
+  const opsFiles = opsScriptFiles();
+  const previewFiles = previewScriptFiles();
+  const proofFiles = proofScriptFiles();
   const libFiles = libScriptFiles();
   const verifyFiles = verifyScriptFiles();
-  const counts = familyCounts(files);
 
   includes(doc, '# Scripts Inventory', 'Scripts inventory: title is present');
   includes(doc, `Root script files: ${files.length}.`, 'Scripts inventory: root script count matches directory');
@@ -125,6 +124,9 @@ function testInventoryMirrorsCurrentScriptCounts(): void {
   includes(doc, `Rehearsal script files under \`scripts/rehearse/\`: ${rehearseFiles.length}.`, 'Scripts inventory: rehearse script count matches directory');
   includes(doc, `Run script files under \`scripts/run/\`: ${runFiles.length}.`, 'Scripts inventory: run script count matches directory');
   includes(doc, `Benchmark script files under \`scripts/benchmark/\`: ${benchmarkFiles.length}.`, 'Scripts inventory: benchmark script count matches directory');
+  includes(doc, `Ops script files under \`scripts/ops/\`: ${opsFiles.length}.`, 'Scripts inventory: ops script count matches directory');
+  includes(doc, `Preview script files under \`scripts/preview/\`: ${previewFiles.length}.`, 'Scripts inventory: preview script count matches directory');
+  includes(doc, `Proof script files under \`scripts/proof/\`: ${proofFiles.length}.`, 'Scripts inventory: proof script count matches directory');
   includes(doc, `Shared helper files under \`scripts/lib/\`: ${libFiles.length}.`, 'Scripts inventory: lib helper count matches directory');
   includes(doc, `Verification script files under \`scripts/verify/\`: ${verifyFiles.length}.`, 'Scripts inventory: verify script count matches directory');
 
@@ -133,12 +135,14 @@ function testInventoryMirrorsCurrentScriptCounts(): void {
     ['`scripts/probe/probe-*`', probeFiles.length],
     ['`scripts/render/render-*`', renderFiles.length],
     ['`scripts/demo/demo-*`', demoFiles.length],
-    ['`scripts/rehearse/rehearse-*`', rehearseFiles.length],
+    ['`scripts/rehearse/*.ts`', rehearseFiles.length],
     ['`scripts/run/run-*`', runFiles.length],
     ['`scripts/verify/{validate,verify}-*`', verifyFiles.length],
-    ['`scripts/benchmark/benchmark-*`', benchmarkFiles.length],
+    ['`scripts/benchmark/*.ts`', benchmarkFiles.length],
+    ['`scripts/ops/*.ts`', opsFiles.length],
+    ['`scripts/preview/preview-*`', previewFiles.length],
+    ['`scripts/proof/*-proof.ts`', proofFiles.length],
     ['`scripts/lib/{secret,remote,repo}-*`', libFiles.length],
-    ['named ops helpers', counts.namedOps],
   ] as const) {
     includes(doc, `| ${label} | ${count} |`, `Scripts inventory: ${label} count matches directory`);
   }

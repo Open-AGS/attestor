@@ -140,7 +140,7 @@ The deeper `schemaAttestation` object is now surfaced through the full `postgres
 
 Attestor includes a bounded demo bootstrap that seeds a deterministic `attestor_demo` schema in PostgreSQL. The first real DB proof run has been completed using this path (PostgreSQL 18.3, real execution, signed certificate, verified kit).
 
-**Self-contained proof:** `npx tsx scripts/real-db-proof.ts` downloads an embedded PostgreSQL binary, starts it, bootstraps the demo schema, runs the full governed proof, and saves verified artifacts. No manual PostgreSQL installation required.
+**Self-contained proof:** `npx tsx scripts/proof/real-db-proof.ts` downloads an embedded PostgreSQL binary, starts it, bootstraps the demo schema, runs the full governed proof, and saves verified artifacts. No manual PostgreSQL installation required.
 
 **Bash / macOS / Linux:**
 ```bash

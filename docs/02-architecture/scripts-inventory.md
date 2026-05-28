@@ -19,7 +19,7 @@ Research anchors:
 
 ## Current Shape
 
-Root script files: 8.
+Root script files: 0.
 
 Check script files under `scripts/check/`: 8.
 
@@ -29,11 +29,17 @@ Render script files under `scripts/render/`: 17.
 
 Demo script files under `scripts/demo/`: 8.
 
-Rehearsal script files under `scripts/rehearse/`: 4.
+Rehearsal script files under `scripts/rehearse/`: 5.
 
 Run script files under `scripts/run/`: 3.
 
-Benchmark script files under `scripts/benchmark/`: 2.
+Benchmark script files under `scripts/benchmark/`: 3.
+
+Ops script files under `scripts/ops/`: 4.
+
+Preview script files under `scripts/preview/`: 1.
+
+Proof script files under `scripts/proof/`: 1.
 
 Shared helper files under `scripts/lib/`: 3.
 
@@ -48,11 +54,12 @@ bundle renderers, `scripts/demo/`, which holds local golden path demos and the
 shared demo path-boundary helper, `scripts/rehearse/`, which holds operator
 rehearsal scripts, `scripts/run/`, which holds suite and live/ops runners,
 `scripts/benchmark/`, which holds local benchmark evidence helpers,
-`scripts/lib/`, which holds shared script-only helpers, and `scripts/verify/`,
-which holds PR-contract, PR-body, and multi-query kit verification helpers. The
-remaining root-level script families should move only through small
-path-migration PRs that update package scripts, workflows, tests, and docs
-together.
+`scripts/ops/`, which holds named operator CLIs, `scripts/preview/`, which
+holds local browser-preview CLIs, `scripts/proof/`, which holds proof-running
+CLIs, `scripts/lib/`, which holds shared script-only helpers, and
+`scripts/verify/`, which holds PR-contract, PR-body, and multi-query kit
+verification helpers. The root `scripts/` directory should stay empty unless a
+future one-off CLI has a documented reason to sit above the family folders.
 
 ## Pick One Script Family
 
@@ -62,12 +69,14 @@ together.
 | `scripts/probe/probe-*` | 19 | You need an opt-in package-surface, live, provider, Stripe, HA, observability, or hosted-flow probe. | `probe-consequence-admission-package-surface.mjs`, `probe-stripe-live-readiness.ts`, `probe-production-hosted-flow.ts` |
 | `scripts/render/render-*` | 17 | You need to render local packets, profiles, credentials templates, proof surfaces, or deployment bundles. | `render-proof-surface.ts`, `render-production-readiness-packet.ts`, `render-ha-profile.ts` |
 | `scripts/demo/demo-*` | 8 | You need a runnable local golden path or path-boundary demo. | `demo-golden-refund.ts`, `demo-golden-paths.ts`, `demo-path-boundary.ts` |
-| `scripts/rehearse/rehearse-*` | 4 | You need a production rehearsal script that simulates an operational path. | `rehearse-production-consequence-behavior.ts`, `rehearse-production-backup-restore-dr.ts` |
+| `scripts/rehearse/*.ts` | 5 | You need a production rehearsal script or rehearsal planner. | `rehearse-production-consequence-behavior.ts`, `plan-production-rehearsal.ts` |
 | `scripts/run/run-*` | 3 | You need a suite runner or live/ops gate runner. | `run-suite.mjs`, `run-live-ops-gate.mjs` |
 | `scripts/verify/{validate,verify}-*` | 4 | You need PR-body, PR-contract, or MQ-kit validation. | `validate-pr-body.mjs`, `validate-pr-contract.mjs`, `verify-mq-cert.ts` |
-| `scripts/benchmark/benchmark-*` | 2 | You need local performance or observability benchmark evidence. | `benchmark-observability.ts`, `benchmark-crypto-intelligence-performance.ts` |
+| `scripts/benchmark/*.ts` | 3 | You need local performance, HA, or observability benchmark evidence. | `benchmark-observability.ts`, `benchmark-crypto-intelligence-performance.ts`, `ha-calibrate.ts` |
+| `scripts/ops/*.ts` | 4 | You need a named operator CLI for backups, restores, Stripe bootstrap, or promotion packaging. | `control-plane-backup.ts`, `control-plane-restore.ts`, `bootstrap-stripe-commercial.ts` |
+| `scripts/preview/preview-*` | 1 | You need a local browser preview server. | `preview-policy-foundry-hosted-ui.ts` |
+| `scripts/proof/*-proof.ts` | 1 | You need a local proof run. | `real-db-proof.ts` |
 | `scripts/lib/{secret,remote,repo}-*` | 3 | You need a shared helper imported by demo, probe, render, check, or ops scripts. | `secret-safe-output.ts`, `remote-secret-keys.ts`, `repo-pipeline-readiness.ts` |
-| named ops helpers | 8 | You need a named operator helper that does not fit a prefix family. | `control-plane-backup.ts`, `real-db-proof.ts`, `bootstrap-stripe-commercial.ts` |
 
 ## PR Preflight
 

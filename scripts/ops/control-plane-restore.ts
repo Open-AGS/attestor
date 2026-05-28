@@ -1,7 +1,7 @@
 import {
   describeControlPlaneSnapshot,
   restoreControlPlaneBackupSnapshot,
-} from '../src/service/control-plane-backup.js';
+} from '../../src/service/control-plane-backup.js';
 
 function parseArgs(argv: string[]): {
   inputDir?: string;

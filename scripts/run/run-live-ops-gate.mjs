@@ -2,7 +2,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { join } from 'node:path';
 
-const rootDir = join(fileURLToPath(new URL('..', import.meta.url)));
+const rootDir = join(fileURLToPath(new URL('../..', import.meta.url)));
 const externalGateEnv = 'ATTESTOR_RUN_EXTERNAL_LIVE_TESTS';
 
 function testCommand(scriptName) {

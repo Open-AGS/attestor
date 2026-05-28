@@ -3,7 +3,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-const rootDir = join(fileURLToPath(new URL('..', import.meta.url)));
+const rootDir = join(fileURLToPath(new URL('../..', import.meta.url)));
 
 function readPackageJson(root = rootDir) {
   return JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));

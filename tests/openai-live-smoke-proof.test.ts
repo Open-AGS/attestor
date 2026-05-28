@@ -206,7 +206,7 @@ function testProbeManifestAndPackageSurface(): void {
   equal(printed.runtimeGateEnv.model, 'ATTESTOR_OPENAI_LIVE_SMOKE_PROOF_MODEL', 'OpenAI live smoke: printed manifest includes model gate env');
 
   const packageJson = readProjectFile('package.json');
-  const liveOpsGate = readProjectFile('scripts', 'run-live-ops-gate.mjs');
+  const liveOpsGate = readProjectFile('scripts', 'run', 'run-live-ops-gate.mjs');
   includes(packageJson, '"test:openai-live-smoke-proof"', 'OpenAI live smoke: package exposes contract test');
   includes(packageJson, '"probe:openai-live-smoke"', 'OpenAI live smoke: package exposes external live probe');
   includes(liveOpsGate, 'probe:openai-live-smoke', 'OpenAI live smoke: external live gate includes probe');

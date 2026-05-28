@@ -11,7 +11,7 @@ not as live exploit proof.
 
 ## What Changed
 
-- Added `scripts/run-f-series-continuous-validation.mjs`, a secretless runner
+- Added `scripts/run/run-f-series-continuous-validation.mjs`, a secretless runner
   that resolves all `test:f*` and `test:final-*` validation scripts plus the
   red-team replay, guard-coverage, supply-chain, drift-binding, tracker, and
   provenance self-tests.

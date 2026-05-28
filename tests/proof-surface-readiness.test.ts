@@ -224,11 +224,11 @@ function testReadinessGateIsWiredIntoVerification(): void {
     'Proof surface readiness: package script exposes readiness gate',
   );
   ok(
-    scripts.test.includes('scripts/run-suite.mjs test'),
+    scripts.test.includes('scripts/run/run-suite.mjs test'),
     'Proof surface readiness: npm test delegates to the suite runner',
   );
   ok(
-    scripts.verify.includes('scripts/run-suite.mjs verify'),
+    scripts.verify.includes('scripts/run/run-suite.mjs verify'),
     'Proof surface readiness: npm run verify delegates to the suite runner',
   );
 }

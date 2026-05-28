@@ -12,7 +12,7 @@ Official anchor: [NIST SP 800-115](https://csrc.nist.gov/pubs/sp/800/115/final).
 | Layer | Evidence |
 |---|---|
 | Type safety | `npm run typecheck`, `npm run typecheck:hygiene`. |
-| Unit and contract tests | `npm test` through `scripts/run-suite.mjs`. |
+| Unit and contract tests | `npm test` through `scripts/run/run-suite.mjs`. |
 | Architecture checks | `npm run verify:architecture`. |
 | Build and package surface | `npm run build`, package-surface probes. |
 | Supply-chain checks | `npm run security:supply-chain-baseline`, `npm run security:audit-high`. |

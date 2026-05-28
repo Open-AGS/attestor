@@ -10,7 +10,7 @@ type GateItem = {
 const {
   liveOpsGroups,
   resolveLiveOpsGate,
-} = await import('../scripts/run-live-ops-gate.mjs') as {
+} = await import('../scripts/run/run-live-ops-gate.mjs') as {
   readonly liveOpsGroups: {
     readonly localLive: readonly string[];
     readonly opsRender: readonly string[];
@@ -94,10 +94,10 @@ function testPackageAndWorkflowExposeBoundaries(): void {
   const workflow = readProjectFile('.github', 'workflows', 'full-verify.yml');
   const productionReadiness = readProjectFile('docs', '08-deployment', 'production-readiness.md');
 
-  equal(packageJson.scripts['verify:live-local'], 'node scripts/run-live-ops-gate.mjs local-live', 'Live/ops gate: package exposes local live gate');
-  equal(packageJson.scripts['verify:ops'], 'node scripts/run-live-ops-gate.mjs ops', 'Live/ops gate: package exposes ops render gate');
-  equal(packageJson.scripts['verify:external-live'], 'node scripts/run-live-ops-gate.mjs external-live', 'Live/ops gate: package exposes external live gate');
-  equal(packageJson.scripts['verify:full'], 'npm run verify && node scripts/run-live-ops-gate.mjs full', 'Live/ops gate: full gate delegates to runner');
+  equal(packageJson.scripts['verify:live-local'], 'node scripts/run/run-live-ops-gate.mjs local-live', 'Live/ops gate: package exposes local live gate');
+  equal(packageJson.scripts['verify:ops'], 'node scripts/run/run-live-ops-gate.mjs ops', 'Live/ops gate: package exposes ops render gate');
+  equal(packageJson.scripts['verify:external-live'], 'node scripts/run/run-live-ops-gate.mjs external-live', 'Live/ops gate: package exposes external live gate');
+  equal(packageJson.scripts['verify:full'], 'npm run verify && node scripts/run/run-live-ops-gate.mjs full', 'Live/ops gate: full gate delegates to runner');
   includes(workflow, 'type: choice', 'Live/ops gate: workflow dispatch exposes explicit mode choices');
   includes(workflow, 'github_environment', 'Live/ops gate: workflow has protected environment input');
   includes(workflow, 'ATTESTOR_RUN_EXTERNAL_LIVE_TESTS: "true"', 'Live/ops gate: workflow opts external live tests in explicitly');

@@ -168,7 +168,7 @@ function testDocsScriptsAndPackageSurfaceAreAligned(): void {
     'Guard activation readiness: package script is exposed',
   );
 
-  const runner = readProjectFile('scripts', 'run-suite.mjs');
+  const runner = readProjectFile('scripts', 'run', 'run-suite.mjs');
   includes(runner, 'test:guard-activation-readiness', 'Guard activation readiness: architecture suite includes script');
 
   const probe = readProjectFile('scripts', 'probe', 'probe-consequence-admission-package-surface.mjs');

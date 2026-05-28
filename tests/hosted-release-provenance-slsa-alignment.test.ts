@@ -192,7 +192,7 @@ function testSupplyChainAndPackageSurfaceEvidence(): void {
   };
   const baseline = readProjectFile('scripts', 'check', 'check-supply-chain-baseline.mjs');
   const securityScan = readProjectFile('.github', 'workflows', 'security-scan.yml');
-  const runner = readProjectFile('scripts', 'run-suite.mjs');
+  const runner = readProjectFile('scripts', 'run', 'run-suite.mjs');
   const packageRunnerTest = readProjectFile('tests', 'package-script-runner.test.ts');
   const securityPolicy = readProjectFile('SECURITY.md');
 

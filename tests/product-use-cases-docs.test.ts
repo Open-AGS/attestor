@@ -67,8 +67,8 @@ function testReadmeAndDocsPointToUseCaseBridge(): void {
   includes(readme, 'docs/01-overview/what-you-can-do.md', 'Use cases: README links the use-case bridge');
   includes(readme, '[What you can do with Attestor](docs/01-overview/what-you-can-do.md)', 'Use cases: README names the bridge plainly');
   includes(productPositioningTest, 'what-you-can-do.md', 'Use cases: product positioning guard tracks the bridge');
-  includes(packageJson.scripts.test, 'scripts/run-suite.mjs test', 'Use cases: npm test delegates to the suite runner');
-  includes(packageJson.scripts.verify, 'scripts/run-suite.mjs verify', 'Use cases: verify delegates to the suite runner');
+  includes(packageJson.scripts.test, 'scripts/run/run-suite.mjs test', 'Use cases: npm test delegates to the suite runner');
+  includes(packageJson.scripts.verify, 'scripts/run/run-suite.mjs verify', 'Use cases: verify delegates to the suite runner');
 }
 
 testUseCaseBridgeStaysConcrete();

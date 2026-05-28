@@ -77,8 +77,8 @@ function testDemoIsReachableFromPackageScriptsAndDocs(): void {
 
   equal(packageJson.scripts['example:admission'], 'tsx examples/first-useful-admission-demo.ts', 'Demo: example script is exported');
   equal(packageJson.scripts['test:first-useful-admission-demo'], 'tsx tests/first-useful-admission-demo.test.ts', 'Demo: test script is exported');
-  includes(packageJson.scripts.test, 'scripts/run-suite.mjs test', 'Demo: npm test delegates to the suite runner');
-  includes(packageJson.scripts.verify, 'scripts/run-suite.mjs verify', 'Demo: verify delegates to the suite runner');
+  includes(packageJson.scripts.test, 'scripts/run/run-suite.mjs test', 'Demo: npm test delegates to the suite runner');
+  includes(packageJson.scripts.verify, 'scripts/run/run-suite.mjs verify', 'Demo: verify delegates to the suite runner');
 
   includes(readme, 'npm run demo:golden-refund', 'Demo: README quick start begins with the concrete golden refund path');
   includes(readme, '[Consequence admission quickstart](docs/01-overview/consequence-admission-quickstart.md)', 'Demo: README links the consequence admission quickstart for the lower-level demo');

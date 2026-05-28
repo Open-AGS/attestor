@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-const { resolveFSeriesContinuousValidationScripts } = await import('../scripts/run-f-series-continuous-validation.mjs') as {
+const { resolveFSeriesContinuousValidationScripts } = await import('../scripts/run/run-f-series-continuous-validation.mjs') as {
   readonly resolveFSeriesContinuousValidationScripts: (root?: string) => readonly {
     readonly label: string;
     readonly command: string;
@@ -39,7 +39,7 @@ const packageJson = JSON.parse(readProjectFile('package.json')) as {
   readonly scripts: Readonly<Record<string, string>>;
 };
 const workflow = readProjectFile('.github', 'workflows', 'f-series-continuous-validation.yml');
-const runner = readProjectFile('scripts', 'run-f-series-continuous-validation.mjs');
+const runner = readProjectFile('scripts', 'run', 'run-f-series-continuous-validation.mjs');
 const tracker = readProjectFile('docs', 'audit', 'attestor-audit-remediation-tracker.md');
 const validationDoc = readProjectFile('docs', 'audit', 'f12-continuous-red-team-validation.md');
 const researchLedger = readProjectFile('docs', 'research', 'attestor-research-provenance-ledger.md');
@@ -51,7 +51,7 @@ const resolvedText = resolvedLabels.join('\n');
 
 includes(
   packageJson.scripts['audit:f-series-continuous-validation'],
-  'scripts/run-f-series-continuous-validation.mjs',
+  'scripts/run/run-f-series-continuous-validation.mjs',
   'F12 validation: package exposes the F-series continuous validation runner',
 );
 includes(

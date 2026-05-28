@@ -53,8 +53,8 @@ function testPackageScriptsMatchReadinessGates(): void {
     ok(typeof packageJson.scripts[scriptName] === 'string', `Hosted readiness: package.json exposes ${scriptName}`);
   }
 
-  includes(packageJson.scripts.test, 'scripts/run-suite.mjs test', 'Hosted readiness: main test script delegates to the suite runner');
-  includes(packageJson.scripts.verify, 'scripts/run-suite.mjs verify', 'Hosted readiness: verify script delegates to the suite runner');
+  includes(packageJson.scripts.test, 'scripts/run/run-suite.mjs test', 'Hosted readiness: main test script delegates to the suite runner');
+  includes(packageJson.scripts.verify, 'scripts/run/run-suite.mjs verify', 'Hosted readiness: verify script delegates to the suite runner');
 }
 
 function testProductionProbeCoversSaleReadyHostedSurface(): void {

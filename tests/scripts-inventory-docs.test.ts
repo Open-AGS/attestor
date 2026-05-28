@@ -57,6 +57,12 @@ function rehearseScriptFiles(): readonly string[] {
     .sort();
 }
 
+function runScriptFiles(): readonly string[] {
+  return readdirSync(join(process.cwd(), 'scripts', 'run'))
+    .filter((entry) => /^run-.*\.mjs$/u.test(entry))
+    .sort();
+}
+
 function verifyScriptFiles(): readonly string[] {
   return readdirSync(join(process.cwd(), 'scripts', 'verify'))
     .filter((entry) => /^(?:validate|verify)-.*\.(?:mjs|ts)$/u.test(entry))
@@ -92,6 +98,7 @@ function testInventoryMirrorsCurrentScriptCounts(): void {
   const renderFiles = renderScriptFiles();
   const demoFiles = demoScriptFiles();
   const rehearseFiles = rehearseScriptFiles();
+  const runFiles = runScriptFiles();
   const verifyFiles = verifyScriptFiles();
   const counts = familyCounts(files);
 
@@ -102,6 +109,7 @@ function testInventoryMirrorsCurrentScriptCounts(): void {
   includes(doc, `Render script files under \`scripts/render/\`: ${renderFiles.length}.`, 'Scripts inventory: render script count matches directory');
   includes(doc, `Demo script files under \`scripts/demo/\`: ${demoFiles.length}.`, 'Scripts inventory: demo script count matches directory');
   includes(doc, `Rehearsal script files under \`scripts/rehearse/\`: ${rehearseFiles.length}.`, 'Scripts inventory: rehearse script count matches directory');
+  includes(doc, `Run script files under \`scripts/run/\`: ${runFiles.length}.`, 'Scripts inventory: run script count matches directory');
   includes(doc, `Verification script files under \`scripts/verify/\`: ${verifyFiles.length}.`, 'Scripts inventory: verify script count matches directory');
 
   for (const [label, count] of [
@@ -110,7 +118,7 @@ function testInventoryMirrorsCurrentScriptCounts(): void {
     ['`scripts/render/render-*`', renderFiles.length],
     ['`scripts/demo/demo-*`', demoFiles.length],
     ['`scripts/rehearse/rehearse-*`', rehearseFiles.length],
-    ['`run-*`', counts.run],
+    ['`scripts/run/run-*`', runFiles.length],
     ['`scripts/verify/{validate,verify}-*`', verifyFiles.length],
     ['`benchmark-*`', counts.benchmark],
     ['named ops helpers', counts.namedOps],
@@ -163,7 +171,7 @@ function testInventoryNamesFailurePreventionScripts(): void {
     'validate-pr-contract.mjs',
     'check-baseline-alignment.mjs',
     'check-public-artifacts-redaction.mjs',
-    'run-suite.mjs',
+    'scripts/run/run-suite.mjs',
   ]) {
     includes(doc, expected, `Scripts inventory: names ${expected}`);
   }

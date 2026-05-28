@@ -221,7 +221,7 @@ export const HOSTED_RELEASE_PROVENANCE_SLSA_GUARDS: readonly HostedReleaseProven
       'Package-surface validation proves repo export contracts, not public npm publication readiness or external deployment availability.',
     implementationEvidence: [
       'package.json',
-      'scripts/run-suite.mjs',
+      'scripts/run/run-suite.mjs',
       'scripts/probe/probe-release-layer-package-surface.mjs',
       'scripts/probe/probe-release-policy-control-plane-package-surface.mjs',
       'scripts/probe/probe-release-enforcement-plane-package-surface.mjs',

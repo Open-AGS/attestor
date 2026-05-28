@@ -130,8 +130,8 @@ function testPackageAndDescriptorStayAligned(): void {
   equal(mapCryptoAdmissionOutcomeToAdmission('needs-evidence').mappedDecision, 'review', 'Admission readiness: crypto needs-evidence maps to review');
   equal(mapCryptoAdmissionOutcomeToAdmission('deny').mappedDecision, 'block', 'Admission readiness: crypto deny maps to block');
 
-  includes(packageJson.scripts.test, 'scripts/run-suite.mjs test', 'Admission readiness: npm test delegates to the suite runner');
-  includes(packageJson.scripts.verify, 'scripts/run-suite.mjs verify', 'Admission readiness: verify delegates to the suite runner');
+  includes(packageJson.scripts.test, 'scripts/run/run-suite.mjs test', 'Admission readiness: npm test delegates to the suite runner');
+  includes(packageJson.scripts.verify, 'scripts/run/run-suite.mjs verify', 'Admission readiness: verify delegates to the suite runner');
 }
 
 function testFacadeBehaviorMatchesTheDocs(): void {

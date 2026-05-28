@@ -702,8 +702,8 @@ function testExampleAndDocs(): void {
 
   equal(packageJson.scripts['example:customer-gate'], 'tsx examples/customer-admission-gate.ts', 'Package: customer gate example script exists');
   equal(packageJson.scripts['test:consequence-admission-customer-gate'], 'tsx tests/consequence-admission-customer-gate.test.ts', 'Package: customer gate test script exists');
-  includes(packageJson.scripts.test, 'scripts/run-suite.mjs test', 'Package: npm test delegates to the suite runner');
-  includes(packageJson.scripts.verify, 'scripts/run-suite.mjs verify', 'Package: verify delegates to the suite runner');
+  includes(packageJson.scripts.test, 'scripts/run/run-suite.mjs test', 'Package: npm test delegates to the suite runner');
+  includes(packageJson.scripts.verify, 'scripts/run/run-suite.mjs verify', 'Package: verify delegates to the suite runner');
 }
 
 testProceedGate();

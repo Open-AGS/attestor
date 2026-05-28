@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-const rootDir = join(fileURLToPath(new URL('..', import.meta.url)));
+const rootDir = join(fileURLToPath(new URL('../..', import.meta.url)));
 
 const SUPPORTING_SECURITY_AND_REPLAY_SCRIPTS = [
   'test:action-surface-onboarding-red-team-fixtures',

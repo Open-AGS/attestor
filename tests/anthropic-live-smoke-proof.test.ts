@@ -213,7 +213,7 @@ function testProbeManifestAndPackageSurface(): void {
   equal(printed.runtimeGateEnv.model, 'ATTESTOR_ANTHROPIC_LIVE_SMOKE_PROOF_MODEL', 'Anthropic live smoke: printed manifest includes model gate env');
 
   const packageJson = readProjectFile('package.json');
-  const liveOpsGate = readProjectFile('scripts', 'run-live-ops-gate.mjs');
+  const liveOpsGate = readProjectFile('scripts', 'run', 'run-live-ops-gate.mjs');
   includes(packageJson, '"test:anthropic-live-smoke-proof"', 'Anthropic live smoke: package exposes contract test');
   includes(packageJson, '"probe:anthropic-live-smoke"', 'Anthropic live smoke: package exposes external live probe');
   includes(liveOpsGate, 'probe:anthropic-live-smoke', 'Anthropic live smoke: external live gate includes probe');

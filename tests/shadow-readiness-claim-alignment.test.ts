@@ -152,7 +152,7 @@ function testDocsPackageAndDescriptorSurfaceAreAligned(): void {
   includes(packageJson, '"test:shadow-readiness-claim-alignment"', 'Shadow readiness: package script is exposed');
   includes(packageJson, '"test:f7-shadow-readiness-claim-alignment-validation"', 'Shadow readiness: validation script is exposed');
 
-  const runner = readProjectFile('scripts', 'run-suite.mjs');
+  const runner = readProjectFile('scripts', 'run', 'run-suite.mjs');
   includes(runner, 'test:shadow-readiness-claim-alignment', 'Shadow readiness: architecture suite includes module test');
 
   const probe = readProjectFile('scripts', 'probe', 'probe-consequence-admission-package-surface.mjs');

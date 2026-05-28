@@ -113,8 +113,8 @@ function testPackageScriptsExposeTheGuard(): void {
   includes(JSON.stringify(packageJson.scripts), 'test:generic-admission-mode-ladder', 'Admission operating model: generic mode ladder script is exported');
   includes(JSON.stringify(packageJson.scripts), 'test:generic-admission-routes', 'Admission operating model: generic route script is exported');
   includes(JSON.stringify(packageJson.scripts), 'test:consequence-admission-package-surface', 'Admission operating model: package surface script is exported');
-  includes(packageJson.scripts.test, 'scripts/run-suite.mjs test', 'Admission operating model: npm test delegates to the suite runner');
-  includes(packageJson.scripts.verify, 'scripts/run-suite.mjs verify', 'Admission operating model: npm run verify delegates to the suite runner');
+  includes(packageJson.scripts.test, 'scripts/run/run-suite.mjs test', 'Admission operating model: npm test delegates to the suite runner');
+  includes(packageJson.scripts.verify, 'scripts/run/run-suite.mjs verify', 'Admission operating model: npm run verify delegates to the suite runner');
 }
 
 testOperatingModelDefinesCanonicalDecisionVocabulary();

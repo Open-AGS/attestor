@@ -459,8 +459,8 @@ function testDocsAndApiRuntimeAreWired(): void {
   includes(releaseRuntime, 'createFileBackedReleaseReviewerQueueStore', 'Runtime docs: release runtime can construct the durable reviewer queue');
   includes(releaseRuntime, 'createFileBackedReleaseTokenIntrospectionStore', 'Runtime docs: release runtime can construct durable token introspection');
   includes(server, 'logRuntimeStartupDiagnostics', 'Runtime docs: server logs runtime startup diagnostics');
-  includes(packageJson.scripts.test, 'scripts/run-suite.mjs test', 'Runtime docs: npm test delegates to the suite runner');
-  includes(packageJson.scripts.verify, 'scripts/run-suite.mjs verify', 'Runtime docs: verify delegates to the suite runner');
+  includes(packageJson.scripts.test, 'scripts/run/run-suite.mjs test', 'Runtime docs: npm test delegates to the suite runner');
+  includes(packageJson.scripts.verify, 'scripts/run/run-suite.mjs verify', 'Runtime docs: verify delegates to the suite runner');
 }
 
 async function run(): Promise<void> {

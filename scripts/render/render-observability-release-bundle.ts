@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'nod
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { inferObservabilityRemoteSecretProvider, remoteSecretKey } from '../remote-secret-keys.ts';
+import { inferObservabilityRemoteSecretProvider, remoteSecretKey } from '../lib/remote-secret-keys.ts';
 
 type Provider = 'generic' | 'grafana-cloud' | 'grafana-alloy';
 type SecretMode = 'secret' | 'external-secret';

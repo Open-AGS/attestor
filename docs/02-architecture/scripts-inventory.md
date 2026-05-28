@@ -19,7 +19,7 @@ Research anchors:
 
 ## Current Shape
 
-Root script files: 11.
+Root script files: 8.
 
 Check script files under `scripts/check/`: 8.
 
@@ -35,6 +35,8 @@ Run script files under `scripts/run/`: 3.
 
 Benchmark script files under `scripts/benchmark/`: 2.
 
+Shared helper files under `scripts/lib/`: 3.
+
 Verification script files under `scripts/verify/`: 4.
 
 The scripts are less flat now, but still intentionally move one family at a
@@ -45,11 +47,12 @@ provider, Stripe, HA, observability, and hosted-flow probes, and
 bundle renderers, `scripts/demo/`, which holds local golden path demos and the
 shared demo path-boundary helper, `scripts/rehearse/`, which holds operator
 rehearsal scripts, `scripts/run/`, which holds suite and live/ops runners,
-`scripts/benchmark/`, which holds local benchmark evidence helpers, and
-`scripts/verify/`, which holds PR-contract, PR-body, and multi-query kit
-verification helpers. The remaining root-level script families should move only
-through small path-migration PRs that update package scripts, workflows, tests,
-and docs together.
+`scripts/benchmark/`, which holds local benchmark evidence helpers,
+`scripts/lib/`, which holds shared script-only helpers, and `scripts/verify/`,
+which holds PR-contract, PR-body, and multi-query kit verification helpers. The
+remaining root-level script families should move only through small
+path-migration PRs that update package scripts, workflows, tests, and docs
+together.
 
 ## Pick One Script Family
 
@@ -63,7 +66,8 @@ and docs together.
 | `scripts/run/run-*` | 3 | You need a suite runner or live/ops gate runner. | `run-suite.mjs`, `run-live-ops-gate.mjs` |
 | `scripts/verify/{validate,verify}-*` | 4 | You need PR-body, PR-contract, or MQ-kit validation. | `validate-pr-body.mjs`, `validate-pr-contract.mjs`, `verify-mq-cert.ts` |
 | `scripts/benchmark/benchmark-*` | 2 | You need local performance or observability benchmark evidence. | `benchmark-observability.ts`, `benchmark-crypto-intelligence-performance.ts` |
-| named ops helpers | 11 | You need a named operator helper that does not fit a prefix family. | `control-plane-backup.ts`, `repo-pipeline-readiness.ts`, `bootstrap-stripe-commercial.ts` |
+| `scripts/lib/{secret,remote,repo}-*` | 3 | You need a shared helper imported by demo, probe, render, check, or ops scripts. | `secret-safe-output.ts`, `remote-secret-keys.ts`, `repo-pipeline-readiness.ts` |
+| named ops helpers | 8 | You need a named operator helper that does not fit a prefix family. | `control-plane-backup.ts`, `real-db-proof.ts`, `bootstrap-stripe-commercial.ts` |
 
 ## PR Preflight
 

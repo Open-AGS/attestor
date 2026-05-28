@@ -14,7 +14,7 @@ import {
 import {
   safeErrorMessage,
   stringifySecretSafe,
-} from '../secret-safe-output.ts';
+} from '../lib/secret-safe-output.ts';
 
 type ManifestInputSpec = {
   readonly path: string;

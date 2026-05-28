@@ -298,7 +298,7 @@ This index records research and buildout sources found in the repository. A sour
   - PR #207 records Node 26 Current-not-LTS and official Node Docker Alpine/musl runtime validation concerns.
   - PR #208 and PR #209: External anchor: not required / repository-internal hardening evidence only.
 - Repository evidence:
-  - Code/test evidence: `tests/node-26-runtime-validation.test.ts`, `tests/production-rollout-public-boundary.test.ts`, `tests/production-readiness-secret-safe-output.test.ts`, `scripts/secret-safe-output.ts`, readiness render/probe scripts changed by PR #209.
+  - Code/test evidence: `tests/node-26-runtime-validation.test.ts`, `tests/production-rollout-public-boundary.test.ts`, `tests/production-readiness-secret-safe-output.test.ts`, `scripts/lib/secret-safe-output.ts`, readiness render/probe scripts changed by PR #209.
   - Contract/documentation evidence: `docs/02-architecture/crypto-engine-hardening-ii.md`, `docs/08-deployment/production-readiness.md`.
   - PR evidence: PR #207 title `Validate Node 26 runtime no-go`; PR #208 title `Guard production rollout public boundary`; PR #209 title `Harden production readiness secret-safe output`.
 - Implemented control: Keeps Docker/package/CI runtime baseline on Node 22 until Node 26 is LTS and runtime smoke is proven; prevents public production rollout claims without deployment env, restart, readiness probe, and smoke tests; redacts live Stripe keys, webhook secrets, bearer tokens, credentialed DB URLs, and Stripe/customer/session refs from operator-facing output.

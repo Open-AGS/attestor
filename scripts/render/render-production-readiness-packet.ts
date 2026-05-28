@@ -18,7 +18,7 @@ import {
 import {
   safeErrorMessage,
   stringifySecretSafe,
-} from '../secret-safe-output.ts';
+} from '../lib/secret-safe-output.ts';
 
 type ObservabilityProvider = 'generic' | 'grafana-cloud' | 'grafana-alloy';
 type HaProvider = 'generic' | 'aws' | 'gke';

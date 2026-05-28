@@ -10,7 +10,7 @@ import {
   digestReference,
   safeErrorMessage,
   stringifySecretSafe,
-} from '../secret-safe-output.ts';
+} from '../lib/secret-safe-output.ts';
 
 type FetchLike = typeof fetch;
 

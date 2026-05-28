@@ -8,7 +8,7 @@ import {
   redactSensitiveOutput,
   safeErrorMessage,
   stringifySecretSafe,
-} from '../secret-safe-output.ts';
+} from '../lib/secret-safe-output.ts';
 
 type Provider = 'generic' | 'aws' | 'gke';
 

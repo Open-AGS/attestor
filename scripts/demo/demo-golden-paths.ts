@@ -5,7 +5,7 @@ import {
   renderGoldenPathsEvaluatorJson,
   renderGoldenPathsEvaluatorMarkdown,
 } from '../../src/consequence-admission/index.js';
-import { safeErrorMessage } from '../secret-safe-output.ts';
+import { safeErrorMessage } from '../lib/secret-safe-output.ts';
 
 function printUsage(): void {
   console.log(`Usage:

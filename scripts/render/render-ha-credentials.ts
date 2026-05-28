@@ -1,6 +1,6 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { remoteSecretKey } from '../remote-secret-keys.ts';
+import { remoteSecretKey } from '../lib/remote-secret-keys.ts';
 
 type NullableString = string | null;
 type TlsMode = 'secret' | 'external-secret' | 'cert-manager' | 'aws-acm';

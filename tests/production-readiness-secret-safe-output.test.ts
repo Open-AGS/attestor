@@ -6,7 +6,7 @@ import {
   redactSensitiveOutput,
   safeErrorMessage,
   stringifySecretSafe,
-} from '../scripts/secret-safe-output.ts';
+} from '../scripts/lib/secret-safe-output.ts';
 import { CONSEQUENCE_DATA_MINIMIZATION_RUNTIME_SECRET_MARKERS } from '../src/consequence-admission/data-minimization-redaction-policy.js';
 
 let passed = 0;

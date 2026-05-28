@@ -3,11 +3,11 @@ import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { probeObservabilityReleaseInputs } from '../probe/probe-observability-release-inputs.ts';
-import { resolveRepoPipelineReadiness } from '../repo-pipeline-readiness.ts';
+import { resolveRepoPipelineReadiness } from '../lib/repo-pipeline-readiness.ts';
 import {
   safeErrorMessage,
   stringifySecretSafe,
-} from '../secret-safe-output.ts';
+} from '../lib/secret-safe-output.ts';
 
 type Provider = 'generic' | 'grafana-cloud' | 'grafana-alloy';
 type SecretMode = 'secret' | 'external-secret';

@@ -19,7 +19,7 @@ Files changed by PR #522 are docs-only:
 - `docs/audit/control-map.md`
 - `docs/audit/current-posture-baseline.md`
 
-Chain-effect verdict: PR #522 does not touch `scripts/secret-safe-output.ts`,
+Chain-effect verdict: PR #522 does not touch `scripts/lib/secret-safe-output.ts`,
 `scripts/demo/demo-golden-refund.ts`, `examples/**`,
 `src/consequence-admission/data-minimization-redaction-policy.ts`,
 `src/consequence-admission/golden-refund-demo.ts`, redaction tests, demo tests,
@@ -39,13 +39,13 @@ Sweep 15 OPS-121 and OPS-122 remain open on `origin/master`.
 | Protected principles | data minimization and redaction; demo safety; no overclaim; auditability |
 | Audit driver | `current-posture-baseline.md` Phase 3 preparation + `finding-index.md` B-025/B-028 + control-map `Public demo safety` next action |
 | External anchors | NIST SP 800-122 for PII confidentiality; GDPR Article 5 data minimisation; OWASP LLM02 sensitive information disclosure; OWASP LLM07 system prompt leakage; CWE-200 / CWE-22 / CWE-532 / CWE-209 vocabulary |
-| Scope | `scripts/secret-safe-output.ts`, `scripts/demo/demo-golden-refund.ts`, `scripts/render/render-proof-{surface,showcase}.ts`, `examples/*demo.ts`, `src/consequence-admission/{data-minimization-redaction-policy,golden-refund-demo}.ts`, `fixtures/golden-refund-reviewer-sandbox.example.json`, redaction/demo tests, and committed public evidence inventory |
+| Scope | `scripts/lib/secret-safe-output.ts`, `scripts/demo/demo-golden-refund.ts`, `scripts/render/render-proof-{surface,showcase}.ts`, `examples/*demo.ts`, `src/consequence-admission/{data-minimization-redaction-policy,golden-refund-demo}.ts`, `fixtures/golden-refund-reviewer-sandbox.example.json`, redaction/demo tests, and committed public evidence inventory |
 
 ## 2. Inspected Files
 
 | File | Depth | Why selected |
 |---|---|---|
-| `scripts/secret-safe-output.ts` | full | Runtime redaction primitive |
+| `scripts/lib/secret-safe-output.ts` | full | Runtime redaction primitive |
 | `src/consequence-admission/data-minimization-redaction-policy.ts` | targeted | Architectural redaction policy and marker vocabulary |
 | `scripts/demo/demo-golden-refund.ts` | targeted | Demo CLI `--scenario` path entry |
 | `scripts/render/render-proof-showcase.ts` | targeted | Public artifact renderer `--from` path entry |
@@ -87,7 +87,7 @@ No critical Sweep 16 file was skipped.
 
 | ID | Severity | State | Title | Evidence | Protected principle | Recommended next action |
 |---|---:|---|---|---|---|---|
-| OPS-129 | P1 | `open` | Redaction patterns are Stripe-focused and miss broad provider tokens. | `scripts/secret-safe-output.ts` covers Stripe keys, `whsec_`, Bearer, Postgres/Redis credentials, and Stripe IDs, but no AWS `AKIA`/`ASIA`, GCP `AIza`/`ya29.`, GitHub PAT, JWT, private-key block, Slack, Anthropic, or OpenAI-specific patterns were found. | data minimization and redaction; demo safety; no overclaim | Extend `SENSITIVE_OUTPUT_PATTERNS` with conservative provider patterns and positive tests per provider. |
+| OPS-129 | P1 | `open` | Redaction patterns are Stripe-focused and miss broad provider tokens. | `scripts/lib/secret-safe-output.ts` covers Stripe keys, `whsec_`, Bearer, Postgres/Redis credentials, and Stripe IDs, but no AWS `AKIA`/`ASIA`, GCP `AIza`/`ya29.`, GitHub PAT, JWT, private-key block, Slack, Anthropic, or OpenAI-specific patterns were found. | data minimization and redaction; demo safety; no overclaim | Extend `SENSITIVE_OUTPUT_PATTERNS` with conservative provider patterns and positive tests per provider. |
 | OPS-130 | P2 | `open / partial-repo` | Architectural redaction markers and runtime redaction patterns are drift-prone. | `CONSEQUENCE_DATA_MINIMIZATION_RUNTIME_SECRET_MARKERS` is a small substring list; `SENSITIVE_OUTPUT_PATTERNS` is a separate regex list with no shared registry. | data minimization and redaction; auditability | Create a typed shared `SecretPattern` registry or add a test proving policy markers are covered by implementation. |
 | OPS-131 | P2 | `open / partial-repo` | Provider redaction test matrix is incomplete. | `production-readiness-secret-safe-output.test.ts` covers Stripe/Bearer/DB shapes, not AWS/GCP/GitHub/JWT/private-key/Slack/Anthropic/OpenAI tokens. | auditability; no overclaim | Add one positive test per provider, one mixed-provider completeness test, and false-positive guards. |
 | OPS-132 | P2 | `open` | No automated public-artifact redaction crawl exists. | No `check-public-artifacts-redaction` script or package script was found; B-028 explicitly asks for public/demo artifact scanning. | data minimization and redaction; demo safety | Add a scanner for public-facing paths and wire it to security/evaluation checks. |
@@ -105,7 +105,7 @@ No critical Sweep 16 file was skipped.
 | 4 | `examples/non-bypassable-gateway-demo.ts` | pure demo | stdout | no | n/a | none |
 | 5 | `scripts/render/render-proof-surface.ts` | renderer | file | `--out` write path | indirect | none |
 | 6 | `scripts/render/render-proof-showcase.ts` | renderer | file | yes, `--from` | indirect | OPS-133 |
-| 7 | `scripts/secret-safe-output.ts` | runtime redactor | library | n/a | n/a | OPS-129, OPS-130, OPS-131, OPS-134 |
+| 7 | `scripts/lib/secret-safe-output.ts` | runtime redactor | library | n/a | n/a | OPS-129, OPS-130, OPS-131, OPS-134 |
 | 8 | `src/consequence-admission/data-minimization-redaction-policy.ts` | policy | library | n/a | n/a | OPS-130, OPS-135 |
 | 9 | `docs/evidence/financial-reporting-acceptance-live-hybrid/**` | committed evidence | static public artifact | n/a | n/a | OPS-132 |
 | 10 | `fixtures/golden-refund-reviewer-sandbox.example.json` | demo fixture | input | n/a | n/a | none |

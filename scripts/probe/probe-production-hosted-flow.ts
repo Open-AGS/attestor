@@ -4,7 +4,7 @@ import {
   digestReference,
   safeErrorMessage,
   stringifySecretSafe,
-} from '../secret-safe-output.ts';
+} from '../lib/secret-safe-output.ts';
 import { trimAndStripTrailingSlashes } from '../../src/platform/string-normalization.js';
 
 import {

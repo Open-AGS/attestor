@@ -1,6 +1,6 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { remoteSecretKey } from '../remote-secret-keys.ts';
+import { remoteSecretKey } from '../lib/remote-secret-keys.ts';
 
 type Provider = 'aws' | 'gke' | 'all';
 type ConcreteProvider = 'aws' | 'gke';

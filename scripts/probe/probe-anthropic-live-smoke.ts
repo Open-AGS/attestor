@@ -11,7 +11,7 @@ import {
 import {
   safeErrorMessage,
   stringifySecretSafe,
-} from '../secret-safe-output.ts';
+} from '../lib/secret-safe-output.ts';
 
 function flag(name: string): boolean {
   return process.argv.includes(`--${name}`);

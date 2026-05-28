@@ -15,7 +15,7 @@ import {
   digestReference,
   safeErrorMessage,
   stringifySecretSafe,
-} from '../secret-safe-output.ts';
+} from '../lib/secret-safe-output.ts';
 
 type GateStatus = 'pass' | 'fail' | 'not-applicable';
 type GoNoGoVerdict = 'go' | 'no-go';

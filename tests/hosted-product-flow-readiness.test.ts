@@ -58,7 +58,7 @@ function testPackageScriptsMatchReadinessGates(): void {
 }
 
 function testProductionProbeCoversSaleReadyHostedSurface(): void {
-  const probe = readProjectFile('scripts', 'probe-production-hosted-flow.ts');
+  const probe = readProjectFile('scripts', 'probe', 'probe-production-hosted-flow.ts');
 
   includes(probe, '/api/v1/account', 'Hosted readiness: production probe covers account summary');
   includes(probe, '/api/v1/account/usage', 'Hosted readiness: production probe covers usage');

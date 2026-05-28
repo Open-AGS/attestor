@@ -4,8 +4,8 @@ import {
   digestReference,
   safeErrorMessage,
   stringifySecretSafe,
-} from './secret-safe-output.ts';
-import { trimAndStripTrailingSlashes } from '../src/platform/string-normalization.js';
+} from '../secret-safe-output.ts';
+import { trimAndStripTrailingSlashes } from '../../src/platform/string-normalization.js';
 
 import {
   COUNTERPARTY_FIXTURE,
@@ -13,7 +13,7 @@ import {
   COUNTERPARTY_REPORT,
   COUNTERPARTY_REPORT_CONTRACT,
   COUNTERPARTY_SQL,
-} from '../src/financial/fixtures/scenarios.js';
+} from '../../src/financial/fixtures/scenarios.js';
 
 type JsonResult = {
   res: Response;

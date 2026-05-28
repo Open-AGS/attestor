@@ -260,7 +260,7 @@ function testDocsScriptsAndPackageSurfaceExposeGuard(): void {
   const readme = readProjectFile('README.md');
   const doc = readProjectFile('docs', '02-architecture', 'agent-loop-abuse-guard.md');
   const systemOverview = readProjectFile('docs', '02-architecture', 'system-overview.md');
-  const packageProbe = readProjectFile('scripts', 'probe-consequence-admission-package-surface.mjs');
+  const packageProbe = readProjectFile('scripts', 'probe', 'probe-consequence-admission-package-surface.mjs');
 
   equal(
     packageJson.scripts['test:agent-loop-abuse-guard'],

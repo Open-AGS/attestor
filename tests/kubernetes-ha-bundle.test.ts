@@ -62,7 +62,7 @@ function main(): void {
   const externalTlsSecret = read('ops/kubernetes/ha/providers/external-secrets/tls-secret.yaml');
   const profilesReadme = read('ops/kubernetes/ha/profiles/README.md');
   const releaseBundleScript = read('scripts/render-ha-release-bundle.ts');
-  const releaseProbeScript = read('scripts/probe-ha-release-inputs.ts');
+  const releaseProbeScript = read('scripts/probe/probe-ha-release-inputs.ts');
   const promotionPacketScript = read('scripts/render-ha-promotion-packet.ts');
   const gkeDomainCutoverScript = read('scripts/render-gke-domain-cutover.ts');
   const awsProfile = read('ops/kubernetes/ha/profiles/aws-production.json');

@@ -116,7 +116,7 @@ function testDocsPackageAndPublicSurfaceStayAligned(): void {
   const registryDocs = readProjectFile('docs', '02-architecture', 'failure-mode-registry.md');
   const packageJson = readProjectFile('package.json');
   const publicSurface = readProjectFile('src', 'consequence-admission', 'public-surface.ts');
-  const probe = readProjectFile('scripts', 'probe-consequence-admission-package-surface.mjs');
+  const probe = readProjectFile('scripts', 'probe', 'probe-consequence-admission-package-surface.mjs');
   const descriptor = consequenceAdmissionDescriptor();
 
   includes(docs, 'attestor.consequence-failure-mode-guard-coverage.v1', 'Guard coverage docs: version is named');

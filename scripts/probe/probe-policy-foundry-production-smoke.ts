@@ -4,13 +4,13 @@ import { pathToFileURL } from 'node:url';
 import {
   HOSTED_POLICY_FOUNDRY_ONBOARDING_WORKFLOW_ROUTE,
   HOSTED_POLICY_FOUNDRY_ONBOARDING_WORKFLOW_VIEW_ROUTE,
-} from '../src/service/http/routes/policy-foundry-hosted-onboarding-routes.js';
-import { trimAndStripTrailingSlashes } from '../src/platform/string-normalization.js';
+} from '../../src/service/http/routes/policy-foundry-hosted-onboarding-routes.js';
+import { trimAndStripTrailingSlashes } from '../../src/platform/string-normalization.js';
 import {
   digestReference,
   safeErrorMessage,
   stringifySecretSafe,
-} from './secret-safe-output.ts';
+} from '../secret-safe-output.ts';
 
 type FetchLike = typeof fetch;
 

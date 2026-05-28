@@ -2,7 +2,7 @@ import { strict as assert } from 'node:assert';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
-import { probeAlertRouting } from '../scripts/probe-alert-routing.ts';
+import { probeAlertRouting } from '../scripts/probe/probe-alert-routing.ts';
 
 let passed = 0;
 

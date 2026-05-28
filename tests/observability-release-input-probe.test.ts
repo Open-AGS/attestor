@@ -3,7 +3,7 @@ import { createServer } from 'node:http';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
-import { probeObservabilityReleaseInputs } from '../scripts/probe-observability-release-inputs.ts';
+import { probeObservabilityReleaseInputs } from '../scripts/probe/probe-observability-release-inputs.ts';
 
 let passed = 0;
 

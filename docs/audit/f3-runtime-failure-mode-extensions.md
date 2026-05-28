@@ -22,7 +22,7 @@ they do not prove production customer workflow coverage.
 - Test: `tests/failure-mode-runtime-extensions.test.ts`
 - Docs: `docs/02-architecture/failure-mode-runtime-extensions.md`
 - Registry placement: `src/consequence-admission/failure-mode-registry.ts`
-- Package surface: `scripts/probe-consequence-admission-package-surface.mjs`
+- Package surface: `scripts/probe/probe-consequence-admission-package-surface.mjs`
 
 ## Control
 

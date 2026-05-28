@@ -255,7 +255,7 @@ function testLedgerIndexesAuditRemediationClosure(): void {
   );
   includes(
     content,
-    'scripts/probe-openai-live-smoke.ts',
+    'scripts/probe/probe-openai-live-smoke.ts',
     'Research provenance ledger: OpenAI live smoke probe evidence is indexed',
   );
   includes(
@@ -275,7 +275,7 @@ function testLedgerIndexesAuditRemediationClosure(): void {
   );
   includes(
     content,
-    'scripts/probe-anthropic-live-smoke.ts',
+    'scripts/probe/probe-anthropic-live-smoke.ts',
     'Research provenance ledger: Anthropic live smoke probe evidence is indexed',
   );
   includes(

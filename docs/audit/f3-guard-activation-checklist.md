@@ -45,7 +45,7 @@ Code evidence:
 
 - `src/consequence-admission/guard-activation-readiness.ts`
 - `src/consequence-admission/index.ts`
-- `scripts/probe-consequence-admission-package-surface.mjs`
+- `scripts/probe/probe-consequence-admission-package-surface.mjs`
 
 Test evidence:
 

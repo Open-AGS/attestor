@@ -280,6 +280,7 @@ The machine-readable role contract is exported from `attestor/consequence-admiss
 - [Domain pack boundary](docs/02-architecture/domain-pack-boundary.md)
 - [Downstream enforcement contract](docs/02-architecture/downstream-enforcement-contract.md)
 - [Failure mode registry](docs/02-architecture/failure-mode-registry.md)
+- [Crypto intelligence buildout](docs/02-architecture/crypto-intelligence-buildout.md)
 - [Reason codes](docs/05-proof/reason-codes.md)
 - [Failure modes and controls](docs/05-proof/failure-modes-and-controls.md)
 - [Review-by-exception inbox](docs/02-architecture/review-by-exception-inbox.md)

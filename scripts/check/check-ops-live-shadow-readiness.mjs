@@ -31,7 +31,7 @@ const FILES = Object.freeze({
   externalSecretsKustomization: 'ops/kubernetes/ha/providers/external-secrets/kustomization.yaml',
   externalSecretsTlsSecret: 'ops/kubernetes/ha/providers/external-secrets/tls-secret.yaml',
   gkeClusterSecretStoreExample: 'ops/kubernetes/ha/providers/external-secrets/clustersecretstore.gke.example.yaml',
-  releaseProbe: 'scripts/probe-ha-release-inputs.ts',
+  releaseProbe: 'scripts/probe/probe-ha-release-inputs.ts',
   releaseBundle: 'scripts/render-ha-release-bundle.ts',
   observabilityReadme: 'ops/observability/README.md',
   observabilityDeployment: 'ops/kubernetes/observability/deployment.yaml',

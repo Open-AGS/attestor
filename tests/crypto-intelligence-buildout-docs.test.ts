@@ -172,7 +172,7 @@ function testTrackerStaysGroundedInExistingCryptoSurfaces(): void {
   );
   includes(
     tracker,
-    'scripts/probe-crypto-intelligence-package-surface.mjs',
+    'scripts/probe/probe-crypto-intelligence-package-surface.mjs',
     'Crypto intelligence docs: Step 10 evidence points to package boundary probe',
   );
   includes(

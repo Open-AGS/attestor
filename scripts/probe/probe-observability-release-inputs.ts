@@ -9,7 +9,7 @@ import {
   redactSensitiveOutput,
   safeErrorMessage,
   stringifySecretSafe,
-} from './secret-safe-output.ts';
+} from '../secret-safe-output.ts';
 
 type Provider = 'generic' | 'grafana-cloud' | 'grafana-alloy';
 type SecretMode = 'secret' | 'external-secret';

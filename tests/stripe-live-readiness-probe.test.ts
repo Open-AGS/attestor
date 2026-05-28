@@ -5,7 +5,7 @@ import {
   STRIPE_PRICE_EXPECTATIONS,
   probeStripeLiveReadiness,
   requiredStripePriceManifest,
-} from '../scripts/probe-stripe-live-readiness.ts';
+} from '../scripts/probe/probe-stripe-live-readiness.ts';
 
 let passed = 0;
 
@@ -340,7 +340,7 @@ function testManifestCanPrintWithoutKey(): void {
     process.execPath,
     [
       resolve('node_modules/tsx/dist/cli.mjs'),
-      'scripts/probe-stripe-live-readiness.ts',
+      'scripts/probe/probe-stripe-live-readiness.ts',
       '--print-required-prices',
     ],
     {

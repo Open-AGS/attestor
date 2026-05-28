@@ -73,9 +73,9 @@ try {
   const tracker = readProjectFile('docs', 'audit', 'attestor-audit-remediation-tracker.md');
   const packageJson = readProjectFile('package.json');
   const openai = readProjectFile('src', 'api', 'openai.ts');
-  const openaiSmoke = readProjectFile('scripts', 'probe-openai-live-smoke.ts');
+  const openaiSmoke = readProjectFile('scripts', 'probe', 'probe-openai-live-smoke.ts');
   const anthropic = readProjectFile('src', 'api', 'anthropic.ts');
-  const anthropicSmoke = readProjectFile('scripts', 'probe-anthropic-live-smoke.ts');
+  const anthropicSmoke = readProjectFile('scripts', 'probe', 'probe-anthropic-live-smoke.ts');
   const models = readProjectFile('src', 'api', 'llm-provider-models.ts');
   const financialCli = readProjectFile('src', 'financial', 'cli.ts');
   const financialTypes = readProjectFile('src', 'financial', 'types.ts');

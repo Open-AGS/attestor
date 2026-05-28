@@ -5,7 +5,7 @@ import { join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 import EmbeddedPostgres from 'embedded-postgres';
 import { RedisMemoryServer } from 'redis-memory-server';
-import { probeHaRuntimeConnectivity } from '../scripts/probe-ha-runtime-connectivity.ts';
+import { probeHaRuntimeConnectivity } from '../scripts/probe/probe-ha-runtime-connectivity.ts';
 
 let passed = 0;
 

@@ -2,7 +2,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { spawnSync } from 'node:child_process';
-import { probeObservabilityReleaseInputs } from './probe-observability-release-inputs.ts';
+import { probeObservabilityReleaseInputs } from './probe/probe-observability-release-inputs.ts';
 import { resolveRepoPipelineReadiness } from './repo-pipeline-readiness.ts';
 import {
   safeErrorMessage,

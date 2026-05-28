@@ -33,6 +33,12 @@ function checkScriptFiles(): readonly string[] {
     .sort();
 }
 
+function probeScriptFiles(): readonly string[] {
+  return readdirSync(join(process.cwd(), 'scripts', 'probe'))
+    .filter((entry) => /^probe-.*\.(?:mjs|ts)$/u.test(entry))
+    .sort();
+}
+
 function familyCounts(files: readonly string[]): Readonly<Record<string, number>> {
   const family = {
     check: files.filter((file) => file.startsWith('check-')).length,
@@ -58,15 +64,17 @@ function testInventoryMirrorsCurrentScriptCounts(): void {
   const doc = readProjectFile('docs', '02-architecture', 'scripts-inventory.md');
   const files = scriptFiles();
   const checkFiles = checkScriptFiles();
+  const probeFiles = probeScriptFiles();
   const counts = familyCounts(files);
 
   includes(doc, '# Scripts Inventory', 'Scripts inventory: title is present');
   includes(doc, `Root script files: ${files.length}.`, 'Scripts inventory: root script count matches directory');
   includes(doc, `Check script files under \`scripts/check/\`: ${checkFiles.length}.`, 'Scripts inventory: check script count matches directory');
+  includes(doc, `Probe script files under \`scripts/probe/\`: ${probeFiles.length}.`, 'Scripts inventory: probe script count matches directory');
 
   for (const [label, count] of [
     ['`scripts/check/check-*`', checkFiles.length],
-    ['`probe-*`', counts.probe],
+    ['`scripts/probe/probe-*`', probeFiles.length],
     ['`render-*`', counts.render],
     ['`demo-*`', counts.demo],
     ['`rehearse-*`', counts.rehearse],

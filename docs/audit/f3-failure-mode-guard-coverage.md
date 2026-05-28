@@ -46,7 +46,7 @@ Code evidence:
 
 - `src/consequence-admission/failure-mode-guard-coverage.ts`
 - `src/consequence-admission/index.ts`
-- `scripts/probe-consequence-admission-package-surface.mjs`
+- `scripts/probe/probe-consequence-admission-package-surface.mjs`
 
 Test evidence:
 

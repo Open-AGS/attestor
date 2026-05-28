@@ -18,7 +18,7 @@ function main(): void {
     process.execPath,
     [
       resolve('node_modules/tsx/dist/cli.mjs'),
-      'scripts/probe-stripe-webhook-config.ts',
+      'scripts/probe/probe-stripe-webhook-config.ts',
       '--print-required-events',
     ],
     {

@@ -7,11 +7,11 @@ import {
   DEFAULT_ANTHROPIC_LIVE_SMOKE_MAX_OUTPUT_TOKENS,
   DEFAULT_ANTHROPIC_LIVE_SMOKE_PROOF_MAX_AGE_MINUTES,
   runAnthropicLiveSmokeProof,
-} from '../src/api/anthropic.js';
+} from '../../src/api/anthropic.js';
 import {
   safeErrorMessage,
   stringifySecretSafe,
-} from './secret-safe-output.ts';
+} from '../secret-safe-output.ts';
 
 function flag(name: string): boolean {
   return process.argv.includes(`--${name}`);

@@ -155,7 +155,7 @@ function testDocsPackageAndDescriptorSurfaceAreAligned(): void {
   const runner = readProjectFile('scripts', 'run-suite.mjs');
   includes(runner, 'test:shadow-readiness-claim-alignment', 'Shadow readiness: architecture suite includes module test');
 
-  const probe = readProjectFile('scripts', 'probe-consequence-admission-package-surface.mjs');
+  const probe = readProjectFile('scripts', 'probe', 'probe-consequence-admission-package-surface.mjs');
   includes(probe, 'consequenceShadowReadinessClaimAlignmentDescriptor', 'Shadow readiness: package probe covers descriptor');
 
   const serialized = JSON.stringify(evaluateConsequenceShadowReadinessClaimAlignment());

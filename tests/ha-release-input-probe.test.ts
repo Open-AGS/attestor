@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import EmbeddedPostgres from 'embedded-postgres';
 import { RedisMemoryServer } from 'redis-memory-server';
-import { probeHaReleaseInputs } from '../scripts/probe-ha-release-inputs.ts';
+import { probeHaReleaseInputs } from '../scripts/probe/probe-ha-release-inputs.ts';
 
 let passed = 0;
 

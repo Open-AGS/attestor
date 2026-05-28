@@ -244,7 +244,7 @@ function testDescriptorDocsAndPackageSurfaceStayAligned(): void {
   const packageJson = JSON.parse(readProjectFile('package.json')) as {
     readonly scripts: Readonly<Record<string, string>>;
   };
-  const packageProbe = readProjectFile('scripts', 'probe-consequence-admission-package-surface.mjs');
+  const packageProbe = readProjectFile('scripts', 'probe', 'probe-consequence-admission-package-surface.mjs');
 
   equal(descriptor.version, 'attestor.shadow-envelope-projector.v1', 'Shadow envelope projector: descriptor version is explicit');
   equal(descriptor.accepts, CANONICAL_SHADOW_EVENT_SCHEMA_VERSION, 'Shadow envelope projector: descriptor accepts canonical shadow schema');

@@ -200,9 +200,9 @@ function testReceiverAlertDashboardAndIncidentEvidence(): void {
   hasControl('dashboard.runtime-truth-boundary', 'dashboard_runtime_truth_metric');
   hasControl('rehearsal.operational-evidence-boundary', 'production_rehearsal_separate_from_claim');
 
-  const receiverProbe = readProjectFile('scripts', 'probe-observability-receivers.ts');
-  const releaseInputProbe = readProjectFile('scripts', 'probe-observability-release-inputs.ts');
-  const alertRouting = readProjectFile('scripts', 'probe-alert-routing.ts');
+  const receiverProbe = readProjectFile('scripts', 'probe', 'probe-observability-receivers.ts');
+  const releaseInputProbe = readProjectFile('scripts', 'probe', 'probe-observability-release-inputs.ts');
+  const alertRouting = readProjectFile('scripts', 'probe', 'probe-alert-routing.ts');
   const rehearsal = readProjectFile('scripts', 'rehearse-production-observability-alerting.ts');
   const dashboard = readProjectFile('ops', 'observability', 'grafana', 'dashboards', 'attestor-overview.json');
   const alerts = readProjectFile('ops', 'observability', 'prometheus', 'alerts.yml');

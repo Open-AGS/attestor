@@ -113,7 +113,7 @@ probe contract.
 The selected adapter contract is now represented by:
 
 - `src/api/anthropic.ts`
-- `scripts/probe-anthropic-live-smoke.ts`
+- `scripts/probe/probe-anthropic-live-smoke.ts`
 - `tests/anthropic-runtime-policy.test.ts`
 - `tests/anthropic-live-smoke-proof.test.ts`
 - updated provider registry route tests

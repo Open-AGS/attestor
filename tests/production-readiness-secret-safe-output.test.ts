@@ -245,10 +245,10 @@ function testDigestReferenceIsStableAndNonReversibleInOutput(): void {
 
 function testCriticalOpsScriptsUseSecretSafeOutput(): void {
   for (const script of [
-    'scripts/probe-production-hosted-flow.ts',
-    'scripts/probe-ha-release-inputs.ts',
-    'scripts/probe-observability-release-inputs.ts',
-    'scripts/probe-policy-foundry-production-smoke.ts',
+    'scripts/probe/probe-production-hosted-flow.ts',
+    'scripts/probe/probe-ha-release-inputs.ts',
+    'scripts/probe/probe-observability-release-inputs.ts',
+    'scripts/probe/probe-policy-foundry-production-smoke.ts',
     'scripts/render-ha-promotion-packet.ts',
     'scripts/render-observability-promotion-packet.ts',
     'scripts/render-production-readiness-packet.ts',
@@ -260,13 +260,13 @@ function testCriticalOpsScriptsUseSecretSafeOutput(): void {
     );
   }
 
-  const hostedFlow = readProjectFile('scripts', 'probe-production-hosted-flow.ts');
+  const hostedFlow = readProjectFile('scripts', 'probe', 'probe-production-hosted-flow.ts');
   ok(!hostedFlow.includes('accountId: account.id,'), 'Secret-safe output: hosted flow does not print raw account ids');
   ok(!hostedFlow.includes('tenantId: account.primaryTenantId,'), 'Secret-safe output: hosted flow does not print raw tenant ids');
   ok(hostedFlow.includes("digestReference('account'"), 'Secret-safe output: hosted flow emits digest account reference');
   ok(hostedFlow.includes("digestReference('checkout-session'"), 'Secret-safe output: hosted flow emits digest checkout reference');
 
-  const policyFoundrySmoke = readProjectFile('scripts', 'probe-policy-foundry-production-smoke.ts');
+  const policyFoundrySmoke = readProjectFile('scripts', 'probe', 'probe-policy-foundry-production-smoke.ts');
   ok(policyFoundrySmoke.includes("digestReference('base-url'"), 'Secret-safe output: Policy Foundry smoke emits digest base URL reference');
   ok(policyFoundrySmoke.includes('stringifySecretSafe'), 'Secret-safe output: Policy Foundry smoke stringifies results through redaction helper');
   ok(policyFoundrySmoke.includes('safeErrorMessage'), 'Secret-safe output: Policy Foundry smoke formats errors through redaction helper');

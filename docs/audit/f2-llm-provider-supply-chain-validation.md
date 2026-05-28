@@ -68,7 +68,7 @@ This closes the original "no guard module" wording as stale. It does not close a
 - per-request timeout policy through OpenAI SDK request options
 - output-token budget enforcement before live calls
 - `store: false` on OpenAI Responses and Chat Completions requests
-- opt-in OpenAI reasoning live smoke proof through `scripts/probe-openai-live-smoke.ts`
+- opt-in OpenAI reasoning live smoke proof through `scripts/probe/probe-openai-live-smoke.ts`
 - no active live failover execution
 
 `src/api/anthropic.ts` is the first non-OpenAI provider wrapper:
@@ -80,7 +80,7 @@ This closes the original "no guard module" wording as stale. It does not close a
 - per-request timeout and output-token budget enforcement
 - strict tool-schema path with top-level `strict: true`
 - digest-only provider proof context
-- opt-in Anthropic reasoning live smoke proof through `scripts/probe-anthropic-live-smoke.ts`
+- opt-in Anthropic reasoning live smoke proof through `scripts/probe/probe-anthropic-live-smoke.ts`
 - no raw prompt or raw provider-body storage in evidence
 
 `src/api/llm-provider-registry.ts` now defines a repository-side provider

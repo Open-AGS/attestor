@@ -303,7 +303,7 @@ function testDocsAndPackageSurface(): void {
   const overview = readProjectFile('docs', '02-architecture', 'consequence-runtime-assurance-overview.md');
   const annex = readProjectFile('docs', 'research', 'cross-domain-pattern-sources.md');
   const ledger = readProjectFile('docs', 'research', 'attestor-research-provenance-ledger.md');
-  const packageProbe = readProjectFile('scripts', 'probe-consequence-admission-package-surface.mjs');
+  const packageProbe = readProjectFile('scripts', 'probe', 'probe-consequence-admission-package-surface.mjs');
   const packageJson = JSON.parse(readProjectFile('package.json')) as {
     readonly scripts: Record<string, string>;
   };

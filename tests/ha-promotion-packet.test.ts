@@ -75,6 +75,7 @@ async function main(): Promise<void> {
     ATTESTOR_RELEASE_AUTHORITY_PG_URL: process.env.ATTESTOR_RELEASE_AUTHORITY_PG_URL,
     ATTESTOR_RELEASE_RUNTIME_PKI_PATH: process.env.ATTESTOR_RELEASE_RUNTIME_PKI_PATH,
     ATTESTOR_RELEASE_RUNTIME_PKI_SHARED_PATH: process.env.ATTESTOR_RELEASE_RUNTIME_PKI_SHARED_PATH,
+    ATTESTOR_RELEASE_RUNTIME_PKI_STORAGE_CLASS: process.env.ATTESTOR_RELEASE_RUNTIME_PKI_STORAGE_CLASS,
     ATTESTOR_ADMIN_API_KEY: process.env.ATTESTOR_ADMIN_API_KEY,
     ATTESTOR_METRICS_API_KEY: process.env.ATTESTOR_METRICS_API_KEY,
     ATTESTOR_ACCOUNT_MFA_ENCRYPTION_KEY: process.env.ATTESTOR_ACCOUNT_MFA_ENCRYPTION_KEY,
@@ -117,8 +118,8 @@ async function main(): Promise<void> {
     ok(blocked.readiness.state === 'blocked-on-environment-inputs', 'HA promotion packet: missing env stays blocked');
     ok(blocked.readiness.missingInputs.some((item) => item.includes('ATTESTOR_API_IMAGE')), 'HA promotion packet: missing image input is surfaced');
 
-    process.env.ATTESTOR_API_IMAGE = 'ghcr.io/example/attestor-api:1.2.3';
-    process.env.ATTESTOR_WORKER_IMAGE = 'ghcr.io/example/attestor-worker:1.2.3';
+    process.env.ATTESTOR_API_IMAGE = 'ghcr.io/example/attestor-api@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+    process.env.ATTESTOR_WORKER_IMAGE = 'ghcr.io/example/attestor-worker@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
     process.env.ATTESTOR_PUBLIC_HOSTNAME = 'ha.attestor.example.invalid';
     process.env.REDIS_URL = redisUrl;
     process.env.ATTESTOR_CONTROL_PLANE_PG_URL = `${basePg}/control_plane`;
@@ -127,6 +128,7 @@ async function main(): Promise<void> {
     process.env.ATTESTOR_RELEASE_AUTHORITY_PG_URL = `${basePg}/release_authority`;
     process.env.ATTESTOR_RELEASE_RUNTIME_PKI_PATH = '/mnt/shared-attestor-release-pki/release-runtime-pki.json';
     process.env.ATTESTOR_RELEASE_RUNTIME_PKI_SHARED_PATH = 'true';
+    process.env.ATTESTOR_RELEASE_RUNTIME_PKI_STORAGE_CLASS = 'standard-rwo';
     process.env.ATTESTOR_ADMIN_API_KEY = 'admin-key';
     process.env.ATTESTOR_METRICS_API_KEY = 'metrics-key';
     process.env.ATTESTOR_ACCOUNT_MFA_ENCRYPTION_KEY = 'mfa-key';

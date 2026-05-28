@@ -135,8 +135,8 @@ OpenAI timeout and output-token budget enforcement are wired in
 `src/api/openai.ts`. Anthropic timeout, retry, output-token, strict-tool, and
 rate-limit mapping are wired in `src/api/anthropic.ts`. OpenAI and Anthropic
 reasoning live smoke proofs are wired as explicit external-live probes in
-`scripts/probe-openai-live-smoke.ts` and
-`scripts/probe-anthropic-live-smoke.ts`; production-like calls remain
+`scripts/probe/probe-openai-live-smoke.ts` and
+`scripts/probe/probe-anthropic-live-smoke.ts`; production-like calls remain
 fail-closed until a fresh proof digest, timestamp, model, and purpose are
 present in the runtime environment. This is still not a production readiness
 claim because live failover execution, customer approval evidence, OpenAI

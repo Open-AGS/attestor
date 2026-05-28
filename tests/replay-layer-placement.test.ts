@@ -178,7 +178,7 @@ function testDocsScriptsAndPackageSurfaceStayAligned(): void {
   const doc = readProjectFile('docs', '02-architecture', 'replay-layer-placement.md');
   const architecture = readProjectFile('docs', '02-architecture', 'ai-action-control-plane-architecture.md');
   const fixtureDoc = readProjectFile('docs', '02-architecture', 'failure-mode-replay-fixtures.md');
-  const packageProbe = readProjectFile('scripts', 'probe-consequence-admission-package-surface.mjs');
+  const packageProbe = readProjectFile('scripts', 'probe', 'probe-consequence-admission-package-surface.mjs');
   const pkg = JSON.parse(readProjectFile('package.json')) as {
     readonly scripts: Record<string, string>;
   };

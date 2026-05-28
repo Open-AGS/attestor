@@ -640,7 +640,7 @@ separate storage surface. It remains blocked until the resume state is backed by
 shared TTL/session storage rather than the local file-backed evaluation store.
 
 The Policy Foundry production smoke probe lives in
-`scripts/probe-policy-foundry-production-smoke.ts`, is covered by
+`scripts/probe/probe-policy-foundry-production-smoke.ts`, is covered by
 `tests/policy-foundry-production-smoke-probe.test.ts`, and is exposed through
 `probe:policy-foundry-production-smoke` and
 `test:policy-foundry-production-smoke-probe`. It is an opt-in deployed-runtime

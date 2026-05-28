@@ -186,8 +186,8 @@ readonly HostedObservabilityPrivacyIncidentGuard[] = [
     nonClaimBoundary:
       'A green receiver probe is target-specific evidence, not a standing claim that every future observability backend is healthy.',
     implementationEvidence: [
-      'scripts/probe-observability-receivers.ts',
-      'scripts/probe-observability-release-inputs.ts',
+      'scripts/probe/probe-observability-receivers.ts',
+      'scripts/probe/probe-observability-release-inputs.ts',
       'scripts/render-observability-promotion-packet.ts',
       'scripts/render-observability-credentials.ts',
     ],
@@ -227,7 +227,7 @@ readonly HostedObservabilityPrivacyIncidentGuard[] = [
     implementationEvidence: [
       'ops/observability/prometheus/alerts.yml',
       'scripts/render-alertmanager-config.mjs',
-      'scripts/probe-alert-routing.ts',
+      'scripts/probe/probe-alert-routing.ts',
       'docs/08-deployment/production-rehearsal-manifest.example.json',
     ],
     validation: [

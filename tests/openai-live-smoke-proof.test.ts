@@ -13,7 +13,7 @@ import {
   runOpenAiLiveSmokeProof,
   type OpenAiLiveSmokeClient,
 } from '../src/api/openai.js';
-import { requiredOpenAiLiveSmokeManifest } from '../scripts/probe-openai-live-smoke.ts';
+import { requiredOpenAiLiveSmokeManifest } from '../scripts/probe/probe-openai-live-smoke.ts';
 
 let passed = 0;
 
@@ -189,7 +189,7 @@ function testProbeManifestAndPackageSurface(): void {
     process.execPath,
     [
       resolve('node_modules/tsx/dist/cli.mjs'),
-      'scripts/probe-openai-live-smoke.ts',
+      'scripts/probe/probe-openai-live-smoke.ts',
       '--print-required-env',
     ],
     {

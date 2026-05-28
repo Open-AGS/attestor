@@ -171,7 +171,7 @@ function testDocsScriptsAndPackageSurfaceAreAligned(): void {
   const runner = readProjectFile('scripts', 'run-suite.mjs');
   includes(runner, 'test:guard-activation-readiness', 'Guard activation readiness: architecture suite includes script');
 
-  const probe = readProjectFile('scripts', 'probe-consequence-admission-package-surface.mjs');
+  const probe = readProjectFile('scripts', 'probe', 'probe-consequence-admission-package-surface.mjs');
   includes(probe, 'consequenceGuardActivationReadinessDescriptor', 'Guard activation readiness: package probe covers descriptor');
 
   const serialized = JSON.stringify(evaluateConsequenceGuardActivationReadiness());

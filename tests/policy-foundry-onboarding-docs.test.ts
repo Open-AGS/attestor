@@ -179,7 +179,7 @@ function testPolicyFoundryArchitectureIsGrounded(): void {
   );
   includes(
     doc,
-    'scripts/probe-policy-foundry-production-smoke.ts',
+    'scripts/probe/probe-policy-foundry-production-smoke.ts',
     'Policy Foundry docs: production smoke probe evidence is named',
   );
   includes(
@@ -599,7 +599,7 @@ function testPackageScriptIsExposed(): void {
   );
   includes(
     pkg.scripts['probe:policy-foundry-production-smoke'] ?? '',
-    'tsx scripts/probe-policy-foundry-production-smoke.ts',
+    'tsx scripts/probe/probe-policy-foundry-production-smoke.ts',
     'Package: Policy Foundry production smoke probe command is stable',
   );
 }

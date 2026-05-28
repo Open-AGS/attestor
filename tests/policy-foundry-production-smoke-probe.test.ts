@@ -14,7 +14,7 @@ import {
 import type { TenantContext } from '../src/service/tenant-isolation.js';
 import {
   runPolicyFoundryProductionSmokeProbe,
-} from '../scripts/probe-policy-foundry-production-smoke.ts';
+} from '../scripts/probe/probe-policy-foundry-production-smoke.ts';
 
 let passed = 0;
 

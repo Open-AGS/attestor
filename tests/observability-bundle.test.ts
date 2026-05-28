@@ -33,9 +33,9 @@ function main(): void {
   const credentialsRenderScript = read('scripts/render-observability-credentials.ts');
   const benchmarkScript = read('scripts/benchmark-observability.ts');
   const releaseBundleScript = read('scripts/render-observability-release-bundle.ts');
-  const receiverProbeScript = read('scripts/probe-observability-receivers.ts');
-  const releaseInputProbeScript = read('scripts/probe-observability-release-inputs.ts');
-  const alertRoutingProbeScript = read('scripts/probe-alert-routing.ts');
+  const receiverProbeScript = read('scripts/probe/probe-observability-receivers.ts');
+  const releaseInputProbeScript = read('scripts/probe/probe-observability-release-inputs.ts');
+  const alertRoutingProbeScript = read('scripts/probe/probe-alert-routing.ts');
   const promotionPacketScript = read('scripts/render-observability-promotion-packet.ts');
   const profilesReadme = read('ops/observability/profiles/README.md');
   const regulatedProfile = read('ops/observability/profiles/regulated-production.json');

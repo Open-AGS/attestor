@@ -223,7 +223,7 @@ function testFinanceAndCryptoFirstIntegrationsStayGrounded(): void {
   const contract = readProjectFile('src', 'service', 'hosted-journey-contract.ts');
   const packageJson = readProjectFile('package.json');
   const pipelineRoute = readProjectFile('src', 'service', 'http', 'routes', 'pipeline-execution-routes.ts');
-  const cryptoAdmission = readProjectFile('src', 'crypto-execution-admission', 'index.ts');
+  const cryptoAdmission = readProjectFile('src', 'crypto-execution-admission', 'planner.ts');
   const cryptoAuthorization = readProjectFile('src', 'crypto-authorization-core', 'index.ts');
 
   includes(examples, 'same Attestor adoption model', 'Hosted first integrations: shared model is explicit');
@@ -397,7 +397,7 @@ function testHostedJourneyRoutesMatchShippedRoutes(): void {
 function testRuntimeCoverageGatesAreNamed(): void {
   const packageJson = readProjectFile('package.json');
   const liveApi = readProjectFile('tests', 'live-api.test.ts');
-  const productionProbe = readProjectFile('scripts', 'probe-production-hosted-flow.ts');
+  const productionProbe = readProjectFile('scripts', 'probe', 'probe-production-hosted-flow.ts');
 
   includes(packageJson, '"test:hosted-product-flow-docs"', 'Hosted product flow docs: package script exposes docs guard');
   includes(packageJson, '"test:hosted-signup-first-api-key-flow"', 'Hosted product flow docs: package script exposes signup-to-first-key gate');

@@ -5,7 +5,7 @@ import { resolve } from 'node:path';
 import {
   probeProductionRehearsalSubstrates,
   type ProductionRehearsalSubstrateSummary,
-} from '../scripts/probe-production-rehearsal-substrates.ts';
+} from '../scripts/probe/probe-production-rehearsal-substrates.ts';
 
 let passed = 0;
 
@@ -232,7 +232,7 @@ function testDocsAndPackageWireTheProbe(): void {
   const tracker = readProjectFile('docs', '02-architecture', 'production-rehearsal-buildout.md');
   const manifest = readProjectFile('docs', '08-deployment', 'production-rehearsal-manifest.example.json');
 
-  equal(packageJson.scripts['probe:production-rehearsal-substrates'], 'tsx scripts/probe-production-rehearsal-substrates.ts', 'Production rehearsal substrate probe: package exposes the live substrate probe');
+  equal(packageJson.scripts['probe:production-rehearsal-substrates'], 'tsx scripts/probe/probe-production-rehearsal-substrates.ts', 'Production rehearsal substrate probe: package exposes the live substrate probe');
   equal(packageJson.scripts['test:production-rehearsal-substrate-probe'], 'tsx tests/production-rehearsal-substrate-probe.test.ts', 'Production rehearsal substrate probe: package exposes the probe test');
   includes(tracker, '| Completed | 10 |', 'Production rehearsal substrate probe: tracker marks ten steps complete');
   includes(tracker, '| 05 | complete | Prove external substrate readiness |', 'Production rehearsal substrate probe: Step 05 is complete without renumbering');

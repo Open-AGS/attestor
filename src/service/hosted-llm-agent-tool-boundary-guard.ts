@@ -249,7 +249,7 @@ export const HOSTED_LLM_AGENT_TOOL_BOUNDARY_GUARDS: readonly HostedLlmAgentToolB
       'tests/consequence-admission-adapter-framework.test.ts',
       'tests/downstream-enforcement-contract.test.ts',
       'tests/consequence-verifier-helper.test.ts',
-      'scripts/probe-consequence-admission-package-surface.mjs',
+      'scripts/probe/probe-consequence-admission-package-surface.mjs',
     ],
     standards: [
       'OWASP Agentic Applications 2026: Tool Misuse and privilege controls',

@@ -14,7 +14,7 @@ import {
   runAnthropicLiveSmokeProof,
   type AnthropicMessagesClient,
 } from '../src/api/anthropic.js';
-import { requiredAnthropicLiveSmokeManifest } from '../scripts/probe-anthropic-live-smoke.ts';
+import { requiredAnthropicLiveSmokeManifest } from '../scripts/probe/probe-anthropic-live-smoke.ts';
 
 let passed = 0;
 
@@ -196,7 +196,7 @@ function testProbeManifestAndPackageSurface(): void {
     process.execPath,
     [
       resolve('node_modules/tsx/dist/cli.mjs'),
-      'scripts/probe-anthropic-live-smoke.ts',
+      'scripts/probe/probe-anthropic-live-smoke.ts',
       '--print-required-env',
     ],
     {

@@ -7,11 +7,11 @@ import {
   OPENAI_LIVE_SMOKE_PROOF_ENV,
   OPENAI_LIVE_SMOKE_PROOF_VERSION,
   runOpenAiLiveSmokeProof,
-} from '../src/api/openai.js';
+} from '../../src/api/openai.js';
 import {
   safeErrorMessage,
   stringifySecretSafe,
-} from './secret-safe-output.ts';
+} from '../secret-safe-output.ts';
 
 function flag(name: string): boolean {
   return process.argv.includes(`--${name}`);

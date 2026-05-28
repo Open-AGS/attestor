@@ -222,7 +222,7 @@ function testDocsOverviewPackageSurfaceAndScriptStayAligned(): void {
   const packageJson = JSON.parse(readProjectFile('package.json')) as {
     readonly scripts: Readonly<Record<string, string>>;
   };
-  const packageProbe = readProjectFile('scripts', 'probe-consequence-admission-package-surface.mjs');
+  const packageProbe = readProjectFile('scripts', 'probe', 'probe-consequence-admission-package-surface.mjs');
 
   for (const expected of [
     '# Shadow Runtime Pipeline',

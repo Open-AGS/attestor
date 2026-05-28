@@ -2,7 +2,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { spawnSync } from 'node:child_process';
-import { probeHaReleaseInputs } from './probe-ha-release-inputs.ts';
+import { probeHaReleaseInputs } from './probe/probe-ha-release-inputs.ts';
 import { resolveRepoPipelineReadiness } from './repo-pipeline-readiness.ts';
 import {
   safeErrorMessage,

@@ -68,7 +68,7 @@ The current repo already covers important parts of the hosted product path:
 - `tests/service-stripe-webhook-service.test.ts` covers signature enforcement, dedupe, replay, conflict, and shared-ledger/control-plane claim behavior.
 - `tests/service-stripe-webhook-billing-processor.test.ts` covers billing event processing behavior behind the route.
 - `tests/hosted-product-flow-readiness.test.ts` is the final docs/probe/test gate that checks truth-source separation, script exposure, production probe coverage, tracker completion, and sale-ready posture before the hosted path can be called clean.
-- `scripts/probe-production-hosted-flow.ts` exists as a production-oriented probe for account creation, first API key use, governed pipeline call, summary/usage/entitlement/features visibility, billing export and reconciliation reads, checkout, portal, signed webhook simulation, and cleanup.
+- `scripts/probe/probe-production-hosted-flow.ts` exists as a production-oriented probe for account creation, first API key use, governed pipeline call, summary/usage/entitlement/features visibility, billing export and reconciliation reads, checkout, portal, signed webhook simulation, and cleanup.
 
 ## Hardening Gaps
 
@@ -80,7 +80,7 @@ These are the remaining gaps that matter before calling the hosted product path 
 4. **Customer first-call quickstart.** Addressed by `docs/01-overview/hosted-first-api-call.md`, which shows the first tenant API-key usage preflight, first `POST /api/v1/pipeline/run` consequence gate, expected decision/tenant/usage shape, secret handling, failure signals, and downstream fail-closed responsibility.
 5. **Finance and crypto adoption examples.** Addressed by `docs/01-overview/finance-and-crypto-first-integrations.md`, which keeps one-product language while separating the real first integration surfaces: finance starts with the hosted `POST /api/v1/pipeline/run` route, and crypto starts with the packaged `attestor/crypto-authorization-core` / `attestor/crypto-execution-admission` surfaces until a future route contract exists.
 6. **Usage and billing visibility guide.** Addressed by `docs/01-overview/hosted-account-visibility.md`, which maps current plan, usage, rate limit, entitlement, feature, billing export, reconciliation, checkout, and portal visibility onto the shipped hosted account-plane routes while keeping pricing truth and operator Stripe truth separate.
-7. **Final truth-source gate.** Addressed by `tests/hosted-product-flow-readiness.test.ts`, `package.json`, and `scripts/probe-production-hosted-flow.ts`, which keep README, pricing, hosted journey, account visibility, Stripe bootstrap, system overview, route contract, runtime probes, and focused hosted-flow gates aligned before calling the hosted path sale-ready.
+7. **Final truth-source gate.** Addressed by `tests/hosted-product-flow-readiness.test.ts`, `package.json`, and `scripts/probe/probe-production-hosted-flow.ts`, which keep README, pricing, hosted journey, account visibility, Stripe bootstrap, system overview, route contract, runtime probes, and focused hosted-flow gates aligned before calling the hosted path sale-ready.
 
 ## Decision
 

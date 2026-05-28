@@ -12,7 +12,7 @@ import {
   observeRequestComplete,
   observeRequestStart,
   shutdownTelemetry,
-} from '../src/service/observability.js';
+} from '../../src/service/observability.js';
 
 type NullableString = string | null;
 

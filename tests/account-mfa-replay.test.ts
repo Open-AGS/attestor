@@ -7,12 +7,12 @@ import {
   generateRecoveryCodes,
   generateTotpSecretBase32,
   verifyTotpCodeWithStep,
-} from '../src/service/account-mfa.js';
+} from '../src/service/account/account-mfa.js';
 import {
   createAccountUser,
   recordAccountUserTotpVerificationStep,
   resetAccountUserStoreForTests,
-} from '../src/service/account-user-store.js';
+} from '../src/service/account/account-user-store.js';
 
 let passed = 0;
 

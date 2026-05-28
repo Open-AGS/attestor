@@ -6,11 +6,11 @@ import { withFileLock } from '../src/platform/file-store.js';
 import {
   createHostedAccount,
   resetAccountStoreForTests,
-} from '../src/service/account-store.js';
+} from '../src/service/account/account-store.js';
 import {
   issueAccountInviteToken,
   resetAccountUserActionTokenStoreForTests,
-} from '../src/service/account-user-token-store.js';
+} from '../src/service/account/account-user-token-store.js';
 import {
   issueTenantApiKey,
   resetTenantKeyStoreForTests,

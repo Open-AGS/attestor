@@ -25,8 +25,8 @@ import {
   type AccountUserRecoveryCodeRecord,
   type AccountUserTotpState,
 } from './account-user-store.js';
-import { isProductionLikeRuntimeEnv } from './deployment-safety.js';
-import { deriveServiceKey } from './secret-derivation.js';
+import { isProductionLikeRuntimeEnv } from '../deployment-safety.js';
+import { deriveServiceKey } from '../secret-derivation.js';
 
 const BASE32_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
 const TOTP_DIGITS = 6;

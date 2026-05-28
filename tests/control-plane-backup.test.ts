@@ -32,18 +32,18 @@ import {
   createHostedAccount,
   findHostedAccountById,
   resetAccountStoreForTests,
-} from '../src/service/account-store.js';
+} from '../src/service/account/account-store.js';
 import {
   createAccountUser,
   findAccountUserByEmail,
   resetAccountUserStoreForTests,
-} from '../src/service/account-user-store.js';
-import { resetAccountUserActionTokenStoreForTests } from '../src/service/account-user-token-store.js';
+} from '../src/service/account/account-user-store.js';
+import { resetAccountUserActionTokenStoreForTests } from '../src/service/account/account-user-token-store.js';
 import {
   findAccountSessionByToken,
   issueAccountSession,
   resetAccountSessionStoreForTests,
-} from '../src/service/account-session-store.js';
+} from '../src/service/account/account-session-store.js';
 import {
   issueTenantApiKey,
   listTenantKeyRecords,

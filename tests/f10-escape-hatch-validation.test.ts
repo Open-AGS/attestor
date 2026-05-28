@@ -12,7 +12,7 @@ import {
   summarizeConsequenceEscapeHatchUsage,
   type FinancePipelineAdmissionRun,
 } from '../src/consequence-admission/index.js';
-import { hostedOidcAllowsInsecureRequests } from '../src/service/account-oidc.js';
+import { hostedOidcAllowsInsecureRequests } from '../src/service/account/account-oidc.js';
 import { createDegradedModeGrant } from '../src/release-enforcement-plane/degraded-mode.js';
 
 let passed = 0;

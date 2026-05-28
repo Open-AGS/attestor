@@ -192,7 +192,7 @@ function testControlContractsForHighRiskFlows(): void {
 
 function testImplementationEvidenceMatchesContract(): void {
   const accountRoutes = readProjectFile('src', 'service', 'http', 'routes', 'account-routes.ts');
-  const authAbuseGuard = readProjectFile('src', 'service', 'auth-abuse-guard.ts');
+  const authAbuseGuard = readProjectFile('src', 'service', 'account', 'auth-abuse-guard.ts');
   const apiKeyService = readProjectFile('src', 'service', 'application', 'account-api-key-service.ts');
   const stripeBilling = readProjectFile('src', 'service', 'stripe-billing.ts');
   const adminRoutes = readProjectFile('src', 'service', 'http', 'routes', 'admin-routes.ts');

@@ -4,7 +4,7 @@ import {
   createAccountApiKeyService,
   type AccountApiKeyServiceDeps,
 } from '../src/service/application/account-api-key-service.js';
-import type { HostedAccountRecord } from '../src/service/account-store.js';
+import type { HostedAccountRecord } from '../src/service/account/account-store.js';
 import type { HostedBillingEntitlementRecord } from '../src/service/billing-entitlement-store.js';
 import { SELF_HOST_PLAN_ID } from '../src/service/plan-catalog.js';
 import { TenantKeyStoreError, type TenantKeyRecord } from '../src/service/tenant-key-store.js';

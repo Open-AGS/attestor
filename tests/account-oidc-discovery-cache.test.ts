@@ -5,7 +5,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 import {
   buildHostedOidcAuthorizationRequest,
   hostedOidcDiscoveryCacheTtlSeconds,
-} from '../src/service/account-oidc.js';
+} from '../src/service/account/account-oidc.js';
 
 let passed = 0;
 

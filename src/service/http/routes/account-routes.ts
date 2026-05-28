@@ -3,12 +3,12 @@ import type {
   AuthenticationResponseJSON,
   RegistrationResponseJSON,
 } from '@simplewebauthn/server';
-import type * as AccountMfa from '../../account-mfa.js';
-import type * as AccountOidc from '../../account-oidc.js';
-import type * as AccountPasskeys from '../../account-passkeys.js';
-import type * as AccountSessionStore from '../../account-session-store.js';
-import type * as AccountSaml from '../../account-saml.js';
-import type * as AccountUserStore from '../../account-user-store.js';
+import type * as AccountMfa from '../../account/account-mfa.js';
+import type * as AccountOidc from '../../account/account-oidc.js';
+import type * as AccountPasskeys from '../../account/account-passkeys.js';
+import type * as AccountSessionStore from '../../account/account-session-store.js';
+import type * as AccountSaml from '../../account/account-saml.js';
+import type * as AccountUserStore from '../../account/account-user-store.js';
 import type * as BillingExport from '../../billing-export.js';
 import type * as BillingFeatureService from '../../billing-feature-service.js';
 import type * as BillingReconciliation from '../../billing-reconciliation.js';
@@ -30,15 +30,15 @@ import type {
   PipelineIdempotencyReadyResult,
   PipelineIdempotencyService,
 } from '../../application/pipeline-idempotency-service.js';
-import type { HostedAccountRecord } from '../../account-store.js';
+import type { HostedAccountRecord } from '../../account/account-store.js';
 import type {
   AccountUserPasskeyCredentialRecord,
   AccountUserRecord,
   AccountUserRole,
-} from '../../account-user-store.js';
-import type { AccountUserActionTokenRecord } from '../../account-user-token-store.js';
+} from '../../account/account-user-store.js';
+import type { AccountUserActionTokenRecord } from '../../account/account-user-token-store.js';
 import type { HostedBillingEntitlementRecord } from '../../billing-entitlement-store.js';
-import type { HostedPasskeyAuthenticationChallengeState, HostedPasskeyAuthenticatorHint, HostedPasskeyRegistrationChallengeState } from '../../account-passkeys.js';
+import type { HostedPasskeyAuthenticationChallengeState, HostedPasskeyAuthenticatorHint, HostedPasskeyRegistrationChallengeState } from '../../account/account-passkeys.js';
 import type { TenantKeyRecord } from '../../tenant-key-store.js';
 import type { AccountAccessContext, TenantContext } from '../../tenant-isolation.js';
 import type { UsageContext } from '../../usage-meter.js';
@@ -46,7 +46,7 @@ import {
   recordAuthAttemptFailureShared as recordAuthAttemptFailure,
   recordAuthAttemptSuccessShared as recordAuthAttemptSuccess,
   recordAuthAttemptUseShared as recordAuthAttemptUse,
-} from '../../auth-abuse-guard.js';
+} from '../../account/auth-abuse-guard.js';
 import {
   accountApiKeyServiceErrorResponse,
   accountAuthServiceErrorResponse,

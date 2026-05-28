@@ -5,10 +5,10 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import Stripe from 'stripe';
 import { startServer } from '../src/service/api-server.js';
-import { resetAccountSessionStoreForTests } from '../src/service/account-session-store.js';
-import { resetAccountStoreForTests } from '../src/service/account-store.js';
-import { resetAccountUserStoreForTests } from '../src/service/account-user-store.js';
-import { resetAccountUserActionTokenStoreForTests } from '../src/service/account-user-token-store.js';
+import { resetAccountSessionStoreForTests } from '../src/service/account/account-session-store.js';
+import { resetAccountStoreForTests } from '../src/service/account/account-store.js';
+import { resetAccountUserStoreForTests } from '../src/service/account/account-user-store.js';
+import { resetAccountUserActionTokenStoreForTests } from '../src/service/account/account-user-token-store.js';
 import { resetAdminAuditLogForTests } from '../src/service/admin-audit-log.js';
 import { resetAdminIdempotencyStoreForTests } from '../src/service/admin-idempotency-store.js';
 import { resetAsyncDeadLetterStoreForTests } from '../src/service/async-dead-letter-store.js';
@@ -362,7 +362,7 @@ async function main(): Promise<void> {
       accountName: `Hosted Billing ${suffix}`,
       email: `billing-owner-${suffix}@example.test`,
       displayName: 'Hosted Billing Owner',
-      password: 'HostedBillingPass123!',
+      password: 'RidgeViolet9742!',
     });
     equal(signupRes.status, 201, 'Hosted billing: signup creates account');
     const accountAdminCookie = cookieHeaderFromResponse(signupRes);
@@ -527,7 +527,7 @@ async function main(): Promise<void> {
 
     const suspendedLoginRes = await postJson(`${baseUrl}/api/v1/auth/login`, {
       email: `billing-owner-${suffix}@example.test`,
-      password: 'HostedBillingPass123!',
+      password: 'RidgeViolet9742!',
     });
     equal(suspendedLoginRes.status, 200, 'Hosted billing: suspended account can re-login for billing self-service');
     const suspendedCookie = cookieHeaderFromResponse(suspendedLoginRes);
@@ -627,7 +627,7 @@ async function main(): Promise<void> {
 
     const restoredLoginRes = await postJson(`${baseUrl}/api/v1/auth/login`, {
       email: `billing-owner-${suffix}@example.test`,
-      password: 'HostedBillingPass123!',
+      password: 'RidgeViolet9742!',
     });
     equal(restoredLoginRes.status, 200, 'Hosted features: restored active account can issue a fresh session');
     const restoredCookie = cookieHeaderFromResponse(restoredLoginRes);

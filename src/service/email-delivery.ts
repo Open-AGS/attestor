@@ -10,7 +10,7 @@
  */
 
 import nodemailer, { type TransportOptions, type Transporter } from 'nodemailer';
-import type { AccountUserRole } from './account-user-store.js';
+import type { AccountUserRole } from './account/account-user-store.js';
 import type { HostedEmailDeliveryProvider } from './email-delivery-event-store.js';
 import {
   buildHostedEmailDeliveryId,

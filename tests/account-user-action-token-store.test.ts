@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { buildPasswordResetTokenRecord } from '../src/service/account-user-token-store.js';
+import { buildPasswordResetTokenRecord } from '../src/service/account/account-user-token-store.js';
 
 const envKey = 'ATTESTOR_PASSWORD_RESET_MAX_ATTEMPTS';
 const saved = process.env[envKey];

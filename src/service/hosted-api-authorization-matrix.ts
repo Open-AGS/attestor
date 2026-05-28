@@ -136,7 +136,7 @@ export const HOSTED_API_AUTHORIZATION_RULES = [
     privacyBoundary: 'credential and action-token material is consumed through service boundaries, not emitted as telemetry',
     evidence: [
       'src/service/http/routes/account-routes.ts',
-      'src/service/auth-abuse-guard.ts',
+      'src/service/account/auth-abuse-guard.ts',
       'src/service/application/account-auth-service.ts',
       'tests/service-account-routes-authorization.test.ts#federated-callback-rate-limit',
     ],

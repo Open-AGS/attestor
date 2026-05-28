@@ -17,7 +17,7 @@ import {
 import {
   configureAuthAbuseGuard,
   shutdownAuthAbuseGuard,
-} from '../auth-abuse-guard.js';
+} from '../account/auth-abuse-guard.js';
 import {
   configureAgentLoopAbuseGuard,
   shutdownAgentLoopAbuseGuard,

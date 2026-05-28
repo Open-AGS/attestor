@@ -1,14 +1,14 @@
 import type { Context } from 'hono';
-import type * as ControlPlaneStore from './control-plane-store.js';
-import type * as RateLimit from './rate-limit.js';
+import type * as ControlPlaneStore from '../control-plane-store.js';
+import type * as RateLimit from '../rate-limit.js';
 import type { HostedAccountRecord } from './account-store.js';
 import {
   projectHostedBillingEntitlement,
   type HostedBillingEntitlementRecord,
-} from './billing-entitlement-store.js';
-import { currentTenant } from './request-context.js';
-import { StripeBillingError } from './stripe-billing.js';
-import type { UsageContext } from './usage-meter.js';
+} from '../billing-entitlement-store.js';
+import { currentTenant } from '../request-context.js';
+import { StripeBillingError } from '../stripe-billing.js';
+import type { UsageContext } from '../usage-meter.js';
 
 export interface CurrentHostedAccountResult {
   tenant: ReturnType<typeof currentTenant>;

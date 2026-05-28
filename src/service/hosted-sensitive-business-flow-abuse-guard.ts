@@ -87,11 +87,11 @@ export const HOSTED_SENSITIVE_BUSINESS_FLOW_ABUSE_GUARDS = [
     privacyBoundary:
       'Credential input, provider assertions, action tokens, and passkey material stay inside service boundaries and are never emitted as telemetry or public proof.',
     implementationEvidence: [
-      'src/service/auth-abuse-guard.ts',
+      'src/service/account/auth-abuse-guard.ts',
       'src/service/http/routes/account-routes.ts#maybeRateLimitAuthAttempt',
       'src/service/http/routes/account-routes.ts#recordHostedSamlReplay',
-      'src/service/account-oidc.ts',
-      'src/service/account-saml.ts',
+      'src/service/account/account-oidc.ts',
+      'src/service/account/account-saml.ts',
     ],
     validation: [
       'tests/account-auth-abuse-guard.test.ts',

@@ -1,6 +1,6 @@
 import type { Context } from 'hono';
 import { createHash } from 'node:crypto';
-import type { AccountUserRole } from '../../account-user-store.js';
+import type { AccountUserRole } from '../../account/account-user-store.js';
 import type { HostedEmailDeliveryProvider, HostedEmailDeliveryStatus } from '../../email-delivery-event-store.js';
 import type { AccountAccessContext } from '../../tenant-isolation.js';
 import {
@@ -16,8 +16,8 @@ import {
   resolveAuthAttemptSource,
   type AuthAttemptDecision,
   type AuthAttemptSubject,
-} from '../../auth-abuse-guard.js';
-import { validateAccountPassword } from '../../account-password-policy.js';
+} from '../../account/auth-abuse-guard.js';
+import { validateAccountPassword } from '../../account/account-password-policy.js';
 import { directRemoteAddressFromContext } from '../../trusted-proxy.js';
 import { acceptsJsonRequestBody } from '../route-response-helpers.js';
 

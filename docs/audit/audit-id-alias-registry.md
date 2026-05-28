@@ -36,8 +36,8 @@ certification, and not production readiness.
 | R20 B-064 | `AUD-2026-SVC-MFA-001` | finding | MFA secret key separation | closed | PR #497, merge `fa19314b` |
 | R20 B-064 remediation | `REM-2026-SVC-MFA-001` | remediation | MFA deployment-doc key-boundary correction | closed | `docs/08-deployment/deployment.md` |
 | R21 B-074 | `AUD-2026-SVC-OIDC-001` | finding | Hosted OIDC discovery cache TTL | closed | PR #498, merge `a3fb83fb` |
-| R21 B-074 remediation | `REM-2026-SVC-OIDC-001` | remediation | TTL-bounded hosted OIDC discovery cache | closed | `src/service/account-oidc.ts`; `tests/account-oidc-discovery-cache.test.ts` |
-| R22 B-075 | `AUD-2026-SVC-USERSTORE-001` | accepted limitation | Hosted account user file-backed store | accepted-limitation | `src/service/account-user-store.ts`; `docs/audit/AUD-2026-SVC-USERSTORE-001.md` |
+| R21 B-074 remediation | `REM-2026-SVC-OIDC-001` | remediation | TTL-bounded hosted OIDC discovery cache | closed | `src/service/account/account-oidc.ts`; `tests/account-oidc-discovery-cache.test.ts` |
+| R22 B-075 | `AUD-2026-SVC-USERSTORE-001` | accepted limitation | Hosted account user file-backed store | accepted-limitation | `src/service/account/account-user-store.ts`; `docs/audit/AUD-2026-SVC-USERSTORE-001.md` |
 | R23 B-076 | `AUD-2026-POL-BUNDLESIGN-001` | accepted limitation | Policy bundle signer holds PEM private key in process memory | accepted-limitation | `src/release-policy-control-plane/bundle-signing.ts`; `docs/audit/AUD-2026-POL-BUNDLESIGN-001.md` |
 | R24 B-077 | `AUD-2026-POL-APPROVALSTORE-001` | accepted limitation | Policy activation approval store path is operator-controlled | accepted-limitation | `src/release-policy-control-plane/activation-approvals.ts`; `docs/audit/AUD-2026-POL-APPROVALSTORE-001.md` |
 | R24 B-078 | `AUD-2026-POL-APPROVALTTL-001` | finding | Approval default TTL not risk-class-aware | fixed | `src/release-policy-control-plane/activation-approvals.ts`; `docs/audit/REM-2026-POL-APPROVALTTL-001.md` |

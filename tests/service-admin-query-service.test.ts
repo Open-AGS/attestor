@@ -3,7 +3,7 @@ import {
   createAdminQueryService,
   type AdminQueryServiceDeps,
 } from '../src/service/application/admin-query-service.js';
-import type { HostedAccountRecord } from '../src/service/account-store.js';
+import type { HostedAccountRecord } from '../src/service/account/account-store.js';
 import type { TenantKeyRecord } from '../src/service/tenant-key-store.js';
 
 const now = '2026-04-21T10:00:00.000Z';

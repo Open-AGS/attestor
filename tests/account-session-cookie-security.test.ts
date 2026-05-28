@@ -1,5 +1,5 @@
 import { strict as assert } from 'node:assert';
-import { sessionCookieSecure } from '../src/service/account-session-store.js';
+import { sessionCookieSecure } from '../src/service/account/account-session-store.js';
 
 let passed = 0;
 

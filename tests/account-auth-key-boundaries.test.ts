@@ -9,13 +9,13 @@ import {
   hashAccountSessionToken,
   issueAccountSession,
   resetAccountSessionStoreForTests,
-} from '../src/service/account-session-store.js';
-import { accountMfaEncryptionKeySource } from '../src/service/account-mfa.js';
-import { hostedOidcStateKeySource } from '../src/service/account-oidc.js';
+} from '../src/service/account/account-session-store.js';
+import { accountMfaEncryptionKeySource } from '../src/service/account/account-mfa.js';
+import { hostedOidcStateKeySource } from '../src/service/account/account-oidc.js';
 import {
   hostedSamlRelayStateKeySource,
   loadHostedSamlSummary,
-} from '../src/service/account-saml.js';
+} from '../src/service/account/account-saml.js';
 
 let passed = 0;
 

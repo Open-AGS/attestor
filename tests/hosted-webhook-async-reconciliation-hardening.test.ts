@@ -126,7 +126,7 @@ function testImplementationEvidenceMatchesSource(): void {
   const stripeRoutes = readProjectFile('src', 'service', 'http', 'routes', 'stripe-webhook-routes.ts');
   const stripeService = readProjectFile('src', 'service', 'application', 'stripe-webhook-service.ts');
   const stripeProcessor = readProjectFile('src', 'service', 'application', 'stripe-webhook-billing-processor.ts');
-  const accountStore = readProjectFile('src', 'service', 'account-store.ts');
+  const accountStore = readProjectFile('src', 'service', 'account', 'account-store.ts');
   const controlPlaneStore = readProjectFile('src', 'service', 'control-plane-store.ts');
   const emailService = readProjectFile('src', 'service', 'application', 'email-webhook-service.ts');
   const pipelineAsyncRoutes = readProjectFile('src', 'service', 'http', 'routes', 'pipeline-async-routes.ts');

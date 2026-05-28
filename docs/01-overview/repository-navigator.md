@@ -65,6 +65,7 @@ do the next action there, and come back only if you still need more context.
 | `src/consequence-admission/` | Shared admission contracts, decisions, guards, shadow, Policy Foundry, domain projections. | You are changing `admit` / `narrow` / `review` / `block` behavior or proof-shaped admission output. |
 | `src/service/` | Hosted runtime, route support, stores, account/billing/webhook/runtime services. | You are changing an HTTP route, hosted account flow, billing, webhook, persistence, or deployment-facing runtime behavior. |
 | `src/service/` reorg plan | [Service organization plan](../02-architecture/service-organization-plan.md) | You are planning to move hosted runtime files without changing behavior. |
+| `src/service/account/` | Hosted account stores, sessions, MFA, SSO, passkeys, password policy, auth-abuse guard, and account route support. | You are changing hosted account, login, signup, SSO, MFA, passkey, or account-user behavior. |
 | `src/service/http/routes/` | Hono route handlers. | You need request/response behavior for `/api/v1/*`. |
 | `src/service/bootstrap/` | Runtime assembly and dependency wiring. | You need to see how routes and stores are composed. |
 | `src/release-kernel/` | Release decisions, evidence packs, tokens, canonicalization, reviewer queue primitives. | You are changing release authority or proof material before enforcement. |

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import Stripe from 'stripe';
-import { AccountStoreError, type HostedAccountRecord } from '../src/service/account-store.js';
+import { AccountStoreError, type HostedAccountRecord } from '../src/service/account/account-store.js';
 import {
   createStripeWebhookBillingProcessor,
   type StripeWebhookBillingProcessorDeps,

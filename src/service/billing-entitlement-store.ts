@@ -16,7 +16,7 @@ import type {
   HostedAccountStatus,
   StripeInvoiceStatus,
   StripeSubscriptionStatus,
-} from './account-store.js';
+} from './account/account-store.js';
 import {
   DEFAULT_HOSTED_PLAN_ID,
   resolvePlanAsyncQueue,

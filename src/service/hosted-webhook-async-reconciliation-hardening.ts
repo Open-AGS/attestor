@@ -154,7 +154,7 @@ export const HOSTED_WEBHOOK_ASYNC_RECONCILIATION_GUARDS: readonly HostedWebhookA
       'Convergence evidence stores normalized status, amounts, ids, and low-cardinality metadata, not raw customer payloads or live secret material.',
     implementationEvidence: [
       'src/service/application/stripe-webhook-billing-processor.ts',
-      'src/service/account-store.ts',
+      'src/service/account/account-store.ts',
       'src/service/control-plane-store.ts',
       'src/service/billing-entitlement-store.ts',
       'src/service/billing-event-ledger.ts',

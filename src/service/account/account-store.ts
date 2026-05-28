@@ -13,7 +13,7 @@
 import { randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
-import { withFileLock, writeTextFileAtomic } from './file-store.js';
+import { withFileLock, writeTextFileAtomic } from '../file-store.js';
 
 export type HostedAccountStatus = 'active' | 'suspended' | 'archived';
 

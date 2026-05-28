@@ -3,7 +3,7 @@ import {
   AccountStoreError,
   type HostedAccountRecord,
   type StripeInvoiceStatus,
-} from '../account-store.js';
+} from '../account/account-store.js';
 import type * as BillingEventLedger from '../billing-event-ledger.js';
 import type { HostedBillingEntitlementRecord } from '../billing-entitlement-store.js';
 import type * as ControlPlaneStore from '../control-plane-store.js';

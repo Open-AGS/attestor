@@ -9,7 +9,7 @@ import {
   recordAuthAttemptUse,
   resetAuthAbuseGuardForTests,
   resolveAuthAttemptSource,
-} from '../src/service/auth-abuse-guard.js';
+} from '../src/service/account/auth-abuse-guard.js';
 
 let passed = 0;
 
@@ -213,6 +213,10 @@ function run() {
 
     {
       const routeSource = readFileSync(join(process.cwd(), 'src', 'service', 'http', 'routes', 'account-routes.ts'), 'utf8');
+      const routeHelperSource = readFileSync(
+        join(process.cwd(), 'src', 'service', 'http', 'routes', 'account-route-helpers.ts'),
+        'utf8',
+      );
       ok(
         routeSource.includes("app.post('/api/v1/auth/signup'") &&
           routeSource.includes('const signupRateLimit = await maybeRateLimitAuthAttempt(c, authAttempt);'),
@@ -250,7 +254,7 @@ function run() {
         'hosted password reset issue route throttles successful request flooding',
       );
       ok(
-        routeSource.includes('function authAttemptForCurrentPassword') &&
+        routeHelperSource.includes('function authAttemptForCurrentPassword') &&
           (routeSource.match(/await maybeRateLimitCurrentPasswordAttempt\(c, access\)/g) ?? []).length >= 5 &&
           (routeSource.match(/await recordAuthAttemptFailure\(currentPasswordAttempt\.subject\)/g) ?? []).length >= 5,
         'hosted current-password sensitive routes share an auth abuse budget',

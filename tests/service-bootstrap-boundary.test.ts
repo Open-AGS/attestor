@@ -261,7 +261,7 @@ function testApiServerUsesExtractedRouteSupport(): void {
   const apiServer = readFileSync(API_SERVER, 'utf8');
   const apiRouteRuntime = readProjectFile('src', 'service', 'bootstrap', 'api-route-runtime.ts');
   const accountRouteSupport = readFileSync(
-    join(SERVICE_ROOT, 'account-route-support.ts'),
+    join(SERVICE_ROOT, 'account', 'account-route-support.ts'),
     'utf8',
   );
   const hostedSurfaceSupport = readFileSync(
@@ -269,7 +269,7 @@ function testApiServerUsesExtractedRouteSupport(): void {
     'utf8',
   );
   const hostedAccountSupport = readFileSync(
-    join(SERVICE_ROOT, 'hosted-account-support.ts'),
+    join(SERVICE_ROOT, 'account', 'hosted-account-support.ts'),
     'utf8',
   );
   const financeReleaseRouteSupport = readFileSync(
@@ -291,9 +291,9 @@ function testApiServerUsesExtractedRouteSupport(): void {
     'utf8',
   );
 
-  assert.match(apiRouteRuntime, /from '\.\.\/account-route-support\.js'/u);
+  assert.match(apiRouteRuntime, /from '\.\.\/account\/account-route-support\.js'/u);
   assert.match(apiRouteRuntime, /from '\.\.\/hosted-surface-support\.js'/u);
-  assert.match(apiRouteRuntime, /from '\.\.\/hosted-account-support\.js'/u);
+  assert.match(apiRouteRuntime, /from '\.\.\/account\/hosted-account-support\.js'/u);
   assert.match(apiRouteRuntime, /from '\.\.\/finance-release-route-support\.js'/u);
   assert.match(apiRouteRuntime, /from '\.\.\/pipeline-route-support\.js'/u);
   assert.match(apiRouteRuntime, /from '\.\.\/request-context\.js'/u);

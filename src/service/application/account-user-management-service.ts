@@ -1,17 +1,17 @@
-import type { HostedAccountRecord } from '../account-store.js';
-import type * as AccountSessionStore from '../account-session-store.js';
+import type { HostedAccountRecord } from '../account/account-store.js';
+import type * as AccountSessionStore from '../account/account-session-store.js';
 import {
   AccountUserStoreError,
   type AccountUserRecord,
   type AccountUserRole,
-} from '../account-user-store.js';
-import type { AccountUserActionTokenRecord } from '../account-user-token-store.js';
+} from '../account/account-user-store.js';
+import type { AccountUserActionTokenRecord } from '../account/account-user-token-store.js';
 import type * as ControlPlaneStore from '../control-plane-store.js';
 import {
   HostedEmailDeliveryError,
   type HostedEmailDeliverySummary,
 } from '../email-delivery.js';
-import { validateAccountPassword } from '../account-password-policy.js';
+import { validateAccountPassword } from '../account/account-password-policy.js';
 
 export interface AccountUserCreateInput {
   accountId: string;

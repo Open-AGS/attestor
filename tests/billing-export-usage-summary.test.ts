@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import type { HostedAccountRecord } from '../src/service/account-store.js';
+import type { HostedAccountRecord } from '../src/service/account/account-store.js';
 import {
   buildHostedBillingExport,
   renderHostedBillingExportCsv,

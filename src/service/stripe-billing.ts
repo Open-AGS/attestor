@@ -9,7 +9,7 @@
 
 import { createHash } from 'node:crypto';
 import Stripe from 'stripe';
-import type { HostedAccountRecord } from './account-store.js';
+import type { HostedAccountRecord } from './account/account-store.js';
 import type { HostedPlanDefinition } from './plan-catalog.js';
 import type { TenantContext } from './tenant-isolation.js';
 import type { UsageContext } from './usage-meter.js';

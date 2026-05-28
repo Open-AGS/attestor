@@ -22,9 +22,9 @@ import type {
   AccountUserRecord,
   AccountUserSamlIdentityRecord,
 } from './account-user-store.js';
-import { trimAndStripTrailingSlashes } from '../platform/string-normalization.js';
-import { isProductionLikeRuntimeEnv } from './deployment-safety.js';
-import { deriveServiceKey } from './secret-derivation.js';
+import { trimAndStripTrailingSlashes } from '../../platform/string-normalization.js';
+import { isProductionLikeRuntimeEnv } from '../deployment-safety.js';
+import { deriveServiceKey } from '../secret-derivation.js';
 
 export interface HostedSamlConfig {
   idpMetadataXml: string;

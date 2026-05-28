@@ -10,7 +10,7 @@
 import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import type { HostedSamlReplayRecord } from './account-saml.js';
-import { writeTextFileAtomic } from './file-store.js';
+import { writeTextFileAtomic } from '../file-store.js';
 
 interface HostedSamlReplayStoreFile {
   version: 1;

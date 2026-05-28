@@ -21,9 +21,9 @@ import type {
   AccountUserOidcIdentityRecord,
   AccountUserRecord,
 } from './account-user-store.js';
-import { trimAndStripTrailingSlashes } from '../platform/string-normalization.js';
-import { isProductionLikeRuntimeEnv } from './deployment-safety.js';
-import { deriveServiceKey } from './secret-derivation.js';
+import { trimAndStripTrailingSlashes } from '../../platform/string-normalization.js';
+import { isProductionLikeRuntimeEnv } from '../deployment-safety.js';
+import { deriveServiceKey } from '../secret-derivation.js';
 
 export interface HostedOidcConfig {
   issuerUrl: string;

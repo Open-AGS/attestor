@@ -33,7 +33,7 @@ import {
 } from './control-plane-store.js';
 import { isProductionLikeRuntimeEnv } from './deployment-safety.js';
 import { DEFAULT_HOSTED_PLAN_ID, SELF_HOST_PLAN_ID, resolvePlanSpec } from './plan-catalog.js';
-import type { AccountUserRole } from './account-user-store.js';
+import type { AccountUserRole } from './account/account-user-store.js';
 import { hashSecretForLookup } from './secret-derivation.js';
 
 export interface TenantContext {

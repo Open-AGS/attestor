@@ -1,5 +1,5 @@
 import { strict as assert } from 'node:assert';
-import { loadHostedPasskeyConfig } from '../src/service/account-passkeys.js';
+import { loadHostedPasskeyConfig } from '../src/service/account/account-passkeys.js';
 
 let passed = 0;
 

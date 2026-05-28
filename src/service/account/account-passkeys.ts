@@ -31,7 +31,7 @@ import type {
   AccountUserPasskeyCredentialRecord,
   AccountUserRecord,
 } from './account-user-store.js';
-import { isProductionLikeRuntimeEnv } from './deployment-safety.js';
+import { isProductionLikeRuntimeEnv } from '../deployment-safety.js';
 
 export interface HostedPasskeyConfig {
   rpId: string;

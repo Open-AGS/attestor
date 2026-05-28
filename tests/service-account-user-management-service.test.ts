@@ -1,13 +1,13 @@
 import assert from 'node:assert/strict';
-import type { HostedAccountRecord } from '../src/service/account-store.js';
-import type { AccountSessionRecord } from '../src/service/account-session-store.js';
+import type { HostedAccountRecord } from '../src/service/account/account-store.js';
+import type { AccountSessionRecord } from '../src/service/account/account-session-store.js';
 import {
   AccountUserManagementServiceError,
   createAccountUserManagementService,
   type AccountUserManagementServiceDeps,
 } from '../src/service/application/account-user-management-service.js';
-import type { AccountUserRecord, AccountUserRole } from '../src/service/account-user-store.js';
-import type { AccountUserActionTokenRecord } from '../src/service/account-user-token-store.js';
+import type { AccountUserRecord, AccountUserRole } from '../src/service/account/account-user-store.js';
+import type { AccountUserActionTokenRecord } from '../src/service/account/account-user-token-store.js';
 import { HostedEmailDeliveryError, type HostedEmailDeliverySummary } from '../src/service/email-delivery.js';
 
 const now = '2026-04-21T10:00:00.000Z';

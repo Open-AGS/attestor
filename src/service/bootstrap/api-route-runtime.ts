@@ -20,8 +20,8 @@ import {
   normalizePasskeyAuthenticatorHint,
   parsePasskeyAuthenticationChallenge,
   parsePasskeyRegistrationChallenge,
-} from '../account-route-support.js';
-import { sessionCookieName } from '../account-session-store.js';
+} from '../account/account-route-support.js';
+import { sessionCookieName } from '../account/account-session-store.js';
 import { ATTESTOR_SERVICE_VERSION } from '../version.js';
 import {
   buildTotpOtpAuthUrl,
@@ -33,14 +33,14 @@ import {
   totpSummary,
   verifyAndConsumeRecoveryCode,
   verifyTotpCodeWithStep,
-} from '../account-mfa.js';
+} from '../account/account-mfa.js';
 import {
   buildHostedOidcAuthorizationRequest,
   completeHostedOidcAuthorization,
   hostedOidcAllowsAutomaticLinking,
   hostedOidcStateKeySource,
   linkAccountUserOidcIdentity,
-} from '../account-oidc.js';
+} from '../account/account-oidc.js';
 import {
   buildAccountUserPasskeyCredentialRecord,
   buildHostedPasskeyAuthenticationOptions,
@@ -49,7 +49,7 @@ import {
   passkeyCredentialToWebAuthnCredential,
   verifyHostedPasskeyAuthentication,
   verifyHostedPasskeyRegistration,
-} from '../account-passkeys.js';
+} from '../account/account-passkeys.js';
 import {
   buildHostedSamlAuthorizationRequest,
   completeHostedSamlAuthorization,
@@ -57,8 +57,8 @@ import {
   hostedSamlAllowsAutomaticLinking,
   hostedSamlRelayStateKeySource,
   linkAccountUserSamlIdentity,
-} from '../account-saml.js';
-import { verifyAccountUserPasswordRecord } from '../account-user-store.js';
+} from '../account/account-saml.js';
+import { verifyAccountUserPasswordRecord } from '../account/account-user-store.js';
 import {
   canEnqueueTenantAsyncJob,
   getAsyncQueueSummary,
@@ -194,7 +194,7 @@ import {
   accountMfaErrorResponse,
   createHostedAccountSupport,
   stripeBillingErrorResponse,
-} from '../hosted-account-support.js';
+} from '../account/hosted-account-support.js';
 import { hashJsonValue } from '../json-stable.js';
 import {
   getMailgunWebhookStatus,

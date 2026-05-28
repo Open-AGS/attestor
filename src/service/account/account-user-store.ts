@@ -16,8 +16,8 @@
 import { randomBytes, randomUUID, scryptSync, timingSafeEqual } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
-import { trimAndStripTrailingSlashes } from '../platform/string-normalization.js';
-import { withFileLock, writeTextFileAtomic } from './file-store.js';
+import { trimAndStripTrailingSlashes } from '../../platform/string-normalization.js';
+import { withFileLock, writeTextFileAtomic } from '../file-store.js';
 
 export type AccountUserRole = 'account_admin' | 'billing_admin' | 'read_only';
 export type AccountUserStatus = 'active' | 'inactive';

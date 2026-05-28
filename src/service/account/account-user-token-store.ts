@@ -16,7 +16,7 @@ import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import type { AccountUserRole } from './account-user-store.js';
-import { withFileLock, writeTextFileAtomic } from './file-store.js';
+import { withFileLock, writeTextFileAtomic } from '../file-store.js';
 
 export type AccountUserActionTokenPurpose =
   | 'invite'

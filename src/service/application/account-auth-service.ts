@@ -1,15 +1,15 @@
-import type * as AccountMfa from '../account-mfa.js';
+import type * as AccountMfa from '../account/account-mfa.js';
 import type * as ControlPlaneStore from '../control-plane-store.js';
 import type * as PlanCatalog from '../plan-catalog.js';
 import type * as RateLimit from '../rate-limit.js';
-import { AccountStoreError, type HostedAccountRecord } from '../account-store.js';
-import type { AccountSessionRecord } from '../account-session-store.js';
-import { AccountUserStoreError, type AccountUserRecord } from '../account-user-store.js';
-import type { AccountUserActionTokenRecord } from '../account-user-token-store.js';
+import { AccountStoreError, type HostedAccountRecord } from '../account/account-store.js';
+import type { AccountSessionRecord } from '../account/account-session-store.js';
+import { AccountUserStoreError, type AccountUserRecord } from '../account/account-user-store.js';
+import type { AccountUserActionTokenRecord } from '../account/account-user-token-store.js';
 import { TenantKeyStoreError, type TenantKeyRecord } from '../tenant-key-store.js';
 import type { TenantContext } from '../tenant-isolation.js';
 import type { UsageContext } from '../usage-meter.js';
-import { validateAccountPassword } from '../account-password-policy.js';
+import { validateAccountPassword } from '../account/account-password-policy.js';
 
 interface SyncHostedBillingEntitlementOptions {
   lastEventId?: string | null;
@@ -111,7 +111,7 @@ export interface AccountAuthServiceDeps {
     tenantId: string,
     options?: SyncHostedBillingEntitlementOptions,
   ): Promise<unknown>;
-  verifyAccountUserPasswordRecord: typeof import('../account-user-store.js').verifyAccountUserPasswordRecord;
+  verifyAccountUserPasswordRecord: typeof import('../account/account-user-store.js').verifyAccountUserPasswordRecord;
   findHostedAccountByIdState: typeof ControlPlaneStore.findHostedAccountByIdState;
   totpSummary: typeof AccountMfa.totpSummary;
   issueAccountMfaLoginTokenState: typeof ControlPlaneStore.issueAccountMfaLoginTokenState;

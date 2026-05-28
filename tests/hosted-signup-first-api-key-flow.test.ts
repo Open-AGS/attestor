@@ -16,10 +16,10 @@ import {
   evaluateConsequenceAdmissionGate,
   type FinancePipelineAdmissionRun,
 } from '../src/consequence-admission/index.js';
-import { resetAccountSessionStoreForTests } from '../src/service/account-session-store.js';
-import { listHostedAccounts, resetAccountStoreForTests } from '../src/service/account-store.js';
-import { resetAccountUserStoreForTests } from '../src/service/account-user-store.js';
-import { resetAccountUserActionTokenStoreForTests } from '../src/service/account-user-token-store.js';
+import { resetAccountSessionStoreForTests } from '../src/service/account/account-session-store.js';
+import { listHostedAccounts, resetAccountStoreForTests } from '../src/service/account/account-store.js';
+import { resetAccountUserStoreForTests } from '../src/service/account/account-user-store.js';
+import { resetAccountUserActionTokenStoreForTests } from '../src/service/account/account-user-token-store.js';
 import { resetAdminAuditLogForTests } from '../src/service/admin-audit-log.js';
 import { resetAdminIdempotencyStoreForTests } from '../src/service/admin-idempotency-store.js';
 import { resetAsyncDeadLetterStoreForTests } from '../src/service/async-dead-letter-store.js';

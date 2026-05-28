@@ -10,7 +10,7 @@ import type {
   AdminMutationService,
 } from '../../application/admin-mutation-service.js';
 import type { AdminQueryService } from '../../application/admin-query-service.js';
-import type { HostedAccountRecord } from '../../account-store.js';
+import type { HostedAccountRecord } from '../../account/account-store.js';
 import type * as BillingEventLedger from '../../billing-event-ledger.js';
 import type { HostedBillingEntitlementRecord } from '../../billing-entitlement-store.js';
 import type * as BillingExport from '../../billing-export.js';

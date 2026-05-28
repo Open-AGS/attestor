@@ -5,14 +5,14 @@ import {
   type AccountAuthCurrentAccount,
   type AccountAuthServiceDeps,
 } from '../src/service/application/account-auth-service.js';
-import type { HostedAccountRecord } from '../src/service/account-store.js';
-import type { AccountSessionRecord } from '../src/service/account-session-store.js';
+import type { HostedAccountRecord } from '../src/service/account/account-store.js';
+import type { AccountSessionRecord } from '../src/service/account/account-session-store.js';
 import type {
   AccountUserPasswordState,
   AccountUserRecord,
   AccountUserTotpState,
-} from '../src/service/account-user-store.js';
-import type { AccountUserActionTokenRecord } from '../src/service/account-user-token-store.js';
+} from '../src/service/account/account-user-store.js';
+import type { AccountUserActionTokenRecord } from '../src/service/account/account-user-token-store.js';
 import type { HostedPlanDefinition, ResolvedPlanSpec } from '../src/service/plan-catalog.js';
 import type { TenantKeyRecord } from '../src/service/tenant-key-store.js';
 

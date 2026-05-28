@@ -11,7 +11,7 @@ import {
   COUNTERPARTY_REPORT_CONTRACT,
   COUNTERPARTY_SQL,
 } from '../src/financial/fixtures/scenarios.js';
-import { generateCurrentTotpCode } from '../src/service/account-mfa.js';
+import { generateCurrentTotpCode } from '../src/service/account/account-mfa.js';
 import { resetAdminAuditLogForTests } from '../src/service/admin-audit-log.js';
 import { resetAdminIdempotencyStoreForTests } from '../src/service/admin-idempotency-store.js';
 import { resetHostedBillingEntitlementStoreForTests } from '../src/service/billing-entitlement-store.js';
@@ -29,7 +29,7 @@ import {
   resetSharedControlPlaneStoreForTests,
   saveAccountUserRecordState,
 } from '../src/service/control-plane-store.js';
-import { buildAccountUserPasskeyCredentialRecord } from '../src/service/account-passkeys.js';
+import { buildAccountUserPasskeyCredentialRecord } from '../src/service/account/account-passkeys.js';
 import {
   authFixtureCredential,
   authenticationChallenge,

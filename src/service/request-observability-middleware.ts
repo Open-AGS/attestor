@@ -1,5 +1,5 @@
 import type { Context, MiddlewareHandler } from 'hono';
-import type { HostedAccountRecord } from './account-store.js';
+import type { HostedAccountRecord } from './account/account-store.js';
 import type * as ControlPlaneStore from './control-plane-store.js';
 import {
   appendStructuredRequestLog,

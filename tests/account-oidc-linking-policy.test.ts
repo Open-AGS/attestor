@@ -3,7 +3,7 @@ import {
   hostedOidcAllowsAutomaticLinking,
   hostedOidcAllowsInsecureRequests,
   type HostedOidcCallbackIdentity,
-} from '../src/service/account-oidc.js';
+} from '../src/service/account/account-oidc.js';
 
 let passed = 0;
 

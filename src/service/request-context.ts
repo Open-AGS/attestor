@@ -9,8 +9,8 @@ import {
 import {
   sessionCookieName,
   sessionCookieSecure,
-} from './account-session-store.js';
-import type { AccountUserRole } from './account-user-store.js';
+} from './account/account-session-store.js';
+import type { AccountUserRole } from './account/account-user-store.js';
 import {
   ACCOUNT_SESSION_TRANSPORT_HEADER,
   anonymousTenantContext,

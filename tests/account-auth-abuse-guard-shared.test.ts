@@ -6,7 +6,7 @@ import {
   recordAuthAttemptFailureShared,
   recordAuthAttemptSuccessShared,
   resetSharedAuthAbuseGuardForTests,
-} from '../src/service/auth-abuse-guard.js';
+} from '../src/service/account/auth-abuse-guard.js';
 
 let passed = 0;
 

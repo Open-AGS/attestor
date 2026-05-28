@@ -1,4 +1,4 @@
-import type { HostedAccountRecord } from './account-store.js';
+import type { HostedAccountRecord } from './account/account-store.js';
 import type { HostedBillingEntitlementRecord } from './billing-entitlement-store.js';
 import {
   isBillingEventLedgerConfigured,

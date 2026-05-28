@@ -3,7 +3,7 @@ import {
   type HostedAccountRecord,
   type HostedAccountStatus,
   type StripeSubscriptionStatus,
-} from '../account-store.js';
+} from '../account/account-store.js';
 import type { HostedBillingEntitlementRecord } from '../billing-entitlement-store.js';
 import type * as ControlPlaneStore from '../control-plane-store.js';
 import type * as PlanCatalog from '../plan-catalog.js';

@@ -6,9 +6,9 @@
  */
 import { createHmac } from 'node:crypto';
 import IORedis from 'ioredis';
-import { envTruthy, isProductionLikeRuntimeEnv } from './deployment-safety.js';
-import { deriveServiceKey } from './secret-derivation.js';
-import { resolveTrustedClientAddress } from './trusted-proxy.js';
+import { envTruthy, isProductionLikeRuntimeEnv } from '../deployment-safety.js';
+import { deriveServiceKey } from '../secret-derivation.js';
+import { resolveTrustedClientAddress } from '../trusted-proxy.js';
 
 export interface AuthAttemptSubject {
   email: string;

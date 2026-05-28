@@ -11,7 +11,7 @@ import {
 } from '../src/service/http/routes/account-routes.js';
 import { createPipelineIdempotencyService } from '../src/service/application/pipeline-idempotency-service.js';
 import type { PipelineIdempotencyService } from '../src/service/application/pipeline-idempotency-service.js';
-import { resetAuthAbuseGuardForTests } from '../src/service/auth-abuse-guard.js';
+import { resetAuthAbuseGuardForTests } from '../src/service/account/auth-abuse-guard.js';
 import {
   ensurePipelineIdempotencyStateReady,
   lookupPipelineIdempotencyState,

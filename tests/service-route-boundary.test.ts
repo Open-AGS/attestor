@@ -343,17 +343,18 @@ function testAccountRouteIsStronglyTyped(): void {
 
 function testAccountRouteDelegatesAuthUseCases(): void {
   const accountRoute = readFileSync(join(ROUTE_ROOT, 'account-routes.ts'), 'utf8');
+  const accountRouteHelpers = readProjectFile('src', 'service', 'http', 'routes', 'account-route-helpers.ts');
   const accountAuthService = readProjectFile('src', 'service', 'application', 'account-auth-service.ts');
 
   assert.match(accountRoute, /authService: AccountAuthService/u);
   assert.match(accountRoute, /authService\.bootstrapFirstUser/u);
   assert.match(accountRoute, /authService\.signup/u);
   assert.match(accountRoute, /authService\.login/u);
-  assert.match(accountRoute, /from '..\/..\/auth-abuse-guard\.js'/u);
-  assert.match(accountRoute, /checkAuthAttemptAllowed/u);
+  assert.match(accountRoute, /from '..\/..\/account\/auth-abuse-guard\.js'/u);
+  assert.match(accountRouteHelpers, /checkAuthAttemptAllowed/u);
   assert.match(accountRoute, /recordAuthAttemptFailure/u);
   assert.match(accountRoute, /recordAuthAttemptSuccess/u);
-  assert.match(accountRoute, /resolveAuthAttemptSource/u);
+  assert.match(accountRouteHelpers, /resolveAuthAttemptSource/u);
   assert.doesNotMatch(accountRoute, /countAccountUsersForAccountState/u);
   assert.doesNotMatch(accountRoute, /provisionHostedAccountState/u);
   assert.doesNotMatch(accountRoute, /deriveSignupTenantId/u);

@@ -29,7 +29,7 @@ import {
   type HostedAccountStatus,
   type StripeInvoiceStatus,
   type StripeSubscriptionStatus,
-} from './account-store.js';
+} from './account/account-store.js';
 import {
   AccountUserStoreError,
   buildAccountUserRecord,
@@ -52,7 +52,7 @@ import {
   type AccountUserRecord,
   type AccountUserStatus,
   type CreateAccountUserInput,
-} from './account-user-store.js';
+} from './account/account-user-store.js';
 import {
   buildAccountSessionRecord,
   accountSessionTokenHashCandidates,
@@ -66,7 +66,7 @@ import {
   revokeAccountSessionsForUser as revokeAccountSessionsForUserFile,
   type AccountSessionRecord,
   type IssueAccountSessionInput,
-} from './account-session-store.js';
+} from './account/account-session-store.js';
 import {
   buildAccountMfaLoginTokenRecord,
   buildAccountPasskeyChallengeTokenRecord,
@@ -90,11 +90,11 @@ import {
   type IssueAccountPasskeyChallengeTokenInput,
   type IssueAccountInviteTokenInput,
   type IssuePasswordResetTokenInput,
-} from './account-user-token-store.js';
+} from './account/account-user-token-store.js';
 import {
   listHostedSamlReplays as listHostedSamlReplaysFile,
   recordHostedSamlReplay as recordHostedSamlReplayFile,
-} from './account-saml-replay-store.js';
+} from './account/account-saml-replay-store.js';
 import {
   exportHostedBillingEntitlementStoreSnapshot as exportHostedBillingEntitlementStoreSnapshotFile,
   findHostedBillingEntitlementByAccountId as findHostedBillingEntitlementByAccountIdFile,
@@ -209,7 +209,7 @@ import {
 import { hashJsonValue } from './json-stable.js';
 import { DEFAULT_HOSTED_PLAN_ID, resolvePlanQuotaPolicy, resolvePlanSpec } from './plan-catalog.js';
 import { hashSecretForLookup } from './secret-derivation.js';
-import type { HostedSamlReplayRecord } from './account-saml.js';
+import type { HostedSamlReplayRecord } from './account/account-saml.js';
 
 type PgQueryResultRow = Record<string, unknown>;
 type PgClient = {

@@ -4,7 +4,7 @@ import {
   createPasswordHashState,
   verifyAccountUserPasswordRecord,
   type AccountUserPasswordState,
-} from '../src/service/account-user-store.js';
+} from '../src/service/account/account-user-store.js';
 
 let passed = 0;
 

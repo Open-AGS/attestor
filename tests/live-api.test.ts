@@ -20,10 +20,10 @@ import { startServer } from '../src/service/api-server.js';
 import { issueTenantApiKey, resetTenantKeyStoreForTests, revokeTenantApiKey } from '../src/service/tenant-key-store.js';
 import { readUsageLedgerSnapshot, resetUsageMeter } from '../src/service/usage-meter.js';
 import { resetTenantRateLimiterForTests } from '../src/service/rate-limit.js';
-import { resetAccountStoreForTests } from '../src/service/account-store.js';
-import { resetAccountUserStoreForTests } from '../src/service/account-user-store.js';
-import { resetAccountUserActionTokenStoreForTests } from '../src/service/account-user-token-store.js';
-import { resetAccountSessionStoreForTests } from '../src/service/account-session-store.js';
+import { resetAccountStoreForTests } from '../src/service/account/account-store.js';
+import { resetAccountUserStoreForTests } from '../src/service/account/account-user-store.js';
+import { resetAccountUserActionTokenStoreForTests } from '../src/service/account/account-user-token-store.js';
+import { resetAccountSessionStoreForTests } from '../src/service/account/account-session-store.js';
 import { resetAdminAuditLogForTests } from '../src/service/admin-audit-log.js';
 import { resetAdminIdempotencyStoreForTests } from '../src/service/admin-idempotency-store.js';
 import { readAsyncDeadLetterStoreSnapshot, resetAsyncDeadLetterStoreForTests } from '../src/service/async-dead-letter-store.js';
@@ -33,7 +33,7 @@ import { resetHostedBillingEntitlementStoreForTests } from '../src/service/billi
 import { resetHostedEmailDeliveryEventStoreForTests } from '../src/service/email-delivery-event-store.js';
 import { resetObservabilityForTests } from '../src/service/observability.js';
 import { ATTESTOR_SERVICE_VERSION } from '../src/service/version.js';
-import { generateCurrentTotpCode } from '../src/service/account-mfa.js';
+import { generateCurrentTotpCode } from '../src/service/account/account-mfa.js';
 import {
   COUNTERPARTY_SQL, COUNTERPARTY_INTENT, COUNTERPARTY_FIXTURE,
   COUNTERPARTY_REPORT, COUNTERPARTY_REPORT_CONTRACT,

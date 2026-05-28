@@ -17,9 +17,9 @@ import { createHash, createHmac, randomBytes, randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import type { AccountUserRole } from './account-user-store.js';
-import { isProductionLikeRuntimeEnv } from './deployment-safety.js';
-import { withFileLock, writeTextFileAtomic } from './file-store.js';
-import { deriveServiceKey } from './secret-derivation.js';
+import { isProductionLikeRuntimeEnv } from '../deployment-safety.js';
+import { withFileLock, writeTextFileAtomic } from '../file-store.js';
+import { deriveServiceKey } from '../secret-derivation.js';
 
 export interface AccountSessionRecord {
   id: string;

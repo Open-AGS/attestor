@@ -1,5 +1,5 @@
 import Stripe from 'stripe';
-import { isProductionLikeRuntimeEnv } from './deployment-safety.js';
+import { isProductionLikeRuntimeEnv } from '../../deployment-safety.js';
 
 export function stripeClient(): Stripe {
   const apiKey = process.env.STRIPE_API_KEY?.trim();

@@ -9,14 +9,14 @@ import type * as AccountPasskeys from '../../account/account-passkeys.js';
 import type * as AccountSessionStore from '../../account/account-session-store.js';
 import type * as AccountSaml from '../../account/account-saml.js';
 import type * as AccountUserStore from '../../account/account-user-store.js';
-import type * as BillingExport from '../../billing-export.js';
-import type * as BillingFeatureService from '../../billing-feature-service.js';
-import type * as BillingReconciliation from '../../billing-reconciliation.js';
+import type * as BillingExport from '../../billing/billing-export.js';
+import type * as BillingFeatureService from '../../billing/billing-feature-service.js';
+import type * as BillingReconciliation from '../../billing/billing-reconciliation.js';
 import type * as PlanCatalog from '../../plan-catalog.js';
 import type * as RateLimit from '../../rate-limit.js';
 import type { AdminAuditAction } from '../../admin-audit-log.js';
 import type { SecretEnvelopeStatus } from '../../secret-envelope.js';
-import type * as StripeBilling from '../../stripe-billing.js';
+import type * as StripeBilling from '../../billing/stripe/stripe-billing.js';
 import {
   type AccountApiKeyService,
 } from '../../application/account-api-key-service.js';
@@ -37,7 +37,7 @@ import type {
   AccountUserRole,
 } from '../../account/account-user-store.js';
 import type { AccountUserActionTokenRecord } from '../../account/account-user-token-store.js';
-import type { HostedBillingEntitlementRecord } from '../../billing-entitlement-store.js';
+import type { HostedBillingEntitlementRecord } from '../../billing/billing-entitlement-store.js';
 import type { HostedPasskeyAuthenticationChallengeState, HostedPasskeyAuthenticatorHint, HostedPasskeyRegistrationChallengeState } from '../../account/account-passkeys.js';
 import type { TenantKeyRecord } from '../../tenant-key-store.js';
 import type { AccountAccessContext, TenantContext } from '../../tenant-isolation.js';

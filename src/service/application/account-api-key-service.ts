@@ -1,5 +1,5 @@
 import type { HostedAccountRecord } from '../account/account-store.js';
-import type { HostedBillingEntitlementRecord } from '../billing-entitlement-store.js';
+import type { HostedBillingEntitlementRecord } from '../billing/billing-entitlement-store.js';
 import type * as ControlPlaneStore from '../control-plane-store.js';
 import type * as PlanCatalog from '../plan-catalog.js';
 import { TenantKeyStoreError, type TenantKeyRecord } from '../tenant-key-store.js';

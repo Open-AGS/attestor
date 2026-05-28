@@ -103,7 +103,7 @@ Severity: medium
 Protected principle: replay and idempotency safety; auditability
 Trust surface: webhooks, presentation binding, release tokens, DPoP/freshness, shadow/replay ledgers
 Source: project-owner supplied F1 audit excerpt
-Exact file/path: src/consequence-admission/presentation-replay-ledger.ts; src/service/stripe-webhook-store.ts; src/release-enforcement-plane/freshness.ts
+Exact file/path: src/consequence-admission/presentation-replay-ledger.ts; src/service/billing/stripe/stripe-webhook-store.ts; src/release-enforcement-plane/freshness.ts
 Exact function/route/test/contract: presentation replay ledger; webhook dedupe; release token introspection
 Affected modules or chain: multiple replay controls with separate stores and telemetry
 Observed behavior: not every replay/idempotency control is in-memory, but some evaluation surfaces still lack shared durable production storage and there is no single cross-vector replay correlation channel.

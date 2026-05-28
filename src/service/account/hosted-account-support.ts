@@ -5,9 +5,9 @@ import type { HostedAccountRecord } from './account-store.js';
 import {
   projectHostedBillingEntitlement,
   type HostedBillingEntitlementRecord,
-} from '../billing-entitlement-store.js';
+} from '../billing/billing-entitlement-store.js';
 import { currentTenant } from '../request-context.js';
-import { StripeBillingError } from '../stripe-billing.js';
+import { StripeBillingError } from '../billing/stripe/stripe-billing.js';
 import type { UsageContext } from '../usage-meter.js';
 
 export interface CurrentHostedAccountResult {

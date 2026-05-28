@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {
   createPolicyFoundryBillingEntitlementEnforcement,
 } from '../src/service/policy-foundry-billing-entitlement-enforcement.js';
-import type { HostedBillingEntitlementRecord } from '../src/service/billing-entitlement-store.js';
+import type { HostedBillingEntitlementRecord } from '../src/service/billing/billing-entitlement-store.js';
 
 let passed = 0;
 

@@ -11,11 +11,11 @@ import type {
 } from '../../application/admin-mutation-service.js';
 import type { AdminQueryService } from '../../application/admin-query-service.js';
 import type { HostedAccountRecord } from '../../account/account-store.js';
-import type * as BillingEventLedger from '../../billing-event-ledger.js';
-import type { HostedBillingEntitlementRecord } from '../../billing-entitlement-store.js';
-import type * as BillingExport from '../../billing-export.js';
-import type * as BillingFeatureService from '../../billing-feature-service.js';
-import type * as BillingReconciliation from '../../billing-reconciliation.js';
+import type * as BillingEventLedger from '../../billing/billing-event-ledger.js';
+import type { HostedBillingEntitlementRecord } from '../../billing/billing-entitlement-store.js';
+import type * as BillingExport from '../../billing/billing-export.js';
+import type * as BillingFeatureService from '../../billing/billing-feature-service.js';
+import type * as BillingReconciliation from '../../billing/billing-reconciliation.js';
 import type * as EmailDelivery from '../../email-delivery.js';
 import type * as Observability from '../../observability.js';
 import type * as PlanCatalog from '../../plan-catalog.js';

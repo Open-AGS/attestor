@@ -18,7 +18,7 @@ import {
 import {
   recordProcessedStripeWebhook,
   resetStripeWebhookStoreForTests,
-} from '../src/service/stripe-webhook-store.js';
+} from '../src/service/billing/stripe/stripe-webhook-store.js';
 import {
   appendAdminAuditRecord,
   resetAdminAuditLogForTests,
@@ -30,7 +30,7 @@ import {
 import {
   resetHostedBillingEntitlementStoreForTests,
   upsertHostedBillingEntitlement,
-} from '../src/service/billing-entitlement-store.js';
+} from '../src/service/billing/billing-entitlement-store.js';
 import {
   recordHostedEmailDispatchEvent,
   resetHostedEmailDeliveryEventStoreForTests,

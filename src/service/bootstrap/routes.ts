@@ -10,7 +10,7 @@ import type {
 import { createServiceAgentLoopAbuseGuard } from '../agent-loop-abuse-guard.js';
 import {
   projectHostedBillingEntitlement,
-} from '../billing-entitlement-store.js';
+} from '../billing/billing-entitlement-store.js';
 import {
   appendAdminAuditRecordState,
   findHostedAccountByTenantIdState,

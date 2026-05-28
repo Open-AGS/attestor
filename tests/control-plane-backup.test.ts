@@ -18,12 +18,12 @@ import {
   finalizeStripeBillingEvent,
   listBillingEvents,
   resetBillingEventLedgerForTests,
-} from '../src/service/billing-event-ledger.js';
+} from '../src/service/billing/billing-event-ledger.js';
 import {
   findHostedBillingEntitlementByAccountId,
   resetHostedBillingEntitlementStoreForTests,
   upsertHostedBillingEntitlement,
-} from '../src/service/billing-entitlement-store.js';
+} from '../src/service/billing/billing-entitlement-store.js';
 import {
   createControlPlaneBackupSnapshot,
   restoreControlPlaneBackupSnapshot,
@@ -58,7 +58,7 @@ import {
   lookupProcessedStripeWebhook,
   recordProcessedStripeWebhook,
   resetStripeWebhookStoreForTests,
-} from '../src/service/stripe-webhook-store.js';
+} from '../src/service/billing/stripe/stripe-webhook-store.js';
 import {
   listAsyncDeadLetterRecords,
   resetAsyncDeadLetterStoreForTests,

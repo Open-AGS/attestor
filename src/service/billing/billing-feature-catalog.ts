@@ -1,4 +1,4 @@
-import type { HostedPlanId } from './plan-catalog.js';
+import type { HostedPlanId } from '../plan-catalog.js';
 
 export type HostedFeatureKey =
   | 'api.access'

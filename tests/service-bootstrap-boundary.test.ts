@@ -287,7 +287,7 @@ function testApiServerUsesExtractedRouteSupport(): void {
   );
   const siteSupport = readFileSync(join(SERVICE_ROOT, 'site-support.ts'), 'utf8');
   const stripeWebhookSupport = readFileSync(
-    join(SERVICE_ROOT, 'stripe-webhook-support.ts'),
+    join(SERVICE_ROOT, 'billing', 'stripe', 'stripe-webhook-support.ts'),
     'utf8',
   );
 
@@ -299,7 +299,7 @@ function testApiServerUsesExtractedRouteSupport(): void {
   assert.match(apiRouteRuntime, /from '\.\.\/request-context\.js'/u);
   assert.match(apiServer, /from '\.\/request-observability-middleware\.js'/u);
   assert.match(apiRouteRuntime, /from '\.\.\/site-support\.js'/u);
-  assert.match(apiRouteRuntime, /from '\.\.\/stripe-webhook-support\.js'/u);
+  assert.match(apiRouteRuntime, /from '\.\.\/billing\/stripe\/stripe-webhook-support\.js'/u);
 
   for (const helperName of [
     'function accountStoreErrorResponse(',

@@ -39,11 +39,11 @@ The shipped hosted customer path maps to these service routes:
 | Inspect usage/quota | `GET /api/v1/account/usage` | `src/service/http/routes/account-routes.ts`, `tests/live-api.test.ts`, `tests/live-control-plane-pg.test.ts` |
 | Inspect billing entitlement | `GET /api/v1/account/entitlement` | `src/service/http/routes/account-routes.ts`, `tests/live-api.test.ts`, `tests/live-control-plane-pg.test.ts` |
 | Inspect feature posture | `GET /api/v1/account/features` | `src/service/http/routes/account-routes.ts` |
-| Inspect invoice, charge, and entitlement export shape | `GET /api/v1/account/billing/export` | `src/service/http/routes/account-routes.ts`, `src/service/billing-export.ts`, `tests/live-api.test.ts` |
-| Inspect billing reconciliation status | `GET /api/v1/account/billing/reconciliation` | `src/service/http/routes/account-routes.ts`, `src/service/billing-reconciliation.ts`, `tests/live-api.test.ts` |
+| Inspect invoice, charge, and entitlement export shape | `GET /api/v1/account/billing/export` | `src/service/http/routes/account-routes.ts`, `src/service/billing/billing-export.ts`, `tests/live-api.test.ts` |
+| Inspect billing reconciliation status | `GET /api/v1/account/billing/reconciliation` | `src/service/http/routes/account-routes.ts`, `src/service/billing/billing-reconciliation.ts`, `tests/live-api.test.ts` |
 | Manage API keys | `GET /api/v1/account/api-keys`, `POST /api/v1/account/api-keys`, `POST /api/v1/account/api-keys/:id/rotate`, `POST /api/v1/account/api-keys/:id/deactivate`, `POST /api/v1/account/api-keys/:id/reactivate`, `POST /api/v1/account/api-keys/:id/revoke` | `src/service/http/routes/account-routes.ts`, `src/service/application/account-api-key-service.ts`, `tests/live-api.test.ts` |
-| Start paid hosted checkout | `POST /api/v1/account/billing/checkout` | `src/service/http/routes/account-routes.ts`, `src/service/stripe-billing.ts`, `tests/stripe-commercial-config.test.ts`, `tests/live-api.test.ts` |
-| Open billing portal | `POST /api/v1/account/billing/portal` | `src/service/http/routes/account-routes.ts`, `src/service/stripe-billing.ts`, `tests/stripe-commercial-config.test.ts`, `tests/live-api.test.ts` |
+| Start paid hosted checkout | `POST /api/v1/account/billing/checkout` | `src/service/http/routes/account-routes.ts`, `src/service/billing/stripe/stripe-billing.ts`, `tests/stripe-commercial-config.test.ts`, `tests/live-api.test.ts` |
+| Open billing portal | `POST /api/v1/account/billing/portal` | `src/service/http/routes/account-routes.ts`, `src/service/billing/stripe/stripe-billing.ts`, `tests/stripe-commercial-config.test.ts`, `tests/live-api.test.ts` |
 | Process Stripe billing lifecycle events | `POST /api/v1/billing/stripe/webhook` | `src/service/http/routes/stripe-webhook-routes.ts`, `src/service/application/stripe-webhook-service.ts`, `src/service/application/stripe-webhook-billing-processor.ts`, `tests/stripe-webhook-events.test.ts`, `tests/live-api.test.ts` |
 
 ## Existing Service Boundaries

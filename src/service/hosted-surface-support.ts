@@ -1,7 +1,7 @@
 import type { AdminAuditRecord } from './admin-audit-log.js';
 import type { HostedAccountRecord } from './account/account-store.js';
-import type { BillingEventRecord } from './billing-event-ledger.js';
-import type { HostedBillingEntitlementRecord } from './billing-entitlement-store.js';
+import type { BillingEventRecord } from './billing/billing-event-ledger.js';
+import type { HostedBillingEntitlementRecord } from './billing/billing-entitlement-store.js';
 import {
   listHostedPlans,
   resolvePlanAsyncDispatch,

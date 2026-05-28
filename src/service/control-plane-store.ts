@@ -107,7 +107,7 @@ import {
   type HostedBillingEntitlementStoreSnapshot,
   type ListBillingEntitlementsFilters,
   type ProjectHostedBillingEntitlementInput,
-} from './billing-entitlement-store.js';
+} from './billing/billing-entitlement-store.js';
 import {
   findActiveTenantKey as findActiveTenantKeyFile,
   findTenantKeyRecordById as findTenantKeyRecordByIdFile,
@@ -170,7 +170,7 @@ import {
   readStripeWebhookStoreSnapshot,
   type StripeWebhookLookup,
   type StripeWebhookRecord,
-} from './stripe-webhook-store.js';
+} from './billing/stripe/stripe-webhook-store.js';
 import {
   buildHostedEmailDispatchEventRecord,
   buildHostedEmailProviderEventRecord,

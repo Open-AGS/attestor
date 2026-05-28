@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { stripeClient } from '../src/service/stripe-webhook-support.js';
+import { stripeClient } from '../src/service/billing/stripe/stripe-webhook-support.js';
 
 let passed = 0;
 function ok(condition: unknown, message: string): void {

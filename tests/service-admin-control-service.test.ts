@@ -5,7 +5,7 @@ import {
   type AdminControlServiceDeps,
 } from '../src/service/application/admin-control-service.js';
 import type { HostedAccountRecord } from '../src/service/account/account-store.js';
-import type { HostedBillingEntitlementRecord } from '../src/service/billing-entitlement-store.js';
+import type { HostedBillingEntitlementRecord } from '../src/service/billing/billing-entitlement-store.js';
 import { DEFAULT_HOSTED_PLAN_ID, type HostedPlanDefinition, type ResolvedPlanSpec } from '../src/service/plan-catalog.js';
 import { SecretEnvelopeError } from '../src/service/secret-envelope.js';
 import { TenantKeyStoreError, type TenantKeyRecord } from '../src/service/tenant-key-store.js';

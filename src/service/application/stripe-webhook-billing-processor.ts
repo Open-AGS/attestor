@@ -4,11 +4,11 @@ import {
   type HostedAccountRecord,
   type StripeInvoiceStatus,
 } from '../account/account-store.js';
-import type * as BillingEventLedger from '../billing-event-ledger.js';
-import type { HostedBillingEntitlementRecord } from '../billing-entitlement-store.js';
+import type * as BillingEventLedger from '../billing/billing-event-ledger.js';
+import type { HostedBillingEntitlementRecord } from '../billing/billing-entitlement-store.js';
 import type * as ControlPlaneStore from '../control-plane-store.js';
 import type * as PlanCatalog from '../plan-catalog.js';
-import type * as StripeBilling from '../stripe-billing.js';
+import type * as StripeBilling from '../billing/stripe/stripe-billing.js';
 import type {
   BillingWebhookMetricOutcome,
   StripeWebhookProcessingHandle,

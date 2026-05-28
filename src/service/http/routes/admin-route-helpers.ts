@@ -1,7 +1,7 @@
 import type { Context } from 'hono';
 import type { AdminAuditAction } from '../../admin-audit-log.js';
-import type * as BillingEventLedger from '../../billing-event-ledger.js';
-import type { HostedBillingEntitlementStatus } from '../../billing-entitlement-store.js';
+import type * as BillingEventLedger from '../../billing/billing-event-ledger.js';
+import type { HostedBillingEntitlementStatus } from '../../billing/billing-entitlement-store.js';
 import type { HostedEmailDeliveryProvider, HostedEmailDeliveryStatus } from '../../email-delivery-event-store.js';
 import {
   AdminControlServiceError as AdminControlServiceErrorValue,

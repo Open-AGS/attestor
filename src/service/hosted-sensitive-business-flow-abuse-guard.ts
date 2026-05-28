@@ -186,7 +186,7 @@ export const HOSTED_SENSITIVE_BUSINESS_FLOW_ABUSE_GUARDS = [
       'The response exposes hosted Stripe handoff references and plan ids only; secret keys, payment details, and webhook secrets stay out of responses.',
     implementationEvidence: [
       'src/service/http/routes/account-routes.ts#Idempotency-Key',
-      'src/service/stripe-billing.ts#createHostedCheckoutSession',
+      'src/service/billing/stripe/stripe-billing.ts#createHostedCheckoutSession',
     ],
     validation: [
       'tests/hosted-stripe-billing-convergence-flow.test.ts',
@@ -215,7 +215,7 @@ export const HOSTED_SENSITIVE_BUSINESS_FLOW_ABUSE_GUARDS = [
       'The route returns the portal URL and session id only, not invoices, payment methods, or raw Stripe customer details.',
     implementationEvidence: [
       'src/service/http/routes/account-routes.ts#createHostedBillingPortalSession',
-      'src/service/stripe-billing.ts#createHostedBillingPortalSession',
+      'src/service/billing/stripe/stripe-billing.ts#createHostedBillingPortalSession',
     ],
     validation: [
       'tests/hosted-stripe-billing-convergence-flow.test.ts',

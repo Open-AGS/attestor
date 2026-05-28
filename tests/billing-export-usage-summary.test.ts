@@ -3,7 +3,7 @@ import type { HostedAccountRecord } from '../src/service/account/account-store.j
 import {
   buildHostedBillingExport,
   renderHostedBillingExportCsv,
-} from '../src/service/billing-export.js';
+} from '../src/service/billing/billing-export.js';
 import type { UsageContext } from '../src/service/usage-meter.js';
 
 let passed = 0;

@@ -4,7 +4,7 @@ import {
   createHostedBillingPortalSession,
   createHostedCheckoutSession,
   recordStripeOverageMeterEvent,
-} from '../src/service/stripe-billing.js';
+} from '../src/service/billing/stripe/stripe-billing.js';
 import { getHostedPlan, resolvePlanStripeOveragePrice, resolvePlanStripeTrialDays } from '../src/service/plan-catalog.js';
 
 let passed = 0;

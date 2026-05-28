@@ -12,13 +12,13 @@ import { resetAccountUserActionTokenStoreForTests } from '../src/service/account
 import { resetAdminAuditLogForTests } from '../src/service/admin-audit-log.js';
 import { resetAdminIdempotencyStoreForTests } from '../src/service/admin-idempotency-store.js';
 import { resetAsyncDeadLetterStoreForTests } from '../src/service/async-dead-letter-store.js';
-import { resetBillingEventLedgerForTests } from '../src/service/billing-event-ledger.js';
-import { resetHostedBillingEntitlementStoreForTests } from '../src/service/billing-entitlement-store.js';
+import { resetBillingEventLedgerForTests } from '../src/service/billing/billing-event-ledger.js';
+import { resetHostedBillingEntitlementStoreForTests } from '../src/service/billing/billing-entitlement-store.js';
 import { resetHostedEmailDeliveryEventStoreForTests } from '../src/service/email-delivery-event-store.js';
 import { resetObservabilityForTests } from '../src/service/observability.js';
 import { resetTenantRateLimiterForTests } from '../src/service/rate-limit.js';
 import { shutdownTenantRuntimeBackends } from '../src/service/runtime/tenant-runtime.js';
-import { resetStripeWebhookStoreForTests } from '../src/service/stripe-webhook-store.js';
+import { resetStripeWebhookStoreForTests } from '../src/service/billing/stripe/stripe-webhook-store.js';
 import { resetTenantKeyStoreForTests } from '../src/service/tenant-key-store.js';
 import { resetUsageMeter } from '../src/service/usage-meter.js';
 

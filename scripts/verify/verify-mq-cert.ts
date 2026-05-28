@@ -1,7 +1,7 @@
 /**
  * Independent multi-query certificate verification from saved files.
  */
-import { verifyMultiQueryCertificate } from '../src/signing/multi-query-certificate.js';
+import { verifyMultiQueryCertificate } from '../../src/signing/multi-query-certificate.js';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 

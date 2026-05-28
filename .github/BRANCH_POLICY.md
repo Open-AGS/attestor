@@ -33,7 +33,7 @@ If a branch is more than 30 days old, more than 50 commits behind `origin/master
 Branches touching these surfaces require extra review before merge:
 
 - `.github/**`
-- `scripts/validate-pr-contract.mjs`
+- `scripts/verify/validate-pr-contract.mjs`
 - `src/consequence-admission/**`
 - `src/release-enforcement-plane/**`
 - `src/signing/**`

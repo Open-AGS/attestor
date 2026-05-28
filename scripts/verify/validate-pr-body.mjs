@@ -4,7 +4,7 @@ import { pathToFileURL } from 'node:url';
 import {
   formatBaselineAlignmentFailure,
   validateBaselineAlignment,
-} from './check/check-baseline-alignment.mjs';
+} from '../check/check-baseline-alignment.mjs';
 import {
   formatValidationFailure,
   validatePrContract,

@@ -23,7 +23,7 @@ Files changed by PR #521 are docs-only:
 - `docs/audit/current-posture-baseline.md`
 
 Chain-effect verdict: PR #521 does not touch `.github/**`,
-`scripts/validate-pr-contract.mjs`, `scripts/check/check-stale-branches.mjs`,
+`scripts/verify/validate-pr-contract.mjs`, `scripts/check/check-stale-branches.mjs`,
 `scripts/check/check-baseline-alignment.mjs`, or any workflow file. No regression, no
 config drift, no defense-in-depth weakening, and no closed-finding reopening
 was found in Sweep 15 scope.
@@ -40,7 +40,7 @@ Sweep 14 OPS-112 and OPS-113 remain open on `origin/master`.
 | Protected principles | release provenance; auditability; operational boundedness; fail-closed boundary; no overclaim |
 | Audit driver | `current-posture-baseline.md` + `finding-index.md` rows `Required commit signatures` and `Required PR reviews` + control-map `Release provenance` next-action |
 | External anchors | GitHub protected branches, required signed commits, required pull request reviews, CODEOWNERS, and GitHub Actions `GITHUB_TOKEN` permission scoping docs; NIST SP 800-218 PO.1 / PS.1 / PS.3 / PW.6 / PW.7; SLSA provenance vocabulary |
-| Scope | `.github/BRANCH_POLICY.md`, `.github/CODEOWNERS`, `.github/dependabot.yml`, `.github/pull_request_template.md`, `.github/workflows/*.yml`, `scripts/validate-pr-contract.mjs`, `scripts/check/check-stale-branches.mjs`, `scripts/check/check-baseline-alignment.mjs`, and audit index rows |
+| Scope | `.github/BRANCH_POLICY.md`, `.github/CODEOWNERS`, `.github/dependabot.yml`, `.github/pull_request_template.md`, `.github/workflows/*.yml`, `scripts/verify/validate-pr-contract.mjs`, `scripts/check/check-stale-branches.mjs`, `scripts/check/check-baseline-alignment.mjs`, and audit index rows |
 
 ## 2. Inspected Files
 
@@ -59,7 +59,7 @@ Sweep 14 OPS-112 and OPS-113 remain open on `origin/master`.
 | `.github/workflows/evaluation-smoke.yml` | targeted | PR and push smoke gate |
 | `.github/workflows/f-series-continuous-validation.yml` | targeted | Red-team replay continuous validation |
 | `.github/workflows/production-rehearsal.yml` | targeted | Gated production rehearsal trigger shape |
-| `scripts/validate-pr-contract.mjs` | full | Claim-vocabulary and PR-template validator |
+| `scripts/verify/validate-pr-contract.mjs` | full | Claim-vocabulary and PR-template validator |
 | `scripts/check/check-stale-branches.mjs` | targeted | Stale branch governance |
 | `scripts/check/check-baseline-alignment.mjs` | targeted | Baseline alignment gate |
 | `docs/audit/{finding-index,report-index,current-posture-baseline,control-map,live-proof-register}.md` | targeted | Current release-provenance claim state |

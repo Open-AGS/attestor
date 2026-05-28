@@ -57,6 +57,12 @@ function rehearseScriptFiles(): readonly string[] {
     .sort();
 }
 
+function verifyScriptFiles(): readonly string[] {
+  return readdirSync(join(process.cwd(), 'scripts', 'verify'))
+    .filter((entry) => /^(?:validate|verify)-.*\.(?:mjs|ts)$/u.test(entry))
+    .sort();
+}
+
 function familyCounts(files: readonly string[]): Readonly<Record<string, number>> {
   const family = {
     check: files.filter((file) => file.startsWith('check-')).length,
@@ -86,6 +92,7 @@ function testInventoryMirrorsCurrentScriptCounts(): void {
   const renderFiles = renderScriptFiles();
   const demoFiles = demoScriptFiles();
   const rehearseFiles = rehearseScriptFiles();
+  const verifyFiles = verifyScriptFiles();
   const counts = familyCounts(files);
 
   includes(doc, '# Scripts Inventory', 'Scripts inventory: title is present');
@@ -95,6 +102,7 @@ function testInventoryMirrorsCurrentScriptCounts(): void {
   includes(doc, `Render script files under \`scripts/render/\`: ${renderFiles.length}.`, 'Scripts inventory: render script count matches directory');
   includes(doc, `Demo script files under \`scripts/demo/\`: ${demoFiles.length}.`, 'Scripts inventory: demo script count matches directory');
   includes(doc, `Rehearsal script files under \`scripts/rehearse/\`: ${rehearseFiles.length}.`, 'Scripts inventory: rehearse script count matches directory');
+  includes(doc, `Verification script files under \`scripts/verify/\`: ${verifyFiles.length}.`, 'Scripts inventory: verify script count matches directory');
 
   for (const [label, count] of [
     ['`scripts/check/check-*`', checkFiles.length],
@@ -103,7 +111,7 @@ function testInventoryMirrorsCurrentScriptCounts(): void {
     ['`scripts/demo/demo-*`', demoFiles.length],
     ['`scripts/rehearse/rehearse-*`', rehearseFiles.length],
     ['`run-*`', counts.run],
-    ['`validate-*` and `verify-*`', counts.validateVerify],
+    ['`scripts/verify/{validate,verify}-*`', verifyFiles.length],
     ['`benchmark-*`', counts.benchmark],
     ['named ops helpers', counts.namedOps],
   ] as const) {

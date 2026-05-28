@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { validatePrBody } from '../scripts/validate-pr-body.mjs';
+import { validatePrBody } from '../scripts/verify/validate-pr-body.mjs';
 
 let passed = 0;
 
@@ -51,7 +51,7 @@ function completeTemplate(template: string): string {
     .replace('Live proof register updated:', 'Live proof register updated: no')
     .replace('Control map / research index updated:', 'Control map / research index updated: no')
     .replace('Evidence system exception:', 'Evidence system exception: no evidence-state change')
-    .replace('Files changed:', 'Files changed: scripts/validate-pr-body.mjs; tests/pr-body-validation.test.ts')
+    .replace('Files changed:', 'Files changed: scripts/verify/validate-pr-body.mjs; tests/pr-body-validation.test.ts')
     .replace(
       'Files intentionally not touched:',
       'Files intentionally not touched: runtime source; audit indexes',
@@ -91,7 +91,7 @@ function testPackageScriptExposesCombinedGate(): void {
 
   equal(
     packageJson.scripts['check:pr-body'],
-    'node scripts/validate-pr-body.mjs',
+    'node scripts/verify/validate-pr-body.mjs',
     'package script exposes combined PR body validation gate',
   );
   ok(

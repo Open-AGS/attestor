@@ -31,7 +31,7 @@ Files changed by PR #523 were docs-only:
 
 Chain-effect verdict: PR #523 does not touch `tests/**`,
 `scripts/check/check-audit-finding-evidence.mjs`,
-`scripts/validate-pr-contract.mjs`, or any source file. No regression, config
+`scripts/verify/validate-pr-contract.mjs`, or any source file. No regression, config
 drift, defense-in-depth weakening, or closed-finding reopening was found in
 Sweep 17 scope.
 

@@ -2,7 +2,7 @@
  * Independent multi-query verification kit check from saved files.
  * Verifies: certificate signature + manifest hash consistency + kit summary truth.
  */
-import { verifyMultiQueryCertificate } from '../src/signing/multi-query-certificate.js';
+import { verifyMultiQueryCertificate } from '../../src/signing/multi-query-certificate.js';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { createHash } from 'node:crypto';

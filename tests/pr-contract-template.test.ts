@@ -7,7 +7,7 @@ import {
   REQUIRED_NON_EMPTY_FIELDS,
   REQUIRED_SECTIONS,
   validatePrContract,
-} from '../scripts/validate-pr-contract.mjs';
+} from '../scripts/verify/validate-pr-contract.mjs';
 
 let passed = 0;
 

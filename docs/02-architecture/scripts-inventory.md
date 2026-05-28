@@ -19,7 +19,7 @@ Research anchors:
 
 ## Current Shape
 
-Root script files: 20.
+Root script files: 16.
 
 Check script files under `scripts/check/`: 8.
 
@@ -31,6 +31,8 @@ Demo script files under `scripts/demo/`: 8.
 
 Rehearsal script files under `scripts/rehearse/`: 4.
 
+Verification script files under `scripts/verify/`: 4.
+
 The scripts are less flat now, but still intentionally move one family at a
 time. The carved-out families are `scripts/check/`, which holds CI and local
 evidence guards, `scripts/probe/`, which holds opt-in package-surface, live,
@@ -38,8 +40,9 @@ provider, Stripe, HA, observability, and hosted-flow probes, and
 `scripts/render/`, which holds local packet, profile, proof, and deployment
 bundle renderers, and `scripts/demo/`, which holds local golden path demos and
 the shared demo path-boundary helper, and `scripts/rehearse/`, which holds
-operator rehearsal scripts. The remaining root-level script families should
-move only through small path-migration PRs that update package scripts,
+operator rehearsal scripts, and `scripts/verify/`, which holds PR-contract,
+PR-body, and multi-query kit verification helpers. The remaining root-level
+script families should move only through small path-migration PRs that update package scripts,
 workflows, tests, and docs together.
 
 ## Pick One Script Family
@@ -52,7 +55,7 @@ workflows, tests, and docs together.
 | `scripts/demo/demo-*` | 8 | You need a runnable local golden path or path-boundary demo. | `demo-golden-refund.ts`, `demo-golden-paths.ts`, `demo-path-boundary.ts` |
 | `scripts/rehearse/rehearse-*` | 4 | You need a production rehearsal script that simulates an operational path. | `rehearse-production-consequence-behavior.ts`, `rehearse-production-backup-restore-dr.ts` |
 | `run-*` | 3 | You need a suite runner or live/ops gate runner. | `run-suite.mjs`, `run-live-ops-gate.mjs` |
-| `validate-*` and `verify-*` | 4 | You need PR-body, PR-contract, or MQ-kit validation. | `validate-pr-body.mjs`, `validate-pr-contract.mjs`, `verify-mq-cert.ts` |
+| `scripts/verify/{validate,verify}-*` | 4 | You need PR-body, PR-contract, or MQ-kit validation. | `validate-pr-body.mjs`, `validate-pr-contract.mjs`, `verify-mq-cert.ts` |
 | `benchmark-*` | 2 | You need local performance or observability benchmark evidence. | `benchmark-observability.ts`, `benchmark-crypto-intelligence-performance.ts` |
 | named ops helpers | 11 | You need a named operator helper that does not fit a prefix family. | `control-plane-backup.ts`, `repo-pipeline-readiness.ts`, `bootstrap-stripe-commercial.ts` |
 

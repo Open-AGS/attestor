@@ -14,7 +14,7 @@
 /.github/workflows/pr-contract.yml @AI-gateway-systems
 /.github/workflows/security-scan.yml @AI-gateway-systems
 /.github/workflows/release-provenance.yml @AI-gateway-systems
-/scripts/validate-pr-contract.mjs @AI-gateway-systems
+/scripts/verify/validate-pr-contract.mjs @AI-gateway-systems
 
 /CONTRIBUTING.md @AI-gateway-systems
 /LICENSE @AI-gateway-systems

@@ -279,6 +279,7 @@ The machine-readable role contract is exported from `attestor/consequence-admiss
 - [Attestor language contract](docs/02-architecture/attestor-language-contract.md)
 - [Glossary](docs/02-architecture/glossary.md)
 - [Consequence admission public surface](docs/02-architecture/consequence-admission-public-surface.md)
+- [Service organization plan](docs/02-architecture/service-organization-plan.md)
 - [Scripts inventory](docs/02-architecture/scripts-inventory.md)
 - [Consequence taxonomy](docs/02-architecture/consequence-taxonomy.md)
 - [Domain pack boundary](docs/02-architecture/domain-pack-boundary.md)

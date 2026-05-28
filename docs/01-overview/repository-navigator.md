@@ -23,6 +23,7 @@ do the next action there, and come back only if you still need more context.
 | "What still needs real deployment evidence?" | [Live proof register](../audit/live-proof-register.md) | you know which proof is live/customer/operator-only. |
 | "How is this engine actually built?" | [Internal machine map](../02-architecture/attestor-internal-machine-map.md) | you can name the route, decision plane, package surface, and proof loop. |
 | "I need to change code safely." | [Code map](#code-map) | you know the owning directory and the nearest test surface. |
+| "I need to reorganize hosted runtime files." | [Service organization plan](../02-architecture/service-organization-plan.md) | you know the slice order, move rules, and no-claims. |
 
 ## Start By Intent
 
@@ -43,6 +44,7 @@ do the next action there, and come back only if you still need more context.
 | Review audit state | [Audit evidence system](../audit/README.md) | [Finding index](../audit/finding-index.md) |
 | Review public package boundaries | [Consequence admission public surface](../02-architecture/consequence-admission-public-surface.md) | [Release layer platform surface](../02-architecture/release-layer-platform-surface.md) |
 | Find the right maintainer script | [Scripts inventory](../02-architecture/scripts-inventory.md) | `npm run test:package-script-runner` |
+| Plan a hosted runtime refactor | [Service organization plan](../02-architecture/service-organization-plan.md) | `npm run test:service-organization-plan-docs` |
 
 ## Start By Role
 
@@ -62,6 +64,7 @@ do the next action there, and come back only if you still need more context.
 |---|---|---|
 | `src/consequence-admission/` | Shared admission contracts, decisions, guards, shadow, Policy Foundry, domain projections. | You are changing `admit` / `narrow` / `review` / `block` behavior or proof-shaped admission output. |
 | `src/service/` | Hosted runtime, route support, stores, account/billing/webhook/runtime services. | You are changing an HTTP route, hosted account flow, billing, webhook, persistence, or deployment-facing runtime behavior. |
+| `src/service/` reorg plan | [Service organization plan](../02-architecture/service-organization-plan.md) | You are planning to move hosted runtime files without changing behavior. |
 | `src/service/http/routes/` | Hono route handlers. | You need request/response behavior for `/api/v1/*`. |
 | `src/service/bootstrap/` | Runtime assembly and dependency wiring. | You need to see how routes and stores are composed. |
 | `src/release-kernel/` | Release decisions, evidence packs, tokens, canonicalization, reviewer queue primitives. | You are changing release authority or proof material before enforcement. |

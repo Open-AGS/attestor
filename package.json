@@ -88,6 +88,7 @@
     "test:product-positioning-docs": "tsx tests/product-positioning-docs.test.ts",
     "test:product-use-cases-docs": "tsx tests/product-use-cases-docs.test.ts",
     "test:repository-navigator-docs": "tsx tests/repository-navigator-docs.test.ts",
+    "test:service-organization-plan-docs": "tsx tests/service-organization-plan-docs.test.ts",
     "test:scripts-inventory-docs": "tsx tests/scripts-inventory-docs.test.ts",
     "test:glossary-docs": "tsx tests/glossary-docs.test.ts",
     "test:customer-integration-recipes-docs": "tsx tests/customer-integration-recipes-docs.test.ts",

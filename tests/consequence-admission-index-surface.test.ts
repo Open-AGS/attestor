@@ -18,6 +18,7 @@ function readProjectFile(path: string): string {
 }
 
 const indexSource = readProjectFile('src/consequence-admission/index.ts');
+const correctionCatalogSource = readProjectFile('src/consequence-admission/correction-catalog.ts');
 const publicSurfaceSource = readProjectFile('src/consequence-admission/public-surface.ts');
 const contractTest = readProjectFile('tests/consequence-admission-contract.test.ts');
 const genericModeTest = readProjectFile('tests/generic-admission-mode-ladder.test.ts');
@@ -73,10 +74,14 @@ ok(
   'OPS-170: generic admission envelope export is present',
 );
 ok(
-  /export function evaluateConsequenceAdmissionRetryBudget\s*\(/.test(indexSource),
+  /evaluateConsequenceAdmissionRetryBudget,/.test(indexSource) &&
+    /export function evaluateConsequenceAdmissionRetryBudget\s*\(/.test(correctionCatalogSource),
   'OPS-170: retry-budget evaluator export is present',
 );
-ok(/function retryBudgetInstruction\s*\(/.test(indexSource), 'OPS-170: retry-budget instruction helper is present');
+ok(
+  /function retryBudgetInstruction\s*\(/.test(correctionCatalogSource),
+  'OPS-170: retry-budget instruction helper is present',
+);
 
 includes(
   contractTest,

@@ -23,7 +23,7 @@ try {
   const tracker = readProjectFile('docs', 'audit', 'attestor-audit-remediation-tracker.md');
   const packageJson = readProjectFile('package.json');
   const moduleSource = readProjectFile('src', 'consequence-admission', 'shadow-readiness-claim-alignment.ts');
-  const indexSource = readProjectFile('src', 'consequence-admission', 'index.ts');
+  const descriptorSource = readProjectFile('src', 'consequence-admission', 'descriptor.ts');
   const coreRoutes = readProjectFile('src', 'service', 'http', 'routes', 'core-routes.ts');
 
   includes(validation, '# F7 Shadow Readiness Claim Alignment Validation', 'F7 readiness validation: title exists');
@@ -40,8 +40,8 @@ try {
   includes(moduleSource, 'readinessOnly: true', 'Repo evidence: readiness-only output is explicit');
   includes(moduleSource, 'rawPayloadStored: false', 'Repo evidence: raw payload storage is false');
 
-  includes(indexSource, 'shadowReadinessClaimAlignmentVersion', 'Repo evidence: descriptor exposes shadow readiness version');
-  includes(indexSource, 'consequenceShadowReadinessClaimAlignmentDescriptor', 'Repo evidence: descriptor embeds shadow readiness surface');
+  includes(descriptorSource, 'shadowReadinessClaimAlignmentVersion', 'Repo evidence: descriptor exposes shadow readiness version');
+  includes(descriptorSource, 'consequenceShadowReadinessClaimAlignmentDescriptor', 'Repo evidence: descriptor embeds shadow readiness surface');
 
   includes(coreRoutes, 'evaluateConsequenceShadowReadinessClaimAlignment', 'Repo evidence: core readiness evaluates shadow readiness');
   includes(coreRoutes, 'checks.shadowReadinessClaimAlignment', 'Repo evidence: /ready exposes shadow readiness check');

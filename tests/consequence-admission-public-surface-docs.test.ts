@@ -25,6 +25,8 @@ function testDocMirrorsCurrentSurfaceCounts(): void {
   const doc = readProjectFile('docs', '02-architecture', 'consequence-admission-public-surface.md');
   const indexSource = readProjectFile('src', 'consequence-admission', 'index.ts');
   const contractsSource = readProjectFile('src', 'consequence-admission', 'contracts.ts');
+  const correctionCatalogSource = readProjectFile('src', 'consequence-admission', 'correction-catalog.ts');
+  const descriptorSource = readProjectFile('src', 'consequence-admission', 'descriptor.ts');
   const publicSurfaceSource = readProjectFile('src', 'consequence-admission', 'public-surface.ts');
 
   const indexExportLines = [...indexSource.matchAll(/^export\s/gm)].length;
@@ -32,6 +34,10 @@ function testDocMirrorsCurrentSurfaceCounts(): void {
     ...indexSource.matchAll(/^export\s+(?:type|interface|class|const|function|enum)\s/gm),
   ].length;
   const contractModuleLines = contractsSource.split(/\r?\n/u).filter((line) => line.length > 0).length;
+  const correctionCatalogModuleLines =
+    correctionCatalogSource.split(/\r?\n/u).filter((line) => line.length > 0).length;
+  const descriptorModuleLines =
+    descriptorSource.split(/\r?\n/u).filter((line) => line.length > 0).length;
   const publicSurfaceReExports = [
     ...publicSurfaceSource.matchAll(/^export \* from ['"]\.\/[^'"]+['"];$/gm),
   ].length;
@@ -47,6 +53,16 @@ function testDocMirrorsCurrentSurfaceCounts(): void {
     doc,
     `contract module non-empty lines: ${contractModuleLines}`,
     'Public surface docs: contract module line count matches source',
+  );
+  includes(
+    doc,
+    `correction catalog module non-empty lines: ${correctionCatalogModuleLines}`,
+    'Public surface docs: correction catalog module line count matches source',
+  );
+  includes(
+    doc,
+    `descriptor module non-empty lines: ${descriptorModuleLines}`,
+    'Public surface docs: descriptor module line count matches source',
   );
   includes(
     doc,
@@ -90,7 +106,8 @@ function testDocLocksV2SplitInventory(): void {
     'Generic guard orchestration',
     'Decision and mapping helpers',
     'Correction catalogue and retry budget',
-    'Builders and descriptor',
+    'Descriptor builder',
+    'Builders',
     'Compatibility delegation',
   ]) {
     includes(doc, expected, `Public surface docs: V2-09 locks ${expected}`);
@@ -98,10 +115,11 @@ function testDocLocksV2SplitInventory(): void {
 
   for (const expected of [
     'V2-10 complete',
-    'V2-11 descriptor/catalog split',
+    'V2-11 complete',
     'V2-12 engine helpers split',
     "plus trailing `export * from './public-surface.js'`",
     '`contracts.ts` remains internal to the package source tree',
+    '`correction-catalog.ts` and `descriptor.ts` remain internal to the package',
     '`public-surface.ts` remains a pure sibling re-export catalogue',
     'no split PR may change `admit`, `narrow`, `review`, or `block` semantics',
   ]) {

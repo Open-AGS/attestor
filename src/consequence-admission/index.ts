@@ -1,154 +1,20 @@
-import { createHash } from 'node:crypto';
 import {
-  canonicalizeReleaseJson,
-  type CanonicalReleaseJsonValue,
-} from '../release-kernel/release-canonicalization.js';
+  createHash,
+} from 'node:crypto';
 import type {
   CryptoExecutionAdmissionOutcome,
 } from '../crypto-execution-admission/index.js';
 import {
-  CONSEQUENCE_ADMISSION_CONTROL_REQUIREMENTS,
-  CONSEQUENCE_ADMISSION_DOMAINS,
-  CONSEQUENCE_ADMISSION_TAXONOMY,
-  consequenceAdmissionDomainProfile,
-} from './taxonomy.js';
-import {
-  CONSEQUENCE_ADMISSION_POLICY_LIMIT_BREACH_ACTIONS,
-  CONSEQUENCE_ADMISSION_POLICY_LIMIT_KINDS,
-} from './policy-limits.js';
-import {
-  CONSEQUENCE_ADMISSION_PRESENTATION_BINDING_FIELDS,
-} from './presentation-binding.js';
-import {
-  CONSEQUENCE_ADMISSION_PRESENTATION_REPLAY_LEDGER_FAILURE_REASONS,
-} from './presentation-replay-ledger.js';
-import {
-  CONSEQUENCE_ADMISSION_DOWNSTREAM_EXECUTION_STATUSES,
-} from './downstream-execution-receipt.js';
-import {
-  CONSEQUENCE_ADMISSION_CONSTRAINT_KINDS,
-  CONSEQUENCE_ADMISSION_CONSTRAINT_PARAMETER_DIGEST_PATTERN,
-  isConsequenceAdmissionConstraintKind,
-  type ConsequenceAdmissionConstraintKind,
-} from './constraint-kinds.js';
-import {
-  CONSEQUENCE_ADMISSION_RETRY_ATTEMPT_LEDGER_FAILURE_REASONS,
-  CONSEQUENCE_ADMISSION_RETRY_ATTEMPT_LEDGER_OUTCOMES,
-  CONSEQUENCE_ADMISSION_RETRY_ATTEMPT_LEDGER_VERSION,
-} from './retry-attempt-ledger.js';
-import {
-  CONSEQUENCE_ADMISSION_AGENT_LOOP_ABUSE_GUARD_OUTCOMES,
-  CONSEQUENCE_ADMISSION_AGENT_LOOP_ABUSE_GUARD_REASON_CODES,
-  CONSEQUENCE_ADMISSION_AGENT_LOOP_ABUSE_GUARD_VERSION,
-} from './agent-loop-abuse-guard.js';
-import {
-  CONSEQUENCE_ADMISSION_ADAPTER_KINDS,
-  CONSEQUENCE_ADMISSION_ADAPTER_OUTCOMES,
-} from './adapter-framework.js';
-import {
-  CONSEQUENCE_AUDIT_EVIDENCE_ARTIFACT_KINDS,
-  CONSEQUENCE_AUDIT_EVIDENCE_FINDING_KINDS,
-} from './audit-evidence-export.js';
-import {
-  CONSEQUENCE_TAMPER_EVIDENT_HISTORY_ENTRY_KINDS,
-  CONSEQUENCE_TAMPER_EVIDENT_HISTORY_VERIFICATION_FAILURE_REASONS,
-  CONSEQUENCE_TAMPER_EVIDENT_HISTORY_VERSION,
-} from './tamper-evident-history.js';
-import {
-  CONSEQUENCE_BUSINESS_RISK_DASHBOARD_WIDGETS,
-  CONSEQUENCE_BUSINESS_RISK_SIGNALS,
-} from './business-risk-dashboard.js';
-import {
-  CONSEQUENCE_DASHBOARD_API_SUMMARY_ATTENTION_KINDS,
-  CONSEQUENCE_DASHBOARD_API_SUMMARY_LINK_KINDS,
-  CONSEQUENCE_DASHBOARD_API_SUMMARY_TILE_KINDS,
-} from './dashboard-api-summary.js';
-import {
-  CONSEQUENCE_EXTERNAL_REVIEW_EVIDENCE_KINDS,
-  CONSEQUENCE_EXTERNAL_REVIEW_EVIDENCE_STATUSES,
-  CONSEQUENCE_EXTERNAL_REVIEW_FINDING_KINDS,
-  CONSEQUENCE_EXTERNAL_REVIEW_FOCUS_AREAS,
-} from './external-review-packet.js';
-import {
-  CONSEQUENCE_DATA_MINIMIZATION_FORBIDDEN_RAW_CLASSES,
-  CONSEQUENCE_DATA_MINIMIZATION_REDACTION_POLICY_VERSION,
-  CONSEQUENCE_DATA_MINIMIZATION_SURFACE_KINDS,
-} from './data-minimization-redaction-policy.js';
-import {
-  CONSEQUENCE_ADMISSION_PACK_DECISION_POSTURES,
-  CONSEQUENCE_ADMISSION_PACK_DECISION_PROFILE_VERSION,
-  CONSEQUENCE_ADMISSION_PACK_DECISION_RECOMMENDED_ACTIONS,
-  CONSEQUENCE_ADMISSION_PACK_DECISION_SIGNAL_KINDS,
-} from './pack-decision-profile.js';
-import {
-  CONSEQUENCE_DOMAIN_PACK_BOUNDARY_VERSION,
-  consequenceDomainPackBoundaryDescriptor,
-} from './domain-pack-boundary.js';
-import {
-  ATTESTOR_CONTROL_PLANE_ROLES,
-  ATTESTOR_CONTROL_PLANE_ROLE_VERSION,
-  ATTESTOR_CONTROL_PLANE_ROLE_DESCRIPTORS,
-} from './control-plane-roles.js';
-import {
-  CONSEQUENCE_FAILURE_MODE_REGISTRY_PLACEMENT_VERSION,
-  consequenceFailureModeRegistryPlacementDescriptor,
-} from './failure-mode-registry.js';
-import {
-  CONSEQUENCE_REPLAY_LAYER_PLACEMENT_VERSION,
-  consequenceReplayLayerPlacementDescriptor,
-} from './replay-layer-placement.js';
-import {
-  CONSEQUENCE_GUARD_ACTIVATION_READINESS_VERSION,
-  consequenceGuardActivationReadinessDescriptor,
-} from './guard-activation-readiness.js';
-import {
-  CONSEQUENCE_SHADOW_READINESS_CLAIM_ALIGNMENT_VERSION,
-  consequenceShadowReadinessClaimAlignmentDescriptor,
-} from './shadow-readiness-claim-alignment.js';
-import {
-  CONSEQUENCE_FAILURE_MODE_GUARD_COVERAGE_VERSION,
-  consequenceFailureModeGuardCoverageMatrix,
-} from './failure-mode-guard-coverage.js';
-import {
-  CONSEQUENCE_HUMAN_REVIEW_FATIGUE_OUTCOMES,
-  CONSEQUENCE_HUMAN_REVIEW_FATIGUE_REASON_CODES,
-  CONSEQUENCE_HUMAN_REVIEW_FATIGUE_GUARD_VERSION,
-  CONSEQUENCE_HUMAN_REVIEW_SURFACE_KINDS,
-  evaluateConsequenceHumanReviewFatigue,
-  type ConsequenceHumanReviewFatigueDecision,
-} from './human-review-fatigue-guard.js';
+  canonicalizeReleaseJson,
+  type CanonicalReleaseJsonValue,
+} from '../release-kernel/release-canonicalization.js';
 import {
   CONSEQUENCE_AGENTIC_SUPPLY_CHAIN_COMPONENT_KINDS,
   CONSEQUENCE_AGENTIC_SUPPLY_CHAIN_CRITICALITY,
-  CONSEQUENCE_AGENTIC_SUPPLY_CHAIN_GUARD_OUTCOMES,
-  CONSEQUENCE_AGENTIC_SUPPLY_CHAIN_GUARD_VERSION,
-  CONSEQUENCE_AGENTIC_SUPPLY_CHAIN_REASON_CODES,
   CONSEQUENCE_AGENTIC_SUPPLY_CHAIN_TRUST_CLASSES,
   evaluateConsequenceAgenticSupplyChain,
   type ConsequenceAgenticSupplyChainDecision,
 } from './agentic-supply-chain-guard.js';
-import {
-  CONSEQUENCE_MULTI_AGENT_DELEGATION_PRINCIPAL_KINDS,
-  CONSEQUENCE_MULTI_AGENT_DELEGATION_GUARD_OUTCOMES,
-  CONSEQUENCE_MULTI_AGENT_DELEGATION_GUARD_VERSION,
-  CONSEQUENCE_MULTI_AGENT_DELEGATION_REASON_CODES,
-  CONSEQUENCE_MULTI_AGENT_DELEGATION_ROLES,
-  evaluateConsequenceMultiAgentDelegation,
-  type ConsequenceMultiAgentDelegationDecision,
-} from './multi-agent-delegation-guard.js';
-import {
-  CONSEQUENCE_FAILURE_MODE_RUNTIME_EXTENSION_OUTCOMES,
-  CONSEQUENCE_FAILURE_MODE_RUNTIME_EXTENSION_REASON_CODES,
-  CONSEQUENCE_FAILURE_MODE_RUNTIME_EXTENSION_VERSION,
-} from './failure-mode-runtime-extensions.js';
-import {
-  CUSTOMER_PEP_RUNTIME_ADOPTION_VERSION,
-  customerPepRuntimeAdoptionDescriptor,
-} from './customer-pep-runtime-adoption.js';
-import {
-  CUSTOMER_PEP_ADOPTION_PACKAGE_VERSION,
-  customerPepAdoptionPackageDescriptor,
-} from './customer-pep-adoption-package.js';
 import {
   CONSEQUENCE_APPROVAL_SOURCE_KINDS,
   CONSEQUENCE_APPROVAL_STATES,
@@ -156,125 +22,38 @@ import {
   evaluateConsequenceApprovalProvenance,
   type ConsequenceApprovalProvenanceDecision,
 } from './approval-provenance-guard.js';
-import {
-  CONSEQUENCE_UNTRUSTED_CONTENT_AUTHORITY_CLAIM_KINDS,
-  CONSEQUENCE_UNTRUSTED_CONTENT_AUTHORITY_SOURCE_KINDS,
-  CONSEQUENCE_UNTRUSTED_CONTENT_AUTHORITY_TRUST_CLASSES,
-  evaluateConsequenceUntrustedContentAuthority,
-  type ConsequenceUntrustedContentAuthorityDecision,
-} from './untrusted-content-authority-guard.js';
-import {
-  CONSEQUENCE_NO_GO_CONDITION_KINDS,
-  CONSEQUENCE_NO_GO_CONDITION_SOURCE_KINDS,
-  CONSEQUENCE_NO_GO_CONDITION_STATES,
-  evaluateConsequenceNoGoConditionLedger,
-  type ConsequenceNoGoConditionLedgerDecision,
-} from './no-go-condition-ledger.js';
-import {
-  CONSEQUENCE_SCOPE_EXPLOSION_DATA_CLASSES,
-  CONSEQUENCE_SCOPE_EXPLOSION_OPERATION_TYPES,
-  CONSEQUENCE_SCOPE_EXPLOSION_REVERSIBILITY_CLASSES,
-  evaluateConsequenceScopeExplosion,
-  type ConsequenceScopeExplosionDecision,
-} from './scope-explosion-guard.js';
-import {
-  CONSEQUENCE_TOOL_RESULT_EVIDENCE_CLASSES,
-  CONSEQUENCE_TOOL_RESULT_RISK_LEVELS,
-  CONSEQUENCE_TOOL_RESULT_SOURCE_TRUST_CLASSES,
-  CONSEQUENCE_TOOL_RESULT_TOOL_KINDS,
-  CONSEQUENCE_TOOL_RESULT_USE_KINDS,
-  evaluateConsequenceToolResultPoisoning,
-  type ConsequenceToolResultPoisoningDecision,
-} from './tool-result-poisoning-guard.js';
-import {
-  CONSEQUENCE_STALE_AUTHORITY_POLICY_DRIFT_STATES,
-  evaluateConsequenceStaleAuthorityPolicy,
-  type ConsequenceStaleAuthorityPolicyDecision,
-} from './stale-authority-policy-guard.js';
-import {
-  CONSEQUENCE_DECISION_CONTEXT_DRIFT_BINDING_VERSION,
-  CONSEQUENCE_DECISION_CONTEXT_DRIFT_OUTCOMES,
-  CONSEQUENCE_DECISION_CONTEXT_DRIFT_REASON_CODES,
-  evaluateConsequenceDecisionContextDrift,
-  type ConsequenceDecisionContextDriftDecision,
-} from './decision-context-drift-binding.js';
-import {
-  AUTHORITY_CREEP_FINDINGS,
-  AUTHORITY_CREEP_GUARD_VERSION,
-  AUTHORITY_CREEP_OUTCOMES,
-  createAuthorityCreepGuard,
-  type AuthorityCreepGuardRecord,
-} from './authority-creep-guard.js';
-import type {
-  DecisionLineageGraphRecord,
-} from './decision-lineage-graph.js';
 import type {
   AssuranceMeasurementPlane,
 } from './assurance-measurement-plane.js';
 import {
-  PROTECTED_ADMISSION_E2E_PROOF_PLAN_VERSION,
-  protectedAdmissionE2eProofPlanDescriptor,
-} from './protected-admission-e2e-proof-plan.js';
+  AUTHORITY_CREEP_GUARD_VERSION,
+  createAuthorityCreepGuard,
+  type AuthorityCreepGuardRecord,
+} from './authority-creep-guard.js';
 import {
-  CONSEQUENCE_ADMISSION_CHECK_KINDS,
-  CONSEQUENCE_ADMISSION_CHECK_OUTCOMES,
-  CONSEQUENCE_ADMISSION_CONSEQUENCE_KINDS,
-  CONSEQUENCE_ADMISSION_CONTRACT_VERSION,
-  CONSEQUENCE_ADMISSION_CORRECTION_AUDIENCES,
-  CONSEQUENCE_ADMISSION_CORRECTION_CATALOG_VERSION,
-  CONSEQUENCE_ADMISSION_DECISIONS,
-  CONSEQUENCE_ADMISSION_ENTRY_POINT_KINDS,
-  CONSEQUENCE_ADMISSION_FEEDBACK_DISCLOSURE_LEVELS,
-  CONSEQUENCE_ADMISSION_NATIVE_SURFACES,
-  CONSEQUENCE_ADMISSION_PACK_FAMILIES,
-  CONSEQUENCE_ADMISSION_PROOF_KINDS,
-  CONSEQUENCE_ADMISSION_RETRY_ATTEMPT_VERSION,
-  CONSEQUENCE_ADMISSION_RETRY_BINDING_FIELDS,
-  CONSEQUENCE_ADMISSION_RETRY_BUDGET_OUTCOMES,
-  CONSEQUENCE_ADMISSION_RETRY_DEFAULT_MAX_ATTEMPTS,
-  CONSEQUENCE_ADMISSION_RETRY_DEFAULT_WINDOW_SECONDS,
-  CONSEQUENCE_ADMISSION_RETRY_RULE_VERSION,
-  CONSEQUENCE_ADMISSION_RISK_CLASSES,
-  GENERIC_ADMISSION_AGENTIC_SUPPLY_CHAIN_REASON_CODES,
-  GENERIC_ADMISSION_APPROVAL_GUARD_REASON_CODES,
-  GENERIC_ADMISSION_AUTHORITY_GUARD_REASON_CODES,
-  GENERIC_ADMISSION_DECISION_CONTEXT_DRIFT_REASON_CODES,
-  GENERIC_ADMISSION_DOWNSTREAM_POSTURES,
-  GENERIC_ADMISSION_HUMAN_REVIEW_FATIGUE_REASON_CODES,
-  GENERIC_ADMISSION_MODES,
-  GENERIC_ADMISSION_MULTI_AGENT_DELEGATION_REASON_CODES,
-  GENERIC_ADMISSION_NO_GO_REASON_CODES,
-  GENERIC_ADMISSION_OBSERVED_FEATURE_ORIGINS,
-  GENERIC_ADMISSION_SHADOW_DECISIONS,
-  GENERIC_ADMISSION_TOOL_RESULT_REASON_CODES,
-  GENERIC_ADMISSION_TRUSTED_OBSERVED_FEATURE_ORIGINS,
-} from './contracts.js';
+  CONSEQUENCE_ADMISSION_CONSTRAINT_KINDS,
+  CONSEQUENCE_ADMISSION_CONSTRAINT_PARAMETER_DIGEST_PATTERN,
+  isConsequenceAdmissionConstraintKind,
+  type ConsequenceAdmissionConstraintKind,
+} from './constraint-kinds.js';
 import type {
   ConsequenceAdmissionCheck,
   ConsequenceAdmissionCheckKind,
   ConsequenceAdmissionCheckOutcome,
   ConsequenceAdmissionConstraint,
-  ConsequenceAdmissionCorrectionCatalog,
-  ConsequenceAdmissionCorrectionCatalogEntry,
   ConsequenceAdmissionDecision,
-  ConsequenceAdmissionDescriptor,
   ConsequenceAdmissionEvidenceRef,
-  ConsequenceAdmissionFeedback,
-  ConsequenceAdmissionFeedbackDisclosureLevel,
   ConsequenceAdmissionNativeDecision,
   ConsequenceAdmissionProblem,
   ConsequenceAdmissionProofRef,
   ConsequenceAdmissionRequest,
   ConsequenceAdmissionResponse,
   ConsequenceAdmissionRetryAttemptBinding,
-  ConsequenceAdmissionRetryBudgetEvaluation,
-  ConsequenceAdmissionRetryGuidance,
   CreateConsequenceAdmissionConstraintInput,
   CreateConsequenceAdmissionRequestInput,
   CreateConsequenceAdmissionResponseInput,
   CreateConsequenceAdmissionRetryAttemptBindingInput,
   CreateGenericAdmissionInput,
-  EvaluateConsequenceAdmissionRetryBudgetInput,
   GenericAdmissionAgenticSupplyChain,
   GenericAdmissionAgenticSupplyChainComponent,
   GenericAdmissionAmount,
@@ -299,6 +78,87 @@ import type {
   GenericAdmissionStaleAuthorityPolicy,
   GenericAdmissionToolResult,
 } from './contracts.js';
+import {
+  CONSEQUENCE_ADMISSION_CHECK_KINDS,
+  CONSEQUENCE_ADMISSION_CHECK_OUTCOMES,
+  CONSEQUENCE_ADMISSION_CONSEQUENCE_KINDS,
+  CONSEQUENCE_ADMISSION_CONTRACT_VERSION,
+  CONSEQUENCE_ADMISSION_DECISIONS,
+  CONSEQUENCE_ADMISSION_ENTRY_POINT_KINDS,
+  CONSEQUENCE_ADMISSION_NATIVE_SURFACES,
+  CONSEQUENCE_ADMISSION_PACK_FAMILIES,
+  CONSEQUENCE_ADMISSION_PROOF_KINDS,
+  CONSEQUENCE_ADMISSION_RETRY_ATTEMPT_VERSION,
+  CONSEQUENCE_ADMISSION_RISK_CLASSES,
+  GENERIC_ADMISSION_AGENTIC_SUPPLY_CHAIN_REASON_CODES,
+  GENERIC_ADMISSION_APPROVAL_GUARD_REASON_CODES,
+  GENERIC_ADMISSION_AUTHORITY_GUARD_REASON_CODES,
+  GENERIC_ADMISSION_DECISION_CONTEXT_DRIFT_REASON_CODES,
+  GENERIC_ADMISSION_HUMAN_REVIEW_FATIGUE_REASON_CODES,
+  GENERIC_ADMISSION_MODES,
+  GENERIC_ADMISSION_MULTI_AGENT_DELEGATION_REASON_CODES,
+  GENERIC_ADMISSION_NO_GO_REASON_CODES,
+  GENERIC_ADMISSION_OBSERVED_FEATURE_ORIGINS,
+  GENERIC_ADMISSION_TOOL_RESULT_REASON_CODES,
+  GENERIC_ADMISSION_TRUSTED_OBSERVED_FEATURE_ORIGINS,
+} from './contracts.js';
+import {
+  evaluateConsequenceDecisionContextDrift,
+  type ConsequenceDecisionContextDriftDecision,
+} from './decision-context-drift-binding.js';
+import type {
+  DecisionLineageGraphRecord,
+} from './decision-lineage-graph.js';
+import {
+  CONSEQUENCE_HUMAN_REVIEW_SURFACE_KINDS,
+  evaluateConsequenceHumanReviewFatigue,
+  type ConsequenceHumanReviewFatigueDecision,
+} from './human-review-fatigue-guard.js';
+import {
+  CONSEQUENCE_MULTI_AGENT_DELEGATION_PRINCIPAL_KINDS,
+  CONSEQUENCE_MULTI_AGENT_DELEGATION_ROLES,
+  evaluateConsequenceMultiAgentDelegation,
+  type ConsequenceMultiAgentDelegationDecision,
+} from './multi-agent-delegation-guard.js';
+import {
+  CONSEQUENCE_NO_GO_CONDITION_KINDS,
+  CONSEQUENCE_NO_GO_CONDITION_SOURCE_KINDS,
+  CONSEQUENCE_NO_GO_CONDITION_STATES,
+  evaluateConsequenceNoGoConditionLedger,
+  type ConsequenceNoGoConditionLedgerDecision,
+} from './no-go-condition-ledger.js';
+import {
+  CONSEQUENCE_SCOPE_EXPLOSION_DATA_CLASSES,
+  CONSEQUENCE_SCOPE_EXPLOSION_OPERATION_TYPES,
+  CONSEQUENCE_SCOPE_EXPLOSION_REVERSIBILITY_CLASSES,
+  evaluateConsequenceScopeExplosion,
+  type ConsequenceScopeExplosionDecision,
+} from './scope-explosion-guard.js';
+import {
+  CONSEQUENCE_STALE_AUTHORITY_POLICY_DRIFT_STATES,
+  evaluateConsequenceStaleAuthorityPolicy,
+  type ConsequenceStaleAuthorityPolicyDecision,
+} from './stale-authority-policy-guard.js';
+import {
+  CONSEQUENCE_ADMISSION_DOMAINS,
+  consequenceAdmissionDomainProfile,
+} from './taxonomy.js';
+import {
+  CONSEQUENCE_TOOL_RESULT_EVIDENCE_CLASSES,
+  CONSEQUENCE_TOOL_RESULT_RISK_LEVELS,
+  CONSEQUENCE_TOOL_RESULT_SOURCE_TRUST_CLASSES,
+  CONSEQUENCE_TOOL_RESULT_TOOL_KINDS,
+  CONSEQUENCE_TOOL_RESULT_USE_KINDS,
+  evaluateConsequenceToolResultPoisoning,
+  type ConsequenceToolResultPoisoningDecision,
+} from './tool-result-poisoning-guard.js';
+import {
+  CONSEQUENCE_UNTRUSTED_CONTENT_AUTHORITY_CLAIM_KINDS,
+  CONSEQUENCE_UNTRUSTED_CONTENT_AUTHORITY_SOURCE_KINDS,
+  CONSEQUENCE_UNTRUSTED_CONTENT_AUTHORITY_TRUST_CLASSES,
+  evaluateConsequenceUntrustedContentAuthority,
+  type ConsequenceUntrustedContentAuthorityDecision,
+} from './untrusted-content-authority-guard.js';
 export {
   CONSEQUENCE_ADMISSION_CHECK_KINDS,
   CONSEQUENCE_ADMISSION_CHECK_OUTCOMES,
@@ -385,6 +245,12 @@ export type {
   GenericAdmissionStaleAuthorityPolicy,
   GenericAdmissionToolResult,
 } from './contracts.js';
+export {
+  CONSEQUENCE_ADMISSION_CORRECTION_CATALOG_ENTRIES,
+  consequenceAdmissionCorrectionCatalog,
+  consequenceAdmissionCorrectionForReason,
+  evaluateConsequenceAdmissionRetryBudget,
+} from './correction-catalog.js';
 
 function normalizeIdentifier(value: string | null | undefined, fieldName: string): string {
   if (typeof value !== 'string') {
@@ -2807,853 +2673,11 @@ export function createConsequenceAdmissionCheck(
   });
 }
 
-export const CONSEQUENCE_ADMISSION_CORRECTION_CATALOG_ENTRIES:
-readonly ConsequenceAdmissionCorrectionCatalogEntry[] = Object.freeze([
-  {
-    reasonCode: 'policy-ref-missing',
-    audience: 'model',
-    disclosureLevel: 'actionable',
-    missingFields: ['policyRef'],
-    requiredEvidenceKinds: ['policy_ref'],
-    retryableByModel: true,
-    operatorOnly: false,
-    safeSummary: 'Attach a bounded policy reference accepted by the customer environment.',
-  },
-  {
-    reasonCode: 'evidence-ref-missing',
-    audience: 'model',
-    disclosureLevel: 'actionable',
-    missingFields: ['evidenceRefs'],
-    requiredEvidenceKinds: ['evidence_ref'],
-    retryableByModel: true,
-    operatorOnly: false,
-    safeSummary: 'Attach evidence references instead of raw customer or private data.',
-  },
-  {
-    reasonCode: 'amount-scope-missing',
-    audience: 'model',
-    disclosureLevel: 'actionable',
-    missingFields: ['amount'],
-    requiredEvidenceKinds: [],
-    retryableByModel: true,
-    operatorOnly: false,
-    safeSummary: 'Provide the proposed amount scope as structured metadata.',
-  },
-  {
-    reasonCode: 'recipient-scope-missing',
-    audience: 'model',
-    disclosureLevel: 'actionable',
-    missingFields: ['recipient'],
-    requiredEvidenceKinds: [],
-    retryableByModel: true,
-    operatorOnly: false,
-    safeSummary: 'Provide a bounded recipient reference for the proposed consequence.',
-  },
-  {
-    reasonCode: 'data-scope-missing',
-    audience: 'model',
-    disclosureLevel: 'actionable',
-    missingFields: ['dataScope'],
-    requiredEvidenceKinds: ['data_scope_ref'],
-    retryableByModel: true,
-    operatorOnly: false,
-    safeSummary: 'Provide data scope metadata such as classification, fields, or record bounds.',
-  },
-  {
-    reasonCode: 'authority-mode-missing',
-    audience: 'model',
-    disclosureLevel: 'actionable',
-    missingFields: ['authorityMode'],
-    requiredEvidenceKinds: ['authority_ref'],
-    retryableByModel: true,
-    operatorOnly: false,
-    safeSummary: 'Provide the customer-approved authority mode or authority reference.',
-  },
-  {
-    reasonCode: 'authority-source-missing',
-    audience: 'operator-control',
-    disclosureLevel: 'minimal',
-    missingFields: ['authoritySources'],
-    requiredEvidenceKinds: ['trusted_authority_source_ref'],
-    retryableByModel: false,
-    operatorOnly: true,
-    safeSummary: 'A trusted authority source must be supplied by the customer gateway, operator workflow, or trusted authority record.',
-  },
-  {
-    reasonCode: 'untrusted-content-authority-source',
-    audience: 'operator-control',
-    disclosureLevel: 'minimal',
-    missingFields: ['authoritySources'],
-    requiredEvidenceKinds: ['trusted_authority_source_ref'],
-    retryableByModel: false,
-    operatorOnly: true,
-    safeSummary: 'Untrusted content cannot authorize the proposed consequence.',
-  },
-  {
-    reasonCode: 'model-generated-authority-source',
-    audience: 'operator-control',
-    disclosureLevel: 'minimal',
-    missingFields: ['authoritySources'],
-    requiredEvidenceKinds: ['trusted_authority_source_ref'],
-    retryableByModel: false,
-    operatorOnly: true,
-    safeSummary: 'Model-generated text cannot be used as authority for the proposed consequence.',
-  },
-  {
-    reasonCode: 'trust-class-override-rejected',
-    audience: 'operator-control',
-    disclosureLevel: 'minimal',
-    missingFields: ['authoritySources.trustClass'],
-    requiredEvidenceKinds: ['trusted_authority_source_ref'],
-    retryableByModel: false,
-    operatorOnly: true,
-    safeSummary: 'A source cannot self-promote from untrusted content into trusted authority.',
-  },
-  {
-    reasonCode: 'trusted-authority-evidence-missing',
-    audience: 'operator-control',
-    disclosureLevel: 'minimal',
-    missingFields: ['authoritySources.evidenceDigest'],
-    requiredEvidenceKinds: ['trusted_authority_evidence_digest'],
-    retryableByModel: false,
-    operatorOnly: true,
-    safeSummary: 'Trusted authority sources must include evidence digest material.',
-  },
-  {
-    reasonCode: 'trusted-evidence-not-authority',
-    audience: 'operator-control',
-    disclosureLevel: 'minimal',
-    missingFields: ['authoritySources'],
-    requiredEvidenceKinds: ['trusted_authority_source_ref'],
-    retryableByModel: false,
-    operatorOnly: true,
-    safeSummary: 'Trusted evidence can support a decision, but it does not grant authority by itself.',
-  },
-  {
-    reasonCode: 'mixed-trusted-and-untrusted-authority-source',
-    audience: 'customer-review',
-    disclosureLevel: 'minimal',
-    missingFields: ['authoritySources'],
-    requiredEvidenceKinds: ['trusted_authority_source_ref'],
-    retryableByModel: false,
-    operatorOnly: true,
-    safeSummary: 'Mixed trusted and untrusted authority claims require customer or operator review.',
-  },
-  {
-    reasonCode: 'authority-review-required',
-    audience: 'customer-review',
-    disclosureLevel: 'minimal',
-    missingFields: ['authoritySources'],
-    requiredEvidenceKinds: ['trusted_authority_source_ref'],
-    retryableByModel: false,
-    operatorOnly: true,
-    safeSummary: 'Authority provenance is incomplete and must be reviewed before execution.',
-  },
-  {
-    reasonCode: 'authority-block',
-    audience: 'operator-control',
-    disclosureLevel: 'minimal',
-    missingFields: ['authoritySources'],
-    requiredEvidenceKinds: ['trusted_authority_source_ref'],
-    retryableByModel: false,
-    operatorOnly: true,
-    safeSummary: 'Authority provenance failed closed.',
-  },
-  {
-    reasonCode: 'approval-missing',
-    audience: 'operator-control',
-    disclosureLevel: 'minimal',
-    missingFields: ['approvals'],
-    requiredEvidenceKinds: ['approval_provenance_ref'],
-    retryableByModel: false,
-    operatorOnly: true,
-    safeSummary: 'Approval provenance is required when approval is used as authority.',
-  },
-  {
-    reasonCode: 'approval-source-missing',
-    audience: 'operator-control',
-    disclosureLevel: 'minimal',
-    missingFields: ['approvals.sourceRef'],
-    requiredEvidenceKinds: ['approval_source_ref'],
-    retryableByModel: false,
-    operatorOnly: true,
-    safeSummary: 'Approval provenance must name the source system or workflow reference.',
-  },
-  {
-    reasonCode: 'approval-source-untrusted',
-    audience: 'operator-control',
-    disclosureLevel: 'minimal',
-    missingFields: ['approvals'],
-    requiredEvidenceKinds: ['trusted_approval_provenance_ref'],
-    retryableByModel: false,
-    operatorOnly: true,
-    safeSummary: 'Untrusted content cannot be treated as approval.',
-  },
-  {
-    reasonCode: 'approval-model-generated',
-    audience: 'operator-control',
-    disclosureLevel: 'minimal',
-    missingFields: ['approvals'],
-    requiredEvidenceKinds: ['trusted_approval_provenance_ref'],
-    retryableByModel: false,
-    operatorOnly: true,
-    safeSummary: 'Model-generated text cannot be used as approval.',
-  },
-  {
-    reasonCode: 'approval-tool-output-unverified',
-    audience: 'operator-control',
-    disclosureLevel: 'minimal',
-    missingFields: ['approvals'],
-    requiredEvidenceKinds: ['verified_tool_approval_ref'],
-    retryableByModel: false,
-    operatorOnly: true,
-    safeSummary: 'Tool output must be verified before it can support approval provenance.',
-  },
-  {
-    reasonCode: 'approval-state-not-approved',
-    audience: 'customer-review',
-    disclosureLevel: 'minimal',
-    missingFields: ['approvals.state'],
-    requiredEvidenceKinds: ['approved_state_ref'],
-    retryableByModel: false,
-    operatorOnly: true,
-    safeSummary: 'Approval provenance has not reached an approved state.',
-  },
-  {
-    reasonCode: 'approval-state-rejected-or-revoked',
-    audience: 'operator-control',
-    disclosureLevel: 'minimal',
-    missingFields: ['approvals.state'],
-    requiredEvidenceKinds: ['active_approval_state_ref'],
-    retryableByModel: false,
-    operatorOnly: true,
-    safeSummary: 'Rejected or revoked approvals fail closed.',
-  },
-  {
-    reasonCode: 'reviewer-identity-missing',
-    audience: 'operator-control',
-    disclosureLevel: 'minimal',
-    missingFields: ['approvals.reviewerRef'],
-    requiredEvidenceKinds: ['reviewer_identity_ref'],
-    retryableByModel: false,
-    operatorOnly: true,
-    safeSummary: 'Approval provenance must bind to a reviewer identity.',
-  },
-  {
-    reasonCode: 'reviewer-authority-missing',
-    audience: 'operator-control',
-    disclosureLevel: 'minimal',
-    missingFields: ['approvals.reviewerAuthorityDigest'],
-    requiredEvidenceKinds: ['reviewer_authority_digest'],
-    retryableByModel: false,
-    operatorOnly: true,
-    safeSummary: 'Approval provenance must bind the reviewer authority evidence.',
-  },
-  {
-    reasonCode: 'approval-digest-missing',
-    audience: 'operator-control',
-    disclosureLevel: 'minimal',
-    missingFields: ['approvals.approvalDigest'],
-    requiredEvidenceKinds: ['approval_digest'],
-    retryableByModel: false,
-    operatorOnly: true,
-    safeSummary: 'Approval provenance must carry a digest of the approval record.',
-  },
-  {
-    reasonCode: 'approval-scope-missing',
-    audience: 'operator-control',
-    disclosureLevel: 'minimal',
-    missingFields: ['approvals.scopeDigest'],
-    requiredEvidenceKinds: ['approval_scope_digest'],
-    retryableByModel: false,
-    operatorOnly: true,
-    safeSummary: 'Approval provenance must bind the approved scope.',
-  },
-  {
-    reasonCode: 'approval-issued-at-missing',
-    audience: 'operator-control',
-    disclosureLevel: 'minimal',
-    missingFields: ['approvals.issuedAt'],
-    requiredEvidenceKinds: ['approval_issued_at'],
-    retryableByModel: false,
-    operatorOnly: true,
-    safeSummary: 'Approval provenance must include an issued-at timestamp.',
-  },
-  {
-    reasonCode: 'approval-issued-at-invalid',
-    audience: 'operator-control',
-    disclosureLevel: 'minimal',
-    missingFields: ['approvals.issuedAt'],
-    requiredEvidenceKinds: ['approval_issued_at'],
-    retryableByModel: false,
-    operatorOnly: true,
-    safeSummary: 'Approval issued-at timestamp must be valid.',
-  },
-  {
-    reasonCode: 'approval-expired',
-    audience: 'operator-control',
-    disclosureLevel: 'minimal',
-    missingFields: ['approvals.expiresAt'],
-    requiredEvidenceKinds: ['fresh_approval_ref'],
-    retryableByModel: false,
-    operatorOnly: true,
-    safeSummary: 'Expired approvals fail closed or require review.',
-  },
-  {
-    reasonCode: 'approval-step-up-missing',
-    audience: 'operator-control',
-    disclosureLevel: 'minimal',
-    missingFields: ['approvals.stepUpVerified'],
-    requiredEvidenceKinds: ['step_up_approval_proof'],
-    retryableByModel: false,
-    operatorOnly: true,
-    safeSummary: 'Step-up approval evidence is missing.',
-  },
-  {
-    reasonCode: 'approval-signature-unverified',
-    audience: 'operator-control',
-    disclosureLevel: 'minimal',
-    missingFields: ['approvals.signatureVerificationInput'],
-    requiredEvidenceKinds: ['signed_approval_verification'],
-    retryableByModel: false,
-    operatorOnly: true,
-    safeSummary: 'Signed approval provenance must verify against the configured trust binding.',
-  },
-  {
-    reasonCode: 'approval-trust-class-source-mismatch',
-    audience: 'operator-control',
-    disclosureLevel: 'minimal',
-    missingFields: ['approvals.trustClass'],
-    requiredEvidenceKinds: ['trusted_approval_provenance_ref'],
-    retryableByModel: false,
-    operatorOnly: true,
-    safeSummary: 'Approval source kind determines trust class; caller overrides cannot promote it.',
-  },
-  {
-    reasonCode: 'approval-duplicate-reviewer',
-    audience: 'operator-control',
-    disclosureLevel: 'minimal',
-    missingFields: ['approvals.reviewerRef'],
-    requiredEvidenceKinds: ['distinct_reviewer_ref'],
-    retryableByModel: false,
-    operatorOnly: true,
-    safeSummary: 'Multiple approvals must come from distinct reviewer identities when required.',
-  },
-  {
-    reasonCode: 'approval-count-insufficient',
-    audience: 'customer-review',
-    disclosureLevel: 'minimal',
-    missingFields: ['approvals'],
-    requiredEvidenceKinds: ['approval_provenance_ref'],
-    retryableByModel: false,
-    operatorOnly: true,
-    safeSummary: 'Not enough valid approvals are bound to the proposed consequence.',
-  },
-  {
-    reasonCode: 'approval-review',
-    audience: 'customer-review',
-    disclosureLevel: 'minimal',
-    missingFields: ['approvals'],
-    requiredEvidenceKinds: ['approval_provenance_ref'],
-    retryableByModel: false,
-    operatorOnly: true,
-    safeSummary: 'Approval provenance requires customer or operator review.',
-  },
-  {
-    reasonCode: 'approval-block',
-    audience: 'operator-control',
-    disclosureLevel: 'minimal',
-    missingFields: ['approvals'],
-    requiredEvidenceKinds: ['approval_provenance_ref'],
-    retryableByModel: false,
-    operatorOnly: true,
-    safeSummary: 'Approval provenance failed closed.',
-  },
-  {
-    reasonCode: 'narrow-required',
-    audience: 'model',
-    disclosureLevel: 'actionable',
-    missingFields: [],
-    requiredEvidenceKinds: ['narrowing_ref'],
-    retryableByModel: true,
-    operatorOnly: false,
-    safeSummary: 'Retry only with a narrower customer-approved consequence scope.',
-  },
-  {
-    reasonCode: 'adapter-readiness-missing',
-    audience: 'operator-control',
-    disclosureLevel: 'minimal',
-    missingFields: ['observedFeatures.adapterReady'],
-    requiredEvidenceKinds: ['adapter_readiness_ref'],
-    retryableByModel: false,
-    operatorOnly: true,
-    safeSummary: 'Adapter readiness is an operator or customer integration control.',
-  },
-  {
-    reasonCode: 'adapter-readiness-origin-untrusted',
-    audience: 'operator-control',
-    disclosureLevel: 'minimal',
-    missingFields: ['observedFeatureOrigins.adapterReady'],
-    requiredEvidenceKinds: ['adapter_readiness_origin_ref'],
-    retryableByModel: false,
-    operatorOnly: true,
-    safeSummary: 'Adapter readiness must be attested by an operator, customer gateway, Attestor runtime, or trusted adapter.',
-  },
-  {
-    reasonCode: 'custom-domain-review-required',
-    audience: 'customer-review',
-    disclosureLevel: 'minimal',
-    missingFields: [],
-    requiredEvidenceKinds: ['customer_policy_ref'],
-    retryableByModel: false,
-    operatorOnly: true,
-    safeSummary: 'Custom consequence domains require customer policy review before automation.',
-  },
-  {
-    reasonCode: 'hold-ledger-missing',
-    audience: 'operator-control',
-    disclosureLevel: 'minimal',
-    missingFields: ['noGoConditions'],
-    requiredEvidenceKinds: ['no_go_condition_ledger_ref'],
-    retryableByModel: false,
-    operatorOnly: true,
-    safeSummary: 'No-go condition state must be supplied by the customer or operator boundary.',
-  },
-  {
-    reasonCode: 'active-no-go-condition-present',
-    audience: 'customer-review',
-    disclosureLevel: 'minimal',
-    missingFields: [],
-    requiredEvidenceKinds: ['no_go_condition_release_ref'],
-    retryableByModel: false,
-    operatorOnly: true,
-    safeSummary: 'An active no-go condition blocks automatic execution.',
-  },
-  {
-    reasonCode: 'pending-hold-review-required',
-    audience: 'customer-review',
-    disclosureLevel: 'minimal',
-    missingFields: [],
-    requiredEvidenceKinds: ['no_go_condition_review_ref'],
-    retryableByModel: false,
-    operatorOnly: true,
-    safeSummary: 'A pending no-go hold requires customer or operator review.',
-  },
-  {
-    reasonCode: 'hold-owner-missing',
-    audience: 'operator-control',
-    disclosureLevel: 'minimal',
-    missingFields: ['noGoConditions.ownerRef'],
-    requiredEvidenceKinds: ['no_go_hold_owner_ref'],
-    retryableByModel: false,
-    operatorOnly: true,
-    safeSummary: 'No-go hold records must bind to a responsible owner.',
-  },
-  {
-    reasonCode: 'hold-authority-missing',
-    audience: 'operator-control',
-    disclosureLevel: 'minimal',
-    missingFields: ['noGoConditions.ownerAuthorityDigest'],
-    requiredEvidenceKinds: ['no_go_hold_authority_digest'],
-    retryableByModel: false,
-    operatorOnly: true,
-    safeSummary: 'No-go hold records must bind to owner authority evidence.',
-  },
-  {
-    reasonCode: 'hold-validity-missing',
-    audience: 'operator-control',
-    disclosureLevel: 'minimal',
-    missingFields: ['noGoConditions.issuedAt', 'noGoConditions.expiresAt'],
-    requiredEvidenceKinds: ['no_go_hold_validity_window'],
-    retryableByModel: false,
-    operatorOnly: true,
-    safeSummary: 'No-go hold records must include a bounded validity window.',
-  },
-  {
-    reasonCode: 'hold-issued-at-invalid',
-    audience: 'operator-control',
-    disclosureLevel: 'minimal',
-    missingFields: ['noGoConditions.issuedAt'],
-    requiredEvidenceKinds: ['no_go_hold_validity_window'],
-    retryableByModel: false,
-    operatorOnly: true,
-    safeSummary: 'No-go hold issued-at timestamps must be valid.',
-  },
-  {
-    reasonCode: 'hold-expires-at-invalid',
-    audience: 'operator-control',
-    disclosureLevel: 'minimal',
-    missingFields: ['noGoConditions.expiresAt'],
-    requiredEvidenceKinds: ['no_go_hold_validity_window'],
-    retryableByModel: false,
-    operatorOnly: true,
-    safeSummary: 'No-go hold expiry timestamps must be valid.',
-  },
-  {
-    reasonCode: 'untrusted-hold-source',
-    audience: 'operator-control',
-    disclosureLevel: 'minimal',
-    missingFields: ['noGoConditions.sourceKind'],
-    requiredEvidenceKinds: ['trusted_no_go_hold_source_ref'],
-    retryableByModel: false,
-    operatorOnly: true,
-    safeSummary: 'Untrusted content cannot create or release a no-go hold.',
-  },
-  {
-    reasonCode: 'natural-language-bypass-attempted',
-    audience: 'operator-control',
-    disclosureLevel: 'minimal',
-    missingFields: [],
-    requiredEvidenceKinds: ['no_go_bypass_review_ref'],
-    retryableByModel: false,
-    operatorOnly: true,
-    safeSummary: 'A natural-language attempt to bypass a no-go hold blocks automatic execution.',
-  },
-  {
-    reasonCode: 'natural-language-bypass-inferred',
-    audience: 'operator-control',
-    disclosureLevel: 'minimal',
-    missingFields: [],
-    requiredEvidenceKinds: ['no_go_bypass_review_ref'],
-    retryableByModel: false,
-    operatorOnly: true,
-    safeSummary: 'Detected no-go bypass language must be reviewed outside the model loop.',
-  },
-  {
-    reasonCode: 'no-go-condition-review',
-    audience: 'customer-review',
-    disclosureLevel: 'minimal',
-    missingFields: [],
-    requiredEvidenceKinds: ['no_go_condition_review_ref'],
-    retryableByModel: false,
-    operatorOnly: true,
-    safeSummary: 'No-go condition state requires customer or operator review.',
-  },
-  {
-    reasonCode: 'no-go-condition-block',
-    audience: 'operator-control',
-    disclosureLevel: 'minimal',
-    missingFields: [],
-    requiredEvidenceKinds: ['no_go_condition_release_ref'],
-    retryableByModel: false,
-    operatorOnly: true,
-    safeSummary: 'No-go condition state blocks automatic execution.',
-  },
-  {
-    reasonCode: 'policy-blocked',
-    audience: 'customer-review',
-    disclosureLevel: 'minimal',
-    missingFields: [],
-    requiredEvidenceKinds: [],
-    retryableByModel: false,
-    operatorOnly: true,
-    safeSummary: 'The customer policy blocked the proposed consequence.',
-  },
-  {
-    reasonCode: 'feature-blocked',
-    audience: 'operator-control',
-    disclosureLevel: 'minimal',
-    missingFields: [],
-    requiredEvidenceKinds: [],
-    retryableByModel: false,
-    operatorOnly: true,
-    safeSummary: 'A customer or operator supplied blocked signal prevented automatic retry.',
-  },
-  {
-    reasonCode: 'feature-unsafe',
-    audience: 'operator-control',
-    disclosureLevel: 'minimal',
-    missingFields: [],
-    requiredEvidenceKinds: [],
-    retryableByModel: false,
-    operatorOnly: true,
-    safeSummary: 'A customer or operator supplied unsafe signal prevented automatic retry.',
-  },
-]);
-
-const ADMISSION_CORRECTION_HINTS:
-Readonly<Record<string, ConsequenceAdmissionCorrectionCatalogEntry>> = Object.freeze(
-  Object.fromEntries(
-    CONSEQUENCE_ADMISSION_CORRECTION_CATALOG_ENTRIES.map((entry) => [
-      entry.reasonCode,
-      entry,
-    ]),
-  ) as Record<string, ConsequenceAdmissionCorrectionCatalogEntry>,
-);
-
-function uniqueSortedStrings(items: readonly string[]): readonly string[] {
-  return Object.freeze([...new Set(items)].sort());
-}
-
-function admissionCorrectionHints(
-  reasonCodes: readonly string[],
-): readonly ConsequenceAdmissionCorrectionCatalogEntry[] {
-  return Object.freeze(
-    reasonCodes
-      .map((code) => ADMISSION_CORRECTION_HINTS[code])
-      .filter((hint): hint is ConsequenceAdmissionCorrectionCatalogEntry => hint !== undefined),
-  );
-}
-
-export function consequenceAdmissionCorrectionCatalog():
-ConsequenceAdmissionCorrectionCatalog {
-  const entries = CONSEQUENCE_ADMISSION_CORRECTION_CATALOG_ENTRIES;
-  return Object.freeze({
-    version: CONSEQUENCE_ADMISSION_CORRECTION_CATALOG_VERSION,
-    entries,
-    reasonCodes: uniqueSortedStrings(entries.map((entry) => entry.reasonCode)),
-    modelRetryableReasonCodes: uniqueSortedStrings(
-      entries
-        .filter((entry) => entry.retryableByModel && !entry.operatorOnly)
-        .map((entry) => entry.reasonCode),
-    ),
-    operatorOnlyReasonCodes: uniqueSortedStrings(
-      entries.filter((entry) => entry.operatorOnly).map((entry) => entry.reasonCode),
-    ),
-  });
-}
-
-export function consequenceAdmissionCorrectionForReason(
-  reasonCode: string,
-): ConsequenceAdmissionCorrectionCatalogEntry | null {
-  const normalized = normalizeIdentifier(reasonCode, 'correction reasonCode');
-  return ADMISSION_CORRECTION_HINTS[normalized] ?? null;
-}
-
-function admissionFeedbackInstruction(input: {
-  readonly allowed: boolean;
-  readonly retryAllowed: boolean;
-  readonly operatorOnlyReasonCodes: readonly string[];
-  readonly reasonCodes: readonly string[];
-}): string {
-  if (input.allowed && input.reasonCodes.length === 0) {
-    return 'No correction is required. Do not retry solely to seek a different decision.';
-  }
-  if (input.retryAllowed) {
-    return [
-      'Retry only with bounded references for the missing fields.',
-      'Do not include raw customer, bank, wallet, credential, secret, or private policy data.',
-    ].join(' ');
-  }
-  if (input.operatorOnlyReasonCodes.length > 0) {
-    return 'Do not retry automatically. Route the action to the customer review or operator boundary.';
-  }
-  if (input.allowed) {
-    return 'Use the reason codes as shadow feedback. Do not include raw sensitive data in a retry.';
-  }
-  return 'Do not retry automatically without customer-controlled review.';
-}
-
-function createAdmissionFeedback(input: {
-  readonly allowed: boolean;
-  readonly reasonCodes: readonly string[];
-  readonly retryAllowed: boolean;
-}): ConsequenceAdmissionFeedback {
-  const hints = admissionCorrectionHints(input.reasonCodes);
-  const missingFields = uniqueSortedStrings(hints.flatMap((hint) => [...hint.missingFields]));
-  const requiredEvidenceKinds = uniqueSortedStrings(
-    hints.flatMap((hint) => [...hint.requiredEvidenceKinds]),
-  );
-  const operatorOnlyReasonCodes = uniqueSortedStrings(
-    input.reasonCodes.filter((code) => ADMISSION_CORRECTION_HINTS[code]?.operatorOnly === true),
-  );
-  const disclosureLevel: ConsequenceAdmissionFeedbackDisclosureLevel =
-    missingFields.length > 0 || requiredEvidenceKinds.length > 0
-      ? 'actionable'
-      : 'minimal';
-
-  return Object.freeze({
-    disclosureLevel,
-    safeForModel: true,
-    reasonCodes: readonlyCopy(input.reasonCodes),
-    missingFields,
-    requiredEvidenceKinds,
-    operatorOnlyReasonCodes,
-    safeInstruction: admissionFeedbackInstruction({
-      allowed: input.allowed,
-      retryAllowed: input.retryAllowed,
-      operatorOnlyReasonCodes,
-      reasonCodes: input.reasonCodes,
-    }),
-  });
-}
-
-function genericModeFromOperationalContext(
-  operationalContext: Readonly<Record<string, string | number | boolean | null>>,
-): GenericAdmissionMode | null {
-  const mode = operationalContext.mode;
-  return typeof mode === 'string' && GENERIC_ADMISSION_MODES.includes(mode as GenericAdmissionMode)
-    ? mode as GenericAdmissionMode
-    : null;
-}
-
-function retryAllowedByReasonCodes(reasonCodes: readonly string[]): boolean {
-  const hints = admissionCorrectionHints(reasonCodes);
-  return hints.some((hint) => hint.retryableByModel) &&
-    !hints.some((hint) => hint.operatorOnly);
-}
-
-function nonRetryableReasonCodes(reasonCodes: readonly string[]): readonly string[] {
-  return uniqueSortedStrings(
-    reasonCodes.filter((code) => ADMISSION_CORRECTION_HINTS[code]?.operatorOnly === true),
-  );
-}
-
-function createAdmissionRetryGuidance(input: {
-  readonly decision: ConsequenceAdmissionDecision;
-  readonly allowed: boolean;
-  readonly reasonCodes: readonly string[];
-  readonly operationalContext: Readonly<Record<string, string | number | boolean | null>>;
-}): ConsequenceAdmissionRetryGuidance {
-  const nonRetryable = nonRetryableReasonCodes(input.reasonCodes);
-  const retryAllowed =
-    input.decision === 'review' &&
-    !input.allowed &&
-    nonRetryable.length === 0 &&
-    retryAllowedByReasonCodes(input.reasonCodes);
-  const retryCategory: ConsequenceAdmissionRetryGuidance['retryCategory'] =
-    input.allowed
-      ? 'not-needed'
-      : retryAllowed
-        ? 'safe-correction'
-        : input.decision === 'review'
-          ? 'human-review-required'
-          : 'not-retryable';
-
-  return Object.freeze({
-    retryAllowed,
-    retryCategory,
-    maxAttempts: retryAllowed ? CONSEQUENCE_ADMISSION_RETRY_DEFAULT_MAX_ATTEMPTS : 0,
-    retryWindowSeconds: retryAllowed
-      ? CONSEQUENCE_ADMISSION_RETRY_DEFAULT_WINDOW_SECONDS
-      : null,
-    nextAllowedMode: retryAllowed
-      ? genericModeFromOperationalContext(input.operationalContext)
-      : null,
-    requiresChangedRequest: retryAllowed,
-    sameRequestReplayAllowed: false,
-    retryBindingRequired: retryAllowed,
-    retryBindingFields: retryAllowed
-      ? CONSEQUENCE_ADMISSION_RETRY_BINDING_FIELDS
-      : Object.freeze([]),
-    nonRetryableReasonCodes: nonRetryable,
-  });
-}
-
-function retryBudgetNumber(
-  value: number | null | undefined,
-  fallback: number,
-  fieldName: string,
-): number {
-  if (value === undefined || value === null) return fallback;
-  return normalizePositiveInteger(value, fieldName);
-}
-
-function addSeconds(timestamp: string, seconds: number): string {
-  return new Date(new Date(timestamp).getTime() + seconds * 1000).toISOString();
-}
-
-function retryBudgetInstruction(retryAllowed: boolean): string {
-  if (retryAllowed) {
-    return [
-      'Bound retry may proceed as a correction attempt.',
-      'The downstream system must still honor the new admission decision before execution.',
-    ].join(' ');
-  }
-  return 'Do not retry automatically. Route the action to customer review or operator control.';
-}
-
-export function evaluateConsequenceAdmissionRetryBudget(
-  input: EvaluateConsequenceAdmissionRetryBudgetInput,
-): ConsequenceAdmissionRetryBudgetEvaluation {
-  const previous = input.previousAdmission;
-  const attempt = input.retryAttempt;
-  const maxAttempts = retryBudgetNumber(
-    input.maxAttempts,
-    previous.retry.maxAttempts,
-    'retryBudget.maxAttempts',
-  );
-  const retryWindowSeconds = retryBudgetNumber(
-    input.retryWindowSeconds,
-    previous.retry.retryWindowSeconds ?? CONSEQUENCE_ADMISSION_RETRY_DEFAULT_WINDOW_SECONDS,
-    'retryBudget.retryWindowSeconds',
-  );
-  const evaluatedAt = normalizeIsoTimestamp(
-    input.evaluatedAt ?? attempt.attemptedAt,
-    'retryBudget.evaluatedAt',
-  );
-  const windowStartedAt = previous.decidedAt;
-  const windowExpiresAt = addSeconds(windowStartedAt, retryWindowSeconds);
-  const reasonCodes: string[] = [];
-
-  if (!previous.retry.retryAllowed) {
-    reasonCodes.push('previous-retry-not-allowed');
-  }
-  if (attempt.previousAdmissionId !== previous.admissionId) {
-    reasonCodes.push('retry-previous-admission-id-mismatch');
-  }
-  if (attempt.previousAdmissionDigest !== previous.digest) {
-    reasonCodes.push('retry-previous-admission-digest-mismatch');
-  }
-  if (attempt.previousRequestId !== previous.request.requestId) {
-    reasonCodes.push('retry-previous-request-id-mismatch');
-  }
-  if (attempt.attemptNumber > maxAttempts) {
-    reasonCodes.push('retry-budget-exhausted');
-  }
-  if (new Date(attempt.attemptedAt).getTime() < new Date(windowStartedAt).getTime()) {
-    reasonCodes.push('retry-before-previous-decision');
-  }
-  if (new Date(attempt.attemptedAt).getTime() > new Date(windowExpiresAt).getTime()) {
-    reasonCodes.push('retry-window-expired');
-  }
-  if (attempt.correctionReasonCodes.length === 0) {
-    reasonCodes.push('retry-correction-reason-missing');
-  }
-
-  const previousFeedbackReasons = new Set(previous.feedback.reasonCodes);
-  const unboundCorrectionReasons = attempt.correctionReasonCodes.filter(
-    (reason) => !previousFeedbackReasons.has(reason),
-  );
-  if (unboundCorrectionReasons.length > 0) {
-    reasonCodes.push('retry-correction-reason-unbound');
-  }
-
-  const previousOperatorOnlyReasons = new Set(previous.feedback.operatorOnlyReasonCodes);
-  const operatorOnlyCorrectionReasons = attempt.correctionReasonCodes.filter((reason) =>
-    previousOperatorOnlyReasons.has(reason),
-  );
-  if (operatorOnlyCorrectionReasons.length > 0) {
-    reasonCodes.push('retry-operator-only-reason');
-  }
-
-  const retryAllowed = reasonCodes.length === 0;
-  const payload = {
-    version: CONSEQUENCE_ADMISSION_RETRY_RULE_VERSION,
-    outcome: retryAllowed ? 'allow-retry' : 'hold-for-review',
-    retryAllowed,
-    failClosed: !retryAllowed,
-    previousAdmissionId: previous.admissionId,
-    previousAdmissionDigest: previous.digest,
-    retryAttemptId: attempt.attemptId,
-    attemptNumber: attempt.attemptNumber,
-    maxAttempts,
-    attemptsRemaining: Math.max(maxAttempts - attempt.attemptNumber, 0),
-    retryWindowSeconds,
-    windowStartedAt,
-    windowExpiresAt,
-    evaluatedAt,
-    reasonCodes: uniqueSortedStrings(reasonCodes),
-    safeInstruction: retryBudgetInstruction(retryAllowed),
-  } satisfies Omit<ConsequenceAdmissionRetryBudgetEvaluation, 'canonical' | 'digest'>;
-  const canonical = canonicalObject(payload as unknown as CanonicalReleaseJsonValue);
-
-  return Object.freeze({
-    ...payload,
-    canonical: canonical.canonical,
-    digest: canonical.digest,
-  });
-}
+import {
+  createAdmissionFeedback,
+  createAdmissionRetryGuidance,
+  uniqueSortedStrings,
+} from './correction-catalog.js';
 
 export function createConsequenceAdmissionRequest(
   input: CreateConsequenceAdmissionRequestInput,
@@ -3921,114 +2945,8 @@ export function createGenericAdmissionEnvelope(input: unknown): GenericAdmission
   });
 }
 
-export function consequenceAdmissionDescriptor():
-ConsequenceAdmissionDescriptor {
-  return Object.freeze({
-    version: CONSEQUENCE_ADMISSION_CONTRACT_VERSION,
-    retryAttemptVersion: CONSEQUENCE_ADMISSION_RETRY_ATTEMPT_VERSION,
-    retryRuleVersion: CONSEQUENCE_ADMISSION_RETRY_RULE_VERSION,
-    retryAttemptLedgerVersion: CONSEQUENCE_ADMISSION_RETRY_ATTEMPT_LEDGER_VERSION,
-    agentLoopAbuseGuardVersion: CONSEQUENCE_ADMISSION_AGENT_LOOP_ABUSE_GUARD_VERSION,
-    correctionCatalogVersion: CONSEQUENCE_ADMISSION_CORRECTION_CATALOG_VERSION,
-    dataMinimizationPolicyVersion: CONSEQUENCE_DATA_MINIMIZATION_REDACTION_POLICY_VERSION,
-    packDecisionProfileVersion: CONSEQUENCE_ADMISSION_PACK_DECISION_PROFILE_VERSION,
-    domainPackBoundaryVersion: CONSEQUENCE_DOMAIN_PACK_BOUNDARY_VERSION,
-    controlPlaneRoleVersion: ATTESTOR_CONTROL_PLANE_ROLE_VERSION,
-    failureModeRegistryPlacementVersion: CONSEQUENCE_FAILURE_MODE_REGISTRY_PLACEMENT_VERSION,
-    replayLayerPlacementVersion: CONSEQUENCE_REPLAY_LAYER_PLACEMENT_VERSION,
-    guardActivationReadinessVersion: CONSEQUENCE_GUARD_ACTIVATION_READINESS_VERSION,
-    shadowReadinessClaimAlignmentVersion:
-      CONSEQUENCE_SHADOW_READINESS_CLAIM_ALIGNMENT_VERSION,
-    failureModeGuardCoverageVersion: CONSEQUENCE_FAILURE_MODE_GUARD_COVERAGE_VERSION,
-    failureModeRuntimeExtensionVersion: CONSEQUENCE_FAILURE_MODE_RUNTIME_EXTENSION_VERSION,
-    customerPepRuntimeAdoptionVersion: CUSTOMER_PEP_RUNTIME_ADOPTION_VERSION,
-    customerPepAdoptionPackageVersion: CUSTOMER_PEP_ADOPTION_PACKAGE_VERSION,
-    protectedAdmissionE2eProofPlanVersion: PROTECTED_ADMISSION_E2E_PROOF_PLAN_VERSION,
-    agenticSupplyChainGuardVersion: CONSEQUENCE_AGENTIC_SUPPLY_CHAIN_GUARD_VERSION,
-    humanReviewFatigueGuardVersion: CONSEQUENCE_HUMAN_REVIEW_FATIGUE_GUARD_VERSION,
-    decisionContextDriftBindingVersion:
-      CONSEQUENCE_DECISION_CONTEXT_DRIFT_BINDING_VERSION,
-    multiAgentDelegationGuardVersion: CONSEQUENCE_MULTI_AGENT_DELEGATION_GUARD_VERSION,
-    authorityCreepGuardVersion: AUTHORITY_CREEP_GUARD_VERSION,
-    retryDefaultMaxAttempts: CONSEQUENCE_ADMISSION_RETRY_DEFAULT_MAX_ATTEMPTS,
-    retryDefaultWindowSeconds: CONSEQUENCE_ADMISSION_RETRY_DEFAULT_WINDOW_SECONDS,
-    decisions: CONSEQUENCE_ADMISSION_DECISIONS,
-    genericAdmissionModes: GENERIC_ADMISSION_MODES,
-    genericAdmissionObservedFeatureOrigins: GENERIC_ADMISSION_OBSERVED_FEATURE_ORIGINS,
-    genericAdmissionShadowDecisions: GENERIC_ADMISSION_SHADOW_DECISIONS,
-    genericAdmissionDownstreamPostures: GENERIC_ADMISSION_DOWNSTREAM_POSTURES,
-    packFamilies: CONSEQUENCE_ADMISSION_PACK_FAMILIES,
-    consequenceKinds: CONSEQUENCE_ADMISSION_CONSEQUENCE_KINDS,
-    riskClasses: CONSEQUENCE_ADMISSION_RISK_CLASSES,
-    entryPointKinds: CONSEQUENCE_ADMISSION_ENTRY_POINT_KINDS,
-    checkKinds: CONSEQUENCE_ADMISSION_CHECK_KINDS,
-    checkOutcomes: CONSEQUENCE_ADMISSION_CHECK_OUTCOMES,
-    feedbackDisclosureLevels: CONSEQUENCE_ADMISSION_FEEDBACK_DISCLOSURE_LEVELS,
-    correctionAudiences: CONSEQUENCE_ADMISSION_CORRECTION_AUDIENCES,
-    correctionReasonCodes: consequenceAdmissionCorrectionCatalog().reasonCodes,
-    controlPlaneRoles: ATTESTOR_CONTROL_PLANE_ROLES,
-    controlPlaneRoleDescriptors: ATTESTOR_CONTROL_PLANE_ROLE_DESCRIPTORS,
-    domainPackBoundary: consequenceDomainPackBoundaryDescriptor(),
-    failureModeRegistryPlacement: consequenceFailureModeRegistryPlacementDescriptor(),
-    replayLayerPlacement: consequenceReplayLayerPlacementDescriptor(),
-    guardActivationReadiness: consequenceGuardActivationReadinessDescriptor(),
-    shadowReadinessClaimAlignment: consequenceShadowReadinessClaimAlignmentDescriptor(),
-    failureModeGuardCoverage: consequenceFailureModeGuardCoverageMatrix(),
-    customerPepRuntimeAdoption: customerPepRuntimeAdoptionDescriptor(),
-    customerPepAdoptionPackage: customerPepAdoptionPackageDescriptor(),
-    protectedAdmissionE2eProofPlan: protectedAdmissionE2eProofPlanDescriptor(),
-    dataMinimizationSurfaceKinds: CONSEQUENCE_DATA_MINIMIZATION_SURFACE_KINDS,
-    dataMinimizationForbiddenRawClasses: CONSEQUENCE_DATA_MINIMIZATION_FORBIDDEN_RAW_CLASSES,
-    packDecisionPostures: CONSEQUENCE_ADMISSION_PACK_DECISION_POSTURES,
-    packDecisionRecommendedActions: CONSEQUENCE_ADMISSION_PACK_DECISION_RECOMMENDED_ACTIONS,
-    packDecisionSignalKinds: CONSEQUENCE_ADMISSION_PACK_DECISION_SIGNAL_KINDS,
-    retryBindingFields: CONSEQUENCE_ADMISSION_RETRY_BINDING_FIELDS,
-    retryBudgetOutcomes: CONSEQUENCE_ADMISSION_RETRY_BUDGET_OUTCOMES,
-    retryAttemptLedgerOutcomes: CONSEQUENCE_ADMISSION_RETRY_ATTEMPT_LEDGER_OUTCOMES,
-    retryAttemptLedgerFailureReasons: CONSEQUENCE_ADMISSION_RETRY_ATTEMPT_LEDGER_FAILURE_REASONS,
-    agentLoopAbuseGuardOutcomes: CONSEQUENCE_ADMISSION_AGENT_LOOP_ABUSE_GUARD_OUTCOMES,
-    agentLoopAbuseGuardReasonCodes: CONSEQUENCE_ADMISSION_AGENT_LOOP_ABUSE_GUARD_REASON_CODES,
-    adapterKinds: CONSEQUENCE_ADMISSION_ADAPTER_KINDS,
-    adapterOutcomes: CONSEQUENCE_ADMISSION_ADAPTER_OUTCOMES,
-    agenticSupplyChainGuardOutcomes: CONSEQUENCE_AGENTIC_SUPPLY_CHAIN_GUARD_OUTCOMES,
-    agenticSupplyChainGuardReasonCodes: CONSEQUENCE_AGENTIC_SUPPLY_CHAIN_REASON_CODES,
-    humanReviewFatigueGuardOutcomes: CONSEQUENCE_HUMAN_REVIEW_FATIGUE_OUTCOMES,
-    humanReviewFatigueGuardReasonCodes: CONSEQUENCE_HUMAN_REVIEW_FATIGUE_REASON_CODES,
-    decisionContextDriftOutcomes: CONSEQUENCE_DECISION_CONTEXT_DRIFT_OUTCOMES,
-    decisionContextDriftReasonCodes: CONSEQUENCE_DECISION_CONTEXT_DRIFT_REASON_CODES,
-    multiAgentDelegationGuardOutcomes: CONSEQUENCE_MULTI_AGENT_DELEGATION_GUARD_OUTCOMES,
-    multiAgentDelegationGuardReasonCodes: CONSEQUENCE_MULTI_AGENT_DELEGATION_REASON_CODES,
-    authorityCreepGuardOutcomes: AUTHORITY_CREEP_OUTCOMES,
-    authorityCreepGuardFindings: AUTHORITY_CREEP_FINDINGS,
-    failureModeRuntimeExtensionOutcomes: CONSEQUENCE_FAILURE_MODE_RUNTIME_EXTENSION_OUTCOMES,
-    failureModeRuntimeExtensionReasonCodes: CONSEQUENCE_FAILURE_MODE_RUNTIME_EXTENSION_REASON_CODES,
-    auditEvidenceArtifactKinds: CONSEQUENCE_AUDIT_EVIDENCE_ARTIFACT_KINDS,
-    auditEvidenceFindingKinds: CONSEQUENCE_AUDIT_EVIDENCE_FINDING_KINDS,
-    tamperEvidentHistoryVersion: CONSEQUENCE_TAMPER_EVIDENT_HISTORY_VERSION,
-    tamperEvidentHistoryEntryKinds: CONSEQUENCE_TAMPER_EVIDENT_HISTORY_ENTRY_KINDS,
-    tamperEvidentHistoryVerificationFailureReasons:
-      CONSEQUENCE_TAMPER_EVIDENT_HISTORY_VERIFICATION_FAILURE_REASONS,
-    businessRiskDashboardWidgets: CONSEQUENCE_BUSINESS_RISK_DASHBOARD_WIDGETS,
-    businessRiskSignals: CONSEQUENCE_BUSINESS_RISK_SIGNALS,
-    dashboardApiSummaryTileKinds: CONSEQUENCE_DASHBOARD_API_SUMMARY_TILE_KINDS,
-    dashboardApiSummaryAttentionKinds: CONSEQUENCE_DASHBOARD_API_SUMMARY_ATTENTION_KINDS,
-    dashboardApiSummaryLinkKinds: CONSEQUENCE_DASHBOARD_API_SUMMARY_LINK_KINDS,
-    externalReviewFocusAreas: CONSEQUENCE_EXTERNAL_REVIEW_FOCUS_AREAS,
-    externalReviewEvidenceKinds: CONSEQUENCE_EXTERNAL_REVIEW_EVIDENCE_KINDS,
-    externalReviewEvidenceStatuses: CONSEQUENCE_EXTERNAL_REVIEW_EVIDENCE_STATUSES,
-    externalReviewFindingKinds: CONSEQUENCE_EXTERNAL_REVIEW_FINDING_KINDS,
-    proofKinds: CONSEQUENCE_ADMISSION_PROOF_KINDS,
-    nativeSurfaces: CONSEQUENCE_ADMISSION_NATIVE_SURFACES,
-    consequenceDomains: CONSEQUENCE_ADMISSION_DOMAINS,
-    controlRequirements: CONSEQUENCE_ADMISSION_CONTROL_REQUIREMENTS,
-    taxonomy: CONSEQUENCE_ADMISSION_TAXONOMY,
-    policyLimitKinds: CONSEQUENCE_ADMISSION_POLICY_LIMIT_KINDS,
-    policyLimitBreachActions: CONSEQUENCE_ADMISSION_POLICY_LIMIT_BREACH_ACTIONS,
-    constraintKinds: CONSEQUENCE_ADMISSION_CONSTRAINT_KINDS,
-    presentationBindingFields: CONSEQUENCE_ADMISSION_PRESENTATION_BINDING_FIELDS,
-    presentationReplayLedgerFailureReasons: CONSEQUENCE_ADMISSION_PRESENTATION_REPLAY_LEDGER_FAILURE_REASONS,
-    downstreamExecutionStatuses: CONSEQUENCE_ADMISSION_DOWNSTREAM_EXECUTION_STATUSES,
-  });
-}
+export {
+  consequenceAdmissionDescriptor,
+} from './descriptor.js';
 
 export * from './public-surface.js';

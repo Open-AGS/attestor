@@ -160,16 +160,19 @@ Completed:
   generic admission request/envelope types from
   `src/consequence-admission/contracts.ts`, keeping `index.ts` as the package
   compatibility facade.
+- `src/consequence-admission/index.ts` now imports and re-exports correction
+  catalogue, safe-feedback, retry-guidance, and retry-budget behavior from
+  `src/consequence-admission/correction-catalog.ts`, and imports/re-exports
+  `consequenceAdmissionDescriptor()` from `src/consequence-admission/descriptor.ts`.
 
 Next:
 
-1. Split `src/consequence-admission/index.ts` by descriptor/catalog ownership.
-2. Split `src/consequence-admission/index.ts` by engine helpers and close out
+1. Split `src/consequence-admission/index.ts` by engine helpers and close out
    the compatibility facade budget.
-3. Split `src/service/http/routes/shadow-routes.ts` by route family.
-4. Leave `src/service/http/routes/account-routes.ts` for a separate route-matrix
+2. Split `src/service/http/routes/shadow-routes.ts` by route family.
+3. Leave `src/service/http/routes/account-routes.ts` for a separate route-matrix
    wave after V2.
-5. Touch crypto/protocol adapters only where module-specific risk warrants it.
+4. Touch crypto/protocol adapters only where module-specific risk warrants it.
 
 ## No-Claims
 

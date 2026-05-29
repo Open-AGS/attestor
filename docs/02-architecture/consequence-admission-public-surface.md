@@ -26,13 +26,21 @@ Current source state:
 
 ```text
 src/consequence-admission/index.ts
-  index export lines: 18
-  index direct export declarations: 16
+  index export lines: 15
+  index direct export declarations: 11
   trailing delegation: export * from './public-surface.js'
 
 src/consequence-admission/contracts.ts
   contract module non-empty lines: 831
   role: constants, literal vocabularies, request/response types, generic admission envelope types
+
+src/consequence-admission/correction-catalog.ts
+  correction catalog module non-empty lines: 887
+  role: correction entries, safe model feedback, retry guidance, retry-budget evaluation
+
+src/consequence-admission/descriptor.ts
+  descriptor module non-empty lines: 279
+  role: package descriptor builder and descriptor-only dependency imports
 
 src/consequence-admission/public-surface.ts
   public-surface module re-exports: 186
@@ -91,6 +99,18 @@ Current `contracts.ts` ownership:
 | Core admission request/response types | `ConsequenceAdmissionRequest`, `ConsequenceAdmissionResponse`, checks, constraints, feedback, proof refs, retry binding input/output. | V2-10 complete |
 | Generic admission request/envelope types | `CreateGenericAdmissionInput`, guard-specific input aliases, `GenericAdmissionModeEvaluation`, `GenericAdmissionEnvelope`. | V2-10 complete |
 
+Current `correction-catalog.ts` ownership:
+
+| Ownership area | Current role | Planned split round |
+|---|---|---|
+| Correction catalogue and retry budget | Correction entries, safe feedback, retry guidance, retry-window evaluation. | V2-11 complete |
+
+Current `descriptor.ts` ownership:
+
+| Ownership area | Current role | Planned split round |
+|---|---|---|
+| Descriptor builder | `consequenceAdmissionDescriptor()` and descriptor-only dependency imports. | V2-11 complete |
+
 Current `index.ts` ownership:
 
 | Ownership area | Current role | Planned split round |
@@ -98,8 +118,7 @@ Current `index.ts` ownership:
 | Normalization helpers | Identifier, enum, timestamp, amount/data-scope, guard-input, retry-attempt, and generic-admission input normalization. | V2-12 engine helpers split |
 | Generic guard orchestration | Authority, approval, scope, tool-result, supply-chain, fatigue, delegation, stale-policy, drift, authority-creep, and no-go decisions. | V2-12 engine helpers split |
 | Decision and mapping helpers | `isConsequenceAdmissionDecision`, `consequenceAdmissionAllowsConsequence`, finance/crypto mapping, and check creation. | V2-11 descriptor/catalog split or V2-12 closeout |
-| Correction catalogue and retry budget | Correction entries, safe feedback, retry guidance, retry-window evaluation. | V2-11 descriptor/catalog split |
-| Builders and descriptor | Request/response/problem/envelope builders and `consequenceAdmissionDescriptor()`. | V2-12 engine helpers split and closeout |
+| Builders | Request/response/problem/envelope builders. | V2-12 engine helpers split and closeout |
 | Compatibility delegation | Selective public re-exports from `contracts.ts` plus trailing `export * from './public-surface.js'`. | Must remain until a compatibility-preserving subpath plan replaces it |
 
 Current `public-surface.ts` ownership:
@@ -116,6 +135,8 @@ V2-10, V2-11, and V2-12 must preserve these contracts:
   pointing at `dist/consequence-admission/index.js`;
 - `contracts.ts` remains internal to the package source tree unless a future
   package `exports` change exposes it explicitly;
+- `correction-catalog.ts` and `descriptor.ts` remain internal to the package
+  source tree unless a future package `exports` change exposes them explicitly;
 - `public-surface.ts` remains a pure sibling re-export catalogue;
 - public import paths keep working through compatibility re-exports;
 - any new source module introduced by the split is internal unless the package

@@ -25,6 +25,7 @@ try {
     '`control-plane-store/admin-audit-state.ts`',
     '`control-plane-store/admin-idempotency-state.ts`',
     '`control-plane-store/async-dead-letter-state.ts`',
+    '`control-plane-store/email-delivery-state.ts`',
     '| Normalizers, coercers, row mappers, shared helpers | `mappers.ts` |',
     '`control-plane-store/pg.ts`',
     '| Hosted account and billing state facade | 991-1501 |',
@@ -34,13 +35,14 @@ try {
     '| Pipeline idempotency | `pipeline-idempotency-state.ts` |',
     '| Stripe webhook processing | 2282-2564 |',
     '| Async dead-letter state | `async-dead-letter-state.ts` |',
-    '| Hosted email delivery | 2556-2720 |',
-    '| Snapshot export/restore and test reset | 2721-3229 |',
+    '| Hosted email delivery | `email-delivery-state.ts` |',
+    '| Snapshot export/restore and test reset | 2540-3011 |',
     'Schema SQL and PG helper extraction are complete.',
     'This is complete in `control-plane-store/mappers.ts`.',
     'Pipeline idempotency is complete in',
     'admin audit/idempotency is complete in',
     'async dead-letter state',
+    'delivery state is complete in `control-plane-store/email-delivery-state.ts`',
     'No behavior change in the store-family split PR.',
     'No schema change unless it is isolated in a separate migration PR.',
     'No production, multi-region, RLS, or live HA claim from this refactor.',
@@ -84,6 +86,11 @@ try {
     'Large-file budget records the async dead-letter state extraction slice',
   );
   includes(
+    budget,
+    '`src/service/control-plane-store.ts` now re-exports hosted email delivery',
+    'Large-file budget records the hosted email delivery state extraction slice',
+  );
+  includes(
     readProjectFile('src', 'service', 'control-plane-store', 'schema.ts'),
     'CREATE TABLE IF NOT EXISTS attestor_control_plane.hosted_accounts',
     'Control-plane schema module keeps hosted account table DDL',
@@ -124,6 +131,11 @@ try {
     'Control-plane store facade re-exports the isolated async dead-letter module',
   );
   includes(
+    readProjectFile('src', 'service', 'control-plane-store.ts'),
+    "from './control-plane-store/email-delivery-state.js';",
+    'Control-plane store facade re-exports the isolated hosted email delivery module',
+  );
+  includes(
     readProjectFile('src', 'service', 'control-plane-store', 'mappers.ts'),
     'export function rowToHostedAccount',
     'Control-plane mapper module keeps hosted account row projection',
@@ -147,6 +159,11 @@ try {
     readProjectFile('src', 'service', 'control-plane-store', 'async-dead-letter-state.ts'),
     'export async function listAsyncDeadLetterRecordsState',
     'Control-plane async dead-letter module keeps list behavior',
+  );
+  includes(
+    readProjectFile('src', 'service', 'control-plane-store', 'email-delivery-state.ts'),
+    'export async function recordHostedEmailProviderEventState',
+    'Control-plane hosted email delivery module keeps provider event behavior',
   );
   includes(
     packageJson,

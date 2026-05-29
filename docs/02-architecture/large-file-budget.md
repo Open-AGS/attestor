@@ -122,6 +122,10 @@ Completed:
   from `src/service/control-plane-store/async-dead-letter-state.ts`, keeping
   the existing facade while isolating the DLQ PostgreSQL/file fallback and
   snapshot family.
+- `src/service/control-plane-store.ts` now re-exports hosted email delivery
+  state from `src/service/control-plane-store/email-delivery-state.ts`, keeping
+  the existing facade while isolating email provider/dispatch event persistence
+  and snapshot behavior.
 
 Next:
 

@@ -89,6 +89,8 @@ surface and the split would make review or security reasoning worse.
 
 ## Planned Reduction Order
 
+Current execution contract: [Large File Refactor V2 Plan](large-file-refactor-v2-plan.md).
+
 Completed:
 
 - `src/service/api-types.ts` is now a compatibility barrel over the
@@ -119,12 +121,14 @@ Completed:
 
 Next:
 
-1. `src/service/control-plane-store.ts` low-coupling store-family split
-2. `src/consequence-admission/index.ts` public surface split
-3. `src/service/http/routes/shadow-routes.ts`
-4. `src/service/http/routes/account-routes.ts`
-5. Remaining route-store hotspots
-6. Crypto/protocol adapters only where module-specific risk warrants it
+1. Continue `src/service/control-plane-store.ts` store-family splits through
+   the V2 closeout target.
+2. Split `src/consequence-admission/index.ts` by public-surface contracts,
+   descriptors, and engine helpers.
+3. Split `src/service/http/routes/shadow-routes.ts` by route family.
+4. Leave `src/service/http/routes/account-routes.ts` for a separate route-matrix
+   wave after V2.
+5. Touch crypto/protocol adapters only where module-specific risk warrants it.
 
 ## No-Claims
 

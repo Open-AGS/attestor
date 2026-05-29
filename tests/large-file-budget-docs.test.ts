@@ -31,6 +31,33 @@ function testLargeFileBudgetDocNamesThresholdsAndCommand(): void {
   includes(doc, 'npm run test:large-file-budget', 'Large file budget doc: package script is documented');
   includes(doc, 'Generated files, lockfiles, OpenAPI JSON, and large fixture JSON are outside', 'Large file budget doc: generated/fixture boundary is explicit');
   includes(doc, 'This guard is repository-side maintainability evidence only.', 'Large file budget doc: no-claim boundary is explicit');
+  includes(doc, '[Large File Refactor V2 Plan](large-file-refactor-v2-plan.md)', 'Large file budget doc: links the active V2 execution contract');
+}
+
+function testLargeFileRefactorV2PlanLocksScopeAndNoClaims(): void {
+  const plan = readProjectFile('docs', '02-architecture', 'large-file-refactor-v2-plan.md');
+
+  includes(plan, '# Large File Refactor V2 Plan', 'V2 plan: title is present');
+  includes(plan, 'This is a repository maintainability plan only.', 'V2 plan: maintainability-only boundary is explicit');
+  includes(plan, '`src/service/control-plane-store.ts` | 3415 | 700-1000', 'V2 plan: control-plane-store target is locked');
+  includes(plan, '`src/consequence-admission/index.ts` | 4609 | 900-1300', 'V2 plan: consequence-admission target is locked');
+  includes(plan, '`src/service/http/routes/shadow-routes.ts` | 3181 | 900-1300', 'V2 plan: shadow-routes target is locked');
+  includes(plan, '## Planned Rounds', 'V2 plan: planned rounds section is present');
+  includes(plan, '| 16 | `shadow-routes.ts`: activation/receipt routes plus closeout', 'V2 plan: round 16 closeout is present');
+  includes(plan, '## Parity Locks Before Moves', 'V2 plan: parity locks section is present');
+  includes(plan, 'public store method inventory, state key inventory', 'V2 plan: control-plane parity lock is explicit');
+  includes(plan, 'public export inventory, admission outcome contract inventory', 'V2 plan: consequence-admission parity lock is explicit');
+  includes(plan, 'route registry inventory, method/path/status/header inventory', 'V2 plan: shadow route parity lock is explicit');
+  includes(plan, '## Risk Profiles', 'V2 plan: risk profiles section is present');
+  includes(plan, 'state shape drift, key-name drift, tenant scope mixup', 'V2 plan: store risk profile is explicit');
+  includes(plan, 'public export drift, `admit`/`narrow`/`review`/`block` semantic drift', 'V2 plan: admission risk profile is explicit');
+  includes(plan, 'missing `no-store` header, raw evidence/payload/impact leakage', 'V2 plan: shadow risk profile is explicit');
+  includes(plan, 'No runtime behavior change is intended.', 'V2 plan: no-behavior-change contract is explicit');
+  includes(plan, 'Do not split crypto/protocol adapters in this wave.', 'V2 plan: crypto/protocol exclusion is explicit');
+  includes(plan, 'Do not split `account-routes.ts` in this wave', 'V2 plan: account-routes exclusion is explicit');
+  includes(plan, 'Use a read-only Opus/second-opinion audit at each major surface boundary', 'V2 plan: second-opinion checkpoint is explicit');
+  includes(plan, '## Rollback Strategy', 'V2 plan: rollback strategy section is present');
+  includes(plan, 'This plan is repository-side maintainability evidence only.', 'V2 plan: no-claims section is explicit');
 }
 
 function testLargeFileBudgetScriptKeepsThresholdsAndRegistry(): void {
@@ -72,9 +99,15 @@ function testRepositoryNavigatorLinksLargeFileBudget(): void {
     '`npm run test:large-file-budget`',
     'Repository navigator: names the large-file budget test command',
   );
+  includes(
+    navigator,
+    '[Large File Refactor V2 Plan](../02-architecture/large-file-refactor-v2-plan.md)',
+    'Repository navigator: links the active large-file refactor V2 plan',
+  );
 }
 
 testLargeFileBudgetDocNamesThresholdsAndCommand();
+testLargeFileRefactorV2PlanLocksScopeAndNoClaims();
 testLargeFileBudgetScriptKeepsThresholdsAndRegistry();
 testLargeFileBudgetPackageScriptsExist();
 testRepositoryNavigatorLinksLargeFileBudget();

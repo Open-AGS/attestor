@@ -1,0 +1,74 @@
+{
+  "shapeVersion": "attestor.api-evidence-shape.v1",
+  "surface": "golden-paths-evaluator-summary",
+  "payload": {
+    "version": "attestor.golden-paths-evaluator.v1",
+    "pathCount": 6,
+    "readyPathCount": 6,
+    "totalScenarioCount": 48,
+    "totalNamedGapCount": 41,
+    "localOnly": true,
+    "repoSideOnly": true,
+    "shadowOnly": true,
+    "noCustomerPepProof": true,
+    "noExternalKmsProof": true,
+    "productionReady": false,
+    "enterpriseReady": false,
+    "paths": [
+      {
+        "key": "money-movement-refund",
+        "pack": "Money Movement",
+        "readiness": "local-review-ready",
+        "scenarioCount": 8,
+        "namedGapCount": 7,
+        "activatesEnforcement": false,
+        "productionReady": false
+      },
+      {
+        "key": "data-movement-controlled-export",
+        "pack": "Data Movement",
+        "readiness": "local-review-ready",
+        "scenarioCount": 8,
+        "namedGapCount": 7,
+        "activatesEnforcement": false,
+        "productionReady": false
+      },
+      {
+        "key": "authority-change-access",
+        "pack": "Authority Change",
+        "readiness": "local-review-ready",
+        "scenarioCount": 8,
+        "namedGapCount": 7,
+        "activatesEnforcement": false,
+        "productionReady": false
+      },
+      {
+        "key": "external-communication-message",
+        "pack": "External Communication",
+        "readiness": "local-review-ready",
+        "scenarioCount": 8,
+        "namedGapCount": 7,
+        "activatesEnforcement": false,
+        "productionReady": false
+      },
+      {
+        "key": "operational-execution-change",
+        "pack": "Operational Execution",
+        "readiness": "local-review-ready",
+        "scenarioCount": 8,
+        "namedGapCount": 6,
+        "activatesEnforcement": false,
+        "productionReady": false
+      },
+      {
+        "key": "programmable-money-transaction-intent",
+        "pack": "Programmable Money",
+        "readiness": "local-review-ready",
+        "scenarioCount": 8,
+        "namedGapCount": 7,
+        "activatesEnforcement": false,
+        "productionReady": false
+      }
+    ]
+  }
+}

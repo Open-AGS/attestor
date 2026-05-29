@@ -46,6 +46,7 @@ function testNavigatorKeepsFirstVisitorPaths(): void {
     '[Internal machine map](../02-architecture/attestor-internal-machine-map.md)',
     '[Service organization plan](../02-architecture/service-organization-plan.md)',
     '[Large file budget](../02-architecture/large-file-budget.md)',
+    '[Test system map](../02-architecture/test-system-map.md)',
   ]) {
     includes(doc, expected, `Repository navigator: links ${expected}`);
   }
@@ -67,6 +68,7 @@ function testNavigatorKeepsServiceMap(): void {
     '| `src/service/application/` | Route-facing application services',
     '| `src/financial/` | Finance proof wedge',
     '| `src/financial/cli/` | Financial CLI command families',
+    '| `tests/README.md` | Short test navigator',
   ]) {
     includes(doc, expected, `Repository navigator: keeps service map row ${expected}`);
   }

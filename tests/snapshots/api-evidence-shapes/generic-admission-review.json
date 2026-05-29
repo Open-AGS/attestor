@@ -1,0 +1,75 @@
+{
+  "shapeVersion": "attestor.api-evidence-shape.v1",
+  "surface": "generic-admission-envelope",
+  "payload": {
+    "mode": "review",
+    "shadowDecision": "would_review",
+    "downstreamPosture": "hold-for-review",
+    "enforcementActive": true,
+    "decision": "review",
+    "allowed": false,
+    "failClosed": true,
+    "reasonCodes": [
+      "mode-review",
+      "shadow-would_review",
+      "policy-ref-missing",
+      "evidence-ref-missing",
+      "authority-source-missing",
+      "authority-review-required"
+    ],
+    "missingFields": [
+      "authoritySources",
+      "evidenceRefs",
+      "policyRef"
+    ],
+    "requiredEvidenceKinds": [
+      "evidence_ref",
+      "policy_ref",
+      "trusted_authority_source_ref"
+    ],
+    "operatorOnlyReasonCodes": [
+      "authority-review-required",
+      "authority-source-missing"
+    ],
+    "proofKinds": [],
+    "checks": [
+      {
+        "kind": "policy",
+        "outcome": "fail",
+        "reasonCodes": [
+          "policy-ref-missing"
+        ]
+      },
+      {
+        "kind": "authority",
+        "outcome": "fail",
+        "reasonCodes": [
+          "authority-source-missing",
+          "authority-review-required"
+        ]
+      },
+      {
+        "kind": "evidence",
+        "outcome": "fail",
+        "reasonCodes": [
+          "evidence-ref-missing"
+        ]
+      },
+      {
+        "kind": "freshness",
+        "outcome": "pass",
+        "reasonCodes": []
+      },
+      {
+        "kind": "enforcement",
+        "outcome": "pass",
+        "reasonCodes": []
+      }
+    ],
+    "retry": {
+      "retryAllowed": false,
+      "retryCategory": "human-review-required",
+      "nextAllowedMode": null
+    }
+  }
+}

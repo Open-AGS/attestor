@@ -45,6 +45,7 @@ function testNavigatorKeepsFirstVisitorPaths(): void {
     '[Audit evidence system](../audit/README.md)',
     '[Internal machine map](../02-architecture/attestor-internal-machine-map.md)',
     '[Service organization plan](../02-architecture/service-organization-plan.md)',
+    '[Large file budget](../02-architecture/large-file-budget.md)',
   ]) {
     includes(doc, expected, `Repository navigator: links ${expected}`);
   }

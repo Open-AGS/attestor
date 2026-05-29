@@ -126,6 +126,10 @@ Completed:
   state from `src/service/control-plane-store/email-delivery-state.ts`, keeping
   the existing facade while isolating email provider/dispatch event persistence
   and snapshot behavior.
+- `src/service/control-plane-store.ts` now re-exports Stripe webhook state from
+  `src/service/control-plane-store/stripe-webhook-state.ts`, keeping the
+  existing facade while isolating webhook dedupe, claim/finalize/release, claim
+  lease cleanup, and snapshot behavior.
 
 Next:
 

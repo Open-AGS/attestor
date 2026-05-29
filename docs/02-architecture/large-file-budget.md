@@ -107,6 +107,8 @@ Completed:
 - `src/service/control-plane-store.ts` now imports PostgreSQL pool, schema, and
   transaction helpers from `src/service/control-plane-store/pg.ts`, keeping the
   existing facade path while isolating shared PG lifecycle state.
+- `src/service/control-plane-store.ts` now imports side-effect-free normalizers,
+  row mappers, and helper functions from `src/service/control-plane-store/mappers.ts`.
 
 Next:
 

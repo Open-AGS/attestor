@@ -8,31 +8,33 @@ The current file is intentionally still the public service import path. The next
 split must preserve `src/service/control-plane-store.ts` as a compatibility
 facade until all callers and tests are proven against smaller modules. The
 shared PostgreSQL lifecycle now lives in `control-plane-store/pg.ts`; the schema
-DDL lives in `control-plane-store/schema.ts`.
+DDL lives in `control-plane-store/schema.ts`; side-effect-free mapping helpers
+live in `control-plane-store/mappers.ts`.
 
 ## Current Shape
 
 | Slice | Current lines | Responsibility | Split target |
 |---|---:|---|---|
-| Boundary comment and imports | 1-228 | Shared control-plane boundary and file-store imports. | Keep imports local to each family after split. |
-| Snapshot interfaces and Stripe claim lease types | 229-316 | Backup/restore snapshot contracts and in-memory webhook lease state. | `control-plane-store/contracts.ts` and `stripe-webhook-state.ts`. |
+| Boundary comment and imports | 1-258 | Shared control-plane boundary and file-store imports. | Keep imports local to each family after split. |
+| Snapshot interfaces and Stripe claim lease types | 259-357 | Backup/restore snapshot contracts and in-memory webhook lease state. | `control-plane-store/contracts.ts` and `stripe-webhook-state.ts`. |
 | PostgreSQL connection and schema bootstrap | `pg.ts` plus `schema.ts` | `ATTESTOR_CONTROL_PLANE_PG_URL`, pool, transaction lifecycle, schema creation, indexes, shared tables. | Complete for this slice; future store-family modules should import from `control-plane-store/pg.ts`. |
-| Normalizers, coercers, row mappers, shared helpers | 317-760 | API-key digests, billing status normalization, row-to-record mappers, advisory locks. | `mappers.ts`, `billing-mappers.ts`, `shared.ts`. |
-| PostgreSQL repository helpers | 761-1396 | Pg helpers for hosted accounts, billing entitlements, tenant keys, usage, account auth, SAML replay. | Keep near the store family that owns each table. |
-| Hosted account and billing state facade | 1397-1907 | Account lifecycle, Stripe subscription/checkout/invoice application, file fallback. | `hosted-account-state.ts`, `billing-entitlement-state.ts`. |
-| Tenant keys and usage state facade | 1908-2176 | Tenant API key issuance/rotation/revocation, tenant plan sync, usage ledger. | `tenant-key-state.ts`, `usage-state.ts`. |
-| Account users, sessions, tokens, SAML replay | 2177-2687 | Account users, identities, password/MFA/passkey tokens, sessions, SAML replay. | `account-user-state.ts`, `account-session-state.ts`, `account-token-state.ts`. |
-| Admin audit and admin idempotency | 2688-2908 | Hash-linked admin audit ledger, admin idempotency replay records. | `admin-audit-state.ts`, `admin-idempotency-state.ts`. |
-| Pipeline idempotency | 2909-3053 | Pipeline request idempotency lookup/record, PostgreSQL advisory transaction. | `pipeline-idempotency-state.ts`. |
-| Stripe webhook processing | 3054-3336 | Processed Stripe webhook lookup, claim/finalize/release, file fallback. | `stripe-webhook-state.ts`. |
-| Async dead-letter and hosted email delivery | 3337-3633 | Async DLQ persistence and hosted email provider/dispatch event state. | `async-dead-letter-state.ts`, `email-delivery-state.ts`. |
-| Snapshot export/restore and test reset | 3634-4187 | Backup/restore adapters across all store families and test reset. | `snapshots.ts`, then per-family snapshot helpers. |
+| Normalizers, coercers, row mappers, shared helpers | `mappers.ts` | API-key digests, billing status normalization, row-to-record mappers, advisory locks, usage context projection. | Complete for this slice; future store-family modules should import from `control-plane-store/mappers.ts`. |
+| PostgreSQL repository helpers | 358-993 | Pg helpers for hosted accounts, billing entitlements, tenant keys, usage, account auth, SAML replay. | Keep near the store family that owns each table. |
+| Hosted account and billing state facade | 994-1504 | Account lifecycle, Stripe subscription/checkout/invoice application, file fallback. | `hosted-account-state.ts`, `billing-entitlement-state.ts`. |
+| Tenant keys and usage state facade | 1505-1773 | Tenant API key issuance/rotation/revocation, tenant plan sync, usage ledger. | `tenant-key-state.ts`, `usage-state.ts`. |
+| Account users, sessions, tokens, SAML replay | 1774-2284 | Account users, identities, password/MFA/passkey tokens, sessions, SAML replay. | `account-user-state.ts`, `account-session-state.ts`, `account-token-state.ts`. |
+| Admin audit and admin idempotency | 2285-2505 | Hash-linked admin audit ledger, admin idempotency replay records. | `admin-audit-state.ts`, `admin-idempotency-state.ts`. |
+| Pipeline idempotency | 2506-2650 | Pipeline request idempotency lookup/record, PostgreSQL advisory transaction. | `pipeline-idempotency-state.ts`. |
+| Stripe webhook processing | 2651-2933 | Processed Stripe webhook lookup, claim/finalize/release, file fallback. | `stripe-webhook-state.ts`. |
+| Async dead-letter and hosted email delivery | 2934-3230 | Async DLQ persistence and hosted email provider/dispatch event state. | `async-dead-letter-state.ts`, `email-delivery-state.ts`. |
+| Snapshot export/restore and test reset | 3231-3784 | Backup/restore adapters across all store families and test reset. | `snapshots.ts`, then per-family snapshot helpers. |
 
 ## Split Order
 
 1. Extract shared PostgreSQL/schema helpers first, without changing exported
    state function names. Schema SQL and PG helper extraction are complete.
 2. Extract row mappers and normalization helpers that have no side effects.
+   This is complete in `control-plane-store/mappers.ts`.
 3. Extract low-coupling families: async dead-letter, hosted email delivery,
    pipeline idempotency, admin audit/idempotency.
 4. Extract medium-coupling families: Stripe webhook, tenant keys, usage.

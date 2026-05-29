@@ -81,7 +81,10 @@ try {
     readProjectFile('src', 'financial', 'cli.ts'),
     readProjectFile('src', 'financial', 'cli', 'live-scenario.ts'),
   ].join('\n');
-  const financialTypes = readProjectFile('src', 'financial', 'types.ts');
+  const financialTypes = [
+    readProjectFile('src', 'financial', 'types.ts'),
+    readProjectFile('src', 'financial', 'types', 'live-proof.ts'),
+  ].join('\n');
   const evaluationPacket = readProjectFile('docs', '00-evaluation', 'v0.1-evaluation-packet.md');
   const registryDoc = readProjectFile('docs', '02-architecture', 'llm-provider-registry.md');
   const descriptor = consequenceAgenticSupplyChainGuardDescriptor();

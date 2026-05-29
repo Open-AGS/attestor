@@ -35,6 +35,13 @@ function readProjectFile(...segments: string[]): string {
   return readFileSync(join(process.cwd(), ...segments), 'utf8');
 }
 
+function readAccountRouteSources(): string {
+  return routeFiles
+    .filter((file) => file[file.length - 1].startsWith('account'))
+    .map((file) => readProjectFile(...file))
+    .join('\n');
+}
+
 const routeFiles = [
   ['src', 'service', 'http', 'routes', 'core-routes.ts'],
   ['src', 'service', 'http', 'routes', 'account-routes.ts'],
@@ -42,6 +49,7 @@ const routeFiles = [
   ['src', 'service', 'http', 'routes', 'account-federated-auth-routes.ts'],
   ['src', 'service', 'http', 'routes', 'account-mfa-passkey-routes.ts'],
   ['src', 'service', 'http', 'routes', 'account-admin-user-routes.ts'],
+  ['src', 'service', 'http', 'routes', 'account-billing-routes.ts'],
   ['src', 'service', 'http', 'routes', 'admin-routes.ts'],
   ['src', 'service', 'http', 'routes', 'action-surface-onboarding-routes.ts'],
   ['src', 'service', 'http', 'routes', 'policy-foundry-hosted-onboarding-routes.ts'],
@@ -256,7 +264,7 @@ function testEveryRuleCarriesEvidenceAndStandards(): void {
 function testImplementationEvidenceMatchesMatrix(): void {
   const requestContext = readProjectFile('src', 'service', 'request-context.ts');
   const tenantIsolation = readProjectFile('src', 'service', 'tenant-isolation.ts');
-  const accountRoutes = readProjectFile('src', 'service', 'http', 'routes', 'account-routes.ts');
+  const accountRoutes = readAccountRouteSources();
   const adminRoutes = readProjectFile('src', 'service', 'http', 'routes', 'admin-routes.ts');
   const releaseAdminAuthorization = readProjectFile('src', 'service', 'http', 'release-admin-authorization.ts');
   const releasePolicyRoutes = readProjectFile('src', 'service', 'http', 'routes', 'release-policy-control-routes.ts');

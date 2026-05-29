@@ -458,7 +458,7 @@ function testAccountRouteUsesStateServicePort(): void {
   assert.match(accountRoutes, /stateService\.findHostedAccountById/u);
   assert.match(accountRoutes, /stateService\.saveAccountUserRecord/u);
   assert.match(accountRoutes, /stateService\.recordHostedSamlReplay/u);
-  assert.match(accountRoute, /stateService\.listHostedEmailDeliveries/u);
+  assert.match(accountRoutes, /stateService\.listHostedEmailDeliveries/u);
   assert.doesNotMatch(accountRoute, /control-plane-store/u);
   assert.doesNotMatch(accountRoute, /findAccountUserByEmailState/u);
   assert.doesNotMatch(accountRoute, /issueAccountSessionState/u);

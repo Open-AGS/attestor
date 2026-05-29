@@ -159,7 +159,7 @@ export const HOSTED_API_AUTHORIZATION_RULES = [
     idempotencyBoundary: 'action_token_or_challenge',
     privacyBoundary: 'account identity settings stay scoped to the authenticated account session',
     evidence: [
-      'src/service/http/routes/account-routes.ts#requireAccountSession',
+      'src/service/http/routes/account-public-auth-routes.ts#requireAccountSession',
       'src/service/http/routes/account-mfa-passkey-routes.ts#requireAccountSession',
       'src/service/tenant-isolation.ts#resolveAccountSessionContext',
       'src/service/bootstrap/http-route-builders.ts#recordAccountMutationAudit',
@@ -178,7 +178,7 @@ export const HOSTED_API_AUTHORIZATION_RULES = [
     idempotencyBoundary: 'service_defined',
     privacyBoundary: 'first-user bootstrap is bound to resolved hosted account context',
     evidence: [
-      'src/service/http/routes/account-routes.ts#currentHostedAccount',
+      'src/service/http/routes/account-public-auth-routes.ts#currentHostedAccount',
       'src/service/application/account-auth-service.ts#bootstrapFirstUser',
     ],
     standards: ['OWASP API1:2023', 'OWASP API5:2023'],
@@ -195,7 +195,7 @@ export const HOSTED_API_AUTHORIZATION_RULES = [
     idempotencyBoundary: 'not_applicable',
     privacyBoundary: 'account, usage, entitlement, and billing export are resolved from current account or tenant context',
     evidence: [
-      'src/service/http/routes/account-routes.ts#currentHostedAccount',
+      'src/service/http/routes/account-billing-routes.ts#currentHostedAccount',
       'src/service/hosted/hosted-journey-contract.ts',
     ],
     standards: ['OWASP API1:2023', 'OWASP API3:2023'],
@@ -213,7 +213,7 @@ export const HOSTED_API_AUTHORIZATION_RULES = [
     idempotencyBoundary: 'not_applicable',
     privacyBoundary: 'role-gated account reads avoid historical plaintext secrets',
     evidence: [
-      'src/service/http/routes/account-routes.ts#requireAccountSession',
+      'src/service/http/routes/account-billing-routes.ts#requireAccountSession',
       'src/service/http/routes/account-admin-user-routes.ts#requireAccountSession',
       'src/service/application/account-api-key-service.ts',
       'src/service/application/account-user-management-service.ts',
@@ -232,7 +232,7 @@ export const HOSTED_API_AUTHORIZATION_RULES = [
     idempotencyBoundary: 'required_header',
     privacyBoundary: 'Stripe checkout session ids are handoff references; secret keys are never emitted',
     evidence: [
-      'src/service/http/routes/account-routes.ts#Idempotency-Key',
+      'src/service/http/routes/account-billing-routes.ts#Idempotency-Key',
       'src/service/billing/stripe/stripe-billing.ts#createHostedCheckoutSession',
       'src/service/bootstrap/http-route-builders.ts#recordAccountMutationAudit',
     ],
@@ -250,7 +250,7 @@ export const HOSTED_API_AUTHORIZATION_RULES = [
     idempotencyBoundary: 'service_defined',
     privacyBoundary: 'portal response is a short-lived Stripe-hosted handoff reference',
     evidence: [
-      'src/service/http/routes/account-routes.ts#requireAccountSession',
+      'src/service/http/routes/account-billing-routes.ts#requireAccountSession',
       'src/service/billing/stripe/stripe-billing.ts#createHostedBillingPortalSession',
       'src/service/bootstrap/http-route-builders.ts#recordAccountMutationAudit',
     ],

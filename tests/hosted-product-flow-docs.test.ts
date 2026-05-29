@@ -196,7 +196,7 @@ function testCommercialTruthSourcesStayLinked(): void {
 function testAccountVisibilityGuideStaysGrounded(): void {
   const guide = readProjectFile('docs', '01-overview', 'hosted-account-visibility.md');
   const contract = readProjectFile('src', 'service', 'hosted', 'hosted-journey-contract.ts');
-  const accountRoutes = readProjectFile('src', 'service', 'http', 'routes', 'account-routes.ts');
+  const accountRoutes = readAccountRouteSources();
   const apiTypes = [
     readProjectFile('src', 'service', 'api-types.ts'),
     readProjectFile('src', 'service', 'api-types', 'account.ts'),
@@ -275,7 +275,7 @@ function testFirstApiCallQuickstartStaysGrounded(): void {
   const firstApiCall = readProjectFile('docs', '01-overview', 'hosted-first-api-call.md');
   const contract = readProjectFile('src', 'service', 'hosted', 'hosted-journey-contract.ts');
   const pipelineRoute = readProjectFile('src', 'service', 'http', 'routes', 'pipeline-execution-routes.ts');
-  const accountRoutes = readProjectFile('src', 'service', 'http', 'routes', 'account-routes.ts');
+  const accountRoutes = readAccountRouteSources();
 
   includes(firstApiCall, 'Authorization: Bearer $ATTESTOR_API_KEY', 'Hosted first API-call docs: Bearer header is used');
   includes(firstApiCall, 'Do not put it in URLs', 'Hosted first API-call docs: API key is not documented as a URL parameter');

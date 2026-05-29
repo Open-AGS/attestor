@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 let passed = 0;
@@ -22,12 +22,16 @@ function excludes(haystack: string, needle: string, message: string): void {
 }
 
 const accountRoutes = readProjectFile('src', 'service', 'http', 'routes', 'account-routes.ts');
+const accountRouteSources = readdirSync(join(process.cwd(), 'src', 'service', 'http', 'routes'))
+  .filter((file) => /^account.*\.ts$/u.test(file))
+  .map((file) => readProjectFile('src', 'service', 'http', 'routes', file))
+  .join('\n');
 const helper = readProjectFile('src', 'service', 'http', 'routes', 'account-route-helpers.ts');
 
 includes(
-  accountRoutes,
+  accountRouteSources,
   "from './account-route-helpers.js';",
-  'Account route helper split: account-routes.ts imports the route-owned helper surface',
+  'Account route helper split: account route modules import the route-owned helper surface',
 );
 
 for (const exportedFunction of [

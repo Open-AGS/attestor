@@ -276,7 +276,17 @@ async function testAccountJsonRoutesRejectMalformedJson(): Promise<void> {
 }
 
 async function testAccountRouteJsonAndAuthAttemptVocabularyIsLocked(): Promise<void> {
-  const source = readFileSync(new URL('../src/service/http/routes/account-routes.ts', import.meta.url), 'utf8');
+  const routeFiles = [
+    '../src/service/http/routes/account-routes.ts',
+    '../src/service/http/routes/account-admin-user-routes.ts',
+    '../src/service/http/routes/account-billing-routes.ts',
+    '../src/service/http/routes/account-federated-auth-routes.ts',
+    '../src/service/http/routes/account-mfa-passkey-routes.ts',
+    '../src/service/http/routes/account-public-auth-routes.ts',
+  ];
+  const source = routeFiles
+    .map((file) => readFileSync(new URL(file, import.meta.url), 'utf8'))
+    .join('\n');
   const helper = readFileSync(new URL('../src/service/http/routes/account-route-helpers.ts', import.meta.url), 'utf8');
 
   assert.equal(source.includes('.json().catch(() => ({}))'), false);

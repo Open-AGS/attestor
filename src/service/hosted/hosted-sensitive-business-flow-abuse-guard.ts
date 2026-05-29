@@ -120,7 +120,7 @@ export const HOSTED_SENSITIVE_BUSINESS_FLOW_ABUSE_GUARDS = [
     privacyBoundary:
       'The response returns the created account user view, not password material or tenant credentials.',
     implementationEvidence: [
-      'src/service/http/routes/account-routes.ts#currentHostedAccount',
+      'src/service/http/routes/account-public-auth-routes.ts#currentHostedAccount',
       'src/service/application/account-auth-service.ts#bootstrapFirstUser',
     ],
     validation: [
@@ -186,7 +186,7 @@ export const HOSTED_SENSITIVE_BUSINESS_FLOW_ABUSE_GUARDS = [
     privacyBoundary:
       'The response exposes hosted Stripe handoff references and plan ids only; secret keys, payment details, and webhook secrets stay out of responses.',
     implementationEvidence: [
-      'src/service/http/routes/account-routes.ts#Idempotency-Key',
+      'src/service/http/routes/account-billing-routes.ts#Idempotency-Key',
       'src/service/billing/stripe/stripe-billing.ts#createHostedCheckoutSession',
     ],
     validation: [
@@ -215,7 +215,7 @@ export const HOSTED_SENSITIVE_BUSINESS_FLOW_ABUSE_GUARDS = [
     privacyBoundary:
       'The route returns the portal URL and session id only, not invoices, payment methods, or raw Stripe customer details.',
     implementationEvidence: [
-      'src/service/http/routes/account-routes.ts#createHostedBillingPortalSession',
+      'src/service/http/routes/account-billing-routes.ts#createHostedBillingPortalSession',
       'src/service/billing/stripe/stripe-billing.ts#createHostedBillingPortalSession',
     ],
     validation: [

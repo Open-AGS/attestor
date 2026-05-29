@@ -47,6 +47,7 @@ const genericAdmissionRoutes = readProjectFile(
   'generic-admission-routes.ts',
 );
 const releaseRuntime = readProjectFile('src', 'service', 'bootstrap', 'release-runtime.ts');
+const releaseRuntimePki = readProjectFile('src', 'service', 'bootstrap', 'release-runtime-pki.ts');
 const releaseObjectModel = readProjectFile('src', 'release-kernel', 'object-model.ts');
 const controlPlaneStore = readProjectFile('src', 'service', 'control-plane-store.ts');
 const controlPlaneSchema = readProjectFile('src', 'service', 'control-plane-store', 'schema.ts');
@@ -104,7 +105,8 @@ includes(tenantIsolation, 'hasVerifiedTenantContext', 'Repo evidence: tenant con
 includes(tenantIsolation, 'c.req.raw.headers.set', 'Repo evidence: tenant middleware overwrites internal headers');
 includes(genericAdmissionRoutes, 'Admission tenantId must match the authenticated tenant context', 'Repo evidence: generic admission rejects tenant mismatch');
 includes(genericAdmissionRoutes, 'tenantId: tenant.tenantId', 'Repo evidence: generic admission overwrites tenantId');
-includes(releaseRuntime, 'generatePkiHierarchy(API_CA_SUBJECT, API_SIGNER_SUBJECT, API_REVIEWER_SUBJECT)', 'Repo evidence: release runtime uses runtime-wide PKI hierarchy');
+includes(releaseRuntimePki, 'generatePkiHierarchy(API_CA_SUBJECT, API_SIGNER_SUBJECT, API_REVIEWER_SUBJECT)', 'Repo evidence: release runtime PKI module uses runtime-wide PKI hierarchy');
+includes(releaseRuntime, 'resolveReleaseRuntimePki', 'Repo evidence: release runtime facade resolves the runtime-wide PKI hierarchy');
 includes(releaseRuntime, 'createReleaseTokenIssuer', 'Repo evidence: release token issuer is created from runtime signer');
 includes(releaseObjectModel, 'readonly tenant_id', 'Repo evidence: release token claims include tenant_id');
 includes(controlPlaneStore, 'isSharedControlPlaneConfigured', 'Repo evidence: shared control-plane mode exists');

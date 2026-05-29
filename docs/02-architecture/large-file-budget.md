@@ -137,6 +137,10 @@ Completed:
 - `src/service/control-plane-store.ts` now re-exports usage ledger state from
   `src/service/control-plane-store/usage-state.ts`, keeping the existing facade
   while isolating quota read/consume/query and snapshot behavior.
+- `src/service/control-plane-store.ts` now re-exports account auth state from
+  `src/service/control-plane-store/account-auth-state.ts`, keeping the existing
+  facade while isolating account users, sessions, action tokens, hosted SAML
+  replay, and their backup/restore snapshot behavior.
 
 Next:
 

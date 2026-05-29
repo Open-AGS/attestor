@@ -15,6 +15,13 @@ function readAccountRouteSources(): string {
     .join('\n');
 }
 
+function readAdminRouteSources(): string {
+  return readdirSync(ROUTE_ROOT)
+    .filter((file) => /^admin.*\.ts$/u.test(file))
+    .map((file) => readFileSync(join(ROUTE_ROOT, file), 'utf8'))
+    .join('\n');
+}
+
 function collectRouteFiles(root: string): string[] {
   const results: string[] = [];
   for (const entry of readdirSync(root)) {
@@ -184,6 +191,18 @@ function testStripeWebhookRouteDelegatesIngressUseCase(): void {
     'application',
     'stripe-webhook-billing-processor.ts',
   );
+  const stripeWebhookBillingProcessorTypes = readProjectFile(
+    'src',
+    'service',
+    'application',
+    'stripe-webhook-billing-processor-types.ts',
+  );
+  const stripeWebhookBillingProcessorContext = readProjectFile(
+    'src',
+    'service',
+    'application',
+    'stripe-webhook-billing-processor-context.ts',
+  );
 
   assert.match(stripeWebhookRoute, /stripeWebhookService: StripeWebhookService/u);
   assert.match(stripeWebhookRoute, /stripeWebhookBillingProcessor: StripeWebhookBillingProcessor/u);
@@ -203,9 +222,10 @@ function testStripeWebhookRouteDelegatesIngressUseCase(): void {
   assert.match(stripeWebhookService, /export interface StripeWebhookService/u);
   assert.match(stripeWebhookService, /begin\(input: StripeWebhookBeginInput\)/u);
   assert.match(stripeWebhookService, /releaseClaim\(\)/u);
-  assert.match(stripeWebhookBillingProcessor, /export interface StripeWebhookBillingProcessor/u);
-  assert.match(stripeWebhookBillingProcessor, /process\(stripeWebhook: StripeWebhookProcessingHandle\)/u);
-  assert.match(stripeWebhookBillingProcessor, /accountStoreErrorResponse/u);
+  assert.match(stripeWebhookBillingProcessor, /StripeWebhookBillingProcessor/u);
+  assert.match(stripeWebhookBillingProcessorTypes, /export interface StripeWebhookBillingProcessor/u);
+  assert.match(stripeWebhookBillingProcessorTypes, /process\(stripeWebhook: StripeWebhookProcessingHandle\)/u);
+  assert.match(stripeWebhookBillingProcessorContext, /export function accountStoreErrorResponse/u);
 }
 
 function testStripeWebhookBillingProcessorUsesNamedEventProcessors(): void {
@@ -215,8 +235,15 @@ function testStripeWebhookBillingProcessorUsesNamedEventProcessors(): void {
     'application',
     'stripe-webhook-billing-processor.ts',
   );
+  const stripeWebhookBillingUnsupportedEvent = readProjectFile(
+    'src',
+    'service',
+    'application',
+    'stripe-webhook-billing-unsupported-event.ts',
+  );
 
-  assert.match(stripeWebhookBillingProcessor, /async function processUnsupportedEvent/u);
+  assert.match(stripeWebhookBillingProcessor, /processUnsupportedStripeBillingEvent/u);
+  assert.match(stripeWebhookBillingUnsupportedEvent, /export async function processUnsupportedStripeBillingEvent/u);
   assert.match(stripeWebhookBillingProcessor, /async function processSubscriptionEvent/u);
   assert.match(stripeWebhookBillingProcessor, /async function processCheckoutCompletedEvent/u);
   assert.match(stripeWebhookBillingProcessor, /async function processChargeEvent/u);
@@ -231,20 +258,28 @@ function testStripeWebhookBillingProcessorUsesNamedEventProcessors(): void {
 
 function testAdminRouteIsStronglyTyped(): void {
   const adminRoute = readFileSync(join(ROUTE_ROOT, 'admin-routes.ts'), 'utf8');
+  const adminRouteContext = readFileSync(join(ROUTE_ROOT, 'admin-route-context.ts'), 'utf8');
 
-  assert.match(adminRoute, /export interface AdminRouteDeps/u);
+  assert.match(adminRoute, /export type \{ AdminRouteDeps \} from '.\/admin-route-context\.js';/u);
+  assert.match(adminRouteContext, /export interface AdminRouteDeps/u);
   assert.doesNotMatch(adminRoute, /type RouteDependency = any/u);
   assert.doesNotMatch(adminRoute, /:\s*any\b/u);
   assert.doesNotMatch(adminRoute, /\bas any\b/u);
+  assert.doesNotMatch(adminRouteContext, /type RouteDependency = any/u);
+  assert.doesNotMatch(adminRouteContext, /:\s*any\b/u);
+  assert.doesNotMatch(adminRouteContext, /\bas any\b/u);
 }
 
 function testAdminRouteDelegatesMutationUseCase(): void {
   const adminRoute = readFileSync(join(ROUTE_ROOT, 'admin-routes.ts'), 'utf8');
+  const adminRoutes = readAdminRouteSources();
+  const adminRouteContext = readFileSync(join(ROUTE_ROOT, 'admin-route-context.ts'), 'utf8');
   const adminMutationService = readProjectFile('src', 'service', 'application', 'admin-mutation-service.ts');
 
-  assert.match(adminRoute, /adminMutationService: AdminMutationService/u);
-  assert.match(adminRoute, /adminMutationService\.begin/u);
-  assert.match(adminRoute, /adminMutationService\.finalize/u);
+  assert.match(adminRoute, /registerAdminAccountMutationRoutes\(app, deps\);/u);
+  assert.match(adminRouteContext, /adminMutationService: AdminMutationService/u);
+  assert.match(adminRoutes, /adminMutationService\.begin/u);
+  assert.match(adminRoutes, /adminMutationService\.finalize/u);
   assert.doesNotMatch(adminRoute, /adminMutationRequest/u);
   assert.doesNotMatch(adminRoute, /finalizeAdminMutation/u);
 
@@ -255,17 +290,21 @@ function testAdminRouteDelegatesMutationUseCase(): void {
 
 function testAdminRouteDelegatesControlUseCases(): void {
   const adminRoute = readFileSync(join(ROUTE_ROOT, 'admin-routes.ts'), 'utf8');
+  const adminRoutes = readAdminRouteSources();
+  const adminRouteContext = readFileSync(join(ROUTE_ROOT, 'admin-route-context.ts'), 'utf8');
   const adminControlService = readProjectFile('src', 'service', 'application', 'admin-control-service.ts');
 
-  assert.match(adminRoute, /adminControlService: AdminControlService/u);
-  assert.match(adminRoute, /adminControlService\.provisionHostedAccount/u);
-  assert.match(adminRoute, /adminControlService\.attachStripeBilling/u);
-  assert.match(adminRoute, /adminControlService\.setHostedAccountStatus/u);
-  assert.match(adminRoute, /adminControlService\.issueTenantApiKey/u);
-  assert.match(adminRoute, /adminControlService\.rotateTenantApiKey/u);
-  assert.match(adminRoute, /adminControlService\.setTenantApiKeyStatus/u);
-  assert.match(adminRoute, /adminControlService\.recoverTenantApiKey/u);
-  assert.match(adminRoute, /adminControlService\.revokeTenantApiKey/u);
+  assert.match(adminRoute, /registerAdminAccountMutationRoutes\(app, deps\);/u);
+  assert.match(adminRoute, /registerAdminTenantKeyRoutes\(app, deps\);/u);
+  assert.match(adminRouteContext, /adminControlService: AdminControlService/u);
+  assert.match(adminRoutes, /adminControlService\.provisionHostedAccount/u);
+  assert.match(adminRoutes, /adminControlService\.attachStripeBilling/u);
+  assert.match(adminRoutes, /adminControlService\.setHostedAccountStatus/u);
+  assert.match(adminRoutes, /adminControlService\.issueTenantApiKey/u);
+  assert.match(adminRoutes, /adminControlService\.rotateTenantApiKey/u);
+  assert.match(adminRoutes, /adminControlService\.setTenantApiKeyStatus/u);
+  assert.match(adminRoutes, /adminControlService\.recoverTenantApiKey/u);
+  assert.match(adminRoutes, /adminControlService\.revokeTenantApiKey/u);
   assert.doesNotMatch(adminRoute, /provisionHostedAccountState/u);
   assert.doesNotMatch(adminRoute, /attachStripeBillingToAccountState/u);
   assert.doesNotMatch(adminRoute, /setHostedAccountStatusState/u);
@@ -285,17 +324,21 @@ function testAdminRouteDelegatesControlUseCases(): void {
 
 function testAdminRouteDelegatesQueryUseCases(): void {
   const adminRoute = readFileSync(join(ROUTE_ROOT, 'admin-routes.ts'), 'utf8');
+  const adminRoutes = readAdminRouteSources();
+  const adminRouteContext = readFileSync(join(ROUTE_ROOT, 'admin-route-context.ts'), 'utf8');
   const adminQueryService = readProjectFile('src', 'service', 'application', 'admin-query-service.ts');
 
-  assert.match(adminRoute, /adminQueryService: AdminQueryService/u);
-  assert.match(adminRoute, /adminQueryService\.listTenantKeys/u);
-  assert.match(adminRoute, /adminQueryService\.listHostedAccounts/u);
-  assert.match(adminRoute, /adminQueryService\.findHostedAccountById/u);
-  assert.match(adminRoute, /adminQueryService\.listAdminAuditRecords/u);
-  assert.match(adminRoute, /adminQueryService\.listHostedBillingEntitlements/u);
-  assert.match(adminRoute, /adminQueryService\.listHostedEmailDeliveries/u);
-  assert.match(adminRoute, /adminQueryService\.listAsyncDeadLetters/u);
-  assert.match(adminRoute, /adminQueryService\.listUsage/u);
+  assert.match(adminRoute, /registerAdminReadRoutes\(app, deps\);/u);
+  assert.match(adminRoute, /registerAdminQueueRoutes\(app, deps\);/u);
+  assert.match(adminRouteContext, /adminQueryService: AdminQueryService/u);
+  assert.match(adminRoutes, /adminQueryService\.listTenantKeys/u);
+  assert.match(adminRoutes, /adminQueryService\.listHostedAccounts/u);
+  assert.match(adminRoutes, /adminQueryService\.findHostedAccountById/u);
+  assert.match(adminRoutes, /adminQueryService\.listAdminAuditRecords/u);
+  assert.match(adminRoutes, /adminQueryService\.listHostedBillingEntitlements/u);
+  assert.match(adminRoutes, /adminQueryService\.listHostedEmailDeliveries/u);
+  assert.match(adminRoutes, /adminQueryService\.listAsyncDeadLetters/u);
+  assert.match(adminRoutes, /adminQueryService\.listUsage/u);
   assert.doesNotMatch(adminRoute, /control-plane-store/u);
   assert.doesNotMatch(adminRoute, /listTenantKeyRecordsState/u);
   assert.doesNotMatch(adminRoute, /listHostedAccountsState/u);
@@ -313,6 +356,7 @@ function testAdminRouteDelegatesQueryUseCases(): void {
 
 function testAdminRouteRequiresSharedDegradedModeGrantStore(): void {
   const adminRoute = readFileSync(join(ROUTE_ROOT, 'admin-routes.ts'), 'utf8');
+  const adminRouteContext = readFileSync(join(ROUTE_ROOT, 'admin-route-context.ts'), 'utf8');
   const apiRouteRuntime = readProjectFile(
     'src',
     'service',
@@ -326,8 +370,8 @@ function testAdminRouteRequiresSharedDegradedModeGrantStore(): void {
     'release-runtime.ts',
   );
 
-  assert.match(adminRoute, /releaseDegradedModeGrantStore: RequestPathDegradedModeGrantStore;/u);
-  assert.doesNotMatch(adminRoute, /releaseDegradedModeGrantStore\?: RequestPathDegradedModeGrantStore;/u);
+  assert.match(adminRouteContext, /releaseDegradedModeGrantStore: RequestPathDegradedModeGrantStore;/u);
+  assert.doesNotMatch(adminRouteContext, /releaseDegradedModeGrantStore\?: RequestPathDegradedModeGrantStore;/u);
   assert.doesNotMatch(adminRoute, /createInMemoryDegradedModeGrantStore/u);
   assert.match(apiRouteRuntime, /createReleaseRuntimeBootstrap\(\{/u);
   assert.match(apiRouteRuntime, /allowPreflightOnDurabilityViolation:\s*runtimeProfile\.id === 'production-shared'/u);

@@ -190,12 +190,34 @@ Completed:
   live in `src/service/http/routes/shadow-downstream-activation-routes.ts`;
   customer activation handoff/receipt routes live in
   `src/service/http/routes/shadow-customer-activation-routes.ts`.
+- `src/service/http/routes/account-routes.ts` is now a small route registration
+  facade. Public account/session routes, federated/MFA/passkey routes,
+  account-admin mutation routes, and account visibility/email/billing routes
+  live in responsibility-named route-family modules.
+- `src/service/http/routes/release-policy-control-routes.ts` is now a small
+  route registration facade. Read/simulation/discovery routes and mutation/
+  activation/rollback routes live in responsibility-named route-family modules.
+- `src/service/http/routes/admin-routes.ts` is now a small route registration
+  facade. Read, account mutation, tenant-key, queue, and release-enforcement
+  admin routes live in responsibility-named route-family modules.
+- `src/service/application/stripe-webhook-billing-processor.ts` now imports and
+  re-exports billing processor contracts from
+  `src/service/application/stripe-webhook-billing-processor-types.ts`, context
+  helpers from `src/service/application/stripe-webhook-billing-processor-context.ts`,
+  Stripe helper functions from
+  `src/service/application/stripe-webhook-billing-processor-helpers.ts`, and
+  unsupported-event handling from
+  `src/service/application/stripe-webhook-billing-unsupported-event.ts`.
+- `src/service/billing/billing-event-ledger.ts` now imports and re-exports
+  billing event, line-item, charge, list-filter, input, and snapshot contracts
+  from `src/service/billing/billing-event-ledger-types.ts`, keeping the ledger
+  API stable while isolating the type surface.
 
 Next:
 
-1. Execute the final wave from
+1. Continue the final wave from
    [Final Large File Refactor Plan](final-large-file-refactor-plan.md), starting
-   with the `account-routes.ts` route-matrix split.
+   with `F-11` shadow persistence store family extraction.
 2. Touch crypto/protocol adapters only where module-specific risk warrants it.
 
 ## No-Claims

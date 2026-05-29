@@ -1,159 +1,32 @@
 import Stripe from 'stripe';
-import {
-  AccountStoreError,
-  type HostedAccountRecord,
-  type StripeInvoiceStatus,
-} from '../account/account-store.js';
 import type * as BillingEventLedger from '../billing/billing-event-ledger.js';
-import type { HostedBillingEntitlementRecord } from '../billing/billing-entitlement-store.js';
-import type * as ControlPlaneStore from '../control-plane-store.js';
-import type * as PlanCatalog from '../plan-catalog.js';
-import type * as StripeBilling from '../billing/stripe/stripe-billing.js';
+import {
+  accountStoreErrorResponse,
+  createProcessorContext,
+} from './stripe-webhook-billing-processor-context.js';
+import {
+  isStripeChargeEvent,
+  stripeSubscriptionHostedPriceId,
+} from './stripe-webhook-billing-processor-helpers.js';
 import type {
-  BillingWebhookMetricOutcome,
-  StripeWebhookProcessingHandle,
-} from './stripe-webhook-service.js';
+  StripeInvoiceWebhookObject,
+  StripeWebhookBillingProcessor,
+  StripeWebhookBillingProcessorDeps,
+  StripeWebhookBillingProcessorResult,
+  StripeWebhookProcessorContext,
+} from './stripe-webhook-billing-processor-types.js';
+import type { StripeWebhookProcessingHandle } from './stripe-webhook-service.js';
+import { processUnsupportedStripeBillingEvent } from './stripe-webhook-billing-unsupported-event.js';
 
-interface SyncHostedBillingEntitlementOptions {
-  lastEventId?: string | null;
-  lastEventType?: string | null;
-  lastEventAt?: string | null;
-  stripeEntitlementLookupKeys?: string[] | null;
-  stripeEntitlementFeatureIds?: string[] | null;
-  stripeEntitlementSummaryUpdatedAt?: string | null;
-}
-
-type StripeAccountMatchReason = 'account_id' | 'subscription_id' | 'customer_id' | 'none';
-
-interface StripeAccountMatch {
-  record: HostedAccountRecord | null;
-  matchReason: StripeAccountMatchReason;
-}
-
-type StripeInvoiceWebhookObject = Stripe.Invoice & {
-  subscription?: unknown;
-  subscription_details?: {
-    metadata?: Record<string, unknown> | Stripe.Metadata | null;
-  } | null;
-  status_transitions?: {
-    paid_at?: unknown;
-  } | null;
-  billing_reason?: string | null;
-};
-
-export interface StripeWebhookProcessorObservability {
-  accountId?: string | null;
-  accountStatus?: HostedAccountRecord['status'] | null;
-  tenantId?: string | null;
-  planId?: string | null;
-}
-
-export interface StripeWebhookBillingProcessorResult {
-  statusCode: 200 | 404 | 409;
-  responseBody: Record<string, unknown>;
-  observability: StripeWebhookProcessorObservability;
-}
-
-interface StripeWebhookProcessorContext {
-  observability: StripeWebhookProcessorObservability;
-  json(
-    responseBody: Record<string, unknown>,
-    statusCode?: 200 | 404 | 409,
-  ): StripeWebhookBillingProcessorResult;
-  set(key: string, value: unknown): void;
-}
-
-export interface StripeWebhookBillingProcessor {
-  process(stripeWebhook: StripeWebhookProcessingHandle): Promise<StripeWebhookBillingProcessorResult>;
-}
-
-export interface StripeWebhookBillingProcessorDeps {
-  observeBillingWebhookEvent(eventType: string, outcome: BillingWebhookMetricOutcome): void;
-  isSupportedStripeWebhookEvent(eventType: string): boolean;
-  stripeReferenceId(value: unknown): string | null;
-  parseStripeInvoiceStatus(raw: unknown): StripeInvoiceStatus;
-  stripeInvoicePriceId(invoice: Stripe.Invoice): string | null;
-  metadataStringValue(
-    key: string,
-    ...sources: Array<Record<string, unknown> | Stripe.Metadata | null | undefined>
-  ): string | null;
-  applyStripeSubscriptionStateState: typeof ControlPlaneStore.applyStripeSubscriptionStateState;
-  applyStripeInvoiceStateState: typeof ControlPlaneStore.applyStripeInvoiceStateState;
-  applyStripeCheckoutCompletionState: typeof ControlPlaneStore.applyStripeCheckoutCompletionState;
-  findHostedAccountByStripeRefs(options: {
-    accountId?: string | null;
-    stripeCustomerId?: string | null;
-    stripeSubscriptionId?: string | null;
-  }): Promise<StripeAccountMatch>;
-  findHostedPlanByStripePriceId: typeof PlanCatalog.findHostedPlanByStripePriceId;
-  resolvePlanSpec: typeof PlanCatalog.resolvePlanSpec;
-  DEFAULT_HOSTED_PLAN_ID: typeof PlanCatalog.DEFAULT_HOSTED_PLAN_ID;
-  syncTenantPlanByTenantIdState: typeof ControlPlaneStore.syncTenantPlanByTenantIdState;
-  syncHostedBillingEntitlement(
-    account: HostedAccountRecord,
-    options?: SyncHostedBillingEntitlementOptions,
-  ): Promise<HostedBillingEntitlementRecord>;
-  revokeAccountSessionsForLifecycleChange(options: {
-    account: HostedAccountRecord | null;
-    previousStatus: HostedAccountRecord['status'] | null;
-    nextStatus: HostedAccountRecord['status'] | null;
-  }): Promise<number>;
-  appendAdminAuditRecordState: typeof ControlPlaneStore.appendAdminAuditRecordState;
-  billingEntitlementView(record: HostedBillingEntitlementRecord): Record<string, unknown>;
-  extractInvoiceLineItemSnapshotsFromInvoice: typeof StripeBilling.extractInvoiceLineItemSnapshotsFromInvoice;
-  listHostedStripeActiveEntitlements: typeof StripeBilling.listHostedStripeActiveEntitlements;
-  extractActiveEntitlementsFromSummary: typeof StripeBilling.extractActiveEntitlementsFromSummary;
-  listHostedStripeInvoiceLineItems: typeof StripeBilling.listHostedStripeInvoiceLineItems;
-  upsertStripeInvoiceLineItems: typeof BillingEventLedger.upsertStripeInvoiceLineItems;
-  parseStripeChargeStatus(raw: unknown): BillingEventLedger.BillingChargeStatus;
-  getHostedPlan: typeof PlanCatalog.getHostedPlan;
-  upsertStripeCharges: typeof BillingEventLedger.upsertStripeCharges;
-  unixSecondsToIso(value: unknown): string | null;
-  resolvePlanStripePrice: typeof PlanCatalog.resolvePlanStripePrice;
-}
-
-function createProcessorContext(): StripeWebhookProcessorContext {
-  const observability: StripeWebhookProcessorObservability = {};
-  return {
-    observability,
-    json(responseBody, statusCode = 200) {
-      return {
-        statusCode,
-        responseBody,
-        observability,
-      };
-    },
-    set(key, value) {
-      switch (key) {
-        case 'obs.accountId':
-          observability.accountId = typeof value === 'string' ? value : null;
-          break;
-        case 'obs.accountStatus':
-          observability.accountStatus = typeof value === 'string'
-            ? value as HostedAccountRecord['status']
-            : null;
-          break;
-        case 'obs.tenantId':
-          observability.tenantId = typeof value === 'string' ? value : null;
-          break;
-        case 'obs.planId':
-          observability.planId = typeof value === 'string' ? value : null;
-          break;
-      }
-    },
-  };
-}
-
-function accountStoreErrorResponse(
-  c: StripeWebhookProcessorContext,
-  err: unknown,
-): StripeWebhookBillingProcessorResult | null {
-  if (!(err instanceof AccountStoreError)) return null;
-  if (err.code === 'NOT_FOUND') {
-    return c.json({ error: err.message }, 404);
-  }
-  return c.json({ error: err.message }, 409);
-}
+export type {
+  StripeAccountMatch,
+  StripeAccountMatchReason,
+  StripeInvoiceWebhookObject,
+  StripeWebhookBillingProcessor,
+  StripeWebhookBillingProcessorDeps,
+  StripeWebhookBillingProcessorResult,
+  StripeWebhookProcessorObservability,
+} from './stripe-webhook-billing-processor-types.js';
 
 export function createStripeWebhookBillingProcessor(
   deps: StripeWebhookBillingProcessorDeps,
@@ -189,57 +62,6 @@ export function createStripeWebhookBillingProcessor(
     resolvePlanStripePrice,
   } = deps;
 
-  function isStripeChargeEvent(eventType: string): boolean {
-    return eventType === 'charge.succeeded'
-      || eventType === 'charge.failed'
-      || eventType === 'charge.refunded';
-  }
-
-  function stripeSubscriptionHostedPriceId(subscription: Stripe.Subscription): string | null {
-    const priceIds = (subscription.items?.data ?? [])
-      .map((item) => typeof item.price?.id === 'string' ? item.price.id : null)
-      .filter((priceId): priceId is string => priceId !== null);
-    return priceIds.find((priceId) => findHostedPlanByStripePriceId(priceId) !== null)
-      ?? priceIds[0]
-      ?? null;
-  }
-
-  async function processUnsupportedEvent(
-    stripeWebhook: StripeWebhookProcessingHandle,
-    c: StripeWebhookProcessorContext,
-  ): Promise<StripeWebhookBillingProcessorResult> {
-    const event = stripeWebhook.event;
-    const sharedBillingLedger = stripeWebhook.sharedBillingLedger;
-    observeBillingWebhookEvent(event.type, 'ignored');
-    if (sharedBillingLedger) {
-      await stripeWebhook.finalizeSharedEvent({
-        providerEventId: event.id,
-        outcome: 'ignored',
-        reason: 'unsupported_event_type',
-        metadata: {
-          eventType: event.type,
-        },
-      });
-    } else {
-      await stripeWebhook.finalizeDedupe({
-        eventType: event.type,
-        accountId: null,
-        stripeCustomerId: null,
-        stripeSubscriptionId: null,
-        outcome: 'ignored',
-        reason: 'unsupported_event_type',
-      });
-    }
-    return c.json({
-      received: true,
-      duplicate: false,
-      ignored: true,
-      eventId: event.id,
-      eventType: event.type,
-      reason: 'unsupported_event_type',
-    });
-  }
-
   async function processSubscriptionEvent(
     stripeWebhook: StripeWebhookProcessingHandle,
     c: StripeWebhookProcessorContext,
@@ -255,7 +77,7 @@ export function createStripeWebhookBillingProcessor(
         : event.type === 'customer.subscription.deleted'
           ? 'canceled'
           : null;
-    const stripePriceId = stripeSubscriptionHostedPriceId(subscription);
+    const stripePriceId = stripeSubscriptionHostedPriceId(subscription, findHostedPlanByStripePriceId);
     const accountIdFromMetadata = metadataStringValue('attestorAccountId', subscription.metadata);
     const eventCreatedAt = unixSecondsToIso(event.created) ?? new Date().toISOString();
 
@@ -1319,7 +1141,7 @@ export function createStripeWebhookBillingProcessor(
       const event = stripeWebhook.event;
       try {
         if (!isSupportedStripeWebhookEvent(event.type)) {
-          return processUnsupportedEvent(stripeWebhook, c);
+          return processUnsupportedStripeBillingEvent(stripeWebhook, c, observeBillingWebhookEvent);
         }
 
         if (event.type.startsWith('customer.subscription.')) {

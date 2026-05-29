@@ -1,7 +1,7 @@
 # Final Large File Refactor Plan
 
-Status: planned. This document is the execution contract for the final broad
-large-file reduction wave after V2 closed the `control-plane-store.ts`,
+Status: in progress. This document is the execution contract for the final
+broad large-file reduction wave after V2 closed the `control-plane-store.ts`,
 `consequence-admission/index.ts`, and `shadow-routes.ts` hotspots.
 
 This is a repository maintainability plan only. It does not change runtime
@@ -56,6 +56,11 @@ References:
 
 Estimated moved code: 18000-22000 lines into smaller responsibility-named
 modules and test files.
+
+Current execution status:
+
+- `F-00` through `F-10` are closed repo-side.
+- Next round: `F-11` shadow persistence store family extraction.
 
 ## Planned Rounds
 

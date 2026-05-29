@@ -26,7 +26,7 @@ try {
     'consequence-admission',
     'shadow-customer-activation-handoff.ts',
   );
-  const routes = readProjectFile('src', 'service', 'http', 'routes', 'shadow-routes.ts');
+  const routes = readProjectFile('src', 'service', 'http', 'routes', 'shadow-customer-activation-routes.ts');
   const handoffTests = readProjectFile('tests', 'shadow-customer-activation-handoff.test.ts');
   const packageJson = readProjectFile('package.json');
 

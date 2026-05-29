@@ -23,7 +23,6 @@ const CODE_EXTENSIONS = Object.freeze([
 const HARD_LIMIT_REGISTRY = Object.freeze([
   { path: 'src/service/control-plane-store.ts', maxLines: 3415, reason: 'P2 store-family split in progress; schema, PG helpers, mapper helpers, pipeline idempotency, and admin state extracted; compatibility facade must keep shrinking.' },
   { path: 'tests/live-api.test.ts', maxLines: 3408, reason: 'P2 live API test matrix; split by live surface after route/runtime priorities are stable.' },
-  { path: 'src/service/http/routes/shadow-routes.ts', maxLines: 1611, reason: 'P2 route-family split in progress; summary/dashboard/audit, simulation/history, and policy-foundry/promotion routes extracted while activation/receipt behavior remains under dedicated coverage.' },
   { path: 'src/service/http/routes/account-routes.ts', maxLines: 2588, reason: 'P2 route-family split planned; account auth/session/MFA/user flows require route-matrix coverage.' },
   { path: 'tests/generic-admission-mode-ladder.test.ts', maxLines: 1861, reason: 'P2 admission-mode matrix; split only after guard route matrix stays stable.' },
   { path: 'src/crypto-authorization-core/modular-account-adapters.ts', maxLines: 1836, reason: 'P4 protocol adapter exception; split only by coherent adapter helper boundaries.' },

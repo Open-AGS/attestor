@@ -185,15 +185,17 @@ Completed:
   Policy Foundry readiness/active-question/red-team, promotion draft/packet/
   simulation, bundle publication, and candidate status routes to
   `src/service/http/routes/shadow-policy-foundry-promotion-routes.ts`.
+- `src/service/http/routes/shadow-routes.ts` is now a small route registration
+  facade. Downstream verification/integration and activation-readiness routes
+  live in `src/service/http/routes/shadow-downstream-activation-routes.ts`;
+  customer activation handoff/receipt routes live in
+  `src/service/http/routes/shadow-customer-activation-routes.ts`.
 
 Next:
 
-1. Split `src/service/http/routes/shadow-routes.ts` downstream verification,
-   downstream integration, activation readiness, activation handoff, and
-   activation receipt routes by route family.
-2. Leave `src/service/http/routes/account-routes.ts` for a separate route-matrix
+1. Leave `src/service/http/routes/account-routes.ts` for a separate route-matrix
    wave after V2.
-3. Touch crypto/protocol adapters only where module-specific risk warrants it.
+2. Touch crypto/protocol adapters only where module-specific risk warrants it.
 
 ## No-Claims
 

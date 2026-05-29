@@ -22,12 +22,20 @@ function excludes(haystack: string, needle: string, message: string): void {
 }
 
 const shadowRoutes = readProjectFile('src', 'service', 'http', 'routes', 'shadow-routes.ts');
+const shadowRouteModules = [
+  shadowRoutes,
+  readProjectFile('src', 'service', 'http', 'routes', 'shadow-summary-dashboard-routes.ts'),
+  readProjectFile('src', 'service', 'http', 'routes', 'shadow-simulation-history-routes.ts'),
+  readProjectFile('src', 'service', 'http', 'routes', 'shadow-policy-foundry-promotion-routes.ts'),
+  readProjectFile('src', 'service', 'http', 'routes', 'shadow-downstream-activation-routes.ts'),
+  readProjectFile('src', 'service', 'http', 'routes', 'shadow-customer-activation-routes.ts'),
+].join('\n');
 const helper = readProjectFile('src', 'service', 'http', 'routes', 'shadow-route-helpers.ts');
 
 includes(
-  shadowRoutes,
+  shadowRouteModules,
   "from './shadow-route-helpers.js';",
-  'Shadow route helper split: route module imports the bounded helper surface',
+  'Shadow route helper split: route-family modules import the bounded helper surface',
 );
 
 for (const exportedHelper of [
@@ -46,9 +54,9 @@ for (const exportedHelper of [
     `Shadow route helper split: ${exportedHelper} is exported from the helper module`,
   );
   excludes(
-    shadowRoutes,
+    shadowRouteModules,
     `function ${exportedHelper}`,
-    `Shadow route helper split: ${exportedHelper} implementation is no longer embedded in shadow-routes.ts`,
+    `Shadow route helper split: ${exportedHelper} implementation is no longer embedded in route modules`,
   );
 }
 

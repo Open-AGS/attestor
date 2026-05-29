@@ -259,7 +259,14 @@ function testImplementationEvidenceMatchesMatrix(): void {
   const releaseReviewRoutes = readProjectFile('src', 'service', 'http', 'routes', 'release-review-routes.ts');
   const stripeWebhookRoutes = readProjectFile('src', 'service', 'http', 'routes', 'stripe-webhook-routes.ts');
   const pipelineAsyncRoutes = readProjectFile('src', 'service', 'http', 'routes', 'pipeline-async-routes.ts');
-  const shadowRoutes = readProjectFile('src', 'service', 'http', 'routes', 'shadow-routes.ts');
+  const shadowRoutes = [
+    readProjectFile('src', 'service', 'http', 'routes', 'shadow-routes.ts'),
+    readProjectFile('src', 'service', 'http', 'routes', 'shadow-summary-dashboard-routes.ts'),
+    readProjectFile('src', 'service', 'http', 'routes', 'shadow-simulation-history-routes.ts'),
+    readProjectFile('src', 'service', 'http', 'routes', 'shadow-policy-foundry-promotion-routes.ts'),
+    readProjectFile('src', 'service', 'http', 'routes', 'shadow-downstream-activation-routes.ts'),
+    readProjectFile('src', 'service', 'http', 'routes', 'shadow-customer-activation-routes.ts'),
+  ].join('\n');
 
   ok(requestContext.includes('currentAdminAuthorized'), 'Hosted auth evidence: admin auth helper exists');
   ok(requestContext.includes('currentMetricsAuthorized'), 'Hosted auth evidence: metrics auth helper exists');

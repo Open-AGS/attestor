@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   HOSTED_JOURNEY_CONTRACT_VERSION,
@@ -36,11 +36,20 @@ function readProjectFile(...segments: string[]): string {
   return readFileSync(join(process.cwd(), ...segments), 'utf8');
 }
 
-const routeOwnerFiles = {
-  account_routes: ['src', 'service', 'http', 'routes', 'account-routes.ts'],
-  pipeline_execution_routes: ['src', 'service', 'http', 'routes', 'pipeline-execution-routes.ts'],
-  pipeline_verification_routes: ['src', 'service', 'http', 'routes', 'pipeline-verification-routes.ts'],
-  stripe_webhook_routes: ['src', 'service', 'http', 'routes', 'stripe-webhook-routes.ts'],
+function readRouteFamilySources(pattern: RegExp): string {
+  const routeDir = join(process.cwd(), 'src', 'service', 'http', 'routes');
+  return readdirSync(routeDir)
+    .filter((file) => pattern.test(file))
+    .sort()
+    .map((file) => readFileSync(join(routeDir, file), 'utf8'))
+    .join('\n');
+}
+
+const routeOwnerSources = {
+  account_routes: () => readRouteFamilySources(/^account.*\.ts$/u),
+  pipeline_execution_routes: () => readProjectFile('src', 'service', 'http', 'routes', 'pipeline-execution-routes.ts'),
+  pipeline_verification_routes: () => readProjectFile('src', 'service', 'http', 'routes', 'pipeline-verification-routes.ts'),
+  stripe_webhook_routes: () => readProjectFile('src', 'service', 'http', 'routes', 'stripe-webhook-routes.ts'),
 } as const;
 
 function routeSnippet(method: 'GET' | 'POST', path: string): string {
@@ -111,7 +120,7 @@ function testTruthSources(): void {
 
 function testRouteContractsMapToShippedRoutes(): void {
   for (const route of HOSTED_JOURNEY_ROUTE_CONTRACTS) {
-    const content = readProjectFile(...routeOwnerFiles[route.owner]);
+    const content = routeOwnerSources[route.owner]();
     ok(
       content.includes(routeSnippet(route.method, route.path)),
       `Hosted journey contract: shipped route exists for ${route.method} ${route.path}`,

@@ -43,7 +43,10 @@ try {
     readProjectFile('src', 'financial', 'cli.ts'),
     readProjectFile('src', 'financial', 'cli', 'live-scenario.ts'),
   ].join('\n');
-  const financialTypes = readProjectFile('src', 'financial', 'types.ts');
+  const financialTypes = [
+    readProjectFile('src', 'financial', 'types.ts'),
+    readProjectFile('src', 'financial', 'types', 'live-proof.ts'),
+  ].join('\n');
 
   equal(GPT_MODEL, 'o3', 'OpenAI runtime policy: reasoning model remains o3');
   equal(GPT_VISION_MODEL, 'gpt-4o', 'OpenAI runtime policy: vision model remains gpt-4o');

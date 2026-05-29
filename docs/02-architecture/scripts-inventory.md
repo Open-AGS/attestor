@@ -21,7 +21,7 @@ Research anchors:
 
 Root script files: 0.
 
-Check script files under `scripts/check/`: 8.
+Check script files under `scripts/check/`: 9.
 
 Probe script files under `scripts/probe/`: 19.
 
@@ -65,7 +65,7 @@ future one-off CLI has a documented reason to sit above the family folders.
 
 | Family | Count | Use it when | Examples |
 |---|---:|---|---|
-| `scripts/check/check-*` | 8 | You need a local or CI guard over evidence, redaction, findings, baseline alignment, branches, or supply-chain posture. | `check-baseline-alignment.mjs`, `check-supply-chain-baseline.mjs`, `check-public-artifacts-redaction.mjs` |
+| `scripts/check/check-*` | 9 | You need a local or CI guard over evidence, redaction, findings, baseline alignment, branches, file budgets, or supply-chain posture. | `check-baseline-alignment.mjs`, `check-large-file-budget.mjs`, `check-public-artifacts-redaction.mjs` |
 | `scripts/probe/probe-*` | 19 | You need an opt-in package-surface, live, provider, Stripe, HA, observability, or hosted-flow probe. | `probe-consequence-admission-package-surface.mjs`, `probe-stripe-live-readiness.ts`, `probe-production-hosted-flow.ts` |
 | `scripts/render/render-*` | 17 | You need to render local packets, profiles, credentials templates, proof surfaces, or deployment bundles. | `render-proof-surface.ts`, `render-production-readiness-packet.ts`, `render-ha-profile.ts` |
 | `scripts/demo/demo-*` | 8 | You need a runnable local golden path or path-boundary demo. | `demo-golden-refund.ts`, `demo-golden-paths.ts`, `demo-path-boundary.ts` |

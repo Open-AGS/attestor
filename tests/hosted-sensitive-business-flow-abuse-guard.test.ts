@@ -51,6 +51,14 @@ function readAccountRouteSources(): string {
     .join('\n');
 }
 
+function readAdminRouteSources(): string {
+  const routeDir = join(process.cwd(), 'src', 'service', 'http', 'routes');
+  return readdirSync(routeDir)
+    .filter((file) => /^admin.*\.ts$/u.test(file))
+    .map((file) => readFileSync(join(routeDir, file), 'utf8'))
+    .join('\n');
+}
+
 function fileExists(projectPath: string): boolean {
   return existsSync(join(process.cwd(), projectPath.split('#')[0]));
 }
@@ -203,7 +211,7 @@ function testImplementationEvidenceMatchesContract(): void {
   const authAbuseGuard = readProjectFile('src', 'service', 'account', 'auth-abuse-guard.ts');
   const apiKeyService = readProjectFile('src', 'service', 'application', 'account-api-key-service.ts');
   const stripeBilling = readProjectFile('src', 'service', 'billing', 'stripe', 'stripe-billing.ts');
-  const adminRoutes = readProjectFile('src', 'service', 'http', 'routes', 'admin-routes.ts');
+  const adminRoutes = readAdminRouteSources();
   const adminMutationService = readProjectFile('src', 'service', 'application', 'admin-mutation-service.ts');
   const pipelineRoutes = readProjectFile('src', 'service', 'http', 'routes', 'pipeline-execution-routes.ts');
   const pipelineAsyncRoutes = readProjectFile('src', 'service', 'http', 'routes', 'pipeline-async-routes.ts');

@@ -283,7 +283,10 @@ export const HOSTED_SENSITIVE_BUSINESS_FLOW_ABUSE_GUARDS = [
     privacyBoundary:
       'Admin audit stores hashed request material and scoped identifiers instead of raw secrets or customer payloads.',
     implementationEvidence: [
-      'src/service/http/routes/admin-routes.ts#beginAdminMutation',
+      'src/service/http/routes/admin-account-mutation-routes.ts#beginAdminMutation',
+      'src/service/http/routes/admin-tenant-key-routes.ts#beginAdminMutation',
+      'src/service/http/routes/admin-queue-routes.ts#beginAdminMutation',
+      'src/service/http/routes/admin-release-enforcement-routes.ts#beginAdminMutation',
       'src/service/bootstrap/http-route-builders.ts#adminMutationRequest',
       'src/service/application/admin-mutation-service.ts',
       'src/service/admin-audit-log.ts',

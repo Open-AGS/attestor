@@ -492,7 +492,10 @@ export const HOSTED_API_AUTHORIZATION_RULES = [
     evidence: [
       'src/service/request-context.ts#configuredAdminRoleKeys',
       'src/service/http/release-admin-authorization.ts#authorizeReleaseAdminRoute',
-      'src/service/http/routes/admin-routes.ts#beginAdminMutation',
+      'src/service/http/routes/admin-account-mutation-routes.ts#beginAdminMutation',
+      'src/service/http/routes/admin-tenant-key-routes.ts#beginAdminMutation',
+      'src/service/http/routes/admin-queue-routes.ts#beginAdminMutation',
+      'src/service/http/routes/admin-release-enforcement-routes.ts#beginAdminMutation',
       'src/service/bootstrap/http-route-builders.ts#adminMutationRequest',
       'tests/service-admin-routes-http.test.ts',
       'tests/release-review-admin-routes.test.ts',

@@ -488,6 +488,7 @@ async function testShadowMutationRateLimitIsTenantRouteScoped(): Promise<void> {
     const routeSource = [
       readFileSync('src/service/http/routes/shadow-routes.ts', 'utf8'),
       readFileSync('src/service/http/routes/shadow-simulation-history-routes.ts', 'utf8'),
+      readFileSync('src/service/http/routes/shadow-policy-foundry-promotion-routes.ts', 'utf8'),
     ].join('\n');
     for (const routeId of [
       'shadow.simulations.create',

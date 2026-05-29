@@ -16,8 +16,11 @@ try {
   const packageJson = readProjectFile('package.json');
 
   for (const expected of [
-    'Status: first split started.',
-    '`src/service/control-plane-store.ts` as a compatibility facade',
+    'Status: facade closeout complete.',
+    'The public service import path remains `src/service/control-plane-store.ts`.',
+    '`control-plane-store/snapshots.ts`',
+    '| Compatibility facade | `control-plane-store.ts` |',
+    '| Snapshot export/restore and test reset | `snapshots.ts` |',
     '| PostgreSQL connection and schema bootstrap | `pg.ts` plus `schema.ts` |',
     '`control-plane-store/schema.ts`',
     '`control-plane-store/mappers.ts`',
@@ -41,7 +44,6 @@ try {
     '| Stripe webhook processing | `stripe-webhook-state.ts` |',
     '| Async dead-letter state | `async-dead-letter-state.ts` |',
     '| Hosted email delivery | `email-delivery-state.ts` |',
-    '| Snapshot export/restore and test reset | 187-359 |',
     'Schema SQL and PG helper extraction are complete.',
     'This is complete in `control-plane-store/mappers.ts`.',
     'Pipeline idempotency is complete in',
@@ -52,6 +54,7 @@ try {
     'tenant keys and usage. This is complete in',
     'sessions, action tokens, and hosted SAML replay are complete in',
     'billing entitlements, and Stripe billing event state are complete in',
+    'snapshot export/restore now lives in `snapshots.ts`',
     'No behavior change in the store-family split PR.',
     'No schema change unless it is isolated in a separate migration PR.',
     'No production, multi-region, RLS, or live HA claim from this refactor.',
@@ -125,6 +128,11 @@ try {
     'Large-file budget records the hosted account and billing state extraction slice',
   );
   includes(
+    budget,
+    '`src/service/control-plane-store.ts` now re-exports control-plane backup,',
+    'Large-file budget records the control-plane snapshot closeout slice',
+  );
+  includes(
     readProjectFile('src', 'service', 'control-plane-store', 'schema.ts'),
     'CREATE TABLE IF NOT EXISTS attestor_control_plane.hosted_accounts',
     'Control-plane schema module keeps hosted account table DDL',
@@ -140,9 +148,9 @@ try {
     'Control-plane store facade imports the isolated PG helper module',
   );
   includes(
-    readProjectFile('src', 'service', 'control-plane-store.ts'),
-    "from './control-plane-store/mappers.js';",
-    'Control-plane store facade imports the isolated mapper helper module',
+    readProjectFile('src', 'service', 'control-plane-store', 'snapshots.ts'),
+    "from './mappers.js';",
+    'Control-plane snapshot module imports the isolated mapper helper module',
   );
   includes(
     readProjectFile('src', 'service', 'control-plane-store.ts'),
@@ -193,6 +201,11 @@ try {
     readProjectFile('src', 'service', 'control-plane-store.ts'),
     "from './control-plane-store/hosted-billing-state.js';",
     'Control-plane store facade re-exports the isolated hosted billing module',
+  );
+  includes(
+    readProjectFile('src', 'service', 'control-plane-store.ts'),
+    "from './control-plane-store/snapshots.js';",
+    'Control-plane store facade re-exports the isolated snapshot module',
   );
   includes(
     readProjectFile('src', 'service', 'control-plane-store', 'mappers.ts'),
@@ -278,6 +291,16 @@ try {
     readProjectFile('src', 'service', 'control-plane-store', 'hosted-billing-state.ts'),
     'export async function exportHostedAccountStoreSnapshot',
     'Control-plane hosted billing module keeps hosted account snapshot behavior',
+  );
+  includes(
+    readProjectFile('src', 'service', 'control-plane-store', 'snapshots.ts'),
+    'export async function resetSharedControlPlaneStoreForTests',
+    'Control-plane snapshot module keeps shared-store test reset behavior',
+  );
+  includes(
+    readProjectFile('src', 'service', 'control-plane-store', 'snapshots.ts'),
+    'export async function exportAdminAuditLogStoreSnapshot',
+    'Control-plane snapshot module keeps admin audit snapshot behavior',
   );
   includes(
     packageJson,

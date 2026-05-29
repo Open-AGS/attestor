@@ -146,17 +146,19 @@ Completed:
   the existing facade while isolating hosted account provisioning, billing
   entitlement projection, Stripe billing event state, and hosted account/billing
   snapshot behavior.
+- `src/service/control-plane-store.ts` now re-exports control-plane backup,
+  restore, and shared-store test reset behavior from
+  `src/service/control-plane-store/snapshots.ts`, closing the control-plane
+  store split with the facade reduced to behavior-free exports.
 
 Next:
 
-1. Continue `src/service/control-plane-store.ts` store-family splits through
-   the V2 closeout target.
-2. Split `src/consequence-admission/index.ts` by public-surface contracts,
+1. Split `src/consequence-admission/index.ts` by public-surface contracts,
    descriptors, and engine helpers.
-3. Split `src/service/http/routes/shadow-routes.ts` by route family.
-4. Leave `src/service/http/routes/account-routes.ts` for a separate route-matrix
+2. Split `src/service/http/routes/shadow-routes.ts` by route family.
+3. Leave `src/service/http/routes/account-routes.ts` for a separate route-matrix
    wave after V2.
-5. Touch crypto/protocol adapters only where module-specific risk warrants it.
+4. Touch crypto/protocol adapters only where module-specific risk warrants it.
 
 ## No-Claims
 

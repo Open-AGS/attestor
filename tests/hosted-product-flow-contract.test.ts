@@ -193,7 +193,12 @@ function testStepContractsUseKnownRoutes(): void {
 }
 
 function testApiTypeContractsExist(): void {
-  const apiTypes = readProjectFile('src', 'service', 'api-types.ts');
+  const apiTypes = [
+    readProjectFile('src', 'service', 'api-types.ts'),
+    readProjectFile('src', 'service', 'api-types', 'account.ts'),
+    readProjectFile('src', 'service', 'api-types', 'billing.ts'),
+    readProjectFile('src', 'service', 'api-types', 'pipeline.ts'),
+  ].join('\n');
   const expectedTypes = [
     'AuthSignupRequest',
     'AuthSignupResponse',

@@ -33,7 +33,6 @@ const HARD_LIMIT_REGISTRY = Object.freeze([
   { path: 'src/service/http/routes/release-policy-control-routes.ts', maxLines: 1679, reason: 'P2 route-family split planned after shadow/account route splits prove the route split pattern.' },
   { path: 'tests/financial.test.ts', maxLines: 1674, reason: 'P2 financial test matrix; split by pipeline/filing/reporting scenarios when finance work resumes.' },
   { path: 'src/crypto-authorization-core/erc4337-user-operation-adapter.ts', maxLines: 1664, reason: 'P4 protocol adapter exception; ERC-4337 behavior should split only along canonical adapter checks.' },
-  { path: 'src/service/api-types.ts', maxLines: 1659, reason: 'P1 type-only split planned; low behavior risk but high import-surface fanout.' },
   { path: 'src/crypto-authorization-core/custody-cosigner-policy-adapter.ts', maxLines: 1635, reason: 'P4 protocol adapter exception; custody policy behavior should split only with adapter-negative tests.' },
   { path: 'src/crypto-authorization-core/eip7702-delegation-adapter.ts', maxLines: 1634, reason: 'P4 protocol adapter exception; EIP-7702 delegated-scope work should be a focused PR.' },
   { path: 'src/crypto-authorization-core/policy-gap-narrowing.ts', maxLines: 1624, reason: 'P4 crypto policy helper exception; split only when the policy-gap contract is otherwise changing.' },

@@ -33,6 +33,7 @@ function testServiceDirectoriesAreResponsibilityNamed(): void {
     listDirectories(),
     [
       'account',
+      'api-types',
       'application',
       'async',
       'billing',
@@ -123,6 +124,7 @@ function testMovedFamiliesDoNotRegressToRoot(): void {
 function testResponsibilityDirectoryCountsMatchCloseoutMap(): void {
   const expectedCounts: Readonly<Record<string, number>> = {
     account: 13,
+    'api-types': 7,
     application: 13,
     async: 7,
     billing: 6,

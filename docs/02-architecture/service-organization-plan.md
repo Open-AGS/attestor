@@ -13,7 +13,9 @@ for long-term maintenance.
 
 At B-service-06 closeout, `src/service/` has 39 root-level cross-cutting files
 plus responsibility-named directories for account, billing, async, pipeline,
-release, hosted, Policy Foundry, and shadow support.
+release, hosted, Policy Foundry, and shadow support. The later large-file
+reduction track keeps the root `api-types.ts` compatibility barrel and moves
+the type families under `src/service/api-types/`.
 
 ## Research Anchors
 
@@ -71,6 +73,7 @@ a short architecture note explains why they must remain root-level.
 |---|---|
 | `src/service/` | Cross-cutting runtime support, core stores, observability, tenant isolation, rate limiting, site support, generic protected admission, and other files that intentionally span multiple service families. |
 | `src/service/account/` | Hosted account, sessions, MFA, SSO, SAML, passkeys, password policy, user/token stores, and account route support. |
+| `src/service/api-types/` | Service API request, response, context, and route constant type families re-exported by the root `api-types.ts` compatibility barrel. |
 | `src/service/application/` | Route-facing application services and use-case ports. |
 | `src/service/async/` | Async pipeline, worker, tenant execution, weighted dispatch, dead-letter handling, and email delivery event support. |
 | `src/service/billing/` | Billing entitlements, event ledger, export/reconciliation, feature catalog/service, and Stripe support under `billing/stripe/`. |
@@ -93,12 +96,11 @@ the test in the same PR.
 2. Keep each PR move-only unless a test proves a necessary import adjustment.
 3. Do not split route files in this phase.
 4. Do not split `control-plane-store.ts` in this phase.
-5. Do not split `api-types.ts` in this phase.
-6. Do not change package exports in this phase.
-7. Update every direct path reference in docs, tests, scripts, and source.
-8. Run the closest route/store/application tests for the moved family.
-9. Merge only after GitHub checks are green.
-10. Verify `origin/master` after every merge.
+5. Do not change package exports in this phase.
+6. Update every direct path reference in docs, tests, scripts, and source.
+7. Run the closest route/store/application tests for the moved family.
+8. Merge only after GitHub checks are green.
+9. Verify `origin/master` after every merge.
 
 ## Import Strategy
 
@@ -153,7 +155,6 @@ These are explicitly outside the B-service move phase:
 - splitting `src/service/http/routes/release-policy-control-routes.ts`
 - splitting `src/service/http/routes/admin-routes.ts`
 - splitting `src/service/control-plane-store.ts`
-- splitting `src/service/api-types.ts`
 - moving `src/consequence-admission/golden-*-*.ts`
 - changing the public package exports map
 

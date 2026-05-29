@@ -29,6 +29,7 @@ function testPlanKeepsContractShape(): void {
     'This is the refactor contract and closeout map for reorganizing `src/service/`.',
     'At B-service-00, `src/service/` has 96 root-level files',
     'At B-service-06 closeout, `src/service/` has 39 root-level cross-cutting files',
+    'the root `api-types.ts` compatibility barrel',
     '## Research Anchors',
     '## Protected Principles',
     '## Authority Boundary',
@@ -51,6 +52,7 @@ function testPlanKeepsFinalServiceMap(): void {
   for (const expected of [
     '| `src/service/` | Cross-cutting runtime support',
     '| `src/service/account/` | Hosted account',
+    '| `src/service/api-types/` | Service API request',
     '| `src/service/application/` | Route-facing application services',
     '| `src/service/async/` | Async pipeline',
     '| `src/service/billing/` | Billing entitlements',
@@ -89,7 +91,6 @@ function testPlanKeepsMoveBoundaries(): void {
     'Move one service family per PR.',
     'Do not split route files in this phase.',
     'Do not split `control-plane-store.ts` in this phase.',
-    'Do not split `api-types.ts` in this phase.',
     'Do not change package exports in this phase.',
     'Use the smallest strategy that preserves runtime behavior.',
     '### Direct mechanical move',

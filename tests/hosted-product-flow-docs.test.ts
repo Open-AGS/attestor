@@ -189,7 +189,11 @@ function testAccountVisibilityGuideStaysGrounded(): void {
   const guide = readProjectFile('docs', '01-overview', 'hosted-account-visibility.md');
   const contract = readProjectFile('src', 'service', 'hosted', 'hosted-journey-contract.ts');
   const accountRoutes = readProjectFile('src', 'service', 'http', 'routes', 'account-routes.ts');
-  const apiTypes = readProjectFile('src', 'service', 'api-types.ts');
+  const apiTypes = [
+    readProjectFile('src', 'service', 'api-types.ts'),
+    readProjectFile('src', 'service', 'api-types', 'account.ts'),
+    readProjectFile('src', 'service', 'api-types', 'billing.ts'),
+  ].join('\n');
 
   includes(guide, '`GET /api/v1/account`', 'Hosted account visibility: summary route is documented');
   includes(guide, '`GET /api/v1/account/usage`', 'Hosted account visibility: usage route is documented');

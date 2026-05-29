@@ -52,15 +52,16 @@ References:
 | `tests/live-api.test.ts` | 141 facade + modules <= 882 | closed | live API test-family extraction |
 | `tests/generic-admission-mode-ladder.test.ts` | 10 facade + modules <= 578 | closed | generic admission mode test-family extraction |
 | `tests/generic-admission-routes.test.ts` | 10 facade + modules <= 367 | closed | generic admission route test-family extraction |
-| `tests/financial.test.ts` | 1674 | split by financial scenario | financial test-family extraction |
+| `tests/financial.test.ts` | 37 facade + modules <=461 | closed | financial test-family extraction |
 
 Estimated moved code: 18000-22000 lines into smaller responsibility-named
 modules and test files.
 
 Current execution status:
 
-- `F-00` through `F-14` are closed repo-side.
-- Next round: `F-15` financial test split and final registry/docs closeout.
+- `F-00` through `F-15` are closed repo-side on this branch.
+- The final broad large-file reduction wave is complete. Future splits should be
+  module-specific, risk-driven work rather than another broad line-count wave.
 
 ## Planned Rounds
 

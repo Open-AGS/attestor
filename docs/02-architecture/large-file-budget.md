@@ -244,13 +244,18 @@ Completed:
   responsibility-named generic admission test-family modules, keeping the
   existing package scripts stable while removing both former monolithic tests
   from the hard-limit registry.
+- `tests/financial.test.ts` is now a small financial-suite facade over
+  responsibility-named financial test-family modules under `tests/financial/`,
+  keeping `npm run test:financial` stable while removing the former monolithic
+  financial test from the hard-limit registry.
 
 Next:
 
-1. Continue the final wave from
-   [Final Large File Refactor Plan](final-large-file-refactor-plan.md), starting
-   with `F-15` financial test split and final registry/docs closeout.
+1. Treat the final broad large-file reduction wave as closed after the F-15
+   branch is merged and verified on `origin/master`.
 2. Touch crypto/protocol adapters only where module-specific risk warrants it.
+3. Any future split should name the protected boundary, targeted tests, and
+   reason the existing file shape blocks review or change locality.
 
 ## No-Claims
 

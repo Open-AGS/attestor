@@ -26,7 +26,6 @@ const HARD_LIMIT_REGISTRY = Object.freeze([
   { path: 'src/crypto-authorization-core/modular-account-adapters.ts', maxLines: 1836, reason: 'P4 protocol adapter exception; split only by coherent adapter helper boundaries.' },
   { path: 'src/crypto-authorization-core/x402-agentic-payment-adapter.ts', maxLines: 1796, reason: 'P4 protocol adapter exception; x402 behavior is trust-sensitive and should split only with focused tests.' },
   { path: 'src/service/http/routes/release-policy-control-routes.ts', maxLines: 1679, reason: 'P2 route-family split planned after shadow/account route splits prove the route split pattern.' },
-  { path: 'tests/financial.test.ts', maxLines: 1674, reason: 'P2 financial test matrix; split by pipeline/filing/reporting scenarios when finance work resumes.' },
   { path: 'src/crypto-authorization-core/erc4337-user-operation-adapter.ts', maxLines: 1664, reason: 'P4 protocol adapter exception; ERC-4337 behavior should split only along canonical adapter checks.' },
   { path: 'src/crypto-authorization-core/custody-cosigner-policy-adapter.ts', maxLines: 1635, reason: 'P4 protocol adapter exception; custody policy behavior should split only with adapter-negative tests.' },
   { path: 'src/crypto-authorization-core/eip7702-delegation-adapter.ts', maxLines: 1634, reason: 'P4 protocol adapter exception; EIP-7702 delegated-scope work should be a focused PR.' },

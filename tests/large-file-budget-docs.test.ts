@@ -31,33 +31,32 @@ function testLargeFileBudgetDocNamesThresholdsAndCommand(): void {
   includes(doc, 'npm run test:large-file-budget', 'Large file budget doc: package script is documented');
   includes(doc, 'Generated files, lockfiles, OpenAPI JSON, and large fixture JSON are outside', 'Large file budget doc: generated/fixture boundary is explicit');
   includes(doc, 'This guard is repository-side maintainability evidence only.', 'Large file budget doc: no-claim boundary is explicit');
-  includes(doc, '[Large File Refactor V2 Plan](large-file-refactor-v2-plan.md)', 'Large file budget doc: links the active V2 execution contract');
+  includes(doc, '[Final Large File Refactor Plan](final-large-file-refactor-plan.md)', 'Large file budget doc: links the active final execution contract');
 }
 
-function testLargeFileRefactorV2PlanLocksScopeAndNoClaims(): void {
-  const plan = readProjectFile('docs', '02-architecture', 'large-file-refactor-v2-plan.md');
+function testFinalLargeFileRefactorPlanLocksScopeAndNoClaims(): void {
+  const plan = readProjectFile('docs', '02-architecture', 'final-large-file-refactor-plan.md');
 
-  includes(plan, '# Large File Refactor V2 Plan', 'V2 plan: title is present');
-  includes(plan, 'This is a repository maintainability plan only.', 'V2 plan: maintainability-only boundary is explicit');
-  includes(plan, '`src/service/control-plane-store.ts` | 3415 | 700-1000', 'V2 plan: control-plane-store target is locked');
-  includes(plan, '`src/consequence-admission/index.ts` | 108 after V2-12 | achieved', 'V2 plan: consequence-admission target is locked');
-  includes(plan, '`src/service/http/routes/shadow-routes.ts` | 94 after V2-16 | achieved', 'V2 plan: shadow-routes target is locked');
-  includes(plan, '## Planned Rounds', 'V2 plan: planned rounds section is present');
-  includes(plan, '| 16 | `shadow-routes.ts`: activation/receipt routes plus closeout', 'V2 plan: round 16 closeout is present');
-  includes(plan, '## Parity Locks Before Moves', 'V2 plan: parity locks section is present');
-  includes(plan, 'public store method inventory, state key inventory', 'V2 plan: control-plane parity lock is explicit');
-  includes(plan, 'public export inventory, admission outcome contract inventory', 'V2 plan: consequence-admission parity lock is explicit');
-  includes(plan, 'route registry inventory, method/path/status/header inventory', 'V2 plan: shadow route parity lock is explicit');
-  includes(plan, '## Risk Profiles', 'V2 plan: risk profiles section is present');
-  includes(plan, 'state shape drift, key-name drift, tenant scope mixup', 'V2 plan: store risk profile is explicit');
-  includes(plan, 'public export drift, `admit`/`narrow`/`review`/`block` semantic drift', 'V2 plan: admission risk profile is explicit');
-  includes(plan, 'missing `no-store` header, raw evidence/payload/impact leakage', 'V2 plan: shadow risk profile is explicit');
-  includes(plan, 'No runtime behavior change is intended.', 'V2 plan: no-behavior-change contract is explicit');
-  includes(plan, 'Do not split crypto/protocol adapters in this wave.', 'V2 plan: crypto/protocol exclusion is explicit');
-  includes(plan, 'Do not split `account-routes.ts` in this wave', 'V2 plan: account-routes exclusion is explicit');
-  includes(plan, 'Use a read-only Opus/second-opinion audit at each major surface boundary', 'V2 plan: second-opinion checkpoint is explicit');
-  includes(plan, '## Rollback Strategy', 'V2 plan: rollback strategy section is present');
-  includes(plan, 'This plan is repository-side maintainability evidence only.', 'V2 plan: no-claims section is explicit');
+  includes(plan, '# Final Large File Refactor Plan', 'Final plan: title is present');
+  includes(plan, 'This is a repository maintainability plan only.', 'Final plan: maintainability-only boundary is explicit');
+  includes(plan, '`src/service/http/routes/account-routes.ts` | 2588 | 150-250 facade', 'Final plan: account route target is locked');
+  includes(plan, '`src/service/http/routes/release-policy-control-routes.ts` | 1679 | 150-300 facade', 'Final plan: release policy route target is locked');
+  includes(plan, '`src/service/http/routes/admin-routes.ts` | 1579 | 150-300 facade', 'Final plan: admin route target is locked');
+  includes(plan, '## Planned Rounds', 'Final plan: planned rounds section is present');
+  includes(plan, '| F-15 | Financial test split and final registry/docs closeout', 'Final plan: closeout round is present');
+  includes(plan, '## Parity Locks Before Moves', 'Final plan: parity locks section is present');
+  includes(plan, 'method/path inventory, session/auth authority inventory', 'Final plan: account parity lock is explicit');
+  includes(plan, 'admin role inventory, read/mutation/break-glass route inventory', 'Final plan: release policy parity lock is explicit');
+  includes(plan, 'role-scoped admin route inventory, mutation audit inventory', 'Final plan: admin parity lock is explicit');
+  includes(plan, '## Risk Profiles', 'Final plan: risk profiles section is present');
+  includes(plan, 'auth/session authority drift, missing CSRF/CORS guard', 'Final plan: account risk profile is explicit');
+  includes(plan, 'admin role escalation, break-glass route drift', 'Final plan: release policy risk profile is explicit');
+  includes(plan, 'role-scoped key bypass, rate-limit ordering drift', 'Final plan: admin risk profile is explicit');
+  includes(plan, 'No runtime behavior change is intended.', 'Final plan: no-behavior-change contract is explicit');
+  includes(plan, 'Do not split crypto/protocol adapters in this wave unless a focused audit', 'Final plan: crypto/protocol exclusion is explicit');
+  includes(plan, '## Intentional Exceptions', 'Final plan: intentional exceptions section is present');
+  includes(plan, '## Rollback Strategy', 'Final plan: rollback strategy section is present');
+  includes(plan, 'This plan is repository-side maintainability evidence only.', 'Final plan: no-claims section is explicit');
 }
 
 function testLargeFileBudgetScriptKeepsThresholdsAndRegistry(): void {
@@ -101,13 +100,13 @@ function testRepositoryNavigatorLinksLargeFileBudget(): void {
   );
   includes(
     navigator,
-    '[Large File Refactor V2 Plan](../02-architecture/large-file-refactor-v2-plan.md)',
-    'Repository navigator: links the active large-file refactor V2 plan',
+    '[Final Large File Refactor Plan](../02-architecture/final-large-file-refactor-plan.md)',
+    'Repository navigator: links the active final large-file refactor plan',
   );
 }
 
 testLargeFileBudgetDocNamesThresholdsAndCommand();
-testLargeFileRefactorV2PlanLocksScopeAndNoClaims();
+testFinalLargeFileRefactorPlanLocksScopeAndNoClaims();
 testLargeFileBudgetScriptKeepsThresholdsAndRegistry();
 testLargeFileBudgetPackageScriptsExist();
 testRepositoryNavigatorLinksLargeFileBudget();

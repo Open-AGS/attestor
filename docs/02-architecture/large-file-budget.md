@@ -92,7 +92,7 @@ surface and the split would make review or security reasoning worse.
 
 ## Planned Reduction Order
 
-Current execution contract: [Large File Refactor V2 Plan](large-file-refactor-v2-plan.md).
+Current execution contract: [Final Large File Refactor Plan](final-large-file-refactor-plan.md).
 
 Completed:
 
@@ -193,8 +193,9 @@ Completed:
 
 Next:
 
-1. Leave `src/service/http/routes/account-routes.ts` for a separate route-matrix
-   wave after V2.
+1. Execute the final wave from
+   [Final Large File Refactor Plan](final-large-file-refactor-plan.md), starting
+   with the `account-routes.ts` route-matrix split.
 2. Touch crypto/protocol adapters only where module-specific risk warrants it.
 
 ## No-Claims

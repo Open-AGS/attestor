@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 let passed = 0;
@@ -21,6 +21,14 @@ function excludes(value: string, unexpected: RegExp, message: string): void {
 
 function readProjectFile(...segments: string[]): string {
   return readFileSync(join(process.cwd(), ...segments), 'utf8');
+}
+
+function readAdminRouteSources(): string {
+  const routeDir = join(process.cwd(), 'src', 'service', 'http', 'routes');
+  return readdirSync(routeDir)
+    .filter((file) => /^admin(?:-|$).*\.ts$/u.test(file))
+    .map((file) => readFileSync(join(routeDir, file), 'utf8'))
+    .join('\n');
 }
 
 const validation = readProjectFile('docs', 'audit', 'f6-tenant-blast-radius-validation.md');
@@ -51,7 +59,7 @@ const productionStoragePath = readProjectFile(
   'production-storage-path.ts',
 );
 const runtimeProfile = readProjectFile('src', 'service', 'bootstrap', 'runtime-profile.ts');
-const adminRoutes = readProjectFile('src', 'service', 'http', 'routes', 'admin-routes.ts');
+const adminRoutes = readAdminRouteSources();
 const recipientReplay = readProjectFile(
   'src',
   'consequence-admission',

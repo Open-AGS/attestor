@@ -141,6 +141,11 @@ Completed:
   `src/service/control-plane-store/account-auth-state.ts`, keeping the existing
   facade while isolating account users, sessions, action tokens, hosted SAML
   replay, and their backup/restore snapshot behavior.
+- `src/service/control-plane-store.ts` now re-exports hosted account and billing
+  state from `src/service/control-plane-store/hosted-billing-state.ts`, keeping
+  the existing facade while isolating hosted account provisioning, billing
+  entitlement projection, Stripe billing event state, and hosted account/billing
+  snapshot behavior.
 
 Next:
 

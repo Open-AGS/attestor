@@ -30,9 +30,10 @@ try {
     '`control-plane-store/tenant-key-state.ts`',
     '`control-plane-store/usage-state.ts`',
     '`control-plane-store/account-auth-state.ts`',
+    '`control-plane-store/hosted-billing-state.ts`',
     '| Normalizers, coercers, row mappers, shared helpers | `mappers.ts` |',
     '`control-plane-store/pg.ts`',
-    '| Hosted account and billing state facade | 404-914 |',
+    '| Hosted account and billing state facade | `hosted-billing-state.ts` |',
     '| Tenant keys and usage state facade | `tenant-key-state.ts` plus `usage-state.ts` |',
     '| Account users, sessions, tokens, SAML replay | `account-auth-state.ts` |',
     '| Admin audit and admin idempotency | `admin-audit-state.ts` plus `admin-idempotency-state.ts` |',
@@ -40,7 +41,7 @@ try {
     '| Stripe webhook processing | `stripe-webhook-state.ts` |',
     '| Async dead-letter state | `async-dead-letter-state.ts` |',
     '| Hosted email delivery | `email-delivery-state.ts` |',
-    '| Snapshot export/restore and test reset | 915-1149 |',
+    '| Snapshot export/restore and test reset | 187-359 |',
     'Schema SQL and PG helper extraction are complete.',
     'This is complete in `control-plane-store/mappers.ts`.',
     'Pipeline idempotency is complete in',
@@ -50,6 +51,7 @@ try {
     'Stripe webhook state is complete in `control-plane-store/stripe-webhook-state.ts`',
     'tenant keys and usage. This is complete in',
     'sessions, action tokens, and hosted SAML replay are complete in',
+    'billing entitlements, and Stripe billing event state are complete in',
     'No behavior change in the store-family split PR.',
     'No schema change unless it is isolated in a separate migration PR.',
     'No production, multi-region, RLS, or live HA claim from this refactor.',
@@ -118,6 +120,11 @@ try {
     'Large-file budget records the account auth state extraction slice',
   );
   includes(
+    budget,
+    '`src/service/control-plane-store.ts` now re-exports hosted account and billing',
+    'Large-file budget records the hosted account and billing state extraction slice',
+  );
+  includes(
     readProjectFile('src', 'service', 'control-plane-store', 'schema.ts'),
     'CREATE TABLE IF NOT EXISTS attestor_control_plane.hosted_accounts',
     'Control-plane schema module keeps hosted account table DDL',
@@ -181,6 +188,11 @@ try {
     readProjectFile('src', 'service', 'control-plane-store.ts'),
     "from './control-plane-store/account-auth-state.js';",
     'Control-plane store facade re-exports the isolated account auth module',
+  );
+  includes(
+    readProjectFile('src', 'service', 'control-plane-store.ts'),
+    "from './control-plane-store/hosted-billing-state.js';",
+    'Control-plane store facade re-exports the isolated hosted billing module',
   );
   includes(
     readProjectFile('src', 'service', 'control-plane-store', 'mappers.ts'),
@@ -251,6 +263,21 @@ try {
     readProjectFile('src', 'service', 'control-plane-store', 'account-auth-state.ts'),
     'export async function exportAccountUserStoreSnapshot',
     'Control-plane account auth module keeps account user snapshot behavior',
+  );
+  includes(
+    readProjectFile('src', 'service', 'control-plane-store', 'hosted-billing-state.ts'),
+    'export async function provisionHostedAccountState',
+    'Control-plane hosted billing module keeps account provisioning behavior',
+  );
+  includes(
+    readProjectFile('src', 'service', 'control-plane-store', 'hosted-billing-state.ts'),
+    'export async function applyStripeSubscriptionStateState',
+    'Control-plane hosted billing module keeps Stripe subscription behavior',
+  );
+  includes(
+    readProjectFile('src', 'service', 'control-plane-store', 'hosted-billing-state.ts'),
+    'export async function exportHostedAccountStoreSnapshot',
+    'Control-plane hosted billing module keeps hosted account snapshot behavior',
   );
   includes(
     packageJson,

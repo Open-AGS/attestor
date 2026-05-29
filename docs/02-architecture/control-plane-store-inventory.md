@@ -19,18 +19,19 @@ Stripe webhook state now lives in `control-plane-store/stripe-webhook-state.ts`;
 tenant key state now lives in `control-plane-store/tenant-key-state.ts`; usage
 state now lives in `control-plane-store/usage-state.ts`; account users,
 sessions, action tokens, and hosted SAML replay now live in
-`control-plane-store/account-auth-state.ts`.
+`control-plane-store/account-auth-state.ts`; hosted account lifecycle, billing
+entitlements, and Stripe billing event state now live in
+`control-plane-store/hosted-billing-state.ts`.
 
 ## Current Shape
 
 | Slice | Current lines | Responsibility | Split target |
 |---|---:|---|---|
-| Boundary comment and imports | 1-206 | Shared control-plane boundary and file-store imports. | Keep imports local to each family after split. |
-| Snapshot interfaces | 207-233 | Backup/restore snapshot contracts that remain owned by the facade. | `control-plane-store/contracts.ts`. |
+| Boundary comment and imports | 1-170 | Shared control-plane boundary and file-store imports. | Keep imports local to each family after split. |
+| Snapshot interfaces | 171-185 | Backup/restore snapshot contracts that remain owned by the facade. | `control-plane-store/contracts.ts`. |
 | PostgreSQL connection and schema bootstrap | `pg.ts` plus `schema.ts` | `ATTESTOR_CONTROL_PLANE_PG_URL`, pool, transaction lifecycle, schema creation, indexes, shared tables. | Complete for this slice; future store-family modules should import from `control-plane-store/pg.ts`. |
 | Normalizers, coercers, row mappers, shared helpers | `mappers.ts` | API-key digests, billing status normalization, row-to-record mappers, advisory locks, usage context projection. | Complete for this slice; future store-family modules should import from `control-plane-store/mappers.ts`. |
-| PostgreSQL repository helpers | 235-402 | Pg helpers for hosted accounts and billing entitlements. | Keep near the store family that owns each table. |
-| Hosted account and billing state facade | 404-914 | Account lifecycle, Stripe subscription/checkout/invoice application, file fallback. | `hosted-account-state.ts`, `billing-entitlement-state.ts`. |
+| Hosted account and billing state facade | `hosted-billing-state.ts` | Account lifecycle, provisioning, Stripe subscription/checkout/invoice application, billing entitlement projection, file fallback, and backup/restore snapshot behavior. | Complete for this slice; future callers should keep using the facade export. |
 | Tenant keys and usage state facade | `tenant-key-state.ts` plus `usage-state.ts` | Tenant API key issuance/rotation/revocation, tenant plan sync, API-key recovery, usage ledger, and backup/restore snapshot behavior. | Complete for this slice; future callers should keep using the facade export. |
 | Account users, sessions, tokens, SAML replay | `account-auth-state.ts` | Account users, identities, password/MFA/passkey tokens, sessions, hosted SAML replay, and backup/restore snapshot behavior. | Complete for this slice; future callers should keep using the facade export. |
 | Admin audit and admin idempotency | `admin-audit-state.ts` plus `admin-idempotency-state.ts` | Hash-linked admin audit ledger, admin idempotency replay records, PostgreSQL advisory transactions, file fallback. | Complete for this slice; snapshot export/restore remains in the facade until `snapshots.ts`. |
@@ -38,7 +39,7 @@ sessions, action tokens, and hosted SAML replay now live in
 | Stripe webhook processing | `stripe-webhook-state.ts` | Processed Stripe webhook lookup, claim/finalize/release, in-memory claim leases, file fallback, and backup/restore snapshot behavior. | Complete for this slice; future callers should keep using the facade export. |
 | Async dead-letter state | `async-dead-letter-state.ts` | Async DLQ shared PostgreSQL persistence, file fallback, list/upsert/remove facade functions, and backup/restore snapshot behavior. | Complete for this slice; future callers should keep using the facade export. |
 | Hosted email delivery | `email-delivery-state.ts` | Hosted email provider/dispatch event state, replay-safe provider event insert, delivery list facade, and backup/restore snapshot behavior. | Complete for this slice; future callers should keep using the facade export. |
-| Snapshot export/restore and test reset | 915-1149 | Backup/restore adapters across all remaining store families and test reset. | `snapshots.ts`, then per-family snapshot helpers. |
+| Snapshot export/restore and test reset | 187-359 | Backup/restore adapters across all remaining store families and test reset. | `snapshots.ts`, then per-family snapshot helpers. |
 
 ## Split Order
 
@@ -58,7 +59,9 @@ sessions, action tokens, and hosted SAML replay now live in
 5. Extract account-heavy families last: hosted accounts, billing entitlements,
    account users, sessions, action tokens, SAML replay. Account users,
    sessions, action tokens, and hosted SAML replay are complete in
-   `control-plane-store/account-auth-state.ts`.
+   `control-plane-store/account-auth-state.ts`; hosted account lifecycle,
+   billing entitlements, and Stripe billing event state are complete in
+   `control-plane-store/hosted-billing-state.ts`.
 6. Keep `src/service/control-plane-store.ts` as a compatibility facade until the
    final closeout PR proves every caller through TypeScript, route tests, backup
    tests, and package-script runner.

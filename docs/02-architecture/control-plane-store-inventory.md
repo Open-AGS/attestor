@@ -12,7 +12,8 @@ DDL lives in `control-plane-store/schema.ts`; side-effect-free mapping helpers
 live in `control-plane-store/mappers.ts`; pipeline idempotency state now lives
 in `control-plane-store/pipeline-idempotency-state.ts`; admin audit and admin
 idempotency state now live in `control-plane-store/admin-audit-state.ts` and
-`control-plane-store/admin-idempotency-state.ts`.
+`control-plane-store/admin-idempotency-state.ts`; async dead-letter state now
+lives in `control-plane-store/async-dead-letter-state.ts`.
 
 ## Current Shape
 
@@ -29,8 +30,9 @@ idempotency state now live in `control-plane-store/admin-audit-state.ts` and
 | Admin audit and admin idempotency | `admin-audit-state.ts` plus `admin-idempotency-state.ts` | Hash-linked admin audit ledger, admin idempotency replay records, PostgreSQL advisory transactions, file fallback. | Complete for this slice; snapshot export/restore remains in the facade until `snapshots.ts`. |
 | Pipeline idempotency | `pipeline-idempotency-state.ts` | Pipeline request idempotency lookup/record, PostgreSQL advisory transaction, file fallback. | Complete for this slice; future callers should keep using the facade export. |
 | Stripe webhook processing | 2282-2564 | Processed Stripe webhook lookup, claim/finalize/release, file fallback. | `stripe-webhook-state.ts`. |
-| Async dead-letter and hosted email delivery | 2565-2861 | Async DLQ persistence and hosted email provider/dispatch event state. | `async-dead-letter-state.ts`, `email-delivery-state.ts`. |
-| Snapshot export/restore and test reset | 2862-3415 | Backup/restore adapters across all store families and test reset. | `snapshots.ts`, then per-family snapshot helpers. |
+| Async dead-letter state | `async-dead-letter-state.ts` | Async DLQ shared PostgreSQL persistence, file fallback, list/upsert/remove facade functions, and backup/restore snapshot behavior. | Complete for this slice; future callers should keep using the facade export. |
+| Hosted email delivery | 2556-2720 | Hosted email provider/dispatch event state. | `email-delivery-state.ts`. |
+| Snapshot export/restore and test reset | 2721-3229 | Backup/restore adapters across all remaining store families and test reset. | `snapshots.ts`, then per-family snapshot helpers. |
 
 ## Split Order
 
@@ -41,7 +43,8 @@ idempotency state now live in `control-plane-store/admin-audit-state.ts` and
 3. Extract low-coupling families: async dead-letter and hosted email delivery.
    Pipeline idempotency is complete in `control-plane-store/pipeline-idempotency-state.ts`;
    admin audit/idempotency is complete in `control-plane-store/admin-audit-state.ts`
-   and `control-plane-store/admin-idempotency-state.ts`.
+   and `control-plane-store/admin-idempotency-state.ts`; async dead-letter state
+   is complete in `control-plane-store/async-dead-letter-state.ts`.
 4. Extract medium-coupling families: Stripe webhook, tenant keys, usage.
 5. Extract account-heavy families last: hosted accounts, billing entitlements,
    account users, sessions, action tokens, SAML replay.

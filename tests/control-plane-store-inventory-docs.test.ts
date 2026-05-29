@@ -24,6 +24,7 @@ try {
     '`control-plane-store/pipeline-idempotency-state.ts`',
     '`control-plane-store/admin-audit-state.ts`',
     '`control-plane-store/admin-idempotency-state.ts`',
+    '`control-plane-store/async-dead-letter-state.ts`',
     '| Normalizers, coercers, row mappers, shared helpers | `mappers.ts` |',
     '`control-plane-store/pg.ts`',
     '| Hosted account and billing state facade | 991-1501 |',
@@ -32,12 +33,14 @@ try {
     '| Admin audit and admin idempotency | `admin-audit-state.ts` plus `admin-idempotency-state.ts` |',
     '| Pipeline idempotency | `pipeline-idempotency-state.ts` |',
     '| Stripe webhook processing | 2282-2564 |',
-    '| Async dead-letter and hosted email delivery | 2565-2861 |',
-    '| Snapshot export/restore and test reset | 2862-3415 |',
+    '| Async dead-letter state | `async-dead-letter-state.ts` |',
+    '| Hosted email delivery | 2556-2720 |',
+    '| Snapshot export/restore and test reset | 2721-3229 |',
     'Schema SQL and PG helper extraction are complete.',
     'This is complete in `control-plane-store/mappers.ts`.',
     'Pipeline idempotency is complete in',
     'admin audit/idempotency is complete in',
+    'async dead-letter state',
     'No behavior change in the store-family split PR.',
     'No schema change unless it is isolated in a separate migration PR.',
     'No production, multi-region, RLS, or live HA claim from this refactor.',
@@ -76,6 +79,11 @@ try {
     'Large-file budget records the admin state extraction slice',
   );
   includes(
+    budget,
+    '`src/service/control-plane-store.ts` now re-exports async dead-letter state',
+    'Large-file budget records the async dead-letter state extraction slice',
+  );
+  includes(
     readProjectFile('src', 'service', 'control-plane-store', 'schema.ts'),
     'CREATE TABLE IF NOT EXISTS attestor_control_plane.hosted_accounts',
     'Control-plane schema module keeps hosted account table DDL',
@@ -111,6 +119,11 @@ try {
     'Control-plane store facade imports the isolated admin idempotency module',
   );
   includes(
+    readProjectFile('src', 'service', 'control-plane-store.ts'),
+    "from './control-plane-store/async-dead-letter-state.js';",
+    'Control-plane store facade re-exports the isolated async dead-letter module',
+  );
+  includes(
     readProjectFile('src', 'service', 'control-plane-store', 'mappers.ts'),
     'export function rowToHostedAccount',
     'Control-plane mapper module keeps hosted account row projection',
@@ -129,6 +142,11 @@ try {
     readProjectFile('src', 'service', 'control-plane-store', 'admin-idempotency-state.ts'),
     'export async function lookupAdminIdempotencyState',
     'Control-plane admin idempotency module keeps lookup behavior',
+  );
+  includes(
+    readProjectFile('src', 'service', 'control-plane-store', 'async-dead-letter-state.ts'),
+    'export async function listAsyncDeadLetterRecordsState',
+    'Control-plane async dead-letter module keeps list behavior',
   );
   includes(
     packageJson,

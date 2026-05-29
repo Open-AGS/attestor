@@ -118,6 +118,10 @@ Completed:
   and admin idempotency state from `src/service/control-plane-store/admin-audit-state.ts`
   and `src/service/control-plane-store/admin-idempotency-state.ts`, keeping
   the existing facade while isolating the admin replay/audit families.
+- `src/service/control-plane-store.ts` now re-exports async dead-letter state
+  from `src/service/control-plane-store/async-dead-letter-state.ts`, keeping
+  the existing facade while isolating the DLQ PostgreSQL/file fallback and
+  snapshot family.
 
 Next:
 

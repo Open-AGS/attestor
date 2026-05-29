@@ -313,15 +313,17 @@ function testReportClaimsThatAreAlreadyClosed(): void {
   );
 
   const controlPlaneStore = readProjectFile('src', 'service', 'control-plane-store.ts');
+  const asyncDeadLetterState = readProjectFile('src', 'service', 'control-plane-store', 'async-dead-letter-state.ts');
   ok(
-    controlPlaneStore.includes('listAsyncDeadLetterRecordsPg') &&
-      controlPlaneStore.includes('upsertAsyncDeadLetterRecordPg') &&
-      controlPlaneStore.includes('removeAsyncDeadLetterRecordPg'),
+    controlPlaneStore.includes("from './control-plane-store/async-dead-letter-state.js'") &&
+      asyncDeadLetterState.includes('listAsyncDeadLetterRecordsPg') &&
+      asyncDeadLetterState.includes('upsertAsyncDeadLetterRecordPg') &&
+      asyncDeadLetterState.includes('removeAsyncDeadLetterRecordPg'),
     'F8-R5: shared control-plane dead-letter persistence exists for HA mode',
   );
   ok(
-    controlPlaneStore.includes('if (!isSharedControlPlaneConfigured()) return listAsyncDeadLetterRecordsFile') &&
-      controlPlaneStore.includes('await listAsyncDeadLetterRecordsPg(filters)'),
+    asyncDeadLetterState.includes('if (!isSharedControlPlaneConfigured()) return listAsyncDeadLetterRecordsFile') &&
+      asyncDeadLetterState.includes('await listAsyncDeadLetterRecordsPg(filters)'),
     'F8-R5: file-backed DLQ is the local fallback, not the shared-control-plane path',
   );
 }

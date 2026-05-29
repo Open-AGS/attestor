@@ -38,6 +38,8 @@ function readProjectFile(...segments: string[]): string {
 const routeFiles = [
   ['src', 'service', 'http', 'routes', 'core-routes.ts'],
   ['src', 'service', 'http', 'routes', 'account-routes.ts'],
+  ['src', 'service', 'http', 'routes', 'account-public-auth-routes.ts'],
+  ['src', 'service', 'http', 'routes', 'account-federated-auth-routes.ts'],
   ['src', 'service', 'http', 'routes', 'admin-routes.ts'],
   ['src', 'service', 'http', 'routes', 'action-surface-onboarding-routes.ts'],
   ['src', 'service', 'http', 'routes', 'policy-foundry-hosted-onboarding-routes.ts'],

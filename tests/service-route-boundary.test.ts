@@ -8,6 +8,13 @@ function readProjectFile(...segments: string[]): string {
   return readFileSync(join(process.cwd(), ...segments), 'utf8');
 }
 
+function readAccountRouteSources(): string {
+  return readdirSync(ROUTE_ROOT)
+    .filter((file) => /^account.*\.ts$/u.test(file))
+    .map((file) => readFileSync(join(ROUTE_ROOT, file), 'utf8'))
+    .join('\n');
+}
+
 function collectRouteFiles(root: string): string[] {
   const results: string[] = [];
   for (const entry of readdirSync(root)) {
@@ -343,13 +350,14 @@ function testAccountRouteIsStronglyTyped(): void {
 
 function testAccountRouteDelegatesAuthUseCases(): void {
   const accountRoute = readFileSync(join(ROUTE_ROOT, 'account-routes.ts'), 'utf8');
+  const accountRoutes = readAccountRouteSources();
   const accountRouteHelpers = readProjectFile('src', 'service', 'http', 'routes', 'account-route-helpers.ts');
   const accountAuthService = readProjectFile('src', 'service', 'application', 'account-auth-service.ts');
 
   assert.match(accountRoute, /authService: AccountAuthService/u);
-  assert.match(accountRoute, /authService\.bootstrapFirstUser/u);
-  assert.match(accountRoute, /authService\.signup/u);
-  assert.match(accountRoute, /authService\.login/u);
+  assert.match(accountRoutes, /authService\.bootstrapFirstUser/u);
+  assert.match(accountRoutes, /authService\.signup/u);
+  assert.match(accountRoutes, /authService\.login/u);
   assert.match(accountRoute, /from '..\/..\/account\/auth-abuse-guard\.js'/u);
   assert.match(accountRouteHelpers, /checkAuthAttemptAllowed/u);
   assert.match(accountRoute, /recordAuthAttemptFailure/u);
@@ -406,6 +414,7 @@ function testCoreRouteExposesReleaseTokenJwksFromRuntimeKey(): void {
 
 function testAccountRouteDelegatesUserManagementUseCases(): void {
   const accountRoute = readFileSync(join(ROUTE_ROOT, 'account-routes.ts'), 'utf8');
+  const accountRoutes = readAccountRouteSources();
   const accountUserManagementService = readProjectFile(
     'src',
     'service',
@@ -414,14 +423,14 @@ function testAccountRouteDelegatesUserManagementUseCases(): void {
   );
 
   assert.match(accountRoute, /userManagementService: AccountUserManagementService/u);
-  assert.match(accountRoute, /userManagementService\.listUsers/u);
-  assert.match(accountRoute, /userManagementService\.createUser/u);
-  assert.match(accountRoute, /userManagementService\.issueInvite/u);
-  assert.match(accountRoute, /userManagementService\.revokeInvite/u);
-  assert.match(accountRoute, /userManagementService\.acceptInvite/u);
-  assert.match(accountRoute, /userManagementService\.setUserStatus/u);
-  assert.match(accountRoute, /userManagementService\.issuePasswordReset/u);
-  assert.match(accountRoute, /userManagementService\.consumePasswordReset/u);
+  assert.match(accountRoutes, /userManagementService\.listUsers/u);
+  assert.match(accountRoutes, /userManagementService\.createUser/u);
+  assert.match(accountRoutes, /userManagementService\.issueInvite/u);
+  assert.match(accountRoutes, /userManagementService\.revokeInvite/u);
+  assert.match(accountRoutes, /userManagementService\.acceptInvite/u);
+  assert.match(accountRoutes, /userManagementService\.setUserStatus/u);
+  assert.match(accountRoutes, /userManagementService\.issuePasswordReset/u);
+  assert.match(accountRoutes, /userManagementService\.consumePasswordReset/u);
   assert.doesNotMatch(accountRoute, /createAccountUserState/u);
   assert.doesNotMatch(accountRoute, /listAccountUsersByAccountIdState/u);
   assert.doesNotMatch(accountRoute, /listAccountUserActionTokensByAccountIdState/u);
@@ -439,6 +448,7 @@ function testAccountRouteDelegatesUserManagementUseCases(): void {
 
 function testAccountRouteUsesStateServicePort(): void {
   const accountRoute = readFileSync(join(ROUTE_ROOT, 'account-routes.ts'), 'utf8');
+  const accountRoutes = readAccountRouteSources();
   const accountStateService = readProjectFile('src', 'service', 'application', 'account-state-service.ts');
 
   assert.match(accountRoute, /stateService: AccountStateService/u);
@@ -446,7 +456,7 @@ function testAccountRouteUsesStateServicePort(): void {
   assert.match(accountRoute, /stateService\.issueAccountSession/u);
   assert.match(accountRoute, /stateService\.findHostedAccountById/u);
   assert.match(accountRoute, /stateService\.saveAccountUserRecord/u);
-  assert.match(accountRoute, /stateService\.recordHostedSamlReplay/u);
+  assert.match(accountRoutes, /stateService\.recordHostedSamlReplay/u);
   assert.match(accountRoute, /stateService\.listHostedEmailDeliveries/u);
   assert.doesNotMatch(accountRoute, /control-plane-store/u);
   assert.doesNotMatch(accountRoute, /findAccountUserByEmailState/u);

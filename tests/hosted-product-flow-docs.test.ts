@@ -1,11 +1,19 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 let passed = 0;
 
 function readProjectFile(...segments: string[]): string {
   return readFileSync(join(process.cwd(), ...segments), 'utf8');
+}
+
+function readAccountRouteSources(): string {
+  const routeDir = join(process.cwd(), 'src', 'service', 'http', 'routes');
+  return readdirSync(routeDir)
+    .filter((file) => /^account.*\.ts$/u.test(file))
+    .map((file) => readFileSync(join(routeDir, file), 'utf8'))
+    .join('\n');
 }
 
 function ok(condition: unknown, message: string): void {
@@ -360,7 +368,7 @@ function testPricingAndTrialTruthsStayAnchored(): void {
 
 function testHostedJourneyRoutesMatchShippedRoutes(): void {
   const journey = readProjectFile('docs', '01-overview', 'hosted-customer-journey.md');
-  const accountRoutes = readProjectFile('src', 'service', 'http', 'routes', 'account-routes.ts');
+  const accountRoutes = readAccountRouteSources();
   const stripeWebhookRoutes = readProjectFile('src', 'service', 'http', 'routes', 'stripe-webhook-routes.ts');
 
   const accountRouteContracts = [

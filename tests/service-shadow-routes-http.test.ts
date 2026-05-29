@@ -485,7 +485,10 @@ async function testShadowMutationRateLimitIsTenantRouteScoped(): Promise<void> {
       1,
       'Shadow mutation rate limit: rejected retry does not write success audit',
     );
-    const routeSource = readFileSync('src/service/http/routes/shadow-routes.ts', 'utf8');
+    const routeSource = [
+      readFileSync('src/service/http/routes/shadow-routes.ts', 'utf8'),
+      readFileSync('src/service/http/routes/shadow-simulation-history-routes.ts', 'utf8'),
+    ].join('\n');
     for (const routeId of [
       'shadow.simulations.create',
       'shadow.policy_candidates.materialize',

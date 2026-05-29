@@ -1,5 +1,4 @@
 import type { Context, Hono } from 'hono';
-import type { AdminAuditAction } from '../../admin-audit-log.js';
 import {
   createShadowActivationReadinessGate,
   createShadowCustomerActivationHandoff,
@@ -12,12 +11,10 @@ import {
   createShadowPolicyPromotionDraft,
   createShadowPolicyPromotionPacket,
   createShadowPolicyPromotionSimulation,
-  createShadowPolicySimulationReport,
   createPolicyFoundryActiveQuestionPacket,
   evaluatePolicyFoundryRedTeamReplay,
   evaluatePolicyFoundryReadiness,
   CONSEQUENCE_ADMISSION_DOWNSTREAM_BOUNDARY_KINDS,
-  GENERIC_ADMISSION_MODES,
   SHADOW_DOWNSTREAM_INTEGRATION_EVIDENCE_KINDS,
   SHADOW_DOWNSTREAM_VERIFICATION_CHECKS,
   SHADOW_CUSTOMER_ACTIVATION_REF_KINDS,
@@ -56,16 +53,20 @@ import {
   type ShadowPolicySimulationReportStoreRecord,
   type UpsertShadowPolicyCandidateBundleResult,
 } from '../../shadow/shadow-persistence-store.js';
-import type {
-  PipelineIdempotencyReadyResult,
-  PipelineIdempotencyService,
-} from '../../application/pipeline-idempotency-service.js';
+import type { PipelineIdempotencyService } from '../../application/pipeline-idempotency-service.js';
 import type { TenantContext } from '../../tenant-isolation.js';
 import { acceptsJsonRequestBody } from '../route-response-helpers.js';
+import {
+  beginShadowMutationIdempotency,
+  finalizeShadowMutationIdempotency,
+  recordShadowMutationAudit,
+  type ShadowMutationAuditInput,
+} from './shadow-mutation-route-helpers.js';
 import {
   registerShadowSummaryDashboardRoutes,
   safeShadowSummary,
 } from './shadow-summary-dashboard-routes.js';
+import { registerShadowSimulationHistoryRoutes } from './shadow-simulation-history-routes.js';
 import {
   assertTenantBoundRecord,
   assertTenantBoundRecords,
@@ -76,24 +77,8 @@ import {
   shadowListPage,
   tenantSummary,
 } from './shadow-route-helpers.js';
-
-const SHADOW_MUTATION_RATE_LIMIT_DEFAULT = 60;
-const SHADOW_MUTATION_RATE_LIMIT_MAX = 600;
-const SHADOW_MUTATION_RATE_LIMIT_WINDOW_MS = 60_000;
-
-const shadowMutationAttempts = new Map<string, {
-  count: number;
-  resetAtMs: number;
-}>();
-
-export interface ShadowMutationAuditInput {
-  readonly routeId: string;
-  readonly action: AdminAuditAction;
-  readonly tenant: TenantContext;
-  readonly requestPayload: unknown;
-  readonly statusCode: number;
-  readonly metadata?: Record<string, unknown>;
-}
+export { resetShadowMutationRateLimiterForTests } from './shadow-mutation-route-helpers.js';
+export type { ShadowMutationAuditInput } from './shadow-mutation-route-helpers.js';
 
 type DownstreamIntegrationProofRouteBody = {
   readonly enforcementPointId: string;
@@ -164,194 +149,11 @@ export interface ShadowRouteDeps {
   now?(): string;
 }
 
-function configuredShadowMutationRateLimit(): number {
-  const raw = process.env.ATTESTOR_SHADOW_MUTATION_RATE_LIMIT_PER_MINUTE?.trim();
-  const parsed = raw ? Number.parseInt(raw, 10) : SHADOW_MUTATION_RATE_LIMIT_DEFAULT;
-  if (!Number.isFinite(parsed) || parsed <= 0) return SHADOW_MUTATION_RATE_LIMIT_DEFAULT;
-  return Math.min(parsed, SHADOW_MUTATION_RATE_LIMIT_MAX);
-}
-
-function shadowMutationRateLimitResponse(
-  c: Context,
-  tenant: TenantContext,
-  routeId: string,
-): Response | null {
-  const limit = configuredShadowMutationRateLimit();
-  const now = Date.now();
-  for (const [key, attempt] of shadowMutationAttempts.entries()) {
-    if (attempt.resetAtMs <= now) shadowMutationAttempts.delete(key);
-  }
-
-  const key = `${tenant.tenantId}:${routeId}`;
-  const current = shadowMutationAttempts.get(key);
-  const attempt = current && current.resetAtMs > now
-    ? current
-    : { count: 0, resetAtMs: now + SHADOW_MUTATION_RATE_LIMIT_WINDOW_MS };
-  attempt.count += 1;
-  shadowMutationAttempts.set(key, attempt);
-
-  const remaining = Math.max(0, limit - attempt.count);
-  const retryAfterSeconds = Math.max(1, Math.ceil((attempt.resetAtMs - now) / 1000));
-  c.header('cache-control', 'no-store');
-  c.header('x-attestor-rate-limit-limit', String(limit));
-  c.header('x-attestor-rate-limit-remaining', String(remaining));
-  c.header('x-attestor-rate-limit-reset', new Date(attempt.resetAtMs).toISOString());
-  if (attempt.count <= limit) return null;
-
-  c.header('retry-after', String(retryAfterSeconds));
-  return problem(c, {
-    type: 'https://attestor.dev/problems/shadow-mutation-rate-limit-exceeded',
-    title: 'Shadow mutation rate limit exceeded',
-    status: 429,
-    detail: 'Shadow mutation writes are rate limited per tenant and route.',
-    reasonCodes: ['shadow-mutation-rate-limit-exceeded'],
-  });
-}
-
-type ShadowMutationIdempotencyBegin =
-  | {
-      readonly kind: 'ready';
-      readonly tenant: TenantContext;
-      readonly ready: PipelineIdempotencyReadyResult | null;
-    }
-  | { readonly kind: 'response'; readonly response: Response };
-
-function shadowIdempotencyKeyFor(c: Context): string | null {
-  const normalized = c.req.header('Idempotency-Key')?.trim() ?? '';
-  return normalized.length > 0 ? normalized : null;
-}
-
-function shadowReplayResponse(input: {
-  readonly statusCode: number;
-  readonly responseBody: unknown;
-  readonly replay: boolean;
-}): Response {
-  return new Response(JSON.stringify(input.responseBody), {
-    status: input.statusCode,
-    headers: {
-      'content-type': 'application/json; charset=UTF-8',
-      'cache-control': 'no-store',
-      ...(input.replay ? { 'x-attestor-idempotent-replay': 'true' } : {}),
-    },
-  });
-}
-
-async function beginShadowMutationIdempotency(
-  c: Context,
-  deps: ShadowRouteDeps,
-  routeId: string,
-  requestPayload: unknown,
-): Promise<ShadowMutationIdempotencyBegin> {
-  const tenant = deps.currentTenant(c);
-  const idempotencyKey = shadowIdempotencyKeyFor(c);
-
-  if (idempotencyKey) {
-    if (!deps.pipelineIdempotencyService) {
-      return {
-        kind: 'response',
-        response: problem(c, {
-          type: 'https://attestor.dev/problems/shadow-mutation-idempotency-unavailable',
-          title: 'Shadow mutation idempotency unavailable',
-          status: 503,
-          detail: 'The shadow mutation route cannot persist idempotent mutation responses in this runtime.',
-          reasonCodes: ['shadow-mutation-idempotency-unavailable'],
-        }),
-      };
-    }
-
-    const begin = await deps.pipelineIdempotencyService.begin({
-      idempotencyKey,
-      tenantId: tenant.tenantId,
-      routeId,
-      requestPayload,
-    });
-
-    if (begin.kind === 'replay') {
-      return {
-        kind: 'response',
-        response: shadowReplayResponse({
-          statusCode: begin.statusCode,
-          responseBody: begin.responseBody,
-          replay: true,
-        }),
-      };
-    }
-
-    if (begin.kind === 'conflict') {
-      return {
-        kind: 'response',
-        response: problem(c, {
-          type: 'https://attestor.dev/problems/shadow-mutation-idempotency-conflict',
-          title: 'Shadow mutation idempotency conflict',
-          status: 409,
-          detail: 'The Idempotency-Key was already used for a different shadow mutation request.',
-          reasonCodes: ['shadow-mutation-idempotency-conflict'],
-        }),
-      };
-    }
-
-    if (begin.kind === 'unavailable') {
-      return {
-        kind: 'response',
-        response: problem(c, {
-          type: 'https://attestor.dev/problems/shadow-mutation-idempotency-unavailable',
-          title: 'Shadow mutation idempotency unavailable',
-          status: 503,
-          detail: 'The shadow mutation route cannot persist idempotent mutation responses in this runtime.',
-          reasonCodes: ['shadow-mutation-idempotency-unavailable'],
-        }),
-      };
-    }
-
-    const rateLimited = shadowMutationRateLimitResponse(c, tenant, routeId);
-    if (rateLimited) return { kind: 'response', response: rateLimited };
-    return { kind: 'ready', tenant, ready: begin };
-  }
-
-  const rateLimited = shadowMutationRateLimitResponse(c, tenant, routeId);
-  if (rateLimited) return { kind: 'response', response: rateLimited };
-  return { kind: 'ready', tenant, ready: null };
-}
-
-async function finalizeShadowMutationIdempotency(
-  deps: ShadowRouteDeps,
-  tenant: TenantContext,
-  routeId: string,
-  requestPayload: unknown,
-  idempotency: PipelineIdempotencyReadyResult | null,
-  statusCode: number,
-  responseBody: Record<string, unknown>,
-): Promise<Record<string, unknown>> {
-  if (!idempotency?.idempotencyKey || !deps.pipelineIdempotencyService) {
-    return responseBody;
-  }
-  return deps.pipelineIdempotencyService.finalize({
-    idempotencyKey: idempotency.idempotencyKey,
-    tenantId: tenant.tenantId,
-    routeId,
-    requestPayload,
-    statusCode,
-    responseBody,
-  });
-}
-
-export function resetShadowMutationRateLimiterForTests(): void {
-  shadowMutationAttempts.clear();
-}
-
 function parseCandidateStatus(value: string | null | undefined): ShadowPolicyCandidateStatus | null {
   if (value === undefined || value === null || value.trim() === '') return null;
   const normalized = value.trim();
   return SHADOW_POLICY_CANDIDATE_STATUSES.includes(normalized as ShadowPolicyCandidateStatus)
     ? normalized as ShadowPolicyCandidateStatus
-    : null;
-}
-
-function parseGenericMode(value: string | null | undefined): GenericAdmissionMode | null {
-  if (value === undefined || value === null || value.trim() === '') return null;
-  const normalized = value.trim();
-  return GENERIC_ADMISSION_MODES.includes(normalized as GenericAdmissionMode)
-    ? normalized as GenericAdmissionMode
     : null;
 }
 
@@ -377,13 +179,6 @@ function selectPolicyFoundryCandidate(input: {
     if (input.domain && candidate.domain !== input.domain) return false;
     return true;
   }) ?? null;
-}
-
-async function recordShadowMutationAudit(
-  deps: ShadowRouteDeps,
-  input: ShadowMutationAuditInput,
-): Promise<void> {
-  await deps.recordShadowMutationAudit?.(input);
 }
 
 async function readStatusTransitionBody(c: Context): Promise<{
@@ -435,86 +230,6 @@ async function readStatusTransitionBody(c: Context): Promise<{
     });
   }
   return { status, actorRef, reason };
-}
-
-async function readSimulationRequestBody(c: Context): Promise<{
-  readonly proposedMode: GenericAdmissionMode;
-  readonly minimumPromotionEvents: number | null;
-} | Response> {
-  if (!acceptsJsonRequestBody(c)) {
-    return problem(c, {
-      type: 'https://attestor.dev/problems/shadow-simulation-json-required',
-      title: 'Shadow simulation JSON required',
-      status: 415,
-      detail: 'The shadow simulation route requires Content-Type: application/json.',
-      reasonCodes: ['shadow-simulation-json-required'],
-    });
-  }
-
-  let body: unknown;
-  try {
-    body = await c.req.json<unknown>();
-  } catch {
-    return problem(c, {
-      type: 'https://attestor.dev/problems/shadow-simulation-json-invalid',
-      title: 'Invalid shadow simulation JSON',
-      status: 400,
-      detail: 'The shadow simulation route requires a valid JSON object when a body is provided.',
-      reasonCodes: ['invalid-json'],
-    });
-  }
-  if (!isRecord(body)) {
-    return problem(c, {
-      type: 'https://attestor.dev/problems/shadow-simulation-input-invalid',
-      title: 'Invalid shadow simulation input',
-      status: 400,
-      detail: 'The shadow simulation route requires an object body when a body is provided.',
-      reasonCodes: ['invalid-shadow-simulation-input'],
-    });
-  }
-
-  const proposedMode = typeof body.proposedMode === 'string'
-    ? parseGenericMode(body.proposedMode)
-    : null;
-  if (body.proposedMode === undefined || body.proposedMode === null) {
-    return problem(c, {
-      type: 'https://attestor.dev/problems/shadow-simulation-mode-required',
-      title: 'Shadow simulation mode required',
-      status: 400,
-      detail: `proposedMode is required and must be one of: ${GENERIC_ADMISSION_MODES.join(', ')}.`,
-      reasonCodes: ['shadow-simulation-mode-required'],
-    });
-  }
-  if (!proposedMode) {
-    return problem(c, {
-      type: 'https://attestor.dev/problems/shadow-simulation-mode-invalid',
-      title: 'Invalid shadow simulation mode',
-      status: 400,
-      detail: `proposedMode must be one of: ${GENERIC_ADMISSION_MODES.join(', ')}.`,
-      reasonCodes: ['invalid-shadow-simulation-mode'],
-    });
-  }
-
-  const minimumPromotionEvents = body.minimumPromotionEvents === undefined || body.minimumPromotionEvents === null
-    ? null
-    : Number(body.minimumPromotionEvents);
-  if (
-    minimumPromotionEvents !== null &&
-    (!Number.isInteger(minimumPromotionEvents) || minimumPromotionEvents <= 0 || minimumPromotionEvents > 10_000)
-  ) {
-    return problem(c, {
-      type: 'https://attestor.dev/problems/shadow-simulation-input-invalid',
-      title: 'Invalid shadow simulation input',
-      status: 400,
-      detail: 'minimumPromotionEvents must be a positive integer no larger than 10000.',
-      reasonCodes: ['invalid-shadow-simulation-input'],
-    });
-  }
-
-  return {
-    proposedMode,
-    minimumPromotionEvents,
-  };
 }
 
 function parseDownstreamBoundaryKind(
@@ -1147,197 +862,7 @@ async function readCustomerActivationReceiptBody(c: Context): Promise<{
 
 export function registerShadowRoutes(app: Hono, deps: ShadowRouteDeps): void {
   registerShadowSummaryDashboardRoutes(app, deps);
-
-  app.post('/api/v1/shadow/simulations', async (c) => {
-    c.header('cache-control', 'no-store');
-    const body = await readSimulationRequestBody(c);
-    if (body instanceof Response) return body;
-    if (!deps.recordShadowPolicySimulationReport) {
-      return problem(c, {
-        type: 'https://attestor.dev/problems/shadow-simulation-store-unavailable',
-        title: 'Shadow simulation store unavailable',
-        status: 503,
-        detail: 'Shadow simulation persistence is not configured for this runtime.',
-        reasonCodes: ['shadow-simulation-store-unavailable'],
-      });
-    }
-
-    try {
-      const routeId = 'shadow.simulations.create';
-      const requestPayload = {
-        proposedMode: body.proposedMode,
-        minimumPromotionEvents: body.minimumPromotionEvents,
-      };
-      const idempotency = await beginShadowMutationIdempotency(c, deps, routeId, requestPayload);
-      if (idempotency.kind === 'response') return idempotency.response;
-      const { tenant } = idempotency;
-      const events = assertTenantBoundRecords(
-        tenant,
-        deps.listShadowEvents({ tenant }),
-        'shadow admission event',
-        { allowNullTenantId: true },
-      );
-      const report = createShadowPolicySimulationReport({
-        events,
-        proposedMode: body.proposedMode,
-        minimumPromotionEvents: body.minimumPromotionEvents,
-        generatedAt: deps.now?.() ?? null,
-      });
-      const persisted = deps.recordShadowPolicySimulationReport({
-        tenant,
-        report,
-      });
-      const persistedRecord = assertTenantBoundRecord(
-        tenant,
-        persisted.record,
-        'shadow simulation',
-      );
-      await recordShadowMutationAudit(deps, {
-        routeId,
-        action: 'shadow.simulation.recorded',
-        tenant,
-        requestPayload,
-        statusCode: 200,
-        metadata: {
-          persistenceKind: persisted.kind,
-          reportId: persistedRecord.reportId,
-          reportDigest: persistedRecord.reportDigest,
-          eventCount: persistedRecord.eventCount,
-        },
-      });
-      const responseBody = await finalizeShadowMutationIdempotency(
-        deps,
-        tenant,
-        routeId,
-        requestPayload,
-        idempotency.ready,
-        200,
-        {
-          tenant: tenantSummary(tenant),
-          storageMode: 'file-backed-evaluation',
-          productionReady: false,
-          rawPayloadStored: false,
-          report,
-          persisted: {
-            kind: persisted.kind,
-            record: persistedRecord,
-          },
-        },
-      );
-      return c.json(responseBody);
-    } catch (error) {
-      const status = caughtErrorStatus(error, {
-        statusMarkers: [{ marker: 'exceeds maximum', status: 400 }],
-        defaultStatus: 503,
-      });
-      return problem(c, {
-        type: 'https://attestor.dev/problems/shadow-simulation-record-failed',
-        title: 'Shadow simulation record failed',
-        status,
-        detail: boundedErrorDetail(error, 'The shadow simulation report could not be recorded.', {
-          safeMarkers: ['exceeds maximum'],
-          safeDetail: 'The shadow simulation request exceeds the supported event bound.',
-        }),
-        reasonCodes: ['shadow-simulation-record-failed'],
-      });
-    }
-  });
-
-  app.get('/api/v1/shadow/simulations', (c) => {
-    c.header('cache-control', 'no-store');
-    if (!deps.listShadowPolicySimulationReports) {
-      return problem(c, {
-        type: 'https://attestor.dev/problems/shadow-simulation-store-unavailable',
-        title: 'Shadow simulation store unavailable',
-        status: 503,
-        detail: 'Shadow simulation listing is not configured for this runtime.',
-        reasonCodes: ['shadow-simulation-store-unavailable'],
-      });
-    }
-    const modeQuery = c.req.query('proposedMode');
-    const proposedMode = parseGenericMode(modeQuery);
-    if (modeQuery && !proposedMode) {
-      return problem(c, {
-        type: 'https://attestor.dev/problems/shadow-simulation-mode-invalid',
-        title: 'Invalid shadow simulation mode',
-        status: 400,
-        detail: `proposedMode must be one of: ${GENERIC_ADMISSION_MODES.join(', ')}.`,
-        reasonCodes: ['invalid-shadow-simulation-mode'],
-      });
-    }
-    try {
-      const tenant = deps.currentTenant(c);
-      const records = assertTenantBoundRecords(
-        tenant,
-        deps.listShadowPolicySimulationReports({ tenant, proposedMode }),
-        'shadow simulation',
-      );
-      const page = shadowListPage(c, records, 'Shadow simulation');
-      if (page instanceof Response) return page;
-      return c.json({
-        tenant: tenantSummary(tenant),
-        storageMode: 'file-backed-evaluation',
-        recordCount: page.records.length,
-        pageInfo: page.pageInfo,
-        rawPayloadStored: false,
-        productionReady: false,
-        records: page.records,
-      });
-    } catch (error) {
-      return problem(c, {
-        type: 'https://attestor.dev/problems/shadow-simulation-list-failed',
-        title: 'Shadow simulation list failed',
-        status: 503,
-        detail: boundedErrorDetail(error, 'The shadow simulation reports could not be listed.'),
-        reasonCodes: ['shadow-simulation-list-failed'],
-      });
-    }
-  });
-
-  app.get('/api/v1/shadow/simulations/:reportId', (c) => {
-    c.header('cache-control', 'no-store');
-    if (!deps.findShadowPolicySimulationReport) {
-      return problem(c, {
-        type: 'https://attestor.dev/problems/shadow-simulation-store-unavailable',
-        title: 'Shadow simulation store unavailable',
-        status: 503,
-        detail: 'Shadow simulation lookup is not configured for this runtime.',
-        reasonCodes: ['shadow-simulation-store-unavailable'],
-      });
-    }
-    try {
-      const tenant = deps.currentTenant(c);
-      const record = deps.findShadowPolicySimulationReport({
-        tenant,
-        reportId: c.req.param('reportId'),
-      });
-      if (!record) {
-        return problem(c, {
-          type: 'https://attestor.dev/problems/shadow-simulation-not-found',
-          title: 'Shadow simulation not found',
-          status: 404,
-          detail: 'No shadow simulation report was found for this tenant and report id.',
-          reasonCodes: ['shadow-simulation-not-found'],
-        });
-      }
-      const tenantRecord = assertTenantBoundRecord(tenant, record, 'shadow simulation');
-      return c.json({
-        tenant: tenantSummary(tenant),
-        storageMode: 'file-backed-evaluation',
-        rawPayloadStored: false,
-        productionReady: false,
-        record: tenantRecord,
-      });
-    } catch (error) {
-      return problem(c, {
-        type: 'https://attestor.dev/problems/shadow-simulation-load-failed',
-        title: 'Shadow simulation load failed',
-        status: 503,
-        detail: boundedErrorDetail(error, 'The shadow simulation report could not be loaded.'),
-        reasonCodes: ['shadow-simulation-load-failed'],
-      });
-    }
-  });
+  registerShadowSimulationHistoryRoutes(app, deps);
 
   app.get('/api/v1/shadow/policy-candidates', (c) => {
     const result = safeShadowSummary(c, deps);

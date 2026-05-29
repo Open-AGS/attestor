@@ -27,6 +27,7 @@ try {
   const shadowRoutes = [
     readProjectFile('src', 'service', 'http', 'routes', 'shadow-routes.ts'),
     readProjectFile('src', 'service', 'http', 'routes', 'shadow-summary-dashboard-routes.ts'),
+    readProjectFile('src', 'service', 'http', 'routes', 'shadow-simulation-history-routes.ts'),
   ].join('\n');
   const activationHandoff = readProjectFile(
     'src',

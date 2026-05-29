@@ -176,11 +176,16 @@ Completed:
   business-risk dashboard, and dashboard-summary read routes to
   `src/service/http/routes/shadow-summary-dashboard-routes.ts`, preserving
   `registerShadowRoutes` as the public route registration facade.
+- `src/service/http/routes/shadow-routes.ts` now delegates shadow simulation
+  create/list/load routes to
+  `src/service/http/routes/shadow-simulation-history-routes.ts` and shares
+  mutation idempotency, rate-limit, and audit helpers through
+  `src/service/http/routes/shadow-mutation-route-helpers.ts`.
 
 Next:
 
-1. Split `src/service/http/routes/shadow-routes.ts` simulation and history
-   routes by route family.
+1. Split `src/service/http/routes/shadow-routes.ts` policy-foundry and
+   promotion routes by route family.
 2. Leave `src/service/http/routes/account-routes.ts` for a separate route-matrix
    wave after V2.
 3. Touch crypto/protocol adapters only where module-specific risk warrants it.

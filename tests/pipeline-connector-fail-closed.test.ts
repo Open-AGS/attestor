@@ -30,7 +30,10 @@ function testExplicitConnectorFailuresFailClosed(): void {
 }
 
 function testExplicitCliConnectorFailuresFailClosed(): void {
-  const cli = readProjectFile('src', 'financial', 'cli.ts');
+  const cli = [
+    readProjectFile('src', 'financial', 'cli.ts'),
+    readProjectFile('src', 'financial', 'cli', 'product-proof.ts'),
+  ].join('\n');
 
   includes(cli, "Connector '${connectorId}' not found. Available:", 'CLI connector: missing connector is fatal');
   includes(cli, "Connector '${connectorId}' not configured (env vars missing)", 'CLI connector: missing config is fatal');

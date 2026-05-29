@@ -39,7 +39,10 @@ function readProjectFile(...segments: string[]): string {
 try {
   const openai = readProjectFile('src', 'api', 'openai.ts');
   const models = readProjectFile('src', 'api', 'llm-provider-models.ts');
-  const financialCli = readProjectFile('src', 'financial', 'cli.ts');
+  const financialCli = [
+    readProjectFile('src', 'financial', 'cli.ts'),
+    readProjectFile('src', 'financial', 'cli', 'live-scenario.ts'),
+  ].join('\n');
   const financialTypes = readProjectFile('src', 'financial', 'types.ts');
 
   equal(GPT_MODEL, 'o3', 'OpenAI runtime policy: reasoning model remains o3');

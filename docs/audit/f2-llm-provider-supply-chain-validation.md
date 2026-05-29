@@ -107,7 +107,7 @@ registry contract:
 
 Current caller evidence:
 
-- `callGpt(...)` is called from `src/financial/cli.ts` only.
+- `callGpt(...)` is called from `src/financial/cli/live-scenario.ts` only; `src/financial/cli.ts` remains the operator entrypoint.
 - `callGptVision(...)` currently has no repo caller outside its own definition.
 - `docs/00-evaluation/v0.1-evaluation-packet.md` labels the live upstream path as optional and not the default reviewer path.
 - `src/financial/types.ts` mentions `ANTHROPIC_API_KEY` in readiness reporting,

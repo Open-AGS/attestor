@@ -37,7 +37,6 @@ const HARD_LIMIT_REGISTRY = Object.freeze([
   { path: 'src/crypto-authorization-core/eip7702-delegation-adapter.ts', maxLines: 1634, reason: 'P4 protocol adapter exception; EIP-7702 delegated-scope work should be a focused PR.' },
   { path: 'src/crypto-authorization-core/policy-gap-narrowing.ts', maxLines: 1624, reason: 'P4 crypto policy helper exception; split only when the policy-gap contract is otherwise changing.' },
   { path: 'src/release-enforcement-plane/envoy-ext-authz.ts', maxLines: 1598, reason: 'P4 enforcement adapter exception; Envoy bridge behavior is route-risk-class sensitive.' },
-  { path: 'src/financial/cli.ts', maxLines: 1589, reason: 'P1 CLI command split planned; parser/commands/rendering can separate without runtime route impact.' },
   { path: 'src/crypto-authorization-core/intelligence-dashboard-summary.ts', maxLines: 1583, reason: 'P4 crypto intelligence summary exception; split only with dashboard-summary golden coverage.' },
   { path: 'src/service/http/routes/admin-routes.ts', maxLines: 1579, reason: 'P2 route-family split planned after route split pattern is proven; admin auth remains high authority.' },
   { path: 'src/crypto-execution-admission/delegated-eoa.ts', maxLines: 1445, reason: 'P4 crypto execution adapter exception; delegated EOA semantics are trust-sensitive.' },

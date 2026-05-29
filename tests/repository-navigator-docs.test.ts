@@ -65,6 +65,8 @@ function testNavigatorKeepsServiceMap(): void {
     '| `src/service/policy-foundry/` | Policy Foundry billing entitlement enforcement',
     '| `src/service/shadow/` | Shadow persistence store.',
     '| `src/service/application/` | Route-facing application services',
+    '| `src/financial/` | Finance proof wedge',
+    '| `src/financial/cli/` | Financial CLI command families',
   ]) {
     includes(doc, expected, `Repository navigator: keeps service map row ${expected}`);
   }

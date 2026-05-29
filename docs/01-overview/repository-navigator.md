@@ -85,6 +85,8 @@ do the next action there, and come back only if you still need more context.
 | `src/crypto-authorization-core/` | Crypto authorization primitives and adapter risk checks. | You are changing programmable-money authorization logic. |
 | `src/crypto-execution-admission/` | Crypto execution plan admission handoff. | You are changing package-boundary crypto execution planning. |
 | `src/signing/` | Ed25519, PKI, canonicalization, keyless signer, certificates. | You are changing proof signing or verification primitives. |
+| `src/financial/` | Finance proof wedge, pipeline, fixtures, and operator CLI. | You are changing the financial proof path or local operator demos. |
+| `src/financial/cli/` | Financial CLI command families behind the small `src/financial/cli.ts` entrypoint. | You are changing one CLI command without widening the operator entrypoint. |
 | `examples/customer-middleware/` | Express, FastAPI, Next.js, and LangChain integration examples. | You want to see where a customer would insert Attestor. |
 | `docs/audit/` | Current posture, finding state, control map, and live proof register. | You need to know whether a claim is repo-proven, live-proof-only, or not proven. |
 | `docs/research/` | Source-backed research notes and provenance ledger. | You need the external source trail behind a design direction. |

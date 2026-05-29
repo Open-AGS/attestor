@@ -93,18 +93,19 @@ Completed:
 
 - `src/service/api-types.ts` is now a compatibility barrel over the
   responsibility-named `src/service/api-types/*` modules.
+- `src/financial/cli.ts` is now a small operator entrypoint over
+  responsibility-named `src/financial/cli/*` command modules.
 
 Next:
 
-1. `src/financial/cli.ts`
-2. `scripts/probe/probe-consequence-admission-package-surface.mjs`
-3. `src/service/control-plane-store.ts` inventory
-4. `src/service/control-plane-store.ts` store-family split
-5. `src/consequence-admission/index.ts` public surface split
-6. `src/service/http/routes/shadow-routes.ts`
-7. `src/service/http/routes/account-routes.ts`
-8. Remaining route-store hotspots
-9. Crypto/protocol adapters only where module-specific risk warrants it
+1. `scripts/probe/probe-consequence-admission-package-surface.mjs`
+2. `src/service/control-plane-store.ts` inventory
+3. `src/service/control-plane-store.ts` store-family split
+4. `src/consequence-admission/index.ts` public surface split
+5. `src/service/http/routes/shadow-routes.ts`
+6. `src/service/http/routes/account-routes.ts`
+7. Remaining route-store hotspots
+8. Crypto/protocol adapters only where module-specific risk warrants it
 
 ## No-Claims
 

@@ -20,16 +20,19 @@ try {
     '`src/service/control-plane-store.ts` as a compatibility facade',
     '| PostgreSQL connection and schema bootstrap | `pg.ts` plus `schema.ts` |',
     '`control-plane-store/schema.ts`',
+    '`control-plane-store/mappers.ts`',
+    '| Normalizers, coercers, row mappers, shared helpers | `mappers.ts` |',
     '`control-plane-store/pg.ts`',
-    '| Hosted account and billing state facade | 1397-1907 |',
-    '| Tenant keys and usage state facade | 1908-2176 |',
-    '| Account users, sessions, tokens, SAML replay | 2177-2687 |',
-    '| Admin audit and admin idempotency | 2688-2908 |',
-    '| Pipeline idempotency | 2909-3053 |',
-    '| Stripe webhook processing | 3054-3336 |',
-    '| Async dead-letter and hosted email delivery | 3337-3633 |',
-    '| Snapshot export/restore and test reset | 3634-4187 |',
+    '| Hosted account and billing state facade | 994-1504 |',
+    '| Tenant keys and usage state facade | 1505-1773 |',
+    '| Account users, sessions, tokens, SAML replay | 1774-2284 |',
+    '| Admin audit and admin idempotency | 2285-2505 |',
+    '| Pipeline idempotency | 2506-2650 |',
+    '| Stripe webhook processing | 2651-2933 |',
+    '| Async dead-letter and hosted email delivery | 2934-3230 |',
+    '| Snapshot export/restore and test reset | 3231-3784 |',
     'Schema SQL and PG helper extraction are complete.',
+    'This is complete in `control-plane-store/mappers.ts`.',
     'No behavior change in the store-family split PR.',
     'No schema change unless it is isolated in a separate migration PR.',
     'No production, multi-region, RLS, or live HA claim from this refactor.',
@@ -53,6 +56,11 @@ try {
     'Large-file budget records the PG helper extraction slice',
   );
   includes(
+    budget,
+    '`src/service/control-plane-store.ts` now imports side-effect-free normalizers,',
+    'Large-file budget records the mapper extraction slice',
+  );
+  includes(
     readProjectFile('src', 'service', 'control-plane-store', 'schema.ts'),
     'CREATE TABLE IF NOT EXISTS attestor_control_plane.hosted_accounts',
     'Control-plane schema module keeps hosted account table DDL',
@@ -66,6 +74,16 @@ try {
     readProjectFile('src', 'service', 'control-plane-store.ts'),
     "from './control-plane-store/pg.js';",
     'Control-plane store facade imports the isolated PG helper module',
+  );
+  includes(
+    readProjectFile('src', 'service', 'control-plane-store.ts'),
+    "from './control-plane-store/mappers.js';",
+    'Control-plane store facade imports the isolated mapper helper module',
+  );
+  includes(
+    readProjectFile('src', 'service', 'control-plane-store', 'mappers.ts'),
+    'export function rowToHostedAccount',
+    'Control-plane mapper module keeps hosted account row projection',
   );
   includes(
     packageJson,

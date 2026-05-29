@@ -77,7 +77,10 @@ try {
   const anthropic = readProjectFile('src', 'api', 'anthropic.ts');
   const anthropicSmoke = readProjectFile('scripts', 'probe', 'probe-anthropic-live-smoke.ts');
   const models = readProjectFile('src', 'api', 'llm-provider-models.ts');
-  const financialCli = readProjectFile('src', 'financial', 'cli.ts');
+  const financialCli = [
+    readProjectFile('src', 'financial', 'cli.ts'),
+    readProjectFile('src', 'financial', 'cli', 'live-scenario.ts'),
+  ].join('\n');
   const financialTypes = readProjectFile('src', 'financial', 'types.ts');
   const evaluationPacket = readProjectFile('docs', '00-evaluation', 'v0.1-evaluation-packet.md');
   const registryDoc = readProjectFile('docs', '02-architecture', 'llm-provider-registry.md');

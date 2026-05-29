@@ -109,6 +109,9 @@ Completed:
   existing facade path while isolating shared PG lifecycle state.
 - `src/service/control-plane-store.ts` now imports side-effect-free normalizers,
   row mappers, and helper functions from `src/service/control-plane-store/mappers.ts`.
+- `src/service/control-plane-store.ts` now re-exports pipeline idempotency state
+  from `src/service/control-plane-store/pipeline-idempotency-state.ts`, keeping
+  the existing facade while isolating the pipeline replay/advisory-lock family.
 
 Next:
 

@@ -220,12 +220,21 @@ Completed:
   `src/service/shadow/shadow-customer-activation-receipt-store.ts`,
   `src/service/shadow/shadow-persistence-types.ts`, and
   `src/service/shadow/shadow-persistence-helpers.ts`.
+- `src/service/bootstrap/release-runtime.ts` now delegates release runtime PKI
+  path, store, rotation, and shared-path enforcement to
+  `src/service/bootstrap/release-runtime-pki.ts`, keeping the runtime bootstrap
+  facade and public imports stable.
+- `src/service/bootstrap/release-tenant-signer-boundary.ts` now re-exports
+  signer boundary constants, descriptor contracts, proof contracts, and error
+  types from
+  `src/service/bootstrap/release-tenant-signer-boundary-contracts.ts`, keeping
+  the behavior entrypoint stable while isolating the contract surface.
 
 Next:
 
 1. Continue the final wave from
    [Final Large File Refactor Plan](final-large-file-refactor-plan.md), starting
-   with `F-12` release runtime and tenant signer bootstrap extraction.
+   with `F-13` financial type-family extraction.
 2. Touch crypto/protocol adapters only where module-specific risk warrants it.
 
 ## No-Claims

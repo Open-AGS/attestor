@@ -32,94 +32,99 @@ function includes(content: string, expected: string, message: string): void {
 }
 
 function testObservedFeaturesStayEvidenceOnly(): void {
-  const source = readProjectFile('src', 'consequence-admission', 'index.ts');
+  const normalization = readProjectFile(
+    'src',
+    'consequence-admission',
+    'generic-input-normalization.ts',
+  );
+  const engine = readProjectFile('src', 'consequence-admission', 'generic-engine.ts');
   includes(
-    source,
+    normalization,
     'observedFeatures: normalizeGenericObservedFeatures(input.observedFeatures)',
     'Consequence admission proof discipline: observedFeatures are normalized from caller input',
   );
   includes(
-    source,
+    normalization,
     'observedFeatureOrigins: normalizeGenericObservedFeatureOrigins(input.observedFeatureOrigins)',
     'Consequence admission proof discipline: observed feature origins are normalized from caller input',
   );
   includes(
-    source,
+    normalization,
     'authoritySources: normalizeGenericAuthoritySources(input.authoritySources)',
     'Consequence admission proof discipline: generic authority sources are normalized from caller input',
   );
   includes(
-    source,
+    normalization,
     'approvals: normalizeGenericApprovals(input.approvals)',
     'Consequence admission proof discipline: generic approval provenance is normalized from caller input',
   );
   includes(
-    source,
+    normalization,
     'noGoConditions: normalizeGenericNoGoConditions(input.noGoConditions)',
     'Consequence admission proof discipline: generic no-go conditions are normalized from caller input',
   );
   includes(
-    source,
+    normalization,
     'agenticSupplyChain: normalizeGenericAgenticSupplyChain(input.agenticSupplyChain)',
     'Consequence admission proof discipline: generic agentic supply-chain metadata is normalized from caller input',
   );
   includes(
-    source,
+    normalization,
     'decisionContextDrift: normalizeGenericDecisionContextDrift(input.decisionContextDrift)',
     'Consequence admission proof discipline: generic decision-context drift metadata is normalized from caller input',
   );
   includes(
-    source,
+    normalization,
     'authorityCreep: normalizeGenericAuthorityCreep(input.authorityCreep)',
     'Consequence admission proof discipline: generic authority-creep metadata is normalized from caller input',
   );
   includes(
-    source,
+    engine,
     'evaluateConsequenceUntrustedContentAuthority({',
     'Consequence admission proof discipline: untrusted-content authority guard is runtime-wired for generic admissions',
   );
   includes(
-    source,
+    engine,
     'evaluateConsequenceApprovalProvenance({',
     'Consequence admission proof discipline: approval provenance guard is runtime-wired for generic approvals',
   );
   includes(
-    source,
+    engine,
     'evaluateConsequenceNoGoConditionLedger({',
     'Consequence admission proof discipline: no-go condition ledger is runtime-wired for generic admissions',
   );
   includes(
-    source,
+    engine,
     'evaluateConsequenceAgenticSupplyChain({',
     'Consequence admission proof discipline: agentic supply-chain guard is runtime-wired for generic admissions',
   );
   includes(
-    source,
+    engine,
     'evaluateConsequenceDecisionContextDrift({',
     'Consequence admission proof discipline: decision-context drift binding is runtime-wired for generic admissions',
   );
   includes(
-    source,
+    engine,
     'createAuthorityCreepGuard({',
     'Consequence admission proof discipline: authority-creep guard is runtime-wired for generic admissions',
   );
   includes(
-    source,
+    engine,
     "return input.observedFeatures?.[key] === true",
     'Consequence admission proof discipline: feature checks are boolean evidence reads',
   );
   includes(
-    source,
+    engine,
     "trustedObservedFeatureTrue(input, 'adapterReady')",
     'Consequence admission proof discipline: adapter readiness requires trusted feature origin',
   );
   includes(
-    source,
+    engine,
     "adapterReadyObserved: observedFeatureTrue(input, 'adapterReady')",
     'Consequence admission proof discipline: raw adapter readiness remains audit-visible',
   );
   includes(
-    source,
+    engine,
     "adapterReady: trustedObservedFeatureTrue(input, 'adapterReady')",
     'Consequence admission proof discipline: trusted adapter readiness is exposed as material evidence',
   );

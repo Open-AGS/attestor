@@ -44,9 +44,7 @@ const HARD_LIMIT_REGISTRY = Object.freeze([
   { path: 'src/release-enforcement-plane/async-envelope.ts', maxLines: 1305, reason: 'P4 enforcement-envelope exception; split only with async envelope verifier coverage.' },
   { path: 'tests/generic-admission-routes.test.ts', maxLines: 1298, reason: 'P2 route test matrix; split after generic admission route fixture helpers are stable.' },
   { path: 'src/crypto-authorization-core/approval-allowance-consequence.ts', maxLines: 1292, reason: 'P4 crypto authorization exception; split only with allowance/consequence behavioral coverage.' },
-  { path: 'src/service/bootstrap/release-runtime.ts', maxLines: 1288, reason: 'P2 bootstrap split candidate; release runtime wiring needs production-shared tests before moving.' },
   { path: 'src/crypto-execution-admission/intent-solver.ts', maxLines: 1258, reason: 'P4 crypto execution adapter exception; intent solver route binding is trust-sensitive.' },
-  { path: 'src/service/bootstrap/release-tenant-signer-boundary.ts', maxLines: 1217, reason: 'P2 bootstrap split candidate; tenant signer boundary needs release signing tests before moving.' },
   { path: 'src/consequence-admission/general-crypto-transaction-gate.ts', maxLines: 1211, reason: 'P4 crypto gate exception; general crypto gate should split only with crypto gate golden tests.' },
   { path: 'src/crypto-authorization-core/intelligence-risk-signals.ts', maxLines: 1208, reason: 'P4 crypto intelligence exception; risk signal split needs dashboard/risk-signal tests.' },
 ]);

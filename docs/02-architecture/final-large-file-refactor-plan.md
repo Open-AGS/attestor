@@ -46,8 +46,8 @@ References:
 | `src/service/application/stripe-webhook-billing-processor.ts` | 1352 | 400-800 | billing processor family extraction |
 | `src/service/billing/billing-event-ledger.ts` | 1242 | 400-800 | billing ledger family extraction |
 | `src/service/shadow/shadow-persistence-store.ts` | 1241 | 400-800 | shadow persistence family extraction |
-| `src/service/bootstrap/release-runtime.ts` | 1288 | 400-800 | release runtime bootstrap extraction |
-| `src/service/bootstrap/release-tenant-signer-boundary.ts` | 1217 | 400-800 | release tenant signer boundary extraction |
+| `src/service/bootstrap/release-runtime.ts` | 951 | 800-1200 cohesive facade | release runtime bootstrap extraction |
+| `src/service/bootstrap/release-tenant-signer-boundary.ts` | 928 | 800-1200 cohesive facade | release tenant signer boundary extraction |
 | `src/financial/types.ts` | 1372 | split type modules with small barrel | financial type-family extraction |
 | `tests/live-api.test.ts` | 3408 | split by live surface | live API test-family extraction |
 | `tests/generic-admission-mode-ladder.test.ts` | 1861 | split by mode/guard matrix | generic admission mode test-family extraction |
@@ -59,8 +59,8 @@ modules and test files.
 
 Current execution status:
 
-- `F-00` through `F-11` are closed repo-side.
-- Next round: `F-12` release runtime and tenant signer bootstrap extraction.
+- `F-00` through `F-12` are closed repo-side.
+- Next round: `F-13` financial type-family extraction.
 
 ## Planned Rounds
 

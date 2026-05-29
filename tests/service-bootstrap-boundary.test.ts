@@ -203,6 +203,7 @@ function testReleaseRuntimeBootstrapOwnsReleaseSetup(): void {
   const apiServer = readFileSync(API_SERVER, 'utf8');
   const apiRouteRuntime = readProjectFile('src', 'service', 'bootstrap', 'api-route-runtime.ts');
   const releaseRuntime = readProjectFile('src', 'service', 'bootstrap', 'release-runtime.ts');
+  const releaseRuntimePki = readProjectFile('src', 'service', 'bootstrap', 'release-runtime-pki.ts');
 
   assert.doesNotMatch(apiServer, /from '\.\/bootstrap\/release-runtime\.js'/u);
   assert.doesNotMatch(apiServer, /createReleaseRuntimeBootstrap\(\)/u);
@@ -220,9 +221,25 @@ function testReleaseRuntimeBootstrapOwnsReleaseSetup(): void {
   assert.match(releaseRuntime, /buildRuntimeProfileStartupDiagnostics/u);
   assert.match(releaseRuntime, /releaseAuthorityStoreMode/u);
   assert.match(releaseRuntime, /isReleaseAuthorityStoreConfigured/u);
+  assert.match(releaseRuntime, /resolveReleaseRuntimePki/u);
+  assert.match(releaseRuntimePki, /generatePkiHierarchy\(/u);
 
   for (const releaseFactory of [
     'generatePkiHierarchy(',
+  ]) {
+    assert.equal(
+      apiServer.includes(releaseFactory),
+      false,
+      `api-server.ts should delegate ${releaseFactory} through bootstrap/release-runtime.ts`,
+    );
+    assert.equal(
+      releaseRuntimePki.includes(releaseFactory),
+      true,
+      `bootstrap/release-runtime-pki.ts should own ${releaseFactory}`,
+    );
+  }
+
+  for (const releaseFactory of [
     'releaseAuthorityStoreMode(',
     'isReleaseAuthorityStoreConfigured(',
     'createFileBackedReleaseDecisionLogWriter(',

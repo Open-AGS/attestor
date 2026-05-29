@@ -59,8 +59,8 @@ modules and test files.
 
 Current execution status:
 
-- `F-00` through `F-10` are closed repo-side.
-- Next round: `F-11` shadow persistence store family extraction.
+- `F-00` through `F-11` are closed repo-side.
+- Next round: `F-12` release runtime and tenant signer bootstrap extraction.
 
 ## Planned Rounds
 

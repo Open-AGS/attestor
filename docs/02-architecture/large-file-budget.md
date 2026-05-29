@@ -212,12 +212,20 @@ Completed:
   billing event, line-item, charge, list-filter, input, and snapshot contracts
   from `src/service/billing/billing-event-ledger-types.ts`, keeping the ledger
   API stable while isolating the type surface.
+- `src/service/shadow/shadow-persistence-store.ts` is now a small compatibility
+  facade over responsibility-named shadow store modules:
+  `src/service/shadow/shadow-admission-event-store.ts`,
+  `src/service/shadow/shadow-policy-simulation-report-store.ts`,
+  `src/service/shadow/shadow-policy-candidate-store.ts`,
+  `src/service/shadow/shadow-customer-activation-receipt-store.ts`,
+  `src/service/shadow/shadow-persistence-types.ts`, and
+  `src/service/shadow/shadow-persistence-helpers.ts`.
 
 Next:
 
 1. Continue the final wave from
    [Final Large File Refactor Plan](final-large-file-refactor-plan.md), starting
-   with `F-11` shadow persistence store family extraction.
+   with `F-12` release runtime and tenant signer bootstrap extraction.
 2. Touch crypto/protocol adapters only where module-specific risk warrants it.
 
 ## No-Claims

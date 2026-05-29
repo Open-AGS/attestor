@@ -43,6 +43,7 @@ This PR advances:
 - [ ] Enterprise Pilot readiness
 - [ ] P0/P1 blocker closure
 - [ ] Baseline update only
+- [ ] Repository maintainability only
 
 Baseline blocker addressed:
 

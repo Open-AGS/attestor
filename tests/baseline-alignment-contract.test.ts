@@ -139,6 +139,16 @@ function testBaselinePhaseIsRequired(): void {
   equal(result.noCheckedPhase, true, 'baseline alignment reports missing checked phase');
 }
 
+function testRepositoryMaintainabilityOnlyIsAccepted(): void {
+  const body = completeTemplate(readProjectFile('.github', 'pull_request_template.md'))
+    .replace('- [x] P0/P1 blocker closure', '- [ ] P0/P1 blocker closure')
+    .replace('- [ ] Repository maintainability only', '- [x] Repository maintainability only')
+    .replace('Baseline phase: Baseline update only', 'Baseline phase: Repository maintainability only');
+  const result = validateBaselineAlignment(body);
+
+  equal(result.ok, true, 'baseline alignment accepts repository maintainability-only PRs');
+}
+
 function testReadinessClaimRequiresNoClaimEvidence(): void {
   const body = completeTemplate(readProjectFile('.github', 'pull_request_template.md'))
     .replace('What this PR does NOT prove: production or enterprise readiness', 'What this PR does NOT prove:')
@@ -181,6 +191,7 @@ testBlankTemplateIsNotACompletedPrBody();
 testCompletedTemplatePasses();
 testCompletedTemplateWithBlockFieldsPasses();
 testBaselinePhaseIsRequired();
+testRepositoryMaintainabilityOnlyIsAccepted();
 testReadinessClaimRequiresNoClaimEvidence();
 testBaselineSmugglingInsideFenceIsRejected();
 testDependabotBypass();

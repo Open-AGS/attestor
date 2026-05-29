@@ -14,6 +14,7 @@ export const BASELINE_PHASE_LABELS = Object.freeze([
   'Enterprise Pilot readiness',
   'P0/P1 blocker closure',
   'Baseline update only',
+  'Repository maintainability only',
 ]);
 
 export const BASELINE_REQUIRED_FIELDS = Object.freeze([

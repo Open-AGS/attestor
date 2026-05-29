@@ -22,16 +22,22 @@ function excludes(haystack: string, needle: string, message: string): void {
 }
 
 const adminRoutes = readProjectFile('src', 'service', 'http', 'routes', 'admin-routes.ts');
+const adminRouteContext = readProjectFile('src', 'service', 'http', 'routes', 'admin-route-context.ts');
 const helper = readProjectFile('src', 'service', 'http', 'routes', 'admin-route-helpers.ts');
 
 includes(
   adminRoutes,
+  "from './admin-route-context.js';",
+  'Admin route helper split: admin-routes.ts imports the route-owned context surface',
+);
+includes(
+  adminRouteContext,
   "from './admin-route-helpers.js';",
-  'Admin route helper split: admin-routes.ts imports the route-owned helper surface',
+  'Admin route helper split: admin-route-context.ts imports the route-owned helper surface',
 );
 includes(
   adminRoutes,
-  "export { resetAdminRouteAuthLimiterForTests } from './admin-route-helpers.js';",
+  "export { resetAdminRouteAuthLimiterForTests } from './admin-route-context.js';",
   'Admin route helper split: legacy test reset export stays available through admin-routes.ts',
 );
 

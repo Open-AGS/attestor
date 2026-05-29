@@ -127,7 +127,7 @@ function testImplementationEvidenceMatchesSource(): void {
   const stripeService = readProjectFile('src', 'service', 'application', 'stripe-webhook-service.ts');
   const stripeProcessor = readProjectFile('src', 'service', 'application', 'stripe-webhook-billing-processor.ts');
   const accountStore = readProjectFile('src', 'service', 'account', 'account-store.ts');
-  const controlPlaneStore = readProjectFile('src', 'service', 'control-plane-store.ts');
+  const hostedBillingState = readProjectFile('src', 'service', 'control-plane-store', 'hosted-billing-state.ts');
   const emailService = readProjectFile('src', 'service', 'application', 'email-webhook-service.ts');
   const pipelineAsyncRoutes = readProjectFile('src', 'service', 'http', 'routes', 'pipeline-async-routes.ts');
   const asyncPipeline = readProjectFile('src', 'service', 'async', 'async-pipeline.ts');
@@ -148,8 +148,8 @@ function testImplementationEvidenceMatchesSource(): void {
   includes(accountStore, 'lastSubscriptionEventCreatedAt', 'Hosted webhook/async evidence: file store tracks subscription event ordering');
   includes(accountStore, 'lastInvoiceEventCreatedAt', 'Hosted webhook/async evidence: file store tracks invoice event ordering');
   includes(accountStore, 'isIncomingProviderEventOlder', 'Hosted webhook/async evidence: file store rejects stale provider ordering');
-  includes(controlPlaneStore, 'lastSubscriptionEventCreatedAt', 'Hosted webhook/async evidence: shared store tracks subscription event ordering');
-  includes(controlPlaneStore, 'lastInvoiceEventCreatedAt', 'Hosted webhook/async evidence: shared store tracks invoice event ordering');
+  includes(hostedBillingState, 'lastSubscriptionEventCreatedAt', 'Hosted webhook/async evidence: shared store tracks subscription event ordering');
+  includes(hostedBillingState, 'lastInvoiceEventCreatedAt', 'Hosted webhook/async evidence: shared store tracks invoice event ordering');
   includes(emailService, 'verifySignedSendGridWebhook', 'Hosted webhook/async evidence: SendGrid signatures are verified');
   includes(emailService, 'verifySignedMailgunWebhook', 'Hosted webhook/async evidence: Mailgun signatures are verified');
   includes(emailService, 'mailgunSignatureTokenDigest', 'Hosted webhook/async evidence: Mailgun replay token is digested');

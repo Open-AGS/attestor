@@ -41,6 +41,7 @@ const genericAdmissionRoutes = readProjectFile(
 const releaseRuntime = readProjectFile('src', 'service', 'bootstrap', 'release-runtime.ts');
 const releaseObjectModel = readProjectFile('src', 'release-kernel', 'object-model.ts');
 const controlPlaneStore = readProjectFile('src', 'service', 'control-plane-store.ts');
+const controlPlaneSchema = readProjectFile('src', 'service', 'control-plane-store', 'schema.ts');
 const usageMeter = readProjectFile('src', 'service', 'usage-meter.ts');
 const tenantRls = readProjectFile('src', 'service', 'tenant-rls.ts');
 const productionStoragePath = readProjectFile(
@@ -99,7 +100,7 @@ includes(releaseRuntime, 'generatePkiHierarchy(API_CA_SUBJECT, API_SIGNER_SUBJEC
 includes(releaseRuntime, 'createReleaseTokenIssuer', 'Repo evidence: release token issuer is created from runtime signer');
 includes(releaseObjectModel, 'readonly tenant_id', 'Repo evidence: release token claims include tenant_id');
 includes(controlPlaneStore, 'isSharedControlPlaneConfigured', 'Repo evidence: shared control-plane mode exists');
-includes(controlPlaneStore, 'usage_ledger', 'Repo evidence: PostgreSQL usage ledger exists');
+includes(controlPlaneSchema, 'usage_ledger', 'Repo evidence: PostgreSQL usage ledger exists');
 includes(controlPlaneStore, 'consumePipelineRunState', 'Repo evidence: API-facing usage state can use shared store');
 includes(usageMeter, 'Local single-node JSON ledger', 'Repo evidence: file usage meter is single-node');
 includes(usageMeter, 'usageMeterStorageDescriptor', 'Repo evidence: usage meter storage descriptor exists');

@@ -42,6 +42,13 @@ function readAccountRouteSources(): string {
     .join('\n');
 }
 
+function readReleasePolicyControlRouteSources(): string {
+  return routeFiles
+    .filter((file) => file[file.length - 1].startsWith('release-policy-control'))
+    .map((file) => readProjectFile(...file))
+    .join('\n');
+}
+
 const routeFiles = [
   ['src', 'service', 'http', 'routes', 'core-routes.ts'],
   ['src', 'service', 'http', 'routes', 'account-routes.ts'],
@@ -55,6 +62,7 @@ const routeFiles = [
   ['src', 'service', 'http', 'routes', 'policy-foundry-hosted-onboarding-routes.ts'],
   ['src', 'service', 'http', 'routes', 'release-review-routes.ts'],
   ['src', 'service', 'http', 'routes', 'release-policy-control-routes.ts'],
+  ['src', 'service', 'http', 'routes', 'release-policy-control-route-context.ts'],
   ['src', 'service', 'http', 'routes', 'generic-admission-routes.ts'],
   ['src', 'service', 'http', 'routes', 'shadow-routes.ts'],
   ['src', 'service', 'http', 'routes', 'pipeline-execution-routes.ts'],
@@ -267,7 +275,7 @@ function testImplementationEvidenceMatchesMatrix(): void {
   const accountRoutes = readAccountRouteSources();
   const adminRoutes = readProjectFile('src', 'service', 'http', 'routes', 'admin-routes.ts');
   const releaseAdminAuthorization = readProjectFile('src', 'service', 'http', 'release-admin-authorization.ts');
-  const releasePolicyRoutes = readProjectFile('src', 'service', 'http', 'routes', 'release-policy-control-routes.ts');
+  const releasePolicyRoutes = readReleasePolicyControlRouteSources();
   const releaseReviewRoutes = readProjectFile('src', 'service', 'http', 'routes', 'release-review-routes.ts');
   const stripeWebhookRoutes = readProjectFile('src', 'service', 'http', 'routes', 'stripe-webhook-routes.ts');
   const pipelineAsyncRoutes = readProjectFile('src', 'service', 'http', 'routes', 'pipeline-async-routes.ts');

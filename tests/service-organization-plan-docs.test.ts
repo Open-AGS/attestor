@@ -26,11 +26,13 @@ function testPlanKeepsContractShape(): void {
 
   for (const expected of [
     '# Service Organization Plan',
-    'This is the refactor contract for reorganizing `src/service/`.',
+    'This is the refactor contract and closeout map for reorganizing `src/service/`.',
     'At B-service-00, `src/service/` has 96 root-level files',
+    'At B-service-06 closeout, `src/service/` has 39 root-level cross-cutting files',
     '## Research Anchors',
     '## Protected Principles',
     '## Authority Boundary',
+    '## Final Service Map',
     '## Rules',
     '## Import Strategy',
     '## Planned Slices',
@@ -40,6 +42,29 @@ function testPlanKeepsContractShape(): void {
     '## No-Claims',
   ]) {
     includes(doc, expected, `Service organization plan: keeps ${expected}`);
+  }
+}
+
+function testPlanKeepsFinalServiceMap(): void {
+  const doc = readProjectFile('docs', '02-architecture', 'service-organization-plan.md');
+
+  for (const expected of [
+    '| `src/service/` | Cross-cutting runtime support',
+    '| `src/service/account/` | Hosted account',
+    '| `src/service/application/` | Route-facing application services',
+    '| `src/service/async/` | Async pipeline',
+    '| `src/service/billing/` | Billing entitlements',
+    '| `src/service/bootstrap/` | Runtime assembly',
+    '| `src/service/hosted/` | Hosted product-flow contracts',
+    '| `src/service/http/` | HTTP helpers',
+    '| `src/service/pipeline/` | Pipeline idempotency store',
+    '| `src/service/policy-foundry/` | Policy Foundry billing entitlement enforcement',
+    '| `src/service/release/` | Release route support',
+    '| `src/service/runtime/` | Runtime-local support contracts',
+    '| `src/service/shadow/` | Shadow persistence store',
+    'The map is enforced by `npm run test:service-organization-map`.',
+  ]) {
+    includes(doc, expected, `Service organization plan: keeps final service map ${expected}`);
   }
 }
 
@@ -87,6 +112,7 @@ function testPlanKeepsSliceOrderAndGates(): void {
     '| B-service-04 | Async and pipeline support | `src/service/pipeline/` and `src/service/async/` |',
     '| B-service-05 | Hosted, Policy Foundry, and shadow support | `src/service/hosted/`, `src/service/policy-foundry/`, `src/service/shadow/` |',
     '| B-service-06 | Closeout lock | docs/tests only unless drift is found |',
+    '`npm run test:service-organization-map` locks the final service directory map',
     '`npm run verify`',
     'If `npm run verify` times out or fails, B-service-06 is not complete.',
   ]) {
@@ -149,10 +175,16 @@ function testPackageScriptExposesPlanGuard(): void {
     'tsx tests/service-organization-plan-docs.test.ts',
     'Package scripts: service organization plan docs guard is exposed',
   );
+  equal(
+    packageJson.scripts['test:service-organization-map'],
+    'tsx tests/service-organization-map.test.ts',
+    'Package scripts: service organization map guard is exposed',
+  );
 }
 
 testPlanKeepsContractShape();
 testPlanKeepsResearchAnchors();
+testPlanKeepsFinalServiceMap();
 testPlanKeepsMoveBoundaries();
 testPlanKeepsSliceOrderAndGates();
 testPlanKeepsNoClaims();

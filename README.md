@@ -72,6 +72,9 @@ npm run demo:golden-refund
 npm run demo:golden-refund -- --json
 ```
 
+The default output includes Engine Visibility: gate order, reason codes,
+evidence posture, and digest stability for the synthetic refund scenarios.
+
 Then run all local golden paths:
 
 ```bash
@@ -79,7 +82,19 @@ npm run demo:golden-paths
 npm run demo:golden-paths -- --json
 ```
 
-## How It Works
+## Why This Matters Now
+
+AI systems are moving from chat into tools that can touch payment flows, data exports, access changes, customer messages, infrastructure, and programmable money.
+
+That is no longer just a prompt-quality problem.
+Teams need to know who asked for the action, what evidence supported it, whether it was replayed, and whether a downstream gate can stop it.
+
+This is the same general direction visible in serious external anchors: the [EU AI Act](https://digital-strategy.ec.europa.eu/en/policies/regulatory-framework-ai), the [NIST AI Risk Management Framework](https://www.nist.gov/itl/ai-risk-management-framework), and [DORA](https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A32022R2554).
+
+These links are context anchors, not compliance claims.
+Attestor targets the action boundary those conversations keep circling around.
+
+## What Attestor Does
 
 The dangerous moment is not the text the model produced.
 It is the moment that text becomes a refund, data export, permission change, deploy, customer message, or wallet transaction.
@@ -89,13 +104,15 @@ Downstream action executes only through the customer PEP / gate.
 
 ```text
 AI agent
-  -> proposed action
+  -> AI proposes action
 Attestor
   -> checks policy, authority, evidence, scope, freshness, replay, tenant, token, and proof
   -> admit / narrow / review / block + proof
 Customer PEP / gateway
   -> downstream executes only if admitted
 ```
+
+downstream action executes only through the customer PEP / gate.
 
 Without an enforced customer-side PEP, gateway, verifier, or adapter, Attestor is advisory evidence.
 With that enforced downstream point, Attestor becomes the control point before action.
@@ -167,7 +184,7 @@ This repository is source-available under Business Source License 1.1.
 Non-production use is allowed.
 Production use requires a commercial license until the Change Date in [LICENSE](LICENSE).
 
-## Scope And Limitations
+## Data Posture
 
 Attestor is a control point, not a data lake.
 
@@ -178,29 +195,9 @@ Customer systems keep ownership of the model, agent, workflow, wallet, database,
 They also keep the system of record.
 Attestor returns a bounded decision, reasons, and proof references.
 
-Proof material can include:
-
-- decision and reason records
-- canonical digests and evidence references
-- signed packets and certificates when signing is configured
-- tamper-evident local history
-- release and CI evidence for repo review
-
-Read proof material as typed evidence, not a universal cryptographic guarantee.
-It does not automatically prove external facts, third-party immutability, production signing authority, or live customer deployment.
-
 Attestor is not the model, an agent runtime, a chat wrapper, a generic workflow app, a wallet, a custody platform, a payment processor, or a permission slip for AI actions without customer-side enforcement.
 
 The [data minimization and redaction policy](docs/02-architecture/data-minimization-redaction-policy.md) forbids raw prompts, raw tool payloads, raw customer identifiers, bank/payment data, wallet material, credentials, private policy thresholds, and downstream error bodies in public evidence surfaces.
-
-Run the local proof surface if you want the repo-side evidence packet:
-
-```bash
-npm run proof:surface
-```
-
-The command writes `.attestor/proof-surface/latest/manifest.json`.
-It is a local static proof surface. It does not start a hosted console or claim a public hosted crypto route.
 
 ## Decision Model
 
@@ -213,17 +210,27 @@ Attestor never returns an open-ended "looks good."
 | `review` | The action must wait for review. |
 | `block` | The action is rejected fail-closed. |
 
-## Why This Matters Now
+## Proof Model
 
-AI systems are moving from chat into tools that can touch payment flows, data exports, access changes, customer messages, infrastructure, and programmable money.
+Proof material can include:
 
-That is no longer just a prompt-quality problem.
-Teams need to know who asked for the action, what evidence supported it, whether it was replayed, and whether a downstream gate can stop it.
+- decision and reason records
+- canonical digests and evidence references
+- signed packets and certificates when signing is configured
+- tamper-evident local history
+- release and CI evidence for repo review
 
-This is the same general direction visible in serious external anchors: the [EU AI Act](https://digital-strategy.ec.europa.eu/en/policies/regulatory-framework-ai), the [NIST AI Risk Management Framework](https://www.nist.gov/itl/ai-risk-management-framework), and [DORA](https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A32022R2554).
+Read proof material as typed evidence, not a universal cryptographic guarantee.
+It does not automatically prove external facts, third-party immutability, production signing authority, or live customer deployment.
 
-These links are context anchors, not compliance claims.
-Attestor targets the action boundary those conversations keep circling around.
+Run the local proof surface if you want the repo-side evidence packet:
+
+```bash
+npm run proof:surface
+```
+
+The command writes `.attestor/proof-surface/latest/manifest.json`.
+It is a local static proof surface. It does not start a hosted console or claim a public hosted crypto route.
 
 ## Start Here
 
@@ -236,13 +243,14 @@ Attestor targets the action boundary those conversations keep circling around.
 - [First hosted API call](docs/01-overview/hosted-first-api-call.md)
 - [Shadow event payload examples](docs/01-overview/shadow-event-payload-examples.md)
 - [Customer middleware examples](examples/customer-middleware/README.md)
+- [Agent retry wrapper demo](docs/01-overview/agent-retry-wrapper-demo.md): `npm run example:agent-retry-wrapper`
+- [Non-bypassable gateway demo](docs/01-overview/non-bypassable-gateway-demo.md): `npm run example:non-bypassable-gateway`
 - [Customer integration recipes](docs/01-overview/customer-integration-recipes.md)
 - [Customer admission gate](docs/01-overview/customer-admission-gate.md)
 - [Pricing and packaging](docs/01-overview/product-packaging.md)
 - [Security Policy](SECURITY.md)
 
-<details>
-<summary>Maintainer reference</summary>
+## Maintainer Reference
 
 ### Evaluation and reviewer paths
 
@@ -264,7 +272,7 @@ Policy Foundry evaluator notes:
 - It keeps reviewed outcome feedback, drift/policy-debt findings, active questions, and candidate evidence as review material.
 - It generates a red-team fixture bundle and local replay reports through the local adversarial replay executor.
 - It can attach live downstream replay evidence when configured, but that remains live evidence, not a repo-side production claim.
-- The hosted onboarding workflow packages the hosted review surface, wizard state, entitlement context, and storage-readiness checks.
+- The hosted onboarding workflow contract packages the hosted review surface, wizard state, entitlement context, and storage-readiness checks.
 - Hosted route: `/api/v1/shadow/policy-foundry/hosted-onboarding-workflow`.
 - The hosted UI flow can be previewed locally with `preview:policy-foundry-hosted-ui` and safe fixtures only.
 - Local self-onboarding uses `npm run policy-foundry:self-onboard` and renders session, coverage, blockers, gate plan, handoff, red-team fixtures.
@@ -279,18 +287,50 @@ The machine-readable role contract is exported from `attestor/consequence-admiss
 - [AI Action Control Plane architecture](docs/02-architecture/ai-action-control-plane-architecture.md)
 - [Attestor language contract](docs/02-architecture/attestor-language-contract.md)
 - [Glossary](docs/02-architecture/glossary.md)
+- [Attestor unlock source of truth](docs/02-architecture/attestor-unlock-source-of-truth.md)
 - [Consequence admission public surface](docs/02-architecture/consequence-admission-public-surface.md)
 - [Service organization plan](docs/02-architecture/service-organization-plan.md)
 - [Scripts inventory](docs/02-architecture/scripts-inventory.md)
 - [Consequence taxonomy](docs/02-architecture/consequence-taxonomy.md)
+- [Agent loop abuse guard](docs/02-architecture/agent-loop-abuse-guard.md)
+- [Adapter framework](docs/02-architecture/adapter-framework.md)
 - [Domain pack boundary](docs/02-architecture/domain-pack-boundary.md)
+- [Domain consequence recipes](docs/02-architecture/domain-consequence-recipes.md)
+- [Integration mode readiness](docs/02-architecture/integration-mode-readiness.md)
 - [Downstream enforcement contract](docs/02-architecture/downstream-enforcement-contract.md)
+- [Downstream presentation binding](docs/02-architecture/downstream-presentation-binding.md)
+- [Downstream execution receipt](docs/02-architecture/downstream-execution-receipt.md)
+- [External review packet](docs/02-architecture/external-review-packet.md)
+- [Verifier helper](docs/02-architecture/verifier-helper.md)
+- [Evidence state model](docs/02-architecture/evidence-state-model.md)
+- [Data minimization redaction policy](docs/02-architecture/data-minimization-redaction-policy.md)
+- [Audit evidence export](docs/02-architecture/audit-evidence-export.md)
+- [Business risk dashboard](docs/02-architecture/business-risk-dashboard.md)
+- [Dashboard API summary](docs/02-architecture/dashboard-api-summary.md)
+- [Tamper-evident history](docs/02-architecture/tamper-evident-history.md)
 - [Failure mode registry](docs/02-architecture/failure-mode-registry.md)
 - [Crypto intelligence buildout](docs/02-architecture/crypto-intelligence-buildout.md)
+- [General Crypto Transaction Gate](docs/02-architecture/general-crypto-transaction-gate.md)
+- [LLM provider runtime decision](docs/02-architecture/llm-provider-runtime-decision.md)
+- [Action surface graph](docs/02-architecture/action-surface-graph.md)
+- [Action surface manifest intake](docs/02-architecture/action-surface-manifest-intake.md)
+- [Action surface declaration ingestors](docs/02-architecture/action-surface-declaration-ingestors.md)
+- [Action surface integration artifacts](docs/02-architecture/action-surface-integration-artifacts.md)
+- [Action surface profiler](docs/02-architecture/action-surface-profiler.md)
+- [Active Question Engine](docs/02-architecture/active-question-engine.md)
+- [Approval/dismiss feedback loop](docs/02-architecture/approval-dismiss-feedback-loop.md)
+- [Adversarial evidence fixtures](docs/02-architecture/adversarial-evidence-fixtures.md)
+- [Counterexample replay generator](docs/02-architecture/counterexample-replay-generator.md)
+- [Pilot readiness packet](docs/02-architecture/pilot-readiness-packet.md)
+- [Policy Candidate PR contract](docs/02-architecture/policy-candidate-pr-contract.md)
+- [Policy Twin backtest](docs/02-architecture/policy-twin-backtest.md)
+- [Policy limit model](docs/02-architecture/policy-limit-model.md)
+- [Enterprise integration recipes](docs/02-architecture/enterprise-integration-recipes.md)
 - [Reason codes](docs/05-proof/reason-codes.md)
 - [Failure modes and controls](docs/05-proof/failure-modes-and-controls.md)
 - [Review-by-exception inbox](docs/02-architecture/review-by-exception-inbox.md)
 - [Retry attempt ledger](docs/02-architecture/retry-attempt-ledger.md)
+- [Presentation replay ledger](docs/02-architecture/presentation-replay-ledger.md)
 - [Production runtime hardening](docs/02-architecture/production-runtime-hardening-buildout.md)
 - [Production shared authority plane](docs/02-architecture/production-shared-authority-plane-buildout.md)
 - [Production rehearsal buildout](docs/02-architecture/production-rehearsal-buildout.md)
@@ -305,7 +345,7 @@ The machine-readable role contract is exported from `attestor/consequence-admiss
 - [Attestor internal machine map](docs/02-architecture/attestor-internal-machine-map.md)
 - Render an action-surface onboarding packet with `npm run render:action-surface-onboarding-packet`.
 - Run the checked example with `npm run example:action-surface-onboarding`.
+- Hosted action-surface onboarding route: `POST /api/v1/shadow/action-surface/onboarding-packet`.
+- The same packet path produces a review handoff checklist for human approval before any enforcement promotion.
 - Run the refund reviewer sandbox with `npm run demo:golden-refund -- --scenario fixtures/golden-refund-reviewer-sandbox.example.json`.
-- [Action-surface onboarding red-team fixture bundle](docs/02-architecture/action-surface-onboarding-packet.md)
-
-</details>
+- [Action surface onboarding packet](docs/02-architecture/action-surface-onboarding-packet.md)

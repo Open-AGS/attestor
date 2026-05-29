@@ -1,14 +1,19 @@
 # Service Organization Plan
 
-This is the refactor contract for reorganizing `src/service/`.
+This is the refactor contract and closeout map for reorganizing `src/service/`.
 
-It is a plan, not a migration already completed. It exists so future service
-moves are reviewable, small, and tied to the Attestor consequence boundary.
+It started as the B-service-00 plan before runtime-near files moved. At
+B-service-06, the planned move-only slices have landed and this document now
+locks the final service map for future changes.
 
 At B-service-00, `src/service/` has 96 root-level files plus the existing
 `application/`, `bootstrap/`, `http/`, and `runtime/` directories. The flat
 root is navigable today through the repository navigator, but it is too wide
 for long-term maintenance.
+
+At B-service-06 closeout, `src/service/` has 39 root-level cross-cutting files
+plus responsibility-named directories for account, billing, async, pipeline,
+release, hosted, Policy Foundry, and shadow support.
 
 ## Research Anchors
 
@@ -55,6 +60,32 @@ It cannot:
 - replace route, store, or policy tests
 
 Repository-side path hygiene remains repository-side evidence only.
+
+## Final Service Map
+
+The root of `src/service/` is for cross-cutting runtime support only. New
+domain-specific files should go to the closest responsibility directory unless
+a short architecture note explains why they must remain root-level.
+
+| Path | Ownership at B-service-06 closeout |
+|---|---|
+| `src/service/` | Cross-cutting runtime support, core stores, observability, tenant isolation, rate limiting, site support, generic protected admission, and other files that intentionally span multiple service families. |
+| `src/service/account/` | Hosted account, sessions, MFA, SSO, SAML, passkeys, password policy, user/token stores, and account route support. |
+| `src/service/application/` | Route-facing application services and use-case ports. |
+| `src/service/async/` | Async pipeline, worker, tenant execution, weighted dispatch, dead-letter handling, and email delivery event support. |
+| `src/service/billing/` | Billing entitlements, event ledger, export/reconciliation, feature catalog/service, and Stripe support under `billing/stripe/`. |
+| `src/service/bootstrap/` | Runtime assembly, route dependency wiring, storage profile wiring, and bootstrap contracts. |
+| `src/service/hosted/` | Hosted product-flow contracts, hosted generic admission proof bridges, hosted LLM/tool boundary, runtime health, observability/privacy, release provenance, and hosted abuse/reconciliation guards. |
+| `src/service/http/` | HTTP helpers and Hono route handlers under `http/routes/`. |
+| `src/service/pipeline/` | Pipeline idempotency store and pipeline route support. |
+| `src/service/policy-foundry/` | Policy Foundry billing entitlement enforcement, hosted UI flow, and hosted wizard state. |
+| `src/service/release/` | Release route support, release authority/request-path stores, degraded-mode grant store, decision log, evidence pack, policy authority, reviewer queue, review site, and token introspection. |
+| `src/service/runtime/` | Runtime-local support contracts. |
+| `src/service/shadow/` | Shadow persistence store. |
+
+The map is enforced by `npm run test:service-organization-map`. If this test
+fails because a new root-level service file is intentional, update the map and
+the test in the same PR.
 
 ## Rules
 
@@ -147,6 +178,7 @@ B-service-06 is complete only when:
 
 - the repository navigator points to the current service map
 - this document reflects the final moved shape
+- `npm run test:service-organization-map` locks the final service directory map
 - no stale path references remain outside intentional historical audit entries
 - the relevant route and package-script path tests pass
 - `npm run typecheck` passes

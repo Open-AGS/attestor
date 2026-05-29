@@ -530,6 +530,7 @@ function testDocsPackageOverviewAndProbe(): void {
   };
   const packageProbe = readProjectFile(
     'scripts',
+    'probe',
     'probe-consequence-admission-package-surface.mjs',
   );
 

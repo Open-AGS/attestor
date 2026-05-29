@@ -49,7 +49,9 @@ function event(input: {
   readonly evidenceRefs?: readonly string[];
   readonly authorityRef?: string | null;
   readonly observedFeatures?: Readonly<Record<string, string | number | boolean | null>>;
+  readonly observedFeatureOrigins?: Readonly<Record<string, 'caller-supplied' | 'operator-attested' | 'customer-gateway' | 'attestor-runtime' | 'trusted-adapter'>>;
 }): ShadowAdmissionEvent {
+  const authorityRef = input.authorityRef === undefined ? 'authority:support-lead' : input.authorityRef;
   const admission = createGenericAdmissionEnvelope({
     mode: 'observe',
     actor: input.actor,
@@ -59,10 +61,32 @@ function event(input: {
     requestedAt: input.occurredAt,
     decidedAt: input.occurredAt,
     requestId: `request:${input.actor}:${input.occurredAt}`,
+    amount: {
+      value: 9000,
+      currency: 'HUF',
+    },
     policyRef: input.policyRef === undefined ? 'policy:refund:v1' : input.policyRef,
     evidenceRefs: input.evidenceRefs ?? ['payment:captured'],
-    authorityRef: input.authorityRef === undefined ? 'authority:support-lead' : input.authorityRef,
-    observedFeatures: input.observedFeatures ?? {},
+    authorityRef,
+    authoritySources: authorityRef === null
+      ? []
+      : [
+          {
+            sourceKind: 'customer-policy',
+            claimKind: 'authorization',
+            sourceRef: authorityRef,
+            trustClass: 'trusted-authority',
+            evidenceDigest: `sha256:${'a'.repeat(64)}`,
+          },
+        ],
+    observedFeatures: {
+      adapterReady: true,
+      ...(input.observedFeatures ?? {}),
+    },
+    observedFeatureOrigins: {
+      adapterReady: 'trusted-adapter',
+      ...(input.observedFeatureOrigins ?? {}),
+    },
     recipient: 'raw_recipient_must_not_escape',
   });
   return createShadowAdmissionEvent({

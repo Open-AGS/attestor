@@ -159,7 +159,7 @@ function repositoryEvidence() {
     {
       kind: 'supply-chain-baseline',
       id: 'supply-chain-baseline',
-      uri: 'scripts/security-supply-chain-baseline.mjs',
+      uri: 'scripts/check/check-supply-chain-baseline.mjs',
       status: 'present',
       summary: 'Registry, lockfile, integrity, workflow permission guard.',
     },

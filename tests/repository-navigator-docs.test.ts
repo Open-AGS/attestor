@@ -44,8 +44,28 @@ function testNavigatorKeepsFirstVisitorPaths(): void {
     '[Reason codes](../05-proof/reason-codes.md)',
     '[Audit evidence system](../audit/README.md)',
     '[Internal machine map](../02-architecture/attestor-internal-machine-map.md)',
+    '[Service organization plan](../02-architecture/service-organization-plan.md)',
   ]) {
     includes(doc, expected, `Repository navigator: links ${expected}`);
+  }
+}
+
+function testNavigatorKeepsServiceMap(): void {
+  const doc = readProjectFile('docs', '01-overview', 'repository-navigator.md');
+
+  for (const expected of [
+    '| `src/service/` | Hosted runtime and cross-cutting service support.',
+    '| `src/service/account/` | Hosted account stores',
+    '| `src/service/billing/` | Billing entitlements',
+    '| `src/service/async/` | Async pipeline',
+    '| `src/service/pipeline/` | Pipeline idempotency store',
+    '| `src/service/release/` | Release authority stores',
+    '| `src/service/hosted/` | Hosted product-flow contracts',
+    '| `src/service/policy-foundry/` | Policy Foundry billing entitlement enforcement',
+    '| `src/service/shadow/` | Shadow persistence store.',
+    '| `src/service/application/` | Route-facing application services',
+  ]) {
+    includes(doc, expected, `Repository navigator: keeps service map row ${expected}`);
   }
 }
 
@@ -85,6 +105,7 @@ function testReadmeLinksNavigator(): void {
 }
 
 testNavigatorKeepsFirstVisitorPaths();
+testNavigatorKeepsServiceMap();
 testNavigatorKeepsNoClaimBoundaries();
 testNavigatorLinksResolve();
 testReadmeLinksNavigator();

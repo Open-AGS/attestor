@@ -15,6 +15,8 @@ export { record, communication, action };
 
 export type FinanceFilingReleaseCandidate = record.FinanceFilingReleaseCandidate;
 export type FinanceFilingReleaseMaterial = record.FinanceFilingReleaseMaterial;
+export type FinanceFilingRow = record.FinanceFilingRow;
+export type FinanceFilingRowValue = record.FinanceFilingRowValue;
 export type FinanceCommunicationReleaseCandidate =
   communication.FinanceCommunicationReleaseCandidate;
 export type FinanceCommunicationReleaseMaterial =

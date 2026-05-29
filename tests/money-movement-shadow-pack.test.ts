@@ -27,10 +27,12 @@ const reviewDigest = `sha256:${'b'.repeat(64)}`;
 
 function createMoneyEvent(input: {
   readonly index: number;
+  readonly amountValue?: number;
   readonly mode?: string;
   readonly policyRef?: string | null;
   readonly evidenceRefs?: readonly string[];
   readonly observedFeatures?: Readonly<Record<string, string | number | boolean | null>>;
+  readonly observedFeatureOrigins?: Readonly<Record<string, 'caller-supplied' | 'operator-attested' | 'customer-gateway' | 'attestor-runtime' | 'trusted-adapter'>>;
   readonly downstreamOutcome?: 'not-observed' | 'proceeded' | 'held' | 'blocked' | 'failed' | 'unknown';
   readonly humanOutcome?: 'not-reviewed' | 'approved' | 'rejected' | 'modified' | 'unknown';
 }) {
@@ -44,13 +46,29 @@ function createMoneyEvent(input: {
       requestedAt: `2026-05-01T21:${String(input.index).padStart(2, '0')}:00.000Z`,
       decidedAt: `2026-05-01T21:${String(input.index).padStart(2, '0')}:01.000Z`,
       amount: {
-        value: 38000,
+        value: input.amountValue ?? 38000,
         currency: 'HUF',
       },
       recipient: 'customer_raw_value_must_not_escape',
       policyRef: input.policyRef ?? 'policy:refunds:v1',
       evidenceRefs: input.evidenceRefs ?? ['order:987', 'payment:456'],
-      observedFeatures: input.observedFeatures,
+      authoritySources: [
+        {
+          sourceKind: 'customer-policy',
+          claimKind: 'authorization',
+          sourceRef: 'policy:refunds:v1',
+          trustClass: 'trusted-authority',
+          evidenceDigest: vendorDigest,
+        },
+      ],
+      observedFeatures: {
+        adapterReady: true,
+        ...(input.observedFeatures ?? {}),
+      },
+      observedFeatureOrigins: {
+        adapterReady: 'trusted-adapter',
+        ...(input.observedFeatureOrigins ?? {}),
+      },
     }),
     occurredAt: `2026-05-01T21:${String(input.index).padStart(2, '0')}:02.000Z`,
     downstreamOutcome: input.downstreamOutcome ?? 'proceeded',
@@ -83,21 +101,21 @@ function testMoneyMovementReportProducesThresholdAndRecipientCandidates(): void 
     minimumRecipientEvents: 3,
     observations: [
       {
-        event: createMoneyEvent({ index: 1 }),
+        event: createMoneyEvent({ index: 1, amountValue: 9000 }),
         amountBucket: lowBucket,
         recipientDigest: vendorDigest,
         recipientClass: 'vendor',
         valueDirection: 'refund',
       },
       {
-        event: createMoneyEvent({ index: 2 }),
+        event: createMoneyEvent({ index: 2, amountValue: 9000 }),
         amountBucket: lowBucket,
         recipientDigest: vendorDigest,
         recipientClass: 'vendor',
         valueDirection: 'refund',
       },
       {
-        event: createMoneyEvent({ index: 3 }),
+        event: createMoneyEvent({ index: 3, amountValue: 9000 }),
         amountBucket: lowBucket,
         recipientDigest: vendorDigest,
         recipientClass: 'vendor',
@@ -129,6 +147,7 @@ function testMoneyMovementReportProducesThresholdAndRecipientCandidates(): void 
       {
         event: createMoneyEvent({
           index: 6,
+          amountValue: 75000,
           observedFeatures: {
             policyBlocked: true,
           },

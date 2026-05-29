@@ -50,6 +50,7 @@ function event(input: {
   readonly evidenceRefs?: readonly string[];
   readonly authorityRef?: string | null;
 }): ShadowAdmissionEvent {
+  const authorityRef = input.authorityRef === undefined ? 'authority:support-lead' : input.authorityRef;
   const admission = createGenericAdmissionEnvelope({
     mode: 'observe',
     actor: input.actor,
@@ -59,9 +60,30 @@ function event(input: {
     requestedAt: input.occurredAt,
     decidedAt: input.occurredAt,
     requestId: `request:${input.actor}:${input.occurredAt}`,
+    amount: {
+      value: 9000,
+      currency: 'HUF',
+    },
     policyRef: input.policyRef === undefined ? 'policy:refund:v1' : input.policyRef,
     evidenceRefs: input.evidenceRefs ?? ['payment:captured'],
-    authorityRef: input.authorityRef === undefined ? 'authority:support-lead' : input.authorityRef,
+    authorityRef,
+    authoritySources: authorityRef === null
+      ? []
+      : [
+          {
+            sourceKind: 'customer-policy',
+            claimKind: 'authorization',
+            sourceRef: authorityRef,
+            trustClass: 'trusted-authority',
+            evidenceDigest: `sha256:${'a'.repeat(64)}`,
+          },
+        ],
+    observedFeatures: {
+      adapterReady: true,
+    },
+    observedFeatureOrigins: {
+      adapterReady: 'trusted-adapter',
+    },
     recipient: 'raw_recipient_must_not_escape',
   });
   return createShadowAdmissionEvent({

@@ -63,11 +63,19 @@ do the next action there, and come back only if you still need more context.
 | Area | What lives there | Use it when |
 |---|---|---|
 | `src/consequence-admission/` | Shared admission contracts, decisions, guards, shadow, Policy Foundry, domain projections. | You are changing `admit` / `narrow` / `review` / `block` behavior or proof-shaped admission output. |
-| `src/service/` | Hosted runtime, route support, stores, account/billing/webhook/runtime services. | You are changing an HTTP route, hosted account flow, billing, webhook, persistence, or deployment-facing runtime behavior. |
-| `src/service/` reorg plan | [Service organization plan](../02-architecture/service-organization-plan.md) | You are planning to move hosted runtime files without changing behavior. |
+| `src/service/` | Hosted runtime and cross-cutting service support. Root files are for shared runtime concerns only. | You are changing deployment-facing runtime behavior that spans more than one service family. |
+| `src/service/` reorg plan | [Service organization plan](../02-architecture/service-organization-plan.md) | You are planning to move hosted runtime files without changing behavior, or a service map drift-lock test failed. |
 | `src/service/account/` | Hosted account stores, sessions, MFA, SSO, passkeys, password policy, auth-abuse guard, and account route support. | You are changing hosted account, login, signup, SSO, MFA, passkey, or account-user behavior. |
+| `src/service/billing/` | Billing entitlements, event ledger, export/reconciliation, billing feature service, and Stripe support under `billing/stripe/`. | You are changing hosted billing, Stripe webhook support, commercial config, or usage exports. |
+| `src/service/async/` | Async pipeline, worker, tenant execution, weighted dispatch, dead-letter handling, and email delivery events. | You are changing queued execution, worker recovery, replay/idempotency support, or async email delivery. |
+| `src/service/pipeline/` | Pipeline idempotency store and pipeline route support. | You are changing pipeline run idempotency, replay, or route support helpers. |
+| `src/service/release/` | Release authority stores, decision log, evidence pack, reviewer queue, degraded-mode grant store, review site, and token introspection. | You are changing hosted release authority, review queue, token/evidence storage, or release route support. |
+| `src/service/hosted/` | Hosted product-flow contracts, generic admission proof bridges, LLM/tool boundary, runtime health, observability/privacy, release provenance, and hosted abuse/reconciliation guards. | You are changing hosted product assurance or hosted admission proof plumbing. |
+| `src/service/policy-foundry/` | Policy Foundry billing entitlement enforcement, hosted UI flow, and hosted wizard state. | You are changing hosted Policy Foundry onboarding or UI state. |
+| `src/service/shadow/` | Shadow persistence store. | You are changing shadow event persistence or shadow route backing storage. |
 | `src/service/http/routes/` | Hono route handlers. | You need request/response behavior for `/api/v1/*`. |
 | `src/service/bootstrap/` | Runtime assembly and dependency wiring. | You need to see how routes and stores are composed. |
+| `src/service/application/` | Route-facing application services and use-case ports. | You are changing route orchestration without changing the lower-level stores directly. |
 | `src/release-kernel/` | Release decisions, evidence packs, tokens, canonicalization, reviewer queue primitives. | You are changing release authority or proof material before enforcement. |
 | `src/release-policy-control-plane/` | Policy bundles, activation, simulation, publication, and lifecycle controls. | You are changing policy lifecycle or activation semantics. |
 | `src/release-enforcement-plane/` | Customer PEP / verifier / middleware primitives. | You are changing downstream enforcement presentation or verification. |

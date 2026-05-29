@@ -3,11 +3,9 @@ import type { DecisionEnvelope, FilingAdapterRegistry } from '../../../filing/fi
 import type {
   FinanceFilingReleaseCandidate,
   FinanceFilingReleaseMaterial,
-} from '../../../release-layer/finance.js';
-import type {
   FinanceFilingRow,
   FinanceFilingRowValue,
-} from '../../../release-kernel/finance-record-release.js';
+} from '../../../release-layer/finance.js';
 import type {
   ReleaseVerificationContext,
   ReleaseVerificationErrorConstructor,

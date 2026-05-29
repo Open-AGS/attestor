@@ -93,7 +93,7 @@ function testReadmeLinksTheRightDeeperDocsWithoutBecomingALinkWall(): void {
   includes(readme, '[Customer admission gate](docs/01-overview/customer-admission-gate.md)', 'Product docs: README links the customer enforcement boundary');
   includes(readme, '[Pricing and packaging](docs/01-overview/product-packaging.md)', 'Product docs: README links commercial packaging');
   includes(readme, '[Security Policy](SECURITY.md)', 'Product docs: README links the security policy');
-  includes(readme, '<summary>Maintainer reference</summary>', 'Product docs: README puts deeper maintainer references behind an explicit disclosure');
+  includes(readme, '## Maintainer Reference', 'Product docs: README keeps deeper maintainer references behind an explicit heading');
   includes(readme, '[What you can do with Attestor](docs/01-overview/what-you-can-do.md)', 'Product docs: README still links the use-case bridge');
   includes(readme, '[Attestor Evaluation Packet v0.1](docs/00-evaluation/v0.1-evaluation-packet.md)', 'Product docs: README still links the evaluation packet');
   includes(readme, '[Evaluation Smoke workflow](.github/workflows/evaluation-smoke.yml)', 'Product docs: README links the reviewer CI path');
@@ -135,7 +135,8 @@ function testReadmeDoesNotRegressToTheOldDenseShape(): void {
 
   excludes(readme, /## Core Operating Loop/u, 'Product docs: README should not reintroduce the old dense operating-loop section');
   excludes(readme, /## Architecture: Core And Packs/u, 'Product docs: README should not reintroduce the old architecture wall');
-  includes(readme, '<details>', 'Product docs: README may hide maintainer-only link depth after the short Start Here surface');
+  excludes(readme, /<details>/u, 'Product docs: README should keep maintainer references under a visible heading, not hidden details');
+  includes(readme, '## Maintainer Reference', 'Product docs: README keeps maintainer-only link depth after the short Start Here surface');
   excludes(readme, /\| Layer \| Role \| Current status \|/u, 'Product docs: README should not use the old layer table');
   excludes(readme, /\| Pack \| What it means today \| Status \|/u, 'Product docs: README should not use the old pack table');
   excludes(readme, /a finance assistant prepares a report from live warehouse data/u, 'Product docs: README should not lead with finance-only wording');

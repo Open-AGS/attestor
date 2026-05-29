@@ -69,6 +69,16 @@ const BASE_PROPOSAL = Object.freeze({
     chain: null,
   },
   recipient: 'customer_123',
+  authorityRef: 'authority:refunds:v1',
+  authoritySources: [
+    {
+      sourceKind: 'customer-policy',
+      claimKind: 'authorization',
+      sourceRef: 'authority:refunds:v1',
+      trustClass: 'trusted-authority',
+      evidenceDigest: `sha256:${'a'.repeat(64)}`,
+    },
+  ],
   summary: 'Support copilot proposes a customer refund.',
   nativeInputRefs: ['amount', 'recipient', 'policyRef', 'evidenceRefs'],
 } satisfies AgentProposal);

@@ -292,6 +292,7 @@
     "test:production-shared-authority-plane-docs": "tsx tests/production-shared-authority-plane-docs.test.ts",
     "test:release-authority-store": "tsx tests/release-authority-store.test.ts",
     "test:release-decision-log-store": "tsx tests/release-decision-log-store.test.ts",
+    "test:release-policy-control-routes-inventory": "tsx tests/release-policy-control-routes-inventory.test.ts",
     "test:release-policy-control-plane-admin-routes": "tsx tests/release-policy-control-plane-admin-routes.test.ts",
     "test:release-review-admin-routes": "tsx tests/release-review-admin-routes.test.ts",
     "test:release-reviewer-queue-store": "tsx tests/release-reviewer-queue-store.test.ts",

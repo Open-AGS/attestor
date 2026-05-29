@@ -155,17 +155,21 @@ Completed:
   covering the current index-owned contract/constants/types, generic admission
   normalization/orchestration, correction/retry catalogue, descriptor builders,
   and compatibility delegation before code movement begins.
+- `src/consequence-admission/index.ts` now imports and selectively re-exports
+  constants, literal vocabularies, core admission request/response types, and
+  generic admission request/envelope types from
+  `src/consequence-admission/contracts.ts`, keeping `index.ts` as the package
+  compatibility facade.
 
 Next:
 
-1. Split `src/consequence-admission/index.ts` by constants/types/contracts.
-2. Split `src/consequence-admission/index.ts` by descriptor/catalog ownership.
-3. Split `src/consequence-admission/index.ts` by engine helpers and close out
+1. Split `src/consequence-admission/index.ts` by descriptor/catalog ownership.
+2. Split `src/consequence-admission/index.ts` by engine helpers and close out
    the compatibility facade budget.
-4. Split `src/service/http/routes/shadow-routes.ts` by route family.
-5. Leave `src/service/http/routes/account-routes.ts` for a separate route-matrix
+3. Split `src/service/http/routes/shadow-routes.ts` by route family.
+4. Leave `src/service/http/routes/account-routes.ts` for a separate route-matrix
    wave after V2.
-6. Touch crypto/protocol adapters only where module-specific risk warrants it.
+5. Touch crypto/protocol adapters only where module-specific risk warrants it.
 
 ## No-Claims
 

@@ -24,12 +24,14 @@ function equal<T>(actual: T, expected: T, message: string): void {
 function testDocMirrorsCurrentSurfaceCounts(): void {
   const doc = readProjectFile('docs', '02-architecture', 'consequence-admission-public-surface.md');
   const indexSource = readProjectFile('src', 'consequence-admission', 'index.ts');
+  const contractsSource = readProjectFile('src', 'consequence-admission', 'contracts.ts');
   const publicSurfaceSource = readProjectFile('src', 'consequence-admission', 'public-surface.ts');
 
   const indexExportLines = [...indexSource.matchAll(/^export\s/gm)].length;
   const indexDirectExportDeclarations = [
     ...indexSource.matchAll(/^export\s+(?:type|interface|class|const|function|enum)\s/gm),
   ].length;
+  const contractModuleLines = contractsSource.split(/\r?\n/u).filter((line) => line.length > 0).length;
   const publicSurfaceReExports = [
     ...publicSurfaceSource.matchAll(/^export \* from ['"]\.\/[^'"]+['"];$/gm),
   ].length;
@@ -40,6 +42,11 @@ function testDocMirrorsCurrentSurfaceCounts(): void {
     doc,
     `index direct export declarations: ${indexDirectExportDeclarations}`,
     'Public surface docs: direct export declaration count matches source',
+  );
+  includes(
+    doc,
+    `contract module non-empty lines: ${contractModuleLines}`,
+    'Public surface docs: contract module line count matches source',
   );
   includes(
     doc,
@@ -90,10 +97,11 @@ function testDocLocksV2SplitInventory(): void {
   }
 
   for (const expected of [
-    'V2-10 constants/types/contracts split',
+    'V2-10 complete',
     'V2-11 descriptor/catalog split',
     'V2-12 engine helpers split',
-    "Trailing `export * from './public-surface.js'`",
+    "plus trailing `export * from './public-surface.js'`",
+    '`contracts.ts` remains internal to the package source tree',
     '`public-surface.ts` remains a pure sibling re-export catalogue',
     'no split PR may change `admit`, `narrow`, `review`, or `block` semantics',
   ]) {

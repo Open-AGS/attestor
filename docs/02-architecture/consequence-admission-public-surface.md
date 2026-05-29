@@ -26,9 +26,13 @@ Current source state:
 
 ```text
 src/consequence-admission/index.ts
-  index export lines: 98
-  index direct export declarations: 97
+  index export lines: 18
+  index direct export declarations: 16
   trailing delegation: export * from './public-surface.js'
+
+src/consequence-admission/contracts.ts
+  contract module non-empty lines: 831
+  role: constants, literal vocabularies, request/response types, generic admission envelope types
 
 src/consequence-admission/public-surface.ts
   public-surface module re-exports: 186
@@ -79,19 +83,24 @@ This section is the split-before-moving lock for the Large File Refactor V2
 consequence-admission rounds. It records what `index.ts` currently owns so the
 next PRs can move code without drifting the public contract.
 
+Current `contracts.ts` ownership:
+
+| Ownership area | Current role | Planned split round |
+|---|---|---|
+| Contract constants and literal vocabularies | Contract versions, decisions, generic modes, retry defaults, entry-point/check/proof vocabularies. | V2-10 complete |
+| Core admission request/response types | `ConsequenceAdmissionRequest`, `ConsequenceAdmissionResponse`, checks, constraints, feedback, proof refs, retry binding input/output. | V2-10 complete |
+| Generic admission request/envelope types | `CreateGenericAdmissionInput`, guard-specific input aliases, `GenericAdmissionModeEvaluation`, `GenericAdmissionEnvelope`. | V2-10 complete |
+
 Current `index.ts` ownership:
 
 | Ownership area | Current role | Planned split round |
 |---|---|---|
-| Contract constants and literal vocabularies | Contract versions, decisions, generic modes, retry defaults, entry-point/check/proof vocabularies. | V2-10 constants/types/contracts split |
-| Core admission request/response types | `ConsequenceAdmissionRequest`, `ConsequenceAdmissionResponse`, checks, constraints, feedback, proof refs, retry binding input/output. | V2-10 constants/types/contracts split |
-| Generic admission request/envelope types | `CreateGenericAdmissionInput`, guard-specific input aliases, `GenericAdmissionModeEvaluation`, `GenericAdmissionEnvelope`. | V2-10 constants/types/contracts split |
 | Normalization helpers | Identifier, enum, timestamp, amount/data-scope, guard-input, retry-attempt, and generic-admission input normalization. | V2-12 engine helpers split |
 | Generic guard orchestration | Authority, approval, scope, tool-result, supply-chain, fatigue, delegation, stale-policy, drift, authority-creep, and no-go decisions. | V2-12 engine helpers split |
 | Decision and mapping helpers | `isConsequenceAdmissionDecision`, `consequenceAdmissionAllowsConsequence`, finance/crypto mapping, and check creation. | V2-11 descriptor/catalog split or V2-12 closeout |
 | Correction catalogue and retry budget | Correction entries, safe feedback, retry guidance, retry-window evaluation. | V2-11 descriptor/catalog split |
 | Builders and descriptor | Request/response/problem/envelope builders and `consequenceAdmissionDescriptor()`. | V2-12 engine helpers split and closeout |
-| Compatibility delegation | Trailing `export * from './public-surface.js'`. | Must remain until a compatibility-preserving subpath plan replaces it |
+| Compatibility delegation | Selective public re-exports from `contracts.ts` plus trailing `export * from './public-surface.js'`. | Must remain until a compatibility-preserving subpath plan replaces it |
 
 Current `public-surface.ts` ownership:
 
@@ -105,6 +114,8 @@ V2-10, V2-11, and V2-12 must preserve these contracts:
 
 - the package `exports` map keeps `attestor` and `attestor/consequence-admission`
   pointing at `dist/consequence-admission/index.js`;
+- `contracts.ts` remains internal to the package source tree unless a future
+  package `exports` change exposes it explicitly;
 - `public-surface.ts` remains a pure sibling re-export catalogue;
 - public import paths keep working through compatibility re-exports;
 - any new source module introduced by the split is internal unless the package

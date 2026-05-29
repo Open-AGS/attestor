@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   requireHostedApiAuthorizationRule,
@@ -41,6 +41,14 @@ function excludes(content: string, unexpected: RegExp, message: string): void {
 
 function readProjectFile(...segments: string[]): string {
   return readFileSync(join(process.cwd(), ...segments), 'utf8');
+}
+
+function readAccountRouteSources(): string {
+  const routeDir = join(process.cwd(), 'src', 'service', 'http', 'routes');
+  return readdirSync(routeDir)
+    .filter((file) => /^account.*\.ts$/u.test(file))
+    .map((file) => readFileSync(join(routeDir, file), 'utf8'))
+    .join('\n');
 }
 
 function fileExists(projectPath: string): boolean {
@@ -191,7 +199,7 @@ function testControlContractsForHighRiskFlows(): void {
 }
 
 function testImplementationEvidenceMatchesContract(): void {
-  const accountRoutes = readProjectFile('src', 'service', 'http', 'routes', 'account-routes.ts');
+  const accountRoutes = readAccountRouteSources();
   const authAbuseGuard = readProjectFile('src', 'service', 'account', 'auth-abuse-guard.ts');
   const apiKeyService = readProjectFile('src', 'service', 'application', 'account-api-key-service.ts');
   const stripeBilling = readProjectFile('src', 'service', 'billing', 'stripe', 'stripe-billing.ts');

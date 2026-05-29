@@ -93,6 +93,7 @@
     "test:service-organization-map": "tsx tests/service-organization-map.test.ts",
     "test:large-file-budget": "npm run check:large-file-budget",
     "test:large-file-budget-docs": "tsx tests/large-file-budget-docs.test.ts",
+    "test:control-plane-store-inventory-docs": "tsx tests/control-plane-store-inventory-docs.test.ts",
     "test:scripts-inventory-docs": "tsx tests/scripts-inventory-docs.test.ts",
     "test:glossary-docs": "tsx tests/glossary-docs.test.ts",
     "test:customer-integration-recipes-docs": "tsx tests/customer-integration-recipes-docs.test.ts",

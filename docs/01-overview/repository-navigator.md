@@ -26,6 +26,7 @@ do the next action there, and come back only if you still need more context.
 | "I need to reorganize hosted runtime files." | [Service organization plan](../02-architecture/service-organization-plan.md) | you know the slice order, move rules, and no-claims. |
 | "I need to split a large file." | [Large file budget](../02-architecture/large-file-budget.md) | you know the 800-line target, 1200-line exception rule, and next split order. |
 | "What is the active large-file refactor wave?" | [Final Large File Refactor Plan](../02-architecture/final-large-file-refactor-plan.md) | you know the 16 rounds, targets, exceptions, and no-claims. |
+| "Which test proves this?" | [Test system map](../02-architecture/test-system-map.md) | you know the nearest hermetic gate, snapshot/golden gate, or live-proof-only boundary. |
 
 ## Start By Intent
 
@@ -46,6 +47,7 @@ do the next action there, and come back only if you still need more context.
 | Review audit state | [Audit evidence system](../audit/README.md) | [Finding index](../audit/finding-index.md) |
 | Review public package boundaries | [Consequence admission public surface](../02-architecture/consequence-admission-public-surface.md) | [Release layer platform surface](../02-architecture/release-layer-platform-surface.md) |
 | Find the right maintainer script | [Scripts inventory](../02-architecture/scripts-inventory.md) | `npm run test:package-script-runner` |
+| Find the right test gate | [Test system map](../02-architecture/test-system-map.md) | `npm run test:test-system-map` |
 | Plan a hosted runtime refactor | [Service organization plan](../02-architecture/service-organization-plan.md) | `npm run test:service-organization-plan-docs` |
 | Reduce oversized files | [Large file budget](../02-architecture/large-file-budget.md) | [Final Large File Refactor Plan](../02-architecture/final-large-file-refactor-plan.md); `npm run test:large-file-budget` |
 
@@ -93,6 +95,7 @@ do the next action there, and come back only if you still need more context.
 | `docs/research/` | Source-backed research notes and provenance ledger. | You need the external source trail behind a design direction. |
 | `scripts/` | Local, CI, probe, render, demo, rehearsal, validation, and operator helper scripts. | You need to run or change a package script without breaking PR or CI gates. |
 | `tests/` | Regression, contract, docs, route, package-surface, and proof discipline tests. | You need to lock behavior or prove a public claim did not drift. |
+| `tests/README.md` | Short test navigator for the current repo-side gate families. | You need to route a change to the nearest test without reading every script. |
 
 ## Package Surface Map
 

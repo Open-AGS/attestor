@@ -1,0 +1,280 @@
+{
+  "version": "attestor.test-system-catalog.v1",
+  "sourceOfTruth": "origin/master",
+  "authorityBoundary": "This catalog routes reviewers to tests. It does not prove live customer PEP no-bypass, production readiness, or enterprise readiness.",
+  "tierModel": [
+    {
+      "id": "T0",
+      "label": "docs-and-meta",
+      "meaning": "Documentation, catalog, script, and evidence-index locks."
+    },
+    {
+      "id": "T1",
+      "label": "unit-and-contract",
+      "meaning": "Hermetic module and package-surface tests."
+    },
+    {
+      "id": "T2",
+      "label": "route-and-local-integration",
+      "meaning": "Local HTTP route, store, replay, and service integration tests."
+    },
+    {
+      "id": "T3",
+      "label": "snapshot-and-golden",
+      "meaning": "Stable API/evidence shape and golden output baseline comparisons."
+    },
+    {
+      "id": "T4",
+      "label": "property-and-fuzz",
+      "meaning": "Generated or table-driven invariant tests for critical decision logic."
+    },
+    {
+      "id": "T5",
+      "label": "live-and-ops",
+      "meaning": "Opt-in live, operator, cloud, provider, and deployment proof gates."
+    }
+  ],
+  "surfaces": [
+    {
+      "id": "admission-core",
+      "label": "Consequence admission core",
+      "tier": "T1",
+      "hermetic": true,
+      "protectedPrinciples": ["fail-closed boundary", "customer authority", "proof integrity"],
+      "primaryScripts": [
+        "test:generic-admission-mode-ladder",
+        "test:consequence-admission-contract",
+        "test:critical-admission-property-suite"
+      ],
+      "referenceFiles": [
+        "src/consequence-admission/generic-engine.ts",
+        "src/consequence-admission/contracts.ts",
+        "tests/generic-admission-mode-ladder.test.ts",
+        "tests/critical-admission-property-suite.test.ts"
+      ]
+    },
+    {
+      "id": "admission-routes",
+      "label": "Generic admission HTTP routes",
+      "tier": "T2",
+      "hermetic": true,
+      "protectedPrinciples": ["tenant isolation", "fail-closed boundary", "replay and idempotency safety"],
+      "primaryScripts": [
+        "test:generic-admission-routes",
+        "test:generic-admission-guard-route-matrix"
+      ],
+      "referenceFiles": [
+        "src/service/http/routes/generic-admission-routes.ts",
+        "tests/generic-admission-routes.test.ts",
+        "tests/generic-admission-guard-route-matrix.test.ts"
+      ]
+    },
+    {
+      "id": "api-evidence-shapes",
+      "label": "API and evidence shape snapshots",
+      "tier": "T3",
+      "hermetic": true,
+      "protectedPrinciples": ["proof integrity", "data minimization and redaction", "no overclaim"],
+      "primaryScripts": ["test:api-evidence-shape-snapshots"],
+      "referenceFiles": [
+        "tests/api-evidence-shape-snapshots.test.ts",
+        "tests/snapshots/api-evidence-shapes/generic-admission-admit.json",
+        "tests/snapshots/api-evidence-shapes/generic-admission-review.json",
+        "tests/snapshots/api-evidence-shapes/golden-paths-evaluator-summary.json"
+      ]
+    },
+    {
+      "id": "golden-paths",
+      "label": "Golden path reviewer outputs",
+      "tier": "T3",
+      "hermetic": true,
+      "protectedPrinciples": ["no overclaim", "auditability", "data minimization and redaction"],
+      "primaryScripts": [
+        "test:golden-output-baseline-diff",
+        "test:golden-paths-evaluator",
+        "demo:golden-paths"
+      ],
+      "referenceFiles": [
+        "src/consequence-admission/golden-paths-evaluator.ts",
+        "tests/golden-output-baseline-diff.test.ts",
+        "tests/snapshots/golden-output-baselines/golden-paths-evaluator.json"
+      ]
+    },
+    {
+      "id": "shadow-policy-foundry",
+      "label": "Shadow, policy foundry, and candidate discovery",
+      "tier": "T1",
+      "hermetic": true,
+      "protectedPrinciples": ["auditability", "no overclaim", "customer authority"],
+      "primaryScripts": [
+        "test:shadow-runtime-pipeline",
+        "test:shadow-runtime-fixture-replay-smoke",
+        "test:policy-twin-backtest"
+      ],
+      "referenceFiles": [
+        "src/consequence-admission/shadow-runtime-pipeline.ts",
+        "tests/shadow-runtime-pipeline.test.ts",
+        "tests/policy-twin-backtest.test.ts"
+      ]
+    },
+    {
+      "id": "release-and-enforcement",
+      "label": "Release kernel, policy control, and enforcement plane",
+      "tier": "T1",
+      "hermetic": true,
+      "protectedPrinciples": ["release provenance", "proof integrity", "customer authority"],
+      "primaryScripts": [
+        "test:release-decision-log-store",
+        "test:release-policy-control-plane-bundle-signing",
+        "test:release-enforcement-plane-dpop"
+      ],
+      "referenceFiles": [
+        "src/release-kernel/",
+        "src/release-policy-control-plane/",
+        "src/release-enforcement-plane/",
+        "tests/release-kernel-canonicalization-parity.test.ts"
+      ]
+    },
+    {
+      "id": "crypto-pack",
+      "label": "Programmable money and crypto package boundary",
+      "tier": "T1",
+      "hermetic": true,
+      "protectedPrinciples": ["customer authority", "no overclaim", "proof integrity"],
+      "primaryScripts": [
+        "test:crypto-execution-admission",
+        "test:crypto-execution-admission-negative-conformance-fixtures",
+        "test:crypto-authorization-core-x402-agentic-payment-adapter"
+      ],
+      "referenceFiles": [
+        "src/crypto-execution-admission/",
+        "src/crypto-authorization-core/",
+        "tests/crypto-execution-admission.test.ts"
+      ]
+    },
+    {
+      "id": "finance-and-filing",
+      "label": "Financial pipeline and filing pack",
+      "tier": "T1",
+      "hermetic": true,
+      "protectedPrinciples": ["proof integrity", "data minimization and redaction", "no overclaim"],
+      "primaryScripts": [
+        "test:financial",
+        "test:pipeline-filing-default-secure",
+        "test:connectors-and-filing"
+      ],
+      "referenceFiles": [
+        "src/financial/",
+        "src/filing/",
+        "tests/financial.test.ts",
+        "tests/financial/"
+      ]
+    },
+    {
+      "id": "service-control-plane",
+      "label": "Hosted service routes, stores, billing, account, and webhooks",
+      "tier": "T2",
+      "hermetic": true,
+      "protectedPrinciples": ["tenant isolation", "replay and idempotency safety", "operational boundedness"],
+      "primaryScripts": [
+        "test:service-core-routes",
+        "test:service-admin-routes-http",
+        "test:service-account-routes-authorization",
+        "test:service-webhook-route-rate-limit"
+      ],
+      "referenceFiles": [
+        "src/service/",
+        "src/service/http/routes/",
+        "tests/service-core-routes.test.ts"
+      ]
+    },
+    {
+      "id": "docs-audit-claim-boundaries",
+      "label": "Docs, audit indexes, and claim boundaries",
+      "tier": "T0",
+      "hermetic": true,
+      "protectedPrinciples": ["auditability", "no overclaim", "release provenance"],
+      "primaryScripts": [
+        "test:test-system-map",
+        "test:audit-finding-test-coverage",
+        "test:security-evidence-system",
+        "test:repository-navigator-docs"
+      ],
+      "referenceFiles": [
+        "docs/audit/finding-index.md",
+        "docs/audit/live-proof-register.md",
+        "docs/02-architecture/test-system-map.md",
+        "tests/README.md"
+      ]
+    },
+    {
+      "id": "live-and-ops",
+      "label": "Live and operator proof gates",
+      "tier": "T5",
+      "hermetic": false,
+      "protectedPrinciples": ["runtime readiness", "operational boundedness", "replay and idempotency safety"],
+      "primaryScripts": [
+        "verify:live-local",
+        "verify:ops",
+        "verify:external-live"
+      ],
+      "referenceFiles": [
+        "docs/audit/live-proof-register.md",
+        ".github/workflows/full-verify.yml",
+        "scripts/run/run-live-ops-gate.mjs"
+      ]
+    }
+  ],
+  "implementationGates": [
+    {
+      "id": "T-00",
+      "label": "test navigator and catalog",
+      "script": "test:test-system-map",
+      "status": "implemented-by-this-slice"
+    },
+    {
+      "id": "T-01",
+      "label": "API/evidence shape snapshot contract suite",
+      "script": "test:api-evidence-shape-snapshots",
+      "status": "implemented-by-this-slice"
+    },
+    {
+      "id": "T-02",
+      "label": "golden output baseline-vs-HEAD diff gate",
+      "script": "test:golden-output-baseline-diff",
+      "status": "implemented-by-this-slice"
+    },
+    {
+      "id": "T-03",
+      "label": "critical admission property suite",
+      "script": "test:critical-admission-property-suite",
+      "status": "implemented-by-this-slice"
+    },
+    {
+      "id": "T-04",
+      "label": "gradual test rehome map",
+      "script": "test:test-system-map",
+      "status": "documented-by-this-slice"
+    }
+  ],
+  "rehomePlan": {
+    "rule": "Do not mass-move the 600+ root test files in one PR. Move families only when the owned surface is already being edited.",
+    "targetDirectories": [
+      "tests/admission/",
+      "tests/shadow/",
+      "tests/release/",
+      "tests/crypto/",
+      "tests/finance/",
+      "tests/service/",
+      "tests/docs-audit/",
+      "tests/live/"
+    ],
+    "currentTransitionState": "Some families already have subdirectories; most legacy tests remain root-flat until touched."
+  },
+  "nonClaims": [
+    "This catalog does not prove production readiness.",
+    "This catalog does not prove live customer PEP no-bypass.",
+    "This catalog does not prove external KMS runtime signing.",
+    "This catalog does not replace targeted route, release, crypto, or live proof tests."
+  ]
+}

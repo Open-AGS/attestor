@@ -1,0 +1,55 @@
+{
+  "shapeVersion": "attestor.api-evidence-shape.v1",
+  "surface": "generic-admission-envelope",
+  "payload": {
+    "mode": "enforce",
+    "shadowDecision": "would_admit",
+    "downstreamPosture": "enforce-decision",
+    "enforcementActive": true,
+    "decision": "admit",
+    "allowed": true,
+    "failClosed": false,
+    "reasonCodes": [
+      "mode-enforce",
+      "shadow-would_admit"
+    ],
+    "missingFields": [],
+    "requiredEvidenceKinds": [],
+    "operatorOnlyReasonCodes": [],
+    "proofKinds": [
+      "admission-receipt"
+    ],
+    "checks": [
+      {
+        "kind": "policy",
+        "outcome": "pass",
+        "reasonCodes": []
+      },
+      {
+        "kind": "authority",
+        "outcome": "pass",
+        "reasonCodes": []
+      },
+      {
+        "kind": "evidence",
+        "outcome": "pass",
+        "reasonCodes": []
+      },
+      {
+        "kind": "freshness",
+        "outcome": "pass",
+        "reasonCodes": []
+      },
+      {
+        "kind": "enforcement",
+        "outcome": "pass",
+        "reasonCodes": []
+      }
+    ],
+    "retry": {
+      "retryAllowed": false,
+      "retryCategory": "not-needed",
+      "nextAllowedMode": null
+    }
+  }
+}

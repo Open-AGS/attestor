@@ -133,20 +133,12 @@ import {
   type UsageLedgerRecord,
 } from './usage-meter.js';
 import {
-  appendAdminAuditRecord as appendAdminAuditRecordFile,
   listAdminAuditRecords as listAdminAuditRecordsFile,
   verifyAdminAuditChain,
-  type AdminAuditAction,
   type AdminAuditRecord,
 } from './admin-audit-log.js';
 import {
-  buildAdminIdempotencyRequestHash,
-  decryptAdminIdempotencyResponse,
-  encryptAdminIdempotencyResponse,
-  lookupAdminIdempotency as lookupAdminIdempotencyFile,
-  recordAdminIdempotency as recordAdminIdempotencyFile,
   readAdminIdempotencySnapshot,
-  type AdminIdempotencyLookup,
   type AdminIdempotencyRecord,
 } from './admin-idempotency-store.js';
 import {
@@ -204,6 +196,20 @@ import {
   withControlPlanePgTransaction as withPgTransaction,
 } from './control-plane-store/pg.js';
 import {
+  appendAdminAuditRecordState,
+  listAdminAuditRecordsState,
+} from './control-plane-store/admin-audit-state.js';
+import {
+  lookupAdminIdempotencyState,
+  recordAdminIdempotencyState,
+} from './control-plane-store/admin-idempotency-state.js';
+export {
+  appendAdminAuditRecordState,
+  listAdminAuditRecordsState,
+  lookupAdminIdempotencyState,
+  recordAdminIdempotencyState,
+};
+import {
   activeReplacementExists,
   adminIdempotencyCutoffIso,
   advisoryLockKey,
@@ -229,7 +235,6 @@ import {
   rowToAccountSession,
   rowToAccountUser,
   rowToAccountUserActionToken,
-  rowToAdminAuditRecord,
   rowToAdminIdempotencyRecord,
   rowToAsyncDeadLetterRecord,
   rowToHostedAccount,
@@ -2272,223 +2277,6 @@ export async function revokeAccountUserActionTokensForUserState(
     }
   }
   return { revokedCount, path: controlPlaneStoreSource() };
-}
-
-export async function appendAdminAuditRecordState(
-  input: Omit<AdminAuditRecord, 'id' | 'occurredAt' | 'previousHash' | 'eventHash'>,
-): Promise<{
-  record: AdminAuditRecord;
-  path: string | null;
-}> {
-  if (!isSharedControlPlaneConfigured()) return appendAdminAuditRecordFile(input);
-  const record = await withPgTransaction(async (client) => {
-    await client.query('SELECT pg_advisory_xact_lock($1::bigint)', [advisoryLockKey('attestor_control_plane:admin_audit')]);
-    const latestResult = await client.query(
-      `SELECT record_json
-         FROM attestor_control_plane.admin_audit_log
-        ORDER BY occurred_at DESC, audit_id DESC
-        LIMIT 1`,
-    );
-    const previous = latestResult.rows[0] ? rowToAdminAuditRecord(latestResult.rows[0]) : null;
-    const baseRecord = {
-      id: `audit_${randomUUID().replace(/-/g, '').slice(0, 16)}`,
-      occurredAt: new Date().toISOString(),
-      previousHash: previous?.eventHash ?? null,
-      ...input,
-    };
-    const recordToInsert: AdminAuditRecord = {
-      ...baseRecord,
-      eventHash: hashJsonValue(baseRecord),
-    };
-    await client.query(
-      `INSERT INTO attestor_control_plane.admin_audit_log (
-        audit_id, occurred_at, actor_type, action, account_id, tenant_id, previous_hash, event_hash, record_json
-      ) VALUES (
-        $1, $2::timestamptz, $3, $4, $5, $6, $7, $8, $9::jsonb
-      )`,
-      [
-        recordToInsert.id,
-        recordToInsert.occurredAt,
-        recordToInsert.actorType,
-        recordToInsert.action,
-        recordToInsert.accountId,
-        recordToInsert.tenantId,
-        recordToInsert.previousHash,
-        recordToInsert.eventHash,
-        JSON.stringify(recordToInsert),
-      ],
-    );
-    return recordToInsert;
-  });
-  return { record, path: controlPlaneStoreSource() };
-}
-
-export async function listAdminAuditRecordsState(filters?: {
-  action?: AdminAuditAction | null;
-  tenantId?: string | null;
-  accountId?: string | null;
-  limit?: number | null;
-}): Promise<{
-  records: AdminAuditRecord[];
-  chainIntact: boolean;
-  latestHash: string | null;
-  path: string | null;
-}> {
-  if (!isSharedControlPlaneConfigured()) return listAdminAuditRecordsFile(filters);
-  await ensureSchema();
-  const pool = await getPool();
-  const result = await pool.query(`
-    SELECT record_json
-      FROM attestor_control_plane.admin_audit_log
-      ORDER BY occurred_at ASC, audit_id ASC
-  `);
-  const allRecords = result.rows.map(rowToAdminAuditRecord);
-  const chainIntact = verifyAdminAuditChain(allRecords);
-  let records = allRecords
-    .filter((record) => !filters?.action || record.action === filters.action)
-    .filter((record) => !filters?.tenantId || record.tenantId === filters.tenantId)
-    .filter((record) => !filters?.accountId || record.accountId === filters.accountId)
-    .sort((left, right) => left.occurredAt < right.occurredAt ? 1 : -1);
-  if (filters?.limit && filters.limit > 0) {
-    records = records.slice(0, filters.limit);
-  }
-  return {
-    records,
-    chainIntact,
-    latestHash: allRecords.length > 0 ? allRecords[allRecords.length - 1]?.eventHash ?? null : null,
-    path: controlPlaneStoreSource(),
-  };
-}
-
-export async function lookupAdminIdempotencyState(options: {
-  idempotencyKey: string;
-  routeId: string;
-  requestPayload: unknown;
-}): Promise<AdminIdempotencyLookup> {
-  if (!isSharedControlPlaneConfigured()) return lookupAdminIdempotencyFile(options);
-  const requestHash = buildAdminIdempotencyRequestHash(options.routeId, options.requestPayload);
-  return withPgTransaction(async (client) => {
-    await client.query(
-      `DELETE FROM attestor_control_plane.admin_idempotency
-        WHERE created_at < $1::timestamptz`,
-      [adminIdempotencyCutoffIso()],
-    );
-    await client.query('SELECT pg_advisory_xact_lock($1::bigint)', [
-      advisoryLockKey(`attestor_control_plane:admin_idempotency:${options.idempotencyKey}`),
-    ]);
-    const result = await client.query(
-      `SELECT record_json
-         FROM attestor_control_plane.admin_idempotency
-        WHERE idempotency_key = $1
-        LIMIT 1`,
-      [options.idempotencyKey],
-    );
-    const existing = result.rows[0] ? rowToAdminIdempotencyRecord(result.rows[0]) : null;
-    if (!existing) return { kind: 'miss', requestHash };
-    if (existing.routeId !== options.routeId || existing.requestHash !== requestHash) {
-      return { kind: 'conflict', requestHash, record: existing };
-    }
-    const replayedRecord: AdminIdempotencyRecord = {
-      ...existing,
-      lastReplayedAt: new Date().toISOString(),
-      replayCount: existing.replayCount + 1,
-    };
-    await client.query(
-      `UPDATE attestor_control_plane.admin_idempotency
-          SET last_replayed_at = $2::timestamptz,
-              replay_count = $3,
-              record_json = $4::jsonb
-        WHERE idempotency_key = $1`,
-      [
-        options.idempotencyKey,
-        replayedRecord.lastReplayedAt,
-        replayedRecord.replayCount,
-        JSON.stringify(replayedRecord),
-      ],
-    );
-    return {
-      kind: 'replay',
-      requestHash,
-      record: replayedRecord,
-      response: decryptAdminIdempotencyResponse(replayedRecord),
-    };
-  });
-}
-
-export async function recordAdminIdempotencyState(options: {
-  idempotencyKey: string;
-  routeId: string;
-  requestPayload: unknown;
-  statusCode: number;
-  response: unknown;
-}): Promise<{ record: AdminIdempotencyRecord; path: string | null }> {
-  if (!isSharedControlPlaneConfigured()) return recordAdminIdempotencyFile(options);
-  const requestHash = buildAdminIdempotencyRequestHash(options.routeId, options.requestPayload);
-  const record = await withPgTransaction(async (client) => {
-    await client.query(
-      `DELETE FROM attestor_control_plane.admin_idempotency
-        WHERE created_at < $1::timestamptz`,
-      [adminIdempotencyCutoffIso()],
-    );
-    await client.query('SELECT pg_advisory_xact_lock($1::bigint)', [
-      advisoryLockKey(`attestor_control_plane:admin_idempotency:${options.idempotencyKey}`),
-    ]);
-    const existingResult = await client.query(
-      `SELECT record_json
-         FROM attestor_control_plane.admin_idempotency
-        WHERE idempotency_key = $1
-        LIMIT 1`,
-      [options.idempotencyKey],
-    );
-    const existing = existingResult.rows[0] ? rowToAdminIdempotencyRecord(existingResult.rows[0]) : null;
-    if (existing) {
-      if (existing.routeId !== options.routeId || existing.requestHash !== requestHash) {
-        throw new Error(`Idempotency-Key '${options.idempotencyKey}' already exists for a different request`);
-      }
-      return existing;
-    }
-    const encrypted = encryptAdminIdempotencyResponse(options.response);
-    const recordToInsert: AdminIdempotencyRecord = {
-      id: `idem_${randomUUID().replace(/-/g, '').slice(0, 16)}`,
-      idempotencyKey: options.idempotencyKey,
-      routeId: options.routeId,
-      requestHash,
-      statusCode: options.statusCode,
-      responseCiphertext: encrypted.ciphertext,
-      responseIv: encrypted.iv,
-      responseAuthTag: encrypted.authTag,
-      createdAt: new Date().toISOString(),
-      lastReplayedAt: null,
-      replayCount: 0,
-    };
-    await client.query(
-      `INSERT INTO attestor_control_plane.admin_idempotency (
-        idempotency_id, idempotency_key, route_id, request_hash, status_code,
-        response_ciphertext, response_iv, response_auth_tag,
-        created_at, last_replayed_at, replay_count, record_json
-      ) VALUES (
-        $1, $2, $3, $4, $5,
-        $6, $7, $8,
-        $9::timestamptz, $10::timestamptz, $11, $12::jsonb
-      )`,
-      [
-        recordToInsert.id,
-        recordToInsert.idempotencyKey,
-        recordToInsert.routeId,
-        recordToInsert.requestHash,
-        recordToInsert.statusCode,
-        recordToInsert.responseCiphertext,
-        recordToInsert.responseIv,
-        recordToInsert.responseAuthTag,
-        recordToInsert.createdAt,
-        recordToInsert.lastReplayedAt,
-        recordToInsert.replayCount,
-        JSON.stringify(recordToInsert),
-      ],
-    );
-    return recordToInsert;
-  });
-  return { record, path: controlPlaneStoreSource() };
 }
 
 export async function lookupProcessedStripeWebhookState(

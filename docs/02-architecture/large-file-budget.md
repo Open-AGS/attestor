@@ -112,6 +112,10 @@ Completed:
 - `src/service/control-plane-store.ts` now re-exports pipeline idempotency state
   from `src/service/control-plane-store/pipeline-idempotency-state.ts`, keeping
   the existing facade while isolating the pipeline replay/advisory-lock family.
+- `src/service/control-plane-store.ts` now imports and re-exports admin audit
+  and admin idempotency state from `src/service/control-plane-store/admin-audit-state.ts`
+  and `src/service/control-plane-store/admin-idempotency-state.ts`, keeping
+  the existing facade while isolating the admin replay/audit families.
 
 Next:
 

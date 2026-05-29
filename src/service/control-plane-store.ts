@@ -207,21 +207,24 @@ import {
   type AsyncDeadLetterRecord,
 } from './async/async-dead-letter-store.js';
 import { hashJsonValue } from './json-stable.js';
-import { CONTROL_PLANE_SCHEMA_SQL } from './control-plane-store/schema.js';
+import {
+  closeControlPlanePgPoolForTests,
+  controlPlaneStoreMode,
+  controlPlaneStoreSource,
+  ensureControlPlanePgSchema as ensureSchema,
+  getControlPlanePgPool as getPool,
+  hasControlPlanePgPoolForTests,
+  isSharedControlPlaneConfigured,
+  type PgClient,
+  type PgPool,
+  type PgQueryResultRow,
+  withControlPlanePgTransaction as withPgTransaction,
+} from './control-plane-store/pg.js';
 import { DEFAULT_HOSTED_PLAN_ID, resolvePlanQuotaPolicy, resolvePlanSpec } from './plan-catalog.js';
 import { hashSecretForLookup } from './secret-derivation.js';
 import type { HostedSamlReplayRecord } from './account/account-saml.js';
 
-type PgQueryResultRow = Record<string, unknown>;
-type PgClient = {
-  query: (sql: string, params?: unknown[]) => Promise<{ rows: PgQueryResultRow[] }>;
-  release: () => void;
-};
-type PgPool = {
-  query: (sql: string, params?: unknown[]) => Promise<{ rows: PgQueryResultRow[] }>;
-  connect: () => Promise<PgClient>;
-  end: () => Promise<void>;
-};
+export { controlPlaneStoreMode, controlPlaneStoreSource, isSharedControlPlaneConfigured };
 
 export interface HostedAccountStoreSnapshot {
   version: 1;
@@ -299,8 +302,6 @@ export interface AsyncDeadLetterStoreSnapshot {
 
 export interface EmailDeliveryEventStoreSnapshot extends HostedEmailDeliveryEventStoreSnapshot {}
 
-let poolPromise: Promise<PgPool> | null = null;
-let initPromise: Promise<void> | null = null;
 type StripeWebhookClaimLease = {
   client: PgClient;
   advisoryLockKey: string;
@@ -312,50 +313,6 @@ export type StripeWebhookClaimState =
   | { kind: 'claimed'; payloadHash: string; record: StripeWebhookRecord; claimId: string }
   | { kind: 'duplicate'; payloadHash: string; record: StripeWebhookRecord }
   | { kind: 'conflict'; payloadHash: string; record: StripeWebhookRecord };
-
-function connectionString(): string | null {
-  return process.env.ATTESTOR_CONTROL_PLANE_PG_URL?.trim() || null;
-}
-
-export function controlPlaneStoreMode(): 'postgres' | 'file' {
-  return connectionString() ? 'postgres' : 'file';
-}
-
-export function isSharedControlPlaneConfigured(): boolean {
-  return controlPlaneStoreMode() === 'postgres';
-}
-
-export function controlPlaneStoreSource(): string | null {
-  return connectionString();
-}
-
-async function getPool(): Promise<PgPool> {
-  const connectionUrl = connectionString();
-  if (!connectionUrl) {
-    throw new Error('Shared control-plane store is disabled. Set ATTESTOR_CONTROL_PLANE_PG_URL.');
-  }
-  if (!poolPromise) {
-    poolPromise = (async () => {
-      const pg = await (Function('return import("pg")')() as Promise<any>);
-      const Pool = pg.Pool ?? pg.default?.Pool;
-      if (!Pool) {
-        throw new Error('pg.Pool is not available for the shared control-plane store.');
-      }
-      return new Pool({ connectionString: connectionUrl }) as PgPool;
-    })();
-  }
-  return poolPromise;
-}
-
-async function ensureSchema(): Promise<void> {
-  if (!initPromise) {
-    initPromise = (async () => {
-      const pool = await getPool();
-      await pool.query(CONTROL_PLANE_SCHEMA_SQL);
-    })();
-  }
-  await initPromise;
-}
 
 function hashApiKey(apiKey: string): string {
   return hashSecretForLookup(apiKey, 'tenant.api-key');
@@ -731,27 +688,6 @@ function advisoryLockKey(namespace: string): string {
     value -= 0x1_0000_0000_0000_0000n;
   }
   return value.toString();
-}
-
-async function withPgTransaction<T>(work: (client: PgClient) => Promise<T>): Promise<T> {
-  await ensureSchema();
-  const pool = await getPool();
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-    const result = await work(client);
-    await client.query('COMMIT');
-    return result;
-  } catch (err) {
-    try {
-      await client.query('ROLLBACK');
-    } catch {
-      // surface original error
-    }
-    throw err;
-  } finally {
-    client.release();
-  }
 }
 
 async function releaseStripeWebhookPgClaimLease(claimId: string): Promise<void> {
@@ -4225,14 +4161,9 @@ export async function resetSharedControlPlaneStoreForTests(): Promise<void> {
   if (stripeWebhookClaimLeases.size > 0) {
     await Promise.all([...stripeWebhookClaimLeases.keys()].map((claimId) => releaseStripeWebhookPgClaimLease(claimId)));
   }
-  if (!poolPromise && !connectionString()) return;
+  if (!hasControlPlanePgPoolForTests() && !controlPlaneStoreSource()) return;
   if (!isSharedControlPlaneConfigured()) {
-    if (poolPromise) {
-      const pool = await poolPromise;
-      await pool.end();
-    }
-    poolPromise = null;
-    initPromise = null;
+    await closeControlPlanePgPoolForTests();
     return;
   }
   const pool = await getPool();
@@ -4252,7 +4183,5 @@ export async function resetSharedControlPlaneStoreForTests(): Promise<void> {
     DROP TABLE IF EXISTS attestor_control_plane.tenant_api_keys;
     DROP TABLE IF EXISTS attestor_control_plane.hosted_accounts;
   `);
-  await pool.end();
-  poolPromise = null;
-  initPromise = null;
+  await closeControlPlanePgPoolForTests();
 }

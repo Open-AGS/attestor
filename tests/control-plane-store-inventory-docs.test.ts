@@ -18,17 +18,18 @@ try {
   for (const expected of [
     'Status: first split started.',
     '`src/service/control-plane-store.ts` as a compatibility facade',
-    '| PostgreSQL connection and schema bootstrap | 316-359 plus `schema.ts` |',
+    '| PostgreSQL connection and schema bootstrap | `pg.ts` plus `schema.ts` |',
     '`control-plane-store/schema.ts`',
-    '| Hosted account and billing state facade | 1461-1971 |',
-    '| Tenant keys and usage state facade | 1972-2240 |',
-    '| Account users, sessions, tokens, SAML replay | 2241-2734 |',
-    '| Admin audit and admin idempotency | 2752-2968 |',
-    '| Pipeline idempotency | 2969-3117 |',
-    '| Stripe webhook processing | 3118-3400 |',
-    '| Async dead-letter and hosted email delivery | 3401-3742 |',
-    '| Snapshot export/restore and test reset | 3743-4258 |',
-    'Schema SQL extraction is complete; PG helper extraction',
+    '`control-plane-store/pg.ts`',
+    '| Hosted account and billing state facade | 1397-1907 |',
+    '| Tenant keys and usage state facade | 1908-2176 |',
+    '| Account users, sessions, tokens, SAML replay | 2177-2687 |',
+    '| Admin audit and admin idempotency | 2688-2908 |',
+    '| Pipeline idempotency | 2909-3053 |',
+    '| Stripe webhook processing | 3054-3336 |',
+    '| Async dead-letter and hosted email delivery | 3337-3633 |',
+    '| Snapshot export/restore and test reset | 3634-4187 |',
+    'Schema SQL and PG helper extraction are complete.',
     'No behavior change in the store-family split PR.',
     'No schema change unless it is isolated in a separate migration PR.',
     'No production, multi-region, RLS, or live HA claim from this refactor.',
@@ -47,14 +48,24 @@ try {
     'Large-file budget records the schema extraction slice',
   );
   includes(
-    readProjectFile('src', 'service', 'control-plane-store.ts'),
-    "import { CONTROL_PLANE_SCHEMA_SQL } from './control-plane-store/schema.js';",
-    'Control-plane store facade imports the isolated schema SQL module',
+    budget,
+    '`src/service/control-plane-store.ts` now imports PostgreSQL pool, schema, and',
+    'Large-file budget records the PG helper extraction slice',
   );
   includes(
     readProjectFile('src', 'service', 'control-plane-store', 'schema.ts'),
     'CREATE TABLE IF NOT EXISTS attestor_control_plane.hosted_accounts',
     'Control-plane schema module keeps hosted account table DDL',
+  );
+  includes(
+    readProjectFile('src', 'service', 'control-plane-store', 'pg.ts'),
+    "import { CONTROL_PLANE_SCHEMA_SQL } from './schema.js';",
+    'Control-plane PG helper module imports the isolated schema SQL module',
+  );
+  includes(
+    readProjectFile('src', 'service', 'control-plane-store.ts'),
+    "from './control-plane-store/pg.js';",
+    'Control-plane store facade imports the isolated PG helper module',
   );
   includes(
     packageJson,

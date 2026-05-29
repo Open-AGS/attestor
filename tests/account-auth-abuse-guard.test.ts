@@ -1,5 +1,5 @@
 import { strict as assert } from 'node:assert';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   authAbuseGuardPolicy,
@@ -16,6 +16,14 @@ let passed = 0;
 function ok(condition: boolean, msg: string): void {
   assert(condition, msg);
   passed++;
+}
+
+function readAccountRouteSources(): string {
+  const routeDir = join(process.cwd(), 'src', 'service', 'http', 'routes');
+  return readdirSync(routeDir)
+    .filter((file) => /^account.*\.ts$/u.test(file))
+    .map((file) => readFileSync(join(routeDir, file), 'utf8'))
+    .join('\n');
 }
 
 const envKeys = [
@@ -212,7 +220,7 @@ function run() {
     }
 
     {
-      const routeSource = readFileSync(join(process.cwd(), 'src', 'service', 'http', 'routes', 'account-routes.ts'), 'utf8');
+      const routeSource = readAccountRouteSources();
       const routeHelperSource = readFileSync(
         join(process.cwd(), 'src', 'service', 'http', 'routes', 'account-route-helpers.ts'),
         'utf8',

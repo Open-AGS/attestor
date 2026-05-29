@@ -50,6 +50,14 @@ function readReleasePolicyControlRouteSources(): string {
     .join('\n');
 }
 
+function readAdminRouteSources(): string {
+  const routeDir = join(process.cwd(), 'src', 'service', 'http', 'routes');
+  return readdirSync(routeDir)
+    .filter((file) => /^admin(?:-|$).*\.ts$/u.test(file))
+    .map((file) => readFileSync(join(routeDir, file), 'utf8'))
+    .join('\n');
+}
+
 const routeFiles = [
   ['src', 'service', 'http', 'routes', 'core-routes.ts'],
   ['src', 'service', 'http', 'routes', 'account-routes.ts'],
@@ -59,6 +67,11 @@ const routeFiles = [
   ['src', 'service', 'http', 'routes', 'account-admin-user-routes.ts'],
   ['src', 'service', 'http', 'routes', 'account-billing-routes.ts'],
   ['src', 'service', 'http', 'routes', 'admin-routes.ts'],
+  ['src', 'service', 'http', 'routes', 'admin-read-routes.ts'],
+  ['src', 'service', 'http', 'routes', 'admin-queue-routes.ts'],
+  ['src', 'service', 'http', 'routes', 'admin-account-mutation-routes.ts'],
+  ['src', 'service', 'http', 'routes', 'admin-tenant-key-routes.ts'],
+  ['src', 'service', 'http', 'routes', 'admin-release-enforcement-routes.ts'],
   ['src', 'service', 'http', 'routes', 'action-surface-onboarding-routes.ts'],
   ['src', 'service', 'http', 'routes', 'policy-foundry-hosted-onboarding-routes.ts'],
   ['src', 'service', 'http', 'routes', 'release-review-routes.ts'],
@@ -279,7 +292,7 @@ function testImplementationEvidenceMatchesMatrix(): void {
   const requestContext = readProjectFile('src', 'service', 'request-context.ts');
   const tenantIsolation = readProjectFile('src', 'service', 'tenant-isolation.ts');
   const accountRoutes = readAccountRouteSources();
-  const adminRoutes = readProjectFile('src', 'service', 'http', 'routes', 'admin-routes.ts');
+  const adminRoutes = readAdminRouteSources();
   const releaseAdminAuthorization = readProjectFile('src', 'service', 'http', 'release-admin-authorization.ts');
   const releasePolicyRoutes = readReleasePolicyControlRouteSources();
   const releaseReviewRoutes = readProjectFile('src', 'service', 'http', 'routes', 'release-review-routes.ts');

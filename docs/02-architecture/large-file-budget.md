@@ -181,11 +181,16 @@ Completed:
   `src/service/http/routes/shadow-simulation-history-routes.ts` and shares
   mutation idempotency, rate-limit, and audit helpers through
   `src/service/http/routes/shadow-mutation-route-helpers.ts`.
+- `src/service/http/routes/shadow-routes.ts` now delegates policy candidate,
+  Policy Foundry readiness/active-question/red-team, promotion draft/packet/
+  simulation, bundle publication, and candidate status routes to
+  `src/service/http/routes/shadow-policy-foundry-promotion-routes.ts`.
 
 Next:
 
-1. Split `src/service/http/routes/shadow-routes.ts` policy-foundry and
-   promotion routes by route family.
+1. Split `src/service/http/routes/shadow-routes.ts` downstream verification,
+   downstream integration, activation readiness, activation handoff, and
+   activation receipt routes by route family.
 2. Leave `src/service/http/routes/account-routes.ts` for a separate route-matrix
    wave after V2.
 3. Touch crypto/protocol adapters only where module-specific risk warrants it.

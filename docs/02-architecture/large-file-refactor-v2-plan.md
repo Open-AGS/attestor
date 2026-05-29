@@ -38,7 +38,7 @@ References:
 |---|---:|---:|---|
 | `src/service/control-plane-store.ts` | 3415 | 700-1000 | store-family extraction behind compatibility facade |
 | `src/consequence-admission/index.ts` | 108 after V2-12 | achieved | compatibility facade over split public-surface and engine-helper modules |
-| `src/service/http/routes/shadow-routes.ts` | 2504 after V2-14 | 900-1300 | route-family extraction behind `registerShadowRoutes` |
+| `src/service/http/routes/shadow-routes.ts` | 1611 after V2-15 | 900-1300 | route-family extraction behind `registerShadowRoutes` |
 
 Estimated moved code: 6500-7500 lines into smaller responsibility-named modules.
 
@@ -60,7 +60,7 @@ Estimated moved code: 6500-7500 lines into smaller responsibility-named modules.
 | 12 | `consequence-admission/index.ts`: engine helpers split and closeout | complete; facade now 108 lines | admission mode ladder, generic routes, package-surface probe, typecheck, hygiene |
 | 13 | `shadow-routes.ts`: summary/dashboard/audit routes | complete; extracted to `shadow-summary-dashboard-routes.ts` | shadow summary/dashboard route tests, typecheck, hygiene |
 | 14 | `shadow-routes.ts`: simulation/history routes | complete; extracted to `shadow-simulation-history-routes.ts` plus shared mutation helpers | shadow simulation/history tests, tenant boundary, typecheck, hygiene |
-| 15 | `shadow-routes.ts`: policy-foundry/promotion routes | 800-1100 | policy-foundry, promotion, bundle publication tests, typecheck, hygiene |
+| 15 | `shadow-routes.ts`: policy-foundry/promotion routes | complete; extracted to `shadow-policy-foundry-promotion-routes.ts` | policy-foundry, promotion, bundle publication tests, typecheck, hygiene |
 | 16 | `shadow-routes.ts`: activation/receipt routes plus closeout | 500-800 | activation, handoff, receipt, shadow HTTP tests, large-file budget |
 
 ## Parity Locks Before Moves

@@ -235,12 +235,21 @@ Completed:
   `src/financial/types/live-proof.ts`,
   `src/financial/types/output-dossier.ts`, and
   `src/financial/types/semantic.ts`.
+- `tests/live-api.test.ts` is now a small integration-suite facade over
+  responsibility-named live API flow modules under `tests/live-api/`, keeping
+  the full hosted/runtime route proof while removing the former monolithic live
+  test file from the hard-limit registry.
+- `tests/generic-admission-mode-ladder.test.ts` and
+  `tests/generic-admission-routes.test.ts` are now small facades over
+  responsibility-named generic admission test-family modules, keeping the
+  existing package scripts stable while removing both former monolithic tests
+  from the hard-limit registry.
 
 Next:
 
 1. Continue the final wave from
    [Final Large File Refactor Plan](final-large-file-refactor-plan.md), starting
-   with `F-14` live API and generic admission test-family extraction.
+   with `F-15` financial test split and final registry/docs closeout.
 2. Touch crypto/protocol adapters only where module-specific risk warrants it.
 
 ## No-Claims

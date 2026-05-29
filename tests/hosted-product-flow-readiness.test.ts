@@ -13,6 +13,18 @@ function readProjectFile(...segments: string[]): string {
   return readFileSync(join(process.cwd(), ...segments), 'utf8');
 }
 
+function readLiveApiSurface(): string {
+  return [
+    ['tests', 'live-api.test.ts'],
+    ['tests', 'live-api', 'runtime-pipeline-flow.ts'],
+    ['tests', 'live-api', 'hosted-plan-usage-flow.ts'],
+    ['tests', 'live-api', 'hosted-account-identity-flow.ts'],
+    ['tests', 'live-api', 'hosted-billing-observability-flow.ts'],
+    ['tests', 'live-api', 'hosted-user-signup-api-key-flow.ts'],
+    ['tests', 'live-api', 'admin-tenant-key-flow.ts'],
+  ].map((segments) => readProjectFile(...segments)).join('\n');
+}
+
 function ok(condition: unknown, message: string): void {
   assert.ok(condition, message);
   passed += 1;
@@ -87,7 +99,7 @@ function testCompletionSourcesAgree(): void {
   const tracker = readProjectFile('docs', '02-architecture', 'hosted-product-flow-buildout.md');
   const audit = readProjectFile('docs', '01-overview', 'hosted-product-flow-audit.md');
   const systemOverview = readProjectFile('docs', '02-architecture', 'system-overview.md');
-  const liveApi = readProjectFile('tests', 'live-api.test.ts');
+  const liveApi = readLiveApiSurface();
 
   includes(tracker, '| Completed | 8 |', 'Hosted readiness: tracker records eight completed steps');
   includes(tracker, '| 08 | complete | Add final docs truth-source and readiness gate |', 'Hosted readiness: tracker records Step 08 completion');

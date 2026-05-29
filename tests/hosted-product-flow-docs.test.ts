@@ -8,6 +8,18 @@ function readProjectFile(...segments: string[]): string {
   return readFileSync(join(process.cwd(), ...segments), 'utf8');
 }
 
+function readLiveApiSurface(): string {
+  return [
+    ['tests', 'live-api.test.ts'],
+    ['tests', 'live-api', 'runtime-pipeline-flow.ts'],
+    ['tests', 'live-api', 'hosted-plan-usage-flow.ts'],
+    ['tests', 'live-api', 'hosted-account-identity-flow.ts'],
+    ['tests', 'live-api', 'hosted-billing-observability-flow.ts'],
+    ['tests', 'live-api', 'hosted-user-signup-api-key-flow.ts'],
+    ['tests', 'live-api', 'admin-tenant-key-flow.ts'],
+  ].map((segments) => readProjectFile(...segments)).join('\n');
+}
+
 function readAccountRouteSources(): string {
   const routeDir = join(process.cwd(), 'src', 'service', 'http', 'routes');
   return readdirSync(routeDir)
@@ -408,7 +420,7 @@ function testHostedJourneyRoutesMatchShippedRoutes(): void {
 
 function testRuntimeCoverageGatesAreNamed(): void {
   const packageJson = readProjectFile('package.json');
-  const liveApi = readProjectFile('tests', 'live-api.test.ts');
+  const liveApi = readLiveApiSurface();
   const productionProbe = readProjectFile('scripts', 'probe', 'probe-production-hosted-flow.ts');
 
   includes(packageJson, '"test:hosted-product-flow-docs"', 'Hosted product flow docs: package script exposes docs guard');

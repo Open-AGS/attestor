@@ -17,6 +17,10 @@ function readProjectFile(path: string): string {
   return readFileSync(join(process.cwd(), path), 'utf8');
 }
 
+function readProjectFiles(paths: string[]): string {
+  return paths.map((path) => readProjectFile(path)).join('\n');
+}
+
 const indexSource = readProjectFile('src/consequence-admission/index.ts');
 const engineSource = readProjectFile('src/consequence-admission/engine.ts');
 const buildersSource = readProjectFile('src/consequence-admission/builders.ts');
@@ -26,7 +30,13 @@ const genericInputNormalizationSource =
 const correctionCatalogSource = readProjectFile('src/consequence-admission/correction-catalog.ts');
 const publicSurfaceSource = readProjectFile('src/consequence-admission/public-surface.ts');
 const contractTest = readProjectFile('tests/consequence-admission-contract.test.ts');
-const genericModeTest = readProjectFile('tests/generic-admission-mode-ladder.test.ts');
+const genericModeTest = readProjectFiles([
+  'tests/generic-admission-mode-ladder.test.ts',
+  'tests/generic-admission-mode-ladder/core-mode-tests.ts',
+  'tests/generic-admission-mode-ladder/authority-approval-no-go-tests.ts',
+  'tests/generic-admission-mode-ladder/supply-review-delegation-tests.ts',
+  'tests/generic-admission-mode-ladder/drift-authority-scope-tests.ts',
+]);
 const retryLedgerTest = readProjectFile('tests/retry-attempt-ledger.test.ts');
 const sharedAtomicStoreTest = readProjectFile('tests/consequence-shared-atomic-stores.test.ts');
 const subSweepReport = readProjectFile('docs/audit/ops-170-consequence-admission-index-focused-sub-sweep.md');

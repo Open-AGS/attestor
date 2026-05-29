@@ -22,9 +22,7 @@ const CODE_EXTENSIONS = Object.freeze([
 
 const HARD_LIMIT_REGISTRY = Object.freeze([
   { path: 'src/service/control-plane-store.ts', maxLines: 3415, reason: 'P2 store-family split in progress; schema, PG helpers, mapper helpers, pipeline idempotency, and admin state extracted; compatibility facade must keep shrinking.' },
-  { path: 'tests/live-api.test.ts', maxLines: 3408, reason: 'P2 live API test matrix; split by live surface after route/runtime priorities are stable.' },
   { path: 'src/service/http/routes/account-routes.ts', maxLines: 2588, reason: 'P2 route-family split planned; account auth/session/MFA/user flows require route-matrix coverage.' },
-  { path: 'tests/generic-admission-mode-ladder.test.ts', maxLines: 1861, reason: 'P2 admission-mode matrix; split only after guard route matrix stays stable.' },
   { path: 'src/crypto-authorization-core/modular-account-adapters.ts', maxLines: 1836, reason: 'P4 protocol adapter exception; split only by coherent adapter helper boundaries.' },
   { path: 'src/crypto-authorization-core/x402-agentic-payment-adapter.ts', maxLines: 1796, reason: 'P4 protocol adapter exception; x402 behavior is trust-sensitive and should split only with focused tests.' },
   { path: 'src/service/http/routes/release-policy-control-routes.ts', maxLines: 1679, reason: 'P2 route-family split planned after shadow/account route splits prove the route split pattern.' },
@@ -41,7 +39,6 @@ const HARD_LIMIT_REGISTRY = Object.freeze([
   { path: 'src/crypto-execution-admission/conformance-fixtures.ts', maxLines: 1336, reason: 'P4 conformance fixture registry exception; split only if fixture families move with tests.' },
   { path: 'src/release-kernel/release-evidence-pack.ts', maxLines: 1322, reason: 'P4 release evidence pack exception; proof material split needs canonicalization and DSSE tests.' },
   { path: 'src/release-enforcement-plane/async-envelope.ts', maxLines: 1305, reason: 'P4 enforcement-envelope exception; split only with async envelope verifier coverage.' },
-  { path: 'tests/generic-admission-routes.test.ts', maxLines: 1298, reason: 'P2 route test matrix; split after generic admission route fixture helpers are stable.' },
   { path: 'src/crypto-authorization-core/approval-allowance-consequence.ts', maxLines: 1292, reason: 'P4 crypto authorization exception; split only with allowance/consequence behavioral coverage.' },
   { path: 'src/crypto-execution-admission/intent-solver.ts', maxLines: 1258, reason: 'P4 crypto execution adapter exception; intent solver route binding is trust-sensitive.' },
   { path: 'src/consequence-admission/general-crypto-transaction-gate.ts', maxLines: 1211, reason: 'P4 crypto gate exception; general crypto gate should split only with crypto gate golden tests.' },

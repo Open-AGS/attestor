@@ -49,9 +49,9 @@ References:
 | `src/service/bootstrap/release-runtime.ts` | 951 | 800-1200 cohesive facade | release runtime bootstrap extraction |
 | `src/service/bootstrap/release-tenant-signer-boundary.ts` | 928 | 800-1200 cohesive facade | release tenant signer boundary extraction |
 | `src/financial/types.ts` | 12 facade + type modules <=403 | closed | financial type-family extraction |
-| `tests/live-api.test.ts` | 3408 | split by live surface | live API test-family extraction |
-| `tests/generic-admission-mode-ladder.test.ts` | 1861 | split by mode/guard matrix | generic admission mode test-family extraction |
-| `tests/generic-admission-routes.test.ts` | 1298 | split by route matrix | generic admission route test-family extraction |
+| `tests/live-api.test.ts` | 141 facade + modules <= 882 | closed | live API test-family extraction |
+| `tests/generic-admission-mode-ladder.test.ts` | 10 facade + modules <= 578 | closed | generic admission mode test-family extraction |
+| `tests/generic-admission-routes.test.ts` | 10 facade + modules <= 367 | closed | generic admission route test-family extraction |
 | `tests/financial.test.ts` | 1674 | split by financial scenario | financial test-family extraction |
 
 Estimated moved code: 18000-22000 lines into smaller responsibility-named
@@ -59,8 +59,8 @@ modules and test files.
 
 Current execution status:
 
-- `F-00` through `F-13` are closed repo-side.
-- Next round: `F-14` live API and generic admission test-family extraction.
+- `F-00` through `F-14` are closed repo-side.
+- Next round: `F-15` financial test split and final registry/docs closeout.
 
 ## Planned Rounds
 

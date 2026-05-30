@@ -40,7 +40,7 @@ function testReadmeHasAPlainFirstThirtySeconds(): void {
   includes(readme, '**Control infrastructure for high-risk AI-driven operations.**', 'README: opens with the short product promise');
   includes(readme, 'Attestor sits between an AI-prepared action and the system that would execute it.', 'README: opens with plain placement language');
   includes(readme, 'Prompts guide. They do not enforce.', 'README: keeps the prompt-control contrast');
-  includes(readme, 'Bad actions can come from hallucination, stale context, poisoned tool output', 'README: explains why a proposed action can be unsafe');
+  includes(readme, 'Unsafe proposed actions can come from hallucination, stale context, poisoned', 'README: explains why a proposed action can be unsafe');
   includes(readme, 'Hostile content still has to pass action, authority, scope, freshness, replay', 'README: names outside manipulation without overclaiming');
   includes(readme, 'Every decision leaves a trail', 'README: shows that the decision stays reviewable');
   includes(readme, '## One Concrete Workflow', 'README: starts with one concrete workflow before abstract categories');

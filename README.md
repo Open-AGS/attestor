@@ -8,8 +8,8 @@ Attestor sits between an AI-prepared action and the system that would execute it
 
 Prompts guide. They do not enforce.
 
-Bad actions can come from hallucination, stale context, poisoned tool output,
-replayed requests, missing approval, or hostile content.
+Unsafe proposed actions can come from hallucination, stale context, poisoned
+tool output, replayed requests, missing approval, or hostile content.
 
 A prompt cannot stop a refund service, export job, identity admin, deploy tool, or wallet adapter.
 

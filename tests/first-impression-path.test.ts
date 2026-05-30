@@ -38,10 +38,10 @@ function testReadmeHasAPlainFirstThirtySeconds(): void {
   const readme = readProjectFile('README.md');
 
   includes(readme, '**Control infrastructure for high-risk AI-driven operations.**', 'README: opens with the short product promise');
-  includes(readme, 'Attestor sits between an AI-prepared action and the system that would execute it.', 'README: opens with plain placement language');
+  includes(readme, 'Attestor sits between an AI-prepared operation and the system that would execute it.', 'README: opens with plain placement language');
   includes(readme, 'Prompts guide. They do not enforce.', 'README: keeps the prompt-control contrast');
-  includes(readme, 'Unsafe proposed actions can come from hallucination, stale context, poisoned', 'README: explains why a proposed action can be unsafe');
-  includes(readme, 'Hostile content still has to pass action, authority, scope, freshness, replay', 'README: names outside manipulation without overclaiming');
+  includes(readme, 'Unsafe proposed requests can come from hallucination, stale context, poisoned', 'README: explains why a proposed request can be unsafe');
+  includes(readme, 'Hostile content still has to pass authority, scope, freshness, replay', 'README: names outside manipulation without overclaiming');
   includes(readme, 'Every decision leaves a trail', 'README: shows that the decision stays reviewable');
   includes(readme, '## One Concrete Workflow', 'README: starts with one concrete workflow before abstract categories');
   includes(readme, 'Refund $8,750 to customer_123 for order_789.', 'README: shows one high-risk action immediately');
@@ -52,19 +52,19 @@ function testReadmeHasAPlainFirstThirtySeconds(): void {
     'manager approval is missing',
     'README: gives the concrete stop reason',
   );
-  includes(readme, 'that AI-prepared action can become a real refund call', 'README: shows the without-gate failure mode');
-  includes(readme, 'The trail remains: proposed action', 'README: shows the trail left by the decision');
+  includes(readme, 'that AI-prepared request can become a real refund call', 'README: shows the without-gate failure mode');
+  includes(readme, 'The trail remains: proposed request', 'README: shows the trail left by the decision');
   includes(readme, 'The repo demo is synthetic and shadow-only', 'README: keeps local-demo no-claims close to the example');
   appearsBefore(readme, '## One Concrete Workflow', '## What It Does', 'README: concrete story comes before broad mechanism');
   appearsBefore(readme, '## Why This Matters Now', '## What It Does', 'README: urgency comes before broad mechanism');
-  appearsBefore(readme, '## One Concrete Workflow', '## The Same Pattern Across Actions', 'README: concrete story comes before pack taxonomy');
+  appearsBefore(readme, '## One Concrete Workflow', '## The Same Pattern Across Operations', 'README: concrete story comes before pack taxonomy');
 }
 
 function testReadmeKeepsTheControlBoundaryAndLocalRunPath(): void {
   const readme = readProjectFile('README.md');
   const demoGuide = readProjectFile('docs', '01-overview', 'demo-guide.md');
 
-  includes(readme, 'AI proposes action', 'README: keeps the core flow start');
+  includes(readme, 'proposes an operation', 'README: keeps the core flow start');
   includes(readme, 'It checks policy, approval, evidence, allowed scope, freshness, replay, tenant', 'README: keeps the check vocabulary');
   includes(readme, 'The real service should run only through the customer-owned gate.', 'README: keeps the customer gate boundary');
   includes(readme, 'Without a customer-side gate, gateway, verifier, or adapter, the decision is', 'README: makes advisory versus control posture explicit');
@@ -85,7 +85,7 @@ function testReadmeKeepsEvaluationTruthBeforeDeepDocs(): void {
   includes(readme, 'Package version: 0.2.0-evaluation', 'README: states current package version plainly');
   includes(readme, 'Release stage:   evaluation release', 'README: states evaluation-release status plainly');
   includes(readme, 'Release type:    GitHub pre-release / Golden Path evaluation baseline', 'README: states current release type plainly');
-  includes(readme, 'The same gate can sit before these action classes:', 'README: keeps cross-action framing concise');
+  includes(readme, 'The same gate can sit before these operation classes:', 'README: keeps cross-operation framing concise');
   includes(readme, 'This is a control point, not a data lake.', 'README: states data posture plainly');
   appearsBefore(readme, '## Current State', '## Data Posture', 'README: current state comes before deeper trust posture');
   excludes(readme, /## Decision Model/u, 'README: should not keep a separate decision-model section');

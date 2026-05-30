@@ -4,19 +4,19 @@
 
 **Control infrastructure for high-risk AI-driven operations.**
 
-Attestor sits between an AI-prepared action and the system that would execute it.
+Attestor sits between an AI-prepared operation and the system that would execute it.
 
 Prompts guide. They do not enforce.
 
-Unsafe proposed actions can come from hallucination, stale context, poisoned
+Unsafe proposed requests can come from hallucination, stale context, poisoned
 tool output, replayed requests, missing approval, or hostile content.
 
 A prompt cannot stop a refund service, export job, identity admin, deploy tool, or wallet adapter.
 
-The stop point has to sit before the real action: check the structured action,
+The stop point has to sit before execution: check the structured request,
 then return `admit`, `narrow`, `review`, or `block`.
 
-Hostile content still has to pass action, authority, scope, freshness, replay,
+Hostile content still has to pass authority, scope, freshness, replay,
 and evidence checks before anything runs.
 
 Every decision leaves a trail: what was proposed, what was checked, why it held
@@ -31,8 +31,8 @@ The risky part is the next call: `refundService.issueRefund(...)`.
 The gate stops it before the service runs: manager approval is missing,
 order/customer binding is incomplete, and duplicate-refund risk is visible.
 
-Without this gate, that AI-prepared action can become a real refund call.
-With a customer-owned gate, no money moves. The trail remains: proposed action,
+Without this gate, that AI-prepared request can become a real refund call.
+With a customer-owned gate, no money moves. The trail remains: proposed request,
 stop reason, reason codes, evidence references, proof references, and the next
 safe step.
 
@@ -62,7 +62,7 @@ The real service should run only through the customer-owned gate.
 
 ```text
 AI agent
-  -> AI proposes action
+  -> proposes an operation
 Attestor
   -> admit / narrow / review / block + reasons and proof references
 Customer-owned gate
@@ -76,11 +76,11 @@ Run Attestor in shadow pilot mode - and map what your AI agents are trying to do
 
 [Run Attestor in shadow pilot mode](docs/01-overview/shadow-event-payload-examples.md)
 
-## The Same Pattern Across Actions
+## The Same Pattern Across Operations
 
-The same gate can sit before these action classes:
+The same gate can sit before these operation classes:
 
-| Action class | Examples |
+| Operation class | Examples |
 |---|---|
 | Money Movement | refunds, payouts, supplier payments, credits, adjustments |
 | Data Movement | customer exports, warehouse queries, report releases |
@@ -105,7 +105,7 @@ completed customer deployment, or a substitute for an external security audit.
 
 This is a control point, not a data lake.
 
-It needs structured action context and proof references, not raw customer data.
+It needs structured request context and proof references, not raw customer data.
 Customer systems keep the model, agent, workflow, wallet, database, service
 call, and system of record.
 

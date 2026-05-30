@@ -29,12 +29,12 @@ function testReadmePublicClaimBoundary(): void {
   );
   includes(
     readme,
-    'Attestor sits between an AI-prepared action and the system that would execute it.',
+    'Attestor sits between an AI-prepared operation and the system that would execute it.',
     'Final claim alignment: README keeps primary placement sentence',
   );
   includes(
     readme,
-    'The stop point has to sit before the real action:',
+    'The stop point has to sit before execution:',
     'Final claim alignment: README keeps proposed-action stop-point sentence',
   );
   includes(

@@ -29,7 +29,7 @@ function testReadmeStartsWithAConcreteWorkflow(): void {
   includes(readme, '**Control infrastructure for high-risk AI-driven operations.**', 'Product docs: README keeps the short product promise');
   includes(readme, 'Attestor sits between an AI-prepared action and the system that would execute it.', 'Product docs: README starts with plain placement language');
   includes(readme, 'Prompts guide. They do not enforce.', 'Product docs: README keeps the prompt-control contrast');
-  includes(readme, 'Bad actions can come from hallucination, stale context, poisoned tool output', 'Product docs: README explains AI/action risk in plain language');
+  includes(readme, 'Unsafe proposed actions can come from hallucination, stale context, poisoned', 'Product docs: README explains AI/action risk in plain language');
   includes(readme, 'A prompt cannot stop a refund service, export job, identity admin, deploy tool, or wallet adapter.', 'Product docs: README preserves the prompt-boundary thesis in plain language');
   includes(readme, 'Hostile content still has to pass action, authority, scope, freshness, replay', 'Product docs: README names outside manipulation without turning it into a security guarantee');
   includes(readme, 'Every decision leaves a trail', 'Product docs: README explains the audit trail in plain language');

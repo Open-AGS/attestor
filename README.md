@@ -8,16 +8,18 @@
 
 Attestor sits between what an AI wants to do and the system that would do it.
 
-It does not try to make the model perfect.
-It controls the proposed action before a customer system acts.
-
 Prompts guide. They do not enforce.
 
-A prompt can guide an AI. It cannot stop a refund service, export job, identity
-admin, deploy tool, or wallet adapter when the proposed action is hallucinated, manipulated, replayed, over-scoped, or missing approval.
+Bad instructions can come from hallucination, stale context, tool-result mistakes, replayed requests, missing approval, or hostile input in email, tickets, web pages, documents, tool output, or another agent.
+
+A prompt cannot stop a refund service, export job, identity admin, deploy tool, or wallet adapter.
 
 The stop point has to sit before the real action. Attestor checks the structured
 action and returns `admit`, `narrow`, `review`, or `block`.
+
+That same boundary helps against outside manipulation: hostile content still has to pass action, authority, scope, freshness, replay, and evidence checks before anything runs.
+
+The decision leaves a traceable trail: what was proposed, what was checked, why it held or blocked, reason codes, and evidence/proof references.
 
 ## One Concrete Workflow
 
@@ -29,7 +31,7 @@ Attestor stops it before the service runs because manager approval is missing,
 the order/customer binding is incomplete, and duplicate-refund risk is visible.
 
 Without Attestor, that AI-prepared action can become a real refund call.
-With Attestor and a customer-owned gate, no money moves. The decision keeps the trail: proposed action, reason codes, evidence references, and proof references.
+With Attestor and a customer-owned gate, no money moves. The audit trail remains: proposed action, stop reason, reason codes, evidence references, proof references, and the next safe step.
 
 This repository demo is synthetic and shadow-only. It does not call Stripe, Shopify, a bank, or a live customer deployment.
 
@@ -70,9 +72,7 @@ Run Attestor in shadow pilot mode - and map what your AI agents are trying to do
 
 ## The Same Pattern Across Actions
 
-The refund example is the first story, not the whole product.
-
-The same control pattern extends to:
+The same gate can sit before these action classes:
 
 | Action class | Examples |
 |---|---|
@@ -82,9 +82,6 @@ The same control pattern extends to:
 | External Communication | customer-facing, legal, billing, support, public messages |
 | Operational Execution | deploys, secret rotations, infrastructure changes, incidents |
 | Programmable Money | wallet calls, Safe transactions, account-abstraction flows, settlement intents |
-
-These are examples over one Attestor engine.
-They are not separate products and not equal-maturity claims.
 
 ## Current State
 

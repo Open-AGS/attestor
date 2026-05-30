@@ -34,8 +34,13 @@ function testReadmePublicClaimBoundary(): void {
   );
   includes(
     readme,
-    'It controls the proposed action before a customer system acts.',
-    'Final claim alignment: README keeps proposed-action control sentence',
+    'The stop point has to sit before the real action.',
+    'Final claim alignment: README keeps proposed-action stop-point sentence',
+  );
+  includes(
+    readme,
+    'The decision leaves a traceable trail',
+    'Final claim alignment: README keeps traceability claim bounded and visible',
   );
   includes(readme, 'evaluation release', 'Final claim alignment: README keeps evaluation-release status');
   includes(

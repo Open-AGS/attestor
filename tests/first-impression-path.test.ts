@@ -39,10 +39,10 @@ function testReadmeHasAPlainFirstThirtySeconds(): void {
 
   includes(readme, '**A gate for high-risk AI actions.**', 'README: opens with the short product promise');
   includes(readme, 'Attestor sits between what an AI wants to do and the system that would do it.', 'README: opens with plain placement language');
-  includes(readme, 'It does not try to make the model perfect.', 'README: states what Attestor does not try to solve');
-  includes(readme, 'It controls the proposed action before a customer system acts.', 'README: states the proposed-action control point');
   includes(readme, 'Prompts guide. They do not enforce.', 'README: keeps the prompt-control contrast');
-  includes(readme, 'hallucinated, manipulated, replayed, over-scoped, or missing approval', 'README: explains why a proposed action can be stopped');
+  includes(readme, 'Bad instructions can come from hallucination, stale context, tool-result mistakes, replayed requests, missing approval, or hostile input', 'README: explains why a proposed action can be unsafe');
+  includes(readme, 'That same boundary helps against outside manipulation', 'README: names outside manipulation without overclaiming');
+  includes(readme, 'The decision leaves a traceable trail', 'README: shows that the decision stays reviewable');
   includes(readme, '## One Concrete Workflow', 'README: starts with one concrete workflow before abstract categories');
   includes(readme, 'Refund $8,750 to customer_123 for order_789.', 'README: shows one high-risk action immediately');
   includes(readme, 'refundService.issueRefund(...)', 'README: names the dangerous downstream service call');
@@ -53,7 +53,7 @@ function testReadmeHasAPlainFirstThirtySeconds(): void {
     'README: gives the concrete stop reason',
   );
   includes(readme, 'that AI-prepared action can become a real refund call', 'README: shows the without-Attestor failure mode');
-  includes(readme, 'The decision keeps the trail: proposed action, reason codes, evidence references, and proof references.', 'README: shows the trail left by the decision');
+  includes(readme, 'The audit trail remains: proposed action, stop reason, reason codes, evidence references, proof references, and the next safe step.', 'README: shows the trail left by the decision');
   includes(readme, 'This repository demo is synthetic and shadow-only', 'README: keeps local-demo no-claims close to the example');
   appearsBefore(readme, '## One Concrete Workflow', '## What Attestor Does', 'README: concrete story comes before broad mechanism');
   appearsBefore(readme, '## Why This Matters Now', '## What Attestor Does', 'README: urgency comes before broad mechanism');
@@ -85,8 +85,7 @@ function testReadmeKeepsEvaluationTruthBeforeDeepDocs(): void {
   includes(readme, 'Package version: 0.2.0-evaluation', 'README: states current package version plainly');
   includes(readme, 'Release stage:   evaluation release', 'README: states evaluation-release status plainly');
   includes(readme, 'Release type:    GitHub pre-release / Golden Path evaluation baseline', 'README: states current release type plainly');
-  includes(readme, 'These are examples over one Attestor engine.', 'README: keeps one-engine pack framing');
-  includes(readme, 'They are not separate products and not equal-maturity claims.', 'README: keeps pack maturity scoped');
+  includes(readme, 'The same gate can sit before these action classes:', 'README: keeps cross-action framing concise');
   includes(readme, 'Attestor is a control point, not a data lake.', 'README: states data posture plainly');
   appearsBefore(readme, '## Current State', '## Data Posture', 'README: current state comes before deeper trust posture');
   excludes(readme, /## Decision Model/u, 'README: should not keep a separate decision-model section');

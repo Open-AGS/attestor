@@ -29,22 +29,22 @@ function testReadmeStartsWithAConcreteWorkflow(): void {
   includes(readme, '**A gate for high-risk AI actions.**', 'Product docs: README keeps the short product promise');
   includes(readme, 'Attestor sits between what an AI wants to do and the system that would do it.', 'Product docs: README starts with plain placement language');
   includes(readme, 'Prompts guide. They do not enforce.', 'Product docs: README keeps the prompt-control contrast');
-  includes(readme, 'A prompt can guide an AI, but it cannot stop a refund service', 'Product docs: README preserves the prompt-boundary thesis in plain language');
+  includes(readme, 'A prompt can guide an AI. It cannot stop a refund service', 'Product docs: README preserves the prompt-boundary thesis in plain language');
   includes(readme, 'hallucinated, manipulated, replayed, over-scoped, or missing approval', 'Product docs: README explains action stop reasons in plain language');
   includes(readme, '## One Concrete Workflow', 'Product docs: README starts product understanding from one concrete workflow');
   includes(readme, 'Refund $8,750 to customer_123 for order_789.', 'Product docs: README uses a concrete refund action');
   includes(readme, 'refundService.issueRefund(...)', 'Product docs: README names the dangerous service call');
-  includes(readme, 'block before the refund service runs', 'Product docs: README gives one concrete refund outcome');
+  includes(readme, 'stops it before the service runs', 'Product docs: README gives one concrete refund outcome');
   includes(readme, 'manager approval is missing', 'Product docs: README shows a concrete stop reason');
-  includes(readme, 'the AI-prepared refund can become an executable service call', 'Product docs: README shows the without-Attestor failure mode');
-  includes(readme, 'The decision leaves a reviewable trail: proposed action, reason codes, evidence references, and proof references.', 'Product docs: README shows the reviewable trail left by the decision');
+  includes(readme, 'that AI-prepared action can become a real refund call', 'Product docs: README shows the without-Attestor failure mode');
+  includes(readme, 'The decision keeps the trail: proposed action, reason codes, evidence references, and proof references.', 'Product docs: README shows the trail left by the decision');
   includes(readme, '## Why This Matters Now', 'Product docs: README keeps urgency context after the core workflow');
   includes(readme, '[EU AI Act](https://digital-strategy.ec.europa.eu/en/policies/regulatory-framework-ai)', 'Product docs: README keeps the EU AI Act as a bounded context anchor');
   includes(readme, '[NIST AI Risk Management Framework](https://www.nist.gov/itl/ai-risk-management-framework)', 'Product docs: README keeps NIST AI RMF as a bounded context anchor');
   includes(readme, '[DORA](https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A32022R2554)', 'Product docs: README keeps DORA as a bounded context anchor');
-  includes(readme, 'These links are context anchors, not compliance claims.', 'Product docs: README explicitly avoids compliance overclaim');
-  includes(readme, 'the refund path is synthetic and shadow-only', 'Product docs: README keeps the refund demo no-claim visible');
-  includes(readme, 'npm run demo:golden-refund', 'Product docs: README keeps the first runnable path visible');
+  includes(readme, 'These are not compliance claims.', 'Product docs: README explicitly avoids compliance overclaim');
+  includes(readme, 'This repository demo is synthetic and shadow-only', 'Product docs: README keeps the refund demo no-claim visible');
+  includes(readme, '[Run the demos in order](docs/01-overview/demo-guide.md)', 'Product docs: README keeps the guided demo path visible');
 }
 
 function testReadmeKeepsSingleEngineAndCustomerBoundary(): void {
@@ -52,14 +52,14 @@ function testReadmeKeepsSingleEngineAndCustomerBoundary(): void {
 
   includes(readme, 'AI agent', 'Product docs: README keeps the actor side of the core flow');
   includes(readme, 'Attestor checks the proposed action: policy, approval, evidence, allowed scope, freshness, replay, tenant, token, and proof references', 'Product docs: README keeps the core check vocabulary in plain language');
-  includes(readme, 'The real service runs only through the customer-owned gate.', 'Product docs: README keeps the customer enforcement boundary');
+  includes(readme, 'The real service should run only through the customer-owned gate.', 'Product docs: README keeps the customer enforcement boundary');
   includes(readme, 'Without an enforced customer-side gate, gateway, verifier, or adapter, Attestor is advisory evidence.', 'Product docs: README distinguishes advisory evidence from control point');
-  includes(readme, 'Start in shadow mode.', 'Product docs: README keeps shadow mode as the adoption wedge');
+  includes(readme, 'Run Attestor in shadow pilot mode - and map what your AI agents are trying to do', 'Product docs: README keeps exact shadow-pilot value line');
   includes(readme, '[Run Attestor in shadow pilot mode](docs/01-overview/shadow-event-payload-examples.md)', 'Product docs: README links the shadow pilot guide');
   includes(readme, 'These are examples over one Attestor engine.', 'Product docs: README keeps one-engine pack framing');
   includes(readme, 'They are not separate products and not equal-maturity claims.', 'Product docs: README keeps pack maturity scoped');
   includes(readme, 'Attestor is a control point, not a data lake.', 'Product docs: README keeps data-posture positioning');
-  includes(readme, 'Customer systems keep ownership of the model, agent, workflow, wallet, database, and downstream execution path.', 'Product docs: README keeps customer ownership boundary');
+  includes(readme, 'Customer systems keep the model, agent, workflow, wallet, database, downstream', 'Product docs: README keeps customer ownership boundary');
 }
 
 function testReadmeKeepsDomainPacksAndLocalTruth(): void {

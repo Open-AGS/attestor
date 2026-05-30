@@ -45,7 +45,7 @@ function testReadmePublicClaimBoundary(): void {
   );
   includes(
     readme,
-    'These links are context anchors, not compliance claims.',
+    'These are not compliance claims.',
     'Final claim alignment: README keeps regulatory-anchor non-claim boundary',
   );
   includes(

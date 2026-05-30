@@ -43,7 +43,7 @@ function testNavigatorKeepsFirstVisitorPaths(): void {
     '[Docs front door](../README.md)',
     '[Current state](../../README.md#current-state)',
     '[Live proof register](../audit/live-proof-register.md)',
-    '[Shadow event payload examples](shadow-event-payload-examples.md)',
+    '[Run Attestor in shadow pilot mode](shadow-event-payload-examples.md)',
     '[Customer middleware examples](../../examples/customer-middleware/README.md)',
     '[Reason codes](../05-proof/reason-codes.md)',
     '[Audit evidence system](../audit/README.md)',
@@ -59,8 +59,8 @@ function testNavigatorKeepsFirstVisitorPaths(): void {
   }
 
   for (const expected of [
-    '# Demo Guide',
-    '## Run The Demos In Order',
+    '# Run The Demos In Order',
+    '## 3. Pick The Action Class You Care About',
     'npm run demo:golden-refund',
     'npm run demo:golden-paths',
     'npm run example:non-bypassable-gateway',

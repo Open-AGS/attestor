@@ -158,21 +158,20 @@ function testDocsAndScriptsStayAligned(): void {
     'G08 engine visibility report',
     'G07 ledger: records demo CLI',
   );
-    for (const expected of [
-      '## One Concrete Workflow',
-      'Refund $8,750 to customer_123 for order_789.',
-      'refundService.issueRefund(...)',
-      'block before the refund service runs',
-      'manager approval is missing',
-      'the AI-prepared refund can become an executable service call',
-      'The decision leaves a reviewable trail: proposed action, reason codes, evidence references, and proof references.',
-      'npm ci',
-      'npm run demo:golden-refund',
-      'the refund path is synthetic and shadow-only',
-      'It does not call Stripe, Shopify, a bank, or a live customer deployment.',
-    ]) {
-      includes(readme, expected, `G07 README: records ${expected}`);
-    }
+  for (const expected of [
+    '## One Concrete Workflow',
+    'Refund $8,750 to customer_123 for order_789.',
+    'refundService.issueRefund(...)',
+    'stops it before the service runs',
+    'manager approval is missing',
+    'that AI-prepared action can become a real refund call',
+    'The decision keeps the trail: proposed action, reason codes, evidence references, and proof references.',
+    '[Run the demos in order](docs/01-overview/demo-guide.md)',
+    'This repository demo is synthetic and shadow-only.',
+    'It does not call Stripe, Shopify, a bank, or a live customer deployment.',
+  ]) {
+    includes(readme, expected, `G07 README: records ${expected}`);
+  }
   for (const expected of [
     'npm run demo:golden-refund',
     'refund action surface -> canonical shadow events -> runtime assurance smoke -> Policy Foundry summary -> pilot readiness packet',

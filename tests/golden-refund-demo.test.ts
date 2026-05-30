@@ -165,7 +165,7 @@ function testDocsAndScriptsStayAligned(): void {
       'block before the refund service runs',
       'manager approval is missing',
       'the AI-prepared refund can become an executable service call',
-      'the call does not run, the reason is visible, and the proof trail remains',
+      'The decision leaves a reviewable trail: proposed action, reason codes, evidence references, and proof references.',
       'npm ci',
       'npm run demo:golden-refund',
       'the refund path is synthetic and shadow-only',

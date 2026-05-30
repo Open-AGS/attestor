@@ -37,7 +37,7 @@ function testReadmeStartsWithAConcreteWorkflow(): void {
   includes(readme, 'block before the refund service runs', 'Product docs: README gives one concrete refund outcome');
   includes(readme, 'manager approval is missing', 'Product docs: README shows a concrete stop reason');
   includes(readme, 'the AI-prepared refund can become an executable service call', 'Product docs: README shows the without-Attestor failure mode');
-  includes(readme, 'the call does not run, the reason is visible, and the proof trail remains', 'Product docs: README shows the with-Attestor gate behavior');
+  includes(readme, 'The decision leaves a reviewable trail: proposed action, reason codes, evidence references, and proof references.', 'Product docs: README shows the reviewable trail left by the decision');
   includes(readme, '## Why This Matters Now', 'Product docs: README keeps urgency context after the core workflow');
   includes(readme, '[EU AI Act](https://digital-strategy.ec.europa.eu/en/policies/regulatory-framework-ai)', 'Product docs: README keeps the EU AI Act as a bounded context anchor');
   includes(readme, '[NIST AI Risk Management Framework](https://www.nist.gov/itl/ai-risk-management-framework)', 'Product docs: README keeps NIST AI RMF as a bounded context anchor');
@@ -63,6 +63,7 @@ function testReadmeKeepsSingleEngineAndCustomerBoundary(): void {
 
 function testReadmeKeepsDomainPacksAndLocalTruth(): void {
   const readme = readProjectFile('README.md');
+  const demoGuide = readProjectFile('docs', '01-overview', 'demo-guide.md');
 
   for (const pack of [
     'Money Movement',
@@ -75,11 +76,12 @@ function testReadmeKeepsDomainPacksAndLocalTruth(): void {
     includes(readme, pack, `Product docs: README names ${pack}`);
   }
 
-  includes(readme, 'npm run demo:golden-data-export', 'Product docs: README links the data golden path');
-  includes(readme, 'npm run demo:golden-authority-change', 'Product docs: README links the authority golden path');
-  includes(readme, 'npm run demo:golden-external-communication', 'Product docs: README links the communication golden path');
-  includes(readme, 'npm run demo:golden-operational-execution', 'Product docs: README links the ops golden path');
-  includes(readme, 'npm run demo:golden-programmable-money', 'Product docs: README links the programmable-money golden path');
+  includes(readme, '[Run the demos in order](docs/01-overview/demo-guide.md)', 'Product docs: README links the guided demo path early');
+  includes(demoGuide, 'npm run demo:golden-data-export', 'Product docs: demo guide links the data golden path');
+  includes(demoGuide, 'npm run demo:golden-authority-change', 'Product docs: demo guide links the authority golden path');
+  includes(demoGuide, 'npm run demo:golden-external-communication', 'Product docs: demo guide links the communication golden path');
+  includes(demoGuide, 'npm run demo:golden-operational-execution', 'Product docs: demo guide links the ops golden path');
+  includes(demoGuide, 'npm run demo:golden-programmable-money', 'Product docs: demo guide links the programmable-money golden path');
   includes(readme, '## Current State', 'Product docs: README keeps a compact current state section');
   includes(readme, 'Package version: 0.2.0-evaluation', 'Product docs: README keeps package version visible');
   includes(readme, 'Tag target:      v0.2.0-evaluation', 'Product docs: README keeps tag target visible');
@@ -101,6 +103,7 @@ function testReadmeLinksTheRightDeeperDocsWithoutBecomingALinkWall(): void {
   includes(readme, '[Security Policy](SECURITY.md)', 'Product docs: README links the security policy');
   excludes(readme, /## Maintainer Reference/u, 'Product docs: README should not keep a maintainer link wall');
   excludes(readme, /## Decision Model/u, 'Product docs: README should keep decision model details out of the front page');
+  excludes(readme, /## Local Demos/u, 'Product docs: README should keep long demo tables out of the front page');
   excludes(readme, /\[Repository map\]\(docs\/01-overview\/repository-map\.md\)/u, 'Product docs: README should route repository map through the navigator');
   excludes(readme, /\[Docs front door\]\(docs\/README\.md\)/u, 'Product docs: README should route docs front door through the navigator');
 }

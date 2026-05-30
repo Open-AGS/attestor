@@ -23,6 +23,7 @@ function ok(condition: unknown, message: string): void {
 
 function testNavigatorKeepsFirstVisitorPaths(): void {
   const doc = readProjectFile('docs', '01-overview', 'repository-navigator.md');
+  const demoGuide = readProjectFile('docs', '01-overview', 'demo-guide.md');
 
   includes(doc, '# Repository Navigator', 'Repository navigator: title is present');
   includes(doc, 'Use this when the repository feels large', 'Repository navigator: purpose is plain');
@@ -37,6 +38,7 @@ function testNavigatorKeepsFirstVisitorPaths(): void {
 
   for (const expected of [
     '[Try Attestor first](try-attestor-first.md)',
+    '[Run the demos in order](demo-guide.md)',
     '[How to integrate Attestor](how-to-integrate-attestor.md)',
     '[Docs front door](../README.md)',
     '[Current state](../../README.md#current-state)',
@@ -54,6 +56,17 @@ function testNavigatorKeepsFirstVisitorPaths(): void {
     '[Test system map](../02-architecture/test-system-map.md)',
   ]) {
     includes(doc, expected, `Repository navigator: links ${expected}`);
+  }
+
+  for (const expected of [
+    '# Demo Guide',
+    '## Run The Demos In Order',
+    'npm run demo:golden-refund',
+    'npm run demo:golden-paths',
+    'npm run example:non-bypassable-gateway',
+    'They do not prove live customer enforcement',
+  ]) {
+    includes(demoGuide, expected, `Demo guide: records ${expected}`);
   }
 }
 
@@ -118,6 +131,7 @@ function assertLinksResolve(...segments: string[]): void {
 function testNavigatorLinksResolve(): void {
   assertLinksResolve('docs', '01-overview', 'repository-navigator.md');
   assertLinksResolve('docs', '01-overview', 'repository-map.md');
+  assertLinksResolve('docs', '01-overview', 'demo-guide.md');
   assertLinksResolve('docs', 'README.md');
 }
 
@@ -132,6 +146,7 @@ function testDocsFrontDoorPullsReadersToTheNextAction(): void {
   includes(doc, '## Understand The System', 'Docs front door: has a system-understanding section');
   includes(doc, '## Maintain The Repo', 'Docs front door: has a maintainer section');
   includes(doc, '[How to integrate Attestor](01-overview/how-to-integrate-attestor.md)', 'Docs front door: links integration guide');
+  includes(doc, '[Run the demos in order](01-overview/demo-guide.md)', 'Docs front door: links guided demo path');
   includes(doc, '[Customer middleware examples](../examples/customer-middleware/README.md)', 'Docs front door: links middleware examples');
   includes(doc, '[Reason codes](05-proof/reason-codes.md)', 'Docs front door: links reason codes');
   includes(doc, '[License and use](01-overview/license-and-use.md)', 'Docs front door: links license-and-use guide');

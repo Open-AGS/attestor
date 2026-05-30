@@ -154,14 +154,16 @@ function testPackageScriptRunsMarkdownAndJson(): void {
 
 function testDocsAndScriptsStayAligned(): void {
   const readme = readProjectFile('README.md');
+  const demoGuide = readProjectFile('docs', '01-overview', 'demo-guide.md');
   const ledger = readProjectFile('docs', 'research', 'attestor-research-provenance-ledger.md');
   const packageJson = JSON.parse(readProjectFile('package.json')) as {
     readonly scripts: Readonly<Record<string, string>>;
   };
 
-  includes(readme, 'npm run demo:golden-paths', 'Golden paths evaluator README: documents aggregate command');
-  includes(readme, 'Then run all local golden paths:', 'Golden paths evaluator README: gives evaluator first-run placement');
-  includes(readme, 'These local demos run repo-side examples through the same decision engine.', 'Golden paths evaluator README: keeps local demo scope');
+  includes(readme, '[Run the demos in order](docs/01-overview/demo-guide.md)', 'Golden paths evaluator README: links the guided demo path');
+  includes(demoGuide, 'npm run demo:golden-paths', 'Golden paths evaluator guide: documents aggregate command');
+  includes(demoGuide, 'Use this when you want the whole local picture in one command.', 'Golden paths evaluator guide: explains aggregate placement');
+  includes(demoGuide, 'The demos are synthetic and repo-side.', 'Golden paths evaluator guide: keeps local demo scope');
   includes(
     ledger,
     'All Golden Paths Evaluator',

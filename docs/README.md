@@ -14,6 +14,7 @@ understand -> try -> integrate -> explain decisions -> verify claims -> maintain
 |---|---|
 | Understand the product in one minute | [README](../README.md) |
 | Run the concrete refund workflow | [Try Attestor first](01-overview/try-attestor-first.md) |
+| Run all demos in order | [Run the demos in order](01-overview/demo-guide.md) |
 | Put Attestor in front of a real service call | [How to integrate Attestor](01-overview/how-to-integrate-attestor.md) |
 | Copy framework-shaped examples | [Customer middleware examples](../examples/customer-middleware/README.md) |
 | Send shadow events without an SDK | [Shadow event payload examples](01-overview/shadow-event-payload-examples.md) |

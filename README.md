@@ -17,18 +17,10 @@ A prompt can guide an AI, but it cannot stop a refund service, export job, ident
 
 ## One Concrete Workflow
 
-A support AI prepares a refund:
-
-```text
-Refund $8,750 to customer_123 for order_789.
-```
+A support AI prepares a refund: **Refund $8,750 to customer_123 for order_789.**
 
 The dangerous step is not the sentence.
-It is the service call after it:
-
-```text
-refundService.issueRefund(...)
-```
+It is the service call after it: `refundService.issueRefund(...)`.
 
 Attestor checks the structured action before that call:
 
@@ -38,22 +30,12 @@ Attestor checks the structured action before that call:
 - manager approval is attached and valid
 - the refund service is reachable only through the customer-owned gate
 
-Outcome:
+Outcome: **block before the refund service runs.**
 
-```text
-block before the refund service runs
-```
-
-Reason:
-
-```text
-manager approval is missing
-order/customer binding is incomplete
-duplicate-refund risk is present
-```
+Reason: manager approval is missing; order/customer binding is incomplete; duplicate-refund risk is present.
 
 Without Attestor, the AI-prepared refund can become an executable service call.
-With Attestor and a customer-owned gate, the call does not run, the reason is visible, and the proof trail remains.
+With Attestor and a customer-owned gate, the call does not run. The decision leaves a reviewable trail: proposed action, reason codes, evidence references, and proof references.
 
 In this repository, the refund path is synthetic and shadow-only. It does not call Stripe, Shopify, a bank, or a live customer deployment.
 
@@ -68,12 +50,7 @@ npm run demo:golden-refund -- --json
 The output shows what was checked, why the action held or blocked, and which
 proof references remain.
 
-Then run all local golden paths:
-
-```bash
-npm run demo:golden-paths
-npm run demo:golden-paths -- --json
-```
+Want the full local path? [Run the demos in order](docs/01-overview/demo-guide.md) - refund first, then the six action classes, then the integration-shape examples.
 
 ## Why This Matters Now
 
@@ -128,22 +105,6 @@ The same control pattern extends to:
 
 These are examples over one Attestor engine.
 They are not separate products and not equal-maturity claims.
-
-## Local Demos
-
-These local demos run repo-side examples through the same decision engine.
-
-| Path | Command | What it shows |
-|---|---|---|
-| Refund | `npm run demo:golden-refund` | Synthetic support refund, reviewer path, named gaps, no live refund call. |
-| Controlled Data Export | `npm run demo:golden-data-export` | Synthetic customer export and report release, no warehouse call. |
-| Authority Change | `npm run demo:golden-authority-change` | Synthetic grant, revocation, delegation, and approval scenarios. |
-| External Communication | `npm run demo:golden-external-communication` | Synthetic customer-facing, legal, billing, support, and public-message review path. |
-| Operational Execution | `npm run demo:golden-operational-execution` | Synthetic deploy, rollback, secret rotation, incident, and runbook path. |
-| Programmable Money | `npm run demo:golden-programmable-money` | Synthetic wallet-facing intent. It does not sign, broadcast, call a wallet, or prove settlement. |
-
-For a guided first run, see [Try Attestor first](docs/01-overview/try-attestor-first.md).
-For an integration path, see [How to integrate Attestor](docs/01-overview/how-to-integrate-attestor.md).
 
 ## Current State
 

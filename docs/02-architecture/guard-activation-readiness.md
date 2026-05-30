@@ -44,6 +44,13 @@ The readiness contract covers:
 - `agentic-supply-chain-guard`
 - `multi-agent-delegation-guard`
 
+Scope note: this list is the guard activation-readiness profile set, not a
+count of every generic admission runtime evaluator. Deterministic contracts and
+assurance slices such as `no-go-condition-ledger`,
+`decision-context-drift-binding`, and `authority-creep-guard` are tracked by
+the failure-mode coverage and proof-discipline contracts unless they are
+promoted into this activation-readiness profile set.
+
 ## Required Criteria
 
 Every covered guard must satisfy all criteria before a production enforcement activation claim is allowed:

@@ -242,13 +242,17 @@ function testMachineMapCountsStayAlignedWithSourceConstants(): void {
 
 function testMachineMapSvgExposesRepoSourcedValueSets(): void {
   const svg = readProjectFile('docs', 'assets', 'attestor-internal-machine-map.svg');
+  const guardActivationReadinessLabel =
+    `Guard Activation Readiness Matrix (${CONSEQUENCE_GUARD_ACTIVATION_GUARD_IDS.length} covered profiles x ` +
+    `${CONSEQUENCE_GUARD_ACTIVATION_CRITERION_IDS.length} criteria x ` +
+    `${CONSEQUENCE_GUARD_ACTIVATION_CRITERION_STATUSES.length} statuses)`;
 
   for (const expected of [
     'Risk x Control Matrix',
     'Release Rollout Matrix',
     'Release Decision Status Value Set',
     'Release Presentation Modes (6) And Enforcement Outcomes',
-    'Guard Readiness Matrix (9 guards x 11 criteria x 3 statuses)',
+    guardActivationReadinessLabel,
     'Guard Criteria (1-11)',
     'Guard Status / State Vocabulary',
     'Enforcement Failure Reasons (23)',

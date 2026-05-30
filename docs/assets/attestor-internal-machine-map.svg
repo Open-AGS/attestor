@@ -665,7 +665,7 @@
 <rect class="chip" x="3240.3666666666663" y="1693" width="107.39999999999999" height="23"/>
 <text class="chipText" x="3251.3666666666663" y="1709" text-anchor="start">shadow-observe</text>
 <rect class="panel" x="40" y="1875" width="392" height="246"/>
-<text class="panelTitle" x="56" y="1899" text-anchor="start">Guard Readiness Matrix (9 guards x 11 criteria x 3 statuses)</text>
+<text class="panelTitle" x="56" y="1899" text-anchor="start">Guard Activation Readiness Matrix (9 covered profiles x 11 criteria x 3 statuses)</text>
 <text class="tinyCenter" x="257" y="1920" text-anchor="middle">1</text>
 <text class="tinyCenter" x="271" y="1920" text-anchor="middle">2</text>
 <text class="tinyCenter" x="285" y="1920" text-anchor="middle">3</text>

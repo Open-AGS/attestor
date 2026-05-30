@@ -26,7 +26,7 @@ function testReadmeStartsWithAConcreteWorkflow(): void {
 
   includes(readme, '<img src="docs/assets/attestor-readme-logo.png"', 'Product docs: README uses the single current Attestor image');
   excludes(readme, /attestor-logo\.png|attestor-readme-hero\.png/u, 'Product docs: README does not use retired Attestor image assets');
-  includes(readme, '**A gate for high-risk AI actions.**', 'Product docs: README keeps the short product promise');
+  includes(readme, '**Control infrastructure for high-risk AI-driven operations.**', 'Product docs: README keeps the short product promise');
   includes(readme, 'Attestor sits between what an AI wants to do and the system that would do it.', 'Product docs: README starts with plain placement language');
   includes(readme, 'Prompts guide. They do not enforce.', 'Product docs: README keeps the prompt-control contrast');
   includes(readme, 'Bad instructions can come from hallucination, stale context, tool-result mistakes, replayed requests, missing approval, or hostile input', 'Product docs: README explains AI/action risk in plain language');

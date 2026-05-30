@@ -24,7 +24,7 @@ function testReadmePublicClaimBoundary(): void {
 
   includes(
     readme,
-    '**A gate for high-risk AI actions.**',
+    '**Control infrastructure for high-risk AI-driven operations.**',
     'Final claim alignment: README keeps control infrastructure headline',
   );
   includes(

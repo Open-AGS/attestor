@@ -37,7 +37,7 @@ function appearsBefore(content: string, earlier: string, later: string, message:
 function testReadmeHasAPlainFirstThirtySeconds(): void {
   const readme = readProjectFile('README.md');
 
-  includes(readme, '**A gate for high-risk AI actions.**', 'README: opens with the short product promise');
+  includes(readme, '**Control infrastructure for high-risk AI-driven operations.**', 'README: opens with the short product promise');
   includes(readme, 'Attestor sits between what an AI wants to do and the system that would do it.', 'README: opens with plain placement language');
   includes(readme, 'Prompts guide. They do not enforce.', 'README: keeps the prompt-control contrast');
   includes(readme, 'Bad instructions can come from hallucination, stale context, tool-result mistakes, replayed requests, missing approval, or hostile input', 'README: explains why a proposed action can be unsafe');

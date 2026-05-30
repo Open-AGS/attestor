@@ -1,15 +1,15 @@
 # Attestor
 
-**Control infrastructure for high-risk AI actions.**
+**A gate for high-risk AI actions.**
 
-Attestor sits between AI intent and real-world action.
+Attestor sits between what an AI wants to do and the system that would do it.
 
 It does not try to make the model perfect.
 It controls the proposed action before a customer system acts.
 
 Prompts guide. They do not enforce.
 
-A prompt is not a formal rule; it is linguistic context interpreted by a probabilistic model. That makes it useful for guidance, but insufficient as deterministic control. The control point has to move from the model's text to the proposed action: the action intent can be structured, checked, admitted, narrowed, reviewed, or blocked before it becomes a real consequence.
+A prompt can guide an AI, but it cannot stop your refund service, export job, identity admin, deploy tool, or wallet adapter. The stop point has to sit before the real action. Attestor checks that structured action and returns `admit`, `narrow`, `review`, or `block`.
 
 ## One Concrete Workflow
 
@@ -55,7 +55,7 @@ Without Attestor:
 the AI-generated refund request can reach the refund service with no gate trace
 ```
 
-With Attestor and a customer enforcement point:
+With Attestor and a customer-owned gate:
 
 ```text
 money does not move
@@ -72,8 +72,8 @@ npm run demo:golden-refund
 npm run demo:golden-refund -- --json
 ```
 
-The default output includes Engine Visibility: gate order, reason codes,
-evidence posture, and digest stability for the synthetic refund scenarios.
+The output shows what was checked, why the action held or blocked, and which
+proof references remain.
 
 Then run all local golden paths:
 
@@ -87,7 +87,7 @@ npm run demo:golden-paths -- --json
 AI systems are moving from chat into tools that can touch payment flows, data exports, access changes, customer messages, infrastructure, and programmable money.
 
 That is no longer just a prompt-quality problem.
-Teams need to know who asked for the action, what evidence supported it, whether it was replayed, and whether a downstream gate can stop it.
+Teams need to know who asked for the action, what evidence supported it, whether it was replayed, and whether the final service can be stopped.
 
 This is the same general direction visible in serious external anchors: the [EU AI Act](https://digital-strategy.ec.europa.eu/en/policies/regulatory-framework-ai), the [NIST AI Risk Management Framework](https://www.nist.gov/itl/ai-risk-management-framework), and [DORA](https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A32022R2554).
 
@@ -99,23 +99,21 @@ Attestor targets the action boundary those conversations keep circling around.
 The dangerous moment is not the text the model produced.
 It is the moment that text becomes a refund, data export, permission change, deploy, customer message, or wallet transaction.
 
-Attestor checks policy, authority, evidence, scope, freshness, replay, tenant, token, and proof.
-Downstream action executes only through the customer PEP / gate.
+Attestor checks the proposed action: policy, approval, evidence, allowed scope, freshness, replay, tenant, token, and proof references.
+The real service runs only through the customer-owned gate.
 
 ```text
 AI agent
   -> AI proposes action
 Attestor
-  -> checks policy, authority, evidence, scope, freshness, replay, tenant, token, and proof
-  -> admit / narrow / review / block + proof
-Customer PEP / gateway
-  -> downstream executes only if admitted
+  -> checks the action
+  -> admit / narrow / review / block + reasons and proof references
+Customer-owned gate
+  -> calls the real service only when allowed
 ```
 
-downstream action executes only through the customer PEP / gate.
-
-Without an enforced customer-side PEP, gateway, verifier, or adapter, Attestor is advisory evidence.
-With that enforced downstream point, Attestor becomes the control point before action.
+Without an enforced customer-side gate, gateway, verifier, or adapter, Attestor is advisory evidence.
+With that enforced downstream point, Attestor becomes the stop point before action.
 
 Start in shadow mode.
 See what the AI would have done before you let it act.
@@ -135,12 +133,12 @@ The same control pattern extends to:
 | Operational Execution | deploys, secret rotations, infrastructure changes, incidents |
 | Programmable Money | wallet calls, Safe transactions, account-abstraction flows, settlement intents |
 
-These are domain packs over one Attestor engine.
+These are examples over one Attestor engine.
 They are not separate products and not equal-maturity claims.
 
-## Local Golden Paths
+## Local Demos
 
-Golden paths are repo-side examples through the shared control engine.
+These local demos run repo-side examples through the same decision engine.
 
 | Path | Command | What it shows |
 |---|---|---|
@@ -152,6 +150,7 @@ Golden paths are repo-side examples through the shared control engine.
 | Programmable Money | `npm run demo:golden-programmable-money` | Synthetic wallet-facing intent. It does not sign, broadcast, call a wallet, or prove settlement. |
 
 For a guided first run, see [Try Attestor first](docs/01-overview/try-attestor-first.md).
+For an integration path, see [How to integrate Attestor](docs/01-overview/how-to-integrate-attestor.md).
 
 ## Current Repository Truth
 
@@ -171,7 +170,7 @@ Release type:    GitHub pre-release / Golden Path evaluation baseline
 Green local checks are repo-side evidence only.
 They do not prove live cloud infrastructure, live customer enforcement, external KMS/HSM signing, shared replay stores, production readiness, or enterprise readiness.
 
-Production control requires live customer PEP proof:
+Production control requires live customer no-bypass proof:
 
 ```text
 direct downstream bypass must fail
@@ -235,6 +234,7 @@ It is a local static proof surface. It does not start a hosted console or claim 
 ## Start Here
 
 - [Repository navigator](docs/01-overview/repository-navigator.md)
+- [How to integrate Attestor](docs/01-overview/how-to-integrate-attestor.md)
 - [Try Attestor first](docs/01-overview/try-attestor-first.md)
 - [Golden Path: Refund](docs/02-architecture/golden-refund-shadow-pilot.md)
 - [Golden Path: External Communication](docs/02-architecture/golden-external-communication-shadow-pilot.md)

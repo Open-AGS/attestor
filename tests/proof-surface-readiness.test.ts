@@ -203,7 +203,7 @@ function testPublicDocsKeepOneProductAndAvoidOverclaims(): void {
   const readme = readProjectFile('README.md');
   const tracker = readProjectFile('docs', '02-architecture', 'proof-console-buildout.md');
 
-  ok(readme.includes('These are domain packs over one Attestor engine.'), 'Proof surface readiness: README keeps one-engine product framing');
+  ok(readme.includes('These are examples over one Attestor engine.'), 'Proof surface readiness: README keeps one-engine product framing');
   ok(tracker.includes('Keep Attestor as one product with one platform core and modular packs.'), 'Proof surface readiness: tracker keeps one-product guardrail');
   ok(readme.includes('It is a local static proof surface. It does not start a hosted console or claim a public hosted crypto route.'), 'Proof surface readiness: README blocks hosted proof-surface overclaim');
   ok(readme.includes('Read proof material as typed evidence, not a universal cryptographic guarantee.'), 'Proof surface readiness: README narrows proof vocabulary');

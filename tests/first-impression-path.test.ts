@@ -37,8 +37,8 @@ function appearsBefore(content: string, earlier: string, later: string, message:
 function testReadmeHasAPlainFirstThirtySeconds(): void {
   const readme = readProjectFile('README.md');
 
-  includes(readme, '**Control infrastructure for high-risk AI actions.**', 'README: opens with the short product promise');
-  includes(readme, 'Attestor sits between AI intent and real-world action.', 'README: opens with plain placement language');
+  includes(readme, '**A gate for high-risk AI actions.**', 'README: opens with the short product promise');
+  includes(readme, 'Attestor sits between what an AI wants to do and the system that would do it.', 'README: opens with plain placement language');
   includes(readme, 'It does not try to make the model perfect.', 'README: states what Attestor does not try to solve');
   includes(readme, 'It controls the proposed action before a customer system acts.', 'README: states the proposed-action control point');
   includes(readme, 'Prompts guide. They do not enforce.', 'README: keeps the prompt-control contrast');
@@ -63,9 +63,9 @@ function testReadmeKeepsTheControlBoundaryAndLocalRunPath(): void {
   const readme = readProjectFile('README.md');
 
   includes(readme, 'AI proposes action', 'README: keeps the core flow start');
-  includes(readme, 'Attestor checks policy, authority, evidence, scope, freshness, replay, tenant, token, and proof', 'README: keeps the check vocabulary');
-  includes(readme, 'downstream action executes only through the customer PEP / gate', 'README: keeps the customer gate boundary');
-  includes(readme, 'Without an enforced customer-side PEP, gateway, verifier, or adapter, Attestor is advisory evidence.', 'README: makes advisory versus control posture explicit');
+  includes(readme, 'Attestor checks the proposed action: policy, approval, evidence, allowed scope, freshness, replay, tenant, token, and proof references', 'README: keeps the check vocabulary');
+  includes(readme, 'The real service runs only through the customer-owned gate.', 'README: keeps the customer gate boundary');
+  includes(readme, 'Without an enforced customer-side gate, gateway, verifier, or adapter, Attestor is advisory evidence.', 'README: makes advisory versus control posture explicit');
   includes(readme, 'Start in shadow mode.', 'README: keeps the adoption wedge simple');
   includes(readme, 'npm ci', 'README: uses reproducible install for the reviewer path');
   includes(readme, 'npm run demo:golden-refund', 'README: shows the first concrete runnable path');
@@ -83,7 +83,7 @@ function testReadmeKeepsEvaluationTruthBeforeDeepDocs(): void {
   includes(readme, 'not a finished public SaaS, a production-use guarantee, a completed customer-operated deployment, or a substitute for an external security audit', 'README: keeps public no-claims visible');
   includes(readme, 'They do not prove live cloud infrastructure, live customer enforcement, external KMS/HSM signing, shared replay stores, production readiness, or enterprise readiness.', 'README: keeps local checks separate from live proof');
   includes(readme, 'direct downstream bypass must fail', 'README: states customer PEP proof requirement');
-  includes(readme, 'These are domain packs over one Attestor engine.', 'README: keeps one-engine pack framing');
+  includes(readme, 'These are examples over one Attestor engine.', 'README: keeps one-engine pack framing');
   includes(readme, 'They are not separate products and not equal-maturity claims.', 'README: keeps pack maturity scoped');
   includes(readme, 'Attestor is a control point, not a data lake.', 'README: states data posture plainly');
   appearsBefore(readme, '## Current Repository Truth', '## Data Posture', 'README: repository truth comes before deeper trust posture');

@@ -102,6 +102,7 @@
     "test:scripts-inventory-docs": "tsx tests/scripts-inventory-docs.test.ts",
     "test:glossary-docs": "tsx tests/glossary-docs.test.ts",
     "test:customer-integration-recipes-docs": "tsx tests/customer-integration-recipes-docs.test.ts",
+    "test:how-to-integrate-attestor-docs": "tsx tests/how-to-integrate-attestor-docs.test.ts",
     "test:shadow-event-payload-examples-docs": "tsx tests/shadow-event-payload-examples-docs.test.ts",
     "test:customer-middleware-examples": "tsx tests/customer-middleware-examples.test.ts",
     "test:evaluation-packet-docs": "tsx tests/evaluation-packet-docs.test.ts",

@@ -37,6 +37,7 @@ function testNavigatorKeepsFirstVisitorPaths(): void {
 
   for (const expected of [
     '[Try Attestor first](try-attestor-first.md)',
+    '[How to integrate Attestor](how-to-integrate-attestor.md)',
     '[Current repository truth](../../README.md#current-repository-truth)',
     '[Live proof register](../audit/live-proof-register.md)',
     '[Shadow event payload examples](shadow-event-payload-examples.md)',

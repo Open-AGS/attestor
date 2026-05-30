@@ -16,7 +16,8 @@ do the next action there, and come back only if you still need more context.
 | If you are thinking... | Go here | Stop when... |
 |---|---|---|
 | "Show me what this does." | [Try Attestor first](try-attestor-first.md) | the refund demo runs and you can explain why it held or blocked. |
-| "Where do I put this in my app?" | [Customer middleware examples](../../examples/customer-middleware/README.md) | you can point to the line before the downstream action executes. |
+| "Where do I put this in my app?" | [How to integrate Attestor](how-to-integrate-attestor.md) | you can point to the line before the real service is called. |
+| "What code do I copy?" | [Customer middleware examples](../../examples/customer-middleware/README.md) | you have the closest framework example open. |
 | "What JSON do I send?" | [Shadow event payload examples](shadow-event-payload-examples.md) | you have copied the closest payload shape for your action class. |
 | "Why did it review or block?" | [Reason codes](../05-proof/reason-codes.md) | you understand the reason code and the next safe step. |
 | "Is this production-ready?" | [Current repository truth](../../README.md#current-repository-truth) | you can separate repo-side evidence from live proof. |
@@ -35,7 +36,7 @@ do the next action there, and come back only if you still need more context.
 | Understand Attestor in one minute | [README](../../README.md) | [Try Attestor first](try-attestor-first.md) |
 | Run the refund workflow | [Try Attestor first](try-attestor-first.md) | [Golden Path: Refund](../02-architecture/golden-refund-shadow-pilot.md) |
 | Send shadow events | [Shadow event payload examples](shadow-event-payload-examples.md) | [Customer middleware examples](../../examples/customer-middleware/README.md) |
-| Wire a customer app | [Customer middleware examples](../../examples/customer-middleware/README.md) | [Customer integration recipes](customer-integration-recipes.md) |
+| Wire a customer app | [How to integrate Attestor](how-to-integrate-attestor.md) | [Customer middleware examples](../../examples/customer-middleware/README.md) |
 | Make the first hosted API call | [First hosted API call](hosted-first-api-call.md) | [Hosted action authorization API](hosted-action-authorization-api.md) |
 | Understand `admit`, `narrow`, `review`, and `block` | [Consequence admission quickstart](consequence-admission-quickstart.md) | [Reason codes](../05-proof/reason-codes.md) |
 | Decode Attestor terms | [Glossary](../02-architecture/glossary.md) | [Attestor language contract](../02-architecture/attestor-language-contract.md) |
@@ -56,7 +57,7 @@ do the next action there, and come back only if you still need more context.
 | Role | Read first | Why |
 |---|---|---|
 | First-time evaluator | [README](../../README.md) | Product shape, concrete refund story, current repository truth. |
-| Customer engineer | [Customer middleware examples](../../examples/customer-middleware/README.md) | Copy-paste integration shape before any SDK abstraction. |
+| Customer engineer | [How to integrate Attestor](how-to-integrate-attestor.md) | The shortest path from AI action to customer-owned gate. |
 | API integrator | [First hosted API call](hosted-first-api-call.md) | Tenant key, first request, and decision handling. |
 | Reviewer or auditor | [Audit evidence system](../audit/README.md) | Current baseline, finding state, live-proof separation. |
 | Maintainer | [Internal machine map](../02-architecture/attestor-internal-machine-map.md) | Where the decision planes, routes, stores, packs, and proof loops live. |
@@ -114,7 +115,7 @@ do the next action there, and come back only if you still need more context.
 ## If You Are Lost
 
 1. Want to see value fast? Run [Try Attestor first](try-attestor-first.md).
-2. Want to wire something? Open [Customer middleware examples](../../examples/customer-middleware/README.md).
+2. Want to wire something? Open [How to integrate Attestor](how-to-integrate-attestor.md).
 3. Want to explain a decision? Open [Reason codes](../05-proof/reason-codes.md).
 4. Want to verify a claim? Open [Audit evidence system](../audit/README.md).
 5. Want to change internals? Open [Internal machine map](../02-architecture/attestor-internal-machine-map.md).

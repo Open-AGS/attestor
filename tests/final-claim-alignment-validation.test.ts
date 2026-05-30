@@ -23,12 +23,12 @@ function testReadmePublicClaimBoundary(): void {
 
   includes(
     readme,
-    '**Control infrastructure for high-risk AI actions.**',
+    '**A gate for high-risk AI actions.**',
     'Final claim alignment: README keeps control infrastructure headline',
   );
   includes(
     readme,
-    'Attestor sits between AI intent and real-world action.',
+    'Attestor sits between what an AI wants to do and the system that would do it.',
     'Final claim alignment: README keeps primary placement sentence',
   );
   includes(

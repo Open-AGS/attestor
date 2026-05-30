@@ -24,10 +24,10 @@ function excludes(content: string, unexpected: RegExp, message: string): void {
 function testReadmeStartsWithAConcreteWorkflow(): void {
   const readme = readProjectFile('README.md');
 
-  includes(readme, '**Control infrastructure for high-risk AI actions.**', 'Product docs: README keeps the short product promise');
-  includes(readme, 'Attestor sits between AI intent and real-world action.', 'Product docs: README starts with plain placement language');
+  includes(readme, '**A gate for high-risk AI actions.**', 'Product docs: README keeps the short product promise');
+  includes(readme, 'Attestor sits between what an AI wants to do and the system that would do it.', 'Product docs: README starts with plain placement language');
   includes(readme, 'Prompts guide. They do not enforce.', 'Product docs: README keeps the prompt-control contrast');
-  includes(readme, 'A prompt is not a formal rule; it is linguistic context interpreted by a probabilistic model.', 'Product docs: README preserves the prompt-boundary thesis');
+  includes(readme, 'A prompt can guide an AI, but it cannot stop your refund service', 'Product docs: README preserves the prompt-boundary thesis in plain language');
   includes(readme, '## One Concrete Workflow', 'Product docs: README starts product understanding from one concrete workflow');
   includes(readme, 'Refund $380 to customer_123.', 'Product docs: README uses a concrete refund action');
   includes(readme, 'blocked before money moves', 'Product docs: README gives one concrete refund outcome');
@@ -48,11 +48,11 @@ function testReadmeKeepsSingleEngineAndCustomerBoundary(): void {
   const readme = readProjectFile('README.md');
 
   includes(readme, 'AI agent', 'Product docs: README keeps the actor side of the core flow');
-  includes(readme, 'Attestor checks policy, authority, evidence, scope, freshness, replay, tenant, token, and proof', 'Product docs: README keeps the core check vocabulary');
-  includes(readme, 'Downstream action executes only through the customer PEP / gate.', 'Product docs: README keeps the customer enforcement boundary');
-  includes(readme, 'Without an enforced customer-side PEP, gateway, verifier, or adapter, Attestor is advisory evidence.', 'Product docs: README distinguishes advisory evidence from control point');
+  includes(readme, 'Attestor checks the proposed action: policy, approval, evidence, allowed scope, freshness, replay, tenant, token, and proof references', 'Product docs: README keeps the core check vocabulary in plain language');
+  includes(readme, 'The real service runs only through the customer-owned gate.', 'Product docs: README keeps the customer enforcement boundary');
+  includes(readme, 'Without an enforced customer-side gate, gateway, verifier, or adapter, Attestor is advisory evidence.', 'Product docs: README distinguishes advisory evidence from control point');
   includes(readme, 'Start in shadow mode.', 'Product docs: README keeps shadow mode as the adoption wedge');
-  includes(readme, 'These are domain packs over one Attestor engine.', 'Product docs: README keeps one-engine pack framing');
+  includes(readme, 'These are examples over one Attestor engine.', 'Product docs: README keeps one-engine pack framing');
   includes(readme, 'They are not separate products and not equal-maturity claims.', 'Product docs: README keeps pack maturity scoped');
   includes(readme, 'Attestor is a control point, not a data lake.', 'Product docs: README keeps data-posture positioning');
   includes(readme, 'Customer systems keep ownership of the model, agent, workflow, wallet, database, and downstream execution path.', 'Product docs: README keeps customer ownership boundary');
@@ -87,6 +87,7 @@ function testReadmeLinksTheRightDeeperDocsWithoutBecomingALinkWall(): void {
 
   includes(readme, '## Start Here', 'Product docs: README exposes a short first-visitor link surface');
   includes(readme, '[Repository navigator](docs/01-overview/repository-navigator.md)', 'Product docs: README links the repository navigator');
+  includes(readme, '[How to integrate Attestor](docs/01-overview/how-to-integrate-attestor.md)', 'Product docs: README links the integration guide');
   includes(readme, '[Try Attestor first](docs/01-overview/try-attestor-first.md)', 'Product docs: README links the first-run guide');
   includes(readme, '[Golden Path: Refund](docs/02-architecture/golden-refund-shadow-pilot.md)', 'Product docs: README links the first concrete workflow');
   includes(readme, '[First hosted API call](docs/01-overview/hosted-first-api-call.md)', 'Product docs: README links the hosted first call');

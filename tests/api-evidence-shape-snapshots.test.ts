@@ -34,11 +34,15 @@ function stableJson(value: unknown): string {
   return `${JSON.stringify(value, null, 2)}\n`;
 }
 
+function normalizeNewlines(value: string): string {
+  return value.replace(/\r\n/gu, '\n');
+}
+
 function readSnapshot(name: string): string {
-  return readFileSync(
+  return normalizeNewlines(readFileSync(
     join(process.cwd(), 'tests', 'snapshots', 'api-evidence-shapes', `${name}.json`),
     'utf8',
-  );
+  ));
 }
 
 function assertSnapshot(name: string, value: ShapeSnapshot): void {

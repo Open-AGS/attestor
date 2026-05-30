@@ -22,6 +22,10 @@ function stableJson(value: unknown): string {
   return `${JSON.stringify(value, null, 2)}\n`;
 }
 
+function normalizeNewlines(value: string): string {
+  return value.replace(/\r\n/gu, '\n');
+}
+
 function goldenBaseline(summary: GoldenPathsEvaluatorSummary): unknown {
   return {
     baselineVersion: 'attestor.golden-output-baseline.v1',
@@ -58,10 +62,10 @@ function goldenBaseline(summary: GoldenPathsEvaluatorSummary): unknown {
 }
 
 const actual = stableJson(goldenBaseline(createGoldenPathsEvaluatorSummary()));
-const expected = readFileSync(
+const expected = normalizeNewlines(readFileSync(
   join(process.cwd(), 'tests', 'snapshots', 'golden-output-baselines', 'golden-paths-evaluator.json'),
   'utf8',
-);
+));
 
 equal(
   actual,

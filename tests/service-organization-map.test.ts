@@ -38,6 +38,7 @@ function testServiceDirectoriesAreResponsibilityNamed(): void {
       'async',
       'billing',
       'bootstrap',
+      'control-plane-store',
       'hosted',
       'http',
       'pipeline',
@@ -125,17 +126,18 @@ function testResponsibilityDirectoryCountsMatchCloseoutMap(): void {
   const expectedCounts: Readonly<Record<string, number>> = {
     account: 13,
     'api-types': 7,
-    application: 13,
+    application: 17,
     async: 7,
-    billing: 6,
-    bootstrap: 16,
+    billing: 7,
+    bootstrap: 18,
+    'control-plane-store': 14,
     hosted: 11,
     http: 2,
     pipeline: 2,
     'policy-foundry': 3,
     release: 10,
     runtime: 2,
-    shadow: 1,
+    shadow: 7,
   };
 
   for (const [directory, expectedCount] of Object.entries(expectedCounts)) {

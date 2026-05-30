@@ -15,7 +15,9 @@ At B-service-06 closeout, `src/service/` has 39 root-level cross-cutting files
 plus responsibility-named directories for account, billing, async, pipeline,
 release, hosted, Policy Foundry, and shadow support. The later large-file
 reduction track keeps the root `api-types.ts` compatibility barrel and moves
-the type families under `src/service/api-types/`.
+the type families under `src/service/api-types/`; it also keeps the root
+`control-plane-store.ts` compatibility facade while moving store-family modules
+under `src/service/control-plane-store/`.
 
 ## Research Anchors
 
@@ -78,6 +80,7 @@ a short architecture note explains why they must remain root-level.
 | `src/service/async/` | Async pipeline, worker, tenant execution, weighted dispatch, dead-letter handling, and email delivery event support. |
 | `src/service/billing/` | Billing entitlements, event ledger, export/reconciliation, feature catalog/service, and Stripe support under `billing/stripe/`. |
 | `src/service/bootstrap/` | Runtime assembly, route dependency wiring, storage profile wiring, and bootstrap contracts. |
+| `src/service/control-plane-store/` | Control-plane persistence family modules for PostgreSQL lifecycle, schema, mapping, idempotency, audit, async dead-letter, email, Stripe webhook, tenant key, usage, account auth, hosted billing, and snapshots, re-exported by the root `control-plane-store.ts` compatibility facade. |
 | `src/service/hosted/` | Hosted product-flow contracts, hosted generic admission proof bridges, hosted LLM/tool boundary, runtime health, observability/privacy, release provenance, and hosted abuse/reconciliation guards. |
 | `src/service/http/` | HTTP helpers and Hono route handlers under `http/routes/`. |
 | `src/service/pipeline/` | Pipeline idempotency store and pipeline route support. |
@@ -95,7 +98,7 @@ the test in the same PR.
 1. Move one service family per PR.
 2. Keep each PR move-only unless a test proves a necessary import adjustment.
 3. Do not split route files in this phase.
-4. Do not split `control-plane-store.ts` in this phase.
+4. Keep `control-plane-store.ts` as the compatibility facade; store-family modules live under `src/service/control-plane-store/`.
 5. Do not change package exports in this phase.
 6. Update every direct path reference in docs, tests, scripts, and source.
 7. Run the closest route/store/application tests for the moved family.
@@ -154,7 +157,7 @@ These are explicitly outside the B-service move phase:
 - splitting `src/service/http/routes/account-routes.ts`
 - splitting `src/service/http/routes/release-policy-control-routes.ts`
 - splitting `src/service/http/routes/admin-routes.ts`
-- splitting `src/service/control-plane-store.ts`
+- removing the root `src/service/control-plane-store.ts` compatibility facade
 - moving `src/consequence-admission/golden-*-*.ts`
 - changing the public package exports map
 

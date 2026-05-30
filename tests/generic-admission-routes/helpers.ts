@@ -115,6 +115,7 @@ export function createApp(planId = 'starter'): Hono {
       planId,
       monthlyRunQuota: 100,
     }),
+    recordShadowAdmission: () => {},
   });
   return app;
 }

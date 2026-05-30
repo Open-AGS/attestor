@@ -82,6 +82,7 @@ function testReadmeKeepsDomainPacksAndLocalTruth(): void {
   includes(readme, '## Current State', 'Product docs: README keeps a compact current state section');
   includes(readme, 'Package version: 0.2.0-evaluation', 'Product docs: README keeps package version visible');
   includes(readme, 'Tag target:      v0.2.0-evaluation', 'Product docs: README keeps tag target visible');
+  includes(readme, 'Release stage:   evaluation release', 'Product docs: README keeps evaluation-release status visible');
   includes(readme, 'Release type:    GitHub pre-release / Golden Path evaluation baseline', 'Product docs: README keeps release type visible');
 }
 

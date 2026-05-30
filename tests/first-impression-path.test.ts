@@ -77,6 +77,7 @@ function testReadmeKeepsEvaluationTruthBeforeDeepDocs(): void {
 
   includes(readme, '## Current State', 'README: exposes compact current state section');
   includes(readme, 'Package version: 0.2.0-evaluation', 'README: states current package version plainly');
+  includes(readme, 'Release stage:   evaluation release', 'README: states evaluation-release status plainly');
   includes(readme, 'Release type:    GitHub pre-release / Golden Path evaluation baseline', 'README: states current release type plainly');
   includes(readme, 'These are examples over one Attestor engine.', 'README: keeps one-engine pack framing');
   includes(readme, 'They are not separate products and not equal-maturity claims.', 'README: keeps pack maturity scoped');

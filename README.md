@@ -163,8 +163,11 @@ For an integration path, see [How to integrate Attestor](docs/01-overview/how-to
 ```text
 Package version: 0.2.0-evaluation
 Tag target:      v0.2.0-evaluation
+Release stage:   evaluation release
 Release type:    GitHub pre-release / Golden Path evaluation baseline
 ```
+
+Attestor is not a finished public SaaS, a production-use guarantee, a completed customer-operated deployment, or a substitute for an external security audit.
 
 ## Data Posture
 

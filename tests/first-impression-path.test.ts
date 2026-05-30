@@ -43,16 +43,16 @@ function testReadmeHasAPlainFirstThirtySeconds(): void {
   includes(readme, 'It controls the proposed action before a customer system acts.', 'README: states the proposed-action control point');
   includes(readme, 'Prompts guide. They do not enforce.', 'README: keeps the prompt-control contrast');
   includes(readme, '## One Concrete Workflow', 'README: starts with one concrete workflow before abstract categories');
-  includes(readme, 'Refund $380 to customer_123.', 'README: shows one high-risk action immediately');
+  includes(readme, 'Refund $8,750 to customer_123.', 'README: shows one high-risk action immediately');
   includes(readme, 'blocked before money moves', 'README: gives one concrete outcome without slash ambiguity');
   includes(
     readme,
-    'manager approval is missing and duplicate-refund risk is present',
+    'manager approval is missing, the order/customer binding is incomplete,',
     'README: gives the concrete stop reason',
   );
   includes(readme, 'What the reviewer sees:', 'README: shows what a user sees');
-  includes(readme, 'the AI-generated refund request can reach the refund service with no gate trace', 'README: shows the without-Attestor failure mode');
-  includes(readme, 'money does not move', 'README: shows the with-Attestor result');
+  includes(readme, 'the AI-generated refund request can reach the refund service as an executable action', 'README: shows the without-Attestor failure mode');
+  includes(readme, 'the refund is stopped', 'README: shows the with-Attestor result');
   includes(readme, 'the refund path is synthetic and shadow-only', 'README: keeps local-demo no-claims close to the example');
   appearsBefore(readme, '## One Concrete Workflow', '## What Attestor Does', 'README: concrete story comes before broad mechanism');
   appearsBefore(readme, '## Why This Matters Now', '## What Attestor Does', 'README: urgency comes before broad mechanism');
@@ -70,24 +70,19 @@ function testReadmeKeepsTheControlBoundaryAndLocalRunPath(): void {
   includes(readme, 'npm ci', 'README: uses reproducible install for the reviewer path');
   includes(readme, 'npm run demo:golden-refund', 'README: shows the first concrete runnable path');
   includes(readme, 'npm run demo:golden-paths', 'README: shows the all-pack local evaluator');
-  includes(readme, 'npm run proof:surface', 'README: exposes the local proof surface command');
-  includes(readme, 'Read proof material as typed evidence, not a universal cryptographic guarantee.', 'README: narrows proof vocabulary');
-  includes(readme, 'It is a local static proof surface. It does not start a hosted console or claim a public hosted crypto route.', 'README: blocks proof-surface hosted-route overclaim');
 }
 
 function testReadmeKeepsEvaluationTruthBeforeDeepDocs(): void {
   const readme = readProjectFile('README.md');
 
-  includes(readme, '## Current Repository Truth', 'README: exposes repository truth section');
-  includes(readme, 'Attestor is an **evaluation release**.', 'README: states evaluation release plainly');
-  includes(readme, 'not a finished public SaaS, a production-use guarantee, a completed customer-operated deployment, or a substitute for an external security audit', 'README: keeps public no-claims visible');
-  includes(readme, 'They do not prove live cloud infrastructure, live customer enforcement, external KMS/HSM signing, shared replay stores, production readiness, or enterprise readiness.', 'README: keeps local checks separate from live proof');
-  includes(readme, 'direct downstream bypass must fail', 'README: states customer PEP proof requirement');
+  includes(readme, '## Current State', 'README: exposes compact current state section');
+  includes(readme, 'Package version: 0.2.0-evaluation', 'README: states current package version plainly');
+  includes(readme, 'Release type:    GitHub pre-release / Golden Path evaluation baseline', 'README: states current release type plainly');
   includes(readme, 'These are examples over one Attestor engine.', 'README: keeps one-engine pack framing');
   includes(readme, 'They are not separate products and not equal-maturity claims.', 'README: keeps pack maturity scoped');
   includes(readme, 'Attestor is a control point, not a data lake.', 'README: states data posture plainly');
-  appearsBefore(readme, '## Current Repository Truth', '## Data Posture', 'README: repository truth comes before deeper trust posture');
-  appearsBefore(readme, '## Decision Model', '## Proof Model', 'README: bounded decision vocabulary comes before proof details');
+  appearsBefore(readme, '## Current State', '## Data Posture', 'README: current state comes before deeper trust posture');
+  appearsBefore(readme, '## Decision Model', '## Start Here', 'README: bounded decision vocabulary comes before final links');
 }
 
 function testReadmeStaysReadableInsteadOfDense(): void {
@@ -95,6 +90,8 @@ function testReadmeStaysReadableInsteadOfDense(): void {
 
   excludes(readme, /## Core Operating Loop/u, 'README: should not reintroduce the old dense operating-loop section');
   excludes(readme, /## Architecture: Core And Packs/u, 'README: should not reintroduce the old architecture wall');
+  excludes(readme, /## Proof Model/u, 'README: should keep proof details out of the front page');
+  excludes(readme, /## Maintainer Reference/u, 'README: should not end with a maintainer link wall');
   excludes(readme, /<details>/u, 'README: should not hide a maintainer link wall');
   excludes(readme, /digest-only canonical shadow fixtures/u, 'README: should not lead with internal fixture language');
   excludes(readme, /runtime assurance smoke over the refund scenarios/u, 'README: should not lead with internal smoke-test language');

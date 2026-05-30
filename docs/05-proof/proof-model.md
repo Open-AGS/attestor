@@ -4,6 +4,20 @@ Attestor treats proof as an explicit runtime truth artifact, not a side effect.
 
 Every governed run records what was actually observed, what was inferred, what was reviewed, and what a verifier can later check independently.
 
+Read proof material as typed evidence, not a universal cryptographic guarantee.
+It does not automatically prove external facts, third-party immutability,
+production signing authority, or live customer deployment.
+
+Run the local proof surface if you want the repo-side evidence packet:
+
+```bash
+npm run proof:surface
+```
+
+The command writes `.attestor/proof-surface/latest/manifest.json`.
+It is a local static proof surface. It does not start a hosted console or claim
+a public hosted crypto route.
+
 ## Proof Modes
 
 | Mode | Meaning |

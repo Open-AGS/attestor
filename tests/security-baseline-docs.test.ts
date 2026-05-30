@@ -60,9 +60,9 @@ function testReadmePinsReviewerAndSecurityEntry(): void {
   const readme = readProjectFile('README.md');
   const docsFrontDoor = readProjectFile('docs', 'README.md');
 
-  includes(readme, '## Current Repository Truth', 'Security baseline: README keeps the repository truth section');
-  includes(readme, 'Attestor is an **evaluation release**.', 'Security baseline: README states evaluation status');
-  includes(readme, 'It is not a finished public SaaS, a production-use guarantee, a completed customer-operated deployment, or a substitute for an external security audit.', 'Security baseline: README blocks production and audit overclaims');
+  includes(readme, '## Current State', 'Security baseline: README keeps the current state section');
+  includes(readme, 'Package version: 0.2.0-evaluation', 'Security baseline: README states evaluation package version');
+  includes(readme, 'Release type:    GitHub pre-release / Golden Path evaluation baseline', 'Security baseline: README states evaluation release type');
   includes(readme, '[Security Policy](SECURITY.md)', 'Security baseline: README links the security policy');
   includes(docsFrontDoor, '[Attestor Evaluation Packet v0.1](00-evaluation/v0.1-evaluation-packet.md)', 'Security baseline: docs front door links the evaluation packet');
   includes(docsFrontDoor, '[Evaluation Smoke workflow](../.github/workflows/evaluation-smoke.yml)', 'Security baseline: docs front door links the current CI reviewer path');

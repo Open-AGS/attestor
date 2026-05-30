@@ -31,12 +31,12 @@ function testReadmeStartsWithAConcreteWorkflow(): void {
   includes(readme, 'Prompts guide. They do not enforce.', 'Product docs: README keeps the prompt-control contrast');
   includes(readme, 'A prompt can guide an AI, but it cannot stop your refund service', 'Product docs: README preserves the prompt-boundary thesis in plain language');
   includes(readme, '## One Concrete Workflow', 'Product docs: README starts product understanding from one concrete workflow');
-  includes(readme, 'Refund $380 to customer_123.', 'Product docs: README uses a concrete refund action');
+  includes(readme, 'Refund $8,750 to customer_123.', 'Product docs: README uses a concrete refund action');
   includes(readme, 'blocked before money moves', 'Product docs: README gives one concrete refund outcome');
-  includes(readme, 'manager approval is missing and duplicate-refund risk is present', 'Product docs: README shows a concrete stop reason');
+  includes(readme, 'manager approval is missing, the order/customer binding is incomplete,', 'Product docs: README shows a concrete stop reason');
   includes(readme, 'What the reviewer sees:', 'Product docs: README makes the reviewer view concrete');
-  includes(readme, 'the AI-generated refund request can reach the refund service with no gate trace', 'Product docs: README shows the without-Attestor failure mode');
-  includes(readme, 'money does not move', 'Product docs: README shows the with-Attestor gate behavior');
+  includes(readme, 'the AI-generated refund request can reach the refund service as an executable action', 'Product docs: README shows the without-Attestor failure mode');
+  includes(readme, 'the refund is stopped', 'Product docs: README shows the with-Attestor gate behavior');
   includes(readme, '## Why This Matters Now', 'Product docs: README keeps urgency context after the core workflow');
   includes(readme, '[EU AI Act](https://digital-strategy.ec.europa.eu/en/policies/regulatory-framework-ai)', 'Product docs: README keeps the EU AI Act as a bounded context anchor');
   includes(readme, '[NIST AI Risk Management Framework](https://www.nist.gov/itl/ai-risk-management-framework)', 'Product docs: README keeps NIST AI RMF as a bounded context anchor');
@@ -79,39 +79,27 @@ function testReadmeKeepsDomainPacksAndLocalTruth(): void {
   includes(readme, 'npm run demo:golden-external-communication', 'Product docs: README links the communication golden path');
   includes(readme, 'npm run demo:golden-operational-execution', 'Product docs: README links the ops golden path');
   includes(readme, 'npm run demo:golden-programmable-money', 'Product docs: README links the programmable-money golden path');
-  includes(readme, 'Attestor is an **evaluation release**.', 'Product docs: README keeps evaluation status visible');
-  includes(readme, 'They do not prove live cloud infrastructure, live customer enforcement, external KMS/HSM signing, shared replay stores, production readiness, or enterprise readiness.', 'Product docs: README separates local evidence from live proof');
-  includes(readme, 'direct downstream bypass must fail', 'Product docs: README states customer PEP proof requirement');
-  includes(readme, 'Plain-language summary: [License and use](docs/01-overview/license-and-use.md).', 'Product docs: README links the plain-language license summary');
+  includes(readme, '## Current State', 'Product docs: README keeps a compact current state section');
+  includes(readme, 'Package version: 0.2.0-evaluation', 'Product docs: README keeps package version visible');
+  includes(readme, 'Tag target:      v0.2.0-evaluation', 'Product docs: README keeps tag target visible');
+  includes(readme, 'Release type:    GitHub pre-release / Golden Path evaluation baseline', 'Product docs: README keeps release type visible');
 }
 
 function testReadmeLinksTheRightDeeperDocsWithoutBecomingALinkWall(): void {
   const readme = readProjectFile('README.md');
 
   includes(readme, '## Start Here', 'Product docs: README exposes a short first-visitor link surface');
-  includes(readme, 'Pick the shortest useful path. Do not read the whole repository first.', 'Product docs: README keeps the first path lightweight');
-  includes(readme, 'Find the right page: [Docs front door](docs/README.md) and [Repository navigator](docs/01-overview/repository-navigator.md)', 'Product docs: README puts docs navigation at the top of the link path');
-  includes(readme, 'Run the concrete refund workflow: [Try Attestor first](docs/01-overview/try-attestor-first.md)', 'Product docs: README leads with the first-run guide');
-  includes(readme, 'Put Attestor before a real service call: [How to integrate Attestor](docs/01-overview/how-to-integrate-attestor.md)', 'Product docs: README links the integration guide');
-  includes(readme, 'Copy framework-shaped examples: [Customer middleware examples](examples/customer-middleware/README.md)', 'Product docs: README links middleware examples');
-  includes(readme, 'Send shadow events without an SDK: [Shadow event payload examples](docs/01-overview/shadow-event-payload-examples.md)', 'Product docs: README links shadow payload examples');
-  includes(readme, 'Explain a `review` or `block`: [Reason codes](docs/05-proof/reason-codes.md)', 'Product docs: README links reason-code support');
-  includes(readme, 'Make the first hosted request: [First hosted API call](docs/01-overview/hosted-first-api-call.md)', 'Product docs: README links the hosted first call');
-  includes(readme, 'Understand what the license allows: [License and use](docs/01-overview/license-and-use.md)', 'Product docs: README links the license-and-use guide');
-  includes(readme, '## Maintainer Reference', 'Product docs: README keeps deeper maintainer references behind an explicit heading');
-  includes(readme, 'Use this after you already know what Attestor does.', 'Product docs: README explains why the maintainer section exists');
-  includes(readme, '[Docs front door](docs/README.md)', 'Product docs: README links the docs front door');
-  includes(readme, '[Repository map](docs/01-overview/repository-map.md)', 'Product docs: README links the repository map');
-  includes(readme, '[Test system map](docs/02-architecture/test-system-map.md)', 'Product docs: README links the test system map');
-  includes(readme, '[AI Action Control Plane architecture](docs/02-architecture/ai-action-control-plane-architecture.md)', 'Product docs: README links the control-plane ADR');
-  includes(readme, '[Attestor language contract](docs/02-architecture/attestor-language-contract.md)', 'Product docs: README links the language contract');
-  includes(readme, '[Glossary](docs/02-architecture/glossary.md)', 'Product docs: README links the glossary');
-  includes(readme, '[Domain pack boundary](docs/02-architecture/domain-pack-boundary.md)', 'Product docs: README links the domain-pack boundary');
-  includes(readme, '[Downstream enforcement contract](docs/02-architecture/downstream-enforcement-contract.md)', 'Product docs: README links the downstream enforcement contract');
-  includes(readme, '[Audit evidence system](docs/audit/README.md)', 'Product docs: README links the audit evidence system');
-  includes(readme, '[Current posture baseline](docs/audit/current-posture-baseline.md)', 'Product docs: README links the current posture baseline');
-  includes(readme, '[Live proof register](docs/audit/live-proof-register.md)', 'Product docs: README links the live proof register');
+  includes(readme, 'Use one entry point first. It opens the rest.', 'Product docs: README keeps the first path lightweight');
+  includes(readme, 'Use one entry point first. It opens the rest.', 'Product docs: README explains the single navigation hub');
+  includes(readme, '[Repository navigator](docs/01-overview/repository-navigator.md) - choose the right path for reading, integrating, verifying, or changing code.', 'Product docs: README leads with repository navigator');
+  includes(readme, '[Try Attestor first](docs/01-overview/try-attestor-first.md) - run the refund workflow.', 'Product docs: README links the first-run guide');
+  includes(readme, '[How to integrate Attestor](docs/01-overview/how-to-integrate-attestor.md) - place the check before a real service call.', 'Product docs: README links the integration guide');
+  includes(readme, '[Reason codes](docs/05-proof/reason-codes.md) - explain a `review` or `block`.', 'Product docs: README links reason-code support');
+  includes(readme, '[License and use](docs/01-overview/license-and-use.md) - understand allowed use.', 'Product docs: README links license guidance');
   includes(readme, '[Security Policy](SECURITY.md)', 'Product docs: README links the security policy');
+  excludes(readme, /## Maintainer Reference/u, 'Product docs: README should not keep a maintainer link wall');
+  excludes(readme, /\[Repository map\]\(docs\/01-overview\/repository-map\.md\)/u, 'Product docs: README should route repository map through the navigator');
+  excludes(readme, /\[Docs front door\]\(docs\/README\.md\)/u, 'Product docs: README should route docs front door through the navigator');
 }
 
 function testArchitectureDocsStayAlignedWithThePublicReadme(): void {
@@ -145,7 +133,7 @@ function testReadmeDoesNotRegressToTheOldDenseShape(): void {
   excludes(readme, /## Core Operating Loop/u, 'Product docs: README should not reintroduce the old dense operating-loop section');
   excludes(readme, /## Architecture: Core And Packs/u, 'Product docs: README should not reintroduce the old architecture wall');
   excludes(readme, /<details>/u, 'Product docs: README should keep maintainer references under a visible heading, not hidden details');
-  includes(readme, '## Maintainer Reference', 'Product docs: README keeps maintainer-only link depth after the short Start Here surface');
+  excludes(readme, /## Maintainer Reference/u, 'Product docs: README should not expose maintainer-only link depth on the front page');
   excludes(readme, /\| Layer \| Role \| Current status \|/u, 'Product docs: README should not use the old layer table');
   excludes(readme, /\| Pack \| What it means today \| Status \|/u, 'Product docs: README should not use the old pack table');
   excludes(readme, /a finance assistant prepares a report from live warehouse data/u, 'Product docs: README should not lead with finance-only wording');

@@ -32,7 +32,7 @@ understand -> try -> integrate -> explain decisions -> verify claims -> maintain
 
 ## Evaluate Trust
 
-- [Current repository truth](../README.md#current-repository-truth)
+- [Current state](../README.md#current-state)
 - [Attestor Evaluation Packet v0.1](00-evaluation/v0.1-evaluation-packet.md)
 - [v0.2.0 evaluation release notes](00-evaluation/v0.2.0-evaluation-release-notes.md)
 - [Security Policy](../SECURITY.md)

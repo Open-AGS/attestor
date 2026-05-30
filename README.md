@@ -20,7 +20,7 @@ A prompt can guide an AI, but it cannot stop your refund service, export job, id
 A support AI prepares this action:
 
 ```text
-Refund $380 to customer_123.
+Refund $8,750 to customer_123.
 ```
 
 Attestor checks:
@@ -41,7 +41,8 @@ blocked before money moves
 Reason:
 
 ```text
-manager approval is missing and duplicate-refund risk is present
+manager approval is missing, the order/customer binding is incomplete,
+and a duplicate-refund risk is present
 ```
 
 What the reviewer sees:
@@ -56,14 +57,15 @@ What the reviewer sees:
 Without Attestor:
 
 ```text
-the AI-generated refund request can reach the refund service with no gate trace
+the AI-generated refund request can reach the refund service as an executable action
 ```
 
 With Attestor and a customer-owned gate:
 
 ```text
-money does not move
-proof remains
+the refund is stopped
+the reason is visible
+the proof trail remains
 ```
 
 In this repository, the refund path is synthetic and shadow-only. It does not call Stripe, Shopify, a bank, or a live customer deployment.
@@ -156,37 +158,13 @@ These local demos run repo-side examples through the same decision engine.
 For a guided first run, see [Try Attestor first](docs/01-overview/try-attestor-first.md).
 For an integration path, see [How to integrate Attestor](docs/01-overview/how-to-integrate-attestor.md).
 
-## Current Repository Truth
-
-Attestor is an **evaluation release**.
-
-It is reviewer-runnable, CI-backed, and useful for technical evaluation.
-It is not a finished public SaaS, a production-use guarantee, a completed customer-operated deployment, or a substitute for an external security audit.
-
-Current baseline:
+## Current State
 
 ```text
 Package version: 0.2.0-evaluation
 Tag target:      v0.2.0-evaluation
 Release type:    GitHub pre-release / Golden Path evaluation baseline
 ```
-
-Green local checks are repo-side evidence only.
-They do not prove live cloud infrastructure, live customer enforcement, external KMS/HSM signing, shared replay stores, production readiness, or enterprise readiness.
-
-Production control requires live customer no-bypass proof:
-
-```text
-direct downstream bypass must fail
-valid Attestor decision must pass
-replay must fail across instances
-proof must remain reviewable
-```
-
-This repository is source-available under Business Source License 1.1.
-Non-production use is allowed.
-Production use requires a commercial license until the Change Date in [LICENSE](LICENSE).
-Plain-language summary: [License and use](docs/01-overview/license-and-use.md).
 
 ## Data Posture
 
@@ -214,56 +192,13 @@ Attestor never returns an open-ended "looks good."
 | `review` | The action must wait for review. |
 | `block` | The action is rejected fail-closed. |
 
-## Proof Model
-
-Proof material can include:
-
-- decision and reason records
-- canonical digests and evidence references
-- signed packets and certificates when signing is configured
-- tamper-evident local history
-- release and CI evidence for repo review
-
-Read proof material as typed evidence, not a universal cryptographic guarantee.
-It does not automatically prove external facts, third-party immutability, production signing authority, or live customer deployment.
-
-Run the local proof surface if you want the repo-side evidence packet:
-
-```bash
-npm run proof:surface
-```
-
-The command writes `.attestor/proof-surface/latest/manifest.json`.
-It is a local static proof surface. It does not start a hosted console or claim a public hosted crypto route.
-
 ## Start Here
 
-Pick the shortest useful path. Do not read the whole repository first.
+Use one entry point first. It opens the rest.
 
-- Find the right page: [Docs front door](docs/README.md) and [Repository navigator](docs/01-overview/repository-navigator.md)
-- Run the concrete refund workflow: [Try Attestor first](docs/01-overview/try-attestor-first.md)
-- Put Attestor before a real service call: [How to integrate Attestor](docs/01-overview/how-to-integrate-attestor.md)
-- Copy framework-shaped examples: [Customer middleware examples](examples/customer-middleware/README.md)
-- Send shadow events without an SDK: [Shadow event payload examples](docs/01-overview/shadow-event-payload-examples.md)
-- Explain a `review` or `block`: [Reason codes](docs/05-proof/reason-codes.md)
-- Make the first hosted request: [First hosted API call](docs/01-overview/hosted-first-api-call.md)
-- Understand what the license allows: [License and use](docs/01-overview/license-and-use.md)
-
-## Maintainer Reference
-
-Use this after you already know what Attestor does.
-
-- [Docs front door](docs/README.md)
-- [Repository navigator](docs/01-overview/repository-navigator.md)
-- [Repository map](docs/01-overview/repository-map.md)
-- [Test system map](docs/02-architecture/test-system-map.md)
-- [AI Action Control Plane architecture](docs/02-architecture/ai-action-control-plane-architecture.md)
-- [Attestor language contract](docs/02-architecture/attestor-language-contract.md)
-- [Glossary](docs/02-architecture/glossary.md)
-- [Domain pack boundary](docs/02-architecture/domain-pack-boundary.md)
-- [Consequence admission public surface](docs/02-architecture/consequence-admission-public-surface.md)
-- [Downstream enforcement contract](docs/02-architecture/downstream-enforcement-contract.md)
-- [Audit evidence system](docs/audit/README.md)
-- [Current posture baseline](docs/audit/current-posture-baseline.md)
-- [Live proof register](docs/audit/live-proof-register.md)
-- [Security Policy](SECURITY.md)
+- [Repository navigator](docs/01-overview/repository-navigator.md) - choose the right path for reading, integrating, verifying, or changing code.
+- [Try Attestor first](docs/01-overview/try-attestor-first.md) - run the refund workflow.
+- [How to integrate Attestor](docs/01-overview/how-to-integrate-attestor.md) - place the check before a real service call.
+- [Reason codes](docs/05-proof/reason-codes.md) - explain a `review` or `block`.
+- [License and use](docs/01-overview/license-and-use.md) - understand allowed use.
+- [Security Policy](SECURITY.md) - report vulnerabilities and review security scope.

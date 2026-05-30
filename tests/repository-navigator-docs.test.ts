@@ -26,6 +26,7 @@ function testNavigatorKeepsFirstVisitorPaths(): void {
 
   includes(doc, '# Repository Navigator', 'Repository navigator: title is present');
   includes(doc, 'Use this when the repository feels large', 'Repository navigator: purpose is plain');
+  includes(doc, '## What This Opens', 'Repository navigator: names the embedded navigation hubs');
   includes(doc, '## Pick One Door', 'Repository navigator: guided decision entry is present');
   includes(doc, 'Do not read everything.', 'Repository navigator: avoids scavenger-hunt reading');
   includes(doc, 'Stop when...', 'Repository navigator: each path has a stopping rule');
@@ -37,7 +38,8 @@ function testNavigatorKeepsFirstVisitorPaths(): void {
   for (const expected of [
     '[Try Attestor first](try-attestor-first.md)',
     '[How to integrate Attestor](how-to-integrate-attestor.md)',
-    '[Current repository truth](../../README.md#current-repository-truth)',
+    '[Docs front door](../README.md)',
+    '[Current state](../../README.md#current-state)',
     '[Live proof register](../audit/live-proof-register.md)',
     '[Shadow event payload examples](shadow-event-payload-examples.md)',
     '[Customer middleware examples](../../examples/customer-middleware/README.md)',
@@ -142,8 +144,11 @@ function testReadmeLinksNavigator(): void {
   const readme = readProjectFile('README.md');
 
   includes(readme, '[Repository navigator](docs/01-overview/repository-navigator.md)', 'Repository navigator: README links the navigator');
-  includes(readme, '[Docs front door](docs/README.md)', 'Repository navigator: README links the docs front door');
-  includes(readme, '[Repository map](docs/01-overview/repository-map.md)', 'Repository navigator: README links the repository map');
+  includes(readme, 'Use one entry point first. It opens the rest.', 'Repository navigator: README presents navigator as the main entry point');
+  assert.doesNotMatch(readme, /\[Docs front door\]\(docs\/README\.md\)/u, 'Repository navigator: README does not expose docs front door beside the navigator');
+  passed += 1;
+  assert.doesNotMatch(readme, /\[Repository map\]\(docs\/01-overview\/repository-map\.md\)/u, 'Repository navigator: README does not expose repository map beside the navigator');
+  passed += 1;
 }
 
 testNavigatorKeepsFirstVisitorPaths();

@@ -160,12 +160,12 @@ function testDocsAndScriptsStayAligned(): void {
   );
     for (const expected of [
       '## One Concrete Workflow',
-      'Refund $8,750 to customer_123.',
-      'blocked before money moves',
-      'manager approval is missing, the order/customer binding is incomplete,',
-      'What the reviewer sees:',
-      'the AI-generated refund request can reach the refund service as an executable action',
-      'the refund is stopped',
+      'Refund $8,750 to customer_123 for order_789.',
+      'refundService.issueRefund(...)',
+      'block before the refund service runs',
+      'manager approval is missing',
+      'the AI-prepared refund can become an executable service call',
+      'the call does not run, the reason is visible, and the proof trail remains',
       'npm ci',
       'npm run demo:golden-refund',
       'the refund path is synthetic and shadow-only',

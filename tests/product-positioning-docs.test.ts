@@ -29,14 +29,15 @@ function testReadmeStartsWithAConcreteWorkflow(): void {
   includes(readme, '**A gate for high-risk AI actions.**', 'Product docs: README keeps the short product promise');
   includes(readme, 'Attestor sits between what an AI wants to do and the system that would do it.', 'Product docs: README starts with plain placement language');
   includes(readme, 'Prompts guide. They do not enforce.', 'Product docs: README keeps the prompt-control contrast');
-  includes(readme, 'A prompt can guide an AI, but it cannot stop your refund service', 'Product docs: README preserves the prompt-boundary thesis in plain language');
+  includes(readme, 'A prompt can guide an AI, but it cannot stop a refund service', 'Product docs: README preserves the prompt-boundary thesis in plain language');
+  includes(readme, 'hallucinated, manipulated, replayed, over-scoped, or missing approval', 'Product docs: README explains action stop reasons in plain language');
   includes(readme, '## One Concrete Workflow', 'Product docs: README starts product understanding from one concrete workflow');
-  includes(readme, 'Refund $8,750 to customer_123.', 'Product docs: README uses a concrete refund action');
-  includes(readme, 'blocked before money moves', 'Product docs: README gives one concrete refund outcome');
-  includes(readme, 'manager approval is missing, the order/customer binding is incomplete,', 'Product docs: README shows a concrete stop reason');
-  includes(readme, 'What the reviewer sees:', 'Product docs: README makes the reviewer view concrete');
-  includes(readme, 'the AI-generated refund request can reach the refund service as an executable action', 'Product docs: README shows the without-Attestor failure mode');
-  includes(readme, 'the refund is stopped', 'Product docs: README shows the with-Attestor gate behavior');
+  includes(readme, 'Refund $8,750 to customer_123 for order_789.', 'Product docs: README uses a concrete refund action');
+  includes(readme, 'refundService.issueRefund(...)', 'Product docs: README names the dangerous service call');
+  includes(readme, 'block before the refund service runs', 'Product docs: README gives one concrete refund outcome');
+  includes(readme, 'manager approval is missing', 'Product docs: README shows a concrete stop reason');
+  includes(readme, 'the AI-prepared refund can become an executable service call', 'Product docs: README shows the without-Attestor failure mode');
+  includes(readme, 'the call does not run, the reason is visible, and the proof trail remains', 'Product docs: README shows the with-Attestor gate behavior');
   includes(readme, '## Why This Matters Now', 'Product docs: README keeps urgency context after the core workflow');
   includes(readme, '[EU AI Act](https://digital-strategy.ec.europa.eu/en/policies/regulatory-framework-ai)', 'Product docs: README keeps the EU AI Act as a bounded context anchor');
   includes(readme, '[NIST AI Risk Management Framework](https://www.nist.gov/itl/ai-risk-management-framework)', 'Product docs: README keeps NIST AI RMF as a bounded context anchor');
@@ -99,6 +100,7 @@ function testReadmeLinksTheRightDeeperDocsWithoutBecomingALinkWall(): void {
   includes(readme, '[License and use](docs/01-overview/license-and-use.md) - understand allowed use.', 'Product docs: README links license guidance');
   includes(readme, '[Security Policy](SECURITY.md)', 'Product docs: README links the security policy');
   excludes(readme, /## Maintainer Reference/u, 'Product docs: README should not keep a maintainer link wall');
+  excludes(readme, /## Decision Model/u, 'Product docs: README should keep decision model details out of the front page');
   excludes(readme, /\[Repository map\]\(docs\/01-overview\/repository-map\.md\)/u, 'Product docs: README should route repository map through the navigator');
   excludes(readme, /\[Docs front door\]\(docs\/README\.md\)/u, 'Product docs: README should route docs front door through the navigator');
 }

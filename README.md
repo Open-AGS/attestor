@@ -13,60 +13,47 @@ It controls the proposed action before a customer system acts.
 
 Prompts guide. They do not enforce.
 
-A prompt can guide an AI, but it cannot stop your refund service, export job, identity admin, deploy tool, or wallet adapter. The stop point has to sit before the real action. Attestor checks that structured action and returns `admit`, `narrow`, `review`, or `block`.
+A prompt can guide an AI, but it cannot stop a refund service, export job, identity admin, deploy tool, or wallet adapter when the proposed action is hallucinated, manipulated, replayed, over-scoped, or missing approval. The stop point has to sit before the real action. Attestor checks the structured action and returns `admit`, `narrow`, `review`, or `block`.
 
 ## One Concrete Workflow
 
-A support AI prepares this action:
+A support AI prepares a refund:
 
 ```text
-Refund $8,750 to customer_123.
+Refund $8,750 to customer_123 for order_789.
 ```
 
-Attestor checks:
+The dangerous step is not the sentence.
+It is the service call after it:
 
-- is there a refund policy?
-- does the order belong to this customer?
-- is the payment real?
-- is manager approval required?
-- was this already refunded?
-- can the refund service execute only after Attestor allows it?
+```text
+refundService.issueRefund(...)
+```
+
+Attestor checks the structured action before that call:
+
+- the order belongs to the customer
+- the payment exists and was not already refunded
+- the amount is inside policy
+- manager approval is attached and valid
+- the refund service is reachable only through the customer-owned gate
 
 Outcome:
 
 ```text
-blocked before money moves
+block before the refund service runs
 ```
 
 Reason:
 
 ```text
-manager approval is missing, the order/customer binding is incomplete,
-and a duplicate-refund risk is present
+manager approval is missing
+order/customer binding is incomplete
+duplicate-refund risk is present
 ```
 
-What the reviewer sees:
-
-- the proposed action
-- the missing approval
-- the duplicate-risk signal
-- the evidence references
-- the safe next step
-- the proof trail
-
-Without Attestor:
-
-```text
-the AI-generated refund request can reach the refund service as an executable action
-```
-
-With Attestor and a customer-owned gate:
-
-```text
-the refund is stopped
-the reason is visible
-the proof trail remains
-```
+Without Attestor, the AI-prepared refund can become an executable service call.
+With Attestor and a customer-owned gate, the call does not run, the reason is visible, and the proof trail remains.
 
 In this repository, the refund path is synthetic and shadow-only. It does not call Stripe, Shopify, a bank, or a live customer deployment.
 
@@ -183,17 +170,6 @@ Attestor returns a bounded decision, reasons, and proof references.
 Attestor is not the model, an agent runtime, a chat wrapper, a generic workflow app, a wallet, a custody platform, a payment processor, or a permission slip for AI actions without customer-side enforcement.
 
 The [data minimization and redaction policy](docs/02-architecture/data-minimization-redaction-policy.md) forbids raw prompts, raw tool payloads, raw customer identifiers, bank/payment data, wallet material, credentials, private policy thresholds, and downstream error bodies in public evidence surfaces.
-
-## Decision Model
-
-Attestor never returns an open-ended "looks good."
-
-| Decision | Meaning |
-|---|---|
-| `admit` | The proposed action may proceed. |
-| `narrow` | Only a safer bounded version may proceed. |
-| `review` | The action must wait for review. |
-| `block` | The action is rejected fail-closed. |
 
 ## Start Here
 

@@ -42,17 +42,18 @@ function testReadmeHasAPlainFirstThirtySeconds(): void {
   includes(readme, 'It does not try to make the model perfect.', 'README: states what Attestor does not try to solve');
   includes(readme, 'It controls the proposed action before a customer system acts.', 'README: states the proposed-action control point');
   includes(readme, 'Prompts guide. They do not enforce.', 'README: keeps the prompt-control contrast');
+  includes(readme, 'hallucinated, manipulated, replayed, over-scoped, or missing approval', 'README: explains why a proposed action can be stopped');
   includes(readme, '## One Concrete Workflow', 'README: starts with one concrete workflow before abstract categories');
-  includes(readme, 'Refund $8,750 to customer_123.', 'README: shows one high-risk action immediately');
-  includes(readme, 'blocked before money moves', 'README: gives one concrete outcome without slash ambiguity');
+  includes(readme, 'Refund $8,750 to customer_123 for order_789.', 'README: shows one high-risk action immediately');
+  includes(readme, 'refundService.issueRefund(...)', 'README: names the dangerous downstream service call');
+  includes(readme, 'block before the refund service runs', 'README: gives one concrete outcome without slash ambiguity');
   includes(
     readme,
-    'manager approval is missing, the order/customer binding is incomplete,',
+    'manager approval is missing',
     'README: gives the concrete stop reason',
   );
-  includes(readme, 'What the reviewer sees:', 'README: shows what a user sees');
-  includes(readme, 'the AI-generated refund request can reach the refund service as an executable action', 'README: shows the without-Attestor failure mode');
-  includes(readme, 'the refund is stopped', 'README: shows the with-Attestor result');
+  includes(readme, 'the AI-prepared refund can become an executable service call', 'README: shows the without-Attestor failure mode');
+  includes(readme, 'the call does not run, the reason is visible, and the proof trail remains', 'README: shows the with-Attestor result');
   includes(readme, 'the refund path is synthetic and shadow-only', 'README: keeps local-demo no-claims close to the example');
   appearsBefore(readme, '## One Concrete Workflow', '## What Attestor Does', 'README: concrete story comes before broad mechanism');
   appearsBefore(readme, '## Why This Matters Now', '## What Attestor Does', 'README: urgency comes before broad mechanism');
@@ -83,7 +84,7 @@ function testReadmeKeepsEvaluationTruthBeforeDeepDocs(): void {
   includes(readme, 'They are not separate products and not equal-maturity claims.', 'README: keeps pack maturity scoped');
   includes(readme, 'Attestor is a control point, not a data lake.', 'README: states data posture plainly');
   appearsBefore(readme, '## Current State', '## Data Posture', 'README: current state comes before deeper trust posture');
-  appearsBefore(readme, '## Decision Model', '## Start Here', 'README: bounded decision vocabulary comes before final links');
+  excludes(readme, /## Decision Model/u, 'README: should not keep a separate decision-model section');
 }
 
 function testReadmeStaysReadableInsteadOfDense(): void {

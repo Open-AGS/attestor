@@ -17,7 +17,7 @@ import { acceptsJsonRequestBody } from '../route-response-helpers.js';
 
 export interface GenericAdmissionRouteDeps {
   currentTenant(context: Context): TenantContext;
-  recordShadowAdmission?(input: {
+  recordShadowAdmission(input: {
     readonly tenant: TenantContext;
     readonly envelope: GenericAdmissionEnvelope;
   }): void;
@@ -46,6 +46,23 @@ function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
+function nestedTenantId(value: unknown): string | null {
+  if (!isRecord(value) || typeof value.tenantId !== 'string') return null;
+  const normalized = value.tenantId.trim();
+  return normalized.length > 0 ? normalized : null;
+}
+
+function assertNestedScopeTenantMatches(
+  payload: Readonly<Record<string, unknown>>,
+  fieldName: 'requestedScope' | 'approvedScope',
+  tenant: TenantContext,
+): void {
+  const requestedTenantId = nestedTenantId(payload[fieldName]);
+  if (requestedTenantId && requestedTenantId !== tenant.tenantId) {
+    throw new GenericAdmissionTenantScopeMismatchError(`${fieldName}.tenantId`);
+  }
+}
+
 function admissionPayloadWithTenant(payload: unknown, tenant: TenantContext): unknown {
   if (!isRecord(payload)) return payload;
   if (typeof payload.tenantId === 'string') {
@@ -54,6 +71,8 @@ function admissionPayloadWithTenant(payload: unknown, tenant: TenantContext): un
       throw new GenericAdmissionTenantScopeMismatchError();
     }
   }
+  assertNestedScopeTenantMatches(payload, 'requestedScope', tenant);
+  assertNestedScopeTenantMatches(payload, 'approvedScope', tenant);
   return {
     ...payload,
     tenantId: tenant.tenantId,
@@ -63,8 +82,10 @@ function admissionPayloadWithTenant(payload: unknown, tenant: TenantContext): un
 }
 
 class GenericAdmissionTenantScopeMismatchError extends Error {
-  constructor() {
-    super('Admission tenantId must match the authenticated tenant context.');
+  constructor(fieldName = 'tenantId') {
+    super(fieldName === 'tenantId'
+      ? 'Admission tenantId must match the authenticated tenant context.'
+      : `Admission ${fieldName} must match the authenticated tenant context.`);
     this.name = 'GenericAdmissionTenantScopeMismatchError';
   }
 }
@@ -171,6 +192,17 @@ export function registerGenericAdmissionRoutes(
         });
         return c.json(problem, status);
       }
+      if (typeof deps.recordShadowAdmission !== 'function') {
+        const problem = createConsequenceAdmissionProblem({
+          type: 'https://attestor.dev/problems/shadow-recording-unavailable',
+          title: 'Shadow recording unavailable',
+          status: 503,
+          detail: 'The shadow admission event recorder is not configured.',
+          instance: '/api/v1/admissions',
+          reasonCodes: ['shadow-recording-unavailable'],
+        });
+        return c.json(problem, 503);
+      }
       const protectedReleaseTokenRequirement =
         evaluateGenericAdmissionProtectedReleaseTokenRequirement({ envelope });
       let envelopeForShadow: GenericAdmissionEnvelope = envelope;
@@ -235,7 +267,7 @@ export function registerGenericAdmissionRoutes(
         return c.json(problem, 503);
       }
       try {
-        deps.recordShadowAdmission?.({ tenant, envelope: envelopeForShadow });
+        deps.recordShadowAdmission({ tenant, envelope: envelopeForShadow });
       } catch {
         const problem = createConsequenceAdmissionProblem({
           type: 'https://attestor.dev/problems/shadow-recording-unavailable',

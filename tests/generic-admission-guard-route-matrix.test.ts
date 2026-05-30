@@ -92,6 +92,7 @@ function createApp(): Hono {
       planId: 'starter',
       monthlyRunQuota: 100,
     }),
+    recordShadowAdmission: () => {},
   });
   return app;
 }
@@ -122,7 +123,7 @@ function scopedMoneyAdmission(): Record<string, unknown> {
       recordCount: 12,
       operationType: 'refund',
       recipientId: 'recipient_other_private',
-      tenantId: 'tenant_current_private',
+      tenantId: 'tenant_route',
       environment: 'production',
       downstreamSystem: 'refund-service-private',
       dataClass: 'customer-visible',
@@ -134,7 +135,7 @@ function scopedMoneyAdmission(): Record<string, unknown> {
       maxRecordCount: 1,
       operationTypes: ['refund'],
       recipientIds: ['recipient_customer_private'],
-      tenantId: 'tenant_current_private',
+      tenantId: 'tenant_route',
       environments: ['production'],
       downstreamSystems: ['refund-service-private'],
       dataClasses: ['customer-visible'],
@@ -303,7 +304,7 @@ const routeGuardMatrix: readonly RouteGuardCase[] = [
       'record-count-exceeds-approved-scope',
     ],
     dimensions: [['scopeExplosionGuardOutcome', 'narrow']],
-    redactionPattern: /recipient_other_private|recipient_customer_private|tenant_current_private|refund-service-private/u,
+    redactionPattern: /recipient_other_private|recipient_customer_private|refund-service-private/u,
   },
   {
     guard: 'tool-result-poisoning',

@@ -213,6 +213,7 @@ async function testProtectedReleaseTokenIssuerUsesRouteResolvedDpopConfirmation(
         confirmation: senderConfirmation ?? null,
         issuedAt: receivedAt,
       }),
+    recordShadowAdmission: () => {},
   });
   const response = await app.request(routeUrl, {
     method: 'POST',

@@ -256,6 +256,7 @@ Use this after you already know what Attestor does.
 - [Docs front door](docs/README.md)
 - [Repository navigator](docs/01-overview/repository-navigator.md)
 - [Repository map](docs/01-overview/repository-map.md)
+- [Attestor Evaluation Packet v0.1](docs/00-evaluation/v0.1-evaluation-packet.md)
 - [Test system map](docs/02-architecture/test-system-map.md)
 - [AI Action Control Plane architecture](docs/02-architecture/ai-action-control-plane-architecture.md)
 - [Attestor language contract](docs/02-architecture/attestor-language-contract.md)
@@ -267,3 +268,5 @@ Use this after you already know what Attestor does.
 - [Current posture baseline](docs/audit/current-posture-baseline.md)
 - [Live proof register](docs/audit/live-proof-register.md)
 - [Security Policy](SECURITY.md)
+
+Action-surface onboarding can generate a local review handoff and red-team fixture bundle. It is review material only; fixtures do not activate enforcement.

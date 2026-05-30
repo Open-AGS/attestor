@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/attestor-readme-logo.png" alt="Attestor" width="720">
+  <img src="docs/assets/attestor-readme-logo.png" alt="Attestor" width="100%">
 </p>
 
 **Control infrastructure for high-risk AI-driven operations.**

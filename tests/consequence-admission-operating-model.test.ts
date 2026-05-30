@@ -48,12 +48,15 @@ function testOperatingModelDefinesCanonicalDecisionVocabulary(): void {
 }
 
 function testTopLevelDocsLinkTheOperatingModel(): void {
-  const readme = readProjectFile('README.md');
+  const docsFrontDoor = readProjectFile('docs', 'README.md');
+  const integrationHub = readProjectFile('docs', '01-overview', 'how-to-integrate-attestor.md');
   const purpose = readProjectFile('docs', '01-overview', 'purpose.md');
   const systemOverview = readProjectFile('docs', '02-architecture', 'system-overview.md');
   const hostedContract = readProjectFile('docs', '01-overview', 'hosted-journey-contract.md');
 
-  includes(readme, 'docs/01-overview/operating-model.md', 'Admission operating model: README links operating model');
+  includes(docsFrontDoor, 'Understand The System', 'Admission operating model: docs front door has system section');
+  includes(docsFrontDoor, '[Operating model](01-overview/operating-model.md)', 'Admission operating model: docs front door links operating model');
+  includes(integrationHub, '[Consequence admission quickstart](consequence-admission-quickstart.md)', 'Admission operating model: integration hub links the shared admission story');
   includes(purpose, 'Operating model](operating-model.md)', 'Admission operating model: purpose links operating model');
   includes(systemOverview, 'Operating model](../01-overview/operating-model.md)', 'Admission operating model: system overview links operating model');
   includes(hostedContract, 'Operating model](operating-model.md)', 'Admission operating model: hosted journey contract links operating model');

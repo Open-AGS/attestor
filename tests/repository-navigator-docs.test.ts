@@ -142,6 +142,7 @@ function testDocsFrontDoorPullsReadersToTheNextAction(): void {
   includes(doc, 'understand -> try -> integrate -> explain decisions -> verify claims -> maintain', 'Docs front door: keeps the reader path explicit');
   includes(doc, '## Start Here', 'Docs front door: has a first-reader section');
   includes(doc, '## Integrate', 'Docs front door: has an integration section');
+  includes(doc, '## Explain Decisions', 'Docs front door: has a decision-explanation section');
   includes(doc, '## Evaluate Trust', 'Docs front door: has a trust-evaluation section');
   includes(doc, '## Understand The System', 'Docs front door: has a system-understanding section');
   includes(doc, '## Maintain The Repo', 'Docs front door: has a maintainer section');
@@ -159,7 +160,7 @@ function testReadmeLinksNavigator(): void {
   const readme = readProjectFile('README.md');
 
   includes(readme, '[Repository navigator](docs/01-overview/repository-navigator.md)', 'Repository navigator: README links the navigator');
-  includes(readme, 'Use one entry point first. It opens the rest.', 'Repository navigator: README presents navigator as the main entry point');
+  includes(readme, 'Start light. Go deeper only when you need the detail.', 'Repository navigator: README presents the short first-reader path');
   assert.doesNotMatch(readme, /\[Docs front door\]\(docs\/README\.md\)/u, 'Repository navigator: README does not expose docs front door beside the navigator');
   passed += 1;
   assert.doesNotMatch(readme, /\[Repository map\]\(docs\/01-overview\/repository-map\.md\)/u, 'Repository navigator: README does not expose repository map beside the navigator');

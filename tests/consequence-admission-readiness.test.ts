@@ -56,6 +56,8 @@ function financeRunFixture(): FinancePipelineAdmissionRun {
 
 function testDocsPointToOneAdmissionStory(): void {
   const readme = readProjectFile('README.md');
+  const docsFrontDoor = readProjectFile('docs', 'README.md');
+  const integrationHub = readProjectFile('docs', '01-overview', 'how-to-integrate-attestor.md');
   const operatingModel = readProjectFile('docs', '01-overview', 'operating-model.md');
   const quickstart = readProjectFile('docs', '01-overview', 'consequence-admission-quickstart.md');
   const firstCall = readProjectFile('docs', '01-overview', 'hosted-first-api-call.md');
@@ -64,9 +66,11 @@ function testDocsPointToOneAdmissionStory(): void {
   const tracker = readProjectFile('docs', '02-architecture', 'consequence-admission-buildout.md');
 
   includes(readme, 'docs/01-overview/consequence-admission-quickstart.md', 'Admission readiness: README links quickstart');
-  includes(readme, 'docs/01-overview/operating-model.md', 'Admission readiness: README links operating model');
-  includes(readme, 'docs/01-overview/hosted-first-api-call.md', 'Admission readiness: README links first hosted call');
-  includes(readme, 'docs/01-overview/finance-and-crypto-first-integrations.md', 'Admission readiness: README links first integrations');
+  includes(docsFrontDoor, '01-overview/consequence-admission-quickstart.md', 'Admission readiness: docs front door links quickstart');
+  includes(docsFrontDoor, '01-overview/hosted-first-api-call.md', 'Admission readiness: docs front door links first hosted call');
+  includes(integrationHub, '[Consequence admission quickstart](consequence-admission-quickstart.md)', 'Admission readiness: integration hub links quickstart');
+  includes(integrationHub, '[First hosted API call](hosted-first-api-call.md)', 'Admission readiness: integration hub links first hosted call');
+  includes(integrationHub, '[Commercial packaging, pricing, and evaluation](product-packaging.md)', 'Admission readiness: integration hub links hosted packaging boundary');
 
   includes(operatingModel, 'Consequence admission quickstart](consequence-admission-quickstart.md)', 'Admission readiness: operating model links quickstart');
   includes(operatingModel, 'The first customer-facing facade is exported through `attestor/consequence-admission`.', 'Admission readiness: operating model names facade package');

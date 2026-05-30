@@ -208,11 +208,11 @@ function testOpenApiContractPreservesShadowBoundaries(): void {
 }
 
 function testDocsPointToTheOpenApiTruthSource(): void {
-  const readme = readProjectFile('README.md');
+  const docsFrontDoor = readProjectFile('docs', 'README.md');
   const doc = readProjectFile('docs', '01-overview', 'hosted-action-authorization-api.md');
 
-  includes(readme, 'Hosted action authorization API', 'Hosted OpenAPI docs: README links the API contract guide');
-  includes(readme, 'docs/01-overview/hosted-action-authorization-api.md', 'Hosted OpenAPI docs: README link points at guide');
+  includes(docsFrontDoor, 'Hosted action authorization API', 'Hosted OpenAPI docs: docs front door links the API contract guide');
+  includes(docsFrontDoor, '01-overview/hosted-action-authorization-api.md', 'Hosted OpenAPI docs: docs front door link points at guide');
   includes(doc, 'docs/api/attestor-action-authorization.openapi.json', 'Hosted OpenAPI docs: guide points at OpenAPI file');
   includes(doc, '`POST /api/v1/admissions`', 'Hosted OpenAPI docs: guide names the canonical admission route');
   includes(doc, '`GET /api/v1/shadow/dashboard-summary`', 'Hosted OpenAPI docs: guide names dashboard summary route');

@@ -3,7 +3,11 @@
 Run Attestor in shadow pilot mode - and map what your AI agents are trying to
 do in the shadow of your systems.
 
+Part of: [How to integrate Attestor](how-to-integrate-attestor.md)
+
 Use this when you want event-shaped data before an SDK or full integration.
+It is the observe-first path: useful for learning what would be held, narrowed,
+or blocked before you enforce anything.
 
 ## Start Here
 
@@ -531,3 +535,9 @@ security certification, production readiness, or compliance.
 
 For the canonical shadow-event projection contract, see
 [Shadow Event Canonical Schema](../02-architecture/shadow-event-canonical-schema.md).
+
+Back: [How to integrate Attestor](how-to-integrate-attestor.md). Next:
+[Consequence admission quickstart](consequence-admission-quickstart.md) when
+you are ready to send the shared admission shape, or
+[Customer admission gate](customer-admission-gate.md) when the downstream stop
+point is ready.

@@ -2,6 +2,12 @@
 
 Use this when a customer-controlled system needs one shared admission shape before an AI action becomes a consequence:
 
+Part of: [How to integrate Attestor](how-to-integrate-attestor.md)
+
+Use this after you know where the gate sits and need the request, response, and
+decision vocabulary. This page is deeper than the README on purpose; it is the
+shared admission contract, not the first product pitch.
+
 ```text
 proposed consequence -> explicit surface -> admit | narrow | review | block -> proof -> downstream gate
 ```
@@ -466,3 +472,8 @@ These gates prove that:
 ## Keep The Boundary Honest
 
 The generic hosted route is not a hosted crypto route and not automatic pack detection. If a future step adds a hosted crypto route or automatic routing, it needs its own route contract, implementation, tests, package/readiness evidence, and tracker update first.
+
+Back: [How to integrate Attestor](how-to-integrate-attestor.md). Next:
+[Customer admission gate](customer-admission-gate.md) for the downstream stop
+point, or [Run Attestor in shadow pilot mode](shadow-event-payload-examples.md)
+when you want observe-mode examples first.

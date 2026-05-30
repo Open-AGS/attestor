@@ -672,7 +672,7 @@ async function testReleaseEnforcementGateRequiresAdmissionProofBinding(): Promis
 
 function testExampleAndDocs(): void {
   const result = runCustomerAdmissionGateExample();
-  const readme = readProjectFile('README.md');
+  const integrationHub = readProjectFile('docs', '01-overview', 'how-to-integrate-attestor.md');
   const doc = readProjectFile('docs', '01-overview', 'customer-admission-gate.md');
   const tryFirst = readProjectFile('docs', '01-overview', 'try-attestor-first.md');
   const packageJson = JSON.parse(readProjectFile('package.json')) as {
@@ -684,7 +684,7 @@ function testExampleAndDocs(): void {
   includes(result.output, 'Customer gate: HOLD', 'Customer gate example: shows hold');
   includes(result.output, 'Customer system enforces the gate', 'Customer gate example: names enforcement responsibility');
 
-  includes(readme, 'docs/01-overview/customer-admission-gate.md', 'README: links customer gate docs');
+  includes(integrationHub, '[Customer admission gate](customer-admission-gate.md)', 'Integration hub: links customer gate docs');
   includes(doc, 'npm run example:customer-gate', 'Customer gate doc: includes runnable command');
   includes(doc, 'assertConsequenceAdmissionGateAllows', 'Customer gate doc: includes copy-paste helper');
   includes(doc, 'This helper is not the hosted admission API.', 'Customer gate doc: keeps route boundary honest');

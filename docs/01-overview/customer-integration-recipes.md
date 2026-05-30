@@ -2,6 +2,12 @@
 
 Use this when you understand the Attestor model but still ask: where do I put it in my own system?
 
+Part of: [How to integrate Attestor](how-to-integrate-attestor.md)
+
+Use this page after the integration hub when you need concrete placement
+examples. It is still one Attestor engine; the examples change the downstream
+system, not the product identity.
+
 The answer is simple: put Attestor at the last customer-owned gate before a real side effect.
 For source-backed target-system placement across Salesforce, Microsoft,
 ServiceNow, Workato, MuleSoft, n8n, Camunda, data/IAM, spend, health, and
@@ -175,11 +181,17 @@ This is not a public hosted crypto route. It is a packaged integration boundary 
 - Do not treat `review` as a soft allow. It is a hold until a customer-owned review path resolves it.
 - Do not assume Attestor auto-detects packs from payload shape.
 
-## Start Here
+## Where To Go Next
 
-1. Run `npm run example:admission`.
-2. Run `npm run example:customer-gate`.
-3. Read the [Customer middleware examples](../../examples/customer-middleware/README.md) for Express, FastAPI, Next.js, and LangChain copy-paste shapes.
-4. Read [First hosted API call](hosted-first-api-call.md) if you want the hosted finance path.
-5. Read [Customer admission gate](customer-admission-gate.md) when you are ready to wire the final customer-side guard.
-6. Read [Finance and crypto first integrations](finance-and-crypto-first-integrations.md) when choosing the first pack-specific surface.
+Back: [How to integrate Attestor](how-to-integrate-attestor.md).
+
+Next, choose the page that matches the work:
+
+| If you need... | Open |
+|---|---|
+| a runnable first admission | [Try Attestor first](try-attestor-first.md) |
+| the shared request and response shape | [Consequence admission quickstart](consequence-admission-quickstart.md) |
+| the final customer-side guard | [Customer admission gate](customer-admission-gate.md) |
+| framework-shaped examples | [Customer middleware examples](../../examples/customer-middleware/README.md) |
+| the hosted finance path | [First hosted API call](hosted-first-api-call.md) |
+| current pack/example boundaries | [Finance and crypto first integrations](finance-and-crypto-first-integrations.md) |

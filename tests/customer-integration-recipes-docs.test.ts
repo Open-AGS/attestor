@@ -63,15 +63,16 @@ function testRecipesStayHonestAboutBoundaries(): void {
 }
 
 function testDocsPointToRecipes(): void {
-  const readme = readProjectFile('README.md');
+  const docsFrontDoor = readProjectFile('docs', 'README.md');
+  const integrationHub = readProjectFile('docs', '01-overview', 'how-to-integrate-attestor.md');
   const useCases = readProjectFile('docs', '01-overview', 'what-you-can-do.md');
   const customerGate = readProjectFile('docs', '01-overview', 'customer-admission-gate.md');
   const packageJson = JSON.parse(readProjectFile('package.json')) as {
     scripts: Record<string, string>;
   };
 
-  includes(readme, 'docs/01-overview/customer-integration-recipes.md', 'Recipes: README links the placement guide');
-  includes(readme, '[Customer integration recipes](docs/01-overview/customer-integration-recipes.md)', 'Recipes: README names the guide plainly');
+  includes(docsFrontDoor, '[Customer integration recipes](01-overview/customer-integration-recipes.md)', 'Recipes: docs front door links the placement guide');
+  includes(integrationHub, '[Customer integration recipes](customer-integration-recipes.md)', 'Recipes: integration hub links the placement guide');
   includes(useCases, '[Customer integration recipes](customer-integration-recipes.md)', 'Recipes: use-case bridge links the recipes');
   includes(customerGate, '[Customer integration recipes](customer-integration-recipes.md)', 'Recipes: customer gate doc links the recipes');
   includes(packageJson.scripts.test, 'scripts/run/run-suite.mjs test', 'Recipes: npm test delegates to the suite runner');

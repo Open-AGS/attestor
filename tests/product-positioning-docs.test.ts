@@ -56,7 +56,8 @@ function testReadmeKeepsSingleEngineAndCustomerBoundary(): void {
   includes(readme, 'It checks policy, approval, evidence, allowed scope, freshness, replay, tenant', 'Product docs: README keeps the core check vocabulary in plain language');
   includes(readme, 'The real service should run only through the customer-owned gate.', 'Product docs: README keeps the customer enforcement boundary');
   includes(readme, 'Without a customer-side gate, gateway, verifier, or adapter, the decision is', 'Product docs: README distinguishes advisory evidence from control point');
-  includes(readme, 'Run Attestor in shadow pilot mode - and map what your AI agents are trying to do', 'Product docs: README keeps exact shadow-pilot value line');
+  includes(readme, '### Run Attestor in shadow pilot mode', 'Product docs: README makes the shadow-pilot path visible');
+  includes(readme, 'Map what your AI agents are trying to do in the shadow of your systems before', 'Product docs: README keeps the shadow-pilot value line');
   includes(readme, '[Run Attestor in shadow pilot mode](docs/01-overview/shadow-event-payload-examples.md)', 'Product docs: README links the shadow pilot guide');
   includes(readme, 'The same gate can sit before these operation classes:', 'Product docs: README keeps cross-operation framing concise');
   includes(readme, 'This is a control point, not a data lake.', 'Product docs: README keeps data-posture positioning');
@@ -96,14 +97,15 @@ function testReadmeLinksTheRightDeeperDocsWithoutBecomingALinkWall(): void {
   const readme = readProjectFile('README.md');
 
   includes(readme, '## Start Here', 'Product docs: README exposes a short first-visitor link surface');
-  includes(readme, 'Use one entry point first. It opens the rest.', 'Product docs: README keeps the first path lightweight');
-  includes(readme, 'Use one entry point first. It opens the rest.', 'Product docs: README explains the single navigation hub');
-  includes(readme, '[Repository navigator](docs/01-overview/repository-navigator.md) - choose the right path for reading, integrating, verifying, or changing code.', 'Product docs: README leads with repository navigator');
-  includes(readme, '[Try Attestor first](docs/01-overview/try-attestor-first.md) - run the refund workflow.', 'Product docs: README links the first-run guide');
-  includes(readme, '[How to integrate Attestor](docs/01-overview/how-to-integrate-attestor.md) - place the check before a real service call.', 'Product docs: README links the integration guide');
-  includes(readme, '[Reason codes](docs/05-proof/reason-codes.md) - explain a `review` or `block`.', 'Product docs: README links reason-code support');
-  includes(readme, '[License and use](docs/01-overview/license-and-use.md) - understand allowed use.', 'Product docs: README links license guidance');
-  includes(readme, '[Security Policy](SECURITY.md)', 'Product docs: README links the security policy');
+  includes(readme, 'Start light. Go deeper only when you need the detail.', 'Product docs: README keeps the first path lightweight');
+  includes(readme, '[Try Attestor first](docs/01-overview/try-attestor-first.md) - run the smallest local refund path and see the decision trail.', 'Product docs: README links the first-run guide');
+  includes(readme, '[How to integrate Attestor](docs/01-overview/how-to-integrate-attestor.md) - find the real side effect and place the customer-owned gate.', 'Product docs: README links the integration guide');
+  includes(readme, '[Run Attestor in shadow pilot mode](docs/01-overview/shadow-event-payload-examples.md) - send observe-mode examples before enforcing anything.', 'Product docs: README links shadow observe mode');
+  includes(readme, '[Consequence admission quickstart](docs/01-overview/consequence-admission-quickstart.md) - use the shared admission shape and decision vocabulary.', 'Product docs: README links the admission quickstart');
+  includes(readme, '[Repository navigator](docs/01-overview/repository-navigator.md) - find deeper docs for hosted, pricing, support, proof, or maintainer work.', 'Product docs: README routes deep docs through the navigator');
+  includes(readme, '[License and use](docs/01-overview/license-and-use.md) and [Security Policy](SECURITY.md)', 'Product docs: README links use and security boundaries');
+  excludes(readme, /\[Reason codes\]\(docs\/05-proof\/reason-codes\.md\)/u, 'Product docs: README keeps reason-code detail behind deeper docs');
+  excludes(readme, /\[Commercial packaging, pricing, and evaluation\]\(docs\/01-overview\/product-packaging\.md\)/u, 'Product docs: README keeps pricing detail behind deeper docs');
   excludes(readme, /## Maintainer Reference/u, 'Product docs: README should not keep a maintainer link wall');
   excludes(readme, /## Decision Model/u, 'Product docs: README should keep decision model details out of the front page');
   excludes(readme, /## Local Demos/u, 'Product docs: README should keep long demo tables out of the front page');

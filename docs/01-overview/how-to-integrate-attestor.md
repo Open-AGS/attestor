@@ -3,6 +3,17 @@
 Use this when your company already has an AI workflow and a real system it can
 change.
 
+Part of: [Attestor Docs](../README.md) -> [Start Here](../../README.md#start-here)
+
+Use this page as the integration hub. It shows the placement rule and then
+points to the more detailed pages only when you need them.
+
+This page covers: where Attestor sits, what to send first, how to gate the real
+side effect, and which page to open next.
+
+This page does not cover: pricing, hosted signup, live production proof, or
+customer PEP no-bypass proof.
+
 Do not start with a dashboard.
 Start with the line of code that does the real thing.
 
@@ -133,12 +144,27 @@ With it, Attestor becomes the stop point before action.
 - a place to hold `review` decisions
 - a test that proves blocked actions do not call the real service
 
-## What To Copy Next
+## What To Open Next
 
-- [Customer middleware examples](../../examples/customer-middleware/README.md)
-- [Shadow event payload examples](shadow-event-payload-examples.md)
-- [Customer admission gate](customer-admission-gate.md)
-- [Reason codes](../05-proof/reason-codes.md)
+Pick the next page by where you are in the integration:
+
+| If you are... | Open |
+|---|---|
+| still proving the shape | [Try Attestor first](try-attestor-first.md) |
+| observing without enforcement | [Run Attestor in shadow pilot mode](shadow-event-payload-examples.md) |
+| sending the first admission request | [Consequence admission quickstart](consequence-admission-quickstart.md) |
+| wiring the downstream stop point | [Customer admission gate](customer-admission-gate.md) |
+| choosing placement in a customer app | [Customer integration recipes](customer-integration-recipes.md) |
+| copying framework-shaped examples | [Customer middleware examples](../../examples/customer-middleware/README.md) |
+| starting from a hosted account | [First hosted API call](hosted-first-api-call.md) |
+
+For review/support language, use [Reason codes](../05-proof/reason-codes.md).
+For hosted buying and package boundaries, use
+[Hosted customer journey](hosted-customer-journey.md) and
+[Commercial packaging, pricing, and evaluation](product-packaging.md).
+
+Back: [Docs front door](../README.md). Deeper map:
+[Repository navigator](repository-navigator.md).
 
 Boundary: this page explains the integration shape. It does not prove live
 customer no-bypass enforcement, external KMS signing, shared replay safety,

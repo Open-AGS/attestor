@@ -2,6 +2,13 @@
 
 Use this after [Try Attestor first](try-attestor-first.md) when you want to see how an application actually enforces an Attestor decision.
 
+Part of: [How to integrate Attestor](how-to-integrate-attestor.md)
+
+Use this page when the customer application is ready to turn an Attestor
+admission response into a local `PROCEED` or `HOLD`. The deeper protected
+enforcement paths are linked here, but they do not become live proof until a
+customer-operated PEP/gate is actually proven.
+
 ```bash
 npm run example:customer-gate
 ```
@@ -146,3 +153,8 @@ assertConsequenceAdmissionGateAllows({
   evidence; it does not deploy or operate that runtime.
 
 Attestor supplies the decision and proof. The customer system enforces the final gate before consequence.
+
+Back: [How to integrate Attestor](how-to-integrate-attestor.md). Next:
+[Customer integration recipes](customer-integration-recipes.md) for placement,
+or [Non-bypassable gateway demo](non-bypassable-gateway-demo.md) for the
+protected-adapter shape.

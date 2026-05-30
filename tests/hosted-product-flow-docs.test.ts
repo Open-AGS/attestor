@@ -42,7 +42,8 @@ function includes(content: string, expected: string, message: string): void {
 }
 
 function testCommercialTruthSourcesStayLinked(): void {
-  const readme = readProjectFile('README.md');
+  const docsFrontDoor = readProjectFile('docs', 'README.md');
+  const integrationHub = readProjectFile('docs', '01-overview', 'how-to-integrate-attestor.md');
   const packaging = readProjectFile('docs', '01-overview', 'product-packaging.md');
   const journey = readProjectFile('docs', '01-overview', 'hosted-customer-journey.md');
   const contract = readProjectFile('docs', '01-overview', 'hosted-journey-contract.md');
@@ -54,44 +55,44 @@ function testCommercialTruthSourcesStayLinked(): void {
   const pricingRoi = readProjectFile('docs', '01-overview', 'pricing-roi-calculator.md');
 
   includes(
-    readme,
-    'docs/01-overview/product-packaging.md',
-    'Hosted product flow docs: README links to pricing truth source',
+    docsFrontDoor,
+    '01-overview/product-packaging.md',
+    'Hosted product flow docs: docs front door links to pricing truth source',
   );
   includes(
-    readme,
-    'docs/01-overview/pricing-roi-calculator.md',
-    'Hosted product flow docs: README links to pricing ROI calculator',
+    docsFrontDoor,
+    '01-overview/pricing-roi-calculator.md',
+    'Hosted product flow docs: docs front door links to pricing ROI calculator',
   );
   includes(
-    readme,
-    'docs/01-overview/hosted-customer-journey.md',
-    'Hosted product flow docs: README links to hosted customer journey',
+    docsFrontDoor,
+    '01-overview/hosted-customer-journey.md',
+    'Hosted product flow docs: docs front door links to hosted customer journey',
   );
   includes(
-    readme,
-    'docs/01-overview/operating-model.md',
-    'Hosted product flow docs: README links to operating model truth source',
+    docsFrontDoor,
+    '01-overview/operating-model.md',
+    'Hosted product flow docs: docs front door links to operating model truth source',
   );
   includes(
-    readme,
-    'docs/01-overview/hosted-first-api-call.md',
-    'Hosted product flow docs: README links to first hosted API-call quickstart',
+    integrationHub,
+    'hosted-first-api-call.md',
+    'Hosted product flow docs: integration hub links to first hosted API-call quickstart',
   );
   includes(
-    readme,
-    'docs/01-overview/customer-admission-gate.md',
-    'Hosted product flow docs: README links to customer admission gate',
+    integrationHub,
+    'customer-admission-gate.md',
+    'Hosted product flow docs: integration hub links to customer admission gate',
   );
   includes(
-    readme,
-    'docs/01-overview/finance-and-crypto-first-integrations.md',
-    'Hosted product flow docs: README links to first finance/crypto integration examples',
+    journey,
+    'finance-and-crypto-first-integrations.md',
+    'Hosted product flow docs: hosted journey links to first finance/crypto integration examples',
   );
   includes(
-    readme,
-    'docs/01-overview/hosted-account-visibility.md',
-    'Hosted product flow docs: README links to account visibility guide',
+    journey,
+    'hosted-account-visibility.md',
+    'Hosted product flow docs: hosted journey links to account visibility guide',
   );
   includes(
     packaging,

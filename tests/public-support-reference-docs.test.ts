@@ -30,6 +30,7 @@ function notIncludes(value: string, forbidden: string, message: string): void {
 const reasonDoc = readProjectFile('docs', '05-proof', 'reason-codes.md');
 const failureDoc = readProjectFile('docs', '05-proof', 'failure-modes-and-controls.md');
 const navigatorDoc = readProjectFile('docs', '01-overview', 'repository-navigator.md');
+const docsFrontDoor = readProjectFile('docs', 'README.md');
 const readme = readProjectFile('README.md');
 const pkg = JSON.parse(readProjectFile('package.json')) as {
   readonly scripts: Record<string, string>;
@@ -112,7 +113,7 @@ function testDocsCarrySupportShapeAndNoClaims(): void {
 
 function testDocsAreDiscoverableAndScripted(): void {
   includes(readme, 'docs/01-overview/repository-navigator.md', 'README links the repository navigator');
-  includes(readme, 'docs/05-proof/reason-codes.md', 'README links public reason-code docs');
+  includes(docsFrontDoor, '[Reason codes](05-proof/reason-codes.md)', 'Docs front door links public reason-code docs');
   includes(navigatorDoc, '../05-proof/reason-codes.md', 'Repository navigator links public reason-code docs');
   includes(navigatorDoc, '../05-proof/failure-modes-and-controls.md', 'Repository navigator links public failure-mode docs');
   assert.equal(

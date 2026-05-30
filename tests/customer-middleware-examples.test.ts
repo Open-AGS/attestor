@@ -297,7 +297,8 @@ function testDocsAndScripts(): void {
     'fastapi-data-export',
     'test_middleware.py',
   );
-  const repositoryReadme = readProjectFile('README.md');
+  const docsFrontDoor = readProjectFile('docs', 'README.md');
+  const integrationHub = readProjectFile('docs', '01-overview', 'how-to-integrate-attestor.md');
   const recipes = readProjectFile('docs', '01-overview', 'customer-integration-recipes.md');
   const packageJson = JSON.parse(readProjectFile('package.json')) as {
     readonly scripts: Record<string, string>;
@@ -312,7 +313,8 @@ function testDocsAndScripts(): void {
   includes(langchainReadme, 'https://docs.langchain.com/oss/javascript/langchain/tools', 'LangChain tool source anchor is present');
   includes(fastapiTest, 'test_review_holds_before_export_service', 'FastAPI example carries review regression test');
   includes(fastapiTest, 'test_narrow_executes_bounded_export', 'FastAPI example carries narrow regression test');
-  includes(repositoryReadme, 'examples/customer-middleware/README.md', 'README links customer middleware examples');
+  includes(docsFrontDoor, 'examples/customer-middleware/README.md', 'Docs front door links customer middleware examples');
+  includes(integrationHub, 'examples/customer-middleware/README.md', 'Integration hub links customer middleware examples');
   includes(recipes, 'examples/customer-middleware/README.md', 'Integration recipes link customer middleware examples');
   assert.equal(
     packageJson.scripts['test:customer-middleware-examples'],

@@ -2,6 +2,8 @@
 
 This quickstart shows the first customer-owned API call after hosted signup.
 
+Part of: [How to integrate Attestor](how-to-integrate-attestor.md)
+
 Use it when you already have a hosted account and the one-time plaintext `initialKey.apiKey` returned by `POST /api/v1/auth/signup`.
 
 It does not replace the canonical route contract in [Hosted journey contract](hosted-journey-contract.md), and it does not define pricing. Pricing lives in [Commercial packaging, pricing, and evaluation](product-packaging.md).
@@ -210,3 +212,5 @@ The verify payload is built from the signed pipeline response and must include a
 - Customer-facing admission facade: [Consequence admission quickstart](consequence-admission-quickstart.md)
 - Customer-side enforcement helper: [Customer admission gate](customer-admission-gate.md)
 - Finance proof wedge: [AI-assisted financial reporting acceptance](financial-reporting-acceptance.md)
+
+Back: [How to integrate Attestor](how-to-integrate-attestor.md).

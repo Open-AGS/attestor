@@ -1,8 +1,10 @@
 # Attestor Docs
 
-Use this page when you know what you want next, but not where it lives.
+Use this page when the README gave you the shape and you need the next useful
+page.
 
-Attestor docs are split by job:
+Start near the top of the path. The deeper pages are still here, but they sit
+behind the job that needs them:
 
 ```text
 understand -> try -> integrate -> explain decisions -> verify claims -> maintain
@@ -15,21 +17,40 @@ understand -> try -> integrate -> explain decisions -> verify claims -> maintain
 | Understand the product in one minute | [README](../README.md) |
 | Run the concrete refund workflow | [Try Attestor first](01-overview/try-attestor-first.md) |
 | Run all demos in order | [Run the demos in order](01-overview/demo-guide.md) |
-| Put Attestor in front of a real service call | [How to integrate Attestor](01-overview/how-to-integrate-attestor.md) |
-| Copy framework-shaped examples | [Customer middleware examples](../examples/customer-middleware/README.md) |
+| See concrete use cases | [What you can do with Attestor](01-overview/what-you-can-do.md) |
 | Run a shadow pilot without an SDK | [Run Attestor in shadow pilot mode](01-overview/shadow-event-payload-examples.md) |
-| Explain a review or block outcome | [Reason codes](05-proof/reason-codes.md) |
+| Put Attestor in front of a real service call | [How to integrate Attestor](01-overview/how-to-integrate-attestor.md) |
+| Use the shared admission shape | [Consequence admission quickstart](01-overview/consequence-admission-quickstart.md) |
 | Understand allowed use | [License and use](01-overview/license-and-use.md) |
 | Navigate the repository | [Repository navigator](01-overview/repository-navigator.md) |
 
 ## Integrate
 
-- [How to integrate Attestor](01-overview/how-to-integrate-attestor.md)
-- [Customer middleware examples](../examples/customer-middleware/README.md)
-- [First hosted API call](01-overview/hosted-first-api-call.md)
-- [Customer admission gate](01-overview/customer-admission-gate.md)
-- [Customer integration recipes](01-overview/customer-integration-recipes.md)
-- [Run Attestor in shadow pilot mode](01-overview/shadow-event-payload-examples.md)
+Start with [How to integrate Attestor](01-overview/how-to-integrate-attestor.md).
+It is the integration hub. Then follow only the page that matches your next
+step:
+
+| If you are... | Read next |
+|---|---|
+| still observing real workflows | [Run Attestor in shadow pilot mode](01-overview/shadow-event-payload-examples.md) |
+| sending the first shared admission request | [Consequence admission quickstart](01-overview/consequence-admission-quickstart.md) |
+| wiring the customer-side stop point | [Customer admission gate](01-overview/customer-admission-gate.md) |
+| choosing where it fits in an app | [Customer integration recipes](01-overview/customer-integration-recipes.md) |
+| copying framework-shaped examples | [Customer middleware examples](../examples/customer-middleware/README.md) |
+| starting from a hosted account | [First hosted API call](01-overview/hosted-first-api-call.md) |
+| checking the hosted action-authorization contract | [Hosted action authorization API](01-overview/hosted-action-authorization-api.md) |
+| checking hosted onboarding, usage, or pricing | [Hosted customer journey](01-overview/hosted-customer-journey.md) |
+
+Hosted commercial details stay in [Commercial packaging, pricing, and
+evaluation](01-overview/product-packaging.md) and the [Pricing ROI
+calculator](01-overview/pricing-roi-calculator.md). They are not the first
+reader path.
+
+## Explain Decisions
+
+- [Reason codes](05-proof/reason-codes.md)
+- [Failure modes and controls](05-proof/failure-modes-and-controls.md)
+- [Proof model](05-proof/proof-model.md)
 
 ## Evaluate Trust
 
@@ -49,6 +70,7 @@ understand -> try -> integrate -> explain decisions -> verify claims -> maintain
 
 ## Understand The System
 
+- [Operating model](01-overview/operating-model.md)
 - [AI Action Control Plane architecture](02-architecture/ai-action-control-plane-architecture.md)
 - [Internal machine map](02-architecture/attestor-internal-machine-map.md)
 - [Domain pack boundary](02-architecture/domain-pack-boundary.md)

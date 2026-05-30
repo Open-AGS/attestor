@@ -4,51 +4,59 @@
 
 **Control infrastructure for high-risk AI-driven operations.**
 
-Attestor sits between what an AI wants to do and the system that would do it.
+Attestor sits between an AI-prepared action and the system that would execute it.
 
 Prompts guide. They do not enforce.
 
-Bad instructions can come from hallucination, stale context, tool-result mistakes, replayed requests, missing approval, or hostile input in email, tickets, web pages, documents, tool output, or another agent.
+Bad actions can come from hallucination, stale context, poisoned tool output,
+replayed requests, missing approval, or hostile content.
 
 A prompt cannot stop a refund service, export job, identity admin, deploy tool, or wallet adapter.
 
-The stop point has to sit before the real action. The system checks the structured
-action and returns `admit`, `narrow`, `review`, or `block`.
+The stop point has to sit before the real action: check the structured action,
+then return `admit`, `narrow`, `review`, or `block`.
 
-That same boundary helps against outside manipulation: hostile content still has to pass action, authority, scope, freshness, replay, and evidence checks before anything runs.
+Hostile content still has to pass action, authority, scope, freshness, replay,
+and evidence checks before anything runs.
 
-The decision leaves a traceable trail: what was proposed, what was checked, why it held or blocked, reason codes, and evidence/proof references.
+Every decision leaves a trail: what was proposed, what was checked, why it held
+or blocked, reason codes, and evidence/proof references.
 
 ## One Concrete Workflow
 
 A support AI prepares: **Refund $8,750 to customer_123 for order_789.**
 
-The dangerous part is the next call: `refundService.issueRefund(...)`.
+The risky part is the next call: `refundService.issueRefund(...)`.
 
-The gate stops it before the service runs because manager approval is missing,
-the order/customer binding is incomplete, and duplicate-refund risk is visible.
+The gate stops it before the service runs: manager approval is missing,
+order/customer binding is incomplete, and duplicate-refund risk is visible.
 
 Without this gate, that AI-prepared action can become a real refund call.
-With a customer-owned gate, no money moves. The audit trail remains: proposed action, stop reason, reason codes, evidence references, proof references, and the next safe step.
+With a customer-owned gate, no money moves. The trail remains: proposed action,
+stop reason, reason codes, evidence references, proof references, and the next
+safe step.
 
-This repository demo is synthetic and shadow-only. It does not call Stripe, Shopify, a bank, or a live customer deployment.
+The repo demo is synthetic and shadow-only. It does not call Stripe, Shopify, a
+bank, or a live customer deployment.
 
 [Run the demos in order](docs/01-overview/demo-guide.md)
 
 ## Why This Matters Now
 
-AI systems are moving from chat into tools that can touch payment flows, data exports, access changes, customer messages, infrastructure, and programmable money.
+AI systems are moving from chat into tools that can touch payments, data,
+access, customer messages, infrastructure, and programmable money.
 
-That is no longer only a prompt-quality problem. Teams need a stop point before
-execution and a record after review: who asked, what was checked, why it held or
-blocked, and what may run next.
+That is no longer a prompt-quality problem. Teams need a stop point before
+execution, and a record after review: who asked, what was checked, why it held
+or blocked, and what may run next.
 
 Context anchors: [EU AI Act](https://digital-strategy.ec.europa.eu/en/policies/regulatory-framework-ai), [NIST AI Risk Management Framework](https://www.nist.gov/itl/ai-risk-management-framework), and [DORA](https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A32022R2554). These are not compliance claims.
 
 ## What It Does
 
-It checks the proposed action: policy, approval, evidence, allowed scope, freshness, replay, tenant, token, and proof references.
-It returns one decision with reasons: `admit`, `narrow`, `review`, or `block`.
+It checks policy, approval, evidence, allowed scope, freshness, replay, tenant,
+token, and proof references. It returns one decision with reasons: `admit`,
+`narrow`, `review`, or `block`.
 
 The real service should run only through the customer-owned gate.
 
@@ -61,8 +69,8 @@ Customer-owned gate
   -> calls the real service only when allowed
 ```
 
-Without an enforced customer-side gate, gateway, verifier, or adapter, the decision is advisory evidence.
-With that enforced downstream point, it becomes the stop point before action.
+Without a customer-side gate, gateway, verifier, or adapter, the decision is
+evidence, not enforcement. With that downstream point, it becomes the stop point.
 
 Run Attestor in shadow pilot mode - and map what your AI agents are trying to do in the shadow of your systems.
 
@@ -90,22 +98,23 @@ Release stage:   evaluation release
 Release type:    GitHub pre-release / Golden Path evaluation baseline
 ```
 
-This is not a finished public SaaS, a production-use guarantee, a completed customer-operated deployment, or a substitute for an external security audit.
+This is an evaluation release. It is not public SaaS, a production guarantee, a
+completed customer deployment, or a substitute for an external security audit.
 
 ## Data Posture
 
 This is a control point, not a data lake.
 
 It needs structured action context and proof references, not raw customer data.
-Customer systems keep the model, agent, workflow, wallet, database, downstream
-execution path, and system of record.
+Customer systems keep the model, agent, workflow, wallet, database, service
+call, and system of record.
 
 It returns a bounded decision, reasons, and proof references.
 
 It is not a model, agent runtime, chat wrapper, workflow app, wallet, custody layer, or payment processor.
 Without a customer-owned gate, it is evidence, not enforcement.
 
-The [data minimization and redaction policy](docs/02-architecture/data-minimization-redaction-policy.md) forbids raw prompts, raw tool payloads, raw customer identifiers, bank/payment data, wallet material, credentials, private policy thresholds, and downstream error bodies in public evidence surfaces.
+The [data minimization and redaction policy](docs/02-architecture/data-minimization-redaction-policy.md) keeps raw prompts, tool payloads, customer identifiers, bank/payment data, wallet material, credentials, private thresholds, and downstream error bodies out of public evidence surfaces.
 
 ## Start Here
 

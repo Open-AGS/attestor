@@ -38,11 +38,11 @@ function testReadmeHasAPlainFirstThirtySeconds(): void {
   const readme = readProjectFile('README.md');
 
   includes(readme, '**Control infrastructure for high-risk AI-driven operations.**', 'README: opens with the short product promise');
-  includes(readme, 'Attestor sits between what an AI wants to do and the system that would do it.', 'README: opens with plain placement language');
+  includes(readme, 'Attestor sits between an AI-prepared action and the system that would execute it.', 'README: opens with plain placement language');
   includes(readme, 'Prompts guide. They do not enforce.', 'README: keeps the prompt-control contrast');
-  includes(readme, 'Bad instructions can come from hallucination, stale context, tool-result mistakes, replayed requests, missing approval, or hostile input', 'README: explains why a proposed action can be unsafe');
-  includes(readme, 'That same boundary helps against outside manipulation', 'README: names outside manipulation without overclaiming');
-  includes(readme, 'The decision leaves a traceable trail', 'README: shows that the decision stays reviewable');
+  includes(readme, 'Bad actions can come from hallucination, stale context, poisoned tool output', 'README: explains why a proposed action can be unsafe');
+  includes(readme, 'Hostile content still has to pass action, authority, scope, freshness, replay', 'README: names outside manipulation without overclaiming');
+  includes(readme, 'Every decision leaves a trail', 'README: shows that the decision stays reviewable');
   includes(readme, '## One Concrete Workflow', 'README: starts with one concrete workflow before abstract categories');
   includes(readme, 'Refund $8,750 to customer_123 for order_789.', 'README: shows one high-risk action immediately');
   includes(readme, 'refundService.issueRefund(...)', 'README: names the dangerous downstream service call');
@@ -53,8 +53,8 @@ function testReadmeHasAPlainFirstThirtySeconds(): void {
     'README: gives the concrete stop reason',
   );
   includes(readme, 'that AI-prepared action can become a real refund call', 'README: shows the without-gate failure mode');
-  includes(readme, 'The audit trail remains: proposed action, stop reason, reason codes, evidence references, proof references, and the next safe step.', 'README: shows the trail left by the decision');
-  includes(readme, 'This repository demo is synthetic and shadow-only', 'README: keeps local-demo no-claims close to the example');
+  includes(readme, 'The trail remains: proposed action', 'README: shows the trail left by the decision');
+  includes(readme, 'The repo demo is synthetic and shadow-only', 'README: keeps local-demo no-claims close to the example');
   appearsBefore(readme, '## One Concrete Workflow', '## What It Does', 'README: concrete story comes before broad mechanism');
   appearsBefore(readme, '## Why This Matters Now', '## What It Does', 'README: urgency comes before broad mechanism');
   appearsBefore(readme, '## One Concrete Workflow', '## The Same Pattern Across Actions', 'README: concrete story comes before pack taxonomy');
@@ -65,9 +65,9 @@ function testReadmeKeepsTheControlBoundaryAndLocalRunPath(): void {
   const demoGuide = readProjectFile('docs', '01-overview', 'demo-guide.md');
 
   includes(readme, 'AI proposes action', 'README: keeps the core flow start');
-  includes(readme, 'It checks the proposed action: policy, approval, evidence, allowed scope, freshness, replay, tenant, token, and proof references', 'README: keeps the check vocabulary');
+  includes(readme, 'It checks policy, approval, evidence, allowed scope, freshness, replay, tenant', 'README: keeps the check vocabulary');
   includes(readme, 'The real service should run only through the customer-owned gate.', 'README: keeps the customer gate boundary');
-  includes(readme, 'Without an enforced customer-side gate, gateway, verifier, or adapter, the decision is advisory evidence.', 'README: makes advisory versus control posture explicit');
+  includes(readme, 'Without a customer-side gate, gateway, verifier, or adapter, the decision is', 'README: makes advisory versus control posture explicit');
   includes(readme, 'Run Attestor in shadow pilot mode - and map what your AI agents are trying to do', 'README: keeps the exact shadow-pilot line');
   includes(readme, '[Run Attestor in shadow pilot mode](docs/01-overview/shadow-event-payload-examples.md)', 'README: links the shadow pilot path near the adoption wedge');
   includes(readme, 'map what your AI agents are trying to do in the shadow of your systems', 'README: explains the shadow pilot value plainly');

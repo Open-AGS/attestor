@@ -29,23 +29,23 @@ function testReadmePublicClaimBoundary(): void {
   );
   includes(
     readme,
-    'Attestor sits between what an AI wants to do and the system that would do it.',
+    'Attestor sits between an AI-prepared action and the system that would execute it.',
     'Final claim alignment: README keeps primary placement sentence',
   );
   includes(
     readme,
-    'The stop point has to sit before the real action.',
+    'The stop point has to sit before the real action:',
     'Final claim alignment: README keeps proposed-action stop-point sentence',
   );
   includes(
     readme,
-    'The decision leaves a traceable trail',
+    'Every decision leaves a trail',
     'Final claim alignment: README keeps traceability claim bounded and visible',
   );
   includes(readme, 'evaluation release', 'Final claim alignment: README keeps evaluation-release status');
   includes(
     readme,
-    'not a finished public SaaS, a production-use guarantee, a completed customer-operated deployment, or a substitute for an external security audit',
+    'It is not public SaaS, a production guarantee, a',
     'Final claim alignment: README keeps production/audit non-claim',
   );
   includes(

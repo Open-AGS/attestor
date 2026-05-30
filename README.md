@@ -72,10 +72,7 @@ Customer-owned gate
 Without a customer-side gate, gateway, verifier, or adapter, the decision is
 evidence, not enforcement. With that downstream point, it becomes the stop point.
 
-### Run Attestor in shadow pilot mode
-
-Map what your AI agents are trying to do in the shadow of your systems before
-you enforce anything.
+### Run Attestor in shadow pilot mode - and map what your AI agents are trying to do in the shadow of your systems.
 
 [Run Attestor in shadow pilot mode](docs/01-overview/shadow-event-payload-examples.md)
 

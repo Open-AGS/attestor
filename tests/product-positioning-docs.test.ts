@@ -56,8 +56,7 @@ function testReadmeKeepsSingleEngineAndCustomerBoundary(): void {
   includes(readme, 'It checks policy, approval, evidence, allowed scope, freshness, replay, tenant', 'Product docs: README keeps the core check vocabulary in plain language');
   includes(readme, 'The real service should run only through the customer-owned gate.', 'Product docs: README keeps the customer enforcement boundary');
   includes(readme, 'Without a customer-side gate, gateway, verifier, or adapter, the decision is', 'Product docs: README distinguishes advisory evidence from control point');
-  includes(readme, '### Run Attestor in shadow pilot mode', 'Product docs: README makes the shadow-pilot path visible');
-  includes(readme, 'Map what your AI agents are trying to do in the shadow of your systems before', 'Product docs: README keeps the shadow-pilot value line');
+  includes(readme, '### Run Attestor in shadow pilot mode - and map what your AI agents are trying to do in the shadow of your systems.', 'Product docs: README makes the original shadow-pilot line visible');
   includes(readme, '[Run Attestor in shadow pilot mode](docs/01-overview/shadow-event-payload-examples.md)', 'Product docs: README links the shadow pilot guide');
   includes(readme, 'The same gate can sit before these operation classes:', 'Product docs: README keeps cross-operation framing concise');
   includes(readme, 'This is a control point, not a data lake.', 'Product docs: README keeps data-posture positioning');

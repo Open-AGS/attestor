@@ -71,7 +71,7 @@ future one-off CLI has a documented reason to sit above the family folders.
 | `scripts/demo/demo-*` | 8 | You need a runnable local golden path or path-boundary demo. | `demo-golden-refund.ts`, `demo-golden-paths.ts`, `demo-path-boundary.ts` |
 | `scripts/rehearse/*.ts` | 5 | You need a production rehearsal script or rehearsal planner. | `rehearse-production-consequence-behavior.ts`, `plan-production-rehearsal.ts` |
 | `scripts/run/run-*` | 3 | You need a suite runner or live/ops gate runner. | `run-suite.mjs`, `run-live-ops-gate.mjs` |
-| `scripts/verify/{validate,verify}-*` | 4 | You need PR-body, PR-contract, or MQ-kit validation. | `validate-pr-body.mjs`, `validate-pr-contract.mjs`, `verify-mq-cert.ts` |
+| `scripts/verify/{validate,verify}-*` | 4 | You need PR-body, PR-contract, or MQ-kit validation. | `validate-pr-body.mjs`, `validate-pr-contract.mjs`, `verify-mq-cert.ts`, `verify-mq-kit.ts` |
 | `scripts/benchmark/*.ts` | 3 | You need local performance, HA, or observability benchmark evidence. | `benchmark-observability.ts`, `benchmark-crypto-intelligence-performance.ts`, `ha-calibrate.ts` |
 | `scripts/ops/*.ts` | 4 | You need a named operator CLI for backups, restores, Stripe bootstrap, or promotion packaging. | `control-plane-backup.ts`, `control-plane-restore.ts`, `bootstrap-stripe-commercial.ts` |
 | `scripts/preview/preview-*` | 1 | You need a local browser preview server. | `preview-policy-foundry-hosted-ui.ts` |

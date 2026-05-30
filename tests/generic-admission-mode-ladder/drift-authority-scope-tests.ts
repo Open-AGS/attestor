@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+
 import {
   GENERIC_ADMISSION_MODES,
   assert,
@@ -14,6 +16,10 @@ import {
   ok,
   throws,
 } from './helpers.js';
+
+function readProjectFile(path: string): string {
+  return readFileSync(path, 'utf8').replace(/\r\n/gu, '\n');
+}
 
 function scopedMoneyAdmission() {
   return {
@@ -579,6 +585,28 @@ function testInvalidInputFailsClosed(): void {
   );
 }
 
+function testGenericGuardReasonCodeSetsRemainMappedToChecks(): void {
+  const contractsSource = readProjectFile('src/consequence-admission/contracts.ts');
+  const engineSource = readProjectFile('src/consequence-admission/generic-engine.ts');
+  const reasonCodeSetNames = [
+    ...contractsSource.matchAll(
+      /^export const (GENERIC_ADMISSION_[A-Z_]+_REASON_CODES):/gmu,
+    ),
+  ].map((match) => match[1]);
+
+  ok(
+    reasonCodeSetNames.length >= 9,
+    'Generic admission: guard reason-code set inventory is discoverable',
+  );
+
+  for (const setName of reasonCodeSetNames) {
+    ok(
+      engineSource.includes(`${setName}.has(reason)`),
+      `Generic admission: ${setName} is mapped into the per-check reason surface`,
+    );
+  }
+}
+
 export function runDriftAuthorityScopeTests(): void {
   testCurrentStaleAuthorityPolicyCanAdmitCompleteRequest();
   testMatchingDecisionContextCanAdmitCompleteRequest();
@@ -593,4 +621,5 @@ export function runDriftAuthorityScopeTests(): void {
   testScopeEscalationBlocksEnforceMode();
   testEnforceModeBlocksKnownUnsafeSignals();
   testInvalidInputFailsClosed();
+  testGenericGuardReasonCodeSetsRemainMappedToChecks();
 }

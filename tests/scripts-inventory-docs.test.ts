@@ -220,8 +220,8 @@ function testInventoryLinksResolveAndNavigationSurfaces(): void {
 
   includes(
     readme,
-    '[Scripts inventory](docs/02-architecture/scripts-inventory.md)',
-    'Scripts inventory: README maintainer reference links the doc',
+    '[Repository navigator](docs/01-overview/repository-navigator.md)',
+    'Scripts inventory: README routes maintainers through the repository navigator',
   );
   includes(
     navigator,

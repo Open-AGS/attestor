@@ -269,5 +269,7 @@ Use this after you already know what Attestor does.
 - [Current posture baseline](docs/audit/current-posture-baseline.md)
 - [Live proof register](docs/audit/live-proof-register.md)
 - [Security Policy](SECURITY.md)
+- [Evaluation Smoke workflow](.github/workflows/evaluation-smoke.yml)
+- [Artifact attestation plan](docs/08-deployment/artifact-attestation-plan.md)
 
 Action-surface onboarding can generate a local review handoff and red-team fixture bundle. It is review material only; fixtures do not activate enforcement.

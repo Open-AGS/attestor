@@ -32,6 +32,11 @@ import type {
 } from '../../account/account-user-store.js';
 import type { AccountUserActionTokenRecord } from '../../account/account-user-token-store.js';
 import type { HostedBillingEntitlementRecord } from '../../billing/billing-entitlement-store.js';
+import type {
+  ListWorkflowEntitlementsFilters,
+  PendingWorkflowEntitlementInput,
+  StoredWorkflowEntitlementRecord,
+} from '../../workflow-entitlement-store.js';
 import type { HostedPasskeyAuthenticationChallengeState, HostedPasskeyAuthenticatorHint, HostedPasskeyRegistrationChallengeState } from '../../account/account-passkeys.js';
 import type { TenantKeyRecord } from '../../tenant-key-store.js';
 import type { AccountAccessContext, TenantContext } from '../../tenant-isolation.js';
@@ -138,6 +143,18 @@ export interface AccountRouteDeps {
   accountMfaErrorResponse(context: Context, error: unknown): Response | null;
   getHostedPlan: typeof PlanCatalog.getHostedPlan;
   createHostedCheckoutSession: typeof StripeBilling.createHostedCheckoutSession;
+  createHostedWorkflowCheckoutSession: typeof StripeBilling.createHostedWorkflowCheckoutSession;
+  listWorkflowEntitlements(filters?: ListWorkflowEntitlementsFilters): Promise<{
+    records: StoredWorkflowEntitlementRecord[];
+    path: string | null;
+  }>;
+  findWorkflowEntitlementByTenantAndWorkflow(
+    tenantId: string,
+    workflowId: string,
+  ): Promise<StoredWorkflowEntitlementRecord | null>;
+  upsertPendingWorkflowEntitlement(
+    input: PendingWorkflowEntitlementInput,
+  ): Promise<{ record: StoredWorkflowEntitlementRecord; path: string | null }>;
   stripeBillingErrorResponse(context: Context, error: unknown): Response | null;
   createHostedBillingPortalSession: typeof StripeBilling.createHostedBillingPortalSession;
   buildHostedBillingExport: typeof BillingExport.buildHostedBillingExport;

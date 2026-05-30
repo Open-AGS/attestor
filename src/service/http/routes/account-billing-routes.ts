@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import type { Hono } from 'hono';
 import type { AccountMutationAuditInput, AccountRouteDeps } from './account-routes.js';
 import {
@@ -5,6 +6,76 @@ import {
   hostedEmailDeliveryStatusFilter,
   readAccountJsonBody,
 } from './account-route-helpers.js';
+import {
+  WORKFLOW_CONSEQUENCE_PACKS,
+  getWorkflowBillingTier,
+  type WorkflowBillingTierId,
+  type WorkflowConsequencePackId,
+} from '../../workflow-entitlement-catalog.js';
+import {
+  digestWorkflowMetadataRef,
+  type StoredWorkflowEntitlementRecord,
+  type WorkflowCheckoutAction,
+} from '../../workflow-entitlement-store.js';
+
+function isWorkflowCheckoutAction(value: string): value is WorkflowCheckoutAction {
+  return value === 'create' || value === 'upgrade' || value === 'downgrade';
+}
+
+function workflowIdFromBody(body: Record<string, unknown>, action: WorkflowCheckoutAction): string {
+  const provided = typeof body.workflowId === 'string' ? body.workflowId.trim() : '';
+  if (provided) return provided;
+  if (action !== 'create') return '';
+  return `wf_${randomUUID().replace(/-/g, '').slice(0, 16)}`;
+}
+
+function workflowPackFromBody(body: Record<string, unknown>): WorkflowConsequencePackId | null {
+  const value = typeof body.consequencePack === 'string' ? body.consequencePack.trim() : '';
+  return WORKFLOW_CONSEQUENCE_PACKS.includes(value as WorkflowConsequencePackId)
+    ? value as WorkflowConsequencePackId
+    : null;
+}
+
+function workflowRefDigest(
+  body: Record<string, unknown>,
+  rawKey: 'downstreamSystemRef' | 'policyGatePathRef',
+  digestKey: 'downstreamSystemRefDigest' | 'policyGatePathRefDigest',
+): string | null {
+  const providedDigest = typeof body[digestKey] === 'string' ? body[digestKey].trim() : '';
+  if (providedDigest.startsWith('sha256:')) return providedDigest;
+  const rawValue = typeof body[rawKey] === 'string' ? body[rawKey].trim() : '';
+  return rawValue ? digestWorkflowMetadataRef(rawValue) : null;
+}
+
+function workflowEntitlementView(record: StoredWorkflowEntitlementRecord): Record<string, unknown> {
+  return {
+    workflowId: record.workflowId,
+    accountId: record.accountId,
+    tenantId: record.tenantId,
+    tier: record.tier,
+    status: record.status,
+    consequencePack: record.consequencePack,
+    stripeCustomerId: record.stripeCustomerId,
+    stripeSubscriptionId: record.stripeSubscriptionId,
+    stripeSubscriptionItemId: record.stripeSubscriptionItemId,
+    stripePriceId: record.stripePriceId,
+    stripeOveragePriceId: record.stripeOveragePriceId,
+    downstreamSystemRefDigest: record.downstreamSystemRefDigest,
+    policyGatePathRefDigest: record.policyGatePathRefDigest,
+    includedAdmissionsMonthly: record.includedAdmissionsMonthly,
+    monthlyAdmissionsUsed: record.monthlyAdmissionsUsed,
+    admissionPeriod: record.admissionPeriod,
+    customerGateProofPresent: record.customerGateProofPresent,
+    lastCheckoutAction: record.lastCheckoutAction,
+    lastCheckoutSessionId: record.lastCheckoutSessionId,
+    lastCheckoutCompletedAt: record.lastCheckoutCompletedAt,
+    lastEventId: record.lastEventId,
+    lastEventType: record.lastEventType,
+    lastEventAt: record.lastEventAt,
+    createdAt: record.createdAt,
+    updatedAt: record.updatedAt,
+  };
+}
 
 export function registerAccountBillingRoutes(app: Hono, deps: AccountRouteDeps): void {
   const {
@@ -18,6 +89,10 @@ export function registerAccountBillingRoutes(app: Hono, deps: AccountRouteDeps):
     buildHostedFeatureServiceView,
     getHostedPlan,
     createHostedCheckoutSession,
+    createHostedWorkflowCheckoutSession,
+    listWorkflowEntitlements,
+    findWorkflowEntitlementByTenantAndWorkflow,
+    upsertPendingWorkflowEntitlement,
     stripeBillingErrorResponse,
     createHostedBillingPortalSession,
     buildHostedBillingExport,
@@ -184,6 +259,175 @@ export function registerAccountBillingRoutes(app: Hono, deps: AccountRouteDeps):
       checkoutSessionId: checkout.sessionId,
       checkoutUrl: checkout.url,
       mock: checkout.mock,
+    });
+  });
+
+  app.get('/api/v1/account/billing/workflows', async (c) => {
+    const roleGate = requireAccountSession(c, {
+      roles: ['account_admin', 'billing_admin', 'read_only'],
+    });
+    if (roleGate) return roleGate;
+    const current = await currentHostedAccount(c);
+    if (current instanceof Response) return current;
+    const status = c.req.query('status')?.trim();
+    const limitRaw = c.req.query('limit')?.trim();
+    const limit = limitRaw ? Number.parseInt(limitRaw, 10) : undefined;
+    const records = await listWorkflowEntitlements({
+      accountId: current.account.id,
+      tenantId: current.tenant.tenantId,
+      status:
+        status === 'active' ||
+        status === 'trialing' ||
+        status === 'past_due' ||
+        status === 'canceled' ||
+        status === 'incomplete'
+          ? status
+          : null,
+      limit: Number.isFinite(limit) ? limit : undefined,
+    });
+    return c.json({
+      accountId: current.account.id,
+      tenantId: current.tenant.tenantId,
+      workflows: records.records.map(workflowEntitlementView),
+      recordCount: records.records.length,
+    });
+  });
+
+  app.post('/api/v1/account/billing/workflows/checkout', async (c) => {
+    const roleGate = requireAccountSession(c, {
+      roles: ['account_admin', 'billing_admin'],
+    });
+    if (roleGate) return roleGate;
+    const access = currentAccountAccess(c)!;
+    const current = await currentHostedAccount(c);
+    if (current instanceof Response) return current;
+
+    const body = await readAccountJsonBody(c);
+    if (body instanceof Response) return body;
+    const idempotencyKey = c.req.header('Idempotency-Key')?.trim() ?? '';
+    if (!idempotencyKey) {
+      return c.json({ error: 'Idempotency-Key header is required for hosted workflow checkout.' }, 400);
+    }
+
+    const rawAction = typeof body.workflowAction === 'string'
+      ? body.workflowAction.trim()
+      : 'create';
+    if (!isWorkflowCheckoutAction(rawAction)) {
+      return c.json({ error: "workflowAction must be 'create', 'upgrade', or 'downgrade'." }, 400);
+    }
+    const workflowId = workflowIdFromBody(body, rawAction);
+    if (!workflowId) {
+      return c.json({ error: 'workflowId is required for workflow upgrade or downgrade checkout.' }, 400);
+    }
+    const tierId = typeof body.tier === 'string' ? body.tier.trim() : '';
+    const tier = getWorkflowBillingTier(tierId);
+    if (!tier) {
+      return c.json({ error: 'tier must be pilot-workflow, starter-workflow, or pro-workflow.' }, 400);
+    }
+    const consequencePack = workflowPackFromBody(body);
+    if (!consequencePack) {
+      return c.json({ error: 'consequencePack is required and must be a known Attestor pack.' }, 400);
+    }
+    const downstreamSystemRefDigest = workflowRefDigest(
+      body,
+      'downstreamSystemRef',
+      'downstreamSystemRefDigest',
+    );
+    const policyGatePathRefDigest = workflowRefDigest(
+      body,
+      'policyGatePathRef',
+      'policyGatePathRefDigest',
+    );
+    if (!downstreamSystemRefDigest || !policyGatePathRefDigest) {
+      return c.json({
+        error: 'downstreamSystemRef and policyGatePathRef, or their sha256 digests, are required for workflow checkout.',
+      }, 400);
+    }
+
+    const existing = await findWorkflowEntitlementByTenantAndWorkflow(
+      current.tenant.tenantId,
+      workflowId,
+    );
+    if (rawAction === 'create' && existing) {
+      return c.json({ error: 'workflowId already exists for this tenant.' }, 409);
+    }
+    if (rawAction !== 'create' && !existing) {
+      return c.json({ error: 'workflowId must already exist for upgrade or downgrade checkout.' }, 404);
+    }
+
+    let checkout;
+    try {
+      checkout = await createHostedWorkflowCheckoutSession({
+        account: current.account,
+        tenant: current.tenant,
+        workflowAction: rawAction,
+        workflowId,
+        tier: tier.id as WorkflowBillingTierId,
+        consequencePack,
+        downstreamSystemRefDigest,
+        policyGatePathRefDigest,
+        idempotencyKey,
+      });
+    } catch (err) {
+      const mapped = stripeBillingErrorResponse(c, err);
+      if (mapped) return mapped;
+      throw err;
+    }
+    const entitlement = await upsertPendingWorkflowEntitlement({
+      accountId: current.account.id,
+      tenantId: current.tenant.tenantId,
+      workflowId,
+      tier: checkout.tier,
+      consequencePack,
+      downstreamSystemRefDigest,
+      policyGatePathRefDigest,
+      stripeCustomerId: current.account.billing.stripeCustomerId,
+      stripePriceId: checkout.stripePriceId,
+      stripeOveragePriceId: checkout.stripeOveragePriceId,
+      checkoutAction: checkout.workflowAction,
+      checkoutSessionId: checkout.sessionId,
+    });
+    await recordAccountSessionMutationAudit({
+      routeId: 'account.billing.workflow_checkout',
+      action: 'account.billing.checkout_started',
+      access,
+      requestPayload: {
+        accountId: current.account.id,
+        tenantId: current.tenant.tenantId,
+        workflowId,
+        workflowAction: checkout.workflowAction,
+        tier: checkout.tier,
+        consequencePack,
+        downstreamSystemRefDigest,
+        policyGatePathRefDigest,
+      },
+      statusCode: 200,
+      tenantId: current.tenant.tenantId,
+      planId: checkout.tier,
+      idempotencyKey,
+      metadata: {
+        mock: checkout.mock,
+        workflowId,
+        workflowAction: checkout.workflowAction,
+        tier: checkout.tier,
+        consequencePack,
+      },
+    });
+
+    c.header('x-attestor-idempotency-key', idempotencyKey);
+    return c.json({
+      accountId: current.account.id,
+      tenantId: current.tenant.tenantId,
+      workflowId,
+      workflowAction: checkout.workflowAction,
+      tier: checkout.tier,
+      consequencePack,
+      stripePriceId: checkout.stripePriceId,
+      stripeOveragePriceId: checkout.stripeOveragePriceId,
+      checkoutSessionId: checkout.sessionId,
+      checkoutUrl: checkout.url,
+      mock: checkout.mock,
+      entitlement: workflowEntitlementView(entitlement.record),
     });
   });
 

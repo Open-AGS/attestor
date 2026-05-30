@@ -19,6 +19,10 @@ import {
   type HostedBillingEntitlementRecord,
 } from '../billing/billing-entitlement-store.js';
 import {
+  normalizeWorkflowEntitlementRecord,
+  type StoredWorkflowEntitlementRecord,
+} from '../workflow-entitlement-store.js';
+import {
   TenantKeyStoreError,
   type TenantKeyRecord,
   type TenantKeyStatus,
@@ -169,6 +173,13 @@ export function coerceHostedBillingEntitlementRecord(value: unknown): HostedBill
   return normalizeHostedBillingEntitlementRecord(value as HostedBillingEntitlementRecord);
 }
 
+export function coerceWorkflowEntitlementRecord(value: unknown): StoredWorkflowEntitlementRecord {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new Error('Invalid workflow entitlement record in shared control-plane store.');
+  }
+  return normalizeWorkflowEntitlementRecord(value as StoredWorkflowEntitlementRecord);
+}
+
 export function coerceTenantKeyRecord(value: unknown): TenantKeyRecord {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     throw new Error('Invalid tenant key record in shared control-plane store.');
@@ -236,6 +247,10 @@ export function rowToHostedAccount(row: PgQueryResultRow): HostedAccountRecord {
 
 export function rowToHostedBillingEntitlement(row: PgQueryResultRow): HostedBillingEntitlementRecord {
   return coerceHostedBillingEntitlementRecord(row.record_json);
+}
+
+export function rowToWorkflowEntitlement(row: PgQueryResultRow): StoredWorkflowEntitlementRecord {
+  return coerceWorkflowEntitlementRecord(row.record_json);
 }
 
 export function rowToTenantKey(row: PgQueryResultRow): TenantKeyRecord {

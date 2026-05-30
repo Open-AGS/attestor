@@ -3,7 +3,9 @@ import {
   StripeBillingError,
   createHostedBillingPortalSession,
   createHostedCheckoutSession,
+  createHostedWorkflowCheckoutSession,
   recordStripeOverageMeterEvent,
+  recordWorkflowStripeOverageMeterEvent,
 } from '../src/service/billing/stripe/stripe-billing.js';
 import { getHostedPlan, resolvePlanStripeOveragePrice, resolvePlanStripeTrialDays } from '../src/service/plan-catalog.js';
 
@@ -26,6 +28,11 @@ async function main(): Promise<void> {
     ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER: process.env.ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER,
     ATTESTOR_STRIPE_OVERAGE_PRICE_PRO: process.env.ATTESTOR_STRIPE_OVERAGE_PRICE_PRO,
     ATTESTOR_STRIPE_OVERAGE_PRICE_SCALE: process.env.ATTESTOR_STRIPE_OVERAGE_PRICE_SCALE,
+    ATTESTOR_STRIPE_PRICE_PILOT_WORKFLOW: process.env.ATTESTOR_STRIPE_PRICE_PILOT_WORKFLOW,
+    ATTESTOR_STRIPE_PRICE_STARTER_WORKFLOW: process.env.ATTESTOR_STRIPE_PRICE_STARTER_WORKFLOW,
+    ATTESTOR_STRIPE_PRICE_PRO_WORKFLOW: process.env.ATTESTOR_STRIPE_PRICE_PRO_WORKFLOW,
+    ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER_WORKFLOW: process.env.ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER_WORKFLOW,
+    ATTESTOR_STRIPE_OVERAGE_PRICE_PRO_WORKFLOW: process.env.ATTESTOR_STRIPE_OVERAGE_PRICE_PRO_WORKFLOW,
     ATTESTOR_STRIPE_OVERAGE_METER_EVENT_NAME: process.env.ATTESTOR_STRIPE_OVERAGE_METER_EVENT_NAME,
   };
 
@@ -38,6 +45,11 @@ async function main(): Promise<void> {
   process.env.ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER = 'price_starter_overage_live';
   process.env.ATTESTOR_STRIPE_OVERAGE_PRICE_PRO = 'price_pro_overage_live';
   process.env.ATTESTOR_STRIPE_OVERAGE_PRICE_SCALE = 'price_scale_overage_live';
+  process.env.ATTESTOR_STRIPE_PRICE_PILOT_WORKFLOW = 'price_pilot_workflow_live';
+  process.env.ATTESTOR_STRIPE_PRICE_STARTER_WORKFLOW = 'price_starter_workflow_live';
+  process.env.ATTESTOR_STRIPE_PRICE_PRO_WORKFLOW = 'price_pro_workflow_live';
+  process.env.ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER_WORKFLOW = 'price_starter_workflow_overage_live';
+  process.env.ATTESTOR_STRIPE_OVERAGE_PRICE_PRO_WORKFLOW = 'price_pro_workflow_overage_live';
 
   try {
     const starter = getHostedPlan('starter');
@@ -95,6 +107,71 @@ async function main(): Promise<void> {
     });
     ok(proCheckout.trialDays === null, 'Stripe commercial config: pro checkout returns no trial in mock mode');
     ok(proCheckout.stripeOveragePriceId === 'price_pro_overage_live', 'Stripe commercial config: pro checkout includes the metered overage price');
+
+    const workflowCheckout = await createHostedWorkflowCheckoutSession({
+      account,
+      tenant,
+      workflowAction: 'create',
+      workflowId: 'wf_refunds',
+      tier: 'starter-workflow',
+      consequencePack: 'money-movement',
+      downstreamSystemRefDigest: 'sha256:downstream',
+      policyGatePathRefDigest: 'sha256:gate',
+      idempotencyKey: 'workflow-checkout-test',
+    });
+    ok(workflowCheckout.mock, 'Stripe commercial config: workflow checkout supports mock mode');
+    ok(workflowCheckout.stripePriceId === 'price_starter_workflow_live', 'Stripe commercial config: workflow checkout uses tier base price');
+    ok(workflowCheckout.stripeOveragePriceId === 'price_starter_workflow_overage_live', 'Stripe commercial config: workflow checkout includes metered workflow overage price');
+
+    const workflowMetering = await recordWorkflowStripeOverageMeterEvent({
+      entitlement: {
+        id: 'went_123',
+        schemaVersion: 'attestor.workflow-entitlement.v1',
+        workflowId: 'wf_refunds',
+        accountId: 'acct_123',
+        tenantId: 'tenant_123',
+        tier: 'starter-workflow',
+        status: 'active',
+        stripeCustomerId: 'cus_mock_123',
+        stripeSubscriptionId: 'sub_mock_123',
+        stripeSubscriptionItemId: 'si_mock_123',
+        stripePriceId: 'price_starter_workflow_live',
+        stripeOveragePriceId: 'price_starter_workflow_overage_live',
+        consequencePack: 'money-movement',
+        downstreamSystemRefDigest: 'sha256:downstream',
+        policyGatePathRefDigest: 'sha256:gate',
+        includedAdmissionsMonthly: 25_000,
+        monthlyAdmissionsUsed: 25_001,
+        admissionPeriod: '2026-05',
+        currentPeriodStart: null,
+        currentPeriodEnd: null,
+        customerGateProofPresent: true,
+        lastCheckoutAction: 'create',
+        lastCheckoutSessionId: 'cs_mock_123',
+        lastCheckoutCompletedAt: null,
+        lastEventId: null,
+        lastEventType: null,
+        lastEventAt: null,
+        createdAt: '2026-05-01T00:00:00.000Z',
+        updatedAt: '2026-05-01T00:00:00.000Z',
+      },
+      usage: {
+        workflowId: 'wf_refunds',
+        accountId: 'acct_123',
+        tenantId: 'tenant_123',
+        tier: 'starter-workflow',
+        meter: 'workflow_monthly_admissions',
+        period: '2026-05',
+        used: 25_001,
+        quota: 25_000,
+        remaining: 0,
+        hardLimit: false,
+        overage: true,
+        overageUnits: 1,
+      },
+    });
+    ok(workflowMetering.status === 'mock_recorded', 'Stripe commercial config: workflow overage metering records mock event');
+    ok(workflowMetering.eventIdentifier?.startsWith('attestor_wf_'), 'Stripe commercial config: workflow meter event identifier is workflow-scoped');
 
     delete process.env.ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER;
     let missingOveragePriceError: unknown = null;

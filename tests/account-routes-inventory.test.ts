@@ -51,6 +51,8 @@ const EXPECTED_ROUTES = Object.freeze([
   ['POST', '/api/v1/auth/password/reset'],
   ['GET', '/api/v1/account/email/deliveries'],
   ['POST', '/api/v1/account/billing/checkout'],
+  ['GET', '/api/v1/account/billing/workflows'],
+  ['POST', '/api/v1/account/billing/workflows/checkout'],
   ['POST', '/api/v1/account/billing/portal'],
   ['GET', '/api/v1/account/billing/export'],
   ['GET', '/api/v1/account/billing/reconciliation'],

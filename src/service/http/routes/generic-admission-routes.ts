@@ -13,7 +13,35 @@ import type {
 } from '../../../release-layer/index.js';
 import { resolvePlanGenericAdmissionMode } from '../../plan-catalog.js';
 import type { TenantContext } from '../../tenant-isolation.js';
+import {
+  evaluateWorkflowEntitlementAccess,
+  type WorkflowEntitlementAccessDecision,
+  type WorkflowEntitlementRecord,
+} from '../../workflow-entitlement.js';
+import type { WorkflowUsageDecision } from '../../workflow-entitlement-store.js';
 import { acceptsJsonRequestBody } from '../route-response-helpers.js';
+
+export interface WorkflowAdmissionMeteringResult {
+  readonly provider: 'stripe';
+  readonly status: 'not_applicable' | 'skipped' | 'mock_recorded' | 'sent' | 'failed';
+  readonly reason: string | null;
+  readonly eventName: string | null;
+  readonly eventIdentifier: string | null;
+  readonly value: number;
+  readonly mock: boolean;
+}
+
+export interface WorkflowAdmissionConsumptionResult {
+  readonly decision: WorkflowUsageDecision | null;
+  readonly billingMetering: WorkflowAdmissionMeteringResult | null;
+}
+
+type GenericAdmissionRouteResponseEnvelope = GenericAdmissionEnvelope & {
+  readonly protectedReleaseTokenAuthorization?: GenericAdmissionProtectedReleaseTokenIssueResult['authorization'];
+  readonly workflowEntitlementAccess?: WorkflowEntitlementAccessDecision;
+  readonly workflowUsage?: WorkflowUsageDecision['usage'];
+  readonly workflowBillingMetering?: WorkflowAdmissionMeteringResult | null;
+};
 
 export interface GenericAdmissionRouteDeps {
   currentTenant(context: Context): TenantContext;
@@ -39,11 +67,69 @@ export interface GenericAdmissionRouteDeps {
     readonly envelope: GenericAdmissionEnvelope;
     readonly receivedAt: string;
   }): ReleaseTokenConfirmationClaim | null | Promise<ReleaseTokenConfirmationClaim | null>;
+  resolveWorkflowEntitlement?(input: {
+    readonly tenant: TenantContext;
+    readonly workflowId: string;
+  }): WorkflowEntitlementRecord | null | Promise<WorkflowEntitlementRecord | null>;
+  consumeWorkflowAdmission?(input: {
+    readonly tenant: TenantContext;
+    readonly workflowId: string;
+    readonly entitlement: WorkflowEntitlementRecord;
+  }): WorkflowAdmissionConsumptionResult | Promise<WorkflowAdmissionConsumptionResult>;
   readonly requireProtectedReleaseTokenForHighRisk?: boolean;
 }
 
 function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function optionalStringField(
+  payload: unknown,
+  keys: readonly string[],
+): string | null {
+  if (!isRecord(payload)) return null;
+  for (const key of keys) {
+    const value = payload[key];
+    if (typeof value === 'string' && value.trim() !== '') return value.trim();
+  }
+  return null;
+}
+
+function nestedRecordField(payload: unknown, key: string): Readonly<Record<string, unknown>> | null {
+  if (!isRecord(payload)) return null;
+  const value = payload[key];
+  return isRecord(value) ? value : null;
+}
+
+function workflowIdFromAdmissionPayload(payload: unknown): string | null {
+  return optionalStringField(payload, ['workflowId', 'workflowRef'])
+    ?? optionalStringField(nestedRecordField(payload, 'workflow'), ['workflowId', 'id'])
+    ?? optionalStringField(nestedRecordField(payload, 'billingWorkflow'), ['workflowId', 'id']);
+}
+
+function workflowRequestedCapability(payload: unknown): string | null {
+  return optionalStringField(payload, ['requestedCapability', 'workflowCapability', 'capability'])
+    ?? optionalStringField(nestedRecordField(payload, 'workflow'), ['requestedCapability', 'capability']);
+}
+
+function workflowRequestedPack(payload: unknown): string | null {
+  return optionalStringField(payload, ['requestedConsequencePack', 'consequencePack', 'pack'])
+    ?? optionalStringField(nestedRecordField(payload, 'workflow'), ['requestedConsequencePack', 'consequencePack', 'pack']);
+}
+
+function workflowCustomerGateProofPresent(payload: unknown): boolean {
+  if (!isRecord(payload)) return false;
+  if (
+    payload.customerGateProofPresent === true ||
+    payload.policyGateProofPresent === true ||
+    payload.customerGateProof === true
+  ) {
+    return true;
+  }
+  const workflow = nestedRecordField(payload, 'workflow');
+  return workflow?.customerGateProofPresent === true
+    || workflow?.policyGateProofPresent === true
+    || workflow?.customerGateProof === true;
 }
 
 function nestedTenantId(value: unknown): string | null {
@@ -156,6 +242,46 @@ export function registerGenericAdmissionRoutes(
         });
         return c.json(problem, 403);
       }
+      const workflowId = workflowIdFromAdmissionPayload(payload);
+      let workflowEntitlement: WorkflowEntitlementRecord | null = null;
+      let workflowAccess: WorkflowEntitlementAccessDecision | null = null;
+      if (workflowId) {
+        if (!deps.resolveWorkflowEntitlement) {
+          const problem = createConsequenceAdmissionProblem({
+            type: 'https://attestor.dev/problems/workflow-entitlement-resolver-unavailable',
+            title: 'Workflow entitlement resolver unavailable',
+            status: 503,
+            detail: 'The workflow entitlement resolver is not configured for workflow-bound admissions.',
+            instance: '/api/v1/admissions',
+            reasonCodes: ['workflow-entitlement-resolver-unavailable'],
+          });
+          return c.json(problem, 503);
+        }
+        workflowEntitlement = await deps.resolveWorkflowEntitlement({
+          tenant,
+          workflowId,
+        });
+        workflowAccess = evaluateWorkflowEntitlementAccess({
+          workflowId,
+          entitlement: workflowEntitlement,
+          requestedMode: envelope.mode,
+          requestedCapability: workflowRequestedCapability(payload),
+          requestedConsequencePack: workflowRequestedPack(payload),
+          customerGateProofPresent: workflowCustomerGateProofPresent(payload),
+          pastDueGraceActive: true,
+        });
+        if (!workflowAccess.allowed) {
+          const problem = createConsequenceAdmissionProblem({
+            type: 'https://attestor.dev/problems/workflow-entitlement-restricted',
+            title: 'Workflow entitlement restricted',
+            status: 403,
+            detail: 'The workflow entitlement does not allow this admission mode, capability, pack, status, or customer-gate posture.',
+            instance: '/api/v1/admissions',
+            reasonCodes: workflowAccess.reasonCodes,
+          });
+          return c.json(problem, 403);
+        }
+      }
       let loopGuard: ConsequenceAdmissionAgentLoopAbuseGuardDecision | undefined;
       try {
         loopGuard = await deps.evaluateAgentLoopAbuse?.({
@@ -206,9 +332,7 @@ export function registerGenericAdmissionRoutes(
       const protectedReleaseTokenRequirement =
         evaluateGenericAdmissionProtectedReleaseTokenRequirement({ envelope });
       let envelopeForShadow: GenericAdmissionEnvelope = envelope;
-      let responseEnvelope: GenericAdmissionEnvelope | (GenericAdmissionEnvelope & {
-        readonly protectedReleaseTokenAuthorization?: GenericAdmissionProtectedReleaseTokenIssueResult['authorization'];
-      }) = envelope;
+      let responseEnvelope: GenericAdmissionRouteResponseEnvelope = envelope;
       if (protectedReleaseTokenRequirement.required && deps.issueProtectedReleaseToken) {
         try {
           const receivedAt = new Date().toISOString();
@@ -265,6 +389,42 @@ export function registerGenericAdmissionRoutes(
           ],
         });
         return c.json(problem, 503);
+      }
+      let workflowConsumption: WorkflowAdmissionConsumptionResult | null = null;
+      if (workflowId && workflowAccess && workflowEntitlement) {
+        if (!deps.consumeWorkflowAdmission) {
+          const problem = createConsequenceAdmissionProblem({
+            type: 'https://attestor.dev/problems/workflow-usage-consumer-unavailable',
+            title: 'Workflow usage consumer unavailable',
+            status: 503,
+            detail: 'The workflow usage consumer is not configured for workflow-bound admissions.',
+            instance: '/api/v1/admissions',
+            reasonCodes: ['workflow-usage-consumer-unavailable'],
+          });
+          return c.json(problem, 503);
+        }
+        workflowConsumption = await deps.consumeWorkflowAdmission({
+          tenant,
+          workflowId,
+          entitlement: workflowEntitlement,
+        });
+        if (!workflowConsumption.decision?.allowed) {
+          const problem = createConsequenceAdmissionProblem({
+            type: 'https://attestor.dev/problems/workflow-admission-quota-exhausted',
+            title: 'Workflow admission quota exhausted',
+            status: 429,
+            detail: 'The workflow has exhausted its included admission quota and its tier does not allow soft overage.',
+            instance: '/api/v1/admissions',
+            reasonCodes: ['workflow-admission-quota-exhausted'],
+          });
+          return c.json(problem, 429);
+        }
+        responseEnvelope = {
+          ...responseEnvelope,
+          workflowEntitlementAccess: workflowAccess,
+          workflowUsage: workflowConsumption.decision.usage,
+          workflowBillingMetering: workflowConsumption.billingMetering,
+        };
       }
       try {
         deps.recordShadowAdmission({ tenant, envelope: envelopeForShadow });

@@ -94,6 +94,9 @@ function testRootKeepsOnlyCrossCuttingFiles(): void {
       'usage-meter.ts',
       'version.ts',
       'webhook-rate-limit.ts',
+      'workflow-entitlement-catalog.ts',
+      'workflow-entitlement-store.ts',
+      'workflow-entitlement.ts',
     ],
     'Service organization map: root files stay limited to cross-cutting service support',
   );
@@ -126,7 +129,7 @@ function testResponsibilityDirectoryCountsMatchCloseoutMap(): void {
   const expectedCounts: Readonly<Record<string, number>> = {
     account: 13,
     'api-types': 7,
-    application: 17,
+    application: 18,
     async: 7,
     billing: 7,
     bootstrap: 18,
@@ -148,7 +151,7 @@ function testResponsibilityDirectoryCountsMatchCloseoutMap(): void {
     );
   }
 
-  equal(listFiles().length, 39, 'Service organization map: root file count matches closeout map');
+  equal(listFiles().length, 42, 'Service organization map: root file count matches closeout map');
 }
 
 function testNestedBillingStripeBoundaryIsPreserved(): void {

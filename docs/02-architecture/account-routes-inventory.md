@@ -9,7 +9,7 @@ change runtime behavior.
 
 ## Boundary
 
-`src/service/http/routes/account-routes.ts` currently owns 49 hosted account
+`src/service/http/routes/account-routes.ts` currently owns 51 hosted account
 routes. The split target is a small `registerAccountRoutes` facade plus
 responsibility-named route modules for public auth, federated auth, MFA/passkey,
 account-admin users/API keys, and account billing/visibility.
@@ -76,6 +76,8 @@ The route split must preserve:
 | `POST` | `/api/v1/auth/password/reset` | public password reset | reset token + auth-abuse rate limit |
 | `GET` | `/api/v1/account/email/deliveries` | account email delivery | account admin or billing admin session |
 | `POST` | `/api/v1/account/billing/checkout` | account billing | account admin or billing admin session + Stripe idempotency key + audit |
+| `GET` | `/api/v1/account/billing/workflows` | workflow billing | account admin, billing admin, or read-only session |
+| `POST` | `/api/v1/account/billing/workflows/checkout` | workflow billing | account admin or billing admin session + Stripe idempotency key + audit |
 | `POST` | `/api/v1/account/billing/portal` | account billing | account admin or billing admin session + audit |
 | `GET` | `/api/v1/account/billing/export` | account billing | hosted account context; CSV response sets `Cache-Control: no-store` |
 | `GET` | `/api/v1/account/billing/reconciliation` | account billing | account admin, billing admin, or read-only session |
@@ -88,7 +90,7 @@ The route split must preserve:
 | `account-federated-auth-routes.ts` | SAML metadata/login/ACS, OIDC login/callback |
 | `account-mfa-passkey-routes.ts` | MFA login/management, passkey login/management |
 | `account-admin-user-routes.ts` | API key admin, user admin, invite admin, password-reset issue |
-| `account-billing-routes.ts` | account summary, usage, features, email deliveries, billing checkout/portal/export/reconciliation |
+| `account-billing-routes.ts` | account summary, usage, features, email deliveries, billing checkout, workflow billing checkout/listing, portal/export/reconciliation |
 | `account-route-context.ts` | shared idempotency, audit, session, and route response helpers that remain route-owned |
 
 ## Tests

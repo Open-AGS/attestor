@@ -202,6 +202,7 @@ export async function resetSharedControlPlaneStoreForTests(): Promise<void> {
     DROP TABLE IF EXISTS attestor_control_plane.pipeline_idempotency;
     DROP TABLE IF EXISTS attestor_control_plane.admin_idempotency;
     DROP TABLE IF EXISTS attestor_control_plane.admin_audit_log;
+    DROP TABLE IF EXISTS attestor_control_plane.workflow_entitlements;
     DROP TABLE IF EXISTS attestor_control_plane.billing_entitlements;
     DROP TABLE IF EXISTS attestor_control_plane.account_saml_replays;
     DROP TABLE IF EXISTS attestor_control_plane.account_user_action_tokens;

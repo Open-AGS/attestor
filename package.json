@@ -74,6 +74,7 @@
     "test:f5-crypto-trust-delegation-boundary-validation": "tsx tests/f5-crypto-trust-delegation-boundary-validation.test.ts",
     "test:workflow-entitlement-catalog": "tsx tests/workflow-entitlement-catalog.test.ts",
     "test:workflow-entitlement": "tsx tests/workflow-entitlement.test.ts",
+    "test:workflow-entitlement-store": "tsx tests/workflow-entitlement-store.test.ts",
     "test:stripe-commercial": "tsx tests/stripe-commercial-config.test.ts",
     "test:stripe-webhook-events": "tsx tests/stripe-webhook-events.test.ts",
     "test:stripe-live-readiness-probe": "tsx tests/stripe-live-readiness-probe.test.ts",

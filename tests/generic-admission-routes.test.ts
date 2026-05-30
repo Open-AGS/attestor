@@ -3,10 +3,12 @@ import { runGuardRouteTests } from './generic-admission-routes/guard-route-tests
 import { getPassedCount } from './generic-admission-routes/helpers.js';
 import { runPlanEnvelopeTests } from './generic-admission-routes/plan-envelope-tests.js';
 import { runProtectedTokenTests } from './generic-admission-routes/protected-token-tests.js';
+import { runWorkflowEntitlementRouteTests } from './generic-admission-routes/workflow-entitlement-tests.js';
 
 await runPlanEnvelopeTests();
 await runGuardRouteTests();
 await runFailClosedRetryTests();
 await runProtectedTokenTests();
+await runWorkflowEntitlementRouteTests();
 
 console.log(`Generic admission route tests: ${getPassedCount()} passed, 0 failed`);

@@ -14,6 +14,19 @@ import type { HostedPlanDefinition } from '../../plan-catalog.js';
 import type { TenantContext } from '../../tenant-isolation.js';
 import type { UsageContext } from '../../usage-meter.js';
 import { resolvePlanStripeOveragePrice, resolvePlanStripePrice, resolvePlanStripeTrialDays } from '../../plan-catalog.js';
+import {
+  resolveWorkflowTierStripeOveragePrice,
+  resolveWorkflowTierStripePrice,
+  type WorkflowBillingTierId,
+  type WorkflowConsequencePackId,
+} from '../../workflow-entitlement-catalog.js';
+import {
+  buildWorkflowStripeMetadata,
+  tenantWorkflowMetadataDigest,
+  type StoredWorkflowEntitlementRecord,
+  type WorkflowCheckoutAction,
+  type WorkflowUsageContext,
+} from '../../workflow-entitlement-store.js';
 
 export class StripeBillingError extends Error {
   constructor(
@@ -96,6 +109,37 @@ function planOveragePriceOrThrow(plan: HostedPlanDefinition): { priceId: string 
   };
 }
 
+function workflowPriceOrThrow(tierId: WorkflowBillingTierId): { tierId: WorkflowBillingTierId; priceId: string } {
+  const resolved = resolveWorkflowTierStripePrice(tierId);
+  if (!resolved.knownTier || !resolved.priceId) {
+    throw new StripeBillingError(
+      'PLAN_UNAVAILABLE',
+      `Stripe workflow price not configured for tier '${tierId}'. Set ${resolved.envName || 'ATTESTOR_STRIPE_PRICE_<WORKFLOW_TIER>'} first.`,
+    );
+  }
+  return {
+    tierId: resolved.tierId as WorkflowBillingTierId,
+    priceId: resolved.priceId,
+  };
+}
+
+function workflowOveragePriceOrThrow(tierId: WorkflowBillingTierId): {
+  priceId: string | null;
+  meterEventName: string;
+} {
+  const resolved = resolveWorkflowTierStripeOveragePrice(tierId);
+  if (resolved.billable && !resolved.priceId) {
+    throw new StripeBillingError(
+      'PLAN_UNAVAILABLE',
+      `Stripe workflow overage price not configured for tier '${tierId}'. Set ${resolved.envName} first.`,
+    );
+  }
+  return {
+    priceId: resolved.priceId,
+    meterEventName: resolved.meterEventName,
+  };
+}
+
 export interface HostedCheckoutSessionResult {
   sessionId: string;
   url: string;
@@ -110,6 +154,19 @@ export interface HostedCheckoutSessionResult {
 export interface HostedBillingPortalSessionResult {
   sessionId: string;
   url: string;
+  mock: boolean;
+}
+
+export interface HostedWorkflowCheckoutSessionResult {
+  sessionId: string;
+  url: string;
+  workflowId: string;
+  workflowAction: WorkflowCheckoutAction;
+  tier: WorkflowBillingTierId;
+  consequencePack: WorkflowConsequencePackId;
+  stripePriceId: string;
+  stripeOveragePriceId: string | null;
+  mode: 'subscription';
   mock: boolean;
 }
 
@@ -421,6 +478,93 @@ export async function createHostedCheckoutSession(options: {
   };
 }
 
+export async function createHostedWorkflowCheckoutSession(options: {
+  account: HostedAccountRecord;
+  tenant: TenantContext;
+  workflowAction: WorkflowCheckoutAction;
+  workflowId: string;
+  tier: WorkflowBillingTierId;
+  consequencePack: WorkflowConsequencePackId;
+  downstreamSystemRefDigest: string | null;
+  policyGatePathRefDigest: string | null;
+  idempotencyKey: string;
+}): Promise<HostedWorkflowCheckoutSessionResult> {
+  const { tierId, priceId } = workflowPriceOrThrow(options.tier);
+  const { priceId: overagePriceId } = workflowOveragePriceOrThrow(options.tier);
+  const successUrl = requiredUrl('ATTESTOR_BILLING_SUCCESS_URL');
+  const cancelUrl = requiredUrl('ATTESTOR_BILLING_CANCEL_URL');
+  const idempotencyKey = options.idempotencyKey.trim();
+  if (!idempotencyKey) {
+    throw new StripeBillingError(
+      'CONFIG',
+      'Idempotency-Key header is required for hosted workflow checkout session creation.',
+    );
+  }
+
+  if (useMockStripeBilling()) {
+    const token = Buffer.from(
+      `${options.account.id}:${options.workflowId}:${tierId}:${idempotencyKey}`,
+      'utf8',
+    ).toString('base64url').slice(0, 32);
+    return {
+      sessionId: `cs_mock_wf_${token}`,
+      url: `https://billing.stripe.test/workflow-checkout/${token}`,
+      workflowId: options.workflowId,
+      workflowAction: options.workflowAction,
+      tier: tierId,
+      consequencePack: options.consequencePack,
+      stripePriceId: priceId,
+      stripeOveragePriceId: overagePriceId,
+      mode: 'subscription',
+      mock: true,
+    };
+  }
+
+  const metadata = buildWorkflowStripeMetadata({
+    accountId: options.account.id,
+    tenantDigest: tenantWorkflowMetadataDigest(options.tenant.tenantId),
+    workflowId: options.workflowId,
+    tier: tierId,
+    consequencePack: options.consequencePack,
+    downstreamSystemRefDigest: options.downstreamSystemRefDigest,
+    policyGatePathRefDigest: options.policyGatePathRefDigest,
+  });
+
+  const session = await stripeClient().checkout.sessions.create({
+    mode: 'subscription',
+    success_url: successUrl,
+    cancel_url: cancelUrl,
+    line_items: [
+      { price: priceId, quantity: 1 },
+      ...(overagePriceId ? [{ price: overagePriceId }] : []),
+    ],
+    customer: options.account.billing.stripeCustomerId ?? undefined,
+    customer_email: options.account.billing.stripeCustomerId ? undefined : options.account.contactEmail,
+    metadata,
+    subscription_data: { metadata },
+    allow_promotion_codes: true,
+  }, {
+    idempotencyKey,
+  });
+
+  if (!session.url) {
+    throw new StripeBillingError('CONFIG', 'Stripe workflow checkout session did not return a hosted URL.');
+  }
+
+  return {
+    sessionId: session.id,
+    url: session.url,
+    workflowId: options.workflowId,
+    workflowAction: options.workflowAction,
+    tier: tierId,
+    consequencePack: options.consequencePack,
+    stripePriceId: priceId,
+    stripeOveragePriceId: overagePriceId,
+    mode: 'subscription',
+    mock: false,
+  };
+}
+
 function stripeMeterEventIdentifier(options: {
   tenantId: string;
   planId: string | null;
@@ -501,6 +645,139 @@ export async function recordStripeOverageMeterEvent(options: {
   const identifier = stripeMeterEventIdentifier({
     tenantId: options.tenant.tenantId,
     planId: options.usage.planId,
+    meter: options.usage.meter,
+    period: options.usage.period,
+    used: options.usage.used,
+  });
+
+  if (useMockStripeBilling()) {
+    return {
+      provider: 'stripe',
+      status: 'mock_recorded',
+      reason: null,
+      eventName: overagePrice.meterEventName,
+      eventIdentifier: identifier,
+      value: 1,
+      mock: true,
+    };
+  }
+
+  try {
+    await stripeClient().billing.meterEvents.create({
+      event_name: overagePrice.meterEventName,
+      identifier,
+      payload: {
+        stripe_customer_id: stripeCustomerId,
+        value: '1',
+      },
+      timestamp: Math.floor(Date.now() / 1000),
+    }, {
+      idempotencyKey: identifier,
+    });
+    return {
+      provider: 'stripe',
+      status: 'sent',
+      reason: null,
+      eventName: overagePrice.meterEventName,
+      eventIdentifier: identifier,
+      value: 1,
+      mock: false,
+    };
+  } catch (error) {
+    return {
+      provider: 'stripe',
+      status: 'failed',
+      reason: error instanceof Error ? error.message : String(error),
+      eventName: overagePrice.meterEventName,
+      eventIdentifier: identifier,
+      value: 1,
+      mock: false,
+    };
+  }
+}
+
+function workflowMeterEventIdentifier(options: {
+  workflowId: string;
+  accountId: string;
+  tenantId: string;
+  tier: string;
+  meter: string;
+  period: string;
+  used: number;
+}): string {
+  const digest = createHash('sha256')
+    .update(JSON.stringify({
+      workflowId: options.workflowId,
+      accountId: options.accountId,
+      tenantId: options.tenantId,
+      tier: options.tier,
+      meter: options.meter,
+      period: options.period,
+      used: options.used,
+    }))
+    .digest('hex')
+    .slice(0, 40);
+  return `attestor_wf_${digest}`;
+}
+
+export async function recordWorkflowStripeOverageMeterEvent(options: {
+  entitlement: StoredWorkflowEntitlementRecord;
+  usage: WorkflowUsageContext;
+}): Promise<StripeOverageMeteringResult> {
+  if (!options.usage.overage || options.usage.overageUnits <= 0) {
+    return {
+      provider: 'stripe',
+      status: 'not_applicable',
+      reason: 'workflow_usage_within_included_quota',
+      eventName: null,
+      eventIdentifier: null,
+      value: 0,
+      mock: useMockStripeBilling(),
+    };
+  }
+
+  const overagePrice = resolveWorkflowTierStripeOveragePrice(options.entitlement.tier);
+  if (!overagePrice.billable) {
+    return {
+      provider: 'stripe',
+      status: 'not_applicable',
+      reason: 'workflow_tier_not_metered_for_overage',
+      eventName: overagePrice.meterEventName,
+      eventIdentifier: null,
+      value: 0,
+      mock: useMockStripeBilling(),
+    };
+  }
+  if (!overagePrice.priceId) {
+    return {
+      provider: 'stripe',
+      status: 'failed',
+      reason: `Stripe workflow overage price is not configured for tier '${overagePrice.tierId}'.`,
+      eventName: overagePrice.meterEventName,
+      eventIdentifier: null,
+      value: 1,
+      mock: useMockStripeBilling(),
+    };
+  }
+
+  const stripeCustomerId = options.entitlement.stripeCustomerId;
+  if (!stripeCustomerId) {
+    return {
+      provider: 'stripe',
+      status: 'skipped',
+      reason: 'workflow entitlement has no Stripe customer id',
+      eventName: overagePrice.meterEventName,
+      eventIdentifier: null,
+      value: 1,
+      mock: useMockStripeBilling(),
+    };
+  }
+
+  const identifier = workflowMeterEventIdentifier({
+    workflowId: options.entitlement.workflowId,
+    accountId: options.entitlement.accountId,
+    tenantId: options.entitlement.tenantId,
+    tier: options.entitlement.tier,
     meter: options.usage.meter,
     period: options.usage.period,
     used: options.usage.used,

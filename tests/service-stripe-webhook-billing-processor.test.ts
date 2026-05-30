@@ -54,7 +54,13 @@ function createDeps(
   const deps: StripeWebhookBillingProcessorDeps = {
     observeBillingWebhookEvent: () => {},
     isSupportedStripeWebhookEvent: () => false,
-    stripeReferenceId: (value) => typeof value === 'string' ? value : null,
+    stripeReferenceId: (value) => {
+      if (typeof value === 'string') return value;
+      if (value && typeof value === 'object' && 'id' in value && typeof (value as { id?: unknown }).id === 'string') {
+        return (value as { id: string }).id;
+      }
+      return null;
+    },
     parseStripeInvoiceStatus: () => null,
     stripeInvoicePriceId: () => null,
     metadataStringValue: () => null,
@@ -66,6 +72,9 @@ function createDeps(
     },
     applyStripeCheckoutCompletionState: async () => {
       throw new Error('unused applyStripeCheckoutCompletionState');
+    },
+    upsertWorkflowEntitlementFromStripeState: async () => {
+      throw new Error('unused upsertWorkflowEntitlementFromStripeState');
     },
     findHostedAccountByStripeRefs: async () => ({
       record: null,
@@ -397,10 +406,136 @@ async function testStaleInvoiceEventFinalizesSharedLedgerAsIgnored(): Promise<vo
   assert.equal(sharedFinalization?.tenantId, 'tenant_123');
 }
 
+async function testWorkflowSubscriptionEventUpdatesWorkflowEntitlementOnly(): Promise<void> {
+  const previous = {
+    ATTESTOR_STRIPE_PRICE_STARTER_WORKFLOW: process.env.ATTESTOR_STRIPE_PRICE_STARTER_WORKFLOW,
+    ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER_WORKFLOW: process.env.ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER_WORKFLOW,
+  };
+  process.env.ATTESTOR_STRIPE_PRICE_STARTER_WORKFLOW = 'price_starter_workflow_live';
+  process.env.ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER_WORKFLOW = 'price_starter_workflow_overage_live';
+  try {
+    const account = hostedAccount({
+      primaryTenantId: 'tenant_123',
+      billing: {
+        stripeCustomerId: 'cus_123',
+        stripeSubscriptionId: 'sub_account_plan',
+      },
+    });
+    let workflowInput: Parameters<StripeWebhookBillingProcessorDeps['upsertWorkflowEntitlementFromStripeState']>[0] | null = null;
+    let appliedAccountSubscription = false;
+    let dedupeFinalization: StripeWebhookDedupeFinalizationInput | null = null;
+    const processor = createStripeWebhookBillingProcessor(createDeps({
+      isSupportedStripeWebhookEvent: () => true,
+      findHostedAccountByStripeRefs: async () => ({
+        record: account,
+        matchReason: 'account_id',
+      }),
+      applyStripeSubscriptionStateState: async () => {
+        appliedAccountSubscription = true;
+        throw new Error('workflow subscription must not update account plan subscription state');
+      },
+      upsertWorkflowEntitlementFromStripeState: async (input) => {
+        workflowInput = input;
+        return {
+          record: {
+            id: 'went_123',
+            schemaVersion: 'attestor.workflow-entitlement.v1',
+            accountId: input.accountId,
+            tenantId: input.tenantId,
+            workflowId: input.workflowId,
+            tier: input.tier,
+            status: input.status,
+            stripeCustomerId: input.stripeCustomerId ?? null,
+            stripeSubscriptionId: input.stripeSubscriptionId ?? null,
+            stripeSubscriptionItemId: input.stripeSubscriptionItemId ?? null,
+            stripePriceId: input.stripePriceId ?? null,
+            stripeOveragePriceId: input.stripeOveragePriceId ?? null,
+            consequencePack: input.consequencePack,
+            downstreamSystemRefDigest: input.downstreamSystemRefDigest ?? null,
+            policyGatePathRefDigest: input.policyGatePathRefDigest ?? null,
+            includedAdmissionsMonthly: 25_000,
+            monthlyAdmissionsUsed: 0,
+            admissionPeriod: '2026-05',
+            currentPeriodStart: null,
+            currentPeriodEnd: null,
+            customerGateProofPresent: false,
+            lastCheckoutAction: null,
+            lastCheckoutSessionId: null,
+            lastCheckoutCompletedAt: null,
+            lastEventId: input.eventId ?? null,
+            lastEventType: input.eventType ?? null,
+            lastEventAt: input.eventAt ?? null,
+            createdAt: '2026-05-01T00:00:00.000Z',
+            updatedAt: '2026-05-01T00:00:00.000Z',
+          },
+          path: null,
+        };
+      },
+      appendAdminAuditRecordState: async () => {},
+      unixSecondsToIso: () => '2026-05-01T10:00:00.000Z',
+    }));
+    const webhook = createWebhook(stripeEvent({
+      id: 'evt_workflow_subscription',
+      type: 'customer.subscription.updated',
+      data: {
+        object: {
+          id: 'sub_workflow_123',
+          customer: 'cus_123',
+          status: 'active',
+          items: {
+            data: [{
+              id: 'si_workflow_base',
+              price: {
+                id: 'price_starter_workflow_live',
+              },
+            }],
+          },
+          metadata: {
+            attestor_account_id: 'acct_123',
+            attestor_tenant_digest: 'sha256:6f56f5748cf7fad57e8abd656a123c63c7f37a3836bb09a016879f9d76031113',
+            attestor_workflow_id: 'wf_refunds',
+            attestor_workflow_tier: 'starter-workflow',
+            attestor_consequence_pack: 'money-movement',
+            attestor_downstream_ref_digest: 'sha256:downstream',
+            attestor_policy_gate_digest: 'sha256:gate',
+          },
+        },
+      },
+    }), {
+      finalizeDedupe: async (input) => {
+        dedupeFinalization = input;
+      },
+    });
+
+    const result = await processor.process(webhook);
+
+    assert.equal(result.statusCode, 200);
+    assert.equal(result.responseBody.workflowId, 'wf_refunds');
+    assert.equal(result.responseBody.workflowEntitlementStatus, 'active');
+    assert.equal(appliedAccountSubscription, false);
+    assert.equal(workflowInput?.stripeSubscriptionItemId, 'si_workflow_base');
+    assert.equal(workflowInput?.stripePriceId, 'price_starter_workflow_live');
+    assert.deepEqual(dedupeFinalization, {
+      eventType: 'customer.subscription.updated',
+      accountId: 'acct_123',
+      stripeCustomerId: 'cus_123',
+      stripeSubscriptionId: 'sub_workflow_123',
+      outcome: 'applied',
+      reason: null,
+    });
+  } finally {
+    if (previous.ATTESTOR_STRIPE_PRICE_STARTER_WORKFLOW === undefined) delete process.env.ATTESTOR_STRIPE_PRICE_STARTER_WORKFLOW;
+    else process.env.ATTESTOR_STRIPE_PRICE_STARTER_WORKFLOW = previous.ATTESTOR_STRIPE_PRICE_STARTER_WORKFLOW;
+    if (previous.ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER_WORKFLOW === undefined) delete process.env.ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER_WORKFLOW;
+    else process.env.ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER_WORKFLOW = previous.ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER_WORKFLOW;
+  }
+}
+
 await testUnsupportedEventFinalizesFileDedupe();
 await testUnsupportedEventFinalizesSharedLedger();
 await testAccountStoreErrorReleasesClaimAndMapsConflict();
 await testStaleSubscriptionEventFinalizesIgnoredWithoutStateConvergence();
 await testStaleInvoiceEventFinalizesSharedLedgerAsIgnored();
+await testWorkflowSubscriptionEventUpdatesWorkflowEntitlementOnly();
 
-console.log('Service stripe webhook billing processor tests: 5 passed, 0 failed');
+console.log('Service stripe webhook billing processor tests: 6 passed, 0 failed');

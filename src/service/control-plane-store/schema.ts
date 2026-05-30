@@ -172,6 +172,33 @@ export const CONTROL_PLANE_SCHEMA_SQL = `
         CREATE INDEX IF NOT EXISTS billing_entitlements_status_updated_idx
           ON attestor_control_plane.billing_entitlements (entitlement_status, updated_at DESC, account_id ASC);
 
+        CREATE TABLE IF NOT EXISTS attestor_control_plane.workflow_entitlements (
+          workflow_id TEXT PRIMARY KEY,
+          account_id TEXT NOT NULL REFERENCES attestor_control_plane.hosted_accounts(account_id) ON DELETE CASCADE,
+          tenant_id TEXT NOT NULL,
+          tier_id TEXT NOT NULL CHECK (tier_id IN ('pilot-workflow', 'starter-workflow', 'pro-workflow')),
+          entitlement_status TEXT NOT NULL CHECK (
+            entitlement_status IN ('active', 'trialing', 'past_due', 'canceled', 'incomplete')
+          ),
+          stripe_subscription_id TEXT NULL,
+          stripe_subscription_item_id TEXT NULL,
+          updated_at TIMESTAMPTZ NOT NULL,
+          record_json JSONB NOT NULL
+        );
+
+        CREATE UNIQUE INDEX IF NOT EXISTS workflow_entitlements_stripe_item_uidx
+          ON attestor_control_plane.workflow_entitlements (stripe_subscription_item_id)
+          WHERE stripe_subscription_item_id IS NOT NULL;
+
+        CREATE INDEX IF NOT EXISTS workflow_entitlements_account_updated_idx
+          ON attestor_control_plane.workflow_entitlements (account_id, updated_at DESC, workflow_id ASC);
+
+        CREATE INDEX IF NOT EXISTS workflow_entitlements_tenant_updated_idx
+          ON attestor_control_plane.workflow_entitlements (tenant_id, updated_at DESC, workflow_id ASC);
+
+        CREATE INDEX IF NOT EXISTS workflow_entitlements_status_updated_idx
+          ON attestor_control_plane.workflow_entitlements (entitlement_status, updated_at DESC, workflow_id ASC);
+
         CREATE TABLE IF NOT EXISTS attestor_control_plane.admin_audit_log (
           audit_id TEXT PRIMARY KEY,
           occurred_at TIMESTAMPTZ NOT NULL,

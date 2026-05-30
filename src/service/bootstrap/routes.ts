@@ -13,9 +13,11 @@ import {
 } from '../billing/billing-entitlement-store.js';
 import {
   appendAdminAuditRecordState,
+  consumeWorkflowEntitlementAdmissionState,
   findHostedAccountByTenantIdState,
   findHostedBillingEntitlementByAccountIdState,
   findTenantRecordByTenantIdState,
+  findWorkflowEntitlementByTenantAndWorkflowState,
 } from '../control-plane-store.js';
 import { hashJsonValue } from '../json-stable.js';
 import { registerAccountRoutes } from '../http/routes/account-routes.js';
@@ -60,6 +62,7 @@ import {
 } from '../hosted/hosted-generic-admission-sender-confirmation.js';
 import { installProductionSharedRequestGuard } from './production-shared-request-guard.js';
 import type { AppRuntime } from './runtime.js';
+import { recordWorkflowStripeOverageMeterEvent } from '../billing/stripe/stripe-billing.js';
 
 export function createPublicSiteRouteDeps<Packet>(runtime: AppRuntime<Packet>) {
   return runtime.services.httpRoutes.publicSite;
@@ -166,6 +169,26 @@ export function createGenericAdmissionRouteDeps<Packet>(
           admission: envelope,
         }),
       });
+    },
+    resolveWorkflowEntitlement: ({ tenant, workflowId }) =>
+      findWorkflowEntitlementByTenantAndWorkflowState(tenant.tenantId, workflowId),
+    consumeWorkflowAdmission: async ({ tenant, workflowId }) => {
+      const consumed = await consumeWorkflowEntitlementAdmissionState(
+        tenant.tenantId,
+        workflowId,
+      );
+      const decision = consumed.decision;
+      const billingMetering =
+        decision?.allowed && decision.usage.overage && decision.usage.overageUnits > 0
+          ? await recordWorkflowStripeOverageMeterEvent({
+              entitlement: decision.entitlement,
+              usage: decision.usage,
+            })
+          : null;
+      return {
+        decision,
+        billingMetering,
+      };
     },
     ...(genericAdmissionProtectedIssuer && genericAdmissionProtectedIntrospectionStore
       ? {

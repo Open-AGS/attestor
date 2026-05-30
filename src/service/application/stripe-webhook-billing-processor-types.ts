@@ -79,6 +79,7 @@ export interface StripeWebhookBillingProcessorDeps {
   applyStripeSubscriptionStateState: typeof ControlPlaneStore.applyStripeSubscriptionStateState;
   applyStripeInvoiceStateState: typeof ControlPlaneStore.applyStripeInvoiceStateState;
   applyStripeCheckoutCompletionState: typeof ControlPlaneStore.applyStripeCheckoutCompletionState;
+  upsertWorkflowEntitlementFromStripeState: typeof ControlPlaneStore.upsertWorkflowEntitlementFromStripeState;
   findHostedAccountByStripeRefs(options: {
     accountId?: string | null;
     stripeCustomerId?: string | null;

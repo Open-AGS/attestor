@@ -17,6 +17,7 @@ import type {
 } from './stripe-webhook-billing-processor-types.js';
 import type { StripeWebhookProcessingHandle } from './stripe-webhook-service.js';
 import { processUnsupportedStripeBillingEvent } from './stripe-webhook-billing-unsupported-event.js';
+import { createStripeWebhookWorkflowBillingProcessor } from './stripe-webhook-workflow-billing-processor.js';
 
 export type {
   StripeAccountMatch,
@@ -61,6 +62,7 @@ export function createStripeWebhookBillingProcessor(
     unixSecondsToIso,
     resolvePlanStripePrice,
   } = deps;
+  const workflowBillingProcessor = createStripeWebhookWorkflowBillingProcessor(deps);
 
   async function processSubscriptionEvent(
     stripeWebhook: StripeWebhookProcessingHandle,
@@ -80,6 +82,8 @@ export function createStripeWebhookBillingProcessor(
     const stripePriceId = stripeSubscriptionHostedPriceId(subscription, findHostedPlanByStripePriceId);
     const accountIdFromMetadata = metadataStringValue('attestorAccountId', subscription.metadata);
     const eventCreatedAt = unixSecondsToIso(event.created) ?? new Date().toISOString();
+    const workflowResult = await workflowBillingProcessor.processSubscriptionEvent(stripeWebhook, c);
+    if (workflowResult) return workflowResult;
 
     let applied;
     try {
@@ -315,6 +319,8 @@ export function createStripeWebhookBillingProcessor(
       : null;
     const stripePriceId = mappedPlan ? resolvePlanStripePrice(mappedPlan.id).priceId : null;
     const completedAt = unixSecondsToIso(session.created) ?? new Date().toISOString();
+    const workflowResult = await workflowBillingProcessor.processCheckoutCompletedEvent(stripeWebhook, c);
+    if (workflowResult) return workflowResult;
 
     let applied;
     try {
@@ -823,6 +829,8 @@ export function createStripeWebhookBillingProcessor(
       invoice.subscription_details?.metadata ?? null,
     );
     const eventCreatedAt = unixSecondsToIso(event.created) ?? new Date().toISOString();
+    const workflowResult = await workflowBillingProcessor.processInvoiceEvent(stripeWebhook, c);
+    if (workflowResult) return workflowResult;
 
     let applied;
     try {

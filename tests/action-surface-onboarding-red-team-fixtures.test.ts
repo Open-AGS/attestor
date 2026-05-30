@@ -219,9 +219,9 @@ function testEmptyPacketDescriptorAndDocs(): void {
   includes(doc, 'synthetic review plans only', 'Red-team fixture doc: synthetic boundary is documented');
   excludes(doc, /fixtures prove production readiness/iu, 'Red-team fixture doc: production readiness is not overclaimed');
 
-  const readme = readProjectFile('README.md');
-  includes(readme, 'red-team fixture bundle', 'README mentions red-team fixture bundle');
-  excludes(readme, /red-team fixtures activate enforcement/iu, 'README does not overclaim fixture activation');
+  const docsFrontDoor = readProjectFile('docs', 'README.md');
+  includes(docsFrontDoor, '[Action surface onboarding packet](02-architecture/action-surface-onboarding-packet.md)', 'Docs front door links the action-surface onboarding packet');
+  excludes(doc, /red-team fixtures activate enforcement/iu, 'Action-surface docs do not overclaim fixture activation');
 
   const pkg = JSON.parse(readProjectFile('package.json')) as {
     readonly scripts: Record<string, string>;

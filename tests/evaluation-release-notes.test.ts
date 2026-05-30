@@ -67,10 +67,11 @@ function testEvaluationVersionTruth(): void {
 
 function testReleaseNotesAreLinkedAndBounded(): void {
   const readme = readProjectFile('README.md');
+  const docsFrontDoor = readProjectFile('docs', 'README.md');
   const packet = readProjectFile('docs', '00-evaluation', 'v0.1-evaluation-packet.md');
   const notes = readProjectFile('docs', '00-evaluation', 'v0.2.0-evaluation-release-notes.md');
 
-  includes(readme, 'docs/00-evaluation/v0.2.0-evaluation-release-notes.md', 'Evaluation release: README links release notes');
+  includes(docsFrontDoor, '[v0.2.0 evaluation release notes](00-evaluation/v0.2.0-evaluation-release-notes.md)', 'Evaluation release: docs front door links release notes');
   includes(readme, 'Package version: 0.2.0-evaluation', 'Evaluation release: README names the current package version');
   includes(readme, 'Release type:    GitHub pre-release / Golden Path evaluation baseline', 'Evaluation release: README names the release type');
   includes(packet, 'v0.2.0-evaluation-release-notes.md', 'Evaluation release: packet links release notes');

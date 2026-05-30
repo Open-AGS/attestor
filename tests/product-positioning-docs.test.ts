@@ -82,30 +82,36 @@ function testReadmeKeepsDomainPacksAndLocalTruth(): void {
   includes(readme, 'Attestor is an **evaluation release**.', 'Product docs: README keeps evaluation status visible');
   includes(readme, 'They do not prove live cloud infrastructure, live customer enforcement, external KMS/HSM signing, shared replay stores, production readiness, or enterprise readiness.', 'Product docs: README separates local evidence from live proof');
   includes(readme, 'direct downstream bypass must fail', 'Product docs: README states customer PEP proof requirement');
+  includes(readme, 'Plain-language summary: [License and use](docs/01-overview/license-and-use.md).', 'Product docs: README links the plain-language license summary');
 }
 
 function testReadmeLinksTheRightDeeperDocsWithoutBecomingALinkWall(): void {
   const readme = readProjectFile('README.md');
 
   includes(readme, '## Start Here', 'Product docs: README exposes a short first-visitor link surface');
-  includes(readme, '[Repository navigator](docs/01-overview/repository-navigator.md)', 'Product docs: README links the repository navigator');
-  includes(readme, '[How to integrate Attestor](docs/01-overview/how-to-integrate-attestor.md)', 'Product docs: README links the integration guide');
-  includes(readme, '[Try Attestor first](docs/01-overview/try-attestor-first.md)', 'Product docs: README links the first-run guide');
-  includes(readme, '[Golden Path: Refund](docs/02-architecture/golden-refund-shadow-pilot.md)', 'Product docs: README links the first concrete workflow');
-  includes(readme, '[First hosted API call](docs/01-overview/hosted-first-api-call.md)', 'Product docs: README links the hosted first call');
-  includes(readme, '[Customer admission gate](docs/01-overview/customer-admission-gate.md)', 'Product docs: README links the customer enforcement boundary');
-  includes(readme, '[Pricing and packaging](docs/01-overview/product-packaging.md)', 'Product docs: README links commercial packaging');
-  includes(readme, '[Security Policy](SECURITY.md)', 'Product docs: README links the security policy');
+  includes(readme, 'Pick the shortest useful path. Do not read the whole repository first.', 'Product docs: README keeps the first path lightweight');
+  includes(readme, 'Find the right page: [Docs front door](docs/README.md) and [Repository navigator](docs/01-overview/repository-navigator.md)', 'Product docs: README puts docs navigation at the top of the link path');
+  includes(readme, 'Run the concrete refund workflow: [Try Attestor first](docs/01-overview/try-attestor-first.md)', 'Product docs: README leads with the first-run guide');
+  includes(readme, 'Put Attestor before a real service call: [How to integrate Attestor](docs/01-overview/how-to-integrate-attestor.md)', 'Product docs: README links the integration guide');
+  includes(readme, 'Copy framework-shaped examples: [Customer middleware examples](examples/customer-middleware/README.md)', 'Product docs: README links middleware examples');
+  includes(readme, 'Send shadow events without an SDK: [Shadow event payload examples](docs/01-overview/shadow-event-payload-examples.md)', 'Product docs: README links shadow payload examples');
+  includes(readme, 'Explain a `review` or `block`: [Reason codes](docs/05-proof/reason-codes.md)', 'Product docs: README links reason-code support');
+  includes(readme, 'Make the first hosted request: [First hosted API call](docs/01-overview/hosted-first-api-call.md)', 'Product docs: README links the hosted first call');
+  includes(readme, 'Understand what the license allows: [License and use](docs/01-overview/license-and-use.md)', 'Product docs: README links the license-and-use guide');
   includes(readme, '## Maintainer Reference', 'Product docs: README keeps deeper maintainer references behind an explicit heading');
-  includes(readme, '[What you can do with Attestor](docs/01-overview/what-you-can-do.md)', 'Product docs: README still links the use-case bridge');
-  includes(readme, '[Attestor Evaluation Packet v0.1](docs/00-evaluation/v0.1-evaluation-packet.md)', 'Product docs: README still links the evaluation packet');
-  includes(readme, '[Evaluation Smoke workflow](.github/workflows/evaluation-smoke.yml)', 'Product docs: README links the reviewer CI path');
-  includes(readme, '[Artifact attestation plan](docs/08-deployment/artifact-attestation-plan.md)', 'Product docs: README links the provenance plan');
-  includes(readme, '[Proof surface tracker](docs/02-architecture/proof-console-buildout.md)', 'Product docs: README links the proof surface tracker');
+  includes(readme, 'Use this after you already know what Attestor does.', 'Product docs: README explains why the maintainer section exists');
+  includes(readme, '[Docs front door](docs/README.md)', 'Product docs: README links the docs front door');
+  includes(readme, '[Repository map](docs/01-overview/repository-map.md)', 'Product docs: README links the repository map');
+  includes(readme, '[Test system map](docs/02-architecture/test-system-map.md)', 'Product docs: README links the test system map');
   includes(readme, '[AI Action Control Plane architecture](docs/02-architecture/ai-action-control-plane-architecture.md)', 'Product docs: README links the control-plane ADR');
   includes(readme, '[Attestor language contract](docs/02-architecture/attestor-language-contract.md)', 'Product docs: README links the language contract');
+  includes(readme, '[Glossary](docs/02-architecture/glossary.md)', 'Product docs: README links the glossary');
   includes(readme, '[Domain pack boundary](docs/02-architecture/domain-pack-boundary.md)', 'Product docs: README links the domain-pack boundary');
   includes(readme, '[Downstream enforcement contract](docs/02-architecture/downstream-enforcement-contract.md)', 'Product docs: README links the downstream enforcement contract');
+  includes(readme, '[Audit evidence system](docs/audit/README.md)', 'Product docs: README links the audit evidence system');
+  includes(readme, '[Current posture baseline](docs/audit/current-posture-baseline.md)', 'Product docs: README links the current posture baseline');
+  includes(readme, '[Live proof register](docs/audit/live-proof-register.md)', 'Product docs: README links the live proof register');
+  includes(readme, '[Security Policy](SECURITY.md)', 'Product docs: README links the security policy');
 }
 
 function testArchitectureDocsStayAlignedWithThePublicReadme(): void {
@@ -168,6 +174,18 @@ function testServiceRefactorStatusStaysVisible(): void {
   includes(serviceRefactor, 'the boundary test caps it at 120 lines', 'Product docs: service refactor tracker records anti-regression guard');
 }
 
+function testLicenseNamesTheCurrentLicensor(): void {
+  const license = readProjectFile('LICENSE');
+  const licenseGuide = readProjectFile('docs', '01-overview', 'license-and-use.md');
+
+  includes(license, 'Licensor: Gömöri Gábor', 'Product docs: LICENSE names the current licensor');
+  excludes(license, /Licensor:\s+0xLamarr Labs/u, 'Product docs: LICENSE does not use the old lab placeholder as licensor');
+  includes(licenseGuide, 'Attestor is source-available under the Business Source License 1.1.', 'Product docs: license guide keeps source-available wording');
+  includes(licenseGuide, 'You need a commercial license for production use before the Change Date.', 'Product docs: license guide keeps production-use boundary');
+  includes(licenseGuide, 'Source-available is not the same as OSI open source.', 'Product docs: license guide avoids open-source overclaim');
+  includes(licenseGuide, 'If this page and the license file ever disagree, the license file controls.', 'Product docs: license guide defers to the legal license');
+}
+
 testReadmeStartsWithAConcreteWorkflow();
 testReadmeKeepsSingleEngineAndCustomerBoundary();
 testReadmeKeepsDomainPacksAndLocalTruth();
@@ -176,5 +194,6 @@ testArchitectureDocsStayAlignedWithThePublicReadme();
 testReadmeDoesNotRegressToTheOldDenseShape();
 testPurposeDoesNotCarryStaleSnapshotLanguage();
 testServiceRefactorStatusStaysVisible();
+testLicenseNamesTheCurrentLicensor();
 
 console.log(`Product positioning docs tests: ${passed} passed, 0 failed`);

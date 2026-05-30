@@ -21,13 +21,13 @@ function excludes(content: string, unexpected: RegExp, message: string): void {
   passed += 1;
 }
 
-function testReadmeLinksEvaluationPacket(): void {
-  const readme = readProjectFile('README.md');
+function testDocsFrontDoorLinksEvaluationPacket(): void {
+  const docsFrontDoor = readProjectFile('docs', 'README.md');
 
   includes(
-    readme,
-    'docs/00-evaluation/v0.1-evaluation-packet.md',
-    'Evaluation packet docs: README links the outside-review packet',
+    docsFrontDoor,
+    '[Attestor Evaluation Packet v0.1](00-evaluation/v0.1-evaluation-packet.md)',
+    'Evaluation packet docs: docs front door links the outside-review packet',
   );
 }
 
@@ -122,7 +122,7 @@ function testEvaluationPacketDoesNotReintroduceTrackerNoise(): void {
   excludes(packet, /\bfirst[- ]slice\b/iu, 'Evaluation packet docs: packet should not use first-slice posture');
 }
 
-testReadmeLinksEvaluationPacket();
+testDocsFrontDoorLinksEvaluationPacket();
 testEvaluationPacketNamesRunnableProofPath();
 testEvaluationPacketNamesConcreteReviewMarkersAndArtifacts();
 testEvaluationPacketNamesFailureAndProductionTruthGates();

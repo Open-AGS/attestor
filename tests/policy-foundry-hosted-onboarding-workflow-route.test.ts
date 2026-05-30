@@ -1101,7 +1101,6 @@ function testDocsAndScriptsExposeHostedWorkflowRoute(): void {
     readonly scripts: Record<string, string>;
   };
   const docs = readProjectFile('docs', '02-architecture', 'policy-foundry-onboarding.md');
-  const readme = readProjectFile('README.md');
   const matrixTest = readProjectFile('tests', 'hosted-api-authorization-matrix.test.ts');
 
   equal(
@@ -1115,9 +1114,9 @@ function testDocsAndScriptsExposeHostedWorkflowRoute(): void {
     'Policy Foundry hosted route: architecture docs name route',
   );
   includes(
-    readme,
+    docs,
     HOSTED_POLICY_FOUNDRY_ONBOARDING_WORKFLOW_ROUTE,
-    'Policy Foundry hosted route: README names route',
+    'Policy Foundry hosted route: architecture docs name route',
   );
   includes(
     matrixTest,

@@ -204,78 +204,79 @@ function testPolicyFoundryArchitectureIsGrounded(): void {
   );
 }
 
-function testReadmeNamesPolicyFoundryWithoutOverclaiming(): void {
-  const readme = readProjectFile('README.md');
+function testDocsNamePolicyFoundryWithoutOverclaiming(): void {
+  const doc = readProjectFile('docs', '02-architecture', 'policy-foundry-onboarding.md');
+  const docsFrontDoor = readProjectFile('docs', 'README.md');
 
   includes(
-    readme,
-    'Policy Foundry is the onboarding layer for this adoption path.',
-    'README: Policy Foundry is named in the adoption path',
+    docsFrontDoor,
+    '[Policy Foundry onboarding](02-architecture/policy-foundry-onboarding.md)',
+    'Docs front door links the Policy Foundry architecture guide',
   );
   includes(
-    readme,
-    'It does not train models, write policy automatically, or prove production readiness.',
-    'README: Policy Foundry avoids ML-training and auto-policy claims',
+    doc,
+    'It is not an automatic policy writer',
+    'Policy Foundry docs: automatic policy writing is rejected',
   );
   includes(
-    readme,
-    'Customers cannot self-attest readiness controls',
-    'README: readiness evidence cannot be self-attested',
+    doc,
+    'self-attest `redTeamReplayStatus` through the readiness query',
+    'Policy Foundry docs: readiness evidence cannot be caller supplied',
   );
   includes(
-    readme,
-    'reviewed outcome feedback',
-    'README: outcome feedback is named without automation overclaim',
+    doc,
+    'The Outcome Feedback Loop is the first reviewed-outcome return path',
+    'Policy Foundry docs: outcome feedback is named without automation overclaim',
   );
   includes(
-    readme,
-    'drift/policy-debt findings',
-    'README: drift/policy debt detector is named without automation overclaim',
+    doc,
+    'The Drift And Policy Debt Detector is the first review-only detector',
+    'Policy Foundry docs: drift/policy debt detector is named without automation overclaim',
   );
   includes(
-    readme,
-    'generates a red-team fixture bundle and local replay reports through the local adversarial replay executor',
-    'README: local adversarial replay executor is named without production overclaim',
+    doc,
+    'The action-surface red-team fixture bundle lives in',
+    'Policy Foundry docs: red-team fixture bundle is named without production overclaim',
   );
   includes(
-    readme,
-    'can attach live downstream replay evidence when configured',
-    'README: live downstream replay evidence is named without production overclaim',
+    doc,
+    'The local adversarial replay executor consumes that fixture bundle',
+    'Policy Foundry docs: local adversarial replay executor is named without production overclaim',
   );
   includes(
-    readme,
-    'hosted onboarding workflow',
-    'README: hosted onboarding workflow contract is named without UI overclaim',
+    doc,
+    'The Policy Foundry Live Downstream Replay contract is the first non-mutating',
+    'Policy Foundry docs: live downstream replay evidence is named without production overclaim',
   );
   includes(
-    readme,
-    'packages the hosted review surface, wizard state, entitlement context, and storage-readiness checks',
-    'README: persistent hosted wizard state is named without production overclaim',
+    doc,
+    'The Policy Foundry Hosted Onboarding Workflow is the first hosted workflow',
+    'Policy Foundry docs: hosted onboarding workflow contract is named without UI overclaim',
   );
   includes(
-    readme,
+    doc,
+    'The compact hosted review surface lives in',
+    'Policy Foundry docs: hosted review surface is named without production overclaim',
+  );
+  includes(
+    doc,
     'preview:policy-foundry-hosted-ui',
-    'README: local browser QA preview is named',
+    'Policy Foundry docs: local browser QA preview is named',
   );
   includes(
-    readme,
-    'safe fixtures only',
-    'README: local browser QA preview limitation is explicit without repeating the full safety boundary',
+    doc,
+    'This harness is browser QA only',
+    'Policy Foundry docs: local browser QA preview limitation is explicit',
   );
   includes(
-    readme,
-    'For an already deployed hosted runtime, the opt-in Policy Foundry production',
-    'README: production smoke probe is named without production overclaim',
+    doc,
+    'Policy Foundry production smoke probe for already deployed hosted environments',
+    'Policy Foundry docs: production smoke probe is named without production overclaim',
   );
   includes(
-    readme,
-    'Safety boundary: hosted onboarding returns review material only.',
-    'README: hosted onboarding limitation is stated once in the safety boundary',
-  );
-  includes(
-    readme,
-    '[Policy Foundry onboarding](docs/02-architecture/policy-foundry-onboarding.md)',
-    'README: Policy Foundry architecture guide is linked',
+    doc,
+    'a smoke probe pass is not a production-readiness',
+    'Policy Foundry docs: hosted onboarding limitation stays bounded',
   );
 }
 
@@ -605,7 +606,7 @@ function testPackageScriptIsExposed(): void {
 }
 
 testPolicyFoundryArchitectureIsGrounded();
-testReadmeNamesPolicyFoundryWithoutOverclaiming();
+testDocsNamePolicyFoundryWithoutOverclaiming();
 testSafetyInvariantsAreExplicit();
 testOnboardingResearchAnchorsAreRecorded();
 testCommercialBoundaryMatchesPackaging();

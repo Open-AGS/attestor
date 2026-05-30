@@ -214,7 +214,6 @@ function testDescriptorDocsAndPackageSurface(): void {
   const docs = readProjectFile('docs', '02-architecture', 'policy-foundry-onboarding.md');
   const tracker = readProjectFile('docs', '02-architecture', 'policy-foundry-self-onboarding-deepening.md');
   const dataMinimizationDocs = readProjectFile('docs', '02-architecture', 'data-minimization-redaction-policy.md');
-  const readme = readProjectFile('README.md');
   const pkg = JSON.parse(readProjectFile('package.json')) as {
     readonly scripts: Record<string, string>;
   };
@@ -229,7 +228,7 @@ function testDescriptorDocsAndPackageSurface(): void {
   includes(docs, 'test:policy-foundry-live-downstream-replay', 'Policy Foundry docs: live downstream replay test command is named');
   includes(tracker, 'attestor.policy-foundry-live-downstream-replay.v1', 'Deepening tracker: live downstream replay version is named');
   includes(dataMinimizationDocs, 'policy-foundry-live-downstream-replay', 'Data minimization docs: live downstream replay surface is listed');
-  includes(readme, 'live downstream replay evidence', 'README: live downstream replay evidence is named');
+  includes(docs, 'passing live downstream replay', 'Policy Foundry docs: live downstream replay evidence is named');
   equal(
     pkg.scripts['test:policy-foundry-live-downstream-replay'],
     'tsx tests/policy-foundry-live-downstream-replay.test.ts',

@@ -188,7 +188,6 @@ function testDescriptorDocsAndPackageSurfaceStayAligned(): void {
   const descriptor = policyFoundrySelfOnboardingCliDescriptor();
   const doc = readProjectFile('docs', '02-architecture', 'policy-foundry-onboarding.md');
   const tracker = readProjectFile('docs', '02-architecture', 'policy-foundry-self-onboarding-deepening.md');
-  const readme = readProjectFile('README.md');
   const pkg = JSON.parse(readProjectFile('package.json')) as {
     readonly scripts: Record<string, string>;
   };
@@ -200,8 +199,8 @@ function testDescriptorDocsAndPackageSurfaceStayAligned(): void {
   includes(doc, 'src/consequence-admission/policy-foundry-self-onboarding-cli.ts', 'Policy Foundry docs: self-onboarding contract is named');
   includes(doc, 'scripts/render/render-policy-foundry-self-onboarding.ts', 'Policy Foundry docs: self-onboarding renderer is named');
   includes(doc, 'test:policy-foundry-self-onboarding-cli', 'Policy Foundry docs: self-onboarding test command is named');
-  includes(readme, 'npm run policy-foundry:self-onboard', 'README: self-onboarding command is named');
-  includes(readme, 'session, coverage, blockers, gate plan, handoff, red-team fixtures', 'README: self-onboarding output is described');
+  includes(doc, 'npm run policy-foundry:self-onboard', 'Policy Foundry docs: self-onboarding command is named');
+  includes(doc, 'coverage score, gate planner, review handoff, synthetic red-team fixtures', 'Policy Foundry docs: self-onboarding output is described');
   includes(tracker, 'complete | Add One-Command Self-Onboarding CLI', 'Deepening tracker: Step 09 is complete');
   includes(tracker, 'Step 01 through Step 12 are complete', 'Deepening tracker: self-onboarding list is complete');
   equal(

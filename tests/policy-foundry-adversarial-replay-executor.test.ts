@@ -209,7 +209,6 @@ function testDescriptorDocsAndPackageSurface(): void {
   const descriptor = policyFoundryAdversarialReplayExecutorDescriptor();
   const docs = readProjectFile('docs', '02-architecture', 'policy-foundry-onboarding.md');
   const dataMinimizationDocs = readProjectFile('docs', '02-architecture', 'data-minimization-redaction-policy.md');
-  const readme = readProjectFile('README.md');
   const pkg = JSON.parse(readProjectFile('package.json')) as {
     readonly scripts: Record<string, string>;
   };
@@ -239,9 +238,9 @@ function testDescriptorDocsAndPackageSurface(): void {
     'Data minimization docs: adversarial replay executor surface is listed',
   );
   includes(
-    readme,
+    docs,
     'local adversarial replay executor',
-    'README: local adversarial replay executor is named',
+    'Policy Foundry docs: local adversarial replay executor is named',
   );
   equal(
     pkg.scripts['test:policy-foundry-adversarial-replay-executor'],

@@ -20,6 +20,7 @@ function excludes(content: string, unexpected: RegExp, message: string): void {
 
 function testReadmePublicClaimBoundary(): void {
   const readme = readProjectFile('README.md');
+  const docsFrontDoor = readProjectFile('docs', 'README.md');
 
   includes(
     readme,
@@ -48,9 +49,9 @@ function testReadmePublicClaimBoundary(): void {
     'Final claim alignment: README keeps regulatory-anchor non-claim boundary',
   );
   includes(
-    readme,
-    '[Audit remediation tracker](docs/audit/attestor-audit-remediation-tracker.md)',
-    'Final claim alignment: README links remediation tracker',
+    docsFrontDoor,
+    '[Audit remediation tracker](audit/attestor-audit-remediation-tracker.md)',
+    'Final claim alignment: docs front door links remediation tracker',
   );
 }
 

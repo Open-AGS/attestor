@@ -1,7 +1,12 @@
 import { pathToFileURL } from 'node:url';
 import Stripe from 'stripe';
+import {
+  DEFAULT_WORKFLOW_STRIPE_OVERAGE_METER_EVENT_NAME,
+  listWorkflowBillingTiers,
+  type WorkflowBillingTierId,
+} from '../../src/service/workflow-entitlement-catalog.js';
 
-type PaidPlanId = 'starter' | 'pro' | 'scale';
+type PaidPlanId = WorkflowBillingTierId;
 
 export interface StripePriceExpectation {
   planId: PaidPlanId;
@@ -105,80 +110,33 @@ export interface StripeLiveReadinessProbeOptions {
   allowTestMode?: boolean;
 }
 
-export const STRIPE_PRICE_EXPECTATIONS: readonly StripePriceExpectation[] = Object.freeze([
-  {
-    planId: 'starter',
-    kind: 'base',
-    displayName: 'Starter',
-    envName: 'ATTESTOR_STRIPE_PRICE_STARTER',
-    expectedCurrency: 'usd',
-    expectedUnitAmountDecimal: '29900',
-    expectedInterval: 'month',
-    expectedIntervalCount: 1,
-    expectedUsageType: 'licensed',
-    expectedMeterEventName: null,
-  },
-  {
-    planId: 'pro',
-    kind: 'base',
-    displayName: 'Pro',
-    envName: 'ATTESTOR_STRIPE_PRICE_PRO',
-    expectedCurrency: 'usd',
-    expectedUnitAmountDecimal: '149900',
-    expectedInterval: 'month',
-    expectedIntervalCount: 1,
-    expectedUsageType: 'licensed',
-    expectedMeterEventName: null,
-  },
-  {
-    planId: 'scale',
-    kind: 'base',
-    displayName: 'Scale',
-    envName: 'ATTESTOR_STRIPE_PRICE_SCALE',
-    expectedCurrency: 'usd',
-    expectedUnitAmountDecimal: '599900',
-    expectedInterval: 'month',
-    expectedIntervalCount: 1,
-    expectedUsageType: 'licensed',
-    expectedMeterEventName: null,
-  },
-  {
-    planId: 'starter',
-    kind: 'overage',
-    displayName: 'Starter overage',
-    envName: 'ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER',
-    expectedCurrency: 'usd',
-    expectedUnitAmountDecimal: '5',
-    expectedInterval: 'month',
-    expectedIntervalCount: 1,
-    expectedUsageType: 'metered',
-    expectedMeterEventName: 'attestor_admission_overage',
-  },
-  {
-    planId: 'pro',
-    kind: 'overage',
-    displayName: 'Pro overage',
-    envName: 'ATTESTOR_STRIPE_OVERAGE_PRICE_PRO',
-    expectedCurrency: 'usd',
-    expectedUnitAmountDecimal: '2.5',
-    expectedInterval: 'month',
-    expectedIntervalCount: 1,
-    expectedUsageType: 'metered',
-    expectedMeterEventName: 'attestor_admission_overage',
-  },
-  {
-    planId: 'scale',
-    kind: 'overage',
-    displayName: 'Scale overage',
-    envName: 'ATTESTOR_STRIPE_OVERAGE_PRICE_SCALE',
-    expectedCurrency: 'usd',
-    expectedUnitAmountDecimal: '1.5',
-    expectedInterval: 'month',
-    expectedIntervalCount: 1,
-    expectedUsageType: 'metered',
-    expectedMeterEventName: 'attestor_admission_overage',
-  },
-]);
+export const STRIPE_PRICE_EXPECTATIONS: readonly StripePriceExpectation[] =
+  Object.freeze(listWorkflowBillingTiers().flatMap((tier) => [
+    {
+      planId: tier.id,
+      kind: 'base' as const,
+      displayName: tier.publicName,
+      envName: tier.basePriceEnvName,
+      expectedCurrency: tier.currency,
+      expectedUnitAmountDecimal: String(tier.unitAmountCents),
+      expectedInterval: tier.interval,
+      expectedIntervalCount: 1,
+      expectedUsageType: 'licensed' as const,
+      expectedMeterEventName: null,
+    },
+    ...(tier.overagePriceEnvName && tier.overageUnitAmountDecimal ? [{
+      planId: tier.id,
+      kind: 'overage' as const,
+      displayName: `${tier.publicName} overage`,
+      envName: tier.overagePriceEnvName,
+      expectedCurrency: tier.currency,
+      expectedUnitAmountDecimal: tier.overageUnitAmountDecimal,
+      expectedInterval: tier.interval,
+      expectedIntervalCount: 1,
+      expectedUsageType: 'metered' as const,
+      expectedMeterEventName: DEFAULT_WORKFLOW_STRIPE_OVERAGE_METER_EVENT_NAME,
+    }] : []),
+  ]));
 
 function arg(name: string): string | null {
   const prefix = `--${name}=`;
@@ -489,13 +447,20 @@ async function evaluateCustomerPortal(
     warnings.push('Default Stripe Customer Portal does not enable subscription cancel or update actions.');
   }
   if (subscriptionUpdateEnabled !== true) {
-    issues.push('Default Stripe Customer Portal must allow subscription plan updates for Starter/Pro/Scale self-service changes.');
+    issues.push(
+      'Default Stripe Customer Portal must allow subscription price updates ' +
+      'for Pilot/Starter/Pro Workflow self-service changes.',
+    );
   }
   if (!subscriptionUpdateAllowedUpdates.includes('price')) {
     issues.push('Default Stripe Customer Portal subscription updates must allow price changes.');
   }
   if (subscriptionUpdateAllowedUpdates.includes('quantity')) {
-    issues.push('Default Stripe Customer Portal subscription updates must not allow quantity changes; Attestor plans are quota tiers, not seat quantities.');
+    issues.push(
+      'Default Stripe Customer Portal subscription updates must not allow ' +
+      'quantity changes; Attestor workflow entitlements are bound to ' +
+      'workflow ids, not seat quantities.',
+    );
   }
   if (subscriptionUpdateMissingPriceIds.length > 0) {
     issues.push(`Default Stripe Customer Portal subscription update products are missing configured price id(s): ${subscriptionUpdateMissingPriceIds.join(', ')}.`);
@@ -545,6 +510,12 @@ export async function probeStripeLiveReadiness(
   if (!allowTestMode && mode !== 'live') {
     issues.push('STRIPE_API_KEY must be a live-mode key for commercial readiness.');
   }
+  if (envValue(env, 'ATTESTOR_STRIPE_PRICE_SCALE')) {
+    warnings.push(
+      'ATTESTOR_STRIPE_PRICE_SCALE is configured. Keep Scale out of ' +
+      'self-service workflow launch unless intentionally re-enabled.',
+    );
+  }
   if (envValue(env, 'ATTESTOR_STRIPE_PRICE_ENTERPRISE')) {
     warnings.push('ATTESTOR_STRIPE_PRICE_ENTERPRISE is configured. Keep Enterprise self-service checkout disabled unless intentionally enabled.');
   }
@@ -586,12 +557,15 @@ async function main(): Promise<void> {
           .map((expectation) => expectation.envName),
       },
       requiredMeterEvent: {
-        eventName: 'attestor_admission_overage',
+        eventName: DEFAULT_WORKFLOW_STRIPE_OVERAGE_METER_EVENT_NAME,
         customerPayloadKey: 'stripe_customer_id',
         valuePayloadKey: 'value',
         defaultAggregation: 'sum',
       },
-      note: 'Create or update these live recurring Stripe base and metered overage prices, map the ids to the listed env vars, then run this probe with STRIPE_API_KEY.',
+      note:
+        'Create or update these live recurring workflow base and metered ' +
+        'overage prices, map the ids to the listed env vars, then run this ' +
+        'probe with STRIPE_API_KEY.',
     }, null, 2));
     return;
   }

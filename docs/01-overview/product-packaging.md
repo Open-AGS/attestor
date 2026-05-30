@@ -362,7 +362,12 @@ This document defines the public commercial shape and the current implementation
 
 The buyer-facing sizing worksheet and ROI formula lives in [Pricing ROI calculator](pricing-roi-calculator.md). That page may feed a public website widget later, but this document remains the plan, price, quota, and licensing source of truth.
 
-The operator-side Stripe and billing bootstrap lives in [Stripe commercial bootstrap](stripe-commercial-bootstrap.md). That page must stay operator-facing and should not become a second public pricing page.
+The operator-side Stripe and billing bootstrap lives in
+[Stripe commercial bootstrap](stripe-commercial-bootstrap.md). That page must
+stay operator-facing and should not become a second public pricing page. Its
+workflow-based launch-prep notes do not change this document's current public
+packaging source until workflow checkout, webhook convergence, runtime
+entitlement loading, and public copy are intentionally switched together.
 
 ## Product Truth To Preserve
 

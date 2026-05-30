@@ -14,10 +14,14 @@ function ok(condition: unknown, message: string): void {
   passed += 1;
 }
 
+function priceSlug(expectation: typeof STRIPE_PRICE_EXPECTATIONS[number]): string {
+  return expectation.planId.replaceAll('-', '_');
+}
+
 function priceIdForExpectation(expectation: typeof STRIPE_PRICE_EXPECTATIONS[number]): string {
   return expectation.kind === 'base'
-    ? `price_${expectation.planId}_live`
-    : `price_${expectation.planId}_overage_live`;
+    ? `price_${priceSlug(expectation)}_live`
+    : `price_${priceSlug(expectation)}_overage_live`;
 }
 
 function fakeStripe(overrides?: {
@@ -48,15 +52,15 @@ function fakeStripe(overrides?: {
           usage_type: expectation.expectedUsageType,
           meter: expectation.expectedMeterEventName ? 'mtr_admission_overage' : null,
         },
-        product: `prod_${expectation.planId}`,
+        product: `prod_${priceSlug(expectation)}`,
       },
     ]),
   );
   const defaultProducts = Object.fromEntries(
     STRIPE_PRICE_EXPECTATIONS.map((expectation) => [
-      `prod_${expectation.planId}`,
+      `prod_${priceSlug(expectation)}`,
       {
-        id: `prod_${expectation.planId}`,
+        id: `prod_${priceSlug(expectation)}`,
         active: true,
       },
     ]),
@@ -127,7 +131,7 @@ function fakeStripe(overrides?: {
                 products: STRIPE_PRICE_EXPECTATIONS
                   .filter((expectation) => expectation.kind === 'base')
                   .map((expectation) => ({
-                  product: `prod_${expectation.planId}`,
+                  product: `prod_${priceSlug(expectation)}`,
                   prices: [priceIdForExpectation(expectation)],
                   adjustable_quantity: {
                     enabled: false,
@@ -158,12 +162,11 @@ async function testHappyPath(): Promise<void> {
     stripe: fakeStripe(),
     env: {
       STRIPE_API_KEY: 'rk_live_ready',
-      ATTESTOR_STRIPE_PRICE_STARTER: 'price_starter_live',
-      ATTESTOR_STRIPE_PRICE_PRO: 'price_pro_live',
-      ATTESTOR_STRIPE_PRICE_SCALE: 'price_scale_live',
-      ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER: 'price_starter_overage_live',
-      ATTESTOR_STRIPE_OVERAGE_PRICE_PRO: 'price_pro_overage_live',
-      ATTESTOR_STRIPE_OVERAGE_PRICE_SCALE: 'price_scale_overage_live',
+      ATTESTOR_STRIPE_PRICE_PILOT_WORKFLOW: 'price_pilot_workflow_live',
+      ATTESTOR_STRIPE_PRICE_STARTER_WORKFLOW: 'price_starter_workflow_live',
+      ATTESTOR_STRIPE_PRICE_PRO_WORKFLOW: 'price_pro_workflow_live',
+      ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER_WORKFLOW: 'price_starter_workflow_overage_live',
+      ATTESTOR_STRIPE_OVERAGE_PRICE_PRO_WORKFLOW: 'price_pro_workflow_overage_live',
     },
   });
 
@@ -175,23 +178,38 @@ async function testHappyPath(): Promise<void> {
   ok(summary.customerPortal.subscriptionUpdateMissingPriceIds.length === 0, 'Stripe live readiness probe: portal includes all configured plan prices');
   ok(summary.customerPortal.subscriptionUpdateProrationBehavior === 'none', 'Stripe live readiness probe: portal proration behavior is surfaced');
   ok(summary.prices.every((price) => price.matchesExpected), 'Stripe live readiness probe: all required prices match expected commercial model');
-  ok(summary.prices.filter((price) => price.meterEventName === 'attestor_admission_overage').length === 3, 'Stripe live readiness probe: all overage prices bind the shared admission meter');
+  ok(
+    summary.prices
+      .filter((price) => price.meterEventName === 'attestor_admission_overage')
+      .length === 2,
+    'Stripe live readiness probe: all workflow overage prices bind the shared admission meter',
+  );
 }
 
 async function testFailClosedIssues(): Promise<void> {
   const brokenPrices = {
-    price_starter_live: {
-      id: 'price_starter_live',
+    price_pilot_workflow_live: {
+      id: 'price_pilot_workflow_live',
+      active: true,
+      livemode: true,
+      currency: 'usd',
+      unit_amount: 9_900,
+      type: 'recurring',
+      recurring: { interval: 'month', interval_count: 1, usage_type: 'licensed', meter: null },
+      product: 'prod_pilot_workflow',
+    },
+    price_starter_workflow_live: {
+      id: 'price_starter_workflow_live',
       active: false,
       livemode: false,
       currency: 'eur',
       unit_amount: 49_900,
       type: 'recurring',
       recurring: { interval: 'year', interval_count: 1 },
-      product: 'prod_starter',
+      product: 'prod_starter_workflow',
     },
-    price_starter_overage_live: {
-      id: 'price_starter_overage_live',
+    price_starter_workflow_overage_live: {
+      id: 'price_starter_workflow_overage_live',
       active: true,
       livemode: true,
       currency: 'usd',
@@ -199,20 +217,20 @@ async function testFailClosedIssues(): Promise<void> {
       unit_amount_decimal: '5',
       type: 'recurring',
       recurring: { interval: 'month', interval_count: 1, usage_type: 'metered', meter: 'mtr_wrong' },
-      product: 'prod_starter',
+      product: 'prod_starter_workflow',
     },
-    price_pro_live: {
-      id: 'price_pro_live',
+    price_pro_workflow_live: {
+      id: 'price_pro_workflow_live',
       active: true,
       livemode: true,
       currency: 'usd',
-      unit_amount: 149_900,
+      unit_amount: 99_900,
       type: 'recurring',
       recurring: { interval: 'month', interval_count: 1, usage_type: 'licensed', meter: null },
-      product: 'prod_pro',
+      product: 'prod_pro_workflow',
     },
-    price_pro_overage_live: {
-      id: 'price_pro_overage_live',
+    price_pro_workflow_overage_live: {
+      id: 'price_pro_workflow_overage_live',
       active: true,
       livemode: true,
       currency: 'usd',
@@ -220,28 +238,7 @@ async function testFailClosedIssues(): Promise<void> {
       unit_amount_decimal: '2.5',
       type: 'recurring',
       recurring: { interval: 'month', interval_count: 1, usage_type: 'metered', meter: 'mtr_admission_overage' },
-      product: 'prod_pro',
-    },
-    price_scale_live: {
-      id: 'price_scale_live',
-      active: true,
-      livemode: true,
-      currency: 'usd',
-      unit_amount: 599_900,
-      type: 'recurring',
-      recurring: { interval: 'month', interval_count: 1, usage_type: 'licensed', meter: null },
-      product: 'prod_scale',
-    },
-    price_scale_overage_live: {
-      id: 'price_scale_overage_live',
-      active: true,
-      livemode: true,
-      currency: 'usd',
-      unit_amount: null,
-      unit_amount_decimal: '1.5',
-      type: 'recurring',
-      recurring: { interval: 'month', interval_count: 1, usage_type: 'metered', meter: 'mtr_admission_overage' },
-      product: 'prod_scale',
+      product: 'prod_pro_workflow',
     },
   };
 
@@ -261,16 +258,20 @@ async function testFailClosedIssues(): Promise<void> {
         },
       },
       prices: brokenPrices,
+      products: {
+        prod_pilot_workflow: { id: 'prod_pilot_workflow', active: true },
+        prod_starter_workflow: { id: 'prod_starter_workflow', active: true },
+        prod_pro_workflow: { id: 'prod_pro_workflow', active: true },
+      },
       portalConfigurations: [],
     }),
     env: {
       STRIPE_API_KEY: 'sk_test_not_live',
-      ATTESTOR_STRIPE_PRICE_STARTER: 'price_starter_live',
-      ATTESTOR_STRIPE_PRICE_PRO: 'price_pro_live',
-      ATTESTOR_STRIPE_PRICE_SCALE: 'price_scale_live',
-      ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER: 'price_starter_overage_live',
-      ATTESTOR_STRIPE_OVERAGE_PRICE_PRO: 'price_pro_overage_live',
-      ATTESTOR_STRIPE_OVERAGE_PRICE_SCALE: 'price_scale_overage_live',
+      ATTESTOR_STRIPE_PRICE_PILOT_WORKFLOW: 'price_pilot_workflow_live',
+      ATTESTOR_STRIPE_PRICE_STARTER_WORKFLOW: 'price_starter_workflow_live',
+      ATTESTOR_STRIPE_PRICE_PRO_WORKFLOW: 'price_pro_workflow_live',
+      ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER_WORKFLOW: 'price_starter_workflow_overage_live',
+      ATTESTOR_STRIPE_OVERAGE_PRICE_PRO_WORKFLOW: 'price_pro_workflow_overage_live',
     },
   });
 
@@ -278,8 +279,16 @@ async function testFailClosedIssues(): Promise<void> {
   ok(summary.issues.some((issue) => issue.includes('live-mode key')), 'Stripe live readiness probe: test API key is blocked');
   ok(summary.issues.some((issue) => issue.includes('payouts are not enabled')), 'Stripe live readiness probe: missing payout readiness is blocked');
   ok(summary.issues.some((issue) => issue.includes('Customer Portal')), 'Stripe live readiness probe: missing Customer Portal is blocked');
-  ok(summary.issues.some((issue) => issue.includes('Starter Stripe price amount')), 'Stripe live readiness probe: price mismatch is blocked');
-  ok(summary.issues.some((issue) => issue.includes('Starter overage') && issue.includes('meter')), 'Stripe live readiness probe: overage meter mismatch is blocked');
+  ok(
+    summary.issues.some((issue) => issue.includes('Starter Workflow Stripe price amount')),
+    'Stripe live readiness probe: price mismatch is blocked',
+  );
+  ok(
+    summary.issues.some((issue) => (
+      issue.includes('Starter Workflow overage') && issue.includes('meter')
+    )),
+    'Stripe live readiness probe: overage meter mismatch is blocked',
+  );
 }
 
 async function testPortalPlanSwitchDriftFailsClosed(): Promise<void> {
@@ -316,25 +325,33 @@ async function testPortalPlanSwitchDriftFailsClosed(): Promise<void> {
     }),
     env: {
       STRIPE_API_KEY: 'sk_live_ready',
-      ATTESTOR_STRIPE_PRICE_STARTER: 'price_starter_live',
-      ATTESTOR_STRIPE_PRICE_PRO: 'price_pro_live',
-      ATTESTOR_STRIPE_PRICE_SCALE: 'price_scale_live',
-      ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER: 'price_starter_overage_live',
-      ATTESTOR_STRIPE_OVERAGE_PRICE_PRO: 'price_pro_overage_live',
-      ATTESTOR_STRIPE_OVERAGE_PRICE_SCALE: 'price_scale_overage_live',
+      ATTESTOR_STRIPE_PRICE_PILOT_WORKFLOW: 'price_pilot_workflow_live',
+      ATTESTOR_STRIPE_PRICE_STARTER_WORKFLOW: 'price_starter_workflow_live',
+      ATTESTOR_STRIPE_PRICE_PRO_WORKFLOW: 'price_pro_workflow_live',
+      ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER_WORKFLOW: 'price_starter_workflow_overage_live',
+      ATTESTOR_STRIPE_OVERAGE_PRICE_PRO_WORKFLOW: 'price_pro_workflow_overage_live',
     },
   });
 
   ok(summary.ok === false, 'Stripe live readiness probe: portal plan-switch drift fails closed');
   ok(summary.issues.some((issue) => issue.includes('must not allow quantity changes')), 'Stripe live readiness probe: quantity changes are blocked');
-  ok(summary.issues.some((issue) => issue.includes('price_pro_live') && issue.includes('price_scale_live')), 'Stripe live readiness probe: missing portal price ids are blocked');
+  ok(
+    summary.issues.some((issue) => (
+      issue.includes('price_pilot_workflow_live') &&
+      issue.includes('price_pro_workflow_live')
+    )),
+    'Stripe live readiness probe: missing workflow portal price ids are blocked',
+  );
   ok(summary.issues.some((issue) => issue.includes('proration_behavior')), 'Stripe live readiness probe: unexpected portal proration is blocked');
   ok(summary.warnings.some((warning) => warning.includes('decreasing_item_amount')), 'Stripe live readiness probe: downgrade scheduling drift is warned');
 }
 
 function testManifestCanPrintWithoutKey(): void {
   const manifest = requiredStripePriceManifest();
-  ok(manifest.length === 6, 'Stripe live readiness probe: required price manifest covers base and overage prices for Starter, Pro, and Scale');
+  ok(
+    manifest.length === 5,
+    'Stripe live readiness probe: required price manifest covers workflow base and overage prices',
+  );
 
   const run = spawnSync(
     process.execPath,
@@ -359,8 +376,14 @@ function testManifestCanPrintWithoutKey(): void {
     requiredMeterEvent?: { eventName?: string };
   };
   ok(
-    printed.requiredPrices.map((entry) => entry.envName).join(',') === 'ATTESTOR_STRIPE_PRICE_STARTER,ATTESTOR_STRIPE_PRICE_PRO,ATTESTOR_STRIPE_PRICE_SCALE,ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER,ATTESTOR_STRIPE_OVERAGE_PRICE_PRO,ATTESTOR_STRIPE_OVERAGE_PRICE_SCALE',
-    'Stripe live readiness probe: printed manifest names required hosted base and overage price env vars',
+    printed.requiredPrices.map((entry) => entry.envName).join(',') === [
+      'ATTESTOR_STRIPE_PRICE_PILOT_WORKFLOW',
+      'ATTESTOR_STRIPE_PRICE_STARTER_WORKFLOW',
+      'ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER_WORKFLOW',
+      'ATTESTOR_STRIPE_PRICE_PRO_WORKFLOW',
+      'ATTESTOR_STRIPE_OVERAGE_PRICE_PRO_WORKFLOW',
+    ].join(','),
+    'Stripe live readiness probe: printed manifest names required workflow price env vars',
   );
   ok(
     printed.requiredPrices.every((entry) => entry.expectedCurrency === 'usd'),

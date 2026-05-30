@@ -6,8 +6,9 @@ import {
   STRIPE_WEBHOOK_ROUTE,
 } from '../../src/service/billing/stripe/stripe-webhook-events.js';
 import { trimAndStripTrailingSlashes } from '../../src/platform/string-normalization.js';
+import { type WorkflowBillingTierId } from '../../src/service/workflow-entitlement-catalog.js';
 
-type PaidPlanId = 'starter' | 'pro' | 'scale';
+type PaidPlanId = WorkflowBillingTierId;
 
 type BootstrapAccountSummary = {
   id: string | null;
@@ -19,19 +20,21 @@ type BootstrapAccountSummary = {
 };
 
 const PLAN_PRODUCTS: Record<PaidPlanId, { name: string; description: string }> = {
-  starter: {
-    name: 'Attestor Starter',
-    description: 'Hosted Attestor subscription for small production teams.',
+  'pilot-workflow': {
+    name: 'Attestor Pilot Workflow',
+    description: 'Hosted Attestor subscription for one proof-packet workflow pilot.',
   },
-  pro: {
-    name: 'Attestor Pro',
-    description: 'Hosted Attestor subscription for growing teams with SSO, dual-control, and longer audit retention.',
+  'starter-workflow': {
+    name: 'Attestor Starter Workflow',
+    description: 'Hosted Attestor subscription for one customer-gated consequence workflow.',
   },
-  scale: {
-    name: 'Attestor Scale',
-    description: 'Hosted Attestor subscription for high-volume production deployments.',
+  'pro-workflow': {
+    name: 'Attestor Pro Workflow',
+    description: 'Hosted Attestor subscription for one advanced hosted consequence workflow.',
   },
 };
+
+const PLAN_IDS = Object.keys(PLAN_PRODUCTS) as PaidPlanId[];
 
 function arg(name: string): string | null {
   const prefix = `--${name}=`;
@@ -148,6 +151,8 @@ async function ensureProduct(stripe: Stripe, planId: PaidPlanId): Promise<Stripe
     metadata: {
       attestor_managed: 'true',
       attestor_plan: planId,
+      attestor_workflow_tier: planId,
+      attestor_billing_unit: 'workflow-subscription-item',
     },
   });
 }
@@ -231,7 +236,7 @@ async function ensurePortalConfiguration(options: {
   products: Record<PaidPlanId, Stripe.Product>;
   basePrices: Record<PaidPlanId, Stripe.Price>;
 }): Promise<Stripe.BillingPortal.Configuration> {
-  const productEntries = (Object.keys(PLAN_PRODUCTS) as PaidPlanId[]).map((planId) => ({
+  const productEntries = PLAN_IDS.map((planId) => ({
     product: options.products[planId].id,
     prices: [options.basePrices[planId].id],
     adjustable_quantity: {
@@ -339,13 +344,13 @@ async function main(): Promise<void> {
   const meter = await ensureAdmissionMeter(stripe);
   const products = {} as Record<PaidPlanId, Stripe.Product>;
   const basePrices = {} as Record<PaidPlanId, Stripe.Price>;
-  const overagePrices = {} as Record<PaidPlanId, Stripe.Price>;
+  const overagePrices = {} as Partial<Record<PaidPlanId, Stripe.Price>>;
 
-  for (const planId of Object.keys(PLAN_PRODUCTS) as PaidPlanId[]) {
+  for (const planId of PLAN_IDS) {
     products[planId] = await ensureProduct(stripe, planId);
     const baseExpectation = STRIPE_PRICE_EXPECTATIONS.find((entry) => entry.planId === planId && entry.kind === 'base');
     const overageExpectation = STRIPE_PRICE_EXPECTATIONS.find((entry) => entry.planId === planId && entry.kind === 'overage');
-    if (!baseExpectation || !overageExpectation) {
+    if (!baseExpectation) {
       throw new Error(`Missing Stripe price expectation for plan '${planId}'.`);
     }
     basePrices[planId] = await ensurePrice({
@@ -356,14 +361,16 @@ async function main(): Promise<void> {
       expectedUnitAmountDecimal: baseExpectation.expectedUnitAmountDecimal,
       meterId: null,
     });
-    overagePrices[planId] = await ensurePrice({
-      stripe,
-      planId,
-      productId: products[planId].id,
-      kind: 'overage',
-      expectedUnitAmountDecimal: overageExpectation.expectedUnitAmountDecimal,
-      meterId: meter.id,
-    });
+    if (overageExpectation) {
+      overagePrices[planId] = await ensurePrice({
+        stripe,
+        planId,
+        productId: products[planId].id,
+        kind: 'overage',
+        expectedUnitAmountDecimal: overageExpectation.expectedUnitAmountDecimal,
+        meterId: meter.id,
+      });
+    }
   }
 
   const portal = await ensurePortalConfiguration({ stripe, products, basePrices });
@@ -380,18 +387,24 @@ async function main(): Promise<void> {
       readWarning: account.readWarning,
     },
     env: {
-      ATTESTOR_STRIPE_PRICE_STARTER: basePrices.starter.id,
-      ATTESTOR_STRIPE_PRICE_PRO: basePrices.pro.id,
-      ATTESTOR_STRIPE_PRICE_SCALE: basePrices.scale.id,
-      ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER: overagePrices.starter.id,
-      ATTESTOR_STRIPE_OVERAGE_PRICE_PRO: overagePrices.pro.id,
-      ATTESTOR_STRIPE_OVERAGE_PRICE_SCALE: overagePrices.scale.id,
+      ...Object.fromEntries(STRIPE_PRICE_EXPECTATIONS.flatMap((expectation) => {
+        if (expectation.kind === 'base') {
+          return [[expectation.envName, basePrices[expectation.planId].id]];
+        }
+        const overagePrice = overagePrices[expectation.planId];
+        return overagePrice ? [[expectation.envName, overagePrice.id]] : [];
+      })),
       ATTESTOR_STRIPE_OVERAGE_METER_EVENT_NAME: 'attestor_admission_overage',
       ATTESTOR_STRIPE_WEBHOOK_ENDPOINT_ID: webhook.skipped ? null : webhook.endpoint.id,
       STRIPE_WEBHOOK_SECRET: webhook.secret ? '<returned-on-create-see-secret-output>' : '<existing-or-reveal-in-stripe-dashboard>',
     },
     stripe: {
-      products: Object.fromEntries((Object.keys(products) as PaidPlanId[]).map((planId) => [planId, products[planId].id])),
+      products: Object.fromEntries(PLAN_IDS.map((planId) => [planId, products[planId].id])),
+      overagePrices: Object.fromEntries(
+        PLAN_IDS.flatMap((planId) => overagePrices[planId]
+          ? [[planId, overagePrices[planId].id]]
+          : []),
+      ),
       meter: {
         id: meter.id,
         eventName: meter.event_name,

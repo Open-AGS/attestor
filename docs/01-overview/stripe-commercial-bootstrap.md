@@ -1,18 +1,26 @@
 # Stripe Commercial Bootstrap
 
-This is the minimum operator checklist for turning Attestor from a technically live hosted API into a product that customers can actually buy.
+This is the minimum operator checklist for workflow-based Stripe launch
+preparation. It is not a public pricing page and it is not live billing proof.
 
-For public plan definitions, pricing, free evaluation, and hosted trial posture, use [Commercial packaging, pricing, and evaluation](product-packaging.md) as the source of truth. This document is operator-facing and should not become a second public pricing page.
+For the current account-plan public packaging source, use
+[Commercial packaging, pricing, and evaluation](product-packaging.md). For the
+workflow launch-prep model, use
+[Attestor Workflow-Based Launch Packaging Plan](launch-packaging-plan.md).
+This document is operator-facing and should not become a second public pricing
+page.
+This page is operator-facing and should not become a second public pricing page.
 
 ## What Customers See
 
 From the customer's side, the commercial shape stays simple:
 
-1. choose a plan
+1. choose a workflow tier
 2. sign up for a hosted account
-3. upgrade through Stripe Checkout when `starter`, `pro`, or `scale` is needed
+3. buy a workflow through Stripe Checkout when `pilot-workflow`,
+   `starter-workflow`, or `pro-workflow` is needed
 4. return to the Attestor account plane
-5. manage API keys, usage, and billing
+5. manage API keys, workflow usage, and billing
 
 Customers do not need to understand your payout setup. They only need a clear plan choice and a reliable checkout path.
 
@@ -22,11 +30,11 @@ Customers do not need to understand your payout setup. They only need a clear pl
 
 The preferred operator path is the repo bootstrap script. It creates or reuses:
 
-- the Starter, Pro, and Scale Stripe products
-- the monthly base prices for those products
+- the Pilot Workflow, Starter Workflow, and Pro Workflow Stripe products
+- the monthly base prices for those workflow products
 - the shared `attestor_admission_overage` Billing Meter
-- the metered monthly overage price for each paid plan
-- the default Customer Portal configuration for plan switching
+- the metered monthly overage price for Starter Workflow and Pro Workflow
+- the default Customer Portal configuration for workflow price switching
 - the Stripe webhook endpoint and supported billing events
 
 Run it with the Stripe account you want to configure:
@@ -46,11 +54,11 @@ If the webhook endpoint is created during this run, Stripe returns the webhook s
 
 ### Manual Shape The Script Enforces
 
-Create recurring Stripe prices for:
+Create recurring monthly Stripe base prices for:
 
-- `starter`
-- `pro`
-- `scale`
+- `pilot-workflow`
+- `starter-workflow`
+- `pro-workflow`
 
 Create one Stripe Billing Meter for admission overage:
 
@@ -59,34 +67,40 @@ Create one Stripe Billing Meter for admission overage:
 - value payload key: `value`
 - aggregation: `sum`
 
-Then create one recurring metered monthly overage price per paid hosted plan, attached to that meter:
+Then create recurring metered monthly overage prices attached to that meter:
 
-- Starter overage: USD `$0.05` per admission
-- Pro overage: USD `$0.025` per admission
-- Scale overage: USD `$0.015` per admission
+- Starter Workflow overage: USD `$0.05` per admission
+- Pro Workflow overage: USD `$0.025` per admission
 
-Do not create an Enterprise self-service price unless you intentionally want Enterprise checkout. The default commercial model keeps Enterprise sales/custom.
+Pilot Workflow has no automatic overage at launch. Do not create Scale or
+Enterprise self-service prices unless those tiers are intentionally re-enabled
+after a separate readiness pass.
 
-Those live Stripe prices should mirror [Commercial packaging, pricing, and evaluation](product-packaging.md).
+Those live Stripe prices should mirror
+[Attestor Workflow-Based Launch Packaging Plan](launch-packaging-plan.md)
+until the public packaging source is intentionally switched.
 
 Map those live Stripe price ids into:
 
-- `ATTESTOR_STRIPE_PRICE_STARTER`
-- `ATTESTOR_STRIPE_PRICE_PRO`
-- `ATTESTOR_STRIPE_PRICE_SCALE`
-- `ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER`
-- `ATTESTOR_STRIPE_OVERAGE_PRICE_PRO`
-- `ATTESTOR_STRIPE_OVERAGE_PRICE_SCALE`
+- `ATTESTOR_STRIPE_PRICE_PILOT_WORKFLOW`
+- `ATTESTOR_STRIPE_PRICE_STARTER_WORKFLOW`
+- `ATTESTOR_STRIPE_PRICE_PRO_WORKFLOW`
+- `ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER_WORKFLOW`
+- `ATTESTOR_STRIPE_OVERAGE_PRICE_PRO_WORKFLOW`
 
-Leave `ATTESTOR_STRIPE_PRICE_ENTERPRISE` unset unless Enterprise self-service checkout is intentionally enabled.
+Leave `ATTESTOR_STRIPE_PRICE_SCALE` and `ATTESTOR_STRIPE_PRICE_ENTERPRISE`
+unset unless Scale or Enterprise self-service checkout is intentionally
+enabled later.
 
 For the shipped default hosted funnel:
 
-- `developer` and `trial` stay outside Stripe as free evaluation paths
+- `trial` stays outside Stripe as the free account-level evaluation path
 - legacy local records with `community` resolve to `developer`
-- `starter` is the first paid hosted plan
-- paid plan trials are not enabled by default; the `trial` plan is a free shadow onboarding state, not a Stripe Checkout trial
-- any change to public price, free trial posture, or paid checkout behavior should be reflected first in [Commercial packaging, pricing, and evaluation](product-packaging.md)
+- `pilot-workflow` is the first paid workflow tier
+- paid workflow trials are not enabled by default; the `trial` plan is a free
+  shadow onboarding state, not a Stripe Checkout trial
+- workflow checkout and webhook convergence must bind each paid subscription
+  item to a workflow entitlement before paid workflow capabilities activate
 
 ### 2. Activate Your Stripe Live Account
 
@@ -103,12 +117,11 @@ Verify that account state from the repo after the Dashboard setup:
 
 ```bash
 STRIPE_API_KEY=sk_live_... \
-ATTESTOR_STRIPE_PRICE_STARTER=price_... \
-ATTESTOR_STRIPE_PRICE_PRO=price_... \
-ATTESTOR_STRIPE_PRICE_SCALE=price_... \
-ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER=price_... \
-ATTESTOR_STRIPE_OVERAGE_PRICE_PRO=price_... \
-ATTESTOR_STRIPE_OVERAGE_PRICE_SCALE=price_... \
+ATTESTOR_STRIPE_PRICE_PILOT_WORKFLOW=price_... \
+ATTESTOR_STRIPE_PRICE_STARTER_WORKFLOW=price_... \
+ATTESTOR_STRIPE_PRICE_PRO_WORKFLOW=price_... \
+ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER_WORKFLOW=price_... \
+ATTESTOR_STRIPE_OVERAGE_PRICE_PRO_WORKFLOW=price_... \
 npm run probe:stripe-live-readiness
 ```
 
@@ -116,14 +129,21 @@ This probe checks:
 
 - the API key is live-mode
 - Stripe account details, charge capability, and payout capability are enabled
-- the Starter, Pro, and Scale price ids are active live monthly USD prices matching the commercial model
-- the Starter, Pro, and Scale overage prices are active live monthly metered USD prices attached to the `attestor_admission_overage` meter
+- the Pilot Workflow, Starter Workflow, and Pro Workflow price ids are active
+  live monthly USD prices matching the workflow model
+- the Starter Workflow and Pro Workflow overage prices are active live monthly
+  metered USD prices attached to the `attestor_admission_overage` meter
 - the default Stripe Customer Portal configuration is active
-- the default Stripe Customer Portal lets customers switch between the configured Starter, Pro, and Scale prices
-- quantity changes are disabled in the Customer Portal, because hosted plans are quota tiers rather than seat quantities
-- Customer Portal subscription updates use `proration_behavior=none`, with cheaper-plan and shorter-interval changes scheduled for the end of the billing period when Stripe exposes those conditions
+- the default Stripe Customer Portal lets customers switch between the
+  configured Pilot, Starter, and Pro Workflow prices
+- quantity changes are disabled in the Customer Portal, because workflow
+  entitlements must bind to workflow ids rather than seat quantities
+- Customer Portal subscription updates use `proration_behavior=none`, with
+  cheaper-plan and shorter-interval changes scheduled for the end of the
+  billing period when Stripe exposes those conditions
 
-It cannot enter legal, tax, or payout identity details for you. Configure those in Stripe Dashboard, then rerun the probe until it returns `"ok": true`.
+It cannot enter legal, tax, or payout identity details for you. Configure
+those in Stripe Dashboard, then rerun the probe until it returns `"ok": true`.
 
 To print the expected price manifest without a Stripe API key:
 
@@ -131,7 +151,9 @@ To print the expected price manifest without a Stripe API key:
 npm run probe:stripe-live-readiness -- --print-required-prices
 ```
 
-That command prints both the required price manifest and the required Customer Portal posture. Use it before changing Stripe Dashboard settings so the dashboard stays aligned with the repo plan catalog.
+That command prints both the required price manifest and the required Customer
+Portal posture. Use it before changing Stripe Dashboard settings so the
+dashboard stays aligned with the repo plan catalog.
 
 ## When Your Bank Details Are Needed
 
@@ -166,14 +188,14 @@ Set these runtime variables on the hosted deployment:
 ```bash
 export STRIPE_API_KEY=sk_live_...
 export STRIPE_WEBHOOK_SECRET=whsec_...
-export ATTESTOR_STRIPE_PRICE_STARTER=price_...
-export ATTESTOR_STRIPE_PRICE_PRO=price_...
-export ATTESTOR_STRIPE_PRICE_SCALE=price_...
-export ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER=price_...
-export ATTESTOR_STRIPE_OVERAGE_PRICE_PRO=price_...
-export ATTESTOR_STRIPE_OVERAGE_PRICE_SCALE=price_...
+export ATTESTOR_STRIPE_PRICE_PILOT_WORKFLOW=price_...
+export ATTESTOR_STRIPE_PRICE_STARTER_WORKFLOW=price_...
+export ATTESTOR_STRIPE_PRICE_PRO_WORKFLOW=price_...
+export ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER_WORKFLOW=price_...
+export ATTESTOR_STRIPE_OVERAGE_PRICE_PRO_WORKFLOW=price_...
 export ATTESTOR_STRIPE_OVERAGE_METER_EVENT_NAME=attestor_admission_overage
-# Optional only when Enterprise self-service checkout is intentionally enabled:
+# Optional only when Scale or Enterprise self-service checkout is intentionally enabled:
+# export ATTESTOR_STRIPE_PRICE_SCALE=price_...
 # export ATTESTOR_STRIPE_PRICE_ENTERPRISE=price_...
 export ATTESTOR_BILLING_SUCCESS_URL=https://<host>/billing/success
 export ATTESTOR_BILLING_CANCEL_URL=https://<host>/billing/cancel
@@ -207,7 +229,8 @@ The endpoint must enable these Attestor-supported Stripe event types:
 - `charge.refunded`
 - `entitlements.active_entitlement_summary.updated`
 
-After creating the endpoint and copying its signing secret into `STRIPE_WEBHOOK_SECRET`, verify the live Stripe configuration:
+After creating the endpoint and copying its signing secret into
+`STRIPE_WEBHOOK_SECRET`, verify the live Stripe configuration:
 
 ```bash
 STRIPE_API_KEY=sk_live_... \
@@ -231,7 +254,7 @@ Attestor does not need a large commercial frontend to be sellable.
 
 The minimum valid commercial surface is:
 
-- pricing information in repo/docs
+- workflow packaging information in repo/docs
 - hosted signup
 - Stripe Checkout upgrade path
 - account plane for keys, usage, and billing
@@ -242,12 +265,16 @@ That is enough to make the hosted API product purchasable.
 
 Attestor is commercially live when all of these are true:
 
-- live Stripe prices exist
+- live Stripe workflow prices exist
 - Stripe live account is activated
 - payout bank account is connected in Stripe
-- Attestor runtime has the live Stripe env vars
+- Attestor runtime has the live Stripe workflow env vars
 - Stripe webhook is pointed at the live Attestor deployment
-- a paid checkout can complete and reflect back into the hosted account plane
-- an over-quota paid admission emits a Stripe Billing Meter Event for the subscribed customer
+- a paid workflow checkout can complete and reflect back into the hosted account plane
+- each paid subscription item is bound to one workflow entitlement
+- an over-quota paid workflow admission emits a Stripe Billing Meter Event for
+  the subscribed customer
 
-Until then, the product may still be technically live and usable, but it is not yet fully sale-ready.
+Until workflow checkout, webhook convergence, runtime entitlement loading, and
+live proof are all verified, this remains launch preparation rather than fully
+sale-ready live billing.

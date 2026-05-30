@@ -122,6 +122,20 @@ Use one entry point first. It opens the rest.
 
 - [Repository navigator](docs/01-overview/repository-navigator.md) - choose the right path for reading, integrating, verifying, or changing code.
 - [Try Attestor first](docs/01-overview/try-attestor-first.md) - run the refund workflow.
+- [Operating model](docs/01-overview/operating-model.md) - understand the decision boundary.
+- [Hosted customer journey](docs/01-overview/hosted-customer-journey.md) - follow the hosted path.
+- [First hosted API call](docs/01-overview/hosted-first-api-call.md) - make the first
+  hosted request.
+- [Customer admission gate](docs/01-overview/customer-admission-gate.md) - place the
+  downstream stop point.
+- [Finance and crypto first integrations](docs/01-overview/finance-and-crypto-first-integrations.md)
+  - start with the first pack examples.
+- [Hosted account visibility](docs/01-overview/hosted-account-visibility.md) - see
+  account, usage, entitlement, and billing views.
+- [Commercial packaging, pricing, and evaluation](docs/01-overview/product-packaging.md)
+  - read the current packaging boundary.
+- [Pricing ROI calculator](docs/01-overview/pricing-roi-calculator.md) - size
+  admission volume and avoided-loss assumptions.
 - [How to integrate Attestor](docs/01-overview/how-to-integrate-attestor.md) - place the check before a real service call.
 - [Reason codes](docs/05-proof/reason-codes.md) - explain a `review` or `block`.
 - [License and use](docs/01-overview/license-and-use.md) - understand allowed use.

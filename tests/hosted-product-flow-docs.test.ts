@@ -368,10 +368,26 @@ function testPricingAndTrialTruthsStayAnchored(): void {
     "pricingRoiCalculator: 'docs/01-overview/pricing-roi-calculator.md'",
     'Hosted product flow docs: ROI calculator is a machine-readable truth source',
   );
-  includes(stripeBootstrap, 'ATTESTOR_STRIPE_PRICE_SCALE=price_', 'Hosted product flow docs: operator scale Stripe price env var is documented');
-  includes(stripeBootstrap, 'ATTESTOR_STRIPE_OVERAGE_PRICE_SCALE=price_', 'Hosted product flow docs: operator scale overage Stripe price env var is documented');
-  includes(stripeBootstrap, 'event name: `attestor_admission_overage`', 'Hosted product flow docs: operator overage meter event name is documented');
-  includes(stripeBootstrap, 'lets customers switch between the configured Starter, Pro, and Scale prices', 'Hosted product flow docs: Stripe readiness checks portal plan switching');
+  includes(
+    stripeBootstrap,
+    'ATTESTOR_STRIPE_PRICE_PILOT_WORKFLOW=price_',
+    'Hosted product flow docs: operator Pilot Workflow Stripe price env var is documented',
+  );
+  includes(
+    stripeBootstrap,
+    'ATTESTOR_STRIPE_OVERAGE_PRICE_PRO_WORKFLOW=price_',
+    'Hosted product flow docs: operator Pro Workflow overage Stripe price env var is documented',
+  );
+  includes(
+    stripeBootstrap,
+    'event name: `attestor_admission_overage`',
+    'Hosted product flow docs: operator overage meter event name is documented',
+  );
+  includes(
+    stripeBootstrap,
+    'configured Pilot, Starter, and Pro Workflow prices',
+    'Hosted product flow docs: Stripe readiness checks portal workflow switching',
+  );
   includes(stripeBootstrap, 'quantity changes are disabled in the Customer Portal', 'Hosted product flow docs: Stripe readiness checks portal quantity posture');
   includes(stripeBootstrap, 'npm run probe:stripe-webhook-config -- --print-required-events', 'Hosted product flow docs: operator webhook manifest command is documented');
   includes(stripeBootstrap, '`entitlements.active_entitlement_summary.updated`', 'Hosted product flow docs: operator webhook event list includes entitlement summary updates');

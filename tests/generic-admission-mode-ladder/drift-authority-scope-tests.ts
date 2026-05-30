@@ -407,6 +407,7 @@ function testMissingAuthorityFreshnessRequiresReview(): void {
 function testScopeExpansionNarrowsEnforceMode(): void {
   const envelope = createGenericAdmissionEnvelope(scopedMoneyAdmission());
   const serialized = JSON.stringify(envelope);
+  const policyCheck = envelope.admission.checks.find((check) => check.kind === 'policy');
 
   equal(envelope.shadowDecision, 'would_narrow', 'Generic admission: scope expansion shadows narrow');
   equal(envelope.admission.decision, 'narrow', 'Generic admission: enforce mode applies scope narrowing');
@@ -422,6 +423,15 @@ function testScopeExpansionNarrowsEnforceMode(): void {
   ok(
     envelope.admission.reasonCodes.includes('record-count-exceeds-approved-scope'),
     'Generic admission: record-count scope explosion reason is explicit',
+  );
+  equal(policyCheck?.outcome, 'warn', 'Generic admission: scope narrow warns the policy check without blocking the narrowed action');
+  ok(
+    policyCheck?.reasonCodes.includes('amount-exceeds-approved-scope'),
+    'Generic admission: scope narrow amount reason attaches to the policy check',
+  );
+  ok(
+    policyCheck?.reasonCodes.includes('recipient-out-of-scope'),
+    'Generic admission: scope narrow recipient reason attaches to the policy check',
   );
   equal(
     envelope.admission.constraints.length,
@@ -466,6 +476,7 @@ function testScopeEscalationBlocksEnforceMode(): void {
       reversibilityClass: 'irreversible',
     },
   });
+  const policyCheck = envelope.admission.checks.find((check) => check.kind === 'policy');
 
   equal(envelope.shadowDecision, 'would_block', 'Generic admission: scope escalation shadows block');
   equal(envelope.admission.decision, 'block', 'Generic admission: enforce mode blocks scope escalation');
@@ -485,6 +496,15 @@ function testScopeEscalationBlocksEnforceMode(): void {
   ok(
     envelope.admission.reasonCodes.includes('irreversible-action-not-approved'),
     'Generic admission: irreversible scope reason is explicit',
+  );
+  equal(policyCheck?.outcome, 'fail', 'Generic admission: blocked scope escalation fails the policy check');
+  ok(
+    policyCheck?.reasonCodes.includes('scope-blocked'),
+    'Generic admission: scope-blocked reason attaches to the policy check',
+  );
+  ok(
+    policyCheck?.reasonCodes.includes('operation-out-of-scope'),
+    'Generic admission: scope operation reason attaches to the policy check',
   );
   equal(
     envelope.admission.request.policyScope.dimensions.scopeExplosionGuardOutcome,

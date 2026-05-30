@@ -156,6 +156,7 @@ import {
   type ConsequenceNoGoConditionRecord,
 } from './no-go-condition-ledger.js';
 import {
+  CONSEQUENCE_SCOPE_EXPLOSION_REASON_CODES,
   type ConsequenceScopeExplosionDecision,
   type ConsequenceScopeExplosionScopeInput,
 } from './scope-explosion-guard.js';
@@ -250,6 +251,9 @@ ReadonlySet<string> = new Set(CONSEQUENCE_UNTRUSTED_CONTENT_AUTHORITY_REASON_COD
 
 export const GENERIC_ADMISSION_APPROVAL_GUARD_REASON_CODES:
 ReadonlySet<string> = new Set(CONSEQUENCE_APPROVAL_GUARD_REASON_CODES);
+
+export const GENERIC_ADMISSION_SCOPE_EXPLOSION_REASON_CODES:
+ReadonlySet<string> = new Set(CONSEQUENCE_SCOPE_EXPLOSION_REASON_CODES);
 
 export const GENERIC_ADMISSION_NO_GO_REASON_CODES:
 ReadonlySet<string> = new Set(CONSEQUENCE_NO_GO_CONDITION_REASON_CODES);

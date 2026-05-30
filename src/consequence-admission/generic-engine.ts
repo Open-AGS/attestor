@@ -22,6 +22,7 @@ import {
   GENERIC_ADMISSION_HUMAN_REVIEW_FATIGUE_REASON_CODES,
   GENERIC_ADMISSION_MULTI_AGENT_DELEGATION_REASON_CODES,
   GENERIC_ADMISSION_NO_GO_REASON_CODES,
+  GENERIC_ADMISSION_SCOPE_EXPLOSION_REASON_CODES,
   GENERIC_ADMISSION_TOOL_RESULT_REASON_CODES,
   GENERIC_ADMISSION_TRUSTED_OBSERVED_FEATURE_ORIGINS,
   type ConsequenceAdmissionCheck,
@@ -681,6 +682,7 @@ function reasonCodesForCheck(
         reason === 'policy-digest-drift' ||
         reason === 'authority-creep-finding:policy-activation-requested' ||
         reason === 'authority-creep-finding:lineage-policy-activation-requested' ||
+        GENERIC_ADMISSION_SCOPE_EXPLOSION_REASON_CODES.has(reason) ||
         GENERIC_ADMISSION_NO_GO_REASON_CODES.has(reason);
     }
     if (kind === 'authority') {
@@ -742,9 +744,11 @@ function reasonCodesForCheck(
 
 function checkOutcomeForGenericMode(
   mode: GenericAdmissionMode,
+  effectiveDecision: ConsequenceAdmissionDecision,
   checkReasons: readonly string[],
 ): ConsequenceAdmissionCheckOutcome {
   if (checkReasons.length === 0) return 'pass';
+  if (effectiveDecision === 'narrow') return 'warn';
   return mode === 'observe' || mode === 'warn' ? 'warn' : 'fail';
 }
 
@@ -756,7 +760,11 @@ function createGenericAdmissionChecks(
   return Object.freeze(
     profile.requiredChecks.map((kind) => {
       const checkReasons = reasonCodesForCheck(kind, evaluation.reasonCodes);
-      const outcome = checkOutcomeForGenericMode(input.mode, checkReasons);
+      const outcome = checkOutcomeForGenericMode(
+        input.mode,
+        evaluation.effectiveDecision,
+        checkReasons,
+      );
       const evidenceRefs =
         kind === 'authority'
           ? [

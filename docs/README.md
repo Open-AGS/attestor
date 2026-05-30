@@ -17,7 +17,7 @@ understand -> try -> integrate -> explain decisions -> verify claims -> maintain
 | Run all demos in order | [Run the demos in order](01-overview/demo-guide.md) |
 | Put Attestor in front of a real service call | [How to integrate Attestor](01-overview/how-to-integrate-attestor.md) |
 | Copy framework-shaped examples | [Customer middleware examples](../examples/customer-middleware/README.md) |
-| Send shadow events without an SDK | [Shadow event payload examples](01-overview/shadow-event-payload-examples.md) |
+| Run a shadow pilot without an SDK | [Run Attestor in shadow pilot mode](01-overview/shadow-event-payload-examples.md) |
 | Explain a review or block outcome | [Reason codes](05-proof/reason-codes.md) |
 | Understand allowed use | [License and use](01-overview/license-and-use.md) |
 | Navigate the repository | [Repository navigator](01-overview/repository-navigator.md) |
@@ -29,7 +29,7 @@ understand -> try -> integrate -> explain decisions -> verify claims -> maintain
 - [First hosted API call](01-overview/hosted-first-api-call.md)
 - [Customer admission gate](01-overview/customer-admission-gate.md)
 - [Customer integration recipes](01-overview/customer-integration-recipes.md)
-- [Shadow event payload examples](01-overview/shadow-event-payload-examples.md)
+- [Run Attestor in shadow pilot mode](01-overview/shadow-event-payload-examples.md)
 
 ## Evaluate Trust
 

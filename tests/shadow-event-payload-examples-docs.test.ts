@@ -86,6 +86,9 @@ function testExamplesAreGenericObserveModeAdmissions(): void {
 }
 
 function testDocsExplainTheCorrectBoundary(): void {
+  includes(doc, '# Run Attestor In Shadow Pilot Mode', 'Docs use the shadow pilot title');
+  includes(doc, 'Run Attestor in shadow pilot mode - and map what your AI agents are trying to', 'Docs carry the shadow pilot value line');
+  includes(doc, '## Start Here', 'Docs organize payloads behind a start-here table');
   includes(doc, 'POST /api/v1/admissions', 'Docs point users to the shipped generic admission route');
   includes(doc, 'This page does not define a separate public `/shadow-events` ingest', 'Docs do not invent a shadow ingest route');
   includes(doc, 'Use `mode: "observe"` first.', 'Docs start with shadow mode');

@@ -80,8 +80,8 @@ function testDemoIsReachableFromPackageScriptsAndDocs(): void {
   includes(packageJson.scripts.test, 'scripts/run/run-suite.mjs test', 'Demo: npm test delegates to the suite runner');
   includes(packageJson.scripts.verify, 'scripts/run/run-suite.mjs verify', 'Demo: verify delegates to the suite runner');
 
-  includes(readme, 'npm run demo:golden-refund', 'Demo: README quick start begins with the concrete golden refund path');
-  includes(readme, '[Consequence admission quickstart](docs/01-overview/consequence-admission-quickstart.md)', 'Demo: README links the consequence admission quickstart for the lower-level demo');
+  includes(readme, '[Run the demos in order](docs/01-overview/demo-guide.md)', 'Demo: README links the guided demo path');
+  includes(readme, '[How to integrate Attestor](docs/01-overview/how-to-integrate-attestor.md)', 'Demo: README links the integration guide for the lower-level placement question');
   includes(quickstart, 'npm run example:admission', 'Demo: consequence admission quickstart links demo command');
   includes(quickstart, 'first useful admission demo', 'Demo: consequence admission quickstart explains demo');
 }

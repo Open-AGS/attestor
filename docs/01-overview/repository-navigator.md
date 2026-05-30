@@ -27,7 +27,7 @@ do the next action there, and come back only if you still need more context.
 | "Show me all demos in order." | [Run the demos in order](demo-guide.md) | you have run the refund path, the all-pack path, and the closest integration-shape example. |
 | "Where do I put this in my app?" | [How to integrate Attestor](how-to-integrate-attestor.md) | you can point to the line before the real service is called. |
 | "What code do I copy?" | [Customer middleware examples](../../examples/customer-middleware/README.md) | you have the closest framework example open. |
-| "What JSON do I send?" | [Shadow event payload examples](shadow-event-payload-examples.md) | you have copied the closest payload shape for your action class. |
+| "What JSON do I send?" | [Run Attestor in shadow pilot mode](shadow-event-payload-examples.md) | you have copied the closest payload shape for your action class. |
 | "Why did it review or block?" | [Reason codes](../05-proof/reason-codes.md) | you understand the reason code and the next safe step. |
 | "Is this production-ready?" | [Current state](../../README.md#current-state) | you can separate repo-side evidence from live proof. |
 | "What still needs real deployment evidence?" | [Live proof register](../audit/live-proof-register.md) | you know which proof is live/customer/operator-only. |
@@ -44,7 +44,7 @@ do the next action there, and come back only if you still need more context.
 |---|---|---|
 | Understand Attestor in one minute | [README](../../README.md) | [Try Attestor first](try-attestor-first.md) |
 | Run the demo path | [Run the demos in order](demo-guide.md) | [Golden Path: Refund](../02-architecture/golden-refund-shadow-pilot.md) |
-| Send shadow events | [Shadow event payload examples](shadow-event-payload-examples.md) | [Customer middleware examples](../../examples/customer-middleware/README.md) |
+| Send shadow events | [Run Attestor in shadow pilot mode](shadow-event-payload-examples.md) | [Customer middleware examples](../../examples/customer-middleware/README.md) |
 | Wire a customer app | [How to integrate Attestor](how-to-integrate-attestor.md) | [Customer middleware examples](../../examples/customer-middleware/README.md) |
 | Make the first hosted API call | [First hosted API call](hosted-first-api-call.md) | [Hosted action authorization API](hosted-action-authorization-api.md) |
 | Understand `admit`, `narrow`, `review`, and `block` | [Consequence admission quickstart](consequence-admission-quickstart.md) | [Reason codes](../05-proof/reason-codes.md) |

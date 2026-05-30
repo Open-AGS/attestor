@@ -87,6 +87,7 @@ With that enforced downstream point, Attestor becomes the stop point before acti
 
 Start in shadow mode.
 See what the AI would have done before you let it act.
+[Run Attestor in shadow pilot mode](docs/01-overview/shadow-event-payload-examples.md) - map what your AI agents are trying to do in the shadow of your systems.
 
 ## The Same Pattern Across Actions
 

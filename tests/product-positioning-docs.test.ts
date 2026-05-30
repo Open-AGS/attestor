@@ -55,6 +55,7 @@ function testReadmeKeepsSingleEngineAndCustomerBoundary(): void {
   includes(readme, 'The real service runs only through the customer-owned gate.', 'Product docs: README keeps the customer enforcement boundary');
   includes(readme, 'Without an enforced customer-side gate, gateway, verifier, or adapter, Attestor is advisory evidence.', 'Product docs: README distinguishes advisory evidence from control point');
   includes(readme, 'Start in shadow mode.', 'Product docs: README keeps shadow mode as the adoption wedge');
+  includes(readme, '[Run Attestor in shadow pilot mode](docs/01-overview/shadow-event-payload-examples.md)', 'Product docs: README links the shadow pilot guide');
   includes(readme, 'These are examples over one Attestor engine.', 'Product docs: README keeps one-engine pack framing');
   includes(readme, 'They are not separate products and not equal-maturity claims.', 'Product docs: README keeps pack maturity scoped');
   includes(readme, 'Attestor is a control point, not a data lake.', 'Product docs: README keeps data-posture positioning');

@@ -69,6 +69,8 @@ function testReadmeKeepsTheControlBoundaryAndLocalRunPath(): void {
   includes(readme, 'The real service runs only through the customer-owned gate.', 'README: keeps the customer gate boundary');
   includes(readme, 'Without an enforced customer-side gate, gateway, verifier, or adapter, Attestor is advisory evidence.', 'README: makes advisory versus control posture explicit');
   includes(readme, 'Start in shadow mode.', 'README: keeps the adoption wedge simple');
+  includes(readme, '[Run Attestor in shadow pilot mode](docs/01-overview/shadow-event-payload-examples.md)', 'README: links the shadow pilot path near the adoption wedge');
+  includes(readme, 'map what your AI agents are trying to do in the shadow of your systems', 'README: explains the shadow pilot value plainly');
   includes(readme, 'npm ci', 'README: uses reproducible install for the reviewer path');
   includes(readme, 'npm run demo:golden-refund', 'README: shows the first concrete runnable path');
   includes(readme, '[Run the demos in order](docs/01-overview/demo-guide.md)', 'README: points early to the guided demo path');

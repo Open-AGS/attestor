@@ -520,6 +520,90 @@ async function testReviewSurfaceHtmlPreviewRouteRendersReviewMaterial(): Promise
   ok(!html.includes('raw_note_must_not_escape'), 'Shadow review surface HTML route: raw observed features are not returned');
 }
 
+async function testReviewSurfaceExportRouteReturnsDownloadArtifact(): Promise<void> {
+  const app = createApp([
+    createEvent(),
+    createEvent({
+      mode: 'enforce',
+      policyRef: 'policy:refunds:v1',
+      evidenceRefs: ['order:export_route_raw_evidence_must_not_escape'],
+      occurredAt: '2026-05-03T10:03:02.000Z',
+      blocked: true,
+    }),
+  ]);
+  const response = await app.request('/api/v1/shadow/review-surface/export');
+  const text = await response.text();
+  const body = JSON.parse(text) as {
+    version: string;
+    exportKind: string;
+    mediaType: string;
+    sourceReviewSurfaceDigest: string;
+    reviewSurface: { digest: string; rawPayloadStored: boolean; decisionSupportOnly: boolean };
+    caseDetails: readonly {
+      caseDigest: string;
+      rawCaseMaterialStored: boolean;
+      decisionSupportOnly: boolean;
+      canAdmit: boolean;
+      canBlockAction: boolean;
+    }[];
+    boundary: {
+      rawPayloadStored: boolean;
+      rawCaseMaterialStored: boolean;
+      autoEnforce: boolean;
+      productionReady: boolean;
+      complianceClaimed: boolean;
+      customerPepNoBypassProven: boolean;
+    };
+    digest: string;
+  };
+
+  equal(response.status, 200, 'Shadow review surface export route: valid request returns 200');
+  equal(response.headers.get('cache-control'), 'no-store', 'Shadow review surface export route: response is no-store');
+  ok(
+    response.headers.get('content-type')?.includes('application/json'),
+    'Shadow review surface export route: content type is JSON',
+  );
+  equal(
+    response.headers.get('content-disposition'),
+    'attachment; filename="attestor-review-surface-export.json"',
+    'Shadow review surface export route: content disposition is attachment',
+  );
+  equal(
+    response.headers.get('x-content-type-options'),
+    'nosniff',
+    'Shadow review surface export route: nosniff header is set',
+  );
+  equal(body.version, 'attestor.review-surface-export.v1', 'Shadow review surface export route: export version is returned');
+  equal(body.exportKind, 'attestor-review-surface-json', 'Shadow review surface export route: export kind is stable');
+  equal(body.mediaType, 'application/json', 'Shadow review surface export route: export media type is JSON');
+  equal(
+    body.sourceReviewSurfaceDigest,
+    body.reviewSurface.digest,
+    'Shadow review surface export route: export binds the review surface digest',
+  );
+  ok(body.caseDetails.length > 0, 'Shadow review surface export route: case details are included');
+  equal(body.reviewSurface.rawPayloadStored, false, 'Shadow review surface export route: review surface is data-minimized');
+  equal(body.reviewSurface.decisionSupportOnly, true, 'Shadow review surface export route: review surface is decision support only');
+  equal(body.caseDetails[0]?.rawCaseMaterialStored, false, 'Shadow review surface export route: case material stays out');
+  equal(body.caseDetails[0]?.decisionSupportOnly, true, 'Shadow review surface export route: case details remain decision support only');
+  equal(body.caseDetails[0]?.canAdmit, false, 'Shadow review surface export route: case detail cannot admit');
+  equal(body.caseDetails[0]?.canBlockAction, false, 'Shadow review surface export route: case detail cannot block by itself');
+  equal(body.boundary.rawPayloadStored, false, 'Shadow review surface export route: boundary stores no raw payload');
+  equal(body.boundary.rawCaseMaterialStored, false, 'Shadow review surface export route: boundary stores no raw case material');
+  equal(body.boundary.autoEnforce, false, 'Shadow review surface export route: export never auto-enforces');
+  equal(body.boundary.productionReady, false, 'Shadow review surface export route: production readiness is not claimed');
+  equal(body.boundary.complianceClaimed, false, 'Shadow review surface export route: compliance is not claimed');
+  equal(
+    body.boundary.customerPepNoBypassProven,
+    false,
+    'Shadow review surface export route: customer PEP no-bypass proof is not claimed',
+  );
+  ok(body.digest.startsWith('sha256:'), 'Shadow review surface export route: export digest is returned');
+  ok(!text.includes('raw_customer_marker_must_not_escape'), 'Shadow review surface export route: raw recipient is not returned');
+  ok(!text.includes('export_route_raw_evidence_must_not_escape'), 'Shadow review surface export route: raw evidence ids are not returned');
+  ok(!text.includes('raw_note_must_not_escape'), 'Shadow review surface export route: raw observed features are not returned');
+}
+
 async function testReviewSurfaceCaseRouteReturnsDigestOnlyDetail(): Promise<void> {
   const app = createApp([
     createEvent(),
@@ -723,6 +807,7 @@ await testBusinessRiskDashboardRouteIsDecisionSupportOnly();
 await testDashboardSummaryRouteReturnsCompactBusinessView();
 await testReviewSurfaceRouteReturnsDigestOnlyWorkspace();
 await testReviewSurfaceHtmlPreviewRouteRendersReviewMaterial();
+await testReviewSurfaceExportRouteReturnsDownloadArtifact();
 await testReviewSurfaceCaseRouteReturnsDigestOnlyDetail();
 await testReviewSurfaceCaseRouteRejectsUnknownCase();
 await testEmptyDashboardRoutesAreExplicit();

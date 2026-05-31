@@ -13,6 +13,11 @@ import {
 } from '../../../consequence-admission/index.js';
 import type { TenantContext } from '../../tenant-isolation.js';
 import { secureHtmlResponseHeaders } from '../route-response-helpers.js';
+import {
+  attestorReviewSurfaceExportHeaders,
+  createAttestorReviewSurfaceExportArtifact,
+  serializeAttestorReviewSurfaceExportArtifact,
+} from '../../shadow/attestor-review-surface-export.js';
 import { renderAttestorReviewSurfaceHtmlPreview } from '../../shadow/attestor-review-surface-html-preview.js';
 import type { ShadowRouteDeps } from './shadow-routes.js';
 import {
@@ -143,6 +148,23 @@ function createShadowReviewSurfaceReadModels(
       generatedAt: result.surface.generatedAt,
     }),
   };
+}
+
+function createShadowReviewCaseDetail(
+  result: SafeShadowReviewSurfaceResult,
+  caseDigest: string,
+): ReturnType<typeof createAttestorReviewCaseDetail> {
+  return createAttestorReviewCaseDetail({
+    reviewSurface: result.reviewSurface,
+    caseDigest,
+    eventDigests: result.auditEvidence.sampleEventDigests,
+    evidenceDigests: result.auditEvidence.artifactRefs.map((artifact) => artifact.digest),
+    proofLinkDigests: [
+      result.auditEvidence.digest,
+      result.dashboard.digest,
+      result.summary.digest,
+    ],
+  });
 }
 
 export function safeShadowReviewSurface(
@@ -310,22 +332,48 @@ export function registerShadowSummaryDashboardRoutes(app: Hono, deps: ShadowRout
     );
   });
 
+  app.get('/api/v1/shadow/review-surface/export', (c) => {
+    const result = safeShadowReviewSurface(c, deps);
+    if (result instanceof Response) return result;
+
+    try {
+      const artifact = createAttestorReviewSurfaceExportArtifact({
+        reviewSurface: result.reviewSurface,
+        caseDetails: result.reviewSurface.caseDigests.map((caseDigest) =>
+          createShadowReviewCaseDetail(result, caseDigest)
+        ),
+        generatedAt: deps.now?.() ?? result.reviewSurface.generatedAt,
+      });
+
+      return c.body(
+        serializeAttestorReviewSurfaceExportArtifact(artifact),
+        200,
+        attestorReviewSurfaceExportHeaders(),
+      );
+    } catch (error) {
+      return problem(c, {
+        type: 'https://attestor.dev/problems/attestor-review-surface-export-unavailable',
+        title: 'Attestor review surface export unavailable',
+        status: 503,
+        detail: boundedErrorDetail(
+          error,
+          'The Attestor review surface export could not be evaluated.',
+          {
+            tenantBoundarySafeDetail:
+              'The Attestor review surface export rejected a tenant boundary violation.',
+          },
+        ),
+        reasonCodes: ['attestor-review-surface-export-unavailable'],
+      });
+    }
+  });
+
   app.get('/api/v1/shadow/review-surface/cases/:caseDigest', (c) => {
     const result = safeShadowReviewSurface(c, deps);
     if (result instanceof Response) return result;
 
     try {
-      const caseDetail = createAttestorReviewCaseDetail({
-        reviewSurface: result.reviewSurface,
-        caseDigest: c.req.param('caseDigest'),
-        eventDigests: result.auditEvidence.sampleEventDigests,
-        evidenceDigests: result.auditEvidence.artifactRefs.map((artifact) => artifact.digest),
-        proofLinkDigests: [
-          result.auditEvidence.digest,
-          result.dashboard.digest,
-          result.summary.digest,
-        ],
-      });
+      const caseDetail = createShadowReviewCaseDetail(result, c.req.param('caseDigest'));
 
       return c.json({
         tenant: tenantSummary(result.tenant),

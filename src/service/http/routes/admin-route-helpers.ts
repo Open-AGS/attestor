@@ -175,6 +175,16 @@ function matchedAdminCredentialRoles(token: string): readonly AdminOperatorRole[
     .map((entry) => entry.role);
 }
 
+function credentialBoundActorId(role: AdminOperatorRole): string {
+  return `admin-credential:${role}`;
+}
+
+function credentialBoundActorDisplayName(role: AdminOperatorRole): string {
+  return role === ADMIN_SUPERUSER_ROLE
+    ? 'Admin Superuser Credential'
+    : `Admin Credential (${role})`;
+}
+
 function adminRouteActorFromRequest(
   context: Context,
   allowedRoles: AdminRouteRoleSet,
@@ -205,17 +215,17 @@ function adminRouteActorFromRequest(
     }, 403);
   }
 
-  const actorId = context.req.header('x-attestor-admin-actor-id')?.trim() || requestedRole;
-  const actorName = context.req.header('x-attestor-admin-actor-name')?.trim() || actorId;
+  const actorId = credentialBoundActorId(credentialRole);
+  const actorName = credentialBoundActorDisplayName(credentialRole);
   return {
-    actorType: actorId === 'admin-superuser' && requestedRole === ADMIN_SUPERUSER_ROLE
+    actorType: credentialRole === ADMIN_SUPERUSER_ROLE
       ? 'admin_api_key'
       : 'admin_operator',
     actorLabel: actorId,
     actorRole: requestedRole,
     releaseActor: {
       id: actorId,
-      type: actorId === 'admin-superuser' ? 'service' : 'user',
+      type: 'service',
       displayName: actorName,
       role: requestedRole,
     },

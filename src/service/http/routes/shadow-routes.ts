@@ -4,6 +4,7 @@ import {
   createShadowPolicyDiscoveryCandidates,
   type GenericAdmissionMode,
   type ShadowAdmissionEvent,
+  type ShadowCustomerActivationHandoff,
   type ShadowCustomerActivationReceiptStatus,
   type ShadowPolicyBundlePublicationSignature,
   type ShadowPolicyBundleSigningPayload,
@@ -11,7 +12,9 @@ import {
 } from '../../../consequence-admission/index.js';
 import {
   type AppendShadowCustomerActivationReceiptResult,
+  type AppendShadowCustomerActivationHandoffResult,
   type AppendShadowPolicySimulationReportResult,
+  type ShadowCustomerActivationHandoffStoreRecord,
   type ShadowCustomerActivationReceiptStoreRecord,
   type ShadowPolicyCandidateStatus,
   type ShadowPolicyCandidateStoreRecord,
@@ -68,6 +71,14 @@ export interface ShadowRouteDeps {
     readonly tenant: TenantContext;
     readonly receipt: ReturnType<typeof createShadowCustomerActivationReceipt>;
   }): AppendShadowCustomerActivationReceiptResult;
+  recordShadowCustomerActivationHandoff?(input: {
+    readonly tenant: TenantContext;
+    readonly handoff: ShadowCustomerActivationHandoff;
+  }): AppendShadowCustomerActivationHandoffResult;
+  findShadowCustomerActivationHandoff?(input: {
+    readonly tenant: TenantContext;
+    readonly handoffId: string;
+  }): ShadowCustomerActivationHandoffStoreRecord | null;
   listShadowCustomerActivationReceiptRecords?(input: {
     readonly tenant: TenantContext;
     readonly activationStatus: ShadowCustomerActivationReceiptStatus | null;

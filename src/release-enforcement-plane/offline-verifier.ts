@@ -131,6 +131,13 @@ export interface OfflineReleaseVerification {
   readonly checkedAt: string;
   readonly profile: VerificationProfile;
   readonly freshness: ReleaseFreshnessEvaluation | null;
+  readonly tenantBinding: {
+    readonly expectedTenantId: string | null;
+    readonly expectedSource: 'input' | 'request-enforcement-point' | 'tenantless-explicit';
+    readonly claimsTenantId: string | null;
+    readonly checked: boolean;
+    readonly matched: boolean | null;
+  };
   readonly verificationResult: VerificationResult;
   readonly tokenVerification: ReleaseTokenVerificationResult | null;
   readonly claims: ReleaseTokenClaims | null;
@@ -180,7 +187,7 @@ function expectedBindingForRequest(
   const request = input.request;
   return {
     audience: input.expected?.audience ?? request.targetId,
-    tenantId: input.expected?.tenantId ?? null,
+    tenantId: expectedTenantIdForRequest(input).tenantId,
     releaseTokenId: input.expected?.releaseTokenId ?? request.releaseTokenId ?? '',
     releaseDecisionId: input.expected?.releaseDecisionId ?? request.releaseDecisionId ?? '',
     consequenceType: input.expected?.consequenceType ?? request.enforcementPoint.consequenceType,
@@ -195,6 +202,42 @@ function expectedBindingForRequest(
     compiledPolicyIrVersion: input.expected?.compiledPolicyIrVersion ?? '',
     policyContext: input.expected?.policyContext ?? null,
   };
+}
+
+function expectedTenantIdForRequest(input: OfflineReleaseVerificationInput): {
+  readonly tenantId: string | null;
+  readonly source: 'input' | 'request-enforcement-point' | 'tenantless-explicit';
+} {
+  const expected = input.expected;
+  if (
+    expected !== undefined &&
+    Object.prototype.hasOwnProperty.call(expected, 'tenantId')
+  ) {
+    return {
+      tenantId: expected.tenantId ?? null,
+      source: expected.tenantId === null ? 'tenantless-explicit' : 'input',
+    };
+  }
+  return {
+    tenantId: input.request.enforcementPoint.tenantId ?? null,
+    source: 'request-enforcement-point',
+  };
+}
+
+function tenantBindingResult(input: {
+  readonly verifierInput: OfflineReleaseVerificationInput;
+  readonly claims: ReleaseTokenClaims | null;
+}): OfflineReleaseVerification['tenantBinding'] {
+  const expected = expectedTenantIdForRequest(input.verifierInput);
+  const claimsTenantId = input.claims?.tenant_id ?? null;
+  const checked = expected.tenantId !== null;
+  return Object.freeze({
+    expectedTenantId: expected.tenantId,
+    expectedSource: expected.source,
+    claimsTenantId,
+    checked,
+    matched: checked ? claimsTenantId === expected.tenantId : null,
+  });
 }
 
 function resolveProfile(input: OfflineReleaseVerificationInput): VerificationProfile {
@@ -933,6 +976,10 @@ export async function verifyOfflineReleaseAuthorization(
     checkedAt,
     profile,
     freshness,
+    tenantBinding: tenantBindingResult({
+      verifierInput: input,
+      claims,
+    }),
     verificationResult,
     tokenVerification,
     claims,

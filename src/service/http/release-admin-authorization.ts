@@ -161,6 +161,37 @@ function matchedAdminCredentialRole(token: string): {
   return { configured: true, role: matchedRole };
 }
 
+function credentialBoundActorId(role: AdminOperatorRole): string {
+  return `admin-credential:${role}`;
+}
+
+function credentialBoundActorDisplayName(role: AdminOperatorRole): string {
+  return role === ADMIN_SUPERUSER_ROLE
+    ? 'Admin Superuser Credential'
+    : `Admin Credential (${role})`;
+}
+
+function policyActorRoleForCredential(role: AdminOperatorRole): string {
+  switch (role) {
+    case 'admin-superuser':
+    case 'admin-release-admin':
+      return 'policy-admin';
+    case 'admin-break-glass':
+      return 'policy-break-glass';
+    case 'admin-audit':
+      return 'policy-auditor';
+    case 'admin-read':
+      return 'policy-reader';
+    case 'admin-account-admin':
+    case 'admin-key-admin':
+    case 'admin-billing-admin':
+    case 'admin-ops-admin':
+      return role;
+    default:
+      return role;
+  }
+}
+
 export function authorizeReleaseAdminRoute(
   context: Context,
   allowedRoles: ReleaseAdminRouteRoleSet,
@@ -203,15 +234,14 @@ export function authorizeReleaseAdminRoute(
     }, 403);
   }
 
-  const actorId = context.req.header('x-attestor-admin-actor-id')?.trim() || requestedAdminRole;
-  const actorName = context.req.header('x-attestor-admin-actor-name')?.trim() || actorId;
-  const releaseActorRole =
-    context.req.header(RELEASE_POLICY_ACTOR_ROLE_HEADER)?.trim() || requestedAdminRole;
+  const actorId = credentialBoundActorId(credentialRole);
+  const actorName = credentialBoundActorDisplayName(credentialRole);
+  const releaseActorRole = policyActorRoleForCredential(credentialRole);
   const actor: ReleaseAdminRouteActor = {
     adminRole: requestedAdminRole,
     releaseActor: {
       id: actorId,
-      type: actorId === 'admin-superuser' ? 'service' : 'user',
+      type: 'service',
       displayName: actorName,
       role: releaseActorRole,
     },

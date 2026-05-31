@@ -23,6 +23,10 @@ export function defaultShadowCustomerActivationReceiptStorePath(): string {
   return resolve(process.env.ATTESTOR_SHADOW_CUSTOMER_ACTIVATION_RECEIPT_STORE_PATH ?? '.attestor/shadow-customer-activation-receipts.json');
 }
 
+export function defaultShadowCustomerActivationHandoffStorePath(): string {
+  return resolve(process.env.ATTESTOR_SHADOW_CUSTOMER_ACTIVATION_HANDOFF_STORE_PATH ?? '.attestor/shadow-customer-activation-handoffs.json');
+}
+
 export function normalizeIdentifier(value: string | null | undefined, fieldName: string): string {
   if (typeof value !== 'string') {
     throw new Error(`Shadow persistence ${fieldName} requires a string.`);

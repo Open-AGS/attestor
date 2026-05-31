@@ -4,11 +4,13 @@ import {
   createGenericAdmissionEnvelope,
   createShadowAdmissionEvent,
   type ShadowAdmissionEvent,
+  type ShadowCustomerActivationHandoff,
 } from '../src/consequence-admission/index.js';
 import { registerShadowRoutes, type ShadowRouteDeps } from '../src/service/http/routes/shadow-routes.js';
 import type {
   AppendShadowCustomerActivationReceiptResult,
   AppendShadowPolicySimulationReportResult,
+  ShadowCustomerActivationHandoffStoreRecord,
   ShadowCustomerActivationReceiptStoreRecord,
   ShadowPolicyCandidateStoreRecord,
   ShadowPolicySimulationReportStoreRecord,
@@ -88,6 +90,52 @@ function foreignCandidateRecord(): ShadowPolicyCandidateStoreRecord {
 
 function foreignReceiptRecord(): ShadowCustomerActivationReceiptStoreRecord {
   return { tenantId: tenantB.tenantId } as unknown as ShadowCustomerActivationReceiptStoreRecord;
+}
+
+function localHandoff(): ShadowCustomerActivationHandoff {
+  return {
+    version: 'attestor.shadow-customer-activation-handoff.v1',
+    tenantId: tenantA.tenantId,
+    handoffId: 'handoff_tenant_route',
+    digest: digestA,
+    sourceActivationReadinessDigest: digestB,
+    sourceIntegrationProofDigest: digestC,
+    sourcePublicationDigest: digestD,
+    sourceBindingDigest: digestE,
+    sourceSimulationDigest: digestF,
+    activationRef: 'activation:route',
+    operatorRef: 'operator:route',
+    rolloutStrategy: 'manual',
+    expiresAt: null,
+    controlRefs: [],
+    controlDigest: digestA,
+    customerControlsReady: true,
+    activationReadinessReady: true,
+    handoffReady: true,
+    handoffInstruction: 'Customer controls are ready for manual activation.',
+    remainingActivationBlockers: [],
+    approvalRequired: true,
+    autoEnforce: false,
+    productionReady: false,
+    generatedAt: '2026-05-05T08:02:00.000Z',
+    rawPayloadStored: false,
+    canonical: '{}',
+  } as unknown as ShadowCustomerActivationHandoff;
+}
+
+function localHandoffRecord(): ShadowCustomerActivationHandoffStoreRecord {
+  const handoff = localHandoff();
+  return {
+    version: 'attestor.shadow-customer-activation-handoff-store.v1',
+    tenantId: tenantA.tenantId,
+    handoffId: handoff.handoffId,
+    handoffDigest: handoff.digest,
+    sourceActivationReadinessDigest: handoff.sourceActivationReadinessDigest,
+    handoffReady: handoff.handoffReady,
+    recordedAt: '2026-05-05T08:02:00.000Z',
+    handoff,
+    rawPayloadStored: false,
+  };
 }
 
 async function expectTenantBoundaryFailure(
@@ -186,6 +234,7 @@ async function testPolicyCandidateTransitionRejectsForeignRecord(): Promise<void
 
 async function testCustomerActivationReceiptCreateRejectsForeignPersistedRecord(): Promise<void> {
   const app = createApp({
+    findShadowCustomerActivationHandoff: () => localHandoffRecord(),
     recordShadowCustomerActivationReceipt: () => ({
       kind: 'recorded',
       record: foreignReceiptRecord(),
@@ -198,34 +247,8 @@ async function testCustomerActivationReceiptCreateRejectsForeignPersistedRecord(
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
-        handoff: {
-          version: 'attestor.shadow-customer-activation-handoff.v1',
-          tenantId: tenantA.tenantId,
-          handoffId: 'handoff_tenant_route',
-          digest: digestA,
-          sourceActivationReadinessDigest: digestB,
-          sourceIntegrationProofDigest: digestC,
-          sourcePublicationDigest: digestD,
-          sourceBindingDigest: digestE,
-          sourceSimulationDigest: digestF,
-          activationRef: 'activation:route',
-          operatorRef: 'operator:route',
-          rolloutStrategy: 'manual',
-          expiresAt: null,
-          controlRefs: [],
-          controlDigest: digestA,
-          customerControlsReady: true,
-          activationReadinessReady: true,
-          handoffReady: true,
-          handoffInstruction: 'Customer controls are ready for manual activation.',
-          remainingActivationBlockers: [],
-          approvalRequired: true,
-          autoEnforce: false,
-          productionReady: false,
-          generatedAt: '2026-05-05T08:02:00.000Z',
-          rawPayloadStored: false,
-          canonical: '{}',
-        },
+        handoffId: 'handoff_tenant_route',
+        handoffDigest: digestA,
         activationStatus: 'activated',
         attemptedAt: '2026-05-05T08:03:00.000Z',
         observedAt: '2026-05-05T08:03:01.000Z',

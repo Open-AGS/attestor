@@ -151,7 +151,7 @@ async function testRoleScopedAccountKeyCanCreateAccountAndAuditsActor(): Promise
 
     assert.equal(result.status, 201);
     assert.equal(capturedAudit.actor?.actorType, 'admin_operator');
-    assert.equal(capturedAudit.actor?.actorLabel, 'operator:account-admin');
+    assert.equal(capturedAudit.actor?.actorLabel, 'admin-credential:admin-account-admin');
     assert.equal(capturedAudit.actor?.actorRole, 'admin-account-admin');
   } finally {
     restore();

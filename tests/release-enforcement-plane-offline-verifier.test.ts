@@ -214,6 +214,7 @@ async function testLowRiskOfflineAllow(): Promise<void> {
     decision,
     issuedAt: '2026-04-18T08:00:00.000Z',
     tokenId: 'rt_low_risk',
+    tenantId: 'tenant-test',
   });
   const request = makeRequest({
     id: 'erq-low-risk',
@@ -284,6 +285,7 @@ async function testHighRiskNeedsOnline(): Promise<void> {
     decision,
     issuedAt: '2026-04-18T08:00:00.000Z',
     tokenId: 'rt_r4_record',
+    tenantId: 'tenant-test',
     confirmation: createMtlsReleaseTokenConfirmation({
       certificateThumbprint: 'cert-thumbprint',
       spiffeId: 'spiffe://attestor/tests/finance-writer',
@@ -351,6 +353,7 @@ async function testMissingReplayLedgerLookupFails(): Promise<void> {
     decision,
     issuedAt: '2026-04-18T08:00:00.000Z',
     tokenId: 'rt_missing_replay_ledger',
+    tenantId: 'tenant-test',
   });
   const request = makeRequest({
     id: 'erq-missing-replay-ledger',
@@ -391,6 +394,7 @@ async function testAudienceMismatchFails(): Promise<void> {
     decision,
     issuedAt: '2026-04-18T08:00:00.000Z',
     tokenId: 'rt_audience',
+    tenantId: 'tenant-test',
   });
   const request = makeRequest({
     id: 'erq-audience',
@@ -416,6 +420,71 @@ async function testAudienceMismatchFails(): Promise<void> {
   equal(verified.verificationResult.status, 'invalid', 'Offline verifier: invalid audience flows into verification result');
 }
 
+async function testRequestTenantIsCheckedByDefault(): Promise<void> {
+  const { issuer, verificationKey } = await setupIssuer();
+  const decision = makeDecision({
+    id: 'decision-tenant',
+    consequenceType: 'decision-support',
+    riskClass: 'R1',
+    targetId: 'analytics.memo.preview',
+  });
+  const issued = await issuer.issue({
+    decision,
+    issuedAt: '2026-04-18T08:00:00.000Z',
+    tokenId: 'rt_tenant_mismatch',
+    tenantId: 'tenant-other',
+  });
+  const request = makeRequest({
+    id: 'erq-tenant',
+    targetId: 'analytics.memo.preview',
+    releaseTokenId: issued.tokenId,
+    releaseDecisionId: decision.id,
+  });
+
+  const mismatch = await verifyOfflineReleaseAuthorization({
+    request,
+    presentation: bearerPresentation({
+      token: issued.token,
+      tokenId: issued.tokenId,
+      decisionId: decision.id,
+      audience: 'analytics.memo.preview',
+    }),
+    verificationKey,
+    now: '2026-04-18T08:01:00.000Z',
+    replayLedgerEntry: null,
+  });
+
+  equal(mismatch.status, 'invalid', 'Offline verifier: request tenant mismatch is invalid by default');
+  deepEqual(mismatch.failureReasons, ['binding-mismatch'], 'Offline verifier: tenant mismatch maps to binding mismatch');
+  equal(mismatch.tenantBinding.expectedTenantId, 'tenant-test', 'Offline verifier: request tenant is the default expected tenant');
+  equal(mismatch.tenantBinding.expectedSource, 'request-enforcement-point', 'Offline verifier: tenant expectation source is visible');
+  equal(mismatch.tenantBinding.claimsTenantId, 'tenant-other', 'Offline verifier: tenant binding records token tenant');
+  equal(mismatch.tenantBinding.checked, true, 'Offline verifier: tenant binding was checked');
+  equal(mismatch.tenantBinding.matched, false, 'Offline verifier: tenant binding mismatch is visible');
+
+  const explicitTenantless = await verifyOfflineReleaseAuthorization({
+    request,
+    presentation: bearerPresentation({
+      token: issued.token,
+      tokenId: issued.tokenId,
+      decisionId: decision.id,
+      audience: 'analytics.memo.preview',
+    }),
+    verificationKey,
+    now: '2026-04-18T08:01:00.000Z',
+    expected: {
+      tenantId: null,
+    },
+    replayLedgerEntry: null,
+  });
+
+  equal(explicitTenantless.status, 'valid', 'Offline verifier: explicit tenantless verification can opt out');
+  equal(explicitTenantless.tenantBinding.expectedTenantId, null, 'Offline verifier: explicit tenantless expected tenant is null');
+  equal(explicitTenantless.tenantBinding.expectedSource, 'tenantless-explicit', 'Offline verifier: explicit tenantless source is visible');
+  equal(explicitTenantless.tenantBinding.checked, false, 'Offline verifier: explicit tenantless verification skips tenant check visibly');
+  equal(explicitTenantless.tenantBinding.matched, null, 'Offline verifier: skipped tenant check has no match value');
+}
+
 async function testOutputAndConsequenceBindingMismatchFails(): Promise<void> {
   const { issuer, verificationKey } = await setupIssuer();
   const decision = makeDecision({
@@ -428,6 +497,7 @@ async function testOutputAndConsequenceBindingMismatchFails(): Promise<void> {
     decision,
     issuedAt: '2026-04-18T08:00:00.000Z',
     tokenId: 'rt_binding',
+    tenantId: 'tenant-test',
   });
   const request = makeRequest({
     id: 'erq-binding',
@@ -465,6 +535,7 @@ async function testConsequenceAndRiskBindingMismatchFails(): Promise<void> {
     decision,
     issuedAt: '2026-04-18T08:00:00.000Z',
     tokenId: 'rt_risk',
+    tenantId: 'tenant-test',
   });
   const request = makeRequest({
     id: 'erq-risk',
@@ -505,6 +576,7 @@ async function testPolicyAndDigestBindingMismatchFails(): Promise<void> {
     decision,
     issuedAt: '2026-04-18T08:00:00.000Z',
     tokenId: 'rt_policy',
+    tenantId: 'tenant-test',
   });
   const request = makeRequest({
     id: 'erq-policy',
@@ -544,6 +616,7 @@ async function testPolicyIrBindingMismatchFailsAsStalePolicy(): Promise<void> {
     decision,
     issuedAt: '2026-04-18T08:00:00.000Z',
     tokenId: 'rt_policy_ir',
+    tenantId: 'tenant-test',
   });
   const request = makeRequest({
     id: 'erq-policy-ir',
@@ -628,6 +701,7 @@ async function testRequiredPolicyProvenanceMissingFailsClosed(): Promise<void> {
     decision,
     issuedAt: '2026-04-18T08:00:00.000Z',
     tokenId: 'rt_r4_missing_policy_provenance',
+    tenantId: 'tenant-test',
     confirmation: createMtlsReleaseTokenConfirmation({
       certificateThumbprint: 'cert-thumbprint',
       spiffeId: 'spiffe://attestor/tests/finance-writer',
@@ -686,6 +760,7 @@ async function testReplayLedgerHitFails(): Promise<void> {
     decision,
     issuedAt: '2026-04-18T08:00:00.000Z',
     tokenId: 'rt_replay',
+    tenantId: 'tenant-test',
   });
   const request = makeRequest({
     id: 'erq-replay',
@@ -728,6 +803,7 @@ async function testExpiredTokenFails(): Promise<void> {
     decision,
     issuedAt: '2026-04-18T08:00:00.000Z',
     tokenId: 'rt_expired',
+    tenantId: 'tenant-test',
     ttlSeconds: 60,
   });
   const request = makeRequest({
@@ -766,6 +842,7 @@ async function testWrongVerificationKeyFails(): Promise<void> {
     decision,
     issuedAt: '2026-04-18T08:00:00.000Z',
     tokenId: 'rt_wrong_key',
+    tenantId: 'tenant-test',
   });
   const request = makeRequest({
     id: 'erq-wrong-key',
@@ -825,6 +902,7 @@ async function testDisallowedPresentationModeFails(): Promise<void> {
     decision,
     issuedAt: '2026-04-18T08:00:00.000Z',
     tokenId: 'rt_mode',
+    tenantId: 'tenant-test',
   });
   const request = makeRequest({
     id: 'erq-mode',
@@ -871,6 +949,7 @@ async function main(): Promise<void> {
   await testHighRiskNeedsOnline();
   await testMissingReplayLedgerLookupFails();
   await testAudienceMismatchFails();
+  await testRequestTenantIsCheckedByDefault();
   await testOutputAndConsequenceBindingMismatchFails();
   await testConsequenceAndRiskBindingMismatchFails();
   await testPolicyAndDigestBindingMismatchFails();

@@ -17,6 +17,7 @@ import {
 } from '../src/release-policy-control-plane/store.js';
 import {
   createInMemoryPolicyActivationApprovalStore,
+  requestPolicyActivationApproval,
   type PolicyActivationApprovalStore,
 } from '../src/release-policy-control-plane/activation-approvals.js';
 import {
@@ -289,25 +290,24 @@ async function publishBundleThroughRoutes(
 }
 
 async function requestAndApproveActivation(fixture: TestAppFixture): Promise<string> {
-  const request = await requestJson(fixture.app, '/api/v1/admin/release-policy/activation-approvals', {
-    method: 'POST',
-    headers: adminHeaders({
-      'x-attestor-admin-actor-id': 'requester_policy_admin',
-      'x-attestor-policy-actor-role': 'policy-admin',
-    }),
-    body: {
-      approvalRequestId: 'approval_prod_current',
-      packId: 'finance-core',
-      bundleId: 'bundle_finance_core_2026_04_18',
-      target: sampleTarget(),
-      rationale: 'Request policy activation approval.',
-      requestedAt: '2026-04-18T09:08:00.000Z',
-      expiresAt: '2026-04-19T09:08:00.000Z',
+  const bundle = await fixture.store.getBundle('finance-core', 'bundle_finance_core_2026_04_18');
+  assert.notEqual(bundle, null);
+  const request = requestPolicyActivationApproval(fixture.approvalStore, {
+    id: 'approval_prod_current',
+    target: createPolicyActivationTarget(sampleTarget()),
+    bundleRecord: bundle!,
+    requestedBy: {
+      id: 'external-change-manager',
+      type: 'user',
+      displayName: 'External Change Manager',
+      role: 'policy-admin',
     },
+    requestedAt: '2026-04-18T09:08:00.000Z',
+    expiresAt: '2026-04-19T09:08:00.000Z',
+    rationale: 'Request policy activation approval.',
   });
-  assert.equal(request.status, 201);
-  assert.equal(request.body.approvalRequest.state, 'pending');
-  assert.equal(request.body.approvalRequest.requirement.requiredApprovals, 2);
+  assert.equal(request.state, 'pending');
+  assert.equal(request.requirement.requiredApprovals, 2);
 
   const first = await requestJson(
     fixture.app,
@@ -317,7 +317,7 @@ async function requestAndApproveActivation(fixture: TestAppFixture): Promise<str
       headers: adminHeaders({
         'x-attestor-admin-actor-id': 'risk_owner',
         'x-attestor-policy-actor-role': 'risk-owner',
-      }),
+      }, 'admin-release-secret'),
       body: {
         rationale: 'Risk owner approves activation.',
         decidedAt: '2026-04-18T09:09:00.000Z',
@@ -326,6 +326,8 @@ async function requestAndApproveActivation(fixture: TestAppFixture): Promise<str
   );
   assert.equal(first.status, 200);
   assert.equal(first.body.approvalRequest.state, 'pending');
+  assert.equal(first.body.decision.reviewer.id, 'admin-credential:admin-release-admin');
+  assert.equal(first.body.decision.reviewer.role, 'policy-admin');
 
   const second = await requestJson(
     fixture.app,
@@ -335,7 +337,7 @@ async function requestAndApproveActivation(fixture: TestAppFixture): Promise<str
       headers: adminHeaders({
         'x-attestor-admin-actor-id': 'compliance_officer',
         'x-attestor-policy-actor-role': 'compliance-officer',
-      }),
+      }, 'admin-secret'),
       body: {
         rationale: 'Compliance approves activation.',
         decidedAt: '2026-04-18T09:10:00.000Z',
@@ -344,6 +346,8 @@ async function requestAndApproveActivation(fixture: TestAppFixture): Promise<str
   );
   assert.equal(second.status, 200);
   assert.equal(second.body.approvalRequest.state, 'approved');
+  assert.equal(second.body.decision.reviewer.id, 'admin-credential:admin-superuser');
+  assert.equal(second.body.decision.reviewer.role, 'policy-admin');
 
   return 'approval_prod_current';
 }
@@ -492,7 +496,7 @@ async function testApprovalRoutesEnforceDualReview(): Promise<void> {
   assert.equal(listed.body.approvalRequests.length, 1);
   assert.deepEqual(
     listed.body.approvalRequests[0].approvedReviewerIds,
-    ['compliance_officer', 'risk_owner'],
+    ['admin-credential:admin-release-admin', 'admin-credential:admin-superuser'],
   );
 }
 
@@ -536,7 +540,6 @@ async function testActivationAndRollbackSurfaces(): Promise<void> {
     [
       'create-pack',
       'publish-bundle',
-      'request-activation-approval',
       'approve-activation',
       'approve-activation',
       'activate-bundle',
@@ -844,7 +847,7 @@ async function testTypedErrorsUseBoundedStatusMappings(): Promise<void> {
       headers: adminHeaders({
         'x-attestor-admin-actor-id': 'risk_owner',
         'x-attestor-policy-actor-role': 'risk-owner',
-      }),
+      }, 'admin-release-secret'),
       body: {
         rationale: 'Risk owner approves activation.',
       },
@@ -858,7 +861,7 @@ async function testTypedErrorsUseBoundedStatusMappings(): Promise<void> {
       headers: adminHeaders({
         'x-attestor-admin-actor-id': 'risk_owner',
         'x-attestor-policy-actor-role': 'risk-owner',
-      }),
+      }, 'admin-release-secret'),
       body: {
         rationale: 'Risk owner attempts a duplicate approval.',
       },

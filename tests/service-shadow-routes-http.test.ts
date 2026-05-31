@@ -17,6 +17,7 @@ import {
   type ShadowMutationAuditInput,
 } from '../src/service/http/routes/shadow-routes.js';
 import {
+  createFileBackedShadowCustomerActivationHandoffStore,
   createFileBackedShadowCustomerActivationReceiptStore,
   createFileBackedShadowPolicyCandidateStore,
   createFileBackedShadowPolicySimulationReportStore,
@@ -102,6 +103,9 @@ function createApp(
   const candidateStore = createFileBackedShadowPolicyCandidateStore({
     path: join(tempDir, `candidates-${auditInputs.length}-${Date.now()}.json`),
   });
+  const handoffStore = createFileBackedShadowCustomerActivationHandoffStore({
+    path: join(tempDir, `handoffs-${auditInputs.length}-${Date.now()}.json`),
+  });
   const receiptStore = createFileBackedShadowCustomerActivationReceiptStore({
     path: join(tempDir, `receipts-${auditInputs.length}-${Date.now()}.json`),
   });
@@ -149,6 +153,16 @@ function createApp(
         status,
         actorRef,
         reason,
+      }).record,
+    recordShadowCustomerActivationHandoff: ({ tenant: routeTenant, handoff }) =>
+      handoffStore.append({
+        tenantId: routeTenant.tenantId,
+        handoff,
+      }),
+    findShadowCustomerActivationHandoff: ({ tenant: routeTenant, handoffId }) =>
+      handoffStore.find({
+        tenantId: routeTenant.tenantId,
+        handoffId,
       }).record,
     recordShadowCustomerActivationReceipt: ({ tenant: routeTenant, receipt }) =>
       receiptStore.append({
@@ -315,7 +329,8 @@ async function seedShadowState(app: Hono): Promise<{
   };
 
   const receiptResponse = await postJson(app, '/api/v1/shadow/customer-activation-receipt', {
-    handoff: handoff.handoff,
+    handoffId: handoff.handoff.handoffId,
+    handoffDigest: handoff.handoff.digest,
     activationStatus: 'activated',
     attemptedAt: '2026-05-21T09:11:00.000Z',
     observedAt: '2026-05-21T09:12:00.000Z',
@@ -385,7 +400,8 @@ async function testAllShadowRoutesHaveHttpCoverage(): Promise<void> {
     ['POST /activation-readiness', postJson(app, '/api/v1/shadow/activation-readiness', proofBody())],
     ['POST /customer-activation-handoff', postJson(app, '/api/v1/shadow/customer-activation-handoff?status=approved', handoffBody())],
     ['POST /customer-activation-receipt', postJson(app, '/api/v1/shadow/customer-activation-receipt', {
-      handoff: seeded.handoff,
+      handoffId: seeded.handoff.handoffId,
+      handoffDigest: seeded.handoff.digest,
       activationStatus: 'activated',
       attemptedAt: '2026-05-21T09:21:00.000Z',
       observedAt: '2026-05-21T09:22:00.000Z',
@@ -641,7 +657,8 @@ async function testShadowListRoutesApplyPaginationBounds(): Promise<void> {
   await postJson(app, '/api/v1/shadow/simulations', { proposedMode: 'review', minimumPromotionEvents: 6 });
   await postJson(app, '/api/v1/shadow/simulations', { proposedMode: 'review', minimumPromotionEvents: 7 });
   await postJson(app, '/api/v1/shadow/customer-activation-receipt', {
-    handoff: seeded.handoff,
+    handoffId: seeded.handoff.handoffId,
+    handoffDigest: seeded.handoff.digest,
     activationStatus: 'activated',
     attemptedAt: '2026-05-21T09:31:00.000Z',
     observedAt: '2026-05-21T09:32:00.000Z',

@@ -14,6 +14,7 @@ import {
 } from '../src/consequence-admission/index.js';
 import { registerShadowRoutes } from '../src/service/http/routes/shadow-routes.js';
 import {
+  createFileBackedShadowCustomerActivationHandoffStore,
   createFileBackedShadowCustomerActivationReceiptStore,
   createFileBackedShadowPolicyCandidateStore,
   resetShadowPersistenceStoresForTests,
@@ -40,6 +41,7 @@ function ok(condition: unknown, message: string): void {
 
 const tempDir = mkdtempSync(join(tmpdir(), 'attestor-shadow-customer-activation-receipt-'));
 const candidatePath = join(tempDir, 'shadow-policy-candidates.json');
+const activationHandoffPath = join(tempDir, 'shadow-customer-activation-handoffs.json');
 const activationReceiptPath = join(tempDir, 'shadow-customer-activation-receipts.json');
 
 const tenant: TenantContext = {
@@ -124,6 +126,9 @@ function createApp(input: {
   readonly productionSigner?: boolean;
 }): Hono {
   const candidateStore = createFileBackedShadowPolicyCandidateStore({ path: candidatePath });
+  const activationHandoffStore = createFileBackedShadowCustomerActivationHandoffStore({
+    path: activationHandoffPath,
+  });
   const activationReceiptStore = createFileBackedShadowCustomerActivationReceiptStore({
     path: activationReceiptPath,
   });
@@ -150,6 +155,16 @@ function createApp(input: {
         status,
         actorRef,
         reason,
+      }).record,
+    recordShadowCustomerActivationHandoff: ({ tenant: routeTenant, handoff }) =>
+      activationHandoffStore.append({
+        tenantId: routeTenant.tenantId,
+        handoff,
+      }),
+    findShadowCustomerActivationHandoff: ({ tenant: routeTenant, handoffId }) =>
+      activationHandoffStore.find({
+        tenantId: routeTenant.tenantId,
+        handoffId,
       }).record,
     recordShadowCustomerActivationReceipt: ({ tenant: routeTenant, receipt }) =>
       activationReceiptStore.append({
@@ -278,9 +293,16 @@ async function postReceipt(app: Hono, body: unknown): Promise<Response> {
   });
 }
 
+function receiptHandoffReference(handoff: ShadowCustomerActivationHandoff) {
+  return {
+    handoffId: handoff.handoffId,
+    handoffDigest: handoff.digest,
+  };
+}
+
 function activatedReceiptBody(handoff: ShadowCustomerActivationHandoff, overrides: Record<string, unknown> = {}) {
   return {
-    handoff,
+    ...receiptHandoffReference(handoff),
     activationStatus: 'activated',
     attemptedAt: '2026-05-02T18:05:10.000Z',
     observedAt: '2026-05-02T18:06:10.000Z',
@@ -415,7 +437,7 @@ async function testRolledBackReceiptCanRecordRollbackClosure(): Promise<void> {
   });
   const handoff = await readyHandoff(app);
   const response = await postReceipt(app, {
-    handoff,
+    ...receiptHandoffReference(handoff),
     activationStatus: 'rolled-back',
     attemptedAt: '2026-05-02T18:05:10.000Z',
     observedAt: '2026-05-02T18:06:10.000Z',
@@ -444,7 +466,7 @@ async function testRolledBackReceiptCanRecordRollbackClosure(): Promise<void> {
   equal(body.receipt.failureReasons.length, 0, 'Customer activation receipt route: completed rollback has no failure reasons');
 }
 
-async function testTamperedHandoffDigestKeepsReceiptHeld(): Promise<void> {
+async function testClientSuppliedHandoffBodyIsRejected(): Promise<void> {
   const app = createApp({
     events: Array.from({ length: 5 }, (_, index) => createSafeEvent(index + 1)),
     productionSigner: true,
@@ -454,17 +476,39 @@ async function testTamperedHandoffDigestKeepsReceiptHeld(): Promise<void> {
     ...handoff,
     sourceSimulationDigest: 'sha256:9999999999999999999999999999999999999999999999999999999999999999',
   };
-  const response = await postReceipt(app, activatedReceiptBody(tampered));
+  const response = await postReceipt(app, {
+    ...activatedReceiptBody(handoff),
+    handoff: tampered,
+  });
   const body = await response.json() as {
-    readonly receipt: {
-      readonly receiptReady: boolean;
-      readonly failureReasons: readonly string[];
-    };
+    readonly reasonCodes: readonly string[];
   };
 
-  equal(response.status, 200, 'Customer activation receipt route: tampered handoff returns 200');
-  equal(body.receipt.receiptReady, false, 'Customer activation receipt route: tampered handoff keeps receipt held');
-  ok(body.receipt.failureReasons.includes('handoff-digest-mismatch'), 'Customer activation receipt route: handoff digest mismatch is explicit');
+  equal(response.status, 400, 'Customer activation receipt route: client-supplied handoff body is rejected');
+  ok(
+    body.reasonCodes.includes('customer-activation-receipt-handoff-reference-required'),
+    'Customer activation receipt route: handoff body rejection is explicit',
+  );
+}
+
+async function testHandoffDigestMismatchFailsClosed(): Promise<void> {
+  const app = createApp({
+    events: Array.from({ length: 5 }, (_, index) => createSafeEvent(index + 1)),
+    productionSigner: true,
+  });
+  const handoff = await readyHandoff(app);
+  const response = await postReceipt(app, activatedReceiptBody(handoff, {
+    handoffDigest: 'sha256:9999999999999999999999999999999999999999999999999999999999999999',
+  }));
+  const body = await response.json() as {
+    readonly reasonCodes: readonly string[];
+  };
+
+  equal(response.status, 409, 'Customer activation receipt route: handoff digest mismatch fails closed');
+  ok(
+    body.reasonCodes.includes('customer-activation-handoff-digest-mismatch'),
+    'Customer activation receipt route: handoff digest mismatch is explicit',
+  );
 }
 
 async function testInvalidActivationDigestIsRejected(): Promise<void> {
@@ -497,7 +541,7 @@ async function testFailedReceiptRequiresErrorEvidence(): Promise<void> {
   });
   const handoff = await readyHandoff(app);
   const missingError = await postReceipt(app, {
-    handoff,
+    ...receiptHandoffReference(handoff),
     activationStatus: 'failed',
     attemptedAt: '2026-05-02T18:05:10.000Z',
     observedAt: '2026-05-02T18:06:10.000Z',
@@ -512,7 +556,7 @@ async function testFailedReceiptRequiresErrorEvidence(): Promise<void> {
     };
   };
   const withError = await postReceipt(app, {
-    handoff,
+    ...receiptHandoffReference(handoff),
     activationStatus: 'failed',
     attemptedAt: '2026-05-02T18:05:10.000Z',
     observedAt: '2026-05-02T18:06:10.000Z',
@@ -680,6 +724,7 @@ async function testReceiptHistoryFiltersAndMissingLookupFailClosed(): Promise<vo
 function resetStores(): void {
   resetShadowPersistenceStoresForTests({
     policyCandidatePath: candidatePath,
+    customerActivationHandoffPath: activationHandoffPath,
     customerActivationReceiptPath: activationReceiptPath,
   });
 }
@@ -694,7 +739,9 @@ try {
   resetStores();
   await testRolledBackReceiptCanRecordRollbackClosure();
   resetStores();
-  await testTamperedHandoffDigestKeepsReceiptHeld();
+  await testClientSuppliedHandoffBodyIsRejected();
+  resetStores();
+  await testHandoffDigestMismatchFailsClosed();
   resetStores();
   await testInvalidActivationDigestIsRejected();
   resetStores();

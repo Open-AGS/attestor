@@ -1,5 +1,6 @@
 import type {
   GenericAdmissionMode,
+  ShadowCustomerActivationHandoff,
   ShadowAdmissionEvent,
   ShadowCustomerActivationReceipt,
   ShadowCustomerActivationReceiptStatus,
@@ -14,6 +15,8 @@ export const SHADOW_POLICY_CANDIDATE_STORE_VERSION =
   'attestor.shadow-policy-candidate-store.v1';
 export const SHADOW_POLICY_SIMULATION_REPORT_STORE_VERSION =
   'attestor.shadow-policy-simulation-report-store.v1';
+export const SHADOW_CUSTOMER_ACTIVATION_HANDOFF_STORE_VERSION =
+  'attestor.shadow-customer-activation-handoff-store.v1';
 export const SHADOW_CUSTOMER_ACTIVATION_RECEIPT_STORE_VERSION =
   'attestor.shadow-customer-activation-receipt-store.v1';
 
@@ -31,6 +34,7 @@ export type ShadowPolicyCandidateStatus =
 export type ShadowAdmissionStoreAppendResultKind = 'recorded' | 'duplicate';
 export type ShadowPolicyCandidateUpsertKind = 'created' | 'updated' | 'unchanged';
 export type ShadowPolicySimulationReportAppendKind = 'recorded' | 'duplicate';
+export type ShadowCustomerActivationHandoffAppendKind = 'recorded' | 'duplicate';
 export type ShadowCustomerActivationReceiptAppendKind = 'recorded' | 'duplicate';
 
 export interface ShadowAdmissionEventStoreRecord {
@@ -190,6 +194,18 @@ export interface ShadowCustomerActivationReceiptStoreRecord {
   readonly rawPayloadStored: false;
 }
 
+export interface ShadowCustomerActivationHandoffStoreRecord {
+  readonly version: typeof SHADOW_CUSTOMER_ACTIVATION_HANDOFF_STORE_VERSION;
+  readonly tenantId: string;
+  readonly handoffId: string;
+  readonly handoffDigest: string;
+  readonly sourceActivationReadinessDigest: string;
+  readonly handoffReady: boolean;
+  readonly recordedAt: string;
+  readonly handoff: ShadowCustomerActivationHandoff;
+  readonly rawPayloadStored: false;
+}
+
 export interface UpsertShadowPolicyCandidateInput {
   readonly tenantId: string;
   readonly candidate: ShadowPolicyDiscoveryCandidate;
@@ -264,10 +280,33 @@ export interface AppendShadowCustomerActivationReceiptInput {
   readonly recordedAt?: string | null;
 }
 
+export interface AppendShadowCustomerActivationHandoffInput {
+  readonly tenantId: string;
+  readonly handoff: ShadowCustomerActivationHandoff;
+  readonly recordedAt?: string | null;
+}
+
+export interface AppendShadowCustomerActivationHandoffResult {
+  readonly kind: ShadowCustomerActivationHandoffAppendKind;
+  readonly record: ShadowCustomerActivationHandoffStoreRecord;
+  readonly path: string;
+}
+
 export interface AppendShadowCustomerActivationReceiptResult {
   readonly kind: ShadowCustomerActivationReceiptAppendKind;
   readonly record: ShadowCustomerActivationReceiptStoreRecord;
   readonly path: string;
+}
+
+export interface FileBackedShadowCustomerActivationHandoffStore {
+  append(input: AppendShadowCustomerActivationHandoffInput): AppendShadowCustomerActivationHandoffResult;
+  find(input: {
+    readonly tenantId: string;
+    readonly handoffId: string;
+  }): {
+    readonly record: ShadowCustomerActivationHandoffStoreRecord | null;
+    readonly path: string;
+  };
 }
 
 export interface ShadowCustomerActivationReceiptListFilters {

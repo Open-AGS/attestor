@@ -274,6 +274,7 @@ async function testLowRiskCanRemainOfflineValid(): Promise<void> {
     decision,
     issuedAt: '2026-04-18T09:00:00.000Z',
     tokenId: 'rt_online_low_risk',
+    tenantId: 'tenant-test',
   });
   const request = makeRequest({
     id: 'erq-online-low-risk',
@@ -312,6 +313,7 @@ async function testHighRiskActiveIntrospectionAllows(): Promise<void> {
     decision,
     issuedAt: '2026-04-18T09:00:00.000Z',
     tokenId: 'rt_online_r4',
+    tenantId: 'tenant-test',
     confirmation: createMtlsReleaseTokenConfirmation({
       certificateThumbprint: WORKLOAD_CERT_THUMBPRINT,
       spiffeId: WORKLOAD_SPIFFE_ID,
@@ -383,6 +385,7 @@ async function testHighRiskCanConsumeOnSuccess(): Promise<void> {
     decision,
     issuedAt: '2026-04-18T09:00:00.000Z',
     tokenId: 'rt_online_consume',
+    tenantId: 'tenant-test',
     confirmation: createMtlsReleaseTokenConfirmation({
       certificateThumbprint: WORKLOAD_CERT_THUMBPRINT,
       spiffeId: WORKLOAD_SPIFFE_ID,
@@ -432,6 +435,7 @@ async function testRevokedTokenFails(): Promise<void> {
     decision,
     issuedAt: '2026-04-18T09:00:00.000Z',
     tokenId: 'rt_online_revoked',
+    tenantId: 'tenant-test',
     confirmation: createMtlsReleaseTokenConfirmation({
       certificateThumbprint: WORKLOAD_CERT_THUMBPRINT,
       spiffeId: WORKLOAD_SPIFFE_ID,
@@ -485,6 +489,7 @@ async function testConsumedTokenFailsAsReplay(): Promise<void> {
     decision,
     issuedAt: '2026-04-18T09:00:00.000Z',
     tokenId: 'rt_online_consumed',
+    tenantId: 'tenant-test',
     confirmation: createMtlsReleaseTokenConfirmation({
       certificateThumbprint: WORKLOAD_CERT_THUMBPRINT,
       spiffeId: WORKLOAD_SPIFFE_ID,
@@ -534,6 +539,7 @@ async function testUnknownTokenFails(): Promise<void> {
     decision,
     issuedAt: '2026-04-18T09:00:00.000Z',
     tokenId: 'rt_online_unknown',
+    tenantId: 'tenant-test',
     confirmation: createMtlsReleaseTokenConfirmation({
       certificateThumbprint: WORKLOAD_CERT_THUMBPRINT,
       spiffeId: WORKLOAD_SPIFFE_ID,
@@ -577,6 +583,7 @@ async function testUnsupportedTokenTypeFails(): Promise<void> {
     decision,
     issuedAt: '2026-04-18T09:00:00.000Z',
     tokenId: 'rt_online_unsupported',
+    tenantId: 'tenant-test',
     confirmation: createMtlsReleaseTokenConfirmation({
       certificateThumbprint: WORKLOAD_CERT_THUMBPRINT,
       spiffeId: WORKLOAD_SPIFFE_ID,
@@ -620,6 +627,7 @@ async function testActiveClaimMismatchFails(): Promise<void> {
     decision,
     issuedAt: '2026-04-18T09:00:00.000Z',
     tokenId: 'rt_online_mismatch',
+    tenantId: 'tenant-test',
     confirmation: createMtlsReleaseTokenConfirmation({
       certificateThumbprint: WORKLOAD_CERT_THUMBPRINT,
       spiffeId: WORKLOAD_SPIFFE_ID,
@@ -669,6 +677,7 @@ async function testActivePolicyClaimMismatchFailsAsStalePolicy(): Promise<void> 
     decision,
     issuedAt: '2026-04-18T09:00:00.000Z',
     tokenId: 'rt_online_policy_mismatch',
+    tenantId: 'tenant-test',
     confirmation: createMtlsReleaseTokenConfirmation({
       certificateThumbprint: WORKLOAD_CERT_THUMBPRINT,
       spiffeId: WORKLOAD_SPIFFE_ID,
@@ -747,6 +756,7 @@ async function testIntrospectionUnavailableFailsClosed(): Promise<void> {
     decision,
     issuedAt: '2026-04-18T09:00:00.000Z',
     tokenId: 'rt_online_unavailable',
+    tenantId: 'tenant-test',
     confirmation: createMtlsReleaseTokenConfirmation({
       certificateThumbprint: WORKLOAD_CERT_THUMBPRINT,
       spiffeId: WORKLOAD_SPIFFE_ID,

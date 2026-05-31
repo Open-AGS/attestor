@@ -22,7 +22,6 @@ import {
   SHADOW_POLICY_PROMOTION_SOURCE_STATUSES,
   type ConsequenceAdmissionDownstreamBoundaryKind,
   type ShadowCustomerActivationControlRef,
-  type ShadowCustomerActivationHandoff,
   type ShadowCustomerActivationReceiptKillSwitchStatus,
   type ShadowCustomerActivationReceiptMonitoringStatus,
   type ShadowCustomerActivationReceiptRollbackStatus,
@@ -416,7 +415,8 @@ function parseCustomerActivationReceiptMonitoringStatus(
 }
 
 async function readCustomerActivationReceiptBody(c: Context): Promise<{
-  readonly handoff: ShadowCustomerActivationHandoff;
+  readonly handoffId: string;
+  readonly handoffDigest: string;
   readonly activationStatus: ShadowCustomerActivationReceiptStatus;
   readonly attemptedAt: string;
   readonly observedAt: string;
@@ -462,7 +462,20 @@ async function readCustomerActivationReceiptBody(c: Context): Promise<{
     });
   }
   const bodyRecord = body;
-  const handoff = bodyRecord.handoff;
+  if (bodyRecord.handoff !== undefined) {
+    return problem(c, {
+      type: 'https://attestor.dev/problems/customer-activation-receipt-handoff-reference-required',
+      title: 'Customer activation receipt handoff reference required',
+      status: 400,
+      detail:
+        'The customer activation receipt route accepts handoffId and handoffDigest only; the handoff body must come from the server-side handoff store.',
+      reasonCodes: ['customer-activation-receipt-handoff-reference-required'],
+    });
+  }
+  const handoffId = typeof bodyRecord.handoffId === 'string' ? bodyRecord.handoffId.trim() : '';
+  const handoffDigest = typeof bodyRecord.handoffDigest === 'string'
+    ? bodyRecord.handoffDigest.trim()
+    : '';
   const activationStatus = typeof bodyRecord.activationStatus === 'string'
     ? parseCustomerActivationReceiptStatus(bodyRecord.activationStatus)
     : null;
@@ -473,13 +486,13 @@ async function readCustomerActivationReceiptBody(c: Context): Promise<{
     : typeof bodyRecord.completedAt === 'string'
       ? bodyRecord.completedAt.trim()
       : '';
-  if (!isRecord(handoff) || !activationStatus || !attemptedAt || !observedAt || completedAt === '') {
+  if (!handoffId || !handoffDigest || !activationStatus || !attemptedAt || !observedAt || completedAt === '') {
     return problem(c, {
       type: 'https://attestor.dev/problems/customer-activation-receipt-input-invalid',
       title: 'Invalid customer activation receipt input',
       status: 400,
       detail:
-        `The customer activation receipt route requires handoff, activationStatus, attemptedAt, and observedAt. Activation status must be one of: ${SHADOW_CUSTOMER_ACTIVATION_RECEIPT_STATUSES.join(', ')}.`,
+        `The customer activation receipt route requires handoffId, handoffDigest, activationStatus, attemptedAt, and observedAt. Activation status must be one of: ${SHADOW_CUSTOMER_ACTIVATION_RECEIPT_STATUSES.join(', ')}.`,
       reasonCodes: ['invalid-customer-activation-receipt-input'],
     });
   }
@@ -542,7 +555,8 @@ async function readCustomerActivationReceiptBody(c: Context): Promise<{
   }
 
   return {
-    handoff: handoff as unknown as ShadowCustomerActivationHandoff,
+    handoffId,
+    handoffDigest,
     activationStatus,
     attemptedAt,
     observedAt,
@@ -678,6 +692,13 @@ export function registerShadowCustomerActivationRoutes(app: Hono, deps: ShadowRo
         expiresAt: body.expiresAt,
         generatedAt: deps.now?.() ?? null,
       });
+      const persistedHandoff = deps.recordShadowCustomerActivationHandoff?.({
+        tenant,
+        handoff,
+      }) ?? null;
+      const persistedHandoffRecord = persistedHandoff
+        ? assertTenantBoundRecord(tenant, persistedHandoff.record, 'shadow customer activation handoff')
+        : null;
       await recordShadowMutationAudit(deps, {
         routeId,
         action: 'shadow.customer_activation_handoff.generated',
@@ -698,6 +719,8 @@ export function registerShadowCustomerActivationRoutes(app: Hono, deps: ShadowRo
           handoffDigest: handoff.digest,
           sourceActivationReadinessDigest: handoff.sourceActivationReadinessDigest,
           handoffReady: handoff.handoffReady,
+          persistenceKind: persistedHandoff?.kind ?? null,
+          persistedHandoffId: persistedHandoffRecord?.handoffId ?? null,
         },
       });
       const responseBody = await finalizeShadowMutationIdempotency(
@@ -709,12 +732,18 @@ export function registerShadowCustomerActivationRoutes(app: Hono, deps: ShadowRo
         200,
         {
           tenant: tenantSummary(tenant),
-          storageMode: 'file-backed-evaluation',
+          storageMode: persistedHandoff ? 'file-backed-evaluation' : 'stateless-handoff',
           productionReady: false,
           approvalRequired: true,
           autoEnforce: false,
           rawPayloadStored: false,
           handoff,
+          persisted: persistedHandoff
+            ? {
+              kind: persistedHandoff.kind,
+              record: persistedHandoffRecord,
+            }
+            : null,
         },
       );
       return c.json(responseBody);
@@ -750,12 +779,30 @@ export function registerShadowCustomerActivationRoutes(app: Hono, deps: ShadowRo
     c.header('cache-control', 'no-store');
     const body = await readCustomerActivationReceiptBody(c);
     if (body instanceof Response) return body;
+    if (!deps.findShadowCustomerActivationHandoff) {
+      return problem(c, {
+        type: 'https://attestor.dev/problems/customer-activation-handoff-store-unavailable',
+        title: 'Customer activation handoff store unavailable',
+        status: 503,
+        detail: 'Customer activation receipts require server-side handoff lookup for this runtime.',
+        reasonCodes: ['customer-activation-handoff-store-unavailable'],
+      });
+    }
+    if (!deps.recordShadowCustomerActivationReceipt) {
+      return problem(c, {
+        type: 'https://attestor.dev/problems/customer-activation-receipt-store-unavailable',
+        title: 'Customer activation receipt store unavailable',
+        status: 503,
+        detail: 'Customer activation receipt persistence is required for this runtime.',
+        reasonCodes: ['customer-activation-receipt-store-unavailable'],
+      });
+    }
 
     try {
       const routeId = 'shadow.customer_activation_receipt.create';
       const requestPayload = {
-        sourceHandoffId: body.handoff.handoffId,
-        sourceHandoffDigest: body.handoff.digest,
+        sourceHandoffId: body.handoffId,
+        sourceHandoffDigest: body.handoffDigest,
         activationStatus: body.activationStatus,
         attemptedAt: body.attemptedAt,
         observedAt: body.observedAt,
@@ -772,8 +819,35 @@ export function registerShadowCustomerActivationRoutes(app: Hono, deps: ShadowRo
       const idempotency = await beginShadowMutationIdempotency(c, deps, routeId, requestPayload);
       if (idempotency.kind === 'response') return idempotency.response;
       const { tenant } = idempotency;
+      const storedHandoffRecord = deps.findShadowCustomerActivationHandoff({
+        tenant,
+        handoffId: body.handoffId,
+      });
+      if (!storedHandoffRecord) {
+        return problem(c, {
+          type: 'https://attestor.dev/problems/customer-activation-handoff-not-found',
+          title: 'Customer activation handoff not found',
+          status: 404,
+          detail: 'No customer activation handoff was found for this tenant and handoff id.',
+          reasonCodes: ['customer-activation-handoff-not-found'],
+        });
+      }
+      const tenantHandoffRecord = assertTenantBoundRecord(
+        tenant,
+        storedHandoffRecord,
+        'shadow customer activation handoff',
+      );
+      if (tenantHandoffRecord.handoffDigest !== body.handoffDigest) {
+        return problem(c, {
+          type: 'https://attestor.dev/problems/customer-activation-handoff-digest-mismatch',
+          title: 'Customer activation handoff digest mismatch',
+          status: 409,
+          detail: 'The supplied handoff digest does not match the server-side handoff record.',
+          reasonCodes: ['customer-activation-handoff-digest-mismatch'],
+        });
+      }
       const receipt = createShadowCustomerActivationReceipt({
-        handoff: body.handoff,
+        handoff: tenantHandoffRecord.handoff,
         activationStatus: body.activationStatus,
         attemptedAt: body.attemptedAt,
         observedAt: body.observedAt,
@@ -797,13 +871,15 @@ export function registerShadowCustomerActivationRoutes(app: Hono, deps: ShadowRo
           reasonCodes: ['customer-activation-receipt-tenant-mismatch'],
         });
       }
-      const persisted = deps.recordShadowCustomerActivationReceipt?.({
+      const persisted = deps.recordShadowCustomerActivationReceipt({
         tenant,
         receipt,
-      }) ?? null;
-      const persistedRecord = persisted
-        ? assertTenantBoundRecord(tenant, persisted.record, 'shadow customer activation receipt')
-        : null;
+      });
+      const persistedRecord = assertTenantBoundRecord(
+        tenant,
+        persisted.record,
+        'shadow customer activation receipt',
+      );
       await recordShadowMutationAudit(deps, {
         routeId,
         action: 'shadow.customer_activation_receipt.recorded',
@@ -815,15 +891,15 @@ export function registerShadowCustomerActivationRoutes(app: Hono, deps: ShadowRo
           rollbackStatus: body.rollbackStatus,
           killSwitchStatus: body.killSwitchStatus,
           monitoringStatus: body.monitoringStatus,
-          persisted: persisted !== null,
+          persisted: true,
         },
         statusCode: 200,
         metadata: {
-          storageMode: persisted ? 'file-backed-evaluation' : 'stateless-receipt',
+          storageMode: 'file-backed-evaluation',
           receiptId: receipt.receiptId,
           receiptDigest: receipt.digest,
-          persistenceKind: persisted?.kind ?? null,
-          persistedReceiptId: persistedRecord?.receiptId ?? null,
+          persistenceKind: persisted.kind,
+          persistedReceiptId: persistedRecord.receiptId,
         },
       });
       const responseBody = await finalizeShadowMutationIdempotency(
@@ -835,18 +911,16 @@ export function registerShadowCustomerActivationRoutes(app: Hono, deps: ShadowRo
         200,
         {
           tenant: tenantSummary(tenant),
-          storageMode: persisted ? 'file-backed-evaluation' : 'stateless-receipt',
+          storageMode: 'file-backed-evaluation',
           productionReady: false,
           approvalRequired: true,
           autoEnforce: false,
           rawPayloadStored: false,
           receipt,
-          persisted: persisted
-            ? {
-              kind: persisted.kind,
-              record: persistedRecord,
-            }
-            : null,
+          persisted: {
+            kind: persisted.kind,
+            record: persistedRecord,
+          },
         },
       );
       return c.json(responseBody);

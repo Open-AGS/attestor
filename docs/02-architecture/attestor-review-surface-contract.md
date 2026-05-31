@@ -172,6 +172,7 @@ The shadow read surface now exposes the review contract for the current tenant:
 
 ```text
 GET /api/v1/shadow/review-surface
+GET /api/v1/shadow/review-surface/view
 GET /api/v1/shadow/review-surface/cases/:caseDigest
 ```
 
@@ -180,9 +181,14 @@ review surface from the current tenant's audit evidence export, business risk
 dashboard, and dashboard API summary. The case route returns digest-only
 drill-down material for a known `caseDigest`.
 
-This is a JSON route, not the hosted UI. It does not activate enforcement,
-mutate policy, grant authority, prove customer PEP no-bypass, prove production
-readiness, or prove compliance.
+The HTML preview renderer lives in
+`src/service/shadow/attestor-review-surface-html-preview.ts` and renders from
+the review surface only. It uses context-specific HTML escaping, no JavaScript,
+security headers, and short task-list-style review rows.
+
+This is a JSON route plus an HTML preview route, not the hosted UI product. It
+does not activate enforcement, mutate policy, grant authority, prove customer
+PEP no-bypass, prove production readiness, or prove compliance.
 
 ## Research Posture
 

@@ -476,6 +476,50 @@ async function testReviewSurfaceRouteReturnsDigestOnlyWorkspace(): Promise<void>
   ok(!text.includes('raw_note_must_not_escape'), 'Shadow review surface route: raw observed features are not returned');
 }
 
+async function testReviewSurfaceHtmlPreviewRouteRendersReviewMaterial(): Promise<void> {
+  const app = createApp([
+    createEvent(),
+    createEvent({
+      mode: 'enforce',
+      policyRef: 'policy:refunds:v1',
+      evidenceRefs: ['order:html_preview_route_raw_evidence_must_not_escape'],
+      occurredAt: '2026-05-03T10:03:02.000Z',
+      blocked: true,
+    }),
+  ]);
+  const response = await app.request('/api/v1/shadow/review-surface/view');
+  const html = await response.text();
+
+  equal(response.status, 200, 'Shadow review surface HTML route: valid request returns 200');
+  equal(response.headers.get('cache-control'), 'no-store', 'Shadow review surface HTML route: response is no-store');
+  ok(
+    response.headers.get('content-type')?.includes('text/html'),
+    'Shadow review surface HTML route: content type is HTML',
+  );
+  equal(
+    response.headers.get('x-content-type-options'),
+    'nosniff',
+    'Shadow review surface HTML route: nosniff header is set',
+  );
+  equal(
+    response.headers.get('referrer-policy'),
+    'no-referrer',
+    'Shadow review surface HTML route: referrer policy is no-referrer',
+  );
+  equal(response.headers.get('x-frame-options'), 'DENY', 'Shadow review surface HTML route: frame denial header is set');
+  ok(
+    response.headers.get('content-security-policy')?.includes("frame-ancestors 'none'"),
+    'Shadow review surface HTML route: CSP denies framing',
+  );
+  ok(html.includes('Attestor review surface'), 'Shadow review surface HTML route: page identity renders');
+  ok(html.includes('Review queue'), 'Shadow review surface HTML route: review queue renders');
+  ok(html.includes('/api/v1/shadow/review-surface/cases/'), 'Shadow review surface HTML route: case detail route renders');
+  ok(html.includes('Review material only'), 'Shadow review surface HTML route: boundary renders');
+  ok(!html.includes('raw_customer_marker_must_not_escape'), 'Shadow review surface HTML route: raw recipient is not returned');
+  ok(!html.includes('html_preview_route_raw_evidence_must_not_escape'), 'Shadow review surface HTML route: raw evidence ids are not returned');
+  ok(!html.includes('raw_note_must_not_escape'), 'Shadow review surface HTML route: raw observed features are not returned');
+}
+
 async function testReviewSurfaceCaseRouteReturnsDigestOnlyDetail(): Promise<void> {
   const app = createApp([
     createEvent(),
@@ -665,6 +709,10 @@ async function testDashboardRoutesRejectForeignTenantEvents(): Promise<void> {
     'Shadow review surface route',
   );
   await expectDashboardTenantBoundaryFailure(
+    '/api/v1/shadow/review-surface/view',
+    'Shadow review surface HTML route',
+  );
+  await expectDashboardTenantBoundaryFailure(
     `/api/v1/shadow/review-surface/cases/${encodeURIComponent('sha256:unknown-case')}`,
     'Shadow review case route',
   );
@@ -674,6 +722,7 @@ await testAuditEvidenceRouteIsNoStoreAndRedacted();
 await testBusinessRiskDashboardRouteIsDecisionSupportOnly();
 await testDashboardSummaryRouteReturnsCompactBusinessView();
 await testReviewSurfaceRouteReturnsDigestOnlyWorkspace();
+await testReviewSurfaceHtmlPreviewRouteRendersReviewMaterial();
 await testReviewSurfaceCaseRouteReturnsDigestOnlyDetail();
 await testReviewSurfaceCaseRouteRejectsUnknownCase();
 await testEmptyDashboardRoutesAreExplicit();

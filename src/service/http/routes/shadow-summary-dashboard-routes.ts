@@ -12,6 +12,8 @@ import {
   type ShadowPolicySimulationReport,
 } from '../../../consequence-admission/index.js';
 import type { TenantContext } from '../../tenant-isolation.js';
+import { secureHtmlResponseHeaders } from '../route-response-helpers.js';
+import { renderAttestorReviewSurfaceHtmlPreview } from '../../shadow/attestor-review-surface-html-preview.js';
 import type { ShadowRouteDeps } from './shadow-routes.js';
 import {
   assertTenantBoundRecords,
@@ -295,6 +297,17 @@ export function registerShadowSummaryDashboardRoutes(app: Hono, deps: ShadowRout
       reviewSurfaceDigest: result.reviewSurface.digest,
       reviewSurface: result.reviewSurface,
     });
+  });
+
+  app.get('/api/v1/shadow/review-surface/view', (c) => {
+    const result = safeShadowReviewSurface(c, deps);
+    if (result instanceof Response) return result;
+
+    return c.body(
+      renderAttestorReviewSurfaceHtmlPreview(result.reviewSurface),
+      200,
+      secureHtmlResponseHeaders(),
+    );
   });
 
   app.get('/api/v1/shadow/review-surface/cases/:caseDigest', (c) => {

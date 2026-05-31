@@ -198,6 +198,85 @@ async function testHostedRouteCanDisableShadowEvents(): Promise<void> {
   equal(body.packet.eventCount, 0, 'Hosted onboarding route: shadow events are omitted when disabled');
 }
 
+async function testHostedRouteAcceptsAutoContextSignals(): Promise<void> {
+  const app = createApp();
+  const response = await app.request('/api/v1/shadow/action-surface/onboarding-packet', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      includeShadowEvents: false,
+      autoContextSignals: [
+        {
+          signalKind: 'mcp-tool-call',
+          sourceRef: 'C:/Users/thedi/private/mcp-call.json',
+          downstreamSystem: 'Warehouse MCP',
+          toolName: 'export_customer_data',
+          toolArguments: {
+            customerId: 'raw_customer_identifier_must_not_escape',
+            token: 'sk_live_must_not_escape',
+          },
+        },
+      ],
+      credentialPosture: 'gateway-held-secret',
+    }),
+  });
+  const text = await response.text();
+  const body = JSON.parse(text) as {
+    readonly autoContext: {
+      readonly candidateCount: number;
+      readonly autoEnforce: boolean;
+      readonly rawPayloadStored: boolean;
+      readonly productionReady: boolean;
+      readonly candidates: readonly {
+        readonly actionSurface: string;
+        readonly integrationModeHint: string;
+        readonly argumentDigest: string | null;
+        readonly sourceRef: string | null;
+      }[];
+    };
+    readonly packet: {
+      readonly declarationCount: number;
+      readonly surfacePlans: readonly {
+        readonly actionSurface: string;
+        readonly artifactKinds: readonly string[];
+      }[];
+    };
+  };
+
+  equal(response.status, 200, 'Hosted onboarding route: auto-context request succeeds');
+  equal(body.autoContext.candidateCount, 1, 'Hosted onboarding route: auto-context candidate is created');
+  equal(body.autoContext.autoEnforce, false, 'Hosted onboarding route: auto-context cannot auto-enforce');
+  equal(body.autoContext.rawPayloadStored, false, 'Hosted onboarding route: auto-context stores no raw payload');
+  equal(body.autoContext.productionReady, false, 'Hosted onboarding route: auto-context is not production-ready');
+  equal(
+    body.autoContext.candidates[0]?.actionSurface,
+    'warehouse_mcp.export_customer_data',
+    'Hosted onboarding route: auto-context action surface is normalized',
+  );
+  equal(
+    body.autoContext.candidates[0]?.integrationModeHint,
+    'mcp-tool-gateway',
+    'Hosted onboarding route: auto-context recommends MCP gateway',
+  );
+  ok(
+    body.autoContext.candidates[0]?.argumentDigest?.startsWith('sha256:'),
+    'Hosted onboarding route: auto-context emits argument digest',
+  );
+  equal(
+    body.autoContext.candidates[0]?.sourceRef,
+    'hosted-request-auto-context-signal:1',
+    'Hosted onboarding route: auto-context source ref is bounded',
+  );
+  equal(body.packet.declarationCount, 1, 'Hosted onboarding route: packet consumes auto-context declaration');
+  ok(
+    body.packet.surfacePlans[0]?.artifactKinds.includes('mcp-tool-gateway-config'),
+    'Hosted onboarding route: packet includes MCP gateway draft from auto-context',
+  );
+  excludes(text, /raw_customer_identifier_must_not_escape/u, 'Hosted onboarding route: auto-context raw args do not escape');
+  excludes(text, /sk_live_must_not_escape/u, 'Hosted onboarding route: auto-context secret-like args do not escape');
+  excludes(text, /C:\/Users\/thedi\/private/u, 'Hosted onboarding route: auto-context caller source path is not emitted');
+}
+
 async function testHostedRouteKeepsTenantScopedShadowEvents(): Promise<void> {
   const app = createApp({
     routeTenant: tenantB,
@@ -317,6 +396,11 @@ function testDocsAndScriptsExposeHostedRoute(): void {
     'Hosted onboarding route: architecture doc names route',
   );
   includes(
+    doc,
+    '`autoContextSignals`',
+    'Hosted onboarding route: architecture doc names auto-context signals',
+  );
+  includes(
     readme,
     'POST /api/v1/shadow/action-surface/onboarding-packet',
     'Hosted onboarding route: README names route',
@@ -331,6 +415,7 @@ function testDocsAndScriptsExposeHostedRoute(): void {
 try {
   await testHostedRouteRendersStatelessReviewPacket();
   await testHostedRouteCanDisableShadowEvents();
+  await testHostedRouteAcceptsAutoContextSignals();
   await testHostedRouteKeepsTenantScopedShadowEvents();
   await testHostedRouteRejectsCrossTenantShadowEventsFromDependency();
   await testHostedRouteRejectsNonJsonMediaType();

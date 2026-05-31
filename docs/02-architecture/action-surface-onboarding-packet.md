@@ -145,6 +145,17 @@ The hosted route replaces caller-provided manifest source paths with bounded
 hosted request references before rendering, so local filenames or private paths
 do not become packet evidence.
 
+The same route can also accept `autoContextSignals` when a customer wants to
+start from MCP, OpenAPI operation metadata, AsyncAPI operation metadata,
+workflow job metadata, OpenTelemetry spans, CloudEvents metadata, or gateway
+logs without hand-writing declarations first. The hosted route rewrites caller
+source references to bounded hosted-request references, digests tool schemas
+and arguments, and feeds the generated declarations into the same packet.
+
+`autoContextSignals` are discovery and review material only. They do not grant
+authority, bind policy, issue credentials, deploy a gateway, activate
+enforcement, or prove customer PEP no-bypass.
+
 Every packet carries:
 
 ```text

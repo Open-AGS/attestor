@@ -4,10 +4,12 @@ import {
   type CanonicalReleaseJsonValue,
 } from '../release-kernel/release-canonicalization.js';
 import {
+  ACTION_SURFACE_DECLARED_CREDENTIAL_POSTURES,
   type ActionSurfaceDeclaration,
   type ActionSurfaceDeclaredCredentialPosture,
 } from './action-surface-profiler.js';
 import {
+  ATTESTOR_INTEGRATION_MODES,
   type AttestorIntegrationMode,
 } from './integration-mode-readiness.js';
 import {
@@ -113,6 +115,52 @@ function stringArrayValue(value: unknown): readonly string[] {
   );
 }
 
+function extensionRecord(value: unknown): UnknownRecord | null {
+  const record = recordValue(value);
+  const extension = recordValue(record?.['x-attestor']);
+  return extension ?? null;
+}
+
+function mergedAttestorHint(
+  root: UnknownRecord,
+  pathItem: UnknownRecord,
+  operation: UnknownRecord,
+): UnknownRecord | null {
+  const rootHint = extensionRecord(root);
+  const pathHint = extensionRecord(pathItem);
+  const operationHint = extensionRecord(operation);
+  const merged = {
+    ...(rootHint ?? {}),
+    ...(pathHint ?? {}),
+    ...(operationHint ?? {}),
+  };
+  return Object.keys(merged).length > 0 ? Object.freeze(merged) : null;
+}
+
+function hintedCredentialPosture(
+  hint: UnknownRecord | null,
+  fallback: ActionSurfaceDeclaredCredentialPosture,
+): ActionSurfaceDeclaredCredentialPosture {
+  const value = stringValue(hint?.credentialPosture);
+  if (
+    value &&
+    (ACTION_SURFACE_DECLARED_CREDENTIAL_POSTURES as readonly string[]).includes(value)
+  ) {
+    return value as ActionSurfaceDeclaredCredentialPosture;
+  }
+  return fallback;
+}
+
+function hintedIntegrationMode(
+  hint: UnknownRecord | null,
+): AttestorIntegrationMode | null {
+  const value = stringValue(hint?.integrationModeHint) ?? stringValue(hint?.integrationMode);
+  if (value && (ATTESTOR_INTEGRATION_MODES as readonly string[]).includes(value)) {
+    return value as AttestorIntegrationMode;
+  }
+  return null;
+}
+
 function normalizeSourceRef(value: string | null | undefined): string | null {
   if (value === undefined || value === null) return null;
   return stringValue(value);
@@ -136,6 +184,12 @@ function textForInference(parts: readonly (string | null | undefined)[]): string
     .toLowerCase();
 }
 
+function hasSeparatedToken(text: string, tokens: readonly string[]): boolean {
+  return tokens.some((token) =>
+    new RegExp(`(^|[^a-z0-9])${token}([^a-z0-9]|$)`, 'u').test(text)
+  );
+}
+
 function isKnownDomain(value: string | null | undefined): value is ConsequenceAdmissionDomain {
   return typeof value === 'string' &&
     (CONSEQUENCE_ADMISSION_DOMAINS as readonly string[]).includes(value);
@@ -148,28 +202,104 @@ function inferDomain(
   const explicit = stringValue(fallback ?? null);
   const text = textForInference(parts);
 
-  if (/\b(refund|payment|payout|invoice|billing|charge|credit|settlement)\b/u.test(text)) {
+  if (hasSeparatedToken(text, [
+    'refund',
+    'payment',
+    'payout',
+    'invoice',
+    'billing',
+    'charge',
+    'credit',
+    'settlement',
+  ])) {
     return 'money-movement';
   }
-  if (/\b(wallet|chain|token|contract|transaction|swap|bridge|custody|safe|userop)\b/u.test(text)) {
+  if (hasSeparatedToken(text, [
+    'wallet',
+    'chain',
+    'token',
+    'contract',
+    'transaction',
+    'swap',
+    'bridge',
+    'custody',
+    'safe',
+    'userop',
+  ])) {
     return 'programmable-money';
   }
-  if (/\b(export|download|customer[_ -]?data|warehouse|query|report|backup|extract)\b/u.test(text)) {
+  if (
+    hasSeparatedToken(text, [
+      'export',
+      'download',
+      'warehouse',
+      'query',
+      'report',
+      'backup',
+      'extract',
+    ]) ||
+    /customer[_ -]?data/u.test(text)
+  ) {
     return 'data-disclosure';
   }
-  if (/\b(filing|tax|regulatory|disclosure|legal|statutory)\b/u.test(text)) {
+  if (hasSeparatedToken(text, [
+    'filing',
+    'tax',
+    'regulatory',
+    'disclosure',
+    'legal',
+    'statutory',
+  ])) {
     return 'regulated-filing';
   }
-  if (/\b(email|message|notify|notification|ticket|reply|sms|slack)\b/u.test(text)) {
+  if (hasSeparatedToken(text, [
+    'email',
+    'message',
+    'notify',
+    'notification',
+    'ticket',
+    'reply',
+    'sms',
+    'slack',
+  ])) {
     return 'external-communication';
   }
-  if (/\b(role|permission|entitlement|admin|account|user|access|delegation)\b/u.test(text)) {
+  if (hasSeparatedToken(text, [
+    'role',
+    'permission',
+    'entitlement',
+    'admin',
+    'account',
+    'user',
+    'access',
+    'delegation',
+  ])) {
     return 'authority-change';
   }
-  if (/\b(deploy|release|rollout|infra|infrastructure|cloud|secret|rotate|restart|incident|workflow)\b/u.test(text)) {
+  if (hasSeparatedToken(text, [
+    'deploy',
+    'release',
+    'rollout',
+    'infra',
+    'infrastructure',
+    'cloud',
+    'secret',
+    'rotate',
+    'restart',
+    'incident',
+    'workflow',
+  ])) {
     return 'system-operation';
   }
-  if (/\b(triage|recommend|analysis|analyze|briefing|score|classify)\b/u.test(text)) {
+  if (hasSeparatedToken(text, [
+    'triage',
+    'recommend',
+    'analysis',
+    'analyze',
+    'briefing',
+    'score',
+    'classify',
+  ])) {
     return 'decision-support';
   }
   return explicit && isKnownDomain(explicit) ? explicit : explicit ?? 'custom';
@@ -266,31 +396,48 @@ export function ingestOpenApiActionSurfaceDeclarations(
       if (!includeReadOperations && !WRITE_HTTP_METHODS.has(method)) continue;
       const operation = recordValue(pathItem[method]);
       if (!operation) continue;
+      const hint = mergedAttestorHint(root, pathItem, operation);
       const operationId = stringValue(operation.operationId);
+      const hintedAction = stringValue(hint?.action) ?? stringValue(hint?.actionName);
+      const operationDownstreamSystem = downstreamFrom(
+        {
+          ...options,
+          downstreamSystem: stringValue(hint?.downstreamSystem) ?? downstreamSystem,
+        },
+        downstreamSystem,
+      );
       const tags = stringArrayValue(operation.tags);
-      const action = slug(operationId ?? openApiFallbackAction(method, path), `${method}_operation`);
+      const action = slug(
+        hintedAction ?? operationId ?? openApiFallbackAction(method, path),
+        `${method}_operation`,
+      );
       const domain = inferDomain(
         [
+          stringValue(hint?.domain),
           operationId,
+          hintedAction,
           method,
           path,
           stringValue(operation.summary),
           stringValue(operation.description),
           ...tags,
         ],
-        options.defaultDomain,
+        stringValue(hint?.domain) ?? options.defaultDomain,
       );
       declarations.push(declaration({
         sourceKind: 'openapi',
-        actionSurface: `${downstreamSystem}.${action}`,
+        actionSurface: `${operationDownstreamSystem}.${action}`,
         domain,
-        downstreamSystem,
+        downstreamSystem: operationDownstreamSystem,
         action,
         operationRef: `${method.toUpperCase()} ${path}`,
         method: method.toUpperCase(),
         path,
-        credentialPosture: operationSecurityPosture(root, operation, options),
-        integrationModeHint: options.integrationModeHint ??
+        credentialPosture: hintedCredentialPosture(
+          hint,
+          operationSecurityPosture(root, operation, options),
+        ),
+        integrationModeHint: hintedIntegrationMode(hint) ?? options.integrationModeHint ??
           (WRITE_HTTP_METHODS.has(method) ? 'gateway-proxy' : null),
       }));
     }

@@ -93,6 +93,7 @@ reader path.
 - [Consequence admission public surface](02-architecture/consequence-admission-public-surface.md)
 - [Downstream enforcement contract](02-architecture/downstream-enforcement-contract.md)
 - [Policy Foundry onboarding](02-architecture/policy-foundry-onboarding.md)
+- [Action surface auto-context](02-architecture/action-surface-auto-context.md)
 - [Action surface onboarding packet](02-architecture/action-surface-onboarding-packet.md)
 - [Glossary](02-architecture/glossary.md)
 

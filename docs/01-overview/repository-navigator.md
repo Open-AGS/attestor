@@ -26,6 +26,7 @@ do the next action there, and come back only if you still need more context.
 | "Show me what this does." | [Try Attestor first](try-attestor-first.md) | the refund demo runs and you can explain why it held or blocked. |
 | "Show me all demos in order." | [Run the demos in order](demo-guide.md) | you have run the refund path, the all-pack path, and the closest integration-shape example. |
 | "Where do I put this in my app?" | [How to integrate Attestor](how-to-integrate-attestor.md) | you can point to the line before the real service is called. |
+| "Can Attestor infer my tools or APIs first?" | [Action surface auto-context](../02-architecture/action-surface-auto-context.md) | you know which metadata is safe to infer and which proof still needs review. |
 | "What code do I copy?" | [Customer middleware examples](../../examples/customer-middleware/README.md) | you have the closest framework example open. |
 | "What JSON do I send?" | [Run Attestor in shadow pilot mode](shadow-event-payload-examples.md) | you have copied the closest payload shape for your action class. |
 | "Why did it review or block?" | [Reason codes](../05-proof/reason-codes.md) | you understand the reason code and the next safe step. |
@@ -46,6 +47,7 @@ do the next action there, and come back only if you still need more context.
 | Run the demo path | [Run the demos in order](demo-guide.md) | [Golden Path: Refund](../02-architecture/golden-refund-shadow-pilot.md) |
 | Send shadow events | [Run Attestor in shadow pilot mode](shadow-event-payload-examples.md) | [Customer middleware examples](../../examples/customer-middleware/README.md) |
 | Wire a customer app | [How to integrate Attestor](how-to-integrate-attestor.md) | [Customer middleware examples](../../examples/customer-middleware/README.md) |
+| Start from MCP, OpenAPI, AsyncAPI, workflow, or telemetry metadata | [Action surface auto-context](../02-architecture/action-surface-auto-context.md) | [Action surface onboarding packet](../02-architecture/action-surface-onboarding-packet.md) |
 | Make the first hosted API call | [First hosted API call](hosted-first-api-call.md) | [Hosted action authorization API](hosted-action-authorization-api.md) |
 | Understand `admit`, `narrow`, `review`, and `block` | [Consequence admission quickstart](consequence-admission-quickstart.md) | [Reason codes](../05-proof/reason-codes.md) |
 | Decode Attestor terms | [Glossary](../02-architecture/glossary.md) | [Attestor language contract](../02-architecture/attestor-language-contract.md) |

@@ -120,6 +120,7 @@ export * from './general-crypto-transaction-gate.js';
 export * from './domain-consequence-recipes.js';
 export * from './pilot-readiness-packet.js';
 export * from './action-surface-profiler.js';
+export * from './action-surface-auto-context.js';
 export * from './action-surface-declaration-ingestors.js';
 export * from './action-surface-manifest-intake.js';
 export * from './action-surface-integration-artifacts.js';

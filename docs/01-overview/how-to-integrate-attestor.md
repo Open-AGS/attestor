@@ -60,6 +60,13 @@ Not inside the prompt.
 Not after the refund.
 Before the real service call.
 
+If you already have MCP tools, an OpenAPI file, AsyncAPI metadata, workflow
+jobs, OpenTelemetry spans, CloudEvents, or gateway logs, use
+[Action surface auto-context](../02-architecture/action-surface-auto-context.md)
+to create the first review packet. That helps Attestor infer the starting
+surface and gaps, but it is still review material. You still need policy,
+evidence, approval, receipt, credential, and gate proof before enforcement.
+
 ## Step 3: Ask Attestor First
 
 Send structured action context.

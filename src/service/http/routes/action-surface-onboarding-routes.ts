@@ -3,8 +3,11 @@ import {
   ACTION_SURFACE_DECLARED_CREDENTIAL_POSTURES,
   ACTION_SURFACE_MANIFEST_FORMATS,
   ACTION_SURFACE_MANIFEST_KINDS,
+  createActionSurfaceAutoContext,
   createActionSurfaceOnboardingPacket,
   createConsequenceAdmissionProblem,
+  type ActionSurfaceAutoContextSignal,
+  type ActionSurfaceAutoContextSignalKind,
   type ActionSurfaceDeclaration,
   type ActionSurfaceDeclaredCredentialPosture,
   type ActionSurfaceManifestFormat,
@@ -20,6 +23,7 @@ const HOSTED_ACTION_SURFACE_ONBOARDING_ROUTE =
 
 const MAX_HOSTED_MANIFESTS = 20;
 const MAX_HOSTED_DECLARATIONS = 500;
+const MAX_HOSTED_AUTO_CONTEXT_SIGNALS = 500;
 const MAX_HOSTED_READINESS_OVERRIDES = 500;
 const DEFAULT_HOSTED_MANIFEST_MAX_BYTES = 512 * 1024;
 
@@ -30,6 +34,7 @@ type HostedActionSurfaceOnboardingRequestBody = {
   readonly attestorBaseUrl?: unknown;
   readonly includeShadowEvents?: unknown;
   readonly manifests?: unknown;
+  readonly autoContextSignals?: unknown;
   readonly declarations?: unknown;
   readonly readinessOverrides?: unknown;
   readonly defaultDomain?: unknown;
@@ -189,6 +194,56 @@ function normalizeDeclarations(
   return arrayFromBody(value, 'declarations', MAX_HOSTED_DECLARATIONS) as readonly ActionSurfaceDeclaration[];
 }
 
+function normalizeAutoContextSignalKind(value: unknown): ActionSurfaceAutoContextSignalKind {
+  const normalized = optionalString(value, 'autoContextSignals[].signalKind');
+  const allowed: readonly ActionSurfaceAutoContextSignalKind[] = [
+    'mcp-tool-definition',
+    'mcp-tool-call',
+    'openapi-operation',
+    'asyncapi-operation',
+    'workflow-job',
+    'otel-span',
+    'cloudevents-event',
+    'gateway-log',
+  ];
+  if (!normalized || !allowed.includes(normalized as ActionSurfaceAutoContextSignalKind)) {
+    throw new Error(
+      `Action surface onboarding hosted route autoContextSignals[].signalKind must be one of: ${allowed.join(', ')}.`,
+    );
+  }
+  return normalized as ActionSurfaceAutoContextSignalKind;
+}
+
+function normalizeAutoContextSignals(
+  body: HostedActionSurfaceOnboardingRequestBody,
+): readonly ActionSurfaceAutoContextSignal[] {
+  const signals = arrayFromBody(
+    body.autoContextSignals,
+    'autoContextSignals',
+    MAX_HOSTED_AUTO_CONTEXT_SIGNALS,
+  );
+  const defaultCredentialPosture = optionalCredentialPosture(body.credentialPosture, null);
+
+  return Object.freeze(
+    signals.map((signal, index) => {
+      if (!isRecord(signal)) {
+        throw new Error(
+          'Action surface onboarding hosted route autoContextSignals entries must be objects.',
+        );
+      }
+      return Object.freeze({
+        ...signal,
+        signalKind: normalizeAutoContextSignalKind(signal.signalKind),
+        sourceRef: `hosted-request-auto-context-signal:${index + 1}`,
+        credentialPosture: optionalCredentialPosture(
+          signal.credentialPosture,
+          defaultCredentialPosture,
+        ),
+      } as ActionSurfaceAutoContextSignal);
+    }),
+  );
+}
+
 function normalizeReadinessOverrides(
   value: unknown,
 ): readonly ActionSurfaceOnboardingReadinessOverride[] {
@@ -265,11 +320,21 @@ export function registerActionSurfaceOnboardingRoutes(
       const events = includeShadowEvents
         ? assertTenantBoundShadowEvents(tenant, deps.listShadowEvents({ tenant }))
         : [];
+      const autoContext = createActionSurfaceAutoContext({
+        generatedAt,
+        defaultActor: 'hosted-onboarding-caller',
+        defaultDomain: optionalString(body.defaultDomain, 'defaultDomain'),
+        defaultDownstreamSystem: optionalString(body.downstreamSystem, 'downstreamSystem'),
+        signals: normalizeAutoContextSignals(body),
+      });
       const packet = createActionSurfaceOnboardingPacket({
         generatedAt,
         attestorBaseUrl: optionalString(body.attestorBaseUrl, 'attestorBaseUrl'),
         manifests: normalizeManifestInputs(body),
-        declarations: normalizeDeclarations(body.declarations),
+        declarations: Object.freeze([
+          ...normalizeDeclarations(body.declarations),
+          ...autoContext.declarations,
+        ]),
         events,
         readinessOverrides: normalizeReadinessOverrides(body.readinessOverrides),
       });
@@ -286,6 +351,7 @@ export function registerActionSurfaceOnboardingRoutes(
         issuesCredentials: false,
         activatesEnforcement: false,
         includedShadowEvents: includeShadowEvents,
+        autoContext,
         packet,
       });
     } catch (error) {

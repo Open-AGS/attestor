@@ -21,6 +21,7 @@ import {
   type OfflineHttpMessageSignatureVerificationContext,
   type OfflineReleaseVerification,
   type OfflineReleaseVerificationInput,
+  type OfflineTrustedWorkloadBinding,
   type OfflineVerifierExpectedBinding,
 } from '../release-enforcement-plane/offline-verifier.js';
 import {
@@ -174,6 +175,7 @@ export interface VerifyCryptoAuthorizationOfflineInput {
   readonly nonceLedgerEntry?: NonceLedgerEntry | null;
   readonly httpMessageSignature?: OfflineHttpMessageSignatureVerificationContext;
   readonly asyncEnvelope?: OfflineAsyncEnvelopeVerificationContext;
+  readonly trustedWorkloadBinding?: OfflineTrustedWorkloadBinding;
   readonly verificationResultId?: string;
 }
 
@@ -870,6 +872,7 @@ export function createCryptoOfflineVerificationInput(
     nonceLedgerEntry: input.nonceLedgerEntry,
     httpMessageSignature: input.httpMessageSignature,
     asyncEnvelope: input.asyncEnvelope,
+    trustedWorkloadBinding: input.trustedWorkloadBinding,
     verificationResultId: input.verificationResultId,
   });
 }

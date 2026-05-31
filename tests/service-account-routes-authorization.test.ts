@@ -307,6 +307,18 @@ async function testAccountRouteJsonAndAuthAttemptVocabularyIsLocked(): Promise<v
     true,
   );
   assert.equal(
+    mfaPasskeySource.includes("return c.json({ error: 'password and code are required.' }, 400);"),
+    true,
+  );
+  assert.equal(
+    mfaPasskeySource.includes('isPendingTotpEnrollmentFresh(user.mfa.totp)'),
+    true,
+  );
+  assert.equal(
+    mfaPasskeySource.includes("return c.json({ error: 'Pending TOTP enrollment has expired. Start enrollment again.' }, 409);"),
+    true,
+  );
+  assert.equal(
     mfaPasskeySource.includes("return c.json({ error: 'Passkey registration challenge has already been used.' }, 409);"),
     true,
   );

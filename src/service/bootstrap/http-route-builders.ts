@@ -111,6 +111,7 @@ export function buildAccountRouteDeps(input: BuildAccountRouteDepsInput): Accoun
     linkAccountUserOidcIdentity: input.linkAccountUserOidcIdentity,
     verifyTotpCodeWithStep: input.verifyTotpCodeWithStep,
     verifyAndConsumeRecoveryCode: input.verifyAndConsumeRecoveryCode,
+    isPendingTotpEnrollmentFresh: input.isPendingTotpEnrollmentFresh,
     requireAccountSession: input.requireAccountSession,
     currentAccountAccess: input.currentAccountAccess,
     buildHostedPasskeyRegistrationOptions: input.buildHostedPasskeyRegistrationOptions,

@@ -29,6 +29,7 @@ import {
 import {
   verifyOfflineReleaseAuthorization,
   type OfflineReleaseVerification,
+  type OfflineTrustedWorkloadBinding,
 } from './offline-verifier.js';
 import {
   verifyOnlineReleaseAuthorization,
@@ -164,6 +165,7 @@ export interface ActionDispatchGatewayOptions {
   readonly forceOnlineIntrospection?: boolean;
   readonly replayLedgerEntry?: ReplayLedgerEntry | null;
   readonly nonceLedgerEntry?: NonceLedgerEntry | null;
+  readonly trustedWorkloadBinding?: OfflineTrustedWorkloadBinding;
   readonly dispatchBaseUri?: string | null;
   readonly now?: () => string;
   readonly requestId?: string;
@@ -776,6 +778,7 @@ export async function enforceActionDispatch(
       now: checkedAt,
       replayLedgerEntry: input.options.replayLedgerEntry,
       nonceLedgerEntry: input.options.nonceLedgerEntry,
+      trustedWorkloadBinding: input.options.trustedWorkloadBinding,
     });
     const forcedFailureReasons = gatewayFailureReasons([
       ...presentationModeFailures,
@@ -817,6 +820,7 @@ export async function enforceActionDispatch(
       now: checkedAt,
       replayLedgerEntry: input.options.replayLedgerEntry,
       nonceLedgerEntry: input.options.nonceLedgerEntry,
+      trustedWorkloadBinding: input.options.trustedWorkloadBinding,
     });
     return resultFromVerification({
       checkedAt,
@@ -839,6 +843,7 @@ export async function enforceActionDispatch(
     forceOnlineIntrospection: input.options.forceOnlineIntrospection ?? true,
     replayLedgerEntry: input.options.replayLedgerEntry,
     nonceLedgerEntry: input.options.nonceLedgerEntry,
+    trustedWorkloadBinding: input.options.trustedWorkloadBinding,
     resourceServerId: input.options.enforcementPointId,
   });
 

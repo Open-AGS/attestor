@@ -113,6 +113,14 @@ function deepEqual<T>(actual: T, expected: T, message: string): void {
   passed += 1;
 }
 
+function trustedWorkloadBinding() {
+  return {
+    expectedCertificateThumbprint: CERT_THUMBPRINT,
+    expectedSpiffeId: SPIFFE_ID,
+    expectedTrustDomain: 'attestor.test',
+  } as const;
+}
+
 function cryptoPolicyProvenance(policyHash: string): ReleasePolicyProvenance {
   return {
     source: 'compiled-admission-policy-index',
@@ -620,6 +628,7 @@ async function testOfflineVerificationWrapper(): Promise<void> {
     verificationKey,
     now: CHECKED_AT,
     verificationResultId: 'vr_crypto_offline_001',
+    trustedWorkloadBinding: trustedWorkloadBinding(),
   });
 
   equal(
@@ -640,6 +649,7 @@ async function testOfflineVerificationWrapper(): Promise<void> {
     replayLedgerEntry: null,
     now: CHECKED_AT,
     verificationResultId: 'vr_crypto_offline_001',
+    trustedWorkloadBinding: trustedWorkloadBinding(),
   });
   equal(
     verified.status,
@@ -692,6 +702,7 @@ async function testOnlineVerificationWrapper(): Promise<void> {
     introspector,
     usageStore: store,
     verificationResultId: 'vr_crypto_online_001',
+    trustedWorkloadBinding: trustedWorkloadBinding(),
   });
 
   equal(
@@ -714,6 +725,7 @@ async function testOnlineVerificationWrapper(): Promise<void> {
     introspector,
     usageStore: store,
     verificationResultId: 'vr_crypto_online_001',
+    trustedWorkloadBinding: trustedWorkloadBinding(),
   });
 
   equal(
@@ -773,6 +785,7 @@ async function testConformanceAndDegradedModeReuse(): Promise<void> {
     now: CHECKED_AT,
     introspector: createReleaseTokenIntrospector(store),
     verificationResultId: 'vr_crypto_online_002',
+    trustedWorkloadBinding: trustedWorkloadBinding(),
   });
   const decision = createEnforcementDecision({
     id: 'ed_crypto_enforcement_001',
@@ -812,6 +825,7 @@ async function testConformanceAndDegradedModeReuse(): Promise<void> {
     replayLedgerEntry: null,
     now: CHECKED_AT,
     verificationResultId: 'vr_crypto_online_003',
+    trustedWorkloadBinding: trustedWorkloadBinding(),
   });
   const degraded = evaluateDegradedMode({
     checkedAt: CHECKED_AT,

@@ -48,6 +48,14 @@ function deepEqual<T>(actual: T, expected: T, message: string): void {
   passed += 1;
 }
 
+function trustedWorkloadBinding() {
+  return {
+    expectedCertificateThumbprint: WORKLOAD_CERT_THUMBPRINT,
+    expectedSpiffeId: WORKLOAD_SPIFFE_ID,
+    expectedTrustDomain: 'attestor',
+  } as const;
+}
+
 function tokenDigest(token: string): string {
   return `sha256:${createHash('sha256').update(token).digest('hex')}`;
 }
@@ -337,6 +345,7 @@ async function testHighRiskActiveIntrospectionAllows(): Promise<void> {
     verificationKey,
     now: '2026-04-18T09:01:00.000Z',
     replayLedgerEntry: null,
+    trustedWorkloadBinding: trustedWorkloadBinding(),
     introspector,
     resourceServerId: 'erq-online-r4-pep',
   });
@@ -409,6 +418,7 @@ async function testHighRiskCanConsumeOnSuccess(): Promise<void> {
     verificationKey,
     now: '2026-04-18T09:01:00.000Z',
     replayLedgerEntry: null,
+    trustedWorkloadBinding: trustedWorkloadBinding(),
     introspector,
     usageStore: store,
     consumeOnSuccess: true,
@@ -465,6 +475,7 @@ async function testRevokedTokenFails(): Promise<void> {
     verificationKey,
     now: '2026-04-18T09:01:00.000Z',
     replayLedgerEntry: null,
+    trustedWorkloadBinding: trustedWorkloadBinding(),
     introspector,
   });
 
@@ -518,6 +529,7 @@ async function testConsumedTokenFailsAsReplay(): Promise<void> {
     verificationKey,
     now: '2026-04-18T09:01:00.000Z',
     replayLedgerEntry: null,
+    trustedWorkloadBinding: trustedWorkloadBinding(),
     introspector,
   });
 
@@ -562,6 +574,7 @@ async function testUnknownTokenFails(): Promise<void> {
     verificationKey,
     now: '2026-04-18T09:01:00.000Z',
     replayLedgerEntry: null,
+    trustedWorkloadBinding: trustedWorkloadBinding(),
     introspector,
   });
 
@@ -607,6 +620,7 @@ async function testUnsupportedTokenTypeFails(): Promise<void> {
     verificationKey,
     now: '2026-04-18T09:01:00.000Z',
     replayLedgerEntry: null,
+    trustedWorkloadBinding: trustedWorkloadBinding(),
     introspector,
     tokenTypeHint: 'not_supported',
   });
@@ -657,6 +671,7 @@ async function testActiveClaimMismatchFails(): Promise<void> {
     verificationKey,
     now: '2026-04-18T09:01:00.000Z',
     replayLedgerEntry: null,
+    trustedWorkloadBinding: trustedWorkloadBinding(),
     introspector,
   });
 
@@ -707,6 +722,7 @@ async function testActivePolicyClaimMismatchFailsAsStalePolicy(): Promise<void> 
     verificationKey,
     now: '2026-04-18T09:01:00.000Z',
     replayLedgerEntry: null,
+    trustedWorkloadBinding: trustedWorkloadBinding(),
     introspector,
   });
 
@@ -730,6 +746,7 @@ async function testActivePolicyClaimMismatchFailsAsStalePolicy(): Promise<void> 
     verificationKey,
     now: '2026-04-18T09:01:00.000Z',
     replayLedgerEntry: null,
+    trustedWorkloadBinding: trustedWorkloadBinding(),
     introspector: tokenPolicyMismatchIntrospector,
   });
 
@@ -784,6 +801,7 @@ async function testIntrospectionUnavailableFailsClosed(): Promise<void> {
     verificationKey,
     now: '2026-04-18T09:01:00.000Z',
     replayLedgerEntry: null,
+    trustedWorkloadBinding: trustedWorkloadBinding(),
     introspector,
   });
 

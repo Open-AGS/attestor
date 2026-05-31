@@ -98,6 +98,7 @@ export interface AccountRouteDeps {
   linkAccountUserOidcIdentity: typeof AccountOidc.linkAccountUserOidcIdentity;
   verifyTotpCodeWithStep: typeof AccountMfa.verifyTotpCodeWithStep;
   verifyAndConsumeRecoveryCode: typeof AccountMfa.verifyAndConsumeRecoveryCode;
+  isPendingTotpEnrollmentFresh: typeof AccountMfa.isPendingTotpEnrollmentFresh;
   requireAccountSession(
     context: Context,
     options?: {

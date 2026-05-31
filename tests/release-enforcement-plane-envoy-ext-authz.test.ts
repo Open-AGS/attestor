@@ -227,6 +227,7 @@ async function issueProxyToken(input: {
     decision,
     issuedAt: '2026-04-18T22:00:00.000Z',
     tokenId: input.tokenId,
+    tenantId: 'tenant-test',
     confirmation: input.confirmation,
   });
 

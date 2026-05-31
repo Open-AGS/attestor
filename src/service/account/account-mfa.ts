@@ -32,6 +32,7 @@ const BASE32_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
 const TOTP_DIGITS = 6;
 const TOTP_PERIOD_SECONDS = 30;
 const TOTP_WINDOW = 1;
+export const TOTP_PENDING_ENROLLMENT_TTL_MS = 10 * 60 * 1000;
 
 export interface EncryptedTotpSecret {
   ciphertext: string;
@@ -269,6 +270,24 @@ export function verifyAndConsumeRecoveryCode(
   return { ok: false, nextTotp: totp, usedRecoveryCodeId: null };
 }
 
+export function isPendingTotpEnrollmentFresh(
+  totp: AccountUserTotpState,
+  nowMs = Date.now(),
+  ttlMs = TOTP_PENDING_ENROLLMENT_TTL_MS,
+): boolean {
+  if (
+    !totp.pendingSecretCiphertext ||
+    !totp.pendingSecretIv ||
+    !totp.pendingSecretAuthTag ||
+    !totp.pendingIssuedAt
+  ) {
+    return false;
+  }
+  const issuedAtMs = Date.parse(totp.pendingIssuedAt);
+  if (!Number.isFinite(issuedAtMs) || issuedAtMs > nowMs) return false;
+  return nowMs - issuedAtMs <= ttlMs;
+}
+
 export function totpSummary(totp: AccountUserTotpState): {
   enabled: boolean;
   method: 'totp' | null;
@@ -283,7 +302,7 @@ export function totpSummary(totp: AccountUserTotpState): {
     enabled,
     method: enabled ? 'totp' : null,
     enrolledAt: enabled ? totp.enabledAt : null,
-    pendingEnrollment: Boolean(totp.pendingSecretCiphertext && totp.pendingIssuedAt),
+    pendingEnrollment: isPendingTotpEnrollmentFresh(totp),
     recoveryCodesRemaining: countRemainingRecoveryCodes(totp.recoveryCodes),
     lastVerifiedAt: totp.lastVerifiedAt,
     updatedAt: totp.updatedAt,

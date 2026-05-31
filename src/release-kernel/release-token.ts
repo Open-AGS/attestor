@@ -127,6 +127,7 @@ export interface ReleaseTokenIssuer {
 
 export const DEFAULT_RELEASE_TOKEN_OVERRIDE_AUTHORITY_ROLES = Object.freeze([
   'policy-admin',
+  'policy-break-glass',
   'risk-owner',
   'compliance-officer',
   'security-admin',

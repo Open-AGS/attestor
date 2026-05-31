@@ -131,6 +131,22 @@ export type ReleaseWebhookReceiverResolver<T> =
   | T
   | ((context: ReleaseWebhookReceiverContext) => T | Promise<T>);
 
+export interface ReleaseWebhookReceiverBreakGlassConsumptionInput {
+  readonly context: ReleaseWebhookReceiverContext;
+  readonly request: EnforcementRequest;
+  readonly presentation: ReleasePresentation;
+  readonly signature: HttpMessageSignatureVerification;
+  readonly verificationResult: VerificationResult;
+  readonly offline: OfflineReleaseVerification | null;
+  readonly online: OnlineReleaseVerification | null;
+  readonly failureReasons: readonly EnforcementFailureReason[];
+  readonly grant: EnforcementBreakGlassGrant;
+}
+
+export type ReleaseWebhookReceiverBreakGlassConsumer = (
+  input: ReleaseWebhookReceiverBreakGlassConsumptionInput,
+) => EnforcementBreakGlassGrant | null | undefined | Promise<EnforcementBreakGlassGrant | null | undefined>;
+
 export interface ReleaseWebhookReceiverResult {
   readonly version: typeof RELEASE_WEBHOOK_RECEIVER_SPEC_VERSION;
   readonly status: ReleaseWebhookReceiverStatus;
@@ -190,6 +206,7 @@ export interface ReleaseWebhookReceiverOptions {
   readonly replayLedgerEntry?: ReleaseWebhookReceiverResolver<ReplayLedgerEntry | null | undefined>;
   readonly nonceLedgerEntry?: ReleaseWebhookReceiverResolver<NonceLedgerEntry | null | undefined>;
   readonly breakGlassGrant?: ReleaseWebhookReceiverResolver<EnforcementBreakGlassGrant | null | undefined>;
+  readonly consumeBreakGlassGrant?: ReleaseWebhookReceiverBreakGlassConsumer;
   readonly breakGlassAllowedFailureReasons?: readonly EnforcementFailureReason[];
   readonly breakGlassMaxTtlSeconds?: number;
   readonly requiredCoveredComponents?: readonly string[];
@@ -514,7 +531,8 @@ function createDecisionAndReceipt(input: {
   return { decision, receipt };
 }
 
-function resultFromVerification(input: {
+async function resultFromVerification(input: {
+  readonly context: ReleaseWebhookReceiverContext;
   readonly checkedAt: string;
   readonly request: EnforcementRequest;
   readonly presentation: ReleasePresentation;
@@ -523,7 +541,7 @@ function resultFromVerification(input: {
   readonly online: OnlineReleaseVerification | null;
   readonly options: ReleaseWebhookReceiverOptions;
   readonly breakGlassGrant: EnforcementBreakGlassGrant | null;
-}): ReleaseWebhookReceiverResult {
+}): Promise<ReleaseWebhookReceiverResult> {
   const verificationResult =
     input.online?.verificationResult ?? input.offline?.verificationResult ?? null;
   if (verificationResult === null) {
@@ -576,13 +594,31 @@ function resultFromVerification(input: {
     options: input.options,
   });
 
-  if (activeGrant && breakGlassEligible) {
+  const consumedGrant = activeGrant && breakGlassEligible && input.options.consumeBreakGlassGrant
+    ? activeBreakGlassGrant(
+        await input.options.consumeBreakGlassGrant({
+          context: input.context,
+          request: input.request,
+          presentation: input.presentation,
+          signature: input.signature,
+          verificationResult,
+          offline: input.offline,
+          online: input.online,
+          failureReasons: verifierFailures,
+          grant: activeGrant,
+        }),
+        input.checkedAt,
+        input.options.breakGlassMaxTtlSeconds,
+      )
+    : null;
+
+  if (consumedGrant && breakGlassEligible) {
     const { decision, receipt } = createDecisionAndReceipt({
       request: input.request,
       verification: verificationResult,
       checkedAt: input.checkedAt,
       failureReasons: verifierFailures,
-      breakGlass: activeGrant,
+      breakGlass: consumedGrant,
     });
     return Object.freeze({
       version: RELEASE_WEBHOOK_RECEIVER_SPEC_VERSION,
@@ -596,7 +632,7 @@ function resultFromVerification(input: {
       online: input.online,
       decision,
       receipt,
-      breakGlass: activeGrant,
+      breakGlass: consumedGrant,
       failureReasons: verifierFailures,
       responseStatus: 202,
       retryable: false,
@@ -916,7 +952,8 @@ export async function evaluateReleaseWebhookRequest(
 
   if (inputUsesOnlineVerifier(verifierInput, options)) {
     const online = await verifyOnlineReleaseAuthorization(verifierInput);
-    const result = resultFromVerification({
+    const result = await resultFromVerification({
+      context,
       checkedAt,
       request: verifierInput.request,
       presentation: verifierInput.presentation,
@@ -935,7 +972,8 @@ export async function evaluateReleaseWebhookRequest(
   }
 
   const offline = await verifyOfflineReleaseAuthorization(verifierInput);
-  const result = resultFromVerification({
+  const result = await resultFromVerification({
+    context,
     checkedAt,
     request: verifierInput.request,
     presentation: verifierInput.presentation,

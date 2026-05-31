@@ -33,6 +33,7 @@ import {
 } from '../src/service/release/release-evidence-pack-store.js';
 
 let passed = 0;
+const VALID_SHARED_PROVENANCE_DIGEST = `sha256:${'b'.repeat(64)}`;
 
 function ok(condition: unknown, message: string): void {
   assert.ok(condition, message);
@@ -68,7 +69,7 @@ function makeFinanceReport() {
     timestamp: '2026-04-24T19:30:00.000Z',
     decision: 'pending_approval',
     certificate: { certificateId: 'cert_shared_release_evidence_pack' },
-    evidenceChain: { terminalHash: 'sha256:chain_terminal_shared_release_evidence_pack', intact: true },
+    evidenceChain: { terminalHash: VALID_SHARED_PROVENANCE_DIGEST, intact: true },
     execution: {
       success: true,
       rows: [

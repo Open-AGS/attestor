@@ -42,6 +42,13 @@ import {
   type HonoReleaseWebhookReceiverEnv,
   type ReleaseWebhookReceiverOptions,
 } from '../src/release-enforcement-plane/webhook-receiver.js';
+import {
+  createDegradedModeGrant,
+  createInMemoryDegradedModeGrantStore,
+  degradedModeScopeFromRequest,
+  degradedModeScopeMatches,
+  grantToBreakGlassGrant,
+} from '../src/release-enforcement-plane/degraded-mode.js';
 
 let passed = 0;
 
@@ -183,6 +190,7 @@ async function issueWebhookToken(input: {
     decision,
     issuedAt: '2026-04-18T16:00:00.000Z',
     tokenId: input.tokenId,
+    tenantId: 'tenant-test',
     confirmation: createHttpMessageSignatureReleaseTokenConfirmation({
       publicKeyThumbprint: input.signatureKey.publicKeyThumbprint,
     }),
@@ -258,6 +266,7 @@ function receiverOptions(input: {
   readonly replayLedgerEntry?: ReplayLedgerEntry | null;
   readonly breakGlass?: boolean;
   readonly breakGlassExpiresAt?: string;
+  readonly consumeBreakGlassGrant?: ReleaseWebhookReceiverOptions['consumeBreakGlassGrant'];
 }): ReleaseWebhookReceiverOptions {
   return {
     verificationKey: input.verificationKey,
@@ -283,6 +292,7 @@ function receiverOptions(input: {
           rationale: 'Control-plane introspection is degraded; local signature verification remains valid.',
         }
       : undefined,
+    consumeBreakGlassGrant: input.consumeBreakGlassGrant,
   };
 }
 
@@ -604,6 +614,7 @@ async function testBreakGlassCanAdmitLocallyVerifiedWebhook(): Promise<void> {
       verificationKey,
       nonce: 'nonce-webhook-break-glass',
       breakGlass: true,
+      consumeBreakGlassGrant: ({ grant }) => grant,
     }),
   );
 
@@ -612,6 +623,129 @@ async function testBreakGlassCanAdmitLocallyVerifiedWebhook(): Promise<void> {
   equal(result.decision?.outcome, 'break-glass-allow', 'Webhook receiver: break-glass creates explicit outcome');
   equal(result.breakGlass?.ticketId, 'INC-4242', 'Webhook receiver: break-glass grant is retained');
   deepEqual(result.failureReasons, ['introspection-unavailable'], 'Webhook receiver: break-glass keeps original failure reasons');
+}
+
+async function testRawBreakGlassGrantRequiresConsumption(): Promise<void> {
+  const { signatureKey, verificationKey, envelope } = await setupValidWebhook({
+    tokenId: 'rt_webhook_receiver_break_glass_raw',
+    decisionId: 'decision-webhook-receiver-break-glass-raw',
+    nonce: 'nonce-webhook-break-glass-raw',
+  });
+  const result = await evaluateReleaseWebhookRequest(
+    {
+      method: 'POST',
+      url: envelope.uri,
+      headers: new Headers(envelope.headers),
+      body: BODY,
+    },
+    receiverOptions({
+      signatureKey,
+      verificationKey,
+      nonce: 'nonce-webhook-break-glass-raw',
+      breakGlass: true,
+    }),
+  );
+
+  equal(result.status, 'rejected', 'Webhook receiver: raw break-glass grant does not admit without consumption');
+  equal(result.breakGlass, null, 'Webhook receiver: unconsumed break-glass grant is not attached');
+  deepEqual(
+    result.failureReasons,
+    ['introspection-unavailable', 'break-glass-required'],
+    'Webhook receiver: unconsumed grant still reports explicit break-glass requirement',
+  );
+}
+
+async function testBreakGlassGrantConsumptionIsOneUse(): Promise<void> {
+  const { signatureKey, verificationKey, envelope } = await setupValidWebhook({
+    tokenId: 'rt_webhook_receiver_break_glass_one_use',
+    decisionId: 'decision-webhook-receiver-break-glass-one-use',
+    nonce: 'nonce-webhook-break-glass-one-use',
+  });
+  const store = createInMemoryDegradedModeGrantStore();
+  const grant = store.registerGrant(createDegradedModeGrant({
+    id: 'dmg_webhook_one_use',
+    state: 'break-glass-open',
+    reason: 'control-plane-recovery',
+    scope: {
+      environment: 'test',
+      enforcementPointId: 'webhook-receiver-pep',
+      pointKind: 'webhook-receiver',
+      boundaryKind: 'webhook',
+      tenantId: 'tenant-test',
+      accountId: 'acct-test',
+      workloadId: 'spiffe://attestor/tests/webhook-receiver',
+      audience: TARGET_ID,
+      targetId: TARGET_ID,
+      consequenceType: 'action',
+      riskClass: 'R3',
+    },
+    authorizedBy: {
+      id: 'user.release-operator',
+      type: 'user',
+      role: 'release-operator',
+    },
+    approvedBy: [
+      {
+        id: 'user.incident-commander',
+        type: 'user',
+        role: 'incident-commander',
+      },
+    ],
+    authorizedAt: '2026-04-18T16:00:30.000Z',
+    startsAt: '2026-04-18T16:00:30.000Z',
+    expiresAt: '2026-04-18T16:05:00.000Z',
+    ticketId: 'INC-4242',
+    rationale: 'Control-plane introspection is degraded; local signature verification remains valid.',
+    maxUses: 1,
+    remainingUses: 1,
+  }));
+  const options = receiverOptions({
+    signatureKey,
+    verificationKey,
+    nonce: 'nonce-webhook-break-glass-one-use',
+    breakGlass: true,
+    consumeBreakGlassGrant: (input) => {
+      const stored = store.findGrant(grant.id);
+      if (!stored || !degradedModeScopeMatches(stored.scope, degradedModeScopeFromRequest(input.request))) {
+        return null;
+      }
+      const consumed = store.consumeGrant({
+        id: grant.id,
+        checkedAt: input.context.checkedAt,
+        actor: grant.authorizedBy,
+        failureReasons: input.failureReasons,
+        metadata: { requestId: input.request.id },
+      });
+      return consumed ? grantToBreakGlassGrant(consumed) : null;
+    },
+  });
+
+  const first = await evaluateReleaseWebhookRequest(
+    {
+      method: 'POST',
+      url: envelope.uri,
+      headers: new Headers(envelope.headers),
+      body: BODY,
+    },
+    options,
+  );
+  const second = await evaluateReleaseWebhookRequest(
+    {
+      method: 'POST',
+      url: envelope.uri,
+      headers: new Headers(envelope.headers),
+      body: BODY,
+    },
+    options,
+  );
+
+  equal(first.status, 'break-glass-accepted', 'Webhook receiver: consumed one-use grant admits once');
+  equal(second.status, 'rejected', 'Webhook receiver: exhausted one-use grant cannot admit again');
+  equal(
+    store.listAuditRecords().filter((record) => record.action === 'grant-used').length,
+    1,
+    'Webhook receiver: consumed grant is recorded once in degraded-mode audit',
+  );
 }
 
 async function testBreakGlassRejectsOverlongGrant(): Promise<void> {
@@ -867,6 +1001,8 @@ async function main(): Promise<void> {
   await testReplayLedgerHitIsConflict();
   await testIntrospectionUnavailableRequiresBreakGlass();
   await testBreakGlassCanAdmitLocallyVerifiedWebhook();
+  await testRawBreakGlassGrantRequiresConsumption();
+  await testBreakGlassGrantConsumptionIsOneUse();
   await testBreakGlassRejectsOverlongGrant();
   await testBreakGlassCannotBypassInvalidSignature();
   await testRejectedResponseBodyAndHeaders();

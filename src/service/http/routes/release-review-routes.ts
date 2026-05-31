@@ -28,6 +28,7 @@ import {
   RELEASE_ADMIN_MUTATION_ROLES,
   RELEASE_ADMIN_READ_ROLES,
   authorizeReleaseAdminRoute,
+  type ReleaseAdminRouteActor,
 } from '../release-admin-authorization.js';
 import { secureHtmlResponseHeaders } from '../route-response-helpers.js';
 
@@ -132,6 +133,14 @@ function readReviewField(
 
   const trimmed = value.trim();
   return trimmed.length > 0 ? trimmed : null;
+}
+
+function actorDisplayName(actor: ReleaseAdminRouteActor['releaseActor']): string {
+  return actor.displayName?.trim() || actor.id;
+}
+
+function actorPolicyRole(authorized: ReleaseAdminRouteActor): string {
+  return authorized.releaseActor.role?.trim() || authorized.adminRole;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -400,9 +409,9 @@ export function registerReleaseReviewRoutes(app: Hono, deps: ReleaseReviewRouteD
       const transition = applyReviewerDecision({
         record,
         outcome: 'approved',
-        reviewerId: readReviewField(body, 'reviewerId') ?? '',
-        reviewerName: readReviewField(body, 'reviewerName') ?? '',
-        reviewerRole: readReviewField(body, 'reviewerRole') ?? '',
+        reviewerId: authorized.releaseActor.id,
+        reviewerName: actorDisplayName(authorized.releaseActor),
+        reviewerRole: actorPolicyRole(authorized),
         note: readReviewField(body, 'note'),
         decidedAt,
       });
@@ -508,8 +517,8 @@ export function registerReleaseReviewRoutes(app: Hono, deps: ReleaseReviewRouteD
             metadata: {
               reviewId: stored.id,
               decisionId: stored.decisionId,
-              reviewerId: readReviewField(body, 'reviewerId'),
-              reviewerRole: readReviewField(body, 'reviewerRole'),
+              reviewerId: authorized.releaseActor.id,
+              reviewerRole: actorPolicyRole(authorized),
               authorityState: stored.authorityState,
               approvalsRecorded: stored.approvalsRecorded,
               releaseTokenId: responseToken?.tokenId ?? null,
@@ -556,9 +565,9 @@ export function registerReleaseReviewRoutes(app: Hono, deps: ReleaseReviewRouteD
       const transition = applyReviewerDecision({
         record,
         outcome: 'rejected',
-        reviewerId: readReviewField(body, 'reviewerId') ?? '',
-        reviewerName: readReviewField(body, 'reviewerName') ?? '',
-        reviewerRole: readReviewField(body, 'reviewerRole') ?? '',
+        reviewerId: authorized.releaseActor.id,
+        reviewerName: actorDisplayName(authorized.releaseActor),
+        reviewerRole: actorPolicyRole(authorized),
         note: readReviewField(body, 'note'),
         decidedAt,
       });
@@ -593,8 +602,8 @@ export function registerReleaseReviewRoutes(app: Hono, deps: ReleaseReviewRouteD
             metadata: {
               reviewId: stored.id,
               decisionId: stored.decisionId,
-              reviewerId: readReviewField(body, 'reviewerId'),
-              reviewerRole: readReviewField(body, 'reviewerRole'),
+              reviewerId: authorized.releaseActor.id,
+              reviewerRole: actorPolicyRole(authorized),
               authorityState: stored.authorityState,
             },
           },
@@ -653,9 +662,10 @@ export function registerReleaseReviewRoutes(app: Hono, deps: ReleaseReviewRouteD
         record,
         reasonCode: readReviewField(body, 'reasonCode') ?? '',
         ticketId: readReviewField(body, 'ticketId'),
-        requestedById: readReviewField(body, 'requestedById') ?? '',
-        requestedByName: readReviewField(body, 'requestedByName') ?? '',
-        requestedByRole: readReviewField(body, 'requestedByRole'),
+        requestedById: authorized.releaseActor.id,
+        requestedByName: actorDisplayName(authorized.releaseActor),
+        requestedByRole: actorPolicyRole(authorized),
+        requestedByType: authorized.releaseActor.type,
         note: readReviewField(body, 'note'),
         decidedAt,
       });

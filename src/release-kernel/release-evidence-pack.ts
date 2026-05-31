@@ -257,6 +257,42 @@ function canonicalDigest(value: unknown): string {
   return taggedSha256Hex(canonicalizeReleaseJson(value as never));
 }
 
+const STRICT_SHA256_ARTIFACT_DIGEST = /^sha256:[0-9a-f]{64}$/u;
+
+function assertStrictSha256ArtifactDigest(value: string | undefined, fieldName: string): string {
+  const normalized = value?.trim() ?? '';
+  if (!STRICT_SHA256_ARTIFACT_DIGEST.test(normalized)) {
+    throw new Error(`${fieldName} must use sha256:<64 lowercase hex> syntax.`);
+  }
+  return normalized;
+}
+
+function issuerDerivedArtifact(
+  artifact: Omit<EvidenceArtifactReference, 'verificationStatus'>,
+): EvidenceArtifactReference {
+  return Object.freeze({
+    ...artifact,
+    digest: assertStrictSha256ArtifactDigest(artifact.digest, `artifact '${artifact.path}' digest`),
+    verificationStatus: 'issuer-derived',
+  });
+}
+
+function declaredUnverifiedArtifact(
+  artifact: EvidenceArtifactReference,
+): EvidenceArtifactReference {
+  const path = artifact.path.trim();
+  if (!path) {
+    throw new Error('Declared evidence artifact reference requires a non-empty path.');
+  }
+
+  return Object.freeze({
+    kind: artifact.kind,
+    path,
+    digest: assertStrictSha256ArtifactDigest(artifact.digest, `artifact '${path}' digest`),
+    verificationStatus: 'declared-unverified',
+  });
+}
+
 function canonicalEqual(left: unknown, right: unknown): boolean {
   return canonicalizeReleaseJson(left as never) === canonicalizeReleaseJson(right as never);
 }
@@ -518,7 +554,7 @@ function buildArtifactReferences(input: {
   readonly artifactReferences: readonly EvidenceArtifactReference[];
 }): readonly EvidenceArtifactReference[] {
   const artifacts: EvidenceArtifactReference[] = [
-    {
+    issuerDerivedArtifact({
       kind: 'other',
       path: `release-decision-log://${input.decision.id}`,
       digest: canonicalDigest(
@@ -529,12 +565,12 @@ function buildArtifactReferences(input: {
           previousEntryDigest: entry.previousEntryDigest,
         })),
       ),
-    },
-    ...input.artifactReferences,
+    }),
+    ...input.artifactReferences.map((artifact) => declaredUnverifiedArtifact(artifact)),
   ];
 
   if (input.review) {
-    artifacts.push({
+    artifacts.push(issuerDerivedArtifact({
       kind: 'review-record',
       path: `release-review://${input.review.id}`,
       digest: canonicalDigest({
@@ -544,15 +580,15 @@ function buildArtifactReferences(input: {
         reviewerDecisions: input.review.reviewerDecisions,
         timeline: input.review.timeline,
       }),
-    });
+    }));
   }
 
   if (input.releaseToken) {
-    artifacts.push({
+    artifacts.push(issuerDerivedArtifact({
       kind: 'signature',
       path: `release-token://${input.releaseToken.tokenId}`,
       digest: taggedSha256Hex(input.releaseToken.token),
-    });
+    }));
   }
 
   return Object.freeze(
@@ -561,6 +597,7 @@ function buildArtifactReferences(input: {
         kind: artifact.kind,
         path: artifact.path,
         digest: artifact.digest,
+        verificationStatus: artifact.verificationStatus,
       }),
     ),
   );

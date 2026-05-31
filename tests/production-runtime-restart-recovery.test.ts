@@ -62,7 +62,7 @@ function makeFinanceReport(overrides: Record<string, unknown> = {}) {
     timestamp: '2026-04-23T10:00:00.000Z',
     decision: 'pending_approval',
     certificate: { certificateId: 'cert_runtime_recovery' },
-    evidenceChain: { terminalHash: 'sha256:chain_terminal_runtime_recovery', intact: true },
+    evidenceChain: { terminalHash: `sha256:${'c'.repeat(64)}`, intact: true },
     execution: {
       success: true,
       rows: [

@@ -1,6 +1,21 @@
 import assert from 'node:assert/strict';
 import { Hono } from 'hono';
 import {
+  buildFinanceFilingReleaseMaterial,
+  buildFinanceFilingReleaseObservation,
+  createFinanceFilingReleaseCandidateFromReport,
+  finalizeFinanceFilingReleaseDecision,
+} from '../src/release-kernel/finance-record-release.js';
+import { createReleaseDecisionEngine } from '../src/release-kernel/release-decision-engine.js';
+import { createInMemoryReleaseDecisionLogWriter } from '../src/release-kernel/release-decision-log.js';
+import {
+  createFinanceReviewerQueueItem,
+  type ReleaseReviewerQueueRecord,
+} from '../src/release-kernel/reviewer-queue.js';
+import { createReleaseTokenIssuer } from '../src/release-kernel/release-token.js';
+import { createReleaseEvidencePackIssuer } from '../src/release-kernel/release-evidence-pack.js';
+import { generateKeyPair } from '../src/signing/keys.js';
+import {
   registerReleaseReviewRoutes,
   type ReleaseReviewRouteDeps,
 } from '../src/service/http/routes/release-review-routes.js';
@@ -15,9 +30,104 @@ function adminHeaders(extra?: Record<string, string>, token = 'admin-secret'): R
   };
 }
 
-function createFixture(input: { readonly reviewDetail?: unknown } = {}): Hono {
+function makeFinanceReport(overrides: Record<string, unknown> = {}) {
+  return {
+    runId: 'release-review-admin-route',
+    decision: 'pending_approval',
+    certificate: { certificateId: 'cert_release_review_admin_route' },
+    evidenceChain: { terminalHash: 'chain_terminal', intact: true },
+    execution: {
+      success: true,
+      rows: [
+        {
+          counterparty_name: 'Bank of Nova Scotia',
+          exposure_usd: 250000000,
+          credit_rating: 'AA-',
+          sector: 'Banking',
+        },
+      ],
+    },
+    liveProof: {
+      mode: 'live_runtime',
+      consistent: true,
+    },
+    receipt: {
+      receiptStatus: 'withheld',
+    },
+    oversight: {
+      status: 'pending',
+    },
+    escrow: {
+      state: 'held',
+    },
+    filingReadiness: {
+      status: 'internal_report_ready',
+      totalGaps: 0,
+      blockingGaps: 0,
+    },
+    audit: {
+      chainIntact: true,
+    },
+    attestation: {
+      manifestHash: 'manifest_hash',
+    },
+    ...overrides,
+  } as any;
+}
+
+function createReviewRecord(): ReleaseReviewerQueueRecord {
+  const report = makeFinanceReport();
+  const candidate = createFinanceFilingReleaseCandidateFromReport(report);
+  assert.ok(candidate, 'Release review route fixture: finance report creates a candidate');
+  const material = buildFinanceFilingReleaseMaterial(candidate);
+  const decisionLog = createInMemoryReleaseDecisionLogWriter();
+  const engine = createReleaseDecisionEngine({ decisionLog });
+  const evaluation = engine.evaluateWithDeterministicChecks(
+    {
+      id: 'release-review-admin-route-decision',
+      createdAt: new Date().toISOString(),
+      outputHash: material.hashBundle.outputHash,
+      consequenceHash: material.hashBundle.consequenceHash,
+      outputContract: material.outputContract,
+      capabilityBoundary: material.capabilityBoundary,
+      requester: {
+        id: 'tenant:tenant-review-admin-route',
+        type: 'service',
+        displayName: 'Attestor API',
+      },
+      target: material.target,
+    },
+    buildFinanceFilingReleaseObservation(material, report),
+  );
+  const finalized = finalizeFinanceFilingReleaseDecision(evaluation.decision, report);
+  return createFinanceReviewerQueueItem({
+    decision: finalized,
+    candidate,
+    report,
+    logEntries: decisionLog.entries(),
+  });
+}
+
+function createFixture(input: {
+  readonly reviewDetail?: unknown;
+  readonly reviewRecord?: ReleaseReviewerQueueRecord;
+} = {}): Hono {
   resetReleaseAdminRouteAuthLimiterForTests();
   const app = new Hono();
+  let reviewRecord = input.reviewRecord ?? null;
+  const decisionLog = createInMemoryReleaseDecisionLogWriter();
+  const tokenKeys = generateKeyPair();
+  const evidenceKeys = generateKeyPair();
+  const tokenIssuer = createReleaseTokenIssuer({
+    issuer: 'attestor.release.review-route-test',
+    privateKeyPem: tokenKeys.privateKeyPem,
+    publicKeyPem: tokenKeys.publicKeyPem,
+  });
+  const evidenceIssuer = createReleaseEvidencePackIssuer({
+    issuer: 'attestor.release.review-route-test',
+    privateKeyPem: evidenceKeys.privateKeyPem,
+    publicKeyPem: evidenceKeys.publicKeyPem,
+  });
   const deps: ReleaseReviewRouteDeps = {
     currentAdminAuthorized,
     apiReleaseReviewerQueueStore: {
@@ -33,34 +143,27 @@ function createFixture(input: { readonly reviewDetail?: unknown } = {}): Hono {
         },
         items: [],
       }),
-      get: async () => input.reviewDetail ?? null,
-      getRecord: async () => null,
-      upsert: async (record: unknown) => record,
+      get: async (id: string) =>
+        reviewRecord?.detail.id === id ? reviewRecord.detail : input.reviewDetail ?? null,
+      getRecord: async (id: string) => (reviewRecord?.detail.id === id ? reviewRecord : null),
+      upsert: async (record: ReleaseReviewerQueueRecord) => {
+        reviewRecord = record;
+        return record.detail;
+      },
     } as never,
     renderReleaseReviewerQueueInboxPage: () => '<html><body>empty</body></html>',
     renderReleaseReviewerQueueDetailPage: () => '<html><body>missing</body></html>',
-    financeReleaseDecisionLog: {
-      append: async () => undefined,
-      entries: async () => [],
-      verify: async () => ({ valid: true, latestEntryDigest: null, errors: [] }),
-    } as never,
-    apiReleaseTokenIssuer: {
-      issue: async () => {
-        throw new Error('release token issuer should not be reached in auth tests');
-      },
-    } as never,
+    financeReleaseDecisionLog: decisionLog,
+    apiReleaseTokenIssuer: tokenIssuer,
     apiReleaseEvidencePackStore: {
       get: async () => null,
-      upsert: async () => undefined,
+      upsert: async (pack) => pack,
     } as never,
-    apiReleaseEvidencePackIssuer: {
-      issue: async () => {
-        throw new Error('evidence pack issuer should not be reached in auth tests');
-      },
-    } as never,
+    apiReleaseEvidencePackIssuer: evidenceIssuer,
     apiReleaseIntrospectionStore: {
       registerIssuedToken: async () => undefined,
     } as never,
+    resolveReleaseReviewTokenConfirmation: () => ({ jkt: 'sha256:test-sender-thumbprint' }),
     adminMutationRequest: async () => ({
       idempotencyKey: null,
       requestHash: 'test-release-review-auth',
@@ -179,6 +282,59 @@ async function testReleaseReviewRoleScopedAdminKeys(): Promise<void> {
   assert.equal(breakGlassReachesOverride.status, 404);
 }
 
+async function testReleaseReviewReviewerIdentityIsCredentialBound(): Promise<void> {
+  const record = createReviewRecord();
+  const app = createFixture({ reviewRecord: record });
+  const firstApproval = await requestJson(app, `/api/v1/admin/release-reviews/${record.detail.id}/approve`, {
+    method: 'POST',
+    headers: adminHeaders(undefined, 'admin-release-secret'),
+    body: {
+      reviewerId: 'spoofed.reviewer.alpha',
+      reviewerName: 'Spoofed Reviewer Alpha',
+      reviewerRole: 'financial_reporting_manager',
+      note: 'Body identity must not become reviewer authority.',
+    },
+  });
+  const secondApproval = await requestJson(app, `/api/v1/admin/release-reviews/${record.detail.id}/approve`, {
+    method: 'POST',
+    headers: adminHeaders(undefined, 'admin-release-secret'),
+    body: {
+      reviewerId: 'spoofed.reviewer.beta',
+      reviewerName: 'Spoofed Reviewer Beta',
+      reviewerRole: 'financial_reporting_manager',
+    },
+  });
+
+  assert.equal(firstApproval.status, 200);
+  assert.equal(firstApproval.body.review.reviewerDecisions[0].reviewerId, 'admin-credential:admin-release-admin');
+  assert.equal(firstApproval.body.review.reviewerDecisions[0].reviewerName, 'Admin Credential (admin-release-admin)');
+  assert.equal(firstApproval.body.review.reviewerDecisions[0].reviewerRole, 'policy-admin');
+  assert.equal(secondApproval.status, 409);
+  assert.equal(secondApproval.body.code, 'duplicate_reviewer');
+}
+
+async function testReleaseReviewOverrideRequesterIsCredentialBound(): Promise<void> {
+  const record = createReviewRecord();
+  const app = createFixture({ reviewRecord: record });
+  const override = await requestJson(app, `/api/v1/admin/release-reviews/${record.detail.id}/override`, {
+    method: 'POST',
+    headers: adminHeaders(undefined, 'admin-break-glass-secret'),
+    body: {
+      reasonCode: 'control-plane-recovery',
+      ticketId: 'INC-4242',
+      requestedById: 'spoofed.incident.commander',
+      requestedByName: 'Spoofed Incident Commander',
+      requestedByRole: 'incident-commander',
+    },
+  });
+
+  assert.equal(override.status, 200);
+  assert.equal(override.body.review.overrideGrant.requestedById, 'admin-credential:admin-break-glass');
+  assert.equal(override.body.review.overrideGrant.requestedByLabel, 'Admin Credential (admin-break-glass)');
+  assert.equal(override.body.review.overrideGrant.requestedByRole, 'policy-break-glass');
+  assert.equal(override.body.releaseToken.override, true);
+}
+
 async function testReleaseReviewHtmlRoutesCarrySecurityHeaders(): Promise<void> {
   const app = createFixture({ reviewDetail: { id: 'review_001' } });
   const inbox = await app.request('/api/v1/admin/release-reviews/inbox', {
@@ -208,8 +364,10 @@ async function run(): Promise<void> {
 
   try {
     await testReleaseReviewRoleScopedAdminKeys();
+    await testReleaseReviewReviewerIdentityIsCredentialBound();
+    await testReleaseReviewOverrideRequesterIsCredentialBound();
     await testReleaseReviewHtmlRoutesCarrySecurityHeaders();
-    console.log('Release review admin-route tests: 2 passed, 0 failed');
+    console.log('Release review admin-route tests: 4 passed, 0 failed');
   } finally {
     process.env.ATTESTOR_ADMIN_API_KEY = originalAdminApiKey;
     process.env.ATTESTOR_ADMIN_READ_API_KEY = originalAdminReadApiKey;

@@ -105,9 +105,10 @@ export interface EvidenceArtifactReference {
     | 'signature'
     | 'verification-kit'
     | 'provenance'
-    | 'other';
+      | 'other';
   readonly path: string;
   readonly digest?: string;
+  readonly verificationStatus?: 'issuer-derived' | 'declared-unverified';
 }
 
 export interface ReleaseEvidencePolicyContext {

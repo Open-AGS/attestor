@@ -25,8 +25,8 @@ Replay is where an authorization gateway quietly becomes advisory if it is not s
 
 An admitted supplier payment should not be reusable against the same adapter. A wallet handoff should not be presented twice because a retry path copied the same key. A data export should not run again because an async worker reprocessed the same message without checking consumption.
 
-The ledger gives the customer-side enforcement point a small replay consumption
-rule inside the configured retention window:
+The ledger gives the customer-side enforcement point a small
+single-use replay consumption rule inside the configured retention window:
 
 ```text
 allow only after the presentation binding allows and the replay key is consumed once within retention

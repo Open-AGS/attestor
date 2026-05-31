@@ -361,6 +361,7 @@ async function testAllShadowRoutesHaveHttpCoverage(): Promise<void> {
     ['GET /business-risk-dashboard', app.request('/api/v1/shadow/business-risk-dashboard')],
     ['GET /dashboard-summary', app.request('/api/v1/shadow/dashboard-summary')],
     ['GET /review-surface', app.request('/api/v1/shadow/review-surface')],
+    ['GET /review-surface/view', app.request('/api/v1/shadow/review-surface/view')],
     [
       'GET /review-surface/cases/:caseDigest',
       app.request(`/api/v1/shadow/review-surface/cases/${encodeURIComponent(firstCaseDigest)}`),
@@ -409,7 +410,7 @@ async function testAllShadowRoutesHaveHttpCoverage(): Promise<void> {
     ],
   ];
 
-  equal(requests.length, 29, 'Shadow routes HTTP coverage: all 29 routes are exercised');
+  equal(requests.length, 30, 'Shadow routes HTTP coverage: all 30 routes are exercised');
   for (const [name, request] of requests) {
     const response = await request;
     ok(response.status !== 404, `Shadow routes HTTP coverage: ${name} is registered`);

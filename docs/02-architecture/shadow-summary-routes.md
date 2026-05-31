@@ -11,6 +11,7 @@ GET /api/v1/shadow/audit-evidence
 GET /api/v1/shadow/business-risk-dashboard
 GET /api/v1/shadow/dashboard-summary
 GET /api/v1/shadow/review-surface
+GET /api/v1/shadow/review-surface/view
 GET /api/v1/shadow/review-surface/cases/:caseDigest
 ```
 
@@ -65,6 +66,10 @@ the same audit evidence, dashboard, and dashboard summary:
 The case-detail route expands one `caseDigest` into digest-only drill-down
 material for reviewers. It does not return raw case payloads and cannot admit,
 block, enforce, or mutate policy.
+
+The HTML preview route renders the same review surface as a no-store HTML page
+for browser inspection. It renders from the review surface only; it does not
+read raw shadow material, run JavaScript, or claim hosted UI/product readiness.
 
 ## Data Boundary
 

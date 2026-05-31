@@ -419,6 +419,28 @@ async function testCanonicalBinding(): Promise<void> {
   ok(left.checkHash.startsWith('sha256:'), 'Envoy bridge: check hash is recorded');
 }
 
+async function testClientTargetHeaderIsNotTrustedByDefault(): Promise<void> {
+  const headerScoped = withHeaders(
+    withContextExtensions(BASE_CHECK, { 'attestor.target_id': '' }),
+    { [ATTESTOR_TARGET_ID_HEADER]: 'client.supplied.target' },
+  );
+  const defaultBinding = buildEnvoyExtAuthzCanonicalBinding(headerScoped);
+  const explicitOptInBinding = buildEnvoyExtAuthzCanonicalBinding(headerScoped, {
+    allowClientTargetHeader: true,
+  });
+
+  equal(
+    defaultBinding.target.id,
+    'finance-gateway.attestor.svc.cluster.local',
+    'Envoy bridge: client target header is ignored without explicit opt-in',
+  );
+  equal(
+    explicitOptInBinding.target.id,
+    'client.supplied.target',
+    'Envoy bridge: client target header requires explicit opt-in',
+  );
+}
+
 async function testRouteRiskClassMapping(): Promise<void> {
   const routeScoped = buildEnvoyExtAuthzCanonicalBinding(
     withContextExtensions(BASE_CHECK, {
@@ -460,6 +482,10 @@ async function testConfigRendering(): Promise<void> {
   equal(envoy.typed_config.validate_mutations, true, 'Envoy bridge: response mutation validation is enabled');
   equal(envoy.typed_config.status_on_error.code, 503, 'Envoy bridge: control-plane errors surface as unavailable');
   ok(envoy.typed_config.allowed_headers.patterns.some((pattern) => pattern.exact === 'dpop'), 'Envoy bridge: DPoP header is included in checks');
+  ok(
+    !envoy.typed_config.allowed_headers.patterns.some((pattern) => pattern.exact === ATTESTOR_TARGET_ID_HEADER),
+    'Envoy bridge: target ID is not forwarded as a trusted default header',
+  );
 
   const provider = renderIstioExtAuthzExtensionProvider({
     name: 'attestor-release-ext-authz',
@@ -913,6 +939,7 @@ async function testMalformedCheckFailsClosed(): Promise<void> {
 
 async function run(): Promise<void> {
   await testCanonicalBinding();
+  await testClientTargetHeaderIsNotTrustedByDefault();
   await testRouteRiskClassMapping();
   await testConfigRendering();
   await testValidDpopProxyCheck();

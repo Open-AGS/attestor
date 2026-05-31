@@ -9,7 +9,9 @@ import {
 import { createReleaseDecisionEngine } from '../src/release-kernel/release-decision-engine.js';
 import { createInMemoryReleaseDecisionLogWriter } from '../src/release-kernel/release-decision-log.js';
 import {
+  applyReviewerDecision,
   createFinanceReviewerQueueItem,
+  ReleaseReviewerQueueError,
   type ReleaseReviewerQueueRecord,
 } from '../src/release-kernel/reviewer-queue.js';
 import { createReleaseTokenIssuer } from '../src/release-kernel/release-token.js';
@@ -108,13 +110,28 @@ function createReviewRecord(): ReleaseReviewerQueueRecord {
   });
 }
 
+function createFinalApprovalReadyReviewRecord(): ReleaseReviewerQueueRecord {
+  return applyReviewerDecision({
+    record: createReviewRecord(),
+    outcome: 'approved',
+    reviewerId: 'external.reviewer.one',
+    reviewerName: 'External Reviewer One',
+    reviewerRole: 'policy-admin',
+    decidedAt: '2026-05-31T00:00:00.000Z',
+  }).record;
+}
+
 function createFixture(input: {
   readonly reviewDetail?: unknown;
   readonly reviewRecord?: ReleaseReviewerQueueRecord;
+  readonly staleRecordReads?: boolean;
+  readonly tokenRegistrations?: string[];
+  readonly evidencePackWrites?: string[];
 } = {}): Hono {
   resetReleaseAdminRouteAuthLimiterForTests();
   const app = new Hono();
   let reviewRecord = input.reviewRecord ?? null;
+  const initialReviewRecord = reviewRecord;
   const decisionLog = createInMemoryReleaseDecisionLogWriter();
   const tokenKeys = generateKeyPair();
   const evidenceKeys = generateKeyPair();
@@ -145,8 +162,27 @@ function createFixture(input: {
       }),
       get: async (id: string) =>
         reviewRecord?.detail.id === id ? reviewRecord.detail : input.reviewDetail ?? null,
-      getRecord: async (id: string) => (reviewRecord?.detail.id === id ? reviewRecord : null),
+      getRecord: async (id: string) => {
+        const source = input.staleRecordReads ? initialReviewRecord : reviewRecord;
+        return source?.detail.id === id ? source : null;
+      },
       upsert: async (record: ReleaseReviewerQueueRecord) => {
+        reviewRecord = record;
+        return record.detail;
+      },
+      commitPendingTransition: async ({ record, expectedAuthorityState, expectedReviewerDecisionCount }) => {
+        if (
+          !reviewRecord ||
+          reviewRecord.detail.id !== record.detail.id ||
+          reviewRecord.detail.status !== 'pending-review' ||
+          reviewRecord.detail.authorityState !== expectedAuthorityState ||
+          reviewRecord.detail.reviewerDecisions.length !== expectedReviewerDecisionCount
+        ) {
+          throw new ReleaseReviewerQueueError(
+            'already_finalized',
+            `Release review '${record.detail.id}' changed before this transition could be committed.`,
+          );
+        }
         reviewRecord = record;
         return record.detail;
       },
@@ -157,11 +193,16 @@ function createFixture(input: {
     apiReleaseTokenIssuer: tokenIssuer,
     apiReleaseEvidencePackStore: {
       get: async () => null,
-      upsert: async (pack) => pack,
+      upsert: async (pack) => {
+        input.evidencePackWrites?.push(pack.evidencePack.id);
+        return pack;
+      },
     } as never,
     apiReleaseEvidencePackIssuer: evidenceIssuer,
     apiReleaseIntrospectionStore: {
-      registerIssuedToken: async () => undefined,
+      registerIssuedToken: async ({ issuedToken }) => {
+        input.tokenRegistrations?.push(issuedToken.tokenId);
+      },
     } as never,
     resolveReleaseReviewTokenConfirmation: () => ({ jkt: 'sha256:test-sender-thumbprint' }),
     adminMutationRequest: async () => ({
@@ -335,6 +376,37 @@ async function testReleaseReviewOverrideRequesterIsCredentialBound(): Promise<vo
   assert.equal(override.body.releaseToken.override, true);
 }
 
+async function testReleaseReviewFinalApprovalCommitsBeforeTokenEvidenceSideEffects(): Promise<void> {
+  const tokenRegistrations: string[] = [];
+  const evidencePackWrites: string[] = [];
+  const record = createFinalApprovalReadyReviewRecord();
+  const app = createFixture({
+    reviewRecord: record,
+    staleRecordReads: true,
+    tokenRegistrations,
+    evidencePackWrites,
+  });
+
+  const firstApproval = await requestJson(app, `/api/v1/admin/release-reviews/${record.detail.id}/approve`, {
+    method: 'POST',
+    headers: adminHeaders(undefined, 'admin-release-secret'),
+    body: { note: 'First final approval should commit the terminal transition.' },
+  });
+  const staleSecondApproval = await requestJson(app, `/api/v1/admin/release-reviews/${record.detail.id}/approve`, {
+    method: 'POST',
+    headers: adminHeaders(undefined, 'admin-release-secret'),
+    body: { note: 'Stale final approval must not issue token or evidence.' },
+  });
+
+  assert.equal(firstApproval.status, 200);
+  assert.ok(firstApproval.body.releaseToken?.tokenId);
+  assert.ok(firstApproval.body.evidencePack?.evidencePackId);
+  assert.equal(staleSecondApproval.status, 409);
+  assert.equal(staleSecondApproval.body.code, 'already_finalized');
+  assert.equal(tokenRegistrations.length, 1);
+  assert.equal(evidencePackWrites.length, 1);
+}
+
 async function testReleaseReviewHtmlRoutesCarrySecurityHeaders(): Promise<void> {
   const app = createFixture({ reviewDetail: { id: 'review_001' } });
   const inbox = await app.request('/api/v1/admin/release-reviews/inbox', {
@@ -366,8 +438,9 @@ async function run(): Promise<void> {
     await testReleaseReviewRoleScopedAdminKeys();
     await testReleaseReviewReviewerIdentityIsCredentialBound();
     await testReleaseReviewOverrideRequesterIsCredentialBound();
+    await testReleaseReviewFinalApprovalCommitsBeforeTokenEvidenceSideEffects();
     await testReleaseReviewHtmlRoutesCarrySecurityHeaders();
-    console.log('Release review admin-route tests: 4 passed, 0 failed');
+    console.log('Release review admin-route tests: 5 passed, 0 failed');
   } finally {
     process.env.ATTESTOR_ADMIN_API_KEY = originalAdminApiKey;
     process.env.ATTESTOR_ADMIN_READ_API_KEY = originalAdminReadApiKey;

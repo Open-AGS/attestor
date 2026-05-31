@@ -263,6 +263,18 @@ async function run(): Promise<void> {
       1,
       'Shared evidence pack: summary counts persisted evidence packs',
     );
+    const replacementPack = await makeEvidencePack();
+    await assert.rejects(
+      store.upsert(replacementPack),
+      SharedReleaseEvidencePackStoreError,
+      'Shared evidence pack: same pack ID with different bundle digest is rejected',
+    );
+    passed += 1;
+    equal(
+      (await store.get(pack.evidencePack.id))?.bundleDigest,
+      pack.bundleDigest,
+      'Shared evidence pack: rejected replacement leaves persisted bundle digest intact',
+    );
 
     await withReleaseAuthorityTransaction(async (client) => {
       await client.query(

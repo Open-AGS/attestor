@@ -221,6 +221,7 @@ export interface EnvoyExtAuthzCanonicalBindingOptions {
   readonly riskClass?: ReleaseEnforcementRiskClass;
   readonly consequenceType?: ReleaseEnforcementConsequenceType;
   readonly includeHeaders?: readonly string[];
+  readonly allowClientTargetHeader?: boolean;
 }
 
 export interface EnvoyExtAuthzCanonicalBinding {
@@ -371,7 +372,6 @@ const DEFAULT_ALLOWED_HEADERS = Object.freeze([
   ATTESTOR_RELEASE_TOKEN_DIGEST_HEADER,
   ATTESTOR_RELEASE_TOKEN_ID_HEADER,
   ATTESTOR_RELEASE_DECISION_ID_HEADER,
-  ATTESTOR_TARGET_ID_HEADER,
   ATTESTOR_OUTPUT_HASH_HEADER,
   ATTESTOR_CONSEQUENCE_HASH_HEADER,
   ATTESTOR_IDEMPOTENCY_KEY_HEADER,
@@ -644,9 +644,11 @@ function targetIdFromCheck(input: {
   readonly path: string;
 }): string {
   return requireIdentifier(
-    input.options.targetId ??
-      input.attributes?.context_extensions?.['attestor.target_id'] ??
-      headerValue(input.headers, ATTESTOR_TARGET_ID_HEADER) ??
+    normalizeIdentifier(input.options.targetId) ??
+      normalizeIdentifier(input.attributes?.context_extensions?.['attestor.target_id']) ??
+      (input.options.allowClientTargetHeader
+        ? headerValue(input.headers, ATTESTOR_TARGET_ID_HEADER)
+        : null) ??
       normalizeIdentifier(input.attributes?.destination?.service) ??
       `${input.host}${input.path}`,
     'targetId',

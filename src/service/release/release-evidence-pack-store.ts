@@ -212,14 +212,8 @@ async function upsertPack(
       $6,
       $7::jsonb
     )
-    ON CONFLICT (pack_id) DO UPDATE SET
-      decision_id = EXCLUDED.decision_id,
-      bundle_digest = EXCLUDED.bundle_digest,
-      issued_at = EXCLUDED.issued_at,
-      key_id = EXCLUDED.key_id,
-      public_key_fingerprint = EXCLUDED.public_key_fingerprint,
-      pack_json = EXCLUDED.pack_json,
-      updated_at = NOW()`,
+    ON CONFLICT (pack_id) DO NOTHING
+    RETURNING pack_id`,
     [
       pack.evidencePack.id,
       pack.statement.predicate.decision.id,
@@ -230,7 +224,30 @@ async function upsertPack(
       JSON.stringify(pack),
     ],
   );
-  return pack;
+  const existing = await getPackById(client, pack.evidencePack.id);
+  if (!existing) {
+    return pack;
+  }
+  if (existing.bundleDigest !== pack.bundleDigest) {
+    throw new SharedReleaseEvidencePackStoreError(
+      `Shared release evidence pack '${pack.evidencePack.id}' already exists with a different bundle digest.`,
+    );
+  }
+  return existing;
+}
+
+async function getPackById(
+  client: ReleaseAuthorityPgClient,
+  id: string,
+): Promise<IssuedReleaseEvidencePack | null> {
+  const result = await client.query(
+    `SELECT pack_id, decision_id, bundle_digest, pack_json
+       FROM ${RELEASE_EVIDENCE_PACK_TABLE}
+      WHERE pack_id = $1
+      LIMIT 1`,
+    [id],
+  );
+  return result.rows[0] ? rowToPack(result.rows[0]) : null;
 }
 
 async function upsert(pack: IssuedReleaseEvidencePack): Promise<IssuedReleaseEvidencePack> {
@@ -240,16 +257,7 @@ async function upsert(pack: IssuedReleaseEvidencePack): Promise<IssuedReleaseEvi
 
 async function get(id: string): Promise<IssuedReleaseEvidencePack | null> {
   await ensureEvidencePackTable();
-  return withReleaseAuthorityTransaction(async (client) => {
-    const result = await client.query(
-      `SELECT pack_id, decision_id, bundle_digest, pack_json
-         FROM ${RELEASE_EVIDENCE_PACK_TABLE}
-        WHERE pack_id = $1
-        LIMIT 1`,
-      [id],
-    );
-    return result.rows[0] ? rowToPack(result.rows[0]) : null;
-  });
+  return withReleaseAuthorityTransaction((client) => getPackById(client, id));
 }
 
 async function summary(): Promise<SharedReleaseEvidencePackStoreSummary> {

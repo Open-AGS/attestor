@@ -45,6 +45,8 @@ export type ReleaseReviewerQueueListResult = review.ReleaseReviewerQueueListResu
 export type ReleaseReviewerQueueListOptions = review.ReleaseReviewerQueueListOptions;
 export type ReleaseReviewerQueueRecord = review.ReleaseReviewerQueueRecord;
 export type ReleaseReviewerQueueStore = review.ReleaseReviewerQueueStore;
+export type CommitPendingReviewerQueueTransitionInput =
+  review.CommitPendingReviewerQueueTransitionInput;
 export type ReleaseDecision = model.ReleaseDecision;
 export type ReleaseEvidencePolicyContext = model.ReleaseEvidencePolicyContext;
 export type ReleasePolicyProvenance = model.ReleasePolicyProvenance;

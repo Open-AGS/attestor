@@ -10,6 +10,7 @@ import type {
   ReleaseReviewerQueueListOptions,
   ReleaseReviewerQueueListResult,
   ReleaseReviewerQueueRecord,
+  CommitPendingReviewerQueueTransitionInput,
   ReleaseTokenIntrospectionStore,
   IssuedReleaseEvidencePack,
 } from '../../release-layer/index.js';
@@ -66,6 +67,9 @@ export interface RequestPathReleaseDecisionLogWriter {
 
 export interface RequestPathReleaseReviewerQueueStore {
   upsert(record: ReleaseReviewerQueueRecord): Awaitable<ReleaseReviewerQueueDetail>;
+  commitPendingTransition(
+    input: CommitPendingReviewerQueueTransitionInput,
+  ): Awaitable<ReleaseReviewerQueueDetail>;
   get(id: string): Awaitable<ReleaseReviewerQueueDetail | null>;
   getRecord(id: string): Awaitable<ReleaseReviewerQueueRecord | null>;
   listPending(options?: ReleaseReviewerQueueListOptions): Awaitable<ReleaseReviewerQueueListResult>;

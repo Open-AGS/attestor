@@ -277,6 +277,9 @@ function unavailableReviewerQueue(): RequestPathReleaseReviewerQueueStore {
     upsert: () => {
       throw unavailableAuthorityError('release reviewer queue');
     },
+    commitPendingTransition: () => {
+      throw unavailableAuthorityError('release reviewer queue');
+    },
     get: () => {
       throw unavailableAuthorityError('release reviewer queue');
     },

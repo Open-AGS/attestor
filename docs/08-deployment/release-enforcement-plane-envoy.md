@@ -73,6 +73,9 @@ Production Envoy integrations must bind each protected route to the risk class
 selected by the customer policy surface. The bridge accepts that binding from
 the Envoy per-route `check_settings.context_extensions` key
 `attestor.risk_class`; invalid values fail closed during canonical binding.
+Target IDs follow the same trust rule: use server-side options, destination
+service, or route `context_extensions.attestor.target_id`; do not forward a
+client-supplied `attestor-target-id` as route authority.
 
 Reference per-route override:
 
@@ -125,7 +128,6 @@ extensionProviders:
     - attestor-release-token
     - attestor-release-token-id
     - attestor-release-decision-id
-    - attestor-target-id
     - attestor-output-hash
     - attestor-consequence-hash
     - traceparent

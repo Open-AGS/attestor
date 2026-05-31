@@ -158,6 +158,7 @@ export interface ReleaseReviewerQueueListResult {
 
 export interface ReleaseReviewerQueueStore {
   upsert(record: ReleaseReviewerQueueRecord): ReleaseReviewerQueueDetail;
+  commitPendingTransition(input: CommitPendingReviewerQueueTransitionInput): ReleaseReviewerQueueDetail;
   get(id: string): ReleaseReviewerQueueDetail | null;
   getRecord(id: string): ReleaseReviewerQueueRecord | null;
   listPending(options?: ReleaseReviewerQueueListOptions): ReleaseReviewerQueueListResult;
@@ -189,6 +190,12 @@ export interface ApplyReviewerDecisionInput {
 export interface ApplyReviewerDecisionResult {
   readonly record: ReleaseReviewerQueueRecord;
   readonly finalDecisionReached: boolean;
+}
+
+export interface CommitPendingReviewerQueueTransitionInput {
+  readonly record: ReleaseReviewerQueueRecord;
+  readonly expectedAuthorityState: ReleaseReviewerQueueDetail['authorityState'];
+  readonly expectedReviewerDecisionCount: number;
 }
 
 export interface AttachIssuedTokenInput {
@@ -792,6 +799,31 @@ function createReleaseReviewerQueueStoreFromAccessors(accessors: {
         } else {
           file.records.push(stored);
         }
+        return stored.detail;
+      });
+    },
+    commitPendingTransition(input: CommitPendingReviewerQueueTransitionInput): ReleaseReviewerQueueDetail {
+      return accessors.mutate((file) => {
+        const stored = freezeRecord(input.record);
+        const existingIndex = file.records.findIndex((entry) => entry.detail.id === stored.detail.id);
+        if (existingIndex < 0) {
+          throw new ReleaseReviewerQueueError(
+            'already_finalized',
+            `Release review '${stored.detail.id}' is no longer pending or is missing.`,
+          );
+        }
+        const existing = file.records[existingIndex];
+        if (
+          existing.detail.status !== 'pending-review' ||
+          existing.detail.authorityState !== input.expectedAuthorityState ||
+          existing.detail.reviewerDecisions.length !== input.expectedReviewerDecisionCount
+        ) {
+          throw new ReleaseReviewerQueueError(
+            'already_finalized',
+            `Release review '${stored.detail.id}' changed before this transition could be committed.`,
+          );
+        }
+        file.records[existingIndex] = stored;
         return stored.detail;
       });
     },

@@ -510,6 +510,35 @@ async function main(): Promise<void> {
     issuedEvidencePack.evidencePack.id,
     'Release evidence pack: in-memory store round-trips the exported bundle',
   );
+  const replacementEvidencePack = await evidenceIssuer.issue({
+    decision: {
+      ...recordWithToken.releaseDecision,
+      evidencePackId: issuedEvidencePack.evidencePack.id,
+    },
+    evidencePackId: issuedEvidencePack.evidencePack.id,
+    issuedAt: '2026-04-17T23:34:00.000Z',
+    decisionLogEntries: decisionLog.entries().filter((entry) => entry.decisionId === recordWithToken.releaseDecision.id),
+    decisionLogChainIntact: decisionLog.verify().valid,
+    review: recordWithToken.detail,
+    releaseToken: issuedToken,
+    artifactReferences: [
+      {
+        kind: 'provenance',
+        path: 'finance-evidence-chain://api-finance-release-evidence',
+        digest: report.evidenceChain.terminalHash,
+      },
+    ],
+  });
+  assert.throws(
+    () => store.upsert(replacementEvidencePack),
+    /different bundle digest/u,
+    'Release evidence pack: in-memory store rejects same ID with different bundle digest',
+  );
+  equal(
+    store.get(issuedEvidencePack.evidencePack.id)?.bundleDigest,
+    issuedEvidencePack.bundleDigest,
+    'Release evidence pack: rejected replacement leaves original bundle digest intact',
+  );
 
   const fileBackedStorePath = join(
     mkdtempSync(join(tmpdir(), 'attestor-release-evidence-pack-store-')),

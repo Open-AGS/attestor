@@ -389,6 +389,8 @@ export function registerReleaseReviewRoutes(app: Hono, deps: ReleaseReviewRouteD
 
     try {
       const decidedAt = new Date().toISOString();
+      const expectedAuthorityState = record.detail.authorityState;
+      const expectedReviewerDecisionCount = record.detail.reviewerDecisions.length;
       const finalApprovalWouldIssueToken = record.detail.approvalsRemaining <= 1;
       const senderConfirmation =
         finalApprovalWouldIssueToken
@@ -416,6 +418,13 @@ export function registerReleaseReviewRoutes(app: Hono, deps: ReleaseReviewRouteD
         decidedAt,
       });
 
+      let finalRecord: ReleaseReviewerQueueRecord = transition.record;
+      let stored = await apiReleaseReviewerQueueStore.commitPendingTransition({
+        record: transition.record,
+        expectedAuthorityState,
+        expectedReviewerDecisionCount,
+      });
+
       await appendReviewerTimelineToDecisionLog(
         financeReleaseDecisionLog,
         transition.record.releaseDecision,
@@ -424,7 +433,6 @@ export function registerReleaseReviewRoutes(app: Hono, deps: ReleaseReviewRouteD
         'review',
       );
 
-      let finalRecord: ReleaseReviewerQueueRecord = transition.record;
       let responseToken: IssuedReleaseTokenResponse | null = null;
       let responseEvidencePack: IssuedEvidencePackResponse | null = null;
       if (transition.record.detail.authorityState === 'approved') {
@@ -502,7 +510,9 @@ export function registerReleaseReviewRoutes(app: Hono, deps: ReleaseReviewRouteD
         responseEvidencePack = buildIssuedEvidencePackResponse(issuedEvidencePack);
       }
 
-      const stored = await apiReleaseReviewerQueueStore.upsert(finalRecord);
+      if (transition.record.detail.authorityState === 'approved') {
+        stored = await apiReleaseReviewerQueueStore.upsert(finalRecord);
+      }
       c.header('cache-control', 'no-store');
       return c.json(
         await finalizeAdminMutation({
@@ -562,6 +572,8 @@ export function registerReleaseReviewRoutes(app: Hono, deps: ReleaseReviewRouteD
 
     try {
       const decidedAt = new Date().toISOString();
+      const expectedAuthorityState = record.detail.authorityState;
+      const expectedReviewerDecisionCount = record.detail.reviewerDecisions.length;
       const transition = applyReviewerDecision({
         record,
         outcome: 'rejected',
@@ -570,6 +582,12 @@ export function registerReleaseReviewRoutes(app: Hono, deps: ReleaseReviewRouteD
         reviewerRole: actorPolicyRole(authorized),
         note: readReviewField(body, 'note'),
         decidedAt,
+      });
+
+      const stored = await apiReleaseReviewerQueueStore.commitPendingTransition({
+        record: transition.record,
+        expectedAuthorityState,
+        expectedReviewerDecisionCount,
       });
 
       await appendReviewerTimelineToDecisionLog(
@@ -587,7 +605,6 @@ export function registerReleaseReviewRoutes(app: Hono, deps: ReleaseReviewRouteD
         'terminal-deny',
       );
 
-      const stored = await apiReleaseReviewerQueueStore.upsert(transition.record);
       c.header('cache-control', 'no-store');
       return c.json(
         await finalizeAdminMutation({
@@ -644,6 +661,8 @@ export function registerReleaseReviewRoutes(app: Hono, deps: ReleaseReviewRouteD
 
     try {
       const decidedAt = new Date().toISOString();
+      const expectedAuthorityState = record.detail.authorityState;
+      const expectedReviewerDecisionCount = record.detail.reviewerDecisions.length;
       const senderConfirmation =
         await resolveReleaseReviewTokenConfirmation?.({
           context: c,
@@ -668,6 +687,12 @@ export function registerReleaseReviewRoutes(app: Hono, deps: ReleaseReviewRouteD
         requestedByType: authorized.releaseActor.type,
         note: readReviewField(body, 'note'),
         decidedAt,
+      });
+
+      await apiReleaseReviewerQueueStore.commitPendingTransition({
+        record: overriddenRecord,
+        expectedAuthorityState,
+        expectedReviewerDecisionCount,
       });
 
       await appendReviewerTimelineToDecisionLog(

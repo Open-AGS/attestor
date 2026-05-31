@@ -1293,10 +1293,15 @@ function upsertIssuedReleaseEvidencePack(
     (entry) => entry.evidencePack.id === stored.evidencePack.id,
   );
   if (existingIndex >= 0) {
-    file.packs[existingIndex] = stored;
-  } else {
-    file.packs.push(stored);
+    const existing = file.packs[existingIndex];
+    if (existing.bundleDigest !== stored.bundleDigest) {
+      throw new ReleaseEvidencePackStoreError(
+        `Release evidence pack '${stored.evidencePack.id}' already exists with a different bundle digest.`,
+      );
+    }
+    return existing;
   }
+  file.packs.push(stored);
   return stored;
 }
 

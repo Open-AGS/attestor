@@ -52,6 +52,9 @@ export interface SharedReleaseReviewerQueueReleaseClaimInput {
 
 export interface SharedReleaseReviewerQueueStore {
   upsert(record: ReleaseReviewerQueueRecord): Promise<ReleaseReviewerQueueDetail>;
+  commitPendingTransition(
+    input: review.CommitPendingReviewerQueueTransitionInput,
+  ): Promise<ReleaseReviewerQueueDetail>;
   get(id: string): Promise<ReleaseReviewerQueueDetail | null>;
   getRecord(id: string): Promise<ReleaseReviewerQueueRecord | null>;
   listPending(options?: ReleaseReviewerQueueListOptions): Promise<ReleaseReviewerQueueListResult>;
@@ -323,6 +326,69 @@ async function upsert(record: ReleaseReviewerQueueRecord): Promise<ReleaseReview
   return stored.detail;
 }
 
+async function commitPendingTransition(
+  input: review.CommitPendingReviewerQueueTransitionInput,
+): Promise<ReleaseReviewerQueueDetail> {
+  await ensureReviewerQueueTable();
+  const stored = review.coerceReleaseReviewerQueueRecord(input.record);
+  return withReleaseAuthorityTransaction(async (client) => {
+    const result = await client.query(
+      `UPDATE ${RELEASE_REVIEWER_QUEUE_TABLE}
+          SET decision_id = $2,
+              status = $3,
+              authority_state = $4,
+              risk_class = $5,
+              risk_rank = $6,
+              consequence_type = $7,
+              created_at = $8::timestamptz,
+              updated_at = $9::timestamptz,
+              claim_token = CASE
+                WHEN $3 = 'pending-review' THEN claim_token
+                ELSE NULL
+              END,
+              claimed_by = CASE
+                WHEN $3 = 'pending-review' THEN claimed_by
+                ELSE NULL
+              END,
+              claimed_at = CASE
+                WHEN $3 = 'pending-review' THEN claimed_at
+                ELSE NULL
+              END,
+              claim_expires_at = CASE
+                WHEN $3 = 'pending-review' THEN claim_expires_at
+                ELSE NULL
+              END,
+              record_json = $10::jsonb
+        WHERE review_id = $1
+          AND status = 'pending-review'
+          AND authority_state = $11
+          AND jsonb_array_length(COALESCE(record_json #> '{detail,reviewerDecisions}', '[]'::jsonb)) = $12
+        RETURNING review_id`,
+      [
+        stored.detail.id,
+        stored.detail.decisionId,
+        stored.detail.status,
+        stored.detail.authorityState,
+        stored.detail.riskClass,
+        riskRank(stored.detail.riskClass),
+        stored.detail.consequenceType,
+        stored.detail.createdAt,
+        stored.detail.updatedAt,
+        JSON.stringify(stored),
+        input.expectedAuthorityState,
+        input.expectedReviewerDecisionCount,
+      ],
+    );
+    if (result.rows.length !== 1) {
+      throw new review.ReleaseReviewerQueueError(
+        'already_finalized',
+        `Release review '${stored.detail.id}' changed before this transition could be committed.`,
+      );
+    }
+    return stored.detail;
+  });
+}
+
 async function getRecord(id: string): Promise<ReleaseReviewerQueueRecord | null> {
   await ensureReviewerQueueTable();
   return withReleaseAuthorityTransaction(async (client) => {
@@ -515,6 +581,7 @@ export async function ensureSharedReleaseReviewerQueueStore(): Promise<SharedRel
 export function createSharedReleaseReviewerQueueStore(): SharedReleaseReviewerQueueStore {
   return Object.freeze({
     upsert,
+    commitPendingTransition,
     async get(id: string): Promise<ReleaseReviewerQueueDetail | null> {
       return (await getRecord(id))?.detail ?? null;
     },

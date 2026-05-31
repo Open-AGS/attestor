@@ -53,6 +53,14 @@ function deepEqual<T>(actual: T, expected: T, message: string): void {
   passed += 1;
 }
 
+function trustedWorkloadBinding() {
+  return {
+    expectedCertificateThumbprint: WORKLOAD_CERT_THUMBPRINT,
+    expectedSpiffeId: WORKLOAD_SPIFFE_ID,
+    expectedTrustDomain: 'attestor',
+  } as const;
+}
+
 function tokenDigest(token: string): string {
   return `sha256:${createHash('sha256').update(token).digest('hex')}`;
 }
@@ -238,6 +246,7 @@ async function testAudienceScopedExchangeIssuesDownstreamToken(): Promise<void> 
     decision,
     issuedAt: '2026-04-18T10:00:00.000Z',
     tokenId: 'rt_parent_exchange_r1',
+    tenantId: 'tenant-test',
   });
 
   const exchanged = await exchangeReleaseToken({
@@ -749,6 +758,7 @@ async function testHighRiskExchangeRegistersForOnlineVerifier(): Promise<void> {
     decision,
     issuedAt: '2026-04-18T10:00:00.000Z',
     tokenId: 'rt_parent_r4_exchange',
+    tenantId: 'tenant-test',
     confirmation: createMtlsReleaseTokenConfirmation({
       certificateThumbprint: WORKLOAD_CERT_THUMBPRINT,
       spiffeId: WORKLOAD_SPIFFE_ID,
@@ -808,6 +818,7 @@ async function testHighRiskExchangeRegistersForOnlineVerifier(): Promise<void> {
     verificationKey,
     replayLedgerEntry: null,
     now: '2026-04-18T10:01:00.000Z',
+    trustedWorkloadBinding: trustedWorkloadBinding(),
     introspector,
     resourceServerId: 'erq-exchanged-r4-pep',
   });

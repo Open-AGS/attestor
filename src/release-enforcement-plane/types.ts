@@ -102,6 +102,7 @@ export const ENFORCEMENT_FAILURE_REASONS = [
   'unknown-authorization',
   'replayed-authorization',
   'missing-replay-proof',
+  'missing-workload-proof',
   'negative-cache-hit',
   'fresh-introspection-required',
   'unsupported-token-type',

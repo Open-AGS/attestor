@@ -22,6 +22,68 @@ import type {
   ExecutionEvidence,
 } from './types.js';
 
+type DataContractScalarType = DataContractColumn['type'];
+
+function normalizeColumnTypeMetadata(value: string | undefined): DataContractScalarType | 'unknown' {
+  const normalized = value?.trim().toLowerCase() ?? '';
+  if (!normalized) return 'unknown';
+  if (
+    normalized === 'number' ||
+    normalized.includes('int') ||
+    normalized.includes('real') ||
+    normalized.includes('double') ||
+    normalized.includes('numeric') ||
+    normalized.includes('decimal') ||
+    normalized.includes('float')
+  ) {
+    return 'number';
+  }
+  if (normalized === 'boolean' || normalized === 'bool') return 'boolean';
+  if (normalized === 'date' || normalized.includes('date') || normalized.includes('time')) return 'date';
+  if (normalized === 'null') return 'null';
+  if (
+    normalized === 'string' ||
+    normalized.includes('text') ||
+    normalized.includes('char') ||
+    normalized.includes('clob') ||
+    normalized.includes('varchar')
+  ) {
+    return 'string';
+  }
+  return 'unknown';
+}
+
+function columnTypeMetadataMatches(
+  expected: DataContractScalarType,
+  actual: DataContractScalarType | 'unknown',
+): boolean {
+  if (actual === 'unknown') return true;
+  if (expected === actual) return true;
+  return expected === 'date' && actual === 'string';
+}
+
+function valueMatchesDeclaredType(value: unknown, expected: DataContractScalarType): boolean {
+  if (value === null || value === undefined) return true;
+  switch (expected) {
+    case 'string':
+      return typeof value === 'string';
+    case 'number':
+      return typeof value === 'number' && Number.isFinite(value);
+    case 'boolean':
+      return typeof value === 'boolean';
+    case 'date':
+      return (
+        value instanceof Date && !Number.isNaN(value.getTime())
+      ) || (
+        typeof value === 'string' &&
+        value.trim().length > 0 &&
+        !Number.isNaN(Date.parse(value))
+      );
+    case 'null':
+      return value === null;
+  }
+}
+
 // ─── Schema Checks ───────────────────────────────────────────────────────────
 
 function checkSchemaMatch(
@@ -49,13 +111,47 @@ function checkSchemaMatch(
         });
       }
     } else {
+      const metadataType = normalizeColumnTypeMetadata(evidence.columnTypes[idx]);
+      const metadataMatches = columnTypeMetadataMatches(col.type, metadataType);
       checks.push({
         check: `column_present:${col.name}`,
         passed: true,
         detail: `Column "${col.name}" present at index ${idx}`,
         severity: col.required ? 'hard' : 'soft',
       });
+      checks.push({
+        check: `column_type:${col.name}:${col.type}`,
+        passed: metadataMatches,
+        detail: metadataMatches
+          ? `Column "${col.name}" declared type ${col.type} matches metadata ${metadataType}`
+          : `Column "${col.name}" declared type ${col.type} does not match metadata ${metadataType}`,
+        severity: 'hard',
+      });
     }
+  }
+
+  return checks;
+}
+
+function checkRowValueTypes(
+  evidence: ExecutionEvidence,
+  expectedColumns: DataContractColumn[],
+): DataContractCheck[] {
+  const checks: DataContractCheck[] = [];
+
+  for (const col of expectedColumns) {
+    const colIdx = evidence.columns.indexOf(col.name);
+    if (colIdx === -1) continue;
+
+    const mismatches = evidence.rows.filter((row) => !valueMatchesDeclaredType(row[col.name], col.type));
+    checks.push({
+      check: `row_type:${col.name}:${col.type}`,
+      passed: mismatches.length === 0,
+      detail: mismatches.length === 0
+        ? `Column "${col.name}": all non-null row values match declared type ${col.type}`
+        : `Column "${col.name}": ${mismatches.length} row values do not match declared type ${col.type}`,
+      severity: 'hard',
+    });
   }
 
   return checks;
@@ -96,6 +192,31 @@ function checkBusinessConstraints(
 ): DataContractCheck[] {
   const checks: DataContractCheck[] = [];
 
+  const numericColumnValues = (column: string) => {
+    const rawValues = evidence.rows.map((r) => r[column]);
+    const values = rawValues.filter((v) => typeof v === 'number' && Number.isFinite(v)) as number[];
+    const nonNumericCount = rawValues.filter((v) => v !== null && v !== undefined && (
+      typeof v !== 'number' || !Number.isFinite(v)
+    )).length;
+    return {
+      values,
+      nonNumericCount,
+    };
+  };
+
+  const numericSetupFailure = (column: string, values: number[], nonNumericCount: number): string | null => {
+    if (!evidence.columns.includes(column)) {
+      return `Column "${column}" missing from result`;
+    }
+    if (nonNumericCount > 0) {
+      return `Column "${column}": ${nonNumericCount} non-numeric constrained values found`;
+    }
+    if (values.length === 0) {
+      return `Column "${column}": no numeric values available for numeric constraint`;
+    }
+    return null;
+  };
+
   for (const constraint of constraints) {
     switch (constraint.check) {
       case 'not_empty': {
@@ -131,67 +252,75 @@ function checkBusinessConstraints(
       }
       case 'non_negative': {
         const col = constraint.column;
-        const negatives = evidence.rows.filter((r) => typeof r[col] === 'number' && (r[col] as number) < 0);
+        const { values, nonNumericCount } = numericColumnValues(col);
+        const setupFailure = numericSetupFailure(col, values, nonNumericCount);
+        const negatives = values.filter((value) => value < 0);
+        const pass = setupFailure === null && negatives.length === 0;
         checks.push({
           check: `non_negative:${col}`,
-          passed: negatives.length === 0,
-          detail: negatives.length === 0
+          passed: pass,
+          detail: setupFailure ?? (negatives.length === 0
             ? `Column "${col}": all values non-negative`
-            : `Column "${col}": ${negatives.length} negative values found`,
+            : `Column "${col}": ${negatives.length} negative values found`),
           severity: 'hard',
         });
         break;
       }
       case 'min': {
         const col = constraint.column;
-        const values = evidence.rows.map((r) => r[col]).filter((v) => typeof v === 'number') as number[];
+        const { values, nonNumericCount } = numericColumnValues(col);
+        const setupFailure = numericSetupFailure(col, values, nonNumericCount);
         const minVal = Math.min(...values);
-        const pass = values.length > 0 && minVal >= (constraint.value ?? -Infinity);
+        const pass = setupFailure === null && minVal >= (constraint.value ?? -Infinity);
         checks.push({
           check: `min:${col}:${constraint.value}`,
           passed: pass,
-          detail: `Column "${col}": min value ${minVal} ${pass ? '>=' : '<'} threshold ${constraint.value}`,
+          detail: setupFailure ?? `Column "${col}": min value ${minVal} ${pass ? '>=' : '<'} threshold ${constraint.value}`,
           severity: 'hard',
         });
         break;
       }
       case 'max': {
         const col = constraint.column;
-        const values = evidence.rows.map((r) => r[col]).filter((v) => typeof v === 'number') as number[];
+        const { values, nonNumericCount } = numericColumnValues(col);
+        const setupFailure = numericSetupFailure(col, values, nonNumericCount);
         const maxVal = Math.max(...values);
-        const pass = values.length > 0 && maxVal <= (constraint.value ?? Infinity);
+        const pass = setupFailure === null && maxVal <= (constraint.value ?? Infinity);
         checks.push({
           check: `max:${col}:${constraint.value}`,
           passed: pass,
-          detail: `Column "${col}": max value ${maxVal} ${pass ? '<=' : '>'} threshold ${constraint.value}`,
+          detail: setupFailure ?? `Column "${col}": max value ${maxVal} ${pass ? '<=' : '>'} threshold ${constraint.value}`,
           severity: 'hard',
         });
         break;
       }
       case 'sum_equals': {
         const col = constraint.column;
-        const values = evidence.rows.map((r) => r[col]).filter((v) => typeof v === 'number') as number[];
+        const { values, nonNumericCount } = numericColumnValues(col);
+        const setupFailure = numericSetupFailure(col, values, nonNumericCount);
         const sum = values.reduce((a, b) => a + b, 0);
         // Use a small tolerance for floating point
-        const pass = Math.abs(sum - (constraint.value ?? 0)) < 0.01;
+        const pass = setupFailure === null && Math.abs(sum - (constraint.value ?? 0)) < 0.01;
         checks.push({
           check: `sum_equals:${col}:${constraint.value}`,
           passed: pass,
-          detail: `Column "${col}": sum ${sum.toFixed(2)} ${pass ? '≈' : '≠'} expected ${constraint.value}`,
+          detail: setupFailure ?? `Column "${col}": sum ${sum.toFixed(2)} ${pass ? '≈' : '≠'} expected ${constraint.value}`,
           severity: 'hard',
         });
         break;
       }
       case 'range': {
         const col = constraint.column;
-        const values = evidence.rows.map((r) => r[col]).filter((v) => typeof v === 'number') as number[];
+        const { values, nonNumericCount } = numericColumnValues(col);
+        const setupFailure = numericSetupFailure(col, values, nonNumericCount);
         const outOfRange = values.filter((v) => v < (constraint.min ?? -Infinity) || v > (constraint.max ?? Infinity));
+        const pass = setupFailure === null && outOfRange.length === 0;
         checks.push({
           check: `range:${col}:${constraint.min}-${constraint.max}`,
-          passed: outOfRange.length === 0,
-          detail: outOfRange.length === 0
+          passed: pass,
+          detail: setupFailure ?? (outOfRange.length === 0
             ? `Column "${col}": all ${values.length} values within [${constraint.min}, ${constraint.max}]`
-            : `Column "${col}": ${outOfRange.length} values outside [${constraint.min}, ${constraint.max}]`,
+            : `Column "${col}": ${outOfRange.length} values outside [${constraint.min}, ${constraint.max}]`),
           severity: 'hard',
         });
         break;
@@ -217,17 +346,28 @@ function checkControlTotals(
   const checks: DataContractCheck[] = [];
 
   for (const ct of controlTotals) {
-    const values = evidence.rows.map((r) => r[ct.column]).filter((v) => typeof v === 'number') as number[];
+    const rawValues = evidence.rows.map((r) => r[ct.column]);
+    const values = rawValues.filter((v) => typeof v === 'number' && Number.isFinite(v)) as number[];
+    const nonNumericCount = rawValues.filter((v) => v !== null && v !== undefined && (
+      typeof v !== 'number' || !Number.isFinite(v)
+    )).length;
+    const setupFailure = !evidence.columns.includes(ct.column)
+      ? `Column "${ct.column}" missing from result`
+      : nonNumericCount > 0
+        ? `Column "${ct.column}": ${nonNumericCount} non-numeric control-total values found`
+        : values.length === 0
+          ? `Column "${ct.column}": no numeric values available for control total`
+          : null;
     const actualTotal = values.reduce((a, b) => a + b, 0);
     const variance = Math.abs(actualTotal - ct.expectedTotal);
-    const pass = variance <= ct.tolerance;
+    const pass = setupFailure === null && variance <= ct.tolerance;
 
     checks.push({
       check: `control_total:${ct.column}`,
       passed: pass,
-      detail: pass
+      detail: setupFailure ?? (pass
         ? `Control total "${ct.description}": ${actualTotal.toFixed(2)} within tolerance ${ct.tolerance} of expected ${ct.expectedTotal}`
-        : `Control total BREACH "${ct.description}": actual=${actualTotal.toFixed(2)}, expected=${ct.expectedTotal}, variance=${variance.toFixed(2)} exceeds tolerance ${ct.tolerance}`,
+        : `Control total BREACH "${ct.description}": actual=${actualTotal.toFixed(2)}, expected=${ct.expectedTotal}, variance=${variance.toFixed(2)} exceeds tolerance ${ct.tolerance}`),
       severity: 'hard',
     });
   }
@@ -249,6 +389,7 @@ export function validateDataContracts(
 ): DataContractResult {
   const allChecks: DataContractCheck[] = [
     ...checkSchemaMatch(evidence, expectedColumns),
+    ...checkRowValueTypes(evidence, expectedColumns),
     ...checkNullability(evidence, expectedColumns),
     ...checkBusinessConstraints(evidence, constraints),
     ...checkControlTotals(evidence, controlTotals ?? []),

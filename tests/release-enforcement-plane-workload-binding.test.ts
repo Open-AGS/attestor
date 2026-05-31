@@ -56,6 +56,14 @@ const CERT_DER = Buffer.from('attestor-workload-certificate-fixture');
 const CERT_THUMBPRINT = certificateThumbprintFromDer(CERT_DER);
 const SPIFFE_ID = 'spiffe://attestor.test/ns/finance/sa/writer';
 const TARGET_ID = 'finance.reporting.record-store';
+
+function trustedWorkloadBinding() {
+  return {
+    expectedCertificateThumbprint: CERT_THUMBPRINT,
+    expectedSpiffeId: SPIFFE_ID,
+    expectedTrustDomain: 'attestor.test',
+  } as const;
+}
 const POLICY_HASH = 'sha256:policy';
 const POLICY_IR_HASH = 'sha256:policy-ir';
 const COMPILED_POLICY_INDEX_VERSION = 'attestor.policy-index.test.v1';
@@ -197,6 +205,7 @@ async function issueWorkloadToken(input: {
     decision,
     issuedAt: '2026-04-18T12:00:00.000Z',
     tokenId: input.tokenId,
+    tenantId: 'tenant-test',
     confirmation: input.confirmation,
   });
 
@@ -309,6 +318,7 @@ async function testMtlsPresentationAndOfflineVerifier(): Promise<void> {
     presentation,
     verificationKey,
     replayLedgerEntry: null,
+    trustedWorkloadBinding: trustedWorkloadBinding(),
     now: '2026-04-18T12:01:00.000Z',
   });
 
@@ -342,11 +352,48 @@ async function testMtlsRejectsWrongCertificate(): Promise<void> {
     }),
     verificationKey,
     replayLedgerEntry: null,
+    trustedWorkloadBinding: trustedWorkloadBinding(),
     now: '2026-04-18T12:01:00.000Z',
   });
 
   equal(verified.status, 'invalid', 'Workload binding: wrong certificate thumbprint fails closed');
   deepEqual(verified.failureReasons, ['fresh-introspection-required', 'binding-mismatch'], 'Workload binding: certificate mismatch is explicit');
+}
+
+async function testMetadataOnlyWorkloadPresentationFailsClosed(): Promise<void> {
+  const { issued, verificationKey, decision } = await issueWorkloadToken({
+    tokenId: 'rt_mtls_metadata_only',
+    decisionId: 'decision-mtls-metadata-only',
+    confirmation: createMtlsReleaseTokenConfirmation({
+      certificateThumbprint: CERT_THUMBPRINT,
+      spiffeId: SPIFFE_ID,
+    }),
+  });
+  const request = makeRequest({
+    id: 'erq-mtls-metadata-only',
+    releaseTokenId: issued.tokenId,
+    releaseDecisionId: decision.id,
+  });
+
+  const verified = await verifyOfflineReleaseAuthorization({
+    request,
+    presentation: createMtlsBoundPresentationFromIssuedToken({
+      issuedToken: issued,
+      certificateThumbprint: CERT_THUMBPRINT,
+      subjectDn: 'CN=finance-writer',
+      spiffeId: SPIFFE_ID,
+      presentedAt: '2026-04-18T12:01:00.000Z',
+    }),
+    verificationKey,
+    replayLedgerEntry: null,
+    now: '2026-04-18T12:01:00.000Z',
+  });
+
+  equal(verified.status, 'invalid', 'Workload binding: metadata-only mTLS proof fails closed');
+  ok(
+    verified.failureReasons.includes('missing-workload-proof'),
+    'Workload binding: missing trusted PEP-observed workload proof is explicit',
+  );
 }
 
 async function testMtlsRejectsUnboundToken(): Promise<void> {
@@ -370,6 +417,7 @@ async function testMtlsRejectsUnboundToken(): Promise<void> {
     }),
     verificationKey,
     replayLedgerEntry: null,
+    trustedWorkloadBinding: trustedWorkloadBinding(),
     now: '2026-04-18T12:01:00.000Z',
   });
 
@@ -418,6 +466,7 @@ async function testSpiffePresentationAndOfflineVerifier(): Promise<void> {
     presentation,
     verificationKey,
     replayLedgerEntry: null,
+    trustedWorkloadBinding: trustedWorkloadBinding(),
     now: '2026-04-18T12:01:00.000Z',
   });
 
@@ -454,6 +503,7 @@ async function testSpiffeRejectsWrongIdentity(): Promise<void> {
     }),
     verificationKey,
     replayLedgerEntry: null,
+    trustedWorkloadBinding: trustedWorkloadBinding(),
     now: '2026-04-18T12:01:00.000Z',
   });
 
@@ -492,6 +542,7 @@ async function testSpiffeRejectsWrongSvidThumbprint(): Promise<void> {
     }),
     verificationKey,
     replayLedgerEntry: null,
+    trustedWorkloadBinding: trustedWorkloadBinding(),
     now: '2026-04-18T12:01:00.000Z',
   });
 
@@ -556,6 +607,7 @@ async function testTokenExchangePreservesWorkloadBinding(): Promise<void> {
     }),
     verificationKey,
     replayLedgerEntry: null,
+    trustedWorkloadBinding: trustedWorkloadBinding(),
     now: '2026-04-18T12:01:30.000Z',
   });
 
@@ -614,6 +666,7 @@ async function main(): Promise<void> {
   testConfirmationClaims();
   await testMtlsPresentationAndOfflineVerifier();
   await testMtlsRejectsWrongCertificate();
+  await testMetadataOnlyWorkloadPresentationFailsClosed();
   await testMtlsRejectsUnboundToken();
   await testSpiffePresentationAndOfflineVerifier();
   await testSpiffeRejectsWrongIdentity();

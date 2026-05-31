@@ -174,6 +174,7 @@ async function issueActionToken(input: {
     decision,
     issuedAt: '2026-04-18T19:00:00.000Z',
     tokenId: input.tokenId,
+    tenantId: 'tenant-test',
     confirmation: input.confirmation,
   });
 
@@ -216,6 +217,11 @@ function options(input: {
     tenantId: 'tenant-test',
     accountId: 'acct-test',
     workloadId: WORKLOAD_SPIFFE_ID,
+    trustedWorkloadBinding: {
+      expectedCertificateThumbprint: WORKLOAD_CERT_THUMBPRINT,
+      expectedSpiffeId: WORKLOAD_SPIFFE_ID,
+      expectedTrustDomain: 'attestor.test',
+    },
     introspector: input.introspector,
     usageStore: input.store,
     verifierMode: input.verifierMode,

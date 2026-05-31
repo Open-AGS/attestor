@@ -22,6 +22,7 @@ export type AdminAuditAction =
   | 'account.billing.checkout_started'
   | 'account.billing.portal_started'
   | 'account.mfa.disabled'
+  | 'account.mfa.totp_enrollment_expired'
   | 'account.mfa.totp_confirmed'
   | 'account.mfa.totp_enrolled'
   | 'account.password.changed'

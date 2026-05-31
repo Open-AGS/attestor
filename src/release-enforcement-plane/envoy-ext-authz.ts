@@ -32,6 +32,7 @@ import {
 import {
   verifyOfflineReleaseAuthorization,
   type OfflineReleaseVerification,
+  type OfflineTrustedWorkloadBinding,
 } from './offline-verifier.js';
 import {
   verifyOnlineReleaseAuthorization,
@@ -1053,6 +1054,22 @@ async function createProxyPresentation(input: {
   });
 }
 
+function trustedWorkloadBindingFromProxy(input: {
+  readonly binding: EnvoyExtAuthzCanonicalBinding;
+  readonly headers: Readonly<Record<string, string>>;
+}): OfflineTrustedWorkloadBinding | undefined {
+  const expectedSpiffeId = spiffePrincipal(input.binding);
+  const expectedCertificateThumbprint = clientCertificateThumbprint(input.headers, input.binding);
+  if (!expectedSpiffeId && !expectedCertificateThumbprint) {
+    return undefined;
+  }
+  return Object.freeze({
+    expectedSpiffeId,
+    expectedTrustDomain: expectedSpiffeId ? trustDomainFromSpiffeId(expectedSpiffeId) : null,
+    expectedCertificateThumbprint,
+  });
+}
+
 function responseStatusForFailures(failureReasons: readonly EnforcementFailureReason[]): number {
   if (failureReasons.includes('missing-release-authorization')) {
     return 401;
@@ -1444,6 +1461,7 @@ export async function evaluateEnvoyExternalAuthorization(
       now: checkedAt,
       replayLedgerEntry: input.options.replayLedgerEntry,
       nonceLedgerEntry: input.options.nonceLedgerEntry,
+      trustedWorkloadBinding: trustedWorkloadBindingFromProxy({ binding, headers }),
     });
     return resultFromVerification({
       checkedAt,
@@ -1467,6 +1485,7 @@ export async function evaluateEnvoyExternalAuthorization(
     forceOnlineIntrospection: input.options.forceOnlineIntrospection ?? true,
     replayLedgerEntry: input.options.replayLedgerEntry,
     nonceLedgerEntry: input.options.nonceLedgerEntry,
+    trustedWorkloadBinding: trustedWorkloadBindingFromProxy({ binding, headers }),
     resourceServerId: input.options.enforcementPointId,
   });
 

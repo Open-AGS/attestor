@@ -143,6 +143,7 @@ async function issueRecordToken(input: {
     decision,
     issuedAt: '2026-04-18T17:00:00.000Z',
     tokenId: input.tokenId,
+    tenantId: 'tenant-test',
     confirmation: createMtlsReleaseTokenConfirmation({
       certificateThumbprint: WORKLOAD_CERT_THUMBPRINT,
       spiffeId: WORKLOAD_SPIFFE_ID,
@@ -179,6 +180,11 @@ function options(input: {
     tenantId: 'tenant-test',
     accountId: 'acct-test',
     workloadId: WORKLOAD_SPIFFE_ID,
+    trustedWorkloadBinding: {
+      expectedCertificateThumbprint: WORKLOAD_CERT_THUMBPRINT,
+      expectedSpiffeId: WORKLOAD_SPIFFE_ID,
+      expectedTrustDomain: 'attestor',
+    },
     introspector: input.introspector,
     usageStore: input.store,
     verifierMode: input.verifierMode,

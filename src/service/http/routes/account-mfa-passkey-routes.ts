@@ -27,6 +27,7 @@ export function registerAccountMfaPasskeyRoutes(app: Hono, deps: AccountRouteDep
     passkeyCredentialToWebAuthnCredential,
     verifyTotpCodeWithStep,
     verifyAndConsumeRecoveryCode,
+    isPendingTotpEnrollmentFresh,
     requireAccountSession,
     currentAccountAccess,
     buildHostedPasskeyRegistrationOptions,
@@ -678,11 +679,43 @@ export function registerAccountMfaPasskeyRoutes(app: Hono, deps: AccountRouteDep
     const body = await readAccountJsonBody(c);
     if (body instanceof Response) return body;
     const code = typeof body.code === 'string' ? body.code.trim() : '';
-    if (!code) {
-      return c.json({ error: 'code is required.' }, 400);
+    const password = typeof body.password === 'string' ? body.password : '';
+    if (!password || !code) {
+      return c.json({ error: 'password and code are required.' }, 400);
+    }
+    const currentPasswordAttempt = await maybeRateLimitCurrentPasswordAttempt(c, access);
+    if (currentPasswordAttempt.response) return currentPasswordAttempt.response;
+    if (!verifyAccountUserPasswordRecord(user.password, password)) {
+      await recordAuthAttemptFailure(currentPasswordAttempt.subject);
+      return c.json({ error: 'Current password is invalid.' }, 403);
     }
     if (!user.mfa.totp.pendingSecretCiphertext || !user.mfa.totp.pendingSecretIv || !user.mfa.totp.pendingSecretAuthTag) {
       return c.json({ error: `Account user '${user.email}' does not have a pending TOTP enrollment.` }, 409);
+    }
+    if (!isPendingTotpEnrollmentFresh(user.mfa.totp)) {
+      const now = new Date().toISOString();
+      const nextUser = structuredClone(user);
+      nextUser.mfa.totp.pendingSecretCiphertext = null;
+      nextUser.mfa.totp.pendingSecretIv = null;
+      nextUser.mfa.totp.pendingSecretAuthTag = null;
+      nextUser.mfa.totp.pendingIssuedAt = null;
+      nextUser.mfa.totp.updatedAt = now;
+      nextUser.updatedAt = now;
+      await stateService.saveAccountUserRecord(nextUser);
+      await recordAccountSessionMutationAudit({
+        routeId: 'account.mfa.totp.confirm',
+        action: 'account.mfa.totp_enrollment_expired',
+        access,
+        requestPayload: {
+          accountId: access.accountId,
+          accountUserId: user.id,
+        },
+        statusCode: 409,
+        metadata: {
+          pendingExpired: true,
+        },
+      });
+      return c.json({ error: 'Pending TOTP enrollment has expired. Start enrollment again.' }, 409);
     }
 
     let secretBase32: string;

@@ -44,6 +44,16 @@ const POLICY_VERSION = 'policy.release-offline-test.v1';
 const POLICY_IR_HASH = 'sha256:policy-ir';
 const COMPILED_POLICY_INDEX_VERSION = 'attestor.policy-index.test.v1';
 const COMPILED_POLICY_IR_VERSION = 'attestor.policy-ir.test.v1';
+const WORKLOAD_CERT_THUMBPRINT = 'cert-thumbprint';
+const WORKLOAD_SPIFFE_ID = 'spiffe://attestor/tests/finance-writer';
+
+function trustedWorkloadBinding() {
+  return {
+    expectedCertificateThumbprint: WORKLOAD_CERT_THUMBPRINT,
+    expectedSpiffeId: WORKLOAD_SPIFFE_ID,
+    expectedTrustDomain: 'attestor',
+  } as const;
+}
 
 function expectedPolicyContext(): ReleaseEnforcementPolicyContext {
   return {
@@ -287,8 +297,8 @@ async function testHighRiskNeedsOnline(): Promise<void> {
     tokenId: 'rt_r4_record',
     tenantId: 'tenant-test',
     confirmation: createMtlsReleaseTokenConfirmation({
-      certificateThumbprint: 'cert-thumbprint',
-      spiffeId: 'spiffe://attestor/tests/finance-writer',
+      certificateThumbprint: WORKLOAD_CERT_THUMBPRINT,
+      spiffeId: WORKLOAD_SPIFFE_ID,
     }),
   });
   const request = makeRequest({
@@ -318,9 +328,9 @@ async function testHighRiskNeedsOnline(): Promise<void> {
     expiresAt: issued.expiresAt,
     proof: {
       kind: 'mtls',
-      certificateThumbprint: 'cert-thumbprint',
+      certificateThumbprint: WORKLOAD_CERT_THUMBPRINT,
       subjectDn: 'CN=finance-writer',
-      spiffeId: 'spiffe://attestor/tests/finance-writer',
+      spiffeId: WORKLOAD_SPIFFE_ID,
     },
   });
 
@@ -331,6 +341,7 @@ async function testHighRiskNeedsOnline(): Promise<void> {
     profile,
     now: '2026-04-18T08:01:00.000Z',
     replayLedgerEntry: null,
+    trustedWorkloadBinding: trustedWorkloadBinding(),
   });
 
   equal(verified.status, 'indeterminate', 'Offline verifier: high-risk token remains indeterminate until online liveness');
@@ -703,8 +714,8 @@ async function testRequiredPolicyProvenanceMissingFailsClosed(): Promise<void> {
     tokenId: 'rt_r4_missing_policy_provenance',
     tenantId: 'tenant-test',
     confirmation: createMtlsReleaseTokenConfirmation({
-      certificateThumbprint: 'cert-thumbprint',
-      spiffeId: 'spiffe://attestor/tests/finance-writer',
+      certificateThumbprint: WORKLOAD_CERT_THUMBPRINT,
+      spiffeId: WORKLOAD_SPIFFE_ID,
     }),
   });
   const request = makeRequest({
@@ -729,9 +740,9 @@ async function testRequiredPolicyProvenanceMissingFailsClosed(): Promise<void> {
     expiresAt: issued.expiresAt,
     proof: {
       kind: 'mtls',
-      certificateThumbprint: 'cert-thumbprint',
+      certificateThumbprint: WORKLOAD_CERT_THUMBPRINT,
       subjectDn: 'CN=finance-writer',
-      spiffeId: 'spiffe://attestor/tests/finance-writer',
+      spiffeId: WORKLOAD_SPIFFE_ID,
     },
   });
 
@@ -741,6 +752,7 @@ async function testRequiredPolicyProvenanceMissingFailsClosed(): Promise<void> {
     verificationKey,
     now: '2026-04-18T08:01:00.000Z',
     replayLedgerEntry: null,
+    trustedWorkloadBinding: trustedWorkloadBinding(),
   });
 
   equal(verified.status, 'invalid', 'Offline verifier: required compiled policy provenance fails closed when missing');

@@ -3,15 +3,18 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
+  TOTP_PENDING_ENROLLMENT_TTL_MS,
   generateCurrentTotpCode,
   generateRecoveryCodes,
   generateTotpSecretBase32,
+  isPendingTotpEnrollmentFresh,
   verifyTotpCodeWithStep,
 } from '../src/service/account/account-mfa.js';
 import {
   createAccountUser,
   recordAccountUserTotpVerificationStep,
   resetAccountUserStoreForTests,
+  type AccountUserTotpState,
 } from '../src/service/account/account-user-store.js';
 
 let passed = 0;
@@ -19,6 +22,29 @@ let passed = 0;
 function ok(condition: unknown, message: string): void {
   assert.ok(condition, message);
   passed += 1;
+}
+
+function pendingTotpState(pendingIssuedAt: string | null): AccountUserTotpState {
+  return {
+    method: 'totp',
+    algorithm: 'SHA1',
+    digits: 6,
+    periodSeconds: 30,
+    enabledAt: null,
+    updatedAt: pendingIssuedAt,
+    sessionBoundaryAt: null,
+    secretCiphertext: null,
+    secretIv: null,
+    secretAuthTag: null,
+    pendingSecretCiphertext: 'pending-ciphertext',
+    pendingSecretIv: 'pending-iv',
+    pendingSecretAuthTag: 'pending-auth-tag',
+    pendingIssuedAt,
+    recoveryCodes: [],
+    recoveryCodesIssuedAt: null,
+    lastVerifiedAt: null,
+    lastAcceptedStep: null,
+  };
 }
 
 async function main(): Promise<void> {
@@ -62,6 +88,34 @@ async function main(): Promise<void> {
     ok(
       recovery.codes.every((entry) => /^[A-Z2-7]{4}-[A-Z2-7]{4}-[A-Z2-7]{4}-[A-Z2-7]{4}$/.test(entry)),
       'Recovery codes: generated codes carry 80 bits as 16 base32 symbols',
+    );
+
+    const pendingNowMs = Date.parse('2026-05-06T00:10:00.000Z');
+    ok(
+      isPendingTotpEnrollmentFresh(
+        pendingTotpState('2026-05-06T00:01:00.000Z'),
+        pendingNowMs,
+      ),
+      'TOTP enrollment freshness: pending secret inside TTL is accepted',
+    );
+    ok(
+      !isPendingTotpEnrollmentFresh(
+        pendingTotpState('2026-05-05T23:59:59.999Z'),
+        pendingNowMs,
+        TOTP_PENDING_ENROLLMENT_TTL_MS,
+      ),
+      'TOTP enrollment freshness: pending secret outside TTL is rejected',
+    );
+    ok(
+      !isPendingTotpEnrollmentFresh(pendingTotpState(null), pendingNowMs),
+      'TOTP enrollment freshness: missing pendingIssuedAt is rejected',
+    );
+    ok(
+      !isPendingTotpEnrollmentFresh(
+        pendingTotpState('2026-05-06T00:10:00.001Z'),
+        pendingNowMs,
+      ),
+      'TOTP enrollment freshness: future pendingIssuedAt is rejected',
     );
 
     console.log(`\nAccount MFA replay tests: ${passed} passed, 0 failed`);

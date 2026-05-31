@@ -28,6 +28,7 @@ import {
 import {
   verifyOfflineReleaseAuthorization,
   type OfflineReleaseVerification,
+  type OfflineTrustedWorkloadBinding,
 } from './offline-verifier.js';
 import {
   verifyOnlineReleaseAuthorization,
@@ -121,6 +122,7 @@ export interface RecordWriteGatewayOptions {
   readonly consumeOnSuccess?: boolean;
   readonly forceOnlineIntrospection?: boolean;
   readonly replayLedgerEntry?: ReplayLedgerEntry | null;
+  readonly trustedWorkloadBinding?: OfflineTrustedWorkloadBinding;
   readonly now?: () => string;
   readonly requestId?: string;
   readonly traceId?: string | null;
@@ -547,6 +549,7 @@ export async function enforceRecordWrite(
       presentation: verifierPresentation,
       verificationKey: input.options.verificationKey,
       replayLedgerEntry: input.options.replayLedgerEntry,
+      trustedWorkloadBinding: input.options.trustedWorkloadBinding,
       now: checkedAt,
     });
     const forcedFailureReasons = gatewayFailureReasons([
@@ -587,6 +590,7 @@ export async function enforceRecordWrite(
       presentation,
       verificationKey: input.options.verificationKey,
       replayLedgerEntry: input.options.replayLedgerEntry,
+      trustedWorkloadBinding: input.options.trustedWorkloadBinding,
       now: checkedAt,
     });
     return resultFromVerification({
@@ -604,6 +608,7 @@ export async function enforceRecordWrite(
     presentation,
     verificationKey: input.options.verificationKey,
     replayLedgerEntry: input.options.replayLedgerEntry,
+    trustedWorkloadBinding: input.options.trustedWorkloadBinding,
     now: checkedAt,
     introspector: input.options.introspector,
     usageStore: input.options.usageStore,

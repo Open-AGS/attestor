@@ -107,6 +107,12 @@ export interface OfflineAsyncEnvelopeVerificationContext {
   readonly clockSkewSeconds?: number;
 }
 
+export interface OfflineTrustedWorkloadBinding {
+  readonly expectedSpiffeId?: string | null;
+  readonly expectedTrustDomain?: string | null;
+  readonly expectedCertificateThumbprint?: string | null;
+}
+
 export interface OfflineReleaseVerificationInput {
   readonly request: EnforcementRequest;
   readonly presentation: ReleasePresentation;
@@ -120,6 +126,7 @@ export interface OfflineReleaseVerificationInput {
   readonly nonceLedgerEntry?: NonceLedgerEntry | null;
   readonly httpMessageSignature?: OfflineHttpMessageSignatureVerificationContext;
   readonly asyncEnvelope?: OfflineAsyncEnvelopeVerificationContext;
+  readonly trustedWorkloadBinding?: OfflineTrustedWorkloadBinding;
   readonly verificationResultId?: string;
 }
 
@@ -527,9 +534,23 @@ function workloadBindingFailureReasons(
     return [];
   }
 
+  const trustedBinding = input.trustedWorkloadBinding;
+  if (
+    trustedBinding === undefined ||
+    (
+      !trustedBinding.expectedCertificateThumbprint &&
+      !trustedBinding.expectedSpiffeId
+    )
+  ) {
+    return ['missing-workload-proof'];
+  }
+
   const verified = verifyWorkloadBoundPresentation({
     presentation: input.presentation,
     claims,
+    expectedCertificateThumbprint: trustedBinding.expectedCertificateThumbprint,
+    expectedSpiffeId: trustedBinding.expectedSpiffeId,
+    expectedTrustDomain: trustedBinding.expectedTrustDomain,
     checkedAt,
   });
 

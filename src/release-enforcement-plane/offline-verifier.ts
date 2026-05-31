@@ -282,6 +282,12 @@ function assertPresentationMode(
   if (!profile.allowedPresentationModes.includes(presentationMode)) {
     return ['binding-mismatch'];
   }
+  if (
+    profile.senderConstraint === 'required' &&
+    !profile.senderConstrainedPresentationModes.includes(presentationMode)
+  ) {
+    return ['binding-mismatch'];
+  }
   return [];
 }
 

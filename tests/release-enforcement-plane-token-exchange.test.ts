@@ -61,6 +61,20 @@ function trustedWorkloadBinding() {
   } as const;
 }
 
+function trustedExchangeActor(actor: {
+  readonly id: string;
+  readonly type: 'human' | 'service' | 'agent';
+  readonly displayName?: string;
+  readonly role?: string;
+  readonly tokenSubject?: string;
+}) {
+  return {
+    ...actor,
+    proofSource: 'trusted-exchange-gateway',
+    proofId: `proof:${actor.id}`,
+  } as const;
+}
+
 function tokenDigest(token: string): string {
   return `sha256:${createHash('sha256').update(token).digest('hex')}`;
 }
@@ -267,6 +281,12 @@ async function testAudienceScopedExchangeIssuesDownstreamToken(): Promise<void> 
         role: 'downstream-writer',
       },
     },
+    trustedActor: trustedExchangeActor({
+      id: 'svc.memo-gateway',
+      type: 'service',
+      displayName: 'Memo Gateway',
+      role: 'downstream-writer',
+    }),
     issuer,
     verificationKey,
     sourceAudience: 'attestor.release.authority',
@@ -688,6 +708,11 @@ async function testExchangePreservesActorChain(): Promise<void> {
         role: 'downstream-writer',
       },
     },
+    trustedActor: trustedExchangeActor({
+      id: 'svc.memo-gateway',
+      type: 'service',
+      role: 'downstream-writer',
+    }),
     issuer,
     verificationKey,
     policy: {
@@ -705,6 +730,52 @@ async function testExchangePreservesActorChain(): Promise<void> {
   equal(exchanged.actorChain.length, 2, 'Token exchange: actor chain keeps current and previous actors');
   equal(exchanged.issuedToken.claims.act?.sub, 'svc.memo-gateway', 'Token exchange: current actor is first in JWT actor chain');
   equal(exchanged.issuedToken.claims.act?.act?.sub, 'svc.orchestrator', 'Token exchange: parent actor is nested in JWT actor chain');
+}
+
+async function testExchangeRequiresTrustedActorProofForRequestActor(): Promise<void> {
+  const { issuer, verificationKey } = await setupIssuer();
+  const decision = makeDecision({
+    id: 'decision-actor-proof-required',
+    consequenceType: 'decision-support',
+    riskClass: 'R1',
+    targetId: 'attestor.release.authority',
+  });
+  const parent = await issuer.issue({
+    decision,
+    issuedAt: '2026-04-18T10:00:00.000Z',
+    tokenId: 'rt_parent_actor_proof_required',
+  });
+
+  const exchanged = await exchangeReleaseToken({
+    request: {
+      id: 'exchange-actor-proof-required',
+      requestedAt: '2026-04-18T10:01:00.000Z',
+      subjectToken: parent.token,
+      audience: 'analytics.memo.writer',
+      scope: 'release:decision-support',
+      actor: {
+        id: 'svc.memo-gateway',
+        type: 'service',
+        role: 'downstream-writer',
+      },
+    },
+    issuer,
+    verificationKey,
+    policy: {
+      allowedAudiences: ['analytics.memo.writer'],
+      allowedScopes: ['release:decision-support'],
+      requireActor: true,
+      maxTtlSeconds: 120,
+    },
+  });
+
+  equal(exchanged.status, 'denied', 'Token exchange: request-body actor does not satisfy requireActor without trusted proof');
+  deepEqual(
+    exchanged.failureReasons,
+    ['actor-proof-required'],
+    'Token exchange: actor proof requirement is explicit',
+  );
+  equal(exchanged.issuedToken, null, 'Token exchange: proofless actor request does not issue a child token');
 }
 
 async function testExchangeRequiresExplicitMaxTtlPolicy(): Promise<void> {
@@ -781,6 +852,11 @@ async function testHighRiskExchangeRegistersForOnlineVerifier(): Promise<void> {
       },
       tokenId: 'rtx_finance_record',
     },
+    trustedActor: trustedExchangeActor({
+      id: 'svc.finance-writer',
+      type: 'service',
+      role: 'record-writer',
+    }),
     issuer,
     verificationKey,
     sourceAudience: 'attestor.release.authority',
@@ -842,6 +918,85 @@ async function testHighRiskExchangeRegistersForOnlineVerifier(): Promise<void> {
     'Token exchange: online verifier snapshots exchanged structured policy context',
   );
   equal(verified.freshness?.introspectionCache.status, 'fresh', 'Token exchange: online freshness is fresh');
+}
+
+async function testExchangeRejectsDuplicateChildTokenId(): Promise<void> {
+  const { issuer, verificationKey } = await setupIssuer();
+  const store = createInMemoryReleaseTokenIntrospectionStore();
+  const introspector = createReleaseTokenIntrospector(store);
+  const decision = makeDecision({
+    id: 'decision-r4-exchange-duplicate-child',
+    consequenceType: 'record',
+    riskClass: 'R4',
+    targetId: 'attestor.release.authority',
+  });
+  const parent = await issuer.issue({
+    decision,
+    issuedAt: '2026-04-18T10:00:00.000Z',
+    tokenId: 'rt_parent_r4_duplicate_child',
+    tenantId: 'tenant-test',
+    confirmation: createMtlsReleaseTokenConfirmation({
+      certificateThumbprint: WORKLOAD_CERT_THUMBPRINT,
+      spiffeId: WORKLOAD_SPIFFE_ID,
+    }),
+  });
+  const existingChild = await issuer.issue({
+    decision,
+    issuedAt: '2026-04-18T10:00:05.000Z',
+    tokenId: 'rtx_duplicate_child',
+    audience: 'finance.reporting.record-store',
+    tenantId: 'tenant-test',
+    confirmation: createMtlsReleaseTokenConfirmation({
+      certificateThumbprint: WORKLOAD_CERT_THUMBPRINT,
+      spiffeId: WORKLOAD_SPIFFE_ID,
+    }),
+  });
+  store.registerIssuedToken({ issuedToken: parent, decision });
+  store.registerIssuedToken({ issuedToken: existingChild, decision });
+
+  const exchanged = await exchangeReleaseToken({
+    request: {
+      id: 'exchange-r4-duplicate-child',
+      requestedAt: '2026-04-18T10:00:30.000Z',
+      subjectToken: parent.token,
+      audience: 'finance.reporting.record-store',
+      resource: 'https://records.attestor.test/finance/',
+      scope: 'record:write',
+      actor: {
+        id: 'svc.finance-writer',
+        type: 'service',
+        role: 'record-writer',
+      },
+      tokenId: existingChild.tokenId,
+    },
+    trustedActor: trustedExchangeActor({
+      id: 'svc.finance-writer',
+      type: 'service',
+      role: 'record-writer',
+    }),
+    issuer,
+    verificationKey,
+    sourceAudience: 'attestor.release.authority',
+    subjectIntrospector: introspector,
+    store,
+    policy: {
+      allowedAudiences: ['finance.reporting.record-store'],
+      allowedSourceAudiences: ['attestor.release.authority'],
+      allowedScopes: ['record:write'],
+      allowedResources: ['https://records.attestor.test/finance/'],
+      maxTtlSeconds: 60,
+      maxUses: 1,
+      requireActor: true,
+    },
+  });
+
+  equal(exchanged.status, 'denied', 'Token exchange: duplicate child token id is denied');
+  deepEqual(
+    exchanged.failureReasons,
+    ['child-token-id-conflict'],
+    'Token exchange: duplicate child token id denial reason is explicit',
+  );
+  equal(exchanged.issuedToken, null, 'Token exchange: duplicate child token id does not return a minted child token');
 }
 
 async function testExchangeRejectsRevokedSubjectWhenIntrospectionIsRequired(): Promise<void> {
@@ -932,6 +1087,10 @@ async function testExchangeRequiresParentIntrospectionForHighRiskParents(): Prom
         type: 'service',
       },
     },
+    trustedActor: trustedExchangeActor({
+      id: 'svc.finance-writer',
+      type: 'service',
+    }),
     issuer,
     verificationKey,
     sourceAudience: 'attestor.release.authority',
@@ -1053,8 +1212,10 @@ async function main(): Promise<void> {
   await testExchangeCapsTtlToSubjectTokenLifetime();
   await testExchangeRejectsExpiredSubject();
   await testExchangePreservesActorChain();
+  await testExchangeRequiresTrustedActorProofForRequestActor();
   await testExchangeRequiresExplicitMaxTtlPolicy();
   await testHighRiskExchangeRegistersForOnlineVerifier();
+  await testExchangeRejectsDuplicateChildTokenId();
   await testExchangeRejectsRevokedSubjectWhenIntrospectionIsRequired();
   await testExchangeRequiresParentIntrospectionForHighRiskParents();
   await testExchangeRequiresChildRegistrationStoreForHighRiskParents();

@@ -8,6 +8,10 @@ import type {
   VerifyReleaseTokenInput,
 } from './release-token.js';
 import {
+  canonicalizeReleaseJson,
+  type CanonicalReleaseJsonValue,
+} from './release-canonicalization.js';
+import {
   ReleaseTokenVerificationFailure as ReleaseTokenVerificationFailureError,
   verifyIssuedReleaseToken,
 } from './release-token.js';
@@ -473,7 +477,7 @@ function saveReleaseTokenIntrospectionStoreFile(
   );
 }
 
-function upsertRegisteredReleaseToken(
+function writeRegisteredReleaseToken(
   file: ReleaseTokenIntrospectionStoreFile,
   record: RegisteredReleaseToken,
 ): RegisteredReleaseToken {
@@ -484,6 +488,49 @@ function upsertRegisteredReleaseToken(
   } else {
     file.records.push(frozen);
   }
+  return frozen;
+}
+
+function registeredTokenRecordsMatch(
+  left: RegisteredReleaseToken,
+  right: RegisteredReleaseToken,
+): boolean {
+  return (
+    canonicalizeReleaseJson(JSON.parse(JSON.stringify(left)) as CanonicalReleaseJsonValue) ===
+    canonicalizeReleaseJson(JSON.parse(JSON.stringify(right)) as CanonicalReleaseJsonValue)
+  );
+}
+
+function assertRegistrationCanReplay(
+  existing: RegisteredReleaseToken,
+  proposed: RegisteredReleaseToken,
+): void {
+  if (existing.status !== 'issued') {
+    throw new ReleaseTokenIntrospectionStoreError(
+      `Release token '${proposed.tokenId}' cannot be re-registered after ${existing.status} state.`,
+    );
+  }
+
+  if (!registeredTokenRecordsMatch(existing, proposed)) {
+    throw new ReleaseTokenIntrospectionStoreError(
+      `Release token '${proposed.tokenId}' is already registered with different authority state.`,
+    );
+  }
+}
+
+function insertRegisteredReleaseToken(
+  file: ReleaseTokenIntrospectionStoreFile,
+  record: RegisteredReleaseToken,
+): RegisteredReleaseToken {
+  const frozen = freezeRegisteredReleaseToken(record);
+  const existing =
+    file.records.find((entry) => entry.tokenId === frozen.tokenId) ?? null;
+  if (existing) {
+    assertRegistrationCanReplay(existing, frozen);
+    return existing;
+  }
+
+  file.records.push(frozen);
   return frozen;
 }
 
@@ -562,7 +609,7 @@ function createReleaseTokenIntrospectionStoreFromAccessors(accessors: {
   return {
     registerIssuedToken(input: RegisterIssuedReleaseTokenInput): RegisteredReleaseToken {
       return accessors.mutate((file) =>
-        upsertRegisteredReleaseToken(file, buildRegisteredReleaseToken(input)),
+        insertRegisteredReleaseToken(file, buildRegisteredReleaseToken(input)),
       );
     },
 
@@ -578,7 +625,7 @@ function createReleaseTokenIntrospectionStoreFromAccessors(accessors: {
         }
 
         const revoked = revokeRegisteredReleaseToken(existing, input);
-        return upsertRegisteredReleaseToken(file, revoked);
+        return writeRegisteredReleaseToken(file, revoked);
       });
     },
 
@@ -589,7 +636,7 @@ function createReleaseTokenIntrospectionStoreFromAccessors(accessors: {
 
         for (const record of file.records) {
           if (record.status === 'issued' && record.expiresAt <= now) {
-            expired.push(upsertRegisteredReleaseToken(file, expireRegisteredReleaseToken(record)));
+            expired.push(writeRegisteredReleaseToken(file, expireRegisteredReleaseToken(record)));
           }
         }
 
@@ -602,7 +649,7 @@ function createReleaseTokenIntrospectionStoreFromAccessors(accessors: {
         const now = introspectionTimestamp(input.usedAt);
         for (const record of file.records) {
           if (record.status === 'issued' && record.expiresAt <= now) {
-            upsertRegisteredReleaseToken(file, expireRegisteredReleaseToken(record));
+            writeRegisteredReleaseToken(file, expireRegisteredReleaseToken(record));
           }
         }
 
@@ -625,7 +672,7 @@ function createReleaseTokenIntrospectionStoreFromAccessors(accessors: {
         }
 
         const consumed = consumeRegisteredReleaseToken(existing, input);
-        upsertRegisteredReleaseToken(file, consumed);
+        writeRegisteredReleaseToken(file, consumed);
         return Object.freeze({
           accepted: true,
           inactiveReason: null,

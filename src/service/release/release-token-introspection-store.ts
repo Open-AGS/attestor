@@ -8,6 +8,10 @@ import {
   type RevokeReleaseTokenInput,
 } from '../../release-layer/index.js';
 import {
+  canonicalizeReleaseJson,
+  type CanonicalReleaseJsonValue,
+} from '../../release-kernel/release-canonicalization.js';
+import {
   RELEASE_AUTHORITY_SCHEMA,
   ensureReleaseAuthorityStore,
   getReleaseAuthorityComponent,
@@ -120,6 +124,33 @@ function inactiveReasonForRecord(record: RegisteredReleaseToken): ReleaseTokenIn
 
 function freezeRecord(record: RegisteredReleaseToken): RegisteredReleaseToken {
   return Object.freeze({ ...record });
+}
+
+function recordsMatch(
+  left: RegisteredReleaseToken,
+  right: RegisteredReleaseToken,
+): boolean {
+  return (
+    canonicalizeReleaseJson(JSON.parse(JSON.stringify(left)) as CanonicalReleaseJsonValue) ===
+    canonicalizeReleaseJson(JSON.parse(JSON.stringify(right)) as CanonicalReleaseJsonValue)
+  );
+}
+
+function assertRegistrationCanReplay(
+  existing: RegisteredReleaseToken,
+  proposed: RegisteredReleaseToken,
+): void {
+  if (existing.status !== 'issued') {
+    throw new SharedReleaseTokenIntrospectionStoreError(
+      `Shared release token introspection cannot re-register token '${proposed.tokenId}' after ${existing.status} state.`,
+    );
+  }
+
+  if (!recordsMatch(existing, proposed)) {
+    throw new SharedReleaseTokenIntrospectionStoreError(
+      `Shared release token introspection token '${proposed.tokenId}' is already registered with different authority state.`,
+    );
+  }
 }
 
 function buildRegisteredRecord(input: RegisterIssuedReleaseTokenInput): RegisteredReleaseToken {
@@ -392,6 +423,102 @@ async function upsertRecord(
   return stored;
 }
 
+async function insertRecord(
+  client: ReleaseAuthorityPgClient,
+  record: RegisteredReleaseToken,
+): Promise<RegisteredReleaseToken> {
+  const stored = freezeRecord(record);
+  const result = await client.query(
+    `INSERT INTO ${RELEASE_TOKEN_INTROSPECTION_TABLE} (
+      token_id,
+      status,
+      status_changed_at,
+      issuer,
+      subject,
+      audience,
+      decision_id,
+      decision_status,
+      consequence_type,
+      risk_class,
+      expires_at,
+      max_uses,
+      use_count,
+      first_used_at,
+      last_used_at,
+      last_used_by_resource_server_id,
+      revoked_at,
+      expired_at,
+      record_json
+    ) VALUES (
+      $1,
+      $2,
+      $3::timestamptz,
+      $4,
+      $5,
+      $6,
+      $7,
+      $8,
+      $9,
+      $10,
+      $11::timestamptz,
+      $12,
+      $13,
+      $14::timestamptz,
+      $15::timestamptz,
+      $16,
+      $17::timestamptz,
+      $18::timestamptz,
+      $19::jsonb
+    )
+    ON CONFLICT (token_id) DO NOTHING
+    RETURNING token_id`,
+    [
+      stored.tokenId,
+      stored.status,
+      stored.statusChangedAt,
+      stored.issuer,
+      stored.subject,
+      stored.audience,
+      stored.decisionId,
+      stored.decisionStatus,
+      stored.consequenceType,
+      stored.riskClass,
+      stored.expiresAt,
+      stored.maxUses,
+      stored.useCount,
+      stored.firstUsedAt,
+      stored.lastUsedAt,
+      stored.lastUsedByResourceServerId,
+      stored.revokedAt,
+      stored.expiredAt,
+      JSON.stringify(stored),
+    ],
+  );
+
+  if (result.rows.length === 1) {
+    return stored;
+  }
+
+  const existingResult = await client.query(
+    `SELECT token_id, status, decision_id, audience, use_count, revoked_at, record_json
+       FROM ${RELEASE_TOKEN_INTROSPECTION_TABLE}
+      WHERE token_id = $1
+      FOR UPDATE`,
+    [stored.tokenId],
+  );
+  const existing = existingResult.rows[0]
+    ? rowToRecord(existingResult.rows[0])
+    : null;
+  if (!existing) {
+    throw new SharedReleaseTokenIntrospectionStoreError(
+      `Shared release token introspection token '${stored.tokenId}' registration conflicted without a readable existing row.`,
+    );
+  }
+
+  assertRegistrationCanReplay(existing, stored);
+  return existing;
+}
+
 async function expireIssuedRows(
   client: ReleaseAuthorityPgClient,
   now: string,
@@ -416,7 +543,7 @@ async function registerIssuedToken(
 ): Promise<RegisteredReleaseToken> {
   await ensureTokenIntrospectionTable();
   const record = buildRegisteredRecord(input);
-  return withReleaseAuthorityTransaction((client) => upsertRecord(client, record));
+  return withReleaseAuthorityTransaction((client) => insertRecord(client, record));
 }
 
 async function findToken(tokenId: string): Promise<RegisteredReleaseToken | null> {

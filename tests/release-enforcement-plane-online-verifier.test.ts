@@ -380,6 +380,53 @@ async function testHighRiskActiveIntrospectionAllows(): Promise<void> {
   equal(verified.freshness?.introspectionCache.status, 'fresh', 'Online verifier: active live introspection creates fresh cache state');
 }
 
+async function testHighRiskBearerFailsWhenSenderConstraintRequired(): Promise<void> {
+  const { issuer, verificationKey } = await setupIssuer();
+  const store = createInMemoryReleaseTokenIntrospectionStore();
+  const introspector = createReleaseTokenIntrospector(store);
+  const decision = makeDecision({
+    id: 'decision-r4-online-bearer-sender-required',
+    consequenceType: 'record',
+    riskClass: 'R4',
+    targetId: 'finance.reporting.record-store',
+  });
+  const issued = await issuer.issue({
+    decision,
+    issuedAt: '2026-04-18T09:00:00.000Z',
+    tokenId: 'rt_online_r4_bearer_sender_required',
+    tenantId: 'tenant-test',
+    confirmation: createMtlsReleaseTokenConfirmation({
+      certificateThumbprint: WORKLOAD_CERT_THUMBPRINT,
+      spiffeId: WORKLOAD_SPIFFE_ID,
+    }),
+  });
+  store.registerIssuedToken({ issuedToken: issued, decision });
+  const request = makeRequest({
+    id: 'erq-online-r4-bearer-sender-required',
+    targetId: 'finance.reporting.record-store',
+    consequenceType: 'record',
+    riskClass: 'R4',
+    boundaryKind: 'record-write',
+    pointKind: 'record-write-gateway',
+    releaseTokenId: issued.tokenId,
+    releaseDecisionId: decision.id,
+  });
+
+  const verified = await verifyOnlineReleaseAuthorization({
+    request,
+    presentation: bearerPresentation({ issued, decisionId: decision.id }),
+    verificationKey,
+    now: '2026-04-18T09:01:00.000Z',
+    replayLedgerEntry: null,
+    introspector,
+    resourceServerId: 'erq-online-r4-bearer-sender-required-pep',
+  });
+
+  equal(verified.status, 'invalid', 'Online verifier: required sender constraint rejects bearer presentation');
+  equal(verified.onlineChecked, false, 'Online verifier: sender-proof failure stops before active-state introspection');
+  deepEqual(verified.failureReasons, ['binding-mismatch'], 'Online verifier: bearer sender-proof failure is explicit');
+}
+
 async function testHighRiskCanConsumeOnSuccess(): Promise<void> {
   const { issuer, verificationKey } = await setupIssuer();
   const store = createInMemoryReleaseTokenIntrospectionStore();
@@ -814,6 +861,7 @@ async function testIntrospectionUnavailableFailsClosed(): Promise<void> {
 async function main(): Promise<void> {
   await testLowRiskCanRemainOfflineValid();
   await testHighRiskActiveIntrospectionAllows();
+  await testHighRiskBearerFailsWhenSenderConstraintRequired();
   await testHighRiskCanConsumeOnSuccess();
   await testRevokedTokenFails();
   await testConsumedTokenFailsAsReplay();

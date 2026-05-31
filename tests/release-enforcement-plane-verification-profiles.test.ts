@@ -70,7 +70,7 @@ function testRecordWriteR4Profile(): void {
   equal(profile.onlineIntrospectionRequired, true, 'Verification profiles: R4 record-write requires online introspection');
   equal(profile.policyProvenanceRequired, true, 'Verification profiles: R4 record-write requires compiled policy provenance');
   equal(profile.senderConstraint, 'required', 'Verification profiles: R4 record-write requires sender constraint');
-  deepEqual(profile.allowedPresentationModes, ['bearer-release-token', 'dpop-bound-token', 'mtls-bound-token', 'spiffe-bound-token'], 'Verification profiles: R4 record-write keeps compatible presentation modes');
+  deepEqual(profile.allowedPresentationModes, ['bearer-release-token', 'dpop-bound-token', 'mtls-bound-token', 'spiffe-bound-token'], 'Verification profiles: R4 record-write lists parser-supported presentation modes');
   deepEqual(profile.senderConstrainedPresentationModes, ['dpop-bound-token', 'mtls-bound-token', 'spiffe-bound-token'], 'Verification profiles: R4 record-write exposes only sender-constrained modes separately');
   equal(profile.replayProtectionRequired, true, 'Verification profiles: R4 record-write requires replay protection');
   equal(profile.cacheBudget.positiveTtlSeconds, 0, 'Verification profiles: R4 record-write requires live positive state');

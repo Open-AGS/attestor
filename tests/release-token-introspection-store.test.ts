@@ -172,6 +172,12 @@ async function run(): Promise<void> {
       'consumed',
       'Shared token introspection: consumed token state persists after concurrent use',
     );
+    await assert.rejects(
+      store.registerIssuedToken({ issuedToken: issued, decision }),
+      SharedReleaseTokenIntrospectionStoreError,
+      'Shared token introspection: duplicate registration cannot reactivate a consumed token id',
+    );
+    passed += 1;
 
     const revocableDecision = makeDecision('decision-shared-token-revoke');
     const revocableToken = await issuer.issue({
@@ -194,6 +200,15 @@ async function run(): Promise<void> {
       'revoked',
       'Shared token introspection: revocation state persists in the shared store',
     );
+    await assert.rejects(
+      store.registerIssuedToken({
+        issuedToken: revocableToken,
+        decision: revocableDecision,
+      }),
+      SharedReleaseTokenIntrospectionStoreError,
+      'Shared token introspection: duplicate registration cannot reactivate a revoked token id',
+    );
+    passed += 1;
 
     const expiringDecision = makeDecision('decision-shared-token-expired');
     const expiringToken = await issuer.issue({

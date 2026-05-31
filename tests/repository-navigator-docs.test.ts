@@ -16,6 +16,11 @@ function includes(content: string, expected: string, message: string): void {
   passed += 1;
 }
 
+function excludes(content: string, unexpected: RegExp, message: string): void {
+  assert.doesNotMatch(content, unexpected, message);
+  passed += 1;
+}
+
 function ok(condition: unknown, message: string): void {
   assert.ok(condition, message);
   passed += 1;
@@ -31,6 +36,7 @@ function testNavigatorKeepsFirstVisitorPaths(): void {
   includes(doc, '## Pick One Door', 'Repository navigator: guided decision entry is present');
   includes(doc, 'Do not read everything.', 'Repository navigator: avoids scavenger-hunt reading');
   includes(doc, 'Stop when...', 'Repository navigator: each path has a stopping rule');
+  includes(doc, '"What is proven today?"', 'Repository navigator: frames readiness as evidence, not a production claim');
   includes(doc, '## Start By Intent', 'Repository navigator: task-first navigation is present');
   includes(doc, '## Start By Role', 'Repository navigator: role-first navigation is present');
   includes(doc, '## Maintainer Maps', 'Repository navigator: deep maps are grouped behind a maintainer section');
@@ -105,6 +111,7 @@ function testNavigatorKeepsNoClaimBoundaries(): void {
   includes(doc, 'package boundary is not hosted enforcement', 'Repository navigator: package boundary no-claim is explicit');
   includes(doc, 'admission decision is not downstream execution', 'Repository navigator: decision/execution split is explicit');
   includes(doc, 'customer PEP / gate is where non-bypassability must be proven', 'Repository navigator: customer PEP proof boundary is explicit');
+  excludes(doc, /"Is this production-ready\?"/u, 'Repository navigator: avoids production-ready as a front-door link prompt');
   includes(map, 'This is a map, not an authority surface.', 'Repository map: map is not an authority surface');
   includes(map, 'package map = what import path means', 'Repository map: package map boundary is explicit');
 }

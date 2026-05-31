@@ -122,6 +122,8 @@ function testTryFirstDocKeepsTheBoundaryHonest(): void {
   includes(doc, 'not a public hosted crypto route', 'Try-first doc: does not invent a hosted crypto route');
   includes(doc, 'not a wallet, custody platform, agent runtime, or orchestration layer', 'Try-first doc: keeps Attestor role narrow');
   includes(doc, 'does not auto-detect packs from payload shape', 'Try-first doc: rejects automatic pack detection');
+  includes(doc, 'Need current package/adapter boundaries?', 'Try-first doc: keeps finance and crypto framed as boundaries');
+  excludes(doc, /Need the finance and crypto entry paths\?/u, 'Try-first doc: avoids making finance and crypto sound like separate products');
 }
 
 function testQuickstartPointsToTheFastPath(): void {

@@ -108,5 +108,5 @@ Customer systems still choose the relevant Attestor surface explicitly.
 - Need bounded agent retries? Read [Agent retry wrapper demo](agent-retry-wrapper-demo.md).
 - Need to start from existing API metadata? Run `npm run example:action-surface-onboarding` and read [Action surface onboarding packet](../02-architecture/action-surface-onboarding-packet.md).
 - Need the first hosted call after signup? Read [First hosted API call](hosted-first-api-call.md).
-- Need the finance and crypto entry paths? Read [Finance and crypto first integrations](finance-and-crypto-first-integrations.md).
+- Need current package/adapter boundaries? Read [Finance and crypto first integrations](finance-and-crypto-first-integrations.md).
 - Need pricing, evaluation, or hosted trial details? Read [Commercial packaging, pricing, and evaluation](product-packaging.md).

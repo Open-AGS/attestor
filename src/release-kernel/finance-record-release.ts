@@ -224,10 +224,15 @@ export function financeFilingReleaseStatusFromReport(
     return 'denied';
   }
 
+  const filingReadinessAllowsRelease =
+    report.filingReadiness.status === 'internal_report_ready' &&
+    report.filingReadiness.totalGaps === 0 &&
+    report.filingReadiness.blockingGaps === 0;
+
   if (
     report.receipt?.receiptStatus === 'issued' &&
     report.escrow.state === 'released' &&
-    report.filingReadiness.status !== 'blocked'
+    filingReadinessAllowsRelease
   ) {
     return 'accepted';
   }
@@ -263,7 +268,9 @@ export function buildFinanceFilingReleaseObservation(
       report.audit.chainIntact &&
       report.evidenceChain.intact &&
       report.receipt?.receiptStatus === 'issued' &&
-      report.filingReadiness.status !== 'blocked' &&
+      report.filingReadiness.status === 'internal_report_ready' &&
+      report.filingReadiness.totalGaps === 0 &&
+      report.filingReadiness.blockingGaps === 0 &&
       (report.decision === 'pass' || report.decision === 'warn'),
     evidenceKinds,
     traceGradePassed: report.liveProof.consistent ?? false,

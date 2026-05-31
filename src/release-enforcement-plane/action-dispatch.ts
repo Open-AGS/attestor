@@ -217,6 +217,7 @@ const ACTION_DISPATCH_PRECONDITION_KINDS = Object.freeze([
   'time-window',
   'idempotency',
 ] as const satisfies readonly ActionDispatchPreconditionKind[]);
+const SHA256_DIGEST_REFERENCE_PATTERN = /^sha256:[a-f0-9]{64}$/u;
 
 function uniqueFailureReasons(
   reasons: readonly EnforcementFailureReason[],
@@ -236,6 +237,22 @@ function normalizeIdentifier(value: string | null | undefined, fieldName: string
 function normalizeOptionalIdentifier(value: string | null | undefined): string | null {
   const normalized = value?.trim();
   return normalized ? normalized : null;
+}
+
+function normalizeOptionalSha256DigestReference(
+  value: string | null | undefined,
+  fieldName: string,
+): string | null {
+  const normalized = normalizeOptionalIdentifier(value);
+  if (normalized === null) {
+    return null;
+  }
+  if (!SHA256_DIGEST_REFERENCE_PATTERN.test(normalized)) {
+    throw new Error(
+      `Action-dispatch enforcement ${fieldName} must use sha256:<64 lowercase hex>.`,
+    );
+  }
+  return normalized;
 }
 
 function normalizeIsoTimestamp(value: string): string {
@@ -381,7 +398,10 @@ function normalizePrecondition(
       precondition.expected === undefined || precondition.expected === null
         ? null
         : normalizeActionValue(precondition.expected, `$.preconditions[${index}].expected`),
-    digest: normalizeOptionalIdentifier(precondition.digest),
+    digest: normalizeOptionalSha256DigestReference(
+      precondition.digest,
+      `precondition[${index}].digest`,
+    ),
   };
 }
 
@@ -430,7 +450,7 @@ function normalizeAction(
       action.parameters === undefined || action.parameters === null
         ? null
         : normalizeActionValue(action.parameters, '$.parameters'),
-    preconditions: normalizePreconditions(action.preconditions),
+    declaredPreconditions: normalizePreconditions(action.preconditions),
     dryRun: action.dryRun ?? false,
     reason: normalizeOptionalIdentifier(action.reason),
     idempotencyKey: normalizeOptionalIdentifier(action.idempotencyKey),

@@ -58,6 +58,7 @@ function deepEqual<T>(actual: T, expected: T, message: string): void {
 
 const WORKLOAD_CERT_THUMBPRINT = 'cert-thumbprint-action-dispatch';
 const WORKLOAD_SPIFFE_ID = 'spiffe://attestor.test/ns/finance/sa/action-dispatcher';
+const CERTIFICATE_PRECONDITION_DIGEST = `sha256:${'a'.repeat(64)}`;
 const POLICY_HASH = 'sha256:policy';
 const POLICY_IR_HASH = 'sha256:policy-ir';
 const COMPILED_POLICY_INDEX_VERSION = 'attestor.policy-index.test.v1';
@@ -82,7 +83,7 @@ const ACTION: ActionDispatchRequest = Object.freeze({
     {
       preconditionId: 'certificate-bound',
       kind: 'evidence',
-      digest: 'sha256:cert-finance-action',
+      digest: CERTIFICATE_PRECONDITION_DIGEST,
     },
     {
       preconditionId: 'filing-readiness',
@@ -334,6 +335,15 @@ async function testCanonicalBindingIsStable(): Promise<void> {
   equal(left.target.kind, 'workflow', 'Action-dispatch gateway: target kind is workflow');
   equal(left.outputContract.consequenceType, 'action', 'Action-dispatch gateway: output contract is action consequence');
   equal(left.outputContract.riskClass, 'R3', 'Action-dispatch gateway: default action risk class is R3');
+  const actionPayload = (left.outputPayload as { readonly actionDispatch?: unknown })
+    .actionDispatch as Record<string, unknown> | undefined;
+  ok(
+    typeof actionPayload === 'object' &&
+      actionPayload !== null &&
+      'declaredPreconditions' in actionPayload &&
+      !('preconditions' in actionPayload),
+    'Action-dispatch gateway: canonical payload labels preconditions as declarations',
+  );
   ok(left.hashBundle.outputHash.startsWith('sha256:'), 'Action-dispatch gateway: output hash is canonicalized');
   ok(left.hashBundle.consequenceHash.startsWith('sha256:'), 'Action-dispatch gateway: consequence hash is canonicalized');
   equal(left.dispatchHash, reordered.dispatchHash, 'Action-dispatch gateway: parameter and precondition ordering do not change dispatch hash');
@@ -718,6 +728,21 @@ async function testCanonicalizationRejectsAmbiguousValues(): Promise<void> {
       traceparent: 'trace-me',
     }),
     /Trace Context/u,
+  );
+  passed += 1;
+
+  assert.throws(
+    () => buildActionDispatchCanonicalBinding({
+      ...ACTION,
+      preconditions: [
+        {
+          preconditionId: 'placeholder-digest',
+          kind: 'evidence',
+          digest: 'sha256:not-a-real-digest',
+        },
+      ],
+    }),
+    /sha256:<64 lowercase hex>/u,
   );
   passed += 1;
 }

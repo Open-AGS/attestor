@@ -196,6 +196,8 @@ export interface CommunicationSendGatewayResult {
   readonly responseStatus: number;
 }
 
+const SHA256_DIGEST_REFERENCE_PATTERN = /^sha256:[a-f0-9]{64}$/u;
+
 function uniqueFailureReasons(
   reasons: readonly EnforcementFailureReason[],
 ): readonly EnforcementFailureReason[] {
@@ -214,6 +216,19 @@ function normalizeIdentifier(value: string | null | undefined, fieldName: string
 function normalizeOptionalIdentifier(value: string | null | undefined): string | null {
   const normalized = value?.trim();
   return normalized ? normalized : null;
+}
+
+function normalizeSha256DigestReference(
+  value: string | null | undefined,
+  fieldName: string,
+): string {
+  const normalized = normalizeIdentifier(value, fieldName);
+  if (!SHA256_DIGEST_REFERENCE_PATTERN.test(normalized)) {
+    throw new Error(
+      `Communication-send enforcement ${fieldName} must use sha256:<64 lowercase hex>.`,
+    );
+  }
+  return normalized;
 }
 
 function normalizeOptionalText(value: string | null | undefined, fieldName: string): string | null {
@@ -296,7 +311,7 @@ function normalizeAttachment(
     attachmentId: normalizeIdentifier(attachment.attachmentId, `attachment[${index}].attachmentId`),
     fileName: normalizeIdentifier(attachment.fileName, `attachment[${index}].fileName`),
     contentType: normalizeIdentifier(attachment.contentType, `attachment[${index}].contentType`),
-    digest: normalizeIdentifier(attachment.digest, `attachment[${index}].digest`),
+    digest: normalizeSha256DigestReference(attachment.digest, `attachment[${index}].digest`),
     sizeBytes: attachment.sizeBytes,
     disposition: normalizeOptionalIdentifier(attachment.disposition),
   };
@@ -357,7 +372,7 @@ function normalizeMessage(
     html,
     templateId,
     locale: normalizeOptionalIdentifier(message.locale),
-    attachments: normalizeAttachments(message.attachments),
+    declaredAttachments: normalizeAttachments(message.attachments),
     metadata:
       message.metadata === undefined || message.metadata === null
         ? null

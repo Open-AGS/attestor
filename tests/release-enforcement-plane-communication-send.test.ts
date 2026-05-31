@@ -72,7 +72,7 @@ const MESSAGE: CommunicationSendMessage = Object.freeze({
       attachmentId: 'evidence-pack',
       fileName: 'release-evidence.json',
       contentType: 'application/json',
-      digest: 'sha256:evidence-pack-digest',
+      digest: `sha256:${'a'.repeat(64)}`,
       sizeBytes: 4096,
       disposition: 'attachment',
     },
@@ -80,7 +80,7 @@ const MESSAGE: CommunicationSendMessage = Object.freeze({
       attachmentId: 'summary',
       fileName: 'review-summary.txt',
       contentType: 'text/plain',
-      digest: 'sha256:review-summary-digest',
+      digest: `sha256:${'b'.repeat(64)}`,
       sizeBytes: 1024,
     },
   ],
@@ -174,6 +174,7 @@ async function issueCommunicationToken(input: {
     decision,
     issuedAt: '2026-04-18T18:00:00.000Z',
     tokenId: input.tokenId,
+    tenantId: 'tenant-test',
     confirmation: input.confirmation,
   });
 
@@ -283,6 +284,15 @@ async function testCanonicalBindingIsStable(): Promise<void> {
   equal(left.target.id, 'finance.reporting.review.mailbox', 'Communication-send gateway: explicit target id binds outbound endpoint');
   equal(left.outputContract.consequenceType, 'communication', 'Communication-send gateway: output contract is communication consequence');
   equal(left.outputContract.riskClass, 'R2', 'Communication-send gateway: default communication send risk class is R2');
+  const communicationPayload = (left.outputPayload as { readonly communicationSend?: unknown })
+    .communicationSend as Record<string, unknown> | undefined;
+  ok(
+    typeof communicationPayload === 'object' &&
+      communicationPayload !== null &&
+      'declaredAttachments' in communicationPayload &&
+      !('attachments' in communicationPayload),
+    'Communication-send gateway: canonical payload labels attachments as declarations',
+  );
   ok(left.hashBundle.outputHash.startsWith('sha256:'), 'Communication-send gateway: output hash is canonicalized');
   ok(left.hashBundle.consequenceHash.startsWith('sha256:'), 'Communication-send gateway: consequence hash is canonicalized');
   equal(left.messageHash, reordered.messageHash, 'Communication-send gateway: metadata and attachment ordering do not change message hash');
@@ -672,12 +682,29 @@ async function testCanonicalizationRejectsAmbiguousValues(): Promise<void> {
           attachmentId: 'bad-size',
           fileName: 'bad.txt',
           contentType: 'text/plain',
-          digest: 'sha256:bad',
+          digest: `sha256:${'c'.repeat(64)}`,
           sizeBytes: -1,
         },
       ],
     }),
     /safe non-negative integer/u,
+  );
+  passed += 1;
+
+  assert.throws(
+    () => buildCommunicationSendCanonicalBinding({
+      ...MESSAGE,
+      attachments: [
+        {
+          attachmentId: 'placeholder-digest',
+          fileName: 'placeholder.txt',
+          contentType: 'text/plain',
+          digest: 'sha256:placeholder',
+          sizeBytes: 1,
+        },
+      ],
+    }),
+    /sha256:<64 lowercase hex>/u,
   );
   passed += 1;
 }

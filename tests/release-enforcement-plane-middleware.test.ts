@@ -173,6 +173,7 @@ async function issueToken(input: {
     decision,
     issuedAt: '2026-04-18T15:00:00.000Z',
     tokenId: input.tokenId,
+    tenantId: 'tenant-test',
   });
   return { issued, verificationKey, decision };
 }
@@ -207,6 +208,9 @@ function baseOptions(input: {
   readonly verificationKey: ReleaseTokenVerificationKey;
   readonly riskClass?: 'R1' | 'R3';
   readonly consequenceType?: 'decision-support' | 'communication' | 'action';
+  readonly targetId?: string | null;
+  readonly outputHash?: string | null;
+  readonly consequenceHash?: string | null;
 }): ReleaseEnforcementMiddlewareOptions {
   return {
     verificationKey: input.verificationKey,
@@ -214,6 +218,20 @@ function baseOptions(input: {
       riskClass: input.riskClass,
       consequenceType: input.consequenceType,
     }),
+    targetId: input.targetId ?? TARGET_ID,
+    outputHash: input.outputHash ?? OUTPUT_HASH,
+    consequenceHash: input.consequenceHash ?? CONSEQUENCE_HASH,
+    replayLedgerEntry: null,
+    now: () => '2026-04-18T15:01:00.000Z',
+  };
+}
+
+function headerOnlyOptions(input: {
+  readonly verificationKey: ReleaseTokenVerificationKey;
+}): ReleaseEnforcementMiddlewareOptions {
+  return {
+    verificationKey: input.verificationKey,
+    enforcementPoint: enforcementPoint(),
     replayLedgerEntry: null,
     now: () => '2026-04-18T15:01:00.000Z',
   };
@@ -379,7 +397,10 @@ async function testHonoMiddlewareDeniesBindingMismatch(): Promise<void> {
   const app = new Hono<HonoReleaseEnforcementEnv>();
   let handlerReached = 0;
 
-  app.use('/mutate/*', createHonoReleaseEnforcementMiddleware(baseOptions({ verificationKey })));
+  app.use('/mutate/*', createHonoReleaseEnforcementMiddleware(baseOptions({
+    verificationKey,
+    outputHash: 'sha256:wrong-output',
+  })));
   app.post('/mutate/report', (context) => {
     handlerReached += 1;
     return context.text('should not run');
@@ -387,9 +408,7 @@ async function testHonoMiddlewareDeniesBindingMismatch(): Promise<void> {
 
   const response = await app.request('/mutate/report', {
     method: 'POST',
-    headers: releaseHeaders(issued, decision, {
-      [ATTESTOR_OUTPUT_HASH_HEADER]: 'sha256:wrong-output',
-    }),
+    headers: releaseHeaders(issued, decision),
   });
   const body = await response.json() as {
     readonly failureReasons: readonly string[];
@@ -397,7 +416,7 @@ async function testHonoMiddlewareDeniesBindingMismatch(): Promise<void> {
     readonly requestId: string | null;
   };
 
-  equal(response.status, 403, 'Middleware: Hono denies output hash binding mismatch');
+  equal(response.status, 403, 'Middleware: Hono denies trusted resolver output hash binding mismatch');
   equal(handlerReached, 0, 'Middleware: binding mismatch does not reach handler');
   deepEqual(body.failureReasons, ['binding-mismatch'], 'Middleware: binding mismatch reason is explicit');
   equal(body.verificationStatus, 'invalid', 'Middleware: invalid verification status is exposed');
@@ -487,7 +506,7 @@ async function testHonoMiddlewareSkipsSafeMethods(): Promise<void> {
   equal(body.status, 'skipped', 'Middleware: skipped status is available in Hono context');
 }
 
-async function testHonoMiddlewareOnlineVerifierAllowsHighRisk(): Promise<void> {
+async function testHonoMiddlewareOnlineVerifierDeniesHighRiskBearer(): Promise<void> {
   const { issued, verificationKey, decision } = await issueToken({
     tokenId: 'rt_middleware_hono_online',
     decisionId: 'decision-middleware-hono-online',
@@ -498,6 +517,7 @@ async function testHonoMiddlewareOnlineVerifierAllowsHighRisk(): Promise<void> {
   const introspector = createReleaseTokenIntrospector(store);
   store.registerIssuedToken({ issuedToken: issued, decision });
   const app = new Hono<HonoReleaseEnforcementEnv>();
+  let handlerReached = 0;
 
   app.use('/mutate/*', createHonoReleaseEnforcementMiddleware({
     ...baseOptions({
@@ -509,6 +529,7 @@ async function testHonoMiddlewareOnlineVerifierAllowsHighRisk(): Promise<void> {
     introspector,
   }));
   app.post('/mutate/send', (context) => {
+    handlerReached += 1;
     const result = context.get(HONO_RELEASE_ENFORCEMENT_CONTEXT_KEY);
     return context.json({
       status: result.status,
@@ -522,15 +543,14 @@ async function testHonoMiddlewareOnlineVerifierAllowsHighRisk(): Promise<void> {
     headers: releaseHeaders(issued, decision),
   });
   const body = await response.json() as {
-    readonly status: string;
-    readonly onlineChecked: boolean;
-    readonly offlineStatus: string;
+    readonly failureReasons: readonly string[];
+    readonly verificationStatus: string;
   };
 
-  equal(response.status, 202, 'Middleware: Hono online verifier allows active high-risk release');
-  equal(body.status, 'allowed', 'Middleware: online path exposes allowed status');
-  equal(body.onlineChecked, true, 'Middleware: online path performs introspection');
-  equal(body.offlineStatus, 'indeterminate', 'Middleware: high-risk offline component remains indeterminate before liveness');
+  equal(response.status, 403, 'Middleware: Hono online verifier denies bearer-only high-risk release');
+  equal(handlerReached, 0, 'Middleware: high-risk bearer denial does not reach handler');
+  deepEqual(body.failureReasons, ['binding-mismatch'], 'Middleware: high-risk bearer denial is explicit');
+  equal(body.verificationStatus, 'invalid', 'Middleware: high-risk bearer denial exposes invalid verification');
 }
 
 async function testHonoMiddlewareOfflineHighRiskFailsClosed(): Promise<void> {
@@ -558,9 +578,9 @@ async function testHonoMiddlewareOfflineHighRiskFailsClosed(): Promise<void> {
     readonly verificationStatus: string;
   };
 
-  equal(response.status, 428, 'Middleware: offline high-risk path fails closed when liveness is required');
-  equal(body.verificationStatus, 'indeterminate', 'Middleware: indeterminate verification is exposed');
-  deepEqual(body.failureReasons, ['fresh-introspection-required'], 'Middleware: missing live introspection is explicit');
+  equal(response.status, 403, 'Middleware: offline high-risk bearer path fails closed before liveness');
+  equal(body.verificationStatus, 'invalid', 'Middleware: sender-constraint failure is exposed as invalid');
+  deepEqual(body.failureReasons, ['binding-mismatch'], 'Middleware: missing sender constraint is explicit');
 }
 
 async function listen(server: Server): Promise<number> {
@@ -658,26 +678,50 @@ async function testNodeMiddlewareDeniesMissingAuthorization(): Promise<void> {
   }
 }
 
-async function testCoreEvaluatorDeniesMissingBindingHeaders(): Promise<void> {
-  const { issued, verificationKey } = await issueToken({
-    tokenId: 'rt_middleware_core_binding',
-    decisionId: 'decision-middleware-core-binding',
+async function testCoreEvaluatorRejectsCallerSuppliedBindingHeadersByDefault(): Promise<void> {
+  const { issued, verificationKey, decision } = await issueToken({
+    tokenId: 'rt_middleware_core_caller_binding',
+    decisionId: 'decision-middleware-core-caller-binding',
   });
   const result = await evaluateReleaseEnforcementHttpRequest(
     {
       method: 'POST',
       url: 'https://middleware.attestor.test/mutate',
-      headers: new Headers({
-        authorization: `Bearer ${issued.token}`,
+      headers: releaseHeaders(issued, decision, {
+        'content-digest': `sha256:${'c'.repeat(64)}`,
       }),
     },
-    baseOptions({ verificationKey }),
+    headerOnlyOptions({ verificationKey }),
   );
 
   equal(result.version, RELEASE_ENFORCEMENT_MIDDLEWARE_SPEC_VERSION, 'Middleware: core evaluator stamps stable spec version');
-  equal(result.status, 'denied', 'Middleware: core evaluator fails closed without binding headers');
-  equal(result.responseStatus, 403, 'Middleware: missing binding headers map to forbidden');
-  deepEqual(result.failureReasons, ['binding-mismatch'], 'Middleware: missing binding headers map to binding mismatch');
+  equal(result.status, 'denied', 'Middleware: default evaluator fails closed on caller-supplied binding headers');
+  equal(result.responseStatus, 403, 'Middleware: untrusted binding headers map to forbidden');
+  deepEqual(result.failureReasons, ['binding-mismatch'], 'Middleware: untrusted binding headers map to binding mismatch');
+}
+
+async function testCoreEvaluatorAllowsExplicitTrustedUpstreamBindingHeaders(): Promise<void> {
+  const { issued, verificationKey, decision } = await issueToken({
+    tokenId: 'rt_middleware_core_trusted_upstream',
+    decisionId: 'decision-middleware-core-trusted-upstream',
+  });
+  const trustedBodyDigest = `sha256:${'d'.repeat(64)}`;
+  const result = await evaluateReleaseEnforcementHttpRequest(
+    {
+      method: 'POST',
+      url: 'https://middleware.attestor.test/mutate',
+      headers: releaseHeaders(issued, decision, {
+        'content-digest': trustedBodyDigest,
+      }),
+    },
+    {
+      ...headerOnlyOptions({ verificationKey }),
+      bindingHeaderMode: 'trusted-upstream',
+    },
+  );
+
+  equal(result.status, 'allowed', 'Middleware: explicit trusted-upstream mode can consume pre-bound headers');
+  equal(result.request?.transport?.kind === 'http' ? result.request.transport.bodyDigest : null, trustedBodyDigest, 'Middleware: trusted-upstream mode records upstream body digest');
 }
 
 async function main(): Promise<void> {
@@ -689,11 +733,12 @@ async function main(): Promise<void> {
   await testHonoMiddlewareDeniesPolicyIrMismatch();
   await testHonoMiddlewareDeniesCompiledPolicyVersionMismatch();
   await testHonoMiddlewareSkipsSafeMethods();
-  await testHonoMiddlewareOnlineVerifierAllowsHighRisk();
+  await testHonoMiddlewareOnlineVerifierDeniesHighRiskBearer();
   await testHonoMiddlewareOfflineHighRiskFailsClosed();
   await testNodeMiddlewareAllowsValidReleaseAuthorization();
   await testNodeMiddlewareDeniesMissingAuthorization();
-  await testCoreEvaluatorDeniesMissingBindingHeaders();
+  await testCoreEvaluatorRejectsCallerSuppliedBindingHeadersByDefault();
+  await testCoreEvaluatorAllowsExplicitTrustedUpstreamBindingHeaders();
 
   console.log(`Release enforcement-plane middleware tests: ${passed} passed, 0 failed`);
 }

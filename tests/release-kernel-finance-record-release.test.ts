@@ -52,6 +52,9 @@ function makeFinanceReport(overrides: Record<string, unknown> = {}) {
     },
     filingReadiness: {
       status: 'internal_report_ready',
+      gaps: [],
+      totalGaps: 0,
+      blockingGaps: 0,
     },
     audit: {
       chainIntact: true,
@@ -128,6 +131,66 @@ async function main(): Promise<void> {
     ),
     'denied',
     'Finance record release: blocked finance outcomes are denied for release',
+  );
+
+  equal(
+    financeFilingReleaseStatusFromReport(
+      makeFinanceReport({
+        filingReadiness: {
+          status: 'filing_not_ready',
+          gaps: [{ category: 'reconciliation', description: 'blocking gap', blocking: true }],
+          totalGaps: 1,
+          blockingGaps: 1,
+        },
+      }),
+    ),
+    'hold',
+    'Finance record release: filing_not_ready cannot authorize a filing release token',
+  );
+
+  equal(
+    financeFilingReleaseStatusFromReport(
+      makeFinanceReport({
+        filingReadiness: {
+          status: 'review_ready',
+          gaps: [{ category: 'metadata', description: 'non-blocking gap', blocking: false }],
+          totalGaps: 1,
+          blockingGaps: 0,
+        },
+      }),
+    ),
+    'hold',
+    'Finance record release: review_ready remains held until internal report readiness is complete',
+  );
+
+  equal(
+    financeFilingReleaseStatusFromReport(
+      makeFinanceReport({
+        filingReadiness: {
+          status: 'internal_report_ready',
+          gaps: [{ category: 'metadata', description: 'inconsistent readiness metadata', blocking: false }],
+          totalGaps: 1,
+          blockingGaps: 0,
+        },
+      }),
+    ),
+    'hold',
+    'Finance record release: inconsistent readiness gap metadata fails closed',
+  );
+
+  const notReadyReport = makeFinanceReport({
+    filingReadiness: {
+      status: 'filing_not_ready',
+      gaps: [{ category: 'approval', description: 'approval gap', blocking: true }],
+      totalGaps: 1,
+      blockingGaps: 1,
+    },
+  });
+  const notReadyObservation = buildFinanceFilingReleaseObservation(material, notReadyReport);
+  equal(
+    notReadyObservation.policyRulesSatisfied,
+    false,
+    'Finance record release: deterministic observation does not satisfy policy with filing_not_ready',
   );
 
   equal(

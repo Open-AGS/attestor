@@ -79,6 +79,7 @@ export const DEFAULT_PROTECTED_HTTP_METHODS = Object.freeze([
 
 export type ReleaseEnforcementMiddlewareStatus = 'allowed' | 'denied' | 'skipped';
 export type ReleaseEnforcementMiddlewareVerifierMode = 'offline' | 'online';
+export type ReleaseEnforcementMiddlewareBindingHeaderMode = 'disabled' | 'trusted-upstream';
 
 export interface ReleaseEnforcementHttpRequest {
   readonly method: string;
@@ -133,6 +134,8 @@ export interface ReleaseEnforcementMiddlewareOptions {
   readonly targetId?: ReleaseEnforcementResolver<string | null | undefined>;
   readonly outputHash?: ReleaseEnforcementResolver<string | null | undefined>;
   readonly consequenceHash?: ReleaseEnforcementResolver<string | null | undefined>;
+  readonly bodyDigest?: ReleaseEnforcementResolver<string | null | undefined>;
+  readonly bindingHeaderMode?: ReleaseEnforcementMiddlewareBindingHeaderMode;
   readonly policyHash?: ReleaseEnforcementResolver<string | null | undefined>;
   readonly policyVersion?: ReleaseEnforcementResolver<string | null | undefined>;
   readonly policyIrHash?: ReleaseEnforcementResolver<string | null | undefined>;
@@ -260,9 +263,13 @@ async function resolveRequiredBinding(
   option: ReleaseEnforcementResolver<string | null | undefined> | undefined,
   context: ReleaseEnforcementHttpContext,
   headerName: string,
+  allowTrustedHeader: boolean,
 ): Promise<string | null> {
   const resolved = normalizeIdentifier(await resolveOption(option, context));
-  return resolved ?? headerValue(context.request.headers, headerName);
+  if (resolved !== null) {
+    return resolved;
+  }
+  return allowTrustedHeader ? headerValue(context.request.headers, headerName) : null;
 }
 
 function headersDigest(headers: ReleaseEnforcementHttpRequest['headers']): string {
@@ -425,20 +432,24 @@ async function defaultInputForHttpRequest(
     });
   }
 
+  const allowTrustedBindingHeaders = options.bindingHeaderMode === 'trusted-upstream';
   const targetId = await resolveRequiredBinding(
     options.targetId,
     context,
     ATTESTOR_TARGET_ID_HEADER,
+    allowTrustedBindingHeaders,
   );
   const outputHash = await resolveRequiredBinding(
     options.outputHash,
     context,
     ATTESTOR_OUTPUT_HASH_HEADER,
+    allowTrustedBindingHeaders,
   );
   const consequenceHash = await resolveRequiredBinding(
     options.consequenceHash,
     context,
     ATTESTOR_CONSEQUENCE_HASH_HEADER,
+    allowTrustedBindingHeaders,
   );
   const policyHash =
     normalizeIdentifier(await resolveOption(options.policyHash, context)) ??
@@ -500,6 +511,9 @@ async function defaultInputForHttpRequest(
     });
   }
 
+  const bodyDigest =
+    normalizeIdentifier(await resolveOption(options.bodyDigest, context)) ??
+    (allowTrustedBindingHeaders ? bodyDigestFromHeaders(context.request.headers) : null);
   const requestInput: CreateEnforcementRequestInput = {
     id: requestId,
     receivedAt: context.checkedAt,
@@ -515,7 +529,7 @@ async function defaultInputForHttpRequest(
       method: normalizeMethod(context.request.method),
       uri: context.request.url,
       headersDigest: headersDigest(context.request.headers),
-      bodyDigest: bodyDigestFromHeaders(context.request.headers),
+      bodyDigest,
     },
   };
   const enforcementRequest = createEnforcementRequest(requestInput);

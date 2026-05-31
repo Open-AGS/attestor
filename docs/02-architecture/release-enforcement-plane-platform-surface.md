@@ -73,6 +73,16 @@ const profile = releaseEnforcementPlane.verificationProfiles.resolveVerification
 });
 ```
 
+## Adapter Binding Rule
+
+Package consumers should derive middleware target, output, consequence, and
+body-digest bindings from trusted server-side resolver code by default. Caller
+headers are not authority on their own.
+
+Header-derived binding is reserved for explicit `trusted-upstream` deployments
+where a gateway has already verified and bound those fields before the request
+reaches the application middleware.
+
 ## What Stays Internal
 
 These paths are intentionally **not** public package API:

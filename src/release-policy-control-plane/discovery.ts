@@ -376,37 +376,6 @@ export function resolvePolicyBundleForTarget(
   });
   const targetLabel = policyActivationTargetLabel(input.target);
 
-  if (discoveryMode === 'static' && metadata) {
-    const selectedCandidate = createStaticCandidate(store, metadata);
-    const matchedCandidates = selectedCandidate
-      ? Object.freeze([selectedCandidate])
-      : Object.freeze([] as PolicyBundleResolutionCandidate[]);
-    const missingBundleCandidates =
-      selectedCandidate && selectedCandidate.bundleRecord === null
-        ? Object.freeze([selectedCandidate])
-        : Object.freeze([] as PolicyBundleResolutionCandidate[]);
-
-    return Object.freeze({
-      version: POLICY_BUNDLE_RESOLUTION_SPEC_VERSION,
-      status: classifyResolutionStatus({
-        selectedCandidate,
-        ambiguousCandidates: Object.freeze([]),
-        missingBundleCandidates,
-        matchedCandidates,
-      }),
-      storeKind: store.kind,
-      discoveryMode,
-      target: input.target,
-      targetLabel,
-      labels,
-      metadata,
-      selectedCandidate,
-      matchedCandidates,
-      ambiguousCandidates: Object.freeze([]),
-      missingBundleCandidates,
-    });
-  }
-
   const scopedActivations = candidateActivationsForScopedResolution(store);
   const frozenPrecedence = resolveFrozenPrecedence(input.target, scopedActivations);
   if (frozenPrecedence.matchedCandidates.length > 0) {
@@ -450,6 +419,37 @@ export function resolvePolicyBundleForTarget(
       selectedCandidate: frozenCandidate,
       matchedCandidates,
       ambiguousCandidates,
+      missingBundleCandidates,
+    });
+  }
+
+  if (discoveryMode === 'static' && metadata) {
+    const selectedCandidate = createStaticCandidate(store, metadata);
+    const matchedCandidates = selectedCandidate
+      ? Object.freeze([selectedCandidate])
+      : Object.freeze([] as PolicyBundleResolutionCandidate[]);
+    const missingBundleCandidates =
+      selectedCandidate && selectedCandidate.bundleRecord === null
+        ? Object.freeze([selectedCandidate])
+        : Object.freeze([] as PolicyBundleResolutionCandidate[]);
+
+    return Object.freeze({
+      version: POLICY_BUNDLE_RESOLUTION_SPEC_VERSION,
+      status: classifyResolutionStatus({
+        selectedCandidate,
+        ambiguousCandidates: Object.freeze([]),
+        missingBundleCandidates,
+        matchedCandidates,
+      }),
+      storeKind: store.kind,
+      discoveryMode,
+      target: input.target,
+      targetLabel,
+      labels,
+      metadata,
+      selectedCandidate,
+      matchedCandidates,
+      ambiguousCandidates: Object.freeze([]),
       missingBundleCandidates,
     });
   }

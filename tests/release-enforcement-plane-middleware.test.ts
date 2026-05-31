@@ -485,14 +485,40 @@ async function testHonoMiddlewareDeniesCompiledPolicyVersionMismatch(): Promise<
   equal(body.verificationStatus, 'invalid', 'Middleware: compiled policy version mismatch exposes invalid verification status');
 }
 
-async function testHonoMiddlewareSkipsSafeMethods(): Promise<void> {
+async function testHonoMiddlewareProtectsReadExportsByDefault(): Promise<void> {
   const { verificationKey } = await issueToken({
-    tokenId: 'rt_middleware_hono_skip',
-    decisionId: 'decision-middleware-hono-skip',
+    tokenId: 'rt_middleware_hono_get_default',
+    decisionId: 'decision-middleware-hono-get-default',
+  });
+  const app = new Hono<HonoReleaseEnforcementEnv>();
+  let handlerReached = 0;
+
+  app.use('/mutate/*', createHonoReleaseEnforcementMiddleware(baseOptions({ verificationKey })));
+  app.get('/mutate/report', (context) => {
+    handlerReached += 1;
+    return context.json({ status: 'should-not-run' });
+  });
+
+  const response = await app.request('/mutate/report', { method: 'GET' });
+  const body = await response.json() as { readonly failureReasons: readonly string[] };
+
+  equal(response.status, 401, 'Middleware: Hono protects GET by default');
+  equal(response.headers.get(ATTESTOR_ENFORCEMENT_STATUS_HEADER), 'denied', 'Middleware: default GET denial is observable');
+  equal(handlerReached, 0, 'Middleware: default GET denial does not reach handler');
+  deepEqual(body.failureReasons, ['missing-release-authorization'], 'Middleware: default GET requires release authorization');
+}
+
+async function testHonoMiddlewareSkipsReadOnlyRoutesOnlyWhenExplicit(): Promise<void> {
+  const { verificationKey } = await issueToken({
+    tokenId: 'rt_middleware_hono_explicit_skip',
+    decisionId: 'decision-middleware-hono-explicit-skip',
   });
   const app = new Hono<HonoReleaseEnforcementEnv>();
 
-  app.use('/mutate/*', createHonoReleaseEnforcementMiddleware(baseOptions({ verificationKey })));
+  app.use('/mutate/*', createHonoReleaseEnforcementMiddleware({
+    ...baseOptions({ verificationKey }),
+    protectedMethods: ['POST', 'PUT', 'PATCH', 'DELETE'],
+  }));
   app.get('/mutate/report', (context) => {
     const result = context.get(HONO_RELEASE_ENFORCEMENT_CONTEXT_KEY);
     return context.json({ status: result.status });
@@ -501,9 +527,9 @@ async function testHonoMiddlewareSkipsSafeMethods(): Promise<void> {
   const response = await app.request('/mutate/report', { method: 'GET' });
   const body = await response.json() as { readonly status: string };
 
-  equal(response.status, 200, 'Middleware: Hono allows safe GET without release authorization');
-  equal(response.headers.get(ATTESTOR_ENFORCEMENT_STATUS_HEADER), 'skipped', 'Middleware: skipped request is observable');
-  equal(body.status, 'skipped', 'Middleware: skipped status is available in Hono context');
+  equal(response.status, 200, 'Middleware: explicit mutation-only configuration can skip GET');
+  equal(response.headers.get(ATTESTOR_ENFORCEMENT_STATUS_HEADER), 'skipped', 'Middleware: explicit skipped GET is observable');
+  equal(body.status, 'skipped', 'Middleware: explicit skipped status is available in Hono context');
 }
 
 async function testHonoMiddlewareOnlineVerifierDeniesHighRiskBearer(): Promise<void> {
@@ -732,7 +758,8 @@ async function main(): Promise<void> {
   await testHonoMiddlewareDeniesBindingMismatch();
   await testHonoMiddlewareDeniesPolicyIrMismatch();
   await testHonoMiddlewareDeniesCompiledPolicyVersionMismatch();
-  await testHonoMiddlewareSkipsSafeMethods();
+  await testHonoMiddlewareProtectsReadExportsByDefault();
+  await testHonoMiddlewareSkipsReadOnlyRoutesOnlyWhenExplicit();
   await testHonoMiddlewareOnlineVerifierDeniesHighRiskBearer();
   await testHonoMiddlewareOfflineHighRiskFailsClosed();
   await testNodeMiddlewareAllowsValidReleaseAuthorization();

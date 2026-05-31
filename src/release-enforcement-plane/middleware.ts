@@ -57,10 +57,10 @@ import type {
 /**
  * Reference Node and Hono policy-enforcement-point middleware.
  *
- * These adapters make ordinary HTTP mutation routes fail closed before the
- * handler runs. They build the standard enforcement request + release
- * presentation objects, invoke the shared verifier core, and expose the result
- * to the downstream handler only after authorization is valid.
+ * These adapters make ordinary consequence-bearing HTTP routes fail closed
+ * before the handler runs. They build the standard enforcement request +
+ * release presentation objects, invoke the shared verifier core, and expose the
+ * result to the downstream handler only after authorization is valid.
  */
 
 export const RELEASE_ENFORCEMENT_MIDDLEWARE_SPEC_VERSION =
@@ -71,6 +71,8 @@ export const ATTESTOR_RELEASE_TOKEN_HEADER = 'attestor-release-token';
 export const ATTESTOR_ENFORCEMENT_REQUEST_ID_HEADER = 'attestor-enforcement-request-id';
 export const ATTESTOR_ENFORCEMENT_STATUS_HEADER = 'x-attestor-enforcement-status';
 export const DEFAULT_PROTECTED_HTTP_METHODS = Object.freeze([
+  'GET',
+  'HEAD',
   'POST',
   'PUT',
   'PATCH',

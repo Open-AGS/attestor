@@ -475,6 +475,68 @@ function testFrozenBundleResolutionFailsClosedBeforePolicySelection(): void {
   assert.equal(result.rollout, null);
 }
 
+function testStaticFrozenBundleResolutionFailsClosedBeforePolicySelection(): void {
+  const store = createInMemoryPolicyControlPlaneStore();
+  const bundle = createSignedBundle('bundle_finance_static_frozen', [
+    createEntry(
+      'entry-record',
+      {
+        environment: 'prod-eu',
+        tenantId: 'tenant-finance',
+        domainId: 'finance',
+        wedgeId: 'finance.record.release',
+        consequenceType: 'record',
+        riskClass: 'R4',
+      },
+      policy.createFirstHardGatewayReleasePolicy(),
+    ),
+  ]);
+
+  store.upsertPack(bundle.pack);
+  store.upsertBundle({
+    manifest: bundle.manifest,
+    artifact: bundle.artifact,
+    signedBundle: bundle.signedBundle,
+  });
+  store.setMetadata(
+    createPolicyControlPlaneMetadata(
+      'embedded-memory',
+      'static',
+      bundle.manifest.bundle,
+      null,
+    ),
+  );
+  const frozen = createPolicyActivationRecord({
+    id: 'activation-static-frozen',
+    state: 'frozen',
+    target: createPolicyActivationTarget({
+      environment: 'prod-eu',
+      tenantId: 'tenant-finance',
+      domainId: 'finance',
+      consequenceType: 'record',
+    }),
+    bundle: bundle.manifest.bundle,
+    activatedBy: {
+      id: 'incident_commander',
+      type: 'user',
+      displayName: 'Incident Commander',
+      role: 'policy-break-glass',
+    },
+    activatedAt: '2026-04-18T08:25:00.000Z',
+    rationale: 'Freeze static policy resolution.',
+    freezeReason: 'Emergency containment.',
+  });
+  store.upsertActivation(frozen);
+
+  const result = createActivePolicyResolver(store).resolve(sampleResolverInput());
+
+  assert.equal(result.status, 'policy-scope-frozen');
+  assert.equal(result.bundleResolution.discoveryMode, 'static');
+  assert.equal(result.bundleResolution.status, 'frozen');
+  assert.equal(result.bundleResolution.selectedCandidate?.activationId, 'activation-static-frozen');
+  assert.equal(result.effectivePolicy, null);
+}
+
 function run(): void {
   testResolvedPolicyUsesMostSpecificEntry();
   testNoPolicyEntryFailsClosedWhenBundleExists();
@@ -483,7 +545,8 @@ function run(): void {
   testIncompatibleBundleFailsClosed();
   testBundleResolutionFailurePassesThrough();
   testFrozenBundleResolutionFailsClosedBeforePolicySelection();
-  console.log('Release policy control-plane resolver tests: 7 passed, 0 failed');
+  testStaticFrozenBundleResolutionFailsClosedBeforePolicySelection();
+  console.log('Release policy control-plane resolver tests: 8 passed, 0 failed');
 }
 
 run();

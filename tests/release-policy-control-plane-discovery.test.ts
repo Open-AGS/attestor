@@ -416,6 +416,60 @@ function testStaticResolutionUsesMetadataActiveBundle(): void {
   assert.equal(result.selectedCandidate?.bundleRef.bundleId, 'bundle_finance_static');
 }
 
+function testFrozenScopeOverridesStaticResolution(): void {
+  const { store, bundle } = seedStoreWithBundle('bundle_finance_static_frozen', {
+    environment: 'prod-eu',
+    tenantId: 'tenant-finance',
+    domainId: 'finance',
+    consequenceType: 'record',
+  });
+  store.setMetadata(
+    createPolicyControlPlaneMetadata(
+      'embedded-memory',
+      'static',
+      bundle.manifest.bundle,
+      null,
+    ),
+  );
+  store.upsertActivation(
+    createPolicyActivationRecord({
+      id: 'activation-static-freeze',
+      state: 'frozen',
+      target: createPolicyActivationTarget({
+        environment: 'prod-eu',
+        tenantId: 'tenant-finance',
+        domainId: 'finance',
+        consequenceType: 'record',
+      }),
+      bundle: bundle.manifest.bundle,
+      activatedBy: {
+        id: 'incident_commander',
+        type: 'user',
+        displayName: 'Incident Commander',
+        role: 'policy-break-glass',
+      },
+      activatedAt: '2026-04-17T14:20:00.000Z',
+      rationale: 'Freeze static policy discovery during incident containment.',
+      freezeReason: 'Emergency freeze must override static discovery.',
+    }),
+  );
+
+  const result = resolvePolicyBundleForTarget(store, {
+    target: createPolicyActivationTarget({
+      environment: 'prod-eu',
+      tenantId: 'tenant-finance',
+      domainId: 'finance',
+      consequenceType: 'record',
+    }),
+  });
+
+  assert.equal(result.status, 'frozen');
+  assert.equal(result.discoveryMode, 'static');
+  assert.equal(result.selectedCandidate?.source, 'activation');
+  assert.equal(result.selectedCandidate?.activationId, 'activation-static-freeze');
+  assert.equal(result.selectedCandidate?.activation?.state, 'frozen');
+}
+
 function testAmbiguousTopCandidatesStayExplicit(): void {
   const store = createInMemoryPolicyControlPlaneStore();
   const first = createSignedBundle('bundle_finance_conflict_a', {
@@ -558,10 +612,11 @@ function run(): void {
   testFrozenScopeFailsClosedEvenWithMoreSpecificActiveBundle();
   testCohortScopedBundleSelectionOverridesBroaderDefaults();
   testStaticResolutionUsesMetadataActiveBundle();
+  testFrozenScopeOverridesStaticResolution();
   testAmbiguousTopCandidatesStayExplicit();
   testMissingBundleIsFailClosed();
   testDiscoveryDocumentCarriesResolutionContext();
-  console.log('Release policy control-plane discovery tests: 10 passed, 0 failed');
+  console.log('Release policy control-plane discovery tests: 11 passed, 0 failed');
 }
 
 run();

@@ -30,7 +30,7 @@ do the next action there, and come back only if you still need more context.
 | "What code do I copy?" | [Customer middleware examples](../../examples/customer-middleware/README.md) | you have the closest framework example open. |
 | "What JSON do I send?" | [Run Attestor in shadow pilot mode](shadow-event-payload-examples.md) | you have copied the closest payload shape for your action class. |
 | "Why did it review or block?" | [Reason codes](../05-proof/reason-codes.md) | you understand the reason code and the next safe step. |
-| "Is this production-ready?" | [README current state](../../README.md#current-state) | you can separate repo-side evidence from live proof. |
+| "What is proven today?" | [README current state](../../README.md#current-state) | you can separate repo-side evidence from live proof. |
 | "What still needs real deployment evidence?" | [Live proof register](../audit/live-proof-register.md) | you know which proof is live/customer/operator-only. |
 | "How is this engine actually built?" | [Internal machine map](../02-architecture/attestor-internal-machine-map.md) | you can name the route, decision plane, package surface, and proof loop. |
 | "I need to change code safely." | [Repository map](repository-map.md) | you know the owning directory and the nearest test surface. |

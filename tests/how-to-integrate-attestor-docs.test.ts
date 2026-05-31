@@ -25,6 +25,8 @@ function testGuideExplainsTheCustomerIntegrationPath(): void {
   const doc = readProjectFile('docs', '01-overview', 'how-to-integrate-attestor.md');
 
   includes(doc, '# How To Integrate Attestor', 'How-to integrate docs: title is present');
+  includes(doc, '[Docs index](../README.md)', 'How-to integrate docs: links back to docs index clearly');
+  includes(doc, '[README Start Here](../../README.md#start-here)', 'How-to integrate docs: names the README section clearly');
   includes(doc, 'Do not start with a dashboard.', 'How-to integrate docs: rejects dashboard-first framing');
   includes(doc, 'Start with the line of code that does the real thing.', 'How-to integrate docs: starts at the side effect');
   includes(doc, 'AI prepares an action', 'How-to integrate docs: names the AI side');
@@ -51,6 +53,8 @@ function testGuideUsesReferenceSafePayloadsAndNoOverclaim(): void {
   excludes(doc, /sk_(live|test)_[A-Za-z0-9_]+/u, 'How-to integrate docs: no Stripe secret keys');
   excludes(doc, /Bearer\s+(?!<redacted>)[A-Za-z0-9._-]+/u, 'How-to integrate docs: no bearer tokens');
   excludes(doc, /-----BEGIN [A-Z ]*PRIVATE KEY-----/u, 'How-to integrate docs: no private keys');
+  excludes(doc, /\[Attestor Docs\]\(\.\.\/README\.md\)/u, 'How-to integrate docs: avoids vague docs-index link text');
+  excludes(doc, /\[Start Here\]\(\.\.\/\.\.\/README\.md#start-here\)/u, 'How-to integrate docs: avoids vague README-section link text');
   excludes(doc, /production-ready/iu, 'How-to integrate docs: avoids production-ready claim wording');
   excludes(doc, /enterprise-grade/iu, 'How-to integrate docs: avoids enterprise marketing language');
 }

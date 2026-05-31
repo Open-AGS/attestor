@@ -166,6 +166,23 @@ This is still a contract object, not a renderer. It does not write files,
 deploy gateways, issue credentials, run probes, activate enforcement, or prove
 customer PEP no-bypass.
 
+## OpenAPI And Gateway Drafts
+
+The first artifact generator lives in
+`src/consequence-admission/action-surface-integration-kit-artifact-drafts.ts`
+and is covered by
+`npm run test:action-surface-integration-kit-artifact-drafts`.
+
+It turns the machine-readable kit packet into:
+
+- an OpenAPI Overlay `1.1.0` draft that adds `x-attestor` review metadata to
+  matched HTTP operations
+- an Envoy `ext_authz` HTTP filter draft with fail-closed route hints
+
+These drafts are still review material. They do not apply the overlay, deploy
+Envoy, configure a gateway, issue credentials, activate enforcement, or prove
+that the customer route is non-bypassable.
+
 ## Human Review Contract
 
 Human review output must be compact, ranked, and role-aware:

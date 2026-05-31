@@ -173,6 +173,7 @@ The shadow read surface now exposes the review contract for the current tenant:
 ```text
 GET /api/v1/shadow/review-surface
 GET /api/v1/shadow/review-surface/view
+GET /api/v1/shadow/review-surface/export
 GET /api/v1/shadow/review-surface/cases/:caseDigest
 ```
 
@@ -186,9 +187,19 @@ The HTML preview renderer lives in
 the review surface only. It uses context-specific HTML escaping, no JavaScript,
 security headers, and short task-list-style review rows.
 
-This is a JSON route plus an HTML preview route, not the hosted UI product. It
-does not activate enforcement, mutate policy, grant authority, prove customer
-PEP no-bypass, prove production readiness, or prove compliance.
+The export route returns a JSON attachment built from the same review surface
+and digest-only case details. It is served as `application/json` with
+`Content-Disposition: attachment`, `cache-control: no-store`, `nosniff`, and a
+static filename:
+
+- `src/service/shadow/attestor-review-surface-export.ts`
+- `attestor.review-surface-export.v1`
+- `npm run test:attestor-review-surface-export`
+
+This is a JSON route, an HTML preview route, and a JSON export route, not the
+hosted UI product. They do not activate enforcement, mutate policy, grant
+authority, prove customer PEP no-bypass, prove production readiness, or prove
+compliance.
 
 ## Research Posture
 
@@ -204,12 +215,19 @@ claiming certification:
 - W3C Verifiable Credentials treats the data model as the structure that
   different serializations map back to; Attestor uses one review contract across
   UI, API, CSV, packets, bundles, and links.
+- RFC 8259 anchors the JSON export as a portable structured data interchange
+  form, and RFC 6266 anchors the download route as an HTTP attachment rather
+  than inline browser content.
+- OWASP API3:2023 warns against exposing sensitive object properties through
+  broad API representations. The export uses an explicit artifact shape built
+  from the redacted review surface instead of raw event objects.
 - GOV.UK interface writing guidance favors short, direct copy and clear link
   text. The review surface should guide teams into the next useful evidence
   view without explaining the whole system on every page.
 
 ## Non-Claims
 
-This contract and hosted JSON route do not implement the hosted UI, do not prove
-production storage, do not prove customer deployment, do not prove customer PEP
-no-bypass, do not activate enforcement, and do not prove compliance.
+This contract and hosted JSON/export routes do not implement the hosted UI, do
+not prove production storage, do not prove customer deployment, do not prove
+customer PEP no-bypass, do not activate enforcement, and do not prove
+compliance.

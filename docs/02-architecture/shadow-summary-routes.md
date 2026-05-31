@@ -12,6 +12,7 @@ GET /api/v1/shadow/business-risk-dashboard
 GET /api/v1/shadow/dashboard-summary
 GET /api/v1/shadow/review-surface
 GET /api/v1/shadow/review-surface/view
+GET /api/v1/shadow/review-surface/export
 GET /api/v1/shadow/review-surface/cases/:caseDigest
 ```
 
@@ -70,6 +71,11 @@ block, enforce, or mutate policy.
 The HTML preview route renders the same review surface as a no-store HTML page
 for browser inspection. It renders from the review surface only; it does not
 read raw shadow material, run JavaScript, or claim hosted UI/product readiness.
+
+The review-surface export route returns a no-store JSON attachment built from
+the same review surface plus digest-only case details. It uses a static
+download filename and does not expose raw events, prompts, payloads, recipients,
+or downstream responses.
 
 ## Data Boundary
 

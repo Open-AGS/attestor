@@ -1,4 +1,4 @@
-import type { Hono } from 'hono';
+import type { Context, Hono } from 'hono';
 import type { DecisionEnvelope, FilingAdapterRegistry } from '../../../filing/filing-adapter.js';
 import type {
   FinanceFilingReleaseCandidate,
@@ -15,6 +15,7 @@ import type {
 } from '../../../release-layer/index.js';
 import { logger } from '../../../utils/logger.js';
 import type { RequestPathReleaseTokenIntrospectionStore } from '../../release/release-authority-request-path.js';
+import type { TenantContext } from '../../tenant-isolation.js';
 import {
   clientSafeInternalError,
   clientSafeProblemDetail,
@@ -23,6 +24,7 @@ import {
 } from '../route-response-helpers.js';
 
 export interface PipelineFilingRoutesDeps {
+  currentTenant(context: Context): TenantContext;
   FINANCE_FILING_ADAPTER_ID: string;
   buildFinanceFilingReleaseMaterial(candidate: FinanceFilingReleaseCandidate): FinanceFilingReleaseMaterial;
   apiReleaseIntrospectionStore: RequestPathReleaseTokenIntrospectionStore;
@@ -72,6 +74,7 @@ function parseFinanceFilingRows(rows: unknown): readonly FinanceFilingRow[] | nu
 
 export function registerPipelineFilingRoutes(app: Hono, deps: PipelineFilingRoutesDeps): void {
   const {
+    currentTenant,
     FINANCE_FILING_ADAPTER_ID,
     buildFinanceFilingReleaseMaterial,
     apiReleaseIntrospectionStore,
@@ -118,6 +121,7 @@ app.post('/api/v1/filing/export', async (c) => {
     const evidenceChainTerminalString =
       typeof evidenceChainTerminal === 'string' ? evidenceChainTerminal : '';
     const proofModeString = typeof proofMode === 'string' ? proofMode : 'unknown';
+    const tenant = currentTenant(c);
 
     const adapter = filingRegistry.get(adapterIdString);
     if (!adapter) {
@@ -153,6 +157,7 @@ app.post('/api/v1/filing/export', async (c) => {
         token,
         verificationKey,
         audience: material.target.id,
+        expectedTenantId: tenant.tenantId,
         expectedTargetId: material.target.id,
         expectedOutputHash: material.hashBundle.outputHash,
         expectedConsequenceHash: material.hashBundle.consequenceHash,
@@ -161,6 +166,10 @@ app.post('/api/v1/filing/export', async (c) => {
         consumeOnSuccess: true,
         tokenTypeHint: 'attestor_release_token',
         resourceServerId: 'attestor.api.finance.filing-export',
+        requireSenderConstrainedToken: true,
+        dpopProofJwt: c.req.header('DPoP') ?? null,
+        dpopHttpMethod: c.req.method,
+        dpopHttpUri: c.req.url,
       });
     } catch (error) {
       if (error instanceof ReleaseVerificationError) {
@@ -218,6 +227,8 @@ app.post('/api/v1/filing/export', async (c) => {
             decisionId: verifiedRelease.verification.claims.decision_id,
             tokenId: verifiedRelease.verification.claims.jti,
             targetId: verifiedRelease.verification.claims.aud,
+            tenantId: verifiedRelease.verification.claims.tenant_id ?? null,
+            senderBinding: verifiedRelease.senderBinding,
             introspectionVerified: verifiedRelease.introspection?.active ?? false,
           }
         : null,

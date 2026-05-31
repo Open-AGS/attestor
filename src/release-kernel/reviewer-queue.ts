@@ -94,6 +94,7 @@ export interface ReleaseReviewerQueueSummary {
   readonly version: typeof RELEASE_REVIEWER_QUEUE_SPEC_VERSION;
   readonly id: string;
   readonly kind: ReleaseReviewerQueueItemKind;
+  readonly tenantId: string | null;
   readonly status: ReleaseReviewerQueueStatus;
   readonly authorityState: ReleaseReviewerAuthorityState;
   readonly createdAt: string;
@@ -171,6 +172,7 @@ export interface CreateFinanceReviewerQueueItemInput {
   readonly candidate: FinanceFilingReleaseCandidate;
   readonly report: FinanceFilingReleaseReportLike;
   readonly logEntries: readonly ReleaseDecisionLogEntry[];
+  readonly tenantId?: string | null;
 }
 
 export interface ApplyReviewerDecisionInput {
@@ -845,6 +847,7 @@ export function createFinanceReviewerQueueItem(
       version: RELEASE_REVIEWER_QUEUE_SPEC_VERSION,
       id: `review_${decision.id}`,
       kind: 'finance.filing-export',
+      tenantId: input.tenantId ?? null,
       status: 'pending-review',
       authorityState: 'pending',
       createdAt,

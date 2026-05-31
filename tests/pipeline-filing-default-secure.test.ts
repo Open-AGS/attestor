@@ -16,6 +16,7 @@ import type {
 } from '../src/release-layer/index.js';
 import { ReleaseVerificationError } from '../src/release-kernel/release-verification.js';
 import type { RequestPathReleaseTokenIntrospectionStore } from '../src/service/release/release-authority-request-path.js';
+import type { TenantContext } from '../src/service/tenant-isolation.js';
 
 let passed = 0;
 
@@ -71,6 +72,15 @@ function releaseMaterial(): FinanceFilingReleaseMaterial {
   } as FinanceFilingReleaseMaterial;
 }
 
+const tenantContext: TenantContext = {
+  tenantId: 'tenant_filing_export',
+  tenantName: 'Filing export tenant',
+  authenticatedAt: '2026-05-31T10:00:00.000Z',
+  source: 'api_key',
+  planId: 'pro',
+  monthlyRunQuota: 100,
+};
+
 async function testReleaseBindingPredicateIsDefaultDeny(): Promise<void> {
   equal(
     isReleaseBoundFilingAdapter('xbrl-us-gaap-2024', 'xbrl-us-gaap-2024'),
@@ -96,6 +106,7 @@ async function testRegisteredButUnboundAdapterFailsClosedBeforeExport(): Promise
   const adapter = unsupportedAdapter(flags);
 
   registerPipelineFilingRoutes(app, {
+    currentTenant: () => tenantContext,
     FINANCE_FILING_ADAPTER_ID: 'xbrl-us-gaap-2024',
     buildFinanceFilingReleaseMaterial(_candidate: FinanceFilingReleaseCandidate): FinanceFilingReleaseMaterial {
       flags.materialBuilt = true;
@@ -164,6 +175,7 @@ async function testUnexpectedFilingFailureReturnsRedactedProblemDetail(): Promis
   const adapter = releaseBoundAdapter();
 
   registerPipelineFilingRoutes(app, {
+    currentTenant: () => tenantContext,
     FINANCE_FILING_ADAPTER_ID: adapter.id,
     buildFinanceFilingReleaseMaterial(): FinanceFilingReleaseMaterial {
       throw new Error('SECRET_FILING_EXCEPTION_MARKER: downstream package builder failed');
@@ -219,8 +231,10 @@ async function testUnexpectedFilingFailureReturnsRedactedProblemDetail(): Promis
 async function testUnexpectedReleaseVerificationFailureReturnsRedactedChallenge(): Promise<void> {
   const app = new Hono();
   const adapter = releaseBoundAdapter();
+  let verificationInput: ReleaseVerificationInput | null = null;
 
   registerPipelineFilingRoutes(app, {
+    currentTenant: () => tenantContext,
     FINANCE_FILING_ADAPTER_ID: adapter.id,
     buildFinanceFilingReleaseMaterial: releaseMaterial,
     apiReleaseIntrospectionStore: {} as RequestPathReleaseTokenIntrospectionStore,
@@ -239,7 +253,8 @@ async function testUnexpectedReleaseVerificationFailureReturnsRedactedChallenge(
     resolveReleaseTokenFromRequest() {
       return 'token';
     },
-    async verifyReleaseAuthorization(): Promise<ReleaseVerificationContext> {
+    async verifyReleaseAuthorization(input): Promise<ReleaseVerificationContext> {
+      verificationInput = input;
       throw new Error('SECRET_RELEASE_TOKEN_MARKER: token verifier leaked detail');
     },
     apiReleaseIntrospector: async () => ({
@@ -253,7 +268,7 @@ async function testUnexpectedReleaseVerificationFailureReturnsRedactedChallenge(
 
   const response = await app.request('/api/v1/filing/export', {
     method: 'POST',
-    headers: { 'content-type': 'application/json' },
+    headers: { 'content-type': 'application/json', DPoP: 'dpop-proof-jwt' },
     body: JSON.stringify({
       adapterId: adapter.id,
       runId: 'run_redacted',
@@ -273,6 +288,30 @@ async function testUnexpectedReleaseVerificationFailureReturnsRedactedChallenge(
     !JSON.stringify(body).includes('SECRET_RELEASE_TOKEN_MARKER') &&
       !(response.headers.get('www-authenticate') ?? '').includes('SECRET_RELEASE_TOKEN_MARKER'),
     'Filing export: release verification challenge and body do not echo raw exception context',
+  );
+  equal(
+    verificationInput?.expectedTenantId ?? null,
+    tenantContext.tenantId,
+    'Filing export: release verification binds the token to the current route tenant',
+  );
+  equal(
+    verificationInput?.requireSenderConstrainedToken,
+    true,
+    'Filing export: release verification requires sender-constrained tokens',
+  );
+  equal(
+    verificationInput?.dpopProofJwt,
+    'dpop-proof-jwt',
+    'Filing export: release verification forwards the DPoP proof for sender binding',
+  );
+  equal(
+    verificationInput?.dpopHttpMethod,
+    'POST',
+    'Filing export: DPoP verification binds to the export HTTP method',
+  );
+  ok(
+    verificationInput?.dpopHttpUri?.endsWith('/api/v1/filing/export'),
+    'Filing export: DPoP verification binds to the export HTTP URI',
   );
 }
 

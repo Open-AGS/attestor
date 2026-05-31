@@ -484,6 +484,58 @@ async function testPipelineConnectorErrorDetailsAreRedacted(): Promise<void> {
   }
 }
 
+async function testBodyReviewerFieldsDoNotCreateApprovalAuthority(): Promise<void> {
+  const restore = withEnv();
+  try {
+    const counters = { consume: 0, run: 0 };
+    const app = new Hono();
+    const deps = executionDeps(counters);
+    let pipelineInput: Record<string, unknown> | null = null;
+    deps.createRequestSigners = () => ({
+      signer: {
+        signingKeyPair: { publicKeyPem: 'pipeline-test-public-key' },
+        trustChain: null,
+        caPublicKeyPem: null,
+      },
+      reviewer: {
+        signingKeyPair: { publicKeyPem: 'reviewer-test-public-key' },
+      },
+    }) as never;
+    deps.runFinancialPipeline = (input) => {
+      pipelineInput = input as unknown as Record<string, unknown>;
+      counters.run += 1;
+      return executionReport(input.runId);
+    };
+    registerPipelineExecutionRoutes(app, deps);
+
+    const response = await app.request('/api/v1/pipeline/run', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        candidateSql: 'select 1',
+        intent: 'approve test query',
+        sign: true,
+        reviewerName: 'Body Reviewer',
+        reviewerRole: 'financial_reporting_manager',
+      }),
+    });
+    const body = await readJson(response);
+
+    assert.equal(response.status, 200);
+    assert.equal(body.reviewerName, null);
+    assert.equal((body.reviewerRequest as Record<string, unknown>).authorityBearing, false);
+    assert.deepEqual(
+      (body.reviewerRequest as Record<string, unknown>).reasonCodes,
+      ['reviewer-identity-not-verified'],
+    );
+    assert.equal(pipelineInput?.approval, undefined);
+    assert.equal(counters.run, 1);
+    assert.equal(counters.consume, 1);
+  } finally {
+    restore();
+  }
+}
+
 async function testPipelineIdempotencyConflictRejectsDifferentPayload(): Promise<void> {
   const restore = withEnv();
   try {
@@ -565,9 +617,10 @@ await testSyncPipelineReplayReturnsSameRunAndConsumesOnce();
 await testPipelineRoutesRejectNonJsonMediaType();
 await testPipelineAsyncRouteRejectsNonJsonMediaType();
 await testPipelineConnectorErrorDetailsAreRedacted();
+await testBodyReviewerFieldsDoNotCreateApprovalAuthority();
 await testPipelineIdempotencyConflictRejectsDifferentPayload();
 await testPipelineIdempotencyConfigFailsBeforeSideEffects();
 await testAsyncPipelineReplayReturnsSameJobAndConsumesOnce();
 await testAsyncBullmqRetryAfterUsageFailureUsesIdempotentQueueClaim();
 
-console.log('Service pipeline routes idempotency tests: 8 passed, 0 failed');
+console.log('Service pipeline routes idempotency tests: 9 passed, 0 failed');

@@ -314,6 +314,9 @@ import {
   createRuntimeHostedGenericAdmissionDpopProofReplayStore,
 } from '../hosted/hosted-generic-admission-dpop-proof-replay-store.js';
 import {
+  resolveHostedGenericAdmissionDpopSenderConfirmation,
+} from '../hosted/hosted-generic-admission-sender-confirmation.js';
+import {
   releaseRuntimeDurabilitySummary,
   resolveRuntimeProfile,
 } from './runtime-profile.js';
@@ -718,6 +721,16 @@ export async function createApiHttpRouteRuntime(
     apiReleaseEvidencePackStore,
     apiReleaseEvidencePackIssuer,
     apiReleaseIntrospectionStore,
+    resolveReleaseReviewTokenConfirmation: async ({ context, issuedAt }) => {
+      const confirmation = await resolveHostedGenericAdmissionDpopSenderConfirmation({
+        proofJwt: context.req.header('DPoP') ?? null,
+        httpMethod: context.req.method,
+        httpUri: context.req.url,
+        now: issuedAt,
+        proofReplayStore: genericAdmissionDpopProofReplayStore,
+      });
+      return confirmation.confirmation;
+    },
     adminMutationRequest,
     finalizeAdminMutation,
   });
@@ -769,6 +782,16 @@ export async function createApiHttpRouteRuntime(
     currentReleaseRequester,
     currentReleaseEvaluationContext,
     finalizeFinanceFilingReleaseDecision,
+    resolveFinanceFilingReleaseTokenConfirmation: async ({ context, report }) => {
+      const confirmation = await resolveHostedGenericAdmissionDpopSenderConfirmation({
+        proofJwt: context.req.header('DPoP') ?? null,
+        httpMethod: context.req.method,
+        httpUri: context.req.url,
+        now: report.timestamp,
+        proofReplayStore: genericAdmissionDpopProofReplayStore,
+      });
+      return confirmation.confirmation;
+    },
     createFinanceReviewerQueueItem,
     apiReleaseReviewerQueueStore,
     apiReleaseTokenIssuer,

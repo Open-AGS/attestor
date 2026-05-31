@@ -15,6 +15,10 @@ import type {
   ReleaseTokenIntrospector,
 } from './release-introspection.js';
 import type { ReleasePolicyProvenanceSource } from './object-model.js';
+import {
+  verifyDpopProof,
+  type DpopProofVerification,
+} from '../release-enforcement-plane/dpop.js';
 
 /**
  * Downstream release-token verification SDK and middleware.
@@ -55,6 +59,10 @@ export interface ReleaseVerificationInput extends VerifyReleaseTokenInput {
   readonly consumeOnSuccess?: boolean;
   readonly tokenTypeHint?: string;
   readonly resourceServerId?: string;
+  readonly requireSenderConstrainedToken?: boolean;
+  readonly dpopProofJwt?: string | null;
+  readonly dpopHttpMethod?: string;
+  readonly dpopHttpUri?: string;
 }
 
 export interface ReleaseVerificationPolicyContext {
@@ -81,12 +89,23 @@ export interface ReleaseVerificationContext {
   readonly expectedPolicyProvenanceSource: ReleasePolicyProvenanceSource | undefined;
   readonly expectedCompiledPolicyIndexVersion: string | undefined;
   readonly expectedCompiledPolicyIrVersion: string | undefined;
+  readonly requireSenderConstrainedToken: boolean;
+  readonly senderBinding: ReleaseVerificationSenderBindingContext;
   readonly introspection: ReleaseTokenIntrospectionResult | null;
   readonly usage: {
     readonly consumed: boolean;
     readonly useCount: number | null;
     readonly maxUses: number | null;
   } | null;
+}
+
+export interface ReleaseVerificationSenderBindingContext {
+  readonly mode: 'bearer' | 'dpop-bound-token';
+  readonly required: boolean;
+  readonly verified: boolean;
+  readonly proofJti: string | null;
+  readonly publicKeyThumbprint: string | null;
+  readonly failureReasons: readonly string[];
 }
 
 export class ReleaseVerificationError extends Error {
@@ -143,6 +162,9 @@ export interface CreateReleaseVerificationMiddlewareInput {
   readonly consumeOnSuccess?: ResolveMaybe<boolean | undefined>;
   readonly tokenTypeHint?: ResolveMaybe<string | undefined>;
   readonly resourceServerId?: ResolveMaybe<string | undefined>;
+  readonly requireSenderConstrainedToken?: ResolveMaybe<boolean | undefined>;
+  readonly dpopHttpUri?: ResolveMaybe<string | undefined>;
+  readonly dpopProofHeaderName?: string;
   readonly tokenHeaderName?: string;
   readonly contextKey?: string;
 }
@@ -358,6 +380,99 @@ function assertVerifiedBinding(
   }
 }
 
+function normalizedDpopProof(value: string | null | undefined): string | null {
+  if (value === undefined || value === null) {
+    return null;
+  }
+  const normalized = value.trim();
+  return normalized.length > 0 ? normalized : null;
+}
+
+function senderBindingContext(input: {
+  readonly mode: ReleaseVerificationSenderBindingContext['mode'];
+  readonly required: boolean;
+  readonly verified: boolean;
+  readonly verification?: DpopProofVerification | null;
+}): ReleaseVerificationSenderBindingContext {
+  return Object.freeze({
+    mode: input.mode,
+    required: input.required,
+    verified: input.verified,
+    proofJti: input.verification?.proofJti ?? null,
+    publicKeyThumbprint: input.verification?.publicKeyThumbprint ?? null,
+    failureReasons: input.verification?.failureReasons ?? Object.freeze([]),
+  });
+}
+
+async function verifySenderBinding(
+  verification: ReleaseTokenVerificationResult,
+  input: ReleaseVerificationInput,
+): Promise<ReleaseVerificationSenderBindingContext> {
+  const requireSenderConstrainedToken = input.requireSenderConstrainedToken === true;
+  const expectedJwkThumbprint = verification.claims.cnf?.jkt?.trim() || null;
+
+  if (!expectedJwkThumbprint) {
+    if (requireSenderConstrainedToken) {
+      throw new ReleaseVerificationError(
+        403,
+        'insufficient_scope',
+        'Release token must be sender-constrained for this consequence path.',
+        buildBearerChallenge(
+          'insufficient_scope',
+          'Release token must be sender-constrained for this consequence path.',
+        ),
+      );
+    }
+
+    return senderBindingContext({
+      mode: 'bearer',
+      required: false,
+      verified: false,
+    });
+  }
+
+  const dpopProofJwt = normalizedDpopProof(input.dpopProofJwt);
+  if (!dpopProofJwt || !input.dpopHttpMethod || !input.dpopHttpUri) {
+    throw new ReleaseVerificationError(
+      401,
+      'invalid_token',
+      'DPoP proof is required for this sender-constrained release token.',
+      buildBearerChallenge(
+        'invalid_token',
+        'DPoP proof is required for this sender-constrained release token.',
+      ),
+    );
+  }
+
+  const dpop = await verifyDpopProof({
+    proofJwt: dpopProofJwt,
+    httpMethod: input.dpopHttpMethod,
+    httpUri: input.dpopHttpUri,
+    accessToken: input.token,
+    expectedJwkThumbprint,
+    now: input.currentDate ?? new Date().toISOString(),
+  });
+
+  if (dpop.status !== 'valid') {
+    throw new ReleaseVerificationError(
+      403,
+      'insufficient_scope',
+      'DPoP proof does not match the sender-constrained release token.',
+      buildBearerChallenge(
+        'insufficient_scope',
+        'DPoP proof does not match the sender-constrained release token.',
+      ),
+    );
+  }
+
+  return senderBindingContext({
+    mode: 'dpop-bound-token',
+    required: true,
+    verified: true,
+    verification: dpop,
+  });
+}
+
 function assertActiveIntrospectionConsistency(
   verification: ReleaseTokenVerificationResult,
   introspection: ActiveReleaseTokenIntrospectionResult,
@@ -377,6 +492,8 @@ function assertActiveIntrospectionConsistency(
       (verification.claims.compiled_policy_index_version ?? null) ||
     (introspection.compiled_policy_ir_version ?? null) !==
       (verification.claims.compiled_policy_ir_version ?? null) ||
+    (introspection.tenant_id ?? null) !== (verification.claims.tenant_id ?? null) ||
+    (introspection.cnf?.jkt ?? null) !== (verification.claims.cnf?.jkt ?? null) ||
     introspection.decision !== verification.claims.decision ||
     introspection.risk_class !== verification.claims.risk_class
   ) {
@@ -437,6 +554,7 @@ export async function verifyReleaseAuthorization(
   }
 
   assertVerifiedBinding(verification, input);
+  const senderBinding = await verifySenderBinding(verification, input);
 
   let introspection: ReleaseTokenIntrospectionResult | null = null;
   if (verification.claims.introspection_required) {
@@ -538,6 +656,8 @@ export async function verifyReleaseAuthorization(
     expectedPolicyProvenanceSource: input.expectedPolicyProvenanceSource,
     expectedCompiledPolicyIndexVersion: input.expectedCompiledPolicyIndexVersion,
     expectedCompiledPolicyIrVersion: input.expectedCompiledPolicyIrVersion,
+    requireSenderConstrainedToken: input.requireSenderConstrainedToken === true,
+    senderBinding,
     introspection,
     usage,
   });
@@ -547,6 +667,7 @@ export function createReleaseVerificationMiddleware(
   input: CreateReleaseVerificationMiddlewareInput,
 ): MiddlewareHandler {
   const tokenHeaderName = input.tokenHeaderName ?? DEFAULT_RELEASE_TOKEN_HEADER;
+  const dpopProofHeaderName = input.dpopProofHeaderName ?? 'DPoP';
   const contextKey = input.contextKey ?? DEFAULT_RELEASE_CONTEXT_KEY;
 
   return async (context, next) => {
@@ -584,6 +705,11 @@ export function createReleaseVerificationMiddleware(
       const consumeOnSuccess = await resolveValue(input.consumeOnSuccess, context);
       const tokenTypeHint = await resolveValue(input.tokenTypeHint, context);
       const resourceServerId = await resolveValue(input.resourceServerId, context);
+      const requireSenderConstrainedToken = await resolveValue(
+        input.requireSenderConstrainedToken,
+        context,
+      );
+      const dpopHttpUri = await resolveValue(input.dpopHttpUri, context);
 
       const verified = await verifyReleaseAuthorization({
         token,
@@ -604,6 +730,10 @@ export function createReleaseVerificationMiddleware(
         consumeOnSuccess,
         tokenTypeHint,
         resourceServerId,
+        requireSenderConstrainedToken,
+        dpopProofJwt: context.req.header(dpopProofHeaderName) ?? null,
+        dpopHttpMethod: context.req.method,
+        dpopHttpUri: dpopHttpUri ?? context.req.url,
       });
 
       context.set(contextKey, verified);

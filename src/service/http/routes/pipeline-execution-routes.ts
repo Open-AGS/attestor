@@ -38,6 +38,7 @@ import type {
   ReleaseEvidencePackIssuer,
   ReleaseReviewerQueueRecord,
   ReleaseTargetKind,
+  ReleaseTokenConfirmationClaim,
   ReleaseTokenIssuer,
   ShadowModeReleaseEvaluator,
   OutputContractDescriptor,
@@ -127,6 +128,11 @@ interface FinanceFilingReleaseSummary {
   readonly evidencePackDigest: string | null;
   readonly reviewQueueId: string | null;
   readonly reviewQueuePath: string | null;
+  readonly tenantId: string;
+  readonly senderConstrained: boolean;
+  readonly presentationRequired: 'sender-constrained' | null;
+  readonly tokenIssueStatus: 'not-required' | 'issued' | 'blocked';
+  readonly reasonCodes: readonly string[];
   readonly candidate: FinanceFilingReleaseCandidate;
 }
 
@@ -196,11 +202,18 @@ export interface PipelineExecutionRoutesDeps {
     decision: ReleaseDecision,
     report: FinancialRunReport,
   ): ReleaseDecision;
+  resolveFinanceFilingReleaseTokenConfirmation?(input: {
+    context: Context;
+    tenant: TenantContext;
+    releaseDecision: ReleaseDecision;
+    report: FinancialRunReport;
+  }): Promise<ReleaseTokenConfirmationClaim | null> | ReleaseTokenConfirmationClaim | null;
   createFinanceReviewerQueueItem(input: {
     decision: ReleaseDecision;
     candidate: FinanceFilingReleaseCandidate;
     report: FinancialRunReport;
     logEntries: readonly ReleaseDecisionLogEntry[];
+    tenantId?: string | null;
   }): ReleaseReviewerQueueRecord;
   apiReleaseReviewerQueueStore: RequestPathReleaseReviewerQueueStore;
   apiReleaseTokenIssuer: ReleaseTokenIssuer;
@@ -304,6 +317,7 @@ export function registerPipelineExecutionRoutes(app: Hono, deps: PipelineExecuti
     currentReleaseRequester,
     currentReleaseEvaluationContext,
     finalizeFinanceFilingReleaseDecision,
+    resolveFinanceFilingReleaseTokenConfirmation,
     createFinanceReviewerQueueItem,
     apiReleaseReviewerQueueStore,
     apiReleaseTokenIssuer,
@@ -318,6 +332,7 @@ export function registerPipelineExecutionRoutes(app: Hono, deps: PipelineExecuti
 
   async function evaluateFinanceFilingReleaseTarget(
     context: Context,
+    tenant: TenantContext,
     report: FinancialRunReport,
     reviewerIdentity: ReviewerIdentity | undefined,
     shouldSign: boolean,
@@ -350,14 +365,34 @@ export function registerPipelineExecutionRoutes(app: Hono, deps: PipelineExecuti
               candidate: filingCandidate,
               report,
               logEntries: await financeReleaseDecisionLog.entries(),
+              tenantId: tenant.tenantId,
             }),
           )
         : null;
-    const issuedReleaseToken =
+    const senderConfirmation =
       releaseDecision.status === 'accepted'
+        ? await resolveFinanceFilingReleaseTokenConfirmation?.({
+            context,
+            tenant,
+            releaseDecision,
+            report,
+          }) ?? null
+        : null;
+    const tokenIssueBlockedReasonCodes =
+      releaseDecision.status === 'accepted' && senderConfirmation === null
+        ? Object.freeze(['finance-filing-release-sender-confirmation-required'])
+        : Object.freeze([]);
+    const issuedReleaseToken =
+      releaseDecision.status === 'accepted' && senderConfirmation !== null
         ? await apiReleaseTokenIssuer.issue({
             decision: releaseDecision,
             issuedAt: report.timestamp,
+            tenantId: tenant.tenantId,
+            audience: material.target.id,
+            resource: material.target.id,
+            scope: 'financial-reporting:filing-export',
+            tokenUse: 'release',
+            confirmation: senderConfirmation,
           })
         : null;
     const decisionForEvidence = issuedReleaseToken
@@ -424,6 +459,16 @@ export function registerPipelineExecutionRoutes(app: Hono, deps: PipelineExecuti
       reviewQueuePath: reviewQueueItem
         ? `/api/v1/admin/release-reviews/${reviewQueueItem.id}`
         : null,
+      tenantId: tenant.tenantId,
+      senderConstrained: Boolean(issuedReleaseToken?.claims.cnf?.jkt),
+      presentationRequired: issuedReleaseToken ? 'sender-constrained' : null,
+      tokenIssueStatus:
+        issuedReleaseToken
+          ? 'issued'
+          : releaseDecision.status === 'accepted'
+            ? 'blocked'
+            : 'not-required',
+      reasonCodes: tokenIssueBlockedReasonCodes,
       candidate: filingCandidate,
     };
   }
@@ -675,11 +720,14 @@ app.post('/api/v1/pipeline/run', async (c) => {
 
     // Keyless signer created after identity resolution (below)
 
-    // OIDC-backed reviewer identity
-    // If reviewerOidcToken is provided, verify it and derive reviewer identity.
-    // If absent, fall back to operator-asserted identity (or no reviewer).
+    // OIDC-backed reviewer identity. Body reviewer fields are display/request
+    // metadata only; they cannot satisfy financial review authority.
     let reviewerIdentity: ReviewerIdentity | undefined;
     let oidcVerified = false;
+    const requestedReviewerName =
+      typeof body.reviewerName === 'string' && body.reviewerName.trim().length > 0
+        ? body.reviewerName.trim()
+        : null;
 
     if (body.reviewerOidcToken && body.oidcIssuer) {
       const oidcResult = await verifyOidcToken(body.reviewerOidcToken, {
@@ -692,13 +740,6 @@ app.post('/api/v1/pipeline/run', async (c) => {
       } else {
         return c.json({ error: `OIDC token verification failed: ${oidcResult.error}`, identitySource: 'rejected' }, 401);
       }
-    } else if (body.reviewerName) {
-      reviewerIdentity = {
-        name: body.reviewerName,
-        role: body.reviewerRole ?? 'operator',
-        identifier: body.reviewerIdentifier ?? 'api-caller',
-        signerFingerprint: null,
-      };
     }
 
     const identitySource = classifyIdentitySource(oidcVerified, false);
@@ -706,7 +747,10 @@ app.post('/api/v1/pipeline/run', async (c) => {
     // Keyless-first: per-request ephemeral keys with CA-issued short-lived certs
     const keylessPair = sign ? createRequestSigners(identitySource, reviewerIdentity?.name) : null;
     const keyPair = keylessPair?.signer.signingKeyPair;
-    const reviewerKeyPair = (sign && reviewerIdentity && keylessPair) ? keylessPair.reviewer.signingKeyPair : undefined;
+    const reviewerKeyPair =
+      sign && oidcVerified && reviewerIdentity && keylessPair
+        ? keylessPair.reviewer.signingKeyPair
+        : undefined;
 
     const input: FinancialPipelineInput = {
       runId: opaqueRouteRunId('api'),
@@ -748,6 +792,7 @@ app.post('/api/v1/pipeline/run', async (c) => {
 
     const financeFilingRelease = await evaluateFinanceFilingReleaseTarget(
       c,
+      tenant,
       report,
       reviewerIdentity,
       Boolean(sign),
@@ -803,6 +848,13 @@ app.post('/api/v1/pipeline/run', async (c) => {
       rateLimit,
       identitySource,
       reviewerName: reviewerIdentity?.name ?? null,
+      reviewerRequest: requestedReviewerName
+        ? {
+            name: requestedReviewerName,
+            authorityBearing: false,
+            reasonCodes: ['reviewer-identity-not-verified'],
+          }
+        : null,
       release: {
         filingExport: financeFilingRelease,
         communication: financeCommunicationRelease,

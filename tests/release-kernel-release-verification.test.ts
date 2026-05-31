@@ -14,6 +14,10 @@ import {
   resolveReleaseTokenFromRequest,
   verifyReleaseAuthorization,
 } from '../src/release-kernel/release-verification.js';
+import {
+  createDpopProof,
+  generateDpopKeyPair,
+} from '../src/release-enforcement-plane/dpop.js';
 
 let passed = 0;
 const POLICY_HASH = 'sha256:policy-runtime-verification';
@@ -182,6 +186,117 @@ async function main(): Promise<void> {
     verified.introspection?.active === true,
     'Release verification: high-risk release tokens require and preserve an active introspection result',
   );
+
+  const dpopKey = await generateDpopKeyPair();
+  const tenantBoundIssued = await issuer.issue({
+    decision,
+    issuedAt: '2026-04-17T21:00:00.000Z',
+    tokenId: 'rt_tenant_sender_bound_verification',
+    tenantId: 'tenant_release_verification',
+    confirmation: { jkt: dpopKey.publicKeyThumbprint },
+  });
+  introspectionStore.registerIssuedToken({
+    issuedToken: tenantBoundIssued,
+    decision,
+  });
+  const dpopProof = await createDpopProof({
+    privateJwk: dpopKey.privateJwk,
+    publicJwk: dpopKey.publicJwk,
+    httpMethod: 'POST',
+    httpUri: 'https://attestor.local/release?debug=true#fragment',
+    accessToken: tenantBoundIssued.token,
+    proofJti: 'dpop-release-verification',
+    issuedAt: '2026-04-17T21:01:00.000Z',
+  });
+  const tenantSenderVerified = await verifyReleaseAuthorization({
+    token: tenantBoundIssued.token,
+    verificationKey,
+    audience: 'finance.reporting.record-store',
+    expectedTenantId: 'tenant_release_verification',
+    expectedTargetId: 'finance.reporting.record-store',
+    expectedOutputHash: 'sha256:output',
+    expectedConsequenceHash: 'sha256:consequence',
+    currentDate: '2026-04-17T21:01:10.000Z',
+    introspector,
+    requireSenderConstrainedToken: true,
+    dpopProofJwt: dpopProof.proofJwt,
+    dpopHttpMethod: 'POST',
+    dpopHttpUri: 'https://attestor.local/release?debug=true#fragment',
+  });
+  equal(
+    tenantSenderVerified.verification.claims.tenant_id,
+    'tenant_release_verification',
+    'Release verification: expected tenant binding is verified from token claims',
+  );
+  equal(
+    tenantSenderVerified.senderBinding.mode,
+    'dpop-bound-token',
+    'Release verification: sender-constrained tokens record DPoP-bound verification mode',
+  );
+  equal(
+    tenantSenderVerified.senderBinding.publicKeyThumbprint,
+    dpopKey.publicKeyThumbprint,
+    'Release verification: sender binding records the verified DPoP public key thumbprint',
+  );
+
+  await assert.rejects(
+    () =>
+      verifyReleaseAuthorization({
+        token: tenantBoundIssued.token,
+        verificationKey,
+        audience: 'finance.reporting.record-store',
+        expectedTenantId: 'tenant_other',
+        expectedTargetId: 'finance.reporting.record-store',
+        expectedOutputHash: 'sha256:output',
+        expectedConsequenceHash: 'sha256:consequence',
+        currentDate: '2026-04-17T21:01:10.000Z',
+        introspector,
+        requireSenderConstrainedToken: true,
+        dpopProofJwt: dpopProof.proofJwt,
+        dpopHttpMethod: 'POST',
+        dpopHttpUri: 'https://attestor.local/release',
+      }),
+    /tenant_id does not match/,
+    'Release verification: expected tenant mismatch fails before downstream admission',
+  );
+  passed += 1;
+
+  await assert.rejects(
+    () =>
+      verifyReleaseAuthorization({
+        token: tenantBoundIssued.token,
+        verificationKey,
+        audience: 'finance.reporting.record-store',
+        expectedTenantId: 'tenant_release_verification',
+        expectedTargetId: 'finance.reporting.record-store',
+        expectedOutputHash: 'sha256:output',
+        expectedConsequenceHash: 'sha256:consequence',
+        currentDate: '2026-04-17T21:01:10.000Z',
+        introspector,
+        requireSenderConstrainedToken: true,
+      }),
+    /DPoP proof is required/,
+    'Release verification: sender-constrained tokens require a DPoP proof on the consequence request',
+  );
+  passed += 1;
+
+  await assert.rejects(
+    () =>
+      verifyReleaseAuthorization({
+        token: issued.token,
+        verificationKey,
+        audience: 'finance.reporting.record-store',
+        expectedTargetId: 'finance.reporting.record-store',
+        expectedOutputHash: 'sha256:output',
+        expectedConsequenceHash: 'sha256:consequence',
+        currentDate: '2026-04-17T21:01:00.000Z',
+        introspector,
+        requireSenderConstrainedToken: true,
+      }),
+    /must be sender-constrained/,
+    'Release verification: downstream routes can require sender-constrained tokens',
+  );
+  passed += 1;
 
   const inactiveIntrospection = await introspectReleaseToken({
     token: issued.token,

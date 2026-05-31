@@ -13,6 +13,7 @@ import {
   type ReleaseReviewerQueueListOptions,
   type ReleaseReviewerQueueListResult,
   type ReleaseReviewerQueueRecord,
+  type ReleaseTokenConfirmationClaim,
   type ReleaseTokenIssuer,
 } from '../../../release-layer/index.js';
 import type { AdminAuditAction } from '../../admin-audit-log.js';
@@ -70,6 +71,12 @@ export interface ReleaseReviewRouteDeps {
   apiReleaseEvidencePackStore: RequestPathReleaseEvidencePackStore;
   apiReleaseEvidencePackIssuer: ReleaseEvidencePackIssuer;
   apiReleaseIntrospectionStore: RequestPathReleaseTokenIntrospectionStore;
+  resolveReleaseReviewTokenConfirmation?(input: {
+    context: Context;
+    decision: ReleaseDecision;
+    issuedAt: string;
+    override: boolean;
+  }): Promise<ReleaseTokenConfirmationClaim | null> | ReleaseTokenConfirmationClaim | null;
   adminMutationRequest(
     c: Context,
     routeId: string,
@@ -86,6 +93,9 @@ interface IssuedReleaseTokenResponse extends Record<string, unknown> {
   decisionId: string;
   ttlSeconds: number;
   override: boolean;
+  tenantId: string | null;
+  senderConstrained: boolean;
+  presentationRequired: 'sender-constrained';
   policyVersion: string | null;
   policyHash: string;
   policyIrHash: string | null;
@@ -192,6 +202,9 @@ function buildIssuedReleaseTokenResponse(
     decisionId: issuedToken.claims.decision_id,
     ttlSeconds: issuedToken.claims.exp - issuedToken.claims.iat,
     override: issuedToken.claims.override,
+    tenantId: issuedToken.claims.tenant_id ?? null,
+    senderConstrained: Boolean(issuedToken.claims.cnf?.jkt),
+    presentationRequired: 'sender-constrained',
     policyVersion: policyContext.policyVersion,
     policyHash: policyContext.policyHash,
     policyIrHash: policyContext.policyIrHash,
@@ -200,6 +213,19 @@ function buildIssuedReleaseTokenResponse(
     compiledPolicyIrVersion: policyContext.compiledPolicyIrVersion,
     policyContext,
   };
+}
+
+function releaseReviewTenantId(record: ReleaseReviewerQueueRecord): string | null {
+  if (record.detail.tenantId) {
+    return record.detail.tenantId;
+  }
+  const requesterId = record.releaseDecision.requester.id.trim();
+  const tenantPrefix = 'tenant:';
+  if (requesterId.startsWith(tenantPrefix)) {
+    const tenantId = requesterId.slice(tenantPrefix.length).trim();
+    return tenantId.length > 0 ? tenantId : null;
+  }
+  return null;
 }
 
 function buildIssuedEvidencePackResponse(
@@ -259,6 +285,7 @@ export function registerReleaseReviewRoutes(app: Hono, deps: ReleaseReviewRouteD
     apiReleaseEvidencePackStore,
     apiReleaseEvidencePackIssuer,
     apiReleaseIntrospectionStore,
+    resolveReleaseReviewTokenConfirmation,
     adminMutationRequest,
     finalizeAdminMutation,
   } = deps;
@@ -353,6 +380,23 @@ export function registerReleaseReviewRoutes(app: Hono, deps: ReleaseReviewRouteD
 
     try {
       const decidedAt = new Date().toISOString();
+      const finalApprovalWouldIssueToken = record.detail.approvalsRemaining <= 1;
+      const senderConfirmation =
+        finalApprovalWouldIssueToken
+          ? await resolveReleaseReviewTokenConfirmation?.({
+              context: c,
+              decision: record.releaseDecision,
+              issuedAt: decidedAt,
+              override: false,
+            }) ?? null
+          : null;
+      if (finalApprovalWouldIssueToken && senderConfirmation === null) {
+        return c.json({
+          error: 'release_token_sender_confirmation_required',
+          error_description:
+            'A valid DPoP proof is required before issuing a sender-constrained release token.',
+        }, 400);
+      }
       const transition = applyReviewerDecision({
         record,
         outcome: 'approved',
@@ -382,9 +426,18 @@ export function registerReleaseReviewRoutes(app: Hono, deps: ReleaseReviewRouteD
           `review:${transition.record.detail.id}:terminal-accept`,
           'terminal-accept',
         );
+        if (senderConfirmation === null) {
+          throw new Error('release token sender confirmation was not resolved for final approval');
+        }
         const issuedToken = await apiReleaseTokenIssuer.issue({
           decision: transition.record.releaseDecision,
           issuedAt: decidedAt,
+          tenantId: releaseReviewTenantId(transition.record),
+          audience: transition.record.releaseDecision.target.id,
+          resource: transition.record.releaseDecision.target.id,
+          scope: 'financial-reporting:filing-export',
+          tokenUse: 'release',
+          confirmation: senderConfirmation,
         });
         await apiReleaseIntrospectionStore.registerIssuedToken({
           issuedToken,
@@ -582,6 +635,20 @@ export function registerReleaseReviewRoutes(app: Hono, deps: ReleaseReviewRouteD
 
     try {
       const decidedAt = new Date().toISOString();
+      const senderConfirmation =
+        await resolveReleaseReviewTokenConfirmation?.({
+          context: c,
+          decision: record.releaseDecision,
+          issuedAt: decidedAt,
+          override: true,
+        }) ?? null;
+      if (senderConfirmation === null) {
+        return c.json({
+          error: 'release_token_sender_confirmation_required',
+          error_description:
+            'A valid DPoP proof is required before issuing a sender-constrained release token.',
+        }, 400);
+      }
       const overriddenRecord = applyBreakGlassOverride({
         record,
         reasonCode: readReviewField(body, 'reasonCode') ?? '',
@@ -612,6 +679,12 @@ export function registerReleaseReviewRoutes(app: Hono, deps: ReleaseReviewRouteD
         decision: overriddenRecord.releaseDecision,
         issuedAt: decidedAt,
         ttlSeconds: 60,
+        tenantId: releaseReviewTenantId(overriddenRecord),
+        audience: overriddenRecord.releaseDecision.target.id,
+        resource: overriddenRecord.releaseDecision.target.id,
+        scope: 'financial-reporting:filing-export',
+        tokenUse: 'release',
+        confirmation: senderConfirmation,
       });
       await apiReleaseIntrospectionStore.registerIssuedToken({
         issuedToken,

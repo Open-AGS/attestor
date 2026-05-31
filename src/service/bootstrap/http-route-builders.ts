@@ -346,6 +346,8 @@ export function buildPipelineRouteDeps(input: BuildPipelineRouteDepsInput): Pipe
     currentReleaseRequester: input.currentReleaseRequester,
     currentReleaseEvaluationContext: input.currentReleaseEvaluationContext,
     finalizeFinanceFilingReleaseDecision: input.finalizeFinanceFilingReleaseDecision,
+    resolveFinanceFilingReleaseTokenConfirmation:
+      input.resolveFinanceFilingReleaseTokenConfirmation,
     createFinanceReviewerQueueItem: input.createFinanceReviewerQueueItem,
     apiReleaseReviewerQueueStore: input.apiReleaseReviewerQueueStore,
     apiReleaseTokenIssuer: input.apiReleaseTokenIssuer,

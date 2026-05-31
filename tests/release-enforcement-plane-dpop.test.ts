@@ -168,6 +168,7 @@ async function issueDpopBoundToken(input: {
   readonly targetId: string;
   readonly consequenceType?: 'record' | 'decision-support';
   readonly riskClass?: 'R1' | 'R4';
+  readonly tenantId?: string | null;
 }) {
   const { issuer, verificationKey } = await setupIssuer();
   const decision = makeDecision({
@@ -180,6 +181,7 @@ async function issueDpopBoundToken(input: {
     decision,
     issuedAt: '2026-04-18T11:00:00.000Z',
     tokenId: input.tokenId,
+    tenantId: input.tenantId ?? 'tenant-test',
     confirmation: {
       jkt: input.dpopKeyPair.publicKeyThumbprint,
     },

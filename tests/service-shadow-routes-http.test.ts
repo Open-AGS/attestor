@@ -342,6 +342,16 @@ async function testAllShadowRoutesHaveHttpCoverage(): Promise<void> {
   const auditInputs: ShadowMutationAuditInput[] = [];
   const app = createApp(auditInputs);
   const seeded = await seedShadowState(app);
+  const reviewSurfaceResponse = await app.request('/api/v1/shadow/review-surface');
+  const reviewSurfaceBody = await reviewSurfaceResponse.json() as {
+    readonly reviewSurface: { readonly caseDigests: readonly string[] };
+  };
+  const firstCaseDigest = reviewSurfaceBody.reviewSurface.caseDigests[0] ?? '';
+
+  ok(
+    firstCaseDigest.startsWith('sha256:'),
+    'Shadow routes HTTP coverage: review surface exposes a case digest',
+  );
 
   const requests: readonly [string, Promise<Response>][] = [
     ['GET /summary', app.request('/api/v1/shadow/summary')],
@@ -350,6 +360,11 @@ async function testAllShadowRoutesHaveHttpCoverage(): Promise<void> {
     ['GET /audit-evidence', app.request('/api/v1/shadow/audit-evidence')],
     ['GET /business-risk-dashboard', app.request('/api/v1/shadow/business-risk-dashboard')],
     ['GET /dashboard-summary', app.request('/api/v1/shadow/dashboard-summary')],
+    ['GET /review-surface', app.request('/api/v1/shadow/review-surface')],
+    [
+      'GET /review-surface/cases/:caseDigest',
+      app.request(`/api/v1/shadow/review-surface/cases/${encodeURIComponent(firstCaseDigest)}`),
+    ],
     ['POST /simulations', postJson(app, '/api/v1/shadow/simulations', { proposedMode: 'review' })],
     ['GET /simulations', app.request('/api/v1/shadow/simulations')],
     ['GET /simulations/:reportId', app.request(`/api/v1/shadow/simulations/${encodeURIComponent(seeded.reportId)}`)],
@@ -394,7 +409,7 @@ async function testAllShadowRoutesHaveHttpCoverage(): Promise<void> {
     ],
   ];
 
-  equal(requests.length, 27, 'Shadow routes HTTP coverage: all 27 routes are exercised');
+  equal(requests.length, 29, 'Shadow routes HTTP coverage: all 29 routes are exercised');
   for (const [name, request] of requests) {
     const response = await request;
     ok(response.status !== 404, `Shadow routes HTTP coverage: ${name} is registered`);

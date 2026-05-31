@@ -541,6 +541,11 @@ function testDocsAndPackageScriptExposeContract(): void {
   );
   includes(
     doc,
+    'GET /api/v1/shadow/review-surface',
+    'Review surface docs: hosted JSON route is named',
+  );
+  includes(
+    doc,
     'Kubernetes conditions',
     'Review surface docs: source-backed status pattern is named',
   );

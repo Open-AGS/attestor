@@ -367,6 +367,217 @@ async function testDashboardSummaryRouteReturnsCompactBusinessView(): Promise<vo
   ok(!text.includes('raw_note_must_not_escape'), 'Shadow dashboard summary route: raw observed features are not returned');
 }
 
+async function testReviewSurfaceRouteReturnsDigestOnlyWorkspace(): Promise<void> {
+  const app = createApp([
+    createEvent(),
+    createEvent({
+      action: 'export_customer_report',
+      domain: 'data-disclosure',
+      downstreamSystem: 'report-service',
+      policyRef: 'policy:reports:v1',
+      evidenceRefs: ['ticket:review_surface_raw_evidence_must_not_escape'],
+      occurredAt: '2026-05-03T10:02:02.000Z',
+    }),
+    createEvent({
+      mode: 'enforce',
+      policyRef: 'policy:refunds:v1',
+      evidenceRefs: ['order:review_surface_blocked_raw_evidence_must_not_escape'],
+      occurredAt: '2026-05-03T10:03:02.000Z',
+      blocked: true,
+    }),
+  ]);
+  const response = await app.request('/api/v1/shadow/review-surface');
+  const text = await response.text();
+  const body = JSON.parse(text) as {
+    tenant: { tenantId: string };
+    productionReady: boolean;
+    complianceClaimed: boolean;
+    decisionSupportOnly: boolean;
+    autoEnforce: boolean;
+    rawPayloadStored: boolean;
+    source: string;
+    auditEvidenceDigest: string;
+    dashboardDigest: string;
+    dashboardSummaryDigest: string;
+    reviewSurfaceDigest: string;
+    reviewSurface: {
+      version: string;
+      sourceAuditExportDigest: string;
+      sourceBusinessRiskDashboardDigest: string;
+      sourceDashboardSummaryDigest: string;
+      tenantDigest: string | null;
+      reviewQueue: readonly { caseDigest: string; defaultVisible: boolean }[];
+      caseDigests: readonly string[];
+      decisionSupportOnly: boolean;
+      autoEnforce: boolean;
+      rawPayloadStored: boolean;
+      hostedUiImplemented: boolean;
+      reviewMaterialOnly: boolean;
+      digest: string;
+    };
+  };
+  const serializedSurface = JSON.stringify(body.reviewSurface);
+
+  equal(response.status, 200, 'Shadow review surface route: valid request returns 200');
+  equal(response.headers.get('cache-control'), 'no-store', 'Shadow review surface route: response is no-store');
+  equal(body.tenant.tenantId, 'tenant_shadow_dashboard', 'Shadow review surface route: tenant context is included');
+  equal(body.productionReady, false, 'Shadow review surface route: production readiness is not claimed');
+  equal(body.complianceClaimed, false, 'Shadow review surface route: compliance is not claimed');
+  equal(body.decisionSupportOnly, true, 'Shadow review surface route: route is decision support only');
+  equal(body.autoEnforce, false, 'Shadow review surface route: route never auto-enforces');
+  equal(body.rawPayloadStored, false, 'Shadow review surface route: raw payload boundary is explicit');
+  equal(body.source, 'dashboard-summary', 'Shadow review surface route: source is explicit');
+  equal(
+    body.reviewSurface.version,
+    'attestor.review-surface.v1',
+    'Shadow review surface route: review surface model is returned',
+  );
+  equal(
+    body.reviewSurface.sourceAuditExportDigest,
+    body.auditEvidenceDigest,
+    'Shadow review surface route: review surface binds audit evidence digest',
+  );
+  equal(
+    body.reviewSurface.sourceBusinessRiskDashboardDigest,
+    body.dashboardDigest,
+    'Shadow review surface route: review surface binds dashboard digest',
+  );
+  equal(
+    body.reviewSurface.sourceDashboardSummaryDigest,
+    body.dashboardSummaryDigest,
+    'Shadow review surface route: review surface binds dashboard summary digest',
+  );
+  equal(
+    body.reviewSurface.digest,
+    body.reviewSurfaceDigest,
+    'Shadow review surface route: top-level digest matches model digest',
+  );
+  ok(
+    body.reviewSurface.tenantDigest?.startsWith('sha256:'),
+    'Shadow review surface route: tenant is digest-bound',
+  );
+  ok(body.reviewSurface.reviewQueue.length > 0, 'Shadow review surface route: review queue is populated');
+  ok(body.reviewSurface.caseDigests.length > 0, 'Shadow review surface route: case digests are populated');
+  equal(
+    body.reviewSurface.decisionSupportOnly,
+    true,
+    'Shadow review surface route: surface remains decision support only',
+  );
+  equal(body.reviewSurface.autoEnforce, false, 'Shadow review surface route: surface never auto-enforces');
+  equal(body.reviewSurface.rawPayloadStored, false, 'Shadow review surface route: surface is data-minimized');
+  equal(body.reviewSurface.hostedUiImplemented, false, 'Shadow review surface route: hosted UI is not claimed');
+  equal(body.reviewSurface.reviewMaterialOnly, true, 'Shadow review surface route: surface is review material only');
+  ok(
+    !serializedSurface.includes('tenant_shadow_dashboard'),
+    'Shadow review surface route: raw tenant id stays outside the surface payload',
+  );
+  ok(!text.includes('raw_customer_marker_must_not_escape'), 'Shadow review surface route: raw recipient is not returned');
+  ok(!text.includes('review_surface_raw_evidence_must_not_escape'), 'Shadow review surface route: raw evidence ids are not returned');
+  ok(!text.includes('raw_note_must_not_escape'), 'Shadow review surface route: raw observed features are not returned');
+}
+
+async function testReviewSurfaceCaseRouteReturnsDigestOnlyDetail(): Promise<void> {
+  const app = createApp([
+    createEvent(),
+    createEvent({
+      mode: 'enforce',
+      policyRef: 'policy:refunds:v1',
+      evidenceRefs: ['order:case_detail_raw_evidence_must_not_escape'],
+      occurredAt: '2026-05-03T10:03:02.000Z',
+      blocked: true,
+    }),
+  ]);
+  const surfaceResponse = await app.request('/api/v1/shadow/review-surface');
+  const surfaceBody = await surfaceResponse.json() as {
+    reviewSurface: { caseDigests: readonly string[] };
+  };
+  const caseDigest = surfaceBody.reviewSurface.caseDigests[0] ?? '';
+  const response = await app.request(
+    `/api/v1/shadow/review-surface/cases/${encodeURIComponent(caseDigest)}`,
+  );
+  const text = await response.text();
+  const body = JSON.parse(text) as {
+    tenant: { tenantId: string };
+    productionReady: boolean;
+    complianceClaimed: boolean;
+    decisionSupportOnly: boolean;
+    autoEnforce: boolean;
+    rawPayloadStored: boolean;
+    source: string;
+    reviewSurfaceDigest: string;
+    caseDetail: {
+      area: string;
+      caseDigest: string;
+      queueItemId: string | null;
+      eventDigests: readonly string[];
+      evidenceDigests: readonly string[];
+      proofLinkDigests: readonly string[];
+      correlationDigests: readonly string[];
+      rawPayloadStored: boolean;
+      rawCaseMaterialStored: boolean;
+      decisionSupportOnly: boolean;
+      autoEnforce: boolean;
+      productionReady: boolean;
+      canAdmit: boolean;
+      canBlockAction: boolean;
+    };
+  };
+
+  equal(response.status, 200, 'Shadow review case route: valid request returns 200');
+  equal(response.headers.get('cache-control'), 'no-store', 'Shadow review case route: response is no-store');
+  equal(body.tenant.tenantId, 'tenant_shadow_dashboard', 'Shadow review case route: tenant context is included');
+  equal(body.productionReady, false, 'Shadow review case route: production readiness is not claimed');
+  equal(body.complianceClaimed, false, 'Shadow review case route: compliance is not claimed');
+  equal(body.decisionSupportOnly, true, 'Shadow review case route: route is decision support only');
+  equal(body.autoEnforce, false, 'Shadow review case route: route never auto-enforces');
+  equal(body.rawPayloadStored, false, 'Shadow review case route: raw payload boundary is explicit');
+  equal(body.source, 'attestor-review-surface', 'Shadow review case route: source is explicit');
+  equal(body.caseDetail.area, 'cases', 'Shadow review case route: case detail area is cases');
+  equal(body.caseDetail.caseDigest, caseDigest, 'Shadow review case route: requested case digest is retained');
+  ok(body.caseDetail.eventDigests.length > 0, 'Shadow review case route: event digests are attached');
+  ok(body.caseDetail.evidenceDigests.length > 0, 'Shadow review case route: evidence digests are attached');
+  ok(body.caseDetail.proofLinkDigests.length > 0, 'Shadow review case route: proof link digests are attached');
+  ok(
+    body.caseDetail.correlationDigests.includes(body.reviewSurfaceDigest),
+    'Shadow review case route: case detail binds the review surface digest',
+  );
+  equal(body.caseDetail.rawPayloadStored, false, 'Shadow review case route: detail stores no raw payload');
+  equal(body.caseDetail.rawCaseMaterialStored, false, 'Shadow review case route: detail stores no raw case material');
+  equal(body.caseDetail.decisionSupportOnly, true, 'Shadow review case route: detail is decision support only');
+  equal(body.caseDetail.autoEnforce, false, 'Shadow review case route: detail never auto-enforces');
+  equal(body.caseDetail.productionReady, false, 'Shadow review case route: detail claims no production readiness');
+  equal(body.caseDetail.canAdmit, false, 'Shadow review case route: detail cannot admit');
+  equal(body.caseDetail.canBlockAction, false, 'Shadow review case route: detail cannot block by itself');
+  ok(!text.includes('raw_customer_marker_must_not_escape'), 'Shadow review case route: raw recipient is not returned');
+  ok(!text.includes('case_detail_raw_evidence_must_not_escape'), 'Shadow review case route: raw evidence ids are not returned');
+  ok(!text.includes('raw_note_must_not_escape'), 'Shadow review case route: raw observed features are not returned');
+}
+
+async function testReviewSurfaceCaseRouteRejectsUnknownCase(): Promise<void> {
+  const app = createApp([createEvent()]);
+  const response = await app.request(
+    `/api/v1/shadow/review-surface/cases/${encodeURIComponent('sha256:unknown-case')}`,
+  );
+  const text = await response.text();
+  const body = JSON.parse(text) as {
+    readonly detail: string;
+    readonly reasonCodes: readonly string[];
+  };
+
+  equal(response.status, 404, 'Shadow review case route: unknown case returns 404');
+  equal(response.headers.get('cache-control'), 'no-store', 'Shadow review case route: unknown case is no-store');
+  equal(
+    body.detail,
+    'The requested review case is not available for the current tenant.',
+    'Shadow review case route: unknown case detail is bounded',
+  );
+  ok(
+    body.reasonCodes.includes('attestor-review-case-unavailable'),
+    'Shadow review case route: unknown case reason is stable',
+  );
+  ok(!text.includes('raw_customer_marker_must_not_escape'), 'Shadow review case route: unknown case does not leak raw recipient');
+}
+
 async function testEmptyDashboardRoutesAreExplicit(): Promise<void> {
   const app = createApp([]);
   const auditResponse = await app.request('/api/v1/shadow/audit-evidence');
@@ -449,11 +660,22 @@ async function testDashboardRoutesRejectForeignTenantEvents(): Promise<void> {
     '/api/v1/shadow/dashboard-summary',
     'Shadow dashboard summary route',
   );
+  await expectDashboardTenantBoundaryFailure(
+    '/api/v1/shadow/review-surface',
+    'Shadow review surface route',
+  );
+  await expectDashboardTenantBoundaryFailure(
+    `/api/v1/shadow/review-surface/cases/${encodeURIComponent('sha256:unknown-case')}`,
+    'Shadow review case route',
+  );
 }
 
 await testAuditEvidenceRouteIsNoStoreAndRedacted();
 await testBusinessRiskDashboardRouteIsDecisionSupportOnly();
 await testDashboardSummaryRouteReturnsCompactBusinessView();
+await testReviewSurfaceRouteReturnsDigestOnlyWorkspace();
+await testReviewSurfaceCaseRouteReturnsDigestOnlyDetail();
+await testReviewSurfaceCaseRouteRejectsUnknownCase();
 await testEmptyDashboardRoutesAreExplicit();
 await testDashboardRoutesRejectForeignTenantEvents();
 

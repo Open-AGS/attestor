@@ -166,6 +166,24 @@ The case detail rejects unknown case digests and keeps the same authority
 boundary as the rest of the review surface: it cannot admit, block, enforce, or
 store raw case material.
 
+## Hosted Read Route
+
+The shadow read surface now exposes the review contract for the current tenant:
+
+```text
+GET /api/v1/shadow/review-surface
+GET /api/v1/shadow/review-surface/cases/:caseDigest
+```
+
+The route is read-only and served with `cache-control: no-store`. It builds the
+review surface from the current tenant's audit evidence export, business risk
+dashboard, and dashboard API summary. The case route returns digest-only
+drill-down material for a known `caseDigest`.
+
+This is a JSON route, not the hosted UI. It does not activate enforcement,
+mutate policy, grant authority, prove customer PEP no-bypass, prove production
+readiness, or prove compliance.
+
 ## Research Posture
 
 The contract shape follows source-backed implementation patterns, without
@@ -186,7 +204,6 @@ claiming certification:
 
 ## Non-Claims
 
-This contract does not implement the hosted UI, does not implement live routes,
-does not prove production storage, does not prove customer deployment, does not
-prove customer PEP no-bypass, does not activate enforcement, and does not prove
-compliance.
+This contract and hosted JSON route do not implement the hosted UI, do not prove
+production storage, do not prove customer deployment, do not prove customer PEP
+no-bypass, do not activate enforcement, and do not prove compliance.

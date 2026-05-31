@@ -10,9 +10,12 @@ GET /api/v1/shadow/recommendations
 GET /api/v1/shadow/audit-evidence
 GET /api/v1/shadow/business-risk-dashboard
 GET /api/v1/shadow/dashboard-summary
+GET /api/v1/shadow/review-surface
+GET /api/v1/shadow/review-surface/cases/:caseDigest
 ```
 
-These routes summarize shadow admission events and policy simulation recommendations for the current tenant.
+These routes summarize shadow admission events, policy simulation
+recommendations, and digest-first review work for the current tenant.
 
 ## What They Return
 
@@ -49,6 +52,19 @@ The dashboard-summary route returns the first-screen API summary built from the 
 - top consequence-domain rows
 - audit evidence and dashboard source digests
 - explicit `decisionSupportOnly`, `autoEnforce`, `rawPayloadStored`, `rawImpactValueStored`, `complianceClaimed`, and `productionReady` boundaries
+
+The review-surface route returns the unified review workspace model built from
+the same audit evidence, dashboard, and dashboard summary:
+
+- overview, queue, case digest, action-map, evidence, policy, and assurance panels
+- audit evidence, dashboard, dashboard-summary, and review-surface digests
+- explicit `decisionSupportOnly`, `autoEnforce`, `rawPayloadStored`,
+  `complianceClaimed`, `productionReady`, and `hostedUiImplemented: false`
+  boundaries
+
+The case-detail route expands one `caseDigest` into digest-only drill-down
+material for reviewers. It does not return raw case payloads and cannot admit,
+block, enforce, or mutate policy.
 
 ## Data Boundary
 

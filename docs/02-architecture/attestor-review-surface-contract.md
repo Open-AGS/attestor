@@ -112,9 +112,10 @@ and `LP-CUSTOMER-PEP-NO-BYPASS`.
 
 The package surface is exported through `attestor/consequence-admission`.
 
-Core descriptor:
+Core APIs:
 
 - `attestorReviewSurfaceContractDescriptor()`
+- `createAttestorReviewSurface(...)`
 
 Source:
 
@@ -123,6 +124,26 @@ Source:
 Focused check:
 
 - `npm run test:attestor-review-surface-contract`
+
+## Aggregator
+
+`createAttestorReviewSurface(...)` composes the first read model from existing
+Attestor outputs:
+
+- audit evidence export
+- business risk dashboard
+- dashboard API summary
+- review-by-exception inbox, when available
+- evidence state model, when available
+- assurance measurement plane, when available
+
+The aggregator validates that the dashboard and summary are bound to the same
+audit export digest. Optional sources stay digest-bound. If any source asks for
+raw payload storage or auto-enforcement, the aggregator fails closed.
+
+The output is still review material only. It does not create cases, serve HTTP
+routes, render the hosted UI, export files, activate enforcement, or mutate
+policy.
 
 ## Research Posture
 

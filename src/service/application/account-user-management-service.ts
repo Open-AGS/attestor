@@ -289,6 +289,10 @@ export function createAccountUserManagementService(
       if (existing) {
         throw new AccountUserManagementServiceError(409, `Account user '${invite.email}' already exists.`);
       }
+      const claimed = await deps.consumeAccountUserActionTokenState(invite.id);
+      if (!claimed.record) {
+        throw new AccountUserManagementServiceError(409, 'Invite token has already been used.');
+      }
       try {
         const created = await deps.createAccountUserState({
           accountId: invite.accountId,
@@ -297,7 +301,6 @@ export function createAccountUserManagementService(
           password: input.password,
           role: invite.role,
         });
-        await deps.consumeAccountUserActionTokenState(invite.id);
         const loginTouch = await deps.recordAccountUserLoginState(created.record.id);
         const issued = await deps.issueAccountSessionState({
           accountId: invite.accountId,
@@ -389,9 +392,12 @@ export function createAccountUserManagementService(
         await recordPasswordResetAttemptFailure(deps, tokenRecord);
         throw error;
       }
+      const claimed = await deps.consumeAccountUserActionTokenState(tokenRecord.id);
+      if (!claimed.record) {
+        throw new AccountUserManagementServiceError(409, 'Password reset token has already been used.');
+      }
       await deps.setAccountUserPasswordState(user.id, input.newPassword);
       await deps.revokeAccountSessionsForUserState(user.id);
-      await deps.consumeAccountUserActionTokenState(tokenRecord.id);
       await deps.revokeAccountUserActionTokensForUserState(user.id, 'password_reset');
     },
   };

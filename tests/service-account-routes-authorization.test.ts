@@ -287,6 +287,10 @@ async function testAccountRouteJsonAndAuthAttemptVocabularyIsLocked(): Promise<v
   const source = routeFiles
     .map((file) => readFileSync(new URL(file, import.meta.url), 'utf8'))
     .join('\n');
+  const mfaPasskeySource = readFileSync(
+    new URL('../src/service/http/routes/account-mfa-passkey-routes.ts', import.meta.url),
+    'utf8',
+  );
   const helper = readFileSync(new URL('../src/service/http/routes/account-route-helpers.ts', import.meta.url), 'utf8');
 
   assert.equal(source.includes('.json().catch(() => ({}))'), false);
@@ -294,6 +298,18 @@ async function testAccountRouteJsonAndAuthAttemptVocabularyIsLocked(): Promise<v
   assert.equal(helper.includes('export type AuthAttemptKind ='), true);
   assert.equal(helper.includes('AUTH_ATTEMPT_KIND'), true);
   assert.equal(helper.includes('acceptsJsonRequestBody'), true);
+  assert.equal(
+    mfaPasskeySource.includes("return c.json({ error: 'Passkey authentication challenge has already been used.' }, 409);"),
+    true,
+  );
+  assert.equal(
+    mfaPasskeySource.includes("return c.json({ error: 'MFA challenge has already been used.' }, 409);"),
+    true,
+  );
+  assert.equal(
+    mfaPasskeySource.includes("return c.json({ error: 'Passkey registration challenge has already been used.' }, 409);"),
+    true,
+  );
 }
 
 async function testAccountApiKeyIssueReplaysWithIdempotencyKey(): Promise<void> {

@@ -195,6 +195,7 @@ export function mapPolicyControlPlaneError(error: unknown): {
     normalized.includes(' require ') ||
     normalized.includes(' cannot be blank') ||
     normalized.startsWith('unsupported ') ||
+    normalized.includes(' is invalid') ||
     normalized.includes(' invalid ')
   ) {
     return knownPolicyError('bad_request', message);
@@ -406,6 +407,7 @@ export function bundleSummaryView(record: StoredPolicyBundleRecord): Record<stri
     manifestDigest: record.artifact.manifestDigest,
     entriesDigest: record.artifact.entriesDigest,
     signed: record.signedBundle !== null,
+    signatureStatus: record.signedBundle ? 'verified' : 'unsigned',
     keyId: record.verificationKey?.keyId ?? null,
     publicKeyFingerprint: record.verificationKey?.publicKeyFingerprint ?? null,
   };

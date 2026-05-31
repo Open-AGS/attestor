@@ -337,6 +337,40 @@ function testBundleUpsertRejectsSignedBundleArtifactMismatch(): void {
   );
 }
 
+function testBundleUpsertRejectsInvalidSignedBundleSignature(): void {
+  const store = createInMemoryPolicyControlPlaneStore();
+  const bundle = createSignedBundle();
+  const invalidSignature = 'AAAA';
+  const forgedSignedBundle = {
+    ...bundle.signedBundle,
+    envelope: {
+      ...bundle.signedBundle.envelope,
+      signatures: [
+        {
+          ...bundle.signedBundle.envelope.signatures[0]!,
+          sig: invalidSignature,
+        },
+      ],
+    },
+    signatureRecord: {
+      ...bundle.signedBundle.signatureRecord,
+      signature: invalidSignature,
+    },
+  } as typeof bundle.signedBundle;
+
+  assert.throws(
+    () =>
+      store.upsertBundle({
+        manifest: bundle.manifest,
+        artifact: bundle.artifact,
+        signedBundle: forgedSignedBundle,
+        verificationKey: bundle.verificationKey,
+      }),
+    /DSSE signature is invalid/i,
+  );
+  assert.equal(store.listBundles().length, 0);
+}
+
 function testMetadataAndActivationOrdering(): void {
   const store = createInMemoryPolicyControlPlaneStore();
   const activationOld = createPolicyActivationRecord({
@@ -373,6 +407,7 @@ testBundleUpsertReplacesExistingRecord();
 testBundleUpsertRejectsContentSubstitution();
 testBundleUpsertRejectsArtifactManifestMismatch();
 testBundleUpsertRejectsSignedBundleArtifactMismatch();
+testBundleUpsertRejectsInvalidSignedBundleSignature();
 testMetadataAndActivationOrdering();
 
-console.log('Release policy control-plane store tests: 30 passed, 0 failed');
+console.log('Release policy control-plane store tests: 31 passed, 0 failed');

@@ -885,15 +885,30 @@ export async function consumeAccountUserActionTokenState(
   id: string,
 ): Promise<{ record: AccountUserActionTokenRecord | null; path: string | null }> {
   if (!isSharedControlPlaneConfigured()) return consumeAccountUserActionTokenFile(id);
-  const records = await listAccountUserActionTokensPg();
-  const record = records.find((entry) => entry.id === id) ?? null;
-  if (!record || record.consumedAt || record.revokedAt || Date.parse(record.expiresAt) <= Date.now()) {
-    return { record: null, path: controlPlaneStoreSource() };
-  }
-  record.consumedAt = new Date().toISOString();
-  record.updatedAt = record.consumedAt;
-  await upsertAccountUserActionTokenPg(record);
-  return { record, path: controlPlaneStoreSource() };
+  await ensureSchema();
+  const pool = await getPool();
+  const consumedAt = new Date().toISOString();
+  const result = await pool.query(
+    `UPDATE attestor_control_plane.account_user_action_tokens
+        SET consumed_at = $2::timestamptz,
+            updated_at = $2::timestamptz,
+            record_json = jsonb_set(
+              jsonb_set(record_json, '{consumedAt}', to_jsonb($2::text), true),
+              '{updatedAt}', to_jsonb($2::text), true
+            )
+      WHERE token_id = $1
+        AND consumed_at IS NULL
+        AND revoked_at IS NULL
+        AND expires_at > $2::timestamptz
+        AND COALESCE((record_json->>'attemptCount')::int, 0) <
+            COALESCE((record_json->>'maxAttempts')::int, 2147483647)
+      RETURNING record_json`,
+    [id, consumedAt],
+  );
+  return {
+    record: result.rows[0] ? rowToAccountUserActionToken(result.rows[0]) : null,
+    path: controlPlaneStoreSource(),
+  };
 }
 
 export async function revokeAccountUserActionTokenState(

@@ -7,6 +7,7 @@ import type {
   IssuedPolicyBundleSignature,
   PolicyBundleVerificationKey,
 } from './bundle-signing.js';
+import { verifyIssuedPolicyBundle } from './bundle-signing.js';
 import type {
   PolicyActivationRecord,
   PolicyBundleManifest,
@@ -128,6 +129,13 @@ function assertBundleRecordCoherence(
     if (input.verificationKey.keyId !== input.signedBundle.keyId) {
       throw new Error('Policy store verification key must match the signed bundle key id.');
     }
+  }
+  if (input.signedBundle) {
+    const verificationKey = input.verificationKey ?? input.signedBundle.verificationKey;
+    verifyIssuedPolicyBundle({
+      issuedBundle: input.signedBundle,
+      verificationKey,
+    });
   }
 }
 

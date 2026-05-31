@@ -180,6 +180,10 @@ export function registerAccountMfaPasskeyRoutes(app: Hono, deps: AccountRouteDep
       return c.json({ error: 'Passkey authentication could not be verified.' }, 400);
     }
 
+    const claimedChallenge = await stateService.consumeAccountUserActionToken(challengeRecord.id);
+    if (!claimedChallenge.record) {
+      return c.json({ error: 'Passkey authentication challenge has already been used.' }, 409);
+    }
     const now = new Date().toISOString();
     const nextUser = structuredClone(user);
     const nextCredential = nextUser.passkeys.credentials[credentialIndex]!;
@@ -190,7 +194,6 @@ export function registerAccountMfaPasskeyRoutes(app: Hono, deps: AccountRouteDep
     nextUser.passkeys.updatedAt = now;
     nextUser.updatedAt = now;
     await stateService.saveAccountUserRecord(nextUser);
-    await stateService.consumeAccountUserActionToken(challengeRecord.id);
     await stateService.revokeAccountUserActionTokensForUser(user.id, 'passkey_authentication');
 
     const loginTouch = await stateService.recordAccountUserLogin(user.id);
@@ -242,6 +245,7 @@ export function registerAccountMfaPasskeyRoutes(app: Hono, deps: AccountRouteDep
 
     let verified = false;
     let recoveryCodeUsed = false;
+    let acceptedTotpStep: string | null = null;
     const nextUser = structuredClone(user);
 
     if (code) {
@@ -257,11 +261,7 @@ export function registerAccountMfaPasskeyRoutes(app: Hono, deps: AccountRouteDep
         });
         verified = totpVerification.ok;
         if (verified && totpVerification.acceptedStep) {
-          const consumed = await stateService.recordAccountUserTotpVerificationStep(
-            user.id,
-            totpVerification.acceptedStep,
-          );
-          verified = consumed.accepted;
+          acceptedTotpStep = totpVerification.acceptedStep;
         }
       } catch (err) {
         const mapped = accountMfaErrorResponse(c, err);
@@ -275,7 +275,6 @@ export function registerAccountMfaPasskeyRoutes(app: Hono, deps: AccountRouteDep
       if (recovery.ok) {
         nextUser.mfa.totp = recovery.nextTotp;
         nextUser.updatedAt = recovery.nextTotp.updatedAt ?? nextUser.updatedAt;
-        await stateService.saveAccountUserRecord(nextUser);
       }
     }
 
@@ -291,7 +290,22 @@ export function registerAccountMfaPasskeyRoutes(app: Hono, deps: AccountRouteDep
       return c.json({ error: 'MFA code is invalid or expired.' }, 400);
     }
 
-    await stateService.consumeAccountUserActionToken(challenge.id);
+    const claimedChallenge = await stateService.consumeAccountUserActionToken(challenge.id);
+    if (!claimedChallenge.record) {
+      return c.json({ error: 'MFA challenge has already been used.' }, 409);
+    }
+    if (acceptedTotpStep !== null) {
+      const consumed = await stateService.recordAccountUserTotpVerificationStep(
+        user.id,
+        acceptedTotpStep,
+      );
+      if (!consumed.accepted) {
+        return c.json({ error: 'MFA code is invalid or expired.' }, 400);
+      }
+    }
+    if (recoveryCodeUsed) {
+      await stateService.saveAccountUserRecord(nextUser);
+    }
     await stateService.revokeAccountUserActionTokensForUser(user.id, 'mfa_login');
     const loginTouch = await stateService.recordAccountUserLogin(user.id);
     const issued = await stateService.issueAccountSession({
@@ -463,6 +477,10 @@ export function registerAccountMfaPasskeyRoutes(app: Hono, deps: AccountRouteDep
       return c.json({ error: 'Passkey registration could not be verified.' }, 400);
     }
 
+    const claimedChallenge = await stateService.consumeAccountUserActionToken(challengeRecord.id);
+    if (!claimedChallenge.record) {
+      return c.json({ error: 'Passkey registration challenge has already been used.' }, 409);
+    }
     const now = new Date().toISOString();
     const nextUser = structuredClone(sessionUser);
     const nextCredential = buildAccountUserPasskeyCredentialRecord({
@@ -488,7 +506,6 @@ export function registerAccountMfaPasskeyRoutes(app: Hono, deps: AccountRouteDep
     nextUser.passkeys.updatedAt = now;
     nextUser.updatedAt = now;
     await stateService.saveAccountUserRecord(nextUser);
-    await stateService.consumeAccountUserActionToken(challengeRecord.id);
     await stateService.revokeAccountUserActionTokensForUser(nextUser.id, 'passkey_registration');
     await recordAccountSessionMutationAudit({
       routeId: 'account.passkeys.register.verify',

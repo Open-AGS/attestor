@@ -287,6 +287,18 @@ async function testInviteDeliveryFailureRevokesIssuedToken(): Promise<void> {
 async function testAcceptInviteConsumesTokenAndIssuesSession(): Promise<void> {
   const calls: string[] = [];
   const service = createAccountUserManagementService(createDeps({
+    createAccountUserState: async (input) => {
+      calls.push(`create:${input.email}:${input.role}`);
+      return {
+        record: user({
+          accountId: input.accountId,
+          email: input.email,
+          displayName: input.displayName,
+          role: input.role,
+        }),
+        path: null,
+      };
+    },
     consumeAccountUserActionTokenState: async (id) => {
       calls.push(`consume:${id}`);
       return { record: token({ id, consumedAt: now }), path: null };
@@ -314,8 +326,34 @@ async function testAcceptInviteConsumesTokenAndIssuesSession(): Promise<void> {
   assert.equal(accepted.user.lastLoginAt, now);
   assert.deepEqual(calls, [
     'consume:atok_123',
+    'create:new@example.com:read_only',
     'session:user_123:read_only',
   ]);
+}
+
+async function testAcceptInviteRejectsReplayBeforeCreatingUser(): Promise<void> {
+  const calls: string[] = [];
+  const service = createAccountUserManagementService(createDeps({
+    consumeAccountUserActionTokenState: async (id) => {
+      calls.push(`consume:${id}`);
+      return { record: null, path: null };
+    },
+    createAccountUserState: async (input) => {
+      calls.push(`create:${input.email}`);
+      return { record: user({ email: input.email }), path: null };
+    },
+  }));
+
+  await assert.rejects(
+    () => service.acceptInvite({
+      inviteToken: 'invite_secret',
+      password: 'long-enough-password',
+    }),
+    (error) => error instanceof AccountUserManagementServiceError
+      && error.statusCode === 409
+      && error.message === 'Invite token has already been used.',
+  );
+  assert.deepEqual(calls, ['consume:atok_123']);
 }
 
 async function testDeactivationRevokesSessionsAndTokens(): Promise<void> {
@@ -362,11 +400,47 @@ async function testConsumePasswordResetRevokesAndConsumes(): Promise<void> {
   });
 
   assert.deepEqual(calls, [
+    'consume:reset_123',
     'password:user_123',
     'sessions:user_123',
-    'consume:reset_123',
     'tokens:user_123:password_reset',
   ]);
+}
+
+async function testConsumePasswordResetRejectsReplayBeforeSideEffects(): Promise<void> {
+  const calls: string[] = [];
+  const service = createAccountUserManagementService(createDeps({
+    findAccountUserActionTokenByTokenState: async () => token({
+      id: 'reset_123',
+      purpose: 'password_reset',
+      accountUserId: 'user_123',
+      displayName: null,
+      role: null,
+    }),
+    consumeAccountUserActionTokenState: async (id) => {
+      calls.push(`consume:${id}`);
+      return { record: null, path: null };
+    },
+    setAccountUserPasswordState: async (id) => {
+      calls.push(`password:${id}`);
+      return { record: user({ id }), path: null };
+    },
+    revokeAccountSessionsForUserState: async (id) => {
+      calls.push(`sessions:${id}`);
+      return { revokedCount: 1, path: null };
+    },
+  }));
+
+  await assert.rejects(
+    () => service.consumePasswordReset({
+      resetToken: 'reset_secret',
+      newPassword: 'long-enough-password',
+    }),
+    (error) => error instanceof AccountUserManagementServiceError
+      && error.statusCode === 409
+      && error.message === 'Password reset token has already been used.',
+  );
+  assert.deepEqual(calls, ['consume:reset_123']);
 }
 
 async function testConsumePasswordResetRecordsFailedTokenAttempt(): Promise<void> {
@@ -434,9 +508,11 @@ async function testCreateUserRejectsCommonOrIdentifierDerivedPassword(): Promise
 await testCreateUserValidatesPasswordAndRole();
 await testInviteDeliveryFailureRevokesIssuedToken();
 await testAcceptInviteConsumesTokenAndIssuesSession();
+await testAcceptInviteRejectsReplayBeforeCreatingUser();
 await testDeactivationRevokesSessionsAndTokens();
 await testConsumePasswordResetRevokesAndConsumes();
+await testConsumePasswordResetRejectsReplayBeforeSideEffects();
 await testConsumePasswordResetRecordsFailedTokenAttempt();
 await testCreateUserRejectsCommonOrIdentifierDerivedPassword();
 
-console.log('Service account user management service tests: 7 passed, 0 failed');
+console.log('Service account user management service tests: 9 passed, 0 failed');

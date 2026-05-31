@@ -433,8 +433,47 @@ async function testPackAndBundleSurfaces(): Promise<void> {
   assert.equal(packs.body.packs.length, 1);
   assert.equal(versions.body.versions.length, 1);
   assert.equal(versions.body.versions[0].signed, true);
+  assert.equal(versions.body.versions[0].signatureStatus, 'verified');
   assert.equal(detail.body.bundle.signedBundle, null);
   assert.equal(detail.body.bundle.artifact.payloadDigest, bundle.artifact.payloadDigest);
+}
+
+async function testBundlePublishRejectsInvalidSignedBundle(): Promise<void> {
+  const fixture = createFixture();
+  const bundle = createSignedBundle();
+  const invalidSignature = 'AAAA';
+  const forgedSignedBundle = {
+    ...bundle.signedBundle,
+    envelope: {
+      ...bundle.signedBundle.envelope,
+      signatures: [
+        {
+          ...bundle.signedBundle.envelope.signatures[0]!,
+          sig: invalidSignature,
+        },
+      ],
+    },
+    signatureRecord: {
+      ...bundle.signedBundle.signatureRecord,
+      signature: invalidSignature,
+    },
+  };
+
+  const response = await requestJson(fixture.app, '/api/v1/admin/release-policy/bundles', {
+    method: 'POST',
+    body: {
+      manifest: bundle.manifest,
+      artifact: bundle.artifact,
+      signedBundle: forgedSignedBundle,
+      verificationKey: bundle.verificationKey,
+      storedAt: '2026-04-18T09:07:00.000Z',
+    },
+  });
+
+  assert.equal(response.status, 400);
+  assert.equal(response.body.error, 'Policy bundle DSSE signature is invalid.');
+  assert.equal(await fixture.store.getBundle('finance-core', bundle.manifest.bundle.bundleId), null);
+  assert.equal(fixture.auditLog.entries().length, 0);
 }
 
 async function testBundleDetailSupportsCacheHeadersAndConditionalRevalidation(): Promise<void> {
@@ -927,6 +966,7 @@ async function run(): Promise<void> {
     await testAdminAuthIsRequired();
     await testRoleScopedAdminKeysCannotEscalateThroughActorHeader();
     await testPackAndBundleSurfaces();
+    await testBundlePublishRejectsInvalidSignedBundle();
     await testBundleDetailSupportsCacheHeadersAndConditionalRevalidation();
     await testActivationRequiresApprovalForR4();
     await testApprovalRoutesEnforceDualReview();
@@ -937,7 +977,7 @@ async function run(): Promise<void> {
     await testListRoutesApplyPaginationBounds();
     await testTypedErrorsUseBoundedStatusMappings();
     await testIdempotentMutationReplayDoesNotAppendAuditTwice();
-    console.log('Release policy control-plane admin-route tests: 13 passed, 0 failed');
+    console.log('Release policy control-plane admin-route tests: 14 passed, 0 failed');
   } finally {
     process.env.ATTESTOR_ADMIN_API_KEY = originalAdminApiKey;
     process.env.ATTESTOR_ADMIN_READ_API_KEY = originalAdminReadApiKey;

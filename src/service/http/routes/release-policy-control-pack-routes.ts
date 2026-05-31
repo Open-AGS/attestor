@@ -1,5 +1,6 @@
 import type { Hono } from 'hono';
 import type { PolicyPackMetadata } from '../../../release-policy-control-plane/index.js';
+import { verifyIssuedPolicyBundle } from '../../../release-policy-control-plane/bundle-signing.js';
 import {
   RELEASE_ADMIN_MUTATION_ROLES,
   auditEntryView,
@@ -81,6 +82,12 @@ export function registerReleasePolicyControlPackRoutes(app: Hono, deps: ReleaseP
 
     try {
       const input = parseBundleUpsertInput(body);
+      if (input.signedBundle) {
+        verifyIssuedPolicyBundle({
+          issuedBundle: input.signedBundle,
+          verificationKey: input.verificationKey ?? input.signedBundle.verificationKey,
+        });
+      }
       const pack = input.artifact.statement.predicate.pack as PolicyPackMetadata;
       await store.upsertPack({
         ...pack,

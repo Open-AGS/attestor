@@ -280,6 +280,25 @@ only when it is bound back to the packet and artifact digests.
 Live customer no-bypass remains `not proven` until `LP-CUSTOMER-PEP-NO-BYPASS`
 is captured.
 
+The no-bypass probe bundle contract lives in
+`src/consequence-admission/action-surface-integration-kit-no-bypass-probe-bundle.ts`
+and is covered by
+`npm run test:action-surface-integration-kit-no-bypass-probe-bundle`.
+
+It expands the packet probe plan into review-only probe definitions for SDK,
+gateway, sidecar, provider-native, and MCP gateway modes:
+
+- target boundary for the customer stop point
+- route or tool references, where the source metadata provides them
+- artifact digests that the probe result must bind back to
+- required evidence fields for the operator or reviewer
+- explicit `safeToAutoRun: false`, `executesProbe: false`, and
+  `proofResultRecorded: false`
+
+The bundle does not run probes, deploy a stop point, issue credentials, activate
+enforcement, or prove customer PEP no-bypass. It is useful only after a customer
+or operator runs the approved probes and records digest-bound evidence.
+
 ## Implementation Order
 
 1. Document this buildout path and lock the no-overclaim wording.

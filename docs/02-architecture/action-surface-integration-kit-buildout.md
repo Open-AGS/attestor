@@ -147,6 +147,25 @@ until the probes run against a reviewed customer or sandbox stop point.
 `approval-record.template.json` shows what a customer reviewer must fill in.
 It records review scope and decision; it does not grant authority by itself.
 
+## Machine-Readable Contract
+
+The repo-side packet contract lives in
+`src/consequence-admission/action-surface-integration-kit-packet.ts` and is
+covered by `npm run test:action-surface-integration-kit-packet`.
+
+The contract composes an existing
+`attestor.action-surface-onboarding-packet.v1` packet into:
+
+- `summary` for the machine entry point
+- `artifactManifest` for generated artifact ids, kinds, and digests
+- `noBypassProbePlan` for customer stop-point probe cases
+- `approvalRecordTemplate` for reviewer decision capture
+- `reviewFiles` for the planned file names and digests
+
+This is still a contract object, not a renderer. It does not write files,
+deploy gateways, issue credentials, run probes, activate enforcement, or prove
+customer PEP no-bypass.
+
 ## Human Review Contract
 
 Human review output must be compact, ranked, and role-aware:

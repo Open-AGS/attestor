@@ -124,6 +124,7 @@ export * from './action-surface-auto-context.js';
 export * from './action-surface-declaration-ingestors.js';
 export * from './action-surface-manifest-intake.js';
 export * from './action-surface-integration-artifacts.js';
+export * from './action-surface-integration-kit-packet.js';
 export * from './action-surface-onboarding-packet.js';
 export * from './action-surface-onboarding-review-handoff.js';
 export * from './action-surface-onboarding-red-team-fixtures.js';

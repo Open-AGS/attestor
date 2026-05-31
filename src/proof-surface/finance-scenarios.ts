@@ -124,6 +124,9 @@ function financeReportFixture(
     },
     filingReadiness: {
       status: 'internal_report_ready',
+      gaps: [],
+      totalGaps: 0,
+      blockingGaps: 0,
     },
     audit: {
       chainIntact: true,

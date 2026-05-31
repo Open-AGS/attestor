@@ -493,6 +493,11 @@ function testDocsAndScriptsExposeReplayLedger(): void {
     'Replay ledger: doc states digest-indexed replay consumption',
   );
   includes(
+    ledgerDoc,
+    'within its configured retention window',
+    'Replay ledger: doc scopes single-use wording to retention',
+  );
+  includes(
     ledgerSource,
     'entriesByReplayKeyDigest',
     'Replay ledger: source names digest-indexed storage',

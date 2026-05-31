@@ -25,10 +25,11 @@ Replay is where an authorization gateway quietly becomes advisory if it is not s
 
 An admitted supplier payment should not be reusable against the same adapter. A wallet handoff should not be presented twice because a retry path copied the same key. A data export should not run again because an async worker reprocessed the same message without checking consumption.
 
-The ledger gives the customer-side enforcement point a small single-use replay consumption rule:
+The ledger gives the customer-side enforcement point a small replay consumption
+rule inside the configured retention window:
 
 ```text
-allow only after the presentation binding allows and the replay key is consumed once
+allow only after the presentation binding allows and the replay key is consumed once within retention
 ```
 
 ## Package Surface
@@ -66,7 +67,7 @@ delete(replayKeyDigest)
 entries()
 ```
 
-`setIfAbsent(entry)` is the important operation. The Step 08 shared backend implements it with PostgreSQL `INSERT ... ON CONFLICT`, a tenant-scope digest, and a unique `(tenant_scope_digest, replay_key_digest)` index. If two enforcement points try to consume the same replay key inside the same tenant scope, exactly one may store the entry; the other receives a duplicate result that maps to `replay-key-already-consumed`.
+`setIfAbsent(entry)` is the important operation. The Step 08 shared backend implements it with PostgreSQL `INSERT ... ON CONFLICT`, a tenant-scope digest, and a unique `(tenant_scope_digest, replay_key_digest)` index. If two enforcement points try to consume the same replay key inside the same tenant scope and retention window, exactly one may store the entry; the other receives a duplicate result that maps to `replay-key-already-consumed`.
 
 The default package store remains `in-memory-reference` and `productionReady: false`. Passing the same store instance to two ledgers is useful for synchronous contract tests. The service-layer shared store proves the durable atomic primitive with embedded PostgreSQL tests; it does not by itself cut over every runtime path.
 
@@ -119,6 +120,6 @@ Primary implementation anchors for the shared store are PostgreSQL `INSERT ... O
 
 - [Downstream enforcement contract](downstream-enforcement-contract.md) decides whether this enforcement point may act.
 - [Downstream presentation binding](downstream-presentation-binding.md) binds the allowed admission to target, body, nonce, proof, constraints, and freshness.
-- The replay ledger consumes the presentation replay key once.
+- The replay ledger consumes the presentation replay key once within its configured retention window.
 - [Downstream execution receipt](downstream-execution-receipt.md) records the observed result after replay consumption.
 - The release-enforcement plane remains the deeper cryptographic path for signed release tokens, DPoP, HTTP message signatures, online introspection, and gateway verification.

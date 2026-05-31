@@ -61,7 +61,6 @@ export function safeShadowSummary(
       tenant,
       deps.listShadowEvents({ tenant }),
       'shadow admission event',
-      { allowNullTenantId: true },
     );
     const simulations = deps.listShadowSimulations?.({ tenant }) ?? [];
     const surface = createShadowSummarySurface({

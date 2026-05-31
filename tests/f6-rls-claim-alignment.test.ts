@@ -37,6 +37,8 @@ includes(tenantRls, "does not protect Attestor's main", 'RLS helper: main contro
 includes(tenantRls, 'withTenantTransaction', 'RLS helper: transaction helper remains present');
 includes(tenantRls, "set_config('app.tenant_id'", 'RLS helper: tenant context remains transaction-local');
 includes(tenantRls, 'Sample/probe tables only', 'RLS helper: boundary list names sample/probe tables');
+includes(tenantRls, 'FORCE ROW LEVEL SECURITY', 'RLS helper: sample/probe tables force RLS for table owners');
+includes(tenantRls, "WHERE tenant_id = current_setting('app.tenant_id', true)", 'RLS helper: sample read path has explicit tenant predicate');
 
 includes(rlsRuntime, 'sample/probe tables', 'RLS runtime: auto-activation scope is narrowed');
 includes(rlsRuntime, 'not evidence that the main control-plane stores use RLS', 'RLS runtime: main store non-claim is explicit');
@@ -55,6 +57,7 @@ includes(tracker, 'Remaining F6 queue after RLS claim-alignment slice: 2 planned
 
 includes(claimAlignment, '# F6 RLS Claim Alignment', 'Claim alignment doc: title exists');
 includes(claimAlignment, "does not wire PostgreSQL Row-Level Security into Attestor's main", 'Claim alignment doc: non-goal is explicit');
+includes(claimAlignment, 'FORCE ROW LEVEL SECURITY', 'Claim alignment doc: sample/probe FORCE RLS hardening is recorded');
 includes(claimAlignment, 'future PR must either wire concrete stores through', 'Claim alignment doc: future fixed condition is explicit');
 includes(packageJson, '"test:f6-rls-claim-alignment"', 'Package: F6 RLS claim alignment test script is exposed');
 

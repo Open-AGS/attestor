@@ -20,6 +20,9 @@ hosted account/billing/usage data paths are database-enforced by RLS today.
 
 - `tenant-rls.ts` now states that it owns sample/probe tables only until a real
   store is wired to it.
+- The sample/probe tables use `FORCE ROW LEVEL SECURITY`, and the sample read
+  query keeps an explicit tenant predicate. This hardens the helper but does not
+  wire it into the main control-plane stores.
 - `runtime/rls-runtime.ts` states that auto-activation covers the RLS
   sample/probe tables, not the main control-plane stores.
 - `docs/08-deployment/deployment.md` no longer lists PostgreSQL RLS as deployed
@@ -38,6 +41,8 @@ npm run test:f6-rls-claim-alignment
 The test verifies:
 
 - the RLS helper uses transaction-local `set_config('app.tenant_id', ...)`;
+- the sample/probe tables use `FORCE ROW LEVEL SECURITY` and an explicit tenant
+  predicate on the sample read path;
 - the helper declares sample/probe boundaries;
 - the runtime activation file does not overclaim main store protection;
 - deployment docs describe `ATTESTOR_PG_URL` as connector/probe substrate, not

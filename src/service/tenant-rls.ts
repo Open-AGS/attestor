@@ -48,6 +48,7 @@ CREATE TABLE IF NOT EXISTS attestor_runs (
 
 -- Enable RLS
 ALTER TABLE attestor_runs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE attestor_runs FORCE ROW LEVEL SECURITY;
 
 -- RLS policy: each tenant sees only their own rows
 CREATE POLICY tenant_isolation_runs ON attestor_runs
@@ -69,11 +70,17 @@ CREATE TABLE IF NOT EXISTS attestor_audit_log (
 );
 
 ALTER TABLE attestor_audit_log ENABLE ROW LEVEL SECURITY;
+ALTER TABLE attestor_audit_log FORCE ROW LEVEL SECURITY;
 
 CREATE POLICY tenant_isolation_audit ON attestor_audit_log
   USING (tenant_id = current_setting('app.tenant_id', true));
 
 CREATE INDEX IF NOT EXISTS idx_audit_tenant_created ON attestor_audit_log (tenant_id, created_at DESC);
+`;
+
+export const TENANT_RLS_FORCE_SQL = `
+ALTER TABLE attestor_runs FORCE ROW LEVEL SECURITY;
+ALTER TABLE attestor_audit_log FORCE ROW LEVEL SECURITY;
 `;
 
 // ─── Transaction-Scoped Tenant Context ──────────────────────────────────────
@@ -148,7 +155,9 @@ export async function getTenantRuns(
   limit: number = 50,
 ): Promise<any[]> {
   const result = await client.query(
-    'SELECT * FROM attestor_runs ORDER BY created_at DESC LIMIT $1',
+    `SELECT * FROM attestor_runs
+     WHERE tenant_id = current_setting('app.tenant_id', true)
+     ORDER BY created_at DESC LIMIT $1`,
     [limit],
   );
   return result.rows;
@@ -175,6 +184,16 @@ export async function autoActivateRLS(pool: any): Promise<{
     );
 
     if (existing.rows.length > 0) {
+      try {
+        await client.query(TENANT_RLS_FORCE_SQL);
+      } catch (err: any) {
+        return {
+          activated: false,
+          policiesFound: existing.rows.length,
+          tablesProtected: existing.rows.map((r: any) => r.tablename),
+          error: `RLS force failed: ${err.message}. Connection role may lack ALTER TABLE privilege.`,
+        };
+      }
       return {
         activated: true,
         policiesFound: existing.rows.length,

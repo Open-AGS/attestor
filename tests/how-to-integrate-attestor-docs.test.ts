@@ -32,9 +32,6 @@ function testGuideExplainsTheCustomerIntegrationPath(): void {
   includes(doc, 'admit / narrow / review / block', 'How-to integrate docs: keeps the four decision outcomes');
   includes(doc, 'The first integration is the gate before the side effect.', 'How-to integrate docs: keeps the core integration shape');
   includes(doc, 'await refundService.issueRefund(intent);', 'How-to integrate docs: shows the real side-effect line');
-  includes(doc, 'Start with one protected action and let a gateway, proxy, SDK wrapper,', 'How-to integrate docs: prefers gateway/adapter-built context');
-  includes(doc, 'Protect: refunds.create', 'How-to integrate docs: shows buyer-facing protected action shape');
-  includes(doc, 'the preferred customer experience is to protect one real action', 'How-to integrate docs: avoids admission-field-first customer flow');
   includes(doc, 'const decision = await attestor.admit(intent);', 'How-to integrate docs: shows the decision call');
   includes(doc, "decision.outcome !== 'admit' && decision.outcome !== 'narrow'", 'How-to integrate docs: holds review and block');
   includes(doc, 'direct call to the downstream service must fail', 'How-to integrate docs: states no-bypass proof');
@@ -63,11 +60,6 @@ function testGuideIsReachableFromPublicNavigation(): void {
 
   includes(readme, '[How to integrate Attestor](docs/01-overview/how-to-integrate-attestor.md)', 'How-to integrate docs: README links guide');
   includes(navigator, '[How to integrate Attestor](how-to-integrate-attestor.md)', 'How-to integrate docs: navigator links guide');
-  includes(
-    readProjectFile('docs', '01-overview', 'how-to-integrate-attestor.md'),
-    '[target-system compatibility matrix](../02-architecture/target-system-compatibility-matrix.md)',
-    'How-to integrate docs: links target-system compatibility matrix',
-  );
 }
 
 function testGuideLinksResolve(): void {

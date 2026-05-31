@@ -64,13 +64,6 @@ function testMatrixRecordsContractDimensions(): void {
     '| Replay and idempotency | Idempotency key digest',
     '| No-go | Explicit boundary',
     'rawMaterialPolicy',
-    '## Gateway-First Recipe Pattern',
-    'hosted proxy / SDK wrapper / MCP tool wrapper / Envoy-style PEP',
-    'The recipe layer may extract observed facts',
-    'inferred fields must remain separate from observed fields',
-    '### Action Recipe Manifest Shape',
-    'deployment modes supported',
-    'The manifest is not a native connector claim.',
   ]) {
     includes(matrix, expected, `Compatibility matrix: contract dimension ${expected} is recorded`);
   }

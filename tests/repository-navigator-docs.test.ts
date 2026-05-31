@@ -139,6 +139,7 @@ function testDocsFrontDoorPullsReadersToTheNextAction(): void {
   const doc = readProjectFile('docs', 'README.md');
 
   includes(doc, '# Attestor Docs', 'Docs front door: title is present');
+  includes(doc, 'Use this docs index when the README gave you the shape', 'Docs front door: purpose names the index');
   includes(doc, 'understand -> try -> integrate -> explain decisions -> verify claims -> maintain', 'Docs front door: keeps the reader path explicit');
   includes(doc, '## Start Here', 'Docs front door: has a first-reader section');
   includes(doc, '## Canonical Docs', 'Docs front door: has a canonical-docs section');
@@ -151,6 +152,8 @@ function testDocsFrontDoorPullsReadersToTheNextAction(): void {
   includes(doc, '[AI Action Control Plane architecture](02-architecture/ai-action-control-plane-architecture.md)', 'Docs front door: names AI Action Control Plane owner doc');
   includes(doc, '[Downstream enforcement contract](02-architecture/downstream-enforcement-contract.md)', 'Docs front door: names customer gate owner doc');
   includes(doc, '[Policy Foundry onboarding](02-architecture/policy-foundry-onboarding.md)', 'Docs front door: names Policy Foundry owner doc');
+  includes(doc, '[Repository README](../README.md)', 'Docs front door: names repository README clearly');
+  includes(doc, '[README current state](../README.md#current-state)', 'Docs front door: names README current state clearly');
   includes(doc, '[Live proof register](audit/live-proof-register.md)', 'Docs front door: links live proof owner doc');
   includes(doc, '[How to integrate Attestor](01-overview/how-to-integrate-attestor.md)', 'Docs front door: links integration guide');
   includes(doc, '[Run the demos in order](01-overview/demo-guide.md)', 'Docs front door: links guided demo path');
@@ -160,6 +163,7 @@ function testDocsFrontDoorPullsReadersToTheNextAction(): void {
   includes(doc, '[Repository navigator](01-overview/repository-navigator.md)', 'Docs front door: links repository navigator');
   includes(doc, '[Repository map](01-overview/repository-map.md)', 'Docs front door: links repository map');
   includes(doc, 'repo-side evidence is not live production proof', 'Docs front door: keeps live-proof boundary visible');
+  includes(doc, 'customer PEP / gate is where non-bypassability must be proven', 'Docs front door: keeps customer PEP proof boundary visible');
 }
 
 function testReadmeLinksNavigator(): void {

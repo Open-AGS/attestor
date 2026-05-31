@@ -1,7 +1,7 @@
 # Attestor Docs
 
-Use this page when the README gave you the shape and you need the next useful
-page.
+Use this docs index when the README gave you the shape and you need the next
+useful page.
 
 Start near the top of the path. The deeper pages are still here, but they sit
 behind the job that needs them:
@@ -14,7 +14,7 @@ understand -> try -> integrate -> explain decisions -> verify claims -> maintain
 
 | If you want to... | Read this |
 |---|---|
-| Understand the product in one minute | [README](../README.md) |
+| Understand the product in one minute | [Repository README](../README.md) |
 | Run the concrete refund workflow | [Try Attestor first](01-overview/try-attestor-first.md) |
 | Run all demos in order | [Run the demos in order](01-overview/demo-guide.md) |
 | See concrete use cases | [What you can do with Attestor](01-overview/what-you-can-do.md) |
@@ -38,7 +38,7 @@ instead of restating the whole system. This table is navigation, not a new autho
 | Admission decisions | [Consequence admission quickstart](01-overview/consequence-admission-quickstart.md) |
 | Reason codes | [Reason codes](05-proof/reason-codes.md) |
 | Policy Foundry | [Policy Foundry onboarding](02-architecture/policy-foundry-onboarding.md) |
-| Current truth / no-claims | [Current state](../README.md#current-state) and [Live proof register](audit/live-proof-register.md) |
+| Current truth / no-claims | [README current state](../README.md#current-state) and [Live proof register](audit/live-proof-register.md) |
 
 ## Integrate
 
@@ -70,7 +70,7 @@ reader path.
 
 ## Evaluate Trust
 
-- [Current state](../README.md#current-state)
+- [README current state](../README.md#current-state)
 - [Attestor Evaluation Packet v0.1](00-evaluation/v0.1-evaluation-packet.md)
 - [v0.2.0 evaluation release notes](00-evaluation/v0.2.0-evaluation-release-notes.md)
 - [Security Policy](../SECURITY.md)
@@ -113,5 +113,5 @@ Keep the boundary clean:
 repo-side evidence is not live production proof
 package boundary is not hosted enforcement
 admission decision is not downstream execution
-customer gate is where non-bypassability must be proven
+customer PEP / gate is where non-bypassability must be proven
 ```

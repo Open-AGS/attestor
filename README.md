@@ -114,7 +114,7 @@ It returns a bounded decision, reasons, and proof references.
 It is not a model, agent runtime, chat wrapper, workflow app, wallet, custody layer, or payment processor.
 Without a customer-owned gate, it is evidence, not enforcement.
 
-The [data minimization and redaction policy](docs/02-architecture/data-minimization-redaction-policy.md) keeps raw prompts, tool payloads, customer identifiers, bank/payment data, wallet material, credentials, private thresholds, and downstream error bodies out of public evidence surfaces.
+The [data minimization and redaction policy](docs/02-architecture/data-minimization-redaction-policy.md) keeps raw prompts, raw tool payloads, raw customer identifiers, raw bank/payment data, wallet material, credentials, private thresholds, and downstream error bodies out of public evidence surfaces.
 
 ## Start Here
 
@@ -124,6 +124,7 @@ Start light. Go deeper only when you need the detail.
 - [How to integrate Attestor](docs/01-overview/how-to-integrate-attestor.md) - find the real side effect and place the customer-owned gate.
 - [Action surface onboarding packet](docs/02-architecture/action-surface-onboarding-packet.md) - start from existing metadata and render review-only packets, integration files, and hosted packet output without applying anything.
 - [Run Attestor in shadow pilot mode](docs/01-overview/shadow-event-payload-examples.md) - send observe-mode examples before enforcing anything.
+- [Dashboard API summary](docs/02-architecture/dashboard-api-summary.md) and [Attestor Review Surface contract](docs/02-architecture/attestor-review-surface-contract.md) - see the compact first-screen API and the review workspace contract without raw event data or enforcement claims.
 - [Consequence admission quickstart](docs/01-overview/consequence-admission-quickstart.md) - use the shared admission shape and decision vocabulary.
 - [Repository navigator](docs/01-overview/repository-navigator.md) - find deeper docs for hosted, pricing, support, proof, or maintainer work.
 - [License and use](docs/01-overview/license-and-use.md) and [Security Policy](SECURITY.md) - understand use boundaries and reporting.

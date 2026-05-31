@@ -60,6 +60,15 @@ import {
   CONSEQUENCE_DASHBOARD_API_SUMMARY_TILE_KINDS,
 } from './dashboard-api-summary.js';
 import {
+  ATTESTOR_REVIEW_SURFACE_AREAS,
+  ATTESTOR_REVIEW_SURFACE_CONTRACT_SLICES,
+  ATTESTOR_REVIEW_SURFACE_DATA_FORMS,
+  ATTESTOR_REVIEW_SURFACE_FRESHNESS_STATES,
+  ATTESTOR_REVIEW_SURFACE_LIFECYCLE_STATES,
+  ATTESTOR_REVIEW_SURFACE_STATUS_LABELS,
+  ATTESTOR_REVIEW_SURFACE_VERSION,
+} from './attestor-review-surface-contract.js';
+import {
   CONSEQUENCE_EXTERNAL_REVIEW_EVIDENCE_KINDS,
   CONSEQUENCE_EXTERNAL_REVIEW_EVIDENCE_STATUSES,
   CONSEQUENCE_EXTERNAL_REVIEW_FINDING_KINDS,
@@ -699,6 +708,13 @@ export interface ConsequenceAdmissionDescriptor {
   readonly dashboardApiSummaryTileKinds: typeof CONSEQUENCE_DASHBOARD_API_SUMMARY_TILE_KINDS;
   readonly dashboardApiSummaryAttentionKinds: typeof CONSEQUENCE_DASHBOARD_API_SUMMARY_ATTENTION_KINDS;
   readonly dashboardApiSummaryLinkKinds: typeof CONSEQUENCE_DASHBOARD_API_SUMMARY_LINK_KINDS;
+  readonly reviewSurfaceVersion: typeof ATTESTOR_REVIEW_SURFACE_VERSION;
+  readonly reviewSurfaceAreas: typeof ATTESTOR_REVIEW_SURFACE_AREAS;
+  readonly reviewSurfaceDataForms: typeof ATTESTOR_REVIEW_SURFACE_DATA_FORMS;
+  readonly reviewSurfaceContractSlices: typeof ATTESTOR_REVIEW_SURFACE_CONTRACT_SLICES;
+  readonly reviewSurfaceFreshnessStates: typeof ATTESTOR_REVIEW_SURFACE_FRESHNESS_STATES;
+  readonly reviewSurfaceLifecycleStates: typeof ATTESTOR_REVIEW_SURFACE_LIFECYCLE_STATES;
+  readonly reviewSurfaceStatusLabels: typeof ATTESTOR_REVIEW_SURFACE_STATUS_LABELS;
   readonly externalReviewFocusAreas: typeof CONSEQUENCE_EXTERNAL_REVIEW_FOCUS_AREAS;
   readonly externalReviewEvidenceKinds: typeof CONSEQUENCE_EXTERNAL_REVIEW_EVIDENCE_KINDS;
   readonly externalReviewEvidenceStatuses: typeof CONSEQUENCE_EXTERNAL_REVIEW_EVIDENCE_STATUSES;

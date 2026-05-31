@@ -14,6 +14,7 @@ export * from './audit-evidence-export.js';
 export * from './tamper-evident-history.js';
 export * from './business-risk-dashboard.js';
 export * from './dashboard-api-summary.js';
+export * from './attestor-review-surface-contract.js';
 export * from './external-review-packet.js';
 export * from './data-minimization-redaction-policy.js';
 export * from './pack-decision-profile.js';

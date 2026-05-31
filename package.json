@@ -441,6 +441,7 @@
     "test:consequence-shared-history-outbox-store": "tsx tests/consequence-shared-history-outbox-store.test.ts",
     "test:local-consequence-shared-store-rehearsal": "tsx tests/local-consequence-shared-store-rehearsal.test.ts",
     "test:consequence-dashboard-api-summary": "tsx tests/consequence-dashboard-api-summary.test.ts",
+    "test:attestor-review-surface-contract": "tsx tests/attestor-review-surface-contract.test.ts",
     "test:consequence-external-review-packet": "tsx tests/consequence-external-review-packet.test.ts",
     "test:data-minimization-redaction-policy": "tsx tests/data-minimization-redaction-policy.test.ts",
     "test:f4-prompt-leakage-marker-validation": "tsx tests/f4-prompt-leakage-marker-validation.test.ts",

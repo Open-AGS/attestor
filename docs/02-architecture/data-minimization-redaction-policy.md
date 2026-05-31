@@ -1,6 +1,6 @@
 # Data Minimization And Redaction Policy
 
-The data minimization and redaction policy is the shared privacy boundary for model feedback, proof, audit, tamper-history, dashboard, dashboard summaries, Policy Foundry active questions, Policy Foundry onboarding sessions, Policy Foundry coverage scores, Policy Foundry gate plans, Policy Foundry candidate registries, Policy Foundry counterexample ledgers, Policy Twin summaries, authority relationship contexts, review-only patch packs, outcome feedback loops, drift/policy-debt detectors, commercial boundary packets, adversarial replay executor reports, live downstream replay reports, hosted onboarding workflow reports, hosted review surfaces, hosted UI flow pages, hosted wizard state, external review, retry, and downstream receipt surfaces.
+The data minimization and redaction policy is the shared privacy boundary for model feedback, proof, audit, tamper-history, dashboard, dashboard summaries, Attestor Review Surface contracts, Policy Foundry active questions, Policy Foundry onboarding sessions, Policy Foundry coverage scores, Policy Foundry gate plans, Policy Foundry candidate registries, Policy Foundry counterexample ledgers, Policy Twin summaries, authority relationship contexts, review-only patch packs, outcome feedback loops, drift/policy-debt detectors, commercial boundary packets, adversarial replay executor reports, live downstream replay reports, hosted onboarding workflow reports, hosted review surfaces, hosted UI flow pages, hosted wizard state, external review, retry, and downstream receipt surfaces.
 
 It answers a narrow question:
 
@@ -66,6 +66,7 @@ The versioned package descriptor covers these surfaces:
 - `tamper-evident-history`
 - `business-risk-dashboard`
 - `dashboard-api-summary`
+- `attestor-review-surface`
 - `external-review-packet`
 - `downstream-presentation-binding`
 - `presentation-replay-ledger`
@@ -178,6 +179,8 @@ The audit export is digest-first review evidence. It can show what was observed,
 The dashboard is decision support. It can show action volume, review load, blocked actions, policy gaps, consequence-domain risk, downstream proof coverage, and operator-supplied aggregate impact.
 
 The dashboard API summary is the compact first-screen shape over that dashboard. It can show tiles, attention items, top domains, and links to deeper API surfaces.
+
+The Attestor Review Surface contract is the digest-first workspace shape over dashboard, queue, case, action-map, evidence, policy, and assurance views. It can show review-safe status, lifecycle, freshness, source digests, artifact references, policy references, and next safe steps.
 
 The external review packet is a reviewer handoff. It can show source evidence digests, repository evidence references, runtime/storage evidence references, checklist items, findings, and non-claims.
 

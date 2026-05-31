@@ -21,6 +21,7 @@ understand -> try -> integrate -> explain decisions -> verify claims -> maintain
 | Run a shadow pilot without an SDK | [Run Attestor in shadow pilot mode](01-overview/shadow-event-payload-examples.md) |
 | Put Attestor in front of a real service call | [How to integrate Attestor](01-overview/how-to-integrate-attestor.md) |
 | Render review files from existing metadata | [Action surface integration kit buildout](02-architecture/action-surface-integration-kit-buildout.md) |
+| Understand the review workspace contract | [Attestor Review Surface contract](02-architecture/attestor-review-surface-contract.md) |
 | Use the shared admission shape | [Consequence admission quickstart](01-overview/consequence-admission-quickstart.md) |
 | Understand allowed use | [License and use](01-overview/license-and-use.md) |
 | Navigate the repository | [Repository navigator](01-overview/repository-navigator.md) |
@@ -39,6 +40,7 @@ instead of restating the whole system. This table is navigation, not a new autho
 | Admission decisions | [Consequence admission quickstart](01-overview/consequence-admission-quickstart.md) |
 | Reason codes | [Reason codes](05-proof/reason-codes.md) |
 | Policy Foundry | [Policy Foundry onboarding](02-architecture/policy-foundry-onboarding.md) |
+| Review workspace | [Attestor Review Surface contract](02-architecture/attestor-review-surface-contract.md) |
 | Current truth / no-claims | [README current state](../README.md#current-state) and [Live proof register](audit/live-proof-register.md) |
 
 ## Integrate
@@ -95,6 +97,7 @@ reader path.
 - [Consequence admission public surface](02-architecture/consequence-admission-public-surface.md)
 - [Downstream enforcement contract](02-architecture/downstream-enforcement-contract.md)
 - [Policy Foundry onboarding](02-architecture/policy-foundry-onboarding.md)
+- [Attestor Review Surface contract](02-architecture/attestor-review-surface-contract.md)
 - [Action surface auto-context](02-architecture/action-surface-auto-context.md)
 - [Action surface onboarding packet](02-architecture/action-surface-onboarding-packet.md)
 - [Action surface integration kit buildout](02-architecture/action-surface-integration-kit-buildout.md)

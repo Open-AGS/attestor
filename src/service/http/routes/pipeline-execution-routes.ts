@@ -243,6 +243,18 @@ function connectorSchemaHash(result: ConnectorExecutionResult): string {
     .slice(0, 16);
 }
 
+const STRICT_SHA256_ARTIFACT_DIGEST = /^sha256:[0-9a-f]{64}$/u;
+
+function financeEvidenceChainArtifactDigest(runId: string, terminalHash: string): string {
+  const normalized = terminalHash.trim();
+  if (STRICT_SHA256_ARTIFACT_DIGEST.test(normalized)) {
+    return normalized;
+  }
+  return `sha256:${createHash('sha256')
+    .update(JSON.stringify({ runId, terminalHash: normalized }))
+    .digest('hex')}`;
+}
+
 function supportedExecutionProvider(provider: string): ExecutionEvidence['provider'] {
   return provider === 'fixture' || provider === 'sqlite' || provider === 'postgres'
     ? provider
@@ -422,9 +434,7 @@ export function registerPipelineExecutionRoutes(app: Hono, deps: PipelineExecuti
                     {
                       kind: 'provenance',
                       path: `finance-evidence-chain://${report.runId}`,
-                      digest: report.evidenceChain.terminalHash.startsWith('sha256:')
-                        ? report.evidenceChain.terminalHash
-                        : `sha256:${report.evidenceChain.terminalHash}`,
+                      digest: financeEvidenceChainArtifactDigest(report.runId, report.evidenceChain.terminalHash),
                     },
                   ]
                 : [],

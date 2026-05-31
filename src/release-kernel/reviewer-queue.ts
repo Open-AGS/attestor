@@ -9,6 +9,7 @@ import type {
 } from './finance-record-release.js';
 import type {
   ReleaseDecision,
+  ReleaseActorReference,
   ReleaseFinding,
   ReleasePolicyProvenanceSource,
 } from './object-model.js';
@@ -202,6 +203,7 @@ export interface ApplyBreakGlassOverrideInput {
   readonly requestedById: string;
   readonly requestedByName: string;
   readonly requestedByRole?: string | null;
+  readonly requestedByType?: ReleaseActorReference['type'];
   readonly note?: string | null;
   readonly decidedAt: string;
 }
@@ -615,7 +617,7 @@ function cloneDecisionWithBreakGlassOverride(
       ticketId: input.ticketId?.trim() || undefined,
       requestedBy: Object.freeze({
         id: requestedById,
-        type: 'user',
+        type: input.requestedByType ?? 'user',
         displayName: requestedByName,
         role: normalizeOptionalRole(input.requestedByRole) ?? undefined,
       }),

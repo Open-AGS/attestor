@@ -32,6 +32,7 @@ import { createReleaseTokenIssuer } from '../src/release-kernel/release-token.js
 import { generateKeyPair } from '../src/signing/keys.js';
 
 let passed = 0;
+const VALID_PROVENANCE_DIGEST = `sha256:${'a'.repeat(64)}`;
 
 function ok(condition: unknown, message: string): void {
   assert.ok(condition, message);
@@ -96,7 +97,7 @@ function makeFinanceReport(overrides: Record<string, unknown> = {}) {
     timestamp: '2026-04-17T23:30:00.000Z',
     decision: 'pending_approval',
     certificate: { certificateId: 'cert_finance_release_evidence' },
-    evidenceChain: { terminalHash: 'sha256:chain_terminal_release_evidence', intact: true },
+    evidenceChain: { terminalHash: VALID_PROVENANCE_DIGEST, intact: true },
     execution: {
       success: true,
       rows: [
@@ -317,9 +318,48 @@ async function main(): Promise<void> {
   ok(issuedEvidencePack.evidencePack.artifacts.some((artifact) => artifact.kind === 'review-record'), 'Release evidence pack: review-record artifact is captured');
   ok(issuedEvidencePack.evidencePack.artifacts.some((artifact) => artifact.kind === 'signature'), 'Release evidence pack: release-token artifact is captured');
   equal(
+    issuedEvidencePack.evidencePack.artifacts.find((artifact) => artifact.kind === 'provenance')?.verificationStatus,
+    'declared-unverified',
+    'Release evidence pack: caller-provided provenance artifacts are labelled declared-unverified',
+  );
+  ok(
+    issuedEvidencePack.evidencePack.artifacts
+      .filter((artifact) => artifact.kind !== 'provenance')
+      .every((artifact) => artifact.verificationStatus === 'issuer-derived'),
+    'Release evidence pack: internally derived artifacts are labelled issuer-derived',
+  );
+  equal(
     issuedEvidencePack.statement.subject[0]?.digest.sha256,
     recordWithToken.releaseDecision.outputHash.replace('sha256:', ''),
     'Release evidence pack: output subject digest binds to the release output hash',
+  );
+  let malformedArtifactDigestError: Error | null = null;
+  try {
+    await evidenceIssuer.issue({
+      decision: {
+        ...recordWithToken.releaseDecision,
+        evidencePackId: 'ep_release_evidence_bad_artifact',
+      },
+      evidencePackId: 'ep_release_evidence_bad_artifact',
+      issuedAt: '2026-04-17T23:33:30.000Z',
+      decisionLogEntries: decisionLog.entries().filter((entry) => entry.decisionId === recordWithToken.releaseDecision.id),
+      decisionLogChainIntact: decisionLog.verify().valid,
+      review: recordWithToken.detail,
+      releaseToken: issuedToken,
+      artifactReferences: [
+        {
+          kind: 'provenance',
+          path: 'finance-evidence-chain://api-finance-release-evidence',
+          digest: 'sha256:not-a-strict-digest',
+        },
+      ],
+    });
+  } catch (error) {
+    malformedArtifactDigestError = error as Error;
+  }
+  ok(
+    malformedArtifactDigestError?.message.includes('sha256:<64 lowercase hex>'),
+    'Release evidence pack: malformed caller-provided artifact digests fail closed',
   );
   equal(
     issuedEvidencePack.statement.subject[1]?.digest.sha256,

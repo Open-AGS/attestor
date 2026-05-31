@@ -126,6 +126,7 @@ export * from './action-surface-manifest-intake.js';
 export * from './action-surface-integration-artifacts.js';
 export * from './action-surface-integration-kit-artifact-drafts.js';
 export * from './action-surface-integration-kit-mcp-gateway-drafts.js';
+export * from './action-surface-integration-kit-no-bypass-probe-bundle.js';
 export * from './action-surface-integration-kit-packet.js';
 export * from './action-surface-onboarding-packet.js';
 export * from './action-surface-onboarding-review-handoff.js';

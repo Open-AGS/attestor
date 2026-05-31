@@ -260,6 +260,24 @@ Prohibited:
 - treating LLM output, telemetry, or generated docs as authority
 - claiming production readiness or non-bypassability from generated files
 
+## Render Entry Point
+
+The local renderer lives in
+`scripts/render/render-action-surface-integration-kit.ts` and is covered by
+`npm run test:action-surface-integration-kit-render`.
+
+Use it to turn reviewed metadata into a local review directory:
+
+```bash
+npm run render:action-surface-integration-kit -- --openapi=path/to/openapi.json
+```
+
+It writes `README.md`, `summary.json`, `artifact-manifest.json`,
+`no-bypass-probes.json`, `approval-record.template.json`, and review artifacts
+under `artifacts/`. It does not deploy anything, expose MCP tools, issue or
+rotate credentials, run no-bypass probes, activate enforcement, or prove
+customer PEP no-bypass.
+
 ## No-Bypass Probe Plan
 
 Every generated gate candidate must have a probe plan. The initial required

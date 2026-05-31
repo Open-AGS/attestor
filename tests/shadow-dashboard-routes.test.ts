@@ -28,13 +28,13 @@ function createEvent(input?: {
   readonly evidenceRefs?: readonly string[];
   readonly occurredAt?: string;
   readonly blocked?: boolean;
-  readonly tenantId?: string;
+  readonly tenantId?: string | null;
 }): ShadowAdmissionEvent {
   const mode = input?.mode ?? 'observe';
   return createShadowAdmissionEvent({
     admission: createGenericAdmissionEnvelope({
       mode,
-      tenantId: input?.tenantId ?? 'tenant_shadow_dashboard',
+      tenantId: input?.tenantId === undefined ? 'tenant_shadow_dashboard' : input.tenantId,
       environment: 'production',
       actor: 'support-ai-agent',
       action: input?.action ?? 'issue_refund',
@@ -758,11 +758,10 @@ async function testEmptyDashboardRoutesAreExplicit(): Promise<void> {
 async function expectDashboardTenantBoundaryFailure(
   route: string,
   message: string,
+  event: ShadowAdmissionEvent = createEvent({ tenantId: 'tenant_shadow_dashboard_foreign' }),
+  leakedTenantId: string | null = 'tenant_shadow_dashboard_foreign',
 ): Promise<void> {
-  const foreignTenantId = 'tenant_shadow_dashboard_foreign';
-  const app = createApp([
-    createEvent({ tenantId: foreignTenantId }),
-  ]);
+  const app = createApp([event]);
   const response = await app.request(route);
   const text = await response.text();
   const body = JSON.parse(text) as { readonly detail?: string };
@@ -772,7 +771,9 @@ async function expectDashboardTenantBoundaryFailure(
     typeof body.detail === 'string' && body.detail.includes('tenant boundary violation'),
     `${message}: safe tenant-boundary reason is returned`,
   );
-  ok(!text.includes(foreignTenantId), `${message}: foreign tenant id is not disclosed`);
+  if (leakedTenantId !== null) {
+    ok(!text.includes(leakedTenantId), `${message}: foreign tenant id is not disclosed`);
+  }
 }
 
 async function testDashboardRoutesRejectForeignTenantEvents(): Promise<void> {
@@ -802,6 +803,46 @@ async function testDashboardRoutesRejectForeignTenantEvents(): Promise<void> {
   );
 }
 
+async function testDashboardRoutesRejectMissingTenantEvents(): Promise<void> {
+  const event = createEvent({ tenantId: null });
+  await expectDashboardTenantBoundaryFailure(
+    '/api/v1/shadow/audit-evidence',
+    'Shadow audit evidence route',
+    event,
+    null,
+  );
+  await expectDashboardTenantBoundaryFailure(
+    '/api/v1/shadow/business-risk-dashboard',
+    'Shadow business risk route',
+    event,
+    null,
+  );
+  await expectDashboardTenantBoundaryFailure(
+    '/api/v1/shadow/dashboard-summary',
+    'Shadow dashboard summary route',
+    event,
+    null,
+  );
+  await expectDashboardTenantBoundaryFailure(
+    '/api/v1/shadow/review-surface',
+    'Shadow review surface route',
+    event,
+    null,
+  );
+  await expectDashboardTenantBoundaryFailure(
+    '/api/v1/shadow/review-surface/view',
+    'Shadow review surface HTML route',
+    event,
+    null,
+  );
+  await expectDashboardTenantBoundaryFailure(
+    `/api/v1/shadow/review-surface/cases/${encodeURIComponent('sha256:unknown-case')}`,
+    'Shadow review case route',
+    event,
+    null,
+  );
+}
+
 await testAuditEvidenceRouteIsNoStoreAndRedacted();
 await testBusinessRiskDashboardRouteIsDecisionSupportOnly();
 await testDashboardSummaryRouteReturnsCompactBusinessView();
@@ -812,5 +853,6 @@ await testReviewSurfaceCaseRouteReturnsDigestOnlyDetail();
 await testReviewSurfaceCaseRouteRejectsUnknownCase();
 await testEmptyDashboardRoutesAreExplicit();
 await testDashboardRoutesRejectForeignTenantEvents();
+await testDashboardRoutesRejectMissingTenantEvents();
 
 console.log(`Shadow dashboard route tests: ${passed} passed, 0 failed`);

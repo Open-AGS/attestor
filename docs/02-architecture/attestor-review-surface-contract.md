@@ -201,6 +201,19 @@ hosted UI product. They do not activate enforcement, mutate policy, grant
 authority, prove customer PEP no-bypass, prove production readiness, or prove
 compliance.
 
+## Hosted Route Hardening
+
+The hosted review routes share one route-hardening descriptor:
+
+- `src/service/shadow/attestor-review-surface-route-hardening.ts`
+- `attestor.review-surface-route-hardening.v1`
+- `npm run test:attestor-review-surface-route-hardening`
+
+It tracks the four hosted review routes, their `no-store` requirement, the HTML
+preview security headers, the JSON export attachment headers, the prohibited raw
+classes, and the non-authority flags. It is a guard for route drift, not a new
+runtime authority layer.
+
 ## Research Posture
 
 The contract shape follows source-backed implementation patterns, without
@@ -218,6 +231,9 @@ claiming certification:
 - RFC 8259 anchors the JSON export as a portable structured data interchange
   form, and RFC 6266 anchors the download route as an HTTP attachment rather
   than inline browser content.
+- RFC 9111 anchors the hosted review route cache posture: review, case, preview,
+  and export responses use `cache-control: no-store` because they carry
+  tenant-scoped review material.
 - OWASP API3:2023 warns against exposing sensitive object properties through
   broad API representations. The export uses an explicit artifact shape built
   from the redacted review surface instead of raw event objects.

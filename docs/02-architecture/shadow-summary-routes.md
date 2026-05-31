@@ -77,6 +77,11 @@ the same review surface plus digest-only case details. It uses a static
 download filename and does not expose raw events, prompts, payloads, recipients,
 or downstream responses.
 
+A route-hardening descriptor tracks the four hosted review routes and locks the
+expected `no-store`, HTML security-header, JSON attachment-header, redaction,
+and no-authority boundaries. Check it with
+`npm run test:attestor-review-surface-route-hardening`.
+
 ## Data Boundary
 
 The routes are read-only and data-minimized. They work from shadow metadata, digests, reason codes, action surfaces, counters, and simulation recommendations.

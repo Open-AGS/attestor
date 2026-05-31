@@ -183,6 +183,26 @@ These drafts are still review material. They do not apply the overlay, deploy
 Envoy, configure a gateway, issue credentials, activate enforcement, or prove
 that the customer route is non-bypassable.
 
+## MCP Gateway Drafts
+
+The MCP gateway draft contract lives in
+`src/consequence-admission/action-surface-integration-kit-mcp-gateway-drafts.ts`
+and is covered by
+`npm run test:action-surface-integration-kit-mcp-gateway-drafts`.
+
+It turns MCP tool surfaces from the kit packet into review-only tool entries
+and credential-isolation checks:
+
+- tool names and input schemas for review
+- source artifact digests for each tool
+- gateway-held credential target posture
+- explicit `agentDirectCredentialAllowed: false`
+- `credentialIssued: false` and `credentialRotated: false`
+
+The draft does not run an MCP server, expose tools to an agent, issue or rotate
+credentials, trust tool annotations as authority, activate enforcement, or
+prove customer PEP no-bypass.
+
 ## Human Review Contract
 
 Human review output must be compact, ranked, and role-aware:

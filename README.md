@@ -124,6 +124,7 @@ Start light. Go deeper only when you need the detail.
 - [How to integrate Attestor](docs/01-overview/how-to-integrate-attestor.md) - find the real side effect and place the customer-owned gate.
 - [Action surface auto-context](docs/02-architecture/action-surface-auto-context.md) - start from MCP, OpenAPI, AsyncAPI, workflow, or telemetry metadata; output stays review material, not enforcement.
 - [Action surface onboarding packet](docs/02-architecture/action-surface-onboarding-packet.md) - turn reviewed metadata into a review-required integration plan.
+- [Action surface integration kit buildout](docs/02-architecture/action-surface-integration-kit-buildout.md) - render review files from existing metadata before any apply or deploy step.
 - Hosted packet route: `POST /api/v1/shadow/action-surface/onboarding-packet` - render a stateless review packet.
 - [Run Attestor in shadow pilot mode](docs/01-overview/shadow-event-payload-examples.md) - send observe-mode examples before enforcing anything.
 - [Consequence admission quickstart](docs/01-overview/consequence-admission-quickstart.md) - use the shared admission shape and decision vocabulary.

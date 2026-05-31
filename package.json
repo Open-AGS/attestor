@@ -661,6 +661,7 @@
     "example:non-bypassable-gateway": "tsx examples/non-bypassable-gateway-demo.ts",
     "example:agent-retry-wrapper": "tsx examples/agent-retry-wrapper-demo.ts",
     "example:action-surface-onboarding": "tsx scripts/render/render-action-surface-onboarding-packet.ts --openapi=examples/action-surface-onboarding/refund.openapi.json --default-domain=money-movement --downstream-system=refund-service --credential-posture=agent-held-static-secret",
+    "example:action-surface-integration-kit": "tsx scripts/render/render-action-surface-integration-kit.ts --openapi=examples/action-surface-onboarding/refund.openapi.json --default-domain=money-movement --downstream-system=refund-service --credential-posture=agent-held-static-secret --target-openapi=examples/action-surface-onboarding/refund.openapi.json",
     "proof:surface": "tsx scripts/render/render-proof-surface.ts",
     "showcase:proof": "tsx scripts/render/render-proof-showcase.ts",
     "showcase:proof:hybrid": "tsx scripts/render/render-proof-showcase.ts --live-scenario counterparty",

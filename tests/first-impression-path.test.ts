@@ -114,6 +114,7 @@ function testTryFirstDocKeepsTheBoundaryHonest(): void {
   includes(doc, 'Engine Visibility', 'Try-first doc: includes engine visibility');
   includes(doc, 'npm run example:non-bypassable-gateway', 'Try-first doc: includes the non-bypassable gateway command');
   includes(doc, 'npm run example:action-surface-onboarding', 'Try-first doc: includes the action-surface onboarding example command');
+  includes(doc, 'npm run example:action-surface-integration-kit', 'Try-first doc: includes the integration kit example command');
   includes(doc, 'one is admitted', 'Try-first doc: explains admitted path');
   includes(doc, 'one is blocked fail-closed', 'Try-first doc: explains blocked path');
   includes(doc, 'proposed consequence -> Attestor admission decision -> proof refs -> downstream gate', 'Try-first doc: explains the operating shape');
@@ -155,6 +156,7 @@ function testPackageScriptsProtectThePath(): void {
   includes(packageJson.scripts['example:admission'], 'examples/first-useful-admission-demo.ts', 'Package: exposes the admission example');
   includes(packageJson.scripts['example:non-bypassable-gateway'], 'examples/non-bypassable-gateway-demo.ts', 'Package: exposes the non-bypassable gateway example');
   includes(packageJson.scripts['example:action-surface-onboarding'], 'examples/action-surface-onboarding/refund.openapi.json', 'Package: exposes the action-surface onboarding example');
+  includes(packageJson.scripts['example:action-surface-integration-kit'], 'scripts/render/render-action-surface-integration-kit.ts', 'Package: exposes the action-surface integration kit example');
   includes(packageJson.scripts['test:first-impression-path'], 'tests/first-impression-path.test.ts', 'Package: exposes the first impression guard');
   includes(packageJson.scripts.test, 'scripts/run/run-suite.mjs test', 'Package: npm test delegates to the suite runner');
   includes(packageJson.scripts.verify, 'scripts/run/run-suite.mjs verify', 'Package: verify delegates to the suite runner');

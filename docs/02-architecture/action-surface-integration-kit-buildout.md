@@ -272,6 +272,12 @@ Use it to turn reviewed metadata into a local review directory:
 npm run render:action-surface-integration-kit -- --openapi=path/to/openapi.json
 ```
 
+The bundled refund OpenAPI example uses the same renderer:
+
+```bash
+npm run example:action-surface-integration-kit
+```
+
 It writes `README.md`, `summary.json`, `artifact-manifest.json`,
 `no-bypass-probes.json`, `approval-record.template.json`, and review artifacts
 under `artifacts/`. It does not deploy anything, expose MCP tools, issue or

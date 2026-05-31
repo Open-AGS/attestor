@@ -55,6 +55,7 @@ customer application.
 | a protected adapter that cannot dispatch without allow | `npm run example:non-bypassable-gateway` | [Non-bypassable gateway demo](non-bypassable-gateway-demo.md) |
 | bounded retry feedback for an agent | `npm run example:agent-retry-wrapper` | [Agent retry wrapper demo](agent-retry-wrapper-demo.md) |
 | action-surface onboarding from an OpenAPI file | `npm run example:action-surface-onboarding` | [Action surface onboarding packet](../02-architecture/action-surface-onboarding-packet.md) |
+| integration kit review files from an OpenAPI file | `npm run example:action-surface-integration-kit` | [Action surface integration kit buildout](../02-architecture/action-surface-integration-kit-buildout.md) |
 
 ## What These Demos Do Not Prove
 

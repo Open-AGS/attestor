@@ -65,6 +65,28 @@ Before the real service call.
 Send structured action context.
 Use references and digests, not raw customer data.
 
+The buyer-facing path should not start with hand-building every admission
+field. Start with one protected action and let a gateway, proxy, SDK wrapper,
+MCP tool wrapper, or Envoy-style PEP adapter build the context from the action
+it sees:
+
+```text
+Protect: refunds.create
+Mode: observe -> review-required -> canary-enforce
+Policy: over threshold requires approval
+Evidence: payment captured, order binding, prior refund history
+Receipt: downstream refund id digest
+```
+
+The adapter may extract target system, action name, amount, resource reference,
+approval reference, evidence references, idempotency key, replay key, and
+receipt reference. It must keep raw prompts, raw customer records, payment
+details, wallet material, downstream error bodies, and secrets out of Attestor.
+
+Hand-built admission JSON is still useful for testing and custom integrations,
+but the preferred customer experience is to protect one real action and have the
+adapter build the admission request.
+
 ```json
 {
   "mode": "observe",
@@ -162,6 +184,8 @@ For review/support language, use [Reason codes](../05-proof/reason-codes.md).
 For hosted buying and package boundaries, use
 [Hosted customer journey](hosted-customer-journey.md) and
 [Commercial packaging, pricing, and evaluation](product-packaging.md).
+For target-system recipe boundaries, use the
+[target-system compatibility matrix](../02-architecture/target-system-compatibility-matrix.md).
 
 Back: [Docs front door](../README.md). Deeper map:
 [Repository navigator](repository-navigator.md).

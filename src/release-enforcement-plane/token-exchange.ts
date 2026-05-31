@@ -22,6 +22,7 @@ import {
 } from '../release-kernel/release-token.js';
 import {
   DEFAULT_RELEASE_TOKEN_TYPE_HINT,
+  ReleaseTokenIntrospectionStoreError,
   type ReleaseTokenIntrospectionStore,
   type ReleaseTokenIntrospector,
 } from '../release-kernel/release-introspection.js';
@@ -58,14 +59,28 @@ export type ReleaseTokenExchangeFailureReason =
   | 'resource-not-allowed'
   | 'invalid-target'
   | 'actor-required'
+  | 'actor-proof-required'
+  | 'actor-proof-mismatch'
   | 'ttl-policy-required'
   | 'ttl-exhausted'
   | 'inactive-subject-token'
   | 'subject-introspection-unavailable'
-  | 'child-registration-store-required';
+  | 'child-registration-store-required'
+  | 'child-token-id-conflict';
 
 export interface ReleaseTokenExchangeActor extends ReleaseActorReference {
   readonly tokenSubject?: string;
+}
+
+export type ReleaseTokenExchangeTrustedActorSource =
+  | 'account-session'
+  | 'actor-token'
+  | 'mtls-spiffe'
+  | 'trusted-exchange-gateway';
+
+export interface ReleaseTokenExchangeTrustedActor extends ReleaseTokenExchangeActor {
+  readonly proofSource: ReleaseTokenExchangeTrustedActorSource;
+  readonly proofId?: string;
 }
 
 export interface ReleaseTokenExchangePolicy {
@@ -100,6 +115,7 @@ export interface ReleaseTokenExchangeInput {
   readonly issuer: ReleaseTokenIssuer;
   readonly verificationKey: ReleaseTokenVerificationKey;
   readonly policy: ReleaseTokenExchangePolicy;
+  readonly trustedActor?: ReleaseTokenExchangeTrustedActor | null;
   readonly sourceAudience?: string;
   readonly store?: ReleaseTokenIntrospectionStore;
   readonly subjectIntrospector?: ReleaseTokenIntrospector;
@@ -344,6 +360,25 @@ function actorClaimFromRequest(
   return Object.freeze(claim);
 }
 
+function actorAuthorityKey(actor: ReleaseTokenExchangeActor): string {
+  return JSON.stringify({
+    id: normalizeIdentifier(actor.id, 'actor.id'),
+    type: actor.type,
+    tokenSubject: normalizeIdentifier(actor.tokenSubject ?? actor.id, 'actor.tokenSubject'),
+    role: actor.role ? actor.role.trim() : null,
+  });
+}
+
+function requestActorMatchesTrustedActor(input: {
+  readonly requestActor: ReleaseTokenExchangeActor | null | undefined;
+  readonly trustedActor: ReleaseTokenExchangeTrustedActor | null;
+}): boolean {
+  if (!input.requestActor || !input.trustedActor) {
+    return true;
+  }
+  return actorAuthorityKey(input.requestActor) === actorAuthorityKey(input.trustedActor);
+}
+
 function flattenActorChain(
   actor: ReleaseTokenActorClaim | undefined,
 ): readonly ReleaseTokenActorClaim[] {
@@ -389,6 +424,7 @@ function policyProvenanceFromClaims(
 function derivedDecisionForExchange(input: {
   readonly claims: ReleaseTokenClaims;
   readonly request: ReleaseTokenExchangeRequest;
+  readonly trustedActor: ReleaseTokenExchangeTrustedActor | null;
   readonly audience: string;
   readonly requestedAt: string;
   readonly expiresAt: string;
@@ -414,7 +450,7 @@ function derivedDecisionForExchange(input: {
       allowedTargets: [input.audience],
       allowedDataDomains: [],
     },
-    requester: requesterFromActorOrSubject(input.request.actor, input.claims),
+    requester: requesterFromActorOrSubject(input.trustedActor, input.claims),
     target: {
       kind: targetKindForClaims(input.claims),
       id: input.audience,
@@ -698,10 +734,10 @@ export async function exchangeReleaseToken(
   const requestedScope = normalizeScope(input.request.scope);
   const scope =
     requestedScope.length > 0 ? requestedScope : defaultScopeForClaims(claims);
-  const actor =
-    input.request.actor
-      ? actorClaimFromRequest(input.request.actor, claims.act)
-      : claims.act ?? null;
+  const trustedActor = input.trustedActor ?? null;
+  const actor = trustedActor
+    ? actorClaimFromRequest(trustedActor, claims.act)
+    : claims.act ?? null;
 
   const policyFailures: ReleaseTokenExchangeFailureReason[] = [];
   if (!input.policy.allowedAudiences.includes(audience)) {
@@ -719,7 +755,23 @@ export async function exchangeReleaseToken(
   if (!singleValueAllowed(input.policy.allowedResources, resource)) {
     policyFailures.push('resource-not-allowed');
   }
-  if (input.policy.requireActor === true && actor === null) {
+  if (
+    !requestActorMatchesTrustedActor({
+      requestActor: input.request.actor,
+      trustedActor,
+    })
+  ) {
+    policyFailures.push('actor-proof-mismatch');
+  }
+  const actorProofRequired =
+    input.policy.requireActor === true &&
+    input.request.actor !== null &&
+    input.request.actor !== undefined &&
+    trustedActor === null;
+  if (actorProofRequired) {
+    policyFailures.push('actor-proof-required');
+  }
+  if (input.policy.requireActor === true && actor === null && !actorProofRequired) {
     policyFailures.push('actor-required');
   }
 
@@ -760,6 +812,25 @@ export async function exchangeReleaseToken(
     });
   }
 
+  if (input.request.tokenId && input.store?.findToken(input.request.tokenId)) {
+    return deny({
+      request: input.request,
+      requestedAt,
+      requestedTokenType,
+      subjectTokenType,
+      actorTokenType,
+      audience,
+      resource,
+      scope,
+      exchangeMode,
+      actor,
+      subjectTokenId: claims.jti,
+      sourceAudience: claims.aud,
+      parentIntrospectionChecked,
+      failureReasons: ['child-token-id-conflict'],
+    });
+  }
+
   const exchangeId = input.request.id;
   const expiresAt = new Date(
     new Date(requestedAt).getTime() + ttlSeconds * 1000,
@@ -767,6 +838,7 @@ export async function exchangeReleaseToken(
   const decision = derivedDecisionForExchange({
     claims,
     request: input.request,
+    trustedActor,
     audience,
     requestedAt,
     expiresAt,
@@ -775,8 +847,8 @@ export async function exchangeReleaseToken(
   const issuedToken = await input.issuer.issue({
     decision,
     subject:
-      exchangeMode === 'impersonation' && input.request.actor
-        ? input.request.actor.tokenSubject ?? input.request.actor.id
+      exchangeMode === 'impersonation' && trustedActor
+        ? trustedActor.tokenSubject ?? trustedActor.id
         : claims.sub,
     issuedAt: requestedAt,
     ttlSeconds,
@@ -794,7 +866,29 @@ export async function exchangeReleaseToken(
     confirmation: claims.cnf,
   });
 
-  input.store?.registerIssuedToken({ issuedToken, decision });
+  try {
+    input.store?.registerIssuedToken({ issuedToken, decision });
+  } catch (error) {
+    if (error instanceof ReleaseTokenIntrospectionStoreError) {
+      return deny({
+        request: input.request,
+        requestedAt,
+        requestedTokenType,
+        subjectTokenType,
+        actorTokenType,
+        audience,
+        resource,
+        scope,
+        exchangeMode,
+        actor,
+        subjectTokenId: claims.jti,
+        sourceAudience: claims.aud,
+        parentIntrospectionChecked,
+        failureReasons: ['child-token-id-conflict'],
+      });
+    }
+    throw error;
+  }
 
   return Object.freeze({
     version: RELEASE_TOKEN_EXCHANGE_SPEC_VERSION,

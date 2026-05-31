@@ -206,6 +206,16 @@ async function main(): Promise<void> {
       'revoked',
       'Release introspection: file-backed store preserves revoked token state after restart',
     );
+    assert.throws(
+      () =>
+        revokedReload.registerIssuedToken({
+          issuedToken: issued,
+          decision,
+        }),
+      ReleaseTokenIntrospectionStoreError,
+      'Release introspection: duplicate registration cannot reactivate a revoked token id',
+    );
+    passed += 1;
 
     const durableSingleUse = await issuer.issue({
       decision,
@@ -227,6 +237,16 @@ async function main(): Promise<void> {
       'consumed',
       'Release introspection: file-backed store preserves consumed token state after restart',
     );
+    assert.throws(
+      () =>
+        consumedReload.registerIssuedToken({
+          issuedToken: durableSingleUse,
+          decision,
+        }),
+      ReleaseTokenIntrospectionStoreError,
+      'Release introspection: duplicate registration cannot reactivate a consumed token id',
+    );
+    passed += 1;
 
     writeFileSync(filePath, '{bad json', 'utf8');
     assert.throws(

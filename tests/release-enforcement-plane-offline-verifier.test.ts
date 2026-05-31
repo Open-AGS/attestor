@@ -352,6 +352,53 @@ async function testHighRiskNeedsOnline(): Promise<void> {
   equal(verified.freshness?.status, 'indeterminate', 'Offline verifier: freshness evaluator records missing online state');
 }
 
+async function testRequiredSenderConstraintRejectsBearer(): Promise<void> {
+  const { issuer, verificationKey } = await setupIssuer();
+  const decision = makeDecision({
+    id: 'decision-r4-bearer-sender-required',
+    consequenceType: 'record',
+    riskClass: 'R4',
+    targetId: 'finance.reporting.record-store',
+  });
+  const issued = await issuer.issue({
+    decision,
+    issuedAt: '2026-04-18T08:00:00.000Z',
+    tokenId: 'rt_r4_bearer_sender_required',
+    tenantId: 'tenant-test',
+    confirmation: createMtlsReleaseTokenConfirmation({
+      certificateThumbprint: WORKLOAD_CERT_THUMBPRINT,
+      spiffeId: WORKLOAD_SPIFFE_ID,
+    }),
+  });
+  const request = makeRequest({
+    id: 'erq-r4-bearer-sender-required',
+    targetId: 'finance.reporting.record-store',
+    boundaryKind: 'record-write',
+    pointKind: 'record-write-gateway',
+    consequenceType: 'record',
+    riskClass: 'R4',
+    releaseTokenId: issued.tokenId,
+    releaseDecisionId: decision.id,
+  });
+
+  const verified = await verifyOfflineReleaseAuthorization({
+    request,
+    presentation: bearerPresentation({
+      token: issued.token,
+      tokenId: issued.tokenId,
+      decisionId: decision.id,
+      audience: 'finance.reporting.record-store',
+      expiresAt: issued.expiresAt,
+    }),
+    verificationKey,
+    now: '2026-04-18T08:01:00.000Z',
+  });
+
+  equal(verified.status, 'invalid', 'Offline verifier: required sender constraint rejects bearer presentation');
+  deepEqual(verified.failureReasons, ['binding-mismatch'], 'Offline verifier: required sender constraint maps bearer to binding mismatch');
+  equal(verified.claims, null, 'Offline verifier: bearer presentation does not expose high-risk token claims when sender proof is required');
+}
+
 async function testMissingReplayLedgerLookupFails(): Promise<void> {
   const { issuer, verificationKey } = await setupIssuer();
   const decision = makeDecision({
@@ -539,7 +586,7 @@ async function testConsequenceAndRiskBindingMismatchFails(): Promise<void> {
   const decision = makeDecision({
     id: 'decision-risk',
     consequenceType: 'decision-support',
-    riskClass: 'R1',
+    riskClass: 'R4',
     targetId: 'analytics.memo.preview',
   });
   const issued = await issuer.issue({
@@ -551,10 +598,10 @@ async function testConsequenceAndRiskBindingMismatchFails(): Promise<void> {
   const request = makeRequest({
     id: 'erq-risk',
     targetId: 'analytics.memo.preview',
-    boundaryKind: 'communication-send',
-    pointKind: 'communication-send-gateway',
+    boundaryKind: 'http-request',
+    pointKind: 'application-middleware',
     consequenceType: 'communication',
-    riskClass: 'R3',
+    riskClass: 'R1',
     releaseTokenId: issued.tokenId,
     releaseDecisionId: decision.id,
   });
@@ -959,6 +1006,7 @@ async function testDisallowedPresentationModeFails(): Promise<void> {
 async function main(): Promise<void> {
   await testLowRiskOfflineAllow();
   await testHighRiskNeedsOnline();
+  await testRequiredSenderConstraintRejectsBearer();
   await testMissingReplayLedgerLookupFails();
   await testAudienceMismatchFails();
   await testRequestTenantIsCheckedByDefault();

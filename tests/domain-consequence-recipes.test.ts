@@ -243,8 +243,8 @@ function testDescriptorDocsAndTrackersStayAligned(): void {
   );
   includes(
     readme,
-    '[Domain consequence recipes](docs/02-architecture/domain-consequence-recipes.md)',
-    'Domain recipes: README links doc',
+    '[How to integrate Attestor](docs/01-overview/how-to-integrate-attestor.md)',
+    'Domain recipes: README links the grouped integration entry point',
   );
   includes(
     ledger,

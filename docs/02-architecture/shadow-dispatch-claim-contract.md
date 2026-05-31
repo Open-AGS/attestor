@@ -101,19 +101,11 @@ claimMode
 
 ## No-Claims
 
-R04 does not claim:
-
-- not storage claim mutation
-- not worker behavior
-- not runner invocation
-- not outbox write integration
-- not audit-plane write integration
-- not live enforcement
-- not exactly-once delivery
-- not global total ordering
-- not packet signing
-- not production readiness
-- not customer deployment readiness
+R04 stays a claim-record contract: not storage claim mutation,
+not worker behavior, not runner invocation, not outbox write integration,
+not audit-plane write integration, and not live enforcement. It also does not
+claim exactly-once delivery, global total ordering, packet signing, production
+readiness, or customer deployment readiness.
 
 R05, R06, R07, and R08 are now complete. The R-series is complete at synthetic
 fixture replay level.

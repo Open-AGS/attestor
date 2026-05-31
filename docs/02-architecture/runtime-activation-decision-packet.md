@@ -219,21 +219,13 @@ R02-R07 chain.
 
 ## No-Claims
 
-R01 does not claim:
-
-- live enforcement
-- production worker readiness
-- customer deployment readiness
-- exactly-once delivery
-- global total ordering
-- audit-plane write integration
-- external event bus delivery
-- Debezium, Temporal, AWS Lambda, or Kubernetes dependency
-- learned invariant activation
-- policy activation
-- signed packet issuance
-- raw event storage
-- compliance certification
+R01 is a decision packet, not runtime proof: no live enforcement and no
+production worker readiness. It also does not claim customer deployment
+readiness, exactly-once delivery, global total ordering,
+audit-plane write integration, external event bus delivery,
+learned invariant activation, policy activation, signed packet issuance,
+raw event storage, compliance certification, or required
+Debezium/Temporal/AWS Lambda/Kubernetes dependency.
 
 The R-series is complete. The next safe step is a separate production-worker /
 shared-store activation decision packet, if and when we choose to move beyond

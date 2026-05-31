@@ -112,13 +112,7 @@ productionReady = false
 
 ## Non-Claims
 
-This file does not claim:
-
-- production readiness
-- completed incident response process
-- NIST SP 800-61 or NIST AI RMF conformance
-- automatic policy activation
-- model training
-- score or calibration mutation
-- live downstream receipt reconciliation
-- customer notification, legal, or compliance completion
+Boundary: repository-side or evaluation evidence only: not production readiness,
+customer deployment proof, customer no-bypass proof, native connector or live
+integration coverage, compliance certification, or automatic policy activation.
+Domain-specific authority still needs separate live proof.

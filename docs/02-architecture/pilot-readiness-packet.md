@@ -126,20 +126,10 @@ recommendation, review, dry-run or plan, approval, and production cutover:
 
 ## Non-Claims
 
-This packet does not claim:
-
-- live customer pilot execution
-- production readiness
-- live customer PEP deployment
-- native connector coverage
-- target-system integration
-- non-bypassable customer enforcement
-- downstream receipt correctness
-- records-system or workflow-workspace ownership
-- compliance certification
-- clinical authority, HIPAA proof, or insurance-system authority
-- automatic policy activation
-- policy correctness
+Boundary: repository-side or evaluation evidence only: not production readiness,
+customer deployment proof, customer no-bypass proof, native connector or live
+integration coverage, compliance certification, or automatic policy activation.
+Domain-specific authority still needs separate live proof.
 
 It only proves the repository-side, digest-only pilot readiness packet contract
 that closes the 26-step master list.

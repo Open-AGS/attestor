@@ -155,12 +155,6 @@ The contract preserves these invariants:
 
 ## Non-Claims
 
-This slice does not claim:
-
-- not a calibration training engine
-- not invariant promotion
-- not live enforcement
-- not raw score authority
-- not model training
-- not production readiness
-- not scikit-learn, ICML, PMLR, or NIST conformance
+Boundary: calibration evidence only: not a calibration training engine, not
+policy activation, not live enforcement, and not production readiness. Weak or
+missing calibration can add review pressure; it cannot grant authority.

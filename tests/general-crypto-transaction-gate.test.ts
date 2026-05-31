@@ -289,8 +289,8 @@ function testDescriptorValidationDocsAndTrackersStayAligned(): void {
   );
   includes(
     readme,
-    '[General Crypto Transaction Gate](docs/02-architecture/general-crypto-transaction-gate.md)',
-    'General crypto gate: README links doc',
+    '[How to integrate Attestor](docs/01-overview/how-to-integrate-attestor.md)',
+    'General crypto gate: README links the grouped integration entry point',
   );
   includes(
     ledger,

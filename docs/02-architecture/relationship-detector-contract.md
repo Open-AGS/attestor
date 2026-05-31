@@ -116,14 +116,9 @@ do not prove formal correctness, live safety, or production readiness.
 
 ## Non-Claims
 
-This contract is:
-
-- not learned inference
-- not correlation learning
-- not fusion
-- not packet signing
-- not live enforcement
-- not policy activation
-- not production readiness
+Boundary: repository-side or evaluation evidence only: not production readiness,
+customer deployment proof, customer no-bypass proof, native connector or live
+integration coverage, compliance certification, or automatic policy activation.
+Domain-specific authority still needs separate live proof.
 
 It never grants authority and never makes a signal or action safer.

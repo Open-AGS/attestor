@@ -183,20 +183,10 @@ production deployment, or compliance readiness.
 
 ## Non-Claims
 
-This engine does not claim:
-
-- policy correctness
-- replay or backtest completion
-- enterprise integration recipe completion
-- approval automation
-- production policy-store readiness
-- native target-system connector coverage
-- customer deployment
-- non-bypassable enforcement
-- downstream receipt correctness
-- compliance certification
-- automatic policy activation
-- live customer pilot execution
+Boundary: repository-side or evaluation evidence only: not production readiness,
+customer deployment proof, customer no-bypass proof, native connector or live
+integration coverage, compliance certification, or automatic policy activation.
+Domain-specific authority still needs separate live proof.
 
 It is the ranked human-question layer that lets the next step generate
 counterexamples and replay fixtures against the right unresolved decisions.

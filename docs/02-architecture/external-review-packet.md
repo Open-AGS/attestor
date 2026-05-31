@@ -103,14 +103,10 @@ This makes the packet safe to hand to a reviewer without turning the review proc
 
 ## Non-Claims
 
-The packet explicitly does not claim:
-
-- security audit completion
-- compliance certification
-- production readiness
-- penetration testing
-- customer-side enforcement proof by itself
-- raw data export
+Boundary: repository-side or evaluation evidence only: not production readiness,
+customer deployment proof, customer no-bypass proof, native connector or live
+integration coverage, compliance certification, or automatic policy activation.
+Domain-specific authority still needs separate live proof.
 
 Those are different review outcomes. The packet helps the reviewer reach them; it does not assert them.
 

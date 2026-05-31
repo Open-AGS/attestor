@@ -189,18 +189,10 @@ deployment, or compliance readiness.
 
 ## Non-Claims
 
-This contract does not claim:
-
-- policy correctness
-- production policy-store readiness
-- native target-system connector coverage
-- customer deployment
-- non-bypassable enforcement
-- downstream receipt correctness
-- compliance certification
-- automatic policy activation
-- live customer pilot execution
-- completion of replay, backtest, review-inbox, or feedback-loop work
+Boundary: repository-side or evaluation evidence only: not production readiness,
+customer deployment proof, customer no-bypass proof, native connector or live
+integration coverage, compliance certification, or automatic policy activation.
+Domain-specific authority still needs separate live proof.
 
 It is the review-only candidate diff layer that lets the next step ask the
 smallest useful human questions without hiding evidence uncertainty.

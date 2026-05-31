@@ -121,15 +121,10 @@ Primary anchors reviewed for this inventory:
 
 ## Non-Claims
 
-This inventory does not claim:
-
-- production readiness
-- shared durable consequence storage implementation
-- migration from existing evaluation files
-- event-bus, Debezium, or worker delivery
-- customer deployment proof
-- crypto custody, wallet, exchange, or transaction broadcasting capability
-- automatic policy activation
+Boundary: repository-side or evaluation evidence only: not production readiness,
+customer deployment proof, customer no-bypass proof, native connector or live
+integration coverage, compliance certification, or automatic policy activation.
+Domain-specific authority still needs separate live proof.
 
 It only answers:
 

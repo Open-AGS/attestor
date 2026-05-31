@@ -235,17 +235,10 @@ customer deployment, or production readiness.
 
 ## Non-Claims
 
-This graph does not claim:
-
-- production event-store readiness
-- graph database deployment
-- native target-system connector coverage
-- customer deployment
-- non-bypassable enforcement
-- downstream receipt correctness
-- compliance certification
-- automatic policy activation
-- live customer pilot execution
+Boundary: repository-side or evaluation evidence only: not production readiness,
+customer deployment proof, customer no-bypass proof, native connector or live
+integration coverage, compliance certification, or automatic policy activation.
+Domain-specific authority still needs separate live proof.
 
 It is the tenant-bound action map consumed by the evidence-state, candidate,
 replay, and review work.

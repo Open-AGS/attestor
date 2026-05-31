@@ -107,14 +107,10 @@ network path, or production deployment.
 
 ## Non-Claims
 
-This adapter PR does not claim:
-
-- runtime release-token issuance uses Google Cloud KMS
-- customer-owned key custody
-- live Google Cloud KMS deployment
-- multi-cloud signer support
-- confidential-compute signing
-- production readiness
+Boundary: repository-side or evaluation evidence only: not production readiness,
+customer deployment proof, customer no-bypass proof, native connector or live
+integration coverage, compliance certification, or automatic policy activation.
+Domain-specific authority still needs separate live proof.
 
 It only adds the first real provider adapter/probe surface and keeps bootstrap
 fail-closed until issuance is explicitly wired.

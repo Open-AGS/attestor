@@ -166,12 +166,7 @@ promotion, not activation, and not enforcement.
 
 ## Non-Claims
 
-This slice does not claim:
-
-- not an invariant mining engine
-- not learned invariant promotion
-- not live enforcement
-- not policy relaxation
-- not model training
-- not production readiness
-- not Daikon, DIDUCE, Texada, Dwyer-pattern, or NIST conformance
+Boundary: review-ready candidate catalog only: not an invariant mining engine,
+not learned invariant promotion, not live enforcement, and
+not production readiness. Candidates remain reviewer-owned until separate
+evidence promotes them.

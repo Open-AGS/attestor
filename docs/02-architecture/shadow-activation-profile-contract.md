@@ -137,24 +137,12 @@ productionReady = false
 
 ## Non-Claims
 
-R02 does not claim:
-
-- worker behavior
-- outbox write integration
-- dispatcher or reconcile claim behavior
-- audit-plane write integration
-- packet signing
-- live enforcement
-- exactly-once delivery
-- not exactly-once delivery
-- global total ordering
-- not global total ordering
-- external event bus delivery
-- learned invariant activation
-- policy activation
-- raw event storage
-- production readiness
-- customer deployment readiness
+R02 stays an activation-profile contract: not worker behavior, not outbox write
+integration, not dispatcher/reconcile claim behavior, not audit-plane write
+integration, not packet signing, not live enforcement,
+not exactly-once delivery, not global total ordering, not external event bus delivery, not
+learned invariant activation, not policy activation, not raw event storage, not
+production readiness, and not customer deployment readiness.
 
 R03, R04, R05, R06, R07, and R08 are now complete. The R-series is complete at
 synthetic fixture replay level.

@@ -123,12 +123,6 @@ the later W10/W12 invariant review path.
 
 ## Non-Claims
 
-This slice does not claim:
-
-- not a baseline mining engine
-- not learned invariant promotion
-- not live enforcement
-- not cross-tenant signal aggregation
-- not model training
-- not production readiness
-- not NIST, Splunk, Microsoft, or Daikon conformance
+Boundary: cohort evidence only: not a baseline mining engine, not learned
+invariant promotion, not live enforcement, and not production readiness. It
+cannot grant authority or reduce review requirements.

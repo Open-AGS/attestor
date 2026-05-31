@@ -70,17 +70,10 @@ evidence if the COE wiring has no open findings.
 
 ## Non-Claims
 
-This hook is:
-
-- not audit-plane write
-- not external lineage export
-- not policy activation
-- not score mutation
-- not calibration mutation
-- not learning activation
-- not training activation
-- not live enforcement
-- not production readiness
+Boundary: read-only outcome-feedback hook only: not audit-plane write,
+not policy activation, not learning activation, not live enforcement, and
+not production readiness. Outcome evidence can open review pressure; it cannot
+change policy by itself.
 
 ## Next
 

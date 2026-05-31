@@ -94,14 +94,9 @@ effect.
 
 ## Non-Claims
 
-This fixture bundle does not:
-
-- run against customer infrastructure;
-- execute tools or downstream systems;
-- use credentials;
-- store raw prompt or provider payload material;
-- prove live prompt-injection resistance;
-- activate policy or enforcement;
-- replace customer PEP no-bypass proof.
+Boundary: repository-side or evaluation evidence only: not production readiness,
+customer deployment proof, customer no-bypass proof, native connector or live
+integration coverage, compliance certification, or automatic policy activation.
+Domain-specific authority still needs separate live proof.
 
 It is repo-side review material for the single Attestor consequence boundary.

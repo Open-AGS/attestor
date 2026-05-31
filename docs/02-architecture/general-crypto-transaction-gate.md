@@ -182,24 +182,12 @@ readiness.
 
 ## Non-Claims
 
-This gate does not claim:
-
-- wallet implementation
-- custody implementation
-- exchange implementation
-- transaction submission
-- key custody or signing authority
-- chain analytics classification
-- bridge, solver, bundler, facilitator, or relayer operation
-- Safe app deployment
-- x402 facilitator deployment
-- customer deployment
-- non-bypassable enforcement
-- downstream receipt correctness
-- compliance certification
-- production readiness
-- automatic policy activation
-- live customer pilot execution
+Boundary: repository-side or evaluation evidence only: not production readiness,
+customer deployment proof, customer no-bypass proof, native connector or live
+integration coverage, compliance certification, or automatic policy activation.
+Domain-specific authority still needs separate live proof.
+Crypto-specific boundary: not a wallet, custodian, signer, exchange, relayer,
+bundler, facilitator, solver, chain analytics service, or transaction submitter.
 
 It proves a repository-side, digest-only gate contract for general crypto
 consequences inside the same Shadow-to-Policy engine. The domain recipe pack is

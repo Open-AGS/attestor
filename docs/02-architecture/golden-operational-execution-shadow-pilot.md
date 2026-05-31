@@ -256,18 +256,8 @@ readiness.
 
 ## No-Claims
 
-O01-O04 do not prove:
-
-- live Kubernetes deployment;
-- live Terraform apply;
-- live GitHub deployment environment enforcement;
-- live secret-manager write or rotation;
-- incident automation correctness;
-- native CI/CD, cloud, runbook, or ticketing connector coverage;
-- raw deployment manifest, Terraform plan, secret, runbook, kubeconfig, or
-  provider credential handling;
-- customer PEP no-bypass enforcement;
-- live replay/idempotency store wiring;
-- automatic policy activation;
-- production readiness;
-- enterprise readiness.
+O01-O04 are synthetic shadow evidence only: not production readiness, live
+Kubernetes/Terraform/GitHub deployment enforcement, secret-manager writes,
+incident automation correctness, native operational connector coverage,
+customer PEP no-bypass proof, automatic policy activation, or enterprise
+readiness.

@@ -181,17 +181,9 @@ certification, customer deployment, or production readiness.
 
 ## Non-Claims
 
-This plan does not claim:
-
-- production readiness
-- live customer PEP deployment
-- live target-system integrations
-- live multi-provider LLM resilience
-- runtime external-KMS release-token issuance
-- target-bound production promotion without a passing go/no-go packet
-- crypto custody, wallet, exchange, or transaction broadcasting capability
-- healthcare, insurance, procurement, or finance compliance certification
-- automatic policy activation
-- live customer pilot execution
+Boundary: repository-side or evaluation evidence only: not production readiness,
+customer deployment proof, customer no-bypass proof, native connector or live
+integration coverage, compliance certification, or automatic policy activation.
+Domain-specific authority still needs separate live proof.
 
 It is the saved master list for the completed 26-step repository-side sequence.

@@ -38,18 +38,14 @@ The public-facing language must keep these claims true:
 
 ## Claims Explicitly Not Made
 
-The current F1-F5 closure does not claim:
-
-- production readiness across every runtime profile
-- independent compliance certification
-- SOC 2, ISO, SLSA, Sigstore, or regulatory certification
-- universal non-bypassability without customer-side enforcement points
-- public transparency-log semantics
-- external WORM/SIEM audit anchoring
-- external KMS/HSM custody
-- chain-authoritative crypto verification without verifiable adapter evidence
-- full customer-operated replay/idempotency storage at every edge
-- live multi-provider LLM resilience
+The current F1-F5 closure is repo-side claim alignment only: not production
+readiness across every runtime profile, independent compliance certification,
+SOC 2/ISO/SLSA/Sigstore/regulatory certification, universal non-bypassability
+without customer-side enforcement points, public transparency-log semantics,
+external WORM/SIEM audit anchoring, external KMS/HSM custody,
+chain-authoritative crypto verification without verifiable adapter evidence,
+full customer-operated replay/idempotency storage at every edge, or live
+multi-provider LLM resilience.
 
 ## Queue Closure State
 

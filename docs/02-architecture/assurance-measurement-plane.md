@@ -182,17 +182,7 @@ model.
 
 ## Non-Claims
 
-This contract does not claim:
-
-- production monitoring readiness
-- NIST AI RMF conformance
-- SRE maturity
-- incident-response completion
-- calibrated anomaly detection
-- statistical confidence guarantees
-- automatic policy tuning
-- automatic score or calibration mutation
-- model training readiness
-- enforcement activation
-- audit-plane write authority
-- live dashboard implementation
+Boundary: repository-side or evaluation evidence only: not production readiness,
+customer deployment proof, customer no-bypass proof, native connector or live
+integration coverage, compliance certification, or automatic policy activation.
+Domain-specific authority still needs separate live proof.

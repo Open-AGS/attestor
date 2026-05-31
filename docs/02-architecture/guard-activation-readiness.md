@@ -104,15 +104,10 @@ It sits between guard-level decision logic and integration-level readiness. Inte
 
 ## Non-Claims
 
-This contract does not claim:
-
-- production readiness
-- external certification
-- customer approval
-- non-bypassability
-- live deployment
-- automatic enforcement
-- complete guard coverage for every customer workflow
+Boundary: repository-side or evaluation evidence only: not production readiness,
+customer deployment proof, customer no-bypass proof, native connector or live
+integration coverage, compliance certification, or automatic policy activation.
+Domain-specific authority still needs separate live proof.
 
 If evidence is missing, the result is blocked with explicit blocker codes such as:
 

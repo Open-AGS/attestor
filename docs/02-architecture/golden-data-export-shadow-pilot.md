@@ -237,18 +237,9 @@ the repo-local refund demo/sandbox and OWASP Input Validation style allowlisting
 
 ## No-Claims
 
-D01-D02 do not prove:
-
-- live Snowflake execution;
-- live Databricks execution;
-- native connector coverage;
-- real customer export;
-- report correctness;
-- customer PEP no-bypass enforcement;
-- live replay/idempotency store wiring;
-- compliance certification;
-- production readiness;
-- enterprise readiness.
+D01-D02 are synthetic shadow evidence only: not production readiness, live
+Snowflake or Databricks execution, real customer export, customer PEP no-bypass
+proof, compliance certification, or enterprise readiness.
 
 ## Next Locked Target
 

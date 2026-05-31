@@ -162,11 +162,7 @@ activate policy.
 
 ## Non-Claims
 
-This file does not claim:
-
-- that the Signal Relationship Fabric is implemented
-- that hazard fusion is implemented
-- that measurement-plane metrics are implemented
-- that policy can be activated automatically
-- that this contract by itself proves safety
-- that repo-side readiness equals live deployment readiness
+Boundary: repository-side or evaluation evidence only: not production readiness,
+customer deployment proof, customer no-bypass proof, native connector or live
+integration coverage, compliance certification, or automatic policy activation.
+Domain-specific authority still needs separate live proof.

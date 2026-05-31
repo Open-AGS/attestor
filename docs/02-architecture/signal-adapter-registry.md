@@ -130,15 +130,9 @@ or formal correctness.
 
 ## Non-Claims
 
-This registry is:
-
-- not runtime adaptation
-- not relationship detection
-- not fusion
-- not packet signing
-- not live enforcement
-- not a learning system
-- not production readiness
+Boundary: adapter declaration registry only: not runtime adaptation, not
+relationship detection, not fusion, not live enforcement, and not production
+readiness. Registrations never grant authority.
 
 It never grants authority and never converts a passing check into a safe
 signal.

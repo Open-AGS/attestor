@@ -57,17 +57,9 @@ external telemetry publication.
 
 ## Non-Claims
 
-R06 does not claim:
-
-- not audit-plane write
-- not external OTel export
-- not external lineage export
-- not measurement authority
-- not outcome feedback hook
-- not live enforcement
-- not policy activation
-- not production readiness
-- not customer deployment readiness
+Boundary: digest-bound observability hook only: not audit-plane write,
+not external OTel export, not outcome feedback hook, not live enforcement, and
+not production readiness. The hook adds evidence; it cannot grant authority.
 
 ## Next
 

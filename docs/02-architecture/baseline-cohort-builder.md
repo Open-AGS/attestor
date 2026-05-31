@@ -99,17 +99,10 @@ for later review.
 
 ## Non-Claims
 
-This slice does not claim:
-
-- baseline mining engine
-- learned invariant synthesizer
-- model training
-- live enforcement
-- policy activation
-- cross-tenant aggregation
-- data-quality platform conformance
-- OpenLineage, TFDV, DVC, lakeFS, Data Cards, or Datasheets conformance
-- production readiness
+Boundary: repository-side or evaluation evidence only: not production readiness,
+customer deployment proof, customer no-bypass proof, native connector or live
+integration coverage, compliance certification, or automatic policy activation.
+Domain-specific authority still needs separate live proof.
 
 Descriptor non-claim vocabulary:
 

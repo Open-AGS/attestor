@@ -76,21 +76,11 @@ claiming a storage write.
 
 ## Non-Claims
 
-R05 does not claim:
-
-- not worker behavior
-- not claim storage mutation
-- not outbox write integration
-- not audit-plane write
-- not live enforcement
-- not policy activation
-- not lease release
-- not publish
-- not packet signing
-- not production readiness
-- not exactly-once delivery
-- not global total ordering
-- not customer deployment readiness
+Boundary: shadow dry-run invocation only: not worker behavior,
+not live enforcement, not policy activation, not production readiness,
+not storage mutation, not outbox/audit-plane write integration, not lease
+release, not publish, not packet signing, not exactly-once delivery, and not
+global total ordering.
 
 ## Next
 

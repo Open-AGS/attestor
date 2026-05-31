@@ -122,11 +122,7 @@ productionReady = false
 
 ## Non-Claims
 
-This file does not claim:
-
-- that modulator evaluation is implemented
-- that fusion math is implemented
-- that context can approve or activate policy
-- that hard denies can be overridden
-- that review requirements can be lowered
-- that repo-side readiness equals live deployment readiness
+Boundary: repository-side or evaluation evidence only: not production readiness,
+customer deployment proof, customer no-bypass proof, native connector or live
+integration coverage, compliance certification, or automatic policy activation.
+Domain-specific authority still needs separate live proof.

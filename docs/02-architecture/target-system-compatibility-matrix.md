@@ -155,20 +155,14 @@ They do not prove native Attestor integrations.
 
 ## Non-Claims
 
-This matrix does not claim:
-
-- native connector coverage
-- live Salesforce, Microsoft, ServiceNow, Workato, MuleSoft, n8n, Zapier,
-  Camunda, Snowflake, Databricks, Okta, Entra, Coupa, SAP, FHIR, Fireblocks,
-  BitGo, Coinbase CDP, Safe, or OpenZeppelin Defender integration
-- target-system certification or marketplace listing
-- customer deployment
-- production readiness
-- compliance certification
-- crypto custody, wallet, exchange, signer, relayer, chain analytics, or
-  broadcaster capability
-- healthcare clinical decision support or medical advice
-- automatic policy activation
+Boundary: repository-side compatibility evidence only: not production readiness,
+native connector coverage, live Salesforce, Microsoft, ServiceNow, Workato,
+MuleSoft, n8n, Zapier, Camunda, Snowflake, Databricks, Okta, Entra, Coupa, SAP,
+FHIR, Fireblocks, BitGo, Coinbase CDP, Safe, or OpenZeppelin Defender
+integration, target-system certification or marketplace listing, customer
+deployment, compliance certification, crypto custody/wallet/exchange/signer/
+relayer/chain analytics/broadcaster capability, healthcare clinical decision
+support or medical advice, or automatic policy activation.
 
 It is the Step 13 compatibility map for deciding the next canonical shadow
 event and action-surface contracts.

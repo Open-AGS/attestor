@@ -209,30 +209,10 @@ insurance compliance, prove clinical validation, or prove production readiness.
 
 ## Non-Claims
 
-This recipe catalog does not claim:
-
-- native connector coverage
-- Ramp, Brex, Coupa, SAP, Snowflake, Databricks, Okta, Entra, SailPoint,
-  FHIR, CDS Hooks, Guidewire ClaimCenter, or Guidewire PolicyCenter deployment
-- payment execution
-- procurement workspace
-- data lake or export service
-- identity store
-- EHR, clinical authority, clinical validation, medical device claim, or HIPAA
-  compliance proof
-- insurance core system, claim record system, policy administration system, or
-  insurance compliance proof
-- records system
-- workflow workspace
-- marketplace listing or partner certification
-- OAuth app approval
-- customer deployment
-- production readiness
-- non-bypassable enforcement
-- downstream receipt correctness
-- compliance certification
-- automatic policy activation
-- live customer pilot execution
+Boundary: repository-side or evaluation evidence only: not production readiness,
+customer deployment proof, customer no-bypass proof, native connector or live
+integration coverage, compliance certification, or automatic policy activation.
+Domain-specific authority still needs separate live proof.
 
 It is the source-backed domain placement catalog for high-friction enterprise
 consequence surfaces. The pilot readiness packet now records what is

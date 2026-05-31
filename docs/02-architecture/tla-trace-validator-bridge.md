@@ -110,15 +110,10 @@ tla-trace-rejected-boundary
 
 ## Non-Claims
 
-This bridge is:
-
-- `not-tlc-runner`
-- `not-apalache-runner`
-- `not-formal-proof`
-- `not-runtime-oracle`
-- `not-policy-activation`
-- `not-live-enforcement`
-- `not-production-ready`
+Boundary: repository-side or evaluation evidence only: not production readiness,
+customer deployment proof, customer no-bypass proof, native connector or live
+integration coverage, compliance certification, or automatic policy activation.
+Domain-specific authority still needs separate live proof.
 
 It does not prove that TypeScript runtime behavior is formally verified. It
 does not activate policy, admit a consequence, close a defeater, or write an

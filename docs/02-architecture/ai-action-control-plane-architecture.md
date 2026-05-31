@@ -213,13 +213,10 @@ Policy Foundry, failure-mode, replay, or authority graph refactors continue.
 
 ## Non-Claims
 
-- This document does not claim Attestor is production-ready.
-- This document does not claim every customer action path is non-bypassable.
-- This document does not claim external standards certify Attestor.
-- This document does not require a microservice split.
-- This document does not allow packs to become separate products.
-- This document does not allow Policy Foundry or an LLM to auto-enforce policy
-  candidates without verified approval, evidence, simulation, and rollout gates.
+Boundary: repository-side or evaluation evidence only: not production readiness,
+customer deployment proof, customer no-bypass proof, native connector or live
+integration coverage, compliance certification, or automatic policy activation.
+Domain-specific authority still needs separate live proof.
 
 ## Next Steps
 

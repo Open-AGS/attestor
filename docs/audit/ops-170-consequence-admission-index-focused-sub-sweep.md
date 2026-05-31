@@ -106,14 +106,10 @@ statements.
 Added a machine-checkable coverage guard for the OPS-170 focused sub-sweep:
 `npm run test:consequence-admission-index-surface`.
 
-This does not claim:
-
-- full modular decomposition of `index.ts`;
-- full line-by-line behavioral audit of every consequence-admission file;
-- full assertion-depth review of every admission/consequence test;
-- production readiness, enterprise readiness, Customer PEP no-bypass proof, or
-  live retry shared-store proof;
-- does not change internal decision math.
+This does not claim full `index.ts` decomposition, full line-by-line
+consequence-admission audit coverage, assertion-depth coverage of every related
+test, production or enterprise readiness, Customer PEP no-bypass proof, live
+retry shared-store proof, or any internal decision-math change.
 
 ## Verdict
 

@@ -72,13 +72,10 @@ decision engines.
 
 ## Non-Claims
 
-- The boundary does not activate enforcement.
-- The boundary does not prove customer workflow coverage.
-- The boundary does not make finance, crypto, filing, or any future pack production-ready.
-- The boundary does not remove the need for a real customer-side PEP, gateway,
-  verifier, or adapter before downstream execution.
-- The boundary does not turn Attestor into a wallet, custody platform, filing
-  platform, or general orchestration layer.
+Boundary: repository-side or evaluation evidence only: not production readiness,
+customer deployment proof, customer no-bypass proof, native connector or live
+integration coverage, compliance certification, or automatic policy activation.
+Domain-specific authority still needs separate live proof.
 
 ## Verification
 

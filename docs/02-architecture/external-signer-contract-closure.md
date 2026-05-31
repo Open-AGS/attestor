@@ -118,15 +118,10 @@ provider call.
 
 ## Non-Claims
 
-This contract closure does not claim:
-
-- live Google Cloud KMS signing
-- external KMS/HSM custody
-- customer-owned key custody
-- production readiness
-- multi-cloud signer support
-- confidential-compute signing
-- public transparency-log inclusion
+Boundary: repository-side or evaluation evidence only: not production readiness,
+customer deployment proof, customer no-bypass proof, native connector or live
+integration coverage, compliance certification, or automatic policy activation.
+Domain-specific authority still needs separate live proof.
 
 It only closes the repository-side proof envelope and diagnostics contract that
 the first real provider adapter must satisfy.

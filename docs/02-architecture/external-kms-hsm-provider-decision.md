@@ -134,15 +134,10 @@ Attestor deployment has called those providers.
 
 ## Non-Claims
 
-This decision does not claim:
-
-- live Google Cloud KMS signing
-- external KMS/HSM custody for Attestor
-- customer-owned key custody
-- production readiness
-- multi-cloud signer support
-- confidential-compute signing
-- Azure or AWS adapters
+Boundary: repository-side or evaluation evidence only: not production readiness,
+customer deployment proof, customer no-bypass proof, native connector or live
+integration coverage, compliance certification, or automatic policy activation.
+Domain-specific authority still needs separate live proof.
 
 It only selects the first provider and the minimum contract the first adapter
 must satisfy.

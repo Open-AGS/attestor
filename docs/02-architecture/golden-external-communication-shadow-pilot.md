@@ -256,15 +256,7 @@ database, and never stores raw message, recipient, or customer identifiers.
 
 ## No-Claims
 
-E01-E04 do not prove:
-
-- live email, SMS, ticketing, CRM, or public-post delivery;
-- native SendGrid, Mailgun, CRM, Zendesk, Slack, or social-platform connector coverage;
-- commercial email legal compliance;
-- legal approval correctness;
-- support response correctness;
-- customer PEP no-bypass enforcement;
-- live replay/idempotency store wiring;
-- automatic policy activation;
-- production readiness;
-- enterprise readiness.
+E01-E04 are synthetic shadow evidence only: not production readiness, live
+message/ticket/CRM delivery, native communication connector coverage, legal or
+support correctness, customer PEP no-bypass proof, automatic policy activation,
+or enterprise readiness.

@@ -208,21 +208,10 @@ deployment, live replay execution, crypto custody, or compliance readiness.
 
 ## Non-Claims
 
-This generator does not claim:
-
-- policy correctness
-- replay or backtest completion
-- enterprise integration recipe completion
-- approval automation
-- production policy-store readiness
-- live target-system connector coverage
-- customer deployment
-- non-bypassable enforcement
-- downstream receipt correctness
-- crypto custody, wallet, exchange, or transaction broadcasting capability
-- compliance certification
-- automatic policy activation
-- live customer pilot execution
+Boundary: repository-side or evaluation evidence only: not production readiness,
+customer deployment proof, customer no-bypass proof, native connector or live
+integration coverage, compliance certification, or automatic policy activation.
+Domain-specific authority still needs separate live proof.
 
 It is the negative-fixture layer that makes Policy Twin backtesting harder to
 fool than happy-path replay.

@@ -66,13 +66,8 @@ npm run test:production-shared-multi-instance-recovery
 
 ## No-Claims
 
-This rehearsal does not close:
-
-- `LP-SHARED-REPLAY-STORE`;
-- `LP-SHARED-INTROSPECTION-STORE`;
-- `LP-CONSEQUENCE-RETRY-ATTEMPT-LEDGER-SHARED-STORE`;
-- customer PEP no-bypass proof;
-- external KMS runtime signing proof;
-- production, live, enterprise, or compliance readiness.
+This rehearsal leaves the shared replay/introspection/retry-attempt live-proof
+items open. It is not customer PEP no-bypass proof, external KMS runtime signing
+proof, or production, live, enterprise, or compliance readiness.
 
 Those remain live/operator/customer proof items.

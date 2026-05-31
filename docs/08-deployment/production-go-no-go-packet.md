@@ -130,13 +130,7 @@ or customer deployment.
 
 ## Non-Claims
 
-This packet does not claim:
-
-- readiness for any environment other than the named target
-- live customer PEP traffic cutover unless `customer-enforcement` scope passes
-- live LLM provider route readiness unless provider-route mode is `required`
-  and the provider proof digest gate passes
-- external compliance certification
-- independent security approval
-- market validation
-- a blanket production guarantee
+Boundary: repository-side or evaluation evidence only: not production readiness,
+customer deployment proof, customer no-bypass proof, native connector or live
+integration coverage, compliance certification, or automatic policy activation.
+Domain-specific authority still needs separate live proof.

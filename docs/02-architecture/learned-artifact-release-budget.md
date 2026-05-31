@@ -94,15 +94,10 @@ about the events that produced it.
 
 ## Non-Claims
 
-- `not-differential-privacy-engine`
-- `not-dp-guarantee`
-- `not-learned-artifact-release`
-- `not-cross-tenant-aggregation`
-- `not-public-release`
-- `not-runtime-budget-store`
-- `not-model-training`
-- `not-policy-activation`
-- `not-production-ready`
+Boundary: repository-side or evaluation evidence only: not production readiness,
+customer deployment proof, customer no-bypass proof, native connector or live
+integration coverage, compliance certification, or automatic policy activation.
+Domain-specific authority still needs separate live proof.
 
 I01 only adds a release-budget and reconstruction-risk contract. It does not
 release artifacts, mine cohorts, synthesize invariants, calibrate confidence,

@@ -99,15 +99,10 @@ certification, customer deployment, or production readiness.
 
 ## Non-Claims
 
-This proof plan does not claim:
-
-- live customer PEP deployment
-- production readiness
-- universal route non-bypassability
-- runtime external-KMS release-token issuance
-- OAuth certification
-- live authorization-server operation
-- complete downstream receipt reconciliation
+Boundary: repository-side or evaluation evidence only: not production readiness,
+customer deployment proof, customer no-bypass proof, native connector or live
+integration coverage, compliance certification, or automatic policy activation.
+Domain-specific authority still needs separate live proof.
 
 It only defines the smallest route contract needed before the customer PEP
 adoption package can be reviewed coherently.

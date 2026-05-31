@@ -101,15 +101,10 @@ artifacts. They generate assurance-case material:
 
 ## Non-Claims
 
-- `not-live-enforcement`
-- `not-runtime-assurance-engine`
-- `not-sacm-conformance-claim`
-- `not-gsn-tooling`
-- `not-formal-proof`
-- `not-reviewer-ui`
-- `not-learning-system`
-- `not-policy-activation`
-- `not-production-ready`
+Boundary: repository-side or evaluation evidence only: not production readiness,
+customer deployment proof, customer no-bypass proof, native connector or live
+integration coverage, compliance certification, or automatic policy activation.
+Domain-specific authority still needs separate live proof.
 
 I00 only gives the shared argument shape. It does not prove that a candidate is
 safe, does not promote learned invariants, does not run against live customers,

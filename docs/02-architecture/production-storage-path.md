@@ -229,14 +229,10 @@ Primary anchors:
 
 ## Non-Claims
 
-This gate does not claim:
-
-- a full production shared store for every consequence-admission surface exists
-  today
-- file-backed evaluation history is safe for multi-node production
-- audit exports or dashboards are compliance certifications
-- storage readiness replaces customer-side enforcement
-- storage readiness replaces external environment rehearsal
+Boundary: repository-side or evaluation evidence only: not production readiness,
+customer deployment proof, customer no-bypass proof, native connector or live
+integration coverage, compliance certification, or automatic policy activation.
+Domain-specific authority still needs separate live proof.
 
 It only gives the runtime and promotion packet a crisp answer:
 

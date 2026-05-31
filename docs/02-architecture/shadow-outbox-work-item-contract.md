@@ -105,18 +105,10 @@ for replay and review.
 
 ## No-Claims
 
-R03 does not claim:
-
-- not claim behavior
-- not worker behavior
-- not outbox write integration
-- audit-plane write integration
-- not live enforcement
-- exactly-once delivery
-- global total ordering
-- packet signing
-- production readiness
-- customer deployment readiness
+R03 stays a pending work-item contract: not claim behavior, not worker behavior,
+not outbox write integration, and not live enforcement. It also does not claim
+audit-plane write integration, exactly-once delivery, global total ordering,
+packet signing, production readiness, or customer deployment readiness.
 
 R04, R05, R06, R07, and R08 are now complete. The R-series is complete at
 synthetic fixture replay level.

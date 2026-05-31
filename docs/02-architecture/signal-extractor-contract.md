@@ -149,15 +149,9 @@ evidence refs. They do not prove production readiness or formal correctness.
 
 ## Non-Claims
 
-This contract is:
-
-- not adapter registry
-- not relationship detection
-- not fusion
-- not packet signing
-- not live enforcement
-- not a learning system
-- not a production deployment claim
+Boundary: signal extraction contract only: not adapter registry,
+not relationship detection, not fusion, not live enforcement, and not production
+readiness. It never reads raw payload and never grants authority.
 
 It never reads raw payload, never grants authority, and never makes an action
 safe.

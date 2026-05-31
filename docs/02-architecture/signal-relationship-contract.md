@@ -125,12 +125,7 @@ consequence envelope
 
 ## Non-Claims
 
-This file does not claim:
-
-- that relationship-aware hazard fusion is implemented
-- that signal scoring is implemented
-- that causal inference is implemented
-- that duplicate discounting is implemented
-- that review or block outcomes are produced here
-- that policy can be activated automatically
-- that repo-side readiness equals live deployment readiness
+Boundary: repository-side or evaluation evidence only: not production readiness,
+customer deployment proof, customer no-bypass proof, native connector or live
+integration coverage, compliance certification, or automatic policy activation.
+Domain-specific authority still needs separate live proof.

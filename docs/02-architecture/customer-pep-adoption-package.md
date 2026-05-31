@@ -120,16 +120,10 @@ customer deployment, compliance certification, or production readiness.
 
 ## Non-Claims
 
-This package does not claim:
-
-- live customer PEP deployment
-- production readiness
-- universal route non-bypassability
-- customer traffic cutover
-- customer-operated monitoring
-- external KMS/HSM runtime release-token issuance
-- live authorization-server operation
-- complete downstream receipt reconciliation
+Boundary: repository-side or evaluation evidence only: not production readiness,
+customer deployment proof, customer no-bypass proof, native connector or live
+integration coverage, compliance certification, or automatic policy activation.
+Domain-specific authority still needs separate live proof.
 
 It is the smallest machine-readable adoption package that can close step 06
 without overclaiming runtime deployment.

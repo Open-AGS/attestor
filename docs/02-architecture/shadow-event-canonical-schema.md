@@ -223,17 +223,10 @@ production operation.
 
 ## Non-Claims
 
-This schema does not claim:
-
-- production event-store readiness
-- SIEM/export integration
-- native target-system connector coverage
-- customer deployment
-- compliance certification
-- automatic policy activation
-- raw-payload retention safety
-- live downstream receipt reconciliation
-- live customer pilot execution
+Boundary: repository-side or evaluation evidence only: not production readiness,
+customer deployment proof, customer no-bypass proof, native connector or live
+integration coverage, compliance certification, or automatic policy activation.
+Domain-specific authority still needs separate live proof.
 
 It is the canonical event input for graph, evidence, candidate, replay, and
 review-by-exception work.

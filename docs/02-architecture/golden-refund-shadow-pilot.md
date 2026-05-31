@@ -223,18 +223,7 @@ deployment, live connector coverage, compliance claims, and scoped enforcement.
 
 ## No-Claims
 
-This document does not claim:
-
-- production readiness;
-- live Stripe connector coverage;
-- live Shopify connector coverage;
-- Google Cloud deployment;
-- GKE deployment;
-- GCP KMS signing;
-- live customer pilot execution;
-- scoped pilot readiness;
-- live enforcement;
-- refund execution;
-- refund product status;
-- refund engine status;
-- compliance readiness.
+This document is synthetic shadow evidence only: not production readiness, live
+Stripe or Shopify connector coverage, cloud/KMS deployment, live customer pilot
+execution, scoped enforcement, refund execution, refund product status, or
+compliance readiness.

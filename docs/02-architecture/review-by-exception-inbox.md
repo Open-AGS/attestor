@@ -183,21 +183,10 @@ deployment, live workflow execution, crypto custody, or compliance readiness.
 
 ## Non-Claims
 
-This inbox does not claim:
-
-- policy correctness
-- approval automation
-- enterprise integration recipe completion
-- production task queue readiness
-- production policy-store readiness
-- live target-system connector coverage
-- customer deployment
-- non-bypassable enforcement
-- downstream receipt correctness
-- crypto custody, wallet, exchange, or transaction broadcasting capability
-- compliance certification
-- automatic policy activation
-- live customer pilot execution
+Boundary: repository-side or evaluation evidence only: not production readiness,
+customer deployment proof, customer no-bypass proof, native connector or live
+integration coverage, compliance certification, or automatic policy activation.
+Domain-specific authority still needs separate live proof.
 
 It is the digest-bound triage layer that lets the next step turn approvals,
 dismissals, stricter-version requests, threshold edits, and rollback decisions

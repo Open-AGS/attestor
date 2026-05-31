@@ -144,18 +144,9 @@ and tests are stable.
 
 ## Non-Claims
 
-This annex does not claim:
-
-- production readiness
-- safety certification
-- NIST AI RMF conformance
-- STPA completeness
-- FMEA completion
-- probabilistic risk assessment completion
-- live customer deployment
-- native connector coverage
-- formal verification
-- trained hazard models
-- automatic policy activation
+This annex is a source map only: not production readiness, safety certification,
+NIST AI RMF conformance, STPA/FMEA/PRA completion, live customer deployment,
+native connector coverage, formal verification, trained hazard models, or
+automatic policy activation.
 
 It is a bounded source map for the next Attestor architecture phase.

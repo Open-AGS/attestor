@@ -153,8 +153,8 @@ function testDocsAndScriptsStayAligned(): void {
   );
   includes(
     readme,
-    '[Golden Path: External Communication](docs/02-architecture/golden-external-communication-shadow-pilot.md)',
-    'E04 README: adds external communication golden path link',
+    '[Run the demos in order](docs/01-overview/demo-guide.md)',
+    'E04 README: links the grouped demo guide',
   );
   equal(
     packageJson.scripts['demo:golden-external-communication'],

@@ -163,16 +163,10 @@ customer deployment readiness.
 
 ## Non-Claims
 
-This projector is:
-
-- not live enforcement
-- not signal extraction
-- not fusion
-- not packet signing
-- not TLA+-checked
-- not a learned invariant engine
-- not cross-tenant aggregation
-- not production readiness
+Boundary: pure deterministic projection only: not live enforcement,
+not signal extraction, not fusion, not TLA+-checked, and not production
+readiness. It never mutates the source event, never reads raw payload, and
+never grants authority.
 
 It never mutates the `CanonicalShadowEvent`, never reads raw payload, and never
 grants authority. In short: never grants authority.

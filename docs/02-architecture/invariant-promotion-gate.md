@@ -141,12 +141,7 @@ The promotion gate preserves these invariants:
 
 ## Non-Claims
 
-This slice does not claim:
-
-- not live enforcement
-- not auto-promotion
-- not policy relaxation
-- not policy mutation
-- not model training
-- not production readiness
-- not GitHub, LaunchDarkly, Kubernetes, Google SRE, or NIST conformance
+Boundary: review-only strengthening patch handoff: no live enforcement,
+no auto-promotion, no relaxation, and not production readiness. Promotion still
+needs an independent reviewer, rollout plan, rollback plan, and separate live
+proof.

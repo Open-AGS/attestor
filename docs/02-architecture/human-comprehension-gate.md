@@ -88,13 +88,7 @@ productionReady = false
 
 ## Non-Claims
 
-This file does not claim:
-
-- live reviewer capacity
-- completed reviewer UX
-- human-factors certification
-- NIST AI RMF conformance
-- production readiness
-- automatic policy activation
-- runtime enforcement
-- that a compact packet proves reviewer understanding
+Boundary: repository-side or evaluation evidence only: not production readiness,
+customer deployment proof, customer no-bypass proof, native connector or live
+integration coverage, compliance certification, or automatic policy activation.
+Domain-specific authority still needs separate live proof.

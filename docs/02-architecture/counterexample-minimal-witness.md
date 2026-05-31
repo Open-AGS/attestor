@@ -123,19 +123,10 @@ Held records create no evidence node and no defeater.
 
 ## Non-Claims
 
-I05 does not claim:
-
-- `not-replay-execution-engine`
-- `not-policy-correctness-proof`
-- `not-target-system-integration`
-- `not-production-traffic`
-- `not-credential-use`
-- `not-model-training`
-- `not-automatic-claim-rejection`
-- `not-automatic-promotion`
-- `not-policy-activation`
-- `not-live-enforcement`
-- `not-production-ready`
+Boundary: repository-side or evaluation evidence only: not production readiness,
+customer deployment proof, customer no-bypass proof, native connector or live
+integration coverage, compliance certification, or automatic policy activation.
+Domain-specific authority still needs separate live proof.
 
 ## Next Step
 

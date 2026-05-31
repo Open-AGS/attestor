@@ -173,17 +173,10 @@ production readiness.
 
 ## Non-Claims
 
-This model does not claim:
-
-- production evidence-store readiness
-- native target-system connector coverage
-- customer deployment
-- non-bypassable enforcement
-- downstream receipt correctness
-- compliance certification
-- automatic policy activation
-- policy candidate correctness
-- live customer pilot execution
+Boundary: repository-side or evaluation evidence only: not production readiness,
+customer deployment proof, customer no-bypass proof, native connector or live
+integration coverage, compliance certification, or automatic policy activation.
+Domain-specific authority still needs separate live proof.
 
 It is the explicit evidence-state layer that lets the next step generate
 candidate diffs without hiding uncertainty.

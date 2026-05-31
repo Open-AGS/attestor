@@ -106,11 +106,7 @@ hazard, fusion throws instead of returning a misleading
 
 ## Non-Claims
 
-This file does not claim:
-
-- that the score is calibrated
-- that causal inference is implemented
-- that formal verification is implemented
-- that review or block decisions are made here
-- that policy can be activated automatically
-- that repo-side readiness equals live deployment readiness
+Boundary: repository-side or evaluation evidence only: not production readiness,
+customer deployment proof, customer no-bypass proof, native connector or live
+integration coverage, compliance certification, or automatic policy activation.
+Domain-specific authority still needs separate live proof.

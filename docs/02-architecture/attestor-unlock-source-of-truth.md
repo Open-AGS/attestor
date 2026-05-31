@@ -132,15 +132,9 @@ provider dependence is in scope, incident/runbook evidence, and human approval.
 
 ## Non-Claims
 
-This tracker does not claim:
-
-- production readiness
-- external KMS/HSM custody
-- live customer PEP deployment
-- OAuth, cloud-provider, SOC 2, ISO, or security audit certification
-- multi-provider LLM resilience
-- multi-region or customer-operated deployment readiness
-- runtime external-KMS release-token issuance
-- target-bound production promotion without a passing go/no-go packet
+Boundary: repository-side or evaluation evidence only: not production readiness,
+customer deployment proof, customer no-bypass proof, native connector or live
+integration coverage, compliance certification, or automatic policy activation.
+Domain-specific authority still needs separate live proof.
 
 It is only the decision map for the next unlock sequence.

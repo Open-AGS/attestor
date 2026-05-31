@@ -35,7 +35,7 @@ The planner remains read-only. Step 05 adds the live substrate probe; until `npm
 
 ## Non-Claims
 
-- This profile is not a hosted public SaaS launch.
-- This profile is not customer-operated production readiness.
-- This profile does not prove external PostgreSQL, Redis, secret, TLS, DNS, or observability readiness.
-- This profile does not add a hosted crypto route or split Attestor into a second product.
+Boundary: repository-side or evaluation evidence only: not production readiness,
+customer deployment proof, customer no-bypass proof, native connector or live
+integration coverage, compliance certification, or automatic policy activation.
+Domain-specific authority still needs separate live proof.

@@ -123,12 +123,7 @@ consequence can execute.
 
 ## Non-Claims
 
-This file does not claim:
-
-- production signing readiness
-- external transparency log or immutable-store publication
-- in-toto, DSSE, JWS, JWT, or NIST conformance
-- runtime admission authority
-- automatic policy activation
-- completed verifier distribution
-- that an evaluation signature is acceptable for production enforcement
+Boundary: repository-side or evaluation evidence only: not production readiness,
+customer deployment proof, customer no-bypass proof, native connector or live
+integration coverage, compliance certification, or automatic policy activation.
+Domain-specific authority still needs separate live proof.

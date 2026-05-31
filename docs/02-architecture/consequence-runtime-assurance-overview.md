@@ -1244,19 +1244,12 @@ coverage, or mathematical correctness of future Attestor implementations.
 
 ## Non-Claims
 
-This overview does not claim:
-
-- production readiness
-- NIST AI RMF conformance
-- safety certification
-- live customer deployment
-- live target-system integration
-- external immutable log coverage
-- formal verification
-- trained hazard models
-- automatic policy activation
-- that measurement metrics can tune enforcement
-- that the current repository implements a production runtime assurance system
+Boundary: repository-side implementation plan only: not production readiness,
+NIST AI RMF conformance, safety certification, live customer deployment, live
+target-system integration, external immutable log coverage, formal
+verification, trained hazard models, automatic policy activation,
+that measurement metrics can tune enforcement, or
+that the current repository implements a production runtime assurance system.
 
 It records the next sequenced implementation plan after the completed
 Shadow-to-Policy master list.

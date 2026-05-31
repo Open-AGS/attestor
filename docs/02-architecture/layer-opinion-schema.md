@@ -141,11 +141,7 @@ make a consequence safe.
 
 ## Non-Claims
 
-This file does not claim:
-
-- that any advisory layer is implemented
-- that hazard fusion is implemented
-- that conformal prediction is implemented
-- that calibration metrics are implemented
-- that an opinion can approve or activate policy
-- that repo-side readiness equals live deployment readiness
+Boundary: repository-side or evaluation evidence only: not production readiness,
+customer deployment proof, customer no-bypass proof, native connector or live
+integration coverage, compliance certification, or automatic policy activation.
+Domain-specific authority still needs separate live proof.

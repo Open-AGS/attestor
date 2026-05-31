@@ -110,15 +110,10 @@ not-live-enforcement
 not-production-ready
 ```
 
-This slice does not claim:
-
-- Daikon, Texada, Synoptic, Dwyer-pattern, CodeQL, SACM, or GSN conformance
-- formal proof
-- model training
-- automatic invariant synthesis
-- automatic policy promotion
-- live enforcement
-- production readiness
+Boundary: repository-side or evaluation evidence only: not production readiness,
+customer deployment proof, customer no-bypass proof, native connector or live
+integration coverage, compliance certification, or automatic policy activation.
+Domain-specific authority still needs separate live proof.
 
 ## Files
 

@@ -65,19 +65,10 @@ it is not customer outcome evidence.
 
 ## Non-Claims
 
-R08 does not claim:
-
-- not production worker
-- not target-system call
-- not audit-plane write
-- not external event bus delivery
-- not external trace export
-- not external lineage export
-- not policy activation
-- not learning activation
-- not training activation
-- not live enforcement
-- not production readiness
+Boundary: synthetic fixture replay only: not target-system call,
+not audit-plane write, not production worker, not live enforcement, and
+not production readiness. It proves the R02-R07 contract chain only at fixture
+level.
 
 ## Result
 

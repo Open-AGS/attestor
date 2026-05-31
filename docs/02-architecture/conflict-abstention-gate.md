@@ -82,12 +82,7 @@ productionReady = false
 
 ## Non-Claims
 
-This file does not claim:
-
-- calibrated probability or conformal validity
-- causal inference
-- formal verification
-- automatic policy activation
-- runtime enforcement
-- production readiness
-- that review or block decisions are final admission decisions
+Boundary: repository-side or evaluation evidence only: not production readiness,
+customer deployment proof, customer no-bypass proof, native connector or live
+integration coverage, compliance certification, or automatic policy activation.
+Domain-specific authority still needs separate live proof.

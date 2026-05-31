@@ -126,13 +126,10 @@ record that later steps can turn into assurance-case nodes and transitions.
 
 ## Non-Claims
 
-- `not-live-enforcement`
-- `not-admission-decision`
-- `not-policy-activation`
-- `not-learning-system`
-- `not-provenance-standard-conformance`
-- `not-data-quality-platform`
-- `not-production-ready`
+Boundary: repository-side or evaluation evidence only: not production readiness,
+customer deployment proof, customer no-bypass proof, native connector or live
+integration coverage, compliance certification, or automatic policy activation.
+Domain-specific authority still needs separate live proof.
 
 ## Next Step
 

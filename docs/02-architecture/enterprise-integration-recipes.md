@@ -201,20 +201,10 @@ readiness.
 
 ## Non-Claims
 
-This recipe catalog does not claim:
-
-- native connector coverage
-- Salesforce, Microsoft, ServiceNow, Workato, MuleSoft, n8n, Zapier, Zendesk,
-  Intercom, Snowflake, Databricks, Okta, Entra, or SailPoint deployment
-- marketplace listing or partner certification
-- OAuth app approval
-- customer deployment
-- production readiness
-- non-bypassable enforcement
-- downstream receipt correctness
-- compliance certification
-- automatic policy activation
-- live customer pilot execution
+Boundary: repository-side or evaluation evidence only: not production readiness,
+customer deployment proof, customer no-bypass proof, native connector or live
+integration coverage, compliance certification, or automatic policy activation.
+Domain-specific authority still needs separate live proof.
 
 It is the source-backed placement catalog for enterprise target systems. The
 domain recipe pack and pilot readiness packet are now recorded separately; live

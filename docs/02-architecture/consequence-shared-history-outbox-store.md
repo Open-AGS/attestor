@@ -152,13 +152,7 @@ Still not complete:
 
 ## Non-Claims
 
-This step does not claim:
-
-- production readiness
-- runtime shared-store cutover
-- migrated existing file-backed history
-- live worker processing
-- Debezium, Kafka, queue, or event-bus delivery
-- customer deployment proof
-- crypto custody, wallet, exchange, broadcaster, or chain analytics capability
-- automatic policy activation
+Boundary: repository-side or evaluation evidence only: not production readiness,
+customer deployment proof, customer no-bypass proof, native connector or live
+integration coverage, compliance certification, or automatic policy activation.
+Domain-specific authority still needs separate live proof.

@@ -9,6 +9,12 @@ It is not an apply step. It does not deploy gateways, issue credentials,
 activate provider connectors, turn on enforcement, or make a production
 readiness claim.
 
+Its supporting components stay inside this path: [Action Surface Manifest
+Intake](action-surface-manifest-intake.md), [Action Surface Declaration
+Ingestors](action-surface-declaration-ingestors.md), [Action Surface
+Profiler](action-surface-profiler.md), and [Action Surface Integration
+Artifacts](action-surface-integration-artifacts.md).
+
 ## Why It Exists
 
 Attestor should not ask customers to complete a blank policy editor before it

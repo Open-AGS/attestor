@@ -240,8 +240,10 @@ function testDescriptorAndDocs(): void {
   includes(doc, 'MCP', 'Action surface profiler doc: MCP anchor is documented');
   includes(doc, '`gateway-proxy`', 'Action surface profiler doc: gateway proxy recommendation is documented');
 
+  const onboardingDoc = readProjectFile('docs', '02-architecture', 'action-surface-onboarding-packet.md');
+  includes(onboardingDoc, '[Action Surface\nProfiler](action-surface-profiler.md)', 'Onboarding packet embeds action surface profiler link');
+
   const readme = readProjectFile('README.md');
-  includes(readme, '[Action surface profiler](docs/02-architecture/action-surface-profiler.md)', 'README links action surface profiler');
   excludes(readme, /automatically makes downstream execution non-bypassable/iu, 'README does not overclaim automatic non-bypassability');
 
   const pkg = JSON.parse(readProjectFile('package.json')) as {

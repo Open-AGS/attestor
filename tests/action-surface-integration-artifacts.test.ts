@@ -207,8 +207,14 @@ function testDescriptorDocsAndValidation(): void {
   includes(doc, 'review drafts only', 'Integration artifacts doc: review-only boundary is documented');
   excludes(doc, /production-ready because of generated artifacts/iu, 'Integration artifacts doc: production readiness is not overclaimed');
 
+  const onboardingDoc = readProjectFile('docs', '02-architecture', 'action-surface-onboarding-packet.md');
+  includes(
+    onboardingDoc,
+    '[Action Surface Integration\nArtifacts](action-surface-integration-artifacts.md)',
+    'Onboarding packet embeds integration artifacts link',
+  );
+
   const readme = readProjectFile('README.md');
-  includes(readme, '[Action surface integration artifacts](docs/02-architecture/action-surface-integration-artifacts.md)', 'README links integration artifacts');
   excludes(readme, /generated artifacts make downstream execution non-bypassable/iu, 'README does not overclaim non-bypassability');
 
   const pkg = JSON.parse(readProjectFile('package.json')) as {

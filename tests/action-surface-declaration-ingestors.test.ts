@@ -207,8 +207,12 @@ function testDescriptorDocsAndPackageScript(): void {
   includes(doc, 'MCP', 'Declaration ingestors doc: MCP is documented');
   excludes(doc, /auto-enforce/iu, 'Declaration ingestors doc: does not claim auto-enforce');
 
-  const readme = readProjectFile('README.md');
-  includes(readme, '[Action surface declaration ingestors](docs/02-architecture/action-surface-declaration-ingestors.md)', 'README links declaration ingestors');
+  const onboardingDoc = readProjectFile('docs', '02-architecture', 'action-surface-onboarding-packet.md');
+  includes(
+    onboardingDoc,
+    '[Action Surface Declaration\nIngestors](action-surface-declaration-ingestors.md)',
+    'Onboarding packet embeds declaration ingestors link',
+  );
 
   const pkg = JSON.parse(readProjectFile('package.json')) as {
     readonly scripts: Record<string, string>;

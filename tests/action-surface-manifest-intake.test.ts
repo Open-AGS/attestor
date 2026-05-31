@@ -176,8 +176,8 @@ function testDescriptorDocsPackageAndDependency(): void {
   includes(doc, '512 KiB', 'Manifest intake doc: size limit is documented');
   excludes(doc, /production-ready because of manifest intake/iu, 'Manifest intake doc: does not overclaim production readiness');
 
-  const readme = readProjectFile('README.md');
-  includes(readme, '[Action surface manifest intake](docs/02-architecture/action-surface-manifest-intake.md)', 'README links manifest intake');
+  const onboardingDoc = readProjectFile('docs', '02-architecture', 'action-surface-onboarding-packet.md');
+  includes(onboardingDoc, '[Action Surface Manifest\nIntake](action-surface-manifest-intake.md)', 'Onboarding packet embeds manifest intake link');
 
   const pkg = JSON.parse(readProjectFile('package.json')) as {
     readonly dependencies: Record<string, string>;

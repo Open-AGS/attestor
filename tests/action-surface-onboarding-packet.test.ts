@@ -199,6 +199,7 @@ function testEmptyPacketAndDocs(): void {
 
   const readme = readProjectFile('README.md');
   includes(readme, '[Action surface onboarding packet](docs/02-architecture/action-surface-onboarding-packet.md)', 'README links onboarding packet');
+  excludes(readme, /docs\/02-architecture\/action-surface-manifest-intake\.md/iu, 'README keeps supporting action-surface links inside the onboarding packet doc');
   excludes(readme, /onboarding packet deploys the gateway/iu, 'README does not overclaim deployment');
 
   const pkg = JSON.parse(readProjectFile('package.json')) as {

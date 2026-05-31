@@ -198,6 +198,8 @@ function testDescriptorDocsAndPackageScript(): void {
   includes(doc, 'OpenAPI', 'Auto-context doc: OpenAPI input is documented');
   includes(doc, 'OpenTelemetry', 'Auto-context doc: OTel input is documented');
   includes(doc, '`x-attestor`', 'Auto-context doc: OpenAPI hints are documented');
+  includes(doc, 'The primary next document is', 'Auto-context doc: names one primary next document');
+  includes(doc, 'Supporting pieces stay inside that path:', 'Auto-context doc: keeps supporting pieces nested');
   includes(doc, 'auto-context can suggest and digest', 'Auto-context doc: authority boundary is documented');
   excludes(doc, /auto-context proves production readiness/iu, 'Auto-context doc: production readiness is not overclaimed');
 

@@ -8,6 +8,11 @@ They do not deploy infrastructure, do not issue credentials, do not activate
 enforcement, do not replace downstream verification, and do not make an action
 surface non-bypassable by themselves. They are review drafts only.
 
+Part of:
+[Action Surface Onboarding Packet](action-surface-onboarding-packet.md) ->
+[Integration Mode Readiness](integration-mode-readiness.md) -> customer review
+of the downstream verifier, gateway, adapter, or connector.
+
 ## Why It Exists
 
 The common `POST /api/v1/admissions` API is not enough to make Attestor easy to

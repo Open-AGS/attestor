@@ -159,6 +159,7 @@ Pick the next page by where you are in the integration:
 |---|---|
 | still proving the shape | [Try Attestor first](try-attestor-first.md) |
 | observing without enforcement | [Run Attestor in shadow pilot mode](shadow-event-payload-examples.md) |
+| starting from existing metadata | [Action surface auto-context](../02-architecture/action-surface-auto-context.md) |
 | sending the first admission request | [Consequence admission quickstart](consequence-admission-quickstart.md) |
 | wiring the downstream stop point | [Customer admission gate](customer-admission-gate.md) |
 | choosing placement in a customer app | [Customer integration recipes](customer-integration-recipes.md) |

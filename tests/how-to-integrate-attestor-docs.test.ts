@@ -46,6 +46,7 @@ function testGuideUsesReferenceSafePayloadsAndNoOverclaim(): void {
   includes(doc, '"evidenceRefs"', 'How-to integrate docs: uses evidence references');
   includes(doc, 'Attestor does not need the raw prompt', 'How-to integrate docs: forbids raw prompt');
   includes(doc, 'Boundary: this page explains the integration shape.', 'How-to integrate docs: carries boundary language');
+  includes(doc, '[Action surface auto-context](../02-architecture/action-surface-auto-context.md)', 'How-to integrate docs: links the metadata-to-packet path');
   includes(doc, 'It does not prove live', 'How-to integrate docs: avoids live-proof overclaim');
   excludes(doc, /sk_(live|test)_[A-Za-z0-9_]+/u, 'How-to integrate docs: no Stripe secret keys');
   excludes(doc, /Bearer\s+(?!<redacted>)[A-Za-z0-9._-]+/u, 'How-to integrate docs: no bearer tokens');

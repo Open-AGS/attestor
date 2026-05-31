@@ -194,6 +194,8 @@ function testEmptyPacketAndDocs(): void {
   includes(doc, 'Action Surface Onboarding Packet', 'Onboarding packet doc: title exists');
   includes(doc, 'Terraform `plan` / `apply`', 'Onboarding packet doc: plan/apply anchor is documented');
   includes(doc, 'Backstage Software Templates', 'Onboarding packet doc: template anchor is documented');
+  includes(doc, 'Supporting component pages stay inside this path:', 'Onboarding packet doc: keeps supporting pages nested');
+  includes(doc, '[Customer admission gate](../01-overview/customer-admission-gate.md)', 'Onboarding packet doc: points to the downstream gate path');
   includes(doc, 'review-required packet', 'Onboarding packet doc: review boundary is documented');
   excludes(doc, /packet makes the workflow production-ready/iu, 'Onboarding packet doc: production readiness is not overclaimed');
 

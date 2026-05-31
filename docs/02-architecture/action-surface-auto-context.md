@@ -59,7 +59,7 @@ MCP / OpenAPI / AsyncAPI / workflow / OTel / CloudEvents / gateway log
   -> action surface declarations
   -> observe-mode generic admission drafts
   -> Action Surface Onboarding Packet
-  -> review-required integration artifacts
+     (surface plan, integration drafts, readiness blockers)
   -> customer review and downstream proof
 ```
 
@@ -109,15 +109,26 @@ Prohibited:
   customer records
 - claim production readiness or customer PEP no-bypass
 
-## Relationship To Existing Contracts
+## Where This Fits
 
-Auto-context feeds existing contracts rather than replacing them:
+Start from [How to integrate Attestor](../01-overview/how-to-integrate-attestor.md)
+when you need the placement rule. Use this page when the customer already has
+metadata and you want Attestor to build the first reviewed surface map.
+
+The primary next document is
+[Action Surface Onboarding Packet](action-surface-onboarding-packet.md). It
+turns the reviewed map into the customer-facing plan.
+
+Supporting pieces stay inside that path:
 
 - [Action surface declaration ingestors](action-surface-declaration-ingestors.md)
-- [Action surface profiler](action-surface-profiler.md)
-- [Action surface onboarding packet](action-surface-onboarding-packet.md)
+  normalize reviewed metadata.
+- [Action surface profiler](action-surface-profiler.md) groups observed and
+  declared surfaces.
 - [Action surface integration artifacts](action-surface-integration-artifacts.md)
-- [Integration Mode Readiness](integration-mode-readiness.md)
+  draft review-only integration material.
+- [Integration Mode Readiness](integration-mode-readiness.md) records what is
+  still missing before scoped enforcement can be considered.
 
 The boundary stays the same:
 

@@ -9,7 +9,13 @@ It is not an apply step. It does not deploy gateways, issue credentials,
 activate provider connectors, turn on enforcement, or make a production
 readiness claim.
 
-Supporting components stay inside this path:
+Path:
+[How to integrate Attestor](../01-overview/how-to-integrate-attestor.md) ->
+[Action Surface Auto-Context](action-surface-auto-context.md) when metadata can
+help -> this review packet -> [Customer admission gate](../01-overview/customer-admission-gate.md)
+when the downstream stop point is being wired.
+
+Supporting component pages stay inside this path:
 
 - [Action Surface Manifest Intake](action-surface-manifest-intake.md) reads bounded manifests.
 - [Action Surface Declaration Ingestors](action-surface-declaration-ingestors.md) normalize reviewed metadata.

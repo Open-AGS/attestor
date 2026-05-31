@@ -204,6 +204,8 @@ function testDescriptorDocsAndValidation(): void {
   includes(doc, 'Envoy `ext_authz`', 'Integration artifacts doc: Envoy anchor is documented');
   includes(doc, 'NGINX `auth_request`', 'Integration artifacts doc: NGINX anchor is documented');
   includes(doc, 'MCP tool gateway', 'Integration artifacts doc: MCP anchor is documented');
+  includes(doc, 'Part of:', 'Integration artifacts doc: states its path context');
+  includes(doc, '[Integration Mode Readiness](integration-mode-readiness.md)', 'Integration artifacts doc: links readiness as the next review gate');
   includes(doc, 'review drafts only', 'Integration artifacts doc: review-only boundary is documented');
   excludes(doc, /production-ready because of generated artifacts/iu, 'Integration artifacts doc: production readiness is not overclaimed');
 

@@ -352,6 +352,7 @@
     "test:action-surface-ingestors": "tsx tests/action-surface-declaration-ingestors.test.ts",
     "test:action-surface-manifest-intake": "tsx tests/action-surface-manifest-intake.test.ts",
     "test:action-surface-integration-artifacts": "tsx tests/action-surface-integration-artifacts.test.ts",
+    "test:action-surface-integration-kit-artifact-drafts": "tsx tests/action-surface-integration-kit-artifact-drafts.test.ts",
     "test:action-surface-integration-kit-buildout": "tsx tests/action-surface-integration-kit-buildout.test.ts",
     "test:action-surface-integration-kit-packet": "tsx tests/action-surface-integration-kit-packet.test.ts",
     "test:action-surface-onboarding-packet": "tsx tests/action-surface-onboarding-packet.test.ts",

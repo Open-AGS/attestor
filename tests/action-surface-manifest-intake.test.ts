@@ -177,7 +177,7 @@ function testDescriptorDocsPackageAndDependency(): void {
   excludes(doc, /production-ready because of manifest intake/iu, 'Manifest intake doc: does not overclaim production readiness');
 
   const onboardingDoc = readProjectFile('docs', '02-architecture', 'action-surface-onboarding-packet.md');
-  includes(onboardingDoc, '[Action Surface Manifest\nIntake](action-surface-manifest-intake.md)', 'Onboarding packet embeds manifest intake link');
+  includes(onboardingDoc, '[Action Surface Manifest Intake](action-surface-manifest-intake.md)', 'Onboarding packet embeds manifest intake link');
 
   const pkg = JSON.parse(readProjectFile('package.json')) as {
     readonly dependencies: Record<string, string>;

@@ -9,11 +9,12 @@ It is not an apply step. It does not deploy gateways, issue credentials,
 activate provider connectors, turn on enforcement, or make a production
 readiness claim.
 
-Its supporting components stay inside this path: [Action Surface Manifest
-Intake](action-surface-manifest-intake.md), [Action Surface Declaration
-Ingestors](action-surface-declaration-ingestors.md), [Action Surface
-Profiler](action-surface-profiler.md), and [Action Surface Integration
-Artifacts](action-surface-integration-artifacts.md).
+Supporting components stay inside this path:
+
+- [Action Surface Manifest Intake](action-surface-manifest-intake.md) reads bounded manifests.
+- [Action Surface Declaration Ingestors](action-surface-declaration-ingestors.md) normalize reviewed metadata.
+- [Action Surface Profiler](action-surface-profiler.md) groups observed and declared surfaces.
+- [Action Surface Integration Artifacts](action-surface-integration-artifacts.md) draft review-only integration material.
 
 ## Why It Exists
 

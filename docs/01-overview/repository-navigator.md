@@ -10,7 +10,7 @@ the audit baseline, or the live proof register.
 
 Use this page as the single navigation hub from the repository front page.
 
-- [Docs front door](../README.md) - docs grouped by job: integrate, verify, understand, maintain.
+- [Docs index](../README.md) - docs grouped by job: integrate, verify, understand, maintain.
 - [Repository map](repository-map.md) - codebase layout, package boundaries, and nearby test surfaces.
 - [Test system map](../02-architecture/test-system-map.md) - which test gate to run for a change.
 
@@ -30,7 +30,7 @@ do the next action there, and come back only if you still need more context.
 | "What code do I copy?" | [Customer middleware examples](../../examples/customer-middleware/README.md) | you have the closest framework example open. |
 | "What JSON do I send?" | [Run Attestor in shadow pilot mode](shadow-event-payload-examples.md) | you have copied the closest payload shape for your action class. |
 | "Why did it review or block?" | [Reason codes](../05-proof/reason-codes.md) | you understand the reason code and the next safe step. |
-| "Is this production-ready?" | [Current state](../../README.md#current-state) | you can separate repo-side evidence from live proof. |
+| "Is this production-ready?" | [README current state](../../README.md#current-state) | you can separate repo-side evidence from live proof. |
 | "What still needs real deployment evidence?" | [Live proof register](../audit/live-proof-register.md) | you know which proof is live/customer/operator-only. |
 | "How is this engine actually built?" | [Internal machine map](../02-architecture/attestor-internal-machine-map.md) | you can name the route, decision plane, package surface, and proof loop. |
 | "I need to change code safely." | [Repository map](repository-map.md) | you know the owning directory and the nearest test surface. |
@@ -43,7 +43,7 @@ do the next action there, and come back only if you still need more context.
 
 | I want to... | Start here | Then go to |
 |---|---|---|
-| Understand Attestor in one minute | [README](../../README.md) | [Try Attestor first](try-attestor-first.md) |
+| Understand Attestor in one minute | [Repository README](../../README.md) | [Try Attestor first](try-attestor-first.md) |
 | Run the demo path | [Run the demos in order](demo-guide.md) | [Golden Path: Refund](../02-architecture/golden-refund-shadow-pilot.md) |
 | Send shadow events | [Run Attestor in shadow pilot mode](shadow-event-payload-examples.md) | [Customer middleware examples](../../examples/customer-middleware/README.md) |
 | Wire a customer app | [How to integrate Attestor](how-to-integrate-attestor.md) | [Customer middleware examples](../../examples/customer-middleware/README.md) |
@@ -52,7 +52,7 @@ do the next action there, and come back only if you still need more context.
 | Understand `admit`, `narrow`, `review`, and `block` | [Consequence admission quickstart](consequence-admission-quickstart.md) | [Reason codes](../05-proof/reason-codes.md) |
 | Decode Attestor terms | [Glossary](../02-architecture/glossary.md) | [Attestor language contract](../02-architecture/attestor-language-contract.md) |
 | Explain a review or block reason | [Reason codes](../05-proof/reason-codes.md) | [Failure modes and controls](../05-proof/failure-modes-and-controls.md) |
-| Check what is real today | [Current state](../../README.md#current-state) | [Current posture baseline](../audit/current-posture-baseline.md) |
+| Check what is real today | [README current state](../../README.md#current-state) | [Current posture baseline](../audit/current-posture-baseline.md) |
 | Check what still needs live proof | [Live proof register](../audit/live-proof-register.md) | [Production readiness](../08-deployment/production-readiness.md) |
 | Understand the whole machine | [AI Action Control Plane architecture](../02-architecture/ai-action-control-plane-architecture.md) | [Internal machine map](../02-architecture/attestor-internal-machine-map.md) |
 | Understand one-engine domain packs | [Domain pack boundary](../02-architecture/domain-pack-boundary.md) | [Finance and crypto first integrations](finance-and-crypto-first-integrations.md) |
@@ -67,7 +67,7 @@ do the next action there, and come back only if you still need more context.
 
 | Role | Read first | Why |
 |---|---|---|
-| First-time evaluator | [README](../../README.md) | Product shape, concrete refund story, current repository truth. |
+| First-time evaluator | [Repository README](../../README.md) | Product shape, concrete refund story, current repository truth. |
 | Customer engineer | [How to integrate Attestor](how-to-integrate-attestor.md) | The shortest path from AI action to customer-owned gate. |
 | API integrator | [First hosted API call](hosted-first-api-call.md) | Tenant key, first request, and decision handling. |
 | Reviewer or auditor | [Audit evidence system](../audit/README.md) | Current baseline, finding state, live-proof separation. |

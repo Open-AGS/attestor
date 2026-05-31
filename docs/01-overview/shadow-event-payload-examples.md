@@ -38,11 +38,11 @@ actually needs.
 
 | If you want to see... | Start with | Then read |
 |---|---|---|
-| money movement risk | [Refund](#refund) | [Reason codes](../05-proof/reason-codes.md) |
-| data export risk | [Customer Export](#customer-export) | [Data minimization and redaction](../02-architecture/data-minimization-redaction-policy.md) |
-| deploy risk | [Deploy](#deploy) | [Failure modes and controls](../05-proof/failure-modes-and-controls.md) |
-| customer-message risk | [Customer Message](#customer-message) | [How to integrate Attestor](how-to-integrate-attestor.md) |
-| wallet-action risk | [Wallet Action](#wallet-action) | [Programmable Money golden path](../02-architecture/golden-programmable-money-shadow-pilot.md) |
+| money movement risk | [Refund example](#refund) | [Reason codes](../05-proof/reason-codes.md) |
+| data export risk | [Customer export example](#customer-export) | [Data minimization and redaction](../02-architecture/data-minimization-redaction-policy.md) |
+| deploy risk | [Deploy example](#deploy) | [Failure modes and controls](../05-proof/failure-modes-and-controls.md) |
+| customer-message risk | [Customer message example](#customer-message) | [How to integrate Attestor](how-to-integrate-attestor.md) |
+| wallet-action risk | [Wallet action example](#wallet-action) | [Programmable Money golden path](../02-architecture/golden-programmable-money-shadow-pilot.md) |
 
 ## Send The First Payload
 

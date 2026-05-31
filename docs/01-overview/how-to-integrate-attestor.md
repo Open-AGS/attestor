@@ -170,7 +170,7 @@ For hosted buying and package boundaries, use
 [Hosted customer journey](hosted-customer-journey.md) and
 [Commercial packaging, pricing, and evaluation](product-packaging.md).
 
-Back: [Docs front door](../README.md). Deeper map:
+Back: [Docs index](../README.md). Deeper:
 [Repository navigator](repository-navigator.md).
 
 Boundary: this page explains the integration shape. It does not prove live

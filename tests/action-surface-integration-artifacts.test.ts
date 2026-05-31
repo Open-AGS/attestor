@@ -210,7 +210,7 @@ function testDescriptorDocsAndValidation(): void {
   const onboardingDoc = readProjectFile('docs', '02-architecture', 'action-surface-onboarding-packet.md');
   includes(
     onboardingDoc,
-    '[Action Surface Integration\nArtifacts](action-surface-integration-artifacts.md)',
+    '[Action Surface Integration Artifacts](action-surface-integration-artifacts.md)',
     'Onboarding packet embeds integration artifacts link',
   );
 

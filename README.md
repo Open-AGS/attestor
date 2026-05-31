@@ -122,9 +122,9 @@ Start light. Go deeper only when you need the detail.
 
 - [Try Attestor first](docs/01-overview/try-attestor-first.md) - run the smallest local refund path and see the decision trail.
 - [How to integrate Attestor](docs/01-overview/how-to-integrate-attestor.md) - find the real side effect and place the customer-owned gate.
-- [Action surface auto-context](docs/02-architecture/action-surface-auto-context.md) - start from MCP, OpenAPI, AsyncAPI, workflow, or telemetry metadata without claiming enforcement.
+- [Action surface auto-context](docs/02-architecture/action-surface-auto-context.md) - start from MCP, OpenAPI, AsyncAPI, workflow, or telemetry metadata; output stays review material, not enforcement.
 - [Action surface onboarding packet](docs/02-architecture/action-surface-onboarding-packet.md) - turn reviewed metadata into a review-required integration plan.
-- `POST /api/v1/shadow/action-surface/onboarding-packet` - render a stateless review packet from manifests, declarations, shadow events, or auto-context signals.
+- Hosted packet route: `POST /api/v1/shadow/action-surface/onboarding-packet` - render a stateless review packet.
 - [Run Attestor in shadow pilot mode](docs/01-overview/shadow-event-payload-examples.md) - send observe-mode examples before enforcing anything.
 - [Consequence admission quickstart](docs/01-overview/consequence-admission-quickstart.md) - use the shared admission shape and decision vocabulary.
 - [Repository navigator](docs/01-overview/repository-navigator.md) - find deeper docs for hosted, pricing, support, proof, or maintainer work.

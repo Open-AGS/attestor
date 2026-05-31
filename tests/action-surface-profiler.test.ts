@@ -241,7 +241,7 @@ function testDescriptorAndDocs(): void {
   includes(doc, '`gateway-proxy`', 'Action surface profiler doc: gateway proxy recommendation is documented');
 
   const onboardingDoc = readProjectFile('docs', '02-architecture', 'action-surface-onboarding-packet.md');
-  includes(onboardingDoc, '[Action Surface\nProfiler](action-surface-profiler.md)', 'Onboarding packet embeds action surface profiler link');
+  includes(onboardingDoc, '[Action Surface Profiler](action-surface-profiler.md)', 'Onboarding packet embeds action surface profiler link');
 
   const readme = readProjectFile('README.md');
   excludes(readme, /automatically makes downstream execution non-bypassable/iu, 'README does not overclaim automatic non-bypassability');

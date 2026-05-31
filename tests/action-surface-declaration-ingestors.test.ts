@@ -210,7 +210,7 @@ function testDescriptorDocsAndPackageScript(): void {
   const onboardingDoc = readProjectFile('docs', '02-architecture', 'action-surface-onboarding-packet.md');
   includes(
     onboardingDoc,
-    '[Action Surface Declaration\nIngestors](action-surface-declaration-ingestors.md)',
+    '[Action Surface Declaration Ingestors](action-surface-declaration-ingestors.md)',
     'Onboarding packet embeds declaration ingestors link',
   );
 

@@ -502,6 +502,19 @@ async function main(): Promise<void> {
     recordWithToken.detail.id,
     'Release evidence pack: verification result exposes the signed reviewer queue id',
   );
+  deepEqual(
+    verification.artifactVerificationSummary,
+    {
+      artifactCount: issuedEvidencePack.evidencePack.artifacts.length,
+      issuerDerivedCount: issuedEvidencePack.evidencePack.artifacts.length - 1,
+      declaredUnverifiedCount: 1,
+      unknownStatusCount: 0,
+      externalArtifactVerificationPerformed: false,
+      allExternalArtifactsVerified: false,
+      state: 'mixed',
+    },
+    'Release evidence pack: verification result separates DSSE validity from external artifact verification',
+  );
 
   const store = createInMemoryReleaseEvidencePackStore();
   store.upsert(issuedEvidencePack);

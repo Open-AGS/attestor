@@ -20,6 +20,7 @@ import {
   createEnforcementRequest,
   createReleasePresentation,
   type EnforcementDecision,
+  type EnforcementEvidenceSemantics,
   type EnforcementReceipt,
   type EnforcementRequest,
   type ReleasePresentation,
@@ -129,6 +130,7 @@ export interface ActionDispatchCanonicalBinding {
   readonly hashBundle: CanonicalReleaseHashBundle;
   readonly dispatchCanonical: string;
   readonly dispatchHash: string;
+  readonly evidenceSemantics: EnforcementEvidenceSemantics;
   readonly httpMethod: typeof ACTION_DISPATCH_HTTP_METHOD;
   readonly dispatchUri: string;
 }
@@ -190,6 +192,7 @@ export interface ActionDispatchGatewayResult {
   readonly online: OnlineReleaseVerification | null;
   readonly decision: EnforcementDecision | null;
   readonly receipt: EnforcementReceipt | null;
+  readonly evidenceSemantics: EnforcementEvidenceSemantics;
   readonly failureReasons: readonly EnforcementFailureReason[];
   readonly responseStatus: number;
 }
@@ -428,6 +431,31 @@ function normalizePreconditions(
   );
 }
 
+function declaredEvidenceSemantics(input: {
+  readonly declaredEvidenceCount: number;
+  readonly evidenceKind: string;
+}): EnforcementEvidenceSemantics {
+  if (input.declaredEvidenceCount === 0) {
+    return Object.freeze({
+      declarationBound: false,
+      verifiedEvidence: false,
+      declaredEvidenceCount: 0,
+      verifiedEvidenceCount: 0,
+      evidenceKinds: Object.freeze([]),
+      boundary: 'none',
+    });
+  }
+
+  return Object.freeze({
+    declarationBound: true,
+    verifiedEvidence: false,
+    declaredEvidenceCount: input.declaredEvidenceCount,
+    verifiedEvidenceCount: 0,
+    evidenceKinds: Object.freeze([input.evidenceKind]),
+    boundary: 'declared-only',
+  });
+}
+
 function normalizeAction(
   action: ActionDispatchRequest,
 ): Record<string, CanonicalReleaseJsonValue> {
@@ -504,6 +532,7 @@ export function buildActionDispatchCanonicalBinding(
 ): ActionDispatchCanonicalBinding {
   const riskClass = options.riskClass ?? 'R3';
   const normalizedAction = normalizeAction(action);
+  const declaredPreconditions = normalizedAction.declaredPreconditions as readonly unknown[];
   const target = actionTarget(action);
   const contract = outputContract(riskClass);
   const outputPayload = Object.freeze({
@@ -533,6 +562,10 @@ export function buildActionDispatchCanonicalBinding(
     hashBundle,
     dispatchCanonical,
     dispatchHash: sha256(dispatchCanonical),
+    evidenceSemantics: declaredEvidenceSemantics({
+      declaredEvidenceCount: declaredPreconditions.length,
+      evidenceKind: 'precondition',
+    }),
     httpMethod: ACTION_DISPATCH_HTTP_METHOD,
     dispatchUri: actionDispatchUri(target.id, options.dispatchBaseUri),
   });
@@ -636,6 +669,7 @@ function decisionAndReceipt(input: {
   readonly verification: VerificationResult;
   readonly checkedAt: string;
   readonly failureReasons: readonly EnforcementFailureReason[];
+  readonly evidenceSemantics: EnforcementEvidenceSemantics;
 }): {
   readonly decision: EnforcementDecision;
   readonly receipt: EnforcementReceipt;
@@ -651,7 +685,11 @@ function decisionAndReceipt(input: {
     id: `er_action_dispatch_${input.request.id}`,
     issuedAt: input.checkedAt,
     decision,
-    receiptDigest: createEnforcementReceiptDigest({ decision }),
+    evidenceSemantics: input.evidenceSemantics,
+    receiptDigest: createEnforcementReceiptDigest({
+      decision,
+      evidenceSemantics: input.evidenceSemantics,
+    }),
   });
 
   return { decision, receipt };
@@ -706,6 +744,7 @@ function deniedEarlyResult(input: {
     online: null,
     decision: null,
     receipt: null,
+    evidenceSemantics: input.binding.evidenceSemantics,
     failureReasons,
     responseStatus: responseStatusForFailures(failureReasons),
   });
@@ -737,6 +776,7 @@ function resultFromVerification(input: {
     verification: verificationResult,
     checkedAt: input.checkedAt,
     failureReasons,
+    evidenceSemantics: input.binding.evidenceSemantics,
   });
   const allowed = failureReasons.length === 0 && verificationResult.status === 'valid';
 
@@ -752,6 +792,7 @@ function resultFromVerification(input: {
     online: input.online,
     decision,
     receipt,
+    evidenceSemantics: input.binding.evidenceSemantics,
     failureReasons,
     responseStatus: allowed ? 200 : responseStatusForFailures(failureReasons),
   });
@@ -814,6 +855,7 @@ export async function enforceActionDispatch(
       verification: forcedVerification,
       checkedAt,
       failureReasons: forcedFailureReasons,
+      evidenceSemantics: binding.evidenceSemantics,
     });
     return Object.freeze({
       version: RELEASE_ACTION_DISPATCH_GATEWAY_SPEC_VERSION,
@@ -827,6 +869,7 @@ export async function enforceActionDispatch(
       online: null,
       decision,
       receipt,
+      evidenceSemantics: binding.evidenceSemantics,
       failureReasons: forcedFailureReasons,
       responseStatus: responseStatusForFailures(forcedFailureReasons),
     });

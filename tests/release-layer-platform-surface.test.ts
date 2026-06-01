@@ -164,6 +164,15 @@ function testReleaseLayerNamespaceBindings(): void {
     predicateType: 'https://attestor.ai/attestation/release-evidence/v1',
     subjectCount: 2,
     bundleDigest: 'sha256:bundle',
+    artifactVerificationSummary: {
+      artifactCount: 1,
+      issuerDerivedCount: 0,
+      declaredUnverifiedCount: 1,
+      unknownStatusCount: 0,
+      externalArtifactVerificationPerformed: false,
+      allExternalArtifactsVerified: false,
+      state: 'declared-only',
+    },
   } satisfies ReleaseEvidencePackVerificationResult;
   assert.equal(
     evidenceVerification.policyProvenanceSource,
@@ -174,6 +183,11 @@ function testReleaseLayerNamespaceBindings(): void {
     evidenceVerification.policyContext.compiledPolicyIrVersion,
     'attestor.compiled-admission-policy-ir.v1',
     'release-layer surface exposes structured evidence verification policy context',
+  );
+  assert.equal(
+    evidenceVerification.artifactVerificationSummary.allExternalArtifactsVerified,
+    false,
+    'release-layer surface exposes artifact verification non-claim summary',
   );
   assert.equal(
     releaseLayer.review.RELEASE_REVIEWER_QUEUE_SPEC_VERSION,

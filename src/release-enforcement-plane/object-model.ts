@@ -46,6 +46,17 @@ export const ENFORCEMENT_RECEIPT_SPEC_VERSION =
 
 export type VerificationStatus = 'valid' | 'invalid' | 'indeterminate';
 
+export type EnforcementEvidenceBoundary = 'none' | 'declared-only' | 'verified';
+
+export interface EnforcementEvidenceSemantics {
+  readonly declarationBound: boolean;
+  readonly verifiedEvidence: boolean;
+  readonly declaredEvidenceCount: number;
+  readonly verifiedEvidenceCount: number;
+  readonly evidenceKinds: readonly string[];
+  readonly boundary: EnforcementEvidenceBoundary;
+}
+
 export interface ReleaseEnforcementPolicyContext {
   readonly policyHash: string | null;
   readonly policyVersion: string | null;
@@ -248,6 +259,7 @@ export interface EnforcementReceipt {
   readonly policyContext: ReleaseEnforcementPolicyContext;
   readonly verificationStatus: VerificationStatus;
   readonly failureReasons: readonly EnforcementFailureReason[];
+  readonly evidenceSemantics: EnforcementEvidenceSemantics | null;
   readonly receiptDigest: string | null;
 }
 
@@ -268,6 +280,7 @@ export interface EnforcementReceiptDigestMaterial {
   readonly policyContext: ReleaseEnforcementPolicyContext;
   readonly verificationStatus: VerificationStatus;
   readonly failureReasons: readonly EnforcementFailureReason[];
+  readonly evidenceSemantics?: EnforcementEvidenceSemantics;
 }
 
 export interface CreateEnforcementRequestInput {
@@ -362,6 +375,7 @@ export interface CreateEnforcementReceiptInput {
   readonly decision: EnforcementDecision;
   readonly outputHash?: string | null;
   readonly consequenceHash?: string | null;
+  readonly evidenceSemantics?: EnforcementEvidenceSemantics | null;
   readonly receiptDigest?: string | null;
 }
 
@@ -369,6 +383,7 @@ export interface CreateEnforcementReceiptDigestInput {
   readonly decision: EnforcementDecision;
   readonly outputHash?: string | null;
   readonly consequenceHash?: string | null;
+  readonly evidenceSemantics?: EnforcementEvidenceSemantics | null;
 }
 
 function normalizeIdentifier(value: string, fieldName: string): string {
@@ -449,6 +464,72 @@ function normalizeFailureReasons(
     return Object.freeze([]);
   }
   return Object.freeze(Array.from(new Set(reasons)).sort());
+}
+
+function normalizeEvidenceKinds(values: readonly string[]): readonly string[] {
+  return Object.freeze(
+    Array.from(
+      new Set(
+        values
+          .map((value) => value.trim())
+          .filter((value) => value.length > 0),
+      ),
+    ).sort(),
+  );
+}
+
+export function normalizeEnforcementEvidenceSemantics(
+  value: EnforcementEvidenceSemantics | null | undefined,
+): EnforcementEvidenceSemantics | null {
+  if (!value) {
+    return null;
+  }
+
+  if (
+    !Number.isSafeInteger(value.declaredEvidenceCount) ||
+    value.declaredEvidenceCount < 0
+  ) {
+    throw new Error('Release enforcement-plane evidence semantics requires a non-negative declared evidence count.');
+  }
+  if (
+    !Number.isSafeInteger(value.verifiedEvidenceCount) ||
+    value.verifiedEvidenceCount < 0
+  ) {
+    throw new Error('Release enforcement-plane evidence semantics requires a non-negative verified evidence count.');
+  }
+
+  if (value.boundary === 'none') {
+    if (
+      value.declarationBound ||
+      value.verifiedEvidence ||
+      value.declaredEvidenceCount !== 0 ||
+      value.verifiedEvidenceCount !== 0
+    ) {
+      throw new Error('Release enforcement-plane empty evidence boundary cannot carry declared or verified evidence.');
+    }
+  } else if (value.boundary === 'declared-only') {
+    if (
+      !value.declarationBound ||
+      value.verifiedEvidence ||
+      value.declaredEvidenceCount === 0 ||
+      value.verifiedEvidenceCount !== 0
+    ) {
+      throw new Error('Release enforcement-plane declared-only evidence boundary cannot claim verified evidence.');
+    }
+  } else if (value.boundary === 'verified') {
+    if (!value.verifiedEvidence || value.verifiedEvidenceCount === 0) {
+      throw new Error('Release enforcement-plane verified evidence boundary requires verified evidence.');
+    }
+  }
+
+  return Object.freeze({
+    declarationBound: value.declarationBound,
+    verifiedEvidence: value.verifiedEvidence,
+    declaredEvidenceCount: value.declaredEvidenceCount,
+    verifiedEvidenceCount: value.verifiedEvidenceCount,
+    evidenceKinds: normalizeEvidenceKinds(value.evidenceKinds),
+    boundary: value.boundary,
+  });
 }
 
 function buildPolicyContext(input: {
@@ -907,6 +988,7 @@ export function enforcementReceiptDigestMaterial(
   const consequenceHash =
     normalizeOptionalIdentifier(input.consequenceHash, 'enforcementReceipt.consequenceHash') ??
     input.decision.verification.consequenceHash;
+  const evidenceSemantics = normalizeEnforcementEvidenceSemantics(input.evidenceSemantics);
 
   return Object.freeze({
     decisionId: input.decision.id,
@@ -925,6 +1007,7 @@ export function enforcementReceiptDigestMaterial(
     policyContext: input.decision.verification.policyContext,
     verificationStatus: input.decision.verification.status,
     failureReasons: input.decision.failureReasons,
+    ...(evidenceSemantics ? { evidenceSemantics } : {}),
   });
 }
 
@@ -938,6 +1021,7 @@ export function createEnforcementReceipt(
   input: CreateEnforcementReceiptInput,
 ): EnforcementReceipt {
   const digestMaterial = enforcementReceiptDigestMaterial(input);
+  const evidenceSemantics = normalizeEnforcementEvidenceSemantics(input.evidenceSemantics);
   return Object.freeze({
     version: ENFORCEMENT_RECEIPT_SPEC_VERSION,
     id: normalizeIdentifier(input.id, 'enforcementReceipt.id'),
@@ -959,6 +1043,7 @@ export function createEnforcementReceipt(
     policyContext: digestMaterial.policyContext,
     verificationStatus: input.decision.verification.status,
     failureReasons: input.decision.failureReasons,
+    evidenceSemantics,
     receiptDigest: normalizeOptionalIdentifier(
       input.receiptDigest,
       'enforcementReceipt.receiptDigest',

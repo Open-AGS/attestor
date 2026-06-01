@@ -158,6 +158,23 @@ export interface ReleaseEvidenceDsseEnvelope {
   readonly signatures: readonly ReleaseEvidenceDsseSignature[];
 }
 
+export type ReleaseEvidenceArtifactVerificationState =
+  | 'none'
+  | 'issuer-derived-only'
+  | 'declared-only'
+  | 'mixed'
+  | 'unknown';
+
+export interface ReleaseEvidenceArtifactVerificationSummary {
+  readonly artifactCount: number;
+  readonly issuerDerivedCount: number;
+  readonly declaredUnverifiedCount: number;
+  readonly unknownStatusCount: number;
+  readonly externalArtifactVerificationPerformed: false;
+  readonly allExternalArtifactsVerified: false;
+  readonly state: ReleaseEvidenceArtifactVerificationState;
+}
+
 export interface IssuedReleaseEvidencePack {
   readonly version: typeof RELEASE_EVIDENCE_PACK_ISSUANCE_SPEC_VERSION;
   readonly evidencePack: EvidencePack;
@@ -217,6 +234,7 @@ export interface ReleaseEvidencePackVerificationResult {
   readonly predicateType: string;
   readonly subjectCount: number;
   readonly bundleDigest: string;
+  readonly artifactVerificationSummary: ReleaseEvidenceArtifactVerificationSummary;
 }
 
 export interface ReleaseEvidencePackIssuer {
@@ -601,6 +619,45 @@ function buildArtifactReferences(input: {
       }),
     ),
   );
+}
+
+function summarizeArtifactVerification(
+  artifacts: readonly EvidenceArtifactReference[],
+): ReleaseEvidenceArtifactVerificationSummary {
+  let issuerDerivedCount = 0;
+  let declaredUnverifiedCount = 0;
+  let unknownStatusCount = 0;
+
+  for (const artifact of artifacts) {
+    if (artifact.verificationStatus === 'issuer-derived') {
+      issuerDerivedCount += 1;
+    } else if (artifact.verificationStatus === 'declared-unverified') {
+      declaredUnverifiedCount += 1;
+    } else {
+      unknownStatusCount += 1;
+    }
+  }
+
+  const state: ReleaseEvidenceArtifactVerificationState =
+    artifacts.length === 0
+      ? 'none'
+      : unknownStatusCount > 0
+        ? 'unknown'
+        : issuerDerivedCount > 0 && declaredUnverifiedCount > 0
+          ? 'mixed'
+          : declaredUnverifiedCount > 0
+            ? 'declared-only'
+            : 'issuer-derived-only';
+
+  return Object.freeze({
+    artifactCount: artifacts.length,
+    issuerDerivedCount,
+    declaredUnverifiedCount,
+    unknownStatusCount,
+    externalArtifactVerificationPerformed: false,
+    allExternalArtifactsVerified: false,
+    state,
+  });
 }
 
 function buildEvidencePack(
@@ -1073,6 +1130,7 @@ export function verifyIssuedReleaseEvidencePack(
     predicateType: statement.predicateType,
     subjectCount: statement.subject.length,
     bundleDigest: pack.bundleDigest,
+    artifactVerificationSummary: summarizeArtifactVerification(pack.evidencePack.artifacts),
   };
 }
 

@@ -14,6 +14,22 @@ import {
   type ConsequenceAdmissionRequest,
   type ConsequenceAdmissionResponse,
 } from './index.js';
+import {
+  evaluateConsequenceApprovalProvenance,
+  type ConsequenceApprovalProvenanceClaim,
+  type ConsequenceApprovalProvenanceDecision,
+} from './approval-provenance-guard.js';
+import {
+  evaluateConsequenceToolResultPoisoning,
+  type ConsequenceToolResultClaim,
+  type ConsequenceToolResultEvidenceClass,
+  type ConsequenceToolResultPoisoningDecision,
+} from './tool-result-poisoning-guard.js';
+import {
+  evaluateConsequenceUntrustedContentAuthority,
+  type ConsequenceUntrustedContentAuthorityDecision,
+  type ConsequenceUntrustedContentAuthoritySource,
+} from './untrusted-content-authority-guard.js';
 
 export const FINANCE_PIPELINE_ADMISSION_ROUTE = '/api/v1/pipeline/run';
 export const FINANCE_PIPELINE_ADMISSION_ENTRY_POINT_ID = 'finance-pipeline-run';
@@ -22,7 +38,16 @@ export const FINANCE_PIPELINE_ADMISSION_SOURCE_REF =
 
 type OperationalPrimitive = string | number | boolean | null;
 
-export interface FinancePipelineAdmissionRequestInput {
+export interface FinancePipelineAdmissionTrustGuardInput {
+  readonly authoritySources?: readonly ConsequenceUntrustedContentAuthoritySource[];
+  readonly approvals?: readonly ConsequenceApprovalProvenanceClaim[];
+  readonly allowedToolResultEvidenceClasses?:
+    readonly ConsequenceToolResultEvidenceClass[] | null;
+  readonly toolResults?: readonly ConsequenceToolResultClaim[] | null;
+}
+
+export interface FinancePipelineAdmissionRequestInput
+  extends FinancePipelineAdmissionTrustGuardInput {
   readonly requestedAt: string;
   readonly requestId?: string | null;
   readonly runId?: string | null;
@@ -125,7 +150,8 @@ export interface FinancePipelineAdmissionRun {
   } | null;
 }
 
-export interface CreateFinancePipelineAdmissionResponseInput {
+export interface CreateFinancePipelineAdmissionResponseInput
+  extends FinancePipelineAdmissionTrustGuardInput {
   readonly run: FinancePipelineAdmissionRun;
   readonly decidedAt: string;
   readonly request?: ConsequenceAdmissionRequest | null;
@@ -316,6 +342,124 @@ function tokenFreshnessOutcome(
   return expiry.getTime() > new Date(decidedAt).getTime() ? 'pass' : 'fail';
 }
 
+function financeAuthorityGuardDecisionFor(input: {
+  readonly request: ConsequenceAdmissionRequest;
+  readonly decidedAt: string;
+  readonly authoritySources?: readonly ConsequenceUntrustedContentAuthoritySource[];
+}): ConsequenceUntrustedContentAuthorityDecision | null {
+  const authoritySources = input.authoritySources ?? [];
+  if (authoritySources.length === 0) return null;
+  return evaluateConsequenceUntrustedContentAuthority({
+    generatedAt: input.decidedAt,
+    actionSurface: 'finance-pipeline',
+    action: input.request.proposedConsequence.action,
+    requiredAuthority: true,
+    sources: authoritySources,
+  });
+}
+
+function financeApprovalGuardDecisionFor(input: {
+  readonly request: ConsequenceAdmissionRequest;
+  readonly decidedAt: string;
+  readonly authoritySources?: readonly ConsequenceUntrustedContentAuthoritySource[];
+  readonly approvals?: readonly ConsequenceApprovalProvenanceClaim[];
+}): ConsequenceApprovalProvenanceDecision | null {
+  const approvals = input.approvals ?? [];
+  const approvalClaimPresent = (input.authoritySources ?? [])
+    .some((source) => source.claimKind === 'approval');
+  if (approvals.length === 0 && !approvalClaimPresent) return null;
+  return evaluateConsequenceApprovalProvenance({
+    generatedAt: input.decidedAt,
+    actionSurface: 'finance-pipeline',
+    action: input.request.proposedConsequence.action,
+    approvals,
+  });
+}
+
+function financeToolResultGuardDecisionFor(input: {
+  readonly request: ConsequenceAdmissionRequest;
+  readonly decidedAt: string;
+  readonly allowedToolResultEvidenceClasses?:
+    readonly ConsequenceToolResultEvidenceClass[] | null;
+  readonly toolResults?: readonly ConsequenceToolResultClaim[] | null;
+}): ConsequenceToolResultPoisoningDecision | null {
+  const hasInput =
+    (input.allowedToolResultEvidenceClasses !== null &&
+      input.allowedToolResultEvidenceClasses !== undefined) ||
+    (input.toolResults !== null &&
+      input.toolResults !== undefined);
+  if (!hasInput) return null;
+  return evaluateConsequenceToolResultPoisoning({
+    generatedAt: input.decidedAt,
+    actionSurface: 'finance-pipeline',
+    action: input.request.proposedConsequence.action,
+    allowedEvidenceClasses: input.allowedToolResultEvidenceClasses ?? null,
+    toolResults: input.toolResults ?? null,
+  });
+}
+
+function financeGuardOutcome(
+  outcome: 'pass' | 'review' | 'block',
+): ConsequenceAdmissionCheckOutcome {
+  if (outcome === 'pass') return 'pass';
+  return outcome === 'review' ? 'warn' : 'fail';
+}
+
+function buildFinanceTrustGuardChecks(input: {
+  readonly authorityGuardDecision: ConsequenceUntrustedContentAuthorityDecision | null;
+  readonly approvalGuardDecision: ConsequenceApprovalProvenanceDecision | null;
+  readonly toolResultGuardDecision: ConsequenceToolResultPoisoningDecision | null;
+}): readonly ConsequenceAdmissionCheck[] {
+  const checks: ConsequenceAdmissionCheck[] = [];
+
+  if (input.authorityGuardDecision !== null) {
+    checks.push(createConsequenceAdmissionCheck({
+      kind: 'authority',
+      label: 'Finance authority-source guard',
+      outcome: financeGuardOutcome(input.authorityGuardDecision.outcome),
+      required: true,
+      summary:
+        input.authorityGuardDecision.outcome === 'pass'
+          ? 'Structured finance authority sources passed the untrusted-content guard.'
+          : 'Structured finance authority sources require review before downstream consequence.',
+      reasonCodes: input.authorityGuardDecision.reasonCodes,
+      evidenceRefs: [input.authorityGuardDecision.digest],
+    }));
+  }
+
+  if (input.approvalGuardDecision !== null) {
+    checks.push(createConsequenceAdmissionCheck({
+      kind: 'authority',
+      label: 'Finance approval provenance guard',
+      outcome: financeGuardOutcome(input.approvalGuardDecision.outcome),
+      required: true,
+      summary:
+        input.approvalGuardDecision.outcome === 'pass'
+          ? 'Structured finance approvals passed provenance checks.'
+          : 'Structured finance approvals require review before downstream consequence.',
+      reasonCodes: input.approvalGuardDecision.reasonCodes,
+      evidenceRefs: [input.approvalGuardDecision.digest],
+    }));
+  }
+
+  if (input.toolResultGuardDecision !== null) {
+    checks.push(createConsequenceAdmissionCheck({
+      kind: 'evidence',
+      label: 'Finance tool-result guard',
+      outcome: financeGuardOutcome(input.toolResultGuardDecision.outcome),
+      required: true,
+      summary:
+        input.toolResultGuardDecision.outcome === 'pass'
+          ? 'Structured finance tool-result evidence passed poisoning checks.'
+          : 'Structured finance tool-result evidence requires review before downstream consequence.',
+      reasonCodes: input.toolResultGuardDecision.reasonCodes,
+      evidenceRefs: [input.toolResultGuardDecision.digest],
+    }));
+  }
+
+  return Object.freeze(checks);
+}
+
 function buildFinanceChecks(input: {
   readonly run: FinancePipelineAdmissionRun;
   readonly request: ConsequenceAdmissionRequest;
@@ -450,9 +594,10 @@ function failedRequiredChecks(
 function effectiveFinanceDecision(
   nativeDecision: ConsequenceAdmissionNativeDecision,
   failedChecks: readonly ConsequenceAdmissionCheck[],
+  trustGuardHolds: readonly ConsequenceAdmissionCheck[],
 ): ConsequenceAdmissionDecision {
   if (
-    failedChecks.length > 0 &&
+    (failedChecks.length > 0 || trustGuardHolds.length > 0) &&
     (nativeDecision.mappedDecision === 'admit' || nativeDecision.mappedDecision === 'narrow')
   ) {
     return 'review';
@@ -464,20 +609,42 @@ function effectiveFinanceDecision(
 function nativeDecisionForEffectiveDecision(input: {
   readonly nativeDecision: ConsequenceAdmissionNativeDecision;
   readonly decision: ConsequenceAdmissionDecision;
-  readonly failedChecks: readonly ConsequenceAdmissionCheck[];
+  readonly holdChecks: readonly ConsequenceAdmissionCheck[];
 }): ConsequenceAdmissionNativeDecision {
-  const { nativeDecision, decision, failedChecks } = input;
+  const { nativeDecision, decision, holdChecks } = input;
   if (nativeDecision.mappedDecision === decision) {
     return nativeDecision;
   }
 
-  const failedKinds = failedChecks.map((check) => check.kind).join(', ');
+  const heldLabels = holdChecks.map((check) => check.label).join(', ');
   return Object.freeze({
     ...nativeDecision,
     mappedDecision: decision,
     mappingReason:
-      `${nativeDecision.mappingReason} Effective canonical admission is held at review because required checks failed: ${failedKinds}.`,
+      `${nativeDecision.mappingReason} Effective canonical admission is held at review because required checks require review: ${heldLabels}.`,
   });
+}
+
+function financeTrustGuardHoldChecks(
+  checks: readonly ConsequenceAdmissionCheck[],
+): readonly ConsequenceAdmissionCheck[] {
+  return Object.freeze(
+    checks.filter((check) => check.outcome === 'warn' || check.outcome === 'fail'),
+  );
+}
+
+function financeTrustGuardReasonCodes(
+  checks: readonly ConsequenceAdmissionCheck[],
+): readonly string[] {
+  return Object.freeze(
+    [...new Set(checks.flatMap((check) => check.reasonCodes))],
+  );
+}
+
+function uniqueChecksByLabel(
+  checks: readonly ConsequenceAdmissionCheck[],
+): readonly ConsequenceAdmissionCheck[] {
+  return Object.freeze([...new Map(checks.map((check) => [check.label, check])).values()]);
 }
 
 function defaultNarrowConstraints(): readonly ConsequenceAdmissionConstraint[] {
@@ -553,7 +720,7 @@ export function createFinancePipelineAdmissionResponse(
   const native = normalizeReleaseStatus(input.run);
   const nativeDecision = mapFinancePipelineDecisionToAdmission(native.value);
   const proof = buildProofRefs(input.run);
-  const checks = buildFinanceChecks({
+  const financeChecks = buildFinanceChecks({
     run: input.run,
     request,
     decidedAt: input.decidedAt,
@@ -561,12 +728,42 @@ export function createFinancePipelineAdmissionResponse(
     nativeDecisionSource: native.source,
     filingRelease: native.filingRelease,
   });
+  const authorityGuardDecision = financeAuthorityGuardDecisionFor({
+    request,
+    decidedAt: input.decidedAt,
+    authoritySources: input.authoritySources,
+  });
+  const approvalGuardDecision = financeApprovalGuardDecisionFor({
+    request,
+    decidedAt: input.decidedAt,
+    authoritySources: input.authoritySources,
+    approvals: input.approvals,
+  });
+  const toolResultGuardDecision = financeToolResultGuardDecisionFor({
+    request,
+    decidedAt: input.decidedAt,
+    allowedToolResultEvidenceClasses: input.allowedToolResultEvidenceClasses,
+    toolResults: input.toolResults,
+  });
+  const guardChecks = buildFinanceTrustGuardChecks({
+    authorityGuardDecision,
+    approvalGuardDecision,
+    toolResultGuardDecision,
+  });
+  const checks = Object.freeze([...financeChecks, ...guardChecks]);
   const requiredFailures = failedRequiredChecks(checks);
-  const decision = effectiveFinanceDecision(nativeDecision, requiredFailures);
+  const trustGuardHolds = financeTrustGuardHoldChecks(guardChecks);
+  const trustGuardReasons = financeTrustGuardReasonCodes(trustGuardHolds);
+  const holdChecks = uniqueChecksByLabel([...requiredFailures, ...trustGuardHolds]);
+  const decision = effectiveFinanceDecision(
+    nativeDecision,
+    requiredFailures,
+    trustGuardHolds,
+  );
   const effectiveNativeDecision = nativeDecisionForEffectiveDecision({
     nativeDecision,
     decision,
-    failedChecks: requiredFailures,
+    holdChecks,
   });
   const constraints =
     decision === 'narrow'
@@ -586,6 +783,8 @@ export function createFinancePipelineAdmissionResponse(
     `finance-${native.source === 'decision' ? 'pipeline' : 'release'}-${decision}`,
     `finance-native-${native.value.toLowerCase()}`,
     ...(requiredFailures.length > 0 ? ['finance-required-check-failed'] : []),
+    ...(trustGuardHolds.length > 0 ? ['finance-trust-guard-held'] : []),
+    ...trustGuardReasons,
   ];
 
   return createConsequenceAdmissionResponse({
@@ -616,6 +815,9 @@ export function createFinancePipelineAdmissionResponse(
       releaseDecisionId: native.filingRelease?.decisionId ?? null,
       releasePolicyVersion: native.filingRelease?.policyVersion ?? null,
       releaseIntrospectionRequired: boolOrNull(native.filingRelease?.introspectionRequired),
+      authorityGuardOutcome: authorityGuardDecision?.outcome ?? null,
+      approvalGuardOutcome: approvalGuardDecision?.outcome ?? null,
+      toolResultGuardOutcome: toolResultGuardDecision?.outcome ?? null,
       ...(input.operationalContext ?? {}),
     }),
   });

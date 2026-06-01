@@ -82,8 +82,9 @@ export type PolicyControlPlaneErrorCode =
   | 'not_found'
   | 'conflict'
   | 'forbidden'
+  | 'unavailable'
   | 'internal';
-export type PolicyControlPlaneHttpStatus = 400 | 403 | 404 | 409 | 500;
+export type PolicyControlPlaneHttpStatus = 400 | 403 | 404 | 409 | 500 | 503;
 
 export const DEFAULT_RELEASE_POLICY_LIST_LIMIT = 50;
 export const MAX_RELEASE_POLICY_LIST_LIMIT = 100;
@@ -92,6 +93,7 @@ export const POLICY_CONTROL_ERROR_STATUS: Record<PolicyControlPlaneErrorCode, Po
   not_found: 404,
   conflict: 409,
   forbidden: 403,
+  unavailable: 503,
   internal: 500,
 };
 
@@ -100,6 +102,7 @@ export interface ReleasePolicyControlRouteDeps {
   policyControlPlaneStore: RequestPathPolicyControlPlaneStore;
   policyActivationApprovalStore: RequestPathPolicyActivationApprovalStore;
   policyMutationAuditLog: RequestPathPolicyMutationAuditLogWriter;
+  requireAtomicPolicyLifecycle?: boolean;
   adminMutationRequest?: (
     c: Context,
     routeId: string,
@@ -737,10 +740,24 @@ function publishedStoreMetadata(
   bundle: StoredPolicyBundleRecord,
   latestActivationId: string | null,
 ): NonNullable<ReturnType<PolicyControlPlaneStore['getMetadata']>> {
+  return publishedStoreMetadataFromBundleReference(
+    storeKind,
+    previous,
+    bundle.manifest.bundle,
+    latestActivationId,
+  );
+}
+
+function publishedStoreMetadataFromBundleReference(
+  storeKind: RequestPathPolicyControlPlaneStore['kind'],
+  previous: ReturnType<PolicyControlPlaneStore['getMetadata']>,
+  bundleRef: PolicyBundleReference | null,
+  latestActivationId: string | null,
+): NonNullable<ReturnType<PolicyControlPlaneStore['getMetadata']>> {
   return createPolicyControlPlaneMetadata(
     storeKind,
     previous?.discoveryMode ?? 'scoped-active',
-    bundle.manifest.bundle,
+    bundleRef,
     latestActivationId ?? previous?.latestActivationId ?? null,
   );
 }
@@ -803,6 +820,7 @@ export async function applyPolicyLifecycleMutation<
 >(input: {
   readonly store: RequestPathPolicyControlPlaneStore;
   readonly auditLog: RequestPathPolicyMutationAuditLogWriter;
+  readonly requireAtomicLifecycle?: boolean;
   readonly action: (localStore: PolicyControlPlaneStore) => T;
   readonly createMetadata?: (
     localStore: PolicyControlPlaneStore,
@@ -820,6 +838,13 @@ export async function applyPolicyLifecycleMutation<
       lifecycle: atomicResult.lifecycle,
       audit: atomicResult.audit,
     });
+  }
+
+  if (input.requireAtomicLifecycle === true) {
+    throw policyControlPlaneError(
+      'unavailable',
+      'Atomic policy lifecycle storage is required for this request path.',
+    );
   }
 
   const lifecycle = await applyPolicyLifecycle(
@@ -843,6 +868,21 @@ export function createLifecycleMetadataPublisher(
       storeKind,
       localStore.getMetadata(),
       bundle,
+      lifecycle.appliedRecord.id,
+    );
+}
+
+export function createLifecycleMetadataPublisherFromAppliedRecord(
+  storeKind: RequestPathPolicyControlPlaneStore['kind'],
+): (
+  localStore: PolicyControlPlaneStore,
+  lifecycle: RequestPathPolicyActivationLifecycleResult,
+) => NonNullable<ReturnType<PolicyControlPlaneStore['getMetadata']>> {
+  return (localStore, lifecycle) =>
+    publishedStoreMetadataFromBundleReference(
+      storeKind,
+      localStore.getMetadata(),
+      lifecycle.appliedRecord.bundle,
       lifecycle.appliedRecord.id,
     );
 }

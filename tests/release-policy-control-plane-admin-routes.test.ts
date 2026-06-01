@@ -13,8 +13,12 @@ import {
 import { createPolicyBundleSigner } from '../src/release-policy-control-plane/bundle-signing.js';
 import {
   createInMemoryPolicyControlPlaneStore,
+  createInMemoryPolicyControlPlaneStoreFromSnapshot,
   type PolicyControlPlaneStore,
 } from '../src/release-policy-control-plane/store.js';
+import {
+  activatePolicyBundle,
+} from '../src/release-policy-control-plane/activation-records.js';
 import {
   createInMemoryPolicyActivationApprovalStore,
   requestPolicyActivationApproval,
@@ -36,6 +40,13 @@ type TestAppFixture = {
   approvalStore: PolicyActivationApprovalStore;
   auditLog: PolicyMutationAuditLogWriter;
   adminAuditRecords: Array<Record<string, unknown>>;
+};
+
+type TestFixtureOptions = {
+  idempotency?: boolean;
+  finalizeError?: Error;
+  store?: PolicyControlPlaneStore;
+  requireAtomicPolicyLifecycle?: boolean;
 };
 
 function adminHeaders(extra?: Record<string, string>, token = 'admin-secret'): Record<string, string> {
@@ -143,6 +154,67 @@ function createSignedBundle(bundleId = 'bundle_finance_core_2026_04_18') {
   };
 }
 
+function actor(id: string) {
+  return {
+    id,
+    type: 'user' as const,
+    displayName: id,
+    role: 'policy-admin',
+  };
+}
+
+function insertReplacementActivation(
+  store: PolicyControlPlaneStore,
+  bundle: ReturnType<typeof createSignedBundle>,
+  activationId: string,
+): void {
+  store.upsertPack(bundle.pack);
+  store.upsertBundle({
+    manifest: bundle.manifest,
+    artifact: bundle.artifact,
+    signedBundle: bundle.signedBundle,
+    verificationKey: bundle.verificationKey,
+  });
+  const localStore = createInMemoryPolicyControlPlaneStoreFromSnapshot(store.exportSnapshot());
+  const lifecycle = activatePolicyBundle(localStore, {
+    id: activationId,
+    target: sampleTarget(),
+    bundle: bundle.manifest.bundle,
+    activatedBy: actor('policy_admin_race'),
+    activatedAt: '2026-04-18T09:12:00.000Z',
+    rationale: 'Replacement activation races with an emergency freeze.',
+  });
+  store.upsertActivation(lifecycle.appliedRecord);
+  if (lifecycle.updatedHistoricalRecord) {
+    store.upsertActivation(lifecycle.updatedHistoricalRecord);
+  }
+}
+
+function createFirstSnapshotRaceStore(
+  base: PolicyControlPlaneStore,
+  replacement: ReturnType<typeof createSignedBundle>,
+): { readonly store: PolicyControlPlaneStore; readonly arm: () => void } {
+  let armed = false;
+  let triggered = false;
+
+  return {
+    store: {
+      ...base,
+      exportSnapshot() {
+        const snapshot = base.exportSnapshot();
+        if (armed && !triggered) {
+          triggered = true;
+          insertReplacementActivation(base, replacement, 'activation_prod_replacement');
+        }
+        return snapshot;
+      },
+    },
+    arm() {
+      armed = true;
+    },
+  };
+}
+
 function sampleTarget() {
   return {
     environment: 'prod-eu',
@@ -180,10 +252,10 @@ function sampleResolverInput() {
   } as const;
 }
 
-function createFixture(options?: { idempotency?: boolean; finalizeError?: Error }): TestAppFixture {
+function createFixture(options?: TestFixtureOptions): TestAppFixture {
   resetReleaseAdminRouteAuthLimiterForTests();
   const app = new Hono();
-  const store = createInMemoryPolicyControlPlaneStore();
+  const store = options?.store ?? createInMemoryPolicyControlPlaneStore();
   const approvalStore = createInMemoryPolicyActivationApprovalStore();
   const auditLog = createInMemoryPolicyMutationAuditLogWriter();
   const adminAuditRecords: Array<Record<string, unknown>> = [];
@@ -199,6 +271,7 @@ function createFixture(options?: { idempotency?: boolean; finalizeError?: Error 
     policyControlPlaneStore: store,
     policyActivationApprovalStore: approvalStore,
     policyMutationAuditLog: auditLog,
+    requireAtomicPolicyLifecycle: options?.requireAtomicPolicyLifecycle,
     adminMutationRequest: options?.idempotency
       ? async (c, routeId, requestPayload) => {
           const idempotencyKey = c.req.header('Idempotency-Key')?.trim() ?? null;
@@ -683,6 +756,79 @@ async function testEmergencyFreezeAndRollbackRequireBreakGlassAndFailClosed(): P
   );
 }
 
+async function testAtomicLifecycleRequiredDisablesFallbackStoreMutations(): Promise<void> {
+  const fixture = createFixture({ requireAtomicPolicyLifecycle: true });
+  await publishBundleThroughRoutes(fixture);
+  const approvalRequestId = await requestAndApproveActivation(fixture);
+
+  const activation = await requestJson(fixture.app, '/api/v1/admin/release-policy/activations', {
+    method: 'POST',
+    body: {
+      activationId: 'activation_atomic_required',
+      packId: 'finance-core',
+      bundleId: 'bundle_finance_core_2026_04_18',
+      approvalRequestId,
+      target: sampleTarget(),
+      activatedAt: '2026-04-18T09:11:00.000Z',
+      rationale: 'Attempt activation when atomic lifecycle storage is required.',
+    },
+  });
+
+  assert.equal(activation.status, 503);
+  assert.equal(activation.body.code, 'unavailable');
+  assert.equal(fixture.store.getActivation('activation_atomic_required'), null);
+  assert.equal(
+    fixture.auditLog.entries().some((entry) => entry.action === 'activate-bundle'),
+    false,
+  );
+}
+
+async function testEmergencyFreezeDerivesImplicitBundleInsideLifecycleSnapshot(): Promise<void> {
+  const baseStore = createInMemoryPolicyControlPlaneStore();
+  const replacement = createSignedBundle('bundle_finance_core_2026_04_19');
+  const race = createFirstSnapshotRaceStore(baseStore, replacement);
+  const fixture = createFixture({ store: race.store });
+  await publishBundleThroughRoutes(fixture);
+  const approvalRequestId = await requestAndApproveActivation(fixture);
+  await requestJson(fixture.app, '/api/v1/admin/release-policy/activations', {
+    method: 'POST',
+    body: {
+      activationId: 'activation_prod_current',
+      packId: 'finance-core',
+      bundleId: 'bundle_finance_core_2026_04_18',
+      approvalRequestId,
+      target: sampleTarget(),
+      activatedAt: '2026-04-18T09:11:00.000Z',
+      rationale: 'Promote finance record release policy.',
+    },
+  });
+
+  race.arm();
+  const freeze = await requestJson(fixture.app, '/api/v1/admin/release-policy/emergency/freeze', {
+    method: 'POST',
+    headers: adminHeaders({
+      'x-attestor-admin-actor-id': 'incident_commander',
+      'x-attestor-policy-actor-role': 'policy-break-glass',
+      'x-attestor-break-glass': 'true',
+    }, 'admin-break-glass-secret'),
+    body: {
+      activationId: 'freeze_prod_current',
+      target: sampleTarget(),
+      breakGlass: true,
+      reasonCode: 'incident-freeze',
+      rationale: 'Freeze policy resolution while the rollout is investigated.',
+      freezeReason: 'Suspected bad policy rollout.',
+    },
+  });
+  const frozen = fixture.store.getActivation('freeze_prod_current');
+
+  assert.equal(freeze.status, 201);
+  assert.equal(freeze.body.activation.bundle.bundleId, replacement.manifest.bundle.bundleId);
+  assert.equal(freeze.body.activation.previousActivationId, 'activation_prod_replacement');
+  assert.equal(frozen?.bundle.bundleId, replacement.manifest.bundle.bundleId);
+  assert.equal(fixture.store.getMetadata()?.activeBundleRef?.bundleId, replacement.manifest.bundle.bundleId);
+}
+
 async function testResolveAndSimulationSurfaces(): Promise<void> {
   const fixture = createFixture();
   await publishBundleThroughRoutes(fixture);
@@ -972,12 +1118,14 @@ async function run(): Promise<void> {
     await testApprovalRoutesEnforceDualReview();
     await testActivationAndRollbackSurfaces();
     await testEmergencyFreezeAndRollbackRequireBreakGlassAndFailClosed();
+    await testAtomicLifecycleRequiredDisablesFallbackStoreMutations();
+    await testEmergencyFreezeDerivesImplicitBundleInsideLifecycleSnapshot();
     await testResolveAndSimulationSurfaces();
     await testAuditSurfaceFiltersAndSnapshotDisclosure();
     await testListRoutesApplyPaginationBounds();
     await testTypedErrorsUseBoundedStatusMappings();
     await testIdempotentMutationReplayDoesNotAppendAuditTwice();
-    console.log('Release policy control-plane admin-route tests: 14 passed, 0 failed');
+    console.log('Release policy control-plane admin-route tests: 16 passed, 0 failed');
   } finally {
     process.env.ATTESTOR_ADMIN_API_KEY = originalAdminApiKey;
     process.env.ATTESTOR_ADMIN_READ_API_KEY = originalAdminReadApiKey;

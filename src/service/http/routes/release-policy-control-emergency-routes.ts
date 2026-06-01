@@ -8,6 +8,7 @@ import {
   authorizeReleaseAdminRoute,
   beginMutation,
   createLifecycleMetadataPublisher,
+  createLifecycleMetadataPublisherFromAppliedRecord,
   createPolicyMutationAuditSubjectFromActivation,
   findLatestActiveExactTargetActivation,
   findRequiredBundle,
@@ -55,10 +56,8 @@ export function registerReleasePolicyControlEmergencyRoutes(app: Hono, deps: Rel
       const bundle =
         packId && bundleId
           ? await findRequiredBundle(store, packId, bundleId)
-          : currentActive
-            ? await findRequiredBundle(store, currentActive.bundle.packId, currentActive.bundle.bundleId)
-            : null;
-      if (!bundle) {
+          : null;
+      if (!bundle && (!currentActive || packId || bundleId)) {
         return c.json({
           error: packId && bundleId
             ? `Policy bundle '${bundleId}' in pack '${packId}' not found.`
@@ -66,20 +65,25 @@ export function registerReleasePolicyControlEmergencyRoutes(app: Hono, deps: Rel
         }, packId && bundleId ? 404 : 400);
       }
 
+      const createMetadata = bundle
+        ? createLifecycleMetadataPublisher(store.kind, bundle)
+        : createLifecycleMetadataPublisherFromAppliedRecord(store.kind);
+
       const { lifecycle, audit } = await applyPolicyLifecycleMutation({
         store,
         auditLog,
+        requireAtomicLifecycle: deps.requireAtomicPolicyLifecycle === true,
         action: (localStore) => freezePolicyActivationScope(localStore, {
           id: optionalString(body, 'activationId') ?? `freeze_${randomUUID().replace(/-/g, '').slice(0, 16)}`,
           target,
-          bundle: bundle.manifest.bundle,
+          bundle: bundle?.manifest.bundle,
           activatedBy: breakGlass.actor,
           activatedAt: optionalString(body, 'activatedAt') ?? new Date().toISOString(),
           reasonCode: breakGlass.reasonCode,
           rationale: breakGlass.rationale,
           freezeReason: optionalString(body, 'freezeReason') ?? breakGlass.rationale,
         }),
-        createMetadata: createLifecycleMetadataPublisher(store.kind, bundle),
+        createMetadata,
         createAudit: (nextLifecycle) => ({
           occurredAt: new Date().toISOString(),
           action: 'freeze-scope',
@@ -161,6 +165,7 @@ export function registerReleasePolicyControlEmergencyRoutes(app: Hono, deps: Rel
       const { lifecycle, audit } = await applyPolicyLifecycleMutation({
         store,
         auditLog,
+        requireAtomicLifecycle: deps.requireAtomicPolicyLifecycle === true,
         action: (localStore) => rollbackPolicyActivation(localStore, {
           id: optionalString(body, 'activationId') ?? `emergency_rollback_${randomUUID().replace(/-/g, '').slice(0, 16)}`,
           target: rollbackTarget.target,

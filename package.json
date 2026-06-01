@@ -727,7 +727,7 @@
     "redis-memory-server": "^0.16.1",
     "samlify": "^2.13.1",
     "saxon-js": "^2.7.0",
-    "smtp-server": "^3.18.4",
+    "smtp-server": "^3.18.5",
     "snowflake-sdk": "2.4.0",
     "stripe": "22.1.1",
     "typescript": "^6.0.3",

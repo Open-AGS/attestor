@@ -138,6 +138,11 @@ export function createConsequenceAdmissionFacadeResponse(
       request: financeRequestFor(input),
       constraints: input.constraints,
       operationalContext: input.operationalContext,
+      authoritySources: input.requestInput?.authoritySources,
+      approvals: input.requestInput?.approvals,
+      allowedToolResultEvidenceClasses:
+        input.requestInput?.allowedToolResultEvidenceClasses,
+      toolResults: input.requestInput?.toolResults,
     });
   }
 

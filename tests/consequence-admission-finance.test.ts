@@ -29,6 +29,22 @@ function check(
   return match;
 }
 
+function checkLabel(
+  response: ConsequenceAdmissionResponse,
+  label: string,
+): ConsequenceAdmissionCheck {
+  const match = response.checks.find((entry) => entry.label === label);
+  assert.ok(match, `Expected ${label} check to exist`);
+  return match;
+}
+
+function reason(response: ConsequenceAdmissionResponse, value: string): boolean {
+  return response.reasonCodes.includes(value);
+}
+
+const digestA = `sha256:${'a'.repeat(64)}`;
+const digestB = `sha256:${'b'.repeat(64)}`;
+
 function requestFixture() {
   return createFinancePipelineAdmissionRequest({
     requestedAt: '2026-04-23T12:00:00.000Z',
@@ -270,6 +286,127 @@ function testDeniedOrUnknownFinanceValuesBlock(): void {
   equal(check(unknown, 'evidence').outcome, 'fail', 'Finance admission: missing proof fails evidence on unknown value');
 }
 
+function testUntrustedFinanceAuthoritySourceHoldsNativePassAtReview(): void {
+  const response = createFinancePipelineAdmissionResponse({
+    request: requestFixture(),
+    run: baseRun(),
+    decidedAt: '2026-04-23T12:00:01.000Z',
+    authoritySources: [
+      {
+        sourceKind: 'chat-message',
+        claimKind: 'authorization',
+        sourceRef: 'chat:finance-approval-thread',
+        trustClass: 'trusted-authority',
+        evidenceDigest: digestA,
+      },
+    ],
+  });
+
+  equal(
+    response.decision,
+    'review',
+    'Finance admission: untrusted authority source holds native pass at review',
+  );
+  equal(response.allowed, false, 'Finance admission: untrusted authority source is not allowed');
+  equal(response.failClosed, true, 'Finance admission: untrusted authority source fails closed');
+  equal(
+    checkLabel(response, 'Finance authority-source guard').outcome,
+    'fail',
+    'Finance admission: authority-source guard fails untrusted authority',
+  );
+  ok(reason(response, 'finance-trust-guard-held'), 'Finance admission: guard hold is visible');
+  ok(
+    reason(response, 'untrusted-content-authority-source'),
+    'Finance admission: untrusted authority reason is carried',
+  );
+}
+
+function testChatApprovalHoldsAcceptedFilingReleaseAtReview(): void {
+  const response = createFinancePipelineAdmissionResponse({
+    request: requestFixture(),
+    run: baseRun({
+      release: {
+        filingExport: {
+          decisionId: 'release_decision_approval_guard',
+          decisionStatus: 'accepted',
+          policyVersion: 'finance-policy-v1',
+          tokenId: 'release_token_approval_guard',
+          expiresAt: '2026-04-23T13:00:00.000Z',
+        },
+      },
+    }),
+    decidedAt: '2026-04-23T12:00:01.000Z',
+    approvals: [
+      {
+        approvalRef: 'approval:chat-thread',
+        sourceKind: 'chat-message',
+        state: 'approved',
+        sourceRef: 'chat:controller-thread',
+        reviewerRef: 'reviewer:finance-controller',
+        reviewerAuthorityDigest: digestA,
+        approvalDigest: digestB,
+        scopeDigest: digestA,
+        issuedAt: '2026-04-23T11:45:00.000Z',
+      },
+    ],
+  });
+
+  equal(
+    response.decision,
+    'review',
+    'Finance admission: chat approval holds accepted filing release at review',
+  );
+  equal(response.allowed, false, 'Finance admission: chat approval is not allowed');
+  equal(
+    checkLabel(response, 'Finance approval provenance guard').outcome,
+    'fail',
+    'Finance admission: approval provenance guard fails untrusted approval',
+  );
+  ok(
+    reason(response, 'approval-source-untrusted'),
+    'Finance admission: untrusted approval reason is carried',
+  );
+}
+
+function testModelGeneratedToolResultAuthorityHoldsNativePassAtReview(): void {
+  const response = createFinancePipelineAdmissionResponse({
+    request: requestFixture(),
+    run: baseRun(),
+    decidedAt: '2026-04-23T12:00:01.000Z',
+    allowedToolResultEvidenceClasses: ['payment-record'],
+    toolResults: [
+      {
+        toolResultRef: 'tool-result:model-summary',
+        toolKind: 'provider-api',
+        sourceTrustClass: 'model-generated',
+        resultUse: 'authority',
+        sourceRef: 'provider:finance-summary',
+        sourceTimestamp: '2026-04-23T11:58:00.000Z',
+        integrityDigest: digestA,
+        evidenceDigest: digestB,
+        evidenceClass: 'payment-record',
+        toolRisk: 'high',
+      },
+    ],
+  });
+
+  equal(
+    response.decision,
+    'review',
+    'Finance admission: model-generated tool authority holds native pass at review',
+  );
+  equal(response.allowed, false, 'Finance admission: model-generated tool result is not allowed');
+  equal(
+    checkLabel(response, 'Finance tool-result guard').outcome,
+    'fail',
+    'Finance admission: tool-result guard fails model-generated authority',
+  );
+  ok(
+    reason(response, 'tool-result-model-generated-source'),
+    'Finance admission: model-generated tool-result reason is carried',
+  );
+}
+
 testDescriptorAndRequestStayOnTheExistingFinanceRoute();
 testNativePipelinePassMapsToAdmitWithProof();
 testNativePipelinePassWithMissingAuthorityOrProofFailsRequiredChecks();
@@ -277,5 +414,8 @@ testNativePipelinePassAcceptsClosedRuntimeAuthorityStatuses();
 testAcceptedFilingReleaseMapsToAdmitWithTokenAndEvidencePack();
 testReviewRequiredFilingReleaseFailsClosed();
 testDeniedOrUnknownFinanceValuesBlock();
+testUntrustedFinanceAuthoritySourceHoldsNativePassAtReview();
+testChatApprovalHoldsAcceptedFilingReleaseAtReview();
+testModelGeneratedToolResultAuthorityHoldsNativePassAtReview();
 
 console.log(`Consequence admission finance tests: ${passed} passed, 0 failed`);

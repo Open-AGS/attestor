@@ -55,6 +55,10 @@ The store does not store raw payloads, raw tenant ids, raw worker ids, raw
 provider bodies, wallet material, prompts, secrets, database URLs, or customer
 records. The API accepts source keys and payloads only as digests.
 
+The tables enable and force PostgreSQL row-level security for table owners.
+Superusers and roles with `BYPASSRLS` still bypass PostgreSQL RLS, so this is
+schema hardening evidence, not live customer database posture proof.
+
 ## Operational Proofs
 
 `ensureConsequenceSharedHistoryOutboxStore()` exposes digest-shaped evidence:

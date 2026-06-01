@@ -167,6 +167,7 @@ export interface ConsequenceAdmissionDownstreamContractDescriptor {
   readonly failureReasons: typeof CONSEQUENCE_ADMISSION_DOWNSTREAM_FAILURE_REASONS;
   readonly decisionExposesRawConstraints: false;
   readonly decisionConstraintReferenceMode: 'digests-only';
+  readonly executionProofExcludesAdmissionReceipt: true;
   readonly constraintKinds: typeof CONSEQUENCE_ADMISSION_CONSTRAINT_KINDS;
   readonly failClosed: true;
 }
@@ -294,6 +295,14 @@ function failedRequiredCheckReasons(
     : [];
 }
 
+function executionProofRefs(
+  proofRefs: readonly ConsequenceAdmissionProofRef[],
+): readonly ConsequenceAdmissionProofRef[] {
+  return Object.freeze(
+    proofRefs.filter((proofRef) => proofRef.kind !== 'admission-receipt'),
+  );
+}
+
 function allConstraintsAccepted(input: {
   readonly constraints: readonly ConsequenceAdmissionConstraint[];
   readonly acceptedConstraintIds: readonly string[];
@@ -403,7 +412,8 @@ export function evaluateConsequenceAdmissionDownstreamContract(
     'acceptedConstraintIds[]',
   );
   const proofRequired = contract.requireProof && executableDecision(admission.decision);
-  const proofSatisfied = !proofRequired || admission.proof.length > 0;
+  const executableProofRefs = executionProofRefs(admission.proof);
+  const proofSatisfied = !proofRequired || executableProofRefs.length > 0;
   const idempotencySatisfied = !contract.requireIdempotencyKey || idempotencyKey !== null;
   const constraintsRequired =
     contract.requireConstraintAcknowledgement &&
@@ -496,6 +506,7 @@ ConsequenceAdmissionDownstreamContractDescriptor {
     failureReasons: CONSEQUENCE_ADMISSION_DOWNSTREAM_FAILURE_REASONS,
     decisionExposesRawConstraints: false,
     decisionConstraintReferenceMode: 'digests-only',
+    executionProofExcludesAdmissionReceipt: true,
     constraintKinds: CONSEQUENCE_ADMISSION_CONSTRAINT_KINDS,
     failClosed: true,
   });

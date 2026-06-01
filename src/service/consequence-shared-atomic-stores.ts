@@ -59,7 +59,7 @@ export interface ConsequenceSharedAtomicStoresSummary {
   readonly rawIdempotencyKeyStored: false;
   readonly rawReplayKeyStored: false;
   readonly rlsPolicyInstalled: true;
-  readonly rlsForced: false;
+  readonly rlsForced: true;
   readonly productionSharedRuntimeWired: false;
   readonly limitation: string;
 }
@@ -110,7 +110,7 @@ ${CONSEQUENCE_SHARED_PRESENTATION_REPLAY_LEDGER_TABLE}:
 const TENANT_SCOPE_CONTRACT = `
 tenant_scope_digest = sha256({version, tenantId|null, environment|null});
 RLS policies compare tenant_scope_digest to current_setting('attestor.tenant_scope_digest', true).
-RLS is enabled but not forced so owner-level migrations and summaries remain possible.
+RLS is enabled and forced for table owners; superusers and BYPASSRLS roles still bypass PostgreSQL RLS.
 `;
 
 const RETRY_IDEMPOTENCY_CONTRACT = `
@@ -400,8 +400,12 @@ async function ensureAtomicTables(): Promise<void> {
 
           ALTER TABLE ${CONSEQUENCE_SHARED_RETRY_ATTEMPT_LEDGER_TABLE}
             ENABLE ROW LEVEL SECURITY;
+          ALTER TABLE ${CONSEQUENCE_SHARED_RETRY_ATTEMPT_LEDGER_TABLE}
+            FORCE ROW LEVEL SECURITY;
           ALTER TABLE ${CONSEQUENCE_SHARED_PRESENTATION_REPLAY_LEDGER_TABLE}
             ENABLE ROW LEVEL SECURITY;
+          ALTER TABLE ${CONSEQUENCE_SHARED_PRESENTATION_REPLAY_LEDGER_TABLE}
+            FORCE ROW LEVEL SECURITY;
 
           DROP POLICY IF EXISTS consequence_retry_attempt_tenant_scope
             ON ${CONSEQUENCE_SHARED_RETRY_ATTEMPT_LEDGER_TABLE};
@@ -464,10 +468,10 @@ async function summary(): Promise<ConsequenceSharedAtomicStoresSummary> {
       rawIdempotencyKeyStored: false,
       rawReplayKeyStored: false,
       rlsPolicyInstalled: true,
-      rlsForced: false,
+      rlsForced: true,
       productionSharedRuntimeWired: false,
       limitation:
-        'Repository-side atomic shared stores only: runtime consequence ledgers still default to in-memory reference stores, and external deployment probes remain required.',
+        'Repository-side atomic shared stores only: runtime consequence ledgers still default to in-memory reference stores, and external deployment probes remain required. PostgreSQL superuser and BYPASSRLS roles remain outside the FORCE RLS table-owner guard.',
     });
   });
 }

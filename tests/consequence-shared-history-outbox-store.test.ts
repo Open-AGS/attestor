@@ -99,6 +99,11 @@ async function testSummaryShape(): Promise<void> {
     'Consequence shared history outbox: summary does not store raw tenant ids',
   );
   equal(
+    summary.rlsForced,
+    true,
+    'Consequence shared history outbox: summary declares FORCE RLS schema posture',
+  );
+  equal(
     summary.debeziumConnectorWired,
     false,
     'Consequence shared history outbox: summary does not claim Debezium delivery',
@@ -128,6 +133,22 @@ async function testSummaryShape(): Promise<void> {
     ),
     'Consequence shared history outbox: operational evidence uses digest-shaped proofs',
   );
+  await withReleaseAuthorityTransaction(async (client) => {
+    const rlsState = await client.query(
+      `SELECT bool_and(relforcerowsecurity) AS forced
+         FROM pg_class
+        WHERE oid IN ($1::regclass, $2::regclass)`,
+      [
+        CONSEQUENCE_SHARED_HISTORY_TABLE,
+        CONSEQUENCE_SHARED_OUTBOX_TABLE,
+      ],
+    );
+    equal(
+      rlsState.rows[0]?.forced,
+      true,
+      'Consequence shared history outbox: PostgreSQL catalogs mark both tables FORCE RLS',
+    );
+  });
 }
 
 async function testAppendOnlyHistoryAndConflicts(): Promise<void> {

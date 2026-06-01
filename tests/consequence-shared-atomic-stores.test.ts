@@ -486,6 +486,27 @@ async function run(): Promise<void> {
       false,
       'Consequence shared atomic stores: summary does not claim runtime cutover',
     );
+    equal(
+      bootSummary.rlsForced,
+      true,
+      'Consequence shared atomic stores: summary declares FORCE RLS schema posture',
+    );
+    await withReleaseAuthorityTransaction(async (client) => {
+      const rlsState = await client.query(
+        `SELECT bool_and(relforcerowsecurity) AS forced
+           FROM pg_class
+          WHERE oid IN ($1::regclass, $2::regclass)`,
+        [
+          CONSEQUENCE_SHARED_RETRY_ATTEMPT_LEDGER_TABLE,
+          CONSEQUENCE_SHARED_PRESENTATION_REPLAY_LEDGER_TABLE,
+        ],
+      );
+      equal(
+        rlsState.rows[0]?.forced,
+        true,
+        'Consequence shared atomic stores: PostgreSQL catalogs mark both tables FORCE RLS',
+      );
+    });
 
     await testSharedRetryAttemptStore();
     await testSharedPresentationReplayStore();

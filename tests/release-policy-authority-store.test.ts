@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import EmbeddedPostgres from 'embedded-postgres';
 import {
+  activationRecords,
   activationApprovals,
   auditLog,
   bundleFormat,
@@ -242,6 +243,55 @@ async function run(): Promise<void> {
     passed += 1;
     equal((await policyStore.listBundleHistory('finance-core')).length, 1, 'Shared policy store: bundle history lists persisted bundle');
     equal((await policyStore.exportSnapshot()).activations.length, 1, 'Shared policy store: snapshot includes persisted activation');
+
+    const failedAtomicBundle = createSignedBundle('bundle_finance_record_atomic_failure');
+    await policyStore.upsertBundle({
+      manifest: failedAtomicBundle.manifest,
+      artifact: failedAtomicBundle.artifact,
+      signedBundle: failedAtomicBundle.signedBundle,
+    });
+    await assert.rejects(
+      () =>
+        policyStore.applyActivationLifecycle({
+          action: (localStore) =>
+            activationRecords.activatePolicyBundle(localStore, {
+              id: 'activation-atomic-failure',
+              target: target(),
+              bundle: failedAtomicBundle.manifest.bundle,
+              activatedBy: actor('policy_admin_atomic'),
+              activatedAt: '2026-04-24T19:18:00.000Z',
+              rationale: 'This lifecycle mutation should roll back.',
+            }),
+          createMetadata: (localStore, lifecycle) =>
+            objectModel.createPolicyControlPlaneMetadata(
+              'postgres',
+              localStore.getMetadata()?.discoveryMode ?? 'scoped-active',
+              failedAtomicBundle.manifest.bundle,
+              lifecycle.appliedRecord.id,
+            ),
+          createAudit: () => {
+            throw new Error('audit append unavailable');
+          },
+        }),
+      /audit append unavailable/,
+      'Shared policy store: lifecycle transaction rejects when audit creation fails',
+    );
+    passed += 1;
+    equal(
+      (await policyStore.getActivation('activation-atomic-failure')),
+      null,
+      'Shared policy store: failed lifecycle transaction rolls back applied activation',
+    );
+    equal(
+      (await policyStore.getMetadata())?.latestActivationId,
+      activation.id,
+      'Shared policy store: failed lifecycle transaction preserves previous metadata',
+    );
+    equal(
+      (await auditWriter.entries()).length,
+      0,
+      'Shared policy store: failed lifecycle transaction does not append audit',
+    );
 
     const inMemoryApprovalStore = activationApprovals.createInMemoryPolicyActivationApprovalStore();
     const approval = activationApprovals.requestPolicyActivationApproval(inMemoryApprovalStore, {

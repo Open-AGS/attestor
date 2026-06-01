@@ -11,6 +11,7 @@ import {
   recordReleaseAuthorityComponentState,
   resetReleaseAuthorityStoreForTests,
   withReleaseAuthorityAdvisoryLock,
+  withReleaseAuthorityAdvisoryLocks,
   type ReleaseAuthorityPgClient,
 } from './release-authority-store.js';
 
@@ -33,6 +34,7 @@ const POLICY_MUTATION_AUDIT_TABLE =
 
 type PgQueryResultRow = Record<string, unknown>;
 type PolicyControlPlaneMetadata = ReturnType<typeof objectModel.createPolicyControlPlaneMetadata>;
+type PolicyControlPlaneStore = ReturnType<typeof policyStore.createInMemoryPolicyControlPlaneStore>;
 type PolicyPackMetadata = ReturnType<typeof objectModel.createPolicyPackMetadata>;
 type PolicyActivationRecord = ReturnType<typeof objectModel.createPolicyActivationRecord>;
 type StoredPolicyBundleRecord = policyStore.StoredPolicyBundleRecord;
@@ -54,6 +56,29 @@ type PolicyMutationAuditVerificationResult =
 type PolicyMutationAuditSnapshot = ReturnType<
   ReturnType<typeof auditLog.createInMemoryPolicyMutationAuditLogWriter>['exportSnapshot']
 >;
+
+interface SharedPolicyActivationLifecycleResult {
+  readonly appliedRecord: PolicyActivationRecord;
+  readonly updatedHistoricalRecord?: PolicyActivationRecord | null;
+}
+
+export interface SharedPolicyActivationLifecycleMutationInput<
+  T extends SharedPolicyActivationLifecycleResult,
+> {
+  readonly action: (localStore: PolicyControlPlaneStore) => T;
+  readonly createMetadata?: (
+    localStore: PolicyControlPlaneStore,
+    lifecycle: T,
+  ) => PolicyControlPlaneMetadata | null;
+  readonly createAudit?: (lifecycle: T) => PolicyMutationAuditAppendInput;
+}
+
+export interface SharedPolicyActivationLifecycleMutationResult<
+  T extends SharedPolicyActivationLifecycleResult,
+> {
+  readonly lifecycle: T;
+  readonly audit: PolicyMutationAuditEntry | null;
+}
 
 export interface SharedPolicyControlPlaneStoreSummary {
   readonly component: typeof POLICY_CONTROL_PLANE_COMPONENT;
@@ -98,6 +123,9 @@ export interface SharedPolicyControlPlaneStore {
   listBundleHistory(packId: string): Promise<readonly StoredPolicyBundleRecord[]>;
   listBundles(): Promise<readonly StoredPolicyBundleRecord[]>;
   upsertActivation(record: PolicyActivationRecord): Promise<PolicyActivationRecord>;
+  applyActivationLifecycle<T extends SharedPolicyActivationLifecycleResult>(
+    input: SharedPolicyActivationLifecycleMutationInput<T>,
+  ): Promise<SharedPolicyActivationLifecycleMutationResult<T>>;
   getActivation(id: string): Promise<PolicyActivationRecord | null>;
   listActivations(): Promise<readonly PolicyActivationRecord[]>;
   exportSnapshot(): Promise<PolicyStoreSnapshot>;
@@ -335,6 +363,137 @@ async function latestPolicyAuditDigest(client: ReleaseAuthorityPgClient): Promis
     : null;
 }
 
+async function policyStoreSnapshotFromClient(
+  client: ReleaseAuthorityPgClient,
+): Promise<PolicyStoreSnapshot> {
+  const metadata = await client.query(
+    `SELECT metadata_json
+       FROM ${POLICY_METADATA_TABLE}
+      WHERE singleton = TRUE
+      LIMIT 1`,
+  );
+  const packs = await client.query(
+    `SELECT *
+       FROM ${POLICY_PACKS_TABLE}
+      ORDER BY pack_id ASC`,
+  );
+  const bundles = await client.query(
+    `SELECT *
+       FROM ${POLICY_BUNDLES_TABLE}
+      ORDER BY stored_at DESC, bundle_version DESC, bundle_id DESC`,
+  );
+  const activations = await client.query(
+    `SELECT *
+       FROM ${POLICY_ACTIVATIONS_TABLE}
+      ORDER BY activated_at DESC, activation_id DESC`,
+  );
+
+  return freezeClone({
+    version: policyStore.POLICY_STORE_SNAPSHOT_SPEC_VERSION,
+    metadata: metadata.rows.length === 0 ? null : rowToMetadata(metadata.rows[0]!),
+    packs: packs.rows.map(rowToPack),
+    bundles: bundles.rows.map(rowToBundle).sort(compareBundles),
+    activations: activations.rows.map(rowToActivation).sort(compareActivations),
+  }) as PolicyStoreSnapshot;
+}
+
+async function setMetadataWithClient(
+  client: ReleaseAuthorityPgClient,
+  metadata: PolicyControlPlaneMetadata,
+): Promise<PolicyControlPlaneMetadata> {
+  const normalized = normalizeMetadata(metadata);
+  await client.query(
+    `INSERT INTO ${POLICY_METADATA_TABLE} (
+      singleton, metadata_json, updated_at
+    ) VALUES (
+      TRUE, $1::jsonb, NOW()
+    )
+    ON CONFLICT (singleton) DO UPDATE SET
+      metadata_json = EXCLUDED.metadata_json,
+      updated_at = EXCLUDED.updated_at`,
+    [JSON.stringify(normalized)],
+  );
+  return normalized;
+}
+
+async function upsertActivationWithClient(
+  client: ReleaseAuthorityPgClient,
+  record: PolicyActivationRecord,
+): Promise<PolicyActivationRecord> {
+  const normalized = normalizeActivation(record);
+  await client.query(
+    `INSERT INTO ${POLICY_ACTIVATIONS_TABLE} (
+      activation_id, activation_state, target_label, pack_id, bundle_id,
+      activated_at, activation_json, updated_at
+    ) VALUES (
+      $1, $2, $3, $4, $5, $6::timestamptz, $7::jsonb, NOW()
+    )
+    ON CONFLICT (activation_id) DO UPDATE SET
+      activation_state = EXCLUDED.activation_state,
+      target_label = EXCLUDED.target_label,
+      pack_id = EXCLUDED.pack_id,
+      bundle_id = EXCLUDED.bundle_id,
+      activated_at = EXCLUDED.activated_at,
+      activation_json = EXCLUDED.activation_json,
+      updated_at = EXCLUDED.updated_at`,
+    [
+      normalized.id,
+      normalized.state,
+      normalized.targetLabel,
+      normalized.bundle.packId,
+      normalized.bundle.bundleId,
+      normalized.activatedAt,
+      JSON.stringify(normalized),
+    ],
+  );
+  return normalized;
+}
+
+async function appendPolicyAuditWithClient(
+  client: ReleaseAuthorityPgClient,
+  input: PolicyMutationAuditAppendInput,
+): Promise<PolicyMutationAuditEntry> {
+  const latest = await client.query(
+    `SELECT sequence, entry_digest
+       FROM ${POLICY_MUTATION_AUDIT_TABLE}
+      ORDER BY sequence DESC
+      LIMIT 1`,
+  );
+  const latestSequence = Number(latest.rows[0]?.sequence ?? 0);
+  const previousEntryDigest =
+    typeof latest.rows[0]?.entry_digest === 'string'
+      ? latest.rows[0]!.entry_digest
+      : null;
+  const entry = auditLog.createPolicyMutationAuditEntry(
+    input,
+    latestSequence + 1,
+    previousEntryDigest,
+  );
+  await client.query(
+    `INSERT INTO ${POLICY_MUTATION_AUDIT_TABLE} (
+      sequence, entry_id, occurred_at, action, pack_id, bundle_id,
+      activation_id, target_label, previous_entry_digest, entry_digest,
+      entry_json
+    ) VALUES (
+      $1, $2, $3::timestamptz, $4, $5, $6, $7, $8, $9, $10, $11::jsonb
+    )`,
+    [
+      entry.sequence,
+      entry.entryId,
+      entry.occurredAt,
+      entry.action,
+      entry.subject.packId,
+      entry.subject.bundleId,
+      entry.subject.activationId,
+      entry.subject.targetLabel,
+      entry.previousEntryDigest,
+      entry.entryDigest,
+      JSON.stringify(entry),
+    ],
+  );
+  return entry;
+}
+
 async function ensurePolicyAuthorityTables(): Promise<void> {
   if (!initPromise) {
     initPromise = (async () => {
@@ -500,21 +659,10 @@ export function createSharedPolicyControlPlaneStore(): SharedPolicyControlPlaneS
 
     async setMetadata(metadata: PolicyControlPlaneMetadata): Promise<PolicyControlPlaneMetadata> {
       await ensurePolicyAuthorityTables();
-      const normalized = normalizeMetadata(metadata);
       await withReleaseAuthorityAdvisoryLock(POLICY_STORE_MUTATION_LOCK, (client) =>
-        client.query(
-          `INSERT INTO ${POLICY_METADATA_TABLE} (
-            singleton, metadata_json, updated_at
-          ) VALUES (
-            TRUE, $1::jsonb, NOW()
-          )
-          ON CONFLICT (singleton) DO UPDATE SET
-            metadata_json = EXCLUDED.metadata_json,
-            updated_at = EXCLUDED.updated_at`,
-          [JSON.stringify(normalized)],
-        ),
+        setMetadataWithClient(client, metadata),
       );
-      return normalized;
+      return normalizeMetadata(metadata);
     },
 
     async upsertPack(pack: PolicyPackMetadata): Promise<PolicyPackMetadata> {
@@ -656,35 +804,40 @@ export function createSharedPolicyControlPlaneStore(): SharedPolicyControlPlaneS
 
     async upsertActivation(record: PolicyActivationRecord): Promise<PolicyActivationRecord> {
       await ensurePolicyAuthorityTables();
-      const normalized = normalizeActivation(record);
-      await withReleaseAuthorityAdvisoryLock(POLICY_STORE_MUTATION_LOCK, (client) =>
-        client.query(
-          `INSERT INTO ${POLICY_ACTIVATIONS_TABLE} (
-            activation_id, activation_state, target_label, pack_id, bundle_id,
-            activated_at, activation_json, updated_at
-          ) VALUES (
-            $1, $2, $3, $4, $5, $6::timestamptz, $7::jsonb, NOW()
-          )
-          ON CONFLICT (activation_id) DO UPDATE SET
-            activation_state = EXCLUDED.activation_state,
-            target_label = EXCLUDED.target_label,
-            pack_id = EXCLUDED.pack_id,
-            bundle_id = EXCLUDED.bundle_id,
-            activated_at = EXCLUDED.activated_at,
-            activation_json = EXCLUDED.activation_json,
-            updated_at = EXCLUDED.updated_at`,
-          [
-            normalized.id,
-            normalized.state,
-            normalized.targetLabel,
-            normalized.bundle.packId,
-            normalized.bundle.bundleId,
-            normalized.activatedAt,
-            JSON.stringify(normalized),
-          ],
-        ),
+      return withReleaseAuthorityAdvisoryLock(POLICY_STORE_MUTATION_LOCK, (client) =>
+        upsertActivationWithClient(client, record),
       );
-      return normalized;
+    },
+
+    async applyActivationLifecycle<T extends SharedPolicyActivationLifecycleResult>(
+      input: SharedPolicyActivationLifecycleMutationInput<T>,
+    ): Promise<SharedPolicyActivationLifecycleMutationResult<T>> {
+      await ensurePolicyAuthorityTables();
+      return withReleaseAuthorityAdvisoryLocks(
+        [POLICY_STORE_MUTATION_LOCK, POLICY_AUDIT_APPEND_LOCK],
+        async (client) => {
+          const localStore = policyStore.createInMemoryPolicyControlPlaneStoreFromSnapshot(
+            await policyStoreSnapshotFromClient(client),
+          );
+          const lifecycle = input.action(localStore);
+          await upsertActivationWithClient(client, lifecycle.appliedRecord);
+          if (lifecycle.updatedHistoricalRecord) {
+            await upsertActivationWithClient(client, lifecycle.updatedHistoricalRecord);
+          }
+
+          const metadata = input.createMetadata?.(localStore, lifecycle) ?? null;
+          if (metadata) {
+            await setMetadataWithClient(client, metadata);
+          }
+
+          const auditInput = input.createAudit?.(lifecycle) ?? null;
+          const audit =
+            auditInput === null
+              ? null
+              : await appendPolicyAuditWithClient(client, auditInput);
+          return Object.freeze({ lifecycle, audit });
+        },
+      );
     },
 
     async getActivation(id: string): Promise<PolicyActivationRecord | null> {
@@ -714,19 +867,10 @@ export function createSharedPolicyControlPlaneStore(): SharedPolicyControlPlaneS
     },
 
     async exportSnapshot(): Promise<PolicyStoreSnapshot> {
-      const [metadata, packs, bundles, activations] = await Promise.all([
-        this.getMetadata(),
-        this.listPacks(),
-        this.listBundles(),
-        this.listActivations(),
-      ]);
-      return freezeClone({
-        version: policyStore.POLICY_STORE_SNAPSHOT_SPEC_VERSION,
-        metadata,
-        packs,
-        bundles,
-        activations,
-      }) as PolicyStoreSnapshot;
+      await ensurePolicyAuthorityTables();
+      return withReleaseAuthorityAdvisoryLock(POLICY_STORE_MUTATION_LOCK, (client) =>
+        policyStoreSnapshotFromClient(client),
+      );
     },
 
     async summary(): Promise<SharedPolicyControlPlaneStoreSummary> {
@@ -903,45 +1047,7 @@ export function createSharedPolicyMutationAuditLogWriter(): SharedPolicyMutation
     async append(input: PolicyMutationAuditAppendInput): Promise<PolicyMutationAuditEntry> {
       await ensurePolicyAuthorityTables();
       return withReleaseAuthorityAdvisoryLock(POLICY_AUDIT_APPEND_LOCK, async (client) => {
-        const latest = await client.query(
-          `SELECT sequence, entry_digest
-             FROM ${POLICY_MUTATION_AUDIT_TABLE}
-            ORDER BY sequence DESC
-            LIMIT 1`,
-        );
-        const latestSequence = Number(latest.rows[0]?.sequence ?? 0);
-        const previousEntryDigest =
-          typeof latest.rows[0]?.entry_digest === 'string'
-            ? latest.rows[0]!.entry_digest
-            : null;
-        const entry = auditLog.createPolicyMutationAuditEntry(
-          input,
-          latestSequence + 1,
-          previousEntryDigest,
-        );
-        await client.query(
-          `INSERT INTO ${POLICY_MUTATION_AUDIT_TABLE} (
-            sequence, entry_id, occurred_at, action, pack_id, bundle_id,
-            activation_id, target_label, previous_entry_digest, entry_digest,
-            entry_json
-          ) VALUES (
-            $1, $2, $3::timestamptz, $4, $5, $6, $7, $8, $9, $10, $11::jsonb
-          )`,
-          [
-            entry.sequence,
-            entry.entryId,
-            entry.occurredAt,
-            entry.action,
-            entry.subject.packId,
-            entry.subject.bundleId,
-            entry.subject.activationId,
-            entry.subject.targetLabel,
-            entry.previousEntryDigest,
-            entry.entryDigest,
-            JSON.stringify(entry),
-          ],
-        );
-        return entry;
+        return appendPolicyAuditWithClient(client, input);
       });
     },
 

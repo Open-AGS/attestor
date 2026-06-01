@@ -312,12 +312,21 @@ export async function withReleaseAuthorityAdvisoryLock<T>(
   lockName: string,
   action: (client: ReleaseAuthorityPgClient) => Promise<T>,
 ): Promise<T> {
-  const [key1, key2] = advisoryLockKeys(lockName);
+  return withReleaseAuthorityAdvisoryLocks([lockName], action);
+}
+
+export async function withReleaseAuthorityAdvisoryLocks<T>(
+  lockNames: readonly string[],
+  action: (client: ReleaseAuthorityPgClient) => Promise<T>,
+): Promise<T> {
+  const keys = [...lockNames].sort().map((lockName) => advisoryLockKeys(lockName));
   return withReleaseAuthorityTransaction(async (client) => {
-    await client.query(
-      'SELECT pg_advisory_xact_lock($1::integer, $2::integer)',
-      [key1, key2],
-    );
+    for (const [key1, key2] of keys) {
+      await client.query(
+        'SELECT pg_advisory_xact_lock($1::integer, $2::integer)',
+        [key1, key2],
+      );
+    }
     return action(client);
   });
 }

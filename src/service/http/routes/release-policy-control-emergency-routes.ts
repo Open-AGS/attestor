@@ -3,10 +3,11 @@ import type { Hono } from 'hono';
 import {
   RELEASE_ADMIN_BREAK_GLASS_ROLES,
   activationView,
-  applyPolicyLifecycle,
+  applyPolicyLifecycleMutation,
   auditEntryView,
   authorizeReleaseAdminRoute,
   beginMutation,
+  createLifecycleMetadataPublisher,
   createPolicyMutationAuditSubjectFromActivation,
   findLatestActiveExactTargetActivation,
   findRequiredBundle,
@@ -17,7 +18,6 @@ import {
   parseActivationTarget,
   parseJsonBody,
   policyErrorResponse,
-  publishStoreMetadata,
   requireBreakGlassAuthorization,
   requiredString,
   rollbackPolicyActivation,
@@ -66,32 +66,36 @@ export function registerReleasePolicyControlEmergencyRoutes(app: Hono, deps: Rel
         }, packId && bundleId ? 404 : 400);
       }
 
-      const lifecycle = await applyPolicyLifecycle(store, (localStore) => freezePolicyActivationScope(localStore, {
-        id: optionalString(body, 'activationId') ?? `freeze_${randomUUID().replace(/-/g, '').slice(0, 16)}`,
-        target,
-        bundle: bundle.manifest.bundle,
-        activatedBy: breakGlass.actor,
-        activatedAt: optionalString(body, 'activatedAt') ?? new Date().toISOString(),
-        reasonCode: breakGlass.reasonCode,
-        rationale: breakGlass.rationale,
-        freezeReason: optionalString(body, 'freezeReason') ?? breakGlass.rationale,
-      }));
-      await publishStoreMetadata(store, bundle, lifecycle.appliedRecord.id);
-      const audit = await auditLog.append({
-        occurredAt: new Date().toISOString(),
-        action: 'freeze-scope',
-        actor: breakGlass.actor,
-        subject: createPolicyMutationAuditSubjectFromActivation(lifecycle.appliedRecord),
-        reasonCode: lifecycle.appliedRecord.reasonCode,
-        rationale: lifecycle.appliedRecord.rationale,
-        mutationSnapshot: {
-          lifecycle,
-          breakGlass: {
-            actor: breakGlass.actor,
-            reasonCode: breakGlass.reasonCode,
-            incidentId: breakGlass.incidentId,
+      const { lifecycle, audit } = await applyPolicyLifecycleMutation({
+        store,
+        auditLog,
+        action: (localStore) => freezePolicyActivationScope(localStore, {
+          id: optionalString(body, 'activationId') ?? `freeze_${randomUUID().replace(/-/g, '').slice(0, 16)}`,
+          target,
+          bundle: bundle.manifest.bundle,
+          activatedBy: breakGlass.actor,
+          activatedAt: optionalString(body, 'activatedAt') ?? new Date().toISOString(),
+          reasonCode: breakGlass.reasonCode,
+          rationale: breakGlass.rationale,
+          freezeReason: optionalString(body, 'freezeReason') ?? breakGlass.rationale,
+        }),
+        createMetadata: createLifecycleMetadataPublisher(store.kind, bundle),
+        createAudit: (nextLifecycle) => ({
+          occurredAt: new Date().toISOString(),
+          action: 'freeze-scope',
+          actor: breakGlass.actor,
+          subject: createPolicyMutationAuditSubjectFromActivation(nextLifecycle.appliedRecord),
+          reasonCode: nextLifecycle.appliedRecord.reasonCode,
+          rationale: nextLifecycle.appliedRecord.rationale,
+          mutationSnapshot: {
+            lifecycle: nextLifecycle,
+            breakGlass: {
+              actor: breakGlass.actor,
+              reasonCode: breakGlass.reasonCode,
+              incidentId: breakGlass.incidentId,
+            },
           },
-        },
+        }),
       });
       const responseBody = {
         activation: activationView(lifecycle.appliedRecord),
@@ -144,38 +148,45 @@ export function registerReleasePolicyControlEmergencyRoutes(app: Hono, deps: Rel
       if (!rollbackTarget) {
         return c.json({ error: `Policy activation '${rollbackTargetId}' not found.` }, 404);
       }
-      const lifecycle = await applyPolicyLifecycle(store, (localStore) => rollbackPolicyActivation(localStore, {
-        id: optionalString(body, 'activationId') ?? `emergency_rollback_${randomUUID().replace(/-/g, '').slice(0, 16)}`,
-        target: rollbackTarget.target,
-        rollbackTargetActivationId: rollbackTarget.id,
-        activatedBy: breakGlass.actor,
-        activatedAt: optionalString(body, 'activatedAt') ?? new Date().toISOString(),
-        reasonCode: breakGlass.reasonCode,
-        rationale: breakGlass.rationale,
-      }));
       const bundle = await findRequiredBundle(
         store,
-        lifecycle.appliedRecord.bundle.packId,
-        lifecycle.appliedRecord.bundle.bundleId,
+        rollbackTarget.bundle.packId,
+        rollbackTarget.bundle.bundleId,
       );
-      if (bundle) {
-        await publishStoreMetadata(store, bundle, lifecycle.appliedRecord.id);
+      if (!bundle) {
+        return c.json({
+          error: `Policy bundle '${rollbackTarget.bundle.bundleId}' in pack '${rollbackTarget.bundle.packId}' not found.`,
+        }, 404);
       }
-      const audit = await auditLog.append({
-        occurredAt: new Date().toISOString(),
-        action: 'rollback-activation',
-        actor: breakGlass.actor,
-        subject: createPolicyMutationAuditSubjectFromActivation(lifecycle.appliedRecord),
-        reasonCode: lifecycle.appliedRecord.reasonCode,
-        rationale: lifecycle.appliedRecord.rationale,
-        mutationSnapshot: {
-          lifecycle,
-          breakGlass: {
-            actor: breakGlass.actor,
-            reasonCode: breakGlass.reasonCode,
-            incidentId: breakGlass.incidentId,
+      const { lifecycle, audit } = await applyPolicyLifecycleMutation({
+        store,
+        auditLog,
+        action: (localStore) => rollbackPolicyActivation(localStore, {
+          id: optionalString(body, 'activationId') ?? `emergency_rollback_${randomUUID().replace(/-/g, '').slice(0, 16)}`,
+          target: rollbackTarget.target,
+          rollbackTargetActivationId: rollbackTarget.id,
+          activatedBy: breakGlass.actor,
+          activatedAt: optionalString(body, 'activatedAt') ?? new Date().toISOString(),
+          reasonCode: breakGlass.reasonCode,
+          rationale: breakGlass.rationale,
+        }),
+        createMetadata: createLifecycleMetadataPublisher(store.kind, bundle),
+        createAudit: (nextLifecycle) => ({
+          occurredAt: new Date().toISOString(),
+          action: 'rollback-activation',
+          actor: breakGlass.actor,
+          subject: createPolicyMutationAuditSubjectFromActivation(nextLifecycle.appliedRecord),
+          reasonCode: nextLifecycle.appliedRecord.reasonCode,
+          rationale: nextLifecycle.appliedRecord.rationale,
+          mutationSnapshot: {
+            lifecycle: nextLifecycle,
+            breakGlass: {
+              actor: breakGlass.actor,
+              reasonCode: breakGlass.reasonCode,
+              incidentId: breakGlass.incidentId,
+            },
           },
-        },
+        }),
       });
       const responseBody = {
         activation: activationView(lifecycle.appliedRecord),

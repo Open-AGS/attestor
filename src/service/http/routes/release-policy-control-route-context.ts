@@ -27,6 +27,7 @@ import {
 } from '../../../release-policy-control-plane/index.js';
 import type {
   RequestPathPolicyActivationApprovalStore,
+  RequestPathPolicyActivationLifecycleResult,
   RequestPathPolicyControlPlaneStore,
   RequestPathPolicyMutationAuditLogWriter,
 } from '../../release/release-authority-request-path.js';
@@ -720,14 +721,27 @@ export async function publishStoreMetadata(
   bundle: StoredPolicyBundleRecord,
   latestActivationId: string | null,
 ): Promise<void> {
-  const previous = await store.getMetadata();
   await store.setMetadata(
-    createPolicyControlPlaneMetadata(
+    publishedStoreMetadata(
       store.kind,
-      previous?.discoveryMode ?? 'scoped-active',
-      bundle.manifest.bundle,
-      latestActivationId ?? previous?.latestActivationId ?? null,
+      await store.getMetadata(),
+      bundle,
+      latestActivationId,
     ),
+  );
+}
+
+function publishedStoreMetadata(
+  storeKind: RequestPathPolicyControlPlaneStore['kind'],
+  previous: ReturnType<PolicyControlPlaneStore['getMetadata']>,
+  bundle: StoredPolicyBundleRecord,
+  latestActivationId: string | null,
+): NonNullable<ReturnType<PolicyControlPlaneStore['getMetadata']>> {
+  return createPolicyControlPlaneMetadata(
+    storeKind,
+    previous?.discoveryMode ?? 'scoped-active',
+    bundle.manifest.bundle,
+    latestActivationId ?? previous?.latestActivationId ?? null,
   );
 }
 
@@ -768,6 +782,8 @@ export async function evaluateActivationApprovalGate(
 export async function applyPolicyLifecycle(
   store: RequestPathPolicyControlPlaneStore,
   action: (localStore: PolicyControlPlaneStore) => ReturnType<typeof activatePolicyBundle>,
+  metadata?: (localStore: PolicyControlPlaneStore, lifecycle: ReturnType<typeof activatePolicyBundle>) =>
+    ReturnType<PolicyControlPlaneStore['getMetadata']>,
 ): Promise<ReturnType<typeof activatePolicyBundle>> {
   const localStore = await snapshotPolicyStore(store);
   const lifecycle = action(localStore);
@@ -775,7 +791,60 @@ export async function applyPolicyLifecycle(
   if (lifecycle.updatedHistoricalRecord) {
     await store.upsertActivation(lifecycle.updatedHistoricalRecord);
   }
+  const nextMetadata = metadata?.(localStore, lifecycle) ?? null;
+  if (nextMetadata) {
+    await store.setMetadata(nextMetadata);
+  }
   return lifecycle;
+}
+
+export async function applyPolicyLifecycleMutation<
+  T extends RequestPathPolicyActivationLifecycleResult,
+>(input: {
+  readonly store: RequestPathPolicyControlPlaneStore;
+  readonly auditLog: RequestPathPolicyMutationAuditLogWriter;
+  readonly action: (localStore: PolicyControlPlaneStore) => T;
+  readonly createMetadata?: (
+    localStore: PolicyControlPlaneStore,
+    lifecycle: T,
+  ) => NonNullable<ReturnType<PolicyControlPlaneStore['getMetadata']>>;
+  readonly createAudit: (lifecycle: T) => Parameters<RequestPathPolicyMutationAuditLogWriter['append']>[0];
+}): Promise<{ readonly lifecycle: T; readonly audit: PolicyMutationAuditEntry }> {
+  const atomicResult = await input.store.applyActivationLifecycle?.({
+    action: input.action,
+    createMetadata: input.createMetadata,
+    createAudit: input.createAudit,
+  });
+  if (atomicResult?.audit) {
+    return Object.freeze({
+      lifecycle: atomicResult.lifecycle,
+      audit: atomicResult.audit,
+    });
+  }
+
+  const lifecycle = await applyPolicyLifecycle(
+    input.store,
+    input.action as never,
+    input.createMetadata as never,
+  ) as unknown as T;
+  const audit = await input.auditLog.append(input.createAudit(lifecycle));
+  return Object.freeze({ lifecycle, audit });
+}
+
+export function createLifecycleMetadataPublisher(
+  storeKind: RequestPathPolicyControlPlaneStore['kind'],
+  bundle: StoredPolicyBundleRecord,
+): (
+  localStore: PolicyControlPlaneStore,
+  lifecycle: RequestPathPolicyActivationLifecycleResult,
+) => NonNullable<ReturnType<PolicyControlPlaneStore['getMetadata']>> {
+  return (localStore, lifecycle) =>
+    publishedStoreMetadata(
+      storeKind,
+      localStore.getMetadata(),
+      bundle,
+      lifecycle.appliedRecord.id,
+    );
 }
 
 export function parseBundleUpsertInput(body: JsonRecord): UpsertStoredPolicyBundleInput {

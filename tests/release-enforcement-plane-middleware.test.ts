@@ -58,6 +58,11 @@ function deepEqual<T>(actual: T, expected: T, message: string): void {
   passed += 1;
 }
 
+function throws(fn: () => unknown, expected: RegExp, message: string): void {
+  assert.throws(fn, expected);
+  passed += 1;
+}
+
 const TARGET_ID = 'middleware.release.target';
 const OUTPUT_HASH = 'sha256:output';
 const CONSEQUENCE_HASH = 'sha256:consequence';
@@ -515,9 +520,23 @@ async function testHonoMiddlewareSkipsReadOnlyRoutesOnlyWhenExplicit(): Promise<
   });
   const app = new Hono<HonoReleaseEnforcementEnv>();
 
+  throws(
+    () =>
+      createHonoReleaseEnforcementMiddleware({
+        ...baseOptions({ verificationKey }),
+        protectedMethods: ['POST', 'PUT', 'PATCH', 'DELETE'],
+      }),
+    /methodCoverageProof/u,
+    'Middleware: method opt-out requires an explicit coverage proof',
+  );
+
   app.use('/mutate/*', createHonoReleaseEnforcementMiddleware({
     ...baseOptions({ verificationKey }),
     protectedMethods: ['POST', 'PUT', 'PATCH', 'DELETE'],
+    methodCoverageProof: {
+      proofRef: 'route-map:read-only-export-reviewed',
+      readOnlyRoutesOnly: true,
+    },
   }));
   app.get('/mutate/report', (context) => {
     const result = context.get(HONO_RELEASE_ENFORCEMENT_CONTEXT_KEY);
@@ -732,6 +751,26 @@ async function testCoreEvaluatorAllowsExplicitTrustedUpstreamBindingHeaders(): P
     decisionId: 'decision-middleware-core-trusted-upstream',
   });
   const trustedBodyDigest = `sha256:${'d'.repeat(64)}`;
+  await assert.rejects(
+    () =>
+      evaluateReleaseEnforcementHttpRequest(
+        {
+          method: 'POST',
+          url: 'https://middleware.attestor.test/mutate',
+          headers: releaseHeaders(issued, decision, {
+            'content-digest': trustedBodyDigest,
+          }),
+        },
+        {
+          ...headerOnlyOptions({ verificationKey }),
+          bindingHeaderMode: 'trusted-upstream',
+        },
+      ),
+    /trustedUpstreamProof/u,
+    'Middleware: trusted-upstream mode requires upstream proof',
+  );
+  passed += 1;
+
   const result = await evaluateReleaseEnforcementHttpRequest(
     {
       method: 'POST',
@@ -743,6 +782,13 @@ async function testCoreEvaluatorAllowsExplicitTrustedUpstreamBindingHeaders(): P
     {
       ...headerOnlyOptions({ verificationKey }),
       bindingHeaderMode: 'trusted-upstream',
+      trustedUpstreamProof: {
+        proofRef: 'upstream:gateway-strips-and-signs-binding',
+        nonBypassableUpstream: true,
+        stripsClientAttestorHeaders: true,
+        derivesBodyDigestFromRequest: true,
+        signedBindingEnvelope: true,
+      },
     },
   );
 

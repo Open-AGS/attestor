@@ -83,6 +83,19 @@ export type ReleaseEnforcementMiddlewareStatus = 'allowed' | 'denied' | 'skipped
 export type ReleaseEnforcementMiddlewareVerifierMode = 'offline' | 'online';
 export type ReleaseEnforcementMiddlewareBindingHeaderMode = 'disabled' | 'trusted-upstream';
 
+export interface ReleaseEnforcementMiddlewareMethodCoverageProof {
+  readonly proofRef: string;
+  readonly readOnlyRoutesOnly: true;
+}
+
+export interface ReleaseEnforcementMiddlewareTrustedUpstreamProof {
+  readonly proofRef: string;
+  readonly nonBypassableUpstream: true;
+  readonly stripsClientAttestorHeaders: true;
+  readonly derivesBodyDigestFromRequest: true;
+  readonly signedBindingEnvelope?: true;
+}
+
 export interface ReleaseEnforcementHttpRequest {
   readonly method: string;
   readonly url: string;
@@ -131,6 +144,7 @@ export interface ReleaseEnforcementMiddlewareOptions {
   readonly consumeOnSuccess?: boolean;
   readonly forceOnlineIntrospection?: boolean;
   readonly protectedMethods?: readonly string[];
+  readonly methodCoverageProof?: ReleaseEnforcementMiddlewareMethodCoverageProof;
   readonly now?: () => string;
   readonly requestId?: ReleaseEnforcementResolver<string>;
   readonly targetId?: ReleaseEnforcementResolver<string | null | undefined>;
@@ -138,6 +152,7 @@ export interface ReleaseEnforcementMiddlewareOptions {
   readonly consequenceHash?: ReleaseEnforcementResolver<string | null | undefined>;
   readonly bodyDigest?: ReleaseEnforcementResolver<string | null | undefined>;
   readonly bindingHeaderMode?: ReleaseEnforcementMiddlewareBindingHeaderMode;
+  readonly trustedUpstreamProof?: ReleaseEnforcementMiddlewareTrustedUpstreamProof;
   readonly policyHash?: ReleaseEnforcementResolver<string | null | undefined>;
   readonly policyVersion?: ReleaseEnforcementResolver<string | null | undefined>;
   readonly policyIrHash?: ReleaseEnforcementResolver<string | null | undefined>;
@@ -242,6 +257,59 @@ function protectedMethods(options: ReleaseEnforcementMiddlewareOptions): Readonl
       method.trim().toUpperCase(),
     ),
   );
+}
+
+function proofRefIsPresent(value: string | null | undefined): boolean {
+  return normalizeIdentifier(value) !== null;
+}
+
+function validateProtectedMethodCoverage(options: ReleaseEnforcementMiddlewareOptions): void {
+  if (options.protectedMethods === undefined) {
+    return;
+  }
+
+  const configured = protectedMethods(options);
+  const missingDefaults = DEFAULT_PROTECTED_HTTP_METHODS.filter(
+    (method) => !configured.has(method),
+  );
+  if (missingDefaults.length === 0) {
+    return;
+  }
+
+  const proof = options.methodCoverageProof;
+  if (!proof || proof.readOnlyRoutesOnly !== true || !proofRefIsPresent(proof.proofRef)) {
+    throw new Error(
+      `Release enforcement middleware protectedMethods excludes ${missingDefaults.join(', ')}. ` +
+        'Provide methodCoverageProof with readOnlyRoutesOnly: true and a proofRef, or keep the default GET/HEAD coverage.',
+    );
+  }
+}
+
+function validateTrustedUpstreamProof(options: ReleaseEnforcementMiddlewareOptions): void {
+  if (options.bindingHeaderMode !== 'trusted-upstream') {
+    return;
+  }
+
+  const proof = options.trustedUpstreamProof;
+  if (
+    !proof ||
+    !proofRefIsPresent(proof.proofRef) ||
+    proof.nonBypassableUpstream !== true ||
+    proof.stripsClientAttestorHeaders !== true ||
+    proof.derivesBodyDigestFromRequest !== true
+  ) {
+    throw new Error(
+      'Release enforcement middleware trusted-upstream mode requires trustedUpstreamProof ' +
+        'with proofRef, nonBypassableUpstream, stripsClientAttestorHeaders, and derivesBodyDigestFromRequest.',
+    );
+  }
+}
+
+export function validateReleaseEnforcementMiddlewareOptions(
+  options: ReleaseEnforcementMiddlewareOptions,
+): void {
+  validateProtectedMethodCoverage(options);
+  validateTrustedUpstreamProof(options);
 }
 
 function shouldProtect(
@@ -613,6 +681,8 @@ export async function evaluateReleaseEnforcementHttpRequest(
   framework: ReleaseEnforcementHttpContext['framework'] = 'custom',
   frameworkContext?: unknown,
 ): Promise<ReleaseEnforcementMiddlewareResult> {
+  validateReleaseEnforcementMiddlewareOptions(options);
+
   const checkedAt = normalizeIsoTimestamp(options.now?.() ?? new Date().toISOString());
   const context: ReleaseEnforcementHttpContext = Object.freeze({
     request,
@@ -707,6 +777,8 @@ function deniedResponse(result: ReleaseEnforcementMiddlewareResult): Response {
 export function createHonoReleaseEnforcementMiddleware(
   options: ReleaseEnforcementMiddlewareOptions,
 ): MiddlewareHandler<HonoReleaseEnforcementEnv> {
+  validateReleaseEnforcementMiddlewareOptions(options);
+
   return createMiddleware<HonoReleaseEnforcementEnv>(async (context, next) => {
     const result = await evaluateReleaseEnforcementHttpRequest(
       {
@@ -769,6 +841,8 @@ export function createNodeReleaseEnforcementMiddleware(
   options: ReleaseEnforcementMiddlewareOptions,
   nodeOptions?: NodeReleaseEnforcementOptions,
 ): NodeReleaseEnforcementMiddleware {
+  validateReleaseEnforcementMiddlewareOptions(options);
+
   return async (request, response, next) => {
     try {
       const result = await evaluateReleaseEnforcementHttpRequest(

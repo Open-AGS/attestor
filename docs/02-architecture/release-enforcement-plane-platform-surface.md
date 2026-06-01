@@ -83,6 +83,12 @@ Header-derived binding is reserved for explicit `trusted-upstream` deployments
 where a gateway has already verified and bound those fields before the request
 reaches the application middleware.
 
+`trusted-upstream` mode must carry a `trustedUpstreamProof` reference showing
+that the upstream is non-bypassable for the protected route, strips client
+`attestor-*` binding headers, and derives the body digest from the received
+request. Middleware method opt-outs must carry `methodCoverageProof` showing
+that the skipped methods are reviewed read-only routes.
+
 ## What Stays Internal
 
 These paths are intentionally **not** public package API:

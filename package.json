@@ -723,7 +723,7 @@
     "nodemailer": "^8.0.7",
     "openai": "6.37.0",
     "openid-client": "6.8.4",
-    "pg": "8.20.0",
+    "pg": "8.21.0",
     "redis-memory-server": "^0.16.1",
     "samlify": "^2.13.1",
     "saxon-js": "^2.7.0",

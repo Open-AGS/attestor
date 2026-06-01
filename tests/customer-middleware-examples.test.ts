@@ -377,7 +377,47 @@ async function testLangChainWalletGate(): Promise<void> {
   });
   const missingProof = await missingProofWrapper(input);
   assert.equal(missingProof.held, true, 'Missing proof returns a held tool result');
+  if (missingProof.held) {
+    assert.equal(missingProof.outcome, 'admit', 'Missing proof keeps the held admit outcome visible');
+    assert.equal(missingProof.gateReason, 'execution-proof', 'Missing proof exposes the gate reason');
+    assert.equal(missingProof.nextStep, 'add-execution-proof', 'Missing proof exposes the next safe step');
+    passed += 3;
+  }
   assert.deepEqual(toolCalls, [], 'Missing proof does not call wallet-facing tool');
+  passed += 2;
+
+  const warnNarrowWrapper = wrapWalletToolWithAttestor({
+    attestor: {
+      admit: async (intent) => middlewareDecision<ReturnType<typeof buildWalletAdmissionIntent>>({
+        outcome: 'narrow',
+        mode: 'warn',
+        reasonCodes: ['warn-effective-narrow'],
+        proofRefs: [releaseProofRef('proof:demo-wallet-warn-narrow')],
+        narrowedIntent: {
+          ...intent,
+          amount: {
+            ...intent.amount,
+            value: '1000000',
+          },
+        },
+      }),
+    },
+    tool: {
+      invoke: async (toolInput: WalletToolInput) => {
+        toolCalls.push(toolInput);
+        return { txRef: 'tx:demo-warn-narrow' };
+      },
+    },
+  });
+  const warnNarrow = await warnNarrowWrapper(input);
+  assert.equal(warnNarrow.held, true, 'Warn-mode narrow returns a held tool result');
+  if (warnNarrow.held) {
+    assert.equal(warnNarrow.outcome, 'narrow', 'Warn-mode narrow keeps the held narrow outcome visible');
+    assert.equal(warnNarrow.mode, 'warn', 'Warn-mode narrow exposes non-enforcing mode');
+    assert.equal(warnNarrow.gateReason, 'non-enforcing-mode', 'Warn-mode narrow exposes the gate reason');
+    passed += 3;
+  }
+  assert.deepEqual(toolCalls, [], 'Warn-mode narrow does not call wallet-facing tool');
   passed += 2;
 
   const narrowedWrapper = wrapWalletToolWithAttestor({

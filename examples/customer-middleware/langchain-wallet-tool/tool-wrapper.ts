@@ -3,6 +3,9 @@ import {
   holdDecision,
   intentForExecution,
   type CustomerMiddlewareAdmissionClient,
+  type CustomerMiddlewareHold,
+  type CustomerMiddlewareOutcome,
+  type CustomerMiddlewareProofRef,
 } from '../shared/admission.js';
 
 export interface WalletToolInput {
@@ -40,14 +43,17 @@ export interface ToolLike<TInput, TResult> {
 export type WalletToolResult =
   | {
       readonly held: true;
-      readonly outcome: 'review' | 'block';
+      readonly outcome: CustomerMiddlewareOutcome;
+      readonly mode: CustomerMiddlewareHold['body']['mode'];
+      readonly gateReason: CustomerMiddlewareHold['body']['gateReason'];
+      readonly nextStep: CustomerMiddlewareHold['body']['nextStep'];
       readonly reasonCodes: readonly string[];
-      readonly proofRefs: readonly string[];
+      readonly proofRefs: readonly CustomerMiddlewareProofRef[];
     }
   | {
       readonly held: false;
       readonly outcome: 'admit' | 'narrow';
-      readonly proofRefs: readonly string[];
+      readonly proofRefs: readonly CustomerMiddlewareProofRef[];
       readonly result: unknown;
     };
 
@@ -105,6 +111,9 @@ export function wrapWalletToolWithAttestor<TResult>(
       return {
         held: true,
         outcome: held.body.outcome,
+        mode: held.body.mode,
+        gateReason: held.body.gateReason,
+        nextStep: held.body.nextStep,
         reasonCodes: held.body.reasonCodes,
         proofRefs: held.body.proofRefs,
       };

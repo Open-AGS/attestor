@@ -88,6 +88,29 @@ export interface RequestPathReleaseEvidencePackStore {
   get(id: string): Awaitable<IssuedReleaseEvidencePack | null>;
 }
 
+export interface RequestPathPolicyActivationLifecycleResult {
+  readonly appliedRecord: PolicyActivationRecord;
+  readonly updatedHistoricalRecord?: PolicyActivationRecord | null;
+}
+
+export interface RequestPathPolicyActivationLifecycleMutationInput<
+  T extends RequestPathPolicyActivationLifecycleResult,
+> {
+  readonly action: (localStore: PolicyControlPlaneStore) => T;
+  readonly createMetadata?: (
+    localStore: PolicyControlPlaneStore,
+    lifecycle: T,
+  ) => ReturnType<PolicyControlPlaneStore['getMetadata']>;
+  readonly createAudit?: (lifecycle: T) => PolicyMutationAuditAppendInput;
+}
+
+export interface RequestPathPolicyActivationLifecycleMutationResult<
+  T extends RequestPathPolicyActivationLifecycleResult,
+> {
+  readonly lifecycle: T;
+  readonly audit: PolicyMutationAuditEntry | null;
+}
+
 export interface RequestPathDegradedModeGrantStore {
   registerGrant(grant: DegradedModeGrant): Awaitable<DegradedModeGrant>;
   findGrant(id: string): Awaitable<DegradedModeGrant | null>;
@@ -112,6 +135,9 @@ export interface RequestPathPolicyControlPlaneStore {
   listBundleHistory(packId: string): Awaitable<readonly StoredPolicyBundleRecord[]>;
   listBundles(): Awaitable<readonly StoredPolicyBundleRecord[]>;
   upsertActivation(record: PolicyActivationRecord): Awaitable<PolicyActivationRecord>;
+  applyActivationLifecycle?<T extends RequestPathPolicyActivationLifecycleResult>(
+    input: RequestPathPolicyActivationLifecycleMutationInput<T>,
+  ): Awaitable<RequestPathPolicyActivationLifecycleMutationResult<T>>;
   getActivation(id: string): Awaitable<PolicyActivationRecord | null>;
   listActivations(): Awaitable<readonly PolicyActivationRecord[]>;
   exportSnapshot(): Awaitable<ReturnType<PolicyControlPlaneStore['exportSnapshot']>>;

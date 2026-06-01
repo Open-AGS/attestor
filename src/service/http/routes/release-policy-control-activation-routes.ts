@@ -4,12 +4,13 @@ import {
   RELEASE_ADMIN_MUTATION_ROLES,
   activatePolicyBundle,
   activationView,
-  applyPolicyLifecycle,
+  applyPolicyLifecycleMutation,
   approvalGateView,
   approvalRequestView,
   auditEntryView,
   authorizeReleaseAdminRoute,
   beginMutation,
+  createLifecycleMetadataPublisher,
   createPolicyMutationAuditSubjectFromActivation,
   evaluateActivationApprovalGate,
   findRequiredBundle,
@@ -20,7 +21,6 @@ import {
   parseJsonBody,
   parseRolloutMode,
   policyErrorResponse,
-  publishStoreMetadata,
   recordActivationApprovalDecision,
   requestActivationApproval,
   requiredString,
@@ -261,25 +261,29 @@ export function registerReleasePolicyControlActivationRoutes(app: Hono, deps: Re
           approval: approvalGateView(approvalGate),
         }, 409);
       }
-      const lifecycle = await applyPolicyLifecycle(store, (localStore) => activatePolicyBundle(localStore, {
-        id: optionalString(body, 'activationId') ?? `activation_${randomUUID().replace(/-/g, '').slice(0, 16)}`,
-        target,
-        bundle: bundle.manifest.bundle,
-        activatedBy: routeAdminActor(c),
-        activatedAt: optionalString(body, 'activatedAt') ?? new Date().toISOString(),
-        rolloutMode: parseRolloutMode(body.rolloutMode),
-        reasonCode: optionalString(body, 'reasonCode') ?? 'activate-bundle',
-        rationale: optionalString(body, 'rationale') ?? `Activate policy bundle ${bundle.bundleId}.`,
-      }));
-      await publishStoreMetadata(store, bundle, lifecycle.appliedRecord.id);
-      const audit = await auditLog.append({
-        occurredAt: new Date().toISOString(),
-        action: 'activate-bundle',
-        actor: routeAdminActor(c),
-        subject: createPolicyMutationAuditSubjectFromActivation(lifecycle.appliedRecord),
-        reasonCode: lifecycle.appliedRecord.reasonCode,
-        rationale: lifecycle.appliedRecord.rationale,
-        mutationSnapshot: lifecycle,
+      const { lifecycle, audit } = await applyPolicyLifecycleMutation({
+        store,
+        auditLog,
+        action: (localStore) => activatePolicyBundle(localStore, {
+          id: optionalString(body, 'activationId') ?? `activation_${randomUUID().replace(/-/g, '').slice(0, 16)}`,
+          target,
+          bundle: bundle.manifest.bundle,
+          activatedBy: routeAdminActor(c),
+          activatedAt: optionalString(body, 'activatedAt') ?? new Date().toISOString(),
+          rolloutMode: parseRolloutMode(body.rolloutMode),
+          reasonCode: optionalString(body, 'reasonCode') ?? 'activate-bundle',
+          rationale: optionalString(body, 'rationale') ?? `Activate policy bundle ${bundle.bundleId}.`,
+        }),
+        createMetadata: createLifecycleMetadataPublisher(store.kind, bundle),
+        createAudit: (nextLifecycle) => ({
+          occurredAt: new Date().toISOString(),
+          action: 'activate-bundle',
+          actor: routeAdminActor(c),
+          subject: createPolicyMutationAuditSubjectFromActivation(nextLifecycle.appliedRecord),
+          reasonCode: nextLifecycle.appliedRecord.reasonCode,
+          rationale: nextLifecycle.appliedRecord.rationale,
+          mutationSnapshot: nextLifecycle,
+        }),
       });
       const responseBody = {
         activation: activationView(lifecycle.appliedRecord),
@@ -326,31 +330,38 @@ export function registerReleasePolicyControlActivationRoutes(app: Hono, deps: Re
       if (!rollbackTarget) {
         return c.json({ error: `Policy activation '${c.req.param('id')}' not found.` }, 404);
       }
-      const lifecycle = await applyPolicyLifecycle(store, (localStore) => rollbackPolicyActivation(localStore, {
-        id: optionalString(body, 'activationId') ?? `rollback_${randomUUID().replace(/-/g, '').slice(0, 16)}`,
-        target: rollbackTarget.target,
-        rollbackTargetActivationId: rollbackTarget.id,
-        activatedBy: routeAdminActor(c),
-        activatedAt: optionalString(body, 'activatedAt') ?? new Date().toISOString(),
-        reasonCode: optionalString(body, 'reasonCode') ?? 'rollback',
-        rationale: optionalString(body, 'rationale') ?? `Rollback to policy activation ${rollbackTarget.id}.`,
-      }));
       const bundle = await findRequiredBundle(
         store,
-        lifecycle.appliedRecord.bundle.packId,
-        lifecycle.appliedRecord.bundle.bundleId,
+        rollbackTarget.bundle.packId,
+        rollbackTarget.bundle.bundleId,
       );
-      if (bundle) {
-        await publishStoreMetadata(store, bundle, lifecycle.appliedRecord.id);
+      if (!bundle) {
+        return c.json({
+          error: `Policy bundle '${rollbackTarget.bundle.bundleId}' in pack '${rollbackTarget.bundle.packId}' not found.`,
+        }, 404);
       }
-      const audit = await auditLog.append({
-        occurredAt: new Date().toISOString(),
-        action: 'rollback-activation',
-        actor: routeAdminActor(c),
-        subject: createPolicyMutationAuditSubjectFromActivation(lifecycle.appliedRecord),
-        reasonCode: lifecycle.appliedRecord.reasonCode,
-        rationale: lifecycle.appliedRecord.rationale,
-        mutationSnapshot: lifecycle,
+      const { lifecycle, audit } = await applyPolicyLifecycleMutation({
+        store,
+        auditLog,
+        action: (localStore) => rollbackPolicyActivation(localStore, {
+          id: optionalString(body, 'activationId') ?? `rollback_${randomUUID().replace(/-/g, '').slice(0, 16)}`,
+          target: rollbackTarget.target,
+          rollbackTargetActivationId: rollbackTarget.id,
+          activatedBy: routeAdminActor(c),
+          activatedAt: optionalString(body, 'activatedAt') ?? new Date().toISOString(),
+          reasonCode: optionalString(body, 'reasonCode') ?? 'rollback',
+          rationale: optionalString(body, 'rationale') ?? `Rollback to policy activation ${rollbackTarget.id}.`,
+        }),
+        createMetadata: createLifecycleMetadataPublisher(store.kind, bundle),
+        createAudit: (nextLifecycle) => ({
+          occurredAt: new Date().toISOString(),
+          action: 'rollback-activation',
+          actor: routeAdminActor(c),
+          subject: createPolicyMutationAuditSubjectFromActivation(nextLifecycle.appliedRecord),
+          reasonCode: nextLifecycle.appliedRecord.reasonCode,
+          rationale: nextLifecycle.appliedRecord.rationale,
+          mutationSnapshot: nextLifecycle,
+        }),
       });
       const responseBody = {
         activation: activationView(lifecycle.appliedRecord),

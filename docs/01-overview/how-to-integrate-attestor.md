@@ -106,8 +106,21 @@ for learning; the customer gate must hold them.
 ```ts
 const decision = await attestor.admit(intent);
 
-if (decision.outcome !== 'admit' && decision.outcome !== 'narrow') {
-  return decision;
+const executableProof = decision.proofRefs.some(
+  (proofRef) => proofRef.kind !== 'admission-receipt',
+);
+
+if (
+  decision.mode === 'observe' ||
+  decision.mode === 'warn' ||
+  decision.allowed !== true ||
+  decision.failClosed === true ||
+  decision.requiredChecksSatisfied !== true ||
+  decision.proofSatisfied !== true ||
+  !executableProof ||
+  (decision.outcome !== 'admit' && decision.outcome !== 'narrow')
+) {
+  return holdForReview(decision);
 }
 
 await refundService.issueRefund(decision.narrowedIntent ?? intent);

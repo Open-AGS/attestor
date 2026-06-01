@@ -5,6 +5,26 @@ import unittest
 from middleware import ExportIntent, guarded_export, run_async
 
 
+def execution_proof(proof_id):
+    return {
+        "kind": "release-token",
+        "id": proof_id,
+        "digest": "sha256:" + "b" * 64,
+        "uri": None,
+        "verifyHint": "Verify at the customer-owned enforcement point.",
+    }
+
+
+def admission_receipt(receipt_id):
+    return {
+        "kind": "admission-receipt",
+        "id": receipt_id,
+        "digest": "sha256:" + "c" * 64,
+        "uri": None,
+        "verifyHint": "Receipt only; not execution proof.",
+    }
+
+
 class FakeAttestor:
     def __init__(self, decision):
         self.decision = decision
@@ -29,8 +49,13 @@ class FastApiDataExportMiddlewareTest(unittest.TestCase):
         attestor = FakeAttestor(
             {
                 "outcome": "review",
+                "mode": "enforce",
+                "allowed": False,
+                "failClosed": False,
+                "requiredChecksSatisfied": True,
+                "proofSatisfied": True,
                 "reasonCodes": ["data-scope-missing"],
-                "proofRefs": ["proof:demo-export-review"],
+                "proofRefs": [execution_proof("proof:demo-export-review")],
             }
         )
         exporter = FakeExporter()
@@ -39,12 +64,56 @@ class FastApiDataExportMiddlewareTest(unittest.TestCase):
         self.assertEqual(result["outcome"], "review")
         self.assertEqual(exporter.calls, [])
 
+    def test_observe_admit_holds_before_export_service(self):
+        attestor = FakeAttestor(
+            {
+                "outcome": "admit",
+                "mode": "observe",
+                "allowed": True,
+                "failClosed": False,
+                "requiredChecksSatisfied": True,
+                "proofSatisfied": True,
+                "reasonCodes": ["observe-effective-admit"],
+                "proofRefs": [execution_proof("proof:demo-export-observe")],
+            }
+        )
+        exporter = FakeExporter()
+        result = run_async(guarded_export(self.intent(), attestor, exporter))
+
+        self.assertEqual(result["held"], True)
+        self.assertEqual(result["mode"], "observe")
+        self.assertEqual(exporter.calls, [])
+
+    def test_receipt_only_admit_holds_before_export_service(self):
+        attestor = FakeAttestor(
+            {
+                "outcome": "admit",
+                "mode": "enforce",
+                "allowed": True,
+                "failClosed": False,
+                "requiredChecksSatisfied": True,
+                "proofSatisfied": True,
+                "reasonCodes": ["receipt-only"],
+                "proofRefs": [admission_receipt("receipt:demo-export")],
+            }
+        )
+        exporter = FakeExporter()
+        result = run_async(guarded_export(self.intent(), attestor, exporter))
+
+        self.assertEqual(result["held"], True)
+        self.assertEqual(exporter.calls, [])
+
     def test_narrow_executes_bounded_export(self):
         attestor = FakeAttestor(
             {
                 "outcome": "narrow",
+                "mode": "enforce",
+                "allowed": True,
+                "failClosed": False,
+                "requiredChecksSatisfied": True,
+                "proofSatisfied": True,
                 "reasonCodes": ["record-scope-reduced"],
-                "proofRefs": ["proof:demo-export-narrow"],
+                "proofRefs": [execution_proof("proof:demo-export-narrow")],
                 "narrowedIntent": {
                     "dataScope": {
                         "records": 100,

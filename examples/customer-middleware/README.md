@@ -11,8 +11,7 @@ await downstreamService.execute(intent);
 
 // with Attestor
 const decision = await attestor.admit(attestorIntent);
-if (decision.outcome !== 'admit' && decision.outcome !== 'narrow') return decision;
-if (decision.mode === 'observe' || decision.mode === 'warn') return decision;
+if (!decisionCanExecute(decision)) return holdDecision(decision);
 await downstreamService.execute(decision.narrowedIntent ?? attestorIntent);
 ```
 
@@ -32,9 +31,11 @@ Outcome rules:
 - `review` holds the action for a customer-owned review path.
 - `block` rejects before the downstream system is called.
 
-Observe and warn responses are learning signals, not execution authority. For
-enforce-mode routes, send an `Idempotency-Key` and require execution proof
-beyond a plain admission receipt.
+Observe and warn responses are learning signals, not execution authority.
+Customer examples hold unless Attestor is out of observe/warn, the response is
+allowed, not fail-closed, required checks are satisfied, and execution proof is
+present beyond a plain admission receipt. For enforce-mode routes, send an
+`Idempotency-Key`.
 
 ## Boundary
 

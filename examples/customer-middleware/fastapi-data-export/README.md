@@ -28,7 +28,9 @@ Outcomes:
 
 The example payload starts in `observe`, so the helper returns a held response
 instead of starting an export job. Switch to a review/enforce path only after
-the customer-owned gate and idempotency handling are wired.
+the customer-owned gate and idempotency handling are wired. The helper also
+holds fail-closed responses, failed required checks, and decisions that only
+carry an admission receipt instead of execution proof.
 
 This example uses synthetic references only. It does not read a warehouse,
 export customer records, or prove production no-bypass enforcement.

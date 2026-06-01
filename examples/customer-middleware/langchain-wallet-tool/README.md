@@ -22,6 +22,10 @@ Outcomes:
 - `review` -> return a held result to the agent or reviewer path.
 - `block` -> reject before the wallet-facing tool is called.
 
+The helper also holds observe/warn responses, fail-closed responses, failed
+required checks, and decisions that only carry an admission receipt instead of
+execution proof.
+
 This example uses synthetic references only. It does not sign, broadcast,
 settle, call a wallet, or prove production no-bypass enforcement. Attestor is
 not a wallet, custodian, signer, bundler, or broadcaster.

@@ -43,6 +43,45 @@ def build_export_admission_payload(intent: ExportIntent) -> dict[str, Any]:
     }
 
 
+def _execution_proof_refs(decision: dict[str, Any]) -> list[dict[str, Any]]:
+    proof_refs = decision.get("proofRefs", [])
+    return [
+        proof_ref
+        for proof_ref in proof_refs
+        if isinstance(proof_ref, dict) and proof_ref.get("kind") != "admission-receipt"
+    ]
+
+
+def _decision_can_execute(decision: dict[str, Any]) -> bool:
+    if decision.get("outcome") not in {"admit", "narrow"}:
+        return False
+    if decision.get("mode") in {"observe", "warn"}:
+        return False
+    if decision.get("allowed") is not True:
+        return False
+    if decision.get("failClosed") is True:
+        return False
+    if decision.get("requiredChecksSatisfied") is not True:
+        return False
+    if decision.get("proofSatisfied") is not True:
+        return False
+    if not _execution_proof_refs(decision):
+        return False
+    if decision.get("outcome") == "narrow" and "narrowedIntent" not in decision:
+        return False
+    return True
+
+
+def _held_response(decision: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "held": True,
+        "outcome": decision.get("outcome", "review"),
+        "mode": decision.get("mode", "observe"),
+        "reasonCodes": decision.get("reasonCodes", []),
+        "proofRefs": decision.get("proofRefs", []),
+    }
+
+
 async def guarded_export(
     intent: ExportIntent,
     attestor: AttestorClient,
@@ -51,21 +90,8 @@ async def guarded_export(
     proposed_payload = build_export_admission_payload(intent)
     decision = await attestor.admit(proposed_payload)
 
-    if decision.get("mode") in {"observe", "warn"}:
-        return {
-            "held": True,
-            "outcome": decision.get("outcome", "observe"),
-            "reasonCodes": decision.get("reasonCodes", []),
-            "proofRefs": decision.get("proofRefs", []),
-        }
-
-    if decision["outcome"] in {"review", "block"}:
-        return {
-            "held": True,
-            "outcome": decision["outcome"],
-            "reasonCodes": decision.get("reasonCodes", []),
-            "proofRefs": decision.get("proofRefs", []),
-        }
+    if not _decision_can_execute(decision):
+        return _held_response(decision)
 
     bounded_payload = decision.get("narrowedIntent") or proposed_payload
     bounded_scope = bounded_payload.get("dataScope", {})

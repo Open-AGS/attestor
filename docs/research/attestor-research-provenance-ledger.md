@@ -61,6 +61,7 @@ This index records research and buildout sources found in the repository. A sour
 | Source | Recorded scope | Trust surfaces / protected principles | Mapping status |
 |---|---|---|---|
 | `docs/01-overview/hosted-product-flow-audit.md` | Hosted account, API key, usage, billing, Stripe, entitlement, adoption flow, truth sources, runtime routes, service boundaries, tests/probes, and hardening gaps. | runtime readiness; customer authority; no overclaim; replay/idempotency safety; auditability. | Audit-indexed. Used as context for hosted product hardening, but exact per-PR mapping is not expanded in this ledger. |
+| `docs/audit/customer-middleware-proof-gate-boundary-validation-2026-06-01.md` | Customer middleware copy-paste gate validation across Express, FastAPI, Next.js, and LangChain examples; observe/warn hold behavior; execution proof semantics; admission-receipt non-execution boundary. | fail-closed boundary; customer authority; proof integrity; no overclaim; auditability. | Audit-indexed for OPS-214. External anchors are OWASP Authorization, NIST SP 800-162 PEP/PDP vocabulary, and framework/tool docs for the example placement surfaces. |
 
 ### Buildout Trackers With Recorded Research Anchors
 

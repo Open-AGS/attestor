@@ -25,5 +25,9 @@ Outcomes:
 - `review` -> return a hold response and route to review.
 - `block` -> reject before the identity-admin service is called.
 
+The helper also holds observe/warn responses, fail-closed responses, failed
+required checks, and decisions that only carry an admission receipt instead of
+execution proof.
+
 This example uses synthetic references only. It does not change a real IdP,
 prove SSO/RBAC deployment, or prove production no-bypass enforcement.

@@ -18,8 +18,50 @@ import {
   wrapWalletToolWithAttestor,
   type WalletToolInput,
 } from '../examples/customer-middleware/langchain-wallet-tool/tool-wrapper.js';
+import type {
+  CustomerMiddlewareDecision,
+  CustomerMiddlewareProofRef,
+} from '../examples/customer-middleware/shared/admission.js';
 
 let passed = 0;
+
+const DEMO_SHA256 = `sha256:${'a'.repeat(64)}`;
+
+function releaseProofRef(id: string): CustomerMiddlewareProofRef {
+  return {
+    kind: 'release-token',
+    id,
+    digest: DEMO_SHA256,
+    uri: null,
+    verifyHint: 'Verify the release token at the customer-owned enforcement point.',
+  };
+}
+
+function admissionReceiptRef(id: string): CustomerMiddlewareProofRef {
+  return {
+    kind: 'admission-receipt',
+    id,
+    digest: DEMO_SHA256,
+    uri: null,
+    verifyHint: 'Receipt only; not execution proof.',
+  };
+}
+
+function middlewareDecision<TIntent>(
+  overrides: Partial<CustomerMiddlewareDecision<TIntent>> = {},
+): CustomerMiddlewareDecision<TIntent> {
+  return {
+    outcome: 'admit',
+    mode: 'enforce',
+    allowed: true,
+    failClosed: false,
+    proofSatisfied: true,
+    requiredChecksSatisfied: true,
+    reasonCodes: ['demo-admitted'],
+    proofRefs: [releaseProofRef('proof:demo-execution')],
+    ...overrides,
+  };
+}
 
 function readProjectFile(...segments: string[]): string {
   return readFileSync(join(process.cwd(), ...segments), 'utf8');
@@ -81,10 +123,11 @@ async function testExpressRefundGate(): Promise<void> {
   const reviewHandler = createExpressRefundHandler({
     now: () => '2026-05-28T08:00:00.000Z',
     attestor: {
-      admit: async () => ({
+      admit: async () => middlewareDecision<ReturnType<typeof buildRefundAdmissionIntent>>({
         outcome: 'review',
+        allowed: false,
         reasonCodes: ['approval-missing'],
-        proofRefs: ['proof:demo-refund-review'],
+        proofRefs: [releaseProofRef('proof:demo-refund-review')],
       }),
     },
     refundService: {
@@ -100,13 +143,36 @@ async function testExpressRefundGate(): Promise<void> {
   assert.deepEqual(refundCalls, [], 'Review does not call refund service');
   passed += 2;
 
+  const observeAdmitHandler = createExpressRefundHandler({
+    now: () => '2026-05-28T08:00:00.000Z',
+    attestor: {
+      admit: async () => middlewareDecision<ReturnType<typeof buildRefundAdmissionIntent>>({
+        outcome: 'admit',
+        mode: 'observe',
+        reasonCodes: ['observe-effective-admit'],
+        proofRefs: [releaseProofRef('proof:demo-refund-observe')],
+      }),
+    },
+    refundService: {
+      issueRefund: async (input) => {
+        refundCalls.push(input);
+        return { refundRef: 'refund:demo-observe', amountMinorUnits: input.amountMinorUnits };
+      },
+    },
+  });
+  const observeResponse = responseRecorder();
+  await observeAdmitHandler({ body: refundBody() }, observeResponse);
+  assert.equal(observeResponse.recorded.status, 202, 'Observe admit returns hold status');
+  assert.deepEqual(refundCalls, [], 'Observe admit does not call refund service');
+  passed += 2;
+
   const narrowHandler = createExpressRefundHandler({
     now: () => '2026-05-28T08:00:00.000Z',
     attestor: {
-      admit: async (intent) => ({
+      admit: async (intent) => middlewareDecision<ReturnType<typeof buildRefundAdmissionIntent>>({
         outcome: 'narrow',
         reasonCodes: ['amount-capped'],
-        proofRefs: ['proof:demo-refund-narrow'],
+        proofRefs: [releaseProofRef('proof:demo-refund-narrow')],
         narrowedIntent: {
           ...intent,
           amount: { value: 10000, currency: 'USD' },
@@ -129,6 +195,28 @@ async function testExpressRefundGate(): Promise<void> {
     'Narrow calls refund service with bounded amount',
   );
   passed += 2;
+
+  const receiptOnlyHandler = createExpressRefundHandler({
+    now: () => '2026-05-28T08:00:00.000Z',
+    attestor: {
+      admit: async () => middlewareDecision<ReturnType<typeof buildRefundAdmissionIntent>>({
+        outcome: 'admit',
+        reasonCodes: ['receipt-only'],
+        proofRefs: [admissionReceiptRef('receipt:demo-refund')],
+      }),
+    },
+    refundService: {
+      issueRefund: async (input) => {
+        refundCalls.push(input);
+        return { refundRef: 'refund:demo-receipt', amountMinorUnits: input.amountMinorUnits };
+      },
+    },
+  });
+  const receiptOnlyResponse = responseRecorder();
+  await receiptOnlyHandler({ body: refundBody() }, receiptOnlyResponse);
+  assert.equal(receiptOnlyResponse.recorded.status, 202, 'Receipt-only admit returns hold status');
+  assert.equal(refundCalls.length, 1, 'Receipt-only admit does not call refund service');
+  passed += 2;
 }
 
 async function testNextPermissionGate(): Promise<void> {
@@ -149,10 +237,12 @@ async function testNextPermissionGate(): Promise<void> {
     { json: async () => body },
     {
       attestor: {
-        admit: async () => ({
+        admit: async () => middlewareDecision<ReturnType<typeof buildPermissionAdmissionIntent>>({
           outcome: 'block',
+          allowed: false,
+          failClosed: true,
           reasonCodes: ['approval-provenance-missing'],
-          proofRefs: ['proof:demo-access-block'],
+          proofRefs: [releaseProofRef('proof:demo-access-block')],
         }),
       },
       identityAdmin: {
@@ -167,14 +257,44 @@ async function testNextPermissionGate(): Promise<void> {
   assert.deepEqual(grants, [], 'Block does not call identity admin');
   passed += 2;
 
+  const warnNarrow = await handlePermissionChange(
+    { json: async () => body },
+    {
+      attestor: {
+        admit: async (intent) => middlewareDecision<ReturnType<typeof buildPermissionAdmissionIntent>>({
+          outcome: 'narrow',
+          mode: 'warn',
+          reasonCodes: ['warn-effective-narrow'],
+          proofRefs: [releaseProofRef('proof:demo-access-warn')],
+          narrowedIntent: {
+            ...intent,
+            requestedScope: {
+              role: 'billing-viewer',
+              resourceRef: 'workspace:demo',
+            },
+          },
+        }),
+      },
+      identityAdmin: {
+        grantRole: async (input) => {
+          grants.push(input);
+          return { grantRef: 'grant:demo-warn' };
+        },
+      },
+    },
+  );
+  assert.equal(warnNarrow.status, 202, 'Warn narrow returns hold status');
+  assert.deepEqual(grants, [], 'Warn narrow does not call identity admin');
+  passed += 2;
+
   const narrowed = await handlePermissionChange(
     { json: async () => body },
     {
       attestor: {
-        admit: async (intent) => ({
+        admit: async (intent) => middlewareDecision<ReturnType<typeof buildPermissionAdmissionIntent>>({
           outcome: 'narrow',
           reasonCodes: ['role-scope-reduced'],
-          proofRefs: ['proof:demo-access-narrow'],
+          proofRefs: [releaseProofRef('proof:demo-access-narrow')],
           narrowedIntent: {
             ...intent,
             requestedScope: {
@@ -219,10 +339,12 @@ async function testLangChainWalletGate(): Promise<void> {
   const toolCalls: WalletToolInput[] = [];
   const blockedWrapper = wrapWalletToolWithAttestor({
     attestor: {
-      admit: async () => ({
+      admit: async () => middlewareDecision<ReturnType<typeof buildWalletAdmissionIntent>>({
         outcome: 'block',
+        allowed: false,
+        failClosed: true,
         reasonCodes: ['wallet-policy-missing'],
-        proofRefs: ['proof:demo-wallet-block'],
+        proofRefs: [releaseProofRef('proof:demo-wallet-block')],
       }),
     },
     tool: {
@@ -237,12 +359,33 @@ async function testLangChainWalletGate(): Promise<void> {
   assert.deepEqual(toolCalls, [], 'Block does not call wallet-facing tool');
   passed += 2;
 
+  const missingProofWrapper = wrapWalletToolWithAttestor({
+    attestor: {
+      admit: async () => middlewareDecision<ReturnType<typeof buildWalletAdmissionIntent>>({
+        outcome: 'admit',
+        proofSatisfied: false,
+        proofRefs: [],
+        reasonCodes: ['proof-missing'],
+      }),
+    },
+    tool: {
+      invoke: async (toolInput: WalletToolInput) => {
+        toolCalls.push(toolInput);
+        return { txRef: 'tx:demo-missing-proof' };
+      },
+    },
+  });
+  const missingProof = await missingProofWrapper(input);
+  assert.equal(missingProof.held, true, 'Missing proof returns a held tool result');
+  assert.deepEqual(toolCalls, [], 'Missing proof does not call wallet-facing tool');
+  passed += 2;
+
   const narrowedWrapper = wrapWalletToolWithAttestor({
     attestor: {
-      admit: async (intent) => ({
+      admit: async (intent) => middlewareDecision<ReturnType<typeof buildWalletAdmissionIntent>>({
         outcome: 'narrow',
         reasonCodes: ['amount-capped'],
-        proofRefs: ['proof:demo-wallet-narrow'],
+        proofRefs: [releaseProofRef('proof:demo-wallet-narrow')],
         narrowedIntent: {
           ...intent,
           amount: {
@@ -312,7 +455,11 @@ function testDocsAndScripts(): void {
   includes(nextReadme, 'https://nextjs.org/docs/app/api-reference/file-conventions/route', 'Next route source anchor is present');
   includes(langchainReadme, 'https://docs.langchain.com/oss/javascript/langchain/tools', 'LangChain tool source anchor is present');
   includes(fastapiTest, 'test_review_holds_before_export_service', 'FastAPI example carries review regression test');
+  includes(fastapiTest, 'test_observe_admit_holds_before_export_service', 'FastAPI example carries observe regression test');
+  includes(fastapiTest, 'test_receipt_only_admit_holds_before_export_service', 'FastAPI example carries proof regression test');
   includes(fastapiTest, 'test_narrow_executes_bounded_export', 'FastAPI example carries narrow regression test');
+  includes(rootReadme, 'not execution authority', 'Root examples doc holds observe/warn execution');
+  includes(rootReadme, 'plain admission receipt', 'Root examples doc distinguishes receipt from execution proof');
   includes(docsFrontDoor, 'examples/customer-middleware/README.md', 'Docs front door links customer middleware examples');
   includes(integrationHub, 'examples/customer-middleware/README.md', 'Integration hub links customer middleware examples');
   includes(recipes, 'examples/customer-middleware/README.md', 'Integration recipes link customer middleware examples');

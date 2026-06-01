@@ -90,6 +90,7 @@ function readinessFor(events: readonly ShadowAdmissionEvent[], customerApproved 
     events,
     generatedAt: '2026-05-05T23:02:00.000Z',
     customerApproved,
+    tenantBoundaryProven: true,
     redTeamReplayStatus: 'failed',
     minimumSampleSize: 20,
   });
@@ -165,6 +166,7 @@ function testPacketCanBeEmptyWhenReadinessHasNoQuestions(): void {
     events,
     generatedAt: '2026-05-06T23:02:00.000Z',
     customerApproved: true,
+    tenantBoundaryProven: true,
     redTeamReplayStatus: 'passed',
     minimumSampleSize: 20,
   });

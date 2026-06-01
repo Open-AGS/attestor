@@ -260,6 +260,12 @@ function testSensitiveBoundariesAreClassified(): void {
       authBoundary: 'tenant_context_and_release_token',
       idempotencyBoundary: 'release_token_consume',
     },
+    {
+      route: { method: 'POST', path: '/api/v1/shadow/simulations' } as const,
+      id: 'shadow.tenant.mutation',
+      authBoundary: 'tenant_context',
+      idempotencyBoundary: 'optional_header_plus_rate_limit',
+    },
   ];
 
   for (const item of expected) {
@@ -305,6 +311,7 @@ function testImplementationEvidenceMatchesMatrix(): void {
     readProjectFile('src', 'service', 'http', 'routes', 'shadow-policy-foundry-promotion-routes.ts'),
     readProjectFile('src', 'service', 'http', 'routes', 'shadow-downstream-activation-routes.ts'),
     readProjectFile('src', 'service', 'http', 'routes', 'shadow-customer-activation-routes.ts'),
+    readProjectFile('src', 'service', 'http', 'routes', 'shadow-mutation-route-helpers.ts'),
   ].join('\n');
 
   ok(requestContext.includes('currentAdminAuthorized'), 'Hosted auth evidence: admin auth helper exists');
@@ -322,6 +329,11 @@ function testImplementationEvidenceMatchesMatrix(): void {
   ok(pipelineAsyncRoutes.includes('bmStatus.tenant.tenantId !== tenant.tenantId'), 'Hosted auth evidence: BullMQ status is tenant-bound');
   ok(pipelineAsyncRoutes.includes('job.tenantId !== tenant.tenantId'), 'Hosted auth evidence: in-process status is tenant-bound');
   ok(shadowRoutes.includes('assertTenantBoundRecord'), 'Hosted auth evidence: shadow route tenant assertion exists');
+  ok(
+    shadowRoutes.includes('beginShadowMutationIdempotency') &&
+      shadowRoutes.includes('shadow-mutation-rate-limit-exceeded'),
+    'Hosted auth evidence: shadow mutation boundary is optional idempotency plus route rate limit',
+  );
 }
 
 async function testInProcessPipelineStatusRejectsCrossTenantJobId(): Promise<void> {

@@ -97,6 +97,7 @@ function testCleanDistributedTrafficCanBecomeScopedEnforceEligible(): void {
     events,
     generatedAt: '2026-05-01T23:02:00.000Z',
     customerApproved: true,
+    tenantBoundaryProven: true,
     redTeamReplayStatus: 'passed',
     minimumSampleSize: 20,
   });
@@ -132,6 +133,7 @@ function testSingleActorConcentrationBlocksEnforce(): void {
     events,
     generatedAt: '2026-05-02T23:02:00.000Z',
     customerApproved: true,
+    tenantBoundaryProven: true,
     redTeamReplayStatus: 'passed',
     minimumSampleSize: 20,
     maxSingleActorConcentration: 0.8,
@@ -194,6 +196,10 @@ function testMissingControlsAndNoSimulationStayNoGo(): void {
     'Policy Foundry readiness: active questions target only blocking gaps',
   );
   ok(missingSimulation.noGoReasons.includes('no-simulation-report'), 'Policy Foundry readiness: simulation remains required');
+  ok(
+    evaluation.noGoReasons.includes('tenant-boundary-not-proven'),
+    'Policy Foundry readiness: tenant boundary proof is not assumed by default',
+  );
 }
 
 function testUnsafeAuthoritySignalsRemainNoGo(): void {

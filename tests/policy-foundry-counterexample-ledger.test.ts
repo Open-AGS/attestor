@@ -135,6 +135,7 @@ function testCleanLedgerStaysDigestOnlyAndUnblocked(): void {
     report,
     events,
     customerApproved: true,
+    tenantBoundaryProven: true,
     redTeamReplayStatus: replay.status,
     generatedAt: '2026-05-13T00:04:00.000Z',
   });
@@ -201,6 +202,7 @@ function testRiskSignalsBlockPromotion(): void {
     report,
     events,
     customerApproved: true,
+    tenantBoundaryProven: true,
     redTeamReplayStatus: replay.status,
     generatedAt: '2026-05-13T01:31:00.000Z',
   });

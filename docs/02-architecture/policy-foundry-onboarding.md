@@ -381,8 +381,11 @@ The candidate-specific red-team replay contract lives in
 `GET /api/v1/shadow/policy-foundry/red-team-replay`.
 The readiness route computes the candidate-specific replay result itself and
 feeds that computed status into the readiness contract. Clients cannot
-self-attest `redTeamReplayStatus` through the readiness query because that
-would turn a no-go control into caller-supplied evidence.
+self-attest `redTeamReplayStatus`, `customerApproved`, or
+`tenantBoundaryProven` through the readiness query because those would turn
+no-go controls into caller-supplied evidence. Customer approval must come from
+a stored current candidate status, and tenant-boundary proof must come from the
+route-owned tenant assertions.
 
 The Onboarding Session Contract is the first central self-onboarding state
 object for this path. It lives in

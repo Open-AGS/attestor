@@ -15,8 +15,10 @@ import {
 } from '../../../consequence-admission/index.js';
 import {
   SHADOW_POLICY_CANDIDATE_STATUSES,
+  type ShadowPolicyCandidateStoreRecord,
   type ShadowPolicyCandidateStatus,
 } from '../../shadow/shadow-persistence-store.js';
+import { hashJsonValue } from '../../json-stable.js';
 import { acceptsJsonRequestBody } from '../route-response-helpers.js';
 import {
   beginShadowMutationIdempotency,
@@ -141,6 +143,86 @@ function shadowMutationActorRef(
   return `tenant-auth:${tenant.source}:${tenant.tenantId}`;
 }
 
+function candidateDigest(candidate: ShadowPolicyDiscoveryCandidate): string {
+  return `sha256:${hashJsonValue(candidate)}`;
+}
+
+function verifiedReadinessProofInputs(input: {
+  readonly deps: ShadowRouteDeps;
+  readonly tenant: ReturnType<ShadowRouteDeps['currentTenant']>;
+  readonly candidate: ShadowPolicyDiscoveryCandidate | null;
+}): {
+  readonly customerApproved: boolean;
+  readonly tenantBoundaryProven: boolean;
+  readonly proofSource: {
+    readonly customerApproval:
+      | 'stored-current-candidate-status'
+      | 'stored-candidate-not-approved'
+      | 'candidate-store-unavailable'
+      | 'candidate-missing';
+    readonly tenantBoundary: 'shadow-route-tenant-assertions';
+  };
+} {
+  if (input.candidate === null) {
+    return {
+      customerApproved: false,
+      tenantBoundaryProven: true,
+      proofSource: {
+        customerApproval: 'candidate-missing',
+        tenantBoundary: 'shadow-route-tenant-assertions',
+      },
+    };
+  }
+
+  const expectedDigest = candidateDigest(input.candidate);
+  const candidateId = input.candidate.candidateId;
+  let matchingRecord: ShadowPolicyCandidateStoreRecord | null = null;
+  if (input.deps.listShadowPolicyCandidateRecords) {
+    const records = assertTenantBoundRecords(
+      input.tenant,
+      input.deps.listShadowPolicyCandidateRecords({
+        tenant: input.tenant,
+        status: null,
+      }),
+      'shadow policy candidate',
+    );
+    matchingRecord = records.find((record) =>
+      record.candidateId === candidateId && record.candidateDigest === expectedDigest
+    ) ?? null;
+  }
+
+  const customerApproved = matchingRecord?.status === 'approved' || matchingRecord?.status === 'activated';
+  const customerApprovalSource = matchingRecord === null
+    ? input.deps.listShadowPolicyCandidateRecords
+      ? 'stored-candidate-not-approved'
+      : 'candidate-store-unavailable'
+    : customerApproved
+      ? 'stored-current-candidate-status'
+      : 'stored-candidate-not-approved';
+  return {
+    customerApproved,
+    tenantBoundaryProven: true,
+    proofSource: {
+      customerApproval: customerApprovalSource,
+      tenantBoundary: 'shadow-route-tenant-assertions',
+    },
+  };
+}
+
+function rejectCallerSuppliedReadinessProof(c: Context, surface: 'readiness' | 'active-questions'): Response | null {
+  const forbidden = ['customerApproved', 'tenantBoundaryProven']
+    .filter((name) => c.req.query(name) !== undefined);
+  if (forbidden.length === 0) return null;
+  return problem(c, {
+    type: `https://attestor.dev/problems/policy-foundry-${surface}-proof-computed`,
+    title: `Policy Foundry ${surface} proof is computed`,
+    status: 400,
+    detail:
+      `${forbidden.join(', ')} can only come from route-verified tenant/candidate proof state, not query input.`,
+    reasonCodes: [`policy-foundry-${surface}-proof-computed`],
+  });
+}
+
 export function registerShadowPolicyFoundryPromotionRoutes(app: Hono, deps: ShadowRouteDeps): void {
   app.get('/api/v1/shadow/policy-candidates', (c) => {
     const result = safeShadowSummary(c, deps);
@@ -176,29 +258,8 @@ export function registerShadowPolicyFoundryPromotionRoutes(app: Hono, deps: Shad
       });
     }
 
-    const customerApprovedQuery = c.req.query('customerApproved');
-    const customerApproved = parseBooleanQuery(customerApprovedQuery);
-    if (customerApprovedQuery && customerApproved === null) {
-      return problem(c, {
-        type: 'https://attestor.dev/problems/policy-foundry-readiness-query-invalid',
-        title: 'Invalid Policy Foundry readiness query',
-        status: 400,
-        detail: 'customerApproved must be true or false when provided.',
-        reasonCodes: ['invalid-policy-foundry-readiness-query'],
-      });
-    }
-
-    const tenantBoundaryProvenQuery = c.req.query('tenantBoundaryProven');
-    const tenantBoundaryProven = parseBooleanQuery(tenantBoundaryProvenQuery);
-    if (tenantBoundaryProvenQuery && tenantBoundaryProven === null) {
-      return problem(c, {
-        type: 'https://attestor.dev/problems/policy-foundry-readiness-query-invalid',
-        title: 'Invalid Policy Foundry readiness query',
-        status: 400,
-        detail: 'tenantBoundaryProven must be true or false when provided.',
-        reasonCodes: ['invalid-policy-foundry-readiness-query'],
-      });
-    }
+    const callerSuppliedProof = rejectCallerSuppliedReadinessProof(c, 'readiness');
+    if (callerSuppliedProof) return callerSuppliedProof;
 
     const llmAuthoritySourceQuery = c.req.query('llmAuthoritySource');
     const llmAuthoritySource = parseBooleanQuery(llmAuthoritySourceQuery);
@@ -232,13 +293,18 @@ export function registerShadowPolicyFoundryPromotionRoutes(app: Hono, deps: Shad
       tenantId: result.tenant.tenantId,
       generatedAt: deps.now?.() ?? null,
     });
+    const proofInputs = verifiedReadinessProofInputs({
+      deps,
+      tenant: result.tenant,
+      candidate,
+    });
     const readiness = evaluatePolicyFoundryReadiness({
       candidate,
       report: result.surface.latestSimulation,
       events: result.events,
       generatedAt: deps.now?.() ?? null,
-      customerApproved,
-      tenantBoundaryProven,
+      customerApproved: proofInputs.customerApproved,
+      tenantBoundaryProven: proofInputs.tenantBoundaryProven,
       llmAuthoritySource,
       redTeamReplayStatus: replay.status,
     });
@@ -259,6 +325,7 @@ export function registerShadowPolicyFoundryPromotionRoutes(app: Hono, deps: Shad
         matched: candidate !== null,
         candidateCount: bundle.candidateCount,
       },
+      readinessProof: proofInputs.proofSource,
       redTeamReplay: {
         status: replay.status,
         digest: replay.digest,
@@ -284,29 +351,8 @@ export function registerShadowPolicyFoundryPromotionRoutes(app: Hono, deps: Shad
       });
     }
 
-    const customerApprovedQuery = c.req.query('customerApproved');
-    const customerApproved = parseBooleanQuery(customerApprovedQuery);
-    if (customerApprovedQuery && customerApproved === null) {
-      return problem(c, {
-        type: 'https://attestor.dev/problems/policy-foundry-active-questions-query-invalid',
-        title: 'Invalid Policy Foundry active questions query',
-        status: 400,
-        detail: 'customerApproved must be true or false when provided.',
-        reasonCodes: ['invalid-policy-foundry-active-questions-query'],
-      });
-    }
-
-    const tenantBoundaryProvenQuery = c.req.query('tenantBoundaryProven');
-    const tenantBoundaryProven = parseBooleanQuery(tenantBoundaryProvenQuery);
-    if (tenantBoundaryProvenQuery && tenantBoundaryProven === null) {
-      return problem(c, {
-        type: 'https://attestor.dev/problems/policy-foundry-active-questions-query-invalid',
-        title: 'Invalid Policy Foundry active questions query',
-        status: 400,
-        detail: 'tenantBoundaryProven must be true or false when provided.',
-        reasonCodes: ['invalid-policy-foundry-active-questions-query'],
-      });
-    }
+    const callerSuppliedProof = rejectCallerSuppliedReadinessProof(c, 'active-questions');
+    if (callerSuppliedProof) return callerSuppliedProof;
 
     const llmAuthoritySourceQuery = c.req.query('llmAuthoritySource');
     const llmAuthoritySource = parseBooleanQuery(llmAuthoritySourceQuery);
@@ -340,13 +386,18 @@ export function registerShadowPolicyFoundryPromotionRoutes(app: Hono, deps: Shad
       tenantId: result.tenant.tenantId,
       generatedAt: deps.now?.() ?? null,
     });
+    const proofInputs = verifiedReadinessProofInputs({
+      deps,
+      tenant: result.tenant,
+      candidate,
+    });
     const readiness = evaluatePolicyFoundryReadiness({
       candidate,
       report: result.surface.latestSimulation,
       events: result.events,
       generatedAt: deps.now?.() ?? null,
-      customerApproved,
-      tenantBoundaryProven,
+      customerApproved: proofInputs.customerApproved,
+      tenantBoundaryProven: proofInputs.tenantBoundaryProven,
       llmAuthoritySource,
       redTeamReplayStatus: replay.status,
     });
@@ -371,6 +422,7 @@ export function registerShadowPolicyFoundryPromotionRoutes(app: Hono, deps: Shad
         matched: candidate !== null,
         candidateCount: bundle.candidateCount,
       },
+      readinessProof: proofInputs.proofSource,
       redTeamReplay: {
         status: replay.status,
         digest: replay.digest,

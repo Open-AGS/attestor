@@ -512,7 +512,7 @@ export function evaluatePolicyFoundryReadiness(
   const report = input.report;
   const redTeamReplayStatus = input.redTeamReplayStatus ?? 'not-run';
   const customerApproved = input.customerApproved === true;
-  const tenantBoundaryProven = input.tenantBoundaryProven !== false;
+  const tenantBoundaryProven = input.tenantBoundaryProven === true;
   const noGoReasons = new Set<PolicyFoundryNoGoReason>();
 
   if (candidate === null) addReason(noGoReasons, 'candidate-missing');

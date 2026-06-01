@@ -3,9 +3,17 @@ import { Hono } from 'hono';
 import {
   createGenericAdmissionEnvelope,
   createShadowAdmissionEvent,
+  createShadowPolicyDiscoveryCandidates,
+  createShadowSummarySurface,
+  type ShadowPolicyDiscoveryCandidate,
   type ShadowAdmissionEvent,
 } from '../src/consequence-admission/index.js';
 import { registerShadowRoutes } from '../src/service/http/routes/shadow-routes.js';
+import {
+  SHADOW_POLICY_CANDIDATE_STORE_VERSION,
+  type ShadowPolicyCandidateStoreRecord,
+} from '../src/service/shadow/shadow-persistence-store.js';
+import { hashJsonValue } from '../src/service/json-stable.js';
 
 let passed = 0;
 
@@ -38,6 +46,7 @@ function event(input: {
       requestedAt: input.occurredAt,
       decidedAt: input.occurredAt,
       requestId: `request:${input.actor}:${input.occurredAt}`,
+      tenantId: 'tenant_policy_foundry',
       policyRef: input.policyRef === undefined ? 'policy:ops:v1' : input.policyRef,
       evidenceRefs: input.evidenceRefs ?? ['change:approved'],
       authorityRef,
@@ -76,7 +85,57 @@ function cleanEvents(): readonly ShadowAdmissionEvent[] {
   );
 }
 
-function createApp(events: readonly ShadowAdmissionEvent[]): Hono {
+function shadowCandidateDigest(candidate: ShadowPolicyDiscoveryCandidate): string {
+  return `sha256:${hashJsonValue(candidate)}`;
+}
+
+function approvedCandidateRecordFor(events: readonly ShadowAdmissionEvent[]): ShadowPolicyCandidateStoreRecord {
+  const generatedAt = '2026-05-01T23:02:00.000Z';
+  const surface = createShadowSummarySurface({
+    events,
+    simulations: [],
+    generatedAt,
+    proposedMode: 'review',
+  });
+  const bundle = createShadowPolicyDiscoveryCandidates({
+    report: surface.latestSimulation,
+    generatedAt,
+  });
+  const candidate = bundle.candidates[0];
+  assert.ok(candidate, 'Policy Foundry readiness route fixture requires a candidate');
+  const candidateDigest = shadowCandidateDigest(candidate);
+  return {
+    version: SHADOW_POLICY_CANDIDATE_STORE_VERSION,
+    tenantId: 'tenant_policy_foundry',
+    candidateId: candidate.candidateId,
+    candidateDigest,
+    candidate,
+    sourceReportId: surface.latestSimulation?.reportId ?? null,
+    sourceReportDigest: surface.latestSimulation?.digest ?? null,
+    status: 'approved',
+    statusHistory: [
+      {
+        status: 'approved',
+        changedAt: '2026-05-01T23:01:30.000Z',
+        candidateDigest,
+        actorRef: 'account-session:policy-reviewer',
+        reason: 'Reviewed candidate for scoped readiness route test.',
+      },
+    ],
+    createdAt: '2026-05-01T23:01:00.000Z',
+    updatedAt: '2026-05-01T23:01:30.000Z',
+    approvalRequired: true,
+    autoEnforce: false,
+    rawPayloadStored: false,
+  };
+}
+
+function createApp(
+  events: readonly ShadowAdmissionEvent[],
+  options?: {
+    readonly candidateRecords?: readonly ShadowPolicyCandidateStoreRecord[];
+  },
+): Hono {
   const app = new Hono();
   registerShadowRoutes(app, {
     currentTenant: () => ({
@@ -90,6 +149,14 @@ function createApp(events: readonly ShadowAdmissionEvent[]): Hono {
     listShadowEvents: ({ tenant }) =>
       tenant.tenantId === 'tenant_policy_foundry' ? events : [],
     listShadowSimulations: () => [],
+    ...(options?.candidateRecords
+      ? {
+          listShadowPolicyCandidateRecords: ({ status }) =>
+            options.candidateRecords?.filter((record) =>
+              status === null || record.status === status
+            ) ?? [],
+        }
+      : {}),
     now: () => '2026-05-01T23:02:00.000Z',
   });
   return app;
@@ -120,6 +187,10 @@ async function testReadinessRouteIsDataMinimizedAndApprovalRequired(): Promise<v
       recommendedRolloutStep: string;
       confidence: { redTeamReplayStatus: string };
     };
+    readinessProof: {
+      customerApproval: string;
+      tenantBoundary: string;
+    };
   };
 
   equal(response.status, 200, 'Policy Foundry readiness route: valid request returns 200');
@@ -147,6 +218,20 @@ async function testReadinessRouteIsDataMinimizedAndApprovalRequired(): Promise<v
     'Policy Foundry readiness route: missing customer approval is explicit',
   );
   ok(
+    !body.readiness.noGoReasons.includes('tenant-boundary-not-proven'),
+    'Policy Foundry readiness route: tenant boundary comes from route assertions, not query defaults',
+  );
+  equal(
+    body.readinessProof.customerApproval,
+    'candidate-store-unavailable',
+    'Policy Foundry readiness route: approval proof source is explicit when no candidate store exists',
+  );
+  equal(
+    body.readinessProof.tenantBoundary,
+    'shadow-route-tenant-assertions',
+    'Policy Foundry readiness route: tenant proof source is route-owned',
+  );
+  ok(
     !body.readiness.noGoReasons.includes('red-team-replay-not-run'),
     'Policy Foundry readiness route: computed red-team replay removes self-attested not-run state',
   );
@@ -155,11 +240,12 @@ async function testReadinessRouteIsDataMinimizedAndApprovalRequired(): Promise<v
   ok(!text.includes('raw_feature_must_not_escape'), 'Policy Foundry readiness route: raw feature values are not returned');
 }
 
-async function testApprovedAndReplayedRouteCanBecomeScopedEnforceEligible(): Promise<void> {
-  const app = createApp(cleanEvents());
-  const response = await app.request(
-    '/api/v1/shadow/policy-foundry/readiness?customerApproved=true',
-  );
+async function testStoredApprovalAndReplayedRouteCanBecomeScopedEnforceEligible(): Promise<void> {
+  const events = cleanEvents();
+  const app = createApp(events, {
+    candidateRecords: [approvedCandidateRecordFor(events)],
+  });
+  const response = await app.request('/api/v1/shadow/policy-foundry/readiness');
   const body = await response.json() as {
     readiness: {
       status: string;
@@ -167,17 +253,27 @@ async function testApprovedAndReplayedRouteCanBecomeScopedEnforceEligible(): Pro
       noGoReasons: readonly string[];
       confidence: { actorDistributionHealth: string; redTeamReplayStatus: string };
     };
+    readinessProof: { customerApproval: string };
     redTeamReplay: { status: string };
   };
 
-  equal(response.status, 200, 'Policy Foundry readiness route: approved replayed request returns 200');
-  equal(body.readiness.status, 'enforce-eligible', 'Policy Foundry readiness route: clean approved sample can be enforce eligible');
+  equal(response.status, 200, 'Policy Foundry readiness route: stored approved request returns 200');
+  equal(
+    body.readiness.status,
+    'enforce-eligible',
+    'Policy Foundry readiness route: digest-bound stored approval can be enforce eligible',
+  );
   equal(
     body.readiness.recommendedRolloutStep,
     'scoped-enforce-low-risk',
     'Policy Foundry readiness route: enforce starts scoped',
   );
-  equal(body.readiness.noGoReasons.length, 0, 'Policy Foundry readiness route: clean approved sample has no no-go reasons');
+  equal(body.readiness.noGoReasons.length, 0, 'Policy Foundry readiness route: clean stored approval has no no-go reasons');
+  equal(
+    body.readinessProof.customerApproval,
+    'stored-current-candidate-status',
+    'Policy Foundry readiness route: approval proof comes from stored current candidate status',
+  );
   equal(
     body.readiness.confidence.actorDistributionHealth,
     'healthy',
@@ -199,7 +295,7 @@ async function testSingleActorRouteBlocksEnforcement(): Promise<void> {
   );
   const app = createApp(events);
   const response = await app.request(
-    '/api/v1/shadow/policy-foundry/readiness?customerApproved=true',
+    '/api/v1/shadow/policy-foundry/readiness',
   );
   const body = await response.json() as {
     readiness: {
@@ -236,17 +332,28 @@ async function testSingleActorRouteBlocksEnforcement(): Promise<void> {
 
 async function testInvalidReadinessQueryFailsClosed(): Promise<void> {
   const app = createApp(cleanEvents());
-  const response = await app.request(
+  const replayResponse = await app.request(
     '/api/v1/shadow/policy-foundry/readiness?redTeamReplayStatus=passed',
   );
-  const body = await response.json() as {
+  const replayBody = await replayResponse.json() as {
+    reasonCodes: readonly string[];
+  };
+  const proofResponse = await app.request(
+    '/api/v1/shadow/policy-foundry/readiness?customerApproved=true&tenantBoundaryProven=true',
+  );
+  const proofBody = await proofResponse.json() as {
     reasonCodes: readonly string[];
   };
 
-  equal(response.status, 400, 'Policy Foundry readiness route: caller-supplied replay status returns 400');
+  equal(replayResponse.status, 400, 'Policy Foundry readiness route: caller-supplied replay status returns 400');
   ok(
-    body.reasonCodes.includes('policy-foundry-red-team-status-computed'),
+    replayBody.reasonCodes.includes('policy-foundry-red-team-status-computed'),
     'Policy Foundry readiness route: computed replay status reason is explicit',
+  );
+  equal(proofResponse.status, 400, 'Policy Foundry readiness route: caller-supplied proof returns 400');
+  ok(
+    proofBody.reasonCodes.includes('policy-foundry-readiness-proof-computed'),
+    'Policy Foundry readiness route: computed proof reason is explicit',
   );
 }
 
@@ -363,7 +470,7 @@ async function testRedTeamReplayRouteIsDataMinimized(): Promise<void> {
 }
 
 await testReadinessRouteIsDataMinimizedAndApprovalRequired();
-await testApprovedAndReplayedRouteCanBecomeScopedEnforceEligible();
+await testStoredApprovalAndReplayedRouteCanBecomeScopedEnforceEligible();
 await testSingleActorRouteBlocksEnforcement();
 await testInvalidReadinessQueryFailsClosed();
 await testActiveQuestionRouteIsDataMinimizedAndPrioritized();

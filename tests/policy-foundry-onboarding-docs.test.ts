@@ -199,8 +199,8 @@ function testPolicyFoundryArchitectureIsGrounded(): void {
   );
   includes(
     doc,
-    'self-attest `redTeamReplayStatus` through the readiness query',
-    'Policy Foundry docs: readiness replay status cannot be caller supplied',
+    'self-attest `redTeamReplayStatus`, `customerApproved`, or',
+    'Policy Foundry docs: readiness replay and proof flags cannot be caller supplied',
   );
 }
 
@@ -220,7 +220,7 @@ function testDocsNamePolicyFoundryWithoutOverclaiming(): void {
   );
   includes(
     doc,
-    'self-attest `redTeamReplayStatus` through the readiness query',
+    '`tenantBoundaryProven` through the readiness query',
     'Policy Foundry docs: readiness evidence cannot be caller supplied',
   );
   includes(

@@ -51,6 +51,7 @@ export type HostedApiIdempotencyBoundary =
   | 'required_header'
   | 'admin_mutation_service'
   | 'tenant_shadow_idempotency_service'
+  | 'optional_header_plus_rate_limit'
   | 'provider_event_dedupe'
   | 'release_token_consume'
   | 'action_token_or_challenge'
@@ -239,6 +240,44 @@ export const HOSTED_API_AUTHORIZATION_RULES = [
     standards: ['OWASP API1:2023', 'OWASP API4:2023', 'Stripe idempotency'],
   },
   {
+    id: 'account.billing.workflow-read',
+    methods: ['GET'],
+    pathPattern: /^\/api\/v1\/account\/billing\/workflows$/u,
+    surface: 'account_plane',
+    authBoundary: 'account_session',
+    tenantBoundary: 'account_session_account_scope',
+    objectBoundary: 'account_id_from_session',
+    mutationSafety: 'read_only',
+    idempotencyBoundary: 'not_applicable',
+    privacyBoundary:
+      'workflow entitlement reads are scoped to the authenticated account and tenant; downstream system and gate references remain digests',
+    evidence: [
+      'src/service/http/routes/account-billing-routes.ts#listWorkflowEntitlements',
+      'src/service/workflow-entitlement-store.ts',
+    ],
+    standards: ['OWASP API1:2023', 'OWASP API3:2023', 'OWASP API5:2023'],
+  },
+  {
+    id: 'account.billing.workflow-checkout',
+    methods: ['POST'],
+    pathPattern: /^\/api\/v1\/account\/billing\/workflows\/checkout$/u,
+    surface: 'account_plane',
+    authBoundary: 'account_session',
+    tenantBoundary: 'account_session_account_scope',
+    objectBoundary: 'account_id_from_session',
+    mutationSafety: 'role_gated_service_mutation_with_account_session_audit',
+    idempotencyBoundary: 'required_header',
+    privacyBoundary:
+      'workflow checkout responses expose Stripe handoff references and workflow digests, not raw downstream system or gate material',
+    evidence: [
+      'src/service/http/routes/account-billing-routes.ts#workflow_checkout',
+      'src/service/billing/stripe/stripe-billing.ts#createHostedWorkflowCheckoutSession',
+      'src/service/workflow-entitlement-store.ts#upsertPendingWorkflowEntitlement',
+      'src/service/bootstrap/http-route-builders.ts#recordAccountMutationAudit',
+    ],
+    standards: ['OWASP API1:2023', 'OWASP API4:2023', 'OWASP API5:2023', 'Stripe idempotency'],
+  },
+  {
     id: 'account.billing.portal',
     methods: ['POST'],
     pathPattern: /^\/api\/v1\/account\/billing\/portal$/u,
@@ -408,8 +447,9 @@ export const HOSTED_API_AUTHORIZATION_RULES = [
     tenantBoundary: 'tenant_middleware',
     objectBoundary: 'tenant_scoped_path_id',
     mutationSafety: 'tenant_scoped_shadow_write',
-    idempotencyBoundary: 'tenant_shadow_idempotency_service',
-    privacyBoundary: 'shadow write paths persist tenant-scoped digests, receipts, or candidates, not raw private payloads',
+    idempotencyBoundary: 'optional_header_plus_rate_limit',
+    privacyBoundary:
+      'shadow write paths persist tenant-scoped digests, receipts, or candidates; Idempotency-Key replay is available when supplied and route-scoped rate limits bound keyless retries',
     evidence: [
       'src/service/http/routes/shadow-routes.ts#assertTenantBoundRecord',
       'src/service/http/routes/shadow-routes.ts#recordShadowMutationAudit',

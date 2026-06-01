@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { createHash } from 'node:crypto';
 import type { Context, Hono } from 'hono';
 import {
   review,
@@ -237,6 +237,48 @@ function releaseReviewTenantId(record: ReleaseReviewerQueueRecord): string | nul
   return null;
 }
 
+function releaseReviewClosureId(
+  prefix: 'rt' | 'ep',
+  record: ReleaseReviewerQueueRecord,
+): string {
+  const digest = createHash('sha256')
+    .update(record.detail.id)
+    .update('\n')
+    .update(record.detail.decisionId)
+    .update('\n')
+    .update(record.detail.authorityState)
+    .digest('hex')
+    .slice(0, 40);
+  return `${prefix}_${digest}`;
+}
+
+function releaseReviewTerminalOccurredAt(
+  record: ReleaseReviewerQueueRecord,
+  fallback: string,
+): string {
+  for (const entry of [...record.detail.timeline].reverse()) {
+    if (entry.phase === 'terminal-accept') {
+      return entry.occurredAt;
+    }
+  }
+  return fallback;
+}
+
+function releaseReviewClosureNeedsRepair(
+  record: ReleaseReviewerQueueRecord,
+  authorityState: 'approved' | 'overridden',
+): boolean {
+  return (
+    record.detail.authorityState === authorityState &&
+    (
+      record.detail.issuedReleaseToken === null ||
+      record.detail.evidencePackId === null ||
+      record.releaseDecision.releaseTokenId === undefined ||
+      record.releaseDecision.evidencePackId === undefined
+    )
+  );
+}
+
 function buildIssuedEvidencePackResponse(
   issuedEvidencePack: IssuedReleaseEvidencePack,
 ): IssuedEvidencePackResponse {
@@ -281,6 +323,144 @@ async function appendReviewerTimelineToDecisionLog(
       rolloutFallbackPolicyId: null,
     },
   });
+}
+
+async function appendReviewerTimelineToDecisionLogOnce(
+  writer: RequestPathReleaseDecisionLogWriter,
+  decision: ReleaseDecision,
+  occurredAt: string,
+  requestId: string,
+  phase: Extract<
+    ReleaseDecisionLogPhase,
+    'review' | 'override' | 'evidence-pack' | 'terminal-accept' | 'terminal-deny'
+  >,
+): Promise<void> {
+  const entries = await writer.entries();
+  if (
+    entries.some(
+      (entry) =>
+        entry.requestId === requestId &&
+        entry.phase === phase &&
+        entry.decisionId === decision.id,
+    )
+  ) {
+    return;
+  }
+  await appendReviewerTimelineToDecisionLog(writer, decision, occurredAt, requestId, phase);
+}
+
+async function completeReleaseReviewAuthorityClosure(input: {
+  readonly record: ReleaseReviewerQueueRecord;
+  readonly issuedAt: string;
+  readonly override: boolean;
+  readonly senderConfirmation: ReleaseTokenConfirmationClaim;
+  readonly queueStore: RequestPathReleaseReviewerQueueStore;
+  readonly decisionLog: RequestPathReleaseDecisionLogWriter;
+  readonly tokenIssuer: ReleaseTokenIssuer;
+  readonly introspectionStore: RequestPathReleaseTokenIntrospectionStore;
+  readonly evidencePackIssuer: ReleaseEvidencePackIssuer;
+  readonly evidencePackStore: RequestPathReleaseEvidencePackStore;
+}): Promise<{
+  readonly stored: ReleaseReviewerQueueDetail;
+  readonly responseToken: IssuedReleaseTokenResponse;
+  readonly responseEvidencePack: IssuedEvidencePackResponse;
+}> {
+  const actionPhase = input.override ? 'override' : 'review';
+  const actionRequestSuffix = input.override ? 'override' : 'approve';
+  const reviewId = input.record.detail.id;
+
+  await appendReviewerTimelineToDecisionLogOnce(
+    input.decisionLog,
+    input.record.releaseDecision,
+    input.issuedAt,
+    `review:${reviewId}:${actionRequestSuffix}`,
+    actionPhase,
+  );
+  await appendReviewerTimelineToDecisionLogOnce(
+    input.decisionLog,
+    input.record.releaseDecision,
+    input.issuedAt,
+    `review:${reviewId}:terminal-accept`,
+    'terminal-accept',
+  );
+
+  const tokenId =
+    input.record.detail.issuedReleaseToken?.tokenId ??
+    input.record.releaseDecision.releaseTokenId ??
+    releaseReviewClosureId('rt', input.record);
+  const issuedToken = await input.tokenIssuer.issue({
+    decision: input.record.releaseDecision,
+    issuedAt: input.issuedAt,
+    tokenId,
+    ttlSeconds: input.override ? 60 : undefined,
+    tenantId: releaseReviewTenantId(input.record),
+    audience: input.record.releaseDecision.target.id,
+    resource: input.record.releaseDecision.target.id,
+    scope: 'financial-reporting:filing-export',
+    tokenUse: 'release',
+    confirmation: input.senderConfirmation,
+  });
+  await input.introspectionStore.registerIssuedToken({
+    issuedToken,
+    decision: input.record.releaseDecision,
+  });
+
+  const tokenRecord = attachIssuedTokenToReviewerQueueRecord({
+    record: input.record,
+    issuedToken,
+  });
+  const evidencePackId =
+    tokenRecord.detail.evidencePackId ??
+    tokenRecord.releaseDecision.evidencePackId ??
+    releaseReviewClosureId('ep', input.record);
+  const releaseDecisionWithEvidence: ReleaseDecision = {
+    ...tokenRecord.releaseDecision,
+    evidencePackId,
+  };
+  await appendReviewerTimelineToDecisionLogOnce(
+    input.decisionLog,
+    releaseDecisionWithEvidence,
+    input.issuedAt,
+    `review:${reviewId}:evidence-pack`,
+    'evidence-pack',
+  );
+  const issuedEvidencePack = await input.evidencePackIssuer.issue({
+    decision: releaseDecisionWithEvidence,
+    evidencePackId,
+    issuedAt: input.issuedAt,
+    decisionLogEntries: (await input.decisionLog.entries())
+      .filter((entry) => entry.decisionId === releaseDecisionWithEvidence.id),
+    decisionLogChainIntact: (await input.decisionLog.verify()).valid,
+    review: tokenRecord.detail,
+    releaseToken: issuedToken,
+  });
+  await input.evidencePackStore.upsert(issuedEvidencePack);
+
+  const finalRecord: ReleaseReviewerQueueRecord = {
+    detail: {
+      ...tokenRecord.detail,
+      updatedAt: input.issuedAt,
+      evidencePackId,
+      timeline: [
+        ...tokenRecord.detail.timeline,
+        {
+          occurredAt: input.issuedAt,
+          phase: 'evidence-pack' as const,
+          decisionStatus: tokenRecord.releaseDecision.status,
+          requiresReview: false,
+          deterministicChecksCompleted: true,
+          reviewerLabel: 'Attestor release evidence issuer',
+        },
+      ],
+    },
+    releaseDecision: releaseDecisionWithEvidence,
+  };
+
+  return {
+    stored: await input.queueStore.upsert(finalRecord),
+    responseToken: buildIssuedReleaseTokenResponse(issuedToken),
+    responseEvidencePack: buildIssuedEvidencePackResponse(issuedEvidencePack),
+  };
 }
 
 export function registerReleaseReviewRoutes(app: Hono, deps: ReleaseReviewRouteDeps): void {
@@ -388,6 +568,62 @@ export function registerReleaseReviewRoutes(app: Hono, deps: ReleaseReviewRouteD
     }
 
     try {
+      if (releaseReviewClosureNeedsRepair(record, 'approved')) {
+        const issuedAt = releaseReviewTerminalOccurredAt(record, new Date().toISOString());
+        const senderConfirmation =
+          await resolveReleaseReviewTokenConfirmation?.({
+            context: c,
+            decision: record.releaseDecision,
+            issuedAt,
+            override: false,
+          }) ?? null;
+        if (senderConfirmation === null) {
+          return c.json({
+            error: 'release_token_sender_confirmation_required',
+            error_description:
+              'A valid DPoP proof is required before repairing a sender-constrained release token closure.',
+          }, 400);
+        }
+        const closure = await completeReleaseReviewAuthorityClosure({
+          record,
+          issuedAt,
+          override: false,
+          senderConfirmation,
+          queueStore: apiReleaseReviewerQueueStore,
+          decisionLog: financeReleaseDecisionLog,
+          tokenIssuer: apiReleaseTokenIssuer,
+          introspectionStore: apiReleaseIntrospectionStore,
+          evidencePackIssuer: apiReleaseEvidencePackIssuer,
+          evidencePackStore: apiReleaseEvidencePackStore,
+        });
+        c.header('cache-control', 'no-store');
+        return c.json(
+          await finalizeAdminMutation({
+            idempotencyKey: mutation.idempotencyKey,
+            routeId,
+            requestPayload: body,
+            statusCode: 200,
+            responseBody: buildReviewActionResponse(
+              closure.stored,
+              closure.responseToken,
+              closure.responseEvidencePack,
+            ),
+            audit: {
+              action: 'release_review.approved',
+              requestHash: mutation.requestHash,
+              metadata: {
+                reviewId: closure.stored.id,
+                decisionId: closure.stored.decisionId,
+                reviewerId: authorized.releaseActor.id,
+                reviewerRole: actorPolicyRole(authorized),
+                authorityState: closure.stored.authorityState,
+                closureRepaired: true,
+              },
+            },
+          }),
+        );
+      }
+
       const decidedAt = new Date().toISOString();
       const expectedAuthorityState = record.detail.authorityState;
       const expectedReviewerDecisionCount = record.detail.reviewerDecisions.length;
@@ -418,100 +654,41 @@ export function registerReleaseReviewRoutes(app: Hono, deps: ReleaseReviewRouteD
         decidedAt,
       });
 
-      let finalRecord: ReleaseReviewerQueueRecord = transition.record;
       let stored = await apiReleaseReviewerQueueStore.commitPendingTransition({
         record: transition.record,
         expectedAuthorityState,
         expectedReviewerDecisionCount,
       });
 
-      await appendReviewerTimelineToDecisionLog(
-        financeReleaseDecisionLog,
-        transition.record.releaseDecision,
-        decidedAt,
-        `review:${transition.record.detail.id}:approve`,
-        'review',
-      );
-
       let responseToken: IssuedReleaseTokenResponse | null = null;
       let responseEvidencePack: IssuedEvidencePackResponse | null = null;
       if (transition.record.detail.authorityState === 'approved') {
+        if (senderConfirmation === null) {
+          throw new Error('release token sender confirmation was not resolved for final approval');
+        }
+        const closure = await completeReleaseReviewAuthorityClosure({
+          record: transition.record,
+          issuedAt: decidedAt,
+          override: false,
+          senderConfirmation,
+          queueStore: apiReleaseReviewerQueueStore,
+          decisionLog: financeReleaseDecisionLog,
+          tokenIssuer: apiReleaseTokenIssuer,
+          introspectionStore: apiReleaseIntrospectionStore,
+          evidencePackIssuer: apiReleaseEvidencePackIssuer,
+          evidencePackStore: apiReleaseEvidencePackStore,
+        });
+        stored = closure.stored;
+        responseToken = closure.responseToken;
+        responseEvidencePack = closure.responseEvidencePack;
+      } else {
         await appendReviewerTimelineToDecisionLog(
           financeReleaseDecisionLog,
           transition.record.releaseDecision,
           decidedAt,
-          `review:${transition.record.detail.id}:terminal-accept`,
-          'terminal-accept',
+          `review:${transition.record.detail.id}:approve`,
+          'review',
         );
-        if (senderConfirmation === null) {
-          throw new Error('release token sender confirmation was not resolved for final approval');
-        }
-        const issuedToken = await apiReleaseTokenIssuer.issue({
-          decision: transition.record.releaseDecision,
-          issuedAt: decidedAt,
-          tenantId: releaseReviewTenantId(transition.record),
-          audience: transition.record.releaseDecision.target.id,
-          resource: transition.record.releaseDecision.target.id,
-          scope: 'financial-reporting:filing-export',
-          tokenUse: 'release',
-          confirmation: senderConfirmation,
-        });
-        await apiReleaseIntrospectionStore.registerIssuedToken({
-          issuedToken,
-          decision: transition.record.releaseDecision,
-        });
-        finalRecord = attachIssuedTokenToReviewerQueueRecord({
-          record: transition.record,
-          issuedToken,
-        });
-        responseToken = buildIssuedReleaseTokenResponse(issuedToken);
-        const evidencePackId = `ep_${randomUUID()}`;
-        const releaseDecisionWithEvidence: ReleaseDecision = {
-          ...finalRecord.releaseDecision,
-          evidencePackId,
-        };
-        await appendReviewerTimelineToDecisionLog(
-          financeReleaseDecisionLog,
-          releaseDecisionWithEvidence,
-          decidedAt,
-          `review:${transition.record.detail.id}:evidence-pack`,
-          'evidence-pack',
-        );
-        const issuedEvidencePack = await apiReleaseEvidencePackIssuer.issue({
-          decision: releaseDecisionWithEvidence,
-          evidencePackId,
-          issuedAt: decidedAt,
-          decisionLogEntries: (await financeReleaseDecisionLog.entries())
-            .filter((entry) => entry.decisionId === releaseDecisionWithEvidence.id),
-          decisionLogChainIntact: (await financeReleaseDecisionLog.verify()).valid,
-          review: finalRecord.detail,
-          releaseToken: issuedToken,
-        });
-        await apiReleaseEvidencePackStore.upsert(issuedEvidencePack);
-        finalRecord = {
-          detail: {
-            ...finalRecord.detail,
-            updatedAt: decidedAt,
-            evidencePackId,
-            timeline: [
-              ...finalRecord.detail.timeline,
-              {
-                occurredAt: decidedAt,
-                phase: 'evidence-pack' as const,
-                decisionStatus: finalRecord.releaseDecision.status,
-                requiresReview: false,
-                deterministicChecksCompleted: true,
-                reviewerLabel: 'Attestor release evidence issuer',
-              },
-            ],
-          },
-          releaseDecision: releaseDecisionWithEvidence,
-        };
-        responseEvidencePack = buildIssuedEvidencePackResponse(issuedEvidencePack);
-      }
-
-      if (transition.record.detail.authorityState === 'approved') {
-        stored = await apiReleaseReviewerQueueStore.upsert(finalRecord);
       }
       c.header('cache-control', 'no-store');
       return c.json(
@@ -571,6 +748,67 @@ export function registerReleaseReviewRoutes(app: Hono, deps: ReleaseReviewRouteD
     }
 
     try {
+      if (releaseReviewClosureNeedsRepair(record, 'overridden')) {
+        const issuedAt = releaseReviewTerminalOccurredAt(record, new Date().toISOString());
+        const senderConfirmation =
+          await resolveReleaseReviewTokenConfirmation?.({
+            context: c,
+            decision: record.releaseDecision,
+            issuedAt,
+            override: true,
+          }) ?? null;
+        if (senderConfirmation === null) {
+          return c.json({
+            error: 'release_token_sender_confirmation_required',
+            error_description:
+              'A valid DPoP proof is required before repairing a sender-constrained release token closure.',
+          }, 400);
+        }
+        const closure = await completeReleaseReviewAuthorityClosure({
+          record,
+          issuedAt,
+          override: true,
+          senderConfirmation,
+          queueStore: apiReleaseReviewerQueueStore,
+          decisionLog: financeReleaseDecisionLog,
+          tokenIssuer: apiReleaseTokenIssuer,
+          introspectionStore: apiReleaseIntrospectionStore,
+          evidencePackIssuer: apiReleaseEvidencePackIssuer,
+          evidencePackStore: apiReleaseEvidencePackStore,
+        });
+        c.header('cache-control', 'no-store');
+        return c.json(
+          await finalizeAdminMutation({
+            idempotencyKey: mutation.idempotencyKey,
+            routeId,
+            requestPayload: body,
+            statusCode: 200,
+            responseBody: buildReviewActionResponse(
+              closure.stored,
+              closure.responseToken,
+              closure.responseEvidencePack,
+            ),
+            audit: {
+              action: 'release_break_glass.issued',
+              requestHash: mutation.requestHash,
+              metadata: {
+                reviewId: closure.stored.id,
+                decisionId: closure.stored.decisionId,
+                reasonCode: closure.stored.overrideGrant?.reasonCode ?? null,
+                ticketId: closure.stored.overrideGrant?.ticketId ?? null,
+                requestedById: closure.stored.overrideGrant?.requestedById ?? null,
+                requestedByRole: closure.stored.overrideGrant?.requestedByRole ?? null,
+                authorityState: closure.stored.authorityState,
+                releaseTokenId: closure.responseToken.tokenId,
+                evidencePackId: closure.responseEvidencePack.evidencePackId,
+                ttlSeconds: closure.responseToken.ttlSeconds,
+                closureRepaired: true,
+              },
+            },
+          }),
+        );
+      }
+
       const decidedAt = new Date().toISOString();
       const expectedAuthorityState = record.detail.authorityState;
       const expectedReviewerDecisionCount = record.detail.reviewerDecisions.length;
@@ -695,87 +933,18 @@ export function registerReleaseReviewRoutes(app: Hono, deps: ReleaseReviewRouteD
         expectedReviewerDecisionCount,
       });
 
-      await appendReviewerTimelineToDecisionLog(
-        financeReleaseDecisionLog,
-        overriddenRecord.releaseDecision,
-        decidedAt,
-        `review:${overriddenRecord.detail.id}:override`,
-        'override',
-      );
-      await appendReviewerTimelineToDecisionLog(
-        financeReleaseDecisionLog,
-        overriddenRecord.releaseDecision,
-        decidedAt,
-        `review:${overriddenRecord.detail.id}:terminal-accept`,
-        'terminal-accept',
-      );
-
-      const issuedToken = await apiReleaseTokenIssuer.issue({
-        decision: overriddenRecord.releaseDecision,
-        issuedAt: decidedAt,
-        ttlSeconds: 60,
-        tenantId: releaseReviewTenantId(overriddenRecord),
-        audience: overriddenRecord.releaseDecision.target.id,
-        resource: overriddenRecord.releaseDecision.target.id,
-        scope: 'financial-reporting:filing-export',
-        tokenUse: 'release',
-        confirmation: senderConfirmation,
-      });
-      await apiReleaseIntrospectionStore.registerIssuedToken({
-        issuedToken,
-        decision: overriddenRecord.releaseDecision,
-      });
-
-      const finalRecord = attachIssuedTokenToReviewerQueueRecord({
+      const closure = await completeReleaseReviewAuthorityClosure({
         record: overriddenRecord,
-        issuedToken,
-      });
-      const evidencePackId = `ep_${randomUUID()}`;
-      const releaseDecisionWithEvidence: ReleaseDecision = {
-        ...finalRecord.releaseDecision,
-        evidencePackId,
-      };
-      await appendReviewerTimelineToDecisionLog(
-        financeReleaseDecisionLog,
-        releaseDecisionWithEvidence,
-        decidedAt,
-        `review:${overriddenRecord.detail.id}:evidence-pack`,
-        'evidence-pack',
-      );
-      const issuedEvidencePack = await apiReleaseEvidencePackIssuer.issue({
-        decision: releaseDecisionWithEvidence,
-        evidencePackId,
         issuedAt: decidedAt,
-        decisionLogEntries: (await financeReleaseDecisionLog.entries())
-          .filter((entry) => entry.decisionId === releaseDecisionWithEvidence.id),
-        decisionLogChainIntact: (await financeReleaseDecisionLog.verify()).valid,
-        review: finalRecord.detail,
-        releaseToken: issuedToken,
+        override: true,
+        senderConfirmation,
+        queueStore: apiReleaseReviewerQueueStore,
+        decisionLog: financeReleaseDecisionLog,
+        tokenIssuer: apiReleaseTokenIssuer,
+        introspectionStore: apiReleaseIntrospectionStore,
+        evidencePackIssuer: apiReleaseEvidencePackIssuer,
+        evidencePackStore: apiReleaseEvidencePackStore,
       });
-      await apiReleaseEvidencePackStore.upsert(issuedEvidencePack);
-      const finalRecordWithEvidence: ReleaseReviewerQueueRecord = {
-        detail: {
-          ...finalRecord.detail,
-          updatedAt: decidedAt,
-          evidencePackId,
-          timeline: [
-            ...finalRecord.detail.timeline,
-            {
-              occurredAt: decidedAt,
-              phase: 'evidence-pack' as const,
-              decisionStatus: finalRecord.releaseDecision.status,
-              requiresReview: false,
-              deterministicChecksCompleted: true,
-              reviewerLabel: 'Attestor release evidence issuer',
-            },
-          ],
-        },
-        releaseDecision: releaseDecisionWithEvidence,
-      };
-
-      const stored = await apiReleaseReviewerQueueStore.upsert(finalRecordWithEvidence);
-      const responseToken = buildIssuedReleaseTokenResponse(issuedToken);
-      const responseEvidencePack = buildIssuedEvidencePackResponse(issuedEvidencePack);
       c.header('cache-control', 'no-store');
       return c.json(
         await finalizeAdminMutation({
@@ -783,21 +952,25 @@ export function registerReleaseReviewRoutes(app: Hono, deps: ReleaseReviewRouteD
           routeId,
           requestPayload: body,
           statusCode: 200,
-          responseBody: buildReviewActionResponse(stored, responseToken, responseEvidencePack),
+          responseBody: buildReviewActionResponse(
+            closure.stored,
+            closure.responseToken,
+            closure.responseEvidencePack,
+          ),
           audit: {
             action: 'release_break_glass.issued',
             requestHash: mutation.requestHash,
             metadata: {
-              reviewId: stored.id,
-              decisionId: stored.decisionId,
-              reasonCode: stored.overrideGrant?.reasonCode ?? null,
-              ticketId: stored.overrideGrant?.ticketId ?? null,
-              requestedById: stored.overrideGrant?.requestedById ?? null,
-              requestedByRole: stored.overrideGrant?.requestedByRole ?? null,
-              authorityState: stored.authorityState,
-              releaseTokenId: responseToken.tokenId,
-              evidencePackId: responseEvidencePack.evidencePackId,
-              ttlSeconds: responseToken.ttlSeconds,
+              reviewId: closure.stored.id,
+              decisionId: closure.stored.decisionId,
+              reasonCode: closure.stored.overrideGrant?.reasonCode ?? null,
+              ticketId: closure.stored.overrideGrant?.ticketId ?? null,
+              requestedById: closure.stored.overrideGrant?.requestedById ?? null,
+              requestedByRole: closure.stored.overrideGrant?.requestedByRole ?? null,
+              authorityState: closure.stored.authorityState,
+              releaseTokenId: closure.responseToken.tokenId,
+              evidencePackId: closure.responseEvidencePack.evidencePackId,
+              ttlSeconds: closure.responseToken.ttlSeconds,
             },
           },
         }),

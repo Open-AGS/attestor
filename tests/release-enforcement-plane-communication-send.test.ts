@@ -293,6 +293,18 @@ async function testCanonicalBindingIsStable(): Promise<void> {
       !('attachments' in communicationPayload),
     'Communication-send gateway: canonical payload labels attachments as declarations',
   );
+  deepEqual(
+    left.evidenceSemantics,
+    {
+      declarationBound: true,
+      verifiedEvidence: false,
+      declaredEvidenceCount: 2,
+      verifiedEvidenceCount: 0,
+      evidenceKinds: ['attachment'],
+      boundary: 'declared-only',
+    },
+    'Communication-send gateway: declared attachments are not reported as verified evidence',
+  );
   ok(left.hashBundle.outputHash.startsWith('sha256:'), 'Communication-send gateway: output hash is canonicalized');
   ok(left.hashBundle.consequenceHash.startsWith('sha256:'), 'Communication-send gateway: consequence hash is canonicalized');
   equal(left.messageHash, reordered.messageHash, 'Communication-send gateway: metadata and attachment ordering do not change message hash');
@@ -328,6 +340,9 @@ async function testValidDpopCommunicationSendAllowsAndConsumesToken(): Promise<v
   equal(result.responseStatus, 200, 'Communication-send gateway: allowed result is send-ready');
   equal(result.decision?.outcome, 'allow', 'Communication-send gateway: valid send emits allow decision');
   ok(result.receipt?.receiptDigest?.startsWith('sha256:'), 'Communication-send gateway: allowed send emits receipt digest');
+  equal(result.evidenceSemantics.verifiedEvidence, false, 'Communication-send gateway: result does not claim verified attachment evidence');
+  equal(result.evidenceSemantics.declaredEvidenceCount, 2, 'Communication-send gateway: result reports declared attachment count');
+  deepEqual(result.receipt?.evidenceSemantics, result.evidenceSemantics, 'Communication-send gateway: receipt carries declared-evidence semantics');
   equal(result.receipt?.policyIrHash, POLICY_IR_HASH, 'Communication-send gateway: receipt preserves compiled policy IR provenance');
   equal(result.receipt?.compiledPolicyIrVersion, COMPILED_POLICY_IR_VERSION, 'Communication-send gateway: receipt preserves compiled policy IR version');
   deepEqual(
@@ -349,8 +364,13 @@ async function testValidDpopCommunicationSendAllowsAndConsumesToken(): Promise<v
   );
   equal(
     result.receipt?.receiptDigest,
-    result.decision ? createEnforcementReceiptDigest({ decision: result.decision }) : null,
-    'Communication-send gateway: receipt digest binds structured policy context',
+    result.decision
+      ? createEnforcementReceiptDigest({
+          decision: result.decision,
+          evidenceSemantics: result.evidenceSemantics,
+        })
+      : null,
+    'Communication-send gateway: receipt digest binds structured policy and declared-evidence context',
   );
   if (!result.decision) {
     throw new Error('Expected communication-send allow result to carry an enforcement decision.');
@@ -366,7 +386,10 @@ async function testValidDpopCommunicationSendAllowsAndConsumesToken(): Promise<v
     },
   };
   ok(
-    createEnforcementReceiptDigest({ decision: tamperedPolicyDecision }) !== result.receipt?.receiptDigest,
+    createEnforcementReceiptDigest({
+      decision: tamperedPolicyDecision,
+      evidenceSemantics: result.evidenceSemantics,
+    }) !== result.receipt?.receiptDigest,
     'Communication-send gateway: changing structured policy context changes receipt digest',
   );
   equal(result.request?.enforcementPoint.boundaryKind, 'communication-send', 'Communication-send gateway: request uses communication-send boundary');
@@ -452,6 +475,7 @@ async function testMissingAuthorizationFailsClosed(): Promise<void> {
   equal(result.status, 'denied', 'Communication-send gateway: missing authorization is denied');
   equal(result.responseStatus, 401, 'Communication-send gateway: missing authorization maps to challenge status');
   deepEqual(result.failureReasons, ['missing-release-authorization'], 'Communication-send gateway: missing authorization failure is explicit');
+  equal(result.evidenceSemantics.boundary, 'declared-only', 'Communication-send gateway: early denial still exposes declaration boundary');
   equal(result.request, null, 'Communication-send gateway: missing authorization does not build verifier request');
 }
 

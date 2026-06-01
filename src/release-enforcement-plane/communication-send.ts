@@ -21,6 +21,7 @@ import {
   createEnforcementRequest,
   createReleasePresentation,
   type EnforcementDecision,
+  type EnforcementEvidenceSemantics,
   type EnforcementReceipt,
   type EnforcementRequest,
   type ReleasePresentation,
@@ -124,6 +125,7 @@ export interface CommunicationSendCanonicalBinding {
   readonly hashBundle: CanonicalReleaseHashBundle;
   readonly messageCanonical: string;
   readonly messageHash: string;
+  readonly evidenceSemantics: EnforcementEvidenceSemantics;
   readonly httpMethod: typeof COMMUNICATION_SEND_HTTP_METHOD;
   readonly sendUri: string;
 }
@@ -192,6 +194,7 @@ export interface CommunicationSendGatewayResult {
   readonly online: OnlineReleaseVerification | null;
   readonly decision: EnforcementDecision | null;
   readonly receipt: EnforcementReceipt | null;
+  readonly evidenceSemantics: EnforcementEvidenceSemantics;
   readonly failureReasons: readonly EnforcementFailureReason[];
   readonly responseStatus: number;
 }
@@ -340,6 +343,31 @@ function normalizeAttachments(
   );
 }
 
+function declaredEvidenceSemantics(input: {
+  readonly declaredEvidenceCount: number;
+  readonly evidenceKind: string;
+}): EnforcementEvidenceSemantics {
+  if (input.declaredEvidenceCount === 0) {
+    return Object.freeze({
+      declarationBound: false,
+      verifiedEvidence: false,
+      declaredEvidenceCount: 0,
+      verifiedEvidenceCount: 0,
+      evidenceKinds: Object.freeze([]),
+      boundary: 'none',
+    });
+  }
+
+  return Object.freeze({
+    declarationBound: true,
+    verifiedEvidence: false,
+    declaredEvidenceCount: input.declaredEvidenceCount,
+    verifiedEvidenceCount: 0,
+    evidenceKinds: Object.freeze([input.evidenceKind]),
+    boundary: 'declared-only',
+  });
+}
+
 function targetIdForMessage(message: CommunicationSendMessage): string {
   return (
     normalizeOptionalIdentifier(message.targetId) ??
@@ -425,6 +453,7 @@ export function buildCommunicationSendCanonicalBinding(
 ): CommunicationSendCanonicalBinding {
   const riskClass = options.riskClass ?? 'R2';
   const normalizedMessage = normalizeMessage(message);
+  const declaredAttachments = normalizedMessage.declaredAttachments as readonly unknown[];
   const target = communicationTarget(message);
   const contract = outputContract(riskClass);
   const outputPayload = Object.freeze({
@@ -453,6 +482,10 @@ export function buildCommunicationSendCanonicalBinding(
     hashBundle,
     messageCanonical,
     messageHash: sha256(messageCanonical),
+    evidenceSemantics: declaredEvidenceSemantics({
+      declaredEvidenceCount: declaredAttachments.length,
+      evidenceKind: 'attachment',
+    }),
     httpMethod: COMMUNICATION_SEND_HTTP_METHOD,
     sendUri: communicationSendUri(target.id, options.sendBaseUri),
   });
@@ -552,6 +585,7 @@ function decisionAndReceipt(input: {
   readonly verification: VerificationResult;
   readonly checkedAt: string;
   readonly failureReasons: readonly EnforcementFailureReason[];
+  readonly evidenceSemantics: EnforcementEvidenceSemantics;
 }): {
   readonly decision: EnforcementDecision;
   readonly receipt: EnforcementReceipt;
@@ -567,7 +601,11 @@ function decisionAndReceipt(input: {
     id: `er_communication_send_${input.request.id}`,
     issuedAt: input.checkedAt,
     decision,
-    receiptDigest: createEnforcementReceiptDigest({ decision }),
+    evidenceSemantics: input.evidenceSemantics,
+    receiptDigest: createEnforcementReceiptDigest({
+      decision,
+      evidenceSemantics: input.evidenceSemantics,
+    }),
   });
 
   return { decision, receipt };
@@ -622,6 +660,7 @@ function deniedEarlyResult(input: {
     online: null,
     decision: null,
     receipt: null,
+    evidenceSemantics: input.binding.evidenceSemantics,
     failureReasons,
     responseStatus: responseStatusForFailures(failureReasons),
   });
@@ -653,6 +692,7 @@ function resultFromVerification(input: {
     verification: verificationResult,
     checkedAt: input.checkedAt,
     failureReasons,
+    evidenceSemantics: input.binding.evidenceSemantics,
   });
   const allowed = failureReasons.length === 0 && verificationResult.status === 'valid';
 
@@ -668,6 +708,7 @@ function resultFromVerification(input: {
     online: input.online,
     decision,
     receipt,
+    evidenceSemantics: input.binding.evidenceSemantics,
     failureReasons,
     responseStatus: allowed ? 200 : responseStatusForFailures(failureReasons),
   });
@@ -730,6 +771,7 @@ export async function enforceCommunicationSend(
       verification: forcedVerification,
       checkedAt,
       failureReasons: forcedFailureReasons,
+      evidenceSemantics: binding.evidenceSemantics,
     });
     return Object.freeze({
       version: RELEASE_COMMUNICATION_SEND_GATEWAY_SPEC_VERSION,
@@ -743,6 +785,7 @@ export async function enforceCommunicationSend(
       online: null,
       decision,
       receipt,
+      evidenceSemantics: binding.evidenceSemantics,
       failureReasons: forcedFailureReasons,
       responseStatus: responseStatusForFailures(forcedFailureReasons),
     });

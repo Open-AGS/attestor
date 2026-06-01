@@ -25,6 +25,35 @@ const TEXT_EXTENSIONS = new Set([
   '.yml',
 ]);
 
+function parseArtifactRoots(args) {
+  if (args.length === 0) return PUBLIC_ARTIFACT_ROOTS;
+
+  const roots = [];
+  for (let index = 0; index < args.length; index += 1) {
+    const arg = args[index];
+    if (arg === '--root') {
+      const root = args[index + 1];
+      if (!root) {
+        throw new Error('check-public-artifacts-redaction requires a value after --root.');
+      }
+      roots.push(root);
+      index += 1;
+      continue;
+    }
+    if (arg?.startsWith('--root=')) {
+      const root = arg.slice('--root='.length);
+      if (!root) {
+        throw new Error('check-public-artifacts-redaction requires a non-empty --root value.');
+      }
+      roots.push(root);
+      continue;
+    }
+    throw new Error(`check-public-artifacts-redaction does not recognize argument: ${arg}`);
+  }
+
+  return Object.freeze(roots);
+}
+
 function listFiles(path) {
   if (!existsSync(path)) return [];
   const stats = statSync(path);
@@ -38,7 +67,9 @@ function listFiles(path) {
   });
 }
 
-const scannedFiles = PUBLIC_ARTIFACT_ROOTS.flatMap(listFiles)
+const artifactRoots = parseArtifactRoots(process.argv.slice(2));
+
+const scannedFiles = artifactRoots.flatMap(listFiles)
   .filter((file) => TEXT_EXTENSIONS.has(extname(file).toLowerCase()));
 
 const leakingFiles = [];

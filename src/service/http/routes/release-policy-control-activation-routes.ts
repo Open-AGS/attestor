@@ -264,6 +264,7 @@ export function registerReleasePolicyControlActivationRoutes(app: Hono, deps: Re
       const { lifecycle, audit } = await applyPolicyLifecycleMutation({
         store,
         auditLog,
+        requireAtomicLifecycle: deps.requireAtomicPolicyLifecycle === true,
         action: (localStore) => activatePolicyBundle(localStore, {
           id: optionalString(body, 'activationId') ?? `activation_${randomUUID().replace(/-/g, '').slice(0, 16)}`,
           target,
@@ -343,6 +344,7 @@ export function registerReleasePolicyControlActivationRoutes(app: Hono, deps: Re
       const { lifecycle, audit } = await applyPolicyLifecycleMutation({
         store,
         auditLog,
+        requireAtomicLifecycle: deps.requireAtomicPolicyLifecycle === true,
         action: (localStore) => rollbackPolicyActivation(localStore, {
           id: optionalString(body, 'activationId') ?? `rollback_${randomUUID().replace(/-/g, '').slice(0, 16)}`,
           target: rollbackTarget.target,

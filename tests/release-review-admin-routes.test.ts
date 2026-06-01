@@ -127,6 +127,8 @@ function createFixture(input: {
   readonly staleRecordReads?: boolean;
   readonly tokenRegistrations?: string[];
   readonly evidencePackWrites?: string[];
+  readonly tokenIssueFailureCount?: number;
+  readonly evidencePackWriteFailureCount?: number;
 } = {}): Hono {
   resetReleaseAdminRouteAuthLimiterForTests();
   const app = new Hono();
@@ -135,16 +137,29 @@ function createFixture(input: {
   const decisionLog = createInMemoryReleaseDecisionLogWriter();
   const tokenKeys = generateKeyPair();
   const evidenceKeys = generateKeyPair();
-  const tokenIssuer = createReleaseTokenIssuer({
+  const baseTokenIssuer = createReleaseTokenIssuer({
     issuer: 'attestor.release.review-route-test',
     privateKeyPem: tokenKeys.privateKeyPem,
     publicKeyPem: tokenKeys.publicKeyPem,
   });
+  let tokenIssueFailuresRemaining = input.tokenIssueFailureCount ?? 0;
+  const tokenIssuer = {
+    issue: async (issueInput: Parameters<typeof baseTokenIssuer.issue>[0]) => {
+      if (tokenIssueFailuresRemaining > 0) {
+        tokenIssueFailuresRemaining -= 1;
+        throw new Error('simulated_release_token_issue_failure');
+      }
+      return baseTokenIssuer.issue(issueInput);
+    },
+    exportVerificationKey: () => baseTokenIssuer.exportVerificationKey(),
+  };
   const evidenceIssuer = createReleaseEvidencePackIssuer({
     issuer: 'attestor.release.review-route-test',
     privateKeyPem: evidenceKeys.privateKeyPem,
     publicKeyPem: evidenceKeys.publicKeyPem,
   });
+  let evidencePackWriteFailuresRemaining = input.evidencePackWriteFailureCount ?? 0;
+  const registeredTokenIds = new Set<string>();
   const deps: ReleaseReviewRouteDeps = {
     currentAdminAuthorized,
     apiReleaseReviewerQueueStore: {
@@ -194,14 +209,23 @@ function createFixture(input: {
     apiReleaseEvidencePackStore: {
       get: async () => null,
       upsert: async (pack) => {
-        input.evidencePackWrites?.push(pack.evidencePack.id);
+        if (evidencePackWriteFailuresRemaining > 0) {
+          evidencePackWriteFailuresRemaining -= 1;
+          throw new Error('simulated_release_evidence_pack_store_failure');
+        }
+        if (!input.evidencePackWrites?.includes(pack.evidencePack.id)) {
+          input.evidencePackWrites?.push(pack.evidencePack.id);
+        }
         return pack;
       },
     } as never,
     apiReleaseEvidencePackIssuer: evidenceIssuer,
     apiReleaseIntrospectionStore: {
       registerIssuedToken: async ({ issuedToken }) => {
-        input.tokenRegistrations?.push(issuedToken.tokenId);
+        if (!registeredTokenIds.has(issuedToken.tokenId)) {
+          registeredTokenIds.add(issuedToken.tokenId);
+          input.tokenRegistrations?.push(issuedToken.tokenId);
+        }
       },
     } as never,
     resolveReleaseReviewTokenConfirmation: () => ({ jkt: 'sha256:test-sender-thumbprint' }),
@@ -407,6 +431,73 @@ async function testReleaseReviewFinalApprovalCommitsBeforeTokenEvidenceSideEffec
   assert.equal(evidencePackWrites.length, 1);
 }
 
+async function testReleaseReviewFinalApprovalRepairsTokenIssueFailureAfterCommit(): Promise<void> {
+  const tokenRegistrations: string[] = [];
+  const evidencePackWrites: string[] = [];
+  const record = createFinalApprovalReadyReviewRecord();
+  const app = createFixture({
+    reviewRecord: record,
+    tokenRegistrations,
+    evidencePackWrites,
+    tokenIssueFailureCount: 1,
+  });
+
+  const failedApproval = await requestJson(app, `/api/v1/admin/release-reviews/${record.detail.id}/approve`, {
+    method: 'POST',
+    headers: adminHeaders(undefined, 'admin-release-secret'),
+    body: { note: 'Terminal transition commits, then token issue fails.' },
+  });
+  const repairedApproval = await requestJson(app, `/api/v1/admin/release-reviews/${record.detail.id}/approve`, {
+    method: 'POST',
+    headers: adminHeaders(undefined, 'admin-release-secret'),
+    body: { note: 'Retry repairs the terminal closure.' },
+  });
+  const detail = await requestJson(app, `/api/v1/admin/release-reviews/${record.detail.id}`, {
+    headers: adminHeaders(undefined, 'admin-read-secret'),
+  });
+
+  assert.equal(failedApproval.status, 500);
+  assert.match(failedApproval.body.error, /simulated_release_token_issue_failure/u);
+  assert.equal(repairedApproval.status, 200);
+  assert.ok(repairedApproval.body.releaseToken?.tokenId);
+  assert.ok(repairedApproval.body.evidencePack?.evidencePackId);
+  assert.equal(tokenRegistrations.length, 1);
+  assert.equal(evidencePackWrites.length, 1);
+  assert.equal(detail.body.review.issuedReleaseToken.tokenId, repairedApproval.body.releaseToken.tokenId);
+  assert.equal(detail.body.review.evidencePackId, repairedApproval.body.evidencePack.evidencePackId);
+}
+
+async function testReleaseReviewFinalApprovalRepairsEvidenceStoreFailureAfterTokenRegistration(): Promise<void> {
+  const tokenRegistrations: string[] = [];
+  const evidencePackWrites: string[] = [];
+  const record = createFinalApprovalReadyReviewRecord();
+  const app = createFixture({
+    reviewRecord: record,
+    tokenRegistrations,
+    evidencePackWrites,
+    evidencePackWriteFailureCount: 1,
+  });
+
+  const failedApproval = await requestJson(app, `/api/v1/admin/release-reviews/${record.detail.id}/approve`, {
+    method: 'POST',
+    headers: adminHeaders(undefined, 'admin-release-secret'),
+    body: { note: 'Terminal transition commits, then evidence storage fails.' },
+  });
+  const repairedApproval = await requestJson(app, `/api/v1/admin/release-reviews/${record.detail.id}/approve`, {
+    method: 'POST',
+    headers: adminHeaders(undefined, 'admin-release-secret'),
+    body: { note: 'Retry reuses the same closure identifiers.' },
+  });
+
+  assert.equal(failedApproval.status, 500);
+  assert.match(failedApproval.body.error, /simulated_release_evidence_pack_store_failure/u);
+  assert.equal(repairedApproval.status, 200);
+  assert.equal(tokenRegistrations.length, 1);
+  assert.equal(evidencePackWrites.length, 1);
+  assert.equal(tokenRegistrations[0], repairedApproval.body.releaseToken.tokenId);
+  assert.equal(evidencePackWrites[0], repairedApproval.body.evidencePack.evidencePackId);
+}
+
 async function testReleaseReviewHtmlRoutesCarrySecurityHeaders(): Promise<void> {
   const app = createFixture({ reviewDetail: { id: 'review_001' } });
   const inbox = await app.request('/api/v1/admin/release-reviews/inbox', {
@@ -439,8 +530,10 @@ async function run(): Promise<void> {
     await testReleaseReviewReviewerIdentityIsCredentialBound();
     await testReleaseReviewOverrideRequesterIsCredentialBound();
     await testReleaseReviewFinalApprovalCommitsBeforeTokenEvidenceSideEffects();
+    await testReleaseReviewFinalApprovalRepairsTokenIssueFailureAfterCommit();
+    await testReleaseReviewFinalApprovalRepairsEvidenceStoreFailureAfterTokenRegistration();
     await testReleaseReviewHtmlRoutesCarrySecurityHeaders();
-    console.log('Release review admin-route tests: 5 passed, 0 failed');
+    console.log('Release review admin-route tests: 7 passed, 0 failed');
   } finally {
     process.env.ATTESTOR_ADMIN_API_KEY = originalAdminApiKey;
     process.env.ATTESTOR_ADMIN_READ_API_KEY = originalAdminReadApiKey;

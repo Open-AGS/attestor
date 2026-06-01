@@ -744,6 +744,7 @@ export async function createApiHttpRouteRuntime(
     policyControlPlaneStore,
     policyActivationApprovalStore,
     policyMutationAuditLog,
+    requireAtomicPolicyLifecycle: runtimeProfile.id === 'production-shared',
     adminMutationRequest,
     finalizeAdminMutation,
   });

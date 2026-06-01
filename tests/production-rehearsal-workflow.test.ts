@@ -99,7 +99,14 @@ function testWorkflowRunsTargetBoundChain(): void {
   includes(yaml, '--approved-by="$ATTESTOR_PRODUCTION_GO_NO_GO_APPROVED_BY"', 'Production rehearsal workflow: execute passes operator-supplied approval actor metadata');
   includes(yaml, '--approval-source="$ATTESTOR_PRODUCTION_GO_NO_GO_APPROVAL_SOURCE"', 'Production rehearsal workflow: execute passes the independent approval source');
   notIncludes(yaml, '--approved-by="$GITHUB_ACTOR"', 'Production rehearsal workflow: execute must not convert dispatcher identity into approval');
+  includes(yaml, 'npm run check:public-artifacts-redaction -- --root .attestor/rehearsal', 'Production rehearsal workflow: execute scans rehearsal artifacts before upload');
   includes(yaml, 'path: .attestor/rehearsal/', 'Production rehearsal workflow: execute uploads rehearsal artifacts');
+  ok(
+    yaml.indexOf('Scan production rehearsal artifacts for redaction') <
+      yaml.indexOf('Upload production rehearsal artifacts'),
+    'Production rehearsal workflow: redaction scan runs before artifact upload',
+  );
+  includes(yaml, "steps.rehearsal_artifact_redaction.outcome == 'success'", 'Production rehearsal workflow: upload is gated on redaction scan success');
 }
 
 function testDocsAndPackageScriptReferenceWorkflow(): void {

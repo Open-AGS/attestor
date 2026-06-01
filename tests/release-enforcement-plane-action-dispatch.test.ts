@@ -344,6 +344,18 @@ async function testCanonicalBindingIsStable(): Promise<void> {
       !('preconditions' in actionPayload),
     'Action-dispatch gateway: canonical payload labels preconditions as declarations',
   );
+  deepEqual(
+    left.evidenceSemantics,
+    {
+      declarationBound: true,
+      verifiedEvidence: false,
+      declaredEvidenceCount: 2,
+      verifiedEvidenceCount: 0,
+      evidenceKinds: ['precondition'],
+      boundary: 'declared-only',
+    },
+    'Action-dispatch gateway: declared preconditions are not reported as verified evidence',
+  );
   ok(left.hashBundle.outputHash.startsWith('sha256:'), 'Action-dispatch gateway: output hash is canonicalized');
   ok(left.hashBundle.consequenceHash.startsWith('sha256:'), 'Action-dispatch gateway: consequence hash is canonicalized');
   equal(left.dispatchHash, reordered.dispatchHash, 'Action-dispatch gateway: parameter and precondition ordering do not change dispatch hash');
@@ -379,6 +391,9 @@ async function testValidDpopActionDispatchAllowsAndConsumesToken(): Promise<void
   equal(result.responseStatus, 200, 'Action-dispatch gateway: allowed result is dispatch-ready');
   equal(result.decision?.outcome, 'allow', 'Action-dispatch gateway: valid action emits allow decision');
   ok(result.receipt?.receiptDigest?.startsWith('sha256:'), 'Action-dispatch gateway: allowed action emits receipt digest');
+  equal(result.evidenceSemantics.verifiedEvidence, false, 'Action-dispatch gateway: result does not claim verified precondition evidence');
+  equal(result.evidenceSemantics.declaredEvidenceCount, 2, 'Action-dispatch gateway: result reports declared precondition count');
+  deepEqual(result.receipt?.evidenceSemantics, result.evidenceSemantics, 'Action-dispatch gateway: receipt carries declared-evidence semantics');
   equal(result.receipt?.policyIrHash, POLICY_IR_HASH, 'Action-dispatch gateway: receipt preserves compiled policy IR provenance');
   equal(result.receipt?.compiledPolicyIrVersion, COMPILED_POLICY_IR_VERSION, 'Action-dispatch gateway: receipt preserves compiled policy IR version');
   deepEqual(
@@ -400,8 +415,13 @@ async function testValidDpopActionDispatchAllowsAndConsumesToken(): Promise<void
   );
   equal(
     result.receipt?.receiptDigest,
-    result.decision ? createEnforcementReceiptDigest({ decision: result.decision }) : null,
-    'Action-dispatch gateway: receipt digest binds structured policy context',
+    result.decision
+      ? createEnforcementReceiptDigest({
+          decision: result.decision,
+          evidenceSemantics: result.evidenceSemantics,
+        })
+      : null,
+    'Action-dispatch gateway: receipt digest binds structured policy and declared-evidence context',
   );
   if (!result.decision) {
     throw new Error('Expected action-dispatch allow result to carry an enforcement decision.');
@@ -417,7 +437,10 @@ async function testValidDpopActionDispatchAllowsAndConsumesToken(): Promise<void
     },
   };
   ok(
-    createEnforcementReceiptDigest({ decision: tamperedPolicyDecision }) !== result.receipt?.receiptDigest,
+    createEnforcementReceiptDigest({
+      decision: tamperedPolicyDecision,
+      evidenceSemantics: result.evidenceSemantics,
+    }) !== result.receipt?.receiptDigest,
     'Action-dispatch gateway: changing structured policy context changes receipt digest',
   );
   equal(result.request?.enforcementPoint.boundaryKind, 'action-dispatch', 'Action-dispatch gateway: request uses action-dispatch boundary');
@@ -500,6 +523,7 @@ async function testMissingAuthorizationFailsClosed(): Promise<void> {
   equal(result.status, 'denied', 'Action-dispatch gateway: missing authorization is denied');
   equal(result.responseStatus, 401, 'Action-dispatch gateway: missing authorization maps to challenge status');
   deepEqual(result.failureReasons, ['missing-release-authorization'], 'Action-dispatch gateway: missing authorization failure is explicit');
+  equal(result.evidenceSemantics.boundary, 'declared-only', 'Action-dispatch gateway: early denial still exposes declaration boundary');
   equal(result.request, null, 'Action-dispatch gateway: missing authorization does not build verifier request');
 }
 

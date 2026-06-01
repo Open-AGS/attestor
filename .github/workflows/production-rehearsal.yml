@@ -218,8 +218,13 @@ jobs:
             --approval-source="$ATTESTOR_PRODUCTION_GO_NO_GO_APPROVAL_SOURCE" \
             --approval-evidence-ref="$ATTESTOR_PRODUCTION_GO_NO_GO_APPROVAL_EVIDENCE_REF"
 
-      - name: Upload production rehearsal artifacts
+      - name: Scan production rehearsal artifacts for redaction
+        id: rehearsal_artifact_redaction
         if: always()
+        run: npm run check:public-artifacts-redaction -- --root .attestor/rehearsal
+
+      - name: Upload production rehearsal artifacts
+        if: always() && steps.rehearsal_artifact_redaction.outcome == 'success'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: production-rehearsal-${{ github.run_id }}

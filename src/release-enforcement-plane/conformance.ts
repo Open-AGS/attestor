@@ -327,6 +327,7 @@ function receiptDigestFinding(result: EnforcementConformanceResultLike): Enforce
     decision: result.decision,
     outputHash: result.receipt.outputHash,
     consequenceHash: result.receipt.consequenceHash,
+    evidenceSemantics: result.receipt.evidenceSemantics,
   });
   const matches = result.receipt.receiptDigest === expectedDigest;
 

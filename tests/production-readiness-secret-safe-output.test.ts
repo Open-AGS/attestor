@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { spawnSync } from 'node:child_process';
 import {
   digestReference,
   redactSensitiveOutput,
@@ -23,6 +25,10 @@ function equal<T>(actual: T, expected: T, message: string): void {
 
 function readProjectFile(...segments: string[]): string {
   return readFileSync(join(process.cwd(), ...segments), 'utf8');
+}
+
+function npmCommand(): string {
+  return process.platform === 'win32' ? 'npm.cmd' : 'npm';
 }
 
 function fixtureTextFromCodePoints(...groups: readonly (readonly number[])[]): string {
@@ -296,6 +302,37 @@ function testPublicArtifactRedactionScannerIsWired(): void {
   ok(scanner.includes('.attestor/proof-surface/latest'), 'Secret-safe output: scanner includes generated proof-surface artifacts');
   ok(scanner.includes('.attestor/showcase/latest'), 'Secret-safe output: scanner includes generated proof showcase artifacts');
   ok(scanner.includes('.attestor/release-provenance'), 'Secret-safe output: scanner includes release provenance staging artifacts');
+  ok(scanner.includes('--root'), 'Secret-safe output: scanner supports explicit artifact roots');
+}
+
+function testPublicArtifactRedactionScannerRootOverride(): void {
+  const tempRoot = mkdtempSync(join(tmpdir(), 'attestor-public-redaction-root-'));
+  try {
+    writeFileSync(join(tempRoot, 'safe.txt'), 'digest-only artifact output\n');
+    const clean = spawnSync(
+      npmCommand(),
+      ['run', 'check:public-artifacts-redaction', '--', '--root', tempRoot],
+      { cwd: process.cwd(), encoding: 'utf8', shell: true },
+    );
+    equal(clean.status, 0, 'Secret-safe output: explicit scanner root passes clean text artifacts');
+
+    writeFileSync(
+      join(tempRoot, 'leak.txt'),
+      fixtureTextFromCodePoints(
+        [0x73, 0x6b, 0x5f, 0x6c, 0x69, 0x76, 0x65, 0x5f],
+        Array.from({ length: 32 }, () => 0x61),
+      ),
+    );
+    const leaking = spawnSync(
+      npmCommand(),
+      ['run', 'check:public-artifacts-redaction', '--', '--root', tempRoot],
+      { cwd: process.cwd(), encoding: 'utf8', shell: true },
+    );
+    equal(leaking.status, 1, 'Secret-safe output: explicit scanner root fails on secret-shaped text artifacts');
+    ok(leaking.stderr.includes('leak.txt'), 'Secret-safe output: explicit scanner root reports the leaking file path');
+  } finally {
+    rmSync(tempRoot, { recursive: true, force: true });
+  }
 }
 
 testRedactsKnownLiveSecretShapes();
@@ -307,5 +344,6 @@ testStringifyAndErrorsAreSecretSafe();
 testDigestReferenceIsStableAndNonReversibleInOutput();
 testCriticalOpsScriptsUseSecretSafeOutput();
 testPublicArtifactRedactionScannerIsWired();
+testPublicArtifactRedactionScannerRootOverride();
 
 console.log(`production-readiness-secret-safe-output: ${passed} assertions passed`);

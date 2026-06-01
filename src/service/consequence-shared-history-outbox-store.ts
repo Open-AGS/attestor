@@ -132,7 +132,7 @@ export interface ConsequenceSharedHistoryOutboxSummary {
   readonly rawPayloadStored: false;
   readonly rawTenantIdStored: false;
   readonly rlsPolicyInstalled: true;
-  readonly rlsForced: false;
+  readonly rlsForced: true;
   readonly debeziumConnectorWired: false;
   readonly productionSharedRuntimeWired: false;
   readonly limitation: string;
@@ -200,6 +200,7 @@ ${CONSEQUENCE_SHARED_OUTBOX_TABLE}:
 const TENANT_SCOPE_CONTRACT = `
 tenant_scope_digest = sha256({version, tenantId|null, environment|null});
 RLS policies compare tenant_scope_digest to current_setting('attestor.tenant_scope_digest', true).
+RLS is enabled and forced for table owners; superusers and BYPASSRLS roles still bypass PostgreSQL RLS.
 Raw tenant ids and raw environment labels are not stored in history or outbox rows.
 `;
 
@@ -581,8 +582,12 @@ async function ensureTables(): Promise<void> {
 
           ALTER TABLE ${CONSEQUENCE_SHARED_HISTORY_TABLE}
             ENABLE ROW LEVEL SECURITY;
+          ALTER TABLE ${CONSEQUENCE_SHARED_HISTORY_TABLE}
+            FORCE ROW LEVEL SECURITY;
           ALTER TABLE ${CONSEQUENCE_SHARED_OUTBOX_TABLE}
             ENABLE ROW LEVEL SECURITY;
+          ALTER TABLE ${CONSEQUENCE_SHARED_OUTBOX_TABLE}
+            FORCE ROW LEVEL SECURITY;
 
           DROP POLICY IF EXISTS consequence_shared_history_tenant_scope
             ON ${CONSEQUENCE_SHARED_HISTORY_TABLE};
@@ -708,11 +713,11 @@ async function summary(): Promise<ConsequenceSharedHistoryOutboxSummary> {
       rawPayloadStored: false,
       rawTenantIdStored: false,
       rlsPolicyInstalled: true,
-      rlsForced: false,
+      rlsForced: true,
       debeziumConnectorWired: false,
       productionSharedRuntimeWired: false,
       limitation:
-        'Repository-side shared source-history and outbox primitive only: runtime shadow stores, read-model workers, Debezium/event-bus delivery, migration jobs, deployment probes, and production readiness remain unclaimed.',
+        'Repository-side shared source-history and outbox primitive only: runtime shadow stores, read-model workers, Debezium/event-bus delivery, migration jobs, deployment probes, and production readiness remain unclaimed. PostgreSQL superuser and BYPASSRLS roles remain outside the FORCE RLS table-owner guard.',
     });
   });
 }

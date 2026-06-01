@@ -173,6 +173,11 @@ function testDescriptor(): void {
     'digests-only',
     'Downstream contract: descriptor declares digest-only constraint refs',
   );
+  equal(
+    descriptor.executionProofExcludesAdmissionReceipt,
+    true,
+    'Downstream contract: descriptor declares admission receipts are not execution proof',
+  );
 }
 
 function testMatchingAdmissionAllowsDownstreamAction(): void {
@@ -190,6 +195,56 @@ function testMatchingAdmissionAllowsDownstreamAction(): void {
   equal(decision.proofSatisfied, true, 'Downstream contract: proof is satisfied');
   equal(decision.idempotencySatisfied, true, 'Downstream contract: idempotency is satisfied');
   equal(decision.failureReasons.length, 0, 'Downstream contract: allow carries no failure reasons');
+}
+
+function testAdmissionReceiptAloneDoesNotSatisfyProofRequirement(): void {
+  const receiptOnlyAdmission = createConsequenceAdmissionResponse({
+    request: paymentRequest(),
+    decidedAt: '2026-05-01T10:00:01.500Z',
+    decision: 'admit',
+    reason: 'Payment consequence has an admission receipt only.',
+    reasonCodes: ['payment-admission-receipt-only'],
+    checks: [
+      passCheck('policy'),
+      passCheck('authority'),
+      passCheck('evidence'),
+      passCheck('freshness'),
+      passCheck('enforcement'),
+    ],
+    proof: [
+      {
+        kind: 'admission-receipt',
+        id: 'generic-admission:receipt-only',
+        digest: 'sha256:admission-receipt',
+        uri: null,
+        verifyHint: 'This proves Attestor produced an admission response, not downstream execution authority.',
+      },
+    ],
+  });
+  const decision = evaluateConsequenceAdmissionDownstreamContract({
+    admission: receiptOnlyAdmission,
+    contract: paymentContract(),
+    observation: {
+      idempotencyKey: 'idem:supplier-payment:receipt-only',
+    },
+  });
+
+  equal(
+    receiptOnlyAdmission.allowed,
+    true,
+    'Downstream contract: receipt-only admission can remain admitted at response level',
+  );
+  equal(decision.outcome, 'hold', 'Downstream contract: receipt-only proof holds');
+  equal(decision.proofSatisfied, false, 'Downstream contract: admission receipt is not execution proof');
+  deepEqual(
+    decision.failureReasons,
+    ['proof-missing'],
+    'Downstream contract: receipt-only proof fails as missing execution proof',
+  );
+  ok(
+    decision.reasonCodes.includes('downstream-contract-proof-missing'),
+    'Downstream contract: proof-missing reason code is explicit',
+  );
 }
 
 function testContractFailsClosedOnMissingIdempotencyAndWrongSystem(): void {
@@ -429,6 +484,7 @@ function testDocsAndScriptsExposeContract(): void {
 
 testDescriptor();
 testMatchingAdmissionAllowsDownstreamAction();
+testAdmissionReceiptAloneDoesNotSatisfyProofRequirement();
 testContractFailsClosedOnMissingIdempotencyAndWrongSystem();
 testContractFailsClosedOnNonExecutableDecision();
 testNarrowRequiresConstraintAcknowledgement();

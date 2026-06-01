@@ -325,8 +325,13 @@ function testRetryLedgerSharedStoreStaysLiveProofOnly(): void {
   );
   includes(
     sharedStore,
-    'readonly rlsForced: false;',
-    'Consequence retry ledger proof discipline: repo keeps FORCE RLS as live deployment proof',
+    'readonly rlsForced: true;',
+    'Consequence retry ledger proof discipline: shared store declares FORCE RLS schema posture',
+  );
+  includes(
+    sharedStore,
+    'FORCE ROW LEVEL SECURITY',
+    'Consequence retry ledger proof discipline: shared store applies FORCE RLS in table DDL',
   );
   includes(
     sharedStore,

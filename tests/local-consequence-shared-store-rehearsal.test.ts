@@ -242,6 +242,11 @@ async function testReconnectKeepsSharedStateVisible(): Promise<void> {
     false,
     'Local consequence shared-store rehearsal: local test does not claim production-shared runtime cutover',
   );
+  equal(
+    summary.rlsForced,
+    true,
+    'Local consequence shared-store rehearsal: local schema keeps FORCE RLS enabled',
+  );
   ok(
     summary.limitation.includes('Repository-side atomic shared stores only'),
     'Local consequence shared-store rehearsal: summary keeps repository-side limitation visible',

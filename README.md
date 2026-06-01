@@ -70,7 +70,9 @@ Customer-owned gate
 ```
 
 Without a customer-side gate, gateway, verifier, or adapter, the decision is
-evidence, not enforcement. With that downstream point, it becomes the stop point.
+evidence, not enforcement. With that
+[downstream point](docs/02-architecture/downstream-enforcement-contract.md), it
+becomes the stop point.
 
 ### Run Attestor in shadow pilot mode - and map what your AI agents are trying to do in the shadow of your systems.
 

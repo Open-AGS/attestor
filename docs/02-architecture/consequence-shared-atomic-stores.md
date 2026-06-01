@@ -58,10 +58,9 @@ it as the transaction-local `attestor.tenant_scope_digest` session value before
 accessing tenant-scoped rows. The tables install row-security policies that
 compare rows against that setting.
 
-RLS is enabled but not forced. That keeps owner-level migrations and summary
-counts possible in the existing shared-store substrate. It also means this is a
-repository-side boundary proof, not a complete customer database privilege
-model.
+RLS is enabled and forced for table owners. PostgreSQL superusers and roles with
+`BYPASSRLS` still bypass RLS, so this remains repository-side schema evidence,
+not a complete customer database privilege model or live deployment proof.
 
 ## Data Minimization
 

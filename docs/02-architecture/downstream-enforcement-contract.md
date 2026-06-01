@@ -24,7 +24,8 @@ A downstream enforcement point should bind the proposed consequence to:
 - the accepted risk class
 - the downstream system that is about to act
 - the policy reference when the contract scopes one
-- proof references when the consequence is executable
+- execution proof references when the consequence is executable; an
+  `admission-receipt` alone is not enough
 - an idempotency or replay key when the boundary can execute more than once
 - explicit constraint acknowledgement when the decision is `narrow`
 
@@ -74,7 +75,10 @@ accepted downstream system: supplier-payment-service
 required: proof, idempotency key, policy ref
 ```
 
-The payment adapter only proceeds if the admission is allowed, not fail-closed, executable, in scope for money movement, bound to the payment service, carrying proof, and presented with an idempotency key.
+The payment adapter only proceeds if the admission is allowed, not fail-closed,
+executable, in scope for money movement, bound to the payment service, carrying
+execution proof beyond an `admission-receipt`, and presented with an idempotency
+key.
 
 If the AI repeats the same request or changes the target service, the contract holds.
 
@@ -121,7 +125,8 @@ The wallet adapter should check:
 - consequence domain is `programmable-money`
 - consequence kind is one of the accepted wallet or programmable-money kinds
 - the contract points to the expected wallet, custody, bundler, or solver surface
-- proof exists
+- execution proof exists; an `admission-receipt` is only evidence that Attestor
+  produced a response
 - idempotency or replay binding exists
 - policy scope matches
 

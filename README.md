@@ -5,20 +5,16 @@
 **Control infrastructure for high-risk AI-driven operations.**
 
 Attestor sits between an AI-prepared operation and the system that would execute it.
-
 Prompts guide. They do not enforce.
 
 Unsafe proposed requests can come from hallucination, stale context, poisoned
 tool output, replayed requests, missing approval, or hostile content.
-
 A prompt cannot stop a refund service, export job, identity admin, deploy tool, or wallet adapter.
 
 The stop point has to sit before execution: check the structured request,
 then return `admit`, `narrow`, `review`, or `block`.
-
 Hostile content still has to pass authority, scope, freshness, replay,
 and evidence checks before anything runs.
-
 Every decision leaves a trail: what was proposed, what was checked, why it held
 or blocked, reason codes, and evidence/proof references.
 

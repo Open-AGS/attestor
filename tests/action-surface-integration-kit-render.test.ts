@@ -79,6 +79,10 @@ function testRendererWritesReviewOnlyIntegrationKit(): void {
     const openApiOverlay = readFileSync(rendered.artifacts.openApiOverlayPath, 'utf8');
     const mcpGatewayDrafts = readFileSync(rendered.artifacts.mcpGatewayDraftsPath, 'utf8');
     const noBypassBundle = readFileSync(rendered.artifacts.noBypassProbeBundlePath, 'utf8');
+    const customerGateWiringPacket = readFileSync(
+      rendered.artifacts.customerGateWiringPacketPath,
+      'utf8',
+    );
 
     equal(rendered.kit.status, 'review-required', 'Integration kit render: surfaces require review');
     equal(rendered.kit.deploysInfrastructure, false, 'Integration kit render: deployment is false');
@@ -112,6 +116,10 @@ function testRendererWritesReviewOnlyIntegrationKit(): void {
       existsSync(rendered.artifacts.noBypassProbeBundlePath),
       'Integration kit render: no-bypass probe bundle is written',
     );
+    ok(
+      existsSync(rendered.artifacts.customerGateWiringPacketPath),
+      'Integration kit render: customer gate wiring packet is written',
+    );
     includes(readme, 'Start here:', 'Integration kit render: README starts with the reviewer entry point');
     includes(readme, 'What this is:', 'Integration kit render: README explains the local handoff shape');
     includes(
@@ -144,6 +152,21 @@ function testRendererWritesReviewOnlyIntegrationKit(): void {
       noBypassBundle,
       'evidenceBinding',
       'Integration kit render: probe bundle carries evidence binding',
+    );
+    includes(
+      customerGateWiringPacket,
+      'LP-CUSTOMER-PEP-NO-BYPASS',
+      'Integration kit render: customer gate wiring packet names live proof blocker',
+    );
+    includes(
+      customerGateWiringPacket,
+      '"customerOwnedGateRequired": true',
+      'Integration kit render: customer gate wiring packet requires customer gate',
+    );
+    includes(
+      customerGateWiringPacket,
+      '"activatesEnforcement": false',
+      'Integration kit render: customer gate wiring packet does not activate enforcement',
     );
     excludes(summary, /raw_prompt_must_not_escape/u, 'Integration kit render: raw OpenAPI text is not serialized');
     excludes(summary, /sk_live_must_not_escape/u, 'Integration kit render: secret-like text is not serialized');
@@ -185,6 +208,10 @@ function testRendererCliAndDocsAndPackageScript(): void {
     ok(
       existsSync(join(outputDir, 'artifacts', 'no-bypass-probe-bundle.json')),
       'Integration kit CLI: no-bypass bundle is written',
+    );
+    ok(
+      existsSync(join(outputDir, 'artifacts', 'customer-gate-wiring-packet.json')),
+      'Integration kit CLI: customer gate wiring packet is written',
     );
   } finally {
     rmSync(tempDir, { recursive: true, force: true });

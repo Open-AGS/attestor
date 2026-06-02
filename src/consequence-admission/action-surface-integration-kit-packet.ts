@@ -72,6 +72,7 @@ export interface ActionSurfaceIntegrationKitArtifactEntry {
   readonly domain: string | null;
   readonly downstreamSystem: string | null;
   readonly operationRefs: readonly string[];
+  readonly readinessDigest: string | null;
   readonly digest: string;
   readonly requiredReview: true;
   readonly rawPayloadStored: false;
@@ -244,6 +245,12 @@ function createArtifactManifest(input: {
   readonly packet: ActionSurfaceOnboardingPacket;
   readonly generatedAt: string;
 }): ActionSurfaceIntegrationKitArtifactManifest {
+  const readinessDigests = new Map(
+    input.packet.surfacePlans.map((plan) => [
+      plan.actionSurface,
+      plan.readinessDigest,
+    ]),
+  );
   const artifacts = Object.freeze(
     input.packet.artifactBundle.artifacts.map((artifact) =>
       Object.freeze({
@@ -254,6 +261,7 @@ function createArtifactManifest(input: {
         domain: artifact.domain,
         downstreamSystem: artifact.downstreamSystem,
         operationRefs: Object.freeze([...artifact.operationRefs].sort()),
+        readinessDigest: readinessDigests.get(artifact.actionSurface) ?? null,
         digest: artifact.digest,
         requiredReview: true,
         rawPayloadStored: false,

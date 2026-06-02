@@ -107,6 +107,7 @@ Each kit should produce one directory per reviewed packet:
   no-bypass-probes.json
   approval-record.template.json
   artifacts/
+    customer-gate-wiring-packet.json
 ```
 
 `README.md` is the human entry point. It should fit on one screen for the first
@@ -146,6 +147,14 @@ until the probes run against a reviewed customer or sandbox stop point.
 
 `approval-record.template.json` shows what a customer reviewer must fill in.
 It records review scope and decision; it does not grant authority by itself.
+
+`artifacts/customer-gate-wiring-packet.json` connects the generated review
+files to the customer-owned stop point evidence that will be needed later. It
+names route or tool refs, likely PEP placement, runtime adoption evidence,
+adoption-package evidence, source readiness digests, and the live-proof
+blocker. It does not deploy a PEP, issue credentials, run probes, activate
+enforcement, or prove
+non-bypassability.
 
 ## Local-First Use
 
@@ -368,6 +377,29 @@ The bundle does not run probes, deploy a stop point, issue credentials, activate
 enforcement, or prove customer PEP no-bypass. It is useful only after a customer
 or operator runs the approved probes and records digest-bound evidence.
 
+## Customer Gate Wiring Packet
+
+The customer gate wiring packet contract lives in
+`src/consequence-admission/action-surface-integration-kit-customer-gate-wiring-packet.ts`
+and is covered by
+`npm run test:action-surface-integration-kit-customer-gate-wiring-packet`.
+
+It turns the generated kit into one review plan per action surface:
+
+- likely customer stop-point placement
+- route or tool refs, when the source metadata provides them
+- customer PEP runtime kind and downstream boundary kind
+- runtime adoption and adoption-package evidence kinds
+- source readiness and artifact digests
+- explicit link to `LP-CUSTOMER-PEP-NO-BYPASS`
+- missing proof labels for the reviewer to close later
+
+Observe-only paths stay observe-only. Enforce-capable paths are only marked as
+customer-gate review candidates. The packet keeps
+`autoEnforce: false`, `deploysInfrastructure: false`,
+`issuesCredentials: false`, `activatesEnforcement: false`, and
+`nonBypassableClaimAllowed: false`.
+
 ## Implementation Order
 
 1. Document this buildout path and lock the no-overclaim wording.
@@ -375,9 +407,11 @@ or operator runs the approved probes and records digest-bound evidence.
 3. Generate OpenAPI Overlay plus gateway or `ext_authz` artifact drafts.
 4. Generate MCP tool gateway artifact drafts with credential isolation checks.
 5. Generate no-bypass probe bundles for gateway, SDK, and MCP modes.
-6. Add a CLI/render entry point that composes scan, generate, and verify-review
+6. Add a customer gate wiring packet that maps kit outputs to customer-owned
+   stop point evidence.
+7. Add a CLI/render entry point that composes scan, generate, and verify-review
    outputs without applying anything.
-7. Link the path from the integration docs and examples after the contract is
+8. Link the path from the integration docs and examples after the contract is
    covered by tests.
 
 Each step must keep the files review-only until a customer-controlled downstream

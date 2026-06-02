@@ -355,6 +355,7 @@
     "test:action-surface-integration-artifacts": "tsx tests/action-surface-integration-artifacts.test.ts",
     "test:action-surface-integration-kit-artifact-drafts": "tsx tests/action-surface-integration-kit-artifact-drafts.test.ts",
     "test:action-surface-integration-kit-buildout": "tsx tests/action-surface-integration-kit-buildout.test.ts",
+    "test:action-surface-integration-kit-customer-gate-wiring-packet": "tsx tests/action-surface-integration-kit-customer-gate-wiring-packet.test.ts",
     "test:action-surface-integration-kit-mcp-gateway-drafts": "tsx tests/action-surface-integration-kit-mcp-gateway-drafts.test.ts",
     "test:action-surface-integration-kit-no-bypass-probe-bundle": "tsx tests/action-surface-integration-kit-no-bypass-probe-bundle.test.ts",
     "test:action-surface-integration-kit-packet": "tsx tests/action-surface-integration-kit-packet.test.ts",

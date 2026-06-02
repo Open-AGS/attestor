@@ -4,6 +4,7 @@ import { pathToFileURL } from 'node:url';
 import {
   ACTION_SURFACE_DECLARED_CREDENTIAL_POSTURES,
   createActionSurfaceIntegrationKitArtifactDraftBundle,
+  createActionSurfaceIntegrationKitCustomerGateWiringPacket,
   createActionSurfaceIntegrationKitMcpGatewayDraftBundle,
   createActionSurfaceIntegrationKitNoBypassProbeBundle,
   createActionSurfaceIntegrationKitPacket,
@@ -55,6 +56,7 @@ export interface RenderedActionSurfaceIntegrationKit {
     readonly envoyExtAuthzPath: string;
     readonly mcpGatewayDraftsPath: string;
     readonly noBypassProbeBundlePath: string;
+    readonly customerGateWiringPacketPath: string;
   };
 }
 
@@ -126,8 +128,16 @@ function renderReadme(input: {
     ReturnType<typeof createActionSurfaceIntegrationKitMcpGatewayDraftBundle>;
   readonly noBypassProbeBundle:
     ReturnType<typeof createActionSurfaceIntegrationKitNoBypassProbeBundle>;
+  readonly customerGateWiringPacket:
+    ReturnType<typeof createActionSurfaceIntegrationKitCustomerGateWiringPacket>;
 }): string {
-  const { kit, artifactDrafts, mcpGatewayDrafts, noBypassProbeBundle } = input;
+  const {
+    kit,
+    artifactDrafts,
+    mcpGatewayDrafts,
+    noBypassProbeBundle,
+    customerGateWiringPacket,
+  } = input;
   const firstArtifact = kit.artifactManifest.artifacts[0];
   const artifactKinds = Object.freeze(
     [...new Set(kit.artifactManifest.artifacts.map((artifact) => artifact.kind))].sort(),
@@ -151,6 +161,7 @@ Start here:
 - surfaces: ${kit.summary.surfaceCount}
 - generated artifacts: ${kit.artifactManifest.artifactCount}
 - no-bypass probe cases: ${kit.noBypassProbePlan.probeCaseCount}
+- customer gate wiring plans: ${customerGateWiringPacket.wiringPlanCount}
 
 What this is:
 
@@ -179,12 +190,14 @@ Review files:
 | artifacts/envoy-ext-authz.json | Envoy ext_authz review draft |
 | artifacts/mcp-gateway-drafts.json | MCP tool-gateway review draft |
 | artifacts/no-bypass-probe-bundle.json | expanded probe definitions |
+| artifacts/customer-gate-wiring-packet.json | customer stop-point wiring review |
 
 Generated draft summary:
 
 - OpenAPI routes: ${artifactDrafts.routeCount}
 - MCP tool drafts: ${mcpGatewayDrafts.toolCount}
 - no-bypass probe bundle cases: ${noBypassProbeBundle.probeCaseCount}
+- customer gate wiring plans: ${customerGateWiringPacket.wiringPlanCount}
 - integration modes: ${formatInlineList(modes)}
 - artifact kinds: ${formatInlineList(artifactKinds)}
 - probe bundle executes probes: ${noBypassProbeBundle.executesProbes}
@@ -199,6 +212,7 @@ Machine anchors:
 - artifact manifest digest: ${kit.summary.artifactManifestDigest}
 - no-bypass probe plan digest: ${kit.summary.noBypassProbePlanDigest}
 - approval template digest: ${kit.summary.approvalRecordTemplateDigest}
+- customer gate wiring packet digest: ${customerGateWiringPacket.digest}
 
 Safety boundary:
 
@@ -304,6 +318,10 @@ export function renderActionSurfaceIntegrationKit(
     kit,
     generatedAt,
   });
+  const customerGateWiringPacket = createActionSurfaceIntegrationKitCustomerGateWiringPacket({
+    kit,
+    generatedAt,
+  });
 
   const artifactsDir = resolve(outputDir, 'artifacts');
   mkdirSync(artifactsDir, { recursive: true });
@@ -317,10 +335,20 @@ export function renderActionSurfaceIntegrationKit(
   const envoyExtAuthzPath = resolve(artifactsDir, 'envoy-ext-authz.json');
   const mcpGatewayDraftsPath = resolve(artifactsDir, 'mcp-gateway-drafts.json');
   const noBypassProbeBundlePath = resolve(artifactsDir, 'no-bypass-probe-bundle.json');
+  const customerGateWiringPacketPath = resolve(
+    artifactsDir,
+    'customer-gate-wiring-packet.json',
+  );
 
   writeFileSync(
     readmePath,
-    renderReadme({ kit, artifactDrafts, mcpGatewayDrafts, noBypassProbeBundle }),
+    renderReadme({
+      kit,
+      artifactDrafts,
+      mcpGatewayDrafts,
+      noBypassProbeBundle,
+      customerGateWiringPacket,
+    }),
     'utf8',
   );
   writeJson(summaryPath, kit.summary);
@@ -331,6 +359,7 @@ export function renderActionSurfaceIntegrationKit(
   writeJson(envoyExtAuthzPath, artifactDrafts.envoyExtAuthz);
   writeJson(mcpGatewayDraftsPath, mcpGatewayDrafts);
   writeJson(noBypassProbeBundlePath, noBypassProbeBundle);
+  writeJson(customerGateWiringPacketPath, customerGateWiringPacket);
 
   return Object.freeze({
     kit,
@@ -346,6 +375,7 @@ export function renderActionSurfaceIntegrationKit(
       envoyExtAuthzPath,
       mcpGatewayDraftsPath,
       noBypassProbeBundlePath,
+      customerGateWiringPacketPath,
     }),
   });
 }
@@ -398,9 +428,11 @@ function main(): void {
       basename(result.artifacts.envoyExtAuthzPath),
       basename(result.artifacts.mcpGatewayDraftsPath),
       basename(result.artifacts.noBypassProbeBundlePath),
+      basename(result.artifacts.customerGateWiringPacketPath),
     ],
     surfaceCount: result.kit.summary.surfaceCount,
     probeCaseCount: result.kit.noBypassProbePlan.probeCaseCount,
+    customerGateWiringPacket: basename(result.artifacts.customerGateWiringPacketPath),
     deploysInfrastructure: result.kit.deploysInfrastructure,
     activatesEnforcement: result.kit.activatesEnforcement,
     nonBypassableClaimAllowed: result.kit.nonBypassableClaimAllowed,

@@ -22,6 +22,7 @@ shadow events, simulations, candidates, evidence, proof refs
   -> audit evidence export and business risk dashboard
   -> dashboard API summary
   -> Attestor Review Surface contract
+  -> shadow pilot integration handoff
   -> UI, API, export, packet, and proof-bundle shapes
 ```
 
@@ -72,6 +73,7 @@ The package exports `attestor.review-surface.v1` through:
 - `ReviewCaseDetail`
 - `EvidenceArtifactIndex`
 - `ActionSurfaceMapView`
+- `ShadowPilotIntegrationHandoff`
 - `PolicyPromotionPanel`
 - `AssuranceHealthPanel`
 
@@ -145,6 +147,29 @@ raw payload storage or auto-enforcement, the aggregator fails closed.
 The output is still review material only. It does not create cases, serve HTTP
 routes, render the hosted UI, export files, activate enforcement, or mutate
 policy.
+
+## Shadow Pilot Integration Handoff
+
+`ShadowPilotIntegrationHandoff` is the compact bridge from shadow review to the
+action-surface onboarding path. It tells a reviewer where to go next without
+turning the review surface into a second engine:
+
+```text
+shadow review surface
+  -> POST /api/v1/shadow/action-surface/onboarding-packet
+  -> action-surface onboarding packet
+  -> integration kit review files
+```
+
+The handoff carries action-surface digests, optional action-surface refs when
+the audit export allows names, review case digests, reviewed-input
+requirements, and expected review outputs such as the integration kit review
+files, customer gate wiring packet, and no-bypass probe plan.
+
+It defaults the hosted onboarding route to include current shadow events, but
+reviewed metadata is still required for API, tool, workflow, or gateway shape.
+It does not upload raw prompts or raw customer records, deploy anything, issue
+credentials, activate enforcement, or prove customer PEP no-bypass.
 
 ## Case Detail
 

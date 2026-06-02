@@ -220,6 +220,7 @@ function testDescriptorDefinesOneWorkspaceContract(): void {
     'ReviewCaseDetail',
     'EvidenceArtifactIndex',
     'ActionSurfaceMapView',
+    'ShadowPilotIntegrationHandoff',
     'PolicyPromotionPanel',
     'AssuranceHealthPanel',
   ] as const) {
@@ -311,6 +312,48 @@ function testAggregatorComposesDigestBoundReviewSurface(): void {
   equal(surface.reviewQueue[0]?.defaultVisible, true, 'Review surface aggregator: human work remains default-visible');
   equal(surface.policy.promotionBlocked, true, 'Review surface aggregator: blocked inbox blocks promotion panel');
   equal(surface.assurance.degradedSignalCount, 1, 'Review surface aggregator: assurance degraded signals are visible');
+  equal(
+    surface.integrationHandoff.handoffKind,
+    'shadow-pilot-to-action-surface-onboarding',
+    'Review surface aggregator: shadow pilot handoff kind is explicit',
+  );
+  equal(
+    surface.integrationHandoff.hostedOnboardingRoute,
+    '/api/v1/shadow/action-surface/onboarding-packet',
+    'Review surface aggregator: hosted onboarding route is exposed',
+  );
+  equal(
+    surface.integrationHandoff.includeShadowEventsDefault,
+    true,
+    'Review surface aggregator: hosted onboarding defaults to shadow events',
+  );
+  ok(
+    surface.integrationHandoff.actionSurfaceRefs.includes('refund-service.issue_refund'),
+    'Review surface aggregator: handoff retains action surface refs',
+  );
+  ok(
+    surface.integrationHandoff.actionSurfaceDigests.some((value) => value.startsWith('sha256:')),
+    'Review surface aggregator: handoff retains action surface digests',
+  );
+  ok(
+    surface.integrationHandoff.expectedReviewOutputs.includes('customer-gate-wiring-packet'),
+    'Review surface aggregator: handoff names the customer gate wiring packet output',
+  );
+  equal(
+    surface.integrationHandoff.activatesEnforcement,
+    false,
+    'Review surface aggregator: handoff cannot activate enforcement',
+  );
+  equal(
+    surface.integrationHandoff.nonBypassableClaimAllowed,
+    false,
+    'Review surface aggregator: handoff cannot claim no-bypass',
+  );
+  equal(
+    surface.integrationHandoff.authority,
+    'handoff-review-only',
+    'Review surface aggregator: handoff authority is review-only',
+  );
   equal(surface.rawPayloadStored, false, 'Review surface aggregator: raw payload storage is false');
   equal(surface.autoEnforce, false, 'Review surface aggregator: auto enforcement is false');
   equal(surface.activatesEnforcement, false, 'Review surface aggregator: enforcement activation is false');
@@ -538,6 +581,16 @@ function testDocsAndPackageScriptExposeContract(): void {
     doc,
     'createAttestorReviewCaseDetail',
     'Review surface docs: case detail API is named',
+  );
+  includes(
+    doc,
+    'ShadowPilotIntegrationHandoff',
+    'Review surface docs: shadow pilot handoff slice is named',
+  );
+  includes(
+    doc,
+    'POST /api/v1/shadow/action-surface/onboarding-packet',
+    'Review surface docs: onboarding handoff route is named',
   );
   includes(
     doc,

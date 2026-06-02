@@ -23,6 +23,8 @@ function createEvent(): ShadowAdmissionEvent {
   return createShadowAdmissionEvent({
     admission: createGenericAdmissionEnvelope({
       mode: 'observe',
+      tenantId: 'tenant_shadow',
+      environment: 'sandbox',
       actor: 'support-ai-agent',
       action: 'issue_refund',
       domain: 'money-movement',

@@ -413,6 +413,17 @@ async function testReviewSurfaceRouteReturnsDigestOnlyWorkspace(): Promise<void>
       rawPayloadStored: boolean;
       hostedUiImplemented: boolean;
       reviewMaterialOnly: boolean;
+      integrationHandoff: {
+        hostedOnboardingRoute: string;
+        hostedOnboardingMethod: string;
+        includeShadowEventsDefault: boolean;
+        actionSurfaceRefs: readonly string[];
+        actionSurfaceDigests: readonly string[];
+        expectedReviewOutputs: readonly string[];
+        activatesEnforcement: boolean;
+        nonBypassableClaimAllowed: boolean;
+        authority: string;
+      };
       digest: string;
     };
   };
@@ -467,6 +478,44 @@ async function testReviewSurfaceRouteReturnsDigestOnlyWorkspace(): Promise<void>
   equal(body.reviewSurface.rawPayloadStored, false, 'Shadow review surface route: surface is data-minimized');
   equal(body.reviewSurface.hostedUiImplemented, false, 'Shadow review surface route: hosted UI is not claimed');
   equal(body.reviewSurface.reviewMaterialOnly, true, 'Shadow review surface route: surface is review material only');
+  equal(
+    body.reviewSurface.integrationHandoff.hostedOnboardingRoute,
+    '/api/v1/shadow/action-surface/onboarding-packet',
+    'Shadow review surface route: integration handoff names onboarding route',
+  );
+  equal(
+    body.reviewSurface.integrationHandoff.hostedOnboardingMethod,
+    'POST',
+    'Shadow review surface route: integration handoff uses POST',
+  );
+  equal(
+    body.reviewSurface.integrationHandoff.includeShadowEventsDefault,
+    true,
+    'Shadow review surface route: integration handoff defaults to shadow events',
+  );
+  ok(
+    body.reviewSurface.integrationHandoff.actionSurfaceDigests.length > 0,
+    'Shadow review surface route: integration handoff carries action surface digests',
+  );
+  ok(
+    body.reviewSurface.integrationHandoff.expectedReviewOutputs.includes('customer-gate-wiring-packet'),
+    'Shadow review surface route: integration handoff names customer gate wiring output',
+  );
+  equal(
+    body.reviewSurface.integrationHandoff.activatesEnforcement,
+    false,
+    'Shadow review surface route: integration handoff cannot activate enforcement',
+  );
+  equal(
+    body.reviewSurface.integrationHandoff.nonBypassableClaimAllowed,
+    false,
+    'Shadow review surface route: integration handoff cannot claim no-bypass',
+  );
+  equal(
+    body.reviewSurface.integrationHandoff.authority,
+    'handoff-review-only',
+    'Shadow review surface route: integration handoff authority is review-only',
+  );
   ok(
     !serializedSurface.includes('tenant_shadow_dashboard'),
     'Shadow review surface route: raw tenant id stays outside the surface payload',

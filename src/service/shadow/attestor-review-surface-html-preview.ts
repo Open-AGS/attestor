@@ -107,6 +107,22 @@ function renderDigestList(title: string, values: readonly string[]): string {
   `;
 }
 
+function renderIntegrationHandoff(surface: AttestorReviewSurface): string {
+  const handoff = surface.integrationHandoff;
+  return `
+    <section class="panel" data-testid="attestor-review-surface-integration-handoff">
+      <h2>Integration handoff</h2>
+      <p>${escapeHtml(handoff.nextSafeStep)}</p>
+      <dl class="handoff-grid">
+        <div><dt>Hosted route</dt><dd><code>${escapeHtml(handoff.hostedOnboardingMethod)} ${escapeHtml(handoff.hostedOnboardingRoute)}</code></dd></div>
+        <div><dt>Local kit</dt><dd><code>${escapeHtml(handoff.localIntegrationKitCommand)}</code></dd></div>
+        <div><dt>Action surfaces</dt><dd>${handoff.actionSurfaceRefs.length}</dd></div>
+        <div><dt>Outputs</dt><dd>${handoff.expectedReviewOutputs.length}</dd></div>
+      </dl>
+    </section>
+  `;
+}
+
 function renderBoundary(surface: AttestorReviewSurface): string {
   return `
     <section class="panel boundary" data-testid="attestor-review-surface-boundary">
@@ -131,6 +147,7 @@ export function renderAttestorReviewSurfaceHtmlPreview(
   const reviewQueue = renderReviewQueue(surface);
   const evidence = renderDigestList('Evidence digests', surface.evidenceLibrary.artifactDigests);
   const sourceDigests = renderDigestList('Source digests', surface.sourceDigests.slice(0, 12));
+  const integrationHandoff = renderIntegrationHandoff(surface);
   const boundary = renderBoundary(surface);
 
   return `<!doctype html>
@@ -284,6 +301,27 @@ export function renderAttestorReviewSurfaceHtmlPreview(
         padding: 12px 0;
       }
       .digest-list li:first-child { border-top: 0; }
+      .handoff-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 12px;
+        margin: 16px 0 0;
+      }
+      .handoff-grid div {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 12px;
+      }
+      .handoff-grid dt {
+        color: var(--muted);
+        font-size: 12px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .handoff-grid dd {
+        margin: 8px 0 0;
+        font-weight: 700;
+      }
       code {
         display: block;
         color: #26364f;
@@ -324,9 +362,10 @@ export function renderAttestorReviewSurfaceHtmlPreview(
 
       <section class="panel" id="review-queue" data-testid="attestor-review-surface-queue">
         <h2>Review queue</h2>
-        ${reviewQueue}
+      ${reviewQueue}
       </section>
 
+      ${integrationHandoff}
       ${evidence}
       ${sourceDigests}
       ${boundary}

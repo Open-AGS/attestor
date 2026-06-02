@@ -117,10 +117,25 @@ function testHtmlPreviewRendersReviewSurfaceOnly(): void {
   includes(html, 'Skip to review queue', 'Review surface HTML preview: skip link is present');
   includes(html, 'data-testid="attestor-review-surface-status"', 'Review surface HTML preview: status panel has stable QA selector');
   includes(html, 'data-testid="attestor-review-surface-queue"', 'Review surface HTML preview: queue has stable QA selector');
+  includes(
+    html,
+    'data-testid="attestor-review-surface-integration-handoff"',
+    'Review surface HTML preview: integration handoff has stable QA selector',
+  );
   includes(html, 'role="alert"', 'Review surface HTML preview: blocker state uses alert role');
   includes(html, 'aria-live="assertive"', 'Review surface HTML preview: blocker state is announced assertively');
   includes(html, '<ol class="task-list">', 'Review surface HTML preview: review queue renders as ordered task list');
   includes(html, '/api/v1/shadow/review-surface/cases/', 'Review surface HTML preview: case detail route is linked');
+  includes(
+    html,
+    'POST /api/v1/shadow/action-surface/onboarding-packet',
+    'Review surface HTML preview: onboarding handoff route is visible',
+  );
+  includes(
+    html,
+    'npm run render:action-surface-integration-kit',
+    'Review surface HTML preview: local integration kit command is visible',
+  );
   includes(html, 'Evidence digests', 'Review surface HTML preview: evidence digest section is visible');
   includes(html, surface.digest, 'Review surface HTML preview: review surface digest is visible');
   includes(html, surface.sourceAuditExportDigest, 'Review surface HTML preview: audit evidence digest is visible');

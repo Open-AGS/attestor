@@ -57,6 +57,7 @@ export const ATTESTOR_REVIEW_SURFACE_CONTRACT_SLICES = [
   'ReviewCaseDetail',
   'EvidenceArtifactIndex',
   'ActionSurfaceMapView',
+  'ShadowPilotIntegrationHandoff',
   'PolicyPromotionPanel',
   'AssuranceHealthPanel',
 ] as const;
@@ -261,6 +262,30 @@ export interface ActionSurfaceMapView extends AttestorReviewSurfaceCommon {
   readonly policyRefs: readonly string[];
 }
 
+export interface ShadowPilotIntegrationHandoff extends AttestorReviewSurfaceCommon {
+  readonly area: 'action-map';
+  readonly handoffKind: 'shadow-pilot-to-action-surface-onboarding';
+  readonly hostedOnboardingRoute: '/api/v1/shadow/action-surface/onboarding-packet';
+  readonly hostedOnboardingMethod: 'POST';
+  readonly includeShadowEventsDefault: true;
+  readonly localIntegrationKitCommand: 'npm run render:action-surface-integration-kit';
+  readonly actionSurfaceRefs: readonly string[];
+  readonly actionSurfaceDigests: readonly string[];
+  readonly reviewCaseDigests: readonly string[];
+  readonly requiredReviewedInputs: readonly string[];
+  readonly expectedReviewOutputs: readonly string[];
+  readonly rawMetadataUploadRequired: false;
+  readonly reviewedMetadataRequired: true;
+  readonly customerReviewRequired: true;
+  readonly customerOwnedGateRequiredForEnforcement: true;
+  readonly approvalRequired: true;
+  readonly activatesEnforcement: false;
+  readonly deploysInfrastructure: false;
+  readonly issuesCredentials: false;
+  readonly nonBypassableClaimAllowed: false;
+  readonly authority: 'handoff-review-only';
+}
+
 export interface PolicyPromotionPanel extends AttestorReviewSurfaceCommon {
   readonly area: 'policy';
   readonly candidateDigests: readonly string[];
@@ -347,6 +372,7 @@ export interface AttestorReviewSurface {
   readonly caseDigests: readonly string[];
   readonly evidenceLibrary: EvidenceArtifactIndex;
   readonly actionMap: ActionSurfaceMapView;
+  readonly integrationHandoff: ShadowPilotIntegrationHandoff;
   readonly policy: PolicyPromotionPanel;
   readonly assurance: AssuranceHealthPanel;
   readonly rawPayloadStored: false;
@@ -783,6 +809,42 @@ export function createAttestorReviewSurface(
     ),
     policyRefs: Object.freeze([]),
   });
+  const integrationHandoff: ShadowPilotIntegrationHandoff = Object.freeze({
+    ...commonBase,
+    area: 'action-map',
+    handoffKind: 'shadow-pilot-to-action-surface-onboarding',
+    hostedOnboardingRoute: '/api/v1/shadow/action-surface/onboarding-packet',
+    hostedOnboardingMethod: 'POST',
+    includeShadowEventsDefault: true,
+    localIntegrationKitCommand: 'npm run render:action-surface-integration-kit',
+    actionSurfaceRefs: actionMap.downstreamSystemRefs,
+    actionSurfaceDigests: input.auditEvidence.scope.surfaceDigests,
+    reviewCaseDigests: caseDigests,
+    requiredReviewedInputs: Object.freeze([
+      'reviewed-shadow-events',
+      'reviewed-api-tool-workflow-or-gateway-metadata',
+      'reviewed-credential-posture',
+      'reviewed-downstream-system-labels',
+    ]),
+    expectedReviewOutputs: Object.freeze([
+      'action-surface-onboarding-packet',
+      'integration-kit-review-files',
+      'customer-gate-wiring-packet',
+      'no-bypass-probe-plan',
+    ]),
+    rawMetadataUploadRequired: false,
+    reviewedMetadataRequired: true,
+    customerReviewRequired: true,
+    customerOwnedGateRequiredForEnforcement: true,
+    approvalRequired: true,
+    activatesEnforcement: false,
+    deploysInfrastructure: false,
+    issuesCredentials: false,
+    nonBypassableClaimAllowed: false,
+    authority: 'handoff-review-only',
+    nextSafeStep:
+      'Use the hosted onboarding route or local integration kit with reviewed metadata; keep shadow evidence review-only until customer gate proof exists.',
+  });
   const policy: PolicyPromotionPanel = Object.freeze({
     ...commonBase,
     area: 'policy',
@@ -834,6 +896,7 @@ export function createAttestorReviewSurface(
     caseDigests,
     evidenceLibrary,
     actionMap,
+    integrationHandoff,
     policy,
     assurance,
     rawPayloadStored: false,

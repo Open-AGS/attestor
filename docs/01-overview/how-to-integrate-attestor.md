@@ -3,7 +3,7 @@
 Use this when your company already has an AI workflow and a real system it can
 change.
 
-Part of: [Docs index](../README.md) -> [README Start Here](../../README.md#start-here)
+Part of: [Docs index](../README.md) -> [Repository README first-reader section](../../README.md#start-here)
 
 Use this page as the integration hub. It shows the placement rule and then
 points to the more detailed pages only when you need them.

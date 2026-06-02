@@ -130,8 +130,13 @@ function testBuildoutDocStaysReviewOnlyAndLinked(): void {
   );
   includes(
     docsReadme,
-    '[Action surface integration kit buildout](02-architecture/action-surface-integration-kit-buildout.md)',
-    'Docs index links integration kit buildout',
+    '[Action surface onboarding packet](02-architecture/action-surface-onboarding-packet.md)',
+    'Docs index routes integration kit work through the onboarding packet',
+  );
+  excludes(
+    docsReadme,
+    /\[Action surface integration kit buildout\]\(02-architecture\/action-surface-integration-kit-buildout\.md\)/u,
+    'Docs index keeps integration kit buildout nested inside the onboarding path',
   );
   includes(
     onboardingDoc,

@@ -20,7 +20,7 @@ understand -> try -> integrate -> explain decisions -> verify claims -> maintain
 | See concrete use cases | [What you can do with Attestor](01-overview/what-you-can-do.md) |
 | Run a shadow pilot without an SDK | [Run Attestor in shadow pilot mode](01-overview/shadow-event-payload-examples.md) |
 | Put Attestor in front of a real service call | [How to integrate Attestor](01-overview/how-to-integrate-attestor.md) |
-| Render review files from existing metadata | [Action surface integration kit buildout](02-architecture/action-surface-integration-kit-buildout.md) |
+| Start from existing API, tool, workflow, or telemetry metadata | [Action surface onboarding packet](02-architecture/action-surface-onboarding-packet.md) |
 | Understand the review workspace contract | [Attestor Review Surface contract](02-architecture/attestor-review-surface-contract.md) |
 | Use the shared admission shape | [Consequence admission quickstart](01-overview/consequence-admission-quickstart.md) |
 | Understand allowed use | [License and use](01-overview/license-and-use.md) |
@@ -55,7 +55,7 @@ step:
 | sending the first shared admission request | [Consequence admission quickstart](01-overview/consequence-admission-quickstart.md) |
 | wiring the customer-side stop point | [Customer admission gate](01-overview/customer-admission-gate.md) |
 | choosing where it fits in an app | [Customer integration recipes](01-overview/customer-integration-recipes.md) |
-| rendering a review package from API metadata | [Action surface integration kit buildout](02-architecture/action-surface-integration-kit-buildout.md) |
+| starting from API, tool, workflow, or telemetry metadata | [Action surface onboarding packet](02-architecture/action-surface-onboarding-packet.md) |
 | copying framework-shaped examples | [Customer middleware examples](../examples/customer-middleware/README.md) |
 | starting from a hosted account | [First hosted API call](01-overview/hosted-first-api-call.md) |
 | checking the hosted action-authorization contract | [Hosted action authorization API](01-overview/hosted-action-authorization-api.md) |
@@ -98,9 +98,7 @@ reader path.
 - [Downstream enforcement contract](02-architecture/downstream-enforcement-contract.md)
 - [Policy Foundry onboarding](02-architecture/policy-foundry-onboarding.md)
 - [Attestor Review Surface contract](02-architecture/attestor-review-surface-contract.md)
-- [Action surface auto-context](02-architecture/action-surface-auto-context.md)
 - [Action surface onboarding packet](02-architecture/action-surface-onboarding-packet.md)
-- [Action surface integration kit buildout](02-architecture/action-surface-integration-kit-buildout.md)
 - [Glossary](02-architecture/glossary.md)
 
 ## Maintain The Repo

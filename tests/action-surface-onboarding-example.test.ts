@@ -201,7 +201,7 @@ function testDocsExposeTheExampleWithoutOverclaiming(): void {
   );
   includes(
     readme,
-    '[Action surface onboarding packet](docs/02-architecture/action-surface-onboarding-packet.md) - start from existing metadata and render review-only packets, integration files, and hosted packet output without applying anything.',
+    '[Action surface onboarding packet](docs/02-architecture/action-surface-onboarding-packet.md) - start from existing metadata; hosted route: `POST /api/v1/shadow/action-surface/onboarding-packet`; supporting auto-context and integration-kit details stay inside this path.',
     'Action surface example: README keeps one action-surface onboarding entry point',
   );
   excludes(

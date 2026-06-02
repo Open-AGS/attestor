@@ -163,7 +163,7 @@ function testDocsFrontDoorPullsReadersToTheNextAction(): void {
   includes(doc, '[README current state](../README.md#current-state)', 'Docs front door: names README current state clearly');
   includes(doc, '[Live proof register](audit/live-proof-register.md)', 'Docs front door: links live proof owner doc');
   includes(doc, '[How to integrate Attestor](01-overview/how-to-integrate-attestor.md)', 'Docs front door: links integration guide');
-  includes(doc, '[Action surface integration kit buildout](02-architecture/action-surface-integration-kit-buildout.md)', 'Docs front door: links review-only integration kit path');
+  includes(doc, '[Action surface onboarding packet](02-architecture/action-surface-onboarding-packet.md)', 'Docs front door: links the action-surface onboarding entry point');
   includes(doc, '[Run the demos in order](01-overview/demo-guide.md)', 'Docs front door: links guided demo path');
   includes(doc, '[Customer middleware examples](../examples/customer-middleware/README.md)', 'Docs front door: links middleware examples');
   includes(doc, '[Reason codes](05-proof/reason-codes.md)', 'Docs front door: links reason codes');

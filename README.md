@@ -130,7 +130,7 @@ Pick the path that matches the job in front of you.
 
 - [Try Attestor first](docs/01-overview/try-attestor-first.md) - run the smallest local refund path and see the decision trail.
 - [How to integrate Attestor](docs/01-overview/how-to-integrate-attestor.md) - find the real side effect and place the customer-owned gate.
-- [Action surface onboarding packet](docs/02-architecture/action-surface-onboarding-packet.md) - start from existing metadata and render review-only packets, integration files, and hosted packet output (`POST /api/v1/shadow/action-surface/onboarding-packet`) without applying anything.
+- [Action surface onboarding packet](docs/02-architecture/action-surface-onboarding-packet.md) - start from existing metadata; hosted route: `POST /api/v1/shadow/action-surface/onboarding-packet`; supporting auto-context and integration-kit details stay inside this path.
 - [Run Attestor in shadow pilot mode](docs/01-overview/shadow-event-payload-examples.md) - send observe-mode examples before enforcing anything.
 - [Consequence admission quickstart](docs/01-overview/consequence-admission-quickstart.md) - use the shared admission shape and decision vocabulary.
 - [Customer admission gate](docs/01-overview/customer-admission-gate.md) - hold the real service call in the customer app, gateway, or middleware.

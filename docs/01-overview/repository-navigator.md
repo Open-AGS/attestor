@@ -22,7 +22,7 @@ Use these when you need the main Attestor route, not every supporting page.
 |---|---|
 | [Try Attestor first](try-attestor-first.md) | Run the smallest local example and read the decision trail. |
 | [How to integrate Attestor](how-to-integrate-attestor.md) | Find the real side effect, then choose the right technical path. |
-| [Action surface onboarding packet](../02-architecture/action-surface-onboarding-packet.md) | Start from OpenAPI, MCP, workflow, telemetry, CloudEvents, or gateway-log metadata. |
+| [Action surface onboarding packet](../02-architecture/action-surface-onboarding-packet.md) | Start from existing API, tool, workflow, telemetry, CloudEvents, or gateway-log metadata; supporting pages stay inside that path. |
 | [Run Attestor in shadow pilot mode](shadow-event-payload-examples.md) | Send observe-mode examples before enforcement. |
 | [Consequence admission quickstart](consequence-admission-quickstart.md) | Send a concrete admission request and read `admit`, `narrow`, `review`, or `block`. |
 | [Customer admission gate](customer-admission-gate.md) | Hold the real service call in the customer app, gateway, or middleware. |
@@ -41,7 +41,7 @@ do the next action there, and come back only if you still need more context.
 | "Show me what this does." | [Try Attestor first](try-attestor-first.md) | the refund demo runs and you can explain why it held or blocked. |
 | "Show me all demos in order." | [Run the demos in order](demo-guide.md) | you have run the refund path, the all-pack path, and the closest integration-shape example. |
 | "Where do I put this in my app?" | [How to integrate Attestor](how-to-integrate-attestor.md) | you can point to the line before the real service is called. |
-| "Can Attestor infer my tools or APIs first?" | [Action surface onboarding packet](../02-architecture/action-surface-onboarding-packet.md) | you have one review packet and know which supporting auto-context or integration-kit detail to open next. |
+| "Can Attestor infer my tools or APIs first?" | [Action surface onboarding packet](../02-architecture/action-surface-onboarding-packet.md) | you have one review packet and know the next reviewed metadata or gate-proof step. |
 | "What code do I copy?" | [Customer middleware examples](../../examples/customer-middleware/README.md) | you have the closest framework example open. |
 | "What JSON do I send?" | [Run Attestor in shadow pilot mode](shadow-event-payload-examples.md) | you have copied the closest payload shape for your action class. |
 | "What holds the real service call?" | [Customer admission gate](customer-admission-gate.md) | you know how the customer-owned gate holds observe, warn, review, block, missing-proof, and fail-closed outcomes. |
@@ -64,7 +64,7 @@ do the next action there, and come back only if you still need more context.
 | Run the demo path | [Run the demos in order](demo-guide.md) | [Golden Path: Refund](../02-architecture/golden-refund-shadow-pilot.md) |
 | Send shadow events | [Run Attestor in shadow pilot mode](shadow-event-payload-examples.md) | [Customer middleware examples](../../examples/customer-middleware/README.md) |
 | Wire a customer app | [How to integrate Attestor](how-to-integrate-attestor.md) | [Customer middleware examples](../../examples/customer-middleware/README.md) |
-| Start from MCP, OpenAPI, AsyncAPI, workflow, or telemetry metadata | [Action surface onboarding packet](../02-architecture/action-surface-onboarding-packet.md) | [Action surface integration kit buildout](../02-architecture/action-surface-integration-kit-buildout.md) |
+| Start from MCP, OpenAPI, AsyncAPI, workflow, or telemetry metadata | [Action surface onboarding packet](../02-architecture/action-surface-onboarding-packet.md) | follow the packet's next safe step. |
 | Make the first hosted API call | [First hosted API call](hosted-first-api-call.md) | [Hosted action authorization API](hosted-action-authorization-api.md) |
 | Understand `admit`, `narrow`, `review`, and `block` | [Consequence admission quickstart](consequence-admission-quickstart.md) | [Reason codes](../05-proof/reason-codes.md) |
 | Review shadow, admission, evidence, and boundary material | [Dashboard API summary](../02-architecture/dashboard-api-summary.md) | [Attestor Review Surface contract](../02-architecture/attestor-review-surface-contract.md) |

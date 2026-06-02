@@ -206,8 +206,13 @@ function testDescriptorDocsAndPackageScript(): void {
   const docsReadme = readProjectFile('docs', 'README.md');
   includes(
     docsReadme,
-    '[Action surface auto-context](02-architecture/action-surface-auto-context.md)',
-    'Auto-context docs: docs front door links auto-context',
+    '[Action surface onboarding packet](02-architecture/action-surface-onboarding-packet.md)',
+    'Auto-context docs: docs front door routes metadata setup through the onboarding packet',
+  );
+  excludes(
+    docsReadme,
+    /\[Action surface auto-context\]\(02-architecture\/action-surface-auto-context\.md\)/u,
+    'Auto-context docs: docs front door keeps auto-context nested inside the onboarding path',
   );
 
   const readme = readProjectFile('README.md');
@@ -225,8 +230,13 @@ function testDescriptorDocsAndPackageScript(): void {
   const navigator = readProjectFile('docs', '01-overview', 'repository-navigator.md');
   includes(
     navigator,
-    '[Action surface auto-context](../02-architecture/action-surface-auto-context.md)',
-    'Auto-context docs: repository navigator links auto-context',
+    '[Action surface onboarding packet](../02-architecture/action-surface-onboarding-packet.md)',
+    'Auto-context docs: repository navigator routes metadata setup through the onboarding packet',
+  );
+  excludes(
+    navigator,
+    /\[Action surface auto-context\]\(\.\.\/02-architecture\/action-surface-auto-context\.md\)/u,
+    'Auto-context docs: repository navigator keeps auto-context nested inside the onboarding path',
   );
 
   const pkg = JSON.parse(readProjectFile('package.json')) as {

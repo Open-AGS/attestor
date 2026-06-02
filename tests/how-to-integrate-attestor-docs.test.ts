@@ -26,7 +26,7 @@ function testGuideExplainsTheCustomerIntegrationPath(): void {
 
   includes(doc, '# How To Integrate Attestor', 'How-to integrate docs: title is present');
   includes(doc, '[Docs index](../README.md)', 'How-to integrate docs: links back to docs index clearly');
-  includes(doc, '[README Start Here](../../README.md#start-here)', 'How-to integrate docs: names the README section clearly');
+  includes(doc, '[Repository README first-reader section](../../README.md#start-here)', 'How-to integrate docs: names the README section clearly');
   includes(doc, 'Do not start with a dashboard.', 'How-to integrate docs: rejects dashboard-first framing');
   includes(doc, 'Start with the line of code that does the real thing.', 'How-to integrate docs: starts at the side effect');
   includes(doc, 'AI prepares an action', 'How-to integrate docs: names the AI side');

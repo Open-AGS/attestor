@@ -76,6 +76,8 @@ function testRendererWritesReviewOnlyIntegrationKit(): void {
     const readme = readFileSync(rendered.artifacts.readmePath, 'utf8');
     const summary = readFileSync(rendered.artifacts.summaryPath, 'utf8');
     const artifactManifest = readFileSync(rendered.artifacts.artifactManifestPath, 'utf8');
+    const openApiOverlay = readFileSync(rendered.artifacts.openApiOverlayPath, 'utf8');
+    const mcpGatewayDrafts = readFileSync(rendered.artifacts.mcpGatewayDraftsPath, 'utf8');
     const noBypassBundle = readFileSync(rendered.artifacts.noBypassProbeBundlePath, 'utf8');
 
     equal(rendered.kit.status, 'review-required', 'Integration kit render: surfaces require review');
@@ -127,7 +129,22 @@ function testRendererWritesReviewOnlyIntegrationKit(): void {
     includes(readme, 'does not apply infrastructure', 'Integration kit render: README blocks apply claims');
     includes(summary, 'artifactManifestDigest', 'Integration kit render: summary binds artifact digest');
     includes(artifactManifest, 'gateway-proxy-config', 'Integration kit render: artifact manifest is useful');
+    includes(
+      openApiOverlay,
+      'credentialBoundaryReviewRequired',
+      'Integration kit render: overlay carries credential review field',
+    );
+    includes(
+      mcpGatewayDrafts,
+      '"annotationAuthority": "hint-only"',
+      'Integration kit render: MCP draft keeps annotation authority bounded',
+    );
     includes(noBypassBundle, '"executesProbes": false', 'Integration kit render: probe bundle does not run');
+    includes(
+      noBypassBundle,
+      'evidenceBinding',
+      'Integration kit render: probe bundle carries evidence binding',
+    );
     excludes(summary, /raw_prompt_must_not_escape/u, 'Integration kit render: raw OpenAPI text is not serialized');
     excludes(summary, /sk_live_must_not_escape/u, 'Integration kit render: secret-like text is not serialized');
     excludes(readme, /production ready: true/iu, 'Integration kit render: README does not overclaim production');

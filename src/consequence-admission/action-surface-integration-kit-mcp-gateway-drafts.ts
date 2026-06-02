@@ -11,6 +11,16 @@ import type {
 export const ACTION_SURFACE_INTEGRATION_KIT_MCP_GATEWAY_DRAFTS_VERSION =
   'attestor.action-surface-integration-kit-mcp-gateway-drafts.v1';
 
+export const ACTION_SURFACE_INTEGRATION_KIT_MCP_REVIEW_EVIDENCE_FIELDS = [
+  'tool-call-request-digest',
+  'attestor-presentation-digest',
+  'gateway-decision-digest',
+  'tool-result-or-denial-digest',
+  'operator-review-record-digest',
+] as const;
+export type ActionSurfaceIntegrationKitMcpReviewEvidenceField =
+  typeof ACTION_SURFACE_INTEGRATION_KIT_MCP_REVIEW_EVIDENCE_FIELDS[number];
+
 export interface CreateActionSurfaceIntegrationKitMcpGatewayDraftBundleInput {
   readonly kit: ActionSurfaceIntegrationKitPacket;
   readonly generatedAt?: string | null;
@@ -26,6 +36,13 @@ export interface ActionSurfaceIntegrationKitMcpToolDraft {
   readonly sourceArtifactDigests: readonly string[];
   readonly requiredReview: true;
   readonly annotationsTrusted: false;
+  readonly annotationAuthority: 'hint-only';
+  readonly customerGatewayRequired: true;
+  readonly credentialBoundaryReviewRequired: true;
+  readonly requiredEvidence:
+    readonly ActionSurfaceIntegrationKitMcpReviewEvidenceField[];
+  readonly reviewerAction: string;
+  readonly authority: 'tool-review-draft-only';
   readonly rawPayloadStored: false;
   readonly productionReady: false;
 }
@@ -40,6 +57,9 @@ export interface ActionSurfaceIntegrationKitCredentialIsolationCheck {
   readonly credentialRotated: false;
   readonly customerApprovalRequired: true;
   readonly reviewRequired: true;
+  readonly requiredEvidence:
+    readonly ActionSurfaceIntegrationKitMcpReviewEvidenceField[];
+  readonly reviewerAction: string;
   readonly noGoReasons: readonly string[];
 }
 
@@ -61,6 +81,8 @@ export interface ActionSurfaceIntegrationKitMcpGatewayDraftBundle {
   readonly rotatesCredentials: false;
   readonly activatesEnforcement: false;
   readonly nonBypassableClaimAllowed: false;
+  readonly annotationAuthority: 'hint-only';
+  readonly customerGatewayRequired: true;
   readonly limitations: readonly string[];
   readonly canonical: string;
   readonly digest: string;
@@ -79,6 +101,10 @@ export interface ActionSurfaceIntegrationKitMcpGatewayDraftDescriptor {
   readonly activatesEnforcement: false;
   readonly nonBypassableClaimAllowed: false;
   readonly annotationsTrusted: false;
+  readonly annotationAuthority: 'hint-only';
+  readonly customerGatewayRequired: true;
+  readonly evidenceFields:
+    typeof ACTION_SURFACE_INTEGRATION_KIT_MCP_REVIEW_EVIDENCE_FIELDS;
 }
 
 function canonicalObject(value: CanonicalReleaseJsonValue): {
@@ -208,6 +234,13 @@ function createToolDrafts(
       sourceArtifactDigests,
       requiredReview: true,
       annotationsTrusted: false,
+      annotationAuthority: 'hint-only',
+      customerGatewayRequired: true,
+      credentialBoundaryReviewRequired: true,
+      requiredEvidence: ACTION_SURFACE_INTEGRATION_KIT_MCP_REVIEW_EVIDENCE_FIELDS,
+      reviewerAction:
+        'Confirm the customer-owned MCP gateway holds the tool credential before exposure.',
+      authority: 'tool-review-draft-only',
       rawPayloadStored: false,
       productionReady: false,
     }));
@@ -234,6 +267,10 @@ function createCredentialIsolationChecks(
           credentialRotated: false,
           customerApprovalRequired: true,
           reviewRequired: true,
+          requiredEvidence:
+            ACTION_SURFACE_INTEGRATION_KIT_MCP_REVIEW_EVIDENCE_FIELDS,
+          reviewerAction:
+            'Replace agent-held credentials with a customer-owned gateway secret boundary.',
           noGoReasons: Object.freeze([
             'credential-boundary-review-required',
             'customer-owned-mcp-gateway-not-proven',
@@ -273,6 +310,8 @@ export function createActionSurfaceIntegrationKitMcpGatewayDraftBundle(
     rotatesCredentials: false,
     activatesEnforcement: false,
     nonBypassableClaimAllowed: false,
+    annotationAuthority: 'hint-only',
+    customerGatewayRequired: true,
     limitations: Object.freeze([
       'These MCP gateway entries are review drafts only.',
       'They do not run an MCP server, expose tools, issue credentials, or rotate credentials.',
@@ -297,5 +336,8 @@ export function actionSurfaceIntegrationKitMcpGatewayDraftDescriptor():
     activatesEnforcement: false,
     nonBypassableClaimAllowed: false,
     annotationsTrusted: false,
+    annotationAuthority: 'hint-only',
+    customerGatewayRequired: true,
+    evidenceFields: ACTION_SURFACE_INTEGRATION_KIT_MCP_REVIEW_EVIDENCE_FIELDS,
   });
 }

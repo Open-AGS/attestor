@@ -203,6 +203,17 @@ It turns the machine-readable kit packet into:
   matched HTTP operations
 - an Envoy `ext_authz` HTTP filter draft with fail-closed route hints
 
+Each generated route now carries the review minimum a team needs before it can
+wire a stop point: domain, downstream system, source artifact digests, required
+evidence fields, credential-boundary review, route-placement review status,
+and a customer stop-point requirement. The overlay is metadata beside the API
+description; it is not an API rewrite or approval.
+
+The Envoy draft includes a review plan for route coverage, fail-closed
+configuration, credential bypass checks, body-handling limits, and digest-bound
+probe evidence. The plan is intentionally written as reviewer work, not an
+applyable deployment recipe.
+
 These drafts are still review material. They do not apply the overlay, deploy
 Envoy, configure a gateway, issue credentials, activate enforcement, or prove
 that the customer route is non-bypassable.
@@ -222,6 +233,9 @@ and credential-isolation checks:
 - gateway-held credential target posture
 - explicit `agentDirectCredentialAllowed: false`
 - `credentialIssued: false` and `credentialRotated: false`
+- `annotationsTrusted: false` and `annotationAuthority: hint-only`
+- required evidence fields for request, presentation, gateway decision, tool
+  denial or result, and operator review
 
 The draft does not run an MCP server, expose tools to an agent, issue or rotate
 credentials, trust tool annotations as authority, activate enforcement, or
@@ -344,6 +358,9 @@ gateway, sidecar, provider-native, and MCP gateway modes:
 - route or tool references, where the source metadata provides them
 - artifact digests that the probe result must bind back to
 - required evidence fields for the operator or reviewer
+- reviewer actions for each probe kind
+- explicit evidence binding back to kit, probe-plan, artifact, and live-proof
+  register references
 - explicit `safeToAutoRun: false`, `executesProbe: false`, and
   `proofResultRecorded: false`
 

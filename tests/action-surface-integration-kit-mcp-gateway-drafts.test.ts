@@ -83,6 +83,31 @@ function testMcpGatewayDraftCreatesReviewOnlyToolSchema(): void {
   equal(tool?.inputSchema.additionalProperties, false, 'MCP gateway drafts: tool input schema is bounded');
   equal(tool?.requiredReview, true, 'MCP gateway drafts: tool requires review');
   equal(tool?.annotationsTrusted, false, 'MCP gateway drafts: annotations are not trusted authority');
+  equal(tool?.annotationAuthority, 'hint-only', 'MCP gateway drafts: annotations are hint-only');
+  equal(
+    tool?.customerGatewayRequired,
+    true,
+    'MCP gateway drafts: customer-owned gateway is required',
+  );
+  equal(
+    tool?.credentialBoundaryReviewRequired,
+    true,
+    'MCP gateway drafts: credential boundary review is required',
+  );
+  ok(
+    tool?.requiredEvidence.includes('tool-call-request-digest'),
+    'MCP gateway drafts: tool request evidence is named',
+  );
+  includes(
+    tool?.reviewerAction ?? '',
+    'customer-owned MCP gateway',
+    'MCP gateway drafts: tool reviewer action names the gateway boundary',
+  );
+  equal(
+    tool?.authority,
+    'tool-review-draft-only',
+    'MCP gateway drafts: tool draft has no independent authority',
+  );
   equal(tool?.rawPayloadStored, false, 'MCP gateway drafts: tool stores no raw payload');
   equal(tool?.productionReady, false, 'MCP gateway drafts: tool is not production-ready');
   equal(bundle.authorizationRequired, true, 'MCP gateway drafts: authorization is required');
@@ -95,6 +120,8 @@ function testMcpGatewayDraftCreatesReviewOnlyToolSchema(): void {
   equal(bundle.rotatesCredentials, false, 'MCP gateway drafts: credential rotation is false');
   equal(bundle.activatesEnforcement, false, 'MCP gateway drafts: enforcement activation is false');
   equal(bundle.nonBypassableClaimAllowed, false, 'MCP gateway drafts: no-bypass claim is false');
+  equal(bundle.annotationAuthority, 'hint-only', 'MCP gateway drafts: bundle annotation authority is hint-only');
+  equal(bundle.customerGatewayRequired, true, 'MCP gateway drafts: bundle requires customer gateway');
   ok(bundle.digest.startsWith('sha256:'), 'MCP gateway drafts: digest is generated');
   ok(
     !text.includes('raw_tool_description_must_not_escape'),
@@ -121,6 +148,15 @@ function testCredentialIsolationChecksStayHumanReviewed(): void {
   equal(check?.customerApprovalRequired, true, 'MCP gateway drafts: customer approval is required');
   equal(check?.reviewRequired, true, 'MCP gateway drafts: credential check requires review');
   ok(
+    check?.requiredEvidence.includes('gateway-decision-digest'),
+    'MCP gateway drafts: credential check names gateway decision evidence',
+  );
+  includes(
+    check?.reviewerAction ?? '',
+    'agent-held credentials',
+    'MCP gateway drafts: credential check tells reviewer what to replace',
+  );
+  ok(
     check?.noGoReasons.includes('credential-boundary-review-required'),
     'MCP gateway drafts: credential boundary blocker is explicit',
   );
@@ -134,6 +170,12 @@ function testDescriptorDocsAndPackageScript(): void {
   equal(descriptor.issuesCredentials, false, 'MCP gateway descriptor: credential issuance is false');
   equal(descriptor.rotatesCredentials, false, 'MCP gateway descriptor: credential rotation is false');
   equal(descriptor.activatesEnforcement, false, 'MCP gateway descriptor: enforcement activation is false');
+  equal(descriptor.annotationAuthority, 'hint-only', 'MCP gateway descriptor: annotations are hint-only');
+  equal(descriptor.customerGatewayRequired, true, 'MCP gateway descriptor: customer gateway is required');
+  ok(
+    descriptor.evidenceFields.includes('tool-result-or-denial-digest'),
+    'MCP gateway descriptor: tool result or denial evidence is exposed',
+  );
 
   const doc = readProjectFile('docs', '02-architecture', 'action-surface-integration-kit-buildout.md');
   includes(doc, 'MCP Gateway Drafts', 'Integration kit doc: MCP gateway draft section exists');

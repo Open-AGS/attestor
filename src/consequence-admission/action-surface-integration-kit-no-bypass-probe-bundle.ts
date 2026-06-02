@@ -50,6 +50,14 @@ export const ACTION_SURFACE_INTEGRATION_KIT_PROBE_EVIDENCE_FIELDS = [
 export type ActionSurfaceIntegrationKitProbeEvidenceField =
   typeof ACTION_SURFACE_INTEGRATION_KIT_PROBE_EVIDENCE_FIELDS[number];
 
+export interface ActionSurfaceIntegrationKitProbeEvidenceBinding {
+  readonly sourceKitDigest: string;
+  readonly sourceProbePlanDigest: string;
+  readonly sourceArtifactDigests: readonly string[];
+  readonly liveProofRegisterRef: 'LP-CUSTOMER-PEP-NO-BYPASS';
+  readonly proofResultMayCloseLiveProof: false;
+}
+
 export interface CreateActionSurfaceIntegrationKitNoBypassProbeBundleInput {
   readonly kit: ActionSurfaceIntegrationKitPacket;
   readonly generatedAt?: string | null;
@@ -69,6 +77,8 @@ export interface ActionSurfaceIntegrationKitNoBypassProbeBundleCase {
   readonly sourceArtifactDigests: readonly string[];
   readonly routeOrToolRefs: readonly string[];
   readonly requiredEvidence: readonly ActionSurfaceIntegrationKitProbeEvidenceField[];
+  readonly evidenceBinding: ActionSurfaceIntegrationKitProbeEvidenceBinding;
+  readonly reviewerAction: string;
   readonly resultStatus: 'not-run';
   readonly customerOwnedExecutionRequired: true;
   readonly requiresCustomerStopPoint: true;
@@ -288,6 +298,23 @@ function requiredEvidenceForKind(
   ]);
 }
 
+function reviewerActionForKind(kind: ActionSurfaceIntegrationKitProbeKind): string {
+  switch (kind) {
+    case 'direct-downstream-without-attestor-presentation':
+      return 'Attempt a direct downstream call and record the customer stop-point denial digest.';
+    case 'stale-or-replayed-presentation':
+      return 'Replay an old presentation and record the denial before downstream execution.';
+    case 'narrow-decision-with-original-wide-request':
+      return 'Try the wider original request after a narrow decision and record the denial.';
+    case 'review-or-block-reaches-downstream-execution':
+      return 'Confirm review or block decisions cannot reach downstream execution.';
+    case 'verifier-unavailable-in-enforcement-mode':
+      return 'Simulate verifier outage and record fail-closed or bounded hold evidence.';
+    case 'observe-mode-would-block-recorded-only':
+      return 'In observe mode, confirm would-block traffic is recorded without enforcement.';
+  }
+}
+
 function createProbeCases(
   kit: ActionSurfaceIntegrationKitPacket,
 ): readonly ActionSurfaceIntegrationKitNoBypassProbeBundleCase[] {
@@ -311,6 +338,14 @@ function createProbeCases(
           artifacts: surfaceArtifacts,
         }),
         requiredEvidence: requiredEvidenceForKind(probe.kind),
+        evidenceBinding: Object.freeze({
+          sourceKitDigest: kit.digest,
+          sourceProbePlanDigest: kit.noBypassProbePlan.digest,
+          sourceArtifactDigests: artifactDigests(surfaceArtifacts),
+          liveProofRegisterRef: kit.noBypassProbePlan.liveProofRegisterRef,
+          proofResultMayCloseLiveProof: false as const,
+        }),
+        reviewerAction: reviewerActionForKind(probe.kind),
         resultStatus: 'not-run' as const,
         customerOwnedExecutionRequired: true as const,
         requiresCustomerStopPoint: true as const,

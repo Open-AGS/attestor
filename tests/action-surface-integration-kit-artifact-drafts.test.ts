@@ -93,6 +93,14 @@ function testOpenApiOverlayDraftIsDigestBoundAndReviewOnly(): void {
     readonly sourceKitDigest: string;
     readonly sourcePacketDigest: string;
     readonly reviewRequired: boolean;
+    readonly customerStopPointRequired: boolean;
+    readonly routePlacementReviewed: boolean;
+    readonly credentialBoundaryReviewRequired: boolean;
+    readonly executionProofRequired: boolean;
+    readonly requiredEvidence: readonly string[];
+    readonly authority: string;
+    readonly rawPayloadStored: boolean;
+    readonly productionReady: boolean;
     readonly nonBypassableClaimAllowed: boolean;
   };
   const text = JSON.stringify(bundle);
@@ -106,6 +114,37 @@ function testOpenApiOverlayDraftIsDigestBoundAndReviewOnly(): void {
   equal(extension.sourceKitDigest, kit.digest, 'Artifact drafts: overlay extension binds kit digest');
   equal(extension.sourcePacketDigest, kit.sourcePacketDigest, 'Artifact drafts: overlay extension binds source packet digest');
   equal(extension.reviewRequired, true, 'Artifact drafts: overlay extension requires review');
+  equal(
+    extension.customerStopPointRequired,
+    true,
+    'Artifact drafts: overlay extension requires customer stop point',
+  );
+  equal(
+    extension.routePlacementReviewed,
+    false,
+    'Artifact drafts: overlay extension route placement is not reviewed',
+  );
+  equal(
+    extension.credentialBoundaryReviewRequired,
+    true,
+    'Artifact drafts: overlay extension requires credential boundary review',
+  );
+  equal(
+    extension.executionProofRequired,
+    true,
+    'Artifact drafts: overlay extension requires execution proof',
+  );
+  ok(
+    extension.requiredEvidence.includes('customer-stop-point-decision-digest'),
+    'Artifact drafts: overlay extension names stop-point evidence',
+  );
+  equal(
+    extension.authority,
+    'review-metadata-only',
+    'Artifact drafts: overlay extension authority is metadata-only',
+  );
+  equal(extension.rawPayloadStored, false, 'Artifact drafts: overlay extension stores no raw payload');
+  equal(extension.productionReady, false, 'Artifact drafts: overlay extension is not production-ready');
   equal(extension.nonBypassableClaimAllowed, false, 'Artifact drafts: overlay extension blocks no-bypass claim');
   equal(bundle.openApiOverlay.requiredReview, true, 'Artifact drafts: overlay requires review');
   equal(bundle.openApiOverlay.rawPayloadStored, false, 'Artifact drafts: overlay stores no raw payload');
@@ -128,8 +167,59 @@ function testEnvoyExtAuthzDraftStaysNonApplying(): void {
   equal(route?.method, 'POST', 'Artifact drafts: route method is retained');
   equal(route?.path, '/refunds', 'Artifact drafts: route path is retained');
   equal(route?.reviewRequired, true, 'Artifact drafts: route hint requires review');
+  equal(route?.domain, 'money-movement', 'Artifact drafts: route hint keeps domain');
+  equal(route?.downstreamSystem, 'refund_service', 'Artifact drafts: route hint keeps downstream system');
+  equal(
+    route?.customerStopPointRequired,
+    true,
+    'Artifact drafts: route hint requires customer stop point',
+  );
+  equal(
+    route?.routePlacementReviewed,
+    false,
+    'Artifact drafts: route hint is not placement-reviewed',
+  );
+  equal(
+    route?.credentialBoundaryReviewRequired,
+    true,
+    'Artifact drafts: route hint requires credential boundary review',
+  );
+  equal(
+    route?.executionProofRequired,
+    true,
+    'Artifact drafts: route hint requires execution proof',
+  );
+  ok(
+    route?.requiredEvidence.includes('operator-review-record-digest'),
+    'Artifact drafts: route hint names operator review evidence',
+  );
+  equal(
+    route?.authority,
+    'route-review-hint-only',
+    'Artifact drafts: route hint has no independent authority',
+  );
   includes(filterText, 'envoy.filters.http.ext_authz', 'Artifact drafts: Envoy filter name is present');
   includes(filterText, 'failureModeAllow', 'Artifact drafts: Envoy failure mode field is present');
+  equal(
+    bundle.envoyExtAuthz.reviewPlan.customerOwnedStopPointRequired,
+    true,
+    'Artifact drafts: Envoy review plan requires customer-owned stop point',
+  );
+  equal(
+    bundle.envoyExtAuthz.reviewPlan.routePlacementReviewed,
+    false,
+    'Artifact drafts: Envoy review plan is not placement-reviewed',
+  );
+  equal(
+    bundle.envoyExtAuthz.reviewPlan.rawRequestBodyAllowed,
+    false,
+    'Artifact drafts: Envoy review plan blocks raw request body forwarding',
+  );
+  includes(
+    JSON.stringify(bundle.envoyExtAuthz.reviewPlan),
+    'confirm route coverage',
+    'Artifact drafts: Envoy review plan gives reviewer action',
+  );
   equal(bundle.approvalRequired, true, 'Artifact drafts: approval is required');
   equal(bundle.autoEnforce, false, 'Artifact drafts: auto enforce is false');
   equal(bundle.rawPayloadStored, false, 'Artifact drafts: raw payload storage is false');

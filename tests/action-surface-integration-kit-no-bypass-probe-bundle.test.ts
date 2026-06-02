@@ -150,6 +150,31 @@ function testProbeCasesCarryModeSpecificHumanReviewTargets(): void {
     gatewayProbe?.requiredEvidence.includes('customer-stop-point-decision-digest'),
     'No-bypass probe bundle: customer stop-point evidence is required',
   );
+  equal(
+    gatewayProbe?.evidenceBinding.sourceKitDigest,
+    bundle.sourceKitDigest,
+    'No-bypass probe bundle: case binds back to source kit digest',
+  );
+  equal(
+    gatewayProbe?.evidenceBinding.sourceProbePlanDigest,
+    bundle.sourceProbePlanDigest,
+    'No-bypass probe bundle: case binds back to source probe plan digest',
+  );
+  equal(
+    gatewayProbe?.evidenceBinding.liveProofRegisterRef,
+    'LP-CUSTOMER-PEP-NO-BYPASS',
+    'No-bypass probe bundle: case names live proof register target',
+  );
+  equal(
+    gatewayProbe?.evidenceBinding.proofResultMayCloseLiveProof,
+    false,
+    'No-bypass probe bundle: generated case alone cannot close live proof',
+  );
+  includes(
+    gatewayProbe?.reviewerAction ?? '',
+    'direct downstream call',
+    'No-bypass probe bundle: gateway case gives reviewer action',
+  );
   equal(gatewayProbe?.safeToAutoRun, false, 'No-bypass probe bundle: auto-run is forbidden');
   equal(gatewayProbe?.executesProbe, false, 'No-bypass probe bundle: probe is not executed');
   equal(gatewayProbe?.resultStatus, 'not-run', 'No-bypass probe bundle: result status is not-run');
@@ -171,6 +196,11 @@ function testProbeCasesCarryModeSpecificHumanReviewTargets(): void {
     mcpProbe?.requiredEvidence.includes('attestor-presentation-digest'),
     'No-bypass probe bundle: replay probe requires presentation digest',
   );
+  includes(
+    mcpProbe?.reviewerAction ?? '',
+    'Replay an old presentation',
+    'No-bypass probe bundle: MCP replay case gives reviewer action',
+  );
 
   const sdkProbe = bundle.probeCases.find((probe) =>
     probe.actionSurface === 'crm.update_account' &&
@@ -190,6 +220,11 @@ function testProbeCasesCarryModeSpecificHumanReviewTargets(): void {
     sdkProbe?.passCondition ?? '',
     'recorded only',
     'No-bypass probe bundle: observe-mode pass condition is human-readable',
+  );
+  includes(
+    sdkProbe?.reviewerAction ?? '',
+    'would-block traffic',
+    'No-bypass probe bundle: observe-mode case gives reviewer action',
   );
 }
 

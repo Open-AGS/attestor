@@ -14,6 +14,16 @@ import type {
 export const ACTION_SURFACE_INTEGRATION_KIT_ARTIFACT_DRAFTS_VERSION =
   'attestor.action-surface-integration-kit-artifact-drafts.v1';
 
+export const ACTION_SURFACE_INTEGRATION_KIT_ARTIFACT_REVIEW_EVIDENCE_FIELDS = [
+  'request-digest',
+  'attestor-presentation-digest',
+  'customer-stop-point-decision-digest',
+  'downstream-receipt-or-denial-digest',
+  'operator-review-record-digest',
+] as const;
+export type ActionSurfaceIntegrationKitArtifactReviewEvidenceField =
+  typeof ACTION_SURFACE_INTEGRATION_KIT_ARTIFACT_REVIEW_EVIDENCE_FIELDS[number];
+
 export interface CreateActionSurfaceIntegrationKitArtifactDraftBundleInput {
   readonly kit: ActionSurfaceIntegrationKitPacket;
   readonly generatedAt?: string | null;
@@ -23,10 +33,19 @@ export interface CreateActionSurfaceIntegrationKitArtifactDraftBundleInput {
 export interface ActionSurfaceIntegrationKitHttpRouteDraft {
   readonly actionSurface: string;
   readonly mode: AttestorIntegrationMode;
+  readonly domain: string | null;
+  readonly downstreamSystem: string | null;
   readonly method: string;
   readonly path: string;
   readonly artifactDigests: readonly string[];
   readonly reviewRequired: true;
+  readonly customerStopPointRequired: true;
+  readonly routePlacementReviewed: false;
+  readonly credentialBoundaryReviewRequired: true;
+  readonly executionProofRequired: true;
+  readonly requiredEvidence:
+    readonly ActionSurfaceIntegrationKitArtifactReviewEvidenceField[];
+  readonly authority: 'route-review-hint-only';
 }
 
 export interface ActionSurfaceIntegrationKitOpenApiOverlayActionDraft {
@@ -56,6 +75,7 @@ export interface ActionSurfaceIntegrationKitEnvoyExtAuthzDraft {
   readonly kind: 'envoy-ext-authz-http-filter-draft';
   readonly filter: Readonly<Record<string, CanonicalReleaseJsonValue>>;
   readonly routeHints: readonly ActionSurfaceIntegrationKitHttpRouteDraft[];
+  readonly reviewPlan: Readonly<Record<string, CanonicalReleaseJsonValue>>;
   readonly failureModeAllow: false;
   readonly requiredReview: true;
   readonly rawPayloadStored: false;
@@ -189,10 +209,19 @@ function collectHttpRouteDrafts(
       }), Object.freeze({
         actionSurface: artifact.actionSurface,
         mode: artifact.mode,
+        domain: draft?.domain ?? artifact.domain,
+        downstreamSystem: draft?.downstreamSystem ?? artifact.downstreamSystem,
         method: operation.method,
         path: operation.path,
         artifactDigests,
         reviewRequired: true,
+        customerStopPointRequired: true,
+        routePlacementReviewed: false,
+        credentialBoundaryReviewRequired: true,
+        executionProofRequired: true,
+        requiredEvidence:
+          ACTION_SURFACE_INTEGRATION_KIT_ARTIFACT_REVIEW_EVIDENCE_FIELDS,
+        authority: 'route-review-hint-only',
       }));
     }
   }
@@ -227,11 +256,22 @@ function createOpenApiOverlay(input: {
           'x-attestor': Object.freeze({
             actionSurface: route.actionSurface,
             integrationMode: route.mode,
+            domain: route.domain,
+            downstreamSystem: route.downstreamSystem,
             sourceKitDigest: input.kit.digest,
             sourcePacketDigest: input.kit.sourcePacketDigest,
             artifactDigests: route.artifactDigests,
+            requiredEvidence:
+              ACTION_SURFACE_INTEGRATION_KIT_ARTIFACT_REVIEW_EVIDENCE_FIELDS,
             reviewRequired: true,
+            customerStopPointRequired: true,
+            routePlacementReviewed: false,
+            credentialBoundaryReviewRequired: true,
+            executionProofRequired: true,
+            authority: 'review-metadata-only',
             autoEnforce: false,
+            rawPayloadStored: false,
+            productionReady: false,
             nonBypassableClaimAllowed: false,
           }),
         }),
@@ -277,6 +317,22 @@ function createEnvoyExtAuthzDraft(input: {
       }),
     }),
     routeHints: input.routes,
+    reviewPlan: Object.freeze({
+      authority: 'configuration-review-only',
+      customerOwnedStopPointRequired: true,
+      routePlacementReviewed: false,
+      credentialBoundaryReviewRequired: true,
+      bodyForwarding: 'digest-or-redacted-summary-only',
+      rawRequestBodyAllowed: false,
+      requiredEvidence:
+        ACTION_SURFACE_INTEGRATION_KIT_ARTIFACT_REVIEW_EVIDENCE_FIELDS,
+      reviewerActions: Object.freeze([
+        'confirm route coverage before applying any gateway config',
+        'confirm failureModeAllow remains false for enforcement-mode routes',
+        'confirm the agent cannot call downstream with direct credentials',
+        'record digest-bound denial or receipt evidence after probes run',
+      ]),
+    }),
     failureModeAllow: false,
     requiredReview: true,
     rawPayloadStored: false,

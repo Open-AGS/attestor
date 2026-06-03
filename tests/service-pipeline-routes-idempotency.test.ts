@@ -445,6 +445,29 @@ async function testPipelineAsyncRouteRejectsNonJsonMediaType(): Promise<void> {
   }
 }
 
+async function testAsyncPipelineRequiresIdempotencyKeyBeforeSideEffects(): Promise<void> {
+  const restore = withEnv();
+  try {
+    const counters = { consume: 0, submit: 0 };
+    const app = new Hono();
+    registerPipelineAsyncRoutes(app, asyncDeps(counters));
+    const response = await app.request('/api/v1/pipeline/run-async', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ candidateSql: 'select 1', intent: 'approve test query' }),
+    });
+    const body = await response.json() as { readonly error: string; readonly detail: string };
+
+    assert.equal(response.status, 428);
+    assert.equal(body.error, 'Pipeline async route requires Idempotency-Key before queue admission.');
+    assert.match(body.detail, /before quota, rate-limit, or queue work/u);
+    assert.equal(counters.submit, 0);
+    assert.equal(counters.consume, 0);
+  } finally {
+    restore();
+  }
+}
+
 async function testPipelineConnectorErrorDetailsAreRedacted(): Promise<void> {
   const restore = withEnv();
   try {
@@ -616,6 +639,7 @@ async function testAsyncPipelineReplayReturnsSameJobAndConsumesOnce(): Promise<v
 await testSyncPipelineReplayReturnsSameRunAndConsumesOnce();
 await testPipelineRoutesRejectNonJsonMediaType();
 await testPipelineAsyncRouteRejectsNonJsonMediaType();
+await testAsyncPipelineRequiresIdempotencyKeyBeforeSideEffects();
 await testPipelineConnectorErrorDetailsAreRedacted();
 await testBodyReviewerFieldsDoNotCreateApprovalAuthority();
 await testPipelineIdempotencyConflictRejectsDifferentPayload();
@@ -623,4 +647,4 @@ await testPipelineIdempotencyConfigFailsBeforeSideEffects();
 await testAsyncPipelineReplayReturnsSameJobAndConsumesOnce();
 await testAsyncBullmqRetryAfterUsageFailureUsesIdempotentQueueClaim();
 
-console.log('Service pipeline routes idempotency tests: 9 passed, 0 failed');
+console.log('Service pipeline routes idempotency tests: 10 passed, 0 failed');

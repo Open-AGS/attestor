@@ -363,6 +363,7 @@ export async function runAdminTenantKeyFlow(ctx: LiveApiHostedContext): Promise<
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${rateTenantBody.key.apiKey}`,
+          'Idempotency-Key': 'admin-tenant-key-rate-limited-async',
         },
         body: JSON.stringify({
           candidateSql: COUNTERPARTY_SQL,

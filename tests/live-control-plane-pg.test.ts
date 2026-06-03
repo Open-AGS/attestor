@@ -629,6 +629,7 @@ async function run(): Promise<void> {
       headers: {
         ...replacementAuth,
         'Content-Type': 'application/json',
+        'Idempotency-Key': 'shared-control-plane-failed-async',
       },
       body: JSON.stringify({
         candidateSql: 123,

@@ -681,7 +681,10 @@ export async function runRuntimePipelineFlow(): Promise<void> {
     {
       const res = await fetch(`${BASE}/api/v1/pipeline/run-async`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Idempotency-Key': 'runtime-pipeline-async-submit',
+        },
         body: JSON.stringify({
           candidateSql: COUNTERPARTY_SQL,
           intent: COUNTERPARTY_INTENT,
@@ -757,12 +760,18 @@ export async function runRuntimePipelineFlow(): Promise<void> {
       const [queueAttemptA, queueAttemptB] = await Promise.all([
         fetch(`${BASE}/api/v1/pipeline/run-async`, {
           method: 'POST',
-          headers: queueHeaders,
+          headers: {
+            ...queueHeaders,
+            'Idempotency-Key': 'runtime-pipeline-queue-cap-a',
+          },
           body: payload,
         }),
         fetch(`${BASE}/api/v1/pipeline/run-async`, {
           method: 'POST',
-          headers: queueHeaders,
+          headers: {
+            ...queueHeaders,
+            'Idempotency-Key': 'runtime-pipeline-queue-cap-b',
+          },
           body: payload,
         }),
       ]);
@@ -793,6 +802,7 @@ export async function runRuntimePipelineFlow(): Promise<void> {
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${failedTenant.apiKey}`,
+          'Idempotency-Key': 'runtime-pipeline-dlq-proof',
         },
         body: JSON.stringify({
           candidateSql: 123,

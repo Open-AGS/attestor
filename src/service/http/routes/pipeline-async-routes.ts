@@ -149,6 +149,12 @@ app.post('/api/v1/pipeline/run-async', async (c) => {
     const tenant = currentTenant(c);
     const routeId = 'POST /api/v1/pipeline/run-async';
     const idempotencyKey = c.req.header('Idempotency-Key')?.trim() || null;
+    if (!idempotencyKey) {
+      return c.json({
+        error: 'Pipeline async route requires Idempotency-Key before queue admission.',
+        detail: 'Retry-safe async pipeline submissions must bind a tenant-scoped idempotency key before quota, rate-limit, or queue work can start.',
+      }, 428);
+    }
     const idempotency = await pipelineIdempotencyService.begin({
       idempotencyKey,
       tenantId: tenant.tenantId,

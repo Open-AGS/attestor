@@ -508,6 +508,202 @@ const routeGuardMatrix: readonly RouteGuardCase[] = [
   },
 ];
 
+type RouteRequiredEvidenceDomain = {
+  readonly name: string;
+  readonly domain: string;
+  readonly action: string;
+  readonly downstreamSystem: string;
+  readonly overrides?: Record<string, unknown>;
+};
+
+type RouteRequiredEvidenceCase = {
+  readonly name: string;
+  readonly domain: string;
+  readonly payload: Record<string, unknown>;
+  readonly reasonCode: string;
+  readonly missingFields: readonly string[];
+  readonly requiredEvidenceKinds: readonly string[];
+  readonly operatorOnlyReasonCodes?: readonly string[];
+};
+
+type RouteDimensionCase = {
+  readonly name: string;
+  readonly payload: Record<string, unknown>;
+  readonly reasonCode: string;
+  readonly dimensions: readonly [string, unknown][];
+  readonly missingFields: readonly string[];
+  readonly requiredEvidenceKinds: readonly string[];
+  readonly operatorOnlyReasonCodes: readonly string[];
+};
+
+function routeDomainPayload(routeDomain: RouteRequiredEvidenceDomain): Record<string, unknown> {
+  return validAdmissionPayload({
+    domain: routeDomain.domain,
+    action: routeDomain.action,
+    downstreamSystem: routeDomain.downstreamSystem,
+    ...routeDomain.overrides,
+  });
+}
+
+function withoutField(
+  payload: Record<string, unknown>,
+  fieldName: string,
+  value: unknown,
+): Record<string, unknown> {
+  return {
+    ...payload,
+    [fieldName]: value,
+  };
+}
+
+const routeRequiredEvidenceDomains: readonly RouteRequiredEvidenceDomain[] = [
+  {
+    name: 'financial record',
+    domain: 'financial-record',
+    action: 'write_reconciliation_record',
+    downstreamSystem: 'finance-workflow',
+  },
+  {
+    name: 'money movement',
+    domain: 'money-movement',
+    action: 'issue_refund',
+    downstreamSystem: 'refund-service',
+  },
+  {
+    name: 'programmable money',
+    domain: 'programmable-money',
+    action: 'wallet_call',
+    downstreamSystem: 'wallet-rpc',
+    overrides: {
+      observedFeatures: {
+        adapterReady: true,
+      },
+      observedFeatureOrigins: {
+        adapterReady: 'operator-attested',
+      },
+    },
+  },
+  {
+    name: 'data disclosure',
+    domain: 'data-disclosure',
+    action: 'export_customer_package',
+    downstreamSystem: 'customer-export-service',
+    overrides: {
+      dataScope: {
+        records: 12,
+        classification: 'restricted',
+        fields: ['email', 'account_status'],
+      },
+    },
+  },
+  {
+    name: 'authority change',
+    domain: 'authority-change',
+    action: 'grant_admin_role',
+    downstreamSystem: 'identity-provider',
+    overrides: {
+      authorityMode: 'grant-role',
+    },
+  },
+  {
+    name: 'external communication',
+    domain: 'external-communication',
+    action: 'send_customer_notice',
+    downstreamSystem: 'notification-service',
+  },
+  {
+    name: 'regulated filing',
+    domain: 'regulated-filing',
+    action: 'prepare_regulated_notice',
+    downstreamSystem: 'filing-system',
+  },
+  {
+    name: 'system operation',
+    domain: 'system-operation',
+    action: 'deploy_service_change',
+    downstreamSystem: 'deployment-pipeline',
+  },
+];
+
+const routeRequiredEvidenceCases: readonly RouteRequiredEvidenceCase[] =
+  routeRequiredEvidenceDomains.flatMap((routeDomain) => {
+    const payload = routeDomainPayload(routeDomain);
+    return [
+      {
+        name: `${routeDomain.name} missing policy ref`,
+        domain: routeDomain.domain,
+        payload: withoutField(payload, 'policyRef', null),
+        reasonCode: 'policy-ref-missing',
+        missingFields: ['policyRef'],
+        requiredEvidenceKinds: ['policy_ref'],
+      },
+      {
+        name: `${routeDomain.name} missing evidence refs`,
+        domain: routeDomain.domain,
+        payload: withoutField(payload, 'evidenceRefs', []),
+        reasonCode: 'evidence-ref-missing',
+        missingFields: ['evidenceRefs'],
+        requiredEvidenceKinds: ['evidence_ref'],
+      },
+      {
+        name: `${routeDomain.name} missing authority source`,
+        domain: routeDomain.domain,
+        payload: {
+          ...payload,
+          authoritySources: [],
+          approvals: [],
+        },
+        reasonCode: 'authority-source-missing',
+        missingFields: ['authoritySources'],
+        requiredEvidenceKinds: ['trusted_authority_source_ref'],
+        operatorOnlyReasonCodes: ['authority-source-missing'],
+      },
+    ];
+  });
+
+const routeAdapterReadinessCases: readonly RouteDimensionCase[] = [
+  {
+    name: 'programmable money missing adapter readiness',
+    payload: validAdmissionPayload({
+      domain: 'programmable-money',
+      action: 'wallet_call',
+      downstreamSystem: 'wallet-rpc',
+    }),
+    reasonCode: 'adapter-readiness-missing',
+    dimensions: [
+      ['adapterReady', false],
+      ['adapterReadyObserved', false],
+      ['adapterReadyOrigin', null],
+    ],
+    missingFields: ['observedFeatures.adapterReady'],
+    requiredEvidenceKinds: ['adapter_readiness_ref'],
+    operatorOnlyReasonCodes: ['adapter-readiness-missing'],
+  },
+  {
+    name: 'programmable money caller-supplied adapter readiness',
+    payload: validAdmissionPayload({
+      domain: 'programmable-money',
+      action: 'wallet_call',
+      downstreamSystem: 'wallet-rpc',
+      observedFeatures: {
+        adapterReady: true,
+      },
+      observedFeatureOrigins: {
+        adapterReady: 'caller-supplied',
+      },
+    }),
+    reasonCode: 'adapter-readiness-origin-untrusted',
+    dimensions: [
+      ['adapterReady', false],
+      ['adapterReadyObserved', true],
+      ['adapterReadyOrigin', 'caller-supplied'],
+    ],
+    missingFields: ['observedFeatureOrigins.adapterReady'],
+    requiredEvidenceKinds: ['adapter_readiness_origin_ref'],
+    operatorOnlyReasonCodes: ['adapter-readiness-origin-untrusted'],
+  },
+];
+
 async function postAdmission(payload: Record<string, unknown>): Promise<GenericAdmissionEnvelope> {
   const app = createApp();
   const response = await app.request('/api/v1/admissions', {
@@ -561,6 +757,89 @@ async function testStructuredGuardCase(routeGuardCase: RouteGuardCase): Promise<
       `Generic admission guard matrix: ${routeGuardCase.guard} does not leak raw guard material`,
     );
     passed += 1;
+  }
+}
+
+function assertEnforceRouteHoldForReview(
+  body: GenericAdmissionEnvelope,
+  label: string,
+): void {
+  equal(body.mode, 'enforce', `Generic admission route invariants: ${label} stays in enforce mode`);
+  equal(body.shadowDecision, 'would_review', `Generic admission route invariants: ${label} shadows review`);
+  equal(body.downstreamPosture, 'hold-for-review', `Generic admission route invariants: ${label} holds downstream`);
+  equal(body.enforcementActive, true, `Generic admission route invariants: ${label} keeps enforcement active`);
+  equal(body.admission.decision, 'review', `Generic admission route invariants: ${label} returns review`);
+  equal(body.admission.allowed, false, `Generic admission route invariants: ${label} is not allowed`);
+  equal(body.admission.failClosed, true, `Generic admission route invariants: ${label} fails closed`);
+}
+
+async function testRequiredEvidenceRouteCase(routeCase: RouteRequiredEvidenceCase): Promise<void> {
+  const body = await postAdmission(routeCase.payload);
+  const dimensions = body.admission.request.policyScope.dimensions as Record<string, unknown>;
+
+  assertEnforceRouteHoldForReview(body, routeCase.name);
+  equal(
+    dimensions.domain,
+    routeCase.domain,
+    `Generic admission route invariants: ${routeCase.name} carries the domain dimension`,
+  );
+  ok(
+    body.admission.reasonCodes.includes(routeCase.reasonCode),
+    `Generic admission route invariants: ${routeCase.name} includes ${routeCase.reasonCode}`,
+  );
+  for (const missingField of routeCase.missingFields) {
+    ok(
+      body.admission.feedback.missingFields.includes(missingField),
+      `Generic admission route invariants: ${routeCase.name} feedback names ${missingField}`,
+    );
+  }
+  for (const requiredEvidenceKind of routeCase.requiredEvidenceKinds) {
+    ok(
+      body.admission.feedback.requiredEvidenceKinds.includes(requiredEvidenceKind),
+      `Generic admission route invariants: ${routeCase.name} feedback asks for ${requiredEvidenceKind}`,
+    );
+  }
+  for (const operatorReason of routeCase.operatorOnlyReasonCodes ?? []) {
+    ok(
+      body.admission.feedback.operatorOnlyReasonCodes.includes(operatorReason),
+      `Generic admission route invariants: ${routeCase.name} marks ${operatorReason} operator-only`,
+    );
+  }
+}
+
+async function testAdapterReadinessRouteCase(routeCase: RouteDimensionCase): Promise<void> {
+  const body = await postAdmission(routeCase.payload);
+  const dimensions = body.admission.request.policyScope.dimensions as Record<string, unknown>;
+
+  assertEnforceRouteHoldForReview(body, routeCase.name);
+  ok(
+    body.admission.reasonCodes.includes(routeCase.reasonCode),
+    `Generic admission route invariants: ${routeCase.name} includes ${routeCase.reasonCode}`,
+  );
+  for (const [dimension, expected] of routeCase.dimensions) {
+    equal(
+      dimensions[dimension],
+      expected,
+      `Generic admission route invariants: ${routeCase.name} carries ${dimension}`,
+    );
+  }
+  for (const missingField of routeCase.missingFields) {
+    ok(
+      body.admission.feedback.missingFields.includes(missingField),
+      `Generic admission route invariants: ${routeCase.name} feedback names ${missingField}`,
+    );
+  }
+  for (const requiredEvidenceKind of routeCase.requiredEvidenceKinds) {
+    ok(
+      body.admission.feedback.requiredEvidenceKinds.includes(requiredEvidenceKind),
+      `Generic admission route invariants: ${routeCase.name} feedback asks for ${requiredEvidenceKind}`,
+    );
+  }
+  for (const operatorReason of routeCase.operatorOnlyReasonCodes) {
+    ok(
+      body.admission.feedback.operatorOnlyReasonCodes.includes(operatorReason),
+      `Generic admission route invariants: ${routeCase.name} marks ${operatorReason} operator-only`,
+    );
   }
 }
 
@@ -631,6 +910,12 @@ async function testAgentLoopAbuseGuardCase(): Promise<void> {
 
 for (const routeGuardCase of routeGuardMatrix) {
   await testStructuredGuardCase(routeGuardCase);
+}
+for (const routeCase of routeRequiredEvidenceCases) {
+  await testRequiredEvidenceRouteCase(routeCase);
+}
+for (const routeCase of routeAdapterReadinessCases) {
+  await testAdapterReadinessRouteCase(routeCase);
 }
 await testAgentLoopAbuseGuardCase();
 

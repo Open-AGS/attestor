@@ -199,10 +199,10 @@ function testDocsExposeTheExampleWithoutOverclaiming(): void {
     integrationKitExampleScript,
     'Action surface example: integration kit package script is stable',
   );
-  includes(
+  excludes(
     readme,
-    '[Action surface onboarding packet](docs/02-architecture/action-surface-onboarding-packet.md) - start from existing metadata; hosted route: `POST /api/v1/shadow/action-surface/onboarding-packet`; supporting auto-context and integration-kit details stay inside this path.',
-    'Action surface example: README keeps one action-surface onboarding entry point',
+    /\[Action surface onboarding packet\]\(docs\/02-architecture\/action-surface-onboarding-packet\.md\)/u,
+    'Action surface example: README keeps action-surface onboarding behind the integration guide',
   );
   excludes(
     readme,

@@ -160,10 +160,10 @@ function testDocsAndScriptsStayAligned(): void {
     readonly scripts: Readonly<Record<string, string>>;
   };
 
-  includes(readme, '[Run the demos in order](docs/01-overview/demo-guide.md)', 'Golden paths evaluator README: links the guided demo path');
+  includes(readme, '[Run the local evaluation path](docs/01-overview/demo-guide.md)', 'Golden paths evaluator README: links the local evaluation path');
   includes(demoGuide, 'npm run demo:golden-paths', 'Golden paths evaluator guide: documents aggregate command');
   includes(demoGuide, 'Use this for the whole local picture in one command.', 'Golden paths evaluator guide: explains aggregate placement');
-  includes(demoGuide, 'The demos are synthetic and repo-side.', 'Golden paths evaluator guide: keeps local demo scope');
+  includes(demoGuide, 'This path is synthetic and repo-side.', 'Golden paths evaluator guide: keeps local evaluation scope');
   includes(
     ledger,
     'All Golden Paths Evaluator',

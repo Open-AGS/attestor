@@ -16,7 +16,7 @@ understand -> try -> integrate -> explain decisions -> verify claims -> maintain
 |---|---|
 | Understand the product in one minute | [Repository README](../README.md) |
 | Run the concrete refund workflow | [Try Attestor first](01-overview/try-attestor-first.md) |
-| Run all demos in order | [Run the demos in order](01-overview/demo-guide.md) |
+| Run the local evaluation path | [Run the local evaluation path](01-overview/demo-guide.md) |
 | See concrete use cases | [What you can do with Attestor](01-overview/what-you-can-do.md) |
 | Run a shadow pilot without an SDK | [Run Attestor in shadow pilot mode](01-overview/shadow-event-payload-examples.md) |
 | Put Attestor in front of a real service call | [How to integrate Attestor](01-overview/how-to-integrate-attestor.md) |

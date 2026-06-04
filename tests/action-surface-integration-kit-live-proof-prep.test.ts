@@ -268,10 +268,10 @@ function testDescriptorDocsPackageAndLinkText(): void {
 
   const readme = readProjectFile('README.md');
   const navigator = readProjectFile('docs', '01-overview', 'repository-navigator.md');
-  includes(
+  excludes(
     readme,
-    '[Review surface dashboard summary](docs/02-architecture/dashboard-api-summary.md)',
-    'README: review surface dashboard link text is standalone',
+    /\[Review surface dashboard summary\]\(docs\/02-architecture\/dashboard-api-summary\.md\)/u,
+    'README keeps review surface dashboard behind the repository navigator',
   );
   includes(
     navigator,

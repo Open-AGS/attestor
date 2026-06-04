@@ -8,11 +8,11 @@ npm run demo:golden-refund
 ```
 
 The demo renders the current Golden Path: Refund as Markdown by default. It
-uses synthetic, digest-only refund fixtures and shows how one AI-proposed refund
-action class can pass through:
+uses synthetic, digest-only refund fixtures and shows the compact evaluation
+shape:
 
 ```text
-refund action surface -> canonical shadow events -> runtime assurance smoke -> Policy Foundry summary -> pilot readiness packet -> Engine Visibility -> optional reviewer sandbox
+proposed refund -> Attestor decision -> proof refs -> downstream gate shape
 ```
 
 It does not execute a refund, call Stripe or Shopify, activate policy, write an

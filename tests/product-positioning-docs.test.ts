@@ -46,7 +46,7 @@ function testReadmeStartsWithAConcreteWorkflow(): void {
   includes(readme, '[DORA](https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A32022R2554)', 'Product docs: README keeps DORA as a bounded context anchor');
   includes(readme, 'These are not compliance claims.', 'Product docs: README explicitly avoids compliance overclaim');
   includes(readme, 'The repo demo is synthetic and shadow-only', 'Product docs: README keeps the refund demo no-claim visible');
-  includes(readme, '[Run the demos in order](docs/01-overview/demo-guide.md)', 'Product docs: README keeps the guided demo path visible');
+  includes(readme, '[Run the local evaluation path](docs/01-overview/demo-guide.md)', 'Product docs: README keeps the local evaluation path visible');
 }
 
 function testReadmeKeepsSingleEngineAndCustomerBoundary(): void {
@@ -79,7 +79,7 @@ function testReadmeKeepsDomainPacksAndLocalTruth(): void {
     includes(readme, pack, `Product docs: README names ${pack}`);
   }
 
-  includes(readme, '[Run the demos in order](docs/01-overview/demo-guide.md)', 'Product docs: README links the guided demo path early');
+  includes(readme, '[Run the local evaluation path](docs/01-overview/demo-guide.md)', 'Product docs: README links the local evaluation path early');
   includes(demoGuide, 'npm run demo:golden-data-export', 'Product docs: demo guide links the data golden path');
   includes(demoGuide, 'npm run demo:golden-authority-change', 'Product docs: demo guide links the authority golden path');
   includes(demoGuide, 'npm run demo:golden-external-communication', 'Product docs: demo guide links the communication golden path');
@@ -100,12 +100,12 @@ function testReadmeLinksTheRightDeeperDocsWithoutBecomingALinkWall(): void {
   includes(readme, 'Start light. Go deeper only when you need the detail.', 'Product docs: README keeps the first path lightweight');
   includes(readme, '[Try Attestor first](docs/01-overview/try-attestor-first.md) - run the smallest local refund path and see the decision trail.', 'Product docs: README links the first-run guide');
   includes(readme, '[How to integrate Attestor](docs/01-overview/how-to-integrate-attestor.md) - find the real side effect and place the customer-owned gate.', 'Product docs: README links the integration guide');
-  includes(readme, '[Action surface onboarding packet](docs/02-architecture/action-surface-onboarding-packet.md) - start from existing metadata; hosted route: `POST /api/v1/shadow/action-surface/onboarding-packet`; supporting auto-context and integration-kit details stay inside this path.', 'Product docs: README links one action-surface entry point');
+  excludes(readme, /\[Action surface onboarding packet\]\(docs\/02-architecture\/action-surface-onboarding-packet\.md\)/u, 'Product docs: README keeps action-surface onboarding behind the integration guide');
   includes(integrateDoc, '[Action surface integration kit buildout](../02-architecture/action-surface-integration-kit-buildout.md)', 'Product docs: integration guide links the review-only integration kit path');
   excludes(readme, /\[Action surface auto-context\]\(docs\/02-architecture\/action-surface-auto-context\.md\)/u, 'Product docs: README keeps action-surface support links behind the integration guide');
   excludes(readme, /\[Action surface integration kit buildout\]\(docs\/02-architecture\/action-surface-integration-kit-buildout\.md\)/u, 'Product docs: README keeps integration kit behind the integration guide');
   includes(readme, '[Run Attestor in shadow pilot mode](docs/01-overview/shadow-event-payload-examples.md) - send observe-mode examples before enforcing anything.', 'Product docs: README links shadow observe mode');
-  includes(readme, '[Consequence admission quickstart](docs/01-overview/consequence-admission-quickstart.md) - use the shared admission shape and decision vocabulary.', 'Product docs: README links the admission quickstart');
+  excludes(readme, /\[Consequence admission quickstart\]\(docs\/01-overview\/consequence-admission-quickstart\.md\)/u, 'Product docs: README keeps admission detail behind the integration guide and navigator');
   includes(readme, '[Repository navigator](docs/01-overview/repository-navigator.md) - find deeper docs for hosted, pricing, support, proof, or maintainer work.', 'Product docs: README routes deep docs through the navigator');
   includes(readme, '[License and use](docs/01-overview/license-and-use.md) and [Security Policy](SECURITY.md)', 'Product docs: README links use and security boundaries');
   excludes(readme, /\[Reason codes\]\(docs\/05-proof\/reason-codes\.md\)/u, 'Product docs: README keeps reason-code detail behind deeper docs');

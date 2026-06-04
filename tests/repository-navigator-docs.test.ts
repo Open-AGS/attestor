@@ -44,7 +44,7 @@ function testNavigatorKeepsFirstVisitorPaths(): void {
 
   for (const expected of [
     '[Try Attestor first](try-attestor-first.md)',
-    '[Run the demos in order](demo-guide.md)',
+    '[Run the local evaluation path](demo-guide.md)',
     '[How to integrate Attestor](how-to-integrate-attestor.md)',
     '[Docs index](../README.md)',
     '[README current state](../../README.md#current-state)',
@@ -65,12 +65,12 @@ function testNavigatorKeepsFirstVisitorPaths(): void {
   }
 
   for (const expected of [
-    '# Run The Demos In Order',
+    '# Run The Local Evaluation Path',
     '## 3. Pick The Action Class You Care About',
     'npm run demo:golden-refund',
     'npm run demo:golden-paths',
     'npm run example:non-bypassable-gateway',
-    'They do not prove live customer enforcement',
+    'It does not prove live customer enforcement',
   ]) {
     includes(demoGuide, expected, `Demo guide: records ${expected}`);
   }
@@ -164,7 +164,7 @@ function testDocsFrontDoorPullsReadersToTheNextAction(): void {
   includes(doc, '[Live proof register](audit/live-proof-register.md)', 'Docs front door: links live proof owner doc');
   includes(doc, '[How to integrate Attestor](01-overview/how-to-integrate-attestor.md)', 'Docs front door: links integration guide');
   includes(doc, '[Action surface onboarding packet](02-architecture/action-surface-onboarding-packet.md)', 'Docs front door: links the action-surface onboarding entry point');
-  includes(doc, '[Run the demos in order](01-overview/demo-guide.md)', 'Docs front door: links guided demo path');
+  includes(doc, '[Run the local evaluation path](01-overview/demo-guide.md)', 'Docs front door: links local evaluation path');
   includes(doc, '[Customer middleware examples](../examples/customer-middleware/README.md)', 'Docs front door: links middleware examples');
   includes(doc, '[Reason codes](05-proof/reason-codes.md)', 'Docs front door: links reason codes');
   includes(doc, '[License and use](01-overview/license-and-use.md)', 'Docs front door: links license-and-use guide');

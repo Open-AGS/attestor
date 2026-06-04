@@ -1,9 +1,9 @@
-# Run The Demos In Order
+# Run The Local Evaluation Path
 
-Use this as the demo hub. Run the refund first, then the all-pack sweep, then
-the integration-shape example closest to your system.
+Use this as the local evaluation path. Run the refund first, then the all-pack
+sweep, then the integration-shape example closest to your system.
 
-The demos are synthetic and repo-side. They do not call Stripe, Shopify,
+This path is synthetic and repo-side. It does not call Stripe, Shopify,
 warehouses, identity providers, deploy systems, wallets, banks, or customer
 production infrastructure.
 
@@ -57,13 +57,13 @@ customer application.
 | action-surface onboarding from an OpenAPI file | `npm run example:action-surface-onboarding` | [Action surface onboarding packet](../02-architecture/action-surface-onboarding-packet.md) |
 | integration kit review files from an OpenAPI file | `npm run example:action-surface-integration-kit` | [Action surface integration kit buildout](../02-architecture/action-surface-integration-kit-buildout.md) |
 
-## What These Demos Do Not Prove
+## What This Local Path Does Not Prove
 
-They do not prove live customer enforcement, customer PEP no-bypass,
+It does not prove live customer enforcement, customer PEP no-bypass,
 production readiness, external KMS signing, live settlement, live data export,
 or compliance.
 
-They prove the repo-side shape: proposed action, checks, outcome, reason codes,
+It proves the repo-side shape: proposed action, checks, outcome, reason codes,
 and proof references.
 
 ## Next

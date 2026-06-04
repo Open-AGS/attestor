@@ -35,7 +35,7 @@ safe step.
 The repo demo is synthetic and shadow-only. It does not call Stripe, Shopify, a
 bank, or a live customer deployment.
 
-[Run the demos in order](docs/01-overview/demo-guide.md)
+[Run the local evaluation path](docs/01-overview/demo-guide.md)
 
 ## Why This Matters Now
 
@@ -125,10 +125,6 @@ Pick the path that matches the job in front of you.
 
 - [Try Attestor first](docs/01-overview/try-attestor-first.md) - run the smallest local refund path and see the decision trail.
 - [How to integrate Attestor](docs/01-overview/how-to-integrate-attestor.md) - find the real side effect and place the customer-owned gate.
-- [Action surface onboarding packet](docs/02-architecture/action-surface-onboarding-packet.md) - start from existing metadata; hosted route: `POST /api/v1/shadow/action-surface/onboarding-packet`; supporting auto-context and integration-kit details stay inside this path.
 - [Run Attestor in shadow pilot mode](docs/01-overview/shadow-event-payload-examples.md) - send observe-mode examples before enforcing anything.
-- [Consequence admission quickstart](docs/01-overview/consequence-admission-quickstart.md) - use the shared admission shape and decision vocabulary.
-- [Customer admission gate](docs/01-overview/customer-admission-gate.md) - hold the real service call in the customer app, gateway, or middleware.
-- [Review surface dashboard summary](docs/02-architecture/dashboard-api-summary.md) - see the compact first-screen API and hosted review surface entry without raw event data or enforcement claims.
 - [Repository navigator](docs/01-overview/repository-navigator.md) - find deeper docs for hosted, pricing, support, proof, or maintainer work.
 - [License and use](docs/01-overview/license-and-use.md) and [Security Policy](SECURITY.md) - understand use boundaries and reporting.

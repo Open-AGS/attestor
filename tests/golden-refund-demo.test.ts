@@ -164,17 +164,17 @@ function testDocsAndScriptsStayAligned(): void {
     'refundService.issueRefund(...)',
     'stops it before the service runs',
     'manager approval is missing',
-    'that AI-prepared action can become a real refund call',
-    'The decision keeps the trail: proposed action, reason codes, evidence references, and proof references.',
-    '[Run the demos in order](docs/01-overview/demo-guide.md)',
-    'This repository demo is synthetic and shadow-only.',
-    'It does not call Stripe, Shopify, a bank, or a live customer deployment.',
+    'that AI-prepared request can become a real refund call',
+    'The trail remains: proposed request',
+    '[Run the local evaluation path](docs/01-overview/demo-guide.md)',
+    'The repo demo is synthetic and shadow-only.',
+    'bank, or a live customer deployment.',
   ]) {
     includes(readme, expected, `G07 README: records ${expected}`);
   }
   for (const expected of [
     'npm run demo:golden-refund',
-    'refund action surface -> canonical shadow events -> runtime assurance smoke -> Policy Foundry summary -> pilot readiness packet',
+    'proposed refund -> Attestor decision -> proof refs -> downstream gate shape',
     'Engine Visibility',
     'It does not execute a refund',
     'Business contrast',

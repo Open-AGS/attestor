@@ -39,7 +39,7 @@ do the next action there, and come back only if you still need more context.
 | If you are thinking... | Go here | Stop when... |
 |---|---|---|
 | "Show me what this does." | [Try Attestor first](try-attestor-first.md) | the refund demo runs and you can explain why it held or blocked. |
-| "Show me all demos in order." | [Run the demos in order](demo-guide.md) | you have run the refund path, the all-pack path, and the closest integration-shape example. |
+| "Show me the local evaluation path." | [Run the local evaluation path](demo-guide.md) | you have run the refund path, the all-pack path, and the closest integration-shape example. |
 | "Where do I put this in my app?" | [How to integrate Attestor](how-to-integrate-attestor.md) | you can point to the line before the real service is called. |
 | "Can Attestor infer my tools or APIs first?" | [Action surface onboarding packet](../02-architecture/action-surface-onboarding-packet.md) | you have one review packet and know the next reviewed metadata or gate-proof step. |
 | "What code do I copy?" | [Customer middleware examples](../../examples/customer-middleware/README.md) | you have the closest framework example open. |
@@ -61,7 +61,7 @@ do the next action there, and come back only if you still need more context.
 | I want to... | Start here | Then go to |
 |---|---|---|
 | Understand Attestor in one minute | [Repository README](../../README.md) | [Try Attestor first](try-attestor-first.md) |
-| Run the demo path | [Run the demos in order](demo-guide.md) | [Golden Path: Refund](../02-architecture/golden-refund-shadow-pilot.md) |
+| Run the local evaluation path | [Run the local evaluation path](demo-guide.md) | [Golden Path: Refund](../02-architecture/golden-refund-shadow-pilot.md) |
 | Send shadow events | [Run Attestor in shadow pilot mode](shadow-event-payload-examples.md) | [Customer middleware examples](../../examples/customer-middleware/README.md) |
 | Wire a customer app | [How to integrate Attestor](how-to-integrate-attestor.md) | [Customer middleware examples](../../examples/customer-middleware/README.md) |
 | Start from MCP, OpenAPI, AsyncAPI, workflow, or telemetry metadata | [Action surface onboarding packet](../02-architecture/action-surface-onboarding-packet.md) | follow the packet's next safe step. |
@@ -109,7 +109,7 @@ code or review public package boundaries.
 
 ## If You Are Lost
 
-1. Want to see value fast? Run [Try Attestor first](try-attestor-first.md), then [Run the demos in order](demo-guide.md).
+1. Want to see value fast? Run [Try Attestor first](try-attestor-first.md), then [Run the local evaluation path](demo-guide.md).
 2. Want to wire something? Open [How to integrate Attestor](how-to-integrate-attestor.md).
 3. Want to start from existing API, tool, workflow, or telemetry metadata? Open [Action surface onboarding packet](../02-architecture/action-surface-onboarding-packet.md).
 4. Want to explain a decision? Open [Reason codes](../05-proof/reason-codes.md).

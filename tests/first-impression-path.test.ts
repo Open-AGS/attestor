@@ -41,7 +41,8 @@ function testReadmeHasAPlainFirstThirtySeconds(): void {
   includes(readme, 'Attestor sits between an AI-prepared operation and the system that would execute it.', 'README: opens with plain placement language');
   includes(readme, 'Prompts guide. They do not enforce.', 'README: keeps the prompt-control contrast');
   includes(readme, 'Unsafe proposed requests can come from hallucination, stale context, poisoned', 'README: explains why a proposed request can be unsafe');
-  includes(readme, 'Hostile content still has to pass authority, scope, freshness, replay', 'README: names outside manipulation without overclaiming');
+  includes(readme, 'Hostile content, whether prompt injection, poisoned tool output, or a replayed', 'README: names outside manipulation without overclaiming');
+  includes(readme, 'When the customer-owned gate is in place, the downstream action stays behind', 'README: keeps the no-bypass posture tied to the customer gate');
   includes(readme, 'Every decision leaves a trail', 'README: shows that the decision stays reviewable');
   includes(readme, '## One Concrete Workflow', 'README: starts with one concrete workflow before abstract categories');
   includes(readme, 'Refund $8,750 to customer_123 for order_789.', 'README: shows one high-risk action immediately');

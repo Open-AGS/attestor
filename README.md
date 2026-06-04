@@ -13,8 +13,11 @@ A prompt cannot stop a refund service, export job, identity admin, deploy tool, 
 
 The stop point has to sit before execution: check the structured request,
 then return `admit`, `narrow`, `review`, or `block`.
-Hostile content still has to pass authority, scope, freshness, replay,
-and evidence checks before anything runs.
+Hostile content, whether prompt injection, poisoned tool output, or a replayed
+request, still has to pass authority, scope, freshness, replay, and evidence
+checks before anything runs.
+When the customer-owned gate is in place, the downstream action stays behind
+that decision.
 Every decision leaves a trail: what was proposed, what was checked, why it held
 or blocked, reason codes, and evidence/proof references.
 

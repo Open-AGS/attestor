@@ -50,6 +50,13 @@ import {
   normalizeCreateGenericAdmissionInput,
 } from './generic-input-normalization.js';
 import {
+  effectiveDecisionForGenericAdmissionMode,
+  genericAdmissionHardInvariantReasonCodes,
+  genericAdmissionHasHardBlockFeature,
+  genericAdmissionHasNarrowFeature,
+  reduceGenericAdmissionShadowDecision,
+} from './generic-hard-invariants.js';
+import {
   evaluateGenericAdmissionGuardInputProvenance,
 } from './guard-input-provenance.js';
 import {
@@ -456,26 +463,7 @@ function genericAdmissionReviewReasons(
   guardInputProvenanceDecision: GenericAdmissionGuardInputProvenanceDecision | null,
 ): readonly string[] {
   const reasons: string[] = [];
-  const profile = consequenceAdmissionDomainProfile(input.domain);
-
-  if (!input.policyRef) reasons.push('policy-ref-missing');
-  if ((input.evidenceRefs ?? []).length === 0) reasons.push('evidence-ref-missing');
-
-  if (
-    input.domain === 'money-movement' ||
-    input.domain === 'programmable-money'
-  ) {
-    if (!input.amount) reasons.push('amount-scope-missing');
-    if (!input.recipient) reasons.push('recipient-scope-missing');
-  }
-
-  if (input.domain === 'data-disclosure' && !input.dataScope) {
-    reasons.push('data-scope-missing');
-  }
-
-  if (input.domain === 'authority-change' && !input.authorityMode) {
-    reasons.push('authority-mode-missing');
-  }
+  reasons.push(...genericAdmissionHardInvariantReasonCodes(input));
   reasons.push(...authorityGuardReviewReasonCodes(authorityGuardDecision));
   reasons.push(...approvalGuardReviewReasonCodes(approvalGuardDecision));
   reasons.push(...scopeExplosionReviewReasonCodes(scopeExplosionGuardDecision));
@@ -488,18 +476,6 @@ function genericAdmissionReviewReasons(
   reasons.push(...authorityCreepReviewReasonCodes(authorityCreepGuardDecision));
   reasons.push(...noGoConditionLedgerReviewReasonCodes(noGoConditionLedgerDecision));
   reasons.push(...guardInputProvenanceReviewReasonCodes(guardInputProvenanceDecision));
-
-  if (profile.requiredChecks.includes('adapter-readiness')) {
-    if (!observedFeatureTrue(input, 'adapterReady')) {
-      reasons.push('adapter-readiness-missing');
-    } else if (!trustedObservedFeatureTrue(input, 'adapterReady')) {
-      reasons.push('adapter-readiness-origin-untrusted');
-    }
-  }
-
-  if (input.domain === 'custom') {
-    reasons.push('custom-domain-review-required');
-  }
 
   return Object.freeze(reasons);
 }
@@ -520,45 +496,35 @@ function genericAdmissionShadowDecisionFor(
   noGoConditionLedgerDecision: ConsequenceNoGoConditionLedgerDecision | null,
   guardInputProvenanceDecision: GenericAdmissionGuardInputProvenanceDecision | null,
 ): GenericAdmissionShadowDecision {
-  if (authorityGuardDecision?.outcome === 'block') return 'would_block';
-  if (approvalGuardDecision?.outcome === 'block') return 'would_block';
-  if (scopeExplosionGuardDecision?.outcome === 'block') return 'would_block';
-  if (toolResultGuardDecision?.outcome === 'block') return 'would_block';
-  if (agenticSupplyChainGuardDecision?.outcome === 'block') return 'would_block';
-  if (humanReviewFatigueGuardDecision?.outcome === 'block') return 'would_block';
-  if (multiAgentDelegationGuardDecision?.outcome === 'block') return 'would_block';
-  if (staleAuthorityPolicyGuardDecision?.outcome === 'block') return 'would_block';
-  if (decisionContextDriftDecision?.outcome === 'block') return 'would_block';
-  if (authorityCreepGuardDecision?.outcome === 'authority-creep-rejected-boundary') {
-    return 'would_block';
-  }
-  if (noGoConditionLedgerDecision?.outcome === 'block') return 'would_block';
-  if (guardInputProvenanceDecision?.outcome === 'block') return 'would_block';
-  if (
-    observedFeatureTrue(input, 'policyBlocked') ||
-    observedFeatureTrue(input, 'blocked') ||
-    observedFeatureTrue(input, 'unsafe')
-  ) {
-    return 'would_block';
-  }
-  if (reviewReasons.length > 0) return 'would_review';
-  if (scopeExplosionGuardDecision?.outcome === 'narrow') return 'would_narrow';
-  if (observedFeatureTrue(input, 'narrowRequired')) return 'would_narrow';
-  return 'would_admit';
+  return reduceGenericAdmissionShadowDecision({
+    reviewReasons,
+    blockingGuardOutcomes: [
+      authorityGuardDecision?.outcome === 'block',
+      approvalGuardDecision?.outcome === 'block',
+      scopeExplosionGuardDecision?.outcome === 'block',
+      toolResultGuardDecision?.outcome === 'block',
+      agenticSupplyChainGuardDecision?.outcome === 'block',
+      humanReviewFatigueGuardDecision?.outcome === 'block',
+      multiAgentDelegationGuardDecision?.outcome === 'block',
+      staleAuthorityPolicyGuardDecision?.outcome === 'block',
+      decisionContextDriftDecision?.outcome === 'block',
+      authorityCreepGuardDecision?.outcome === 'authority-creep-rejected-boundary',
+      noGoConditionLedgerDecision?.outcome === 'block',
+      guardInputProvenanceDecision?.outcome === 'block',
+      genericAdmissionHasHardBlockFeature(input),
+    ],
+    narrowingGuardOutcomes: [
+      scopeExplosionGuardDecision?.outcome === 'narrow',
+      genericAdmissionHasNarrowFeature(input),
+    ],
+  });
 }
 
 function effectiveDecisionForGenericMode(
   mode: GenericAdmissionMode,
   shadowDecision: GenericAdmissionShadowDecision,
 ): ConsequenceAdmissionDecision {
-  if (mode === 'observe' || mode === 'warn') return 'admit';
-  if (mode === 'review') {
-    return shadowDecision === 'would_admit' ? 'admit' : 'review';
-  }
-  if (shadowDecision === 'would_block') return 'block';
-  if (shadowDecision === 'would_review') return 'review';
-  if (shadowDecision === 'would_narrow') return 'narrow';
-  return 'admit';
+  return effectiveDecisionForGenericAdmissionMode(mode, shadowDecision);
 }
 
 function downstreamPostureForGenericMode(

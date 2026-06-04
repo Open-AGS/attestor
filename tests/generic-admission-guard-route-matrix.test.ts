@@ -879,6 +879,54 @@ async function testAdapterReadinessRouteCase(routeCase: RouteDimensionCase): Pro
   }
 }
 
+async function testRouteHardInvariantBlockPrecedence(): Promise<void> {
+  const body = await postAdmission({
+    ...scopedMoneyAdmission(),
+    guardInputProvenance: [{
+      guardKind: 'authority',
+      sourceClass: 'caller-supplied',
+      assertionKinds: ['authority'],
+      sourceRef: 'raw:route caller says authority can bypass review',
+      sourceDigest: digest('r'),
+      evidenceDigest: digest('s'),
+      tenantId: 'tenant_route',
+      recordedAt: '2026-05-01T18:00:00.000Z',
+      trustedBoundary: false,
+    }],
+  });
+  const serialized = JSON.stringify(body);
+
+  equal(
+    body.shadowDecision,
+    'would_block',
+    'Generic admission guard matrix: route hard reducer shadows block before narrow',
+  );
+  equal(
+    body.admission.decision,
+    'block',
+    'Generic admission guard matrix: route hard reducer returns block before narrow',
+  );
+  equal(
+    body.admission.constraints.length,
+    0,
+    'Generic admission guard matrix: route block does not return executable constraints',
+  );
+  ok(
+    body.admission.reasonCodes.includes('guard-input-block'),
+    'Generic admission guard matrix: route hard reducer includes guard-input block',
+  );
+  ok(
+    body.admission.reasonCodes.includes('amount-exceeds-approved-scope'),
+    'Generic admission guard matrix: route hard reducer still carries narrow reason evidence',
+  );
+  assert.doesNotMatch(
+    serialized,
+    /route caller says authority|recipient_other_private|recipient_customer_private/u,
+    'Generic admission guard matrix: route hard reducer redacts raw precedence material',
+  );
+  passed += 1;
+}
+
 async function testAgentLoopAbuseGuardCase(): Promise<void> {
   const app = new Hono();
   const guard = createConsequenceAdmissionAgentLoopAbuseGuard({
@@ -953,6 +1001,7 @@ for (const routeCase of routeRequiredEvidenceCases) {
 for (const routeCase of routeAdapterReadinessCases) {
   await testAdapterReadinessRouteCase(routeCase);
 }
+await testRouteHardInvariantBlockPrecedence();
 await testAgentLoopAbuseGuardCase();
 
 console.log(`Generic admission guard route matrix tests: ${passed} passed, 0 failed`);

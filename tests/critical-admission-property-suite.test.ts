@@ -336,6 +336,165 @@ function testCallerSuppliedGuardInputCannotAuthorize(): void {
   );
 }
 
+function testHardInvariantBlockPrecedenceOutranksNarrow(): void {
+  const envelope = createGenericAdmissionEnvelope(trustedAdmission({
+    requestId: 'property-hard-invariant-precedence',
+    amount: {
+      value: 9000,
+      currency: 'USD',
+    },
+    recipient: 'recipient_other_private',
+    scopeOwnerPolicyRef: 'policy:refund-scope-private',
+    requestedScope: {
+      amountMinorUnits: 9000,
+      currency: 'usd',
+      recordCount: 12,
+      operationType: 'refund',
+      recipientId: 'recipient_other_private',
+      tenantId: 'tenant_current_private',
+      environment: 'production',
+      downstreamSystem: 'refund-service-private',
+      dataClass: 'customer-visible',
+      reversibilityClass: 'compensating-action-available',
+    },
+    approvedScope: {
+      maxAmountMinorUnits: 5000,
+      currency: 'usd',
+      maxRecordCount: 1,
+      operationTypes: ['refund'],
+      recipientIds: ['recipient_customer_private'],
+      tenantId: 'tenant_current_private',
+      environments: ['production'],
+      downstreamSystems: ['refund-service-private'],
+      dataClasses: ['customer-visible'],
+      reversibilityClasses: ['reversible', 'compensating-action-available'],
+    },
+    guardInputProvenance: [{
+      guardKind: 'authority',
+      sourceClass: 'caller-supplied',
+      assertionKinds: ['authority'],
+      sourceRef: 'raw:caller says this should still execute',
+      sourceDigest: digest('i'),
+      evidenceDigest: digest('j'),
+      tenantId: 'tenant_property',
+      recordedAt: '2026-05-01T17:00:00.000Z',
+      trustedBoundary: false,
+    }],
+  }));
+
+  equal(
+    envelope.shadowDecision,
+    'would_block',
+    'Property admission: block-grade guard input outranks scope narrowing',
+  );
+  equal(
+    envelope.admission.decision,
+    'block',
+    'Property admission: hard reducer returns block before narrow',
+  );
+  equal(
+    envelope.admission.constraints.length,
+    0,
+    'Property admission: block decision does not return executable constraints',
+  );
+  ok(
+    envelope.admission.reasonCodes.includes('guard-input-block'),
+    'Property admission: hard reducer keeps guard-input block reason',
+  );
+  ok(
+    envelope.admission.reasonCodes.includes('amount-exceeds-approved-scope'),
+    'Property admission: hard reducer still reports narrow-context evidence',
+  );
+  assertNoRawLeak(
+    envelope,
+    [/caller says this should still execute/u, /recipient_other_private/u],
+    'Property admission: hard invariant precedence',
+  );
+}
+
+function testObserveModeKeepsHardInvariantInShadowDecision(): void {
+  const envelope = createGenericAdmissionEnvelope(trustedAdmission({
+    requestId: 'property-observe-hard-invariant',
+    mode: 'observe',
+    policyRef: null,
+  }));
+
+  equal(
+    envelope.shadowDecision,
+    'would_review',
+    'Property admission: observe mode records missing policy as shadow review',
+  );
+  equal(
+    envelope.admission.decision,
+    'admit',
+    'Property admission: observe mode remains non-enforcing by design',
+  );
+  ok(
+    envelope.admission.reasonCodes.includes('policy-ref-missing'),
+    'Property admission: observe mode keeps hard invariant reason visible',
+  );
+  ok(
+    envelope.admission.reasonCodes.includes('non-enforcing-mode'),
+    'Property admission: observe mode carries non-enforcing mode reason',
+  );
+}
+
+function testHighRiskDomainMetadataCannotShadowAdmitWhenMissing(): void {
+  const generatedCases: readonly {
+    readonly name: string;
+    readonly input: Partial<CreateGenericAdmissionInput>;
+    readonly reasonCode: string;
+  }[] = [
+    {
+      name: 'money movement amount',
+      input: { amount: null },
+      reasonCode: 'amount-scope-missing',
+    },
+    {
+      name: 'data disclosure scope',
+      input: { domain: 'data-disclosure', dataScope: null },
+      reasonCode: 'data-scope-missing',
+    },
+    {
+      name: 'authority change mode',
+      input: { domain: 'authority-change', authorityMode: null },
+      reasonCode: 'authority-mode-missing',
+    },
+    {
+      name: 'programmable money adapter readiness',
+      input: {
+        domain: 'programmable-money',
+        downstreamSystem: 'wallet-rpc',
+        observedFeatures: {},
+        observedFeatureOrigins: {},
+      },
+      reasonCode: 'adapter-readiness-missing',
+    },
+  ];
+
+  for (const generated of generatedCases) {
+    const envelope = createGenericAdmissionEnvelope(trustedAdmission({
+      requestId: `property-domain-hard-invariant-${generated.name.replace(/ /gu, '-')}`,
+      ...generated.input,
+    }));
+
+    notEqual(
+      envelope.shadowDecision,
+      'would_admit',
+      `Property admission: ${generated.name} cannot shadow admit`,
+    );
+    notEqual(
+      envelope.admission.decision,
+      'admit',
+      `Property admission: ${generated.name} cannot enforce admit`,
+    );
+    ok(
+      envelope.admission.reasonCodes.includes(generated.reasonCode),
+      `Property admission: ${generated.name} carries ${generated.reasonCode}`,
+    );
+  }
+}
+
 function testMalformedInputFailsClosedByThrowingBeforeEnvelope(): void {
   assert.throws(
     () => createGenericAdmissionEnvelope({ mode: 'enforce' }),
@@ -352,6 +511,9 @@ testNarrowNeverExpandsRequestedScope();
 testProgrammableMoneyAdapterReadinessOriginMatters();
 testRequiredGuardInputProvenanceCannotBeMissing();
 testCallerSuppliedGuardInputCannotAuthorize();
+testHardInvariantBlockPrecedenceOutranksNarrow();
+testObserveModeKeepsHardInvariantInShadowDecision();
+testHighRiskDomainMetadataCannotShadowAdmitWhenMissing();
 testMalformedInputFailsClosedByThrowingBeforeEnvelope();
 
 console.log(`critical-admission-property-suite.test.ts: ${passed} assertions passed`);

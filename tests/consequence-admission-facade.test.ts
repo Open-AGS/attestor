@@ -8,6 +8,7 @@ import {
   createConsequenceAdmissionFacadeResponse,
   consequenceAdmissionFacadeDescriptor,
   isConsequenceAdmissionFacadeSurface,
+  type ConsequenceAdmissionCheck,
   type ConsequenceAdmissionResponse,
   type FinancePipelineAdmissionRun,
 } from '../src/consequence-admission/index.js';
@@ -29,6 +30,22 @@ function equal<T>(actual: T, expected: T, message: string): void {
   assert.equal(actual, expected, message);
   passed += 1;
 }
+
+function checkLabel(
+  response: ConsequenceAdmissionResponse,
+  label: string,
+): ConsequenceAdmissionCheck {
+  const match = response.checks.find((entry) => entry.label === label);
+  assert.ok(match, `Expected ${label} check to exist`);
+  return match;
+}
+
+function reason(response: ConsequenceAdmissionResponse, value: string): boolean {
+  return response.reasonCodes.includes(value);
+}
+
+const digestA = `sha256:${'a'.repeat(64)}`;
+const digestB = `sha256:${'b'.repeat(64)}`;
 
 function financeRunFixture(
   overrides: Partial<FinancePipelineAdmissionRun> = {},
@@ -194,6 +211,130 @@ function testFinanceFacadeUsesFinanceProjection(): void {
   equal(response.nativeDecision?.value, 'pass', 'Facade: finance native value is preserved');
 }
 
+function testFinanceFacadeForwardsAuthorityGuardMetadata(): void {
+  const response = createConsequenceAdmissionFacadeResponse({
+    surface: 'finance-pipeline-run',
+    run: financeRunFixture(),
+    decidedAt: '2026-04-23T14:02:00.000Z',
+    requestInput: {
+      actorRef: 'actor:finance-agent',
+      reviewerRef: 'reviewer:controller',
+      authorityMode: 'dual-approval',
+      authoritySources: [
+        {
+          sourceKind: 'chat-message',
+          claimKind: 'authorization',
+          sourceRef: 'chat:finance-approval-thread',
+          trustClass: 'trusted-authority',
+          evidenceDigest: digestA,
+        },
+      ],
+    },
+  });
+
+  assertCanonicalResponse(response, 'review');
+  equal(response.allowed, false, 'Facade: forwarded untrusted authority is not allowed');
+  equal(response.failClosed, true, 'Facade: forwarded untrusted authority fails closed');
+  equal(
+    checkLabel(response, 'Finance authority-source guard').outcome,
+    'fail',
+    'Facade: finance authority guard runs through the facade',
+  );
+  ok(reason(response, 'finance-trust-guard-held'), 'Facade: guard hold is carried');
+  ok(
+    reason(response, 'untrusted-content-authority-source'),
+    'Facade: untrusted authority reason is carried',
+  );
+}
+
+function testFinanceFacadeForwardsApprovalGuardMetadata(): void {
+  const response = createConsequenceAdmissionFacadeResponse({
+    surface: 'finance-pipeline-run',
+    run: financeRunFixture({
+      release: {
+        filingExport: {
+          decisionId: 'release_decision_facade_approval_guard',
+          decisionStatus: 'accepted',
+          policyVersion: 'finance-policy-v1',
+          tokenId: 'release_token_facade_approval_guard',
+          expiresAt: '2026-04-23T15:00:00.000Z',
+        },
+      },
+    }),
+    decidedAt: '2026-04-23T14:02:00.000Z',
+    requestInput: {
+      actorRef: 'actor:finance-agent',
+      reviewerRef: 'reviewer:controller',
+      authorityMode: 'dual-approval',
+      approvals: [
+        {
+          approvalRef: 'approval:chat-thread',
+          sourceKind: 'chat-message',
+          state: 'approved',
+          sourceRef: 'chat:controller-thread',
+          reviewerRef: 'reviewer:finance-controller',
+          reviewerAuthorityDigest: digestA,
+          approvalDigest: digestB,
+          scopeDigest: digestA,
+          issuedAt: '2026-04-23T13:45:00.000Z',
+        },
+      ],
+    },
+  });
+
+  assertCanonicalResponse(response, 'review');
+  equal(response.allowed, false, 'Facade: forwarded chat approval is not allowed');
+  equal(
+    checkLabel(response, 'Finance approval provenance guard').outcome,
+    'fail',
+    'Facade: finance approval guard runs through the facade',
+  );
+  ok(
+    reason(response, 'approval-source-untrusted'),
+    'Facade: untrusted approval reason is carried',
+  );
+}
+
+function testFinanceFacadeForwardsToolResultGuardMetadata(): void {
+  const response = createConsequenceAdmissionFacadeResponse({
+    surface: 'finance-pipeline-run',
+    run: financeRunFixture(),
+    decidedAt: '2026-04-23T14:02:00.000Z',
+    requestInput: {
+      actorRef: 'actor:finance-agent',
+      reviewerRef: 'reviewer:controller',
+      authorityMode: 'dual-approval',
+      allowedToolResultEvidenceClasses: ['payment-record'],
+      toolResults: [
+        {
+          toolResultRef: 'tool-result:model-summary',
+          toolKind: 'provider-api',
+          sourceTrustClass: 'model-generated',
+          resultUse: 'authority',
+          sourceRef: 'provider:finance-summary',
+          sourceTimestamp: '2026-04-23T13:58:00.000Z',
+          integrityDigest: digestA,
+          evidenceDigest: digestB,
+          evidenceClass: 'payment-record',
+          toolRisk: 'high',
+        },
+      ],
+    },
+  });
+
+  assertCanonicalResponse(response, 'review');
+  equal(response.allowed, false, 'Facade: forwarded model-generated tool result is not allowed');
+  equal(
+    checkLabel(response, 'Finance tool-result guard').outcome,
+    'fail',
+    'Facade: finance tool-result guard runs through the facade',
+  );
+  ok(
+    reason(response, 'tool-result-model-generated-source'),
+    'Facade: model-generated tool-result reason is carried',
+  );
+}
+
 function testCryptoFacadeUsesPackageProjection(): void {
   const plan = cryptoPlanFixture({
     adapterKind: 'erc-4337-user-operation',
@@ -231,6 +372,9 @@ function testInvalidSurfaceFailsClosedBeforeGuessing(): void {
 
 testDescriptorKeepsOneExplicitFacade();
 testFinanceFacadeUsesFinanceProjection();
+testFinanceFacadeForwardsAuthorityGuardMetadata();
+testFinanceFacadeForwardsApprovalGuardMetadata();
+testFinanceFacadeForwardsToolResultGuardMetadata();
 testCryptoFacadeUsesPackageProjection();
 testInvalidSurfaceFailsClosedBeforeGuessing();
 

@@ -45,6 +45,8 @@ The point is not to create another proof format for its own sake. The point is t
 
 Executable body material must be supplied as a digest reference such as `sha256:...`. If raw request body material is placed in `bodyDigest`, binding creation rejects it, and presentation evaluation holds fail-closed rather than treating raw material as proof.
 
+An `admission-receipt` may be carried as admission evidence, but it is not required or counted as execution proof.
+
 ## Freshness Nonce Boundary
 
 For high-impact presentations, the enforcement point should use an

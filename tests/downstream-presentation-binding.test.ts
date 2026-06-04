@@ -133,6 +133,65 @@ function admittedPayment(): ConsequenceAdmissionResponse {
   });
 }
 
+function admittedPaymentWithReceiptAndReleaseToken(): ConsequenceAdmissionResponse {
+  return createConsequenceAdmissionResponse({
+    request: paymentRequest(),
+    decidedAt: '2026-05-01T12:00:01.000Z',
+    decision: 'admit',
+    reason: 'Payment consequence passed admission checks with receipt and release proof.',
+    reasonCodes: ['payment-admitted'],
+    checks: [
+      passCheck('policy'),
+      passCheck('authority'),
+      passCheck('evidence'),
+      passCheck('freshness'),
+      passCheck('enforcement'),
+    ],
+    proof: [
+      {
+        kind: 'admission-receipt',
+        id: 'generic-admission:payment-receipt',
+        digest: 'sha256:payment-receipt',
+        uri: null,
+        verifyHint: 'This proves Attestor produced an admission response, not downstream execution authority.',
+      },
+      {
+        kind: 'release-token',
+        id: 'rt_payment_presentation',
+        digest: 'sha256:token',
+        uri: null,
+        verifyHint: 'Verify the release token before dispatch.',
+      },
+    ],
+  });
+}
+
+function receiptOnlyPayment(): ConsequenceAdmissionResponse {
+  return createConsequenceAdmissionResponse({
+    request: paymentRequest(),
+    decidedAt: '2026-05-01T12:00:01.500Z',
+    decision: 'admit',
+    reason: 'Payment consequence has an admission receipt only.',
+    reasonCodes: ['payment-admission-receipt-only'],
+    checks: [
+      passCheck('policy'),
+      passCheck('authority'),
+      passCheck('evidence'),
+      passCheck('freshness'),
+      passCheck('enforcement'),
+    ],
+    proof: [
+      {
+        kind: 'admission-receipt',
+        id: 'generic-admission:payment-receipt-only',
+        digest: 'sha256:payment-receipt-only',
+        uri: null,
+        verifyHint: 'This proves Attestor produced an admission response, not downstream execution authority.',
+      },
+    ],
+  });
+}
+
 const RAW_NARROW_CONSTRAINT_ID = 'constraint:max-amount';
 const RAW_NARROW_CONSTRAINT_SUMMARY =
   'private-policy-threshold: payment amount must not exceed 250 EUR.';
@@ -723,6 +782,80 @@ function testNarrowPresentationRequiresConstraintAcknowledgement(): void {
   );
 }
 
+function testAdmissionReceiptIsNotRequiredAsExecutionProofRef(): void {
+  const admission = admittedPaymentWithReceiptAndReleaseToken();
+  const binding = createConsequenceAdmissionPresentationBinding({
+    admission,
+    contract: paymentContract(),
+    target: {
+      uri: 'https://payments.example.internal/supplier-payments',
+      method: 'POST',
+      bodyDigest: 'sha256:payment-body',
+    },
+    replayKey: 'payment:tenant_a:invoice_1938:attempt_release_only',
+    nonce: 'nonce:payment-adapter:001',
+    presentedAt: '2026-05-01T12:00:05.000Z',
+    expiresAt: '2026-05-01T12:01:05.000Z',
+    proofRefIds: ['rt_payment_presentation'],
+  });
+  const decision = evaluateConsequenceAdmissionPresentationBinding({
+    admission,
+    contract: paymentContract(),
+    presentation: binding,
+    expected: EXPECTED,
+    now: '2026-05-01T12:00:30.000Z',
+  });
+
+  equal(
+    decision.outcome,
+    'allow',
+    'Presentation binding: release-token proof ref allows without requiring admission receipt ref',
+  );
+  equal(
+    decision.downstreamDecision.proofSatisfied,
+    true,
+    'Presentation binding: downstream execution proof is satisfied by the release token',
+  );
+  equal(
+    decision.failureReasons.includes('proof-ref-missing'),
+    false,
+    'Presentation binding: admission receipt is not required as execution proof ref',
+  );
+}
+
+function testReceiptOnlyPresentationStillHoldsAtDownstreamContract(): void {
+  const admission = receiptOnlyPayment();
+  const binding = paymentBinding(admission);
+  const decision = evaluateConsequenceAdmissionPresentationBinding({
+    admission,
+    contract: paymentContract(),
+    presentation: binding,
+    expected: EXPECTED,
+    now: '2026-05-01T12:00:30.000Z',
+  });
+
+  equal(
+    decision.outcome,
+    'hold',
+    'Presentation binding: receipt-only admission still holds',
+  );
+  deepEqual(
+    decision.failureReasons,
+    ['downstream-contract-held'],
+    'Presentation binding: receipt-only proof is held by the downstream contract',
+  );
+  deepEqual(
+    decision.downstreamDecision.failureReasons,
+    ['proof-missing'],
+    'Presentation binding: downstream contract names the missing execution proof',
+  );
+  equal(
+    decision.failureReasons.includes('proof-ref-missing'),
+    false,
+    'Presentation binding: receipt-only proof is not misclassified as a missing execution proof ref',
+  );
+}
+
 function testDocsAndScriptsExposePresentationBinding(): void {
   const readme = readProjectFile('README.md');
   const navigator = readProjectFile('docs', '01-overview', 'repository-navigator.md');
@@ -789,6 +922,11 @@ function testDocsAndScriptsExposePresentationBinding(): void {
     'Presentation binding: doc states nested downstream constraint refs are digest-only',
   );
   includes(
+    bindingDoc,
+    'An `admission-receipt` may be carried as admission evidence, but it is not required or counted as execution proof.',
+    'Presentation binding: doc states admission receipts are not execution proof refs',
+  );
+  includes(
     contractDoc,
     '[Downstream presentation binding](downstream-presentation-binding.md)',
     'Presentation binding: downstream contract doc links presentation binding',
@@ -812,6 +950,8 @@ testTargetBodyAndNonceMustMatch();
 testAttestorIssuedFreshnessNonceCanBindPresentation();
 testRawBodyDigestMaterialIsRejected();
 testNarrowPresentationRequiresConstraintAcknowledgement();
+testAdmissionReceiptIsNotRequiredAsExecutionProofRef();
+testReceiptOnlyPresentationStillHoldsAtDownstreamContract();
 testDocsAndScriptsExposePresentationBinding();
 
 console.log(`Downstream presentation binding tests: ${passed} passed, 0 failed`);

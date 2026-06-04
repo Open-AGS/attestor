@@ -464,6 +464,15 @@ function proofRefIdsFor(admission: ConsequenceAdmissionResponse): readonly strin
   return Object.freeze(admission.proof.map((proof) => proof.id).sort());
 }
 
+function executionProofRefIdsFor(admission: ConsequenceAdmissionResponse): readonly string[] {
+  return Object.freeze(
+    admission.proof
+      .filter((proof) => proof.kind !== 'admission-receipt')
+      .map((proof) => proof.id)
+      .sort(),
+  );
+}
+
 function requiredProofIdsMissing(input: {
   readonly admission: ConsequenceAdmissionResponse;
   readonly contract: ConsequenceAdmissionDownstreamContract;
@@ -472,7 +481,7 @@ function requiredProofIdsMissing(input: {
   if (!input.contract.requireProof) return false;
   if (!input.admission.allowed) return false;
   const presented = new Set(input.presentation.proofRefIds);
-  return input.admission.proof.some((proof) => !presented.has(proof.id));
+  return executionProofRefIdsFor(input.admission).some((proofId) => !presented.has(proofId));
 }
 
 function requiredConstraintIdsMissing(input: {

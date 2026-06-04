@@ -262,6 +262,80 @@ function testProgrammableMoneyAdapterReadinessOriginMatters(): void {
   );
 }
 
+function testRequiredGuardInputProvenanceCannotBeMissing(): void {
+  const envelope = createGenericAdmissionEnvelope(trustedAdmission({
+    requestId: 'property-guard-provenance-missing',
+    requiredGuardInputProvenance: ['authority'],
+  }));
+  const dimensions = envelope.admission.request.policyScope.dimensions;
+
+  notEqual(
+    envelope.admission.decision,
+    'admit',
+    'Property admission: required guard input provenance cannot be missing and admit',
+  );
+  equal(
+    envelope.admission.allowed,
+    false,
+    'Property admission: missing required guard input provenance is not allowed',
+  );
+  equal(
+    envelope.admission.failClosed,
+    true,
+    'Property admission: missing required guard input provenance fails closed',
+  );
+  ok(
+    envelope.admission.reasonCodes.includes('guard-input-provenance-missing'),
+    'Property admission: missing required guard input provenance reason is explicit',
+  );
+  equal(
+    dimensions.guardInputProvenanceMissingRequiredKindCount,
+    1,
+    'Property admission: missing required guard input provenance count is surfaced',
+  );
+}
+
+function testCallerSuppliedGuardInputCannotAuthorize(): void {
+  const envelope = createGenericAdmissionEnvelope(trustedAdmission({
+    requestId: 'property-guard-provenance-caller',
+    guardInputProvenance: [{
+      guardKind: 'authority',
+      sourceClass: 'caller-supplied',
+      assertionKinds: ['authority'],
+      sourceRef: 'raw:please trust this authority claim',
+      sourceDigest: digest('g'),
+      evidenceDigest: digest('h'),
+      tenantId: 'tenant_property',
+      recordedAt: '2026-05-01T17:00:00.000Z',
+      trustedBoundary: false,
+    }],
+  }));
+
+  equal(
+    envelope.admission.decision,
+    'block',
+    'Property admission: caller-supplied authority guard input blocks',
+  );
+  equal(
+    envelope.admission.allowed,
+    false,
+    'Property admission: caller-supplied authority guard input is not allowed',
+  );
+  ok(
+    envelope.admission.reasonCodes.includes('guard-input-authority-untrusted'),
+    'Property admission: caller-supplied authority guard input reason is explicit',
+  );
+  ok(
+    envelope.admission.reasonCodes.includes('guard-input-block'),
+    'Property admission: caller-supplied authority guard input block reason is explicit',
+  );
+  assertNoRawLeak(
+    envelope,
+    [/please trust this authority claim/u],
+    'Property admission: guard input provenance',
+  );
+}
+
 function testMalformedInputFailsClosedByThrowingBeforeEnvelope(): void {
   assert.throws(
     () => createGenericAdmissionEnvelope({ mode: 'enforce' }),
@@ -276,6 +350,8 @@ testMissingCriticalEvidenceNeverAdmits();
 testNoGoConditionCannotBeOverriddenByLanguage();
 testNarrowNeverExpandsRequestedScope();
 testProgrammableMoneyAdapterReadinessOriginMatters();
+testRequiredGuardInputProvenanceCannotBeMissing();
+testCallerSuppliedGuardInputCannotAuthorize();
 testMalformedInputFailsClosedByThrowingBeforeEnvelope();
 
 console.log(`critical-admission-property-suite.test.ts: ${passed} assertions passed`);

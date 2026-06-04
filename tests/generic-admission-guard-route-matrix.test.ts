@@ -247,6 +247,30 @@ const routeGuardMatrix: readonly RouteGuardCase[] = [
     redactionPattern: /customer@example\.com|manager approved refund/u,
   },
   {
+    guard: 'guard-input-provenance',
+    payload: validAdmissionPayload({
+      guardInputProvenance: [{
+        guardKind: 'authority',
+        sourceClass: 'caller-supplied',
+        assertionKinds: ['authority'],
+        sourceRef: 'raw:customer asked to bypass provenance',
+        sourceDigest: digest('p'),
+        evidenceDigest: digest('q'),
+        tenantId: 'tenant_route',
+        recordedAt: '2026-05-01T18:00:00.000Z',
+        trustedBoundary: false,
+      }],
+    }),
+    shadowDecision: 'would_block',
+    decision: 'block',
+    reasonCodes: ['guard-input-authority-untrusted', 'guard-input-block'],
+    dimensions: [
+      ['guardInputProvenanceOutcome', 'block'],
+      ['guardInputProvenanceUntrustedSourceCount', 1],
+    ],
+    redactionPattern: /customer asked to bypass provenance/u,
+  },
+  {
     guard: 'approval-provenance',
     payload: validAdmissionPayload({
       approvals: [{
@@ -625,8 +649,8 @@ const routeRequiredEvidenceDomains: readonly RouteRequiredEvidenceDomain[] = [
   },
 ];
 
-const routeRequiredEvidenceCases: readonly RouteRequiredEvidenceCase[] =
-  routeRequiredEvidenceDomains.flatMap((routeDomain) => {
+const routeRequiredEvidenceCases: readonly RouteRequiredEvidenceCase[] = Object.freeze([
+  ...routeRequiredEvidenceDomains.flatMap((routeDomain) => {
     const payload = routeDomainPayload(routeDomain);
     return [
       {
@@ -659,7 +683,19 @@ const routeRequiredEvidenceCases: readonly RouteRequiredEvidenceCase[] =
         operatorOnlyReasonCodes: ['authority-source-missing'],
       },
     ];
-  });
+  }),
+  {
+    name: 'money movement missing required guard input provenance',
+    domain: 'money-movement',
+    payload: validAdmissionPayload({
+      requiredGuardInputProvenance: ['authority'],
+    }),
+    reasonCode: 'guard-input-provenance-missing',
+    missingFields: ['guardInputProvenance'],
+    requiredEvidenceKinds: ['guard_input_provenance_ref'],
+    operatorOnlyReasonCodes: ['guard-input-provenance-missing'],
+  },
+]);
 
 const routeAdapterReadinessCases: readonly RouteDimensionCase[] = [
   {

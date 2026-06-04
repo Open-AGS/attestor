@@ -17,6 +17,9 @@ import type {
 import {
   GENERIC_ADMISSION_MODES,
   GENERIC_ADMISSION_OBSERVED_FEATURE_ORIGINS,
+  GENERIC_ADMISSION_GUARD_INPUT_ASSERTION_KINDS,
+  GENERIC_ADMISSION_GUARD_INPUT_KINDS,
+  GENERIC_ADMISSION_GUARD_INPUT_SOURCE_CLASSES,
   CONSEQUENCE_ADMISSION_RETRY_ATTEMPT_VERSION,
   type ConsequenceAdmissionRetryAttemptBinding,
   type CreateConsequenceAdmissionRetryAttemptBindingInput,
@@ -31,6 +34,10 @@ import {
   type GenericAdmissionDecisionContextBindingContext,
   type GenericAdmissionDecisionContextDrift,
   type GenericAdmissionFeatureValue,
+  type GenericAdmissionGuardInputAssertionKind,
+  type GenericAdmissionGuardInputKind,
+  type GenericAdmissionGuardInputProvenanceRecord,
+  type GenericAdmissionGuardInputSourceClass,
   type GenericAdmissionHumanReviewFatigue,
   type GenericAdmissionMultiAgentDelegation,
   type GenericAdmissionMultiAgentDelegationPrincipal,
@@ -861,6 +868,88 @@ function normalizeGenericObservedFeatureOrigins(
   return Object.freeze(normalized);
 }
 
+function normalizeGenericGuardInputAssertionKinds(
+  value: unknown,
+  fieldName: string,
+): readonly GenericAdmissionGuardInputAssertionKind[] {
+  if (!Array.isArray(value)) {
+    throw new Error(`Consequence admission ${fieldName} must be an array.`);
+  }
+  const normalized = value.map((entry, index) => normalizeEnumValue(
+    typeof entry === 'string' ? entry : String(entry),
+    GENERIC_ADMISSION_GUARD_INPUT_ASSERTION_KINDS,
+    `${fieldName}[${index}]`,
+  ));
+  const unique = [...new Set(normalized)].sort() as GenericAdmissionGuardInputAssertionKind[];
+  if (unique.length === 0) {
+    throw new Error(`Consequence admission ${fieldName} must not be empty.`);
+  }
+  return Object.freeze(unique);
+}
+
+function normalizeGenericGuardInputProvenance(
+  value: unknown,
+): readonly GenericAdmissionGuardInputProvenanceRecord[] {
+  if (value === undefined || value === null) return Object.freeze([]);
+  if (!Array.isArray(value)) {
+    throw new Error('Consequence admission guardInputProvenance must be an array when provided.');
+  }
+  return Object.freeze(
+    value.map((entry, index) => {
+      const field = `guardInputProvenance[${index}]`;
+      if (!isRecord(entry)) {
+        throw new Error(`Consequence admission ${field} must be an object.`);
+      }
+      const sourceRef = readOptionalString(entry, 'sourceRef');
+      const sourceDigest = readOptionalString(entry, 'sourceDigest');
+      const evidenceDigest = readOptionalString(entry, 'evidenceDigest');
+      const tenantId = readOptionalString(entry, 'tenantId');
+      const recordedAt = readOptionalTimestamp(entry, 'recordedAt');
+      const trustedBoundary = readOptionalBoolean(entry, 'trustedBoundary');
+
+      return Object.freeze({
+        guardKind: normalizeEnumValue(
+          readRequiredString(entry, 'guardKind'),
+          GENERIC_ADMISSION_GUARD_INPUT_KINDS,
+          `${field}.guardKind`,
+        ) as GenericAdmissionGuardInputKind,
+        sourceClass: normalizeEnumValue(
+          readRequiredString(entry, 'sourceClass'),
+          GENERIC_ADMISSION_GUARD_INPUT_SOURCE_CLASSES,
+          `${field}.sourceClass`,
+        ) as GenericAdmissionGuardInputSourceClass,
+        assertionKinds: normalizeGenericGuardInputAssertionKinds(
+          entry.assertionKinds,
+          `${field}.assertionKinds`,
+        ),
+        ...(sourceRef === null ? {} : { sourceRef }),
+        ...(sourceDigest === null ? {} : { sourceDigest }),
+        ...(evidenceDigest === null ? {} : { evidenceDigest }),
+        ...(tenantId === null ? {} : { tenantId }),
+        ...(recordedAt === null ? {} : { recordedAt }),
+        ...(trustedBoundary === null ? {} : { trustedBoundary }),
+      });
+    }),
+  );
+}
+
+function normalizeRequiredGuardInputProvenance(
+  value: unknown,
+): readonly GenericAdmissionGuardInputKind[] {
+  if (value === undefined || value === null) return Object.freeze([]);
+  if (!Array.isArray(value)) {
+    throw new Error(
+      'Consequence admission requiredGuardInputProvenance must be an array when provided.',
+    );
+  }
+  const normalized = value.map((entry, index) => normalizeEnumValue(
+    typeof entry === 'string' ? entry : String(entry),
+    GENERIC_ADMISSION_GUARD_INPUT_KINDS,
+    `requiredGuardInputProvenance[${index}]`,
+  ));
+  return Object.freeze([...new Set(normalized)].sort() as GenericAdmissionGuardInputKind[]);
+}
+
 function normalizeGenericAuthoritySources(
   value: unknown,
 ): readonly GenericAdmissionAuthoritySource[] {
@@ -1168,6 +1257,10 @@ export function normalizeCreateGenericAdmissionInput(input: unknown): CreateGene
     staleAuthorityPolicy: normalizeGenericStaleAuthorityPolicy(input.staleAuthorityPolicy),
     decisionContextDrift: normalizeGenericDecisionContextDrift(input.decisionContextDrift),
     authorityCreep: normalizeGenericAuthorityCreep(input.authorityCreep),
+    guardInputProvenance: normalizeGenericGuardInputProvenance(input.guardInputProvenance),
+    requiredGuardInputProvenance: normalizeRequiredGuardInputProvenance(
+      input.requiredGuardInputProvenance,
+    ),
     noGoLedgerRef: readOptionalString(input, 'noGoLedgerRef'),
     noGoConditions: normalizeGenericNoGoConditions(input.noGoConditions),
     noGoNaturalLanguageBypassAttempted: readOptionalBoolean(

@@ -19,6 +19,7 @@ import {
   GENERIC_ADMISSION_APPROVAL_GUARD_REASON_CODES,
   GENERIC_ADMISSION_AUTHORITY_GUARD_REASON_CODES,
   GENERIC_ADMISSION_DECISION_CONTEXT_DRIFT_REASON_CODES,
+  GENERIC_ADMISSION_GUARD_INPUT_PROVENANCE_REASON_CODES,
   GENERIC_ADMISSION_HUMAN_REVIEW_FATIGUE_REASON_CODES,
   GENERIC_ADMISSION_MULTI_AGENT_DELEGATION_REASON_CODES,
   GENERIC_ADMISSION_NO_GO_REASON_CODES,
@@ -35,6 +36,7 @@ import {
   type CreateGenericAdmissionInput,
   type GenericAdmissionDownstreamPosture,
   type GenericAdmissionEnvelope,
+  type GenericAdmissionGuardInputProvenanceDecision,
   type GenericAdmissionMode,
   type GenericAdmissionModeEvaluation,
   type GenericAdmissionObservedFeatureOrigin,
@@ -47,6 +49,9 @@ import {
 import {
   normalizeCreateGenericAdmissionInput,
 } from './generic-input-normalization.js';
+import {
+  evaluateGenericAdmissionGuardInputProvenance,
+} from './guard-input-provenance.js';
 import {
   evaluateConsequenceHumanReviewFatigue,
   type ConsequenceHumanReviewFatigueDecision,
@@ -413,6 +418,28 @@ function noGoConditionLedgerReviewReasonCodes(
   return Object.freeze([...decision.reasonCodes]);
 }
 
+function genericAdmissionGuardInputProvenanceDecisionFor(
+  input: CreateGenericAdmissionInput,
+): GenericAdmissionGuardInputProvenanceDecision | null {
+  const records = input.guardInputProvenance ?? [];
+  const requiredGuardKinds = input.requiredGuardInputProvenance ?? [];
+  if (records.length === 0 && requiredGuardKinds.length === 0) return null;
+  return evaluateGenericAdmissionGuardInputProvenance({
+    generatedAt: input.decidedAt ?? input.requestedAt ?? null,
+    actionSurface: input.domain,
+    action: input.action,
+    records,
+    requiredGuardKinds,
+  });
+}
+
+function guardInputProvenanceReviewReasonCodes(
+  decision: GenericAdmissionGuardInputProvenanceDecision | null,
+): readonly string[] {
+  if (decision === null || decision.outcome === 'pass') return Object.freeze([]);
+  return Object.freeze([...decision.reasonCodes]);
+}
+
 function genericAdmissionReviewReasons(
   input: CreateGenericAdmissionInput,
   authorityGuardDecision: ConsequenceUntrustedContentAuthorityDecision | null,
@@ -426,6 +453,7 @@ function genericAdmissionReviewReasons(
   decisionContextDriftDecision: ConsequenceDecisionContextDriftDecision | null,
   authorityCreepGuardDecision: AuthorityCreepGuardRecord | null,
   noGoConditionLedgerDecision: ConsequenceNoGoConditionLedgerDecision | null,
+  guardInputProvenanceDecision: GenericAdmissionGuardInputProvenanceDecision | null,
 ): readonly string[] {
   const reasons: string[] = [];
   const profile = consequenceAdmissionDomainProfile(input.domain);
@@ -459,6 +487,7 @@ function genericAdmissionReviewReasons(
   reasons.push(...decisionContextDriftReviewReasonCodes(decisionContextDriftDecision));
   reasons.push(...authorityCreepReviewReasonCodes(authorityCreepGuardDecision));
   reasons.push(...noGoConditionLedgerReviewReasonCodes(noGoConditionLedgerDecision));
+  reasons.push(...guardInputProvenanceReviewReasonCodes(guardInputProvenanceDecision));
 
   if (profile.requiredChecks.includes('adapter-readiness')) {
     if (!observedFeatureTrue(input, 'adapterReady')) {
@@ -489,6 +518,7 @@ function genericAdmissionShadowDecisionFor(
   decisionContextDriftDecision: ConsequenceDecisionContextDriftDecision | null,
   authorityCreepGuardDecision: AuthorityCreepGuardRecord | null,
   noGoConditionLedgerDecision: ConsequenceNoGoConditionLedgerDecision | null,
+  guardInputProvenanceDecision: GenericAdmissionGuardInputProvenanceDecision | null,
 ): GenericAdmissionShadowDecision {
   if (authorityGuardDecision?.outcome === 'block') return 'would_block';
   if (approvalGuardDecision?.outcome === 'block') return 'would_block';
@@ -503,6 +533,7 @@ function genericAdmissionShadowDecisionFor(
     return 'would_block';
   }
   if (noGoConditionLedgerDecision?.outcome === 'block') return 'would_block';
+  if (guardInputProvenanceDecision?.outcome === 'block') return 'would_block';
   if (
     observedFeatureTrue(input, 'policyBlocked') ||
     observedFeatureTrue(input, 'blocked') ||
@@ -599,6 +630,8 @@ function createGenericAdmissionEvaluation(
   const authorityCreepGuardDecision =
     genericAdmissionAuthorityCreepGuardDecisionFor(input);
   const noGoConditionLedgerDecision = genericAdmissionNoGoConditionLedgerDecisionFor(input);
+  const guardInputProvenanceDecision =
+    genericAdmissionGuardInputProvenanceDecisionFor(input);
   const reviewReasons = genericAdmissionReviewReasons(
     input,
     authorityGuardDecision,
@@ -612,6 +645,7 @@ function createGenericAdmissionEvaluation(
     decisionContextDriftDecision,
     authorityCreepGuardDecision,
     noGoConditionLedgerDecision,
+    guardInputProvenanceDecision,
   );
   const shadowDecision = genericAdmissionShadowDecisionFor(
     input,
@@ -627,6 +661,7 @@ function createGenericAdmissionEvaluation(
     decisionContextDriftDecision,
     authorityCreepGuardDecision,
     noGoConditionLedgerDecision,
+    guardInputProvenanceDecision,
   );
   const effectiveDecision = effectiveDecisionForGenericMode(input.mode, shadowDecision);
   const downstreamPosture = downstreamPostureForGenericMode(input.mode, effectiveDecision);
@@ -661,6 +696,7 @@ function createGenericAdmissionEvaluation(
     decisionContextDriftDecision,
     authorityCreepGuardDecision,
     noGoConditionLedgerDecision,
+    guardInputProvenanceDecision,
   });
 }
 
@@ -682,8 +718,14 @@ function reasonCodesForCheck(
         reason === 'policy-digest-drift' ||
         reason === 'authority-creep-finding:policy-activation-requested' ||
         reason === 'authority-creep-finding:lineage-policy-activation-requested' ||
+        reason === 'guard-input-policy-untrusted' ||
+        reason === 'guard-input-provenance-missing' ||
         GENERIC_ADMISSION_SCOPE_EXPLOSION_REASON_CODES.has(reason) ||
-        GENERIC_ADMISSION_NO_GO_REASON_CODES.has(reason);
+        GENERIC_ADMISSION_NO_GO_REASON_CODES.has(reason) ||
+        (
+          GENERIC_ADMISSION_GUARD_INPUT_PROVENANCE_REASON_CODES.has(reason) &&
+          reason.includes('policy')
+        );
     }
     if (kind === 'authority') {
       return (reason.startsWith('authority-') &&
@@ -695,7 +737,11 @@ function reasonCodesForCheck(
         reason === 'supply-chain-review-missing' ||
         GENERIC_ADMISSION_MULTI_AGENT_DELEGATION_REASON_CODES.has(reason) ||
         GENERIC_ADMISSION_AUTHORITY_GUARD_REASON_CODES.has(reason) ||
-        GENERIC_ADMISSION_APPROVAL_GUARD_REASON_CODES.has(reason);
+        GENERIC_ADMISSION_APPROVAL_GUARD_REASON_CODES.has(reason) ||
+        reason === 'guard-input-source-untrusted' ||
+        reason === 'guard-input-authority-untrusted' ||
+        reason === 'guard-input-provenance-missing' ||
+        reason === 'guard-input-block';
     }
     if (kind === 'evidence') {
       return reason.startsWith('evidence-') ||
@@ -707,7 +753,12 @@ function reasonCodesForCheck(
         GENERIC_ADMISSION_TOOL_RESULT_REASON_CODES.has(reason) ||
         GENERIC_ADMISSION_AGENTIC_SUPPLY_CHAIN_REASON_CODES.has(reason) ||
         GENERIC_ADMISSION_HUMAN_REVIEW_FATIGUE_REASON_CODES.has(reason) ||
-        GENERIC_ADMISSION_DECISION_CONTEXT_DRIFT_REASON_CODES.has(reason);
+        GENERIC_ADMISSION_DECISION_CONTEXT_DRIFT_REASON_CODES.has(reason) ||
+        reason === 'guard-input-source-untrusted' ||
+        reason === 'guard-input-digest-missing' ||
+        reason === 'guard-input-evidence-untrusted' ||
+        reason === 'guard-input-provenance-missing' ||
+        reason === 'guard-input-review';
     }
     if (kind === 'enforcement') {
       return reason === 'non-enforcing-mode' ||
@@ -735,7 +786,8 @@ function reasonCodesForCheck(
         reason === 'decision-context-expired' ||
         reason === 'decision-context-age-exceeded' ||
         reason === 'simulation-refresh-required' ||
-        reason === 'simulation-digest-missing';
+        reason === 'simulation-digest-missing' ||
+        reason === 'guard-input-timestamp-missing';
     }
     return false;
   });
@@ -775,6 +827,9 @@ function createGenericAdmissionChecks(
               ...(evaluation.approvalGuardDecision !== null
                 ? [evaluation.approvalGuardDecision.digest]
                 : []),
+              ...(evaluation.guardInputProvenanceDecision !== null
+                ? [evaluation.guardInputProvenanceDecision.digest]
+                : []),
               ...(evaluation.multiAgentDelegationGuardDecision !== null
                 ? [evaluation.multiAgentDelegationGuardDecision.digest]
                 : []),
@@ -793,6 +848,9 @@ function createGenericAdmissionChecks(
                 ...(evaluation.decisionContextDriftDecision !== null
                   ? [evaluation.decisionContextDriftDecision.digest]
                   : []),
+                ...(evaluation.guardInputProvenanceDecision !== null
+                  ? [evaluation.guardInputProvenanceDecision.digest]
+                  : []),
                 ...(evaluation.authorityCreepGuardDecision !== null &&
                 evaluation.authorityCreepGuardDecision.findings.some((finding) =>
                   finding.includes('policy-activation'))
@@ -804,6 +862,10 @@ function createGenericAdmissionChecks(
               ...(evaluation.decisionContextDriftDecision !== null &&
               (kind === 'evidence' || kind === 'freshness')
                 ? [evaluation.decisionContextDriftDecision.digest]
+                : []),
+              ...(evaluation.guardInputProvenanceDecision !== null &&
+              (kind === 'evidence' || kind === 'freshness')
+                ? [evaluation.guardInputProvenanceDecision.digest]
                 : []),
               ...(evaluation.humanReviewFatigueGuardDecision !== null && kind === 'evidence'
                 ? [evaluation.humanReviewFatigueGuardDecision.digest]
@@ -1062,6 +1124,24 @@ function genericAdmissionDimensions(
       evaluation.authorityCreepGuardDecision?.opensUndercuttingDefeater ?? false,
     authorityCreepRejectedBoundary:
       evaluation.authorityCreepGuardDecision?.outcome === 'authority-creep-rejected-boundary',
+    guardInputProvenanceOutcome:
+      evaluation.guardInputProvenanceDecision?.outcome ?? null,
+    guardInputProvenanceDigest:
+      evaluation.guardInputProvenanceDecision?.digest ?? null,
+    guardInputProvenanceRecordCount:
+      evaluation.guardInputProvenanceDecision?.counts.recordCount ?? 0,
+    guardInputProvenanceRequiredKindCount:
+      evaluation.guardInputProvenanceDecision?.counts.requiredKindCount ?? 0,
+    guardInputProvenanceMissingRequiredKindCount:
+      evaluation.guardInputProvenanceDecision?.counts.missingRequiredKindCount ?? 0,
+    guardInputProvenanceUntrustedSourceCount:
+      evaluation.guardInputProvenanceDecision?.counts.untrustedSourceCount ?? 0,
+    guardInputProvenanceMissingDigestCount:
+      evaluation.guardInputProvenanceDecision?.counts.missingDigestCount ?? 0,
+    guardInputProvenanceMissingTimestampCount:
+      evaluation.guardInputProvenanceDecision?.counts.missingTimestampCount ?? 0,
+    guardInputProvenanceMissingTenantCount:
+      evaluation.guardInputProvenanceDecision?.counts.missingTenantCount ?? 0,
   });
 }
 

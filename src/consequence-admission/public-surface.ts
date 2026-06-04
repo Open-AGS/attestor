@@ -163,6 +163,7 @@ export * from './scope-explosion-guard.js';
 export * from './human-review-fatigue-guard.js';
 export * from './agentic-supply-chain-guard.js';
 export * from './multi-agent-delegation-guard.js';
+export * from './guard-input-provenance.js';
 export * from './decision-context-drift-binding.js';
 export * from './no-go-condition-ledger.js';
 export * from './escape-hatch-telemetry.js';

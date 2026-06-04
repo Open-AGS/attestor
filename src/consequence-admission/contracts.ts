@@ -216,6 +216,9 @@ export const CONSEQUENCE_ADMISSION_RETRY_RULE_VERSION =
 export const CONSEQUENCE_ADMISSION_CORRECTION_CATALOG_VERSION =
   'attestor.consequence-admission-correction-catalog.v1';
 
+export const GENERIC_ADMISSION_GUARD_INPUT_PROVENANCE_VERSION =
+  'attestor.generic-admission-guard-input-provenance.v1';
+
 export const CONSEQUENCE_ADMISSION_RETRY_DEFAULT_MAX_ATTEMPTS = 2;
 export const CONSEQUENCE_ADMISSION_RETRY_DEFAULT_WINDOW_SECONDS = 300;
 
@@ -255,6 +258,79 @@ ReadonlySet<GenericAdmissionObservedFeatureOrigin> = new Set([
   'trusted-adapter',
 ]);
 
+export const GENERIC_ADMISSION_GUARD_INPUT_KINDS = [
+  'authority',
+  'policy',
+  'evidence',
+  'freshness',
+  'tenant',
+  'scope',
+  'approval',
+  'replay',
+  'tool-result',
+  'adapter-readiness',
+  'no-go',
+  'decision-context',
+] as const;
+export type GenericAdmissionGuardInputKind =
+  typeof GENERIC_ADMISSION_GUARD_INPUT_KINDS[number];
+
+export const GENERIC_ADMISSION_GUARD_INPUT_SOURCE_CLASSES = [
+  'caller-supplied',
+  'model-generated',
+  'tool-output',
+  'operator-attested',
+  'customer-gateway',
+  'attestor-runtime',
+  'trusted-adapter',
+  'policy-store',
+  'evidence-store',
+  'approval-workflow',
+  'identity-provider',
+] as const;
+export type GenericAdmissionGuardInputSourceClass =
+  typeof GENERIC_ADMISSION_GUARD_INPUT_SOURCE_CLASSES[number];
+
+export const GENERIC_ADMISSION_TRUSTED_GUARD_INPUT_SOURCE_CLASSES:
+ReadonlySet<GenericAdmissionGuardInputSourceClass> = new Set([
+  'operator-attested',
+  'customer-gateway',
+  'attestor-runtime',
+  'trusted-adapter',
+  'policy-store',
+  'evidence-store',
+  'approval-workflow',
+  'identity-provider',
+]);
+
+export const GENERIC_ADMISSION_GUARD_INPUT_ASSERTION_KINDS =
+  GENERIC_ADMISSION_GUARD_INPUT_KINDS;
+export type GenericAdmissionGuardInputAssertionKind =
+  typeof GENERIC_ADMISSION_GUARD_INPUT_ASSERTION_KINDS[number];
+
+export const GENERIC_ADMISSION_GUARD_INPUT_PROVENANCE_OUTCOMES = [
+  'pass',
+  'review',
+  'block',
+] as const;
+export type GenericAdmissionGuardInputProvenanceOutcome =
+  typeof GENERIC_ADMISSION_GUARD_INPUT_PROVENANCE_OUTCOMES[number];
+
+export const GENERIC_ADMISSION_GUARD_INPUT_PROVENANCE_REASON_CODE_VALUES = [
+  'guard-input-provenance-missing',
+  'guard-input-source-untrusted',
+  'guard-input-digest-missing',
+  'guard-input-timestamp-missing',
+  'guard-input-tenant-missing',
+  'guard-input-authority-untrusted',
+  'guard-input-policy-untrusted',
+  'guard-input-evidence-untrusted',
+  'guard-input-review',
+  'guard-input-block',
+] as const;
+export type GenericAdmissionGuardInputProvenanceReasonCode =
+  typeof GENERIC_ADMISSION_GUARD_INPUT_PROVENANCE_REASON_CODE_VALUES[number];
+
 export const GENERIC_ADMISSION_AUTHORITY_GUARD_REASON_CODES:
 ReadonlySet<string> = new Set(CONSEQUENCE_UNTRUSTED_CONTENT_AUTHORITY_REASON_CODES);
 
@@ -281,6 +357,9 @@ ReadonlySet<string> = new Set(CONSEQUENCE_HUMAN_REVIEW_FATIGUE_REASON_CODES);
 
 export const GENERIC_ADMISSION_MULTI_AGENT_DELEGATION_REASON_CODES:
 ReadonlySet<string> = new Set(CONSEQUENCE_MULTI_AGENT_DELEGATION_REASON_CODES);
+
+export const GENERIC_ADMISSION_GUARD_INPUT_PROVENANCE_REASON_CODES:
+ReadonlySet<string> = new Set(GENERIC_ADMISSION_GUARD_INPUT_PROVENANCE_REASON_CODE_VALUES);
 
 export const GENERIC_ADMISSION_SHADOW_DECISIONS = [
   'would_admit',
@@ -818,6 +897,67 @@ export type GenericAdmissionDecisionContextBindingContext =
 export type GenericAdmissionDecisionContextDrift =
   Omit<EvaluateConsequenceDecisionContextDriftInput, 'generatedAt' | 'actionSurface' | 'action'>;
 
+export interface GenericAdmissionGuardInputProvenanceRecord {
+  readonly guardKind: GenericAdmissionGuardInputKind;
+  readonly sourceClass: GenericAdmissionGuardInputSourceClass;
+  readonly assertionKinds: readonly GenericAdmissionGuardInputAssertionKind[];
+  readonly sourceRef?: string | null;
+  readonly sourceDigest?: string | null;
+  readonly evidenceDigest?: string | null;
+  readonly tenantId?: string | null;
+  readonly recordedAt?: string | null;
+  readonly trustedBoundary?: boolean | null;
+}
+
+export interface GenericAdmissionGuardInputProvenanceObservedRecord {
+  readonly guardKind: GenericAdmissionGuardInputKind;
+  readonly sourceClass: GenericAdmissionGuardInputSourceClass;
+  readonly assertionKinds: readonly GenericAdmissionGuardInputAssertionKind[];
+  readonly sourceRefDigest?: string;
+  readonly sourceDigest?: string;
+  readonly evidenceDigest?: string;
+  readonly tenantIdDigest?: string;
+  readonly recordedAt?: string;
+  readonly trustedBoundary: boolean;
+  readonly outcome: GenericAdmissionGuardInputProvenanceOutcome;
+  readonly reasonCodes: readonly GenericAdmissionGuardInputProvenanceReasonCode[];
+}
+
+export interface GenericAdmissionGuardInputProvenanceDecision {
+  readonly version: typeof GENERIC_ADMISSION_GUARD_INPUT_PROVENANCE_VERSION;
+  readonly generatedAt: string;
+  readonly actionSurface?: string;
+  readonly action?: string;
+  readonly outcome: GenericAdmissionGuardInputProvenanceOutcome;
+  readonly allowed: boolean;
+  readonly failClosed: boolean;
+  readonly reasonCodes: readonly GenericAdmissionGuardInputProvenanceReasonCode[];
+  readonly failureModeId: 'guard-input-provenance';
+  readonly protectedPrinciples: readonly [
+    'proof integrity',
+    'customer authority',
+    'auditability',
+  ];
+  readonly counts: {
+    readonly recordCount: number;
+    readonly requiredKindCount: number;
+    readonly missingRequiredKindCount: number;
+    readonly trustedSourceCount: number;
+    readonly untrustedSourceCount: number;
+    readonly missingDigestCount: number;
+    readonly missingTimestampCount: number;
+    readonly missingTenantCount: number;
+  };
+  readonly missingRequiredGuardKinds: readonly GenericAdmissionGuardInputKind[];
+  readonly observedRecords: readonly GenericAdmissionGuardInputProvenanceObservedRecord[];
+  readonly rawPayloadStored: false;
+  readonly productionReady: false;
+  readonly activatesEnforcement: false;
+  readonly limitation: string;
+  readonly canonical: string;
+  readonly digest: string;
+}
+
 export type GenericAdmissionAgenticSupplyChainComponent =
   ConsequenceAgenticSupplyChainComponent;
 
@@ -885,6 +1025,10 @@ export interface CreateGenericAdmissionInput {
   readonly staleAuthorityPolicy?: GenericAdmissionStaleAuthorityPolicy | null;
   readonly decisionContextDrift?: GenericAdmissionDecisionContextDrift | null;
   readonly authorityCreep?: GenericAdmissionAuthorityCreep | null;
+  readonly guardInputProvenance?:
+    readonly GenericAdmissionGuardInputProvenanceRecord[];
+  readonly requiredGuardInputProvenance?:
+    readonly GenericAdmissionGuardInputKind[];
   readonly noGoLedgerRef?: string | null;
   readonly noGoConditions?: readonly GenericAdmissionNoGoCondition[] | null;
   readonly noGoNaturalLanguageBypassAttempted?: boolean | null;
@@ -916,6 +1060,8 @@ export interface GenericAdmissionModeEvaluation {
   readonly decisionContextDriftDecision: ConsequenceDecisionContextDriftDecision | null;
   readonly authorityCreepGuardDecision: AuthorityCreepGuardRecord | null;
   readonly noGoConditionLedgerDecision: ConsequenceNoGoConditionLedgerDecision | null;
+  readonly guardInputProvenanceDecision:
+    GenericAdmissionGuardInputProvenanceDecision | null;
 }
 
 export interface GenericAdmissionEnvelope {

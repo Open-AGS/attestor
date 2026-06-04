@@ -45,7 +45,9 @@ do the next action there, and come back only if you still need more context.
 | "What code do I copy?" | [Customer middleware examples](../../examples/customer-middleware/README.md) | you have the closest framework example open. |
 | "What JSON do I send?" | [Run Attestor in shadow pilot mode](shadow-event-payload-examples.md) | you have copied the closest payload shape for your action class. |
 | "What holds the real service call?" | [Customer admission gate](customer-admission-gate.md) | you know how the customer-owned gate holds observe, warn, review, block, missing-proof, and fail-closed outcomes. |
+| "What binds one allowed decision to this exact downstream call?" | [Downstream presentation binding](../02-architecture/downstream-presentation-binding.md) | you understand target, body digest, replay key, nonce, freshness, proof, and constraint acknowledgement at the customer edge. |
 | "What does the reviewer see?" | [Review surface dashboard summary](../02-architecture/dashboard-api-summary.md) | you understand the compact review surface without treating it as enforcement. |
+| "How do we test that hostile language or evidence does not become authority?" | [Adversarial evidence fixtures](../02-architecture/adversarial-evidence-fixtures.md) | you understand the synthetic review-only fixture bundle and its no-authority boundary. |
 | "Why did it review or block?" | [Reason codes](../05-proof/reason-codes.md) | you understand the reason code and the next safe step. |
 | "What is proven today?" | [README current state](../../README.md#current-state) | you can separate repo-side evidence from live proof. |
 | "What still needs real deployment evidence?" | [Live proof register](../audit/live-proof-register.md) | you know which proof is live/customer/operator-only. |

@@ -725,6 +725,7 @@ function testNarrowPresentationRequiresConstraintAcknowledgement(): void {
 
 function testDocsAndScriptsExposePresentationBinding(): void {
   const readme = readProjectFile('README.md');
+  const navigator = readProjectFile('docs', '01-overview', 'repository-navigator.md');
   const bindingDoc = readProjectFile('docs', '02-architecture', 'downstream-presentation-binding.md');
   const contractDoc = readProjectFile('docs', '02-architecture', 'downstream-enforcement-contract.md');
   const systemOverview = readProjectFile('docs', '02-architecture', 'system-overview.md');
@@ -734,8 +735,13 @@ function testDocsAndScriptsExposePresentationBinding(): void {
 
   includes(
     readme,
-    'docs/02-architecture/downstream-presentation-binding.md',
-    'Presentation binding: README links presentation binding doc',
+    '[Repository navigator](docs/01-overview/repository-navigator.md)',
+    'Presentation binding: README routes deeper proof docs through the navigator',
+  );
+  includes(
+    navigator,
+    '[Downstream presentation binding](../02-architecture/downstream-presentation-binding.md)',
+    'Presentation binding: repository navigator links presentation binding doc',
   );
   includes(
     bindingDoc,

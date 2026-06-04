@@ -66,7 +66,7 @@ function testNavigatorKeepsFirstVisitorPaths(): void {
 
   for (const expected of [
     '# Run The Local Evaluation Path',
-    '## 3. Pick The Action Class You Care About',
+    '## 4. Pick The Action Class You Care About',
     'npm run demo:golden-refund',
     'npm run demo:golden-paths',
     'npm run example:non-bypassable-gateway',

@@ -145,6 +145,7 @@ function testDescriptorDocsAndPackageSurfaceStayAligned(): void {
   const docs = readProjectFile('docs', '02-architecture', 'adversarial-evidence-fixtures.md');
   const systemOverview = readProjectFile('docs', '02-architecture', 'system-overview.md');
   const readme = readProjectFile('README.md');
+  const navigator = readProjectFile('docs', '01-overview', 'repository-navigator.md');
   const researchIndex = readProjectFile('docs', 'research', 'README.md');
   const researchLedger = readProjectFile('docs', 'research', 'attestor-research-provenance-ledger.md');
   const baseline = readProjectFile('docs', 'audit', 'current-posture-baseline.md');
@@ -183,8 +184,13 @@ function testDescriptorDocsAndPackageSurfaceStayAligned(): void {
   );
   includes(
     readme,
-    '[Adversarial evidence fixtures](docs/02-architecture/adversarial-evidence-fixtures.md)',
-    'README links adversarial evidence fixtures',
+    '[Repository navigator](docs/01-overview/repository-navigator.md)',
+    'README routes deeper adversarial evidence docs through the navigator',
+  );
+  includes(
+    navigator,
+    '[Adversarial evidence fixtures](../02-architecture/adversarial-evidence-fixtures.md)',
+    'Repository navigator links adversarial evidence fixtures',
   );
   includes(
     researchIndex,

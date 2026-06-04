@@ -88,6 +88,8 @@ function testExamplesAreGenericObserveModeAdmissions(): void {
 function testDocsExplainTheCorrectBoundary(): void {
   includes(doc, '# Run Attestor In Shadow Pilot Mode', 'Docs use the shadow pilot title');
   includes(doc, 'Run Attestor in shadow pilot mode - and map what your AI agents are trying to', 'Docs carry the shadow pilot value line');
+  includes(doc, "Most organisations don't have a clear picture of what their AI agents are", 'Docs carry the shadow pilot top-of-page context line');
+  includes(doc, 'picture before you enforce anything.', 'Docs keep the observe-before-enforce framing visible');
   includes(doc, '## Minimal First Payload', 'Docs give first integrators a minimal payload shape');
   includes(doc, 'Start with one proposed consequence in observe mode.', 'Docs teach the first payload entry point');
   includes(doc, 'Then choose the closest validated example below', 'Docs direct readers from the minimal shape to validated examples');

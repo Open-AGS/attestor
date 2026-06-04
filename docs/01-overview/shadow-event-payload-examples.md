@@ -3,6 +3,10 @@
 Run Attestor in shadow pilot mode - and map what your AI agents are trying to
 do in the shadow of your systems.
 
+Most organisations don't have a clear picture of what their AI agents are
+actually attempting inside their systems. Shadow pilot mode gives you that
+picture before you enforce anything.
+
 Part of: [How to integrate Attestor](how-to-integrate-attestor.md)
 
 Use this when you want event-shaped data before an SDK or full integration.

@@ -1,19 +1,31 @@
 # Run The Local Evaluation Path
 
-Use this as the local evaluation path. Run the refund first, then the all-pack
-sweep, then the integration-shape example closest to your system.
+Use this as the local evaluation path. Write the local evaluation package first,
+then open the refund, all-pack sweep, or integration-shape example closest to
+your system.
 
 This path is synthetic and repo-side. It does not call Stripe, Shopify,
 warehouses, identity providers, deploy systems, wallets, banks, or customer
 production infrastructure.
 
-## 1. Start With The Refund
+## 1. Write The Local Evaluation Package
+
+Use this for one local folder with the human summary, decision trail, refund
+path, and no-claim boundary.
+
+```bash
+npm ci
+npm run evaluate:local
+```
+
+The default artifact root is `.attestor/evaluation/latest`.
+
+## 2. Start With The Refund
 
 Shortest path: one AI-prepared refund, checked before the refund service can
 run.
 
 ```bash
-npm ci
 npm run demo:golden-refund
 npm run demo:golden-refund -- --json
 ```
@@ -21,7 +33,7 @@ npm run demo:golden-refund -- --json
 Stop when you can explain the action, the stop reason, the proof references,
 and why no live refund ran.
 
-## 2. Run All Action Classes
+## 3. Run All Action Classes
 
 Use this for the whole local picture in one command.
 
@@ -32,7 +44,7 @@ npm run demo:golden-paths -- --json
 
 Stop when you can name the six action classes and the risk each one represents.
 
-## 3. Pick The Action Class You Care About
+## 4. Pick The Action Class You Care About
 
 | Demo | What it shows | Run | Read |
 |---|---|---|---|
@@ -43,7 +55,7 @@ Stop when you can name the six action classes and the risk each one represents.
 | Operational execution | deploys, rollbacks, secret rotations, infrastructure changes | `npm run demo:golden-operational-execution` | [Golden Path: Operational Execution](../02-architecture/golden-operational-execution-shadow-pilot.md) |
 | Programmable money | wallet, Safe, account-abstraction, or settlement actions | `npm run demo:golden-programmable-money` | [Golden Path: Programmable Money](../02-architecture/golden-programmable-money-shadow-pilot.md) |
 
-## 4. See The Integration Shape
+## 5. See The Integration Shape
 
 These examples are smaller than an SDK. They show where the check sits in a
 customer application.

@@ -43,10 +43,17 @@ tokens, prompts, payloads, or customer data.
   token-use consumption.
 - `src/consequence-admission/customer-gate.ts` consumes a proven
   release-enforcement result before allowing a downstream gate to proceed.
+- `src/consequence-admission/controlled-data-export-gate.ts` evaluates a
+  digest-bound export intent against the release-enforcement customer gate,
+  downstream contract, tenant/action/target binding, and approved data scope.
 - `src/release-kernel/release-introspection.ts` provides active-token
   introspection and token-use consumption.
 - `docs/02-architecture/protected-admission-e2e-proof-plan.md` remains the
   broader proof-plan source for customer PEP and live-proof blockers.
+- `tests/data-movement-full-consequence-engine-proof-m02a.test.ts` locks the
+  route-to-PEP decision proof.
+- `tests/data-movement-full-consequence-engine-proof-m02b.test.ts` locks the
+  PEP-to-export-gate and proof-packet proof.
 
 ## M02 Scope
 
@@ -89,6 +96,43 @@ PEP decision
 The sandbox gate must be small but real. It must check the Attestor decision,
 token/proof reference, tenant, scope, and action intent before emitting any
 export result.
+
+M02B binds the final export intent to the admission by requiring the digest of
+the export intent to appear in `admission.request.nativeInputRefs`. The proof
+packet records scope digests, field digests, release-enforcement metadata,
+downstream-contract outcome, receipt metadata, and no-claim flags. It does not
+store raw release tokens, sender proofs, field names, recipient refs, raw
+payloads, provider bodies, or rows.
+
+The M02B gate can emit:
+
+```text
+executed
+narrowed
+held-for-review
+blocked
+```
+
+`narrowed` means only the approved record cap and approved field subset are
+reflected in the executed scope digest. It does not mean the gate can widen a
+scope, grant authority, or skip constraints.
+
+## M02B Source Anchors
+
+Reviewed on 2026-06-05:
+
+- OAuth DPoP RFC 9449 anchors sender-constrained proof and proof replay
+  handling: [RFC 9449](https://www.rfc-editor.org/rfc/rfc9449.html).
+- OAuth Token Introspection RFC 7662 anchors online active-token liveness:
+  [RFC 7662](https://www.rfc-editor.org/rfc/rfc7662.html).
+- OWASP Logging Cheat Sheet anchors the redaction/no-sensitive-material posture
+  for proof output: [OWASP Logging Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html).
+- NIST Privacy Framework anchors privacy-risk and data-minimization vocabulary:
+  [NIST Privacy Framework](https://www.nist.gov/privacy-framework).
+
+These are engineering anchors only. They do not prove standards conformance,
+OAuth certification, privacy compliance, live provider deployment, or
+production readiness.
 
 ## Engine Proof Invariants
 

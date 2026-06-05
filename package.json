@@ -341,6 +341,7 @@
     "test:release-enforcement-plane-dpop": "tsx tests/release-enforcement-plane-dpop.test.ts",
     "test:release-enforcement-plane-degraded-mode": "tsx tests/release-enforcement-plane-degraded-mode.test.ts",
     "test:data-movement-full-consequence-engine-proof-m02a": "tsx tests/data-movement-full-consequence-engine-proof-m02a.test.ts",
+    "test:data-movement-full-consequence-engine-proof-m02b": "tsx tests/data-movement-full-consequence-engine-proof-m02b.test.ts",
     "test:generic-admission-routes": "tsx tests/generic-admission-routes.test.ts",
     "test:generic-admission-guard-route-matrix": "tsx tests/generic-admission-guard-route-matrix.test.ts",
     "test:shadow-admission-events": "tsx tests/shadow-admission-events.test.ts",

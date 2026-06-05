@@ -50,6 +50,7 @@ export * from './golden-data-export-runtime-smoke.js';
 export * from './golden-data-export-pilot-readiness-probe.js';
 export * from './golden-data-export-demo.js';
 export * from './golden-data-export-reviewer-sandbox.js';
+export * from './controlled-data-export-gate.js';
 export * from './golden-authority-change-shadow-fixtures.js';
 export * from './golden-authority-change-policy-foundry-projection.js';
 export * from './golden-authority-change-runtime-smoke.js';

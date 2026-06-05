@@ -78,6 +78,7 @@ function testPackageJsonDelegatesLargeSuitesToRunner(): void {
   equal(pkg.scripts['verify:full'], 'npm run verify && node scripts/run/run-live-ops-gate.mjs full', 'Package runner: full verification delegates live/ops work to the live/ops runner');
   equal(pkg.scripts['typecheck:hygiene'], 'tsc --noEmit --noUnusedLocals --noUnusedParameters', 'Package runner: strict unused-code hygiene is available as an explicit check');
   equal(pkg.scripts['test:package-script-runner'], 'tsx tests/package-script-runner.test.ts', 'Package runner: runner contract test is exposed');
+  equal(pkg.scripts['proof:data-movement-full-consequence-engine'], 'npm run test:data-movement-full-consequence-engine-proof-m02a && npm run test:data-movement-full-consequence-engine-proof-m02b', 'Package runner: data movement proof run composes the M02A and M02B engine proof tests');
 }
 
 function testFastSuiteKeepsCriticalCoverage(): void {
@@ -228,11 +229,22 @@ function testPrivatePackageBoundaryIsDocumented(): void {
   includes(systemOverview, 'not a public npm availability claim', 'Package boundary: system overview clarifies private package posture');
 }
 
+function testDataMovementProofRunContractIsDocumented(): void {
+  const doc = readProjectFile('docs', '02-architecture', 'data-movement-full-consequence-engine-proof.md');
+
+  includes(doc, '## M03A - Proof Run Contract', 'Data movement proof contract: M03A section is documented');
+  includes(doc, 'npm run proof:data-movement-full-consequence-engine', 'Data movement proof contract: combined proof command is documented');
+  includes(doc, '### Claim To Evidence Matrix', 'Data movement proof contract: claim-to-evidence matrix is documented');
+  includes(doc, 'Not live customer PEP no-bypass proof.', 'Data movement proof contract: customer PEP no-bypass remains a non-claim');
+  includes(doc, 'Not a live Snowflake, Databricks, BigQuery, GCS, or warehouse integration.', 'Data movement proof contract: live provider integration remains a non-claim');
+}
+
 testPackageJsonDelegatesLargeSuitesToRunner();
 testFastSuiteKeepsCriticalCoverage();
 testVerifySuiteKeepsGateOrdering();
 testArchitectureSuiteKeepsBoundaryCoverage();
 testDefaultSuitesExcludeLiveAndOpsGates();
 testPrivatePackageBoundaryIsDocumented();
+testDataMovementProofRunContractIsDocumented();
 
 console.log(`Package script runner tests: ${passed} passed, 0 failed`);

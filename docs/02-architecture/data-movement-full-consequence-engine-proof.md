@@ -150,6 +150,26 @@ The M02-M04 tests should name and lock these invariants:
 10. Raw tokens, prompts, provider bodies, and customer payloads cannot enter
     public proof output.
 
+## M03A - Proof Run Contract
+
+M03A keeps the repository-side proof easy to rerun and review. It does not add
+a new runtime path. It composes the M02A and M02B engine proof tests into one
+local proof command:
+
+```bash
+npm run proof:data-movement-full-consequence-engine
+```
+
+### Claim To Evidence Matrix
+
+| Claim | Repository evidence | Proof command | Non-claim |
+| --- | --- | --- | --- |
+| The proof uses the real generic admission route. | `src/service/http/routes/generic-admission-routes.ts`; `tests/data-movement-full-consequence-engine-proof-m02a.test.ts`; `tests/data-movement-full-consequence-engine-proof-m02b.test.ts` | `npm run test:data-movement-full-consequence-engine-proof-m02a`; `npm run test:data-movement-full-consequence-engine-proof-m02b` | Not a live hosted SaaS route proof. |
+| The admission can issue a sender-constrained protected release token and register online introspection state. | `src/consequence-admission/generic-protected-release-token.ts`; `src/release-kernel/release-introspection.ts`; `tests/data-movement-full-consequence-engine-proof-m02a.test.ts` | `npm run test:data-movement-full-consequence-engine-proof-m02a` | Not external KMS/HSM signing readiness. |
+| A release-enforcement PEP can consume the route-issued token and produce a customer-gate decision. | `src/release-enforcement-plane/online-verifier.ts`; `src/consequence-admission/customer-gate.ts`; `tests/data-movement-full-consequence-engine-proof-m02a.test.ts` | `npm run test:data-movement-full-consequence-engine-proof-m02a` | Not live customer PEP no-bypass proof. |
+| The sandbox export gate consumes the PEP decision and controls execute, narrow, hold, or block outcomes. | `src/consequence-admission/controlled-data-export-gate.ts`; `tests/data-movement-full-consequence-engine-proof-m02b.test.ts` | `npm run test:data-movement-full-consequence-engine-proof-m02b` | Not a live Snowflake, Databricks, BigQuery, GCS, or warehouse integration. |
+| The proof packet explains the outcome without raw sensitive material or production claims. | `src/consequence-admission/controlled-data-export-gate.ts`; `tests/data-movement-full-consequence-engine-proof-m02b.test.ts`; `scripts/check/check-public-artifacts-redaction.mjs` | `npm run test:data-movement-full-consequence-engine-proof-m02b`; `npm run check:public-artifacts-redaction` when publishing generated proof artifacts | Not a full disclosure review for arbitrary local, live, binary, or operator artifacts. |
+
 ## Paid Service Timing
 
 Paid services are only required when they strengthen decision-adjacent proof for

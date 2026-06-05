@@ -1,8 +1,8 @@
 # Data Movement Consequence Engine Proof
 
-Status: M00/M01 proof contract. This document defines the repository-side and
-external-provider path for proving the Data Movement consequence engine without
-claiming SaaS production readiness.
+Status: M03B repository-side proof contract. This document defines the
+repository-side and external-provider path for proving the Data Movement
+consequence engine without claiming SaaS production readiness.
 
 ## Purpose
 
@@ -169,6 +169,22 @@ npm run proof:data-movement-full-consequence-engine
 | A release-enforcement PEP can consume the route-issued token and produce a customer-gate decision. | `src/release-enforcement-plane/online-verifier.ts`; `src/consequence-admission/customer-gate.ts`; `tests/data-movement-full-consequence-engine-proof-m02a.test.ts` | `npm run test:data-movement-full-consequence-engine-proof-m02a` | Not live customer PEP no-bypass proof. |
 | The sandbox export gate consumes the PEP decision and controls execute, narrow, hold, or block outcomes. | `src/consequence-admission/controlled-data-export-gate.ts`; `tests/data-movement-full-consequence-engine-proof-m02b.test.ts` | `npm run test:data-movement-full-consequence-engine-proof-m02b` | Not a live Snowflake, Databricks, BigQuery, GCS, or warehouse integration. |
 | The proof packet explains the outcome without raw sensitive material or production claims. | `src/consequence-admission/controlled-data-export-gate.ts`; `tests/data-movement-full-consequence-engine-proof-m02b.test.ts`; `scripts/check/check-public-artifacts-redaction.mjs` | `npm run test:data-movement-full-consequence-engine-proof-m02b`; `npm run check:public-artifacts-redaction` when publishing generated proof artifacts | Not a full disclosure review for arbitrary local, live, binary, or operator artifacts. |
+
+## M03B - Fail-Closed Matrix
+
+M03B keeps the repository-side proof readable in failure cases. It does not add
+a new runtime path. It records which existing proof tests show that the export
+does not proceed when proof, tenant, scope, token, or decision authority is
+invalid.
+
+| Condition | Expected proof-run behavior | Repository evidence | Non-claim |
+| --- | --- | --- | --- |
+| Missing sender proof or missing export-intent proof | Route or export gate fails closed; no protected export is executed. | `tests/data-movement-full-consequence-engine-proof-m02a.test.ts`; `tests/data-movement-full-consequence-engine-proof-m02b.test.ts` | Not a live outage or customer deployment proof. |
+| Wrong tenant, target, audience, or scope | Release-enforcement or export gate rejects the request; no downstream receipt is emitted for a blocked export. | `tests/data-movement-full-consequence-engine-proof-m02a.test.ts`; `tests/data-movement-full-consequence-engine-proof-m02b.test.ts` | Not live shared-store/RLS tenant isolation proof. |
+| Replayed proof or reused consumed token | Replay is rejected and cannot execute a second protected export. | `tests/data-movement-full-consequence-engine-proof-m02a.test.ts`; `tests/data-movement-full-consequence-engine-proof-m02b.test.ts`; `src/release-kernel/release-introspection.ts` | Not multi-instance Redis/Postgres replay-store proof. |
+| Observe, warn, review, or block decision | Customer gate or export gate holds or blocks; exported record count remains zero. | `tests/data-movement-full-consequence-engine-proof-m02b.test.ts`; `src/consequence-admission/customer-gate.ts`; `src/consequence-admission/controlled-data-export-gate.ts` | Not live customer PEP no-bypass proof. |
+| Narrow decision | Export can proceed only within the narrowed record cap and approved field subset. | `tests/data-movement-full-consequence-engine-proof-m02b.test.ts`; `src/consequence-admission/controlled-data-export-gate.ts` | Not authority to widen scope or skip constraints. |
+| Proof output is inspected | Proof packet and receipt metadata exclude raw release tokens, sender proofs, raw payloads, provider bodies, rows, and raw field names. | `tests/data-movement-full-consequence-engine-proof-m02b.test.ts`; `scripts/check/check-public-artifacts-redaction.mjs` | Not a full review of arbitrary local, live, binary, or operator artifacts. |
 
 ## Paid Service Timing
 

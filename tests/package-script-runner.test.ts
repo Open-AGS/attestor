@@ -79,6 +79,7 @@ function testPackageJsonDelegatesLargeSuitesToRunner(): void {
   equal(pkg.scripts['typecheck:hygiene'], 'tsc --noEmit --noUnusedLocals --noUnusedParameters', 'Package runner: strict unused-code hygiene is available as an explicit check');
   equal(pkg.scripts['test:package-script-runner'], 'tsx tests/package-script-runner.test.ts', 'Package runner: runner contract test is exposed');
   equal(pkg.scripts['proof:data-movement-full-consequence-engine'], 'npm run test:data-movement-full-consequence-engine-proof-m02a && npm run test:data-movement-full-consequence-engine-proof-m02b', 'Package runner: data movement proof run composes the M02A and M02B engine proof tests');
+  equal(pkg.scripts['proof:data-movement-public-artifact-readiness'], 'npm run proof:data-movement-full-consequence-engine && npm run check:public-artifacts-redaction -- --root .attestor/proof-surface/latest --root .attestor/showcase/latest', 'Package runner: data movement public artifact readiness composes proof and redaction checks');
 }
 
 function testFastSuiteKeepsCriticalCoverage(): void {
@@ -240,9 +241,14 @@ function testDataMovementProofRunContractIsDocumented(): void {
   includes(doc, 'Replayed proof or reused consumed token', 'Data movement proof contract: replay fail-closed condition is documented');
   includes(doc, 'Observe, warn, review, or block decision', 'Data movement proof contract: non-admit decisions cannot export');
   includes(doc, 'Narrow decision', 'Data movement proof contract: narrow outcome remains scope-limited');
+  includes(doc, '## M04 - Public Artifact Readiness', 'Data movement proof contract: M04 public artifact readiness is documented');
+  includes(doc, 'npm run proof:data-movement-public-artifact-readiness', 'Data movement proof contract: public artifact readiness command is documented');
+  includes(doc, '.attestor/proof-surface/latest', 'Data movement proof contract: proof-surface artifact root is documented');
+  includes(doc, '.attestor/showcase/latest', 'Data movement proof contract: showcase artifact root is documented');
   includes(doc, 'Not live customer PEP no-bypass proof.', 'Data movement proof contract: customer PEP no-bypass remains a non-claim');
   includes(doc, 'Not multi-instance Redis/Postgres replay-store proof.', 'Data movement proof contract: shared replay store remains a non-claim');
   includes(doc, 'Not a live Snowflake, Databricks, BigQuery, GCS, or warehouse integration.', 'Data movement proof contract: live provider integration remains a non-claim');
+  includes(doc, 'Does not scan arbitrary local, live, binary, or operator artifacts.', 'Data movement proof contract: artifact scanner scope remains bounded');
 }
 
 testPackageJsonDelegatesLargeSuitesToRunner();

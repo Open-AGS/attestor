@@ -343,6 +343,7 @@
     "test:data-movement-full-consequence-engine-proof-m02a": "tsx tests/data-movement-full-consequence-engine-proof-m02a.test.ts",
     "test:data-movement-full-consequence-engine-proof-m02b": "tsx tests/data-movement-full-consequence-engine-proof-m02b.test.ts",
     "proof:data-movement-full-consequence-engine": "npm run test:data-movement-full-consequence-engine-proof-m02a && npm run test:data-movement-full-consequence-engine-proof-m02b",
+    "proof:data-movement-public-artifact-readiness": "npm run proof:data-movement-full-consequence-engine && npm run check:public-artifacts-redaction -- --root .attestor/proof-surface/latest --root .attestor/showcase/latest",
     "test:generic-admission-routes": "tsx tests/generic-admission-routes.test.ts",
     "test:generic-admission-guard-route-matrix": "tsx tests/generic-admission-guard-route-matrix.test.ts",
     "test:shadow-admission-events": "tsx tests/shadow-admission-events.test.ts",

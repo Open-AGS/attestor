@@ -1,6 +1,6 @@
 # Data Movement Consequence Engine Proof
 
-Status: M03B repository-side proof contract. This document defines the
+Status: M04 repository-side proof contract. This document defines the
 repository-side and external-provider path for proving the Data Movement
 consequence engine without claiming SaaS production readiness.
 
@@ -185,6 +185,27 @@ invalid.
 | Observe, warn, review, or block decision | Customer gate or export gate holds or blocks; exported record count remains zero. | `tests/data-movement-full-consequence-engine-proof-m02b.test.ts`; `src/consequence-admission/customer-gate.ts`; `src/consequence-admission/controlled-data-export-gate.ts` | Not live customer PEP no-bypass proof. |
 | Narrow decision | Export can proceed only within the narrowed record cap and approved field subset. | `tests/data-movement-full-consequence-engine-proof-m02b.test.ts`; `src/consequence-admission/controlled-data-export-gate.ts` | Not authority to widen scope or skip constraints. |
 | Proof output is inspected | Proof packet and receipt metadata exclude raw release tokens, sender proofs, raw payloads, provider bodies, rows, and raw field names. | `tests/data-movement-full-consequence-engine-proof-m02b.test.ts`; `scripts/check/check-public-artifacts-redaction.mjs` | Not a full review of arbitrary local, live, binary, or operator artifacts. |
+
+## M04 - Public Artifact Readiness
+
+M04 keeps the repository-side proof safe to package for public review. It does
+not create a live external run and does not publish artifacts by itself. It
+binds the proof command to the existing public-artifact redaction scanner for
+the generated proof and showcase roots:
+
+```bash
+npm run proof:data-movement-public-artifact-readiness
+```
+
+| Artifact surface | Required root | Readiness gate | Non-claim |
+| --- | --- | --- | --- |
+| Proof-surface packet | `.attestor/proof-surface/latest` | `npm run check:public-artifacts-redaction -- --root .attestor/proof-surface/latest` | Does not prove the packet was generated in this run. |
+| Showcase packet | `.attestor/showcase/latest` | `npm run check:public-artifacts-redaction -- --root .attestor/showcase/latest` | Does not prove the packet is suitable for every publication channel. |
+| Combined public-readiness check | `.attestor/proof-surface/latest`; `.attestor/showcase/latest` | `npm run proof:data-movement-public-artifact-readiness` | Does not scan arbitrary local, live, binary, or operator artifacts. |
+
+Generated public proof artifacts for this track must stay digest-first and must
+not include raw release tokens, sender proofs, prompts, payloads, provider
+bodies, rows, customer identifiers, tenant secrets, or raw field names.
 
 ## Paid Service Timing
 

@@ -409,16 +409,9 @@ redaction failure
 Each failure path must hold before the real downstream action, or mark the
 artifact as not shareable when the issue is proof-output redaction.
 
-## No-Claims
+## Proof Boundary
 
-This map does not prove:
-
-- not production readiness;
-- not enterprise readiness;
-- not live customer PEP no-bypass;
-- not live shared replay/introspection stores;
-- not external KMS/HSM-backed runtime signing;
-- not customer deployment;
-- compliance certification.
-
-Those are separate proof obligations.
+This map explains the internal consequence path only. Production operation,
+enterprise readiness, customer deployment, live customer PEP non-bypassability,
+shared replay/introspection stores, external key-backed signing, and
+compliance certification remain separate proof obligations.

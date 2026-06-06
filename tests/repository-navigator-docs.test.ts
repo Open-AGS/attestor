@@ -36,6 +36,8 @@ function testNavigatorKeepsFirstVisitorPaths(): void {
   includes(doc, '## Pick One Door', 'Repository navigator: guided decision entry is present');
   includes(doc, 'Do not read everything.', 'Repository navigator: avoids scavenger-hunt reading');
   includes(doc, 'Stop when...', 'Repository navigator: each path has a stopping rule');
+  includes(doc, '"Where does this actually run?"', 'Repository navigator: routes runtime-shape questions to the local path');
+  includes(doc, 'local command, the hosted/API route shape, the customer gate, and the proof packet', 'Repository navigator: stopping rule names the concrete developer artifacts');
   includes(doc, '"What is proven today?"', 'Repository navigator: frames readiness as evidence, not a production claim');
   includes(doc, '## Start By Intent', 'Repository navigator: task-first navigation is present');
   includes(doc, '## Start By Role', 'Repository navigator: role-first navigation is present');
@@ -66,11 +68,16 @@ function testNavigatorKeepsFirstVisitorPaths(): void {
 
   for (const expected of [
     '# Run The Local Evaluation Path',
+    '## Five-Minute Developer Path',
+    'POST /api/v1/admissions',
+    'assertConsequenceAdmissionGateAllows',
+    'proof trail after the decision',
+    '## Proof Boundary',
+    'repo-side shape: proposed action, checks, outcome',
     '## 4. Pick The Action Class You Care About',
     'npm run demo:golden-refund',
     'npm run demo:golden-paths',
     'npm run example:non-bypassable-gateway',
-    'It does not prove live customer enforcement',
   ]) {
     includes(demoGuide, expected, `Demo guide: records ${expected}`);
   }
@@ -149,6 +156,7 @@ function testDocsFrontDoorPullsReadersToTheNextAction(): void {
   includes(doc, 'Use this docs index when the README gave you the shape', 'Docs front door: purpose names the index');
   includes(doc, 'understand -> try -> integrate -> explain decisions -> verify claims -> maintain', 'Docs front door: keeps the reader path explicit');
   includes(doc, '## Start Here', 'Docs front door: has a first-reader section');
+  includes(doc, 'See where it runs, what JSON moves, and where the gate sits', 'Docs front door: starts with concrete developer artifacts');
   includes(doc, '## Canonical Docs', 'Docs front door: has a canonical-docs section');
   includes(doc, 'This table is navigation, not a new authority surface.', 'Docs front door: canonical table is not an authority surface');
   includes(doc, '## Integrate', 'Docs front door: has an integration section');

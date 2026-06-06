@@ -75,6 +75,13 @@ function testReadmeKeepsTheControlBoundaryAndLocalRunPath(): void {
   includes(demoGuide, 'npm run demo:golden-paths', 'Demo guide: shows the all-pack local evaluator');
   includes(demoGuide, 'npm ci', 'Demo guide: keeps reproducible install for the reviewer path');
   includes(demoGuide, 'npm run demo:golden-refund', 'Demo guide: shows the first concrete runnable path');
+  includes(demoGuide, '## Five-Minute Developer Path', 'Demo guide: opens with the short developer path');
+  includes(demoGuide, 'local examples', 'Demo guide: names the local runnable examples');
+  includes(demoGuide, 'hosted/API shape', 'Demo guide: names the hosted route shape');
+  includes(demoGuide, 'customer app', 'Demo guide: names the customer-side placement');
+  includes(demoGuide, 'POST /api/v1/admissions', 'Demo guide: shows the admission route shape');
+  includes(demoGuide, 'assertConsequenceAdmissionGateAllows', 'Demo guide: shows the gate call');
+  includes(demoGuide, 'proof trail after the decision', 'Demo guide: keeps proof output close to the flow');
   excludes(readme, /## Local Demos/u, 'README: moves the long demo table out of the front page');
 }
 

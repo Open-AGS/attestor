@@ -39,6 +39,7 @@ do the next action there, and come back only if you still need more context.
 | If you are thinking... | Go here | Stop when... |
 |---|---|---|
 | "Show me what this does." | [Try Attestor first](try-attestor-first.md) | the refund demo runs and you can explain why it held or blocked. |
+| "Where does this actually run?" | [Run the local evaluation path](demo-guide.md) | you can point to the local command, the hosted/API route shape, the customer gate, and the proof packet. |
 | "Show me the local evaluation path." | [Run the local evaluation path](demo-guide.md) | you have run the refund path, the all-pack path, and the closest integration-shape example. |
 | "Where do I put this in my app?" | [How to integrate Attestor](how-to-integrate-attestor.md) | you can point to the line before the real service is called. |
 | "Can Attestor infer my tools or APIs first?" | [Action surface onboarding packet](../02-architecture/action-surface-onboarding-packet.md) | you have one review packet and know the next reviewed metadata or gate-proof step. |

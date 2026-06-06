@@ -87,6 +87,12 @@ function testReadmeKeepsDomainPacksAndLocalTruth(): void {
   }
 
   includes(readme, '[Run the local evaluation path](docs/01-overview/demo-guide.md)', 'Product docs: README links the local evaluation path early');
+  includes(demoGuide, '## Five-Minute Developer Path', 'Product docs: demo guide starts with a concrete developer path');
+  includes(demoGuide, 'request in, decision out, gate before the', 'Product docs: demo guide summarizes the developer flow plainly');
+  includes(demoGuide, 'downstream call, proof trail after the decision', 'Product docs: demo guide keeps proof output close to execution');
+  includes(demoGuide, 'POST /api/v1/admissions', 'Product docs: demo guide shows the hosted admission route shape');
+  includes(demoGuide, 'assertConsequenceAdmissionGateAllows', 'Product docs: demo guide shows where the customer gate sits');
+  includes(demoGuide, '## Proof Boundary', 'Product docs: demo guide keeps the boundary concise');
   includes(demoGuide, 'npm run demo:golden-data-export', 'Product docs: demo guide links the data golden path');
   includes(demoGuide, 'npm run demo:golden-authority-change', 'Product docs: demo guide links the authority golden path');
   includes(demoGuide, 'npm run demo:golden-external-communication', 'Product docs: demo guide links the communication golden path');

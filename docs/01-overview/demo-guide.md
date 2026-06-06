@@ -8,6 +8,84 @@ This path is synthetic and repo-side. It does not call Stripe, Shopify,
 warehouses, identity providers, deploy systems, wallets, banks, or customer
 production infrastructure.
 
+## Five-Minute Developer Path
+
+Use this section when the repo feels large and you just want to see where
+Attestor runs.
+
+```text
+local examples
+  npm run example:admission
+  npm run example:customer-gate
+
+hosted/API shape
+  POST /api/v1/admissions
+
+customer app
+  calls Attestor before the real service call
+  runs the customer gate before write/send/file/execute
+```
+
+The smallest useful request shape is:
+
+```json
+{
+  "mode": "observe",
+  "actor": "support-ai-agent",
+  "action": "issue_refund",
+  "domain": "money-movement",
+  "downstreamSystem": "refund-service",
+  "amount": { "value": 380, "currency": "USD" },
+  "recipient": "customer_123",
+  "evidenceRefs": ["order:987", "payment:456"],
+  "policyRef": "policy:refunds:v1"
+}
+```
+
+The response shape to look for is:
+
+```json
+{
+  "mode": "observe",
+  "shadowDecision": "would_admit",
+  "admission": {
+    "decision": "admit",
+    "allowed": true,
+    "request": {
+      "entryPoint": { "route": "/api/v1/admissions" }
+    }
+  }
+}
+```
+
+The customer gate is the line before the real service call:
+
+```ts
+assertConsequenceAdmissionGateAllows({
+  admission,
+  downstreamAction: 'refund-service.issue_refund',
+});
+
+// Only after the gate allows:
+// await refundService.issueRefund(...)
+```
+
+The proof packet is the reviewable trail:
+
+```json
+{
+  "proposedActionDigest": "sha256:...",
+  "decision": "admit",
+  "reasonCodes": ["policy-matched", "evidence-bound"],
+  "proofRefs": ["order:987", "payment:456"],
+  "gate": "proceed",
+  "downstreamReceipt": "receipt:..."
+}
+```
+
+That is the whole developer shape: request in, decision out, gate before the
+downstream call, proof trail after the decision.
+
 ## 1. Write The Local Evaluation Package
 
 Use this for one local folder with the human summary, decision trail, refund
@@ -69,14 +147,13 @@ customer application.
 | action-surface onboarding from an OpenAPI file | `npm run example:action-surface-onboarding` | [Action surface onboarding packet](../02-architecture/action-surface-onboarding-packet.md) |
 | integration kit review files from an OpenAPI file | `npm run example:action-surface-integration-kit` | [Action surface integration kit buildout](../02-architecture/action-surface-integration-kit-buildout.md) |
 
-## What This Local Path Does Not Prove
+## Proof Boundary
 
-It does not prove live customer enforcement, customer PEP no-bypass,
-production readiness, external KMS signing, live settlement, live data export,
-or compliance.
-
-It proves the repo-side shape: proposed action, checks, outcome, reason codes,
-and proof references.
+This local path proves the repo-side shape: proposed action, checks, outcome,
+reason codes, gate placement, and proof references. Live customer enforcement,
+customer PEP non-bypassability, production operation, external key-backed
+signing, live settlement, live data export, and certification remain separate
+proof obligations.
 
 ## Next
 

@@ -29,44 +29,38 @@ function excludes(content: string, unexpected: RegExp, message: string): void {
   passed += 1;
 }
 
-function testMachineMapExistsAndNamesTheCorePath(): void {
+function testMachineMapExistsAndUsesTheTextDiagram(): void {
   const doc = readProjectFile('docs', '02-architecture', 'attestor-internal-machine-map.md');
-  const svg = readProjectFile('docs', 'assets', 'attestor-internal-machine-map.svg');
 
   includes(doc, '# Attestor Internal Machine Map', 'Machine map: document exists');
   includes(doc, 'engine-level internal map', 'Machine map: status names engine-level scope');
   includes(doc, 'It is not a claim that every source file', 'Machine map: completeness boundary is explicit');
-  includes(doc, '## One-Picture Internal Map', 'Machine map: one-picture diagram section is present');
-  includes(doc, '../assets/attestor-internal-machine-map.svg', 'Machine map: readable SVG is embedded');
-  includes(doc, 'AI / workflow proposes an action', 'Machine map: source side is explicit');
-  includes(doc, 'admission PDP', 'Machine map: PDP is explicit');
-  includes(doc, 'protected release authorization', 'Machine map: release proof layer is explicit');
-  includes(doc, 'enforcement PEP', 'Machine map: PEP is explicit');
-  includes(doc, 'customer gate', 'Machine map: customer gate is explicit');
-  includes(doc, 'real action or nothing happens', 'Machine map: terminal split is explicit');
-  excludes(doc, /```mermaid/u, 'Machine map: document uses the SVG poster, not Mermaid');
-
-  includes(svg, '<svg', 'Machine map SVG: svg exists');
-  includes(svg, 'Attestor Full Consequence Path Map', 'Machine map SVG: title is updated');
-  includes(svg, 'AI AGENT / WORKFLOW', 'Machine map SVG: AI source is visible');
-  includes(svg, 'ACTION INTENT NORMALIZER', 'Machine map SVG: normalizer is visible');
-  includes(svg, 'PIP: Policy / Evidence / Context Inputs', 'Machine map SVG: PIP panel is visible');
-  includes(svg, 'PDP: CONSEQUENCE', 'Machine map SVG: PDP is visible');
-  includes(svg, 'PAP / Release Authorization Layer', 'Machine map SVG: release authorization is visible');
-  includes(svg, 'PEP: Release Enforcement Verifier', 'Machine map SVG: enforcement verifier is visible');
-  includes(svg, 'Customer Gate / Downstream PEP', 'Machine map SVG: customer gate is visible');
-  includes(svg, 'REAL DOWNSTREAM ACTION', 'Machine map SVG: real action terminal is visible');
-  includes(svg, 'NOTHING HAPPENS', 'Machine map SVG: no-action terminal is visible');
-  includes(svg, 'Digest-Only Proof Packet / Audit Output', 'Machine map SVG: proof packet is visible');
+  includes(doc, '## Full Consequence Path Map', 'Machine map: full consequence path section is present');
+  includes(doc, '```text', 'Machine map: diagram is a plain text block');
+  includes(doc, '┌──────────────────────────────────────────────────────────────────────┐', 'Machine map: box-drawing frame is present');
+  includes(doc, '│ AI AGENT / WORKFLOW                                                   │', 'Machine map: AI source box is present');
+  includes(doc, '│ ACTION INTENT NORMALIZER                                              │', 'Machine map: normalizer box is present');
+  includes(doc, '│ PIP: POLICY / EVIDENCE / CONTEXT INPUTS                              │', 'Machine map: PIP box is present');
+  includes(doc, '│ PDP: CONSEQUENCE ADMISSION CORE                                       │', 'Machine map: PDP box is present');
+  includes(doc, '│ PAP / RELEASE AUTHORIZATION LAYER                                    │', 'Machine map: release authorization box is present');
+  includes(doc, '│ RELEASE ENFORCEMENT VERIFIER                                         │', 'Machine map: enforcement verifier box is present');
+  includes(doc, '│ CUSTOMER GATE / DOWNSTREAM PEP                                       │', 'Machine map: customer gate box is present');
+  includes(doc, '│ REAL DOWNSTREAM ACTION                                                │', 'Machine map: real action terminal is present');
+  includes(doc, '│ PROOF PACKET / AUDIT OUTPUT                                           │', 'Machine map: proof packet terminal is present');
+  excludes(doc, /!\[[^\]]*\]\(\.\.\/assets\/attestor-internal-machine-map\.svg\)/u, 'Machine map: SVG image embed is not used');
+  excludes(doc, /Open full-size SVG/u, 'Machine map: full-size SVG link is not used');
+  excludes(doc, /```mermaid/u, 'Machine map: Mermaid is not used for this map');
 }
 
 function testMachineMapNamesTheBranchingSemantics(): void {
   const doc = readProjectFile('docs', '02-architecture', 'attestor-internal-machine-map.md');
-  const svg = readProjectFile('docs', 'assets', 'attestor-internal-machine-map.svg');
 
   for (const decision of CONSEQUENCE_ADMISSION_DECISIONS) {
     includes(doc, `\`${decision}\``, `Machine map: decision ${decision} is documented`);
-    includes(svg, decision, `Machine map SVG: decision ${decision} is visible`);
+  }
+
+  for (const expected of ['ADMIT', 'NARROW', 'REVIEW', 'REVIEW/BLOCK', 'NO EXECUTION']) {
+    includes(doc, expected, `Machine map: branch ${expected} is visible in the text diagram`);
   }
 
   for (const checkKind of CONSEQUENCE_ADMISSION_CHECK_KINDS) {
@@ -74,24 +68,22 @@ function testMachineMapNamesTheBranchingSemantics(): void {
   }
 
   for (const expected of [
-    'review/block produces proof-only hold',
-    'no executable authority',
+    'No executable release should be treated as authority',
     'protected release token',
     'online introspection',
     'replay consumption',
     'sender-constrained presentation',
     'wrong tenant',
-    'wrong target/audience',
+    'wrong target or audience',
     'replayed authorization',
     'scope outside allowed bounds',
   ]) {
-    includes(`${doc}\n${svg}`, expected, `Machine map: branch rule ${expected} is visible`);
+    includes(doc, expected, `Machine map: branch rule ${expected} is visible`);
   }
 }
 
 function testMachineMapPreservesAuthorityBoundariesAndNoClaims(): void {
   const doc = readProjectFile('docs', '02-architecture', 'attestor-internal-machine-map.md');
-  const svg = readProjectFile('docs', 'assets', 'attestor-internal-machine-map.svg');
 
   for (const expected of [
     '| PIP | Policy Information Point',
@@ -101,10 +93,10 @@ function testMachineMapPreservesAuthorityBoundariesAndNoClaims(): void {
     'NIST SP 800-162',
     'OASIS XACML 3.0 core specification',
     'not a generic access-control product claim',
-    'Production: customer-owned and customer-operated.',
+    'Production: customer-owned, customer-operated.',
     'This is where non-bypassability must be proven in a real customer deployment.',
   ]) {
-    includes(`${doc}\n${svg}`, expected, `Machine map: authority boundary ${expected} is present`);
+    includes(doc, expected, `Machine map: authority boundary ${expected} is present`);
   }
 
   for (const expected of [
@@ -116,13 +108,12 @@ function testMachineMapPreservesAuthorityBoundariesAndNoClaims(): void {
     'not customer deployment',
     'compliance certification',
   ]) {
-    includes(`${doc}\n${svg}`, expected, `Machine map: no-claim ${expected} is visible`);
+    includes(doc, expected, `Machine map: no-claim ${expected} is visible`);
   }
 }
 
 function testMachineMapLinksAndSourceAreasArePresent(): void {
   const doc = readProjectFile('docs', '02-architecture', 'attestor-internal-machine-map.md');
-  const svg = readProjectFile('docs', 'assets', 'attestor-internal-machine-map.svg');
   const readme = readProjectFile('README.md');
   const overview = readProjectFile('docs', '02-architecture', 'system-overview.md');
   const packageJson = JSON.parse(readProjectFile('package.json')) as {
@@ -139,9 +130,9 @@ function testMachineMapLinksAndSourceAreasArePresent(): void {
     'src/consequence-admission/customer-gate.ts',
     'src/service/*',
     'src/signing/*',
-    'Shadow-to-policy modules inform future policy; they are not the enforcement edge.',
+    'informs future policy but is not the enforcement edge.',
   ]) {
-    includes(`${doc}\n${svg}`, expected, `Machine map: source area ${expected} is mapped`);
+    includes(doc, expected, `Machine map: source area ${expected} is mapped`);
   }
 
   includes(
@@ -157,7 +148,7 @@ function testMachineMapLinksAndSourceAreasArePresent(): void {
   includes(
     readme,
     'View the full consequence path map',
-    'Machine map: README primary link names the full consequence path map',
+    'Machine map: README primary link name is preserved',
   );
   assert.equal(
     packageJson.scripts['test:attestor-internal-machine-map'],
@@ -167,7 +158,7 @@ function testMachineMapLinksAndSourceAreasArePresent(): void {
   passed += 1;
 }
 
-testMachineMapExistsAndNamesTheCorePath();
+testMachineMapExistsAndUsesTheTextDiagram();
 testMachineMapNamesTheBranchingSemantics();
 testMachineMapPreservesAuthorityBoundariesAndNoClaims();
 testMachineMapLinksAndSourceAreasArePresent();

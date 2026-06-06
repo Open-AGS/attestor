@@ -55,18 +55,245 @@ Source anchors:
 - [NIST SP 800-162](https://csrc.nist.gov/pubs/sp/800/162/upd2/final)
 - [OASIS XACML 3.0 core specification](https://docs.oasis-open.org/xacml/3.0/xacml-3.0-core-spec-cos01-en.html)
 
-## One-Picture Internal Map
+## Full Consequence Path Map
 
-The SVG below is the readable one-picture map. It is intentionally less dense
-than the old internal poster so the main consequence path, branches, and
-authority boundaries can be understood at once.
+The map below is the canonical human-readable diagram for this document. It is
+kept as plain text so the structure is visible in Markdown, code review,
+terminal output, and repository diffs.
 
-Decision points and branch outcomes are shown directly in the flow. Side panels
-show PIP inputs, no-claims, and the module groups that feed the path.
+The customer-gate box marks the customer/downstream enforcement boundary.
+This is where non-bypassability must be proven in a real customer deployment.
 
-![Attestor full consequence path map](../assets/attestor-internal-machine-map.svg)
-
-[Open full-size SVG](../assets/attestor-internal-machine-map.svg)
+```text
+┌──────────────────────────────────────────────────────────────────────┐
+│ AI AGENT / WORKFLOW                                                   │
+│                                                                      │
+│ "refund 50 EUR for customer X"                                       │
+│ "export these rows"                                                  │
+│ "change user role"                                                   │
+│                                                                      │
+│ Output: proposed action intent                                       │
+│ Authority: NONE                                                      │
+└───────────────────────────────┬──────────────────────────────────────┘
+                                │
+                                ▼
+┌──────────────────────────────────────────────────────────────────────┐
+│ ACTION INTENT NORMALIZER                                              │
+│                                                                      │
+│ Turns messy AI/workflow output into a strict consequence request:     │
+│                                                                      │
+│  action                                                              │
+│  actor                                                               │
+│  target                                                              │
+│  tenant                                                              │
+│  scope                                                               │
+│  evidence refs                                                       │
+│  approval refs                                                       │
+│  idempotency key                                                     │
+│  requested downstream system                                         │
+└───────────────┬──────────────────────────────────────────────────────┘
+                │
+                ├── invalid / incomplete intent
+                │       ▼
+                │   ┌──────────────────────────────┐
+                │   │ HOLD BEFORE DECISION          │
+                │   │ no release token              │
+                │   │ no downstream action          │
+                │   └──────────────────────────────┘
+                │
+                ▼
+┌──────────────────────────────────────────────────────────────────────┐
+│ PIP: POLICY / EVIDENCE / CONTEXT INPUTS                              │
+│                                                                      │
+│  ┌──────────────────────┐   ┌──────────────────────┐                │
+│  │ Policy version        │   │ Evidence refs         │                │
+│  │ active rules          │   │ documents / receipts  │                │
+│  └──────────────────────┘   └──────────────────────┘                │
+│                                                                      │
+│  ┌──────────────────────┐   ┌──────────────────────┐                │
+│  │ Actor authority       │   │ Approval provenance   │                │
+│  │ role / delegation     │   │ who approved what     │                │
+│  └──────────────────────┘   └──────────────────────┘                │
+│                                                                      │
+│  ┌──────────────────────┐   ┌──────────────────────┐                │
+│  │ Tenant / target       │   │ Replay / idempotency  │                │
+│  │ boundary              │   │ has this run before?  │                │
+│  └──────────────────────┘   └──────────────────────┘                │
+│                                                                      │
+│  ┌──────────────────────┐   ┌──────────────────────┐                │
+│  │ No-go / hold state    │   │ Freshness             │                │
+│  │ freeze / compliance   │   │ stale approval?       │                │
+│  └──────────────────────┘   └──────────────────────┘                │
+└───────────────────────────────┬──────────────────────────────────────┘
+                                │
+                                ▼
+┌──────────────────────────────────────────────────────────────────────┐
+│ PDP: CONSEQUENCE ADMISSION CORE                                       │
+│                                                                      │
+│ Main decision engine.                                                │
+│                                                                      │
+│ Checks:                                                              │
+│  ├─ Is the policy active and applicable?                             │
+│  ├─ Does evidence bind to this action?                               │
+│  ├─ Is the actor authorized?                                         │
+│  ├─ Is approval real, fresh, and scoped?                              │
+│  ├─ Does tenant match?                                                │
+│  ├─ Does target system match?                                         │
+│  ├─ Is requested scope too wide?                                      │
+│  ├─ Is there a no-go/compliance hold?                                 │
+│  ├─ Is this a replay or duplicate?                                    │
+│  ├─ Is untrusted content trying to become authority?                  │
+│  └─ Are deterministic constraints satisfied?                          │
+│                                                                      │
+│ Output: admit | narrow | review | block                              │
+│         reason codes                                                 │
+│         proof refs                                                   │
+│         constraints                                                  │
+└───────────────┬──────────────────┬──────────────────┬───────────────┘
+                │                  │                  │
+                ▼                  ▼                  ▼
+        ┌──────────────┐   ┌──────────────┐   ┌──────────────────┐
+        │ ADMIT         │   │ NARROW        │   │ REVIEW           │
+        │ allowed as-is │   │ allowed only  │   │ human/operator   │
+        │              │   │ in bounds     │   │ hold required    │
+        └──────┬───────┘   └──────┬───────┘   └────────┬─────────┘
+               │                  │                    │
+               │                  │                    ▼
+               │                  │             ┌──────────────┐
+               │                  │             │ NO EXECUTION  │
+               │                  │             │ proof only    │
+               │                  │             └──────────────┘
+               │                  │
+               │                  │
+               │                  │             ┌──────────────────┐
+               │                  └────────────▶│ bounded scope     │
+               │                                │ constraints bind  │
+               │                                └────────┬─────────┘
+               │                                         │
+               ▼                                         ▼
+┌──────────────────────────────────────────────────────────────────────┐
+│ PAP / RELEASE AUTHORIZATION LAYER                                    │
+│                                                                      │
+│ Only ADMIT and NARROW can enter this path.                            │
+│ REVIEW/BLOCK must not produce executable authority.                   │
+│                                                                      │
+│  ├─ bind decision id                                                  │
+│  ├─ bind policy version                                               │
+│  ├─ bind tenant                                                       │
+│  ├─ bind target/audience                                              │
+│  ├─ bind approved or narrowed scope                                   │
+│  ├─ bind proof refs                                                   │
+│  ├─ bind expiry                                                       │
+│  ├─ bind sender constraint                                            │
+│  ├─ sign protected release token                                      │
+│  └─ register token for introspection                                  │
+│                                                                      │
+│ Output: protected release token                                      │
+└───────────────┬──────────────────────────────────────────────────────┘
+                │
+                ├── signing / policy / proof binding failure
+                │       ▼
+                │   ┌──────────────────────────────┐
+                │   │ NO RELEASE                    │
+                │   │ no downstream action          │
+                │   └──────────────────────────────┘
+                │
+                ▼
+┌──────────────────────────────────────────────────────────────────────┐
+│ RELEASE ENFORCEMENT VERIFIER                                         │
+│ PEP-side verifier                                                     │
+│                                                                      │
+│ Checks:                                                              │
+│  ├─ token signature valid?                                            │
+│  ├─ token not expired?                                                │
+│  ├─ token audience matches downstream?                                │
+│  ├─ token tenant matches request?                                     │
+│  ├─ scope matches approved/narrowed scope?                            │
+│  ├─ sender-constrained presentation exists?                           │
+│  ├─ online introspection says active?                                 │
+│  ├─ replay consumption succeeds once?                                 │
+│  ├─ body/action digest matches?                                       │
+│  └─ release proof ref matches admission?                              │
+└───────────────┬──────────────────────────────────────────────────────┘
+                │
+                ├── any check fails
+                │       ▼
+                │   ┌──────────────────────────────┐
+                │   │ HOLD                          │
+                │   │ no downstream action          │
+                │   │ reason is recorded            │
+                │   └──────────────────────────────┘
+                │
+                ▼
+┌──────────────────────────────────────────────────────────────────────┐
+│ CUSTOMER GATE / DOWNSTREAM PEP                                       │
+│                                                                      │
+│ Production: customer-owned, customer-operated.                       │
+│ Attestor cannot magically force this unless customer wires it in.    │
+│                                                                      │
+│ Gate asks:                                                           │
+│  ├─ Did Attestor admit or narrow?                                     │
+│  ├─ Is release proof valid?                                           │
+│  ├─ Was replay consumed?                                              │
+│  ├─ Is this the right tenant?                                         │
+│  ├─ Is this the right target system?                                  │
+│  ├─ Is this the right action?                                         │
+│  ├─ Is scope within allowed bounds?                                   │
+│  └─ Is the downstream call still permitted?                           │
+└───────────────┬──────────────────────────────────────┬───────────────┘
+                │                                      │
+                │                                      ├── any check fails
+                │                                      │       ▼
+                │                                      │   ┌─────────────────────┐
+                │                                      │   │ NOTHING HAPPENS      │
+                │                                      │   │ no refund/export/etc │
+                │                                      │   └─────────────────────┘
+                │
+                ▼
+┌──────────────────────────────────────────────────────────────────────┐
+│ REAL DOWNSTREAM ACTION                                                │
+│                                                                      │
+│ Examples:                                                            │
+│  ├─ refund 50 EUR                                                     │
+│  ├─ export approved data                                              │
+│  ├─ send external message                                             │
+│  ├─ change authority/role                                             │
+│  └─ execute operational action                                        │
+└───────────────┬──────────────────────────────────────────────────────┘
+                │
+                ▼
+┌──────────────────────────────────────────────────────────────────────┐
+│ DOWNSTREAM RECEIPT                                                    │
+│                                                                      │
+│  ├─ what executed                                                     │
+│  ├─ where it executed                                                 │
+│  ├─ when it executed                                                  │
+│  ├─ provider/job/object/transaction ref                               │
+│  ├─ executed scope digest                                             │
+│  └─ no raw sensitive payload                                          │
+└───────────────┬──────────────────────────────────────────────────────┘
+                │
+                ▼
+┌──────────────────────────────────────────────────────────────────────┐
+│ PROOF PACKET / AUDIT OUTPUT                                           │
+│                                                                      │
+│ Collects digest-only evidence from every layer:                       │
+│                                                                      │
+│  ├─ AI action digest                                                  │
+│  ├─ normalized intent digest                                          │
+│  ├─ PDP decision                                                      │
+│  ├─ reason codes                                                      │
+│  ├─ policy version                                                    │
+│  ├─ evidence refs                                                     │
+│  ├─ release token id/digest, not raw token                            │
+│  ├─ introspection result                                              │
+│  ├─ replay consumption result                                         │
+│  ├─ customer gate decision                                            │
+│  ├─ downstream receipt                                                │
+│  ├─ redaction scan                                                    │
+│  └─ no-claims                                                         │
+└──────────────────────────────────────────────────────────────────────┘
+```
 
 ## Branching Outcome Rules
 
@@ -186,12 +413,12 @@ artifact as not shareable when the issue is proof-output redaction.
 
 This map does not prove:
 
-- production readiness;
-- enterprise readiness;
-- live customer PEP no-bypass;
-- live shared replay/introspection stores;
-- external KMS/HSM-backed runtime signing;
-- customer deployment;
+- not production readiness;
+- not enterprise readiness;
+- not live customer PEP no-bypass;
+- not live shared replay/introspection stores;
+- not external KMS/HSM-backed runtime signing;
+- not customer deployment;
 - compliance certification.
 
 Those are separate proof obligations.

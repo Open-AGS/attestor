@@ -2,6 +2,15 @@
   <img src="docs/assets/attestor-readme-logo.png" alt="Attestor" width="100%">
 </p>
 
+<p align="center">
+  <a href="docs/00-evaluation/v0.2.0-evaluation-release-notes.md"><img alt="version 0.2.0-evaluation" src="https://img.shields.io/badge/version-0.2.0--evaluation-334155"></a>
+  <a href="docs/research/cross-domain-pattern-sources.md"><img alt="NIST AI RMF mapped" src="https://img.shields.io/badge/NIST%20AI%20RMF-mapped-0369a1"></a>
+  <a href="docs/03-governance/iso42001-2023-annex-a-mapping.md"><img alt="ISO 42001 mapped" src="https://img.shields.io/badge/ISO%2042001-mapped-0369a1"></a>
+  <a href="docs/02-architecture/data-movement-full-consequence-engine-proof.md#m03b---fail-closed-matrix"><img alt="fail-closed locked" src="https://img.shields.io/badge/fail--closed-locked-16a34a"></a>
+</p>
+
+<p align="center"><sub>Badges describe repository evidence and framework mappings, not certification or production readiness.</sub></p>
+
 **Control infrastructure for high-risk AI-driven operations.**
 
 Attestor sits between an AI-prepared operation and the system that would execute it.

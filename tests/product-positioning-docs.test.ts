@@ -34,12 +34,11 @@ function testReadmeStartsWithAConcreteWorkflow(): void {
   includes(readme, 'Badges describe repository evidence and framework mappings, not certification or production readiness.', 'Product docs: README badge row avoids certification and production overclaim');
   includes(readme, '**Control infrastructure for high-risk AI-driven operations.**', 'Product docs: README keeps the short product promise');
   includes(readme, 'Attestor sits between an AI-prepared operation and the system that would execute it.', 'Product docs: README starts with plain placement language');
-  includes(readme, 'Prompts guide. They do not enforce.', 'Product docs: README keeps the prompt-control contrast');
-  includes(readme, 'Unsafe proposed requests can come from hallucination, stale context, poisoned', 'Product docs: README explains AI/request risk in plain language');
-  includes(readme, 'A prompt cannot stop a refund service, export job, identity admin, deploy tool, or wallet adapter.', 'Product docs: README preserves the prompt-boundary thesis in plain language');
-  includes(readme, 'Hostile content, whether prompt injection, poisoned tool output, or a replayed', 'Product docs: README names outside manipulation without turning it into a security guarantee');
-  includes(readme, 'When the customer-owned gate is in place, the downstream action stays behind', 'Product docs: README ties downstream no-bypass posture to the customer gate');
-  includes(readme, 'Every decision leaves a trail', 'Product docs: README explains the audit trail in plain language');
+  includes(readme, 'Prompts can guide behavior, but they cannot enforce it', 'Product docs: README keeps the prompt-control contrast');
+  includes(readme, 'Unsafe requests can come from hallucination, stale context, poisoned tool output', 'Product docs: README explains AI/request risk in plain language');
+  includes(readme, 'Before anything runs, Attestor checks', 'Product docs: README preserves the pre-execution control boundary');
+  includes(readme, 'With a customer-owned gate in place, the downstream action stays behind', 'Product docs: README ties downstream no-bypass posture to the customer gate');
+  includes(readme, 'The trail records what was proposed', 'Product docs: README explains the audit trail in plain language');
   includes(readme, '## One Concrete Workflow', 'Product docs: README starts product understanding from one concrete workflow');
   includes(readme, 'Refund $8,750 to customer_123 for order_789.', 'Product docs: README uses a concrete refund action');
   includes(readme, 'refundService.issueRefund(...)', 'Product docs: README names the dangerous service call');

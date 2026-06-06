@@ -82,7 +82,7 @@ function testMachineMapNamesTheBranchingSemantics(): void {
   }
 }
 
-function testMachineMapPreservesAuthorityBoundariesAndNoClaims(): void {
+function testMachineMapPreservesAuthorityBoundaries(): void {
   const doc = readProjectFile('docs', '02-architecture', 'attestor-internal-machine-map.md');
 
   for (const expected of [
@@ -100,16 +100,22 @@ function testMachineMapPreservesAuthorityBoundariesAndNoClaims(): void {
   }
 
   for (const expected of [
-    'not production readiness',
-    'not enterprise readiness',
-    'not live customer PEP no-bypass',
-    'not live shared replay/introspection stores',
-    'not external KMS/HSM-backed runtime signing',
-    'not customer deployment',
+    '## Proof Boundary',
+    'internal consequence path only',
+    'Production operation',
+    'enterprise readiness',
+    'customer deployment',
+    'live customer PEP non-bypassability',
+    'shared replay/introspection stores',
+    'external key-backed signing',
     'compliance certification',
+    'separate proof obligations',
   ]) {
-    includes(doc, expected, `Machine map: no-claim ${expected} is visible`);
+    includes(doc, expected, `Machine map: proof boundary ${expected} is visible`);
   }
+
+  excludes(doc, /## No-Claims/u, 'Machine map: avoids a separate no-claims list section');
+  excludes(doc, /- not production readiness/u, 'Machine map: avoids long negative bullet lists');
 }
 
 function testMachineMapLinksAndSourceAreasArePresent(): void {
@@ -160,7 +166,7 @@ function testMachineMapLinksAndSourceAreasArePresent(): void {
 
 testMachineMapExistsAndUsesTheTextDiagram();
 testMachineMapNamesTheBranchingSemantics();
-testMachineMapPreservesAuthorityBoundariesAndNoClaims();
+testMachineMapPreservesAuthorityBoundaries();
 testMachineMapLinksAndSourceAreasArePresent();
 
 console.log(`Attestor internal machine map tests: ${passed} passed, 0 failed`);

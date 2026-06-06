@@ -1,1261 +1,320 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="3600" height="3550" viewBox="0 0 3600 3550" role="img" aria-labelledby="title desc">
-<title id="title">Attestor Internal Machine Blueprint</title>
-<desc id="desc">One-picture dark blueprint of the Attestor internal machine. It shows main flow, ten decision axes, release PDP, admission PDP, enforcement PEP, customer gate, PROCEED/HOLD outcomes, boundaries, side loops, source modules, and repo-sourced value sets.</desc>
-<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#dbeafe"/></marker><style>.page{fill:#06111f}.grid{stroke:#12263b;stroke-width:1}.title{font:700 34px Arial,Helvetica,sans-serif;fill:#f8fdff}.subtitle{font:400 15px Arial,Helvetica,sans-serif;fill:#b8d7e6}.sectionTitle{font:700 17px Arial,Helvetica,sans-serif;fill:#f8fdff}.label{font:700 13px Arial,Helvetica,sans-serif;fill:#f8fdff}.labelCenter{font:700 12.5px Arial,Helvetica,sans-serif;fill:#f8fdff}.body{font:400 11.5px Arial,Helvetica,sans-serif;fill:#dbeafe}.tiny{font:400 10px Arial,Helvetica,sans-serif;fill:#a9c3d3}.tinyCenter{font:400 10px Arial,Helvetica,sans-serif;fill:#a9c3d3}.panelTitle{font:700 13.5px Arial,Helvetica,sans-serif;fill:#f8fdff}.chipText{font:400 9.8px Arial,Helvetica,sans-serif;fill:#dbeafe}.tableText{font:400 10.2px Arial,Helvetica,sans-serif;fill:#dbeafe}.tableTextStrong{font:700 10.2px Arial,Helvetica,sans-serif;fill:#f8fdff}.nodeGreen{fill:#11331f;stroke:#67d68f;stroke-width:1.25;rx:8}.nodeBlue{fill:#0b3556;stroke:#65c9f2;stroke-width:1.35;rx:8}.nodeBlue2{fill:#0c2a45;stroke:#5faed7;stroke-width:1.2;rx:8}.nodeYellow{fill:#3a300e;stroke:#f4c542;stroke-width:1.2;rx:8}.nodeRed{fill:#492018;stroke:#ff8f79;stroke-width:1.25;rx:8}.nodeGray{fill:#101827;stroke:#8798ad;stroke-width:1.1;rx:8}.decision{fill:#551823;stroke:#ff9a8f;stroke-width:1.35}.panel{fill:#091827;stroke:#31516b;stroke-width:1.15;rx:10}.panelGold{fill:#16150d;stroke:#8d7834;stroke-width:1.1;rx:10}.panelGreen{fill:#081c16;stroke:#3e9d70;stroke-width:1.1;rx:10}.boundaryTenant{fill:none;stroke:#3b82f6;stroke-width:2.3;stroke-dasharray:12 9;rx:18}.boundarySigner{fill:none;stroke:#f4c542;stroke-width:2.1;stroke-dasharray:10 7;rx:16}.boundaryDownstream{fill:none;stroke:#fb7185;stroke-width:2.2;stroke-dasharray:12 8;rx:18}.bus{fill:#f8fdff;stroke:#f8fdff;stroke-width:1}.junction{fill:#dbeafe;stroke:#dbeafe;stroke-width:1}.arrow{stroke:#dbeafe;stroke-width:1.45;fill:none;marker-end:url(#arrow)}.thickArrow{stroke:#e8f6ff;stroke-width:2.25;fill:none;marker-end:url(#arrow)}.thinArrow{stroke:#b8d7e6;stroke-width:1.1;fill:none;marker-end:url(#arrow)}.dash{stroke:#93a4b8;stroke-width:1;fill:none;stroke-dasharray:7 8;marker-end:url(#arrow);opacity:.58}.chip{fill:#101827;stroke:#52657a;stroke-width:1;rx:7}.tableHead{fill:#172338;stroke:#52657a;stroke-width:1;rx:5}.tableCell{fill:#0d1d2d;stroke:#253b50;stroke-width:1;rx:4}.tableCellAlt{fill:#102336;stroke:#253b50;stroke-width:1;rx:4}.matrixPass{fill:#46bf7d;stroke:#9bf2bd;stroke-width:.6;rx:2}.matrixBlocked{fill:#71301f;stroke:#ffb199;stroke-width:.6;rx:2}.proceed{fill:#0f7a4f;stroke:#75e0ae;stroke-width:1.6;rx:10}.hold{fill:#9b1c1c;stroke:#ff9a8f;stroke-width:1.6;rx:10}.termText{font:700 20px Arial,Helvetica,sans-serif;fill:#fff}</style></defs>
-<rect class="page" x="0" y="0" width="3600" height="3550"/>
-<path class="grid" d="M0 0 V3550"/>
-<path class="grid" d="M50 0 V3550"/>
-<path class="grid" d="M100 0 V3550"/>
-<path class="grid" d="M150 0 V3550"/>
-<path class="grid" d="M200 0 V3550"/>
-<path class="grid" d="M250 0 V3550"/>
-<path class="grid" d="M300 0 V3550"/>
-<path class="grid" d="M350 0 V3550"/>
-<path class="grid" d="M400 0 V3550"/>
-<path class="grid" d="M450 0 V3550"/>
-<path class="grid" d="M500 0 V3550"/>
-<path class="grid" d="M550 0 V3550"/>
-<path class="grid" d="M600 0 V3550"/>
-<path class="grid" d="M650 0 V3550"/>
-<path class="grid" d="M700 0 V3550"/>
-<path class="grid" d="M750 0 V3550"/>
-<path class="grid" d="M800 0 V3550"/>
-<path class="grid" d="M850 0 V3550"/>
-<path class="grid" d="M900 0 V3550"/>
-<path class="grid" d="M950 0 V3550"/>
-<path class="grid" d="M1000 0 V3550"/>
-<path class="grid" d="M1050 0 V3550"/>
-<path class="grid" d="M1100 0 V3550"/>
-<path class="grid" d="M1150 0 V3550"/>
-<path class="grid" d="M1200 0 V3550"/>
-<path class="grid" d="M1250 0 V3550"/>
-<path class="grid" d="M1300 0 V3550"/>
-<path class="grid" d="M1350 0 V3550"/>
-<path class="grid" d="M1400 0 V3550"/>
-<path class="grid" d="M1450 0 V3550"/>
-<path class="grid" d="M1500 0 V3550"/>
-<path class="grid" d="M1550 0 V3550"/>
-<path class="grid" d="M1600 0 V3550"/>
-<path class="grid" d="M1650 0 V3550"/>
-<path class="grid" d="M1700 0 V3550"/>
-<path class="grid" d="M1750 0 V3550"/>
-<path class="grid" d="M1800 0 V3550"/>
-<path class="grid" d="M1850 0 V3550"/>
-<path class="grid" d="M1900 0 V3550"/>
-<path class="grid" d="M1950 0 V3550"/>
-<path class="grid" d="M2000 0 V3550"/>
-<path class="grid" d="M2050 0 V3550"/>
-<path class="grid" d="M2100 0 V3550"/>
-<path class="grid" d="M2150 0 V3550"/>
-<path class="grid" d="M2200 0 V3550"/>
-<path class="grid" d="M2250 0 V3550"/>
-<path class="grid" d="M2300 0 V3550"/>
-<path class="grid" d="M2350 0 V3550"/>
-<path class="grid" d="M2400 0 V3550"/>
-<path class="grid" d="M2450 0 V3550"/>
-<path class="grid" d="M2500 0 V3550"/>
-<path class="grid" d="M2550 0 V3550"/>
-<path class="grid" d="M2600 0 V3550"/>
-<path class="grid" d="M2650 0 V3550"/>
-<path class="grid" d="M2700 0 V3550"/>
-<path class="grid" d="M2750 0 V3550"/>
-<path class="grid" d="M2800 0 V3550"/>
-<path class="grid" d="M2850 0 V3550"/>
-<path class="grid" d="M2900 0 V3550"/>
-<path class="grid" d="M2950 0 V3550"/>
-<path class="grid" d="M3000 0 V3550"/>
-<path class="grid" d="M3050 0 V3550"/>
-<path class="grid" d="M3100 0 V3550"/>
-<path class="grid" d="M3150 0 V3550"/>
-<path class="grid" d="M3200 0 V3550"/>
-<path class="grid" d="M3250 0 V3550"/>
-<path class="grid" d="M3300 0 V3550"/>
-<path class="grid" d="M3350 0 V3550"/>
-<path class="grid" d="M3400 0 V3550"/>
-<path class="grid" d="M3450 0 V3550"/>
-<path class="grid" d="M3500 0 V3550"/>
-<path class="grid" d="M3550 0 V3550"/>
-<path class="grid" d="M3600 0 V3550"/>
-<path class="grid" d="M0 0 H3600"/>
-<path class="grid" d="M0 50 H3600"/>
-<path class="grid" d="M0 100 H3600"/>
-<path class="grid" d="M0 150 H3600"/>
-<path class="grid" d="M0 200 H3600"/>
-<path class="grid" d="M0 250 H3600"/>
-<path class="grid" d="M0 300 H3600"/>
-<path class="grid" d="M0 350 H3600"/>
-<path class="grid" d="M0 400 H3600"/>
-<path class="grid" d="M0 450 H3600"/>
-<path class="grid" d="M0 500 H3600"/>
-<path class="grid" d="M0 550 H3600"/>
-<path class="grid" d="M0 600 H3600"/>
-<path class="grid" d="M0 650 H3600"/>
-<path class="grid" d="M0 700 H3600"/>
-<path class="grid" d="M0 750 H3600"/>
-<path class="grid" d="M0 800 H3600"/>
-<path class="grid" d="M0 850 H3600"/>
-<path class="grid" d="M0 900 H3600"/>
-<path class="grid" d="M0 950 H3600"/>
-<path class="grid" d="M0 1000 H3600"/>
-<path class="grid" d="M0 1050 H3600"/>
-<path class="grid" d="M0 1100 H3600"/>
-<path class="grid" d="M0 1150 H3600"/>
-<path class="grid" d="M0 1200 H3600"/>
-<path class="grid" d="M0 1250 H3600"/>
-<path class="grid" d="M0 1300 H3600"/>
-<path class="grid" d="M0 1350 H3600"/>
-<path class="grid" d="M0 1400 H3600"/>
-<path class="grid" d="M0 1450 H3600"/>
-<path class="grid" d="M0 1500 H3600"/>
-<path class="grid" d="M0 1550 H3600"/>
-<path class="grid" d="M0 1600 H3600"/>
-<path class="grid" d="M0 1650 H3600"/>
-<path class="grid" d="M0 1700 H3600"/>
-<path class="grid" d="M0 1750 H3600"/>
-<path class="grid" d="M0 1800 H3600"/>
-<path class="grid" d="M0 1850 H3600"/>
-<path class="grid" d="M0 1900 H3600"/>
-<path class="grid" d="M0 1950 H3600"/>
-<path class="grid" d="M0 2000 H3600"/>
-<path class="grid" d="M0 2050 H3600"/>
-<path class="grid" d="M0 2100 H3600"/>
-<path class="grid" d="M0 2150 H3600"/>
-<path class="grid" d="M0 2200 H3600"/>
-<path class="grid" d="M0 2250 H3600"/>
-<path class="grid" d="M0 2300 H3600"/>
-<path class="grid" d="M0 2350 H3600"/>
-<path class="grid" d="M0 2400 H3600"/>
-<path class="grid" d="M0 2450 H3600"/>
-<path class="grid" d="M0 2500 H3600"/>
-<path class="grid" d="M0 2550 H3600"/>
-<path class="grid" d="M0 2600 H3600"/>
-<path class="grid" d="M0 2650 H3600"/>
-<path class="grid" d="M0 2700 H3600"/>
-<path class="grid" d="M0 2750 H3600"/>
-<path class="grid" d="M0 2800 H3600"/>
-<path class="grid" d="M0 2850 H3600"/>
-<path class="grid" d="M0 2900 H3600"/>
-<path class="grid" d="M0 2950 H3600"/>
-<path class="grid" d="M0 3000 H3600"/>
-<path class="grid" d="M0 3050 H3600"/>
-<path class="grid" d="M0 3100 H3600"/>
-<path class="grid" d="M0 3150 H3600"/>
-<path class="grid" d="M0 3200 H3600"/>
-<path class="grid" d="M0 3250 H3600"/>
-<path class="grid" d="M0 3300 H3600"/>
-<path class="grid" d="M0 3350 H3600"/>
-<path class="grid" d="M0 3400 H3600"/>
-<path class="grid" d="M0 3450 H3600"/>
-<path class="grid" d="M0 3500 H3600"/>
-<path class="grid" d="M0 3550 H3600"/>
-<text class="title" x="40" y="52" text-anchor="start">Attestor Internal Machine Blueprint</text>
-<text class="subtitle" x="40" y="80" text-anchor="start">One dark, readable source-of-truth map: flow + dimensions + value sets + matrices + boundaries + side loops.</text>
-<text class="tiny" x="40" y="108" text-anchor="start">All labels in the value panels are taken from current repo constants or directly from source unions; no unproven production claim is added.</text>
-<rect class="panelGold" x="40" y="132" width="680" height="120"/>
-<text class="panelTitle" x="56" y="156" text-anchor="start">Time</text>
-<text class="body" x="56" y="180" text-anchor="start">token TTL: 1800 / 900 / 600 / 300 / 180s</text>
-<text class="body" x="56" y="196" text-anchor="start">expiry, notBefore, context age</text>
-<text class="body" x="56" y="212" text-anchor="start">fresh/stale/replay window</text>
-<rect class="panelGold" x="744" y="132" width="680" height="120"/>
-<text class="panelTitle" x="760" y="156" text-anchor="start">Identity</text>
-<text class="body" x="760" y="180" text-anchor="start">tenant, account, actor, requester</text>
-<text class="body" x="760" y="196" text-anchor="start">audience + target binding</text>
-<text class="body" x="760" y="212" text-anchor="start">DPoP / mTLS / SPIFFE sender binding</text>
-<rect class="panelGold" x="1448" y="132" width="680" height="120"/>
-<text class="panelTitle" x="1464" y="156" text-anchor="start">Content</text>
-<text class="body" x="1464" y="180" text-anchor="start">output contract, target kind, artifact type</text>
-<text class="body" x="1464" y="196" text-anchor="start">data surfaces: 34</text>
-<text class="body" x="1464" y="212" text-anchor="start">forbidden raw classes: 15</text>
-<rect class="panelGold" x="2152" y="132" width="680" height="120"/>
-<text class="panelTitle" x="2168" y="156" text-anchor="start">Evidence</text>
-<text class="body" x="2168" y="180" text-anchor="start">proof refs, evidence pack, trace evidence</text>
-<text class="body" x="2168" y="196" text-anchor="start">retention: ephemeral / standard / regulated</text>
-<text class="body" x="2168" y="212" text-anchor="start">receipt and provenance binding</text>
-<rect class="panelGold" x="2856" y="132" width="680" height="120"/>
-<text class="panelTitle" x="2872" y="156" text-anchor="start">Risk</text>
-<text class="body" x="2872" y="180" text-anchor="start">classes: R0 / R1 / R2 / R3 / R4</text>
-<text class="body" x="2872" y="196" text-anchor="start">review mode + token level + checks</text>
-<text class="body" x="2872" y="212" text-anchor="start">failure disposition per class</text>
-<rect class="panelGold" x="40" y="274" width="680" height="120"/>
-<text class="panelTitle" x="56" y="298" text-anchor="start">Scope / intent</text>
-<text class="body" x="56" y="322" text-anchor="start">policy scope, target, capability boundary</text>
-<text class="body" x="56" y="338" text-anchor="start">allowed tools and data domains</text>
-<text class="body" x="56" y="354" text-anchor="start">active bundle / missing / invalid</text>
-<rect class="panelGold" x="744" y="274" width="680" height="120"/>
-<text class="panelTitle" x="760" y="298" text-anchor="start">Rollout</text>
-<text class="body" x="760" y="322" text-anchor="start">modes: dry-run / canary / enforce / rolled-back</text>
-<text class="body" x="760" y="338" text-anchor="start">reasons: 6</text>
-<text class="body" x="760" y="354" text-anchor="start">cohort keys: 8 SHA-256 bucket inputs</text>
-<rect class="panelGold" x="1448" y="274" width="680" height="120"/>
-<text class="panelTitle" x="1464" y="298" text-anchor="start">Consequence</text>
-<text class="body" x="1464" y="322" text-anchor="start">types: communication / record / action / decision-support</text>
-<text class="body" x="1464" y="338" text-anchor="start">admission domains: 10</text>
-<text class="body" x="1464" y="354" text-anchor="start">boundary + idempotency + receipt</text>
-<rect class="panelGold" x="2152" y="274" width="680" height="120"/>
-<text class="panelTitle" x="2168" y="298" text-anchor="start">Human</text>
-<text class="body" x="2168" y="322" text-anchor="start">auto / named-reviewer / dual-approval</text>
-<text class="body" x="2168" y="338" text-anchor="start">reviewer queue, override, break-glass</text>
-<text class="body" x="2168" y="354" text-anchor="start">approval remains explicit</text>
-<rect class="panelGold" x="2856" y="274" width="680" height="120"/>
-<text class="panelTitle" x="2872" y="298" text-anchor="start">Cryptography</text>
-<text class="body" x="2872" y="322" text-anchor="start">SHA-256 digests, EdDSA JWT, PKI</text>
-<text class="body" x="2872" y="338" text-anchor="start">DPoP, mTLS, SPIFFE, HTTP signatures</text>
-<text class="body" x="2872" y="354" text-anchor="start">signed JSON envelope, tamper evidence</text>
-<text class="sectionTitle" x="40" y="408" text-anchor="start">Main runtime projection</text>
-<rect class="boundaryTenant" x="310" y="438" width="2520" height="895"/>
-<text class="tiny" x="330" y="462" text-anchor="start">Tenant perimeter: tenant/account/actor/request context stays bound across ingress, route lanes, candidate context, release, and admission.</text>
-<rect class="boundaryDownstream" x="2985" y="438" width="585" height="895"/>
-<text class="tiny" x="3008" y="462" text-anchor="start">Downstream contract boundary: PEP and customer gate are the last protected edge before real consequence.</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="2600" height="1900" viewBox="0 0 2600 1900" role="img" aria-labelledby="title desc">
+<title id="title">Attestor Full Consequence Path Map</title>
+<desc id="desc">A one-picture map of the Attestor consequence engine: AI action intent, normalizer, PIP inputs, PDP admission decision, release authorization, enforcement verifier, customer gate, real downstream action or hold, receipt, and proof packet.</desc>
+<defs>
+  <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+    <path d="M 0 0 L 10 5 L 0 10 z" fill="#dbeafe"/>
+  </marker>
+  <style>
+    .page{fill:#06111f}
+    .grid{stroke:#10263a;stroke-width:1}
+    .title{font:700 38px Arial,Helvetica,sans-serif;fill:#f8fdff}
+    .subtitle{font:400 18px Arial,Helvetica,sans-serif;fill:#b8d7e6}
+    .section{font:700 18px Arial,Helvetica,sans-serif;fill:#f8fdff}
+    .label{font:700 15px Arial,Helvetica,sans-serif;fill:#f8fdff}
+    .body{font:400 13px Arial,Helvetica,sans-serif;fill:#dbeafe}
+    .tiny{font:400 11.5px Arial,Helvetica,sans-serif;fill:#a9c3d3}
+    .node{fill:#0c2337;stroke:#65c9f2;stroke-width:1.5;rx:10}
+    .nodeGreen{fill:#10351f;stroke:#67d68f;stroke-width:1.5;rx:10}
+    .nodeGold{fill:#3a300e;stroke:#f4c542;stroke-width:1.5;rx:10}
+    .nodeRed{fill:#421a1d;stroke:#ff8f79;stroke-width:1.5;rx:10}
+    .nodeGray{fill:#101827;stroke:#8798ad;stroke-width:1.2;rx:10}
+    .panel{fill:#091827;stroke:#31516b;stroke-width:1.25;rx:14}
+    .panelGreen{fill:#081c16;stroke:#3e9d70;stroke-width:1.25;rx:14}
+    .panelGold{fill:#17150b;stroke:#8d7834;stroke-width:1.25;rx:14}
+    .panelRed{fill:#1f1014;stroke:#8d3944;stroke-width:1.25;rx:14}
+    .branch{fill:#16243a;stroke:#52657a;stroke-width:1;rx:8}
+    .diamond{fill:#551823;stroke:#ff9a8f;stroke-width:1.6}
+    .arrow{stroke:#dbeafe;stroke-width:2;fill:none;marker-end:url(#arrow)}
+    .softArrow{stroke:#9fbad0;stroke-width:1.5;fill:none;stroke-dasharray:7 7;marker-end:url(#arrow)}
+    .holdArrow{stroke:#ffb199;stroke-width:1.7;fill:none;stroke-dasharray:7 7;marker-end:url(#arrow)}
+    .boundary{fill:none;stroke:#3b82f6;stroke-width:2.2;stroke-dasharray:13 9;rx:18}
+    .gateBoundary{fill:none;stroke:#fb7185;stroke-width:2.4;stroke-dasharray:13 9;rx:18}
+    .proofBoundary{fill:none;stroke:#f4c542;stroke-width:2.2;stroke-dasharray:10 8;rx:18}
+    .terminalProceed{fill:#0f7a4f;stroke:#75e0ae;stroke-width:2;rx:12}
+    .terminalHold{fill:#9b1c1c;stroke:#ff9a8f;stroke-width:2;rx:12}
+    .terminalText{font:700 24px Arial,Helvetica,sans-serif;fill:#ffffff}
+  </style>
+</defs>
+<rect class="page" x="0" y="0" width="2600" height="1900"/>
+<g opacity="0.42">
+  <path class="grid" d="M0 0 H2600"/>
+  <path class="grid" d="M0 50 H2600"/>
+  <path class="grid" d="M0 100 H2600"/>
+  <path class="grid" d="M0 150 H2600"/>
+  <path class="grid" d="M0 200 H2600"/>
+  <path class="grid" d="M0 250 H2600"/>
+  <path class="grid" d="M0 300 H2600"/>
+  <path class="grid" d="M0 350 H2600"/>
+  <path class="grid" d="M0 400 H2600"/>
+  <path class="grid" d="M0 450 H2600"/>
+  <path class="grid" d="M0 500 H2600"/>
+  <path class="grid" d="M0 550 H2600"/>
+  <path class="grid" d="M0 600 H2600"/>
+  <path class="grid" d="M0 650 H2600"/>
+  <path class="grid" d="M0 700 H2600"/>
+  <path class="grid" d="M0 750 H2600"/>
+  <path class="grid" d="M0 800 H2600"/>
+  <path class="grid" d="M0 850 H2600"/>
+  <path class="grid" d="M0 900 H2600"/>
+  <path class="grid" d="M0 950 H2600"/>
+  <path class="grid" d="M0 1000 H2600"/>
+  <path class="grid" d="M0 1050 H2600"/>
+  <path class="grid" d="M0 1100 H2600"/>
+  <path class="grid" d="M0 1150 H2600"/>
+  <path class="grid" d="M0 1200 H2600"/>
+  <path class="grid" d="M0 1250 H2600"/>
+  <path class="grid" d="M0 1300 H2600"/>
+  <path class="grid" d="M0 1350 H2600"/>
+  <path class="grid" d="M0 1400 H2600"/>
+  <path class="grid" d="M0 1450 H2600"/>
+  <path class="grid" d="M0 1500 H2600"/>
+  <path class="grid" d="M0 1550 H2600"/>
+  <path class="grid" d="M0 1600 H2600"/>
+  <path class="grid" d="M0 1650 H2600"/>
+  <path class="grid" d="M0 1700 H2600"/>
+  <path class="grid" d="M0 1750 H2600"/>
+  <path class="grid" d="M0 1800 H2600"/>
+  <path class="grid" d="M0 1850 H2600"/>
+  <path class="grid" d="M0 1900 H2600"/>
+  <path class="grid" d="M0 0 V1900"/>
+  <path class="grid" d="M50 0 V1900"/>
+  <path class="grid" d="M100 0 V1900"/>
+  <path class="grid" d="M150 0 V1900"/>
+  <path class="grid" d="M200 0 V1900"/>
+  <path class="grid" d="M250 0 V1900"/>
+  <path class="grid" d="M300 0 V1900"/>
+  <path class="grid" d="M350 0 V1900"/>
+  <path class="grid" d="M400 0 V1900"/>
+  <path class="grid" d="M450 0 V1900"/>
+  <path class="grid" d="M500 0 V1900"/>
+  <path class="grid" d="M550 0 V1900"/>
+  <path class="grid" d="M600 0 V1900"/>
+  <path class="grid" d="M650 0 V1900"/>
+  <path class="grid" d="M700 0 V1900"/>
+  <path class="grid" d="M750 0 V1900"/>
+  <path class="grid" d="M800 0 V1900"/>
+  <path class="grid" d="M850 0 V1900"/>
+  <path class="grid" d="M900 0 V1900"/>
+  <path class="grid" d="M950 0 V1900"/>
+  <path class="grid" d="M1000 0 V1900"/>
+  <path class="grid" d="M1050 0 V1900"/>
+  <path class="grid" d="M1100 0 V1900"/>
+  <path class="grid" d="M1150 0 V1900"/>
+  <path class="grid" d="M1200 0 V1900"/>
+  <path class="grid" d="M1250 0 V1900"/>
+  <path class="grid" d="M1300 0 V1900"/>
+  <path class="grid" d="M1350 0 V1900"/>
+  <path class="grid" d="M1400 0 V1900"/>
+  <path class="grid" d="M1450 0 V1900"/>
+  <path class="grid" d="M1500 0 V1900"/>
+  <path class="grid" d="M1550 0 V1900"/>
+  <path class="grid" d="M1600 0 V1900"/>
+  <path class="grid" d="M1650 0 V1900"/>
+  <path class="grid" d="M1700 0 V1900"/>
+  <path class="grid" d="M1750 0 V1900"/>
+  <path class="grid" d="M1800 0 V1900"/>
+  <path class="grid" d="M1850 0 V1900"/>
+  <path class="grid" d="M1900 0 V1900"/>
+  <path class="grid" d="M1950 0 V1900"/>
+  <path class="grid" d="M2000 0 V1900"/>
+  <path class="grid" d="M2050 0 V1900"/>
+  <path class="grid" d="M2100 0 V1900"/>
+  <path class="grid" d="M2150 0 V1900"/>
+  <path class="grid" d="M2200 0 V1900"/>
+  <path class="grid" d="M2250 0 V1900"/>
+  <path class="grid" d="M2300 0 V1900"/>
+  <path class="grid" d="M2350 0 V1900"/>
+  <path class="grid" d="M2400 0 V1900"/>
+  <path class="grid" d="M2450 0 V1900"/>
+  <path class="grid" d="M2500 0 V1900"/>
+  <path class="grid" d="M2550 0 V1900"/>
+</g>
 
-<text class="sectionTitle" x="40" y="452" text-anchor="start">Callers, Route Lanes, And Runtime Ingress</text>
-<rect class="nodeGreen" x="40" y="500" width="210" height="70"/>
-<text class="label" x="56" y="524" text-anchor="start">AI agent / app</text>
-<text class="body" x="56" y="546" text-anchor="start">proposed consequence</text>
-<rect class="nodeGreen" x="40" y="610" width="210" height="70"/>
-<text class="label" x="56" y="634" text-anchor="start">Operator / reviewer</text>
-<text class="body" x="56" y="656" text-anchor="start">human authority</text>
-<rect class="nodeGreen" x="40" y="720" width="210" height="70"/>
-<text class="label" x="56" y="744" text-anchor="start">LLM / package caller</text>
-<text class="body" x="56" y="766" text-anchor="start">provider, SDK, release-layer</text>
-<rect class="bus" x="282" y="500" width="16" height="290"/>
-<text class="tiny" x="260" y="486" text-anchor="start">ingress bus</text>
-<path class="arrow" d="M250 535 H282"/>
-<path class="arrow" d="M250 645 H282"/>
-<path class="arrow" d="M250 755 H282"/>
-<rect class="nodeBlue" x="335" y="500" width="270" height="70"/>
-<text class="label" x="351" y="524" text-anchor="start">Service ingress</text>
-<text class="body" x="351" y="546" text-anchor="start">tenant, actor, account context</text>
-<polygon class="decision" points="470,612 595,660 470,708 345,660"/>
-<text class="labelCenter" x="470" y="657" text-anchor="middle">Entry path</text>
-<text class="tinyCenter" x="470" y="674" text-anchor="middle">route lane?</text>
-<rect class="nodeBlue2" x="335" y="790" width="270" height="76"/>
-<text class="label" x="351" y="814" text-anchor="start">Candidate builder</text>
-<text class="body" x="351" y="836" text-anchor="start">normalizes route and request</text>
-<text class="body" x="351" y="852" text-anchor="start">candidate context created</text>
-<path class="arrow" d="M298 535 H335"/>
-<path class="arrow" d="M470 570 V612"/>
-<path class="arrow" d="M470 708 V790"/>
+<text class="title" x="60" y="62">Attestor Full Consequence Path Map</text>
+<text class="subtitle" x="60" y="94">AI proposes. Admission decides. Release proves. Enforcement verifies. Customer gate enforces. Action happens, or nothing happens.</text>
 
-<rect class="panel" x="650" y="480" width="520" height="270"/>
-<text class="panelTitle" x="670" y="506" text-anchor="start">Route lane groups</text>
-<rect class="nodeBlue2" x="670" y="526" width="225" height="38"/>
-<text class="label" x="686" y="550" text-anchor="start">Core route group</text>
-<rect class="nodeBlue2" x="920" y="526" width="230" height="38"/>
-<text class="label" x="936" y="550" text-anchor="start">Public site and proof route group</text>
-<rect class="nodeBlue2" x="670" y="580" width="225" height="38"/>
-<text class="label" x="686" y="604" text-anchor="start">Auth and account route group</text>
-<rect class="nodeBlue2" x="920" y="580" width="230" height="38"/>
-<text class="label" x="936" y="604" text-anchor="start">Admin and operator route group</text>
-<rect class="nodeBlue2" x="670" y="634" width="225" height="38"/>
-<text class="label" x="686" y="658" text-anchor="start">Pipeline route group</text>
-<rect class="nodeBlue2" x="920" y="634" width="230" height="38"/>
-<text class="label" x="936" y="658" text-anchor="start">Admission and shadow route group</text>
-<rect class="nodeBlue2" x="670" y="688" width="225" height="38"/>
-<text class="label" x="686" y="712" text-anchor="start">Webhook route group</text>
-<rect class="nodeBlue2" x="920" y="688" width="230" height="38"/>
-<text class="label" x="936" y="712" text-anchor="start">Generic admission route group</text>
-<text class="tiny" x="670" y="742" text-anchor="start">Verification and filing routes enter the same candidate builder path.</text>
-<path class="thinArrow" d="M595 660 H650"/>
-<path class="thinArrow" d="M910 750 V820"/>
+<rect class="boundary" x="40" y="122" width="1650" height="990"/>
+<text class="section" x="70" y="152">Attestor decision and proof boundary</text>
 
-<rect class="nodeYellow" x="650" y="820" width="520" height="118"/>
-<text class="label" x="670" y="846" text-anchor="start">Ten Decision Axes Applied To The Same Candidate</text>
-<text class="body" x="670" y="868" text-anchor="start">normalized proposed consequence</text>
-<text class="body" x="670" y="884" text-anchor="start">tenant + actor + target + output + risk</text>
-<text class="body" x="670" y="900" text-anchor="start">one fact set, projected into release and admission</text>
-<text class="body" x="670" y="916" text-anchor="start">time / identity / content / evidence / risk / scope / rollout / consequence / human / crypto</text>
-<path class="thickArrow" d="M605 828 H650"/>
-<rect class="bus" x="1210" y="585" width="18" height="440"/>
-<text class="tiny" x="1186" y="568" text-anchor="start">candidate bus</text>
-<path class="thickArrow" d="M1170 879 H1210"/>
+<rect class="gateBoundary" x="1730" y="610" width="800" height="370"/>
+<text class="section" x="1760" y="640">Customer / downstream enforcement boundary</text>
 
-<rect class="boundarySigner" x="1260" y="470" width="330" height="220"/>
-<text class="tiny" x="1282" y="494" text-anchor="start">KMS / signer boundary</text>
-<text class="sectionTitle" x="1282" y="522" text-anchor="start">Policy Control Plane</text>
-<rect class="nodeRed" x="1282" y="540" width="280" height="58"/>
-<text class="label" x="1298" y="564" text-anchor="start">Policy bundles</text>
-<text class="body" x="1298" y="586" text-anchor="start">signed, scoped, activated</text>
-<rect class="nodeRed" x="1282" y="612" width="280" height="58"/>
-<text class="label" x="1298" y="636" text-anchor="start">Signer / KMS edge</text>
-<text class="body" x="1298" y="658" text-anchor="start">key boundary evidence</text>
-<path class="thinArrow" d="M1562 569 H1605 V610 H1560"/>
-<path class="thinArrow" d="M1562 641 H1605 V610 H1560"/>
+<rect class="proofBoundary" x="1730" y="1015" width="800" height="600"/>
+<text class="section" x="1760" y="1045">Receipt and proof boundary</text>
 
-<text class="sectionTitle" x="1260" y="742" text-anchor="start">Domain Packs Into Admission PDP</text>
-<rect class="nodeYellow" x="1260" y="760" width="150" height="52"/>
-<text class="label" x="1276" y="784" text-anchor="start">Finance pack</text>
-<rect class="nodeYellow" x="1430" y="760" width="120" height="52"/>
-<text class="label" x="1446" y="784" text-anchor="start">Filing</text>
-<rect class="nodeYellow" x="1570" y="760" width="130" height="52"/>
-<text class="label" x="1586" y="784" text-anchor="start">Crypto</text>
-<path class="thinArrow" d="M1228 800 H1260"/>
-<path class="thinArrow" d="M1335 812 V940 H1560"/>
-<path class="thinArrow" d="M1490 812 V940 H1560"/>
-<path class="thinArrow" d="M1635 812 V940 H1560"/>
+<rect class="node" x="85" y="190" width="350" height="125"/>
+<text class="label" x="110" y="220">AI AGENT / WORKFLOW</text>
+<text class="body" x="110" y="248">Proposes an action intent:</text>
+<text class="tiny" x="110" y="273">refund, export, send, role change, operation</text>
+<text class="tiny" x="110" y="296">Authority: none. Output is untrusted.</text>
 
-<path class="thinArrow" d="M1228 650 H1560"/>
-<path class="thinArrow" d="M1228 940 H1560"/>
-<polygon class="decision" points="1680,562 1800,610 1680,658 1560,610"/>
-<text class="labelCenter" x="1680" y="607" text-anchor="middle">Policy resolution</text>
-<text class="tinyCenter" x="1680" y="624" text-anchor="middle">active scope?</text>
-<polygon class="decision" points="1940,562 2060,610 1940,658 1820,610"/>
-<text class="labelCenter" x="1940" y="607" text-anchor="middle">Rollout resolution</text>
-<text class="tinyCenter" x="1940" y="624" text-anchor="middle">dry-run/canary/enforce</text>
-<polygon class="decision" points="2200,562 2320,610 2200,658 2080,610"/>
-<text class="labelCenter" x="2200" y="607" text-anchor="middle">Deterministic checks</text>
-<text class="tinyCenter" x="2200" y="624" text-anchor="middle">9 control categories</text>
-<polygon class="decision" points="2460,562 2580,610 2460,658 2340,610"/>
-<text class="labelCenter" x="2460" y="607" text-anchor="middle">ReleaseDecision</text>
-<text class="tinyCenter" x="2460" y="624" text-anchor="middle">7 statuses</text>
-<path class="arrow" d="M1800 610 H1820"/>
-<path class="arrow" d="M2060 610 H2080"/>
-<path class="arrow" d="M2320 610 H2340"/>
-<rect class="nodeBlue" x="2620" y="570" width="270" height="80"/>
-<text class="label" x="2636" y="594" text-anchor="start">Release PDP</text>
-<text class="body" x="2636" y="616" text-anchor="start">release status + proof plan</text>
-<text class="body" x="2636" y="632" text-anchor="start">token/evidence/review outputs</text>
-<path class="arrow" d="M2580 610 H2620"/>
+<path class="arrow" d="M435 252 H515"/>
 
-<polygon class="decision" points="1680,892 1800,940 1680,988 1560,940"/>
-<text class="labelCenter" x="1680" y="937" text-anchor="middle">Admission mode ladder</text>
-<text class="tinyCenter" x="1680" y="954" text-anchor="middle">observe/warn/review/enforce</text>
-<polygon class="decision" points="1940,892 2060,940 1940,988 1820,940"/>
-<text class="labelCenter" x="1940" y="937" text-anchor="middle">Required admission checks</text>
-<text class="tinyCenter" x="1940" y="954" text-anchor="middle">6 checks</text>
-<polygon class="decision" points="2200,892 2320,940 2200,988 2080,940"/>
-<text class="labelCenter" x="2200" y="937" text-anchor="middle">Canonical decision</text>
-<text class="tinyCenter" x="2200" y="954" text-anchor="middle">admit/narrow/review/block</text>
-<polygon class="decision" points="2460,892 2580,940 2460,988 2340,940"/>
-<text class="labelCenter" x="2460" y="937" text-anchor="middle">Protected token required?</text>
-<text class="tinyCenter" x="2460" y="954" text-anchor="middle">generic high-risk path</text>
-<path class="arrow" d="M1800 940 H1820"/>
-<path class="arrow" d="M2060 940 H2080"/>
-<path class="arrow" d="M2320 940 H2340"/>
-<rect class="nodeBlue" x="2620" y="900" width="300" height="80"/>
-<text class="label" x="2636" y="924" text-anchor="start">Admission PDP</text>
-<text class="body" x="2636" y="946" text-anchor="start">canonical response + digest</text>
-<text class="body" x="2636" y="962" text-anchor="start">proof refs, constraints, failClosed</text>
-<path class="arrow" d="M2580 940 H2620"/>
+<rect class="node" x="520" y="190" width="365" height="125"/>
+<text class="label" x="545" y="220">ACTION INTENT NORMALIZER</text>
+<text class="body" x="545" y="248">Creates strict consequence request.</text>
+<text class="tiny" x="545" y="273">action, actor, tenant, target, scope</text>
+<text class="tiny" x="545" y="296">evidence refs, approval refs, idempotency</text>
 
-<rect class="junction" x="2948" y="625" width="16" height="330"/>
-<path class="thickArrow" d="M2890 610 H2948 V760"/>
-<path class="thickArrow" d="M2920 940 H2948 V812"/>
-<text class="tiny" x="2870" y="595" text-anchor="start">release + admission fan-in</text>
-<text class="sectionTitle" x="3008" y="524" text-anchor="start">Enforcement PEP, Customer Gate, Terminal Outcomes</text>
-<path class="thickArrow" d="M2964 790 H3010"/>
-<polygon class="decision" points="3130,732 3245,776 3130,820 3015,776"/>
-<text class="labelCenter" x="3130" y="773" text-anchor="middle">Enforcement path</text>
-<text class="tinyCenter" x="3130" y="790" text-anchor="middle">gate / PEP / contract</text>
-<polygon class="decision" points="3130,852 3245,896 3130,940 3015,896"/>
-<text class="labelCenter" x="3130" y="893" text-anchor="middle">Presentation mode ok?</text>
-<text class="tinyCenter" x="3130" y="910" text-anchor="middle">6 modes</text>
-<polygon class="decision" points="3130,972 3245,1016 3130,1060 3015,1016"/>
-<text class="labelCenter" x="3130" y="1013" text-anchor="middle">Offline verification</text>
-<text class="tinyCenter" x="3130" y="1030" text-anchor="middle">signature + binding</text>
-<polygon class="decision" points="3130,1092 3245,1136 3130,1180 3015,1136"/>
-<text class="labelCenter" x="3130" y="1133" text-anchor="middle">Online verification</text>
-<text class="tinyCenter" x="3130" y="1150" text-anchor="middle">introspection + replay</text>
-<polygon class="decision" points="3130,1212 3245,1256 3130,1300 3015,1256"/>
-<text class="labelCenter" x="3130" y="1253" text-anchor="middle">Enforcement result</text>
-<text class="tinyCenter" x="3130" y="1270" text-anchor="middle">5 outcomes</text>
-<path class="arrow" d="M3130 820 V852"/>
-<path class="arrow" d="M3130 940 V972"/>
-<path class="arrow" d="M3130 1060 V1092"/>
-<path class="arrow" d="M3130 1180 V1212"/>
-<polygon class="decision" points="3315,1218 3400,1256 3315,1294 3230,1256"/>
-<text class="labelCenter" x="3315" y="1253" text-anchor="middle">Customer gate</text>
-<text class="tinyCenter" x="3315" y="1270" text-anchor="middle">proceed/hold</text>
-<path class="arrow" d="M3245 1256 H3230"/>
-<polygon class="decision" points="3458,1222 3528,1256 3458,1290 3388,1256"/>
-<text class="labelCenter" x="3458" y="1253" text-anchor="middle">Terminal split</text>
-<path class="arrow" d="M3400 1256 H3388"/>
-<rect class="proceed" x="3426" y="1066" width="132" height="62"/>
-<text class="termText" x="3492" y="1102" text-anchor="middle">PROCEED</text>
-<text class="tinyCenter" x="3492" y="1119" text-anchor="middle">allowed path</text>
-<rect class="hold" x="3426" y="1314" width="132" height="62"/>
-<text class="termText" x="3492" y="1350" text-anchor="middle">HOLD</text>
-<text class="tinyCenter" x="3492" y="1367" text-anchor="middle">fail-closed</text>
-<path class="arrow" d="M3458 1222 C3458 1155 3426 1110 3426 1098"/>
-<path class="arrow" d="M3458 1290 C3458 1320 3426 1332 3426 1345"/>
-<text class="tiny" x="3398" y="1082" text-anchor="start">proceed</text>
-<text class="tiny" x="3398" y="1340" text-anchor="start">hold</text>
+<path class="holdArrow" d="M705 315 V390 H375 V455"/>
+<rect class="terminalHold" x="210" y="455" width="330" height="92"/>
+<text class="terminalText" x="245" y="492">HOLD BEFORE DECISION</text>
+<text class="tiny" x="245" y="520">invalid or incomplete intent; no downstream action</text>
 
-<text class="sectionTitle" x="50" y="1160" text-anchor="start">Shared Stores</text>
-<rect class="nodeRed" x="50" y="1180" width="240" height="62"/>
-<text class="label" x="66" y="1204" text-anchor="start">Shared stores</text>
-<text class="body" x="66" y="1226" text-anchor="start">tenant / account / outbox</text>
-<text class="sectionTitle" x="360" y="1160" text-anchor="start">Support Surfaces</text>
-<rect class="nodeRed" x="360" y="1180" width="240" height="62"/>
-<text class="label" x="376" y="1204" text-anchor="start">Audit dashboard</text>
-<text class="body" x="376" y="1226" text-anchor="start">receipt and review evidence</text>
-<rect class="nodeRed" x="670" y="1180" width="240" height="62"/>
-<text class="label" x="686" y="1204" text-anchor="start">Proof surfaces</text>
-<text class="body" x="686" y="1226" text-anchor="start">signed envelopes / verify</text>
+<path class="arrow" d="M885 252 H965"/>
 
-<text class="sectionTitle" x="1195" y="1190" text-anchor="start">Shadow-To-Policy Loop</text>
-<rect class="nodeBlue2" x="1195" y="1212" width="190" height="50"/>
-<text class="label" x="1211" y="1236" text-anchor="start">shadow event</text>
-<text class="body" x="1211" y="1258" text-anchor="start">observed</text>
-<rect class="nodeBlue2" x="1430" y="1212" width="190" height="50"/>
-<text class="label" x="1446" y="1236" text-anchor="start">action surface</text>
-<text class="body" x="1446" y="1258" text-anchor="start">inventory</text>
-<rect class="nodeBlue2" x="1665" y="1212" width="190" height="50"/>
-<text class="label" x="1681" y="1236" text-anchor="start">candidate</text>
-<text class="body" x="1681" y="1258" text-anchor="start">schema-valid</text>
-<rect class="nodeBlue2" x="1900" y="1212" width="190" height="50"/>
-<text class="label" x="1916" y="1236" text-anchor="start">review packet</text>
-<text class="body" x="1916" y="1258" text-anchor="start">approval</text>
-<path class="dash" d="M910 1210 C1040 1228 1110 1236 1195 1237"/>
-<path class="dash" d="M1385 1237 H1430"/>
-<path class="dash" d="M1620 1237 H1665"/>
-<path class="dash" d="M1855 1237 H1900"/>
-<path class="dash" d="M1995 1212 C1840 1110 1540 760 1422 598"/>
-<text class="tiny" x="1210" y="1294" text-anchor="start">observed traffic -&gt; action surface -&gt; candidate -&gt; review packet -&gt; approved policy bundle only</text>
-<rect class="nodeGray" x="2865" y="1370" width="210" height="54"/>
-<text class="label" x="2881" y="1394" text-anchor="start">Readiness gate</text>
-<text class="body" x="2881" y="1416" text-anchor="start">probe-driven readiness</text>
-<path class="dash" d="M3130 1300 C3070 1360 3000 1362 3075 1397"/>
-<text class="tiny" x="3076" y="1360" text-anchor="start">Probe -&gt; readiness gate</text>
-<path class="dash" d="M3230 1256 C2440 1340 920 1308 480 1242"/>
-<text class="tiny" x="700" y="1272" text-anchor="start">Receipt -&gt; audit dashboard</text>
-<text class="sectionTitle" x="40" y="1372" text-anchor="start">Repo-sourced value matrices</text>
-<rect class="panel" x="40" y="1400" width="1300" height="220"/>
-<text class="panelTitle" x="56" y="1425" text-anchor="start">Risk x Control Matrix</text>
-<rect class="tableHead" x="50" y="1438" width="169.71428571428572" height="25"/>
-<text class="tableTextStrong" x="58" y="1455" text-anchor="start">risk</text>
-<rect class="tableHead" x="235.71428571428572" y="1438" width="169.71428571428572" height="25"/>
-<text class="tableTextStrong" x="243.71428571428572" y="1455" text-anchor="start">review</text>
-<rect class="tableHead" x="421.42857142857144" y="1438" width="169.71428571428572" height="25"/>
-<text class="tableTextStrong" x="429.42857142857144" y="1455" text-anchor="start">token</text>
-<rect class="tableHead" x="607.1428571428571" y="1438" width="169.71428571428572" height="25"/>
-<text class="tableTextStrong" x="615.1428571428571" y="1455" text-anchor="start">checks</text>
-<rect class="tableHead" x="792.8571428571429" y="1438" width="169.71428571428572" height="25"/>
-<text class="tableTextStrong" x="800.8571428571429" y="1455" text-anchor="start">retention</text>
-<rect class="tableHead" x="978.5714285714287" y="1438" width="169.71428571428572" height="25"/>
-<text class="tableTextStrong" x="986.5714285714287" y="1455" text-anchor="start">ttl</text>
-<rect class="tableHead" x="1164.2857142857142" y="1438" width="169.71428571428572" height="25"/>
-<text class="tableTextStrong" x="1172.2857142857142" y="1455" text-anchor="start">receipt</text>
-<rect class="tableCell" x="50" y="1468" width="169.71428571428572" height="27"/>
-<text class="tableTextStrong" x="58" y="1487" text-anchor="start">R0</text>
-<rect class="tableCell" x="235.71428571428572" y="1468" width="169.71428571428572" height="27"/>
-<text class="tableText" x="243.71428571428572" y="1487" text-anchor="start">auto</text>
-<rect class="tableCell" x="421.42857142857144" y="1468" width="169.71428571428572" height="27"/>
-<text class="tableText" x="429.42857142857144" y="1487" text-anchor="start">none</text>
-<rect class="tableCell" x="607.1428571428571" y="1468" width="169.71428571428572" height="27"/>
-<text class="tableText" x="615.1428571428571" y="1487" text-anchor="start">1</text>
-<rect class="tableCell" x="792.8571428571429" y="1468" width="169.71428571428572" height="27"/>
-<text class="tableText" x="800.8571428571429" y="1487" text-anchor="start">ephemeral</text>
-<rect class="tableCell" x="978.5714285714287" y="1468" width="169.71428571428572" height="27"/>
-<text class="tableText" x="986.5714285714287" y="1487" text-anchor="start">1800s</text>
-<rect class="tableCell" x="1164.2857142857142" y="1468" width="169.71428571428572" height="27"/>
-<text class="tableText" x="1172.2857142857142" y="1487" text-anchor="start">no</text>
-<rect class="tableCellAlt" x="50" y="1500" width="169.71428571428572" height="27"/>
-<text class="tableTextStrong" x="58" y="1519" text-anchor="start">R1</text>
-<rect class="tableCellAlt" x="235.71428571428572" y="1500" width="169.71428571428572" height="27"/>
-<text class="tableText" x="243.71428571428572" y="1519" text-anchor="start">auto</text>
-<rect class="tableCellAlt" x="421.42857142857144" y="1500" width="169.71428571428572" height="27"/>
-<text class="tableText" x="429.42857142857144" y="1519" text-anchor="start">optional</text>
-<rect class="tableCellAlt" x="607.1428571428571" y="1500" width="169.71428571428572" height="27"/>
-<text class="tableText" x="615.1428571428571" y="1519" text-anchor="start">2</text>
-<rect class="tableCellAlt" x="792.8571428571429" y="1500" width="169.71428571428572" height="27"/>
-<text class="tableText" x="800.8571428571429" y="1519" text-anchor="start">standard</text>
-<rect class="tableCellAlt" x="978.5714285714287" y="1500" width="169.71428571428572" height="27"/>
-<text class="tableText" x="986.5714285714287" y="1519" text-anchor="start">900s</text>
-<rect class="tableCellAlt" x="1164.2857142857142" y="1500" width="169.71428571428572" height="27"/>
-<text class="tableText" x="1172.2857142857142" y="1519" text-anchor="start">no</text>
-<rect class="tableCell" x="50" y="1532" width="169.71428571428572" height="27"/>
-<text class="tableTextStrong" x="58" y="1551" text-anchor="start">R2</text>
-<rect class="tableCell" x="235.71428571428572" y="1532" width="169.71428571428572" height="27"/>
-<text class="tableText" x="243.71428571428572" y="1551" text-anchor="start">auto</text>
-<rect class="tableCell" x="421.42857142857144" y="1532" width="169.71428571428572" height="27"/>
-<text class="tableText" x="429.42857142857144" y="1551" text-anchor="start">required</text>
-<rect class="tableCell" x="607.1428571428571" y="1532" width="169.71428571428572" height="27"/>
-<text class="tableText" x="615.1428571428571" y="1551" text-anchor="start">5</text>
-<rect class="tableCell" x="792.8571428571429" y="1532" width="169.71428571428572" height="27"/>
-<text class="tableText" x="800.8571428571429" y="1551" text-anchor="start">standard</text>
-<rect class="tableCell" x="978.5714285714287" y="1532" width="169.71428571428572" height="27"/>
-<text class="tableText" x="986.5714285714287" y="1551" text-anchor="start">600s</text>
-<rect class="tableCell" x="1164.2857142857142" y="1532" width="169.71428571428572" height="27"/>
-<text class="tableText" x="1172.2857142857142" y="1551" text-anchor="start">no</text>
-<rect class="tableCellAlt" x="50" y="1564" width="169.71428571428572" height="27"/>
-<text class="tableTextStrong" x="58" y="1583" text-anchor="start">R3</text>
-<rect class="tableCellAlt" x="235.71428571428572" y="1564" width="169.71428571428572" height="27"/>
-<text class="tableText" x="243.71428571428572" y="1583" text-anchor="start">named-reviewer</text>
-<rect class="tableCellAlt" x="421.42857142857144" y="1564" width="169.71428571428572" height="27"/>
-<text class="tableText" x="429.42857142857144" y="1583" text-anchor="start">required-with-introspection</text>
-<rect class="tableCellAlt" x="607.1428571428571" y="1564" width="169.71428571428572" height="27"/>
-<text class="tableText" x="615.1428571428571" y="1583" text-anchor="start">7</text>
-<rect class="tableCellAlt" x="792.8571428571429" y="1564" width="169.71428571428572" height="27"/>
-<text class="tableText" x="800.8571428571429" y="1583" text-anchor="start">standard</text>
-<rect class="tableCellAlt" x="978.5714285714287" y="1564" width="169.71428571428572" height="27"/>
-<text class="tableText" x="986.5714285714287" y="1583" text-anchor="start">300s</text>
-<rect class="tableCellAlt" x="1164.2857142857142" y="1564" width="169.71428571428572" height="27"/>
-<text class="tableText" x="1172.2857142857142" y="1583" text-anchor="start">no</text>
-<rect class="tableCell" x="50" y="1596" width="169.71428571428572" height="27"/>
-<text class="tableTextStrong" x="58" y="1615" text-anchor="start">R4</text>
-<rect class="tableCell" x="235.71428571428572" y="1596" width="169.71428571428572" height="27"/>
-<text class="tableText" x="243.71428571428572" y="1615" text-anchor="start">dual-approval</text>
-<rect class="tableCell" x="421.42857142857144" y="1596" width="169.71428571428572" height="27"/>
-<text class="tableText" x="429.42857142857144" y="1615" text-anchor="start">required-with-introspection</text>
-<rect class="tableCell" x="607.1428571428571" y="1596" width="169.71428571428572" height="27"/>
-<text class="tableText" x="615.1428571428571" y="1615" text-anchor="start">9</text>
-<rect class="tableCell" x="792.8571428571429" y="1596" width="169.71428571428572" height="27"/>
-<text class="tableText" x="800.8571428571429" y="1615" text-anchor="start">regulated</text>
-<rect class="tableCell" x="978.5714285714287" y="1596" width="169.71428571428572" height="27"/>
-<text class="tableText" x="986.5714285714287" y="1615" text-anchor="start">180s</text>
-<rect class="tableCell" x="1164.2857142857142" y="1596" width="169.71428571428572" height="27"/>
-<text class="tableText" x="1172.2857142857142" y="1615" text-anchor="start">yes</text>
-<rect class="panel" x="1380" y="1400" width="760" height="220"/>
-<text class="panelTitle" x="1396" y="1424" text-anchor="start">Release Rollout Matrix</text>
-<text class="tableTextStrong" x="1396" y="1452" text-anchor="start">modes</text>
-<rect class="chip" x="1448" y="1436" width="66.80000000000001" height="23"/>
-<text class="chipText" x="1459" y="1452" text-anchor="start">dry-run</text>
-<rect class="chip" x="1522.8" y="1436" width="60.400000000000006" height="23"/>
-<text class="chipText" x="1533.8" y="1452" text-anchor="start">canary</text>
-<rect class="chip" x="1591.2" y="1436" width="66.80000000000001" height="23"/>
-<text class="chipText" x="1602.2" y="1452" text-anchor="start">enforce</text>
-<rect class="chip" x="1666" y="1436" width="92.4" height="23"/>
-<text class="chipText" x="1677" y="1452" text-anchor="start">rolled-back</text>
-<text class="tableTextStrong" x="1396" y="1488" text-anchor="start">reasons</text>
-<rect class="chip" x="1458" y="1472" width="66.80000000000001" height="23"/>
-<text class="chipText" x="1469" y="1488" text-anchor="start">dry-run</text>
-<rect class="chip" x="1532.8" y="1472" width="111.60000000000001" height="23"/>
-<text class="chipText" x="1543.8" y="1488" text-anchor="start">canary-enforce</text>
-<rect class="chip" x="1652.3999999999999" y="1472" width="105.2" height="23"/>
-<text class="chipText" x="1663.3999999999999" y="1488" text-anchor="start">canary-shadow</text>
-<rect class="chip" x="1765.6" y="1472" width="162.8" height="23"/>
-<text class="chipText" x="1776.6" y="1488" text-anchor="start">canary-missing-context</text>
-<rect class="chip" x="1936.3999999999999" y="1472" width="66.80000000000001" height="23"/>
-<text class="chipText" x="1947.3999999999999" y="1488" text-anchor="start">enforce</text>
-<rect class="chip" x="2011.1999999999998" y="1472" width="92.4" height="23"/>
-<text class="chipText" x="2022.1999999999998" y="1488" text-anchor="start">rolled-back</text>
-<text class="tableTextStrong" x="1396" y="1555" text-anchor="start">cohort keys</text>
-<rect class="chip" x="1482" y="1539" width="86" height="23"/>
-<text class="chipText" x="1493" y="1555" text-anchor="start">request-id</text>
-<rect class="chip" x="1576" y="1539" width="92.4" height="23"/>
-<text class="chipText" x="1587" y="1555" text-anchor="start">output-hash</text>
-<rect class="chip" x="1676.4" y="1539" width="98.80000000000001" height="23"/>
-<text class="chipText" x="1687.4" y="1555" text-anchor="start">requester-id</text>
-<rect class="chip" x="1783.2" y="1539" width="79.6" height="23"/>
-<text class="chipText" x="1794.2" y="1555" text-anchor="start">target-id</text>
-<rect class="chip" x="1870.8" y="1539" width="79.6" height="23"/>
-<text class="chipText" x="1881.8" y="1555" text-anchor="start">tenant-id</text>
-<rect class="chip" x="1958.3999999999999" y="1539" width="86" height="23"/>
-<text class="chipText" x="1969.3999999999999" y="1555" text-anchor="start">account-id</text>
-<rect class="chip" x="2052.3999999999996" y="1539" width="66.80000000000001" height="23"/>
-<text class="chipText" x="2063.3999999999996" y="1555" text-anchor="start">plan-id</text>
-<rect class="chip" x="1482" y="1570" width="79.6" height="23"/>
-<text class="chipText" x="1493" y="1586" text-anchor="start">cohort-id</text>
-<rect class="panel" x="2180" y="1400" width="1380" height="185"/>
-<text class="panelTitle" x="2196" y="1424" text-anchor="start">Release Decision Status Value Set</text>
-<rect class="chip" x="2196" y="1442" width="70.8" height="23"/>
-<text class="chipText" x="2207" y="1458" text-anchor="start">accepted</text>
-<rect class="chip" x="2274.8" y="1442" width="56" height="23"/>
-<text class="chipText" x="2285.8" y="1458" text-anchor="start">hold</text>
-<rect class="chip" x="2338.8" y="1442" width="64.69999999999999" height="23"/>
-<text class="chipText" x="2349.8" y="1458" text-anchor="start">expired</text>
-<rect class="chip" x="2411.5" y="1442" width="83" height="23"/>
-<text class="chipText" x="2422.5" y="1458" text-anchor="start">overridden</text>
-<rect class="chip" x="2879" y="1442" width="58.599999999999994" height="23"/>
-<text class="chipText" x="2890" y="1458" text-anchor="start">denied</text>
-<rect class="chip" x="2945.6" y="1442" width="113.5" height="23"/>
-<text class="chipText" x="2956.6" y="1458" text-anchor="start">review-required</text>
-<rect class="chip" x="3067.1" y="1442" width="64.69999999999999" height="23"/>
-<text class="chipText" x="3078.1" y="1458" text-anchor="start">revoked</text>
-<rect class="chip" x="3139.7999999999997" y="1442" width="363.59999999999997" height="23"/>
-<text class="chipText" x="3150.7999999999997" y="1458" text-anchor="start">terminal: accepted, denied, expired, revoked, overridden</text>
-<rect class="panel" x="40" y="1640" width="700" height="198"/>
-<text class="panelTitle" x="56" y="1664" text-anchor="start">Deterministic Release Checks (9)</text>
-<rect class="chip" x="56" y="1682" width="111.60000000000001" height="23"/>
-<text class="chipText" x="67" y="1698" text-anchor="start">contract-shape</text>
-<rect class="chip" x="175.60000000000002" y="1682" width="111.60000000000001" height="23"/>
-<text class="chipText" x="186.60000000000002" y="1698" text-anchor="start">target-binding</text>
-<rect class="chip" x="295.20000000000005" y="1682" width="143.60000000000002" height="23"/>
-<text class="chipText" x="306.20000000000005" y="1698" text-anchor="start">capability-boundary</text>
-<rect class="chip" x="446.80000000000007" y="1682" width="188.4" height="23"/>
-<text class="chipText" x="457.80000000000007" y="1698" text-anchor="start">consequence-hash-integrity</text>
-<rect class="chip" x="56" y="1713" width="162.8" height="23"/>
-<text class="chipText" x="67" y="1729" text-anchor="start">policy-rule-validation</text>
-<rect class="chip" x="226.8" y="1713" width="156.4" height="23"/>
-<text class="chipText" x="237.8" y="1729" text-anchor="start">evidence-completeness</text>
-<rect class="chip" x="391.20000000000005" y="1713" width="162.8" height="23"/>
-<text class="chipText" x="402.20000000000005" y="1729" text-anchor="start">trace-grade-regression</text>
-<rect class="chip" x="562" y="1713" width="137.2" height="23"/>
-<text class="chipText" x="573" y="1729" text-anchor="start">provenance-binding</text>
-<rect class="chip" x="56" y="1744" width="233.20000000000002" height="23"/>
-<text class="chipText" x="67" y="1760" text-anchor="start">downstream-receipt-reconciliation</text>
-<rect class="panel" x="780" y="1640" width="560" height="160"/>
-<text class="panelTitle" x="796" y="1664" text-anchor="start">Admission Checks (6)</text>
-<rect class="chip" x="796" y="1682" width="60.400000000000006" height="23"/>
-<text class="chipText" x="807" y="1698" text-anchor="start">policy</text>
-<rect class="chip" x="864.4" y="1682" width="79.6" height="23"/>
-<text class="chipText" x="875.4" y="1698" text-anchor="start">authority</text>
-<rect class="chip" x="952" y="1682" width="73.2" height="23"/>
-<text class="chipText" x="963" y="1698" text-anchor="start">evidence</text>
-<rect class="chip" x="1033.2" y="1682" width="79.6" height="23"/>
-<text class="chipText" x="1044.2" y="1698" text-anchor="start">freshness</text>
-<rect class="chip" x="1120.8" y="1682" width="92.4" height="23"/>
-<text class="chipText" x="1131.8" y="1698" text-anchor="start">enforcement</text>
-<rect class="chip" x="796" y="1713" width="130.8" height="23"/>
-<text class="chipText" x="807" y="1729" text-anchor="start">adapter-readiness</text>
-<rect class="panel" x="1380" y="1640" width="760" height="160"/>
-<text class="panelTitle" x="1396" y="1664" text-anchor="start">Admission Decisions And Modes</text>
-<rect class="chip" x="1396" y="1682" width="56" height="23"/>
-<text class="chipText" x="1407" y="1698" text-anchor="start">admit</text>
-<rect class="chip" x="1460" y="1682" width="58.599999999999994" height="23"/>
-<text class="chipText" x="1471" y="1698" text-anchor="start">review</text>
-<rect class="chip" x="1526.6" y="1682" width="64.69999999999999" height="23"/>
-<text class="chipText" x="1537.6" y="1698" text-anchor="start">observe</text>
-<rect class="chip" x="1599.3" y="1682" width="58.599999999999994" height="23"/>
-<text class="chipText" x="1610.3" y="1698" text-anchor="start">review</text>
-<rect class="chip" x="1396" y="1713" width="89.1" height="23"/>
-<text class="chipText" x="1407" y="1729" text-anchor="start">would_admit</text>
-<rect class="chip" x="1493.1" y="1713" width="95.19999999999999" height="23"/>
-<text class="chipText" x="1504.1" y="1729" text-anchor="start">would_review</text>
-<rect class="chip" x="1596.3" y="1713" width="95.19999999999999" height="23"/>
-<text class="chipText" x="1607.3" y="1729" text-anchor="start">observe-only</text>
-<rect class="chip" x="1396" y="1744" width="113.5" height="23"/>
-<text class="chipText" x="1407" y="1760" text-anchor="start">hold-for-review</text>
-<rect class="chip" x="1769" y="1682" width="58.599999999999994" height="23"/>
-<text class="chipText" x="1780" y="1698" text-anchor="start">narrow</text>
-<rect class="chip" x="1835.6" y="1682" width="56" height="23"/>
-<text class="chipText" x="1846.6" y="1698" text-anchor="start">block</text>
-<rect class="chip" x="1899.6" y="1682" width="56" height="23"/>
-<text class="chipText" x="1910.6" y="1698" text-anchor="start">warn</text>
-<rect class="chip" x="1963.6" y="1682" width="64.69999999999999" height="23"/>
-<text class="chipText" x="1974.6" y="1698" text-anchor="start">enforce</text>
-<rect class="chip" x="1769" y="1713" width="95.19999999999999" height="23"/>
-<text class="chipText" x="1780" y="1729" text-anchor="start">would_narrow</text>
-<rect class="chip" x="1872.2" y="1713" width="89.1" height="23"/>
-<text class="chipText" x="1883.2" y="1729" text-anchor="start">would_block</text>
-<rect class="chip" x="1969.3" y="1713" width="76.9" height="23"/>
-<text class="chipText" x="1980.3" y="1729" text-anchor="start">warn-only</text>
-<rect class="chip" x="1769" y="1744" width="119.6" height="23"/>
-<text class="chipText" x="1780" y="1760" text-anchor="start">enforce-decision</text>
-<rect class="panel" x="2180" y="1620" width="1380" height="218"/>
-<text class="panelTitle" x="2196" y="1644" text-anchor="start">Release Presentation Modes (6) And Enforcement Outcomes</text>
-<rect class="chip" x="2196" y="1662" width="144" height="23"/>
-<text class="chipText" x="2207" y="1678" text-anchor="start">bearer-release-token</text>
-<rect class="chip" x="2348" y="1662" width="131.8" height="23"/>
-<text class="chipText" x="2359" y="1678" text-anchor="start">spiffe-bound-token</text>
-<rect class="chip" x="2487.8" y="1662" width="56" height="23"/>
-<text class="chipText" x="2498.8" y="1678" text-anchor="start">allow</text>
-<rect class="chip" x="2196" y="1693" width="137.89999999999998" height="23"/>
-<text class="chipText" x="2207" y="1709" text-anchor="start">needs-introspection</text>
-<rect class="chip" x="2341.9" y="1693" width="144" height="23"/>
-<text class="chipText" x="2352.9" y="1709" text-anchor="start">online-introspection</text>
-<rect class="chip" x="2651.3333333333335" y="1662" width="119.6" height="23"/>
-<text class="chipText" x="2662.3333333333335" y="1678" text-anchor="start">dpop-bound-token</text>
-<rect class="chip" x="2778.9333333333334" y="1662" width="156.2" height="23"/>
-<text class="chipText" x="2789.9333333333334" y="1678" text-anchor="start">http-message-signature</text>
-<rect class="chip" x="2943.133333333333" y="1662" width="56" height="23"/>
-<text class="chipText" x="2954.133333333333" y="1678" text-anchor="start">deny</text>
-<rect class="chip" x="2651.3333333333335" y="1693" width="125.69999999999999" height="23"/>
-<text class="chipText" x="2662.3333333333335" y="1709" text-anchor="start">break-glass-allow</text>
-<rect class="chip" x="2785.0333333333333" y="1693" width="113.5" height="23"/>
-<text class="chipText" x="2796.0333333333333" y="1709" text-anchor="start">hybrid-required</text>
-<rect class="chip" x="3106.6666666666665" y="1662" width="119.6" height="23"/>
-<text class="chipText" x="3117.6666666666665" y="1678" text-anchor="start">mtls-bound-token</text>
-<rect class="chip" x="3234.2666666666664" y="1662" width="144" height="23"/>
-<text class="chipText" x="3245.2666666666664" y="1678" text-anchor="start">signed-json-envelope</text>
-<rect class="chip" x="3386.2666666666664" y="1662" width="95.19999999999999" height="23"/>
-<text class="chipText" x="3397.2666666666664" y="1678" text-anchor="start">shadow-allow</text>
-<rect class="chip" x="3106.6666666666665" y="1693" width="125.69999999999999" height="23"/>
-<text class="chipText" x="3117.6666666666665" y="1709" text-anchor="start">offline-signature</text>
-<rect class="chip" x="3240.3666666666663" y="1693" width="107.39999999999999" height="23"/>
-<text class="chipText" x="3251.3666666666663" y="1709" text-anchor="start">shadow-observe</text>
-<rect class="panel" x="40" y="1875" width="392" height="246"/>
-<text class="panelTitle" x="56" y="1899" text-anchor="start">Guard Activation Readiness Matrix (9 covered profiles x 11 criteria x 3 statuses)</text>
-<text class="tinyCenter" x="257" y="1920" text-anchor="middle">1</text>
-<text class="tinyCenter" x="271" y="1920" text-anchor="middle">2</text>
-<text class="tinyCenter" x="285" y="1920" text-anchor="middle">3</text>
-<text class="tinyCenter" x="299" y="1920" text-anchor="middle">4</text>
-<text class="tinyCenter" x="313" y="1920" text-anchor="middle">5</text>
-<text class="tinyCenter" x="327" y="1920" text-anchor="middle">6</text>
-<text class="tinyCenter" x="341" y="1920" text-anchor="middle">7</text>
-<text class="tinyCenter" x="355" y="1920" text-anchor="middle">8</text>
-<text class="tinyCenter" x="369" y="1920" text-anchor="middle">9</text>
-<text class="tinyCenter" x="383" y="1920" text-anchor="middle">10</text>
-<text class="tinyCenter" x="397" y="1920" text-anchor="middle">11</text>
-<text class="tiny" x="56" y="1939" text-anchor="start">agent-loop-abuse-guard</text>
-<rect class="matrixPass" x="250" y="1927" width="10" height="10"/>
-<rect class="matrixPass" x="264" y="1927" width="10" height="10"/>
-<rect class="matrixPass" x="278" y="1927" width="10" height="10"/>
-<rect class="matrixPass" x="292" y="1927" width="10" height="10"/>
-<rect class="matrixPass" x="306" y="1927" width="10" height="10"/>
-<rect class="matrixPass" x="320" y="1927" width="10" height="10"/>
-<rect class="matrixPass" x="334" y="1927" width="10" height="10"/>
-<rect class="matrixPass" x="348" y="1927" width="10" height="10"/>
-<rect class="matrixPass" x="362" y="1927" width="10" height="10"/>
-<rect class="matrixPass" x="376" y="1927" width="10" height="10"/>
-<rect class="matrixPass" x="390" y="1927" width="10" height="10"/>
-<text class="tiny" x="56" y="1957" text-anchor="start">untrusted-content-authority-guard</text>
-<rect class="matrixPass" x="250" y="1945" width="10" height="10"/>
-<rect class="matrixPass" x="264" y="1945" width="10" height="10"/>
-<rect class="matrixPass" x="278" y="1945" width="10" height="10"/>
-<rect class="matrixPass" x="292" y="1945" width="10" height="10"/>
-<rect class="matrixPass" x="306" y="1945" width="10" height="10"/>
-<rect class="matrixPass" x="320" y="1945" width="10" height="10"/>
-<rect class="matrixPass" x="334" y="1945" width="10" height="10"/>
-<rect class="matrixPass" x="348" y="1945" width="10" height="10"/>
-<rect class="matrixPass" x="362" y="1945" width="10" height="10"/>
-<rect class="matrixPass" x="376" y="1945" width="10" height="10"/>
-<rect class="matrixPass" x="390" y="1945" width="10" height="10"/>
-<text class="tiny" x="56" y="1975" text-anchor="start">tool-result-poisoning-guard</text>
-<rect class="matrixPass" x="250" y="1963" width="10" height="10"/>
-<rect class="matrixPass" x="264" y="1963" width="10" height="10"/>
-<rect class="matrixPass" x="278" y="1963" width="10" height="10"/>
-<rect class="matrixPass" x="292" y="1963" width="10" height="10"/>
-<rect class="matrixPass" x="306" y="1963" width="10" height="10"/>
-<rect class="matrixPass" x="320" y="1963" width="10" height="10"/>
-<rect class="matrixPass" x="334" y="1963" width="10" height="10"/>
-<rect class="matrixPass" x="348" y="1963" width="10" height="10"/>
-<rect class="matrixPass" x="362" y="1963" width="10" height="10"/>
-<rect class="matrixPass" x="376" y="1963" width="10" height="10"/>
-<rect class="matrixPass" x="390" y="1963" width="10" height="10"/>
-<text class="tiny" x="56" y="1993" text-anchor="start">approval-provenance-guard</text>
-<rect class="matrixBlocked" x="250" y="1981" width="10" height="10"/>
-<rect class="matrixBlocked" x="264" y="1981" width="10" height="10"/>
-<rect class="matrixBlocked" x="278" y="1981" width="10" height="10"/>
-<rect class="matrixBlocked" x="292" y="1981" width="10" height="10"/>
-<rect class="matrixBlocked" x="306" y="1981" width="10" height="10"/>
-<rect class="matrixBlocked" x="320" y="1981" width="10" height="10"/>
-<rect class="matrixBlocked" x="334" y="1981" width="10" height="10"/>
-<rect class="matrixBlocked" x="348" y="1981" width="10" height="10"/>
-<rect class="matrixBlocked" x="362" y="1981" width="10" height="10"/>
-<rect class="matrixBlocked" x="376" y="1981" width="10" height="10"/>
-<rect class="matrixBlocked" x="390" y="1981" width="10" height="10"/>
-<text class="tiny" x="56" y="2011" text-anchor="start">stale-authority-policy-guard</text>
-<rect class="matrixBlocked" x="250" y="1999" width="10" height="10"/>
-<rect class="matrixBlocked" x="264" y="1999" width="10" height="10"/>
-<rect class="matrixBlocked" x="278" y="1999" width="10" height="10"/>
-<rect class="matrixBlocked" x="292" y="1999" width="10" height="10"/>
-<rect class="matrixBlocked" x="306" y="1999" width="10" height="10"/>
-<rect class="matrixBlocked" x="320" y="1999" width="10" height="10"/>
-<rect class="matrixBlocked" x="334" y="1999" width="10" height="10"/>
-<rect class="matrixBlocked" x="348" y="1999" width="10" height="10"/>
-<rect class="matrixBlocked" x="362" y="1999" width="10" height="10"/>
-<rect class="matrixBlocked" x="376" y="1999" width="10" height="10"/>
-<rect class="matrixBlocked" x="390" y="1999" width="10" height="10"/>
-<text class="tiny" x="56" y="2029" text-anchor="start">scope-explosion-guard</text>
-<rect class="matrixBlocked" x="250" y="2017" width="10" height="10"/>
-<rect class="matrixBlocked" x="264" y="2017" width="10" height="10"/>
-<rect class="matrixBlocked" x="278" y="2017" width="10" height="10"/>
-<rect class="matrixBlocked" x="292" y="2017" width="10" height="10"/>
-<rect class="matrixBlocked" x="306" y="2017" width="10" height="10"/>
-<rect class="matrixBlocked" x="320" y="2017" width="10" height="10"/>
-<rect class="matrixBlocked" x="334" y="2017" width="10" height="10"/>
-<rect class="matrixBlocked" x="348" y="2017" width="10" height="10"/>
-<rect class="matrixBlocked" x="362" y="2017" width="10" height="10"/>
-<rect class="matrixBlocked" x="376" y="2017" width="10" height="10"/>
-<rect class="matrixBlocked" x="390" y="2017" width="10" height="10"/>
-<text class="tiny" x="56" y="2047" text-anchor="start">human-review-fatigue-guard</text>
-<rect class="matrixBlocked" x="250" y="2035" width="10" height="10"/>
-<rect class="matrixBlocked" x="264" y="2035" width="10" height="10"/>
-<rect class="matrixBlocked" x="278" y="2035" width="10" height="10"/>
-<rect class="matrixBlocked" x="292" y="2035" width="10" height="10"/>
-<rect class="matrixBlocked" x="306" y="2035" width="10" height="10"/>
-<rect class="matrixBlocked" x="320" y="2035" width="10" height="10"/>
-<rect class="matrixBlocked" x="334" y="2035" width="10" height="10"/>
-<rect class="matrixBlocked" x="348" y="2035" width="10" height="10"/>
-<rect class="matrixBlocked" x="362" y="2035" width="10" height="10"/>
-<rect class="matrixBlocked" x="376" y="2035" width="10" height="10"/>
-<rect class="matrixBlocked" x="390" y="2035" width="10" height="10"/>
-<text class="tiny" x="56" y="2065" text-anchor="start">agentic-supply-chain-guard</text>
-<rect class="matrixBlocked" x="250" y="2053" width="10" height="10"/>
-<rect class="matrixBlocked" x="264" y="2053" width="10" height="10"/>
-<rect class="matrixBlocked" x="278" y="2053" width="10" height="10"/>
-<rect class="matrixBlocked" x="292" y="2053" width="10" height="10"/>
-<rect class="matrixBlocked" x="306" y="2053" width="10" height="10"/>
-<rect class="matrixBlocked" x="320" y="2053" width="10" height="10"/>
-<rect class="matrixBlocked" x="334" y="2053" width="10" height="10"/>
-<rect class="matrixBlocked" x="348" y="2053" width="10" height="10"/>
-<rect class="matrixBlocked" x="362" y="2053" width="10" height="10"/>
-<rect class="matrixBlocked" x="376" y="2053" width="10" height="10"/>
-<rect class="matrixBlocked" x="390" y="2053" width="10" height="10"/>
-<text class="tiny" x="56" y="2083" text-anchor="start">multi-agent-delegation-guard</text>
-<rect class="matrixBlocked" x="250" y="2071" width="10" height="10"/>
-<rect class="matrixBlocked" x="264" y="2071" width="10" height="10"/>
-<rect class="matrixBlocked" x="278" y="2071" width="10" height="10"/>
-<rect class="matrixBlocked" x="292" y="2071" width="10" height="10"/>
-<rect class="matrixBlocked" x="306" y="2071" width="10" height="10"/>
-<rect class="matrixBlocked" x="320" y="2071" width="10" height="10"/>
-<rect class="matrixBlocked" x="334" y="2071" width="10" height="10"/>
-<rect class="matrixBlocked" x="348" y="2071" width="10" height="10"/>
-<rect class="matrixBlocked" x="362" y="2071" width="10" height="10"/>
-<rect class="matrixBlocked" x="376" y="2071" width="10" height="10"/>
-<rect class="matrixBlocked" x="390" y="2071" width="10" height="10"/>
-<text class="tiny" x="56" y="2109" text-anchor="start">Rows: guards. Columns: criteria 1-11. Status vocabulary: pass / blocked / not-applicable.</text>
-<rect class="panel" x="520" y="1875" width="680" height="230"/>
-<text class="panelTitle" x="536" y="1899" text-anchor="start">Guard Criteria (1-11)</text>
-<rect class="chip" x="536" y="1917" width="182" height="23"/>
-<text class="chipText" x="547" y="1933" text-anchor="start">guard-descriptor-exported</text>
-<rect class="chip" x="726" y="1917" width="194.8" height="23"/>
-<text class="chipText" x="737" y="1933" text-anchor="start">fail-closed-decision-output</text>
-<rect class="chip" x="928.8" y="1917" width="201.20000000000002" height="23"/>
-<text class="chipText" x="939.8" y="1933" text-anchor="start">raw-payload-storage-disabled</text>
-<rect class="chip" x="536" y="1948" width="214" height="23"/>
-<text class="chipText" x="547" y="1964" text-anchor="start">production-shared-state-proven</text>
-<rect class="chip" x="758" y="1948" width="169.20000000000002" height="23"/>
-<text class="chipText" x="769" y="1964" text-anchor="start">signed-decision-binding</text>
-<rect class="chip" x="935.2" y="1948" width="246" height="23"/>
-<text class="chipText" x="946.2" y="1964" text-anchor="start">route-or-pep-enforcement-integrated</text>
-<rect class="chip" x="536" y="1979" width="214" height="23"/>
-<text class="chipText" x="547" y="1995" text-anchor="start">downstream-verifier-integrated</text>
-<rect class="chip" x="758" y="1979" width="162.8" height="23"/>
-<text class="chipText" x="769" y="1995" text-anchor="start">replay-fixture-covered</text>
-<rect class="chip" x="928.8" y="1979" width="150" height="23"/>
-<text class="chipText" x="939.8" y="1995" text-anchor="start">audit-record-emitted</text>
-<rect class="chip" x="536" y="2010" width="194.8" height="23"/>
-<text class="chipText" x="547" y="2026" text-anchor="start">operator-runbook-documented</text>
-<rect class="chip" x="738.8" y="2010" width="201.20000000000002" height="23"/>
-<text class="chipText" x="749.8" y="2026" text-anchor="start">customer-activation-approved</text>
-<rect class="panel" x="1240" y="1875" width="760" height="230"/>
-<text class="panelTitle" x="1256" y="1899" text-anchor="start">Guard Status / State Vocabulary</text>
-<rect class="chip" x="1256" y="1917" width="56" height="23"/>
-<text class="chipText" x="1267" y="1933" text-anchor="start">pass</text>
-<rect class="chip" x="1320" y="1917" width="66.80000000000001" height="23"/>
-<text class="chipText" x="1331" y="1933" text-anchor="start">blocked</text>
-<rect class="chip" x="1394.8" y="1917" width="111.60000000000001" height="23"/>
-<text class="chipText" x="1405.8" y="1933" text-anchor="start">not-applicable</text>
-<rect class="chip" x="1514.3999999999999" y="1917" width="105.2" height="23"/>
-<text class="chipText" x="1525.3999999999999" y="1933" text-anchor="start">decision-only</text>
-<rect class="chip" x="1627.6" y="1917" width="214" height="23"/>
-<text class="chipText" x="1638.6" y="1933" text-anchor="start">production-enforcement-blocked</text>
-<rect class="chip" x="1256" y="1948" width="201.20000000000002" height="23"/>
-<text class="chipText" x="1267" y="1964" text-anchor="start">production-enforcement-ready</text>
-<rect class="panel" x="2040" y="1875" width="1520" height="330"/>
-<text class="panelTitle" x="2056" y="1899" text-anchor="start">Enforcement Failure Reasons (23)</text>
-<rect class="chip" x="2056" y="1917" width="198.89999999999998" height="23"/>
-<text class="chipText" x="2067" y="1933" text-anchor="start">missing-release-authorization</text>
-<rect class="chip" x="2262.9" y="1917" width="186.7" height="23"/>
-<text class="chipText" x="2273.9" y="1933" text-anchor="start">not-yet-valid-authorization</text>
-<rect class="chip" x="2056" y="1948" width="150.1" height="23"/>
-<text class="chipText" x="2067" y="1964" text-anchor="start">revoked-authorization</text>
-<rect class="chip" x="2214.1" y="1948" width="144" height="23"/>
-<text class="chipText" x="2225.1" y="1964" text-anchor="start">missing-replay-proof</text>
-<rect class="chip" x="2366.1" y="1948" width="156.2" height="23"/>
-<text class="chipText" x="2377.1" y="1964" text-anchor="start">unsupported-token-type</text>
-<rect class="chip" x="2056" y="1979" width="101.3" height="23"/>
-<text class="chipText" x="2067" y="1995" text-anchor="start">invalid-nonce</text>
-<rect class="chip" x="2165.3" y="1979" width="119.6" height="23"/>
-<text class="chipText" x="2176.3" y="1995" text-anchor="start">binding-mismatch</text>
-<rect class="chip" x="2292.9" y="1979" width="101.3" height="23"/>
-<text class="chipText" x="2303.9" y="1995" text-anchor="start">policy-frozen</text>
-<rect class="chip" x="2558" y="1917" width="125.69999999999999" height="23"/>
-<text class="chipText" x="2569" y="1933" text-anchor="start">invalid-signature</text>
-<rect class="chip" x="2691.7" y="1917" width="119.6" height="23"/>
-<text class="chipText" x="2702.7" y="1933" text-anchor="start">future-issued-at</text>
-<rect class="chip" x="2819.2999999999997" y="1917" width="150.1" height="23"/>
-<text class="chipText" x="2830.2999999999997" y="1933" text-anchor="start">unknown-authorization</text>
-<rect class="chip" x="2558" y="1948" width="131.8" height="23"/>
-<text class="chipText" x="2569" y="1964" text-anchor="start">negative-cache-hit</text>
-<rect class="chip" x="2697.8" y="1948" width="192.79999999999998" height="23"/>
-<text class="chipText" x="2708.8" y="1964" text-anchor="start">introspection-claim-mismatch</text>
-<rect class="chip" x="2898.6000000000004" y="1948" width="107.39999999999999" height="23"/>
-<text class="chipText" x="2909.6000000000004" y="1964" text-anchor="start">wrong-audience</text>
-<rect class="chip" x="2558" y="1979" width="95.19999999999999" height="23"/>
-<text class="chipText" x="2569" y="1995" text-anchor="start">stale-policy</text>
-<rect class="chip" x="2661.2" y="1979" width="144" height="23"/>
-<text class="chipText" x="2672.2" y="1995" text-anchor="start">break-glass-required</text>
-<rect class="chip" x="3060" y="1917" width="150.1" height="23"/>
-<text class="chipText" x="3071" y="1933" text-anchor="start">expired-authorization</text>
-<rect class="chip" x="3218.1" y="1917" width="137.89999999999998" height="23"/>
-<text class="chipText" x="3229.1" y="1933" text-anchor="start">stale-authorization</text>
-<rect class="chip" x="3364" y="1917" width="156.2" height="23"/>
-<text class="chipText" x="3375" y="1933" text-anchor="start">replayed-authorization</text>
-<rect class="chip" x="3060" y="1948" width="192.79999999999998" height="23"/>
-<text class="chipText" x="3071" y="1964" text-anchor="start">fresh-introspection-required</text>
-<rect class="chip" x="3260.8" y="1948" width="101.3" height="23"/>
-<text class="chipText" x="3271.8" y="1964" text-anchor="start">missing-nonce</text>
-<rect class="chip" x="3370.1000000000004" y="1948" width="125.69999999999999" height="23"/>
-<text class="chipText" x="3381.1000000000004" y="1964" text-anchor="start">wrong-consequence</text>
-<rect class="chip" x="3060" y="1979" width="174.5" height="23"/>
-<text class="chipText" x="3071" y="1995" text-anchor="start">introspection-unavailable</text>
-<rect class="panel" x="40" y="2145" width="1160" height="360"/>
-<text class="panelTitle" x="56" y="2169" text-anchor="start">Failure Mode Registry (20 modes)</text>
-<rect class="chip" x="56" y="2187" width="162.29999999999998" height="23"/>
-<text class="chipText" x="67" y="2203" text-anchor="start">direct-prompt-injection</text>
-<rect class="chip" x="226.29999999999998" y="2187" width="235.5" height="23"/>
-<text class="chipText" x="237.29999999999998" y="2203" text-anchor="start">untrusted-content-authorizes-action</text>
-<rect class="chip" x="56" y="2218" width="150.1" height="23"/>
-<text class="chipText" x="67" y="2234" text-anchor="start">tool-result-poisoning</text>
-<rect class="chip" x="214.1" y="2218" width="144" height="23"/>
-<text class="chipText" x="225.1" y="2234" text-anchor="start">cross-tenant-leakage</text>
-<rect class="chip" x="366.1" y="2218" width="168.39999999999998" height="23"/>
-<text class="chipText" x="377.1" y="2234" text-anchor="start">fake-approval-laundering</text>
-<rect class="chip" x="56" y="2249" width="125.69999999999999" height="23"/>
-<text class="chipText" x="67" y="2265" text-anchor="start">no-go-hold-bypass</text>
-<rect class="chip" x="189.7" y="2249" width="180.6" height="23"/>
-<text class="chipText" x="200.7" y="2265" text-anchor="start">duplicate-execution-replay</text>
-<rect class="chip" x="378.29999999999995" y="2249" width="144" height="23"/>
-<text class="chipText" x="389.29999999999995" y="2265" text-anchor="start">human-review-fatigue</text>
-<rect class="chip" x="56" y="2280" width="217.2" height="23"/>
-<text class="chipText" x="67" y="2296" text-anchor="start">multi-agent-delegation-confusion</text>
-<rect class="chip" x="281.2" y="2280" width="308.7" height="23"/>
-<text class="chipText" x="292.2" y="2296" text-anchor="start">unsupported-confidence-or-hallucinated-evidence</text>
-<rect class="chip" x="629" y="2187" width="174.5" height="23"/>
-<text class="chipText" x="640" y="2203" text-anchor="start">indirect-prompt-injection</text>
-<rect class="chip" x="811.5" y="2187" width="192.79999999999998" height="23"/>
-<text class="chipText" x="822.5" y="2203" text-anchor="start">tool-misuse-excessive-agency</text>
-<rect class="chip" x="629" y="2218" width="174.5" height="23"/>
-<text class="chipText" x="640" y="2234" text-anchor="start">sensitive-data-disclosure</text>
-<rect class="chip" x="811.5" y="2218" width="180.6" height="23"/>
-<text class="chipText" x="822.5" y="2234" text-anchor="start">wrong-recipient-disclosure</text>
-<rect class="chip" x="1000.1" y="2218" width="174.5" height="23"/>
-<text class="chipText" x="1011.1" y="2234" text-anchor="start">stale-authority-or-policy</text>
-<rect class="chip" x="629" y="2249" width="113.5" height="23"/>
-<text class="chipText" x="640" y="2265" text-anchor="start">scope-explosion</text>
-<rect class="chip" x="750.5" y="2249" width="192.79999999999998" height="23"/>
-<text class="chipText" x="761.5" y="2265" text-anchor="start">review-required-auto-promote</text>
-<rect class="chip" x="951.3" y="2249" width="162.29999999999998" height="23"/>
-<text class="chipText" x="962.3" y="2265" text-anchor="start">model-tool-config-drift</text>
-<rect class="chip" x="629" y="2280" width="198.89999999999998" height="23"/>
-<text class="chipText" x="640" y="2296" text-anchor="start">hidden-downstream-side-effect</text>
-<rect class="chip" x="835.9" y="2280" width="211.1" height="23"/>
-<text class="chipText" x="846.9" y="2296" text-anchor="start">agentic-supply-chain-compromise</text>
-<rect class="panel" x="1240" y="2145" width="1280" height="210"/>
-<text class="panelTitle" x="1256" y="2169" text-anchor="start">Failure Sources / Classifications / Defaults</text>
-<rect class="chip" x="1256" y="2187" width="101.3" height="23"/>
-<text class="chipText" x="1267" y="2203" text-anchor="start">nist-ai-600-1</text>
-<rect class="chip" x="1365.3" y="2187" width="150.1" height="23"/>
-<text class="chipText" x="1376.3" y="2203" text-anchor="start">ncsc-prompt-injection</text>
-<rect class="chip" x="1523.3999999999999" y="2187" width="76.9" height="23"/>
-<text class="chipText" x="1534.3999999999999" y="2203" text-anchor="start">agentdojo</text>
-<rect class="chip" x="1256" y="2218" width="101.3" height="23"/>
-<text class="chipText" x="1267" y="2234" text-anchor="start">model-quality</text>
-<rect class="chip" x="1365.3" y="2218" width="70.8" height="23"/>
-<text class="chipText" x="1376.3" y="2234" text-anchor="start">evidence</text>
-<rect class="chip" x="1444.1" y="2218" width="95.19999999999999" height="23"/>
-<text class="chipText" x="1455.1" y="2234" text-anchor="start">auditability</text>
-<rect class="chip" x="1547.3" y="2218" width="58.599999999999994" height="23"/>
-<text class="chipText" x="1558.3" y="2234" text-anchor="start">medium</text>
-<rect class="chip" x="1256" y="2249" width="58.599999999999994" height="23"/>
-<text class="chipText" x="1267" y="2265" text-anchor="start">narrow</text>
-<rect class="chip" x="1678" y="2187" width="144" height="23"/>
-<text class="chipText" x="1689" y="2203" text-anchor="start">owasp-llm-top10-2025</text>
-<rect class="chip" x="1830" y="2187" width="235.5" height="23"/>
-<text class="chipText" x="1841" y="2203" text-anchor="start">microsoft-indirect-prompt-injection</text>
-<rect class="chip" x="1678" y="2218" width="125.69999999999999" height="23"/>
-<text class="chipText" x="1689" y="2234" text-anchor="start">the-agent-company</text>
-<rect class="chip" x="1811.7" y="2218" width="101.3" height="23"/>
-<text class="chipText" x="1822.7" y="2234" text-anchor="start">system-design</text>
-<rect class="chip" x="1921" y="2218" width="58.599999999999994" height="23"/>
-<text class="chipText" x="1932" y="2234" text-anchor="start">policy</text>
-<rect class="chip" x="1987.6" y="2218" width="70.8" height="23"/>
-<text class="chipText" x="1998.6" y="2234" text-anchor="start">security</text>
-<rect class="chip" x="1678" y="2249" width="56" height="23"/>
-<text class="chipText" x="1689" y="2265" text-anchor="start">high</text>
-<rect class="chip" x="1742" y="2249" width="58.599999999999994" height="23"/>
-<text class="chipText" x="1753" y="2265" text-anchor="start">review</text>
-<rect class="chip" x="2100" y="2187" width="168.39999999999998" height="23"/>
-<text class="chipText" x="2111" y="2203" text-anchor="start">owasp-agentic-top10-2026</text>
-<rect class="chip" x="2276.4" y="2187" width="186.7" height="23"/>
-<text class="chipText" x="2287.4" y="2203" text-anchor="start">openai-agent-builder-safety</text>
-<rect class="chip" x="2100" y="2218" width="70.8" height="23"/>
-<text class="chipText" x="2111" y="2234" text-anchor="start">echoleak</text>
-<rect class="chip" x="2178.8" y="2218" width="76.9" height="23"/>
-<text class="chipText" x="2189.8" y="2234" text-anchor="start">authority</text>
-<rect class="chip" x="2263.7000000000003" y="2218" width="70.8" height="23"/>
-<text class="chipText" x="2274.7000000000003" y="2234" text-anchor="start">workflow</text>
-<rect class="chip" x="2342.5000000000005" y="2218" width="113.5" height="23"/>
-<text class="chipText" x="2353.5000000000005" y="2234" text-anchor="start">human-oversight</text>
-<rect class="chip" x="2100" y="2249" width="64.69999999999999" height="23"/>
-<text class="chipText" x="2111" y="2265" text-anchor="start">blocker</text>
-<rect class="chip" x="2172.7" y="2249" width="56" height="23"/>
-<text class="chipText" x="2183.7" y="2265" text-anchor="start">block</text>
-<rect class="panel" x="1240" y="2380" width="1280" height="125"/>
-<text class="panelTitle" x="1256" y="2404" text-anchor="start">Protected Principles</text>
-<rect class="chip" x="1256" y="2422" width="113.5" height="23"/>
-<text class="chipText" x="1267" y="2438" text-anchor="start">proof integrity</text>
-<rect class="chip" x="1377.5" y="2422" width="119.6" height="23"/>
-<text class="chipText" x="1388.5" y="2438" text-anchor="start">tenant isolation</text>
-<rect class="chip" x="1505.1" y="2422" width="211.1" height="23"/>
-<text class="chipText" x="1516.1" y="2438" text-anchor="start">data minimization and redaction</text>
-<rect class="chip" x="1724.1999999999998" y="2422" width="125.69999999999999" height="23"/>
-<text class="chipText" x="1735.1999999999998" y="2438" text-anchor="start">runtime readiness</text>
-<rect class="chip" x="1256" y="2453" width="95.19999999999999" height="23"/>
-<text class="chipText" x="1267" y="2469" text-anchor="start">auditability</text>
-<rect class="chip" x="1359.2" y="2453" width="162.29999999999998" height="23"/>
-<text class="chipText" x="1370.2" y="2469" text-anchor="start">operational boundedness</text>
-<rect class="chip" x="1889" y="2422" width="144" height="23"/>
-<text class="chipText" x="1900" y="2438" text-anchor="start">fail-closed boundary</text>
-<rect class="chip" x="2041" y="2422" width="131.8" height="23"/>
-<text class="chipText" x="2052" y="2438" text-anchor="start">customer authority</text>
-<rect class="chip" x="2180.8" y="2422" width="95.19999999999999" height="23"/>
-<text class="chipText" x="2191.8" y="2438" text-anchor="start">no overclaim</text>
-<rect class="chip" x="2284" y="2422" width="131.8" height="23"/>
-<text class="chipText" x="2295" y="2438" text-anchor="start">release provenance</text>
-<rect class="chip" x="1889" y="2453" width="174.5" height="23"/>
-<text class="chipText" x="1900" y="2469" text-anchor="start">replay/idempotency safety</text>
-<path class="dash" d="M2040 2050 C1800 2070 1680 1990 1240 1990"/>
-<text class="tiny" x="1780" y="2055" text-anchor="start">Failure mode registry -&gt; guard readiness</text>
-<rect class="panel" x="40" y="2540" width="1500" height="380"/>
-<text class="panelTitle" x="56" y="2564" text-anchor="start">Data Minimization Surfaces (34)</text>
-<rect class="chip" x="56" y="2582" width="168.39999999999998" height="23"/>
-<text class="chipText" x="67" y="2598" text-anchor="start">admission-model-feedback</text>
-<rect class="chip" x="232.39999999999998" y="2582" width="144" height="23"/>
-<text class="chipText" x="243.39999999999998" y="2598" text-anchor="start">retry-attempt-ledger</text>
-<rect class="chip" x="56" y="2613" width="186.7" height="23"/>
-<text class="chipText" x="67" y="2629" text-anchor="start">policy-discovery-candidates</text>
-<rect class="chip" x="250.7" y="2613" width="198.89999999999998" height="23"/>
-<text class="chipText" x="261.7" y="2629" text-anchor="start">policy-foundry-coverage-score</text>
-<rect class="chip" x="56" y="2644" width="241.6" height="23"/>
-<text class="chipText" x="67" y="2660" text-anchor="start">policy-foundry-counterexample-ledger</text>
-<rect class="chip" x="56" y="2675" width="247.7" height="23"/>
-<text class="chipText" x="67" y="2691" text-anchor="start">policy-foundry-review-only-patch-pack</text>
-<rect class="chip" x="56" y="2706" width="272.1" height="23"/>
-<text class="chipText" x="67" y="2722" text-anchor="start">policy-foundry-drift-policy-debt-detector</text>
-<rect class="chip" x="56" y="2737" width="247.7" height="23"/>
-<text class="chipText" x="67" y="2753" text-anchor="start">policy-foundry-live-downstream-replay</text>
-<rect class="chip" x="311.7" y="2737" width="198.89999999999998" height="23"/>
-<text class="chipText" x="322.7" y="2753" text-anchor="start">policy-foundry-hosted-ui-flow</text>
-<rect class="chip" x="56" y="2768" width="156.2" height="23"/>
-<text class="chipText" x="67" y="2784" text-anchor="start">tamper-evident-history</text>
-<rect class="chip" x="220.2" y="2768" width="156.2" height="23"/>
-<text class="chipText" x="231.2" y="2784" text-anchor="start">external-review-packet</text>
-<rect class="chip" x="56" y="2799" width="192.79999999999998" height="23"/>
-<text class="chipText" x="67" y="2815" text-anchor="start">downstream-execution-receipt</text>
-<rect class="chip" x="551.3333333333333" y="2582" width="150.1" height="23"/>
-<text class="chipText" x="562.3333333333333" y="2598" text-anchor="start">pack-decision-profile</text>
-<rect class="chip" x="709.4333333333333" y="2582" width="107.39999999999999" height="23"/>
-<text class="chipText" x="720.4333333333333" y="2598" text-anchor="start">shadow-summary</text>
-<rect class="chip" x="551.3333333333333" y="2613" width="211.1" height="23"/>
-<text class="chipText" x="562.3333333333333" y="2629" text-anchor="start">policy-foundry-active-questions</text>
-<rect class="chip" x="770.4333333333333" y="2613" width="186.7" height="23"/>
-<text class="chipText" x="781.4333333333333" y="2629" text-anchor="start">policy-foundry-gate-planner</text>
-<rect class="chip" x="551.3333333333333" y="2644" width="229.39999999999998" height="23"/>
-<text class="chipText" x="562.3333333333333" y="2660" text-anchor="start">policy-foundry-policy-twin-summary</text>
-<rect class="chip" x="788.7333333333332" y="2644" width="229.39999999999998" height="23"/>
-<text class="chipText" x="799.7333333333332" y="2660" text-anchor="start">policy-foundry-self-onboarding-cli</text>
-<rect class="chip" x="551.3333333333333" y="2675" width="229.39999999999998" height="23"/>
-<text class="chipText" x="562.3333333333333" y="2691" text-anchor="start">policy-foundry-commercial-boundary</text>
-<rect class="chip" x="551.3333333333333" y="2706" width="272.1" height="23"/>
-<text class="chipText" x="562.3333333333333" y="2722" text-anchor="start">policy-foundry-hosted-onboarding-workflow</text>
-<rect class="chip" x="551.3333333333333" y="2737" width="229.39999999999998" height="23"/>
-<text class="chipText" x="562.3333333333333" y="2753" text-anchor="start">policy-foundry-hosted-wizard-state</text>
-<rect class="chip" x="788.7333333333332" y="2737" width="162.29999999999998" height="23"/>
-<text class="chipText" x="799.7333333333332" y="2753" text-anchor="start">business-risk-dashboard</text>
-<rect class="chip" x="551.3333333333333" y="2768" width="211.1" height="23"/>
-<text class="chipText" x="562.3333333333333" y="2784" text-anchor="start">downstream-presentation-binding</text>
-<rect class="chip" x="1046.6666666666665" y="2582" width="125.69999999999999" height="23"/>
-<text class="chipText" x="1057.6666666666665" y="2598" text-anchor="start">admission-problem</text>
-<rect class="chip" x="1180.3666666666666" y="2582" width="125.69999999999999" height="23"/>
-<text class="chipText" x="1191.3666666666666" y="2598" text-anchor="start">shadow-simulation</text>
-<rect class="chip" x="1046.6666666666665" y="2613" width="223.29999999999998" height="23"/>
-<text class="chipText" x="1057.6666666666665" y="2629" text-anchor="start">policy-foundry-onboarding-session</text>
-<rect class="chip" x="1277.9666666666665" y="2613" width="223.29999999999998" height="23"/>
-<text class="chipText" x="1288.9666666666665" y="2629" text-anchor="start">policy-foundry-candidate-registry</text>
-<rect class="chip" x="1046.6666666666665" y="2644" width="296.5" height="23"/>
-<text class="chipText" x="1057.6666666666665" y="2660" text-anchor="start">policy-foundry-authority-relationship-context</text>
-<rect class="chip" x="1046.6666666666665" y="2675" width="241.6" height="23"/>
-<text class="chipText" x="1057.6666666666665" y="2691" text-anchor="start">policy-foundry-outcome-feedback-loop</text>
-<rect class="chip" x="1046.6666666666665" y="2706" width="278.2" height="23"/>
-<text class="chipText" x="1057.6666666666665" y="2722" text-anchor="start">policy-foundry-adversarial-replay-executor</text>
-<rect class="chip" x="1046.6666666666665" y="2737" width="241.6" height="23"/>
-<text class="chipText" x="1057.6666666666665" y="2753" text-anchor="start">policy-foundry-hosted-review-surface</text>
-<rect class="chip" x="1296.2666666666664" y="2737" width="150.1" height="23"/>
-<text class="chipText" x="1307.2666666666664" y="2753" text-anchor="start">audit-evidence-export</text>
-<rect class="chip" x="1046.6666666666665" y="2768" width="150.1" height="23"/>
-<text class="chipText" x="1057.6666666666665" y="2784" text-anchor="start">dashboard-api-summary</text>
-<rect class="chip" x="1204.7666666666664" y="2768" width="180.6" height="23"/>
-<text class="chipText" x="1215.7666666666664" y="2784" text-anchor="start">presentation-replay-ledger</text>
-<rect class="panel" x="1580" y="2540" width="860" height="245"/>
-<text class="panelTitle" x="1596" y="2564" text-anchor="start">Forbidden Raw Data Classes (15)</text>
-<rect class="chip" x="1596" y="2582" width="124.4" height="23"/>
-<text class="chipText" x="1607" y="2598" text-anchor="start">raw-model-prompt</text>
-<rect class="chip" x="1728.4" y="2582" width="124.4" height="23"/>
-<text class="chipText" x="1739.4" y="2598" text-anchor="start">raw-model-output</text>
-<rect class="chip" x="1860.8000000000002" y="2582" width="124.4" height="23"/>
-<text class="chipText" x="1871.8000000000002" y="2598" text-anchor="start">raw-tool-payload</text>
-<rect class="chip" x="1993.2000000000003" y="2582" width="169.20000000000002" height="23"/>
-<text class="chipText" x="2004.2000000000003" y="2598" text-anchor="start">raw-customer-identifier</text>
-<rect class="chip" x="2170.4" y="2582" width="130.8" height="23"/>
-<text class="chipText" x="2181.4" y="2598" text-anchor="start">raw-personal-data</text>
-<rect class="chip" x="1596" y="2613" width="175.60000000000002" height="23"/>
-<text class="chipText" x="1607" y="2629" text-anchor="start">raw-bank-or-payment-data</text>
-<rect class="chip" x="1779.6" y="2613" width="175.60000000000002" height="23"/>
-<text class="chipText" x="1790.6" y="2629" text-anchor="start">raw-wallet-key-or-secret</text>
-<rect class="chip" x="1963.1999999999998" y="2613" width="156.4" height="23"/>
-<text class="chipText" x="1974.1999999999998" y="2629" text-anchor="start">raw-recipient-details</text>
-<rect class="chip" x="2127.6" y="2613" width="156.4" height="23"/>
-<text class="chipText" x="2138.6" y="2629" text-anchor="start">raw-evidence-document</text>
-<rect class="chip" x="1596" y="2644" width="226.8" height="23"/>
-<text class="chipText" x="1607" y="2660" text-anchor="start">raw-database-row-or-query-result</text>
-<rect class="chip" x="1830.8" y="2644" width="169.20000000000002" height="23"/>
-<text class="chipText" x="1841.8" y="2660" text-anchor="start">raw-downstream-response</text>
-<rect class="chip" x="2008" y="2644" width="150" height="23"/>
-<text class="chipText" x="2019" y="2660" text-anchor="start">credential-or-secret</text>
-<rect class="chip" x="2166" y="2644" width="175.60000000000002" height="23"/>
-<text class="chipText" x="2177" y="2660" text-anchor="start">private-policy-threshold</text>
-<rect class="chip" x="1596" y="2675" width="143.60000000000002" height="23"/>
-<text class="chipText" x="1607" y="2691" text-anchor="start">raw-idempotency-key</text>
-<rect class="chip" x="1747.6" y="2675" width="111.60000000000001" height="23"/>
-<text class="chipText" x="1758.6" y="2691" text-anchor="start">raw-replay-key</text>
-<rect class="panel" x="2580" y="2240" width="980" height="210"/>
-<text class="panelTitle" x="2596" y="2264" text-anchor="start">Enforcement Points And Boundaries</text>
-<rect class="chip" x="2596" y="2282" width="156.2" height="23"/>
-<text class="chipText" x="2607" y="2298" text-anchor="start">application-middleware</text>
-<rect class="chip" x="2760.2" y="2282" width="107.39999999999999" height="23"/>
-<text class="chipText" x="2771.2" y="2298" text-anchor="start">async-consumer</text>
-<rect class="chip" x="2875.6" y="2282" width="180.6" height="23"/>
-<text class="chipText" x="2886.6" y="2298" text-anchor="start">communication-send-gateway</text>
-<rect class="chip" x="2596" y="2313" width="113.5" height="23"/>
-<text class="chipText" x="2607" y="2329" text-anchor="start">proxy-ext-authz</text>
-<rect class="chip" x="2717.5" y="2313" width="95.19999999999999" height="23"/>
-<text class="chipText" x="2728.5" y="2329" text-anchor="start">http-request</text>
-<rect class="chip" x="2820.7" y="2313" width="101.3" height="23"/>
-<text class="chipText" x="2831.7" y="2329" text-anchor="start">async-message</text>
-<rect class="chip" x="2596" y="2344" width="131.8" height="23"/>
-<text class="chipText" x="2607" y="2360" text-anchor="start">communication-send</text>
-<rect class="chip" x="2735.8" y="2344" width="113.5" height="23"/>
-<text class="chipText" x="2746.8" y="2360" text-anchor="start">proxy-admission</text>
-<rect class="chip" x="3079" y="2282" width="119.6" height="23"/>
-<text class="chipText" x="3090" y="2298" text-anchor="start">webhook-receiver</text>
-<rect class="chip" x="3206.6" y="2282" width="144" height="23"/>
-<text class="chipText" x="3217.6" y="2298" text-anchor="start">record-write-gateway</text>
-<rect class="chip" x="3358.6" y="2282" width="162.29999999999998" height="23"/>
-<text class="chipText" x="3369.6" y="2298" text-anchor="start">action-dispatch-gateway</text>
-<rect class="chip" x="3079" y="2313" width="125.69999999999999" height="23"/>
-<text class="chipText" x="3090" y="2329" text-anchor="start">artifact-verifier</text>
-<rect class="chip" x="3212.7" y="2313" width="64.69999999999999" height="23"/>
-<text class="chipText" x="3223.7" y="2329" text-anchor="start">webhook</text>
-<rect class="chip" x="3285.3999999999996" y="2313" width="95.19999999999999" height="23"/>
-<text class="chipText" x="3296.3999999999996" y="2329" text-anchor="start">record-write</text>
-<rect class="chip" x="3388.5999999999995" y="2313" width="113.5" height="23"/>
-<text class="chipText" x="3399.5999999999995" y="2329" text-anchor="start">action-dispatch</text>
-<rect class="chip" x="3079" y="2344" width="113.5" height="23"/>
-<text class="chipText" x="3090" y="2360" text-anchor="start">artifact-export</text>
-<rect class="panel" x="2580" y="2475" width="980" height="150"/>
-<text class="panelTitle" x="2596" y="2499" text-anchor="start">Consequence Types And Admission Domains</text>
-<rect class="chip" x="2596" y="2517" width="101.3" height="23"/>
-<text class="chipText" x="2607" y="2533" text-anchor="start">communication</text>
-<rect class="chip" x="2705.3" y="2517" width="58.599999999999994" height="23"/>
-<text class="chipText" x="2716.3" y="2533" text-anchor="start">action</text>
-<rect class="chip" x="2771.9" y="2517" width="119.6" height="23"/>
-<text class="chipText" x="2782.9" y="2533" text-anchor="start">financial-record</text>
-<rect class="chip" x="2899.5" y="2517" width="131.8" height="23"/>
-<text class="chipText" x="2910.5" y="2533" text-anchor="start">programmable-money</text>
-<rect class="chip" x="2596" y="2548" width="119.6" height="23"/>
-<text class="chipText" x="2607" y="2564" text-anchor="start">authority-change</text>
-<rect class="chip" x="2723.6" y="2548" width="119.6" height="23"/>
-<text class="chipText" x="2734.6" y="2564" text-anchor="start">regulated-filing</text>
-<rect class="chip" x="2851.2" y="2548" width="119.6" height="23"/>
-<text class="chipText" x="2862.2" y="2564" text-anchor="start">decision-support</text>
-<rect class="chip" x="3079" y="2517" width="58.599999999999994" height="23"/>
-<text class="chipText" x="3090" y="2533" text-anchor="start">record</text>
-<rect class="chip" x="3145.6" y="2517" width="119.6" height="23"/>
-<text class="chipText" x="3156.6" y="2533" text-anchor="start">decision-support</text>
-<rect class="chip" x="3273.2" y="2517" width="107.39999999999999" height="23"/>
-<text class="chipText" x="3284.2" y="2533" text-anchor="start">money-movement</text>
-<rect class="chip" x="3388.6" y="2517" width="113.5" height="23"/>
-<text class="chipText" x="3399.6" y="2533" text-anchor="start">data-disclosure</text>
-<rect class="chip" x="3079" y="2548" width="156.2" height="23"/>
-<text class="chipText" x="3090" y="2564" text-anchor="start">external-communication</text>
-<rect class="chip" x="3243.2" y="2548" width="119.6" height="23"/>
-<text class="chipText" x="3254.2" y="2564" text-anchor="start">system-operation</text>
-<rect class="chip" x="3370.7999999999997" y="2548" width="58.599999999999994" height="23"/>
-<text class="chipText" x="3381.7999999999997" y="2564" text-anchor="start">custom</text>
-<rect class="panel" x="2580" y="2650" width="980" height="280"/>
-<text class="panelTitle" x="2596" y="2674" text-anchor="start">Data Minimization Audiences / Allowed Units / Governance Refs</text>
-<rect class="chip" x="2596" y="2692" width="56" height="23"/>
-<text class="chipText" x="2607" y="2708" text-anchor="start">model</text>
-<rect class="chip" x="2660" y="2692" width="125.69999999999999" height="23"/>
-<text class="chipText" x="2671" y="2708" text-anchor="start">external-reviewer</text>
-<rect class="chip" x="2596" y="2723" width="119.6" height="23"/>
-<text class="chipText" x="2607" y="2739" text-anchor="start">safe-instruction</text>
-<rect class="chip" x="2723.6" y="2723" width="58.599999999999994" height="23"/>
-<text class="chipText" x="2734.6" y="2739" text-anchor="start">counts</text>
-<rect class="chip" x="2790.2" y="2723" width="95.19999999999999" height="23"/>
-<text class="chipText" x="2801.2" y="2739" text-anchor="start">tenant-scope</text>
-<rect class="chip" x="2596" y="2754" width="107.39999999999999" height="23"/>
-<text class="chipText" x="2607" y="2770" text-anchor="start">surface-digest</text>
-<rect class="chip" x="2711.4" y="2754" width="107.39999999999999" height="23"/>
-<text class="chipText" x="2722.4" y="2770" text-anchor="start">approval-state</text>
-<rect class="chip" x="2596" y="2785" width="205" height="23"/>
-<text class="chipText" x="2607" y="2801" text-anchor="start">nist-ai-rmf-risk-documentation</text>
-<rect class="chip" x="2596" y="2816" width="290.4" height="23"/>
-<text class="chipText" x="2607" y="2832" text-anchor="start">owasp-llm02-sensitive-information-disclosure</text>
-<rect class="chip" x="2596" y="2847" width="247.7" height="23"/>
-<text class="chipText" x="2607" y="2863" text-anchor="start">rfc9457-problem-details-not-debugging</text>
-<rect class="chip" x="2918" y="2692" width="125.69999999999999" height="23"/>
-<text class="chipText" x="2929" y="2708" text-anchor="start">customer-reviewer</text>
-<rect class="chip" x="3051.7" y="2692" width="119.6" height="23"/>
-<text class="chipText" x="3062.7" y="2708" text-anchor="start">dashboard-viewer</text>
-<rect class="chip" x="2918" y="2723" width="137.89999999999998" height="23"/>
-<text class="chipText" x="2929" y="2739" text-anchor="start">missing-field-names</text>
-<rect class="chip" x="3063.9" y="2723" width="64.69999999999999" height="23"/>
-<text class="chipText" x="3074.9" y="2739" text-anchor="start">digests</text>
-<rect class="chip" x="2918" y="2754" width="125.69999999999999" height="23"/>
-<text class="chipText" x="2929" y="2770" text-anchor="start">environment-scope</text>
-<rect class="chip" x="3051.7" y="2754" width="131.8" height="23"/>
-<text class="chipText" x="3062.7" y="2770" text-anchor="start">artifact-reference</text>
-<rect class="chip" x="2918" y="2785" width="58.599999999999994" height="23"/>
-<text class="chipText" x="2929" y="2801" text-anchor="start">status</text>
-<rect class="chip" x="2984.6" y="2785" width="235.5" height="23"/>
-<text class="chipText" x="2995.6" y="2801" text-anchor="start">nist-sp-800-122-pii-confidentiality</text>
-<rect class="chip" x="2918" y="2816" width="223.29999999999998" height="23"/>
-<text class="chipText" x="2929" y="2832" text-anchor="start">owasp-llm07-system-prompt-leakage</text>
-<rect class="chip" x="3240" y="2692" width="70.8" height="23"/>
-<text class="chipText" x="3251" y="2708" text-anchor="start">operator</text>
-<rect class="chip" x="3318.8" y="2692" width="95.19999999999999" height="23"/>
-<text class="chipText" x="3329.8" y="2708" text-anchor="start">reason-codes</text>
-<rect class="chip" x="3240" y="2723" width="162.29999999999998" height="23"/>
-<text class="chipText" x="3251" y="2739" text-anchor="start">required-evidence-kinds</text>
-<rect class="chip" x="3410.3" y="2723" width="83" height="23"/>
-<text class="chipText" x="3421.3" y="2739" text-anchor="start">timestamps</text>
-<rect class="chip" x="3240" y="2754" width="131.8" height="23"/>
-<text class="chipText" x="3251" y="2770" text-anchor="start">consequence-domain</text>
-<rect class="chip" x="3379.8" y="2754" width="119.6" height="23"/>
-<text class="chipText" x="3390.8" y="2770" text-anchor="start">policy-reference</text>
-<rect class="chip" x="3240" y="2785" width="229.39999999999998" height="23"/>
-<text class="chipText" x="3251" y="2801" text-anchor="start">operator-supplied-aggregate-impact</text>
-<rect class="chip" x="3240" y="2816" width="192.79999999999998" height="23"/>
-<text class="chipText" x="3251" y="2832" text-anchor="start">gdpr-art-5-data-minimisation</text>
-<rect class="chip" x="3240" y="2847" width="314.79999999999995" height="23"/>
-<text class="chipText" x="3251" y="2863" text-anchor="start">pci-dss-sensitive-authentication-data-not-stored</text>
-<rect class="panelGreen" x="1580" y="2925" width="860" height="52"/>
-<text class="panelTitle" x="1596" y="2949" text-anchor="start">34x15 Redaction Matrix Rule</text>
-<text class="body" x="1596" y="2973" text-anchor="start">Every listed surface is checked against every listed forbidden raw class; rawPayloadStored=false; raw override unsupported.</text>
-<text class="sectionTitle" x="40" y="3350" text-anchor="start">Source module tags</text>
-<rect class="chip" x="40" y="3372" width="65.4" height="24"/>
-<text class="chipText" x="51" y="3388" text-anchor="start">src/api</text>
-<rect class="chip" x="113.4" y="3372" width="108.8" height="24"/>
-<text class="chipText" x="124.4" y="3388" text-anchor="start">src/connectors</text>
-<rect class="chip" x="230.2" y="3372" width="177" height="24"/>
-<text class="chipText" x="241.2" y="3388" text-anchor="start">src/consequence-admission</text>
-<rect class="chip" x="415.2" y="3372" width="201.8" height="24"/>
-<text class="chipText" x="426.2" y="3388" text-anchor="start">src/crypto-authorization-core</text>
-<rect class="chip" x="625" y="3372" width="208" height="24"/>
-<text class="chipText" x="636" y="3388" text-anchor="start">src/crypto-execution-admission</text>
-<rect class="chip" x="841" y="3372" width="164.6" height="24"/>
-<text class="chipText" x="852" y="3388" text-anchor="start">src/crypto-intelligence</text>
-<rect class="chip" x="1013.6" y="3372" width="90.2" height="24"/>
-<text class="chipText" x="1024.6" y="3388" text-anchor="start">src/domains</text>
-<rect class="chip" x="1111.8" y="3372" width="84" height="24"/>
-<text class="chipText" x="1122.8" y="3388" text-anchor="start">src/filing</text>
-<rect class="chip" x="1203.8" y="3372" width="102.60000000000001" height="24"/>
-<text class="chipText" x="1214.8" y="3388" text-anchor="start">src/financial</text>
-<rect class="chip" x="1314.3999999999999" y="3372" width="96.4" height="24"/>
-<text class="chipText" x="1325.3999999999999" y="3388" text-anchor="start">src/identity</text>
-<rect class="chip" x="1418.8" y="3372" width="96.4" height="24"/>
-<text class="chipText" x="1429.8" y="3388" text-anchor="start">src/platform</text>
-<rect class="chip" x="1523.2" y="3372" width="127.4" height="24"/>
-<text class="chipText" x="1534.2" y="3388" text-anchor="start">src/proof-surface</text>
-<rect class="chip" x="1658.6000000000001" y="3372" width="201.8" height="24"/>
-<text class="chipText" x="1669.6000000000001" y="3388" text-anchor="start">src/release-enforcement-plane</text>
-<rect class="chip" x="1868.4" y="3372" width="133.60000000000002" height="24"/>
-<text class="chipText" x="1879.4" y="3388" text-anchor="start">src/release-kernel</text>
-<rect class="chip" x="2010" y="3372" width="127.4" height="24"/>
-<text class="chipText" x="2021" y="3388" text-anchor="start">src/release-layer</text>
-<rect class="chip" x="2145.4" y="3372" width="220.4" height="24"/>
-<text class="chipText" x="2156.4" y="3388" text-anchor="start">src/release-policy-control-plane</text>
-<rect class="chip" x="2373.8" y="3372" width="90.2" height="24"/>
-<text class="chipText" x="2384.8" y="3388" text-anchor="start">src/service</text>
-<rect class="chip" x="2472" y="3372" width="96.4" height="24"/>
-<text class="chipText" x="2483" y="3388" text-anchor="start">src/showcase</text>
-<rect class="chip" x="2576.4" y="3372" width="90.2" height="24"/>
-<text class="chipText" x="2587.4" y="3388" text-anchor="start">src/signing</text>
-<rect class="chip" x="2674.6" y="3372" width="77.80000000000001" height="24"/>
-<text class="chipText" x="2685.6" y="3388" text-anchor="start">src/utils</text>
+<rect class="panel" x="970" y="150" width="520" height="210"/>
+<text class="section" x="1000" y="180">PIP: Policy / Evidence / Context Inputs</text>
+<text class="body" x="1000" y="212">policy version, policy refs, evidence refs</text>
+<text class="body" x="1000" y="238">actor authority, approval provenance</text>
+<text class="body" x="1000" y="264">tenant, target, audience, scope</text>
+<text class="body" x="1000" y="290">freshness, no-go holds, replay identity</text>
+<text class="body" x="1000" y="316">provider/cost context, proof refs</text>
+
+<path class="arrow" d="M1230 360 V430"/>
+
+<polygon class="diamond" points="1230,430 1500,535 1230,640 960,535"/>
+<text class="label" x="1110" y="508">PDP: CONSEQUENCE</text>
+<text class="label" x="1118" y="532">ADMISSION CORE</text>
+<text class="tiny" x="1084" y="560">policy, evidence, authority, tenant, scope,</text>
+<text class="tiny" x="1106" y="582">freshness, no-go, replay, deterministic checks</text>
+
+<path class="arrow" d="M1040 610 L760 720"/>
+<path class="arrow" d="M1170 642 L1055 720"/>
+<path class="holdArrow" d="M1320 642 L1460 720"/>
+<path class="holdArrow" d="M1420 600 L1720 720"/>
+
+<rect class="nodeGreen" x="575" y="720" width="285" height="95"/>
+<text class="label" x="665" y="750">ADMIT</text>
+<text class="tiny" x="612" y="777">allowed as requested</text>
+<text class="tiny" x="612" y="800">may continue with proof</text>
+
+<rect class="nodeGold" x="910" y="720" width="285" height="95"/>
+<text class="label" x="1002" y="750">NARROW</text>
+<text class="tiny" x="944" y="777">allowed only in bounds</text>
+<text class="tiny" x="944" y="800">constraints bind execution</text>
+
+<rect class="nodeRed" x="1315" y="720" width="285" height="95"/>
+<text class="label" x="1402" y="750">REVIEW</text>
+<text class="tiny" x="1350" y="777">human/operator hold</text>
+<text class="tiny" x="1350" y="800">no executable authority</text>
+
+<rect class="nodeRed" x="1660" y="720" width="285" height="95"/>
+<text class="label" x="1753" y="750">BLOCK</text>
+<text class="tiny" x="1700" y="777">fail closed</text>
+<text class="tiny" x="1700" y="800">no executable authority</text>
+
+<path class="holdArrow" d="M1458 815 V885 H1915"/>
+<path class="holdArrow" d="M1802 815 V885 H1915"/>
+<rect class="terminalHold" x="1915" y="840" width="340" height="90"/>
+<text class="terminalText" x="1960" y="876">NO DOWNSTREAM ACTION</text>
+<text class="tiny" x="1960" y="904">review/block produces proof-only hold</text>
+
+<path class="arrow" d="M718 815 V910 H910"/>
+<path class="arrow" d="M1052 815 V910 H910"/>
+<rect class="panelGold" x="760" y="910" width="620" height="180"/>
+<text class="section" x="790" y="940">PAP / Release Authorization Layer</text>
+<text class="body" x="790" y="972">Only admit/narrow enter this path.</text>
+<text class="body" x="790" y="998">Binds decision id, policy version, tenant, target,</text>
+<text class="body" x="790" y="1024">allowed or narrowed scope, proof refs, expiry, sender.</text>
+<text class="body" x="790" y="1050">Signs protected release token and registers introspection.</text>
+
+<path class="holdArrow" d="M1380 1000 H1575 V1138"/>
+<rect class="terminalHold" x="1415" y="1138" width="310" height="82"/>
+<text class="terminalText" x="1466" y="1173">NO RELEASE</text>
+<text class="tiny" x="1466" y="1199">binding/signing failure holds</text>
+
+<path class="arrow" d="M1070 1090 V1185"/>
+
+<rect class="panel" x="735" y="1185" width="670" height="210"/>
+<text class="section" x="765" y="1215">PEP: Release Enforcement Verifier</text>
+<text class="body" x="765" y="1246">verifies token signature, expiry, audience, tenant, target</text>
+<text class="body" x="765" y="1272">checks sender-constrained presentation and body digest</text>
+<text class="body" x="765" y="1298">requires online introspection and replay consumption</text>
+<text class="body" x="765" y="1324">matches release proof ref to admission proof</text>
+<text class="tiny" x="765" y="1356">failure reasons: stale, replayed, missing proof, wrong binding</text>
+
+<path class="holdArrow" d="M1405 1288 H1585 V1395 H1915"/>
+<rect class="terminalHold" x="1915" y="1355" width="340" height="90"/>
+<text class="terminalText" x="1990" y="1391">HOLD</text>
+<text class="tiny" x="1960" y="1419">invalid verifier result; no downstream action</text>
+
+<path class="arrow" d="M1405 1290 H1755"/>
+
+<rect class="panelRed" x="1755" y="680" width="700" height="275"/>
+<text class="section" x="1785" y="712">Customer Gate / Downstream PEP</text>
+<text class="body" x="1785" y="744">Production: customer-owned and customer-operated.</text>
+<text class="body" x="1785" y="770">Checks Attestor decision, valid release proof, replay,</text>
+<text class="body" x="1785" y="796">tenant, target, action, body digest, and allowed scope.</text>
+<text class="body" x="1785" y="822">If any check fails, nothing happens.</text>
+<text class="tiny" x="1785" y="854">This is where non-bypassability must be proven in a real customer deployment.</text>
+
+<path class="holdArrow" d="M2110 955 V1015"/>
+<rect class="terminalHold" x="1915" y="1015" width="390" height="92"/>
+<text class="terminalText" x="1960" y="1052">NOTHING HAPPENS</text>
+<text class="tiny" x="1960" y="1080">gate failed; no refund/export/send/write</text>
+
+<path class="arrow" d="M2455 818 H2520 V1215 H2360"/>
+<rect class="terminalProceed" x="1955" y="1170" width="405" height="95"/>
+<text class="terminalText" x="2018" y="1208">REAL DOWNSTREAM ACTION</text>
+<text class="tiny" x="2018" y="1236">refund, export, send, role change, operation</text>
+
+<path class="arrow" d="M2158 1265 V1350"/>
+<rect class="nodeGreen" x="1925" y="1350" width="465" height="110"/>
+<text class="label" x="2058" y="1383">DOWNSTREAM RECEIPT</text>
+<text class="body" x="1960" y="1412">what executed, where, when, provider/job/transaction ref</text>
+<text class="tiny" x="1960" y="1438">executed scope digest; no raw sensitive payload</text>
+
+<path class="arrow" d="M2158 1460 V1532"/>
+<rect class="panelGold" x="1785" y="1532" width="745" height="230"/>
+<text class="section" x="1815" y="1564">Digest-Only Proof Packet / Audit Output</text>
+<text class="body" x="1815" y="1596">AI action digest, normalized request digest, PDP decision</text>
+<text class="body" x="1815" y="1622">reason codes, policy version, evidence refs, constraints</text>
+<text class="body" x="1815" y="1648">release token id/digest, introspection, replay, gate result</text>
+<text class="body" x="1815" y="1674">downstream receipt refs, redaction scan, no-claims</text>
+<text class="tiny" x="1815" y="1710">Never store raw token, raw prompt, raw provider body, raw rows, credentials, or customer identifiers.</text>
+
+<rect class="panelGreen" x="85" y="610" width="410" height="350"/>
+<text class="section" x="115" y="642">Decision Vocabulary</text>
+<text class="body" x="115" y="678">admit: proceed as requested</text>
+<text class="body" x="115" y="704">narrow: proceed only within constraints</text>
+<text class="body" x="115" y="730">review: hold for human/operator review</text>
+<text class="body" x="115" y="756">block: fail closed</text>
+<text class="body" x="115" y="800">Allowed branches still need:</text>
+<text class="tiny" x="135" y="826">protected release token</text>
+<text class="tiny" x="135" y="850">online introspection</text>
+<text class="tiny" x="135" y="874">replay consumption</text>
+<text class="tiny" x="135" y="898">customer/downstream gate</text>
+
+<rect class="panel" x="85" y="1015" width="520" height="330"/>
+<text class="section" x="115" y="1048">Module Groups Feeding This Path</text>
+<text class="body" x="115" y="1080">src/api/*: provider edge, optional action source</text>
+<text class="body" x="115" y="1106">src/consequence-admission/*: admission PDP and gate</text>
+<text class="body" x="115" y="1132">src/release-kernel/* and src/release-layer/*: release</text>
+<text class="body" x="115" y="1158">src/release-policy-control-plane/*: policy/PAP</text>
+<text class="body" x="115" y="1184">src/release-enforcement-plane/*: verifier/PEP</text>
+<text class="body" x="115" y="1210">src/service/*: routes, stores, runtime composition</text>
+<text class="body" x="115" y="1236">domain packs: financial, crypto, filing, data, ops</text>
+<text class="body" x="115" y="1262">src/signing/* and proof surfaces: verification artifacts</text>
+<text class="tiny" x="115" y="1300">Shadow-to-policy modules inform future policy; they are not the enforcement edge.</text>
+
+<rect class="panelRed" x="85" y="1395" width="520" height="315"/>
+<text class="section" x="115" y="1428">Failure Paths That Must Hold</text>
+<text class="body" x="115" y="1460">invalid intent, missing proof, wrong tenant</text>
+<text class="body" x="115" y="1486">wrong target/audience, wrong action</text>
+<text class="body" x="115" y="1512">stale token, missing sender constraint</text>
+<text class="body" x="115" y="1538">missing online introspection, replayed authorization</text>
+<text class="body" x="115" y="1564">scope outside allowed bounds, redaction failure</text>
+<text class="tiny" x="115" y="1602">If the failure is execution-related: no downstream call.</text>
+<text class="tiny" x="115" y="1626">If the failure is output-related: artifact is not shareable.</text>
+
+<rect class="panelGold" x="735" y="1440" width="670" height="270"/>
+<text class="section" x="765" y="1472">No-Claims Kept Visible</text>
+<text class="body" x="765" y="1504">not production readiness</text>
+<text class="body" x="765" y="1530">not enterprise readiness</text>
+<text class="body" x="765" y="1556">not live customer PEP no-bypass</text>
+<text class="body" x="765" y="1582">not live shared replay/introspection stores</text>
+<text class="body" x="765" y="1608">not external KMS/HSM-backed runtime signing</text>
+<text class="body" x="765" y="1634">not customer deployment or compliance certification</text>
 </svg>

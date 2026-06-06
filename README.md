@@ -11,6 +11,10 @@
 
 <p align="center"><sub>Badges describe repository evidence and framework mappings, not certification or production readiness.</sub></p>
 
+<p align="center">
+  <a href="docs/02-architecture/attestor-internal-machine-map.md"><strong>View the full consequence path map</strong></a>
+</p>
+
 **Control infrastructure for high-risk AI-driven operations.**
 
 Attestor sits between an AI-prepared operation and the system that would execute it.

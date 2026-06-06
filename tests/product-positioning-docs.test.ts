@@ -26,6 +26,12 @@ function testReadmeStartsWithAConcreteWorkflow(): void {
 
   includes(readme, '<img src="docs/assets/attestor-readme-logo.png"', 'Product docs: README uses the single current Attestor image');
   excludes(readme, /attestor-logo\.png|attestor-readme-hero\.png/u, 'Product docs: README does not use retired Attestor image assets');
+  includes(readme, 'alt="version 0.2.0-evaluation"', 'Product docs: README exposes the evaluation version badge');
+  includes(readme, 'alt="NIST AI RMF mapped"', 'Product docs: README exposes the NIST AI RMF mapped badge');
+  includes(readme, 'alt="ISO 42001 mapped"', 'Product docs: README exposes the ISO 42001 mapped badge');
+  includes(readme, 'alt="fail-closed locked"', 'Product docs: README exposes the fail-closed evidence badge');
+  includes(readme, 'docs/02-architecture/data-movement-full-consequence-engine-proof.md#m03b---fail-closed-matrix', 'Product docs: README fail-closed badge links to the proof matrix');
+  includes(readme, 'Badges describe repository evidence and framework mappings, not certification or production readiness.', 'Product docs: README badge row avoids certification and production overclaim');
   includes(readme, '**Control infrastructure for high-risk AI-driven operations.**', 'Product docs: README keeps the short product promise');
   includes(readme, 'Attestor sits between an AI-prepared operation and the system that would execute it.', 'Product docs: README starts with plain placement language');
   includes(readme, 'Prompts guide. They do not enforce.', 'Product docs: README keeps the prompt-control contrast');

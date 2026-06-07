@@ -137,6 +137,9 @@ function testRs02EnvelopeAndNonClaimsStayNarrow(): void {
   includes(doc, 'RS05 Consequence Mapping', 'Runtime signal doc: RS05 consequence mapping section is named');
   includes(doc, 'src/consequence-admission/runtime-signal-consequence-mapping.ts', 'Runtime signal doc: RS05 implementation path is named');
   includes(doc, 'attestor.runtime-signal-consequence-mapping.v1', 'Runtime signal doc: RS05 contract version is named');
+  includes(doc, 'RS06 Auto-Context Bridge', 'Runtime signal doc: RS06 auto-context bridge section is named');
+  includes(doc, 'src/consequence-admission/action-surface-auto-context.ts', 'Runtime signal doc: RS06 implementation path is named');
+  includes(doc, 'attestor.action-surface-runtime-signal-bridge.v1', 'Runtime signal doc: RS06 bridge version is named');
   includes(doc, 'signalKind', 'Runtime signal doc: envelope includes signal kind');
   includes(doc, 'sourceSystem', 'Runtime signal doc: envelope includes source system');
   includes(doc, 'tenantRefDigest', 'Runtime signal doc: envelope includes tenant digest');

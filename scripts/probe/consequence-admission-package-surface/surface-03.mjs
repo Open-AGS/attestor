@@ -235,6 +235,36 @@ export async function runConsequenceAdmissionPackageSurface03({ assert, root, ad
   );
 
   assert.equal(
+    admission.ACTION_SURFACE_RUNTIME_SIGNAL_BRIDGE_VERSION,
+    'attestor.action-surface-runtime-signal-bridge.v1',
+  );
+
+  assert.equal(
+    admission.actionSurfaceAutoContextDescriptor().runtimeSignalEnvelopeVersion,
+    admission.RUNTIME_SIGNAL_ENVELOPE_VERSION,
+  );
+
+  assert.equal(
+    admission.actionSurfaceAutoContextDescriptor().runtimeSignalConsequenceMappingVersion,
+    admission.RUNTIME_SIGNAL_CONSEQUENCE_MAPPING_VERSION,
+  );
+
+  assert.equal(
+    admission.actionSurfaceAutoContextDescriptor().runtimeSignalBridgeUsesExistingAutoContextPath,
+    true,
+  );
+
+  assert.equal(
+    typeof admission.runtimeSignalEnvelopeToActionSurfaceAutoContextSignal,
+    'function',
+  );
+
+  assert.equal(
+    typeof admission.createActionSurfaceAutoContextFromRuntimeSignals,
+    'function',
+  );
+
+  assert.equal(
     admission.SIGNAL_EXTRACTOR_CONTRACT_VERSION,
     'attestor.signal-extractor-contract.v1',
   );

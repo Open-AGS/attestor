@@ -178,6 +178,20 @@ create a gate plan, consume proof, activate enforcement, or mark anything safe.
 `enforcement-proof` signals stay out of this mapper and belong to proof intake.
 The focused local check is `npm run test:runtime-signal-consequence-mapping`.
 
+## RS06 Auto-Context Bridge
+
+The repo-side Auto-Context bridge lives in
+`src/consequence-admission/action-surface-auto-context.ts` as
+`attestor.action-surface-runtime-signal-bridge.v1`. It accepts RS02 runtime
+signal envelopes and feeds them into the existing Action Surface Auto-Context
+path.
+
+The bridge preserves digest references from the envelope and returns the
+existing `attestor.action-surface-auto-context.v1` result. It does not create a
+parallel mapper, grant authority, admit a consequence, deploy a gate, or prove
+source-system authenticity. The focused local check is
+`npm run test:action-surface-auto-context`.
+
 ## Boundaries
 
 - `runtime signal != authority`

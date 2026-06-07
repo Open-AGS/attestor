@@ -2,14 +2,23 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
+  ACTION_SURFACE_RUNTIME_SIGNAL_BRIDGE_VERSION,
   actionSurfaceAutoContextDescriptor,
   createActionSurfaceAutoContext,
+  createActionSurfaceAutoContextFromRuntimeSignals,
   createActionSurfaceAutoContextOnboardingPacket,
   ingestOpenApiActionSurfaceDeclarations,
+  normalizeRuntimeSignal,
+  runtimeSignalEnvelopeToActionSurfaceAutoContextSignal,
   type ActionSurfaceAutoContextCandidate,
 } from '../src/consequence-admission/index.js';
 
 let passed = 0;
+
+const digestA = `sha256:${'a'.repeat(64)}`;
+const digestB = `sha256:${'b'.repeat(64)}`;
+const digestC = `sha256:${'c'.repeat(64)}`;
+const digestD = `sha256:${'d'.repeat(64)}`;
 
 function equal<T>(actual: T, expected: T, message: string): void {
   assert.equal(actual, expected, message);
@@ -184,9 +193,91 @@ function testTelemetrySignalsAreDiscoveryOnly(): void {
   excludes(text, /raw_subject_must_not_escape/u, 'Auto-context telemetry: CloudEvent subject raw text does not escape');
 }
 
+function testRuntimeSignalEnvelopesBridgeIntoExistingAutoContextPath(): void {
+  const openapi = normalizeRuntimeSignal({
+    sourceKind: 'openapi-operation',
+    sourceSystem: 'openapi.customer-api',
+    eventTime: '2026-05-31T10:20:00.000Z',
+    tenantRefDigest: digestA,
+    actorRefDigest: digestB,
+    traceId: '4bf92f3577b34da6a3ce929d0e0e4736',
+    method: 'POST',
+    path: '/api/v1/exports',
+    operationId: 'createExport',
+    inputSchemaDigest: digestC,
+    actionSurface: 'data-export',
+    downstreamSystem: 'export-service',
+    policyRefs: ['policy:data-export.v1'],
+  });
+  const cloudevent = normalizeRuntimeSignal({
+    sourceKind: 'cloudevents-event',
+    sourceSystem: 'cloudevents.customer-bus',
+    eventTime: '2026-05-31T10:20:01.000Z',
+    tenantRefDigest: digestA,
+    actorRefDigest: digestB,
+    runtimeRef: 'event-router',
+    eventType: 'com.example.billing.refund.created',
+    eventSource: 'billing-events',
+    eventIdDigest: digestA,
+    dataSchemaDigest: digestC,
+    dataDigest: digestD,
+    actionSurface: 'refund-event',
+    downstreamSystem: 'billing-service',
+    evidenceRefs: ['evidence:refund-event.v1'],
+  });
+  const bridgedSignal = runtimeSignalEnvelopeToActionSurfaceAutoContextSignal(openapi.envelope);
+  const result = createActionSurfaceAutoContextFromRuntimeSignals({
+    generatedAt: '2026-05-31T10:20:02.000Z',
+    defaultActor: 'runtime-signal-reviewer',
+    envelopes: [openapi.envelope, cloudevent.envelope],
+  });
+  const [exportCandidate, refundCandidate] = result.candidates;
+  const text = JSON.stringify(result);
+
+  equal(
+    ACTION_SURFACE_RUNTIME_SIGNAL_BRIDGE_VERSION,
+    'attestor.action-surface-runtime-signal-bridge.v1',
+    'Auto-context runtime signal bridge: version is explicit',
+  );
+  equal(bridgedSignal.signalKind, 'openapi-operation', 'Auto-context runtime signal bridge: OpenAPI envelope maps to existing OpenAPI signal kind');
+  equal(bridgedSignal.sourceRef, `runtime-signal:${openapi.envelope.signalDigest}`, 'Auto-context runtime signal bridge: source ref is the envelope digest');
+  equal(bridgedSignal.inputShapeDigest, digestC, 'Auto-context runtime signal bridge: input schema digest is preserved');
+  equal(result.version, 'attestor.action-surface-auto-context.v1', 'Auto-context runtime signal bridge: result stays the existing auto-context contract');
+  equal(result.signalCount, 2, 'Auto-context runtime signal bridge: signal count is retained');
+  equal(result.candidateCount, 2, 'Auto-context runtime signal bridge: candidate count is retained');
+  equal(result.autoEnforce, false, 'Auto-context runtime signal bridge: auto-enforce remains false');
+  equal(result.canGrantAuthority, false, 'Auto-context runtime signal bridge: cannot grant authority');
+  equal(result.activatesEnforcement, false, 'Auto-context runtime signal bridge: cannot activate enforcement');
+  equal(result.productionReady, false, 'Auto-context runtime signal bridge: production readiness is not claimed');
+  equal(exportCandidate?.actionSurface, 'export_service.data_export', 'Auto-context runtime signal bridge: export candidate uses existing action-surface shape');
+  equal(exportCandidate?.domain, 'data-disclosure', 'Auto-context runtime signal bridge: data movement maps into existing data-disclosure domain');
+  equal(exportCandidate?.inputShapeDigest, digestC, 'Auto-context runtime signal bridge: candidate keeps schema digest');
+  equal(exportCandidate?.argumentDigest, null, 'Auto-context runtime signal bridge: declaration carries no argument digest');
+  equal(exportCandidate?.genericAdmissionDraft.mode, 'observe', 'Auto-context runtime signal bridge: draft admission stays observe mode');
+  ok(
+    exportCandidate?.genericAdmissionDraft.nativeInputRefs.includes(exportCandidate.candidateId),
+    'Auto-context runtime signal bridge: generic draft points to the auto-context candidate id',
+  );
+  equal(refundCandidate?.domain, 'money-movement', 'Auto-context runtime signal bridge: refund observation maps into money movement');
+  equal(refundCandidate?.argumentDigest, digestD, 'Auto-context runtime signal bridge: CloudEvents data digest is preserved');
+  ok(result.reviewChecklist.includes('enforcement-boundary'), 'Auto-context runtime signal bridge: enforcement boundary remains a review checklist gap');
+  excludes(text, /openapi\.customer-api/u, 'Auto-context runtime signal bridge: source system raw label is not emitted');
+  excludes(text, /cloudevents\.customer-bus/u, 'Auto-context runtime signal bridge: event source system raw label is not emitted');
+}
+
 function testDescriptorDocsAndPackageScript(): void {
   const descriptor = actionSurfaceAutoContextDescriptor();
   equal(descriptor.outputIsDecisionSupportOnly, true, 'Auto-context descriptor: decision-support only');
+  equal(
+    descriptor.runtimeSignalBridgeVersion,
+    'attestor.action-surface-runtime-signal-bridge.v1',
+    'Auto-context descriptor: runtime signal bridge version is explicit',
+  );
+  equal(
+    descriptor.runtimeSignalBridgeUsesExistingAutoContextPath,
+    true,
+    'Auto-context descriptor: runtime signal bridge uses existing auto-context path',
+  );
   equal(descriptor.autoEnforce, false, 'Auto-context descriptor: auto-enforce is false');
   equal(descriptor.canGrantAuthority, false, 'Auto-context descriptor: cannot grant authority');
   ok(descriptor.signalKinds.includes('mcp-tool-call'), 'Auto-context descriptor: MCP call signals are listed');
@@ -253,6 +344,7 @@ try {
   testMcpToolCallCreatesDigestOnlyObserveDraft();
   testOpenApiAttestorHintsStayMetadataOnly();
   testTelemetrySignalsAreDiscoveryOnly();
+  testRuntimeSignalEnvelopesBridgeIntoExistingAutoContextPath();
   testDescriptorDocsAndPackageScript();
   console.log(`Action surface auto-context tests: ${passed} passed, 0 failed`);
 } catch (error) {

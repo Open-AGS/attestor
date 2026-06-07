@@ -21,6 +21,15 @@ import type {
 import {
   type AttestorIntegrationMode,
 } from './integration-mode-readiness.js';
+import {
+  RUNTIME_SIGNAL_CONSEQUENCE_MAPPING_VERSION,
+  mapRuntimeSignalToConsequenceCandidate,
+  type RuntimeSignalConsequenceCandidate,
+} from './runtime-signal-consequence-mapping.js';
+import {
+  RUNTIME_SIGNAL_ENVELOPE_VERSION,
+  type RuntimeSignalEnvelope,
+} from './runtime-signal-envelope.js';
 import type {
   ShadowAdmissionEvent,
 } from './shadow-events.js';
@@ -31,6 +40,9 @@ import {
 
 export const ACTION_SURFACE_AUTO_CONTEXT_VERSION =
   'attestor.action-surface-auto-context.v1';
+
+export const ACTION_SURFACE_RUNTIME_SIGNAL_BRIDGE_VERSION =
+  'attestor.action-surface-runtime-signal-bridge.v1';
 
 export const ACTION_SURFACE_AUTO_CONTEXT_SIGNAL_KINDS = [
   'mcp-tool-definition',
@@ -77,6 +89,8 @@ export interface ActionSurfaceAutoContextSignal {
   readonly toolName?: string | null;
   readonly toolInputSchema?: unknown;
   readonly toolArguments?: unknown;
+  readonly inputShapeDigest?: string | null;
+  readonly argumentDigest?: string | null;
   readonly operationId?: string | null;
   readonly method?: string | null;
   readonly path?: string | null;
@@ -97,6 +111,14 @@ export interface CreateActionSurfaceAutoContextInput {
   readonly defaultDomain?: ConsequenceAdmissionDomain | string | null;
   readonly defaultDownstreamSystem?: string | null;
   readonly signals: readonly ActionSurfaceAutoContextSignal[];
+}
+
+export interface CreateActionSurfaceAutoContextFromRuntimeSignalsInput {
+  readonly generatedAt?: string | null;
+  readonly defaultActor?: string | null;
+  readonly defaultDomain?: ConsequenceAdmissionDomain | string | null;
+  readonly defaultDownstreamSystem?: string | null;
+  readonly envelopes: readonly RuntimeSignalEnvelope[];
 }
 
 export interface ActionSurfaceAutoContextFieldState {
@@ -155,8 +177,13 @@ export interface ActionSurfaceAutoContextResult {
 
 export interface ActionSurfaceAutoContextDescriptor {
   readonly version: typeof ACTION_SURFACE_AUTO_CONTEXT_VERSION;
+  readonly runtimeSignalBridgeVersion: typeof ACTION_SURFACE_RUNTIME_SIGNAL_BRIDGE_VERSION;
+  readonly runtimeSignalEnvelopeVersion: typeof RUNTIME_SIGNAL_ENVELOPE_VERSION;
+  readonly runtimeSignalConsequenceMappingVersion: typeof RUNTIME_SIGNAL_CONSEQUENCE_MAPPING_VERSION;
   readonly signalKinds: typeof ACTION_SURFACE_AUTO_CONTEXT_SIGNAL_KINDS;
   readonly fields: typeof ACTION_SURFACE_AUTO_CONTEXT_FIELDS;
+  readonly acceptsRuntimeSignalEnvelopes: true;
+  readonly runtimeSignalBridgeUsesExistingAutoContextPath: true;
   readonly approvalRequired: true;
   readonly autoEnforce: false;
   readonly canGrantAuthority: false;
@@ -229,6 +256,17 @@ function digestString(value: string | null | undefined): string | null {
   const normalized = normalizeOptionalString(value);
   if (!normalized) return null;
   return hashCanonical(normalized);
+}
+
+function normalizeOptionalDigest(
+  value: string | null | undefined,
+  fieldName: string,
+): string | null {
+  if (value === undefined || value === null) return null;
+  if (!/^sha256:[0-9a-f]{64}$/u.test(value)) {
+    throw new Error(`Action surface auto-context ${fieldName} must be a sha256 digest reference.`);
+  }
+  return value;
 }
 
 function textForInference(parts: readonly (string | null | undefined)[]): string {
@@ -574,8 +612,12 @@ function candidateFor(input: {
   const integrationModeHint = integrationModeFor(signal, method);
   const actionSurface = `${downstreamSystem}.${action}`;
   const operationRef = operationRefFor(signal, method);
-  const inputShapeDigest = digestUnknown(signal.toolInputSchema);
-  const argumentDigest = digestUnknown(signal.toolArguments);
+  const inputShapeDigest =
+    normalizeOptionalDigest(signal.inputShapeDigest, 'signals[].inputShapeDigest') ??
+    digestUnknown(signal.toolInputSchema);
+  const argumentDigest =
+    normalizeOptionalDigest(signal.argumentDigest, 'signals[].argumentDigest') ??
+    digestUnknown(signal.toolArguments);
   const observedAt = normalizeIsoTimestamp(signal.observedAt, input.generatedAt, 'signals[].observedAt');
   const domainExplicit = isKnownDomain(normalizeOptionalString(signal.domain ?? null));
   const downstreamExplicit = normalizeOptionalString(signal.downstreamSystem ?? null) !== null;
@@ -669,6 +711,147 @@ function reviewChecklist(
   return Object.freeze([...checklist].sort());
 }
 
+function domainForRuntimeSignalCandidate(
+  candidate: RuntimeSignalConsequenceCandidate,
+): ConsequenceAdmissionDomain {
+  switch (candidate.consequenceClass) {
+    case 'financial':
+      return 'money-movement';
+    case 'data-movement':
+      return 'data-disclosure';
+    case 'authority-change':
+      return 'authority-change';
+    case 'external-communication':
+      return 'external-communication';
+    case 'operational-execution':
+      return 'system-operation';
+    case 'programmable-money':
+      return 'programmable-money';
+    case 'health-claims':
+      return 'decision-support';
+    case 'unknown':
+      return 'custom';
+  }
+}
+
+function httpOperationParts(operationRef: string | null): {
+  readonly method: string | null;
+  readonly path: string | null;
+  readonly operationId: string | null;
+} {
+  const match = operationRef?.match(/^(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS|TRACE)\s+([^#]+)(?:#(.+))?$/u);
+  if (!match) {
+    return Object.freeze({ method: null, path: null, operationId: null });
+  }
+  return Object.freeze({
+    method: match[1] ?? null,
+    path: match[2] ?? null,
+    operationId: match[3] ?? null,
+  });
+}
+
+function mcpToolName(operationRef: string | null): string | null {
+  const match = operationRef?.match(/^mcp\.tool:(?:(?:[^:]+):)?([^:]+)$/u);
+  return match?.[1] ?? null;
+}
+
+function asyncApiParts(operationRef: string | null): {
+  readonly operationId: string | null;
+  readonly channel: string | null;
+} {
+  const match = operationRef?.match(/^asyncapi\.operation:([^@]+)@([^#]+)(?:#.+)?$/u);
+  if (!match) {
+    return Object.freeze({ operationId: null, channel: null });
+  }
+  return Object.freeze({
+    operationId: match[1] ?? null,
+    channel: match[2] ?? null,
+  });
+}
+
+function cloudEventParts(operationRef: string | null): {
+  readonly eventType: string | null;
+  readonly eventSource: string | null;
+} {
+  const match = operationRef?.match(/^cloudevent:([^@]+)@([^#]+)(?:#.+)?$/u);
+  if (!match) {
+    return Object.freeze({ eventType: null, eventSource: null });
+  }
+  return Object.freeze({
+    eventType: match[1] ?? null,
+    eventSource: match[2] ?? null,
+  });
+}
+
+function autoContextSignalKindForRuntimeSignal(
+  envelope: RuntimeSignalEnvelope,
+): ActionSurfaceAutoContextSignalKind {
+  if (mcpToolName(envelope.operationRef)) return 'mcp-tool-definition';
+  if (httpOperationParts(envelope.operationRef).method) return 'openapi-operation';
+  if (asyncApiParts(envelope.operationRef).operationId) return 'asyncapi-operation';
+  if (cloudEventParts(envelope.operationRef).eventType) return 'cloudevents-event';
+  if (envelope.operationRef?.startsWith('otel.log:')) return 'gateway-log';
+  if (envelope.signalKind === 'observation') return 'gateway-log';
+  return 'workflow-job';
+}
+
+export function runtimeSignalEnvelopeToActionSurfaceAutoContextSignal(
+  envelope: RuntimeSignalEnvelope,
+): ActionSurfaceAutoContextSignal {
+  const candidate = mapRuntimeSignalToConsequenceCandidate(envelope);
+  const signalKind = autoContextSignalKindForRuntimeSignal(envelope);
+  const http = httpOperationParts(envelope.operationRef);
+  const asyncapi = asyncApiParts(envelope.operationRef);
+  const cloudevent = cloudEventParts(envelope.operationRef);
+  const toolName = mcpToolName(envelope.operationRef);
+  const action = candidate.actionSurface === 'unknown'
+    ? envelope.operationRef ?? 'runtime-signal'
+    : candidate.actionSurface;
+
+  return Object.freeze({
+    signalKind,
+    sourceRef: `runtime-signal:${envelope.signalDigest}`,
+    producerRef: envelope.sourceSystem,
+    observedAt: envelope.eventTime,
+    actor: envelope.actorRefDigest ? `actor:${envelope.actorRefDigest}` : null,
+    downstreamSystem: envelope.downstreamSystem,
+    action,
+    domain: domainForRuntimeSignalCandidate(candidate),
+    credentialPosture: 'unknown',
+    integrationModeHint: null,
+    toolName,
+    operationId: http.operationId ?? asyncapi.operationId,
+    method: http.method,
+    path: http.path,
+    channel: asyncapi.channel,
+    workflowRef: signalKind === 'workflow-job' ? envelope.operationRef : null,
+    spanName: envelope.operationRef?.startsWith('otel.log:') ? envelope.operationRef : null,
+    httpRoute: http.path,
+    httpMethod: http.method,
+    cloudEventType: cloudevent.eventType,
+    cloudEventSource: cloudevent.eventSource,
+    inputShapeDigest: envelope.inputSchemaDigest,
+    argumentDigest: envelope.argumentOrBodyDigest,
+  });
+}
+
+export function createActionSurfaceAutoContextFromRuntimeSignals(
+  input: CreateActionSurfaceAutoContextFromRuntimeSignalsInput,
+): ActionSurfaceAutoContextResult {
+  if (!Array.isArray(input.envelopes)) {
+    throw new Error('Action surface auto-context runtime signal bridge requires envelopes.');
+  }
+  return createActionSurfaceAutoContext({
+    generatedAt: input.generatedAt,
+    defaultActor: input.defaultActor,
+    defaultDomain: input.defaultDomain,
+    defaultDownstreamSystem: input.defaultDownstreamSystem,
+    signals: input.envelopes.map((envelope) =>
+      runtimeSignalEnvelopeToActionSurfaceAutoContextSignal(envelope)
+    ),
+  });
+}
+
 export function createActionSurfaceAutoContext(
   input: CreateActionSurfaceAutoContextInput,
 ): ActionSurfaceAutoContextResult {
@@ -737,8 +920,13 @@ export function createActionSurfaceAutoContextOnboardingPacket(input: {
 export function actionSurfaceAutoContextDescriptor(): ActionSurfaceAutoContextDescriptor {
   return Object.freeze({
     version: ACTION_SURFACE_AUTO_CONTEXT_VERSION,
+    runtimeSignalBridgeVersion: ACTION_SURFACE_RUNTIME_SIGNAL_BRIDGE_VERSION,
+    runtimeSignalEnvelopeVersion: RUNTIME_SIGNAL_ENVELOPE_VERSION,
+    runtimeSignalConsequenceMappingVersion: RUNTIME_SIGNAL_CONSEQUENCE_MAPPING_VERSION,
     signalKinds: ACTION_SURFACE_AUTO_CONTEXT_SIGNAL_KINDS,
     fields: ACTION_SURFACE_AUTO_CONTEXT_FIELDS,
+    acceptsRuntimeSignalEnvelopes: true,
+    runtimeSignalBridgeUsesExistingAutoContextPath: true,
     approvalRequired: true,
     autoEnforce: false,
     canGrantAuthority: false,

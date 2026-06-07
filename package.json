@@ -356,6 +356,7 @@
     "test:action-risk-inventory": "tsx tests/action-risk-inventory.test.ts",
     "test:action-surface-profiler": "tsx tests/action-surface-profiler.test.ts",
     "test:action-surface-auto-context": "tsx tests/action-surface-auto-context.test.ts",
+    "test:runtime-signal-handling-doc": "tsx tests/runtime-signal-handling-doc.test.ts",
     "test:action-surface-ingestors": "tsx tests/action-surface-declaration-ingestors.test.ts",
     "test:action-surface-manifest-intake": "tsx tests/action-surface-manifest-intake.test.ts",
     "test:action-surface-integration-artifacts": "tsx tests/action-surface-integration-artifacts.test.ts",

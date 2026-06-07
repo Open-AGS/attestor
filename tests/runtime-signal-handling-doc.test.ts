@@ -126,6 +126,8 @@ function testRs02EnvelopeAndNonClaimsStayNarrow(): void {
   };
 
   includes(doc, 'RS02 Minimal Envelope', 'Runtime signal doc: next-step envelope is scoped');
+  includes(doc, 'src/consequence-admission/runtime-signal-envelope.ts', 'Runtime signal doc: RS02 implementation path is named');
+  includes(doc, 'attestor.runtime-signal-envelope.v1', 'Runtime signal doc: RS02 contract version is named');
   includes(doc, 'signalKind', 'Runtime signal doc: envelope includes signal kind');
   includes(doc, 'sourceSystem', 'Runtime signal doc: envelope includes source system');
   includes(doc, 'tenantRefDigest', 'Runtime signal doc: envelope includes tenant digest');
@@ -141,6 +143,11 @@ function testRs02EnvelopeAndNonClaimsStayNarrow(): void {
     pkg.scripts['test:runtime-signal-handling-doc'],
     'tsx tests/runtime-signal-handling-doc.test.ts',
     'package.json exposes runtime signal handling doc test',
+  );
+  equal(
+    pkg.scripts['test:runtime-signal-envelope'],
+    'tsx tests/runtime-signal-envelope.test.ts',
+    'package.json exposes runtime signal envelope test',
   );
 }
 

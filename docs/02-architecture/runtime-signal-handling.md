@@ -102,8 +102,10 @@ customer-owned gate enforces. The proof packet records what happened.
 
 ## RS02 Minimal Envelope
 
-The next contract should stay small. It should represent a signal safely before
-adding business logic:
+The repo-side contract lives in
+`src/consequence-admission/runtime-signal-envelope.ts` as
+`attestor.runtime-signal-envelope.v1`. It stays small and represents a signal
+safely before adding business logic:
 
 ```text
 signalKind
@@ -125,7 +127,9 @@ signalDigest
 ```
 
 The envelope must stay digest-first and review-oriented. It must not grant
-authority, reduce admission requirements, or activate enforcement.
+authority, reduce admission requirements, activate enforcement, or claim
+production readiness. The focused local check is
+`npm run test:runtime-signal-envelope`.
 
 ## Boundaries
 

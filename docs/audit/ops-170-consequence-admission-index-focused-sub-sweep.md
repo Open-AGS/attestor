@@ -29,7 +29,7 @@ and retry-budget branches.
 A later auditability-only refactor split the broad package-surface re-export
 catalogue into `src/consequence-admission/public-surface.ts` while keeping the
 implementation-bearing builders in `src/consequence-admission/index.ts`. This
-does not change runtime behavior, internal decision math, retry semantics, store
+does not change internal decision math, runtime behavior, retry semantics, store
 selection, route handling, Customer PEP authority, or the public package
 contract; it only makes the broad re-export surface easier to inspect.
 

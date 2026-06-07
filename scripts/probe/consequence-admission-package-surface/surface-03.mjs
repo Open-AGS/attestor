@@ -135,6 +135,31 @@ export async function runConsequenceAdmissionPackageSurface03({ assert, root, ad
   );
 
   assert.equal(
+    admission.RUNTIME_SIGNAL_ENVELOPE_VERSION,
+    'attestor.runtime-signal-envelope.v1',
+  );
+
+  assert.equal(
+    admission.runtimeSignalEnvelopeDescriptor().digestFirst,
+    true,
+  );
+
+  assert.equal(
+    admission.runtimeSignalEnvelopeDescriptor().rawPayloadStored,
+    false,
+  );
+
+  assert.equal(
+    admission.runtimeSignalEnvelopeDescriptor().canAdmit,
+    false,
+  );
+
+  assert.equal(
+    typeof admission.createRuntimeSignalEnvelope,
+    'function',
+  );
+
+  assert.equal(
     admission.SIGNAL_EXTRACTOR_CONTRACT_VERSION,
     'attestor.signal-extractor-contract.v1',
   );

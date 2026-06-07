@@ -195,6 +195,19 @@ function testRs02EnvelopeAndNonClaimsStayNarrow(): void {
     'It does not expose a separate runtime-signal product surface, promise public npm availability, freeze the internal file layout, wire a live route, activate enforcement, or prove production readiness.',
     'Runtime signal doc: RS11 no-overclaim boundary is explicit',
   );
+  includes(doc, 'RS12 Example Path', 'Runtime signal doc: RS12 example path section is named');
+  includes(doc, 'examples/runtime-signal-path/metadata-to-gate-plan.ts', 'Runtime signal doc: RS12 example path is named');
+  includes(doc, 'attestor.runtime-signal-example-path.v1', 'Runtime signal doc: RS12 example version is named');
+  includesNormalized(
+    doc,
+    'It shows OpenAPI/MCP/OpenTelemetry metadata moving through the existing RS04 normalizer, RS05 consequence mapper, and RS08 integration readiness bridge.',
+    'Runtime signal doc: RS12 example flow is explicit',
+  );
+  includesNormalized(
+    doc,
+    'It does not create an admission request, deploy a gate, consume proof, activate enforcement, wire a live route, or prove production readiness.',
+    'Runtime signal doc: RS12 no-overclaim boundary is explicit',
+  );
   includes(doc, 'signalKind', 'Runtime signal doc: envelope includes signal kind');
   includes(doc, 'sourceSystem', 'Runtime signal doc: envelope includes source system');
   includes(doc, 'tenantRefDigest', 'Runtime signal doc: envelope includes tenant digest');
@@ -208,6 +221,7 @@ function testRs02EnvelopeAndNonClaimsStayNarrow(): void {
   includes(doc, '`PEP receipt != production readiness`', 'Runtime signal doc: PEP receipt no-claim is explicit');
   includes(doc, '`proof intake material != external verification`', 'Runtime signal doc: proof intake no-claim is explicit');
   includes(doc, '`public contract surface != deep internal module path`', 'Runtime signal doc: public surface no-claim is explicit');
+  includes(doc, '`example path != live run`', 'Runtime signal doc: example path no-claim is explicit');
   equal(
     pkg.scripts['test:runtime-signal-handling-doc'],
     'tsx tests/runtime-signal-handling-doc.test.ts',
@@ -257,6 +271,11 @@ function testRs02EnvelopeAndNonClaimsStayNarrow(): void {
     pkg.scripts['test:runtime-signal-public-surface'],
     'tsx tests/runtime-signal-public-surface.test.ts',
     'package.json exposes runtime signal public surface test',
+  );
+  equal(
+    pkg.scripts['test:runtime-signal-example-path'],
+    'tsx tests/runtime-signal-example-path.test.ts',
+    'package.json exposes runtime signal example path test',
   );
 }
 

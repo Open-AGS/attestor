@@ -188,6 +188,7 @@
     "test:runtime-signal-review-packet": "tsx tests/runtime-signal-review-packet.test.ts",
     "test:runtime-signal-proof-intake": "tsx tests/runtime-signal-proof-intake.test.ts",
     "test:runtime-signal-public-surface": "tsx tests/runtime-signal-public-surface.test.ts",
+    "test:runtime-signal-example-path": "tsx tests/runtime-signal-example-path.test.ts",
     "test:signal-extractor-contract": "tsx tests/signal-extractor-contract.test.ts",
     "test:signal-adapter-registry": "tsx tests/signal-adapter-registry.test.ts",
     "test:relationship-detector-contract": "tsx tests/relationship-detector-contract.test.ts",

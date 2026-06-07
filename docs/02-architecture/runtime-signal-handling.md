@@ -268,6 +268,21 @@ production readiness. The focused local check is
 `npm run test:runtime-signal-public-surface`; the package-level check is
 `npm run test:consequence-admission-package-surface` after build.
 
+## RS12 Example Path
+
+The local example lives in
+`examples/runtime-signal-path/metadata-to-gate-plan.ts` as
+`attestor.runtime-signal-example-path.v1`. It shows OpenAPI/MCP/OpenTelemetry
+metadata moving through the existing RS04 normalizer, RS05 consequence mapper,
+and RS08 integration readiness bridge.
+
+The example produces digest-only review material: signal digest, consequence
+candidate digest, apparent consequence class, recommended next step, and
+gate/readiness placement. It does not create an admission request, deploy a
+gate, consume proof, activate enforcement, wire a live route, or prove
+production readiness. The focused local check is
+`npm run test:runtime-signal-example-path`.
+
 ## Boundaries
 
 - `runtime signal != authority`
@@ -277,6 +292,7 @@ production readiness. The focused local check is
 - `PEP receipt != production readiness`
 - `proof intake material != external verification`
 - `public contract surface != deep internal module path`
+- `example path != live run`
 
 These are separate proof obligations.
 

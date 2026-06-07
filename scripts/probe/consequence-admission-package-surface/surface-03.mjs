@@ -270,6 +270,31 @@ export async function runConsequenceAdmissionPackageSurface03({ assert, root, ad
   );
 
   assert.equal(
+    admission.RUNTIME_SIGNAL_INTEGRATION_READINESS_BRIDGE_VERSION,
+    'attestor.runtime-signal-integration-readiness-bridge.v1',
+  );
+
+  assert.equal(
+    admission.runtimeSignalIntegrationReadinessBridgeDescriptor().integrationModeReadinessVersion,
+    admission.ATTESTOR_INTEGRATION_MODE_READINESS_VERSION,
+  );
+
+  assert.equal(
+    admission.runtimeSignalIntegrationReadinessBridgeDescriptor().runtimeSignalAloneCanClaimNonBypassable,
+    false,
+  );
+
+  assert.equal(
+    admission.runtimeSignalIntegrationReadinessBridgeDescriptor().usesExistingReadinessEvaluator,
+    true,
+  );
+
+  assert.equal(
+    typeof admission.createRuntimeSignalIntegrationReadinessBridge,
+    'function',
+  );
+
+  assert.equal(
     admission.ACTION_SURFACE_RUNTIME_SIGNAL_BRIDGE_VERSION,
     'attestor.action-surface-runtime-signal-bridge.v1',
   );

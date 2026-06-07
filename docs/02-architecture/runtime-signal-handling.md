@@ -206,6 +206,24 @@ bridge. It still does not decide, deploy a gate, consume proof, or prove
 production readiness. The focused local check is
 `npm run test:runtime-signal-authority-guard`.
 
+## RS08 Integration Readiness Bridge
+
+The repo-side integration readiness bridge lives in
+`src/consequence-admission/runtime-signal-integration-readiness-bridge.ts` as
+`attestor.runtime-signal-integration-readiness-bridge.v1`. It feeds RS02
+envelopes and RS05 candidates into the existing Integration Mode Readiness
+evaluator.
+
+The bridge can infer review placement such as advisory, shadow capture, SDK
+gate, HTTP gateway proxy, MCP tool gateway, sidecar external authorization, or
+provider-native connector. It cannot infer credential isolation from a signal,
+claim no-bypass from metadata, deploy a gate, consume proof, or activate
+enforcement. Runtime signals can suggest where a gate belongs; explicit
+customer-controlled evidence still has to prove the gate, credential posture,
+presentation binding, replay protection, approval, and reviewed artifacts. The
+focused local check is
+`npm run test:runtime-signal-integration-readiness-bridge`.
+
 ## Boundaries
 
 - `runtime signal != authority`

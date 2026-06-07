@@ -148,6 +148,14 @@ function testRs02EnvelopeAndNonClaimsStayNarrow(): void {
     'observation cannot admit, telemetry cannot grant authority, metadata cannot mark an action safe',
     'Runtime signal doc: RS07 authority boundary is explicit',
   );
+  includes(doc, 'RS08 Integration Readiness Bridge', 'Runtime signal doc: RS08 readiness bridge section is named');
+  includes(doc, 'src/consequence-admission/runtime-signal-integration-readiness-bridge.ts', 'Runtime signal doc: RS08 implementation path is named');
+  includes(doc, 'attestor.runtime-signal-integration-readiness-bridge.v1', 'Runtime signal doc: RS08 bridge version is named');
+  includesNormalized(
+    doc,
+    'It cannot infer credential isolation from a signal, claim no-bypass from metadata, deploy a gate',
+    'Runtime signal doc: RS08 no-overclaim boundary is explicit',
+  );
   includes(doc, 'signalKind', 'Runtime signal doc: envelope includes signal kind');
   includes(doc, 'sourceSystem', 'Runtime signal doc: envelope includes source system');
   includes(doc, 'tenantRefDigest', 'Runtime signal doc: envelope includes tenant digest');
@@ -188,6 +196,11 @@ function testRs02EnvelopeAndNonClaimsStayNarrow(): void {
     pkg.scripts['test:runtime-signal-consequence-mapping'],
     'tsx tests/runtime-signal-consequence-mapping.test.ts',
     'package.json exposes runtime signal consequence mapping test',
+  );
+  equal(
+    pkg.scripts['test:runtime-signal-integration-readiness-bridge'],
+    'tsx tests/runtime-signal-integration-readiness-bridge.test.ts',
+    'package.json exposes runtime signal integration readiness bridge test',
   );
 }
 

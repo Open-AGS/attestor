@@ -31,6 +31,7 @@ export * from './runtime-signal-authority-guard.js';
 export * from './runtime-signal-source-binding.js';
 export * from './runtime-signal-normalizer.js';
 export * from './runtime-signal-consequence-mapping.js';
+export * from './runtime-signal-integration-readiness-bridge.js';
 export * from './signal-extractor-contract.js';
 export * from './signal-adapter-registry.js';
 export * from './relationship-detector-contract.js';

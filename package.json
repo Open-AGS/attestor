@@ -184,6 +184,7 @@
     "test:runtime-signal-source-binding": "tsx tests/runtime-signal-source-binding.test.ts",
     "test:runtime-signal-normalizer": "tsx tests/runtime-signal-normalizer.test.ts",
     "test:runtime-signal-consequence-mapping": "tsx tests/runtime-signal-consequence-mapping.test.ts",
+    "test:runtime-signal-integration-readiness-bridge": "tsx tests/runtime-signal-integration-readiness-bridge.test.ts",
     "test:signal-extractor-contract": "tsx tests/signal-extractor-contract.test.ts",
     "test:signal-adapter-registry": "tsx tests/signal-adapter-registry.test.ts",
     "test:relationship-detector-contract": "tsx tests/relationship-detector-contract.test.ts",

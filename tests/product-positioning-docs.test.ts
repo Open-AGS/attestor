@@ -41,6 +41,9 @@ function testReadmeStartsWithAConcreteWorkflow(): void {
   includes(readme, 'The trail records what was proposed', 'Product docs: README explains the audit trail in plain language');
   excludes(readme, /## One Concrete Workflow/u, 'Product docs: README keeps the concrete workflow behind the first-run guide');
   includes(readme, 'Attestor translates AI intent into a structured consequence, then reduces it to', 'Product docs: README keeps the consequence translation shape');
+  includes(readme, 'a decision, gate/readiness status, and proof references.', 'Product docs: README avoids implying a live gate outcome before customer gate placement');
+  includes(readme, 'gate-placement/readiness plan', 'Product docs: README frames runtime signals as placement/readiness review');
+  includes(readme, 'docs/02-architecture/runtime-signal-handling.md#rs12-example-path', 'Product docs: README links the runtime signal example path directly');
   includes(readme, '## Why This Matters Now', 'Product docs: README keeps urgency context after the core workflow');
   includes(readme, '[EU AI Act](https://digital-strategy.ec.europa.eu/en/policies/regulatory-framework-ai)', 'Product docs: README keeps the EU AI Act as a bounded context anchor');
   includes(readme, '[NIST AI Risk Management Framework](https://www.nist.gov/itl/ai-risk-management-framework)', 'Product docs: README keeps NIST AI RMF as a bounded context anchor');
@@ -59,7 +62,10 @@ function testReadmeKeepsSingleEngineAndCustomerBoundary(): void {
   excludes(readme, /### Run Attestor in shadow pilot mode/u, 'Product docs: README keeps shadow pilot detail behind the navigator');
   excludes(readme, /\[Run Attestor in shadow pilot mode\]\(docs\/01-overview\/shadow-event-payload-examples\.md\)/u, 'Product docs: README keeps shadow pilot out of the main link set');
   includes(readme, 'The same gate can sit before these operation classes:', 'Product docs: README keeps cross-operation framing concise');
-  excludes(readme, /## Data Posture/u, 'Product docs: README keeps data posture behind deeper docs');
+  includes(readme, '## Data Posture', 'Product docs: README keeps the data boundary visible');
+  includes(readme, 'Attestor is a control point, not a data lake.', 'Product docs: README states the data posture plainly');
+  includes(readme, 'structured request', 'Product docs: README keeps bounded request context visible');
+  includes(readme, 'not raw customer data', 'Product docs: README keeps data minimization visible');
 }
 
 function testReadmeKeepsDomainPacksAndLocalTruth(): void {

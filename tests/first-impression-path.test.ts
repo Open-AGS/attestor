@@ -47,6 +47,9 @@ function testReadmeHasAPlainFirstThirtySeconds(): void {
   excludes(readme, /## One Concrete Workflow/u, 'README: keeps the concrete workflow behind the first-run guide');
   includes(readme, '## Why This Matters Now', 'README: moves from placement into urgency before mechanism');
   includes(readme, 'Attestor translates AI intent into a structured consequence, then reduces it to', 'README: states the consequence translation shape');
+  includes(readme, 'a decision, gate/readiness status, and proof references.', 'README: avoids implying a live gate outcome before customer gate placement');
+  includes(readme, 'gate-placement/readiness plan', 'README: frames runtime signals as placement/readiness review, not gate deployment');
+  includes(readme, 'docs/02-architecture/runtime-signal-handling.md#rs12-example-path', 'README: links the runtime signal example path directly');
   includes(readme, '[Try Attestor first](docs/01-overview/try-attestor-first.md)', 'README: sends the concrete first run to the first-run guide');
   appearsBefore(readme, '## Why This Matters Now', '## What It Does', 'README: urgency comes before broad mechanism');
   appearsBefore(readme, '## What It Does', '## The Same Pattern Across Operations', 'README: mechanism comes before pack taxonomy');
@@ -86,9 +89,14 @@ function testReadmeKeepsEvaluationTruthBeforeDeepDocs(): void {
   includes(readme, 'Release type:    GitHub pre-release / Golden Path evaluation baseline', 'README: states current release type plainly');
   includes(readme, 'The same gate can sit before these operation classes:', 'README: keeps cross-operation framing concise');
   includes(readme, 'This is an evaluation release.', 'README: keeps evaluation no-claim near current state');
+  includes(readme, '## Data Posture', 'README: exposes the data boundary before first-reader links');
+  includes(readme, 'Attestor is a control point, not a data lake.', 'README: keeps raw customer data posture visible');
+  includes(readme, 'structured request', 'README: states bounded request context plainly');
+  includes(readme, 'not raw customer data', 'README: states data minimization plainly');
+  appearsBefore(readme, '## Current State', '## Data Posture', 'README: current state comes before data posture');
+  appearsBefore(readme, '## Data Posture', '## Start Here', 'README: data posture comes before first-reader links');
   appearsBefore(readme, '## Current State', '## Start Here', 'README: current state comes before first-reader links');
   excludes(readme, /## Decision Model/u, 'README: should not keep a separate decision-model section');
-  excludes(readme, /## Data Posture/u, 'README: keeps data posture behind deeper docs instead of a front-page block');
 }
 
 function testReadmeStaysReadableInsteadOfDense(): void {

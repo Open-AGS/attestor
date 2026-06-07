@@ -47,7 +47,7 @@ function testRuntimeSignalBoundaryIsExplicit(): void {
   includes(doc, 'Local Example', 'Runtime signal doc: local example section exists');
   includesNormalized(
     doc,
-    'system metadata / telemetry / proof -> digest-only signal -> consequence candidate -> gate/readiness plan',
+    'system metadata / telemetry / proof -> digest-only signal -> consequence candidate -> gate-placement/readiness plan',
     'Runtime signal doc: short path is visible before detailed sections',
   );
   includesNormalized(

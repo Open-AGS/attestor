@@ -12,7 +12,7 @@ real consequence:
 system metadata / telemetry / proof
   -> digest-only signal
   -> consequence candidate
-  -> gate/readiness plan
+  -> gate-placement/readiness plan
 ```
 
 This helps place the customer-owned gate before the real action. It does not
@@ -21,7 +21,7 @@ authorize, execute, deploy a gate, or prove production readiness.
 ## Local Example
 
 The local example turns OpenAPI/MCP/OpenTelemetry metadata into a digest-only
-signal, consequence candidate, and gate/readiness plan.
+signal, consequence candidate, and gate-placement/readiness plan.
 
 - Source: `examples/runtime-signal-path/metadata-to-gate-plan.ts`
 - Check: `npm run test:runtime-signal-example-path`
@@ -306,7 +306,7 @@ and RS08 integration readiness bridge.
 
 The example produces digest-only review material: signal digest, consequence
 candidate digest, apparent consequence class, recommended next step, and
-gate/readiness placement. It does not create an admission request, deploy a
+gate placement/readiness status. It does not create an admission request, deploy a
 gate, consume proof, activate enforcement, wire a live route, or prove
 production readiness. The focused local check is
 `npm run test:runtime-signal-example-path`.

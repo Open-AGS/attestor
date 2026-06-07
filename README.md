@@ -43,7 +43,7 @@ Context anchors: [EU AI Act](https://digital-strategy.ec.europa.eu/en/policies/r
 ## What It Does
 
 Attestor translates AI intent into a structured consequence, then reduces it to
-a decision, a gate outcome, and proof.
+a decision, gate/readiness status, and proof references.
 
 It checks policy, approval, evidence, allowed scope, freshness, replay, tenant,
 and token, then returns one bounded decision with reasons: `admit`, `narrow`,
@@ -53,9 +53,9 @@ The real service should run only through the customer-owned gate.
 
 System metadata can show where consequences are forming. The
 local example turns OpenAPI/MCP/OpenTelemetry metadata into a digest-only signal,
-consequence candidate, and gate/readiness plan.
+consequence candidate, and gate-placement/readiness plan.
 
-[Open the runtime signal example](docs/02-architecture/runtime-signal-handling.md#local-example)
+[Open the runtime signal example](docs/02-architecture/runtime-signal-handling.md#rs12-example-path)
 
 ```text
 AI agent
@@ -95,6 +95,12 @@ Release type:    GitHub pre-release / Golden Path evaluation baseline
 
 This is an evaluation release. It is not public SaaS, a production guarantee, a
 completed customer deployment, or a substitute for an external security audit.
+
+## Data Posture
+
+Attestor is a control point, not a data lake. It needs structured request
+context and proof references, not raw customer data. Customer systems keep the
+model, agent, workflow, wallet, database, service call, and system of record.
 
 ## Start Here
 

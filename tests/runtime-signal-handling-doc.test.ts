@@ -156,6 +156,19 @@ function testRs02EnvelopeAndNonClaimsStayNarrow(): void {
     'It cannot infer credential isolation from a signal, claim no-bypass from metadata, deploy a gate',
     'Runtime signal doc: RS08 no-overclaim boundary is explicit',
   );
+  includes(doc, 'RS09 Review Packet', 'Runtime signal doc: RS09 review packet section is named');
+  includes(doc, 'src/consequence-admission/runtime-signal-review-packet.ts', 'Runtime signal doc: RS09 implementation path is named');
+  includes(doc, 'attestor.runtime-signal-review-packet.v1', 'Runtime signal doc: RS09 packet version is named');
+  includesNormalized(
+    doc,
+    'The packet shows four things: what action is forming, what consequence class it maps to, what controls or evidence are still missing, and where the customer gate belongs.',
+    'Runtime signal doc: RS09 review packet summary is explicit',
+  );
+  includesNormalized(
+    doc,
+    'It cannot admit, authorize, deploy a gate, consume proof, activate enforcement, or prove production readiness.',
+    'Runtime signal doc: RS09 authority boundary is explicit',
+  );
   includes(doc, 'signalKind', 'Runtime signal doc: envelope includes signal kind');
   includes(doc, 'sourceSystem', 'Runtime signal doc: envelope includes source system');
   includes(doc, 'tenantRefDigest', 'Runtime signal doc: envelope includes tenant digest');
@@ -202,6 +215,11 @@ function testRs02EnvelopeAndNonClaimsStayNarrow(): void {
     'tsx tests/runtime-signal-integration-readiness-bridge.test.ts',
     'package.json exposes runtime signal integration readiness bridge test',
   );
+  equal(
+    pkg.scripts['test:runtime-signal-review-packet'],
+    'tsx tests/runtime-signal-review-packet.test.ts',
+    'package.json exposes runtime signal review packet test',
+  );
 }
 
 function testResearchAnchorsAreOfficialAndNoModelNamesLeak(): void {
@@ -239,6 +257,9 @@ function testResearchAnchorsAreOfficialAndNoModelNamesLeak(): void {
   includes(doc, 'OPA decision logs', 'Runtime signal doc: OPA decision log anchor is present');
   includes(doc, 'Kubernetes admission control', 'Runtime signal doc: Kubernetes admission anchor is present');
   includes(doc, 'NIST AI RMF 1.0', 'Runtime signal doc: NIST AI RMF anchor is present');
+  includes(doc, 'Google SRE alerting guidance', 'Runtime signal doc: Google SRE anchor is present');
+  includes(doc, 'GitHub branch protection documentation', 'Runtime signal doc: GitHub branch protection anchor is present');
+  includes(doc, 'Terraform plan and apply', 'Runtime signal doc: Terraform plan/apply anchor is present');
   excludes(doc, forbiddenModelNamePattern, 'Runtime signal doc: no model or tool names are used');
   excludes(
     doc,

@@ -295,6 +295,41 @@ export async function runConsequenceAdmissionPackageSurface03({ assert, root, ad
   );
 
   assert.equal(
+    admission.RUNTIME_SIGNAL_REVIEW_PACKET_VERSION,
+    'attestor.runtime-signal-review-packet.v1',
+  );
+
+  assert.equal(
+    admission.runtimeSignalReviewPacketDescriptor().runtimeSignalEnvelopeVersion,
+    admission.RUNTIME_SIGNAL_ENVELOPE_VERSION,
+  );
+
+  assert.equal(
+    admission.runtimeSignalReviewPacketDescriptor().runtimeSignalConsequenceMappingVersion,
+    admission.RUNTIME_SIGNAL_CONSEQUENCE_MAPPING_VERSION,
+  );
+
+  assert.equal(
+    admission.runtimeSignalReviewPacketDescriptor().runtimeSignalIntegrationReadinessBridgeVersion,
+    admission.RUNTIME_SIGNAL_INTEGRATION_READINESS_BRIDGE_VERSION,
+  );
+
+  assert.equal(
+    admission.runtimeSignalReviewPacketDescriptor().showsActionConsequenceMissingAndGate,
+    true,
+  );
+
+  assert.equal(
+    admission.runtimeSignalReviewPacketDescriptor().canAdmit,
+    false,
+  );
+
+  assert.equal(
+    typeof admission.createRuntimeSignalReviewPacket,
+    'function',
+  );
+
+  assert.equal(
     admission.ACTION_SURFACE_RUNTIME_SIGNAL_BRIDGE_VERSION,
     'attestor.action-surface-runtime-signal-bridge.v1',
   );

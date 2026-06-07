@@ -224,6 +224,20 @@ presentation binding, replay protection, approval, and reviewed artifacts. The
 focused local check is
 `npm run test:runtime-signal-integration-readiness-bridge`.
 
+## RS09 Review Packet
+
+The repo-side review packet lives in
+`src/consequence-admission/runtime-signal-review-packet.ts` as
+`attestor.runtime-signal-review-packet.v1`. It turns an RS02 envelope, RS05
+candidate, and RS08 readiness bridge into a short human review packet.
+
+The packet shows four things: what action is forming, what consequence class it
+maps to, what controls or evidence are still missing, and where the customer
+gate belongs. It remains digest-first review material. It cannot admit,
+authorize, deploy a gate, consume proof, activate enforcement, or prove
+production readiness. The focused local check is
+`npm run test:runtime-signal-review-packet`.
+
 ## Boundaries
 
 - `runtime signal != authority`
@@ -268,3 +282,10 @@ These sources are engineering anchors only. They do not certify Attestor.
   passive telemetry.
 - [NIST AI RMF 1.0](https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.100-1.pdf)
   anchors AI risk management as governed, mapped, measured, and managed work.
+- [Google SRE alerting guidance](https://sre.google/sre-book/monitoring-distributed-systems/)
+  anchors review packets and alerts as actionable human work, not passive noise.
+- [GitHub branch protection documentation](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches)
+  anchors required checks and reviews as explicit gates before merge.
+- [Terraform plan and apply](https://developer.hashicorp.com/terraform/cli/commands/plan)
+  anchors the review-before-change pattern: show intended changes before
+  applying them.

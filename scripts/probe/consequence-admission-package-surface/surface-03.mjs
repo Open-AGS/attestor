@@ -160,6 +160,26 @@ export async function runConsequenceAdmissionPackageSurface03({ assert, root, ad
   );
 
   assert.equal(
+    admission.RUNTIME_SIGNAL_SOURCE_BINDING_VERSION,
+    'attestor.runtime-signal-source-binding.v1',
+  );
+
+  assert.equal(
+    admission.runtimeSignalSourceBindingDescriptor().signedEvidenceMustCoverEnvelopeDigest,
+    true,
+  );
+
+  assert.equal(
+    admission.runtimeSignalSourceBindingDescriptor().canAdmit,
+    false,
+  );
+
+  assert.equal(
+    typeof admission.createRuntimeSignalSourceBinding,
+    'function',
+  );
+
+  assert.equal(
     admission.SIGNAL_EXTRACTOR_CONTRACT_VERSION,
     'attestor.signal-extractor-contract.v1',
   );

@@ -131,6 +131,21 @@ authority, reduce admission requirements, activate enforcement, or claim
 production readiness. The focused local check is
 `npm run test:runtime-signal-envelope`.
 
+## RS03 Source Binding
+
+The repo-side source binding contract lives in
+`src/consequence-admission/runtime-signal-source-binding.ts` as
+`attestor.runtime-signal-source-binding.v1`. It classifies a signal source as
+`unverified`, `authenticated`, `signed`, `customer-attested`, or `pep-proof`
+from digest-only binding evidence.
+
+The binding class must match the envelope `sourceTrustLevel`. Signed evidence
+must cover the envelope `signalDigest`, and `pep-proof` can only bind an
+`enforcement-proof` signal. This contract records source confidence for review
+and proof packaging; it still cannot grant authority, admit a consequence,
+activate enforcement, or prove production readiness. The focused local check is
+`npm run test:runtime-signal-source-binding`.
+
 ## Boundaries
 
 - `runtime signal != authority`

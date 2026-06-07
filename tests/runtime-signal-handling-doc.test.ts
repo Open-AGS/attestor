@@ -131,6 +131,9 @@ function testRs02EnvelopeAndNonClaimsStayNarrow(): void {
   includes(doc, 'RS03 Source Binding', 'Runtime signal doc: RS03 source binding section is named');
   includes(doc, 'src/consequence-admission/runtime-signal-source-binding.ts', 'Runtime signal doc: RS03 implementation path is named');
   includes(doc, 'attestor.runtime-signal-source-binding.v1', 'Runtime signal doc: RS03 contract version is named');
+  includes(doc, 'RS04 Normalizer Layer', 'Runtime signal doc: RS04 normalizer section is named');
+  includes(doc, 'src/consequence-admission/runtime-signal-normalizer.ts', 'Runtime signal doc: RS04 implementation path is named');
+  includes(doc, 'attestor.runtime-signal-normalizer.v1', 'Runtime signal doc: RS04 contract version is named');
   includes(doc, 'signalKind', 'Runtime signal doc: envelope includes signal kind');
   includes(doc, 'sourceSystem', 'Runtime signal doc: envelope includes source system');
   includes(doc, 'tenantRefDigest', 'Runtime signal doc: envelope includes tenant digest');
@@ -156,6 +159,11 @@ function testRs02EnvelopeAndNonClaimsStayNarrow(): void {
     pkg.scripts['test:runtime-signal-source-binding'],
     'tsx tests/runtime-signal-source-binding.test.ts',
     'package.json exposes runtime signal source binding test',
+  );
+  equal(
+    pkg.scripts['test:runtime-signal-normalizer'],
+    'tsx tests/runtime-signal-normalizer.test.ts',
+    'package.json exposes runtime signal normalizer test',
   );
 }
 

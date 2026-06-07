@@ -164,6 +164,20 @@ The normalizer cannot grant authority, admit a consequence, activate
 enforcement, or prove production readiness. The focused local check is
 `npm run test:runtime-signal-normalizer`.
 
+## RS05 Consequence Mapping
+
+The repo-side consequence mapping contract lives in
+`src/consequence-admission/runtime-signal-consequence-mapping.ts` as
+`attestor.runtime-signal-consequence-mapping.v1`. It turns an RS02 envelope
+into a review-only consequence candidate using existing Attestor consequence
+classes and action-risk vocabulary.
+
+The mapper records the apparent action surface, consequence class, missing
+controls, risk signals, and next review step. It does not admit the action,
+create a gate plan, consume proof, activate enforcement, or mark anything safe.
+`enforcement-proof` signals stay out of this mapper and belong to proof intake.
+The focused local check is `npm run test:runtime-signal-consequence-mapping`.
+
 ## Boundaries
 
 - `runtime signal != authority`

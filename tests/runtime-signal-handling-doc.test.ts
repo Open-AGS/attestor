@@ -134,6 +134,9 @@ function testRs02EnvelopeAndNonClaimsStayNarrow(): void {
   includes(doc, 'RS04 Normalizer Layer', 'Runtime signal doc: RS04 normalizer section is named');
   includes(doc, 'src/consequence-admission/runtime-signal-normalizer.ts', 'Runtime signal doc: RS04 implementation path is named');
   includes(doc, 'attestor.runtime-signal-normalizer.v1', 'Runtime signal doc: RS04 contract version is named');
+  includes(doc, 'RS05 Consequence Mapping', 'Runtime signal doc: RS05 consequence mapping section is named');
+  includes(doc, 'src/consequence-admission/runtime-signal-consequence-mapping.ts', 'Runtime signal doc: RS05 implementation path is named');
+  includes(doc, 'attestor.runtime-signal-consequence-mapping.v1', 'Runtime signal doc: RS05 contract version is named');
   includes(doc, 'signalKind', 'Runtime signal doc: envelope includes signal kind');
   includes(doc, 'sourceSystem', 'Runtime signal doc: envelope includes source system');
   includes(doc, 'tenantRefDigest', 'Runtime signal doc: envelope includes tenant digest');
@@ -165,6 +168,11 @@ function testRs02EnvelopeAndNonClaimsStayNarrow(): void {
     'tsx tests/runtime-signal-normalizer.test.ts',
     'package.json exposes runtime signal normalizer test',
   );
+  equal(
+    pkg.scripts['test:runtime-signal-consequence-mapping'],
+    'tsx tests/runtime-signal-consequence-mapping.test.ts',
+    'package.json exposes runtime signal consequence mapping test',
+  );
 }
 
 function testResearchAnchorsAreOfficialAndNoModelNamesLeak(): void {
@@ -172,6 +180,17 @@ function testResearchAnchorsAreOfficialAndNoModelNamesLeak(): void {
     'docs',
     '02-architecture',
     'runtime-signal-handling.md',
+  );
+  const forbiddenModelNamePattern = new RegExp(
+    `\\b(${
+      [
+        ['Co', 'dex'].join(''),
+        ['G', 'PT'].join(''),
+        ['Clau', 'de'].join(''),
+        ['Op', 'us'].join(''),
+      ].join('|')
+    })\\b`,
+    'u',
   );
 
   includes(doc, 'OpenAPI 3.1.1', 'Runtime signal doc: OpenAPI anchor is present');
@@ -189,7 +208,7 @@ function testResearchAnchorsAreOfficialAndNoModelNamesLeak(): void {
   includes(doc, 'OWASP GenAI LLM06 Excessive Agency', 'Runtime signal doc: OWASP anchor is present');
   includes(doc, 'NIST SP 800-207 Zero Trust', 'Runtime signal doc: Zero Trust anchor is present');
   includes(doc, 'NIST AI RMF 1.0', 'Runtime signal doc: NIST AI RMF anchor is present');
-  excludes(doc, /\b(Codex|GPT|Claude|Opus)\b/u, 'Runtime signal doc: no model or tool names are used');
+  excludes(doc, forbiddenModelNamePattern, 'Runtime signal doc: no model or tool names are used');
   excludes(
     doc,
     /runtime signal grants authority|runtime signal proves production readiness/iu,

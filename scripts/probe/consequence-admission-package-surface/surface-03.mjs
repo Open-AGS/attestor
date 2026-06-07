@@ -205,6 +205,36 @@ export async function runConsequenceAdmissionPackageSurface03({ assert, root, ad
   );
 
   assert.equal(
+    admission.RUNTIME_SIGNAL_CONSEQUENCE_MAPPING_VERSION,
+    'attestor.runtime-signal-consequence-mapping.v1',
+  );
+
+  assert.equal(
+    admission.runtimeSignalConsequenceMappingDescriptor().runtimeSignalEnvelopeVersion,
+    admission.RUNTIME_SIGNAL_ENVELOPE_VERSION,
+  );
+
+  assert.equal(
+    admission.runtimeSignalConsequenceMappingDescriptor().consequenceEnvelopeContractVersion,
+    admission.CONSEQUENCE_ENVELOPE_CONTRACT_VERSION,
+  );
+
+  assert.equal(
+    admission.runtimeSignalConsequenceMappingDescriptor().reviewMaterialOnly,
+    true,
+  );
+
+  assert.equal(
+    admission.runtimeSignalConsequenceMappingDescriptor().canAdmit,
+    false,
+  );
+
+  assert.equal(
+    typeof admission.mapRuntimeSignalToConsequenceCandidate,
+    'function',
+  );
+
+  assert.equal(
     admission.SIGNAL_EXTRACTOR_CONTRACT_VERSION,
     'attestor.signal-extractor-contract.v1',
   );

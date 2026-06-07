@@ -140,6 +140,14 @@ function testRs02EnvelopeAndNonClaimsStayNarrow(): void {
   includes(doc, 'RS06 Auto-Context Bridge', 'Runtime signal doc: RS06 auto-context bridge section is named');
   includes(doc, 'src/consequence-admission/action-surface-auto-context.ts', 'Runtime signal doc: RS06 implementation path is named');
   includes(doc, 'attestor.action-surface-runtime-signal-bridge.v1', 'Runtime signal doc: RS06 bridge version is named');
+  includes(doc, 'RS07 Signal Authority Guard', 'Runtime signal doc: RS07 authority guard section is named');
+  includes(doc, 'src/consequence-admission/runtime-signal-authority-guard.ts', 'Runtime signal doc: RS07 implementation path is named');
+  includes(doc, 'attestor.runtime-signal-authority-guard.v1', 'Runtime signal doc: RS07 guard version is named');
+  includesNormalized(
+    doc,
+    'observation cannot admit, telemetry cannot grant authority, metadata cannot mark an action safe',
+    'Runtime signal doc: RS07 authority boundary is explicit',
+  );
   includes(doc, 'signalKind', 'Runtime signal doc: envelope includes signal kind');
   includes(doc, 'sourceSystem', 'Runtime signal doc: envelope includes source system');
   includes(doc, 'tenantRefDigest', 'Runtime signal doc: envelope includes tenant digest');
@@ -160,6 +168,11 @@ function testRs02EnvelopeAndNonClaimsStayNarrow(): void {
     pkg.scripts['test:runtime-signal-envelope'],
     'tsx tests/runtime-signal-envelope.test.ts',
     'package.json exposes runtime signal envelope test',
+  );
+  equal(
+    pkg.scripts['test:runtime-signal-authority-guard'],
+    'tsx tests/runtime-signal-authority-guard.test.ts',
+    'package.json exposes runtime signal authority guard test',
   );
   equal(
     pkg.scripts['test:runtime-signal-source-binding'],
@@ -210,6 +223,8 @@ function testResearchAnchorsAreOfficialAndNoModelNamesLeak(): void {
   includes(doc, 'RFC 9449 DPoP', 'Runtime signal doc: DPoP anchor is present');
   includes(doc, 'OWASP GenAI LLM06 Excessive Agency', 'Runtime signal doc: OWASP anchor is present');
   includes(doc, 'NIST SP 800-207 Zero Trust', 'Runtime signal doc: Zero Trust anchor is present');
+  includes(doc, 'OPA decision logs', 'Runtime signal doc: OPA decision log anchor is present');
+  includes(doc, 'Kubernetes admission control', 'Runtime signal doc: Kubernetes admission anchor is present');
   includes(doc, 'NIST AI RMF 1.0', 'Runtime signal doc: NIST AI RMF anchor is present');
   excludes(doc, forbiddenModelNamePattern, 'Runtime signal doc: no model or tool names are used');
   excludes(

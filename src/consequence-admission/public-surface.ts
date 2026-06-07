@@ -27,6 +27,7 @@ export * from './shadow-events.js';
 export * from './canonical-shadow-event-schema.js';
 export * from './shadow-envelope-projector.js';
 export * from './runtime-signal-envelope.js';
+export * from './runtime-signal-authority-guard.js';
 export * from './runtime-signal-source-binding.js';
 export * from './runtime-signal-normalizer.js';
 export * from './runtime-signal-consequence-mapping.js';

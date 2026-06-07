@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   ACTION_SURFACE_RUNTIME_SIGNAL_BRIDGE_VERSION,
+  RUNTIME_SIGNAL_AUTHORITY_GUARD_VERSION,
   actionSurfaceAutoContextDescriptor,
   createActionSurfaceAutoContext,
   createActionSurfaceAutoContextFromRuntimeSignals,
@@ -277,6 +278,11 @@ function testDescriptorDocsAndPackageScript(): void {
     descriptor.runtimeSignalBridgeUsesExistingAutoContextPath,
     true,
     'Auto-context descriptor: runtime signal bridge uses existing auto-context path',
+  );
+  equal(
+    descriptor.runtimeSignalAuthorityGuardVersion,
+    RUNTIME_SIGNAL_AUTHORITY_GUARD_VERSION,
+    'Auto-context descriptor: runtime signal authority guard version is explicit',
   );
   equal(descriptor.autoEnforce, false, 'Auto-context descriptor: auto-enforce is false');
   equal(descriptor.canGrantAuthority, false, 'Auto-context descriptor: cannot grant authority');

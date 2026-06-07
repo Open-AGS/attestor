@@ -18,6 +18,10 @@ import {
   RUNTIME_SIGNAL_ENVELOPE_VERSION,
   type RuntimeSignalEnvelope,
 } from './runtime-signal-envelope.js';
+import {
+  RUNTIME_SIGNAL_AUTHORITY_GUARD_VERSION,
+  assertRuntimeSignalAuthorityBoundary,
+} from './runtime-signal-authority-guard.js';
 
 export const RUNTIME_SIGNAL_CONSEQUENCE_MAPPING_VERSION =
   'attestor.runtime-signal-consequence-mapping.v1';
@@ -89,6 +93,7 @@ export interface RuntimeSignalConsequenceCandidate {
   readonly runtimeSignalEnvelopeVersion: typeof RUNTIME_SIGNAL_ENVELOPE_VERSION;
   readonly consequenceEnvelopeContractVersion: typeof CONSEQUENCE_ENVELOPE_CONTRACT_VERSION;
   readonly actionRiskInventoryVersion: typeof ACTION_RISK_INVENTORY_VERSION;
+  readonly runtimeSignalAuthorityGuardVersion: typeof RUNTIME_SIGNAL_AUTHORITY_GUARD_VERSION;
   readonly sourceSignalDigest: string;
   readonly sourceSignalKind: RuntimeSignalEnvelope['signalKind'];
   readonly sourceTrustLevel: RuntimeSignalEnvelope['sourceTrustLevel'];
@@ -127,6 +132,7 @@ export interface RuntimeSignalConsequenceMappingDescriptor {
   readonly runtimeSignalEnvelopeVersion: typeof RUNTIME_SIGNAL_ENVELOPE_VERSION;
   readonly consequenceEnvelopeContractVersion: typeof CONSEQUENCE_ENVELOPE_CONTRACT_VERSION;
   readonly actionRiskInventoryVersion: typeof ACTION_RISK_INVENTORY_VERSION;
+  readonly runtimeSignalAuthorityGuardVersion: typeof RUNTIME_SIGNAL_AUTHORITY_GUARD_VERSION;
   readonly consequenceClasses: typeof CONSEQUENCE_ENVELOPE_CONSEQUENCE_CLASSES;
   readonly candidateOrigins: typeof RUNTIME_SIGNAL_CONSEQUENCE_CANDIDATE_ORIGINS;
   readonly missingControls: typeof RUNTIME_SIGNAL_CONSEQUENCE_MISSING_CONTROLS;
@@ -173,6 +179,16 @@ function assertDigest(value: unknown, fieldName: string): string {
 }
 
 function assertEnvelopeBoundary(envelope: RuntimeSignalEnvelope): void {
+  try {
+    assertRuntimeSignalAuthorityBoundary({
+      signalKind: envelope.signalKind,
+      sourceTrustLevel: envelope.sourceTrustLevel,
+      target: envelope,
+      targetLabel: 'runtime-signal-envelope',
+    });
+  } catch {
+    throw new Error('Runtime signal consequence mapping requires a no-authority runtime signal envelope.');
+  }
   if (
     envelope.version !== RUNTIME_SIGNAL_ENVELOPE_VERSION ||
     envelope.rawPayloadStored !== false ||
@@ -428,6 +444,7 @@ export function mapRuntimeSignalToConsequenceCandidate(
     runtimeSignalEnvelopeVersion: RUNTIME_SIGNAL_ENVELOPE_VERSION,
     consequenceEnvelopeContractVersion: CONSEQUENCE_ENVELOPE_CONTRACT_VERSION,
     actionRiskInventoryVersion: ACTION_RISK_INVENTORY_VERSION,
+    runtimeSignalAuthorityGuardVersion: RUNTIME_SIGNAL_AUTHORITY_GUARD_VERSION,
     sourceSignalDigest: envelope.signalDigest,
     sourceSignalKind: envelope.signalKind,
     sourceTrustLevel: envelope.sourceTrustLevel,
@@ -462,6 +479,12 @@ export function mapRuntimeSignalToConsequenceCandidate(
     productionReady: false,
     outputIsDecisionSupportOnly: true,
   } as const;
+  assertRuntimeSignalAuthorityBoundary({
+    signalKind: envelope.signalKind,
+    sourceTrustLevel: envelope.sourceTrustLevel,
+    target: payload,
+    targetLabel: 'runtime-signal-consequence-candidate',
+  });
   const canonical = canonicalObject(payload as unknown as CanonicalReleaseJsonValue);
 
   return Object.freeze({
@@ -477,6 +500,7 @@ export function runtimeSignalConsequenceMappingDescriptor(): RuntimeSignalConseq
     runtimeSignalEnvelopeVersion: RUNTIME_SIGNAL_ENVELOPE_VERSION,
     consequenceEnvelopeContractVersion: CONSEQUENCE_ENVELOPE_CONTRACT_VERSION,
     actionRiskInventoryVersion: ACTION_RISK_INVENTORY_VERSION,
+    runtimeSignalAuthorityGuardVersion: RUNTIME_SIGNAL_AUTHORITY_GUARD_VERSION,
     consequenceClasses: CONSEQUENCE_ENVELOPE_CONSEQUENCE_CLASSES,
     candidateOrigins: RUNTIME_SIGNAL_CONSEQUENCE_CANDIDATE_ORIGINS,
     missingControls: RUNTIME_SIGNAL_CONSEQUENCE_MISSING_CONTROLS,

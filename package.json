@@ -180,6 +180,7 @@
     "test:assurance-measurement-plane": "tsx tests/assurance-measurement-plane.test.ts",
     "test:shadow-envelope-projector": "tsx tests/shadow-envelope-projector.test.ts",
     "test:runtime-signal-envelope": "tsx tests/runtime-signal-envelope.test.ts",
+    "test:runtime-signal-authority-guard": "tsx tests/runtime-signal-authority-guard.test.ts",
     "test:runtime-signal-source-binding": "tsx tests/runtime-signal-source-binding.test.ts",
     "test:runtime-signal-normalizer": "tsx tests/runtime-signal-normalizer.test.ts",
     "test:runtime-signal-consequence-mapping": "tsx tests/runtime-signal-consequence-mapping.test.ts",

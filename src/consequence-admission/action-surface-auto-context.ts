@@ -27,6 +27,10 @@ import {
   type RuntimeSignalConsequenceCandidate,
 } from './runtime-signal-consequence-mapping.js';
 import {
+  RUNTIME_SIGNAL_AUTHORITY_GUARD_VERSION,
+  assertRuntimeSignalAuthorityBoundary,
+} from './runtime-signal-authority-guard.js';
+import {
   RUNTIME_SIGNAL_ENVELOPE_VERSION,
   type RuntimeSignalEnvelope,
 } from './runtime-signal-envelope.js';
@@ -180,6 +184,7 @@ export interface ActionSurfaceAutoContextDescriptor {
   readonly runtimeSignalBridgeVersion: typeof ACTION_SURFACE_RUNTIME_SIGNAL_BRIDGE_VERSION;
   readonly runtimeSignalEnvelopeVersion: typeof RUNTIME_SIGNAL_ENVELOPE_VERSION;
   readonly runtimeSignalConsequenceMappingVersion: typeof RUNTIME_SIGNAL_CONSEQUENCE_MAPPING_VERSION;
+  readonly runtimeSignalAuthorityGuardVersion: typeof RUNTIME_SIGNAL_AUTHORITY_GUARD_VERSION;
   readonly signalKinds: typeof ACTION_SURFACE_AUTO_CONTEXT_SIGNAL_KINDS;
   readonly fields: typeof ACTION_SURFACE_AUTO_CONTEXT_FIELDS;
   readonly acceptsRuntimeSignalEnvelopes: true;
@@ -830,6 +835,12 @@ function autoContextSignalKindForRuntimeSignal(
 export function runtimeSignalEnvelopeToActionSurfaceAutoContextSignal(
   envelope: RuntimeSignalEnvelope,
 ): ActionSurfaceAutoContextSignal {
+  assertRuntimeSignalAuthorityBoundary({
+    signalKind: envelope.signalKind,
+    sourceTrustLevel: envelope.sourceTrustLevel,
+    target: envelope,
+    targetLabel: 'runtime-signal-envelope',
+  });
   const candidate = mapRuntimeSignalToConsequenceCandidate(envelope);
   const signalKind = autoContextSignalKindForRuntimeSignal(envelope);
   const http = httpOperationParts(envelope.operationRef);
@@ -873,7 +884,7 @@ export function createActionSurfaceAutoContextFromRuntimeSignals(
   if (!Array.isArray(input.envelopes)) {
     throw new Error('Action surface auto-context runtime signal bridge requires envelopes.');
   }
-  return createActionSurfaceAutoContext({
+  const result = createActionSurfaceAutoContext({
     generatedAt: input.generatedAt,
     defaultActor: input.defaultActor,
     defaultDomain: input.defaultDomain,
@@ -882,6 +893,15 @@ export function createActionSurfaceAutoContextFromRuntimeSignals(
       runtimeSignalEnvelopeToActionSurfaceAutoContextSignal(envelope)
     ),
   });
+  for (const envelope of input.envelopes) {
+    assertRuntimeSignalAuthorityBoundary({
+      signalKind: envelope.signalKind,
+      sourceTrustLevel: envelope.sourceTrustLevel,
+      target: result,
+      targetLabel: 'action-surface-auto-context-result',
+    });
+  }
+  return result;
 }
 
 export function createActionSurfaceAutoContext(
@@ -955,6 +975,7 @@ export function actionSurfaceAutoContextDescriptor(): ActionSurfaceAutoContextDe
     runtimeSignalBridgeVersion: ACTION_SURFACE_RUNTIME_SIGNAL_BRIDGE_VERSION,
     runtimeSignalEnvelopeVersion: RUNTIME_SIGNAL_ENVELOPE_VERSION,
     runtimeSignalConsequenceMappingVersion: RUNTIME_SIGNAL_CONSEQUENCE_MAPPING_VERSION,
+    runtimeSignalAuthorityGuardVersion: RUNTIME_SIGNAL_AUTHORITY_GUARD_VERSION,
     signalKinds: ACTION_SURFACE_AUTO_CONTEXT_SIGNAL_KINDS,
     fields: ACTION_SURFACE_AUTO_CONTEXT_FIELDS,
     acceptsRuntimeSignalEnvelopes: true,

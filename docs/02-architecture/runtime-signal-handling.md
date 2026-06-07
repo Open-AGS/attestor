@@ -192,6 +192,20 @@ parallel mapper, grant authority, admit a consequence, deploy a gate, or prove
 source-system authenticity. The focused local check is
 `npm run test:action-surface-auto-context`.
 
+## RS07 Signal Authority Guard
+
+The repo-side signal authority guard lives in
+`src/consequence-admission/runtime-signal-authority-guard.ts` as
+`attestor.runtime-signal-authority-guard.v1`. It is a fail-closed invariant
+check for runtime-signal-derived outputs.
+
+The guard enforces that observation cannot admit, telemetry cannot grant
+authority, metadata cannot mark an action safe, and measurement output cannot
+activate enforcement. It is used by the consequence mapper and the Auto-Context
+bridge. It still does not decide, deploy a gate, consume proof, or prove
+production readiness. The focused local check is
+`npm run test:runtime-signal-authority-guard`.
+
 ## Boundaries
 
 - `runtime signal != authority`
@@ -229,5 +243,10 @@ These sources are engineering anchors only. They do not certify Attestor.
   anchors the risk of giving autonomous systems excessive execution ability.
 - [NIST SP 800-207 Zero Trust](https://csrc.nist.gov/pubs/sp/800/207/final)
   anchors policy decision and enforcement separation.
+- [OPA decision logs](https://www.openpolicyagent.org/docs/management-decision-logs)
+  anchor decisions as logged evidence, including masking sensitive fields.
+- [Kubernetes admission control](https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/)
+  anchors the pattern that admission happens before mutation, not inside
+  passive telemetry.
 - [NIST AI RMF 1.0](https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.100-1.pdf)
   anchors AI risk management as governed, mapped, measured, and managed work.

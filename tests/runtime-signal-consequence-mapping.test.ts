@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
+  RUNTIME_SIGNAL_AUTHORITY_GUARD_VERSION,
   RUNTIME_SIGNAL_CONSEQUENCE_MAPPING_VERSION,
   createRuntimeSignalEnvelope,
   mapRuntimeSignalToConsequenceCandidate,
@@ -103,6 +104,7 @@ function testDescriptorKeepsMappingReviewOnly(): void {
   equal(descriptor.runtimeSignalEnvelopeVersion, 'attestor.runtime-signal-envelope.v1', 'Runtime signal consequence mapping: descriptor consumes RS02 envelope');
   equal(descriptor.consequenceEnvelopeContractVersion, 'attestor.consequence-envelope-contract.v1', 'Runtime signal consequence mapping: descriptor maps to existing consequence envelope contract');
   equal(descriptor.actionRiskInventoryVersion, 'attestor.action-risk-inventory.v1', 'Runtime signal consequence mapping: descriptor uses existing action-risk vocabulary');
+  equal(descriptor.runtimeSignalAuthorityGuardVersion, RUNTIME_SIGNAL_AUTHORITY_GUARD_VERSION, 'Runtime signal consequence mapping: descriptor uses RS07 authority guard');
   includes(descriptor.consequenceClasses, 'data-movement', 'Runtime signal consequence mapping: descriptor exposes existing data-movement class');
   includes(descriptor.missingControls, 'gate-proof-missing', 'Runtime signal consequence mapping: descriptor names gate proof as missing control');
   equal(descriptor.ruleBasedCandidateOnly, true, 'Runtime signal consequence mapping: descriptor is rule-based candidate mapping only');

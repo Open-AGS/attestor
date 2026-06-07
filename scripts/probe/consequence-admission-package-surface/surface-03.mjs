@@ -160,6 +160,36 @@ export async function runConsequenceAdmissionPackageSurface03({ assert, root, ad
   );
 
   assert.equal(
+    admission.RUNTIME_SIGNAL_AUTHORITY_GUARD_VERSION,
+    'attestor.runtime-signal-authority-guard.v1',
+  );
+
+  assert.equal(
+    admission.runtimeSignalAuthorityGuardDescriptor().runtimeSignalEnvelopeVersion,
+    admission.RUNTIME_SIGNAL_ENVELOPE_VERSION,
+  );
+
+  assert.equal(
+    admission.runtimeSignalAuthorityGuardDescriptor().observationCannotAdmit,
+    true,
+  );
+
+  assert.equal(
+    admission.runtimeSignalAuthorityGuardDescriptor().telemetryCannotGrantAuthority,
+    true,
+  );
+
+  assert.equal(
+    admission.runtimeSignalAuthorityGuardDescriptor().canAdmit,
+    false,
+  );
+
+  assert.equal(
+    typeof admission.assertRuntimeSignalAuthorityBoundary,
+    'function',
+  );
+
+  assert.equal(
     admission.RUNTIME_SIGNAL_SOURCE_BINDING_VERSION,
     'attestor.runtime-signal-source-binding.v1',
   );
@@ -220,6 +250,11 @@ export async function runConsequenceAdmissionPackageSurface03({ assert, root, ad
   );
 
   assert.equal(
+    admission.runtimeSignalConsequenceMappingDescriptor().runtimeSignalAuthorityGuardVersion,
+    admission.RUNTIME_SIGNAL_AUTHORITY_GUARD_VERSION,
+  );
+
+  assert.equal(
     admission.runtimeSignalConsequenceMappingDescriptor().reviewMaterialOnly,
     true,
   );
@@ -247,6 +282,11 @@ export async function runConsequenceAdmissionPackageSurface03({ assert, root, ad
   assert.equal(
     admission.actionSurfaceAutoContextDescriptor().runtimeSignalConsequenceMappingVersion,
     admission.RUNTIME_SIGNAL_CONSEQUENCE_MAPPING_VERSION,
+  );
+
+  assert.equal(
+    admission.actionSurfaceAutoContextDescriptor().runtimeSignalAuthorityGuardVersion,
+    admission.RUNTIME_SIGNAL_AUTHORITY_GUARD_VERSION,
   );
 
   assert.equal(

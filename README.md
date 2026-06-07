@@ -70,6 +70,12 @@ token, and proof references. It returns one decision with reasons: `admit`,
 
 The real service should run only through the customer-owned gate.
 
+Runtime signals can help Attestor find where consequences are forming. The
+local example shows OpenAPI/MCP/OpenTelemetry metadata becoming a digest-only
+runtime signal, consequence candidate, and gate/readiness plan.
+
+[View the runtime signal example path](docs/02-architecture/runtime-signal-handling.md#rs12-example-path)
+
 ```text
 AI agent
   -> proposes an operation

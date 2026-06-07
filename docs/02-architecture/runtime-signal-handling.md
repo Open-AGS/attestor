@@ -146,6 +146,24 @@ and proof packaging; it still cannot grant authority, admit a consequence,
 activate enforcement, or prove production readiness. The focused local check is
 `npm run test:runtime-signal-source-binding`.
 
+## RS04 Normalizer Layer
+
+The repo-side normalizer contract lives in
+`src/consequence-admission/runtime-signal-normalizer.ts` as
+`attestor.runtime-signal-normalizer.v1`. It maps controlled metadata from MCP
+tools, OpenAPI operations, AsyncAPI operations, CloudEvents events, and
+OpenTelemetry logs into the RS02 envelope.
+
+Declaration sources become `declaration` signals with `declared` trust.
+CloudEvents and OpenTelemetry sources become `observation` signals with
+`observed` trust. The normalizer records a digest of the source input it used,
+but it does not store raw payloads, tool arguments, prompts, provider bodies, or
+customer identifiers.
+
+The normalizer cannot grant authority, admit a consequence, activate
+enforcement, or prove production readiness. The focused local check is
+`npm run test:runtime-signal-normalizer`.
+
 ## Boundaries
 
 - `runtime signal != authority`

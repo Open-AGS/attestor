@@ -180,6 +180,31 @@ export async function runConsequenceAdmissionPackageSurface03({ assert, root, ad
   );
 
   assert.equal(
+    admission.RUNTIME_SIGNAL_NORMALIZER_VERSION,
+    'attestor.runtime-signal-normalizer.v1',
+  );
+
+  assert.equal(
+    admission.runtimeSignalNormalizerDescriptor().runtimeSignalEnvelopeVersion,
+    admission.RUNTIME_SIGNAL_ENVELOPE_VERSION,
+  );
+
+  assert.equal(
+    admission.runtimeSignalNormalizerDescriptor().sourceInputDigestRequired,
+    true,
+  );
+
+  assert.equal(
+    admission.runtimeSignalNormalizerDescriptor().canAdmit,
+    false,
+  );
+
+  assert.equal(
+    typeof admission.normalizeRuntimeSignal,
+    'function',
+  );
+
+  assert.equal(
     admission.SIGNAL_EXTRACTOR_CONTRACT_VERSION,
     'attestor.signal-extractor-contract.v1',
   );

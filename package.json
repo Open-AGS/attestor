@@ -181,6 +181,7 @@
     "test:shadow-envelope-projector": "tsx tests/shadow-envelope-projector.test.ts",
     "test:runtime-signal-envelope": "tsx tests/runtime-signal-envelope.test.ts",
     "test:runtime-signal-source-binding": "tsx tests/runtime-signal-source-binding.test.ts",
+    "test:runtime-signal-normalizer": "tsx tests/runtime-signal-normalizer.test.ts",
     "test:signal-extractor-contract": "tsx tests/signal-extractor-contract.test.ts",
     "test:signal-adapter-registry": "tsx tests/signal-adapter-registry.test.ts",
     "test:relationship-detector-contract": "tsx tests/relationship-detector-contract.test.ts",

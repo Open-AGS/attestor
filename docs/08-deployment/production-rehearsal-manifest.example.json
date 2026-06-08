@@ -14,8 +14,8 @@
   "source": {
     "repository": "AI-gateway-systems/attestor",
     "commit": "0000000",
-    "tag": "v0.3.0-evaluation",
-    "release": "v0.3.0-evaluation",
+    "tag": "replace-with-release-tag-when-created",
+    "release": "replace-with-release-name-when-created",
     "workflowRuns": {
       "evaluationSmoke": "replace-with-run-id",
       "fullVerify": "replace-with-run-id",

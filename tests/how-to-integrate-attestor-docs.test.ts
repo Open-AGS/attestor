@@ -39,6 +39,7 @@ function testGuideExplainsTheCustomerIntegrationPath(): void {
   includes(doc, '# How To Integrate Attestor', 'How-to integrate docs: title is present');
   includes(doc, '[Docs index](../README.md)', 'How-to integrate docs: links back to docs index clearly');
   includes(doc, '[Repository README first-reader section](../../README.md#start-here)', 'How-to integrate docs: names the README section clearly');
+  includes(doc, '[How Attestor connects to existing systems](how-attestor-connects-to-existing-systems.md)', 'How-to integrate docs: links the existing-system connection overview');
   includes(doc, 'If you do not yet know the real action path, start with', 'How-to integrate docs: sends unclear action paths to shadow pilot mode first');
   includes(doc, 'observe one proposed', 'How-to integrate docs: starts unknown action paths with observation');
   includes(doc, 'consequence path, then come back here to place the gate.', 'How-to integrate docs: separates observation from gate placement');
@@ -68,7 +69,7 @@ function testGuideUsesReferenceSafePayloadsAndNoOverclaim(): void {
   includes(doc, '"evidenceRefs"', 'How-to integrate docs: uses evidence references');
   includes(doc, 'Attestor does not need the raw prompt', 'How-to integrate docs: forbids raw prompt');
   includes(doc, 'Boundary: this page explains where the gate goes.', 'How-to integrate docs: carries boundary language');
-  includes(doc, '[Action surface auto-context](../02-architecture/action-surface-auto-context.md)', 'How-to integrate docs: links the metadata-to-packet path');
+  includes(doc, '[Action surface onboarding packet](../02-architecture/action-surface-onboarding-packet.md)', 'How-to integrate docs: links the metadata-to-packet path');
   includes(doc, 'require their own', 'How-to integrate docs: avoids live-proof overclaim');
   includes(doc, 'proof.', 'How-to integrate docs: keeps proof boundary explicit');
   excludes(doc, /sk_(live|test)_[A-Za-z0-9_]+/u, 'How-to integrate docs: no Stripe secret keys');

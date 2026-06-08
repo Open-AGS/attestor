@@ -73,11 +73,12 @@ function testReleaseNotesAreLinkedAndBounded(): void {
 
   includes(docsFrontDoor, '[v0.3.0 evaluation release notes](00-evaluation/v0.3.0-evaluation-release-notes.md)', 'Evaluation release: docs front door links release notes');
   includes(readme, 'Package version: 0.3.0-evaluation', 'Evaluation release: README names the current package version');
-  includes(readme, 'Release type:    GitHub pre-release / multi-path evaluation baseline', 'Evaluation release: README names the release type');
+  includes(readme, 'Release tag:     pending', 'Evaluation release: README does not claim a missing release tag');
+  includes(readme, 'Release type:    repository baseline / multi-path local review', 'Evaluation release: README names the release type');
   includes(packet, 'v0.3.0-evaluation-release-notes.md', 'Evaluation release: packet links release notes');
   includes(notes, '# Attestor v0.3.0-evaluation Release Notes', 'Evaluation release: release note title is stable');
-  includes(notes, '**Release type:** GitHub pre-release / multi-path evaluation baseline', 'Evaluation release: release type is explicit');
-  includes(notes, '**Tag:** `v0.3.0-evaluation`', 'Evaluation release: tag name is explicit');
+  includes(notes, '**Release type:** repository baseline / multi-path local review', 'Evaluation release: release type is explicit');
+  includes(notes, '**Release tag:** pending', 'Evaluation release: tag state is explicit');
   includes(notes, '**Package version:** `0.3.0-evaluation`', 'Evaluation release: package version is explicit');
   includes(notes, 'SemVer-compatible pre-release identifier', 'Evaluation release: versioning basis is explicit');
   includes(notes, 'https://semver.org/', 'Evaluation release: SemVer anchor is linked');

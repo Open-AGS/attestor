@@ -42,8 +42,8 @@ function testReadmeStartsWithAConcreteWorkflow(): void {
   excludes(readme, /## One Concrete Workflow/u, 'Product docs: README keeps the concrete workflow behind the first-run guide');
   includes(readme, 'Attestor translates AI intent into a structured consequence, then reduces it to', 'Product docs: README keeps the consequence translation shape');
   includes(readme, 'a decision, gate status, and proof references.', 'Product docs: README avoids implying a live gate outcome before customer gate placement');
-  includes(readme, 'gate placement plan', 'Product docs: README frames runtime signals as placement review');
-  includes(readme, 'docs/02-architecture/runtime-signal-handling.md#rs12-example-path', 'Product docs: README links the runtime signal example path directly');
+  includes(readme, 'action discovery, rule drafts, admission decisions, customer gates, and proof', 'Product docs: README frames existing system signals as a complete connection path');
+  includes(readme, '[See how Attestor connects to existing systems](docs/01-overview/how-attestor-connects-to-existing-systems.md)', 'Product docs: README routes runtime signal detail through the existing-systems overview');
   includes(readme, '## Why This Matters Now', 'Product docs: README keeps urgency context after the core workflow');
   includes(readme, '[EU AI Act](https://digital-strategy.ec.europa.eu/en/policies/regulatory-framework-ai)', 'Product docs: README keeps the EU AI Act as a bounded context anchor');
   includes(readme, '[NIST AI Risk Management Framework](https://www.nist.gov/itl/ai-risk-management-framework)', 'Product docs: README keeps NIST AI RMF as a bounded context anchor');
@@ -98,9 +98,9 @@ function testReadmeKeepsDomainPacksAndLocalTruth(): void {
   includes(demoGuide, 'npm run demo:golden-programmable-money', 'Product docs: demo guide links the programmable-money golden path');
   includes(readme, '## Current State', 'Product docs: README keeps a compact current state section');
   includes(readme, 'Package version: 0.3.0-evaluation', 'Product docs: README keeps package version visible');
-  includes(readme, 'Tag target:      v0.3.0-evaluation', 'Product docs: README keeps tag target visible');
-  includes(readme, 'Release stage:   evaluation release', 'Product docs: README keeps evaluation-release status visible');
-  includes(readme, 'Release type:    GitHub pre-release / multi-path evaluation baseline', 'Product docs: README keeps release type visible');
+  includes(readme, 'Release tag:     pending', 'Product docs: README keeps tag state truthful');
+  includes(readme, 'Release stage:   evaluation baseline', 'Product docs: README keeps evaluation status visible');
+  includes(readme, 'Release type:    repository baseline / multi-path local review', 'Product docs: README keeps release type visible');
 }
 
 function testReadmeLinksTheRightDeeperDocsWithoutBecomingALinkWall(): void {
@@ -120,7 +120,7 @@ function testReadmeLinksTheRightDeeperDocsWithoutBecomingALinkWall(): void {
   includes(readme, '[Run Attestor in shadow pilot mode](docs/01-overview/shadow-event-payload-examples.md) - observe one real action path before enforcing anything.', 'Product docs: README links observe mode as a main onboarding path');
   includes(readme, '[How to integrate Attestor](docs/01-overview/how-to-integrate-attestor.md) - find the real side effect and place the customer-owned gate.', 'Product docs: README links the integration guide');
   excludes(readme, /\[Action surface onboarding packet\]\(docs\/02-architecture\/action-surface-onboarding-packet\.md\)/u, 'Product docs: README keeps action-surface onboarding behind the integration guide');
-  includes(integrateDoc, '[Action surface integration kit buildout](../02-architecture/action-surface-integration-kit-buildout.md)', 'Product docs: integration guide links the review-only integration kit path');
+  includes(integrateDoc, '[Action surface onboarding packet](../02-architecture/action-surface-onboarding-packet.md)', 'Product docs: integration guide links the metadata review entry path');
   excludes(readme, /\[Action surface auto-context\]\(docs\/02-architecture\/action-surface-auto-context\.md\)/u, 'Product docs: README keeps action-surface support links behind the integration guide');
   excludes(readme, /\[Action surface integration kit buildout\]\(docs\/02-architecture\/action-surface-integration-kit-buildout\.md\)/u, 'Product docs: README keeps integration kit behind the integration guide');
   excludes(readme, /\[Consequence admission quickstart\]\(docs\/01-overview\/consequence-admission-quickstart\.md\)/u, 'Product docs: README keeps admission detail behind the integration guide and navigator');

@@ -219,11 +219,15 @@ function testDocsExposeTheExampleWithoutOverclaiming(): void {
     '[Action surface integration kit buildout](../02-architecture/action-surface-integration-kit-buildout.md)',
     'Action surface example: integration guide links integration kit after onboarding',
   );
-  includes(tryFirst, 'npm run example:action-surface-onboarding', 'Action surface example: try-first doc includes command');
-  includes(
+  excludes(
     tryFirst,
-    'npm run example:action-surface-integration-kit',
-    'Action surface example: try-first doc includes integration kit command',
+    /npm run example:action-surface-onboarding/u,
+    'Action surface example: try-first doc keeps action-surface commands out of the first run',
+  );
+  excludes(
+    tryFirst,
+    /npm run example:action-surface-integration-kit/u,
+    'Action surface example: try-first doc keeps integration kit commands out of the first run',
   );
   includes(
     demoGuide,

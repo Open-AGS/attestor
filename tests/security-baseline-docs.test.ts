@@ -62,7 +62,8 @@ function testReadmePinsReviewerAndSecurityEntry(): void {
 
   includes(readme, '## Current State', 'Security baseline: README keeps the current state section');
   includes(readme, 'Package version: 0.3.0-evaluation', 'Security baseline: README states evaluation package version');
-  includes(readme, 'Release type:    GitHub pre-release / multi-path evaluation baseline', 'Security baseline: README states evaluation release type');
+  includes(readme, 'Release tag:     pending', 'Security baseline: README does not claim a missing release tag');
+  includes(readme, 'Release type:    repository baseline / multi-path local review', 'Security baseline: README states evaluation release type');
   includes(readme, '[Security Policy](SECURITY.md)', 'Security baseline: README links the security policy');
   includes(docsFrontDoor, '[Attestor Evaluation Packet v0.1](00-evaluation/v0.1-evaluation-packet.md)', 'Security baseline: docs front door links the evaluation packet');
   includes(docsFrontDoor, '[Evaluation Smoke workflow](../.github/workflows/evaluation-smoke.yml)', 'Security baseline: docs front door links the current CI reviewer path');

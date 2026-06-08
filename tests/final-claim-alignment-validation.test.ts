@@ -42,10 +42,15 @@ function testReadmePublicClaimBoundary(): void {
     'The trail records what was proposed',
     'Final claim alignment: README keeps traceability claim bounded and visible',
   );
-  includes(readme, 'evaluation release', 'Final claim alignment: README keeps evaluation-release status');
+  includes(readme, 'Release tag:     pending', 'Final claim alignment: README does not claim a missing release tag');
   includes(
     readme,
-    'This is an evaluation release for local review and integration planning.',
+    'Release type:    repository baseline / multi-path local review',
+    'Final claim alignment: README keeps repository baseline status',
+  );
+  includes(
+    readme,
+    'This baseline is for local review and integration planning.',
     'Final claim alignment: README keeps evaluation boundary',
   );
   includes(
@@ -55,7 +60,7 @@ function testReadmePublicClaimBoundary(): void {
   );
   includes(
     readme,
-    'customer deployment and external security audit are separate proof steps.',
+    'deployment and external security audit are separate proof steps.',
     'Final claim alignment: README keeps live/audit proof split',
   );
   includes(

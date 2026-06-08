@@ -5,20 +5,21 @@ change.
 
 Part of: [Docs index](../README.md) -> [Repository README first-reader section](../../README.md#start-here)
 
-Use this page as the integration hub. It shows the placement rule and then
-points to the more detailed pages only when you need them.
+Use this page as the integration hub. It shows the placement rule first, then
+points to deeper pages only when you need them.
 
 This page covers: where Attestor sits, what to send first, how to gate the real
 side effect, and which page to open next.
+
+For the connection map across existing metadata, observe mode, rule drafts,
+admission decisions, customer gates, and proof, read
+[How Attestor connects to existing systems](how-attestor-connects-to-existing-systems.md).
 
 If you do not yet know the real action path, start with
 [shadow pilot mode](shadow-event-payload-examples.md): observe one proposed
 consequence path, then come back here to place the gate.
 
-For the hosted finance request shape, use
-[First hosted API call](hosted-first-api-call.md).
-
-Pricing, hosted signup, and production proof live in separate pages.
+Hosted setup, pricing, and production proof live in separate pages.
 
 Do not start with a dashboard.
 Start with the line of code that does the real thing.
@@ -66,16 +67,14 @@ Not inside the prompt.
 Not after the refund.
 Before the real service call.
 
-If you already have MCP tools, an OpenAPI file, AsyncAPI metadata, workflow
-jobs, OpenTelemetry spans, CloudEvents, or gateway logs, start with the
+If you already have API specs, tool descriptions, workflow jobs, telemetry
+spans, events, or gateway logs, start with the
 [Action surface onboarding packet](../02-architecture/action-surface-onboarding-packet.md).
-That path turns existing metadata into a review packet: candidate actions,
-draft integration files, missing controls, and gate placement notes.
+That path turns existing metadata into review material: candidate actions,
+missing controls, and gate placement notes.
 
-Use [Action surface auto-context](../02-architecture/action-surface-auto-context.md)
-when you need the metadata details. Use
-[Action surface integration kit buildout](../02-architecture/action-surface-integration-kit-buildout.md)
-when you need generated review files and a no-bypass probe plan.
+If you are building adapters for that metadata path, continue with the
+[Action surface integration kit buildout](../02-architecture/action-surface-integration-kit-buildout.md).
 
 The hosted renderer for the same review packet is
 `POST /api/v1/shadow/action-surface/onboarding-packet`.
@@ -200,18 +199,16 @@ Pick the next page by where you are in the integration:
 | If you are... | Open |
 |---|---|
 | still proving the shape | [Try Attestor first](try-attestor-first.md) |
-| using existing metadata first | [Action surface onboarding packet](../02-architecture/action-surface-onboarding-packet.md) |
+| seeing all connection points before choosing one | [How Attestor connects to existing systems](how-attestor-connects-to-existing-systems.md) |
 | observing before enforcement | [Run Attestor in shadow pilot mode](shadow-event-payload-examples.md) |
 | sending a concrete admission request | [Consequence admission quickstart](consequence-admission-quickstart.md) |
 | holding the real service call | [Customer admission gate](customer-admission-gate.md) |
 | copying framework-shaped gate examples | [Customer middleware examples](../../examples/customer-middleware/README.md) |
-| reviewing shadow, admission, evidence, and boundary material | [Review surface dashboard summary](../02-architecture/dashboard-api-summary.md) |
 | finding deeper hosted, proof, support, or maintainer docs | [Repository navigator](repository-navigator.md) |
 
 For review/support language, use [Reason codes](../05-proof/reason-codes.md).
-For hosted buying and package boundaries, use
-[Hosted customer journey](hosted-customer-journey.md) and
-[Commercial packaging, pricing, and evaluation](product-packaging.md).
+For hosted buying and package boundaries, use the
+[Repository navigator](repository-navigator.md).
 
 Back: [Docs index](../README.md). Deeper:
 [Repository navigator](repository-navigator.md).

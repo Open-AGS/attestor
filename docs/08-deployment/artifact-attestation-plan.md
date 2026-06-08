@@ -1,6 +1,6 @@
 # Artifact Attestation Plan
 
-Attestor `v0.3.0-evaluation` has a reviewer-runnable packet, a GitHub-visible smoke gate, a full verification workflow, and a release-only provenance workflow. The SLSA v1.2-aligned release provenance path introduced for the `v0.1.2-evaluation` attested baseline remains the release evidence path for `v0.3.0-evaluation`: [release-provenance.yml](../../.github/workflows/release-provenance.yml) is a separate release-only attestation workflow that proves where selected review artifacts came from without widening the push or PR reviewer workflows.
+Attestor `0.3.0-evaluation` has a reviewer-runnable packet, a GitHub-visible smoke gate, a full verification workflow, and a release-only provenance workflow. The SLSA v1.2-aligned release provenance path introduced for the `v0.1.2-evaluation` attested baseline remains the release evidence path for the planned `v0.3.0-evaluation` tag: [release-provenance.yml](../../.github/workflows/release-provenance.yml) is a separate release-only attestation workflow that proves where selected review artifacts came from without widening the push or PR reviewer workflows.
 
 ## Current Baseline
 

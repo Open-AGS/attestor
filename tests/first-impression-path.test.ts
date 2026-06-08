@@ -48,8 +48,8 @@ function testReadmeHasAPlainFirstThirtySeconds(): void {
   includes(readme, '## Why This Matters Now', 'README: moves from placement into urgency before mechanism');
   includes(readme, 'Attestor translates AI intent into a structured consequence, then reduces it to', 'README: states the consequence translation shape');
   includes(readme, 'a decision, gate status, and proof references.', 'README: avoids implying a live gate outcome before customer gate placement');
-  includes(readme, 'gate placement plan', 'README: frames runtime signals as gate placement review, not gate deployment');
-  includes(readme, 'docs/02-architecture/runtime-signal-handling.md#rs12-example-path', 'README: links the runtime signal example path directly');
+  includes(readme, 'action discovery, rule drafts, admission decisions, customer gates, and proof', 'README: frames existing system signals as a complete connection path');
+  includes(readme, '[See how Attestor connects to existing systems](docs/01-overview/how-attestor-connects-to-existing-systems.md)', 'README: routes the runtime signal entry through the existing-systems overview');
   includes(readme, '[Try Attestor first](docs/01-overview/try-attestor-first.md)', 'README: sends the concrete first run to the first-run guide');
   appearsBefore(readme, '## Why This Matters Now', '## What It Does', 'README: urgency comes before broad mechanism');
   appearsBefore(readme, '## What It Does', '## The Same Pattern Across Operations', 'README: mechanism comes before pack taxonomy');
@@ -88,10 +88,11 @@ function testReadmeKeepsEvaluationTruthBeforeDeepDocs(): void {
 
   includes(readme, '## Current State', 'README: exposes compact current state section');
   includes(readme, 'Package version: 0.3.0-evaluation', 'README: states current package version plainly');
-  includes(readme, 'Release stage:   evaluation release', 'README: states evaluation-release status plainly');
-  includes(readme, 'Release type:    GitHub pre-release / multi-path evaluation baseline', 'README: states current release type plainly');
+  includes(readme, 'Release tag:     pending', 'README: does not claim a missing release tag');
+  includes(readme, 'Release stage:   evaluation baseline', 'README: states evaluation status plainly');
+  includes(readme, 'Release type:    repository baseline / multi-path local review', 'README: states current release type plainly');
   includes(readme, 'The same gate can sit before these operation classes:', 'README: keeps cross-operation framing concise');
-  includes(readme, 'This is an evaluation release for local review and integration planning.', 'README: keeps evaluation boundary near current state');
+  includes(readme, 'This baseline is for local review and integration planning.', 'README: keeps evaluation boundary near current state');
   includes(readme, '## Data Posture', 'README: exposes the data boundary before first-reader links');
   includes(readme, 'Attestor is a control point, not a data lake.', 'README: keeps raw customer data posture visible');
   includes(readme, 'structured request', 'README: states bounded request context plainly');
@@ -129,8 +130,8 @@ function testTryFirstDocKeepsTheBoundaryHonest(): void {
   includes(doc, 'npm run demo:golden-refund -- --determinism-check', 'Try-first doc: includes the determinism check command');
   includes(doc, 'Checks and reasons', 'Try-first doc: includes check visibility');
   includes(doc, 'npm run example:non-bypassable-gateway', 'Try-first doc: includes the non-bypassable gateway command');
-  includes(doc, 'npm run example:action-surface-onboarding', 'Try-first doc: includes the action-surface onboarding example command');
-  includes(doc, 'npm run example:action-surface-integration-kit', 'Try-first doc: includes the integration kit example command');
+  excludes(doc, /npm run example:action-surface-onboarding/u, 'Try-first doc: keeps metadata examples out of the first-run command list');
+  excludes(doc, /npm run example:action-surface-integration-kit/u, 'Try-first doc: keeps review-package examples out of the first-run command list');
   includes(doc, 'one is admitted', 'Try-first doc: explains admitted path');
   includes(doc, 'one is blocked fail-closed', 'Try-first doc: explains blocked path');
   includes(doc, 'proposed consequence -> Attestor admission decision -> proof refs -> downstream gate', 'Try-first doc: explains the operating shape');
@@ -138,7 +139,7 @@ function testTryFirstDocKeepsTheBoundaryHonest(): void {
   includes(doc, 'Hosted API calls, generated integration files,', 'Try-first doc: separates local examples from deeper surfaces');
   includes(doc, 'crypto or wallet paths, and domain selection', 'Try-first doc: keeps domain selection outside the local examples');
   includes(doc, 'Customer systems still choose the relevant Attestor path explicitly.', 'Try-first doc: rejects automatic path selection');
-  includes(doc, 'Need current package/adapter boundaries?', 'Try-first doc: keeps finance and crypto framed as boundaries');
+  includes(doc, 'Package and adapter boundaries are listed in the [Repository navigator](repository-navigator.md).', 'Try-first doc: keeps package boundaries behind secondary navigation');
   excludes(doc, /Need the finance and crypto entry paths\?/u, 'Try-first doc: avoids making finance and crypto sound like separate products');
 }
 

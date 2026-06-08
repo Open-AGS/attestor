@@ -55,6 +55,7 @@ function testNavigatorKeepsFirstVisitorPaths(): void {
     '[Try Attestor first](try-attestor-first.md)',
     '[Run the local evaluation path](demo-guide.md)',
     '[How to integrate Attestor](how-to-integrate-attestor.md)',
+    '[How Attestor connects to existing systems](how-attestor-connects-to-existing-systems.md)',
     '[README current state](../../README.md#current-state)',
     '[Live proof register](../audit/live-proof-register.md)',
     '[Run Attestor in shadow pilot mode](shadow-event-payload-examples.md)',
@@ -114,6 +115,37 @@ function testNavigatorKeepsServiceMap(): void {
   ]) {
     includes(doc, expected, `Repository navigator: keeps service map row ${expected}`);
   }
+}
+
+function testExistingSystemsOverviewIsPlainAndBounded(): void {
+  const doc = readProjectFile('docs', '01-overview', 'how-attestor-connects-to-existing-systems.md');
+
+  includes(doc, '# How Attestor Connects To Existing Systems', 'Existing-system overview: title is present');
+  includes(doc, 'without finding every risky action by hand', 'Existing-system overview: explains why the page exists');
+  includes(doc, 'keeps real execution behind a customer-owned gate', 'Existing-system overview: keeps the connection path practical');
+  includes(doc, 'review material, not authority', 'Existing-system overview: keeps signal authority bounded');
+  includes(doc, 'Final rules remain human-approved.', 'Existing-system overview: keeps rule activation human-owned');
+  includes(doc, 'The decision becomes enforcement only when the customer-owned gate sits before', 'Existing-system overview: ties enforcement to customer gate placement');
+  includes(doc, 'external security audit remain separate proof steps.', 'Existing-system overview: keeps proof boundaries concise');
+
+  for (const expected of [
+    '[Action surface onboarding packet](../02-architecture/action-surface-onboarding-packet.md)',
+    '[System signals and gate placement](../02-architecture/runtime-signal-handling.md)',
+    '[Run Attestor in shadow pilot mode](shadow-event-payload-examples.md)',
+    '[Policy Foundry onboarding](../02-architecture/policy-foundry-onboarding.md)',
+    '[Consequence admission quickstart](consequence-admission-quickstart.md)',
+    '[Customer admission gate](customer-admission-gate.md)',
+    '[Proof model](../05-proof/proof-model.md)',
+    '[Customer middleware examples](../../examples/customer-middleware/README.md)',
+    '[Reason codes](../05-proof/reason-codes.md)',
+    '[Downstream enforcement contract](../02-architecture/downstream-enforcement-contract.md)',
+    '[Repository navigator](repository-navigator.md)',
+  ]) {
+    includes(doc, expected, `Existing-system overview: links ${expected}`);
+  }
+
+  excludes(doc, /generated gate plan/iu, 'Existing-system overview: avoids implying gate generation');
+  excludes(doc, /production readiness/iu, 'Existing-system overview: avoids production-readiness wording');
 }
 
 function testDeveloperEntryPathIsConcreteAndBounded(): void {
@@ -197,6 +229,7 @@ function assertLinksResolve(...segments: string[]): void {
 
 function testNavigatorLinksResolve(): void {
   assertLinksResolve('docs', '01-overview', 'repository-navigator.md');
+  assertLinksResolve('docs', '01-overview', 'how-attestor-connects-to-existing-systems.md');
   assertLinksResolve('docs', '01-overview', 'developer-entry-path.md');
   assertLinksResolve('docs', '01-overview', 'repository-map.md');
   assertLinksResolve('docs', '01-overview', 'demo-guide.md');
@@ -207,15 +240,14 @@ function testDocsFrontDoorPullsReadersToTheNextAction(): void {
   const doc = readProjectFile('docs', 'README.md');
 
   includes(doc, '# Attestor Docs', 'Docs front door: title is present');
-  includes(doc, 'Use this docs index when the README gave you the shape', 'Docs front door: purpose names the index');
-  includes(doc, 'understand -> try -> integrate -> explain decisions -> verify claims -> maintain', 'Docs front door: keeps the reader path explicit');
+  includes(doc, 'Use this docs index after the repository README.', 'Docs front door: purpose names the index');
+  includes(doc, 'understand -> try -> observe -> integrate -> explain -> verify -> maintain', 'Docs front door: keeps the reader path explicit');
   includes(doc, '## Start Here', 'Docs front door: has a first-reader section');
-  includes(doc, 'The main first-reader path starts in the repository README', 'Docs front door: points first readers to the repository README');
-  includes(doc, 'index is secondary navigation.', 'Docs front door: stays secondary to the repository README');
-  includes(doc, 'Run the local evaluation path and see where the gate sits', 'Docs front door: keeps the local evaluation path in one row');
+  includes(doc, 'It is secondary navigation, not', 'Docs front door: stays secondary to the repository README');
+  includes(doc, 'Observe one real action path', 'Docs front door: keeps observe path near the top');
   equal(
     countOccurrences(doc, '| Run the local evaluation path'),
-    1,
+    0,
     'Docs front door: local evaluation path is not duplicated in Start Here',
   );
   includes(doc, '## Canonical Docs', 'Docs front door: has a canonical-docs section');
@@ -233,8 +265,8 @@ function testDocsFrontDoorPullsReadersToTheNextAction(): void {
   includes(doc, '[README current state](../README.md#current-state)', 'Docs front door: names README current state clearly');
   includes(doc, '[Live proof register](audit/live-proof-register.md)', 'Docs front door: links live proof owner doc');
   includes(doc, '[How to integrate Attestor](01-overview/how-to-integrate-attestor.md)', 'Docs front door: links integration guide');
-  includes(doc, '[Action surface onboarding packet](02-architecture/action-surface-onboarding-packet.md)', 'Docs front door: links the action-surface onboarding entry point');
-  includes(doc, '[Run the local evaluation path](01-overview/demo-guide.md)', 'Docs front door: links local evaluation path');
+  includes(doc, '[How Attestor connects to existing systems](01-overview/how-attestor-connects-to-existing-systems.md)', 'Docs front door: links existing-system connection overview');
+  includes(doc, '[Action surface onboarding packet](02-architecture/action-surface-onboarding-packet.md)', 'Docs front door: links the metadata onboarding entry point');
   includes(doc, '[Developer entry path](01-overview/developer-entry-path.md)', 'Docs front door: links developer entry path');
   includes(doc, '[Customer middleware examples](../examples/customer-middleware/README.md)', 'Docs front door: links middleware examples');
   includes(doc, '[Reason codes](05-proof/reason-codes.md)', 'Docs front door: links reason codes');
@@ -258,6 +290,7 @@ function testReadmeLinksNavigator(): void {
 
 testNavigatorKeepsFirstVisitorPaths();
 testNavigatorKeepsServiceMap();
+testExistingSystemsOverviewIsPlainAndBounded();
 testDeveloperEntryPathIsConcreteAndBounded();
 testNavigatorKeepsNoClaimBoundaries();
 testNavigatorLinksResolve();

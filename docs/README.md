@@ -24,6 +24,7 @@ understand -> try -> integrate -> explain decisions -> verify claims -> maintain
 | Start from existing API, tool, workflow, or telemetry metadata | [Action surface onboarding packet](02-architecture/action-surface-onboarding-packet.md) |
 | Understand the review workspace contract | [Attestor Review Surface contract](02-architecture/attestor-review-surface-contract.md) |
 | Use the shared admission shape | [Consequence admission quickstart](01-overview/consequence-admission-quickstart.md) |
+| Understand the main code path before changing it | [Developer entry path](01-overview/developer-entry-path.md) |
 | Understand allowed use | [License and use](01-overview/license-and-use.md) |
 | Navigate the repository | [Repository navigator](01-overview/repository-navigator.md) |
 
@@ -105,6 +106,7 @@ reader path.
 ## Maintain The Repo
 
 - [Repository navigator](01-overview/repository-navigator.md)
+- [Developer entry path](01-overview/developer-entry-path.md)
 - [Repository map](01-overview/repository-map.md)
 - [Test system map](02-architecture/test-system-map.md)
 - [Service organization plan](02-architecture/service-organization-plan.md)

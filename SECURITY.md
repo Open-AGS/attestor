@@ -1,12 +1,12 @@
 # Security Policy
 
-Attestor `v0.2.0-evaluation` is an evaluation pre-release. It is reviewer-runnable, CI-backed, and useful for technical evaluation. It is not a production-use guarantee, a completed customer-operated deployment, or a substitute for a security audit.
+Attestor `v0.3.0-evaluation` is an evaluation pre-release. It is reviewer-runnable, CI-backed, and useful for technical evaluation. It is not a production-use guarantee, a completed customer-operated deployment, or a substitute for a security audit.
 
 ## Supported Status
 
 | Version or branch | Status | Security posture |
 |---|---|---|
-| `v0.2.0-evaluation` | Current evaluation pre-release | Supported for evaluation, review, and reproducible CI-backed proof paths |
+| `v0.3.0-evaluation` | Current evaluation pre-release | Supported for evaluation, review, and reproducible CI-backed proof paths |
 | `master` | Active development | May move quickly; use for development, not as a stable release boundary |
 | Older evaluation tags | Historical | Not the current baseline for new review or disclosure guidance |
 

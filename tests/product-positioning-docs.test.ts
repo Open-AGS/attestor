@@ -26,7 +26,7 @@ function testReadmeStartsWithAConcreteWorkflow(): void {
 
   includes(readme, '<img src="docs/assets/attestor-readme-logo.png"', 'Product docs: README uses the single current Attestor image');
   excludes(readme, /attestor-logo\.png|attestor-readme-hero\.png/u, 'Product docs: README does not use retired Attestor image assets');
-  includes(readme, 'alt="version 0.2.0-evaluation"', 'Product docs: README exposes the evaluation version badge');
+  includes(readme, 'alt="version 0.3.0-evaluation"', 'Product docs: README exposes the evaluation version badge');
   includes(readme, 'alt="NIST AI RMF mapped"', 'Product docs: README exposes the NIST AI RMF mapped badge');
   includes(readme, 'alt="ISO 42001 mapped"', 'Product docs: README exposes the ISO 42001 mapped badge');
   includes(readme, 'alt="fail-closed locked"', 'Product docs: README exposes the fail-closed evidence badge');
@@ -97,10 +97,10 @@ function testReadmeKeepsDomainPacksAndLocalTruth(): void {
   includes(demoGuide, 'npm run demo:golden-operational-execution', 'Product docs: demo guide links the ops golden path');
   includes(demoGuide, 'npm run demo:golden-programmable-money', 'Product docs: demo guide links the programmable-money golden path');
   includes(readme, '## Current State', 'Product docs: README keeps a compact current state section');
-  includes(readme, 'Package version: 0.2.0-evaluation', 'Product docs: README keeps package version visible');
-  includes(readme, 'Tag target:      v0.2.0-evaluation', 'Product docs: README keeps tag target visible');
+  includes(readme, 'Package version: 0.3.0-evaluation', 'Product docs: README keeps package version visible');
+  includes(readme, 'Tag target:      v0.3.0-evaluation', 'Product docs: README keeps tag target visible');
   includes(readme, 'Release stage:   evaluation release', 'Product docs: README keeps evaluation-release status visible');
-  includes(readme, 'Release type:    GitHub pre-release / Golden Path evaluation baseline', 'Product docs: README keeps release type visible');
+  includes(readme, 'Release type:    GitHub pre-release / multi-path evaluation baseline', 'Product docs: README keeps release type visible');
 }
 
 function testReadmeLinksTheRightDeeperDocsWithoutBecomingALinkWall(): void {

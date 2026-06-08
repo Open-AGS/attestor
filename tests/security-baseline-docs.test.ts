@@ -30,7 +30,7 @@ function testSecurityPolicyExplainsEvaluationBoundary(): void {
   const security = readProjectFile('SECURITY.md');
 
   includes(security, '# Security Policy', 'Security baseline: policy title is stable');
-  includes(security, 'v0.2.0-evaluation', 'Security baseline: current evaluation release is named');
+  includes(security, 'v0.3.0-evaluation', 'Security baseline: current evaluation release is named');
   includes(security, 'evaluation pre-release', 'Security baseline: evaluation status is explicit');
   includes(security, 'not a production-use guarantee', 'Security baseline: production guarantee is not overstated');
   includes(security, 'release decisions, tokens, and enforcement behavior in this repository', 'Security baseline: in-scope surface is explicit');
@@ -61,8 +61,8 @@ function testReadmePinsReviewerAndSecurityEntry(): void {
   const docsFrontDoor = readProjectFile('docs', 'README.md');
 
   includes(readme, '## Current State', 'Security baseline: README keeps the current state section');
-  includes(readme, 'Package version: 0.2.0-evaluation', 'Security baseline: README states evaluation package version');
-  includes(readme, 'Release type:    GitHub pre-release / Golden Path evaluation baseline', 'Security baseline: README states evaluation release type');
+  includes(readme, 'Package version: 0.3.0-evaluation', 'Security baseline: README states evaluation package version');
+  includes(readme, 'Release type:    GitHub pre-release / multi-path evaluation baseline', 'Security baseline: README states evaluation release type');
   includes(readme, '[Security Policy](SECURITY.md)', 'Security baseline: README links the security policy');
   includes(docsFrontDoor, '[Attestor Evaluation Packet v0.1](00-evaluation/v0.1-evaluation-packet.md)', 'Security baseline: docs front door links the evaluation packet');
   includes(docsFrontDoor, '[Evaluation Smoke workflow](../.github/workflows/evaluation-smoke.yml)', 'Security baseline: docs front door links the current CI reviewer path');

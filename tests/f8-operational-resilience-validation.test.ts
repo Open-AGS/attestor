@@ -44,7 +44,7 @@ function coreDeps(): CoreRouteDeps {
     asyncBackendMode: 'in_process',
     isSharedControlPlaneConfigured: () => false,
     serviceInstanceId: 'f8-test-instance',
-    serviceVersion: '0.2.0-evaluation',
+    serviceVersion: '0.3.0-evaluation',
     startTime: Date.now(),
     domainRegistry: {
       listIds: () => ['finance'],

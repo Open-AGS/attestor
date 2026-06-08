@@ -1,6 +1,6 @@
 {
   "name": "attestor",
-  "version": "0.2.0-evaluation",
+  "version": "0.3.0-evaluation",
   "description": "AI Action Control Plane for deciding, proving, and auditing AI-generated actions before they change real systems",
   "type": "module",
   "main": "dist/consequence-admission/index.js",

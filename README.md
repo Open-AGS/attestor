@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <a href="docs/00-evaluation/v0.2.0-evaluation-release-notes.md"><img alt="version 0.2.0-evaluation" src="https://img.shields.io/badge/version-0.2.0--evaluation-334155"></a>
+  <a href="docs/00-evaluation/v0.3.0-evaluation-release-notes.md"><img alt="version 0.3.0-evaluation" src="https://img.shields.io/badge/version-0.3.0--evaluation-334155"></a>
   <a href="docs/research/cross-domain-pattern-sources.md"><img alt="NIST AI RMF mapped" src="https://img.shields.io/badge/NIST%20AI%20RMF-mapped-0369a1"></a>
   <a href="docs/03-governance/iso42001-2023-annex-a-mapping.md"><img alt="ISO 42001 mapped" src="https://img.shields.io/badge/ISO%2042001-mapped-0369a1"></a>
   <a href="docs/02-architecture/data-movement-full-consequence-engine-proof.md#m03b---fail-closed-matrix"><img alt="fail-closed locked" src="https://img.shields.io/badge/fail--closed-locked-16a34a"></a>
@@ -95,10 +95,10 @@ The same gate can sit before these operation classes:
 ## Current State
 
 ```text
-Package version: 0.2.0-evaluation
-Tag target:      v0.2.0-evaluation
+Package version: 0.3.0-evaluation
+Tag target:      v0.3.0-evaluation
 Release stage:   evaluation release
-Release type:    GitHub pre-release / Golden Path evaluation baseline
+Release type:    GitHub pre-release / multi-path evaluation baseline
 ```
 
 This is an evaluation release. It is not public SaaS, a production guarantee, a

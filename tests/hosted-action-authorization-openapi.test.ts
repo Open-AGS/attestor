@@ -69,7 +69,7 @@ function testOpenApiContractIsBoundedAndCurrent(): void {
 
   equal(document.openapi, '3.2.0', 'Hosted OpenAPI: contract uses the current OpenAPI version');
   equal(document.info.title, 'Attestor Action Authorization API', 'Hosted OpenAPI: title names the action authorization surface');
-  equal(document.info.version, '0.2.0-evaluation', 'Hosted OpenAPI: version keeps evaluation release boundary');
+  equal(document.info.version, '0.3.0-evaluation', 'Hosted OpenAPI: version keeps evaluation release boundary');
   includes(document.info.description, 'not a production readiness claim', 'Hosted OpenAPI: description avoids production overclaim');
   includes(document.info.description, 'wallet/custody API', 'Hosted OpenAPI: description avoids custody overclaim');
   ok(

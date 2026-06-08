@@ -18,7 +18,7 @@ It is the current calibrated execution baseline.
 
 - Source of truth: `origin/master`
 - Baseline HEAD: `2292828d0195e6bdb1113ebdce7a16d914fe89aa`
-- Package: `attestor@0.2.0-evaluation`
+- Package: `attestor@0.3.0-evaluation`
 - Date: 2026-05-22
 - Repository-side posture: credible
 - Production-side posture: not proven

@@ -78,7 +78,7 @@ reader path.
 
 - [README current state](../README.md#current-state)
 - [Attestor Evaluation Packet v0.1](00-evaluation/v0.1-evaluation-packet.md)
-- [v0.2.0 evaluation release notes](00-evaluation/v0.2.0-evaluation-release-notes.md)
+- [v0.3.0 evaluation release notes](00-evaluation/v0.3.0-evaluation-release-notes.md)
 - [Security Policy](../SECURITY.md)
 - [License and use](01-overview/license-and-use.md)
 - [Audit evidence system](audit/README.md)

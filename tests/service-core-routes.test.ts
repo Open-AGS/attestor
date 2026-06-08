@@ -48,7 +48,7 @@ async function testReleaseTokenJwksRouteExposesPublicVerificationKeyOnly(): Prom
     asyncBackendMode: 'in_process',
     isSharedControlPlaneConfigured: () => false,
     serviceInstanceId: 'svc-test',
-    serviceVersion: '0.2.0-evaluation',
+    serviceVersion: '0.3.0-evaluation',
     startTime: Date.now(),
     domainRegistry: {
       listIds: () => [],
@@ -211,7 +211,7 @@ async function testReleaseTokenJwksRouteExposesPublicVerificationKeyOnly(): Prom
   );
   equal(
     healthBody.version,
-    '0.2.0-evaluation',
+    '0.3.0-evaluation',
     'Core routes: public health route reports service version',
   );
   equal(

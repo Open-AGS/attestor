@@ -87,9 +87,9 @@ function testReadmeKeepsEvaluationTruthBeforeDeepDocs(): void {
   const readme = readProjectFile('README.md');
 
   includes(readme, '## Current State', 'README: exposes compact current state section');
-  includes(readme, 'Package version: 0.2.0-evaluation', 'README: states current package version plainly');
+  includes(readme, 'Package version: 0.3.0-evaluation', 'README: states current package version plainly');
   includes(readme, 'Release stage:   evaluation release', 'README: states evaluation-release status plainly');
-  includes(readme, 'Release type:    GitHub pre-release / Golden Path evaluation baseline', 'README: states current release type plainly');
+  includes(readme, 'Release type:    GitHub pre-release / multi-path evaluation baseline', 'README: states current release type plainly');
   includes(readme, 'The same gate can sit before these operation classes:', 'README: keeps cross-operation framing concise');
   includes(readme, 'This is an evaluation release.', 'README: keeps evaluation no-claim near current state');
   includes(readme, '## Data Posture', 'README: exposes the data boundary before first-reader links');

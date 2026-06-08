@@ -11,6 +11,10 @@ points to deeper pages only when you need them.
 This page covers: where Attestor sits, what to send first, how to gate the real
 side effect, and which page to open next.
 
+For the connection map across existing metadata, observe mode, rule drafts,
+admission decisions, customer gates, and proof, read
+[How Attestor connects to existing systems](how-attestor-connects-to-existing-systems.md).
+
 If you do not yet know the real action path, start with
 [shadow pilot mode](shadow-event-payload-examples.md): observe one proposed
 consequence path, then come back here to place the gate.
@@ -195,7 +199,7 @@ Pick the next page by where you are in the integration:
 | If you are... | Open |
 |---|---|
 | still proving the shape | [Try Attestor first](try-attestor-first.md) |
-| using existing metadata first | [Action surface onboarding packet](../02-architecture/action-surface-onboarding-packet.md) |
+| seeing all connection points before choosing one | [How Attestor connects to existing systems](how-attestor-connects-to-existing-systems.md) |
 | observing before enforcement | [Run Attestor in shadow pilot mode](shadow-event-payload-examples.md) |
 | sending a concrete admission request | [Consequence admission quickstart](consequence-admission-quickstart.md) |
 | holding the real service call | [Customer admission gate](customer-admission-gate.md) |

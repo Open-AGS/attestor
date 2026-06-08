@@ -48,8 +48,8 @@ function testReadmeHasAPlainFirstThirtySeconds(): void {
   includes(readme, '## Why This Matters Now', 'README: moves from placement into urgency before mechanism');
   includes(readme, 'Attestor translates AI intent into a structured consequence, then reduces it to', 'README: states the consequence translation shape');
   includes(readme, 'a decision, gate status, and proof references.', 'README: avoids implying a live gate outcome before customer gate placement');
-  includes(readme, 'gate placement plan', 'README: frames runtime signals as gate placement review, not gate deployment');
-  includes(readme, 'docs/02-architecture/runtime-signal-handling.md#rs12-example-path', 'README: links the runtime signal example path directly');
+  includes(readme, 'action discovery, rule drafts, admission decisions, customer gates, and proof', 'README: frames existing system signals as a complete connection path');
+  includes(readme, '[See how Attestor connects to existing systems](docs/01-overview/how-attestor-connects-to-existing-systems.md)', 'README: routes the runtime signal entry through the existing-systems overview');
   includes(readme, '[Try Attestor first](docs/01-overview/try-attestor-first.md)', 'README: sends the concrete first run to the first-run guide');
   appearsBefore(readme, '## Why This Matters Now', '## What It Does', 'README: urgency comes before broad mechanism');
   appearsBefore(readme, '## What It Does', '## The Same Pattern Across Operations', 'README: mechanism comes before pack taxonomy');

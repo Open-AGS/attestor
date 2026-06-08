@@ -16,6 +16,7 @@ understand -> try -> observe -> integrate -> explain -> verify -> maintain
 | Understand the product in one minute | [Repository README](../README.md) |
 | Run the concrete refund workflow | [Try Attestor first](01-overview/try-attestor-first.md) |
 | Observe one real action path | [Run Attestor in shadow pilot mode](01-overview/shadow-event-payload-examples.md) |
+| See how existing systems connect | [How Attestor connects to existing systems](01-overview/how-attestor-connects-to-existing-systems.md) |
 | Put Attestor in front of a real service call | [How to integrate Attestor](01-overview/how-to-integrate-attestor.md) |
 | Find deeper docs | [Repository navigator](01-overview/repository-navigator.md) |
 
@@ -30,6 +31,7 @@ claims stay with the linked evidence records.
 | AI Action Control Plane | [AI Action Control Plane architecture](02-architecture/ai-action-control-plane-architecture.md) |
 | Customer gate / PEP | [Downstream enforcement contract](02-architecture/downstream-enforcement-contract.md) |
 | First integration | [How to integrate Attestor](01-overview/how-to-integrate-attestor.md) |
+| Existing system connection | [How Attestor connects to existing systems](01-overview/how-attestor-connects-to-existing-systems.md) |
 | Observe / shadow pilot | [Run Attestor in shadow pilot mode](01-overview/shadow-event-payload-examples.md) |
 | Admission decisions | [Consequence admission quickstart](01-overview/consequence-admission-quickstart.md) |
 | Reason codes | [Reason codes](05-proof/reason-codes.md) |
@@ -48,7 +50,7 @@ It is the integration hub. Then follow only the page that matches your next step
 | sending the first shared admission request | [Consequence admission quickstart](01-overview/consequence-admission-quickstart.md) |
 | wiring the customer-side stop point | [Customer admission gate](01-overview/customer-admission-gate.md) |
 | choosing where it fits in an app | [Customer integration recipes](01-overview/customer-integration-recipes.md) |
-| starting from API, tool, workflow, or telemetry metadata | [Action surface onboarding packet](02-architecture/action-surface-onboarding-packet.md) |
+| connecting existing APIs, telemetry, rules, gates, and proof | [How Attestor connects to existing systems](01-overview/how-attestor-connects-to-existing-systems.md) |
 | copying framework-shaped examples | [Customer middleware examples](../examples/customer-middleware/README.md) |
 
 Hosted account, pricing, and support pages stay behind the

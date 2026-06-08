@@ -51,11 +51,11 @@ and token, then returns one bounded decision with reasons: `admit`, `narrow`,
 
 The real service should run only through the customer-owned gate.
 
-System metadata can show where risky actions are forming. The local example
-turns OpenAPI, MCP, and OpenTelemetry metadata into a redacted signal, an
-action review, and a gate placement plan.
+System metadata can show where risky actions are forming. Existing APIs, tools,
+jobs, telemetry, events, and gateway logs can become review material for
+action discovery, rule drafts, admission decisions, customer gates, and proof.
 
-[Open the runtime signal example](docs/02-architecture/runtime-signal-handling.md#rs12-example-path)
+[See how Attestor connects to existing systems](docs/01-overview/how-attestor-connects-to-existing-systems.md)
 
 ```text
 AI agent

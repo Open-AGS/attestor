@@ -12,7 +12,7 @@
 <p align="center"><sub>Badges point to repository evidence.</sub></p>
 
 <p align="center">
-  <a href="docs/02-architecture/attestor-internal-machine-map.md"><strong>View the full consequence path map</strong></a>
+  <a href="docs/01-overview/how-attestor-connects-to-existing-systems.md"><strong>How Attestor connects to existing systems</strong></a>
 </p>
 
 **Control infrastructure for high-risk AI-driven operations.**
@@ -55,7 +55,7 @@ System metadata can show where risky actions are forming. Existing APIs, tools,
 jobs, telemetry, events, and gateway logs can become review material for
 action discovery, rule drafts, admission decisions, customer gates, and proof.
 
-[See how Attestor connects to existing systems](docs/01-overview/how-attestor-connects-to-existing-systems.md)
+[View the full consequence path map](docs/02-architecture/attestor-internal-machine-map.md)
 
 ```text
 AI agent

@@ -43,7 +43,8 @@ function testReadmeStartsWithAConcreteWorkflow(): void {
   includes(readme, 'Attestor translates AI intent into a structured consequence, then reduces it to', 'Product docs: README keeps the consequence translation shape');
   includes(readme, 'a decision, gate status, and proof references.', 'Product docs: README avoids implying a live gate outcome before customer gate placement');
   includes(readme, 'action discovery, rule drafts, admission decisions, customer gates, and proof', 'Product docs: README frames existing system signals as a complete connection path');
-  includes(readme, '[See how Attestor connects to existing systems](docs/01-overview/how-attestor-connects-to-existing-systems.md)', 'Product docs: README routes runtime signal detail through the existing-systems overview');
+  includes(readme, '<a href="docs/01-overview/how-attestor-connects-to-existing-systems.md"><strong>How Attestor connects to existing systems</strong></a>', 'Product docs: README makes existing-system connection the top link');
+  includes(readme, '[View the full consequence path map](docs/02-architecture/attestor-internal-machine-map.md)', 'Product docs: README keeps the internal map as the deeper mechanism link');
   includes(readme, '## Why This Matters Now', 'Product docs: README keeps urgency context after the core workflow');
   includes(readme, '[EU AI Act](https://digital-strategy.ec.europa.eu/en/policies/regulatory-framework-ai)', 'Product docs: README keeps the EU AI Act as a bounded context anchor');
   includes(readme, '[NIST AI Risk Management Framework](https://www.nist.gov/itl/ai-risk-management-framework)', 'Product docs: README keeps NIST AI RMF as a bounded context anchor');

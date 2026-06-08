@@ -182,8 +182,8 @@ function testMachineMapLinksAndSourceAreasArePresent(): void {
   );
   includes(
     readme,
-    'href="docs/02-architecture/attestor-internal-machine-map.md"',
-    'Machine map: README has a primary link to the internal map',
+    '[View the full consequence path map](docs/02-architecture/attestor-internal-machine-map.md)',
+    'Machine map: README links to the internal map',
   );
   includes(
     readme,

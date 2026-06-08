@@ -112,7 +112,7 @@ function testReadmeKeepsDomainPacksAndLocalTruth(): void {
   includes(demoGuide, 'npm run demo:golden-programmable-money', 'Product docs: demo guide links the programmable-money golden path');
   includes(readme, '## Current State', 'Product docs: README keeps a compact current state section');
   includes(readme, 'Package version: 0.3.0-evaluation', 'Product docs: README keeps package version visible');
-  includes(readme, 'Release tag:     pending', 'Product docs: README keeps tag state truthful');
+  includes(readme, 'Release tag:     v0.3.0-evaluation', 'Product docs: README keeps tag state truthful');
   includes(readme, 'Release stage:   evaluation baseline', 'Product docs: README keeps evaluation status visible');
   includes(readme, 'Release type:    repository baseline / multi-path local review', 'Product docs: README keeps release type visible');
 }

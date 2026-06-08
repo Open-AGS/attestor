@@ -18,7 +18,8 @@
 **Control infrastructure for high-risk AI-driven operations.**
 
 Attestor sits between an AI-prepared operation and the system that would execute it.
-Prompts can guide behavior, but they cannot enforce it or stop a real service call.
+Prompts can guide behavior, but they cannot enforce it or stop an unsafe,
+unauthorized, or out-of-scope service call.
 
 Unsafe requests can come from hallucination, stale context, poisoned tool output,
 replay, missing approval, or hostile content. Before anything runs, Attestor checks
@@ -95,7 +96,7 @@ The same gate can sit before these operation classes:
 
 ```text
 Package version: 0.3.0-evaluation
-Release tag:     pending
+Release tag:     v0.3.0-evaluation
 Release stage:   evaluation baseline
 Release type:    repository baseline / multi-path local review
 ```

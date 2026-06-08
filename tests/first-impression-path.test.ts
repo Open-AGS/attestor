@@ -89,7 +89,7 @@ function testReadmeKeepsEvaluationTruthBeforeDeepDocs(): void {
 
   includes(readme, '## Current State', 'README: exposes compact current state section');
   includes(readme, 'Package version: 0.3.0-evaluation', 'README: states current package version plainly');
-  includes(readme, 'Release tag:     pending', 'README: does not claim a missing release tag');
+  includes(readme, 'Release tag:     v0.3.0-evaluation', 'README: names the evaluation release tag');
   includes(readme, 'Release stage:   evaluation baseline', 'README: states evaluation status plainly');
   includes(readme, 'Release type:    repository baseline / multi-path local review', 'README: states current release type plainly');
   includes(readme, 'The same gate can sit before these operation classes:', 'README: keeps cross-operation framing concise');

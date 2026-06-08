@@ -42,7 +42,7 @@ function testReadmePublicClaimBoundary(): void {
     'The trail records what was proposed',
     'Final claim alignment: README keeps traceability claim bounded and visible',
   );
-  includes(readme, 'Release tag:     pending', 'Final claim alignment: README does not claim a missing release tag');
+  includes(readme, 'Release tag:     v0.3.0-evaluation', 'Final claim alignment: README states the evaluation release tag');
   includes(
     readme,
     'Release type:    repository baseline / multi-path local review',

@@ -45,8 +45,18 @@ function testReadmePublicClaimBoundary(): void {
   includes(readme, 'evaluation release', 'Final claim alignment: README keeps evaluation-release status');
   includes(
     readme,
-    'It is not public SaaS, a production guarantee, a',
-    'Final claim alignment: README keeps production/audit non-claim',
+    'This is an evaluation release for local review and integration planning.',
+    'Final claim alignment: README keeps evaluation boundary',
+  );
+  includes(
+    readme,
+    'Live',
+    'Final claim alignment: README names live proof boundary',
+  );
+  includes(
+    readme,
+    'customer deployment and external security audit are separate proof steps.',
+    'Final claim alignment: README keeps live/audit proof split',
   );
   includes(
     readme,

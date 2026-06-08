@@ -113,7 +113,7 @@ model, agent, workflow, wallet, database, service call, and system of record.
 ## Start Here
 
 Start light. Go deeper only when you need the detail.
-If you are new, follow this order: local run, shadow pilot, then customer gate.
+If you are new, follow this order: [local run](docs/01-overview/try-attestor-first.md), [shadow pilot](docs/01-overview/shadow-event-payload-examples.md), then [customer gate](docs/01-overview/customer-admission-gate.md).
 
 - [Try Attestor first](docs/01-overview/try-attestor-first.md) - run the smallest local refund path and see the decision trail.
 - [Run Attestor in shadow pilot mode](docs/01-overview/shadow-event-payload-examples.md) - observe one real action surface before enforcing anything.

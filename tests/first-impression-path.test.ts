@@ -96,7 +96,7 @@ function testReadmeKeepsEvaluationTruthBeforeDeepDocs(): void {
   includes(readme, 'Attestor is a control point, not a data lake.', 'README: keeps raw customer data posture visible');
   includes(readme, 'structured request', 'README: states bounded request context plainly');
   includes(readme, 'not raw customer data', 'README: states data minimization plainly');
-  includes(readme, 'If you are new, follow this order: local run, shadow pilot, then customer gate.', 'README: Start Here gives first readers a clear order');
+  includes(readme, 'If you are new, follow this order: [local run](docs/01-overview/try-attestor-first.md), [shadow pilot](docs/01-overview/shadow-event-payload-examples.md), then [customer gate](docs/01-overview/customer-admission-gate.md).', 'README: Start Here gives first readers a linked order');
   includes(readme, '[Run Attestor in shadow pilot mode](docs/01-overview/shadow-event-payload-examples.md) - observe one real action surface before enforcing anything.', 'README: Start Here includes observe mode before integration');
   includes(readme, 'Use boundaries: [License and use](docs/01-overview/license-and-use.md) and [Security Policy](SECURITY.md).', 'README: use boundaries are separated from main onboarding paths');
   appearsBefore(readme, '[Run Attestor in shadow pilot mode](docs/01-overview/shadow-event-payload-examples.md) - observe one real action surface before enforcing anything.', '[How to integrate Attestor](docs/01-overview/how-to-integrate-attestor.md)', 'README: observe path comes before integration path');

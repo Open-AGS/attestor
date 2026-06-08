@@ -62,6 +62,7 @@ function testNavigatorKeepsFirstVisitorPaths(): void {
     '[Reason codes](../05-proof/reason-codes.md)',
     '[Audit evidence system](../audit/README.md)',
     '[Internal machine map](../02-architecture/attestor-internal-machine-map.md)',
+    '[Developer entry path](developer-entry-path.md)',
     '[Repository map](repository-map.md)',
     '[Repository map](repository-map.md#code-map)',
     '[Repository map](repository-map.md#package-surface-map)',
@@ -115,6 +116,50 @@ function testNavigatorKeepsServiceMap(): void {
   }
 }
 
+function testDeveloperEntryPathIsConcreteAndBounded(): void {
+  const doc = readProjectFile('docs', '01-overview', 'developer-entry-path.md');
+
+  includes(doc, '# Developer Entry Path', 'Developer entry path: title is present');
+  includes(
+    doc,
+    'Use this when you want to understand the main Attestor runtime path before',
+    'Developer entry path: purpose is practical',
+  );
+  includes(
+    doc,
+    'not a full architecture map, a line-by-line audit, live proof, or',
+    'Developer entry path: scope boundary is explicit',
+  );
+  includes(doc, 'npm run example:admission', 'Developer entry path: starts with admission example');
+  includes(doc, 'npm run example:non-bypassable-gateway', 'Developer entry path: starts with gateway example');
+  includes(doc, 'proposed consequence', 'Developer entry path: names the flow start');
+  includes(doc, 'guard evaluation', 'Developer entry path: names guard evaluation');
+  includes(doc, 'customer gate before the downstream action', 'Developer entry path: names customer gate');
+
+  for (const expected of [
+    '`examples/first-useful-admission-demo.ts`',
+    '`examples/non-bypassable-gateway-demo.ts`',
+    '`src/service/http/routes/generic-admission-routes.ts`',
+    '`src/consequence-admission/generic-input-normalization.ts`',
+    '`src/consequence-admission/generic-engine.ts`',
+    '`src/consequence-admission/customer-gate.ts`',
+    '`src/consequence-admission/downstream-enforcement-contract.ts`',
+    '`src/consequence-admission/index.ts`',
+    '`tests/generic-admission-routes.test.ts`',
+    '`tests/generic-admission-guard-route-matrix.test.ts`',
+    '`tests/critical-admission-property-suite.test.ts`',
+    '`tests/consequence-admission-customer-gate.test.ts`',
+    '`tests/downstream-enforcement-contract.test.ts`',
+  ]) {
+    includes(doc, expected, `Developer entry path: names concrete repo path ${expected}`);
+  }
+
+  includes(doc, 'local example is not live customer enforcement', 'Developer entry path: local/live boundary is explicit');
+  includes(doc, 'shadow record is not downstream execution', 'Developer entry path: shadow/execution split is explicit');
+  includes(doc, 'release proof is not customer PEP no-bypass proof', 'Developer entry path: release/customer gate proof split is explicit');
+  includes(doc, 'repo-side evidence is not production readiness', 'Developer entry path: production no-claim is explicit');
+}
+
 function testNavigatorKeepsNoClaimBoundaries(): void {
   const doc = readProjectFile('docs', '01-overview', 'repository-navigator.md');
   const map = readProjectFile('docs', '01-overview', 'repository-map.md');
@@ -150,6 +195,7 @@ function assertLinksResolve(...segments: string[]): void {
 
 function testNavigatorLinksResolve(): void {
   assertLinksResolve('docs', '01-overview', 'repository-navigator.md');
+  assertLinksResolve('docs', '01-overview', 'developer-entry-path.md');
   assertLinksResolve('docs', '01-overview', 'repository-map.md');
   assertLinksResolve('docs', '01-overview', 'demo-guide.md');
   assertLinksResolve('docs', 'README.md');
@@ -186,6 +232,7 @@ function testDocsFrontDoorPullsReadersToTheNextAction(): void {
   includes(doc, '[How to integrate Attestor](01-overview/how-to-integrate-attestor.md)', 'Docs front door: links integration guide');
   includes(doc, '[Action surface onboarding packet](02-architecture/action-surface-onboarding-packet.md)', 'Docs front door: links the action-surface onboarding entry point');
   includes(doc, '[Run the local evaluation path](01-overview/demo-guide.md)', 'Docs front door: links local evaluation path');
+  includes(doc, '[Developer entry path](01-overview/developer-entry-path.md)', 'Docs front door: links developer entry path');
   includes(doc, '[Customer middleware examples](../examples/customer-middleware/README.md)', 'Docs front door: links middleware examples');
   includes(doc, '[Reason codes](05-proof/reason-codes.md)', 'Docs front door: links reason codes');
   includes(doc, '[License and use](01-overview/license-and-use.md)', 'Docs front door: links license-and-use guide');
@@ -208,6 +255,7 @@ function testReadmeLinksNavigator(): void {
 
 testNavigatorKeepsFirstVisitorPaths();
 testNavigatorKeepsServiceMap();
+testDeveloperEntryPathIsConcreteAndBounded();
 testNavigatorKeepsNoClaimBoundaries();
 testNavigatorLinksResolve();
 testDocsFrontDoorPullsReadersToTheNextAction();

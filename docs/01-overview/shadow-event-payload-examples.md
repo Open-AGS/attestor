@@ -9,9 +9,20 @@ picture before you enforce anything.
 
 Part of: [How to integrate Attestor](how-to-integrate-attestor.md)
 
-Use this when you want event-shaped data before an SDK or full integration.
-It is the observe-first path: useful for learning what would be held, narrowed,
-or blocked before you enforce anything.
+Use this when you want to learn from real AI workflow attempts before a full SDK
+or enforcement integration. Start with one operation class and one downstream
+system.
+
+The pilot path is:
+
+1. send proposed consequences in `observe` mode;
+2. keep raw prompts and customer records out;
+3. compare `admit`, `narrow`, `review`, and `block` decisions with real
+   workflow expectations;
+4. decide where the customer-owned gate belongs.
+
+This is observation and decision evidence. Enforcement starts only when that
+gate is placed before the real side effect.
 
 ## Minimal First Payload
 

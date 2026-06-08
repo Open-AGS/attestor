@@ -13,6 +13,7 @@ import {
   issueTenantApiKey,
   metricSamples,
   ok,
+  pipelineRunHeaders,
   readAsyncDeadLetterStoreSnapshot,
   readFileSync,
   readUsageLedgerSnapshot,
@@ -47,7 +48,7 @@ export async function runHostedPlanUsageFlow(): Promise<void> {
     {
       const first = await fetch(`${BASE}/api/v1/pipeline/run`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer pro-key' },
+        headers: pipelineRunHeaders('hosted-plan-usage-first', { Authorization: 'Bearer pro-key' }),
         body: JSON.stringify({
           candidateSql: COUNTERPARTY_SQL,
           intent: COUNTERPARTY_INTENT,
@@ -65,7 +66,7 @@ export async function runHostedPlanUsageFlow(): Promise<void> {
 
       const second = await fetch(`${BASE}/api/v1/pipeline/run`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer pro-key' },
+        headers: pipelineRunHeaders('hosted-plan-usage-second', { Authorization: 'Bearer pro-key' }),
         body: JSON.stringify({
           candidateSql: COUNTERPARTY_SQL,
           intent: COUNTERPARTY_INTENT,
@@ -82,7 +83,7 @@ export async function runHostedPlanUsageFlow(): Promise<void> {
 
       const third = await fetch(`${BASE}/api/v1/pipeline/run`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer pro-key' },
+        headers: pipelineRunHeaders('hosted-plan-usage-third', { Authorization: 'Bearer pro-key' }),
         body: JSON.stringify({
           candidateSql: COUNTERPARTY_SQL,
           intent: COUNTERPARTY_INTENT,

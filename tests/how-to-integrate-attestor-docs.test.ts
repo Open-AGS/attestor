@@ -39,6 +39,9 @@ function testGuideExplainsTheCustomerIntegrationPath(): void {
   includes(doc, '# How To Integrate Attestor', 'How-to integrate docs: title is present');
   includes(doc, '[Docs index](../README.md)', 'How-to integrate docs: links back to docs index clearly');
   includes(doc, '[Repository README first-reader section](../../README.md#start-here)', 'How-to integrate docs: names the README section clearly');
+  includes(doc, 'If you do not yet know the real action surface, start with', 'How-to integrate docs: sends unclear action surfaces to shadow pilot mode first');
+  includes(doc, 'observe one proposed', 'How-to integrate docs: starts unknown action surfaces with observation');
+  includes(doc, 'consequence path, then come back here to place the gate.', 'How-to integrate docs: separates observation from gate placement');
   includes(doc, 'Do not start with a dashboard.', 'How-to integrate docs: rejects dashboard-first framing');
   includes(doc, 'Start with the line of code that does the real thing.', 'How-to integrate docs: starts at the side effect');
   includes(doc, 'AI prepares an action', 'How-to integrate docs: names the AI side');

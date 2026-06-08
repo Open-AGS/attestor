@@ -13,6 +13,7 @@ import {
   issueTenantApiKey,
   metricSamples,
   ok,
+  pipelineRunHeaders,
   readAsyncDeadLetterStoreSnapshot,
   readFileSync,
   readUsageLedgerSnapshot,
@@ -93,10 +94,9 @@ export async function runAdminTenantKeyFlow(ctx: LiveApiHostedContext): Promise<
 
       const tenantRun = await fetch(`${BASE}/api/v1/pipeline/run`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+        headers: pipelineRunHeaders('admin-tenant-key-initial-run', {
           Authorization: `Bearer ${issueBody.key.apiKey}`,
-        },
+        }),
         body: JSON.stringify({
           candidateSql: COUNTERPARTY_SQL,
           intent: COUNTERPARTY_INTENT,
@@ -228,10 +228,9 @@ export async function runAdminTenantKeyFlow(ctx: LiveApiHostedContext): Promise<
 
       const accountRun = await fetch(`${BASE}/api/v1/pipeline/run`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+        headers: pipelineRunHeaders('admin-tenant-key-account-run', {
           Authorization: `Bearer ${createAccountBody.initialKey.apiKey}`,
-        },
+        }),
         body: JSON.stringify({
           candidateSql: COUNTERPARTY_SQL,
           intent: COUNTERPARTY_INTENT,
@@ -319,10 +318,9 @@ export async function runAdminTenantKeyFlow(ctx: LiveApiHostedContext): Promise<
       for (let attempt = 0; attempt < 1; attempt += 1) {
         const allowed = await fetch(`${BASE}/api/v1/pipeline/run`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
+          headers: pipelineRunHeaders(`admin-tenant-key-rate-allowed-${attempt + 1}`, {
             Authorization: `Bearer ${rateTenantBody.key.apiKey}`,
-          },
+          }),
           body: JSON.stringify({
             candidateSql: COUNTERPARTY_SQL,
             intent: COUNTERPARTY_INTENT,
@@ -339,10 +337,9 @@ export async function runAdminTenantKeyFlow(ctx: LiveApiHostedContext): Promise<
 
       const limitedSync = await fetch(`${BASE}/api/v1/pipeline/run`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+        headers: pipelineRunHeaders('admin-tenant-key-rate-limited-sync', {
           Authorization: `Bearer ${rateTenantBody.key.apiKey}`,
-        },
+        }),
         body: JSON.stringify({
           candidateSql: COUNTERPARTY_SQL,
           intent: COUNTERPARTY_INTENT,
@@ -380,10 +377,9 @@ export async function runAdminTenantKeyFlow(ctx: LiveApiHostedContext): Promise<
 
       const afterReset = await fetch(`${BASE}/api/v1/pipeline/run`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+        headers: pipelineRunHeaders('admin-tenant-key-after-reset', {
           Authorization: `Bearer ${rateTenantBody.key.apiKey}`,
-        },
+        }),
         body: JSON.stringify({
           candidateSql: COUNTERPARTY_SQL,
           intent: COUNTERPARTY_INTENT,

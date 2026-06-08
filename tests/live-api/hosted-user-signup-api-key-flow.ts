@@ -14,6 +14,7 @@ import {
   issueTenantApiKey,
   metricSamples,
   ok,
+  pipelineRunHeaders,
   readAsyncDeadLetterStoreSnapshot,
   readFileSync,
   readUsageLedgerSnapshot,
@@ -230,10 +231,9 @@ export async function runHostedUserSignupApiKeyFlow(ctx: LiveApiHostedContext): 
 
       const signupPipelineRunRes = await fetch(`${BASE}/api/v1/pipeline/run`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+        headers: pipelineRunHeaders('hosted-user-signup-first-run', {
           Authorization: `Bearer ${signupBody.initialKey.apiKey}`,
-        },
+        }),
         body: JSON.stringify({
           candidateSql: COUNTERPARTY_SQL,
           intent: COUNTERPARTY_INTENT,
@@ -250,10 +250,9 @@ export async function runHostedUserSignupApiKeyFlow(ctx: LiveApiHostedContext): 
       for (let attempt = 2; attempt <= 10; attempt += 1) {
         const res = await fetch(`${BASE}/api/v1/pipeline/run`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
+          headers: pipelineRunHeaders(`hosted-user-signup-run-${attempt}`, {
             Authorization: `Bearer ${signupBody.initialKey.apiKey}`,
-          },
+          }),
           body: JSON.stringify({
             candidateSql: COUNTERPARTY_SQL,
             intent: COUNTERPARTY_INTENT,
@@ -268,10 +267,9 @@ export async function runHostedUserSignupApiKeyFlow(ctx: LiveApiHostedContext): 
 
       const signupAdditionalRunRes = await fetch(`${BASE}/api/v1/pipeline/run`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+        headers: pipelineRunHeaders('hosted-user-signup-additional-run', {
           Authorization: `Bearer ${signupBody.initialKey.apiKey}`,
-        },
+        }),
         body: JSON.stringify({
           candidateSql: COUNTERPARTY_SQL,
           intent: COUNTERPARTY_INTENT,

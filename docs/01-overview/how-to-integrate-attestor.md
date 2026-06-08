@@ -11,6 +11,13 @@ points to the more detailed pages only when you need them.
 This page covers: where Attestor sits, what to send first, how to gate the real
 side effect, and which page to open next.
 
+If you do not yet know the real action surface, start with
+[shadow pilot mode](shadow-event-payload-examples.md): observe one proposed
+consequence path, then come back here to place the gate.
+
+For the hosted finance request shape, use
+[First hosted API call](hosted-first-api-call.md).
+
 This page does not cover: pricing, hosted signup, live production proof, or
 customer PEP no-bypass proof.
 

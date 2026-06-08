@@ -13,6 +13,7 @@ import {
   issueTenantApiKey,
   metricSamples,
   ok,
+  pipelineRunHeaders,
   readAsyncDeadLetterStoreSnapshot,
   readFileSync,
   readUsageLedgerSnapshot,
@@ -74,7 +75,7 @@ export async function runRuntimePipelineFlow(): Promise<void> {
     {
       const res = await fetch(`${BASE}/api/v1/pipeline/run`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: pipelineRunHeaders('runtime-pipeline-unsigned'),
         body: JSON.stringify({
           candidateSql: COUNTERPARTY_SQL,
           intent: COUNTERPARTY_INTENT,
@@ -114,7 +115,7 @@ export async function runRuntimePipelineFlow(): Promise<void> {
     {
       const res = await fetch(`${BASE}/api/v1/pipeline/run`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: pipelineRunHeaders('runtime-pipeline-signed'),
         body: JSON.stringify({
           candidateSql: COUNTERPARTY_SQL,
           intent: COUNTERPARTY_INTENT,
@@ -179,7 +180,7 @@ export async function runRuntimePipelineFlow(): Promise<void> {
       };
       const res = await fetch(`${BASE}/api/v1/pipeline/run`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: pipelineRunHeaders('runtime-pipeline-review-required'),
         body: JSON.stringify({
           candidateSql: COUNTERPARTY_SQL,
           intent: reviewRequiredIntent,
@@ -213,7 +214,7 @@ export async function runRuntimePipelineFlow(): Promise<void> {
       };
       const res = await fetch(`${BASE}/api/v1/pipeline/run`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: pipelineRunHeaders('runtime-pipeline-break-glass-review'),
         body: JSON.stringify({
           candidateSql: COUNTERPARTY_SQL,
           intent: breakGlassIntent,
@@ -553,7 +554,7 @@ export async function runRuntimePipelineFlow(): Promise<void> {
     {
       const revokeRun = await fetch(`${BASE}/api/v1/pipeline/run`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: pipelineRunHeaders('runtime-pipeline-revoked-release-source'),
         body: JSON.stringify({
           candidateSql: COUNTERPARTY_SQL,
           intent: COUNTERPARTY_INTENT,

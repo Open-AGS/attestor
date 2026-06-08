@@ -70,12 +70,13 @@ Exact IDs and limits depend on the account and plan. The important signal is tha
 
 This reference payload uses the finance proof wedge because it is the deepest proven path today. Production callers should send their own proposed consequence material and evidence source.
 
-Call `POST /api/v1/pipeline/run` from the customer system that is about to write, send, file, execute, or settle:
+Call `POST /api/v1/pipeline/run` from the customer system that is about to write, send, file, execute, or settle. Use a unique `Idempotency-Key` per proposed action:
 
 ```bash
 curl -sS -X POST "$ATTESTOR_BASE_URL/api/v1/pipeline/run" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $ATTESTOR_API_KEY" \
+  -H "Idempotency-Key: $ATTESTOR_IDEMPOTENCY_KEY" \
   --data-binary @- <<'JSON'
 {
   "candidateSql": "SELECT counterparty_name, exposure_usd, credit_rating, sector FROM risk.counterparty_exposures WHERE reporting_date = '2026-03-28' ORDER BY exposure_usd DESC",

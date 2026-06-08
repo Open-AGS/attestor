@@ -22,6 +22,7 @@ Use these when you need the main Attestor route, not every supporting page.
 | [Action surface onboarding packet](../02-architecture/action-surface-onboarding-packet.md) | Start from existing API, tool, workflow, telemetry, CloudEvents, or gateway-log metadata. |
 | [Consequence admission quickstart](consequence-admission-quickstart.md) | Send a concrete admission request and read `admit`, `narrow`, `review`, or `block`. |
 | [Customer admission gate](customer-admission-gate.md) | Hold the real service call in the customer app, gateway, or middleware. |
+| [Developer entry path](developer-entry-path.md) | Follow the main request, route, guard, decision, proof, and gate path before changing code. |
 | [Review surface dashboard summary](../02-architecture/dashboard-api-summary.md) | Review shadow, admission, evidence, boundary, reason, and next-step material without raw event data. |
 
 ## Start By Intent
@@ -41,7 +42,7 @@ Use these when you need the main Attestor route, not every supporting page.
 | Check what still needs live proof | [Live proof register](../audit/live-proof-register.md) | [Production readiness](../08-deployment/production-readiness.md) |
 | Understand the whole machine | [AI Action Control Plane architecture](../02-architecture/ai-action-control-plane-architecture.md) | [Internal machine map](../02-architecture/attestor-internal-machine-map.md) |
 | Review audit state | [Audit evidence system](../audit/README.md) | [Finding index](../audit/finding-index.md) |
-| Change code safely | [Repository map](repository-map.md) | [Test system map](../02-architecture/test-system-map.md) |
+| Change code safely | [Developer entry path](developer-entry-path.md) | [Repository map](repository-map.md) and [Test system map](../02-architecture/test-system-map.md) |
 
 ## Start By Role
 
@@ -51,7 +52,7 @@ Use these when you need the main Attestor route, not every supporting page.
 | Customer engineer | [How to integrate Attestor](how-to-integrate-attestor.md) | The shortest path from AI action to customer-owned gate. |
 | API integrator | [First hosted API call](hosted-first-api-call.md) | Tenant key, first request, and decision handling. |
 | Reviewer or auditor | [Audit evidence system](../audit/README.md) | Current baseline, finding state, live-proof separation. |
-| Maintainer | [Internal machine map](../02-architecture/attestor-internal-machine-map.md) | Where the decision planes, routes, stores, packs, and proof loops live. |
+| Maintainer | [Developer entry path](developer-entry-path.md) | The shortest code-reading path before deeper architecture maps. |
 | Product or docs editor | [Attestor language contract](../02-architecture/attestor-language-contract.md) | Public wording, no-claims, and one-engine terminology. |
 | Term lookup | [Glossary](../02-architecture/glossary.md) | Short definitions for terms that otherwise sound too similar. |
 
@@ -62,6 +63,7 @@ code or review public package boundaries.
 
 | I need... | Go here |
 |---|---|
+| First code-reading path for the main admission flow | [Developer entry path](developer-entry-path.md) |
 | Code ownership, directories, and nearby tests | [Repository map](repository-map.md#code-map) |
 | Public import paths and package boundaries | [Repository map](repository-map.md#package-surface-map) |
 | Hosted runtime reorganization rules | [Service organization plan](../02-architecture/service-organization-plan.md) |
@@ -77,7 +79,7 @@ code or review public package boundaries.
 4. Want to start from existing API, tool, workflow, or telemetry metadata? Open [Action surface onboarding packet](../02-architecture/action-surface-onboarding-packet.md).
 5. Want to explain a decision? Open [Reason codes](../05-proof/reason-codes.md).
 6. Want to verify a claim? Open [Audit evidence system](../audit/README.md).
-7. Want to change internals? Open [Internal machine map](../02-architecture/attestor-internal-machine-map.md).
+7. Want to change internals? Open [Developer entry path](developer-entry-path.md), then [Internal machine map](../02-architecture/attestor-internal-machine-map.md).
 
 Keep the distinction clean:
 

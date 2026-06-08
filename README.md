@@ -109,6 +109,8 @@ Attestor is a control point, not a data lake. It needs structured request
 context and proof references, not raw customer data. Customer systems keep the
 model, agent, workflow, wallet, database, service call, and system of record.
 
+[Security and data handling](docs/01-overview/security-and-data-handling.md)
+
 ## Start Here
 
 Start light. Go deeper only when you need the detail.

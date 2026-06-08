@@ -55,6 +55,7 @@ function testReadmeStartsWithAConcreteWorkflow(): void {
 
 function testReadmeKeepsSingleEngineAndCustomerBoundary(): void {
   const readme = readProjectFile('README.md');
+  const securityDoc = readProjectFile('docs', '01-overview', 'security-and-data-handling.md');
 
   includes(readme, 'AI agent', 'Product docs: README keeps the actor side of the core flow');
   includes(readme, 'It checks policy, approval, evidence, allowed scope, freshness, replay, tenant', 'Product docs: README keeps the core check vocabulary in plain language');
@@ -68,6 +69,18 @@ function testReadmeKeepsSingleEngineAndCustomerBoundary(): void {
   includes(readme, 'Attestor is a control point, not a data lake.', 'Product docs: README states the data posture plainly');
   includes(readme, 'structured request', 'Product docs: README keeps bounded request context visible');
   includes(readme, 'not raw customer data', 'Product docs: README keeps data minimization visible');
+  includes(readme, '[Security and data handling](docs/01-overview/security-and-data-handling.md)', 'Product docs: README links the security/data handling page from Data Posture');
+  includes(securityDoc, '# Security And Data Handling', 'Product docs: security/data handling page has a serious title');
+  includes(securityDoc, 'data lake.', 'Product docs: security page opens with data-minimization posture');
+  includes(securityDoc, 'that intent is not execution authority', 'Product docs: security page separates AI intent from authority');
+  includes(securityDoc, 'Customer systems keep the model, agent, workflow, wallet, database, payment', 'Product docs: security page keeps customer systems in control');
+  includes(securityDoc, 'They should not expose raw prompts, raw tool payloads, raw customer', 'Product docs: security page states forbidden raw data classes');
+  includes(securityDoc, 'Runtime metadata is also bounded.', 'Product docs: security page bounds metadata and telemetry authority');
+  includes(securityDoc, 'review, hold, narrow, or block', 'Product docs: security page names fail-closed posture');
+  includes(securityDoc, 'Replay and idempotency are part of that posture.', 'Product docs: security page names replay and idempotency safety');
+  includes(securityDoc, 'read-only reviewer workflows, CodeQL, dependency review', 'Product docs: security page names repository security controls');
+  includes(securityDoc, 'customer-specific cloud controls remain separate proof steps.', 'Product docs: security page keeps evaluation boundary clear');
+  excludes(securityDoc, /does not leak|cannot leak|fully secure|guaranteed secure/iu, 'Product docs: security page avoids absolute security guarantees');
 }
 
 function testReadmeKeepsDomainPacksAndLocalTruth(): void {

@@ -98,11 +98,13 @@ function testReadmeKeepsEvaluationTruthBeforeDeepDocs(): void {
   includes(readme, 'Attestor is a control point, not a data lake.', 'README: keeps raw customer data posture visible');
   includes(readme, 'structured request', 'README: states bounded request context plainly');
   includes(readme, 'not raw customer data', 'README: states data minimization plainly');
+  includes(readme, '[Security and data handling](docs/01-overview/security-and-data-handling.md)', 'README: links the deeper security and data-handling page from Data Posture');
   includes(readme, 'If you are new, follow this order: [local run](docs/01-overview/try-attestor-first.md), [shadow pilot](docs/01-overview/shadow-event-payload-examples.md), then [customer gate](docs/01-overview/customer-admission-gate.md).', 'README: Start Here gives first readers a linked order');
   includes(readme, '[Run Attestor in shadow pilot mode](docs/01-overview/shadow-event-payload-examples.md) - observe one real action path before enforcing anything.', 'README: Start Here includes observe mode before integration');
   includes(readme, 'Use boundaries: [License and use](docs/01-overview/license-and-use.md) and [Security Policy](SECURITY.md).', 'README: use boundaries are separated from main onboarding paths');
   appearsBefore(readme, '[Run Attestor in shadow pilot mode](docs/01-overview/shadow-event-payload-examples.md) - observe one real action path before enforcing anything.', '[How to integrate Attestor](docs/01-overview/how-to-integrate-attestor.md)', 'README: observe path comes before integration path');
   appearsBefore(readme, '## Current State', '## Data Posture', 'README: current state comes before data posture');
+  appearsBefore(readme, '[Security and data handling](docs/01-overview/security-and-data-handling.md)', '## Start Here', 'README: security/data handling link stays with Data Posture before first-reader links');
   appearsBefore(readme, '## Data Posture', '## Start Here', 'README: data posture comes before first-reader links');
   appearsBefore(readme, '## Current State', '## Start Here', 'README: current state comes before first-reader links');
   excludes(readme, /## Decision Model/u, 'README: should not keep a separate decision-model section');

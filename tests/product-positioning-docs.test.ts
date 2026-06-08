@@ -105,11 +105,17 @@ function testReadmeKeepsDomainPacksAndLocalTruth(): void {
 
 function testReadmeLinksTheRightDeeperDocsWithoutBecomingALinkWall(): void {
   const readme = readProjectFile('README.md');
+  const localRunDoc = readProjectFile('docs', '01-overview', 'try-attestor-first.md');
+  const shadowPilotDoc = readProjectFile('docs', '01-overview', 'shadow-event-payload-examples.md');
+  const customerGateDoc = readProjectFile('docs', '01-overview', 'customer-admission-gate.md');
   const integrateDoc = readProjectFile('docs', '01-overview', 'how-to-integrate-attestor.md');
 
   includes(readme, '## Start Here', 'Product docs: README exposes a short first-visitor link surface');
   includes(readme, 'Start light. Go deeper only when you need the detail.', 'Product docs: README keeps the first path lightweight');
   includes(readme, 'If you are new, follow this order: [local run](docs/01-overview/try-attestor-first.md), [shadow pilot](docs/01-overview/shadow-event-payload-examples.md), then [customer gate](docs/01-overview/customer-admission-gate.md).', 'Product docs: README gives first readers a linked order');
+  includes(localRunDoc, '# Try Attestor First', 'Product docs: local run link points to the first-run guide');
+  includes(shadowPilotDoc, '# Run Attestor In Shadow Pilot Mode', 'Product docs: shadow pilot link points to observe-mode setup');
+  includes(customerGateDoc, '# Customer Admission Gate', 'Product docs: customer gate link points to the enforcement guide');
   includes(readme, '[Try Attestor first](docs/01-overview/try-attestor-first.md) - run the smallest local refund path and see the decision trail.', 'Product docs: README links the first-run guide');
   includes(readme, '[Run Attestor in shadow pilot mode](docs/01-overview/shadow-event-payload-examples.md) - observe one real action surface before enforcing anything.', 'Product docs: README links observe mode as a main onboarding path');
   includes(readme, '[How to integrate Attestor](docs/01-overview/how-to-integrate-attestor.md) - find the real side effect and place the customer-owned gate.', 'Product docs: README links the integration guide');

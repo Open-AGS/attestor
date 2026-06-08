@@ -11,6 +11,9 @@ points to the more detailed pages only when you need them.
 This page covers: where Attestor sits, what to send first, how to gate the real
 side effect, and which page to open next.
 
+For the hosted finance request shape, use
+[First hosted API call](hosted-first-api-call.md).
+
 This page does not cover: pricing, hosted signup, live production proof, or
 customer PEP no-bypass proof.
 

@@ -99,8 +99,8 @@ Source-backed research notes:
 
 | Method | Path | Tenant binding | Quota/rate | Idempotency | Current state |
 |---|---|---|---|---|---|
-| POST | `/api/v1/pipeline/run` | `currentTenant(c)` | quota + tenant rate-limit before connector work | `Idempotency-Key` checked before side effects; replay returns prior response; conflict returns 409 | OPS-86 closed repo-side |
-| POST | `/api/v1/pipeline/run-async` | `currentTenant(c)` | quota + tenant rate-limit + async queue cap | `Idempotency-Key` checked before side effects; replay returns prior job response; conflict returns 409 | OPS-86 closed repo-side; OPS-89 remains |
+| POST | `/api/v1/pipeline/run` | `currentTenant(c)` | quota + tenant rate-limit before connector work | `Idempotency-Key` required before side effects; replay returns prior response; conflict returns 409 | OPS-86 closed repo-side |
+| POST | `/api/v1/pipeline/run-async` | `currentTenant(c)` | quota + tenant rate-limit + async queue cap | `Idempotency-Key` required before side effects; replay returns prior job response; conflict returns 409 | OPS-86 closed repo-side; OPS-89 remains |
 | GET | `/api/v1/pipeline/status/:jobId` | `currentTenant(c)` and job tenant equality | n/a | n/a | wrong tenant returns 404 |
 
 Coverage: 3 / 3 pipeline execution and async routes mapped.

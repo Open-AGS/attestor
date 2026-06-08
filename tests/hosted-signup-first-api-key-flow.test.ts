@@ -104,9 +104,10 @@ function pipelineBody() {
   };
 }
 
-async function runPipeline(baseUrl: string, apiKey: string): Promise<Response> {
+async function runPipeline(baseUrl: string, apiKey: string, idempotencyKey: string): Promise<Response> {
   return postJson(`${baseUrl}/api/v1/pipeline/run`, pipelineBody(), {
     Authorization: `Bearer ${apiKey}`,
+    'Idempotency-Key': idempotencyKey,
   });
 }
 
@@ -272,7 +273,11 @@ async function main(): Promise<void> {
     equal(accountBody.entitlement.accessEnabled, true, 'Hosted account: initial entitlement allows access');
     equal(accountBody.entitlement.effectivePlanId, 'developer', 'Hosted account: entitlement reflects Developer plan');
 
-    const firstRunRes = await runPipeline(baseUrl, initialApiKey);
+    const firstRunRes = await runPipeline(
+      baseUrl,
+      initialApiKey,
+      'hosted-signup-first-api-key-pipeline-run',
+    );
     equal(firstRunRes.status, 200, 'Hosted consequence call: first API key can call Attestor');
     const firstRunBody = await readJson(firstRunRes);
     equal(firstRunBody.decision, 'pass', 'Hosted consequence call: decision is returned before consequence');
@@ -290,23 +295,27 @@ async function main(): Promise<void> {
         summary: 'Hosted first API key asks whether the reporting consequence may proceed.',
       },
     });
-    equal(admission.decision, 'admit', 'Hosted consequence call: finance pass maps to canonical admit');
+    equal(admission.decision, 'review', 'Hosted consequence call: tenant API-key authority holds for review');
     equal(admission.request.entryPoint.route, '/api/v1/pipeline/run', 'Hosted consequence call: canonical admission preserves hosted route');
     const gate = evaluateConsequenceAdmissionGate({
       admission,
       downstreamAction: 'customer_reporting_store.write',
     });
-    equal(gate.outcome, 'proceed', 'Hosted consequence call: customer gate proceeds after admitted response');
+    equal(gate.outcome, 'hold', 'Hosted consequence call: customer gate holds review response');
     equal(gate.downstreamAction, 'customer_reporting_store.write', 'Hosted consequence call: customer gate preserves downstream action label');
-    equal(gate.failClosed, false, 'Hosted consequence call: admitted customer gate is not fail closed');
+    equal(gate.failClosed, true, 'Hosted consequence call: held customer gate is fail closed');
     ok(
-      gate.reasonCodes.includes('customer-gate-proceed'),
-      'Hosted consequence call: customer gate records proceed reason',
+      gate.reasonCodes.includes('customer-gate-hold'),
+      'Hosted consequence call: customer gate records hold reason',
     );
 
     seedUsageLedger(tempRoot, tenantId, 500);
 
-    const quotaExceededRes = await runPipeline(baseUrl, initialApiKey);
+    const quotaExceededRes = await runPipeline(
+      baseUrl,
+      initialApiKey,
+      'hosted-signup-first-api-key-quota-exceeded-run',
+    );
     equal(quotaExceededRes.status, 429, 'Hosted quota: Developer run 501 is blocked');
     const quotaExceededBody = await readJson(quotaExceededRes);
     equal(

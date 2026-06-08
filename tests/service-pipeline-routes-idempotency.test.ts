@@ -468,6 +468,29 @@ async function testAsyncPipelineRequiresIdempotencyKeyBeforeSideEffects(): Promi
   }
 }
 
+async function testSyncPipelineRequiresIdempotencyKeyBeforeSideEffects(): Promise<void> {
+  const restore = withEnv();
+  try {
+    const counters = { consume: 0, run: 0 };
+    const app = new Hono();
+    registerPipelineExecutionRoutes(app, executionDeps(counters));
+    const response = await app.request('/api/v1/pipeline/run', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ candidateSql: 'select 1', intent: 'approve test query' }),
+    });
+    const body = await response.json() as { readonly error: string; readonly detail: string };
+
+    assert.equal(response.status, 428);
+    assert.equal(body.error, 'Pipeline route requires Idempotency-Key before execution.');
+    assert.match(body.detail, /before quota, rate-limit, connector, signing, or pipeline work/u);
+    assert.equal(counters.run, 0);
+    assert.equal(counters.consume, 0);
+  } finally {
+    restore();
+  }
+}
+
 async function testPipelineConnectorErrorDetailsAreRedacted(): Promise<void> {
   const restore = withEnv();
   try {
@@ -486,7 +509,7 @@ async function testPipelineConnectorErrorDetailsAreRedacted(): Promise<void> {
     registerPipelineExecutionRoutes(app, deps);
     const response = await app.request('/api/v1/pipeline/run', {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      headers: { 'content-type': 'application/json', 'Idempotency-Key': 'pipeline-connector-redaction' },
       body: JSON.stringify({
         candidateSql: 'select 1',
         intent: 'approve test query',
@@ -533,7 +556,7 @@ async function testBodyReviewerFieldsDoNotCreateApprovalAuthority(): Promise<voi
 
     const response = await app.request('/api/v1/pipeline/run', {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      headers: { 'content-type': 'application/json', 'Idempotency-Key': 'pipeline-body-reviewer' },
       body: JSON.stringify({
         candidateSql: 'select 1',
         intent: 'approve test query',
@@ -640,6 +663,7 @@ await testSyncPipelineReplayReturnsSameRunAndConsumesOnce();
 await testPipelineRoutesRejectNonJsonMediaType();
 await testPipelineAsyncRouteRejectsNonJsonMediaType();
 await testAsyncPipelineRequiresIdempotencyKeyBeforeSideEffects();
+await testSyncPipelineRequiresIdempotencyKeyBeforeSideEffects();
 await testPipelineConnectorErrorDetailsAreRedacted();
 await testBodyReviewerFieldsDoNotCreateApprovalAuthority();
 await testPipelineIdempotencyConflictRejectsDifferentPayload();
@@ -647,4 +671,4 @@ await testPipelineIdempotencyConfigFailsBeforeSideEffects();
 await testAsyncPipelineReplayReturnsSameJobAndConsumesOnce();
 await testAsyncBullmqRetryAfterUsageFailureUsesIdempotentQueueClaim();
 
-console.log('Service pipeline routes idempotency tests: 10 passed, 0 failed');
+console.log('Service pipeline routes idempotency tests: 11 passed, 0 failed');

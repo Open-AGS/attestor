@@ -155,6 +155,17 @@ export function csrfHeaders(cookie: string): Record<string, string> {
   };
 }
 
+export function pipelineRunHeaders(
+  idempotencyKey: string,
+  headers: Record<string, string> = {},
+): Record<string, string> {
+  return {
+    ...headers,
+    'Content-Type': 'application/json',
+    'Idempotency-Key': idempotencyKey,
+  };
+}
+
 export async function waitForRateLimitWindowHead(windowSeconds: number): Promise<void> {
   const windowMs = windowSeconds * 1000;
   const elapsedMs = Date.now() % windowMs;

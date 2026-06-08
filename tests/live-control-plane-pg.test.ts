@@ -500,6 +500,7 @@ async function run(): Promise<void> {
       headers: {
         ...tenantAuth,
         'Content-Type': 'application/json',
+        'Idempotency-Key': 'shared-control-plane-pipeline-run-1',
       },
       body: JSON.stringify({
         candidateSql: COUNTERPARTY_SQL,

@@ -77,6 +77,7 @@ async function run() {
     process.env.ATTESTOR_PG_ALLOWED_SCHEMAS = 'attestor_demo';
     process.env.ATTESTOR_SCHEMA_ATTESTATION_HISTORY_PATH = join(dataDir, 'schema-attestation-history.json');
     process.env.ATTESTOR_SCHEMA_CONTENT_HASH_MAX_ROWS = '1000';
+    process.env.ATTESTOR_PIPELINE_IDEMPOTENCY_ENCRYPTION_KEY = 'live-postgres-pipeline-idempotency';
     resetSchemaAttestationHistoryForTests();
 
     console.log('  [Probe]');
@@ -253,7 +254,10 @@ async function run() {
         await waitForReady(base);
         const pipelineRes = await fetch(`${base}/api/v1/pipeline/run`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'Idempotency-Key': 'live-postgres-schema-attestation-run',
+          },
           body: JSON.stringify({
             intent: { ...COUNTERPARTY_INTENT, allowedSchemas: ['attestor_demo'] },
             candidateSql: getDemoCounterpartySql(),

@@ -184,7 +184,7 @@ function testDescriptorDocsPackageAndDependency(): void {
     readonly devDependencies: Record<string, string>;
     readonly scripts: Record<string, string>;
   };
-  equal(pkg.dependencies['js-yaml'], '^4.1.1', 'Manifest intake package: js-yaml is a direct dependency');
+  equal(pkg.dependencies['js-yaml'], '^4.2.0', 'Manifest intake package: js-yaml is a direct dependency');
   equal(pkg.devDependencies['@types/js-yaml'], '^4.0.9', 'Manifest intake package: js-yaml types are direct dev dependency');
   equal(
     pkg.scripts['test:action-surface-manifest-intake'],

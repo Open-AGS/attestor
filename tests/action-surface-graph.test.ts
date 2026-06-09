@@ -262,6 +262,11 @@ function testDescriptorDocsAndTrackersStayAligned(): void {
   const ledger = readProjectFile('docs', 'research', 'attestor-research-provenance-ledger.md');
   const systemOverview = readProjectFile('docs', '02-architecture', 'system-overview.md');
   const targetMatrix = readProjectFile('docs', '02-architecture', 'target-system-compatibility-matrix.md');
+  const connectionGuide = readProjectFile(
+    'docs',
+    '01-overview',
+    'how-attestor-connects-to-existing-systems.md',
+  );
   const readme = readProjectFile('README.md');
   const packageJson = JSON.parse(readProjectFile('package.json')) as {
     readonly scripts: Readonly<Record<string, string>>;
@@ -320,8 +325,13 @@ function testDescriptorDocsAndTrackersStayAligned(): void {
   );
   includes(
     readme,
-    '[Action surface graph](docs/02-architecture/action-surface-graph.md)',
-    'Action surface graph: README links graph doc',
+    'href="docs/01-overview/how-attestor-connects-to-existing-systems.md"',
+    'Action surface graph: README links first-reader connection guide',
+  );
+  includes(
+    connectionGuide,
+    '[Action surface onboarding packet](../02-architecture/action-surface-onboarding-packet.md)',
+    'Action surface graph: connection guide links the first action-surface entry point',
   );
   assert.equal(
     packageJson.scripts['test:action-surface-graph'],

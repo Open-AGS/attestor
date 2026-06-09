@@ -310,9 +310,9 @@ function testDocsAndPackageSurface(): void {
 
   includes(docs, '# TLA+ Trace Validator Bridge', 'TLA bridge docs: title is present');
   includes(docs, 'attestor.tla-trace-validator-bridge.v1', 'TLA bridge docs: version is present');
-  includes(docs, 'not-tlc-runner', 'TLA bridge docs: TLC runner non-claim is present');
-  includes(docs, 'not-apalache-runner', 'TLA bridge docs: Apalache runner non-claim is present');
-  includes(docs, 'not-formal-proof', 'TLA bridge docs: formal proof non-claim is present');
+  includes(docs, 'does not run TLC, Apalache', 'TLA bridge docs: model-checker runner boundary is present');
+  includes(docs, 'does not prove that TypeScript runtime behavior is formally verified', 'TLA bridge docs: formal proof boundary is present');
+  includes(docs, 'does not activate policy, admit a consequence', 'TLA bridge docs: authority boundary is present');
   includes(overview, 'Progress: 14/14 complete after I13. 0 steps remain.', 'Overview: I09 progress is updated');
   includes(overview, '| I09 | complete | TLA+ Trace Validator Bridge |', 'Overview: I09 is complete');
   includes(overview, 'src/consequence-admission/tla-trace-validator-bridge.ts', 'Overview: I09 source file is tracked');

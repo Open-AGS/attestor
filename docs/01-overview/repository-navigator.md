@@ -66,7 +66,8 @@ code or review public package boundaries.
 | Code ownership, directories, and nearby tests | [Repository map](repository-map.md#code-map) |
 | Public import paths and package boundaries | [Repository map](repository-map.md#package-surface-map) |
 | Hosted runtime reorganization rules | [Service organization plan](../02-architecture/service-organization-plan.md) |
-| Large-file split rules | [Large file budget](../02-architecture/large-file-budget.md) |
+| Large-file split rules | [Large file budget](../02-architecture/large-file-budget.md); run `npm run test:large-file-budget`. |
+| Large-file refactor plan | [Final Large File Refactor Plan](../02-architecture/final-large-file-refactor-plan.md) |
 | Script families and package commands | [Scripts inventory](../02-architecture/scripts-inventory.md) |
 | Test families and gate selection | [Test system map](../02-architecture/test-system-map.md) |
 

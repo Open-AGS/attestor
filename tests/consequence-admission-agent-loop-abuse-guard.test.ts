@@ -269,8 +269,8 @@ function testDocsScriptsAndPackageSurfaceExposeGuard(): void {
   );
   includes(
     readme,
-    'docs/02-architecture/agent-loop-abuse-guard.md',
-    'Agent loop abuse guard: README links architecture doc',
+    'freshness, replay, and evidence',
+    'Agent loop abuse guard: README names replay checks',
   );
   includes(
     doc,

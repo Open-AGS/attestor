@@ -494,8 +494,8 @@ function testDocsAndScriptsExposeRetryAttemptLedger(): void {
 
   includes(
     readme,
-    'docs/02-architecture/retry-attempt-ledger.md',
-    'Retry attempt ledger: README links architecture doc',
+    '[Try Attestor first](docs/01-overview/try-attestor-first.md)',
+    'Retry attempt ledger: README links the first-run guide',
   );
   includes(
     quickstart,

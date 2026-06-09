@@ -28,8 +28,8 @@ function testTrackerIsLinkedFromCurrentTruthSources(): void {
 
   includes(
     readme,
-    'docs/02-architecture/production-rehearsal-buildout.md',
-    'Production rehearsal docs: README links the new tracker',
+    '[Repository navigator](docs/01-overview/repository-navigator.md)',
+    'Production rehearsal docs: README links the repository navigator',
   );
   includes(
     systemOverview,

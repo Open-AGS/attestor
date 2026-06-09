@@ -449,8 +449,8 @@ function testDescriptorDocsAndTrackersStayAligned(): void {
   );
   includes(
     readme,
-    '[Counterexample replay generator](docs/02-architecture/counterexample-replay-generator.md)',
-    'Counterexample replay generator: README links doc',
+    'href="docs/01-overview/how-attestor-connects-to-existing-systems.md"',
+    'Counterexample replay generator: README links the integration overview',
   );
   assert.equal(
     packageJson.scripts['test:counterexample-replay-generator'],

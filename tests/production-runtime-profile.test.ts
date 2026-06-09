@@ -430,7 +430,7 @@ function testDocsAndApiRuntimeAreWired(): void {
   includes(tracker, '| 06 | complete | Wire runtime profile selection through API bootstrap |', 'Runtime docs: Step 06 is complete');
   includes(tracker, '| 07 | complete | Add restart and recovery tests |', 'Runtime docs: Step 07 is complete');
   includes(tracker, '| 08 | complete | Update production docs and readiness gates |', 'Runtime docs: Step 08 is complete');
-  includes(readme, 'production-runtime-hardening-buildout.md', 'Runtime docs: README links hardening tracker');
+  includes(readme, '[Repository navigator](docs/01-overview/repository-navigator.md)', 'Runtime docs: README links the repository navigator');
   includes(productionReadiness, '## Runtime Profile Gate', 'Runtime docs: production readiness guide has a runtime profile gate');
   includes(productionReadiness, 'ATTESTOR_RUNTIME_PROFILE', 'Runtime docs: production readiness guide documents the runtime profile knob');
   includes(productionReadiness, 'If `NODE_ENV=production`, `ATTESTOR_HA_MODE=true`, `ATTESTOR_PUBLIC_HOSTNAME`, or `ATTESTOR_PUBLIC_BASE_URL` is present, startup fails closed unless `ATTESTOR_RUNTIME_PROFILE` is set explicitly.', 'Runtime docs: production-like environments require explicit profile selection');

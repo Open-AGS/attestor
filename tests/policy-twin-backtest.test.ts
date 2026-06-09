@@ -431,8 +431,8 @@ function testDescriptorDocsAndTrackersStayAligned(): void {
   );
   includes(
     readme,
-    '[Policy Twin backtest](docs/02-architecture/policy-twin-backtest.md)',
-    'Policy Twin backtest: README links doc',
+    'href="docs/01-overview/how-attestor-connects-to-existing-systems.md"',
+    'Policy Twin backtest: README links the integration overview',
   );
   assert.equal(
     packageJson.scripts['test:policy-twin-backtest'],

@@ -766,9 +766,9 @@ async function testReleaseEnforcementGateRequiresAdmissionProofBinding(): Promis
 
 function testExampleAndDocs(): void {
   const result = runCustomerAdmissionGateExample();
+  const readme = readProjectFile('README.md');
   const integrationHub = readProjectFile('docs', '01-overview', 'how-to-integrate-attestor.md');
   const doc = readProjectFile('docs', '01-overview', 'customer-admission-gate.md');
-  const tryFirst = readProjectFile('docs', '01-overview', 'try-attestor-first.md');
   const packageJson = JSON.parse(readProjectFile('package.json')) as {
     scripts: Record<string, string>;
   };
@@ -792,7 +792,7 @@ function testExampleAndDocs(): void {
   includes(doc, 'assertConsequenceAdmissionGateAllowsReleaseEnforcement', 'Customer gate doc: includes release-enforcement helper');
   includes(doc, 'sender-constrained, online-checked, replay-consumed', 'Customer gate doc: protected path requires sender constraint, online liveness, and replay consumption');
   includes(doc, 'store the raw release token or sender proof', 'Customer gate doc: release-enforcement path is secret-safe');
-  includes(tryFirst, '[Customer admission gate](customer-admission-gate.md)', 'Try-first doc: links the next integration step');
+  includes(readme, 'then [customer gate](docs/01-overview/customer-admission-gate.md)', 'README: links the next integration step');
 
   equal(packageJson.scripts['example:customer-gate'], 'tsx examples/customer-admission-gate.ts', 'Package: customer gate example script exists');
   equal(packageJson.scripts['test:consequence-admission-customer-gate'], 'tsx tests/consequence-admission-customer-gate.test.ts', 'Package: customer gate test script exists');

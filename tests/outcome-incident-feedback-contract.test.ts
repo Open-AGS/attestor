@@ -469,7 +469,8 @@ function testDocsAndPackageScriptStayAligned(): void {
     'confirmed-incident',
     'postmortem',
     'automaticPolicyMutationAllowed = false',
-    'NIST SP 800-61 or NIST AI RMF conformance',
+    'claiming NIST conformance',
+    'automaticPolicyMutationAllowed = false',
   ]) {
     includes(doc, expected, `Outcome incident feedback doc: records ${expected}`);
   }

@@ -319,8 +319,8 @@ function testDescriptorDocsAndPackageSurface(): void {
   );
   includes(
     readme,
-    'hosted onboarding workflow contract',
-    'README: hosted onboarding workflow contract is named',
+    'href="docs/01-overview/how-attestor-connects-to-existing-systems.md"',
+    'README: existing-systems overview is linked',
   );
   equal(
     pkg.scripts['test:policy-foundry-hosted-onboarding-workflow'],

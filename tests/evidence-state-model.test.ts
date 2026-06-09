@@ -316,6 +316,11 @@ function testDescriptorDocsAndTrackersStayAligned(): void {
   const systemOverview = readProjectFile('docs', '02-architecture', 'system-overview.md');
   const actionGraphDoc = readProjectFile('docs', '02-architecture', 'action-surface-graph.md');
   const shadowEventDoc = readProjectFile('docs', '02-architecture', 'shadow-event-canonical-schema.md');
+  const connectionGuide = readProjectFile(
+    'docs',
+    '01-overview',
+    'how-attestor-connects-to-existing-systems.md',
+  );
   const readme = readProjectFile('README.md');
   const packageJson = JSON.parse(readProjectFile('package.json')) as {
     readonly scripts: Readonly<Record<string, string>>;
@@ -382,8 +387,13 @@ function testDescriptorDocsAndTrackersStayAligned(): void {
   );
   includes(
     readme,
-    '[Evidence state model](docs/02-architecture/evidence-state-model.md)',
-    'Evidence state model: README links doc',
+    'href="docs/01-overview/how-attestor-connects-to-existing-systems.md"',
+    'Evidence state model: README links first-reader connection guide',
+  );
+  includes(
+    connectionGuide,
+    '[Action surface onboarding packet](../02-architecture/action-surface-onboarding-packet.md)',
+    'Evidence state model: connection guide links action-surface entry point',
   );
   assert.equal(
     packageJson.scripts['test:evidence-state-model'],

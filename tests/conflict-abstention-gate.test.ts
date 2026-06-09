@@ -461,7 +461,8 @@ function testDocsOverviewAndPackageScriptStayAligned(): void {
     'NIST AI RMF',
     'Conformal prediction with reject option',
     'Google SRE monitoring',
-    'calibrated probability or conformal validity',
+    'not model calibration',
+    'does not implement conformal',
   ]) {
     includes(contractDoc, expected, `Conflict gate docs: records ${expected}`);
   }

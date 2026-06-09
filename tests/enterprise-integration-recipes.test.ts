@@ -235,8 +235,8 @@ function testDescriptorDocsAndTrackersStayAligned(): void {
   );
   includes(
     readme,
-    '[Enterprise integration recipes](docs/02-architecture/enterprise-integration-recipes.md)',
-    'Enterprise recipes: README links doc',
+    'href="docs/01-overview/how-attestor-connects-to-existing-systems.md"',
+    'Enterprise recipes: README links the integration overview',
   );
   includes(
     customerRecipes,

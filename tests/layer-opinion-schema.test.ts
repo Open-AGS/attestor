@@ -265,7 +265,9 @@ function testDocsOverviewAndPackageScriptStayAligned(): void {
     'NASA runtime assurance',
     'Conformal prediction',
     'NIST AI RMF',
-    'that any advisory layer is implemented',
+    'advisory intelligence layers',
+    'cannot decide that an',
+    'advisory-only',
   ]) {
     includes(contractDoc, expected, `LayerOpinion docs: records ${expected}`);
   }

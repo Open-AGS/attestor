@@ -104,7 +104,11 @@ function testRendererDocsAndScripts(): void {
     'Onboarding render: package test is exposed',
   );
   includes(doc, 'render:action-surface-onboarding-packet', 'Onboarding render: architecture doc names renderer');
-  includes(readme, 'npm run render:action-surface-onboarding-packet', 'Onboarding render: README includes command');
+  includes(
+    readme,
+    'href="docs/01-overview/how-attestor-connects-to-existing-systems.md"',
+    'Onboarding render: README links the existing-systems overview',
+  );
 }
 
 try {

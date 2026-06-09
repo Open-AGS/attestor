@@ -144,6 +144,7 @@ function testDataMinimization(): void {
 function testDescriptorDocsAndScriptsStayAligned(): void {
   const descriptor = goldenProgrammableMoneyPolicyFoundryProjectionDescriptor();
   const doc = readProjectFile('docs', '02-architecture', 'golden-programmable-money-shadow-pilot.md');
+  const demoGuide = readProjectFile('docs', '01-overview', 'demo-guide.md');
   const ledger = readProjectFile('docs', 'research', 'attestor-research-provenance-ledger.md');
   const readme = readProjectFile('README.md');
   const packageJson = JSON.parse(readProjectFile('package.json')) as {
@@ -174,8 +175,13 @@ function testDescriptorDocsAndScriptsStayAligned(): void {
   );
   includes(
     readme,
+    '[Golden Path: Programmable Money](docs/02-architecture/golden-programmable-money-shadow-pilot.md)',
+    'P02 README: links the programmable-money golden path',
+  );
+  includes(
+    demoGuide,
     '`npm run demo:golden-programmable-money`',
-    'P02 README: names the programmable-money demo command',
+    'P02 demo guide: names the programmable-money demo command',
   );
   equal(
     packageJson.scripts['test:golden-programmable-money-policy-foundry-projection'],

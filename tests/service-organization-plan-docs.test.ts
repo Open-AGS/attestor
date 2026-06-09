@@ -162,9 +162,9 @@ function testPlanLinksResolveAndNavigationSurfaces(): void {
     'Service organization plan: repository navigator links the plan',
   );
   includes(
-    navigator,
+    doc,
     'npm run test:service-organization-plan-docs',
-    'Service organization plan: repository navigator names the docs guard',
+    'Service organization plan: plan names the docs guard',
   );
 }
 

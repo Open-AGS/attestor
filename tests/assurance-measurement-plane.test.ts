@@ -620,7 +620,8 @@ function testDocsAndPackageScriptStayAligned(): void {
     'fallsOpen: false',
     'measurement-degraded',
     'NIST AI RMF conformance',
-    'calibrated anomaly detection',
+    'not a calibrated statistical',
+    'not a production anomaly detection claim',
   ]) {
     includes(docs, expected, `Assurance measurement docs: records ${expected}`);
   }

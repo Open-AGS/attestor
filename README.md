@@ -90,7 +90,7 @@ The same gate can sit before these operation classes:
 | Authority Change | grants, revocations, unlocks, approvals, delegations |
 | External Communication | customer-facing, legal, billing, support, public messages |
 | Operational Execution | deploys, secret rotations, infrastructure changes, incidents |
-| Programmable Money | wallet calls, Safe transactions, account-abstraction flows, settlement intents |
+| Programmable Money | [Golden Path: Programmable Money](docs/02-architecture/golden-programmable-money-shadow-pilot.md): wallet calls, Safe transactions, account-abstraction flows, settlement intents |
 
 ## Current State
 
@@ -123,3 +123,7 @@ If you are new, follow this order: [local run](docs/01-overview/try-attestor-fir
 - [Repository navigator](docs/01-overview/repository-navigator.md) - find deeper docs for hosted, pricing, support, proof, or maintainer work.
 
 Use boundaries: [License and use](docs/01-overview/license-and-use.md) and [Security Policy](SECURITY.md).
+
+Reference: [Glossary](docs/02-architecture/glossary.md).
+
+Maintainer tracker: [Attestor unlock source of truth](docs/02-architecture/attestor-unlock-source-of-truth.md).

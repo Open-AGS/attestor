@@ -361,9 +361,9 @@ function testDocsAndPackageSurface(): void {
     'Eliminative Argumentation',
     'Assurance 2.0',
     'GSN render view',
-    'not-live-enforcement',
-    'not-sacm-conformance-claim',
-    'not-learning-system',
+    'not a runtime engine',
+    'SACM 2.3-aligned, not a SACM certification',
+    'does not replace deterministic Attestor gates',
   ]) {
     includes(docs, expected, `Assurance case docs: records ${expected}`);
   }

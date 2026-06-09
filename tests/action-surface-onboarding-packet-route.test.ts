@@ -402,8 +402,8 @@ function testDocsAndScriptsExposeHostedRoute(): void {
   );
   includes(
     readme,
-    'POST /api/v1/shadow/action-surface/onboarding-packet',
-    'Hosted onboarding route: README names route',
+    'href="docs/01-overview/how-attestor-connects-to-existing-systems.md"',
+    'Hosted onboarding route: README links the existing-systems overview',
   );
   includes(
     matrixTest,

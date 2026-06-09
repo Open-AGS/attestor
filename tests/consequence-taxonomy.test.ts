@@ -134,8 +134,8 @@ function testDocsAndScriptsExposeTheTaxonomy(): void {
 
   includes(
     readme,
-    'docs/02-architecture/consequence-taxonomy.md',
-    'Consequence taxonomy: README links the architecture taxonomy',
+    '## The Same Pattern Across Operations',
+    'Consequence taxonomy: README exposes the operation-class overview',
   );
   includes(
     taxonomy,

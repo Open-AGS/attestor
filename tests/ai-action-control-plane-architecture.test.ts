@@ -41,8 +41,8 @@ function testArchitectureDecisionIsExplicitAndBounded(): void {
   );
   includes(
     doc,
-    'This document does not claim Attestor is production-ready.',
-    'AI action control-plane docs: production-readiness non-claim is explicit',
+    'not a production-readiness claim',
+    'AI action control-plane docs: production-readiness boundary is explicit',
   );
 }
 

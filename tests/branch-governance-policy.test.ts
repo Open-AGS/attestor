@@ -33,7 +33,7 @@ includes(workflow, 'pull_request:', 'Branch workflow: runs on pull requests touc
 includes(workflow, 'push:', 'Branch workflow: runs on master pushes touching governance files');
 includes(workflow, "'.github/**'", 'Branch workflow: watches GitHub governance files');
 includes(workflow, "'SECURITY.md'", 'Branch workflow: watches SECURITY.md');
-includes(workflow, 'actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6', 'Branch workflow: checkout action is SHA-pinned');
+includes(workflow, 'actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6', 'Branch workflow: checkout action is SHA-pinned');
 includes(workflow, 'node scripts/check/check-stale-branches.mjs --require-master-only', 'Branch workflow: stale branch checker runs in master-only mode');
 includes(workflow, 'ATTESTOR_BRANCH_GOVERNANCE_TOKEN', 'Branch workflow: live governance probes require a dedicated admin-read token secret');
 includes(workflow, 'GitHub Administration: read permission', 'Branch workflow: token permission boundary is explicit');

@@ -134,7 +134,6 @@ function testDemoIsReachableFromDocsAndScripts(): void {
   };
   const readme = readProjectFile('README.md');
   const quickstart = readProjectFile('docs', '01-overview', 'consequence-admission-quickstart.md');
-  const tryFirst = readProjectFile('docs', '01-overview', 'try-attestor-first.md');
   const doc = readProjectFile('docs', '01-overview', 'agent-retry-wrapper-demo.md');
 
   equal(
@@ -149,7 +148,7 @@ function testDemoIsReachableFromDocsAndScripts(): void {
   );
   includes(readme, '[Try Attestor first](docs/01-overview/try-attestor-first.md)', 'Agent retry wrapper: README links first-run guide');
   includes(quickstart, 'agent retry wrapper demo', 'Agent retry wrapper: quickstart links demo');
-  includes(tryFirst, '[Agent retry wrapper demo](agent-retry-wrapper-demo.md)', 'Agent retry wrapper: try-first links demo');
+  includes(quickstart, 'npm run example:agent-retry-wrapper', 'Agent retry wrapper: quickstart names demo command');
   includes(doc, 'npm run example:agent-retry-wrapper', 'Agent retry wrapper: doc includes command');
   includes(
     doc,

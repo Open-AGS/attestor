@@ -282,8 +282,8 @@ function testDescriptorDocsAndPackageSurface(): void {
   );
   includes(
     readme,
-    'docs/02-architecture/dashboard-api-summary.md',
-    'Dashboard API summary: README links architecture doc',
+    'href="docs/01-overview/how-attestor-connects-to-existing-systems.md"',
+    'Dashboard API summary: README links the existing-systems overview',
   );
   includes(
     doc,

@@ -461,8 +461,8 @@ function testDescriptorDocsAndTrackersStayAligned(): void {
   );
   includes(
     readme,
-    '[Review-by-exception inbox](docs/02-architecture/review-by-exception-inbox.md)',
-    'Review inbox: README links doc',
+    'href="docs/01-overview/how-attestor-connects-to-existing-systems.md"',
+    'Review inbox: README links the integration overview',
   );
   assert.equal(
     packageJson.scripts['test:review-by-exception-inbox'],

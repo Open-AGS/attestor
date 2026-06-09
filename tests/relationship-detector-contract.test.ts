@@ -377,7 +377,8 @@ function testDocsOverviewPackageAndProbeStayAligned(): void {
     'NASA Runtime Assurance',
     'not learned inference',
     'not fusion',
-    'not packet signing',
+    'sign packets',
+    'It only emits relationship structure',
     'never grants authority',
   ]) {
     includes(doc, expected, `Relationship detector doc: records ${expected}`);

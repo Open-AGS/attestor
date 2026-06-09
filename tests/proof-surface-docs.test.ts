@@ -23,26 +23,32 @@ function excludes(content: string, unexpected: RegExp, message: string): void {
 
 function testProofSurfaceIsFindableFromReadme(): void {
   const readme = readProjectFile('README.md');
+  const proofModel = readProjectFile('docs', '05-proof', 'proof-model.md');
 
   includes(
     readme,
-    'docs/02-architecture/proof-console-buildout.md',
-    'Proof surface docs: README links the proof surface tracker',
+    '[Repository navigator](docs/01-overview/repository-navigator.md)',
+    'Proof surface docs: README links the repository navigator',
   );
   includes(
-    readme,
+    proofModel,
     'npm run proof:surface',
-    'Proof surface docs: README names the local proof-surface command',
+    'Proof surface docs: proof model names the local proof-surface command',
   );
   includes(
-    readme,
+    proofModel,
     '.attestor/proof-surface/latest/manifest.json',
-    'Proof surface docs: README points evaluators at the local manifest',
+    'Proof surface docs: proof model points evaluators at the local manifest',
   );
   includes(
-    readme,
-    'It is a local static proof surface. It does not start a hosted console or claim a public hosted crypto route.',
-    'Proof surface docs: README keeps the proof surface local and avoids hosted-route claims',
+    proofModel,
+    'It is a local static proof surface.',
+    'Proof surface docs: proof model keeps the proof surface local and avoids hosted-route claims',
+  );
+  includes(
+    proofModel,
+    'It does not start a hosted console or claim',
+    'Proof surface docs: proof model avoids hosted-route claims',
   );
 }
 

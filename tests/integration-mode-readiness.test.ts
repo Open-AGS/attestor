@@ -208,7 +208,11 @@ function testDescriptorAndDocs(): void {
   includes(doc, 'agent-held-static-secret', 'Integration readiness doc: credential exposure is documented');
 
   const readme = readProjectFile('README.md');
-  includes(readme, '[Integration mode readiness](docs/02-architecture/integration-mode-readiness.md)', 'README links integration mode readiness');
+  includes(
+    readme,
+    'href="docs/01-overview/how-attestor-connects-to-existing-systems.md"',
+    'README links the integration overview',
+  );
   excludes(readme, /production-ready because of integration mode readiness/iu, 'README does not overclaim production readiness');
 
   const pkg = JSON.parse(readProjectFile('package.json')) as {

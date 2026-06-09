@@ -190,6 +190,7 @@ async function issueHttpSignatureBoundToken(input: {
   readonly targetId?: string;
   readonly consequenceType?: 'decision-support' | 'action' | 'communication';
   readonly riskClass?: 'R1' | 'R3';
+  readonly tenantId?: string;
   readonly bindToSignatureKey?: boolean;
 }): Promise<{
   readonly issued: IssuedReleaseToken;
@@ -207,6 +208,7 @@ async function issueHttpSignatureBoundToken(input: {
     decision,
     issuedAt: '2026-04-18T13:00:00.000Z',
     tokenId: input.tokenId,
+    tenantId: input.tenantId ?? 'tenant-test',
     confirmation:
       input.bindToSignatureKey === false
         ? undefined

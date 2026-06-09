@@ -304,8 +304,8 @@ function testDescriptorDocsAndPackageSurface(): void {
   );
   includes(
     readme,
-    'docs/02-architecture/audit-evidence-export.md',
-    'Audit evidence export: README links architecture doc',
+    'The trail records what was proposed',
+    'Audit evidence export: README describes the decision trail',
   );
   includes(
     doc,

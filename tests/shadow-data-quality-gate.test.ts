@@ -361,8 +361,8 @@ function testDocsPackageAndOverview(): void {
     'Great Expectations',
     'Deequ',
     'undermining defeater',
-    'not-admission-decision',
-    'not-data-quality-platform',
+    'not an admission decision',
+    'not a data-quality',
   ]) {
     includes(docs, expected, `Shadow data quality docs: records ${expected}`);
   }

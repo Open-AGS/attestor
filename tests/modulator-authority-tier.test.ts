@@ -211,7 +211,9 @@ function testDocsOverviewAndPackageScriptStayAligned(): void {
     'NASA runtime assurance',
     'NIST AI RMF',
     'Google SRE',
-    'that modulator evaluation is implemented',
+    'This is a types-only shape for context',
+    'It does not decide whether an action can run',
+    'These dimensions are inputs to later fabric/fusion work',
   ]) {
     includes(contractDoc, expected, `Modulator authority docs: records ${expected}`);
   }

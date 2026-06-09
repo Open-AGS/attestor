@@ -306,8 +306,8 @@ function testDocsAndScriptsExposeAdapterFramework(): void {
 
   includes(
     readme,
-    'docs/02-architecture/adapter-framework.md',
-    'Adapter framework: README links adapter framework doc',
+    '[How to integrate Attestor](docs/01-overview/how-to-integrate-attestor.md)',
+    'Adapter framework: README links the integration guide',
   );
   includes(
     adapterDoc,

@@ -370,8 +370,8 @@ function testDocsAndPackageExposePolicyLimitModel(): void {
 
   includes(
     readme,
-    'docs/02-architecture/policy-limit-model.md',
-    'Policy limits: README links policy limit model',
+    'It checks policy, approval, evidence, allowed scope',
+    'Policy limits: README names policy and scope checks',
   );
   includes(
     policyDoc,

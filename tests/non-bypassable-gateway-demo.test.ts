@@ -103,7 +103,7 @@ function testDemoIsReachableFromDocsAndScripts(): void {
   );
   includes(readme, '[Try Attestor first](docs/01-overview/try-attestor-first.md)', 'Non-bypassable demo: README links first-run guide');
   includes(quickstart, 'non-bypassable gateway demo', 'Non-bypassable demo: quickstart links demo');
-  includes(tryFirst, '[Non-bypassable gateway demo](non-bypassable-gateway-demo.md)', 'Non-bypassable demo: try-first links demo');
+  includes(tryFirst, '`npm run example:non-bypassable-gateway`', 'Non-bypassable demo: try-first names demo command');
   includes(doc, 'npm run example:non-bypassable-gateway', 'Non-bypassable demo: doc includes command');
   includes(doc, 'No verifier allow, no downstream consequence.', 'Non-bypassable demo: doc carries core rule');
 }

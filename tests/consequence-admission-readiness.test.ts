@@ -68,10 +68,10 @@ function testDocsPointToOneAdmissionStory(): void {
   includes(readme, 'docs/01-overview/how-to-integrate-attestor.md', 'Admission readiness: README sends admission detail through the integration hub');
   excludes(readme, /docs\/01-overview\/consequence-admission-quickstart\.md/u, 'Admission readiness: README keeps quickstart behind deeper docs');
   includes(docsFrontDoor, '01-overview/consequence-admission-quickstart.md', 'Admission readiness: docs front door links quickstart');
-  includes(docsFrontDoor, '01-overview/hosted-first-api-call.md', 'Admission readiness: docs front door links first hosted call');
+  includes(docsFrontDoor, '01-overview/repository-navigator.md', 'Admission readiness: docs front door links the repository navigator');
   includes(integrationHub, '[Consequence admission quickstart](consequence-admission-quickstart.md)', 'Admission readiness: integration hub links quickstart');
   includes(integrationHub, '[First hosted API call](hosted-first-api-call.md)', 'Admission readiness: integration hub links first hosted call');
-  includes(integrationHub, '[Commercial packaging, pricing, and evaluation](product-packaging.md)', 'Admission readiness: integration hub links hosted packaging boundary');
+  includes(integrationHub, '[Repository navigator](repository-navigator.md)', 'Admission readiness: integration hub links hosted packaging boundary through the navigator');
 
   includes(operatingModel, 'Consequence admission quickstart](consequence-admission-quickstart.md)', 'Admission readiness: operating model links quickstart');
   includes(operatingModel, 'The first customer-facing facade is exported through `attestor/consequence-admission`.', 'Admission readiness: operating model names facade package');

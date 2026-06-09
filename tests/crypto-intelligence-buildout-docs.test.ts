@@ -28,8 +28,8 @@ function testTrackerIsLinkedFromCurrentTruthSources(): void {
 
   includes(
     readme,
-    'docs/02-architecture/crypto-intelligence-buildout.md',
-    'Crypto intelligence docs: README links the tracker',
+    '[Repository navigator](docs/01-overview/repository-navigator.md)',
+    'Crypto intelligence docs: README links the repository navigator',
   );
   includes(
     systemOverview,

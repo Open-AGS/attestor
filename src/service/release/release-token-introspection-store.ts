@@ -1,5 +1,7 @@
 import {
+  canonicalizeReleaseJson,
   introspection,
+  type CanonicalReleaseJsonValue,
   type RegisteredReleaseToken,
   type RegisterIssuedReleaseTokenInput,
   type RecordedReleaseTokenUseResult,
@@ -7,10 +9,6 @@ import {
   type ReleaseTokenInactiveReason,
   type RevokeReleaseTokenInput,
 } from '../../release-layer/index.js';
-import {
-  canonicalizeReleaseJson,
-  type CanonicalReleaseJsonValue,
-} from '../../release-kernel/release-canonicalization.js';
 import {
   RELEASE_AUTHORITY_SCHEMA,
   ensureReleaseAuthorityStore,

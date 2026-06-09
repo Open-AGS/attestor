@@ -494,7 +494,8 @@ function testDocsOverviewAndPackageScriptStayAligned(): void {
     'NRC fault tree analysis',
     'NASA FMEA',
     'Google SRE monitoring',
-    'that review or block decisions are made here',
+    'computes caution pressure',
+    '`block-pressure` is not a block decision',
   ]) {
     includes(contractDoc, expected, `Monotone fusion docs: records ${expected}`);
   }

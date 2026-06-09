@@ -230,6 +230,7 @@ async function issueAsyncEnvelopeBoundToken(input: {
   readonly targetId?: string;
   readonly consequenceType?: 'action' | 'record' | 'communication';
   readonly riskClass?: 'R1' | 'R3';
+  readonly tenantId?: string;
   readonly bindToEnvelopeKey?: boolean;
 }): Promise<{
   readonly issued: IssuedReleaseToken;
@@ -247,6 +248,7 @@ async function issueAsyncEnvelopeBoundToken(input: {
     decision,
     issuedAt: '2026-04-18T14:00:00.000Z',
     tokenId: input.tokenId,
+    tenantId: input.tenantId ?? 'tenant-test',
     confirmation:
       input.bindToEnvelopeKey === false
         ? undefined

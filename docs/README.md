@@ -14,6 +14,7 @@ understand -> try -> observe -> integrate -> explain -> verify -> maintain
 | If you want to... | Read this |
 |---|---|
 | Understand the product in one minute | [Repository README](../README.md) |
+| See concrete work it can control | [What you can do with Attestor](01-overview/what-you-can-do.md) |
 | Run the concrete refund workflow | [Try Attestor first](01-overview/try-attestor-first.md) |
 | Observe one real action path | [Run Attestor in shadow pilot mode](01-overview/shadow-event-payload-examples.md) |
 | See how existing systems connect | [How Attestor connects to existing systems](01-overview/how-attestor-connects-to-existing-systems.md) |
@@ -56,6 +57,17 @@ It is the integration hub. Then follow only the page that matches your next step
 Hosted account, pricing, and support pages stay behind the
 [Repository navigator](01-overview/repository-navigator.md). They are not the
 first-reader path.
+
+## Hosted And Commercial
+
+Use these when evaluating hosted delivery, pricing, support, or operating
+responsibilities:
+
+- [Commercial packaging, pricing, and evaluation](01-overview/product-packaging.md)
+- [Pricing ROI calculator](01-overview/pricing-roi-calculator.md)
+- [Hosted customer journey](01-overview/hosted-customer-journey.md)
+- [Hosted action authorization API](01-overview/hosted-action-authorization-api.md)
+- [Operating model](01-overview/operating-model.md)
 
 ## Explain Decisions
 

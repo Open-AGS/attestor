@@ -506,6 +506,7 @@ function testExistingDescriptorsBindToPolicyVersion(): void {
 
 function testDocsAndScriptsExposePolicy(): void {
   const readme = readProjectFile('README.md');
+  const securityDataHandling = readProjectFile('docs', '01-overview', 'security-and-data-handling.md');
   const doc = readProjectFile('docs', '02-architecture', 'data-minimization-redaction-policy.md');
   const systemOverview = readProjectFile('docs', '02-architecture', 'system-overview.md');
   const packageJson = JSON.parse(readProjectFile('package.json')) as {
@@ -514,13 +515,13 @@ function testDocsAndScriptsExposePolicy(): void {
 
   includes(
     readme,
-    'docs/02-architecture/data-minimization-redaction-policy.md',
-    'Data minimization policy: README links architecture doc',
+    '[Security and data handling](docs/01-overview/security-and-data-handling.md)',
+    'Data minimization policy: README links security and data handling',
   );
   includes(
-    readme,
-    'raw prompts, raw tool payloads, raw customer identifiers',
-    'Data minimization policy: README names forbidden raw classes',
+    securityDataHandling,
+    'raw prompts, raw tool payloads, raw customer',
+    'Data minimization policy: security page names forbidden raw classes',
   );
   includes(
     doc,

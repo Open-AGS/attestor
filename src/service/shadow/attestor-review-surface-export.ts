@@ -8,7 +8,7 @@ import {
 import {
   canonicalizeReleaseJson,
   type CanonicalReleaseJsonValue,
-} from '../../release-kernel/release-canonicalization.js';
+} from '../../release-layer/index.js';
 
 export const ATTESTOR_REVIEW_SURFACE_EXPORT_VERSION =
   'attestor.review-surface-export.v1';

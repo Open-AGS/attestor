@@ -339,8 +339,8 @@ function testDescriptorDocsAndTrackersStayAligned(): void {
   );
   includes(
     readme,
-    '[Active Question Engine](docs/02-architecture/active-question-engine.md)',
-    'Active question engine: README links doc',
+    'href="docs/01-overview/how-attestor-connects-to-existing-systems.md"',
+    'Active question engine: README links first-reader connection guide',
   );
   assert.equal(
     packageJson.scripts['test:active-question-engine'],

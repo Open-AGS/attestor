@@ -228,8 +228,8 @@ function testHostedUiFlowDescriptorDocsAndScript(): void {
   );
   includes(
     readme,
-    'hosted UI flow',
-    'README: hosted UI flow is named',
+    'href="docs/01-overview/how-attestor-connects-to-existing-systems.md"',
+    'README: existing-systems overview is linked',
   );
   equal(
     pkg.scripts['test:policy-foundry-hosted-ui-flow'],

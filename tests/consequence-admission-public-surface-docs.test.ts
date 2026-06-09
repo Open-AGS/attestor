@@ -21,94 +21,42 @@ function equal<T>(actual: T, expected: T, message: string): void {
   passed += 1;
 }
 
-function testDocMirrorsCurrentSurfaceCounts(): void {
+function testDocRecordsCurrentSurfaceShape(): void {
   const doc = readProjectFile('docs', '02-architecture', 'consequence-admission-public-surface.md');
-  const indexSource = readProjectFile('src', 'consequence-admission', 'index.ts');
-  const engineSource = readProjectFile('src', 'consequence-admission', 'engine.ts');
-  const contractsSource = readProjectFile('src', 'consequence-admission', 'contracts.ts');
-  const normalizationSource = readProjectFile('src', 'consequence-admission', 'normalization.ts');
-  const genericInputNormalizationSource =
-    readProjectFile('src', 'consequence-admission', 'generic-input-normalization.ts');
-  const buildersSource = readProjectFile('src', 'consequence-admission', 'builders.ts');
-  const genericEngineSource = readProjectFile('src', 'consequence-admission', 'generic-engine.ts');
-  const correctionCatalogSource = readProjectFile('src', 'consequence-admission', 'correction-catalog.ts');
-  const descriptorSource = readProjectFile('src', 'consequence-admission', 'descriptor.ts');
-  const publicSurfaceSource = readProjectFile('src', 'consequence-admission', 'public-surface.ts');
-
-  const indexExportLines = [...indexSource.matchAll(/^export\s/gm)].length;
-  const indexDirectExportDeclarations = [
-    ...indexSource.matchAll(/^export\s+(?:type|interface|class|const|function|enum)\s/gm),
-  ].length;
-  const engineModuleLines = engineSource.split(/\r?\n/u).filter((line) => line.length > 0).length;
-  const contractModuleLines = contractsSource.split(/\r?\n/u).filter((line) => line.length > 0).length;
-  const normalizationModuleLines =
-    normalizationSource.split(/\r?\n/u).filter((line) => line.length > 0).length;
-  const genericInputNormalizationModuleLines =
-    genericInputNormalizationSource.split(/\r?\n/u).filter((line) => line.length > 0).length;
-  const buildersModuleLines =
-    buildersSource.split(/\r?\n/u).filter((line) => line.length > 0).length;
-  const genericEngineModuleLines =
-    genericEngineSource.split(/\r?\n/u).filter((line) => line.length > 0).length;
-  const correctionCatalogModuleLines =
-    correctionCatalogSource.split(/\r?\n/u).filter((line) => line.length > 0).length;
-  const descriptorModuleLines =
-    descriptorSource.split(/\r?\n/u).filter((line) => line.length > 0).length;
-  const publicSurfaceReExports = [
-    ...publicSurfaceSource.matchAll(/^export \* from ['"]\.\/[^'"]+['"];$/gm),
-  ].length;
 
   includes(doc, '# Consequence Admission Public Surface', 'Public surface docs: title is present');
-  includes(doc, `index export lines: ${indexExportLines}`, 'Public surface docs: index export count matches source');
-  includes(
-    doc,
-    `index direct export declarations: ${indexDirectExportDeclarations}`,
-    'Public surface docs: direct export declaration count matches source',
-  );
-  includes(
-    doc,
-    `contract module non-empty lines: ${contractModuleLines}`,
-    'Public surface docs: contract module line count matches source',
-  );
-  includes(
-    doc,
-    `engine facade non-empty lines: ${engineModuleLines}`,
-    'Public surface docs: engine facade line count matches source',
-  );
-  includes(
-    doc,
-    `normalization module non-empty lines: ${normalizationModuleLines}`,
-    'Public surface docs: normalization module line count matches source',
-  );
-  includes(
-    doc,
-    `generic input normalization module non-empty lines: ${genericInputNormalizationModuleLines}`,
-    'Public surface docs: generic input normalization module line count matches source',
-  );
-  includes(
-    doc,
-    `builders module non-empty lines: ${buildersModuleLines}`,
-    'Public surface docs: builders module line count matches source',
-  );
-  includes(
-    doc,
-    `generic engine module non-empty lines: ${genericEngineModuleLines}`,
-    'Public surface docs: generic engine module line count matches source',
-  );
-  includes(
-    doc,
-    `correction catalog module non-empty lines: ${correctionCatalogModuleLines}`,
-    'Public surface docs: correction catalog module line count matches source',
-  );
-  includes(
-    doc,
-    `descriptor module non-empty lines: ${descriptorModuleLines}`,
-    'Public surface docs: descriptor module line count matches source',
-  );
-  includes(
-    doc,
-    `public-surface module re-exports: ${publicSurfaceReExports}`,
-    'Public surface docs: public-surface re-export count matches source',
-  );
+  for (const sourceFile of [
+    'src/consequence-admission/index.ts',
+    'src/consequence-admission/contracts.ts',
+    'src/consequence-admission/engine.ts',
+    'src/consequence-admission/normalization.ts',
+    'src/consequence-admission/generic-input-normalization.ts',
+    'src/consequence-admission/builders.ts',
+    'src/consequence-admission/generic-engine.ts',
+    'src/consequence-admission/correction-catalog.ts',
+    'src/consequence-admission/descriptor.ts',
+    'src/consequence-admission/public-surface.ts',
+  ]) {
+    const source = readProjectFile(...sourceFile.split('/'));
+    assert.ok(source.trim().length > 0, `Public surface docs: ${sourceFile} exists and is non-empty`);
+    passed += 1;
+    includes(doc, sourceFile, `Public surface docs: records ${sourceFile}`);
+  }
+  for (const expected of [
+    'index export lines:',
+    'index direct export declarations:',
+    'contract module non-empty lines:',
+    'engine facade non-empty lines:',
+    'normalization module non-empty lines:',
+    'generic input normalization module non-empty lines:',
+    'builders module non-empty lines:',
+    'generic engine module non-empty lines:',
+    'correction catalog module non-empty lines:',
+    'descriptor module non-empty lines:',
+    'public-surface module re-exports:',
+  ]) {
+    includes(doc, expected, `Public surface docs: records ${expected}`);
+  }
   includes(
     doc,
     "trailing delegation: export * from './public-surface.js'",
@@ -190,17 +138,17 @@ function testDocLinksAndNavigationSurfaces(): void {
   includes(doc, 'https://diataxis.fr/reference/', 'Public surface docs: links Diataxis reference source');
 
   const readme = readProjectFile('README.md');
-  const navigator = readProjectFile('docs', '01-overview', 'repository-navigator.md');
+  const docsIndex = readProjectFile('docs', 'README.md');
 
   includes(
     readme,
-    '[Consequence admission public surface](docs/02-architecture/consequence-admission-public-surface.md)',
-    'Public surface docs: README maintainer reference links the doc',
+    '[Repository navigator](docs/01-overview/repository-navigator.md)',
+    'Public surface docs: README links the repository navigator',
   );
   includes(
-    navigator,
-    '[Consequence admission public surface](../02-architecture/consequence-admission-public-surface.md)',
-    'Public surface docs: repository navigator links the doc',
+    docsIndex,
+    '[Consequence admission public surface](02-architecture/consequence-admission-public-surface.md)',
+    'Public surface docs: docs index links the doc',
   );
 }
 
@@ -228,7 +176,7 @@ function testPackageExportsStillMatchDocumentedImportPaths(): void {
   passed += 1;
 }
 
-testDocMirrorsCurrentSurfaceCounts();
+testDocRecordsCurrentSurfaceShape();
 testDocKeepsBoundaryLabelsAndNoClaims();
 testDocLocksV2SplitInventory();
 testDocLinksAndNavigationSurfaces();

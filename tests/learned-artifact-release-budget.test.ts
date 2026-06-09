@@ -284,9 +284,9 @@ function testDocsPackageAndOverview(): void {
     'OpenDP',
     'Census reconstruction',
     'undermining defeater',
-    'not-differential-privacy-engine',
-    'not-dp-guarantee',
-    'not-cross-tenant-aggregation',
+    'not a differential privacy engine',
+    'not a DP guarantee',
+    'not cross-tenant aggregation',
   ]) {
     includes(docs, expected, `Learned artifact budget docs: records ${expected}`);
   }

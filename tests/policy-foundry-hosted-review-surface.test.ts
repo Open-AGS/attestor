@@ -332,8 +332,8 @@ function testDescriptorDocsAndPackageSurface(): void {
   );
   includes(
     readme,
-    'hosted review surface',
-    'README: hosted review surface is named',
+    'href="docs/01-overview/how-attestor-connects-to-existing-systems.md"',
+    'README: existing-systems overview is linked',
   );
   equal(
     pkg.scripts['test:policy-foundry-hosted-review-surface'],

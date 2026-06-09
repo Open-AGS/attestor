@@ -290,7 +290,9 @@ function testDocsOverviewAndPackageScriptStayAligned(): void {
     'STPA / STAMP',
     'NRC fault tree work',
     'Pearl causality',
-    'that relationship-aware hazard fusion is implemented',
+    'relationships, and monotone interaction rules',
+    'It records what each signal claims to know',
+    'relationship type and direction',
   ]) {
     includes(contractDoc, expected, `Signal relationship docs: records ${expected}`);
   }

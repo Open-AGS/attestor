@@ -403,8 +403,8 @@ function testDescriptorDocsAndPackageSurface(): void {
   );
   includes(
     readme,
-    'docs/02-architecture/external-review-packet.md',
-    'External review packet: README links architecture doc',
+    '[Security and data handling](docs/01-overview/security-and-data-handling.md)',
+    'External review packet: README links security and data handling',
   );
   includes(
     doc,

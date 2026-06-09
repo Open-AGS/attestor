@@ -140,7 +140,7 @@ function testResponsibilityDirectoryCountsMatchCloseoutMap(): void {
     'policy-foundry': 3,
     release: 10,
     runtime: 2,
-    shadow: 7,
+    shadow: 11,
   };
 
   for (const [directory, expectedCount] of Object.entries(expectedCounts)) {

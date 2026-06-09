@@ -503,8 +503,11 @@ function testDocsAndPackageScriptStayAligned(): void {
     'createSignedAssurancePacketHistoryBinding()',
     'digest-only references',
     'externalImmutabilityClaimed = false',
-    'production signing readiness',
-    'in-toto, DSSE, JWS, JWT, or NIST conformance',
+    'not a live signing service',
+    'productionSigningBoundaryRequired = true',
+    'verifier distribution and production KMS/HSM evidence',
+    'without claiming in-toto or DSSE interoperability',
+    'without converting measurement output into decision authority',
   ]) {
     includes(doc, expected, `Signed assurance packet doc: records ${expected}`);
   }

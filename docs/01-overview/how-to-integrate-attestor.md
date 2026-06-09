@@ -202,7 +202,9 @@ Pick the next page by where you are in the integration:
 | seeing all connection points before choosing one | [How Attestor connects to existing systems](how-attestor-connects-to-existing-systems.md) |
 | observing before enforcement | [Run Attestor in shadow pilot mode](shadow-event-payload-examples.md) |
 | sending a concrete admission request | [Consequence admission quickstart](consequence-admission-quickstart.md) |
+| making the first hosted API call | [First hosted API call](hosted-first-api-call.md) |
 | holding the real service call | [Customer admission gate](customer-admission-gate.md) |
+| choosing where it fits in an app | [Customer integration recipes](customer-integration-recipes.md) |
 | copying framework-shaped gate examples | [Customer middleware examples](../../examples/customer-middleware/README.md) |
 | finding deeper hosted, proof, support, or maintainer docs | [Repository navigator](repository-navigator.md) |
 

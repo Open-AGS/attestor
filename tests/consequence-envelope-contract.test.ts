@@ -227,7 +227,8 @@ function testDocsOverviewAndPackageScriptStayAligned(): void {
     'NASA runtime assurance',
     'NIST AI RMF',
     'Google SRE monitoring',
-    'that the Signal Relationship Fabric is implemented',
+    'typed signal extraction',
+    'relationship activation',
   ]) {
     includes(contractDoc, expected, `Consequence envelope docs: records ${expected}`);
   }

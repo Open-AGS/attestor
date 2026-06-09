@@ -313,7 +313,8 @@ function testDocsOverviewAndPackageScriptStayAligned(): void {
     'NASA Human Systems Integration',
     'Google SRE practical alerting',
     'Microsoft Human-AI Interaction Guidelines',
-    'human-factors certification',
+    'not a human-factors',
+    'not live reviewer capacity',
   ]) {
     includes(contractDoc, expected, `Human comprehension docs: records ${expected}`);
   }

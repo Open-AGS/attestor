@@ -434,9 +434,9 @@ function testDocsPackageOverviewAndProbe(): void {
     'QuickCheck',
     'Delta Debugging',
     'FoundationDB',
-    'not-replay-execution-engine',
-    'not-automatic-claim-rejection',
-    'not-live-enforcement',
+    'not a replay execution engine',
+    'does not reject the claim automatically',
+    'not live',
   ]) {
     includes(docs, expected, `Counterexample minimal witness docs: records ${expected}`);
   }

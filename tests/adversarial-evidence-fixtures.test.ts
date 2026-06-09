@@ -189,8 +189,8 @@ function testDescriptorDocsAndPackageSurfaceStayAligned(): void {
   );
   includes(
     navigator,
-    '[Adversarial evidence fixtures](../02-architecture/adversarial-evidence-fixtures.md)',
-    'Repository navigator links adversarial evidence fixtures',
+    '[Failure modes and controls](../05-proof/failure-modes-and-controls.md)',
+    'Repository navigator links failure-mode controls',
   );
   includes(
     researchIndex,

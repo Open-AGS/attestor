@@ -262,8 +262,8 @@ function testDocsAndScriptsExposeHelper(): void {
 
   includes(
     readme,
-    'docs/02-architecture/verifier-helper.md',
-    'Verifier helper: README links helper doc',
+    'docs/02-architecture/downstream-enforcement-contract.md',
+    'Verifier helper: README links the downstream contract',
   );
   includes(
     helperDoc,

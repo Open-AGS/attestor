@@ -162,8 +162,8 @@ function testTrackersAndIndexesAreUpdated(): void {
   );
   includes(
     readme,
-    '[LLM provider runtime decision](docs/02-architecture/llm-provider-runtime-decision.md)',
-    'Runtime decision: README links the decision doc',
+    'href="docs/01-overview/how-attestor-connects-to-existing-systems.md"',
+    'Runtime decision: README links the integration overview',
   );
   includes(
     ledger,

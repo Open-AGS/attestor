@@ -25,7 +25,7 @@ Check script files under `scripts/check/`: 9.
 
 Probe script files under `scripts/probe/`: 19.
 
-Render script files under `scripts/render/`: 17.
+Render script files under `scripts/render/`: 18.
 
 Demo script files under `scripts/demo/`: 8.
 
@@ -67,7 +67,7 @@ future one-off CLI has a documented reason to sit above the family folders.
 |---|---:|---|---|
 | `scripts/check/check-*` | 9 | You need a local or CI guard over evidence, redaction, findings, baseline alignment, branches, file budgets, or supply-chain posture. | `check-baseline-alignment.mjs`, `check-large-file-budget.mjs`, `check-public-artifacts-redaction.mjs` |
 | `scripts/probe/probe-*` | 19 | You need an opt-in package-surface, live, provider, Stripe, HA, observability, or hosted-flow probe. | `probe-consequence-admission-package-surface.mjs`, `probe-stripe-live-readiness.ts`, `probe-production-hosted-flow.ts` |
-| `scripts/render/render-*` | 17 | You need to render local packets, profiles, credentials templates, proof surfaces, or deployment bundles. | `render-proof-surface.ts`, `render-production-readiness-packet.ts`, `render-ha-profile.ts` |
+| `scripts/render/render-*` | 18 | You need to render local packets, profiles, credentials templates, proof surfaces, or deployment bundles. | `render-proof-surface.ts`, `render-production-readiness-packet.ts`, `render-ha-profile.ts` |
 | `scripts/demo/demo-*` | 8 | You need a runnable local golden path or path-boundary demo. | `demo-golden-refund.ts`, `demo-golden-paths.ts`, `demo-path-boundary.ts` |
 | `scripts/rehearse/*.ts` | 5 | You need a production rehearsal script or rehearsal planner. | `rehearse-production-consequence-behavior.ts`, `plan-production-rehearsal.ts` |
 | `scripts/run/run-*` | 3 | You need a suite runner or live/ops gate runner. | `run-suite.mjs`, `run-live-ops-gate.mjs` |

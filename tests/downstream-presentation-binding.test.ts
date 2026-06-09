@@ -858,7 +858,7 @@ function testReceiptOnlyPresentationStillHoldsAtDownstreamContract(): void {
 
 function testDocsAndScriptsExposePresentationBinding(): void {
   const readme = readProjectFile('README.md');
-  const navigator = readProjectFile('docs', '01-overview', 'repository-navigator.md');
+  const integrationGuide = readProjectFile('docs', '01-overview', 'how-to-integrate-attestor.md');
   const bindingDoc = readProjectFile('docs', '02-architecture', 'downstream-presentation-binding.md');
   const contractDoc = readProjectFile('docs', '02-architecture', 'downstream-enforcement-contract.md');
   const systemOverview = readProjectFile('docs', '02-architecture', 'system-overview.md');
@@ -872,9 +872,9 @@ function testDocsAndScriptsExposePresentationBinding(): void {
     'Presentation binding: README routes deeper proof docs through the navigator',
   );
   includes(
-    navigator,
+    integrationGuide,
     '[Downstream presentation binding](../02-architecture/downstream-presentation-binding.md)',
-    'Presentation binding: repository navigator links presentation binding doc',
+    'Presentation binding: integration guide links presentation binding doc',
   );
   includes(
     bindingDoc,

@@ -270,8 +270,8 @@ function testDescriptorDocsAndPackageSurface(): void {
   );
   includes(
     readme,
-    'docs/02-architecture/business-risk-dashboard.md',
-    'Business risk dashboard: README links architecture doc',
+    'href="docs/01-overview/how-attestor-connects-to-existing-systems.md"',
+    'Business risk dashboard: README links the existing-systems overview',
   );
   includes(
     doc,

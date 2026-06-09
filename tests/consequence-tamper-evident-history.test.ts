@@ -301,8 +301,8 @@ function testDescriptorDocsAndPackageSurface(): void {
   );
   includes(
     readme,
-    'docs/02-architecture/tamper-evident-history.md',
-    'Tamper history: README links architecture doc',
+    'The trail records what was proposed',
+    'Tamper history: README describes the decision trail',
   );
   includes(
     doc,

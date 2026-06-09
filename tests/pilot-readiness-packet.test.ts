@@ -236,9 +236,9 @@ function testDescriptorDocsAndTrackersStayAligned(): void {
     'ready-for-scoped-pilot',
     'not-ready',
     'Minimum shadow observation days',
-    'live customer pilot execution',
+    'The packet does not execute a pilot.',
     'production readiness',
-    'native connector coverage',
+    'native connector or live',
   ]) {
     includes(doc, expected, `Pilot packet doc: records ${expected}`);
   }
@@ -278,8 +278,8 @@ function testDescriptorDocsAndTrackersStayAligned(): void {
   );
   includes(
     readme,
-    '[Pilot readiness packet](docs/02-architecture/pilot-readiness-packet.md)',
-    'Pilot packet: README links doc',
+    'href="docs/01-overview/how-attestor-connects-to-existing-systems.md"',
+    'Pilot packet: README links the integration overview',
   );
   includes(
     ledger,

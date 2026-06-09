@@ -526,8 +526,8 @@ function testDescriptorDocsAndTrackersStayAligned(): void {
   );
   includes(
     readme,
-    '[Approval/dismiss feedback loop](docs/02-architecture/approval-dismiss-feedback-loop.md)',
-    'Feedback loop: README links doc',
+    'href="docs/01-overview/how-attestor-connects-to-existing-systems.md"',
+    'Feedback loop: README links the integration overview',
   );
   assert.equal(
     packageJson.scripts['test:approval-dismiss-feedback-loop'],

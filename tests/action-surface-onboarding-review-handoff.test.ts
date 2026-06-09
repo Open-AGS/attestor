@@ -215,7 +215,13 @@ function testEmptyPacketAndDocs(): void {
   excludes(doc, /handoff activates enforcement/iu, 'Review handoff doc: enforcement activation is not overclaimed');
 
   const readme = readProjectFile('README.md');
-  includes(readme, 'review handoff', 'README mentions review handoff');
+  const connectionGuide = readProjectFile('docs', '01-overview', 'how-attestor-connects-to-existing-systems.md');
+  includes(
+    readme,
+    'href="docs/01-overview/how-attestor-connects-to-existing-systems.md"',
+    'README links the existing-systems overview',
+  );
+  includes(connectionGuide, 'bounded review material', 'Existing-systems overview mentions review material');
   excludes(readme, /review handoff deploys/iu, 'README does not overclaim review handoff deployment');
 
   const pkg = JSON.parse(readProjectFile('package.json')) as {

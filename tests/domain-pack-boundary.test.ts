@@ -221,7 +221,7 @@ function testDocsScriptsAndPackageSurfaceStayAligned(): void {
   includes(doc, 'src/consequence-admission/domain-pack-boundary.ts', 'Domain pack docs: source file is named');
   includes(doc, 'finance-admission-projection', 'Domain pack docs: finance projection is named');
   includes(doc, 'crypto-admission-projection', 'Domain pack docs: crypto projection is named');
-  includes(doc, 'does not activate enforcement', 'Domain pack docs: enforcement non-claim is present');
+  includes(doc, 'self-activate enforcement', 'Domain pack docs: enforcement boundary is present');
   includes(architecture, 'attestor.consequence-domain-pack-boundary.v1', 'Architecture docs: domain pack boundary contract is named');
   includes(systemOverview, '[Domain pack boundary](domain-pack-boundary.md)', 'System overview: domain pack boundary doc is linked');
   includes(packageProbe, 'consequenceDomainPackBoundaryDescriptor', 'Package probe: domain pack boundary descriptor is checked');

@@ -195,8 +195,8 @@ function testDocsAndPackageExposeProfile(): void {
 
   includes(
     customerGateDoc,
-    'Protected customer enforcement profile',
-    'Protected enforcement profile: customer gate doc names protected profile',
+    'For protected customer gateways',
+    'Protected enforcement profile: customer gate doc names protected gateways',
   );
   includes(
     customerGateDoc,

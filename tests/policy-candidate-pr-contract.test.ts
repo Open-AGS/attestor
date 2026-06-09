@@ -314,6 +314,11 @@ function testDescriptorDocsAndTrackersStayAligned(): void {
   const masterPlan = readProjectFile('docs', '02-architecture', 'unified-shadow-to-policy-master-plan.md');
   const ledger = readProjectFile('docs', 'research', 'attestor-research-provenance-ledger.md');
   const systemOverview = readProjectFile('docs', '02-architecture', 'system-overview.md');
+  const connectionGuide = readProjectFile(
+    'docs',
+    '01-overview',
+    'how-attestor-connects-to-existing-systems.md',
+  );
   const readme = readProjectFile('README.md');
   const packageJson = JSON.parse(readProjectFile('package.json')) as {
     readonly scripts: Readonly<Record<string, string>>;
@@ -376,8 +381,13 @@ function testDescriptorDocsAndTrackersStayAligned(): void {
   );
   includes(
     readme,
-    '[Policy Candidate PR contract](docs/02-architecture/policy-candidate-pr-contract.md)',
-    'Policy candidate PR: README links doc',
+    'href="docs/01-overview/how-attestor-connects-to-existing-systems.md"',
+    'Policy candidate PR: README links first-reader connection guide',
+  );
+  includes(
+    connectionGuide,
+    '[Action surface onboarding packet](../02-architecture/action-surface-onboarding-packet.md)',
+    'Policy candidate PR: connection guide links the discovery entry point',
   );
   assert.equal(
     packageJson.scripts['test:policy-candidate-pr-contract'],

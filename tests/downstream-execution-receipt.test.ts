@@ -476,8 +476,8 @@ function testDocsAndScriptsExposeExecutionReceipt(): void {
 
   includes(
     readme,
-    'docs/02-architecture/downstream-execution-receipt.md',
-    'Execution receipt: README links execution receipt doc',
+    'reasons and proof references',
+    'Execution receipt: README names proof references',
   );
   includes(
     receiptDoc,

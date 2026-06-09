@@ -148,7 +148,7 @@ function testAdmissionDescriptorExposesTheRoleContract(): void {
 function testDocsPointAtTheMachineReadableContract(): void {
   const architecture = readProjectFile('docs', '02-architecture', 'ai-action-control-plane-architecture.md');
   const systemOverview = readProjectFile('docs', '02-architecture', 'system-overview.md');
-  const readme = readProjectFile('README.md');
+  const docsFrontDoor = readProjectFile('docs', 'README.md');
 
   includes(
     architecture,
@@ -161,9 +161,9 @@ function testDocsPointAtTheMachineReadableContract(): void {
     'Control-plane role naming: system overview points at the machine-readable role registry',
   );
   includes(
-    readme,
-    'The machine-readable role contract is exported from `attestor/consequence-admission`.',
-    'Control-plane role naming: README names the packaged role contract',
+    docsFrontDoor,
+    '[AI Action Control Plane architecture](02-architecture/ai-action-control-plane-architecture.md)',
+    'Control-plane role naming: docs front door links the architecture contract',
   );
 }
 

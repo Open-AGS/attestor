@@ -26,8 +26,8 @@ replay, missing approval, or hostile content. Before anything runs, Attestor che
 policy, authority, scope, freshness, replay, and evidence, then returns `admit`,
 `narrow`, `review`, or `block`.
 
-The customer-owned gate decides before execution. The trail shows what was
-proposed, what was checked, and why it was held or allowed.
+The customer-owned gate decides before execution. The trail records what was proposed,
+what was checked, and why it was held or allowed.
 
 ## Why This Matters Now
 

@@ -24,7 +24,7 @@ function excludes(content: string, unexpected: RegExp, message: string): void {
 function testReadmeStartsWithAConcreteWorkflow(): void {
   const readme = readProjectFile('README.md');
 
-  includes(readme, '<img src="docs/assets/attestor-readme-logo.png"', 'Product docs: README uses the single current Attestor image');
+  includes(readme, '<img src="docs/assets/attestor-proof-demo-thumbnail-v2.png"', 'Product docs: README uses the current proof demo thumbnail');
   excludes(readme, /attestor-logo\.png|attestor-readme-hero\.png/u, 'Product docs: README does not use retired Attestor image assets');
   includes(readme, 'alt="version 0.3.0-evaluation"', 'Product docs: README exposes the evaluation version badge');
   includes(readme, 'alt="NIST AI RMF mapped"', 'Product docs: README exposes the NIST AI RMF mapped badge');
@@ -37,7 +37,7 @@ function testReadmeStartsWithAConcreteWorkflow(): void {
   includes(readme, 'Prompts can guide behavior, but they cannot enforce it', 'Product docs: README keeps the prompt-control contrast');
   includes(readme, 'Unsafe requests can come from hallucination, stale context, poisoned tool output', 'Product docs: README explains AI/request risk in plain language');
   includes(readme, 'Before anything runs, Attestor checks', 'Product docs: README preserves the pre-execution control boundary');
-  includes(readme, 'With a customer-owned gate in place, the downstream action stays behind', 'Product docs: README ties downstream no-bypass posture to the customer gate');
+  includes(readme, 'The customer-owned gate decides before execution.', 'Product docs: README ties downstream no-bypass posture to the customer gate');
   includes(readme, 'The trail records what was proposed', 'Product docs: README explains the audit trail in plain language');
   excludes(readme, /## One Concrete Workflow/u, 'Product docs: README keeps the concrete workflow behind the first-run guide');
   includes(readme, 'Attestor translates AI intent into a structured consequence, then reduces it to', 'Product docs: README keeps the consequence translation shape');

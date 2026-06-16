@@ -162,7 +162,7 @@ function testDocsAndScriptsStayAligned(): void {
   includes(ledger, 'G08 engine visibility report', 'G08 ledger: records engine visibility');
   includes(
     readme,
-    'The trail records what was proposed, what was checked, and why it was',
+    'The trail records what was proposed',
     'G08 README: explains the same visibility value in first-reader language',
   );
   includes(tryFirst, '--determinism-check', 'G08 try-first doc: shows determinism command');

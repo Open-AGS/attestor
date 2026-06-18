@@ -1,7 +1,9 @@
 <p align="center">
-  <a href="https://www.youtube.com/watch?v=wq8BGolr2-I">
+  <a href="https://www.youtube.com/watch?v=HHY_kxhYXQY">
     <img src="docs/assets/attestor-proof-demo-thumbnail-v2.png" alt="Watch the Attestor proof demo video" width="100%">
   </a>
+  <br>
+  <a href="https://www.youtube.com/watch?v=HHY_kxhYXQY">Watch demo</a>
 </p>
 
 <p align="center">

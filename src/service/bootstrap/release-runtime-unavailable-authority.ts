@@ -66,6 +66,12 @@ export function unavailableTokenIntrospection(): RequestPathReleaseTokenIntrospe
     revokeToken: () => {
       throw unavailableAuthorityError('release token introspection store');
     },
+    findDecisionRevocation: () => {
+      throw unavailableAuthorityError('release token introspection store');
+    },
+    revokeTokensForDecision: () => {
+      throw unavailableAuthorityError('release token introspection store');
+    },
     syncLifecycle: () => {
       throw unavailableAuthorityError('release token introspection store');
     },

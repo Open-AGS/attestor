@@ -14,6 +14,10 @@ import type {
 import {
   CONSEQUENCE_DATA_MINIMIZATION_REDACTION_POLICY_VERSION,
 } from './data-minimization-redaction-policy.js';
+import {
+  normalizeGenericAdmissionGuardOutcomeTrace,
+  type GenericAdmissionGuardOutcomeTraceEntry,
+} from './generic-guard-outcome-trace.js';
 import type { ConsequenceAdmissionDomain } from './taxonomy.js';
 
 export const SHADOW_ADMISSION_EVENT_VERSION =
@@ -91,6 +95,7 @@ export interface CreateShadowAdmissionEventInput {
   readonly actionSurface?: string | null;
   readonly policyRef?: string | null;
   readonly observedFeatures?: Readonly<Record<string, GenericAdmissionFeatureValue>> | null;
+  readonly guardOutcomes?: readonly GenericAdmissionGuardOutcomeTraceEntry[] | null;
   readonly redactionLevel?: ShadowAdmissionRedactionLevel | null;
 }
 
@@ -115,6 +120,7 @@ export interface ShadowAdmissionEvent {
   readonly tenantId: string | null;
   readonly environment: string | null;
   readonly reasonCodes: readonly string[];
+  readonly guardOutcomes: readonly GenericAdmissionGuardOutcomeTraceEntry[];
   readonly downstreamOutcome: ShadowAdmissionDownstreamOutcome;
   readonly humanOutcome: ShadowAdmissionHumanOutcome;
   readonly observedFeatureKeys: readonly string[];
@@ -237,6 +243,15 @@ function readonlyStringArray(items: readonly string[]): readonly string[] {
   return Object.freeze([...items]);
 }
 
+export function normalizeShadowAdmissionEvent(event: ShadowAdmissionEvent): ShadowAdmissionEvent {
+  return Object.freeze({
+    ...event,
+    guardOutcomes: normalizeGenericAdmissionGuardOutcomeTrace(
+      event.guardOutcomes ?? null,
+    ),
+  });
+}
+
 function normalizeObservedFeatures(
   features: Readonly<Record<string, GenericAdmissionFeatureValue>> | null | undefined,
 ): {
@@ -346,6 +361,7 @@ function createEventId(input: {
   readonly downstreamOutcome: ShadowAdmissionDownstreamOutcome;
   readonly humanOutcome: ShadowAdmissionHumanOutcome;
   readonly observedFeatureDigest: string | null;
+  readonly guardOutcomes: readonly GenericAdmissionGuardOutcomeTraceEntry[];
   readonly originWitnessDigest: string;
   readonly redactionWitnessDigest: string;
 }): string {
@@ -383,6 +399,9 @@ export function createShadowAdmissionEvent(
     'redactionLevel',
   );
   const observedFeatures = normalizeObservedFeatures(input.observedFeatures);
+  const guardOutcomes = normalizeGenericAdmissionGuardOutcomeTrace(
+    input.guardOutcomes ?? envelope?.guardOutcomes ?? null,
+  );
   const actionSurface = normalizeOptionalIdentifier(
     input.actionSurface,
     'actionSurface',
@@ -405,6 +424,7 @@ export function createShadowAdmissionEvent(
     downstreamOutcome,
     humanOutcome,
     observedFeatureDigest: observedFeatures.digest,
+    guardOutcomes,
     originWitnessDigest: originWitness.digest,
     redactionWitnessDigest: redactionWitness.digest,
   });
@@ -429,6 +449,7 @@ export function createShadowAdmissionEvent(
     tenantId: admission.request.policyScope.tenantId,
     environment: admission.request.policyScope.environment,
     reasonCodes: readonlyStringArray(admission.reasonCodes),
+    guardOutcomes,
     downstreamOutcome,
     humanOutcome,
     observedFeatureKeys: observedFeatures.keys,
@@ -496,7 +517,9 @@ export function createInMemoryShadowAdmissionEventRecorder(
 
   return Object.freeze({
     record(input: CreateShadowAdmissionEventInput | ShadowAdmissionEvent): ShadowAdmissionEvent {
-      const event = isShadowAdmissionEvent(input) ? input : createShadowAdmissionEvent(input);
+      const event = normalizeShadowAdmissionEvent(
+        isShadowAdmissionEvent(input) ? input : createShadowAdmissionEvent(input),
+      );
       events.push(event);
       return event;
     },

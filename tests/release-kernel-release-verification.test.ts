@@ -475,6 +475,42 @@ async function main(): Promise<void> {
   );
   passed += 1;
 
+  const decisionRevokedForVerification = Object.freeze({
+    ...decision,
+    id: 'decision-release-verifier-decision-revoked',
+  });
+  const decisionRevokedIssued = await issuer.issue({
+    decision: decisionRevokedForVerification,
+    issuedAt: '2026-04-17T21:00:00.000Z',
+    tokenId: 'rt_decision_revoked_verification',
+  });
+  introspectionStore.registerIssuedToken({
+    issuedToken: decisionRevokedIssued,
+    decision: decisionRevokedForVerification,
+  });
+  introspectionStore.revokeTokensForDecision({
+    decisionId: decisionRevokedForVerification.id,
+    revokedAt: '2026-04-17T21:02:10.000Z',
+    reason: 'approval withdrawn after admission',
+    revokedBy: 'admin_api_key',
+  });
+  await assert.rejects(
+    () =>
+      verifyReleaseAuthorization({
+        token: decisionRevokedIssued.token,
+        verificationKey,
+        audience: 'finance.reporting.record-store',
+        expectedTargetId: 'finance.reporting.record-store',
+        expectedOutputHash: 'sha256:output',
+        expectedConsequenceHash: 'sha256:consequence',
+        currentDate: '2026-04-17T21:02:30.000Z',
+        introspector,
+      }),
+    /revoked by the Attestor release authority/,
+    'Release verification: decision-level revocation rejects all release tokens for that decision',
+  );
+  passed += 1;
+
   await assert.rejects(
     () =>
       verifyReleaseAuthorization({

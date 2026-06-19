@@ -43,6 +43,9 @@ import type {
   EvaluateConsequenceMultiAgentDelegationInput,
 } from './multi-agent-delegation-guard.js';
 import type { AuthorityCreepGuardRecord } from './authority-creep-guard.js';
+import type {
+  GenericAdmissionGuardOutcomeTraceEntry,
+} from './generic-guard-outcome-trace.js';
 import type { DecisionLineageGraphRecord } from './decision-lineage-graph.js';
 import type { AssuranceMeasurementPlane } from './assurance-measurement-plane.js';
 import type {
@@ -272,5 +275,6 @@ export interface GenericAdmissionEnvelope {
   readonly shadowDecision: GenericAdmissionShadowDecision;
   readonly downstreamPosture: GenericAdmissionDownstreamPosture;
   readonly enforcementActive: boolean;
+  readonly guardOutcomes: readonly GenericAdmissionGuardOutcomeTraceEntry[];
   readonly admission: ConsequenceAdmissionResponse;
 }

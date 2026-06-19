@@ -138,6 +138,12 @@ The final admission receives a `release-token` proof reference by token id and d
 
 Hosted bootstrap now requires the protected release-token route for high-risk generic admissions. The hosted route validates a token-request DPoP proof from the `DPoP` header, derives the `cnf.jkt` sender confirmation, consumes the proof `jti` in a raw-proof-free DPoP proof replay store, and uses the runtime release-token issuer to return caller-only protected authorization material. Local and single-node profiles use the in-memory replay store; `production-shared` switches to the PostgreSQL shared replay store only after the shared authority request path is active. When the hosted runtime provides the release-token introspection authority, issued protected tokens are registered there by token id and metadata so downstream online verification can consume the same authority without storing the raw token in admission or shadow records. Missing, invalid, or replayed DPoP proof fails closed instead of falling back to a compatibility admission. `/api/v1/health` and `/api/v1/ready` expose `genericAdmissionProtectedRoute`; `production-shared` remains blocked until the issuer boundary is external KMS/HSM-backed with structured live provider proof, token introspection and token-use replay-consumption stores are shared, the DPoP sender-proof replay store is shared, and the rest of the customer enforcement path is proven.
 
+Release-token enforcement is a token-state boundary, not a fresh upstream
+approval oracle. Its practical authority window is `min(token TTL, revocation
+propagation latency)`. If a decision or approval is withdrawn after admission,
+the release-token introspection store exposes decision-level revocation so all
+tokens for that decision become inactive before expiry.
+
 This is still not customer PEP activation by itself. A production integration must configure the external issuer boundary, token-introspection authority, token-use replay store, DPoP proof replay store, sender-proof verifier, and non-bypassable downstream enforcement point.
 
 When an action is held for missing policy, evidence, amount, recipient, data scope, or authority shape, the admission response includes model-safe feedback. The feedback names fields and evidence kinds, not raw customer data or private policy internals. A safe retry must send a changed request; replaying the same request is not treated as model repair.

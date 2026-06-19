@@ -27,9 +27,9 @@ function equal<T>(actual: T, expected: T, message: string): void {
   passed += 1;
 }
 
-function makeDecision() {
+function makeDecision(id = 'decision-release-introspection') {
   return createReleaseDecisionSkeleton({
-    id: 'decision-release-introspection',
+    id,
     createdAt: '2026-04-17T23:00:00.000Z',
     status: 'accepted',
     policyVersion: 'finance.structured-record-release.v1',
@@ -399,6 +399,132 @@ async function main(): Promise<void> {
       'Release introspection: revoked tokens report revocation as the inactive reason',
     );
   }
+
+  const decisionRevoked = makeDecision('decision-release-introspection-decision-revoked');
+  const decisionScopedIssued = await issuer.issue({
+    decision: decisionRevoked,
+    issuedAt: '2026-04-17T23:00:00.000Z',
+    tokenId: 'rt_decision_revocation_primary',
+  });
+  const decisionScopedSecondIssued = await issuer.issue({
+    decision: decisionRevoked,
+    issuedAt: '2026-04-17T23:00:00.000Z',
+    tokenId: 'rt_decision_revocation_secondary',
+  });
+  store.registerIssuedToken({
+    issuedToken: decisionScopedIssued,
+    decision: decisionRevoked,
+  });
+  store.registerIssuedToken({
+    issuedToken: decisionScopedSecondIssued,
+    decision: decisionRevoked,
+  });
+  const unaffectedDecision = makeDecision('decision-release-introspection-unaffected');
+  const unaffectedIssued = await issuer.issue({
+    decision: unaffectedDecision,
+    issuedAt: '2026-04-17T23:00:00.000Z',
+    tokenId: 'rt_decision_revocation_unaffected',
+  });
+  store.registerIssuedToken({
+    issuedToken: unaffectedIssued,
+    decision: unaffectedDecision,
+  });
+
+  const decisionRevocation = store.revokeTokensForDecision({
+    decisionId: decisionRevoked.id,
+    revokedAt: '2026-04-17T23:02:00.000Z',
+    reason: 'upstream approval withdrawn',
+    revokedBy: 'admin_api_key',
+  });
+  equal(
+    decisionRevocation.revokedTokens.length,
+    2,
+    'Release introspection: decision-level revocation revokes all active tokens for the decision',
+  );
+  equal(
+    decisionRevocation.decisionRevocation.reason,
+    'upstream approval withdrawn',
+    'Release introspection: decision-level revocation records the approval-change reason',
+  );
+  equal(
+    store.findDecisionRevocation(decisionRevoked.id)?.revokedBy ?? null,
+    'admin_api_key',
+    'Release introspection: decision-level revocation is queryable by decision id',
+  );
+  const decisionRevokedIntrospection = await introspector.introspect({
+    token: decisionScopedIssued.token,
+    verificationKey,
+    audience: 'finance.reporting.record-store',
+    currentDate: '2026-04-17T23:02:30.000Z',
+    resourceServerId: 'attestor.tests.release-introspection',
+  });
+  ok(
+    decisionRevokedIntrospection.active === false,
+    'Release introspection: tokens under a revoked decision are inactive before expiry',
+  );
+  if (!decisionRevokedIntrospection.active) {
+    equal(
+      decisionRevokedIntrospection.inactive_reason,
+      'revoked',
+      'Release introspection: decision-revoked tokens report revoked as the inactive reason',
+    );
+  }
+  const decisionRevokedUse = store.recordTokenUse({
+    tokenId: decisionScopedSecondIssued.tokenId,
+    usedAt: '2026-04-17T23:02:40.000Z',
+    resourceServerId: 'attestor.tests.release-introspection',
+  });
+  ok(
+    decisionRevokedUse.accepted === false,
+    'Release introspection: decision-revoked tokens cannot be consumed after revocation',
+  );
+  equal(
+    decisionRevokedUse.inactiveReason,
+    'revoked',
+    'Release introspection: decision-revoked token use reports revocation',
+  );
+  const unaffectedIntrospection = await introspector.introspect({
+    token: unaffectedIssued.token,
+    verificationKey,
+    audience: 'finance.reporting.record-store',
+    currentDate: '2026-04-17T23:02:30.000Z',
+    resourceServerId: 'attestor.tests.release-introspection',
+  });
+  ok(
+    unaffectedIntrospection.active,
+    'Release introspection: decision-level revocation does not affect other decisions',
+  );
+  const decisionRevocationReplay = store.revokeTokensForDecision({
+    decisionId: decisionRevoked.id,
+    revokedAt: '2026-04-17T23:02:50.000Z',
+    reason: 'duplicate revoke',
+    revokedBy: 'admin_api_key',
+  });
+  equal(
+    decisionRevocationReplay.revokedTokens.length,
+    0,
+    'Release introspection: repeated decision-level revocation is idempotent',
+  );
+  equal(
+    decisionRevocationReplay.alreadyInactiveTokens.length,
+    2,
+    'Release introspection: repeated decision-level revocation reports inactive decision tokens',
+  );
+  const lateDecisionToken = await issuer.issue({
+    decision: decisionRevoked,
+    issuedAt: '2026-04-17T23:02:50.000Z',
+    tokenId: 'rt_decision_revocation_late',
+  });
+  assert.throws(
+    () =>
+      store.registerIssuedToken({
+        issuedToken: lateDecisionToken,
+        decision: decisionRevoked,
+      }),
+    ReleaseTokenIntrospectionStoreError,
+    'Release introspection: revoked decisions cannot register newly issued release tokens',
+  );
+  passed += 1;
 
   const inactiveAudienceMismatch = await introspector.introspect({
     token: issued.token,

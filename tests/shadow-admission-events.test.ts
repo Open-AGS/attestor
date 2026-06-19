@@ -3,6 +3,7 @@ import {
   createGenericAdmissionEnvelope,
   createInMemoryShadowAdmissionEventRecorder,
   createShadowAdmissionEvent,
+  GENERIC_ADMISSION_GUARD_OUTCOME_TRACE_GUARD_IDS,
   summarizeShadowAdmissionEvents,
 } from '../src/consequence-admission/index.js';
 
@@ -73,6 +74,21 @@ function testShadowEventRedactsRawInputs(): void {
   equal(event.redactionWitness.rawObservedValuesStored, false, 'Shadow event: redaction witness declares raw observed values are not stored');
   equal(event.redactionWitnessDigest, event.redactionWitness.digest, 'Shadow event: redaction witness digest is carried');
   equal(event.evidenceRefCount, 2, 'Shadow event: evidence is counted instead of copied');
+  equal(
+    event.guardOutcomes.length,
+    GENERIC_ADMISSION_GUARD_OUTCOME_TRACE_GUARD_IDS.length,
+    'Shadow event: guard outcome trace preserves every generic guard slot',
+  );
+  equal(
+    event.guardOutcomes[0]?.guardId ?? null,
+    'hard-invariant',
+    'Shadow event: guard outcome trace starts with hard invariant slot',
+  );
+  equal(
+    event.guardOutcomes[0]?.effect ?? null,
+    'review',
+    'Shadow event: guard outcome trace records hard invariant review effect',
+  );
   ok(event.eventId.startsWith('shadow:sha256:'), 'Shadow event: generated id is digest-backed');
   ok(event.admissionDigest.startsWith('sha256:'), 'Shadow event: admission digest is carried');
   ok(event.observedFeatureDigest?.startsWith('sha256:'), 'Shadow event: observed feature digest is carried');
@@ -141,6 +157,11 @@ function testRecorderSummarizesPolicyGapsAndReviewLoad(): void {
   equal(summary.rawPayloadEventCount, 0, 'Shadow summary: raw payload events remain zero');
   equal(observedEvent.originWitness.admissionId, observedEvent.admissionId, 'Shadow recorder: recorded event carries origin witness');
   equal(blockedEvent.redactionWitness.rawPayloadStored, false, 'Shadow recorder: recorded event carries redaction witness');
+  equal(
+    blockedEvent.guardOutcomes.find((entry) => entry.guardId === 'hard-invariant')?.effect ?? null,
+    'block',
+    'Shadow recorder: recorded event carries guard outcome effects',
+  );
   equal(
     summarizeShadowAdmissionEvents([blockedEvent]).blockedCount,
     1,

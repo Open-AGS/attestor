@@ -4,6 +4,11 @@ import { withFileLock, writeTextFileAtomic } from '../platform/file-store.js';
 import type { ReleaseTokenClaims } from './object-model.js';
 import { releaseDecisionMaxUses } from './object-model.js';
 import {
+  freezeReleaseDecisionRevocation,
+  normalizeReleaseLifecycleText,
+  releaseDecisionRevocationRecordFor,
+} from './release-decision-revocation.js';
+import {
   canonicalizeReleaseJson,
   type CanonicalReleaseJsonValue,
 } from './release-canonicalization.js';
@@ -29,6 +34,9 @@ import {
   type ReleaseTokenIntrospectionResult,
   type ReleaseTokenIntrospectionStore,
   type ReleaseTokenIntrospector,
+  type ReleaseDecisionRevocationRecord,
+  type RevokeReleaseTokensForDecisionInput,
+  type RevokeReleaseTokensForDecisionResult,
   type RevokeReleaseTokenInput,
   type SupportedReleaseTokenTypeHint,
 } from './release-introspection-types.js';
@@ -55,22 +63,12 @@ export type {
   ReleaseTokenIntrospectionStore,
   ReleaseTokenIntrospector,
   ReleaseTokenRegistryStatus,
+  ReleaseDecisionRevocationRecord,
+  RevokeReleaseTokensForDecisionInput,
+  RevokeReleaseTokensForDecisionResult,
   RevokeReleaseTokenInput,
   SupportedReleaseTokenTypeHint,
 } from './release-introspection-types.js';
-
-/**
- * Active-status release-token introspection for high-risk release paths.
- *
- * This module mirrors the intent of OAuth token introspection for the Attestor
- * release layer: cryptographic verification alone is not enough for R3/R4
- * consequence paths. The protected resource also needs an "is this token still
- * active in the release authority plane?" answer.
- *
- * Step 15 intentionally stops short of revocation and replay semantics. It
- * introduces a registry and active-state introspection surface that Step 16
- * and Step 17 can later deepen without forcing a redesign.
- */
 
 const DEFAULT_RELEASE_TOKEN_INTROSPECTION_STORE_PATH =
   '.attestor/release-token-introspection-store.json';
@@ -78,6 +76,7 @@ const DEFAULT_RELEASE_TOKEN_INTROSPECTION_STORE_PATH =
 interface ReleaseTokenIntrospectionStoreFile {
   readonly version: 1;
   records: RegisteredReleaseToken[];
+  decisionRevocations: ReleaseDecisionRevocationRecord[];
 }
 
 function introspectionTimestamp(currentDate?: string): string {
@@ -129,18 +128,11 @@ function releaseTokenIntrospectionPolicyContext(
 function normalizeSupportedTokenTypeHint(
   tokenTypeHint?: string,
 ): SupportedReleaseTokenTypeHint | null {
-  if (!tokenTypeHint) {
-    return null;
-  }
-
-  if (
+  if (!tokenTypeHint) return null;
+  return (
     tokenTypeHint === DEFAULT_RELEASE_TOKEN_TYPE_HINT ||
     tokenTypeHint === 'access_token'
-  ) {
-    return tokenTypeHint;
-  }
-
-  return null;
+  ) ? tokenTypeHint : null;
 }
 
 function registeredReleaseTokenMatchesClaims(
@@ -170,12 +162,6 @@ function registeredReleaseTokenMatchesClaims(
     record.introspectionRequired === claims.introspection_required &&
     record.authorityMode === claims.authority_mode
   );
-}
-
-function registeredReleaseTokenIsActive(
-  record: RegisteredReleaseToken,
-): boolean {
-  return record.status === 'issued';
 }
 
 function inactiveReasonForRegisteredReleaseToken(
@@ -261,6 +247,7 @@ function defaultReleaseTokenIntrospectionStoreFile(): ReleaseTokenIntrospectionS
   return {
     version: 1,
     records: [],
+    decisionRevocations: [],
   };
 }
 
@@ -284,7 +271,11 @@ function normalizeReleaseTokenIntrospectionStoreFile(
     value === null ||
     Array.isArray(value) ||
     (value as { version?: unknown }).version !== 1 ||
-    !Array.isArray((value as { records?: unknown }).records)
+    !Array.isArray((value as { records?: unknown }).records) ||
+    (
+      (value as { decisionRevocations?: unknown }).decisionRevocations !== undefined &&
+      !Array.isArray((value as { decisionRevocations?: unknown }).decisionRevocations)
+    )
   ) {
     throw new ReleaseTokenIntrospectionStoreError(
       `Release token introspection store '${path}' has an invalid file shape.`,
@@ -296,6 +287,11 @@ function normalizeReleaseTokenIntrospectionStoreFile(
     records: (value as { records: RegisteredReleaseToken[] }).records.map((record) =>
       freezeRegisteredReleaseToken(record),
     ),
+    decisionRevocations: (
+      value as { decisionRevocations?: ReleaseDecisionRevocationRecord[] }
+    ).decisionRevocations?.map((record) =>
+      freezeReleaseDecisionRevocation(record, introspectionTimestamp)
+    ) ?? [],
   };
 }
 
@@ -328,6 +324,7 @@ function saveReleaseTokenIntrospectionStoreFile(
       {
         version: 1,
         records: file.records,
+        decisionRevocations: file.decisionRevocations,
       },
       null,
       2,
@@ -381,6 +378,11 @@ function insertRegisteredReleaseToken(
   record: RegisteredReleaseToken,
 ): RegisteredReleaseToken {
   const frozen = freezeRegisteredReleaseToken(record);
+  if (file.decisionRevocations.some((entry) => entry.decisionId === frozen.decisionId)) {
+    throw new ReleaseTokenIntrospectionStoreError(
+      `Release decision '${frozen.decisionId}' is revoked and cannot issue active release tokens.`,
+    );
+  }
   const existing =
     file.records.find((entry) => entry.tokenId === frozen.tokenId) ?? null;
   if (existing) {
@@ -441,6 +443,21 @@ function revokeRegisteredReleaseToken(
   });
 }
 
+function writeDecisionRevocation(
+  file: ReleaseTokenIntrospectionStoreFile,
+  record: ReleaseDecisionRevocationRecord,
+): ReleaseDecisionRevocationRecord {
+  const frozen = freezeReleaseDecisionRevocation(record, introspectionTimestamp);
+  const existingIndex = file.decisionRevocations.findIndex((entry) =>
+    entry.decisionId === frozen.decisionId
+  );
+  if (existingIndex >= 0) {
+    return file.decisionRevocations[existingIndex];
+  }
+  file.decisionRevocations.push(frozen);
+  return frozen;
+}
+
 function consumeRegisteredReleaseToken(
   record: RegisteredReleaseToken,
   input: RecordReleaseTokenUseInput,
@@ -487,6 +504,49 @@ function createReleaseTokenIntrospectionStoreFromAccessors(accessors: {
       });
     },
 
+    findDecisionRevocation(decisionId: string): ReleaseDecisionRevocationRecord | null {
+      const normalized = normalizeReleaseLifecycleText(decisionId, 'decisionId') ?? decisionId;
+      return accessors.read().decisionRevocations.find((record) =>
+        record.decisionId === normalized
+      ) ?? null;
+    },
+
+    revokeTokensForDecision(
+      input: RevokeReleaseTokensForDecisionInput,
+    ): RevokeReleaseTokensForDecisionResult {
+      return accessors.mutate((file) => {
+        const decisionRevocation =
+          writeDecisionRevocation(
+            file,
+            releaseDecisionRevocationRecordFor(input, normalizeLifecycleTimestamp),
+          );
+        const revokedTokens: RegisteredReleaseToken[] = [];
+        const alreadyInactiveTokens: RegisteredReleaseToken[] = [];
+
+        for (const record of file.records) {
+          if (record.decisionId !== decisionRevocation.decisionId) continue;
+          if (record.status !== 'issued') {
+            alreadyInactiveTokens.push(record);
+            continue;
+          }
+
+          const revoked = revokeRegisteredReleaseToken(record, {
+            tokenId: record.tokenId,
+            revokedAt: decisionRevocation.revokedAt,
+            reason: decisionRevocation.reason ?? undefined,
+            revokedBy: decisionRevocation.revokedBy ?? undefined,
+          });
+          revokedTokens.push(writeRegisteredReleaseToken(file, revoked));
+        }
+
+        return Object.freeze({
+          decisionRevocation,
+          revokedTokens: Object.freeze(revokedTokens),
+          alreadyInactiveTokens: Object.freeze(alreadyInactiveTokens),
+        });
+      });
+    },
+
     syncLifecycle(currentDate?: string): readonly RegisteredReleaseToken[] {
       const now = introspectionTimestamp(currentDate);
       return accessors.mutate((file) => {
@@ -529,6 +589,14 @@ function createReleaseTokenIntrospectionStoreFromAccessors(accessors: {
           });
         }
 
+        if (file.decisionRevocations.some((entry) => entry.decisionId === existing.decisionId)) {
+          return Object.freeze({
+            accepted: false,
+            inactiveReason: 'revoked',
+            record: existing,
+          });
+        }
+
         const consumed = consumeRegisteredReleaseToken(existing, input);
         writeRegisteredReleaseToken(file, consumed);
         return Object.freeze({
@@ -550,6 +618,7 @@ export function createInMemoryReleaseTokenIntrospectionStore(): ReleaseTokenIntr
       const workingCopy: ReleaseTokenIntrospectionStoreFile = {
         version: 1,
         records: [...file.records],
+        decisionRevocations: [...file.decisionRevocations],
       };
       const result = action(workingCopy);
       file = workingCopy;
@@ -645,9 +714,18 @@ export async function introspectReleaseToken(
     );
   }
 
-  if (!registeredReleaseTokenIsActive(record)) {
+  if (record.status !== 'issued') {
     return inactiveReleaseTokenIntrospection(
       inactiveReasonForRegisteredReleaseToken(record),
+      input.currentDate,
+      input.resourceServerId,
+    );
+  }
+
+  const decisionRevocation = await input.store.findDecisionRevocation(record.decisionId);
+  if (decisionRevocation) {
+    return inactiveReleaseTokenIntrospection(
+      'revoked',
       input.currentDate,
       input.resourceServerId,
     );

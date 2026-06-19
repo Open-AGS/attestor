@@ -44,6 +44,22 @@ async function testStructuredGuardCase(routeGuardCase: RouteGuardCase): Promise<
   const body = await postAdmission(routeGuardCase.payload);
   const serialized = JSON.stringify(body);
   const dimensions = body.admission.request.policyScope.dimensions as Record<string, unknown>;
+  const traceGuardIdByRouteGuard: Readonly<Record<string, string>> = {
+    'untrusted-content-authority': 'authority',
+    'approval-provenance': 'approval',
+    'no-go-condition-ledger': 'no-go-condition',
+    'scope-explosion': 'scope-explosion',
+    'tool-result-poisoning': 'tool-result',
+    'agentic-supply-chain': 'agentic-supply-chain',
+    'human-review-fatigue': 'human-review-fatigue',
+    'multi-agent-delegation': 'multi-agent-delegation',
+    'stale-authority-policy': 'stale-authority-policy',
+    'decision-context-drift': 'decision-context-drift',
+    'authority-creep': 'authority-creep',
+    'guard-input-provenance': 'guard-input-provenance',
+  };
+  const traceGuardId = traceGuardIdByRouteGuard[routeGuardCase.guard];
+  const traceEntry = body.guardOutcomes.find((entry) => entry.guardId === traceGuardId);
 
   equal(
     body.shadowDecision,
@@ -69,6 +85,14 @@ async function testStructuredGuardCase(routeGuardCase: RouteGuardCase): Promise<
       `Generic admission guard matrix: ${routeGuardCase.guard} carries ${dimension}`,
     );
   }
+  ok(
+    traceEntry !== undefined,
+    `Generic admission guard matrix: ${routeGuardCase.guard} carries a guard outcome trace entry`,
+  );
+  ok(
+    traceEntry?.effect === 'block' || traceEntry?.effect === 'review' || traceEntry?.effect === 'narrow',
+    `Generic admission guard matrix: ${routeGuardCase.guard} trace entry records a non-pass effect`,
+  );
   if (routeGuardCase.redactionPattern) {
     doesNotMatch(
       serialized,

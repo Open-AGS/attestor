@@ -97,6 +97,16 @@ function testAdmissionShadowEventProjectsToCanonicalEnvelope(): void {
   equal(canonical.rawMaterialBoundary.rawProviderBodyStored, false, 'Canonical shadow event: raw provider body storage is false');
   equal(canonical.rawMaterialBoundary.rawWalletMaterialStored, false, 'Canonical shadow event: raw wallet material storage is false');
   equal(canonical.rawMaterialBoundary.rawCustomerIdentifierStored, false, 'Canonical shadow event: raw customer identifier storage is false');
+  equal(
+    canonical.decision.guardOutcomes?.[0]?.guardId ?? null,
+    'hard-invariant',
+    'Canonical shadow event: guard outcome trace projects from admission shadow events',
+  );
+  equal(
+    canonical.decision.guardOutcomes?.[0]?.rawPayloadStored ?? null,
+    false,
+    'Canonical shadow event: guard outcome trace keeps raw payload storage false',
+  );
   equal(canonical.autoEnforce, false, 'Canonical shadow event: cannot auto-enforce');
   equal(canonical.approvalRequiredForPromotion, true, 'Canonical shadow event: promotion requires approval');
   ok(canonical.eventId.startsWith('canonical-shadow:sha256:'), 'Canonical shadow event: event id is digest-backed');

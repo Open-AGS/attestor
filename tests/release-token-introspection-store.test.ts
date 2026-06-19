@@ -210,6 +210,71 @@ async function run(): Promise<void> {
     );
     passed += 1;
 
+    const decisionRevocationDecision = makeDecision('decision-shared-token-decision-revoke');
+    const decisionRevocationTokenA = await issuer.issue({
+      decision: decisionRevocationDecision,
+      issuedAt: '2026-04-24T19:00:00.000Z',
+      tokenId: 'rt_shared_decision_revocation_a',
+    });
+    const decisionRevocationTokenB = await issuer.issue({
+      decision: decisionRevocationDecision,
+      issuedAt: '2026-04-24T19:00:00.000Z',
+      tokenId: 'rt_shared_decision_revocation_b',
+    });
+    await store.registerIssuedToken({
+      issuedToken: decisionRevocationTokenA,
+      decision: decisionRevocationDecision,
+    });
+    await store.registerIssuedToken({
+      issuedToken: decisionRevocationTokenB,
+      decision: decisionRevocationDecision,
+    });
+    const decisionRevocation = await store.revokeTokensForDecision({
+      decisionId: decisionRevocationDecision.id,
+      revokedAt: '2026-04-24T19:01:40.000Z',
+      reason: 'approval withdrawn',
+      revokedBy: 'release-token-introspection-store-test',
+    });
+    equal(
+      decisionRevocation.revokedTokens.length,
+      2,
+      'Shared token introspection: decision-level revocation revokes all active decision tokens',
+    );
+    equal(
+      (await store.findDecisionRevocation(decisionRevocationDecision.id))?.reason ?? null,
+      'approval withdrawn',
+      'Shared token introspection: decision-level revocation is persisted by decision id',
+    );
+    equal(
+      (await store.findToken(decisionRevocationTokenA.tokenId))?.status ?? null,
+      'revoked',
+      'Shared token introspection: decision-level revocation updates token rows',
+    );
+    const decisionRevokedUse = await store.recordTokenUse({
+      tokenId: decisionRevocationTokenB.tokenId,
+      usedAt: '2026-04-24T19:01:45.000Z',
+      resourceServerId: 'resource-decision-revoked',
+    });
+    equal(
+      decisionRevokedUse.inactiveReason,
+      'revoked',
+      'Shared token introspection: decision-revoked token use reports revocation',
+    );
+    const lateDecisionToken = await issuer.issue({
+      decision: decisionRevocationDecision,
+      issuedAt: '2026-04-24T19:01:50.000Z',
+      tokenId: 'rt_shared_decision_revocation_late',
+    });
+    await assert.rejects(
+      store.registerIssuedToken({
+        issuedToken: lateDecisionToken,
+        decision: decisionRevocationDecision,
+      }),
+      SharedReleaseTokenIntrospectionStoreError,
+      'Shared token introspection: revoked decisions cannot register later release tokens',
+    );
+    passed += 1;
+
     const expiringDecision = makeDecision('decision-shared-token-expired');
     const expiringToken = await issuer.issue({
       decision: expiringDecision,

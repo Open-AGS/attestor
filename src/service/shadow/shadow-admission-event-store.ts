@@ -1,6 +1,9 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import type { ShadowAdmissionEvent } from '../../consequence-admission/index.js';
+import {
+  normalizeShadowAdmissionEvent,
+  type ShadowAdmissionEvent,
+} from '../../consequence-admission/index.js';
 import { withFileLock } from '../file-store.js';
 import {
   compareDesc,
@@ -39,7 +42,7 @@ function normalizeAdmissionRecord(
       ? Math.trunc(record.sequence)
       : 1,
     recordedAt: normalizeIsoTimestamp(record.recordedAt, new Date().toISOString(), 'recordedAt'),
-    event: record.event,
+    event: normalizeShadowAdmissionEvent(record.event),
     rawPayloadStored: false,
   };
 }

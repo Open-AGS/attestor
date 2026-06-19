@@ -43,6 +43,9 @@ import {
   observedFeatureTrue,
 } from './generic-engine-dimensions.js';
 import {
+  createGenericAdmissionGuardOutcomeTrace,
+} from './generic-guard-outcome-trace.js';
+import {
   effectiveDecisionForGenericAdmissionMode,
   genericAdmissionHardInvariantReasonCodes,
   genericAdmissionHasHardBlockFeature,
@@ -703,6 +706,7 @@ export function createGenericAdmissionEnvelope(input: unknown): GenericAdmission
     shadowDecision: evaluation.shadowDecision,
     downstreamPosture: evaluation.downstreamPosture,
     enforcementActive: evaluation.enforcementActive,
+    guardOutcomes: createGenericAdmissionGuardOutcomeTrace(normalized, evaluation),
     admission: response,
   });
 }

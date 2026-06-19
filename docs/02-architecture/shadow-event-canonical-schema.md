@@ -39,7 +39,7 @@ The machine-readable contract lives in
 | Tenant / actor | `tenantRefDigest`, `actorRefDigest`. | Raw tenant ids, user ids, emails, account ids, API keys, and wallet material are not stored. |
 | Observed facts | Facts directly observed from the route, target wrapper, manifest, or admission event. | Observed facts must not contain inferred policy conclusions. |
 | Inferred facts | Consequence class, authority delta, or other classification derived from observed facts. | Inference is stored separately so downstream policy work can mark uncertainty. |
-| Decision | Admission digest, mode, shadow decision, effective decision, allowed/fail-closed flags, reason codes. | This records what Attestor saw or decided; it does not activate policy. |
+| Decision | Admission digest, mode, shadow decision, effective decision, allowed/fail-closed flags, reason codes, and compact guard outcome trace. | This records what Attestor saw or decided; it does not activate policy. Guard trace entries are diagnostic/provenance metadata only and cannot grant authority. |
 | Outcome | Downstream and human outcome labels when available. | Outcome labels are not proof of downstream completion unless a receipt ref exists. |
 | References | Evidence, simulation, approval, receipt, policy, idempotency, replay, trace, schema, provenance, authority, and outbox refs. | References must be `sha256:` digest refs, never raw ids or payloads. |
 | Raw material boundary | Redaction policy version and false flags for raw payload, prompt, provider body, wallet material, and customer identifier storage. | Any raw-material storage requirement belongs outside this schema and blocks promotion. |
@@ -76,6 +76,7 @@ idempotencyRefDigest
 replayRefDigest
 traceRefDigest
 schemaRefDigest
+decision.guardOutcomes[]
 rawMaterialBoundary
 autoEnforce = false
 approvalRequiredForPromotion = true
@@ -110,6 +111,47 @@ state vocabulary: `observed`, `inferred`, `missing`, `conflicting`, `stale`,
 `untrusted`, `approved`, and `enforceable`.
 
 ## Source Kinds
+
+## Guard Outcome Trace
+
+Admission-shadow events preserve a compact guard outcome trace under
+`decision.guardOutcomes[]`. Each entry carries:
+
+```text
+version = attestor.generic-admission-guard-outcome-trace.v1
+guardId
+outcome
+effect = not-evaluated | pass | narrow | review | block
+reasonCodes[]
+decisionDigest
+rawPayloadStored = false
+```
+
+The trace is generated from the generic admission evaluation before the raw
+request is discarded. It lets shadow pilots aggregate "which guard produced
+which effect" without storing prompts, tool payloads, approval bodies, policy
+text, provider bodies, customer identifiers, or downstream responses. The
+stable guard ids are:
+
+```text
+hard-invariant
+authority
+approval
+scope-explosion
+tool-result
+agentic-supply-chain
+human-review-fatigue
+multi-agent-delegation
+stale-authority-policy
+decision-context-drift
+authority-creep
+no-go-condition
+guard-input-provenance
+```
+
+The trace is not an enforcement surface. Policy promotion, customer activation,
+and release enforcement must still use the normal approval, replay,
+release-token, and customer PEP paths.
 
 Allowed source kinds:
 

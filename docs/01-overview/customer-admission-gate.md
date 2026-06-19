@@ -96,6 +96,16 @@ matched, and bound to an admission `release-token` proof reference by token id
 and digest. The gate records only digest/token/verifier metadata and does not
 store the raw release token or sender proof.
 
+Release enforcement validates the issued release token and the Attestor release
+authority state. It does not re-query every upstream approval source at
+execution time. The authority freshness window is therefore bounded by the
+shorter of the token TTL and the time it takes an upstream approval/authority
+change to reach the release-token introspection authority. When an approval or
+decision is withdrawn, operators or integrations should call the decision-level
+revocation helper on the release-token introspection store. That helper records
+the decision as revoked and makes every release token for that decision
+inactive, without storing the raw token or sender proof.
+
 ## Choose The Right Gate
 
 The customer gate is the smallest local helper. High-risk consequences need a

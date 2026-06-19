@@ -16,6 +16,10 @@ import type {
   ShadowAdmissionEvent,
   ShadowAdmissionHumanOutcome,
 } from './shadow-events.js';
+import {
+  normalizeGenericAdmissionGuardOutcomeTrace,
+  type GenericAdmissionGuardOutcomeTraceEntry,
+} from './generic-guard-outcome-trace.js';
 
 export const CANONICAL_SHADOW_EVENT_SCHEMA_VERSION =
   'attestor.canonical-shadow-event.v1';
@@ -138,6 +142,7 @@ export interface CanonicalShadowEventDecision {
   readonly allowed: boolean | null;
   readonly failClosed: boolean | null;
   readonly reasonCodes: readonly string[];
+  readonly guardOutcomes?: readonly GenericAdmissionGuardOutcomeTraceEntry[];
 }
 
 export interface CanonicalShadowEventOutcome {
@@ -416,6 +421,7 @@ function defaultDecision(): CanonicalShadowEventDecision {
     allowed: null,
     failClosed: null,
     reasonCodes: Object.freeze([]),
+    guardOutcomes: Object.freeze([]),
   });
 }
 
@@ -433,6 +439,7 @@ function normalizeDecision(
     reasonCodes: Object.freeze([...decision.reasonCodes].map((reasonCode, index) =>
       normalizeString(reasonCode, `decision.reasonCodes[${index}]`)
     ).sort()),
+    guardOutcomes: normalizeGenericAdmissionGuardOutcomeTrace(decision.guardOutcomes),
   });
 }
 
@@ -608,6 +615,7 @@ export function createCanonicalShadowEventFromAdmissionEvent(
       allowed: event.allowed,
       failClosed: event.failClosed,
       reasonCodes: event.reasonCodes,
+      guardOutcomes: event.guardOutcomes,
     },
     outcome: {
       downstreamOutcome: event.downstreamOutcome,

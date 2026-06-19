@@ -73,7 +73,12 @@ export type ReleaseTokenIssuer = token.ReleaseTokenIssuer;
 export type ReleaseTokenVerificationKey = token.ReleaseTokenVerificationKey;
 export type RegisteredReleaseToken = introspection.RegisteredReleaseToken;
 export type RegisterIssuedReleaseTokenInput = introspection.RegisterIssuedReleaseTokenInput;
+export type ReleaseDecisionRevocationRecord = introspection.ReleaseDecisionRevocationRecord;
 export type RevokeReleaseTokenInput = introspection.RevokeReleaseTokenInput;
+export type RevokeReleaseTokensForDecisionInput =
+  introspection.RevokeReleaseTokensForDecisionInput;
+export type RevokeReleaseTokensForDecisionResult =
+  introspection.RevokeReleaseTokensForDecisionResult;
 export type RecordReleaseTokenUseInput = introspection.RecordReleaseTokenUseInput;
 export type RecordedReleaseTokenUseResult = introspection.RecordedReleaseTokenUseResult;
 export type ReleaseTokenIntrospectionPolicyContext =

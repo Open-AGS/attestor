@@ -4,9 +4,12 @@ import {
   type CanonicalReleaseJsonValue,
   type RegisteredReleaseToken,
   type RegisterIssuedReleaseTokenInput,
+  type ReleaseDecisionRevocationRecord,
   type RecordedReleaseTokenUseResult,
   type RecordReleaseTokenUseInput,
   type ReleaseTokenInactiveReason,
+  type RevokeReleaseTokensForDecisionInput,
+  type RevokeReleaseTokensForDecisionResult,
   type RevokeReleaseTokenInput,
 } from '../../release-layer/index.js';
 import {
@@ -18,6 +21,12 @@ import {
   withReleaseAuthorityTransaction,
   type ReleaseAuthorityPgClient,
 } from './release-authority-store.js';
+import {
+  RELEASE_TOKEN_DECISION_REVOCATION_TABLE,
+  findDecisionRevocationInTransaction,
+  insertDecisionRevocation,
+  releaseDecisionRevocationRecordFor,
+} from './release-token-decision-revocation-store.js';
 
 const RELEASE_TOKEN_INTROSPECTION_COMPONENT = 'release-token-introspection';
 const RELEASE_TOKEN_INTROSPECTION_TABLE =
@@ -29,6 +38,7 @@ type PgQueryResultRow = Record<string, unknown>;
 export interface SharedReleaseTokenIntrospectionStoreSummary {
   readonly component: typeof RELEASE_TOKEN_INTROSPECTION_COMPONENT;
   readonly table: typeof RELEASE_TOKEN_INTROSPECTION_TABLE;
+  readonly decisionRevocationTable: typeof RELEASE_TOKEN_DECISION_REVOCATION_TABLE;
   readonly totalRecords: number;
   readonly issuedRecords: number;
   readonly revokedRecords: number;
@@ -41,6 +51,10 @@ export interface SharedReleaseTokenIntrospectionStore {
   registerIssuedToken(input: RegisterIssuedReleaseTokenInput): Promise<RegisteredReleaseToken>;
   findToken(tokenId: string): Promise<RegisteredReleaseToken | null>;
   revokeToken(input: RevokeReleaseTokenInput): Promise<RegisteredReleaseToken | null>;
+  findDecisionRevocation(decisionId: string): Promise<ReleaseDecisionRevocationRecord | null>;
+  revokeTokensForDecision(
+    input: RevokeReleaseTokensForDecisionInput,
+  ): Promise<RevokeReleaseTokensForDecisionResult>;
   syncLifecycle(currentDate?: string): Promise<readonly RegisteredReleaseToken[]>;
   recordTokenUse(input: RecordReleaseTokenUseInput): Promise<RecordedReleaseTokenUseResult>;
   summary(): Promise<SharedReleaseTokenIntrospectionStoreSummary>;
@@ -301,6 +315,16 @@ async function ensureTokenIntrospectionTable(): Promise<void> {
 
           CREATE INDEX IF NOT EXISTS release_token_introspection_audience_idx
             ON ${RELEASE_TOKEN_INTROSPECTION_TABLE} (audience);
+
+          CREATE TABLE IF NOT EXISTS ${RELEASE_TOKEN_DECISION_REVOCATION_TABLE} (
+            decision_id TEXT PRIMARY KEY,
+            revoked_at TIMESTAMPTZ NOT NULL,
+            reason TEXT NULL,
+            revoked_by TEXT NULL,
+            record_json JSONB NOT NULL,
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+          );
         `);
       });
 
@@ -316,6 +340,7 @@ async function ensureTokenIntrospectionTable(): Promise<void> {
           sharedStore: 'postgres',
           storeVersion: SHARED_RELEASE_TOKEN_INTROSPECTION_STORE_VERSION,
           table: RELEASE_TOKEN_INTROSPECTION_TABLE,
+          decisionRevocationTable: RELEASE_TOKEN_DECISION_REVOCATION_TABLE,
           lifecycleDiscipline: 'row-lock-token-use-and-revocation',
           bootstrapWired: false,
           trackerStep: '05',
@@ -541,7 +566,16 @@ async function registerIssuedToken(
 ): Promise<RegisteredReleaseToken> {
   await ensureTokenIntrospectionTable();
   const record = buildRegisteredRecord(input);
-  return withReleaseAuthorityTransaction((client) => insertRecord(client, record));
+  return withReleaseAuthorityTransaction(async (client) => {
+    const decisionRevocation =
+      await findDecisionRevocationInTransaction(client, record.decisionId);
+    if (decisionRevocation) {
+      throw new SharedReleaseTokenIntrospectionStoreError(
+        `Shared release token introspection decision '${record.decisionId}' is revoked and cannot issue active release tokens.`,
+      );
+    }
+    return insertRecord(client, record);
+  });
 }
 
 async function findToken(tokenId: string): Promise<RegisteredReleaseToken | null> {
@@ -575,6 +609,53 @@ async function revokeToken(
       return null;
     }
     return upsertRecord(client, revokeRecord(existing, input));
+  });
+}
+
+async function findDecisionRevocation(
+  decisionId: string,
+): Promise<ReleaseDecisionRevocationRecord | null> {
+  await ensureTokenIntrospectionTable();
+  const normalized = requireString(decisionId, 'decisionId');
+  return withReleaseAuthorityTransaction((client) =>
+    findDecisionRevocationInTransaction(client, normalized)
+  );
+}
+
+async function revokeTokensForDecision(
+  input: RevokeReleaseTokensForDecisionInput,
+): Promise<RevokeReleaseTokensForDecisionResult> {
+  await ensureTokenIntrospectionTable();
+  const revocation = releaseDecisionRevocationRecordFor(input);
+  return withReleaseAuthorityTransaction(async (client) => {
+    const decisionRevocation = await insertDecisionRevocation(client, revocation);
+    const result = await client.query(
+      `SELECT token_id, status, decision_id, audience, use_count, revoked_at, record_json
+         FROM ${RELEASE_TOKEN_INTROSPECTION_TABLE}
+        WHERE decision_id = $1
+        FOR UPDATE`,
+      [decisionRevocation.decisionId],
+    );
+    const revokedTokens: RegisteredReleaseToken[] = [];
+    const alreadyInactiveTokens: RegisteredReleaseToken[] = [];
+    for (const row of result.rows) {
+      const existing = rowToRecord(row);
+      if (existing.status !== 'issued') {
+        alreadyInactiveTokens.push(existing);
+        continue;
+      }
+      revokedTokens.push(await upsertRecord(client, revokeRecord(existing, {
+        tokenId: existing.tokenId,
+        revokedAt: decisionRevocation.revokedAt,
+        reason: decisionRevocation.reason ?? undefined,
+        revokedBy: decisionRevocation.revokedBy ?? undefined,
+      })));
+    }
+    return Object.freeze({
+      decisionRevocation,
+      revokedTokens: Object.freeze(revokedTokens),
+      alreadyInactiveTokens: Object.freeze(alreadyInactiveTokens),
+    });
   });
 }
 
@@ -613,6 +694,15 @@ async function recordTokenUse(
         record: existing,
       });
     }
+    const decisionRevocation =
+      await findDecisionRevocationInTransaction(client, existing.decisionId);
+    if (decisionRevocation) {
+      return Object.freeze({
+        accepted: false,
+        inactiveReason: 'revoked',
+        record: existing,
+      });
+    }
     const consumed = await upsertRecord(client, consumeRecord(existing, input));
     return Object.freeze({
       accepted: true,
@@ -641,6 +731,7 @@ async function summary(): Promise<SharedReleaseTokenIntrospectionStoreSummary> {
   return Object.freeze({
     component: RELEASE_TOKEN_INTROSPECTION_COMPONENT,
     table: RELEASE_TOKEN_INTROSPECTION_TABLE,
+    decisionRevocationTable: RELEASE_TOKEN_DECISION_REVOCATION_TABLE,
     totalRecords: requireInteger(stats.total_records ?? 0, 'total_records'),
     issuedRecords: requireInteger(stats.issued_records ?? 0, 'issued_records'),
     revokedRecords: requireInteger(stats.revoked_records ?? 0, 'revoked_records'),
@@ -662,6 +753,8 @@ export function createSharedReleaseTokenIntrospectionStore(): SharedReleaseToken
     registerIssuedToken,
     findToken,
     revokeToken,
+    findDecisionRevocation,
+    revokeTokensForDecision,
     syncLifecycle,
     recordTokenUse,
     summary,

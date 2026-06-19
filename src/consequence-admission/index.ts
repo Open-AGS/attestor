@@ -120,6 +120,19 @@ export {
 } from './engine.js';
 
 export {
+  GENERIC_ADMISSION_GUARD_OUTCOME_TRACE_EFFECTS,
+  GENERIC_ADMISSION_GUARD_OUTCOME_TRACE_GUARD_IDS,
+  GENERIC_ADMISSION_GUARD_OUTCOME_TRACE_VERSION,
+  createGenericAdmissionGuardOutcomeTrace,
+  normalizeGenericAdmissionGuardOutcomeTrace,
+} from './generic-guard-outcome-trace.js';
+export type {
+  GenericAdmissionGuardOutcomeTraceEffect,
+  GenericAdmissionGuardOutcomeTraceEntry,
+  GenericAdmissionGuardOutcomeTraceGuardId,
+} from './generic-guard-outcome-trace.js';
+
+export {
   consequenceAdmissionDescriptor,
 } from './descriptor.js';
 

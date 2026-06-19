@@ -78,6 +78,28 @@ export interface RevokeReleaseTokenInput {
   readonly revokedBy?: string;
 }
 
+export interface ReleaseDecisionRevocationRecord {
+  readonly version: typeof RELEASE_TOKEN_REGISTRY_SPEC_VERSION;
+  readonly decisionId: string;
+  readonly revokedAt: string;
+  readonly reason: string | null;
+  readonly revokedBy: string | null;
+  readonly rawPayloadStored: false;
+}
+
+export interface RevokeReleaseTokensForDecisionInput {
+  readonly decisionId: string;
+  readonly revokedAt?: string;
+  readonly reason?: string;
+  readonly revokedBy?: string;
+}
+
+export interface RevokeReleaseTokensForDecisionResult {
+  readonly decisionRevocation: ReleaseDecisionRevocationRecord;
+  readonly revokedTokens: readonly RegisteredReleaseToken[];
+  readonly alreadyInactiveTokens: readonly RegisteredReleaseToken[];
+}
+
 export interface RecordReleaseTokenUseInput {
   readonly tokenId: string;
   readonly usedAt?: string;
@@ -94,6 +116,10 @@ export interface ReleaseTokenIntrospectionStore {
   registerIssuedToken(input: RegisterIssuedReleaseTokenInput): RegisteredReleaseToken;
   findToken(tokenId: string): RegisteredReleaseToken | null;
   revokeToken(input: RevokeReleaseTokenInput): RegisteredReleaseToken | null;
+  findDecisionRevocation(decisionId: string): ReleaseDecisionRevocationRecord | null;
+  revokeTokensForDecision(
+    input: RevokeReleaseTokensForDecisionInput,
+  ): RevokeReleaseTokensForDecisionResult;
   syncLifecycle(currentDate?: string): readonly RegisteredReleaseToken[];
   recordTokenUse(input: RecordReleaseTokenUseInput): RecordedReleaseTokenUseResult;
 }

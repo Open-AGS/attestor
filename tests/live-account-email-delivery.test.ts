@@ -296,6 +296,7 @@ async function main(): Promise<void> {
       headers: {
         'Content-Type': 'application/json',
         Cookie: accountAdminCookie!,
+        'x-attestor-csrf': 'live-account-email-delivery',
       },
       body: JSON.stringify({
         email: 'invitee@email.example',
@@ -346,6 +347,7 @@ async function main(): Promise<void> {
       headers: {
         'Content-Type': 'application/json',
         Cookie: accountAdminCookie!,
+        'x-attestor-csrf': 'live-account-email-delivery',
       },
       body: JSON.stringify({ ttlMinutes: 15 }),
     });

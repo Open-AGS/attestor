@@ -35,9 +35,7 @@ import {
 } from '../account/account-user-store.js';
 import {
   buildAccountSessionRecord,
-  accountSessionTokenHashCandidates,
   findAccountSessionByToken as findAccountSessionByTokenFile,
-  isAccountSessionRecordExpired,
   issueAccountSession as issueAccountSessionFile,
   listAccountSessions as listAccountSessionsFile,
   revokeAccountSession as revokeAccountSessionFile,
@@ -54,7 +52,6 @@ import {
   buildPasswordResetTokenRecord,
   consumeAccountUserActionToken as consumeAccountUserActionTokenFile,
   findAccountUserActionTokenByToken as findAccountUserActionTokenByTokenFile,
-  hashAccountUserActionToken,
   issueAccountPasskeyChallengeToken as issueAccountPasskeyChallengeTokenFile,
   issueAccountMfaLoginToken as issueAccountMfaLoginTokenFile,
   issueAccountInviteToken as issueAccountInviteTokenFile,
@@ -81,386 +78,47 @@ import {
   ensureControlPlanePgSchema as ensureSchema,
   getControlPlanePgPool as getPool,
   isSharedControlPlaneConfigured,
-  type PgClient,
-  type PgPool,
   withControlPlanePgTransaction as withPgTransaction,
 } from './pg.js';
 import {
   coerceAccountUserActionTokenRecord,
   coerceAccountUserRecord,
-  coerceHostedSamlReplayRecord,
-  mapPgErrorToAccountUserStoreError,
-  rowToAccountSession,
   rowToAccountUser,
   rowToAccountUserActionToken,
-  rowToHostedSamlReplay,
 } from './mappers.js';
+import {
+  countAccountUsersByAccountIdPg,
+  findAccountUserByEmailPg,
+  findAccountUserByIdPg,
+  listAccountUsersByAccountIdPg,
+  listAllAccountUsersPg,
+  upsertAccountUserPg,
+} from './account-auth-state-users.js';
+import {
+  listAccountSessionsPg,
+  upsertAccountSessionPg,
+} from './account-auth-state-sessions.js';
+import {
+  findAccountSessionByTokenPg,
+  findAccountUserActionTokenByTokenPg,
+  listAccountUserActionTokensPg,
+  upsertAccountUserActionTokenPg,
+} from './account-auth-state-tokens.js';
+import {
+  listHostedSamlReplaysPg,
+  recordHostedSamlReplayPg,
+} from './account-auth-state-saml.js';
+import type {
+  AccountSessionStoreSnapshot,
+  AccountUserActionTokenStoreSnapshot,
+  AccountUserStoreSnapshot,
+} from './account-auth-state-types.js';
+export type {
+  AccountSessionStoreSnapshot,
+  AccountUserActionTokenStoreSnapshot,
+  AccountUserStoreSnapshot,
+} from './account-auth-state-types.js';
 
-export interface AccountUserStoreSnapshot {
-  version: 1;
-  exportedAt: string;
-  recordCount: number;
-  records: AccountUserRecord[];
-}
-
-export interface AccountSessionStoreSnapshot {
-  version: 1;
-  exportedAt: string;
-  recordCount: number;
-  records: AccountSessionRecord[];
-}
-
-export interface AccountUserActionTokenStoreSnapshot {
-  version: 1;
-  exportedAt: string;
-  recordCount: number;
-  records: AccountUserActionTokenRecord[];
-}
-
-async function listAccountUsersByAccountIdPg(accountId: string): Promise<AccountUserRecord[]> {
-  await ensureSchema();
-  const pool = await getPool();
-  const result = await pool.query(
-    `SELECT record_json
-       FROM attestor_control_plane.account_users
-      WHERE account_id = $1
-      ORDER BY updated_at DESC, account_user_id ASC`,
-    [accountId],
-  );
-  return result.rows.map(rowToAccountUser);
-}
-
-async function listAllAccountUsersPg(): Promise<AccountUserRecord[]> {
-  await ensureSchema();
-  const pool = await getPool();
-  const result = await pool.query(`
-    SELECT record_json
-      FROM attestor_control_plane.account_users
-      ORDER BY updated_at DESC, account_user_id ASC
-  `);
-  return result.rows.map(rowToAccountUser);
-}
-
-async function findAccountUserByIdPg(id: string): Promise<AccountUserRecord | null> {
-  await ensureSchema();
-  const pool = await getPool();
-  const result = await pool.query(
-    `SELECT record_json
-       FROM attestor_control_plane.account_users
-      WHERE account_user_id = $1
-      LIMIT 1`,
-    [id],
-  );
-  return result.rows[0] ? rowToAccountUser(result.rows[0]) : null;
-}
-
-async function findAccountUserByEmailPg(email: string): Promise<AccountUserRecord | null> {
-  await ensureSchema();
-  const pool = await getPool();
-  const result = await pool.query(
-    `SELECT record_json
-       FROM attestor_control_plane.account_users
-      WHERE email = $1
-      LIMIT 1`,
-    [email.trim().toLowerCase()],
-  );
-  return result.rows[0] ? rowToAccountUser(result.rows[0]) : null;
-}
-
-async function countAccountUsersByAccountIdPg(accountId: string): Promise<number> {
-  await ensureSchema();
-  const pool = await getPool();
-  const result = await pool.query(
-    `SELECT COUNT(*)::int AS count
-       FROM attestor_control_plane.account_users
-      WHERE account_id = $1`,
-    [accountId],
-  );
-  return Number(result.rows[0]?.count ?? 0);
-}
-
-async function upsertAccountUserPg(record: AccountUserRecord, executor?: PgPool | PgClient): Promise<void> {
-  await ensureSchema();
-  const target = executor ?? await getPool();
-  try {
-    await target.query(
-      `INSERT INTO attestor_control_plane.account_users (
-        account_user_id, account_id, email, role_id, user_status, updated_at, last_login_at, record_json
-      ) VALUES (
-        $1, $2, $3, $4, $5, $6::timestamptz, $7::timestamptz, $8::jsonb
-      )
-      ON CONFLICT (account_user_id) DO UPDATE SET
-        account_id = EXCLUDED.account_id,
-        email = EXCLUDED.email,
-        role_id = EXCLUDED.role_id,
-        user_status = EXCLUDED.user_status,
-        updated_at = EXCLUDED.updated_at,
-        last_login_at = EXCLUDED.last_login_at,
-        record_json = EXCLUDED.record_json`,
-      [
-        record.id,
-        record.accountId,
-        record.email,
-        record.role,
-        record.status,
-        record.updatedAt,
-        record.lastLoginAt,
-        JSON.stringify(record),
-      ],
-    );
-  } catch (err) {
-    const mapped = mapPgErrorToAccountUserStoreError(err);
-    if (mapped) throw mapped;
-    throw err;
-  }
-}
-
-async function listAccountSessionsPg(filters?: {
-  accountId?: string | null;
-  accountUserId?: string | null;
-}): Promise<AccountSessionRecord[]> {
-  await ensureSchema();
-  const pool = await getPool();
-  const where: string[] = [];
-  const params: unknown[] = [];
-  let idx = 1;
-  if (filters?.accountId) {
-    where.push(`account_id = $${idx++}`);
-    params.push(filters.accountId);
-  }
-  if (filters?.accountUserId) {
-    where.push(`account_user_id = $${idx++}`);
-    params.push(filters.accountUserId);
-  }
-  const result = await pool.query(
-    `SELECT record_json
-       FROM attestor_control_plane.account_sessions
-      ${where.length > 0 ? `WHERE ${where.join(' AND ')}` : ''}
-      ORDER BY last_seen_at DESC, session_id ASC`,
-    params,
-  );
-  return result.rows.map(rowToAccountSession);
-}
-
-async function upsertAccountSessionPg(record: AccountSessionRecord, executor?: PgPool | PgClient): Promise<void> {
-  await ensureSchema();
-  const target = executor ?? await getPool();
-  await target.query(
-    `INSERT INTO attestor_control_plane.account_sessions (
-      session_id, account_id, account_user_id, role_id, token_hash, created_at, last_seen_at, expires_at, revoked_at, record_json
-    ) VALUES (
-      $1, $2, $3, $4, $5, $6::timestamptz, $7::timestamptz, $8::timestamptz, $9::timestamptz, $10::jsonb
-    )
-    ON CONFLICT (session_id) DO UPDATE SET
-      account_id = EXCLUDED.account_id,
-      account_user_id = EXCLUDED.account_user_id,
-      role_id = EXCLUDED.role_id,
-      token_hash = EXCLUDED.token_hash,
-      created_at = EXCLUDED.created_at,
-      last_seen_at = EXCLUDED.last_seen_at,
-      expires_at = EXCLUDED.expires_at,
-      revoked_at = EXCLUDED.revoked_at,
-      record_json = EXCLUDED.record_json`,
-    [
-      record.id,
-      record.accountId,
-      record.accountUserId,
-      record.role,
-      record.tokenHash,
-      record.createdAt,
-      record.lastSeenAt,
-      record.expiresAt,
-      record.revokedAt,
-      JSON.stringify(record),
-    ],
-  );
-}
-
-async function listAccountUserActionTokensPg(filters?: {
-  accountId?: string | null;
-  accountUserId?: string | null;
-  purpose?: AccountUserActionTokenPurpose | null;
-}): Promise<AccountUserActionTokenRecord[]> {
-  await ensureSchema();
-  const pool = await getPool();
-  const where: string[] = [];
-  const params: unknown[] = [];
-  let idx = 1;
-  if (filters?.accountId) {
-    where.push(`account_id = $${idx++}`);
-    params.push(filters.accountId);
-  }
-  if (filters?.accountUserId) {
-    where.push(`account_user_id = $${idx++}`);
-    params.push(filters.accountUserId);
-  }
-  if (filters?.purpose) {
-    where.push(`purpose = $${idx++}`);
-    params.push(filters.purpose);
-  }
-  const result = await pool.query(
-    `SELECT record_json
-       FROM attestor_control_plane.account_user_action_tokens
-      ${where.length > 0 ? `WHERE ${where.join(' AND ')}` : ''}
-      ORDER BY updated_at DESC, token_id ASC`,
-    params,
-  );
-  return result.rows.map(rowToAccountUserActionToken);
-}
-
-async function upsertAccountUserActionTokenPg(
-  record: AccountUserActionTokenRecord,
-  executor?: PgPool | PgClient,
-): Promise<void> {
-  await ensureSchema();
-  const target = executor ?? await getPool();
-  await target.query(
-    `INSERT INTO attestor_control_plane.account_user_action_tokens (
-      token_id, purpose, account_id, account_user_id, email, role_id, token_hash,
-      updated_at, expires_at, consumed_at, revoked_at, record_json
-    ) VALUES (
-      $1, $2, $3, $4, $5, $6, $7,
-      $8::timestamptz, $9::timestamptz, $10::timestamptz, $11::timestamptz, $12::jsonb
-    )
-    ON CONFLICT (token_id) DO UPDATE SET
-      purpose = EXCLUDED.purpose,
-      account_id = EXCLUDED.account_id,
-      account_user_id = EXCLUDED.account_user_id,
-      email = EXCLUDED.email,
-      role_id = EXCLUDED.role_id,
-      token_hash = EXCLUDED.token_hash,
-      updated_at = EXCLUDED.updated_at,
-      expires_at = EXCLUDED.expires_at,
-      consumed_at = EXCLUDED.consumed_at,
-      revoked_at = EXCLUDED.revoked_at,
-      record_json = EXCLUDED.record_json`,
-    [
-      record.id,
-      record.purpose,
-      record.accountId,
-      record.accountUserId,
-      record.email,
-      record.role,
-      record.tokenHash,
-      record.updatedAt,
-      record.expiresAt,
-      record.consumedAt,
-      record.revokedAt,
-      JSON.stringify(record),
-    ],
-  );
-}
-
-async function findAccountSessionByTokenPg(token: string, options?: { touch?: boolean }): Promise<AccountSessionRecord | null> {
-  await ensureSchema();
-  const pool = await getPool();
-  const tokenHashes = accountSessionTokenHashCandidates(token);
-  const result = await pool.query(
-    `SELECT record_json
-       FROM attestor_control_plane.account_sessions
-      WHERE token_hash = ANY($1::text[])
-      LIMIT 1`,
-    [tokenHashes],
-  );
-  if (!result.rows[0]) return null;
-  const record = rowToAccountSession(result.rows[0]);
-  const now = new Date();
-  if (record.revokedAt || isAccountSessionRecordExpired(record, now.getTime())) {
-    return null;
-  }
-  if (options?.touch) {
-    record.lastSeenAt = now.toISOString();
-    await upsertAccountSessionPg(record);
-  }
-  return record;
-}
-
-async function findAccountUserActionTokenByTokenPg(token: string): Promise<AccountUserActionTokenRecord | null> {
-  await ensureSchema();
-  const pool = await getPool();
-  const result = await pool.query(
-    `SELECT record_json
-       FROM attestor_control_plane.account_user_action_tokens
-      WHERE token_hash = $1
-      LIMIT 1`,
-    [hashAccountUserActionToken(token)],
-  );
-  if (!result.rows[0]) return null;
-  const record = rowToAccountUserActionToken(result.rows[0]);
-  if (record.revokedAt || record.consumedAt || Date.parse(record.expiresAt) <= Date.now()) {
-    return null;
-  }
-  if (record.maxAttempts !== null && record.attemptCount >= record.maxAttempts) {
-    return null;
-  }
-  return record;
-}
-
-async function listHostedSamlReplaysPg(): Promise<HostedSamlReplayRecord[]> {
-  await ensureSchema();
-  const pool = await getPool();
-  await pool.query(
-    `DELETE FROM attestor_control_plane.account_saml_replays
-      WHERE expires_at <= $1::timestamptz`,
-    [new Date().toISOString()],
-  );
-  const result = await pool.query(
-    `SELECT record_json
-       FROM attestor_control_plane.account_saml_replays
-      ORDER BY consumed_at DESC, request_id ASC`,
-  );
-  return result.rows.map(rowToHostedSamlReplay);
-}
-
-async function recordHostedSamlReplayPg(
-  record: HostedSamlReplayRecord,
-): Promise<{ duplicate: boolean; record: HostedSamlReplayRecord; existing: HostedSamlReplayRecord | null }> {
-  await ensureSchema();
-  const pool = await getPool();
-  const normalized = coerceHostedSamlReplayRecord(record);
-  await pool.query(
-    `DELETE FROM attestor_control_plane.account_saml_replays
-      WHERE expires_at <= $1::timestamptz`,
-    [new Date().toISOString()],
-  );
-  const insert = await pool.query(
-    `INSERT INTO attestor_control_plane.account_saml_replays (
-      request_id, response_id, issuer, subject, consumed_at, expires_at, record_json
-    ) VALUES (
-      $1, $2, $3, $4, $5::timestamptz, $6::timestamptz, $7::jsonb
-    )
-    ON CONFLICT (request_id) DO NOTHING
-    RETURNING record_json`,
-    [
-      normalized.requestId,
-      normalized.responseId,
-      normalized.issuer,
-      normalized.subject,
-      normalized.consumedAt,
-      normalized.expiresAt,
-      JSON.stringify(normalized),
-    ],
-  );
-  if (insert.rows[0]) {
-    return {
-      duplicate: false,
-      record: normalized,
-      existing: null,
-    };
-  }
-  const existing = await pool.query(
-    `SELECT record_json
-       FROM attestor_control_plane.account_saml_replays
-      WHERE request_id = $1
-      LIMIT 1`,
-    [normalized.requestId],
-  );
-  return {
-    duplicate: true,
-    record: normalized,
-    existing: existing.rows[0] ? rowToHostedSamlReplay(existing.rows[0]) : null,
-  };
-}
 
 export async function listAccountUsersByAccountIdState(accountId: string): Promise<{
   records: AccountUserRecord[];

@@ -1,6 +1,3 @@
-import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import {
   RELEASE_TENANT_SIGNER_BOUNDARY_SPEC_VERSION,
   RELEASE_TENANT_SIGNER_LIVE_PROVIDER_PROOF_SPEC_VERSION,
@@ -15,35 +12,15 @@ import {
   releaseTenantSignerLiveProviderProofChallengeDigest,
   resolveReleaseTenantSignerProviderCapability,
 } from '../src/service/bootstrap/release-tenant-signer-boundary.js';
-
-let passed = 0;
-
-function readProjectFile(...segments: string[]): string {
-  return readFileSync(join(process.cwd(), ...segments), 'utf8');
-}
-
-function equal<T>(actual: T, expected: T, message: string): void {
-  assert.equal(actual, expected, message);
-  passed += 1;
-}
-
-function ok(condition: unknown, message: string): void {
-  assert.ok(condition, message);
-  passed += 1;
-}
-
-function includes(value: string, expected: string, message: string): void {
-  assert.ok(
-    value.includes(expected),
-    `${message}\nExpected to include: ${expected}`,
-  );
-  passed += 1;
-}
-
-function excludes(value: string, unexpected: string, message: string): void {
-  assert.ok(!value.includes(unexpected), message);
-  passed += 1;
-}
+import {
+  equal,
+  excludes,
+  includes,
+  ok,
+  passedCount,
+  readProjectFile,
+  throws,
+} from './production-tenant-signer-boundary-fixtures.js';
 
 function testRuntimeSharedSignerIsNotTenantIsolated(): void {
   const descriptor = createRuntimeSharedReleaseTenantSignerDescriptor({
@@ -210,7 +187,7 @@ function testFakeExternalKmsFailsClosedOnTenantMismatch(): void {
     keyId: 'release-key-v1',
   });
 
-  assert.throws(
+  throws(
     () =>
       signer.sign({
         tenantId: 'tenant-b',
@@ -221,7 +198,6 @@ function testFakeExternalKmsFailsClosedOnTenantMismatch(): void {
       error.message.includes('mismatched tenant'),
     'Tenant signer boundary: fake signer refuses tenant mismatch',
   );
-  passed += 1;
 }
 
 function testProviderCapabilityMapsNativeSigningAlgorithms(): void {
@@ -314,7 +290,7 @@ function testUnsupportedProviderAlgorithmFailsClosed(): void {
     null,
     'Tenant signer boundary: unsupported provider algorithm has no native algorithm claim',
   );
-  assert.throws(
+  throws(
     () =>
       createReleaseTenantSignerLiveProviderProof({
         tenantId: 'tenant-a',
@@ -331,7 +307,6 @@ function testUnsupportedProviderAlgorithmFailsClosed(): void {
     /does not support algorithm/u,
     'Tenant signer boundary: unsupported provider algorithm cannot produce a live proof envelope',
   );
-  passed += 1;
 }
 
 function testProductionReadinessRequiresLiveProviderProof(): void {
@@ -370,12 +345,11 @@ function testProductionReadinessRequiresLiveProviderProof(): void {
     missingLiveProbe.productionBlockers.includes('live-provider-sign-verify-probe-missing'),
     'Tenant signer boundary: live provider proof blocker is explicit',
   );
-  assert.throws(
+  throws(
     () => assertReleaseTenantSignerProductionReady(missingLiveProbe),
     ReleaseTenantSignerBoundaryError,
     'Tenant signer boundary: production assert fails closed without live proof',
   );
-  passed += 1;
 
   const liveProof = createReleaseTenantSignerLiveProviderProof({
     tenantId: 'tenant-a',
@@ -802,4 +776,4 @@ testConfidentialSignerRequiresAttestationEvidence();
 testKeyIdMustBeOpaque();
 testDocsAndPackageExposeBoundary();
 
-console.log(`Production tenant signer boundary tests: ${passed} passed, 0 failed`);
+console.log(`Production tenant signer boundary tests: ${passedCount()} passed, 0 failed`);

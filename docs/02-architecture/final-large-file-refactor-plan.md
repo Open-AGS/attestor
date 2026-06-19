@@ -161,13 +161,17 @@ limit exceptions unless module-specific risk warrants a focused audit and PR.
 
 The final wave is complete only when all of the following are true:
 
+- No tracked text file above 800 lines is unregistered.
+- No registered oversized file grows beyond its locked `maxLines`.
 - No non-exception mixed responsibility route, store, bootstrap, billing, type,
-  or test file remains above 1200 lines.
+  doc, fixture, or test file remains above 800 lines unless it is explicitly
+  queued as a split target with a named protected boundary and targeted checks.
 - `account-routes.ts`, `release-policy-control-routes.ts`, and `admin-routes.ts`
-  are small route registration facades or are explicitly justified in the
-  registry with fresh route matrices.
-- The remaining hard-limit registry entries are limited to intentional
-  protocol, adapter, conformance, proof, or canonical evidence exceptions.
+  remain small route registration facades and are not protected by stale
+  oversized limits.
+- The remaining oversized registry entries are limited to intentional protocol,
+  adapter, conformance, proof, generated contract, fixture, canonical evidence,
+  or explicitly queued responsibility-split exceptions.
 - `npm run test:large-file-budget` is green.
 - Every moved slice has a targeted local check and green GitHub checks.
 

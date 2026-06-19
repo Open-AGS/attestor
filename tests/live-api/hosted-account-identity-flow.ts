@@ -428,6 +428,7 @@ export async function runHostedAccountIdentityFlow(ctx: LiveApiHostedContext): P
           ...csrfHeaders(readOnlyCookie!),
         },
         body: JSON.stringify({
+          password: 'M4!qZ8nY2vC7pR1',
           code: generateCurrentTotpCode(readOnlyMfaEnrollBody.enrollment.secretBase32),
         }),
       });

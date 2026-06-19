@@ -1,22 +1,18 @@
-import { createHash } from 'node:crypto';
 import type { Context, Hono } from 'hono';
 import {
   review,
   type IssuedReleaseEvidencePack,
   type IssuedReleaseToken,
   type ReleaseDecision,
-  type ReleaseDecisionLogPhase,
   type ReleaseEvidencePackIssuer,
   type ReleaseEvidencePolicyContext,
   type ReleaseEvidenceTokenPolicyContext,
   type ReleaseReviewerQueueDetail,
-  type ReleaseReviewerQueueListOptions,
   type ReleaseReviewerQueueListResult,
   type ReleaseReviewerQueueRecord,
   type ReleaseTokenConfirmationClaim,
   type ReleaseTokenIssuer,
 } from '../../../release-layer/index.js';
-import type { AdminAuditAction } from '../../admin-audit-log.js';
 import type {
   RequestPathReleaseDecisionLogWriter,
   RequestPathReleaseEvidencePackStore,
@@ -28,9 +24,30 @@ import {
   RELEASE_ADMIN_MUTATION_ROLES,
   RELEASE_ADMIN_READ_ROLES,
   authorizeReleaseAdminRoute,
-  type ReleaseAdminRouteActor,
 } from '../release-admin-authorization.js';
 import { secureHtmlResponseHeaders } from '../route-response-helpers.js';
+import {
+  actorDisplayName,
+  actorPolicyRole,
+  parsePositiveLimit,
+  parseReviewActionBody,
+  readReviewField,
+  readReviewListOptions,
+} from './release-review-route-request.js';
+import {
+  appendReviewerTimelineToDecisionLog,
+  appendReviewerTimelineToDecisionLogOnce,
+  releaseReviewClosureId,
+  releaseReviewClosureNeedsRepair,
+  releaseReviewTenantId,
+  releaseReviewTerminalOccurredAt,
+} from './release-review-route-closure-helpers.js';
+import { buildReviewActionResponse } from './release-review-route-responses.js';
+import type {
+  AdminMutationFinalizationInput,
+  AdminMutationRequestResult,
+  IssuedReleaseTokenResponse,
+} from './release-review-route-types.js';
 
 const {
   ReleaseReviewerQueueError,
@@ -39,28 +56,6 @@ const {
   attachIssuedTokenToReviewerQueueRecord,
 } = review;
 
-type AdminMutationRequestResult = {
-  idempotencyKey: string | null;
-  requestHash: string;
-};
-
-interface AdminMutationFinalizationInput {
-  idempotencyKey: string | null;
-  routeId: string;
-  requestPayload: unknown;
-  statusCode: number;
-  responseBody: Record<string, unknown>;
-  audit: {
-    action: AdminAuditAction;
-    accountId?: string | null;
-    tenantId?: string | null;
-    tenantKeyId?: string | null;
-    planId?: string | null;
-    monthlyRunQuota?: number | null;
-    requestHash?: string;
-    metadata?: Record<string, unknown>;
-  };
-}
 
 export interface ReleaseReviewRouteDeps {
   currentAdminAuthorized(c: Context): Response | null;
@@ -86,27 +81,8 @@ export interface ReleaseReviewRouteDeps {
   finalizeAdminMutation(input: AdminMutationFinalizationInput): Promise<Record<string, unknown>>;
 }
 
-interface IssuedReleaseTokenResponse extends Record<string, unknown> {
-  tokenId: string;
-  token: string;
-  expiresAt: string;
-  targetId: string;
-  decisionId: string;
-  ttlSeconds: number;
-  override: boolean;
-  tenantId: string | null;
-  senderConstrained: boolean;
-  presentationRequired: 'sender-constrained';
-  policyVersion: string | null;
-  policyHash: string;
-  policyIrHash: string | null;
-  policyProvenanceSource: ReleaseReviewerQueueDetail['policyProvenanceSource'];
-  compiledPolicyIndexVersion: string | null;
-  compiledPolicyIrVersion: string | null;
-  policyContext: ReleaseEvidenceTokenPolicyContext;
-}
 
-interface IssuedEvidencePackResponse extends Record<string, unknown> {
+export interface IssuedEvidencePackResponse extends Record<string, unknown> {
   evidencePackId: string;
   exportPath: string;
   bundleDigest: string;
@@ -116,80 +92,6 @@ interface IssuedEvidencePackResponse extends Record<string, unknown> {
   policyContext: ReleaseEvidencePolicyContext;
 }
 
-function parsePositiveLimit(value: string | undefined): number | null {
-  if (!value?.trim()) return null;
-  const parsed = Number.parseInt(value.trim(), 10);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
-}
-
-function readReviewField(
-  body: Record<string, unknown>,
-  key: string,
-): string | null {
-  const value = body[key];
-  if (typeof value !== 'string') {
-    return null;
-  }
-
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : null;
-}
-
-function actorDisplayName(actor: ReleaseAdminRouteActor['releaseActor']): string {
-  return actor.displayName?.trim() || actor.id;
-}
-
-function actorPolicyRole(authorized: ReleaseAdminRouteActor): string {
-  return authorized.releaseActor.role?.trim() || authorized.adminRole;
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-function readReviewListOptions(c: Context): ReleaseReviewerQueueListOptions {
-  return {
-    limit: parsePositiveLimit(c.req.query('limit')) ?? undefined,
-    riskClass: (c.req.query('riskClass')?.trim() || undefined) as
-      | ReleaseReviewerQueueListOptions['riskClass']
-      | undefined,
-    consequenceType: (c.req.query('consequenceType')?.trim() || undefined) as
-      | ReleaseReviewerQueueListOptions['consequenceType']
-      | undefined,
-  };
-}
-
-async function parseReviewActionBody(c: Context): Promise<Record<string, unknown>> {
-  const contentType = c.req.header('content-type') ?? '';
-  if (contentType.includes('application/json')) {
-    const parsed = await c.req.json();
-    return isRecord(parsed) ? parsed : {};
-  }
-
-  const parsed = await c.req.parseBody();
-  return Object.fromEntries(
-    Object.entries(parsed).map(([key, value]) => [key, Array.isArray(value) ? value[0] : value]),
-  );
-}
-
-function buildReviewActionResponse(
-  review: ReleaseReviewerQueueDetail,
-  releaseToken: IssuedReleaseTokenResponse | null,
-  evidencePack: IssuedEvidencePackResponse | null,
-): Record<string, unknown> {
-  return {
-    review,
-    authority: {
-      state: review.authorityState,
-      approvalsRequired: review.minimumReviewerCount,
-      approvalsRecorded: review.approvalsRecorded,
-      approvalsRemaining: review.approvalsRemaining,
-      finalized: review.authorityState !== 'pending',
-    },
-    releaseToken,
-    evidencePack,
-  };
-}
 
 function buildIssuedReleaseTokenResponse(
   issuedToken: IssuedReleaseToken,
@@ -224,60 +126,6 @@ function buildIssuedReleaseTokenResponse(
   };
 }
 
-function releaseReviewTenantId(record: ReleaseReviewerQueueRecord): string | null {
-  if (record.detail.tenantId) {
-    return record.detail.tenantId;
-  }
-  const requesterId = record.releaseDecision.requester.id.trim();
-  const tenantPrefix = 'tenant:';
-  if (requesterId.startsWith(tenantPrefix)) {
-    const tenantId = requesterId.slice(tenantPrefix.length).trim();
-    return tenantId.length > 0 ? tenantId : null;
-  }
-  return null;
-}
-
-function releaseReviewClosureId(
-  prefix: 'rt' | 'ep',
-  record: ReleaseReviewerQueueRecord,
-): string {
-  const digest = createHash('sha256')
-    .update(record.detail.id)
-    .update('\n')
-    .update(record.detail.decisionId)
-    .update('\n')
-    .update(record.detail.authorityState)
-    .digest('hex')
-    .slice(0, 40);
-  return `${prefix}_${digest}`;
-}
-
-function releaseReviewTerminalOccurredAt(
-  record: ReleaseReviewerQueueRecord,
-  fallback: string,
-): string {
-  for (const entry of [...record.detail.timeline].reverse()) {
-    if (entry.phase === 'terminal-accept') {
-      return entry.occurredAt;
-    }
-  }
-  return fallback;
-}
-
-function releaseReviewClosureNeedsRepair(
-  record: ReleaseReviewerQueueRecord,
-  authorityState: 'approved' | 'overridden',
-): boolean {
-  return (
-    record.detail.authorityState === authorityState &&
-    (
-      record.detail.issuedReleaseToken === null ||
-      record.detail.evidencePackId === null ||
-      record.releaseDecision.releaseTokenId === undefined ||
-      record.releaseDecision.evidencePackId === undefined
-    )
-  );
-}
 
 function buildIssuedEvidencePackResponse(
   issuedEvidencePack: IssuedReleaseEvidencePack,
@@ -293,61 +141,6 @@ function buildIssuedEvidencePackResponse(
   };
 }
 
-async function appendReviewerTimelineToDecisionLog(
-  writer: RequestPathReleaseDecisionLogWriter,
-  decision: ReleaseDecision,
-  occurredAt: string,
-  requestId: string,
-  phase: Extract<
-    ReleaseDecisionLogPhase,
-    'review' | 'override' | 'evidence-pack' | 'terminal-accept' | 'terminal-deny'
-  >,
-): Promise<void> {
-  await writer.append({
-    occurredAt,
-    requestId,
-    phase,
-    matchedPolicyId: decision.policyVersion,
-    decision,
-    metadata: {
-      policyMatched: true,
-      pendingChecks: [],
-      pendingEvidenceKinds: [],
-      requiresReview: decision.status === 'hold' || decision.status === 'review-required',
-      deterministicChecksCompleted: true,
-      effectivePolicyId: null,
-      rolloutMode: null,
-      rolloutEvaluationMode: null,
-      rolloutReason: null,
-      rolloutCanaryBucket: null,
-      rolloutFallbackPolicyId: null,
-    },
-  });
-}
-
-async function appendReviewerTimelineToDecisionLogOnce(
-  writer: RequestPathReleaseDecisionLogWriter,
-  decision: ReleaseDecision,
-  occurredAt: string,
-  requestId: string,
-  phase: Extract<
-    ReleaseDecisionLogPhase,
-    'review' | 'override' | 'evidence-pack' | 'terminal-accept' | 'terminal-deny'
-  >,
-): Promise<void> {
-  const entries = await writer.entries();
-  if (
-    entries.some(
-      (entry) =>
-        entry.requestId === requestId &&
-        entry.phase === phase &&
-        entry.decisionId === decision.id,
-    )
-  ) {
-    return;
-  }
-  await appendReviewerTimelineToDecisionLog(writer, decision, occurredAt, requestId, phase);
-}
 
 async function completeReleaseReviewAuthorityClosure(input: {
   readonly record: ReleaseReviewerQueueRecord;

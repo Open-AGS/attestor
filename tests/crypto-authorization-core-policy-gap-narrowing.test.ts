@@ -1,4 +1,3 @@
-import assert from 'node:assert/strict';
 import {
   CRYPTO_NARROWING_CANDIDATE_KINDS,
   CRYPTO_NARROWING_SCOPE_KINDS,
@@ -23,75 +22,17 @@ import {
   createCryptoConsequenceRiskAssessment,
 } from '../src/crypto-authorization-core/consequence-risk-mapping.js';
 import {
-  createCryptoCanonicalCounterpartyReference,
-} from '../src/crypto-authorization-core/canonical-references.js';
-import {
-  createCryptoAccountReference,
-  createCryptoAssetReference,
-  createCryptoChainReference,
-} from '../src/crypto-authorization-core/types.js';
-
-let passed = 0;
-
-function ok(condition: unknown, message: string): void {
-  assert.ok(condition, message);
-  passed += 1;
-}
-
-function equal<T>(actual: T, expected: T, message: string): void {
-  assert.equal(actual, expected, message);
-  passed += 1;
-}
-
-function deepEqual<T>(actual: T, expected: T, message: string): void {
-  assert.deepEqual(actual, expected, message);
-  passed += 1;
-}
-
-function fixtureChain() {
-  return createCryptoChainReference({
-    namespace: 'eip155',
-    chainId: '1',
-  });
-}
-
-function fixtureAccount(accountKind: Parameters<typeof createCryptoAccountReference>[0]['accountKind'] = 'eoa') {
-  return createCryptoAccountReference({
-    accountKind,
-    chain: fixtureChain(),
-    address: '0x1111111111111111111111111111111111111111',
-  });
-}
-
-function fixtureAsset() {
-  return createCryptoAssetReference({
-    assetKind: 'stablecoin',
-    chain: fixtureChain(),
-    assetId: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
-    symbol: 'USDC',
-    decimals: 6,
-  });
-}
-
-function fixtureCounterparty(counterpartyKind: Parameters<typeof createCryptoCanonicalCounterpartyReference>[0]['counterpartyKind'] = 'account') {
-  return createCryptoCanonicalCounterpartyReference({
-    counterpartyKind,
-    counterpartyId: `${counterpartyKind}:main`,
-    chain: fixtureChain(),
-  });
-}
-
-function candidateKinds(
-  assessment: ReturnType<typeof createCryptoPolicyGapNarrowingAssessment>,
-): readonly string[] {
-  return assessment.candidates.map((candidate) => candidate.kind);
-}
-
-function gapClasses(
-  assessment: ReturnType<typeof createCryptoPolicyGapNarrowingAssessment>,
-): readonly string[] {
-  return assessment.gaps.map((gap) => gap.gapClass);
-}
+  candidateKinds,
+  deepEqual,
+  equal,
+  fixtureAccount,
+  fixtureAsset,
+  fixtureCounterparty,
+  gapClasses,
+  ok,
+  passedCount,
+  throws,
+} from './crypto-authorization-core-policy-gap-narrowing-fixtures.js';
 
 function testDescriptorVocabulary(): void {
   const descriptor = cryptoPolicyGapNarrowingDescriptor();
@@ -693,39 +634,36 @@ function testInvalidInputsFailClosed(): void {
     riskAssessment: risk,
   });
 
-  assert.throws(
+  throws(
     () =>
       createCryptoPolicyGapNarrowingAssessment({
         signalAssessment: signals,
         generatedAt: 'not-a-date',
-      }),
+    }),
     /ISO timestamp/i,
   );
-  passed += 1;
 
-  assert.throws(
+  throws(
     () =>
       createCryptoPolicyGapNarrowingAssessment({
         signalAssessment: signals,
         generatedAt: '2026-05-11T11:50:00.000Z',
         policyRef: 'policy with spaces',
-      }),
+    }),
     /compact scoped reference/i,
   );
-  passed += 1;
 
-  assert.throws(
+  throws(
     () =>
       createCryptoPolicyGapNarrowingAssessment({
         signalAssessment: signals,
         generatedAt: '2026-05-11T11:50:00.000Z',
         allowedCandidateKinds: ['unknown-kind' as never],
-      }),
+    }),
     /does not support candidate kind/i,
   );
-  passed += 1;
 
-  assert.throws(
+  throws(
     () =>
       createCryptoPolicyCoverageProfile({
         generatedAt: '2026-05-11T11:50:00.000Z',
@@ -736,12 +674,11 @@ function testInvalidInputsFailClosed(): void {
             sourceKind: 'policy-rule',
           },
         ],
-      }),
+    }),
     /does not support policy dimension/i,
   );
-  passed += 1;
 
-  assert.throws(
+  throws(
     () =>
       createCryptoPolicyCoverageProfile({
         generatedAt: '2026-05-11T11:50:00.000Z',
@@ -754,10 +691,9 @@ function testInvalidInputsFailClosed(): void {
             maxAgeSeconds: 60,
           },
         ],
-      }),
+    }),
     /observedAt cannot be after generatedAt/i,
   );
-  passed += 1;
 
   const coverageProfile = createCryptoPolicyCoverageProfile({
     generatedAt: '2026-05-11T11:50:00.000Z',
@@ -785,15 +721,14 @@ function testInvalidInputsFailClosed(): void {
     policyCoverageProfile: coverageProfile,
   });
 
-  assert.throws(
+  throws(
     () =>
       createCryptoPolicyIntelligenceRoutingProfile({
         coverageProfile: differentCoverageProfile,
         policyGapAssessment: assessment,
-      }),
+    }),
     /same coverage profile digest/i,
   );
-  passed += 1;
 }
 
 testDescriptorVocabulary();
@@ -807,4 +742,4 @@ testPolicyIntelligenceRoutingProfilePrecedenceAndPrivacy();
 testPolicyIntelligenceRoutingReviewOnlyPath();
 testInvalidInputsFailClosed();
 
-console.log(`Crypto authorization core policy-gap narrowing tests: ${passed} passed, 0 failed`);
+console.log(`Crypto authorization core policy-gap narrowing tests: ${passedCount()} passed, 0 failed`);

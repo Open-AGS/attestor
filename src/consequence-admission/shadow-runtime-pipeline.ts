@@ -3,7 +3,6 @@ import {
   canonicalizeReleaseJson,
   type CanonicalReleaseJsonValue,
 } from '../release-kernel/release-canonicalization.js';
-import type { CanonicalShadowEvent } from './canonical-shadow-event-schema.js';
 import {
   CONSEQUENCE_TAMPER_EVIDENT_HISTORY_VERSION,
 } from './tamper-evident-history.js';
@@ -18,7 +17,6 @@ import type {
 import {
   HUMAN_COMPREHENSION_GATE_VERSION,
   type HumanComprehensionActiveQuestionRef,
-  type HumanComprehensionGateResult,
   type HumanComprehensionReasonLineInput,
   evaluateHumanComprehensionGate,
 } from './human-comprehension-gate.js';
@@ -49,7 +47,6 @@ import {
 } from './relationship-detector-contract.js';
 import {
   SHADOW_ENVELOPE_PROJECTOR_VERSION,
-  type CreateShadowEnvelopeProjectionOptions,
   type ShadowEnvelopeProjection,
   createShadowEnvelopeProjection,
 } from './shadow-envelope-projector.js';
@@ -73,106 +70,23 @@ import {
 } from './signal-relationship-contract.js';
 import {
   SIGNED_ASSURANCE_PACKET_VERSION,
-  type SignedAssurancePacket,
   type SignedAssurancePacketDecision,
   createSignedAssurancePacket,
 } from './signed-assurance-packet.js';
+import { shadowRuntimePipelineDescriptor } from './shadow-runtime-pipeline-descriptor.js';
+import {
+  normalizeGeneratedAt,
+  normalizeReviewCapacity,
+  normalizeReviewRate,
+} from './shadow-runtime-pipeline-normalize.js';
+import {
+  SHADOW_RUNTIME_PIPELINE_VERSION,
+  type ShadowRuntimePipelineInput,
+  type ShadowRuntimePipelineResult,
+} from './shadow-runtime-pipeline-types.js';
 
-export const SHADOW_RUNTIME_PIPELINE_VERSION =
-  'attestor.shadow-runtime-pipeline.v1';
-
-export interface ShadowRuntimePipelineInput {
-  readonly event: CanonicalShadowEvent;
-  readonly projectionOptions?: CreateShadowEnvelopeProjectionOptions | null;
-  readonly generatedAt?: string | null;
-  readonly reviewerCapacityPerHour?: number | null;
-  readonly currentReviewRatePerMinute?: number | null;
-}
-
-export interface ShadowRuntimePipelineCounts {
-  readonly signalBatchCount: number;
-  readonly signalCount: number;
-  readonly relationshipCount: number;
-  readonly interactionRuleCount: number;
-  readonly opinionCount: number;
-  readonly modulatorCount: number;
-  readonly reasonLineCount: number;
-  readonly activeQuestionCount: number;
-}
-
-export interface ShadowRuntimePipelineResult {
-  readonly version: typeof SHADOW_RUNTIME_PIPELINE_VERSION;
-  readonly shadowEnvelopeProjectorVersion:
-    typeof SHADOW_ENVELOPE_PROJECTOR_VERSION;
-  readonly signalExtractorContractVersion:
-    typeof SIGNAL_EXTRACTOR_CONTRACT_VERSION;
-  readonly signalAdapterRegistryVersion:
-    typeof SIGNAL_ADAPTER_REGISTRY_VERSION;
-  readonly relationshipDetectorContractVersion:
-    typeof RELATIONSHIP_DETECTOR_CONTRACT_VERSION;
-  readonly signalRelationshipContractVersion:
-    typeof SIGNAL_RELATIONSHIP_CONTRACT_VERSION;
-  readonly layerOpinionSchemaVersion: typeof LAYER_OPINION_SCHEMA_VERSION;
-  readonly modulatorAuthorityTierVersion:
-    typeof MODULATOR_AUTHORITY_TIER_VERSION;
-  readonly relationshipAwareMonotoneFusionVersion:
-    typeof RELATIONSHIP_AWARE_MONOTONE_FUSION_VERSION;
-  readonly conflictAbstentionGateVersion:
-    typeof CONFLICT_ABSTENTION_GATE_VERSION;
-  readonly humanComprehensionGateVersion:
-    typeof HUMAN_COMPREHENSION_GATE_VERSION;
-  readonly signedAssurancePacketVersion:
-    typeof SIGNED_ASSURANCE_PACKET_VERSION;
-  readonly executionMode: 'shadow-only';
-  readonly packetSigningIncluded: false;
-  readonly projection: ShadowEnvelopeProjection;
-  readonly adapterRegistry: SignalAdapterRegistry;
-  readonly signalBatches: readonly SignalExtractionBatch[];
-  readonly signals: readonly SignalRelationshipSignal[];
-  readonly relationshipDetection: RelationshipDetectionBatch;
-  readonly opinions: readonly LayerOpinion[];
-  readonly modulators: readonly ContextModulator[];
-  readonly fusion: RelationshipAwareMonotoneFusionResult;
-  readonly conflictGate: ConflictAbstentionGateResult;
-  readonly humanComprehensionGate: HumanComprehensionGateResult;
-  readonly assurancePacket: SignedAssurancePacket;
-  readonly counts: ShadowRuntimePipelineCounts;
-  readonly noLiveEnforcement: true;
-  readonly grantsAuthority: false;
-  readonly canAdmit: false;
-  readonly activatesEnforcement: false;
-  readonly autoEnforce: false;
-  readonly learnsFromTraffic: false;
-  readonly crossTenantAggregation: false;
-  readonly rawPayloadRead: false;
-  readonly rawPayloadStored: false;
-  readonly productionReady: false;
-  readonly nonClaims: readonly string[];
-  readonly canonical: string;
-  readonly digest: string;
-}
-
-export interface ShadowRuntimePipelineDescriptor {
-  readonly version: typeof SHADOW_RUNTIME_PIPELINE_VERSION;
-  readonly connects: readonly string[];
-  readonly executionMode: 'shadow-only';
-  readonly pureFunction: true;
-  readonly deterministicProjection: true;
-  readonly builtInAdapterRegistryUsed: true;
-  readonly relationshipEvaluationBeforeFusion: true;
-  readonly unsignedPacketOnly: true;
-  readonly noLiveEnforcement: true;
-  readonly grantsAuthority: false;
-  readonly canAdmit: false;
-  readonly activatesEnforcement: false;
-  readonly autoEnforce: false;
-  readonly learnsFromTraffic: false;
-  readonly crossTenantAggregation: false;
-  readonly rawPayloadRead: false;
-  readonly rawPayloadStored: false;
-  readonly productionReady: false;
-  readonly nonClaims: readonly string[];
-}
+export * from './shadow-runtime-pipeline-types.js';
+export { shadowRuntimePipelineDescriptor };
 
 const SIGNAL_CONFIDENCE = 0.64;
 const SIGNAL_UNCERTAINTY = 0.36;
@@ -735,78 +649,6 @@ function createHistoryBinding(projection: ShadowEnvelopeProjection) {
     }),
     entryCount: 0,
     verified: false,
-  });
-}
-
-function normalizeGeneratedAt(
-  value: string | null | undefined,
-  fallback: string,
-): string {
-  const timestamp = new Date(value ?? fallback);
-  if (Number.isNaN(timestamp.getTime())) {
-    throw new Error('Shadow runtime pipeline generatedAt must be an ISO timestamp.');
-  }
-  return timestamp.toISOString();
-}
-
-function normalizeReviewCapacity(value: number | null | undefined): number {
-  if (value === null || value === undefined) return 20;
-  if (!Number.isInteger(value) || value < 0) {
-    throw new Error(
-      'Shadow runtime pipeline reviewerCapacityPerHour must be a non-negative integer.',
-    );
-  }
-  return value;
-}
-
-function normalizeReviewRate(value: number | null | undefined): number {
-  if (value === null || value === undefined) return 0;
-  if (!Number.isFinite(value) || value < 0) {
-    throw new Error(
-      'Shadow runtime pipeline currentReviewRatePerMinute must be a non-negative number.',
-    );
-  }
-  return value;
-}
-
-export function shadowRuntimePipelineDescriptor():
-  ShadowRuntimePipelineDescriptor {
-  return Object.freeze({
-    version: SHADOW_RUNTIME_PIPELINE_VERSION,
-    connects: Object.freeze([
-      SHADOW_ENVELOPE_PROJECTOR_VERSION,
-      SIGNAL_EXTRACTOR_CONTRACT_VERSION,
-      SIGNAL_ADAPTER_REGISTRY_VERSION,
-      RELATIONSHIP_DETECTOR_CONTRACT_VERSION,
-      RELATIONSHIP_AWARE_MONOTONE_FUSION_VERSION,
-      CONFLICT_ABSTENTION_GATE_VERSION,
-      HUMAN_COMPREHENSION_GATE_VERSION,
-      SIGNED_ASSURANCE_PACKET_VERSION,
-    ]),
-    executionMode: 'shadow-only',
-    pureFunction: true,
-    deterministicProjection: true,
-    builtInAdapterRegistryUsed: true,
-    relationshipEvaluationBeforeFusion: true,
-    unsignedPacketOnly: true,
-    noLiveEnforcement: true,
-    grantsAuthority: false,
-    canAdmit: false,
-    activatesEnforcement: false,
-    autoEnforce: false,
-    learnsFromTraffic: false,
-    crossTenantAggregation: false,
-    rawPayloadRead: false,
-    rawPayloadStored: false,
-    productionReady: false,
-    nonClaims: Object.freeze([
-      'not-live-enforcement',
-      'not-policy-activation',
-      'not-downstream-execution',
-      'not-learning',
-      'not-cross-tenant-aggregation',
-      'not-production-ready',
-    ]),
   });
 }
 

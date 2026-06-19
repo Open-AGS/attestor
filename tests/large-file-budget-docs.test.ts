@@ -26,10 +26,12 @@ function testLargeFileBudgetDocNamesThresholdsAndCommand(): void {
 
   includes(doc, '# Large File Budget', 'Large file budget doc: title is present');
   includes(doc, '`<= 800` lines', 'Large file budget doc: target threshold is explicit');
-  includes(doc, '`801-1200` lines', 'Large file budget doc: tolerated range is explicit');
+  includes(doc, '`> 800` lines', 'Large file budget doc: over-target exception is explicit');
   includes(doc, '`> 1200` lines', 'Large file budget doc: hard-limit exception is explicit');
   includes(doc, 'npm run test:large-file-budget', 'Large file budget doc: package script is documented');
-  includes(doc, 'Generated files, lockfiles, OpenAPI JSON, and large fixture JSON are outside', 'Large file budget doc: generated/fixture boundary is explicit');
+  includes(doc, 'OpenAPI JSON and large fixture JSON are scanned as explicit exceptions', 'Large file budget doc: generated/fixture boundary is explicit');
+  includes(doc, 'docs/', 'Large file budget doc: docs scan root is explicit');
+  includes(doc, 'fixtures/', 'Large file budget doc: fixtures scan root is explicit');
   includes(doc, 'This guard is repository-side maintainability evidence only.', 'Large file budget doc: no-claim boundary is explicit');
   includes(doc, '[Final Large File Refactor Plan](final-large-file-refactor-plan.md)', 'Large file budget doc: links the active final execution contract');
 }
@@ -56,6 +58,8 @@ function testFinalLargeFileRefactorPlanLocksScopeAndNoClaims(): void {
   includes(plan, 'Do not split crypto/protocol adapters in this wave unless a focused audit', 'Final plan: crypto/protocol exclusion is explicit');
   includes(plan, '## Intentional Exceptions', 'Final plan: intentional exceptions section is present');
   includes(plan, '## Rollback Strategy', 'Final plan: rollback strategy section is present');
+  includes(plan, 'No tracked text file above 800 lines is unregistered.', 'Final plan: 800-line closeout is explicit');
+  includes(plan, 'No registered oversized file grows beyond its locked `maxLines`.', 'Final plan: oversized growth lock is explicit');
   includes(plan, 'This plan is repository-side maintainability evidence only.', 'Final plan: no-claims section is explicit');
 }
 
@@ -64,7 +68,10 @@ function testLargeFileBudgetScriptKeepsThresholdsAndRegistry(): void {
 
   includes(script, 'const TARGET_LINES = 800;', 'Large file budget script: target threshold is locked');
   includes(script, 'const HARD_LIMIT_LINES = 1200;', 'Large file budget script: hard limit is locked');
-  includes(script, 'const HARD_LIMIT_REGISTRY = Object.freeze([', 'Large file budget script: hard-limit registry exists');
+  includes(script, 'const OVERSIZE_FILE_REGISTRY = Object.freeze([', 'Large file budget script: oversized registry exists');
+  includes(script, "'docs/'", 'Large file budget script: docs scan root exists');
+  includes(script, "'fixtures/'", 'Large file budget script: fixtures scan root exists');
+  includes(script, 'Files above ${TARGET_LINES} lines without a registry entry:', 'Large file budget script: unregistered over-target files fail');
   includes(script, 'git\', [\'ls-files\']', 'Large file budget script: scans tracked files only');
 }
 

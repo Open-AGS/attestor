@@ -14,6 +14,7 @@ import { runHostedBillingObservabilityFlow } from './live-api/hosted-billing-obs
 import { runHostedPlanUsageFlow } from './live-api/hosted-plan-usage-flow.js';
 import { runHostedUserSignupApiKeyFlow } from './live-api/hosted-user-signup-api-key-flow.js';
 import { runRuntimePipelineFlow } from './live-api/runtime-pipeline-flow.js';
+import { resetPipelineIdempotencyStoreForTests } from '../src/service/pipeline/pipeline-idempotency-store.js';
 import {
   join,
   mkdirSync,
@@ -58,6 +59,8 @@ async function run() {
   process.env.ATTESTOR_ADMIN_AUDIT_LOG_PATH = join(process.cwd(), '.attestor', 'live-api-admin-audit.json');
   process.env.ATTESTOR_ADMIN_IDEMPOTENCY_STORE_PATH = join(process.cwd(), '.attestor', 'live-api-admin-idempotency.json');
   process.env.ATTESTOR_ASYNC_DLQ_STORE_PATH = join(process.cwd(), '.attestor', 'live-api-async-dlq.json');
+  process.env.ATTESTOR_PIPELINE_IDEMPOTENCY_STORE_PATH = join(process.cwd(), '.attestor', 'live-api-pipeline-idempotency.json');
+  process.env.ATTESTOR_PIPELINE_IDEMPOTENCY_ENCRYPTION_KEY = 'live-api-pipeline-idempotency-secret';
   process.env.ATTESTOR_STRIPE_WEBHOOK_STORE_PATH = join(process.cwd(), '.attestor', 'live-api-stripe-webhooks.json');
   process.env.ATTESTOR_BILLING_ENTITLEMENT_STORE_PATH = join(process.cwd(), '.attestor', 'live-api-billing-entitlements.json');
   process.env.ATTESTOR_WORKFLOW_ENTITLEMENT_STORE_PATH = join(process.cwd(), '.attestor', 'live-api-workflow-entitlements.json');
@@ -65,6 +68,8 @@ async function run() {
   process.env.ATTESTOR_OBSERVABILITY_LOG_PATH = join(process.cwd(), '.attestor', 'live-api-observability.jsonl');
   process.env.ATTESTOR_SESSION_COOKIE_SECURE = 'false';
   process.env.ATTESTOR_ADMIN_API_KEY = 'admin-secret';
+  process.env.ATTESTOR_ADMIN_RELEASE_API_KEY = 'admin-release-secret';
+  process.env.ATTESTOR_ADMIN_BREAK_GLASS_API_KEY = 'admin-break-glass-secret';
   process.env.ATTESTOR_METRICS_API_KEY = 'metrics-secret';
   process.env.ATTESTOR_RATE_LIMIT_WINDOW_SECONDS = '5';
   process.env.ATTESTOR_RATE_LIMIT_TRIAL_REQUESTS = '3';
@@ -97,6 +102,7 @@ async function run() {
   resetAdminAuditLogForTests();
   resetAdminIdempotencyStoreForTests();
   resetAsyncDeadLetterStoreForTests();
+  resetPipelineIdempotencyStoreForTests();
   resetStripeWebhookStoreForTests();
   resetHostedBillingEntitlementStoreForTests();
   resetWorkflowEntitlementStoreForTests();
@@ -135,6 +141,7 @@ async function run() {
     await resetTenantRateLimiterForTests();
     resetAdminAuditLogForTests();
     resetAdminIdempotencyStoreForTests();
+    resetPipelineIdempotencyStoreForTests();
     resetStripeWebhookStoreForTests();
     resetHostedBillingEntitlementStoreForTests();
     resetWorkflowEntitlementStoreForTests();

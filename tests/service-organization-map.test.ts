@@ -61,6 +61,7 @@ function testRootKeepsOnlyCrossCuttingFiles(): void {
       'api-server.ts',
       'api-types.ts',
       'consequence-shared-atomic-stores.ts',
+      'consequence-shared-history-outbox-store-types.ts',
       'consequence-shared-history-outbox-store.ts',
       'control-plane-backup.ts',
       'control-plane-store.ts',
@@ -73,6 +74,7 @@ function testRootKeepsOnlyCrossCuttingFiles(): void {
       'http-production-edge-contract.ts',
       'json-stable.ts',
       'mailgun-email-webhook.ts',
+      'observability-types.ts',
       'observability.ts',
       'plan-catalog.ts',
       'public-route-rate-limit.ts',
@@ -84,6 +86,7 @@ function testRootKeepsOnlyCrossCuttingFiles(): void {
       'secret-derivation.ts',
       'secret-envelope.ts',
       'sendgrid-email-webhook.ts',
+      'site-hosted-return-page.ts',
       'site-support.ts',
       'site.ts',
       'tenant-admin.ts',
@@ -131,14 +134,14 @@ function testResponsibilityDirectoryCountsMatchCloseoutMap(): void {
     'api-types': 7,
     application: 18,
     async: 7,
-    billing: 7,
-    bootstrap: 18,
-    'control-plane-store': 14,
+    billing: 13,
+    bootstrap: 21,
+    'control-plane-store': 24,
     hosted: 11,
     http: 2,
     pipeline: 2,
     'policy-foundry': 3,
-    release: 10,
+    release: 16,
     runtime: 2,
     shadow: 11,
   };
@@ -151,7 +154,7 @@ function testResponsibilityDirectoryCountsMatchCloseoutMap(): void {
     );
   }
 
-  equal(listFiles().length, 42, 'Service organization map: root file count matches closeout map');
+  equal(listFiles().length, 45, 'Service organization map: root file count matches closeout map');
 }
 
 function testNestedBillingStripeBoundaryIsPreserved(): void {

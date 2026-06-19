@@ -122,6 +122,7 @@ function testInventoryLocksSplitAndRiskBoundaries(): void {
     'account-public-auth-routes.ts',
     'account-federated-auth-routes.ts',
     'account-mfa-passkey-routes.ts',
+    'account-passkey-management-routes.ts',
     'account-admin-user-routes.ts',
     'account-billing-routes.ts',
     'account-route-context.ts',

@@ -1,288 +1,66 @@
-import { deleteCookie, getCookie } from 'hono/cookie';
-import { runFinancialPipeline } from '../../financial/pipeline.js';
-import { buildCounterpartyEnvelope } from '../../filing/xbrl-adapter.js';
-import { verifyOidcToken, classifyIdentitySource } from '../../identity/oidc-identity.js';
-import { buildVerificationKit } from '../../signing/bundle.js';
-import { verifyCertificate } from '../../signing/certificate.js';
-import { derivePublicKeyIdentity } from '../../signing/keys.js';
-import { verifyTrustChain } from '../../signing/pki-chain.js';
-import {
-  accountPasskeyCredentialView,
-  accountUserActionTokenView,
-  accountUserDetailedMfaView,
-  accountUserDetailedOidcView,
-  accountUserDetailedPasskeyView,
-  accountUserDetailedSamlView,
-  accountUserView,
-  asAuthenticationResponse,
-  asRegistrationResponse,
-  deriveSignupTenantId,
-  normalizePasskeyAuthenticatorHint,
-  parsePasskeyAuthenticationChallenge,
-  parsePasskeyRegistrationChallenge,
-} from '../account/account-route-support.js';
-import { sessionCookieName } from '../account/account-session-store.js';
-import { ATTESTOR_SERVICE_VERSION } from '../version.js';
-import {
-  buildTotpOtpAuthUrl,
-  accountMfaEncryptionKeySource,
-  decryptTotpSecret,
-  encryptTotpSecret,
-  generateRecoveryCodes,
-  generateTotpSecretBase32,
-  isPendingTotpEnrollmentFresh,
-  totpSummary,
-  verifyAndConsumeRecoveryCode,
-  verifyTotpCodeWithStep,
-} from '../account/account-mfa.js';
-import {
-  buildHostedOidcAuthorizationRequest,
-  completeHostedOidcAuthorization,
-  hostedOidcAllowsAutomaticLinking,
-  hostedOidcStateKeySource,
-  linkAccountUserOidcIdentity,
-} from '../account/account-oidc.js';
-import {
-  buildAccountUserPasskeyCredentialRecord,
-  buildHostedPasskeyAuthenticationOptions,
-  buildHostedPasskeyRegistrationOptions,
-  generateHostedPasskeyUserHandle,
-  passkeyCredentialToWebAuthnCredential,
-  verifyHostedPasskeyAuthentication,
-  verifyHostedPasskeyRegistration,
-} from '../account/account-passkeys.js';
-import {
-  buildHostedSamlAuthorizationRequest,
-  completeHostedSamlAuthorization,
-  getHostedSamlMetadata,
-  hostedSamlAllowsAutomaticLinking,
-  hostedSamlRelayStateKeySource,
-  linkAccountUserSamlIdentity,
-} from '../account/account-saml.js';
-import { verifyAccountUserPasswordRecord } from '../account/account-user-store.js';
-import {
-  canEnqueueTenantAsyncJob,
-  getAsyncQueueSummary,
-  getAsyncRetryPolicy,
-  getJobStatus,
-  listFailedPipelineJobs,
-  retryFailedPipelineJob,
-  submitPipelineJob,
-} from '../async/async-pipeline.js';
-import { getTenantAsyncExecutionCoordinatorStatus } from '../async/async-tenant-execution.js';
-import { getTenantAsyncWeightedDispatchCoordinatorStatus } from '../async/async-weighted-dispatch.js';
-import {
-  claimStripeBillingEvent,
-  finalizeStripeBillingEvent,
-  isBillingEventLedgerConfigured,
-  listBillingEvents,
-  releaseStripeBillingEventClaim,
-  upsertStripeCharges,
-} from '../billing/billing-event-ledger.js';
-import { buildHostedFeatureServiceView } from '../billing/billing-feature-service.js';
-import {
-  buildHostedBillingExport,
-  renderHostedBillingExportCsv,
-} from '../billing/billing-export.js';
-import { buildHostedBillingReconciliation } from '../billing/billing-reconciliation.js';
-import {
-  appendAdminAuditRecordState,
-  attachStripeBillingToAccountState,
-  canConsumePipelineRunState,
-  claimProcessedStripeWebhookState,
-  consumeAccountUserActionTokenState,
-  consumeAccountUserRecoveryCodeState,
-  consumePipelineRunState,
-  countAccountUsersForAccountState,
-  createAccountUserState,
-  finalizeProcessedStripeWebhookState,
-  findAccountUserActionTokenByTokenState,
-  findAccountUserByEmailState,
-  findAccountUserByIdState,
-  findAccountUserByOidcIdentityState,
-  findAccountUserByPasskeyCredentialIdState,
-  findAccountUserBySamlIdentityState,
-  findHostedAccountByIdState,
-  findHostedAccountByTenantIdState,
-  findHostedBillingEntitlementByAccountIdState,
-  findWorkflowEntitlementByTenantAndWorkflowState,
-  findTenantRecordByTenantIdState,
-  getUsageContextState,
-  isSharedControlPlaneConfigured,
-  issueAccountInviteTokenState,
-  issueAccountMfaLoginTokenState,
-  issueAccountPasskeyChallengeTokenState,
-  issueAccountSessionState,
-  issuePasswordResetTokenState,
-  issueTenantApiKeyState,
-  listAccountUserActionTokensByAccountIdState,
-  listAccountUsersByAccountIdState,
-  listAdminAuditRecordsState,
-  listAsyncDeadLetterRecordsState,
-  listHostedAccountsState,
-  listHostedBillingEntitlementsState,
-  listWorkflowEntitlementsState,
-  listHostedEmailDeliveriesState,
-  listTenantKeyRecordsState,
-  ensurePipelineIdempotencyStateReady,
-  lookupAdminIdempotencyState,
-  lookupPipelineIdempotencyState,
-  lookupProcessedStripeWebhookState,
-  provisionHostedAccountState,
-  queryUsageLedgerState,
-  recordAccountUserLoginState,
-  recordAccountUserTotpVerificationStepState,
-  recordAdminIdempotencyState,
-  recordPipelineIdempotencyState,
-  recordHostedEmailProviderEventState,
-  recordHostedSamlReplayState,
-  recordProcessedStripeWebhookState,
-  recoverTenantApiKeyState,
-  releaseProcessedStripeWebhookClaimState,
-  revokeAccountSessionByTokenState,
-  revokeAccountSessionsForAccountState,
-  revokeAccountSessionsForUserState,
-  revokeAccountUserActionTokenState,
-  revokeAccountUserActionTokensForUserState,
-  revokeTenantApiKeyState,
-  rotateTenantApiKeyState,
-  saveAccountUserActionTokenRecordState,
-  saveAccountUserRecordState,
-  setAccountUserPasswordState,
-  setAccountUserStatusState,
-  setHostedAccountStatusState,
-  setTenantApiKeyStatusState,
-  upsertAsyncDeadLetterRecordState,
-  upsertHostedBillingEntitlementState,
-  upsertPendingWorkflowEntitlementState,
-  upsertWorkflowEntitlementFromStripeState,
-} from '../control-plane-store.js';
-import {
-  deliverHostedInviteEmail,
-  deliverHostedPasswordResetEmail,
-  getHostedEmailDeliveryStatus,
-} from '../async/email-delivery.js';
-import {
-  buildFinanceActionReleaseMaterial,
-  buildFinanceActionReleaseObservation,
-  buildFinanceCommunicationReleaseMaterial,
-  buildFinanceCommunicationReleaseObservation,
-  buildFinanceFilingReleaseMaterial,
-  buildFinanceFilingReleaseObservation,
-  createFinanceActionReleaseCandidateFromReport,
-  createFinanceCommunicationReleaseCandidateFromReport,
-  createFinanceFilingReleaseCandidateFromReport,
-  createFinanceReviewerQueueItem,
-  finalizeFinanceFilingReleaseDecision,
-  FINANCE_FILING_ADAPTER_ID,
-  ReleaseVerificationError,
-  resolveReleaseTokenFromRequest,
-  verifyReleaseAuthorization,
-} from '../release/finance-release-route-support.js';
-import {
-  evaluateApiHighAvailabilityState,
-} from '../high-availability.js';
-import {
-  accountApiKeyView,
-  adminAccountView,
-  adminAuditView,
-  adminPlanView,
-  adminTenantKeyView,
-  billingEntitlementView,
-  billingEventView,
-} from '../hosted/hosted-surface-support.js';
-import {
-  accountMfaErrorResponse,
-  createHostedAccountSupport,
-  stripeBillingErrorResponse,
-} from '../account/hosted-account-support.js';
-import { hashJsonValue } from '../json-stable.js';
-import {
-  getMailgunWebhookStatus,
-  mailgunSignatureTokenDigest,
-  mailgunEventTypeToStatusHint,
-  parseMailgunWebhookEvent,
-  verifySignedMailgunWebhook,
-} from '../mailgun-email-webhook.js';
-import {
-  getTelemetryStatus,
-  observeBillingWebhookEvent,
-  renderPrometheusMetrics,
-} from '../observability.js';
-import {
-  DEFAULT_HOSTED_PLAN_ID,
-  SELF_HOST_PLAN_ID,
-  defaultRateLimitWindowSeconds,
-  resolvePlanSpec,
-} from '../plan-catalog.js';
-import {
-  applyRateLimitHeaders,
-  schemaAttestationSummaryFromConnector,
-  schemaAttestationSummaryFromFull,
-} from '../pipeline/pipeline-route-support.js';
-import {
-  getTenantPipelineRateLimit,
-  reserveTenantPipelineRequest,
-} from '../rate-limit.js';
-import {
-  createRequestSigners,
-  currentAccountAccess,
-  currentAccountRole,
-  currentAdminAuthorized,
-  currentMetricsAuthorized,
-  currentReleaseEvaluationContext,
-  currentReleaseRequester,
-  currentTenant,
-  requireAccountSession,
-  setSessionCookieForRecord,
-} from '../request-context.js';
-import {
-  renderReleaseReviewerQueueDetailPage,
-  renderReleaseReviewerQueueInboxPage,
-} from '../release/release-review-site.js';
-import {
-  asyncBackendMode,
-  bullmqQueue,
-  currentAsyncSubmissionReservations,
-  inProcessJobs,
-  inProcessTenantQueueSnapshot,
-  redisMode,
-  releaseAsyncSubmission,
-  reserveAsyncSubmission,
-} from '../runtime/tenant-runtime.js';
-import { rlsActivationResult } from '../runtime/rls-runtime.js';
-import { getSecretEnvelopeStatus } from '../secret-envelope.js';
-import {
-  getSendGridWebhookStatus,
-  parseSendGridWebhookEvents,
-  sendGridEventTypeToStatusHint,
-  verifySignedSendGridWebhook,
-} from '../sendgrid-email-webhook.js';
-import {
-  renderFinancialReportingLandingPage,
-  renderFinancialReportingProofPage,
-  renderHostedReturnPage,
-} from '../site.js';
-import {
-  committedEvidenceContentType,
-  committedFinancialPacket,
-  readCommittedEvidence,
-} from '../site-support.js';
-import {
-  createHostedBillingPortalSession,
-  createHostedWorkflowCheckoutSession,
-  extractActiveEntitlementsFromSummary,
-  listHostedStripeActiveEntitlements,
-} from '../billing/stripe/stripe-billing.js';
-import { isSupportedStripeWebhookEvent } from '../billing/stripe/stripe-webhook-events.js';
-import {
-  metadataStringValue,
-  parseStripeChargeStatus,
-  stripeClient,
-  stripeReferenceId,
-  unixSecondsToIso,
-} from '../billing/stripe/stripe-webhook-support.js';
-import { tenantKeyStorePolicy } from '../tenant-key-store.js';
+import * as staticDeps from './api-route-runtime-static-deps.js';
+
+const {
+  deleteCookie, getCookie, runFinancialPipeline, buildCounterpartyEnvelope,
+  verifyOidcToken, classifyIdentitySource, buildVerificationKit, verifyCertificate,
+  derivePublicKeyIdentity, verifyTrustChain, accountPasskeyCredentialView, accountUserActionTokenView,
+  accountUserDetailedMfaView, accountUserDetailedOidcView, accountUserDetailedPasskeyView, accountUserDetailedSamlView,
+  accountUserView, asAuthenticationResponse, asRegistrationResponse, deriveSignupTenantId,
+  normalizePasskeyAuthenticatorHint, parsePasskeyAuthenticationChallenge, parsePasskeyRegistrationChallenge, sessionCookieName,
+  ATTESTOR_SERVICE_VERSION, buildTotpOtpAuthUrl, accountMfaEncryptionKeySource, decryptTotpSecret,
+  encryptTotpSecret, generateRecoveryCodes, generateTotpSecretBase32, isPendingTotpEnrollmentFresh,
+  totpSummary, verifyAndConsumeRecoveryCode, verifyTotpCodeWithStep, buildHostedOidcAuthorizationRequest,
+  completeHostedOidcAuthorization, hostedOidcAllowsAutomaticLinking, hostedOidcStateKeySource, linkAccountUserOidcIdentity,
+  buildAccountUserPasskeyCredentialRecord, buildHostedPasskeyAuthenticationOptions, buildHostedPasskeyRegistrationOptions, generateHostedPasskeyUserHandle,
+  passkeyCredentialToWebAuthnCredential, verifyHostedPasskeyAuthentication, verifyHostedPasskeyRegistration, buildHostedSamlAuthorizationRequest,
+  completeHostedSamlAuthorization, getHostedSamlMetadata, hostedSamlAllowsAutomaticLinking, hostedSamlRelayStateKeySource,
+  linkAccountUserSamlIdentity, verifyAccountUserPasswordRecord, canEnqueueTenantAsyncJob, getAsyncQueueSummary,
+  getAsyncRetryPolicy, getJobStatus, listFailedPipelineJobs, retryFailedPipelineJob,
+  submitPipelineJob, getTenantAsyncExecutionCoordinatorStatus, getTenantAsyncWeightedDispatchCoordinatorStatus, claimStripeBillingEvent,
+  finalizeStripeBillingEvent, isBillingEventLedgerConfigured, listBillingEvents, releaseStripeBillingEventClaim,
+  upsertStripeCharges, buildHostedFeatureServiceView, buildHostedBillingExport, renderHostedBillingExportCsv,
+  buildHostedBillingReconciliation, appendAdminAuditRecordState, attachStripeBillingToAccountState, canConsumePipelineRunState,
+  claimProcessedStripeWebhookState, consumeAccountUserActionTokenState, consumeAccountUserRecoveryCodeState, consumePipelineRunState,
+  countAccountUsersForAccountState, createAccountUserState, finalizeProcessedStripeWebhookState, findAccountUserActionTokenByTokenState,
+  findAccountUserByEmailState, findAccountUserByIdState, findAccountUserByOidcIdentityState, findAccountUserByPasskeyCredentialIdState,
+  findAccountUserBySamlIdentityState, findHostedAccountByIdState, findHostedAccountByTenantIdState, findHostedBillingEntitlementByAccountIdState,
+  findWorkflowEntitlementByTenantAndWorkflowState, findTenantRecordByTenantIdState, getUsageContextState, isSharedControlPlaneConfigured,
+  issueAccountInviteTokenState, issueAccountMfaLoginTokenState, issueAccountPasskeyChallengeTokenState, issueAccountSessionState,
+  issuePasswordResetTokenState, issueTenantApiKeyState, listAccountUserActionTokensByAccountIdState, listAccountUsersByAccountIdState,
+  listAdminAuditRecordsState, listAsyncDeadLetterRecordsState, listHostedAccountsState, listHostedBillingEntitlementsState,
+  listWorkflowEntitlementsState, listHostedEmailDeliveriesState, listTenantKeyRecordsState, ensurePipelineIdempotencyStateReady,
+  lookupAdminIdempotencyState, lookupPipelineIdempotencyState, lookupProcessedStripeWebhookState, provisionHostedAccountState,
+  queryUsageLedgerState, recordAccountUserLoginState, recordAccountUserTotpVerificationStepState, recordAdminIdempotencyState,
+  recordPipelineIdempotencyState, recordHostedEmailProviderEventState, recordHostedSamlReplayState, recordProcessedStripeWebhookState,
+  recoverTenantApiKeyState, releaseProcessedStripeWebhookClaimState, revokeAccountSessionByTokenState, revokeAccountSessionsForAccountState,
+  revokeAccountSessionsForUserState, revokeAccountUserActionTokenState, revokeAccountUserActionTokensForUserState, revokeTenantApiKeyState,
+  rotateTenantApiKeyState, saveAccountUserActionTokenRecordState, saveAccountUserRecordState, setAccountUserPasswordState,
+  setAccountUserStatusState, setHostedAccountStatusState, setTenantApiKeyStatusState, upsertAsyncDeadLetterRecordState,
+  upsertHostedBillingEntitlementState, upsertPendingWorkflowEntitlementState, upsertWorkflowEntitlementFromStripeState, deliverHostedInviteEmail,
+  deliverHostedPasswordResetEmail, getHostedEmailDeliveryStatus, buildFinanceActionReleaseMaterial, buildFinanceActionReleaseObservation,
+  buildFinanceCommunicationReleaseMaterial, buildFinanceCommunicationReleaseObservation, buildFinanceFilingReleaseMaterial, buildFinanceFilingReleaseObservation,
+  createFinanceActionReleaseCandidateFromReport, createFinanceCommunicationReleaseCandidateFromReport, createFinanceFilingReleaseCandidateFromReport, createFinanceReviewerQueueItem,
+  finalizeFinanceFilingReleaseDecision, FINANCE_FILING_ADAPTER_ID, ReleaseVerificationError, resolveReleaseTokenFromRequest,
+  verifyReleaseAuthorization, evaluateApiHighAvailabilityState, accountApiKeyView, adminAccountView,
+  adminAuditView, adminPlanView, adminTenantKeyView, billingEntitlementView,
+  billingEventView, accountMfaErrorResponse, createHostedAccountSupport, stripeBillingErrorResponse,
+  hashJsonValue, getMailgunWebhookStatus, mailgunSignatureTokenDigest, mailgunEventTypeToStatusHint,
+  parseMailgunWebhookEvent, verifySignedMailgunWebhook, getTelemetryStatus, observeBillingWebhookEvent,
+  renderPrometheusMetrics, DEFAULT_HOSTED_PLAN_ID, SELF_HOST_PLAN_ID, defaultRateLimitWindowSeconds,
+  resolvePlanSpec, applyRateLimitHeaders, schemaAttestationSummaryFromConnector, schemaAttestationSummaryFromFull,
+  getTenantPipelineRateLimit, reserveTenantPipelineRequest, createRequestSigners, currentAccountAccess,
+  currentAccountRole, currentAdminAuthorized, currentMetricsAuthorized, currentReleaseEvaluationContext,
+  currentReleaseRequester, currentTenant, requireAccountSession, setSessionCookieForRecord,
+  renderReleaseReviewerQueueDetailPage, renderReleaseReviewerQueueInboxPage, asyncBackendMode, bullmqQueue,
+  currentAsyncSubmissionReservations, inProcessJobs, inProcessTenantQueueSnapshot, redisMode,
+  releaseAsyncSubmission, reserveAsyncSubmission, rlsActivationResult, getSecretEnvelopeStatus,
+  getSendGridWebhookStatus, parseSendGridWebhookEvents, sendGridEventTypeToStatusHint, verifySignedSendGridWebhook,
+  renderFinancialReportingLandingPage, renderFinancialReportingProofPage, renderHostedReturnPage, committedEvidenceContentType,
+  committedFinancialPacket, readCommittedEvidence, createHostedBillingPortalSession, createHostedWorkflowCheckoutSession,
+  extractActiveEntitlementsFromSummary, listHostedStripeActiveEntitlements, isSupportedStripeWebhookEvent, metadataStringValue,
+  parseStripeChargeStatus, stripeClient, stripeReferenceId, unixSecondsToIso,
+  tenantKeyStorePolicy,
+} = staticDeps;
 import type { AppRegistries } from './registries.js';
 import { createReleaseRuntimeBootstrap } from './release-runtime.js';
 import {

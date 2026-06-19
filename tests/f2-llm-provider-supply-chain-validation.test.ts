@@ -72,9 +72,17 @@ try {
   const doc = readProjectFile('docs', 'audit', 'f2-llm-provider-supply-chain-validation.md');
   const tracker = readProjectFile('docs', 'audit', 'attestor-audit-remediation-tracker.md');
   const packageJson = readProjectFile('package.json');
-  const openai = readProjectFile('src', 'api', 'openai.ts');
+  const openai = [
+    readProjectFile('src', 'api', 'openai.ts'),
+    readProjectFile('src', 'api', 'openai-types.ts'),
+    readProjectFile('src', 'api', 'openai-json-extraction.ts'),
+  ].join('\n');
   const openaiSmoke = readProjectFile('scripts', 'probe', 'probe-openai-live-smoke.ts');
-  const anthropic = readProjectFile('src', 'api', 'anthropic.ts');
+  const anthropic = [
+    readProjectFile('src', 'api', 'anthropic.ts'),
+    readProjectFile('src', 'api', 'anthropic-types.ts'),
+    readProjectFile('src', 'api', 'anthropic-helpers.ts'),
+  ].join('\n');
   const anthropicSmoke = readProjectFile('scripts', 'probe', 'probe-anthropic-live-smoke.ts');
   const models = readProjectFile('src', 'api', 'llm-provider-models.ts');
   const financialCli = [

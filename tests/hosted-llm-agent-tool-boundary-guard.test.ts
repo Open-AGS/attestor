@@ -170,6 +170,7 @@ function testImplementationEvidenceMatchesSource(): void {
     readProjectFile('src', 'consequence-admission', 'index.ts'),
     readProjectFile('src', 'consequence-admission', 'contracts.ts'),
     readProjectFile('src', 'consequence-admission', 'correction-catalog.ts'),
+    readProjectFile('src', 'consequence-admission', 'correction-catalog-entries.ts'),
     readProjectFile('src', 'consequence-admission', 'builders.ts'),
   ].join('\n');
   const dataMinimization = readProjectFile('src', 'consequence-admission', 'data-minimization-redaction-policy.ts');

@@ -88,7 +88,8 @@ The route split must preserve:
 |---|---|
 | `account-public-auth-routes.ts` | bootstrap, signup, login, logout, password change/reset, `/auth/me` |
 | `account-federated-auth-routes.ts` | SAML metadata/login/ACS, OIDC login/callback |
-| `account-mfa-passkey-routes.ts` | MFA login/management, passkey login/management |
+| `account-mfa-passkey-routes.ts` | MFA login/verify plus TOTP enrollment/confirm/disable |
+| `account-passkey-management-routes.ts` | account profile views and account-scoped passkey list/register/delete |
 | `account-admin-user-routes.ts` | API key admin, user admin, invite admin, password-reset issue |
 | `account-billing-routes.ts` | account summary, usage, features, email deliveries, billing checkout, workflow billing checkout/listing, portal/export/reconciliation |
 | `account-route-context.ts` | shared idempotency, audit, session, and route response helpers that remain route-owned |

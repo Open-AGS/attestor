@@ -1,9 +1,4 @@
-import { strict as assert } from 'node:assert';
-import EmbeddedPostgres from 'embedded-postgres';
-import Stripe from 'stripe';
-import { createServer } from 'node:net';
-import { existsSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs';
-import { join } from 'node:path';
+import { existsSync } from 'node:fs';
 import {
   COUNTERPARTY_FIXTURE,
   COUNTERPARTY_INTENT,
@@ -12,197 +7,49 @@ import {
   COUNTERPARTY_SQL,
 } from '../src/financial/fixtures/scenarios.js';
 import { generateCurrentTotpCode } from '../src/service/account/account-mfa.js';
-import { resetAdminAuditLogForTests } from '../src/service/admin-audit-log.js';
-import { resetAdminIdempotencyStoreForTests } from '../src/service/admin-idempotency-store.js';
-import { resetHostedBillingEntitlementStoreForTests } from '../src/service/billing/billing-entitlement-store.js';
-import { resetHostedEmailDeliveryEventStoreForTests } from '../src/service/async/email-delivery-event-store.js';
-import { resetObservabilityForTests } from '../src/service/observability.js';
-import { resetTenantRateLimiterForTests } from '../src/service/rate-limit.js';
-import { resetStripeWebhookStoreForTests } from '../src/service/billing/stripe/stripe-webhook-store.js';
-import { resetBillingEventLedgerForTests } from '../src/service/billing/billing-event-ledger.js';
-import { tenantWorkflowMetadataDigest } from '../src/service/workflow-entitlement-store.js';
 import {
   claimProcessedStripeWebhookState,
   finalizeProcessedStripeWebhookState,
-  findAccountUserByEmailState,
-  issueAccountPasskeyChallengeTokenState,
   releaseProcessedStripeWebhookClaimState,
-  resetSharedControlPlaneStoreForTests,
-  saveAccountUserRecordState,
 } from '../src/service/control-plane-store.js';
-import { buildAccountUserPasskeyCredentialRecord } from '../src/service/account/account-passkeys.js';
 import {
-  authFixtureCredential,
-  authenticationChallenge,
-  authenticationResponse,
-  registrationChallenge,
-  registrationResponse,
-  webauthnOrigin,
-} from './helpers/passkey-fixtures.js';
-
-let passed = 0;
-const stripe = new Stripe('sk_test_live_control_plane');
-const workflowId = 'wf_pg_live_billing_001';
-const workflowTier = 'pro-workflow';
-const workflowConsequencePack = 'money-movement';
-const workflowPriceId = 'price_pro_workflow_monthly';
-const stripeCustomerId = 'cus_pg_live_001';
-const stripeSubscriptionId = 'sub_pg_live_workflow_001';
-const stripeSubscriptionItemId = 'si_pg_live_workflow_001';
-
-function ok(condition: boolean, message: string): void {
-  assert(condition, message);
-  passed += 1;
-}
-
-function currentTotpStepIndex(nowMs = Date.now()): number {
-  return Math.floor(nowMs / 30_000);
-}
-
-async function waitForTotpStepAfter(step: number): Promise<void> {
-  while (currentTotpStepIndex() <= step) {
-    await new Promise((resolve) => setTimeout(resolve, 250));
-  }
-  await new Promise((resolve) => setTimeout(resolve, 150));
-}
-
-async function reservePort(): Promise<number> {
-  return new Promise((resolve, reject) => {
-    const server = createServer();
-    server.unref();
-    server.on('error', reject);
-    server.listen(0, '127.0.0.1', () => {
-      const address = server.address();
-      if (!address || typeof address === 'string') {
-        server.close();
-        reject(new Error('Could not reserve TCP port.'));
-        return;
-      }
-      const { port } = address;
-      server.close((err) => err ? reject(err) : resolve(port));
-    });
-  });
-}
-
-async function waitForJobStatus(
-  base: string,
-  jobId: string,
-  expected: 'completed' | 'failed',
-  timeoutMs: number = 6000,
-  headers?: Record<string, string>,
-): Promise<any> {
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    const res = await fetch(`${base}/api/v1/pipeline/status/${jobId}`, { headers });
-    const body = await res.json();
-    if (body.status === expected) return body;
-    await new Promise((resolve) => setTimeout(resolve, 250));
-  }
-  throw new Error(`Timed out waiting for async job ${jobId} to reach status '${expected}'.`);
-}
-
-function workflowStripeMetadata(input: {
-  accountId: string;
-  tenantId: string;
-  downstreamSystemRefDigest: string;
-  policyGatePathRefDigest: string;
-}): Record<string, string> {
-  return {
-    attestor_account_id: input.accountId,
-    attestor_tenant_digest: tenantWorkflowMetadataDigest(input.tenantId),
-    attestor_workflow_id: workflowId,
-    attestor_workflow_tier: workflowTier,
-    attestor_consequence_pack: workflowConsequencePack,
-    attestor_downstream_ref_digest: input.downstreamSystemRefDigest,
-    attestor_policy_gate_digest: input.policyGatePathRefDigest,
-  };
-}
+  accountMutationHeaders,
+  cleanupLiveControlPlanePgHarness,
+  currentTotpStepIndex,
+  ok,
+  passedCount,
+  startLiveControlPlanePgHarness,
+  stripe,
+  stripeCustomerId,
+  stripeSubscriptionId,
+  stripeSubscriptionItemId,
+  waitForJobStatus,
+  waitForTotpStepAfter,
+  workflowConsequencePack,
+  workflowId,
+  workflowPriceId,
+  workflowStripeMetadata,
+  workflowTier,
+} from './live-control-plane-pg-fixtures.js';
+import { runSharedPgAccountAuthScenario } from './live-control-plane-pg-account-auth-scenario.js';
 
 async function run(): Promise<void> {
-  mkdirSync('.attestor', { recursive: true });
-  const tempRoot = mkdtempSync(join(process.cwd(), '.attestor', 'live-control-plane-pg-'));
-  const pgDataDir = join(tempRoot, 'pg');
-  const pgPort = await reservePort();
-  const apiPort = await reservePort();
-  const pg = new EmbeddedPostgres({
-    databaseDir: pgDataDir,
-    user: 'control_plane_live',
-    password: 'control_plane_live',
-    port: pgPort,
-    persistent: false,
-    initdbFlags: ['--encoding=UTF8', '--locale=C'],
-  });
-
-  const accountStorePath = join(tempRoot, 'accounts.json');
-  const tenantKeyStorePath = join(tempRoot, 'tenant-keys.json');
-  const usageLedgerPath = join(tempRoot, 'usage-ledger.json');
-  const accountUserStorePath = join(tempRoot, 'account-users.json');
-  const accountUserTokenStorePath = join(tempRoot, 'account-user-tokens.json');
-  const accountSessionStorePath = join(tempRoot, 'account-sessions.json');
-  const adminAuditPath = join(tempRoot, 'admin-audit.json');
-  const adminIdempotencyPath = join(tempRoot, 'admin-idempotency.json');
-  const asyncDlqPath = join(tempRoot, 'async-dlq.json');
-  const stripeWebhookPath = join(tempRoot, 'stripe-webhooks.json');
-  const billingEntitlementPath = join(tempRoot, 'billing-entitlements.json');
-  const workflowEntitlementPath = join(tempRoot, 'workflow-entitlements.json');
-
-  process.env.ATTESTOR_CONTROL_PLANE_PG_URL = `postgres://control_plane_live:control_plane_live@localhost:${pgPort}/attestor_control_plane`;
-  process.env.ATTESTOR_BILLING_LEDGER_PG_URL = `postgres://control_plane_live:control_plane_live@localhost:${pgPort}/attestor_billing`;
-  process.env.ATTESTOR_ACCOUNT_STORE_PATH = accountStorePath;
-  process.env.ATTESTOR_ACCOUNT_USER_STORE_PATH = accountUserStorePath;
-  process.env.ATTESTOR_ACCOUNT_USER_TOKEN_STORE_PATH = accountUserTokenStorePath;
-  process.env.ATTESTOR_ACCOUNT_SESSION_STORE_PATH = accountSessionStorePath;
-  process.env.ATTESTOR_ACCOUNT_MFA_ENCRYPTION_KEY = 'shared-control-plane-mfa-secret';
-  process.env.ATTESTOR_TENANT_KEY_STORE_PATH = tenantKeyStorePath;
-  process.env.ATTESTOR_USAGE_LEDGER_PATH = usageLedgerPath;
-  process.env.ATTESTOR_ADMIN_AUDIT_LOG_PATH = adminAuditPath;
-  process.env.ATTESTOR_ADMIN_IDEMPOTENCY_STORE_PATH = adminIdempotencyPath;
-  process.env.ATTESTOR_ASYNC_DLQ_STORE_PATH = asyncDlqPath;
-  process.env.ATTESTOR_STRIPE_WEBHOOK_STORE_PATH = stripeWebhookPath;
-  process.env.ATTESTOR_BILLING_ENTITLEMENT_STORE_PATH = billingEntitlementPath;
-  process.env.ATTESTOR_WORKFLOW_ENTITLEMENT_STORE_PATH = workflowEntitlementPath;
-  process.env.ATTESTOR_EMAIL_DELIVERY_EVENTS_PATH = join(tempRoot, 'email-delivery-events.json');
-  process.env.ATTESTOR_OBSERVABILITY_LOG_PATH = join(tempRoot, 'observability.jsonl');
-  process.env.ATTESTOR_ADMIN_API_KEY = 'admin-shared-control-plane';
-  process.env.ATTESTOR_RATE_LIMIT_WINDOW_SECONDS = '2';
-  process.env.ATTESTOR_RATE_LIMIT_STARTER_REQUESTS = '5';
-  process.env.ATTESTOR_RATE_LIMIT_PRO_REQUESTS = '10';
-  process.env.ATTESTOR_ASYNC_PENDING_STARTER_JOBS = '1';
-  process.env.ATTESTOR_STRIPE_USE_MOCK = 'true';
-  process.env.STRIPE_API_KEY = 'sk_test_live_control_plane_mock';
-  process.env.STRIPE_WEBHOOK_SECRET = 'whsec_live_control_plane';
-  process.env.ATTESTOR_BILLING_SUCCESS_URL = 'https://attestor.dev/billing/success';
-  process.env.ATTESTOR_BILLING_CANCEL_URL = 'https://attestor.dev/billing/cancel';
-  process.env.ATTESTOR_BILLING_PORTAL_RETURN_URL = 'https://attestor.dev/settings/billing';
-  process.env.ATTESTOR_STRIPE_PRICE_PILOT_WORKFLOW = 'price_pilot_workflow_monthly';
-  process.env.ATTESTOR_STRIPE_PRICE_STARTER_WORKFLOW = 'price_starter_workflow_monthly';
-  process.env.ATTESTOR_STRIPE_PRICE_PRO_WORKFLOW = 'price_pro_workflow_monthly';
-  process.env.ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER_WORKFLOW = 'price_starter_workflow_overage_monthly';
-  process.env.ATTESTOR_STRIPE_OVERAGE_PRICE_PRO_WORKFLOW = 'price_pro_workflow_overage_monthly';
-  process.env.ATTESTOR_WEBAUTHN_RP_ID = 'dev.dontneeda.pw';
-  process.env.ATTESTOR_WEBAUTHN_ORIGIN = webauthnOrigin;
-  process.env.ATTESTOR_WEBAUTHN_RP_NAME = 'Attestor Test';
-  process.env.ATTESTOR_WEBAUTHN_REQUIRE_USER_VERIFICATION = 'false';
-
-  await pg.initialise();
-  await pg.start();
-  await pg.createDatabase('attestor_control_plane');
-  await pg.createDatabase('attestor_billing');
-
-  await resetSharedControlPlaneStoreForTests();
-  await resetTenantRateLimiterForTests();
-  resetAdminAuditLogForTests();
-  resetAdminIdempotencyStoreForTests();
-  resetStripeWebhookStoreForTests();
-  resetHostedBillingEntitlementStoreForTests();
-  resetHostedEmailDeliveryEventStoreForTests();
-  resetObservabilityForTests();
-  await resetBillingEventLedgerForTests();
-
-  const { startServer } = await import('../src/service/api-server.js');
-  const base = `http://127.0.0.1:${apiPort}`;
-  const server = startServer(apiPort);
-  await new Promise((resolve) => setTimeout(resolve, 500));
+  const harness = await startLiveControlPlanePgHarness();
+  const { base, paths } = harness;
+  const {
+    accountStorePath,
+    tenantKeyStorePath,
+    usageLedgerPath,
+    accountUserStorePath,
+    accountUserTokenStorePath,
+    accountSessionStorePath,
+    adminAuditPath,
+    adminIdempotencyPath,
+    asyncDlqPath,
+    stripeWebhookPath,
+    billingEntitlementPath,
+    workflowEntitlementPath,
+  } = paths;
 
   try {
     console.log('\n[Live shared control-plane PG]');
@@ -259,269 +106,14 @@ async function run(): Promise<void> {
 
     const tenantAuth = { Authorization: `Bearer ${createAccountBody.initialKey.apiKey}` };
 
-    const accountRes = await fetch(`${base}/api/v1/account`, { headers: tenantAuth });
-    ok(accountRes.status === 200, 'Tenant account summary: 200');
-    const accountBody = await accountRes.json() as any;
-    ok(accountBody.account.accountName === 'PG Hosted Co', 'Tenant account summary: account name matches');
-    ok(accountBody.usage.used === 0, 'Tenant account summary: usage starts at 0');
-    ok(accountBody.entitlement.status === 'provisioned', 'Tenant account summary: entitlement starts provisioned');
-    ok(accountBody.entitlement.effectivePlanId === 'trial', 'Tenant account summary: trial entitlement projected');
-
-    const entitlementRes = await fetch(`${base}/api/v1/account/entitlement`, { headers: tenantAuth });
-    ok(entitlementRes.status === 200, 'Tenant entitlement summary: 200');
-    const entitlementBody = await entitlementRes.json() as any;
-    ok(entitlementBody.entitlement.provider === 'manual', 'Tenant entitlement summary: provider starts manual');
-
-    const initialFeaturesRes = await fetch(`${base}/api/v1/account/features`, { headers: tenantAuth });
-    ok(initialFeaturesRes.status === 200, 'Tenant features summary: 200');
-    const initialFeaturesBody = await initialFeaturesRes.json() as any;
-    ok(initialFeaturesBody.features.some((entry: any) => entry.key === 'api.access' && entry.grantSource === 'plan_default'), 'Tenant features summary: api.access starts as plan-default feature');
-
-    const bootstrapRes = await fetch(`${base}/api/v1/account/users/bootstrap`, {
-      method: 'POST',
-      headers: {
-        ...tenantAuth,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        email: 'owner@pg-hosted.example',
-        displayName: 'PG Owner',
-        password: 'PgOwnerPass123!',
-      }),
+    const authScenario = await runSharedPgAccountAuthScenario({
+      base,
+      tenantAuth,
+      accountUserStorePath,
+      accountUserTokenStorePath,
+      accountSessionStorePath,
     });
-    ok(bootstrapRes.status === 201, 'Account bootstrap via shared PG: 201');
-    const bootstrapBody = await bootstrapRes.json() as any;
-    ok(bootstrapBody.user.role === 'account_admin', 'Account bootstrap via shared PG: account_admin created');
-    ok(!existsSync(accountUserStorePath), 'Shared PG: bootstrap does not create local user store file');
-
-    const loginRes = await fetch(`${base}/api/v1/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        email: 'owner@pg-hosted.example',
-        password: 'PgOwnerPass123!',
-      }),
-    });
-    ok(loginRes.status === 200, 'Account login via shared PG: 200');
-    let accountSessionCookie = loginRes.headers.get('set-cookie')?.split(';', 1)[0] ?? null;
-    ok(Boolean(accountSessionCookie), 'Account login via shared PG: session cookie returned');
-    ok(!existsSync(accountSessionStorePath), 'Shared PG: login does not create local session store file');
-
-    const meRes = await fetch(`${base}/api/v1/auth/me`, {
-      headers: { Cookie: accountSessionCookie! },
-    });
-    ok(meRes.status === 200, 'Account me via shared PG session: 200');
-    const meBody = await meRes.json() as any;
-    ok(meBody.session.role === 'account_admin', 'Account me via shared PG session: role persisted');
-
-    const mfaEnrollRes = await fetch(`${base}/api/v1/account/mfa/totp/enroll`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Cookie: accountSessionCookie!,
-      },
-      body: JSON.stringify({
-        password: 'PgOwnerPass123!',
-      }),
-    });
-    ok(mfaEnrollRes.status === 200, 'Shared PG MFA enroll: 200');
-    const mfaEnrollBody = await mfaEnrollRes.json() as any;
-    ok(typeof mfaEnrollBody.enrollment.secretBase32 === 'string', 'Shared PG MFA enroll: secret returned');
-    ok(!existsSync(accountUserStorePath), 'Shared PG MFA enroll: no local account user store created');
-
-    let lastOwnerTotpStep = currentTotpStepIndex();
-    const mfaConfirmRes = await fetch(`${base}/api/v1/account/mfa/totp/confirm`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Cookie: accountSessionCookie!,
-      },
-      body: JSON.stringify({
-        code: generateCurrentTotpCode(mfaEnrollBody.enrollment.secretBase32),
-      }),
-    });
-    ok(mfaConfirmRes.status === 200, 'Shared PG MFA confirm: 200');
-    const mfaConfirmBody = await mfaConfirmRes.json() as any;
-    accountSessionCookie = mfaConfirmRes.headers.get('set-cookie')?.split(';', 1)[0] ?? null;
-    ok(Boolean(accountSessionCookie), 'Shared PG MFA confirm: fresh session cookie returned');
-    ok(Array.isArray(mfaConfirmBody.recoveryCodes) && mfaConfirmBody.recoveryCodes.length === 8, 'Shared PG MFA confirm: recovery codes returned');
-    ok(!existsSync(accountSessionStorePath), 'Shared PG MFA confirm: no local session store created');
-
-    const mfaSummaryRes = await fetch(`${base}/api/v1/account/mfa`, {
-      headers: { Cookie: accountSessionCookie! },
-    });
-    ok(mfaSummaryRes.status === 200, 'Shared PG MFA summary: 200');
-    const mfaSummaryBody = await mfaSummaryRes.json() as any;
-    ok(mfaSummaryBody.mfa.enabled === true, 'Shared PG MFA summary: enabled=true');
-
-    const passkeyOptionsRes = await fetch(`${base}/api/v1/account/passkeys/register/options`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Cookie: accountSessionCookie!,
-      },
-      body: JSON.stringify({
-        password: 'PgOwnerPass123!',
-        preferredAuthenticatorType: 'localDevice',
-      }),
-    });
-    ok(passkeyOptionsRes.status === 200, 'Shared PG passkey register options: 200');
-    ok(!existsSync(accountUserTokenStorePath), 'Shared PG passkey register options: no local token store created');
-
-    const passkeyUser = await findAccountUserByEmailState('owner@pg-hosted.example');
-    ok(Boolean(passkeyUser), 'Shared PG passkey seed: user lookup available');
-    const seededRegistrationToken = await issueAccountPasskeyChallengeTokenState({
-      purpose: 'passkey_registration',
-      accountId: passkeyUser!.accountId,
-      accountUserId: passkeyUser!.id,
-      email: passkeyUser!.email,
-      context: {
-        challenge: registrationChallenge,
-        rpId: 'dev.dontneeda.pw',
-        origin: webauthnOrigin,
-        userHandle: 'shared-pg-passkey-user-handle',
-      },
-    });
-
-    const passkeyRegisterVerifyRes = await fetch(`${base}/api/v1/account/passkeys/register/verify`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Cookie: accountSessionCookie!,
-      },
-      body: JSON.stringify({
-        challengeToken: seededRegistrationToken.token,
-        response: registrationResponse,
-      }),
-    });
-    ok(passkeyRegisterVerifyRes.status === 200, 'Shared PG passkey register verify: 200');
-    const passkeyRegisterVerifyBody = await passkeyRegisterVerifyRes.json() as any;
-    ok(passkeyRegisterVerifyBody.user.passkeys.credentialCount === 1, 'Shared PG passkey register verify: count=1');
-    ok(!existsSync(accountUserStorePath), 'Shared PG passkey register verify: no local user store created');
-
-    const passkeyUserForAuth = await findAccountUserByEmailState('owner@pg-hosted.example');
-    ok(Boolean(passkeyUserForAuth), 'Shared PG passkey auth seed: user lookup available');
-    const nextPasskeyUser = structuredClone(passkeyUserForAuth!);
-    nextPasskeyUser.passkeys.userHandle = nextPasskeyUser.passkeys.userHandle || 'shared-pg-passkey-user-handle';
-    nextPasskeyUser.passkeys.credentials = [
-      buildAccountUserPasskeyCredentialRecord({
-        credential: {
-          id: authFixtureCredential.id,
-          publicKey: Buffer.from(authFixtureCredential.publicKey),
-          counter: authFixtureCredential.counter,
-        },
-        transports: ['internal'],
-        aaguid: null,
-        deviceType: 'singleDevice',
-        backedUp: false,
-      }),
-    ];
-    nextPasskeyUser.passkeys.updatedAt = new Date().toISOString();
-    nextPasskeyUser.updatedAt = nextPasskeyUser.passkeys.updatedAt;
-    await saveAccountUserRecordState(nextPasskeyUser);
-
-    const passkeyAuthOptionsRes = await fetch(`${base}/api/v1/auth/passkeys/options`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: 'owner@pg-hosted.example' }),
-    });
-    ok(passkeyAuthOptionsRes.status === 200, 'Shared PG passkey auth options: 200');
-    ok(!existsSync(accountUserTokenStorePath), 'Shared PG passkey auth options: no local token store created');
-
-    const seededAuthenticationToken = await issueAccountPasskeyChallengeTokenState({
-      purpose: 'passkey_authentication',
-      accountId: nextPasskeyUser.accountId,
-      accountUserId: nextPasskeyUser.id,
-      email: nextPasskeyUser.email,
-      context: {
-        challenge: authenticationChallenge,
-        rpId: 'dev.dontneeda.pw',
-        origin: webauthnOrigin,
-      },
-    });
-
-    const passkeyAuthVerifyRes = await fetch(`${base}/api/v1/auth/passkeys/verify`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        challengeToken: seededAuthenticationToken.token,
-        response: authenticationResponse,
-      }),
-    });
-    ok(passkeyAuthVerifyRes.status === 200, 'Shared PG passkey auth verify: 200');
-    const passkeyAuthVerifyBody = await passkeyAuthVerifyRes.json() as any;
-    ok(passkeyAuthVerifyBody.upstreamAuth?.provider === 'passkey', 'Shared PG passkey auth verify: provider=passkey');
-    const passkeySessionCookie = passkeyAuthVerifyRes.headers.get('set-cookie')?.split(';', 1)[0] ?? null;
-    ok(Boolean(passkeySessionCookie), 'Shared PG passkey auth verify: session cookie returned');
-    ok(!existsSync(accountSessionStorePath), 'Shared PG passkey auth verify: no local session store created');
-
-    const passkeyMeRes = await fetch(`${base}/api/v1/auth/me`, {
-      headers: { Cookie: passkeySessionCookie! },
-    });
-    ok(passkeyMeRes.status === 200, 'Shared PG passkey auth session: /me works');
-
-    const mfaLoginRes = await fetch(`${base}/api/v1/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        email: 'owner@pg-hosted.example',
-        password: 'PgOwnerPass123!',
-      }),
-    });
-    ok(mfaLoginRes.status === 200, 'Shared PG MFA login: challenge response');
-    const mfaLoginBody = await mfaLoginRes.json() as any;
-    ok(mfaLoginBody.mfaRequired === true, 'Shared PG MFA login: mfaRequired');
-    ok(!existsSync(accountUserTokenStorePath), 'Shared PG MFA login: no local action token store created');
-
-    await waitForTotpStepAfter(lastOwnerTotpStep);
-    lastOwnerTotpStep = currentTotpStepIndex();
-    const mfaVerifyRes = await fetch(`${base}/api/v1/auth/mfa/verify`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        challengeToken: mfaLoginBody.challengeToken,
-        code: generateCurrentTotpCode(mfaEnrollBody.enrollment.secretBase32),
-      }),
-    });
-    ok(mfaVerifyRes.status === 200, 'Shared PG MFA verify: 200');
-    accountSessionCookie = mfaVerifyRes.headers.get('set-cookie')?.split(';', 1)[0] ?? null;
-    ok(Boolean(accountSessionCookie), 'Shared PG MFA verify: session cookie returned');
-
-    const inviteRes = await fetch(`${base}/api/v1/account/users/invites`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Cookie: accountSessionCookie!,
-      },
-      body: JSON.stringify({
-        email: 'invitee@pg-hosted.example',
-        displayName: 'PG Invitee',
-        role: 'read_only',
-      }),
-    });
-    ok(inviteRes.status === 201, 'Account invite via shared PG: 201');
-    const inviteBody = await inviteRes.json() as any;
-    ok(inviteBody.invite.status === 'pending', 'Account invite via shared PG: pending');
-    ok(!existsSync(accountUserTokenStorePath), 'Shared PG: invite does not create local token store file');
-
-    const acceptInviteRes = await fetch(`${base}/api/v1/account/users/invites/accept`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        inviteToken: inviteBody.inviteToken,
-        password: 'PgInvitePass123!',
-      }),
-    });
-    ok(acceptInviteRes.status === 201, 'Account invite accept via shared PG: 201');
-    const acceptInviteBody = await acceptInviteRes.json() as any;
-    ok(acceptInviteBody.user.email === 'invitee@pg-hosted.example', 'Account invite accept via shared PG: user created');
-
-    const sessionAccountRes = await fetch(`${base}/api/v1/account`, {
-      headers: { Cookie: accountSessionCookie! },
-    });
-    ok(sessionAccountRes.status === 200, 'Account summary via shared PG session: 200');
-    const sessionAccountBody = await sessionAccountRes.json() as any;
-    ok(sessionAccountBody.tenantContext.source === 'account_session', 'Account summary via shared PG session: source=account_session');
+    let { accountSessionCookie, lastOwnerTotpStep, mfaSecretBase32 } = authScenario;
 
     const pipelineRes = await fetch(`${base}/api/v1/pipeline/run`, {
       method: 'POST',
@@ -632,7 +224,7 @@ async function run(): Promise<void> {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         email: 'owner@pg-hosted.example',
-        password: 'PgOwnerPass123!',
+        password: 'RiverQuartz91!',
       }),
     });
     ok(reLoginRes.status === 200, 'Shared PG account can re-login after reactivate');
@@ -646,7 +238,7 @@ async function run(): Promise<void> {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         challengeToken: reLoginBody.challengeToken,
-        code: generateCurrentTotpCode(mfaEnrollBody.enrollment.secretBase32),
+        code: generateCurrentTotpCode(mfaSecretBase32),
       }),
     });
     ok(reLoginVerifyRes.status === 200, 'Shared PG re-login MFA verify: 200');
@@ -688,8 +280,8 @@ async function run(): Promise<void> {
     const retiredCheckoutRes = await fetch(`${base}/api/v1/account/billing/checkout`, {
       method: 'POST',
       headers: {
-        Cookie: accountSessionCookie!,
         'Content-Type': 'application/json',
+        ...accountMutationHeaders(accountSessionCookie!),
         'Idempotency-Key': 'shared-control-plane-checkout-1',
       },
       body: JSON.stringify({ planId: 'trial' }),
@@ -701,8 +293,8 @@ async function run(): Promise<void> {
     const workflowCheckoutRes = await fetch(`${base}/api/v1/account/billing/workflows/checkout`, {
       method: 'POST',
       headers: {
-        Cookie: accountSessionCookie!,
         'Content-Type': 'application/json',
+        ...accountMutationHeaders(accountSessionCookie!),
         'Idempotency-Key': 'shared-control-plane-workflow-checkout-1',
       },
       body: JSON.stringify({
@@ -1034,7 +626,7 @@ async function run(): Promise<void> {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         email: 'owner@pg-hosted.example',
-        password: 'PgOwnerPass123!',
+        password: 'RiverQuartz91!',
       }),
     });
     ok(postInvoiceLoginRes.status === 200, 'Shared PG post-invoice login: challenge response');
@@ -1048,7 +640,7 @@ async function run(): Promise<void> {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         challengeToken: postInvoiceLoginBody.challengeToken,
-        code: generateCurrentTotpCode(mfaEnrollBody.enrollment.secretBase32),
+        code: generateCurrentTotpCode(mfaSecretBase32),
       }),
     });
     ok(postInvoiceVerifyRes.status === 200, 'Shared PG post-invoice MFA verify: 200');
@@ -1092,23 +684,9 @@ async function run(): Promise<void> {
     ok(adminBillingReconciliationBody.reconciliation.summary.partialCount >= 1, 'Admin account billing reconciliation via shared PG: partial invoice counted');
     ok(adminBillingReconciliationBody.reconciliation.summary.attentionCount === 0, 'Admin account billing reconciliation via shared PG: no reconciliation drift');
 
-    console.log(`  Shared control-plane PG tests: ${passed} passed, 0 failed\n`);
+    console.log(`  Shared control-plane PG tests: ${passedCount()} passed, 0 failed\n`);
   } finally {
-    server.close();
-    await resetSharedControlPlaneStoreForTests();
-    await resetTenantRateLimiterForTests();
-    resetAdminAuditLogForTests();
-    resetAdminIdempotencyStoreForTests();
-    resetStripeWebhookStoreForTests();
-    resetHostedBillingEntitlementStoreForTests();
-    resetHostedEmailDeliveryEventStoreForTests();
-    resetObservabilityForTests();
-    await resetBillingEventLedgerForTests();
-    try { await pg.stop(); } catch {}
-    try { rmSync(tempRoot, { recursive: true, force: true }); } catch {}
-    delete process.env.ATTESTOR_CONTROL_PLANE_PG_URL;
-    delete process.env.ATTESTOR_BILLING_LEDGER_PG_URL;
-    delete process.env.ATTESTOR_WORKFLOW_ENTITLEMENT_STORE_PATH;
+    await cleanupLiveControlPlanePgHarness(harness);
   }
 }
 

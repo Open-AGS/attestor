@@ -32,6 +32,14 @@ function includes(content: string, expected: string, message: string): void {
   passed += 1;
 }
 
+function includesNormalized(content: string, expected: string, message: string): void {
+  assert.ok(
+    content.replace(/\s+/gu, ' ').includes(expected),
+    `${message}\nExpected to find: ${expected}`,
+  );
+  passed += 1;
+}
+
 function excludes(content: string, unexpected: RegExp, message: string): void {
   assert.doesNotMatch(content, unexpected, message);
   passed += 1;
@@ -227,7 +235,7 @@ function testDescriptorDocsAndPackageSurface(): void {
     'src/consequence-admission/policy-foundry-adversarial-replay-executor.ts',
     'Policy Foundry docs: adversarial replay executor code evidence is named',
   );
-  includes(
+  includesNormalized(
     docs,
     'local/synthetic adversarial replay executor',
     'Policy Foundry docs: local synthetic executor boundary is documented',

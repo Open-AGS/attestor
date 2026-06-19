@@ -1,7 +1,3 @@
-import assert from 'node:assert/strict';
-import { createHash } from 'node:crypto';
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { runCustomerAdmissionGateExample } from '../examples/customer-admission-gate.js';
 import { createReleaseDecisionSkeleton, type ReleasePolicyProvenance } from '../src/release-kernel/object-model.js';
 import {
@@ -27,85 +23,29 @@ import {
   assertConsequenceAdmissionGateAllowsReleaseEnforcement,
   assertConsequenceAdmissionGateAllows,
   assertConsequenceAdmissionGateAllowsSignedBearerToken,
-  createConsequenceAdmissionFacadeResponse,
   createGenericAdmissionEnvelope,
   evaluateConsequenceAdmissionGate,
   evaluateConsequenceAdmissionGateWithReleaseEnforcement,
   evaluateConsequenceAdmissionGateWithSignedBearerToken,
-  type FinancePipelineAdmissionRun,
 } from '../src/consequence-admission/index.js';
-
-let passed = 0;
-const PROTECTED_POLICY_HASH = 'sha256:customer-gate-protected-policy';
-const PROTECTED_POLICY_IR_HASH = 'sha256:customer-gate-protected-policy-ir';
-const PROTECTED_OUTPUT_HASH = 'sha256:customer-gate-protected-output';
-const PROTECTED_CONSEQUENCE_HASH = 'sha256:customer-gate-protected-consequence';
-const PROTECTED_COMPILED_POLICY_INDEX_VERSION = 'attestor.customer-gate.policy-index.test.v1';
-const PROTECTED_COMPILED_POLICY_IR_VERSION = 'attestor.customer-gate.policy-ir.test.v1';
-
-function readProjectFile(...segments: string[]): string {
-  return readFileSync(join(process.cwd(), ...segments), 'utf8');
-}
-
-function includes(content: string, expected: string, message: string): void {
-  assert.ok(
-    content.includes(expected),
-    `${message}\nExpected to find: ${expected}`,
-  );
-  passed += 1;
-}
-
-function equal<T>(actual: T, expected: T, message: string): void {
-  assert.equal(actual, expected, message);
-  passed += 1;
-}
-
-function ok(condition: unknown, message: string): void {
-  assert.ok(condition, message);
-  passed += 1;
-}
-
-function digestBearerToken(token: string): string {
-  return `sha256:${createHash('sha256').update(token).digest('hex')}`;
-}
-
-function financeRunFixture(
-  overrides: Partial<FinancePipelineAdmissionRun> = {},
-): FinancePipelineAdmissionRun {
-  return {
-    runId: 'run_customer_gate_001',
-    decision: 'pass',
-    proofMode: 'offline_fixture',
-    warrant: 'issued',
-    escrow: 'released',
-    receipt: 'issued',
-    capsule: 'closed',
-    auditChainIntact: true,
-    certificate: {
-      certificateId: 'cert_customer_gate_001',
-      signing: {
-        fingerprint: 'fingerprint_customer_gate_001',
-      },
-    },
-    verification: {
-      digest: 'sha256:customer-gate',
-    },
-    tenantContext: {
-      tenantId: 'tenant_customer_gate',
-      source: 'hosted',
-      planId: 'trial',
-    },
-    ...overrides,
-  };
-}
-
-function admissionFor(run: FinancePipelineAdmissionRun) {
-  return createConsequenceAdmissionFacadeResponse({
-    surface: 'finance-pipeline-run',
-    run,
-    decidedAt: '2026-04-23T18:30:00.000Z',
-  });
-}
+import {
+  PROTECTED_COMPILED_POLICY_INDEX_VERSION,
+  PROTECTED_COMPILED_POLICY_IR_VERSION,
+  PROTECTED_CONSEQUENCE_HASH,
+  PROTECTED_OUTPUT_HASH,
+  PROTECTED_POLICY_HASH,
+  PROTECTED_POLICY_IR_HASH,
+  admissionFor,
+  digestBearerToken,
+  equal,
+  financeRunFixture,
+  includes,
+  ok,
+  passedCount,
+  readProjectFile,
+  rejects,
+  throws,
+} from './consequence-admission-customer-gate-fixtures.js';
 
 function testProceedGate(): void {
   const gate = evaluateConsequenceAdmissionGate({
@@ -196,19 +136,18 @@ function testRequiredCheckFailureHoldsEvenWithProof(): void {
 }
 
 function testAssertGateThrowsWhenHeld(): void {
-  assert.throws(
+  throws(
     () =>
       assertConsequenceAdmissionGateAllows({
         admission: admissionFor(financeRunFixture({ decision: 'fail' })),
         downstreamAction: 'customer_message_sender.send',
       }),
     (error: unknown) => {
-      assert.ok(error instanceof ConsequenceAdmissionGateHeldError);
-      assert.equal(error.gateDecision.outcome, 'hold');
+      ok(error instanceof ConsequenceAdmissionGateHeldError, 'Customer gate: assert helper throws held error');
+      equal(error.gateDecision.outcome, 'hold', 'Customer gate: held error carries hold decision');
       return true;
     },
   );
-  passed += 1;
 }
 
 function validGenericMoneyAdmission(mode: 'observe' | 'enforce') {
@@ -276,7 +215,7 @@ function testNonEnforcingAdmissionCannotPassCustomerGate(): void {
     gate.reasonCodes.includes('customer-gate-non-enforcing-mode-held'),
     'Customer gate: non-enforcing mode hold reason is explicit',
   );
-  assert.throws(
+  throws(
     () =>
       assertConsequenceAdmissionGateAllows({
         admission: envelope.admission,
@@ -284,7 +223,6 @@ function testNonEnforcingAdmissionCannotPassCustomerGate(): void {
       }),
     ConsequenceAdmissionGateHeldError,
   );
-  passed += 1;
 }
 
 function testAdmissionReceiptAloneDoesNotSatisfyExecutionProof(): void {
@@ -610,7 +548,7 @@ async function testSignedBearerGateRejectsBearerOnlyUpgradeForProtectedTokens():
     'Customer gate signed bearer: introspection-required failure is explicit',
   );
 
-  await assert.rejects(
+  await rejects(
     () =>
       assertConsequenceAdmissionGateAllowsSignedBearerToken({
         admission,
@@ -620,12 +558,11 @@ async function testSignedBearerGateRejectsBearerOnlyUpgradeForProtectedTokens():
         currentDate: '2026-05-15T10:01:00.000Z',
       }),
     (error: unknown) => {
-      assert.ok(error instanceof ConsequenceAdmissionSignedBearerGateHeldError);
-      assert.ok(error.gateDecision.signedBearer.failureReasons.includes('introspection-required'));
+      ok(error instanceof ConsequenceAdmissionSignedBearerGateHeldError, 'Customer gate signed bearer: assert helper throws held error');
+      ok(error.gateDecision.signedBearer.failureReasons.includes('introspection-required'), 'Customer gate signed bearer: held error carries introspection-required reason');
       return true;
     },
   );
-  passed += 1;
 }
 
 async function testReleaseEnforcementGateAllowsSenderConstrainedVerifiedToken(): Promise<void> {
@@ -725,7 +662,7 @@ async function testReleaseEnforcementGateRequiresReplayConsumption(): Promise<vo
     'Customer gate release enforcement: replay consumption failure is explicit',
   );
 
-  assert.throws(
+  throws(
     () =>
       assertConsequenceAdmissionGateAllowsReleaseEnforcement({
         admission,
@@ -734,12 +671,11 @@ async function testReleaseEnforcementGateRequiresReplayConsumption(): Promise<vo
         releaseTokenDigest: digestBearerToken(issued.token),
       }),
     (error: unknown) => {
-      assert.ok(error instanceof ConsequenceAdmissionReleaseEnforcementGateHeldError);
-      assert.ok(error.gateDecision.releaseEnforcement.failureReasons.includes('replay-consumption-required'));
+      ok(error instanceof ConsequenceAdmissionReleaseEnforcementGateHeldError, 'Customer gate release enforcement: assert helper throws held error');
+      ok(error.gateDecision.releaseEnforcement.failureReasons.includes('replay-consumption-required'), 'Customer gate release enforcement: held error carries replay reason');
       return true;
     },
   );
-  passed += 1;
 }
 
 async function testReleaseEnforcementGateRequiresAdmissionProofBinding(): Promise<void> {
@@ -816,4 +752,4 @@ await testReleaseEnforcementGateRequiresReplayConsumption();
 await testReleaseEnforcementGateRequiresAdmissionProofBinding();
 testExampleAndDocs();
 
-console.log(`Consequence admission customer gate tests: ${passed} passed, 0 failed`);
+console.log(`Consequence admission customer gate tests: ${passedCount()} passed, 0 failed`);

@@ -587,7 +587,10 @@ function testInvalidInputFailsClosed(): void {
 
 function testGenericGuardReasonCodeSetsRemainMappedToChecks(): void {
   const contractsSource = readProjectFile('src/consequence-admission/contracts.ts');
-  const engineSource = readProjectFile('src/consequence-admission/generic-engine.ts');
+  const engineSource = [
+    readProjectFile('src/consequence-admission/generic-engine.ts'),
+    readProjectFile('src/consequence-admission/generic-engine-checks.ts'),
+  ].join('\n');
   const reasonCodeSetNames = [
     ...contractsSource.matchAll(
       /^export const (GENERIC_ADMISSION_[A-Z_]+_REASON_CODES):/gmu,

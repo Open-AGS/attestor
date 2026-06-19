@@ -1,5 +1,3 @@
-import { strict as assert } from 'node:assert';
-import { createPrivateKey, sign } from 'node:crypto';
 import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -18,128 +16,24 @@ import {
 } from '../src/release-kernel/reviewer-queue.js';
 import {
   ReleaseEvidencePackStoreError,
-  RELEASE_EVIDENCE_PACK_DSSE_PAYLOAD_TYPE,
   createFileBackedReleaseEvidencePackStore,
   createInMemoryReleaseEvidencePackStore,
   createReleaseEvidencePackIssuer,
-  type IssuedReleaseEvidencePack,
   type ReleaseEvidenceStatement,
   resetFileBackedReleaseEvidencePackStoreForTests,
   verifyIssuedReleaseEvidencePack,
 } from '../src/release-kernel/release-evidence-pack.js';
-import { canonicalizeReleaseJson } from '../src/release-kernel/release-canonicalization.js';
 import { createReleaseTokenIssuer } from '../src/release-kernel/release-token.js';
 import { generateKeyPair } from '../src/signing/keys.js';
-
-let passed = 0;
-const VALID_PROVENANCE_DIGEST = `sha256:${'a'.repeat(64)}`;
-
-function ok(condition: unknown, message: string): void {
-  assert.ok(condition, message);
-  passed += 1;
-}
-
-function equal<T>(actual: T, expected: T, message: string): void {
-  assert.equal(actual, expected, message);
-  passed += 1;
-}
-
-function deepEqual<T>(actual: T, expected: T, message: string): void {
-  assert.deepEqual(actual, expected, message);
-  passed += 1;
-}
-
-function dssePreAuthEncoding(payloadType: string, payload: Buffer): Buffer {
-  const payloadTypeBuffer = Buffer.from(payloadType, 'utf-8');
-  return Buffer.concat([
-    Buffer.from('DSSEv1 ', 'utf-8'),
-    Buffer.from(String(payloadTypeBuffer.length), 'utf-8'),
-    Buffer.from(' ', 'utf-8'),
-    payloadTypeBuffer,
-    Buffer.from(' ', 'utf-8'),
-    Buffer.from(String(payload.length), 'utf-8'),
-    Buffer.from(' ', 'utf-8'),
-    payload,
-  ]);
-}
-
-function resignEvidencePackStatement(input: {
-  readonly issuedEvidencePack: IssuedReleaseEvidencePack;
-  readonly statement: ReleaseEvidenceStatement;
-  readonly privateKeyPem: string;
-}): IssuedReleaseEvidencePack {
-  const payload = Buffer.from(canonicalizeReleaseJson(input.statement as never), 'utf-8');
-  const signature = sign(
-    null,
-    dssePreAuthEncoding(RELEASE_EVIDENCE_PACK_DSSE_PAYLOAD_TYPE, payload),
-    createPrivateKey(input.privateKeyPem),
-  );
-
-  return {
-    ...input.issuedEvidencePack,
-    statement: input.statement,
-    envelope: {
-      ...input.issuedEvidencePack.envelope,
-      payload: payload.toString('base64'),
-      signatures: [
-        {
-          ...input.issuedEvidencePack.envelope.signatures[0]!,
-          sig: signature.toString('base64'),
-        },
-      ],
-    },
-  };
-}
-
-function makeFinanceReport(overrides: Record<string, unknown> = {}) {
-  return {
-    runId: 'api-finance-release-evidence',
-    timestamp: '2026-04-17T23:30:00.000Z',
-    decision: 'pending_approval',
-    certificate: { certificateId: 'cert_finance_release_evidence' },
-    evidenceChain: { terminalHash: VALID_PROVENANCE_DIGEST, intact: true },
-    execution: {
-      success: true,
-      rows: [
-        {
-          counterparty_name: 'Bank of Nova Scotia',
-          exposure_usd: 250000000,
-          credit_rating: 'AA-',
-          sector: 'Banking',
-        },
-        {
-          counterparty_name: 'BNP Paribas',
-          exposure_usd: 185000000,
-          credit_rating: 'A+',
-          sector: 'Banking',
-        },
-      ],
-    },
-    liveProof: {
-      mode: 'live_runtime',
-      consistent: true,
-    },
-    receipt: {
-      receiptStatus: 'withheld',
-    },
-    oversight: {
-      status: 'pending',
-    },
-    escrow: {
-      state: 'held',
-    },
-    filingReadiness: {
-      status: 'internal_report_ready',
-    },
-    audit: {
-      chainIntact: true,
-    },
-    attestation: {
-      manifestHash: 'manifest_hash_release_evidence',
-    },
-    ...overrides,
-  } as any;
-}
+import {
+  deepEqual,
+  equal,
+  makeFinanceReport,
+  ok,
+  passedCount,
+  resignEvidencePackStatement,
+  throws,
+} from './release-kernel-release-evidence-pack-fixtures.js';
 
 async function main(): Promise<void> {
   const report = makeFinanceReport();
@@ -542,7 +436,7 @@ async function main(): Promise<void> {
       },
     ],
   });
-  assert.throws(
+  throws(
     () => store.upsert(replacementEvidencePack),
     /different bundle digest/u,
     'Release evidence pack: in-memory store rejects same ID with different bundle digest',
@@ -581,7 +475,7 @@ async function main(): Promise<void> {
   };
   tamperedStoreFile.packs[0]!.bundleDigest = 'sha256:deadbeef';
   writeFileSync(fileBackedStorePath, `${JSON.stringify(tamperedStoreFile, null, 2)}\n`);
-  assert.throws(
+  throws(
     () =>
       verifyIssuedReleaseEvidencePack(
         { issuedEvidencePack } as unknown as Parameters<
@@ -591,22 +485,19 @@ async function main(): Promise<void> {
     /explicit trusted verification key/i,
     'Release evidence pack: verification requires a caller-supplied trusted key',
   );
-  passed += 1;
 
-  assert.throws(
+  throws(
     () => createFileBackedReleaseEvidencePackStore(fileBackedStorePath),
     ReleaseEvidencePackStoreError,
     'Release evidence pack: file-backed store rejects tampered bundle digest on restart',
   );
-  passed += 1;
 
   writeFileSync(fileBackedStorePath, '{not-json');
-  assert.throws(
+  throws(
     () => createFileBackedReleaseEvidencePackStore(fileBackedStorePath),
     ReleaseEvidencePackStoreError,
     'Release evidence pack: file-backed store rejects malformed persisted state',
   );
-  passed += 1;
 
   let tamperedSignatureError: Error | null = null;
   try {
@@ -854,7 +745,7 @@ async function main(): Promise<void> {
     'Release evidence pack: tampered bundle digest is rejected',
   );
 
-  console.log(`\nRelease kernel release-evidence-pack tests: ${passed} passed, 0 failed`);
+  console.log(`\nRelease kernel release-evidence-pack tests: ${passedCount()} passed, 0 failed`);
 }
 
 main().catch((error) => {

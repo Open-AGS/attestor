@@ -26,8 +26,13 @@ import {
   resetTenantAsyncWeightedDispatchCoordinatorForTests,
   shutdownTenantAsyncWeightedDispatchCoordinator,
 } from '../../src/service/async/async-weighted-dispatch.js';
+import {
+  fail,
+  pass,
+  skip,
+  type ProductionAsyncRecoveryCheck,
+} from './async-recovery-checks.ts';
 
-type CheckStatus = 'pass' | 'fail' | 'skip';
 type Environment = Readonly<Record<string, string | undefined>>;
 
 interface TargetProfile {
@@ -63,12 +68,7 @@ interface PriorStepSummary {
   };
 }
 
-export interface ProductionAsyncRecoveryCheck {
-  readonly id: string;
-  readonly status: CheckStatus;
-  readonly detail: string;
-  readonly evidence?: unknown;
-}
+export type { ProductionAsyncRecoveryCheck } from './async-recovery-checks.ts';
 
 interface AsyncRecoveryBehavior {
   readonly redis: {
@@ -143,10 +143,6 @@ export interface ProductionAsyncRecoverySummary {
   readonly nonClaims: readonly string[];
 }
 
-interface EnvRestore {
-  restore(): void;
-}
-
 function arg(name: string, fallback?: string): string | undefined {
   const prefixed = `--${name}=`;
   const found = process.argv.find((entry) => entry.startsWith(prefixed));
@@ -157,18 +153,6 @@ function arg(name: string, fallback?: string): string | undefined {
 function envValue(env: Environment, name: string): string | null {
   const value = env[name];
   return value && value.trim() ? value.trim() : null;
-}
-
-function pass(id: string, detail: string, evidence?: unknown): ProductionAsyncRecoveryCheck {
-  return { id, status: 'pass', detail, evidence };
-}
-
-function fail(id: string, detail: string, evidence?: unknown): ProductionAsyncRecoveryCheck {
-  return { id, status: 'fail', detail, evidence };
-}
-
-function skip(id: string, detail: string, evidence?: unknown): ProductionAsyncRecoveryCheck {
-  return { id, status: 'skip', detail, evidence };
 }
 
 function readJsonFile<T>(path: string): T {
@@ -327,7 +311,7 @@ async function waitForCondition(
   return false;
 }
 
-function setTemporaryEnv(values: Readonly<Record<string, string>>): EnvRestore {
+function setTemporaryEnv(values: Readonly<Record<string, string>>): { restore(): void } {
   const previous = new Map<string, string | undefined>();
   for (const [key, value] of Object.entries(values)) {
     previous.set(key, process.env[key]);

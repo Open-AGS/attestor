@@ -231,7 +231,12 @@ function testSupplyChainAndPackageSurfaceEvidence(): void {
 
 function testProofPacketBindingEvidence(): void {
   const canonicalization = readProjectFile('src', 'release-kernel', 'release-canonicalization.ts');
-  const evidencePack = readProjectFile('src', 'release-kernel', 'release-evidence-pack.ts');
+  const evidencePack = [
+    readProjectFile('src', 'release-kernel', 'release-evidence-pack.ts'),
+    readProjectFile('src', 'release-kernel', 'release-evidence-pack-types.ts'),
+    readProjectFile('src', 'release-kernel', 'release-evidence-pack-dsse.ts'),
+    readProjectFile('src', 'release-kernel', 'release-evidence-pack-verification.ts'),
+  ].join('\n');
   const tamperHistory = readProjectFile('src', 'consequence-admission', 'tamper-evident-history.ts');
   const auditExport = readProjectFile('src', 'consequence-admission', 'audit-evidence-export.ts');
   const externalReview = readProjectFile('src', 'consequence-admission', 'external-review-packet.ts');

@@ -22,7 +22,6 @@ import {
   stripe,
   unsignedBearerToken,
   waitForJobStatus,
-  waitForRateLimitWindowHead,
   waitForTotpStepAfter,
 } from './helpers.js';
 import type { LiveApiHostedContext } from './helpers.js';
@@ -124,6 +123,7 @@ export async function runHostedUserSignupApiKeyFlow(ctx: LiveApiHostedContext): 
         console.log(`    billing events: skipped (PG ledger not configured, status ${billingEventsRes.status})`);
       }
 
+      console.log('\n  [Hosted account billing/metrics reads]');
       const billingEntitlementsNoAuth = await fetch(`${BASE}/api/v1/admin/billing/entitlements`);
       ok(billingEntitlementsNoAuth.status === 401, 'Admin Billing Entitlements: auth required');
 
@@ -197,6 +197,7 @@ export async function runHostedUserSignupApiKeyFlow(ctx: LiveApiHostedContext): 
       const telemetryBody = await telemetryRes.json() as any;
       ok(telemetryBody.telemetry.enabled === false, 'Admin Telemetry: disabled by default without OTLP env');
 
+      console.log('\n  [Hosted signup trial quota smoke]');
       const signupRes = await fetch(`${BASE}/api/v1/auth/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -229,6 +230,8 @@ export async function runHostedUserSignupApiKeyFlow(ctx: LiveApiHostedContext): 
       ok(signupUsageBody.usage.quota === 10_000, 'Auth Signup: trial signup has 10000 included hosted admissions');
       ok(signupUsageBody.usage.enforced === true, 'Auth Signup: trial hosted quota is enforced');
 
+      const previousTrialRateLimit = process.env.ATTESTOR_RATE_LIMIT_TRIAL_REQUESTS;
+      process.env.ATTESTOR_RATE_LIMIT_TRIAL_REQUESTS = '20';
       const signupPipelineRunRes = await fetch(`${BASE}/api/v1/pipeline/run`, {
         method: 'POST',
         headers: pipelineRunHeaders('hosted-user-signup-first-run', {
@@ -280,7 +283,13 @@ export async function runHostedUserSignupApiKeyFlow(ctx: LiveApiHostedContext): 
         }),
       });
       ok(signupAdditionalRunRes.status === 200, 'Auth Signup: trial quota is large enough that the live smoke does not exhaust it');
+      if (previousTrialRateLimit === undefined) {
+        delete process.env.ATTESTOR_RATE_LIMIT_TRIAL_REQUESTS;
+      } else {
+        process.env.ATTESTOR_RATE_LIMIT_TRIAL_REQUESTS = previousTrialRateLimit;
+      }
 
+      console.log('\n  [Account API keys lifecycle]');
       const accountKeysRes = await fetch(`${BASE}/api/v1/account/api-keys`, {
         headers: csrfHeaders(signupCookie!),
       });

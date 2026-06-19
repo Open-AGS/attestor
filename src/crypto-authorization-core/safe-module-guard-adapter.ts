@@ -1,22 +1,40 @@
-import { createHash } from 'node:crypto';
-import {
-  canonicalizeReleaseJson,
-  type CanonicalReleaseJsonValue,
+import type {
+  CanonicalReleaseJsonValue,
 } from '../release-kernel/release-canonicalization.js';
 import type {
   CryptoAuthorizationIntent,
 } from './object-model.js';
-import type {
-  CryptoConsequenceRiskAssessment,
-} from './consequence-risk-mapping.js';
 import type { CryptoReleaseDecisionBinding } from './release-decision-binding.js';
 import type { CryptoPolicyControlPlaneScopeBinding } from './policy-control-plane-scope-binding.js';
 import type { CryptoEnforcementVerificationBinding } from './enforcement-plane-verification.js';
+import { createCryptoAuthorizationSimulation } from './authorization-simulation.js';
+import { canonicalObject } from './safe-module-guard-adapter-canonical.js';
 import {
-  createCryptoAuthorizationSimulation,
-  type CryptoAuthorizationSimulationResult,
-  type CryptoSimulationPreflightSignal,
-} from './authorization-simulation.js';
+  outcomeFromObservations,
+  preflightIdFor,
+  signalsFor,
+} from './safe-module-guard-adapter-signals.js';
+import {
+  SAFE_MODULE_GUARD_ADAPTER_SPEC_VERSION,
+  SAFE_MODULE_GUARD_HOOK_PHASES,
+  SAFE_MODULE_OPERATION_TYPES,
+} from './safe-module-guard-adapter-types.js';
+import type {
+  CreateSafeModuleGuardPreflightInput,
+  SafeModuleGuardCheck,
+  SafeModuleGuardHookContext,
+  SafeModuleGuardHookPhase,
+  SafeModuleGuardObservation,
+  SafeModuleGuardObservationStatus,
+  SafeModuleGuardPreflight,
+  SafeModuleGuardRecoveryPosture,
+  SafeModuleGuardSimulationResult,
+  SafeModuleGuardTransaction,
+  SafeModuleOperationType,
+} from './safe-module-guard-adapter-types.js';
+
+export * from './safe-module-guard-adapter-types.js';
+export { safeModuleGuardAdapterDescriptor } from './safe-module-guard-adapter-descriptor.js';
 
 /**
  * Safe module guard adapter for module-initiated Safe transactions.
@@ -27,153 +45,6 @@ import {
  * module nonce/idempotency, and recovery posture as first-class preflight
  * evidence before the generic Attestor simulation can allow a preview.
  */
-
-export const SAFE_MODULE_GUARD_ADAPTER_SPEC_VERSION =
-  'attestor.crypto-safe-module-guard-adapter.v1';
-
-export const SAFE_MODULE_GUARD_HOOK_PHASES = [
-  'check-module-transaction',
-  'check-after-module-execution',
-] as const;
-export type SafeModuleGuardHookPhase =
-  typeof SAFE_MODULE_GUARD_HOOK_PHASES[number];
-
-export const SAFE_MODULE_OPERATION_TYPES = [
-  'call',
-  'delegatecall',
-] as const;
-export type SafeModuleOperationType = typeof SAFE_MODULE_OPERATION_TYPES[number];
-
-export const SAFE_MODULE_GUARD_OUTCOMES = [
-  'allow',
-  'review-required',
-  'block',
-] as const;
-export type SafeModuleGuardOutcome =
-  typeof SAFE_MODULE_GUARD_OUTCOMES[number];
-
-export const SAFE_MODULE_GUARD_OBSERVATION_STATUSES = [
-  'pass',
-  'warn',
-  'fail',
-] as const;
-export type SafeModuleGuardObservationStatus =
-  typeof SAFE_MODULE_GUARD_OBSERVATION_STATUSES[number];
-
-export const SAFE_MODULE_GUARD_CHECKS = [
-  'safe-module-adapter-kind-is-module-guard',
-  'safe-module-account-matches-intent',
-  'safe-module-chain-matches-intent',
-  'safe-module-is-enabled',
-  'safe-module-guard-is-installed',
-  'safe-module-operation-is-call',
-  'safe-module-target-matches-intent',
-  'safe-module-function-selector-matches-intent',
-  'safe-module-native-value-posture',
-  'safe-module-nonce-matches-intent',
-  'safe-module-release-binding-ready',
-  'safe-module-policy-binding-ready',
-  'safe-module-enforcement-binding-ready',
-  'safe-module-transaction-hash-bound',
-  'safe-module-recovery-posture-ready',
-  'safe-module-post-execution-status',
-] as const;
-export type SafeModuleGuardCheck = typeof SAFE_MODULE_GUARD_CHECKS[number];
-
-export interface SafeModuleGuardHookContext {
-  readonly phase: SafeModuleGuardHookPhase;
-  readonly checkedAt: string;
-  readonly moduleGuardAddress: string;
-  readonly safeVersion?: string | null;
-  readonly executionSuccess?: boolean | null;
-}
-
-export interface SafeModuleGuardRecoveryPosture {
-  readonly moduleCanBeDisabledByOwners: boolean;
-  readonly guardCanBeRemovedByOwners: boolean;
-  readonly emergencySafeTxPrepared: boolean;
-  readonly recoveryAuthorityRef?: string | null;
-  readonly recoveryDelaySeconds?: number | null;
-}
-
-export interface SafeModuleGuardTransaction {
-  readonly safeAddress: string;
-  readonly chainId: string;
-  readonly moduleAddress: string;
-  readonly moduleEnabled: boolean;
-  readonly moduleGuardInstalled: boolean;
-  readonly moduleKind?: string | null;
-  readonly modulePolicyRef?: string | null;
-  readonly to: string;
-  readonly value: string;
-  readonly data: string;
-  readonly operation: SafeModuleOperationType;
-  readonly delegateCallAllowed?: boolean;
-  readonly moduleTxHash: string;
-  readonly moduleNonce: string;
-  readonly executor?: string | null;
-  readonly returnDataHash?: string | null;
-}
-
-export interface SafeModuleGuardObservation {
-  readonly check: SafeModuleGuardCheck;
-  readonly status: SafeModuleGuardObservationStatus;
-  readonly code: string;
-  readonly message: string;
-  readonly required: boolean;
-  readonly evidence: Readonly<Record<string, CanonicalReleaseJsonValue>>;
-}
-
-export interface CreateSafeModuleGuardPreflightInput {
-  readonly intent: CryptoAuthorizationIntent;
-  readonly riskAssessment: CryptoConsequenceRiskAssessment;
-  readonly releaseBinding: CryptoReleaseDecisionBinding;
-  readonly policyScopeBinding: CryptoPolicyControlPlaneScopeBinding;
-  readonly enforcementBinding: CryptoEnforcementVerificationBinding;
-  readonly transaction: SafeModuleGuardTransaction;
-  readonly hook: SafeModuleGuardHookContext;
-  readonly recovery: SafeModuleGuardRecoveryPosture;
-  readonly preflightId?: string | null;
-}
-
-export interface SafeModuleGuardPreflight {
-  readonly version: typeof SAFE_MODULE_GUARD_ADAPTER_SPEC_VERSION;
-  readonly preflightId: string;
-  readonly adapterKind: 'safe-module-guard';
-  readonly hookPhase: SafeModuleGuardHookPhase;
-  readonly checkedAt: string;
-  readonly moduleGuardAddress: string;
-  readonly safeAddress: string;
-  readonly moduleAddress: string;
-  readonly moduleTxHash: string;
-  readonly operation: SafeModuleOperationType;
-  readonly chainId: string;
-  readonly to: string;
-  readonly functionSelector: string | null;
-  readonly moduleNonce: string;
-  readonly outcome: SafeModuleGuardOutcome;
-  readonly signals: readonly CryptoSimulationPreflightSignal[];
-  readonly observations: readonly SafeModuleGuardObservation[];
-  readonly releaseBindingDigest: string;
-  readonly policyScopeDigest: string;
-  readonly enforcementBindingDigest: string;
-  readonly canonical: string;
-  readonly digest: string;
-}
-
-export interface SafeModuleGuardSimulationResult {
-  readonly preflight: SafeModuleGuardPreflight;
-  readonly simulation: CryptoAuthorizationSimulationResult;
-}
-
-export interface SafeModuleGuardAdapterDescriptor {
-  readonly version: typeof SAFE_MODULE_GUARD_ADAPTER_SPEC_VERSION;
-  readonly hookPhases: typeof SAFE_MODULE_GUARD_HOOK_PHASES;
-  readonly operationTypes: typeof SAFE_MODULE_OPERATION_TYPES;
-  readonly outcomes: typeof SAFE_MODULE_GUARD_OUTCOMES;
-  readonly checks: typeof SAFE_MODULE_GUARD_CHECKS;
-  readonly standards: readonly string[];
-}
 
 const ZERO_EVM_ADDRESS = '0x0000000000000000000000000000000000000000';
 
@@ -253,17 +124,6 @@ function normalizeOptionalRecoveryDelay(value: number | null | undefined): numbe
     throw new Error('Safe module guard adapter recoveryDelaySeconds must be a non-negative integer.');
   }
   return value;
-}
-
-function canonicalObject<T extends CanonicalReleaseJsonValue>(value: T): {
-  readonly canonical: string;
-  readonly digest: string;
-} {
-  const canonical = canonicalizeReleaseJson(value);
-  return Object.freeze({
-    canonical,
-    digest: `sha256:${createHash('sha256').update(canonical).digest('hex')}`,
-  });
 }
 
 function caip2ChainId(intent: CryptoAuthorizationIntent): string {
@@ -740,141 +600,6 @@ function buildObservations(input: {
   return Object.freeze(observations);
 }
 
-function outcomeFromObservations(
-  observations: readonly SafeModuleGuardObservation[],
-): SafeModuleGuardOutcome {
-  if (observations.some((entry) => entry.status === 'fail')) {
-    return 'block';
-  }
-  if (observations.some((entry) => entry.required && entry.status === 'warn')) {
-    return 'review-required';
-  }
-  return 'allow';
-}
-
-function signalStatusFor(
-  outcome: SafeModuleGuardOutcome,
-): CryptoSimulationPreflightSignal['status'] {
-  switch (outcome) {
-    case 'allow':
-      return 'pass';
-    case 'review-required':
-      return 'warn';
-    case 'block':
-      return 'fail';
-  }
-}
-
-function signalCodeFor(
-  source: 'safe-guard' | 'module-hook',
-  outcome: SafeModuleGuardOutcome,
-): string {
-  const prefix = source === 'safe-guard'
-    ? 'safe-module-guard'
-    : 'safe-module-hook';
-  switch (outcome) {
-    case 'allow':
-      return `${prefix}-adapter-allow`;
-    case 'review-required':
-      return `${prefix}-adapter-review-required`;
-    case 'block':
-      return `${prefix}-adapter-block`;
-  }
-}
-
-function signalMessageFor(
-  source: 'safe-guard' | 'module-hook',
-  outcome: SafeModuleGuardOutcome,
-): string {
-  const surface = source === 'safe-guard' ? 'Safe module guard' : 'Safe module hook';
-  switch (outcome) {
-    case 'allow':
-      return `${surface} adapter accepted the Attestor-bound module transaction preflight.`;
-    case 'review-required':
-      return `${surface} adapter needs additional Attestor evidence before module execution.`;
-    case 'block':
-      return `${surface} adapter would block the module transaction fail-closed.`;
-  }
-}
-
-function failingReasonCodes(
-  observations: readonly SafeModuleGuardObservation[],
-): readonly string[] {
-  return Object.freeze(
-    observations
-      .filter((entry) => entry.status !== 'pass')
-      .map((entry) => entry.code),
-  );
-}
-
-function preflightIdFor(input: {
-  readonly hook: SafeModuleGuardHookContext;
-  readonly transaction: SafeModuleGuardTransaction;
-  readonly releaseBindingDigest: string;
-  readonly policyScopeDigest: string;
-  readonly enforcementBindingDigest: string;
-}): string {
-  return canonicalObject({
-    version: SAFE_MODULE_GUARD_ADAPTER_SPEC_VERSION,
-    phase: input.hook.phase,
-    checkedAt: input.hook.checkedAt,
-    moduleGuardAddress: input.hook.moduleGuardAddress,
-    moduleAddress: input.transaction.moduleAddress,
-    moduleTxHash: input.transaction.moduleTxHash,
-    releaseBindingDigest: input.releaseBindingDigest,
-    policyScopeDigest: input.policyScopeDigest,
-    enforcementBindingDigest: input.enforcementBindingDigest,
-  }).digest;
-}
-
-function signalsFor(input: {
-  readonly outcome: SafeModuleGuardOutcome;
-  readonly preflightId: string;
-  readonly hook: SafeModuleGuardHookContext;
-  readonly transaction: SafeModuleGuardTransaction;
-  readonly functionSelector: string | null;
-  readonly observations: readonly SafeModuleGuardObservation[];
-}): readonly CryptoSimulationPreflightSignal[] {
-  const evidence = Object.freeze({
-    adapterVersion: SAFE_MODULE_GUARD_ADAPTER_SPEC_VERSION,
-    preflightId: input.preflightId,
-    outcome: input.outcome,
-    hookPhase: input.hook.phase,
-    moduleGuardAddress: input.hook.moduleGuardAddress,
-    safeAddress: input.transaction.safeAddress,
-    moduleAddress: input.transaction.moduleAddress,
-    moduleEnabled: input.transaction.moduleEnabled,
-    moduleGuardInstalled: input.transaction.moduleGuardInstalled,
-    moduleTxHash: input.transaction.moduleTxHash,
-    operation: input.transaction.operation,
-    to: input.transaction.to,
-    value: input.transaction.value,
-    functionSelector: input.functionSelector,
-    moduleNonce: input.transaction.moduleNonce,
-    reasonCodes: failingReasonCodes(input.observations),
-  });
-  const status = signalStatusFor(input.outcome);
-
-  return Object.freeze([
-    Object.freeze({
-      source: 'safe-guard',
-      status,
-      code: signalCodeFor('safe-guard', input.outcome),
-      message: signalMessageFor('safe-guard', input.outcome),
-      required: true,
-      evidence,
-    }),
-    Object.freeze({
-      source: 'module-hook',
-      status,
-      code: signalCodeFor('module-hook', input.outcome),
-      message: signalMessageFor('module-hook', input.outcome),
-      required: true,
-      evidence,
-    }),
-  ]);
-}
-
 export function createSafeModuleGuardPreflight(
   input: CreateSafeModuleGuardPreflightInput,
 ): SafeModuleGuardPreflight {
@@ -973,27 +698,4 @@ export function safeModuleGuardPreflightLabel(
     `module:${preflight.moduleAddress}`,
     `safe:${preflight.safeAddress}`,
   ].join(' / ');
-}
-
-export function safeModuleGuardAdapterDescriptor():
-SafeModuleGuardAdapterDescriptor {
-  return Object.freeze({
-    version: SAFE_MODULE_GUARD_ADAPTER_SPEC_VERSION,
-    hookPhases: SAFE_MODULE_GUARD_HOOK_PHASES,
-    operationTypes: SAFE_MODULE_OPERATION_TYPES,
-    outcomes: SAFE_MODULE_GUARD_OUTCOMES,
-    checks: SAFE_MODULE_GUARD_CHECKS,
-    standards: Object.freeze([
-      'Safe-Module-Guard',
-      'setModuleGuard',
-      'execTransactionFromModule',
-      'checkModuleTransaction',
-      'checkAfterModuleExecution',
-      'ERC-4337-module-aware',
-      'release-layer',
-      'release-policy-control-plane',
-      'release-enforcement-plane',
-      'attestor-crypto-authorization-simulation',
-    ]),
-  });
 }

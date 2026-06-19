@@ -29,13 +29,13 @@ Render script files under `scripts/render/`: 18.
 
 Demo script files under `scripts/demo/`: 8.
 
-Rehearsal script files under `scripts/rehearse/`: 5.
+Rehearsal script files under `scripts/rehearse/`: 13.
 
 Run script files under `scripts/run/`: 3.
 
 Benchmark script files under `scripts/benchmark/`: 3.
 
-Ops script files under `scripts/ops/`: 4.
+Ops script files under `scripts/ops/`: 6.
 
 Preview script files under `scripts/preview/`: 1.
 
@@ -69,11 +69,11 @@ future one-off CLI has a documented reason to sit above the family folders.
 | `scripts/probe/probe-*` | 19 | You need an opt-in package-surface, live, provider, Stripe, HA, observability, or hosted-flow probe. | `probe-consequence-admission-package-surface.mjs`, `probe-stripe-live-readiness.ts`, `probe-production-hosted-flow.ts` |
 | `scripts/render/render-*` | 18 | You need to render local packets, profiles, credentials templates, proof surfaces, or deployment bundles. | `render-proof-surface.ts`, `render-production-readiness-packet.ts`, `render-ha-profile.ts` |
 | `scripts/demo/demo-*` | 8 | You need a runnable local golden path or path-boundary demo. | `demo-golden-refund.ts`, `demo-golden-paths.ts`, `demo-path-boundary.ts` |
-| `scripts/rehearse/*.ts` | 5 | You need a production rehearsal script or rehearsal planner. | `rehearse-production-consequence-behavior.ts`, `plan-production-rehearsal.ts` |
+| `scripts/rehearse/*.ts` | 13 | You need a production rehearsal script, rehearsal planner, or rehearsal helper. | `rehearse-production-consequence-behavior.ts`, `plan-production-rehearsal.ts` |
 | `scripts/run/run-*` | 3 | You need a suite runner or live/ops gate runner. | `run-suite.mjs`, `run-live-ops-gate.mjs` |
 | `scripts/verify/{validate,verify}-*` | 4 | You need PR-body, PR-contract, or MQ-kit validation. | `validate-pr-body.mjs`, `validate-pr-contract.mjs`, `verify-mq-cert.ts`, `verify-mq-kit.ts` |
 | `scripts/benchmark/*.ts` | 3 | You need local performance, HA, or observability benchmark evidence. | `benchmark-observability.ts`, `benchmark-crypto-intelligence-performance.ts`, `ha-calibrate.ts` |
-| `scripts/ops/*.ts` | 4 | You need a named operator CLI for backups, restores, Stripe bootstrap, or promotion packaging. | `control-plane-backup.ts`, `control-plane-restore.ts`, `bootstrap-stripe-commercial.ts` |
+| `scripts/ops/*.ts` | 6 | You need a named operator CLI for backups, restores, Stripe bootstrap, or promotion packaging. | `control-plane-backup.ts`, `control-plane-restore.ts`, `bootstrap-stripe-commercial.ts` |
 | `scripts/preview/preview-*` | 1 | You need a local browser preview server. | `preview-policy-foundry-hosted-ui.ts` |
 | `scripts/proof/*-proof.ts` | 1 | You need a local proof run. | `real-db-proof.ts` |
 | `scripts/lib/{secret,remote,repo}-*` | 3 | You need a shared helper imported by demo, probe, render, check, or ops scripts. | `secret-safe-output.ts`, `remote-secret-keys.ts`, `repo-pipeline-readiness.ts` |

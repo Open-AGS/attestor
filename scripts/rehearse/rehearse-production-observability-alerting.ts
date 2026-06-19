@@ -9,8 +9,13 @@ import {
   probeObservabilityReceivers,
   type ReceiverProbeSummary,
 } from '../probe/probe-observability-receivers.ts';
+import {
+  fail,
+  pass,
+  skip,
+  type ProductionObservabilityAlertingCheck,
+} from './observability-alerting-checks.ts';
 
-type CheckStatus = 'pass' | 'fail' | 'skip';
 type Environment = Readonly<Record<string, string | undefined>>;
 
 interface TargetProfile {
@@ -105,12 +110,7 @@ interface RehearsalAdapters {
   readonly fetchText: (url: string, timeoutMs: number) => Promise<EndpointProbe<string>>;
 }
 
-export interface ProductionObservabilityAlertingCheck {
-  readonly id: string;
-  readonly status: CheckStatus;
-  readonly detail: string;
-  readonly evidence?: unknown;
-}
+export type { ProductionObservabilityAlertingCheck } from './observability-alerting-checks.ts';
 
 export interface ProductionObservabilityAlertingSummary {
   readonly generatedAt: string;
@@ -169,30 +169,6 @@ function arg(name: string, fallback?: string): string | undefined {
 function envValue(env: Environment, name: string): string | null {
   const value = env[name];
   return value && value.trim() ? value.trim() : null;
-}
-
-function pass(
-  id: string,
-  detail: string,
-  evidence?: unknown,
-): ProductionObservabilityAlertingCheck {
-  return { id, status: 'pass', detail, evidence };
-}
-
-function fail(
-  id: string,
-  detail: string,
-  evidence?: unknown,
-): ProductionObservabilityAlertingCheck {
-  return { id, status: 'fail', detail, evidence };
-}
-
-function skip(
-  id: string,
-  detail: string,
-  evidence?: unknown,
-): ProductionObservabilityAlertingCheck {
-  return { id, status: 'skip', detail, evidence };
 }
 
 function readJsonFile<T>(path: string): T {

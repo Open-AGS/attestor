@@ -25,15 +25,12 @@ import {
   type StripeSubscriptionStatus,
 } from '../account/account-store.js';
 import {
-  exportHostedBillingEntitlementStoreSnapshot as exportHostedBillingEntitlementStoreSnapshotFile,
   findHostedBillingEntitlementByAccountId as findHostedBillingEntitlementByAccountIdFile,
   listHostedBillingEntitlements as listHostedBillingEntitlementsFile,
-  normalizeHostedBillingEntitlementRecord,
   projectHostedBillingEntitlement,
-  restoreHostedBillingEntitlementStoreSnapshot as restoreHostedBillingEntitlementStoreSnapshotFile,
   upsertHostedBillingEntitlement as upsertHostedBillingEntitlementFile,
   type HostedBillingEntitlementRecord,
-  type HostedBillingEntitlementStoreSnapshot,
+
   type ListBillingEntitlementsFilters,
   type ProjectHostedBillingEntitlementInput,
 } from '../billing/billing-entitlement-store.js';
@@ -53,8 +50,6 @@ import {
   ensureControlPlanePgSchema as ensureSchema,
   getControlPlanePgPool as getPool,
   isSharedControlPlaneConfigured,
-  type PgClient,
-  type PgPool,
 } from './pg.js';
 import {
   buildTenantKeyRecord,
@@ -66,14 +61,13 @@ import {
   normalizeStripeInvoiceStatus,
   normalizeStripeSubscriptionStatus,
   resolveStripeAccountMatch,
-  rowToHostedAccount,
-  rowToHostedBillingEntitlement,
+
+
   rowToWorkflowEntitlement,
   touchRecord,
 } from './mappers.js';
 import {
   consumeWorkflowEntitlementAdmission as consumeWorkflowEntitlementAdmissionFile,
-  exportWorkflowEntitlementStoreSnapshot as exportWorkflowEntitlementStoreSnapshotFile,
   findWorkflowEntitlementByStripeSubscriptionItemId as findWorkflowEntitlementByStripeSubscriptionItemIdFile,
   findWorkflowEntitlementByTenantAndWorkflow as findWorkflowEntitlementByTenantAndWorkflowFile,
   listWorkflowEntitlements as listWorkflowEntitlementsFile,
@@ -81,313 +75,52 @@ import {
   projectPendingWorkflowEntitlement,
   projectStripeWorkflowEntitlement,
   projectWorkflowEntitlementAdmissionUsage,
-  restoreWorkflowEntitlementStoreSnapshot as restoreWorkflowEntitlementStoreSnapshotFile,
   upsertPendingWorkflowEntitlement as upsertPendingWorkflowEntitlementFile,
   upsertWorkflowEntitlementFromStripe as upsertWorkflowEntitlementFromStripeFile,
   type ListWorkflowEntitlementsFilters,
   type PendingWorkflowEntitlementInput,
   type StoredWorkflowEntitlementRecord,
   type StripeWorkflowEntitlementInput,
-  type WorkflowEntitlementStoreSnapshot,
+
   type WorkflowUsageDecision,
 } from '../workflow-entitlement-store.js';
+import {
+  findHostedAccountByIdPg,
+  findHostedAccountByTenantIdPg,
+  listHostedAccountsPg,
+  upsertHostedAccountPg,
+} from './hosted-billing-state-hosted-accounts.js';
+import {
+  findHostedBillingEntitlementByAccountIdPg,
+  listHostedBillingEntitlementsPg,
+  upsertHostedBillingEntitlementPg,
+} from './hosted-billing-state-billing-entitlements.js';
+import {
+  findWorkflowEntitlementByStripeSubscriptionItemIdPg,
+  findWorkflowEntitlementByTenantAndWorkflowPg,
+  listWorkflowEntitlementsPg,
+  upsertWorkflowEntitlementPg,
+} from './hosted-billing-state-workflow-entitlements.js';
+import type {
+  BillingEntitlementStoreSnapshot,
+  HostedAccountStoreSnapshot,
+  WorkflowEntitlementSnapshot,
+} from './hosted-billing-state-types.js';
+export type {
+  BillingEntitlementStoreSnapshot,
+  HostedAccountStoreSnapshot,
+  WorkflowEntitlementSnapshot,
+} from './hosted-billing-state-types.js';
+import {
+  exportHostedAccountStoreSnapshotImpl,
+  exportHostedBillingEntitlementStoreSnapshotImpl,
+  exportWorkflowEntitlementStoreSnapshotImpl,
+  restoreHostedAccountStoreSnapshotImpl,
+  restoreHostedBillingEntitlementStoreSnapshotImpl,
+  restoreWorkflowEntitlementStoreSnapshotImpl,
+} from './hosted-billing-state-snapshots.js';
 
-export interface HostedAccountStoreSnapshot {
-  version: 1;
-  exportedAt: string;
-  recordCount: number;
-  records: HostedAccountRecord[];
-}
 
-export interface BillingEntitlementStoreSnapshot extends HostedBillingEntitlementStoreSnapshot {}
-export interface WorkflowEntitlementSnapshot extends WorkflowEntitlementStoreSnapshot {}
-
-async function listHostedAccountsPg(): Promise<HostedAccountRecord[]> {
-  await ensureSchema();
-  const pool = await getPool();
-  const result = await pool.query(`
-    SELECT record_json
-      FROM attestor_control_plane.hosted_accounts
-      ORDER BY updated_at ASC, account_id ASC
-  `);
-  return result.rows.map(rowToHostedAccount);
-}
-
-async function findHostedAccountByIdPg(id: string): Promise<HostedAccountRecord | null> {
-  await ensureSchema();
-  const pool = await getPool();
-  const result = await pool.query(
-    `SELECT record_json
-       FROM attestor_control_plane.hosted_accounts
-      WHERE account_id = $1
-      LIMIT 1`,
-    [id],
-  );
-  return result.rows[0] ? rowToHostedAccount(result.rows[0]) : null;
-}
-
-async function findHostedAccountByTenantIdPg(primaryTenantId: string): Promise<HostedAccountRecord | null> {
-  await ensureSchema();
-  const pool = await getPool();
-  const result = await pool.query(
-    `SELECT record_json
-       FROM attestor_control_plane.hosted_accounts
-      WHERE primary_tenant_id = $1
-      LIMIT 1`,
-    [primaryTenantId],
-  );
-  return result.rows[0] ? rowToHostedAccount(result.rows[0]) : null;
-}
-
-async function upsertHostedAccountPg(record: HostedAccountRecord, executor?: PgPool | PgClient): Promise<void> {
-  await ensureSchema();
-  const target = executor ?? await getPool();
-  try {
-    await target.query(
-      `INSERT INTO attestor_control_plane.hosted_accounts (
-        account_id, primary_tenant_id, account_status, stripe_customer_id, stripe_subscription_id, updated_at, record_json
-      ) VALUES (
-        $1, $2, $3, $4, $5, $6::timestamptz, $7::jsonb
-      )
-      ON CONFLICT (account_id) DO UPDATE SET
-        primary_tenant_id = EXCLUDED.primary_tenant_id,
-        account_status = EXCLUDED.account_status,
-        stripe_customer_id = EXCLUDED.stripe_customer_id,
-        stripe_subscription_id = EXCLUDED.stripe_subscription_id,
-        updated_at = EXCLUDED.updated_at,
-        record_json = EXCLUDED.record_json`,
-      [
-        record.id,
-        record.primaryTenantId,
-        record.status,
-        record.billing.stripeCustomerId,
-        record.billing.stripeSubscriptionId,
-        record.updatedAt,
-        JSON.stringify(record),
-      ],
-    );
-  } catch (err) {
-    const mapped = mapPgErrorToAccountStoreError(err);
-    if (mapped) throw mapped;
-    throw err;
-  }
-}
-
-async function listHostedBillingEntitlementsPg(
-  filters?: ListBillingEntitlementsFilters,
-): Promise<HostedBillingEntitlementRecord[]> {
-  await ensureSchema();
-  const pool = await getPool();
-  const clauses: string[] = [];
-  const params: unknown[] = [];
-  if (filters?.accountId) {
-    params.push(filters.accountId);
-    clauses.push(`account_id = $${params.length}`);
-  }
-  if (filters?.tenantId) {
-    params.push(filters.tenantId);
-    clauses.push(`tenant_id = $${params.length}`);
-  }
-  if (filters?.status) {
-    params.push(filters.status);
-    clauses.push(`entitlement_status = $${params.length}`);
-  }
-  const limit = Math.max(1, Math.min(1000, filters?.limit ?? 100));
-  const offset = Math.max(0, filters?.offset ?? 0);
-  params.push(limit);
-  params.push(offset);
-  const whereClause = clauses.length > 0 ? `WHERE ${clauses.join(' AND ')}` : '';
-  const result = await pool.query(
-    `SELECT record_json
-       FROM attestor_control_plane.billing_entitlements
-       ${whereClause}
-      ORDER BY updated_at DESC, account_id ASC
-      LIMIT $${params.length - 1}
-      OFFSET $${params.length}`,
-    params,
-  );
-  return result.rows.map(rowToHostedBillingEntitlement);
-}
-
-async function listAllHostedBillingEntitlementsPg(): Promise<HostedBillingEntitlementRecord[]> {
-  const pageSize = 1000;
-  const records: HostedBillingEntitlementRecord[] = [];
-  for (let offset = 0; ; offset += pageSize) {
-    const page = await listHostedBillingEntitlementsPg({
-      limit: pageSize,
-      offset,
-    });
-    records.push(...page);
-    if (page.length < pageSize) break;
-  }
-  return records;
-}
-
-async function findHostedBillingEntitlementByAccountIdPg(accountId: string): Promise<HostedBillingEntitlementRecord | null> {
-  await ensureSchema();
-  const pool = await getPool();
-  const result = await pool.query(
-    `SELECT record_json
-       FROM attestor_control_plane.billing_entitlements
-      WHERE account_id = $1
-      LIMIT 1`,
-    [accountId],
-  );
-  return result.rows[0] ? rowToHostedBillingEntitlement(result.rows[0]) : null;
-}
-
-async function upsertHostedBillingEntitlementPg(
-  record: HostedBillingEntitlementRecord,
-  executor?: PgPool | PgClient,
-): Promise<void> {
-  await ensureSchema();
-  const target = executor ?? await getPool();
-  await target.query(
-    `INSERT INTO attestor_control_plane.billing_entitlements (
-      account_id, tenant_id, provider, entitlement_status, access_enabled, effective_plan_id, last_event_id, updated_at, record_json
-    ) VALUES (
-      $1, $2, $3, $4, $5, $6, $7, $8::timestamptz, $9::jsonb
-    )
-    ON CONFLICT (account_id) DO UPDATE SET
-      tenant_id = EXCLUDED.tenant_id,
-      provider = EXCLUDED.provider,
-      entitlement_status = EXCLUDED.entitlement_status,
-      access_enabled = EXCLUDED.access_enabled,
-      effective_plan_id = EXCLUDED.effective_plan_id,
-      last_event_id = EXCLUDED.last_event_id,
-      updated_at = EXCLUDED.updated_at,
-      record_json = EXCLUDED.record_json`,
-    [
-      record.accountId,
-      record.tenantId,
-      record.provider,
-      record.status,
-      record.accessEnabled,
-      record.effectivePlanId,
-      record.lastEventId,
-      record.updatedAt,
-      JSON.stringify(record),
-    ],
-  );
-}
-
-async function listWorkflowEntitlementsPg(
-  filters?: ListWorkflowEntitlementsFilters,
-): Promise<StoredWorkflowEntitlementRecord[]> {
-  await ensureSchema();
-  const pool = await getPool();
-  const clauses: string[] = [];
-  const params: unknown[] = [];
-  if (filters?.accountId) {
-    params.push(filters.accountId);
-    clauses.push(`account_id = $${params.length}`);
-  }
-  if (filters?.tenantId) {
-    params.push(filters.tenantId);
-    clauses.push(`tenant_id = $${params.length}`);
-  }
-  if (filters?.status) {
-    params.push(filters.status);
-    clauses.push(`entitlement_status = $${params.length}`);
-  }
-  const limit = Math.max(1, Math.min(1000, filters?.limit ?? 100));
-  const offset = Math.max(0, filters?.offset ?? 0);
-  params.push(limit);
-  params.push(offset);
-  const whereClause = clauses.length > 0 ? `WHERE ${clauses.join(' AND ')}` : '';
-  const result = await pool.query(
-    `SELECT record_json
-       FROM attestor_control_plane.workflow_entitlements
-       ${whereClause}
-      ORDER BY updated_at DESC, workflow_id ASC
-      LIMIT $${params.length - 1}
-      OFFSET $${params.length}`,
-    params,
-  );
-  return result.rows.map(rowToWorkflowEntitlement);
-}
-
-async function listAllWorkflowEntitlementsPg(): Promise<StoredWorkflowEntitlementRecord[]> {
-  const pageSize = 1000;
-  const records: StoredWorkflowEntitlementRecord[] = [];
-  for (let offset = 0; ; offset += pageSize) {
-    const page = await listWorkflowEntitlementsPg({
-      limit: pageSize,
-      offset,
-    });
-    records.push(...page);
-    if (page.length < pageSize) break;
-  }
-  return records;
-}
-
-async function findWorkflowEntitlementByTenantAndWorkflowPg(
-  tenantId: string,
-  workflowId: string,
-): Promise<StoredWorkflowEntitlementRecord | null> {
-  await ensureSchema();
-  const pool = await getPool();
-  const result = await pool.query(
-    `SELECT record_json
-       FROM attestor_control_plane.workflow_entitlements
-      WHERE tenant_id = $1 AND workflow_id = $2
-      LIMIT 1`,
-    [tenantId, workflowId],
-  );
-  return result.rows[0] ? rowToWorkflowEntitlement(result.rows[0]) : null;
-}
-
-async function findWorkflowEntitlementByStripeSubscriptionItemIdPg(
-  stripeSubscriptionItemId: string,
-): Promise<StoredWorkflowEntitlementRecord | null> {
-  await ensureSchema();
-  const pool = await getPool();
-  const result = await pool.query(
-    `SELECT record_json
-       FROM attestor_control_plane.workflow_entitlements
-      WHERE stripe_subscription_item_id = $1
-      LIMIT 1`,
-    [stripeSubscriptionItemId],
-  );
-  return result.rows[0] ? rowToWorkflowEntitlement(result.rows[0]) : null;
-}
-
-async function upsertWorkflowEntitlementPg(
-  record: StoredWorkflowEntitlementRecord,
-  executor?: PgPool | PgClient,
-): Promise<void> {
-  await ensureSchema();
-  const target = executor ?? await getPool();
-  await target.query(
-    `INSERT INTO attestor_control_plane.workflow_entitlements (
-      workflow_id, account_id, tenant_id, tier_id, entitlement_status,
-      stripe_subscription_id, stripe_subscription_item_id, updated_at, record_json
-    ) VALUES (
-      $1, $2, $3, $4, $5,
-      $6, $7, $8::timestamptz, $9::jsonb
-    )
-    ON CONFLICT (workflow_id) DO UPDATE SET
-      account_id = EXCLUDED.account_id,
-      tenant_id = EXCLUDED.tenant_id,
-      tier_id = EXCLUDED.tier_id,
-      entitlement_status = EXCLUDED.entitlement_status,
-      stripe_subscription_id = EXCLUDED.stripe_subscription_id,
-      stripe_subscription_item_id = EXCLUDED.stripe_subscription_item_id,
-      updated_at = EXCLUDED.updated_at,
-      record_json = EXCLUDED.record_json`,
-    [
-      record.workflowId,
-      record.accountId,
-      record.tenantId,
-      record.tier,
-      record.status,
-      record.stripeSubscriptionId,
-      record.stripeSubscriptionItemId,
-      record.updatedAt,
-      JSON.stringify(record),
-    ],
-  );
-}
 
 export async function listHostedAccountsState(): Promise<{
   records: HostedAccountRecord[];
@@ -1009,93 +742,34 @@ export async function applyStripeInvoiceStateState(options: {
 }
 
 export async function exportHostedAccountStoreSnapshot(): Promise<HostedAccountStoreSnapshot> {
-  const records = isSharedControlPlaneConfigured()
-    ? await listHostedAccountsPg()
-    : listHostedAccountsFile().records;
-  return {
-    version: 1,
-    exportedAt: new Date().toISOString(),
-    recordCount: records.length,
-    records,
-  };
+  return exportHostedAccountStoreSnapshotImpl();
 }
 
 export async function exportHostedBillingEntitlementStoreSnapshot(): Promise<BillingEntitlementStoreSnapshot> {
-  const records = isSharedControlPlaneConfigured()
-    ? await listAllHostedBillingEntitlementsPg()
-    : exportHostedBillingEntitlementStoreSnapshotFile().records;
-  return {
-    version: 1,
-    exportedAt: new Date().toISOString(),
-    recordCount: records.length,
-    records,
-  };
+  return exportHostedBillingEntitlementStoreSnapshotImpl();
 }
 
 export async function exportWorkflowEntitlementStoreSnapshot(): Promise<WorkflowEntitlementSnapshot> {
-  const records = isSharedControlPlaneConfigured()
-    ? await listAllWorkflowEntitlementsPg()
-    : exportWorkflowEntitlementStoreSnapshotFile().records;
-  return {
-    version: 1,
-    exportedAt: new Date().toISOString(),
-    recordCount: records.length,
-    records,
-  };
+  return exportWorkflowEntitlementStoreSnapshotImpl();
 }
 
 export async function restoreHostedAccountStoreSnapshot(
   snapshot: HostedAccountStoreSnapshot,
   options?: { replaceExisting?: boolean },
 ): Promise<{ recordCount: number }> {
-  if (!isSharedControlPlaneConfigured()) {
-    throw new Error('Shared control-plane PostgreSQL is not configured for hosted account restore.');
-  }
-  await ensureSchema();
-  const pool = await getPool();
-  if (options?.replaceExisting) {
-    await pool.query('TRUNCATE TABLE attestor_control_plane.hosted_accounts CASCADE');
-  }
-  for (const record of snapshot.records) {
-    await upsertHostedAccountPg(normalizeHostedAccountRecord(record));
-  }
-  return { recordCount: snapshot.records.length };
+  return restoreHostedAccountStoreSnapshotImpl(snapshot, options);
 }
 
 export async function restoreWorkflowEntitlementStoreSnapshot(
   snapshot: WorkflowEntitlementSnapshot,
   options?: { replaceExisting?: boolean },
 ): Promise<{ recordCount: number }> {
-  if (!isSharedControlPlaneConfigured()) {
-    const restored = restoreWorkflowEntitlementStoreSnapshotFile(snapshot);
-    return { recordCount: restored.recordCount };
-  }
-  await ensureSchema();
-  const pool = await getPool();
-  if (options?.replaceExisting) {
-    await pool.query('TRUNCATE TABLE attestor_control_plane.workflow_entitlements');
-  }
-  for (const record of snapshot.records) {
-    await upsertWorkflowEntitlementPg(normalizeWorkflowEntitlementRecord(record));
-  }
-  return { recordCount: snapshot.records.length };
+  return restoreWorkflowEntitlementStoreSnapshotImpl(snapshot, options);
 }
 
 export async function restoreHostedBillingEntitlementStoreSnapshot(
   snapshot: BillingEntitlementStoreSnapshot,
   options?: { replaceExisting?: boolean },
 ): Promise<{ recordCount: number }> {
-  if (!isSharedControlPlaneConfigured()) {
-    const restored = restoreHostedBillingEntitlementStoreSnapshotFile(snapshot);
-    return { recordCount: restored.recordCount };
-  }
-  await ensureSchema();
-  const pool = await getPool();
-  if (options?.replaceExisting) {
-    await pool.query('TRUNCATE TABLE attestor_control_plane.billing_entitlements CASCADE');
-  }
-  for (const record of snapshot.records) {
-    await upsertHostedBillingEntitlementPg(normalizeHostedBillingEntitlementRecord(record));
-  }
-  return { recordCount: snapshot.records.length };
+  return restoreHostedBillingEntitlementStoreSnapshotImpl(snapshot, options);
 }

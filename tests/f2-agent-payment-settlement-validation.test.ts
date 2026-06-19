@@ -17,16 +17,16 @@ try {
   const note = readProjectFile('docs', 'audit', 'f2-agent-payment-settlement-validation.md');
   const tracker = readProjectFile('docs', 'audit', 'attestor-audit-remediation-tracker.md');
   const packageJson = readProjectFile('package.json');
-  const adapter = readProjectFile(
-    'src',
-    'crypto-authorization-core',
-    'x402-agentic-payment-adapter.ts',
-  );
-  const resourceServer = readProjectFile(
-    'src',
-    'crypto-execution-admission',
-    'x402-resource-server.ts',
-  );
+  const adapter = [
+    readProjectFile('src', 'crypto-authorization-core', 'x402-agentic-payment-adapter.ts'),
+    readProjectFile('src', 'crypto-authorization-core', 'x402-agentic-payment-adapter-observations.ts'),
+    readProjectFile('src', 'crypto-authorization-core', 'x402-agentic-payment-adapter-types.ts'),
+  ].join('\n');
+  const resourceServer = [
+    readProjectFile('src', 'crypto-execution-admission', 'x402-resource-server.ts'),
+    readProjectFile('src', 'crypto-execution-admission', 'x402-resource-server-types.ts'),
+    readProjectFile('src', 'crypto-execution-admission', 'x402-resource-server-evaluation.ts'),
+  ].join('\n');
   const receipt = readProjectFile(
     'src',
     'consequence-admission',

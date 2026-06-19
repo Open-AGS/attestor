@@ -93,19 +93,20 @@ export async function runHostedPlanUsageFlow(): Promise<void> {
           sign: false,
         }),
       });
-      ok(third.status === 200, 'Quota: paid Pro third run continues into soft overage');
+      ok(third.status === 429, 'Quota: trial third run is blocked by the evaluation hard limit');
       const thirdBody = await third.json() as any;
-      ok(thirdBody.usage.used === 3, 'Quota: paid overage run increments usage');
-      ok(thirdBody.usage.remaining === 0, 'Quota: paid overage remaining stays at 0');
-      ok(thirdBody.usage.enforced === false, 'Quota: paid overage is not a hard stop');
-      ok(thirdBody.usage.overage === true, 'Quota: paid overage is marked');
-      ok(thirdBody.usage.overageUnits === 1, 'Quota: paid overage units are reported');
-      console.log(`    quota soft-overage: used=${thirdBody.usage.used}/${thirdBody.usage.quota}, status=${third.status}`);
+      ok(thirdBody.error === 'Monthly pipeline run quota exceeded for this tenant plan.', 'Quota: hard-limit rejection body returned');
+      ok(thirdBody.usage.used === 2, 'Quota: rejected run does not increment usage');
+      ok(thirdBody.usage.remaining === 0, 'Quota: rejected run remaining stays at 0');
+      ok(thirdBody.usage.enforced === true, 'Quota: trial quota is enforced as a hard stop');
+      ok(thirdBody.usage.overage === false, 'Quota: trial hard stop does not mark paid overage');
+      ok(thirdBody.usage.overageUnits === 0, 'Quota: trial hard stop has no paid overage units');
+      console.log(`    quota hard-limit: used=${thirdBody.usage.used}/${thirdBody.usage.quota}, status=${third.status}`);
 
       const ledger = readUsageLedgerSnapshot();
       const persisted = ledger.records.find((entry) => entry.tenantId === 'tenant-pro' && entry.period === secondBody.usage.period);
       ok(Boolean(persisted), 'Quota: usage persisted to local ledger');
-      ok(persisted?.used === 3, 'Quota: persisted ledger count includes paid overage');
+      ok(persisted?.used === 2, 'Quota: persisted ledger count excludes rejected trial run');
     }
 
     process.env.ATTESTOR_TENANT_KEYS = '';

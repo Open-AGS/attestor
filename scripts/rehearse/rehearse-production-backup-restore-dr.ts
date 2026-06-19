@@ -11,204 +11,32 @@ import {
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import {
-  consequenceAdmissionAllowsConsequence,
-  createConsequenceAdmissionRequest,
-  createConsequenceAdmissionResponse,
-} from '../../src/consequence-admission/index.js';
+  buildAdmissionProbe,
+} from './backup-restore-dr-admission-probe.ts';
+import { COMPONENT_TABLES } from './backup-restore-dr-components.ts';
+import { renderReadme } from './backup-restore-dr-readme.ts';
+import {
+  fail,
+  pass,
+  skip,
+  type BackupRestoreDrBehavior,
+  type ControlPlaneBackupManifest,
+  type Environment,
+  type NpmCommandResult,
+  type PgClient,
+  type PostgresPitrDrillEvidence,
+  type PostgresValidationSummary,
+  type PriorStepSummary,
+  type ProductionBackupRestoreDrCheck,
+  type ProductionBackupRestoreDrSummary,
+  type RedisDurabilityPosture,
+  type TargetProfile,
+} from './backup-restore-dr-types.ts';
 
-type CheckStatus = 'pass' | 'fail' | 'skip';
-type Environment = Readonly<Record<string, string | undefined>>;
-
-interface TargetProfile {
-  readonly profileId: string;
-  readonly targetEnvironment: {
-    readonly provider: string;
-    readonly namespace: string;
-  };
-  readonly runtime: {
-    readonly profile: string;
-    readonly requireSharedAuthority: boolean;
-    readonly noLocalFallback: boolean;
-    readonly sharedAuthorityContract: string;
-  };
-  readonly substrates: readonly Array<{
-    readonly id: string;
-    readonly kind: string;
-    readonly requiredEnv: readonly string[];
-  }>;
-}
-
-interface PriorStepSummary {
-  readonly profileId?: string;
-  readonly readiness: {
-    readonly passed: boolean;
-    readonly state: string;
-    readonly issues?: readonly string[];
-  };
-  readonly target?: {
-    readonly provider?: string;
-    readonly namespace?: string;
-    readonly publicHostname?: string | null;
-  };
-}
-
-interface PostgresPitrDrillEvidence {
-  readonly schemaVersion: 'attestor.postgres-pitr-drill.v1';
-  readonly generatedAt: string;
-  readonly status: 'passed' | 'failed' | 'pending';
-  readonly source: {
-    readonly baseBackupId: string;
-    readonly walArchiveRef: string;
-    readonly sourcePgRef: string;
-  };
-  readonly restore: {
-    readonly replacementTarget: string;
-    readonly recoveredTo: string;
-    readonly restoredAt: string;
-    readonly validatedAt: string;
-    readonly validationQueries: readonly string[];
-  };
-  readonly operator: string;
-  readonly notes?: readonly string[];
-}
-
-interface ControlPlaneBackupManifestComponent {
-  readonly id: string;
-  readonly tier: string;
-  readonly snapshotPath: string | null;
-  readonly present: boolean;
-  readonly sha256: string | null;
-  readonly bytes: number | null;
-  readonly recordCount: number | null;
-}
-
-interface ControlPlaneBackupManifest {
-  readonly version: number;
-  readonly snapshotId: string;
-  readonly generatedAt: string;
-  readonly includeEphemeral: boolean;
-  readonly sharedControlPlaneMode: string;
-  readonly sharedBillingLedgerConfigured: boolean;
-  readonly components: readonly ControlPlaneBackupManifestComponent[];
-}
-
-export interface ProductionBackupRestoreDrCheck {
-  readonly id: string;
-  readonly status: CheckStatus;
-  readonly detail: string;
-  readonly evidence?: unknown;
-}
-
-interface NpmCommandResult {
-  readonly command: string;
-  readonly exitCode: number | null;
-  readonly stdout: string;
-  readonly stderr: string;
-  readonly error: string | null;
-}
-
-interface RedisDurabilityPosture {
-  readonly ping: string;
-  readonly maxmemoryPolicy: string;
-  readonly appendonly: string;
-  readonly appendfsync: string | null;
-  readonly save: string | null;
-  readonly durablePersistenceConfigured: boolean;
-}
-
-interface PostgresValidationSummary {
-  readonly releaseAuthority: {
-    readonly sourceReadyComponents: number;
-    readonly replacementReadyComponents: number;
-    readonly replacementComponentCount: number;
-  };
-  readonly controlPlane: {
-    readonly restoredTables: Record<string, number>;
-    readonly comparedComponents: number;
-  };
-  readonly billingLedger: {
-    readonly eventCount: number;
-    readonly invoiceLineItemCount: number;
-    readonly chargeCount: number;
-  };
-}
-
-interface BackupRestoreDrBehavior {
-  readonly controlPlaneBackup: {
-    readonly snapshotDir: string;
-    readonly manifestPath: string;
-    readonly snapshotId: string;
-    readonly manifestDigest: string;
-    readonly presentComponents: number;
-  };
-  readonly controlPlaneRestore: {
-    readonly replacementControlPlane: string;
-    readonly replacementBillingLedger: string;
-    readonly restoredComponentCount: number;
-    readonly skippedComponentCount: number;
-  };
-  readonly postgresPitr: {
-    readonly evidencePath: string;
-    readonly baseBackupId: string;
-    readonly walArchiveRef: string;
-    readonly recoveredTo: string;
-    readonly validationQueryCount: number;
-  };
-  readonly redisDurability: {
-    readonly source: RedisDurabilityPosture;
-    readonly replacement: RedisDurabilityPosture;
-  };
-  readonly postRestore: {
-    readonly postgres: PostgresValidationSummary;
-    readonly apiReadyStatus: number;
-    readonly workerReadyStatus: number;
-    readonly admissionAllowed: boolean;
-    readonly blockedFailClosed: boolean;
-  };
-}
-
-export interface ProductionBackupRestoreDrSummary {
-  readonly generatedAt: string;
-  readonly profileId: string;
-  readonly readiness: {
-    readonly state:
-      | 'passed-backup-restore-dr-rehearsal'
-      | 'blocked-on-target-prerequisites'
-      | 'failed-backup-restore-dr-rehearsal';
-    readonly passed: boolean;
-    readonly issues: readonly string[];
-  };
-  readonly target: {
-    readonly provider: string;
-    readonly namespace: string;
-    readonly publicHostname: string | null;
-  };
-  readonly replacementTarget: {
-    readonly controlPlanePgUrlRef: string;
-    readonly billingLedgerPgUrlRef: string;
-    readonly releaseAuthorityPgUrlRef: string;
-    readonly redisUrlRef: string;
-    readonly apiReadyUrl: string;
-    readonly workerReadyUrl: string;
-  };
-  readonly artifacts: {
-    readonly outputDir: string;
-    readonly summaryPath: string;
-    readonly readmePath: string;
-    readonly backupSnapshotDir: string;
-    readonly pitrEvidencePath: string | null;
-  };
-  readonly checks: readonly ProductionBackupRestoreDrCheck[];
-  readonly commands: readonly NpmCommandResult[];
-  readonly behavior: BackupRestoreDrBehavior | null;
-  readonly nonClaims: readonly string[];
-}
-
-interface PgClient {
-  connect(): Promise<void>;
-  query(sql: string, params?: unknown[]): Promise<{ rows: Array<Record<string, unknown>> }>;
-  end(): Promise<void>;
-}
+export type {
+  ProductionBackupRestoreDrCheck,
+  ProductionBackupRestoreDrSummary,
+} from './backup-restore-dr-types.ts';
 
 const DEFAULT_PROFILE_PATH =
   'docs/08-deployment/production-rehearsal-targets/gke-production-rehearsal.json';
@@ -221,20 +49,6 @@ const DEFAULT_CONSEQUENCE_SUMMARY =
 const DEFAULT_ASYNC_SUMMARY =
   '.attestor/rehearsal/gke-production-rehearsal/async-recovery/summary.json';
 
-const COMPONENT_TABLES: Record<string, string> = {
-  account_store: 'hosted_accounts',
-  account_user_store: 'account_users',
-  account_session_store: 'account_sessions',
-  account_user_action_token_store: 'account_user_action_tokens',
-  tenant_key_store: 'tenant_api_keys',
-  usage_ledger: 'usage_ledger',
-  billing_entitlement_store: 'billing_entitlements',
-  async_dead_letter_store: 'async_dead_letter_jobs',
-  admin_audit_log: 'admin_audit_log',
-  admin_idempotency_store: 'admin_idempotency',
-  stripe_webhook_store: 'stripe_webhook_dedupe',
-};
-
 function arg(name: string, fallback?: string): string | undefined {
   const prefixed = `--${name}=`;
   const found = process.argv.find((entry) => entry.startsWith(prefixed));
@@ -245,18 +59,6 @@ function arg(name: string, fallback?: string): string | undefined {
 function envValue(env: Environment, name: string): string | null {
   const value = env[name];
   return value && value.trim() ? value.trim() : null;
-}
-
-function pass(id: string, detail: string, evidence?: unknown): ProductionBackupRestoreDrCheck {
-  return { id, status: 'pass', detail, evidence };
-}
-
-function fail(id: string, detail: string, evidence?: unknown): ProductionBackupRestoreDrCheck {
-  return { id, status: 'fail', detail, evidence };
-}
-
-function skip(id: string, detail: string, evidence?: unknown): ProductionBackupRestoreDrCheck {
-  return { id, status: 'skip', detail, evidence };
 }
 
 function readJsonFile<T>(path: string): T {
@@ -638,74 +440,6 @@ function listCount(value: string): number {
   return value.split(',').map((entry) => entry.trim()).filter(Boolean).length;
 }
 
-function buildAdmissionProbe(): {
-  readonly admissionAllowed: boolean;
-  readonly blockedFailClosed: boolean;
-} {
-  const requestedAt = new Date().toISOString();
-  const request = createConsequenceAdmissionRequest({
-    requestedAt,
-    packFamily: 'finance',
-    entryPoint: {
-      kind: 'hosted-route',
-      id: 'post-restore-dr-probe',
-      route: '/api/v1/pipeline/run',
-      packageSubpath: null,
-      sourceRef: 'production-rehearsal-step-08',
-    },
-    proposedConsequence: {
-      actor: 'dr-rehearsal',
-      action: 'write restored financial record',
-      downstreamSystem: 'replacement-target',
-      consequenceKind: 'record',
-      riskClass: 'R4',
-      summary: 'Post-restore admission probe',
-    },
-    policyScope: {
-      policyRef: 'production-rehearsal/dr',
-      tenantId: 'tenant-dr-rehearsal',
-      environment: 'production-shared',
-    },
-    authority: {
-      actorRef: 'operator:dr-rehearsal',
-      reviewerRef: 'reviewer:dr-rehearsal',
-      authorityMode: 'dual-control',
-    },
-    evidence: [{
-      id: 'dr-restore-summary',
-      kind: 'production-rehearsal-summary',
-      digest: 'sha256:post-restore-dr-probe',
-      uri: null,
-    }],
-  });
-  const admitted = createConsequenceAdmissionResponse({
-    request,
-    decidedAt: new Date().toISOString(),
-    decision: 'admit',
-    reason: 'Post-restore admission probe is allowed.',
-    reasonCodes: ['DR_RESTORE_PROBE_ALLOWED'],
-    proof: [{
-      kind: 'release-evidence-pack',
-      id: 'dr-restore-proof-ref',
-      digest: 'sha256:dr-restore-proof-ref',
-      uri: null,
-      verifyHint: 'Verify the restored rehearsal evidence pack against the promotion bundle.',
-    }],
-  });
-  const blocked = createConsequenceAdmissionResponse({
-    request,
-    decidedAt: new Date().toISOString(),
-    decision: 'block',
-    reason: 'Post-restore negative admission probe blocks fail-closed.',
-    reasonCodes: ['DR_RESTORE_PROBE_BLOCKED'],
-    proof: [],
-  });
-  return {
-    admissionAllowed: consequenceAdmissionAllowsConsequence(admitted.decision) && admitted.allowed,
-    blockedFailClosed: !blocked.allowed && blocked.failClosed,
-  };
-}
-
 async function validatePostRestorePostgres(input: {
   readonly manifest: ControlPlaneBackupManifest;
   readonly sourceReleaseAuthorityPgUrl: string;
@@ -888,53 +622,6 @@ async function runBackupRestoreDrBehavior(input: {
 
 function writeJson(path: string, value: unknown): void {
   writeFileSync(path, `${JSON.stringify(value, null, 2)}\n`, 'utf8');
-}
-
-function renderReadme(summary: ProductionBackupRestoreDrSummary): string {
-  const lines = [
-    '# Production Backup / Restore / DR Rehearsal',
-    '',
-    `Generated: ${summary.generatedAt}`,
-    `Profile: ${summary.profileId}`,
-    `State: ${summary.readiness.state}`,
-    `Passed: ${summary.readiness.passed ? 'yes' : 'no'}`,
-    '',
-    '## Checks',
-    '',
-    ...summary.checks.map((check) => `- ${check.status.toUpperCase()} ${check.id}: ${check.detail}`),
-    '',
-    '## Artifacts',
-    '',
-    `- Summary: ${summary.artifacts.summaryPath}`,
-    `- Backup snapshot: ${summary.artifacts.backupSnapshotDir}`,
-    `- PITR evidence: ${summary.artifacts.pitrEvidencePath ?? '(missing)'}`,
-    '',
-    '## Behavior',
-    '',
-  ];
-  if (summary.behavior) {
-    lines.push(
-      `- Control-plane snapshot: ${summary.behavior.controlPlaneBackup.snapshotId}`,
-      `- Present backup components: ${summary.behavior.controlPlaneBackup.presentComponents}`,
-      `- Restored components: ${summary.behavior.controlPlaneRestore.restoredComponentCount}`,
-      `- Redis source durability: appendonly=${summary.behavior.redisDurability.source.appendonly}, save=${summary.behavior.redisDurability.source.save ?? '(empty)'}`,
-      `- Redis replacement durability: appendonly=${summary.behavior.redisDurability.replacement.appendonly}, save=${summary.behavior.redisDurability.replacement.save ?? '(empty)'}`,
-      `- Replacement API ready status: ${summary.behavior.postRestore.apiReadyStatus}`,
-      `- Replacement worker ready status: ${summary.behavior.postRestore.workerReadyStatus}`,
-      `- Admission allowed probe: ${summary.behavior.postRestore.admissionAllowed ? 'passed' : 'failed'}`,
-      `- Blocked fail-closed probe: ${summary.behavior.postRestore.blockedFailClosed ? 'passed' : 'failed'}`,
-    );
-  } else {
-    lines.push('- Core backup/restore/DR behavior was not exercised.');
-  }
-  lines.push(
-    '',
-    '## Non-Claims',
-    '',
-    ...summary.nonClaims.map((claim) => `- ${claim}`),
-    '',
-  );
-  return lines.join('\n');
 }
 
 export async function rehearseProductionBackupRestoreDr(options?: {

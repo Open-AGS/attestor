@@ -48,7 +48,7 @@ export async function runAdminTenantKeyFlow(ctx: LiveApiHostedContext): Promise<
       const issueBody = await issueRes.json() as any;
       ok(typeof issueBody.key.apiKey === 'string', 'Admin API: plaintext apiKey returned once');
       ok(issueBody.key.planId === 'trial', 'Admin API: plan persisted');
-      ok(issueBody.key.monthlyRunQuota === 250000, 'Admin API: plan default quota applied');
+      ok(issueBody.key.monthlyRunQuota === 10_000, 'Admin API: plan default quota applied');
 
       const issueReplayRes = await fetch(`${BASE}/api/v1/admin/tenant-keys`, {
         method: 'POST',
@@ -242,8 +242,34 @@ export async function runAdminTenantKeyFlow(ctx: LiveApiHostedContext): Promise<
       });
       ok(accountRun.status === 200, 'Admin Accounts: created account key can consume pipeline run');
       const accountRunBody = await accountRun.json() as any;
-      ok(accountRunBody.rateLimit.requestsPerWindow === 20, 'Admin Accounts: run response reflects synced pro rate limit');
+      ok(accountRunBody.rateLimit.requestsPerWindow === 3, 'Admin Accounts: run response keeps trial account rate limit after workflow billing');
       ok(accountRunBody.rateLimit.used >= 1, 'Admin Accounts: run rate limit usage increments');
+
+      const suspendAccountRes = await fetch(`${BASE}/api/v1/admin/accounts/${createAccountBody.account.id}/suspend`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer admin-secret',
+          'Idempotency-Key': 'idem-account-suspend-1',
+        },
+        body: JSON.stringify({ reason: 'billing review' }),
+      });
+      ok(suspendAccountRes.status === 200, 'Admin Accounts: suspend status 200');
+      const suspendAccountBody = await suspendAccountRes.json() as any;
+      ok(suspendAccountBody.account.status === 'suspended', 'Admin Accounts: suspend marks account suspended');
+
+      const reactivateAccountRes = await fetch(`${BASE}/api/v1/admin/accounts/${createAccountBody.account.id}/reactivate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer admin-secret',
+          'Idempotency-Key': 'idem-account-reactivate-1',
+        },
+        body: JSON.stringify({ reason: 'billing review resolved' }),
+      });
+      ok(reactivateAccountRes.status === 200, 'Admin Accounts: reactivate status 200');
+      const reactivateAccountBody = await reactivateAccountRes.json() as any;
+      ok(reactivateAccountBody.account.status === 'active', 'Admin Accounts: reactivate restores account active');
 
       const archiveAccountRes = await fetch(`${BASE}/api/v1/admin/accounts`, {
         method: 'POST',
@@ -305,11 +331,11 @@ export async function runAdminTenantKeyFlow(ctx: LiveApiHostedContext): Promise<
           planId: 'trial',
         }),
       });
-      ok(rateTenantRes.status === 201, 'Admin API: starter tenant for rate-limit test issued');
+      ok(rateTenantRes.status === 201, 'Admin API: trial tenant for rate-limit test issued');
       const rateTenantBody = await rateTenantRes.json() as any;
-      const previousStarterRateLimitRequests = process.env.ATTESTOR_RATE_LIMIT_STARTER_REQUESTS;
+      const previousTrialRateLimitRequests = process.env.ATTESTOR_RATE_LIMIT_TRIAL_REQUESTS;
       const previousRateLimitWindowSeconds = process.env.ATTESTOR_RATE_LIMIT_WINDOW_SECONDS;
-      process.env.ATTESTOR_RATE_LIMIT_STARTER_REQUESTS = '1';
+      process.env.ATTESTOR_RATE_LIMIT_TRIAL_REQUESTS = '1';
       process.env.ATTESTOR_RATE_LIMIT_WINDOW_SECONDS = '15';
       await waitForRateLimitWindowHead(
         Number.parseInt(process.env.ATTESTOR_RATE_LIMIT_WINDOW_SECONDS ?? '15', 10) || 15,
@@ -330,9 +356,9 @@ export async function runAdminTenantKeyFlow(ctx: LiveApiHostedContext): Promise<
             sign: false,
           }),
         });
-        ok(allowed.status === 200, `Rate Limit: starter request ${attempt + 1} allowed`);
+        ok(allowed.status === 200, `Rate Limit: trial request ${attempt + 1} allowed`);
         const allowedBody = await allowed.json() as any;
-        ok(allowedBody.rateLimit.requestsPerWindow === 1, `Rate Limit: request ${attempt + 1} limit exposed`);
+        ok(allowedBody.rateLimit.requestsPerWindow === 1, `Rate Limit: request ${attempt + 1} trial limit exposed`);
       }
 
       const limitedSync = await fetch(`${BASE}/api/v1/pipeline/run`, {
@@ -349,11 +375,11 @@ export async function runAdminTenantKeyFlow(ctx: LiveApiHostedContext): Promise<
           sign: false,
         }),
       });
-      ok(limitedSync.status === 429, 'Rate Limit: sync route throttled after starter window exhausted');
+      ok(limitedSync.status === 429, 'Rate Limit: sync route throttled after trial window exhausted');
       ok(limitedSync.headers.get('retry-after') !== null, 'Rate Limit: retry-after header present');
       const limitedSyncBody = await limitedSync.json() as any;
       ok(limitedSyncBody.rateLimit.remaining === 0, 'Rate Limit: sync 429 reports zero remaining');
-      ok(limitedSyncBody.rateLimit.requestsPerWindow === 1, 'Rate Limit: sync 429 reports starter limit');
+      ok(limitedSyncBody.rateLimit.requestsPerWindow === 1, 'Rate Limit: sync 429 reports trial limit');
 
       const limitedAsync = await fetch(`${BASE}/api/v1/pipeline/run-async`, {
         method: 'POST',
@@ -392,10 +418,10 @@ export async function runAdminTenantKeyFlow(ctx: LiveApiHostedContext): Promise<
       ok(afterReset.status === 200, 'Rate Limit: window reset allows new request');
       const afterResetBody = await afterReset.json() as any;
       ok(afterResetBody.rateLimit.used === 1, 'Rate Limit: reset starts new window usage at 1');
-      if (typeof previousStarterRateLimitRequests === 'string') {
-        process.env.ATTESTOR_RATE_LIMIT_STARTER_REQUESTS = previousStarterRateLimitRequests;
+      if (typeof previousTrialRateLimitRequests === 'string') {
+        process.env.ATTESTOR_RATE_LIMIT_TRIAL_REQUESTS = previousTrialRateLimitRequests;
       } else {
-        delete process.env.ATTESTOR_RATE_LIMIT_STARTER_REQUESTS;
+        delete process.env.ATTESTOR_RATE_LIMIT_TRIAL_REQUESTS;
       }
       if (typeof previousRateLimitWindowSeconds === 'string') {
         process.env.ATTESTOR_RATE_LIMIT_WINDOW_SECONDS = previousRateLimitWindowSeconds;

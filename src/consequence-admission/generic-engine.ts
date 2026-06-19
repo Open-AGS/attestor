@@ -15,31 +15,13 @@ import {
   type AuthorityCreepGuardRecord,
 } from './authority-creep-guard.js';
 import {
-  GENERIC_ADMISSION_AGENTIC_SUPPLY_CHAIN_REASON_CODES,
-  GENERIC_ADMISSION_APPROVAL_GUARD_REASON_CODES,
-  GENERIC_ADMISSION_AUTHORITY_GUARD_REASON_CODES,
-  GENERIC_ADMISSION_DECISION_CONTEXT_DRIFT_REASON_CODES,
-  GENERIC_ADMISSION_GUARD_INPUT_PROVENANCE_REASON_CODES,
-  GENERIC_ADMISSION_HUMAN_REVIEW_FATIGUE_REASON_CODES,
-  GENERIC_ADMISSION_MULTI_AGENT_DELEGATION_REASON_CODES,
-  GENERIC_ADMISSION_NO_GO_REASON_CODES,
-  GENERIC_ADMISSION_SCOPE_EXPLOSION_REASON_CODES,
-  GENERIC_ADMISSION_TOOL_RESULT_REASON_CODES,
-  GENERIC_ADMISSION_TRUSTED_OBSERVED_FEATURE_ORIGINS,
-  type ConsequenceAdmissionCheck,
-  type ConsequenceAdmissionCheckKind,
-  type ConsequenceAdmissionCheckOutcome,
-  type ConsequenceAdmissionConstraint,
   type ConsequenceAdmissionDecision,
-  type ConsequenceAdmissionProofRef,
-  type ConsequenceAdmissionRequest,
   type CreateGenericAdmissionInput,
   type GenericAdmissionDownstreamPosture,
   type GenericAdmissionEnvelope,
   type GenericAdmissionGuardInputProvenanceDecision,
   type GenericAdmissionMode,
   type GenericAdmissionModeEvaluation,
-  type GenericAdmissionObservedFeatureOrigin,
   type GenericAdmissionShadowDecision,
 } from './contracts.js';
 import {
@@ -49,6 +31,17 @@ import {
 import {
   normalizeCreateGenericAdmissionInput,
 } from './generic-input-normalization.js';
+import {
+  createGenericAdmissionChecks,
+  genericAdmissionConstraints,
+  genericAdmissionProof,
+  genericAdmissionReason,
+} from './generic-engine-checks.js';
+import {
+  genericAdmissionDimensions,
+  genericAdmissionSummary,
+  observedFeatureTrue,
+} from './generic-engine-dimensions.js';
 import {
   effectiveDecisionForGenericAdmissionMode,
   genericAdmissionHardInvariantReasonCodes,
@@ -72,13 +65,11 @@ import {
   type ConsequenceNoGoConditionLedgerDecision,
 } from './no-go-condition-ledger.js';
 import {
-  createConsequenceAdmissionCheck,
   createConsequenceAdmissionRequest,
   createConsequenceAdmissionResponse,
 } from './builders.js';
 import {
   canonicalObject,
-  inferConstraintKind,
 } from './normalization.js';
 import {
   evaluateConsequenceScopeExplosion,
@@ -99,35 +90,6 @@ import {
   evaluateConsequenceUntrustedContentAuthority,
   type ConsequenceUntrustedContentAuthorityDecision,
 } from './untrusted-content-authority-guard.js';
-
-function observedFeatureTrue(
-  input: CreateGenericAdmissionInput,
-  key: string,
-): boolean {
-  return input.observedFeatures?.[key] === true;
-}
-
-function observedFeatureOriginFor(
-  input: CreateGenericAdmissionInput,
-  key: string,
-): GenericAdmissionObservedFeatureOrigin | null {
-  return input.observedFeatureOrigins?.[key] ?? null;
-}
-
-function observedFeatureHasTrustedOrigin(
-  input: CreateGenericAdmissionInput,
-  key: string,
-): boolean {
-  const origin = observedFeatureOriginFor(input, key);
-  return origin !== null && GENERIC_ADMISSION_TRUSTED_OBSERVED_FEATURE_ORIGINS.has(origin);
-}
-
-function trustedObservedFeatureTrue(
-  input: CreateGenericAdmissionInput,
-  key: string,
-): boolean {
-  return observedFeatureTrue(input, key) && observedFeatureHasTrustedOrigin(input, key);
-}
 
 function genericAdmissionAuthorityGuardDecisionFor(
   input: CreateGenericAdmissionInput,
@@ -663,451 +625,6 @@ function createGenericAdmissionEvaluation(
     authorityCreepGuardDecision,
     noGoConditionLedgerDecision,
     guardInputProvenanceDecision,
-  });
-}
-
-function reasonCodesForCheck(
-  kind: ConsequenceAdmissionCheckKind,
-  reasonCodes: readonly string[],
-): readonly string[] {
-  const matches = reasonCodes.filter((reason) => {
-    if (reason.endsWith('-pass')) return false;
-    if (kind === 'policy') {
-      return reason.startsWith('policy-') ||
-        reason.startsWith('current-policy-') ||
-        reason === 'stale-policy-review' ||
-        reason === 'stale-policy-block' ||
-        reason.startsWith('drift-state-') ||
-        reason === 'no-go-reason-present' ||
-        reason === 'supply-chain-domain-pack-boundary-unverified' ||
-        reason === 'policy-version-drift' ||
-        reason === 'policy-digest-drift' ||
-        reason === 'authority-creep-finding:policy-activation-requested' ||
-        reason === 'authority-creep-finding:lineage-policy-activation-requested' ||
-        reason === 'guard-input-policy-untrusted' ||
-        reason === 'guard-input-provenance-missing' ||
-        GENERIC_ADMISSION_SCOPE_EXPLOSION_REASON_CODES.has(reason) ||
-        GENERIC_ADMISSION_NO_GO_REASON_CODES.has(reason) ||
-        (
-          GENERIC_ADMISSION_GUARD_INPUT_PROVENANCE_REASON_CODES.has(reason) &&
-          reason.includes('policy')
-        );
-    }
-    if (kind === 'authority') {
-      return (reason.startsWith('authority-') &&
-          !reason.startsWith('authority-creep-')) ||
-        reason.startsWith('approval-') ||
-        reason === 'authority-creep-finding:authority-action-requested' ||
-        reason === 'authority-creep-finding:lineage-authority-action-requested' ||
-        reason === 'supply-chain-owner-authority-missing' ||
-        reason === 'supply-chain-review-missing' ||
-        GENERIC_ADMISSION_MULTI_AGENT_DELEGATION_REASON_CODES.has(reason) ||
-        GENERIC_ADMISSION_AUTHORITY_GUARD_REASON_CODES.has(reason) ||
-        GENERIC_ADMISSION_APPROVAL_GUARD_REASON_CODES.has(reason) ||
-        reason === 'guard-input-source-untrusted' ||
-        reason === 'guard-input-authority-untrusted' ||
-        reason === 'guard-input-provenance-missing' ||
-        reason === 'guard-input-block';
-    }
-    if (kind === 'evidence') {
-      return reason.startsWith('evidence-') ||
-        reason.startsWith('authority-creep-finding:') ||
-        reason.startsWith('authority-creep-blocked-metric-use:') ||
-        reason === 'authority-creep-outcome:authority-creep-open-undercutting-defeater' ||
-        reason === 'authority-creep-outcome:authority-creep-held-for-lineage-binding' ||
-        reason === 'authority-creep-outcome:authority-creep-rejected-boundary' ||
-        GENERIC_ADMISSION_TOOL_RESULT_REASON_CODES.has(reason) ||
-        GENERIC_ADMISSION_AGENTIC_SUPPLY_CHAIN_REASON_CODES.has(reason) ||
-        GENERIC_ADMISSION_HUMAN_REVIEW_FATIGUE_REASON_CODES.has(reason) ||
-        GENERIC_ADMISSION_DECISION_CONTEXT_DRIFT_REASON_CODES.has(reason) ||
-        reason === 'guard-input-source-untrusted' ||
-        reason === 'guard-input-digest-missing' ||
-        reason === 'guard-input-evidence-untrusted' ||
-        reason === 'guard-input-provenance-missing' ||
-        reason === 'guard-input-review';
-    }
-    if (kind === 'enforcement') {
-      return reason === 'non-enforcing-mode' ||
-        reason === 'supply-chain-permission-scope-missing' ||
-        reason === 'supply-chain-permission-overbroad' ||
-        reason === 'supply-chain-install-scripts-present' ||
-        reason === 'supply-chain-network-egress-unreviewed' ||
-        reason === 'supply-chain-runtime-replay-missing' ||
-        reason === 'authority-creep-finding:live-enforcement-requested' ||
-        reason === 'authority-creep-finding:lineage-live-enforcement-requested' ||
-        reason === 'authority-creep-outcome:authority-creep-rejected-boundary';
-    }
-    if (kind === 'adapter-readiness') {
-      return reason.startsWith('adapter-') ||
-        reason === 'supply-chain-adapter-readiness-missing';
-    }
-    if (kind === 'freshness') {
-      return reason.startsWith('freshness-') ||
-        reason.includes('freshness') ||
-        reason === 'approval-validity-window-missing' ||
-        reason === 'approval-not-yet-valid' ||
-        reason === 'approval-expired' ||
-        reason === 'authority-expired' ||
-        reason === 'authority-expires-at-invalid' ||
-        reason === 'decision-context-expired' ||
-        reason === 'decision-context-age-exceeded' ||
-        reason === 'simulation-refresh-required' ||
-        reason === 'simulation-digest-missing' ||
-        reason === 'guard-input-timestamp-missing';
-    }
-    return false;
-  });
-  return Object.freeze(matches);
-}
-
-function checkOutcomeForGenericMode(
-  mode: GenericAdmissionMode,
-  effectiveDecision: ConsequenceAdmissionDecision,
-  checkReasons: readonly string[],
-): ConsequenceAdmissionCheckOutcome {
-  if (checkReasons.length === 0) return 'pass';
-  if (effectiveDecision === 'narrow') return 'warn';
-  return mode === 'observe' || mode === 'warn' ? 'warn' : 'fail';
-}
-
-function createGenericAdmissionChecks(
-  input: CreateGenericAdmissionInput,
-  evaluation: GenericAdmissionModeEvaluation,
-): readonly ConsequenceAdmissionCheck[] {
-  const profile = consequenceAdmissionDomainProfile(input.domain);
-  return Object.freeze(
-    profile.requiredChecks.map((kind) => {
-      const checkReasons = reasonCodesForCheck(kind, evaluation.reasonCodes);
-      const outcome = checkOutcomeForGenericMode(
-        input.mode,
-        evaluation.effectiveDecision,
-        checkReasons,
-      );
-      const evidenceRefs =
-        kind === 'authority'
-          ? [
-              ...(input.evidenceRefs ?? []),
-              ...(evaluation.authorityGuardDecision !== null
-                ? [evaluation.authorityGuardDecision.digest]
-                : []),
-              ...(evaluation.approvalGuardDecision !== null
-                ? [evaluation.approvalGuardDecision.digest]
-                : []),
-              ...(evaluation.guardInputProvenanceDecision !== null
-                ? [evaluation.guardInputProvenanceDecision.digest]
-                : []),
-              ...(evaluation.multiAgentDelegationGuardDecision !== null
-                ? [evaluation.multiAgentDelegationGuardDecision.digest]
-                : []),
-              ...(evaluation.authorityCreepGuardDecision !== null &&
-              evaluation.authorityCreepGuardDecision.findings.some((finding) =>
-                finding.includes('authority-action'))
-                ? [evaluation.authorityCreepGuardDecision.digest]
-                : []),
-            ]
-          : kind === 'policy'
-            ? [
-                ...(input.evidenceRefs ?? []),
-                ...(evaluation.noGoConditionLedgerDecision !== null
-                  ? [evaluation.noGoConditionLedgerDecision.digest]
-                  : []),
-                ...(evaluation.decisionContextDriftDecision !== null
-                  ? [evaluation.decisionContextDriftDecision.digest]
-                  : []),
-                ...(evaluation.guardInputProvenanceDecision !== null
-                  ? [evaluation.guardInputProvenanceDecision.digest]
-                  : []),
-                ...(evaluation.authorityCreepGuardDecision !== null &&
-                evaluation.authorityCreepGuardDecision.findings.some((finding) =>
-                  finding.includes('policy-activation'))
-                  ? [evaluation.authorityCreepGuardDecision.digest]
-                  : []),
-              ]
-          : [
-              ...(input.evidenceRefs ?? []),
-              ...(evaluation.decisionContextDriftDecision !== null &&
-              (kind === 'evidence' || kind === 'freshness')
-                ? [evaluation.decisionContextDriftDecision.digest]
-                : []),
-              ...(evaluation.guardInputProvenanceDecision !== null &&
-              (kind === 'evidence' || kind === 'freshness')
-                ? [evaluation.guardInputProvenanceDecision.digest]
-                : []),
-              ...(evaluation.humanReviewFatigueGuardDecision !== null && kind === 'evidence'
-                ? [evaluation.humanReviewFatigueGuardDecision.digest]
-                : []),
-              ...(evaluation.authorityCreepGuardDecision !== null && kind === 'evidence'
-                ? [evaluation.authorityCreepGuardDecision.digest]
-                : []),
-            ];
-      return createConsequenceAdmissionCheck({
-        kind,
-        label: `${kind} check`,
-        outcome,
-        required: input.mode === 'review' || input.mode === 'enforce',
-        summary:
-          outcome === 'pass'
-            ? `${kind} closure is present for the proposed consequence.`
-            : `${kind} closure is incomplete for the proposed consequence.`,
-        reasonCodes: checkReasons,
-        evidenceRefs,
-      });
-    }),
-  );
-}
-
-function genericAdmissionReason(
-  evaluation: GenericAdmissionModeEvaluation,
-): string {
-  if (evaluation.mode === 'observe') {
-    return 'Observe mode recorded the shadow admission decision without blocking downstream execution.';
-  }
-  if (evaluation.mode === 'warn') {
-    return 'Warn mode allowed the request while returning the shadow admission decision and warning checks.';
-  }
-  if (evaluation.effectiveDecision === 'review') {
-    return 'The proposed consequence is held for review before downstream execution.';
-  }
-  if (evaluation.effectiveDecision === 'block') {
-    return 'The proposed consequence is blocked before downstream execution.';
-  }
-  if (evaluation.effectiveDecision === 'narrow') {
-    return 'The proposed consequence may proceed only through the returned constraints.';
-  }
-  return 'The proposed consequence passed the generic admission mode ladder.';
-}
-
-function genericAdmissionConstraints(
-  input: CreateGenericAdmissionInput,
-  evaluation: GenericAdmissionModeEvaluation,
-): readonly ConsequenceAdmissionConstraint[] {
-  if (evaluation.effectiveDecision !== 'narrow') return Object.freeze([]);
-  const scopeConstraints =
-    evaluation.scopeExplosionGuardDecision?.constraints.map((constraint) => Object.freeze({
-      id: `constraint:${input.domain}:scope:${constraint.dimension}`,
-      kind: inferConstraintKind(`${constraint.dimension}:${constraint.reasonCode}`),
-      summary: constraint.safeSummary,
-      enforcedBy: input.downstreamSystem,
-      parameterDigest: constraint.constraintDigest,
-    })) ?? [];
-  if (scopeConstraints.length > 0) return Object.freeze(scopeConstraints);
-  return Object.freeze([
-    {
-      id: `constraint:${input.domain}:generic-narrow`,
-      kind: 'customer-approved-scope',
-      summary: 'Proceed only with the customer-approved narrowed scope.',
-      enforcedBy: input.downstreamSystem,
-      parameterDigest: null,
-    },
-  ]);
-}
-
-function genericAdmissionProof(
-  request: ConsequenceAdmissionRequest,
-  evaluation: GenericAdmissionModeEvaluation,
-): readonly ConsequenceAdmissionProofRef[] {
-  if (evaluation.effectiveDecision !== 'admit' && evaluation.effectiveDecision !== 'narrow') {
-    return Object.freeze([]);
-  }
-  return Object.freeze([
-    {
-      kind: 'admission-receipt',
-      id: `generic-admission:${request.requestId}`,
-      digest: request.requestId,
-      uri: null,
-      verifyHint:
-        evaluation.mode === 'observe' || evaluation.mode === 'warn'
-          ? 'Observe and warn modes are adoption modes; inspect shadowDecision before promoting to review or enforce.'
-          : 'Verify the admission digest and downstream enforcement contract before execution.',
-    },
-  ]);
-}
-
-function genericAdmissionSummary(input: CreateGenericAdmissionInput): string {
-  return input.summary ?? `${input.actor} proposes ${input.action} on ${input.downstreamSystem}.`;
-}
-
-function genericAdmissionDimensions(
-  input: CreateGenericAdmissionInput,
-  evaluation: GenericAdmissionModeEvaluation,
-): Readonly<Record<string, string | number | boolean | null>> {
-  return Object.freeze({
-    domain: input.domain,
-    mode: input.mode,
-    shadowDecision: evaluation.shadowDecision,
-    downstreamPosture: evaluation.downstreamPosture,
-    hasAmount: input.amount !== null && input.amount !== undefined,
-    hasRecipient: input.recipient !== null && input.recipient !== undefined,
-    hasDataScope: input.dataScope !== null && input.dataScope !== undefined,
-    adapterReady: trustedObservedFeatureTrue(input, 'adapterReady'),
-    adapterReadyObserved: observedFeatureTrue(input, 'adapterReady'),
-    adapterReadyOrigin: observedFeatureOriginFor(input, 'adapterReady'),
-    authorityGuardOutcome: evaluation.authorityGuardDecision?.outcome ?? null,
-    authorityGuardDigest: evaluation.authorityGuardDecision?.digest ?? null,
-    authoritySourceCount: evaluation.authorityGuardDecision?.counts.sourceCount ?? 0,
-    trustedAuthoritySourceCount:
-      evaluation.authorityGuardDecision?.counts.trustedAuthoritySourceCount ?? 0,
-    untrustedAuthoritySourceCount:
-      evaluation.authorityGuardDecision?.counts.untrustedAuthoritySourceCount ?? 0,
-    approvalGuardOutcome: evaluation.approvalGuardDecision?.outcome ?? null,
-    approvalGuardDigest: evaluation.approvalGuardDecision?.digest ?? null,
-    approvalCount: evaluation.approvalGuardDecision?.counts.approvalCount ?? 0,
-    validApprovalCount: evaluation.approvalGuardDecision?.counts.validApprovalCount ?? 0,
-    untrustedApprovalCount:
-      evaluation.approvalGuardDecision?.counts.untrustedApprovalCount ?? 0,
-    noGoConditionOutcome: evaluation.noGoConditionLedgerDecision?.outcome ?? null,
-    noGoConditionDigest: evaluation.noGoConditionLedgerDecision?.digest ?? null,
-    noGoConditionCount:
-      evaluation.noGoConditionLedgerDecision?.observed.conditionCount ?? 0,
-    noGoActiveConditionCount:
-      evaluation.noGoConditionLedgerDecision?.observed.activeCount ?? 0,
-    noGoPendingReviewCount:
-      evaluation.noGoConditionLedgerDecision?.observed.pendingReviewCount ?? 0,
-    noGoUntrustedSourceCount:
-      evaluation.noGoConditionLedgerDecision?.observed.untrustedSourceCount ?? 0,
-    noGoNaturalLanguageBypassAttempted:
-      evaluation.noGoConditionLedgerDecision?.observed.naturalLanguageBypassAttempted ?? false,
-    noGoNaturalLanguageBypassSignalCount:
-      evaluation.noGoConditionLedgerDecision?.observed.naturalLanguageBypassSignalCount ?? 0,
-    scopeExplosionGuardOutcome: evaluation.scopeExplosionGuardDecision?.outcome ?? null,
-    scopeExplosionGuardDigest: evaluation.scopeExplosionGuardDecision?.digest ?? null,
-    scopeExceededDimensionCount:
-      evaluation.scopeExplosionGuardDecision?.observed.exceededDimensions.length ?? 0,
-    scopeNarrowingDimensionCount:
-      evaluation.scopeExplosionGuardDecision?.observed.narrowingDimensions.length ?? 0,
-    scopeBlockingDimensionCount:
-      evaluation.scopeExplosionGuardDecision?.observed.blockingDimensions.length ?? 0,
-    scopeReviewDimensionCount:
-      evaluation.scopeExplosionGuardDecision?.observed.reviewDimensions.length ?? 0,
-    toolResultGuardOutcome: evaluation.toolResultGuardDecision?.outcome ?? null,
-    toolResultGuardDigest: evaluation.toolResultGuardDecision?.digest ?? null,
-    toolResultCount: evaluation.toolResultGuardDecision?.counts.toolResultCount ?? 0,
-    trustedToolResultEvidenceCount:
-      evaluation.toolResultGuardDecision?.counts.trustedEvidenceCount ?? 0,
-    toolResultReviewCount: evaluation.toolResultGuardDecision?.counts.reviewCount ?? 0,
-    toolResultBlockCount: evaluation.toolResultGuardDecision?.counts.blockCount ?? 0,
-    untrustedToolResultSourceCount:
-      evaluation.toolResultGuardDecision?.counts.untrustedSourceCount ?? 0,
-    modelGeneratedToolResultSourceCount:
-      evaluation.toolResultGuardDecision?.counts.modelGeneratedSourceCount ?? 0,
-    toolResultMissingIntegrityCount:
-      evaluation.toolResultGuardDecision?.counts.missingIntegrityCount ?? 0,
-    toolResultMissingTimestampCount:
-      evaluation.toolResultGuardDecision?.counts.missingTimestampCount ?? 0,
-    toolResultEvidenceClassMismatchCount:
-      evaluation.toolResultGuardDecision?.counts.evidenceClassMismatchCount ?? 0,
-    agenticSupplyChainGuardOutcome:
-      evaluation.agenticSupplyChainGuardDecision?.outcome ?? null,
-    agenticSupplyChainGuardDigest:
-      evaluation.agenticSupplyChainGuardDecision?.digest ?? null,
-    agenticSupplyChainComponentCount:
-      evaluation.agenticSupplyChainGuardDecision?.counts.componentCount ?? 0,
-    agenticSupplyChainBlockCount:
-      evaluation.agenticSupplyChainGuardDecision?.counts.blockCount ?? 0,
-    agenticSupplyChainReviewCount:
-      evaluation.agenticSupplyChainGuardDecision?.counts.reviewCount ?? 0,
-    agenticSupplyChainUnpinnedCount:
-      evaluation.agenticSupplyChainGuardDecision?.counts.unpinnedCount ?? 0,
-    agenticSupplyChainMissingProvenanceCount:
-      evaluation.agenticSupplyChainGuardDecision?.counts.missingProvenanceCount ?? 0,
-    agenticSupplyChainUnverifiedProvenanceCount:
-      evaluation.agenticSupplyChainGuardDecision?.counts.unverifiedProvenanceCount ?? 0,
-    agenticSupplyChainOverbroadPermissionCount:
-      evaluation.agenticSupplyChainGuardDecision?.counts.overbroadPermissionCount ?? 0,
-    agenticSupplyChainUnreviewedGeneratedArtifactCount:
-      evaluation.agenticSupplyChainGuardDecision?.counts.unreviewedGeneratedArtifactCount ?? 0,
-    humanReviewFatigueGuardOutcome:
-      evaluation.humanReviewFatigueGuardDecision?.outcome ?? null,
-    humanReviewFatigueGuardDigest:
-      evaluation.humanReviewFatigueGuardDecision?.digest ?? null,
-    humanReviewTotalReviewItems:
-      evaluation.humanReviewFatigueGuardDecision?.observed.totalReviewItems ?? 0,
-    humanReviewLowPriorityRatio:
-      evaluation.humanReviewFatigueGuardDecision?.observed.lowPriorityRatio ?? 0,
-    humanReviewNoGoItems:
-      evaluation.humanReviewFatigueGuardDecision?.observed.noGoItems ?? 0,
-    humanReviewMissingEvidenceItems:
-      evaluation.humanReviewFatigueGuardDecision?.observed.missingEvidenceItems ?? 0,
-    humanReviewApprovalRatio:
-      evaluation.humanReviewFatigueGuardDecision?.observed.approvalRatio ?? 0,
-    humanReviewRawPayloadStored:
-      evaluation.humanReviewFatigueGuardDecision?.observed.rawPayloadStored ?? false,
-    humanReviewAutoEnforceRequested:
-      evaluation.humanReviewFatigueGuardDecision?.observed.autoEnforceRequested ?? false,
-    multiAgentDelegationGuardOutcome:
-      evaluation.multiAgentDelegationGuardDecision?.outcome ?? null,
-    multiAgentDelegationGuardDigest:
-      evaluation.multiAgentDelegationGuardDecision?.digest ?? null,
-    multiAgentDelegationPrincipalCount:
-      evaluation.multiAgentDelegationGuardDecision?.counts.principalCount ?? 0,
-    multiAgentDelegationAgentPrincipalCount:
-      evaluation.multiAgentDelegationGuardDecision?.counts.agentPrincipalCount ?? 0,
-    multiAgentDelegationMissingIdentityCount:
-      evaluation.multiAgentDelegationGuardDecision?.counts.missingIdentityCount ?? 0,
-    multiAgentDelegationMissingAuthorityCount:
-      evaluation.multiAgentDelegationGuardDecision?.counts.missingAuthorityCount ?? 0,
-    multiAgentDelegationMissingScopeCount:
-      evaluation.multiAgentDelegationGuardDecision?.counts.missingScopeCount ?? 0,
-    multiAgentDelegationDistinctTenantCount:
-      evaluation.multiAgentDelegationGuardDecision?.counts.distinctTenantCount ?? 0,
-    staleAuthorityPolicyGuardOutcome:
-      evaluation.staleAuthorityPolicyGuardDecision?.outcome ?? null,
-    staleAuthorityPolicyGuardDigest:
-      evaluation.staleAuthorityPolicyGuardDecision?.digest ?? null,
-    staleAuthorityPolicyNoGoReasonCount:
-      evaluation.staleAuthorityPolicyGuardDecision?.counts.noGoReasonCount ?? 0,
-    staleAuthorityPolicyBlockReasonCount:
-      evaluation.staleAuthorityPolicyGuardDecision?.counts.blockReasonCount ?? 0,
-    staleAuthorityPolicyReviewReasonCount:
-      evaluation.staleAuthorityPolicyGuardDecision?.counts.reviewReasonCount ?? 0,
-    staleAuthorityPolicyDriftState:
-      evaluation.staleAuthorityPolicyGuardDecision?.observed.driftState ?? null,
-    decisionContextDriftOutcome:
-      evaluation.decisionContextDriftDecision?.outcome ?? null,
-    decisionContextDriftDigest:
-      evaluation.decisionContextDriftDecision?.digest ?? null,
-    decisionContextDriftDimensionCount:
-      evaluation.decisionContextDriftDecision?.counts.driftDimensionCount ?? 0,
-    decisionContextMissingDimensionCount:
-      evaluation.decisionContextDriftDecision?.counts.missingDimensionCount ?? 0,
-    decisionContextBlockReasonCount:
-      evaluation.decisionContextDriftDecision?.counts.blockReasonCount ?? 0,
-    decisionContextReviewReasonCount:
-      evaluation.decisionContextDriftDecision?.counts.reviewReasonCount ?? 0,
-    decisionContextAgeHours:
-      evaluation.decisionContextDriftDecision?.observed.contextAgeHours ?? null,
-    authorityCreepGuardOutcome:
-      evaluation.authorityCreepGuardDecision?.outcome ?? null,
-    authorityCreepGuardDigest:
-      evaluation.authorityCreepGuardDecision?.digest ?? null,
-    authorityCreepFindingCount:
-      evaluation.authorityCreepGuardDecision?.findings.length ?? 0,
-    authorityCreepBlockedMetricUseCount:
-      evaluation.authorityCreepGuardDecision?.blockedMetricUses.length ?? 0,
-    authorityCreepArtifactFindingCount:
-      evaluation.authorityCreepGuardDecision?.artifactFindings.length ?? 0,
-    authorityCreepOpensUndercuttingDefeater:
-      evaluation.authorityCreepGuardDecision?.opensUndercuttingDefeater ?? false,
-    authorityCreepRejectedBoundary:
-      evaluation.authorityCreepGuardDecision?.outcome === 'authority-creep-rejected-boundary',
-    guardInputProvenanceOutcome:
-      evaluation.guardInputProvenanceDecision?.outcome ?? null,
-    guardInputProvenanceDigest:
-      evaluation.guardInputProvenanceDecision?.digest ?? null,
-    guardInputProvenanceRecordCount:
-      evaluation.guardInputProvenanceDecision?.counts.recordCount ?? 0,
-    guardInputProvenanceRequiredKindCount:
-      evaluation.guardInputProvenanceDecision?.counts.requiredKindCount ?? 0,
-    guardInputProvenanceMissingRequiredKindCount:
-      evaluation.guardInputProvenanceDecision?.counts.missingRequiredKindCount ?? 0,
-    guardInputProvenanceUntrustedSourceCount:
-      evaluation.guardInputProvenanceDecision?.counts.untrustedSourceCount ?? 0,
-    guardInputProvenanceMissingDigestCount:
-      evaluation.guardInputProvenanceDecision?.counts.missingDigestCount ?? 0,
-    guardInputProvenanceMissingTimestampCount:
-      evaluation.guardInputProvenanceDecision?.counts.missingTimestampCount ?? 0,
-    guardInputProvenanceMissingTenantCount:
-      evaluation.guardInputProvenanceDecision?.counts.missingTenantCount ?? 0,
   });
 }
 

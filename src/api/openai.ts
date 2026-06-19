@@ -12,11 +12,62 @@ import {
   bindLlmProviderProofContext,
   digestLlmProviderContextValue,
   type LlmProviderProofContextBinding,
-  type LlmProviderPurpose,
 } from './llm-provider-registry.js';
 import { OPENAI_REASONING_MODEL, OPENAI_VISION_MODEL } from './llm-provider-models.js';
+import {
+  DEFAULT_OPENAI_LIVE_SMOKE_MAX_OUTPUT_TOKENS,
+  DEFAULT_OPENAI_LIVE_SMOKE_PROOF_MAX_AGE_MINUTES,
+  DEFAULT_OPENAI_MAX_ATTEMPTS,
+  DEFAULT_OPENAI_REASONING_MAX_OUTPUT_TOKENS,
+  DEFAULT_OPENAI_RETRY_INITIAL_DELAY_MS,
+  DEFAULT_OPENAI_RETRY_MAX_DELAY_MS,
+  DEFAULT_OPENAI_TIMEOUT_MS,
+  DEFAULT_OPENAI_VISION_MAX_OUTPUT_TOKENS,
+  OPENAI_LIVE_SMOKE_EXPECTED_OUTPUT,
+  OPENAI_LIVE_SMOKE_PROOF_ENV,
+  OPENAI_LIVE_SMOKE_PROOF_VERSION,
+  OPENAI_RUNTIME_POLICY_VERSION,
+  type GptCallParams,
+  type GptCallResult,
+  type GptVisionCallParams,
+  type OpenAiLiveSmokeProof,
+  type OpenAiLiveSmokeProofEnvEvaluation,
+  type OpenAiLiveSmokeProofState,
+  type OpenAiModelObservation,
+  type OpenAiRuntimePolicy,
+  type OpenAiRuntimePolicySummary,
+  type OpenAiRuntimePurpose,
+} from './openai-types.js';
 import { ApiError, ParseError } from '../utils/errors.js';
 import { logger } from '../utils/logger.js';
+
+export {
+  DEFAULT_OPENAI_LIVE_SMOKE_MAX_OUTPUT_TOKENS,
+  DEFAULT_OPENAI_LIVE_SMOKE_PROOF_MAX_AGE_MINUTES,
+  DEFAULT_OPENAI_MAX_ATTEMPTS,
+  DEFAULT_OPENAI_REASONING_MAX_OUTPUT_TOKENS,
+  DEFAULT_OPENAI_RETRY_INITIAL_DELAY_MS,
+  DEFAULT_OPENAI_RETRY_MAX_DELAY_MS,
+  DEFAULT_OPENAI_TIMEOUT_MS,
+  DEFAULT_OPENAI_VISION_MAX_OUTPUT_TOKENS,
+  OPENAI_LIVE_SMOKE_EXPECTED_OUTPUT,
+  OPENAI_LIVE_SMOKE_PROOF_ENV,
+  OPENAI_LIVE_SMOKE_PROOF_VERSION,
+  OPENAI_RUNTIME_POLICY_VERSION,
+} from './openai-types.js';
+export type {
+  GptCallParams,
+  GptCallResult,
+  GptVisionCallParams,
+  OpenAiLiveSmokeProof,
+  OpenAiLiveSmokeProofEnvEvaluation,
+  OpenAiLiveSmokeProofState,
+  OpenAiModelObservation,
+  OpenAiRuntimePolicy,
+  OpenAiRuntimePolicySummary,
+  OpenAiRuntimePurpose,
+} from './openai-types.js';
+export { extractJson, extractTaggedJson } from './openai-json-extraction.js';
 
 let client: OpenAI | null = null;
 
@@ -31,92 +82,7 @@ function getClient(): OpenAI {
   return client;
 }
 
-export interface GptCallParams {
-  systemPrompt: string;
-  userMessage: string;
-  stage: string;
-  /** Reasoning effort level — maps to reasoning.effort on the Responses API. */
-  effort?: 'low' | 'medium' | 'high';
-  maxTokens?: number;
-}
-
-export interface GptCallResult {
-  content: string;
-  inputTokens: number;
-  outputTokens: number;
-  totalTokens: number;
-  /** Whether the response used cached input tokens (provider-side). */
-  cachedInputTokens: number;
-  /** Provider-returned model name, when the API response exposes one. */
-  observedModel: string | null;
-  /** True when the provider-returned model differs from Attestor's configured model. */
-  modelDriftObserved: boolean;
-  /** Digest-only provider/model/prompt/config binding for live-model proof. */
-  providerProofContext: LlmProviderProofContextBinding;
-  /** Non-secret runtime policy metadata applied to this provider call. */
-  runtimePolicy: OpenAiRuntimePolicySummary;
-}
-
-export const OPENAI_RUNTIME_POLICY_VERSION = 'openai-runtime-policy.v1' as const;
-export const DEFAULT_OPENAI_TIMEOUT_MS = 120_000;
-export const DEFAULT_OPENAI_MAX_ATTEMPTS = 2;
-export const DEFAULT_OPENAI_RETRY_INITIAL_DELAY_MS = 1_000;
-export const DEFAULT_OPENAI_RETRY_MAX_DELAY_MS = 8_000;
-export const DEFAULT_OPENAI_REASONING_MAX_OUTPUT_TOKENS = 32_000;
-export const DEFAULT_OPENAI_VISION_MAX_OUTPUT_TOKENS = 4_000;
-export const OPENAI_LIVE_SMOKE_PROOF_VERSION = 'openai-live-smoke-proof.v1' as const;
-export const OPENAI_LIVE_SMOKE_EXPECTED_OUTPUT = 'ATTESTOR_OPENAI_SMOKE_OK' as const;
-export const DEFAULT_OPENAI_LIVE_SMOKE_MAX_OUTPUT_TOKENS = 64;
-export const DEFAULT_OPENAI_LIVE_SMOKE_PROOF_MAX_AGE_MINUTES = 24 * 60;
-
 const SHA256_DIGEST_PATTERN = /^sha256:[a-f0-9]{64}$/u;
-
-export const OPENAI_LIVE_SMOKE_PROOF_ENV = Object.freeze({
-  digest: 'ATTESTOR_OPENAI_LIVE_SMOKE_PROOF_DIGEST',
-  checkedAt: 'ATTESTOR_OPENAI_LIVE_SMOKE_PROOF_CHECKED_AT',
-  model: 'ATTESTOR_OPENAI_LIVE_SMOKE_PROOF_MODEL',
-  purpose: 'ATTESTOR_OPENAI_LIVE_SMOKE_PROOF_PURPOSE',
-  maxAgeMinutes: 'ATTESTOR_OPENAI_LIVE_SMOKE_PROOF_MAX_AGE_MINUTES',
-} as const);
-
-export type OpenAiRuntimePurpose = Extract<LlmProviderPurpose, 'reasoning' | 'vision'>;
-
-export type OpenAiLiveSmokeProofState = 'not-configured' | 'valid' | 'invalid' | 'stale';
-
-export interface OpenAiLiveSmokeProofEnvEvaluation {
-  readonly version: typeof OPENAI_LIVE_SMOKE_PROOF_VERSION;
-  readonly state: OpenAiLiveSmokeProofState;
-  readonly proofDigest: string | null;
-  readonly checkedAt: string | null;
-  readonly model: string | null;
-  readonly purpose: OpenAiRuntimePurpose | null;
-  readonly maxAgeMinutes: number;
-  readonly rawPromptStored: false;
-  readonly rawProviderBodyStored: false;
-  readonly blockers: readonly string[];
-}
-
-export interface OpenAiLiveSmokeProof {
-  readonly version: typeof OPENAI_LIVE_SMOKE_PROOF_VERSION;
-  readonly providerId: 'openai';
-  readonly purpose: 'reasoning';
-  readonly configuredModel: string;
-  readonly observedModel: string | null;
-  readonly modelDriftObserved: boolean;
-  readonly checkedAt: string;
-  readonly requestStore: false;
-  readonly sdkMaxRetries: 0;
-  readonly timeoutMs: number;
-  readonly maxOutputTokens: number;
-  readonly responseAccepted: boolean;
-  readonly responseDigest: string;
-  readonly providerProofContext: LlmProviderProofContextBinding;
-  readonly proofDigest: string;
-  readonly env: Readonly<typeof OPENAI_LIVE_SMOKE_PROOF_ENV>;
-  readonly rawPromptStored: false;
-  readonly rawProviderBodyStored: false;
-  readonly productionReady: false;
-}
 
 export interface OpenAiLiveSmokeClient {
   readonly responses: {
@@ -133,53 +99,9 @@ export interface RunOpenAiLiveSmokeProofOptions {
   readonly checkedAt?: string;
 }
 
-export interface OpenAiRuntimePolicy {
-  readonly version: typeof OPENAI_RUNTIME_POLICY_VERSION;
-  readonly providerId: 'openai';
-  readonly purpose: OpenAiRuntimePurpose;
-  readonly configuredModel: string;
-  readonly timeoutMs: number;
-  readonly maxAttempts: number;
-  readonly retryInitialDelayMs: number;
-  readonly retryMaxDelayMs: number;
-  readonly maxOutputTokens: number;
-  readonly configuredMaxOutputTokens: number;
-  readonly requestedMaxOutputTokens: number | null;
-  readonly sdkMaxRetries: 0;
-  readonly responseStore: false;
-  readonly productionLikeRuntime: boolean;
-  readonly productionReady: false;
-  readonly liveSmokeProof: OpenAiLiveSmokeProofEnvEvaluation;
-  readonly configDigest: string;
-  readonly blockers: readonly string[];
-}
-
-export type OpenAiRuntimePolicySummary = Pick<
-  OpenAiRuntimePolicy,
-  | 'version'
-  | 'providerId'
-  | 'purpose'
-  | 'configuredModel'
-  | 'timeoutMs'
-  | 'maxAttempts'
-  | 'maxOutputTokens'
-  | 'sdkMaxRetries'
-  | 'responseStore'
-  | 'productionLikeRuntime'
-  | 'productionReady'
-  | 'liveSmokeProof'
-  | 'configDigest'
->;
-
 /** Primary GPT model used for upstream analysis and verification. */
 export const GPT_MODEL = OPENAI_REASONING_MODEL;
 const MODEL = GPT_MODEL;
-
-export interface OpenAiModelObservation {
-  configuredModel: string;
-  observedModel: string | null;
-  modelDriftObserved: boolean;
-}
 
 function extractObservedModel(response: unknown): string | null {
   const model = (response as { readonly model?: unknown } | null)?.model;
@@ -743,17 +665,6 @@ export async function callGpt(params: GptCallParams): Promise<GptCallResult> {
 export const GPT_VISION_MODEL = OPENAI_VISION_MODEL;
 const VISION_MODEL = GPT_VISION_MODEL;
 
-export interface GptVisionCallParams {
-  systemPrompt: string;
-  userText: string;
-  /** Base64-encoded image data (PNG or JPEG). */
-  imageBase64: string;
-  /** MIME type of the image. */
-  mediaType?: 'image/png' | 'image/jpeg' | 'image/webp';
-  stage: string;
-  maxTokens?: number;
-}
-
 /**
  * Call GPT-4o with image + text for structured visual observation.
  * Uses Chat Completions API (Vision is not on Responses API yet).
@@ -853,74 +764,4 @@ export async function callGptVision(params: GptVisionCallParams): Promise<GptCal
     stage, 'openai',
     `Vision failed after ${runtimePolicy.maxAttempts} attempts: ${lastError instanceof Error ? lastError.message : String(lastError)}`,
   );
-}
-
-/**
- * Extract JSON from a GPT response that may contain markdown code fences.
- */
-export function extractJson<T>(content: string, stage: string): T {
-  // Try direct parse first
-  try {
-    return JSON.parse(content) as T;
-  } catch {
-    // Try extracting from code fence
-    const fenceMatch = content.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/);
-    if (fenceMatch) {
-      try {
-        return JSON.parse(fenceMatch[1]) as T;
-      } catch (e) {
-        throw new ParseError(stage, `JSON inside code fence is malformed: ${e instanceof Error ? e.message : String(e)}`, content);
-      }
-    }
-
-    // Try finding JSON object/array boundaries
-    const objStart = content.indexOf('{');
-    const arrStart = content.indexOf('[');
-    const start = objStart >= 0 && (arrStart < 0 || objStart < arrStart) ? objStart : arrStart;
-    if (start >= 0) {
-      const sub = content.slice(start);
-      try {
-        return JSON.parse(sub) as T;
-      } catch {
-        // D4: Try balanced-brace extraction — find the matching closing brace
-        if (content[start] === '{') {
-          let depth = 0;
-          let end = -1;
-          for (let i = start; i < content.length; i++) {
-            if (content[i] === '{') depth++;
-            if (content[i] === '}') { depth--; if (depth === 0) { end = i; break; } }
-          }
-          if (end > start) {
-            try {
-              return JSON.parse(content.slice(start, end + 1)) as T;
-            } catch { /* fall through */ }
-          }
-        }
-      }
-    }
-
-    throw new ParseError(stage, 'No valid JSON found in response', content.slice(0, 500));
-  }
-}
-
-/**
- * Extract JSON from a tagged wrapper first, then fall back to generic extraction.
- * Useful for stages where we can demand a strict tagged payload from the model.
- */
-export function extractTaggedJson<T>(content: string, stage: string, tagName: string): T {
-  const taggedMatch = content.match(new RegExp(`<${tagName}>([\\s\\S]*?)</${tagName}>`, 'i'));
-  if (taggedMatch) {
-    const body = taggedMatch[1].trim();
-    try {
-      return JSON.parse(body) as T;
-    } catch (err) {
-      throw new ParseError(
-        stage,
-        `Malformed JSON inside <${tagName}>: ${err instanceof Error ? err.message : String(err)}`,
-        body.slice(0, 500),
-      );
-    }
-  }
-
-  return extractJson<T>(content, stage);
 }

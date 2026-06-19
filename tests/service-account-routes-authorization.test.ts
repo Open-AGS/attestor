@@ -282,15 +282,18 @@ async function testAccountRouteJsonAndAuthAttemptVocabularyIsLocked(): Promise<v
     '../src/service/http/routes/account-billing-routes.ts',
     '../src/service/http/routes/account-federated-auth-routes.ts',
     '../src/service/http/routes/account-mfa-passkey-routes.ts',
+    '../src/service/http/routes/account-passkey-management-routes.ts',
     '../src/service/http/routes/account-public-auth-routes.ts',
   ];
   const source = routeFiles
     .map((file) => readFileSync(new URL(file, import.meta.url), 'utf8'))
     .join('\n');
-  const mfaPasskeySource = readFileSync(
-    new URL('../src/service/http/routes/account-mfa-passkey-routes.ts', import.meta.url),
-    'utf8',
-  );
+  const mfaPasskeySource = [
+    '../src/service/http/routes/account-mfa-passkey-routes.ts',
+    '../src/service/http/routes/account-passkey-management-routes.ts',
+  ]
+    .map((file) => readFileSync(new URL(file, import.meta.url), 'utf8'))
+    .join('\n');
   const helper = readFileSync(new URL('../src/service/http/routes/account-route-helpers.ts', import.meta.url), 'utf8');
 
   assert.equal(source.includes('.json().catch(() => ({}))'), false);

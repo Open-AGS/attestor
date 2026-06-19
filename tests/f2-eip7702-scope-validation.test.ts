@@ -22,12 +22,17 @@ try {
   const note = readProjectFile('docs', 'audit', 'f2-eip7702-scope-validation.md');
   const tracker = readProjectFile('docs', 'audit', 'attestor-audit-remediation-tracker.md');
   const packageJson = readProjectFile('package.json');
-  const adapter = readProjectFile(
-    'src',
-    'crypto-authorization-core',
-    'eip7702-delegation-adapter.ts',
-  );
-  const handoff = readProjectFile('src', 'crypto-execution-admission', 'delegated-eoa.ts');
+  const adapter = [
+    readProjectFile('src', 'crypto-authorization-core', 'eip7702-delegation-adapter.ts'),
+    readProjectFile('src', 'crypto-authorization-core', 'eip7702-delegation-adapter-observations.ts'),
+    readProjectFile('src', 'crypto-authorization-core', 'eip7702-delegation-adapter-types.ts'),
+  ].join('\n');
+  const handoff = [
+    readProjectFile('src', 'crypto-execution-admission', 'delegated-eoa.ts'),
+    readProjectFile('src', 'crypto-execution-admission', 'delegated-eoa-types.ts'),
+    readProjectFile('src', 'crypto-execution-admission', 'delegated-eoa-expectations.ts'),
+    readProjectFile('src', 'crypto-execution-admission', 'delegated-eoa-runtime.ts'),
+  ].join('\n');
   const adapterTests = readProjectFile(
     'tests',
     'crypto-authorization-core-eip7702-delegation-adapter.test.ts',

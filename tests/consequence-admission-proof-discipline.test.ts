@@ -37,7 +37,10 @@ function testObservedFeaturesStayEvidenceOnly(): void {
     'consequence-admission',
     'generic-input-normalization.ts',
   );
-  const engine = readProjectFile('src', 'consequence-admission', 'generic-engine.ts');
+  const engine = [
+    readProjectFile('src', 'consequence-admission', 'generic-engine.ts'),
+    readProjectFile('src', 'consequence-admission', 'generic-engine-dimensions.ts'),
+  ].join('\n');
   includes(
     normalization,
     'observedFeatures: normalizeGenericObservedFeatures(input.observedFeatures)',

@@ -9,23 +9,17 @@ import {
 } from '../release-kernel/release-token.js';
 import {
   RELEASE_TOKEN_SPEC_VERSION,
-  type ReleasePolicyProvenanceSource,
   type ReleaseTokenClaims,
 } from '../release-kernel/object-model.js';
 import {
   createVerificationResult,
   type EnforcementRequest,
-  type ReleaseEnforcementPolicyContext,
   type ReleasePresentation,
-  type VerificationResult,
 } from './object-model.js';
 import {
   evaluateReleaseFreshness,
   resolveFreshnessRules,
-  type NonceLedgerEntry,
   type ReleaseFreshnessEvaluation,
-  type ReplayLedgerEntry,
-  type ReplaySubjectKind,
 } from './freshness.js';
 import {
   ENFORCEMENT_FAILURE_REASONS,
@@ -41,15 +35,38 @@ import {
 } from './http-message-signatures.js';
 import {
   verifySignedAsyncConsequenceEnvelope,
-  type DsseEnvelope,
-  type SignedAsyncConsequenceEnvelope,
 } from './async-envelope.js';
 import { verifyWorkloadBoundPresentation } from './workload-binding.js';
 import {
   resolveVerificationProfile,
   type VerificationProfile,
 } from './verification-profiles.js';
-import type { JWK } from 'jose';
+import {
+  expectedBindingForRequest,
+  type ResolvedOfflineVerifierExpectedBinding,
+  tenantBindingResult,
+} from './offline-verifier-expected-binding.js';
+import {
+  nonceForPresentation,
+  replayKeyForPresentation,
+  replaySubjectKindForPresentation,
+  tokenExpiresAtIso,
+  tokenIssuedAtIso,
+  tokenNotBeforeIso,
+} from './offline-verifier-freshness-projection.js';
+import {
+  policyContextFromClaims,
+  policyContextMatchesClaims,
+} from './offline-verifier-policy-context.js';
+import {
+  OFFLINE_RELEASE_VERIFIER_SPEC_VERSION,
+  type OfflineAsyncEnvelopeVerificationContext,
+  type OfflineReleaseVerification,
+  type OfflineReleaseVerificationInput,
+  type OfflineReleaseVerificationStatus,
+} from './offline-verifier-types.js';
+
+export * from './offline-verifier-types.js';
 
 /**
  * Offline release verification core.
@@ -59,115 +76,6 @@ import type { JWK } from 'jose';
  * bindings, then returns `indeterminate` rather than `valid` whenever the
  * profile still requires online liveness in a later enforcement step.
  */
-
-export const OFFLINE_RELEASE_VERIFIER_SPEC_VERSION =
-  'attestor.release-enforcement-offline-verifier.v1';
-
-export type OfflineReleaseVerificationStatus =
-  | 'valid'
-  | 'invalid'
-  | 'indeterminate';
-
-export interface OfflineVerifierExpectedBinding {
-  readonly audience?: string;
-  readonly tenantId?: string | null;
-  readonly releaseTokenId?: string;
-  readonly releaseDecisionId?: string;
-  readonly consequenceType?: EnforcementRequest['enforcementPoint']['consequenceType'];
-  readonly riskClass?: EnforcementRequest['enforcementPoint']['riskClass'];
-  readonly outputHash?: string;
-  readonly consequenceHash?: string;
-  readonly policyHash?: string;
-  readonly policyVersion?: string;
-  readonly policyIrHash?: string;
-  readonly policyProvenanceSource?: ReleasePolicyProvenanceSource | null;
-  readonly compiledPolicyIndexVersion?: string;
-  readonly compiledPolicyIrVersion?: string;
-  readonly policyContext?: ReleaseEnforcementPolicyContext | null;
-}
-
-export interface OfflineHttpMessageSignatureVerificationContext {
-  readonly message: HttpMessageForSignature;
-  readonly publicJwk: JWK;
-  readonly label?: string;
-  readonly expectedNonce?: string | null;
-  readonly expectedTag?: string | null;
-  readonly requiredCoveredComponents?: readonly string[];
-  readonly maxSignatureAgeSeconds?: number;
-  readonly clockSkewSeconds?: number;
-}
-
-export interface OfflineAsyncEnvelopeVerificationContext {
-  readonly envelope: DsseEnvelope | SignedAsyncConsequenceEnvelope;
-  readonly publicJwk: JWK;
-  readonly expectedIdempotencyKey?: string | null;
-  readonly expectedMessageId?: string | null;
-  readonly expectedQueueOrTopic?: string | null;
-  readonly maxEnvelopeAgeSeconds?: number;
-  readonly clockSkewSeconds?: number;
-}
-
-export interface OfflineTrustedWorkloadBinding {
-  readonly expectedSpiffeId?: string | null;
-  readonly expectedTrustDomain?: string | null;
-  readonly expectedCertificateThumbprint?: string | null;
-}
-
-export interface OfflineReleaseVerificationInput {
-  readonly request: EnforcementRequest;
-  readonly presentation: ReleasePresentation;
-  readonly verificationKey: ReleaseTokenVerificationKey;
-  readonly now: string;
-  readonly profile?: VerificationProfile;
-  readonly expected?: OfflineVerifierExpectedBinding;
-  readonly replayKey?: string | null;
-  readonly replaySubjectKind?: ReplaySubjectKind;
-  readonly replayLedgerEntry?: ReplayLedgerEntry | null;
-  readonly nonceLedgerEntry?: NonceLedgerEntry | null;
-  readonly httpMessageSignature?: OfflineHttpMessageSignatureVerificationContext;
-  readonly asyncEnvelope?: OfflineAsyncEnvelopeVerificationContext;
-  readonly trustedWorkloadBinding?: OfflineTrustedWorkloadBinding;
-  readonly verificationResultId?: string;
-}
-
-export interface OfflineReleaseVerification {
-  readonly version: typeof OFFLINE_RELEASE_VERIFIER_SPEC_VERSION;
-  readonly status: OfflineReleaseVerificationStatus;
-  readonly offlineVerified: boolean;
-  readonly requiresOnlineIntrospection: boolean;
-  readonly checkedAt: string;
-  readonly profile: VerificationProfile;
-  readonly freshness: ReleaseFreshnessEvaluation | null;
-  readonly tenantBinding: {
-    readonly expectedTenantId: string | null;
-    readonly expectedSource: 'input' | 'request-enforcement-point' | 'tenantless-explicit';
-    readonly claimsTenantId: string | null;
-    readonly checked: boolean;
-    readonly matched: boolean | null;
-  };
-  readonly verificationResult: VerificationResult;
-  readonly tokenVerification: ReleaseTokenVerificationResult | null;
-  readonly claims: ReleaseTokenClaims | null;
-  readonly failureReasons: readonly EnforcementFailureReason[];
-}
-
-interface ResolvedOfflineVerifierExpectedBinding {
-  readonly audience: string;
-  readonly tenantId: string | null;
-  readonly releaseTokenId: string;
-  readonly releaseDecisionId: string;
-  readonly consequenceType: EnforcementRequest['enforcementPoint']['consequenceType'];
-  readonly riskClass: EnforcementRequest['enforcementPoint']['riskClass'];
-  readonly outputHash: string;
-  readonly consequenceHash: string;
-  readonly policyHash: string;
-  readonly policyVersion: string;
-  readonly policyIrHash: string;
-  readonly policyProvenanceSource: ReleasePolicyProvenanceSource | null;
-  readonly compiledPolicyIndexVersion: string;
-  readonly compiledPolicyIrVersion: string;
-  readonly policyContext: ReleaseEnforcementPolicyContext | null;
-}
 
 function normalizeIsoTimestamp(value: string, fieldName: string): string {
   const timestamp = new Date(value);
@@ -186,65 +94,6 @@ function uniqueFailureReasons(
 ): readonly EnforcementFailureReason[] {
   const present = new Set(reasons);
   return Object.freeze(ENFORCEMENT_FAILURE_REASONS.filter((reason) => present.has(reason)));
-}
-
-function expectedBindingForRequest(
-  input: OfflineReleaseVerificationInput,
-): ResolvedOfflineVerifierExpectedBinding {
-  const request = input.request;
-  return {
-    audience: input.expected?.audience ?? request.targetId,
-    tenantId: expectedTenantIdForRequest(input).tenantId,
-    releaseTokenId: input.expected?.releaseTokenId ?? request.releaseTokenId ?? '',
-    releaseDecisionId: input.expected?.releaseDecisionId ?? request.releaseDecisionId ?? '',
-    consequenceType: input.expected?.consequenceType ?? request.enforcementPoint.consequenceType,
-    riskClass: input.expected?.riskClass ?? request.enforcementPoint.riskClass,
-    outputHash: input.expected?.outputHash ?? request.outputHash,
-    consequenceHash: input.expected?.consequenceHash ?? request.consequenceHash,
-    policyHash: input.expected?.policyHash ?? '',
-    policyVersion: input.expected?.policyVersion ?? '',
-    policyIrHash: input.expected?.policyIrHash ?? '',
-    policyProvenanceSource: input.expected?.policyProvenanceSource ?? null,
-    compiledPolicyIndexVersion: input.expected?.compiledPolicyIndexVersion ?? '',
-    compiledPolicyIrVersion: input.expected?.compiledPolicyIrVersion ?? '',
-    policyContext: input.expected?.policyContext ?? null,
-  };
-}
-
-function expectedTenantIdForRequest(input: OfflineReleaseVerificationInput): {
-  readonly tenantId: string | null;
-  readonly source: 'input' | 'request-enforcement-point' | 'tenantless-explicit';
-} {
-  const expected = input.expected;
-  if (
-    expected !== undefined &&
-    Object.prototype.hasOwnProperty.call(expected, 'tenantId')
-  ) {
-    return {
-      tenantId: expected.tenantId ?? null,
-      source: expected.tenantId === null ? 'tenantless-explicit' : 'input',
-    };
-  }
-  return {
-    tenantId: input.request.enforcementPoint.tenantId ?? null,
-    source: 'request-enforcement-point',
-  };
-}
-
-function tenantBindingResult(input: {
-  readonly verifierInput: OfflineReleaseVerificationInput;
-  readonly claims: ReleaseTokenClaims | null;
-}): OfflineReleaseVerification['tenantBinding'] {
-  const expected = expectedTenantIdForRequest(input.verifierInput);
-  const claimsTenantId = input.claims?.tenant_id ?? null;
-  const checked = expected.tenantId !== null;
-  return Object.freeze({
-    expectedTenantId: expected.tenantId,
-    expectedSource: expected.source,
-    claimsTenantId,
-    checked,
-    matched: checked ? claimsTenantId === expected.tenantId : null,
-  });
 }
 
 function resolveProfile(input: OfflineReleaseVerificationInput): VerificationProfile {
@@ -701,32 +550,6 @@ function asyncEnvelopeExpectedQueueOrTopic(
     : null;
 }
 
-function policyContextFromClaims(
-  claims: ReleaseTokenClaims,
-): ReleaseEnforcementPolicyContext {
-  return Object.freeze({
-    policyHash: claims.policy_hash,
-    policyVersion: claims.policy_version ?? null,
-    policyIrHash: claims.policy_ir_hash ?? null,
-    policyProvenanceSource: claims.policy_provenance_source ?? null,
-    compiledPolicyIndexVersion: claims.compiled_policy_index_version ?? null,
-    compiledPolicyIrVersion: claims.compiled_policy_ir_version ?? null,
-  });
-}
-
-function policyContextMatchesClaims(
-  expected: ReleaseEnforcementPolicyContext,
-  claims: ReleaseTokenClaims,
-): boolean {
-  const actual = policyContextFromClaims(claims);
-  return actual.policyHash === expected.policyHash &&
-    actual.policyVersion === expected.policyVersion &&
-    actual.policyIrHash === expected.policyIrHash &&
-    actual.policyProvenanceSource === expected.policyProvenanceSource &&
-    actual.compiledPolicyIndexVersion === expected.compiledPolicyIndexVersion &&
-    actual.compiledPolicyIrVersion === expected.compiledPolicyIrVersion;
-}
-
 async function signedJsonEnvelopeBindingFailureReasons(
   input: OfflineReleaseVerificationInput,
   claims: ReleaseTokenClaims,
@@ -798,67 +621,6 @@ async function signedJsonEnvelopeBindingFailureReasons(
     ...verified.failureReasons,
     ...metadataFailures,
   ]);
-}
-
-function replaySubjectKindForPresentation(
-  presentation: ReleasePresentation,
-): ReplaySubjectKind {
-  if (presentation.proof?.kind === 'dpop') {
-    return 'dpop-proof';
-  }
-
-  if (presentation.proof?.kind === 'http-message-signature') {
-    return 'http-message-signature';
-  }
-
-  if (presentation.proof?.kind === 'signed-json-envelope') {
-    return 'signed-json-envelope';
-  }
-
-  return 'release-token';
-}
-
-function replayKeyForPresentation(
-  presentation: ReleasePresentation,
-  claims: ReleaseTokenClaims,
-): string {
-  if (presentation.proof?.kind === 'dpop') {
-    return `dpop-proof:${presentation.proof.proofJti}`;
-  }
-
-  if (presentation.proof?.kind === 'http-message-signature') {
-    return `http-message-signature:${presentation.proof.nonce ?? presentation.proof.signature}`;
-  }
-
-  if (presentation.proof?.kind === 'signed-json-envelope') {
-    return `signed-json-envelope:${presentation.proof.envelopeDigest}`;
-  }
-
-  return `release-token:${claims.jti}`;
-}
-
-function nonceForPresentation(presentation: ReleasePresentation): string | null {
-  if (presentation.proof?.kind === 'dpop') {
-    return presentation.proof.nonce;
-  }
-
-  if (presentation.proof?.kind === 'http-message-signature') {
-    return presentation.proof.nonce;
-  }
-
-  return null;
-}
-
-function tokenIssuedAtIso(claims: ReleaseTokenClaims): string {
-  return new Date(claims.iat * 1000).toISOString();
-}
-
-function tokenNotBeforeIso(claims: ReleaseTokenClaims): string {
-  return new Date(claims.nbf * 1000).toISOString();
-}
-
-function tokenExpiresAtIso(claims: ReleaseTokenClaims): string {
-  return new Date(claims.exp * 1000).toISOString();
 }
 
 function deriveStatus(

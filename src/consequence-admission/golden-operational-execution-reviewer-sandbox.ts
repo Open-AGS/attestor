@@ -19,153 +19,20 @@ import {
   runShadowRuntimeFixtureReplaySmoke,
   type ShadowRuntimeFixtureReplaySmokeResult,
 } from './shadow-runtime-fixture-replay-smoke.js';
+import {
+  GOLDEN_OPERATIONAL_EXECUTION_REVIEWER_SANDBOX_ALLOWED_KEYS,
+  GOLDEN_OPERATIONAL_EXECUTION_REVIEWER_SANDBOX_GATE_ORDER,
+  GOLDEN_OPERATIONAL_EXECUTION_REVIEWER_SANDBOX_INPUT_VERSION,
+  GOLDEN_OPERATIONAL_EXECUTION_REVIEWER_SANDBOX_SOURCE_ANCHORS,
+  GOLDEN_OPERATIONAL_EXECUTION_REVIEWER_SANDBOX_VERSION,
+  type GoldenOperationalExecutionReviewerSandboxDecisionSummary,
+  type GoldenOperationalExecutionReviewerSandboxInput,
+  type GoldenOperationalExecutionReviewerSandboxResult,
+  type GoldenOperationalExecutionReviewerSandboxSafetyBoundary,
+} from './golden-operational-execution-reviewer-sandbox-types.js';
 
-export const GOLDEN_OPERATIONAL_EXECUTION_REVIEWER_SANDBOX_VERSION =
-  'attestor.golden-operational-execution-reviewer-sandbox.v1';
-export const GOLDEN_OPERATIONAL_EXECUTION_REVIEWER_SANDBOX_INPUT_VERSION =
-  'attestor.golden-operational-execution-reviewer-sandbox-input.v1';
-
-export const GOLDEN_OPERATIONAL_EXECUTION_REVIEWER_SANDBOX_ALLOWED_KEYS = [
-  'version',
-  'actionSurface',
-  'targetSystem',
-  'operationClass',
-  'environmentClass',
-  'changeRisk',
-  'approvalFreshness',
-  'rollbackPlanStatus',
-  'dryRunStatus',
-  'incidentState',
-  'tenantScope',
-  'operatorAuthority',
-  'instructionLikeEvidence',
-  'externalSideEffect',
-  'duplicateOperationAttempt',
-] as const;
-
-export const GOLDEN_OPERATIONAL_EXECUTION_REVIEWER_SANDBOX_GATE_ORDER = [
-  'schema-validation',
-  'operation-surface-binding',
-  'tenant-scope-check',
-  'operator-authority-check',
-  'dry-run-plan-check',
-  'rollback-readiness-check',
-  'incident-break-glass-check',
-  'duplicate-operation-replay-check',
-  'shadow-runtime-smoke',
-  'decision-summary',
-] as const;
-export type GoldenOperationalExecutionReviewerSandboxGate =
-  typeof GOLDEN_OPERATIONAL_EXECUTION_REVIEWER_SANDBOX_GATE_ORDER[number];
-
-export const GOLDEN_OPERATIONAL_EXECUTION_REVIEWER_SANDBOX_SOURCE_ANCHORS = [
-  'strict-json-allowlisted-shape',
-  'kubernetes-server-side-dry-run-no-mutation-pattern',
-  'terraform-plan-before-apply-pattern',
-  'github-protected-deployment-environment-review-pattern',
-  'nist-sp-800-61-rev3-incident-response-lifecycle',
-  'opa-cedar-policy-test-pattern',
-] as const;
-
-export type GoldenOperationalExecutionReviewerSandboxStatus =
-  | 'accepted'
-  | 'invalid-schema'
-  | 'outside-scope';
-
-export interface GoldenOperationalExecutionReviewerSandboxInput {
-  readonly version: typeof GOLDEN_OPERATIONAL_EXECUTION_REVIEWER_SANDBOX_INPUT_VERSION;
-  readonly actionSurface: string;
-  readonly targetSystem: GoldenOperationalExecutionShadowFixtureOperationFacts['targetSystem'];
-  readonly operationClass: GoldenOperationalExecutionShadowFixtureOperationFacts['operationClass'];
-  readonly environmentClass: GoldenOperationalExecutionShadowFixtureOperationFacts['environmentClass'];
-  readonly changeRisk: GoldenOperationalExecutionShadowFixtureOperationFacts['changeRisk'];
-  readonly approvalFreshness: GoldenOperationalExecutionShadowFixtureOperationFacts['approvalFreshness'];
-  readonly rollbackPlanStatus: GoldenOperationalExecutionShadowFixtureOperationFacts['rollbackPlanStatus'];
-  readonly dryRunStatus: GoldenOperationalExecutionShadowFixtureOperationFacts['dryRunStatus'];
-  readonly incidentState: GoldenOperationalExecutionShadowFixtureOperationFacts['incidentState'];
-  readonly tenantScope: GoldenOperationalExecutionShadowFixtureOperationFacts['tenantScope'];
-  readonly operatorAuthority: GoldenOperationalExecutionShadowFixtureOperationFacts['operatorAuthority'];
-  readonly instructionLikeEvidence: boolean;
-  readonly externalSideEffect: boolean;
-  readonly duplicateOperationAttempt: boolean;
-}
-
-export interface GoldenOperationalExecutionReviewerSandboxSafetyBoundary {
-  readonly noTargetSystemCall: true;
-  readonly noDeployment: true;
-  readonly noInfrastructureChange: true;
-  readonly noSecretManagerWrite: true;
-  readonly noIncidentAutomationExecution: true;
-  readonly noRunbookExecution: true;
-  readonly noProviderCall: true;
-  readonly noAuditWrite: true;
-  readonly noExternalEventBus: true;
-  readonly noExternalTraceExport: true;
-  readonly noExternalLineageExport: true;
-  readonly noPolicyActivation: true;
-  readonly noLearningActivation: true;
-  readonly noTrainingActivation: true;
-  readonly grantsAuthority: false;
-  readonly canAdmit: false;
-  readonly activatesEnforcement: false;
-  readonly autoEnforce: false;
-  readonly rawPayloadRead: false;
-  readonly rawPayloadStored: false;
-  readonly rawDeploymentManifestRead: false;
-  readonly rawDeploymentManifestStored: false;
-  readonly rawTerraformPlanRead: false;
-  readonly rawTerraformPlanStored: false;
-  readonly rawSecretMaterialRead: false;
-  readonly rawSecretMaterialStored: false;
-  readonly rawRunbookTextRead: false;
-  readonly rawRunbookTextStored: false;
-  readonly rawCustomerIdentifiersRead: false;
-  readonly rawCustomerIdentifiersStored: false;
-  readonly productionReady: false;
-}
-
-export interface GoldenOperationalExecutionReviewerSandboxDecisionSummary {
-  readonly shadowDecision: CanonicalShadowEventDecision['shadowDecision'];
-  readonly effectiveDecision: CanonicalShadowEventDecision['effectiveDecision'];
-  readonly packetDecision: 'admit' | 'narrow' | 'review' | 'block';
-  readonly fusionPosture: string;
-  readonly conflictOutcome: string;
-  readonly humanStatus: string;
-  readonly evidenceCompletenessPercent: number;
-  readonly reasonCodes: readonly string[];
-  readonly decisionRelevantDigest: string;
-}
-
-export interface GoldenOperationalExecutionReviewerSandboxResult {
-  readonly version: typeof GOLDEN_OPERATIONAL_EXECUTION_REVIEWER_SANDBOX_VERSION;
-  readonly step: 'O04';
-  readonly generatedAt: string;
-  readonly inputVersion:
-    typeof GOLDEN_OPERATIONAL_EXECUTION_REVIEWER_SANDBOX_INPUT_VERSION | null;
-  readonly inputStatus: GoldenOperationalExecutionReviewerSandboxStatus;
-  readonly inputDigest: string | null;
-  readonly engineScope: 'operational_execution.change_request';
-  readonly requestedActionSurface: string | null;
-  readonly schemaErrors: readonly string[];
-  readonly issueCodes: readonly string[];
-  readonly expectedPosture: GoldenOperationalExecutionShadowFixturePosture | null;
-  readonly eventDigest: string | null;
-  readonly smokeDigest: string | null;
-  readonly envelopeRefDigest: string | null;
-  readonly assurancePacketDigest: string | null;
-  readonly gateOrder: typeof GOLDEN_OPERATIONAL_EXECUTION_REVIEWER_SANDBOX_GATE_ORDER;
-  readonly decisionSummary: GoldenOperationalExecutionReviewerSandboxDecisionSummary | null;
-  readonly smokeResult: ShadowRuntimeFixtureReplaySmokeResult | null;
-  readonly sourceAnchors: typeof GOLDEN_OPERATIONAL_EXECUTION_REVIEWER_SANDBOX_SOURCE_ANCHORS;
-  readonly noClaims: readonly string[];
-  readonly safetyBoundary: GoldenOperationalExecutionReviewerSandboxSafetyBoundary;
-  readonly engineRan: boolean;
-  readonly shadowOnly: true;
-  readonly previewOnly: true;
-  readonly reviewerSupplied: true;
-  readonly canonical: string;
-  readonly digest: string;
-}
+export * from './golden-operational-execution-reviewer-sandbox-types.js';
+export * from './golden-operational-execution-reviewer-sandbox-renderers.js';
 
 const GENERATED_AT = '2026-05-26T11:45:00.000Z';
 const BASE_OCCURRED_AT = '2026-05-26T11:45:00.000Z';
@@ -249,7 +116,6 @@ function canonicalObject(value: CanonicalReleaseJsonValue): {
     digest: `sha256:${createHash('sha256').update(canonical).digest('hex')}`,
   });
 }
-
 function digestFor(kind: string, value: CanonicalReleaseJsonValue): string {
   return canonicalObject({ kind, value }).digest;
 }
@@ -890,94 +756,4 @@ export function runGoldenOperationalExecutionReviewerSandbox(
     previewOnly: true,
     reviewerSupplied: true,
   });
-}
-
-function list(items: readonly string[]): string {
-  return items.length ? items.map((item) => `- ${item}`).join('\n') : '- none';
-}
-
-export function renderGoldenOperationalExecutionReviewerSandboxMarkdown(
-  result: GoldenOperationalExecutionReviewerSandboxResult,
-): string {
-  const decision = result.decisionSummary;
-  return `# Golden Path: Operational Execution Reviewer Sandbox
-
-Status: ${result.inputStatus}
-
-## Practical Contrast
-
-Without Attestor for this local input:
-
-- no Attestor issue-code report
-- no digest-bound rollback, dry-run, approval, replay, or trace material
-- no explicit no-claim boundary before an operational side effect
-
-With Attestor for this local input:
-
-- result status: ${result.inputStatus}
-- engine ran: ${result.engineRan}
-- visible gate stages: ${result.gateOrder.length}
-- issue codes: ${result.issueCodes.length}
-- deployments: ${result.safetyBoundary.noDeployment ? '0' : 'present'}
-- infrastructure changes: ${result.safetyBoundary.noInfrastructureChange ? '0' : 'present'}
-- secret-manager writes: ${result.safetyBoundary.noSecretManagerWrite ? '0' : 'present'}
-- decision digest: ${decision?.decisionRelevantDigest ?? 'none'}
-
-## Input Boundary
-
-- engine scope: ${result.engineScope}
-- requested action surface: ${result.requestedActionSurface ?? 'not provided'}
-- engine ran: ${result.engineRan}
-- input digest: ${result.inputDigest ?? 'none'}
-
-## Schema Errors
-
-${list(result.schemaErrors)}
-
-## Issue Codes
-
-${list(result.issueCodes)}
-
-## Decision Summary
-
-- expected posture: ${result.expectedPosture ?? 'none'}
-- shadow decision: ${decision?.shadowDecision ?? 'none'}
-- effective decision: ${decision?.effectiveDecision ?? 'none'}
-- packet decision: ${decision?.packetDecision ?? 'none'}
-- fusion posture: ${decision?.fusionPosture ?? 'none'}
-- conflict outcome: ${decision?.conflictOutcome ?? 'none'}
-- human gate: ${decision?.humanStatus ?? 'none'}
-- evidence completeness: ${decision?.evidenceCompletenessPercent ?? 0}%
-- decision digest: ${decision?.decisionRelevantDigest ?? 'none'}
-
-## Gate Trace
-
-${result.gateOrder.map((gate, index) => `${index + 1}. ${gate}`).join('\n')}
-
-## No-Claims
-
-${list(result.noClaims)}
-
-## Safety Boundary
-
-- target-system calls: ${result.safetyBoundary.noTargetSystemCall ? '0' : 'present'}
-- deployments: ${result.safetyBoundary.noDeployment ? '0' : 'present'}
-- infrastructure changes: ${result.safetyBoundary.noInfrastructureChange ? '0' : 'present'}
-- secret-manager writes: ${result.safetyBoundary.noSecretManagerWrite ? '0' : 'present'}
-- incident automation execution: ${result.safetyBoundary.noIncidentAutomationExecution ? '0' : 'present'}
-- runbook execution: ${result.safetyBoundary.noRunbookExecution ? '0' : 'present'}
-- provider calls: ${result.safetyBoundary.noProviderCall ? '0' : 'present'}
-- audit writes: ${result.safetyBoundary.noAuditWrite ? '0' : 'present'}
-- policy activation: ${result.safetyBoundary.noPolicyActivation ? '0' : 'present'}
-- learning/training activation: ${result.safetyBoundary.noLearningActivation && result.safetyBoundary.noTrainingActivation ? '0' : 'present'}
-- grants authority: ${result.safetyBoundary.grantsAuthority}
-- can admit: ${result.safetyBoundary.canAdmit}
-- production ready: ${result.safetyBoundary.productionReady}
-`;
-}
-
-export function renderGoldenOperationalExecutionReviewerSandboxJson(
-  result: GoldenOperationalExecutionReviewerSandboxResult,
-): string {
-  return `${JSON.stringify(result, null, 2)}\n`;
 }

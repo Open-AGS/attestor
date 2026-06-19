@@ -308,7 +308,10 @@ function testSafetyInvariantsAreExplicit(): void {
 }
 
 function testOnboardingResearchAnchorsAreRecorded(): void {
-  const doc = readProjectFile('docs', '02-architecture', 'policy-foundry-onboarding.md');
+  const doc = [
+    readProjectFile('docs', '02-architecture', 'policy-foundry-onboarding.md'),
+    readProjectFile('docs', '02-architecture', 'policy-foundry-onboarding-appendix.md'),
+  ].join('\n');
 
   for (const anchor of [
     'AWS IAM Access Analyzer',

@@ -1,11 +1,3 @@
-import assert from 'node:assert/strict';
-import { generateKeyPair } from '../src/signing/keys.js';
-import {
-  createReleaseTokenIssuer,
-  type IssuedReleaseToken,
-  type ReleaseTokenVerificationKey,
-} from '../src/release-kernel/release-token.js';
-import type { ReleasePolicyProvenance } from '../src/release-kernel/object-model.js';
 import {
   createInMemoryReleaseTokenIntrospectionStore,
   createReleaseTokenIntrospector,
@@ -20,9 +12,6 @@ import {
   createDegradedModeGrant,
   evaluateDegradedMode,
 } from '../src/release-enforcement-plane/degraded-mode.js';
-import {
-  createMtlsReleaseTokenConfirmation,
-} from '../src/release-enforcement-plane/workload-binding.js';
 import {
   CRYPTO_ENFORCEMENT_BINDING_CHECKS,
   CRYPTO_ENFORCEMENT_VERIFICATION_SPEC_VERSION,
@@ -79,89 +68,33 @@ import {
   type CryptoConsequenceRiskAssessment,
 } from '../src/crypto-authorization-core/consequence-risk-mapping.js';
 import {
-  createCryptoAccountReference,
-  createCryptoAssetReference,
-  createCryptoChainReference,
   type CryptoExecutionAdapterKind,
 } from '../src/crypto-authorization-core/types.js';
-
-let passed = 0;
-
-const ACCOUNT_ADDRESS = '0x1111111111111111111111111111111111111111';
-const BRIDGE_ADDRESS = '0x2222222222222222222222222222222222222222';
-const VERIFYING_CONTRACT = '0x9999999999999999999999999999999999999999';
-const SIGNATURE = `0x${'11'.repeat(65)}`;
-const CERT_THUMBPRINT = 'cert-thumbprint-crypto-enforcement';
-const SPIFFE_ID = 'spiffe://attestor.test/ns/crypto/sa/safe-guard';
-const CHECKED_AT = '2026-04-21T09:02:00.000Z';
-const POLICY_IR_HASH = 'sha256:crypto-policy-ir';
-const COMPILED_POLICY_INDEX_VERSION = 'attestor.crypto-policy-index.test.v1';
-const COMPILED_POLICY_IR_VERSION = 'attestor.crypto-policy-ir.test.v1';
-
-function ok(condition: unknown, message: string): void {
-  assert.ok(condition, message);
-  passed += 1;
-}
-
-function equal<T>(actual: T, expected: T, message: string): void {
-  assert.equal(actual, expected, message);
-  passed += 1;
-}
-
-function deepEqual<T>(actual: T, expected: T, message: string): void {
-  assert.deepEqual(actual, expected, message);
-  passed += 1;
-}
-
-function trustedWorkloadBinding() {
-  return {
-    expectedCertificateThumbprint: CERT_THUMBPRINT,
-    expectedSpiffeId: SPIFFE_ID,
-    expectedTrustDomain: 'attestor.test',
-  } as const;
-}
-
-function cryptoPolicyProvenance(policyHash: string): ReleasePolicyProvenance {
-  return {
-    source: 'compiled-admission-policy-index',
-    policyId: 'policy.crypto-enforcement-test',
-    policySpecVersion: 'attestor.crypto-policy.v1',
-    policyHash,
-    compiledPolicyHash: policyHash,
-    compiledPolicyIrHash: POLICY_IR_HASH,
-    compiledPolicyIndexVersion: COMPILED_POLICY_INDEX_VERSION,
-    compiledPolicyIrVersion: COMPILED_POLICY_IR_VERSION,
-    verificationValid: true,
-    verificationErrorCodes: [],
-    verificationWarningCodes: [],
-  };
-}
-
-function fixtureChain() {
-  return createCryptoChainReference({
-    namespace: 'eip155',
-    chainId: '1',
-  });
-}
-
-function fixtureAccount() {
-  return createCryptoAccountReference({
-    accountKind: 'safe',
-    chain: fixtureChain(),
-    address: ACCOUNT_ADDRESS,
-    accountLabel: 'Treasury Safe',
-  });
-}
-
-function fixtureAsset() {
-  return createCryptoAssetReference({
-    assetKind: 'stablecoin',
-    chain: fixtureChain(),
-    assetId: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
-    symbol: 'USDC',
-    decimals: 6,
-  });
-}
+import {
+  ACCOUNT_ADDRESS,
+  BRIDGE_ADDRESS,
+  CERT_THUMBPRINT,
+  CHECKED_AT,
+  COMPILED_POLICY_INDEX_VERSION,
+  COMPILED_POLICY_IR_VERSION,
+  POLICY_IR_HASH,
+  SIGNATURE,
+  SPIFFE_ID,
+  VERIFYING_CONTRACT,
+  createBinding,
+  deepEqual,
+  equal,
+  fixtureAccount,
+  fixtureAsset,
+  fixtureChain,
+  issuedPresentationFixture,
+  issueableReleaseDecision,
+  ok,
+  passedCount,
+  setupIssuer,
+  throws,
+  trustedWorkloadBinding,
+} from './crypto-authorization-core-enforcement-verification-fixtures.js';
 
 interface FixtureSuite {
   readonly intent: CryptoAuthorizationIntent;
@@ -340,90 +273,6 @@ function fixtureSuite(
     riskAssessment,
     releaseBinding,
     policyScopeBinding,
-  };
-}
-
-function createBinding(
-  releaseBinding: CryptoReleaseDecisionBinding,
-  policyScopeBinding: CryptoPolicyControlPlaneScopeBinding | null,
-): CryptoEnforcementVerificationBinding {
-  return createCryptoEnforcementVerificationBinding({
-    releaseBinding,
-    policyScopeBinding,
-    requestId: 'erq_crypto_enforcement_001',
-    receivedAt: '2026-04-21T09:01:00.000Z',
-    enforcementPoint: {
-      enforcementPointId: 'pep.crypto.safe-guard',
-      workloadId: SPIFFE_ID,
-    },
-    traceId: 'trace-crypto-enforcement-001',
-    idempotencyKey: 'idem-crypto-enforcement-001',
-  });
-}
-
-function issueableReleaseDecision(
-  decision: CryptoReleaseDecisionBinding['releaseDecision'],
-): CryptoReleaseDecisionBinding['releaseDecision'] {
-  return Object.freeze({
-    ...decision,
-    status: 'accepted',
-    policyProvenance:
-      decision.policyProvenance ?? cryptoPolicyProvenance(decision.policyHash),
-  });
-}
-
-async function setupIssuer(): Promise<{
-  readonly verificationKey: ReleaseTokenVerificationKey;
-  readonly issue: (input: {
-    readonly tokenId: string;
-    readonly decision: CryptoReleaseDecisionBinding['releaseDecision'];
-    readonly tenantId?: string | null;
-  }) => Promise<IssuedReleaseToken>;
-}> {
-  const keyPair = generateKeyPair();
-  const issuer = createReleaseTokenIssuer({
-    issuer: 'attestor.release.local',
-    privateKeyPem: keyPair.privateKeyPem,
-    publicKeyPem: keyPair.publicKeyPem,
-  });
-  return {
-    verificationKey: await issuer.exportVerificationKey(),
-    issue(input) {
-      return issuer.issue({
-        decision: input.decision,
-        issuedAt: '2026-04-21T09:01:30.000Z',
-        tokenId: input.tokenId,
-        tenantId: input.tenantId ?? null,
-        confirmation: createMtlsReleaseTokenConfirmation({
-          certificateThumbprint: CERT_THUMBPRINT,
-          spiffeId: SPIFFE_ID,
-        }),
-      });
-    },
-  };
-}
-
-async function issuedPresentationFixture(): Promise<{
-  readonly binding: CryptoEnforcementVerificationBinding;
-  readonly issued: IssuedReleaseToken;
-  readonly verificationKey: ReleaseTokenVerificationKey;
-  readonly releaseDecision: CryptoReleaseDecisionBinding['releaseDecision'];
-}> {
-  const suite = fixtureSuite();
-  const binding = createBinding(suite.releaseBinding, suite.policyScopeBinding);
-  const releaseDecision = issueableReleaseDecision(suite.releaseBinding.releaseDecision);
-  const issuer = await setupIssuer();
-  const issued = await issuer.issue({
-    tokenId: 'rt_crypto_enforcement_001',
-    decision: releaseDecision,
-    tenantId: binding.enforcementRequest.enforcementPoint.tenantId,
-  });
-
-  return {
-    binding,
-    issued,
-    verificationKey: issuer.verificationKey,
-    releaseDecision,
   };
 }
 
@@ -609,7 +458,7 @@ function testCreatesBinding(): void {
 }
 
 async function testOfflineVerificationWrapper(): Promise<void> {
-  const { binding, issued, verificationKey } = await issuedPresentationFixture();
+  const { binding, issued, verificationKey } = await issuedPresentationFixture(fixtureSuite());
   const presentation = createCryptoReleasePresentation({
     binding,
     issuedToken: issued,
@@ -674,7 +523,7 @@ async function testOfflineVerificationWrapper(): Promise<void> {
 }
 
 async function testOnlineVerificationWrapper(): Promise<void> {
-  const { binding, issued, verificationKey, releaseDecision } = await issuedPresentationFixture();
+  const { binding, issued, verificationKey, releaseDecision } = await issuedPresentationFixture(fixtureSuite());
   const store = createInMemoryReleaseTokenIntrospectionStore();
   store.registerIssuedToken({
     issuedToken: issued,
@@ -900,7 +749,7 @@ async function testConformanceAndDegradedModeReuse(): Promise<void> {
 function testMismatchedPolicyBindingFailsClosed(): void {
   const suite = fixtureSuite();
 
-  assert.throws(
+  throws(
     () =>
       createCryptoEnforcementVerificationBinding({
         releaseBinding: suite.releaseBinding,
@@ -917,7 +766,6 @@ function testMismatchedPolicyBindingFailsClosed(): void {
       }),
     /release decision/i,
   );
-  passed += 1;
 }
 
 async function main(): Promise<void> {
@@ -927,7 +775,7 @@ async function main(): Promise<void> {
   await testOnlineVerificationWrapper();
   await testConformanceAndDegradedModeReuse();
   testMismatchedPolicyBindingFailsClosed();
-  console.log(`crypto authorization core enforcement verification tests passed (${passed} assertions)`);
+  console.log(`crypto authorization core enforcement verification tests passed (${passedCount()} assertions)`);
 }
 
 main().catch((error) => {

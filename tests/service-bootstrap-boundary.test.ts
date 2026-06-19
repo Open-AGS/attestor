@@ -277,6 +277,13 @@ function testReleaseRuntimeBootstrapOwnsReleaseSetup(): void {
 function testApiServerUsesExtractedRouteSupport(): void {
   const apiServer = readFileSync(API_SERVER, 'utf8');
   const apiRouteRuntime = readProjectFile('src', 'service', 'bootstrap', 'api-route-runtime.ts');
+  const apiRouteRuntimeStaticDeps = readProjectFile(
+    'src',
+    'service',
+    'bootstrap',
+    'api-route-runtime-static-deps.ts',
+  );
+  const apiRouteRuntimeSources = `${apiRouteRuntime}\n${apiRouteRuntimeStaticDeps}`;
   const accountRouteSupport = readFileSync(
     join(SERVICE_ROOT, 'account', 'account-route-support.ts'),
     'utf8',
@@ -308,15 +315,15 @@ function testApiServerUsesExtractedRouteSupport(): void {
     'utf8',
   );
 
-  assert.match(apiRouteRuntime, /from '\.\.\/account\/account-route-support\.js'/u);
-  assert.match(apiRouteRuntime, /from '\.\.\/hosted\/hosted-surface-support\.js'/u);
-  assert.match(apiRouteRuntime, /from '\.\.\/account\/hosted-account-support\.js'/u);
-  assert.match(apiRouteRuntime, /from '\.\.\/release\/finance-release-route-support\.js'/u);
-  assert.match(apiRouteRuntime, /from '\.\.\/pipeline\/pipeline-route-support\.js'/u);
-  assert.match(apiRouteRuntime, /from '\.\.\/request-context\.js'/u);
+  assert.match(apiRouteRuntimeSources, /from '\.\.\/account\/account-route-support\.js'/u);
+  assert.match(apiRouteRuntimeSources, /from '\.\.\/hosted\/hosted-surface-support\.js'/u);
+  assert.match(apiRouteRuntimeSources, /from '\.\.\/account\/hosted-account-support\.js'/u);
+  assert.match(apiRouteRuntimeSources, /from '\.\.\/release\/finance-release-route-support\.js'/u);
+  assert.match(apiRouteRuntimeSources, /from '\.\.\/pipeline\/pipeline-route-support\.js'/u);
+  assert.match(apiRouteRuntimeSources, /from '\.\.\/request-context\.js'/u);
   assert.match(apiServer, /from '\.\/request-observability-middleware\.js'/u);
-  assert.match(apiRouteRuntime, /from '\.\.\/site-support\.js'/u);
-  assert.match(apiRouteRuntime, /from '\.\.\/billing\/stripe\/stripe-webhook-support\.js'/u);
+  assert.match(apiRouteRuntimeSources, /from '\.\.\/site-support\.js'/u);
+  assert.match(apiRouteRuntimeSources, /from '\.\.\/billing\/stripe\/stripe-webhook-support\.js'/u);
 
   for (const helperName of [
     'function accountStoreErrorResponse(',

@@ -1,49 +1,43 @@
 import { createHash } from 'node:crypto';
 import {
   CRYPTO_AUTHORIZATION_CONSEQUENCE_PROFILES,
-  type CryptoAuthorizationConsequenceKind,
-  type CryptoAuthorizationRiskClass,
 } from './types.js';
-import type {
-  CryptoAuthorizationDecision as CryptoAuthorizationDecisionObject,
-  CryptoAuthorizationIntent,
-} from './object-model.js';
-import type { CryptoConsequenceRiskAssessment } from './consequence-risk-mapping.js';
-import type { CryptoEip712AuthorizationEnvelope } from './eip712-authorization-envelope.js';
-import type {
-  CryptoErc1271ValidationResult,
-  CryptoSignatureValidationProjection,
-} from './erc1271-validation-projection.js';
-import type {
-  CryptoAuthorizationFreshnessEvaluation,
-  CryptoReplayFreshnessRules,
-} from './replay-freshness-rules.js';
 import {
   createCanonicalReleaseHashBundle,
-  type CanonicalReleaseHashBundle,
   type CanonicalReleaseJsonValue,
 } from '../release-kernel/release-canonicalization.js';
 import {
   createReleaseDecisionSkeleton,
-  releaseDecisionExpiresAt,
-  releaseDecisionMaxUses,
-  releaseDecisionRequiresIntrospection,
   type EvidenceArtifactReference,
   type EvidencePack,
   type ReleaseActorReference,
   type ReleaseDecision,
   type ReleaseFinding,
   type ReleaseTargetReference,
-  type ReleaseTokenClaims,
   type ReviewAuthority,
 } from '../release-kernel/object-model.js';
 import type {
   CapabilityBoundaryDescriptor,
-  ConsequenceType,
   OutputContractDescriptor,
   ReleaseDecisionStatus,
   ReviewAuthorityMode,
 } from '../release-kernel/types.js';
+import { releaseTokenPostureFor } from './release-decision-binding-token.js';
+import {
+  CRYPTO_RELEASE_BINDING_CHECKS,
+  CRYPTO_RELEASE_DECISION_BINDING_SPEC_VERSION,
+} from './release-decision-binding-types.js';
+import type {
+  CreateCryptoReleaseDecisionBindingInput,
+  CryptoReleaseBindingStatus,
+  CryptoReleaseDecisionBinding,
+  CryptoReleaseEvidenceBinding,
+  CryptoReleaseHashBinding,
+  CryptoReleaseReviewerAuthorityBinding,
+} from './release-decision-binding-types.js';
+
+export * from './release-decision-binding-types.js';
+export { cryptoReleaseDecisionBindingDescriptor } from './release-decision-binding-descriptor.js';
 
 /**
  * Binding between crypto authorization and the Attestor release layer.
@@ -54,133 +48,6 @@ import type {
  * release decision hashes that downstream enforcement already knows how to
  * verify.
  */
-
-export const CRYPTO_RELEASE_DECISION_BINDING_SPEC_VERSION =
-  'attestor.crypto-release-decision-binding.v1';
-
-export const CRYPTO_RELEASE_ARTIFACT_PATHS = [
-  'crypto-authorization-intent',
-  'crypto-authorization-decision',
-  'crypto-risk-assessment',
-  'crypto-eip712-envelope',
-  'crypto-signature-validation',
-  'crypto-freshness-rules',
-  'crypto-freshness-evaluation',
-] as const;
-export type CryptoReleaseArtifactPath = typeof CRYPTO_RELEASE_ARTIFACT_PATHS[number];
-
-export const CRYPTO_RELEASE_BINDING_STATUSES = [
-  'bound',
-  'blocked',
-  'review-required',
-  'pending',
-] as const;
-export type CryptoReleaseBindingStatus =
-  typeof CRYPTO_RELEASE_BINDING_STATUSES[number];
-
-export const CRYPTO_RELEASE_BINDING_CHECKS = [
-  'crypto-decision-matches-intent',
-  'envelope-matches-crypto-decision',
-  'risk-assessment-matches-decision',
-  'release-hashes-match-crypto-payloads',
-  'release-status-matches-crypto-result',
-  'review-authority-is-not-weaker',
-  'evidence-artifacts-are-bound',
-  'release-token-posture-is-bound',
-] as const;
-export type CryptoReleaseBindingCheck = typeof CRYPTO_RELEASE_BINDING_CHECKS[number];
-
-export interface CryptoReleaseHashBinding {
-  readonly releaseHashBundle: CanonicalReleaseHashBundle;
-  readonly outputPayloadDigest: string;
-  readonly consequencePayloadDigest: string;
-  readonly outputContract: OutputContractDescriptor;
-  readonly capabilityBoundary: CapabilityBoundaryDescriptor;
-  readonly target: ReleaseTargetReference;
-}
-
-export interface CryptoReleaseReviewerAuthorityBinding {
-  readonly cryptoRequired: ReviewAuthority;
-  readonly releaseBound: ReviewAuthority;
-  readonly sufficient: boolean;
-  readonly minimumReviewerCountDelta: number;
-}
-
-export interface CryptoReleaseTokenPosture {
-  readonly required: boolean;
-  readonly eligible: boolean;
-  readonly tokenClaimStatus:
-    | 'not-required'
-    | 'required-not-present'
-    | 'bound';
-  readonly tokenId: string | null;
-  readonly audience: string;
-  readonly subject: string;
-  readonly scope: string;
-  readonly resource: string;
-  readonly introspectionRequired: boolean;
-  readonly consumeOnSuccess: boolean;
-  readonly maxUses: number;
-  readonly ttlCeilingSeconds: number;
-}
-
-export interface CryptoReleaseEvidenceBinding {
-  readonly requiredArtifacts: readonly EvidenceArtifactReference[];
-  readonly evidencePackStatus: 'not-provided' | 'bound';
-  readonly evidencePackId: string | null;
-}
-
-export interface CryptoReleaseDecisionBinding {
-  readonly version: typeof CRYPTO_RELEASE_DECISION_BINDING_SPEC_VERSION;
-  readonly bindingId: string;
-  readonly status: CryptoReleaseBindingStatus;
-  readonly cryptoDecisionId: string;
-  readonly releaseDecisionId: string;
-  readonly chainId: string;
-  readonly accountAddress: string;
-  readonly consequenceKind: CryptoAuthorizationConsequenceKind;
-  readonly releaseConsequenceType: ConsequenceType;
-  readonly riskClass: CryptoAuthorizationRiskClass;
-  readonly releaseDecision: ReleaseDecision;
-  readonly hashBinding: CryptoReleaseHashBinding;
-  readonly reviewerAuthority: CryptoReleaseReviewerAuthorityBinding;
-  readonly evidence: CryptoReleaseEvidenceBinding;
-  readonly releaseTokenPosture: CryptoReleaseTokenPosture;
-  readonly bindingChecks: readonly CryptoReleaseBindingCheck[];
-  readonly canonical: string;
-  readonly digest: string;
-}
-
-export interface CreateCryptoReleaseDecisionBindingInput {
-  readonly intent: CryptoAuthorizationIntent;
-  readonly cryptoDecision: CryptoAuthorizationDecisionObject;
-  readonly riskAssessment: CryptoConsequenceRiskAssessment;
-  readonly envelope: CryptoEip712AuthorizationEnvelope;
-  readonly signatureValidation: CryptoSignatureValidationProjection;
-  readonly signatureValidationResult?: CryptoErc1271ValidationResult | null;
-  readonly freshnessRules: CryptoReplayFreshnessRules;
-  readonly freshnessEvaluation?: CryptoAuthorizationFreshnessEvaluation | null;
-  readonly releaseDecision?: ReleaseDecision | null;
-  readonly evidencePack?: EvidencePack | null;
-  readonly releaseTokenClaims?: ReleaseTokenClaims | null;
-  readonly createdAt?: string | null;
-  readonly policyVersion?: string | null;
-  readonly policyHash?: string | null;
-  readonly requester?: ReleaseActorReference | null;
-  readonly target?: ReleaseTargetReference | null;
-  readonly evidencePackId?: string | null;
-  readonly releaseTokenId?: string | null;
-  readonly requiredReviewerRoles?: readonly string[] | null;
-  readonly requiredReviewerIds?: readonly string[] | null;
-}
-
-export interface CryptoReleaseDecisionBindingDescriptor {
-  readonly version: typeof CRYPTO_RELEASE_DECISION_BINDING_SPEC_VERSION;
-  readonly artifactPaths: typeof CRYPTO_RELEASE_ARTIFACT_PATHS;
-  readonly statuses: typeof CRYPTO_RELEASE_BINDING_STATUSES;
-  readonly bindingChecks: typeof CRYPTO_RELEASE_BINDING_CHECKS;
-  readonly standards: readonly string[];
-}
 
 type CanonicalJsonValue =
   | null
@@ -800,88 +667,6 @@ function validateEvidencePack(
   });
 }
 
-function tokenTtlCeilingSeconds(
-  releaseDecision: ReleaseDecision,
-  freshnessRules: CryptoReplayFreshnessRules,
-): number {
-  const createdAt = Math.floor(Date.parse(releaseDecision.createdAt) / 1000);
-  if (!Number.isFinite(createdAt)) {
-    throw new Error('Crypto release decision binding release decision createdAt must be an ISO timestamp.');
-  }
-  const releaseExpiry = releaseDecisionExpiresAt(releaseDecision);
-  const releaseExpirySeconds = releaseExpiry
-    ? Math.floor(Date.parse(releaseExpiry) / 1000)
-    : Number.MAX_SAFE_INTEGER;
-  const freshnessExpiry = freshnessRules.validityWindow.effectiveExpiresAtEpochSeconds;
-  return Math.max(0, Math.min(releaseExpirySeconds, freshnessExpiry) - createdAt);
-}
-
-function validateReleaseTokenClaims(
-  claims: ReleaseTokenClaims,
-  releaseDecision: ReleaseDecision,
-): void {
-  if (claims.decision_id !== releaseDecision.id) {
-    throw new Error('Crypto release decision binding release token decision id does not match release decision.');
-  }
-  if (claims.decision !== releaseDecision.status) {
-    throw new Error('Crypto release decision binding release token status does not match release decision.');
-  }
-  if (claims.output_hash !== releaseDecision.outputHash) {
-    throw new Error('Crypto release decision binding release token output hash does not match release decision.');
-  }
-  if (claims.consequence_hash !== releaseDecision.consequenceHash) {
-    throw new Error('Crypto release decision binding release token consequence hash does not match release decision.');
-  }
-  if (claims.policy_hash !== releaseDecision.policyHash) {
-    throw new Error('Crypto release decision binding release token policy hash does not match release decision.');
-  }
-  if (claims.aud !== releaseDecision.target.id) {
-    throw new Error('Crypto release decision binding release token audience does not match release target.');
-  }
-  if (claims.introspection_required !== releaseDecisionRequiresIntrospection(releaseDecision)) {
-    throw new Error('Crypto release decision binding release token introspection posture does not match release decision.');
-  }
-}
-
-function releaseTokenPostureFor(
-  input: CreateCryptoReleaseDecisionBindingInput,
-  releaseDecision: ReleaseDecision,
-): CryptoReleaseTokenPosture {
-  const eligible = releaseDecision.status === 'accepted';
-  const required = eligible;
-  const claims = input.releaseTokenClaims ?? null;
-  if (claims) {
-    validateReleaseTokenClaims(claims, releaseDecision);
-  }
-
-  const tokenClaimStatus = !required
-    ? 'not-required'
-    : claims
-      ? 'bound'
-      : 'required-not-present';
-
-  return Object.freeze({
-    required,
-    eligible,
-    tokenClaimStatus,
-    tokenId: claims?.jti ?? releaseDecision.releaseTokenId,
-    audience: releaseDecision.target.id,
-    subject: `releaseDecision:${releaseDecision.id}`,
-    scope: `release:crypto:${input.intent.consequenceKind}`,
-    resource: [
-      input.envelope.chainBinding.caip2ChainId,
-      input.envelope.signerBinding.accountAddress,
-      input.intent.target.targetId,
-    ].join('/'),
-    introspectionRequired: releaseDecisionRequiresIntrospection(releaseDecision),
-    consumeOnSuccess:
-      input.freshnessRules.replayLedger.consumeOnAllow ||
-      (releaseDecisionMaxUses(releaseDecision) ?? 1) === 1,
-    maxUses: releaseDecisionMaxUses(releaseDecision) ?? 1,
-    ttlCeilingSeconds: tokenTtlCeilingSeconds(releaseDecision, input.freshnessRules),
-  });
-}
-
 export function createCryptoReleaseDecisionBinding(
   input: CreateCryptoReleaseDecisionBindingInput,
 ): CryptoReleaseDecisionBinding {
@@ -964,22 +749,4 @@ export function cryptoReleaseDecisionBindingLabel(
     `account:${binding.accountAddress}`,
     `risk:${binding.riskClass}`,
   ].join(' / ');
-}
-
-export function cryptoReleaseDecisionBindingDescriptor():
-CryptoReleaseDecisionBindingDescriptor {
-  return Object.freeze({
-    version: CRYPTO_RELEASE_DECISION_BINDING_SPEC_VERSION,
-    artifactPaths: CRYPTO_RELEASE_ARTIFACT_PATHS,
-    statuses: CRYPTO_RELEASE_BINDING_STATUSES,
-    bindingChecks: CRYPTO_RELEASE_BINDING_CHECKS,
-    standards: Object.freeze([
-      'EIP-712',
-      'ERC-1271-aware',
-      'ERC-4337-ready',
-      'ERC-7715-ready',
-      'EIP-7702-ready',
-      'DSSE-evidence-ready',
-    ]),
-  });
 }

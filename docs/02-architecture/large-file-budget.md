@@ -10,12 +10,13 @@ growing while they wait for focused split work.
 
 | Range | Rule |
 |---|---|
-| `<= 800` lines | Normal target for source, tests, scripts, and examples. |
-| `801-1200` lines | Tolerated when a file is still one coherent concept. Review before adding more. |
-| `> 1200` lines | Hard-limit exception. Must be listed in the large-file registry. |
+| `<= 800` lines | Normal target for source, tests, scripts, examples, docs, and fixtures. |
+| `> 800` lines | Exception only. Must be listed in the oversized-file registry with a locked `maxLines` value and a reason. |
+| `> 1200` lines | Hard-limit exception. Must be registered and should remain limited to generated contracts, large fixtures, protocol/adapter/conformance/proof surfaces, or queued splits with explicit tests. |
 
-Generated files, lockfiles, OpenAPI JSON, and large fixture JSON are outside
-this code-file guard. They should not drive source refactor decisions.
+Lockfiles, vendored material, and binary/doc assets are outside this guard.
+OpenAPI JSON and large fixture JSON are scanned as explicit exceptions so they
+cannot grow silently.
 
 ## Current Guard
 
@@ -32,19 +33,23 @@ src/
 tests/
 scripts/
 examples/
+docs/
+fixtures/
 ```
 
-It checks TypeScript and JavaScript source-like files only.
+It checks TypeScript, JavaScript, Markdown, JSON, and YAML text files.
 
 The check fails when:
 
-- a file grows above `1200` lines without a registry entry;
+- a file grows above `800` lines without a registry entry;
 - a registered oversized file grows beyond its locked `maxLines`;
-- a registered oversized file no longer exists and the registry was not cleaned;
+- a registered oversized file no longer exists or has shrunk to `<= 800` lines
+  and the registry was not cleaned;
 - the registry contains duplicates.
 
-The check reports files above `800` lines, but Phase 0 does not fail all of
-them. The first job is to stop growth. Later phases shrink the existing list.
+The guard fails every unregistered file above `800` lines. Existing oversized
+files are therefore either temporary split targets or intentional exceptions,
+and none of them may grow while they wait for focused split work.
 
 ## Why This Shape
 
@@ -72,7 +77,7 @@ Default target:
 
 ```text
 Most files: <= 800 lines
-Hard exceptions: <= 1200 lines when genuinely cohesive
+Any file above 800: explicit registry entry, locked maxLines, named reason
 Current oversized files: no growth while queued
 ```
 

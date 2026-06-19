@@ -10,41 +10,57 @@ const SCANNED_ROOTS = Object.freeze([
   'tests/',
   'scripts/',
   'examples/',
+  'docs/',
+  'fixtures/',
 ]);
 
-const CODE_EXTENSIONS = Object.freeze([
+const TEXT_EXTENSIONS = Object.freeze([
   '.cjs',
   '.js',
   '.mjs',
   '.ts',
   '.tsx',
+  '.md',
+  '.json',
+  '.yaml',
+  '.yml',
 ]);
 
-const HARD_LIMIT_REGISTRY = Object.freeze([
-  { path: 'src/service/control-plane-store.ts', maxLines: 3415, reason: 'P2 store-family split in progress; schema, PG helpers, mapper helpers, pipeline idempotency, and admin state extracted; compatibility facade must keep shrinking.' },
-  { path: 'src/service/http/routes/account-routes.ts', maxLines: 2588, reason: 'P2 route-family split planned; account auth/session/MFA/user flows require route-matrix coverage.' },
-  { path: 'src/crypto-authorization-core/modular-account-adapters.ts', maxLines: 1836, reason: 'P4 protocol adapter exception; split only by coherent adapter helper boundaries.' },
-  { path: 'src/crypto-authorization-core/x402-agentic-payment-adapter.ts', maxLines: 1796, reason: 'P4 protocol adapter exception; x402 behavior is trust-sensitive and should split only with focused tests.' },
-  { path: 'src/service/http/routes/release-policy-control-routes.ts', maxLines: 1679, reason: 'P2 route-family split planned after shadow/account route splits prove the route split pattern.' },
-  { path: 'src/crypto-authorization-core/erc4337-user-operation-adapter.ts', maxLines: 1664, reason: 'P4 protocol adapter exception; ERC-4337 behavior should split only along canonical adapter checks.' },
-  { path: 'src/crypto-authorization-core/custody-cosigner-policy-adapter.ts', maxLines: 1635, reason: 'P4 protocol adapter exception; custody policy behavior should split only with adapter-negative tests.' },
-  { path: 'src/crypto-authorization-core/eip7702-delegation-adapter.ts', maxLines: 1634, reason: 'P4 protocol adapter exception; EIP-7702 delegated-scope work should be a focused PR.' },
-  { path: 'src/crypto-authorization-core/policy-gap-narrowing.ts', maxLines: 1624, reason: 'P4 crypto policy helper exception; split only when the policy-gap contract is otherwise changing.' },
-  { path: 'src/release-enforcement-plane/envoy-ext-authz.ts', maxLines: 1619, reason: 'P4 enforcement adapter exception; Envoy bridge behavior is route-risk-class sensitive.' },
-  { path: 'src/crypto-authorization-core/intelligence-dashboard-summary.ts', maxLines: 1583, reason: 'P4 crypto intelligence summary exception; split only with dashboard-summary golden coverage.' },
-  { path: 'src/service/http/routes/admin-routes.ts', maxLines: 1579, reason: 'P2 route-family split planned after route split pattern is proven; admin auth remains high authority.' },
-  { path: 'src/crypto-execution-admission/delegated-eoa.ts', maxLines: 1445, reason: 'P4 crypto execution adapter exception; delegated EOA semantics are trust-sensitive.' },
-  { path: 'src/release-kernel/release-evidence-pack.ts', maxLines: 1422, reason: 'P4 release evidence pack exception; proof material split needs canonicalization and DSSE tests.' },
-  { path: 'src/crypto-execution-admission/adapter-readiness-manifest.ts', maxLines: 1375, reason: 'P4 crypto execution manifest exception; split only with platform-surface tests.' },
-  { path: 'src/crypto-execution-admission/conformance-fixtures.ts', maxLines: 1336, reason: 'P4 conformance fixture registry exception; split only if fixture families move with tests.' },
-  { path: 'src/consequence-admission/finance.ts', maxLines: 1307, reason: 'P4 finance admission projection exception; split only with admission projection and guard parity tests.' },
-  { path: 'src/release-enforcement-plane/async-envelope.ts', maxLines: 1305, reason: 'P4 enforcement-envelope exception; split only with async envelope verifier coverage.' },
-  { path: 'src/crypto-authorization-core/approval-allowance-consequence.ts', maxLines: 1292, reason: 'P4 crypto authorization exception; split only with allowance/consequence behavioral coverage.' },
-  { path: 'src/consequence-admission/generic-input-normalization.ts', maxLines: 1281, reason: 'P4 generic admission normalization exception; split only with normalization and guard parity tests.' },
-  { path: 'src/crypto-execution-admission/intent-solver.ts', maxLines: 1258, reason: 'P4 crypto execution adapter exception; intent solver route binding is trust-sensitive.' },
-  { path: 'tests/release-enforcement-plane-token-exchange.test.ts', maxLines: 1231, reason: 'P4 token-exchange test exception; split only with release-enforcement negative-path parity.' },
-  { path: 'src/consequence-admission/general-crypto-transaction-gate.ts', maxLines: 1211, reason: 'P4 crypto gate exception; general crypto gate should split only with crypto gate golden tests.' },
-  { path: 'src/crypto-authorization-core/intelligence-risk-signals.ts', maxLines: 1208, reason: 'P4 crypto intelligence exception; risk signal split needs dashboard/risk-signal tests.' },
+const EXCLUDED_PREFIXES = Object.freeze([
+  'docs/assets/',
+  'vendor/',
+]);
+
+const EXCLUDED_PATHS = Object.freeze(new Set([
+  'package-lock.json',
+]));
+
+const REASONS = Object.freeze({
+  billingSplitTarget: 'temporary billing split target; move-only ledger extraction must preserve event ordering, dedupe, and export parity.',
+  bootstrapSplitTarget: 'temporary bootstrap split target; split only with runtime/bootstrap boundary tests.',
+  conformanceFixture: 'large conformance fixture exception; split only when fixture families move with conformance tests.',
+  consequenceAdmission: 'temporary consequence-admission split target; split only with guard, package-surface, or golden parity tests.',
+  cryptoAuthorization: 'crypto authorization protocol surface; split only with adapter-specific negative and package-surface tests.',
+  cryptoExecution: 'crypto execution adapter or conformance surface; split only with adapter-specific conformance tests.',
+  generatedOpenApi: 'generated OpenAPI contract exception; split source contracts instead of hand-editing generated JSON.',
+  largeDocument: 'temporary documentation split target; split by stable architecture sections without weakening no-claim language.',
+  largeScript: 'temporary script split target; split collection, assertion, and rendering phases without changing CLI output.',
+  largeTest: 'temporary test split target; split scenario families while keeping the package script and assertions stable.',
+  proofSurface: 'proof-surface exception; split only with proof scenario and artifact parity tests.',
+  providerAdapter: 'provider adapter surface; split only with runtime policy, timeout, redaction, and fake-client tests.',
+  releaseEnforcement: 'release enforcement surface; split only with verifier, replay, signing, or route-risk parity tests.',
+  releaseKernel: 'release kernel proof or queue surface; split only with canonicalization, DSSE, or queue parity tests.',
+  researchLedger: 'research provenance ledger exception; split only by append-stable ledger volumes with citation tests.',
+  routeSplitTarget: 'temporary route split target; move-only route-family extraction must preserve auth, status, headers, and audit behavior.',
+  storeSplitTarget: 'temporary store split target; extraction must preserve snapshots, shared-store behavior, tenant scope, and backup parity.',
+  temporarySplitTarget: 'temporary split target; must not grow while queued for responsibility-based extraction.',
+});
+
+const OVERSIZE_FILE_REGISTRY = Object.freeze([
+  { path: 'docs/api/attestor-action-authorization.openapi.json', maxLines: 1978, reason: REASONS.generatedOpenApi },
+  { path: 'fixtures/crypto-execution-admission/conformance-fixtures.v1.json', maxLines: 1692, reason: REASONS.conformanceFixture },
+  { path: 'docs/research/attestor-research-provenance-ledger.md', maxLines: 1525, reason: REASONS.researchLedger },
+  { path: 'docs/02-architecture/consequence-runtime-assurance-overview.md', maxLines: 1255, reason: REASONS.largeDocument },
 ]);
 
 function normalizePath(path) {
@@ -58,12 +74,18 @@ function trackedFiles() {
     .filter(Boolean);
 }
 
-function hasCodeExtension(path) {
-  return CODE_EXTENSIONS.some((extension) => path.endsWith(extension));
+function hasTextExtension(path) {
+  return TEXT_EXTENSIONS.some((extension) => path.endsWith(extension));
+}
+
+function isExcludedPath(path) {
+  return EXCLUDED_PATHS.has(path) || EXCLUDED_PREFIXES.some((prefix) => path.startsWith(prefix));
 }
 
 function isScannedPath(path) {
-  return SCANNED_ROOTS.some((root) => path.startsWith(root)) && hasCodeExtension(path);
+  return !isExcludedPath(path)
+    && SCANNED_ROOTS.some((root) => path.startsWith(root))
+    && hasTextExtension(path);
 }
 
 function countLines(path) {
@@ -91,16 +113,20 @@ const files = trackedFiles()
   .map((file) => ({ file, lines: countLines(file) }))
   .sort((left, right) => right.lines - left.lines || left.file.localeCompare(right.file));
 
-const registryByPath = new Map(HARD_LIMIT_REGISTRY.map((entry) => [entry.path, entry]));
-const duplicateRegistry = duplicateRegistryPaths(HARD_LIMIT_REGISTRY);
-const staleRegistry = HARD_LIMIT_REGISTRY
-  .filter((entry) => !files.some((file) => file.file === entry.path))
+const filesByPath = new Map(files.map((file) => [file.file, file]));
+const registryByPath = new Map(OVERSIZE_FILE_REGISTRY.map((entry) => [entry.path, entry]));
+const duplicateRegistry = duplicateRegistryPaths(OVERSIZE_FILE_REGISTRY);
+const staleRegistry = OVERSIZE_FILE_REGISTRY
+  .filter((entry) => {
+    const file = filesByPath.get(entry.path);
+    return !file || file.lines <= TARGET_LINES;
+  })
   .map((entry) => entry.path);
 
 const overTarget = files.filter((file) => file.lines > TARGET_LINES);
 const overHardLimit = files.filter((file) => file.lines > HARD_LIMIT_LINES);
-const unregisteredHardLimitFiles = overHardLimit.filter((file) => !registryByPath.has(file.file));
-const grownRegisteredFiles = overHardLimit.filter((file) => {
+const unregisteredTargetFiles = overTarget.filter((file) => !registryByPath.has(file.file));
+const grownRegisteredFiles = overTarget.filter((file) => {
   const entry = registryByPath.get(file.file);
   return entry && file.lines > entry.maxLines;
 });
@@ -111,15 +137,15 @@ if (duplicateRegistry.length > 0) {
   failures.push(...duplicateRegistry.map((path) => `- ${path}`));
 }
 if (staleRegistry.length > 0) {
-  failures.push('Stale large-file registry entries:');
+  failures.push(`Stale registry entries at or below ${TARGET_LINES} lines:`);
   failures.push(...staleRegistry.map((path) => `- ${path}`));
 }
-if (unregisteredHardLimitFiles.length > 0) {
-  failures.push(`Files above ${HARD_LIMIT_LINES} lines without a registry entry:`);
-  failures.push(...unregisteredHardLimitFiles.map((file) => `- ${file.file} (${file.lines})`));
+if (unregisteredTargetFiles.length > 0) {
+  failures.push(`Files above ${TARGET_LINES} lines without a registry entry:`);
+  failures.push(...unregisteredTargetFiles.map((file) => `- ${file.file} (${file.lines})`));
 }
 if (grownRegisteredFiles.length > 0) {
-  failures.push('Registered large files grew past their locked maxLines:');
+  failures.push('Registered oversized files grew past their locked maxLines:');
   failures.push(...grownRegisteredFiles.map((file) => {
     const entry = registryByPath.get(file.file);
     return `- ${file.file} (${file.lines} > ${entry.maxLines})`;
@@ -129,14 +155,14 @@ if (grownRegisteredFiles.length > 0) {
 if (failures.length > 0) {
   console.error('Large-file budget check failed.');
   console.error(failures.join('\n'));
-  console.error(`\nTarget: <= ${TARGET_LINES} lines. Hard limit: ${HARD_LIMIT_LINES} lines unless explicitly registered.`);
+  console.error(`\nTarget: <= ${TARGET_LINES} lines. Exceptions above target must be registered and must not grow.`);
   process.exit(1);
 }
 
 console.log(`Large-file budget: ${files.length} files scanned.`);
-console.log(`Large-file budget: ${overTarget.length} files above target (${TARGET_LINES} lines).`);
+console.log(`Large-file budget: ${overTarget.length} registered files above target (${TARGET_LINES} lines).`);
 console.log(`Large-file budget: ${overHardLimit.length} registered files above hard limit (${HARD_LIMIT_LINES} lines).`);
-console.log('Large-file budget: 0 unregistered hard-limit files, 0 registered growth violations.');
+console.log('Large-file budget: 0 unregistered over-target files, 0 registered growth violations.');
 console.log('Largest files:');
 for (const file of files.slice(0, 10)) {
   console.log(`- ${file.file}: ${file.lines}`);

@@ -14,17 +14,21 @@ import {
   metricSamples,
   ok,
   pipelineRunHeaders,
-  readAsyncDeadLetterStoreSnapshot,
   readFileSync,
   readUsageLedgerSnapshot,
   revokeTenantApiKey,
   stripe,
   unsignedBearerToken,
-  waitForJobStatus,
   waitForRateLimitWindowHead,
   waitForTotpStepAfter,
 } from './helpers.js';
 import type { LiveApiHostedContext } from './helpers.js';
+import {
+  dpopJsonHeaders,
+  dpopPipelineRunHeaders,
+  generateDpopKeyPair,
+} from './dpop-helpers.js';
+import { runRuntimePipelineAsyncFlow } from './runtime-pipeline-async-flow.js';
 
 export async function runRuntimePipelineFlow(): Promise<void> {
     console.log('  [GET /api/v1/health]');
@@ -108,14 +112,18 @@ export async function runRuntimePipelineFlow(): Promise<void> {
     let reviewRequiredFilingRelease: any = null;
     let reviewQueueId: string | null = null;
     let approvedReleaseToken: string | null = null;
+    let approvedReleaseTokenId: string | null = null;
     let breakGlassFilingRelease: any = null;
     let breakGlassReviewQueueId: string | null = null;
     let breakGlassReleaseToken: string | null = null;
     let breakGlassEvidencePackId: string | null = null;
+    const filingReleaseDpop = await generateDpopKeyPair();
+    const approvedReviewReleaseDpop = await generateDpopKeyPair();
+    const breakGlassReleaseDpop = await generateDpopKeyPair();
     {
       const res = await fetch(`${BASE}/api/v1/pipeline/run`, {
         method: 'POST',
-        headers: pipelineRunHeaders('runtime-pipeline-signed'),
+        headers: await dpopPipelineRunHeaders('runtime-pipeline-signed', filingReleaseDpop),
         body: JSON.stringify({
           candidateSql: COUNTERPARTY_SQL,
           intent: COUNTERPARTY_INTENT,
@@ -151,12 +159,14 @@ export async function runRuntimePipelineFlow(): Promise<void> {
       ok(body.release?.filingExport !== null, 'Pipeline(signed): filing release artifact present');
       ok(body.release.filingExport.targetId === 'sec.edgar.filing.prepare', 'Pipeline(signed): filing release target bound');
       ok(body.release.filingExport.introspectionRequired === true, 'Pipeline(signed): filing release requires active introspection');
-      ok(typeof body.release.filingExport.token === 'string', 'Pipeline(signed): filing release token present');
+      ok(body.release.filingExport.decisionStatus === 'hold', 'Pipeline(signed): regulated filing release is held for reviewer authority');
+      ok(body.release.filingExport.token === null, 'Pipeline(signed): held filing release does not issue a token');
+      ok(body.release.filingExport.tokenIssueStatus === 'not-required', 'Pipeline(signed): held filing release does not attempt token issue');
+      ok(body.release.filingExport.presentationRequired === null, 'Pipeline(signed): no presentation is required before review closure');
       ok(typeof body.release.filingExport.outputHash === 'string', 'Pipeline(signed): filing release output hash present');
       ok(typeof body.release.filingExport.consequenceHash === 'string', 'Pipeline(signed): filing release consequence hash present');
-      ok(typeof body.release.filingExport.evidencePackId === 'string', 'Pipeline(signed): durable evidence pack id present');
-      ok(typeof body.release.filingExport.evidencePackPath === 'string', 'Pipeline(signed): durable evidence pack export path present');
-      ok(typeof body.release.filingExport.evidencePackDigest === 'string', 'Pipeline(signed): durable evidence pack digest present');
+      ok(typeof body.release.filingExport.reviewQueueId === 'string', 'Pipeline(signed): reviewer queue id present before release');
+      ok(body.release.filingExport.evidencePackId === null, 'Pipeline(signed): durable evidence pack waits for authority closure');
       ok(body.release.filingExport.candidate.adapterId === 'xbrl-us-gaap-2024', 'Pipeline(signed): filing release candidate adapter');
       ok(Array.isArray(body.release.filingExport.candidate.rows), 'Pipeline(signed): filing release candidate rows present');
       ok(body.release?.communication !== null, 'Pipeline(signed): communication shadow release present');
@@ -208,6 +218,7 @@ export async function runRuntimePipelineFlow(): Promise<void> {
     // ═══ PIPELINE RUN — break-glass review-required candidate ═══
     console.log('\n  [POST /api/v1/pipeline/run — break-glass review-required candidate]');
     {
+      await waitForRateLimitWindowHead(5);
       const breakGlassIntent = {
         ...COUNTERPARTY_INTENT,
         materialityTier: 'high',
@@ -284,7 +295,7 @@ export async function runRuntimePipelineFlow(): Promise<void> {
       const firstApprovalRes = await fetch(`${BASE}/api/v1/admin/release-reviews/${reviewQueueId}/approve`, {
         method: 'POST',
         headers: {
-          Authorization: 'Bearer admin-secret',
+          Authorization: 'Bearer admin-release-secret',
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -302,10 +313,12 @@ export async function runRuntimePipelineFlow(): Promise<void> {
 
       const secondApprovalRes = await fetch(`${BASE}/api/v1/admin/release-reviews/${reviewQueueId}/approve`, {
         method: 'POST',
-        headers: {
-          Authorization: 'Bearer admin-secret',
-          'Content-Type': 'application/json',
-        },
+        headers: await dpopJsonHeaders({
+          keyPair: approvedReviewReleaseDpop,
+          httpUri: `${BASE}/api/v1/admin/release-reviews/${reviewQueueId}/approve`,
+          proofJti: 'dpop-review-second-approval',
+          headers: { Authorization: 'Bearer admin-secret' },
+        }),
         body: JSON.stringify({
           reviewerId: 'reviewer.beta',
           reviewerName: 'Beta Reviewer',
@@ -323,6 +336,7 @@ export async function runRuntimePipelineFlow(): Promise<void> {
       ok(typeof secondApprovalBody.evidencePack?.exportPath === 'string', 'Reviewer approve(second): durable evidence pack export path returned');
       ok(typeof secondApprovalBody.evidencePack?.policyContext?.policyHash === 'string', 'Reviewer approve(second): evidence pack response carries structured policy context');
       approvedReleaseToken = secondApprovalBody.releaseToken.token;
+      approvedReleaseTokenId = secondApprovalBody.releaseToken.tokenId;
 
       const listAfterApprovalRes = await fetch(`${BASE}/api/v1/admin/release-reviews`, {
         headers: { Authorization: 'Bearer admin-secret' },
@@ -338,10 +352,12 @@ export async function runRuntimePipelineFlow(): Promise<void> {
     {
       const overrideRes = await fetch(`${BASE}/api/v1/admin/release-reviews/${breakGlassReviewQueueId}/override`, {
         method: 'POST',
-        headers: {
-          Authorization: 'Bearer admin-secret',
-          'Content-Type': 'application/json',
-        },
+        headers: await dpopJsonHeaders({
+          keyPair: breakGlassReleaseDpop,
+          httpUri: `${BASE}/api/v1/admin/release-reviews/${breakGlassReviewQueueId}/override`,
+          proofJti: 'dpop-break-glass-override',
+          headers: { Authorization: 'Bearer admin-break-glass-secret' },
+        }),
         body: JSON.stringify({
           reasonCode: 'regulatory_deadline',
           ticketId: 'INC-2048',
@@ -438,17 +454,20 @@ export async function runRuntimePipelineFlow(): Promise<void> {
     console.log('\n  [POST /api/v1/filing/export — tampered payload]');
     {
       const tampered = {
-        ...filingRelease.candidate,
-        rows: filingRelease.candidate.rows.map((row: Record<string, unknown>) => ({ ...row })),
+        ...reviewRequiredFilingRelease.candidate,
+        rows: reviewRequiredFilingRelease.candidate.rows.map((row: Record<string, unknown>) => ({ ...row })),
       };
       (tampered.rows[0] as any).exposure_usd = Number((tampered.rows[0] as any).exposure_usd ?? 0) + 1;
 
       const res = await fetch(`${BASE}/api/v1/filing/export`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${filingRelease.token}`,
-        },
+        headers: await dpopJsonHeaders({
+          keyPair: approvedReviewReleaseDpop,
+          httpUri: `${BASE}/api/v1/filing/export`,
+          proofJti: 'dpop-filing-tampered',
+          accessToken: approvedReleaseToken,
+          headers: { Authorization: `Bearer ${approvedReleaseToken}` },
+        }),
         body: JSON.stringify(tampered),
       });
       ok(res.status === 403, 'Filing(tampered): status 403');
@@ -462,17 +481,34 @@ export async function runRuntimePipelineFlow(): Promise<void> {
     {
       const res = await fetch(`${BASE}/api/v1/filing/export`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${approvedReleaseToken}`,
-        },
+        headers: await dpopJsonHeaders({
+          keyPair: approvedReviewReleaseDpop,
+          httpUri: `${BASE}/api/v1/filing/export`,
+          proofJti: 'dpop-filing-approved-review',
+          accessToken: approvedReleaseToken,
+          headers: { Authorization: `Bearer ${approvedReleaseToken}` },
+        }),
         body: JSON.stringify(reviewRequiredFilingRelease.candidate),
       });
       ok(res.status === 200, 'Filing(approved dual-review token): status 200');
       const body = await res.json() as any;
       ok(body.release?.authorized === true, 'Filing(approved dual-review token): release authorization is attached');
       ok(body.release?.introspectionVerified === true, 'Filing(approved dual-review token): high-risk introspection is confirmed');
+      ok(body.adapterId === 'xbrl-us-gaap-2024', 'Filing(approved dual-review token): adapter ID');
+      ok(body.format === 'xbrl', 'Filing(approved dual-review token): format = xbrl');
+      ok(body.taxonomyVersion === 'US-GAAP 2024', 'Filing(approved dual-review token): taxonomy version');
+      ok(body.mapping.mappedCount > 0, 'Filing(approved dual-review token): has mapped fields');
+      ok(body.mapping.coveragePercent > 50, 'Filing(approved dual-review token): coverage > 50%');
       ok(body.package?.content?.facts?.length > 0, 'Filing(approved dual-review token): filing package is still produced after human authority closes');
+      ok(body.package.evidenceLink.runId === reviewRequiredFilingRelease.candidate.runId, 'Filing(approved dual-review token): evidence link runId');
+      ok(body.package.evidenceLink.certificateId === reviewRequiredFilingRelease.candidate.certificateId, 'Filing(approved dual-review token): evidence link certId');
+      ok(body.release?.decisionId === reviewRequiredFilingRelease.decisionId, 'Filing(approved dual-review token): release summary preserves decision id');
+      ok(body.release?.tokenId === approvedReleaseTokenId, 'Filing(approved dual-review token): release summary preserves token id');
+      ok(body.package.issuedPackage.fileExtension === '.xbr', 'Filing(approved dual-review token): report package uses .xbr');
+      ok(body.package.issuedPackage.files.some((f: any) => f.path === 'META-INF/reportPackage.json'), 'Filing(approved dual-review token): includes reportPackage.json');
+      const zip = await JSZip.loadAsync(Buffer.from(body.package.issuedPackage.archive.base64, 'base64'));
+      ok(zip.file(`${body.package.issuedPackage.topLevelDirectory}/META-INF/reportPackage.json`) !== null, 'Filing(approved dual-review token): zip metadata exists');
+      ok(zip.file(`${body.package.issuedPackage.topLevelDirectory}/${body.package.issuedPackage.reportPath}`) !== null, 'Filing(approved dual-review token): zip report exists');
       console.log(`    approved review release authorized=${Boolean(body.release.tokenId)}`);
     }
 
@@ -481,10 +517,13 @@ export async function runRuntimePipelineFlow(): Promise<void> {
     {
       const res = await fetch(`${BASE}/api/v1/filing/export`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${breakGlassReleaseToken}`,
-        },
+        headers: await dpopJsonHeaders({
+          keyPair: breakGlassReleaseDpop,
+          httpUri: `${BASE}/api/v1/filing/export`,
+          proofJti: 'dpop-filing-break-glass',
+          accessToken: breakGlassReleaseToken,
+          headers: { Authorization: `Bearer ${breakGlassReleaseToken}` },
+        }),
         body: JSON.stringify(breakGlassFilingRelease.candidate),
       });
       ok(res.status === 200, 'Filing(break-glass token): status 200');
@@ -495,49 +534,19 @@ export async function runRuntimePipelineFlow(): Promise<void> {
       console.log(`    overridden release authorized=${Boolean(body.release.tokenId)}`);
     }
 
-    // ═══ FILING EXPORT — authorized XBRL ═══
-    console.log('\n  [POST /api/v1/filing/export — authorized XBRL]');
-    {
-      const res = await fetch(`${BASE}/api/v1/filing/export`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${filingRelease.token}`,
-        },
-        body: JSON.stringify(filingRelease.candidate),
-      });
-      ok(res.status === 200, 'Filing: status 200');
-      const body = await res.json() as any;
-      ok(body.adapterId === 'xbrl-us-gaap-2024', 'Filing: adapter ID');
-      ok(body.format === 'xbrl', 'Filing: format = xbrl');
-      ok(body.taxonomyVersion === 'US-GAAP 2024', 'Filing: taxonomy version');
-      ok(body.mapping.mappedCount > 0, 'Filing: has mapped fields');
-      ok(body.mapping.coveragePercent > 50, 'Filing: coverage > 50%');
-      ok(body.package.content.facts.length > 0, 'Filing: package has facts');
-      ok(body.package.evidenceLink.runId === filingRelease.candidate.runId, 'Filing: evidence link runId');
-      ok(body.package.evidenceLink.certificateId === filingRelease.candidate.certificateId, 'Filing: evidence link certId');
-      ok(body.release?.authorized === true, 'Filing: release summary reports authorized');
-      ok(body.release?.decisionId === filingRelease.decisionId, 'Filing: release summary preserves decision id');
-      ok(body.release?.introspectionVerified === true, 'Filing: release summary reports active introspection verification');
-      ok(body.release?.tokenId === filingRelease.tokenId, 'Filing: release summary preserves token id');
-      ok(body.package.issuedPackage.fileExtension === '.xbr', 'Filing: report package uses .xbr');
-      ok(body.package.issuedPackage.files.some((f: any) => f.path === 'META-INF/reportPackage.json'), 'Filing: includes reportPackage.json');
-      const zip = await JSZip.loadAsync(Buffer.from(body.package.issuedPackage.archive.base64, 'base64'));
-      ok(zip.file(`${body.package.issuedPackage.topLevelDirectory}/META-INF/reportPackage.json`) !== null, 'Filing: zip metadata exists');
-      ok(zip.file(`${body.package.issuedPackage.topLevelDirectory}/${body.package.issuedPackage.reportPath}`) !== null, 'Filing: zip report exists');
-      console.log(`    mapped=${body.mapping.mappedCount}, coverage=${body.mapping.coveragePercent}%, facts=${body.package.content.facts.length}`);
-    }
-
     // ═══ FILING EXPORT — replayed release token ═══
     console.log('\n  [POST /api/v1/filing/export — replayed release token]');
     {
       const replayRes = await fetch(`${BASE}/api/v1/filing/export`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${filingRelease.token}`,
-        },
-        body: JSON.stringify(filingRelease.candidate),
+        headers: await dpopJsonHeaders({
+          keyPair: approvedReviewReleaseDpop,
+          httpUri: `${BASE}/api/v1/filing/export`,
+          proofJti: 'dpop-filing-replay',
+          accessToken: approvedReleaseToken,
+          headers: { Authorization: `Bearer ${approvedReleaseToken}` },
+        }),
+        body: JSON.stringify(reviewRequiredFilingRelease.candidate),
       });
       ok(replayRes.status === 401, 'Filing(replay): consumed token no longer authorizes export');
       const replayBody = await replayRes.json() as any;
@@ -552,9 +561,10 @@ export async function runRuntimePipelineFlow(): Promise<void> {
     // ═══ FILING EXPORT — revoked release token ═══
     console.log('\n  [POST /api/v1/filing/export — revoked release token]');
     {
+      const revokedReleaseDpop = await generateDpopKeyPair();
       const revokeRun = await fetch(`${BASE}/api/v1/pipeline/run`, {
         method: 'POST',
-        headers: pipelineRunHeaders('runtime-pipeline-revoked-release-source'),
+        headers: await dpopPipelineRunHeaders('runtime-pipeline-revoked-release-source', revokedReleaseDpop),
         body: JSON.stringify({
           candidateSql: COUNTERPARTY_SQL,
           intent: COUNTERPARTY_INTENT,
@@ -567,9 +577,44 @@ export async function runRuntimePipelineFlow(): Promise<void> {
       ok(revokeRun.status === 200, 'Filing(revoked): fresh signed pipeline run status 200');
       const revokeRunBody = await revokeRun.json() as any;
       const revokedRelease = revokeRunBody.release?.filingExport;
-      ok(typeof revokedRelease?.tokenId === 'string', 'Filing(revoked): fresh release token id present');
+      ok(typeof revokedRelease?.reviewQueueId === 'string', 'Filing(revoked): fresh review queue id present');
 
-      const revokeRes = await fetch(`${BASE}/api/v1/admin/release-tokens/${revokedRelease.tokenId}/revoke`, {
+      const revokedFirstApprovalRes = await fetch(`${BASE}/api/v1/admin/release-reviews/${revokedRelease.reviewQueueId}/approve`, {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer admin-release-secret',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          reviewerId: 'reviewer.alpha.revoked',
+          reviewerName: 'Alpha Reviewer',
+          reviewerRole: 'financial_reporting_manager',
+          note: 'First reviewer confirms the revocation test candidate before release.',
+        }),
+      });
+      ok(revokedFirstApprovalRes.status === 200, 'Filing(revoked): first reviewer approval status 200');
+
+      const revokedSecondApprovalRes = await fetch(`${BASE}/api/v1/admin/release-reviews/${revokedRelease.reviewQueueId}/approve`, {
+        method: 'POST',
+        headers: await dpopJsonHeaders({
+          keyPair: revokedReleaseDpop,
+          httpUri: `${BASE}/api/v1/admin/release-reviews/${revokedRelease.reviewQueueId}/approve`,
+          proofJti: 'dpop-revoked-review-second-approval',
+          headers: { Authorization: 'Bearer admin-secret' },
+        }),
+        body: JSON.stringify({
+          reviewerId: 'reviewer.beta.revoked',
+          reviewerName: 'Beta Reviewer',
+          reviewerRole: 'financial_reporting_manager',
+          note: 'Second reviewer closes the revocation test candidate before release.',
+        }),
+      });
+      ok(revokedSecondApprovalRes.status === 200, 'Filing(revoked): second reviewer approval status 200');
+      const revokedSecondApprovalBody = await revokedSecondApprovalRes.json() as any;
+      const revokedReleaseToken = revokedSecondApprovalBody.releaseToken;
+      ok(typeof revokedReleaseToken?.tokenId === 'string', 'Filing(revoked): fresh release token id present');
+
+      const revokeRes = await fetch(`${BASE}/api/v1/admin/release-tokens/${revokedReleaseToken.tokenId}/revoke`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -587,10 +632,13 @@ export async function runRuntimePipelineFlow(): Promise<void> {
 
       const revokedExportRes = await fetch(`${BASE}/api/v1/filing/export`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${revokedRelease.token}`,
-        },
+        headers: await dpopJsonHeaders({
+          keyPair: revokedReleaseDpop,
+          httpUri: `${BASE}/api/v1/filing/export`,
+          proofJti: 'dpop-filing-revoked',
+          accessToken: revokedReleaseToken.token,
+          headers: { Authorization: `Bearer ${revokedReleaseToken.token}` },
+        }),
         body: JSON.stringify(revokedRelease.candidate),
       });
       ok(revokedExportRes.status === 401, 'Filing(revoked): revoked token no longer authorizes export');
@@ -676,218 +724,8 @@ export async function runRuntimePipelineFlow(): Promise<void> {
       console.log(`    mismatch detected: pkiBound=${mm.chainVerification.pkiBound}, pkiVerified=${mm.trustBinding.pkiVerified}`);
     }
 
-    // ═══ ASYNC PIPELINE ═══
-    console.log('\n  [POST /api/v1/pipeline/run-async — submit]');
-    let asyncJobId: string;
-    {
-      const res = await fetch(`${BASE}/api/v1/pipeline/run-async`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Idempotency-Key': 'runtime-pipeline-async-submit',
-        },
-        body: JSON.stringify({
-          candidateSql: COUNTERPARTY_SQL,
-          intent: COUNTERPARTY_INTENT,
-          fixtures: [COUNTERPARTY_FIXTURE],
-          generatedReport: COUNTERPARTY_REPORT,
-          reportContract: COUNTERPARTY_REPORT_CONTRACT,
-          sign: true,
-        }),
-      });
-      ok(res.status === 202, 'Async: submit returns 202');
-      const body = await res.json() as any;
-      ok(body.jobId !== undefined, 'Async: jobId returned');
-      ok(body.status === 'queued', 'Async: status=queued');
-      ok(body.backendMode === 'in_process' || body.backendMode === 'bullmq', 'Async: backendMode truthful');
-      ok(typeof body.asyncQueue?.tenantPendingJobs === 'number', 'Async: queue snapshot present');
-      ok(typeof body.asyncQueue?.tenantActiveExecutions === 'number', 'Async: active execution snapshot present');
-      ok(typeof body.asyncQueue?.tenantWeightedDispatchEnforced === 'boolean', 'Async: weighted dispatch enforcement surfaced');
-      ok(typeof body.asyncQueue?.tenantWeightedDispatchWeight === 'number' || body.asyncQueue?.tenantWeightedDispatchWeight === null, 'Async: weighted dispatch weight surfaced');
-      ok(body.asyncQueue?.retryPolicy?.attempts >= 1, 'Async: retry policy present');
-      asyncJobId = body.jobId;
-      console.log(`    jobId=${asyncJobId}, status=${body.status}, backend=${body.backendMode}`);
-    }
+    await runRuntimePipelineAsyncFlow();
 
-    // Poll for completion
-    console.log('\n  [GET /api/v1/pipeline/status/:jobId — poll]');
-    {
-      // Wait a moment for the async job to complete
-      await new Promise(r => setTimeout(r, 2000));
-      const res = await fetch(`${BASE}/api/v1/pipeline/status/${asyncJobId}`);
-      ok(res.status === 200, 'Async: status endpoint 200');
-      const body = await res.json() as any;
-      ok(body.status === 'completed', 'Async: job completed');
-      ok(body.backendMode === 'in_process' || body.backendMode === 'bullmq', 'Async: status shows backendMode');
-      ok(body.result !== null, 'Async: result present');
-      ok(body.result.decision === 'pass', 'Async: decision=pass');
-      ok(body.result.certificateId !== null, 'Async: certificate issued');
-      ok(body.result.certificate !== null, 'Async: full cert in result');
-      ok(body.result.trustChain !== null, 'Async: trust chain in result');
-      ok(typeof body.attemptsMade === 'number', 'Async: attemptsMade returned');
-      ok(typeof body.maxAttempts === 'number' && body.maxAttempts >= 1, 'Async: maxAttempts returned');
-      ok(body.tenantContext?.tenantId === '__attestor_anonymous__', 'Async: tenant context returned in status');
-      console.log(`    status=${body.status}, backend=${body.backendMode}, decision=${body.result.decision}, cert=${body.result.certificateId}`);
-    }
-
-    // Status for non-existent job
-    console.log('\n  [GET /api/v1/pipeline/status/nonexistent]');
-    {
-      const res = await fetch(`${BASE}/api/v1/pipeline/status/nonexistent`);
-      ok(res.status === 404, 'Async: unknown job = 404');
-      console.log(`    unknown job rejected`);
-    }
-
-    console.log('\n  [Async Queue Hardening — tenant cap + DLQ + retry]');
-    {
-      const queueTenant = issueTenantApiKey({
-        tenantId: 'tenant-queue',
-        tenantName: 'Queue Tenant',
-        planId: 'trial',
-      });
-      const queueHeaders = {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${queueTenant.apiKey}`,
-      };
-
-      const payload = JSON.stringify({
-        candidateSql: COUNTERPARTY_SQL,
-        intent: COUNTERPARTY_INTENT,
-        fixtures: [COUNTERPARTY_FIXTURE],
-        generatedReport: COUNTERPARTY_REPORT,
-        reportContract: COUNTERPARTY_REPORT_CONTRACT,
-        sign: false,
-      });
-      const [queueAttemptA, queueAttemptB] = await Promise.all([
-        fetch(`${BASE}/api/v1/pipeline/run-async`, {
-          method: 'POST',
-          headers: {
-            ...queueHeaders,
-            'Idempotency-Key': 'runtime-pipeline-queue-cap-a',
-          },
-          body: payload,
-        }),
-        fetch(`${BASE}/api/v1/pipeline/run-async`, {
-          method: 'POST',
-          headers: {
-            ...queueHeaders,
-            'Idempotency-Key': 'runtime-pipeline-queue-cap-b',
-          },
-          body: payload,
-        }),
-      ]);
-      const queueBodies = [
-        { status: queueAttemptA.status, body: await queueAttemptA.json() as any },
-        { status: queueAttemptB.status, body: await queueAttemptB.json() as any },
-      ];
-      const acceptedQueueJob = queueBodies.find((entry) => entry.status === 202);
-      const rejectedQueueJob = queueBodies.find((entry) => entry.status === 429);
-      ok(Boolean(acceptedQueueJob), 'Async Queue: one starter job accepted');
-      ok(Boolean(rejectedQueueJob), 'Async Queue: one starter job rejected at pending cap');
-      ok(acceptedQueueJob!.body.asyncQueue.tenantIsolationEnforced === true, 'Async Queue: starter tenant isolation enforced');
-      ok(acceptedQueueJob!.body.asyncQueue.tenantPendingLimit === 1, 'Async Queue: starter tenant pending cap = 1');
-      ok(acceptedQueueJob!.body.asyncQueue.tenantActiveExecutionLimit === 1, 'Async Queue: starter tenant active execution cap = 1');
-      ok(acceptedQueueJob!.body.asyncQueue.tenantWeightedDispatchEnforced === true, 'Async Queue: starter weighted dispatch enforced');
-      ok(acceptedQueueJob!.body.asyncQueue.tenantWeightedDispatchWeight === 1, 'Async Queue: starter weighted dispatch weight = 1');
-      ok(acceptedQueueJob!.body.asyncQueue.tenantWeightedDispatchWindowMs === 400, 'Async Queue: starter weighted dispatch window = 400ms');
-      ok(rejectedQueueJob!.body.asyncQueue.tenantPendingJobs >= 1, 'Async Queue: rejected response reports pending jobs');
-      ok(rejectedQueueJob!.body.asyncQueue.tenantPendingLimit === 1, 'Async Queue: rejected response reports pending limit');
-
-      const failedTenant = issueTenantApiKey({
-        tenantId: 'tenant-dlq',
-        tenantName: 'DLQ Tenant',
-        planId: 'trial',
-      });
-      const failedSubmit = await fetch(`${BASE}/api/v1/pipeline/run-async`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${failedTenant.apiKey}`,
-          'Idempotency-Key': 'runtime-pipeline-dlq-proof',
-        },
-        body: JSON.stringify({
-          candidateSql: 123,
-          intent: 'bad-intent',
-          sign: false,
-        }),
-      });
-      ok(failedSubmit.status === 202, 'Async Queue: invalid payload still reaches worker for DLQ proof');
-      const failedSubmitBody = await failedSubmit.json() as any;
-      const failedStatus = await waitForJobStatus(
-        failedSubmitBody.jobId,
-        'failed',
-        6000,
-        { Authorization: `Bearer ${failedTenant.apiKey}` },
-      );
-      ok(
-        failedStatus.error.includes('candidateSql')
-          || failedStatus.error.includes('intent')
-          || failedStatus.error.includes('Async job payload requires')
-          || failedStatus.error.includes('non-empty string')
-          || failedStatus.error.includes('object'),
-        `Async Queue: worker exposes validation failure (actual=${failedStatus.error})`,
-      );
-      ok(failedStatus.maxAttempts >= 1, 'Async Queue: failed status reports retry ceiling');
-      ok(failedStatus.tenantContext?.tenantId === 'tenant-dlq', 'Async Queue: failed status keeps tenant context');
-
-      const adminQueueNoAuth = await fetch(`${BASE}/api/v1/admin/queue`);
-      ok(adminQueueNoAuth.status === 401, 'Admin Queue: auth required');
-
-      const adminQueueRes = await fetch(`${BASE}/api/v1/admin/queue?tenantId=tenant-dlq&planId=pro`, {
-        headers: { Authorization: 'Bearer admin-secret' },
-      });
-      ok(adminQueueRes.status === 200, 'Admin Queue: status 200');
-      const adminQueueBody = await adminQueueRes.json() as any;
-      ok(adminQueueBody.retryPolicy.attempts >= 1, 'Admin Queue: retry policy exposed');
-      ok(adminQueueBody.tenant?.tenantId === 'tenant-dlq', 'Admin Queue: tenant snapshot returned');
-      ok(adminQueueBody.counts.failed >= 1, 'Admin Queue: failed count reflected');
-      ok(typeof adminQueueBody.tenant?.weightedDispatchEnforced === 'boolean', 'Admin Queue: weighted dispatch enforcement surfaced');
-      ok(typeof adminQueueBody.tenant?.weightedDispatchWindowMs === 'number' || adminQueueBody.tenant?.weightedDispatchWindowMs === null, 'Admin Queue: weighted dispatch window surfaced');
-
-      const dlqNoAuth = await fetch(`${BASE}/api/v1/admin/queue/dlq`);
-      ok(dlqNoAuth.status === 401, 'Admin DLQ: auth required');
-
-      const dlqRes = await fetch(`${BASE}/api/v1/admin/queue/dlq?tenantId=tenant-dlq&limit=10`, {
-        headers: { Authorization: 'Bearer admin-secret' },
-      });
-      ok(dlqRes.status === 200, 'Admin DLQ: status 200');
-      const dlqBody = await dlqRes.json() as any;
-      ok(dlqBody.summary.recordCount >= 1, 'Admin DLQ: at least one failed job listed');
-      const dlqRecord = dlqBody.records.find((record: any) => record.jobId === failedSubmitBody.jobId);
-      ok(Boolean(dlqRecord), 'Admin DLQ: failed job record present');
-      ok(dlqRecord.failedReason.includes('candidateSql') || dlqRecord.failedReason.includes('intent'), 'Admin DLQ: failure reason preserved');
-      ok(dlqRecord.backendMode === 'bullmq', 'Admin DLQ: backendMode truthful');
-      ok(typeof dlqRecord.recordedAt === 'string', 'Admin DLQ: recordedAt surfaced');
-      const persistedDlq = readAsyncDeadLetterStoreSnapshot();
-      ok(persistedDlq.records.some((record) => record.jobId === failedSubmitBody.jobId), 'Admin DLQ: failed job persisted to local DLQ store');
-
-      const retryNoAuth = await fetch(`${BASE}/api/v1/admin/queue/jobs/${failedSubmitBody.jobId}/retry`, {
-        method: 'POST',
-      });
-      ok(retryNoAuth.status === 401, 'Admin Queue Retry: auth required');
-
-      const retryRes = await fetch(`${BASE}/api/v1/admin/queue/jobs/${failedSubmitBody.jobId}/retry`, {
-        method: 'POST',
-        headers: {
-          Authorization: 'Bearer admin-secret',
-          'Idempotency-Key': 'queue-retry-live-api',
-        },
-      });
-      ok(retryRes.status === 202, 'Admin Queue Retry: status 202');
-      const retryBody = await retryRes.json() as any;
-      ok(retryBody.job.jobId === failedSubmitBody.jobId, 'Admin Queue Retry: same job retried');
-      ok(!readAsyncDeadLetterStoreSnapshot().records.some((record) => record.jobId === failedSubmitBody.jobId), 'Admin Queue Retry: DLQ record removed after retry');
-
-      const retryAuditRes = await fetch(`${BASE}/api/v1/admin/audit?action=async_job.retried`, {
-        headers: { Authorization: 'Bearer admin-secret' },
-      });
-      ok(retryAuditRes.status === 200, 'Admin Queue Retry: audit status 200');
-      const retryAuditBody = await retryAuditRes.json() as any;
-      ok(retryAuditBody.summary.recordCount >= 1, 'Admin Queue Retry: retry action audited');
-      console.log(`    cap=1, failedJob=${failedSubmitBody.jobId}, dlqRecords=${dlqBody.summary.recordCount}`);
-    }
-
-    // ═══ PIPELINE RUN — bad input ═══
     console.log('\n  [POST /api/v1/pipeline/run — missing fields]');
     {
       const badInputTenant = issueTenantApiKey({

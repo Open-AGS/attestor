@@ -1,0 +1,47 @@
+import {
+  MODULAR_ACCOUNT_ADAPTER_KINDS,
+  MODULAR_ACCOUNT_ADAPTER_PROFILES,
+  MODULAR_ACCOUNT_ADAPTER_SPEC_VERSION,
+  MODULAR_ACCOUNT_CHECKS,
+  MODULAR_ACCOUNT_EXECUTION_CALL_TYPES,
+  MODULAR_ACCOUNT_EXECUTION_FUNCTIONS,
+  MODULAR_ACCOUNT_EXECUTION_TYPES,
+  MODULAR_ACCOUNT_MODULE_KINDS,
+  MODULAR_ACCOUNT_OUTCOMES,
+  MODULAR_ACCOUNT_STANDARDS,
+  MODULAR_ACCOUNT_VALIDATION_FUNCTIONS,
+  type ModularAccountAdaptersDescriptor,
+} from './modular-account-adapters-types.js';
+
+export function modularAccountAdaptersDescriptor(): ModularAccountAdaptersDescriptor {
+  return Object.freeze({
+    version: MODULAR_ACCOUNT_ADAPTER_SPEC_VERSION,
+    adapterKinds: MODULAR_ACCOUNT_ADAPTER_KINDS,
+    standards: MODULAR_ACCOUNT_STANDARDS,
+    moduleKinds: MODULAR_ACCOUNT_MODULE_KINDS,
+    callTypes: MODULAR_ACCOUNT_EXECUTION_CALL_TYPES,
+    executionTypes: MODULAR_ACCOUNT_EXECUTION_TYPES,
+    validationFunctions: MODULAR_ACCOUNT_VALIDATION_FUNCTIONS,
+    executionFunctions: MODULAR_ACCOUNT_EXECUTION_FUNCTIONS,
+    outcomes: MODULAR_ACCOUNT_OUTCOMES,
+    checks: MODULAR_ACCOUNT_CHECKS,
+    profiles: MODULAR_ACCOUNT_ADAPTER_PROFILES,
+    references: Object.freeze([
+      'ERC-7579',
+      'ERC-6900',
+      'ERC-4337',
+      'ERC-1271',
+      'ERC-165',
+      'ERC-2771',
+      'module-allowlist',
+      'audit-evidence',
+      'module-hook',
+      'plugin-manifest',
+      'runtime-validation',
+      'release-layer',
+      'release-policy-control-plane',
+      'release-enforcement-plane',
+      'attestor-crypto-authorization-simulation',
+    ]),
+  });
+}

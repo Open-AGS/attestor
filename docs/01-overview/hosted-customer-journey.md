@@ -26,7 +26,7 @@ The hosted path should be easy to understand:
 2. receive the first API key
 3. make the first Attestor API call before consequence
 4. enforce the customer-side admission gate before the downstream action
-5. upgrade through Stripe Checkout if a paid hosted plan is needed
+5. create a paid workflow entitlement through Stripe Checkout if production workflow access is needed
 
 After that, the same account remains the control point for keys, usage, entitlement, and billing.
 
@@ -36,12 +36,12 @@ The concrete account-plane visibility map lives in [Hosted account visibility](h
 
 The first hosted commercial flow is:
 
-1. the customer reads the docs and chooses a hosted plan
+1. the customer reads the docs and chooses the trial or workflow path
 2. the customer signs up for a hosted account
 3. Attestor returns the first tenant API key
 4. the customer calls Attestor from their own environment before a consequence
-5. the customer upgrades through Stripe Checkout when moving to a paid hosted plan
-6. the same account carries the paid entitlement after checkout
+5. the customer starts Stripe Checkout for a named paid workflow entitlement
+6. the same account carries the workflow entitlement after checkout
 7. the customer manages keys, usage, and billing from the hosted account plane
 
 ```mermaid
@@ -65,8 +65,8 @@ Use this sequence:
 4. project the response with `attestor/consequence-admission` and enforce the customer-side gate before the downstream action
 5. inspect usage or entitlement with `GET /api/v1/account/usage`, `GET /api/v1/account/entitlement`, or `GET /api/v1/account`
 6. inspect feature or billing state with `GET /api/v1/account/features`, `GET /api/v1/account/billing/export`, or `GET /api/v1/account/billing/reconciliation`
-7. start checkout for a paid hosted plan
-   send `planId` (`starter`, `pro`, `scale`, or `enterprise`) to `POST /api/v1/account/billing/checkout`
+7. start checkout for a paid workflow entitlement
+   send `workflowAction`, `workflowId`, `tier`, `consequencePack`, and the required downstream/gate digests to `POST /api/v1/account/billing/workflows/checkout`
 8. open the returned `checkoutUrl` and finish payment in Stripe
 9. keep using the same account after checkout completes
 10. manage billing later through `POST /api/v1/account/billing/portal`
@@ -77,10 +77,10 @@ The concrete first API-call and gate example lives in [First hosted API call](ho
 
 The hosted account plane only needs to cover:
 
-- current plan, entitlement, and feature state
+- current Trial account access, workflow entitlement, and feature state
 - usage against quota and rate limit
 - API key lifecycle
-- billing checkout, billing portal, export, and reconciliation visibility
+- workflow checkout, billing portal, export, and reconciliation visibility
 - onboarding and docs links
 
 That is enough to make the hosted product purchasable and usable.
@@ -102,7 +102,8 @@ The canonical contract lives in [Hosted journey contract](hosted-journey-contrac
 - `POST /api/v1/account/api-keys/:id/deactivate`
 - `POST /api/v1/account/api-keys/:id/reactivate`
 - `POST /api/v1/account/api-keys/:id/revoke`
-- `POST /api/v1/account/billing/checkout`
+- `GET /api/v1/account/billing/workflows`
+- `POST /api/v1/account/billing/workflows/checkout`
 - `POST /api/v1/account/billing/portal`
 - `GET /api/v1/account/billing/export`
 - `GET /api/v1/account/billing/reconciliation`

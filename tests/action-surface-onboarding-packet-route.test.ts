@@ -46,7 +46,7 @@ const tenantA: TenantContext = {
   tenantName: 'Onboarding Tenant A',
   authenticatedAt: '2026-05-12T18:00:00.000Z',
   source: 'api_key',
-  planId: 'starter',
+  planId: 'trial',
   monthlyRunQuota: 100,
 };
 

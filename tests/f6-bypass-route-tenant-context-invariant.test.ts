@@ -120,7 +120,7 @@ async function run() {
       ok(response.status === 200, 'non-bypass route remains routable in local-dev anonymous mode');
       ok(body.rawTenantId === ANONYMOUS_TENANT_ID, 'non-bypass route overwrites spoofed tenant id');
       ok(body.rawTenantSource === 'anonymous', 'non-bypass route overwrites spoofed tenant source');
-      ok(body.rawPlanId === 'developer', 'non-bypass route overwrites spoofed plan id');
+      ok(body.rawPlanId === 'trial', 'non-bypass route overwrites spoofed plan id');
       ok(body.verified === 'true', 'non-bypass route marks internally-written tenant context verified');
       ok(hasVerifiedTenantContext(new Headers({ [TENANT_CONTEXT_VERIFIED_HEADER]: 'true' })), 'verified helper accepts only the internal verified marker');
       ok(body.currentTenant?.tenantId === ANONYMOUS_TENANT_ID, 'currentTenant reads only internally-written tenant context');

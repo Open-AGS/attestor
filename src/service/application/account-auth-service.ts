@@ -10,6 +10,10 @@ import { TenantKeyStoreError, type TenantKeyRecord } from '../tenant-key-store.j
 import type { TenantContext } from '../tenant-isolation.js';
 import type { UsageContext } from '../usage-meter.js';
 import { validateAccountPassword } from '../account/account-password-policy.js';
+import {
+  TRIAL_ACCOUNT_ENTITLEMENT,
+  listWorkflowBillingTierIds,
+} from '../workflow-entitlement-catalog.js';
 
 interface SyncHostedBillingEntitlementOptions {
   lastEventId?: string | null;
@@ -55,8 +59,10 @@ export interface AccountAuthSignupResult {
   commercial: {
     currentPhase: 'evaluation' | 'paid';
     includedMonthlyRunQuota: number | null;
-    firstHostedPlanId: string;
-    firstHostedPlanTrialDays: number | null;
+    trialAccountEntitlementId: 'trial';
+    trialDurationDays: number;
+    workflowBillingTierIds: string[];
+    workflowCheckoutRoute: '/api/v1/account/billing/workflows/checkout';
   };
 }
 
@@ -103,7 +109,6 @@ export interface AccountAuthServiceDeps {
   resolvePlanSpec: typeof PlanCatalog.resolvePlanSpec;
   SELF_HOST_PLAN_ID: typeof PlanCatalog.SELF_HOST_PLAN_ID;
   DEFAULT_HOSTED_PLAN_ID: typeof PlanCatalog.DEFAULT_HOSTED_PLAN_ID;
-  resolvePlanStripeTrialDays: typeof PlanCatalog.resolvePlanStripeTrialDays;
   provisionHostedAccountState: typeof ControlPlaneStore.provisionHostedAccountState;
   issueAccountSessionState: typeof ControlPlaneStore.issueAccountSessionState;
   recordAccountUserLoginState: typeof ControlPlaneStore.recordAccountUserLoginState;
@@ -293,8 +298,10 @@ export function createAccountAuthService(deps: AccountAuthServiceDeps): AccountA
         commercial: {
           currentPhase: resolvedPlan.plan?.intendedFor === 'evaluation' ? 'evaluation' : 'paid',
           includedMonthlyRunQuota: resolvedPlan.monthlyRunQuota,
-          firstHostedPlanId: deps.DEFAULT_HOSTED_PLAN_ID,
-          firstHostedPlanTrialDays: deps.resolvePlanStripeTrialDays(deps.DEFAULT_HOSTED_PLAN_ID).trialDays,
+          trialAccountEntitlementId: TRIAL_ACCOUNT_ENTITLEMENT.id,
+          trialDurationDays: TRIAL_ACCOUNT_ENTITLEMENT.durationDays,
+          workflowBillingTierIds: listWorkflowBillingTierIds(),
+          workflowCheckoutRoute: '/api/v1/account/billing/workflows/checkout',
         },
       };
     },

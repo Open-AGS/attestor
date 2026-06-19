@@ -96,52 +96,45 @@ What they get:
 - a commercial deployment path under customer control
 - enterprise packaging around deployment boundary, scale, retention, support, KMS, and operating requirements
 
-## Hosted Plans
+## Account Trial And Workflow Tiers
 
-List prices below are USD. Operators may configure local Stripe currency and tax behavior separately, but the product positioning should use this table as the public commercial model.
+List prices below are USD. Operators may configure local Stripe currency and
+tax behavior separately, but the repository billing model is intentionally not
+an account-plan ladder. The account starts in a free `trial` evaluation state;
+paid commercial access is attached to named workflow subscription items.
 
-| Plan | Price | Included usage | Overage | Intended use |
+| Billing surface | Price | Included usage | Overage | Intended use |
 |---|---:|---:|---:|---|
-| `developer` | free | `500` admissions / month | none; upgrade required | perpetual individual evaluation, local proof work, and low-volume shadow/warn testing |
-| `trial` | free for `60` days | `5,000` admissions total | none; converts to `developer` or paid plan | serious shadow-mode evaluation with Pro-like discovery before enforcement rollout |
-| `starter` | USD `$299` / month or `$2,990` / year | `25,000` admissions / month | `$0.05` / admission | first real hosted production workflow |
-| `pro` | USD `$1,499` / month or `$14,990` / year | `250,000` admissions / month | `$0.025` / admission | multiple workflows, one business unit, or a growing AI/agent platform |
-| `scale` | USD `$5,999` / month, contract-led | `1,000,000` admissions / month | `$0.015` / admission | high-volume hosted deployment with stricter support, retention, and integration needs |
-| `enterprise` | from USD `$50,000` / year | custom, normally `5,000,000`+ admissions / month | custom | self-hosted, air-gapped, dedicated, regulated, or negotiated deployment boundary |
+| `trial` account entitlement | free | `10,000` admissions total over `30` days | none; hard stop | evaluate observed consequence surfaces before buying a workflow |
+| `pilot-workflow` | USD `$99` / month | `15,000` admissions / month | none; hard stop | one selected pack in observe, warn, simulation, or scoped rollout review |
+| `starter-workflow` | USD `$299` / month | `25,000` admissions / month | `$0.05` / admission | one customer-gated production workflow for one selected pack |
+| `pro-workflow` | USD `$999` / month | `250,000` admissions / month | `$0.025` / admission | one advanced workflow with all current hosted packs, SSO, RBAC, and dual-control activation |
+| negotiated deployment | contract | custom | custom | customer-operated, dedicated, air-gapped, regulated, or bespoke support/retention boundary |
 
-## Plan Details
+There is no self-service hosted account billing plan named `developer`,
+`starter`, `pro`, `scale`, `enterprise`, or `community` in the current billing
+model. Legacy account-plan ids may remain in local compatibility records for
+old tenant keys, but they are not Stripe checkout products and they do not own
+paid entitlement state.
 
-### Developer
+## Billing Surface Details
 
-Perpetual free plan, not a short trial.
+### Trial Account Entitlement
 
-- `500` admissions per month
-- shadow and warn mode only
-- one user
-- no SSO
-- community support
-- `7` day audit retention
-- public or local proof artifacts only
+The trial is an account-level onboarding state for serious evaluation, not a
+Stripe subscription item and not a permanent free plan.
 
-Developer exists to keep the funnel alive after evaluation. It should not carry production enforcement promises.
-
-### Free Shadow Trial
-
-The trial is an onboarding state for serious evaluation, not a permanent plan.
-
-- `60` day window
-- `5,000` admissions total
-- Pro-like feature discovery in shadow mode
-- Policy Foundry discovery preview
-- Policy Twin simulation preview
-- readiness and no-go scoring preview
-- policy candidate discovery
+- `30` day window
+- `10,000` admissions total
+- up to `2` shadow surfaces
+- up to `2` account users
+- `14` day retention
 - no card required
-- converts to Developer, Starter, Pro, Scale, or Enterprise
+- hard-limited before production workflow overage can apply
 
-High-consequence teams need enough time to observe real action paths before
-asking workflows to stop. Fourteen days is usually too short for finance,
-crypto, healthcare, custody, or regulated operational buyers.
+The trial lets high-consequence teams observe real action paths before asking a
+workflow to review or stop actions. Production enforcement still needs a named
+workflow entitlement and a customer PEP/gate.
 
 ## Policy Foundry Packaging Boundary
 
@@ -156,14 +149,13 @@ candidates and missing controls from observed shadow actions.
 
 The commercial boundary is:
 
-| Plan | Policy Foundry posture |
+| Billing surface | Policy Foundry posture |
 |---|---|
-| `developer` | Basic shadow summary, action risk inventory, limited policy candidate preview, no production enforcement. |
-| `trial` | Time-boxed Pro-like shadow discovery, Policy Twin preview, readiness and no-go scoring preview, no production enforcement. |
-| `starter` | One production workflow with basic Policy Foundry, Policy Twin, active questions, review/enforce ladder, and short-retention audit export. |
-| `pro` | Advanced confidence scoring, candidate red-team replay, multiple workflows, RBAC/SSO, dual approval, and longer retention. |
-| `scale` | Higher-volume discovery, custom templates, drift detection, stronger support, and longer retention. |
-| `enterprise` | Customer-operated, dedicated, air-gapped, regulated, or custom pack deployment boundaries. |
+| `trial` account entitlement | Shadow discovery, action risk inventory, Policy Twin preview, readiness and no-go scoring preview, no production enforcement. |
+| `pilot-workflow` | One selected pack in observe, warn, review-simulation, and scoped-rollout-review modes with hosted review surface and audit export. |
+| `starter-workflow` | One selected customer-gated production workflow with Policy Foundry, Policy Twin, active questions, review/enforce ladder, and handoff artifacts. |
+| `pro-workflow` | One advanced workflow with all current hosted packs, candidate red-team replay, drift/policy-debt detection, RBAC, SSO, dual-control activation, and longer retention. |
+| negotiated deployment | Customer-operated, dedicated, air-gapped, regulated, or custom pack deployment boundaries. |
 
 Security minimums must not become paid-only features. Redaction, proof
 verification, tenant isolation, fail-closed semantics, offline verifier access,
@@ -187,31 +179,52 @@ review-only patch packs, one-command self-onboarding, outcome feedback,
 drift/policy-debt detection, the commercial boundary contract, and hosted
 Foundry billing entitlement enforcement.
 
-### Starter
+### Pilot Workflow
 
-First self-service paid hosted plan.
+First self-service paid workflow for bounded rollout.
+
+- `15,000` admissions per month
+- observe, warn, review-simulation, and scoped-rollout-review modes
+- one selected consequence pack
+- `3` account users
+- hosted review surface and hosted UI flow
+- audit export
+- `30` day retention
+- hard stop at quota
+
+Pilot Workflow does not carry automatic paid overage and does not unlock enforce
+mode. It is for real workflow discovery and controlled rollout rehearsal before
+production enforcement.
+
+### Starter Workflow
+
+First self-service paid workflow for customer-gated production use.
 
 - `25,000` admissions per month
 - shadow, warn, review, and enforce modes
-- three team members
-- one consequence pack enabled for production use
+- `5` account users
+- one selected consequence pack enabled for production use
 - reviewer queue
 - policy authoring and activation workflow
 - JSON/CSV audit export
 - email or chat support with next-business-day target
-- `30` day audit retention
+- `90` day audit retention
 - target hosted SLA posture: `99.5%`
 - overage: `$0.05` per admission
 
-Starter should be strong enough for one real production workflow. Do not make enforce mode a Pro-only feature; the product is an authorization gate, not only an analytics dashboard.
+Starter Workflow should be strong enough for one real production workflow. Do
+not make enforce mode a Pro-only feature; the product is an authorization gate,
+not only an analytics dashboard. Enforce mode still requires a customer
+PEP/gate; the workflow entitlement does not create downstream authority by
+itself.
 
-### Pro
+### Pro Workflow
 
-Primary growth-stage plan.
+Advanced self-service workflow.
 
 - `250,000` admissions per month
-- all Starter features
-- finance and crypto packs included
+- all Starter Workflow features
+- all current hosted consequence packs inside one workflow boundary
 - `25` team members
 - RBAC
 - SSO with OIDC or SAML
@@ -224,7 +237,8 @@ Primary growth-stage plan.
 - target hosted SLA posture: `99.9%`
 - overage: `$0.025` per admission
 
-Pro is where procurement-grade B2B features begin. SSO belongs here because it is a common deal requirement, not an exotic enterprise luxury.
+Pro Workflow is where procurement-grade B2B features begin. SSO belongs here
+because it is a common deal requirement, not an exotic enterprise luxury.
 
 Crypto packs are package-boundary SDK surfaces, not hosted crypto route claims.
 Using them requires a customer-side adapter or PEP that imports the Attestor
@@ -232,28 +246,11 @@ crypto packages and binds wallet, Safe, bundler, custody, x402, or solver
 execution to Attestor admission results. Attestor does not become the wallet,
 custodian, signer, broadcaster, facilitator, or settlement verifier.
 
-### Scale
-
-High-volume hosted plan, still below custom enterprise deployment.
-
-- `1,000,000` admissions per month
-- all Pro features
-- multi-region hosted posture where available
-- named customer success owner
-- `1` hour business-hours response target
-- target hosted SLA posture: `99.95%`
-- `3` year audit retention
-- compliance-oriented evidence exports
-- one custom integration or custom pack scoping workshop included
-- overage: `$0.015` per admission
-
-Scale is priced to make upgrade economically obvious before Pro overage becomes painful.
-
-### Enterprise
+### Negotiated Deployment
 
 Negotiated commercial path.
 
-- custom admission volume, normally `5,000,000`+ admissions per month
+- custom admission volume
 - customer-operated deployment option
 - air-gapped or on-premises deployment option
 - dedicated infrastructure option
@@ -264,7 +261,10 @@ Negotiated commercial path.
 - bespoke consequence-pack and integration terms
 - pre-release feature access when commercially approved
 
-Enterprise is where banks, insurers, regulated healthcare operators, custody providers, large AI platforms, and strict data-boundary customers fit.
+Negotiated deployment is where banks, insurers, regulated healthcare operators,
+custody providers, large AI platforms, and strict data-boundary customers fit.
+It is not a self-service hosted account plan and is not wired through the legacy
+Stripe account-plan checkout.
 
 ## Add-On Modules
 
@@ -274,16 +274,16 @@ Enterprise is where banks, insurers, regulated healthcare operators, custody pro
 | Compliance Pack | USD `$3,000` / year | SOC 2-oriented evidence package and auditor-ready documentation exports |
 | External Audit Co-Signing | USD `$5,000` / audit window | Attestor co-signing support for customer external audit packets |
 | Custom Domain Pack Development | USD `$50,000` - `$250,000` engagement | bespoke consequence pack for insurance claims, energy, procurement, government, or other customer domain |
-| 24/7 Premium Support | `+20%` on tier | Pro, Scale, and Enterprise support uplift |
+| 24/7 Premium Support | `+20%` on tier | Pro Workflow and negotiated deployment support uplift |
 | Private Policy Bundle Mirror | USD `$500` / month | signed customer-specific policy bundle distribution endpoint |
 
 Add-ons should not fragment the core trust story. They extend the same admission and proof model into deeper domains or operating requirements.
 
 ## Overage Philosophy
 
-Paid hosted overage should be soft by default.
+Paid workflow overage should be soft by default for production workflow tiers.
 
-When a paid customer exceeds included usage:
+When a paid workflow exceeds included usage:
 
 - continue processing admissions
 - mark usage as overage
@@ -292,12 +292,14 @@ When a paid customer exceeds included usage:
 - expose overage clearly in account usage and billing export
 - avoid surprise hard stops on production consequence gates
 
-Hard quota remains appropriate for free Developer and Trial plans. Paid production customers should not discover on a Friday night that all consequence gates stopped because billing crossed a line.
+Hard quota remains appropriate for the free Trial account entitlement and Pilot
+Workflow. Paid production customers should not discover on a Friday night that
+all consequence gates stopped because billing crossed a line.
 
-The Stripe runtime contract for the default hosted model is:
+The Stripe runtime contract for the hosted workflow model is:
 
-- base monthly prices: `ATTESTOR_STRIPE_PRICE_STARTER`, `ATTESTOR_STRIPE_PRICE_PRO`, `ATTESTOR_STRIPE_PRICE_SCALE`
-- metered overage prices: `ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER`, `ATTESTOR_STRIPE_OVERAGE_PRICE_PRO`, `ATTESTOR_STRIPE_OVERAGE_PRICE_SCALE`
+- base monthly prices: `ATTESTOR_STRIPE_PRICE_PILOT_WORKFLOW`, `ATTESTOR_STRIPE_PRICE_STARTER_WORKFLOW`, `ATTESTOR_STRIPE_PRICE_PRO_WORKFLOW`
+- metered overage prices: `ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER_WORKFLOW`, `ATTESTOR_STRIPE_OVERAGE_PRICE_PRO_WORKFLOW`
 - overage meter event name: `attestor_admission_overage` unless `ATTESTOR_STRIPE_OVERAGE_METER_EVENT_NAME` is explicitly overridden
 - meter payload keys: `stripe_customer_id` and `value`
 
@@ -305,10 +307,10 @@ The Stripe runtime contract for the default hosted model is:
 
 The customer path should stay simple:
 
-1. use Developer or Trial to observe the consequence surface
-2. upgrade through Stripe Checkout for Starter or Pro
-3. talk to sales for Scale when volume, support, or retention needs are larger
-4. move to Enterprise for customer-operated deployment, air-gapped operation, custom compliance, or negotiated legal terms
+1. use Trial to observe the consequence surface
+2. create a paid workflow through Stripe Checkout for Pilot, Starter Workflow, or Pro Workflow
+3. talk to sales for higher-volume, support, retention, or customer-operated deployment needs
+4. keep negotiated deployment offline/operator-owned for air-gapped operation, custom compliance, or negotiated legal terms
 5. keep the same account plane for keys, usage, billing, entitlement, and proof visibility
 
 For the detailed hosted signup and checkout flow, see [Hosted customer journey](hosted-customer-journey.md). For exact route order, auth boundaries, success signals, and failure signals, see [Hosted journey contract](hosted-journey-contract.md).
@@ -326,24 +328,18 @@ That applies whether Attestor is used through a hosted paid plan or through a cu
 
 ## Current Implementation Status
 
-This pricing model is now the runtime plan-catalog shape for hosted account provisioning, quota defaults, rate limits, admin plan views, Stripe price lookup, and usage response naming.
+This pricing model is now split between account access/quota compatibility and workflow billing entitlements.
 
 Current shipped hosted implementation uses:
 
-- plan ids: `developer`, `trial`, `starter`, `pro`, `scale`, `enterprise`
-- legacy alias: `community` resolves to `developer` for backward compatibility with older local records
-- usage meter name: `monthly_admission_runs`
-- paid hosted quota behavior: Starter, Pro, and Scale continue into soft overage; Developer and Free Shadow Trial remain hard-limited
-- first free hosted path: `developer` with `500` admissions per month
-- free shadow trial plan metadata: `trial` with `60` days and `5,000` admissions
-- required paid Stripe price env vars: `ATTESTOR_STRIPE_PRICE_STARTER`, `ATTESTOR_STRIPE_PRICE_PRO`, and `ATTESTOR_STRIPE_PRICE_SCALE`
-- required paid Stripe overage price env vars: `ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER`, `ATTESTOR_STRIPE_OVERAGE_PRICE_PRO`, and `ATTESTOR_STRIPE_OVERAGE_PRICE_SCALE`
-- Stripe overage meter events are emitted for over-quota paid admissions through the `attestor_admission_overage` meter event name
-- optional Enterprise self-service price env var: `ATTESTOR_STRIPE_PRICE_ENTERPRISE`, only when Enterprise checkout is intentionally enabled
-
-One commercial behavior is still a separate lifecycle step and must not be overclaimed:
-
-- The `trial` plan exists in the catalog, but signup still provisions Developer by default; trial invitation/conversion lifecycle is a separate implementation step.
+- account access ids: `trial` plus legacy compatibility records for older local tenant keys
+- account usage meter name: `monthly_admission_runs`
+- workflow usage meter name: `workflow_monthly_admissions`
+- first free hosted path: `trial` with `10,000` admissions over `30` days
+- paid workflow tiers: `pilot-workflow`, `starter-workflow`, `pro-workflow`
+- required paid Stripe workflow price env vars: `ATTESTOR_STRIPE_PRICE_PILOT_WORKFLOW`, `ATTESTOR_STRIPE_PRICE_STARTER_WORKFLOW`, and `ATTESTOR_STRIPE_PRICE_PRO_WORKFLOW`
+- required paid Stripe workflow overage price env vars: `ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER_WORKFLOW` and `ATTESTOR_STRIPE_OVERAGE_PRICE_PRO_WORKFLOW`
+- Stripe overage meter events are emitted for over-quota workflow admissions through the `attestor_admission_overage` meter event name
 
 ## Hosted Commercial Surface
 
@@ -367,9 +363,9 @@ The buyer-facing sizing worksheet and ROI formula lives in [Pricing ROI calculat
 The operator-side Stripe and billing bootstrap lives in
 [Stripe commercial bootstrap](stripe-commercial-bootstrap.md). That page must
 stay operator-facing and should not become a second public pricing page. Its
-workflow-based launch-prep notes do not change this document's current public
-packaging source until workflow checkout, webhook convergence, runtime
-entitlement loading, and public copy are intentionally switched together.
+workflow-based setup instructions implement this document's current billing
+model: account-level trial first, then workflow subscription items through
+Stripe Checkout and signed webhook convergence.
 
 ## Product Truth To Preserve
 

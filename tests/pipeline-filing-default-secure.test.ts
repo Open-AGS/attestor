@@ -77,7 +77,7 @@ const tenantContext: TenantContext = {
   tenantName: 'Filing export tenant',
   authenticatedAt: '2026-05-31T10:00:00.000Z',
   source: 'api_key',
-  planId: 'pro',
+  planId: 'trial',
   monthlyRunQuota: 100,
 };
 

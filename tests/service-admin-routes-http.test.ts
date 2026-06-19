@@ -84,7 +84,7 @@ function testDeps(options: {
     adminTenantKeyView(record: Record<string, unknown>) {
       return { id: record.id, tenantId: record.tenantId };
     },
-    DEFAULT_HOSTED_PLAN_ID: 'starter',
+    DEFAULT_HOSTED_PLAN_ID: 'trial',
   } as unknown as AdminRouteDeps;
 }
 

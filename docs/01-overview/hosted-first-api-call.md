@@ -51,12 +51,12 @@ Expected shape:
 {
   "tenantContext": {
     "source": "api_key",
-    "planId": "developer"
+    "planId": "trial"
   },
   "usage": {
     "used": 0,
-    "quota": 10,
-    "remaining": 10,
+    "quota": 10000,
+    "remaining": 10000,
     "enforced": true,
     "hardLimit": true,
     "overage": false,
@@ -137,11 +137,11 @@ Expected shape:
   "proofMode": "offline_fixture",
   "tenantContext": {
     "source": "api_key",
-    "planId": "developer"
+    "planId": "trial"
   },
   "usage": {
     "used": 1,
-    "remaining": 9,
+    "remaining": 9999,
     "overage": false,
     "overageUnits": 0
   }
@@ -203,7 +203,7 @@ The verify payload is built from the signed pipeline response and must include a
 - `401`: the tenant API key is missing, invalid, or revoked
 - `400`: the request shape is invalid, usually missing `candidateSql` or `intent`
 - `429`: free/trial hard quota or rate limit blocks the run; the rejected run does not become a downstream consequence
-- paid hosted overage: Starter, Pro, and Scale continue returning `200`, keep `remaining` at `0`, mark `usage.overage` plus `usage.overageUnits`, and include `billingMetering` with the Stripe meter-event status for that over-quota run
+- paid workflow overage: Starter Workflow and Pro Workflow continue returning `200`, keep `remaining` at `0`, mark workflow usage overage plus overage units, and include Stripe workflow meter-event status for that over-quota run
 - non-allowed decision: the downstream system must fail closed or route to review
 
 ## Where To Go Next

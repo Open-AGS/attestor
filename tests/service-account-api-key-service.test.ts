@@ -114,7 +114,7 @@ function createDeps(overrides: Partial<AccountApiKeyServiceDeps> = {}): AccountA
       id: 'tenant_123',
       tenantId: 'tenant_123',
       tenantName: 'Acme Tenant',
-      planId: 'pro',
+      planId: 'trial',
       monthlyRunQuota: 500,
       createdAt: now,
       updatedAt: now,
@@ -194,7 +194,7 @@ async function testIssueUsesTenantPlanAndSyncsEntitlement(): Promise<void> {
 
   assert.equal(result.apiKey, 'atk_created');
   assert.deepEqual(events, [
-    'issue:pro:500:Acme Tenant',
+    'issue:trial:500:Acme Tenant',
     'sync:tenant_123:account.api_keys.issue:2026-04-21T10:00:00.000Z',
   ]);
 }

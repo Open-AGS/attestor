@@ -112,10 +112,11 @@ async function main(): Promise<void> {
     process.env.ATTESTOR_BILLING_SUCCESS_URL = 'https://attestor.dev/billing/success';
     process.env.ATTESTOR_BILLING_CANCEL_URL = 'https://attestor.dev/billing/cancel';
     process.env.ATTESTOR_BILLING_PORTAL_RETURN_URL = 'https://attestor.dev/settings/billing';
-    process.env.ATTESTOR_STRIPE_PRICE_STARTER = 'price_starter_monthly';
-    process.env.ATTESTOR_STRIPE_PRICE_PRO = 'price_pro_monthly';
-    process.env.ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER = 'price_starter_overage_monthly';
-    process.env.ATTESTOR_STRIPE_OVERAGE_PRICE_PRO = 'price_pro_overage_monthly';
+    process.env.ATTESTOR_STRIPE_PRICE_PILOT_WORKFLOW = 'price_pilot_workflow_monthly';
+    process.env.ATTESTOR_STRIPE_PRICE_STARTER_WORKFLOW = 'price_starter_workflow_monthly';
+    process.env.ATTESTOR_STRIPE_PRICE_PRO_WORKFLOW = 'price_pro_workflow_monthly';
+    process.env.ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER_WORKFLOW = 'price_starter_workflow_overage_monthly';
+    process.env.ATTESTOR_STRIPE_OVERAGE_PRICE_PRO_WORKFLOW = 'price_pro_workflow_overage_monthly';
     process.env.ATTESTOR_SESSION_COOKIE_SECURE = 'false';
     process.env.ATTESTOR_EMAIL_DELIVERY_MODE = 'manual';
     process.env.ATTESTOR_CONTROL_PLANE_PG_URL = '';
@@ -158,7 +159,7 @@ async function main(): Promise<void> {
         contactEmail: 'ops@passkeys.example',
         tenantId: 'tenant-passkeys',
         tenantName: 'Passkeys Tenant',
-        planId: 'starter',
+        planId: 'trial',
       }),
     });
     ok(createAccountRes.status === 201, 'Admin account create: 201');

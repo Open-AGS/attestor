@@ -743,7 +743,7 @@ export async function runRuntimePipelineFlow(): Promise<void> {
       const queueTenant = issueTenantApiKey({
         tenantId: 'tenant-queue',
         tenantName: 'Queue Tenant',
-        planId: 'starter',
+        planId: 'trial',
       });
       const queueHeaders = {
         'Content-Type': 'application/json',
@@ -796,7 +796,7 @@ export async function runRuntimePipelineFlow(): Promise<void> {
       const failedTenant = issueTenantApiKey({
         tenantId: 'tenant-dlq',
         tenantName: 'DLQ Tenant',
-        planId: 'pro',
+        planId: 'trial',
       });
       const failedSubmit = await fetch(`${BASE}/api/v1/pipeline/run-async`, {
         method: 'POST',
@@ -893,7 +893,7 @@ export async function runRuntimePipelineFlow(): Promise<void> {
       const badInputTenant = issueTenantApiKey({
         tenantId: 'tenant-bad-input',
         tenantName: 'Bad Input Tenant',
-        planId: 'pro',
+        planId: 'trial',
       });
       const res = await fetch(`${BASE}/api/v1/pipeline/run`, {
         method: 'POST',
@@ -928,7 +928,7 @@ export async function runRuntimePipelineFlow(): Promise<void> {
       const notFoundTenant = issueTenantApiKey({
         tenantId: 'tenant-not-found',
         tenantName: 'Not Found Tenant',
-        planId: 'pro',
+        planId: 'trial',
       });
       const res = await fetch(`${BASE}/api/v1/nonexistent`, {
         headers: { Authorization: `Bearer ${notFoundTenant.apiKey}` },

@@ -49,6 +49,8 @@ import { resetBillingEventLedgerForTests } from '../../src/service/billing/billi
 export { resetBillingEventLedgerForTests };
 import { resetHostedBillingEntitlementStoreForTests } from '../../src/service/billing/billing-entitlement-store.js';
 export { resetHostedBillingEntitlementStoreForTests };
+import { resetWorkflowEntitlementStoreForTests } from '../../src/service/workflow-entitlement-store.js';
+export { resetWorkflowEntitlementStoreForTests };
 import { resetHostedEmailDeliveryEventStoreForTests } from '../../src/service/async/email-delivery-event-store.js';
 export { resetHostedEmailDeliveryEventStoreForTests };
 import { resetObservabilityForTests } from '../../src/service/observability.js';

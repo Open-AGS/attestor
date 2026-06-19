@@ -41,13 +41,13 @@ export async function runAdminTenantKeyFlow(ctx: LiveApiHostedContext): Promise<
         body: JSON.stringify({
           tenantId: 'tenant-admin',
           tenantName: 'Admin Co',
-          planId: 'pro',
+          planId: 'trial',
         }),
       });
       ok(issueRes.status === 201, 'Admin API: issue key created');
       const issueBody = await issueRes.json() as any;
       ok(typeof issueBody.key.apiKey === 'string', 'Admin API: plaintext apiKey returned once');
-      ok(issueBody.key.planId === 'pro', 'Admin API: plan persisted');
+      ok(issueBody.key.planId === 'trial', 'Admin API: plan persisted');
       ok(issueBody.key.monthlyRunQuota === 250000, 'Admin API: plan default quota applied');
 
       const issueReplayRes = await fetch(`${BASE}/api/v1/admin/tenant-keys`, {
@@ -60,7 +60,7 @@ export async function runAdminTenantKeyFlow(ctx: LiveApiHostedContext): Promise<
         body: JSON.stringify({
           tenantId: 'tenant-admin',
           tenantName: 'Admin Co',
-          planId: 'pro',
+          planId: 'trial',
         }),
       });
       ok(issueReplayRes.status === 201, 'Admin API: tenant issue replay preserves status');
@@ -167,7 +167,7 @@ export async function runAdminTenantKeyFlow(ctx: LiveApiHostedContext): Promise<
         body: JSON.stringify({
           tenantId: 'tenant-admin',
           tenantName: 'Admin Co',
-          planId: 'pro',
+          planId: 'trial',
         }),
       });
       ok(thirdKeyRes.status === 409, 'Admin API: third active key for tenant rejected');
@@ -222,7 +222,7 @@ export async function runAdminTenantKeyFlow(ctx: LiveApiHostedContext): Promise<
       const usageListed = usageListBody.records.find((entry: any) => entry.tenantId === 'tenant-admin');
       ok(Boolean(usageListed), 'Admin Usage: tenant-admin appears in usage report');
       ok(usageListed.tenantName === 'Admin Co', 'Admin Usage: tenant name enriched');
-      ok(usageListed.planId === 'pro', 'Admin Usage: plan enriched');
+      ok(usageListed.planId === 'trial', 'Admin Usage: plan enriched');
       ok(usageListed.used === 1, 'Admin Usage: used count tracked');
       ok(usageListBody.summary.totalUsed >= 1, 'Admin Usage: summary totalUsed present');
 
@@ -302,7 +302,7 @@ export async function runAdminTenantKeyFlow(ctx: LiveApiHostedContext): Promise<
         body: JSON.stringify({
           tenantId: 'tenant-rate',
           tenantName: 'Rate Co',
-          planId: 'starter',
+          planId: 'trial',
         }),
       });
       ok(rateTenantRes.status === 201, 'Admin API: starter tenant for rate-limit test issued');

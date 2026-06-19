@@ -145,13 +145,11 @@ function configureIsolatedStores(root: string): void {
   process.env.ATTESTOR_BILLING_SUCCESS_URL = 'https://attestor.dev/billing/success';
   process.env.ATTESTOR_BILLING_CANCEL_URL = 'https://attestor.dev/billing/cancel';
   process.env.ATTESTOR_BILLING_PORTAL_RETURN_URL = 'https://attestor.dev/settings/billing';
-  process.env.ATTESTOR_STRIPE_PRICE_STARTER = 'price_starter_monthly';
-  process.env.ATTESTOR_STRIPE_PRICE_PRO = 'price_pro_monthly';
-  process.env.ATTESTOR_STRIPE_PRICE_SCALE = 'price_scale_monthly';
-  process.env.ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER = 'price_starter_overage_monthly';
-  process.env.ATTESTOR_STRIPE_OVERAGE_PRICE_PRO = 'price_pro_overage_monthly';
-  process.env.ATTESTOR_STRIPE_OVERAGE_PRICE_SCALE = 'price_scale_overage_monthly';
-  process.env.ATTESTOR_STRIPE_PRICE_ENTERPRISE = 'price_enterprise_monthly';
+  process.env.ATTESTOR_STRIPE_PRICE_PILOT_WORKFLOW = 'price_pilot_workflow_monthly';
+  process.env.ATTESTOR_STRIPE_PRICE_STARTER_WORKFLOW = 'price_starter_workflow_monthly';
+  process.env.ATTESTOR_STRIPE_PRICE_PRO_WORKFLOW = 'price_pro_workflow_monthly';
+  process.env.ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER_WORKFLOW = 'price_starter_workflow_overage_monthly';
+  process.env.ATTESTOR_STRIPE_OVERAGE_PRICE_PRO_WORKFLOW = 'price_pro_workflow_overage_monthly';
 }
 
 function currentUsagePeriod(): string {
@@ -222,12 +220,14 @@ async function main(): Promise<void> {
     const signupBody = await readJson(signupRes);
     equal(signupBody.signup, true, 'Hosted signup: response identifies signup flow');
     equal(signupBody.user.role, 'account_admin', 'Hosted signup: first user is account_admin');
-    equal(signupBody.initialKey.planId, 'developer', 'Hosted signup: first API key starts on Developer');
-    equal(signupBody.initialKey.monthlyRunQuota, 500, 'Hosted signup: first API key has Developer quota');
+    equal(signupBody.initialKey.planId, 'trial', 'Hosted signup: first API key starts on Trial');
+    equal(signupBody.initialKey.monthlyRunQuota, 10_000, 'Hosted signup: first API key has Trial quota');
     equal(signupBody.commercial.currentPhase, 'evaluation', 'Hosted signup: commercial phase starts as evaluation');
-    equal(signupBody.commercial.includedMonthlyRunQuota, 500, 'Hosted signup: evaluation quota is visible');
-    equal(signupBody.commercial.firstHostedPlanId, 'starter', 'Hosted signup: first paid hosted plan is starter');
-    equal(signupBody.commercial.firstHostedPlanTrialDays, null, 'Hosted signup: paid checkout has no default Stripe trial');
+    equal(signupBody.commercial.includedMonthlyRunQuota, 10_000, 'Hosted signup: evaluation quota is visible');
+    equal(signupBody.commercial.trialAccountEntitlementId, 'trial', 'Hosted signup: trial account entitlement is visible');
+    equal(signupBody.commercial.trialDurationDays, 30, 'Hosted signup: trial duration is visible');
+    assert.deepEqual(signupBody.commercial.workflowBillingTierIds, ['pilot-workflow', 'starter-workflow', 'pro-workflow'], 'Hosted signup: workflow billing tiers are visible');
+    equal(signupBody.commercial.workflowCheckoutRoute, '/api/v1/account/billing/workflows/checkout', 'Hosted signup: workflow checkout route is visible');
     ok(
       typeof signupBody.initialKey.apiKey === 'string' && signupBody.initialKey.apiKey.startsWith('atk_'),
       'Hosted signup: plaintext initial API key is returned once',
@@ -257,11 +257,11 @@ async function main(): Promise<void> {
     const usageBody = await readJson(usageRes);
     equal(usageBody.tenantContext.tenantId, tenantId, 'Hosted usage: tenant context matches signup account');
     equal(usageBody.tenantContext.source, 'api_key', 'Hosted usage: tenant source is API key');
-    equal(usageBody.tenantContext.planId, 'developer', 'Hosted usage: Developer plan is visible');
+    equal(usageBody.tenantContext.planId, 'trial', 'Hosted usage: Trial plan is visible');
     equal(usageBody.usage.used, 0, 'Hosted usage: usage starts at zero');
-    equal(usageBody.usage.quota, 500, 'Hosted usage: Developer quota is visible');
-    equal(usageBody.usage.remaining, 500, 'Hosted usage: remaining quota starts at five hundred');
-    equal(usageBody.usage.enforced, true, 'Hosted usage: Developer quota is enforced');
+    equal(usageBody.usage.quota, 10_000, 'Hosted usage: Trial quota is visible');
+    equal(usageBody.usage.remaining, 10_000, 'Hosted usage: remaining quota starts at ten thousand');
+    equal(usageBody.usage.enforced, true, 'Hosted usage: Trial quota is enforced');
 
     const accountRes = await fetch(`${baseUrl}/api/v1/account`, {
       headers: { Authorization: `Bearer ${initialApiKey}` },
@@ -271,7 +271,7 @@ async function main(): Promise<void> {
     equal(accountBody.account.id, signupBody.account.id, 'Hosted account: account id matches signup');
     equal(accountBody.entitlement.status, 'provisioned', 'Hosted account: initial entitlement is provisioned');
     equal(accountBody.entitlement.accessEnabled, true, 'Hosted account: initial entitlement allows access');
-    equal(accountBody.entitlement.effectivePlanId, 'developer', 'Hosted account: entitlement reflects Developer plan');
+    equal(accountBody.entitlement.effectivePlanId, 'trial', 'Hosted account: entitlement reflects Trial plan');
 
     const firstRunRes = await runPipeline(
       baseUrl,
@@ -283,7 +283,7 @@ async function main(): Promise<void> {
     equal(firstRunBody.decision, 'pass', 'Hosted consequence call: decision is returned before consequence');
     equal(firstRunBody.tenantContext.tenantId, tenantId, 'Hosted consequence call: tenant context is preserved');
     equal(firstRunBody.usage.used, 1, 'Hosted consequence call: allowed run consumes usage');
-    equal(firstRunBody.usage.remaining, 499, 'Hosted consequence call: remaining quota decrements');
+    equal(firstRunBody.usage.remaining, 9_999, 'Hosted consequence call: remaining quota decrements');
 
     const admission = createConsequenceAdmissionFacadeResponse({
       surface: 'finance-pipeline-run',
@@ -309,21 +309,21 @@ async function main(): Promise<void> {
       'Hosted consequence call: customer gate records hold reason',
     );
 
-    seedUsageLedger(tempRoot, tenantId, 500);
+    seedUsageLedger(tempRoot, tenantId, 10_000);
 
     const quotaExceededRes = await runPipeline(
       baseUrl,
       initialApiKey,
       'hosted-signup-first-api-key-quota-exceeded-run',
     );
-    equal(quotaExceededRes.status, 429, 'Hosted quota: Developer run 501 is blocked');
+    equal(quotaExceededRes.status, 429, 'Hosted quota: Trial run 10001 is blocked');
     const quotaExceededBody = await readJson(quotaExceededRes);
     equal(
       quotaExceededBody.error,
       'Monthly pipeline run quota exceeded for this tenant plan.',
       'Hosted quota: rejection reason is explicit',
     );
-    equal(quotaExceededBody.usage.used, 500, 'Hosted quota: rejected run does not increment usage');
+    equal(quotaExceededBody.usage.used, 10_000, 'Hosted quota: rejected run does not increment usage');
     equal(quotaExceededBody.usage.remaining, 0, 'Hosted quota: rejected run reports exhausted quota');
 
     const keysRes = await fetch(`${baseUrl}/api/v1/account/api-keys`, {
@@ -368,7 +368,7 @@ async function main(): Promise<void> {
       typeof issueKeyBody.key.apiKey === 'string' && issueKeyBody.key.apiKey.startsWith('atk_'),
       'Hosted API keys: newly issued plaintext key is returned once',
     );
-    equal(issueKeyBody.key.planId, 'developer', 'Hosted API keys: issued key inherits Developer plan');
+    equal(issueKeyBody.key.planId, 'trial', 'Hosted API keys: issued key inherits Trial account access');
 
     const secondApiKey = issueKeyBody.key.apiKey as string;
     const secondKeyUsageRes = await fetch(`${baseUrl}/api/v1/account/usage`, {
@@ -376,7 +376,7 @@ async function main(): Promise<void> {
     });
     equal(secondKeyUsageRes.status, 200, 'Hosted API keys: newly issued key authenticates');
     const secondKeyUsageBody = await readJson(secondKeyUsageRes);
-    equal(secondKeyUsageBody.usage.used, 500, 'Hosted API keys: usage stays tenant-scoped across keys');
+    equal(secondKeyUsageBody.usage.used, 10_000, 'Hosted API keys: usage stays tenant-scoped across keys');
 
     const revokeInitialKeyRes = await fetch(`${baseUrl}/api/v1/account/api-keys/${initialKeyId}/revoke`, {
       method: 'POST',

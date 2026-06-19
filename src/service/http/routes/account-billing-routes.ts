@@ -87,8 +87,6 @@ export function registerAccountBillingRoutes(app: Hono, deps: AccountRouteDeps):
     getTenantPipelineRateLimit,
     readHostedBillingEntitlement,
     buildHostedFeatureServiceView,
-    getHostedPlan,
-    createHostedCheckoutSession,
     createHostedWorkflowCheckoutSession,
     listWorkflowEntitlements,
     findWorkflowEntitlementByTenantAndWorkflow,
@@ -199,37 +197,6 @@ export function registerAccountBillingRoutes(app: Hono, deps: AccountRouteDeps):
     const current = await currentHostedAccount(c);
     if (current instanceof Response) return current;
 
-    const body = await readAccountJsonBody(c);
-    if (body instanceof Response) return body;
-    const idempotencyKey = c.req.header('Idempotency-Key')?.trim() ?? '';
-    if (!idempotencyKey) {
-      return c.json({ error: 'Idempotency-Key header is required for hosted checkout.' }, 400);
-    }
-    const requestedPlanId = typeof body.planId === 'string' ? body.planId.trim() : '';
-    if (!requestedPlanId) {
-      return c.json({ error: 'planId is required.' }, 400);
-    }
-
-    const plan = getHostedPlan(requestedPlanId);
-    if (!plan || plan.intendedFor === 'evaluation') {
-      return c.json({
-        error: `Hosted billing checkout only supports hosted/enterprise plans. Valid hosted plans: starter, pro, scale, enterprise.`,
-      }, 400);
-    }
-
-    let checkout;
-    try {
-      checkout = await createHostedCheckoutSession({
-        account: current.account,
-        tenant: current.tenant,
-        plan,
-        idempotencyKey,
-      });
-    } catch (err) {
-      const mapped = stripeBillingErrorResponse(c, err);
-      if (mapped) return mapped;
-      throw err;
-    }
     await recordAccountSessionMutationAudit({
       routeId: 'account.billing.checkout',
       action: 'account.billing.checkout_started',
@@ -237,29 +204,24 @@ export function registerAccountBillingRoutes(app: Hono, deps: AccountRouteDeps):
       requestPayload: {
         accountId: current.account.id,
         tenantId: current.tenant.tenantId,
-        planId: requestedPlanId,
+        retired: true,
       },
-      statusCode: 200,
+      statusCode: 410,
       tenantId: current.tenant.tenantId,
-      planId: checkout.planId,
-      idempotencyKey,
+      planId: null,
       metadata: {
-        mock: checkout.mock,
+        retired: true,
+        replacementRoute: '/api/v1/account/billing/workflows/checkout',
       },
     });
 
-    c.header('x-attestor-idempotency-key', idempotencyKey);
     return c.json({
       accountId: current.account.id,
       tenantId: current.tenant.tenantId,
-      planId: checkout.planId,
-      stripePriceId: checkout.stripePriceId,
-      stripeOveragePriceId: checkout.stripeOveragePriceId,
-      trialDays: checkout.trialDays,
-      checkoutSessionId: checkout.sessionId,
-      checkoutUrl: checkout.url,
-      mock: checkout.mock,
-    });
+      error: 'Account-plan checkout is retired. Use workflow billing checkout.',
+      replacementRoute: '/api/v1/account/billing/workflows/checkout',
+      allowedWorkflowTiers: ['pilot-workflow', 'starter-workflow', 'pro-workflow'],
+    }, 410);
   });
 
   app.get('/api/v1/account/billing/workflows', async (c) => {

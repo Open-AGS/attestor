@@ -10,7 +10,7 @@ const record: AsyncDeadLetterRecord = {
   name: 'pipeline-run',
   backendMode: 'in_process',
   tenantId: 'tenant_123',
-  planId: 'pro',
+  planId: 'trial',
   state: 'failed',
   failedReason: 'boom',
   attemptsMade: 1,

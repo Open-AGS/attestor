@@ -55,7 +55,7 @@ function tenantKey(overrides: Partial<TenantKeyRecord> = {}): TenantKeyRecord {
     id: 'tkey_123',
     tenantId: 'tenant_123',
     tenantName: 'Acme',
-    planId: 'pro',
+    planId: 'trial',
     monthlyRunQuota: 1000,
     apiKeyHash: 'hash',
     apiKeyPreview: 'atk_1234...abcd',
@@ -72,12 +72,11 @@ function tenantKey(overrides: Partial<TenantKeyRecord> = {}): TenantKeyRecord {
   };
 }
 
-const proPlan: HostedPlanDefinition = {
-  id: 'pro',
-  displayName: 'Pro',
-  description: 'Pro',
+const trialPlan: HostedPlanDefinition = {
+  id: 'trial',
+  displayName: 'Trial',
+  description: 'Trial',
   defaultEvaluationDays: null,
-  defaultStripeTrialDays: null,
   defaultMonthlyRunQuota: 1000,
   defaultPipelineRequestsPerWindow: 100,
   defaultAsyncPendingJobsPerTenant: 10,
@@ -89,8 +88,8 @@ const proPlan: HostedPlanDefinition = {
 
 function resolvedPlan(overrides: Partial<ResolvedPlanSpec> = {}): ResolvedPlanSpec {
   return {
-    plan: proPlan,
-    planId: 'pro',
+    plan: trialPlan,
+    planId: 'trial',
     monthlyRunQuota: 1000,
     knownPlan: true,
     quotaSource: 'plan_default',
@@ -106,8 +105,8 @@ function entitlement(overrides: Partial<HostedBillingEntitlementRecord> = {}): H
     provider: 'manual',
     status: 'active',
     accessEnabled: true,
-    effectivePlanId: 'pro',
-    requestedPlanId: 'pro',
+    effectivePlanId: 'trial',
+    requestedPlanId: 'trial',
     monthlyRunQuota: 1000,
     requestsPerWindow: 100,
     asyncPendingJobsPerTenant: 10,
@@ -222,7 +221,7 @@ async function testProvisionResolvesPlanAndSyncsEntitlement(): Promise<void> {
   const service = createAdminControlService(createDeps({
     resolvePlanSpec: (options) => {
       calls.push(`resolve:${options?.planId}:${options?.monthlyRunQuota}`);
-      return resolvedPlan({ planId: 'enterprise', monthlyRunQuota: 5000 });
+      return resolvedPlan({ planId: 'trial', monthlyRunQuota: 5000 });
     },
     provisionHostedAccountState: async (input) => {
       calls.push(`provision:${input.key.planId}:${input.key.monthlyRunQuota}`);
@@ -248,16 +247,16 @@ async function testProvisionResolvesPlanAndSyncsEntitlement(): Promise<void> {
     contactEmail: 'ops@example.com',
     tenantId: 'tenant_new',
     tenantName: 'Acme Tenant',
-    planId: 'enterprise',
+    planId: 'trial',
     monthlyRunQuota: 5000,
   });
 
   assert.equal(result.account.id, 'acct_new');
-  assert.equal(result.initialKey.planId, 'enterprise');
+  assert.equal(result.initialKey.planId, 'trial');
   assert.equal(result.apiKey, 'atk_created');
   assert.deepEqual(calls, [
-    'resolve:enterprise:5000',
-    'provision:enterprise:5000',
+    'resolve:trial:5000',
+    'provision:trial:5000',
     'sync:acct_new',
   ]);
 }
@@ -330,7 +329,7 @@ async function testTenantKeyErrorsMapToControlErrors(): Promise<void> {
     () => service.issueTenantApiKey({
       tenantId: 'tenant_123',
       tenantName: 'Acme',
-      planId: 'pro',
+      planId: 'trial',
       monthlyRunQuota: 1000,
       billingEvent: {
         idempotencyKey: 'idem_123',

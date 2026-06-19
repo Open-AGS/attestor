@@ -155,10 +155,10 @@ function testRoutesStayConsistentWithAuthorizationMatrix(): void {
 
   const checkoutGuards = findHostedSensitiveBusinessFlowAbuseGuardsForRoute({
     method: 'POST',
-    path: '/api/v1/account/billing/checkout',
+    path: '/api/v1/account/billing/workflows/checkout',
   });
   equal(checkoutGuards.length, 1, 'Hosted sensitive flow guard: checkout route has one abuse guard');
-  equal(checkoutGuards[0].id, 'billing.checkout-upgrade', 'Hosted sensitive flow guard: checkout route resolves');
+  equal(checkoutGuards[0].id, 'billing.workflow-checkout', 'Hosted sensitive flow guard: checkout route resolves');
 }
 
 function testCriticalSensitiveRoutesAreCovered(): void {
@@ -173,7 +173,7 @@ function testCriticalSensitiveRoutesAreCovered(): void {
     'POST /api/v1/account/users/bootstrap',
     'POST /api/v1/account/api-keys',
     'POST /api/v1/account/api-keys/:id/rotate',
-    'POST /api/v1/account/billing/checkout',
+    'POST /api/v1/account/billing/workflows/checkout',
     'POST /api/v1/account/billing/portal',
     'POST /api/v1/admissions',
     'POST /api/v1/pipeline/run',
@@ -194,8 +194,8 @@ function testControlContractsForHighRiskFlows(): void {
   hasControl('account.api-key-lifecycle', 'account_admin_role_gate');
   hasControl('account.api-key-lifecycle', 'active_key_limit');
   hasControl('account.api-key-lifecycle', 'one_time_plaintext_secret_delivery');
-  hasControl('billing.checkout-upgrade', 'required_idempotency_key');
-  hasControl('billing.checkout-upgrade', 'stripe_sdk_idempotency_key');
+  hasControl('billing.workflow-checkout', 'required_idempotency_key');
+  hasControl('billing.workflow-checkout', 'stripe_sdk_idempotency_key');
   hasControl('billing.portal-handoff', 'stripe_hosted_handoff');
   hasControl('tenant.expensive-runtime-execution', 'tenant_quota_check');
   hasControl('tenant.expensive-runtime-execution', 'tenant_rate_limit_reservation');

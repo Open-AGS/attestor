@@ -37,7 +37,7 @@ export async function runHostedPlanUsageFlow(): Promise<void> {
       ok(res.status === 200, 'Usage: status 200');
       const body = await res.json() as any;
       ok(body.tenantContext.tenantId === 'tenant-pro', 'Usage: tenant id');
-      ok(body.tenantContext.planId === 'pro', 'Usage: plan id');
+      ok(body.tenantContext.planId === 'trial', 'Usage: plan id');
       ok(body.usage.used === 0, 'Usage: starts at 0');
       ok(body.usage.quota === 2, 'Usage: quota = 2');
       ok(body.usage.remaining === 2, 'Usage: remaining = 2');
@@ -60,7 +60,7 @@ export async function runHostedPlanUsageFlow(): Promise<void> {
       });
       ok(first.status === 200, 'Quota: first run allowed');
       const firstBody = await first.json() as any;
-      ok(firstBody.tenantContext.planId === 'pro', 'Quota: plan propagated');
+      ok(firstBody.tenantContext.planId === 'trial', 'Quota: plan propagated');
       ok(firstBody.usage.used === 1, 'Quota: first run increments usage');
       ok(firstBody.usage.remaining === 1, 'Quota: first run remaining = 1');
 
@@ -115,7 +115,7 @@ export async function runHostedPlanUsageFlow(): Promise<void> {
       const issued = issueTenantApiKey({
         tenantId: 'tenant-file',
         tenantName: 'File Co',
-        planId: 'starter',
+        planId: 'trial',
         monthlyRunQuota: 1,
       });
 
@@ -125,7 +125,7 @@ export async function runHostedPlanUsageFlow(): Promise<void> {
       ok(usageRes.status === 200, 'File store: issued key is accepted');
       const usageBody = await usageRes.json() as any;
       ok(usageBody.tenantContext.tenantId === 'tenant-file', 'File store: tenant id propagated');
-      ok(usageBody.tenantContext.planId === 'starter', 'File store: plan propagated');
+      ok(usageBody.tenantContext.planId === 'trial', 'File store: plan propagated');
       ok(usageBody.usage.quota === 1, 'File store: quota propagated');
       ok(usageBody.rateLimit.requestsPerWindow === 3, 'File store: rate limit propagated');
 

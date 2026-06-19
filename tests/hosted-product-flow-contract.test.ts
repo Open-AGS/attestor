@@ -61,8 +61,8 @@ function testDescriptorShape(): void {
 
   equal(contract.version, HOSTED_JOURNEY_CONTRACT_VERSION, 'Hosted journey contract: version is exported');
   equal(contract.productModel, HOSTED_JOURNEY_PRODUCT_MODEL, 'Hosted journey contract: product model is one Attestor core');
-  equal(contract.defaultEvaluationPlanId, 'developer', 'Hosted journey contract: Developer is default evaluation path');
-  equal(contract.firstPaidHostedPlanId, 'starter', 'Hosted journey contract: starter is first paid hosted plan');
+  equal(contract.defaultEvaluationPlanId, 'trial', 'Hosted journey contract: Trial is default evaluation path');
+  equal(contract.firstPaidWorkflowTierId, 'starter-workflow', 'Hosted journey contract: starter workflow is first paid workflow tier');
   ok(contract.consequenceBoundary.includes('before the downstream system'), 'Hosted journey contract: consequence boundary is explicit');
   ok(contract.packSelection.includes('does not auto-detect packs'), 'Hosted journey contract: no auto-detect promise');
   ok(contract.billingConvergence.includes('signed Stripe webhooks'), 'Hosted journey contract: billing convergence belongs to signed webhooks');
@@ -133,7 +133,7 @@ function testRouteContractsStayFocused(): void {
   const routePaths = HOSTED_JOURNEY_ROUTE_CONTRACTS.map((route) => route.path);
 
   ok(routeKeys.includes('signup'), 'Hosted journey contract: signup route is included');
-  ok(routeKeys.includes('checkout'), 'Hosted journey contract: checkout route is included');
+  ok(routeKeys.includes('workflow_checkout'), 'Hosted journey contract: workflow checkout route is included');
   ok(routeKeys.includes('stripe_webhook'), 'Hosted journey contract: Stripe webhook route is included');
   ok(routeKeys.includes('features'), 'Hosted journey contract: features route is included');
   ok(routeKeys.includes('billing_export'), 'Hosted journey contract: billing export route is included');
@@ -151,7 +151,7 @@ function testRouteContractsStayFocused(): void {
 }
 
 function testAuthAndBillingBoundaries(): void {
-  const checkout = HOSTED_JOURNEY_ROUTE_CONTRACTS.find((route) => route.key === 'checkout');
+  const checkout = HOSTED_JOURNEY_ROUTE_CONTRACTS.find((route) => route.key === 'workflow_checkout');
   const webhook = HOSTED_JOURNEY_ROUTE_CONTRACTS.find((route) => route.key === 'stripe_webhook');
   const signup = HOSTED_JOURNEY_ROUTE_CONTRACTS.find((route) => route.key === 'signup');
   const firstCall = HOSTED_JOURNEY_ROUTE_CONTRACTS.find((route) => route.key === 'first_consequence_call');
@@ -162,9 +162,9 @@ function testAuthAndBillingBoundaries(): void {
 
   equal(signup?.authBoundary, 'none', 'Hosted journey contract: signup starts without auth');
   equal(firstCall?.authBoundary, 'tenant_api_key', 'Hosted journey contract: first consequence call uses tenant API key');
-  equal(checkout?.authBoundary, 'account_session', 'Hosted journey contract: checkout uses account session');
-  ok(checkout?.requiredHeaders.includes('Idempotency-Key'), 'Hosted journey contract: checkout requires Idempotency-Key');
-  ok(checkout?.requiredHeaders.includes('x-attestor-csrf'), 'Hosted journey contract: checkout requires CSRF confirmation for cookie sessions');
+  equal(checkout?.authBoundary, 'account_session', 'Hosted journey contract: workflow checkout uses account session');
+  ok(checkout?.requiredHeaders.includes('Idempotency-Key'), 'Hosted journey contract: workflow checkout requires Idempotency-Key');
+  ok(checkout?.requiredHeaders.includes('x-attestor-csrf'), 'Hosted journey contract: workflow checkout requires CSRF confirmation for cookie sessions');
   ok(billingPortal?.requiredHeaders.includes('x-attestor-csrf'), 'Hosted journey contract: billing portal requires CSRF confirmation for cookie sessions');
   ok(issueApiKey?.requiredHeaders.includes('x-attestor-csrf'), 'Hosted journey contract: API key issuance requires CSRF confirmation for cookie sessions');
   equal(billingExport?.authBoundary, 'account_session_or_tenant_api_key', 'Hosted journey contract: billing export can be read from account plane or tenant API key');
@@ -214,7 +214,8 @@ function testApiTypeContractsExist(): void {
     'AccountSummaryResponse',
     'AccountUsageResponse',
     'AccountFeaturesResponse',
-    'AccountBillingCheckoutResponse',
+    'AccountWorkflowBillingCheckoutRequest',
+    'AccountWorkflowBillingCheckoutResponse',
     'AccountBillingPortalResponse',
     'AccountBillingExportResponse',
     'AccountBillingReconciliationResponse',

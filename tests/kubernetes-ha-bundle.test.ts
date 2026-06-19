@@ -68,12 +68,14 @@ function main(): void {
   const awsProfile = read('ops/kubernetes/ha/profiles/aws-production.json');
   const gkeProfile = read('ops/kubernetes/ha/profiles/gke-production.json');
   const haReadme = read('ops/kubernetes/ha/README.md');
+  const retiredScaleOverageEnv = ['ATTESTOR_STRIPE_OVERAGE_PRICE', 'SCALE'].join('_');
 
   ok(kustomization.includes('api-deployment.yaml') && kustomization.includes('worker-serviceaccount.yaml') && kustomization.includes('networkpolicy.yaml') && kustomization.includes('gateway.yaml') && kustomization.includes('release-runtime-pki-pvc.yaml'), 'Kubernetes HA bundle: kustomization includes deployments, worker ServiceAccount, NetworkPolicy, gateway, and shared release-runtime PKI resources');
   ok(apiDeployment.includes('ATTESTOR_HA_MODE') && apiDeployment.includes('ATTESTOR_CONTROL_PLANE_PG_URL'), 'Kubernetes HA bundle: API deployment enables HA mode and shared control-plane');
   ok(apiDeployment.includes('ATTESTOR_RELEASE_AUTHORITY_PG_URL') && apiDeployment.includes('release-authority-pg-url'), 'Kubernetes HA bundle: API deployment wires shared release-authority PostgreSQL');
-  ok(apiDeployment.includes('ATTESTOR_STRIPE_PRICE_SCALE') && apiDeployment.includes('stripe-price-scale'), 'Kubernetes HA bundle: API deployment wires hosted Scale Stripe price');
-  ok(apiDeployment.includes('ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER') && apiDeployment.includes('ATTESTOR_STRIPE_OVERAGE_PRICE_PRO') && apiDeployment.includes('ATTESTOR_STRIPE_OVERAGE_PRICE_SCALE'), 'Kubernetes HA bundle: API deployment wires hosted Stripe overage prices');
+  ok(apiDeployment.includes('ATTESTOR_STRIPE_PRICE_PILOT_WORKFLOW') && apiDeployment.includes('stripe-price-pilot-workflow'), 'Kubernetes HA bundle: API deployment wires Pilot Workflow Stripe price');
+  ok(apiDeployment.includes('ATTESTOR_STRIPE_PRICE_STARTER_WORKFLOW') && apiDeployment.includes('ATTESTOR_STRIPE_PRICE_PRO_WORKFLOW'), 'Kubernetes HA bundle: API deployment wires Starter/Pro Workflow Stripe prices');
+  ok(apiDeployment.includes('ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER_WORKFLOW') && apiDeployment.includes('ATTESTOR_STRIPE_OVERAGE_PRICE_PRO_WORKFLOW') && !apiDeployment.includes(retiredScaleOverageEnv), 'Kubernetes HA bundle: API deployment wires workflow overage prices without Scale account-plan overage');
   ok(apiDeployment.includes('claimName: attestor-release-runtime-pki') && apiDeployment.includes('/var/lib/attestor/release-runtime-pki'), 'Kubernetes HA bundle: API deployment mounts a shared release-runtime PKI path');
   ok(releasePkiPvc.includes('ReadWriteMany'), 'Kubernetes HA bundle: release-runtime PKI PVC requires shared read/write access across API pods');
   ok(releasePkiPvc.includes('storageClassName: attestor-release-runtime-pki-rwx') && releasePkiPvc.includes('ATTESTOR_RELEASE_RUNTIME_PKI_STORAGE_PROOF'), 'Kubernetes HA bundle: release-runtime PKI PVC requires explicit storage class and live storage proof');
@@ -134,7 +136,8 @@ function main(): void {
   ok(gkeClusterSecretStoreExample.includes('kind: ClusterSecretStore') && gkeClusterSecretStoreExample.includes('gcpsm:') && gkeClusterSecretStoreExample.includes('workloadIdentity:'), 'Kubernetes HA bundle: GKE ClusterSecretStore example binds External Secrets to Google Secret Manager with Workload Identity');
   ok(externalRuntimeSecret.includes('kind: ExternalSecret') && externalRuntimeSecret.includes('attestor-runtime-secrets'), 'Kubernetes HA bundle: external-secrets overlay manages runtime secret material');
   ok(externalRuntimeSecret.includes('release-authority-pg-url'), 'Kubernetes HA bundle: external-secrets overlay includes release-authority PostgreSQL');
-  ok(externalRuntimeSecret.includes('stripe-price-scale') && externalRuntimeSecret.includes('stripe-overage-price-starter') && externalRuntimeSecret.includes('stripe-overage-price-pro') && externalRuntimeSecret.includes('stripe-overage-price-scale'), 'Kubernetes HA bundle: external-secrets overlay includes hosted Scale and overage Stripe prices');
+  ok(externalRuntimeSecret.includes('stripe-price-pilot-workflow') && externalRuntimeSecret.includes('stripe-price-starter-workflow') && externalRuntimeSecret.includes('stripe-price-pro-workflow'), 'Kubernetes HA bundle: external-secrets overlay includes workflow Stripe prices');
+  ok(externalRuntimeSecret.includes('stripe-overage-price-starter-workflow') && externalRuntimeSecret.includes('stripe-overage-price-pro-workflow') && !externalRuntimeSecret.includes('stripe-overage-price-scale'), 'Kubernetes HA bundle: external-secrets overlay includes workflow overage prices without Scale account-plan overage');
   ok(externalTlsSecret.includes('kubernetes.io/tls') && externalTlsSecret.includes('attestor-tls'), 'Kubernetes HA bundle: external-secrets overlay can project TLS material');
   ok(profilesReadme.includes('render:ha-profile') && profilesReadme.includes('aws-production.json') && profilesReadme.includes('Renderers always emit artifacts'), 'Kubernetes HA bundle: profiles README documents benchmark-to-profile tuning and emit-on-fail boundary');
   ok(releaseBundleScript.includes('render-ha-profile.ts') && releaseBundleScript.includes('render-ha-credentials.ts'), 'Kubernetes HA bundle: release bundle renderer composes scaling and credential artifacts');

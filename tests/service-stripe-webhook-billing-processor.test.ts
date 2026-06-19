@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import Stripe from 'stripe';
-import { AccountStoreError, type HostedAccountRecord } from '../src/service/account/account-store.js';
+import type { HostedAccountRecord } from '../src/service/account/account-store.js';
 import {
   createStripeWebhookBillingProcessor,
   type StripeWebhookBillingProcessorDeps,
@@ -61,18 +61,7 @@ function createDeps(
       }
       return null;
     },
-    parseStripeInvoiceStatus: () => null,
-    stripeInvoicePriceId: () => null,
     metadataStringValue: () => null,
-    applyStripeSubscriptionStateState: async () => {
-      throw new Error('unused applyStripeSubscriptionStateState');
-    },
-    applyStripeInvoiceStateState: async () => {
-      throw new Error('unused applyStripeInvoiceStateState');
-    },
-    applyStripeCheckoutCompletionState: async () => {
-      throw new Error('unused applyStripeCheckoutCompletionState');
-    },
     upsertWorkflowEntitlementFromStripeState: async () => {
       throw new Error('unused upsertWorkflowEntitlementFromStripeState');
     },
@@ -80,44 +69,21 @@ function createDeps(
       record: null,
       matchReason: 'none',
     }),
-    findHostedPlanByStripePriceId: () => null,
-    resolvePlanSpec: (() => {
-      throw new Error('unused resolvePlanSpec');
-    }) as StripeWebhookBillingProcessorDeps['resolvePlanSpec'],
-    DEFAULT_HOSTED_PLAN_ID: 'starter',
-    syncTenantPlanByTenantIdState: async () => ({
-      record: null,
-      path: null,
-    }),
     syncHostedBillingEntitlement: async () => {
       throw new Error('unused syncHostedBillingEntitlement');
     },
-    revokeAccountSessionsForLifecycleChange: async () => 0,
     appendAdminAuditRecordState: async () => {
       throw new Error('unused appendAdminAuditRecordState');
     },
     billingEntitlementView: () => ({}),
-    extractInvoiceLineItemSnapshotsFromInvoice: () => ({
-      lineItems: [],
-      hasMore: false,
-    }),
     listHostedStripeActiveEntitlements: async () => [],
     extractActiveEntitlementsFromSummary: () => [],
-    listHostedStripeInvoiceLineItems: async () => [],
-    upsertStripeInvoiceLineItems: async () => ({
-      recordCount: 0,
-      records: [],
-    }),
     parseStripeChargeStatus: () => null,
-    getHostedPlan: () => null,
     upsertStripeCharges: async () => ({
       recordCount: 0,
       records: [],
     }),
     unixSecondsToIso: () => '2026-04-21T10:00:00.000Z',
-    resolvePlanStripePrice: (() => {
-      throw new Error('unused resolvePlanStripePrice');
-    }) as StripeWebhookBillingProcessorDeps['resolvePlanStripePrice'],
   };
   return {
     ...deps,
@@ -228,80 +194,25 @@ async function testUnsupportedEventFinalizesSharedLedger(): Promise<void> {
   assert.equal(sharedFinalization?.reason, 'unsupported_event_type');
 }
 
-async function testAccountStoreErrorReleasesClaimAndMapsConflict(): Promise<void> {
-  let releaseCount = 0;
-  const processor = createStripeWebhookBillingProcessor(createDeps({
-    isSupportedStripeWebhookEvent: () => true,
-    applyStripeSubscriptionStateState: async () => {
-      throw new AccountStoreError('INVALID_STATE', 'account state is locked');
-    },
-  }));
-  const webhook = createWebhook(stripeEvent({
-    type: 'customer.subscription.updated',
-    data: {
-      object: {
-        id: 'sub_123',
-        customer: 'cus_123',
-        status: 'active',
-        items: {
-          data: [{
-            price: {
-              id: 'price_123',
-            },
-          }],
-        },
-        metadata: {
-          attestorAccountId: 'acct_123',
-        },
-      },
-    },
-  }), {
-    releaseClaim: async () => {
-      releaseCount += 1;
-    },
-  });
-
-  const result = await processor.process(webhook);
-
-  assert.equal(releaseCount, 1);
-  assert.equal(result.statusCode, 409);
-  assert.deepEqual(result.responseBody, {
-    error: 'account state is locked',
-  });
-}
-
-async function testStaleSubscriptionEventFinalizesIgnoredWithoutStateConvergence(): Promise<void> {
+async function testLegacySubscriptionEventFinalizesRetiredWithoutStateConvergence(): Promise<void> {
   const account = hostedAccount();
   let dedupeFinalization: StripeWebhookDedupeFinalizationInput | null = null;
-  let receivedEventCreatedAt: string | null | undefined;
+  let auditAction: string | null = null;
   const processor = createStripeWebhookBillingProcessor(createDeps({
     isSupportedStripeWebhookEvent: () => true,
-    applyStripeSubscriptionStateState: async (input) => {
-      receivedEventCreatedAt = input.eventCreatedAt;
-      return {
-        record: account,
-        previousStatus: account.status,
-        nextStatus: account.status,
-        previousBillingStatus: account.billing.stripeSubscriptionStatus,
-        nextBillingStatus: account.billing.stripeSubscriptionStatus,
-        path: null,
-        matchReason: 'subscription_id',
-        stale: true,
-      };
-    },
-    syncTenantPlanByTenantIdState: async () => {
-      throw new Error('stale subscription event must not sync tenant plan');
-    },
+    findHostedAccountByStripeRefs: async () => ({
+      record: account,
+      matchReason: 'subscription_id',
+    }),
     syncHostedBillingEntitlement: async () => {
-      throw new Error('stale subscription event must not sync entitlement');
+      throw new Error('legacy subscription event must not sync account entitlement');
     },
-    appendAdminAuditRecordState: async () => {
-      throw new Error('stale subscription event must not append applied audit record');
+    appendAdminAuditRecordState: async (input) => {
+      auditAction = input.action;
     },
-    unixSecondsToIso: () => '2026-04-21T10:00:00.000Z',
   }));
   const webhook = createWebhook(stripeEvent({
-    id: 'evt_old_subscription',
+    id: 'evt_legacy_subscription',
     type: 'customer.subscription.updated',
     data: {
       object: {
@@ -326,53 +237,36 @@ async function testStaleSubscriptionEventFinalizesIgnoredWithoutStateConvergence
 
   const result = await processor.process(webhook);
 
-  assert.equal(receivedEventCreatedAt, '2026-04-21T10:00:00.000Z');
   assert.equal(result.statusCode, 200);
   assert.equal(result.responseBody.ignored, true);
-  assert.equal(result.responseBody.reason, 'stale_subscription_event');
+  assert.equal(result.responseBody.reason, 'legacy_account_plan_billing_retired');
+  assert.equal(auditAction, 'billing.stripe.webhook_applied');
   assert.deepEqual(dedupeFinalization, {
     eventType: 'customer.subscription.updated',
     accountId: 'acct_123',
     stripeCustomerId: 'cus_123',
     stripeSubscriptionId: 'sub_123',
     outcome: 'ignored',
-    reason: 'stale_subscription_event',
+    reason: 'legacy_account_plan_billing_retired',
   });
 }
 
-async function testStaleInvoiceEventFinalizesSharedLedgerAsIgnored(): Promise<void> {
+async function testLegacyInvoiceEventFinalizesSharedLedgerAsRetired(): Promise<void> {
   const account = hostedAccount();
   let sharedFinalization: StripeWebhookSharedFinalizationInput | null = null;
   const processor = createStripeWebhookBillingProcessor(createDeps({
     isSupportedStripeWebhookEvent: () => true,
-    parseStripeInvoiceStatus: () => 'open',
-    stripeInvoicePriceId: () => 'price_123',
-    applyStripeInvoiceStateState: async () => ({
+    findHostedAccountByStripeRefs: async () => ({
       record: account,
-      previousStatus: account.status,
-      nextStatus: account.status,
-      previousBillingStatus: account.billing.stripeSubscriptionStatus,
-      nextBillingStatus: account.billing.stripeSubscriptionStatus,
-      path: null,
       matchReason: 'subscription_id',
-      stale: true,
     }),
-    extractInvoiceLineItemSnapshotsFromInvoice: () => {
-      throw new Error('stale invoice event must not extract line items');
-    },
-    syncTenantPlanByTenantIdState: async () => {
-      throw new Error('stale invoice event must not sync tenant plan');
-    },
     syncHostedBillingEntitlement: async () => {
-      throw new Error('stale invoice event must not sync entitlement');
+      throw new Error('legacy invoice event must not sync account entitlement');
     },
-    appendAdminAuditRecordState: async () => {
-      throw new Error('stale invoice event must not append applied audit record');
-    },
-    unixSecondsToIso: () => '2026-04-21T10:00:00.000Z',
+    appendAdminAuditRecordState: async () => {},
   }));
   const webhook = createWebhook(stripeEvent({
-    id: 'evt_old_invoice',
+    id: 'evt_legacy_invoice',
     type: 'invoice.payment_failed',
     data: {
       object: {
@@ -398,10 +292,10 @@ async function testStaleInvoiceEventFinalizesSharedLedgerAsIgnored(): Promise<vo
 
   assert.equal(result.statusCode, 200);
   assert.equal(result.responseBody.ignored, true);
-  assert.equal(result.responseBody.reason, 'stale_invoice_event');
-  assert.equal(sharedFinalization?.providerEventId, 'evt_old_invoice');
+  assert.equal(result.responseBody.reason, 'legacy_account_plan_billing_retired');
+  assert.equal(sharedFinalization?.providerEventId, 'evt_legacy_invoice');
   assert.equal(sharedFinalization?.outcome, 'ignored');
-  assert.equal(sharedFinalization?.reason, 'stale_invoice_event');
+  assert.equal(sharedFinalization?.reason, 'legacy_account_plan_billing_retired');
   assert.equal(sharedFinalization?.accountId, 'acct_123');
   assert.equal(sharedFinalization?.tenantId, 'tenant_123');
 }
@@ -422,7 +316,6 @@ async function testWorkflowSubscriptionEventUpdatesWorkflowEntitlementOnly(): Pr
       },
     });
     let workflowInput: Parameters<StripeWebhookBillingProcessorDeps['upsertWorkflowEntitlementFromStripeState']>[0] | null = null;
-    let appliedAccountSubscription = false;
     let dedupeFinalization: StripeWebhookDedupeFinalizationInput | null = null;
     const processor = createStripeWebhookBillingProcessor(createDeps({
       isSupportedStripeWebhookEvent: () => true,
@@ -430,10 +323,6 @@ async function testWorkflowSubscriptionEventUpdatesWorkflowEntitlementOnly(): Pr
         record: account,
         matchReason: 'account_id',
       }),
-      applyStripeSubscriptionStateState: async () => {
-        appliedAccountSubscription = true;
-        throw new Error('workflow subscription must not update account plan subscription state');
-      },
       upsertWorkflowEntitlementFromStripeState: async (input) => {
         workflowInput = input;
         return {
@@ -512,7 +401,6 @@ async function testWorkflowSubscriptionEventUpdatesWorkflowEntitlementOnly(): Pr
     assert.equal(result.statusCode, 200);
     assert.equal(result.responseBody.workflowId, 'wf_refunds');
     assert.equal(result.responseBody.workflowEntitlementStatus, 'active');
-    assert.equal(appliedAccountSubscription, false);
     assert.equal(workflowInput?.stripeSubscriptionItemId, 'si_workflow_base');
     assert.equal(workflowInput?.stripePriceId, 'price_starter_workflow_live');
     assert.deepEqual(dedupeFinalization, {
@@ -533,9 +421,8 @@ async function testWorkflowSubscriptionEventUpdatesWorkflowEntitlementOnly(): Pr
 
 await testUnsupportedEventFinalizesFileDedupe();
 await testUnsupportedEventFinalizesSharedLedger();
-await testAccountStoreErrorReleasesClaimAndMapsConflict();
-await testStaleSubscriptionEventFinalizesIgnoredWithoutStateConvergence();
-await testStaleInvoiceEventFinalizesSharedLedgerAsIgnored();
+await testLegacySubscriptionEventFinalizesRetiredWithoutStateConvergence();
+await testLegacyInvoiceEventFinalizesSharedLedgerAsRetired();
 await testWorkflowSubscriptionEventUpdatesWorkflowEntitlementOnly();
 
-console.log('Service stripe webhook billing processor tests: 6 passed, 0 failed');
+console.log('Service stripe webhook billing processor tests: 5 passed, 0 failed');

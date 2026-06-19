@@ -157,24 +157,23 @@ export interface AdminAccountLifecycleResponse {
 }
 
 export interface HostedPlanSummary {
-  id: 'developer' | 'trial' | 'starter' | 'pro' | 'scale' | 'enterprise';
+  id: 'trial';
   displayName: string;
   description: string;
   defaultEvaluationDays: number | null;
-  defaultStripeTrialDays: number | null;
   defaultMonthlyRunQuota: number | null;
   defaultPipelineRequestsPerWindow: number | null;
   defaultAsyncPendingJobsPerTenant: number | null;
   defaultAsyncActiveJobsPerTenant: number | null;
-  stripePriceConfigured: boolean;
-  intendedFor: 'evaluation' | 'hosted' | 'enterprise';
+  billingSurface: 'workflow_entitlement';
+  intendedFor: 'evaluation';
   defaultForHostedProvisioning: boolean;
 }
 
 export interface AdminListPlansResponse {
   plans: HostedPlanSummary[];
   defaults: {
-    hostedProvisioningPlanId: 'starter';
+    hostedProvisioningPlanId: 'trial';
     maxActiveKeysPerTenant: number;
     rateLimitWindowSeconds: number;
     asyncExecutionShared: boolean;

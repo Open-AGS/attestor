@@ -102,7 +102,7 @@ function testFinanceProvingHelperSurvivesThroughPublicSurface(): void {
     {
       tenantId: 'tenant-pilot',
       cohortId: 'wave-a',
-      planId: 'enterprise',
+      planId: 'trial',
     },
   );
 
@@ -112,7 +112,7 @@ function testFinanceProvingHelperSurvivesThroughPublicSurface(): void {
   assert.equal(target.consequenceType, 'record');
   assert.equal(target.riskClass, 'R4');
   assert.equal(target.cohortId, 'wave-a');
-  assert.equal(target.planId, 'enterprise');
+  assert.equal(target.planId, 'trial');
 }
 
 testReleasePolicyControlPlanePublicSurfaceDescriptor();

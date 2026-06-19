@@ -25,7 +25,7 @@ const context = {
   targetId: 'finance.reporting.record-store',
   tenantId: 'tenant-finance',
   accountId: 'account-major',
-  planId: 'enterprise',
+  planId: 'trial',
   cohortId: 'wave-a',
 };
 

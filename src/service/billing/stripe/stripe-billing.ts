@@ -1,5 +1,5 @@
 /**
- * Stripe Billing — Hosted checkout + customer portal first slice
+ * Stripe Billing - workflow checkout, customer portal, and billing export
  *
  * BOUNDARY:
  * - Stripe-hosted checkout and portal
@@ -10,10 +10,7 @@
 import { createHash } from 'node:crypto';
 import Stripe from 'stripe';
 import type { HostedAccountRecord } from '../../account/account-store.js';
-import type { HostedPlanDefinition } from '../../plan-catalog.js';
 import type { TenantContext } from '../../tenant-isolation.js';
-import type { UsageContext } from '../../usage-meter.js';
-import { resolvePlanStripeOveragePrice, resolvePlanStripePrice, resolvePlanStripeTrialDays } from '../../plan-catalog.js';
 import {
   resolveWorkflowTierStripeOveragePrice,
   resolveWorkflowTierStripePrice,
@@ -82,33 +79,6 @@ function requiredUrl(envName: 'ATTESTOR_BILLING_SUCCESS_URL' | 'ATTESTOR_BILLING
   return parsed.toString();
 }
 
-function planPriceOrThrow(planId: string): { planId: string; priceId: string } {
-  const resolved = resolvePlanStripePrice(planId);
-  if (!resolved.knownPlan || !resolved.priceId) {
-    throw new StripeBillingError(
-      'PLAN_UNAVAILABLE',
-      `Stripe price not configured for plan '${planId}'. Set ATTESTOR_STRIPE_PRICE_${planId.toUpperCase()} first.`,
-    );
-  }
-  return {
-    planId: resolved.planId,
-    priceId: resolved.priceId,
-  };
-}
-
-function planOveragePriceOrThrow(plan: HostedPlanDefinition): { priceId: string | null } {
-  const resolved = resolvePlanStripeOveragePrice(plan.id);
-  if (resolved.billable && !resolved.priceId) {
-    throw new StripeBillingError(
-      'PLAN_UNAVAILABLE',
-      `Stripe metered overage price not configured for plan '${plan.id}'. Set ATTESTOR_STRIPE_OVERAGE_PRICE_${plan.id.toUpperCase()} first.`,
-    );
-  }
-  return {
-    priceId: resolved.priceId,
-  };
-}
-
 function workflowPriceOrThrow(tierId: WorkflowBillingTierId): { tierId: WorkflowBillingTierId; priceId: string } {
   const resolved = resolveWorkflowTierStripePrice(tierId);
   if (!resolved.knownTier || !resolved.priceId) {
@@ -138,17 +108,6 @@ function workflowOveragePriceOrThrow(tierId: WorkflowBillingTierId): {
     priceId: resolved.priceId,
     meterEventName: resolved.meterEventName,
   };
-}
-
-export interface HostedCheckoutSessionResult {
-  sessionId: string;
-  url: string;
-  planId: string;
-  stripePriceId: string;
-  stripeOveragePriceId: string | null;
-  trialDays: number | null;
-  mode: 'subscription';
-  mock: boolean;
 }
 
 export interface HostedBillingPortalSessionResult {
@@ -401,83 +360,6 @@ export async function listHostedStripeActiveEntitlements(options: {
   return records;
 }
 
-export async function createHostedCheckoutSession(options: {
-  account: HostedAccountRecord;
-  tenant: TenantContext;
-  plan: HostedPlanDefinition;
-  idempotencyKey: string;
-}): Promise<HostedCheckoutSessionResult> {
-  const { planId, priceId } = planPriceOrThrow(options.plan.id);
-  const { priceId: overagePriceId } = planOveragePriceOrThrow(options.plan);
-  const trialDays = resolvePlanStripeTrialDays(options.plan.id).trialDays;
-  const successUrl = requiredUrl('ATTESTOR_BILLING_SUCCESS_URL');
-  const cancelUrl = requiredUrl('ATTESTOR_BILLING_CANCEL_URL');
-  const idempotencyKey = options.idempotencyKey.trim();
-  if (!idempotencyKey) {
-    throw new StripeBillingError(
-      'CONFIG',
-      'Idempotency-Key header is required for hosted checkout session creation.',
-    );
-  }
-
-  if (useMockStripeBilling()) {
-    const token = Buffer.from(
-      `${options.account.id}:${planId}:${idempotencyKey}`,
-      'utf8',
-    ).toString('base64url').slice(0, 32);
-    return {
-      sessionId: `cs_mock_${token}`,
-      url: `https://billing.stripe.test/checkout/${token}`,
-      planId,
-      stripePriceId: priceId,
-      stripeOveragePriceId: overagePriceId,
-      trialDays,
-      mode: 'subscription',
-      mock: true,
-    };
-  }
-
-  const metadata = {
-    attestorAccountId: options.account.id,
-    attestorTenantId: options.account.primaryTenantId,
-    attestorPlanId: planId,
-  };
-
-  const session = await stripeClient().checkout.sessions.create({
-    mode: 'subscription',
-    success_url: successUrl,
-    cancel_url: cancelUrl,
-    line_items: [
-      { price: priceId, quantity: 1 },
-      ...(overagePriceId ? [{ price: overagePriceId }] : []),
-    ],
-    customer: options.account.billing.stripeCustomerId ?? undefined,
-    customer_email: options.account.billing.stripeCustomerId ? undefined : options.account.contactEmail,
-    metadata,
-    subscription_data: trialDays === null
-      ? { metadata }
-      : { metadata, trial_period_days: trialDays },
-    allow_promotion_codes: true,
-  }, {
-    idempotencyKey,
-  });
-
-  if (!session.url) {
-    throw new StripeBillingError('CONFIG', 'Stripe checkout session did not return a hosted URL.');
-  }
-
-  return {
-    sessionId: session.id,
-    url: session.url,
-    planId,
-    stripePriceId: priceId,
-    stripeOveragePriceId: overagePriceId,
-    trialDays,
-    mode: 'subscription',
-    mock: false,
-  };
-}
-
 export async function createHostedWorkflowCheckoutSession(options: {
   account: HostedAccountRecord;
   tenant: TenantContext;
@@ -563,137 +445,6 @@ export async function createHostedWorkflowCheckoutSession(options: {
     mode: 'subscription',
     mock: false,
   };
-}
-
-function stripeMeterEventIdentifier(options: {
-  tenantId: string;
-  planId: string | null;
-  meter: string;
-  period: string;
-  used: number;
-}): string {
-  const digest = createHash('sha256')
-    .update(JSON.stringify({
-      tenantId: options.tenantId,
-      planId: options.planId,
-      meter: options.meter,
-      period: options.period,
-      used: options.used,
-    }))
-    .digest('hex')
-    .slice(0, 40);
-  return `attestor_${digest}`;
-}
-
-export async function recordStripeOverageMeterEvent(options: {
-  account: HostedAccountRecord | null;
-  tenant: Pick<TenantContext, 'tenantId' | 'planId'>;
-  usage: UsageContext;
-}): Promise<StripeOverageMeteringResult> {
-  if (!options.usage.overage || options.usage.overageUnits <= 0) {
-    return {
-      provider: 'stripe',
-      status: 'not_applicable',
-      reason: 'usage_within_included_quota',
-      eventName: null,
-      eventIdentifier: null,
-      value: 0,
-      mock: useMockStripeBilling(),
-    };
-  }
-
-  const overagePrice = resolvePlanStripeOveragePrice(options.usage.planId);
-  if (!overagePrice.billable) {
-    return {
-      provider: 'stripe',
-      status: 'not_applicable',
-      reason: 'plan_not_metered_for_overage',
-      eventName: overagePrice.meterEventName,
-      eventIdentifier: null,
-      value: 0,
-      mock: useMockStripeBilling(),
-    };
-  }
-  if (!overagePrice.priceId) {
-    return {
-      provider: 'stripe',
-      status: 'failed',
-      reason: `Stripe overage price is not configured for plan '${overagePrice.planId}'.`,
-      eventName: overagePrice.meterEventName,
-      eventIdentifier: null,
-      value: 1,
-      mock: useMockStripeBilling(),
-    };
-  }
-
-  const account = options.account;
-  const stripeCustomerId = account?.billing.provider === 'stripe'
-    ? account.billing.stripeCustomerId
-    : null;
-  if (!stripeCustomerId) {
-    return {
-      provider: 'stripe',
-      status: 'skipped',
-      reason: 'hosted account has no Stripe customer id',
-      eventName: overagePrice.meterEventName,
-      eventIdentifier: null,
-      value: 1,
-      mock: useMockStripeBilling(),
-    };
-  }
-
-  const identifier = stripeMeterEventIdentifier({
-    tenantId: options.tenant.tenantId,
-    planId: options.usage.planId,
-    meter: options.usage.meter,
-    period: options.usage.period,
-    used: options.usage.used,
-  });
-
-  if (useMockStripeBilling()) {
-    return {
-      provider: 'stripe',
-      status: 'mock_recorded',
-      reason: null,
-      eventName: overagePrice.meterEventName,
-      eventIdentifier: identifier,
-      value: 1,
-      mock: true,
-    };
-  }
-
-  try {
-    await stripeClient().billing.meterEvents.create({
-      event_name: overagePrice.meterEventName,
-      identifier,
-      payload: {
-        stripe_customer_id: stripeCustomerId,
-        value: '1',
-      },
-      timestamp: Math.floor(Date.now() / 1000),
-    }, {
-      idempotencyKey: identifier,
-    });
-    return {
-      provider: 'stripe',
-      status: 'sent',
-      reason: null,
-      eventName: overagePrice.meterEventName,
-      eventIdentifier: identifier,
-      value: 1,
-      mock: false,
-    };
-  } catch (error) {
-    return {
-      provider: 'stripe',
-      status: 'failed',
-      reason: error instanceof Error ? error.message : String(error),
-      eventName: overagePrice.meterEventName,
-      eventIdentifier: identifier,
-      value: 1,
-      mock: false,
-    };
-  }
 }
 
 function workflowMeterEventIdentifier(options: {

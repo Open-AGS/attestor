@@ -343,15 +343,17 @@ function testCommercialBoundaryMatchesPackaging(): void {
   includes(packaging, '## Policy Foundry Packaging Boundary', 'Product packaging: Foundry boundary section exists');
   includes(packaging, 'Policy Foundry is the platform-core onboarding layer for observed-action policy', 'Product packaging: Foundry is core');
   includes(packaging, 'missing controls from observed shadow actions', 'Product packaging: external language avoids training claims');
-  includes(packaging, 'Policy Twin simulation preview', 'Product packaging: Trial carries Policy Twin preview');
+  includes(packaging, 'Policy Twin preview', 'Product packaging: Trial carries Policy Twin preview');
   includes(packaging, 'Security minimums must not become paid-only features', 'Product packaging: safety floor is preserved');
   includes(packaging, 'repo-side commercial boundary contract is implemented', 'Product packaging: repo-side commercial boundary is explicit');
   includes(packaging, 'hosted Policy Foundry route now also includes', 'Product packaging: hosted entitlement implementation is explicit');
   includes(packaging, 'commercial access gating, not policy', 'Product packaging: hosted entitlement limitation is explicit');
 
-  for (const plan of ['developer', 'trial', 'starter', 'pro', 'scale', 'enterprise']) {
-    includes(doc, `- ${plan[0]?.toUpperCase()}${plan.slice(1)}`, `Policy Foundry docs: ${plan} commercial posture is recorded`);
-    includes(packaging, `| \`${plan}\` |`, `Product packaging: ${plan} Foundry row exists`);
+  for (const surface of ['Trial account entitlement', 'Pilot Workflow', 'Starter Workflow', 'Pro Workflow', 'Negotiated deployment']) {
+    includes(doc, `- ${surface}`, `Policy Foundry docs: ${surface} commercial posture is recorded`);
+  }
+  for (const surface of ['`trial` account entitlement', '`pilot-workflow`', '`starter-workflow`', '`pro-workflow`', 'negotiated deployment']) {
+    includes(packaging, `| ${surface} |`, `Product packaging: ${surface} Foundry row exists`);
   }
 }
 

@@ -53,8 +53,8 @@ async function main(): Promise<void> {
     ATTESTOR_ASYNC_DISPATCH_BASE_INTERVAL_MS: process.env.ATTESTOR_ASYNC_DISPATCH_BASE_INTERVAL_MS,
     ATTESTOR_ASYNC_DISPATCH_REDIS_URL: process.env.ATTESTOR_ASYNC_DISPATCH_REDIS_URL,
     ATTESTOR_ASYNC_ACTIVE_REDIS_URL: process.env.ATTESTOR_ASYNC_ACTIVE_REDIS_URL,
-    ATTESTOR_ASYNC_ACTIVE_STARTER_JOBS: process.env.ATTESTOR_ASYNC_ACTIVE_STARTER_JOBS,
-    ATTESTOR_ASYNC_ACTIVE_PRO_JOBS: process.env.ATTESTOR_ASYNC_ACTIVE_PRO_JOBS,
+    ATTESTOR_ASYNC_ACTIVE_TRIAL_JOBS: process.env.ATTESTOR_ASYNC_ACTIVE_TRIAL_JOBS,
+    ATTESTOR_ASYNC_DISPATCH_TRIAL_WEIGHT: process.env.ATTESTOR_ASYNC_DISPATCH_TRIAL_WEIGHT,
     ATTESTOR_ASYNC_WORKER_CONCURRENCY: process.env.ATTESTOR_ASYNC_WORKER_CONCURRENCY,
   };
 
@@ -67,8 +67,8 @@ async function main(): Promise<void> {
   process.env.ATTESTOR_ASYNC_DISPATCH_BASE_INTERVAL_MS = '400';
   process.env.ATTESTOR_ASYNC_DISPATCH_REDIS_URL = redisUrl;
   process.env.ATTESTOR_ASYNC_ACTIVE_REDIS_URL = redisUrl;
-  process.env.ATTESTOR_ASYNC_ACTIVE_STARTER_JOBS = '4';
-  process.env.ATTESTOR_ASYNC_ACTIVE_PRO_JOBS = '4';
+  process.env.ATTESTOR_ASYNC_ACTIVE_TRIAL_JOBS = '4';
+  process.env.ATTESTOR_ASYNC_DISPATCH_TRIAL_WEIGHT = '1';
   process.env.ATTESTOR_ASYNC_WORKER_CONCURRENCY = '4';
 
   const planStarts = new Map<string, number[]>();
@@ -78,7 +78,7 @@ async function main(): Promise<void> {
     redisUrl,
     queueName,
     processJob: async (job) => {
-      const planId = job.data.tenant.planId ?? 'community';
+      const planId = job.data.tenant.planId ?? 'trial';
       const planEntries = planStarts.get(planId) ?? [];
       planEntries.push(Date.now());
       planStarts.set(planId, planEntries);
@@ -106,70 +106,41 @@ async function main(): Promise<void> {
     ok(coordinator.backend === 'redis', 'Weighted dispatch: backend reports redis');
     ok(coordinator.shared === true, 'Weighted dispatch: shared mode reports true');
 
-    const starterA = await submitPipelineJob(queue, {
-      runId: 'starter-a',
+    const trialA = await submitPipelineJob(queue, {
+      runId: 'trial-a',
       candidateSql: 'select 1 as n',
-      intent: { label: 'starter-a' },
+      intent: { label: 'trial-a' },
     }, {
-      tenantId: 'starter-a',
-      planId: 'starter',
+      tenantId: 'trial-a',
+      planId: 'trial',
       source: 'live-test',
     });
-    const starterB = await submitPipelineJob(queue, {
-      runId: 'starter-b',
+    const trialB = await submitPipelineJob(queue, {
+      runId: 'trial-b',
       candidateSql: 'select 2 as n',
-      intent: { label: 'starter-b' },
+      intent: { label: 'trial-b' },
     }, {
-      tenantId: 'starter-b',
-      planId: 'starter',
-      source: 'live-test',
-    });
-    const proA = await submitPipelineJob(queue, {
-      runId: 'pro-a',
-      candidateSql: 'select 3 as n',
-      intent: { label: 'pro-a' },
-    }, {
-      tenantId: 'pro-a',
-      planId: 'pro',
-      source: 'live-test',
-    });
-    const proB = await submitPipelineJob(queue, {
-      runId: 'pro-b',
-      candidateSql: 'select 4 as n',
-      intent: { label: 'pro-b' },
-    }, {
-      tenantId: 'pro-b',
-      planId: 'pro',
+      tenantId: 'trial-b',
+      planId: 'trial',
       source: 'live-test',
     });
 
     await sleep(150);
 
-    const starterSnapshot = await getTenantAsyncQueueSnapshot(queue, 'starter-a', 'starter');
-    ok(starterSnapshot.weightedDispatchEnforced === true, 'Weighted dispatch: starter snapshot reports enforcement');
-    ok(starterSnapshot.weightedDispatchBackend === 'redis', 'Weighted dispatch: starter snapshot reports redis backend');
-    ok(starterSnapshot.weightedDispatchWeight === 1, 'Weighted dispatch: starter weight = 1');
-    ok(starterSnapshot.weightedDispatchWindowMs === 400, 'Weighted dispatch: starter dispatch window = 400ms');
+    const trialSnapshot = await getTenantAsyncQueueSnapshot(queue, 'trial-a', 'trial');
+    ok(trialSnapshot.weightedDispatchEnforced === true, 'Weighted dispatch: trial snapshot reports enforcement');
+    ok(trialSnapshot.weightedDispatchBackend === 'redis', 'Weighted dispatch: trial snapshot reports redis backend');
+    ok(trialSnapshot.weightedDispatchWeight === 1, 'Weighted dispatch: trial weight = 1');
+    ok(trialSnapshot.weightedDispatchWindowMs === 400, 'Weighted dispatch: trial dispatch window = 400ms');
 
-    const proSnapshot = await getTenantAsyncQueueSnapshot(queue, 'pro-a', 'pro');
-    ok(proSnapshot.weightedDispatchWeight === 2, 'Weighted dispatch: pro weight = 2');
-    ok(proSnapshot.weightedDispatchWindowMs === 200, 'Weighted dispatch: pro dispatch window = 200ms');
+    await waitForCompletion(queue, trialA.jobId);
+    await waitForCompletion(queue, trialB.jobId);
 
-    await waitForCompletion(queue, starterA.jobId);
-    await waitForCompletion(queue, starterB.jobId);
-    await waitForCompletion(queue, proA.jobId);
-    await waitForCompletion(queue, proB.jobId);
+    const trialStarts = (planStarts.get('trial') ?? []).sort((a, b) => a - b);
+    ok(trialStarts.length === 2, 'Weighted dispatch: both trial jobs ran');
 
-    const starterStarts = (planStarts.get('starter') ?? []).sort((a, b) => a - b);
-    const proStarts = (planStarts.get('pro') ?? []).sort((a, b) => a - b);
-    ok(starterStarts.length === 2, 'Weighted dispatch: both starter jobs ran');
-    ok(proStarts.length === 2, 'Weighted dispatch: both pro jobs ran');
-
-    const starterDelta = starterStarts[1] - starterStarts[0];
-    const proDelta = proStarts[1] - proStarts[0];
-    ok(starterDelta >= 300, 'Weighted dispatch: starter jobs are spaced by the slower dispatch window');
-    ok(proDelta >= 140, 'Weighted dispatch: pro jobs are still dispatch-gated, not concurrent');
-    ok(proDelta < starterDelta, 'Weighted dispatch: pro plan gets a shorter shared dispatch interval than starter');
+    const trialDelta = trialStarts[1] - trialStarts[0];
+    ok(trialDelta >= 300, 'Weighted dispatch: trial jobs are spaced by the dispatch window');
 
     console.log(`  Live async weighted dispatch tests: ${passed} passed, 0 failed`);
   } finally {

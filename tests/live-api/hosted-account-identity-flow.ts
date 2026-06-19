@@ -36,22 +36,19 @@ export async function runHostedAccountIdentityFlow(ctx: LiveApiHostedContext): P
       });
       ok(plansRes.status === 200, 'Admin Plans: list status 200');
       const plansBody = await plansRes.json() as any;
-      ok(plansBody.defaults.hostedProvisioningPlanId === 'starter', 'Admin Plans: hosted default = starter');
+      ok(plansBody.defaults.hostedProvisioningPlanId === 'trial', 'Admin Plans: hosted default = trial');
       ok(plansBody.defaults.rateLimitWindowSeconds === 5, 'Admin Plans: rate-limit window override exposed');
       ok(plansBody.defaults.asyncExecutionShared === true, 'Admin Plans: async execution backend reported as shared');
       ok(plansBody.defaults.asyncWeightedDispatchShared === true, 'Admin Plans: async weighted dispatch backend reported as shared');
-      const starterPlan = plansBody.plans.find((entry: any) => entry.id === 'starter');
-      const developerPlan = plansBody.plans.find((entry: any) => entry.id === 'developer');
-      ok(Boolean(developerPlan), 'Admin Plans: developer plan present');
-      ok(developerPlan.defaultMonthlyRunQuota === 500, 'Admin Plans: developer hosted quota = 500');
-      ok(Boolean(starterPlan), 'Admin Plans: starter plan present');
-      ok(starterPlan.defaultMonthlyRunQuota === 25_000, 'Admin Plans: starter quota = 25,000');
-      ok(starterPlan.defaultPipelineRequestsPerWindow === 3, 'Admin Plans: starter rate limit = 3');
-      ok(starterPlan.defaultAsyncActiveJobsPerTenant === 1, 'Admin Plans: starter active execution cap = 1');
-      ok(starterPlan.defaultAsyncDispatchWeight === 1, 'Admin Plans: starter dispatch weight = 1');
-      ok(starterPlan.defaultAsyncDispatchWindowMs === 400, 'Admin Plans: starter dispatch window = 400ms');
-      ok(starterPlan.stripePriceConfigured === true, 'Admin Plans: starter Stripe price configured');
-      ok(starterPlan.defaultForHostedProvisioning === true, 'Admin Plans: starter is hosted default');
+      const trialPlan = plansBody.plans.find((entry: any) => entry.id === 'trial');
+      ok(Boolean(trialPlan), 'Admin Plans: trial account entitlement present');
+      ok(trialPlan.defaultMonthlyRunQuota === 10_000, 'Admin Plans: trial quota = 10,000');
+      ok(trialPlan.defaultPipelineRequestsPerWindow === 3, 'Admin Plans: trial rate limit override = 3');
+      ok(trialPlan.defaultAsyncActiveJobsPerTenant === 1, 'Admin Plans: trial active execution cap override = 1');
+      ok(trialPlan.defaultAsyncDispatchWeight === 1, 'Admin Plans: trial dispatch weight override = 1');
+      ok(trialPlan.defaultAsyncDispatchWindowMs === 400, 'Admin Plans: trial dispatch window = 400ms');
+      ok(trialPlan.billingSurface === 'workflow_entitlement', 'Admin Plans: billing surface is workflow entitlement');
+      ok(trialPlan.defaultForHostedProvisioning === true, 'Admin Plans: trial is hosted default');
 
       const accountsNoAuth = await fetch(`${BASE}/api/v1/admin/accounts`);
       ok(accountsNoAuth.status === 401, 'Admin Accounts: auth required');
@@ -75,8 +72,8 @@ export async function runHostedAccountIdentityFlow(ctx: LiveApiHostedContext): P
       const createAccountBody = ctx.createAccountBody;
       ok(createAccountBody.account.accountName === 'Account Co', 'Admin Accounts: account name persisted');
       ok(typeof createAccountBody.initialKey.apiKey === 'string', 'Admin Accounts: initial key returned');
-      ok(createAccountBody.initialKey.planId === 'starter', 'Admin Accounts: hosted default plan applied');
-      ok(createAccountBody.initialKey.monthlyRunQuota === 25_000, 'Admin Accounts: hosted default quota applied');
+      ok(createAccountBody.initialKey.planId === 'trial', 'Admin Accounts: trial account entitlement applied');
+      ok(createAccountBody.initialKey.monthlyRunQuota === 10_000, 'Admin Accounts: trial quota applied');
 
       const createAccountReplayRes = await fetch(`${BASE}/api/v1/admin/accounts`, {
         method: 'POST',
@@ -130,12 +127,12 @@ export async function runHostedAccountIdentityFlow(ctx: LiveApiHostedContext): P
       });
       ok(accountUsageRes.status === 200, 'Admin Accounts: initial key works on tenant route');
       const accountUsageBody = await accountUsageRes.json() as any;
-      ok(accountUsageBody.rateLimit.requestsPerWindow === 3, 'Admin Accounts: starter rate limit visible on account usage');
+      ok(accountUsageBody.rateLimit.requestsPerWindow === 3, 'Admin Accounts: trial rate limit visible on account usage');
 
       const forgedTenantToken = unsignedBearerToken({
         tenantId: createAccountBody.account.primaryTenantId,
         tenantName: 'Forged Tenant',
-        planId: 'enterprise',
+        planId: 'trial',
         monthlyRunQuota: 999999,
       });
       const forgedUsageRes = await fetch(`${BASE}/api/v1/account/usage`, {
@@ -179,17 +176,17 @@ export async function runHostedAccountIdentityFlow(ctx: LiveApiHostedContext): P
       ok(accountEntitlementRes.status === 200, 'Account Entitlement: status 200');
       const accountEntitlementBody = await accountEntitlementRes.json() as any;
       ok(accountEntitlementBody.entitlement.accountId === createAccountBody.account.id, 'Account Entitlement: account id matches');
-      ok(accountEntitlementBody.entitlement.effectivePlanId === 'starter', 'Account Entitlement: starter plan reflected');
+      ok(accountEntitlementBody.entitlement.effectivePlanId === 'trial', 'Account Entitlement: trial account entitlement reflected');
 
       const accountFeaturesInitialRes = await fetch(`${BASE}/api/v1/account/features`, {
         headers: { Authorization: `Bearer ${createAccountBody.initialKey.apiKey}` },
       });
       ok(accountFeaturesInitialRes.status === 200, 'Account Features: initial status 200');
       const accountFeaturesInitialBody = await accountFeaturesInitialRes.json() as any;
-      const starterApiFeature = accountFeaturesInitialBody.features.find((entry: any) => entry.key === 'api.access');
-      ok(Boolean(starterApiFeature), 'Account Features: api.access feature present');
-      ok(starterApiFeature.granted === true, 'Account Features: api.access initially granted by plan default');
-      ok(starterApiFeature.grantSource === 'plan_default', 'Account Features: api.access initial source is plan default');
+      const trialApiFeature = accountFeaturesInitialBody.features.find((entry: any) => entry.key === 'api.access');
+      ok(Boolean(trialApiFeature), 'Account Features: api.access feature present');
+      ok(trialApiFeature.granted === true, 'Account Features: api.access initially granted by trial default');
+      ok(trialApiFeature.grantSource === 'plan_default', 'Account Features: api.access initial source is plan default');
 
       const bootstrapRes = await fetch(`${BASE}/api/v1/account/users/bootstrap`, {
         method: 'POST',

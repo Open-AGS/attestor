@@ -32,6 +32,7 @@ import {
   resetTenantKeyStoreForTests,
   resetTenantRateLimiterForTests,
   resetUsageMeter,
+  resetWorkflowEntitlementStoreForTests,
   rmSync,
   startServer,
 } from './live-api/helpers.js';
@@ -59,14 +60,19 @@ async function run() {
   process.env.ATTESTOR_ASYNC_DLQ_STORE_PATH = join(process.cwd(), '.attestor', 'live-api-async-dlq.json');
   process.env.ATTESTOR_STRIPE_WEBHOOK_STORE_PATH = join(process.cwd(), '.attestor', 'live-api-stripe-webhooks.json');
   process.env.ATTESTOR_BILLING_ENTITLEMENT_STORE_PATH = join(process.cwd(), '.attestor', 'live-api-billing-entitlements.json');
+  process.env.ATTESTOR_WORKFLOW_ENTITLEMENT_STORE_PATH = join(process.cwd(), '.attestor', 'live-api-workflow-entitlements.json');
   process.env.ATTESTOR_EMAIL_DELIVERY_EVENTS_PATH = join(process.cwd(), '.attestor', 'live-api-email-delivery-events.json');
   process.env.ATTESTOR_OBSERVABILITY_LOG_PATH = join(process.cwd(), '.attestor', 'live-api-observability.jsonl');
   process.env.ATTESTOR_SESSION_COOKIE_SECURE = 'false';
   process.env.ATTESTOR_ADMIN_API_KEY = 'admin-secret';
   process.env.ATTESTOR_METRICS_API_KEY = 'metrics-secret';
   process.env.ATTESTOR_RATE_LIMIT_WINDOW_SECONDS = '5';
+  process.env.ATTESTOR_RATE_LIMIT_TRIAL_REQUESTS = '3';
   process.env.ATTESTOR_RATE_LIMIT_STARTER_REQUESTS = '3';
   process.env.ATTESTOR_RATE_LIMIT_PRO_REQUESTS = '20';
+  process.env.ATTESTOR_ASYNC_PENDING_TRIAL_JOBS = '1';
+  process.env.ATTESTOR_ASYNC_ACTIVE_TRIAL_JOBS = '1';
+  process.env.ATTESTOR_ASYNC_DISPATCH_TRIAL_WEIGHT = '1';
   process.env.ATTESTOR_ASYNC_PENDING_STARTER_JOBS = '1';
   process.env.ATTESTOR_ASYNC_ACTIVE_STARTER_JOBS = '1';
   process.env.ATTESTOR_ASYNC_DISPATCH_STARTER_WEIGHT = '1';
@@ -77,13 +83,11 @@ async function run() {
   process.env.ATTESTOR_BILLING_SUCCESS_URL = 'https://attestor.dev/billing/success';
   process.env.ATTESTOR_BILLING_CANCEL_URL = 'https://attestor.dev/billing/cancel';
   process.env.ATTESTOR_BILLING_PORTAL_RETURN_URL = 'https://attestor.dev/settings/billing';
-  process.env.ATTESTOR_STRIPE_PRICE_STARTER = 'price_starter_monthly';
-  process.env.ATTESTOR_STRIPE_PRICE_PRO = 'price_pro_monthly';
-  process.env.ATTESTOR_STRIPE_PRICE_SCALE = 'price_scale_monthly';
-  process.env.ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER = 'price_starter_overage_monthly';
-  process.env.ATTESTOR_STRIPE_OVERAGE_PRICE_PRO = 'price_pro_overage_monthly';
-  process.env.ATTESTOR_STRIPE_OVERAGE_PRICE_SCALE = 'price_scale_overage_monthly';
-  process.env.ATTESTOR_STRIPE_PRICE_ENTERPRISE = 'price_enterprise_monthly';
+  process.env.ATTESTOR_STRIPE_PRICE_PILOT_WORKFLOW = 'price_pilot_workflow_monthly';
+  process.env.ATTESTOR_STRIPE_PRICE_STARTER_WORKFLOW = 'price_starter_workflow_monthly';
+  process.env.ATTESTOR_STRIPE_PRICE_PRO_WORKFLOW = 'price_pro_workflow_monthly';
+  process.env.ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER_WORKFLOW = 'price_starter_workflow_overage_monthly';
+  process.env.ATTESTOR_STRIPE_OVERAGE_PRICE_PRO_WORKFLOW = 'price_pro_workflow_overage_monthly';
   resetTenantKeyStoreForTests();
   resetUsageMeter();
   await resetTenantRateLimiterForTests();
@@ -95,6 +99,7 @@ async function run() {
   resetAsyncDeadLetterStoreForTests();
   resetStripeWebhookStoreForTests();
   resetHostedBillingEntitlementStoreForTests();
+  resetWorkflowEntitlementStoreForTests();
   resetHostedEmailDeliveryEventStoreForTests();
   await resetBillingEventLedgerForTests();
   resetObservabilityForTests();
@@ -132,6 +137,7 @@ async function run() {
     resetAdminIdempotencyStoreForTests();
     resetStripeWebhookStoreForTests();
     resetHostedBillingEntitlementStoreForTests();
+    resetWorkflowEntitlementStoreForTests();
     resetHostedEmailDeliveryEventStoreForTests();
     await resetBillingEventLedgerForTests();
     resetObservabilityForTests();

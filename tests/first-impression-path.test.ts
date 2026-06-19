@@ -42,7 +42,7 @@ function testReadmeHasAPlainFirstThirtySeconds(): void {
   includes(readme, 'Prompts can guide behavior, but they cannot enforce it', 'README: keeps the prompt-control contrast');
   includes(readme, 'Unsafe requests can come from hallucination, stale context, poisoned tool output', 'README: explains why a proposed request can be unsafe');
   includes(readme, 'Before anything runs, Attestor checks', 'README: names pre-execution checks without overclaiming');
-  includes(readme, 'With a customer-owned gate in place, the downstream action stays behind', 'README: keeps the no-bypass posture tied to the customer gate');
+  includes(readme, 'The customer-owned gate decides before execution.', 'README: keeps the no-bypass posture tied to the customer gate');
   includes(readme, 'The trail records what was proposed', 'README: shows that the decision stays reviewable');
   excludes(readme, /## One Concrete Workflow/u, 'README: keeps the concrete workflow behind the first-run guide');
   includes(readme, '## Why This Matters Now', 'README: moves from placement into urgency before mechanism');

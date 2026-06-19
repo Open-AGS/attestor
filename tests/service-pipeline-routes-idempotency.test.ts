@@ -24,7 +24,7 @@ import type { TenantContext } from '../src/service/tenant-isolation.js';
 const tenant: TenantContext = {
   tenantId: 'tenant_pipeline_idem',
   source: 'api_key',
-  planId: 'pro',
+  planId: 'trial',
   accountId: 'acct_pipeline_idem',
   tenantName: 'Pipeline Idempotency',
   monthlyRunQuota: 100,

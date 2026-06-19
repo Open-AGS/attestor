@@ -36,7 +36,7 @@ function testActivationTargetNormalization(): void {
     consequenceType: 'record',
     riskClass: 'R4',
     cohortId: 'wave-a',
-    planId: 'enterprise',
+    planId: 'trial',
   });
 
   assert.deepEqual(target, {
@@ -48,7 +48,7 @@ function testActivationTargetNormalization(): void {
     consequenceType: 'record',
     riskClass: 'R4',
     cohortId: 'wave-a',
-    planId: 'enterprise',
+    planId: 'trial',
   });
 }
 

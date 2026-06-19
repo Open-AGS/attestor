@@ -188,8 +188,10 @@ export interface AuthSignupResponse {
   commercial: {
     currentPhase: 'evaluation' | 'paid';
     includedMonthlyRunQuota: number | null;
-    firstHostedPlanId: string;
-    firstHostedPlanTrialDays: number | null;
+    trialAccountEntitlementId: 'trial';
+    trialDurationDays: number;
+    workflowBillingTierIds: string[];
+    workflowCheckoutRoute: '/api/v1/account/billing/workflows/checkout';
   };
   initialKey: AccountApiKeyRecord & { apiKey: string };
 }

@@ -397,7 +397,7 @@ async function submitFailsQuickly(): Promise<AsyncRecoveryBehavior['failQuick']>
       submitPipelineJob(
         unavailableQueue,
         makeInput('fail-quick'),
-        { tenantId: 'tenant-production-rehearsal', planId: 'enterprise', source: 'production-rehearsal' },
+        { tenantId: 'tenant-production-rehearsal', planId: 'trial', source: 'production-rehearsal' },
       ),
       new Promise<never>((_, reject) => setTimeout(() => reject(new Error('submit did not fail within 2000ms')), 2000)),
     ]);
@@ -486,7 +486,7 @@ async function runCoreAsyncRecovery(input: {
     const drainedJob = await submitPipelineJob(
       queue,
       makeInput('drain'),
-      { tenantId: 'tenant-production-rehearsal', planId: 'enterprise', source: 'production-rehearsal' },
+      { tenantId: 'tenant-production-rehearsal', planId: 'trial', source: 'production-rehearsal' },
     );
     await waitForCondition(async () => drainStarted, 5_000);
     const closeStarted = Date.now();
@@ -504,7 +504,7 @@ async function runCoreAsyncRecovery(input: {
     const restartedJob = await submitPipelineJob(
       queue,
       makeInput('restart'),
-      { tenantId: 'tenant-production-rehearsal', planId: 'enterprise', source: 'production-rehearsal' },
+      { tenantId: 'tenant-production-rehearsal', planId: 'trial', source: 'production-rehearsal' },
     );
     const restartedStatus = await waitForStatus(queue, restartedJob.jobId, ['completed']);
     await restartWorker.close();
@@ -535,7 +535,7 @@ async function runCoreAsyncRecovery(input: {
     const retryJob = await submitPipelineJob(
       queue,
       makeInput('retry'),
-      { tenantId: 'tenant-production-rehearsal', planId: 'enterprise', source: 'production-rehearsal' },
+      { tenantId: 'tenant-production-rehearsal', planId: 'trial', source: 'production-rehearsal' },
     );
     const retryStatus = await waitForStatus(queue, retryJob.jobId, ['completed']);
     await retryWorker.close();
@@ -560,7 +560,7 @@ async function runCoreAsyncRecovery(input: {
     const failedJob = await submitPipelineJob(
       queue,
       makeInput('dead-letter'),
-      { tenantId: 'tenant-production-rehearsal', planId: 'enterprise', source: 'production-rehearsal' },
+      { tenantId: 'tenant-production-rehearsal', planId: 'trial', source: 'production-rehearsal' },
     );
     const failedStatus = await waitForStatus(queue, failedJob.jobId, ['failed']);
     const dlqVisible = await waitForCondition(async () => {

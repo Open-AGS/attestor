@@ -320,7 +320,7 @@ function financeRun(input: {
     tenantContext: {
       tenantId: 'tenant_production_rehearsal',
       source: 'production-rehearsal',
-      planId: 'enterprise',
+      planId: 'trial',
     },
     release: input.releaseDecisionStatus
       ? {

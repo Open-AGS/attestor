@@ -330,7 +330,7 @@ function testAuditAndLedgerMutationsHonorLocks(): void {
   createFreshLock(billingEntitlementPath);
   assertLockTimeout(() => upsertHostedBillingEntitlement({
     account: account.record,
-    currentPlanId: 'community',
+    currentPlanId: 'trial',
     currentMonthlyRunQuota: 10,
   }), 'billing entitlement mutation waits on the entitlement store lock');
   removeLock(billingEntitlementPath);

@@ -33,7 +33,7 @@ It is the fastest way to confirm which tenant is active, which plan is effective
 | Invoice, charge, line-item, and entitlement export for account visibility or CSV handoff | `GET /api/v1/account/billing/export?format=json|csv&limit=<n>` | account session or `Authorization: Bearer <tenant_api_key>` | `checkout`, `invoices`, `charges`, `lineItems`, `entitlementFeatures`, `reconciliation`, `summary` | Attestor export view over Stripe-backed and ledger-backed billing truth |
 | Per-invoice reconciliation status for review work | `GET /api/v1/account/billing/reconciliation?limit=<n>` | account session with `account_admin`, `billing_admin`, or `read_only` | `entitlement`, `reconciliation` | Attestor reconciliation view |
 | Open self-service billing UI | `POST /api/v1/account/billing/portal` | account session with `account_admin` or `billing_admin` | `portalSessionId`, `portalUrl`, `mock` | Attestor creates the session; Stripe hosts the portal |
-| Start paid hosted upgrade | `POST /api/v1/account/billing/checkout` | account session with `account_admin` or `billing_admin` plus `Idempotency-Key` | `checkoutSessionId`, `checkoutUrl`, `planId`, `trialDays`, `mock` | Attestor starts checkout; Stripe collects payment |
+| Start paid workflow upgrade | `POST /api/v1/account/billing/workflows/checkout` | account session with `account_admin` or `billing_admin` plus `Idempotency-Key` | `checkoutSessionId`, `checkoutUrl`, `workflowId`, `tier`, `mock` | Attestor starts workflow checkout; Stripe collects payment |
 
 ## What Attestor owns
 
@@ -46,7 +46,7 @@ Attestor owns the customer-visible control view before and around consequence:
 - entitlement state and access posture
 - feature projection on top of the effective plan
 - billing export and reconciliation read models
-- checkout-session creation and billing-portal session creation
+- workflow checkout-session creation and billing-portal session creation
 
 That is why the customer can stay on one account plane while moving from evaluation to paid hosted use.
 
@@ -61,7 +61,7 @@ Stripe still owns the billing system itself:
 - subscription lifecycle changes
 - asynchronous billing event delivery
 
-Attestor does not replace those Stripe surfaces. It creates the customer handoff into them, then converges the resulting lifecycle back into account-plane entitlement and feature state through signed webhook processing.
+Attestor does not replace those Stripe surfaces. It creates the customer handoff into them, then converges the resulting lifecycle back into workflow entitlement state through signed webhook processing.
 
 ## How to read the state in practice
 
@@ -78,12 +78,12 @@ Use this order:
 ## Important shape details
 
 - Attestor currently returns usage and rate-limit visibility in JSON response bodies through `usage` and `rateLimit`; this guide does not claim a separate public header contract.
-- `usage.enforced` and `usage.hardLimit` mean the included quota is a hard stop; `usage.overage` and `usage.overageUnits` mean a paid hosted account continued beyond included admissions.
-- Developer and Free Shadow Trial remain hard-limited. Starter, Pro, and Scale continue into paid soft overage instead of stopping production consequence gates.
+- `usage.enforced` and `usage.hardLimit` mean the included account quota is a hard stop; workflow entitlement usage carries the paid overage posture.
+- Trial remains hard-limited. Starter Workflow and Pro Workflow continue into paid soft overage instead of stopping production consequence gates.
 - `GET /api/v1/account/billing/export` can return `json` or `csv`, and the JSON payload includes a `summary.dataSource` value such as `stripe_live`, `ledger_derived`, `mock_summary`, or `empty`.
 - `GET /api/v1/account/features` is the clean place to answer "is this capability actually granted?" without forcing callers to interpret raw Stripe objects.
 - `GET /api/v1/account/billing/reconciliation` is session-only on purpose; it is for account-plane review work, not for generic tenant runtime calls.
-- `POST /api/v1/account/billing/portal` and `POST /api/v1/account/billing/checkout` do not return invoices or subscription state directly. They return the short-lived handoff into Stripe-hosted UI.
+- `POST /api/v1/account/billing/portal` and `POST /api/v1/account/billing/workflows/checkout` do not return invoices or subscription state directly. They return the short-lived handoff into Stripe-hosted UI.
 
 ## What not to mix together
 

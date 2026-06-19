@@ -166,7 +166,7 @@ function testTelemetryPrivacyControls(): void {
     parentSpanId: null,
     traceFlags: '01',
     tenantId: 'tenant_private',
-    planId: 'starter',
+    planId: 'trial',
     accountId: 'acct_1234567890abcdef',
     accountStatus: 'active',
     rateLimited: false,

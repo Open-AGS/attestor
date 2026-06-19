@@ -141,8 +141,6 @@ export function buildAccountRouteDeps(input: BuildAccountRouteDepsInput): Accoun
     deleteCookie: input.deleteCookie,
     sessionCookieName: input.sessionCookieName,
     accountMfaErrorResponse: input.accountMfaErrorResponse,
-    getHostedPlan: input.getHostedPlan,
-    createHostedCheckoutSession: input.createHostedCheckoutSession,
     createHostedWorkflowCheckoutSession: input.createHostedWorkflowCheckoutSession,
     listWorkflowEntitlements: input.listWorkflowEntitlements,
     findWorkflowEntitlementByTenantAndWorkflow: input.findWorkflowEntitlementByTenantAndWorkflow,

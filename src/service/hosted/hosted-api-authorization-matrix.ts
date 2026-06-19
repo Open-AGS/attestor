@@ -230,14 +230,13 @@ export const HOSTED_API_AUTHORIZATION_RULES = [
     tenantBoundary: 'account_session_account_scope',
     objectBoundary: 'account_id_from_session',
     mutationSafety: 'role_gated_service_mutation_with_account_session_audit',
-    idempotencyBoundary: 'required_header',
-    privacyBoundary: 'Stripe checkout session ids are handoff references; secret keys are never emitted',
+    idempotencyBoundary: 'not_applicable',
+    privacyBoundary: 'retired route returns the workflow checkout replacement and no Stripe handoff references',
     evidence: [
-      'src/service/http/routes/account-billing-routes.ts#Idempotency-Key',
-      'src/service/billing/stripe/stripe-billing.ts#createHostedCheckoutSession',
+      'src/service/http/routes/account-billing-routes.ts#account-plan checkout retired',
       'src/service/bootstrap/http-route-builders.ts#recordAccountMutationAudit',
     ],
-    standards: ['OWASP API1:2023', 'OWASP API4:2023', 'Stripe idempotency'],
+    standards: ['OWASP API1:2023', 'OWASP API4:2023'],
   },
   {
     id: 'account.billing.workflow-read',

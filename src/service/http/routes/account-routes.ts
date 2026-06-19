@@ -12,7 +12,6 @@ import type * as AccountUserStore from '../../account/account-user-store.js';
 import type * as BillingExport from '../../billing/billing-export.js';
 import type * as BillingFeatureService from '../../billing/billing-feature-service.js';
 import type * as BillingReconciliation from '../../billing/billing-reconciliation.js';
-import type * as PlanCatalog from '../../plan-catalog.js';
 import type * as RateLimit from '../../rate-limit.js';
 import type { AdminAuditAction } from '../../admin-audit-log.js';
 import type { SecretEnvelopeStatus } from '../../secret-envelope.js';
@@ -142,8 +141,6 @@ export interface AccountRouteDeps {
   deleteCookie(context: Context, key: string, options?: { path?: string }): void;
   sessionCookieName: typeof AccountSessionStore.sessionCookieName;
   accountMfaErrorResponse(context: Context, error: unknown): Response | null;
-  getHostedPlan: typeof PlanCatalog.getHostedPlan;
-  createHostedCheckoutSession: typeof StripeBilling.createHostedCheckoutSession;
   createHostedWorkflowCheckoutSession: typeof StripeBilling.createHostedWorkflowCheckoutSession;
   listWorkflowEntitlements(filters?: ListWorkflowEntitlementsFilters): Promise<{
     records: StoredWorkflowEntitlementRecord[];

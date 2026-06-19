@@ -159,11 +159,11 @@ async function run(): Promise<void> {
     const issued = issueTenantApiKey({
       tenantId: 'tenant-backup',
       tenantName: 'Backup Tenant',
-      planId: 'starter',
+      planId: 'trial',
     });
     upsertHostedBillingEntitlement({
       account,
-      currentPlanId: 'starter',
+      currentPlanId: 'trial',
       currentMonthlyRunQuota: 100,
       lastEventId: 'evt_entitlement_backup_1',
       lastEventType: 'manual.provisioning',
@@ -178,7 +178,7 @@ async function run(): Promise<void> {
       accountId: account.id,
       tenantId: 'tenant-backup',
       tenantKeyId: issued.record.id,
-      planId: 'starter',
+      planId: 'trial',
       monthlyRunQuota: 100,
       idempotencyKey: 'idem-backup-1',
       requestHash: 'req_hash_backup',
@@ -206,7 +206,7 @@ async function run(): Promise<void> {
       name: 'pipeline-run',
       backendMode: 'bullmq',
       tenantId: 'tenant-backup',
-      planId: 'starter',
+      planId: 'trial',
       state: 'failed',
       failedReason: 'synthetic DLQ failure',
       attemptsMade: 3,
@@ -230,7 +230,7 @@ async function run(): Promise<void> {
       tenantId: 'tenant-backup',
       stripeCustomerId: 'cus_backup',
       stripeSubscriptionId: 'sub_backup',
-      stripePriceId: 'price_starter_monthly',
+      stripePriceId: 'price_starter_workflow_monthly',
       stripeInvoiceId: 'in_backup_1',
       stripeInvoiceStatus: 'paid',
       stripeInvoiceCurrency: 'usd',
@@ -240,7 +240,7 @@ async function run(): Promise<void> {
       accountStatusAfter: 'active',
       billingStatusBefore: 'active',
       billingStatusAfter: 'active',
-      mappedPlanId: 'starter',
+      mappedPlanId: null,
       metadata: { paidAt: '2026-04-07T00:00:00.000Z' },
     });
 
@@ -308,7 +308,7 @@ async function run(): Promise<void> {
 
     const restoredEntitlement = findHostedBillingEntitlementByAccountId(account.id).record;
     ok(Boolean(restoredEntitlement), 'Restore: billing entitlement recovered');
-    ok(restoredEntitlement?.effectivePlanId === 'starter', 'Restore: billing entitlement plan preserved');
+    ok(restoredEntitlement?.effectivePlanId === 'trial', 'Restore: billing entitlement plan preserved');
 
     const restoredAudit = listAdminAuditRecords();
     ok(restoredAudit.chainIntact === true, 'Restore: admin audit chain intact');

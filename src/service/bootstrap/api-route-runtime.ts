@@ -78,7 +78,6 @@ import {
   listBillingEvents,
   releaseStripeBillingEventClaim,
   upsertStripeCharges,
-  upsertStripeInvoiceLineItems,
 } from '../billing/billing-event-ledger.js';
 import { buildHostedFeatureServiceView } from '../billing/billing-feature-service.js';
 import {
@@ -87,9 +86,6 @@ import {
 } from '../billing/billing-export.js';
 import { buildHostedBillingReconciliation } from '../billing/billing-reconciliation.js';
 import {
-  applyStripeCheckoutCompletionState,
-  applyStripeInvoiceStateState,
-  applyStripeSubscriptionStateState,
   appendAdminAuditRecordState,
   attachStripeBillingToAccountState,
   canConsumePipelineRunState,
@@ -156,7 +152,6 @@ import {
   setAccountUserStatusState,
   setHostedAccountStatusState,
   setTenantApiKeyStatusState,
-  syncTenantPlanByTenantIdState,
   upsertAsyncDeadLetterRecordState,
   upsertHostedBillingEntitlementState,
   upsertPendingWorkflowEntitlementState,
@@ -218,11 +213,7 @@ import {
   DEFAULT_HOSTED_PLAN_ID,
   SELF_HOST_PLAN_ID,
   defaultRateLimitWindowSeconds,
-  findHostedPlanByStripePriceId,
-  getHostedPlan,
   resolvePlanSpec,
-  resolvePlanStripePrice,
-  resolvePlanStripeTrialDays,
 } from '../plan-catalog.js';
 import {
   applyRateLimitHeaders,
@@ -279,21 +270,15 @@ import {
 } from '../site-support.js';
 import {
   createHostedBillingPortalSession,
-  createHostedCheckoutSession,
   createHostedWorkflowCheckoutSession,
   extractActiveEntitlementsFromSummary,
-  extractInvoiceLineItemSnapshotsFromInvoice,
   listHostedStripeActiveEntitlements,
-  listHostedStripeInvoiceLineItems,
-  recordStripeOverageMeterEvent,
 } from '../billing/stripe/stripe-billing.js';
 import { isSupportedStripeWebhookEvent } from '../billing/stripe/stripe-webhook-events.js';
 import {
   metadataStringValue,
   parseStripeChargeStatus,
-  parseStripeInvoiceStatus,
   stripeClient,
-  stripeInvoicePriceId,
   stripeReferenceId,
   unixSecondsToIso,
 } from '../billing/stripe/stripe-webhook-support.js';
@@ -433,7 +418,6 @@ export async function createApiHttpRouteRuntime(
     syncHostedBillingEntitlement,
     syncHostedBillingEntitlementForTenant,
     findHostedAccountByStripeRefs,
-    revokeAccountSessionsForLifecycleChange,
   } = createHostedAccountSupport({
     DEFAULT_HOSTED_PLAN_ID,
     findHostedAccountByTenantId: findHostedAccountByTenantIdState,
@@ -519,7 +503,6 @@ export async function createApiHttpRouteRuntime(
     resolvePlanSpec,
     SELF_HOST_PLAN_ID,
     DEFAULT_HOSTED_PLAN_ID,
-    resolvePlanStripeTrialDays,
     provisionHostedAccountState,
     issueAccountSessionState,
     recordAccountUserLoginState,
@@ -625,8 +608,6 @@ export async function createApiHttpRouteRuntime(
     deleteCookie,
     sessionCookieName,
     accountMfaErrorResponse,
-    getHostedPlan,
-    createHostedCheckoutSession,
     createHostedWorkflowCheckoutSession,
     listWorkflowEntitlements: listWorkflowEntitlementsState,
     findWorkflowEntitlementByTenantAndWorkflow: findWorkflowEntitlementByTenantAndWorkflowState,
@@ -756,10 +737,15 @@ export async function createApiHttpRouteRuntime(
     ensurePipelineIdempotencyStateReady,
     lookupPipelineIdempotencyState,
     recordPipelineIdempotencyState,
-    async recordOverageMetering({ tenant, usage }) {
-      const account = await findHostedAccountByTenantIdState(tenant.tenantId);
-      return recordStripeOverageMeterEvent({ account, tenant, usage });
-    },
+    recordOverageMetering: async () => ({
+      provider: 'stripe',
+      status: 'not_applicable',
+      reason: 'account_plan_overage_metering_retired_use_workflow_entitlement_metering',
+      eventName: null,
+      eventIdentifier: null,
+      value: 0,
+      mock: process.env.ATTESTOR_STRIPE_USE_MOCK === 'true',
+    }),
     upsertDeadLetterRecord: upsertAsyncDeadLetterRecordState,
     currentTenant,
     reserveTenantPipelineRequest,
@@ -846,32 +832,17 @@ export async function createApiHttpRouteRuntime(
     releaseStripeBillingEventClaim,
     isSupportedStripeWebhookEvent,
     stripeReferenceId,
-    parseStripeInvoiceStatus,
-    stripeInvoicePriceId,
     metadataStringValue,
-    applyStripeSubscriptionStateState,
-    applyStripeInvoiceStateState,
-    applyStripeCheckoutCompletionState,
     upsertWorkflowEntitlementFromStripeState,
     findHostedAccountByStripeRefs,
-    findHostedPlanByStripePriceId,
-    resolvePlanSpec,
-    DEFAULT_HOSTED_PLAN_ID,
-    syncTenantPlanByTenantIdState,
     syncHostedBillingEntitlement,
-    revokeAccountSessionsForLifecycleChange,
     appendAdminAuditRecordState,
     billingEntitlementView,
-    extractInvoiceLineItemSnapshotsFromInvoice,
     listHostedStripeActiveEntitlements,
     extractActiveEntitlementsFromSummary,
-    listHostedStripeInvoiceLineItems,
-    upsertStripeInvoiceLineItems,
     parseStripeChargeStatus,
-    getHostedPlan,
     upsertStripeCharges,
     unixSecondsToIso,
-    resolvePlanStripePrice,
     getSendGridWebhookStatus,
     verifySignedSendGridWebhook,
     parseSendGridWebhookEvents,

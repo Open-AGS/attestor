@@ -108,7 +108,7 @@ async function main(): Promise<void> {
       intent: { label: 'tenant-a-1' },
     }, {
       tenantId: 'tenant-a',
-      planId: 'starter',
+      planId: 'trial',
       source: 'live-test',
     });
     const tenantAJob2 = await submitPipelineJob(queue, {
@@ -117,7 +117,7 @@ async function main(): Promise<void> {
       intent: { label: 'tenant-a-2' },
     }, {
       tenantId: 'tenant-a',
-      planId: 'starter',
+      planId: 'trial',
       source: 'live-test',
     });
 
@@ -145,7 +145,7 @@ async function main(): Promise<void> {
       intent: { label: 'tenant-b' },
     }, {
       tenantId: 'tenant-b',
-      planId: 'starter',
+      planId: 'trial',
       source: 'live-test',
     });
     const tenantCJob = await submitPipelineJob(queue, {
@@ -154,7 +154,7 @@ async function main(): Promise<void> {
       intent: { label: 'tenant-c' },
     }, {
       tenantId: 'tenant-c',
-      planId: 'starter',
+      planId: 'trial',
       source: 'live-test',
     });
 

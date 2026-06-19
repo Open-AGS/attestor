@@ -201,8 +201,8 @@ function testCommercialTruthSourcesStayLinked(): void {
   );
   includes(
     packaging,
-    'optional Enterprise self-service price env var',
-    'Hosted product flow docs: product packaging keeps Enterprise checkout optional',
+    'There is no self-service hosted account billing plan named `developer`',
+    'Hosted product flow docs: product packaging retires the legacy account-plan ladder',
   );
 }
 
@@ -223,10 +223,10 @@ function testAccountVisibilityGuideStaysGrounded(): void {
   includes(guide, '`GET /api/v1/account/billing/export?format=json|csv&limit=<n>`', 'Hosted account visibility: billing export route is documented');
   includes(guide, '`GET /api/v1/account/billing/reconciliation?limit=<n>`', 'Hosted account visibility: billing reconciliation route is documented');
   includes(guide, '`POST /api/v1/account/billing/portal`', 'Hosted account visibility: billing portal route is documented');
-  includes(guide, '`POST /api/v1/account/billing/checkout`', 'Hosted account visibility: billing checkout route is documented');
+  includes(guide, '`POST /api/v1/account/billing/workflows/checkout`', 'Hosted account visibility: workflow billing checkout route is documented');
   includes(guide, '`rateLimit`', 'Hosted account visibility: rateLimit body field is documented');
   includes(guide, 'hard-limit versus paid soft-overage posture', 'Hosted account visibility: overage posture is documented');
-  includes(guide, '`usage.overage` and `usage.overageUnits`', 'Hosted account visibility: overage fields are documented');
+  includes(guide, 'workflow entitlement usage carries the paid overage posture', 'Hosted account visibility: workflow overage posture is documented');
   includes(guide, '`summary.dataSource`', 'Hosted account visibility: billing export data source field is documented');
   includes(guide, 'Stripe still owns the billing system itself:', 'Hosted account visibility: Stripe ownership boundary is documented');
   includes(guide, 'use [Stripe commercial bootstrap](stripe-commercial-bootstrap.md) only for operator setup, not as a customer pricing page', 'Hosted account visibility: operator truth source separation is documented');
@@ -307,7 +307,7 @@ function testFirstApiCallQuickstartStaysGrounded(): void {
   includes(firstApiCall, '"overageUnits"', 'Hosted first API-call docs: overage unit field is shown');
   includes(firstApiCall, '`401`', 'Hosted first API-call docs: invalid key failure is documented');
   includes(firstApiCall, '`429`', 'Hosted first API-call docs: quota/rate-limit failure is documented');
-  includes(firstApiCall, 'paid hosted overage: Starter, Pro, and Scale continue returning `200`', 'Hosted first API-call docs: paid soft overage failure posture is documented');
+  includes(firstApiCall, 'paid workflow overage: Starter Workflow and Pro Workflow continue returning `200`', 'Hosted first API-call docs: paid workflow overage failure posture is documented');
   includes(
     firstApiCall,
     'The downstream system should gate on the returned decision.',
@@ -351,24 +351,22 @@ function testPricingAndTrialTruthsStayAnchored(): void {
   const pricingRoi = readProjectFile('docs', '01-overview', 'pricing-roi-calculator.md');
   const contract = readProjectFile('src', 'service', 'hosted', 'hosted-journey-contract.ts');
 
-  includes(packaging, '`monthly_admission_runs`', 'Hosted product flow docs: billable admission meter is documented');
-  includes(packaging, '| `developer` | free | `500` admissions / month |', 'Hosted product flow docs: developer plan remains free');
-  includes(packaging, '| `trial` | free for `60` days | `5,000` admissions total |', 'Hosted product flow docs: shadow trial posture is documented');
-  includes(packaging, '| `starter` | USD `$299` / month or `$2,990` / year | `25,000` admissions / month |', 'Hosted product flow docs: starter pricing is documented');
-  includes(packaging, '| `pro` | USD `$1,499` / month or `$14,990` / year | `250,000` admissions / month |', 'Hosted product flow docs: pro pricing is documented');
-  includes(packaging, '| `scale` | USD `$5,999` / month, contract-led | `1,000,000` admissions / month |', 'Hosted product flow docs: scale pricing posture is documented');
-  includes(packaging, '| `enterprise` | from USD `$50,000` / year | custom, normally `5,000,000`+ admissions / month |', 'Hosted product flow docs: enterprise pricing posture is documented');
-  includes(packaging, 'plan ids: `developer`, `trial`, `starter`, `pro`, `scale`, `enterprise`', 'Hosted product flow docs: current shipped plan ids remain documented');
-  includes(packaging, 'legacy alias: `community` resolves to `developer`', 'Hosted product flow docs: legacy community alias is documented');
-  includes(packaging, 'usage meter name: `monthly_admission_runs`', 'Hosted product flow docs: current admission meter is documented');
-  includes(packaging, 'paid hosted quota behavior: Starter, Pro, and Scale continue into soft overage', 'Hosted product flow docs: paid soft overage behavior is documented');
-  includes(packaging, 'Stripe overage meter events are emitted for over-quota paid admissions', 'Hosted product flow docs: paid overage metering is documented');
-  includes(packaging, 'The `trial` plan exists in the catalog, but signup still provisions Developer by default', 'Hosted product flow docs: trial lifecycle gap is not overclaimed');
+  includes(packaging, '`monthly_admission_runs`', 'Hosted product flow docs: account admission meter is documented');
+  includes(packaging, '`workflow_monthly_admissions`', 'Hosted product flow docs: workflow admission meter is documented');
+  includes(packaging, '| `trial` account entitlement | free | `10,000` admissions total over `30` days |', 'Hosted product flow docs: trial account entitlement is documented');
+  includes(packaging, '| `pilot-workflow` | USD `$99` / month | `15,000` admissions / month |', 'Hosted product flow docs: Pilot Workflow pricing is documented');
+  includes(packaging, '| `starter-workflow` | USD `$299` / month | `25,000` admissions / month |', 'Hosted product flow docs: Starter Workflow pricing is documented');
+  includes(packaging, '| `pro-workflow` | USD `$999` / month | `250,000` admissions / month |', 'Hosted product flow docs: Pro Workflow pricing is documented');
+  includes(packaging, 'Legacy account-plan ids may remain in local compatibility records', 'Hosted product flow docs: legacy account plan compatibility is not active billing');
+  includes(packaging, 'paid workflow tiers: `pilot-workflow`, `starter-workflow`, `pro-workflow`', 'Hosted product flow docs: current workflow tier ids are documented');
+  includes(packaging, 'Paid workflow overage should be soft by default for production workflow tiers.', 'Hosted product flow docs: paid workflow overage behavior is documented');
+  includes(packaging, 'Stripe overage meter events are emitted for over-quota workflow admissions', 'Hosted product flow docs: workflow overage metering is documented');
+  includes(packaging, 'first free hosted path: `trial` with `10,000` admissions over `30` days', 'Hosted product flow docs: trial lifecycle is documented');
   includes(pricingRoi, '`daily_admissions`', 'Hosted product flow docs: ROI calculator sizes by daily admissions');
   includes(pricingRoi, 'monthly_admissions = daily_admissions * business_days_per_month', 'Hosted product flow docs: ROI calculator includes monthly sizing formula');
   includes(pricingRoi, 'roi_multiple = annual_avoided_loss / annual_subscription_cost', 'Hosted product flow docs: ROI calculator includes avoided-loss formula');
   includes(pricingRoi, 'Attestor is not insurance and does not guarantee that every bad action is prevented', 'Hosted product flow docs: ROI calculator blocks guaranteed-savings overclaim');
-  includes(pricingRoi, 'When enforcement is required, do not recommend Developer.', 'Hosted product flow docs: ROI calculator blocks Developer enforcement overclaim');
+  includes(pricingRoi, 'When enforcement is required, do not recommend Trial or Pilot Workflow by', 'Hosted product flow docs: ROI calculator blocks non-production enforcement overclaim');
   includes(
     contract,
     "pricingRoiCalculator: 'docs/01-overview/pricing-roi-calculator.md'",
@@ -419,7 +417,8 @@ function testHostedJourneyRoutesMatchShippedRoutes(): void {
     'POST /api/v1/account/api-keys/:id/deactivate',
     'POST /api/v1/account/api-keys/:id/reactivate',
     'POST /api/v1/account/api-keys/:id/revoke',
-    'POST /api/v1/account/billing/checkout',
+    'GET /api/v1/account/billing/workflows',
+    'POST /api/v1/account/billing/workflows/checkout',
     'POST /api/v1/account/billing/portal',
     'GET /api/v1/account/billing/export',
     'GET /api/v1/account/billing/reconciliation',
@@ -456,13 +455,13 @@ function testRuntimeCoverageGatesAreNamed(): void {
   includes(liveApi, '/api/v1/account/features', 'Hosted product flow docs: live API suite covers hosted features');
   includes(liveApi, '/api/v1/account/billing/export?limit=5', 'Hosted product flow docs: live API suite covers hosted billing export');
   includes(liveApi, '/api/v1/account/billing/reconciliation?limit=5', 'Hosted product flow docs: live API suite covers hosted billing reconciliation');
-  includes(liveApi, '/api/v1/account/billing/checkout', 'Hosted product flow docs: live API suite covers checkout');
+  includes(liveApi, '/api/v1/account/billing/workflows/checkout', 'Hosted product flow docs: live API suite covers workflow checkout');
   includes(liveApi, '/api/v1/billing/stripe/webhook', 'Hosted product flow docs: live API suite covers Stripe webhook');
-  includes(liveApi, 'entitlements.active_entitlement_summary.updated', 'Hosted product flow docs: live API suite covers Stripe entitlement summary updates');
+  includes(liveApi, 'evt_workflow_checkout_account_001_completed', 'Hosted product flow docs: live API suite covers workflow checkout webhook convergence');
   includes(productionProbe, '/api/v1/account/features', 'Hosted product flow docs: production probe covers hosted features');
   includes(productionProbe, '/api/v1/account/billing/export?limit=5', 'Hosted product flow docs: production probe covers hosted billing export');
   includes(productionProbe, '/api/v1/account/billing/reconciliation?limit=5', 'Hosted product flow docs: production probe covers hosted billing reconciliation');
-  includes(productionProbe, '/api/v1/account/billing/checkout', 'Hosted product flow docs: production probe covers checkout');
+  includes(productionProbe, '/api/v1/account/billing/workflows/checkout', 'Hosted product flow docs: production probe covers workflow checkout');
   includes(productionProbe, '/api/v1/account/billing/portal', 'Hosted product flow docs: production probe covers portal');
   includes(productionProbe, 'generateTestHeaderString', 'Hosted product flow docs: production probe signs Stripe webhook payloads');
 }

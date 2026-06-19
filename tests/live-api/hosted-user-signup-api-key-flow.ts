@@ -91,27 +91,27 @@ export async function runHostedUserSignupApiKeyFlow(ctx: LiveApiHostedContext): 
         const billingEventsBody = await billingEventsRes.json() as any;
         ok(billingEventsBody.summary.recordCount === 5, 'Admin Billing Events: five webhook events stored for account');
         ok(billingEventsBody.summary.appliedCount === 5, 'Admin Billing Events: all stored events applied');
-        const checkoutLedger = billingEventsBody.records.find((entry: any) => entry.providerEventId === 'evt_checkout_account_001_completed');
-        ok(Boolean(checkoutLedger), 'Admin Billing Events: checkout completion event present');
-        ok(checkoutLedger.stripeCheckoutSessionId === checkoutBody.checkoutSessionId, 'Admin Billing Events: checkout event captures session id');
-        ok(checkoutLedger.mappedPlanId === 'pro', 'Admin Billing Events: checkout event captures mapped plan');
-        const pastDueLedger = billingEventsBody.records.find((entry: any) => entry.providerEventId === 'evt_sub_account_001_past_due');
-        ok(Boolean(pastDueLedger), 'Admin Billing Events: past_due event present');
-        ok(pastDueLedger.accountStatusAfter === 'suspended', 'Admin Billing Events: past_due captures suspended status');
-        ok(pastDueLedger.billingStatusAfter === 'past_due', 'Admin Billing Events: past_due captures billing status');
-        const activeLedger = billingEventsBody.records.find((entry: any) => entry.providerEventId === 'evt_sub_account_001_active');
-        ok(Boolean(activeLedger), 'Admin Billing Events: active event present');
-        ok(activeLedger.accountStatusBefore === 'suspended', 'Admin Billing Events: active event captures previous status');
-        ok(activeLedger.accountStatusAfter === 'active', 'Admin Billing Events: active event captures restored status');
-        ok(activeLedger.mappedPlanId === 'pro', 'Admin Billing Events: active event captures mapped plan');
-        const invoiceFailedLedger = billingEventsBody.records.find((entry: any) => entry.providerEventId === 'evt_invoice_account_001_failed');
-        ok(Boolean(invoiceFailedLedger), 'Admin Billing Events: invoice failure event present');
-        ok(invoiceFailedLedger.stripeInvoiceId === 'in_account_001_failed', 'Admin Billing Events: invoice failure captures invoice id');
-        ok(invoiceFailedLedger.stripeInvoiceAmountDue === 5000, 'Admin Billing Events: invoice failure captures amount due');
-        const invoicePaidLedger = billingEventsBody.records.find((entry: any) => entry.providerEventId === 'evt_invoice_account_001_paid');
-        ok(Boolean(invoicePaidLedger), 'Admin Billing Events: invoice paid event present');
-        ok(invoicePaidLedger.stripeInvoiceStatus === 'paid', 'Admin Billing Events: invoice paid captures invoice status');
-        ok(invoicePaidLedger.stripeInvoiceAmountPaid === 5000, 'Admin Billing Events: invoice paid captures amount paid');
+        const checkoutLedger = billingEventsBody.records.find((entry: any) => entry.providerEventId === 'evt_workflow_checkout_account_001_completed');
+        ok(Boolean(checkoutLedger), 'Admin Billing Events: workflow checkout completion event present');
+        ok(checkoutLedger.stripeCheckoutSessionId !== null, 'Admin Billing Events: workflow checkout event captures session id');
+        ok(checkoutLedger.stripePriceId === 'price_pro_workflow_monthly', 'Admin Billing Events: workflow checkout captures workflow price');
+        ok(checkoutLedger.metadata.workflowTier === 'pro-workflow', 'Admin Billing Events: checkout event captures workflow tier metadata');
+        const pastDueLedger = billingEventsBody.records.find((entry: any) => entry.providerEventId === 'evt_workflow_sub_account_001_past_due');
+        ok(Boolean(pastDueLedger), 'Admin Billing Events: workflow past_due event present');
+        ok(pastDueLedger.billingStatusAfter === 'past_due', 'Admin Billing Events: workflow past_due captures billing status');
+        ok(pastDueLedger.metadata.workflowEntitlementStatus === 'past_due', 'Admin Billing Events: workflow past_due captures entitlement status metadata');
+        const activeLedger = billingEventsBody.records.find((entry: any) => entry.providerEventId === 'evt_workflow_sub_account_001_active');
+        ok(Boolean(activeLedger), 'Admin Billing Events: workflow active event present');
+        ok(activeLedger.billingStatusAfter === 'active', 'Admin Billing Events: workflow active captures billing status');
+        ok(activeLedger.metadata.workflowTier === 'pro-workflow', 'Admin Billing Events: active event captures workflow tier');
+        const invoiceFailedLedger = billingEventsBody.records.find((entry: any) => entry.providerEventId === 'evt_workflow_invoice_account_001_failed');
+        ok(Boolean(invoiceFailedLedger), 'Admin Billing Events: workflow invoice failure event present');
+        ok(invoiceFailedLedger.stripeInvoiceId === 'in_workflow_account_001_failed', 'Admin Billing Events: workflow invoice failure captures invoice id');
+        ok(invoiceFailedLedger.stripeInvoiceAmountDue === 99900, 'Admin Billing Events: workflow invoice failure captures amount due');
+        const invoicePaidLedger = billingEventsBody.records.find((entry: any) => entry.providerEventId === 'evt_workflow_invoice_account_001_paid');
+        ok(Boolean(invoicePaidLedger), 'Admin Billing Events: workflow invoice paid event present');
+        ok(invoicePaidLedger.stripeInvoiceStatus === 'paid', 'Admin Billing Events: workflow invoice paid captures invoice status');
+        ok(invoicePaidLedger.stripeInvoiceAmountPaid === 99900, 'Admin Billing Events: workflow invoice paid captures amount paid');
 
         const billingEventTypeRes = await fetch(`${BASE}/api/v1/admin/billing/events?eventType=customer.subscription.updated`, {
           headers: { Authorization: 'Bearer admin-secret' },
@@ -133,8 +133,8 @@ export async function runHostedUserSignupApiKeyFlow(ctx: LiveApiHostedContext): 
       ok(billingEntitlementsRes.status === 200, 'Admin Billing Entitlements: status 200');
       const billingEntitlementsBody = await billingEntitlementsRes.json() as any;
       ok(billingEntitlementsBody.summary.recordCount === 1, 'Admin Billing Entitlements: one record returned for account');
-      ok(billingEntitlementsBody.records[0].status === 'active', 'Admin Billing Entitlements: active entitlement returned');
-      ok(billingEntitlementsBody.records[0].effectivePlanId === 'pro', 'Admin Billing Entitlements: plan filter view shows pro');
+      ok(billingEntitlementsBody.records[0].status === 'provisioned', 'Admin Billing Entitlements: account-level trial entitlement returned');
+      ok(billingEntitlementsBody.records[0].effectivePlanId === 'trial', 'Admin Billing Entitlements: plan filter view shows trial');
 
       const metricsNoAuth = await fetch(`${BASE}/api/v1/admin/metrics`);
       ok(metricsNoAuth.status === 401, 'Admin Metrics: auth required');
@@ -213,11 +213,11 @@ export async function runHostedUserSignupApiKeyFlow(ctx: LiveApiHostedContext): 
       ok(Boolean(signupCookie), 'Auth Signup: session cookie issued');
       ok(signupBody.signup === true, 'Auth Signup: signup flag true');
       ok(signupBody.user.role === 'account_admin', 'Auth Signup: first user is account_admin');
-      ok(signupBody.initialKey.planId === 'developer', 'Auth Signup: developer plan applied');
+      ok(signupBody.initialKey.planId === 'trial', 'Auth Signup: trial plan applied');
       ok(signupBody.commercial.currentPhase === 'evaluation', 'Auth Signup: signup starts in evaluation phase');
-      ok(signupBody.commercial.includedMonthlyRunQuota === 500, 'Auth Signup: developer includes 500 hosted admissions before upgrade');
-      ok(signupBody.commercial.firstHostedPlanId === 'starter', 'Auth Signup: starter is the first hosted paid plan');
-      ok(signupBody.commercial.firstHostedPlanTrialDays === null, 'Auth Signup: paid checkout trial default is not surfaced as enabled');
+      ok(signupBody.commercial.includedMonthlyRunQuota === 10_000, 'Auth Signup: trial includes 10000 hosted admissions before workflow checkout');
+      ok(signupBody.commercial.trialAccountEntitlementId === 'trial', 'Auth Signup: trial account entitlement is surfaced');
+      ok(signupBody.commercial.workflowCheckoutRoute === '/api/v1/account/billing/workflows/checkout', 'Auth Signup: workflow checkout route is surfaced');
       ok(typeof signupBody.initialKey.apiKey === 'string', 'Auth Signup: initial API key returned');
 
       const signupUsageRes = await fetch(`${BASE}/api/v1/account/usage`, {
@@ -225,9 +225,9 @@ export async function runHostedUserSignupApiKeyFlow(ctx: LiveApiHostedContext): 
       });
       ok(signupUsageRes.status === 200, 'Auth Signup: initial API key works');
       const signupUsageBody = await signupUsageRes.json() as any;
-      ok(signupUsageBody.tenantContext.planId === 'developer', 'Auth Signup: developer plan visible in usage');
-      ok(signupUsageBody.usage.quota === 500, 'Auth Signup: developer signup has 500 included hosted admissions');
-      ok(signupUsageBody.usage.enforced === true, 'Auth Signup: developer hosted quota is enforced');
+      ok(signupUsageBody.tenantContext.planId === 'trial', 'Auth Signup: trial plan visible in usage');
+      ok(signupUsageBody.usage.quota === 10_000, 'Auth Signup: trial signup has 10000 included hosted admissions');
+      ok(signupUsageBody.usage.enforced === true, 'Auth Signup: trial hosted quota is enforced');
 
       const signupPipelineRunRes = await fetch(`${BASE}/api/v1/pipeline/run`, {
         method: 'POST',
@@ -243,9 +243,9 @@ export async function runHostedUserSignupApiKeyFlow(ctx: LiveApiHostedContext): 
           sign: false,
         }),
       });
-      ok(signupPipelineRunRes.status === 200, 'Auth Signup: evaluation account can consume one of the included developer hosted admissions');
+      ok(signupPipelineRunRes.status === 200, 'Auth Signup: evaluation account can consume one of the included trial hosted admissions');
       const signupPipelineRunBody = await signupPipelineRunRes.json() as any;
-      ok(signupPipelineRunBody.decision === 'pass', 'Auth Signup: developer hosted admission still executes the governed pipeline');
+      ok(signupPipelineRunBody.decision === 'pass', 'Auth Signup: trial hosted admission still executes the governed pipeline');
 
       for (let attempt = 2; attempt <= 10; attempt += 1) {
         const res = await fetch(`${BASE}/api/v1/pipeline/run`, {
@@ -262,7 +262,7 @@ export async function runHostedUserSignupApiKeyFlow(ctx: LiveApiHostedContext): 
             sign: false,
           }),
         });
-        ok(res.status === 200, `Auth Signup: developer run ${attempt} stays within the included quota`);
+        ok(res.status === 200, `Auth Signup: trial run ${attempt} stays within the included quota`);
       }
 
       const signupAdditionalRunRes = await fetch(`${BASE}/api/v1/pipeline/run`, {
@@ -279,7 +279,7 @@ export async function runHostedUserSignupApiKeyFlow(ctx: LiveApiHostedContext): 
           sign: false,
         }),
       });
-      ok(signupAdditionalRunRes.status === 200, 'Auth Signup: developer quota is large enough that the live smoke does not exhaust it');
+      ok(signupAdditionalRunRes.status === 200, 'Auth Signup: trial quota is large enough that the live smoke does not exhaust it');
 
       const accountKeysRes = await fetch(`${BASE}/api/v1/account/api-keys`, {
         headers: csrfHeaders(signupCookie!),
@@ -319,7 +319,7 @@ export async function runHostedUserSignupApiKeyFlow(ctx: LiveApiHostedContext): 
       ok(issueAccountKeyRes.status === 201, 'Account API Keys: issue status 201');
       const issueAccountKeyBody = await issueAccountKeyRes.json() as any;
       ok(typeof issueAccountKeyBody.key.apiKey === 'string', 'Account API Keys: plaintext key returned on issue');
-      ok(issueAccountKeyBody.key.planId === 'developer', 'Account API Keys: issued key inherits developer plan');
+      ok(issueAccountKeyBody.key.planId === 'trial', 'Account API Keys: issued key inherits trial plan');
 
       const deactivateKeyRes = await fetch(`${BASE}/api/v1/account/api-keys/${issueAccountKeyBody.key.id}/deactivate`, {
         method: 'POST',

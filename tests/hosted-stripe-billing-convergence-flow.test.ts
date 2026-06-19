@@ -21,6 +21,7 @@ import { shutdownTenantRuntimeBackends } from '../src/service/runtime/tenant-run
 import { resetStripeWebhookStoreForTests } from '../src/service/billing/stripe/stripe-webhook-store.js';
 import { resetTenantKeyStoreForTests } from '../src/service/tenant-key-store.js';
 import { resetUsageMeter } from '../src/service/usage-meter.js';
+import { tenantWorkflowMetadataDigest } from '../src/service/workflow-entitlement-store.js';
 
 let passed = 0;
 
@@ -136,13 +137,11 @@ function configureIsolatedStores(root: string): void {
   process.env.ATTESTOR_BILLING_SUCCESS_URL = 'https://attestor.dev/billing/success';
   process.env.ATTESTOR_BILLING_CANCEL_URL = 'https://attestor.dev/billing/cancel';
   process.env.ATTESTOR_BILLING_PORTAL_RETURN_URL = 'https://attestor.dev/settings/billing';
-  process.env.ATTESTOR_STRIPE_PRICE_STARTER = 'price_starter_monthly';
-  process.env.ATTESTOR_STRIPE_PRICE_PRO = 'price_pro_monthly';
-  process.env.ATTESTOR_STRIPE_PRICE_SCALE = 'price_scale_monthly';
-  process.env.ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER = 'price_starter_overage_monthly';
-  process.env.ATTESTOR_STRIPE_OVERAGE_PRICE_PRO = 'price_pro_overage_monthly';
-  process.env.ATTESTOR_STRIPE_OVERAGE_PRICE_SCALE = 'price_scale_overage_monthly';
-  process.env.ATTESTOR_STRIPE_PRICE_ENTERPRISE = 'price_enterprise_monthly';
+  process.env.ATTESTOR_STRIPE_PRICE_PILOT_WORKFLOW = 'price_pilot_workflow_monthly';
+  process.env.ATTESTOR_STRIPE_PRICE_STARTER_WORKFLOW = 'price_starter_workflow_monthly';
+  process.env.ATTESTOR_STRIPE_PRICE_PRO_WORKFLOW = 'price_pro_workflow_monthly';
+  process.env.ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER_WORKFLOW = 'price_starter_workflow_overage_monthly';
+  process.env.ATTESTOR_STRIPE_OVERAGE_PRICE_PRO_WORKFLOW = 'price_pro_workflow_overage_monthly';
 }
 
 async function resetStores(): Promise<void> {
@@ -170,7 +169,11 @@ function checkoutCompletedPayload(input: {
   checkoutSessionId: string;
   customerId: string;
   subscriptionId: string;
-  planId: string;
+  workflowId: string;
+  workflowTier: string;
+  consequencePack: string;
+  downstreamSystemRefDigest: string;
+  policyGatePathRefDigest: string;
 }): string {
   return JSON.stringify({
     id: input.eventId,
@@ -186,9 +189,13 @@ function checkoutCompletedPayload(input: {
         subscription: input.subscriptionId,
         created: Math.floor(Date.now() / 1000),
         metadata: {
-          attestorAccountId: input.accountId,
-          attestorTenantId: input.tenantId,
-          attestorPlanId: input.planId,
+          attestor_account_id: input.accountId,
+          attestor_tenant_digest: tenantWorkflowMetadataDigest(input.tenantId),
+          attestor_workflow_id: input.workflowId,
+          attestor_workflow_tier: input.workflowTier,
+          attestor_consequence_pack: input.consequencePack,
+          attestor_downstream_ref_digest: input.downstreamSystemRefDigest,
+          attestor_policy_gate_digest: input.policyGatePathRefDigest,
         },
       },
     },
@@ -197,10 +204,17 @@ function checkoutCompletedPayload(input: {
 
 function subscriptionUpdatedPayload(input: {
   eventId: string;
+  accountId: string;
+  tenantId: string;
   customerId: string;
   subscriptionId: string;
   status: string;
   priceId: string;
+  workflowId: string;
+  workflowTier: string;
+  consequencePack: string;
+  downstreamSystemRefDigest: string;
+  policyGatePathRefDigest: string;
 }): string {
   return JSON.stringify({
     id: input.eventId,
@@ -213,10 +227,18 @@ function subscriptionUpdatedPayload(input: {
         object: 'subscription',
         customer: input.customerId,
         status: input.status,
-        metadata: {},
+        metadata: {
+          attestor_account_id: input.accountId,
+          attestor_tenant_digest: tenantWorkflowMetadataDigest(input.tenantId),
+          attestor_workflow_id: input.workflowId,
+          attestor_workflow_tier: input.workflowTier,
+          attestor_consequence_pack: input.consequencePack,
+          attestor_downstream_ref_digest: input.downstreamSystemRefDigest,
+          attestor_policy_gate_digest: input.policyGatePathRefDigest,
+        },
         items: {
           object: 'list',
-          data: [{ price: { id: input.priceId } }],
+          data: [{ id: 'si_hosted_billing_001', price: { id: input.priceId } }],
         },
       },
     },
@@ -227,6 +249,7 @@ function invoicePayload(input: {
   eventId: string;
   eventType: 'invoice.payment_failed' | 'invoice.paid';
   accountId: string;
+  tenantId: string;
   customerId: string;
   subscriptionId: string;
   invoiceId: string;
@@ -234,8 +257,22 @@ function invoicePayload(input: {
   amountPaid: number;
   amountDue: number;
   priceId: string;
+  workflowId: string;
+  workflowTier: string;
+  consequencePack: string;
+  downstreamSystemRefDigest: string;
+  policyGatePathRefDigest: string;
 }): string {
   const now = Math.floor(Date.now() / 1000);
+  const workflowMetadata = {
+    attestor_account_id: input.accountId,
+    attestor_tenant_digest: tenantWorkflowMetadataDigest(input.tenantId),
+    attestor_workflow_id: input.workflowId,
+    attestor_workflow_tier: input.workflowTier,
+    attestor_consequence_pack: input.consequencePack,
+    attestor_downstream_ref_digest: input.downstreamSystemRefDigest,
+    attestor_policy_gate_digest: input.policyGatePathRefDigest,
+  };
   return JSON.stringify({
     id: input.eventId,
     object: 'event',
@@ -252,8 +289,9 @@ function invoicePayload(input: {
         amount_paid: input.amountPaid,
         amount_due: input.amountDue,
         billing_reason: 'subscription_cycle',
-        metadata: {
-          attestorAccountId: input.accountId,
+        metadata: workflowMetadata,
+        subscription_details: {
+          metadata: workflowMetadata,
         },
         status_transitions: {
           paid_at: input.status === 'paid' ? now : null,
@@ -268,7 +306,7 @@ function invoicePayload(input: {
             amount: input.amountDue,
             subtotal: input.amountDue,
             currency: 'usd',
-            description: 'Attestor Pro Monthly',
+            description: 'Attestor Pro Workflow monthly',
             quantity: 1,
             subscription: input.subscriptionId,
             pricing: {
@@ -295,49 +333,6 @@ function invoicePayload(input: {
             },
             metadata: {},
           }],
-        },
-      },
-    },
-  });
-}
-
-function entitlementSummaryPayload(input: {
-  eventId: string;
-  customerId: string;
-}): string {
-  return JSON.stringify({
-    id: input.eventId,
-    object: 'event',
-    type: 'entitlements.active_entitlement_summary.updated',
-    created: Math.floor(Date.now() / 1000),
-    data: {
-      object: {
-        object: 'entitlements.active_entitlement_summary',
-        customer: input.customerId,
-        entitlements: {
-          object: 'list',
-          data: [
-            {
-              id: 'ent_hosted_pro_api',
-              object: 'entitlements.active_entitlement',
-              lookup_key: 'attestor.pro.api',
-              feature: {
-                id: 'feat_hosted_pro_api',
-                object: 'entitlements.feature',
-                lookup_key: 'attestor.pro.api',
-              },
-            },
-            {
-              id: 'ent_hosted_billing_export',
-              object: 'entitlements.active_entitlement',
-              lookup_key: 'attestor.pro.billing_export',
-              feature: {
-                id: 'feat_hosted_billing_export',
-                object: 'entitlements.feature',
-                lookup_key: 'attestor.pro.billing_export',
-              },
-            },
-          ],
         },
       },
     },
@@ -376,52 +371,14 @@ async function main(): Promise<void> {
     const tenantId = signupBody.account.primaryTenantId as string;
     const initialApiKey = signupBody.initialKey.apiKey as string;
 
-    const missingIdempotencyRes = await postJson(
+    const retiredCheckoutRes = await postJson(
       `${baseUrl}/api/v1/account/billing/checkout`,
-      { planId: 'pro' },
+      { planId: 'trial' },
       accountMutationHeaders,
     );
-    equal(missingIdempotencyRes.status, 400, 'Hosted checkout: Idempotency-Key is required');
-
-    const invalidPlanRes = await postJson(
-      `${baseUrl}/api/v1/account/billing/checkout`,
-      { planId: 'developer' },
-      {
-        ...accountMutationHeaders,
-        'Idempotency-Key': 'billing-invalid-developer',
-      },
-    );
-    equal(invalidPlanRes.status, 400, 'Hosted checkout: Developer cannot be bought through Stripe checkout');
-
-    const checkoutRes = await postJson(
-      `${baseUrl}/api/v1/account/billing/checkout`,
-      { planId: 'pro' },
-      {
-        ...accountMutationHeaders,
-        'Idempotency-Key': 'billing-pro-checkout-1',
-      },
-    );
-    equal(checkoutRes.status, 200, 'Hosted checkout: paid checkout session starts');
-    equal(checkoutRes.headers.get('x-attestor-idempotency-key'), 'billing-pro-checkout-1', 'Hosted checkout: idempotency key is echoed');
-    const checkoutBody = await readJson(checkoutRes);
-    equal(checkoutBody.planId, 'pro', 'Hosted checkout: plan is echoed');
-    equal(checkoutBody.stripePriceId, 'price_pro_monthly', 'Hosted checkout: Stripe price maps to pro');
-    equal(checkoutBody.trialDays, null, 'Hosted checkout: pro has no trial by default');
-    equal(checkoutBody.mock, true, 'Hosted checkout: deterministic mock mode is visible');
-    ok(String(checkoutBody.checkoutUrl).includes('/checkout/'), 'Hosted checkout: hosted checkout URL is returned');
-
-    const checkoutReplayRes = await postJson(
-      `${baseUrl}/api/v1/account/billing/checkout`,
-      { planId: 'pro' },
-      {
-        ...accountMutationHeaders,
-        'Idempotency-Key': 'billing-pro-checkout-1',
-      },
-    );
-    equal(checkoutReplayRes.status, 200, 'Hosted checkout: idempotent replay stays successful');
-    const checkoutReplayBody = await readJson(checkoutReplayRes);
-    equal(checkoutReplayBody.checkoutSessionId, checkoutBody.checkoutSessionId, 'Hosted checkout: replay preserves checkout session id');
-    equal(checkoutReplayBody.checkoutUrl, checkoutBody.checkoutUrl, 'Hosted checkout: replay preserves checkout URL');
+    equal(retiredCheckoutRes.status, 410, 'Hosted checkout: legacy account-plan checkout is retired');
+    const retiredCheckoutBody = await readJson(retiredCheckoutRes);
+    equal(retiredCheckoutBody.replacementRoute, '/api/v1/account/billing/workflows/checkout', 'Hosted checkout: retired route names workflow checkout replacement');
 
     const entitlementAfterCheckoutRes = await fetch(`${baseUrl}/api/v1/account/entitlement`, {
       headers: { Cookie: accountAdminCookie! },
@@ -429,7 +386,7 @@ async function main(): Promise<void> {
     equal(entitlementAfterCheckoutRes.status, 200, 'Hosted entitlement: readable after checkout start');
     const entitlementAfterCheckoutBody = await readJson(entitlementAfterCheckoutRes);
     equal(entitlementAfterCheckoutBody.entitlement.status, 'provisioned', 'Hosted entitlement: checkout start alone does not activate paid access');
-    equal(entitlementAfterCheckoutBody.entitlement.effectivePlanId, 'developer', 'Hosted entitlement: evaluation plan remains active until webhook convergence');
+    equal(entitlementAfterCheckoutBody.entitlement.effectivePlanId, 'trial', 'Hosted entitlement: trial account access remains active until workflow entitlement is used');
 
     const portalBeforeCustomerRes = await fetch(`${baseUrl}/api/v1/account/billing/portal`, {
       method: 'POST',
@@ -437,8 +394,56 @@ async function main(): Promise<void> {
     });
     equal(portalBeforeCustomerRes.status, 409, 'Hosted portal: Stripe customer is required before portal creation');
 
+    const workflowId = `wf_hosted_${suffix.replace(/[^a-z0-9]/gi, '').slice(0, 12)}`;
+    const workflowTier = 'pro-workflow';
+    const consequencePack = 'money-movement';
+    const workflowCheckoutRes = await postJson(
+      `${baseUrl}/api/v1/account/billing/workflows/checkout`,
+      {
+        workflowAction: 'create',
+        workflowId,
+        tier: workflowTier,
+        consequencePack,
+        downstreamSystemRef: 'customer_reporting_store.write',
+        policyGatePathRef: 'customer_gate:finance-reporting',
+      },
+      {
+        ...accountMutationHeaders,
+        'Idempotency-Key': 'hosted-stripe-workflow-checkout-1',
+      },
+    );
+    equal(workflowCheckoutRes.status, 200, 'Hosted workflow checkout: checkout session is created');
+    const checkoutBody = await readJson(workflowCheckoutRes);
+    equal(checkoutBody.workflowId, workflowId, 'Hosted workflow checkout: workflow id is echoed');
+    equal(checkoutBody.tier, workflowTier, 'Hosted workflow checkout: tier is echoed');
+    equal(checkoutBody.mock, true, 'Hosted workflow checkout: mock mode is visible');
+    equal(checkoutBody.stripePriceId, 'price_pro_workflow_monthly', 'Hosted workflow checkout: workflow price is used');
+    const downstreamSystemRefDigest = checkoutBody.entitlement.downstreamSystemRefDigest as string;
+    const policyGatePathRefDigest = checkoutBody.entitlement.policyGatePathRefDigest as string;
+    ok(downstreamSystemRefDigest.startsWith('sha256:'), 'Hosted workflow checkout: downstream ref is digested');
+    ok(policyGatePathRefDigest.startsWith('sha256:'), 'Hosted workflow checkout: policy gate ref is digested');
+
+    const workflowsAfterCheckoutRes = await fetch(`${baseUrl}/api/v1/account/billing/workflows`, {
+      headers: { Cookie: accountAdminCookie! },
+    });
+    equal(workflowsAfterCheckoutRes.status, 200, 'Hosted workflow list: readable after checkout start');
+    const workflowsAfterCheckoutBody = await readJson(workflowsAfterCheckoutRes);
+    const pendingWorkflow = workflowsAfterCheckoutBody.workflows.find((entry: any) => entry.workflowId === workflowId);
+    ok(Boolean(pendingWorkflow), 'Hosted workflow list: pending workflow is visible');
+    equal(pendingWorkflow.status, 'incomplete', 'Hosted workflow list: checkout starts incomplete workflow entitlement');
+
     const customerId = `cus_hosted_${suffix.replace(/[^a-z0-9]/gi, '').slice(0, 12)}`;
     const subscriptionId = `sub_hosted_${suffix.replace(/[^a-z0-9]/gi, '').slice(0, 12)}`;
+    const attachCustomerRes = await postJson(
+      `${baseUrl}/api/v1/admin/accounts/${accountId}/billing/stripe`,
+      { stripeCustomerId: customerId },
+      {
+        Authorization: 'Bearer hosted-stripe-billing-admin',
+        'Idempotency-Key': 'hosted-stripe-customer-bind-1',
+      },
+    );
+    equal(attachCustomerRes.status, 200, 'Hosted portal setup: Stripe customer can be bound without an account plan');
+
     const checkoutPayload = checkoutCompletedPayload({
       eventId: 'evt_hosted_checkout_completed',
       accountId,
@@ -446,7 +451,11 @@ async function main(): Promise<void> {
       checkoutSessionId: checkoutBody.checkoutSessionId,
       customerId,
       subscriptionId,
-      planId: 'pro',
+      workflowId,
+      workflowTier,
+      consequencePack,
+      downstreamSystemRefDigest,
+      policyGatePathRefDigest,
     });
 
     const invalidSignatureRes = await fetch(`${baseUrl}/api/v1/billing/stripe/webhook`, {
@@ -470,10 +479,9 @@ async function main(): Promise<void> {
     equal(checkoutWebhookRes.status, 200, 'Stripe webhook: checkout.session.completed is accepted');
     const checkoutWebhookBody = await readJson(checkoutWebhookRes);
     equal(checkoutWebhookBody.accountId, accountId, 'Stripe webhook: checkout completion maps account');
-    equal(checkoutWebhookBody.mappedPlanId, 'pro', 'Stripe webhook: checkout completion maps plan');
-    equal(checkoutWebhookBody.billing.stripeCustomerId, customerId, 'Stripe webhook: checkout completion stores customer');
-    equal(checkoutWebhookBody.billing.stripeSubscriptionId, subscriptionId, 'Stripe webhook: checkout completion stores subscription');
-    equal(checkoutWebhookBody.billing.lastCheckoutSessionId, checkoutBody.checkoutSessionId, 'Stripe webhook: checkout completion stores session id');
+    equal(checkoutWebhookBody.workflowId, workflowId, 'Stripe webhook: checkout completion maps workflow');
+    equal(checkoutWebhookBody.workflowTier, workflowTier, 'Stripe webhook: checkout completion maps workflow tier');
+    equal(checkoutWebhookBody.workflowEntitlementStatus, 'incomplete', 'Stripe webhook: checkout completion leaves workflow incomplete until subscription lifecycle converges');
 
     const checkoutDuplicateRes = await postStripeWebhook(baseUrl, checkoutPayload);
     equal(checkoutDuplicateRes.status, 200, 'Stripe webhook: duplicate checkout event preserves 200');
@@ -488,7 +496,11 @@ async function main(): Promise<void> {
       checkoutSessionId: checkoutBody.checkoutSessionId,
       customerId,
       subscriptionId,
-      planId: 'enterprise',
+      workflowId,
+      workflowTier: 'starter-workflow',
+      consequencePack,
+      downstreamSystemRefDigest,
+      policyGatePathRefDigest,
     });
     const checkoutConflictRes = await postStripeWebhook(baseUrl, checkoutConflictPayload);
     equal(checkoutConflictRes.status, 409, 'Stripe webhook: same event id with different payload is rejected');
@@ -498,52 +510,53 @@ async function main(): Promise<void> {
     });
     equal(summaryAfterCheckoutRes.status, 200, 'Hosted account: summary is readable after checkout convergence');
     const summaryAfterCheckoutBody = await readJson(summaryAfterCheckoutRes);
-    equal(summaryAfterCheckoutBody.tenantContext.planId, 'pro', 'Hosted account: tenant plan converges to pro');
-    equal(summaryAfterCheckoutBody.entitlement.provider, 'stripe', 'Hosted account: entitlement provider switches to Stripe');
-    equal(
-      summaryAfterCheckoutBody.entitlement.status,
-      'checkout_completed',
-      'Hosted account: checkout completion remains pending until the subscription lifecycle converges',
-    );
-    equal(summaryAfterCheckoutBody.entitlement.effectivePlanId, 'pro', 'Hosted account: effective plan becomes pro');
+    equal(summaryAfterCheckoutBody.tenantContext.planId, 'trial', 'Hosted account: account plan remains trial after workflow checkout');
+    equal(summaryAfterCheckoutBody.entitlement.effectivePlanId, 'trial', 'Hosted account: account entitlement remains trial after workflow checkout');
 
     const pastDuePayload = subscriptionUpdatedPayload({
       eventId: 'evt_hosted_subscription_past_due',
+      accountId,
+      tenantId,
       customerId,
       subscriptionId,
       status: 'past_due',
-      priceId: 'price_pro_monthly',
+      priceId: 'price_pro_workflow_monthly',
+      workflowId,
+      workflowTier,
+      consequencePack,
+      downstreamSystemRefDigest,
+      policyGatePathRefDigest,
     });
     const pastDueRes = await postStripeWebhook(baseUrl, pastDuePayload);
     equal(pastDueRes.status, 200, 'Stripe webhook: past_due subscription update is accepted');
     const pastDueBody = await readJson(pastDueRes);
-    equal(pastDueBody.accountStatus, 'suspended', 'Stripe webhook: past_due suspends the hosted account');
-    equal(pastDueBody.billing.stripeSubscriptionStatus, 'past_due', 'Stripe webhook: billing status becomes past_due');
+    equal(pastDueBody.accountStatus, 'active', 'Stripe webhook: workflow past_due does not suspend the account plane');
+    equal(pastDueBody.workflowEntitlementStatus, 'past_due', 'Stripe webhook: workflow entitlement becomes past_due');
 
-    const blockedUsageRes = await fetch(`${baseUrl}/api/v1/account/usage`, {
+    const accountUsageAfterWorkflowPastDueRes = await fetch(`${baseUrl}/api/v1/account/usage`, {
       headers: { Authorization: `Bearer ${initialApiKey}` },
     });
-    equal(blockedUsageRes.status, 403, 'Hosted enforcement: suspended paid account is fail-closed for tenant APIs');
+    equal(accountUsageAfterWorkflowPastDueRes.status, 200, 'Hosted enforcement: account trial usage remains readable after workflow past_due');
 
-    const suspendedLoginRes = await postJson(`${baseUrl}/api/v1/auth/login`, {
+    const portalLoginRes = await postJson(`${baseUrl}/api/v1/auth/login`, {
       email: `billing-owner-${suffix}@example.test`,
       password: 'RidgeViolet9742!',
     });
-    equal(suspendedLoginRes.status, 200, 'Hosted billing: suspended account can re-login for billing self-service');
-    const suspendedCookie = cookieHeaderFromResponse(suspendedLoginRes);
-    ok(Boolean(suspendedCookie), 'Hosted billing: suspended re-login issues session cookie');
+    equal(portalLoginRes.status, 200, 'Hosted billing: account can re-login for billing self-service');
+    const portalCookie = cookieHeaderFromResponse(portalLoginRes);
+    ok(Boolean(portalCookie), 'Hosted billing: re-login issues session cookie');
 
-    const suspendedPortalRes = await fetch(`${baseUrl}/api/v1/account/billing/portal`, {
+    const portalRes = await fetch(`${baseUrl}/api/v1/account/billing/portal`, {
       method: 'POST',
       headers: {
-        Cookie: suspendedCookie!,
-        'x-attestor-csrf': 'hosted-stripe-billing-suspended',
+        Cookie: portalCookie!,
+        'x-attestor-csrf': 'hosted-stripe-billing-portal',
       },
     });
-    equal(suspendedPortalRes.status, 200, 'Hosted portal: suspended account can still open billing portal');
-    const suspendedPortalBody = await readJson(suspendedPortalRes);
-    ok(String(suspendedPortalBody.portalUrl).includes('/portal/'), 'Hosted portal: portal URL is returned');
-    equal(suspendedPortalBody.mock, true, 'Hosted portal: mock mode is visible');
+    equal(portalRes.status, 200, 'Hosted portal: account with Stripe customer can open billing portal');
+    const portalBody = await readJson(portalRes);
+    ok(String(portalBody.portalUrl).includes('/portal/'), 'Hosted portal: portal URL is returned');
+    equal(portalBody.mock, true, 'Hosted portal: mock mode is visible');
 
     const pastDueReplayRes = await postStripeWebhook(baseUrl, pastDuePayload);
     equal(pastDueReplayRes.status, 200, 'Stripe webhook: duplicate past_due event preserves 200');
@@ -551,101 +564,86 @@ async function main(): Promise<void> {
 
     const activePayload = subscriptionUpdatedPayload({
       eventId: 'evt_hosted_subscription_active',
+      accountId,
+      tenantId,
       customerId,
       subscriptionId,
       status: 'active',
-      priceId: 'price_pro_monthly',
+      priceId: 'price_pro_workflow_monthly',
+      workflowId,
+      workflowTier,
+      consequencePack,
+      downstreamSystemRefDigest,
+      policyGatePathRefDigest,
     });
     const activeRes = await postStripeWebhook(baseUrl, activePayload);
     equal(activeRes.status, 200, 'Stripe webhook: active subscription update is accepted');
     const activeBody = await readJson(activeRes);
     equal(activeBody.accountStatus, 'active', 'Stripe webhook: active subscription restores account');
-    equal(activeBody.billing.stripeSubscriptionStatus, 'active', 'Stripe webhook: billing status is active');
-    equal(activeBody.mappedPlanId, 'pro', 'Stripe webhook: active subscription maps pro plan');
+    equal(activeBody.workflowEntitlementStatus, 'active', 'Stripe webhook: workflow entitlement is active');
 
     const unblockedUsageRes = await fetch(`${baseUrl}/api/v1/account/usage`, {
       headers: { Authorization: `Bearer ${initialApiKey}` },
     });
-    equal(unblockedUsageRes.status, 200, 'Hosted enforcement: active paid account can use tenant APIs again');
+    equal(unblockedUsageRes.status, 200, 'Hosted enforcement: active account can use tenant APIs');
     const unblockedUsageBody = await readJson(unblockedUsageRes);
-    equal(unblockedUsageBody.tenantContext.planId, 'pro', 'Hosted enforcement: restored tenant API sees pro plan');
-    equal(unblockedUsageBody.usage.quota, 250000, 'Hosted enforcement: pro quota is visible after billing convergence');
+    equal(unblockedUsageBody.tenantContext.planId, 'trial', 'Hosted enforcement: tenant API still sees trial account plan');
+    equal(unblockedUsageBody.usage.quota, 10000, 'Hosted enforcement: trial account quota remains visible after workflow convergence');
+
+    const workflowsAfterActiveRes = await fetch(`${baseUrl}/api/v1/account/billing/workflows`, {
+      headers: { Cookie: accountAdminCookie! },
+    });
+    equal(workflowsAfterActiveRes.status, 200, 'Hosted workflow list: readable after subscription convergence');
+    const workflowsAfterActiveBody = await readJson(workflowsAfterActiveRes);
+    const activeWorkflow = workflowsAfterActiveBody.workflows.find((entry: any) => entry.workflowId === workflowId);
+    equal(activeWorkflow.status, 'active', 'Hosted workflow list: workflow entitlement is active');
+    equal(activeWorkflow.tier, workflowTier, 'Hosted workflow list: workflow tier remains pro-workflow');
 
     const invoiceFailedRes = await postStripeWebhook(baseUrl, invoicePayload({
       eventId: 'evt_hosted_invoice_failed',
       eventType: 'invoice.payment_failed',
       accountId,
+      tenantId,
       customerId,
       subscriptionId,
       invoiceId: 'in_hosted_failed',
       status: 'open',
       amountPaid: 0,
       amountDue: 5000,
-      priceId: 'price_pro_monthly',
+      priceId: 'price_pro_workflow_monthly',
+      workflowId,
+      workflowTier,
+      consequencePack,
+      downstreamSystemRefDigest,
+      policyGatePathRefDigest,
     }));
     equal(invoiceFailedRes.status, 200, 'Stripe webhook: invoice.payment_failed is accepted');
     const invoiceFailedBody = await readJson(invoiceFailedRes);
-    equal(invoiceFailedBody.billing.lastInvoiceId, 'in_hosted_failed', 'Stripe webhook: failed invoice id is stored');
-    equal(invoiceFailedBody.billing.lastInvoiceStatus, 'open', 'Stripe webhook: failed invoice status is stored');
-    equal(invoiceFailedBody.billing.lastInvoiceAmountDue, 5000, 'Stripe webhook: failed invoice amount due is stored');
-    ok(typeof invoiceFailedBody.billing.delinquentSince === 'string', 'Stripe webhook: delinquentSince is set after payment failure');
+    equal(invoiceFailedBody.workflowId, workflowId, 'Stripe webhook: failed invoice maps workflow');
+    equal(invoiceFailedBody.workflowEntitlementStatus, 'past_due', 'Stripe webhook: failed invoice marks workflow past_due');
 
     const invoicePaidRes = await postStripeWebhook(baseUrl, invoicePayload({
       eventId: 'evt_hosted_invoice_paid',
       eventType: 'invoice.paid',
       accountId,
+      tenantId,
       customerId,
       subscriptionId,
       invoiceId: 'in_hosted_paid',
       status: 'paid',
       amountPaid: 5000,
       amountDue: 5000,
-      priceId: 'price_pro_monthly',
+      priceId: 'price_pro_workflow_monthly',
+      workflowId,
+      workflowTier,
+      consequencePack,
+      downstreamSystemRefDigest,
+      policyGatePathRefDigest,
     }));
     equal(invoicePaidRes.status, 200, 'Stripe webhook: invoice.paid is accepted');
     const invoicePaidBody = await readJson(invoicePaidRes);
-    equal(invoicePaidBody.billing.lastInvoiceId, 'in_hosted_paid', 'Stripe webhook: paid invoice id is stored');
-    equal(invoicePaidBody.billing.lastInvoiceStatus, 'paid', 'Stripe webhook: paid invoice status is stored');
-    equal(invoicePaidBody.billing.lastInvoiceAmountPaid, 5000, 'Stripe webhook: paid invoice amount is stored');
-    equal(invoicePaidBody.billing.delinquentSince, null, 'Stripe webhook: paid invoice clears delinquency');
-
-    const entitlementSummaryRes = await postStripeWebhook(baseUrl, entitlementSummaryPayload({
-      eventId: 'evt_hosted_entitlements_updated',
-      customerId,
-    }));
-    equal(entitlementSummaryRes.status, 200, 'Stripe webhook: entitlement summary update is accepted');
-    const entitlementSummaryBody = await readJson(entitlementSummaryRes);
-    equal(entitlementSummaryBody.entitlement.lastEventId, 'evt_hosted_entitlements_updated', 'Hosted entitlement: last event advances to entitlement summary');
-    ok(
-      entitlementSummaryBody.entitlement.stripeEntitlementLookupKeys.includes('attestor.pro.api'),
-      'Hosted entitlement: Stripe lookup keys are persisted',
-    );
-    ok(
-      entitlementSummaryBody.entitlement.stripeEntitlementFeatureIds.includes('feat_hosted_pro_api'),
-      'Hosted entitlement: Stripe feature ids are persisted',
-    );
-
-    const restoredLoginRes = await postJson(`${baseUrl}/api/v1/auth/login`, {
-      email: `billing-owner-${suffix}@example.test`,
-      password: 'RidgeViolet9742!',
-    });
-    equal(restoredLoginRes.status, 200, 'Hosted features: restored active account can issue a fresh session');
-    const restoredCookie = cookieHeaderFromResponse(restoredLoginRes);
-    ok(Boolean(restoredCookie), 'Hosted features: restored login returns a session cookie');
-
-    const featuresRes = await fetch(`${baseUrl}/api/v1/account/features`, {
-      headers: { Cookie: restoredCookie! },
-    });
-    equal(featuresRes.status, 200, 'Hosted features: feature view is readable after entitlement summary');
-    const featuresBody = await readJson(featuresRes);
-    equal(featuresBody.summary.stripeSummaryPresent, true, 'Hosted features: Stripe summary is marked present');
-    const apiFeature = featuresBody.features.find((entry: any) => entry.key === 'api.access');
-    ok(Boolean(apiFeature), 'Hosted features: api.access feature exists');
-    equal(apiFeature.granted, true, 'Hosted features: api.access is granted by Stripe entitlement');
-    equal(apiFeature.grantSource, 'stripe_entitlement', 'Hosted features: api.access source is Stripe entitlement');
-    const reconciliationFeature = featuresBody.features.find((entry: any) => entry.key === 'billing.reconciliation');
-    ok(Boolean(reconciliationFeature), 'Hosted features: billing.reconciliation feature exists');
-    equal(reconciliationFeature.granted, false, 'Hosted features: missing Stripe entitlement remains disabled');
+    equal(invoicePaidBody.workflowId, workflowId, 'Stripe webhook: paid invoice maps workflow');
+    equal(invoicePaidBody.workflowEntitlementStatus, 'active', 'Stripe webhook: paid invoice restores workflow active');
 
     ok(passed > 0, 'Hosted Stripe billing convergence flow: tests executed');
     console.log(`\nHosted Stripe billing convergence flow tests: ${passed} passed, 0 failed`);

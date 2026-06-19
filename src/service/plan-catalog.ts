@@ -1,27 +1,32 @@
 /**
- * Hosted Plan Catalog — Single source of truth for monetizable hosted access.
+ * Hosted Plan Catalog - account evaluation access.
  *
- * The catalog defines the small built-in plan set used by hosted onboarding,
- * quota defaults, and operator/admin surfaces. Self-hosted or externally
- * asserted tokens may still carry custom plan ids, but the managed hosted
- * shell should speak a consistent built-in vocabulary.
+ * Billing is intentionally not modeled here. Paid commercial packaging is
+ * workflow-level and lives in workflow-entitlement-catalog.ts. This module only
+ * preserves Trial account access plus legacy account-plan aliases needed by
+ * existing tenant keys and operator/admin compatibility surfaces.
  */
 
-export type HostedPlanId = 'developer' | 'trial' | 'starter' | 'pro' | 'scale' | 'enterprise';
-export type LegacyHostedPlanId = 'community';
+export type HostedPlanId = 'trial';
+export type LegacyHostedPlanId =
+  | 'community'
+  | 'developer'
+  | 'starter'
+  | 'pro'
+  | 'scale'
+  | 'enterprise';
 
 export interface HostedPlanDefinition {
   id: HostedPlanId;
   displayName: string;
   description: string;
   defaultEvaluationDays: number | null;
-  defaultStripeTrialDays: number | null;
   defaultMonthlyRunQuota: number | null;
   defaultPipelineRequestsPerWindow: number | null;
   defaultAsyncPendingJobsPerTenant: number | null;
   defaultAsyncActiveJobsPerTenant: number | null;
   defaultAsyncDispatchWeight: number | null;
-  intendedFor: 'evaluation' | 'hosted' | 'enterprise';
+  intendedFor: 'evaluation';
   defaultForHostedProvisioning: boolean;
 }
 
@@ -68,32 +73,6 @@ export interface PlanAsyncDispatchSpec {
   source: 'plan_default' | 'env_override' | 'custom_disabled';
 }
 
-export interface PlanStripePriceSpec {
-  planId: string;
-  priceId: string | null;
-  configured: boolean;
-  knownPlan: boolean;
-  source: 'env' | 'unconfigured' | 'custom_unconfigured';
-}
-
-export interface PlanStripeOveragePriceSpec {
-  planId: string;
-  priceId: string | null;
-  configured: boolean;
-  knownPlan: boolean;
-  billable: boolean;
-  meterEventName: string;
-  source: 'env' | 'unconfigured' | 'not_billable' | 'custom_unconfigured';
-}
-
-export interface PlanStripeTrialSpec {
-  planId: string;
-  trialDays: number | null;
-  configured: boolean;
-  knownPlan: boolean;
-  source: 'plan_default' | 'env_override' | 'custom_unconfigured';
-}
-
 export interface PlanGenericAdmissionModeSpec {
   planId: string;
   mode: string;
@@ -111,101 +90,36 @@ export interface PlanQuotaPolicySpec {
   source: 'evaluation_hard_limit' | 'paid_soft_overage' | 'custom_hard_limit';
 }
 
-export const SELF_HOST_PLAN_ID: HostedPlanId = 'developer';
-export const DEFAULT_HOSTED_PLAN_ID: HostedPlanId = 'starter';
-export const DEFAULT_STRIPE_OVERAGE_METER_EVENT_NAME = 'attestor_admission_overage';
+export const SELF_HOST_PLAN_ID: HostedPlanId = 'trial';
+export const DEFAULT_HOSTED_PLAN_ID: HostedPlanId = 'trial';
 
 const PLAN_CATALOG: HostedPlanDefinition[] = [
   {
-    id: 'developer',
-    displayName: 'Developer',
-    description: 'Perpetual free evaluation path for local proof work and low-volume shadow or warn testing before a paid hosted plan is needed.',
-    defaultEvaluationDays: null,
-    defaultStripeTrialDays: null,
-    defaultMonthlyRunQuota: 500,
-    defaultPipelineRequestsPerWindow: 10,
-    defaultAsyncPendingJobsPerTenant: 2,
-    defaultAsyncActiveJobsPerTenant: 1,
-    defaultAsyncDispatchWeight: 1,
-    intendedFor: 'evaluation',
-    defaultForHostedProvisioning: false,
-  },
-  {
     id: 'trial',
     displayName: 'Free Shadow Trial',
-    description: 'Sixty-day shadow-mode onboarding path with Pro-like discovery headroom before the customer chooses Developer or a paid hosted plan.',
-    defaultEvaluationDays: 60,
-    defaultStripeTrialDays: null,
-    defaultMonthlyRunQuota: 5_000,
+    description: 'Thirty-day account-level evaluation path before paid workflow entitlements are created.',
+    defaultEvaluationDays: 30,
+    defaultMonthlyRunQuota: 10_000,
     defaultPipelineRequestsPerWindow: 60,
     defaultAsyncPendingJobsPerTenant: 8,
     defaultAsyncActiveJobsPerTenant: 2,
     defaultAsyncDispatchWeight: 2,
     intendedFor: 'evaluation',
-    defaultForHostedProvisioning: false,
-  },
-  {
-    id: 'starter',
-    displayName: 'Starter',
-    description: 'Hosted API access for the first live high-consequence workflow, including enforce mode and account-plane billing without building the control layer yourself.',
-    defaultEvaluationDays: null,
-    defaultStripeTrialDays: null,
-    defaultMonthlyRunQuota: 25_000,
-    defaultPipelineRequestsPerWindow: 120,
-    defaultAsyncPendingJobsPerTenant: 8,
-    defaultAsyncActiveJobsPerTenant: 2,
-    defaultAsyncDispatchWeight: 2,
-    intendedFor: 'hosted',
     defaultForHostedProvisioning: true,
-  },
-  {
-    id: 'pro',
-    displayName: 'Pro',
-    description: 'Growth-stage hosted API plan for repeated release, finance, crypto, or operational control use across multiple workflows or one business unit.',
-    defaultEvaluationDays: null,
-    defaultStripeTrialDays: null,
-    defaultMonthlyRunQuota: 250_000,
-    defaultPipelineRequestsPerWindow: 600,
-    defaultAsyncPendingJobsPerTenant: 32,
-    defaultAsyncActiveJobsPerTenant: 4,
-    defaultAsyncDispatchWeight: 4,
-    intendedFor: 'hosted',
-    defaultForHostedProvisioning: false,
-  },
-  {
-    id: 'scale',
-    displayName: 'Scale',
-    description: 'High-volume hosted plan for larger admission volume, stronger retention and support needs, and heavier integration posture.',
-    defaultEvaluationDays: null,
-    defaultStripeTrialDays: null,
-    defaultMonthlyRunQuota: 1_000_000,
-    defaultPipelineRequestsPerWindow: 3_000,
-    defaultAsyncPendingJobsPerTenant: 128,
-    defaultAsyncActiveJobsPerTenant: 16,
-    defaultAsyncDispatchWeight: 8,
-    intendedFor: 'hosted',
-    defaultForHostedProvisioning: false,
-  },
-  {
-    id: 'enterprise',
-    displayName: 'Enterprise',
-    description: 'Hosted enterprise or customer-operated deployment plan for regulated reporting environments, higher-scale control surfaces, or negotiated deployment boundaries.',
-    defaultEvaluationDays: null,
-    defaultStripeTrialDays: null,
-    defaultMonthlyRunQuota: null,
-    defaultPipelineRequestsPerWindow: 10_000,
-    defaultAsyncPendingJobsPerTenant: 256,
-    defaultAsyncActiveJobsPerTenant: 32,
-    defaultAsyncDispatchWeight: 16,
-    intendedFor: 'enterprise',
-    defaultForHostedProvisioning: false,
   },
 ];
 
 function canonicalHostedPlanId(planId: string | null | undefined): string | null {
   const trimmed = planId?.trim();
   if (!trimmed) return null;
-  return trimmed === 'community' ? 'developer' : trimmed;
+  return [
+    'community',
+    'developer',
+    'starter',
+    'pro',
+    'scale',
+    'enterprise',
+  ].includes(trimmed) ? 'trial' : trimmed;
 }
 
 function normalizeQuota(quota: number | null | undefined): number | null {
@@ -232,23 +146,6 @@ function asyncActiveEnvNameForPlan(planId: HostedPlanId): string {
 
 function asyncDispatchWeightEnvNameForPlan(planId: HostedPlanId): string {
   return `ATTESTOR_ASYNC_DISPATCH_${planId.toUpperCase()}_WEIGHT`;
-}
-
-function stripePriceEnvNameForPlan(planId: HostedPlanId): string {
-  return `ATTESTOR_STRIPE_PRICE_${planId.toUpperCase()}`;
-}
-
-function stripeOveragePriceEnvNameForPlan(planId: HostedPlanId): string {
-  return `ATTESTOR_STRIPE_OVERAGE_PRICE_${planId.toUpperCase()}`;
-}
-
-function stripeTrialEnvNameForPlan(planId: HostedPlanId): string {
-  return `ATTESTOR_STRIPE_${planId.toUpperCase()}_TRIAL_DAYS`;
-}
-
-function normalizeTrialDays(days: number | null | undefined): number | null {
-  if (typeof days !== 'number' || !Number.isInteger(days) || days <= 0) return null;
-  return days;
 }
 
 export function defaultRateLimitWindowSeconds(): number {
@@ -454,127 +351,6 @@ export function resolvePlanAsyncDispatch(planId: string | null | undefined): Pla
   };
 }
 
-export function resolvePlanStripePrice(planId: string | null | undefined): PlanStripePriceSpec {
-  const resolvedPlanId = canonicalHostedPlanId(planId) || SELF_HOST_PLAN_ID;
-  const plan = getHostedPlan(resolvedPlanId);
-
-  if (!plan) {
-    return {
-      planId: resolvedPlanId,
-      priceId: null,
-      configured: false,
-      knownPlan: false,
-      source: 'custom_unconfigured',
-    };
-  }
-
-  if (plan.intendedFor === 'evaluation') {
-    return {
-      planId: plan.id,
-      priceId: null,
-      configured: false,
-      knownPlan: true,
-      source: 'unconfigured',
-    };
-  }
-
-  const priceId = process.env[stripePriceEnvNameForPlan(plan.id)]?.trim() || null;
-  return {
-    planId: plan.id,
-    priceId,
-    configured: Boolean(priceId),
-    knownPlan: true,
-    source: priceId ? 'env' : 'unconfigured',
-  };
-}
-
-export function stripeOverageMeterEventName(env: Record<string, string | undefined> = process.env): string {
-  const configured = env.ATTESTOR_STRIPE_OVERAGE_METER_EVENT_NAME?.trim();
-  return configured || DEFAULT_STRIPE_OVERAGE_METER_EVENT_NAME;
-}
-
-export function resolvePlanStripeOveragePrice(
-  planId: string | null | undefined,
-  env: Record<string, string | undefined> = process.env,
-): PlanStripeOveragePriceSpec {
-  const resolvedPlanId = canonicalHostedPlanId(planId) || SELF_HOST_PLAN_ID;
-  const plan = getHostedPlan(resolvedPlanId);
-  const meterEventName = stripeOverageMeterEventName(env);
-
-  if (!plan) {
-    return {
-      planId: resolvedPlanId,
-      priceId: null,
-      configured: false,
-      knownPlan: false,
-      billable: false,
-      meterEventName,
-      source: 'custom_unconfigured',
-    };
-  }
-
-  if (plan.intendedFor !== 'hosted') {
-    return {
-      planId: plan.id,
-      priceId: null,
-      configured: false,
-      knownPlan: true,
-      billable: false,
-      meterEventName,
-      source: 'not_billable',
-    };
-  }
-
-  const priceId = env[stripeOveragePriceEnvNameForPlan(plan.id)]?.trim() || null;
-  return {
-    planId: plan.id,
-    priceId,
-    configured: Boolean(priceId),
-    knownPlan: true,
-    billable: true,
-    meterEventName,
-    source: priceId ? 'env' : 'unconfigured',
-  };
-}
-
-export function resolvePlanStripeTrialDays(planId: string | null | undefined): PlanStripeTrialSpec {
-  const resolvedPlanId = canonicalHostedPlanId(planId) || SELF_HOST_PLAN_ID;
-  const plan = getHostedPlan(resolvedPlanId);
-
-  if (!plan) {
-    return {
-      planId: resolvedPlanId,
-      trialDays: null,
-      configured: false,
-      knownPlan: false,
-      source: 'custom_unconfigured',
-    };
-  }
-
-  const rawOverride = process.env[stripeTrialEnvNameForPlan(plan.id)]?.trim() ?? '';
-  const parsedOverride = rawOverride ? normalizeTrialDays(Number.parseInt(rawOverride, 10)) : null;
-  const trialDays = parsedOverride ?? plan.defaultStripeTrialDays;
-
-  return {
-    planId: plan.id,
-    trialDays,
-    configured: trialDays !== null,
-    knownPlan: true,
-    source: parsedOverride !== null ? 'env_override' : 'plan_default',
-  };
-}
-
-export function findHostedPlanByStripePriceId(priceId: string | null | undefined): HostedPlanDefinition | null {
-  const resolvedPriceId = priceId?.trim();
-  if (!resolvedPriceId) return null;
-  for (const plan of PLAN_CATALOG) {
-    if (resolvePlanStripePrice(plan.id).priceId === resolvedPriceId) {
-      return { ...plan };
-    }
-  }
-  return null;
-}
-
 export function resolvePlanSpec(options?: {
   planId?: string | null;
   monthlyRunQuota?: number | null;
@@ -587,7 +363,7 @@ export function resolvePlanSpec(options?: {
 
   if (!plan) {
     if (!options?.allowCustomPlan) {
-      throw new Error(`Unknown planId '${requestedPlanId}'. Valid plans: ${validHostedPlanIds().join(', ')}. Legacy alias 'community' resolves to 'developer'.`);
+      throw new Error(`Unknown planId '${requestedPlanId}'. Valid plans: ${validHostedPlanIds().join(', ')}. Legacy account plan aliases resolve to 'trial'.`);
     }
     return {
       plan: null,

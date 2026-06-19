@@ -73,7 +73,7 @@ function createApp(events: readonly ShadowAdmissionEvent[]): Hono {
       tenantName: 'Shadow Dashboard Tenant',
       authenticatedAt: '2026-05-03T10:00:00.000Z',
       source: 'api_key',
-      planId: 'community',
+      planId: 'trial',
       monthlyRunQuota: 100,
     }),
     listShadowEvents: ({ tenant }) =>

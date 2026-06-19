@@ -85,7 +85,7 @@ function createApp(): Hono {
       tenantName: 'Review Surface Hardening Tenant',
       authenticatedAt: '2026-05-31T14:00:00.000Z',
       source: 'api_key',
-      planId: 'community',
+      planId: 'trial',
       monthlyRunQuota: 100,
     }),
     listShadowEvents: ({ tenant }) =>

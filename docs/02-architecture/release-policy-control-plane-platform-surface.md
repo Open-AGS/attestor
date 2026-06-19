@@ -66,7 +66,7 @@ const target =
     {
       tenantId: 'tenant-pilot',
       cohortId: 'wave-a',
-      planId: 'enterprise',
+      planId: 'trial',
     },
   );
 ```

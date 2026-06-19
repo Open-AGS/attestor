@@ -31,12 +31,12 @@ const account: HostedAccountRecord = {
   billing: {
     provider: 'stripe',
     stripeCustomerId: null,
-    stripeSubscriptionId: 'sub_usage_export',
+    stripeSubscriptionId: 'sub_usage_export_workflow',
     stripeSubscriptionStatus: 'active',
-    stripePriceId: 'price_pro_monthly',
-    lastCheckoutSessionId: 'cs_usage_export',
-    lastCheckoutCompletedAt: '2026-05-01T00:00:00.000Z',
-    lastCheckoutPlanId: 'pro',
+    stripePriceId: 'price_pro_workflow_monthly',
+    lastCheckoutSessionId: null,
+    lastCheckoutCompletedAt: null,
+    lastCheckoutPlanId: null,
     lastInvoiceId: null,
     lastInvoiceStatus: null,
     lastInvoiceCurrency: null,
@@ -55,7 +55,7 @@ const account: HostedAccountRecord = {
 
 const usage: UsageContext = {
   tenantId: 'tenant_usage_export',
-  planId: 'pro',
+  planId: 'trial',
   meter: 'monthly_admission_runs',
   period: '2026-05',
   used: 250_001,

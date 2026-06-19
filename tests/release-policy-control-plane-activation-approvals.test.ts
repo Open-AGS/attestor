@@ -66,7 +66,7 @@ function targetForRisk(riskClass: 'R2' | 'R4'): PolicyActivationTarget {
       wedgeId: 'finance-review-summary-communication',
       consequenceType: 'communication',
       riskClass: 'R2',
-      planId: 'enterprise',
+      planId: 'trial',
     });
   }
 
@@ -78,7 +78,7 @@ function targetForRisk(riskClass: 'R2' | 'R4'): PolicyActivationTarget {
     wedgeId: 'finance.record.release',
     consequenceType: 'record',
     riskClass: 'R4',
-    planId: 'enterprise',
+    planId: 'trial',
   });
 }
 

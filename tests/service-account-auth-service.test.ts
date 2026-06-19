@@ -139,8 +139,8 @@ function tenantKey(overrides: Partial<TenantKeyRecord> = {}): TenantKeyRecord {
     id: 'key_123',
     tenantId: 'tenant_123',
     tenantName: 'Acme',
-    planId: 'developer',
-    monthlyRunQuota: 500,
+    planId: 'trial',
+    monthlyRunQuota: 10_000,
     apiKeyHash: 'hash',
     apiKeyPreview: 'att_...',
     status: 'active',
@@ -180,26 +180,25 @@ function actionToken(overrides: Partial<AccountUserActionTokenRecord> = {}): Acc
   };
 }
 
-const developerPlan: HostedPlanDefinition = {
-  id: 'developer',
-  displayName: 'Developer',
-  description: 'Developer',
-  defaultEvaluationDays: null,
-  defaultStripeTrialDays: null,
-  defaultMonthlyRunQuota: 500,
-  defaultPipelineRequestsPerWindow: 10,
-  defaultAsyncPendingJobsPerTenant: 2,
-  defaultAsyncActiveJobsPerTenant: 1,
-  defaultAsyncDispatchWeight: 1,
+const trialPlan: HostedPlanDefinition = {
+  id: 'trial',
+  displayName: 'Free Shadow Trial',
+  description: 'Trial',
+  defaultEvaluationDays: 30,
+  defaultMonthlyRunQuota: 10_000,
+  defaultPipelineRequestsPerWindow: 60,
+  defaultAsyncPendingJobsPerTenant: 8,
+  defaultAsyncActiveJobsPerTenant: 2,
+  defaultAsyncDispatchWeight: 2,
   intendedFor: 'evaluation',
-  defaultForHostedProvisioning: false,
+  defaultForHostedProvisioning: true,
 };
 
 function resolvedPlan(): ResolvedPlanSpec {
   return {
-    plan: developerPlan,
-    planId: 'developer',
-    monthlyRunQuota: 500,
+    plan: trialPlan,
+    planId: 'trial',
+    monthlyRunQuota: 10_000,
     knownPlan: true,
     quotaSource: 'plan_default',
   };
@@ -212,23 +211,23 @@ function currentAccount(source: AccountAuthCurrentAccount['tenant']['source'] = 
       tenantName: 'Acme',
       authenticatedAt: now,
       source,
-      planId: 'developer',
-      monthlyRunQuota: 500,
+      planId: 'trial',
+      monthlyRunQuota: 10_000,
     },
     account: account(),
     usage: {
       tenantId: 'tenant_123',
-      planId: 'developer',
+      planId: 'trial',
       meter: 'monthly_admission_runs',
       period: '2026-04',
       used: 0,
-      quota: 500,
-      remaining: 500,
+      quota: 10_000,
+      remaining: 10_000,
       enforced: true,
     },
     rateLimit: {
       tenantId: 'tenant_123',
-      planId: 'developer',
+      planId: 'trial',
       scope: 'pipeline_requests',
       backend: 'memory',
       windowSeconds: 60,
@@ -257,15 +256,8 @@ function createDeps(overrides: Partial<AccountAuthServiceDeps> = {}): AccountAut
     findAccountUserByEmailState: async () => null,
     deriveSignupTenantId: () => 'tenant_123',
     resolvePlanSpec: () => resolvedPlan(),
-    SELF_HOST_PLAN_ID: 'developer',
-    DEFAULT_HOSTED_PLAN_ID: 'starter',
-    resolvePlanStripeTrialDays: (planId) => ({
-      planId: planId ?? 'starter',
-      trialDays: null,
-      configured: false,
-      knownPlan: true,
-      source: 'plan_default',
-    }),
+    SELF_HOST_PLAN_ID: 'trial',
+    DEFAULT_HOSTED_PLAN_ID: 'trial',
     provisionHostedAccountState: async (input) => ({
       account: account({
         accountName: input.account.accountName,
@@ -370,9 +362,11 @@ async function testSignupOrchestratesAccountAndSession(): Promise<void> {
   assert.equal(result.apiKey, 'att_live_initial');
   assert.deepEqual(result.commercial, {
     currentPhase: 'evaluation',
-    includedMonthlyRunQuota: 500,
-    firstHostedPlanId: 'starter',
-    firstHostedPlanTrialDays: null,
+    includedMonthlyRunQuota: 10_000,
+    trialAccountEntitlementId: 'trial',
+    trialDurationDays: 30,
+    workflowBillingTierIds: ['pilot-workflow', 'starter-workflow', 'pro-workflow'],
+    workflowCheckoutRoute: '/api/v1/account/billing/workflows/checkout',
   });
   assert.deepEqual(syncEvents, ['tenant_123:auth.signup']);
 }

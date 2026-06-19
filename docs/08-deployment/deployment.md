@@ -305,15 +305,12 @@ external identity fabric.
 | `OTEL_SERVICE_INSTANCE_ID` | No | Hostname | OpenTelemetry service instance id for exported request spans |
 | `STRIPE_API_KEY` | No | None | Stripe secret API key for hosted Checkout and Billing Portal session creation; required in production-like runtimes |
 | `STRIPE_WEBHOOK_SECRET` | No | None | Stripe signing secret for `POST /api/v1/billing/stripe/webhook` |
-| `ATTESTOR_STRIPE_PRICE_STARTER` | No | None | Stripe recurring price id for the hosted `starter` plan |
-| `ATTESTOR_STRIPE_PRICE_PRO` | No | None | Stripe recurring price id for the hosted `pro` plan |
-| `ATTESTOR_STRIPE_PRICE_SCALE` | No | None | Stripe recurring price id for the hosted `scale` plan |
-| `ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER` | No | None | Stripe recurring metered overage price id for the hosted `starter` plan |
-| `ATTESTOR_STRIPE_OVERAGE_PRICE_PRO` | No | None | Stripe recurring metered overage price id for the hosted `pro` plan |
-| `ATTESTOR_STRIPE_OVERAGE_PRICE_SCALE` | No | None | Stripe recurring metered overage price id for the hosted `scale` plan |
-| `ATTESTOR_STRIPE_OVERAGE_METER_EVENT_NAME` | No | `attestor_admission_overage` | Stripe Billing Meter event name used for paid overage admissions |
-| `ATTESTOR_STRIPE_PRICE_ENTERPRISE` | No | None | Optional Stripe recurring price id only when Enterprise self-service checkout is intentionally enabled; otherwise Enterprise is sales/custom |
-| `ATTESTOR_STRIPE_STARTER_TRIAL_DAYS` | No | `14` | Starter-plan Stripe trial length in days for hosted checkout |
+| `ATTESTOR_STRIPE_PRICE_PILOT_WORKFLOW` | No | None | Stripe recurring price id for the `pilot-workflow` tier |
+| `ATTESTOR_STRIPE_PRICE_STARTER_WORKFLOW` | No | None | Stripe recurring price id for the `starter-workflow` tier |
+| `ATTESTOR_STRIPE_PRICE_PRO_WORKFLOW` | No | None | Stripe recurring price id for the `pro-workflow` tier |
+| `ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER_WORKFLOW` | No | None | Stripe recurring metered overage price id for the `starter-workflow` tier |
+| `ATTESTOR_STRIPE_OVERAGE_PRICE_PRO_WORKFLOW` | No | None | Stripe recurring metered overage price id for the `pro-workflow` tier |
+| `ATTESTOR_STRIPE_OVERAGE_METER_EVENT_NAME` | No | `attestor_admission_overage` | Stripe Billing Meter event name used for workflow overage admissions |
 | `ATTESTOR_BILLING_SUCCESS_URL` | No | None | Return URL for successful Stripe Checkout sessions |
 | `ATTESTOR_BILLING_CANCEL_URL` | No | None | Return URL for canceled Stripe Checkout sessions |
 | `ATTESTOR_BILLING_PORTAL_RETURN_URL` | No | None | Return URL for Stripe Billing Portal sessions |

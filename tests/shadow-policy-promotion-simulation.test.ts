@@ -38,7 +38,7 @@ const tenant: TenantContext = {
   tenantName: 'Shadow Policy Simulation Tenant',
   authenticatedAt: '2026-05-02T12:00:00.000Z',
   source: 'api_key',
-  planId: 'community',
+  planId: 'trial',
   monthlyRunQuota: 100,
 };
 

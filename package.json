@@ -741,7 +741,7 @@
     "js-yaml": "^4.2.0",
     "jszip": "^3.10.1",
     "node-forge": "1.4.0",
-    "nodemailer": "^9.0.0",
+    "nodemailer": "^9.0.1",
     "openai": "6.37.0",
     "openid-client": "6.8.4",
     "pg": "8.21.0",
@@ -766,6 +766,9 @@
     "fast-xml-parser": "^5.7.2",
     "follow-redirects": "^1.16.0",
     "protobufjs": "8.2.0",
+    "smtp-server": {
+      "nodemailer": "9.0.1"
+    },
     "uuid": "^14.0.0"
   },
   "engines": {

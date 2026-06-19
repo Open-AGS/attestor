@@ -68,7 +68,7 @@ FinancePipelineAdmissionRun {
     tenantContext: {
       tenantId: 'tenant_pack_decision',
       source: 'hosted',
-      planId: 'starter',
+      planId: 'trial',
     },
     usage: {
       used: 10,

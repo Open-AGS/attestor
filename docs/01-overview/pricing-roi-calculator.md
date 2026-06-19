@@ -30,27 +30,27 @@ Then recommend:
 
 | Monthly admissions | Recommendation |
 |---:|---|
-| `0` to `500` | Developer, if shadow/warn evaluation is enough. |
-| `501` to `5,000` | Trial for serious shadow evaluation, or Starter if enforcement is needed now. |
-| `5,001` to `25,000` | Starter. |
-| `25,001` to `250,000` | Pro. |
-| `250,001` to `1,000,000` | Scale. |
-| `1,000,001` and above | Enterprise conversation. |
+| `0` to `10,000` total during onboarding | Trial account entitlement, if evaluation is enough. |
+| `0` to `15,000` per month | Pilot Workflow for one selected pack without enforce mode. |
+| `0` to `25,000` per month | Starter Workflow when one production workflow needs review/enforce. |
+| `25,001` to `250,000` per month | Pro Workflow. |
+| `250,001` and above | Negotiated deployment or custom commercial workflow terms. |
 
-When enforcement is required, do not recommend Developer. Developer is a free evaluation path, not a production enforcement promise.
+When enforcement is required, do not recommend Trial or Pilot Workflow by
+themselves. Production enforcement needs Starter Workflow or Pro Workflow plus
+a customer PEP/gate.
 
 ## Subscription Cost
 
-Use current list prices:
+Use current workflow list prices:
 
-| Plan | Monthly list price | Included monthly admissions | Overage |
+| Billing surface | Monthly list price | Included admissions | Overage |
 |---|---:|---:|---:|
-| Developer | `$0` | `500` | none; upgrade required |
-| Trial | `$0` | `5,000` total during trial | none; convert or upgrade |
-| Starter | `$299` | `25,000` | `$0.05` |
-| Pro | `$1,499` | `250,000` | `$0.025` |
-| Scale | `$5,999` | `1,000,000` | `$0.015` |
-| Enterprise | custom | custom | custom |
+| Trial account entitlement | `$0` | `10,000` total over `30` days | none; hard stop |
+| Pilot Workflow | `$99` | `15,000` / month | none; hard stop |
+| Starter Workflow | `$299` | `25,000` / month | `$0.05` |
+| Pro Workflow | `$999` | `250,000` / month | `$0.025` |
+| Negotiated deployment | custom | custom | custom |
 
 For paid plans:
 
@@ -59,7 +59,8 @@ monthly_subscription_cost =
   monthly_list_price + max(0, monthly_admissions - included_monthly_admissions) * overage_rate
 ```
 
-Scale and Enterprise pricing should be confirmed in a sales conversation before quoting overage-heavy workloads.
+Negotiated deployment and custom workflow terms should be confirmed in a sales
+conversation before quoting overage-heavy workloads.
 
 ## Avoided-Loss ROI
 
@@ -78,12 +79,12 @@ Example:
 | daily admissions | `2,000` |
 | business days per month | `22` |
 | monthly admissions | `44,000` |
-| recommended plan | Pro |
-| monthly subscription cost | `$1,499` |
-| annual subscription cost | `$17,988` |
+| recommended billing surface | Pro Workflow |
+| monthly subscription cost | `$999` |
+| annual subscription cost | `$11,988` |
 | estimated loss per bad action | `$250,000` |
 | prevented bad actions per year | `1` |
-| ROI multiple | `13.9x` |
+| ROI multiple | `20.9x` |
 
 Use conservative avoided-loss values. Attestor is not insurance and does not guarantee that every bad action is prevented; the calculator only helps a customer compare control cost with consequence risk.
 
@@ -97,21 +98,21 @@ Recommended CTA logic:
 
 | Condition | CTA |
 |---|---|
-| wants evaluation only | Start Developer |
-| wants shadow evaluation at real volume | Start 60-day Trial |
-| wants one production workflow | Start Starter |
-| wants SSO, dual-control, and multiple workflows | Start Pro |
-| wants high volume, retention, support, or custom integrations | Talk to Sales for Scale |
-| wants self-hosted, air-gapped, dedicated, or regulated deployment | Talk to Sales for Enterprise |
+| wants evaluation only | Start Trial |
+| wants scoped rollout rehearsal | Start Pilot Workflow |
+| wants one production workflow | Start Starter Workflow |
+| wants SSO, RBAC, dual-control, or all current hosted packs | Start Pro Workflow |
+| wants high volume, retention, support, custom integrations, self-hosted, air-gapped, dedicated, or regulated deployment | Talk to Sales |
 
 ## What Not To Claim
 
 Do not claim:
 
-- that Developer enforces production workflows
-- that Trial is automatically provisioned by hosted signup today
+- that legacy Developer account access is an active billing plan
+- that Trial by itself enforces production workflows
+- that Pilot Workflow by itself enforces production workflows
 - that annual Stripe checkout is wired until the runtime supports billing intervals
-- that Enterprise is self-service checkout unless `ATTESTOR_STRIPE_PRICE_ENTERPRISE` is intentionally configured
+- that negotiated deployment is self-service checkout; it remains offline/operator-owned
 - that the ROI multiple is guaranteed savings
 
 Those boundaries keep the pricing page aligned with the shipped runtime and the commercial source of truth.

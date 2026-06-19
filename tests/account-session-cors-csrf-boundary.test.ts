@@ -57,7 +57,7 @@ function accountSessionHeaders(
     [TENANT_CONTEXT_VERIFIED_HEADER]: 'true',
     'x-attestor-tenant-id': 'tenant_browser_boundary',
     'x-attestor-tenant-source': 'account_session',
-    'x-attestor-plan-id': 'developer',
+    'x-attestor-plan-id': 'trial',
     'x-attestor-account-id': 'acct_browser_boundary',
     'x-attestor-account-user-id': 'ausr_browser_boundary',
     'x-attestor-account-role': 'account_admin',

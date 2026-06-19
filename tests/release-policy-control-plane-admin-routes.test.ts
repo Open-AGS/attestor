@@ -108,7 +108,7 @@ function createEntry() {
     wedgeId: 'finance.record.release',
     consequenceType: 'record',
     riskClass: 'R4',
-    planId: 'enterprise',
+    planId: 'trial',
   });
   const provisional = createPolicyBundleEntry({
     id: 'entry-record-r4',
@@ -224,7 +224,7 @@ function sampleTarget() {
     wedgeId: 'finance.record.release',
     consequenceType: 'record',
     riskClass: 'R4',
-    planId: 'enterprise',
+    planId: 'trial',
   } as const;
 }
 

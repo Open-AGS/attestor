@@ -11,12 +11,11 @@ export const POLICY_FOUNDRY_COMMERCIAL_BOUNDARY_VERSION =
   'attestor.policy-foundry-commercial-boundary.v1';
 
 export const POLICY_FOUNDRY_COMMERCIAL_PLANS = [
-  'developer',
   'trial',
-  'starter',
-  'pro',
-  'scale',
-  'enterprise',
+  'pilot-workflow',
+  'starter-workflow',
+  'pro-workflow',
+  'negotiated-deployment',
 ] as const;
 export type PolicyFoundryCommercialPlan =
   typeof POLICY_FOUNDRY_COMMERCIAL_PLANS[number];
@@ -24,10 +23,10 @@ export type PolicyFoundryCommercialPlan =
 export const POLICY_FOUNDRY_COMMERCIAL_POSTURES = [
   'evaluation-only',
   'trial-shadow-discovery',
+  'pilot-proof-packet',
   'single-workflow-production',
-  'growth-production',
-  'high-volume-production',
-  'customer-operated-enterprise',
+  'advanced-workflow-production',
+  'negotiated-customer-operated',
 ] as const;
 export type PolicyFoundryCommercialPosture =
   typeof POLICY_FOUNDRY_COMMERCIAL_POSTURES[number];
@@ -220,10 +219,15 @@ const trialCapabilities: readonly PolicyFoundryCommercialCapability[] = Object.f
   'active-questions',
 ]);
 
-const starterCapabilities: readonly PolicyFoundryCommercialCapability[] = Object.freeze([
+const pilotWorkflowCapabilities: readonly PolicyFoundryCommercialCapability[] = Object.freeze([
   ...trialCapabilities,
-  'review-enforce-ladder',
   'short-retention-audit-export',
+  'candidate-red-team-replay',
+]);
+
+const starterCapabilities: readonly PolicyFoundryCommercialCapability[] = Object.freeze([
+  ...pilotWorkflowCapabilities,
+  'review-enforce-ladder',
 ]);
 
 const proCapabilities: readonly PolicyFoundryCommercialCapability[] = Object.freeze([
@@ -234,33 +238,18 @@ const proCapabilities: readonly PolicyFoundryCommercialCapability[] = Object.fre
   'rbac-sso',
   'dual-approval',
   'longer-retention',
-]);
-
-const scaleCapabilities: readonly PolicyFoundryCommercialCapability[] = Object.freeze([
-  ...proCapabilities,
   'custom-templates',
   'drift-policy-debt-detection',
 ]);
 
-const enterpriseCapabilities: readonly PolicyFoundryCommercialCapability[] = Object.freeze([
-  ...scaleCapabilities,
+const negotiatedCapabilities: readonly PolicyFoundryCommercialCapability[] = Object.freeze([
+  ...proCapabilities,
   'customer-operated-deployment',
   'regulated-deployment-boundary',
   'custom-pack-boundary',
 ]);
 
 const PLAN_BOUNDARIES: readonly PolicyFoundryCommercialPlanBoundary[] = Object.freeze([
-  Object.freeze({
-    plan: 'developer',
-    posture: 'evaluation-only',
-    paidPlan: false,
-    hostedProductionAllowed: false,
-    customerOperatedAllowed: false,
-    maxProductionWorkflows: 0,
-    auditRetentionDays: 7,
-    includedCapabilities: baseCapabilities,
-    safetyMinimums: POLICY_FOUNDRY_SAFETY_MINIMUMS,
-  }),
   Object.freeze({
     plan: 'trial',
     posture: 'trial-shadow-discovery',
@@ -273,7 +262,18 @@ const PLAN_BOUNDARIES: readonly PolicyFoundryCommercialPlanBoundary[] = Object.f
     safetyMinimums: POLICY_FOUNDRY_SAFETY_MINIMUMS,
   }),
   Object.freeze({
-    plan: 'starter',
+    plan: 'pilot-workflow',
+    posture: 'pilot-proof-packet',
+    paidPlan: true,
+    hostedProductionAllowed: false,
+    customerOperatedAllowed: false,
+    maxProductionWorkflows: 0,
+    auditRetentionDays: 30,
+    includedCapabilities: pilotWorkflowCapabilities,
+    safetyMinimums: POLICY_FOUNDRY_SAFETY_MINIMUMS,
+  }),
+  Object.freeze({
+    plan: 'starter-workflow',
     posture: 'single-workflow-production',
     paidPlan: true,
     hostedProductionAllowed: true,
@@ -284,36 +284,25 @@ const PLAN_BOUNDARIES: readonly PolicyFoundryCommercialPlanBoundary[] = Object.f
     safetyMinimums: POLICY_FOUNDRY_SAFETY_MINIMUMS,
   }),
   Object.freeze({
-    plan: 'pro',
-    posture: 'growth-production',
+    plan: 'pro-workflow',
+    posture: 'advanced-workflow-production',
     paidPlan: true,
     hostedProductionAllowed: true,
     customerOperatedAllowed: false,
-    maxProductionWorkflows: 25,
+    maxProductionWorkflows: 1,
     auditRetentionDays: 365,
     includedCapabilities: proCapabilities,
     safetyMinimums: POLICY_FOUNDRY_SAFETY_MINIMUMS,
   }),
   Object.freeze({
-    plan: 'scale',
-    posture: 'high-volume-production',
-    paidPlan: true,
-    hostedProductionAllowed: true,
-    customerOperatedAllowed: false,
-    maxProductionWorkflows: null,
-    auditRetentionDays: 1095,
-    includedCapabilities: scaleCapabilities,
-    safetyMinimums: POLICY_FOUNDRY_SAFETY_MINIMUMS,
-  }),
-  Object.freeze({
-    plan: 'enterprise',
-    posture: 'customer-operated-enterprise',
+    plan: 'negotiated-deployment',
+    posture: 'negotiated-customer-operated',
     paidPlan: true,
     hostedProductionAllowed: true,
     customerOperatedAllowed: true,
     maxProductionWorkflows: null,
     auditRetentionDays: null,
-    includedCapabilities: enterpriseCapabilities,
+    includedCapabilities: negotiatedCapabilities,
     safetyMinimums: POLICY_FOUNDRY_SAFETY_MINIMUMS,
   }),
 ]);
@@ -350,17 +339,26 @@ function nextSafeStepFor(input: {
   if (input.noGoReasons.length > 0) {
     return 'Keep the request in review and either reduce scope or upgrade the commercial plan before activation.';
   }
-  if (input.plan === 'developer' || input.plan === 'trial') {
+  if (input.plan === 'trial') {
     return 'Continue shadow or warn evaluation; do not activate production enforcement from this plan.';
   }
   return 'Use this boundary as commercial context only; production rollout still requires approval, verifier evidence, deployment readiness, and smoke tests.';
+}
+
+function normalizeCommercialPlanText(value: PolicyFoundryCommercialPlan | string | null | undefined): string {
+  const normalized = (value ?? 'trial').trim().toLowerCase();
+  if (normalized.length === 0) return 'trial';
+  if (normalized === 'developer' || normalized === 'community') return 'trial';
+  if (normalized === 'starter') return 'starter-workflow';
+  if (normalized === 'pro' || normalized === 'scale' || normalized === 'enterprise') return 'unsupported';
+  return normalized;
 }
 
 export function createPolicyFoundryCommercialBoundary(
   input: CreatePolicyFoundryCommercialBoundaryInput = {},
 ): PolicyFoundryCommercialBoundary {
   const generatedAt = normalizeIsoTimestamp(input.generatedAt, new Date(0).toISOString());
-  const planText = (input.plan ?? 'developer').trim().toLowerCase();
+  const planText = normalizeCommercialPlanText(input.plan);
   const planSupported = isPlan(planText);
   const plan = planSupported ? planText : 'unsupported';
   const boundary = planSupported ? planBoundaryFor(planText) : null;

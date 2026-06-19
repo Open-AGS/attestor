@@ -70,7 +70,7 @@ function testDeps(options: {
             id: 'tkey_route_authz',
             tenantId: 'tenant_route_authz',
             tenantName: 'Route Authz',
-            planId: 'pro',
+            planId: 'trial',
             monthlyRunQuota: 500,
             status: 'active',
           },

@@ -77,7 +77,7 @@ async function main(): Promise<void> {
 
     const tenant = await extractTenantContext('Bearer secret-a');
     equal(tenant?.tenantId, 'tenant-a', 'F6 tenant key cache: hashed env key resolves tenant');
-    equal(tenant?.planId, 'pro', 'F6 tenant key cache: hashed env key preserves plan');
+    equal(tenant?.planId, 'trial', 'F6 tenant key cache: hashed env key preserves plan');
     equal(tenant?.monthlyRunQuota, 25, 'F6 tenant key cache: hashed env key preserves quota');
 
     resetCase();

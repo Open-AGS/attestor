@@ -117,7 +117,7 @@ function tenant(tenantId: string): TenantContext {
     tenantName: tenantId,
     authenticatedAt: '2026-05-11T00:00:00.000Z',
     source: 'api_key',
-    planId: 'starter',
+    planId: 'trial',
     monthlyRunQuota: 10,
   };
 }
@@ -129,7 +129,7 @@ function createAsyncJob(jobId: string, tenantId: string): InProcessAsyncJob {
     submittedAt: '2026-05-11T00:00:00.000Z',
     completedAt: '2026-05-11T00:00:01.000Z',
     tenantId,
-    planId: 'starter',
+    planId: 'trial',
     result: {
       runId: 'run_matrix',
       decision: 'approve',
@@ -193,7 +193,7 @@ function createAsyncRouteApp(options: {
       maxAttempts: 1,
       tenant: {
         tenantId: 'tenant_a',
-        planId: 'starter',
+        planId: 'trial',
         source: 'api_key',
       },
       failedAt: null,
@@ -233,6 +233,12 @@ function testSensitiveBoundariesAreClassified(): void {
     {
       route: { method: 'POST', path: '/api/v1/account/billing/checkout' } as const,
       id: 'account.billing.checkout',
+      authBoundary: 'account_session',
+      idempotencyBoundary: 'not_applicable',
+    },
+    {
+      route: { method: 'POST', path: '/api/v1/account/billing/workflows/checkout' } as const,
+      id: 'account.billing.workflow-checkout',
       authBoundary: 'account_session',
       idempotencyBoundary: 'required_header',
     },

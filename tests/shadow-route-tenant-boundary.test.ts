@@ -35,7 +35,7 @@ const tenantA: TenantContext = {
   tenantName: 'Route Tenant A',
   authenticatedAt: '2026-05-05T08:00:00.000Z',
   source: 'api_key',
-  planId: 'community',
+  planId: 'trial',
   monthlyRunQuota: 100,
 };
 

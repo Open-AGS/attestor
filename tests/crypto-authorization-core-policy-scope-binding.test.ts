@@ -200,7 +200,7 @@ function fixtureBindingInput(options?: {
     cryptoDecision,
     riskAssessment,
     generatedAt: '2026-04-21T08:00:03.000Z',
-    planId: 'enterprise',
+    planId: 'trial',
   } as const;
 }
 
@@ -237,7 +237,7 @@ function testCreatesPolicyControlPlaneBinding(): void {
   equal(binding.activationTarget.wedgeId, 'crypto.approval', 'Crypto policy scope binding: activation target carries crypto wedge');
   equal(binding.activationTarget.consequenceType, 'action', 'Crypto policy scope binding: activation target maps to release action');
   equal(binding.activationTarget.riskClass, 'R4', 'Crypto policy scope binding: activation target carries risk');
-  equal(binding.activationTarget.planId, 'enterprise', 'Crypto policy scope binding: activation target carries plan');
+  equal(binding.activationTarget.planId, 'trial', 'Crypto policy scope binding: activation target carries plan');
   ok(binding.activationTarget.cohortId?.includes('wallet-call-api'), 'Crypto policy scope binding: activation target carries adapter cohort');
   ok(binding.scopeSelector.dimensions.includes('account'), 'Crypto policy scope binding: selector is account scoped');
   ok(binding.scopeSelector.dimensions.includes('wedge'), 'Crypto policy scope binding: selector is wedge scoped');
@@ -316,7 +316,7 @@ function testSimulationOverlayResolvesCandidatePolicy(): void {
         targetId: 'erc20:usdc:approve',
         tenantId: 'tenant-crypto',
         accountId: binding.activationTarget.accountId,
-        planId: 'enterprise',
+        planId: 'trial',
         cohortId: binding.activationTarget.cohortId,
       },
     },

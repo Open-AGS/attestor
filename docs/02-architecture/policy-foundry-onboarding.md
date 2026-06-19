@@ -327,18 +327,17 @@ The correct wording is `not enough evidence` or `no-go for enforce`, not
 Policy Foundry should create the free evaluation aha moment, but it should not
 be unlimited free production value.
 
-- Developer: basic shadow summary, action risk inventory, limited candidate
-  preview, no production enforcement.
-- Trial: time-boxed Pro-like shadow discovery, Policy Twin preview, readiness
-  and no-go scoring, no production enforcement.
-- Starter: one production workflow with basic Policy Foundry, Policy Twin,
-  active questions, review/enforce ladder, and short-retention audit export.
-- Pro: advanced confidence scoring, candidate red-team replay, multiple
-  workflows, RBAC/SSO, dual approval, and longer retention.
-- Scale: higher-volume discovery, custom templates, drift detection, stronger
-  support, and longer retention.
-- Enterprise: customer-operated, dedicated, air-gapped, regulated, or custom
-  pack deployment boundaries.
+- Trial account entitlement: shadow discovery, action risk inventory, Policy
+  Twin preview, readiness/no-go scoring preview, and no production enforcement.
+- Pilot Workflow: one selected pack in observe, warn, review-simulation, and
+  scoped-rollout-review modes with hosted review surface and audit export.
+- Starter Workflow: one customer-gated production workflow with Policy Foundry,
+  Policy Twin, active questions, review/enforce ladder, and handoff artifacts.
+- Pro Workflow: one advanced workflow with all current hosted packs, candidate
+  red-team replay, drift/policy-debt detection, RBAC, SSO, dual-control
+  activation, and longer retention.
+- Negotiated deployment: customer-operated, dedicated, air-gapped, regulated,
+  or custom pack deployment boundaries.
 
 Security minimums stay available across plans: redaction, proof verification,
 tenant isolation, fail-closed semantics, and no auto-enforcement from shadow
@@ -347,9 +346,10 @@ reads must not become paid-only safety features.
 The first repo-side commercial boundary contract lives in
 `src/consequence-admission/policy-foundry-commercial-boundary.ts`, is covered by
 `tests/policy-foundry-commercial-boundary.test.ts`, and is exposed through
-`test:policy-foundry-commercial-boundary`. It maps Developer, Trial, Starter,
-Pro, Scale, and Enterprise Foundry capabilities while keeping these safety
-minimums out of the paywall:
+`test:policy-foundry-commercial-boundary`. It maps Trial, Starter, Pro, Scale,
+and Enterprise Foundry compatibility capabilities while the billing model maps
+self-service paid access to Pilot, Starter Workflow, and Pro Workflow
+entitlements. These safety minimums stay out of the paywall:
 
 ```text
 redaction

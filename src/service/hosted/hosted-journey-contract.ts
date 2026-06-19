@@ -86,7 +86,8 @@ export const HOSTED_JOURNEY_ROUTE_CONTRACTS = [
       'account_session cookie issued',
       'initialKey.apiKey returned once',
       'commercial.currentPhase is evaluation',
-      'commercial.firstHostedPlanId is starter',
+      'commercial.trialAccountEntitlementId is trial',
+      'commercial.workflowCheckoutRoute points to workflow checkout',
     ],
     failureSignals: [
       '400 for missing or invalid signup input',
@@ -220,13 +221,13 @@ export const HOSTED_JOURNEY_ROUTE_CONTRACTS = [
     ],
   },
   {
-    key: 'checkout',
+    key: 'workflow_checkout',
     method: 'POST',
-    path: '/api/v1/account/billing/checkout',
+    path: '/api/v1/account/billing/workflows/checkout',
     owner: 'account_routes',
     authBoundary: 'account_session',
-    requestContract: 'AccountBillingCheckoutRequest',
-    responseContract: 'AccountBillingCheckoutResponse',
+    requestContract: 'AccountWorkflowBillingCheckoutRequest',
+    responseContract: 'AccountWorkflowBillingCheckoutResponse',
     requiredHeaders: [
       'Content-Type: application/json',
       'Cookie: account session',
@@ -237,12 +238,12 @@ export const HOSTED_JOURNEY_ROUTE_CONTRACTS = [
       '200 OK',
       'checkoutSessionId returned',
       'checkoutUrl returned',
-      'planId returned',
-      'trialDays returned',
+      'workflowId returned',
+      'tier returned',
     ],
     failureSignals: [
       '400 when Idempotency-Key is missing',
-      '400 when planId is missing or not a hosted paid plan',
+      '400 when workflowId, tier, consequencePack, or required workflow digests are missing',
       '401 or 403 when account_admin or billing_admin session is missing',
     ],
   },
@@ -353,7 +354,7 @@ export const HOSTED_JOURNEY_ROUTE_CONTRACTS = [
     successSignals: [
       '200 OK for applied or ignored supported event',
       '200 OK with x-attestor-stripe-replay for duplicate event',
-      'entitlement state converges after supported billing events',
+      'workflow entitlement state converges after supported billing events',
     ],
     failureSignals: [
       '400 when Stripe-Signature is missing or invalid',
@@ -368,7 +369,7 @@ export const HOSTED_JOURNEY_STEP_CONTRACTS = [
     id: 'create-hosted-account',
     title: 'Create the hosted account',
     audience: 'customer',
-    intent: 'Start on the free Developer evaluation path and receive the first tenant API key.',
+    intent: 'Start on the free Trial account entitlement and receive the first tenant API key.',
     routeKeys: ['signup'],
     successSignals: [
       'first account user has account_admin authority',
@@ -387,7 +388,7 @@ export const HOSTED_JOURNEY_STEP_CONTRACTS = [
     intent: 'Confirm the account plane can show current plan, entitlement, usage, and rate limit before real use.',
     routeKeys: ['account_summary', 'usage', 'entitlement', 'features'],
     successSignals: [
-      'developer plan is visible during evaluation',
+      'trial account access is visible during evaluation',
       'included hosted run quota is visible',
       'entitlement state is visible',
       'feature grants are visible',
@@ -422,15 +423,15 @@ export const HOSTED_JOURNEY_STEP_CONTRACTS = [
     id: 'upgrade-through-checkout',
     title: 'Upgrade through Stripe Checkout',
     audience: 'customer',
-    intent: 'Move from evaluation to a paid hosted plan without changing the account-plane identity.',
-    routeKeys: ['checkout'],
+    intent: 'Move from evaluation to a paid workflow entitlement without changing the account-plane identity.',
+    routeKeys: ['workflow_checkout'],
     successSignals: [
       'checkoutUrl sends the customer to Stripe-hosted checkout',
       'idempotent retries do not create a conflicting checkout request',
     ],
     failureSignals: [
       'missing Idempotency-Key',
-      'unsupported plan',
+      'unsupported workflow tier',
       'missing account_admin or billing_admin authority',
     ],
   },
@@ -438,7 +439,7 @@ export const HOSTED_JOURNEY_STEP_CONTRACTS = [
     id: 'converge-billing-state',
     title: 'Converge billing and entitlement state',
     audience: 'stripe',
-    intent: 'Use signed Stripe webhooks to converge checkout, subscription, invoice, charge, and entitlement changes into Attestor account state.',
+    intent: 'Use signed Stripe webhooks to converge workflow checkout, subscription, invoice, charge, and workflow entitlement changes into Attestor account state.',
     routeKeys: ['stripe_webhook', 'entitlement', 'account_summary'],
     successSignals: [
       'supported Stripe event is applied or ignored deterministically',
@@ -485,14 +486,14 @@ export function hostedJourneyContract() {
   return {
     version: HOSTED_JOURNEY_CONTRACT_VERSION,
     productModel: HOSTED_JOURNEY_PRODUCT_MODEL,
-    defaultEvaluationPlanId: 'developer',
-    firstPaidHostedPlanId: 'starter',
+    defaultEvaluationPlanId: 'trial',
+    firstPaidWorkflowTierId: 'starter-workflow',
     consequenceBoundary:
       'customer systems call Attestor before the downstream system writes, sends, files, or executes',
     packSelection:
       'Attestor does not auto-detect packs; callers choose the relevant hosted path for the consequence they need to control',
     billingConvergence:
-      'checkout starts the paid hosted path, while signed Stripe webhooks converge account entitlement state',
+      'workflow checkout starts the paid path, while signed Stripe webhooks converge workflow entitlement state',
     truthSources: HOSTED_JOURNEY_TRUTH_SOURCES,
     readinessGates: HOSTED_PRODUCT_FLOW_READINESS_GATES,
     routeContracts: HOSTED_JOURNEY_ROUTE_CONTRACTS,

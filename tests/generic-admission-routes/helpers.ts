@@ -104,7 +104,7 @@ export function ok(condition: unknown, message: string): void {
   markPassed();
 }
 
-export function createApp(planId = 'starter'): Hono {
+export function createApp(planId = 'custom-route-test-plan'): Hono {
   const app = new Hono();
   registerGenericAdmissionRoutes(app, {
     currentTenant: () => ({
@@ -120,7 +120,7 @@ export function createApp(planId = 'starter'): Hono {
   return app;
 }
 
-export function createLoopGuardedApp(planId = 'starter'): { readonly app: Hono; readonly shadowRecords: number } {
+export function createLoopGuardedApp(planId = 'custom-route-test-plan'): { readonly app: Hono; readonly shadowRecords: number } {
   const app = new Hono();
   const guard = createConsequenceAdmissionAgentLoopAbuseGuard({
     policy: {

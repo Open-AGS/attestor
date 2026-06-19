@@ -237,7 +237,7 @@ async function main(): Promise<void> {
         contactEmail: 'ops@mailgun.example',
         tenantId: 'tenant-mailgun',
         tenantName: 'Mailgun Tenant',
-        planId: 'starter',
+        planId: 'trial',
       }),
     });
     ok(createAccountRes.status === 201, 'Mailgun Webhook: account create status 201');
@@ -283,6 +283,7 @@ async function main(): Promise<void> {
       headers: {
         'Content-Type': 'application/json',
         Cookie: accountAdminCookie!,
+        'x-attestor-csrf': 'live-account-email-mailgun-webhook',
       },
       body: JSON.stringify({
         email: 'invitee@mailgun.example',

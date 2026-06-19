@@ -373,8 +373,9 @@ export function registerGenericAdmissionRoutes(
         }
         throw error;
       }
+      const workflowId = workflowIdFromAdmissionPayload(payload);
       const modePolicy = resolvePlanGenericAdmissionMode(tenant.planId, envelope.mode);
-      if (!modePolicy.allowed) {
+      if (!modePolicy.allowed && !workflowId) {
         const problem = createConsequenceAdmissionProblem({
           type: 'https://attestor.dev/problems/admission-plan-mode-restricted',
           title: 'Admission mode not available on plan',
@@ -396,7 +397,6 @@ export function registerGenericAdmissionRoutes(
       if (idempotency.kind === 'response') {
         return idempotency.response;
       }
-      const workflowId = workflowIdFromAdmissionPayload(payload);
       let workflowEntitlement: WorkflowEntitlementRecord | null = null;
       let workflowAccess: WorkflowEntitlementAccessDecision | null = null;
       if (workflowId) {

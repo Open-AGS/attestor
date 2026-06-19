@@ -140,7 +140,7 @@ function testDiscoveryLabelsCarryReservedAndCustomValues(): void {
     consequenceType: 'record',
     riskClass: 'R4',
     cohortId: 'wave-a',
-    planId: 'enterprise',
+    planId: 'trial',
   });
 
   const labels = createPolicyDiscoveryLabels({
@@ -155,7 +155,7 @@ function testDiscoveryLabelsCarryReservedAndCustomValues(): void {
   assert.equal(labels.values['attestor.environment'], 'prod-eu');
   assert.equal(labels.values['attestor.account'], 'account-123');
   assert.equal(labels.values['attestor.cohort'], 'wave-a');
-  assert.equal(labels.values['attestor.plan'], 'enterprise');
+  assert.equal(labels.values['attestor.plan'], 'trial');
   assert.equal(labels.values['attestor.store_kind'], 'file-backed');
   assert.equal(labels.values['cohort'], 'wave-a');
   assert.equal(labels.values['release.channel'], 'stable');

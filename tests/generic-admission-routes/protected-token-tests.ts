@@ -27,7 +27,7 @@ async function testProtectedReleaseTokenIssuerReturnsAuthorizationWithoutRecordi
       tenantName: 'Route Tenant',
       authenticatedAt: '2026-05-01T18:00:00.000Z',
       source: 'api_key',
-      planId: 'starter',
+      planId: 'custom-route-test-plan',
       monthlyRunQuota: 100,
     }),
     issueProtectedReleaseToken: ({ envelope }) =>
@@ -139,7 +139,7 @@ async function testProtectedReleaseTokenRequiredFailsClosedWithoutIssuer(): Prom
       tenantName: 'Route Tenant',
       authenticatedAt: '2026-05-01T18:00:00.000Z',
       source: 'api_key',
-      planId: 'starter',
+      planId: 'custom-route-test-plan',
       monthlyRunQuota: 100,
     }),
     requireProtectedReleaseTokenForHighRisk: true,
@@ -191,7 +191,7 @@ async function testProtectedReleaseTokenIssuerUsesRouteResolvedDpopConfirmation(
       tenantName: 'Route Tenant',
       authenticatedAt: '2026-05-01T18:00:00.000Z',
       source: 'api_key',
-      planId: 'starter',
+      planId: 'custom-route-test-plan',
       monthlyRunQuota: 100,
     }),
     resolveProtectedReleaseTokenConfirmation: async ({ context, receivedAt }) => {
@@ -285,7 +285,7 @@ async function testProtectedReleaseTokenIssuerFailsClosedWithoutDpopConfirmation
       tenantName: 'Route Tenant',
       authenticatedAt: '2026-05-01T18:00:00.000Z',
       source: 'api_key',
-      planId: 'starter',
+      planId: 'custom-route-test-plan',
       monthlyRunQuota: 100,
     }),
     resolveProtectedReleaseTokenConfirmation: async ({ context, receivedAt }) => {

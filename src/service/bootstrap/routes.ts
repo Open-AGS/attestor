@@ -367,6 +367,8 @@ export function createPolicyFoundryHostedOnboardingRouteDeps<Packet>(
         currentMonthlyRunQuota: tenantRecord?.monthlyRunQuota ?? tenant.monthlyRunQuota,
       });
     },
+    resolveWorkflowEntitlement: ({ tenant, workflowId }) =>
+      findWorkflowEntitlementByTenantAndWorkflowState(tenant.tenantId, workflowId),
     wizardStateStore,
     pipelineIdempotencyService: runtime.services.httpRoutes.pipeline.pipelineIdempotencyService,
     now: () => new Date().toISOString(),

@@ -171,7 +171,7 @@ async function run(): Promise<void> {
         contactEmail: 'ops@vault-hosted.example',
         tenantId: 'tenant-vault-live',
         tenantName: 'Vault Live Tenant',
-        planId: 'starter',
+        planId: 'trial',
       }),
     });
     ok(createAccountRes.status === 201, 'Admin account create with Vault seal: 201');

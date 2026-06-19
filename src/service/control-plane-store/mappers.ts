@@ -43,7 +43,7 @@ import {
   recoverSecretEnvelope,
   sealSecretEnvelope,
 } from '../secret-envelope.js';
-import { resolvePlanQuotaPolicy } from '../plan-catalog.js';
+import { DEFAULT_HOSTED_PLAN_ID, resolvePlanQuotaPolicy } from '../plan-catalog.js';
 import { hashSecretForLookup } from '../secret-derivation.js';
 import type { HostedSamlReplayRecord } from '../account/account-saml.js';
 import type { PgQueryResultRow } from './pg.js';
@@ -370,7 +370,7 @@ export async function maybeSealTenantKeyRecord(record: TenantKeyRecord, apiKey: 
     tenantKeyId: record.id,
     tenantId: record.tenantId,
     tenantName: record.tenantName,
-    planId: record.planId ?? 'developer',
+    planId: record.planId ?? DEFAULT_HOSTED_PLAN_ID,
     createdAt: record.createdAt,
   });
   if (!recoveryEnvelope) return record;

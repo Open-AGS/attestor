@@ -137,43 +137,31 @@ spec:
                 secretKeyRef:
                   name: attestor-runtime-secrets
                   key: stripe-webhook-secret
-            - name: ATTESTOR_STRIPE_PRICE_STARTER
+            - name: ATTESTOR_STRIPE_PRICE_PILOT_WORKFLOW
               valueFrom:
                 secretKeyRef:
                   name: attestor-runtime-secrets
-                  key: stripe-price-starter
-            - name: ATTESTOR_STRIPE_PRICE_PRO
+                  key: stripe-price-pilot-workflow
+            - name: ATTESTOR_STRIPE_PRICE_STARTER_WORKFLOW
               valueFrom:
                 secretKeyRef:
                   name: attestor-runtime-secrets
-                  key: stripe-price-pro
-            - name: ATTESTOR_STRIPE_PRICE_SCALE
+                  key: stripe-price-starter-workflow
+            - name: ATTESTOR_STRIPE_PRICE_PRO_WORKFLOW
               valueFrom:
                 secretKeyRef:
                   name: attestor-runtime-secrets
-                  key: stripe-price-scale
-            - name: ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER
+                  key: stripe-price-pro-workflow
+            - name: ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER_WORKFLOW
               valueFrom:
                 secretKeyRef:
                   name: attestor-runtime-secrets
-                  key: stripe-overage-price-starter
-            - name: ATTESTOR_STRIPE_OVERAGE_PRICE_PRO
+                  key: stripe-overage-price-starter-workflow
+            - name: ATTESTOR_STRIPE_OVERAGE_PRICE_PRO_WORKFLOW
               valueFrom:
                 secretKeyRef:
                   name: attestor-runtime-secrets
-                  key: stripe-overage-price-pro
-            - name: ATTESTOR_STRIPE_OVERAGE_PRICE_SCALE
-              valueFrom:
-                secretKeyRef:
-                  name: attestor-runtime-secrets
-                  key: stripe-overage-price-scale
-            - name: ATTESTOR_STRIPE_PRICE_ENTERPRISE
-              valueFrom:
-                secretKeyRef:
-                  name: attestor-runtime-secrets
-                  key: stripe-price-enterprise
-            - name: ATTESTOR_STRIPE_STARTER_TRIAL_DAYS
-              value: "14"
+                  key: stripe-overage-price-pro-workflow
             - name: ATTESTOR_BILLING_SUCCESS_URL
               value: "https://attestor.example.com/billing/success"
             - name: ATTESTOR_BILLING_CANCEL_URL

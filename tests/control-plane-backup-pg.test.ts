@@ -115,7 +115,7 @@ async function run(): Promise<void> {
       key: {
         tenantId: 'tenant-backup-pg',
         tenantName: 'Backup PG Tenant',
-        planId: 'starter',
+        planId: 'trial',
       },
     });
     const ownerUser = await createAccountUserState({
@@ -132,16 +132,16 @@ async function run(): Promise<void> {
     });
     await upsertHostedBillingEntitlementState({
       account: provisioned.account,
-      currentPlanId: 'starter',
+      currentPlanId: 'trial',
       currentMonthlyRunQuota: 100,
-      stripeEntitlementLookupKeys: ['attestor.starter.api'],
-      stripeEntitlementFeatureIds: ['feat_starter_api'],
+      stripeEntitlementLookupKeys: [],
+      stripeEntitlementFeatureIds: [],
       stripeEntitlementSummaryUpdatedAt: '2026-04-07T00:00:00.000Z',
       lastEventId: 'evt_entitlement_backup_pg_1',
       lastEventType: 'manual.provisioning',
       lastEventAt: '2026-04-07T00:00:00.000Z',
     });
-    await consumePipelineRunState('tenant-backup-pg', 'starter', 100);
+    await consumePipelineRunState('tenant-backup-pg', 'trial', 100);
 
     await appendAdminAuditRecordState({
       actorType: 'admin_api_key',
@@ -151,7 +151,7 @@ async function run(): Promise<void> {
       accountId: provisioned.account.id,
       tenantId: 'tenant-backup-pg',
       tenantKeyId: provisioned.initialKey.id,
-      planId: 'starter',
+      planId: 'trial',
       monthlyRunQuota: 100,
       idempotencyKey: 'idem-backup-pg-1',
       requestHash: 'req_hash_backup_pg',
@@ -179,7 +179,7 @@ async function run(): Promise<void> {
       name: 'pipeline-run',
       backendMode: 'bullmq',
       tenantId: 'tenant-backup-pg',
-      planId: 'starter',
+      planId: 'trial',
       state: 'failed',
       failedReason: 'synthetic shared PG DLQ failure',
       attemptsMade: 3,
@@ -203,7 +203,7 @@ async function run(): Promise<void> {
       tenantId: 'tenant-backup-pg',
       stripeCustomerId: 'cus_backup_pg',
       stripeSubscriptionId: 'sub_backup_pg',
-      stripePriceId: 'price_starter_monthly',
+      stripePriceId: 'price_starter_workflow_monthly',
       stripeInvoiceId: 'in_backup_pg_1',
       stripeInvoiceStatus: 'paid',
       stripeInvoiceCurrency: 'usd',
@@ -213,7 +213,7 @@ async function run(): Promise<void> {
       accountStatusAfter: 'active',
       billingStatusBefore: 'active',
       billingStatusAfter: 'active',
-      mappedPlanId: 'starter',
+      mappedPlanId: null,
       metadata: { paidAt: '2026-04-07T00:00:00.000Z' },
     });
     await upsertStripeInvoiceLineItems({
@@ -227,8 +227,8 @@ async function run(): Promise<void> {
       replaceExisting: true,
       lineItems: [{
         stripeInvoiceLineItemId: 'il_backup_pg_1',
-        stripePriceId: 'price_starter_monthly',
-        description: 'Attestor Starter Monthly',
+        stripePriceId: 'price_starter_workflow_monthly',
+        description: 'Attestor Starter Workflow Monthly',
         currency: 'usd',
         amount: 5000,
         subtotal: 5000,
@@ -320,8 +320,8 @@ async function run(): Promise<void> {
 
     const restoredEntitlement = await findHostedBillingEntitlementByAccountIdState(provisioned.account.id);
     ok(Boolean(restoredEntitlement), 'Restore: hosted billing entitlement recovered from PG snapshot');
-    ok(restoredEntitlement?.effectivePlanId === 'starter', 'Restore: hosted billing entitlement plan preserved');
-    ok(restoredEntitlement?.stripeEntitlementLookupKeys.includes('attestor.starter.api') === true, 'Restore: hosted billing entitlement lookup keys preserved');
+    ok(restoredEntitlement?.effectivePlanId === 'trial', 'Restore: hosted billing entitlement plan preserved');
+    ok(restoredEntitlement?.stripeEntitlementLookupKeys.length === 0, 'Restore: legacy account-plan entitlement lookup keys stay absent');
 
     const restoredAudit = await listAdminAuditRecordsState();
     ok(restoredAudit.chainIntact === true, 'Restore: admin audit chain intact');
@@ -424,8 +424,8 @@ async function run(): Promise<void> {
       provider: 'manual' as const,
       status: 'provisioned' as const,
       accessEnabled: true,
-      effectivePlanId: 'starter',
-      requestedPlanId: 'starter',
+      effectivePlanId: 'trial',
+      requestedPlanId: 'trial',
       monthlyRunQuota: 100,
       requestsPerWindow: 5,
       asyncPendingJobsPerTenant: 1,

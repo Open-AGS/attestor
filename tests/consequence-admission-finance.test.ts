@@ -97,7 +97,7 @@ function baseRun(overrides: Partial<FinancePipelineAdmissionRun> = {}): FinanceP
     tenantContext: {
       tenantId: 'tenant_demo',
       source: 'hosted',
-      planId: 'community',
+      planId: 'trial',
     },
     usage: {
       used: 1,

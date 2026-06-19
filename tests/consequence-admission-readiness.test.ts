@@ -49,7 +49,7 @@ function financeRunFixture(): FinancePipelineAdmissionRun {
     tenantContext: {
       tenantId: 'tenant_readiness',
       source: 'api_key',
-      planId: 'community',
+      planId: 'trial',
     },
   };
 }

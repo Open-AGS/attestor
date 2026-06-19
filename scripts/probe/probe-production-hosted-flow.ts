@@ -6,6 +6,7 @@ import {
   stringifySecretSafe,
 } from '../lib/secret-safe-output.ts';
 import { trimAndStripTrailingSlashes } from '../../src/platform/string-normalization.js';
+import { tenantWorkflowMetadataDigest } from '../../src/service/workflow-entitlement-store.js';
 
 import {
   COUNTERPARTY_FIXTURE,
@@ -146,7 +147,7 @@ async function main(): Promise<void> {
     assert.equal(pipelineRun.body.decision, 'pass');
     assert.equal(pipelineRun.body.proofMode, 'offline_fixture');
     assert.equal(pipelineRun.body.tenantContext?.tenantId, account.primaryTenantId);
-    assert.equal(pipelineRun.body.tenantContext?.planId, 'starter');
+    assert.equal(pipelineRun.body.tenantContext?.planId, 'trial');
     assert.equal(pipelineRun.body.verification?.cryptographic?.valid, true);
 
     const verify = await fetchJson(`${baseUrl}/api/v1/verify`, {
@@ -191,21 +192,34 @@ async function main(): Promise<void> {
     assert.equal(filing.body.adapterId, 'xbrl-us-gaap-2024');
     assert.equal(filing.body.package?.issuedPackage?.fileExtension, '.xbr');
 
-    const checkout = await fetchJson(`${baseUrl}/api/v1/account/billing/checkout`, {
+    const workflowId = `wf_launch_${suffix}`;
+    const workflowTier = 'starter-workflow';
+    const checkout = await fetchJson(`${baseUrl}/api/v1/account/billing/workflows/checkout`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Cookie: sessionCookie,
         'Idempotency-Key': `launch-verify-checkout-${suffix}`,
       },
-      body: JSON.stringify({ planId: 'starter' }),
+      body: JSON.stringify({
+        workflowAction: 'create',
+        workflowId,
+        tier: workflowTier,
+        consequencePack: 'money-movement',
+        downstreamSystemRef: 'customer_reporting_store.write',
+        policyGatePathRef: 'customer_gate:finance-reporting',
+      }),
     });
     assert.equal(checkout.res.status, 200, `Checkout failed: ${checkout.res.status} ${checkout.text}`);
-    assert.equal(checkout.body.planId, 'starter');
-    assert.equal(checkout.body.trialDays, 14);
+    assert.equal(checkout.body.workflowId, workflowId);
+    assert.equal(checkout.body.tier, workflowTier);
     assert.equal(checkout.body.mock, false);
     assert.match(checkout.body.checkoutSessionId, /^cs_/);
     assert.match(checkout.body.checkoutUrl, /^https:\/\/checkout\.stripe\.com\//);
+    const downstreamSystemRefDigest = checkout.body.entitlement?.downstreamSystemRefDigest;
+    const policyGatePathRefDigest = checkout.body.entitlement?.policyGatePathRefDigest;
+    assert.match(downstreamSystemRefDigest, /^sha256:/);
+    assert.match(policyGatePathRefDigest, /^sha256:/);
 
     const stripeCustomer = await stripe.customers.create({
       email: contactEmail,
@@ -256,9 +270,13 @@ async function main(): Promise<void> {
           subscription: subscriptionId,
           created: Math.floor(Date.now() / 1000),
           metadata: {
-            attestorAccountId: account.id,
-            attestorTenantId: account.primaryTenantId,
-            attestorPlanId: 'starter',
+            attestor_account_id: account.id,
+            attestor_tenant_digest: tenantWorkflowMetadataDigest(account.primaryTenantId),
+            attestor_workflow_id: workflowId,
+            attestor_workflow_tier: workflowTier,
+            attestor_consequence_pack: 'money-movement',
+            attestor_downstream_ref_digest: downstreamSystemRefDigest,
+            attestor_policy_gate_digest: policyGatePathRefDigest,
           },
         },
       },
@@ -289,11 +307,17 @@ async function main(): Promise<void> {
           customer: stripeCustomer.id,
           status: 'trialing',
           metadata: {
-            attestorAccountId: account.id,
+            attestor_account_id: account.id,
+            attestor_tenant_digest: tenantWorkflowMetadataDigest(account.primaryTenantId),
+            attestor_workflow_id: workflowId,
+            attestor_workflow_tier: workflowTier,
+            attestor_consequence_pack: 'money-movement',
+            attestor_downstream_ref_digest: downstreamSystemRefDigest,
+            attestor_policy_gate_digest: policyGatePathRefDigest,
           },
           items: {
             object: 'list',
-            data: [{ price: { id: checkout.body.stripePriceId } }],
+            data: [{ id: `si_launch_${suffix}`, price: { id: checkout.body.stripePriceId } }],
           },
         },
       },
@@ -316,8 +340,16 @@ async function main(): Promise<void> {
       headers: { Cookie: sessionCookie },
     });
     assert.equal(entitlement.res.status, 200, `Entitlement failed: ${entitlement.res.status} ${entitlement.text}`);
-    assert.equal(entitlement.body.entitlement?.status, 'trialing');
-    assert.equal(entitlement.body.entitlement?.effectivePlanId, 'starter');
+    assert.equal(entitlement.body.entitlement?.effectivePlanId, 'trial');
+
+    const workflows = await fetchJson(`${baseUrl}/api/v1/account/billing/workflows`, {
+      headers: { Cookie: sessionCookie },
+    });
+    assert.equal(workflows.res.status, 200, `Workflow billing list failed: ${workflows.res.status} ${workflows.text}`);
+    assert.ok(
+      workflows.body.workflows?.some((workflow: any) => workflow.workflowId === workflowId && workflow.status === 'trialing'),
+      'Workflow entitlement did not converge to trialing.',
+    );
 
     const accountSummary = await fetchJson(`${baseUrl}/api/v1/account`, {
       headers: { Cookie: sessionCookie },
@@ -365,9 +397,10 @@ async function main(): Promise<void> {
       },
       billing: {
         checkoutSessionRef: digestReference('checkout-session', checkout.body.checkoutSessionId),
-        checkoutTrialDays: checkout.body.trialDays,
+        workflowId,
+        workflowTier,
         portalSessionRef: digestReference('portal-session', portal.body.portalSessionId),
-        entitlementStatus: entitlement.body.entitlement.status,
+        workflowEntitlementStatus: workflows.body.workflows?.find((workflow: any) => workflow.workflowId === workflowId)?.status ?? null,
         effectivePlanId: entitlement.body.entitlement.effectivePlanId,
         subscriptionStatus: accountSummary.body.account.billing.stripeSubscriptionStatus,
         billingExportDataSource: billingExport.body.summary?.dataSource ?? null,

@@ -19,9 +19,9 @@ import {
 
 async function testEvaluationPlansRejectEnforcingModes(): Promise<void> {
   const scenarios = [
-    { planId: 'developer', mode: 'enforce', expectedPlanId: 'developer' },
+    { planId: 'trial', mode: 'enforce', expectedPlanId: 'trial' },
     { planId: 'trial', mode: 'review', expectedPlanId: 'trial' },
-    { planId: 'community', mode: 'enforce', expectedPlanId: 'developer' },
+    { planId: 'trial', mode: 'enforce', expectedPlanId: 'trial' },
   ] as const;
 
   for (const scenario of scenarios) {
@@ -77,7 +77,7 @@ async function testPostAdmissionRouteReturnsEnvelope(): Promise<void> {
       'content-type': 'application/json',
     },
     body: JSON.stringify({
-      mode: 'enforce',
+      mode: 'warn',
       actor: 'support-ai-agent',
       action: 'issue_refund',
       domain: 'money-movement',
@@ -124,9 +124,9 @@ async function testPostAdmissionRouteReturnsEnvelope(): Promise<void> {
 
   equal(response.status, 200, 'Generic admission route: valid request returns 200');
   equal(response.headers.get('cache-control'), 'no-store', 'Generic admission route: response is no-store');
-  equal(body.mode, 'enforce', 'Generic admission route: mode is preserved');
+  equal(body.mode, 'warn', 'Generic admission route: mode is preserved');
   equal(body.shadowDecision, 'would_admit', 'Generic admission route: complete request shadows admit');
-  equal(body.downstreamPosture, 'enforce-decision', 'Generic admission route: enforce posture is returned');
+  equal(body.downstreamPosture, 'warn-only', 'Generic admission route: warn posture is returned');
   equal(body.admission.decision, 'admit', 'Generic admission route: complete request admits');
   equal(body.admission.allowed, true, 'Generic admission route: admitted request is allowed');
   equal(body.admission.feedback.safeForModel, true, 'Generic admission route: model-safe feedback is exposed');

@@ -78,7 +78,7 @@ function testProductionProbeCoversSaleReadyHostedSurface(): void {
   includes(probe, '/api/v1/account/features', 'Hosted readiness: production probe covers features');
   includes(probe, '/api/v1/account/billing/export?limit=5', 'Hosted readiness: production probe covers billing export');
   includes(probe, '/api/v1/account/billing/reconciliation?limit=5', 'Hosted readiness: production probe covers billing reconciliation');
-  includes(probe, '/api/v1/account/billing/checkout', 'Hosted readiness: production probe covers checkout');
+  includes(probe, '/api/v1/account/billing/workflows/checkout', 'Hosted readiness: production probe covers workflow checkout');
   includes(probe, '/api/v1/account/billing/portal', 'Hosted readiness: production probe covers billing portal');
   includes(probe, '/api/v1/billing/stripe/webhook', 'Hosted readiness: production probe covers Stripe webhook convergence');
 }

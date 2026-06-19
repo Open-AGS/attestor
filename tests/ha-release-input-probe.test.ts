@@ -81,13 +81,11 @@ async function main(): Promise<void> {
     ATTESTOR_ACCOUNT_MFA_ENCRYPTION_KEY: process.env.ATTESTOR_ACCOUNT_MFA_ENCRYPTION_KEY,
     STRIPE_API_KEY: process.env.STRIPE_API_KEY,
     STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
-    ATTESTOR_STRIPE_PRICE_STARTER: process.env.ATTESTOR_STRIPE_PRICE_STARTER,
-    ATTESTOR_STRIPE_PRICE_PRO: process.env.ATTESTOR_STRIPE_PRICE_PRO,
-    ATTESTOR_STRIPE_PRICE_SCALE: process.env.ATTESTOR_STRIPE_PRICE_SCALE,
-    ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER: process.env.ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER,
-    ATTESTOR_STRIPE_OVERAGE_PRICE_PRO: process.env.ATTESTOR_STRIPE_OVERAGE_PRICE_PRO,
-    ATTESTOR_STRIPE_OVERAGE_PRICE_SCALE: process.env.ATTESTOR_STRIPE_OVERAGE_PRICE_SCALE,
-    ATTESTOR_STRIPE_PRICE_ENTERPRISE: process.env.ATTESTOR_STRIPE_PRICE_ENTERPRISE,
+    ATTESTOR_STRIPE_PRICE_PILOT_WORKFLOW: process.env.ATTESTOR_STRIPE_PRICE_PILOT_WORKFLOW,
+    ATTESTOR_STRIPE_PRICE_STARTER_WORKFLOW: process.env.ATTESTOR_STRIPE_PRICE_STARTER_WORKFLOW,
+    ATTESTOR_STRIPE_PRICE_PRO_WORKFLOW: process.env.ATTESTOR_STRIPE_PRICE_PRO_WORKFLOW,
+    ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER_WORKFLOW: process.env.ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER_WORKFLOW,
+    ATTESTOR_STRIPE_OVERAGE_PRICE_PRO_WORKFLOW: process.env.ATTESTOR_STRIPE_OVERAGE_PRICE_PRO_WORKFLOW,
     ATTESTOR_BILLING_SUCCESS_URL: process.env.ATTESTOR_BILLING_SUCCESS_URL,
     ATTESTOR_BILLING_CANCEL_URL: process.env.ATTESTOR_BILLING_CANCEL_URL,
     ATTESTOR_BILLING_PORTAL_RETURN_URL: process.env.ATTESTOR_BILLING_PORTAL_RETURN_URL,
@@ -138,13 +136,11 @@ async function main(): Promise<void> {
     process.env.ATTESTOR_ACCOUNT_MFA_ENCRYPTION_KEY = 'mfa-key';
     process.env.STRIPE_API_KEY = 'sk_live_probe';
     process.env.STRIPE_WEBHOOK_SECRET = 'whsec_probe';
-    process.env.ATTESTOR_STRIPE_PRICE_STARTER = 'price_starter_probe';
-    process.env.ATTESTOR_STRIPE_PRICE_PRO = 'price_pro_probe';
-    process.env.ATTESTOR_STRIPE_PRICE_SCALE = 'price_scale_probe';
-    process.env.ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER = 'price_starter_overage_probe';
-    process.env.ATTESTOR_STRIPE_OVERAGE_PRICE_PRO = 'price_pro_overage_probe';
-    process.env.ATTESTOR_STRIPE_OVERAGE_PRICE_SCALE = 'price_scale_overage_probe';
-    process.env.ATTESTOR_STRIPE_PRICE_ENTERPRISE = 'price_enterprise_probe';
+    process.env.ATTESTOR_STRIPE_PRICE_PILOT_WORKFLOW = 'price_pilot_workflow_probe';
+    process.env.ATTESTOR_STRIPE_PRICE_STARTER_WORKFLOW = 'price_starter_workflow_probe';
+    process.env.ATTESTOR_STRIPE_PRICE_PRO_WORKFLOW = 'price_pro_workflow_probe';
+    process.env.ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER_WORKFLOW = 'price_starter_workflow_overage_probe';
+    process.env.ATTESTOR_STRIPE_OVERAGE_PRICE_PRO_WORKFLOW = 'price_pro_workflow_overage_probe';
     process.env.ATTESTOR_BILLING_SUCCESS_URL = 'https://ha.attestor.example.invalid/billing/success';
     process.env.ATTESTOR_BILLING_CANCEL_URL = 'https://ha.attestor.example.invalid/billing/cancel';
     process.env.ATTESTOR_BILLING_PORTAL_RETURN_URL = 'https://ha.attestor.example.invalid/settings/billing';

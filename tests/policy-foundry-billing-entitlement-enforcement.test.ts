@@ -3,6 +3,10 @@ import {
   createPolicyFoundryBillingEntitlementEnforcement,
 } from '../src/service/policy-foundry/policy-foundry-billing-entitlement-enforcement.js';
 import type { HostedBillingEntitlementRecord } from '../src/service/billing/billing-entitlement-store.js';
+import {
+  evaluateWorkflowEntitlementAccess,
+  type WorkflowEntitlementAccessDecision,
+} from '../src/service/workflow-entitlement.js';
 
 let passed = 0;
 
@@ -24,8 +28,8 @@ function entitlement(overrides: Partial<HostedBillingEntitlementRecord> = {}): H
     provider: 'stripe',
     status: 'active',
     accessEnabled: true,
-    effectivePlanId: 'starter',
-    requestedPlanId: 'starter',
+    effectivePlanId: 'trial',
+    requestedPlanId: 'trial',
     monthlyRunQuota: 100,
     requestsPerWindow: 100,
     asyncPendingJobsPerTenant: 2,
@@ -33,12 +37,12 @@ function entitlement(overrides: Partial<HostedBillingEntitlementRecord> = {}): H
     stripeCustomerId: 'cus_policy_foundry',
     stripeSubscriptionId: 'sub_policy_foundry',
     stripeSubscriptionStatus: 'active',
-    stripePriceId: 'price_starter_monthly',
+    stripePriceId: 'price_starter_workflow_monthly',
     stripeCheckoutSessionId: 'cs_policy_foundry',
     stripeInvoiceId: 'in_policy_foundry',
     stripeInvoiceStatus: 'paid',
-    stripeEntitlementLookupKeys: ['attestor.starter.api'],
-    stripeEntitlementFeatureIds: ['feat_starter_api'],
+    stripeEntitlementLookupKeys: [],
+    stripeEntitlementFeatureIds: [],
     stripeEntitlementSummaryUpdatedAt: '2026-05-13T10:00:00.000Z',
     lastEventId: 'evt_policy_foundry',
     lastEventType: 'entitlements.active_entitlement_summary.updated',
@@ -52,23 +56,47 @@ function entitlement(overrides: Partial<HostedBillingEntitlementRecord> = {}): H
   };
 }
 
+function workflowAccess(input: {
+  readonly tier?: string;
+  readonly status?: 'active' | 'trialing' | 'past_due' | 'canceled' | 'incomplete';
+  readonly customerGateProofPresent?: boolean;
+} = {}): WorkflowEntitlementAccessDecision {
+  return evaluateWorkflowEntitlementAccess({
+    workflowId: 'wf_policy_foundry',
+    entitlement: {
+      workflowId: 'wf_policy_foundry',
+      tier: input.tier ?? 'starter-workflow',
+      status: input.status ?? 'active',
+      consequencePack: 'money-movement',
+      stripeSubscriptionItemId: 'si_policy_foundry',
+      stripePriceId: 'price_policy_foundry',
+      customerGateProofPresent: input.customerGateProofPresent ?? true,
+    },
+    requestedMode: 'enforce',
+    requestedCapability: 'customer-gated-enforce-mode',
+  });
+}
+
 function testBillingProviderPlanPreventsPlanSpoofing(): void {
   const result = createPolicyFoundryBillingEntitlementEnforcement({
     evaluatedAt: '2026-05-13T11:00:00.000Z',
-    tenantPlanId: 'starter',
-    requestedPlan: 'enterprise',
+    tenantPlanId: 'trial',
+    requestedPlan: 'pro-workflow',
     requestedPlanExplicit: true,
     requestedCapabilities: ['customer-operated-deployment'],
     requestedCustomerOperatedDeployment: true,
-    entitlement: entitlement({ effectivePlanId: 'starter' }),
+    entitlement: entitlement({ effectivePlanId: 'trial' }),
     entitlementResolverConfigured: true,
+    workflowEntitlementAccess: workflowAccess({ tier: 'starter-workflow' }),
+    workflowEntitlementResolverConfigured: true,
   });
 
   equal(result.version, 'attestor.policy-foundry-billing-entitlement-enforcement.v1', 'Billing entitlement enforcement: version is explicit');
   equal(result.enforcementMode, 'billing-provider-enforced', 'Billing entitlement enforcement: provider mode is enabled');
-  equal(result.commercialPlanForBoundary, 'starter', 'Billing entitlement enforcement: boundary uses effective billing plan');
+  equal(result.effectiveBillingPlanId, 'starter-workflow', 'Billing entitlement enforcement: effective billing tier comes from workflow entitlement');
+  equal(result.commercialPlanForBoundary, 'starter-workflow', 'Billing entitlement enforcement: boundary uses effective workflow tier');
   ok(result.noGoReasons.includes('requested-plan-not-entitled'), 'Billing entitlement enforcement: explicit plan elevation is blocked');
-  ok(result.noGoReasons.includes('customer-operated-not-entitled'), 'Billing entitlement enforcement: customer-operated request needs enterprise');
+  ok(result.noGoReasons.includes('customer-operated-not-entitled'), 'Billing entitlement enforcement: customer-operated request needs negotiated deployment');
   equal(result.commercialCapabilitiesAllowed, false, 'Billing entitlement enforcement: commercial capabilities are not allowed on mismatch');
   equal(result.entitlementDecisionAuthority, false, 'Billing entitlement enforcement: billing is not policy authority');
   equal(result.safetyMinimumsRemainAvailable, true, 'Billing entitlement enforcement: safety minimums remain available');
@@ -77,16 +105,18 @@ function testBillingProviderPlanPreventsPlanSpoofing(): void {
 function testMissingProviderStateFailsClosedForProductionRequests(): void {
   const result = createPolicyFoundryBillingEntitlementEnforcement({
     evaluatedAt: '2026-05-13T11:05:00.000Z',
-    tenantPlanId: 'starter',
+    tenantPlanId: 'trial',
     requestedCapabilities: ['review-enforce-ladder'],
     requestedProductionWorkflowCount: 1,
     requestedHostedProduction: true,
     entitlement: null,
     entitlementResolverConfigured: true,
+    workflowEntitlementAccess: null,
+    workflowEntitlementResolverConfigured: true,
   });
 
   equal(result.entitlementPresent, false, 'Billing entitlement enforcement: missing entitlement is explicit');
-  equal(result.commercialPlanForBoundary, 'developer', 'Billing entitlement enforcement: missing provider state fails closed to developer boundary');
+  equal(result.commercialPlanForBoundary, 'trial', 'Billing entitlement enforcement: missing provider state fails closed to trial boundary');
   ok(result.noGoReasons.includes('billing-entitlement-missing'), 'Billing entitlement enforcement: missing entitlement is no-go');
   ok(result.noGoReasons.includes('production-enforcement-not-entitled'), 'Billing entitlement enforcement: production request is not entitled');
   equal(result.commercialCapabilitiesAllowed, false, 'Billing entitlement enforcement: production request is not commercially allowed');
@@ -95,12 +125,12 @@ function testMissingProviderStateFailsClosedForProductionRequests(): void {
 function testDelinquentProviderStateDisablesCommercialCapabilities(): void {
   const result = createPolicyFoundryBillingEntitlementEnforcement({
     evaluatedAt: '2026-05-13T11:10:00.000Z',
-    tenantPlanId: 'pro',
+    tenantPlanId: 'trial',
     requestedCapabilities: ['candidate-red-team-replay'],
     entitlement: entitlement({
       status: 'delinquent',
       accessEnabled: false,
-      effectivePlanId: 'pro',
+      effectivePlanId: 'pro-workflow',
       stripeSubscriptionStatus: 'past_due',
       reason: 'subscription_past_due',
     }),
@@ -108,7 +138,7 @@ function testDelinquentProviderStateDisablesCommercialCapabilities(): void {
   });
 
   equal(result.accessEnabled, false, 'Billing entitlement enforcement: disabled access is reflected');
-  equal(result.commercialPlanForBoundary, 'developer', 'Billing entitlement enforcement: disabled access fails closed to developer boundary');
+  equal(result.commercialPlanForBoundary, 'trial', 'Billing entitlement enforcement: disabled access fails closed to trial boundary');
   ok(result.noGoReasons.includes('billing-access-disabled'), 'Billing entitlement enforcement: disabled access is no-go');
   equal(result.productionReady, false, 'Billing entitlement enforcement: production readiness is not claimed');
 }

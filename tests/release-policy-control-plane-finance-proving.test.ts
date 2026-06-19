@@ -487,7 +487,7 @@ function testRecordFlowUsesTenantScopedBundleOverride(): void {
   activateScopedFinanceOverride(
     store,
     'record',
-    { tenantId: 'tenant-pilot', planId: 'enterprise' },
+    { tenantId: 'tenant-pilot', planId: 'trial' },
     'bundle_finance_tenant_pilot_record',
     'finance.structured-record-release.tenant-pilot.v1',
   );
@@ -503,7 +503,7 @@ function testRecordFlowUsesTenantScopedBundleOverride(): void {
       ...input.request,
       context: {
         tenantId: 'tenant-pilot',
-        planId: 'enterprise',
+        planId: 'trial',
       },
     },
     input.observation,
@@ -513,7 +513,7 @@ function testRecordFlowUsesTenantScopedBundleOverride(): void {
       ...input.request,
       context: {
         tenantId: 'tenant-general',
-        planId: 'enterprise',
+        planId: 'trial',
       },
     },
     input.observation,

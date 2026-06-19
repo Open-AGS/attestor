@@ -90,7 +90,7 @@ export function createPolicyFoundryHostedUiPreviewHtml(
     adversarialReplay,
     commercialBoundary: createPolicyFoundryCommercialBoundary({
       generatedAt: '2026-05-13T13:02:00.000Z',
-      plan: 'starter',
+      plan: 'starter-workflow',
       requestedCapabilities: ['basic-shadow-summary', 'active-questions'],
     }),
     reviewedStepIds: state === 'ready'

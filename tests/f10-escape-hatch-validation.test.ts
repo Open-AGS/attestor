@@ -60,7 +60,7 @@ function financeRunFixture(overrides: Partial<FinancePipelineAdmissionRun> = {})
     tenantContext: {
       tenantId: 'tenant_f10',
       source: 'hosted',
-      planId: 'community',
+      planId: 'trial',
     },
     ...overrides,
   };

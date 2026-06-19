@@ -166,10 +166,10 @@ export const HOSTED_SENSITIVE_BUSINESS_FLOW_ABUSE_GUARDS = [
     standards: ['OWASP API1:2023', 'OWASP API3:2023', 'OWASP API5:2023'],
   },
   {
-    id: 'billing.checkout-upgrade',
-    title: 'Stripe Checkout paid plan upgrade',
+    id: 'billing.workflow-checkout',
+    title: 'Stripe Checkout workflow entitlement upgrade',
     routes: [
-      { method: 'POST', path: '/api/v1/account/billing/checkout', authorizationRuleId: 'account.billing.checkout' },
+      { method: 'POST', path: '/api/v1/account/billing/workflows/checkout', authorizationRuleId: 'account.billing.workflow-checkout' },
     ],
     automationRisks: ['checkout_replay', 'role_confusion'],
     requiredControls: [
@@ -180,14 +180,14 @@ export const HOSTED_SENSITIVE_BUSINESS_FLOW_ABUSE_GUARDS = [
       'privacy_minimized_response',
     ],
     replayBoundary:
-      'The route requires Idempotency-Key and passes it to Stripe Checkout session creation so customer retry semantics do not mint divergent paid sessions.',
+      'The workflow checkout route requires Idempotency-Key and passes it to Stripe Checkout session creation so customer retry semantics do not mint divergent paid workflow sessions.',
     costBoundary:
-      'Checkout can only target catalog-backed hosted plans and does not become entitlement truth until signed Stripe webhooks converge state.',
+      'Checkout can only target catalog-backed workflow tiers and does not become entitlement truth until signed Stripe webhooks converge workflow state.',
     privacyBoundary:
-      'The response exposes hosted Stripe handoff references and plan ids only; secret keys, payment details, and webhook secrets stay out of responses.',
+      'The response exposes hosted Stripe handoff references, workflow ids, tier ids, and digests only; secret keys, payment details, raw downstream system refs, and webhook secrets stay out of responses.',
     implementationEvidence: [
-      'src/service/http/routes/account-billing-routes.ts#Idempotency-Key',
-      'src/service/billing/stripe/stripe-billing.ts#createHostedCheckoutSession',
+      'src/service/http/routes/account-billing-routes.ts#workflow_checkout',
+      'src/service/billing/stripe/stripe-billing.ts#createHostedWorkflowCheckoutSession',
     ],
     validation: [
       'tests/hosted-stripe-billing-convergence-flow.test.ts',

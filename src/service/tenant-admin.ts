@@ -29,8 +29,6 @@ import {
   DEFAULT_HOSTED_PLAN_ID,
   listHostedPlans,
   resolvePlanRateLimit,
-  resolvePlanStripeOveragePrice,
-  resolvePlanStripePrice,
   validHostedPlanIds,
 } from './plan-catalog.js';
 
@@ -91,7 +89,7 @@ async function main() {
         `id=${record.id}`,
         `tenant=${record.tenantId}`,
         `name="${record.tenantName}"`,
-        `plan=${record.planId ?? 'developer'}`,
+        `plan=${record.planId ?? DEFAULT_HOSTED_PLAN_ID}`,
         `quota=${record.monthlyRunQuota ?? 'unlimited'}`,
         'secret=redacted',
         `sealed=${record.recoveryEnvelope?.provider ?? '-'}`,
@@ -106,18 +104,15 @@ async function main() {
 
   if (command === 'plans') {
     console.log(`Policy: maxActiveKeysPerTenant=${tenantKeyStorePolicy().maxActiveKeysPerTenant}`);
-    console.log('Built-in hosted plans:');
+    console.log('Built-in account access plans:');
     for (const plan of listHostedPlans()) {
       const rateLimit = resolvePlanRateLimit(plan.id);
-      const stripePrice = resolvePlanStripePrice(plan.id);
-      const stripeOveragePrice = resolvePlanStripeOveragePrice(plan.id);
       console.log([
         `id=${plan.id}`,
         `name="${plan.displayName}"`,
         `quota=${plan.defaultMonthlyRunQuota ?? 'unlimited'}`,
         `rateLimit=${rateLimit.requestsPerWindow ?? 'unlimited'}/${rateLimit.windowSeconds}s`,
-        `stripePrice=${stripePrice.priceId ?? 'unconfigured'}`,
-        `stripeOveragePrice=${stripeOveragePrice.priceId ?? (stripeOveragePrice.billable ? 'unconfigured' : 'not_billable')}`,
+        'billing=workflow_entitlement_only',
         `defaultForHostedProvisioning=${plan.defaultForHostedProvisioning}`,
         `scope=${plan.intendedFor}`,
       ].join(' | '));
@@ -152,7 +147,7 @@ async function main() {
     console.log(`Store: ${path}`);
     console.log(`Issued tenant key record ${record.id}`);
     console.log(`Tenant: ${record.tenantId} (${record.tenantName})`);
-    console.log(`Plan: ${record.planId ?? 'developer'}`);
+    console.log(`Plan: ${record.planId ?? DEFAULT_HOSTED_PLAN_ID}`);
     console.log(`Quota: ${record.monthlyRunQuota ?? 'unlimited'}`);
     console.log('');
     console.log('Secret material generated.');
@@ -180,7 +175,7 @@ async function main() {
     });
     console.log(`Store: ${path}`);
     console.log(`Rotated ${previousRecord.id} -> ${record.id} for tenant ${record.tenantId}`);
-    console.log(`Plan: ${record.planId ?? 'developer'}`);
+    console.log(`Plan: ${record.planId ?? DEFAULT_HOSTED_PLAN_ID}`);
     console.log(`Quota: ${record.monthlyRunQuota ?? 'unlimited'}`);
     console.log('');
     console.log('Replacement secret material generated.');

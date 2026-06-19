@@ -5,6 +5,7 @@ import {
   type PolicyFoundryCommercialCapability,
   type PolicyFoundryCommercialPlan,
 } from '../../consequence-admission/index.js';
+import type { WorkflowEntitlementAccessDecision } from '../workflow-entitlement.js';
 
 export const POLICY_FOUNDRY_BILLING_ENTITLEMENT_ENFORCEMENT_VERSION =
   'attestor.policy-foundry-billing-entitlement-enforcement.v1';
@@ -36,6 +37,8 @@ export interface CreatePolicyFoundryBillingEntitlementEnforcementInput {
   readonly requestedCustomerOperatedDeployment?: boolean | null;
   readonly entitlement?: HostedBillingEntitlementRecord | null;
   readonly entitlementResolverConfigured?: boolean | null;
+  readonly workflowEntitlementAccess?: WorkflowEntitlementAccessDecision | null;
+  readonly workflowEntitlementResolverConfigured?: boolean | null;
 }
 
 export interface PolicyFoundryBillingEntitlementEnforcement {
@@ -47,6 +50,12 @@ export interface PolicyFoundryBillingEntitlementEnforcement {
   readonly provider: HostedBillingEntitlementRecord['provider'] | null;
   readonly entitlementStatus: HostedBillingEntitlementRecord['status'] | null;
   readonly accessEnabled: boolean | null;
+  readonly workflowEntitlementResolverConfigured: boolean;
+  readonly workflowEntitlementPresent: boolean;
+  readonly workflowEntitlementTier: string | null;
+  readonly workflowEntitlementStatus: string | null;
+  readonly workflowEntitlementAction: string | null;
+  readonly workflowEntitlementReasonCodes: readonly string[];
   readonly stripeSummaryUpdatedAt: string | null;
   readonly requestedPlan: string | null;
   readonly requestedPlanExplicit: boolean;
@@ -73,12 +82,11 @@ export interface PolicyFoundryBillingEntitlementEnforcement {
 }
 
 const PLAN_RANKS: Readonly<Record<PolicyFoundryCommercialPlan, number>> = Object.freeze({
-  developer: 0,
-  trial: 1,
-  starter: 2,
-  pro: 3,
-  scale: 4,
-  enterprise: 5,
+  trial: 0,
+  'pilot-workflow': 1,
+  'starter-workflow': 2,
+  'pro-workflow': 3,
+  'negotiated-deployment': 4,
 });
 
 function isPlan(value: string | null | undefined): value is PolicyFoundryCommercialPlan {
@@ -91,7 +99,9 @@ function isCapability(value: string): value is PolicyFoundryCommercialCapability
 
 function normalizePlan(value: string | null | undefined): string | null {
   const normalized = value?.trim().toLowerCase() ?? '';
-  return normalized === '' ? null : normalized;
+  if (normalized === '') return null;
+  if (normalized === 'developer' || normalized === 'community') return 'trial';
+  return normalized;
 }
 
 function normalizeCapabilities(values: readonly string[] | null | undefined): readonly string[] {
@@ -141,10 +151,10 @@ function nextSafeStepFor(reasons: readonly PolicyFoundryBillingEntitlementEnforc
     return 'Restore hosted billing access before allowing paid Policy Foundry capabilities or production rollout requests.';
   }
   if (reasons.includes('requested-plan-not-entitled')) {
-    return 'Use the billing-provider effective plan, or upgrade the hosted account before requesting higher-tier Policy Foundry capabilities.';
+    return 'Use the billing-provider workflow tier, or buy the required workflow entitlement before requesting higher-tier Policy Foundry capabilities.';
   }
   if (reasons.includes('customer-operated-not-entitled')) {
-    return 'Move the account to an enterprise entitlement before customer-operated Policy Foundry deployment planning.';
+    return 'Keep customer-operated Policy Foundry deployment behind a negotiated deployment entitlement.';
   }
   if (reasons.includes('production-enforcement-not-entitled')) {
     return 'Keep the workflow in shadow or review mode until the billing-provider entitlement allows production workflow rollout.';
@@ -163,6 +173,7 @@ export function createPolicyFoundryBillingEntitlementEnforcement(
     throw new Error('Policy Foundry billing entitlement enforcement evaluatedAt must be an ISO timestamp.');
   }
   const entitlementResolverConfigured = Boolean(input.entitlementResolverConfigured);
+  const workflowEntitlementResolverConfigured = Boolean(input.workflowEntitlementResolverConfigured);
   const requestedPlan = normalizePlan(input.requestedPlan);
   const tenantPlanId = normalizePlan(input.tenantPlanId);
   const requestedCapabilities = normalizeCapabilities(input.requestedCapabilities as readonly string[] | null | undefined);
@@ -170,18 +181,27 @@ export function createPolicyFoundryBillingEntitlementEnforcement(
   const requestedHostedProduction = input.requestedHostedProduction ?? requestedProductionWorkflowCount > 0;
   const requestedCustomerOperatedDeployment = input.requestedCustomerOperatedDeployment ?? false;
   const entitlement = input.entitlement ?? null;
+  const workflowEntitlementAccess = input.workflowEntitlementAccess ?? null;
   const entitlementPresent = entitlement !== null;
+  const workflowEntitlementPresent = workflowEntitlementAccess !== null &&
+    workflowEntitlementAccess.status !== 'missing';
   const accessEnabled = entitlement?.accessEnabled ?? null;
   const entitlementPlan = normalizePlan(entitlement?.effectivePlanId ?? null);
+  const workflowTier =
+    workflowEntitlementAccess?.tier && isPlan(workflowEntitlementAccess.tier)
+      ? workflowEntitlementAccess.tier
+      : null;
   const billingStateRequired = requiresBillingState({
     requestedCapabilities,
     requestedProductionWorkflowCount,
     requestedHostedProduction,
     requestedCustomerOperatedDeployment,
   });
-  const effectiveBillingPlanId = entitlementResolverConfigured
-    ? entitlementPlan
-    : entitlementPlan ?? tenantPlanId;
+  const effectiveBillingPlanId = workflowEntitlementResolverConfigured
+    ? workflowTier
+    : entitlementResolverConfigured
+      ? entitlementPlan
+      : entitlementPlan ?? tenantPlanId;
 
   const noGoReasons = new Set<PolicyFoundryBillingEntitlementEnforcementNoGoReason>();
   if (requestedPlan !== null && !isPlan(requestedPlan)) {
@@ -193,8 +213,19 @@ export function createPolicyFoundryBillingEntitlementEnforcement(
   if (entitlementResolverConfigured && !entitlementPresent && billingStateRequired) {
     noGoReasons.add('billing-entitlement-missing');
   }
+  if (workflowEntitlementResolverConfigured && !workflowEntitlementPresent && billingStateRequired) {
+    noGoReasons.add('billing-entitlement-missing');
+  }
   if (entitlementPresent && accessEnabled === false && billingStateRequired) {
     noGoReasons.add('billing-access-disabled');
+  }
+  if (
+    workflowEntitlementResolverConfigured &&
+    workflowEntitlementAccess !== null &&
+    workflowEntitlementAccess.action === 'block' &&
+    billingStateRequired
+  ) {
+    noGoReasons.add('production-enforcement-not-entitled');
   }
   if (
     input.requestedPlanExplicit &&
@@ -202,21 +233,22 @@ export function createPolicyFoundryBillingEntitlementEnforcement(
   ) {
     noGoReasons.add('requested-plan-not-entitled');
   }
-  if (requestedHostedProduction && (!isPlan(effectiveBillingPlanId) || PLAN_RANKS[effectiveBillingPlanId] < PLAN_RANKS.starter)) {
+  if (requestedHostedProduction && (!isPlan(effectiveBillingPlanId) || PLAN_RANKS[effectiveBillingPlanId] < PLAN_RANKS['starter-workflow'])) {
     noGoReasons.add('production-enforcement-not-entitled');
   }
-  if (requestedProductionWorkflowCount > 0 && (!isPlan(effectiveBillingPlanId) || PLAN_RANKS[effectiveBillingPlanId] < PLAN_RANKS.starter)) {
+  if (requestedProductionWorkflowCount > 0 && (!isPlan(effectiveBillingPlanId) || PLAN_RANKS[effectiveBillingPlanId] < PLAN_RANKS['starter-workflow'])) {
     noGoReasons.add('production-enforcement-not-entitled');
   }
-  if (requestedCustomerOperatedDeployment && effectiveBillingPlanId !== 'enterprise') {
+  if (requestedCustomerOperatedDeployment && effectiveBillingPlanId !== 'negotiated-deployment') {
     noGoReasons.add('customer-operated-not-entitled');
   }
 
   const sortedNoGoReasons = Object.freeze([...noGoReasons].sort());
   const commercialPlanForBoundary =
-    entitlementResolverConfigured && (!entitlementPresent || accessEnabled === false)
-      ? 'developer'
-      : effectiveBillingPlanId ?? tenantPlanId ?? 'developer';
+    (workflowEntitlementResolverConfigured && (!workflowEntitlementPresent || workflowEntitlementAccess?.action === 'block')) ||
+    (entitlementResolverConfigured && (!entitlementPresent || accessEnabled === false))
+      ? 'trial'
+      : effectiveBillingPlanId ?? tenantPlanId ?? 'trial';
 
   return Object.freeze({
     version: POLICY_FOUNDRY_BILLING_ENTITLEMENT_ENFORCEMENT_VERSION,
@@ -229,6 +261,12 @@ export function createPolicyFoundryBillingEntitlementEnforcement(
     provider: entitlement?.provider ?? null,
     entitlementStatus: entitlement?.status ?? null,
     accessEnabled,
+    workflowEntitlementResolverConfigured,
+    workflowEntitlementPresent,
+    workflowEntitlementTier: workflowEntitlementAccess?.tier ?? null,
+    workflowEntitlementStatus: workflowEntitlementAccess?.status ?? null,
+    workflowEntitlementAction: workflowEntitlementAccess?.action ?? null,
+    workflowEntitlementReasonCodes: Object.freeze([...(workflowEntitlementAccess?.reasonCodes ?? [])]),
     stripeSummaryUpdatedAt: entitlement?.stripeEntitlementSummaryUpdatedAt ?? null,
     requestedPlan,
     requestedPlanExplicit: Boolean(input.requestedPlanExplicit),
@@ -252,6 +290,6 @@ export function createPolicyFoundryBillingEntitlementEnforcement(
     rawPayloadStored: false,
     nextSafeStep: nextSafeStepFor(sortedNoGoReasons),
     limitation:
-      'This gate enforces hosted commercial Policy Foundry access from billing-provider entitlement state. It does not replace policy authority, activate production enforcement, or prove deployment readiness.',
+      'This gate enforces hosted commercial Policy Foundry access from billing-provider workflow entitlement state. It does not replace policy authority, activate production enforcement, or prove deployment readiness.',
   });
 }

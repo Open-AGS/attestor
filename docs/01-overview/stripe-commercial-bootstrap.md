@@ -88,14 +88,10 @@ Map those live Stripe price ids into:
 - `ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER_WORKFLOW`
 - `ATTESTOR_STRIPE_OVERAGE_PRICE_PRO_WORKFLOW`
 
-Leave `ATTESTOR_STRIPE_PRICE_SCALE` and `ATTESTOR_STRIPE_PRICE_ENTERPRISE`
-unset unless Scale or Enterprise self-service checkout is intentionally
-enabled later.
-
 For the shipped default hosted funnel:
 
 - `trial` stays outside Stripe as the free account-level evaluation path
-- legacy local records with `community` resolve to `developer`
+- legacy local account-plan records are compatibility-only and do not drive Stripe checkout
 - `pilot-workflow` is the first paid workflow tier
 - paid workflow trials are not enabled by default; the `trial` plan is a free
   shadow onboarding state, not a Stripe Checkout trial
@@ -178,7 +174,7 @@ That means:
 
 - the bank account is part of **your Stripe live setup**
 - it is **not** something Attestor stores or handles
-- it is **not** required for free `developer` or `trial` evaluation paths
+- it is **not** required for the free `trial` evaluation path
 - it **is** required before you can honestly call the product commercially live
 
 ## 3. Configure The Attestor Runtime
@@ -194,9 +190,6 @@ export ATTESTOR_STRIPE_PRICE_PRO_WORKFLOW=price_...
 export ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER_WORKFLOW=price_...
 export ATTESTOR_STRIPE_OVERAGE_PRICE_PRO_WORKFLOW=price_...
 export ATTESTOR_STRIPE_OVERAGE_METER_EVENT_NAME=attestor_admission_overage
-# Optional only when Scale or Enterprise self-service checkout is intentionally enabled:
-# export ATTESTOR_STRIPE_PRICE_SCALE=price_...
-# export ATTESTOR_STRIPE_PRICE_ENTERPRISE=price_...
 export ATTESTOR_BILLING_SUCCESS_URL=https://<host>/billing/success
 export ATTESTOR_BILLING_CANCEL_URL=https://<host>/billing/cancel
 export ATTESTOR_BILLING_PORTAL_RETURN_URL=https://<host>/settings/billing

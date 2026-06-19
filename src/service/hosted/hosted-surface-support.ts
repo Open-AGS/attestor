@@ -8,9 +8,6 @@ import {
   resolvePlanAsyncExecution,
   resolvePlanAsyncQueue,
   resolvePlanRateLimit,
-  resolvePlanStripeOveragePrice,
-  resolvePlanStripePrice,
-  resolvePlanStripeTrialDays,
 } from '../plan-catalog.js';
 import type { TenantKeyRecord } from '../tenant-key-store.js';
 
@@ -66,16 +63,13 @@ export function adminPlanView() {
     displayName: plan.displayName,
     description: plan.description,
     defaultEvaluationDays: plan.defaultEvaluationDays,
-    defaultStripeTrialDays: resolvePlanStripeTrialDays(plan.id).trialDays,
     defaultMonthlyRunQuota: plan.defaultMonthlyRunQuota,
     defaultPipelineRequestsPerWindow: resolvePlanRateLimit(plan.id).requestsPerWindow,
     defaultAsyncPendingJobsPerTenant: resolvePlanAsyncQueue(plan.id).pendingJobsPerTenant,
     defaultAsyncActiveJobsPerTenant: resolvePlanAsyncExecution(plan.id).activeJobsPerTenant,
     defaultAsyncDispatchWeight: resolvePlanAsyncDispatch(plan.id).dispatchWeight,
     defaultAsyncDispatchWindowMs: resolvePlanAsyncDispatch(plan.id).dispatchWindowMs,
-    stripePriceConfigured: resolvePlanStripePrice(plan.id).configured,
-    stripeOveragePriceConfigured: resolvePlanStripeOveragePrice(plan.id).configured,
-    stripeOverageMeterEventName: resolvePlanStripeOveragePrice(plan.id).meterEventName,
+    billingSurface: 'workflow_entitlement',
     intendedFor: plan.intendedFor,
     defaultForHostedProvisioning: plan.defaultForHostedProvisioning,
   }));

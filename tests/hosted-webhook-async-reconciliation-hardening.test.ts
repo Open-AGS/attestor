@@ -126,6 +126,7 @@ function testImplementationEvidenceMatchesSource(): void {
   const stripeRoutes = readProjectFile('src', 'service', 'http', 'routes', 'stripe-webhook-routes.ts');
   const stripeService = readProjectFile('src', 'service', 'application', 'stripe-webhook-service.ts');
   const stripeProcessor = readProjectFile('src', 'service', 'application', 'stripe-webhook-billing-processor.ts');
+  const workflowStripeProcessor = readProjectFile('src', 'service', 'application', 'stripe-webhook-workflow-billing-processor.ts');
   const accountStore = readProjectFile('src', 'service', 'account', 'account-store.ts');
   const hostedBillingState = readProjectFile('src', 'service', 'control-plane-store', 'hosted-billing-state.ts');
   const emailService = readProjectFile('src', 'service', 'application', 'email-webhook-service.ts');
@@ -140,10 +141,10 @@ function testImplementationEvidenceMatchesSource(): void {
   includes(stripeService, 'claimStripeBillingEvent', 'Hosted webhook/async evidence: Stripe shared ledger claim exists');
   includes(stripeService, 'x-attestor-stripe-replay', 'Hosted webhook/async evidence: duplicate replay header exists');
   includes(stripeService, 'releaseClaim', 'Hosted webhook/async evidence: claims can be released on failure');
-  includes(stripeProcessor, 'stale_subscription_event', 'Hosted webhook/async evidence: stale subscription events are ignored');
-  includes(stripeProcessor, 'stale_invoice_event', 'Hosted webhook/async evidence: stale invoice events are ignored');
-  includes(stripeProcessor, 'syncHostedBillingEntitlement', 'Hosted webhook/async evidence: billing entitlement convergence exists');
-  includes(stripeProcessor, 'upsertStripeInvoiceLineItems', 'Hosted webhook/async evidence: invoice line item ledger persistence exists');
+  includes(stripeProcessor, 'legacy_account_plan_billing_retired', 'Hosted webhook/async evidence: legacy account billing events are retired');
+  includes(stripeProcessor, "replacementBillingSurface: 'workflow_entitlement'", 'Hosted webhook/async evidence: retired billing events point to workflow entitlement');
+  includes(workflowStripeProcessor, 'upsertWorkflowEntitlementFromStripeState', 'Hosted webhook/async evidence: workflow billing entitlement convergence exists');
+  includes(workflowStripeProcessor, 'stripeInvoiceAmountPaid', 'Hosted webhook/async evidence: workflow invoice summary ledger persistence exists');
   includes(stripeProcessor, 'upsertStripeCharges', 'Hosted webhook/async evidence: charge ledger persistence exists');
   includes(accountStore, 'lastSubscriptionEventCreatedAt', 'Hosted webhook/async evidence: file store tracks subscription event ordering');
   includes(accountStore, 'lastInvoiceEventCreatedAt', 'Hosted webhook/async evidence: file store tracks invoice event ordering');

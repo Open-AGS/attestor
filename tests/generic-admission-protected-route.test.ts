@@ -72,7 +72,7 @@ function runtimeWith(
             tenantName: 'Route Tenant',
             authenticatedAt: '2026-05-15T09:00:00.000Z',
             source: 'api_key',
-            planId: 'starter',
+            planId: 'trial',
             monthlyRunQuota: 100,
           }),
         },

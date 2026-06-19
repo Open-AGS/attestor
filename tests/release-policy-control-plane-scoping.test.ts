@@ -38,7 +38,7 @@ function sampleRequestTarget() {
     consequenceType: 'record',
     riskClass: 'R4',
     cohortId: 'wave-a',
-    planId: 'enterprise',
+    planId: 'trial',
   });
 }
 
@@ -218,7 +218,7 @@ function testPlanIsLowestOptionalPrecedence(): void {
     request,
     createPolicyActivationTarget({
       environment: 'prod-eu',
-      planId: 'enterprise',
+      planId: 'trial',
     }),
   );
 
@@ -239,7 +239,7 @@ function testCohortPrecedenceSitsAbovePlanDefaults(): void {
     request,
     createPolicyActivationTarget({
       environment: 'prod-eu',
-      planId: 'enterprise',
+      planId: 'trial',
     }),
   );
 

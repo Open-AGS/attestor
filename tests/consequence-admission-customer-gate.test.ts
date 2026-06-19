@@ -93,7 +93,7 @@ function financeRunFixture(
     tenantContext: {
       tenantId: 'tenant_customer_gate',
       source: 'hosted',
-      planId: 'community',
+      planId: 'trial',
     },
     ...overrides,
   };

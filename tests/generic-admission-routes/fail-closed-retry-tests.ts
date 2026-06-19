@@ -26,7 +26,7 @@ async function testTenantMismatchFailsClosedBeforeShadowRecording(): Promise<voi
       tenantName: 'Authenticated Tenant',
       authenticatedAt: '2026-05-01T18:00:00.000Z',
       source: 'api_key',
-      planId: 'starter',
+      planId: 'custom-route-test-plan',
       monthlyRunQuota: 100,
     }),
     recordShadowAdmission: () => {
@@ -68,7 +68,7 @@ async function testNestedScopeTenantMismatchFailsClosedBeforeShadowRecording(): 
       tenantName: 'Route Tenant',
       authenticatedAt: '2026-05-01T18:00:00.000Z',
       source: 'api_key',
-      planId: 'starter',
+      planId: 'custom-route-test-plan',
       monthlyRunQuota: 100,
     }),
     recordShadowAdmission: () => {
@@ -123,7 +123,7 @@ async function testApprovedScopeTenantMismatchFailsClosedBeforeShadowRecording()
       tenantName: 'Route Tenant',
       authenticatedAt: '2026-05-01T18:00:00.000Z',
       source: 'api_key',
-      planId: 'starter',
+      planId: 'custom-route-test-plan',
       monthlyRunQuota: 100,
     }),
     recordShadowAdmission: () => {
@@ -178,7 +178,7 @@ async function testLoopGuardUnavailableFailsClosedBeforeShadowRecording(): Promi
       tenantName: 'Route Tenant',
       authenticatedAt: '2026-05-01T18:00:00.000Z',
       source: 'api_key',
-      planId: 'starter',
+      planId: 'custom-route-test-plan',
       monthlyRunQuota: 100,
     }),
     evaluateAgentLoopAbuse: async () => {
@@ -224,7 +224,7 @@ async function testMissingShadowRecorderFailsClosed(): Promise<void> {
       tenantName: 'Route Tenant',
       authenticatedAt: '2026-05-01T18:00:00.000Z',
       source: 'api_key',
-      planId: 'starter',
+      planId: 'custom-route-test-plan',
       monthlyRunQuota: 100,
     }),
   } as unknown as Parameters<typeof registerGenericAdmissionRoutes>[1]);

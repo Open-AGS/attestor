@@ -510,15 +510,6 @@ export async function probeStripeLiveReadiness(
   if (!allowTestMode && mode !== 'live') {
     issues.push('STRIPE_API_KEY must be a live-mode key for commercial readiness.');
   }
-  if (envValue(env, 'ATTESTOR_STRIPE_PRICE_SCALE')) {
-    warnings.push(
-      'ATTESTOR_STRIPE_PRICE_SCALE is configured. Keep Scale out of ' +
-      'self-service workflow launch unless intentionally re-enabled.',
-    );
-  }
-  if (envValue(env, 'ATTESTOR_STRIPE_PRICE_ENTERPRISE')) {
-    warnings.push('ATTESTOR_STRIPE_PRICE_ENTERPRISE is configured. Keep Enterprise self-service checkout disabled unless intentionally enabled.');
-  }
   const portalPriceIds = requiredPortalPriceIds(env);
 
   const [account, customerPortal, prices] = await Promise.all([

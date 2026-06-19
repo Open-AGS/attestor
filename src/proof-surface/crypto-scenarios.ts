@@ -413,7 +413,7 @@ function x402FixtureSuite(): CryptoFixtureSuite {
     riskAssessment,
     releaseBinding,
     generatedAt: '2026-04-21T09:00:03.000Z',
-    planId: 'enterprise',
+    planId: 'trial',
   });
   const enforcementBinding = createCryptoEnforcementVerificationBinding({
     releaseBinding,
@@ -567,7 +567,7 @@ function eip7702FixtureSuite(): CryptoFixtureSuite {
     riskAssessment,
     releaseBinding,
     generatedAt: '2026-04-21T09:00:03.000Z',
-    planId: 'enterprise',
+    planId: 'trial',
   });
   const enforcementBinding = createCryptoEnforcementVerificationBinding({
     releaseBinding,

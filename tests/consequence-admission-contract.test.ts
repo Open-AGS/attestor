@@ -276,7 +276,7 @@ function testRequestAndResponseAreCanonicalAndProofBearing(): void {
     proof: [proofFixture()],
     operationalContext: {
       tenantId: 'tenant_demo',
-      planId: 'community',
+      planId: 'trial',
     },
   });
 

@@ -217,7 +217,7 @@ async function seedSourceControlPlane(env: Env): Promise<void> {
     key: {
       tenantId: 'tenant-dr-rehearsal',
       tenantName: 'DR Rehearsal Tenant',
-      planId: 'starter',
+      planId: 'trial',
     },
   });
   const user = await createAccountUserState({
@@ -234,10 +234,10 @@ async function seedSourceControlPlane(env: Env): Promise<void> {
   });
   await upsertHostedBillingEntitlementState({
     account: provisioned.account,
-    currentPlanId: 'starter',
+    currentPlanId: 'trial',
     currentMonthlyRunQuota: 100,
-    stripeEntitlementLookupKeys: ['attestor.starter.api'],
-    stripeEntitlementFeatureIds: ['feat_starter_api'],
+    stripeEntitlementLookupKeys: [],
+    stripeEntitlementFeatureIds: [],
     stripeEntitlementSummaryUpdatedAt: '2026-04-28T00:00:00.000Z',
     lastEventId: 'evt_dr_entitlement_1',
     lastEventType: 'manual.provisioning',
@@ -252,7 +252,7 @@ async function seedSourceControlPlane(env: Env): Promise<void> {
     accountId: provisioned.account.id,
     tenantId: 'tenant-dr-rehearsal',
     tenantKeyId: provisioned.initialKey.id,
-    planId: 'starter',
+    planId: 'trial',
     monthlyRunQuota: 100,
     idempotencyKey: 'idem-dr-1',
     requestHash: 'req_hash_dr',
@@ -280,7 +280,7 @@ async function seedSourceControlPlane(env: Env): Promise<void> {
     name: 'pipeline-run',
     backendMode: 'bullmq',
     tenantId: 'tenant-dr-rehearsal',
-    planId: 'starter',
+    planId: 'trial',
     state: 'failed',
     failedReason: 'synthetic DR rehearsal failure',
     attemptsMade: 3,
@@ -304,7 +304,7 @@ async function seedSourceControlPlane(env: Env): Promise<void> {
     tenantId: 'tenant-dr-rehearsal',
     stripeCustomerId: 'cus_dr',
     stripeSubscriptionId: 'sub_dr',
-    stripePriceId: 'price_starter_monthly',
+    stripePriceId: 'price_starter_workflow_monthly',
     stripeInvoiceId: 'in_dr_1',
     stripeInvoiceStatus: 'paid',
     stripeInvoiceCurrency: 'usd',
@@ -314,7 +314,7 @@ async function seedSourceControlPlane(env: Env): Promise<void> {
     accountStatusAfter: 'active',
     billingStatusBefore: 'active',
     billingStatusAfter: 'active',
-    mappedPlanId: 'starter',
+    mappedPlanId: null,
     metadata: { paidAt: '2026-04-28T00:00:00.000Z' },
   });
   await upsertStripeInvoiceLineItems({
@@ -328,8 +328,8 @@ async function seedSourceControlPlane(env: Env): Promise<void> {
     replaceExisting: true,
     lineItems: [{
       stripeInvoiceLineItemId: 'il_dr_1',
-      stripePriceId: 'price_starter_monthly',
-      description: 'Attestor Starter Monthly',
+      stripePriceId: 'price_starter_workflow_monthly',
+      description: 'Attestor Starter Workflow Monthly',
       currency: 'usd',
       amount: 5000,
       subtotal: 5000,

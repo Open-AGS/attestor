@@ -7,8 +7,36 @@
 import type { AccountBillingEntitlementRecord } from './account.js';
 import type { UsageContext } from './shared.js';
 
-export interface AccountBillingCheckoutRequest {
-  planId: 'starter' | 'pro' | 'enterprise';
+export type AccountWorkflowBillingTierId =
+  | 'pilot-workflow'
+  | 'starter-workflow'
+  | 'pro-workflow';
+
+export type AccountWorkflowConsequencePackId =
+  | 'money-movement'
+  | 'data-movement'
+  | 'authority-change'
+  | 'external-communication'
+  | 'operational-execution'
+  | 'programmable-money';
+
+export interface RetiredAccountPlanCheckoutResponse {
+  accountId: string;
+  tenantId: string;
+  error: string;
+  replacementRoute: '/api/v1/account/billing/workflows/checkout';
+  allowedWorkflowTiers: AccountWorkflowBillingTierId[];
+}
+
+export interface AccountWorkflowBillingCheckoutRequest {
+  workflowAction?: 'create' | 'upgrade' | 'downgrade';
+  workflowId?: string;
+  tier: AccountWorkflowBillingTierId;
+  consequencePack: AccountWorkflowConsequencePackId;
+  downstreamSystemRef?: string;
+  downstreamSystemRefDigest?: string;
+  policyGatePathRef?: string;
+  policyGatePathRefDigest?: string;
 }
 
 export interface EmailDeliveryRecordView {
@@ -84,15 +112,47 @@ export interface MailgunWebhookResponse {
   conflict: number;
 }
 
-export interface AccountBillingCheckoutResponse {
+export interface AccountWorkflowEntitlementView {
+  workflowId: string;
   accountId: string;
   tenantId: string;
-  planId: 'starter' | 'pro' | 'enterprise';
+  tier: AccountWorkflowBillingTierId;
+  status: 'active' | 'trialing' | 'past_due' | 'canceled' | 'incomplete';
+  consequencePack: AccountWorkflowConsequencePackId;
+  stripeCustomerId: string | null;
+  stripeSubscriptionId: string | null;
+  stripeSubscriptionItemId: string | null;
+  stripePriceId: string | null;
+  stripeOveragePriceId: string | null;
+  downstreamSystemRefDigest: string;
+  policyGatePathRefDigest: string;
+  includedAdmissionsMonthly: number;
+  monthlyAdmissionsUsed: number;
+  admissionPeriod: string | null;
+  customerGateProofPresent: boolean;
+  lastCheckoutAction: 'create' | 'upgrade' | 'downgrade' | null;
+  lastCheckoutSessionId: string | null;
+  lastCheckoutCompletedAt: string | null;
+  lastEventId: string | null;
+  lastEventType: string | null;
+  lastEventAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AccountWorkflowBillingCheckoutResponse {
+  accountId: string;
+  tenantId: string;
+  workflowId: string;
+  workflowAction: 'create' | 'upgrade' | 'downgrade';
+  tier: AccountWorkflowBillingTierId;
+  consequencePack: AccountWorkflowConsequencePackId;
   stripePriceId: string;
-  trialDays: number | null;
+  stripeOveragePriceId: string | null;
   checkoutSessionId: string;
   checkoutUrl: string;
   mock: boolean;
+  entitlement: AccountWorkflowEntitlementView;
 }
 
 export interface AccountBillingPortalResponse {

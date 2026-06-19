@@ -55,7 +55,7 @@ const tenant: TenantContext = {
   tenantName: 'Shadow HTTP Tenant',
   authenticatedAt: '2026-05-21T09:00:00.000Z',
   source: 'api_key',
-  planId: 'community',
+  planId: 'trial',
   monthlyRunQuota: 100,
 };
 

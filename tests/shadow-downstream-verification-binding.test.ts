@@ -38,7 +38,7 @@ const tenant: TenantContext = {
   tenantName: 'Shadow Downstream Binding Tenant',
   authenticatedAt: '2026-05-02T13:00:00.000Z',
   source: 'api_key',
-  planId: 'community',
+  planId: 'trial',
   monthlyRunQuota: 100,
 };
 

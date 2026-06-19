@@ -43,6 +43,10 @@ import type {
   PolicyFoundryHostedWizardStateRecord,
   PolicyFoundryHostedWizardStateStore,
 } from '../../policy-foundry/policy-foundry-hosted-wizard-state.js';
+import {
+  evaluateWorkflowEntitlementAccess,
+  type WorkflowEntitlementRecord,
+} from '../../workflow-entitlement.js';
 import type {
   PipelineIdempotencyReadyResult,
   PipelineIdempotencyService,
@@ -111,6 +115,10 @@ export interface PolicyFoundryHostedOnboardingRouteDeps {
   resolveBillingEntitlement?(input: {
     readonly tenant: TenantContext;
   }): Promise<HostedBillingEntitlementRecord | null> | HostedBillingEntitlementRecord | null;
+  resolveWorkflowEntitlement?(input: {
+    readonly tenant: TenantContext;
+    readonly workflowId: string;
+  }): Promise<WorkflowEntitlementRecord | null> | WorkflowEntitlementRecord | null;
   wizardStateStore?: PolicyFoundryHostedWizardStateStore;
   pipelineIdempotencyService?: PipelineIdempotencyService;
   now?(): string;
@@ -327,12 +335,13 @@ function normalizeCommercialPlan(
   value: unknown,
   fallback: string | null,
 ): PolicyFoundryCommercialPlan | string {
-  const normalized = (optionalString(value, 'commercialPlan') ?? fallback ?? 'developer').trim().toLowerCase();
-  if (normalized.length === 0) return 'developer';
-  if (!(POLICY_FOUNDRY_COMMERCIAL_PLANS as readonly string[]).includes(normalized)) {
-    return normalized;
+  const normalized = (optionalString(value, 'commercialPlan') ?? fallback ?? 'trial').trim().toLowerCase();
+  if (normalized.length === 0) return 'trial';
+  const canonical = normalized === 'developer' || normalized === 'community' ? 'trial' : normalized;
+  if (!(POLICY_FOUNDRY_COMMERCIAL_PLANS as readonly string[]).includes(canonical)) {
+    return canonical;
   }
-  return normalized as PolicyFoundryCommercialPlan;
+  return canonical as PolicyFoundryCommercialPlan;
 }
 
 function optionalExecutionMode(value: unknown): PolicyFoundryAdversarialReplayExecutionMode | null {
@@ -588,6 +597,22 @@ async function createHostedPolicyFoundryOnboardingMaterial(
   const requestedCustomerOperatedDeployment =
     optionalBoolean(body.requestedCustomerOperatedDeployment, 'requestedCustomerOperatedDeployment', false);
   const billingEntitlement = await deps.resolveBillingEntitlement?.({ tenant }) ?? null;
+  const workflowId = optionalString(body.workflowId, 'workflowId');
+  const workflowBillingCheckRequired =
+    requestedHostedProduction ||
+    (requestedProductionWorkflowCount ?? 0) > 0 ||
+    requestedCustomerOperatedDeployment;
+  const workflowEntitlementAccess =
+    deps.resolveWorkflowEntitlement && workflowBillingCheckRequired && workflowId
+      ? evaluateWorkflowEntitlementAccess({
+          workflowId,
+          entitlement: await deps.resolveWorkflowEntitlement({ tenant, workflowId }),
+          requestedMode: 'enforce',
+          requestedCapability: 'customer-gated-enforce-mode',
+          customerGateProofPresent:
+            optionalBoolean(body.customerApprovalRecorded, 'customerApprovalRecorded', false),
+        })
+      : null;
   const billingEntitlementEnforcement = createPolicyFoundryBillingEntitlementEnforcement({
     evaluatedAt: generatedAt,
     tenantPlanId: tenant.planId,
@@ -599,6 +624,8 @@ async function createHostedPolicyFoundryOnboardingMaterial(
     requestedCustomerOperatedDeployment,
     entitlement: billingEntitlement,
     entitlementResolverConfigured: Boolean(deps.resolveBillingEntitlement),
+    workflowEntitlementAccess,
+    workflowEntitlementResolverConfigured: Boolean(deps.resolveWorkflowEntitlement) && workflowBillingCheckRequired,
   });
   const includeShadowEvents = optionalBoolean(body.includeShadowEvents, 'includeShadowEvents', true);
   const events = includeShadowEvents
@@ -649,7 +676,7 @@ async function createHostedPolicyFoundryOnboardingMaterial(
   });
   const workflow = createPolicyFoundryHostedOnboardingWorkflow({
     generatedAt,
-    workflowId: optionalString(body.workflowId, 'workflowId'),
+    workflowId,
     tenantId: tenant.tenantId,
     selfOnboardingPacket,
     adversarialReplay,

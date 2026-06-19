@@ -42,7 +42,7 @@ The shipped hosted customer path maps to these service routes:
 | Inspect invoice, charge, and entitlement export shape | `GET /api/v1/account/billing/export` | `src/service/http/routes/account-billing-routes.ts`, `src/service/billing/billing-export.ts`, `tests/live-api.test.ts` |
 | Inspect billing reconciliation status | `GET /api/v1/account/billing/reconciliation` | `src/service/http/routes/account-billing-routes.ts`, `src/service/billing/billing-reconciliation.ts`, `tests/live-api.test.ts` |
 | Manage API keys | `GET /api/v1/account/api-keys`, `POST /api/v1/account/api-keys`, `POST /api/v1/account/api-keys/:id/rotate`, `POST /api/v1/account/api-keys/:id/deactivate`, `POST /api/v1/account/api-keys/:id/reactivate`, `POST /api/v1/account/api-keys/:id/revoke` | `src/service/http/routes/account-admin-user-routes.ts`, `src/service/application/account-api-key-service.ts`, `tests/live-api.test.ts` |
-| Start paid hosted checkout | `POST /api/v1/account/billing/checkout` | `src/service/http/routes/account-billing-routes.ts`, `src/service/billing/stripe/stripe-billing.ts`, `tests/stripe-commercial-config.test.ts`, `tests/live-api.test.ts` |
+| Start paid workflow checkout | `POST /api/v1/account/billing/workflows/checkout` | `src/service/http/routes/account-billing-routes.ts`, `src/service/billing/stripe/stripe-billing.ts`, `tests/stripe-commercial-config.test.ts`, `tests/live-api.test.ts` |
 | Open billing portal | `POST /api/v1/account/billing/portal` | `src/service/http/routes/account-billing-routes.ts`, `src/service/billing/stripe/stripe-billing.ts`, `tests/stripe-commercial-config.test.ts`, `tests/live-api.test.ts` |
 | Process Stripe billing lifecycle events | `POST /api/v1/billing/stripe/webhook` | `src/service/http/routes/stripe-webhook-routes.ts`, `src/service/application/stripe-webhook-service.ts`, `src/service/application/stripe-webhook-billing-processor.ts`, `tests/stripe-webhook-events.test.ts`, `tests/live-api.test.ts` |
 
@@ -61,14 +61,14 @@ The refactor already moved the most important hosted flow responsibilities behin
 
 The current repo already covers important parts of the hosted product path:
 
-- `tests/live-api.test.ts` proves signup, first API key, Developer quota, API-key lifecycle, checkout, portal, signed webhook processing, entitlement summary updates, invoice outcomes, delinquency/suspension behavior, and route observability.
+- `tests/live-api.test.ts` proves signup, first API key, Trial quota, API-key lifecycle, workflow checkout, portal, signed webhook processing, entitlement summary updates, invoice outcomes, delinquency/suspension behavior, and route observability.
 - `tests/live-control-plane-pg.test.ts` covers the same billing/entitlement shape against shared control-plane persistence.
-- `tests/stripe-commercial-config.test.ts` covers Stripe checkout/portal configuration, hosted plan pricing env vars, free evaluation plan defaults, mock mode, and unsafe return URL rejection.
+- `tests/stripe-commercial-config.test.ts` covers Stripe workflow checkout/portal configuration, workflow pricing env vars, free Trial account entitlement defaults, mock mode, and unsafe return URL rejection.
 - `tests/stripe-webhook-events.test.ts` guards the supported Stripe event list and canonical webhook route.
 - `tests/service-stripe-webhook-service.test.ts` covers signature enforcement, dedupe, replay, conflict, and shared-ledger/control-plane claim behavior.
 - `tests/service-stripe-webhook-billing-processor.test.ts` covers billing event processing behavior behind the route.
 - `tests/hosted-product-flow-readiness.test.ts` is the final docs/probe/test gate that checks truth-source separation, script exposure, production probe coverage, tracker completion, and sale-ready posture before the hosted path can be called clean.
-- `scripts/probe/probe-production-hosted-flow.ts` exists as a production-oriented probe for account creation, first API key use, governed pipeline call, summary/usage/entitlement/features visibility, billing export and reconciliation reads, checkout, portal, signed webhook simulation, and cleanup.
+- `scripts/probe/probe-production-hosted-flow.ts` exists as a production-oriented probe for account creation, first API key use, governed pipeline call, summary/usage/entitlement/features visibility, billing export and reconciliation reads, workflow checkout, portal, signed webhook simulation, and cleanup.
 
 ## Hardening Gaps
 

@@ -75,7 +75,7 @@ The route split must preserve:
 | `POST` | `/api/v1/account/users/:id/password-reset` | password reset admin | account admin session + mutation idempotency + rate limit + audit |
 | `POST` | `/api/v1/auth/password/reset` | public password reset | reset token + auth-abuse rate limit |
 | `GET` | `/api/v1/account/email/deliveries` | account email delivery | account admin or billing admin session |
-| `POST` | `/api/v1/account/billing/checkout` | account billing | account admin or billing admin session + Stripe idempotency key + audit |
+| `POST` | `/api/v1/account/billing/checkout` | retired account billing compatibility | account admin or billing admin session + audit + workflow checkout replacement |
 | `GET` | `/api/v1/account/billing/workflows` | workflow billing | account admin, billing admin, or read-only session |
 | `POST` | `/api/v1/account/billing/workflows/checkout` | workflow billing | account admin or billing admin session + Stripe idempotency key + audit |
 | `POST` | `/api/v1/account/billing/portal` | account billing | account admin or billing admin session + audit |

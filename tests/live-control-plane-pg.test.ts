@@ -20,6 +20,7 @@ import { resetObservabilityForTests } from '../src/service/observability.js';
 import { resetTenantRateLimiterForTests } from '../src/service/rate-limit.js';
 import { resetStripeWebhookStoreForTests } from '../src/service/billing/stripe/stripe-webhook-store.js';
 import { resetBillingEventLedgerForTests } from '../src/service/billing/billing-event-ledger.js';
+import { tenantWorkflowMetadataDigest } from '../src/service/workflow-entitlement-store.js';
 import {
   claimProcessedStripeWebhookState,
   finalizeProcessedStripeWebhookState,
@@ -41,6 +42,13 @@ import {
 
 let passed = 0;
 const stripe = new Stripe('sk_test_live_control_plane');
+const workflowId = 'wf_pg_live_billing_001';
+const workflowTier = 'pro-workflow';
+const workflowConsequencePack = 'money-movement';
+const workflowPriceId = 'price_pro_workflow_monthly';
+const stripeCustomerId = 'cus_pg_live_001';
+const stripeSubscriptionId = 'sub_pg_live_workflow_001';
+const stripeSubscriptionItemId = 'si_pg_live_workflow_001';
 
 function ok(condition: boolean, message: string): void {
   assert(condition, message);
@@ -93,6 +101,23 @@ async function waitForJobStatus(
   throw new Error(`Timed out waiting for async job ${jobId} to reach status '${expected}'.`);
 }
 
+function workflowStripeMetadata(input: {
+  accountId: string;
+  tenantId: string;
+  downstreamSystemRefDigest: string;
+  policyGatePathRefDigest: string;
+}): Record<string, string> {
+  return {
+    attestor_account_id: input.accountId,
+    attestor_tenant_digest: tenantWorkflowMetadataDigest(input.tenantId),
+    attestor_workflow_id: workflowId,
+    attestor_workflow_tier: workflowTier,
+    attestor_consequence_pack: workflowConsequencePack,
+    attestor_downstream_ref_digest: input.downstreamSystemRefDigest,
+    attestor_policy_gate_digest: input.policyGatePathRefDigest,
+  };
+}
+
 async function run(): Promise<void> {
   mkdirSync('.attestor', { recursive: true });
   const tempRoot = mkdtempSync(join(process.cwd(), '.attestor', 'live-control-plane-pg-'));
@@ -119,6 +144,7 @@ async function run(): Promise<void> {
   const asyncDlqPath = join(tempRoot, 'async-dlq.json');
   const stripeWebhookPath = join(tempRoot, 'stripe-webhooks.json');
   const billingEntitlementPath = join(tempRoot, 'billing-entitlements.json');
+  const workflowEntitlementPath = join(tempRoot, 'workflow-entitlements.json');
 
   process.env.ATTESTOR_CONTROL_PLANE_PG_URL = `postgres://control_plane_live:control_plane_live@localhost:${pgPort}/attestor_control_plane`;
   process.env.ATTESTOR_BILLING_LEDGER_PG_URL = `postgres://control_plane_live:control_plane_live@localhost:${pgPort}/attestor_billing`;
@@ -134,6 +160,7 @@ async function run(): Promise<void> {
   process.env.ATTESTOR_ASYNC_DLQ_STORE_PATH = asyncDlqPath;
   process.env.ATTESTOR_STRIPE_WEBHOOK_STORE_PATH = stripeWebhookPath;
   process.env.ATTESTOR_BILLING_ENTITLEMENT_STORE_PATH = billingEntitlementPath;
+  process.env.ATTESTOR_WORKFLOW_ENTITLEMENT_STORE_PATH = workflowEntitlementPath;
   process.env.ATTESTOR_EMAIL_DELIVERY_EVENTS_PATH = join(tempRoot, 'email-delivery-events.json');
   process.env.ATTESTOR_OBSERVABILITY_LOG_PATH = join(tempRoot, 'observability.jsonl');
   process.env.ATTESTOR_ADMIN_API_KEY = 'admin-shared-control-plane';
@@ -147,11 +174,11 @@ async function run(): Promise<void> {
   process.env.ATTESTOR_BILLING_SUCCESS_URL = 'https://attestor.dev/billing/success';
   process.env.ATTESTOR_BILLING_CANCEL_URL = 'https://attestor.dev/billing/cancel';
   process.env.ATTESTOR_BILLING_PORTAL_RETURN_URL = 'https://attestor.dev/settings/billing';
-  process.env.ATTESTOR_STRIPE_PRICE_STARTER = 'price_starter_monthly';
-  process.env.ATTESTOR_STRIPE_PRICE_PRO = 'price_pro_monthly';
-  process.env.ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER = 'price_starter_overage_monthly';
-  process.env.ATTESTOR_STRIPE_OVERAGE_PRICE_PRO = 'price_pro_overage_monthly';
-  process.env.ATTESTOR_STRIPE_PRICE_ENTERPRISE = 'price_enterprise_monthly';
+  process.env.ATTESTOR_STRIPE_PRICE_PILOT_WORKFLOW = 'price_pilot_workflow_monthly';
+  process.env.ATTESTOR_STRIPE_PRICE_STARTER_WORKFLOW = 'price_starter_workflow_monthly';
+  process.env.ATTESTOR_STRIPE_PRICE_PRO_WORKFLOW = 'price_pro_workflow_monthly';
+  process.env.ATTESTOR_STRIPE_OVERAGE_PRICE_STARTER_WORKFLOW = 'price_starter_workflow_overage_monthly';
+  process.env.ATTESTOR_STRIPE_OVERAGE_PRICE_PRO_WORKFLOW = 'price_pro_workflow_overage_monthly';
   process.env.ATTESTOR_WEBAUTHN_RP_ID = 'dev.dontneeda.pw';
   process.env.ATTESTOR_WEBAUTHN_ORIGIN = webauthnOrigin;
   process.env.ATTESTOR_WEBAUTHN_RP_NAME = 'Attestor Test';
@@ -192,7 +219,7 @@ async function run(): Promise<void> {
         contactEmail: 'ops@pg-hosted.example',
         tenantId: 'tenant-pg-live',
         tenantName: 'PG Live Tenant',
-        planId: 'starter',
+        planId: 'trial',
       }),
     });
     ok(createAccountRes.status === 201, 'Admin account create: 201');
@@ -206,6 +233,7 @@ async function run(): Promise<void> {
     ok(!existsSync(tenantKeyStorePath), 'Shared PG: no local tenant key store file created');
     ok(!existsSync(usageLedgerPath), 'Shared PG: no local usage ledger file created');
     ok(!existsSync(billingEntitlementPath), 'Shared PG: no local billing entitlement file created');
+    ok(!existsSync(workflowEntitlementPath), 'Shared PG: no local workflow entitlement file created');
     ok(!existsSync(adminAuditPath), 'Shared PG: no local admin audit file created');
     ok(!existsSync(adminIdempotencyPath), 'Shared PG: no local admin idempotency file created');
     ok(!existsSync(asyncDlqPath), 'Shared PG: no local async DLQ file created');
@@ -222,7 +250,7 @@ async function run(): Promise<void> {
         contactEmail: 'ops@pg-hosted.example',
         tenantId: 'tenant-pg-live',
         tenantName: 'PG Live Tenant',
-        planId: 'starter',
+        planId: 'trial',
       }),
     });
     ok(createAccountReplayRes.status === 201, 'Admin account replay: 201');
@@ -237,7 +265,7 @@ async function run(): Promise<void> {
     ok(accountBody.account.accountName === 'PG Hosted Co', 'Tenant account summary: account name matches');
     ok(accountBody.usage.used === 0, 'Tenant account summary: usage starts at 0');
     ok(accountBody.entitlement.status === 'provisioned', 'Tenant account summary: entitlement starts provisioned');
-    ok(accountBody.entitlement.effectivePlanId === 'starter', 'Tenant account summary: starter entitlement projected');
+    ok(accountBody.entitlement.effectivePlanId === 'trial', 'Tenant account summary: trial entitlement projected');
 
     const entitlementRes = await fetch(`${base}/api/v1/account/entitlement`, { headers: tenantAuth });
     ok(entitlementRes.status === 200, 'Tenant entitlement summary: 200');
@@ -535,7 +563,7 @@ async function run(): Promise<void> {
         'Content-Type': 'application/json',
         'Idempotency-Key': 'shared-control-plane-rotate-1',
       },
-      body: JSON.stringify({ planId: 'pro' }),
+      body: JSON.stringify({ planId: 'trial' }),
     });
     ok(rotateRes.status === 201, 'Tenant key rotate: 201');
     const rotateBody = await rotateRes.json() as any;
@@ -551,8 +579,8 @@ async function run(): Promise<void> {
     });
     ok(sessionAccountAfterRotateRes.status === 200, 'Account summary reflects rotated tenant key plan');
     const sessionAccountAfterRotateBody = await sessionAccountAfterRotateRes.json() as any;
-    ok(sessionAccountAfterRotateBody.tenantContext.planId === 'pro', 'Account summary picks up rotated tenant plan');
-    ok(sessionAccountAfterRotateBody.entitlement.effectivePlanId === 'pro', 'Entitlement sync follows rotated tenant plan');
+    ok(sessionAccountAfterRotateBody.tenantContext.planId === 'trial', 'Account summary picks up rotated tenant plan');
+    ok(sessionAccountAfterRotateBody.entitlement.effectivePlanId === 'trial', 'Entitlement sync follows rotated tenant trial access');
 
     const deactivateRes = await fetch(`${base}/api/v1/admin/tenant-keys/${createAccountBody.initialKey.id}/deactivate`, {
       method: 'POST',
@@ -657,18 +685,45 @@ async function run(): Promise<void> {
     ok(sharedDlqRecord.backendMode === 'bullmq', 'Shared PG async DLQ: backend mode truthful');
     ok(!existsSync(asyncDlqPath), 'Shared PG async DLQ: no local file created after failure');
 
-    const checkoutRes = await fetch(`${base}/api/v1/account/billing/checkout`, {
+    const retiredCheckoutRes = await fetch(`${base}/api/v1/account/billing/checkout`, {
       method: 'POST',
       headers: {
         Cookie: accountSessionCookie!,
         'Content-Type': 'application/json',
         'Idempotency-Key': 'shared-control-plane-checkout-1',
       },
-      body: JSON.stringify({ planId: 'pro' }),
+      body: JSON.stringify({ planId: 'trial' }),
     });
-    ok(checkoutRes.status === 200, 'Billing checkout via shared PG session: 200');
-    const checkoutBody = await checkoutRes.json() as any;
-    ok(checkoutBody.planId === 'pro', 'Billing checkout via shared PG session: plan echoed');
+    ok(retiredCheckoutRes.status === 410, 'Retired account-plan checkout via shared PG session: 410');
+    const retiredCheckoutBody = await retiredCheckoutRes.json() as any;
+    ok(retiredCheckoutBody.replacementRoute === '/api/v1/account/billing/workflows/checkout', 'Retired checkout via shared PG points to workflow checkout');
+
+    const workflowCheckoutRes = await fetch(`${base}/api/v1/account/billing/workflows/checkout`, {
+      method: 'POST',
+      headers: {
+        Cookie: accountSessionCookie!,
+        'Content-Type': 'application/json',
+        'Idempotency-Key': 'shared-control-plane-workflow-checkout-1',
+      },
+      body: JSON.stringify({
+        workflowAction: 'create',
+        workflowId,
+        tier: workflowTier,
+        consequencePack: workflowConsequencePack,
+        downstreamSystemRef: 'customer_reporting_store.write',
+        policyGatePathRef: 'customer_gate:finance-reporting',
+      }),
+    });
+    ok(workflowCheckoutRes.status === 200, 'Workflow billing checkout via shared PG session: 200');
+    const workflowCheckoutBody = await workflowCheckoutRes.json() as any;
+    ok(workflowCheckoutBody.workflowId === workflowId, 'Workflow billing checkout via shared PG: workflow id echoed');
+    ok(workflowCheckoutBody.tier === workflowTier, 'Workflow billing checkout via shared PG: tier echoed');
+    ok(workflowCheckoutBody.stripePriceId === workflowPriceId, 'Workflow billing checkout via shared PG: workflow price used');
+    const downstreamSystemRefDigest = workflowCheckoutBody.entitlement.downstreamSystemRefDigest as string;
+    const policyGatePathRefDigest = workflowCheckoutBody.entitlement.policyGatePathRefDigest as string;
+    ok(downstreamSystemRefDigest.startsWith('sha256:'), 'Workflow billing checkout via shared PG: downstream ref digest stored');
+    ok(policyGatePathRefDigest.startsWith('sha256:'), 'Workflow billing checkout via shared PG: policy gate digest stored');
+    ok(!existsSync(workflowEntitlementPath), 'Shared PG: workflow checkout avoids local workflow entitlement file');
 
     const listAccountsRes = await fetch(`${base}/api/v1/admin/accounts`, {
       headers: { Authorization: 'Bearer admin-shared-control-plane' },
@@ -691,13 +746,13 @@ async function run(): Promise<void> {
         'Idempotency-Key': 'shared-control-plane-attach-billing-1',
       },
       body: JSON.stringify({
-        stripeCustomerId: 'cus_pg_live_001',
-        stripeSubscriptionId: 'sub_pg_live_001',
-        stripeSubscriptionStatus: 'active',
-        stripePriceId: 'price_pro_monthly',
+        stripeCustomerId,
       }),
     });
-    ok(attachBillingRes.status === 200, 'Attach Stripe billing: 200');
+    ok(attachBillingRes.status === 200, 'Attach Stripe customer for workflow billing: 200');
+    const attachBillingBody = await attachBillingRes.json() as any;
+    ok(attachBillingBody.account.billing.stripeCustomerId === stripeCustomerId, 'Attach Stripe customer for workflow billing: customer persisted');
+    ok(attachBillingBody.account.billing.stripeSubscriptionId === null, 'Attach Stripe customer for workflow billing: no account-plan subscription persisted');
 
     const sharedClaimPayload = '{"id":"evt_pg_live_claim_1"}';
     const firstClaim = await claimProcessedStripeWebhookState({
@@ -722,8 +777,8 @@ async function run(): Promise<void> {
       eventId: 'evt_pg_live_claim_1',
       eventType: 'invoice.paid',
       accountId: createAccountBody.account.id,
-      stripeCustomerId: 'cus_pg_live_001',
-      stripeSubscriptionId: 'sub_pg_live_001',
+      stripeCustomerId,
+      stripeSubscriptionId,
       outcome: 'applied',
       reason: null,
       rawPayload: sharedClaimPayload,
@@ -752,8 +807,8 @@ async function run(): Promise<void> {
       eventId: 'evt_pg_live_claim_release',
       eventType: 'invoice.payment_failed',
       accountId: createAccountBody.account.id,
-      stripeCustomerId: 'cus_pg_live_001',
-      stripeSubscriptionId: 'sub_pg_live_001',
+      stripeCustomerId,
+      stripeSubscriptionId,
       outcome: 'ignored',
       reason: 'manual_release_test',
       rawPayload: '{"id":"evt_pg_live_claim_release"}',
@@ -766,18 +821,22 @@ async function run(): Promise<void> {
       created: 1712553600,
       data: {
         object: {
-          id: 'sub_pg_live_001',
+          id: stripeSubscriptionId,
           object: 'subscription',
-          customer: 'cus_pg_live_001',
+          customer: stripeCustomerId,
           status: 'past_due',
-          metadata: {
-            attestorAccountId: createAccountBody.account.id,
-          },
+          metadata: workflowStripeMetadata({
+            accountId: createAccountBody.account.id,
+            tenantId: createAccountBody.account.primaryTenantId,
+            downstreamSystemRefDigest,
+            policyGatePathRefDigest,
+          }),
           items: {
             data: [
               {
+                id: stripeSubscriptionItemId,
                 price: {
-                  id: 'price_pro_monthly',
+                  id: workflowPriceId,
                 },
               },
             ],
@@ -798,6 +857,9 @@ async function run(): Promise<void> {
       body: subscriptionPayload,
     });
     ok(webhookRes.status === 200, 'Shared PG webhook: first delivery accepted');
+    const webhookBody = await webhookRes.json() as any;
+    ok(webhookBody.accountStatus === 'active', 'Shared PG webhook: workflow past_due leaves account active');
+    ok(webhookBody.workflowEntitlementStatus === 'past_due', 'Shared PG webhook: workflow entitlement marked past_due');
     const webhookReplayRes = await fetch(`${base}/api/v1/billing/stripe/webhook`, {
       method: 'POST',
       headers: {
@@ -810,11 +872,20 @@ async function run(): Promise<void> {
     ok(webhookReplayRes.headers.get('x-attestor-stripe-replay') === 'true', 'Shared PG webhook: duplicate replay header set');
     ok(!existsSync(stripeWebhookPath), 'Shared PG: no local Stripe webhook dedupe file created');
     ok(!existsSync(billingEntitlementPath), 'Shared PG: webhook lifecycle still avoids local entitlement file');
+    ok(!existsSync(workflowEntitlementPath), 'Shared PG: webhook lifecycle still avoids local workflow entitlement file');
 
     const entitlementAfterWebhookRes = await fetch(`${base}/api/v1/account/entitlement`, {
       headers: { Authorization: `Bearer ${rotateBody.newKey.apiKey}` },
     });
-    ok(entitlementAfterWebhookRes.status === 403, 'Shared PG entitlement route respects suspended account state');
+    ok(entitlementAfterWebhookRes.status === 200, 'Shared PG entitlement route remains available after workflow past_due');
+
+    const workflowAfterPastDueRes = await fetch(`${base}/api/v1/account/billing/workflows`, {
+      headers: { Cookie: accountSessionCookie! },
+    });
+    ok(workflowAfterPastDueRes.status === 200, 'Shared PG workflow entitlements: readable after workflow past_due');
+    const workflowAfterPastDueBody = await workflowAfterPastDueRes.json() as any;
+    const workflowAfterPastDue = workflowAfterPastDueBody.workflows.find((entry: any) => entry.workflowId === workflowId);
+    ok(workflowAfterPastDue.status === 'past_due', 'Shared PG workflow entitlements: workflow status is past_due');
 
     const adminEntitlementsRes = await fetch(`${base}/api/v1/admin/billing/entitlements?accountId=${createAccountBody.account.id}`, {
       headers: { Authorization: 'Bearer admin-shared-control-plane' },
@@ -822,8 +893,8 @@ async function run(): Promise<void> {
     ok(adminEntitlementsRes.status === 200, 'Admin billing entitlements via shared PG: 200');
     const adminEntitlementsBody = await adminEntitlementsRes.json() as any;
     ok(adminEntitlementsBody.summary.recordCount === 1, 'Admin billing entitlements via shared PG: one record');
-    ok(adminEntitlementsBody.records[0].status === 'delinquent', 'Admin billing entitlements via shared PG: delinquent status reflected');
-    ok(adminEntitlementsBody.records[0].provider === 'stripe', 'Admin billing entitlements via shared PG: provider switched to stripe');
+    ok(adminEntitlementsBody.records[0].status === 'provisioned', 'Admin billing entitlements via shared PG: account-level entitlement remains provisioned');
+    ok(adminEntitlementsBody.records[0].provider === 'stripe', 'Admin billing entitlements via shared PG: Stripe customer binding reflected');
 
     const invoicePaidPayload = JSON.stringify({
       id: 'evt_pg_live_invoice_paid_1',
@@ -834,15 +905,26 @@ async function run(): Promise<void> {
         object: {
           id: 'in_pg_live_001',
           object: 'invoice',
-          customer: 'cus_pg_live_001',
-          subscription: 'sub_pg_live_001',
+          customer: stripeCustomerId,
+          subscription: stripeSubscriptionId,
           status: 'paid',
           currency: 'usd',
-          amount_paid: 5000,
-          amount_due: 5000,
+          amount_paid: 99900,
+          amount_due: 99900,
           billing_reason: 'subscription_cycle',
-          metadata: {
-            attestorAccountId: createAccountBody.account.id,
+          metadata: workflowStripeMetadata({
+            accountId: createAccountBody.account.id,
+            tenantId: createAccountBody.account.primaryTenantId,
+            downstreamSystemRefDigest,
+            policyGatePathRefDigest,
+          }),
+          subscription_details: {
+            metadata: workflowStripeMetadata({
+              accountId: createAccountBody.account.id,
+              tenantId: createAccountBody.account.primaryTenantId,
+              downstreamSystemRefDigest,
+              policyGatePathRefDigest,
+            }),
           },
           status_transitions: {
             paid_at: 1712555400,
@@ -854,18 +936,18 @@ async function run(): Promise<void> {
               id: 'il_pg_live_001_1',
               object: 'line_item',
               invoice: 'in_pg_live_001',
-              amount: 5000,
-              subtotal: 5000,
+              amount: 99900,
+              subtotal: 99900,
               currency: 'usd',
-              description: 'Attestor Pro Monthly',
+              description: 'Attestor Pro Workflow Monthly',
               quantity: 1,
-              subscription: 'sub_pg_live_001',
+              subscription: stripeSubscriptionId,
               pricing: {
                 type: 'price_details',
                 price_details: {
-                  price: 'price_pro_monthly',
+                  price: workflowPriceId,
                 },
-                unit_amount_decimal: '5000',
+                unit_amount_decimal: '99900',
               },
               period: {
                 start: 1712551800,
@@ -875,6 +957,7 @@ async function run(): Promise<void> {
                 type: 'subscription_item_details',
                 invoice_item_details: null,
                 subscription_item_details: {
+                  subscription_item: stripeSubscriptionItemId,
                   proration: false,
                 },
               },
@@ -896,6 +979,8 @@ async function run(): Promise<void> {
       body: invoicePaidPayload,
     });
     ok(invoicePaidRes.status === 200, 'Shared PG invoice paid webhook: accepted');
+    const invoicePaidBody = await invoicePaidRes.json() as any;
+    ok(invoicePaidBody.workflowEntitlementStatus === 'active', 'Shared PG invoice paid webhook: workflow entitlement restored active');
 
     const chargePayload = JSON.stringify({
       id: 'evt_pg_live_charge_1',
@@ -906,10 +991,10 @@ async function run(): Promise<void> {
         object: {
           id: 'ch_pg_live_001',
           object: 'charge',
-          customer: 'cus_pg_live_001',
+          customer: stripeCustomerId,
           invoice: 'in_pg_live_001',
           payment_intent: 'pi_pg_live_001',
-          amount: 5000,
+          amount: 99900,
           amount_refunded: 0,
           currency: 'usd',
           status: 'succeeded',
@@ -937,54 +1022,12 @@ async function run(): Promise<void> {
     });
     ok(chargeRes.status === 200, 'Shared PG charge webhook: accepted');
 
-    const entitlementSummaryPayload = JSON.stringify({
-      id: 'evt_pg_live_entitlements_1',
-      object: 'event',
-      type: 'entitlements.active_entitlement_summary.updated',
-      created: 1712559000,
-      data: {
-        object: {
-          object: 'entitlements.active_entitlement_summary',
-          customer: 'cus_pg_live_001',
-          entitlements: {
-            object: 'list',
-            data: [
-              {
-                id: 'ent_pg_live_api',
-                object: 'entitlements.active_entitlement',
-                lookup_key: 'attestor.pro.api',
-                feature: {
-                  id: 'feat_pro_api',
-                  object: 'entitlements.feature',
-                  lookup_key: 'attestor.pro.api',
-                },
-              },
-            ],
-          },
-        },
-      },
-    });
-    const entitlementSummarySignature = stripe.webhooks.generateTestHeaderString({
-      payload: entitlementSummaryPayload,
-      secret: process.env.STRIPE_WEBHOOK_SECRET!,
-    });
-    const entitlementSummaryRes = await fetch(`${base}/api/v1/billing/stripe/webhook`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Stripe-Signature': entitlementSummarySignature,
-      },
-      body: entitlementSummaryPayload,
-    });
-    ok(entitlementSummaryRes.status === 200, 'Shared PG entitlement summary webhook: accepted');
-
-    const adminEntitlementsAfterFeaturesRes = await fetch(`${base}/api/v1/admin/billing/entitlements?accountId=${createAccountBody.account.id}`, {
+    const adminEntitlementsAfterWorkflowRes = await fetch(`${base}/api/v1/admin/billing/entitlements?accountId=${createAccountBody.account.id}`, {
       headers: { Authorization: 'Bearer admin-shared-control-plane' },
     });
-    ok(adminEntitlementsAfterFeaturesRes.status === 200, 'Admin billing entitlements via shared PG after entitlement summary: 200');
-    const adminEntitlementsAfterFeaturesBody = await adminEntitlementsAfterFeaturesRes.json() as any;
-    ok(adminEntitlementsAfterFeaturesBody.records[0].stripeEntitlementLookupKeys.includes('attestor.pro.api'), 'Admin billing entitlements via shared PG: lookup keys persisted');
-    ok(adminEntitlementsAfterFeaturesBody.records[0].stripeEntitlementFeatureIds.includes('feat_pro_api'), 'Admin billing entitlements via shared PG: feature ids persisted');
+    ok(adminEntitlementsAfterWorkflowRes.status === 200, 'Admin billing entitlements via shared PG after workflow invoice: 200');
+    const adminEntitlementsAfterWorkflowBody = await adminEntitlementsAfterWorkflowRes.json() as any;
+    ok(adminEntitlementsAfterWorkflowBody.records[0].effectivePlanId === 'trial', 'Admin billing entitlements via shared PG: account quota compatibility plan remains trial');
 
     const postInvoiceLoginRes = await fetch(`${base}/api/v1/auth/login`, {
       method: 'POST',
@@ -1017,16 +1060,15 @@ async function run(): Promise<void> {
     });
     ok(accountFeaturesRes.status === 200, 'Account features via shared PG: 200');
     const accountFeaturesBody = await accountFeaturesRes.json() as any;
-    ok(accountFeaturesBody.summary.stripeSummaryPresent === true, 'Account features via shared PG: stripe summary visible');
-    ok(accountFeaturesBody.features.some((entry: any) => entry.key === 'api.access' && entry.grantSource === 'stripe_entitlement'), 'Account features via shared PG: api feature backed by Stripe entitlement');
-    ok(accountFeaturesBody.features.some((entry: any) => entry.key === 'billing.reconciliation' && entry.grantSource === 'stripe_not_granted'), 'Account features via shared PG: missing Stripe reconciliation entitlement reported');
+    ok(accountFeaturesBody.summary.stripeSummaryPresent === false, 'Account features via shared PG: account-level Stripe entitlement summary stays absent');
+    ok(accountFeaturesBody.features.some((entry: any) => entry.key === 'api.access' && entry.grantSource === 'plan_default'), 'Account features via shared PG: api feature remains account-plan compatibility default');
 
     const adminFeaturesRes = await fetch(`${base}/api/v1/admin/accounts/${createAccountBody.account.id}/features`, {
       headers: { Authorization: 'Bearer admin-shared-control-plane' },
     });
     ok(adminFeaturesRes.status === 200, 'Admin account features via shared PG: 200');
     const adminFeaturesBody = await adminFeaturesRes.json() as any;
-    ok(adminFeaturesBody.summary.grantedCount >= 2, 'Admin account features via shared PG: granted feature count reported');
+    ok(adminFeaturesBody.summary.grantedCount >= 1, 'Admin account features via shared PG: granted feature count reported');
 
     const adminBillingExportRes = await fetch(`${base}/api/v1/admin/accounts/${createAccountBody.account.id}/billing/export?limit=5`, {
       headers: { Authorization: 'Bearer admin-shared-control-plane' },
@@ -1035,11 +1077,11 @@ async function run(): Promise<void> {
     const adminBillingExportBody = await adminBillingExportRes.json() as any;
     const exportedCharge = adminBillingExportBody.charges.find((entry: any) => entry.chargeId === 'ch_pg_live_001');
     ok(Boolean(exportedCharge), 'Admin account billing export via shared PG: charge ledger exported');
-    ok(adminBillingExportBody.entitlementFeatures.lookupKeys.includes('attestor.pro.api'), 'Admin account billing export via shared PG: entitlement lookup keys exported');
-    ok(adminBillingExportBody.reconciliation.summary.status === 'reconciled', 'Admin account billing export via shared PG: reconciliation is fully reconciled');
+    ok(adminBillingExportBody.entitlementFeatures.lookupKeys.length === 0, 'Admin account billing export via shared PG: no legacy account-plan entitlement lookup keys exported');
+    ok(adminBillingExportBody.reconciliation.summary.status === 'partial', 'Admin account billing export via shared PG: reconciliation is partial without captured line items');
     const reconciledInvoice = adminBillingExportBody.reconciliation.invoices.find((entry: any) => entry.invoiceId === 'in_pg_live_001');
     ok(Boolean(reconciledInvoice), 'Admin account billing export via shared PG: reconciliation includes paid invoice');
-    ok(reconciledInvoice.checks.lineItemsVsInvoice.status === 'match', 'Admin account billing export via shared PG: line items match invoice');
+    ok(reconciledInvoice.checks.lineItemsVsInvoice.status === 'unavailable', 'Admin account billing export via shared PG: line items unavailable without live Stripe fetch');
     ok(reconciledInvoice.checks.chargesVsInvoicePaid.status === 'match', 'Admin account billing export via shared PG: charges match invoice payment');
 
     const adminBillingReconciliationRes = await fetch(`${base}/api/v1/admin/accounts/${createAccountBody.account.id}/billing/reconciliation?limit=5`, {
@@ -1047,7 +1089,7 @@ async function run(): Promise<void> {
     });
     ok(adminBillingReconciliationRes.status === 200, 'Admin account billing reconciliation via shared PG: 200');
     const adminBillingReconciliationBody = await adminBillingReconciliationRes.json() as any;
-    ok(adminBillingReconciliationBody.reconciliation.summary.reconciledCount >= 1, 'Admin account billing reconciliation via shared PG: reconciled invoice counted');
+    ok(adminBillingReconciliationBody.reconciliation.summary.partialCount >= 1, 'Admin account billing reconciliation via shared PG: partial invoice counted');
     ok(adminBillingReconciliationBody.reconciliation.summary.attentionCount === 0, 'Admin account billing reconciliation via shared PG: no reconciliation drift');
 
     console.log(`  Shared control-plane PG tests: ${passed} passed, 0 failed\n`);
@@ -1066,6 +1108,7 @@ async function run(): Promise<void> {
     try { rmSync(tempRoot, { recursive: true, force: true }); } catch {}
     delete process.env.ATTESTOR_CONTROL_PLANE_PG_URL;
     delete process.env.ATTESTOR_BILLING_LEDGER_PG_URL;
+    delete process.env.ATTESTOR_WORKFLOW_ENTITLEMENT_STORE_PATH;
   }
 }
 

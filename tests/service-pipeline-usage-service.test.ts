@@ -11,14 +11,14 @@ const tenant: TenantContext = {
   tenantName: 'Acme',
   authenticatedAt: '2026-04-21T10:00:00.000Z',
   source: 'api_key',
-  planId: 'pro',
+  planId: 'trial',
   monthlyRunQuota: 10,
 };
 
 function usage(overrides: Partial<UsageContext> = {}): UsageContext {
   return {
     tenantId: 'tenant_123',
-    planId: 'pro',
+    planId: 'trial',
     meter: 'monthly_admission_runs',
     period: '2026-04',
     used: 3,
@@ -56,7 +56,7 @@ async function testUsageServiceChecksQuotaFromTenantContext(): Promise<void> {
 
   assert.equal(result.allowed, true);
   assert.equal(result.usage.remaining, 7);
-  assert.deepEqual(calls, ['check:tenant_123:pro:10']);
+  assert.deepEqual(calls, ['check:tenant_123:trial:10']);
 }
 
 async function testUsageServiceConsumesRunFromTenantContext(): Promise<void> {
@@ -68,7 +68,7 @@ async function testUsageServiceConsumesRunFromTenantContext(): Promise<void> {
   assert.equal(result.usage.used, 4);
   assert.equal(result.usage.remaining, 6);
   assert.equal(result.billingMetering, null);
-  assert.deepEqual(calls, ['consume:tenant_123:pro:10']);
+  assert.deepEqual(calls, ['consume:tenant_123:trial:10']);
 }
 
 async function testUsageServiceRecordsOverageMetering(): Promise<void> {
@@ -97,7 +97,7 @@ async function testUsageServiceRecordsOverageMetering(): Promise<void> {
 
   assert.equal(result.usage.overage, true);
   assert.equal(result.billingMetering?.status, 'mock_recorded');
-  assert.deepEqual(calls, ['consume:tenant_123:pro:10', 'meter:tenant_123:11:1']);
+  assert.deepEqual(calls, ['consume:tenant_123:trial:10', 'meter:tenant_123:11:1']);
 }
 
 await testUsageServiceChecksQuotaFromTenantContext();

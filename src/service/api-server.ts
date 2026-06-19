@@ -21,7 +21,8 @@
  * - GET  /api/v1/account/features    — current hosted feature entitlement truth
  * - GET  /api/v1/account/email/deliveries — hosted invite/reset delivery analytics
  * - GET  /api/v1/account/usage       — current hosted usage/rate-limit summary
- * - POST /api/v1/account/billing/checkout — create Stripe Checkout subscription session
+ * - POST /api/v1/account/billing/checkout — retired account-plan checkout compatibility response
+ * - POST /api/v1/account/billing/workflows/checkout — create Stripe Checkout workflow subscription session
  * - POST /api/v1/account/billing/portal — create Stripe Billing Portal session
  * - GET  /api/v1/account/billing/export — export hosted billing summary/history as JSON or CSV
  * - GET  /api/v1/account/billing/reconciliation — per-account charge/invoice reconciliation view

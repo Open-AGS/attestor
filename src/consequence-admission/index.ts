@@ -1,4 +1,29 @@
 export {
+  CONSEQUENCE_ADMISSION_ACCESS_REQUEST_APPROVAL_VERSION,
+  CONSEQUENCE_ADMISSION_ACCESS_REQUEST_AUTHORITY_KINDS,
+  CONSEQUENCE_ADMISSION_ACCESS_REQUEST_TASK_STATUSES,
+  CONSEQUENCE_ADMISSION_REQUESTABLE_DENIAL_REASONS,
+  completeConsequenceAdmissionAccessRequestTask,
+  createConsequenceAdmissionAccessRequestReevaluationContext,
+  createConsequenceAdmissionAccessRequestTask,
+  createConsequenceAdmissionRequestableDenial,
+} from './access-request-approval.js';
+export type {
+  CompleteConsequenceAdmissionAccessRequestTaskInput,
+  ConsequenceAdmissionAccessRequestApproval,
+  ConsequenceAdmissionAccessRequestAuthorityKind,
+  ConsequenceAdmissionAccessRequestReevaluationContext,
+  ConsequenceAdmissionAccessRequestResult,
+  ConsequenceAdmissionAccessRequestTask,
+  ConsequenceAdmissionAccessRequestTaskStatus,
+  ConsequenceAdmissionRequestableDenial,
+  ConsequenceAdmissionRequestableDenialBinding,
+  ConsequenceAdmissionRequestableDenialReason,
+  CreateConsequenceAdmissionAccessRequestTaskInput,
+  CreateConsequenceAdmissionRequestableDenialInput,
+} from './access-request-approval.js';
+
+export {
   CONSEQUENCE_ADMISSION_CHECK_KINDS,
   CONSEQUENCE_ADMISSION_CHECK_OUTCOMES,
   CONSEQUENCE_ADMISSION_CONSEQUENCE_KINDS,

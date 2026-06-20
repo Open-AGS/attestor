@@ -1,10 +1,14 @@
 import type { Context, Hono } from 'hono';
 import {
+  createConsequenceAdmissionRequestableDenial,
   createConsequenceAdmissionProblem,
   createGenericAdmissionEnvelope,
   evaluateGenericAdmissionProtectedReleaseTokenRequirement,
   GenericAdmissionProtectedReleaseTokenIssuanceError,
+  type ConsequenceAdmissionAccessRequestTask,
   type ConsequenceAdmissionAgentLoopAbuseGuardDecision,
+  type ConsequenceAdmissionRequestableDenial,
+  type ConsequenceAdmissionRequestableDenialReason,
   type GenericAdmissionProtectedReleaseTokenIssueResult,
   type GenericAdmissionEnvelope,
 } from '../../../consequence-admission/index.js';
@@ -42,6 +46,8 @@ export interface WorkflowAdmissionConsumptionResult {
 
 type GenericAdmissionRouteResponseEnvelope = GenericAdmissionEnvelope & {
   readonly protectedReleaseTokenAuthorization?: GenericAdmissionProtectedReleaseTokenIssueResult['authorization'];
+  readonly requestableDenial?: ConsequenceAdmissionRequestableDenial;
+  readonly accessRequestTask?: ConsequenceAdmissionAccessRequestTask;
   readonly workflowEntitlementAccess?: WorkflowEntitlementAccessDecision;
   readonly workflowUsage?: WorkflowUsageDecision['usage'];
   readonly workflowBillingMetering?: WorkflowAdmissionMeteringResult | null;
@@ -71,6 +77,23 @@ export interface GenericAdmissionRouteDeps {
     readonly envelope: GenericAdmissionEnvelope;
     readonly receivedAt: string;
   }): ReleaseTokenConfirmationClaim | null | Promise<ReleaseTokenConfirmationClaim | null>;
+  createAccessRequestTask?(input: {
+    readonly context: Context;
+    readonly tenant: TenantContext;
+    readonly envelope: GenericAdmissionEnvelope;
+    readonly denial: ConsequenceAdmissionRequestableDenial;
+    readonly receivedAt: string;
+  }): ConsequenceAdmissionAccessRequestTask | Promise<ConsequenceAdmissionAccessRequestTask>;
+  getAccessRequestTask?(input: {
+    readonly context: Context;
+    readonly tenant: TenantContext;
+    readonly taskId: string;
+  }): ConsequenceAdmissionAccessRequestTask | null | Promise<ConsequenceAdmissionAccessRequestTask | null>;
+  listAccessRequestTasks?(input: {
+    readonly context: Context;
+    readonly tenant: TenantContext;
+    readonly limit: number;
+  }): readonly ConsequenceAdmissionAccessRequestTask[] | Promise<readonly ConsequenceAdmissionAccessRequestTask[]>;
   resolveWorkflowEntitlement?(input: {
     readonly tenant: TenantContext;
     readonly workflowId: string;
@@ -146,6 +169,133 @@ function workflowCustomerGateProofPresent(payload: unknown): boolean {
   return workflow?.customerGateProofPresent === true
     || workflow?.policyGateProofPresent === true
     || workflow?.customerGateProof === true;
+}
+
+const NON_REQUESTABLE_DENIAL_REASON_CODES = [
+  'untrusted-content-authority-source',
+  'model-generated-authority-source',
+  'trust-class-override-rejected',
+  'authority-block',
+  'approval-source-untrusted',
+  'approval-model-generated',
+  'approval-tool-output-unverified',
+  'approval-state-rejected-or-revoked',
+  'approval-trust-class-source-mismatch',
+  'approval-duplicate-reviewer',
+  'approval-block',
+  'policy-version-mismatch',
+  'policy-superseded',
+  'policy-updated-after-approval',
+  'drift-state-block',
+  'no-go-reason-present',
+] as const;
+
+const STEP_UP_REQUESTABLE_REASON_CODES = [
+  'approval-step-up-missing',
+] as const;
+
+const FRESHNESS_REQUESTABLE_REASON_CODES = [
+  'approval-expired',
+  'authority-freshness-missing',
+  'authority-freshness-too-old',
+  'authority-expired',
+] as const;
+
+const APPROVAL_REQUESTABLE_REASON_CODES = [
+  'approval-missing',
+  'approval-source-missing',
+  'approval-state-not-approved',
+  'reviewer-identity-missing',
+  'reviewer-authority-missing',
+  'approval-digest-missing',
+  'approval-scope-missing',
+  'approval-issued-at-missing',
+  'approval-count-insufficient',
+] as const;
+
+function hasAnyReasonCode(
+  reasonCodes: ReadonlySet<string>,
+  candidates: readonly string[],
+): boolean {
+  return candidates.some((code) => reasonCodes.has(code));
+}
+
+function requestableDenialReasonFor(
+  envelope: GenericAdmissionEnvelope,
+): ConsequenceAdmissionRequestableDenialReason | null {
+  const admission = envelope.admission;
+  if (!envelope.enforcementActive || admission.allowed || !admission.failClosed) {
+    return null;
+  }
+  const reasonCodes = new Set(admission.reasonCodes);
+  if (hasAnyReasonCode(reasonCodes, NON_REQUESTABLE_DENIAL_REASON_CODES)) {
+    return null;
+  }
+  if (hasAnyReasonCode(reasonCodes, STEP_UP_REQUESTABLE_REASON_CODES)) {
+    return 'step-up-required';
+  }
+  if (hasAnyReasonCode(reasonCodes, FRESHNESS_REQUESTABLE_REASON_CODES)) {
+    return 'authority-freshness-required';
+  }
+  if (hasAnyReasonCode(reasonCodes, APPROVAL_REQUESTABLE_REASON_CODES)) {
+    return 'approval-required';
+  }
+  return null;
+}
+
+function requestableDenialExpiresAt(input: {
+  readonly envelope: GenericAdmissionEnvelope;
+  readonly receivedAt: string;
+}): string {
+  const receivedAtMs = new Date(input.receivedAt).getTime();
+  const decidedAtMs = new Date(input.envelope.admission.decidedAt).getTime();
+  const baseMs = Math.max(
+    Number.isNaN(receivedAtMs) ? 0 : receivedAtMs,
+    Number.isNaN(decidedAtMs) ? 0 : decidedAtMs,
+  );
+  return new Date(baseMs + 10 * 60 * 1000).toISOString();
+}
+
+function createRouteRequestableDenial(input: {
+  readonly envelope: GenericAdmissionEnvelope;
+  readonly receivedAt: string;
+}): ConsequenceAdmissionRequestableDenial | null {
+  const reason = requestableDenialReasonFor(input.envelope);
+  if (reason === null) return null;
+  return createConsequenceAdmissionRequestableDenial({
+    admission: input.envelope.admission,
+    reason,
+    template: `generic-admission:${reason}`,
+    expiresAt: requestableDenialExpiresAt(input),
+    catalogRefs: ['authzen:access-request:requestable-denial'],
+  });
+}
+
+function accessRequestTaskMatchesDenial(input: {
+  readonly denial: ConsequenceAdmissionRequestableDenial;
+  readonly task: ConsequenceAdmissionAccessRequestTask;
+}): boolean {
+  return input.task.denial.binding.digest === input.denial.binding.digest &&
+    input.task.accessPermitted === false &&
+    input.task.releaseTokenMayBeIssued === false;
+}
+
+function parseAccessRequestLimit(value: string | undefined): number {
+  if (!value) return 100;
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) return 100;
+  return Math.min(Math.trunc(parsed), 500);
+}
+
+function accessRequestTaskUnavailableProblem() {
+  return createConsequenceAdmissionProblem({
+    type: 'https://attestor.dev/problems/access-request-task-store-unavailable',
+    title: 'Access request task store unavailable',
+    status: 503,
+    detail: 'The access request task store is not configured for this runtime.',
+    instance: '/api/v1/admissions/access-requests',
+    reasonCodes: ['access-request-task-store-unavailable'],
+  });
 }
 
 function admissionIdempotencyKeyFor(context: Context): string | null {
@@ -322,6 +472,60 @@ export function registerGenericAdmissionRoutes(
   app: Hono,
   deps: GenericAdmissionRouteDeps,
 ): void {
+  app.get('/api/v1/admissions/access-requests', async (c) => {
+    c.header('cache-control', 'no-store');
+    if (!deps.listAccessRequestTasks) {
+      return c.json(accessRequestTaskUnavailableProblem(), 503);
+    }
+    const tenant = deps.currentTenant(c);
+    const limit = parseAccessRequestLimit(c.req.query('limit'));
+    const tasks = await deps.listAccessRequestTasks({
+      context: c,
+      tenant,
+      limit,
+    });
+    return c.json({
+      version: 'attestor.generic-admission-access-request-list.v1',
+      tenantId: tenant.tenantId,
+      count: tasks.length,
+      limit,
+      tasks,
+      rawPayloadStored: false,
+      productionReady: false,
+    });
+  });
+
+  app.get('/api/v1/admissions/access-requests/:id', async (c) => {
+    c.header('cache-control', 'no-store');
+    if (!deps.getAccessRequestTask) {
+      return c.json(accessRequestTaskUnavailableProblem(), 503);
+    }
+    const tenant = deps.currentTenant(c);
+    const task = await deps.getAccessRequestTask({
+      context: c,
+      tenant,
+      taskId: c.req.param('id'),
+    });
+    if (!task) {
+      const problem = createConsequenceAdmissionProblem({
+        type: 'https://attestor.dev/problems/access-request-task-not-found',
+        title: 'Access request task not found',
+        status: 404,
+        detail: 'The access request task was not found for this tenant.',
+        instance: '/api/v1/admissions/access-requests',
+        reasonCodes: ['access-request-task-not-found'],
+      });
+      return c.json(problem, 404);
+    }
+    return c.json({
+      version: 'attestor.generic-admission-access-request-status.v1',
+      tenantId: tenant.tenantId,
+      task,
+      rawPayloadStored: false,
+      productionReady: false,
+    });
+  });
+
   app.post('/api/v1/admissions', async (c) => {
     c.header('cache-control', 'no-store');
 
@@ -543,6 +747,51 @@ export function registerGenericAdmissionRoutes(
           ],
         });
         return c.json(problem, 503);
+      }
+      const accessRequestReceivedAt = new Date().toISOString();
+      const requestableDenial = createRouteRequestableDenial({
+        envelope: responseEnvelope,
+        receivedAt: accessRequestReceivedAt,
+      });
+      if (requestableDenial) {
+        let accessRequestTask: ConsequenceAdmissionAccessRequestTask | undefined;
+        if (deps.createAccessRequestTask) {
+          try {
+            accessRequestTask = await deps.createAccessRequestTask({
+              context: c,
+              tenant,
+              envelope: responseEnvelope,
+              denial: requestableDenial,
+              receivedAt: accessRequestReceivedAt,
+            });
+          } catch {
+            const problem = createConsequenceAdmissionProblem({
+              type: 'https://attestor.dev/problems/access-request-task-unavailable',
+              title: 'Access request task unavailable',
+              status: 503,
+              detail: 'The access request task dependency could not create a requestable-denial task.',
+              instance: '/api/v1/admissions',
+              reasonCodes: ['access-request-task-unavailable'],
+            });
+            return c.json(problem, 503);
+          }
+          if (!accessRequestTaskMatchesDenial({ denial: requestableDenial, task: accessRequestTask })) {
+            const problem = createConsequenceAdmissionProblem({
+              type: 'https://attestor.dev/problems/access-request-task-invalid',
+              title: 'Access request task invalid',
+              status: 503,
+              detail: 'The access request task dependency returned a task that does not match the requestable denial.',
+              instance: '/api/v1/admissions',
+              reasonCodes: ['access-request-task-invalid'],
+            });
+            return c.json(problem, 503);
+          }
+        }
+        responseEnvelope = {
+          ...responseEnvelope,
+          requestableDenial,
+          ...(accessRequestTask ? { accessRequestTask } : {}),
+        };
       }
       let workflowConsumption: WorkflowAdmissionConsumptionResult | null = null;
       if (workflowId && workflowAccess && workflowEntitlement) {

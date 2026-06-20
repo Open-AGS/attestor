@@ -53,6 +53,9 @@ It checks policy, approval, evidence, allowed scope, freshness, replay, tenant,
 and token, then returns one bounded decision with reasons: `admit`, `narrow`,
 `review`, or `block`.
 
+It also checks that approvals and policy context are still valid before
+execution.
+
 The real service should run only through the customer-owned gate.
 
 System metadata can show where risky actions are forming. Existing APIs, tools,

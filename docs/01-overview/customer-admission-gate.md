@@ -106,6 +106,22 @@ revocation helper on the release-token introspection store. That helper records
 the decision as revoked and makes every release token for that decision
 inactive, without storing the raw token or sender proof.
 
+When an approval is missing or stale before execution, the stronger low-friction
+pattern is to keep the first admission as a requestable denial. The access
+request and approval task may collect the missing authority, but they are still
+not execution proof and must not be accepted by this gate as a substitute for a
+release token. After approval, the customer system asks Attestor for a fresh
+admission evaluation over the same digest-bound scope. This gate should accept
+execution only from that post-approval admission plus its required release
+proof.
+
+For hosted generic admissions, `requestableDenial` and `accessRequestTask` are
+response metadata for that approval workflow. They can help route the missing
+approval work, but this gate treats them as `HOLD` material until a fresh
+post-approval admission carries the required execution proof.
+The hosted status routes expose the task state for coordination only; they do
+not make a pending or approved task acceptable execution proof.
+
 ## Choose The Right Gate
 
 The customer gate is the smallest local helper. High-risk consequences need a

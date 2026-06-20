@@ -61,6 +61,9 @@ import {
   type HostedGenericAdmissionDpopProofReplayStore,
   resolveHostedGenericAdmissionDpopSenderConfirmation,
 } from '../hosted/hosted-generic-admission-sender-confirmation.js';
+import {
+  createFileBackedHostedGenericAdmissionAccessRequestStore,
+} from '../hosted/hosted-generic-admission-access-request-store.js';
 import { installProductionSharedRequestGuard } from './production-shared-request-guard.js';
 import type { AppRuntime } from './runtime.js';
 import { recordWorkflowStripeOverageMeterEvent } from '../billing/stripe/stripe-billing.js';
@@ -155,6 +158,8 @@ export function createGenericAdmissionRouteDeps<Packet>(
     genericAdmissionProtectedIntrospectionStoreFor(runtime);
   const genericAdmissionDpopProofReplayStore =
     genericAdmissionDpopProofReplayStoreFor(runtime);
+  const genericAdmissionAccessRequestStore =
+    createFileBackedHostedGenericAdmissionAccessRequestStore();
   return {
     currentTenant: runtime.services.httpRoutes.pipeline.currentTenant,
     evaluateAgentLoopAbuse: async ({ tenant, envelope, receivedAt }) =>
@@ -171,6 +176,22 @@ export function createGenericAdmissionRouteDeps<Packet>(
         }),
       });
     },
+    createAccessRequestTask: ({ tenant, denial, receivedAt }) =>
+      genericAdmissionAccessRequestStore.create({
+        tenantId: tenant.tenantId,
+        denial,
+        createdAt: receivedAt,
+      }).task,
+    getAccessRequestTask: ({ tenant, taskId }) =>
+      genericAdmissionAccessRequestStore.get({
+        tenantId: tenant.tenantId,
+        taskId,
+      })?.task ?? null,
+    listAccessRequestTasks: ({ tenant, limit }) =>
+      genericAdmissionAccessRequestStore.list({
+        tenantId: tenant.tenantId,
+        limit,
+      }).records.map((record) => record.task),
     resolveWorkflowEntitlement: ({ tenant, workflowId }) =>
       findWorkflowEntitlementByTenantAndWorkflowState(tenant.tenantId, workflowId),
     consumeWorkflowAdmission: async ({ tenant, workflowId }) => {

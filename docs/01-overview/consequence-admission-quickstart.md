@@ -144,6 +144,34 @@ propagation latency)`. If a decision or approval is withdrawn after admission,
 the release-token introspection store exposes decision-level revocation so all
 tokens for that decision become inactive before expiry.
 
+For approval work that is not already fresh enough at admission time, use a
+requestable denial instead of issuing a release token against the old decision.
+A requestable denial stays a fail-closed `review` or `block` decision. It can
+open an access-request task, but the task and the approval result are not
+execution proof: they set `accessPermitted: false`,
+`releaseTokenMayBeIssued: false`, and `requiresReevaluation: true`. After the
+task is approved, the only next authorization step is a fresh admission
+evaluation for the same digest-bound actor, action, downstream system, policy,
+and tenant scope. Only that new admission may issue a short-lived protected
+release token for downstream execution.
+
+The package contract for this approval path is available through
+`attestor/consequence-admission`. It is a digest-first contract surface: raw
+approval refs, actor refs, policy refs, and downstream refs must not be stored
+in the requestable-denial record, access-request task, or re-evaluation
+context. The hosted runtime includes a local file-backed evaluation task store
+and status routes for this metadata; a shared production approval workflow,
+operator queue, and upstream approval connector are separate runtime wiring.
+
+The hosted generic admission route can expose this boundary as optional
+response metadata. A requestable denial may include `requestableDenial`; if the
+runtime has an access-request task dependency configured, it also includes
+`accessRequestTask`. The task can be read from
+`GET /api/v1/admissions/access-requests/:id`, and the tenant-scoped list is at
+`GET /api/v1/admissions/access-requests`. Neither field authorizes execution,
+and neither field is a release token. The downstream gate still needs a later
+post-approval admission with required release proof before it can proceed.
+
 This is still not customer PEP activation by itself. A production integration must configure the external issuer boundary, token-introspection authority, token-use replay store, DPoP proof replay store, sender-proof verifier, and non-bypassable downstream enforcement point.
 
 When an action is held for missing policy, evidence, amount, recipient, data scope, or authority shape, the admission response includes model-safe feedback. The feedback names fields and evidence kinds, not raw customer data or private policy internals. A safe retry must send a changed request; replaying the same request is not treated as model repair.

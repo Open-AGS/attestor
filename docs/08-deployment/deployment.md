@@ -165,6 +165,7 @@ external identity fabric.
 | `ATTESTOR_ACCOUNT_SAML_REPLAY_STORE_PATH` | No | `.attestor/account-saml-replays.json` | File-backed hosted SAML replay-consumption ledger used when `ATTESTOR_CONTROL_PLANE_PG_URL` is not configured |
 | `ATTESTOR_TENANT_KEY_STORE_PATH` | No | `.attestor/tenant-keys.json` | File-backed tenant key store used by `npm run tenant:keys` and API key lookup when `ATTESTOR_CONTROL_PLANE_PG_URL` is not configured |
 | `ATTESTOR_TENANT_KEY_MAX_ACTIVE_PER_TENANT` | No | `2` | Max simultaneously active hosted API keys per tenant during rotation overlap |
+| `ATTESTOR_GENERIC_ADMISSION_ACCESS_REQUEST_STORE_PATH` | No | `.attestor/generic-admission-access-requests.json` | File-backed evaluation store for hosted generic admission requestable-denial access-request tasks. It stores digest-first task metadata only and is not a shared production approval workflow |
 | `ATTESTOR_SECRET_ENVELOPE_PROVIDER` | No | None | Optional hosted secret-envelope provider for sealed tenant-key recovery (`vault_transit`) |
 | `ATTESTOR_TENANT_KEY_RECOVERY_ENABLED` | No | `false` | Enables audited break-glass tenant-key recovery when a secret-envelope provider is configured |
 | `ATTESTOR_VAULT_TRANSIT_BASE_URL` | No | None | Vault Transit base URL used when `ATTESTOR_SECRET_ENVELOPE_PROVIDER=vault_transit`. Production-like runtimes require `https://` unless the URL targets localhost |

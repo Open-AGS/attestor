@@ -15,6 +15,7 @@ import {
   completeConsequenceAdmissionAccessRequestTask,
   createConsequenceAdmissionAccessRequestTask,
   type CompleteConsequenceAdmissionAccessRequestTaskInput,
+  type ConsequenceAdmissionAccessRequestPrincipalBinding,
   type ConsequenceAdmissionAccessRequestTask,
   type ConsequenceAdmissionRequestableDenial,
 } from '../../consequence-admission/index.js';
@@ -49,6 +50,7 @@ export interface HostedGenericAdmissionAccessRequestStoreCreateInput {
   readonly tenantId: string;
   readonly denial: ConsequenceAdmissionRequestableDenial;
   readonly createdAt: string;
+  readonly requester: NonNullable<CompleteConsequenceAdmissionAccessRequestTaskInput['decisionAuthority']>;
   readonly statusEndpoint?: string | null;
 }
 
@@ -57,6 +59,7 @@ export interface HostedGenericAdmissionAccessRequestStoreCompleteInput {
   readonly taskId: string;
   readonly status: CompleteConsequenceAdmissionAccessRequestTaskInput['status'];
   readonly decidedAt: string;
+  readonly decisionAuthority?: CompleteConsequenceAdmissionAccessRequestTaskInput['decisionAuthority'];
   readonly approval?: CompleteConsequenceAdmissionAccessRequestTaskInput['approval'];
 }
 
@@ -99,12 +102,25 @@ function defaultStore(): StoreFile {
 function normalizeTask(
   task: ConsequenceAdmissionAccessRequestTask,
 ): ConsequenceAdmissionAccessRequestTask {
+  const legacyTask = task as ConsequenceAdmissionAccessRequestTask & {
+    readonly requester?: ConsequenceAdmissionAccessRequestPrincipalBinding | null;
+  };
   return {
     ...task,
     statusEndpoint: task.statusEndpoint?.trim() || null,
     createdAt: normalizeIsoTimestamp(task.createdAt, new Date().toISOString(), 'task.createdAt'),
     updatedAt: normalizeIsoTimestamp(task.updatedAt, new Date().toISOString(), 'task.updatedAt'),
     expiresAt: normalizeIsoTimestamp(task.expiresAt, new Date().toISOString(), 'task.expiresAt'),
+    requester: legacyTask.requester ?? null,
+    result: task.result
+      ? {
+          ...task.result,
+          approval: {
+            ...task.result.approval,
+            decisionAuthority: task.result.approval.decisionAuthority ?? null,
+          },
+        } as ConsequenceAdmissionAccessRequestTask['result']
+      : null,
     accessPermitted: false,
     releaseTokenMayBeIssued: false,
     rawPayloadStored: false,
@@ -187,6 +203,7 @@ export function createFileBackedHostedGenericAdmissionAccessRequestStore(options
           denial: input.denial,
           taskId,
           createdAt,
+          requester: input.requester,
           statusEndpoint: input.statusEndpoint ?? `/api/v1/admissions/access-requests/${taskId}`,
         });
         const record: HostedGenericAdmissionAccessRequestStoreRecord = {
@@ -217,6 +234,7 @@ export function createFileBackedHostedGenericAdmissionAccessRequestStore(options
           task: current.task,
           status: input.status,
           decidedAt: input.decidedAt,
+          decisionAuthority: input.decisionAuthority,
           approval: input.approval,
         });
         const record: HostedGenericAdmissionAccessRequestStoreRecord = {

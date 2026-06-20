@@ -13,6 +13,22 @@ import {
 
 type GenericAdmissionRouteDeps = Parameters<typeof registerGenericAdmissionRoutes>[1];
 
+function requesterFixture() {
+  return {
+    principalRef: 'tenant:api_key:route-test-client',
+    source: 'tenant-context',
+    role: 'api_key',
+  };
+}
+
+function approverFixture() {
+  return {
+    principalRef: 'account-user:route-risk-owner',
+    source: 'account-session',
+    role: 'account_admin',
+  };
+}
+
 function tenantFixture() {
   return {
     tenantId: 'tenant_route',
@@ -38,19 +54,23 @@ function createAccessRequestRouteDeps(
   const taskKey = (tenantId: string, taskId: string) => `${tenantId}\u0000${taskId}`;
   return {
     currentTenant: () => tenantFixture(),
+    now: () => '2026-05-01T18:00:01.000Z',
     recordShadowAdmission: () => {},
-    createAccessRequestTask: ({ tenant, denial, receivedAt }) => {
+    currentAccessRequestPrincipal: () => requesterFixture(),
+    authorizeAccessRequestDecision: () => approverFixture(),
+    createAccessRequestTask: ({ tenant, denial, receivedAt, requester }) => {
       counter += 1;
       const task = createConsequenceAdmissionAccessRequestTask({
         denial,
         taskId: `arq_hardening_${counter}`,
         createdAt: receivedAt,
+        requester,
         statusEndpoint: `https://attestor.test/access-requests/arq_hardening_${counter}`,
       });
       tasks.set(taskKey(tenant.tenantId, task.id), task);
       return task;
     },
-    completeAccessRequestTask: ({ tenant, taskId, status, decidedAt, approval }) => {
+    completeAccessRequestTask: ({ tenant, taskId, status, decidedAt, decisionAuthority, approval }) => {
       const key = taskKey(tenant.tenantId, taskId);
       const current = tasks.get(key);
       if (!current) return null;
@@ -58,6 +78,7 @@ function createAccessRequestRouteDeps(
         task: current,
         status,
         decidedAt,
+        decisionAuthority,
         approval,
       });
       tasks.set(key, completed);
@@ -112,6 +133,7 @@ async function createApprovedAccessRequest(input: {
         approvedUntil: offsetIso(task.expiresAt, -1_000),
         approvalRef: `approval:${input.approvalId}`,
         authorityKind: 'approval',
+        scopeDigest: task.denial.binding.scopeDigest,
         state: 'approved',
       },
     }),
@@ -125,6 +147,42 @@ async function createApprovedAccessRequest(input: {
   return {
     task,
     approvalRefDigest: decisionBody.reevaluation?.approvalRefDigest ?? null,
+  };
+}
+
+async function createPendingAccessRequest(app: Hono, label: string): Promise<ConsequenceAdmissionAccessRequestTask> {
+  const initialResponse = await app.request('/api/v1/admissions', {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify(validAdmissionPayload({ approvals: undefined })),
+  });
+  const initialBody = await initialResponse.json() as {
+    accessRequestTask?: ConsequenceAdmissionAccessRequestTask;
+  };
+  const task = initialBody.accessRequestTask;
+  ok(task, `Generic admission route hardening: ${label} setup creates an access request task`);
+  return task;
+}
+
+function approvedDecisionPayload(
+  task: ConsequenceAdmissionAccessRequestTask,
+  approvalOverrides: Record<string, unknown> = {},
+): Record<string, unknown> {
+  return {
+    status: 'approved',
+    decidedAt: offsetIso(task.createdAt, 1_000),
+    approval: {
+      id: 'approval_route_hardening',
+      approvedAt: task.createdAt,
+      approvedUntil: offsetIso(task.expiresAt, -1_000),
+      approvalRef: 'approval:route:hardening',
+      authorityKind: 'approval',
+      scopeDigest: task.denial.binding.scopeDigest,
+      state: 'approved',
+      ...approvalOverrides,
+    },
   };
 }
 
@@ -230,6 +288,116 @@ async function testApprovedAccessRequestRejectsMaterialScopeDrift(): Promise<voi
   }
 }
 
+async function testAccessRequestDecisionRequiresAuthorizer(): Promise<void> {
+  const app = new Hono();
+  const deps = createAccessRequestRouteDeps({
+    authorizeAccessRequestDecision: undefined,
+  });
+  registerGenericAdmissionRoutes(app, deps);
+  const task = await createPendingAccessRequest(app, 'missing authorizer');
+  const decisionResponse = await app.request(`/api/v1/admissions/access-requests/${task.id}/decision`, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify(approvedDecisionPayload(task)),
+  });
+  const body = await decisionResponse.json() as {
+    reasonCodes: readonly string[];
+  };
+  const stored = await deps.getAccessRequestTask?.({
+    context: {} as never,
+    tenant: tenantFixture(),
+    taskId: task.id,
+  });
+
+  equal(decisionResponse.status, 503, 'Generic admission route hardening: missing decision authorizer fails closed');
+  ok(
+    body.reasonCodes.includes('access-request-decision-authorizer-unavailable'),
+    'Generic admission route hardening: missing authorizer reports explicit reason',
+  );
+  equal(stored?.status, 'pending', 'Generic admission route hardening: missing authorizer leaves task pending');
+}
+
+async function testAccessRequestDecisionAuthorizerCanDenyBeforePersist(): Promise<void> {
+  const app = new Hono();
+  let completeCalls = 0;
+  const deps = createAccessRequestRouteDeps({
+    authorizeAccessRequestDecision: ({ context }) =>
+      context.json({ reasonCodes: ['reviewer-required'] }, 403),
+    completeAccessRequestTask: () => {
+      completeCalls += 1;
+      throw new Error('authorization denial must stop before completion');
+    },
+  });
+  registerGenericAdmissionRoutes(app, deps);
+  const task = await createPendingAccessRequest(app, 'authorizer deny');
+  const decisionResponse = await app.request(`/api/v1/admissions/access-requests/${task.id}/decision`, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify(approvedDecisionPayload(task)),
+  });
+  const stored = await deps.getAccessRequestTask?.({
+    context: {} as never,
+    tenant: tenantFixture(),
+    taskId: task.id,
+  });
+
+  equal(decisionResponse.status, 403, 'Generic admission route hardening: authorizer denial is returned');
+  equal(completeCalls, 0, 'Generic admission route hardening: authorizer denial is not persisted');
+  equal(stored?.status, 'pending', 'Generic admission route hardening: denied authorization leaves task pending');
+}
+
+async function testAccessRequestDecisionRejectsSelfApproval(): Promise<void> {
+  const app = new Hono();
+  const deps = createAccessRequestRouteDeps({
+    authorizeAccessRequestDecision: () => requesterFixture(),
+  });
+  registerGenericAdmissionRoutes(app, deps);
+  const task = await createPendingAccessRequest(app, 'self approval');
+  const decisionResponse = await app.request(`/api/v1/admissions/access-requests/${task.id}/decision`, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify(approvedDecisionPayload(task)),
+  });
+  const stored = await deps.getAccessRequestTask?.({
+    context: {} as never,
+    tenant: tenantFixture(),
+    taskId: task.id,
+  });
+
+  equal(decisionResponse.status, 400, 'Generic admission route hardening: requester cannot approve its own task');
+  equal(stored?.status, 'pending', 'Generic admission route hardening: self approval leaves task pending');
+}
+
+async function testApprovedDecisionRequiresExplicitScopeDigest(): Promise<void> {
+  const app = new Hono();
+  const deps = createAccessRequestRouteDeps();
+  registerGenericAdmissionRoutes(app, deps);
+  const task = await createPendingAccessRequest(app, 'missing approval scope');
+  const decisionResponse = await app.request(`/api/v1/admissions/access-requests/${task.id}/decision`, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify(approvedDecisionPayload(task, {
+      scopeDigest: undefined,
+    })),
+  });
+  const stored = await deps.getAccessRequestTask?.({
+    context: {} as never,
+    tenant: tenantFixture(),
+    taskId: task.id,
+  });
+
+  equal(decisionResponse.status, 400, 'Generic admission route hardening: approved decision requires scope digest');
+  equal(stored?.status, 'pending', 'Generic admission route hardening: missing scope leaves task pending');
+}
+
 async function testFutureClientDecisionTimeCannotExtendRequestableDenialTtl(): Promise<void> {
   const app = new Hono();
   const deps = createAccessRequestRouteDeps();
@@ -256,6 +424,38 @@ async function testFutureClientDecisionTimeCannotExtendRequestableDenialTtl(): P
   equal(response.status, 200, 'Generic admission route hardening: future client decidedAt still returns denial');
   equal(ttlMs, 10 * 60 * 1000, 'Generic admission route hardening: denial TTL uses server route time');
   equal(deps.taskCount(), 1, 'Generic admission route hardening: future client decidedAt creates a bounded task');
+}
+
+async function testClientBackdatedAdmissionTimeCannotMakeExpiredApprovalFresh(): Promise<void> {
+  const app = new Hono();
+  registerGenericAdmissionRoutes(app, createAccessRequestRouteDeps({
+    now: () => '2026-05-01T20:00:00.000Z',
+  }));
+  const response = await app.request('/api/v1/admissions', {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify(validAdmissionPayload({
+      requestedAt: '2026-05-01T18:00:00.000Z',
+      decidedAt: '2026-05-01T18:00:01.000Z',
+    })),
+  });
+  const body = await response.json() as {
+    admission: {
+      allowed: boolean;
+      failClosed: boolean;
+      reasonCodes: readonly string[];
+    };
+  };
+
+  equal(response.status, 200, 'Generic admission route hardening: backdated client admission returns evaluated denial');
+  equal(body.admission.allowed, false, 'Generic admission route hardening: expired approval is not allowed');
+  equal(body.admission.failClosed, true, 'Generic admission route hardening: expired approval remains fail-closed');
+  ok(
+    body.admission.reasonCodes.includes('approval-expired'),
+    'Generic admission route hardening: route server time drives approval freshness',
+  );
 }
 
 async function testInvalidApprovalDecisionDoesNotPersist(): Promise<void> {
@@ -293,6 +493,7 @@ async function testInvalidApprovalDecisionDoesNotPersist(): Promise<void> {
         approvedAt: task.createdAt,
         approvedUntil: task.createdAt,
         authorityKind: 'approval',
+        scopeDigest: task.denial.binding.scopeDigest,
       },
     }),
   });
@@ -309,6 +510,11 @@ async function testInvalidApprovalDecisionDoesNotPersist(): Promise<void> {
 
 export async function runRequestableDenialHardeningRouteTests(): Promise<void> {
   await testApprovedAccessRequestRejectsMaterialScopeDrift();
+  await testAccessRequestDecisionRequiresAuthorizer();
+  await testAccessRequestDecisionAuthorizerCanDenyBeforePersist();
+  await testAccessRequestDecisionRejectsSelfApproval();
+  await testApprovedDecisionRequiresExplicitScopeDigest();
   await testFutureClientDecisionTimeCannotExtendRequestableDenialTtl();
+  await testClientBackdatedAdmissionTimeCannotMakeExpiredApprovalFresh();
   await testInvalidApprovalDecisionDoesNotPersist();
 }

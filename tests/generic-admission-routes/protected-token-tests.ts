@@ -30,6 +30,7 @@ async function testProtectedReleaseTokenIssuerReturnsAuthorizationWithoutRecordi
       planId: 'custom-route-test-plan',
       monthlyRunQuota: 100,
     }),
+    now: () => '2026-05-01T18:00:01.000Z',
     issueProtectedReleaseToken: ({ envelope }) =>
       issueGenericAdmissionProtectedReleaseToken({
         envelope,
@@ -142,6 +143,7 @@ async function testProtectedReleaseTokenRequiredFailsClosedWithoutIssuer(): Prom
       planId: 'custom-route-test-plan',
       monthlyRunQuota: 100,
     }),
+    now: () => '2026-05-01T18:00:01.000Z',
     requireProtectedReleaseTokenForHighRisk: true,
     recordShadowAdmission: () => {
       shadowRecords += 1;
@@ -182,7 +184,7 @@ async function testProtectedReleaseTokenIssuerUsesRouteResolvedDpopConfirmation(
     httpMethod: 'POST',
     httpUri: routeUrl,
     proofJti: 'dpop-generic-route-issuer-bridge',
-    issuedAt: new Date().toISOString(),
+    issuedAt: '2026-05-01T18:00:01.000Z',
   });
   let resolvedThumbprint: string | null = null;
   registerGenericAdmissionRoutes(app, {
@@ -194,6 +196,7 @@ async function testProtectedReleaseTokenIssuerUsesRouteResolvedDpopConfirmation(
       planId: 'custom-route-test-plan',
       monthlyRunQuota: 100,
     }),
+    now: () => '2026-05-01T18:00:01.000Z',
     resolveProtectedReleaseTokenConfirmation: async ({ context, receivedAt }) => {
       const confirmation =
         await resolveHostedGenericAdmissionDpopSenderConfirmation({
@@ -288,6 +291,7 @@ async function testProtectedReleaseTokenIssuerFailsClosedWithoutDpopConfirmation
       planId: 'custom-route-test-plan',
       monthlyRunQuota: 100,
     }),
+    now: () => '2026-05-01T18:00:01.000Z',
     resolveProtectedReleaseTokenConfirmation: async ({ context, receivedAt }) => {
       const confirmation =
         await resolveHostedGenericAdmissionDpopSenderConfirmation({

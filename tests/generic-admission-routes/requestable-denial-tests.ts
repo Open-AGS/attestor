@@ -26,6 +26,22 @@ function tenantFixture() {
 
 type GenericAdmissionRouteDeps = Parameters<typeof registerGenericAdmissionRoutes>[1];
 
+function requesterFixture() {
+  return {
+    principalRef: 'tenant:api_key:route-test-client',
+    source: 'tenant-context',
+    role: 'api_key',
+  };
+}
+
+function approverFixture() {
+  return {
+    principalRef: 'account-user:route-risk-owner',
+    source: 'account-session',
+    role: 'account_admin',
+  };
+}
+
 function offsetIso(timestamp: string, deltaMs: number): string {
   return new Date(new Date(timestamp).getTime() + deltaMs).toISOString();
 }
@@ -40,19 +56,23 @@ function createAccessRequestRouteDeps(
   const taskKey = (tenantId: string, taskId: string) => `${tenantId}\u0000${taskId}`;
   return {
     currentTenant: () => tenantFixture(),
+    now: () => '2026-05-01T18:00:01.000Z',
     recordShadowAdmission: () => {},
-    createAccessRequestTask: ({ tenant, denial, receivedAt }) => {
+    currentAccessRequestPrincipal: () => requesterFixture(),
+    authorizeAccessRequestDecision: () => approverFixture(),
+    createAccessRequestTask: ({ tenant, denial, receivedAt, requester }) => {
       counter += 1;
       const task = createConsequenceAdmissionAccessRequestTask({
         denial,
         taskId: `arq_route_${counter}`,
         createdAt: receivedAt,
+        requester,
         statusEndpoint: `https://attestor.test/access-requests/arq_route_${counter}`,
       });
       tasks.set(taskKey(tenant.tenantId, task.id), task);
       return task;
     },
-    completeAccessRequestTask: ({ tenant, taskId, status, decidedAt, approval }) => {
+    completeAccessRequestTask: ({ tenant, taskId, status, decidedAt, decisionAuthority, approval }) => {
       const key = taskKey(tenant.tenantId, taskId);
       const current = tasks.get(key);
       if (!current) return null;
@@ -60,6 +80,7 @@ function createAccessRequestRouteDeps(
         task: current,
         status,
         decidedAt,
+        decisionAuthority,
         approval,
       });
       tasks.set(key, completed);
@@ -136,12 +157,13 @@ async function testMissingApprovalProducesRequestableDenialWithoutToken(): Promi
       tokenIssuerCalls += 1;
       throw new Error('release token issuer must not run for denied admissions');
     },
-    createAccessRequestTask: ({ denial, receivedAt }) => {
+    createAccessRequestTask: ({ denial, receivedAt, requester }) => {
       taskCreateCalls += 1;
       const task = createConsequenceAdmissionAccessRequestTask({
         denial,
         taskId: 'arq_route_missing_approval',
         createdAt: receivedAt,
+        requester,
         statusEndpoint: 'https://attestor.test/access-requests/arq_route_missing_approval',
       });
       taskStore.set(task.id, task);
@@ -329,6 +351,7 @@ async function testApprovedAccessRequestRequiresFreshBoundAdmission(): Promise<v
         approvedUntil,
         approvalRef: 'approval:route:001',
         authorityKind: 'approval',
+        scopeDigest: task.denial.binding.scopeDigest,
         state: 'approved',
       },
     }),
@@ -480,6 +503,7 @@ async function testApprovedAccessRequestRejectsFreshScopeMismatch(): Promise<voi
         approvedAt: task.createdAt,
         approvedUntil: offsetIso(task.expiresAt, -1_000),
         authorityKind: 'approval',
+        scopeDigest: task.denial.binding.scopeDigest,
       },
     }),
   });
@@ -514,12 +538,13 @@ async function testUntrustedApprovalDoesNotBecomeRequestableDenial(): Promise<vo
   let taskCreateCalls = 0;
   registerGenericAdmissionRoutes(app, {
     currentTenant: () => tenantFixture(),
-    createAccessRequestTask: ({ denial, receivedAt }) => {
+    createAccessRequestTask: ({ denial, receivedAt, requester }) => {
       taskCreateCalls += 1;
       return createConsequenceAdmissionAccessRequestTask({
         denial,
         taskId: 'arq_route_untrusted_approval',
         createdAt: receivedAt,
+        requester,
       });
     },
     recordShadowAdmission: () => {},
@@ -577,12 +602,13 @@ async function testModelGeneratedApprovalDoesNotBecomeRequestableDenial(): Promi
   let taskCreateCalls = 0;
   registerGenericAdmissionRoutes(app, {
     currentTenant: () => tenantFixture(),
-    createAccessRequestTask: ({ denial, receivedAt }) => {
+    createAccessRequestTask: ({ denial, receivedAt, requester }) => {
       taskCreateCalls += 1;
       return createConsequenceAdmissionAccessRequestTask({
         denial,
         taskId: 'arq_route_model_generated_approval',
         createdAt: receivedAt,
+        requester,
       });
     },
     recordShadowAdmission: () => {},
@@ -639,11 +665,12 @@ async function testInvalidAccessRequestTaskFailsClosed(): Promise<void> {
   const app = new Hono();
   registerGenericAdmissionRoutes(app, {
     currentTenant: () => tenantFixture(),
-    createAccessRequestTask: ({ denial, receivedAt }) => {
+    createAccessRequestTask: ({ denial, receivedAt, requester }) => {
       const task = createConsequenceAdmissionAccessRequestTask({
         denial,
         taskId: 'arq_route_invalid_binding',
         createdAt: receivedAt,
+        requester,
       });
       return {
         ...task,
@@ -728,6 +755,7 @@ async function testAccessRequestTasksAreTenantScoped(): Promise<void> {
         approvedAt: task.createdAt,
         approvedUntil: offsetIso(task.expiresAt, -1_000),
         authorityKind: 'approval',
+        scopeDigest: task.denial.binding.scopeDigest,
       },
     }),
   });

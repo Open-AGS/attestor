@@ -97,6 +97,7 @@ export function createApp(): Hono {
       planId: 'custom-admission-guard-test-plan',
       monthlyRunQuota: 100,
     }),
+    now: () => '2026-05-01T18:00:01.000Z',
     recordShadowAdmission: () => {},
   });
   return app;

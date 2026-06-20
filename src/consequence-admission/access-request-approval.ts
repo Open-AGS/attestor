@@ -41,6 +41,18 @@ export const CONSEQUENCE_ADMISSION_ACCESS_REQUEST_TASK_STATUSES = [
 export type ConsequenceAdmissionAccessRequestTaskStatus =
   typeof CONSEQUENCE_ADMISSION_ACCESS_REQUEST_TASK_STATUSES[number];
 
+export interface ConsequenceAdmissionAccessRequestPrincipalInput {
+  readonly principalRef: string;
+  readonly source: string;
+  readonly role?: string | null;
+}
+
+export interface ConsequenceAdmissionAccessRequestPrincipalBinding {
+  readonly principalDigest: string;
+  readonly source: string;
+  readonly role: string | null;
+}
+
 export interface ConsequenceAdmissionRequestableDenialBinding {
   readonly originalAdmissionId: string;
   readonly originalAdmissionDigest: string;
@@ -84,8 +96,9 @@ export interface ConsequenceAdmissionAccessRequestApproval {
   readonly approvedAt: string;
   readonly approvedUntil: string;
   readonly authorityKind: ConsequenceAdmissionAccessRequestAuthorityKind;
-  readonly scopeDigest: string | null;
+  readonly scopeDigest: string;
   readonly approvalStateDigest: string | null;
+  readonly decisionAuthority: ConsequenceAdmissionAccessRequestPrincipalBinding;
   readonly rawApprovalStored: false;
 }
 
@@ -105,6 +118,7 @@ export interface ConsequenceAdmissionAccessRequestTask {
   readonly createdAt: string;
   readonly updatedAt: string;
   readonly expiresAt: string;
+  readonly requester: ConsequenceAdmissionAccessRequestPrincipalBinding | null;
   readonly denial: ConsequenceAdmissionRequestableDenial;
   readonly result: ConsequenceAdmissionAccessRequestResult | null;
   readonly accessPermitted: false;
@@ -122,6 +136,9 @@ export interface ConsequenceAdmissionAccessRequestReevaluationContext {
   readonly bindingDigest: string;
   readonly scopeDigest: string;
   readonly approvalRefDigest: string;
+  readonly decisionAuthorityDigest: string;
+  readonly decisionAuthoritySource: string;
+  readonly decisionAuthorityRole: string | null;
   readonly approvedUntil: string;
   readonly reevaluateAt: string;
   readonly releaseTokenMayBeIssuedBeforeReevaluation: false;
@@ -142,6 +159,7 @@ export interface CreateConsequenceAdmissionAccessRequestTaskInput {
   readonly denial: ConsequenceAdmissionRequestableDenial;
   readonly taskId: string;
   readonly createdAt: string;
+  readonly requester?: ConsequenceAdmissionAccessRequestPrincipalInput | null;
   readonly expiresAt?: string | null;
   readonly statusEndpoint?: string | null;
 }
@@ -150,6 +168,7 @@ export interface CompleteConsequenceAdmissionAccessRequestTaskInput {
   readonly task: ConsequenceAdmissionAccessRequestTask;
   readonly status: Exclude<ConsequenceAdmissionAccessRequestTaskStatus, 'pending'>;
   readonly decidedAt: string;
+  readonly decisionAuthority?: ConsequenceAdmissionAccessRequestPrincipalInput | null;
   readonly approval?: {
     readonly id: string;
     readonly approvedAt?: string | null;
@@ -208,6 +227,30 @@ function normalizeApprovalId(value: string): string {
     throw new Error('Consequence admission access request approval.id must be a stable non-raw identifier.');
   }
   return normalized;
+}
+
+function normalizePrincipalToken(value: string, fieldName: string): string {
+  const normalized = normalizeNonEmptyString(value, fieldName);
+  if (!/^[A-Za-z0-9._:/@-]+$/u.test(normalized) || normalized.length > 200) {
+    throw new Error(`Consequence admission access request ${fieldName} must be a stable bounded identifier.`);
+  }
+  return normalized;
+}
+
+function principalBindingFor(
+  input: ConsequenceAdmissionAccessRequestPrincipalInput,
+  fieldName: string,
+): ConsequenceAdmissionAccessRequestPrincipalBinding {
+  const principalRef = normalizePrincipalToken(input.principalRef, `${fieldName}.principalRef`);
+  const source = normalizePrincipalToken(input.source, `${fieldName}.source`);
+  const role = input.role?.trim()
+    ? normalizePrincipalToken(input.role, `${fieldName}.role`)
+    : null;
+  return Object.freeze({
+    principalDigest: digestText(principalRef),
+    source,
+    role,
+  });
 }
 
 function uniqueReadonly<T>(items: readonly T[]): readonly T[] {
@@ -364,6 +407,9 @@ export function createConsequenceAdmissionAccessRequestTask(
     createdAt,
     updatedAt: createdAt,
     expiresAt,
+    requester: input.requester
+      ? principalBindingFor(input.requester, 'requester')
+      : null,
     denial: input.denial,
     result: null,
     accessPermitted: false,
@@ -401,6 +447,16 @@ export function completeConsequenceAdmissionAccessRequestTask(
   if (!approval) {
     throw new Error('Consequence admission approved access request task requires approval material.');
   }
+  if (!task.requester) {
+    throw new Error('Consequence admission approved access request task requires requester authority binding.');
+  }
+  if (!input.decisionAuthority) {
+    throw new Error('Consequence admission approved access request task requires decision authority binding.');
+  }
+  const decisionAuthority = principalBindingFor(input.decisionAuthority, 'decisionAuthority');
+  if (decisionAuthority.principalDigest === task.requester.principalDigest) {
+    throw new Error('Consequence admission access request decision authority cannot match the requester.');
+  }
   const approvedAt = normalizeIsoTimestamp(approval.approvedAt ?? decidedAt, 'approval.approvedAt');
   const approvedUntil = normalizeIsoTimestamp(approval.approvedUntil, 'approval.approvedUntil');
   if (approvedAt < task.createdAt) {
@@ -421,9 +477,10 @@ export function completeConsequenceAdmissionAccessRequestTask(
   if (!task.denial.requiredAuthorityKinds.includes(approval.authorityKind)) {
     throw new Error('Consequence admission approval authorityKind does not satisfy the access request.');
   }
-  const scopeDigest = approval.scopeDigest?.trim()
-    ? normalizeDigest(approval.scopeDigest, 'approval.scopeDigest')
-    : task.denial.binding.scopeDigest;
+  if (!approval.scopeDigest?.trim()) {
+    throw new Error('Consequence admission approval scopeDigest is required.');
+  }
+  const scopeDigest = normalizeDigest(approval.scopeDigest, 'approval.scopeDigest');
   if (scopeDigest !== task.denial.binding.scopeDigest) {
     throw new Error('Consequence admission approval scopeDigest does not match the requestable denial.');
   }
@@ -438,6 +495,7 @@ export function completeConsequenceAdmissionAccessRequestTask(
     authorityKind: approval.authorityKind,
     scopeDigest,
     approvalStateDigest: approval.approvalState ? digestText(approval.approvalState) : null,
+    decisionAuthority,
     rawApprovalStored: false,
   });
 
@@ -495,6 +553,9 @@ export function createConsequenceAdmissionAccessRequestReevaluationContext(
     bindingDigest: input.task.denial.binding.digest,
     scopeDigest: input.task.denial.binding.scopeDigest,
     approvalRefDigest: input.task.result.approval.approvalRefDigest,
+    decisionAuthorityDigest: input.task.result.approval.decisionAuthority.principalDigest,
+    decisionAuthoritySource: input.task.result.approval.decisionAuthority.source,
+    decisionAuthorityRole: input.task.result.approval.decisionAuthority.role,
     approvedUntil: input.task.result.approval.approvedUntil,
     reevaluateAt,
     releaseTokenMayBeIssuedBeforeReevaluation: false,

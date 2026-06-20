@@ -99,6 +99,22 @@ function isoNow(offsetMs = 0): string {
   return new Date(Date.now() + offsetMs).toISOString();
 }
 
+function withFreshAdmissionTimes(payload: Record<string, unknown>): Record<string, unknown> {
+  const approvals = Array.isArray(payload.approvals)
+    ? payload.approvals.map((approval) => ({
+        ...(approval as Record<string, unknown>),
+        issuedAt: isoNow(-60_000),
+        expiresAt: isoNow(10 * 60_000),
+      }))
+    : payload.approvals;
+  return {
+    ...payload,
+    requestedAt: isoNow(-1_000),
+    decidedAt: isoNow(),
+    approvals,
+  };
+}
+
 function baseExportIntent(overrides: Partial<ControlledDataExportIntent> = {}):
 ControlledDataExportIntent {
   return {
@@ -131,7 +147,7 @@ function dataMovementAdmissionPayload(
   intent: ControlledDataExportIntent,
   overrides: Record<string, unknown> = {},
 ): Record<string, unknown> {
-  return validAdmissionPayload({
+  return withFreshAdmissionTimes(validAdmissionPayload({
     action: DATA_EXPORT_ACTION,
     domain: 'data-disclosure',
     downstreamSystem: DATA_EXPORT_TARGET,
@@ -149,7 +165,7 @@ function dataMovementAdmissionPayload(
     nativeInputRefs: [controlledDataExportIntentDigest(intent)],
     summary: 'analytics-ai-agent proposes a controlled aggregate data export.',
     ...overrides,
-  });
+  }));
 }
 
 async function createHarness(): Promise<AdmissionHarness> {

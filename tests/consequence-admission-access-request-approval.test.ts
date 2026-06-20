@@ -8,6 +8,7 @@ import {
   createConsequenceAdmissionRequest,
   createConsequenceAdmissionRequestableDenial,
   createConsequenceAdmissionResponse,
+  type CompleteConsequenceAdmissionAccessRequestTaskInput,
   type ConsequenceAdmissionResponse,
 } from '../src/consequence-admission/index.js';
 
@@ -128,6 +129,22 @@ function requestableDenialFixture() {
   });
 }
 
+function requesterFixture() {
+  return {
+    principalRef: 'tenant:api_key:tenant_requestable_denial',
+    source: 'tenant-context',
+    role: 'api_key',
+  };
+}
+
+function approverFixture() {
+  return {
+    principalRef: 'account-user:reviewer-risk-owner',
+    source: 'account-session',
+    role: 'account_admin',
+  };
+}
+
 function testRequestableDenialIsNotAccessGrant(): void {
   const denial = requestableDenialFixture();
   const serialized = JSON.stringify(denial);
@@ -169,17 +186,20 @@ function testApprovalTaskStillRequiresReevaluation(): void {
     denial,
     taskId: 'arq_refund_001',
     createdAt: '2026-06-18T10:00:02.000Z',
+    requester: requesterFixture(),
     statusEndpoint: 'https://attestor.example/access/v1/requests/arq_refund_001',
   });
   const approved = completeConsequenceAdmissionAccessRequestTask({
     task,
     status: 'approved',
     decidedAt: '2026-06-18T10:04:00.000Z',
+    decisionAuthority: approverFixture(),
     approval: {
       id: 'apr_refund_001',
       approvalRef: 'approval:manager:raw-refund-approval',
       approvedUntil: '2026-06-18T10:08:00.000Z',
       authorityKind: 'approval',
+      scopeDigest: denial.binding.scopeDigest,
       approvalState: 'signed-approval-state-raw',
     },
   });
@@ -222,6 +242,7 @@ function testDeniedTaskDoesNotProduceReevaluationContext(): void {
     denial: requestableDenialFixture(),
     taskId: 'arq_refund_002',
     createdAt: '2026-06-18T10:00:02.000Z',
+    requester: requesterFixture(),
   });
   const denied = completeConsequenceAdmissionAccessRequestTask({
     task,
@@ -247,15 +268,18 @@ function testExpiredApprovalCannotReevaluate(): void {
     denial: requestableDenialFixture(),
     taskId: 'arq_refund_003',
     createdAt: '2026-06-18T10:00:02.000Z',
+    requester: requesterFixture(),
   });
   const approved = completeConsequenceAdmissionAccessRequestTask({
     task,
     status: 'approved',
     decidedAt: '2026-06-18T10:04:00.000Z',
+    decisionAuthority: approverFixture(),
     approval: {
       id: 'apr_refund_003',
       approvedUntil: '2026-06-18T10:05:00.000Z',
       authorityKind: 'approval',
+      scopeDigest: task.denial.binding.scopeDigest,
     },
   });
 
@@ -285,6 +309,7 @@ function testApprovalLifecycleBoundaries(): void {
     denial,
     taskId: 'arq_refund_004',
     createdAt: '2026-06-18T10:00:02.000Z',
+    requester: requesterFixture(),
   });
 
   throws(
@@ -293,10 +318,12 @@ function testApprovalLifecycleBoundaries(): void {
         task,
         status: 'approved',
         decidedAt: '2026-06-18T10:10:00.000Z',
+        decisionAuthority: approverFixture(),
         approval: {
           id: 'apr_refund_late',
           approvedUntil: '2026-06-18T10:10:01.000Z',
           authorityKind: 'approval',
+          scopeDigest: denial.binding.scopeDigest,
         },
       }),
     /after expiry/u,
@@ -308,11 +335,13 @@ function testApprovalLifecycleBoundaries(): void {
         task,
         status: 'approved',
         decidedAt: '2026-06-18T10:04:00.000Z',
+        decisionAuthority: approverFixture(),
         approval: {
           id: 'apr_refund_overlong',
           approvedAt: '2026-06-18T10:04:00.000Z',
           approvedUntil: '2026-06-18T10:11:00.000Z',
           authorityKind: 'approval',
+          scopeDigest: denial.binding.scopeDigest,
         },
       }),
     /cannot exceed task expiry/u,
@@ -324,11 +353,13 @@ function testApprovalLifecycleBoundaries(): void {
         task,
         status: 'approved',
         decidedAt: '2026-06-18T10:04:00.000Z',
+        decisionAuthority: approverFixture(),
         approval: {
           id: 'apr_refund_future',
           approvedAt: '2026-06-18T10:05:00.000Z',
           approvedUntil: '2026-06-18T10:08:00.000Z',
           authorityKind: 'approval',
+          scopeDigest: denial.binding.scopeDigest,
         },
       }),
     /cannot be after decidedAt/u,
@@ -340,11 +371,13 @@ function testApprovalLifecycleBoundaries(): void {
         task,
         status: 'approved',
         decidedAt: '2026-06-18T10:04:00.000Z',
+        decisionAuthority: approverFixture(),
         approval: {
           id: 'apr_refund_expired_before_decision',
           approvedAt: '2026-06-18T10:02:00.000Z',
           approvedUntil: '2026-06-18T10:03:00.000Z',
           authorityKind: 'approval',
+          scopeDigest: denial.binding.scopeDigest,
         },
       }),
     /must be after decidedAt/u,
@@ -358,6 +391,7 @@ function testApprovalScopeAndAuthorityMustMatch(): void {
     denial,
     taskId: 'arq_refund_005',
     createdAt: '2026-06-18T10:00:02.000Z',
+    requester: requesterFixture(),
   });
   throws(
     () =>
@@ -365,6 +399,7 @@ function testApprovalScopeAndAuthorityMustMatch(): void {
         task,
         status: 'approved',
         decidedAt: '2026-06-18T10:04:00.000Z',
+        decisionAuthority: approverFixture(),
         approval: {
           id: 'apr_refund_wrong_scope',
           approvedUntil: '2026-06-18T10:08:00.000Z',
@@ -374,6 +409,39 @@ function testApprovalScopeAndAuthorityMustMatch(): void {
       }),
     /scopeDigest does not match/u,
     'Access request approval: mismatched approval scope is rejected',
+  );
+  throws(
+    () =>
+      completeConsequenceAdmissionAccessRequestTask({
+        task,
+        status: 'approved',
+        decidedAt: '2026-06-18T10:04:00.000Z',
+        decisionAuthority: approverFixture(),
+        approval: {
+          id: 'apr_refund_missing_scope',
+          approvedUntil: '2026-06-18T10:08:00.000Z',
+          authorityKind: 'approval',
+        } as CompleteConsequenceAdmissionAccessRequestTaskInput['approval'],
+      }),
+    /scopeDigest is required/u,
+    'Access request approval: approval scope digest is mandatory',
+  );
+  throws(
+    () =>
+      completeConsequenceAdmissionAccessRequestTask({
+        task,
+        status: 'approved',
+        decidedAt: '2026-06-18T10:04:00.000Z',
+        decisionAuthority: requesterFixture(),
+        approval: {
+          id: 'apr_refund_self_approval',
+          approvedUntil: '2026-06-18T10:08:00.000Z',
+          authorityKind: 'approval',
+          scopeDigest: denial.binding.scopeDigest,
+        },
+      }),
+    /decision authority cannot match the requester/u,
+    'Access request approval: requester cannot approve its own access request',
   );
 
   const stepUpDenial = createConsequenceAdmissionRequestableDenial({
@@ -386,6 +454,7 @@ function testApprovalScopeAndAuthorityMustMatch(): void {
     denial: stepUpDenial,
     taskId: 'arq_refund_step_up',
     createdAt: '2026-06-18T10:00:02.000Z',
+    requester: requesterFixture(),
   });
   throws(
     () =>
@@ -393,10 +462,12 @@ function testApprovalScopeAndAuthorityMustMatch(): void {
         task: stepUpTask,
         status: 'approved',
         decidedAt: '2026-06-18T10:04:00.000Z',
+        decisionAuthority: approverFixture(),
         approval: {
           id: 'apr_refund_plain_approval',
           approvedUntil: '2026-06-18T10:08:00.000Z',
           authorityKind: 'approval',
+          scopeDigest: stepUpDenial.binding.scopeDigest,
         },
       }),
     /authorityKind does not satisfy/u,
@@ -410,16 +481,19 @@ function testReevaluationScopeMustMatchFreshAdmission(): void {
     denial,
     taskId: 'arq_refund_006',
     createdAt: '2026-06-18T10:00:02.000Z',
+    requester: requesterFixture(),
   });
   const approved = completeConsequenceAdmissionAccessRequestTask({
     task,
     status: 'approved',
     decidedAt: '2026-06-18T10:04:00.000Z',
+    decisionAuthority: approverFixture(),
     approval: {
       id: 'apr_refund_006',
       approvedAt: '2026-06-18T10:04:00.000Z',
       approvedUntil: '2026-06-18T10:08:00.000Z',
       authorityKind: 'approval',
+      scopeDigest: denial.binding.scopeDigest,
     },
   });
 

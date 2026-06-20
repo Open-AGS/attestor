@@ -115,6 +115,7 @@ export function createApp(planId = 'custom-route-test-plan'): Hono {
       planId,
       monthlyRunQuota: 100,
     }),
+    now: () => '2026-05-01T18:00:01.000Z',
     recordShadowAdmission: () => {},
   });
   return app;
@@ -138,6 +139,7 @@ export function createLoopGuardedApp(planId = 'custom-route-test-plan'): { reado
       planId,
       monthlyRunQuota: 100,
     }),
+    now: () => '2026-05-01T18:00:01.000Z',
     evaluateAgentLoopAbuse: ({ tenant, envelope, receivedAt }) =>
       guard.evaluate({
         tenantId: tenant.tenantId,

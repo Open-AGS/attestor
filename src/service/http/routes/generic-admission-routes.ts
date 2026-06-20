@@ -5,6 +5,7 @@ import {
   createGenericAdmissionEnvelope,
   evaluateGenericAdmissionProtectedReleaseTokenRequirement,
   GenericAdmissionProtectedReleaseTokenIssuanceError,
+  type ConsequenceAdmissionAccessRequestPrincipalInput,
   type ConsequenceAdmissionAccessRequestTask,
   type ConsequenceAdmissionAgentLoopAbuseGuardDecision,
   type ConsequenceAdmissionRequestableDenial,
@@ -207,12 +208,32 @@ function accessRequestTaskMatchesDenial(input: {
     input.task.denial.binding.scopeDigest === input.denial.binding.scopeDigest &&
     input.task.version === input.denial.version &&
     input.task.status === 'pending' &&
+    input.task.requester !== null &&
     input.task.result === null &&
     input.task.accessPermitted === false &&
     input.task.releaseTokenMayBeIssued === false &&
     input.task.rawPayloadStored === false &&
     input.task.denial.rawPayloadStored === false &&
     input.task.denial.releaseTokenMayBeIssued === false;
+}
+
+function tenantAccessRequestPrincipal(tenant: TenantContext): ConsequenceAdmissionAccessRequestPrincipalInput {
+  return {
+    principalRef: `tenant:${tenant.source}:${tenant.tenantId}`,
+    source: 'tenant-context',
+    role: tenant.source,
+  };
+}
+
+async function currentAccessRequestPrincipal(input: {
+  readonly context: Context;
+  readonly deps: GenericAdmissionRouteDeps;
+  readonly tenant: TenantContext;
+}): Promise<ConsequenceAdmissionAccessRequestPrincipalInput> {
+  return await input.deps.currentAccessRequestPrincipal?.({
+    context: input.context,
+    tenant: input.tenant,
+  }) ?? tenantAccessRequestPrincipal(input.tenant);
 }
 
 function admissionIdempotencyKeyFor(context: Context): string | null {
@@ -423,11 +444,14 @@ export function registerGenericAdmissionRoutes(
     try {
       const tenant = deps.currentTenant(c);
       const routeId = 'POST /api/v1/admissions';
+      const receivedAt = deps.now?.() ?? new Date().toISOString();
       let tenantBoundPayload: unknown;
       let envelope: GenericAdmissionEnvelope;
       try {
         tenantBoundPayload = admissionPayloadWithTenant(payload, tenant);
-        envelope = createGenericAdmissionEnvelope(tenantBoundPayload);
+        envelope = createGenericAdmissionEnvelope(tenantBoundPayload, {
+          evaluatedAt: receivedAt,
+        });
       } catch (error) {
         if (error instanceof GenericAdmissionTenantScopeMismatchError) {
           const problem = createConsequenceAdmissionProblem({
@@ -510,7 +534,7 @@ export function registerGenericAdmissionRoutes(
         loopGuard = await deps.evaluateAgentLoopAbuse?.({
           tenant,
           envelope,
-          receivedAt: new Date().toISOString(),
+          receivedAt,
         });
       } catch {
         const problem = createConsequenceAdmissionProblem({
@@ -547,7 +571,7 @@ export function registerGenericAdmissionRoutes(
         tenant,
         payload,
         envelope,
-        reevaluateAt: new Date().toISOString(),
+        reevaluateAt: receivedAt,
       });
       if (accessRequestResolution.kind === 'response') {
         return accessRequestResolution.response;
@@ -577,7 +601,6 @@ export function registerGenericAdmissionRoutes(
         : envelope;
       if (protectedReleaseTokenRequirement.required && deps.issueProtectedReleaseToken) {
         try {
-          const receivedAt = new Date().toISOString();
           const senderConfirmation =
             await deps.resolveProtectedReleaseTokenConfirmation?.({
               context: c,
@@ -633,21 +656,26 @@ export function registerGenericAdmissionRoutes(
         });
         return c.json(problem, 503);
       }
-      const accessRequestReceivedAt = new Date().toISOString();
       const requestableDenial = createRouteRequestableDenial({
         envelope: responseEnvelope,
-        receivedAt: accessRequestReceivedAt,
+        receivedAt,
       });
       if (requestableDenial) {
         let accessRequestTask: ConsequenceAdmissionAccessRequestTask | undefined;
         if (deps.createAccessRequestTask) {
           try {
+            const requester = await currentAccessRequestPrincipal({
+              context: c,
+              deps,
+              tenant,
+            });
             accessRequestTask = await deps.createAccessRequestTask({
               context: c,
               tenant,
               envelope: responseEnvelope,
               denial: requestableDenial,
-              receivedAt: accessRequestReceivedAt,
+              receivedAt,
+              requester,
             });
           } catch {
             const problem = createConsequenceAdmissionProblem({

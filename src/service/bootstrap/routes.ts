@@ -64,6 +64,7 @@ import {
 import {
   createFileBackedHostedGenericAdmissionAccessRequestStore,
 } from '../hosted/hosted-generic-admission-access-request-store.js';
+import type { AccountAccessContext } from '../tenant-isolation.js';
 import { installProductionSharedRequestGuard } from './production-shared-request-guard.js';
 import type { AppRuntime } from './runtime.js';
 import { recordWorkflowStripeOverageMeterEvent } from '../billing/stripe/stripe-billing.js';
@@ -145,6 +146,27 @@ function genericAdmissionDpopProofReplayStoreFor<Packet>(
   return services.genericAdmissionDpopProofReplayStore ?? null;
 }
 
+function accountAccessRequestPrincipal(
+  access: AccountAccessContext,
+) {
+  return {
+    principalRef: `account-user:${access.accountUserId}`,
+    source: 'account-session',
+    role: access.role,
+  } as const;
+}
+
+function tenantAccessRequestPrincipal(tenant: {
+  readonly tenantId: string;
+  readonly source: string;
+}) {
+  return {
+    principalRef: `tenant:${tenant.source}:${tenant.tenantId}`,
+    source: 'tenant-context',
+    role: tenant.source,
+  } as const;
+}
+
 export function createGenericAdmissionRouteDeps<Packet>(
   runtime: AppRuntime<Packet>,
 ): GenericAdmissionRouteDeps {
@@ -176,18 +198,39 @@ export function createGenericAdmissionRouteDeps<Packet>(
         }),
       });
     },
-    createAccessRequestTask: ({ tenant, denial, receivedAt }) =>
+    currentAccessRequestPrincipal: ({ context, tenant }) => {
+      const access = runtime.services.httpRoutes.account.currentAccountAccess(context);
+      return access ? accountAccessRequestPrincipal(access) : tenantAccessRequestPrincipal(tenant);
+    },
+    authorizeAccessRequestDecision: ({ context }) => {
+      const unauthorized =
+        runtime.services.httpRoutes.account.requireAccountSession(context, {
+          roles: ['account_admin'],
+        });
+      if (unauthorized) return unauthorized;
+      const access = runtime.services.httpRoutes.account.currentAccountAccess(context);
+      if (!access) {
+        return context.json({
+          error: 'Account-admin approval authority required for access request decisions.',
+          reasonCodes: ['access-request-decision-account-admin-required'],
+        }, 403);
+      }
+      return accountAccessRequestPrincipal(access);
+    },
+    createAccessRequestTask: ({ tenant, denial, receivedAt, requester }) =>
       genericAdmissionAccessRequestStore.create({
         tenantId: tenant.tenantId,
         denial,
         createdAt: receivedAt,
+        requester,
       }).task,
-    completeAccessRequestTask: ({ tenant, taskId, status, decidedAt, approval }) =>
+    completeAccessRequestTask: ({ tenant, taskId, status, decidedAt, decisionAuthority, approval }) =>
       genericAdmissionAccessRequestStore.complete({
         tenantId: tenant.tenantId,
         taskId,
         status,
         decidedAt,
+        decisionAuthority,
         approval,
       })?.task ?? null,
     getAccessRequestTask: ({ tenant, taskId }) =>

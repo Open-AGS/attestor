@@ -631,15 +631,39 @@ function createGenericAdmissionEvaluation(
   });
 }
 
-export function createGenericAdmissionEnvelope(input: unknown): GenericAdmissionEnvelope {
+export interface CreateGenericAdmissionEnvelopeOptions {
+  readonly evaluatedAt?: string | null;
+}
+
+function normalizedRouteEvaluationTime(value: string | null | undefined): string | null {
+  if (value === null || value === undefined) return null;
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    throw new Error('Generic admission evaluatedAt must be an ISO timestamp.');
+  }
+  return parsed.toISOString();
+}
+
+export function createGenericAdmissionEnvelope(
+  input: unknown,
+  options: CreateGenericAdmissionEnvelopeOptions = {},
+): GenericAdmissionEnvelope {
   const normalized = normalizeCreateGenericAdmissionInput(input);
-  const evaluation = createGenericAdmissionEvaluation(normalized);
-  const profile = consequenceAdmissionDomainProfile(normalized.domain);
-  const requestedAt = normalized.requestedAt ?? new Date().toISOString();
-  const decidedAt = normalized.decidedAt ?? requestedAt;
+  const evaluatedAt = normalizedRouteEvaluationTime(options.evaluatedAt);
+  const effectiveInput = evaluatedAt
+    ? {
+        ...normalized,
+        requestedAt: evaluatedAt,
+        decidedAt: evaluatedAt,
+      }
+    : normalized;
+  const evaluation = createGenericAdmissionEvaluation(effectiveInput);
+  const profile = consequenceAdmissionDomainProfile(effectiveInput.domain);
+  const requestedAt = effectiveInput.requestedAt ?? new Date().toISOString();
+  const decidedAt = effectiveInput.decidedAt ?? requestedAt;
   const request = createConsequenceAdmissionRequest({
     requestedAt,
-    requestId: normalized.requestId,
+    requestId: effectiveInput.requestId,
     packFamily: 'general',
     entryPoint: {
       kind: 'hosted-route',
@@ -649,34 +673,34 @@ export function createGenericAdmissionEnvelope(input: unknown): GenericAdmission
       sourceRef: 'src/service/http/routes/generic-admission-routes.ts',
     },
     proposedConsequence: {
-      actor: normalized.actor,
-      action: normalized.action,
-      downstreamSystem: normalized.downstreamSystem,
+      actor: effectiveInput.actor,
+      action: effectiveInput.action,
+      downstreamSystem: effectiveInput.downstreamSystem,
       consequenceKind: profile.defaultConsequenceKinds[0] ?? 'custom',
       riskClass: profile.minimumRiskClass,
-      summary: genericAdmissionSummary(normalized),
+      summary: genericAdmissionSummary(effectiveInput),
     },
     policyScope: {
-      policyRef: normalized.policyRef,
-      tenantId: normalized.tenantId,
-      environment: normalized.environment,
-      dimensions: genericAdmissionDimensions(normalized, evaluation),
+      policyRef: effectiveInput.policyRef,
+      tenantId: effectiveInput.tenantId,
+      environment: effectiveInput.environment,
+      dimensions: genericAdmissionDimensions(effectiveInput, evaluation),
     },
     authority: {
-      actorRef: normalized.actorRef ?? normalized.actor,
-      reviewerRef: normalized.reviewerRef,
-      signerRef: normalized.signerRef,
-      delegationRef: normalized.delegationRef,
-      authorityMode: normalized.authorityMode,
+      actorRef: effectiveInput.actorRef ?? effectiveInput.actor,
+      reviewerRef: effectiveInput.reviewerRef,
+      signerRef: effectiveInput.signerRef,
+      delegationRef: effectiveInput.delegationRef,
+      authorityMode: effectiveInput.authorityMode,
     },
-    evidence: (normalized.evidenceRefs ?? []).map((ref) => ({
+    evidence: (effectiveInput.evidenceRefs ?? []).map((ref) => ({
       id: ref,
       kind: 'reference',
       digest: null,
       uri: null,
     })),
-    nativeInputRefs: normalized.nativeInputRefs,
-    retryAttempt: normalized.retryAttempt,
+    nativeInputRefs: effectiveInput.nativeInputRefs,
+    retryAttempt: effectiveInput.retryAttempt,
   });
   const response = createConsequenceAdmissionResponse({
     request,
@@ -684,8 +708,8 @@ export function createGenericAdmissionEnvelope(input: unknown): GenericAdmission
     decision: evaluation.effectiveDecision,
     reason: genericAdmissionReason(evaluation),
     reasonCodes: evaluation.reasonCodes,
-    checks: createGenericAdmissionChecks(normalized, evaluation),
-    constraints: genericAdmissionConstraints(normalized, evaluation),
+    checks: createGenericAdmissionChecks(effectiveInput, evaluation),
+    constraints: genericAdmissionConstraints(effectiveInput, evaluation),
     proof: genericAdmissionProof(request, evaluation),
     operationalContext: {
       mode: evaluation.mode,
@@ -695,9 +719,9 @@ export function createGenericAdmissionEnvelope(input: unknown): GenericAdmission
       modeBlocksDownstream:
         evaluation.downstreamPosture === 'hold-for-review' ||
         evaluation.effectiveDecision === 'block',
-      consequenceDomain: normalized.domain,
+      consequenceDomain: effectiveInput.domain,
       taxonomyRiskClass: profile.minimumRiskClass,
-      nonEnforcingMode: normalized.mode === 'observe' || normalized.mode === 'warn',
+      nonEnforcingMode: effectiveInput.mode === 'observe' || effectiveInput.mode === 'warn',
     },
   });
 
@@ -706,7 +730,7 @@ export function createGenericAdmissionEnvelope(input: unknown): GenericAdmission
     shadowDecision: evaluation.shadowDecision,
     downstreamPosture: evaluation.downstreamPosture,
     enforcementActive: evaluation.enforcementActive,
-    guardOutcomes: createGenericAdmissionGuardOutcomeTrace(normalized, evaluation),
+    guardOutcomes: createGenericAdmissionGuardOutcomeTrace(effectiveInput, evaluation),
     admission: response,
   });
 }

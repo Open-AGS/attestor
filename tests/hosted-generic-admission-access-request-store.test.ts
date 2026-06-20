@@ -86,6 +86,22 @@ function requestableDenialFixture() {
   });
 }
 
+function requesterFixture() {
+  return {
+    principalRef: 'tenant:api_key:store-client',
+    source: 'tenant-context',
+    role: 'api_key',
+  };
+}
+
+function approverFixture() {
+  return {
+    principalRef: 'account-user:store-risk-owner',
+    source: 'account-session',
+    role: 'account_admin',
+  };
+}
+
 function testFileBackedAccessRequestStore(): void {
   const tempRoot = mkdtempSync(join(tmpdir(), 'attestor-access-request-store-'));
   const path = join(tempRoot, 'store.json');
@@ -96,16 +112,19 @@ function testFileBackedAccessRequestStore(): void {
       tenantId: 'tenant_store',
       denial,
       createdAt: '2026-06-20T10:00:02.000Z',
+      requester: requesterFixture(),
     });
     const duplicate = store.create({
       tenantId: 'tenant_store',
       denial,
       createdAt: '2026-06-20T10:00:03.000Z',
+      requester: requesterFixture(),
     });
     const otherTenantCreated = store.create({
       tenantId: 'other_tenant',
       denial,
       createdAt: '2026-06-20T10:00:04.000Z',
+      requester: requesterFixture(),
     });
     const reloaded = createFileBackedHostedGenericAdmissionAccessRequestStore({ path });
     const completed = reloaded.complete({
@@ -113,12 +132,14 @@ function testFileBackedAccessRequestStore(): void {
       taskId: created.task.id,
       status: 'approved',
       decidedAt: '2026-06-20T10:01:00.000Z',
+      decisionAuthority: approverFixture(),
       approval: {
         id: 'approval_store_001',
         approvedAt: '2026-06-20T10:00:30.000Z',
         approvedUntil: '2026-06-20T10:08:00.000Z',
         approvalRef: 'approval:raw-store-ref-001',
         authorityKind: 'approval',
+        scopeDigest: denial.binding.scopeDigest,
         approvalState: 'approved',
       },
     });
@@ -143,10 +164,12 @@ function testFileBackedAccessRequestStore(): void {
       taskId: created.task.id,
       status: 'approved',
       decidedAt: '2026-06-20T10:02:00.000Z',
+      decisionAuthority: approverFixture(),
       approval: {
         id: 'approval_store_cross_tenant',
         approvedUntil: '2026-06-20T10:08:00.000Z',
         authorityKind: 'approval',
+        scopeDigest: denial.binding.scopeDigest,
       },
     });
     const serialized = JSON.stringify(reloaded.exportSnapshot());

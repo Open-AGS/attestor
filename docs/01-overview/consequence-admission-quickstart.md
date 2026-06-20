@@ -155,6 +155,13 @@ evaluation for the same digest-bound actor, action, downstream system, policy,
 and tenant scope. Only that new admission may issue a short-lived protected
 release token for downstream execution.
 
+The hosted access-request decision route requires an independently
+authenticated account-admin decision authority. The tenant API key that creates
+the task cannot approve it, approved decisions must carry the original
+`scopeDigest`, and the route uses server-side evaluation time for freshness so
+client-supplied request or decision timestamps cannot make an expired approval
+fresh.
+
 The package contract for this approval path is available through
 `attestor/consequence-admission`. It is a digest-first contract surface: raw
 approval refs, actor refs, policy refs, and downstream refs must not be stored

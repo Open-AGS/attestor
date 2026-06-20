@@ -13,6 +13,8 @@ export type {
   CompleteConsequenceAdmissionAccessRequestTaskInput,
   ConsequenceAdmissionAccessRequestApproval,
   ConsequenceAdmissionAccessRequestAuthorityKind,
+  ConsequenceAdmissionAccessRequestPrincipalBinding,
+  ConsequenceAdmissionAccessRequestPrincipalInput,
   ConsequenceAdmissionAccessRequestReevaluationContext,
   ConsequenceAdmissionAccessRequestResult,
   ConsequenceAdmissionAccessRequestTask,

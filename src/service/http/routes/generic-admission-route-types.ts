@@ -1,6 +1,7 @@
 import type { Context } from 'hono';
 import type {
   CompleteConsequenceAdmissionAccessRequestTaskInput,
+  ConsequenceAdmissionAccessRequestPrincipalInput,
   ConsequenceAdmissionAccessRequestReevaluationContext,
   ConsequenceAdmissionAccessRequestTask,
   ConsequenceAdmissionAgentLoopAbuseGuardDecision,
@@ -44,6 +45,7 @@ export type GenericAdmissionRouteResponseEnvelope = GenericAdmissionEnvelope & {
 
 export interface GenericAdmissionRouteDeps {
   currentTenant(context: Context): TenantContext;
+  readonly now?: () => string;
   recordShadowAdmission(input: {
     readonly tenant: TenantContext;
     readonly envelope: GenericAdmissionEnvelope;
@@ -72,13 +74,26 @@ export interface GenericAdmissionRouteDeps {
     readonly envelope: GenericAdmissionEnvelope;
     readonly denial: ConsequenceAdmissionRequestableDenial;
     readonly receivedAt: string;
+    readonly requester: ConsequenceAdmissionAccessRequestPrincipalInput;
   }): ConsequenceAdmissionAccessRequestTask | Promise<ConsequenceAdmissionAccessRequestTask>;
+  currentAccessRequestPrincipal?(input: {
+    readonly context: Context;
+    readonly tenant: TenantContext;
+  }): ConsequenceAdmissionAccessRequestPrincipalInput | null | Promise<ConsequenceAdmissionAccessRequestPrincipalInput | null>;
+  authorizeAccessRequestDecision?(input: {
+    readonly context: Context;
+    readonly tenant: TenantContext;
+    readonly task: ConsequenceAdmissionAccessRequestTask;
+    readonly status: CompleteConsequenceAdmissionAccessRequestTaskInput['status'];
+    readonly payload: unknown;
+  }): ConsequenceAdmissionAccessRequestPrincipalInput | Response | Promise<ConsequenceAdmissionAccessRequestPrincipalInput | Response>;
   completeAccessRequestTask?(input: {
     readonly context: Context;
     readonly tenant: TenantContext;
     readonly taskId: string;
     readonly status: CompleteConsequenceAdmissionAccessRequestTaskInput['status'];
     readonly decidedAt: string;
+    readonly decisionAuthority?: CompleteConsequenceAdmissionAccessRequestTaskInput['decisionAuthority'];
     readonly approval?: CompleteConsequenceAdmissionAccessRequestTaskInput['approval'];
   }): ConsequenceAdmissionAccessRequestTask | null | Promise<ConsequenceAdmissionAccessRequestTask | null>;
   getAccessRequestTask?(input: {

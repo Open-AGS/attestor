@@ -54,6 +54,17 @@ function accessRequestTaskUnavailableProblem() {
   });
 }
 
+function accessRequestDecisionAuthorizerUnavailableProblem() {
+  return createConsequenceAdmissionProblem({
+    type: 'https://attestor.dev/problems/access-request-decision-authorizer-unavailable',
+    title: 'Access request decision authorizer unavailable',
+    status: 503,
+    detail: 'The access request decision route requires an independently authenticated reviewer or operator authorizer.',
+    instance: '/api/v1/admissions/access-requests',
+    reasonCodes: ['access-request-decision-authorizer-unavailable'],
+  });
+}
+
 function invalidAccessRequestProblem(input: {
   readonly title: string;
   readonly detail: string;
@@ -113,7 +124,8 @@ function approvalFromPayload(
   const id = optionalStringField(approval, ['id', 'approvalId']);
   const approvedUntil = optionalStringField(approval, ['approvedUntil', 'expiresAt']);
   const authorityKind = optionalStringField(approval, ['authorityKind']);
-  if (!id || !approvedUntil || !authorityKind) return null;
+  const scopeDigest = optionalStringField(approval, ['scopeDigest']);
+  if (!id || !approvedUntil || !authorityKind || !scopeDigest) return null;
   return {
     id,
     approvedAt: optionalStringField(approval, ['approvedAt', 'issuedAt']),
@@ -122,7 +134,7 @@ function approvalFromPayload(
       CompleteConsequenceAdmissionAccessRequestTaskInput['approval']
     >['authorityKind'],
     approvalRef: optionalStringField(approval, ['approvalRef', 'ref']),
-    scopeDigest: optionalStringField(approval, ['scopeDigest']),
+    scopeDigest,
     approvalState: optionalStringField(approval, ['approvalState', 'stateDigest', 'state']),
   };
 }
@@ -310,7 +322,7 @@ export function registerGenericAdmissionAccessRequestRoutes(
         type: 'https://attestor.dev/problems/access-request-approval-required',
         title: 'Access request approval required',
         status: 400,
-        detail: 'Approved access request decisions require approval id, approvedUntil, and authorityKind.',
+        detail: 'Approved access request decisions require approval id, approvedUntil, authorityKind, and scopeDigest.',
         instance: '/api/v1/admissions/access-requests',
         reasonCodes: ['access-request-approval-required'],
       });
@@ -318,7 +330,7 @@ export function registerGenericAdmissionAccessRequestRoutes(
     }
     const tenant = deps.currentTenant(c);
     const taskId = c.req.param('id');
-    const decidedAt = new Date().toISOString();
+    const decidedAt = deps.now?.() ?? new Date().toISOString();
     const currentTask = await deps.getAccessRequestTask({
       context: c,
       tenant,
@@ -335,12 +347,26 @@ export function registerGenericAdmissionAccessRequestRoutes(
       });
       return c.json(problem, 404);
     }
+    if (!deps.authorizeAccessRequestDecision) {
+      return c.json(accessRequestDecisionAuthorizerUnavailableProblem(), 503);
+    }
+    const authorization = await deps.authorizeAccessRequestDecision({
+      context: c,
+      tenant,
+      task: currentTask,
+      status,
+      payload,
+    });
+    if (authorization instanceof Response) {
+      return authorization;
+    }
     let previewTask: ConsequenceAdmissionAccessRequestTask;
     try {
       previewTask = completeConsequenceAdmissionAccessRequestTask({
         task: currentTask,
         status,
         decidedAt,
+        decisionAuthority: authorization,
         approval,
       });
       if (previewTask.status === 'approved') {
@@ -368,6 +394,7 @@ export function registerGenericAdmissionAccessRequestRoutes(
         taskId,
         status,
         decidedAt,
+        decisionAuthority: authorization,
         approval,
       });
     } catch {

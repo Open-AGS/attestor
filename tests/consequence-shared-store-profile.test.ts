@@ -45,6 +45,7 @@ Readonly<Record<ProductionStoragePathComponentId, ProductionStorageMode>>
     'shadow-policy-simulations': 'shared-durable',
     'shadow-policy-candidates': 'shared-durable',
     'shadow-activation-receipts': 'shared-durable',
+    'generic-admission-access-requests': 'shared-durable',
     'policy-foundry-hosted-wizard-state': 'shared-durable',
     'retry-attempt-ledger': 'shared-durable',
     'presentation-replay-ledger': 'shared-durable',
@@ -89,7 +90,7 @@ function testEvaluationProfileAcceptsBacklogWithoutProductionClaim(): void {
   equal(profile.operationalEvidenceReady, false, 'Consequence shared-store profile: local-dev does not overclaim operational proof');
   equal(profile.blockers.length, 0, 'Consequence shared-store profile: local-dev emits no production blockers');
   equal(profile.authorityComponents.length, 2, 'Consequence shared-store profile: authority substrate is inventoried');
-  equal(profile.components.length, 10, 'Consequence shared-store profile: consequence/read-model surfaces are inventoried');
+  equal(profile.components.length, 11, 'Consequence shared-store profile: consequence/read-model surfaces are inventoried');
   ok(
     profile.backlogComponentIds.includes('retry-attempt-ledger'),
     'Consequence shared-store profile: retry ledger remains backlog outside production',

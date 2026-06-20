@@ -12,7 +12,9 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import {
+  completeConsequenceAdmissionAccessRequestTask,
   createConsequenceAdmissionAccessRequestTask,
+  type CompleteConsequenceAdmissionAccessRequestTaskInput,
   type ConsequenceAdmissionAccessRequestTask,
   type ConsequenceAdmissionRequestableDenial,
 } from '../../consequence-admission/index.js';
@@ -50,9 +52,19 @@ export interface HostedGenericAdmissionAccessRequestStoreCreateInput {
   readonly statusEndpoint?: string | null;
 }
 
+export interface HostedGenericAdmissionAccessRequestStoreCompleteInput {
+  readonly tenantId: string;
+  readonly taskId: string;
+  readonly status: CompleteConsequenceAdmissionAccessRequestTaskInput['status'];
+  readonly decidedAt: string;
+  readonly approval?: CompleteConsequenceAdmissionAccessRequestTaskInput['approval'];
+}
+
 export interface HostedGenericAdmissionAccessRequestStore {
   create(input: HostedGenericAdmissionAccessRequestStoreCreateInput):
     HostedGenericAdmissionAccessRequestStoreRecord;
+  complete(input: HostedGenericAdmissionAccessRequestStoreCompleteInput):
+    HostedGenericAdmissionAccessRequestStoreRecord | null;
   get(input: {
     readonly tenantId: string;
     readonly taskId: string;
@@ -190,6 +202,34 @@ export function createFileBackedHostedGenericAdmissionAccessRequestStore(options
         store.records.push(record);
         saveShadowStore(path, store);
         return record;
+      });
+    },
+    complete(input: HostedGenericAdmissionAccessRequestStoreCompleteInput) {
+      return withStoreLock((store) => {
+        const tenantId = normalizeIdentifier(input.tenantId, 'tenantId');
+        const taskId = normalizeIdentifier(input.taskId, 'taskId');
+        const index = store.records.findIndex((record) =>
+          record.tenantId === tenantId && record.task.id === taskId
+        );
+        if (index < 0) return null;
+        const current = normalizeRecord(store.records[index]);
+        const completedTask = completeConsequenceAdmissionAccessRequestTask({
+          task: current.task,
+          status: input.status,
+          decidedAt: input.decidedAt,
+          approval: input.approval,
+        });
+        const record: HostedGenericAdmissionAccessRequestStoreRecord = {
+          ...current,
+          task: completedTask,
+          updatedAt: completedTask.updatedAt,
+          rawPayloadStored: false,
+          productionReady: false,
+        };
+        assertTaskIsSafe(record);
+        store.records[index] = record;
+        saveShadowStore(path, store);
+        return normalizeRecord(record);
       });
     },
     get(input: {

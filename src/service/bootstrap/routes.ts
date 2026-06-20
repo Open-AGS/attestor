@@ -182,6 +182,14 @@ export function createGenericAdmissionRouteDeps<Packet>(
         denial,
         createdAt: receivedAt,
       }).task,
+    completeAccessRequestTask: ({ tenant, taskId, status, decidedAt, approval }) =>
+      genericAdmissionAccessRequestStore.complete({
+        tenantId: tenant.tenantId,
+        taskId,
+        status,
+        decidedAt,
+        approval,
+      })?.task ?? null,
     getAccessRequestTask: ({ tenant, taskId }) =>
       genericAdmissionAccessRequestStore.get({
         tenantId: tenant.tenantId,

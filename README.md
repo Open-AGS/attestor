@@ -53,8 +53,8 @@ It checks policy, approval, evidence, allowed scope, freshness, replay, tenant,
 and token, then returns one bounded decision with reasons: `admit`, `narrow`,
 `review`, or `block`.
 
-It also checks that approvals and policy context are still valid before
-execution.
+For requestable approvals, it checks that the approved task still matches the
+current policy and scope context before execution.
 
 The real service should run only through the customer-owned gate.
 

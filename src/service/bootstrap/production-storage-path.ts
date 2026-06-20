@@ -13,6 +13,7 @@ export type ProductionStoragePathComponentId =
   | 'shadow-policy-simulations'
   | 'shadow-policy-candidates'
   | 'shadow-activation-receipts'
+  | 'generic-admission-access-requests'
   | 'policy-foundry-hosted-wizard-state'
   | 'retry-attempt-ledger'
   | 'presentation-replay-ledger'
@@ -203,6 +204,17 @@ readonly ProductionStoragePathComponent[] {
       migrationTarget: 'shared-authority-control-plane',
       note:
         'Activation receipts close the customer-side loop and need shared receipt history before production-shared.',
+    }),
+    component({
+      component: 'generic-admission-access-requests',
+      plane: 'consequence-admission-plane',
+      label: 'Generic admission access-request task lifecycle',
+      currentMode: current('generic-admission-access-requests', 'file-backed-evaluation'),
+      requiredModeForProduction: 'shared-durable',
+      tenantScoped: true,
+      migrationTarget: 'shared-authority-control-plane',
+      note:
+        'Requestable-denial tasks must be shared and lifecycle-consistent before multi-node production can coordinate approvals.',
     }),
     component({
       component: 'policy-foundry-hosted-wizard-state',

@@ -9,12 +9,8 @@ import {
   type ConsequenceAdmissionAgentLoopAbuseGuardDecision,
   type ConsequenceAdmissionRequestableDenial,
   type ConsequenceAdmissionRequestableDenialReason,
-  type GenericAdmissionProtectedReleaseTokenIssueResult,
   type GenericAdmissionEnvelope,
 } from '../../../consequence-admission/index.js';
-import type {
-  ReleaseTokenConfirmationClaim,
-} from '../../../release-layer/index.js';
 import { resolvePlanGenericAdmissionMode } from '../../plan-catalog.js';
 import type { TenantContext } from '../../tenant-isolation.js';
 import {
@@ -24,89 +20,24 @@ import {
 } from '../../workflow-entitlement.js';
 import type {
   PipelineIdempotencyReadyResult,
-  PipelineIdempotencyService,
 } from '../../application/pipeline-idempotency-service.js';
-import type { WorkflowUsageDecision } from '../../workflow-entitlement-store.js';
 import { acceptsJsonRequestBody } from '../route-response-helpers.js';
+import {
+  registerGenericAdmissionAccessRequestRoutes,
+  resolveAccessRequestReevaluation,
+} from './generic-admission-access-request-routes.js';
+import type {
+  GenericAdmissionRouteDeps,
+  GenericAdmissionRouteResponseEnvelope,
+  WorkflowAdmissionConsumptionResult,
+} from './generic-admission-route-types.js';
 
-export interface WorkflowAdmissionMeteringResult {
-  readonly provider: 'stripe';
-  readonly status: 'not_applicable' | 'skipped' | 'mock_recorded' | 'sent' | 'failed';
-  readonly reason: string | null;
-  readonly eventName: string | null;
-  readonly eventIdentifier: string | null;
-  readonly value: number;
-  readonly mock: boolean;
-}
-
-export interface WorkflowAdmissionConsumptionResult {
-  readonly decision: WorkflowUsageDecision | null;
-  readonly billingMetering: WorkflowAdmissionMeteringResult | null;
-}
-
-type GenericAdmissionRouteResponseEnvelope = GenericAdmissionEnvelope & {
-  readonly protectedReleaseTokenAuthorization?: GenericAdmissionProtectedReleaseTokenIssueResult['authorization'];
-  readonly requestableDenial?: ConsequenceAdmissionRequestableDenial;
-  readonly accessRequestTask?: ConsequenceAdmissionAccessRequestTask;
-  readonly workflowEntitlementAccess?: WorkflowEntitlementAccessDecision;
-  readonly workflowUsage?: WorkflowUsageDecision['usage'];
-  readonly workflowBillingMetering?: WorkflowAdmissionMeteringResult | null;
-};
-
-export interface GenericAdmissionRouteDeps {
-  currentTenant(context: Context): TenantContext;
-  recordShadowAdmission(input: {
-    readonly tenant: TenantContext;
-    readonly envelope: GenericAdmissionEnvelope;
-  }): void;
-  evaluateAgentLoopAbuse?(input: {
-    readonly tenant: TenantContext;
-    readonly envelope: GenericAdmissionEnvelope;
-    readonly receivedAt: string;
-  }): ConsequenceAdmissionAgentLoopAbuseGuardDecision | Promise<ConsequenceAdmissionAgentLoopAbuseGuardDecision>;
-  issueProtectedReleaseToken?(input: {
-    readonly context: Context;
-    readonly tenant: TenantContext;
-    readonly envelope: GenericAdmissionEnvelope;
-    readonly receivedAt: string;
-    readonly senderConfirmation?: ReleaseTokenConfirmationClaim | null;
-  }): GenericAdmissionProtectedReleaseTokenIssueResult | Promise<GenericAdmissionProtectedReleaseTokenIssueResult>;
-  resolveProtectedReleaseTokenConfirmation?(input: {
-    readonly context: Context;
-    readonly tenant: TenantContext;
-    readonly envelope: GenericAdmissionEnvelope;
-    readonly receivedAt: string;
-  }): ReleaseTokenConfirmationClaim | null | Promise<ReleaseTokenConfirmationClaim | null>;
-  createAccessRequestTask?(input: {
-    readonly context: Context;
-    readonly tenant: TenantContext;
-    readonly envelope: GenericAdmissionEnvelope;
-    readonly denial: ConsequenceAdmissionRequestableDenial;
-    readonly receivedAt: string;
-  }): ConsequenceAdmissionAccessRequestTask | Promise<ConsequenceAdmissionAccessRequestTask>;
-  getAccessRequestTask?(input: {
-    readonly context: Context;
-    readonly tenant: TenantContext;
-    readonly taskId: string;
-  }): ConsequenceAdmissionAccessRequestTask | null | Promise<ConsequenceAdmissionAccessRequestTask | null>;
-  listAccessRequestTasks?(input: {
-    readonly context: Context;
-    readonly tenant: TenantContext;
-    readonly limit: number;
-  }): readonly ConsequenceAdmissionAccessRequestTask[] | Promise<readonly ConsequenceAdmissionAccessRequestTask[]>;
-  resolveWorkflowEntitlement?(input: {
-    readonly tenant: TenantContext;
-    readonly workflowId: string;
-  }): WorkflowEntitlementRecord | null | Promise<WorkflowEntitlementRecord | null>;
-  consumeWorkflowAdmission?(input: {
-    readonly tenant: TenantContext;
-    readonly workflowId: string;
-    readonly entitlement: WorkflowEntitlementRecord;
-  }): WorkflowAdmissionConsumptionResult | Promise<WorkflowAdmissionConsumptionResult>;
-  readonly admissionIdempotencyService?: PipelineIdempotencyService;
-  readonly requireProtectedReleaseTokenForHighRisk?: boolean;
-  readonly requireAdmissionIdempotencyKeyForEnforce?: boolean;
-}
+export type {
+  GenericAdmissionRouteDeps,
+  GenericAdmissionRouteResponseEnvelope,
+  WorkflowAdmissionConsumptionResult,
+  WorkflowAdmissionMeteringResult,
+} from './generic-admission-route-types.js';
 
 type GenericAdmissionIdempotencyBegin =
   | {
@@ -276,26 +207,15 @@ function accessRequestTaskMatchesDenial(input: {
   readonly task: ConsequenceAdmissionAccessRequestTask;
 }): boolean {
   return input.task.denial.binding.digest === input.denial.binding.digest &&
+    input.task.denial.binding.scopeDigest === input.denial.binding.scopeDigest &&
+    input.task.version === input.denial.version &&
+    input.task.status === 'pending' &&
+    input.task.result === null &&
     input.task.accessPermitted === false &&
-    input.task.releaseTokenMayBeIssued === false;
-}
-
-function parseAccessRequestLimit(value: string | undefined): number {
-  if (!value) return 100;
-  const parsed = Number.parseInt(value, 10);
-  if (!Number.isFinite(parsed) || parsed <= 0) return 100;
-  return Math.min(Math.trunc(parsed), 500);
-}
-
-function accessRequestTaskUnavailableProblem() {
-  return createConsequenceAdmissionProblem({
-    type: 'https://attestor.dev/problems/access-request-task-store-unavailable',
-    title: 'Access request task store unavailable',
-    status: 503,
-    detail: 'The access request task store is not configured for this runtime.',
-    instance: '/api/v1/admissions/access-requests',
-    reasonCodes: ['access-request-task-store-unavailable'],
-  });
+    input.task.releaseTokenMayBeIssued === false &&
+    input.task.rawPayloadStored === false &&
+    input.task.denial.rawPayloadStored === false &&
+    input.task.denial.releaseTokenMayBeIssued === false;
 }
 
 function admissionIdempotencyKeyFor(context: Context): string | null {
@@ -472,59 +392,7 @@ export function registerGenericAdmissionRoutes(
   app: Hono,
   deps: GenericAdmissionRouteDeps,
 ): void {
-  app.get('/api/v1/admissions/access-requests', async (c) => {
-    c.header('cache-control', 'no-store');
-    if (!deps.listAccessRequestTasks) {
-      return c.json(accessRequestTaskUnavailableProblem(), 503);
-    }
-    const tenant = deps.currentTenant(c);
-    const limit = parseAccessRequestLimit(c.req.query('limit'));
-    const tasks = await deps.listAccessRequestTasks({
-      context: c,
-      tenant,
-      limit,
-    });
-    return c.json({
-      version: 'attestor.generic-admission-access-request-list.v1',
-      tenantId: tenant.tenantId,
-      count: tasks.length,
-      limit,
-      tasks,
-      rawPayloadStored: false,
-      productionReady: false,
-    });
-  });
-
-  app.get('/api/v1/admissions/access-requests/:id', async (c) => {
-    c.header('cache-control', 'no-store');
-    if (!deps.getAccessRequestTask) {
-      return c.json(accessRequestTaskUnavailableProblem(), 503);
-    }
-    const tenant = deps.currentTenant(c);
-    const task = await deps.getAccessRequestTask({
-      context: c,
-      tenant,
-      taskId: c.req.param('id'),
-    });
-    if (!task) {
-      const problem = createConsequenceAdmissionProblem({
-        type: 'https://attestor.dev/problems/access-request-task-not-found',
-        title: 'Access request task not found',
-        status: 404,
-        detail: 'The access request task was not found for this tenant.',
-        instance: '/api/v1/admissions/access-requests',
-        reasonCodes: ['access-request-task-not-found'],
-      });
-      return c.json(problem, 404);
-    }
-    return c.json({
-      version: 'attestor.generic-admission-access-request-status.v1',
-      tenantId: tenant.tenantId,
-      task,
-      rawPayloadStored: false,
-      productionReady: false,
-    });
-  });
+  registerGenericAdmissionAccessRequestRoutes(app, deps);
 
   app.post('/api/v1/admissions', async (c) => {
     c.header('cache-control', 'no-store');
@@ -676,6 +544,20 @@ export function registerGenericAdmissionRoutes(
         });
         return c.json(problem, status);
       }
+      const accessRequestResolution = await resolveAccessRequestReevaluation({
+        context: c,
+        deps,
+        tenant,
+        payload,
+        envelope,
+        reevaluateAt: new Date().toISOString(),
+      });
+      if (accessRequestResolution.kind === 'response') {
+        return accessRequestResolution.response;
+      }
+      const accessRequestReevaluation = accessRequestResolution.kind === 'ready'
+        ? accessRequestResolution.reevaluation
+        : null;
       if (typeof deps.recordShadowAdmission !== 'function') {
         const problem = createConsequenceAdmissionProblem({
           type: 'https://attestor.dev/problems/shadow-recording-unavailable',
@@ -690,7 +572,12 @@ export function registerGenericAdmissionRoutes(
       const protectedReleaseTokenRequirement =
         evaluateGenericAdmissionProtectedReleaseTokenRequirement({ envelope });
       let envelopeForShadow: GenericAdmissionEnvelope = envelope;
-      let responseEnvelope: GenericAdmissionRouteResponseEnvelope = envelope;
+      let responseEnvelope: GenericAdmissionRouteResponseEnvelope = accessRequestReevaluation
+        ? {
+            ...envelope,
+            accessRequestReevaluation,
+          }
+        : envelope;
       if (protectedReleaseTokenRequirement.required && deps.issueProtectedReleaseToken) {
         try {
           const receivedAt = new Date().toISOString();
@@ -712,6 +599,7 @@ export function registerGenericAdmissionRoutes(
           responseEnvelope = {
             ...issued.envelope,
             protectedReleaseTokenAuthorization: issued.authorization,
+            ...(accessRequestReevaluation ? { accessRequestReevaluation } : {}),
           };
         } catch (error) {
           const reasonCodes = error instanceof GenericAdmissionProtectedReleaseTokenIssuanceError

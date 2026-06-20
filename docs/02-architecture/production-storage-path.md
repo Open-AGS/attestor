@@ -36,6 +36,7 @@ For `local-dev` and `single-node-durable`, that is acceptable. For
 - shadow policy simulation reports
 - shadow policy candidates
 - shadow activation receipts
+- generic admission access-request task lifecycle
 - Policy Foundry hosted wizard resume state
 - retry attempt ledger
 - presentation replay ledger
@@ -79,6 +80,7 @@ the following move to shared authority/control-plane storage:
 - shadow simulation history
 - policy candidate lifecycle
 - activation receipt history
+- generic admission access-request task lifecycle
 - Policy Foundry hosted wizard resume state
 - retry attempt ledger
 - presentation replay ledger
@@ -108,7 +110,8 @@ The profile groups the current backlog into explicit primitives:
 
 - tenant-scoped append-only history for shadow events, simulations, policy
   candidates, and activation receipts
-- tenant-scoped TTL/session state for hosted Policy Foundry resume flows
+- tenant-scoped TTL/session state for generic admission access-request tasks and
+  hosted Policy Foundry resume flows
 - atomic record-if-absent semantics for retry attempts
 - atomic set-if-absent semantics for downstream presentation replay keys
 - atomic counters and correction-signature sets for agent-loop abuse control

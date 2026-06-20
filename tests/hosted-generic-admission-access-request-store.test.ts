@@ -102,7 +102,26 @@ function testFileBackedAccessRequestStore(): void {
       denial,
       createdAt: '2026-06-20T10:00:03.000Z',
     });
+    const otherTenantCreated = store.create({
+      tenantId: 'other_tenant',
+      denial,
+      createdAt: '2026-06-20T10:00:04.000Z',
+    });
     const reloaded = createFileBackedHostedGenericAdmissionAccessRequestStore({ path });
+    const completed = reloaded.complete({
+      tenantId: 'tenant_store',
+      taskId: created.task.id,
+      status: 'approved',
+      decidedAt: '2026-06-20T10:01:00.000Z',
+      approval: {
+        id: 'approval_store_001',
+        approvedAt: '2026-06-20T10:00:30.000Z',
+        approvedUntil: '2026-06-20T10:08:00.000Z',
+        approvalRef: 'approval:raw-store-ref-001',
+        authorityKind: 'approval',
+        approvalState: 'approved',
+      },
+    });
     const fetched = reloaded.get({
       tenantId: 'tenant_store',
       taskId: created.task.id,
@@ -111,9 +130,24 @@ function testFileBackedAccessRequestStore(): void {
       tenantId: 'tenant_store',
       limit: 10,
     });
-    const otherTenant = reloaded.get({
+    const otherListed = reloaded.list({
       tenantId: 'other_tenant',
+      limit: 10,
+    });
+    const otherTenant = reloaded.get({
+      tenantId: 'missing_tenant',
       taskId: created.task.id,
+    });
+    const crossTenantComplete = reloaded.complete({
+      tenantId: 'missing_tenant',
+      taskId: created.task.id,
+      status: 'approved',
+      decidedAt: '2026-06-20T10:02:00.000Z',
+      approval: {
+        id: 'approval_store_cross_tenant',
+        approvedUntil: '2026-06-20T10:08:00.000Z',
+        authorityKind: 'approval',
+      },
     });
     const serialized = JSON.stringify(reloaded.exportSnapshot());
 
@@ -132,13 +166,48 @@ function testFileBackedAccessRequestStore(): void {
       `/api/v1/admissions/access-requests/${created.task.id}`,
       'Hosted access request store: task has a status endpoint',
     );
+    equal(
+      otherTenantCreated.task.id,
+      created.task.id,
+      'Hosted access request store: same denial may reuse task id across tenants',
+    );
     equal(duplicate.task.id, created.task.id, 'Hosted access request store: duplicate denial reuses task');
-    equal(fetched?.task.id, created.task.id, 'Hosted access request store: task survives reload');
+    equal(completed?.task.status, 'approved', 'Hosted access request store: task can be approved');
+    equal(
+      completed?.task.result?.mode,
+      'reevaluate',
+      'Hosted access request store: approved task still requires re-evaluation',
+    );
+    equal(
+      completed?.task.result?.accessPermitted,
+      false,
+      'Hosted access request store: approved task does not directly permit access',
+    );
+    equal(
+      completed?.task.result?.releaseTokenMayBeIssued,
+      false,
+      'Hosted access request store: approved task cannot directly issue release tokens',
+    );
+    equal(
+      completed?.task.result?.approval.scopeDigest,
+      denial.binding.scopeDigest,
+      'Hosted access request store: completed approval is scope-bound to the denial',
+    );
+    equal(fetched?.task.status, 'approved', 'Hosted access request store: completed task survives reload');
     equal(listed.records.length, 1, 'Hosted access request store: list returns the tenant task');
+    equal(listed.records[0]?.task.status, 'approved', 'Hosted access request store: list returns the updated task');
+    equal(otherListed.records.length, 1, 'Hosted access request store: list is tenant scoped');
+    equal(
+      otherListed.records[0]?.task.status,
+      'pending',
+      'Hosted access request store: completing one tenant does not update another tenant',
+    );
     equal(otherTenant, null, 'Hosted access request store: task lookup is tenant scoped');
+    equal(crossTenantComplete, null, 'Hosted access request store: completion is tenant scoped');
     ok(!serialized.includes('support-ai-agent'), 'Hosted access request store: actor raw ref is not stored');
     ok(!serialized.includes('refund-service'), 'Hosted access request store: downstream raw ref is not stored');
     ok(!serialized.includes('policy:refunds:v1'), 'Hosted access request store: policy raw ref is not stored');
+    ok(!serialized.includes('approval:raw-store-ref-001'), 'Hosted access request store: approval raw ref is not stored');
   } finally {
     rmSync(tempRoot, { recursive: true, force: true });
   }

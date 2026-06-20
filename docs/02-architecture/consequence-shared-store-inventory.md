@@ -10,9 +10,9 @@ Step 08 adds the first PostgreSQL-backed atomic retry/replay store slice in
 Step 09 adds the shared source-history and outbox primitive in
 [Consequence Shared History Outbox Store](consequence-shared-history-outbox-store.md).
 This inventory remains the broader map because the default runtime path,
-hosted wizard shared session state, agent-loop proof, read-model workers,
-connector delivery, migration jobs, and deployment probes are still not cleared
-for `production-shared`.
+generic admission access-request task state, hosted wizard shared session state,
+agent-loop proof, read-model workers, connector delivery, migration jobs, and
+deployment probes are still not cleared for `production-shared`.
 
 ## Decision
 
@@ -50,6 +50,7 @@ Shadow-to-Policy and production-shared readiness.
 | shadow policy simulations | file-backed evaluation; shared primitive now exists | tenant-scoped append-only history | Step 09 primitive done |
 | shadow policy candidates | file-backed evaluation; shared primitive now exists | tenant-scoped append-only history | Step 09 primitive done |
 | shadow activation receipts | file-backed evaluation; shared primitive now exists | tenant-scoped append-only history | Step 09 primitive done |
+| generic admission access-request tasks | file-backed evaluation | tenant-scoped TTL session state | later shared-session work |
 | Policy Foundry hosted wizard state | file-backed evaluation | tenant-scoped TTL session state | later shared-session work |
 | retry attempt ledger | in-memory reference | atomic record-if-absent | Step 08 |
 | presentation replay ledger | in-memory reference | atomic set-if-absent | Step 08 |

@@ -50,6 +50,7 @@ export interface ConsequenceAdmissionRequestableDenialBinding {
   readonly actionDigest: string;
   readonly downstreamSystemDigest: string;
   readonly policyRefDigest: string | null;
+  readonly scopeDigest: string;
   readonly decision: Extract<ConsequenceAdmissionDecision, 'review' | 'block'>;
   readonly canonical: string;
   readonly digest: string;
@@ -113,6 +114,7 @@ export interface ConsequenceAdmissionAccessRequestReevaluationContext {
   readonly originalAdmissionDigest: string;
   readonly originalRequestId: string;
   readonly bindingDigest: string;
+  readonly scopeDigest: string;
   readonly approvalRefDigest: string;
   readonly approvedUntil: string;
   readonly reevaluateAt: string;
@@ -183,6 +185,24 @@ function normalizeNonEmptyString(value: string, fieldName: string): string {
   return normalized;
 }
 
+const SHA_256_DIGEST_PATTERN = /^sha256:[a-f0-9]{64}$/u;
+
+function normalizeDigest(value: string, fieldName: string): string {
+  const normalized = normalizeNonEmptyString(value, fieldName);
+  if (!SHA_256_DIGEST_PATTERN.test(normalized)) {
+    throw new Error(`Consequence admission access request ${fieldName} must be a sha256 digest.`);
+  }
+  return normalized;
+}
+
+function normalizeApprovalId(value: string): string {
+  const normalized = normalizeNonEmptyString(value, 'approval.id');
+  if (!/^[A-Za-z0-9._:-]+$/u.test(normalized) || /(?:https?:|\/|\\|\?|#|@)/iu.test(normalized)) {
+    throw new Error('Consequence admission access request approval.id must be a stable non-raw identifier.');
+  }
+  return normalized;
+}
+
 function uniqueReadonly<T>(items: readonly T[]): readonly T[] {
   return Object.freeze([...new Set(items)]);
 }
@@ -213,12 +233,8 @@ function defaultAuthorityKindsFor(
   }
 }
 
-function bindingFor(admission: ConsequenceAdmissionResponse): ConsequenceAdmissionRequestableDenialBinding {
-  validateRequestableDecision(admission.decision);
-  const material = {
-    originalAdmissionId: admission.admissionId,
-    originalAdmissionDigest: admission.digest,
-    originalRequestId: admission.request.requestId,
+function scopeMaterialFor(admission: ConsequenceAdmissionResponse) {
+  return {
     tenantDigest: admission.request.policyScope.tenantId
       ? digestText(admission.request.policyScope.tenantId)
       : null,
@@ -228,6 +244,26 @@ function bindingFor(admission: ConsequenceAdmissionResponse): ConsequenceAdmissi
     policyRefDigest: admission.request.policyScope.policyRef
       ? digestText(admission.request.policyScope.policyRef)
       : null,
+  } as const;
+}
+
+export function scopeDigestForConsequenceAdmissionResponse(
+  admission: ConsequenceAdmissionResponse,
+): string {
+  return canonicalObject(
+    scopeMaterialFor(admission) as unknown as CanonicalReleaseJsonValue,
+  ).digest;
+}
+
+function bindingFor(admission: ConsequenceAdmissionResponse): ConsequenceAdmissionRequestableDenialBinding {
+  validateRequestableDecision(admission.decision);
+  const scopeMaterial = scopeMaterialFor(admission);
+  const material = {
+    originalAdmissionId: admission.admissionId,
+    originalAdmissionDigest: admission.digest,
+    originalRequestId: admission.request.requestId,
+    ...scopeMaterial,
+    scopeDigest: scopeDigestForConsequenceAdmissionResponse(admission),
     decision: admission.decision,
   } as const;
   const { canonical, digest } = canonicalObject(material as unknown as CanonicalReleaseJsonValue);
@@ -308,6 +344,12 @@ export function completeConsequenceAdmissionAccessRequestTask(
     throw new Error('Consequence admission access request task is already terminal.');
   }
   const decidedAt = normalizeIsoTimestamp(input.decidedAt, 'decidedAt');
+  const expiresAtBoundary = task.expiresAt <= task.denial.expiresAt
+    ? task.expiresAt
+    : task.denial.expiresAt;
+  if (status !== 'expired' && decidedAt >= expiresAtBoundary) {
+    throw new Error('Consequence admission access request task cannot be completed after expiry.');
+  }
   if (status !== 'approved') {
     return Object.freeze({
       ...task,
@@ -325,19 +367,37 @@ export function completeConsequenceAdmissionAccessRequestTask(
   }
   const approvedAt = normalizeIsoTimestamp(approval.approvedAt ?? decidedAt, 'approval.approvedAt');
   const approvedUntil = normalizeIsoTimestamp(approval.approvedUntil, 'approval.approvedUntil');
+  if (approvedAt < task.createdAt) {
+    throw new Error('Consequence admission approval approvedAt cannot be before task creation.');
+  }
+  if (approvedAt > decidedAt) {
+    throw new Error('Consequence admission approval approvedAt cannot be after decidedAt.');
+  }
   if (approvedUntil <= approvedAt) {
     throw new Error('Consequence admission approval approvedUntil must be after approvedAt.');
+  }
+  if (approvedUntil > expiresAtBoundary) {
+    throw new Error('Consequence admission approval approvedUntil cannot exceed task expiry.');
+  }
+  if (!task.denial.requiredAuthorityKinds.includes(approval.authorityKind)) {
+    throw new Error('Consequence admission approval authorityKind does not satisfy the access request.');
+  }
+  const scopeDigest = approval.scopeDigest?.trim()
+    ? normalizeDigest(approval.scopeDigest, 'approval.scopeDigest')
+    : task.denial.binding.scopeDigest;
+  if (scopeDigest !== task.denial.binding.scopeDigest) {
+    throw new Error('Consequence admission approval scopeDigest does not match the requestable denial.');
   }
   const approvalRef =
     approval.approvalRef?.trim() ||
     approval.id;
   const completedApproval: ConsequenceAdmissionAccessRequestApproval = Object.freeze({
-    id: normalizeNonEmptyString(approval.id, 'approval.id'),
+    id: normalizeApprovalId(approval.id),
     approvalRefDigest: digestText(approvalRef),
     approvedAt,
     approvedUntil,
     authorityKind: approval.authorityKind,
-    scopeDigest: approval.scopeDigest?.trim() || null,
+    scopeDigest,
     approvalStateDigest: approval.approvalState ? digestText(approval.approvalState) : null,
     rawApprovalStored: false,
   });
@@ -363,14 +423,27 @@ export function createConsequenceAdmissionAccessRequestReevaluationContext(
   input: {
     readonly task: ConsequenceAdmissionAccessRequestTask;
     readonly reevaluateAt: string;
+    readonly reevaluatedAdmission?: ConsequenceAdmissionResponse | null;
   },
 ): ConsequenceAdmissionAccessRequestReevaluationContext {
   if (input.task.status !== 'approved' || !input.task.result) {
     throw new Error('Consequence admission re-evaluation context requires an approved access request task.');
   }
   const reevaluateAt = normalizeIsoTimestamp(input.reevaluateAt, 'reevaluateAt');
+  if (reevaluateAt < input.task.result.approval.approvedAt) {
+    throw new Error('Consequence admission re-evaluation context cannot predate approval.');
+  }
   if (reevaluateAt >= input.task.result.approval.approvedUntil) {
     throw new Error('Consequence admission re-evaluation context cannot use an expired approval.');
+  }
+  if (reevaluateAt >= input.task.expiresAt || reevaluateAt >= input.task.denial.expiresAt) {
+    throw new Error('Consequence admission re-evaluation context cannot use an expired access request task.');
+  }
+  if (
+    input.reevaluatedAdmission &&
+    scopeDigestForConsequenceAdmissionResponse(input.reevaluatedAdmission) !== input.task.denial.binding.scopeDigest
+  ) {
+    throw new Error('Consequence admission re-evaluation context scope does not match the access request.');
   }
 
   return Object.freeze({
@@ -381,6 +454,7 @@ export function createConsequenceAdmissionAccessRequestReevaluationContext(
     originalAdmissionDigest: input.task.denial.binding.originalAdmissionDigest,
     originalRequestId: input.task.denial.binding.originalRequestId,
     bindingDigest: input.task.denial.binding.digest,
+    scopeDigest: input.task.denial.binding.scopeDigest,
     approvalRefDigest: input.task.result.approval.approvalRefDigest,
     approvedUntil: input.task.result.approval.approvedUntil,
     reevaluateAt,

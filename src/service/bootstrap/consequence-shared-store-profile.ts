@@ -15,6 +15,7 @@ export const CONSEQUENCE_SHARED_STORE_COMPONENTS = Object.freeze([
   'shadow-policy-simulations',
   'shadow-policy-candidates',
   'shadow-activation-receipts',
+  'generic-admission-access-requests',
   'policy-foundry-hosted-wizard-state',
   'retry-attempt-ledger',
   'presentation-replay-ledger',
@@ -178,6 +179,10 @@ const COMPONENT_REQUIREMENTS: Readonly<
   'shadow-activation-receipts': Object.freeze({
     evidenceRole: 'consequence-history',
     requiredStorePrimitive: 'tenant-scoped-append-only-history',
+  }),
+  'generic-admission-access-requests': Object.freeze({
+    evidenceRole: 'hosted-session-state',
+    requiredStorePrimitive: 'tenant-scoped-ttl-session-state',
   }),
   'policy-foundry-hosted-wizard-state': Object.freeze({
     evidenceRole: 'hosted-session-state',

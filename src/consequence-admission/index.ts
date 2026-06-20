@@ -7,6 +7,7 @@ export {
   createConsequenceAdmissionAccessRequestReevaluationContext,
   createConsequenceAdmissionAccessRequestTask,
   createConsequenceAdmissionRequestableDenial,
+  scopeDigestForConsequenceAdmissionResponse,
 } from './access-request-approval.js';
 export type {
   CompleteConsequenceAdmissionAccessRequestTaskInput,

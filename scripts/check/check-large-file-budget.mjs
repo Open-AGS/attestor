@@ -59,7 +59,7 @@ const REASONS = Object.freeze({
 const OVERSIZE_FILE_REGISTRY = Object.freeze([
   { path: 'docs/api/attestor-action-authorization.openapi.json', maxLines: 1978, reason: REASONS.generatedOpenApi },
   { path: 'fixtures/crypto-execution-admission/conformance-fixtures.v1.json', maxLines: 1692, reason: REASONS.conformanceFixture },
-  { path: 'docs/research/attestor-research-provenance-ledger.md', maxLines: 1525, reason: REASONS.researchLedger },
+  { path: 'docs/research/attestor-research-provenance-ledger.md', maxLines: 1540, reason: REASONS.researchLedger },
   { path: 'docs/02-architecture/consequence-runtime-assurance-overview.md', maxLines: 1255, reason: REASONS.largeDocument },
 ]);
 

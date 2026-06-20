@@ -137,11 +137,11 @@ function testResponsibilityDirectoryCountsMatchCloseoutMap(): void {
     billing: 13,
     bootstrap: 21,
     'control-plane-store': 24,
-    hosted: 11,
+    hosted: 12,
     http: 2,
     pipeline: 2,
     'policy-foundry': 3,
-    release: 16,
+    release: 17,
     runtime: 2,
     shadow: 11,
   };

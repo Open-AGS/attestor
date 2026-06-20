@@ -31,6 +31,7 @@ Readonly<Record<ProductionStoragePathComponentId, ProductionStorageMode>>
     'shadow-policy-simulations': 'shared-durable',
     'shadow-policy-candidates': 'shared-durable',
     'shadow-activation-receipts': 'shared-durable',
+    'generic-admission-access-requests': 'shared-durable',
     'policy-foundry-hosted-wizard-state': 'shared-durable',
     'retry-attempt-ledger': 'shared-durable',
     'presentation-replay-ledger': 'shared-durable',
@@ -60,7 +61,7 @@ function testEvaluationProfiles(): void {
     releaseAuthorityMode: 'disabled',
   });
   equal(singleNode.readyForSelectedProfile, true, 'Production storage path: single-node durable remains evaluation acceptable');
-  equal(singleNode.components.length, 12, 'Production storage path: inventories every storage surface');
+  equal(singleNode.components.length, 13, 'Production storage path: inventories every storage surface');
 }
 
 function testProductionSharedBlocksCurrentEvaluationStores(): void {

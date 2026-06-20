@@ -245,6 +245,31 @@ export const CONSEQUENCE_SHARED_STORE_INVENTORY_ITEMS = Object.freeze([
       'Receipt append table bound to tenant, source handoff digest, activation status, and rollback status.',
   }),
   item({
+    id: 'generic-admission-access-requests',
+    label: 'Generic admission access-request task lifecycle',
+    plane: 'consequence-admission-plane',
+    evidenceRole: 'hosted-session-state',
+    currentMode: 'file-backed-evaluation',
+    requiredPrimitive: 'tenant-scoped-ttl-session-state',
+    requiredOperationalProofs: TTL_SESSION_PROOFS,
+    profileComponent: 'generic-admission-access-requests',
+    migrationSlice: '09-append-only-history-outbox',
+    blocksProductionShared: true,
+    cryptoCompatible: true,
+    repositoryEvidence: Object.freeze([
+      'src/consequence-admission/access-request-approval.ts',
+      'src/service/hosted/hosted-generic-admission-access-request-store.ts',
+      'tests/consequence-admission-access-request-approval.test.ts',
+      'tests/hosted-generic-admission-access-request-store.test.ts',
+    ]),
+    blockerCodes: Object.freeze([
+      'file-backed-evaluation-history',
+      'shared-operational-proof-missing',
+    ]),
+    nextContract:
+      'Shared TTL task store with tenant-bound completion, decision lifecycle consistency, and lock keyspace proof.',
+  }),
+  item({
     id: 'policy-foundry-hosted-wizard-state',
     label: 'Policy Foundry hosted wizard resume state',
     plane: 'policy-foundry-plane',

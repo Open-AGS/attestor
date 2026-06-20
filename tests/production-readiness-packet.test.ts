@@ -58,6 +58,7 @@ Readonly<Record<ProductionStoragePathComponentId, ProductionStorageMode>>
     'shadow-policy-simulations': 'shared-durable',
     'shadow-policy-candidates': 'shared-durable',
     'shadow-activation-receipts': 'shared-durable',
+    'generic-admission-access-requests': 'shared-durable',
     'policy-foundry-hosted-wizard-state': 'shared-durable',
     'retry-attempt-ledger': 'shared-durable',
     'presentation-replay-ledger': 'shared-durable',

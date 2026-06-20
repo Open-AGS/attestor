@@ -38,7 +38,15 @@ function proofFixture() {
   };
 }
 
-function admissionFixture(decision: 'admit' | 'review' | 'block'): ConsequenceAdmissionResponse {
+function admissionFixture(
+  decision: 'admit' | 'review' | 'block',
+  overrides: {
+    readonly actor?: string;
+    readonly action?: string;
+    readonly downstreamSystem?: string;
+    readonly policyRef?: string;
+  } = {},
+): ConsequenceAdmissionResponse {
   const request = createConsequenceAdmissionRequest({
     requestedAt: '2026-06-18T10:00:00.000Z',
     packFamily: 'general',
@@ -50,15 +58,15 @@ function admissionFixture(decision: 'admit' | 'review' | 'block'): ConsequenceAd
       sourceRef: 'src/service/http/routes/generic-admission-routes.ts',
     },
     proposedConsequence: {
-      actor: 'support-ai-agent',
-      action: 'issue_refund',
-      downstreamSystem: 'refund-service',
+      actor: overrides.actor ?? 'support-ai-agent',
+      action: overrides.action ?? 'issue_refund',
+      downstreamSystem: overrides.downstreamSystem ?? 'refund-service',
       consequenceKind: 'transfer',
       riskClass: 'R3',
       summary: 'Refund requires fresh approval before execution.',
     },
     policyScope: {
-      policyRef: 'policy:refunds:v1',
+      policyRef: overrides.policyRef ?? 'policy:refunds:v1',
       tenantId: 'tenant_requestable_denial',
       environment: 'production',
       dimensions: {
@@ -162,7 +170,6 @@ function testApprovalTaskStillRequiresReevaluation(): void {
       approvalRef: 'approval:manager:raw-refund-approval',
       approvedUntil: '2026-06-18T10:08:00.000Z',
       authorityKind: 'approval',
-      scopeDigest: `sha256:${'b'.repeat(64)}`,
       approvalState: 'signed-approval-state-raw',
     },
   });
@@ -192,6 +199,11 @@ function testApprovalTaskStillRequiresReevaluation(): void {
     reevaluation.originalAdmissionDigest,
     denial.binding.originalAdmissionDigest,
     'Access request approval: re-evaluation context binds original admission digest',
+  );
+  equal(
+    reevaluation.scopeDigest,
+    denial.binding.scopeDigest,
+    'Access request approval: re-evaluation context binds original scope digest',
   );
 }
 
@@ -257,10 +269,164 @@ function testExpiredApprovalCannotReevaluate(): void {
   );
 }
 
+function testApprovalLifecycleBoundaries(): void {
+  const denial = requestableDenialFixture();
+  const task = createConsequenceAdmissionAccessRequestTask({
+    denial,
+    taskId: 'arq_refund_004',
+    createdAt: '2026-06-18T10:00:02.000Z',
+  });
+
+  throws(
+    () =>
+      completeConsequenceAdmissionAccessRequestTask({
+        task,
+        status: 'approved',
+        decidedAt: '2026-06-18T10:10:00.000Z',
+        approval: {
+          id: 'apr_refund_late',
+          approvedUntil: '2026-06-18T10:10:01.000Z',
+          authorityKind: 'approval',
+        },
+      }),
+    /after expiry/u,
+    'Access request approval: task cannot be approved after denial expiry',
+  );
+  throws(
+    () =>
+      completeConsequenceAdmissionAccessRequestTask({
+        task,
+        status: 'approved',
+        decidedAt: '2026-06-18T10:04:00.000Z',
+        approval: {
+          id: 'apr_refund_overlong',
+          approvedAt: '2026-06-18T10:04:00.000Z',
+          approvedUntil: '2026-06-18T10:11:00.000Z',
+          authorityKind: 'approval',
+        },
+      }),
+    /cannot exceed task expiry/u,
+    'Access request approval: approval window cannot outlive task or denial expiry',
+  );
+  throws(
+    () =>
+      completeConsequenceAdmissionAccessRequestTask({
+        task,
+        status: 'approved',
+        decidedAt: '2026-06-18T10:04:00.000Z',
+        approval: {
+          id: 'apr_refund_future',
+          approvedAt: '2026-06-18T10:05:00.000Z',
+          approvedUntil: '2026-06-18T10:08:00.000Z',
+          authorityKind: 'approval',
+        },
+      }),
+    /cannot be after decidedAt/u,
+    'Access request approval: approval cannot be recorded before it exists',
+  );
+}
+
+function testApprovalScopeAndAuthorityMustMatch(): void {
+  const denial = requestableDenialFixture();
+  const task = createConsequenceAdmissionAccessRequestTask({
+    denial,
+    taskId: 'arq_refund_005',
+    createdAt: '2026-06-18T10:00:02.000Z',
+  });
+  throws(
+    () =>
+      completeConsequenceAdmissionAccessRequestTask({
+        task,
+        status: 'approved',
+        decidedAt: '2026-06-18T10:04:00.000Z',
+        approval: {
+          id: 'apr_refund_wrong_scope',
+          approvedUntil: '2026-06-18T10:08:00.000Z',
+          authorityKind: 'approval',
+          scopeDigest: `sha256:${'f'.repeat(64)}`,
+        },
+      }),
+    /scopeDigest does not match/u,
+    'Access request approval: mismatched approval scope is rejected',
+  );
+
+  const stepUpDenial = createConsequenceAdmissionRequestableDenial({
+    admission: admissionFixture('review'),
+    reason: 'step-up-required',
+    template: 'step_up',
+    expiresAt: '2026-06-18T10:10:00.000Z',
+  });
+  const stepUpTask = createConsequenceAdmissionAccessRequestTask({
+    denial: stepUpDenial,
+    taskId: 'arq_refund_step_up',
+    createdAt: '2026-06-18T10:00:02.000Z',
+  });
+  throws(
+    () =>
+      completeConsequenceAdmissionAccessRequestTask({
+        task: stepUpTask,
+        status: 'approved',
+        decidedAt: '2026-06-18T10:04:00.000Z',
+        approval: {
+          id: 'apr_refund_plain_approval',
+          approvedUntil: '2026-06-18T10:08:00.000Z',
+          authorityKind: 'approval',
+        },
+      }),
+    /authorityKind does not satisfy/u,
+    'Access request approval: step-up task cannot be completed with plain approval authority',
+  );
+}
+
+function testReevaluationScopeMustMatchFreshAdmission(): void {
+  const denial = requestableDenialFixture();
+  const task = createConsequenceAdmissionAccessRequestTask({
+    denial,
+    taskId: 'arq_refund_006',
+    createdAt: '2026-06-18T10:00:02.000Z',
+  });
+  const approved = completeConsequenceAdmissionAccessRequestTask({
+    task,
+    status: 'approved',
+    decidedAt: '2026-06-18T10:04:00.000Z',
+    approval: {
+      id: 'apr_refund_006',
+      approvedAt: '2026-06-18T10:04:00.000Z',
+      approvedUntil: '2026-06-18T10:08:00.000Z',
+      authorityKind: 'approval',
+    },
+  });
+
+  throws(
+    () =>
+      createConsequenceAdmissionAccessRequestReevaluationContext({
+        task: approved,
+        reevaluateAt: '2026-06-18T10:03:59.000Z',
+      }),
+    /cannot predate approval/u,
+    'Access request approval: re-evaluation cannot predate approval',
+  );
+  throws(
+    () =>
+      createConsequenceAdmissionAccessRequestReevaluationContext({
+        task: approved,
+        reevaluateAt: '2026-06-18T10:04:10.000Z',
+        reevaluatedAdmission: admissionFixture('review', {
+          action: 'wire_refund',
+        }),
+      }),
+    /scope does not match/u,
+    'Access request approval: changed fresh admission scope is rejected',
+  );
+}
+
 testRequestableDenialIsNotAccessGrant();
 testAllowedAdmissionCannotBecomeRequestableDenial();
 testApprovalTaskStillRequiresReevaluation();
 testDeniedTaskDoesNotProduceReevaluationContext();
 testExpiredApprovalCannotReevaluate();
+testApprovalLifecycleBoundaries();
+testApprovalScopeAndAuthorityMustMatch();
+testReevaluationScopeMustMatchFreshAdmission();
 
 console.log(`Consequence admission access-request approval tests: ${passed} passed, 0 failed`);

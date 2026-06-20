@@ -45,6 +45,9 @@ function admissionFixture(
     readonly action?: string;
     readonly downstreamSystem?: string;
     readonly policyRef?: string;
+    readonly environment?: string;
+    readonly dimensions?: Readonly<Record<string, string | number | boolean | null>>;
+    readonly authorityMode?: string;
   } = {},
 ): ConsequenceAdmissionResponse {
   const request = createConsequenceAdmissionRequest({
@@ -68,14 +71,21 @@ function admissionFixture(
     policyScope: {
       policyRef: overrides.policyRef ?? 'policy:refunds:v1',
       tenantId: 'tenant_requestable_denial',
-      environment: 'production',
+      environment: overrides.environment ?? 'production',
       dimensions: {
         domain: 'money-movement',
+        materialScopeDigest: `sha256:${'1'.repeat(64)}`,
+        amountDigest: `sha256:${'2'.repeat(64)}`,
+        recipientDigest: `sha256:${'3'.repeat(64)}`,
+        dataScopeDigest: null,
+        requestedScopeDigest: null,
+        approvedScopeDigest: null,
+        ...overrides.dimensions,
       },
     },
     authority: {
       actorRef: 'service:support-ai-agent',
-      authorityMode: 'single-reviewer',
+      authorityMode: overrides.authorityMode ?? 'single-reviewer',
     },
     evidence: [],
     nativeInputRefs: [],
@@ -324,6 +334,22 @@ function testApprovalLifecycleBoundaries(): void {
     /cannot be after decidedAt/u,
     'Access request approval: approval cannot be recorded before it exists',
   );
+  throws(
+    () =>
+      completeConsequenceAdmissionAccessRequestTask({
+        task,
+        status: 'approved',
+        decidedAt: '2026-06-18T10:04:00.000Z',
+        approval: {
+          id: 'apr_refund_expired_before_decision',
+          approvedAt: '2026-06-18T10:02:00.000Z',
+          approvedUntil: '2026-06-18T10:03:00.000Z',
+          authorityKind: 'approval',
+        },
+      }),
+    /must be after decidedAt/u,
+    'Access request approval: approval window must still be live at decision time',
+  );
 }
 
 function testApprovalScopeAndAuthorityMustMatch(): void {
@@ -417,6 +443,21 @@ function testReevaluationScopeMustMatchFreshAdmission(): void {
       }),
     /scope does not match/u,
     'Access request approval: changed fresh admission scope is rejected',
+  );
+  throws(
+    () =>
+      createConsequenceAdmissionAccessRequestReevaluationContext({
+        task: approved,
+        reevaluateAt: '2026-06-18T10:04:10.000Z',
+        reevaluatedAdmission: admissionFixture('review', {
+          dimensions: {
+            domain: 'money-movement',
+            materialScopeDigest: `sha256:${'9'.repeat(64)}`,
+          },
+        }),
+      }),
+    /scope does not match/u,
+    'Access request approval: changed material scope digest is rejected',
   );
 }
 

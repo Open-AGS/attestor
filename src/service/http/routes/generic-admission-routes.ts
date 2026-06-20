@@ -179,11 +179,7 @@ function requestableDenialExpiresAt(input: {
   readonly receivedAt: string;
 }): string {
   const receivedAtMs = new Date(input.receivedAt).getTime();
-  const decidedAtMs = new Date(input.envelope.admission.decidedAt).getTime();
-  const baseMs = Math.max(
-    Number.isNaN(receivedAtMs) ? 0 : receivedAtMs,
-    Number.isNaN(decidedAtMs) ? 0 : decidedAtMs,
-  );
+  const baseMs = Number.isNaN(receivedAtMs) ? Date.now() : receivedAtMs;
   return new Date(baseMs + 10 * 60 * 1000).toISOString();
 }
 
@@ -197,6 +193,7 @@ function createRouteRequestableDenial(input: {
     admission: input.envelope.admission,
     reason,
     template: `generic-admission:${reason}`,
+    evaluatedAt: input.receivedAt,
     expiresAt: requestableDenialExpiresAt(input),
     catalogRefs: ['authzen:access-request:requestable-denial'],
   });

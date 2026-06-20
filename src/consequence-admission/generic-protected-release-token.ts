@@ -28,6 +28,9 @@ import {
   type ConsequenceAdmissionResponse,
   type GenericAdmissionEnvelope,
 } from './index.js';
+import {
+  scopeDigestForConsequenceAdmissionResponse,
+} from './access-request-approval.js';
 import type {
   ConsequenceAdmissionDownstreamBoundaryKind,
 } from './downstream-enforcement-contract.js';
@@ -311,6 +314,7 @@ function releaseDecisionFor(input: {
     audience: input.audience,
   } as unknown as CanonicalReleaseJsonValue);
   const consequenceHash = canonicalDigest({
+    materialScopeDigest: scopeDigestForConsequenceAdmissionResponse(admission),
     proposedConsequence: admission.request.proposedConsequence,
     policyScope: admission.request.policyScope,
   } as unknown as CanonicalReleaseJsonValue);

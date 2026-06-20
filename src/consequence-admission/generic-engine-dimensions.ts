@@ -4,6 +4,14 @@ import {
   type GenericAdmissionModeEvaluation,
   type GenericAdmissionObservedFeatureOrigin,
 } from './contracts.js';
+import {
+  canonicalizeReleaseJson,
+  type CanonicalReleaseJsonValue,
+} from '../release-kernel/release-canonicalization.js';
+import { createHash } from 'node:crypto';
+
+export const GENERIC_ADMISSION_MATERIAL_SCOPE_VERSION =
+  'attestor.generic-admission-material-scope.v1';
 
 export function observedFeatureTrue(
   input: CreateGenericAdmissionInput,
@@ -38,6 +46,53 @@ export function genericAdmissionSummary(input: CreateGenericAdmissionInput): str
   return input.summary ?? `${input.actor} proposes ${input.action} on ${input.downstreamSystem}.`;
 }
 
+function canonicalDigest(value: CanonicalReleaseJsonValue): string {
+  const canonical = canonicalizeReleaseJson(value);
+  return `sha256:${createHash('sha256').update(canonical).digest('hex')}`;
+}
+
+function digestNullable(value: unknown | null | undefined): string | null {
+  if (value === undefined || value === null) return null;
+  return canonicalDigest(value as CanonicalReleaseJsonValue);
+}
+
+function digestOptionalString(value: string | null | undefined): string | null {
+  const normalized = value?.trim();
+  return normalized ? canonicalDigest(normalized as unknown as CanonicalReleaseJsonValue) : null;
+}
+
+function sortedNativeInputRefs(input: CreateGenericAdmissionInput): readonly string[] {
+  return Object.freeze([...(input.nativeInputRefs ?? [])].sort());
+}
+
+function materialScopeFor(input: CreateGenericAdmissionInput): CanonicalReleaseJsonValue {
+  return {
+    version: GENERIC_ADMISSION_MATERIAL_SCOPE_VERSION,
+    mode: input.mode,
+    tenantId: input.tenantId ?? null,
+    actor: input.actor,
+    action: input.action,
+    domain: input.domain,
+    downstreamSystem: input.downstreamSystem,
+    environment: input.environment ?? null,
+    policyRef: input.policyRef ?? null,
+    authorityMode: input.authorityMode ?? null,
+    amount: input.amount ?? null,
+    recipient: input.recipient ?? null,
+    dataScope: input.dataScope ?? null,
+    scopeOwnerPolicyRef: input.scopeOwnerPolicyRef ?? null,
+    requestedScope: input.requestedScope ?? null,
+    approvedScope: input.approvedScope ?? null,
+    nativeInputRefs: sortedNativeInputRefs(input),
+  } as unknown as CanonicalReleaseJsonValue;
+}
+
+export function genericAdmissionMaterialScopeDigest(
+  input: CreateGenericAdmissionInput,
+): string {
+  return canonicalDigest(materialScopeFor(input));
+}
+
 export function genericAdmissionDimensions(
   input: CreateGenericAdmissionInput,
   evaluation: GenericAdmissionModeEvaluation,
@@ -45,6 +100,16 @@ export function genericAdmissionDimensions(
   return Object.freeze({
     domain: input.domain,
     mode: input.mode,
+    materialScopeVersion: GENERIC_ADMISSION_MATERIAL_SCOPE_VERSION,
+    materialScopeDigest: genericAdmissionMaterialScopeDigest(input),
+    amountDigest: digestNullable(input.amount),
+    recipientDigest: digestOptionalString(input.recipient),
+    dataScopeDigest: digestNullable(input.dataScope),
+    requestedScopeDigest: digestNullable(input.requestedScope),
+    approvedScopeDigest: digestNullable(input.approvedScope),
+    scopeOwnerPolicyRefDigest: digestOptionalString(input.scopeOwnerPolicyRef),
+    authorityModeDigest: digestOptionalString(input.authorityMode),
+    nativeInputRefsDigest: canonicalDigest(sortedNativeInputRefs(input) as unknown as CanonicalReleaseJsonValue),
     shadowDecision: evaluation.shadowDecision,
     downstreamPosture: evaluation.downstreamPosture,
     hasAmount: input.amount !== null && input.amount !== undefined,

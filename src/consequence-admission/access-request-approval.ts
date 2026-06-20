@@ -49,7 +49,13 @@ export interface ConsequenceAdmissionRequestableDenialBinding {
   readonly actorDigest: string;
   readonly actionDigest: string;
   readonly downstreamSystemDigest: string;
+  readonly domainDigest: string | null;
+  readonly environmentDigest: string | null;
   readonly policyRefDigest: string | null;
+  readonly consequenceKindDigest: string;
+  readonly riskClassDigest: string;
+  readonly authorityModeDigest: string | null;
+  readonly materialScopeDigest: string;
   readonly scopeDigest: string;
   readonly decision: Extract<ConsequenceAdmissionDecision, 'review' | 'block'>;
   readonly canonical: string;
@@ -126,6 +132,7 @@ export interface CreateConsequenceAdmissionRequestableDenialInput {
   readonly admission: ConsequenceAdmissionResponse;
   readonly reason: ConsequenceAdmissionRequestableDenialReason;
   readonly template: string;
+  readonly evaluatedAt?: string | null;
   readonly expiresAt: string;
   readonly requiredAuthorityKinds?: readonly ConsequenceAdmissionAccessRequestAuthorityKind[];
   readonly catalogRefs?: readonly string[];
@@ -233,17 +240,46 @@ function defaultAuthorityKindsFor(
   }
 }
 
+function digestOptionalText(value: string | null | undefined): string | null {
+  const normalized = value?.trim();
+  return normalized ? digestText(normalized) : null;
+}
+
+function dimensionDigest(value: unknown): string | null {
+  return typeof value === 'string' && SHA_256_DIGEST_PATTERN.test(value) ? value : null;
+}
+
+function materialScopeDigestFor(admission: ConsequenceAdmissionResponse): string {
+  const materialScopeDigest = dimensionDigest(
+    admission.request.policyScope.dimensions.materialScopeDigest,
+  );
+  if (materialScopeDigest) return materialScopeDigest;
+  return canonicalObject({
+    version: 'attestor.consequence-admission-material-scope-fallback.v1',
+    proposedConsequence: admission.request.proposedConsequence,
+    policyScope: admission.request.policyScope,
+    authority: admission.request.authority,
+    nativeInputRefs: admission.request.nativeInputRefs,
+  } as unknown as CanonicalReleaseJsonValue).digest;
+}
+
 function scopeMaterialFor(admission: ConsequenceAdmissionResponse) {
   return {
-    tenantDigest: admission.request.policyScope.tenantId
-      ? digestText(admission.request.policyScope.tenantId)
-      : null,
+    tenantDigest: digestOptionalText(admission.request.policyScope.tenantId),
     actorDigest: digestText(admission.request.proposedConsequence.actor),
     actionDigest: digestText(admission.request.proposedConsequence.action),
     downstreamSystemDigest: digestText(admission.request.proposedConsequence.downstreamSystem),
-    policyRefDigest: admission.request.policyScope.policyRef
-      ? digestText(admission.request.policyScope.policyRef)
-      : null,
+    domainDigest: digestOptionalText(
+      typeof admission.request.policyScope.dimensions.domain === 'string'
+        ? admission.request.policyScope.dimensions.domain
+        : null,
+    ),
+    environmentDigest: digestOptionalText(admission.request.policyScope.environment),
+    policyRefDigest: digestOptionalText(admission.request.policyScope.policyRef),
+    consequenceKindDigest: digestText(admission.request.proposedConsequence.consequenceKind),
+    riskClassDigest: digestText(admission.request.proposedConsequence.riskClass),
+    authorityModeDigest: digestOptionalText(admission.request.authority.authorityMode),
+    materialScopeDigest: materialScopeDigestFor(admission),
   } as const;
 }
 
@@ -282,7 +318,7 @@ export function createConsequenceAdmissionRequestableDenial(
   if (admission.allowed || !admission.failClosed) {
     throw new Error('Consequence admission requestable denial can only wrap a fail-closed denied admission.');
   }
-  const evaluatedAt = normalizeIsoTimestamp(admission.decidedAt, 'evaluatedAt');
+  const evaluatedAt = normalizeIsoTimestamp(input.evaluatedAt ?? admission.decidedAt, 'evaluatedAt');
   const expiresAt = normalizeIsoTimestamp(input.expiresAt, 'expiresAt');
   if (expiresAt <= evaluatedAt) {
     throw new Error('Consequence admission requestable denial expiresAt must be after evaluatedAt.');
@@ -375,6 +411,9 @@ export function completeConsequenceAdmissionAccessRequestTask(
   }
   if (approvedUntil <= approvedAt) {
     throw new Error('Consequence admission approval approvedUntil must be after approvedAt.');
+  }
+  if (approvedUntil <= decidedAt) {
+    throw new Error('Consequence admission approval approvedUntil must be after decidedAt.');
   }
   if (approvedUntil > expiresAtBoundary) {
     throw new Error('Consequence admission approval approvedUntil cannot exceed task expiry.');

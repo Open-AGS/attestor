@@ -1,6 +1,7 @@
 import type { Context, Hono } from 'hono';
 import {
   CONSEQUENCE_ADMISSION_ACCESS_REQUEST_TASK_STATUSES,
+  completeConsequenceAdmissionAccessRequestTask,
   createConsequenceAdmissionAccessRequestReevaluationContext,
   createConsequenceAdmissionProblem,
   scopeDigestForConsequenceAdmissionResponse,
@@ -263,6 +264,9 @@ export function registerGenericAdmissionAccessRequestRoutes(
     if (!deps.completeAccessRequestTask) {
       return c.json(accessRequestTaskUnavailableProblem(), 503);
     }
+    if (!deps.getAccessRequestTask) {
+      return c.json(accessRequestTaskUnavailableProblem(), 503);
+    }
     if (!acceptsJsonRequestBody(c)) {
       const problem = createConsequenceAdmissionProblem({
         type: 'https://attestor.dev/problems/access-request-decision-json-required',
@@ -313,13 +317,55 @@ export function registerGenericAdmissionAccessRequestRoutes(
       return c.json(problem, 400);
     }
     const tenant = deps.currentTenant(c);
-    const decidedAt = optionalStringField(payload, ['decidedAt']) ?? new Date().toISOString();
+    const taskId = c.req.param('id');
+    const decidedAt = new Date().toISOString();
+    const currentTask = await deps.getAccessRequestTask({
+      context: c,
+      tenant,
+      taskId,
+    });
+    if (!currentTask) {
+      const problem = createConsequenceAdmissionProblem({
+        type: 'https://attestor.dev/problems/access-request-task-not-found',
+        title: 'Access request task not found',
+        status: 404,
+        detail: 'The access request task was not found for this tenant.',
+        instance: '/api/v1/admissions/access-requests',
+        reasonCodes: ['access-request-task-not-found'],
+      });
+      return c.json(problem, 404);
+    }
+    let previewTask: ConsequenceAdmissionAccessRequestTask;
+    try {
+      previewTask = completeConsequenceAdmissionAccessRequestTask({
+        task: currentTask,
+        status,
+        decidedAt,
+        approval,
+      });
+      if (previewTask.status === 'approved') {
+        createConsequenceAdmissionAccessRequestReevaluationContext({
+          task: previewTask,
+          reevaluateAt: decidedAt,
+        });
+      }
+    } catch {
+      const problem = createConsequenceAdmissionProblem({
+        type: 'https://attestor.dev/problems/access-request-decision-invalid',
+        title: 'Access request decision invalid',
+        status: 400,
+        detail: 'The access request decision failed lifecycle, authority, freshness, or scope validation.',
+        instance: '/api/v1/admissions/access-requests',
+        reasonCodes: ['access-request-decision-invalid'],
+      });
+      return c.json(problem, 400);
+    }
     let task: ConsequenceAdmissionAccessRequestTask | null;
     try {
       task = await deps.completeAccessRequestTask({
         context: c,
         tenant,
-        taskId: c.req.param('id'),
+        taskId,
         status,
         decidedAt,
         approval,
@@ -346,12 +392,25 @@ export function registerGenericAdmissionAccessRequestRoutes(
       });
       return c.json(problem, 404);
     }
-    const reevaluation = task.status === 'approved'
-      ? createConsequenceAdmissionAccessRequestReevaluationContext({
-          task,
-          reevaluateAt: decidedAt,
-        })
-      : null;
+    let reevaluation: ConsequenceAdmissionAccessRequestReevaluationContext | null = null;
+    try {
+      reevaluation = task.status === 'approved'
+        ? createConsequenceAdmissionAccessRequestReevaluationContext({
+            task,
+            reevaluateAt: decidedAt,
+          })
+        : null;
+    } catch {
+      const problem = createConsequenceAdmissionProblem({
+        type: 'https://attestor.dev/problems/access-request-decision-invalid',
+        title: 'Access request decision invalid',
+        status: 400,
+        detail: 'The persisted access request decision failed fresh re-evaluation context validation.',
+        instance: '/api/v1/admissions/access-requests',
+        reasonCodes: ['access-request-decision-invalid'],
+      });
+      return c.json(problem, 400);
+    }
     return c.json({
       version: 'attestor.generic-admission-access-request-decision.v1',
       tenantId: tenant.tenantId,

@@ -54,7 +54,7 @@ and token, then returns one bounded decision with reasons: `admit`, `narrow`,
 `review`, or `block`.
 
 For requestable approvals, it checks that the approved task still matches the
-current policy and scope context before execution.
+current policy and material scope context before execution.
 
 The real service should run only through the customer-owned gate.
 

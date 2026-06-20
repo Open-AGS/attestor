@@ -3,6 +3,7 @@ import { runGuardRouteTests } from './generic-admission-routes/guard-route-tests
 import { getPassedCount } from './generic-admission-routes/helpers.js';
 import { runIdempotencyRouteTests } from './generic-admission-routes/idempotency-tests.js';
 import { runPlanEnvelopeTests } from './generic-admission-routes/plan-envelope-tests.js';
+import { runRequestableDenialHardeningRouteTests } from './generic-admission-routes/requestable-denial-hardening-tests.js';
 import { runProtectedTokenTests } from './generic-admission-routes/protected-token-tests.js';
 import { runRequestableDenialRouteTests } from './generic-admission-routes/requestable-denial-tests.js';
 import { runWorkflowEntitlementRouteTests } from './generic-admission-routes/workflow-entitlement-tests.js';
@@ -12,6 +13,7 @@ await runGuardRouteTests();
 await runFailClosedRetryTests();
 await runProtectedTokenTests();
 await runRequestableDenialRouteTests();
+await runRequestableDenialHardeningRouteTests();
 await runIdempotencyRouteTests();
 await runWorkflowEntitlementRouteTests();
 

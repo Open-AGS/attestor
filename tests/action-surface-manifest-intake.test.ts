@@ -130,6 +130,29 @@ paths:
   );
 }
 
+function testYamlMergeSequenceLimit(): void {
+  const repeatedMergeAliases = new Array(21).fill('*refundOperation').join(', ');
+  assert.throws(
+    () => ingestActionSurfaceManifestText(`
+openapi: 3.1.0
+info:
+  title: Refund API
+  version: 1.0.0
+x-refund-operation: &refundOperation
+  operationId: issueRefund
+paths:
+  /refunds:
+    post:
+      <<: [${repeatedMergeAliases}]
+`, {
+      sourceRef: 'openapi/refund-merge-sequence-limit.yaml',
+    }),
+    /maxMergeSeqLength/u,
+    'Manifest intake: YAML merge sequences are bounded before repeated-alias expansion can dominate parse work',
+  );
+  passed += 1;
+}
+
 function testWorkflowYamlManifestIntakeDetectsSecretRisk(): void {
   const result = ingestActionSurfaceManifestText(`
 name: Deploy production
@@ -236,6 +259,7 @@ try {
   testYamlOpenApiManifestIntake();
   testJsonMcpManifestIntake();
   testYamlMergeTagCompatibility();
+  testYamlMergeSequenceLimit();
   testWorkflowYamlManifestIntakeDetectsSecretRisk();
   testLimitsAndExplicitKind();
   testDescriptorDocsPackageAndDependency();

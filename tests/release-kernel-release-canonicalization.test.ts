@@ -66,6 +66,36 @@ async function main(): Promise<void> {
     /Only plain JSON objects are canonicalizable/,
     'Release canonicalization: custom object instances are rejected instead of being coerced implicitly',
   );
+  const sharedReference = { leaf: 'alias' };
+  equal(
+    canonicalizeReleaseJson({ first: sharedReference, second: sharedReference } as never),
+    '{"first":{"leaf":"alias"},"second":{"leaf":"alias"}}',
+    'Release canonicalization: repeated object references are canonicalized as deterministic JSON value trees',
+  );
+
+  const cyclicReference: { readonly label: string; self?: unknown } = { label: 'cycle' };
+  (cyclicReference as { self?: unknown }).self = cyclicReference;
+  throws(
+    () => canonicalizeReleaseJson(cyclicReference as never),
+    /Circular object references are not canonicalizable/,
+    'Release canonicalization: circular object references are rejected before recursive traversal can loop',
+  );
+
+  let overlyDeep: unknown = null;
+  for (let index = 0; index < 130; index += 1) {
+    overlyDeep = { nested: overlyDeep };
+  }
+  throws(
+    () => canonicalizeReleaseJson(overlyDeep as never),
+    /exceeds maximum depth/,
+    'Release canonicalization: overly deep payloads are rejected before recursive traversal can exhaust the stack',
+  );
+
+  throws(
+    () => canonicalizeReleaseJson(new Array(100_001).fill(null) as never),
+    /exceeds maximum node count/,
+    'Release canonicalization: oversized payload graphs are rejected before unbounded canonicalization work',
+  );
 
   const outputCanonical = canonicalizeReleaseOutputEnvelope({
     outputContract: {

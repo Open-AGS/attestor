@@ -45,6 +45,7 @@ import {
   ANONYMOUS_TENANT_ID,
   LEGACY_ANONYMOUS_TENANT_ID,
 } from '../tenant-isolation.js';
+import { logger } from '../../utils/logger.js';
 
 export interface PipelineJobTenantContext {
   tenantId: string;
@@ -369,6 +370,19 @@ async function persistTerminalDeadLetterJob(
     failedReason: failedReasonFromEvent(job, err),
   });
   await upsertAsyncDeadLetterRecordState(record);
+}
+
+function logDeadLetterPersistenceFailure(
+  action: 'persist-terminal-dead-letter' | 'remove-completed-dead-letter',
+  job: Pick<Job<PipelineJobData, PipelineJobResult>, 'id' | 'name'> | undefined | null,
+  err: unknown,
+): void {
+  logger.error('async.deadLetter', 'Async dead-letter persistence failed', {
+    action,
+    jobId: job?.id ? String(job.id) : 'unknown',
+    jobName: job?.name ?? 'unknown',
+    errorName: err instanceof Error ? err.name : typeof err,
+  });
 }
 
 export function getAsyncRetryPolicy(config?: AsyncPipelineConfig): AsyncRetryPolicy {
@@ -756,13 +770,17 @@ export function createPipelineWorker(config?: AsyncPipelineConfig): Worker<Pipel
 
   worker.on('completed', (job) => {
     if (!job?.id) return;
-    void removeAsyncDeadLetterRecordState(String(job.id)).catch(() => {});
+    void removeAsyncDeadLetterRecordState(String(job.id)).catch((err) => {
+      logDeadLetterPersistenceFailure('remove-completed-dead-letter', job, err);
+    });
   });
 
   worker.on('failed', (job, err) => {
     if (!job || !err) return;
     if (err.name === 'DelayedError') return;
-    void persistTerminalDeadLetterJob(job, err).catch(() => {});
+    void persistTerminalDeadLetterJob(job, err).catch((persistErr) => {
+      logDeadLetterPersistenceFailure('persist-terminal-dead-letter', job, persistErr);
+    });
   });
 
   return worker;

@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import {
   createPipelineDeadLetterService,
   type PipelineDeadLetterServiceDeps,
@@ -45,6 +47,32 @@ async function testDeadLetterServiceDelegatesRecordUpsert(): Promise<void> {
   assert.deepEqual(calls, [record]);
 }
 
-await testDeadLetterServiceDelegatesRecordUpsert();
+function testAsyncPipelineDeadLetterPersistenceFailuresAreLogged(): void {
+  const source = readFileSync(join(process.cwd(), 'src', 'service', 'async', 'async-pipeline.ts'), 'utf8');
 
-console.log('Service pipeline dead letter service tests: 1 passed, 0 failed');
+  assert.match(
+    source,
+    /logger\.error\('async\.deadLetter', 'Async dead-letter persistence failed'/,
+    'Async pipeline: dead-letter persistence failures emit a structured operator log',
+  );
+  assert.doesNotMatch(
+    source,
+    /persistTerminalDeadLetterJob\(job, err\)\.catch\(\(\) => \{\}\)/,
+    'Async pipeline: terminal dead-letter persistence failure must not be swallowed silently',
+  );
+  assert.doesNotMatch(
+    source,
+    /removeAsyncDeadLetterRecordState\(String\(job\.id\)\)\.catch\(\(\) => \{\}\)/,
+    'Async pipeline: completed-job dead-letter cleanup failure must not be swallowed silently',
+  );
+  assert.match(
+    source,
+    /errorName: err instanceof Error \? err\.name : typeof err/,
+    'Async pipeline: dead-letter failure log uses redacted error classification instead of raw provider bodies',
+  );
+}
+
+await testDeadLetterServiceDelegatesRecordUpsert();
+testAsyncPipelineDeadLetterPersistenceFailuresAreLogged();
+
+console.log('Service pipeline dead letter service tests: 5 passed, 0 failed');

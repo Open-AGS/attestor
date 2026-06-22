@@ -17,6 +17,8 @@ import type { ReleaseTargetReference } from './object-model.js';
  */
 
 export const RELEASE_CANONICALIZATION_SPEC_VERSION = 'attestor.release-canonicalization.v1';
+const MAX_CANONICAL_RELEASE_JSON_DEPTH = 128;
+const MAX_CANONICAL_RELEASE_JSON_NODES = 100_000;
 
 export type CanonicalReleaseJsonValue =
   | null
@@ -27,6 +29,11 @@ export type CanonicalReleaseJsonValue =
   | { readonly [key: string]: CanonicalReleaseJsonValue };
 
 type CanonicalReleaseObject = { readonly [key: string]: CanonicalReleaseJsonValue };
+
+interface CanonicalizationState {
+  readonly activeReferences: WeakSet<object>;
+  nodeCount: number;
+}
 
 export interface ReleaseOutputEnvelope {
   readonly outputContract: OutputContractDescriptor;
@@ -75,10 +82,44 @@ function isCanonicalReleaseObject(value: CanonicalReleaseJsonValue): value is Ca
   return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
 
+function enterCanonicalNode(path: string, depth: number, state: CanonicalizationState): void {
+  state.nodeCount += 1;
+  if (state.nodeCount > MAX_CANONICAL_RELEASE_JSON_NODES) {
+    throw new Error(
+      `Canonical JSON exceeds maximum node count of ${MAX_CANONICAL_RELEASE_JSON_NODES} at ${path}.`,
+    );
+  }
+
+  if (depth > MAX_CANONICAL_RELEASE_JSON_DEPTH) {
+    throw new Error(
+      `Canonical JSON exceeds maximum depth of ${MAX_CANONICAL_RELEASE_JSON_DEPTH} at ${path}.`,
+    );
+  }
+}
+
+function enterCanonicalReference(
+  value: object,
+  path: string,
+  state: CanonicalizationState,
+): void {
+  if (state.activeReferences.has(value)) {
+    throw new Error(`Circular object references are not canonicalizable at ${path}.`);
+  }
+  state.activeReferences.add(value);
+}
+
+function leaveCanonicalReference(value: object, state: CanonicalizationState): void {
+  state.activeReferences.delete(value);
+}
+
 function normalizeCanonicalValue(
   value: CanonicalReleaseJsonValue,
   path: string,
+  state: CanonicalizationState,
+  depth: number,
 ): CanonicalReleaseJsonValue {
+  enterCanonicalNode(path, depth, state);
+
   if (value === null) {
     return null;
   }
@@ -95,28 +136,41 @@ function normalizeCanonicalValue(
   }
 
   if (Array.isArray(value)) {
-    return Object.freeze(
-      value.map((item, index) => normalizeCanonicalValue(item, `${path}[${index}]`)),
-    );
+    enterCanonicalReference(value, path, state);
+    try {
+      return Object.freeze(
+        value.map((item, index) => normalizeCanonicalValue(item, `${path}[${index}]`, state, depth + 1)),
+      );
+    } finally {
+      leaveCanonicalReference(value, state);
+    }
   }
 
   if (!isPlainObject(value)) {
     throw new Error(`Only plain JSON objects are canonicalizable at ${path}.`);
   }
 
-  const normalizedEntries = Object.keys(value)
-    .sort()
-    .map((key) => {
-      const nestedValue = value[key];
-      if (nestedValue === undefined) {
-        throw new Error(`Undefined values are not canonicalizable at ${path}.${key}.`);
-      }
-      return [key, normalizeCanonicalValue(nestedValue as CanonicalReleaseJsonValue, `${path}.${key}`)] as const;
-    });
+  enterCanonicalReference(value, path, state);
+  try {
+    const normalizedEntries = Object.keys(value)
+      .sort()
+      .map((key) => {
+        const nestedValue = value[key];
+        if (nestedValue === undefined) {
+          throw new Error(`Undefined values are not canonicalizable at ${path}.${key}.`);
+        }
+        return [
+          key,
+          normalizeCanonicalValue(nestedValue as CanonicalReleaseJsonValue, `${path}.${key}`, state, depth + 1),
+        ] as const;
+      });
 
-  return Object.freeze(
-    Object.fromEntries(normalizedEntries) as { readonly [key: string]: CanonicalReleaseJsonValue },
-  );
+    return Object.freeze(
+      Object.fromEntries(normalizedEntries) as { readonly [key: string]: CanonicalReleaseJsonValue },
+    );
+  } finally {
+    leaveCanonicalReference(value, state);
+  }
 }
 
 function serializeCanonicalValue(value: CanonicalReleaseJsonValue): string {
@@ -151,7 +205,12 @@ function serializeCanonicalObject(value: CanonicalReleaseObject): string {
 }
 
 export function canonicalizeReleaseJson(value: CanonicalReleaseJsonValue): string {
-  const normalized = normalizeCanonicalValue(value, '$');
+  const normalized = normalizeCanonicalValue(
+    value,
+    '$',
+    { activeReferences: new WeakSet<object>(), nodeCount: 0 },
+    0,
+  );
   return serializeCanonicalValue(normalized);
 }
 

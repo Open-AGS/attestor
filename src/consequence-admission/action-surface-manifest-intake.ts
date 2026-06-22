@@ -78,6 +78,7 @@ export interface ActionSurfaceManifestIntakeDescriptor {
 type UnknownRecord = Readonly<Record<string, unknown>>;
 
 const DEFAULT_MAX_MANIFEST_BYTES = 512 * 1024;
+const MAX_YAML_MERGE_SEQUENCE_LENGTH = 20;
 const YAML_MANIFEST_SCHEMA = CORE_SCHEMA.withTags(mergeTag);
 
 function canonicalObject(value: CanonicalReleaseJsonValue): {
@@ -138,6 +139,7 @@ function parseManifestText(
   return parseYaml(text, {
     filename: 'action-surface-manifest',
     json: false,
+    maxMergeSeqLength: MAX_YAML_MERGE_SEQUENCE_LENGTH,
     schema: YAML_MANIFEST_SCHEMA,
   }) as unknown;
 }

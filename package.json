@@ -738,7 +738,7 @@
     "hono": "4.12.26",
     "ioredis": "5.11.1",
     "jose": "6.2.3",
-    "js-yaml": "^4.2.0",
+    "js-yaml": "^5.0.0",
     "jszip": "^3.10.1",
     "node-forge": "1.4.0",
     "nodemailer": "^9.0.1",

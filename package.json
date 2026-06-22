@@ -735,7 +735,7 @@
     "cda-schematron-validator": "^1.1.12",
     "dotenv": "^17.4.2",
     "embedded-postgres": "^18.3.0-beta.17",
-    "hono": "4.12.25",
+    "hono": "4.12.26",
     "ioredis": "5.11.1",
     "jose": "6.2.3",
     "js-yaml": "^4.2.0",

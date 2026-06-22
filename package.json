@@ -750,7 +750,7 @@
     "saxon-js": "^2.7.0",
     "smtp-server": "^3.18.5",
     "snowflake-sdk": "2.4.3",
-    "stripe": "22.1.1",
+    "stripe": "22.2.2",
     "typescript": "^6.0.3",
     "xmlbuilder2": "^4.0.3",
     "xslt3": "^2.7.0"

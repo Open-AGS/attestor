@@ -1,6 +1,6 @@
 <p align="center">
-  <a href="docs/whitepaper/Attestor_Technical_Whitepaper.pdf">
-    <img src="docs/assets/attestor-readme-logo.png" alt="Read the Attestor Technical Whitepaper" width="100%">
+  <a href="https://www.youtube.com/watch?v=HHY_kxhYXQY">
+    <img src="docs/assets/attestor-proof-demo-thumbnail-v2.png" alt="Watch the Attestor proof demo video" width="100%">
   </a>
   <br>
   <strong><a href="docs/whitepaper/Attestor_Technical_Whitepaper.pdf">📄 Read the Technical Whitepaper</a></strong>

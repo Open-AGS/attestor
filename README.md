@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/attestor-readme-logo.png" alt="Attestor" width="100%">
+  <img src="docs/assets/attestor-live-environment-hero.jpg" alt="Attestor Hero Visual" width="100%">
   <br>
   <strong><a href="docs/whitepaper/Attestor_Technical_Whitepaper.pdf">📄 Read the Technical Whitepaper</a></strong>
 </p>

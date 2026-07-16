@@ -744,7 +744,7 @@
     "nodemailer": "^9.0.1",
     "openai": "6.47.0",
     "openid-client": "6.8.4",
-    "pg": "8.21.0",
+    "pg": "8.22.0",
     "redis-memory-server": "^0.16.1",
     "samlify": "^2.13.1",
     "saxon-js": "^2.7.0",

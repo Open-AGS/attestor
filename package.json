@@ -742,7 +742,7 @@
     "jszip": "^3.10.1",
     "node-forge": "1.4.0",
     "nodemailer": "^9.0.1",
-    "openai": "6.37.0",
+    "openai": "6.47.0",
     "openid-client": "6.8.4",
     "pg": "8.21.0",
     "redis-memory-server": "^0.16.1",

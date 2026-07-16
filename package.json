@@ -745,7 +745,7 @@
     "openai": "6.47.0",
     "openid-client": "6.8.4",
     "pg": "8.22.0",
-    "redis-memory-server": "^0.16.1",
+    "redis-memory-server": "^0.17.0",
     "samlify": "^2.13.1",
     "saxon-js": "^2.7.0",
     "smtp-server": "^3.18.5",

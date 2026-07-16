@@ -1,5 +1,9 @@
-import { readFileSync } from 'node:fs';
+import { execFileSync, spawnSync } from 'node:child_process';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { strict as assert } from 'node:assert';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 let passed = 0;
 
@@ -33,8 +37,12 @@ includes(workflow, 'pull_request:', 'Branch workflow: runs on pull requests touc
 includes(workflow, 'push:', 'Branch workflow: runs on master pushes touching governance files');
 includes(workflow, "'.github/**'", 'Branch workflow: watches GitHub governance files');
 includes(workflow, "'SECURITY.md'", 'Branch workflow: watches SECURITY.md');
-includes(workflow, 'actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6', 'Branch workflow: checkout action is SHA-pinned');
-includes(workflow, 'node scripts/check/check-stale-branches.mjs --require-master-only', 'Branch workflow: stale branch checker runs in master-only mode');
+includes(workflow, 'actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0', 'Branch workflow: checkout action is SHA-pinned');
+includes(workflow, 'pull-requests: read', 'Branch workflow: active PR inventory has narrow read authority');
+includes(workflow, 'Fetch active same-repository PR branches', 'Branch workflow: active same-repository PR heads are fetched');
+includes(workflow, "select(.head.repo.full_name == .base.repo.full_name)", 'Branch workflow: fork heads are excluded from origin branch inventory');
+includes(workflow, '--require-active-pr-only', 'Branch workflow: stale branch checker allows only active PR heads');
+includes(workflow, '--open-pr-heads-file', 'Branch workflow: active PR inventory is passed explicitly');
 includes(workflow, 'ATTESTOR_BRANCH_GOVERNANCE_TOKEN', 'Branch workflow: live governance probes require a dedicated admin-read token secret');
 includes(workflow, 'GitHub Administration: read permission', 'Branch workflow: token permission boundary is explicit');
 includes(workflow, "delete_branch_on_merge", 'Branch workflow: repository auto-delete setting is checked');
@@ -51,8 +59,11 @@ includes(workflow, 'dismiss_stale_reviews', 'Branch workflow: stale review dismi
 includes(workflow, 'require_last_push_approval', 'Branch workflow: last-push approval setting is checked');
 
 includes(script, '--require-master-only', 'Branch script: supports master-only enforcement');
+includes(script, '--require-active-pr-only', 'Branch script: supports active-PR-only enforcement');
+includes(script, 'orphanedRemoteBranches', 'Branch script: reports branches without an active PR');
 includes(script, 'mergedCodexBranches', 'Branch script: reports merged codex branches');
 includes(script, 'Remote branch policy requires master-only public branches.', 'Branch script: fails non-master branch inventory when required');
+includes(script, 'Only master and active same-repository PR branches may exist on the remote.', 'Branch script: fails orphaned remote branches');
 
 includes(codeowners, '/CONTRIBUTING.md @AI-gateway-systems', 'CODEOWNERS: contributing guidance requires owner review');
 includes(codeowners, 'Per-surface teams must not be added as placeholders.', 'CODEOWNERS: placeholder surface teams are forbidden');
@@ -75,5 +86,76 @@ includes(contributing, 'team membership policy', 'Contributing: team membership 
 includes(remediation, 'delete_branch_on_merge=true', 'Branch remediation: final delete-branch-on-merge state is recorded');
 matches(remediation, /branch inventory: `\["master"\]`/u, 'Branch remediation: final branch inventory is recorded');
 includes(remediation, 'This remediation does not prove production readiness', 'Branch remediation: no-claim boundary is explicit');
+
+const checkerPath = fileURLToPath(
+  new URL('../scripts/check/check-stale-branches.mjs', import.meta.url),
+);
+const fixtureRoot = mkdtempSync(join(tmpdir(), 'attestor-branch-governance-'));
+const remotePath = join(fixtureRoot, 'remote.git');
+const workPath = join(fixtureRoot, 'work');
+const openPrHeadsPath = join(fixtureRoot, 'open-pr-heads.txt');
+
+function git(args: string[], cwd?: string): string {
+  return execFileSync('git', args, { cwd, encoding: 'utf8' }).trim();
+}
+
+function runChecker(...args: string[]) {
+  return spawnSync(process.execPath, [checkerPath, ...args], {
+    cwd: workPath,
+    encoding: 'utf8',
+  });
+}
+
+try {
+  git(['init', '--bare', remotePath]);
+  git(['clone', remotePath, workPath]);
+  git(['config', 'user.name', 'Attestor Test'], workPath);
+  git(['config', 'user.email', 'attestor-test@example.invalid'], workPath);
+  writeFileSync(join(workPath, 'fixture.txt'), 'master\n');
+  git(['add', 'fixture.txt'], workPath);
+  git(['commit', '-m', 'fixture: master'], workPath);
+  git(['branch', '-M', 'master'], workPath);
+  git(['push', '-u', 'origin', 'master'], workPath);
+
+  git(['switch', '-c', 'codex/active-review'], workPath);
+  writeFileSync(join(workPath, 'active.txt'), 'active review\n');
+  git(['add', 'active.txt'], workPath);
+  git(['commit', '-m', 'fixture: active review'], workPath);
+  git(['push', '-u', 'origin', 'codex/active-review'], workPath);
+  writeFileSync(openPrHeadsPath, 'codex/active-review\n');
+
+  const activeResult = runChecker(
+    '--require-active-pr-only',
+    '--open-pr-heads-file',
+    openPrHeadsPath,
+  );
+  assert.equal(activeResult.status, 0, activeResult.stderr);
+  passed += 1;
+
+  const strictResult = runChecker('--require-master-only');
+  assert.notEqual(strictResult.status, 0);
+  passed += 1;
+
+  git(['switch', 'master'], workPath);
+  git(['switch', '-c', 'codex/orphaned'], workPath);
+  writeFileSync(join(workPath, 'orphaned.txt'), 'orphaned\n');
+  git(['add', 'orphaned.txt'], workPath);
+  git(['commit', '-m', 'fixture: orphaned'], workPath);
+  git(['push', '-u', 'origin', 'codex/orphaned'], workPath);
+
+  const orphanedResult = runChecker(
+    '--require-active-pr-only',
+    '--open-pr-heads-file',
+    openPrHeadsPath,
+  );
+  assert.notEqual(orphanedResult.status, 0);
+  assert.match(
+    `${orphanedResult.stdout}\n${orphanedResult.stderr}`,
+    /codex\/orphaned/u,
+  );
+  passed += 2;
+} finally {
+  rmSync(fixtureRoot, { recursive: true, force: true });
+}
 
 console.log(`Branch governance policy tests: ${passed} passed, 0 failed`);

@@ -17,6 +17,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: read
 
 jobs:
   branch-governance:
@@ -30,9 +31,22 @@ jobs:
       - name: Fetch branch inventory
         run: git fetch --prune origin '+refs/heads/*:refs/remotes/origin/*'
 
+      - name: Fetch active same-repository PR branches
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh api --paginate "repos/${GH_REPO}/pulls?state=open&per_page=100" \
+            --jq '.[] | select(.head.repo.full_name == .base.repo.full_name) | .head.ref' \
+            | sort -u > "${RUNNER_TEMP}/open-pr-heads.txt"
+
       - name: Verify stale branch policy
         if: github.event_name != 'pull_request'
-        run: node scripts/check/check-stale-branches.mjs --require-master-only
+        run: >-
+          node scripts/check/check-stale-branches.mjs
+          --require-active-pr-only
+          --open-pr-heads-file "${RUNNER_TEMP}/open-pr-heads.txt"
 
       - name: Verify branch-governance admin-read token
         if: github.event_name != 'pull_request'

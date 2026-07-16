@@ -12,6 +12,8 @@ All release, evaluation, security, audit, and documentation claims must resolve 
 
 They are not release channels, evaluation baselines, support branches, installation targets, or evidence sources. Do not ask users, reviewers, customers, scripts, or documentation to install or clone Attestor from a `codex/*` branch.
 
+An active same-repository pull request may keep its head branch temporarily while review and required checks are in progress. That branch is a review ref only: it does not become a public source of truth, and it must be removed when the PR is merged or closed.
+
 ## Merge Cleanup
 
 GitHub repository setting `delete_branch_on_merge` must stay enabled.
@@ -20,7 +22,7 @@ After a PR is merged, its head branch should be deleted automatically. If a bran
 
 ## Stale Branches
 
-Unmerged branches are not allowed to remain as long-lived public work-in-progress.
+Non-master branches without an open same-repository pull request are not allowed to remain as public work-in-progress.
 
 If a branch is more than 30 days old, more than 50 commits behind `origin/master`, or contains trust-sensitive files, it must be handled in one of these ways:
 

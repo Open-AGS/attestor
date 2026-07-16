@@ -24,7 +24,7 @@ function excludes(content: string, unexpected: RegExp, message: string): void {
 function testReadmeStartsWithAConcreteWorkflow(): void {
   const readme = readProjectFile('README.md');
 
-  includes(readme, '<img src="docs/assets/attestor-proof-demo-thumbnail-v2.png"', 'Product docs: README uses the current proof demo thumbnail');
+  includes(readme, '<img src="docs/assets/attestor-readme-logo.png"', 'Product docs: README uses the current brand visual');
   excludes(readme, /attestor-logo\.png|attestor-readme-hero\.png/u, 'Product docs: README does not use retired Attestor image assets');
   includes(readme, 'alt="version 0.3.0-evaluation"', 'Product docs: README exposes the evaluation version badge');
   includes(readme, 'alt="NIST AI RMF mapped"', 'Product docs: README exposes the NIST AI RMF mapped badge');
